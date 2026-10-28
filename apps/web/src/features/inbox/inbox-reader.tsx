@@ -1,18 +1,48 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import type { InboxDetail } from "@workspace/domain"
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  CalendarCheck,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clock3,
+  Ellipsis,
+  Reply,
+  Send,
+  User,
+} from "lucide-react"
+import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { Textarea } from "@workspace/ui/components/textarea"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { ApiError } from "@/lib/api.ts"
-import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
+import {
+  PROFILE_ZONE,
+  companyInitials,
+  stageLabel,
+} from "@/features/apply/apply-stages.ts"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
 import { InboxLimitError, inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
-import { chipClock, inboxChip, nextMorningIso } from "./inbox-time.ts"
+import {
+  FAINT_TEXT,
+  GmailMark,
+  InboxIconButton,
+  SOFT_TEXT,
+} from "./inbox-parts.tsx"
+import {
+  chipClock,
+  inboxChip,
+  inboxStamp,
+  inboxWhen,
+  nextMorningIso,
+} from "./inbox-time.ts"
 
 function resetClock(iso: string | null, zone: string) {
   if (!iso) return "later"
@@ -61,7 +91,13 @@ export function InboxReader({
   const [busy, setBusy] = useState(false)
   const prompt = Boolean(detail.jobId && detail.suggestedStage === "interview")
   const hasDraft = draft != null
-  const sendGlow = hasDraft && !prompt
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
+  const earlier = detail.messages.slice(0, -1)
+  const current = detail.messages.at(-1) ?? null
+  const inbound = detail.messages.findLast(
+    (message) => message.direction === "in"
+  )
+  const me = detail.messages.find((message) => message.direction === "out")
 
   function saveDraft(draftBody: string) {
     return runCommand("inbox.updateDraft", {
@@ -92,9 +128,10 @@ export function InboxReader({
   return (
     <section
       aria-label="Reading pane"
+      data-pen-section="Detail pane"
       className="flex min-h-0 min-w-0 flex-1 flex-col"
     >
-      <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-3 py-2">
+      <div className="flex h-13 shrink-0 items-center gap-1 border-b border-border ps-9.5 pe-12 max-md:h-auto max-md:min-h-13 max-md:flex-wrap max-md:px-3 max-md:py-1.5">
         {narrow ? (
           <Button variant="ghost" onClick={onBack}>
             <ArrowLeft />
@@ -103,6 +140,7 @@ export function InboxReader({
         ) : null}
         <Button
           variant="ghost"
+          className={TOOLBAR_BUTTON}
           disabled={busy}
           onClick={() =>
             run(async () => {
@@ -116,10 +154,12 @@ export function InboxReader({
             })
           }
         >
+          <Check className="size-3.75" />
           Done
         </Button>
         <Button
           variant="ghost"
+          className={TOOLBAR_BUTTON}
           disabled={busy}
           onClick={() =>
             run(async () => {
@@ -131,128 +171,234 @@ export function InboxReader({
             })
           }
         >
+          <Clock3 className="size-3.75" />
           Snooze
         </Button>
-        <Button variant="ghost" disabled aria-describedby="inbox-gmail-closed">
-          Open in Gmail
-        </Button>
-        <span id="inbox-gmail-closed" className="sr-only">
-          Gmail is not connected
+        <InboxIconButton
+          label="More"
+          className="size-7.5 rounded-[7px] max-md:hidden"
+          disabled
+        >
+          <Ellipsis />
+        </InboxIconButton>
+        <span className="flex-1" />
+        <span
+          className={cn("shrink-0 text-[12.5px] whitespace-nowrap", SOFT_TEXT)}
+        >
+          {`${index} of ${count}`}
         </span>
-        <span className="ml-auto text-sm text-muted-foreground">
-          {index} of {count}
-        </span>
+        <span className="ps-2" />
         <Button
-          variant="ghost"
-          size="icon"
+          variant="default"
+          size="icon-sm"
+          className="size-7 rounded-[7px]"
           aria-label="Previous"
           disabled={index <= 1}
           onClick={onPrevious}
         >
-          <ChevronLeft />
+          <ChevronUp className="size-3.25" />
         </Button>
         <Button
-          variant="ghost"
-          size="icon"
+          variant="default"
+          size="icon-sm"
+          className="size-7 rounded-[7px]"
           aria-label="Next"
           disabled={index >= count}
           onClick={onNext}
         >
-          <ChevronRight />
+          <ChevronDown className="size-3.25" />
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-        <h2 className="text-base font-medium">{detail.subject}</h2>
-        <div data-user-content className="mt-4 flex flex-col gap-4 text-sm">
-          {detail.messages.length === 0 ? <p>{detail.summary}</p> : null}
-          {detail.messages.map((message) => (
-            <article key={message.id} className="whitespace-pre-wrap">
-              <p className="font-medium">{message.fromName}</p>
-              <p>{message.bodyText}</p>
-            </article>
-          ))}
-          {detail.job ? (
-            <p className="flex items-center gap-2">
-              <StageIcon stage={detail.job.stage} />
-              Linked to {detail.job.title} in Apply
-            </p>
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-12 pt-7 pb-6 max-md:px-5">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            {detail.subject}
+          </h2>
+          {detail.messages.length > 0 ? (
+            <span className={cn("text-[13px]", FAINT_TEXT)}>
+              {`${detail.messages.length} ${detail.messages.length === 1 ? "message" : "messages"}`}
+            </span>
           ) : null}
+          <span className="flex-1" />
+          <Button
+            variant="ghost"
+            className={cn(
+              "h-7 gap-1.5 rounded-[7px] px-2.5 text-[12.5px]",
+              SOFT_TEXT
+            )}
+            disabled
+            aria-describedby="inbox-gmail-closed"
+          >
+            <GmailMark className="h-3.75 w-5" />
+            Open in Gmail
+            <ArrowUpRight className="size-3" />
+          </Button>
+          <span id="inbox-gmail-closed" className="sr-only">
+            Gmail is not connected
+          </span>
         </div>
         {prompt ? (
-          <div className="mt-6 flex flex-col items-start gap-2">
-            <p>Move this job to Interview?</p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="glow"
-                disabled={busy}
-                onClick={() =>
-                  run(async () => {
-                    const result = await runCommand("inbox.acceptSuggestion", {
-                      threadId: detail.id,
-                    })
-                    toastWithUndo("Moved to Interview", () => {
-                      if (result.activityId)
-                        void undoActivity(queryClient, result.activityId)
-                    })
+          <div className="flex min-h-11 items-center gap-x-2 gap-y-1 rounded-[10px] border border-border py-1.5 ps-3 pe-1.5 max-md:flex-wrap">
+            <CalendarCheck className="size-4 text-foreground" aria-hidden />
+            <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 text-[13px]">
+              <span className="font-medium text-foreground">
+                Interview request
+              </span>
+              <span className="text-muted-foreground">
+                {detail.job
+                  ? `Move this job from ${stageLabel(detail.job.stage)} to Interview?`
+                  : "Move this job to Interview?"}
+              </span>
+            </p>
+            <Button
+              className="h-7 shrink-0 rounded-[7px] px-2.5 text-[12.5px]"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  const result = await runCommand("inbox.acceptSuggestion", {
+                    threadId: detail.id,
                   })
-                }
-              >
-                Move to Interview
-              </Button>
-              <Button
-                variant="ghost"
-                disabled={busy}
-                onClick={() =>
-                  run(async () => {
-                    await runCommand("inbox.clearSuggestion", {
-                      threadId: detail.id,
-                    })
+                  toastWithUndo("Moved to Interview", () => {
+                    if (result.activityId)
+                      void undoActivity(queryClient, result.activityId)
                   })
-                }
-              >
-                Not now
-              </Button>
-            </div>
+                })
+              }
+            >
+              Move to Interview
+            </Button>
+            <Button
+              variant="ghost"
+              className={cn(
+                "h-7 rounded-[7px] px-2.5 text-[12.5px]",
+                SOFT_TEXT
+              )}
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  await runCommand("inbox.clearSuggestion", {
+                    threadId: detail.id,
+                  })
+                })
+              }
+            >
+              Not now
+            </Button>
           </div>
+        ) : detail.job ? (
+          <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
+            <StageIcon stage={detail.job.stage} />
+            {`Linked to ${detail.job.title} in Apply`}
+          </p>
         ) : null}
+        <div data-user-content className="flex flex-col">
+          {detail.messages.length === 0 ? (
+            <p className="text-sm">{detail.summary}</p>
+          ) : null}
+          {earlier.length > 0 ? (
+            <div className="border-t border-border/60">
+              {earlier.map((message) => {
+                const open = opened.has(message.id)
+                return (
+                  <div key={message.id} className="border-b border-border/60">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      aria-expanded={open}
+                      className="h-13 w-full justify-start gap-3 rounded-none px-0 text-left font-normal hover:bg-transparent"
+                      onClick={() =>
+                        setOpened((previous) => {
+                          const next = new Set(previous)
+                          if (!next.delete(message.id)) next.add(message.id)
+                          return next
+                        })
+                      }
+                    >
+                      <PersonAvatar name={message.fromName} />
+                      <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
+                        {message.fromName}
+                      </span>
+                      <span
+                        className={cn(
+                          "min-w-0 flex-1 truncate text-[13px]",
+                          FAINT_TEXT
+                        )}
+                      >
+                        {open ? "" : message.bodyText}
+                      </span>
+                      <span className={cn("shrink-0 text-xs", FAINT_TEXT)}>
+                        {inboxWhen(message.sentAt, now, zone)}
+                      </span>
+                    </Button>
+                    {open ? <Paragraphs text={message.bodyText} /> : null}
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
+          {current ? (
+            <article className="flex flex-col gap-3.5 pt-4.5 pb-1">
+              <header className="flex flex-wrap items-center gap-3">
+                <PersonAvatar name={current.fromName} />
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <p className="flex flex-wrap items-baseline gap-x-1.5">
+                    <span className="text-[13.5px] font-semibold text-foreground">
+                      {current.fromName}
+                    </span>
+                    <span className={cn("text-[12.5px]", SOFT_TEXT)}>
+                      {`<${current.fromEmail}>`}
+                    </span>
+                  </p>
+                  <p
+                    className={cn("flex items-center gap-1 text-xs", SOFT_TEXT)}
+                  >
+                    {current.direction === "in"
+                      ? "to me"
+                      : `to ${current.toEmail}`}
+                    <ChevronDown
+                      className={cn("size-2.5", FAINT_TEXT)}
+                      aria-hidden
+                    />
+                  </p>
+                </div>
+                <span className="flex-1" />
+                <span className={cn("text-xs", SOFT_TEXT)}>
+                  {inboxStamp(current.sentAt, now, zone)}
+                </span>
+              </header>
+              <Paragraphs text={current.bodyText} />
+            </article>
+          ) : null}
+        </div>
         {hasDraft ? (
-          <div className="mt-6 flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">Drafted by opencv</p>
-            {limit ? (
-              <div role="alert" className="flex flex-col gap-1 text-sm">
-                <p>You've reached today's Free limit.</p>
-                <p>{limit.message}</p>
-                <a
-                  href="/settings"
-                  className="text-foreground underline underline-offset-4"
-                >
-                  Upgrade
-                </a>
-              </div>
-            ) : null}
-            <Textarea
-              aria-label="Reply"
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              onBlur={() => {
-                if (body === savedBody) return
-                void saveDraft(body)
-                  .then(() => setSavedBody(body))
-                  .catch((error: unknown) => {
-                    toast(
-                      error instanceof ApiError
-                        ? error.message
-                        : "Could not load inbox. Refresh the page."
-                    )
-                  })
-              }}
-            />
-            {times.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+          <div className="flex gap-3 max-md:[&>[data-slot=avatar]]:hidden">
+            {me ? (
+              <PersonAvatar name={me.fromName} />
+            ) : (
+              <Avatar>
+                <AvatarFallback className="bg-muted">
+                  <User className="size-4" aria-hidden />
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+              {inbound ? (
+                <p className="flex h-9 min-w-0 items-center gap-2 px-4 pt-1 text-[12.5px]">
+                  <Reply className={cn("size-3.25", SOFT_TEXT)} aria-hidden />
+                  <span className="shrink-0 font-medium whitespace-nowrap text-foreground">
+                    {inbound.fromName}
+                  </span>
+                  <span className={cn("min-w-0 truncate", SOFT_TEXT)}>
+                    {`<${inbound.fromEmail}>`}
+                  </span>
+                </p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-1.5 px-4 pt-1.5">
                 {times.map((time, chip) => (
                   <Button
                     key={time}
-                    variant={chip === selected ? "secondary" : "ghost"}
+                    variant={chip === selected ? "default" : "outline"}
+                    className={cn(CHIP, chip === selected && CHIP_ON)}
                     aria-pressed={chip === selected}
                     onClick={() => {
                       if (chip === selected) return
@@ -267,67 +413,137 @@ export function InboxReader({
                     {inboxChip(time, zone)}
                   </Button>
                 ))}
-              </div>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="ghost"
-                disabled={busy || limit != null}
-                onClick={() =>
-                  run(async () => {
-                    const next = await runCommand("inbox.draftReply", {
-                      threadId: detail.id,
-                      hint: "another time",
-                    })
-                    setBody(next.body)
-                    setSavedBody(next.body)
-                    setLimit(null)
-                  })
-                }
-              >
-                {limit
-                  ? `Coach is back at ${resetClock(limit.resetsAt, zone)}`
-                  : "Suggest another time"}
-              </Button>
-              <Button
-                variant={sendGlow ? "glow" : "ghost"}
-                disabled={busy || body.trim() === ""}
-                onClick={() =>
-                  run(async () => {
-                    if (body !== savedBody) {
-                      await saveDraft(body)
-                      setSavedBody(body)
-                    }
-                    await runCommand("inbox.send", { threadId: detail.id })
-                    toast("Reply sent")
-                  })
-                }
-              >
-                Send
-              </Button>
-              {times.length > 0 ? (
                 <Button
-                  variant="ghost"
-                  disabled={busy}
+                  variant="outline"
+                  className={CHIP}
+                  disabled={busy || limit != null}
                   onClick={() =>
                     run(async () => {
-                      const start = times[selected]
-                      if (!start) return
-                      await runCommand("inbox.addToCalendar", {
+                      const next = await runCommand("inbox.draftReply", {
                         threadId: detail.id,
-                        start,
+                        hint: "another time",
                       })
-                      toast("Added to calendar")
+                      setBody(next.body)
+                      setSavedBody(next.body)
+                      setLimit(null)
                     })
                   }
                 >
-                  Add to calendar
+                  {limit
+                    ? `Coach is back at ${resetClock(limit.resetsAt, zone)}`
+                    : "Suggest another time"}
                 </Button>
+              </div>
+              {limit ? (
+                <div
+                  role="alert"
+                  className="flex flex-col gap-1 px-4 pt-3 text-sm"
+                >
+                  <p>You've reached today's Free limit.</p>
+                  <p>{limit.message}</p>
+                  <a
+                    href="/settings"
+                    className="text-foreground underline underline-offset-4"
+                  >
+                    Upgrade
+                  </a>
+                </div>
               ) : null}
+              <div className="px-4 py-3.5">
+                <Textarea
+                  aria-label="Reply"
+                  className="min-h-0 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-relaxed shadow-none focus-visible:ring-0 dark:bg-transparent"
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  onBlur={() => {
+                    if (body === savedBody) return
+                    void saveDraft(body)
+                      .then(() => setSavedBody(body))
+                      .catch((error: unknown) => {
+                        toast(
+                          error instanceof ApiError
+                            ? error.message
+                            : "Could not load inbox. Refresh the page."
+                        )
+                      })
+                  }}
+                />
+              </div>
+              <div className="flex h-12 items-center gap-1.5 ps-4 pe-3">
+                <Button
+                  className="h-8 gap-1.5 rounded-lg border-transparent bg-foreground px-3 text-[12.5px] font-semibold text-background ring-0 hover:bg-foreground/90"
+                  disabled={busy || body.trim() === ""}
+                  onClick={() =>
+                    run(async () => {
+                      if (body !== savedBody) {
+                        await saveDraft(body)
+                        setSavedBody(body)
+                      }
+                      await runCommand("inbox.send", { threadId: detail.id })
+                      toast("Reply sent")
+                    })
+                  }
+                >
+                  <Send className="size-3.25" />
+                  Send
+                </Button>
+                {times.length > 0 ? (
+                  <Button
+                    variant="ghost"
+                    className="h-7 gap-1.75 rounded-md px-2 text-[12.5px] font-normal text-muted-foreground"
+                    disabled={busy}
+                    onClick={() =>
+                      run(async () => {
+                        const start = times[selected]
+                        if (!start) return
+                        await runCommand("inbox.addToCalendar", {
+                          threadId: detail.id,
+                          start,
+                        })
+                        toast("Added to calendar")
+                      })
+                    }
+                  >
+                    <CalendarCheck className="size-4" />
+                    Add to calendar
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
       </div>
     </section>
+  )
+}
+
+const TOOLBAR_BUTTON =
+  "h-7.5 gap-1.5 rounded-[7px] px-2.5 text-[12.5px] text-foreground/85"
+const CHIP = "h-6.5 rounded-full px-2.5 text-xs"
+const CHIP_ON =
+  "border-transparent bg-foreground text-background ring-0 hover:bg-foreground/90"
+
+function PersonAvatar({ name }: { name: string }) {
+  return (
+    <Avatar>
+      <AvatarFallback className="bg-accent text-[10.5px] font-semibold">
+        {companyInitials(name)}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
+function Paragraphs({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col gap-3.5 ps-11 text-sm leading-relaxed text-foreground max-md:ps-0">
+      {text.split(/\n{2,}/).map((paragraph, at) => (
+        <p
+          key={`${at}-${paragraph.slice(0, 12)}`}
+          className="whitespace-pre-wrap"
+        >
+          {paragraph}
+        </p>
+      ))}
+    </div>
   )
 }

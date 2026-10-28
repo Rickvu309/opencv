@@ -19,10 +19,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   b1m7SA: { issue: 498, expires: "2026-12-31" }, // W1.4 Code wrong or expired
   NAXQk: { issue: 498, expires: "2026-12-31" }, // W1.5 Welcome
   DhG87: { issue: 498, expires: "2026-12-31" }, // W1.6 Session expired
-  F2Ofg0: { issue: 493, expires: "2026-12-31" }, // W2.1 Connect Gmail
-  nKD1b: { issue: 493, expires: "2026-12-31" }, // W2.2 Scanning
-  eXcUw: { issue: 493, expires: "2026-12-31" }, // W2.3 Inbox
-  PSHPF: { issue: 493, expires: "2026-12-31" }, // W2.4 Recruiter reply
   FUipv: { issue: 498, expires: "2026-12-31" }, // W3.1 New chat
   ISnTZ: { issue: 498, expires: "2026-12-31" }, // W3.2 Chat history
   lOO77: { issue: 498, expires: "2026-12-31" }, // W3.3 More ideas

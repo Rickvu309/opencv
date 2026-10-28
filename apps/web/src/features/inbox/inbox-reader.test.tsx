@@ -53,16 +53,15 @@ function renderReader(detail: typeof LOCAL_DETAIL) {
 describe("inbox reader", () => {
   it("offers the interview move and does not offer Send", async () => {
     const posts = postsOf()
-    const view = renderReader(LOCAL_DETAIL)
+    renderReader(LOCAL_DETAIL)
+    expect(
+      screen.getByText("Move this job from Applied to Interview?")
+    ).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Move to Interview" })
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Not now" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Send" })).toBeNull()
-    expect(view.container.querySelectorAll(".glow")).toHaveLength(1)
-    expect(view.container.querySelector(".glow")).toHaveAccessibleName(
-      "Move to Interview"
-    )
     expect(posts).toEqual([])
     await userEvent.click(screen.getByRole("button", { name: "Not now" }))
     expect(posts.map((post) => post.path)).toEqual([
@@ -81,10 +80,13 @@ describe("inbox reader", () => {
     ])
   })
 
-  it("keeps Send as the only glow and does not send on first paint", async () => {
+  it("does not send on first paint and shows the draft with its time chips", async () => {
     const posts = postsOf()
-    const view = renderReader(REGIONAL_DETAIL)
-    expect(screen.getByText("Drafted by opencv")).toBeInTheDocument()
+    renderReader(REGIONAL_DETAIL)
+    expect(screen.getByRole("textbox", { name: "Reply" })).toHaveValue(
+      REGIONAL_DETAIL.draft!.body
+    )
+    expect(screen.getAllByText("Hanh Tran")).toHaveLength(2)
     expect(screen.getByRole("button", { name: "Thu 14:30" })).toHaveAttribute(
       "aria-pressed",
       "true"
@@ -95,9 +97,6 @@ describe("inbox reader", () => {
     expect(
       screen.getByRole("button", { name: "Add to calendar" })
     ).toBeInTheDocument()
-    const glows = view.container.querySelectorAll(".glow")
-    expect(glows).toHaveLength(1)
-    expect(glows[0]).toHaveAccessibleName("Send")
     expect(posts).toEqual([])
     await userEvent.click(screen.getByRole("button", { name: "Send" }))
     expect(posts.map((post) => post.path)).toEqual(["/api/commands/inbox.send"])
