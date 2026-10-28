@@ -197,6 +197,33 @@ function installEditorFetch() {
   return calls
 }
 
+function installConflictFetch(server: PaperView) {
+  const calls: Recorded[] = []
+  vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input)
+    const body = typeof init?.body === "string" ? JSON.parse(init.body) : null
+    calls.push({ url, body, keepalive: init?.keepalive })
+    if (url.includes("/api/commands/paper.replace")) {
+      const version = contentVersionOf(body)
+      if (version < server.contentVersion) {
+        return Promise.resolve(
+          fail(
+            409,
+            "CONFLICT",
+            "This document changed. Reload it and try again."
+          )
+        )
+      }
+      return Promise.resolve(ok({ ...server, contentVersion: version + 1 }))
+    }
+    if (url.includes(`/api/paper/${letter.id}`)) {
+      return Promise.resolve(ok(server))
+    }
+    return Promise.resolve(ok({}))
+  })
+  return calls
+}
+
 function contentVersionOf(body: unknown) {
   if (!body || typeof body !== "object" || !("input" in body)) return 1
   const input = (body as { input?: { contentVersion?: number } }).input
@@ -259,39 +286,116 @@ describe("Letter edits survive autosave and leaving", () => {
     vi.useRealTimers()
   })
 
-  it("keeps the caret when autosave returns a new content version", async () => {
-    const calls = installEditorFetch()
-    renderLetter()
+  it("restores the caret when a focused letter is filled", () => {
+    installEditorFetch()
+    const view = renderLetter()
     const box = screen.getByRole("textbox", { name: "Letter text" })
-    expect(box.textContent).toBe("I write clearly.")
     box.focus()
-    box.textContent = "abcXdef"
-    placeCaret(box, 4)
-    fireEvent.input(box)
-    expect(caretOffset(box)).toBe(4)
-
-    await advance(700)
-
-    expect(savedMarkdown(calls).markdown).toBe("abcXdef")
-    expect(box.textContent).toBe("abcXdef")
-    expect(caretOffset(box)).toBe(4)
+    const written = "I write clearly. Ready."
+    view.rerender(
+      <PaperLetterEditor
+        doc={{
+          ...letter,
+          contentVersion: 2,
+          document: { markdown: written },
+        }}
+        job={job}
+        cvName="PM track CV"
+        onBack={() => undefined}
+      />
+    )
+    expect(box.textContent).toBe(written)
+    expect(caretOffset(box)).toBe(written.length)
   })
 
-  it("saves a word typed 200 ms before the editor unmounts", async () => {
+  it("reloads the server letter after a conflict", async () => {
+    const server: PaperView = {
+      ...letter,
+      contentVersion: 4,
+      document: { markdown: "Server copy from the api." },
+    }
+    const calls = installConflictFetch(server)
+    renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    box.focus()
+    box.textContent = "I write clearly. Z"
+    fireEvent.input(box)
+    await advance(700)
+
+    fireEvent.click(screen.getByRole("button", { name: "Reload" }))
+    await advance(0)
+
+    expect(box.textContent).toBe("Server copy from the api.")
+    box.textContent = "Server copy from the api. Q"
+    fireEvent.input(box)
+    await advance(700)
+
+    const saves = calls.filter((call) => call.url.includes("paper.replace"))
+    const last = saves[saves.length - 1]
+    expect(contentVersionOf(last?.body)).toBe(4)
+    expect(
+      (last?.body as { input?: { document?: { markdown?: string } } }).input
+        ?.document?.markdown
+    ).toBe("Server copy from the api. Q")
+  })
+
+  it("adopts a later copy after the typed save settles", async () => {
     const calls = installEditorFetch()
     const view = renderLetter()
     const box = screen.getByRole("textbox", { name: "Letter text" })
     box.focus()
-    box.textContent = "harbor"
+    box.textContent = "I write clearly. typed"
     fireEvent.input(box)
+    await advance(700)
 
-    await advance(200)
-    expect(savedMarkdown(calls).markdown).toBeUndefined()
-    view.unmount()
-    await advance(0)
+    expect(box.textContent).toBe("I write clearly. typed")
+    const coach = "Coach rewrote the letter."
+    view.rerender(
+      <PaperLetterEditor
+        doc={{
+          ...letter,
+          contentVersion: 4,
+          document: { markdown: coach },
+        }}
+        job={job}
+        cvName="PM track CV"
+        onBack={() => undefined}
+      />
+    )
+    expect(box.textContent).toBe(coach)
 
-    expect(savedMarkdown(calls).markdown).toBe("harbor")
-    expect(savedMarkdown(calls).save?.keepalive).not.toBe(true)
+    box.textContent = "Coach rewrote the letter. Q"
+    fireEvent.input(box)
+    await advance(700)
+    const saves = calls.filter((call) => call.url.includes("paper.replace"))
+    expect(contentVersionOf(saves[saves.length - 1]?.body)).toBe(4)
+  })
+
+  it("puts the caret at the end of a server copy", async () => {
+    installEditorFetch()
+    const view = renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    box.focus()
+    placeCaret(box, 1)
+    fireEvent.input(box)
+    await advance(700)
+
+    const written = "Server copy from the api."
+    box.focus()
+    view.rerender(
+      <PaperLetterEditor
+        doc={{
+          ...letter,
+          contentVersion: 4,
+          document: { markdown: written },
+        }}
+        job={job}
+        cvName="PM track CV"
+        onBack={() => undefined}
+      />
+    )
+    expect(box.textContent).toBe(written)
+    expect(caretOffset(box)).toBe(written.length)
   })
 
   it("saves a word with keepalive when the page hides", async () => {

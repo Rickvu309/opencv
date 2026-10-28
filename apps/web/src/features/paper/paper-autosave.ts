@@ -9,9 +9,11 @@ type Options<T> = {
   docId: PaperId
   initialVersion: number
   toDocument: (value: T) => unknown
-  onSaved: (saved: PaperView) => void
+  onSaved: (saved: PaperView, inputEpoch: number) => void
   onConflict: () => void
   onError: (error: unknown) => void
+  /** Read when a save starts, so a later keystroke can keep the dirty flag. */
+  readInputEpoch?: () => number
 }
 
 /**
@@ -21,7 +23,9 @@ type Options<T> = {
  * updates the version and does not count as the current document. A conflict
  * drops the pending edit and refuses further schedules until adopt().
  * pagehide sends the pending edit with keepalive, because a reload cancels
- * a normal fetch before it lands.
+ * a normal fetch before it lands. A save already in flight was not keepalive.
+ * When that request settles, one pending edit is sent again with keepalive.
+ * pageshow clears that mode so a restored page uses a normal save.
  */
 export function usePaperAutosave<T>({
   docId,
@@ -30,6 +34,7 @@ export function usePaperAutosave<T>({
   onSaved,
   onConflict,
   onError,
+  readInputEpoch,
 }: Options<T>) {
   const run = useRunCommand()
   const queryClient = useQueryClient()
@@ -45,21 +50,25 @@ export function usePaperAutosave<T>({
   const onConflictRef = useRef(onConflict)
   const onErrorRef = useRef(onError)
   const toDocumentRef = useRef(toDocument)
+  const readInputEpochRef = useRef(readInputEpoch)
   useEffect(() => {
     onSavedRef.current = onSaved
     onConflictRef.current = onConflict
     onErrorRef.current = onError
     toDocumentRef.current = toDocument
-  }, [onSaved, onConflict, onError, toDocument])
+    readInputEpochRef.current = readInputEpoch
+  }, [onSaved, onConflict, onError, toDocument, readInputEpoch])
 
   const flush = useCallback(async () => {
     if (conflictRef.current || inflightRef.current) return
     inflightRef.current = true
     let saves = 0
+    let resentOnUnload = false
     try {
       while (pendingRef.current != null && !conflictRef.current) {
         const sentEpoch = epochRef.current
         const next = pendingRef.current
+        const inputEpoch = readInputEpochRef.current?.() ?? sentEpoch
         pendingRef.current = null
         try {
           const saved = await run(
@@ -78,7 +87,9 @@ export function usePaperAutosave<T>({
           if (sentEpoch < appliedEpochRef.current) continue
           appliedEpochRef.current = sentEpoch
           versionRef.current = saved.contentVersion
-          if (sentEpoch === epochRef.current) onSavedRef.current(saved)
+          if (sentEpoch === epochRef.current) {
+            onSavedRef.current(saved, inputEpoch)
+          }
         } catch (error) {
           if (error instanceof ApiError && error.code === "CONFLICT") {
             conflictRef.current = true
@@ -92,6 +103,16 @@ export function usePaperAutosave<T>({
           }
           if (pendingRef.current == null && sentEpoch === epochRef.current) {
             pendingRef.current = next
+          }
+          // The in-flight save had no keepalive, so a reload aborts it.
+          // Send the pending edit once more before the page is gone.
+          if (
+            unloadRef.current &&
+            pendingRef.current != null &&
+            !resentOnUnload
+          ) {
+            resentOnUnload = true
+            continue
           }
           onErrorRef.current(error)
           break
@@ -121,9 +142,14 @@ export function usePaperAutosave<T>({
       }
       void flushRef.current()
     }
+    const onPageShow = () => {
+      unloadRef.current = false
+    }
     window.addEventListener("pagehide", onPageHide)
+    window.addEventListener("pageshow", onPageShow)
     return () => {
       window.removeEventListener("pagehide", onPageHide)
+      window.removeEventListener("pageshow", onPageShow)
       if (document.visibilityState === "hidden") unloadRef.current = true
       if (timerRef.current != null) window.clearTimeout(timerRef.current)
       void flushRef.current()
