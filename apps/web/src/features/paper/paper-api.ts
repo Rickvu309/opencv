@@ -122,6 +122,27 @@ export async function importPaperFile(
   return unwrapData(payload)
 }
 
+export async function importPaperLink(
+  link: string,
+  signal?: AbortSignal
+): Promise<never> {
+  const res = await fetchBinary(endpoints.paperImport, {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ link }),
+    signal,
+  })
+  const payload = (await res.json().catch(() => null)) as {
+    error?: { message?: string }
+  } | null
+  throw new ApiError(
+    res.ok ? 422 : res.status,
+    "LINK_UNREADABLE",
+    payload?.error?.message ?? "Could not import that file. Try it again."
+  )
+}
+
 export function stopPaperChat(chatId: string): Promise<void> {
   return apiFetch(endpoints.chatStop(chatId), { method: "POST" })
 }

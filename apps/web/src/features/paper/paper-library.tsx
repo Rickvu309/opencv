@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type DragEvent } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   paperDocNameSchema,
@@ -26,22 +26,32 @@ import {
 } from "@/lib/contract-client.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
 
-import { importPaperFile, latestActivityId } from "./paper-api.ts"
+import {
+  importPaperFile,
+  importPaperLink,
+  latestActivityId,
+} from "./paper-api.ts"
+import {
+  CantReadDialog,
+  ImportProgressDialog,
+  PaperImportRow,
+} from "./paper-import.tsx"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
-import {
-  PaperImportScreen,
-  type PaperImportState,
-} from "./paper-import-state.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { paperEditedLabel } from "./paper-templates.ts"
 
 const IMPORT_ACCEPT =
-  ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+  ".pdf,.docx,.txt,.json,.pages,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json,application/vnd.apple.pages"
+
+type PaperImportState =
+  | { type: "idle" }
+  | { type: "importing"; name: string }
+  | { type: "error"; message: string }
 
 type Mode =
   | { type: "new"; step: "kind" | "gallery" }
@@ -89,7 +99,8 @@ export function PaperLibrary({
   const [jobsError, setJobsError] = useState<string | null>(null)
   const [printTarget, setPrintTarget] = useState<PaperView | null>(null)
   const [printNonce, setPrintNonce] = useState(0)
-  const dialogOpen = mode !== null
+  const [link, setLink] = useState("")
+  const dialogOpen = mode !== null || importState.type !== "idle"
   const needle = query.trim().toLowerCase()
   const documents = docs.filter(
     (doc) => doc.kind === "cv" || doc.kind === "letter"
@@ -129,6 +140,15 @@ export function PaperLibrary({
     }
   }
 
+  async function discardImport(created: PaperView) {
+    if (created.sourceFileId) {
+      await run("paper.deleteFile", { fileId: created.sourceFileId }).catch(
+        () => undefined
+      )
+    }
+    await run("paper.delete", { docId: created.id }).catch(() => undefined)
+  }
+
   async function onImport(file: File) {
     importRequest.current?.abort()
     const request = new AbortController()
@@ -136,8 +156,13 @@ export function PaperLibrary({
     setMode(null)
     setImportState({ type: "importing", name: file.name })
     try {
-      const created = await importPaperFile(file, request.signal)
-      if (request.signal.aborted) return
+      // Do not pass this signal to the upload. A keep-alive cancel does not
+      // abort the server request, and aborting the fetch drops the id.
+      const created = await importPaperFile(file)
+      if (request.signal.aborted) {
+        await discardImport(created)
+        return
+      }
       void refreshQueries(queryClient, [
         { query: "paper.list" },
         { query: "paper.files" },
@@ -148,10 +173,7 @@ export function PaperLibrary({
       if (request.signal.aborted) return
       setImportState({
         type: "error",
-        message: messageOf(
-          err,
-          "Could not import that file. Try a PDF, DOCX, or plain text file."
-        ),
+        message: messageOf(err, "Could not import that file. Try it again."),
       })
     } finally {
       if (importRequest.current === request) importRequest.current = null
@@ -162,10 +184,6 @@ export function PaperLibrary({
     importRequest.current?.abort()
     importRequest.current = null
     setImportState({ type: "idle" })
-    void refreshQueries(queryClient, [
-      { query: "paper.list" },
-      { query: "paper.files" },
-    ])
   }
 
   async function startBlank() {
@@ -190,6 +208,25 @@ export function PaperLibrary({
 
   function chooseFile() {
     importRef.current?.click()
+  }
+
+  async function onPasteLink() {
+    const value = link.trim()
+    if (!value) return
+    try {
+      await importPaperLink(value)
+    } catch (err) {
+      setImportState({
+        type: "error",
+        message: messageOf(err, "Could not import that file. Try it again."),
+      })
+    }
+  }
+
+  function onDropFile(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    const file = event.dataTransfer.files[0]
+    if (file) void onImport(file)
   }
 
   async function openLink(doc: PaperView) {
@@ -275,25 +312,6 @@ export function PaperLibrary({
     )
   }
 
-  if (importState.type !== "idle") {
-    return (
-      <>
-        <PaperImportInput
-          inputRef={importRef}
-          accept={IMPORT_ACCEPT}
-          onFile={(file) => void onImport(file)}
-        />
-        <PaperImportScreen
-          state={importState}
-          onCancel={cancelImport}
-          onRetry={chooseFile}
-          onBlank={() => void startBlank()}
-          creatingBlank={creatingBlank}
-        />
-      </>
-    )
-  }
-
   return (
     <section
       aria-label="Paper"
@@ -363,20 +381,13 @@ export function PaperLibrary({
               href="/proof"
             />
           </div>
-          <div className="rounded-lg border border-border p-4">
-            <p className="text-sm font-medium">Import a file</p>
-            <p className="text-sm text-muted-foreground">
-              Drop a PDF, Word or Google Doc, or paste a LinkedIn link.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-3"
-              onClick={chooseFile}
-            >
-              Choose file
-            </Button>
-          </div>
+          <PaperImportRow
+            link={link}
+            onLinkChange={setLink}
+            onSubmitLink={() => void onPasteLink()}
+            onChooseFile={chooseFile}
+            onDropFile={onDropFile}
+          />
         </div>
       ) : null}
       {!loading && !error && noResults ? (
@@ -565,6 +576,20 @@ export function PaperLibrary({
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImportProgressDialog
+        open={importState.type === "importing"}
+        filename={importState.type === "importing" ? importState.name : ""}
+        onCancel={cancelImport}
+      />
+      <CantReadDialog
+        open={importState.type === "error"}
+        sentence={importState.type === "error" ? importState.message : ""}
+        onChoose={chooseFile}
+        onBlank={() => void startBlank()}
+        onClose={() => setImportState({ type: "idle" })}
+        blankPending={creatingBlank}
+      />
 
       <Dialog
         open={mode?.type === "link"}

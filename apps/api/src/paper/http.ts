@@ -16,7 +16,16 @@ import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { readOwnedPhoto, readSharedPhoto, saveFile } from "./store.js"
+import { parseImportLink } from "./import-parse.js"
+import {
+  IMPORT_FILE_CAP,
+  IMPORT_SIZE_MESSAGE,
+  deleteFile,
+  readOwnedPhoto,
+  readSharedPhoto,
+  saveFile,
+  withImportSignal,
+} from "./store.js"
 
 function person(userId: string) {
   return personActor(userId)
@@ -51,6 +60,79 @@ function fileIdOrMissing(value: string) {
   } catch {
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
   }
+}
+
+function concatBytes(chunks: Uint8Array[]) {
+  const length = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
+  const bytes = new Uint8Array(length)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
+}
+
+/** Declared length is checked before any byte is kept. A stream stops at the cap. */
+async function readImportUpload(
+  c: Parameters<typeof jsonWithStatus>[0]
+): Promise<{ over: true } | { over: false; file: File | null; link: string }> {
+  const declared = Number(c.req.header("content-length"))
+  if (Number.isFinite(declared) && declared > IMPORT_FILE_CAP) {
+    return { over: true }
+  }
+  const reader = c.req.raw.body?.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  if (reader) {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > IMPORT_FILE_CAP) {
+        await reader.cancel()
+        return { over: true }
+      }
+      chunks.push(value)
+    }
+  }
+  const type = c.req.header("content-type")
+  let form: FormData
+  try {
+    form = await new Request("http://import.local/", {
+      method: "POST",
+      headers: type ? { "content-type": type } : undefined,
+      body: concatBytes(chunks),
+    }).formData()
+  } catch {
+    return { over: false, file: null, link: "" }
+  }
+  const file = form.get("file")
+  const link = form.get("link")
+  return {
+    over: false,
+    file: file instanceof File ? file : null,
+    link: typeof link === "string" ? link : "",
+  }
+}
+
+function refuseImportLink(
+  c: Parameters<typeof jsonWithStatus>[0],
+  value: string
+) {
+  const parsed = parseImportLink(value)
+  if (!parsed || parsed.ok) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Choose a file to import."),
+      httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+    )
+  }
+  return jsonWithStatus(
+    c,
+    errorEnvelope(parsed.code, parsed.message),
+    httpStatusForError(parsed.code)
+  )
 }
 
 export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
@@ -98,8 +180,28 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   routes.post("/import", async (c) => {
-    const body = await c.req.parseBody()
-    const file = body.file
+    const contentType = c.req.header("content-type") ?? ""
+    if (contentType.includes("application/json")) {
+      const parsed = await readJsonBody(c)
+      if (!parsed.ok) return parsed.response
+      const link =
+        parsed.value &&
+        typeof parsed.value === "object" &&
+        "link" in parsed.value
+          ? parsed.value.link
+          : ""
+      return refuseImportLink(c, typeof link === "string" ? link : "")
+    }
+    const uploaded = await readImportUpload(c)
+    if (uploaded.over) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, IMPORT_SIZE_MESSAGE),
+        413
+      )
+    }
+    if (uploaded.link.trim()) return refuseImportLink(c, uploaded.link)
+    const file = uploaded.file
     if (!(file instanceof File)) {
       return jsonWithStatus(
         c,
@@ -107,19 +209,45 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       )
     }
-    const saved = await saveFile({
-      userId: parseUserId(c.var.userId),
-      name: file.name,
-      mediaType: file.type || "application/octet-stream",
-      bytes: Buffer.from(await file.arrayBuffer()),
-      purpose: "import",
-    })
-    const imported = await registry.execute({
-      name: "paper.import",
-      input: { fileId: saved.id },
-      actor: person(c.var.userId),
-    })
-    return c.json(successEnvelope(imported.output))
+    if (file.size > IMPORT_FILE_CAP) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, IMPORT_SIZE_MESSAGE),
+        413
+      )
+    }
+    let bytes: Buffer | undefined = Buffer.from(await file.arrayBuffer())
+    let savedId: string | undefined
+    try {
+      const saved = await saveFile({
+        userId: parseUserId(c.var.userId),
+        name: file.name,
+        mediaType: file.type || "application/octet-stream",
+        bytes,
+        purpose: "import",
+      })
+      savedId = saved.id
+      bytes = undefined
+      void bytes
+      const imported = await withImportSignal(c.req.raw.signal, () =>
+        registry.execute({
+          name: "paper.import",
+          input: { fileId: saved.id },
+          actor: person(c.var.userId),
+        })
+      )
+      return c.json(successEnvelope(imported.output))
+    } catch (error) {
+      // The command transaction rolls back its own delete. Drop the row here.
+      bytes = undefined
+      void bytes
+      if (savedId) {
+        await deleteFile(person(c.var.userId), parseFileId(savedId)).catch(
+          () => undefined
+        )
+      }
+      throw error
+    }
   })
 
   routes.get("/files", async (c) => {

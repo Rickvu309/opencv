@@ -1,0 +1,143 @@
+import type { DragEvent } from "react"
+import { LoaderCircle } from "lucide-react"
+
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
+
+export function PaperImportRow({
+  link,
+  onLinkChange,
+  onSubmitLink,
+  onChooseFile,
+  onDropFile,
+}: {
+  link: string
+  onLinkChange: (value: string) => void
+  onSubmitLink: () => void
+  onChooseFile: () => void
+  onDropFile: (event: DragEvent<HTMLDivElement>) => void
+}) {
+  return (
+    <div
+      role="region"
+      aria-label="Import a file"
+      className="rounded-lg border border-border p-4"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={onDropFile}
+    >
+      <p className="text-sm font-medium">Import a file</p>
+      <p className="text-sm text-muted-foreground">
+        Drop a PDF, Word or Google Doc, or paste a LinkedIn link.
+      </p>
+      <Input
+        aria-label="Paste a link"
+        placeholder="Paste a link"
+        value={link}
+        className="mt-3"
+        onChange={(event) => onLinkChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") return
+          event.preventDefault()
+          onSubmitLink()
+        }}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        className="mt-3"
+        onClick={onChooseFile}
+      >
+        Choose file
+      </Button>
+    </div>
+  )
+}
+
+export function ImportProgressDialog({
+  open,
+  filename,
+  onCancel,
+}: {
+  open: boolean
+  filename: string
+  onCancel: () => void
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onCancel()
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Importing…</DialogTitle>
+        </DialogHeader>
+        <div role="status" className="flex items-center gap-3">
+          <LoaderCircle
+            aria-hidden
+            className="size-4 animate-spin motion-reduce:animate-none"
+          />
+          <p className="truncate text-sm text-muted-foreground">{filename}</p>
+        </div>
+        <div className="flex justify-end">
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function CantReadDialog({
+  open,
+  sentence,
+  onChoose,
+  onBlank,
+  onClose,
+  blankPending = false,
+}: {
+  open: boolean
+  sentence: string
+  onChoose: () => void
+  onBlank: () => void
+  onClose: () => void
+  blankPending?: boolean
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Can&apos;t read this file</DialogTitle>
+          <DialogDescription role="alert">{sentence}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onBlank}
+            disabled={blankPending}
+          >
+            Start blank
+          </Button>
+          <Button type="button" variant="glow" onClick={onChoose}>
+            Choose another file
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

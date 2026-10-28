@@ -5,11 +5,12 @@ import { render } from "@/test/render-with-client.tsx"
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
-import { importPaperFile } from "./paper-api.ts"
+import { importPaperFile, importPaperLink } from "./paper-api.ts"
 
 vi.mock("./paper-api.ts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./paper-api.ts")>()),
   importPaperFile: vi.fn(),
+  importPaperLink: vi.fn(),
 }))
 
 function cv(name: string): PaperView {
@@ -50,7 +51,7 @@ function renderLibrary(docs: PaperView[]) {
 }
 
 describe("Paper library", () => {
-  it("shows import progress and aborts a cancelled upload without opening a document", async () => {
+  it("shows import progress and cancels without opening a document", async () => {
     vi.mocked(importPaperFile).mockImplementation(
       () => new Promise(() => undefined)
     )
@@ -60,10 +61,67 @@ describe("Paper library", () => {
     if (!input) throw new Error("Missing import input")
     fireEvent.change(input, { target: { files: [file] } })
     expect(await screen.findByRole("status")).toHaveTextContent("Linh_CV.pdf")
-    const signal = vi.mocked(importPaperFile).mock.calls[0]?.[1]
-    expect(signal?.aborted).toBe(false)
+    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
-    expect(signal?.aborted).toBe(true)
+    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
+    expect(screen.getByText("Start a document")).toBeInTheDocument()
+  })
+
+  it("deletes the uploaded file when a cancelled import still returns", async () => {
+    const created = {
+      ...cv("sample"),
+      sourceFileId:
+        "22222222-2222-4222-8222-222222222222" as PaperView["sourceFileId"],
+    }
+    let finish: (value: PaperView) => void = () => undefined
+    vi.mocked(importPaperFile).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        })
+    )
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      calls.push(String(input))
+      return Promise.resolve(
+        Response.json({
+          ok: true,
+          data: { id: created.id, fileId: created.sourceFileId },
+        })
+      )
+    })
+    const onOpen = vi.fn()
+    render(
+      <PaperLibrary
+        docs={[]}
+        files={[]}
+        loading={false}
+        error={null}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />
+    )
+    const input = document.querySelector('input[type="file"]')
+    if (!input) throw new Error("Missing import input")
+    fireEvent.change(input, {
+      target: {
+        files: [new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })],
+      },
+    })
+    expect(await screen.findByRole("status")).toHaveTextContent("Linh_CV.pdf")
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+    await act(async () => {
+      finish(created)
+    })
+    await vi.waitFor(() => {
+      expect(
+        calls.some((url) =>
+          url.split("?")[0]?.endsWith("/api/commands/paper.delete")
+        )
+      ).toBe(true)
+    })
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(calls.some((url) => url.includes("paper.deleteFile"))).toBe(true)
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
@@ -91,6 +149,43 @@ describe("Paper library", () => {
     const picker = vi.spyOn(retryInput, "click")
     fireEvent.click(screen.getByRole("button", { name: "Choose another file" }))
     expect(picker).toHaveBeenCalledOnce()
+  })
+
+  it("drops a file on the import row and starts the same import", async () => {
+    vi.mocked(importPaperFile).mockImplementation(
+      () => new Promise(() => undefined)
+    )
+    renderLibrary([])
+    const file = new File(["CV"], "Dropped.pdf", { type: "application/pdf" })
+    fireEvent.drop(screen.getByRole("region", { name: "Import a file" }), {
+      dataTransfer: { files: [file] },
+    })
+    expect(await screen.findByRole("status")).toHaveTextContent("Dropped.pdf")
+    expect(
+      screen.getByRole("heading", { name: "Importing…" })
+    ).toBeInTheDocument()
+    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(file)
+  })
+
+  it("posts a pasted link and shows the server sentence", async () => {
+    vi.mocked(importPaperLink).mockRejectedValueOnce(
+      new Error("Google Docs aren't supported. Download a PDF or Word file.")
+    )
+    renderLibrary([])
+    const field = screen.getByRole("textbox", { name: "Paste a link" })
+    fireEvent.change(field, {
+      target: { value: "https://docs.google.com/document/d/abc" },
+    })
+    fireEvent.keyDown(field, { key: "Enter" })
+    expect(
+      await screen.findByRole("heading", { name: "Can't read this file" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Google Docs aren't supported. Download a PDF or Word file."
+    )
+    expect(vi.mocked(importPaperLink)).toHaveBeenCalledWith(
+      "https://docs.google.com/document/d/abc"
+    )
   })
 
   it("shows the three start cards and the import row when there are no documents", () => {

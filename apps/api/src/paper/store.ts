@@ -1,8 +1,10 @@
+import { AsyncLocalStorage } from "node:async_hooks"
 import { randomBytes } from "node:crypto"
 
 import {
   DEFAULT_PAPER_DOC_NAME,
   ERROR_CODES,
+  IMPORT_PAGES_MESSAGE,
   PAPER_CONTENT_VERSION,
   decodePaperContent,
   blankBlockDocument,
@@ -29,8 +31,26 @@ import { getDb, transaction } from "../db/context.js"
 import { files, jobs, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import {
+  IMPORT_FAILED_MESSAGE,
+  IMPORT_GENERIC_MESSAGE,
+  classifyImport,
+  importParsers,
+  mediaTypeForImport,
+  parseImportFile,
+} from "./import-parse.js"
 
-const FILE_CAP = 8_000_000
+const importAbort = new AsyncLocalStorage<AbortSignal>()
+
+export function withImportSignal<T>(
+  signal: AbortSignal,
+  run: () => Promise<T>
+) {
+  return importAbort.run(signal, run)
+}
+
+export const IMPORT_FILE_CAP = 8_000_000
+export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
 const AVATAR_CAP = 2_000_000
 
 function iso(value: Date) {
@@ -138,6 +158,7 @@ export async function createPaper(
       createdAt: now,
       updatedAt: now,
     })
+  importParsers.onInsert?.()
   return toPaper(await ownedPaper(actor.userId, parsePaperId(id)))
 }
 
@@ -459,13 +480,6 @@ function avatarMediaType(bytes: Buffer) {
   throw new CommandError(ERROR_CODES.FILE_UNSUPPORTED, "Upload an image.")
 }
 
-const IMPORT_TYPES = new Set([
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-  "application/json",
-])
-
 export async function saveFile(input: {
   userId: UserId
   name: string
@@ -473,23 +487,32 @@ export async function saveFile(input: {
   bytes: Buffer
   purpose: "import" | "avatar"
 }) {
-  const cap = input.purpose === "avatar" ? AVATAR_CAP : FILE_CAP
+  const cap = input.purpose === "avatar" ? AVATAR_CAP : IMPORT_FILE_CAP
   if (input.bytes.byteLength > cap) {
     throw new CommandError(
       ERROR_CODES.VALIDATION_ERROR,
       input.purpose === "avatar"
         ? "Photo must be 2 MB or smaller."
-        : "File must be 8 MB or smaller."
+        : IMPORT_SIZE_MESSAGE
     )
   }
-  if (input.purpose === "import" && !IMPORT_TYPES.has(input.mediaType)) {
-    throw new CommandError(
-      ERROR_CODES.FILE_UNSUPPORTED,
-      "Upload a PDF, Word, or text file."
-    )
+  let mediaType = input.mediaType
+  if (input.purpose === "import") {
+    const kind = classifyImport({
+      name: input.name,
+      mediaType: input.mediaType,
+      bytes: input.bytes,
+    })
+    if (kind === "pages" || kind === "unknown") {
+      throw new CommandError(
+        ERROR_CODES.FILE_UNSUPPORTED,
+        kind === "pages" ? IMPORT_PAGES_MESSAGE : IMPORT_GENERIC_MESSAGE
+      )
+    }
+    mediaType = mediaTypeForImport(kind)
   }
-  const mediaType =
-    input.purpose === "avatar" ? avatarMediaType(input.bytes) : input.mediaType
+  const storedType =
+    input.purpose === "avatar" ? avatarMediaType(input.bytes) : mediaType
   const id = createId()
   await getDb()
     .insert(files)
@@ -497,7 +520,7 @@ export async function saveFile(input: {
       id,
       userId: input.userId,
       name: input.name.slice(0, 200) || "file",
-      mediaType,
+      mediaType: storedType,
       byteSize: input.bytes.byteLength,
       purpose: input.purpose,
       bytes: input.bytes,
@@ -550,6 +573,12 @@ export async function deleteFile(actor: Actor, fileId: FileId) {
   return { fileId }
 }
 
+async function removeImportFile(userId: UserId, fileId: string) {
+  await getDb()
+    .delete(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
+}
+
 export async function importPaper(actor: Actor, fileId: FileId) {
   const rows = await getDb()
     .select()
@@ -560,37 +589,60 @@ export async function importPaper(actor: Actor, fileId: FileId) {
   if (!file || file.purpose !== "import") {
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Import file not found")
   }
-  let document = blankDocument("cv")
-  if (
-    file.mediaType === "application/json" ||
-    file.mediaType === "text/plain"
-  ) {
-    const text = file.bytes.toString("utf8")
-    try {
-      document = requireDocument("cv", JSON.parse(text) as unknown)
-    } catch {
-      document = blankDocument("cv")
-    }
+  let parsed: Awaited<ReturnType<typeof parseImportFile>>
+  try {
+    parsed = await parseImportFile({
+      name: file.name,
+      mediaType: file.mediaType,
+      bytes: file.bytes,
+    })
+  } catch {
+    await removeImportFile(actor.userId, file.id)
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
   }
-  const created = await createPaper(actor, {
-    kind: "cv",
-    name: file.name.replace(/\.[^.]+$/, "") || DEFAULT_PAPER_DOC_NAME.cv,
-    document,
-  })
+  if (!parsed.ok) {
+    await removeImportFile(actor.userId, file.id)
+    throw new CommandError(
+      parsed.code === "LINK_UNREADABLE"
+        ? ERROR_CODES.LINK_UNREADABLE
+        : ERROR_CODES.FILE_UNSUPPORTED,
+      parsed.message
+    )
+  }
+  const giveUp = async (docId?: string) => {
+    if (docId) {
+      await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
+    }
+    await removeImportFile(actor.userId, file.id)
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
+  }
+  if (importAbort.getStore()?.aborted) await giveUp()
+  let created: PaperView
+  try {
+    created = await createPaper(actor, {
+      kind: "cv",
+      name: file.name.replace(/\.[^.]+$/, "") || DEFAULT_PAPER_DOC_NAME.cv,
+      document: parsed.document,
+    })
+  } catch (error) {
+    await removeImportFile(actor.userId, file.id)
+    throw error
+  }
+  if (importAbort.getStore()?.aborted) await giveUp(created.id)
   await getDb()
     .update(paperDocs)
     .set({
       sourceFileId: file.id,
-      checks:
-        file.mediaType === "text/plain" || file.mediaType === "application/json"
-          ? []
-          : [
-              {
-                id: "import",
-                kind: "import",
-                message: "Imported file needs a read.",
-              },
-            ],
+      checks: [
+        {
+          id: "source-file",
+          kind: "source",
+          message: file.name,
+          blockId: "",
+          resolved: true,
+        },
+        ...parsed.checks,
+      ],
     })
     .where(eq(paperDocs.id, created.id))
   return toPaper(await ownedPaper(actor.userId, parsePaperId(created.id)))
