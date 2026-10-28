@@ -17,6 +17,7 @@ case "$1 $2" in
   "repo view") echo "owner/repo" ;;
   "pr diff") [[ -z "${MP_DIFF_FAIL:-}" ]] || exit 1; printf '%s\n' $MP_FILES ;;
   "api repos/owner/repo/branches/main") echo "${MP_MAIN:-1234567890ab00000000000000000000000000ff}" ;;
+  "api repos/owner/repo/compare/"*) [[ -z "${MP_COMPARE_FAIL:-}" ]] || exit 1; printf '%s\n' ${MP_COMPARE_FILES:-} ;;
   "pr merge" | "api repos/owner/repo/statuses/"*) ;;
   "pr view")
     case "$*" in
@@ -30,13 +31,16 @@ esac
 STUB
 cat >"$tmp/review" <<'STUB'
 #!/usr/bin/env bash
-echo "review-pr: working on $1"
+# The first call answers MP_REVIEW_OUT/RC; every later call (the --regate rerun) answers MP_REVIEW_OUT2/RC2 when set.
+n=$(( $(cat "$MP_COUNT" 2>/dev/null || echo 0) + 1 )); echo "$n" >"$MP_COUNT"
+echo "review-pr: working on $1 (call $n)"
+if (( n > 1 )) && [[ -n "${MP_REVIEW_OUT2:-}" ]]; then printf '%s\n' "$MP_REVIEW_OUT2"; exit "${MP_REVIEW_RC2:-0}"; fi
 printf '%s\n' "$MP_REVIEW_OUT"
 exit "$MP_REVIEW_RC"
 STUB
 chmod +x "$tmp/bin/gh" "$tmp/review"
 export PATH=$tmp/bin:$PATH MP_LOG=$tmp/gh.log MERGE_PR_REVIEW_CMD=$tmp/review
-export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv
+export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv MP_COUNT=$tmp/review-count
 
 patch=0123456789abcdef0123456789abcdef01234567
 old=ffffffffffffffffffffffffffffffffffffffff
@@ -47,7 +51,7 @@ full="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review:
 review_only="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: sol-loop, approved."
 
 reset() {
-  : >"$MP_LOG"
+  : >"$MP_LOG"; rm -f "$MP_COUNT"; unset MP_REVIEW_OUT2 MP_REVIEW_RC2 MP_COMPARE_FILES MP_COMPARE_FAIL MP_MAIN
   export MP_ME=owner MP_AUTHOR=owner MP_REVIEW_RC=0 MP_REVIEW_OUT=$ok_line MP_FILES="scripts/x.sh docs/y.md"
   MP_EVIDENCE=$(evidence "$full"); export MP_EVIDENCE
 }
@@ -74,6 +78,7 @@ result() {
 }
 called() { grep -F -q -- "$2" "$MP_LOG" || fail "$1" "gh was not called with: $2"; }
 never() { grep -F -q -- "$2" "$MP_LOG" && fail "$1" "gh was called with: $2"; return 0; }
+no_merge() { never "$1" "api repos/owner/repo/statuses/"; never "$1" "pr merge"; }
 no_writes() { never "$1" "api repos/"; never "$1" "pr merge"; }
 
 reset
@@ -121,9 +126,48 @@ expect "a failed diff listing refuses" 1 "could not list the files"
 no_writes "diff failure"
 
 reset; MP_MAIN=9999999999990000000000000000000000000000 run
-expect "main moved during the review refuses" 1 "main moved from 1234567890ab"
-result status=fail cause=behind-main "next=heavy -- scripts/merge-pr.sh 5"
+expect "main moved during the review refuses and names --regate" 1 "main moved from 1234567890ab" "heavy -- scripts/merge-pr.sh 5 --regate"
+result status=fail cause=behind-main "next=heavy -- scripts/merge-pr.sh 5 --regate"
+[[ "$(cat "$MP_COUNT")" == 1 ]] || fail "main moved" "the gate reran without --regate"
 never "main moved" "api repos/owner/repo/statuses/"; never "main moved" "pr merge"
+
+# --regate: main moved after the gate. Disjoint files and overlapping files both rerun the gate; only an OK for the new
+# main merges. The first gate tested main 1234567890ab; the rerun tests main 999999999999.
+moved=9999999999990000000000000000000000000000
+ok_line2="RESULT: OK (patch id $patch, main 999999999999). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $head"
+reset; MP_MAIN=$moved MP_REVIEW_OUT2=$ok_line2 MP_COMPARE_FILES="apps/web/a.tsx docs/z.md" run --regate
+expect "--regate with disjoint files reruns the gate and merges" 0 "main moved from 1234567890ab to 999999999999: 2 file(s) changed on main" "disjoint: none of them is one of the PR's 2 file(s)" "review gate (regate: main moved)" "merged PR #5"
+[[ "$(cat "$MP_COUNT")" == 2 ]] || fail "regate disjoint" "the gate ran $(cat "$MP_COUNT") times, want 2"
+called "regate disjoint" "api repos/owner/repo/compare/1234567890ab...$moved"
+called "regate disjoint" "description=OK patch ${patch:0:12} main 999999999999"
+called "regate disjoint" "pr merge 5 --squash --admin --match-head-commit $head"
+result status=ok cause=none
+
+reset; MP_MAIN=$moved MP_REVIEW_OUT2=$ok_line2 MP_COMPARE_FILES="scripts/x.sh apps/web/a.tsx" run --regate
+expect "--regate with overlapping files says so, still reruns and merges" 0 "NOT disjoint: 1 file(s) are in both: scripts/x.sh" "merged PR #5"
+[[ "$(cat "$MP_COUNT")" == 2 ]] || fail "regate overlap" "the gate ran $(cat "$MP_COUNT") times, want 2"
+
+reset; MP_MAIN=$moved MP_REVIEW_OUT2=$ok_line2 MP_COMPARE_FAIL=1 run --regate
+expect "--regate still reruns when the file list is unavailable" 0 "could not list the files that changed on main" "merged PR #5"
+
+reset; MP_MAIN=$moved MP_REVIEW_RC2=1 MP_REVIEW_OUT2="RESULT: FAIL (1). Request changes" MP_COMPARE_FILES="scripts/x.sh" run --regate
+expect "--regate does not merge when the rerun fails" 1 "NOT disjoint" "did not pass"
+no_merge "regate rerun fails"
+
+reset; MP_MAIN=$moved MP_COMPARE_FILES="docs/z.md" run --regate
+expect "--regate does not merge when main moved again during the rerun" 1 "main moved from 1234567890ab" "--regate"
+no_merge "regate main moved twice"
+[[ "$(cat "$MP_COUNT")" == 2 ]] || fail "regate twice" "the gate ran $(cat "$MP_COUNT") times, want 2 (one rerun only)"
+
+reset; MP_MAIN=$moved MP_REVIEW_OUT2=$ok_line2 MP_EVIDENCE=$(evidence "$review_only") MP_FILES="apps/web/a.tsx" MP_COMPARE_FILES="docs/z.md" run --regate
+expect "--regate still demands the verify evidence" 1 "'verify'"
+no_merge "regate missing verify"
+
+reset
+run --regate
+expect "--regate with an unmoved main merges after one gate run" 0 "merged PR #5"
+[[ "$(cat "$MP_COUNT")" == 1 ]] || fail "regate not needed" "the gate ran $(cat "$MP_COUNT") times, want 1"
+never "regate not needed" "api repos/owner/repo/compare/"
 
 reset; MP_EVIDENCE=$(evidence "looks good, patch id $patch") run
 expect "no independent review refuses" 1 "Independent review"
