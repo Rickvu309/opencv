@@ -5,6 +5,7 @@ import { render as renderWithClient } from "@/test/render-with-client.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import {
   emptyCvDocument,
+  blankBlockDocument,
   type CvBlockDocument,
   type PaperPages,
   type PaperView,
@@ -165,6 +166,50 @@ describe("CV editor version 2", () => {
         }),
       }),
     ])
+  })
+
+  it("keeps typing queued while an older block save is in flight", async () => {
+    const replacements: {
+      contentVersion: number
+      document: CvBlockDocument
+    }[] = []
+    let release: (response: Response) => void = () => undefined
+    const pending = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes("/api/commands/paper.replace")) {
+        replacements.push(inputOf(init))
+        if (replacements.length === 1) return pending
+        return Promise.resolve(ok({ ...record, contentVersion: 3 }))
+      }
+      return Promise.resolve(ok({}))
+    })
+    render(
+      <PaperCvEditor
+        initial={{ ...record, document: blankBlockDocument() }}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    const name = screen.getByPlaceholderText("Your name")
+    vi.useFakeTimers()
+    fireEvent.change(name, { target: { value: "First edit" } })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    fireEvent.change(name, { target: { value: "Second edit" } })
+    await act(async () => {
+      release(ok({ ...record, contentVersion: 2 }))
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    expect(replacements).toHaveLength(2)
+    expect(replacements[1]).toMatchObject({
+      contentVersion: 2,
+      document: { header: { name: "Second edit" } },
+    })
   })
 
   it("saves the keystroke after Fit at the Coach version with the Coach fields", async () => {
