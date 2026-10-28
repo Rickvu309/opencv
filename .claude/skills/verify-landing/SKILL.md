@@ -70,7 +70,7 @@ Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](
 
 ### Baseline at the sync commit
 
-At `e1ff7ab37b54dac73bb31c06c3b18512eb025de3` the checker printed 28 PASS; #454 added 29 and 30. The replacements and the reason for each are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
+At `ceb07502` (main, checked in #510) the checker prints 30 PASS and 1 FAIL: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
 
 ## Taste review (judged layer)
 
@@ -78,30 +78,7 @@ The judged rubric, the protocol, and the reviewer prompt are in [taste-review.md
 
 ## Coverage record
 
-Sync commit: `e1ff7ab37b54dac73bb31c06c3b18512eb025de3` (main). The checker printed 28 PASS there. The checks describe the landing as of that commit.
-
-Component files in this table are under `apps/web/src/features/landing/` unless a path is written out.
-
-| Checks                 | Files and symbols they read                                                                                                                                                                                                                                                                                 |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01, 03, 04, 05         | `LANDING_HEADLINE_LINES`, `LANDING_SUBHEAD`, `LANDING_TITLE`, `LANDING_DESCRIPTION` in `landing-copy.ts`, via `landing-page.tsx` and `landing-hero.tsx`.                                                                                                                                                    |
-| 02, 06, 08, 10, 11, 13 | `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_FIGURE_LABELS`, `LANDING_PRIMARY_LABEL`. Rendered by `landing-hero.tsx`, `landing-nav.tsx`, `landing-products.tsx`, and `landing-sections.tsx`.                                                                            |
-| 07, 16                 | `landing-nav.tsx` `LandingNav` and `landing-sections.tsx` `LandingClose` link to `/sign-in`. `landing-hero.tsx` has no button.                                                                                                                                                                              |
-| 12, 22                 | Page text and markup; 22 also reads `figures/oc/logo-marquee.tsx` (the `#logos` marquee and its aria-hidden copy). 12 reads `LANDING_LOGO_LABEL` and `LANDING_STORIES` as rendered by `landing-sections.tsx`, not alt text. It scans all page text, footer included, for stars, invented counts and prices. |
-| 14, 25                 | The hero visual, `<LandingFigure id="apply-board" />` in `landing-hero.tsx` (`figures/landing-figure.tsx`, its box comes from `landing-figure.css` `aspect-ratio`). The figure has no width, height or fetchpriority.                                                                                       |
-| 15                     | `LANDING_NAV_LINKS` in `landing-nav.tsx`. Asserts Product, Stories, and Pricing.                                                                                                                                                                                                                            |
-| 17, 18, 23, 24         | `landing.css`, `packages/ui/src/styles/globals.css`, `packages/ui/src/components/button.tsx`.                                                                                                                                                                                                               |
-| 19                     | `LANDING_FIGURE_LABELS` (figure alts), `LANDING_PRODUCTS`, `LANDING_COMING_NEXT`, `LANDING_INTEGRATIONS`, `LANDING_STORIES` in `landing-copy.ts`; the story and logo files are in `apps/web/public/landing/`.                                                                                               |
-| 20, 20b, 21            | `landing.css` reduced motion, nav scroll state, `button.tsx` `transition-all`, `figures/oc/reveal.tsx` and `reveal.css` (scroll text reveal), `figures/oc/logo-marquee.css` (stops under reduced motion).                                                                                                   |
-| 27                     | `landing-figures.tsx` and `figures/*-art.tsx` (viewBox, paths, ellipses, inline hex).                                                                                                                                                                                                                       |
-| 28                     | `OpenCvLogo` from `apps/web/src/features/app-shell/app-logo.tsx`, rendered by `landing-nav.tsx`.                                                                                                                                                                                                            |
-| 29, 30                 | `landing-button.ts`; `reference/coach-art.png`.                                                                                                                                                                                                                                                             |
-| 31                     | `design/landing.styles.json`, `design/landing.omitted.json`, `landing.css`, `OpenCvMark` in `apps/web/src/features/app-shell/app-logo.tsx`.                                                                                                                                                                 |
-| Probes and rules       | `probe.mjs`, `pen-probe.mjs`, `text-rules.mjs`, `page-checks.mjs`, and `text-style-check.mjs` in this skill's `scripts/lib/`.                                                                                                                                                                               |
-
-Constants the checks assume: product section ids `paper`, `apply`, and `coach`, the route `/`, an `h1` inside `main > section`, a sign-up link with `href="/sign-in"` whose label is not "Log in", and images under `/landing/`. `/sign-up` in `apps/web/src/router.tsx` redirects to `/sign-in`. Pitch is not a product section this checker scores. If a change moves one, update `probe.mjs` and the rule that reads it in the same PR.
-
-Not covered: pixel content of screenshots (judged, J4 to J7), real-device and Safari rendering, network speed and measured LCP (check 25 reads attributes, not timings), screen reader output, keyboard order and focus rings, the signed-in redirect, and any page other than `/`.
+The sync commit, the files and symbols each check reads, the constants the checks assume, and what is not covered are in [coverage.md](coverage.md). Read it before you change a check or the code it covers.
 
 ## What else checks the landing
 
@@ -116,10 +93,10 @@ Links and hashes are `.claude/skills/verify-marketing-links`. Run `pnpm --filter
 Find whether the covered code moved since the sync commit:
 
 ```bash
-git diff --stat e1ff7ab37b54dac73bb31c06c3b18512eb025de3..HEAD -- apps/web/src/features/landing apps/web/public/landing apps/web/index.html packages/ui/src/components packages/ui/src/styles/globals.css
+git diff --stat ceb07502..HEAD -- apps/web/src/features/landing apps/web/public/landing apps/web/index.html packages/ui/src/components packages/ui/src/styles/globals.css
 ```
 
-An empty diff means the record holds. Otherwise read the diff against the table above and run the checker; every changed line must match an intended change. If a rule no longer fits the code, fix `probe.mjs` or the rule and prove it: break the property in a scratch copy, see it FAIL, restore, see the baseline. Move the sync commit only after the checks describe the code at the new commit.
+An empty diff means the record holds. Otherwise read the diff against the table in [coverage.md](coverage.md) and run the checker; every changed line must match an intended change. If a rule no longer fits the code, fix `probe.mjs` or the rule and prove it: break the property in a scratch copy, see it FAIL, restore, see the baseline. Move the sync commit only after the checks describe the code at the new commit.
 
 Never edit the landing to make a check pass unless that was the task. A FAIL on today's page is a finding; report it.
 

@@ -17,10 +17,10 @@ const ROUTES = {
   pitch: ["/pitch", "document.querySelector('h1')"],
   inbox: ["/inbox", "document.querySelector('h1')"],
 }
-// Also listed under "Constants the checks assume" in SKILL.md.
-const PRIMARY = {
+// Also listed under "Constants the checks assume" in coverage.md.
+export const PRIMARY = {
   home: /^Add /,
-  paper: /^(New|Make mine)$/,
+  paper: /^New$/,
   apply: /^(New job|Add job)$/,
   pitch: /^Get early access$/,
 }

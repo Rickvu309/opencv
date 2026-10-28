@@ -38,14 +38,14 @@ Visual craft:
 
 Motion:
 
-- 24 `motion-tokens`: every computed transition and animation runs 150 ms or 280 ms on the toured screens, including an open Pitch story, and no `duration-N` class or `Nms` value in features or routes source is off-token (so the 75 ms in `pitch-stories.tsx` counts). Looping spinners and skeletons are skipped. Source: `globals.css`; the program motion rule.
+- 24 `motion-tokens`: every computed transition and animation runs 150 ms or 280 ms on the toured screens, and no `duration-N` class or `Nms` value in the signed-in feature folders (`FEATURE_DIRS` in `scripts/lib/check-util.mjs`: coach, home, paper, apply, coming-soon, inbox, settings, command-palette, commands, app-shell) or routes source is off-token. Pitch and Proof live in coming-soon. Looping spinners and skeletons are skipped. Source: `globals.css`; the program motion rule.
 - 25 `reduced-motion`: with reduce, nothing over 1 ms runs, scroll is not smooth, and the command palette open transition uses the panel duration token. There is no story timer to find. Source: WCAG 2.3.3.
 - 26 `no-text-reveal`: no app file imports text-reveal (source read). Source: Apple layout.
 
 Accessibility and performance:
 
 - 27 `alerts-have-role`: the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
-- 28 `primary-buttons-48`: the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. Source: the design kit.
+- 28 `primary-buttons-48`: the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. The buttons are the `PRIMARY` labels in `scripts/lib/tour.mjs`: New job on Apply, New on the Paper library, Get early access on Pitch. Source: the design kit.
 - 29 `table-not-mounted-while-loading`: while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("Start a document"). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
 - 30 `undo-and-reject`: Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
 

@@ -27,6 +27,7 @@ import {
   result,
   sourceFiles,
 } from "./check-util.mjs"
+import { PRIMARY } from "./tour.mjs"
 
 export function runChecks(d) {
   const r = contentChecks(d)
@@ -221,7 +222,7 @@ export function runChecks(d) {
           .map(([k, n]) => `${k} x${n}`)
           .join(", ") || "none"
       }${examples[0] ? ` e.g. ${examples[0].t}.${examples[0].c.slice(0, 40)}` : ""}; in feature source: ${list([...new Set(srcMotion)], 3) || "none"}`,
-      "every transition and animation runs 150ms or 280ms, measured on the toured screens including an open Pitch story and as duration-N classes or Nms values in features and routes (looping spinners and skeletons skipped)"
+      "every transition and animation runs 150ms or 280ms, measured on the toured screens and as duration-N classes or Nms values in the signed-in feature folders and routes (looping spinners and skeletons skipped)"
     )
   )
 
@@ -274,10 +275,11 @@ export function runChecks(d) {
     )
   )
 
+  // The Paper primary is New on the library; the CV editor has had no Save or Make mine since #396.
   const need = {
-    apply: [d.apply, /^(New job|Add job)$/],
-    paper: [d.cv, /^(Make mine|Save)/],
-    pitch: [d.pitchEdit, /^Get early access$/],
+    apply: [d.apply, PRIMARY.apply],
+    paper: [d.paper, PRIMARY.paper],
+    pitch: [d.pitchEdit, PRIMARY.pitch],
   }
   const found = Object.entries(need).map(([k, [s, re]]) => {
     const b = s.buttons.find((x) => re.test(x.label))
