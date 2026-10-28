@@ -162,13 +162,54 @@ describe("useCoachTurn turn lifecycle", () => {
       expect(coachTexts()).toEqual(["Partial reply"])
       expect(result.current.error).toBeNull()
 
+      if (delayed) {
+        const second = scriptCoachStream({
+          gated: true,
+          texts: ["Second partial", " never shown"],
+        })
+        act(() => {
+          result.current.regenerate()
+        })
+        second.release(2)
+        await waitFor(() => expect(coachTexts()).toContain("Second partial"))
+        let hideSecondReply = true
+        vi.stubGlobal(
+          "fetch",
+          async (input: RequestInfo | URL, init?: RequestInit) => {
+            const response = await chatApiFetchOrThrow(input, init)
+            const url = typeof input === "string" ? input : String(input)
+            if (
+              hideSecondReply &&
+              (init?.method ?? "GET") === "GET" &&
+              /\/api\/chats\/[^/?]+$/.test(new URL(url, "http://x").pathname)
+            ) {
+              hideSecondReply = false
+              const envelope: { data: unknown } = await response.json()
+              const detail = chatDetailSchema.parse(envelope.data)
+              return Response.json({
+                ok: true,
+                data: { ...detail, messages: detail.messages.slice(0, -1) },
+              })
+            }
+            return response
+          }
+        )
+        act(() => result.current.stop())
+        await waitFor(() => expect(result.current.phase).toBe("idle"))
+        expect(coachTexts()).toEqual(["Partial reply", "Second partial"])
+      }
+
       scriptCoachStream({ texts: ["Fresh reply"] })
       act(() => {
         result.current.regenerate()
       })
       await waitFor(() => expect(coachTexts()).toContain("Fresh reply"))
       await waitFor(() => expect(result.current.phase).toBe("idle"))
-      expect(coachTexts()).toEqual(["Partial reply", "Fresh reply"])
+      expect(coachTexts()).toEqual(
+        delayed
+          ? ["Partial reply", "Second partial", "Fresh reply"]
+          : ["Partial reply", "Fresh reply"]
+      )
       const ids = result.current.messages.map((message) => message.id)
       expect(new Set(ids).size).toBe(ids.length)
       expect(ids).not.toContain(STREAMING_COACH_ID)

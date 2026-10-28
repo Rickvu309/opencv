@@ -215,11 +215,14 @@ export function useCoachTurn({
         }
         const detail = await hydrateChat(chatKey)
         if (stale()) return
-        const hasSavedReply = detail?.messages.some(
-          (message) =>
-            message.role === "coach" &&
-            !prefix.some((previous) => previous.id === message.id)
-        )
+        const previousReplies = prefix.filter(
+          (message) => message.role === "coach"
+        ).length
+        const savedReplies = detail?.messages.filter(
+          (message) => message.role === "coach"
+        ).length
+        const hasSavedReply =
+          savedReplies != null && savedReplies > previousReplies
         if (!hasSavedReply && parts.length > 0)
           keepStreamedCoach(chatKey, user, parts)
         dispatch({ type: "abort", messages: settled(chatKey) })
