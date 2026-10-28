@@ -1,6 +1,6 @@
 import { useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   blocksToPreviewModel,
   isCvBlockDocument,
@@ -14,7 +14,7 @@ import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
-import { printPaper } from "./paper-print.ts"
+import { printPaper, quietPaperChrome } from "./paper-print.ts"
 import { printLayout } from "./paper-templates.ts"
 
 function sharedCv(
@@ -48,10 +48,15 @@ export function PaperSharePage() {
     id: number
     title: string
   } | null>(null)
+  const quietRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (quietRef.current) quietPaperChrome(quietRef.current)
+  })
 
   useEffect(() => {
     if (!printJob) return
-    printPaper(printJob.title)
+    return printPaper(printJob.title, () => setPrintJob(null))
   }, [printJob])
 
   if (!token || query.isError) {
@@ -106,7 +111,7 @@ export function PaperSharePage() {
           shareToken={token}
         />
       ) : null}
-      <div inert className="min-w-0">
+      <div ref={quietRef} data-paper-quiet="" inert className="min-w-0">
         {cv ? (
           <CvPhotoFrame value={{ shareToken: token }}>
             <CvDocument data={cv} onChange={() => undefined} />

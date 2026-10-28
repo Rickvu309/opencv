@@ -1,6 +1,9 @@
 import { readA4HeightPx } from "./paper-cv-a4.tsx"
 import "./paper-print.css"
 
+const PRINT_WAIT_MS = 2000
+const MEASURE_DEBOUNCE_MS = 50
+
 export function pagesFromPreviewHeight(
   contentHeightPx: number,
   pageHeightPx: number
@@ -14,22 +17,95 @@ export function readPreviewPageCount(element: HTMLElement | null) {
   return pagesFromPreviewHeight(element.scrollHeight, readA4HeightPx(element))
 }
 
-export function printPaper(title?: string) {
+/** Re-measure after layout settles and again when webfonts finish. */
+export function bindPrintPageCount(apply: () => void) {
+  let cancelled = false
+  const run = () => {
+    if (!cancelled) apply()
+  }
+  run()
+  const timer = window.setTimeout(run, MEASURE_DEBOUNCE_MS)
+  void document.fonts?.ready?.then(() => run())
+  return () => {
+    cancelled = true
+    window.clearTimeout(timer)
+  }
+}
+
+function isSeparator(text: string) {
+  const trimmed = text.trim()
+  return trimmed === "·" || trimmed === "|"
+}
+
+/** Placeholders are editor chrome. Print, share and the measure clone drop them. */
+export function quietPaperChrome(root: ParentNode) {
+  const fields = root.querySelectorAll<HTMLElement>("[data-paper-canvas-field]")
+  for (const field of fields) {
+    field.removeAttribute("data-placeholder")
+    if (field.textContent?.trim()) continue
+    field.setAttribute("hidden", "")
+    const previous = field.previousElementSibling
+    if (previous && isSeparator(previous.textContent ?? "")) {
+      previous.setAttribute("hidden", "")
+    }
+  }
+}
+
+export function printPaper(title: string | undefined, onDone?: () => void) {
   const root = document.body
   const previousTitle = document.title
   if (title) document.title = title
   root.setAttribute("data-print", "paper")
-  const clear = () => {
+  let cancelled = false
+  let finished = false
+  let timer = 0
+
+  const finish = () => {
+    if (finished) return
+    finished = true
+    window.clearTimeout(timer)
     root.removeAttribute("data-print")
     if (title) document.title = previousTitle
+    onDone?.()
   }
-  window.addEventListener("afterprint", clear, { once: true })
-  window.setTimeout(() => {
-    root.getBoundingClientRect()
+
+  const onAfter = () => {
+    window.removeEventListener("afterprint", onAfter)
+    finish()
+  }
+  window.addEventListener("afterprint", onAfter)
+
+  const images = [
+    ...root.querySelectorAll<HTMLImageElement>("[data-paper-print] img"),
+  ]
+  const fonts = document.fonts?.ready ?? Promise.resolve()
+  const decoded = Promise.all(
+    images.map((img) => {
+      if (typeof img.decode !== "function") return Promise.resolve()
+      return img.decode().catch(() => undefined)
+    })
+  )
+  const bound = new Promise<void>((resolve) => {
+    timer = window.setTimeout(resolve, PRINT_WAIT_MS)
+  })
+
+  void Promise.race([Promise.all([fonts, decoded]), bound]).then(() => {
+    window.clearTimeout(timer)
+    if (cancelled || finished) return
     try {
       window.print()
     } catch {
-      clear()
+      window.removeEventListener("afterprint", onAfter)
+      finish()
     }
-  }, 0)
+  })
+
+  return () => {
+    cancelled = true
+    window.clearTimeout(timer)
+    window.removeEventListener("afterprint", onAfter)
+    if (finished) return
+    root.removeAttribute("data-print")
+    if (title) document.title = previousTitle
+  }
 }

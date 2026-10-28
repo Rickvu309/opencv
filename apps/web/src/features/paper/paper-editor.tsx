@@ -36,8 +36,12 @@ import {
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
 import { getPaper, streamPaperTurn } from "./paper-api.ts"
-import { PaperPrintSheet } from "./paper-print-sheet.tsx"
-import { printPaper, readPreviewPageCount } from "./paper-print.ts"
+import { PaperPrintMeasure, PaperPrintSheet } from "./paper-print-sheet.tsx"
+import {
+  bindPrintPageCount,
+  printPaper,
+  readPreviewPageCount,
+} from "./paper-print.ts"
 import { editorEditedLabel, previewTemplate } from "./paper-templates.ts"
 
 function toastError(error: unknown, fallback: string) {
@@ -96,7 +100,7 @@ export function PaperCvEditor({
         toastError(error, "Could not save. Try again.")
       },
     })
-  const previewRef = useRef<HTMLDivElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
   const [previewPages, setPreviewPages] = useState(1)
   const [printJob, setPrintJob] = useState<{
     id: number
@@ -105,23 +109,15 @@ export function PaperCvEditor({
   const showBanner = previewPages > 1 && pageState.pageChoice === "unset"
 
   useLayoutEffect(() => {
-    const content =
-      previewRef.current?.querySelector<HTMLElement>("[data-cv-preview]") ??
-      null
-    const apply = () => {
-      const next = readPreviewPageCount(content)
+    return bindPrintPageCount(() => {
+      const next = readPreviewPageCount(measureRef.current)
       setPreviewPages((current) => (current === next ? current : next))
-    }
-    apply()
-    if (!content || typeof ResizeObserver === "undefined") return
-    const observer = new ResizeObserver(apply)
-    observer.observe(content)
-    return () => observer.disconnect()
-  }, [doc])
+    })
+  }, [doc, templateId])
 
   useEffect(() => {
     if (!printJob) return
-    printPaper(printJob.title)
+    return printPaper(printJob.title, () => setPrintJob(null))
   }, [printJob])
 
   useEffect(() => {
@@ -449,11 +445,7 @@ export function PaperCvEditor({
           </div>
         </div>
       ) : null}
-      <div
-        ref={previewRef}
-        data-template={previewTemplate(templateId)}
-        className="min-w-0"
-      >
+      <div data-template={previewTemplate(templateId)} className="min-w-0">
         <CvPhotoFrame
           value={{
             docId: initial.id,
@@ -482,12 +474,20 @@ export function PaperCvEditor({
           />
         </CvPhotoFrame>
         {previewPages > 1 ? (
-          <p className="mt-2 text-sm text-muted-foreground">Page 2</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Page {previewPages}
+          </p>
         ) : null}
       </div>
       {nameError ? (
         <p className="text-sm text-destructive">{nameError}</p>
       ) : null}
+      <PaperPrintMeasure
+        source={doc}
+        templateId={templateId}
+        docId={initial.id}
+        measureRef={measureRef}
+      />
       {printJob ? (
         <PaperPrintSheet
           name={name}

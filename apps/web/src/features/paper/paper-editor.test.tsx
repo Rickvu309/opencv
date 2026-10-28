@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
-import type { ReactElement } from "react"
+import { StrictMode, type ReactElement } from "react"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import {
@@ -77,6 +77,9 @@ function installFetch(conflict = false) {
     if (url.includes("/api/commands/paper.keepTwoPages")) {
       return Promise.resolve(ok({ ...record, pageChoice: "keep" }))
     }
+    if (url.includes("/api/commands/paper.setTemplate")) {
+      return Promise.resolve(ok({ ...record, templateId: "modern" }))
+    }
     return Promise.resolve(ok({}))
   })
   return calls
@@ -86,6 +89,9 @@ afterEach(() => {
   document.body.removeAttribute("data-print")
   vi.useRealTimers()
   cleanup()
+  document
+    .querySelectorAll("[data-paper-measure]")
+    .forEach((node) => node.remove())
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -182,7 +188,7 @@ describe("CV editor chrome", () => {
     expect(screen.queryByText("Page 2")).not.toBeInTheDocument()
   })
 
-  it("shows page 2 from the preview and hides the banner when kept", () => {
+  it("shows page 2 from the preview and hides the banner when kept", async () => {
     vi.spyOn(paperPrint, "readPreviewPageCount").mockReturnValue(2)
     render(
       <PaperCvEditor
@@ -220,6 +226,74 @@ describe("CV editor chrome", () => {
     })
     expect(print).toHaveBeenCalledTimes(1)
     expect(document.body).not.toHaveAttribute("data-print")
+  })
+
+  it("counts the printed template, not the taller editor canvas", async () => {
+    let printed = 1
+    const seen: string[] = []
+    vi.spyOn(paperPrint, "readPreviewPageCount").mockImplementation((element) => {
+      if (element?.hasAttribute("data-cv-preview")) seen.push("canvas")
+      if (element?.hasAttribute("data-paper-measure")) seen.push("print")
+      return printed
+    })
+    installFetch()
+    const view = render(
+      <PaperCvEditor
+        initial={record}
+        pages={pages(3)}
+        onBack={() => undefined}
+      />
+    )
+    expect(seen).toContain("print")
+    expect(seen).not.toContain("canvas")
+    expect(screen.queryByText("Over one page")).not.toBeInTheDocument()
+    printed = 2
+    view.rerender(
+      <PaperCvEditor
+        initial={{
+          ...record,
+          contentVersion: 2,
+          document: { ...emptyCvDocument(), name: "Ada Verify" },
+        }}
+        pages={pages(3)}
+        onBack={() => undefined}
+      />
+    )
+    expect(screen.getByText("Over one page")).toBeInTheDocument()
+    expect(screen.getByText("Page 2")).toBeInTheDocument()
+    printed = 1
+    fireEvent.click(screen.getByRole("button", { name: "Change template" }))
+    fireEvent.click(screen.getByRole("button", { name: "Modern" }))
+    fireEvent.click(screen.getByRole("button", { name: "Use template" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(screen.queryByText("Over one page")).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Page /)).not.toBeInTheDocument()
+  })
+
+  it("prints once in strict mode and unmounts the sheet after printing", async () => {
+    installFetch()
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
+    render(
+      <StrictMode>
+        <PaperCvEditor
+          initial={record}
+          pages={pages(1)}
+          onBack={() => undefined}
+        />
+      </StrictMode>
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+    expect(document.querySelector("[data-paper-print]")).not.toBeNull()
+    act(() => {
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    expect(document.querySelector("[data-paper-print]")).toBeNull()
   })
 
   it("shows blank CV placeholders and does not save them", () => {

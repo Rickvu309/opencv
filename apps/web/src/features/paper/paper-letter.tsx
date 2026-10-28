@@ -122,7 +122,7 @@ export function PaperLetterEditor({
 
   useEffect(() => {
     if (!printJob) return
-    printPaper(printJob.title)
+    return printPaper(printJob.title, () => setPrintJob(null))
   }, [printJob])
 
   useEffect(() => {

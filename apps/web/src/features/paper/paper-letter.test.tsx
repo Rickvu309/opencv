@@ -1,4 +1,5 @@
 import type { JobView, PaperView } from "@workspace/domain"
+import { StrictMode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
@@ -139,6 +140,31 @@ describe("Cover letter", () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("prints once in strict mode and unmounts the letter sheet", async () => {
+    vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
+    render(
+      <StrictMode>
+        <PaperLetterEditor
+          doc={letter}
+          job={job}
+          cvName={null}
+          onBack={() => undefined}
+        />
+      </StrictMode>
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+    expect(document.querySelector("[data-paper-letter]")).not.toBeNull()
+    act(() => {
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    expect(document.querySelector("[data-paper-letter]")).toBeNull()
   })
 
   it("drafts with the job title and refetches on a paper replace tool result", async () => {

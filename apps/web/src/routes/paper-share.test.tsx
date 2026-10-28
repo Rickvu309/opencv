@@ -1,4 +1,5 @@
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
+import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 
@@ -75,5 +76,71 @@ describe("Paper share page", () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows no placeholder for an empty summary or an empty company", async () => {
+    const quiet: PaperView = {
+      ...shared,
+      templateId: "simple",
+      document: {
+        ...emptyCvDocument(),
+        name: "Ada",
+        summary: "",
+        experience: [
+          {
+            role: "Product intern",
+            company: "",
+            period: "2024",
+            bullets: ["Shipped the checklist"],
+          },
+        ],
+      },
+    }
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/paper/shared/tok")) {
+        return Promise.resolve(Response.json({ ok: true, data: quiet }))
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    render(<PaperSharePage />)
+    expect(
+      await screen.findByRole("heading", { name: "PM track CV" })
+    ).toBeInTheDocument()
+    const preview = document.querySelector("[data-paper-quiet]")
+    expect(preview).not.toBeNull()
+    expect(preview?.innerHTML ?? "").not.toContain("Add text")
+    expect(preview?.querySelector("[aria-label='Company']")).toHaveAttribute(
+      "hidden"
+    )
+    expect(preview?.querySelector("[aria-label='Summary']")).toHaveAttribute(
+      "hidden"
+    )
+  })
+
+  it("prints once in strict mode and unmounts the share sheet", async () => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/paper/shared/tok")) {
+        return Promise.resolve(Response.json({ ok: true, data: shared }))
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
+    render(
+      <StrictMode>
+        <PaperSharePage />
+      </StrictMode>
+    )
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+    expect(document.querySelector("[data-paper-print]")).not.toBeNull()
+    act(() => {
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    expect(document.querySelector("[data-paper-print]")).toBeNull()
   })
 })

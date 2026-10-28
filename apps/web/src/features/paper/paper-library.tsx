@@ -110,7 +110,10 @@ export function PaperLibrary({
 
   useEffect(() => {
     if (printNonce === 0 || !printTarget) return
-    printPaper(printTarget.name)
+    return printPaper(printTarget.name, () => {
+      setPrintTarget(null)
+      setPrintNonce(0)
+    })
   }, [printNonce, printTarget])
 
   async function rememberUndo(subjectId: string, label: string) {
