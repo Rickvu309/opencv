@@ -25,8 +25,8 @@ import {
 import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
 import { boardLanes } from "./checks-stages.mjs"
 
-export function runChecks(d) {
-  const r = contentChecks(d)
+export function runChecks(d, want = () => true) {
+  const r = contentChecks(d, want)
   const { screens, allSnaps, labels, has, scan } = context(d)
   r.push(...motionChecks(d, { allSnaps, screens }))
 
@@ -170,34 +170,37 @@ export function runChecks(d) {
     )
   )
 
-  r.push(primaryButtonCheck(d))
+  if (want("28")) r.push(primaryButtonCheck(d))
 
-  const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
-    d.paperLoading.text
-  )?.[0]
-  const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
-  const emptyCopy = /Start a document/.exec(d.paperEmpty.text)?.[0]
-  const rule29 =
-    "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
-  const loadQuiet = stubSilent(d.paperLoading)
-  const emptyQuiet = stubSilent(d.paperEmpty)
-  const loadOk = loadQuiet !== null || (loadingOwn && !d.paperLoading.hasTable)
-  const emptyOk =
-    emptyQuiet !== null ||
-    (Boolean(emptyCopy) && (loadQuiet !== null || emptyCopy !== loadingCopy))
-  r.push(
-    judged(
-      "29",
-      "table-not-mounted-while-loading",
-      rule29,
-      loadOk && emptyOk,
-      `loading: ${loadQuiet ? "not judged" : `${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}`}; empty (list answered with none): ${emptyQuiet ? "not judged" : emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
-      [
-        loadQuiet && `loading part (${loadQuiet})`,
-        emptyQuiet && `empty part (${emptyQuiet})`,
-      ]
+  if (want("29")) {
+    const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
+      d.paperLoading.text
+    )?.[0]
+    const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
+    const emptyCopy = /Start a document/.exec(d.paperEmpty.text)?.[0]
+    const rule29 =
+      "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
+    const loadQuiet = stubSilent(d.paperLoading)
+    const emptyQuiet = stubSilent(d.paperEmpty)
+    const loadOk =
+      loadQuiet !== null || (loadingOwn && !d.paperLoading.hasTable)
+    const emptyOk =
+      emptyQuiet !== null ||
+      (Boolean(emptyCopy) && (loadQuiet !== null || emptyCopy !== loadingCopy))
+    r.push(
+      judged(
+        "29",
+        "table-not-mounted-while-loading",
+        rule29,
+        loadOk && emptyOk,
+        `loading: ${loadQuiet ? "not judged" : `${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}`}; empty (list answered with none): ${emptyQuiet ? "not judged" : emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
+        [
+          loadQuiet && `loading part (${loadQuiet})`,
+          emptyQuiet && `empty part (${emptyQuiet})`,
+        ]
+      )
     )
-  )
+  }
 
   const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
   const reject =
@@ -282,23 +285,25 @@ export function runChecks(d) {
     )
   )
 
-  const papers = d.paper.paperCards
-  const longPaper = papers.filter((x) => x.titleLines > 2)
-  const tall = d.apply.cards.filter((x) => x.titleLines > 2)
-  const untitled = d.apply.cards.filter((x) => x.titleLines === null)
-  r.push(
-    result(
-      "36",
-      "row-density",
-      papers.length > 0 &&
-        longPaper.length === 0 &&
-        d.apply.cards.length > 0 &&
-        untitled.length === 0 &&
-        tall.length === 0,
-      `Paper cards ${papers.length}, over 2 title lines: ${longPaper.length}${papers.length ? "" : " (no card found)"}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
-      'no Paper card name and no Apply card title runs past two lines. The Paper library is a card grid since #396, so there are no rows to size. A Paper card is a button named "<name>, <edited>" holding those two texts; an Apply card title is found by its text from the card\'s aria-label, not by tag. No card or no title element is a FAIL'
+  if (want("36")) {
+    const papers = d.paper.paperCards
+    const longPaper = papers.filter((x) => x.titleLines > 2)
+    const tall = d.apply.cards.filter((x) => x.titleLines > 2)
+    const untitled = d.apply.cards.filter((x) => x.titleLines === null)
+    r.push(
+      result(
+        "36",
+        "row-density",
+        papers.length > 0 &&
+          longPaper.length === 0 &&
+          d.apply.cards.length > 0 &&
+          untitled.length === 0 &&
+          tall.length === 0,
+        `Paper cards ${papers.length}, over 2 title lines: ${longPaper.length}${papers.length ? "" : " (no card found)"}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
+        'no Paper card name and no Apply card title runs past two lines. The Paper library is a card grid since #396, so there are no rows to size. A Paper card is a button named "<name>, <edited>" holding those two texts; an Apply card title is found by its text from the card\'s aria-label, not by tag. No card or no title element is a FAIL'
+      )
     )
-  )
+  }
 
   const rc = {}
   for (const s of allSnaps)
@@ -320,39 +325,41 @@ export function runChecks(d) {
     )
   )
 
-  const mobileNav = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
-  const ms = Object.entries(d.mobile).map(([k, s]) => {
-    const names = mobileNav.map((n) =>
-      s.buttons.find(
-        (b) =>
-          b.label === n &&
-          b.x >= 0 &&
-          b.x + b.w <= 390 &&
-          b.y < 844 &&
-          b.w >= 24 &&
-          b.h >= 24
+  if (want("38")) {
+    const mobileNav = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
+    const ms = Object.entries(d.mobile).map(([k, s]) => {
+      const names = mobileNav.map((n) =>
+        s.buttons.find(
+          (b) =>
+            b.label === n &&
+            b.x >= 0 &&
+            b.x + b.w <= 390 &&
+            b.y < 844 &&
+            b.w >= 24 &&
+            b.h >= 24
+        )
+      )
+      return {
+        k,
+        overflow: s.docScroll.sw > s.docScroll.cw,
+        missing: names.filter((x) => !x).length,
+      }
+    })
+    r.push(
+      result(
+        "38",
+        "mobile-surfaces-reachable",
+        ms.every((m) => !m.overflow && m.missing === 0),
+        ms
+          .map(
+            (m) =>
+              `${m.k}: ${m.overflow ? "page scrolls sideways" : "fits"}, ${mobileNav.length - m.missing}/${mobileNav.length} surface links in view`
+          )
+          .join("; "),
+        "at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more, and the page does not scroll sideways"
       )
     )
-    return {
-      k,
-      overflow: s.docScroll.sw > s.docScroll.cw,
-      missing: names.filter((x) => !x).length,
-    }
-  })
-  r.push(
-    result(
-      "38",
-      "mobile-surfaces-reachable",
-      ms.every((m) => !m.overflow && m.missing === 0),
-      ms
-        .map(
-          (m) =>
-            `${m.k}: ${m.overflow ? "page scrolls sideways" : "fits"}, ${mobileNav.length - m.missing}/${mobileNav.length} surface links in view`
-        )
-        .join("; "),
-      "at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more, and the page does not scroll sideways"
-    )
-  )
+  }
 
   const settingsSnaps = [
     d.settings,

@@ -1,14 +1,7 @@
-import { readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-
 import { srgbToOklch } from "../../../verify-app-ui/scripts/lib/oklch.mjs"
 import { FILES } from "./assumes.mjs"
+import { readDesignFile } from "./spec.mjs"
 import { verdict } from "./verdict.mjs"
-
-const repo = join(dirname(fileURLToPath(import.meta.url)), "../../../../..")
-const landingStylesPath = join(repo, FILES.styles)
-const landingOmittedPath = join(repo, FILES.omitted)
 
 // Contrast floors. Each entry must still describe a live mismatch; a match fails the check.
 const TEXT_STYLE_EXCEPTIONS = [
@@ -139,8 +132,8 @@ export function textStyleVerdict(penSections) {
   let styles
   let omittedRows
   try {
-    styles = JSON.parse(readFileSync(landingStylesPath, "utf8"))
-    omittedRows = JSON.parse(readFileSync(landingOmittedPath, "utf8"))
+    styles = JSON.parse(readDesignFile(FILES.styles, "utf8"))
+    omittedRows = JSON.parse(readDesignFile(FILES.omitted, "utf8"))
   } catch (error) {
     return verdict(
       "31",

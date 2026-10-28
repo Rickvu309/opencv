@@ -2,6 +2,8 @@
 // verify-landing: measures the landing page against the mechanical checks in SKILL.md.
 //   pnpm --filter web verify:landing        (PORT=4399 by default)
 //   VERIFY_LANDING_SHOTS=<dir> also writes the review screenshots (first view and full page, both viewports).
+//   VERIFY_TIER=invariant|design|all (default all). invariant skips the design checks: it measures none of
+//   them and reads nothing under a design/ or reference/ folder.
 // Starts the Vite dev server on PORT unless something already answers there, drives headless
 // Chromium over the DevTools protocol, prints one PASS, FAIL or STALE line per property, and exits 3
 // when any check is STALE (its locator matched nothing), else 1 when any property fails. It never edits the app.
@@ -11,16 +13,27 @@ import { mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import {
+  gate,
+  selectTier,
+  tierFromEnv,
+} from "../../verify-app-ui/scripts/lib/tier.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
+import { designProbeSource } from "./lib/design-probe.mjs"
+import { KINDS } from "./lib/kinds.mjs"
 import { pageChecks } from "./lib/page-checks.mjs"
 import { penProbeSource } from "./lib/pen-probe.mjs"
 import { probeSource } from "./lib/probe.mjs"
+import { loadSpec } from "./lib/spec.mjs"
 import { textRules } from "./lib/text-rules.mjs"
 import { summarize } from "./lib/verdict.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const port = process.env.PORT ?? "4399"
 const url = `http://127.0.0.1:${port}/`
+const tier = tierFromEnv()
+const want = gate(KINDS, tier)
+let spec = null
 const shots = process.env.VERIFY_LANDING_SHOTS
 if (shots) mkdirSync(shots, { recursive: true })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -75,6 +88,8 @@ async function visit(
     snap.first = await page.evaluate(probeSource("first"))
     await sleep(1500)
     if (wanted.top) snap.top = await page.evaluate(probeSource("top"))
+    if (wanted.design && spec)
+      snap.design = await page.evaluate(designProbeSource(spec))
     if (keep)
       await page.screenshot(`${shots}/${wanted.shot}-first-view.png`, false)
     if (wanted.deep || keep) {
@@ -105,7 +120,7 @@ async function visit(
         snap.topOpen = await page.evaluate(probeSource("top"))
       }
     }
-    if (wanted.pen) {
+    if (wanted.pen && spec) {
       snap.pen = await page.evaluate(`(async () => {
         await document.fonts.ready
         return ${penProbeSource}
@@ -121,6 +136,7 @@ let server = null
 let browser = null
 let exit = 0
 try {
+  if (tier !== "invariant") spec = loadSpec()
   if (await answers()) {
     if (!process.env.VERIFY_LANDING_REUSE) {
       throw new Error(
@@ -134,7 +150,7 @@ try {
   const desktop = await visit(
     browser,
     { width: 1440, height: 900, mobile: false, reducedMotion: false },
-    { top: true, deep: true, shot: "desktop", pen: true }
+    { top: true, deep: true, shot: "desktop", pen: true, design: true }
   )
   const mobile = await visit(
     browser,
@@ -148,10 +164,10 @@ try {
   )
   if (!desktop.top.blocks.some((b) => b.tag === "h1"))
     throw new Error(`no H1 rendered at ${url}`)
-  const results = [
-    ...textRules(desktop.top),
+  const results = selectTier(KINDS, tier, [
+    ...textRules(desktop.top, want),
     ...pageChecks({
-      desktop: desktop.top,
+      desktop: { ...desktop.top, ...desktop.design },
       mobile: mobile.top,
       mobileOpen: mobile.topOpen ?? null,
       first: desktop.first,
@@ -160,9 +176,11 @@ try {
       deep: desktop.deep,
       reducedDeep: reduced.deep,
       penSections: desktop.pen,
+      design: spec,
+      want,
     }),
-  ]
-  const { lines, exit: code } = summarize(results)
+  ])
+  const { lines, exit: code } = summarize(results, tier)
   console.log(`verify-landing ${url} (1440x900, 390x844, reduced motion)`)
   for (const line of lines) console.log(line)
   exit = code

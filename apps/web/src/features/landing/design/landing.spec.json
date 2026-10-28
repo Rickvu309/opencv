@@ -1,0 +1,59 @@
+{
+  "27": {
+    "viewBox": "0 0 300 300",
+    "cards": 3,
+    "shapes": 94,
+    "inlineHex": 0
+  },
+  "28": {
+    "gapMin": 9,
+    "gapMax": 13,
+    "fontSize": 16,
+    "fontWeight": 600,
+    "markInset": 2
+  },
+  "29": {
+    "tolerance": 0.6,
+    "fontWeight": 500,
+    "buttons": {
+      "nav": {
+        "scope": "nav",
+        "label": "Get started",
+        "height": 32,
+        "fontSize": 13,
+        "padInline": 12,
+        "inset": true,
+        "outer": true,
+        "pill": true
+      },
+      "close": {
+        "scope": "close",
+        "label": "Get started",
+        "height": 44,
+        "fontSize": 16,
+        "padInline": 20,
+        "inset": true,
+        "outer": true,
+        "pill": true
+      },
+      "sample": {
+        "scope": "close",
+        "label": "See a sample",
+        "height": 44,
+        "fontSize": 16,
+        "padInline": 20,
+        "inset": false,
+        "outer": false,
+        "borderVisible": false,
+        "pill": true
+      }
+    }
+  },
+  "30": {
+    "reference": ".claude/skills/verify-landing/reference/coach-art.png",
+    "title": "A coach that does the work",
+    "raster": 300,
+    "channelDelta": 48,
+    "maxRatio": 0.0125
+  }
+}

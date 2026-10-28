@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { PALETTE_DIR, ROUTES_DIR, featureFolders } from "./assumes.mjs"
+import { checkLine, summaryLine } from "./tier.mjs"
 
 export const repo = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -86,18 +87,11 @@ export const stubSilent = (...snaps) => {
   return quiet.length ? "the scenario stub never fired" : null
 }
 
-export function summarize(results) {
-  const lines = results.map(
-    (r) =>
-      `${r.status} ${r.id} ${r.name}: ${r.measured.slice(0, 230)} | rule: ${r.rule}`
-  )
-  const by = (status) => results.filter((r) => r.status === status)
-  const [failed, staled] = [by("FAIL"), by("STALE")]
-  const ids = [...failed, ...staled].map((r) => r.id)
-  lines.push(
-    `${by("PASS").length} PASS, ${failed.length} FAIL, ${staled.length} STALE${ids.length ? `: ${ids.join(" ")}` : ""}`
-  )
-  return { lines, exit: staled.length ? 3 : failed.length ? 1 : 0 }
+export function summarize(results, tier) {
+  const lines = results.map(checkLine)
+  lines.push(summaryLine(results, tier))
+  const by = (status) => results.some((r) => r.status === status)
+  return { lines, exit: by("STALE") ? 3 : by("FAIL") ? 1 : 0 }
 }
 
 export function context(d) {

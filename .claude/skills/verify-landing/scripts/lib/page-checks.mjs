@@ -42,6 +42,8 @@ export function pageChecks({
   deep,
   reducedDeep,
   penSections,
+  design,
+  want,
 }) {
   const out = []
 
@@ -69,47 +71,53 @@ export function pageChecks({
     )
   )
 
-  const names = ["product", "stories", "pricing"]
-  const inView = (snap, n) =>
-    snap.links.some(
-      (l) =>
-        l.visible &&
-        l.text.toLowerCase() === n &&
-        l.rect.y >= 0 &&
-        l.rect.y + l.rect.h <= snap.vh &&
-        l.rect.x >= 0 &&
-        l.rect.x < snap.vw
+  if (want("15")) {
+    const names = ["product", "stories", "pricing"]
+    const inView = (snap, n) =>
+      snap.links.some(
+        (l) =>
+          l.visible &&
+          l.text.toLowerCase() === n &&
+          l.rect.y >= 0 &&
+          l.rect.y + l.rect.h <= snap.vh &&
+          l.rect.x >= 0 &&
+          l.rect.x < snap.vw
+      )
+    const seenOpen = mobileOpen
+      ? names.filter((n) => inView(mobileOpen, n))
+      : []
+    const seenClosed = names.filter((n) => inView(mobile, n))
+    const seen = seenOpen.length > seenClosed.length ? seenOpen : seenClosed
+    // NN/g 4.3
+    out.push(
+      verdict(
+        "15",
+        "nav-links-before-fold-390",
+        "At 390x844 Product, Stories and Pricing are visible as links without scrolling, in the page or in a menu the checker opens with one click",
+        seen.length === names.length,
+        `${seen.length} of ${names.length} visible without scrolling: ${seen.join(", ") || "none"} (${mobileOpen ? "menu opened" : "no menu button found"})`
+      )
     )
-  const seenOpen = mobileOpen ? names.filter((n) => inView(mobileOpen, n)) : []
-  const seenClosed = names.filter((n) => inView(mobile, n))
-  const seen = seenOpen.length > seenClosed.length ? seenOpen : seenClosed
-  // NN/g 4.3
-  out.push(
-    verdict(
-      "15",
-      "nav-links-before-fold-390",
-      "At 390x844 Product, Stories and Pricing are visible as links without scrolling, in the page or in a menu the checker opens with one click",
-      seen.length === names.length,
-      `${seen.length} of ${names.length} visible without scrolling: ${seen.join(", ") || "none"} (${mobileOpen ? "menu opened" : "no menu button found"})`
-    )
-  )
+  }
 
-  const heroButtons = desktop.links.filter(
-    (l) => l.region === "hero" && l.visible && l.buttonLike
-  )
-  const signIn = desktop.links.find(
-    (l) => l.region === "hero" && /sign in/i.test(l.text)
-  )
-  // Baymard, primary button more prominent and separated
-  out.push(
-    verdict(
-      "16",
-      "hero-has-no-button",
-      "The hero is the headline and the photo, with no button. The action is in the nav and the close",
-      heroButtons.length === 0 && !(signIn && signIn.buttonLike),
-      `${heroButtons.length} button(s) in hero: ${heroButtons.map((b) => `"${b.text}"`).join(", ") || "none"}`
+  if (want("16")) {
+    const heroButtons = desktop.links.filter(
+      (l) => l.region === "hero" && l.visible && l.buttonLike
     )
-  )
+    const signIn = desktop.links.find(
+      (l) => l.region === "hero" && /sign in/i.test(l.text)
+    )
+    // Baymard, primary button more prominent and separated
+    out.push(
+      verdict(
+        "16",
+        "hero-has-no-button",
+        "The hero is the headline and the photo, with no button. The action is in the nav and the close",
+        heroButtons.length === 0 && !(signIn && signIn.buttonLike),
+        `${heroButtons.length} button(s) in hero: ${heroButtons.map((b) => `"${b.text}"`).join(", ") || "none"}`
+      )
+    )
+  }
 
   const light = luminance(desktop.bg) >= 0.85
   const sat = deep.colors.filter((c) => chroma(c.rgb) >= 0.18)
@@ -162,26 +170,28 @@ export function pageChecks({
     )
   )
 
-  // App logos and customer portraits are named by app or person, not by a product surface.
-  // A [role=img] figure has no file; its aria-label is the alt.
-  const named = (i) =>
-    /^\/landing\/(logo|story)-/.test(i.src ?? "")
-      ? Boolean(i.alt)
-      : (i.alt ?? "").length >= 20 &&
-        /coach|paper|apply|proof|pitch|cv|letter/i.test(i.alt)
-  const bad = desktop.imgs.filter(
-    (i) => !(i.figure || i.src?.startsWith("/landing/")) || !named(i)
-  )
-  const figureCount = desktop.imgs.filter((i) => i.figure).length
-  out.push(
-    verdict(
-      "19",
-      "images-named-and-local",
-      "Every marketing image is from /landing/ and its alt names Coach, Paper, Apply, Proof, Pitch, a CV or a letter (app logos and customer portraits need only an alt)",
-      desktop.imgs.length > 0 && bad.length === 0,
-      `${desktop.imgs.length} images (${figureCount} figures), ${bad.length} without a surface-naming alt${bad[0] ? `: ${bad[0].src ?? bad[0].alt}` : ""}`
+  if (want("19")) {
+    // App logos and customer portraits are named by app or person, not by a product surface.
+    // A [role=img] figure has no file; its aria-label is the alt.
+    const named = (i) =>
+      /^\/landing\/(logo|story)-/.test(i.src ?? "")
+        ? Boolean(i.alt)
+        : (i.alt ?? "").length >= 20 &&
+          /coach|paper|apply|proof|pitch|cv|letter/i.test(i.alt)
+    const bad = desktop.imgs.filter(
+      (i) => !(i.figure || i.src?.startsWith("/landing/")) || !named(i)
     )
-  )
+    const figureCount = desktop.imgs.filter((i) => i.figure).length
+    out.push(
+      verdict(
+        "19",
+        "images-named-and-local",
+        "Every marketing image is from /landing/ and its alt names Coach, Paper, Apply, Proof, Pitch, a CV or a letter (app logos and customer portraits need only an alt)",
+        desktop.imgs.length > 0 && bad.length === 0,
+        `${desktop.imgs.length} images (${figureCount} figures), ${bad.length} without a surface-naming alt${bad[0] ? `: ${bad[0].src ?? bad[0].alt}` : ""}`
+      )
+    )
+  }
 
   const describe = (list) =>
     list.length
@@ -352,8 +362,7 @@ export function pageChecks({
     )
   )
 
-  out.push(...designChecks(desktop))
-
-  out.push(textStyleVerdict(penSections))
+  if (want("27")) out.push(...designChecks(desktop, design))
+  if (want("31")) out.push(textStyleVerdict(penSections))
   return out
 }

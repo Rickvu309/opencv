@@ -66,7 +66,7 @@ export function coachErrorCheck(d) {
   )
 }
 
-export function contentChecks(d) {
+export function contentChecks(d, want = () => true) {
   const r = []
   const { allSnaps, labels, has, scan } = context(d)
 
@@ -125,20 +125,22 @@ export function contentChecks(d) {
     )
   )
 
-  const chrome = d.cv.chrome ?? []
-  const placeholderName = chrome.includes("Name")
-  const yourName =
-    chrome.includes("Your name") || /\bYour name\b/.test(d.cv.text)
-  const title = d.cv.h1[0] ?? ""
-  r.push(
-    result(
-      "06",
-      "starter-cv-name",
-      placeholderName && !yourName && title !== "Your name",
-      `name placeholder Name: ${placeholderName}; title: "${title}"; Your name in the CV text: ${yourName}`,
-      "a new CV's name field placeholder is Name, and the title is not Your name"
+  if (want("06")) {
+    const chrome = d.cv.chrome ?? []
+    const placeholderName = chrome.includes("Name")
+    const yourName =
+      chrome.includes("Your name") || /\bYour name\b/.test(d.cv.text)
+    const title = d.cv.h1[0] ?? ""
+    r.push(
+      result(
+        "06",
+        "starter-cv-name",
+        placeholderName && !yourName && title !== "Your name",
+        `name placeholder Name: ${placeholderName}; title: "${title}"; Your name in the CV text: ${yourName}`,
+        "a new CV's name field placeholder is Name, and the title is not Your name"
+      )
     )
-  )
+  }
 
   const claims = metricClaims(
     `${d.pitch.exposedText ?? d.pitch.text} ${d.pitch.imgs.map((i) => i.alt).join(" ")}`
@@ -190,54 +192,60 @@ export function contentChecks(d) {
     )
   )
 
-  // 10. Jobs are deleted through the api. The empty board is one empty state, with no Closed header.
-  const ae = d.applyEmpty
-  const closedHeader = boardLanes(ae).hiddenShown
-  const wells = (ae.text.match(/Drop a (job|opportunity) here/g) ?? []).length
-  const confirmed = ae.cards.length === 0 && !closedHeader && wells === 0
-  r.push(
-    result(
-      "10",
-      "empty-board-one-empty-state",
-      confirmed && ae.emptyStates === 1,
-      confirmed
-        ? `after deleting ${ae.deleted?.deleted} jobs: 0 cards, ${ae.emptyStates} empty states, Closed header ${closedHeader}`
-        : `the zero-job board was not reached: ${ae.cards.length} cards, Closed header ${closedHeader}, ${wells} wells`,
-      "with every job deleted the board shows one empty state and no Closed header. Closed stays behind Hidden columns. A board that was not confirmed empty is a FAIL"
+  if (want("10")) {
+    // 10. Jobs are deleted through the api. The empty board is one empty state, with no Closed header.
+    const ae = d.applyEmpty
+    const closedHeader = boardLanes(ae).hiddenShown
+    const wells = (ae.text.match(/Drop a (job|opportunity) here/g) ?? []).length
+    const confirmed = ae.cards.length === 0 && !closedHeader && wells === 0
+    r.push(
+      result(
+        "10",
+        "empty-board-one-empty-state",
+        confirmed && ae.emptyStates === 1,
+        confirmed
+          ? `after deleting ${ae.deleted?.deleted} jobs: 0 cards, ${ae.emptyStates} empty states, Closed header ${closedHeader}`
+          : `the zero-job board was not reached: ${ae.cards.length} cards, Closed header ${closedHeader}, ${wells} wells`,
+        "with every job deleted the board shows one empty state and no Closed header. Closed stays behind Hidden columns. A board that was not confirmed empty is a FAIL"
+      )
     )
-  )
+  }
 
-  const pl = d.paperLoading.text
-  const loading = /Loading documents|Loading…|Loading\.\.\./.test(pl)
-  const emptyCopy = /Start a document/i.test(pl)
-  const rule11 =
-    "a loading list says it is loading (Loading documents, Loading...) and never shows Start a document"
-  const silent11 = stubSilent(d.paperLoading)
-  r.push(
-    judged(
-      "11",
-      "loading-not-empty",
-      rule11,
-      silent11 !== null || (loading && !emptyCopy),
-      `while GET /api/paper is held: loading text ${loading}, empty copy ${emptyCopy}`,
-      [silent11 && `held list (${silent11})`]
+  if (want("11")) {
+    const pl = d.paperLoading.text
+    const loading = /Loading documents|Loading…|Loading\.\.\./.test(pl)
+    const emptyCopy = /Start a document/i.test(pl)
+    const rule11 =
+      "a loading list says it is loading (Loading documents, Loading...) and never shows Start a document"
+    const silent11 = stubSilent(d.paperLoading)
+    r.push(
+      judged(
+        "11",
+        "loading-not-empty",
+        rule11,
+        silent11 !== null || (loading && !emptyCopy),
+        `while GET /api/paper is held: loading text ${loading}, empty copy ${emptyCopy}`,
+        [silent11 && `held list (${silent11})`]
+      )
     )
-  )
+  }
 
-  const hit = /Hit Publish/i.test(d.pitch.text)
-  const pub = d.pitch.buttons.some((b) => /^Publish$/i.test(b.label))
-  r.push(
-    result(
-      "12",
-      "unpublished-banner-has-publish",
-      !hit || pub,
-      `banner says "Hit Publish": ${hit}; a Publish button is on screen: ${pub}; buttons: ${list(
-        d.pitch.buttons.filter((b) => !b.inSidebar).map((b) => b.label),
-        6
-      )}`,
-      "when the unpublished banner names Publish, a Publish button is in the same view"
+  if (want("12")) {
+    const hit = /Hit Publish/i.test(d.pitch.text)
+    const pub = d.pitch.buttons.some((b) => /^Publish$/i.test(b.label))
+    r.push(
+      result(
+        "12",
+        "unpublished-banner-has-publish",
+        !hit || pub,
+        `banner says "Hit Publish": ${hit}; a Publish button is on screen: ${pub}; buttons: ${list(
+          d.pitch.buttons.filter((b) => !b.inSidebar).map((b) => b.label),
+          6
+        )}`,
+        "when the unpublished banner names Publish, a Publish button is in the same view"
+      )
     )
-  )
+  }
 
   // 13. A percentage passes only with a basis phrase in the same card; one outside a card has no card to hold it.
   const cardPct = d.apply.cards.map((c) => ({
