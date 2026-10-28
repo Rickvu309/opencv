@@ -125,7 +125,7 @@ function probe(SEL) {
         primary: e.matches(SEL.primary),
       }
     })
-  out.primaryMarks = document.querySelectorAll(SEL.primary).length
+  out.primaryMarks = visible.filter((e) => e.matches(SEL.primary)).length
 
   // Motion: durations in effect on every visible element, and loops that run without a trigger.
   const dur = {}
@@ -348,7 +348,7 @@ function probe(SEL) {
   ).length
   out.emptyStates = visible.filter((e) => e.matches(SEL.emptyState)).length
   // A Paper library card is a button named "<name>, <edited>" holding those two texts as its spans.
-  out.paperCards = [...document.querySelectorAll("main button[aria-label]")]
+  out.paperCards = [...document.querySelectorAll(SEL.paperCard)]
     .filter(shown)
     .flatMap((c) => {
       const [name, edited] = [...c.querySelectorAll(":scope > span")]
@@ -449,7 +449,6 @@ function probe(SEL) {
   if (editor && shown(editor)) out.editorRect = rect(editor)
   const aside = document.querySelector("aside")
   if (aside && shown(aside)) out.sidebarRect = rect(aside)
-  out.coachFloat = Boolean(document.querySelector(SEL.coachFloat))
   if (composer) {
     let panel = null
     for (

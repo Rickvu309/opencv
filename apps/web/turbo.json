@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*",
+        "$TURBO_ROOT$/.claude/skills/verify-app-ui/**",
+        "$TURBO_ROOT$/.claude/skills/verify-landing/**"
+      ]
+    }
+  }
+}

@@ -186,6 +186,23 @@ test("32: a marked surface Tab never reaches is a FAIL, not STALE", () => {
   assert.equal(keyboardPrimaryCheck(d).status, "FAIL")
 })
 
+test("28 and 32: two visible primary actions on one screen FAIL and name the count", () => {
+  const two = { ...buttonSnap([marked("Add", 36)]), primaryMarks: 2 }
+  const d = {
+    apply: buttonSnap([marked("New job", 36)]),
+    paper: two,
+    pitchEdit: buttonSnap([marked("Get early access", 36)]),
+    coach: buttonSnap([], true),
+    tabs: { coach: tabsOf(5), paper: tabsOf(9) },
+  }
+  const size = primaryButtonCheck(d)
+  assert.equal(size.status, "FAIL")
+  assert.match(size.measured, /paper has 2 visible \[data-primary-action\]/)
+  const keys = keyboardPrimaryCheck(d)
+  assert.equal(keys.status, "FAIL")
+  assert.match(keys.measured, /paper has 2 visible \[data-primary-action\]/)
+})
+
 test("board lanes follow the stage list, not pinned words", () => {
   const lane = (stage, heading) => ({ stage, heading })
   const full = {
@@ -209,6 +226,13 @@ test("board lanes follow the stage list, not pinned words", () => {
   )
   assert.equal(closed.hiddenShown, true)
   assert.match(boardLanes(full, null).unread, /JOB_STAGES not readable/)
+  assert.deepEqual(
+    boardLanes({ lanes: [lane("saved", "Saved"), lane("applied", "Saved")] }, [
+      "saved",
+      "applied",
+    ]).misnamed,
+    [lane("applied", "Saved")]
+  )
 })
 
 const alertSnap = (text, stubHits) => ({ alerts: [text], stubHits })

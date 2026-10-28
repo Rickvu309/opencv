@@ -6,6 +6,13 @@ export function boardLanes(snap, stages = boardStages()) {
   return {
     stages,
     lanes,
+    // The heading names its stage: the lane with data-stage="applied" is headed "Applied".
+    misnamed: lanes.filter(
+      (l) =>
+        l.heading &&
+        l.stage !== HIDDEN_STAGE &&
+        l.heading.toLowerCase() !== l.stage?.replace(/-/g, " ")
+    ),
     missing: (stages ?? []).filter(
       (s) => !lanes.some((l) => l.stage === s && l.heading)
     ),

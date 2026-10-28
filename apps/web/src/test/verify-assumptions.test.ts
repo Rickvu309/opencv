@@ -8,6 +8,7 @@ import { jobStageSchema } from "@workspace/domain"
 
 import {
   ASSUMES as appUi,
+  TOURED,
   jobStages,
 } from "../../../../.claude/skills/verify-app-ui/scripts/lib/assumes.mjs"
 import { ASSUMES as landing } from "../../../../.claude/skills/verify-landing/scripts/lib/assumes.mjs"
@@ -33,37 +34,45 @@ function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) return sourceFiles(full)
-    return /\.(tsx?|css)$/.test(entry.name) && !/\.test\./.test(entry.name)
+    return /\.tsx?$/.test(entry.name) && !/\.test\./.test(entry.name)
       ? [full]
       : []
   })
 }
 
-const corpus = ["apps/web/src", "packages/ui/src"]
+const rawSources = ["apps/web/src", "packages/ui/src"]
   .flatMap((dir) => sourceFiles(abs(dir)))
   .map((file) => readFileSync(file, "utf8"))
-  .join("\n")
+// Markup is what a selector must find: .ts and .tsx source with its comments removed, never a stylesheet.
+const stripComments = (text: string) =>
+  text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(?<![:"'`\w])\/\/[^\n]*/g, "")
+const corpus = rawSources.map(stripComments).join("\n")
 const router = readFileSync(abs("apps/web/src/router.tsx"), "utf8")
 const routerPaths = [...router.matchAll(/path: "([^"]+)"/g)].map((m) => m[1])
 const productPaths = Object.values(SURFACE_PATHS)
 
-const appears = (name: string) =>
-  new RegExp(
-    `(?<![\\w-])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w-])`
-  ).test(corpus)
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+const word = (name: string) => `(?<![\\w-])${escape(name)}(?![\\w-])`
 
-// Every id, class, attribute name and quoted attribute value a selector names.
-function selectorTokens(selector: string): string[] {
-  const tokens: string[] = []
-  for (const m of selector.matchAll(/#([\w-]+)/g)) tokens.push(m[1]!)
-  for (const m of selector.matchAll(/\.([\w-]+)/g)) tokens.push(m[1]!)
+// Every id, class, attribute name and attribute value a selector names, as the markup pattern that must exist.
+// A value must sit on its attribute (data-slot="empty" or data-slot={"empty"}), not appear as a bare word.
+function selectorPatterns(selector: string): { label: string; re: RegExp }[] {
+  const out: { label: string; re: RegExp }[] = []
+  const add = (label: string, source: string) =>
+    out.push({ label, re: new RegExp(source) })
+  for (const m of selector.matchAll(/#([\w-]+)/g)) add(m[1]!, word(m[1]!))
+  for (const m of selector.matchAll(/\.([\w-]+)/g)) add(m[1]!, word(m[1]!))
   for (const m of selector.matchAll(
     /\[([\w-]+)(?:=["']?([^\]"']+)["']?)?\]/g
   )) {
-    tokens.push(m[1]!)
-    if (m[2]) tokens.push(m[2])
+    if (m[2])
+      add(
+        `${m[1]}="${m[2]}"`,
+        `${word(m[1]!)}=(?:"${escape(m[2])}"|\\{["']${escape(m[2])}["']\\})`
+      )
+    else add(m[1]!, word(m[1]!))
   }
-  return tokens
+  return out
 }
 
 function literals(file: string): string[] {
@@ -105,8 +114,8 @@ describe.each(SKILLS)("%s assumptions", (_name, assumes) => {
 
   it("selects only markup the app source names", () => {
     for (const selector of assumes.selectors) {
-      for (const token of selectorTokens(selector)) {
-        expect(appears(token), `${token} from ${selector}`).toBe(true)
+      for (const { label, re } of selectorPatterns(selector)) {
+        expect(re.test(corpus), `${label} from ${selector}`).toBe(true)
       }
     }
   })
@@ -125,13 +134,20 @@ describe.each(SKILLS)("%s assumptions", (_name, assumes) => {
 })
 
 describe("verify-app-ui", () => {
-  it("marks one primary action on each toured surface", () => {
-    expect(appUi.markers.map((m) => m.surface).sort()).toEqual([
-      "apply",
-      "coach",
-      "paper",
-      "pitch",
-    ])
+  it("marks one primary action on each toured surface, and nowhere else", () => {
+    expect(appUi.markers.map((m) => m.surface).sort()).toEqual(
+      [...TOURED].sort()
+    )
+    const attrs = new Set(appUi.markers.map((m) => m.attr))
+    for (const attr of attrs) {
+      const everywhere = rawSources.reduce(
+        (sum, text) => sum + text.split(attr).length - 1,
+        0
+      )
+      expect(everywhere, `${attr} in apps/web/src and packages/ui/src`).toBe(
+        appUi.markers.filter((m) => m.attr === attr).length
+      )
+    }
   })
 
   it("reads the stage list the domain exports", () => {

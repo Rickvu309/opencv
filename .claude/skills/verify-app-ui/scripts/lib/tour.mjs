@@ -8,6 +8,7 @@ import {
   JOBS_PATH,
   PATHS,
   SEL,
+  TOURED,
   apiMatches,
   commandPath,
 } from "./assumes.mjs"
@@ -216,7 +217,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   }
   for (const key of Object.keys(ROUTES)) await visit(key)
 
-  for (const key of ["coach", "paper", "apply", "pitch"]) {
+  for (const key of TOURED) {
     must(await visit(key), `${key} did not render at ${ROUTES[key][0]}`)
     d.tabs[key] = await tabWalk(a)
     await a.sleep(1200)

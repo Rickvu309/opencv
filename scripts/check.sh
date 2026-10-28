@@ -140,7 +140,12 @@ if (( changed_mode )); then
           echo "==> $t: no workspace package changed, nothing to run"
         fi
         if [[ "$t" == "test" ]]; then
-          if has_changed '.claude/skills/verify-app-ui/*' '.claude/skills/verify-landing/*' && [[ " ${scope_dirs[*]:-} " != *" apps/web "* ]]; then
+          web_in_scope=0
+          if [[ ${#scope_dirs[@]} -gt 0 ]]; then
+            scoped=$(pnpm ls -r --depth -1 --parseable "${filters[@]}" 2>/dev/null || true)
+            [[ $'\n'"$scoped"$'\n' == *"/apps/web"$'\n'* ]] && web_in_scope=1
+          fi
+          if has_changed '.claude/skills/verify-app-ui/*' '.claude/skills/verify-landing/*' && (( ! web_in_scope )); then
             echo "==> web tests (verify-assumptions reads the verify skills' assumptions)"
             run "$pm" --filter web test || failed+=(verify-assumptions)
           fi

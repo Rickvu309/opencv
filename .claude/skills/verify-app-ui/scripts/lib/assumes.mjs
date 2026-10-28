@@ -28,6 +28,9 @@ export const SOURCE_FILES = {
   jobStages: "packages/domain/src/job.ts",
 }
 
+// The surfaces the tour walks, in order. Each carries one primary action marker.
+export const TOURED = ["coach", "paper", "apply", "pitch"]
+
 // The toured routes, each taken from the app's own path table.
 export const PATHS = {
   coach: SURFACE_PATHS.coach,
@@ -67,7 +70,7 @@ export const SEL = {
   card: "[data-card-id]",
   lane: '[data-slot="board-lane"]',
   paperEditor: "[data-paper-editor]",
-  coachFloat: "[data-coach-float-card], [data-coach-float-pill]",
+  paperCard: "main button[aria-label]",
   userContent: "[data-user-content]",
   primary: "[data-primary-action]",
   emptyState: '[data-slot="empty"]',

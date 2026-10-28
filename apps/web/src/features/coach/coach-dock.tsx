@@ -57,6 +57,8 @@ type Props = {
   onAttachJob?: () => void
   onAttachLink?: () => void
   disabled?: boolean
+  /** Marks the Add control as the screen's one primary action. Only the Coach page sets it. */
+  primaryAction?: boolean
 }
 
 export function CoachDock({
@@ -72,6 +74,7 @@ export function CoachDock({
   onAttachJob,
   onAttachLink,
   disabled = false,
+  primaryAction = false,
 }: Props) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -109,7 +112,7 @@ export function CoachDock({
             />
           }
           aria-label={menuOpen ? "Close menu" : "Add"}
-          data-primary-action
+          data-primary-action={primaryAction ? "" : undefined}
         >
           {menuOpen ? <X /> : <Plus />}
         </DropdownMenuTrigger>

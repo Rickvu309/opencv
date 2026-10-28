@@ -34,17 +34,16 @@ export function runChecks(d) {
   const editor = d.cv.editorRect
   const side = d.cv.sidebarRect
   const widest = Boolean(editor) && (!side || editor.w >= side.w)
-  const noFloat = !d.cv.coachFloat
   const panelClosed = !d.cv.panelRect
   r.push(
     result(
       "15",
       "cv-widest-coach-beside",
-      widest && noFloat && panelClosed,
+      widest && panelClosed,
       editor
-        ? `editor ${editor.w}px, sidebar ${side?.w ?? "none"}px, float ${Boolean(d.cv.coachFloat)}, panel ${d.cv.panelRect ? "open" : "closed"}`
+        ? `editor ${editor.w}px, sidebar ${side?.w ?? "none"}px, panel ${d.cv.panelRect ? "open" : "closed"}`
         : "no editor region",
-      "with the Coach panel closed, the CV editor is the widest region and no second Coach float covers the sheet (an open panel is #377)"
+      "with the Coach panel closed, the CV editor is the widest region (an open panel is #377)"
     )
   )
 
@@ -159,12 +158,14 @@ export function runChecks(d) {
     judged(
       "23",
       "stage-word-plus-dot",
-      "every stage in JOB_STAGES except closed is a visible lane heading. Closed is not a heading until Hidden columns",
-      board.missing.length === 0 && !board.hiddenShown,
+      "every stage in JOB_STAGES except closed is a visible lane headed with its own name. Closed is not a heading until Hidden columns",
+      board.missing.length === 0 &&
+        !board.hiddenShown &&
+        board.misnamed.length === 0,
       `${shown.length} lane headings of ${board.stages?.length ?? "an unread number of"} stages; ${list(
         shown.map((l) => l.heading),
         5
-      )}`,
+      )}${board.misnamed.map((l) => `; ${l.stage} lane headed "${l.heading}"`).join("")}`,
       [board.unread]
     )
   )

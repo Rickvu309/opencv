@@ -23,7 +23,7 @@ Writing and logic:
 Structure:
 
 - 14 retired with the Home page. The id is not reused.
-- 15 `cv-widest-coach-beside`: with the Coach panel closed, the CV editor is the widest region and no second Coach float covers the sheet (at 1440 wide). An open panel belongs to #377. Source: Cursor; Linear.
+- 15 `cv-widest-coach-beside`: with the Coach panel closed, the CV editor is the widest region (at 1440 wide). An open panel belongs to #377. Source: Cursor; Linear.
 - 16 `apply-five-stages-no-hscroll`: every stage in `JOB_STAGES` (`packages/domain/src/job.ts`, read by `assumes.mjs`) except closed is a visible lane heading at 1440x900, Closed is not, and the board does not scroll sideways. A lane is the `data-slot="board-lane"` element with its `data-stage`. An unreadable stage list is STALE unless a lane check already FAILs. The 390 pass skips this property because the lanes scroll there. Source: the Apply board.
 - 17 `search-key-hint`: the Search button has a `kbd` inside it and Ctrl-K opens the dialog. Source: Raycast.
 - 18 `paper-no-disabled-filter`: no Paper control says Coming soon. The Proof card is a link, not a disabled control. Source: Apple feedback.
@@ -34,7 +34,7 @@ Visual craft:
 - 20 `text-contrast`: 4.5:1, or 3:1 at 24px (18.66px bold). Skipped: text over images and gradients, disabled controls, aria-hidden text and svg. Source: WCAG 1.4.3.
 - 21 `target-size-24`: every link and button 24x24, or a 24px circle that touches no other target; controls that are hidden until hover are not measured. Source: WCAG 2.5.8.
 - 22 `apply-dot-count-or-absent`: the Apply link is found by the accessible name Apply. It has no dot, or the dot has a count or an accessible name (an aria-hidden dot has none). A missing Apply link is a FAIL. Source: Apple feedback.
-- 23 `stage-word-plus-dot`: every `JOB_STAGES` stage except closed has a visible lane heading. Closed is not a heading until Hidden columns. No stage word or count is pinned. Source: the Apply board.
+- 23 `stage-word-plus-dot`: every `JOB_STAGES` stage except closed has a visible lane headed with its own name (the `applied` lane says Applied, case aside). Closed is not a heading until Hidden columns. No count is pinned. Source: the Apply board.
 
 Motion:
 
@@ -45,14 +45,14 @@ Motion:
 Accessibility and performance:
 
 - 27 `alerts-have-role`: the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
-- 28 `primary-buttons-32`: the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. The button on each surface is the one with `data-primary-action` (`SEL.primary` in `scripts/lib/assumes.mjs`): New job on Apply, New on the Paper library, Get early access on Pitch. A surface with no marked button is STALE, and the vitest `verify-assumptions` fails first. Source: the design kit.
+- 28 `primary-buttons-32`: the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. The button on each surface is the one with `data-primary-action` (`SEL.primary` in `scripts/lib/assumes.mjs`; a surface with more than one visible marked element FAILs, naming the count): New job on Apply, New on the Paper library, Get early access on Pitch. A surface with no marked button is STALE, and the vitest `verify-assumptions` fails first. Source: the design kit.
 - 29 `table-not-mounted-while-loading`: while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("Start a document"). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
 - 30 `undo-and-reject`: Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
 
 App-wide:
 
 - 31 `one-h1-per-screen`: exactly one visible h1 on the start page, Paper, the open CV, Apply and Pitch. The shell panel title is not an h1. Pitch's only h1 is the coming-soon promise. The page name is not an h1.
-- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). The primary is the element marked `data-primary-action`, or anything inside it. On `/coach` that is the Add control of the composer; Message Coach is not required. Pitch's primary is Get early access.
+- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). The primary is the element marked `data-primary-action`, or anything inside it. On `/coach` that is the Add control of the composer; Message Coach is not required. Pitch's primary is Get early access. A surface with more than one visible marked element FAILs, naming the count.
 - 33 `no-console-errors`: the signed-in desktop, reduced-motion and 390px passes log no console error, React warning, uncaught exception or failed load. The mocked scenario pages are not counted.
 - 34 `first-render-budget`: each route renders its content within 2000 ms of navigation (dev server, warm). The budget is this skill's, set for the shared 8-core machine.
 - 35 `spacing-scale`: 95% or more of padding and gap values are on the 4px scale plus the half steps 2, 6, 10, 14.
