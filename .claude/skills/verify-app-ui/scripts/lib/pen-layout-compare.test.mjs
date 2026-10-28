@@ -211,3 +211,12 @@ test("white text on a dark fill is judged against that fill", () => {
   const app = { ...onDark, background: "rgba(26, 26, 26, 1)" }
   assert.equal(colorMatches(onDark, app, tokens), true)
 })
+
+test("a pen colour that passes AA still fails when the app text is unreadable", () => {
+  const pen = {
+    ...small("rgba(255, 255, 255, 1)"),
+    background: "rgba(17, 17, 17, 1)",
+  }
+  const app = { ...pen, background: "rgba(255, 255, 255, 1)" }
+  assert.equal(colorMatches(pen, app, tokens), false)
+})

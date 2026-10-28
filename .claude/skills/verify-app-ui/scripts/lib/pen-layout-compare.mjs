@@ -81,11 +81,11 @@ const contrastNeed = ({ fontSize, fontWeight }) =>
 export function colorMatches(want, got, tokens = {}) {
   const need = contrastNeed(want)
   const shipped = contrast(got.color, got.background)
+  if (shipped < need) return false
   // A pen colour too faint for AA must not ship as drawn. The app colour
   // passes when it is about the lightest colour that meets AA.
   if (contrast(want.color, want.background) < need)
     return (
-      shipped >= need &&
       shipped <= need * TOLERANCE.contrastHeadroom &&
       colorDistance(want.color, got.color) <= TOLERANCE.contrastFloor
     )
