@@ -44,7 +44,7 @@ Forty-three named properties (id 14 retired with the Home page and is not reused
 
 ## Baseline at the sync commit
 
-At `8b5f640a` plus #526 the checker prints 35 PASS, 7 FAIL and 1 STALE: FAIL 01 02 20 27 28 36 41, STALE 32. 04 now drives its Coach stub (`POST /api/chats/<id>/turns`, one hit in each scenario) and passes. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
+This baseline predates #516, which retired check 14 with the Home page. At `8b5f640a` plus #526 the checker prints 35 PASS, 7 FAIL and 1 STALE: FAIL 01 02 20 27 28 36 41, STALE 32. 04 now drives its Coach stub (`POST /api/chats/<id>/turns`, one hit in each scenario) and passes. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
 
 - 20: eight text nodes under 4.5:1, all on the Inbox connect screen, such as "Skip for now" at 3.36:1 and "Reads job emails only. Nothing is sent without you." at 2.45:1. `inbox-parts.tsx` `SOFT_TEXT` (`text-muted-foreground/70`) and `FAINT_TEXT` (`/55`) copy the pen greys #8A8A8E and #A0A0A2, which fail AA on white. Introduced by `682a1ea7` (#505). Apply ships such greys as the lightest AA grey (`apply-tone.ts`); Inbox does not.
 - 28: Apply's New job is 28px (`apply-toolbar.tsx` `h-7`, from `aa89ba79`, #509). The pen draws that control (node BmWvu) as a 28px ghost header action, so check 28 and the pen disagree. The operator decides which one moves. Paper New is 32px and Pitch Get early access is 40px.

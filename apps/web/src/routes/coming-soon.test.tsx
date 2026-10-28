@@ -137,16 +137,22 @@ describe("coming soon and the calm 404", () => {
     })
   })
 
-  it("sends the retired /app/home path back to the start page", async () => {
-    const { router } = renderApp("/app/home")
+  it.each(["/home", "/app/home"])(
+    "shows the 404 for the retired %s path, with a way back to the start page",
+    async (path) => {
+      const { router } = renderApp(path)
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Back to start" })
-    )
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/apply")
-    })
-  })
+      expect(
+        await screen.findByRole("heading", { level: 1, name: "Page not found" })
+      ).toBeInTheDocument()
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Back to start" })
+      )
+      await waitFor(() => {
+        expect(router.state.location.pathname).toBe("/apply")
+      })
+    }
+  )
 
   it("renders a signed-in profile path inside the shell", async () => {
     renderApp("/u/someone")

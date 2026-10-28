@@ -84,6 +84,7 @@ describe("app shell layout", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument()
     expect(screen.getByText(SAMPLE_AUTHOR_NAME)).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Home" })).not.toBeInTheDocument()
     expect(
       screen.queryByRole("link", { name: SAMPLE_AUTHOR_NAME })
     ).not.toBeInTheDocument()
