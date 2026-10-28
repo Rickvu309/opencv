@@ -74,10 +74,13 @@ export const SEL = {
 }
 
 export const HIDDEN_STAGE = "closed"
-// JOB_STAGES imports zod, so plain node reads its array literal instead of the module.
+// job.ts imports zod, so plain node reads the JOB_STAGES array literal instead of the module.
+// verify-assumptions.test.ts holds the parse to jobStageSchema, the domain's export.
 export function jobStages() {
   const text = readFileSync(join(root, SOURCE_FILES.jobStages), "utf8")
-  const literal = /export const JOB_STAGES = \[([^\]]*)\]/.exec(text)?.[1]
+  const literal = /(?:export\s+)?const JOB_STAGES = \[([^\]]*)\]/.exec(
+    text
+  )?.[1]
   const stages = [...(literal ?? "").matchAll(/"([a-z-]+)"/g)].map((m) => m[1])
   return stages.length ? stages : null
 }

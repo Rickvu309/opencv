@@ -4,7 +4,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
-import { JOB_STAGES } from "@workspace/domain"
+import { jobStageSchema } from "@workspace/domain"
 
 import {
   ASSUMES as appUi,
@@ -135,6 +135,6 @@ describe("verify-app-ui", () => {
   })
 
   it("reads the stage list the domain exports", () => {
-    expect(jobStages()).toEqual([...JOB_STAGES])
+    expect(jobStages()).toEqual(jobStageSchema.options)
   })
 })
