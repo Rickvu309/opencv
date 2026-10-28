@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { QueryOutput } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { SearchInput } from "@workspace/ui/components/search-input"
 
 import {
   SettingsLoadError,
@@ -64,11 +64,11 @@ export function IntegrationsSection() {
       <SettingsTitle title="Integrations">
         Connect the apps you already use.
       </SettingsTitle>
-      <Input
+      <SearchInput
         aria-label="Search integrations"
         placeholder="Search integrations"
         value={search}
-        onChange={(event) => setSearch(event.target.value)}
+        onValueChange={setSearch}
       />
       {groups.length === 0 ? (
         <div className="mt-6 flex flex-col gap-1">
