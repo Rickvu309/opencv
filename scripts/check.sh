@@ -92,12 +92,13 @@ fi
 if   [[ -f pnpm-lock.yaml ]];    then pm=pnpm
 elif [[ -f yarn.lock ]];         then pm=yarn
 else pm=npm; fi
-command -v "$pm" >/dev/null 2>&1 || { echo "check: $pm is not installed." >&2; exit 1; }
-command -v node  >/dev/null 2>&1 || { echo "check: node is not installed." >&2; exit 1; }
+command -v "$pm" >/dev/null 2>&1 || { echo "check: $pm is not installed." >&2; result_fail env "$pm is not installed"; exit 1; }
+command -v node  >/dev/null 2>&1 || { echo "check: node is not installed." >&2; result_fail env "node is not installed"; exit 1; }
 
 needs_install=$(node -e "const p=require('./package.json');console.log(Object.keys({...p.dependencies,...p.devDependencies}).length>0?1:0)")
 if [[ "$needs_install" == "1" && ! -d node_modules ]]; then
   echo "check: node_modules missing. Install first ($pm install)." >&2
+  result_fail env "node_modules missing"
   exit 1
 fi
 

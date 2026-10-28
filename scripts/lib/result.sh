@@ -16,7 +16,7 @@
 #   ${PR_RESULT_DIR:-$HOME/tmp/pr-results}/<repo>-<script>-<id>.json   (overwritten per run)
 #   ...and appends the same line to history.jsonl in that directory,
 # and prints `RESULT_JSON: <path>` as the last stdout line. A crash (non-zero exit with no result_fail/result_human)
-# is status "error". Writing never changes the exit code.
+# is status "error", and so is a kill by SIGINT, SIGTERM or SIGHUP (detail "killed by SIG<name>"). Writing never changes the exit code.
 #
 # Fields (all present, null when unknown): schema, script, repo, id, status (ok|fail|human|error),
 # cause (none|behind-main|merge-conflict|test|timing-test|lint|typecheck|build|env|disk|hygiene|other), detail,
@@ -26,7 +26,7 @@
 R_SCHEMA=1
 R_SCRIPT=""; R_REPO=""; R_ID=""; R_STATUS=""; R_CAUSE=""; R_DETAIL=""; R_NEXT=""; R_LOG=""; R_BLOCKED=""
 R_FILES=(); R_RETRIED=()
-R_START_EPOCH=0; R_START_ISO=""
+R_START_EPOCH=0; R_START_ISO=""; R_SIGNAL=""
 
 _r_json_str() {
   local s=$1
@@ -61,6 +61,12 @@ result_begin() {
   R_START_EPOCH=$(date +%s)
   R_START_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   trap '_result_exit' EXIT
+  local sig n
+  for sig in INT:130 TERM:143 HUP:129; do
+    n=${sig#*:}
+    # shellcheck disable=SC2064
+    trap "R_SIGNAL=${sig%:*}; exit $n" "${sig%:*}"
+  done
 }
 result_id() { R_ID=$(_r_slug "$1"); }
 result_fail() {
@@ -85,17 +91,19 @@ result_blocked_by() {
 }
 
 # Take cause, detail, files, next and log from the result file of a script this one ran (a failed check.sh, say).
-# Returns 1 when the file is missing or unreadable, so the caller can report its own cause.
+# Returns 1 when the file is missing, unreadable or older than this run (a leftover from an earlier run), so the caller
+# can report its own cause.
 result_adopt() {
   local f=$1 lines
   [[ -f "$f" ]] || return 1
   mapfile -t lines < <(node -e '
     const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))
+    if (typeof r.startedAt !== "string" || r.startedAt < process.argv[2]) process.exit(1)
     const one = (v) => String(v ?? "").replace(/\s+/g, " ")
     console.log(one(r.cause)); console.log(one(r.detail)); console.log(one(r.next)); console.log(one(r.log))
     for (const f of r.files ?? []) console.log(f)
     for (const f of r.retried ?? []) console.log("retried:" + f)
-  ' "$f" 2>/dev/null) || return 1
+  ' "$f" "$R_START_ISO" 2>/dev/null) || return 1
   [[ ${#lines[@]} -ge 4 ]] || return 1
   local cause=${lines[0]}; [[ "$cause" != none && -n "$cause" ]] || cause=other
   result_fail "$cause" "${lines[1]}" "${lines[2]}"
@@ -110,7 +118,9 @@ result_adopt() {
 result_json() {
   local rc=${1:-0} now status=$R_STATUS cause=$R_CAUSE detail=$R_DETAIL
   now=$(date +%s)
-  if [[ -z "$status" || ( "$status" == ok && "$rc" != 0 ) ]]; then
+  if [[ -n "$R_SIGNAL" ]]; then
+    status=error; cause=other; detail="killed by SIG$R_SIGNAL"
+  elif [[ -z "$status" || ( "$status" == ok && "$rc" != 0 ) ]]; then
     if [[ "$rc" == 0 ]]; then status=ok; cause=none
     else status=error; cause=other; detail="exited with code $rc before reporting a result"; fi
   fi

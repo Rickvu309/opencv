@@ -260,10 +260,10 @@ if (( merge_rc == 0 )); then
     fi
   fi
 elif (( merge_rc == 1 )); then
-  conflicts=$(tail -n +2 <<<"$merge_out" | tr '\n' ' ')
+  mapfile -t conflict_files < <(tail -n +2 <<<"$merge_out" | sed '/^$/d')
+  conflicts=${conflict_files[*]}
   bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve: ${conflicts:-see git merge origin/main}"
-  # shellcheck disable=SC2086
-  result_file $conflicts
+  result_file ${conflict_files[@]+"${conflict_files[@]}"}
   result_fail merge-conflict "does not merge cleanly with main: ${conflicts:-unknown files}" "git fetch origin && git rebase origin/main"
 else
   merge_err=$(git -C "$main_checkout" --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main "$head_ref" 2>&1 >/dev/null | head -3 | tr '\n' ' ' || true)
