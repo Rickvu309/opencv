@@ -18,13 +18,15 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
   - `<surface>-contract.ts` declares each surface's commands and most of its reads (`paper`, `job`, `inbox`, `account`, and `chat` for commands).
   - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads, `link.get` and `workspace.search` itself.
   - `chat-turn.ts` holds `ChatTurnEvent`, the Coach stream events.
+  - `job-posting.ts` holds the posting scan and its link guard (`openableApplyJobUrl`), `job-position.ts` the board order keys.
 - `apps/api/src/<module>/` is one product module: `account`, `chat`, `paper`, `job` and `inbox`. Other modules import it only through its `index.ts`.
   - `commands.ts` binds the module's contract commands with `bindCommands` and its reads with `tableQuery`. `account` binds its reads in `queries.ts`.
+  - `job` also holds the posting fetch (`fetch-posting.ts`, the guard against internal hosts) and the scan (`scan.ts`).
   - `http.ts` mounts its routes. `store.ts` holds most of its database writes. Only files under the module's own directory write its tables, plus `auth.ts` for the auth tables. `registry/ownership.test.ts` holds the owner list.
 - Other api folders:
   - `registry/` runs every command, writes the `activity`, `pending_actions` and idempotency rows, and builds the Coach's tools.
   - `coach/` runs a Coach turn and is the only importer of the AI SDK. It has no contract commands.
-  - `apply/` fetches job postings for `job`. `mail/` sends sign-in codes. `db/schema.ts` is the schema.
+  - `mail/` sends sign-in codes. `db/schema.ts` is the schema.
 - `apps/web/src` is the SPA. `routes/` holds pages and `features/<surface>/` holds each surface's components and state. `lib/` is the only place that calls the api.
   - `contract-client.ts` runs commands and owns read keys and refresh.
   - `api.ts` (`apiFetch`) and `requests.ts` (`endpoints`) fetch reads.
@@ -48,6 +50,7 @@ Tests that hold this shape, and what each one rejects:
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
 - `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when an old number now names a different decision.
 - `scripts/retired-words.test.mjs` rejects Thread or Opportunity in a source file or file name under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few named exceptions), and says Chat or Job instead. The old Apply stage ids are not guarded until #437 renames them.
+- `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that nothing outside its file imports, and says delete it or import it.
 
 ### Git
 
@@ -130,14 +133,7 @@ Full checklist: `docs/git-workflow/review-and-approval.md`.
 
 ### Production recovery
 
-Production sign-in recovery needs these checks; a local OTP or HTTP 200 is insufficient.
-
-| Rule                                                                                                                       | Enforced by                                                                                                                                                            |
-| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The API production build must pass before merge                                                                            | `scripts/review-pr.sh` runs `pnpm --filter api... run build`; `scripts/test-review-pr.sh` rejects a failed build; the review cache key includes both production builds |
-| A sign-in recovery receipt requires the expected deployed commit, configured mail, confirmed delivery and a usable session | `scripts/verify-auth-production.mjs`; its regression cases run in `pnpm test`                                                                                          |
-
-Run the production check from `docs/deploy.md` after an auth recovery deploy. It discovers Railway and Resend CLI access before sending a test code. Pending delivery fails the check and prints the email ID for a later check without resending.
+Production sign-in recovery needs checks beyond a local OTP or HTTP 200. See `docs/agents/production-recovery.md`.
 
 ### Design system
 
