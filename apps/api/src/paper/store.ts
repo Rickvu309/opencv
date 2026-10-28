@@ -7,6 +7,7 @@ import {
   decodePaperContent,
   emptyCvDocument,
   emptyLetterDocument,
+  isCvBlockDocument,
   parseFileId,
   parsePaperId,
   type PaperView,
@@ -145,6 +146,17 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
     canonicalJson(current.document) === canonicalJson(document)
   ) {
     return { ...view, previousDocument: view.document }
+  }
+  // A stored version 2 CV stays on blocks. A version 1 row may still adopt version 2.
+  if (
+    current.kind === "cv" &&
+    isCvBlockDocument(current.document) &&
+    !isCvBlockDocument(document)
+  ) {
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      "This CV uses blocks. Send a version 2 document."
+    )
   }
   const updatedAt = new Date()
   const contentVersion = current.contentVersion + 1

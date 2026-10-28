@@ -49,6 +49,24 @@ const v1Fixture = {
   skills: [{ label: "Product", items: ["Interviews", "PRDs"] }],
 }
 
+const v2Fixture: CvBlockDocument = {
+  version: 2,
+  header: {
+    name: "Lan Nguyen",
+    email: "lan@example.com",
+    phone: "",
+    city: "Hanoi",
+    linkedin: "",
+  },
+  sections: [
+    {
+      id: "sec-summary",
+      kind: "summary",
+      blocks: [{ id: "sum-1", type: "text", text: "Ships small experiments." }],
+    },
+  ],
+}
+
 describe("version 2 CV documents", () => {
   it("stores version 1 on create and still accepts a v1 replace", async () => {
     const { db, client } = await createMigratedTestDb()
@@ -215,6 +233,102 @@ describe("version 2 CV documents", () => {
           'Invalid option: expected one of "internship"|"product"|"service"|"academic"|"photo"',
       },
     })
+    await client.close()
+  })
+
+  it("refuses a version 1 body on a version 2 CV and keeps the stored document", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const { cookie } = await signUp(app, {
+      name: "Lan",
+      email: "lan-470-guard@example.com",
+    })
+    const headers = authHeaders(cookie)
+    const createdRes = await app.request("/api/commands/paper.create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: { kind: "cv", name: "Lan blocks" } }),
+    })
+    const created = await jsonOf(createdRes)
+    const docId = String(created.data?.id)
+    const adopted = await app.request("/api/commands/paper.replace", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        input: {
+          docId,
+          contentVersion: created.data?.contentVersion,
+          document: v2Fixture,
+        },
+      }),
+    })
+    expect(adopted.status).toBe(200)
+    const adoptedBody = await jsonOf(adopted)
+    const versionAfter = adoptedBody.data?.contentVersion
+
+    const downgrade = await app.request("/api/commands/paper.replace", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        input: {
+          docId,
+          contentVersion: versionAfter,
+          document: v1Fixture,
+        },
+      }),
+    })
+    expect(downgrade.status).toBe(400)
+    await expect(downgrade.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "This CV uses blocks. Send a version 2 document.",
+      },
+    })
+
+    const readRes = await app.request(`/api/paper/${docId}`, { headers })
+    expect(readRes.status).toBe(200)
+    const read = await jsonOf(readRes)
+    expect(read.data?.document).toEqual(v2Fixture)
+    expect(read.data?.contentVersion).toBe(versionAfter)
+    await client.close()
+  })
+
+  it("accepts a version 2 body on a version 1 CV", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const { cookie } = await signUp(app, {
+      name: "Lan",
+      email: "lan-470-adopt@example.com",
+    })
+    const headers = authHeaders(cookie)
+    const createdRes = await app.request("/api/commands/paper.create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: { kind: "cv", name: "Lan adopt" } }),
+    })
+    expect(createdRes.status).toBe(200)
+    const created = await jsonOf(createdRes)
+    expect(created.data?.document?.version).toBeUndefined()
+    const docId = String(created.data?.id)
+
+    const replaceRes = await app.request("/api/commands/paper.replace", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        input: {
+          docId,
+          contentVersion: created.data?.contentVersion,
+          document: v2Fixture,
+        },
+      }),
+    })
+    expect(replaceRes.status).toBe(200)
+    const replaced = await jsonOf(replaceRes)
+    expect(replaced.data?.document).toEqual(v2Fixture)
+    expect(replaced.data?.contentVersion).toBe(
+      (created.data?.contentVersion ?? 0) + 1
+    )
     await client.close()
   })
 })
