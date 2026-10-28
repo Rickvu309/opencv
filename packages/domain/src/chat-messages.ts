@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { applyStageSchema } from "./apply.js"
+import { applyStageSchema } from "./job-posting.js"
 import { CHAT_MESSAGE_MAX, coachSelectionSchema } from "./chat.js"
 export {
   COACH_SELECTION_TEXT_MAX,

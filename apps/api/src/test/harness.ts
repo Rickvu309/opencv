@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises"
 
 import type { CoachRuntime } from "@workspace/domain"
 
-import type { FetchJobPosting } from "../apply/fetch-posting.js"
+import type { FetchJobPosting } from "../job/index.js"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 

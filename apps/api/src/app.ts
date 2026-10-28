@@ -12,7 +12,6 @@ import {
   createUsageRoutes,
 } from "./account/index.js"
 import { bindAuth, createAuth, type AuthDatabase } from "./auth.js"
-import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createChatRoutes } from "./chat/index.js"
 import { createCoachRoutes, interpretPosting } from "./coach/index.js"
 import {
@@ -23,7 +22,7 @@ import {
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
 import { createInboxRoutes } from "./inbox/index.js"
-import { createJobRoutes } from "./job/index.js"
+import { createJobRoutes, type FetchJobPosting } from "./job/index.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,

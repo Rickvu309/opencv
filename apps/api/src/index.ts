@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 
 import { createApp } from "./app.js"
-import type { FetchJobPosting } from "./apply/fetch-posting.js"
+import type { FetchJobPosting } from "./job/index.js"
 import { createDemoCoachRuntime, withScanJobPosting } from "./coach/index.js"
 import {
   apiPortFromEnv,
