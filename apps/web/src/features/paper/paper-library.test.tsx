@@ -51,7 +51,7 @@ function renderLibrary(docs: PaperView[]) {
 }
 
 describe("Paper library", () => {
-  it("shows import progress and aborts a cancelled upload without opening a document", async () => {
+  it("shows import progress and cancels without opening a document", async () => {
     vi.mocked(importPaperFile).mockImplementation(
       () => new Promise(() => undefined)
     )
@@ -61,10 +61,9 @@ describe("Paper library", () => {
     if (!input) throw new Error("Missing import input")
     fireEvent.change(input, { target: { files: [file] } })
     expect(await screen.findByRole("status")).toHaveTextContent("Linh_CV.pdf")
-    const signal = vi.mocked(importPaperFile).mock.calls[0]?.[1]
-    expect(signal?.aborted).toBe(false)
+    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
-    expect(signal?.aborted).toBe(true)
+    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
@@ -158,10 +157,7 @@ describe("Paper library", () => {
     expect(
       screen.getByRole("heading", { name: "Importing…" })
     ).toBeInTheDocument()
-    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(
-      file,
-      expect.any(AbortSignal)
-    )
+    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(file)
   })
 
   it("posts a pasted link and shows the server sentence", async () => {

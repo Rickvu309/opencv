@@ -141,14 +141,12 @@ export function PaperLibrary({
   }
 
   async function discardImport(created: PaperView) {
-    try {
-      if (created.sourceFileId) {
-        await run("paper.deleteFile", { fileId: created.sourceFileId })
-      }
-      await run("paper.delete", { docId: created.id })
-    } catch {
-      // The server may already have dropped the row.
+    if (created.sourceFileId) {
+      await run("paper.deleteFile", { fileId: created.sourceFileId }).catch(
+        () => undefined
+      )
     }
+    await run("paper.delete", { docId: created.id }).catch(() => undefined)
   }
 
   async function onImport(file: File) {
@@ -158,7 +156,9 @@ export function PaperLibrary({
     setMode(null)
     setImportState({ type: "importing", name: file.name })
     try {
-      const created = await importPaperFile(file, request.signal)
+      // Do not pass this signal to the upload. A keep-alive cancel does not
+      // abort the server request, and aborting the fetch drops the id.
+      const created = await importPaperFile(file)
       if (request.signal.aborted) {
         await discardImport(created)
         return
