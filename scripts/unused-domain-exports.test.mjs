@@ -14,9 +14,11 @@ const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/
 // Exported with no outside importer on purpose. The contract types are read by
 // registry/contract.type-test.ts, the two schemas by paper-blocks.test.ts. The two
 // id types must stay exported or the declaration build cannot name `brand` (TS4023).
+// DiffHunk is named in the signatures of the exported paper-diff functions.
 const KEPT_ON_PURPOSE = new Set([
   "ActivityId",
   "PendingActionId",
+  "DiffHunk",
   "AccountContract",
   "ChatContract",
   "InboxContract",
