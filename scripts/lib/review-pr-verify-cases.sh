@@ -132,6 +132,22 @@ mark
 REVIEW_TEST_APP_UI_OUT=$new_fail REVIEW_TEST_APP_UI_OUT2=$known_fail run --no-install --no-cache
 expect "a flaky new FAIL (FAIL then PASS) passes with a note" 0 "rerunning once" "FLAKY 21 alerts-have-role: NEW FAIL in run 1 only" "verify-app-ui invariant tier: pass" "RESULT: OK"
 want_calls "flaky" 3
+# A run that needed its rerun is not cached, so the next review or merge-pr.sh sees the flake note again.
+fresh_pr; touch_web; pr_commit "a new tree for the flaky cache case"
+REVIEW_TEST_APP_UI_OUT=$new_fail REVIEW_TEST_APP_UI_OUT2=$known_fail run --no-install
+mark
+REVIEW_TEST_APP_UI_OUT=$new_fail REVIEW_TEST_APP_UI_OUT2=$known_fail run --no-install
+expect "a flaky run is not cached" 0 "FLAKY 21 alerts-have-role: NEW FAIL in run 1 only" "RESULT: OK"
+absent "flaky cache" "(cached;"
+want_calls "flaky not cached" 3
+
+# A timing check (first-render-budget) is advisory: printed with its measured text, never a failure, never rerun.
+printf 'PASS 01 [invariant] a: ok | rule: r\nFAIL 20 [invariant] text-contrast: known | rule: r\nFAIL 34 [invariant] first-render-budget: 4100 ms | rule: r\n' >"$tmp/budget.txt"
+mark
+REVIEW_TEST_APP_UI_OUT=$tmp/budget.txt run --no-install --no-cache
+expect "a failing first-render-budget does not gate the review" 0 "ADVISORY 34 first-render-budget: FAIL, not gating: 4100 ms" "verify-app-ui invariant tier: pass" "RESULT: OK"
+absent "advisory" "rerunning once"
+want_calls "advisory" 2
 
 mark
 REVIEW_TEST_APP_UI_OUT=$tmp/in-use.txt REVIEW_TEST_APP_UI_EXIT=2 REVIEW_TEST_APP_UI_OUT2=$known_fail REVIEW_TEST_APP_UI_EXIT2=1 run --no-install --no-cache
@@ -152,13 +168,22 @@ run --no-install --no-cache
 expect "a PR that removes its entry while the check still FAILs is a NEW FAIL" 1 "verify-app-ui invariant tier: NEW FAIL 20 text-contrast: 8 of 455 text nodes fail | run 1: 8 of 455" "RESULT: FAIL"
 want_calls "removes entry, check fails" 3
 
-# A list-only PR that adds an entry is OK and skips the tier. The same entry in a PR that changes anything else fails.
+# A list-only PR that adds an entry still runs the tier, with its whole list allowed: an entry whose check FAILs passes,
+# an entry whose check PASSes excuses nothing and fails.
+printf 'PASS 01 [invariant] a: ok | rule: r\nFAIL 20 [invariant] text-contrast: known | rule: r\nPASS 21 [invariant] alerts-have-role: ok | rule: r\n' >"$tmp/pass-21.txt"
 fresh_pr; app_list "[$entry20,$entry21]"
-pr_commit "list 21"
+pr_commit "list 21 while 21 passes"
 mark
-run --no-install
-expect "a list-only PR that adds an entry is OK and skips the tier" 0 "adds known finding(s) (verify-app-ui:21 ) and changes nothing else, so the verify tier is skipped" "RESULT: OK"
-want_calls "list only adds" 0
+REVIEW_TEST_APP_UI_OUT=$tmp/pass-21.txt run --no-install
+expect "a list-only PR that excuses a passing check fails" 1 "adds known finding(s) (verify-app-ui:21 ) and changes nothing else; the verify tier runs" "FIXED, still listed in known-findings.json 21 alerts-have-role" "RESULT: FAIL"
+want_calls "list only excuses a pass" 2
+fresh_pr; app_list "[$entry20,$entry21]"
+pr_commit "list 21 while 21 fails"
+mark
+REVIEW_TEST_APP_UI_OUT=$new_fail run --no-install
+expect "a list-only PR that excuses a failing check passes" 0 "verify-app-ui invariant tier: pass" "RESULT: OK"
+absent "list only excuses a fail" "NEW FAIL"
+want_calls "list only excuses a fail" 2
 fresh_pr; touch_web; app_list "[$entry20,$entry21]"
 pr_commit "list 21 and change the web app"
 mark
@@ -179,7 +204,7 @@ fresh_pr; touch_web
 printf '{\n  "scripts": {\n    "verify:app-ui": "echo FAIL"\n  }\n}\n' >"$work/apps/web/package.json"
 pr_commit "redefine verify:app-ui"
 GIT_CONFIG_PARAMETERS="'color.ui=always'" run --no-install
-expect "a verify:* script edit is noted" 0 "edits a verify:* script in apps/web/package.json, so the review must read that diff"
+expect "a verify:* script edit is noted" 0 "edits a verify:* or dev script in apps/web/package.json or apps/api/package.json"
 fresh_pr
 mkdir -p "$work/.claude/skills/verify-opencv/scripts" && echo ': launch' >"$work/.claude/skills/verify-opencv/scripts/launch.sh"
 pr_commit "edit the stack launcher"

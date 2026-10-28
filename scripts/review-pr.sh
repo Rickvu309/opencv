@@ -186,8 +186,8 @@ gate=$(grep -E '^(package\.json|scripts/|\.githooks/|\.github/)' <<<"$files" || 
 [[ -z "$gate" ]] || note "changes workflow/check files, review them closely: $(tr '\n' ' ' <<<"$gate")"
 verify_edits=$(grep -E "$VERIFY_EDIT_RE" <<<"$files" || true)
 [[ -z "$verify_edits" ]] || note "edits a verify known-findings.json or checker script, so the review must read that diff: $(tr '\n' ' ' <<<"$verify_edits")"
-verify_scripts=$(git -C "$main_checkout" diff --no-color --no-ext-diff -U0 "origin/main...$head_ref" -- apps/web/package.json | grep -E '^[+-].*"verify:' || true)
-[[ -z "$verify_scripts" ]] || note "edits a verify:* script in apps/web/package.json, so the review must read that diff"
+verify_scripts=$(git -C "$main_checkout" diff --no-color --no-ext-diff -U0 "origin/main...$head_ref" -- apps/web/package.json apps/api/package.json | grep -E '^[+-].*"(verify:[^"]*|dev)"' || true)
+[[ -z "$verify_scripts" ]] || note "edits a verify:* or dev script in apps/web/package.json or apps/api/package.json (the verify launcher runs them), so the review must read that diff"
 verify_needed=0
 if grep -qE "$VERIFY_RE" <<<"$files"; then verify_needed=1; else note "touches no apps/web, apps/api, packages/ui, packages/domain or verify skill file; the verify tier is skipped"; fi
 
@@ -235,8 +235,8 @@ if (( merge_rc == 0 )); then
     elif grep -qvE "$VERIFY_LIST_RE" <<<"$files"; then
       bad "adds known finding(s) ($(sed 's/ ADDED /:/' <<<"$list_adds" | tr '\n' ' ')) and changes other files; land the entry in its own PR, with its issue, that changes only known-findings.json"
     else
-      verify_needed=0
-      note "adds known finding(s) ($(sed 's/ ADDED /:/' <<<"$list_adds" | tr '\n' ' ')) and changes nothing else, so the verify tier is skipped; the review must read that diff and check each entry's issue is open"
+      verify_list_only=1
+      note "adds known finding(s) ($(sed 's/ ADDED /:/' <<<"$list_adds" | tr '\n' ' ')) and changes nothing else; the verify tier runs with the PR's whole list and fails an entry whose check passes. The review must read that diff and check each entry's issue is open"
     fi
   fi
   git -C "$main_checkout" worktree add --quiet --detach --no-checkout "$wt" origin/main
@@ -250,7 +250,7 @@ if (( merge_rc == 0 )); then
     checker_blob=$(git -C "$main_checkout" rev-parse --verify --quiet origin/main:scripts/check.sh || true)
     cache_dir="$wt_root/.review-pr-cache"
     # Older gates did not build both apps, so their cached results cannot skip these builds.
-    cache_hit="$cache_dir/$tree-$checker_blob-install$install-apibuild-webbuild-verify$verify_needed-$(verify_tier_key)"
+    cache_hit="$cache_dir/$tree-$checker_blob-install$install-apibuild-webbuild-verify$verify_needed-listonly$verify_list_only-$(verify_tier_key)"
     if (( use_cache )) && [[ -n "$checker_blob" && -f "$cache_hit" ]]; then
       ok "lint, typecheck, test passed for this exact tree on $(cat "$cache_hit") (cached; --no-cache reruns)"
       ok "api build passed for this exact tree (cached; --no-cache reruns)"
@@ -286,7 +286,7 @@ if (( merge_rc == 0 )); then
             bad "web build failed"; result_fail build "web build failed"
           fi
           if (( verify_needed && ${#fails[@]} == fails_before )); then run_verify_tier; fi
-          if (( ${#fails[@]} == fails_before )); then mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"; fi
+          if (( ${#fails[@]} == fails_before && ! verify_flaky )); then mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"; fi
         else
           bad "scripts/check.sh failed"
           result_adopt "$(result_path check)" || result_fail test "scripts/check.sh failed"

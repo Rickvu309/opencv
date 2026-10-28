@@ -3,6 +3,10 @@
 verify_lib=$(dirname "${BASH_SOURCE[0]}")
 verify_lock_dir=${VERIFY_LOCK_DIR:-${HOME:-.}/tmp/verify-ports}
 VERIFY_TIMEOUT=${VERIFY_TIMEOUT:-900}
+# review-pr.sh sets verify_list_only=1 for a PR that only adds known-findings.json entries; verify_flaky=1 here keeps a
+# run that needed its rerun out of the cache, so a later review or merge-pr.sh sees the flake note again.
+verify_list_only=0
+verify_flaky=0
 
 # verify_tier_key hashes what a cached result depends on besides the tested tree (which holds the PR's own lists and
 # checkers): main's copy of each skill's known-findings.json and scripts/ tree, and the classifier and this wiring.
@@ -85,7 +89,13 @@ verify_one() {
   known="$dir/review-pr-$pr-verify-$name.known.json"; expect="$dir/review-pr-$pr-verify-$name.expect.json"
   git -C "$main_checkout" show "origin/main:.claude/skills/$skill/known-findings.json" >"$main_known" 2>/dev/null || : >"$main_known"
   cp "$wt/.claude/skills/$skill/known-findings.json" "$pr_known" 2>/dev/null || : >"$pr_known"
-  node "$verify_lib/verify-gate.mjs" list "$main_known" "$pr_known" "$known" >/dev/null || echo '[]' >"$known"
+  if (( verify_list_only )); then
+    # A list-only PR changes no code, so every entry it adds must FAIL today: allow the PR's whole list and let the gate
+    # fail an entry whose check passes ("FIXED, still listed"), so a list cannot excuse a check that passes.
+    cp "$pr_known" "$known"
+  else
+    node "$verify_lib/verify-gate.mjs" list "$main_known" "$pr_known" "$known" >/dev/null || echo '[]' >"$known"
+  fi
   git -C "$main_checkout" show "origin/main:.claude/skills/$skill/scripts/lib/kinds.mjs" >"$dir/review-pr-$pr-verify-$name.main-kinds.mjs" 2>/dev/null || : >"$dir/review-pr-$pr-verify-$name.main-kinds.mjs"
   node "$verify_lib/verify-gate.mjs" expect "$dir/review-pr-$pr-verify-$name.main-kinds.mjs" "$wt/.claude/skills/$skill/scripts/lib/kinds.mjs" "$expect"
   if ! verify_attempt "$name" "$log"; then
@@ -94,7 +104,8 @@ verify_one() {
   rc1=$vrc; logs=$log
   out=$(node "$verify_lib/verify-gate.mjs" check --log "$log" --exit "$rc1" --known "$known" --expect "$expect" 2>&1) || true
   if grep -q '^NEW FAIL ' <<<"$out" && ! grep -qE '^(STALE|ERROR) ' <<<"$out"; then
-    note "$skill: NEW FAIL in the first run, rerunning once; it counts only when it fails in both runs"
+    note "$skill: NEW FAIL in the first run, rerunning once, cold like the first run; it counts only when it fails in both runs"
+    rm -rf "$wt/apps/web/node_modules/.vite"
     if ! verify_attempt "$name" "$log2"; then
       bad "$skill: no free port pair in 4450 to 4458 for the rerun (log: $log)"; result_fail env "$skill: no free port" "read $log"; return
     fi
@@ -103,7 +114,8 @@ verify_one() {
   fi
   while IFS= read -r line; do
     [[ -n "$line" && "$line" != gate:* ]] || continue
-    if [[ "$line" == FLAKY\ * ]]; then note "$skill invariant tier: $line (logs: $logs)"; continue; fi
+    if [[ "$line" == FLAKY\ * ]]; then verify_flaky=1; note "$skill invariant tier: $line (logs: $logs)"; continue; fi
+    if [[ "$line" == ADVISORY\ * ]]; then note "$skill invariant tier: $line (log: $logs)"; continue; fi
     problems=$((problems + 1))
     bad "$skill invariant tier: $line (log: $logs)"
     result_fail test "$skill invariant tier: $line" "read $log"

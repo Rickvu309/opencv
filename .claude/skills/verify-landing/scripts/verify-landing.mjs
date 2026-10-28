@@ -8,7 +8,7 @@
 // Chromium over the DevTools protocol, prints one PASS, FAIL or STALE line per property, and exits 3
 // when any check is STALE (its locator matched nothing), else 1 when any property fails. It never edits the app.
 // Exit 2 means the page did not render.
-import { spawn } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -31,6 +31,7 @@ import { summarize } from "./lib/verdict.mjs"
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const port = process.env.PORT ?? "4399"
 const url = `http://127.0.0.1:${port}/`
+const portOwner = resolve(repo, ".claude/skills/verify-opencv/scripts/port-owner.sh")
 const tier = tierFromEnv()
 const want = gate(KINDS, tier)
 let spec = null
@@ -63,7 +64,12 @@ async function startServer() {
     { cwd: repo, stdio: "ignore", detached: true }
   )
   for (let i = 0; i < 120; i++) {
-    if (await answers()) return child
+    if (await answers()) {
+      const owner = spawnSync("bash", [portOwner, port, String(child.pid)], { encoding: "utf8" })
+      if (owner.status === 0) return child
+      process.kill(-child.pid, "SIGKILL")
+      throw new Error(owner.stderr.trim() || `port ${port} is in use by a server this run did not start`)
+    }
     await sleep(1000)
   }
   process.kill(-child.pid, "SIGKILL")
@@ -135,6 +141,15 @@ async function visit(
 let server = null
 let browser = null
 let exit = 0
+const bail = (code) => async () => {
+  try {
+    if (browser) await browser.quit()
+  } catch {}
+  if (server) process.kill(-server.pid, "SIGTERM")
+  process.exit(code)
+}
+process.on("SIGINT", bail(130))
+process.on("SIGTERM", bail(143))
 try {
   if (tier !== "invariant") {
     spec = loadSpecOrError()

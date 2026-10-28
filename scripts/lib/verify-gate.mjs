@@ -7,6 +7,7 @@
 //   PASS, listed          fixed: fails the review until the entry is removed, so the list cannot rot
 //   STALE                 fails the review
 //   listed, not reported  gone: the check was removed or renamed; fails until the entry is removed
+//   advisory               a check named in ADVISORY: run and printed as an `ADVISORY` line, never gates, whatever its status
 //   expected, not reported an invariant id in main's kinds.mjs (and still in the PR's) that the run did not report: MISSING
 // A checker exit other than 0, 1 or 3 (a timeout is 124), or a run with no check lines, is an error and fails the review.
 // A NEW FAIL is retried by the caller: given a second run, it counts only when it is a NEW FAIL in both runs. Any other
@@ -22,6 +23,9 @@ import { pathToFileURL } from "node:url"
 
 const LINE = /^(PASS|FAIL|STALE) (\S+) (?:\[\w+\] )?(.*)$/
 const SNIPPET = 160
+// Checks that print but never gate the review: their value depends on timing on a shared dev server (cold Vite compile,
+// load from other reviews), which is not a reliable gate. Keyed by check name; renaming one makes it gate again.
+export const ADVISORY = new Set(["first-render-budget"])
 
 export function parseKnown(text) {
   const list = text.trim() === "" ? [] : JSON.parse(text)
@@ -63,12 +67,19 @@ export function classify({ output, exit, known, expected = [] }) {
     return { problems, counts: {} }
   }
   const listed = new Set(known.map((e) => e.id))
-  const counts = { pass: 0, known: 0, new: 0, fixed: 0, stale: 0, gone: 0, missing: 0 }
+  const counts = { pass: 0, known: 0, new: 0, fixed: 0, stale: 0, gone: 0, missing: 0, advisory: 0 }
   const seen = new Set()
+  const advisory = []
   for (const c of checks) {
     seen.add(c.id)
     const text = c.measured.slice(0, SNIPPET)
-    if (c.status === "STALE") {
+    if (ADVISORY.has(c.name)) {
+      if (c.status === "PASS") counts.pass++
+      else {
+        counts.advisory++
+        advisory.push({ state: "ADVISORY", id: c.id, name: c.name, text: `${c.status}, not gating: ${text}` })
+      }
+    } else if (c.status === "STALE") {
       counts.stale++
       problems.push({ state: "STALE", id: c.id, name: c.name, text })
     } else if (c.status === "FAIL") {
@@ -92,7 +103,7 @@ export function classify({ output, exit, known, expected = [] }) {
     counts.missing++
     problems.push({ state: "MISSING", id, text: "the checker did not report this invariant check" })
   }
-  return { problems, counts }
+  return { problems, advisory, counts }
 }
 
 const isNew = (p) => p.state === "NEW FAIL"
@@ -116,7 +127,7 @@ export function combineRuns(first, second) {
   for (const q of again.values())
     if (!before.has(q.id)) flaky.push({ state: "FLAKY", id: q.id, name: q.name, text: `NEW FAIL in run 2 only, so not counted: ${q.text}` })
   const counts = Object.keys(second.counts).length ? second.counts : first.counts
-  return { problems, flaky, counts }
+  return { problems, flaky, advisory: [...(first.advisory ?? []), ...(second.advisory ?? [])], counts }
 }
 
 export function allowedList(main, pr) {
@@ -157,9 +168,9 @@ function checkCommand(argv) {
   }
   let result = classify({ output, exit, known, expected })
   let flaky = []
-  if (output2 !== undefined) ({ problems: result.problems, flaky, counts: result.counts } = combineRuns(result, classify({ output: output2, exit: exit2, known, expected })))
+  if (output2 !== undefined) ({ problems: result.problems, flaky, advisory: result.advisory, counts: result.counts } = combineRuns(result, classify({ output: output2, exit: exit2, known, expected })))
   const { problems, counts } = result
-  for (const p of [...problems, ...flaky]) console.log(`${p.state} ${p.id}${p.name ? ` ${p.name}` : ""}: ${p.text}`)
+  for (const p of [...problems, ...flaky, ...(result.advisory ?? [])]) console.log(`${p.state} ${p.id}${p.name ? ` ${p.name}` : ""}: ${p.text}`)
   if (flaky.length) counts.flaky = flaky.length
   const summary = Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(", ")
   console.log(`gate: ${problems.length === 0 ? "pass" : `${problems.length} problem(s)`}${summary ? ` (${summary})` : ""}`)

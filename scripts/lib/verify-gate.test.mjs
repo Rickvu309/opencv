@@ -1,9 +1,12 @@
 // The PR review's classification of a verify checker run. Run: node --test scripts/lib/verify-gate.test.mjs
 import assert from "node:assert/strict"
+import { spawn, spawnSync } from "node:child_process"
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { createServer } from "node:net"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import test from "node:test"
+import { fileURLToPath } from "node:url"
 
 import { allowedList, classify, combineRuns, invariantIds, main, parseChecks, parseKnown } from "./verify-gate.mjs"
 
@@ -185,4 +188,67 @@ test("list writes the allowed entries and prints the added ids; expect writes th
   })
   assert.deepEqual(out.filter((l) => l.startsWith("ADDED")), ["ADDED 41"])
   assert.ok(out.some((l) => l.startsWith("ERROR -:")))
+})
+
+test("a failing, stale or listed timing check is advisory: printed, counted, never a problem", () => {
+  const budget = (status) => `${status} 34 [invariant] first-render-budget: 4100 ms | rule: r`
+  for (const [status, exit] of [["FAIL", 1], ["STALE", 3]]) {
+    const { problems, advisory, counts } = classify({ output: `${budget(status)}\nPASS 01 [invariant] a: ok | rule: r`, exit, known: [] })
+    assert.deepEqual(problems, [], status)
+    assert.equal(advisory.length, 1)
+    assert.equal(advisory[0].state, "ADVISORY")
+    assert.equal(advisory[0].text, `${status}, not gating: 4100 ms`)
+    assert.equal(counts.advisory, 1)
+  }
+  assert.deepEqual(run([`PASS 34 [invariant] first-render-budget: 90 ms | rule: r`], known("34")).problems, [])
+  assert.equal(run([line("FAIL", "34", "4100 ms")]).problems.length, 1, "only the named check is advisory")
+})
+
+test("check prints the advisory line and still passes", () => {
+  const out = withFiles((put) => {
+    const log = put("run.log", "FAIL 34 [invariant] first-render-budget: 4100 ms | rule: r\nPASS 01 [invariant] a: ok | rule: r\n")
+    assert.equal(main(["check", "--log", log, "--exit", "1", "--known", put("k.json", "[]")]), 0)
+    assert.equal(main(["check", "--log", log, "--exit", "1", "--known", put("k.json", "[]"), "--log2", log, "--exit2", "1"]), 0)
+  })
+  assert.ok(out.some((l) => l === "ADVISORY 34 first-render-budget: FAIL, not gating: 4100 ms"))
+  assert.ok(out.some((l) => l.startsWith("gate: pass") && l.includes("1 advisory")))
+})
+
+const portOwner = join(dirname(fileURLToPath(import.meta.url)), "../../.claude/skills/verify-opencv/scripts/port-owner.sh")
+const owner = (port, pgid) => spawnSync("bash", [portOwner, String(port), String(pgid)], { encoding: "utf8" })
+const pgidOf = (pid) => Number(spawnSync("ps", ["-o", "pgid=", "-p", String(pid)], { encoding: "utf8" }).stdout.trim())
+
+const BOGUS_GROUP = 2147483000
+
+test("the ownership check rejects a port held by a foreign listener and no port at all", async () => {
+  const server = createServer()
+  await new Promise((done) => server.listen(0, "127.0.0.1", done))
+  const { port } = server.address()
+  try {
+    const foreign = owner(port, BOGUS_GROUP)
+    assert.equal(foreign.status, 1)
+    assert.match(foreign.stderr, new RegExp(`port ${port} is in use by pid ${process.pid}, which does not descend`))
+    assert.equal(owner(port, pgidOf(process.pid)).status, 0, "the listener is in the group it is checked against")
+  } finally {
+    await new Promise((done) => server.close(done))
+  }
+  const none = owner(port, pgidOf(process.pid))
+  assert.equal(none.status, 1, "nothing listens: not ours")
+  assert.match(none.stderr, /is in use by a process this launch did not start/)
+  assert.equal(owner("x", "y").status, 2)
+})
+
+test("the ownership check accepts a listener that started its own group below the launched one", async () => {
+  const listener = `const s = require("net").createServer(); s.listen(0, "127.0.0.1", () => console.log(process.pid + " " + s.address().port))`
+  let listenerPid = 0
+  let port = 0
+  const child = spawn("sh", ["-c", `setsid node -e '${listener}'; true`], { detached: true, stdio: ["ignore", "pipe", "ignore"] })
+  try {
+    ;[listenerPid, port] = await new Promise((done) => child.stdout.once("data", (d) => done(String(d).trim().split(" ").map(Number))))
+    assert.equal(owner(port, child.pid).status, 0, "descends from the launched group through its own group")
+    assert.equal(owner(port, BOGUS_GROUP).status, 1)
+  } finally {
+    process.kill(-child.pid, "SIGKILL")
+    if (listenerPid) process.kill(listenerPid, "SIGKILL")
+  }
 })
