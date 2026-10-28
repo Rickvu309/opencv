@@ -1,3 +1,5 @@
+import type { BlogCoverKey } from "./blog-cover-stories.ts"
+
 import { post as applyingIsB2bSales } from "./posts/applying-is-b2b-sales.ts"
 import { post as showYourWork } from "./posts/show-your-work-not-your-duties.ts"
 import { post as stopMassApplying } from "./posts/stop-mass-applying.ts"
@@ -10,8 +12,6 @@ export type BlogBlock =
   | { kind: "p"; text: string }
   | { kind: "h2"; text: string }
   | { kind: "quote"; text: string }
-
-import type { BlogCoverKey } from "./blog-cover-stories.ts"
 
 export type { BlogCoverKey } from "./blog-cover-stories.ts"
 
