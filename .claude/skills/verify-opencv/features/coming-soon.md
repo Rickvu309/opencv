@@ -35,6 +35,6 @@ Preconditions: signed in on a new account (see `auth.md`). `run.env` loaded. Ses
 ## Gotchas
 
 - The preview is a picture. Download CV and Email are not controls.
-- The page name is a paragraph. The promise is the only h1.
+- The page name is the h1 in the 52px header. The promise is an h2.
 - Empty palette search does not call `/api/search`.
 - A chat row opens the shell panel. A job row goes to Apply, not to a job id.
