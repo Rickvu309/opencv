@@ -1,12 +1,11 @@
 export const AUTH_COPY = {
   logIn: "Log in to opencv",
-  noPassword: "No password needed.",
   google: "Continue with Google",
   or: "or",
   email: "Email",
   emailPlaceholder: "Enter your email address",
   continue: "Continue",
-  codePromise: "We'll email you a 6-digit code.",
+  terms: "By continuing, you agree to the Terms of Service and Privacy Policy.",
   hero1: "Write your CV with a coach.",
   hero2: "Track every application.",
   language: "Language",
