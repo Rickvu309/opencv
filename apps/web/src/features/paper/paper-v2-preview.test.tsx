@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, screen } from "@testing-library/react"
-import type { ReactElement } from "react"
+import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { useState, type ReactElement } from "react"
 import {
   cvCodecToBlocks,
   emptyCvDocument,
@@ -13,6 +13,7 @@ import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
+import { PaperBlockEditor } from "./paper-block-editor.tsx"
 import { PaperSharePage } from "./paper-share-page.tsx"
 
 function render(ui: ReactElement) {
@@ -87,7 +88,13 @@ function view(document: PaperView["document"]): PaperView {
 
 function visibleText(surface: "editor" | "share") {
   const read = (name: string) =>
-    screen.getAllByRole("textbox", { name }).map((node) => node.textContent)
+    screen
+      .getAllByRole("textbox", { name })
+      .map((node) =>
+        node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement
+          ? node.value
+          : (node.textContent ?? "")
+      )
   return {
     name: read("Name"),
     headline: read("Headline"),
@@ -119,33 +126,91 @@ afterEach(() => {
 })
 
 describe("version 2 preview", () => {
-  it("renders a version 2 CV and a v1 CV with the same editor text", () => {
+  it("preserves readable v2 content in editable fields", () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(Response.json({ ok: true, data: {} }))
     )
-    const v1 = render(
-      <PaperCvEditor
-        initial={view(fixture)}
-        pages={pages}
-        onBack={() => undefined}
-      />
-    )
-    const fromV1 = visibleText("editor")
-    v1.unmount()
-
+    const blocks = cvCodecToBlocks(fixture)
     render(
       <PaperCvEditor
-        initial={view(cvCodecToBlocks(fixture))}
+        initial={view(blocks)}
         pages={pages}
         onBack={() => undefined}
       />
     )
-    expect(visibleText("editor")).toEqual(fromV1)
-    expect(fromV1.role).toEqual(["Discovery lead"])
-    expect(fromV1.period).toContain("2024 – Present")
-    expect(fromV1.bullet).toEqual(["Ran interviews"])
-    expect(fromV1.school).toEqual(["UIT"])
-    expect(fromV1.skill).toEqual(["Interviews", "PRDs"])
+    expect(
+      screen
+        .getAllByRole("textbox", { name: "Name" })
+        .find(
+          (node) =>
+            node.getAttribute("aria-label") === "Name" &&
+            (node as HTMLInputElement).value === "Lan Nguyen"
+        )
+    ).toHaveValue("Lan Nguyen")
+    expect(screen.getByRole("textbox", { name: "Role" })).toHaveValue(
+      "Discovery lead"
+    )
+    expect(screen.getByRole("textbox", { name: "School" })).toHaveValue("UIT")
+    expect(
+      screen.getByRole("textbox", { name: "Skills, comma separated" })
+    ).toHaveValue("Interviews,PRDs")
+  })
+
+  it("keeps comma and multiword skill typing intact", () => {
+    const Harness = () => {
+      const [document, setDocument] = useState(cvCodecToBlocks(fixture))
+      return (
+        <PaperBlockEditor
+          document={document}
+          checks={[]}
+          sourceFileName={null}
+          templateId="simple"
+          onChange={setDocument}
+          onAskCoach={() => undefined}
+          onDismissCheck={() => undefined}
+        />
+      )
+    }
+    render(<Harness />)
+    const field = screen.getByRole("textbox", {
+      name: "Skills, comma separated",
+    })
+    fireEvent.change(field, { target: { value: "User research, Product" } })
+    expect(field).toHaveValue("User research, Product")
+    fireEvent.change(field, {
+      target: { value: "User research, Product strategy,SQL" },
+    })
+    expect(field).toHaveValue("User research, Product strategy,SQL")
+    expect(field).toHaveValue("User research, Product strategy,SQL")
+  })
+
+  it("uses the selected print layout while retaining editable block content", () => {
+    const layouts = [
+      ["simple", "cv-template-internship"],
+      ["modern", "cv-template-product"],
+      ["compact", "cv-template-service"],
+      ["academic", "cv-template-academic"],
+      ["with-photo", "cv-template-photo"],
+    ] as const
+    for (const [templateId, className] of layouts) {
+      cleanup()
+      vi.stubGlobal("fetch", () =>
+        Promise.resolve(Response.json({ ok: true, data: {} }))
+      )
+      render(
+        <PaperCvEditor
+          initial={{ ...view(cvCodecToBlocks(fixture)), templateId }}
+          pages={pages}
+          onBack={() => undefined}
+        />
+      )
+      expect(
+        screen.getByRole("region", { name: "CV block canvas" })
+      ).toHaveClass(className)
+      expect(screen.getByRole("textbox", { name: "Role" })).toHaveValue(
+        "Discovery lead"
+      )
+    }
   })
 
   it("renders a version 2 CV and a v1 CV with the same share text", async () => {

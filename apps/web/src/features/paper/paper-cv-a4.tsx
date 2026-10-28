@@ -40,9 +40,10 @@ export function readA4HeightPx(target?: Element | null): number {
 type Props = {
   children: ReactNode
   className?: string
+  preview?: boolean
 }
 
-export function CvA4Canvas({ children, className }: Props) {
+export function CvA4Canvas({ children, className, preview = false }: Props) {
   const contentRef = useRef<HTMLDivElement>(null)
   const [pageCount, setPageCount] = useState(1)
   const [pageHeight, setPageHeight] = useState(A4_HEIGHT_FALLBACK_PX)
@@ -72,13 +73,14 @@ export function CvA4Canvas({ children, className }: Props) {
       data-paper-a4-fit="width"
       className={cn(
         "cv-a4-fit flex w-full justify-center bg-muted/30 px-2 py-8 sm:px-4",
+        preview && "cv-a4-preview",
         className
       )}
     >
       <div
         className="cv-a4-page relative border border-border bg-card shadow-sm"
         style={{
-          width: `${A4_WIDTH_MM}mm`,
+          width: preview ? undefined : `${A4_WIDTH_MM}mm`,
           maxWidth: "100%",
           minHeight: pageHeight,
           height: totalHeight,

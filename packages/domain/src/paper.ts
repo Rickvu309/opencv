@@ -96,6 +96,7 @@ export type PaperStoredKind = z.infer<typeof paperStoredKindSchema>
 export const paperCreateInputSchema = z
   .object({
     kind: paperStoredKindSchema,
+    document: z.unknown().optional(),
     templateId: paperTemplateIdSchema.optional(),
     name: paperDocNameSchema.optional(),
     jobId: jobIdSchema.optional(),

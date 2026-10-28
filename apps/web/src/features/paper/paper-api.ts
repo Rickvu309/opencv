@@ -96,13 +96,17 @@ export async function uploadPaperPhoto(file: File): Promise<FileId> {
   return unwrapData(payload).id
 }
 
-export async function importPaperFile(file: File): Promise<PaperView> {
+export async function importPaperFile(
+  file: File,
+  signal?: AbortSignal
+): Promise<PaperView> {
   const body = new FormData()
   body.set("file", file)
   const res = await fetchBinary(endpoints.paperImport, {
     method: "POST",
     credentials: "include",
     body,
+    signal,
   })
   if (!res.ok) {
     const payload = (await res.json().catch(() => null)) as {

@@ -38,6 +38,14 @@ const STARTERS = [
   "Find gaps between my CV and a job",
 ]
 
+const MORE_STARTERS = [
+  "Follow up on an application",
+  "Compare two offers",
+  "Improve my LinkedIn",
+  "Companies hiring now",
+  "Set a weekly goal",
+]
+
 type Attachment = CoachContextItem & { label: string }
 type Picker = "paper" | "job" | "link" | null
 
@@ -136,6 +144,24 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
     chat.title.toLowerCase().includes(search.toLowerCase())
   )
   const groups = ["Today", "Yesterday", "Last 7 days", "Earlier"]
+  const showHome = messages.length === 0 && !active
+  const coachDock = (
+    <CoachDock
+      draft={draft}
+      setDraft={setDraft}
+      onSend={() => send()}
+      onStop={store.stop}
+      turnActive={active}
+      disabled={capped || !enabled}
+      placeholder={
+        capped ? `Coach is back at ${resetTime}` : "Ask Coach anything"
+      }
+      menuPlacement={showHome ? "below" : "above"}
+      onAttachFromPaper={() => setPicker("paper")}
+      onAttachJob={() => setPicker("job")}
+      onAttachLink={() => setPicker("link")}
+    />
+  )
 
   return (
     <div data-slot="coach-panel-body" className="flex h-full min-h-0 flex-col">
@@ -155,37 +181,36 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
-        {messages.length === 0 && !active ? (
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">How can I help?</h2>
-              <p className="text-sm text-muted-foreground">
-                Bring a CV or a saved job. We can work on your next step
-                together.
-              </p>
+        {showHome ? (
+          <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col items-center px-4 pt-60 pb-8 sm:px-6">
+            <div className="flex w-full flex-col gap-3">
+              <div className="pb-2 text-center">
+                <h2 className="text-xl font-semibold">How can I help?</h2>
+              </div>
+              {coachDock}
+              <Button
+                variant="ghost"
+                className="mx-auto h-10 rounded-full px-4"
+                onClick={() => setMoreIdeas((value) => !value)}
+              >
+                More ideas
+              </Button>
+              <div className="flex flex-wrap justify-center gap-2">
+                {(moreIdeas ? MORE_STARTERS : STARTERS.slice(0, 6)).map(
+                  (starter) => (
+                    <Button
+                      key={starter}
+                      variant="outline"
+                      className="h-10 rounded-full px-4 text-left whitespace-normal"
+                      disabled={!enabled || capped}
+                      onClick={() => setDraft(starter)}
+                    >
+                      {starter}
+                    </Button>
+                  )
+                )}
+              </div>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {STARTERS.slice(0, moreIdeas ? STARTERS.length : 6).map(
-                (starter) => (
-                  <Button
-                    key={starter}
-                    variant="outline"
-                    className="h-auto justify-start px-4 py-3 text-left whitespace-normal"
-                    disabled={!enabled || capped}
-                    onClick={() => setDraft(starter)}
-                  >
-                    {starter}
-                  </Button>
-                )
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              className="self-start"
-              onClick={() => setMoreIdeas((value) => !value)}
-            >
-              More ideas
-            </Button>
           </div>
         ) : (
           <ChatView
@@ -198,7 +223,7 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
           />
         )}
       </div>
-      <div className="mx-auto w-full max-w-3xl shrink-0 space-y-2 px-3 pt-2 pb-3">
+      <div className="mx-auto w-full max-w-2xl shrink-0 space-y-2 px-3 pt-2 pb-3">
         {active && step ? (
           <p role="status" className="text-xs text-muted-foreground">
             {step.split("\n").map((label) => (
@@ -261,21 +286,7 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
             </Button>
           </p>
         ) : null}
-        <CoachDock
-          draft={draft}
-          setDraft={setDraft}
-          onSend={() => send()}
-          onStop={store.stop}
-          turnActive={active}
-          disabled={capped || !enabled}
-          placeholder={
-            capped ? `Coach is back at ${resetTime}` : "Message Coach"
-          }
-          menuPlacement="above"
-          onAttachFromPaper={() => setPicker("paper")}
-          onAttachJob={() => setPicker("job")}
-          onAttachLink={() => setPicker("link")}
-        />
+        {!showHome ? coachDock : null}
       </div>
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent>

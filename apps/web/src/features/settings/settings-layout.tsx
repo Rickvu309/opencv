@@ -251,7 +251,7 @@ export function SettingsRow({
           variant="ghost"
           disabled={disabled}
           onClick={onClick}
-          className="h-auto w-full flex-wrap justify-between gap-3 rounded-none px-4 py-3.5 text-left font-normal hover:bg-muted"
+          className="h-auto w-full flex-wrap justify-between gap-3 rounded-none px-4 py-3.5 text-left font-normal whitespace-normal hover:bg-muted"
         >
           {body}
         </Button>
@@ -271,7 +271,7 @@ export function SettingsRow({
 
 export function StateWord({ on }: { on: boolean }) {
   return (
-    <span className="text-sm text-muted-foreground">
+    <span className="shrink-0 text-sm text-muted-foreground">
       {on ? "Enabled" : "Disabled"}
     </span>
   )

@@ -15,9 +15,13 @@ export const PAPER_GALLERY_DIALOG_CLASS =
 export function PaperTemplateGallery({
   onUse,
   onImport,
+  onBlank,
+  pending = false,
 }: {
   onUse: (templateId: PaperTemplateId) => void
   onImport?: () => void
+  onBlank?: () => void
+  pending?: boolean
 }) {
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState<PaperTemplateId>("simple")
@@ -77,12 +81,27 @@ export function PaperTemplateGallery({
         </div>
       </div>
       <div className="flex flex-wrap justify-end gap-2">
+        {onBlank ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBlank}
+            disabled={pending}
+          >
+            Start blank
+          </Button>
+        ) : null}
         {onImport ? (
           <Button type="button" variant="ghost" onClick={onImport}>
             Import a file
           </Button>
         ) : null}
-        <Button type="button" variant="glow" onClick={() => onUse(current.id)}>
+        <Button
+          type="button"
+          variant="glow"
+          onClick={() => onUse(current.id)}
+          disabled={pending}
+        >
           Use template
         </Button>
       </div>

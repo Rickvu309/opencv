@@ -9,6 +9,7 @@ applyLocalApiUrl("test")
 // These files assert first-load module state, so each needs a fresh module graph.
 const ISOLATED_FILES = [
   "src/router-lazy.test.tsx",
+  "src/features/paper/paper-library.test.tsx",
   "src/routes/app-shell.test.tsx",
 ]
 

@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 import {
   Avatar,
@@ -34,7 +35,8 @@ export function NavProfile({ onNavigate }: Props) {
         onClick={onNavigate}
         className={`${FOCUS_RING} inline-flex h-7 items-center rounded-md px-2 text-sm text-foreground hover:bg-muted`}
       >
-        {shellCopy.settings}
+        <Settings className="size-4" aria-hidden="true" />
+        <span className="sr-only">{shellCopy.settings}</span>
       </Link>
     </div>
   )

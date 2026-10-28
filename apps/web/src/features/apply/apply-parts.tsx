@@ -9,7 +9,7 @@ import type { JobPriority, JobView } from "@workspace/domain"
 import type { ActivityFeedRow } from "@workspace/domain"
 
 import type { ChecklistItem } from "./apply-api.ts"
-import { companyInitials, priorityLabel } from "./apply-stages.ts"
+import { companyInitials, monthDay, priorityLabel } from "./apply-stages.ts"
 
 export function PriorityBars({ level }: { level: JobPriority }) {
   const filled = level === "low" ? 1 : level === "high" ? 3 : 2
@@ -50,7 +50,7 @@ export function CompanyTile({ company }: { company: string }) {
   )
 }
 
-export function JobCard({ job, phrase }: { job: JobView; phrase?: string }) {
+export function JobCard({ job }: { job: JobView }) {
   return (
     <div data-slot="job-card" className="flex flex-col gap-2 text-left">
       <span className="flex items-start gap-2.5">
@@ -70,11 +70,12 @@ export function JobCard({ job, phrase }: { job: JobView; phrase?: string }) {
             {job.location}
           </span>
         ) : null}
-        {phrase ? (
-          <span className="ml-auto text-xs text-muted-foreground">
-            {phrase}
-          </span>
-        ) : null}
+        <time
+          dateTime={job.createdAt}
+          className="ml-auto text-xs text-muted-foreground"
+        >
+          {monthDay(new Date(job.createdAt))}
+        </time>
       </span>
     </div>
   )
@@ -109,6 +110,12 @@ export function JobRow({
       <span className="max-w-24 min-w-0 shrink truncate text-xs text-muted-foreground sm:max-w-none sm:shrink-0">
         {phrase}
       </span>
+      <time
+        dateTime={job.createdAt}
+        className="hidden w-12 shrink-0 text-right text-xs text-muted-foreground md:block"
+      >
+        {monthDay(new Date(job.createdAt))}
+      </time>
     </Button>
   )
 }

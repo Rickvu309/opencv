@@ -48,13 +48,24 @@ describe("Coach workspace", () => {
         )
       ).not.toBeInTheDocument()
     )
-    fireEvent.click(screen.getByRole("button", { name: "More ideas" }))
+    const composer = screen.getByPlaceholderText("Ask Coach anything")
+    const moreIdeas = screen.getByRole("button", { name: "More ideas" })
+    const starter = screen.getByRole("button", { name: "Review my CV" })
     expect(
-      screen.getByRole("button", { name: "Help me reply to a recruiter" })
+      composer.compareDocumentPosition(moreIdeas) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(
+      moreIdeas.compareDocumentPosition(starter) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    fireEvent.click(moreIdeas)
+    expect(
+      screen.getByRole("button", { name: "Follow up on an application" })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Review my CV" })
-    ).toBeInTheDocument()
+    ).not.toBeInTheDocument()
   })
 
   it("disables sending and shows the reset and Upgrade when capped", async () => {

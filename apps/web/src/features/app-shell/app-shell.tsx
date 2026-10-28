@@ -6,7 +6,17 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
-import { Menu, Search, SquarePen } from "lucide-react"
+import {
+  BriefcaseBusiness,
+  Columns3,
+  FileText,
+  Inbox,
+  Link2,
+  Menu,
+  MessageCircle,
+  Search,
+  SquarePen,
+} from "lucide-react"
 
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
@@ -70,6 +80,15 @@ function linkClass(active: boolean) {
   )
 }
 
+const navigationIcons = {
+  inbox: Inbox,
+  coach: MessageCircle,
+  jobs: BriefcaseBusiness,
+  paper: FileText,
+  apply: Columns3,
+  pitch: Link2,
+}
+
 function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
   const inbox = useInboxUnread()
   const favorites = useShellFavorites()
@@ -79,69 +98,83 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
 
   return (
     <div className="flex h-full min-h-0 w-[244px] flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-12 shrink-0 items-center px-3">
+      <div className="flex h-12 shrink-0 items-center justify-between px-3">
         <Brand size={16} />
-      </div>
-      <div className="flex shrink-0 gap-1 px-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={shellCopy.search}
-          aria-keyshortcuts="Control+K Meta+K"
-          onClick={onSearch}
-        >
-          <Search />
-          <Kbd className="sr-only">{searchShortcutLabel()}</Kbd>
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={shellCopy.newChat}
-          onClick={onNewChat}
-        >
-          <SquarePen />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={shellCopy.search}
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={onSearch}
+          >
+            <Search />
+            <Kbd className="sr-only">{searchShortcutLabel()}</Kbd>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={shellCopy.newChat}
+            onClick={onNewChat}
+          >
+            <SquarePen />
+          </Button>
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto px-2 pb-2">
         <nav aria-label="Main" className="mt-2 flex flex-col gap-0.5">
-          {SHELL_PRIMARY.map((item) => (
-            <Link
-              key={item.id}
-              to={item.to}
-              aria-label={item.label}
-              activeOptions={{ exact: true }}
-              onClick={onNavigate}
-              activeProps={{ className: linkClass(true) }}
-              inactiveProps={{ className: linkClass(false) }}
-            >
-              <span>{item.label}</span>
-              {item.id === "inbox" && count != null ? (
-                <span
+          {SHELL_PRIMARY.map((item) => {
+            const Icon = navigationIcons[item.id]
+            return (
+              <Link
+                key={item.id}
+                to={item.to}
+                aria-label={item.label}
+                activeOptions={{ exact: true }}
+                onClick={onNavigate}
+                activeProps={{ className: linkClass(true) }}
+                inactiveProps={{ className: linkClass(false) }}
+              >
+                <Icon
+                  className="size-4 text-muted-foreground"
                   aria-hidden="true"
-                  className="ml-auto text-xs text-muted-foreground"
-                >
-                  {count}
-                </span>
-              ) : null}
-            </Link>
-          ))}
+                />
+                <span>{item.label}</span>
+                {item.id === "inbox" && count != null ? (
+                  <span
+                    aria-hidden="true"
+                    className="ml-auto text-xs text-muted-foreground"
+                  >
+                    {count}
+                  </span>
+                ) : null}
+              </Link>
+            )
+          })}
           <p className="px-2 pt-3 pb-1 text-xs text-muted-foreground">
             {shellCopy.yourWork}
           </p>
-          {SHELL_WORK.map((item) => (
-            <Link
-              key={item.id}
-              to={item.to}
-              activeOptions={{ exact: true }}
-              onClick={onNavigate}
-              activeProps={{ className: linkClass(true) }}
-              inactiveProps={{ className: linkClass(false) }}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {SHELL_WORK.map((item) => {
+            const Icon = navigationIcons[item.id]
+            return (
+              <Link
+                key={item.id}
+                to={item.to}
+                activeOptions={{ exact: true }}
+                onClick={onNavigate}
+                activeProps={{ className: linkClass(true) }}
+                inactiveProps={{ className: linkClass(false) }}
+              >
+                <Icon
+                  className="size-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
         {favorites.pending ? (
           <Skeleton className="mx-2 mt-3 h-7" />
@@ -368,13 +401,13 @@ export function AppShell({ onSearch }: AppShellProps) {
         {isDesktop ? (
           <aside
             aria-label="Sidebar"
-            className="flex w-[244px] shrink-0 border-r border-sidebar-border"
+            className="flex w-[244px] shrink-0 bg-sidebar"
           >
             {nav}
           </aside>
         ) : null}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="relative flex min-h-0 min-w-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar md:pt-2 md:pr-2">
+          <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background md:rounded-lg md:border md:border-border">
             <main
               id="app-main"
               tabIndex={-1}

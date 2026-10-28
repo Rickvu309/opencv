@@ -345,3 +345,29 @@
     }
   }
 }
+
+@media screen {
+  .cv-a4-preview .cv-a4-page {
+    width: 560px;
+    --cv-page-height: 792px;
+    --cv-padding-x: 52px;
+    --cv-padding-y: 44px;
+  }
+
+  .cv-a4-preview .cv-template-root {
+    font-size: 10.5px;
+  }
+}
+
+@media screen and (max-width: 639px) {
+  .cv-a4-preview .cv-a4-page {
+    --cv-padding-x: 24px;
+    --cv-padding-y: 32px;
+  }
+}
+
+@media print {
+  .cv-a4-preview .cv-a4-page {
+    width: 210mm;
+  }
+}

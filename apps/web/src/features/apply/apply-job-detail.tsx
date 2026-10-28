@@ -291,7 +291,17 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
             </form>
           </section>
           <section aria-label="Activity" className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium">Activity</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-medium">Activity</h2>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => toast("Subscriptions are not on yet.")}
+              >
+                Subscribe
+              </Button>
+            </div>
             <ul className="flex flex-col gap-1">
               {rows.map((row) => (
                 <ActivityItem key={row.id} row={row} />
@@ -322,13 +332,6 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
           </form>
         </div>
         <aside className="flex w-full shrink-0 flex-col gap-3 lg:w-72">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => toast("Subscriptions are not on yet.")}
-          >
-            Subscribe
-          </Button>
           <h2 className="text-sm font-medium">Properties</h2>
           <Property label="Stage">
             <Select

@@ -131,10 +131,14 @@ describe("new job dialog", () => {
       target: { value: posting },
     })
     fireEvent.click(screen.getByRole("button", { name: "Paste" }))
-    expect(await screen.findByText(/in Interview/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        /Associate Product Manager Intern · Northwind Labs · Interview/
+      )
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
     fireEvent.click(await screen.findByRole("button", { name: "New job" }))
-    expect(screen.queryByText(/in Interview/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Already on your board/)).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: "https://jobs.example/company-missing" },
     })
@@ -170,7 +174,11 @@ describe("new job dialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Paste" }))
     expect(await screen.findByText("Filled")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-    expect(await screen.findByText(/in Interview/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        /Associate Product Manager Intern · Northwind Labs · Interview/
+      )
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Open" }))
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`/apply/${existing.id}`)

@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
@@ -9,7 +15,7 @@ describe("apply calendar", () => {
   afterEach(() => {
     cleanup()
   })
-  it("shows an interview in the visible week and Week sets span", async () => {
+  it("renders the week schedule rows and places interviews in their hour", async () => {
     const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: "Asia/Ho_Chi_Minh",
       year: "numeric",
@@ -27,8 +33,7 @@ describe("apply calendar", () => {
         interviewAt: `${year}-${month}-${day}T03:00:00.000Z`,
       }),
     ])
-    const { router } = renderApp("/apply?view=calendar")
-    expect(await screen.findByText("Week interview")).toBeInTheDocument()
+    renderApp("/apply?view=calendar&span=week")
     const dayLabel = new Intl.DateTimeFormat("en-US", {
       weekday: "short",
       month: "short",
@@ -37,17 +42,34 @@ describe("apply calendar", () => {
     }).format(
       new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12))
     )
-    expect(screen.getByRole("group", { name: dayLabel })).toBeInTheDocument()
+    expect(await screen.findByText("Week interview")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /\d{4}/ })).toBeInTheDocument()
+    expect(screen.getByText("All day")).toBeInTheDocument()
+    expect(screen.getByText("8:00")).toBeInTheDocument()
+    expect(screen.getByText("18:00")).toBeInTheDocument()
+    const interviewHour = screen.getByRole("group", {
+      name: `${dayLabel}, 10:00`,
+    })
     expect(
-      screen.getByRole("group", { name: "Week interview" })
+      within(interviewHour).getByText("Week interview")
     ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Week" }))
+    expect(
+      screen.getByRole("group", { name: `${dayLabel}, 11:00` })
+    ).toBeEmptyDOMElement()
+    expect(screen.getByRole("group", { name: dayLabel })).toBeInTheDocument()
+  })
+
+  it("keeps the month grid and month span when Month is selected", async () => {
+    setMockJobs([mockJob({ title: "Saved job" })])
+    const { router } = renderApp("/apply?view=calendar&span=week")
+    fireEvent.click(await screen.findByRole("button", { name: "Month" }))
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({
         view: "calendar",
-        span: "week",
+        span: "month",
       })
     })
-    expect(await screen.findByText("Week interview")).toBeInTheDocument()
+    expect(screen.getByText("Mon")).toBeInTheDocument()
+    expect(screen.getByText("Sun")).toBeInTheDocument()
   })
 })

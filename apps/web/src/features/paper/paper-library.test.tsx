@@ -1,9 +1,15 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
+import { importPaperFile } from "./paper-api.ts"
+
+vi.mock("./paper-api.ts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./paper-api.ts")>()),
+  importPaperFile: vi.fn(),
+}))
 
 function cv(name: string): PaperView {
   return {
@@ -24,6 +30,7 @@ function cv(name: string): PaperView {
 
 afterEach(() => {
   cleanup()
+  vi.clearAllMocks()
 })
 
 function renderLibrary(docs: PaperView[]) {
@@ -40,6 +47,49 @@ function renderLibrary(docs: PaperView[]) {
 }
 
 describe("Paper library", () => {
+  it("shows import progress and aborts a cancelled upload without opening a document", async () => {
+    vi.mocked(importPaperFile).mockImplementation(
+      () => new Promise(() => undefined)
+    )
+    renderLibrary([])
+    const file = new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })
+    const input = document.querySelector('input[type="file"]')
+    if (!input) throw new Error("Missing import input")
+    fireEvent.change(input, { target: { files: [file] } })
+    expect(await screen.findByRole("status")).toHaveTextContent("Linh_CV.pdf")
+    const signal = vi.mocked(importPaperFile).mock.calls[0]?.[1]
+    expect(signal?.aborted).toBe(false)
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+    expect(signal?.aborted).toBe(true)
+    expect(screen.getByText("Start a document")).toBeInTheDocument()
+  })
+
+  it("shows a failed import and lets the user retry with another file", async () => {
+    vi.mocked(importPaperFile).mockRejectedValueOnce(
+      new Error("Pages files aren't supported. Try a PDF or Word file.")
+    )
+    renderLibrary([])
+    const input = document.querySelector('input[type="file"]')
+    if (!input) throw new Error("Missing import input")
+    fireEvent.change(input, {
+      target: { files: [new File(["CV"], "Linh.pages")] },
+    })
+    expect(
+      await screen.findByRole("heading", { name: "Can't read this file" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Pages files aren't supported"
+    )
+    expect(
+      screen.getByRole("button", { name: "Start blank" })
+    ).toBeInTheDocument()
+    const retryInput = document.querySelector('input[type="file"]')
+    if (!retryInput) throw new Error("Missing retry input")
+    const picker = vi.spyOn(retryInput, "click")
+    fireEvent.click(screen.getByRole("button", { name: "Choose another file" }))
+    expect(picker).toHaveBeenCalledOnce()
+  })
+
   it("shows the three start cards and the import row when there are no documents", () => {
     renderLibrary([])
     expect(screen.getByText("Start a document")).toBeInTheDocument()

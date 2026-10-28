@@ -91,6 +91,11 @@ export function ApplyCalendar({
 }) {
   const [cursor, setCursor] = useState(() => new Date())
   const today = zonedYmd(new Date())
+  const monthLabel = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(cursor)
   const days = useMemo(
     () => (span === "week" ? weekDays(cursor) : monthDays(cursor)),
     [span, cursor]
@@ -117,6 +122,7 @@ export function ApplyCalendar({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
+        <h2 className="min-w-0 flex-1 text-sm font-medium">{monthLabel}</h2>
         <Button
           type="button"
           variant="ghost"
@@ -193,59 +199,94 @@ export function ApplyCalendar({
           })}
         </div>
       ) : (
-        <div className="flex flex-col gap-2 md:grid md:grid-cols-7">
-          {days.map((day) => (
-            <div
-              key={day}
-              role="group"
-              aria-label={dayName(day)}
-              className={cn(
-                "rounded-md border border-border p-2",
-                day === today && "bg-accent"
-              )}
-            >
-              <p className="text-xs text-muted-foreground">
-                {WEEKDAYS[weekdayIndex(day)]} {Number(day.slice(8))}
-              </p>
-              <p className="text-xs text-muted-foreground">All day</p>
-              {jobs
-                .filter((job) => job.deadline === day)
-                .map((job) => (
-                  <p
-                    key={job.id}
-                    role="group"
-                    aria-label={job.title}
-                    className={cn("text-xs", day === today && "bg-accent")}
-                  >
-                    {job.title}
-                  </p>
-                ))}
-              {HOURS.map((hour) => {
-                const atHour = jobs.filter(
-                  (job) =>
-                    job.interviewAt != null &&
-                    zonedYmd(new Date(job.interviewAt)) === day &&
-                    hourOf(job.interviewAt) === hour
-                )
-                if (atHour.length === 0) return null
-                return (
-                  <div key={hour}>
-                    <p className="text-xs text-muted-foreground">{hour}:00</p>
-                    {atHour.map((job) => (
+        <div className="w-full min-w-0 overflow-x-auto">
+          <div className="min-w-3xl">
+            <div className="grid grid-cols-8 border-b border-border">
+              <div aria-hidden="true" />
+              {days.map((day) => (
+                <div
+                  key={day}
+                  role="group"
+                  aria-label={dayName(day)}
+                  className={cn(
+                    "border-s border-border px-2 py-2 text-xs text-muted-foreground",
+                    day === today && "bg-accent"
+                  )}
+                >
+                  {WEEKDAYS[weekdayIndex(day)]} {Number(day.slice(8))}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-8 border-b border-border">
+              <div className="px-2 py-2 text-xs text-muted-foreground">
+                All day
+              </div>
+              {days.map((day) => (
+                <div
+                  key={day}
+                  role="group"
+                  aria-label={`${dayName(day)}, all day`}
+                  className={cn(
+                    "min-h-10 border-s border-border px-2 py-1",
+                    day === today && "bg-accent"
+                  )}
+                >
+                  {jobs
+                    .filter((job) => job.deadline === day)
+                    .map((job) => (
                       <p
                         key={job.id}
                         role="group"
                         aria-label={job.title}
-                        className="text-xs"
+                        className="truncate text-xs"
                       >
                         {job.title}
                       </p>
                     ))}
-                  </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
-          ))}
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="grid grid-cols-8 border-b border-border"
+              >
+                <div className="px-2 py-2 text-xs text-muted-foreground">
+                  {hour}:00
+                </div>
+                {days.map((day) => {
+                  const atHour = jobs.filter(
+                    (job) =>
+                      job.interviewAt != null &&
+                      zonedYmd(new Date(job.interviewAt)) === day &&
+                      hourOf(job.interviewAt) === hour
+                  )
+                  return (
+                    <div
+                      key={day}
+                      role="group"
+                      aria-label={`${dayName(day)}, ${hour}:00`}
+                      className={cn(
+                        "min-h-10 border-s border-border px-2 py-1",
+                        day === today && "bg-accent"
+                      )}
+                    >
+                      {atHour.map((job) => (
+                        <p
+                          key={job.id}
+                          role="group"
+                          aria-label={job.title}
+                          className="truncate text-xs"
+                        >
+                          {job.title}
+                        </p>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -26,7 +26,6 @@ import {
   ALL_STAGES,
   BOARD_STAGES,
   cardName,
-  listPhrase,
   stageLabel,
 } from "./apply-stages.ts"
 
@@ -177,7 +176,7 @@ export function ApplyBoard({
                       }
                     }}
                   >
-                    <JobCard job={item.job} phrase={listPhrase(item.job)} />
+                    <JobCard job={item.job} />
                   </KanbanCard>
                 )}
               </KanbanCards>

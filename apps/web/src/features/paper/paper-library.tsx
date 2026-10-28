@@ -1,7 +1,8 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   paperDocNameSchema,
+  blankBlockDocument,
   type JobView,
   type PaperFile,
   type PaperView,
@@ -30,6 +31,10 @@ import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
 import { PaperImportInput } from "./paper-cv-surface.tsx"
+import {
+  PaperImportScreen,
+  type PaperImportState,
+} from "./paper-import-state.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
@@ -70,6 +75,11 @@ export function PaperLibrary({
   const run = useRunCommand()
   const queryClient = useQueryClient()
   const importRef = useRef<HTMLInputElement>(null)
+  const importRequest = useRef<AbortController | null>(null)
+  const [importState, setImportState] = useState<PaperImportState>({
+    type: "idle",
+  })
+  const [creatingBlank, setCreatingBlank] = useState(false)
   const [query, setQuery] = useState("")
   const [mode, setMode] = useState<Mode>(null)
   const [rename, setRename] = useState("")
@@ -89,8 +99,11 @@ export function PaperLibrary({
   const visibleFiles = files.filter(
     (file) => needle === "" || file.name.toLowerCase().includes(needle)
   )
-  const noResults = needle !== "" && visible.length === 0
+  const noResults =
+    needle !== "" && visible.length === 0 && visibleFiles.length === 0
   const firstRun = !loading && !error && documents.length === 0 && needle === ""
+
+  useEffect(() => () => importRequest.current?.abort(), [])
 
   async function rememberUndo(subjectId: string, label: string) {
     try {
@@ -106,21 +119,61 @@ export function PaperLibrary({
   }
 
   async function onImport(file: File) {
+    importRequest.current?.abort()
+    const request = new AbortController()
+    importRequest.current = request
+    setMode(null)
+    setImportState({ type: "importing", name: file.name })
     try {
-      const created = await importPaperFile(file)
+      const created = await importPaperFile(file, request.signal)
+      if (request.signal.aborted) return
       void refreshQueries(queryClient, [
         { query: "paper.list" },
         { query: "paper.files" },
       ])
-      setMode(null)
+      setImportState({ type: "idle" })
       onOpen(created.id)
     } catch (err) {
-      toast(
-        messageOf(
+      if (request.signal.aborted) return
+      setImportState({
+        type: "error",
+        message: messageOf(
           err,
           "Could not import that file. Try a PDF, DOCX, or plain text file."
-        )
-      )
+        ),
+      })
+    } finally {
+      if (importRequest.current === request) importRequest.current = null
+    }
+  }
+
+  function cancelImport() {
+    importRequest.current?.abort()
+    importRequest.current = null
+    setImportState({ type: "idle" })
+    void refreshQueries(queryClient, [
+      { query: "paper.list" },
+      { query: "paper.files" },
+    ])
+  }
+
+  async function startBlank() {
+    if (creatingBlank) return
+    setCreatingBlank(true)
+    try {
+      const created = await run("paper.create", {
+        kind: "cv",
+        document: blankBlockDocument(),
+      })
+      setImportState({ type: "idle" })
+      onOpen(created.id)
+    } catch (err) {
+      setImportState({
+        type: "error",
+        message: messageOf(err, "Could not create a CV. Try again."),
+      })
+    } finally {
+      setCreatingBlank(false)
     }
   }
 
@@ -224,6 +277,25 @@ export function PaperLibrary({
         onDownload={() => void download(doc)}
         onDelete={() => setMode({ type: "delete", doc })}
       />
+    )
+  }
+
+  if (importState.type !== "idle") {
+    return (
+      <>
+        <PaperImportInput
+          inputRef={importRef}
+          accept={IMPORT_ACCEPT}
+          onFile={(file) => void onImport(file)}
+        />
+        <PaperImportScreen
+          state={importState}
+          onCancel={cancelImport}
+          onRetry={chooseFile}
+          onBlank={() => void startBlank()}
+          creatingBlank={creatingBlank}
+        />
+      </>
     )
   }
 
