@@ -1,0 +1,276 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills"
+  },
+  "frames": [
+    {
+      "id": "Cs3hj",
+      "name": "Blog (Linear layout)"
+    },
+    {
+      "id": "EKv2D",
+      "name": "Blog post (Linear layout)"
+    },
+    {
+      "id": "w7zeGR",
+      "name": "Landing (Linear layout)"
+    },
+    {
+      "id": "q720Ng",
+      "name": "Pricing (Linear layout)"
+    },
+    {
+      "id": "qIdzL",
+      "name": "Stories (Linear layout)"
+    },
+    {
+      "id": "x1ht5a",
+      "name": "W1.1 Continue"
+    },
+    {
+      "id": "yGwdJ",
+      "name": "W1.2 Enter code"
+    },
+    {
+      "id": "iAwJ7",
+      "name": "W1.3 Verifying"
+    },
+    {
+      "id": "b1m7SA",
+      "name": "W1.4 Code wrong or expired"
+    },
+    {
+      "id": "NAXQk",
+      "name": "W1.5 Welcome"
+    },
+    {
+      "id": "DhG87",
+      "name": "W1.6 Session expired"
+    },
+    {
+      "id": "F2Ofg0",
+      "name": "W2.1 Connect Gmail"
+    },
+    {
+      "id": "nKD1b",
+      "name": "W2.2 Scanning"
+    },
+    {
+      "id": "eXcUw",
+      "name": "W2.3 Inbox"
+    },
+    {
+      "id": "PSHPF",
+      "name": "W2.4 Recruiter reply"
+    },
+    {
+      "id": "FUipv",
+      "name": "W3.1 New chat"
+    },
+    {
+      "id": "ISnTZ",
+      "name": "W3.2 Chat history"
+    },
+    {
+      "id": "lOO77",
+      "name": "W3.3 More ideas"
+    },
+    {
+      "id": "kfJuz",
+      "name": "W3.4 Composer menus"
+    },
+    {
+      "id": "Vm0eJ",
+      "name": "W3.5 Coach working"
+    },
+    {
+      "id": "wiQ9M",
+      "name": "W3.6 Free cap reached"
+    },
+    {
+      "id": "kmUTI",
+      "name": "W3.7 Coach panel"
+    },
+    {
+      "id": "NHq3j",
+      "name": "W4.1 Jobs coming soon"
+    },
+    {
+      "id": "YC0lV",
+      "name": "W5.1 Paper first run"
+    },
+    {
+      "id": "mkEKx",
+      "name": "W5.2 Paper library"
+    },
+    {
+      "id": "VH2fp",
+      "name": "W5.3 Paper menus"
+    },
+    {
+      "id": "O7zOJK",
+      "name": "W5.4 No results"
+    },
+    {
+      "id": "YCAbn",
+      "name": "W5.5 Delete confirm"
+    },
+    {
+      "id": "aZiLz",
+      "name": "W6.1 Start: blank or template"
+    },
+    {
+      "id": "L3V6y",
+      "name": "W6.2 Blank doc"
+    },
+    {
+      "id": "pCOLZ",
+      "name": "W6.3 Slash menu"
+    },
+    {
+      "id": "TtBmY",
+      "name": "W6.4 Editing"
+    },
+    {
+      "id": "F0BP4A",
+      "name": "W6.5 Block menu"
+    },
+    {
+      "id": "mOKD3",
+      "name": "W6.6 Drag a block"
+    },
+    {
+      "id": "jcbPS",
+      "name": "W6.7 CV done"
+    },
+    {
+      "id": "DPAVo",
+      "name": "W6.8 Importing a file"
+    },
+    {
+      "id": "Uh2Ku",
+      "name": "W6.9 Check import"
+    },
+    {
+      "id": "gWPIB",
+      "name": "W6.10 Can't read file"
+    },
+    {
+      "id": "k8HycK",
+      "name": "W6.11 Over one page"
+    },
+    {
+      "id": "NgYML",
+      "name": "W7.1 Start: pick the job"
+    },
+    {
+      "id": "tsfNR",
+      "name": "W7.2 Drafting"
+    },
+    {
+      "id": "sgAtL",
+      "name": "W7.3 Letter + suggestion"
+    },
+    {
+      "id": "D1s74Z",
+      "name": "W7.4 Can't read job link"
+    },
+    {
+      "id": "FCDYX",
+      "name": "W8.1 Proof coming soon"
+    },
+    {
+      "id": "D8PoQ6",
+      "name": "W9.1 Board empty"
+    },
+    {
+      "id": "c4KwjR",
+      "name": "W9.2 New job"
+    },
+    {
+      "id": "aLOFO",
+      "name": "W9.3 Board"
+    },
+    {
+      "id": "f0rS0",
+      "name": "W9.4 List"
+    },
+    {
+      "id": "NsAiG",
+      "name": "W9.5 Filters no results"
+    },
+    {
+      "id": "a3PFL",
+      "name": "W9.6 Drag to stage"
+    },
+    {
+      "id": "U4613",
+      "name": "W9.7 Calendar month"
+    },
+    {
+      "id": "ZA60d",
+      "name": "W9.8 Calendar week"
+    },
+    {
+      "id": "Z3OFW",
+      "name": "W10.1 Filled in"
+    },
+    {
+      "id": "tNZ73",
+      "name": "W10.2 Company missing"
+    },
+    {
+      "id": "pD2lq",
+      "name": "W10.3 Already on your board"
+    },
+    {
+      "id": "qSuLB",
+      "name": "W10.4 Job detail"
+    },
+    {
+      "id": "MWsZM",
+      "name": "W10.5 Link from Paper"
+    },
+    {
+      "id": "Wlp2X",
+      "name": "W10.6 Closed job"
+    },
+    {
+      "id": "jHl7W",
+      "name": "W10.7 Delete job"
+    },
+    {
+      "id": "RAl5t",
+      "name": "W11.1 Pitch coming soon"
+    },
+    {
+      "id": "qCgR7",
+      "name": "W12.1 Preferences"
+    },
+    {
+      "id": "LiQPl",
+      "name": "W12.2 Coach"
+    },
+    {
+      "id": "K5FuN",
+      "name": "W12.3 Integrations"
+    },
+    {
+      "id": "U6XwWT",
+      "name": "W12.4 Usage & limits"
+    },
+    {
+      "id": "vOOtp",
+      "name": "W12.5 Billing"
+    },
+    {
+      "id": "dgd0V",
+      "name": "W12.6 Account"
+    },
+    {
+      "id": "LG57z",
+      "name": "W12.7 Delete account"
+    }
+  ]
+}
