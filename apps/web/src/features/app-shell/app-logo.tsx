@@ -5,7 +5,7 @@ type MarkProps = {
   className?: string
 }
 
-function OpenCvMark({ className }: MarkProps) {
+export function OpenCvMark({ className }: MarkProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

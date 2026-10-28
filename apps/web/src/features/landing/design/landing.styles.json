@@ -1,0 +1,765 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "w7zeGR",
+    "frameName": "Landing (Linear layout)"
+  },
+  "sections": [
+    {
+      "id": "amorM",
+      "name": "Nav",
+      "texts": [
+        {
+          "content": "opencv",
+          "fill": "#1B1B1F",
+          "fontSize": 16,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.5
+        },
+        {
+          "content": "Product",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Stories",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Pricing",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Blog",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Help",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Log in",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Get started",
+          "fill": "#1B1B1F",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        }
+      ],
+      "marks": [{ "id": "h1tp0", "name": "Mark", "width": 24, "height": 24 }]
+    },
+    {
+      "id": "zaFbA",
+      "name": "Hero",
+      "texts": [
+        {
+          "content": "Get your butt in your dream seat.",
+          "fill": "#1B1B1F",
+          "fontSize": 64,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.4
+        },
+        {
+          "content": "Tailor your CV for every job. Track every application. Prep with Coach.",
+          "fill": "#6E6E78",
+          "fontSize": 15,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "FVT93",
+      "name": "Logos",
+      "texts": [
+        {
+          "content": "PEOPLE USING OPENCV HAVE INTERVIEWED AT",
+          "fill": "#A0A0A9",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": 0.6
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "XWAX6",
+      "name": "Statement",
+      "texts": [
+        {
+          "content": "You’ve done more than your CV says.",
+          "fill": "#1B1B1F",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        },
+        {
+          "content": "opencv helps",
+          "fill": "#A0A0A9",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        },
+        {
+          "content": "you show it: a CV and letter written for each role, a board for every application, and a coach that knows both.",
+          "fill": "#A0A0A9",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        }
+      ],
+      "marks": [{ "id": "GVQcA", "name": "Mark", "width": 40, "height": 40 }]
+    },
+    {
+      "id": "IEtud",
+      "name": "Benefits",
+      "texts": [
+        {
+          "content": "A CV for every job",
+          "fill": "#1B1B1F",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null
+        },
+        {
+          "content": "Write once in Paper, then tailor your CV and letter to each job in a minute.",
+          "fill": "#6E6E78",
+          "fontSize": 15,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Every application in one place",
+          "fill": "#1B1B1F",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null
+        },
+        {
+          "content": "Save jobs from any link and see what to do next on one board.",
+          "fill": "#6E6E78",
+          "fontSize": 15,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "A coach that does the work",
+          "fill": "#1B1B1F",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null
+        },
+        {
+          "content": "Ask Coach to tailor, prep or follow up. It reads your work first.",
+          "fill": "#6E6E78",
+          "fontSize": 15,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "MGDsx",
+      "name": "Paper Wrap",
+      "texts": [
+        {
+          "content": "Paper",
+          "fill": "#1B1B1F",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        },
+        {
+          "content": "Write your CV and letters in a clean editor. Coach tailors them to each job and keeps it to one page.",
+          "fill": "#6E6E78",
+          "fontSize": 24,
+          "lineHeight": 1.33,
+          "fontWeight": "normal",
+          "letterSpacing": -0.29
+        },
+        {
+          "content": "Learn more",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Features",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Tailored CVs",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Import a CV",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Cover letters",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "One-page check",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "IQNzE",
+      "name": "Apply Wrap",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#1B1B1F",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        },
+        {
+          "content": "Save any job from a link, move it from Saved to Offer, and never miss an interview or a deadline.",
+          "fill": "#6E6E78",
+          "fontSize": 24,
+          "lineHeight": 1.33,
+          "fontWeight": "normal",
+          "letterSpacing": -0.29
+        },
+        {
+          "content": "Learn more",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Features",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Board and list",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Job details",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Calendar",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Interview prep",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "OAtgE",
+      "name": "Coach Wrap",
+      "texts": [
+        {
+          "content": "Coach",
+          "fill": "#1B1B1F",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        },
+        {
+          "content": "Ask in plain words. Coach reads your CV and the job, then does the work while you watch.",
+          "fill": "#6E6E78",
+          "fontSize": 24,
+          "lineHeight": 1.33,
+          "fontWeight": "normal",
+          "letterSpacing": -0.29
+        },
+        {
+          "content": "Learn more",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Features",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Tailor a CV",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Prep an interview",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Write a letter",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Email updates",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "oBvMh",
+      "name": "Integrations Wrap",
+      "texts": [
+        {
+          "content": "Works with your apps",
+          "fill": "#1B1B1F",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        },
+        {
+          "content": "Bring in your mail, calendar, files and profiles. Coach uses them to keep Apply up to date.",
+          "fill": "#6E6E78",
+          "fontSize": 24,
+          "lineHeight": 1.33,
+          "fontWeight": "normal",
+          "letterSpacing": -0.29
+        },
+        {
+          "content": "See all integrations",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "QXqKc",
+      "name": "Coming next Wrap",
+      "texts": [
+        {
+          "content": "Coming next",
+          "fill": "#1B1B1F",
+          "fontSize": 48,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.056
+        },
+        {
+          "content": "Two new ways to show your work. Join the waitlist and get them first.",
+          "fill": "#6E6E78",
+          "fontSize": 24,
+          "lineHeight": 1.33,
+          "fontWeight": "normal",
+          "letterSpacing": -0.29
+        },
+        {
+          "content": "Join the waitlist",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Proof",
+          "fill": "#1B1B1F",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Turn a CV line into evidence.",
+          "fill": "#6E6E78",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Pitch",
+          "fill": "#1B1B1F",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Your CV and Proofs on one page.",
+          "fill": "#6E6E78",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "b8FKWt",
+      "name": "Customers",
+      "texts": [
+        {
+          "content": "I stopped listing duties and showed the one campaign I actually ran. The recruiter called me back in four days.",
+          "fill": "#1B1B1F",
+          "fontSize": 32,
+          "lineHeight": 1.125,
+          "fontWeight": "normal",
+          "letterSpacing": -0.7
+        },
+        {
+          "content": "Nguyễn Thảo Vy",
+          "fill": "#1B1B1F",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Brand Marketing Associate, Ho Chi Minh City",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "I sent fewer applications and treated each one like a pitch.",
+          "fill": "#1B1B1F",
+          "fontSize": 32,
+          "lineHeight": 1.125,
+          "fontWeight": "normal",
+          "letterSpacing": -0.7
+        },
+        {
+          "content": "Kim Ji-woo",
+          "fill": "#1B1B1F",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "UX Designer, Seoul",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "opencv helps people go from a first note to an offer. From first jobs to senior roles.",
+          "fill": "#6E6E78",
+          "fontSize": 15,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Read all stories",
+          "fill": "#1B1B1F",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "f3irQ",
+      "name": "Prefooter",
+      "texts": [
+        {
+          "content": "Be the obvious hire. Start today.",
+          "fill": "#1B1B1F",
+          "fontSize": 72,
+          "lineHeight": 1,
+          "fontWeight": "500",
+          "letterSpacing": -1.584
+        },
+        {
+          "content": "Get started",
+          "fill": "#1B1B1F",
+          "fontSize": 16,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "See a sample",
+          "fill": "#1B1B1F",
+          "fontSize": 16,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "YnPHd",
+      "name": "Footer Wrap",
+      "texts": [
+        {
+          "content": "opencv",
+          "fill": "#1B1B1F",
+          "fontSize": 16,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.5
+        },
+        {
+          "content": "Show your work. Get the job.",
+          "fill": "#6E6E78",
+          "fontSize": 14,
+          "lineHeight": 1.5,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Product",
+          "fill": "#1B1B1F",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Paper",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Apply",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Coach",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Pricing",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Company",
+          "fill": "#1B1B1F",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "About",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Stories",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Careers",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Blog",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Connect",
+          "fill": "#1B1B1F",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Contact us",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "X",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "LinkedIn",
+          "fill": "#6E6E78",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "© 2026 opencv",
+          "fill": "#A0A0A9",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Privacy    Terms",
+          "fill": "#A0A0A9",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        }
+      ],
+      "marks": [{ "id": "HVZbV", "name": "Mark", "width": 24, "height": 24 }]
+    }
+  ]
+}

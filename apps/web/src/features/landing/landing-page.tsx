@@ -17,7 +17,7 @@ import {
 
 export function LandingPage() {
   return (
-    <div className="landing-root min-h-svh">
+    <div className="landing-root landing-home min-h-svh">
       <title>{LANDING_TITLE}</title>
       <meta name="description" content={LANDING_DESCRIPTION} />
       <LandingNav />

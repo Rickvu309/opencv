@@ -11,6 +11,10 @@
 // (shader, image, mesh_gradient, and anything else that is not a plain color).
 // With --assets, each recorded shader is copied from <pen dir>/<url> into
 // <dir>/<file name>, so the app's shader file is generated from the pen.
+// When out.json is named landing.snapshot.json, the same run also writes
+// landing.styles.json beside it: each text's content and the fields the pen
+// sets, plus inline marks (a non-text child at most 64px on both sides, with
+// children of its own, in a frame that also has a text child).
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
@@ -147,6 +151,71 @@ function collect(node, texts, fills) {
   const children = node.children
   if (!Array.isArray(children)) return
   for (const child of children) collect(child, texts, fills)
+}
+
+function resolveFill(fill) {
+  let value = fill
+  for (let hop = 0; hop < 4; hop++) {
+    if (typeof value !== "string" || !value.startsWith("$")) break
+    const entry = doc.variables?.[value.slice(1)]
+    value = entry && typeof entry === "object" ? entry.value : entry
+  }
+  if (typeof value !== "string") return null
+  const match = /^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$/.exec(value.trim())
+  if (!match) return value
+  return `#${match[1].toUpperCase()}`
+}
+
+function collectStyleTexts(node, texts) {
+  if (node?.type === "text" && typeof node.content === "string") {
+    const content = node.content.replaceAll("\n", " ").trim()
+    if (content !== "") {
+      texts.push({
+        content,
+        fill: resolveFill(node.fill),
+        fontSize: typeof node.fontSize === "number" ? node.fontSize : null,
+        lineHeight:
+          typeof node.lineHeight === "number" ? node.lineHeight : null,
+        fontWeight: node.fontWeight == null ? null : String(node.fontWeight),
+        letterSpacing:
+          typeof node.letterSpacing === "number" ? node.letterSpacing : null,
+      })
+    }
+  }
+  const children = node?.children
+  if (!Array.isArray(children)) return
+  for (const child of children) collectStyleTexts(child, texts)
+}
+
+// A mark is the small symbol that sits in a line of text: Nav, Statement, Footer.
+// Spacer frames and empty icon boxes have no children, so they are not marks.
+function collectMarks(node, marks) {
+  const children = node?.children
+  if (!Array.isArray(children)) return
+  const besideText =
+    node?.type === "frame" && children.some((child) => child?.type === "text")
+  for (const child of children) {
+    const width = child?.width
+    const height = child?.height
+    if (
+      besideText &&
+      child?.type !== "text" &&
+      typeof width === "number" &&
+      typeof height === "number" &&
+      width <= 64 &&
+      height <= 64 &&
+      Array.isArray(child.children) &&
+      child.children.length > 0
+    ) {
+      marks.push({
+        id: typeof child.id === "string" ? child.id : "",
+        name: typeof child.name === "string" ? child.name : "",
+        width,
+        height,
+      })
+    }
+    collectMarks(child, marks)
+  }
 }
 
 const frame = resolveNode(requested, new Set())
@@ -751,3 +820,29 @@ writeFileSync(
     filepath: outFile,
   })
 )
+
+if (path.basename(outFile) === "landing.snapshot.json") {
+  const styleSections = (
+    Array.isArray(frame.children) ? frame.children : []
+  ).map((child) => {
+    const texts = []
+    const marks = []
+    collectStyleTexts(child, texts)
+    collectMarks(child, marks)
+    return {
+      id: typeof child.id === "string" ? child.id : "",
+      name: typeof child.name === "string" ? child.name : "",
+      texts,
+      marks,
+    }
+  })
+  const stylesFile = path.join(path.dirname(outFile), "landing.styles.json")
+  const stylesOptions = (await prettier.resolveConfig(stylesFile)) ?? options
+  writeFileSync(
+    stylesFile,
+    await prettier.format(
+      JSON.stringify({ source: sourceOf(requested), sections: styleSections }),
+      { ...stylesOptions, filepath: stylesFile }
+    )
+  )
+}
