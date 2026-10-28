@@ -46,31 +46,19 @@ describe("shared Coach turn hook", () => {
     expect(store).toMatch(/useCoachTurn/)
     expect(store).not.toMatch(/streamCoachTurn/)
 
-    const panel =
-      read("features/paper/coach-float.tsx") +
-      read("features/paper/coach-float-chips.tsx")
-    expect(panel).toMatch(/useCoachTurn/)
+    expect(
+      existsSync(path.join(webSrc, "features/paper/coach-float.tsx"))
+    ).toBe(false)
+    expect(
+      existsSync(path.join(webSrc, "features/paper/coach-float-chips.tsx"))
+    ).toBe(false)
+    expect(
+      existsSync(path.join(webSrc, "features/paper/paper-cite-control.tsx"))
+    ).toBe(false)
+
     expect(read("features/coach/coach-chat.tsx")).not.toMatch(
       /assistant-ui|AssistantRuntime/
     )
-    expect(panel).toMatch(/CoachChat/)
-    expect(panel).toMatch(/data-coach-soft-scope/)
-    expect(panel).toMatch(/data-coach-context-chip/)
-    expect(panel).toMatch(/Add to context/)
-    expect(panel).toMatch(/Pin in context/)
-    expect(panel).toMatch(/Attached from Paper/)
-    expect(panel).toMatch(/Remove from context/)
-    expect(panel).toMatch(/PaperCiteControl/)
-    expect(panel).toMatch(/rememberCoachCites/)
-    expect(panel).not.toMatch(/provenance/)
-    expect(panel).not.toMatch(/sources rail/)
-    const cite = read("features/paper/paper-cite-control.tsx")
-    expect(cite).toMatch(/data-coach-cite/)
-    expect(cite).toMatch(/Show on Paper/)
-    expect(cite).not.toMatch(/provenance/)
-    expect(cite).not.toMatch(/sources rail/)
-    expect(cite).not.toMatch(/knowledge-base/)
-    expect(panel).not.toMatch(/ChatView/)
     expect(read("features/coach/coach-chat.tsx")).toMatch(/CoachDock/)
     expect(read("features/coach/coach-chat.tsx")).toMatch(
       /showModePicker=\{false\}/
@@ -80,12 +68,6 @@ describe("shared Coach turn hook", () => {
     expect(read("features/coach/coach-chat.tsx")).not.toMatch(/provenance/)
     expect(read("features/coach/coach-chat.tsx")).not.toMatch(/sources rail/)
     expect(read("features/coach/coach-dock.tsx")).toMatch(/onAttachFromPaper/)
-    expect(panel).not.toMatch(/sessionStorage/)
-    expect(panel).not.toMatch(/Sparkles/)
-    expect(panel).not.toMatch(/AI assist/)
-    expect(panel).not.toMatch(/knowledge-base/)
-    expect(panel).not.toMatch(/Add sources/)
-    expect(panel).not.toMatch(/sources library/)
   })
 })
 

@@ -12,7 +12,6 @@ import { Hono } from "hono"
 import type { Auth } from "../auth.js"
 import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../http-json.js"
-import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
@@ -305,8 +304,4 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   return routes
-}
-
-export async function readOptionalJson(c: Parameters<typeof readJsonBody>[0]) {
-  return readJsonBody(c)
 }

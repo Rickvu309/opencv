@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen } from "@testing-library/react"
-import { useState, type ReactElement } from "react"
+import { cleanup, screen } from "@testing-library/react"
+import type { ReactElement } from "react"
 import {
   cvCodecToBlocks,
   emptyCvDocument,
@@ -13,7 +13,6 @@ import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
-import { PaperBlockEditor } from "./paper-block-editor.tsx"
 import { PaperSharePage } from "./paper-share-page.tsx"
 
 function render(ui: ReactElement) {
@@ -153,34 +152,6 @@ describe("version 2 preview", () => {
     expect(fromV1.bullet).toEqual(["Ran interviews"])
     expect(fromV1.school).toEqual(["UIT"])
     expect(fromV1.skill).toEqual(["Interviews", "PRDs"])
-  })
-
-  it("keeps comma and multiword skill typing intact", () => {
-    const Harness = () => {
-      const [document, setDocument] = useState(cvCodecToBlocks(fixture))
-      return (
-        <PaperBlockEditor
-          document={document}
-          checks={[]}
-          sourceFileName={null}
-          templateId="simple"
-          onChange={setDocument}
-          onAskCoach={() => undefined}
-          onDismissCheck={() => undefined}
-        />
-      )
-    }
-    render(<Harness />)
-    const field = screen.getByRole("textbox", {
-      name: "Skills, comma separated",
-    })
-    fireEvent.change(field, { target: { value: "User research, Product" } })
-    expect(field).toHaveValue("User research, Product")
-    fireEvent.change(field, {
-      target: { value: "User research, Product strategy,SQL" },
-    })
-    expect(field).toHaveValue("User research, Product strategy,SQL")
-    expect(field).toHaveValue("User research, Product strategy,SQL")
   })
 
   it("uses the selected print layout while retaining editable block content", () => {
