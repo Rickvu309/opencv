@@ -6,6 +6,7 @@ import {
   SectionTitle,
 } from "./cv-parts.tsx"
 import { ExperienceList, EducationList, SkillChips } from "./cv-entries.tsx"
+import { ActivitiesAndAwards } from "./cv-lines.tsx"
 
 export function InternshipCv({
   data,
@@ -78,6 +79,7 @@ export function InternshipCv({
         <SectionTitle>Skills</SectionTitle>
         <SkillChips groups={data.skills} onChange={setSkills} />
       </section>
+      <ActivitiesAndAwards data={data} />
     </div>
   )
 }

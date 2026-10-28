@@ -1,4 +1,4 @@
-import { ERROR_CODES, personActor } from "@workspace/domain"
+import { emptyCvDocument, ERROR_CODES, personActor } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
@@ -28,8 +28,8 @@ describe("paper.replace", () => {
         document: Record<string, unknown>
         contentVersion: number
       }
-      const first = { ...doc.document, summary: "First body" }
-      const second = { ...doc.document, summary: "Second body" }
+      const first = { ...emptyCvDocument(), summary: "First body" }
+      const second = { ...emptyCvDocument(), summary: "Second body" }
       const replaced = await registry.execute({
         name: "paper.replace",
         input: {
@@ -99,7 +99,7 @@ describe("paper.replace", () => {
         document: Record<string, unknown>
         contentVersion: number
       }
-      const next = { ...doc.document, summary: "Shipped the note." }
+      const next = { ...emptyCvDocument(), summary: "Shipped the note." }
       const replaced = await registry.execute({
         name: "paper.replace",
         input: {

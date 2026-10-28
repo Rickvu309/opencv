@@ -1,3 +1,6 @@
+import { blocksToCvCodec } from "./paper-blocks/codec.js"
+import { isCvBlockDocument } from "./paper-blocks/document.js"
+import { blocksToPreviewModel } from "./paper-blocks/preview.js"
 import {
   isCvDocument,
   isLetterDocument,
@@ -197,13 +200,62 @@ function diffProof(before: ProofDocument, after: ProofDocument): DiffHunk[] {
   return hunks
 }
 
+function cvSide(value: unknown): CvDocument | null {
+  if (isCvBlockDocument(value)) return blocksToCvCodec(value)
+  if (isCvDocument(value)) return value
+  return null
+}
+
+function carriedLines(value: unknown, kind: "activities" | "awards"): string[] {
+  if (!isCvBlockDocument(value)) return []
+  return blocksToPreviewModel(value)[kind]
+}
+
+function lineHunks(
+  section: string,
+  sectionId: string,
+  before: readonly string[],
+  after: readonly string[]
+): DiffHunk[] {
+  const hunks: DiffHunk[] = []
+  const count = Math.max(before.length, after.length)
+  for (let index = 0; index < count; index += 1) {
+    const hunk = fieldHunk(
+      section,
+      `${sectionId}-${index}`,
+      before[index] ?? "",
+      after[index] ?? ""
+    )
+    if (hunk) hunks.push(hunk)
+  }
+  return hunks
+}
+
 export function diffPaperContent(
   kind: PaperContentKind,
   before: unknown,
   after: unknown
 ): DiffHunk[] {
-  if (kind === "cv" && isCvDocument(before) && isCvDocument(after)) {
-    return diffCv(before, after)
+  if (kind === "cv") {
+    const beforeCv = cvSide(before)
+    const afterCv = cvSide(after)
+    if (beforeCv && afterCv) {
+      return [
+        ...diffCv(beforeCv, afterCv),
+        ...lineHunks(
+          "Activities",
+          "activities",
+          carriedLines(before, "activities"),
+          carriedLines(after, "activities")
+        ),
+        ...lineHunks(
+          "Awards",
+          "awards",
+          carriedLines(before, "awards"),
+          carriedLines(after, "awards")
+        ),
+      ]
+    }
   }
   if (
     kind === "letter" &&

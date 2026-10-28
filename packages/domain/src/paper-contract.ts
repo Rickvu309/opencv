@@ -8,6 +8,7 @@ import {
 } from "./contract.js"
 import { fileIdSchema, paperIdSchema } from "./ids.js"
 import { cvDocumentV1Schema, letterDocumentV1Schema } from "./paper-codecs.js"
+import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
 import {
   paperCreateInputSchema,
   paperDeleteFileInputSchema,
@@ -31,12 +32,19 @@ import type { QueryRef } from "./queries.js"
 
 /** A stored document is a CV or a letter. Proofs live in their own table. */
 export const storedPaperDocumentSchema = z.union([
+  cvBlockDocumentSchema,
   cvDocumentV1Schema,
   letterDocumentV1Schema,
 ])
 
 export const paperCheckSchema = z
-  .object({ id: z.string(), kind: z.string(), message: z.string() })
+  .object({
+    id: z.string(),
+    kind: z.string(),
+    message: z.string(),
+    blockId: z.string().optional(),
+    resolved: z.boolean().optional(),
+  })
   .strict()
 
 export const paperPageChoiceSchema = z.enum(["unset", "keep"])
