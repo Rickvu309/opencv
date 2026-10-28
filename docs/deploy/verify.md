@@ -13,12 +13,12 @@ once in the background and be woken when it exits. The command needs an
 authenticated `railway` CLI and the commit in the local git history. It prints
 one line per service (`api`, `web`) and a final `RESULT` line.
 
-| Outcome        | Meaning                                                                                        |
-| -------------- | ---------------------------------------------------------------------------------------------- |
-| `DEPLOYED`     | The latest successful deployment is this commit and `/health` answers 200.                     |
-| `DEPLOYING`    | A deployment for this commit is queued, building or deploying.                                 |
-| `FAILED`       | The deployment failed or crashed, `/health` is not 200, or production runs a different commit. |
-| `NOT_EXPECTED` | The commit changes no file under the service's watch paths, so Railway does not redeploy it.   |
+| Outcome        | Meaning                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| `DEPLOYED`     | Production runs this commit, or a later one that contains it, and `/health` answers 200.        |
+| `DEPLOYING`    | Railway has not started this commit yet, or its deployment is queued, building or deploying.    |
+| `FAILED`       | The deployment failed or crashed, `/health` is not 200, or production runs an unrelated commit. |
+| `NOT_EXPECTED` | The commit changes no file under the service's watch paths, so Railway does not redeploy it.    |
 
 Exit codes:
 
@@ -27,8 +27,8 @@ Exit codes:
   command later.
 - 1: a service `FAILED`, or the check could not run.
 
-A `FAILED` right after a merge can mean Railway has not started the deployment
-yet. Rerun once before treating it as a failure.
+A `DEPLOYING` that outlasts `--wait 600` means Railway never started or never
+finished the deploy. Check the Railway dashboard before merging again.
 
 The watch paths live in `.railway/railway.ts` and are copied into
 `scripts/verify-deploy.mjs`. `scripts/verify-deploy.test.mjs` fails if they

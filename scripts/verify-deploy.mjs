@@ -77,32 +77,37 @@ async function classify(service, commit, changedFiles, io) {
   const deployments = listDeployments(service.name, io)
   const ours = deployments.find((d) => d.meta?.commitHash === commit)
   const running = deployments.find((d) => d.status === "SUCCESS")
-  const runs = `production runs ${short(running?.meta?.commitHash ?? "unknown")}`
-  if (!ours)
-    return {
-      outcome: "FAILED",
-      detail: `no deployment for this commit; ${runs}`,
-    }
-  if (inProgress.has(ours.status))
-    return {
-      outcome: "DEPLOYING",
-      detail: `deployment ${short(ours.id)} is ${ours.status}`,
-    }
-  if (ours.status !== "SUCCESS" || running.id !== ours.id)
-    return {
-      outcome: "FAILED",
-      detail: `deployment ${short(ours.id)} is ${ours.status}; ${runs}`,
-    }
+  const live = running?.meta?.commitHash
+  const runs = `production runs ${short(live ?? "unknown")}`
+  // A later merge can replace or skip our deployment; its commit still contains ours.
+  const superseded = live && live !== commit && io.isAncestor(commit, live)
+  if (!superseded) {
+    if (!ours)
+      return {
+        outcome: "DEPLOYING",
+        detail: `no deployment for this commit yet; ${runs}`,
+      }
+    if (inProgress.has(ours.status))
+      return {
+        outcome: "DEPLOYING",
+        detail: `deployment ${short(ours.id)} is ${ours.status}`,
+      }
+    if (ours.status !== "SUCCESS" || running.id !== ours.id)
+      return {
+        outcome: "FAILED",
+        detail: `deployment ${short(ours.id)} is ${ours.status}; ${runs}`,
+      }
+  }
+  const via = superseded
+    ? `live in later commit ${short(live)}`
+    : `deployment ${short(ours.id)} succeeded`
   const health = await io.health(service.origin)
   if (health !== 200)
     return {
       outcome: "FAILED",
-      detail: `deployment ${short(ours.id)} succeeded but /health returned HTTP ${health}`,
+      detail: `${via} but /health returned HTTP ${health}`,
     }
-  return {
-    outcome: "DEPLOYED",
-    detail: `deployment ${short(ours.id)} succeeded, /health 200`,
-  }
+  return { outcome: "DEPLOYED", detail: `${via}, /health 200` }
 }
 
 export async function verifyDeploy({ commit, wait = 0 }, io) {
@@ -141,6 +146,17 @@ export function report(commit, { results, exitCode }) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+function isAncestor(ancestor, descendant) {
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], {
+      stdio: "ignore",
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 function changedFiles(commit) {
   return execFileSync("git", ["diff", "--name-only", `${commit}^`, commit], {
     encoding: "utf8",
@@ -163,7 +179,14 @@ if (
       throw new Error("Use --wait with a number of seconds.")
     const result = await verifyDeploy(
       { commit: values.commit, wait },
-      { cli, health: healthStatus, changedFiles, now: Date.now, sleep }
+      {
+        cli,
+        health: healthStatus,
+        changedFiles,
+        isAncestor,
+        now: Date.now,
+        sleep,
+      }
     )
     console.log(report(values.commit, result))
     process.exitCode = result.exitCode

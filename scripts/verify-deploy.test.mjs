@@ -13,7 +13,13 @@ const deployment = (id, status, hash) => ({
   meta: { commitHash: hash },
 })
 
-function boundary({ files = code, deployments = {}, health = {}, clock } = {}) {
+function boundary({
+  files = code,
+  deployments = {},
+  health = {},
+  clock,
+  descendants = [],
+} = {}) {
   const calls = []
   let now = 0
   const io = {
@@ -32,6 +38,8 @@ function boundary({ files = code, deployments = {}, health = {}, clock } = {}) {
       return health[origin] ?? 200
     },
     changedFiles: () => files,
+    isAncestor: (ancestor, descendant) =>
+      ancestor === commit && descendants.includes(descendant),
     now: () => now,
     async sleep(ms) {
       now += ms
@@ -117,29 +125,48 @@ test("an unhealthy host is FAILED even when the deployment succeeded", async () 
   assert.equal(run.exitCode, 1)
 })
 
-test("production running a different commit is FAILED", async () => {
+test("no deployment yet for this commit is DEPLOYING, not FAILED", async () => {
   const { io } = boundary({
     deployments: { api: [deployment("api-old", "SUCCESS", older)] },
   })
   const run = await verifyDeploy({ commit }, io)
-  assert.equal(states(run).api, "FAILED")
-  assert.match(run.results[0].detail, /no deployment for this commit/)
-  assert.equal(run.exitCode, 1)
+  assert.equal(states(run).api, "DEPLOYING")
+  assert.match(run.results[0].detail, /no deployment for this commit yet/)
+  assert.equal(run.exitCode, 3)
 })
 
-test("a newer commit already live over ours is FAILED", async () => {
+test("a later commit that contains ours is DEPLOYED", async () => {
   const newer = "a".repeat(40)
+  for (const ours of [
+    [deployment("web-ours", "SUCCESS", commit)],
+    [deployment("web-ours", "SKIPPED", commit)],
+    [],
+  ]) {
+    const { io } = boundary({
+      descendants: [newer],
+      deployments: {
+        web: [deployment("web-newer", "SUCCESS", newer), ...ours],
+      },
+    })
+    const run = await verifyDeploy({ commit }, io)
+    assert.equal(states(run).web, "DEPLOYED")
+    assert.match(run.results[1].detail, /live in later commit aaaaaaa/)
+  }
+})
+
+test("a newer unrelated commit live over ours is FAILED", async () => {
+  const other = "b".repeat(40)
   const { io } = boundary({
     deployments: {
       web: [
-        deployment("web-newer", "SUCCESS", newer),
+        deployment("web-other", "SUCCESS", other),
         deployment("web-ours", "SUCCESS", commit),
       ],
     },
   })
   const run = await verifyDeploy({ commit }, io)
   assert.equal(states(run).web, "FAILED")
-  assert.match(run.results[1].detail, /production runs aaaaaaa/)
+  assert.match(run.results[1].detail, /production runs bbbbbbb/)
 })
 
 test("FAILED wins over DEPLOYING", async () => {
