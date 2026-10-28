@@ -113,10 +113,13 @@ async function requestEmailChange(email: string) {
     throw new CommandError(ERROR_CODES.VALIDATION_ERROR, SEND_FAILED)
   }
   try {
-    await auth.api.requestEmailChangeEmailOTP({
+    const sent = await auth.api.requestEmailChangeEmailOTP({
       body: { newEmail: email },
       headers,
     })
+    if (sent instanceof Response && !sent.ok) {
+      throw new CommandError(ERROR_CODES.VALIDATION_ERROR, SEND_FAILED)
+    }
   } catch (error) {
     const failure = authFailure(error)
     const sameOrInvalid =

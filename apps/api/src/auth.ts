@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks"
 
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { createAuthMiddleware } from "better-auth/api"
 import { emailOTP, genericOAuth } from "better-auth/plugins"
 
 import { PROFILE_DEFAULTS } from "@workspace/domain"
@@ -10,7 +11,7 @@ import { eq } from "drizzle-orm"
 import type { AppDatabase } from "./db/context.js"
 import { user } from "./db/schema.js"
 import { authSchema } from "./db/schema.js"
-import { createAuthCodeSender } from "./mail/auth-code.js"
+import { authMailFailed, createAuthCodeSender } from "./mail/auth-code.js"
 import { isAllowedOrigin } from "./origin.js"
 
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0]
@@ -24,8 +25,14 @@ export type AuthConfig = {
   rateLimitEnabled?: boolean
   resendApiKey?: string
   authEmailFrom?: string
+  logAuthMail?: boolean
   googleClientId?: string
   googleClientSecret?: string
+}
+
+const AUTH_EMAIL_FAILED = {
+  code: "AUTH_EMAIL_FAILED",
+  message: "We could not send the code. Try again.",
 }
 
 /**
@@ -49,6 +56,7 @@ export function createAuth({
   rateLimitEnabled = true,
   resendApiKey,
   authEmailFrom,
+  logAuthMail = false,
   googleClientId,
   googleClientSecret,
 }: AuthConfig) {
@@ -66,6 +74,7 @@ export function createAuth({
     sendVerificationOTP: createAuthCodeSender({
       resendApiKey,
       from: authEmailFrom,
+      logOtp: logAuthMail,
     }),
   })
   const google =
@@ -111,6 +120,16 @@ export function createAuth({
     },
     rateLimit: { enabled: rateLimitEnabled },
     telemetry: { enabled: false },
+    hooks: {
+      // Same per-request context the sender stamps. The send stays awaited.
+      after: createAuthMiddleware(async (ctx) => {
+        if (!authMailFailed(ctx)) return
+        return new Response(JSON.stringify(AUTH_EMAIL_FAILED), {
+          status: 503,
+          headers: { "content-type": "application/json" },
+        })
+      }),
+    },
     databaseHooks: {
       user: {
         create: {
