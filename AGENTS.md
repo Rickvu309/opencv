@@ -135,17 +135,21 @@ Stock shadcn/ui on `base-nova` (Base UI) in `packages/ui`, consumed as source by
 
 Install: `pnpm dlx shadcn@latest add <name> -c apps/web` for shadcn, `pnpm dlx shadcn@latest add https://www.kibo-ui.com/r/<name>.json -c apps/web` for Kibo UI, `https://www.cult-ui.com/r/<name>.json` for Cult UI, `@magicui/<name>` for Magic UI and `https://www.affectui.com/r/<name>.json` for affectUI. After every install run `node scripts/ds-codemod.mjs` to rename retired class names. Never add a token; if a registry piece brings one, map it to a shadcn variable.
 
-Design parity. The landing's design source is the pen frame named in `apps/web/src/features/landing/design/landing.snapshot.json`. The sign-in screen's is the frame in `apps/web/src/features/auth/design/auth.snapshot.json`. Regenerate a snapshot with `node scripts/pen-snapshot.mjs <pen> <frame id> <out.json>` when the design changes. The auth frame also copies its shader: `node scripts/pen-snapshot.mjs <pen> x1ht5a apps/web/src/features/auth/design/auth.snapshot.json --assets apps/web/src/features/auth/design`. Never build from `design/exports` PNGs. Rules and what enforces them:
+Design parity. The landing's design source is the pen frame named in `apps/web/src/features/landing/design/landing.snapshot.json`. The sign-in screen's is the frame in `apps/web/src/features/auth/design/auth.snapshot.json`. Regenerate a snapshot with `node scripts/pen-snapshot.mjs <pen> <frame id> <out.json>` when the design changes. The auth frame also copies its shader: `node scripts/pen-snapshot.mjs <pen> x1ht5a apps/web/src/features/auth/design/auth.snapshot.json --assets apps/web/src/features/auth/design`. Never build from `design/exports` PNGs. For pricing or blog cover changes, run `node scripts/verify-marketing-design.mjs <local web origin> <evidence directory>` against your assigned worktree port. It visits pricing and every post at desktop and phone widths and saves screenshots. Inspect those images; visible labels cannot establish visual quality by themselves.
 
-| Rule                                              | Enforced by                                                         |
-| ------------------------------------------------- | ------------------------------------------------------------------- |
-| Landing text matches the pen frame                | `landing-design-parity.test.tsx`                                    |
-| Auth screens match the pen auth layout            | `auth-design-parity.test.tsx`                                       |
-| Pen shader and image fills are built, not dropped | `scripts/pen-snapshot.mjs` fills and the parity tests               |
-| Hidden pen nodes stay hidden                      | `scripts/pen-snapshot.mjs` skips `enabled:false`                    |
-| Landing art comes from pen geometry               | `scripts/pen-art-to-svg.mjs` and verify-landing 27                  |
-| Rotated pen ellipses pivot on the corner          | `scripts/pen-art-to-svg.mjs` and verify-landing 30                  |
-| Nav lockup spacing matches the frame              | verify-landing 28                                                   |
-| Marketing calls to action                         | `landing-button.ts`, `landing-button.test.ts` and verify-landing 29 |
-| Stock tokens only                                 | `design-vocabulary.test.ts`                                         |
-| Module boundaries                                 | `boundaries.test.ts`                                                |
+Rules and what enforces them:
+
+| Rule                                              | Enforced by                                                                                      |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Landing text matches the pen frame                | `landing-design-parity.test.tsx`                                                                 |
+| Auth screens match the pen auth layout            | `auth-design-parity.test.tsx`                                                                    |
+| Pen shader and image fills are built, not dropped | `scripts/pen-snapshot.mjs` fills and the parity tests                                            |
+| Hidden pen nodes stay hidden                      | `scripts/pen-snapshot.mjs` skips `enabled:false`                                                 |
+| Landing art comes from pen geometry               | `scripts/pen-art-to-svg.mjs` and verify-landing 27                                               |
+| Rotated pen ellipses pivot on the corner          | `scripts/pen-art-to-svg.mjs` and verify-landing 30                                               |
+| Nav lockup spacing matches the frame              | verify-landing 28                                                                                |
+| Marketing calls to action                         | `landing-button.ts`, `landing-button.test.ts` and verify-landing 29                              |
+| Pricing uses its own pen frame and scale          | `pricing-parity.test.tsx` and `scripts/verify-marketing-design.mjs`                              |
+| Blog cover shows the article’s argument           | Typed `blog-cover-stories.ts`, `blog-covers.test.tsx`, and `scripts/verify-marketing-design.mjs` |
+| Stock tokens only                                 | `design-vocabulary.test.ts`                                                                      |
+| Module boundaries                                 | `boundaries.test.ts`                                                                             |

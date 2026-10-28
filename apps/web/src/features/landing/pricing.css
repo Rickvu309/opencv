@@ -1,0 +1,309 @@
+.pricing-column {
+  margin-inline: auto;
+}
+
+.pricing-header-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pricing-header h1,
+.pricing-section-title,
+.pricing-plan-name h2,
+.pricing-price,
+.pricing-note,
+.pricing-lead,
+.pricing-audience,
+.pricing-features,
+.pricing-included-item h3,
+.pricing-included-item p,
+.pricing-faq h3,
+.pricing-faq p {
+  margin: 0;
+}
+
+.pricing-header h1 {
+  font-weight: 500;
+  line-height: 1;
+}
+
+.pricing-header p,
+.pricing-audience,
+.pricing-price-period,
+.pricing-note,
+.pricing-included-item p,
+.pricing-faq p,
+.pricing-compare-table td {
+  color: var(--muted-foreground);
+}
+
+.pricing-section-title,
+.pricing-plan-name h2,
+.pricing-lead,
+.pricing-included-item h3,
+.pricing-faq h3,
+.pricing-compare-table th {
+  font-weight: 500;
+}
+
+.pricing-plan-row {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .pricing-plan-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pricing-plan {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pricing-plan-free {
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.pricing-plan-pro {
+  border: 1px solid var(--card);
+  background-color: color-mix(in oklch, var(--ring) 12%, var(--background));
+  background-image:
+    radial-gradient(
+      ellipse 80% 70% at 0% 0%,
+      color-mix(in oklch, var(--ring) 28%, var(--background)),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 80% at 100% 0%,
+      color-mix(in oklch, var(--chart-3) 16%, var(--background)),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 85% 75% at 40% 100%,
+      color-mix(in oklch, var(--ring) 20%, var(--background)),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 60% 55% at 100% 100%,
+      color-mix(in oklch, var(--chart-2) 14%, var(--background)),
+      transparent 70%
+    );
+  box-shadow: 0 16px 48px color-mix(in oklch, var(--ring) 20%, transparent);
+}
+
+.pricing-plan-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pricing-plan-name h2 {
+  font-size: 18px;
+}
+
+.pricing-kicker {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  margin: 0;
+  padding-inline: 10px;
+  border: 1px solid var(--card);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--card) 70%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.pricing-audience {
+  margin-top: 6px;
+  font-size: 15px;
+}
+
+.pricing-price {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.pricing-price-amount {
+  font-weight: 500;
+  line-height: 1;
+}
+
+.pricing-price-period {
+  font-size: 15px;
+}
+
+.pricing-cta {
+  margin-top: 28px;
+}
+
+.pricing-note {
+  margin-top: 10px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.pricing-plan-rule {
+  height: 1px;
+  margin: 28px 0 0;
+  border: 0;
+  background: var(--border);
+}
+
+.pricing-plan-pro .pricing-plan-rule {
+  background: var(--card);
+}
+
+.pricing-lead {
+  margin-top: 24px;
+  font-size: 14px;
+}
+
+.pricing-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.pricing-lead + .pricing-features {
+  margin-top: 14px;
+}
+
+.pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.pricing-features svg {
+  flex: none;
+}
+
+.pricing-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-compare-copy {
+  gap: 24px;
+}
+
+.pricing-faq-copy {
+  gap: 16px;
+}
+
+.pricing-included-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 56rem) {
+  .pricing-included-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pricing-included-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pricing-tile {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.pricing-included-item h3 {
+  font-size: 15px;
+}
+
+.pricing-included-item p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pricing-compare-scroll {
+  overflow-x: auto;
+}
+
+.pricing-compare-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.pricing-compare-table thead tr,
+.pricing-compare-row {
+  border-top: 1px solid var(--border);
+}
+
+.pricing-compare-table th,
+.pricing-compare-table td {
+  padding: 0;
+  font-size: 15px;
+  font-weight: 400;
+  text-align: start;
+  vertical-align: middle;
+  padding-inline-end: 8px;
+}
+
+.pricing-compare-table thead th {
+  font-weight: 500;
+}
+
+.pricing-compare-group th {
+  border: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pricing-dash {
+  color: color-mix(in oklch, var(--muted-foreground) 70%, var(--background));
+}
+
+.pricing-faq article {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.pricing-faq h3 {
+  font-size: 17px;
+}
+
+.pricing-faq p {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.pricing-prefooter .landing-section {
+  padding: 0;
+}
+
+.pricing-prefooter .landing-close-actions {
+  margin-block-start: 40px;
+}
+
+.pricing-footer .landing-footer {
+  margin-block-start: 0;
+}

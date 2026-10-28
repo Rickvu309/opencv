@@ -283,8 +283,11 @@ describe("pricing page", () => {
       "href",
       "/sign-in"
     )
-    expect(screen.getAllByText("Not included").length).toBeGreaterThan(0)
-    expect(document.body).not.toHaveTextContent("–")
+    expect(
+      screen.getAllByRole("img", { name: "Not included" }).length
+    ).toBeGreaterThan(0)
+    expect(screen.queryByText("Not included")).not.toBeInTheDocument()
+    expect(document.body).toHaveTextContent("\u2013")
   })
 })
 

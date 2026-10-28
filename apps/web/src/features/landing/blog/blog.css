@@ -175,6 +175,14 @@
   block-size: auto;
 }
 
+.blog-cover-story {
+  display: block;
+  inline-size: min(37.5rem, 94cqi);
+  block-size: auto;
+  color: var(--foreground);
+  font-family: inherit;
+}
+
 .blog-list-section {
   padding-block-start: 7rem;
 }
