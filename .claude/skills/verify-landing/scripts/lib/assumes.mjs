@@ -29,6 +29,7 @@ export const SEL = {
 }
 
 export const FILES = {
+  spec: `${LANDING_DIR}/design/landing.spec.json`,
   styles: `${LANDING_DIR}/design/landing.styles.json`,
   omitted: `${LANDING_DIR}/design/landing.omitted.json`,
 }

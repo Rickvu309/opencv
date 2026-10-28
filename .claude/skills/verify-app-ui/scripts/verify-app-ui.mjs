@@ -4,6 +4,8 @@
 //   pnpm --filter web verify:app-ui        (api on PORT, web on PORT+1; 4450 and 4451 by default)
 //   VERIFY_APP_UI_SHOTS=<dir> also writes the review screenshots.
 //   VERIFY_APP_UI_DATA=<file> writes the raw measurements as JSON for inspection.
+//   VERIFY_TIER=invariant|design|all (default all). invariant skips the design checks: they are not computed.
+//   verify-pen-layout and verify-apply-pen are separate commands, design by nature, and ignore the tier.
 // Starts the api (PGlite, scripted Coach) and the web dev server through the verify-opencv skill's
 // launch.sh, signs up a throwaway account, drives headless Chromium over the DevTools protocol, prints
 // one PASS, FAIL or STALE line per property, tears everything down, and exits 3 when any check is STALE
@@ -15,7 +17,9 @@ import { createConnection } from "node:net"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { runChecks } from "./lib/checks.mjs"
 import { summarize } from "./lib/check-util.mjs"
+import { KINDS } from "./lib/kinds.mjs"
 import { startStack, stopStack } from "./lib/stack.mjs"
+import { gate, selectTier, tierFromEnv } from "./lib/tier.mjs"
 import { runTour } from "./lib/tour.mjs"
 
 const base = Number(process.env.PORT ?? 4450)
@@ -25,6 +29,7 @@ if (!(base >= 4450 && base <= 4458)) {
   )
   process.exit(2)
 }
+const tier = tierFromEnv()
 const shots = process.env.VERIFY_APP_UI_SHOTS
 if (shots) mkdirSync(shots, { recursive: true })
 
@@ -59,7 +64,10 @@ try {
   const data = await runTour({ browser, ...stack, shots })
   if (process.env.VERIFY_APP_UI_DATA)
     writeFileSync(process.env.VERIFY_APP_UI_DATA, JSON.stringify(data, null, 1))
-  const { lines, exit: code } = summarize(runChecks(data))
+  const { lines, exit: code } = summarize(
+    selectTier(KINDS, tier, runChecks(data, gate(KINDS, tier))),
+    tier
+  )
   console.log(
     `verify-app-ui api=${stack.apiUrl} web=${stack.webUrl} (1440x900, 390x844, reduced motion)`
   )

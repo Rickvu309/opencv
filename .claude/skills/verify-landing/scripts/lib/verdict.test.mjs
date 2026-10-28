@@ -3,10 +3,13 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import { designChecks } from "./design-checks.mjs"
+import { loadSpec } from "./spec.mjs"
 import { judged, stale, summarize, verdict } from "./verdict.mjs"
 
+const spec = loadSpec()
+
 test("the art, lockup and CTA checks are STALE on a page with none of them", () => {
-  const out = designChecks({ ctas: {}, benefitArt: { count: 0 } })
+  const out = designChecks({ ctas: {}, benefitArt: { count: 0 } }, spec)
   assert.deepEqual(
     out.map((r) => [r.id, r.status]),
     [
@@ -20,11 +23,14 @@ test("the art, lockup and CTA checks are STALE on a page with none of them", () 
 })
 
 test("a found element is still judged, so a wrong lockup is FAIL", () => {
-  const out = designChecks({
-    ctas: {},
-    benefitArt: { count: 0 },
-    navLockup: { gap: 2, fontSize: "16px", fontWeight: "600" },
-  })
+  const out = designChecks(
+    {
+      ctas: {},
+      benefitArt: { count: 0 },
+      navLockup: { gap: 2, fontSize: "16px", fontWeight: "600" },
+    },
+    spec
+  )
   assert.equal(out.find((r) => r.id === "28").status, "FAIL")
 })
 
@@ -39,26 +45,32 @@ const wrongCta = {
 }
 
 test("29: a found wrong CTA FAILs although the others are missing; missing alone is STALE", () => {
-  const out = designChecks({
-    ctas: { nav: wrongCta },
-    benefitArt: { section: true, count: 0 },
-  }).find((r) => r.id === "29")
+  const out = designChecks(
+    {
+      ctas: { nav: wrongCta },
+      benefitArt: { section: true, count: 0 },
+    },
+    spec
+  ).find((r) => r.id === "29")
   assert.equal(out.status, "FAIL")
   assert.match(
     out.measured,
     /not judged: no button matched Get started in #close/
   )
-  const none = designChecks({ ctas: {}, benefitArt: {} }).find(
+  const none = designChecks({ ctas: {}, benefitArt: {} }, spec).find(
     (r) => r.id === "29"
   )
   assert.equal(none.status, "STALE")
 })
 
 test("27 and 30: #benefits present without its art is FAIL, only a missing #benefits is STALE", () => {
-  const out = designChecks({
-    ctas: {},
-    benefitArt: { section: true, count: 0 },
-  })
+  const out = designChecks(
+    {
+      ctas: {},
+      benefitArt: { section: true, count: 0 },
+    },
+    spec
+  )
   for (const id of ["27", "30"])
     assert.equal(out.find((r) => r.id === id).status, "FAIL", id)
 })

@@ -1,3 +1,8 @@
+import {
+  checkLine,
+  summaryLine,
+} from "../../../verify-app-ui/scripts/lib/tier.mjs"
+
 // The result shape shared by the landing checks. STALE means the check could not run a part of itself because
 // an anchor it needs (a container, a probe) was missing. A missing object the property is about is a FAIL.
 export const verdict = (id, name, rule, pass, measured) => ({
@@ -41,16 +46,9 @@ export const judged = (id, name, rule, pass, measured, unjudged = []) => {
   return verdict(id, name, rule, true, measured)
 }
 
-export function summarize(results) {
-  const lines = results.map(
-    (r) =>
-      `${r.status} ${r.id} ${r.name}: ${r.measured.slice(0, 230)} | rule: ${r.rule}`
-  )
-  const by = (status) => results.filter((r) => r.status === status)
-  const [failed, staled] = [by("FAIL"), by("STALE")]
-  const ids = [...failed, ...staled].map((r) => r.id)
-  lines.push(
-    `${by("PASS").length} PASS, ${failed.length} FAIL, ${staled.length} STALE${ids.length ? `: ${ids.join(" ")}` : ""}`
-  )
-  return { lines, exit: staled.length ? 3 : failed.length ? 1 : 0 }
+export function summarize(results, tier) {
+  const lines = results.map(checkLine)
+  lines.push(summaryLine(results, tier))
+  const by = (status) => results.some((r) => r.status === status)
+  return { lines, exit: by("STALE") ? 3 : by("FAIL") ? 1 : 0 }
 }

@@ -24,9 +24,10 @@ import {
 } from "./check-util.mjs"
 import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
 import { boardLanes } from "./checks-stages.mjs"
+import { sidewaysScroll } from "./checks-scroll.mjs"
 
-export function runChecks(d) {
-  const r = contentChecks(d)
+export function runChecks(d, want = () => true) {
+  const r = contentChecks(d, want)
   const { screens, allSnaps, labels, has, scan } = context(d)
   r.push(...motionChecks(d, { allSnaps, screens }))
 
@@ -50,16 +51,17 @@ export function runChecks(d) {
   const board = boardLanes(d.apply)
   const hs =
     d.apply.docScroll.sw > d.apply.docScroll.cw || d.apply.hScrollers.length > 0
-  r.push(
-    judged(
-      "16",
-      "apply-five-stages-no-hscroll",
-      "at 1440x900 Apply shows a lane heading for every stage in JOB_STAGES except closed and does not scroll sideways. Closed stays hidden. The 390 pass skips this property",
-      board.missing.length === 0 && !board.hiddenShown && !hs,
-      `stages ${list(board.stages ?? [], 5) || "unread"}; missing lanes: ${board.missing.join(" ") || "none"}; Closed visible: ${board.hiddenShown}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
-      [board.unread]
+  if (want("16"))
+    r.push(
+      judged(
+        "16",
+        "apply-five-stages-no-hscroll",
+        "at 1440x900 Apply shows a lane heading for every stage in JOB_STAGES except closed and does not scroll sideways. Closed stays hidden. The 390 pass skips this property",
+        board.missing.length === 0 && !board.hiddenShown && !hs,
+        `stages ${list(board.stages ?? [], 5) || "unread"}; missing lanes: ${board.missing.join(" ") || "none"}; Closed visible: ${board.hiddenShown}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
+        [board.unread]
+      )
     )
-  )
 
   r.push(
     result(
@@ -93,15 +95,16 @@ export function runChecks(d) {
     }
   }
   const light = SURFACES.every((k) => screens[k].bodyBgLum >= 0.85)
-  r.push(
-    result(
-      "19",
-      "light-field-sparse-accent",
-      light && decor.length === 0,
-      `light: ${light}; decorative dark or tinted fills: ${decor.length ? list(decor, 3) : "none"}`,
-      "background luminance 0.85+; no large dark or tinted decorative fill (heuristic: 6000px2 and up, non-button, non-token chroma 0.08+ or luminance under 0.1)"
+  if (want("19"))
+    r.push(
+      result(
+        "19",
+        "light-field-sparse-accent",
+        light && decor.length === 0,
+        `light: ${light}; decorative dark or tinted fills: ${decor.length ? list(decor, 3) : "none"}`,
+        "background luminance 0.85+; no large dark or tinted decorative fill (heuristic: 6000px2 and up, non-button, non-token chroma 0.08+ or luminance under 0.1)"
+      )
     )
-  )
 
   const sum = (key, f) => allSnaps.reduce((n, s) => n + f(s[key]), 0)
   const cfails = allSnaps.flatMap((s) => s.contrast.fails)
@@ -154,50 +157,54 @@ export function runChecks(d) {
   )
 
   const shown = board.lanes.filter((l) => l.heading)
-  r.push(
-    judged(
-      "23",
-      "stage-word-plus-dot",
-      "every stage in JOB_STAGES except closed is a visible lane headed with its own name. Closed is not a heading until Hidden columns",
-      board.missing.length === 0 &&
-        !board.hiddenShown &&
-        board.misnamed.length === 0,
-      `${shown.length} lane headings of ${board.stages?.length ?? "an unread number of"} stages; ${list(
-        shown.map((l) => l.heading),
-        5
-      )}${board.misnamed.map((l) => `; ${l.stage} lane headed "${l.heading}"`).join("")}`,
-      [board.unread]
+  if (want("23"))
+    r.push(
+      judged(
+        "23",
+        "stage-word-plus-dot",
+        "every stage in JOB_STAGES except closed is a visible lane headed with its own name. Closed is not a heading until Hidden columns",
+        board.missing.length === 0 &&
+          !board.hiddenShown &&
+          board.misnamed.length === 0,
+        `${shown.length} lane headings of ${board.stages?.length ?? "an unread number of"} stages; ${list(
+          shown.map((l) => l.heading),
+          5
+        )}${board.misnamed.map((l) => `; ${l.stage} lane headed "${l.heading}"`).join("")}`,
+        [board.unread]
+      )
     )
-  )
 
-  r.push(primaryButtonCheck(d))
+  if (want("28")) r.push(primaryButtonCheck(d))
 
-  const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
-    d.paperLoading.text
-  )?.[0]
-  const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
-  const emptyCopy = /Start a document/.exec(d.paperEmpty.text)?.[0]
-  const rule29 =
-    "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
-  const loadQuiet = stubSilent(d.paperLoading)
-  const emptyQuiet = stubSilent(d.paperEmpty)
-  const loadOk = loadQuiet !== null || (loadingOwn && !d.paperLoading.hasTable)
-  const emptyOk =
-    emptyQuiet !== null ||
-    (Boolean(emptyCopy) && (loadQuiet !== null || emptyCopy !== loadingCopy))
-  r.push(
-    judged(
-      "29",
-      "table-not-mounted-while-loading",
-      rule29,
-      loadOk && emptyOk,
-      `loading: ${loadQuiet ? "not judged" : `${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}`}; empty (list answered with none): ${emptyQuiet ? "not judged" : emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
-      [
-        loadQuiet && `loading part (${loadQuiet})`,
-        emptyQuiet && `empty part (${emptyQuiet})`,
-      ]
+  if (want("29")) {
+    const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
+      d.paperLoading.text
+    )?.[0]
+    const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
+    const emptyCopy = /Start a document/.exec(d.paperEmpty.text)?.[0]
+    const rule29 =
+      "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
+    const loadQuiet = stubSilent(d.paperLoading)
+    const emptyQuiet = stubSilent(d.paperEmpty)
+    const loadOk =
+      loadQuiet !== null || (loadingOwn && !d.paperLoading.hasTable)
+    const emptyOk =
+      emptyQuiet !== null ||
+      (Boolean(emptyCopy) && (loadQuiet !== null || emptyCopy !== loadingCopy))
+    r.push(
+      judged(
+        "29",
+        "table-not-mounted-while-loading",
+        rule29,
+        loadOk && emptyOk,
+        `loading: ${loadQuiet ? "not judged" : `${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}`}; empty (list answered with none): ${emptyQuiet ? "not judged" : emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
+        [
+          loadQuiet && `loading part (${loadQuiet})`,
+          emptyQuiet && `empty part (${emptyQuiet})`,
+        ]
+      )
     )
-  )
+  }
 
   const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
   const reject =
@@ -207,16 +214,17 @@ export function runChecks(d) {
   const rule30 =
     "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
   const why30 = scanProblem(scan)
-  r.push(
-    judged(
-      "30",
-      "undo-and-reject",
-      rule30,
-      undo && (reject || why30 !== null),
-      `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
-      [!reject && why30 && `Reject source read (${why30})`]
+  if (want("30"))
+    r.push(
+      judged(
+        "30",
+        "undo-and-reject",
+        rule30,
+        undo && (reject || why30 !== null),
+        `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
+        [!reject && why30 && `Reject source read (${why30})`]
+      )
     )
-  )
 
   // App-wide checks the tour adds.
   const h1s = SURFACES.map((k) => `${k}:${screens[k].h1.length}`)
@@ -282,23 +290,25 @@ export function runChecks(d) {
     )
   )
 
-  const papers = d.paper.paperCards
-  const longPaper = papers.filter((x) => x.titleLines > 2)
-  const tall = d.apply.cards.filter((x) => x.titleLines > 2)
-  const untitled = d.apply.cards.filter((x) => x.titleLines === null)
-  r.push(
-    result(
-      "36",
-      "row-density",
-      papers.length > 0 &&
-        longPaper.length === 0 &&
-        d.apply.cards.length > 0 &&
-        untitled.length === 0 &&
-        tall.length === 0,
-      `Paper cards ${papers.length}, over 2 title lines: ${longPaper.length}${papers.length ? "" : " (no card found)"}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
-      'no Paper card name and no Apply card title runs past two lines. The Paper library is a card grid since #396, so there are no rows to size. A Paper card is a button named "<name>, <edited>" holding those two texts; an Apply card title is found by its text from the card\'s aria-label, not by tag. No card or no title element is a FAIL'
+  if (want("36")) {
+    const papers = d.paper.paperCards
+    const longPaper = papers.filter((x) => x.titleLines > 2)
+    const tall = d.apply.cards.filter((x) => x.titleLines > 2)
+    const untitled = d.apply.cards.filter((x) => x.titleLines === null)
+    r.push(
+      result(
+        "36",
+        "row-density",
+        papers.length > 0 &&
+          longPaper.length === 0 &&
+          d.apply.cards.length > 0 &&
+          untitled.length === 0 &&
+          tall.length === 0,
+        `Paper cards ${papers.length}, over 2 title lines: ${longPaper.length}${papers.length ? "" : " (no card found)"}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
+        'no Paper card name and no Apply card title runs past two lines. The Paper library is a card grid since #396, so there are no rows to size. A Paper card is a button named "<name>, <edited>" holding those two texts; an Apply card title is found by its text from the card\'s aria-label, not by tag. No card or no title element is a FAIL'
+      )
     )
-  )
+  }
 
   const rc = {}
   for (const s of allSnaps)
@@ -320,39 +330,43 @@ export function runChecks(d) {
     )
   )
 
-  const mobileNav = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
-  const ms = Object.entries(d.mobile).map(([k, s]) => {
-    const names = mobileNav.map((n) =>
-      s.buttons.find(
-        (b) =>
-          b.label === n &&
-          b.x >= 0 &&
-          b.x + b.w <= 390 &&
-          b.y < 844 &&
-          b.w >= 24 &&
-          b.h >= 24
+  if (want("38")) {
+    const mobileNav = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
+    const ms = Object.entries(d.mobile).map(([k, s]) => {
+      const names = mobileNav.map((n) =>
+        s.buttons.find(
+          (b) =>
+            b.label === n &&
+            b.x >= 0 &&
+            b.x + b.w <= 390 &&
+            b.y < 844 &&
+            b.w >= 24 &&
+            b.h >= 24
+        )
+      )
+      return {
+        k,
+        overflow: s.docScroll.sw > s.docScroll.cw,
+        missing: names.filter((x) => !x).length,
+      }
+    })
+    r.push(
+      result(
+        "38",
+        "mobile-surfaces-reachable",
+        ms.every((m) => !m.overflow && m.missing === 0),
+        ms
+          .map(
+            (m) =>
+              `${m.k}: ${m.overflow ? "page scrolls sideways" : "fits"}, ${mobileNav.length - m.missing}/${mobileNav.length} surface links in view`
+          )
+          .join("; "),
+        "at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more, and the page does not scroll sideways"
       )
     )
-    return {
-      k,
-      overflow: s.docScroll.sw > s.docScroll.cw,
-      missing: names.filter((x) => !x).length,
-    }
-  })
-  r.push(
-    result(
-      "38",
-      "mobile-surfaces-reachable",
-      ms.every((m) => !m.overflow && m.missing === 0),
-      ms
-        .map(
-          (m) =>
-            `${m.k}: ${m.overflow ? "page scrolls sideways" : "fits"}, ${mobileNav.length - m.missing}/${mobileNav.length} surface links in view`
-        )
-        .join("; "),
-      "at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more, and the page does not scroll sideways"
-    )
-  )
+  }
+
+  r.push(sidewaysScroll(d))
 
   const settingsSnaps = [
     d.settings,
@@ -381,15 +395,16 @@ export function runChecks(d) {
 
   const glowViews = capturedGlowViews(d)
   const extraGlow = extraGlowPrimaries(glowViews.map((view) => view.count))
-  r.push(
-    result(
-      "40",
-      "one-glow-primary",
-      extraGlow.length === 0,
-      glowViews.map((view) => `${view.name} ${view.count}`).join(", "),
-      "each view has at most one glow primary"
+  if (want("40"))
+    r.push(
+      result(
+        "40",
+        "one-glow-primary",
+        extraGlow.length === 0,
+        glowViews.map((view) => `${view.name} ${view.count}`).join(", "),
+        "each view has at most one glow primary"
+      )
     )
-  )
 
   const dashes = dashViolations(copy)
   r.push(
@@ -403,15 +418,16 @@ export function runChecks(d) {
   )
 
   const toggles = toggleViolations(checkedLabels)
-  r.push(
-    result(
-      "42",
-      "toggle-enabled-disabled",
-      toggles.length === 0,
-      toggles.length ? list(toggles) : "toggles read Enabled or Disabled",
-      "a toggle reads Enabled or Disabled, never On, Off, or Connected"
+  if (want("42"))
+    r.push(
+      result(
+        "42",
+        "toggle-enabled-disabled",
+        toggles.length === 0,
+        toggles.length ? list(toggles) : "toggles read Enabled or Disabled",
+        "a toggle reads Enabled or Disabled, never On, Off, or Connected"
+      )
     )
-  )
 
   const titles = titleBeforeCompany(checkedLabels)
   r.push(

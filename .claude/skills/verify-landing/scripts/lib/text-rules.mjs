@@ -35,7 +35,7 @@ const sentenceTexts = (top) =>
       sentences(b.text).map((text) => ({ region: b.region, text }))
     )
 
-export function textRules(top) {
+export function textRules(top, want = () => true) {
   const h1 = top.blocks.find((b) => b.tag === "h1")?.text ?? ""
   const subBlock = part(top, (r) => r === "hero").find((b) => b.tag === "p")
   const sub = subBlock?.text ?? ""
@@ -60,15 +60,16 @@ export function textRules(top) {
       b.region !== "nav" && /\bopencv\b/.test(b.text) && /\bCV\b/.test(b.text)
   )
   // The first-release hero is the outcome line. The statement names opencv and the CV.
-  out.push(
-    verdict(
-      "02",
-      "statement-names-cv",
-      'A block outside the nav names "opencv" and "CV" (the statement carries the product, not the H1)',
-      namesWork,
-      `statement names opencv and CV=${namesWork}`
+  if (want("02"))
+    out.push(
+      verdict(
+        "02",
+        "statement-names-cv",
+        'A block outside the nav names "opencv" and "CV" (the statement carries the product, not the H1)',
+        namesWork,
+        `statement names opencv and CV=${namesWork}`
+      )
     )
-  )
 
   const listItems = Math.max(
     0,
@@ -112,27 +113,29 @@ export function textRules(top) {
     )
   )
 
-  const titles = SURFACES.map((name) => {
-    const block = top.blocks.find(
-      (b) => b.region === `surface:${name}` && b.tag === "h2"
+  if (want("06")) {
+    const titles = SURFACES.map((name) => {
+      const block = top.blocks.find(
+        (b) => b.region === `surface:${name}` && b.tag === "h2"
+      )
+      const h2 = block?.text ?? ""
+      const count = words(h2).length
+      return { name, h2, found: Boolean(block), ok: count >= 1 && count <= 3 }
+    })
+    const bad = titles.filter((t) => !t.ok)
+    // The three product titles are the surface names: one to three words.
+    out.push(
+      verdict(
+        "06",
+        "product-titles-name-the-surface",
+        "Each product title (paper, apply, coach) is 1 to 3 words; a surface with no h2 is off",
+        bad.length === 0,
+        bad.length
+          ? `off: ${bad.map((t) => `${t.name}->${t.found ? `"${t.h2}"` : "no h2"}`).join(", ")}`
+          : "all three titles are 1 to 3 words"
+      )
     )
-    const h2 = block?.text ?? ""
-    const count = words(h2).length
-    return { name, h2, found: Boolean(block), ok: count >= 1 && count <= 3 }
-  })
-  const bad = titles.filter((t) => !t.ok)
-  // The three product titles are the surface names: one to three words.
-  out.push(
-    verdict(
-      "06",
-      "product-titles-name-the-surface",
-      "Each product title (paper, apply, coach) is 1 to 3 words; a surface with no h2 is off",
-      bad.length === 0,
-      bad.length
-        ? `off: ${bad.map((t) => `${t.name}->${t.found ? `"${t.h2}"` : "no h2"}`).join(", ")}`
-        : "all three titles are 1 to 3 words"
-    )
-  )
+  }
 
   const signUps = top.links.filter(
     (l) => isSignUpLink(l) && ["nav", "hero", "closing"].includes(l.region)
@@ -145,30 +148,33 @@ export function textRules(top) {
   const heroSignUp = signUps.filter((l) => l.region === "hero")
   const distinct = new Set(labels.flatMap((l) => l.texts))
   // The design hero is type and a photo. The same action sits in the nav and the close.
-  out.push(
-    verdict(
-      "07",
-      "one-primary-label",
-      "One sign-up label in the nav and one in the closing band, and none in the hero",
-      distinct.size === 1 &&
-        labels.every((l) => l.texts.length === 1) &&
-        heroSignUp.length === 0,
-      `${labels.map((l) => `${l.r}=${quote(l.texts)}`).join(" ")} hero=${heroSignUp.length}`
+  if (want("07"))
+    out.push(
+      verdict(
+        "07",
+        "one-primary-label",
+        "One sign-up label in the nav and one in the closing band, and none in the hero",
+        distinct.size === 1 &&
+          labels.every((l) => l.texts.length === 1) &&
+          heroSignUp.length === 0,
+        `${labels.map((l) => `${l.r}=${quote(l.texts)}`).join(" ")} hero=${heroSignUp.length}`
+      )
     )
-  )
 
-  const label = [...distinct][0] ?? ""
-  // NN/g 4.1; Shapiro "Find food", "Start learning"
-  out.push(
-    verdict(
-      "08",
-      "label-has-object",
-      'The sign-up label is the design label "Get started", or another 2+ word label that is not a bare verb (Start free, Learn more, Join)',
-      words(label).length >= 2 &&
-        (label === "Get started" || !GENERIC_LABEL.test(label)),
-      `label ${quote([label])}, ${words(label).length} words`
+  if (want("08")) {
+    const label = [...distinct][0] ?? ""
+    // NN/g 4.1; Shapiro "Find food", "Start learning"
+    out.push(
+      verdict(
+        "08",
+        "label-has-object",
+        'The sign-up label is the design label "Get started", or another 2+ word label that is not a bare verb (Start free, Learn more, Join)',
+        words(label).length >= 2 &&
+          (label === "Get started" || !GENERIC_LABEL.test(label)),
+        `label ${quote([label])}, ${words(label).length} words`
+      )
     )
-  )
+  }
 
   const objection = /\byour\s+(own\s+)?(cv|work|goals|story)\b/i
   const firstSurface = top.blocks.findIndex((b) =>
@@ -193,42 +199,46 @@ export function textRules(top) {
     )
   )
 
-  const facts =
-    /\b(cv|proof|role|roles|letter|site|claim|interview|job|jobs)\b/i
-  const firsts = SURFACES.map((name) => {
-    const block = top.blocks.find(
-      (b) => b.region === `surface:${name}` && b.tag === "p"
+  if (want("11")) {
+    const facts =
+      /\b(cv|proof|role|roles|letter|site|claim|interview|job|jobs)\b/i
+    const firsts = SURFACES.map((name) => {
+      const block = top.blocks.find(
+        (b) => b.region === `surface:${name}` && b.tag === "p"
+      )
+      return { name, found: Boolean(block), ok: facts.test(block?.text ?? "") }
+    })
+    out.push(
+      verdict(
+        "11",
+        "product-body-ties-to-hero",
+        "Each product's intro paragraph names proof, a CV, a role, a letter, a site, or a claim; a surface with no intro paragraph is off",
+        firsts.every((f) => f.ok),
+        `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => (f.found ? f.name : `${f.name} (no p)`)))}`
+      )
     )
-    return { name, found: Boolean(block), ok: facts.test(block?.text ?? "") }
-  })
-  out.push(
-    verdict(
-      "11",
-      "product-body-ties-to-hero",
-      "Each product's intro paragraph names proof, a CV, a role, a letter, a site, or a claim; a surface with no intro paragraph is off",
-      firsts.every((f) => f.ok),
-      `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => (f.found ? f.name : `${f.name} (no p)`)))}`
-    )
-  )
+  }
 
-  const text = top.bodyText
-  const logos = /PEOPLE USING OPENCV HAVE INTERVIEWED AT/.test(text)
-  const quoteA = /I stopped listing duties/.test(text)
-  const quoteB = /treated each one like a pitch/.test(text)
-  const invented =
-    /[★⭐]|trusted by|as seen in|\b\d[\d,.]*\+?\s?(users|companies|professionals)\b/i.exec(
-      text
-    )?.[0]
-  // The design draws a logo row and two quotes. Prices live on /pricing. Invented counts stay off /.
-  out.push(
-    verdict(
-      "12",
-      "designed-logos-and-quotes",
-      "The logos eyebrow and both design quotes are on the page, with no star rating and no invented user count. Prices are not on /",
-      logos && quoteA && quoteB && !invented && !/\$\s?\d/.test(text),
-      `logos=${logos} quoteA=${quoteA} quoteB=${quoteB} invented=${invented ?? "none"}`
+  if (want("12")) {
+    const text = top.bodyText
+    const logos = /PEOPLE USING OPENCV HAVE INTERVIEWED AT/.test(text)
+    const quoteA = /I stopped listing duties/.test(text)
+    const quoteB = /treated each one like a pitch/.test(text)
+    const invented =
+      /[★⭐]|trusted by|as seen in|\b\d[\d,.]*\+?\s?(users|companies|professionals)\b/i.exec(
+        text
+      )?.[0]
+    // The design draws a logo row and two quotes. Prices live on /pricing. Invented counts stay off /.
+    out.push(
+      verdict(
+        "12",
+        "designed-logos-and-quotes",
+        "The logos eyebrow and both design quotes are on the page, with no star rating and no invented user count. Prices are not on /",
+        logos && quoteA && quoteB && !invented && !/\$\s?\d/.test(text),
+        `logos=${logos} quoteA=${quoteA} quoteB=${quoteB} invented=${invented ?? "none"}`
+      )
     )
-  )
+  }
 
   const alts = top.imgs.map((i) => i.alt ?? "")
   const personAlt = alts.some((a) => /portrait/i.test(a))
@@ -236,14 +246,15 @@ export function textRules(top) {
   const placeholder = alts.filter((a) =>
     /placeholder|your name|lorem|untitled/i.test(a)
   ).length
-  out.push(
-    verdict(
-      "13",
-      "customer-and-cv-alt",
-      "Some image alt names a customer portrait, some alt names a CV or letter, and none says placeholder",
-      personAlt && cvAlt && placeholder === 0,
-      `person=${personAlt}, cv-or-letter=${cvAlt}, placeholder alts=${placeholder}`
+  if (want("13"))
+    out.push(
+      verdict(
+        "13",
+        "customer-and-cv-alt",
+        "Some image alt names a customer portrait, some alt names a CV or letter, and none says placeholder",
+        personAlt && cvAlt && placeholder === 0,
+        `person=${personAlt}, cv-or-letter=${cvAlt}, placeholder alts=${placeholder}`
+      )
     )
-  )
   return out
 }

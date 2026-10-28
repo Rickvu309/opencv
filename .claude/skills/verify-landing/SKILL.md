@@ -22,7 +22,7 @@ PORT=4399 pnpm --filter web verify:landing
 - About 20 s warm. One browser process, so do not run it beside install, vitest or another browser run on the shared machine.
 - `VERIFY_LANDING_SHOTS=<dir>` also writes `desktop-first-view.png`, `desktop-full.png`, `mobile-first-view.png`, `mobile-full.png` (1440x900 and 390x844) for the taste review.
 
-Output is one line per property, `PASS|FAIL|STALE <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL, K STALE: <ids>`. A check judges every part it can find. Any found part that breaks the rule makes it FAIL. With none broken, a part it could not locate (the hero section, `#benefits`, the nav lockup, a call-to-action button, the first product section) makes it STALE, and the line names it. A missing object the property is about (the hero figure, the benefit art, a product title) is a FAIL, not a STALE. Exit 0 all PASS, 1 any FAIL and no STALE, 3 any STALE, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+Output is one line per property, `PASS|FAIL|STALE <id> [<kind>] <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL, K STALE: <ids> [tier <tier>]`. A check judges every part it can find. Any found part that breaks the rule makes it FAIL. With none broken, a part it could not locate (the hero section, `#benefits`, the nav lockup, a call-to-action button, the first product section) makes it STALE, and the line names it. A missing object the property is about (the hero figure, the benefit art, a product title) is a FAIL, not a STALE. Exit 0 all PASS, 1 any FAIL and no STALE, 3 any STALE, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
 
 Reading a STALE: it means the check could not run that part, and the measured value names it ("not judged: ..."). A STALE hides nothing that was found, since any FAIL in the same check would have shown. Decide whether the checker's setup or the page changed. If the page dropped the section or button on purpose, repair the locator in `probe.mjs` or the check. If it lost it by accident, that is the regression: fix the page. A check that cannot run never counts as a pass.
 
@@ -31,6 +31,22 @@ Reading a FAIL: the measured value is what the page does, the rule is what it sh
 1. Is the measurement right? Compare it with the screenshot (`VERIFY_LANDING_SHOTS`) or the DOM in the browser. A number that does not match what you see is a probe bug: fix `scripts/lib/probe.mjs`.
 2. Is the rule right? If the measurement is right but the rule misjudges (a good page fails, or a bad page passes), it is a rule bug: fix the rule in `text-rules.mjs` or `page-checks.mjs` and add a case to `text-rules.test.mjs` when the rule is a pure text rule.
 3. Both right: it is a finding about the page. Report it. Do not edit the page unless that was the task.
+
+## Tiers
+
+Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properties.md). An invariant check holds for any good design: writing rules, WCAG, reduced motion, tokens, no sideways scroll. A design check holds only for the current one: a pen frame, a pinned count, size, copy or picture.
+
+- `VERIFY_TIER=invariant` runs the invariant checks only. The design checks are not computed: the design probe does not run, nothing is rasterised, and no file under `design/` or `reference/` is read. Use it for any change that is not a redesign. A redesign does not break it.
+- `VERIFY_TIER=design` reports only the design checks. `VERIFY_TIER=all` (default) runs both.
+- The design numbers of 27 to 30 live in `apps/web/src/features/landing/design/landing.spec.json`, not in the checker. 31 reads `landing.styles.json` and `landing.omitted.json` beside it. Checks 06, 07, 08, 11, 12, 13, 14, 15, 16, 17 and 19 are design-tier rules that keep their copy and counts in `text-rules.mjs` and `page-checks.mjs`.
+- `verify:pen-layout` and `verify:apply-pen` are separate commands and design by nature. The tier does not touch them.
+
+After a redesign:
+
+1. Run with `VERIFY_LANDING_SHOTS=<dir>` and look at the screenshots. A spec value is only as good as the page it was measured from, so the look comes first.
+2. `node scripts/design-spec.mjs record --from-app <origin>`. It writes nothing. It prints one line per spec value, `unchanged` or `<id>.<path>: <committed> -> <measured>`, and exits 1 when anything differs (or a value sits outside a committed tolerance), 0 when nothing does. A recorder cannot tell a redesign from a regression, since any value it writes becomes the truth. Read its diff against the screenshots: a card count that fell from 3 to 2 or a type size that shrank is a regression to fix in the page, not a number to record.
+3. Only when the diff is the redesign, run it again with `--accept` (optionally `--out <path>`) and commit the spec. `--accept` keeps the committed tolerances and locators (the nav gap band, the CTA tolerance, the art delta and ratio, the button labels, the Coach card title, the mark inset) and exits 2 without writing when a measurement is outside one, so move a tolerance by hand first. The spec holds design values only; rules such as "no inline hex" stay in the checker. It never writes `reference/coach-art.png`: that picture comes from the design tool or a screenshot a human approved, never from the page it judges. Replace it in its own reviewed commit.
+4. The reviewer of that PR reads the spec diff the same way, against the same screenshots.
 
 ## The properties
 
