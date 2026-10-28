@@ -37,7 +37,7 @@ Editing files under `apps/api/src` while the stack is up makes `tsx watch` respa
 
 Use the `agent-browser` skill with its own named session (`export AGENT_BROWSER_SESSION=verify-<run>`). Load `$WEB_URL` from `run.env` (`set -a; . ~/tmp/opencv-verify/<run>/run.env; set +a`). Prefer ARIA roles and accessible names: `agent-browser find role button click --name "Continue"`.
 
-Routes: `/sign-in`. `/sign-up` redirects to `/sign-in`. `/app` redirects to the start page, Apply by default. `/app/paper`, `/app/apply`, `/app/coach`, `/app/inbox`, `/app/settings` (Preferences, plus `/app/settings/coach`, `/app/settings/integrations`, `/app/settings/usage`, `/app/settings/billing`, `/app/settings/billing/upgrade`, and `/app/settings/account`). `/app/jobs`, `/app/proofs` and `/app/pitch` are coming soon. `/app/proof` redirects to `/app/proofs`. Signed-out visits to `/app/*` redirect to `/sign-in?redirect=...`. `/u/$slug` and unknown paths are the calm 404.
+Routes: `/sign-in`. `/sign-up` redirects to `/sign-in`. Signed in, `/` redirects to the start page, Apply by default. The product routes are the `SURFACE_PATHS` in `apps/web/src/lib/product-paths.ts`: `/paper`, `/apply`, `/coach`, `/inbox`, `/settings` (Preferences, plus `/settings/coach`, `/settings/integrations`, `/settings/usage`, `/settings/billing`, `/settings/billing/upgrade`, and `/settings/account`). `/jobs`, `/proofs` and `/pitch` are coming soon. `/proof` redirects to `/proofs`. The legacy `/app` prefix redirects to the route without it, so never open it to inspect a screen. Signed-out visits to a product route redirect to `/sign-in?redirect=...`. `/u/$slug` and unknown paths are the calm 404.
 
 The first email code creates an empty account. It does not seed a CV, Apply cards, a Pitch, or a welcome thread. Each feature recipe creates the records it drives. Brand text may change between branches, so assert on behavior and accessible names, not the product name.
 
@@ -53,6 +53,14 @@ Open `features/README.md`, pick the feature file for what changed, and follow it
 - `features/inbox.md`
 
 A proof that drives one convenient entry point is incomplete when the feature file lists others.
+
+## Design parity
+
+A screen that works can still differ from the design. Before you call a screen verified, check it against the pen frames, not only against the app's own expectations.
+
+- Frame coverage is guarded by #494: `apps/web/src/test/design-frames.json` lists the release frames and `PENDING_FRAMES` in `apps/web/src/test/design-frame-coverage.test.ts` lists the ones not built from the pen yet. A frame with a committed snapshot and a parity test is guarded, so run that test.
+- For a pending frame, open it in `design/opencv.pen` on `chore/350-design-kit-cli-skills`, screenshot the live screen at the same width, and list each visible difference. Never write "matches the design" for a pending frame.
+- Open the canonical route from `SURFACE_PATHS` (`apps/web/src/lib/product-paths.ts`), not a legacy `/app` path. `scripts/skill-routes.test.mjs` rejects a retired path in any skill.
 
 ## Evidence
 

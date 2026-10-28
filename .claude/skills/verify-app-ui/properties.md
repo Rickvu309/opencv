@@ -22,7 +22,7 @@ Writing and logic:
 
 Structure:
 
-- 14 `home-composer-first`: the `/app` start page does not show "What are you aiming for?" or "Four small things". Home is gone until the Coach page replaces this check. Source: Apple layout.
+- 14 `home-composer-first`: the `/home` page does not show "What are you aiming for?" or "Four small things". Home is gone until the Coach page replaces this check. Source: Apple layout.
 - 15 `cv-widest-coach-beside`: with the Coach panel closed, the CV editor is the widest region and no second Coach float covers the sheet (at 1440 wide). An open panel belongs to #377. Source: Cursor; Linear.
 - 16 `apply-five-stages-no-hscroll`: Saved, Applied, Interview and Offer are visible column headings at 1440x900, Closed is not, and the board does not scroll sideways. The 390 pass skips this property because the lanes scroll there. Source: the Apply board.
 - 17 `search-key-hint`: the Search button has a `kbd` inside it and Ctrl-K opens the dialog. Source: Raycast.
@@ -52,7 +52,7 @@ Accessibility and performance:
 App-wide:
 
 - 31 `one-h1-per-screen`: exactly one visible h1 on the start page, Paper, the open CV, Apply and Pitch. Home is not a screen. The shell panel title is not an h1. Pitch's only h1 is the coming-soon promise. The page name is not an h1.
-- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). On `/app` the primary is the start page Add control. Message Coach is not required. Pitch's primary is Get early access.
+- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). On `/home` the primary is the start page Add control. Message Coach is not required. Pitch's primary is Get early access.
 - 33 `no-console-errors`: the signed-in desktop, reduced-motion and 390px passes log no console error, React warning, uncaught exception or failed load. The mocked scenario pages are not counted.
 - 34 `first-render-budget`: each route renders its content within 2000 ms of navigation (dev server, warm). The budget is this skill's, set for the shared 8-core machine.
 - 35 `spacing-scale`: 95% or more of padding and gap values are on the 4px scale plus the half steps 2, 6, 10, 14.
@@ -62,7 +62,7 @@ App-wide:
 
 Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 
-- 39 `brand-wordmark`: chrome never contains OpenCV. The brand is the mark plus lowercase opencv. The same 39 to 44 rules also run on `/app/settings` (desktop, reduced motion, and 390). Those snaps stay off the four surfaces in check 38.
+- 39 `brand-wordmark`: chrome never contains OpenCV. The brand is the mark plus lowercase opencv. The same 39 to 44 rules also run on `/settings` (desktop, reduced motion, and 390). Those snaps stay off the four surfaces in check 38.
 - 40 `one-glow-primary`: each toured view, including the 390px pass and the Inbox connect screen, has at most one control wearing the glow utility. The Inbox follows its pen frames and wears no glow.
 - 41 `no-dash-in-copy`: chrome has no em dash, en dash, or middle dot.
 - 42 `toggle-enabled-disabled`: a toggle label is Enabled or Disabled. On, Off, and Connected fail.

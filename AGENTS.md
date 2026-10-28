@@ -152,22 +152,23 @@ Signed-in screens match their pen frame in layout, not only in copy. A screen bu
 
 Rules and what enforces them:
 
-| Rule                                              | Enforced by                                                                                       |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Landing text matches the pen frame                | `landing-design-parity.test.tsx`                                                                  |
-| Landing text styles and marks match the frame     | verify-landing 31                                                                                 |
-| Auth screens match the pen auth layout            | `auth-design-parity.test.tsx`                                                                     |
-| Pen shader and image fills are built, not dropped | `scripts/pen-snapshot.mjs` fills and the parity tests                                             |
-| Hidden pen nodes stay hidden                      | `scripts/pen-snapshot.mjs` skips `enabled:false`                                                  |
-| Landing art comes from pen geometry               | `scripts/pen-art-to-svg.mjs` and verify-landing 27                                                |
-| Rotated pen ellipses pivot on the corner          | `scripts/pen-art-to-svg.mjs` and verify-landing 30                                                |
-| Nav lockup spacing matches the frame              | verify-landing 28                                                                                 |
-| Marketing calls to action                         | `landing-button.ts`, `landing-button.test.ts` and verify-landing 29                               |
-| Pricing uses its own pen frame and scale          | `pricing-parity.test.tsx` and `scripts/verify-marketing-design.mjs`                               |
-| Blog cover shows the article’s argument           | Typed `blog-cover-stories.ts`, `blog-covers.test.tsx`, and `scripts/verify-marketing-design.mjs`  |
-| Signed-in screen layout matches its pen frame     | `scripts/pen-layout.mjs`, `*.layout.json` and `verify:pen-layout` (`pen-layout-compare.test.mjs`) |
-| Apply shows every text and icon of its frames     | `apply-design-parity.board.test.tsx`, `apply-design-parity.job.test.tsx`                          |
-| Apply text styles and icon sizes match the frames | `verify-apply-pen.mjs` (`pnpm --filter web verify:apply-pen`)                                     |
-| Stock tokens only                                 | `design-vocabulary.test.ts`                                                                       |
-| Release frames have parity snapshots              | `design-frame-coverage.test.ts`                                                                   |
-| Module boundaries                                 | `boundaries.test.ts`                                                                              |
+| Rule                                                                | Enforced by                                                                                       |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Landing text matches the pen frame                                  | `landing-design-parity.test.tsx`                                                                  |
+| Landing text styles and marks match the frame                       | verify-landing 31                                                                                 |
+| Auth screens match the pen auth layout                              | `auth-design-parity.test.tsx`                                                                     |
+| Pen shader and image fills are built, not dropped                   | `scripts/pen-snapshot.mjs` fills and the parity tests                                             |
+| Hidden pen nodes stay hidden                                        | `scripts/pen-snapshot.mjs` skips `enabled:false`                                                  |
+| Landing art comes from pen geometry                                 | `scripts/pen-art-to-svg.mjs` and verify-landing 27                                                |
+| Rotated pen ellipses pivot on the corner                            | `scripts/pen-art-to-svg.mjs` and verify-landing 30                                                |
+| Nav lockup spacing matches the frame                                | verify-landing 28                                                                                 |
+| Marketing calls to action                                           | `landing-button.ts`, `landing-button.test.ts` and verify-landing 29                               |
+| Pricing uses its own pen frame and scale                            | `pricing-parity.test.tsx` and `scripts/verify-marketing-design.mjs`                               |
+| Blog cover shows the article’s argument                             | Typed `blog-cover-stories.ts`, `blog-covers.test.tsx`, and `scripts/verify-marketing-design.mjs`  |
+| Signed-in screen layout matches its pen frame                       | `scripts/pen-layout.mjs`, `*.layout.json` and `verify:pen-layout` (`pen-layout-compare.test.mjs`) |
+| Verify skills name product routes without the retired `/app` prefix | `scripts/skill-routes.test.mjs`                                                                   |
+| Apply shows every text and icon of its frames                       | `apply-design-parity.board.test.tsx`, `apply-design-parity.job.test.tsx`                          |
+| Apply text styles and icon sizes match the frames                   | `verify-apply-pen.mjs` (`pnpm --filter web verify:apply-pen`)                                     |
+| Stock tokens only                                                   | `design-vocabulary.test.ts`                                                                       |
+| Release frames have parity snapshots                                | `design-frame-coverage.test.ts`                                                                   |
+| Module boundaries                                                   | `boundaries.test.ts`                                                                              |

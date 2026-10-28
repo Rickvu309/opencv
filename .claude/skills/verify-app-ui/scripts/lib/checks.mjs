@@ -44,7 +44,7 @@ export function runChecks(d) {
       staleHome.length
         ? `start page still shows ${staleHome.join(", ")}`
         : "start page does not show the old Home prompts",
-      "the /app start page does not show What are you aiming for? or Four small things"
+      "the /home page does not show What are you aiming for? or Four small things"
     )
   )
 
