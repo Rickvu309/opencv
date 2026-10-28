@@ -19,6 +19,8 @@ import { getDb, transaction } from "../db/context.js"
 import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
+import { receiptDetail, reversalOf } from "./receipt.js"
+
 const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
 const CHECKLIST_COMMANDS = new Set([
@@ -373,6 +375,51 @@ export class Registry {
       }
     }
     return query.read(input, branded)
+  }
+
+  async confirmations(userId: string, chatId: string) {
+    const rows = await getDb()
+      .select()
+      .from(pendingActions)
+      .where(
+        and(
+          eq(pendingActions.userId, userId),
+          eq(pendingActions.chatId, chatId)
+        )
+      )
+    return Promise.all(
+      rows.map(async (row) => {
+        const completed =
+          row.status === "approved"
+            ? await this.activityByKey(userId, row.id)
+            : null
+        return {
+          id: row.id,
+          status:
+            row.status === "pending" &&
+            Date.now() - row.createdAt.getTime() > PENDING_TTL_MS
+              ? ("expired" as const)
+              : row.status,
+          receipt: completed
+            ? {
+                summary: completed.summary,
+                activityId: completed.id,
+                reversal: reversalOf(
+                  completed.reversalCommand
+                    ? {
+                        command: completed.reversalCommand,
+                        input: completed.reversalInput,
+                      }
+                    : null,
+                  completed.summary
+                ),
+                detail: receiptDetail(completed.command, completed.result),
+                undone: completed.undoneAt !== null,
+              }
+            : undefined,
+        }
+      })
+    )
   }
 
   async approve(userId: string, pendingActionId: string) {

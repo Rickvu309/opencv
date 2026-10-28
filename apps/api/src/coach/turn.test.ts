@@ -410,6 +410,54 @@ describe("liveParts with a model that calls an unknown tool", () => {
   })
 })
 
+describe("live model failures and grounding", () => {
+  it("sends the selected passage and document version to the model and surfaces provider failure", async () => {
+    let observed: unknown
+    const model = new MockLanguageModelV3({
+      doStream: async (options) => {
+        observed = options
+        return {
+          stream: simulateReadableStream({
+            chunks: [
+              { type: "error", error: new Error("synthetic-provider-failure") },
+            ],
+          }),
+        }
+      },
+    })
+    const parts = []
+    for await (const part of liveParts({
+      model,
+      history: [
+        {
+          id: "user",
+          role: "user",
+          text: "Rewrite the selected passage",
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      registry: {} as never,
+      actor: {} as never,
+      toolEntries: [],
+      focusDoc: {
+        id: "doc",
+        name: "CV",
+        kind: "cv",
+        status: "draft",
+        content: emptyCvDocument(),
+        contentVersion: 7,
+      },
+      selection: { text: "UNIQUE_SELECTED_PASSAGE", sectionId: "summary" },
+    }))
+      parts.push(part)
+    expect(JSON.stringify(observed)).toContain("UNIQUE_SELECTED_PASSAGE")
+    expect(JSON.stringify(observed)).toContain("contentVersion")
+    expect(parts.some((part) => part.type === "error")).toBe(true)
+    expect(parts.some((part) => part.type === "finish")).toBe(false)
+    expect(JSON.stringify(parts)).not.toContain("synthetic-provider-failure")
+  })
+})
+
 describe("writeChatEvent", () => {
   it("sends a plain error event, not Zod text, for an event that breaks the contract", async () => {
     const written: { event?: string; data: string }[] = []

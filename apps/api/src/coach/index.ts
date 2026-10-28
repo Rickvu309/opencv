@@ -6,3 +6,5 @@ export {
   createScriptedCoachRuntime,
   withScanJobPosting,
 } from "./fake.js"
+
+export { openCoachUsage } from "./usage-store.js"

@@ -60,7 +60,13 @@ export async function completeFree(
   prompt: string
 ): Promise<string> {
   const { generateText } = await import("ai")
-  const result = await generateText({ model, prompt })
+  const result = await generateText({
+    model,
+    prompt,
+    timeout: 10_000,
+    maxOutputTokens: 256,
+    maxRetries: 0,
+  })
   return result.text
 }
 

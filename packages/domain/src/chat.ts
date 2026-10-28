@@ -2,6 +2,25 @@ import { z } from "zod"
 
 import { activityIdSchema, chatIdSchema, pendingActionIdSchema } from "./ids.js"
 
+export const COACH_SELECTION_TEXT_MAX = 2000
+export const COACH_SELECTION_SECTION_ID_MAX = 80
+
+export const coachSelectionSchema = z
+  .object({
+    text: z
+      .string()
+      .trim()
+      .min(1, "Selection text is required")
+      .max(COACH_SELECTION_TEXT_MAX, "Selection is too long"),
+    sectionId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(COACH_SELECTION_SECTION_ID_MAX)
+      .optional(),
+  })
+  .strict()
+
 export const CHAT_TITLE_MAX = 200
 export const CHAT_MESSAGE_MAX = 8000
 export const CHAT_OPEN_WINDOW_DAYS = 7
@@ -58,6 +77,7 @@ export const chatAppendMessageInputSchema = z
     chatId: chatIdSchema,
     text: z.string().trim().min(1).max(CHAT_MESSAGE_MAX),
     attachments: z.array(chatAttachmentSchema).max(8).optional(),
+    selection: coachSelectionSchema.optional(),
   })
   .strict()
 

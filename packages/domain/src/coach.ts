@@ -283,6 +283,12 @@ export function appendCoachPart(
           ...(part.reversal ? { reversal: part.reversal } : {}),
           ...(part.detail ? { detail: part.detail } : {}),
           ...(part.activityId ? { activityId: part.activityId } : {}),
+          ...(part.pendingActionId
+            ? {
+                pendingActionId: part.pendingActionId,
+                approval: "pending" as const,
+              }
+            : {}),
           toolCallId: part.toolCallId,
         },
       ]

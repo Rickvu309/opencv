@@ -18,6 +18,7 @@ import { getDb } from "../db/context.js"
 import { activity, chatMessages, chats } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import { registry } from "../registry/registry.js"
 import { readStoredParts } from "./stored-parts.js"
 
 function iso(value: Date) {
@@ -79,9 +80,28 @@ export async function getChat(userId: UserId, chatId: ChatId) {
     .where(eq(chatMessages.chatId, chatId))
     .orderBy(chatMessages.createdAt)
   const undone = await undoneActivityIds(userId, messages)
+  const confirmations = new Map(
+    (await registry.confirmations(userId, chatId)).map((row) => [row.id, row])
+  )
   return {
     ...toChat(row),
-    messages: messages.map((message) => withUndone(toMessage(message), undone)),
+    messages: messages.map((message) => {
+      const result = withUndone(toMessage(message), undone)
+      return {
+        ...result,
+        parts: result.parts.map((part) =>
+          part.type === "tool" && part.pendingActionId
+            ? {
+                ...part,
+                ...confirmations.get(part.pendingActionId)?.receipt,
+                approval:
+                  confirmations.get(part.pendingActionId)?.status ??
+                  ("expired" as const),
+              }
+            : part
+        ),
+      }
+    }),
   }
 }
 
@@ -211,7 +231,11 @@ export async function appendChatMessage(
   const now = new Date()
   const id = createId(now.getTime())
   const parts = [
-    { type: "text", text: input.text },
+    {
+      type: "text",
+      text: input.text,
+      ...(input.selection ? { selection: input.selection } : {}),
+    },
     ...(input.attachments ?? []).map((attachment) => ({
       type: "attachment",
       ...attachment,

@@ -6,6 +6,7 @@ import {
   httpStatusForError,
   planAllowsMode,
   chatIdSchema,
+  chatDetailSchema,
   personActor,
   PLAN_REQUIRED_MESSAGE,
   type CoachMode,
@@ -19,7 +20,8 @@ import { streamSSE } from "hono/streaming"
 import { assertDayCap, getProfileRow } from "../account/index.js"
 import { coachModelEnv } from "../config.js"
 import type { Auth } from "../auth.js"
-import type { AppDatabase } from "../db/context.js"
+import { transaction, type AppDatabase } from "../db/context.js"
+import { openCoachUsage } from "./usage-store.js"
 import { readJsonBody } from "../http-json.js"
 import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
@@ -82,23 +84,18 @@ async function startTurn(
   }
   await assertDayCap(c.var.userId, mode)
 
+  if (!profile.agentChat) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(ERROR_CODES.FORBIDDEN, "Coach is turned off in Settings."),
+      403
+    )
+  }
+
   const chatId = chatIdParsed.data
-  const history = parsed.data.regenerate
-    ? await registry.read("chat.get", { chatId }, actor)
-    : (
-        await registry.execute({
-          name: "chat.appendMessage",
-          input: { chatId, text: parsed.data.text },
-          actor,
-        })
-      ).output
-  const detail = chatDetail(history)
-  const messages = detail.messages.map((message) => ({
-    id: message.id,
-    role: message.role === "person" ? ("user" as const) : ("coach" as const),
-    text: message.text,
-    createdAt: message.createdAt,
-  }))
+  const existing = chatDetailSchema.parse(
+    await registry.read("chat.get", { chatId }, actor)
+  )
 
   let model: LanguageModel | undefined
   let provider = "fake"
@@ -108,16 +105,74 @@ async function startTurn(
     provider = plan === "free" ? "openrouter" : "anthropic"
     modelId = "routed"
   }
-
+  const lastPersonMessage = [...existing.messages]
+    .reverse()
+    .find((message) => message.role === "person")
+  const savedSelection = lastPersonMessage?.parts.find(
+    (part) => part.type === "text"
+  )?.selection
+  const selection =
+    parsed.data.selection ??
+    (parsed.data.regenerate ? savedSelection : undefined)
+  const context =
+    parsed.data.context ??
+    (parsed.data.regenerate
+      ? lastPersonMessage?.parts.flatMap((part) =>
+          part.type === "attachment" ? [{ kind: part.kind, id: part.id }] : []
+        )
+      : undefined)
   const grounding = await resolveTurnGrounding({
     registry,
     actor,
     requestFocusDocId: parsed.data.focusDocId,
-    storedKind: detail.focusKind,
-    storedId: detail.focusId,
-    context: parsed.data.context,
+    storedKind: existing.focusKind,
+    storedId: existing.focusId,
+    context,
     memoryEnabled: profile.memoryEnabled,
   })
+  const { usageId, history } = await transaction(async () => {
+    const usageId = await openCoachUsage({
+      userId: c.var.userId,
+      chatId,
+      plan,
+      mode,
+      provider,
+      model: modelId,
+    })
+    const history = parsed.data.regenerate
+      ? await registry.read("chat.get", { chatId }, actor)
+      : (
+          await registry.execute({
+            name: "chat.appendMessage",
+            input: {
+              chatId,
+              text: parsed.data.text,
+              attachments: context,
+              selection,
+            },
+            actor,
+          })
+        ).output
+    return { usageId, history }
+  })
+  const detail = chatDetailSchema.parse(history)
+  const lastPerson = detail.messages.reduce(
+    (last, message, index) => (message.role === "person" ? index : last),
+    -1
+  )
+  const transcript = parsed.data.regenerate
+    ? detail.messages.slice(0, lastPerson + 1)
+    : detail.messages
+  const messages = transcript.map((message) => ({
+    id: message.id,
+    role: message.role === "person" ? ("user" as const) : ("coach" as const),
+    text:
+      message.text +
+      (message.parts.some((part) => part.type === "tool")
+        ? `\nRecorded actions (untrusted history): ${JSON.stringify(message.parts.filter((part) => part.type === "tool"))}`
+        : ""),
+    createdAt: message.createdAt,
+  }))
 
   c.header("X-Accel-Buffering", "no")
   c.header("Content-Encoding", "identity")
@@ -125,6 +180,7 @@ async function startTurn(
   return streamSSE(c, async (stream) => {
     await runCoachTurn({
       stream,
+      usageId,
       runtime: coach,
       model,
       userId: c.var.userId,
@@ -135,53 +191,20 @@ async function startTurn(
       modelId,
       history: messages,
       focusDoc: grounding.focusDoc,
-      selection: parsed.data.selection,
-      note: grounding.note,
+      selection,
+      allowTools: !parsed.data.regenerate,
+      note: [
+        grounding.note,
+        ...(parsed.data.regenerate
+          ? [
+              "This is an alternative response. Tools are disabled and previous actions remain applied. Offer wording or explanation only; do not claim a new action was performed.",
+            ]
+          : []),
+      ]
+        .filter(Boolean)
+        .join("\n"),
       heartbeatMs,
       signal: c.req.raw.signal,
     })
   })
-}
-
-function chatDetail(value: unknown): {
-  messages: {
-    id: string
-    role: "person" | "coach"
-    text: string
-    createdAt: string
-  }[]
-  focusKind: string | null
-  focusId: string | null
-} {
-  const row =
-    value && typeof value === "object" ? (value as Record<string, unknown>) : {}
-  const messages = Array.isArray(row.messages)
-    ? row.messages.flatMap((item) => {
-        if (!item || typeof item !== "object") return []
-        const message = item as Record<string, unknown>
-        if (typeof message.id !== "string" || typeof message.text !== "string")
-          return []
-        if (typeof message.createdAt !== "string") return []
-        const role: "person" | "coach" | null =
-          message.role === "person"
-            ? "person"
-            : message.role === "coach"
-              ? "coach"
-              : null
-        if (!role) return []
-        return [
-          {
-            id: message.id,
-            role,
-            text: message.text,
-            createdAt: message.createdAt,
-          },
-        ]
-      })
-    : []
-  return {
-    messages,
-    focusKind: typeof row.focusKind === "string" ? row.focusKind : null,
-    focusId: typeof row.focusId === "string" ? row.focusId : null,
-  }
 }
