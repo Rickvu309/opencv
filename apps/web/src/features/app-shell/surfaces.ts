@@ -1,9 +1,8 @@
-import { HOME_PATH, SURFACE_PATHS } from "@/lib/product-paths.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 export type SurfaceId = keyof typeof SURFACE_PATHS
 
-/** Left until #377 replaces Home. Not a shell surface. */
-export { HOME_PATH, SURFACE_PATHS }
+export { SURFACE_PATHS }
 
 export const SURFACE_COPY: Record<SurfaceId, { title: string; body: string }> =
   {

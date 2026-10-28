@@ -40,7 +40,6 @@ export const ROUTE_TABLE: readonly RouteClass[] = [
   { id: "/app", fullPath: "/app", kind: "layout" },
   { id: "/app/$", fullPath: "/app/$", kind: "layout" },
   { id: "/product", fullPath: "/", kind: "layout" },
-  { id: "/product/home", fullPath: "/home", kind: "app" },
   { id: "/product/paper", fullPath: "/paper", kind: "app" },
   { id: "/product/paper/$docId", fullPath: "/paper/$docId", kind: "app" },
   { id: "/product/apply", fullPath: "/apply", kind: "app" },

@@ -12,15 +12,16 @@ import {
   scriptCoachStream,
 } from "@/test/chat-api-mock.ts"
 import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
-  expectHomeIdle,
+  expectCoachIdle,
   expectSendSettled,
   expectChatText,
   idleHeading,
   sendMessage,
   stepButton,
-} from "@/test/home-chat-helpers.ts"
+} from "@/test/coach-chat-helpers.ts"
 
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())
@@ -37,14 +38,14 @@ async function openStoredChat(title: RegExp) {
   fireEvent.click(await within(dialog).findByRole("button", { name: title }))
 }
 
-describe("Home Chat mode and History", { timeout: 15_000 }, () => {
+describe("Coach chat and history", { timeout: 15_000 }, () => {
   it("streams a reply progressively and drops working status at first text", async () => {
     const stream = scriptCoachStream({
       gated: true,
       texts: ["Hello", " world"],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     await sendMessage("Help me plan the week")
 
@@ -98,8 +99,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
         },
       ],
     })
-    const first = renderApp()
-    await expectHomeIdle()
+    const first = renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Move the intern card to Prep")
     await expectSendSettled("Move the intern card to Prep")
     expect(
@@ -118,8 +119,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
     first.unmount()
 
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await openStoredChat(/Move the intern card to Prep/)
     expect(
       (
@@ -204,8 +205,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
         },
       ],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Update my CV, move the card, and start a new CV")
     await expectSendSettled("Update my CV, move the card, and start a new CV")
 
@@ -235,8 +236,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     scriptCoachStream({
       texts: ["Try this:\n\n- **star** the card\n- open `Prep`"],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Show me **markdown** please")
 
     const chat = await screen.findByRole("log", { name: "Chat" })
@@ -258,8 +259,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
       ...navigator,
       clipboard: { writeText },
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Should I finish my CV first?")
     await expectSendSettled("Should I finish my CV first?")
 
@@ -279,8 +280,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
 
   it("regenerates the latest Coach turn as a new row and keeps the prior one", async () => {
     scriptCoachStream({ texts: ["First answer"] })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Help me plan the week")
     expect(await screen.findByText("First answer")).toBeInTheDocument()
     await waitFor(() => {
@@ -319,8 +320,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
         },
       ],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Move the intern card to Prep")
     expect(
       await screen.findByRole("button", {
@@ -353,8 +354,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
 
   it("shows a Retry alert when regenerate hits the daily cap", async () => {
     scriptCoachStream({ texts: ["First answer"] })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Cap me")
     expect(await screen.findByText("First answer")).toBeInTheDocument()
     await waitFor(() => {
@@ -380,8 +381,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
   })
 
   it("enables Regenerate only on the latest Coach message in a restored Chat", async () => {
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await openStoredChat(new RegExp(FIXTURE_CHATS[0]!.title))
     await expectChatText(FIXTURE_CHATS[0]!.messages[0]!.text)
 
@@ -399,8 +400,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
       gated: true,
       texts: ["Partial reply", " should not appear"],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     await sendMessage("Stop me")
     stream.release(2)
@@ -428,8 +429,8 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
         message: "The Coach is unavailable right now",
       },
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     await sendMessage("Are you there?")
     const chat = await screen.findByRole("log", { name: "Chat" })

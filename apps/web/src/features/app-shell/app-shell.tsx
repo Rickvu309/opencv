@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import {
-  Link,
-  Outlet,
-  useNavigate,
-  useRouterState,
-} from "@tanstack/react-router"
+import { Link, Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   BriefcaseBusiness,
@@ -23,7 +18,6 @@ import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
-import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import {
   DESKTOP_MEDIA_QUERY,
   useMediaQuery,
@@ -226,9 +220,6 @@ type AppShellProps = {
 export function AppShell({ onSearch }: AppShellProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
   const chats = useShellChats()
   const [panel, setPanel] = useState<PanelState>(CLOSED_PANEL)
@@ -246,7 +237,6 @@ export function AppShell({ onSearch }: AppShellProps) {
   }, [])
   const menuRef = useRef<HTMLButtonElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
-  const showDock = pathname !== HOME_PATH
   const panelVisible = panel.open && panel.mode !== "dock"
 
   useEffect(() => {
@@ -418,23 +408,19 @@ export function AppShell({ onSearch }: AppShellProps) {
             </main>
             {panelFrame}
           </div>
-          {showDock ? (
-            <ShellDock
-              dockRef={dockRef}
-              titles={(chats.data ?? []).map((chat) => ({
-                id: chat.id,
-                title: chatDisplayTitle(chat.title),
-              }))}
-              onOpenChat={(chat) => openPanel(chat)}
-              onCoach={() =>
-                openPanel({ title: shellCopy.coach, chatId: null })
-              }
-              onHistory={() => {
-                closePanel()
-                void navigate({ to: "/coach" })
-              }}
-            />
-          ) : null}
+          <ShellDock
+            dockRef={dockRef}
+            titles={(chats.data ?? []).map((chat) => ({
+              id: chat.id,
+              title: chatDisplayTitle(chat.title),
+            }))}
+            onOpenChat={(chat) => openPanel(chat)}
+            onCoach={() => openPanel({ title: shellCopy.coach, chatId: null })}
+            onHistory={() => {
+              closePanel()
+              void navigate({ to: "/coach" })
+            }}
+          />
         </div>
       </div>
       {!isDesktop && drawerOpen ? (

@@ -9,8 +9,6 @@ export const SURFACE_PATHS = {
   settings: "/settings",
 } as const
 
-export const HOME_PATH = "/home"
-
 export const START_PAGES = {
   apply: "/apply",
   paper: "/paper",

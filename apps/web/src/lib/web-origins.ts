@@ -1,9 +1,8 @@
-import { HOME_PATH, SURFACE_PATHS, legacyAppPath } from "./product-paths.ts"
+import { SURFACE_PATHS, legacyAppPath } from "./product-paths.ts"
 
 const PRODUCT_ROOTS = [
   "/sign-in",
   "/sign-up",
-  HOME_PATH,
   ...Object.values(SURFACE_PATHS),
   "/proof",
 ]

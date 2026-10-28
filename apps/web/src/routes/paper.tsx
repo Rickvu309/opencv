@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 
-import { useFirstCafeSurfaceVisit } from "@/features/home/use-first-cafe-surface-visit.ts"
 import {
   listPaper,
   listPaperFiles,
@@ -11,7 +10,6 @@ import {
 import { PaperLibrary } from "@/features/paper/paper-library.tsx"
 
 export function PaperPage() {
-  useFirstCafeSurfaceVisit("sample-cv")
   const navigate = useNavigate()
   const docs = useQuery({
     queryKey: paperListKey(),

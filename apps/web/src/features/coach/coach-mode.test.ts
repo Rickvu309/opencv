@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { coachModeHelper, coachModeLabel } from "@/features/coach/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
@@ -55,9 +55,9 @@ describe("coach mode copy", () => {
   })
 })
 
-describe("Home dock mode control", () => {
-  it("shows Free, Light, Max in order as one radiogroup in the dock", async () => {
-    renderApp(HOME_PATH)
+describe("Coach mode control", () => {
+  it("shows Free, Light, Max in order as one radiogroup in the composer", async () => {
+    renderApp(SURFACE_PATHS.coach)
 
     const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
     expect(
@@ -71,7 +71,7 @@ describe("Home dock mode control", () => {
 
   it("selects Free, Light, and Max and stores Max as max", async () => {
     setMockPlan("pro")
-    renderApp(HOME_PATH)
+    renderApp(SURFACE_PATHS.coach)
 
     await chooseMode("Light")
     await waitFor(() => {
@@ -96,7 +96,7 @@ describe("Home dock mode control", () => {
 
   it("moves the mode with the arrow keys", async () => {
     setMockPlan("pro")
-    renderApp(HOME_PATH)
+    renderApp(SURFACE_PATHS.coach)
 
     const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
     const free = within(group).getByRole("radio", { name: "Free" })
@@ -118,14 +118,14 @@ describe("Home dock mode control", () => {
 
   it("keeps the chosen mode after remount, on the active Chat, and on the next send", async () => {
     setMockPlan("pro")
-    const first = renderApp(HOME_PATH)
+    const first = renderApp(SURFACE_PATHS.coach)
     await chooseMode("Light")
     await waitFor(() => {
       expect(getMockCoachMode()).toBe("light")
     })
     first.unmount()
 
-    renderApp(HOME_PATH)
+    renderApp(SURFACE_PATHS.coach)
     await waitFor(() => {
       expectChecked(
         screen.getByRole("radiogroup", { name: "Coach mode" }),

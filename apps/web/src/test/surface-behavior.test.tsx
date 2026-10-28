@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 
-import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { setMockProfile } from "@/test/profile-api-mock.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -87,17 +88,12 @@ describe("empty api data shows empty states, never sample content", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("Home shows the greeting and no sample chat", async () => {
+  it("Coach opens empty, with no sample content", async () => {
     getMockChats().splice(0)
     getMockPaperDocs().splice(0)
-    renderApp(HOME_PATH)
+    renderApp(SURFACE_PATHS.coach)
 
-    expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: /^Good (morning|afternoon|evening),/,
-      })
-    ).toBeInTheDocument()
+    await expectCoachIdle()
     expectNone(FIXTURE_CHATS.map((chat) => chat.title))
     expectNone(samplePaperDocs().map((doc) => doc.name))
     expectNone(sampleApplyCards().map((card) => card.title))

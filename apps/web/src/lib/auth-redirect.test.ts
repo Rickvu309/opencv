@@ -64,7 +64,7 @@ describe("signInHref", () => {
     expect(signInHref("/app/paper")).toBe("/sign-in?redirect=%2Fpaper")
   })
 
-  it("does not loop on auth screens or Home", () => {
+  it("does not loop on auth screens or the root", () => {
     expect(signInHref("/sign-in")).toBe("/sign-in")
     expect(signInHref("/sign-up")).toBe("/sign-in")
     expect(signInHref("/")).toBe("/sign-in")

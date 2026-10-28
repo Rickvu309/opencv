@@ -137,6 +137,17 @@ describe("coming soon and the calm 404", () => {
     })
   })
 
+  it("sends the retired /app/home path back to the start page", async () => {
+    const { router } = renderApp("/app/home")
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Back to start" })
+    )
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/apply")
+    })
+  })
+
   it("renders a signed-in profile path inside the shell", async () => {
     renderApp("/u/someone")
 

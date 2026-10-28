@@ -3,11 +3,7 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
 import { AppShell } from "@/features/app-shell/app-shell.tsx"
 import { SearchModal } from "@/features/app-shell/search-modal.tsx"
-import {
-  HOME_PATH,
-  SURFACE_PATHS,
-  type SurfaceId,
-} from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
 import { ShellOverlays } from "@/features/auth/shell-overlays.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { useChatList } from "@/features/coach/use-chat-list.ts"
@@ -50,7 +46,7 @@ function AppShellChrome() {
 
   function handleOpenChat(id: string) {
     openChat(id)
-    void navigate({ to: HOME_PATH })
+    void navigate({ to: SURFACE_PATHS.coach })
   }
 
   function goSurface(id: SurfaceId) {

@@ -7,7 +7,6 @@ import { Button } from "@workspace/ui/components/button"
 import { toastWithUndo } from "@workspace/ui/components/sonner"
 
 import { authClient } from "@/lib/auth-client.ts"
-import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 import {
   activityKey,
   refreshQueries,
@@ -71,14 +70,8 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   const next = index >= 0 ? ordered[index + 1] : undefined
   const job = detail.data
 
-  function noteCafe() {
-    const userId = session?.user.id
-    if (userId) recordFirstCafeItem(userId, "apply")
-  }
-
   async function changeStage(stage: JobStage) {
     const result = await run("job.move", { jobId: id, stage })
-    noteCafe()
     if (stage === "closed" && result.activityId) {
       const activityId = result.activityId
       toastWithUndo("Moved to Closed", () => {

@@ -233,12 +233,6 @@ const productLayoutRoute = createRoute({
   ),
 })
 
-const homeRoute = createRoute({
-  getParentRoute: () => productLayoutRoute,
-  path: "/home",
-  component: lazyRouteComponent(() => import("@/routes/home.tsx"), "HomePage"),
-})
-
 const paperRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/paper",
@@ -400,7 +394,6 @@ const routeTree = rootRoute.addChildren([
   legacyAppRoute,
   legacyAppSplatRoute,
   productLayoutRoute.addChildren([
-    homeRoute,
     paperRoute,
     paperDocRoute,
     applyRoute,
