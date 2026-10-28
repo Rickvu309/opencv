@@ -21,7 +21,6 @@ export const endpoints = {
   paperShared: (token: string) => `/api/paper/shared/${token}`,
   paperSharedPhoto: (token: string) => `/api/paper/shared/${token}/photo`,
   paperImport: "/api/paper/import",
-  paperPdf: (docId: string) => `/api/paper/${docId}/pdf`,
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
   chatStop: (chatId: string) => `/api/chats/${chatId}/stop`,

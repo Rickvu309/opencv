@@ -12,6 +12,7 @@ import {
 } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
+import * as paperPrint from "./paper-print.ts"
 
 function render(ui: ReactElement) {
   const wrap = (content: ReactElement) => (
@@ -55,6 +56,7 @@ afterEach(() => {
   vi.useRealTimers()
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe("CV editor version 2", () => {
@@ -112,9 +114,9 @@ describe("CV editor version 2", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
-    expect(calls.some((url) => url.includes("/api/commands/paper.replace"))).toBe(
-      true
-    )
+    expect(
+      calls.some((url) => url.includes("/api/commands/paper.replace"))
+    ).toBe(true)
   })
 
   it("stores version 2 after one keystroke on a version 1 CV", async () => {
@@ -211,7 +213,10 @@ describe("CV editor version 2", () => {
       contentVersion?: number
       document?: {
         version?: number
-        sections?: { kind?: string; blocks?: { type?: string; text?: string; role?: string }[] }[]
+        sections?: {
+          kind?: string
+          blocks?: { type?: string; text?: string; role?: string }[]
+        }[]
       }
     }[] = []
     const turn =
@@ -237,6 +242,7 @@ describe("CV editor version 2", () => {
       }
       return Promise.resolve(ok({}))
     })
+    vi.spyOn(paperPrint, "readPreviewPageCount").mockReturnValue(2)
     render(
       <PaperCvEditor
         initial={record}

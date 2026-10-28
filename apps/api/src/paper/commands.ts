@@ -217,17 +217,6 @@ export function registerPaper(registry: Registry) {
     })
   )
   registry.addQuery(
-    tableQuery("paper.pdf", {
-      description: "Render a document as PDF bytes.",
-      coach: false,
-      step: () => "Download PDF",
-      read: async (input, actor) => {
-        const doc = toPaper(await ownedPaper(actor.userId, input.docId))
-        return { docId: doc.id, name: doc.name }
-      },
-    })
-  )
-  registry.addQuery(
     tableQuery("paper.shared", {
       description: "Read a shared document.",
       coach: false,

@@ -1,5 +1,6 @@
+import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
 
@@ -29,8 +30,10 @@ function cv(name: string): PaperView {
 }
 
 afterEach(() => {
+  document.body.removeAttribute("data-print")
   cleanup()
   vi.clearAllMocks()
+  vi.restoreAllMocks()
 })
 
 function renderLibrary(docs: PaperView[]) {
@@ -123,6 +126,82 @@ describe("Paper library", () => {
     expect(
       screen.getByText("Try another word, or clear the search.")
     ).toBeInTheDocument()
+  })
+
+  it("prints the card from Download PDF", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(document.body).toHaveAttribute("data-print", "paper")
+      expect(
+        document.querySelector("[data-paper-print] .cv-template-internship")
+      ).not.toBeNull()
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    renderLibrary([cv("PM track CV")])
+    fireEvent.click(screen.getByRole("button", { name: "PM track CV menu" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Download PDF" })
+    )
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("prints a letter card from Download PDF", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(document.body).toHaveAttribute("data-print", "paper")
+      expect(
+        document.querySelector("[data-paper-letter]")?.textContent
+      ).toContain("One line for the letter.")
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    const letter: PaperView = {
+      ...cv("Northwind letter"),
+      id: "22222222-2222-4222-8222-222222222222",
+      kind: "letter",
+      templateId: null,
+      document: { markdown: "One line for the letter." },
+    }
+    renderLibrary([letter])
+    fireEvent.click(
+      screen.getByRole("button", { name: "Northwind letter menu" })
+    )
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Download PDF" })
+    )
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("prints once in strict mode and unmounts the library sheet", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
+    render(
+      <StrictMode>
+        <PaperLibrary
+          docs={[cv("PM track CV")]}
+          files={[]}
+          loading={false}
+          error={null}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />
+      </StrictMode>
+    )
+    fireEvent.click(screen.getByRole("button", { name: "PM track CV menu" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Download PDF" })
+    )
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+    expect(document.querySelector("[data-paper-print]")).not.toBeNull()
+    act(() => {
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    expect(document.querySelector("[data-paper-print]")).toBeNull()
   })
 
   it("exposes Rename and Delete on the card menu", async () => {

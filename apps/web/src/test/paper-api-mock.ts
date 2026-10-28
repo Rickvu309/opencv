@@ -152,13 +152,6 @@ export async function paperApiFetch(
     return jsonError(404, "NOT_FOUND", "This link does not open a document.")
   }
 
-  if (method === "GET" && /^\/api\/paper\/[^/]+\/pdf$/.test(path)) {
-    return new Response("pdf", {
-      status: 200,
-      headers: { "content-type": "application/pdf" },
-    })
-  }
-
   const detail = /^\/api\/paper\/([^/]+)$/.exec(path)
   if (method === "GET" && detail) {
     const doc = store.docs.find((item) => item.id === detail[1])
