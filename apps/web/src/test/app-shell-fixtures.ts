@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react"
 import { expect, vi } from "vitest"
 
-import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
+import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
 
 export const NAV = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
 

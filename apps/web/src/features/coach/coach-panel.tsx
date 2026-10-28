@@ -1,7 +1,6 @@
 import type { ReactNode } from "react"
 import { Maximize2, Minus, X } from "lucide-react"
 
-import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { Button } from "@workspace/ui/components/button"
 
 export type CoachPanelMode = "dock" | "side" | "full"
@@ -41,7 +40,7 @@ export function CoachPanel({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={shellCopy.minimize}
+          aria-label="Minimize"
           onClick={onMinimize}
         >
           <Minus />
@@ -50,7 +49,7 @@ export function CoachPanel({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={shellCopy.expand}
+          aria-label="Expand"
           aria-pressed={mode === "full"}
           onClick={onExpand}
         >
@@ -60,7 +59,7 @@ export function CoachPanel({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={shellCopy.close}
+          aria-label="Close"
           onClick={onClose}
         >
           <X />

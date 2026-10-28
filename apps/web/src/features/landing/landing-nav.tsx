@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
+import { OpenCvLogo } from "@/components/app-logo.tsx"
 
 import { landingButton } from "./landing-button.ts"
 import {

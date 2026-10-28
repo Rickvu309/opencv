@@ -30,9 +30,6 @@ describe("shell copy", () => {
       "shell.menu": shellCopy.menu,
       "shell.closeMenu": shellCopy.closeMenu,
       "shell.history": shellCopy.history,
-      "shell.minimize": shellCopy.minimize,
-      "shell.expand": shellCopy.expand,
-      "shell.close": shellCopy.close,
     })
   })
 })

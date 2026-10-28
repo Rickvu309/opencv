@@ -13,8 +13,5 @@
   "shell.settings": "Settings",
   "shell.menu": "Menu",
   "shell.closeMenu": "Close menu",
-  "shell.history": "History",
-  "shell.minimize": "Minimize",
-  "shell.expand": "Expand",
-  "shell.close": "Close"
+  "shell.history": "History"
 }

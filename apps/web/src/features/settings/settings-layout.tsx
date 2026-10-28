@@ -14,10 +14,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
-import {
-  DESKTOP_MEDIA_QUERY,
-  useMediaQuery,
-} from "@/features/app-shell/use-media-query.ts"
+import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
 import { startPagePath } from "@/lib/product-paths.ts"
 
 import {

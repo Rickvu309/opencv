@@ -44,16 +44,8 @@ export default defineConfig([
               message: "A surface feature must not import the router.",
             },
             {
-              group: [
-                "**/app-shell/*",
-                "!**/app-shell/use-media-query.ts",
-                "!**/app-shell/profile-display.ts",
-              ],
+              group: ["**/app-shell/*", "!**/app-shell/profile-display.ts"],
               message: "A surface feature must not import shell chrome.",
-            },
-            {
-              group: ["**/search-modal*"],
-              message: "A surface feature must not import the search modal.",
             },
           ],
         },

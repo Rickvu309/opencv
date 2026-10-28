@@ -1,7 +1,7 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
 import { Link } from "@tanstack/react-router"
 
-import { OpenCvMark } from "@/features/app-shell/app-logo.tsx"
+import { OpenCvMark } from "@/components/app-logo.tsx"
 
 import { LogoMarquee } from "./figures/oc/logo-marquee.tsx"
 import { Reveal, RevealText } from "./figures/oc/reveal.tsx"
