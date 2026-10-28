@@ -27,6 +27,8 @@ set -euo pipefail
 
 # shellcheck source=scripts/lib/result.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
+# shellcheck source=scripts/lib/disk.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/disk.sh"
 result_begin new-task
 
 TYPES="feat fix hotfix refactor chore docs"
@@ -93,6 +95,8 @@ common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
 main_checkout=$(dirname "$common_dir")
 repo_name=$(basename "$main_checkout")
 wt_root="$(dirname "$main_checkout")/${repo_name}.worktrees"
+
+disk_guard "$main_checkout" "$wt_root"
 
 main_branch=$(git -C "$main_checkout" branch --show-current || true)
 [[ "$main_branch" == "main" ]] || warn "main checkout ($main_checkout) is on '$main_branch'; it should stay on main."

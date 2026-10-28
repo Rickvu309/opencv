@@ -30,21 +30,35 @@ function assertResult(result, id, ...expects) {
   )
 }
 
-function run(t, pushExit, quiet = false) {
+function run(t, pushExit, quiet = false, lowDisk = false, noCommonDir = false) {
   const scratch = join(homedir(), "tmp")
   mkdirSync(scratch, { recursive: true })
   const root = mkdtempSync(join(scratch, "open-pr-test-"))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   mkdirSync(join(root, "bin"))
-  mkdirSync(join(root, "scripts"))
+  mkdirSync(join(root, "work", "repo", "scripts"), { recursive: true })
+  mkdirSync(join(root, "home", "tmp"), { recursive: true })
+  mkdirSync(join(root, "tmpdir"))
   const executable = (path, text) =>
     writeFileSync(join(root, path), text, { mode: 0o755 })
-  executable("scripts/check.sh", "#!/bin/sh\nexit 0\n")
+  writeFileSync(join(root, "events"), "")
+  if (lowDisk) {
+    // A nearly full filesystem (99% used, 1 GiB free), below the 2 GiB limit.
+    executable(
+      "bin/df",
+      "#!/bin/sh\necho 'Filesystem 1024-blocks Used Available Capacity Mounted on'\necho '/dev/sda1 157286400 156237824 1048576 99% /'\n"
+    )
+  }
+  executable("work/repo/scripts/check.sh", "#!/bin/sh\nexit 0\n")
   executable(
     "bin/git",
     `#!/bin/sh
 case "$1" in
-  rev-parse) printf '%s\\n' "$PROOF_ROOT" ;;
+  rev-parse)
+    case "$*" in
+      *git-common-dir*) [ "$PROOF_NO_COMMON" = 1 ] && exit 1; printf '%s\\n' "$PROOF_ROOT/work/repo/.git" ;;
+      *) printf '%s\\n' "$PROOF_ROOT/work/repo" ;;
+    esac ;;
   symbolic-ref) echo fix/999-push-failure-proof ;;
   status) exit 0 ;;
   rev-list) echo local-new-commit ;;
@@ -76,8 +90,12 @@ esac
     PROOF_ROOT: root,
     PROOF_PUSH_EXIT: String(pushExit),
     PROOF_QUIET: quiet ? "1" : "0",
+    PROOF_NO_COMMON: noCommonDir ? "1" : "0",
+    HOME: join(root, "home"),
+    TMPDIR: join(root, "tmpdir"),
     PR_RESULT_DIR: join(root, "results"),
     PR_RESULT_REPO: "opencv",
+    PR_DISK_MIN_MB: lowDisk ? "2048" : "1", // the real disk's free space must not decide a test
   }
   const result = spawnSync(
     "bash",
@@ -119,4 +137,30 @@ test("successful push with no output still creates a PR", (t) => {
   const result = run(t, 0, true)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.events, "push skip=unset\ncreate\n")
+})
+
+test("a nearly full disk fails with cause disk before the check, push or PR", (t) => {
+  const result = run(t, 0, false, true)
+  assert.equal(result.status, 1)
+  assert.equal(result.events, "")
+  assert.match(result.stderr, /disk preflight failed: only 1024 MiB free/)
+  assert.match(result.stderr, /scripts\/cleanup-worktree\.sh/)
+  assertResult(
+    result,
+    "fix-999-push-failure-proof",
+    "status=fail",
+    "cause=disk"
+  )
+})
+
+test("a disk failure names the main checkout in next, also when git cannot find the common dir", (t) => {
+  for (const noCommonDir of [false, true]) {
+    const result = run(t, 0, false, true, noCommonDir)
+    const file = join(result.root, "results", "opencv-open-pr-fix-999-push-failure-proof.json")
+    const next = JSON.parse(readFileSync(file, "utf8")).next
+    assert.ok(
+      next.startsWith(`cd ${join(result.root, "work", "repo")} && `),
+      `next is ${next}`
+    )
+  }
 })

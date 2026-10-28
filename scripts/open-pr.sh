@@ -16,6 +16,8 @@ set -euo pipefail
 
 # shellcheck source=scripts/lib/result.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
+# shellcheck source=scripts/lib/disk.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/disk.sh"
 result_begin open-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-([a-z0-9]+(-[a-z0-9]+)*)$'
@@ -44,6 +46,11 @@ branch=$(git symbolic-ref --quiet --short HEAD) || die "detached HEAD; check out
 type=${BASH_REMATCH[1]}; issue=${BASH_REMATCH[2]}; slug=${BASH_REMATCH[3]}
 result_id "$branch"
 export PR_RESULT_ID=$branch
+
+# Before anything is pushed or created: the worktree, its siblings and the scratch dirs must have room and accept writes.
+common_dir=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+if [[ "$(basename "$common_dir")" == ".git" ]]; then main_checkout=$(dirname "$common_dir"); else main_checkout=$top; fi
+disk_guard "$main_checkout" "$(dirname "$main_checkout")/$(basename "$main_checkout").worktrees" "$top"
 
 have_gh=0
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then have_gh=1; fi
