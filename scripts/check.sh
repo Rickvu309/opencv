@@ -12,6 +12,12 @@
 #   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo task concurrency (--concurrency; default: turbo's own for the full run, 2 for --changed)
 #   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (vitest reads it itself; turbo passes it through)
 #   `heavy -- scripts/check.sh` sets both to 2 (see AGENTS.md section 4)
+#   CHECK_RETRY_FAILED_TESTS=1 scripts/check.sh --changed   rerun a failed vitest file once, alone (set by open-pr.sh only,
+#     so its quick check and the pre-push check of its push; review-pr.sh and plain runs never retry). If every failed file
+#     passes: warn "passed only on retry: <files>", record them in the result file's `retried`, exit 0. Else fail as before.
+#     Only when `test` is the one failed task, at most CHECK_RETRY_MAX_FILES (5, digits only) files failed, turbo's
+#     "Failed:" line names only packages that have a retried file, and the log has no vitest unhandled error. Turbo runs
+#     with --continue then, so every package runs; a package that failed without a FAIL line keeps the run failed.
 #
 # --changed (pnpm only; may be combined with task names) looks at the files that differ from
 # `git merge-base origin/main HEAD`: committed, staged, unstaged and untracked (not ignored). Then:
@@ -83,6 +89,38 @@ failed_test_files() {
     fi
     [[ "$seen" == *" $dir$file "* ]] || { seen+="$dir$file "; echo "$dir$file"; }
   done < <(sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -E 'FAIL ' | head -n 200)
+}
+
+# Directories of the packages turbo reports as failed ("Failed:    web#test, @workspace/domain#test"), one per line.
+# Prints nothing and returns 1 when the log has no such line or a name maps to no workspace package.
+failed_test_dirs() {
+  [[ -n "$check_log" && -s "$check_log" ]] || return 1
+  local list tok pkg d found=0
+  list=$(sed $'s/\033\\[[0-9;]*m//g' "$check_log" | sed -nE 's/^[[:space:]]*Failed:[[:space:]]+//p' | tr ',' '\n')
+  while read -r tok; do
+    [[ -n "$tok" ]] || continue
+    [[ "$tok" == *"#test" ]] || return 1
+    pkg=${tok%"#test"}; found=0
+    for d in apps/*/package.json packages/*/package.json; do
+      [[ -f "$d" ]] || continue
+      if [[ "$(node -p "require('./$d').name" 2>/dev/null)" == "$pkg" ]]; then dirname "$d"; found=1; break; fi
+    done
+    (( found )) || return 1
+  done <<<"$list"
+  [[ -n "$list" ]]
+}
+
+# Count of lines in the log, color codes stripped, that match an extended regex. grep reads the whole stream (never -q on
+# a pipe: it exits at the first match, sed gets SIGPIPE on a long log, and pipefail then reports no match).
+log_count() {
+  [[ -n "$check_log" && -s "$check_log" ]] || { echo 0; return 0; }
+  sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -cE "$@" || true
+}
+
+# True when the log shows vitest's own unhandled error report ("Vitest caught 1 unhandled error", the "Unhandled Errors"
+# header): that run failed without a FAIL line for it. An app log line that says "unhandled error" does not count.
+has_unhandled_errors() {
+  (( $(log_count -i 'Vitest caught [0-9]+ unhandled|⎯ Unhandled (Errors?|Rejections?) ⎯') > 0 ))
 }
 
 if [[ ! -f package.json ]]; then
@@ -174,7 +212,8 @@ if (( changed_mode )); then
       typecheck|test)
         if [[ ${#scope_dirs[@]} -gt 0 ]]; then
           echo "==> turbo $t (${#scope_dirs[@]} changed packages + dependents)"
-          run pnpm exec turbo run "$t" --concurrency=$conc "${filters[@]}" || failed+=("$t")
+          cont=(); [[ "$t" == test && "${CHECK_RETRY_FAILED_TESTS:-}" == 1 ]] && cont=(--continue)
+          run pnpm exec turbo run "$t" --concurrency=$conc ${cont[@]+"${cont[@]}"} "${filters[@]}" || failed+=("$t")
         else
           echo "==> $t: no workspace package changed, nothing to run"
         fi
@@ -207,6 +246,10 @@ if (( changed_mode )); then
           if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh; then
             echo "==> scripts/test-review-pr.sh"
             run scripts/test-review-pr.sh || failed+=(review-pr-tests)
+          fi
+          if has_changed scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs 'scripts/fixtures/check-flaky-*.txt'; then
+            echo "==> scripts/test-check-retry.sh"
+            run scripts/test-check-retry.sh || failed+=(check-retry-tests)
           fi
           if has_changed scripts/lib/conflict-report.sh scripts/test-conflict-report.sh; then
             echo "==> scripts/test-conflict-report.sh"
@@ -251,12 +294,60 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report; do
+    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done
   fi
 fi
+
+# Retry (CHECK_RETRY_FAILED_TESTS=1, see the header): sets failed=() when every failed file passes alone.
+retry_attempted=0; still_failing=(); passed_on_retry=()
+retry_failed_tests() {
+  [[ "${CHECK_RETRY_FAILED_TESTS:-}" == 1 && ${#failed[@]} -eq 1 && "${failed[0]}" == test ]] || return 0
+  (( changed_mode && ! dry )) || return 0
+  local files=() f d rel max=${CHECK_RETRY_MAX_FILES:-5} failed_dirs=() covered=" " dirs_out
+  [[ "$max" =~ ^[0-9]+$ ]] || max=5
+  mapfile -t files < <(failed_test_files)
+  [[ ${#files[@]} -gt 0 ]] || return 0
+  if has_unhandled_errors; then
+    echo "check: the test output has an unhandled error; not retrying, a retry of the failed files would not cover it."
+    return 0
+  fi
+  for f in "${files[@]}"; do covered+="$(cut -d/ -f1-2 <<<"$f") "; done
+  if ! dirs_out=$(failed_test_dirs); then
+    echo "check: turbo's failed packages are not known; not retrying."
+    return 0
+  fi
+  mapfile -t failed_dirs <<<"$dirs_out"
+  for d in "${failed_dirs[@]}"; do
+    if [[ "$covered" != *" $d "* ]]; then
+      echo "check: $d failed without a failed test file to retry; not retrying."
+      return 0
+    fi
+  done
+  if (( ${#files[@]} > max )); then
+    echo "check: ${#files[@]} test files failed (more than $max); not retrying, this looks like a real failure."
+    return 0
+  fi
+  retry_attempted=1
+  for f in "${files[@]}"; do
+    case "$f" in
+      apps/*/*|packages/*/*) d=$(cut -d/ -f1-2 <<<"$f"); rel=${f#"$d/"} ;;
+      *) still_failing+=("$f"); continue ;;
+    esac
+    echo "==> retry once: $f"
+    if run pnpm --dir "$d" run test "$rel"; then passed_on_retry+=("$f"); else still_failing+=("$f"); fi
+  done
+  if [[ ${#still_failing[@]} -eq 0 ]]; then
+    failed=()
+    echo "WARN passed only on retry: ${passed_on_retry[*]}"
+    result_retried "${passed_on_retry[@]}"
+  else
+    echo "check: failed again on retry: ${still_failing[*]}" >&2
+  fi
+}
+retry_failed_tests
 
 mode_desc="${tasks[*]}"; (( changed_mode )) && mode_desc="$mode_desc; changed since ${base:0:9}"
 if [[ ${#failed[@]} -gt 0 ]]; then
@@ -269,13 +360,14 @@ if [[ ${#failed[@]} -gt 0 ]]; then
     *) cause=test ;;
   esac
   # Only vitest's own error line counts ("Error: Hook timed out in 10000ms."), not a test that prints those words.
-  if [[ "$cause" == test && -n "$check_log" ]] && sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -qE '^([A-Za-z0-9@/_.-]+:test: )? *Error: (Hook|Test) timed out in [0-9]+ ?ms'; then cause=timing-test; fi
+  if [[ "$cause" == test ]] && (( $(log_count '^([A-Za-z0-9@/_.-]+:test: )? *Error: (Hook|Test) timed out in [0-9]+ ?ms') > 0 )); then cause=timing-test; fi
   mapfile -t failing_files < <(failed_test_files)
+  if (( retry_attempted )); then failing_files=("${still_failing[@]}"); fi
   [[ ${#failing_files[@]} -eq 0 ]] || result_file "${failing_files[@]}"
   [[ -z "$check_log" ]] || result_log "$check_log"
   rerun="heavy -- scripts/check.sh"; (( ! changed_mode )) || rerun+=" --changed"
   result_fail "$cause" "failed: ${failed[*]}" "$rerun ${tasks[*]}"
   exit 1
 fi
-result_ok "all passed ($mode_desc)$( (( ! dry )) || echo ', dry run')"
+result_ok "all passed ($mode_desc)$( (( ! dry )) || echo ', dry run')$( (( ${#passed_on_retry[@]} == 0 )) || echo ", passed only on retry: ${passed_on_retry[*]}")"
 if (( dry )); then echo "check: dry run, nothing ran ($mode_desc)"; else echo "check: all passed ($mode_desc)"; fi

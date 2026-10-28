@@ -11,6 +11,10 @@
 # Title:  type: description (#N)       e.g. feat: add login page (#42)
 # Body:   .github/pull_request_template.md with "Closes #N" filled in
 #
+# A test file that fails in the quick check or in the pre-push check of the push is rerun once, alone. If it passes the
+# run goes on with "WARN passed only on retry: <files>" and the files are in result.json (retried); a second failure fails.
+# This is done with CHECK_RETRY_FAILED_TESTS=1 for this script's own check.sh runs only; scripts/review-pr.sh never retries.
+#
 # Emergency only: SKIP_CHECKS=1 scripts/open-pr.sh   (say so in the PR body)
 set -euo pipefail
 
@@ -104,19 +108,25 @@ fi
 [[ -z "$(git status --porcelain)" ]] || die "uncommitted changes. Commit (or stash) them first."
 [[ -n "$(git rev-list origin/main..HEAD 2>/dev/null)" ]] || die "no commits on $branch beyond origin/main"
 
+checked=0
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
   echo "WARNING: SKIP_CHECKS=1, checks skipped. Emergencies only." >&2
 else
   # Quick check of what changed; the full check runs once, in scripts/review-pr.sh.
   info "Running scripts/check.sh --changed"
+  checked=1
+  export CHECK_RETRY_FAILED_TESTS=1
   if ! env -u CHECK_DRY_RUN scripts/check.sh --changed; then
     result_adopt "$(result_path check)" || true
     DIE_CAUSE=other die "checks failed. Fix them, commit, and run open-pr.sh again."
   fi
 fi
 
+(( ! checked )) || result_adopt_retried "$(result_path check)"
 info "Pushing $branch"
 git push -u origin HEAD || DIE_CAUSE=other die "push failed; no PR created. Fix the push error and retry."
+(( ! checked )) || result_adopt_retried "$(result_path check)"
+(( ${#R_RETRIED[@]} == 0 )) || echo "WARN passed only on retry: ${R_RETRIED[*]}"
 
 args=(--base main --head "$branch" --title "$title" --body "$body")
 (( draft )) && args+=(--draft)

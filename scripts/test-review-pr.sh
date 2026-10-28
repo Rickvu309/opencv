@@ -60,6 +60,7 @@ mkdir -p scripts .github
 cat >scripts/check.sh <<'CHK'
 #!/usr/bin/env bash
 echo "ran on $(git -c core.hooksPath=/dev/null write-tree)" >>"$REVIEW_TEST_RUNS"
+echo "retry=${CHECK_RETRY_FAILED_TESTS-unset}" >>"$REVIEW_TEST_RUNS.env"
 [[ -f FAIL_CHECK ]] && exit 1
 exit 0
 CHK
@@ -120,9 +121,10 @@ merge_tree() { git -C "$work" merge-tree --write-tree main "$REVIEW_TEST_BRANCH"
 pr_commit() { git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -C "$work" push -q -f origin "$REVIEW_TEST_BRANCH:refs/pull/1/head"; }
 main_commit() { git -C "$work" checkout -q main && git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -C "$work" push -q origin main && git -C "$work" checkout -q "$REVIEW_TEST_BRANCH"; }
 
-run --no-install
+CHECK_RETRY_FAILED_TESTS=1 run --no-install
 expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "running pnpm --filter web build" "web build passed" "RESULT: OK (patch id" "--match-head-commit $(git -C "$work" rev-parse "$REVIEW_TEST_BRANCH")"
 want_runs "behind main" 1
+[[ "$(cat "$REVIEW_TEST_RUNS.env")" == "retry=unset" ]] || fail "gate" "the gate's check ran with CHECK_RETRY_FAILED_TESTS set: it must never retry"
 result status=ok cause=none next="heavy -- scripts/merge-pr.sh 1"
 grep -q "patch id" "$PR_RESULT_DIR/opencv-review-pr-1.json" || fail "ok result" "detail has no patch id"
 grep -q "ran on $(merge_tree)" "$REVIEW_TEST_RUNS" || fail "behind main" "check did not run on the merge tree $(merge_tree)"

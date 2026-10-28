@@ -81,7 +81,13 @@ result_human() {
 }
 result_ok() { R_STATUS=ok; R_CAUSE=none; R_DETAIL=$(_r_oneline "${1:-}"); [[ -z "${2:-}" ]] || R_NEXT=$2; }
 result_file() { R_FILES+=("$@"); }
-result_retried() { R_RETRIED+=("$@"); }
+result_retried() {
+  local f x
+  for f in "$@"; do
+    for x in ${R_RETRIED[@]+"${R_RETRIED[@]}"}; do [[ "$x" != "$f" ]] || continue 2; done
+    R_RETRIED+=("$f")
+  done
+}
 result_next() { R_NEXT=$1; }
 result_log() { R_LOG=$1; }
 result_blocked_by() {
@@ -112,6 +118,15 @@ result_adopt() {
   for l in "${lines[@]:4}"; do
     case "$l" in retried:*) R_RETRIED+=("${l#retried:}") ;; *) R_FILES+=("$l") ;; esac
   done
+}
+
+# Add the `retried` files of a nested script's result file (the check.sh that open-pr.sh ran) to this one.
+result_adopt_retried() {
+  local x
+  [[ -f "$1" ]] || return 0
+  while IFS= read -r x; do [[ -z "$x" ]] || result_retried "$x"; done < <(node -e '
+    for (const f of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).retried ?? []) console.log(f)
+  ' "$1" 2>/dev/null)
 }
 
 # Build the JSON line for exit code $1 and settle the status of a script that never reported one.

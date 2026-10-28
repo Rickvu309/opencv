@@ -236,7 +236,7 @@ if (( merge_rc == 0 )); then
         git -C "$main_checkout" cat-file blob "$checker_blob" >"$checker"
         chmod +x "$checker"
         # A stray CHECK_DRY_RUN, CHECK_BASE_REF in the reviewer shell must not turn the full run into a no-op.
-        if (cd "$wt" && env -u CHECK_DRY_RUN -u CHECK_BASE_REF "$checker"); then
+        if (cd "$wt" && env -u CHECK_DRY_RUN -u CHECK_BASE_REF -u CHECK_RETRY_FAILED_TESTS "$checker"); then
           ok "lint, typecheck, test passed"
           note "running pnpm --filter api... run build"
           if (cd "$wt" && pnpm --filter api... run build); then
