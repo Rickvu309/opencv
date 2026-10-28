@@ -9,4 +9,4 @@ node scripts/pen-snapshot.mjs <pen> <frame id> apps/web/src/features/apply/desig
 node scripts/pen-layout.mjs <pen> <frame id> apps/web/src/features/apply/design/<slug>.layout.json --route <route> --pane <same id> --driver verify-apply-pen
 ```
 
-`--driver` makes `verify:pen-layout` skip the layout, since only this script can seed the data and open the dialog. Pen greys that fail AA ship as the lightest AA grey on their surface (`apps/web/src/features/apply/apply-tone.ts`). Positions the pen frame itself gets wrong sit in `LAYOUT_EXCEPTIONS` in `scripts/lib/apply-pen-gaps.mjs`, dated and pending the operator.
+`--driver` makes `verify:pen-layout` skip the layout, since only this script can seed the data and open the dialog. Pen greys that fail AA ship as the lightest AA grey on their surface (`apps/web/src/features/apply/apply-tone.ts`). Positions the product cannot match (a chip for data it does not store) sit in `LAYOUT_EXCEPTIONS` in `scripts/lib/apply-pen-gaps.mjs`, dated and pending the operator.

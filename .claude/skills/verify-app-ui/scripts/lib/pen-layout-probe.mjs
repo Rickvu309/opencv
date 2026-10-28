@@ -125,17 +125,27 @@ function probe(args) {
     }
     return { pane: pageSize, texts }
   }
+  // include names extra roots outside the pane (a portal such as a drag
+  // overlay); their texts are measured relative to the pane too.
+  const scopes = [
+    pane,
+    ...(args.include ?? []).flatMap((selector) => [
+      ...document.querySelectorAll(selector),
+    ]),
+  ]
   const byText = new Map()
   const add = (text, element, root) => {
     if (!text) return
     if (!byText.has(text)) byText.set(text, [])
     byText.get(text).push({ element, root })
   }
-  for (const element of pane.querySelectorAll("*")) {
+  for (const element of scopes.flatMap((scope) => [
+    ...scope.querySelectorAll("*"),
+  ])) {
     if (element.children.length === 0 && !element.textContent.trim()) continue
     add(ownText(element), element, element)
   }
-  for (const node of textNodes(pane)) {
+  for (const node of scopes.flatMap((scope) => textNodes(scope))) {
     if (node.parentElement) add(normalize(node.data), node.parentElement, node)
   }
   // A field's value or placeholder is drawn as text in the pen. Its box starts
@@ -162,7 +172,9 @@ function probe(args) {
     return { left, top, right: left + width, bottom: top + line }
   }
   if (args.mode === "app")
-    for (const field of pane.querySelectorAll("input, textarea")) {
+    for (const field of scopes.flatMap((scope) => [
+      ...scope.querySelectorAll("input, textarea"),
+    ])) {
       const text = normalize(field.value || field.placeholder || "")
       if (!text || field.getBoundingClientRect().width === 0) continue
       if (!byText.has(text)) byText.set(text, [])

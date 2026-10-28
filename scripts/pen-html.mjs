@@ -312,7 +312,9 @@ const containerCss = (node, ctx) => {
 
 export function penNodeToHtml(node, parent, ctx) {
   if (node.enabled === false) return ""
-  const mode = parentModeOf(parent)
+  // A child marked layoutPosition "absolute" leaves its parent's flex flow
+  // and sits at its own x and y, as a free layer does.
+  const mode = node.layoutPosition === "absolute" ? "abs" : parentModeOf(parent)
   const style = [
     "box-sizing:border-box;",
     sizeCss(node, mode),

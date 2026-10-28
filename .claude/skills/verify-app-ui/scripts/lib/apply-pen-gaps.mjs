@@ -99,37 +99,19 @@ function detailGaps() {
   }
 }
 
-// Positions the pen frame itself gets wrong, for comparePenLayout. Each entry
-// fails once it expires or once the property matches.
-const PEN_FRAME_ERROR = {
+// Positions the product cannot match, for comparePenLayout. Each entry fails
+// once it expires or once the property matches.
+const PENDING_OPERATOR = {
   until: "2027-01-31",
   approvedBy: "pending operator (quanvu309)",
 }
-const weekHeader =
-  "the W9.8 frame stacks its hour lines above the day headers, which sit mid-grid"
 export const LAYOUT_EXCEPTIONS = [
-  ...["Mon 2", "Tue 3", "Wed 4", "Thu 5", "Fri 6", "Sat 7", "Sun 8"].map(
-    (text) => ({
-      frameId: "ZA60d",
-      text,
-      property: "y",
-      reason: weekHeader,
-      ...PEN_FRAME_ERROR,
-    })
-  ),
-  {
-    frameId: "ZA60d",
-    text: "14:00 to 15:00",
-    property: "y",
-    reason: "the W9.8 frame draws the 14:00 interview on the 16:00 row",
-    ...PEN_FRAME_ERROR,
-  },
   {
     frameId: "U4613",
     text: "Junior Marketing",
     property: "y",
     reason:
       "the W9.7 frame stacks it under a follow-up chip the product does not store",
-    ...PEN_FRAME_ERROR,
+    ...PENDING_OPERATOR,
   },
 ]

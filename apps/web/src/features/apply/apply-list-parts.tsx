@@ -20,7 +20,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 type RowPhrase = { text: string; soon: boolean }
 
 /** A weekday alone is only unambiguous within the next seven days. */
-export function rowPhrase(job: JobView, now = new Date()): RowPhrase {
+function rowPhrase(job: JobView, now = new Date()): RowPhrase {
   if (job.stage === "interview" && job.interviewAt) {
     const at = new Date(job.interviewAt)
     const wait = at.getTime() - now.getTime()

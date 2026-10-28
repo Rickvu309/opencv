@@ -309,7 +309,7 @@
     {
       "text": "Mon 2",
       "x": 86,
-      "y": 258,
+      "y": 159,
       "width": 36,
       "height": 15,
       "fontSize": 12,
@@ -323,7 +323,7 @@
     {
       "text": "Tue 3",
       "x": 242,
-      "y": 257,
+      "y": 158,
       "width": 32,
       "height": 15,
       "fontSize": 12,
@@ -337,7 +337,7 @@
     {
       "text": "Product analyst",
       "x": 253,
-      "y": 674.5,
+      "y": 575.5,
       "width": 89.5,
       "height": 15,
       "fontSize": 12,
@@ -351,7 +351,7 @@
     {
       "text": "Round 2 interview",
       "x": 253,
-      "y": 690,
+      "y": 591,
       "width": 98,
       "height": 14,
       "fontSize": 11.5,
@@ -365,7 +365,7 @@
     {
       "text": "14:00 to 15:00",
       "x": 253,
-      "y": 704.5,
+      "y": 605.5,
       "width": 73,
       "height": 14,
       "fontSize": 11,
@@ -379,7 +379,7 @@
     {
       "text": "Wed 4",
       "x": 397,
-      "y": 257,
+      "y": 158,
       "width": 37.5,
       "height": 15,
       "fontSize": 12,
@@ -393,7 +393,7 @@
     {
       "text": "Thu 5",
       "x": 552,
-      "y": 257,
+      "y": 158,
       "width": 33,
       "height": 15,
       "fontSize": 12,
@@ -407,7 +407,7 @@
     {
       "text": "Fri 6",
       "x": 707,
-      "y": 257,
+      "y": 158,
       "width": 25.5,
       "height": 15,
       "fontSize": 12,
@@ -421,7 +421,7 @@
     {
       "text": "Sat 7",
       "x": 862,
-      "y": 257,
+      "y": 158,
       "width": 29,
       "height": 15,
       "fontSize": 12,
@@ -435,7 +435,7 @@
     {
       "text": "Sun 8",
       "x": 1017,
-      "y": 235,
+      "y": 158,
       "width": 33,
       "height": 15,
       "fontSize": 12,
@@ -449,7 +449,7 @@
     {
       "text": "UX research due",
       "x": 1040,
-      "y": 259.5,
+      "y": 182.5,
       "width": 92,
       "height": 14,
       "fontSize": 11.5,

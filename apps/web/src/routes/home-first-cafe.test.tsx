@@ -267,8 +267,8 @@ describe("Home first-café checklist", () => {
         name: "Associate PM intern, Local startup",
       })
     )
-    await user.click(await screen.findByRole("combobox", { name: "Stage" }))
-    await user.click(await screen.findByRole("option", { name: "Applied" }))
+    await user.click(await screen.findByRole("button", { name: /^Stage:/ }))
+    await user.click(await screen.findByRole("menuitem", { name: "Applied" }))
     await waitFor(() => {
       expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
     })
@@ -419,8 +419,8 @@ describe("Home first-café checklist", () => {
         name: "Associate PM intern, Local startup",
       })
     )
-    await user.click(await screen.findByRole("combobox", { name: "Stage" }))
-    await user.click(await screen.findByRole("option", { name: "Applied" }))
+    await user.click(await screen.findByRole("button", { name: /^Stage:/ }))
+    await user.click(await screen.findByRole("menuitem", { name: "Applied" }))
     await goHome()
     await expectHomeStarted()
 

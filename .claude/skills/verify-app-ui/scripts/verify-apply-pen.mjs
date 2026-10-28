@@ -143,11 +143,13 @@ async function main() {
           ...full,
           texts: full.texts.filter((text) => !(text.text in notShown)),
         }
-        const pane = root === MAIN ? `[data-slot="app-shell"] ${MAIN}` : root
+        const [first, ...include] = root.split(",")
+        const pane = first === MAIN ? `[data-slot="app-shell"] ${MAIN}` : first
         const box = await page.evaluate(
           probeSource({
             mode: "app",
             pane,
+            include,
             texts: layout.texts,
             tokens: TEXT_TOKENS,
           })
@@ -194,14 +196,15 @@ async function main() {
       async () => {
         await open("/apply", lanes)
         // Lift Business analyst intern by its centre and hold it where the
-        // frame draws it (x 536, y 322 in the main panel), over Interview.
+        // frame draws it: x 536, y 322 inside the board, which starts below
+        // the 52px header and 44px toolbar, so y 418 in the main panel.
         const spot = await page.evaluate(`(() => {
           const card = [...document.querySelectorAll("[data-slot=kanban-card]")].find((n) => n.textContent.includes("Business analyst intern"))
           const pane = document.querySelector("#app-main").getBoundingClientRect()
           const r = card.getBoundingClientRect()
           return { x: r.left + r.width / 2, y: r.top + r.height / 2, dx: r.width / 2, dy: r.height / 2, left: pane.left, top: pane.top }
         })()`)
-        const to = { x: spot.left + 536 + spot.dx, y: spot.top + 322 + spot.dy }
+        const to = { x: spot.left + 536 + spot.dx, y: spot.top + 418 + spot.dy }
         await page.mouse("mousePressed", spot.x, spot.y)
         for (let step = 1; step <= 12; step += 1)
           await page.mouse(
