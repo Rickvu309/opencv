@@ -46,7 +46,7 @@ The failure prints witness lines, the first failing sweep tuples, and the `fast-
 - `isBlockedApplyScanHost("fda.gov") -> true` or `https://fda.gov/jobs/1 -> ok:false` (test F1): a public host was refused. Open `isPrivateIPv6` at `fetch-posting.ts` line 63 and `isBlockedApplyScanHost` at line 75. A hostname that is not an IPv6 literal must never reach a prefix test.
 - `http://user@127.0.0.1/x reached fetch (no lookup, lenient lookup)` (test F2): a blocked host passed because of its shape. Open `hostFromHttpUrl` at line 90. The host must come from `new URL(url).hostname`, never from string splitting, so userinfo, port and brackets are normalised the way `fetch` normalises them.
 - A failure in "no bare blocked host reaches fetch" names a host class. Find its clause: `isPrivateIPv4` (line 25) for dotted quads, `isPrivateIPv6` (line 63) for bracketed addresses including IPv4-mapped ones in dotted or hex form, `isBlockedApplyScanHost` (line 75) for names and suffixes.
-- A failure in "no non-http(s) scheme reaches fetch" with an `ftp:`, `file:`, `javascript:` or `data:` URL points at the scheme test `/^https?:\/\//i` in `openableApplyJobUrl` (`packages/domain/src/job-posting.ts` line 64), or at `normalizeApplyJobUrl`.
+- A failure in "no non-http(s) scheme reaches fetch" with an `ftp:`, `file:`, `javascript:` or `data:` URL points at the scheme test `/^https?:\/\//i` in `openableApplyJobUrl` (`packages/domain/src/job-posting.ts` line 50), or at `normalizeApplyJobUrl`.
 - A counterexample that matches neither F1 nor F2 and fails on an unchanged guard means the test table is wrong. Check the host row against the guard's documented ranges before editing code.
 
 ## Bounds and assumptions
@@ -67,7 +67,7 @@ The failure prints witness lines, the first failing sweep tuples, and the `fast-
 | `hostFromHttpUrl`          | `apps/api/src/job/fetch-posting.ts` line 90  |
 | `assertPublicApplyScanUrl` | `apps/api/src/job/fetch-posting.ts` line 98  |
 | `createFetchJobPosting`    | `apps/api/src/job/fetch-posting.ts` line 154 |
-| `openableApplyJobUrl`      | `packages/domain/src/job-posting.ts` line 56 |
+| `openableApplyJobUrl`      | `packages/domain/src/job-posting.ts` line 42 |
 
 Check file: `apps/api/src/job/fetch-posting.formal.test.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 

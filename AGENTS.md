@@ -18,10 +18,10 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
   - `<surface>-contract.ts` declares each surface's commands and most of its reads (`paper`, `job`, `inbox`, `account`, and `chat` for commands).
   - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads, `link.get` and `workspace.search` itself.
   - `chat-turn.ts` holds `ChatTurnEvent`, the Coach stream events.
-  - `job-posting.ts` holds the posting scan and its link guard (`openableApplyJobUrl`), `job-position.ts` the board order keys.
+  - `job-posting.ts` holds the posting link guard (`openableApplyJobUrl`) and the board stage enum, `job-position.ts` the board order keys.
 - `apps/api/src/<module>/` is one product module: `account`, `chat`, `paper`, `job` and `inbox`. Other modules import it only through its `index.ts`.
   - `commands.ts` binds the module's contract commands with `bindCommands` and its reads with `tableQuery`. `account` binds its reads in `queries.ts`.
-  - `job` also holds the posting fetch (`fetch-posting.ts`, the guard against internal hosts) and the scan (`scan.ts`).
+  - `job` also holds the posting fetch (`fetch-posting.ts`, the guard against internal hosts) and reads a posting into fields in `store.ts` (`fetchPosting`, `parsePostingText`), and can add the Coach's `interpretPosting` when `interpretPostings` is on.
   - `http.ts` mounts its routes. `store.ts` holds most of its database writes. Only files under the module's own directory write its tables, plus `auth.ts` for the auth tables. `registry/ownership.test.ts` holds the owner list.
 - Other api folders:
   - `registry/` runs every command, writes the `activity`, `pending_actions` and idempotency rows, and builds the Coach's tools.
@@ -133,7 +133,7 @@ Full checklist: `docs/git-workflow/review-and-approval.md`.
 
 ### Production recovery
 
-Production sign-in recovery needs checks beyond a local OTP or HTTP 200. See `docs/agents/production-recovery.md`.
+Production sign-in recovery needs checks beyond a local OTP or HTTP 200. See `docs/agents/production-recovery.md` and `scripts/verify-auth-production.mjs`.
 
 ### Design system
 
