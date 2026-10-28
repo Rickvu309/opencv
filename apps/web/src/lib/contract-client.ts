@@ -45,6 +45,7 @@ export function refreshReads(queryClient: QueryClient, refs: QueryRef[]) {
 
 export type RunOptions = {
   refresh?: boolean
+  keepalive?: boolean
 }
 
 export type CommandResult<T> = T & { activityId?: string }
@@ -69,6 +70,7 @@ export async function runContractCommand<N extends ContractCommandName>(
         ? {}
         : { idempotencyKey: crypto.randomUUID() }),
     }),
+    ...(options.keepalive ? { keepalive: true } : {}),
   })
   if (options.refresh !== false) {
     await refreshQueries(

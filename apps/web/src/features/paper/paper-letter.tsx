@@ -1,30 +1,41 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { keywordGap, type JobView, type PaperView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
-import { ApiError } from "@/lib/api-error.ts"
-import { listJobs } from "@/features/apply/apply-api.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
-import { isAbortError } from "@/lib/sse.ts"
 import { useQueryClient } from "@tanstack/react-query"
 
-import {
-  getPaper,
-  paperGetKey,
-  PaperLimitError,
-  stopPaperChat,
-  streamPaperTurn,
-} from "./paper-api.ts"
+import { getPaper, paperGetKey } from "./paper-api.ts"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperLetterArticle } from "./paper-letter-article.tsx"
 import { editorEditedLabel } from "./paper-templates.ts"
 
-function unreadableLink(value: string) {
-  return /docs\.google\.com|linkedin\.com/i.test(value)
+export { PaperLetterStart } from "./paper-letter-start.tsx"
+
+function caretOffset(node: HTMLElement) {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return null
+  if (!node.contains(selection.anchorNode)) return null
+  const range = selection.getRangeAt(0)
+  const before = range.cloneRange()
+  before.selectNodeContents(node)
+  before.setEnd(range.endContainer, range.endOffset)
+  return before.toString().length
+}
+
+function placeCaret(node: HTMLElement, offset: number) {
+  const text = node.firstChild
+  if (!text) return
+  const range = document.createRange()
+  const clamped = Math.max(0, Math.min(offset, text.textContent?.length ?? 0))
+  range.setStart(text, clamped)
+  range.collapse(true)
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
 }
 
 function markdownOf(document: unknown) {
@@ -32,233 +43,6 @@ function markdownOf(document: unknown) {
     return ""
   const markdown = (document as { markdown: unknown }).markdown
   return typeof markdown === "string" ? markdown : ""
-}
-
-function resetClock(iso: string | null) {
-  if (!iso) return "later"
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return "later"
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  })
-}
-
-export function PaperLetterStart({
-  jobs: jobsProp,
-  cvName,
-  onCreated,
-  onImport,
-}: {
-  jobs?: JobView[]
-  cvName: string | null
-  onCreated: (id: string) => void
-  onImport: () => void
-}) {
-  const run = useRunCommand()
-  const queryClient = useQueryClient()
-  const [jobs, setJobs] = useState<JobView[]>(jobsProp ?? [])
-  const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<JobView | null>(null)
-  const [drafting, setDrafting] = useState(false)
-  const [text, setText] = useState("")
-  const [limit, setLimit] = useState<PaperLimitError | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
-  const chatRef = useRef<string | null>(null)
-  const textRef = useRef("")
-  const unread = unreadableLink(query)
-  const shown = unread
-    ? jobs
-    : jobs.filter((job) => {
-        const hay = `${job.title} ${job.company}`.toLowerCase()
-        const needle = query.trim().toLowerCase()
-        return needle === "" || hay.includes(needle)
-      })
-
-  useEffect(() => {
-    if (jobsProp) {
-      setJobs(jobsProp)
-      return
-    }
-    void listJobs()
-      .then(setJobs)
-      .catch((err: unknown) => {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Could not load jobs. Refresh the page."
-        )
-      })
-  }, [jobsProp])
-
-  async function draft() {
-    if (!selected && query.trim() === "") return
-    setLimit(null)
-    setError(null)
-    setDrafting(true)
-    textRef.current = ""
-    setText("")
-    const controller = new AbortController()
-    abortRef.current = controller
-    try {
-      const created = await run("paper.create", {
-        kind: "letter",
-        ...(selected
-          ? { jobId: selected.id, name: `Cover letter, ${selected.company}` }
-          : { name: "Cover letter" }),
-      })
-      const chat = await run("chat.create", {
-        title: selected ? `Cover letter, ${selected.company}` : "Cover letter",
-      })
-      chatRef.current = chat.id
-      const turnText =
-        unread || !selected
-          ? query.trim()
-          : `Draft a cover letter for ${selected.title} at ${selected.company}.`
-      let replaced = false
-      await streamPaperTurn({
-        queryClient,
-        chatId: chat.id,
-        text: turnText,
-        focusDocId: created.id,
-        context: selected ? [{ kind: "job", id: selected.id }] : undefined,
-        signal: controller.signal,
-        onText: (delta) => {
-          textRef.current += delta
-          setText(textRef.current)
-        },
-        onToolResult: (tool) => {
-          if (tool === "paper.replace") {
-            replaced = true
-            void queryClient.fetchQuery({
-              queryKey: paperGetKey(created.id),
-              queryFn: () => getPaper(created.id),
-              staleTime: 0,
-            })
-          }
-        },
-      })
-      if (!replaced && textRef.current) {
-        await run("paper.replace", {
-          docId: created.id,
-          contentVersion: created.contentVersion,
-          document: { markdown: textRef.current },
-        })
-      }
-      onCreated(created.id)
-    } catch (err) {
-      if (isAbortError(err)) return
-      if (err instanceof PaperLimitError) {
-        setLimit(err)
-        return
-      }
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Could not draft the letter. Try again."
-      )
-    } finally {
-      setDrafting(false)
-    }
-  }
-
-  function stop() {
-    abortRef.current?.abort()
-    if (chatRef.current) void stopPaperChat(chatRef.current)
-    setDrafting(false)
-  }
-
-  async function startBlank() {
-    try {
-      const created = await run("paper.create", {
-        kind: "letter",
-        name: "Cover letter",
-      })
-      onCreated(created.id)
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Could not start a letter. Try again."
-      )
-    }
-  }
-
-  const draftName = limit
-    ? `Coach is back at ${resetClock(limit.resetsAt)}`
-    : "Draft letter"
-
-  return (
-    <div className="flex flex-col gap-3">
-      <Input
-        aria-label="Search jobs, paste a link or attach a file"
-        placeholder="Search jobs, paste a link or attach a file"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
-      {unread ? (
-        <p>Can&apos;t read this link. Paste the job text or attach a file.</p>
-      ) : null}
-      <div className="grid max-h-48 gap-1 overflow-auto">
-        {shown.map((job) => (
-          <Button
-            key={job.id}
-            type="button"
-            variant={selected?.id === job.id ? "secondary" : "outline"}
-            className="h-auto justify-start whitespace-normal"
-            aria-pressed={selected?.id === job.id}
-            onClick={() => setSelected(job)}
-          >
-            {job.title}, {job.company}
-          </Button>
-        ))}
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onImport}>
-          Attach a file
-        </Button>
-        <Button type="button" variant="ghost" onClick={() => void startBlank()}>
-          Start blank
-        </Button>
-        {drafting ? (
-          <Button type="button" variant="glow" onClick={stop}>
-            Stop
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant={limit ? "outline" : "glow"}
-            disabled={Boolean(limit)}
-            onClick={() => void draft()}
-          >
-            {draftName}
-          </Button>
-        )}
-      </div>
-      {drafting ? (
-        <div>
-          <p>Coach is writing…</p>
-          {cvName ? <p>From {cvName}</p> : null}
-          <p>
-            {text}
-            <span
-              aria-hidden="true"
-              className="ml-px inline-block h-4 w-px bg-foreground motion-safe:animate-pulse"
-            />
-          </p>
-        </div>
-      ) : null}
-      {limit ? (
-        <div>
-          <p>You&apos;ve reached today&apos;s Free limit.</p>
-          <p>{limit.message}</p>
-          <a href="/app/settings">Upgrade</a>
-        </div>
-      ) : null}
-      {error ? <p>{error}</p> : null}
-    </div>
-  )
 }
 
 export function PaperLetterEditor({
@@ -273,7 +57,10 @@ export function PaperLetterEditor({
   onBack: () => void
 }) {
   const run = useRunCommand()
+  const queryClient = useQueryClient()
   const editorRef = useRef<HTMLDivElement>(null)
+  const dirtyRef = useRef(false)
+  const inputCountRef = useRef(0)
   const [markdown, setMarkdown] = useState(markdownOf(doc.document))
   const [updatedAt, setUpdatedAt] = useState(doc.updatedAt)
   const [hiddenGap, setHiddenGap] = useState(false)
@@ -282,9 +69,12 @@ export function PaperLetterEditor({
     docId: doc.id,
     initialVersion: doc.contentVersion,
     toDocument: (next) => ({ markdown: next }),
-    onSaved: () => {
+    readInputEpoch: () => inputCountRef.current,
+    onSaved: (saved, inputEpoch) => {
+      if (inputEpoch === inputCountRef.current) dirtyRef.current = false
       setUpdatedAt(new Date().toISOString())
       setConflict(false)
+      queryClient.setQueryData(paperGetKey(doc.id), saved)
     },
     onConflict: () => setConflict(true),
     onError: (error) => {
@@ -293,24 +83,61 @@ export function PaperLetterEditor({
       )
     },
   })
+  const scheduleRef = useRef(schedule)
+  const adoptRef = useRef(adopt)
+  useEffect(() => {
+    scheduleRef.current = schedule
+    adoptRef.current = adopt
+  }, [schedule, adopt])
+  const caretRef = useRef<number | null>(null)
+  const onLetterInput = useCallback(() => {
+    const node = editorRef.current
+    const next = node?.textContent ?? ""
+    inputCountRef.current += 1
+    dirtyRef.current = true
+    caretRef.current = node ? caretOffset(node) : null
+    setMarkdown(next)
+    scheduleRef.current(next)
+  }, [])
   const gap = hiddenGap
     ? null
     : keywordGap(markdown, job?.posting?.requirements ?? "")
 
   useEffect(() => {
+    if (dirtyRef.current) return
+    const next = markdownOf(doc.document)
+    // A reload can be newer than the query prop. Leave that text on screen.
+    if (doc.contentVersion < versionRef.current) return
+    if (doc.contentVersion === versionRef.current && next === markdown) return
+    caretRef.current = null
+    adoptRef.current(doc.contentVersion)
+    setMarkdown(next)
+  }, [doc, markdown, versionRef])
+
+  useEffect(() => {
     const node = editorRef.current
-    if (!node || document.activeElement === node) return
-    if (node.textContent !== markdown) node.textContent = markdown
+    if (!node || node.textContent === markdown) return
+    const focused = document.activeElement === node
+    if (focused && dirtyRef.current && node.textContent !== "") return
+    const offset = focused ? (caretRef.current ?? markdown.length) : null
+    node.textContent = markdown
+    if (offset != null) placeCaret(node, offset)
   }, [markdown])
 
   async function reloadLetter() {
     try {
       const next = await getPaper(doc.id)
       const text = markdownOf(next.document)
+      dirtyRef.current = false
+      caretRef.current = null
       adopt(next.contentVersion)
+      queryClient.setQueryData(paperGetKey(doc.id), next)
       setMarkdown(text)
       const node = editorRef.current
-      if (node) node.textContent = text
+      if (node) {
+        node.textContent = text
+        if (document.activeElement === node) placeCaret(node, text.length)
+      }
       setUpdatedAt(next.updatedAt)
       setConflict(false)
     } catch (error) {
@@ -373,11 +200,7 @@ export function PaperLetterEditor({
           <PaperLetterArticle
             doc={doc}
             editorRef={editorRef}
-            onInput={() => {
-              const next = editorRef.current?.textContent ?? ""
-              setMarkdown(next)
-              schedule(next)
-            }}
+            onInput={onLetterInput}
           />
         </div>
         {gap ? (

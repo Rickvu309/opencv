@@ -1,4 +1,4 @@
-import type { RefObject } from "react"
+import { memo, type RefObject } from "react"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -13,7 +13,11 @@ type Props = {
   onInput: () => void
 }
 
-export function PaperLetterArticle({ doc, editorRef, onInput }: Props) {
+export const PaperLetterArticle = memo(function PaperLetterArticle({
+  doc,
+  editorRef,
+  onInput,
+}: Props) {
   return (
     <article
       className={cn(
@@ -60,4 +64,4 @@ export function PaperLetterArticle({ doc, editorRef, onInput }: Props) {
       />
     </article>
   )
-}
+})

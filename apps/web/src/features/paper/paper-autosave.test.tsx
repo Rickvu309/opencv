@@ -25,13 +25,16 @@ function ok(data: unknown) {
   return Response.json({ ok: true, data })
 }
 
-function setup() {
-  const requests: { url: string; body: unknown }[] = []
+function setup(onReplace?: (count: number) => Promise<Response> | Response) {
+  const requests: { url: string; body: unknown; keepalive?: boolean }[] = []
+  let replaces = 0
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
     const body = typeof init?.body === "string" ? JSON.parse(init.body) : null
-    requests.push({ url, body })
+    requests.push({ url, body, keepalive: init?.keepalive })
     if (url.includes("/api/commands/paper.replace")) {
+      replaces += 1
+      if (onReplace) return onReplace(replaces)
       return Promise.resolve(ok(saved))
     }
     if (url.endsWith("/pages")) {
@@ -110,5 +113,64 @@ describe("paper autosave", () => {
     ).toHaveLength(0)
     expect(count("/api/paper")).toBe(2)
     expect(count("/pages")).toBe(2)
+  })
+
+  it("sends a pending edit with keepalive when the page hides during a save", async () => {
+    let rejectFirst: (error: unknown) => void = () => {}
+    const first = new Promise<Response>((_resolve, reject) => {
+      rejectFirst = reject
+    })
+    const { requests, view } = setup((count) => {
+      if (count === 1) return first
+      return Promise.resolve(ok({ ...saved, contentVersion: 3 }))
+    })
+    await vi.waitFor(() => expect(requests.length).toBe(3))
+    act(() => view.result.current.schedule("first"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    act(() => view.result.current.schedule("second"))
+    await act(async () => {
+      window.dispatchEvent(new Event("pagehide"))
+    })
+    await act(async () => {
+      rejectFirst(Object.assign(new Error("aborted"), { name: "AbortError" }))
+      await vi.advanceTimersByTimeAsync(0)
+    })
+
+    const saves = requests.filter((request) =>
+      request.url.includes("paper.replace")
+    )
+    expect(saves).toHaveLength(2)
+    expect(saves[1]?.keepalive).toBe(true)
+    expect(saves[1]?.body).toMatchObject({
+      input: { document: { markdown: "second" } },
+    })
+  })
+
+  it("uses a normal save after the page is shown again", async () => {
+    const { requests, view } = setup()
+    await vi.waitFor(() => expect(requests.length).toBe(3))
+    act(() => view.result.current.schedule("hide"))
+    await act(async () => {
+      window.dispatchEvent(new Event("pagehide"))
+    })
+    await vi.waitFor(() =>
+      expect(
+        requests.filter((request) => request.url.includes("paper.replace"))
+      ).toHaveLength(1)
+    )
+    await act(async () => {
+      window.dispatchEvent(new Event("pageshow"))
+    })
+    act(() => view.result.current.schedule("show"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+
+    const saves = requests.filter((request) =>
+      request.url.includes("paper.replace")
+    )
+    expect(saves[0]?.keepalive).toBe(true)
+    expect(saves[1]?.keepalive).not.toBe(true)
+    expect(saves[1]?.body).toMatchObject({
+      input: { document: { markdown: "show" } },
+    })
   })
 })
