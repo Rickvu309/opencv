@@ -226,8 +226,7 @@
   "notFound.signIn": "Go to sign in",
   "inboxConnectTitle": "Never miss a recruiter reply",
   "inboxConnectPromise": "Reads job emails only. Nothing is sent without you.",
-  "inboxMove": "Move this job to Interview?",
-  "inboxDraftBy": "Drafted by opencv",
+  "inboxMove": "Move this job from Applied to Interview?",
   "inboxEmptyTitle": "No job emails yet",
   "inboxScanTitle": "Finding your job emails"
 }

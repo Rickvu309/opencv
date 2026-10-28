@@ -63,7 +63,7 @@ App-wide:
 Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 
 - 39 `brand-wordmark`: chrome never contains OpenCV. The brand is the mark plus lowercase opencv. The same 39 to 44 rules also run on `/app/settings` (desktop, reduced motion, and 390). Those snaps stay off the four surfaces in check 38.
-- 40 `one-glow-primary`: each toured view, including the 390px pass and the Inbox connect screen, has at most one control wearing the glow utility. The reader glow is Move to Interview while the prompt is open, otherwise Send.
+- 40 `one-glow-primary`: each toured view, including the 390px pass and the Inbox connect screen, has at most one control wearing the glow utility. The Inbox follows its pen frames and wears no glow.
 - 41 `no-dash-in-copy`: chrome has no em dash, en dash, or middle dot.
 - 42 `toggle-enabled-disabled`: a toggle label is Enabled or Disabled. On, Off, and Connected fail.
 - 43 `title-before-company`: a job line does not start with "at" and no title.
