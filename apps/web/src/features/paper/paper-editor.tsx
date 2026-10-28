@@ -39,14 +39,10 @@ import {
 } from "./paper-templates.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
-function cvOf(document: unknown, templateId: string | null): CvDocument {
-  if (isCvDocument(document)) {
-    return {
-      ...document,
-      templateId: printLayout(document.templateId || templateId),
-    }
-  }
-  return { ...emptyCvDocument(), templateId: printLayout(templateId) }
+function cvOf(document: unknown, rowTemplateId: string | null): CvDocument {
+  const layout = printLayout(rowTemplateId)
+  if (isCvDocument(document)) return { ...document, templateId: layout }
+  return { ...emptyCvDocument(), templateId: layout }
 }
 
 export function PaperCvEditor({

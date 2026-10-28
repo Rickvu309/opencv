@@ -312,4 +312,61 @@ describe("CV editor chrome", () => {
       ).toBe("modern")
     })
   })
+
+  it("prints the row template when the body still says internship", () => {
+    const view = render(
+      <PaperCvEditor
+        initial={{ ...record, templateId: "modern" }}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    expect(view.container.querySelector(".cv-template-product")).not.toBeNull()
+    expect(view.container.querySelector(".cv-template-internship")).toBeNull()
+  })
+
+  it("keeps the chosen layout when a reload leaves the body unchanged", async () => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/commands/paper.setTemplate")) {
+        return Promise.resolve(
+          ok({ ...record, templateId: "modern", contentVersion: 2 })
+        )
+      }
+      return Promise.resolve(ok({}))
+    })
+    const open = render(
+      <PaperCvEditor
+        initial={record}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    expect(
+      open.container.querySelector(".cv-template-internship")
+    ).not.toBeNull()
+    fireEvent.click(screen.getByRole("button", { name: "Change template" }))
+    fireEvent.click(screen.getByRole("button", { name: "Modern" }))
+    fireEvent.click(screen.getByRole("button", { name: "Use template" }))
+    await vi.waitFor(() => {
+      expect(
+        open.container.querySelector(".cv-template-product")
+      ).not.toBeNull()
+    })
+    open.unmount()
+
+    const reloaded = render(
+      <PaperCvEditor
+        initial={{ ...record, templateId: "modern" }}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    expect(
+      reloaded.container.querySelector(".cv-template-product")
+    ).not.toBeNull()
+    expect(
+      reloaded.container.querySelector(".cv-template-internship")
+    ).toBeNull()
+  })
 })

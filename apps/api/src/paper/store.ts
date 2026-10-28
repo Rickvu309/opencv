@@ -155,10 +155,23 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
   }
   const updatedAt = new Date()
   const contentVersion = current.contentVersion + 1
-  await getDb()
+  const written = await getDb()
     .update(paperDocs)
     .set({ document, contentVersion, updatedAt })
-    .where(eq(paperDocs.id, current.id))
+    .where(
+      and(
+        eq(paperDocs.id, current.id),
+        eq(paperDocs.contentVersion, input.contentVersion)
+      )
+    )
+  if ((written.rowCount ?? 0) === 0) {
+    const latest = toPaper(await ownedPaper(actor.userId, input.docId))
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "This document changed. Reload it and try again.",
+      { document: latest }
+    )
+  }
   return {
     ...toPaper({ ...current, document, contentVersion, updatedAt }),
     previousDocument: view.document,
