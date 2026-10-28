@@ -1,6 +1,6 @@
 ---
 name: verify-app-ui
-description: Check the interior quality and taste of the signed-in OpenCV app (Coach, Paper, Apply, Pitch), covering writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker signs up a throwaway account on a PGlite stack and measures its properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/home, coach, paper, apply, pitch, app-shell, apps/web/src/routes, or a packages/ui component those import (button, card, dialog, empty, input, kbd, skeleton, spinner, tabs, tooltip, badge), the motion tokens in packages/ui/src/styles/globals.css, and when asked whether the app is good.
+description: Check the interior quality and taste of the signed-in OpenCV app (Coach, Paper, Apply, Pitch), covering writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker signs up a throwaway account on a PGlite stack and measures its properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/coach, paper, apply, pitch, app-shell, apps/web/src/routes, or a packages/ui component those import (button, card, dialog, empty, input, kbd, skeleton, spinner, tabs, tooltip, badge), the motion tokens in packages/ui/src/styles/globals.css, and when asked whether the app is good.
 ---
 
 # verify-app-ui
