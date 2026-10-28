@@ -1,6 +1,16 @@
-import { emptyCvDocument, type CvBlockDocument } from "@workspace/domain"
+import { eq } from "drizzle-orm"
+import {
+  blankBlockDocument,
+  coachActor,
+  emptyCvDocument,
+  personActor,
+  type CvBlockDocument,
+} from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
+import { withDatabase } from "../db/context.js"
+import { paperDocs, user } from "../db/schema.js"
+import { installRegistry } from "../registry/install.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -112,7 +122,7 @@ describe("version 2 CV documents", () => {
     }
   })
 
-  it("stores version 1 on create and still accepts a v1 replace", async () => {
+  it("stores version 2 on create and refuses a version 1 replace", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const { cookie } = await signUp(app, {
@@ -129,14 +139,14 @@ describe("version 2 CV documents", () => {
     expect(createdRes.status).toBe(200)
     const created = await jsonOf(createdRes)
     const docId = String(created.data?.id)
-    expect(created.data?.document?.version).toBeUndefined()
+    expect(created.data?.document).toEqual(blankBlockDocument())
 
     const readRes = await app.request(`/api/paper/${docId}`, { headers })
     expect(readRes.status).toBe(200)
     const read = await jsonOf(readRes)
-    expect(read.data?.document).toEqual(emptyCvDocument())
+    expect(read.data?.document).toEqual(blankBlockDocument())
 
-    const replaceRes = await app.request("/api/commands/paper.replace", {
+    const rejected = await app.request("/api/commands/paper.replace", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -147,13 +157,29 @@ describe("version 2 CV documents", () => {
         },
       }),
     })
+    expect(rejected.status).toBe(400)
+    await expect(rejected.json()).resolves.toMatchObject({
+      ok: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "This CV uses blocks. Send a version 2 document.",
+      },
+    })
+
+    const replaceRes = await app.request("/api/commands/paper.replace", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        input: {
+          docId,
+          contentVersion: created.data?.contentVersion,
+          document: v2Fixture,
+        },
+      }),
+    })
     expect(replaceRes.status).toBe(200)
     const replaced = await jsonOf(replaceRes)
-    expect(replaced.data?.document?.version).toBeUndefined()
-    expect(replaced.data?.document).toMatchObject({
-      name: "Lan Nguyen",
-      experience: v1Fixture.experience,
-    })
+    expect(replaced.data?.document).toEqual(v2Fixture)
     await client.close()
   })
 
@@ -353,8 +379,15 @@ describe("version 2 CV documents", () => {
     })
     expect(createdRes.status).toBe(200)
     const created = await jsonOf(createdRes)
-    expect(created.data?.document?.version).toBeUndefined()
+    expect(created.data?.document?.version).toBe(2)
     const docId = String(created.data?.id)
+    await db
+      .update(paperDocs)
+      .set({ document: emptyCvDocument() as Record<string, unknown> })
+      .where(eq(paperDocs.id, docId))
+    const seeded = await app.request(`/api/paper/${docId}`, { headers })
+    const seededBody = await jsonOf(seeded)
+    expect(seededBody.data?.document?.version).toBeUndefined()
 
     const replaceRes = await app.request("/api/commands/paper.replace", {
       method: "POST",
@@ -373,6 +406,40 @@ describe("version 2 CV documents", () => {
     expect(replaced.data?.contentVersion).toBe(
       (created.data?.contentVersion ?? 0) + 1
     )
+    await client.close()
+  })
+
+  it("stores a Coach version 1 replace as version 2", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-coach-v2"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-coach-v2@example.com",
+    })
+    await withDatabase(db, async () => {
+      const person = personActor(userId)
+      const created = await registry.execute({
+        name: "paper.create",
+        input: { kind: "cv", name: "CV" },
+        actor: person,
+      })
+      const doc = created.output as { id: string; contentVersion: number }
+      const replaced = await registry.execute({
+        name: "paper.replace",
+        input: {
+          docId: doc.id,
+          contentVersion: doc.contentVersion,
+          document: { ...emptyCvDocument(), name: "Ada" },
+        },
+        actor: coachActor(userId, "00000000-0000-4000-8000-000000000379"),
+      })
+      expect(replaced.output).toMatchObject({
+        contentVersion: doc.contentVersion + 1,
+        document: { version: 2, header: { name: "Ada" } },
+      })
+    })
     await client.close()
   })
 })

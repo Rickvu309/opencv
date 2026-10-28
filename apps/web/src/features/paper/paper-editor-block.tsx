@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react"
 import { blockEntry, type CvBlock } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { GripVertical, MoreHorizontal } from "lucide-react"
-import { BlockField } from "./paper-block-field.tsx"
+import { BlockField } from "./paper-canvas-field.tsx"
 import {
   makeId,
   blockTypeOf,

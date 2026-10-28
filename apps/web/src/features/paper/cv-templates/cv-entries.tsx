@@ -14,12 +14,12 @@ import {
   removeSkillItem,
   renameSkillGroup,
   renameSkillItem,
-} from "../paper-cv-edits.ts"
+} from "./cv-edits.ts"
 import {
   type CvEducation,
   type CvExperience,
   type CvSkillGroup,
-} from "../paper-cv-types.ts"
+} from "./cv-types.ts"
 import {
   CvType,
   EditableField,

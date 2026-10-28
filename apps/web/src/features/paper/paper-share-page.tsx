@@ -7,8 +7,8 @@ import {
   type CvDocument as CvDocumentData,
 } from "@workspace/domain"
 
+import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
-import { CvDocument } from "./paper-cv-document.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
 import { printLayout } from "./paper-templates.ts"
 

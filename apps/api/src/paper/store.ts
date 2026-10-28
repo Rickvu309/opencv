@@ -5,7 +5,7 @@ import {
   ERROR_CODES,
   PAPER_CONTENT_VERSION,
   decodePaperContent,
-  emptyCvDocument,
+  blankBlockDocument,
   emptyLetterDocument,
   isCvBlockDocument,
   isCvDocument,
@@ -88,7 +88,7 @@ function requireDocument(kind: PaperStoredKind, document: unknown) {
 }
 
 function blankDocument(kind: PaperStoredKind) {
-  return (kind === "cv" ? emptyCvDocument() : emptyLetterDocument()) as Record<
+  return (kind === "cv" ? blankBlockDocument() : emptyLetterDocument()) as Record<
     string,
     unknown
   >

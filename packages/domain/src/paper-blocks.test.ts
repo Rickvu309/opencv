@@ -224,6 +224,62 @@ describe("cv block codec", () => {
     assert.deepEqual(preview.awards, ["Dean list"])
     assert.equal(preview.experience[0]?.role, "Discovery lead")
   })
+
+  it("reads a slash-inserted project from its text block", () => {
+    const projects = (
+      blocks: CvBlockDocument["sections"][number]["blocks"]
+    ): CvBlockDocument => ({
+      version: 2,
+      header: {
+        name: "Lan Nguyen",
+        email: "",
+        phone: "",
+        city: "",
+        linkedin: "",
+      },
+      sections: [{ id: "section-projects", kind: "projects", blocks }],
+    })
+    assert.deepEqual(
+      blocksToPreviewModel(
+        projects([{ id: "note", type: "text", text: "OpenCV\nA CV editor" }])
+      ).projects,
+      [{ name: "OpenCV", detail: "A CV editor" }]
+    )
+    assert.deepEqual(
+      blocksToPreviewModel(
+        projects([{ id: "name-only", type: "text", text: "OpenCV project" }])
+      ).projects,
+      [{ name: "OpenCV project", detail: "" }]
+    )
+    assert.deepEqual(
+      blocksToPreviewModel(
+        projects([
+          { id: "name", type: "heading", text: "Wallet audit" },
+          { id: "detail", type: "text", text: "Mapped friction" },
+        ])
+      ).projects,
+      [{ name: "Wallet audit", detail: "Mapped friction" }]
+    )
+    assert.deepEqual(
+      blocksToPreviewModel(
+        projects([
+          { id: "name", type: "heading", text: "Wallet audit" },
+          { id: "detail", type: "text", text: "Mapped friction" },
+          {
+            id: "points",
+            type: "bulleted-list",
+            items: [{ id: "point", text: "Interviewed five people" }],
+          },
+        ])
+      ).projects,
+      [
+        {
+          name: "Wallet audit",
+          detail: "Mapped friction\nInterviewed five people",
+        },
+      ]
+    )
+  })
 })
 
 describe("import checks", () => {

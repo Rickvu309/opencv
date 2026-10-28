@@ -2,6 +2,7 @@ import {
   type ElementType,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
   createContext,
   useContext,
   useEffect,
@@ -24,8 +25,8 @@ import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 
 import { cvPhotoRejection, getPaper, uploadPaperPhoto } from "../paper-api.ts"
-import { addEducation, EMPTY_SECTION_CTA } from "../paper-cv-edits.ts"
-import { handleCanvasFieldKeyDown } from "../paper-cv-keyboard.ts"
+import { addEducation, EMPTY_SECTION_CTA } from "./cv-edits.ts"
+import { handleCanvasFieldKeyDown } from "./cv-keyboard.ts"
 import {
   cvTypeClass,
   type CvData,
@@ -33,7 +34,34 @@ import {
   type CvExperience,
   type CvSkillGroup,
   type CvTypeRole,
-} from "../paper-cv-types.ts"
+} from "./cv-types.ts"
+
+export function PaperImportInput({
+  inputRef,
+  accept,
+  onFile,
+}: {
+  inputRef: RefObject<HTMLInputElement | null>
+  accept: string
+  onFile: (file: File) => void
+}) {
+  return (
+    <>
+      {/* Documented exception: native file input. Kit Input cannot host a hidden file picker. */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) onFile(file)
+          event.target.value = ""
+        }}
+      />
+    </>
+  )
+}
 
 export function CvType({
   role,

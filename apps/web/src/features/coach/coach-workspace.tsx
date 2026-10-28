@@ -19,6 +19,7 @@ import {
   usageKey,
 } from "@/lib/account-api.ts"
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
+import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
 import { CoachDock } from "./coach-dock.tsx"
 import { ChatView } from "./chat-view.tsx"
@@ -65,7 +66,7 @@ function historyGroup(date: string) {
 export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
   const store = useChatStore()
   const { activeChatId, messages, phase, error, step, chats, openChat } = store
-  const [draft, setDraft] = useState("")
+  const [draft, setDraft] = useState(() => takeCoachDraft() ?? "")
   const [moreIdeas, setMoreIdeas] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -100,12 +101,16 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
   useEffect(() => {
     if (chatId) openRequestedChat(chatId)
   }, [chatId])
+  useEffect(() => subscribeCoachDraft(setDraft), [])
   const [draftChatId, setDraftChatId] = useState(activeChatId)
   if (draftChatId !== activeChatId) {
+    const seeded = takeCoachDraft()
     setDraftChatId(activeChatId)
     if (draftChatId !== null) {
-      setDraft("")
+      setDraft(seeded ?? "")
       setAttachments([])
+    } else if (seeded) {
+      setDraft(seeded)
     }
   }
 

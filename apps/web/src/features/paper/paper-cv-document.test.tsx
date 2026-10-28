@@ -11,9 +11,8 @@ import {
   PAPER_CANVAS_BLOCK_CLASS,
   PAPER_CANVAS_FIELD_CLASS,
   PAPER_CANVAS_NEXT_STEP_CLASS,
-} from "./paper-cv-document.tsx"
-import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./paper-cv-edits.ts"
-import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
+} from "./cv-print-document.tsx"
+import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./cv-templates/cv-edits.ts"
 import {
   CV_TEMPLATES,
   CV_TYPE_ROLES,
@@ -21,6 +20,10 @@ import {
   type CvData,
   type CvTemplateId,
 } from "./paper-cv-types.ts"
+
+function applyCvTemplate(data: CvData, templateId: CvTemplateId): CvData {
+  return { ...data, templateId }
+}
 
 afterEach(() => {
   cleanup()

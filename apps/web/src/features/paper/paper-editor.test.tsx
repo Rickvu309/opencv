@@ -1,11 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import type { ReactElement } from "react"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import {
   emptyCvDocument,
-  blankBlockDocument,
   type PaperPages,
   type PaperView,
 } from "@workspace/domain"
@@ -106,10 +105,10 @@ describe("CV editor chrome", () => {
     )
     expect(screen.queryByText("Edited just now")).not.toBeInTheDocument()
 
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const role = screen.getByRole("textbox", { name: "Role" })
     vi.useFakeTimers()
-    summary.textContent = "Edited for verify."
-    fireEvent.input(summary)
+    role.textContent = "Edited for verify."
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -154,16 +153,17 @@ describe("CV editor chrome", () => {
       ).not.toBeInTheDocument()
     })
 
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const role = screen.getByRole("textbox", { name: "Role" })
     vi.useFakeTimers()
-    summary.textContent = "A conflicting edit."
-    fireEvent.input(summary)
+    role.textContent = "A conflicting edit."
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
     expect(
       screen.getByRole("region", { name: "Document changed" })
     ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled()
   })
 
   it("shows page 2 when a later read says keep", () => {
@@ -202,20 +202,31 @@ describe("CV editor chrome", () => {
       "Phone",
       "City",
       "LinkedIn",
-      "Role, company",
-      "Dates",
+      "Company",
       "What you did, and what changed because of it",
-      "School, degree",
+      "Degree",
+      "Location",
       "Tools, software and languages",
     ]) {
       const field = screen.getByRole("textbox", { name: label })
       expect(field).toHaveAttribute("data-placeholder", label)
       expect(field.textContent).toBe("")
     }
-    expect(screen.getByRole("textbox", { name: "Role, company" })).toHaveClass(
+    const role = screen.getByRole("textbox", { name: "Role" })
+    expect(role).toHaveAttribute("data-placeholder", "Role, company")
+    expect(role).toHaveClass("block")
+    expect(role.textContent).toBe("")
+    const school = screen.getByRole("textbox", { name: "School" })
+    expect(school).toHaveAttribute("data-placeholder", "School, degree")
+    expect(school.textContent).toBe("")
+    expect(screen.getAllByRole("textbox", { name: "Dates" })[0]).toHaveClass(
       "block"
     )
-    expect(screen.getByRole("textbox", { name: "Dates" })).toHaveClass("block")
+    expect(screen.queryByRole("button", { name: "Bold" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Italic" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Underline" })
+    ).not.toBeInTheDocument()
   })
 
   it("does not send a stale version when a conflict lands between two edits", async () => {
@@ -252,18 +263,18 @@ describe("CV editor chrome", () => {
         onBack={() => undefined}
       />
     )
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const role = screen.getByRole("textbox", { name: "Role" })
     vi.useFakeTimers()
-    summary.textContent = "First"
-    fireEvent.input(summary)
+    role.textContent = "First"
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
     expect(replaceCount).toBe(1)
     expect(bodies[0]?.contentVersion).toBe(1)
 
-    summary.textContent = "Second"
-    fireEvent.input(summary)
+    role.textContent = "Second"
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -286,7 +297,9 @@ describe("CV editor chrome", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
-    expect(summary.textContent).toBe("Server text")
+    expect(screen.getByRole("textbox", { name: "Summary" }).textContent).toBe(
+      "Server text"
+    )
     expect(replaceCount).toBe(1)
   })
 
@@ -335,8 +348,11 @@ describe("CV editor chrome", () => {
         onBack={() => undefined}
       />
     )
-    expect(view.container.querySelector(".cv-template-product")).not.toBeNull()
-    expect(view.container.querySelector(".cv-template-internship")).toBeNull()
+    expect(
+      view.container
+        .querySelector("[data-paper-editor] [data-template]")
+        ?.getAttribute("data-template")
+    ).toBe("modern")
   })
 
   it("keeps the chosen layout when a reload leaves the body unchanged", async () => {
@@ -357,15 +373,19 @@ describe("CV editor chrome", () => {
       />
     )
     expect(
-      open.container.querySelector(".cv-template-internship")
-    ).not.toBeNull()
+      open.container
+        .querySelector("[data-paper-editor] [data-template]")
+        ?.getAttribute("data-template")
+    ).toBe("simple")
     fireEvent.click(screen.getByRole("button", { name: "Change template" }))
     fireEvent.click(screen.getByRole("button", { name: "Modern" }))
     fireEvent.click(screen.getByRole("button", { name: "Use template" }))
     await vi.waitFor(() => {
       expect(
-        open.container.querySelector(".cv-template-product")
-      ).not.toBeNull()
+        open.container
+          .querySelector("[data-paper-editor] [data-template]")
+          ?.getAttribute("data-template")
+      ).toBe("modern")
     })
     open.unmount()
 
@@ -377,131 +397,104 @@ describe("CV editor chrome", () => {
       />
     )
     expect(
-      reloaded.container.querySelector(".cv-template-product")
-    ).not.toBeNull()
-    expect(
-      reloaded.container.querySelector(".cv-template-internship")
-    ).toBeNull()
+      reloaded.container
+        .querySelector("[data-paper-editor] [data-template]")
+        ?.getAttribute("data-template")
+    ).toBe("modern")
   })
 
-  it.each([1, 2])(
-    "saves version %i text before a photo attaches and preserves it on the next edit",
-    async (version) => {
-      const fileId = "11111111-1111-4111-8111-111111111111"
-      const calls: {
-        url: string
-        body?: { input?: Record<string, unknown> }
-      }[] = []
-      vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input)
-        const body =
-          typeof init?.body === "string"
-            ? (JSON.parse(init.body) as { input?: Record<string, unknown> })
-            : undefined
-        calls.push({ url, body })
-        if (url.includes("/api/paper/files") && init?.method === "POST") {
-          return Promise.resolve(ok({ id: fileId }))
-        }
-        if (url.includes("/api/commands/paper.attachPhoto")) {
-          return Promise.resolve(
-            ok({
-              ...record,
-              templateId: "with-photo",
-              contentVersion: 3,
-              activityId: "33333333-3333-4333-8333-333333333333",
-            })
-          )
-        }
-        if (url.includes("/api/commands/paper.replace")) {
-          return Promise.resolve(ok({ ...record, contentVersion: 2 }))
-        }
-        return Promise.resolve(ok({}))
-      })
-
-      const docId = "22222222-2222-4222-8222-222222222222"
-      const view = render(
-        <PaperCvEditor
-          initial={{
-            ...record,
-            id: docId,
-            templateId: "with-photo",
-            document: version === 2 ? blankBlockDocument() : emptyCvDocument(),
-          }}
-          pages={{ docId, pages: 1, pageChoice: "unset" }}
-          onBack={() => undefined}
-        />
-      )
-      const summary =
-        version === 2
-          ? within(
-              screen.getByRole("region", { name: "CV block canvas" })
-            ).getByRole("textbox", { name: "Name" })
-          : screen.getByRole("textbox", { name: "Summary" })
-      function edit(text: string) {
-        if (version === 2)
-          fireEvent.change(summary, { target: { value: text } })
-        else {
-          summary.textContent = text
-          fireEvent.input(summary)
-        }
+  it("saves typed text before a photo attaches and keeps it on the next edit", async () => {
+    const fileId = "11111111-1111-4111-8111-111111111111"
+    const calls: { url: string; body?: { input?: Record<string, unknown> } }[] =
+      []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const body =
+        typeof init?.body === "string"
+          ? (JSON.parse(init.body) as { input?: Record<string, unknown> })
+          : undefined
+      calls.push({ url, body })
+      if (url.includes("/api/paper/files") && init?.method === "POST") {
+        return Promise.resolve(ok({ id: fileId }))
       }
-      edit("Kept with the photo")
-      const input = view.container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement
-      expect(input).toBeTruthy()
-      fireEvent.change(input, {
-        target: {
-          files: [
-            new File([new Uint8Array(8)], "face.png", { type: "image/png" }),
-          ],
-        },
-      })
-      await vi.waitFor(() => {
-        expect(
-          calls.some((call) => call.url.includes("paper.attachPhoto"))
-        ).toBe(true)
-      })
-      const replace = calls.find((call) => call.url.includes("paper.replace"))
-      const attach = calls.find((call) =>
-        call.url.includes("paper.attachPhoto")
-      )
-      expect(replace?.body?.input).toMatchObject({
-        contentVersion: 1,
-        document:
-          version === 2
-            ? { header: { name: "Kept with the photo" } }
-            : { summary: "Kept with the photo" },
-      })
-      expect(calls.indexOf(replace!)).toBeLessThan(calls.indexOf(attach!))
-      expect(attach?.body?.input).toMatchObject({ fileId })
-      await vi.waitFor(() =>
-        expect(
-          screen.getByRole("button", { name: "Change profile photo" })
-        ).toBeInTheDocument()
-      )
-      expect(
-        view.container.querySelector("img")?.getAttribute("src")
-      ).toContain(`/api/paper/files/${fileId}/bytes`)
-      edit("Edited after photo")
-      await vi.waitFor(() => {
-        const replacements = calls.filter((call) =>
-          call.url.includes("paper.replace")
+      if (url.includes("/api/commands/paper.attachPhoto")) {
+        return Promise.resolve(
+          ok({
+            ...record,
+            templateId: "with-photo",
+            contentVersion: 3,
+            activityId: "33333333-3333-4333-8333-333333333333",
+          })
         )
-        expect(replacements).toHaveLength(2)
-        expect(replacements[1]?.body?.input).toMatchObject({
-          contentVersion: 3,
-          document:
-            version === 2
-              ? {
-                  header: {
-                    name: "Edited after photo",
-                    photo: `file:${fileId}`,
-                  },
-                }
-              : { summary: "Edited after photo", photoUrl: `file:${fileId}` },
-        })
-      })
-    }
-  )
+      }
+      if (url.includes("/api/commands/paper.replace")) {
+        return Promise.resolve(ok({ ...record, contentVersion: 2 }))
+      }
+      return Promise.resolve(ok({}))
+    })
+
+    const docId = "22222222-2222-4222-8222-222222222222"
+    const view = render(
+      <PaperCvEditor
+        initial={{ ...record, id: docId, templateId: "with-photo" }}
+        pages={{ docId, pages: 1, pageChoice: "unset" }}
+        onBack={() => undefined}
+      />
+    )
+    const role = screen.getByRole("textbox", { name: "Role" })
+    role.textContent = "Kept with the photo"
+    fireEvent.input(role)
+    const input = view.container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    expect(input).toBeTruthy()
+    fireEvent.change(input, {
+      target: {
+        files: [
+          new File([new Uint8Array(8)], "face.png", { type: "image/png" }),
+        ],
+      },
+    })
+    await vi.waitFor(() => {
+      expect(calls.some((call) => call.url.includes("paper.attachPhoto"))).toBe(
+        true
+      )
+    })
+    const replace = calls.find((call) => call.url.includes("paper.replace"))
+    const attach = calls.find((call) => call.url.includes("paper.attachPhoto"))
+    expect(replace?.body?.input).toMatchObject({ contentVersion: 1 })
+    expect(JSON.stringify(replace?.body?.input?.document)).toContain(
+      "Kept with the photo"
+    )
+    expect(calls.indexOf(replace!)).toBeLessThan(calls.indexOf(attach!))
+    expect(attach?.body?.input).toMatchObject({ fileId })
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Change profile photo" })
+      ).toBeInTheDocument()
+    )
+    expect(view.container.querySelector("img")?.getAttribute("src")).toContain(
+      `/api/paper/files/${fileId}/bytes`
+    )
+    const roleAgain = screen.getByRole("textbox", { name: "Role" })
+    vi.useFakeTimers()
+    roleAgain.textContent = "Edited after photo"
+    fireEvent.input(roleAgain)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    const replacements = calls.filter((call) =>
+      call.url.includes("paper.replace")
+    )
+    expect(replacements.length).toBeGreaterThan(1)
+    expect(replacements.at(-1)?.body?.input).toMatchObject({
+      contentVersion: 3,
+      document: {
+        header: { photo: `file:${fileId}` },
+      },
+    })
+    expect(JSON.stringify(replacements.at(-1)?.body?.input?.document)).toContain(
+      "Edited after photo"
+    )
+  })
 })

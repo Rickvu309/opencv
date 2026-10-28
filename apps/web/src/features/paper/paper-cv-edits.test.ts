@@ -15,7 +15,7 @@ import {
   removeSkillItem,
   renameSkillGroup,
   renameSkillItem,
-} from "./paper-cv-edits.ts"
+} from "./cv-templates/cv-edits.ts"
 
 const sample = defaultCvData()
 

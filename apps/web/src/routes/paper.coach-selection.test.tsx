@@ -11,7 +11,7 @@ afterEach(() => {
 })
 
 describe("Paper selection chrome", () => {
-  it("names Bold, Italic, and Underline inside the editor", async () => {
+  it("keeps Coach and Undo and drops the unsaved marks", async () => {
     renderApp(SURFACE_PATHS.paper)
     await expectPaperDrive()
     fireEvent.click(screen.getByRole("button", { name: /^PM track CV,/ }))
@@ -19,14 +19,14 @@ describe("Paper selection chrome", () => {
       name: "Editing PM track CV",
     })
     const toolbar = within(editor).getByRole("toolbar", { name: "Selection" })
+    expect(within(toolbar).getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(within(toolbar).getByRole("button", { name: "Undo" })).toBeInTheDocument()
+    expect(within(toolbar).queryByRole("button", { name: "Bold" })).not.toBeInTheDocument()
     expect(
-      within(toolbar).getByRole("button", { name: "Bold" })
-    ).toBeInTheDocument()
+      within(toolbar).queryByRole("button", { name: "Italic" })
+    ).not.toBeInTheDocument()
     expect(
-      within(toolbar).getByRole("button", { name: "Italic" })
-    ).toBeInTheDocument()
-    expect(
-      within(toolbar).getByRole("button", { name: "Underline" })
-    ).toBeInTheDocument()
+      within(toolbar).queryByRole("button", { name: "Underline" })
+    ).not.toBeInTheDocument()
   })
 })

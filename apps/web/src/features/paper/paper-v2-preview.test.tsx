@@ -126,34 +126,33 @@ afterEach(() => {
 })
 
 describe("version 2 preview", () => {
-  it("preserves readable v2 content in editable fields", () => {
+  it("renders a version 2 CV and a v1 CV with the same editor text", () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(Response.json({ ok: true, data: {} }))
     )
-    const blocks = cvCodecToBlocks(fixture)
-    render(
+    const v1 = render(
       <PaperCvEditor
-        initial={view(blocks)}
+        initial={view(fixture)}
         pages={pages}
         onBack={() => undefined}
       />
     )
-    expect(
-      screen
-        .getAllByRole("textbox", { name: "Name" })
-        .find(
-          (node) =>
-            node.getAttribute("aria-label") === "Name" &&
-            (node as HTMLInputElement).value === "Lan Nguyen"
-        )
-    ).toHaveValue("Lan Nguyen")
-    expect(screen.getByRole("textbox", { name: "Role" })).toHaveValue(
-      "Discovery lead"
+    const fromV1 = visibleText("editor")
+    v1.unmount()
+
+    render(
+      <PaperCvEditor
+        initial={view(cvCodecToBlocks(fixture))}
+        pages={pages}
+        onBack={() => undefined}
+      />
     )
-    expect(screen.getByRole("textbox", { name: "School" })).toHaveValue("UIT")
-    expect(
-      screen.getByRole("textbox", { name: "Skills, comma separated" })
-    ).toHaveValue("Interviews,PRDs")
+    expect(visibleText("editor")).toEqual(fromV1)
+    expect(fromV1.role).toEqual(["Discovery lead"])
+    expect(fromV1.period).toContain("2024 – Present")
+    expect(fromV1.bullet).toEqual(["Ran interviews"])
+    expect(fromV1.school).toEqual(["UIT"])
+    expect(fromV1.skill).toEqual(["Interviews", "PRDs"])
   })
 
   it("keeps comma and multiword skill typing intact", () => {
@@ -186,18 +185,18 @@ describe("version 2 preview", () => {
 
   it("uses the selected print layout while retaining editable block content", () => {
     const layouts = [
-      ["simple", "cv-template-internship"],
-      ["modern", "cv-template-product"],
-      ["compact", "cv-template-service"],
-      ["academic", "cv-template-academic"],
-      ["with-photo", "cv-template-photo"],
+      ["simple", "simple"],
+      ["modern", "modern"],
+      ["compact", "compact"],
+      ["academic", "academic"],
+      ["with-photo", "with-photo"],
     ] as const
-    for (const [templateId, className] of layouts) {
+    for (const [templateId, template] of layouts) {
       cleanup()
       vi.stubGlobal("fetch", () =>
         Promise.resolve(Response.json({ ok: true, data: {} }))
       )
-      render(
+      const viewNode = render(
         <PaperCvEditor
           initial={{ ...view(cvCodecToBlocks(fixture)), templateId }}
           pages={pages}
@@ -205,9 +204,9 @@ describe("version 2 preview", () => {
         />
       )
       expect(
-        screen.getByRole("region", { name: "CV block canvas" })
-      ).toHaveClass(className)
-      expect(screen.getByRole("textbox", { name: "Role" })).toHaveValue(
+        viewNode.container.querySelector("[data-paper-editor] [data-template]")
+      ).toHaveAttribute("data-template", template)
+      expect(screen.getByRole("textbox", { name: "Role" }).textContent).toBe(
         "Discovery lead"
       )
     }
@@ -286,6 +285,91 @@ describe("version 2 preview", () => {
       expect(
         screen.getByRole("heading", { name: "Awards" })
       ).toBeInTheDocument()
+    }
+  })
+
+  it("renders summary, projects and languages on every share layout", async () => {
+    const blocks = cvCodecToBlocks({
+      ...fixture,
+      projects: [{ name: "OpenCV", detail: "A CV editor" }],
+      languages: ["English"],
+    })
+    const layouts = [
+      "simple",
+      "modern",
+      "compact",
+      "academic",
+      "with-photo",
+    ] as const
+    for (const templateId of layouts) {
+      cleanup()
+      vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes("/api/paper/shared/tok")) {
+          return Promise.resolve(
+            Response.json({
+              ok: true,
+              data: { ...view(blocks), templateId },
+            })
+          )
+        }
+        return Promise.resolve(Response.json({ ok: true, data: {} }))
+      })
+      render(<PaperSharePage />)
+      expect(
+        await screen.findByRole("heading", { name: "Lan CV" })
+      ).toBeInTheDocument()
+      expect(
+        screen.getAllByText("Ships small experiments.").length
+      ).toBeGreaterThan(0)
+      expect(screen.getAllByText("OpenCV").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("A CV editor").length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/English/).length).toBeGreaterThan(0)
+    }
+  })
+
+  it("renders a slash-inserted project on every share layout", async () => {
+    const blocks = cvCodecToBlocks(fixture)
+    blocks.sections.push({
+      id: "sec-projects",
+      kind: "projects",
+      blocks: [
+        {
+          id: "proj-1",
+          type: "text",
+          text: "OpenCV project\nTracked the editor",
+        },
+      ],
+    })
+    const layouts = [
+      "simple",
+      "modern",
+      "compact",
+      "academic",
+      "with-photo",
+    ] as const
+    for (const templateId of layouts) {
+      cleanup()
+      vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes("/api/paper/shared/tok")) {
+          return Promise.resolve(
+            Response.json({
+              ok: true,
+              data: { ...view(blocks), templateId },
+            })
+          )
+        }
+        return Promise.resolve(Response.json({ ok: true, data: {} }))
+      })
+      render(<PaperSharePage />)
+      expect(
+        await screen.findByRole("heading", { name: "Lan CV" })
+      ).toBeInTheDocument()
+      expect(screen.getAllByText("OpenCV project").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("Tracked the editor").length).toBeGreaterThan(
+        0
+      )
     }
   })
 })

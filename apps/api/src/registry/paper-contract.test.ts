@@ -1,6 +1,7 @@
 import {
   commands,
   coachActor,
+  blankBlockDocument,
   emptyCvDocument,
   emptyLetterDocument,
   paperContract,
@@ -60,10 +61,14 @@ describe("paper contract", () => {
 
       const cv = idOf(await run("paper.create", { kind: "cv", name: "My CV" }))
       const letter = idOf(await run("paper.create", { kind: "letter" }))
+      const named = blankBlockDocument()
       await run("paper.replace", {
         docId: cv,
         contentVersion: 1,
-        document: { ...emptyCvDocument(), name: "Ada Lane" },
+        document: {
+          ...named,
+          header: { ...named.header, name: "Ada Lane" },
+        },
       })
       await run("paper.rename", { docId: cv, name: "Ada CV" })
       const copy = idOf(await run("paper.duplicate", { docId: cv }))

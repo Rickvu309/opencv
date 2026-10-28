@@ -1,4 +1,10 @@
-import { keywordGap, paperContract } from "@workspace/domain"
+import {
+  cvCodecToBlocks,
+  isCvBlockDocument,
+  isCvDocument,
+  keywordGap,
+  paperContract,
+} from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
@@ -54,7 +60,17 @@ export function registerPaper(registry: Registry) {
       }),
     },
     "paper.replace": {
-      handler: (input, actor) => replacePaper(actor, input),
+      handler: async (input, actor) => {
+        let document = input.document
+        // The Coach still writes the version 1 shape. A block row stays version 2.
+        if (actor.type === "coach" && isCvDocument(document)) {
+          const current = await ownedPaper(actor.userId, input.docId)
+          if (current.kind === "cv" && isCvBlockDocument(current.document)) {
+            document = cvCodecToBlocks(document)
+          }
+        }
+        return replacePaper(actor, { ...input, document })
+      },
       reversal: (input, output) => ({
         command: "paper.replace",
         input: {

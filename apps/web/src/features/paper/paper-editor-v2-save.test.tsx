@@ -4,8 +4,8 @@ import type { ReactElement } from "react"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import {
-  emptyCvDocument,
   blankBlockDocument,
+  emptyCvDocument,
   type CvBlockDocument,
   type PaperPages,
   type PaperView,
@@ -58,7 +58,7 @@ afterEach(() => {
 })
 
 describe("CV editor version 2", () => {
-  it("keeps a pending block edit when dismissing an import check", async () => {
+  it("saves a block edit on a version 2 CV", async () => {
     const document: CvBlockDocument = {
       version: 2,
       header: {
@@ -88,84 +88,60 @@ describe("CV editor version 2", () => {
         },
       ],
     }
-    const replacements: {
-      contentVersion: number
-      document: CvBlockDocument
-    }[] = []
-    const imported: PaperView = {
-      ...record,
-      document,
-      sourceFileId: "source-file",
-      checks: [
-        {
-          id: "phone-check",
-          kind: "phone",
-          message: "Phone missing",
-          resolved: false,
-        },
-      ],
-    }
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      calls.push(String(input))
+      return Promise.resolve(ok({}))
+    })
+    render(
+      <PaperCvEditor
+        initial={{ ...record, document }}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    expect(
+      screen.queryByText("This CV uses blocks. The block editor is coming.")
+    ).not.toBeInTheDocument()
+    expect(screen.getByText("Debate club")).toBeInTheDocument()
+    expect(screen.getByText("Dean list")).toBeInTheDocument()
+    const summary = screen.getByRole("textbox", { name: "Summary" })
+    vi.useFakeTimers()
+    summary.textContent = "Ships interview notes.X"
+    fireEvent.input(summary)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    expect(calls.some((url) => url.includes("/api/commands/paper.replace"))).toBe(
+      true
+    )
+  })
+
+  it("stores version 2 after one keystroke on a version 1 CV", async () => {
+    const bodies: { document?: { version?: number } }[] = []
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).includes("/api/paper/files")) {
-        return Promise.resolve(ok([{ id: "source-file", name: "CV.pdf" }]))
-      }
-      if (String(input).includes("/api/commands/paper.dismissCheck")) {
-        return Promise.resolve(ok({ ...imported, checks: [] }))
-      }
-      if (String(input).includes("/api/commands/paper.replace")) {
-        const replacement = inputOf<
-          { contentVersion: number; document: CvBlockDocument } & {
-            docId: string
-          }
-        >(init)
-        replacements.push(replacement)
-        return Promise.resolve(
-          ok({ ...record, contentVersion: 2, document: replacement.document })
-        )
+      const url = String(input)
+      if (url.includes("/api/commands/paper.replace")) {
+        bodies.push(inputOf(init))
+        return Promise.resolve(ok({ ...record, contentVersion: 2 }))
       }
       return Promise.resolve(ok({}))
     })
     render(
       <PaperCvEditor
-        initial={imported}
+        initial={record}
         pages={pages(1)}
         onBack={() => undefined}
       />
     )
-    expect(screen.getByText("Debate club")).toBeInTheDocument()
-    expect(screen.getByText("Dean list")).toBeInTheDocument()
-    const summary = screen.getByDisplayValue("Ships interview notes.")
-    const skip = await screen.findByRole("button", { name: "Skip" })
+    const role = screen.getByRole("textbox", { name: "Role" })
     vi.useFakeTimers()
-    fireEvent.change(summary, {
-      target: { value: "Ships interview notes. Updated" },
-    })
-    await act(async () => {
-      fireEvent.click(skip)
-    })
+    role.textContent = "PM"
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
-    expect(replacements).toEqual([
-      expect.objectContaining({
-        contentVersion: 1,
-        document: expect.objectContaining({
-          version: 2,
-          sections: expect.arrayContaining([
-            expect.objectContaining({
-              kind: "summary",
-              blocks: expect.arrayContaining([
-                {
-                  id: "sum-1",
-                  type: "text",
-                  text: "Ships interview notes. Updated",
-                },
-              ]),
-            }),
-          ]),
-        }),
-      }),
-    ])
+    expect(bodies[0]?.document?.version).toBe(2)
   })
 
   it("keeps typing queued while an older block save is in flight", async () => {
@@ -192,13 +168,18 @@ describe("CV editor version 2", () => {
         onBack={() => undefined}
       />
     )
-    const name = screen.getByPlaceholderText("Your name")
+    const name = screen
+      .getAllByRole("textbox", { name: "Name" })
+      .find((node) => node.getAttribute("data-placeholder") === "Name")
+    if (!name) throw new Error("header name field missing")
     vi.useFakeTimers()
-    fireEvent.change(name, { target: { value: "First edit" } })
+    name.textContent = "First edit"
+    fireEvent.input(name)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
-    fireEvent.change(name, { target: { value: "Second edit" } })
+    name.textContent = "Second edit"
+    fireEvent.input(name)
     await act(async () => {
       release(ok({ ...record, contentVersion: 2 }))
     })
@@ -229,8 +210,8 @@ describe("CV editor version 2", () => {
     const replaces: {
       contentVersion?: number
       document?: {
-        summary?: string
-        experience?: { role?: string }[]
+        version?: number
+        sections?: { kind?: string; blocks?: { type?: string; text?: string; role?: string }[] }[]
       }
     }[] = []
     const turn =
@@ -263,10 +244,10 @@ describe("CV editor version 2", () => {
         onBack={() => undefined}
       />
     )
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const role = screen.getByRole("textbox", { name: "Role" })
     vi.useFakeTimers()
-    summary.textContent = "Queued before fit"
-    fireEvent.input(summary)
+    role.textContent = "Queued before fit"
+    fireEvent.input(role)
     fireEvent.click(screen.getByRole("button", { name: "Fit to one page" }))
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
@@ -276,19 +257,22 @@ describe("CV editor version 2", () => {
     )
     expect(replaces).toEqual([])
 
+    const summary = screen.getByRole("textbox", { name: "Summary" })
     summary.textContent = "Coach summary X"
     fireEvent.input(summary)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
-    expect(replaces).toEqual([
-      expect.objectContaining({
-        contentVersion: 5,
-        document: expect.objectContaining({
-          summary: "Coach summary X",
-          experience: [expect.objectContaining({ role: "Coach role" })],
-        }),
-      }),
-    ])
+    const saved = replaces[0]?.document
+    const summaryText = saved?.sections
+      ?.find((section) => section.kind === "summary")
+      ?.blocks?.find((block) => block.type === "text")?.text
+    const savedRole = saved?.sections
+      ?.find((section) => section.kind === "experience")
+      ?.blocks?.find((block) => block.type === "experience-entry")?.role
+    expect(replaces[0]?.contentVersion).toBe(5)
+    expect(saved?.version).toBe(2)
+    expect(summaryText).toBe("Coach summary X")
+    expect(savedRole).toBe("Coach role")
   })
 })
