@@ -1,0 +1,10106 @@
+{
+ "boards": [
+  {
+   "id": "FIZL5",
+   "name": "1.3 Components / Actions",
+   "kind": "components"
+  },
+  {
+   "id": "B4iHj",
+   "name": "1.3 Components / Inputs",
+   "kind": "components"
+  },
+  {
+   "id": "L1W32E",
+   "name": "1.3 Components / Display and feedback",
+   "kind": "components"
+  },
+  {
+   "id": "CiMk0",
+   "name": "1.3 Components / Navigation and rows",
+   "kind": "components"
+  },
+  {
+   "id": "EK8si",
+   "name": "1.4 Patterns / Layouts and headers",
+   "kind": "patterns"
+  },
+  {
+   "id": "JufVz",
+   "name": "1.4 Patterns / Lists, board and detail",
+   "kind": "patterns"
+  },
+  {
+   "id": "hzktK",
+   "name": "1.4 Patterns / Coach and editor",
+   "kind": "patterns"
+  },
+  {
+   "id": "SMI9p",
+   "name": "1.4 Patterns / Flows and states",
+   "kind": "patterns"
+  },
+  {
+   "id": "hvocI",
+   "name": "1.6 Masters / App kit",
+   "kind": "masters"
+  },
+  {
+   "id": "S1JHUS",
+   "name": "1.6 Masters / Editor feedback",
+   "kind": "masters"
+  }
+ ],
+ "sections": [
+  {
+   "board": "FIZL5",
+   "kind": "components",
+   "id": "ADBSc",
+   "name": "Button",
+   "desc": "One primary per view. Secondary for everything else. Ghost in toolbars. Danger only to delete.",
+   "spec": {
+    "Props": "variant: primary | secondary | ghost | danger\nsize: sm 28 | md 32 | lg 44\nstate: default | hover | pressed | focus | disabled | loading\nicon?: lucide name, leading",
+    "Tokens": "primary fill: glow mesh (1.2 Glow / Button)\nlabel: #1B1B1F, Inter 13/500\nfocus ring: 2px ds-focus #6D78D5 outer\nradius: 6 sm, 7 md, pill lg"
+   },
+   "masters": [
+    "aD7Ua",
+    "DPicC",
+    "jeYiV",
+    "lDP8C",
+    "r4Oa5",
+    "pDO0L",
+    "M6ucRC",
+    "sclgT",
+    "gnUm1",
+    "D3ibm",
+    "vLwLX",
+    "aHSQ1",
+    "gu9D6",
+    "HBc1Z",
+    "SuMo2",
+    "zaAqf",
+    "kfnMf",
+    "Z4CtN",
+    "pkF4q",
+    "UOsLW",
+    "DTtRT",
+    "OkvKu",
+    "PNCg8",
+    "mSP2d",
+    "C0NqL",
+    "T9pjLm",
+    "RoHVK",
+    "lojMD",
+    "j9bYa",
+    "M6r5WU",
+    "CLjTT",
+    "Uofgt",
+    "ST3xX",
+    "k09JY",
+    "ZKa7B",
+    "LjtnX",
+    "t1cCR",
+    "qC96u",
+    "E015j",
+    "U3sZGh"
+   ]
+  },
+  {
+   "board": "FIZL5",
+   "kind": "components",
+   "id": "daU2X",
+   "name": "Icon button",
+   "desc": "Toolbar and header actions. Always has a tooltip and an aria-label.",
+   "spec": {
+    "Props": "size: 24 | 28 | 32\nstate: default | hover | pressed | selected | focus | disabled\nicon: lucide name",
+    "Tokens": "icon: ds-text-secondary, selected ds-text-primary\nhover ds-bg-subtle, pressed ds-bg-chip, selected ds-bg-active"
+   },
+   "masters": [
+    "GhLVV",
+    "h68iF",
+    "s9PEoV",
+    "V2tpdd",
+    "uEuBV",
+    "rYRWq",
+    "u136l9",
+    "vB2Oi",
+    "zj7xY",
+    "G1kQXQ",
+    "Uo8bs",
+    "znWZq",
+    "sIYGe",
+    "zbvdQ",
+    "y19Fw",
+    "tDwIb",
+    "iktKH",
+    "lesQs"
+   ]
+  },
+  {
+   "board": "FIZL5",
+   "kind": "components",
+   "id": "UbO8Q",
+   "name": "Link",
+   "desc": "Text actions inside copy and section headers.",
+   "spec": {
+    "Props": "kind: inline | chevron | muted\nstate: default | hover | focus | disabled",
+    "Tokens": "inline underlined always, others underline on hover"
+   },
+   "masters": [
+    "jqSJc",
+    "MxiVk",
+    "TgC4j",
+    "C7EPrB",
+    "p2yXh",
+    "skrBX",
+    "j6cjq5",
+    "v21gQc",
+    "U5sXXo",
+    "IUNtu",
+    "JrLyF",
+    "vrSOX"
+   ]
+  },
+  {
+   "board": "B4iHj",
+   "kind": "components",
+   "id": "iIzDC",
+   "name": "Text field",
+   "desc": "Label, input, then helper or error. Never block paste. Validate on submit.",
+   "spec": {
+    "Props": "state: default | hover | focus | filled | error | disabled\nlabel, placeholder, helper?, error?",
+    "Tokens": "input h32 r7 px10, border ds-border, hover ds-border-strong\nfocus border ds-focus 1.5, error ds-danger + message"
+   },
+   "masters": [
+    "t721zI",
+    "y4aQEi",
+    "W2pEPZ",
+    "tdRnE",
+    "YbK1R",
+    "t6OJT"
+   ]
+  },
+  {
+   "board": "B4iHj",
+   "kind": "components",
+   "id": "p1Xkyb",
+   "name": "Search",
+   "desc": "Filters the list below it as you type. Clear button once filled.",
+   "spec": {
+    "Props": "state: default | focus | filled | disabled",
+    "Tokens": "h36 r8 px12, icon 15 ds-text-tertiary"
+   },
+   "masters": [
+    "za5E2",
+    "injtH",
+    "e8qf2B",
+    "K7EGWZ"
+   ]
+  },
+  {
+   "board": "B4iHj",
+   "kind": "components",
+   "id": "vZII7",
+   "name": "Select",
+   "desc": "Shows the current value. Opens a menu with a check on the selected option.",
+   "spec": {
+    "Props": "state: default | hover | focus | open | disabled\nvalue, options[]",
+    "Tokens": "trigger h30 r7, menu r8 padding 4, option h28 r5, selected ds-bg-subtle + check"
+   },
+   "masters": [
+    "HYHkO",
+    "rJ0uv",
+    "fxJzH",
+    "SAtRy",
+    "OZiUT"
+   ]
+  },
+  {
+   "board": "B4iHj",
+   "kind": "components",
+   "id": "kFdZa",
+   "name": "Segmented control",
+   "desc": "Two to four options that switch a view or setting at once.",
+   "spec": {
+    "Props": "options: 2 to 4\nselected: index\nstate: default | hover | disabled",
+    "Tokens": "track ds-bg-chip r8 p3, selected ds-bg-surface r6 + 1px shadow"
+   },
+   "masters": [
+    "bUrsV",
+    "FPzZe",
+    "A9TiNk",
+    "D7rXs"
+   ]
+  },
+  {
+   "board": "B4iHj",
+   "kind": "components",
+   "id": "lHF7w",
+   "name": "Switch, checkbox, radio",
+   "desc": "Switch applies at once. Checkbox and radio wait for a save.",
+   "spec": {
+    "Props": "checked: true | false | mixed (checkbox)\nstate: default | hover | focus | disabled",
+    "Tokens": "switch 32x18 knob 14, on ds-text-primary, off ds-bg-active\nbox 16 r4, radio 16 round, on ds-text-primary"
+   },
+   "masters": [
+    "OOoTq",
+    "NHrBG",
+    "wdGKs",
+    "vNW8o",
+    "v04BYW",
+    "JczMI",
+    "IUNRW",
+    "BFnxh",
+    "GfMc3",
+    "Utixx",
+    "vSrjj",
+    "MpcKq",
+    "KaDs7",
+    "XqWtf",
+    "rc23R",
+    "EBFk1",
+    "kyO8W",
+    "aaEFB",
+    "w9tZb",
+    "welhc",
+    "KLvrJ",
+    "WCALc",
+    "RRUJV",
+    "m6sPIm",
+    "YjzJi",
+    "p7ugT",
+    "U7uQD",
+    "yo5qS"
+   ]
+  },
+  {
+   "board": "B4iHj",
+   "kind": "components",
+   "id": "nzSwt",
+   "name": "Textarea",
+   "desc": "Notes and job descriptions. Grows with content up to 8 lines.",
+   "spec": {
+    "Props": "state: default | focus | filled\nminRows 3, maxRows 8",
+    "Tokens": "r8 p10x12, 13/1.5"
+   },
+   "masters": [
+    "SsgPy",
+    "PmS6i",
+    "K4o81"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "IT1fY",
+   "name": "Badge",
+   "desc": "Short status words on cards and rows. Never more than two words.",
+   "spec": {
+    "Props": "tone: neutral | success | warning | danger | info",
+    "Tokens": "h20 r5 px7 11.5/500, soft bg + strong text"
+   },
+   "masters": [
+    "Lvgad",
+    "Sy7pL",
+    "Vq6lo",
+    "xqfUX",
+    "OIKFi"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "RzI3j",
+   "name": "Chip",
+   "desc": "Properties and filters. Icons may carry color, the label never does.",
+   "spec": {
+    "Props": "state: default | hover | selected | removable\nicon?: lucide, iconColor?",
+    "Tokens": "h24 r6 px8, 12/500, border ds-border, selected ds-bg-active"
+   },
+   "masters": [
+    "hGdMb",
+    "US4Dl",
+    "y6ctx",
+    "fy7y6",
+    "PnDY2"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "LE7yZ",
+   "name": "Stage and status",
+   "desc": "Stage icons are the only colored UI. Status words read Enabled or Disabled.",
+   "spec": {
+    "Props": "stage: saved | applied | interview | offer | closed\nstatus: enabled | disabled | expired",
+    "Tokens": "stage tokens ds-stage-*, status 13 ds-text-secondary + chevron"
+   },
+   "masters": [
+    "bqUZV",
+    "xEcSG",
+    "eGlmr",
+    "PJKFy",
+    "ZfoX7",
+    "O8bkJ",
+    "spYhq",
+    "dgPGr",
+    "OZr9t"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "bfCFf",
+   "name": "Avatar and tiles",
+   "desc": "Initials until there is a photo. Tiles hold one icon or one brand logo.",
+   "spec": {
+    "Props": "avatar size: 20 | 24 | 32 | 44, initials | photo\ntile: icon 32 | logo 32 | logo 64",
+    "Tokens": "avatar ds-bg-chip text ds-text-secondary, tile r8 border 0.5"
+   },
+   "masters": [
+    "qa4TB",
+    "Bazl7",
+    "Y6G5K",
+    "Bjaf2",
+    "i5ZjsQ",
+    "ZRXLT",
+    "YauwQ"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "Q0S0F",
+   "name": "Meter",
+   "desc": "Usage as a share, never a count. Turns red only when the limit is reached.",
+   "spec": {
+    "Props": "value: 0..1\nlabel, caption\nstate: normal | high | full",
+    "Tokens": "track h6 r3 ds-bg-chip, fill ds-text-primary, high ds-warning, full ds-danger"
+   },
+   "masters": [
+    "Ha6gJ",
+    "h1S5wr",
+    "Kegtg"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "TvuoJ",
+   "name": "Working steps",
+   "desc": "Coach shows what it is doing. Done, active, pending.",
+   "spec": {
+    "Props": "step state: done | active | pending\nlabel, meta?",
+    "Tokens": "line ds-border, active spinner, pending ds-text-tertiary"
+   },
+   "masters": [
+    "atGEb"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "wMnAa",
+   "name": "Tooltip and skeleton",
+   "desc": "Tooltips name icon buttons and add a shortcut. Skeletons hold layout while loading.",
+   "spec": {
+    "Props": "tooltip: label, kbd?\nskeleton: lines 1..n",
+    "Tokens": "tooltip ds-text-primary bg, white 12/500, r6\nskeleton ds-bg-chip r4"
+   },
+   "masters": [
+    "sEEYU",
+    "Ivb1w"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "gdsbO",
+   "name": "Toast",
+   "desc": "Bottom center, 4 seconds, one fact. Errors stay until dismissed and offer a fix.",
+   "spec": {
+    "Props": "tone: success | info | error\nmessage, action?",
+    "Tokens": "bg #1A1A1A r10 h40, white 13/500, action #FFFFFF1A"
+   },
+   "masters": [
+    "a6L3eW",
+    "i52X7L",
+    "N15ZQ"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "HTclB",
+   "name": "Banner",
+   "desc": "Inline notice at the top of a page or card. One line, one action.",
+   "spec": {
+    "Props": "tone: info | success | warning | danger\ntitle, body, action?",
+    "Tokens": "soft tone bg r10, icon in tone color, text ds-text-*"
+   },
+   "masters": [
+    "Y2JI5Y",
+    "l5qkQ1",
+    "jU8fs",
+    "wNDBy"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "pS8dW",
+   "name": "Dialog",
+   "desc": "One question. Title names the thing, body says only what is final. Escape closes.",
+   "spec": {
+    "Props": "kind: default | destructive\ntitle, body, primaryLabel",
+    "Tokens": "w440 r12, body p20, footer p12x16, shadow y16 b48"
+   },
+   "masters": [
+    "Q2FGh6",
+    "qnQrM"
+   ]
+  },
+  {
+   "board": "L1W32E",
+   "kind": "components",
+   "id": "RVDc7",
+   "name": "Page states",
+   "desc": "Every list has an empty, an error and a loading state. One sentence and one action.",
+   "spec": {
+    "Props": "kind: empty | error | loading | no results",
+    "Tokens": "icon tile 40 r10, title 14/600, line 13 secondary, one button"
+   },
+   "masters": [
+    "l9ybbN",
+    "VXMb8",
+    "SqdQ6",
+    "hegPJ"
+   ]
+  },
+  {
+   "board": "CiMk0",
+   "kind": "components",
+   "id": "k2o0BS",
+   "name": "Sidebar item",
+   "desc": "App sidebar and settings sidebar share one item. Count is optional.",
+   "spec": {
+    "Props": "state: default | hover | active\nicon, label, count?",
+    "Tokens": "h28 r6 px8 gap8, icon 14, hover ds-bg-hover on ds-bg-sidebar, active ds-bg-active + 500"
+   },
+   "masters": [
+    "Ozv2h",
+    "NFIpx",
+    "eYyNy",
+    "RDTaN",
+    "O4qPtZ",
+    "mD51H"
+   ]
+  },
+  {
+   "board": "CiMk0",
+   "kind": "components",
+   "id": "lxG4p",
+   "name": "View tabs and breadcrumb",
+   "desc": "Switch views of the same list. Breadcrumb shows where a detail page lives.",
+   "spec": {
+    "Props": "tab state: default | hover | selected\nbreadcrumb: parent, current, icon?",
+    "Tokens": "tab h26 pill, selected ds-bg-active, crumb 13 secondary then 13/500 primary"
+   },
+   "masters": [
+    "cbwiI",
+    "o97OIp",
+    "NDNlf",
+    "T9noN"
+   ]
+  },
+  {
+   "board": "CiMk0",
+   "kind": "components",
+   "id": "OyS4I",
+   "name": "Menu item",
+   "desc": "Inside menus and context menus. Destructive items sit last, after a divider.",
+   "spec": {
+    "Props": "state: default | hover | selected | disabled | destructive\nicon, label, shortcut?",
+    "Tokens": "h30 r6 px8, menu panel r8 p4 border 0.5 + popover shadow"
+   },
+   "masters": [
+    "y9PEi",
+    "sTtbh",
+    "E2IA9N",
+    "T8vYxb",
+    "BKwU1"
+   ]
+  },
+  {
+   "board": "CiMk0",
+   "kind": "components",
+   "id": "d6Ec1c",
+   "name": "Settings row",
+   "desc": "The building block of every settings page. Stack rows in a card with 0.5 dividers.",
+   "spec": {
+    "Props": "kind: link | toggle | select | button\nstate: default | hover\nicon?, label, desc, control",
+    "Tokens": "row p14x20 gap12, tile 32 r8, label 13/500, desc 12.5 tertiary\ncard r10 border 0.5 ds-border on ds-bg-canvas"
+   },
+   "masters": [
+    "A6d1Z",
+    "x55xL",
+    "Okqcv",
+    "NzT67",
+    "G1UPmp",
+    "vb8Hh",
+    "GgriK",
+    "ACdVt"
+   ]
+  },
+  {
+   "board": "CiMk0",
+   "kind": "components",
+   "id": "qcdn3",
+   "name": "Integration card",
+   "desc": "One app, one line. Enabled shows a green dot, expired a grey one.",
+   "spec": {
+    "Props": "state: available | hover | enabled | expired\nlogo, name, line",
+    "Tokens": "w220 p14 r10, logo tile 32, border 0.5, hover ds-border-strong"
+   },
+   "masters": [
+    "i3RhBk",
+    "hmmsn",
+    "NILDu",
+    "XyLop"
+   ]
+  },
+  {
+   "board": "CiMk0",
+   "kind": "components",
+   "id": "ARpnz",
+   "name": "Job card",
+   "desc": "Job title first, company second. Stage lives in the lane, not on the card.",
+   "spec": {
+    "Props": "state: default | hover | selected | dragging\nrole, company, logoIcon, priority, location, date, interview?",
+    "Tokens": "w224 p12 r8 border 0.5, hover border-strong, selected ring ds-focus, dragging shadow y12 b32"
+   },
+   "masters": []
+  },
+  {
+   "board": "EK8si",
+   "kind": "patterns",
+   "id": "tWtch",
+   "name": "Layouts",
+   "desc": null,
+   "spec": {},
+   "masters": [
+    "WizjX",
+    "fed35",
+    "tqDO9",
+    "D25I0",
+    "NuHB6",
+    "n2l7t",
+    "y4orp",
+    "wayJC",
+    "cMOIR",
+    "s5OwY"
+   ]
+  },
+  {
+   "board": "EK8si",
+   "kind": "patterns",
+   "id": "L1SmK",
+   "name": "Header",
+   "desc": "Seven headers and one settings title cover every page. Height 52, left padding 20, actions on the right.",
+   "spec": {
+    "Props": "kind: page | toolbar | list | document | detail | reading | chat | settings\ntitle?, breadcrumb?, actions[]",
+    "Tokens": "h52 px20 border-bottom 0.5 ds-border, title 13/500\ntoolbar h44 under header, view tabs left, filter + display right"
+   },
+   "masters": [
+    "ojNtV",
+    "t2VfE",
+    "IqU5C",
+    "kkXDu",
+    "KGYnZ",
+    "jbAd0",
+    "gzrXW",
+    "ugrSt"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "CauJd",
+   "name": "Inbox row",
+   "desc": "One message per row. Unread is a dark dot and bold sender. Urgent adds a grey clock, never a red dot.",
+   "spec": {
+    "Props": "state: unread | read | urgent | hover | selected\nfrom, initials, preview, time",
+    "Tokens": "h44 px16 gap12, avatar 22, from w140 13/500, preview secondary, time 12 tertiary"
+   },
+   "masters": [
+    "qGE4Y",
+    "c5B0a",
+    "wL67k",
+    "f9ipNR",
+    "cvv07"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "DKL4n",
+   "name": "Job row",
+   "desc": "List view of Apply. Stage icon first, then job title, then company.",
+   "spec": {
+    "Props": "state: default | hover | selected\nstage, logoIcon, role, company, interview?, date",
+    "Tokens": "h40 px16 gap10 r6, logo 20 r5, company tertiary, date 12 tertiary"
+   },
+   "masters": [
+    "e33gB",
+    "Kt1vD",
+    "St3kS"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "S7RdXu",
+   "name": "List group",
+   "desc": "Groups rows by stage. Collapsed groups keep their count visible.",
+   "spec": {
+    "Props": "state: expanded | collapsed\nstage, label, count",
+    "Tokens": "h36 px12 r6 ds-bg-subtle, caret 14, count tertiary, add on the right"
+   },
+   "masters": [
+    "HibCb",
+    "UWYTg"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "cl77A",
+   "name": "Board lane",
+   "desc": "A stage column. Lane stays light, cards carry the content. Drop targets highlight in focus blue.",
+   "spec": {
+    "Props": "state: default | empty | drop target\nstage, count, cards[]",
+    "Tokens": "w244 r6 p8 gap8 #FAFAFA, head h28, drop ds-focus 1.5 + #EEF1FB"
+   },
+   "masters": [
+    "gE7d1",
+    "MB3vw",
+    "y4ckI"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "SCisg",
+   "name": "Calendar",
+   "desc": "Month cells and week events. Events use the stage icon and a soft fill, never a solid color block.",
+   "spec": {
+    "Props": "cell: default | other month | today | events | overflow\nevent: interview | deadline | selected",
+    "Tokens": "cell min h112, num 22 circle, today ds-text-primary fill + white\nchip h22 r5 ds-bg-subtle, week block r6 stage tint 9%"
+   },
+   "masters": [
+    "q8OEA",
+    "WTTrI",
+    "I1m5Xi",
+    "JzhaC",
+    "krLJ4",
+    "pmfde",
+    "csvHL",
+    "IS0X8"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "Q0bwa",
+   "name": "Property",
+   "desc": "Rows in the detail rail. Click to edit. Empty properties read as an action in tertiary text.",
+   "spec": {
+    "Props": "state: set | empty | hover\nkind: stage | priority | location | date | person | link | paper",
+    "Tokens": "h32 px8 gap9 r6, icon 14 colored by meaning, empty ds-text-tertiary"
+   },
+   "masters": [
+    "raQDK",
+    "KRyyj",
+    "GC6hp",
+    "I12EHk",
+    "B8h4j0",
+    "S8aoN"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "EDsKI",
+   "name": "Checklist",
+   "desc": "Interview prep and next steps. Head shows progress, items check off in place.",
+   "spec": {
+    "Props": "item state: todo | done | hover\nhead: title, done/total, add",
+    "Tokens": "item h32 r6, check 15 round, done ds-stage-offer fill + strikethrough tertiary"
+   },
+   "masters": [
+    "KnFU1",
+    "Dhmyx",
+    "YQ1Ti",
+    "WpgIu",
+    "H8GXA",
+    "x1qA9"
+   ]
+  },
+  {
+   "board": "JufVz",
+   "kind": "patterns",
+   "id": "K46r5",
+   "name": "Gallery card",
+   "desc": "Paper files and templates. Thumbnail on top, label below. New card is the first or last slot.",
+   "spec": {
+    "Props": "kind: file | new | template\nstate: default | hover | selected",
+    "Tokens": "thumb 150x212 r8 border 0.5, hover border-strong + lift, selected ds-focus 1.5\nlabel 13/500 + meta 12 tertiary"
+   },
+   "masters": [
+    "OFuJ4",
+    "poqBI",
+    "SR804",
+    "cBHbt",
+    "q4sL5G"
+   ]
+  },
+  {
+   "board": "hzktK",
+   "kind": "patterns",
+   "id": "wcawI",
+   "name": "Coach home",
+   "desc": "The first thing Coach shows. One question, the composer, and starter prompts that scroll sideways.",
+   "spec": {
+    "Props": "greeting, composer, suggestions[]",
+    "Tokens": "column w680 centered, greeting 24/600, suggestions pill h32 r999 border ds-border"
+   },
+   "masters": [
+    "h2hu1"
+   ]
+  },
+  {
+   "board": "hzktK",
+   "kind": "patterns",
+   "id": "gSIMZ",
+   "name": "Messages",
+   "desc": "User asks in a soft bubble on the right. Coach answers in plain text on the left, with steps, actions and follow-ups.",
+   "spec": {
+    "Props": "role: user | coach\ncoach parts: worked, body, actions, follow-ups",
+    "Tokens": "column w720, bubble ds-bg-subtle r14 px14 py10 max 520, coach body 14/1.6\nactions icon 16 tertiary gap 14, follow-up pill h30"
+   },
+   "masters": [
+    "Om2Zo",
+    "gzDyX",
+    "J3jfY"
+   ]
+  },
+  {
+   "board": "hzktK",
+   "kind": "patterns",
+   "id": "U9KT8",
+   "name": "Composer",
+   "desc": "Where every Coach request starts. Stays usable while Coach works. At the limit it shows why and how to continue.",
+   "spec": {
+    "Props": "state: empty | typing | working | at limit\nmode: free | pro",
+    "Tokens": "w720 r12 border ds-border, min h96, send 28 round glow when ready"
+   },
+   "masters": [
+    "ekKND",
+    "Kj3JO"
+   ]
+  },
+  {
+   "board": "hzktK",
+   "kind": "patterns",
+   "id": "tj5DP",
+   "name": "Document blocks",
+   "desc": "A CV is a stack of blocks. Each block can be hovered, selected, moved and rewritten by Coach.",
+   "spec": {
+    "Props": "block: name | contact | section | entry | bullet | text\nstate: default | hover | selected",
+    "Tokens": "page w560 p48, name 22/600, section 11/600 caps + rule, entry 13/600 + date right, bullet 12.5/1.5"
+   },
+   "masters": [
+    "YtoP7",
+    "LWL2X",
+    "MUc32",
+    "yceL9",
+    "qATKE",
+    "NuojG",
+    "zgEQ4"
+   ]
+  },
+  {
+   "board": "hzktK",
+   "kind": "patterns",
+   "id": "fpRbw",
+   "name": "Editor tools",
+   "desc": "Menus and bars that act on blocks. Slash inserts, block menu moves, selection toolbar formats or asks Coach.",
+   "spec": {
+    "Props": "slash: groups[], items[] with kbd\nblock menu: turn into, duplicate, move, ask Coach, delete\nselection: coach, style, b i u link, more",
+    "Tokens": "menus w232 to 300, r8 p4, popover shadow; selection bar h32 r8 dark-free white"
+   },
+   "masters": [
+    "g4ARNL",
+    "tZGOb",
+    "gpw0z",
+    "G877Ld"
+   ]
+  },
+  {
+   "board": "hzktK",
+   "kind": "patterns",
+   "id": "fjlrE",
+   "name": "Coach in the document",
+   "desc": "Coach comments in the margin, anchored to a line. Import shows progress, then flags what is missing.",
+   "spec": {
+    "Props": "suggestion: title, body, primary, secondary\nimport: reading | review | missing field | cannot read",
+    "Tokens": "suggestion w260 r10 border, anchor dot 7 + connector; reading pill h36 r999; review bar w560"
+   },
+   "masters": [
+    "a8JM2U"
+   ]
+  },
+  {
+   "board": "SMI9p",
+   "kind": "patterns",
+   "id": "AueXw",
+   "name": "Sign in",
+   "desc": "Email first, then a 6 digit code. No passwords. Wrong or expired codes keep the email and offer a new code.",
+   "spec": {
+    "Steps": "1 email, 2 code, 3 verifying, 4 welcome\nE wrong or expired code, E session expired",
+    "Rules": "one field per step, primary is the glow\ncodes expire after 10 minutes"
+   },
+   "masters": [
+    "fLvsL",
+    "SA5ZF",
+    "V48sry",
+    "dgN1Z",
+    "Sps51",
+    "RqLE0"
+   ]
+  },
+  {
+   "board": "SMI9p",
+   "kind": "patterns",
+   "id": "luYMC",
+   "name": "Add a job",
+   "desc": "Manual first. A link is optional and only fills the form. Missing or duplicate data is flagged inline.",
+   "spec": {
+    "Steps": "1 empty, 2 filled\nE company missing, E already on your board",
+    "Rules": "dialog w600 r12, primary Add job + Enter hint\ndocument-style fields, no labels above"
+   },
+   "masters": [
+    "G5ymk",
+    "rc9uC",
+    "gkWRp",
+    "ZTpUQ"
+   ]
+  },
+  {
+   "board": "SMI9p",
+   "kind": "patterns",
+   "id": "Q30za",
+   "name": "Delete",
+   "desc": "Always confirm. Title names the thing, body says it is final, the button repeats the verb.",
+   "spec": {
+    "Steps": "1 menu Delete job, 2 confirm, 3 toast with Undo",
+    "Rules": "danger button only here, Escape cancels, focus starts on Cancel"
+   },
+   "masters": []
+  },
+  {
+   "board": "SMI9p",
+   "kind": "patterns",
+   "id": "Dnutj",
+   "name": "Limits and upgrade",
+   "desc": "Say what happened, when it resets, and the one way past it. Never block what already works.",
+   "spec": {
+    "Steps": "1 meter high, 2 limit reached in composer, 3 Billing upgrade\nE payment failed",
+    "Rules": "Paper and Apply keep working at the limit\nupgrade copy names Pro and one benefit"
+   },
+   "masters": [
+    "YDW6e"
+   ]
+  },
+  {
+   "board": "SMI9p",
+   "kind": "patterns",
+   "id": "JyrUL",
+   "name": "Import a CV",
+   "desc": "Read the file, show what was found, flag only what is missing. If the file cannot be read, offer two ways forward.",
+   "spec": {
+    "Steps": "1 importing, 2 review with flags, 3 done\nE cannot read the file",
+    "Rules": "progress pill bottom center, flags in the margin\nmax 2 flags at a time"
+   },
+   "masters": [
+    "qyhIz"
+   ]
+  },
+  {
+   "board": "SMI9p",
+   "kind": "patterns",
+   "id": "Orok3",
+   "name": "Coming soon",
+   "desc": "For products that are not live yet. One promise, one action, a peek at what is coming.",
+   "spec": {
+    "Steps": "badge, title, line, action, peek",
+    "Rules": "hero w560 centered, peek fades at the bottom\naction joins a waitlist, never a fake button"
+   },
+   "masters": [
+    "fAGKX"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "UDKyE",
+   "name": "App shell",
+   "desc": "Sidebar, main panel and the bottom dock. Every app screen is an instance with the main panel overridden.",
+   "spec": {
+    "Props": "mainPanel: slot\nchatPanel?: open | closed\nactive: inbox | coach | jobs | paper | apply | pitch",
+    "Tokens": "bg ds-bg-sidebar\nmain panel ds-bg-surface r8, inset 8\nbottom bar h40, sidebar w244",
+    "Content rules": "One main panel per screen.\nDock shows up to two next steps.\nCoach button always last.",
+    "Standard uses": "Inbox, Coach, Paper, Apply, Pitch, Jobs\nSettings uses its own nav"
+   },
+   "masters": [
+    "cxAxL"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "zyLPS",
+   "name": "Sidebar and nav item",
+   "desc": "Workspace switcher, three primary items, Your work, Favorites, and the account row.",
+   "spec": {
+    "Props": "items[], favorites[]\nnav item: icon, label, count?, state",
+    "Tokens": "w244 p10, item h28 r6 gap8\nhover ds-bg-hover, active ds-bg-active",
+    "Content rules": "Labels are one word.\nFavorites show the item icon, not a star.",
+    "Standard uses": "Inbox 4, Coach, Jobs\nPaper, Apply, Pitch"
+   },
+   "masters": [
+    "Zi9iS",
+    "V1kLM"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "Jh46I",
+   "name": "Coach dock, composer and chat panel",
+   "desc": "The three places people type to Coach. The Free pill on the right opens the model menu: Free, Light and Max (Light and Max need Pro).",
+   "spec": {
+    "Props": "placeholder, context?: paper item\nmodel: free | light | max\nstate: empty | typing | working | at limit\npanel: title, body slot",
+    "Tokens": "dock w720 r12 border ds-border\nsend 32 round, attach 30\npanel w400 h600 r12 shadow",
+    "Content rules": "Placeholder asks, never instructs.\nContext chip names the open item.\nWorking state keeps typing enabled.",
+    "Standard uses": "Coach home and threads\nside panel on Paper and Apply"
+   },
+   "masters": [
+    "FRVf9",
+    "idtEC",
+    "REfNk"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "qQS1n",
+   "name": "Auth layout",
+   "desc": "Split screen for sign in. Form slot on the left, the lit mark on the right.",
+   "spec": {
+    "Props": "formSlot: email | code | verifying | wrong code\nlang: en | vi",
+    "Tokens": "left w720 white, form w340\nright w720 shader auth-quadrant-v2",
+    "Content rules": "One field per step.\nHeadline on the right stays the same.",
+    "Standard uses": "W1.1 to W1.4"
+   },
+   "masters": [
+    "P23Lk"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "xpFaG",
+   "name": "Apply",
+   "desc": "Stage icons, the job card, the job row and the list group. Stage icons are the only colored UI in the app.",
+   "spec": {
+    "Props": "stage: saved | applied | interview | offer | closed\ncard: role, company, logoIcon, priority, location, date, interview?",
+    "Tokens": "stage ds-stage-* 14\ncard w224 p12 r8 border 0.5\nrow h40 r6, group h36 ds-bg-subtle",
+    "Content rules": "Job title first, company second.\nNo tags on board cards.\nDates are short: Oct 25.",
+    "Standard uses": "Board, List, Calendar\nJob detail rail, Inbox detection"
+   },
+   "masters": [
+    "Cfj4F",
+    "anzDA",
+    "Q6oOZa",
+    "RKlNn",
+    "mIjuF",
+    "Ru1A6",
+    "U175h6",
+    "sF4Vd"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "GCKJG",
+   "name": "Inbox row",
+   "desc": "One recruiter message per row. Unread is a dark dot and a bold sender.",
+   "spec": {
+    "Props": "unread, from, initials, preview, time\nstate: default | hover | selected",
+    "Tokens": "h44 px16 gap12, avatar 22\ndot 6 ds-text-primary",
+    "Content rules": "Preview is the first line of the message.\nUrgent adds a grey clock, never red.",
+    "Standard uses": "W2.3 Inbox, W2.4 Recruiter reply"
+   },
+   "masters": [
+    "DZL3M"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "bvFmD",
+   "name": "Paper label and brand",
+   "desc": "The file label under every Paper thumbnail, plus the mark, avatar and brand logos.",
+   "spec": {
+    "Props": "label: title, meta, badge?\navatar: initials | photo",
+    "Tokens": "label 13/500 + 12 tertiary\nmark 20, avatar 20 ds-bg-chip",
+    "Content rules": "Meta says when, not who.\nBrand logos are never recolored.",
+    "Standard uses": "Paper library, Integrations\nsign in, Gmail connect"
+   },
+   "masters": [
+    "ABQ42",
+    "BGvRz",
+    "tvP20",
+    "AjGd4",
+    "EKeVv",
+    "FiUu3"
+   ]
+  },
+  {
+   "board": "hvocI",
+   "kind": "masters",
+   "id": "Q0m2s",
+   "name": "Deprecated",
+   "desc": "Kept so older references keep working. Do not use in new screens. Use the replacement on the right.",
+   "spec": {},
+   "masters": [
+    "o9qor",
+    "tHZVt",
+    "SHvK6",
+    "OvPGt",
+    "FXRDC",
+    "I6MgBP",
+    "IMeKE",
+    "zUUPy",
+    "S9egLY",
+    "Lhuar",
+    "K6Tt8u",
+    "XUvwV",
+    "PqONv",
+    "T0TI1U",
+    "Dvglx",
+    "A8e3ym",
+    "NSnMF",
+    "H3vHkR",
+    "QYdbJ"
+   ]
+  },
+  {
+   "board": "S1JHUS",
+   "kind": "masters",
+   "id": "E3Sox",
+   "name": "Head",
+   "desc": null,
+   "spec": {},
+   "masters": []
+  },
+  {
+   "board": "S1JHUS",
+   "kind": "masters",
+   "id": "B6Zirc",
+   "name": "FloatingPill",
+   "desc": null,
+   "spec": {},
+   "masters": [
+    "P0K3Qd"
+   ]
+  },
+  {
+   "board": "S1JHUS",
+   "kind": "masters",
+   "id": "P2IeAp",
+   "name": "Suggestion",
+   "desc": null,
+   "spec": {},
+   "masters": [
+    "dWXt1"
+   ]
+  },
+  {
+   "board": "S1JHUS",
+   "kind": "masters",
+   "id": "G2p4G",
+   "name": "NoticeBar",
+   "desc": null,
+   "spec": {},
+   "masters": [
+    "D1oOhJ"
+   ]
+  },
+  {
+   "board": "S1JHUS",
+   "kind": "masters",
+   "id": "lfsI3",
+   "name": "StateMessage",
+   "desc": null,
+   "spec": {},
+   "masters": [
+    "y5Jup"
+   ]
+  }
+ ],
+ "masters": [
+  {
+   "id": "aD7Ua",
+   "name": "Button/Primary/MD/Default",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "liYPc",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "DPicC",
+   "name": "Button/Primary/MD/Hover",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "dGI5c",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "jeYiV",
+   "name": "Button/Primary/MD/Pressed",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "q4hsj",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "lDP8C",
+   "name": "Button/Primary/MD/Focus",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "SBIqe",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "r4Oa5",
+   "name": "Button/Primary/MD/Disabled",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "BBt1t",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "pDO0L",
+   "name": "Button/Primary/MD/Loading",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "R0INg0",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [
+    {
+     "id": "K9xr7",
+     "name": "Spinner",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "M6ucRC",
+   "name": "Button/Secondary/MD/Default",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "g06hJ",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "sclgT",
+   "name": "Button/Secondary/MD/Hover",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "RPvYn",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "gnUm1",
+   "name": "Button/Secondary/MD/Pressed",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "qTimE",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "D3ibm",
+   "name": "Button/Secondary/MD/Focus",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "cMSio",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "vLwLX",
+   "name": "Button/Secondary/MD/Disabled",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "OuJc3",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "aHSQ1",
+   "name": "Button/Secondary/MD/Loading",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "maLgL",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [
+    {
+     "id": "vJ1gI",
+     "name": "Spinner",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "gu9D6",
+   "name": "Button/Ghost/MD/Default",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "MV9l3",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "HBc1Z",
+   "name": "Button/Ghost/MD/Hover",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "pMKmn",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "SuMo2",
+   "name": "Button/Ghost/MD/Pressed",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "rt9o9",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "zaAqf",
+   "name": "Button/Ghost/MD/Focus",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "KNY5z",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "kfnMf",
+   "name": "Button/Ghost/MD/Disabled",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "PCwq8",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "Z4CtN",
+   "name": "Button/Ghost/MD/Loading",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "dIPRF",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [
+    {
+     "id": "y5PI4",
+     "name": "Spinner",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "pkF4q",
+   "name": "Button/Danger/MD/Default",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "ktya2",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "UOsLW",
+   "name": "Button/Danger/MD/Hover",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "aXmY4",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "DTtRT",
+   "name": "Button/Danger/MD/Pressed",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "VC57f",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "OkvKu",
+   "name": "Button/Danger/MD/Focus",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "ah8t1",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "PNCg8",
+   "name": "Button/Danger/MD/Disabled",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "D3bq7",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "mSP2d",
+   "name": "Button/Danger/MD/Loading",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "nkASB",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [
+    {
+     "id": "XrNrY",
+     "name": "Spinner",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "C0NqL",
+   "name": "Button/Primary/SM/Default",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "a0DJf",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "T9pjLm",
+   "name": "Button/Primary/LG/Default",
+   "type": "frame",
+   "height": 44,
+   "texts": [
+    {
+     "id": "q74MUj",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "RoHVK",
+   "name": "Button/Primary/MD/With icon",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "tYD7n",
+     "name": "Label",
+     "content": "New job"
+    }
+   ],
+   "icons": [
+    {
+     "id": "n0KbT",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "lojMD",
+   "name": "Button/Primary/MD/Icon only",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "aXvxR",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "j9bYa",
+   "name": "Button/Secondary/SM/Default",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "Vjoz3",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "M6r5WU",
+   "name": "Button/Secondary/LG/Default",
+   "type": "frame",
+   "height": 44,
+   "texts": [
+    {
+     "id": "i7TsaE",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "CLjTT",
+   "name": "Button/Secondary/MD/With icon",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "BbrC1",
+     "name": "Label",
+     "content": "New job"
+    }
+   ],
+   "icons": [
+    {
+     "id": "mRoiL",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "Uofgt",
+   "name": "Button/Secondary/MD/Icon only",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "XPyUY",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "ST3xX",
+   "name": "Button/Ghost/SM/Default",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "ibmh8",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "k09JY",
+   "name": "Button/Ghost/LG/Default",
+   "type": "frame",
+   "height": 44,
+   "texts": [
+    {
+     "id": "XIMr6",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "ZKa7B",
+   "name": "Button/Ghost/MD/With icon",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "VlUJe",
+     "name": "Label",
+     "content": "New job"
+    }
+   ],
+   "icons": [
+    {
+     "id": "ogSHA",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "LjtnX",
+   "name": "Button/Ghost/MD/Icon only",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "JfmSd",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "t1cCR",
+   "name": "Button/Danger/SM/Default",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "b9H5s",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "qC96u",
+   "name": "Button/Danger/LG/Default",
+   "type": "frame",
+   "height": 44,
+   "texts": [
+    {
+     "id": "lgWYv",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "E015j",
+   "name": "Button/Danger/MD/With icon",
+   "type": "frame",
+   "height": 32,
+   "texts": [
+    {
+     "id": "lsffM",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [
+    {
+     "id": "p5hyFF",
+     "name": "Icon",
+     "icon": "trash-2"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "U3sZGh",
+   "name": "Button/Danger/MD/Icon only",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "n6qnI",
+     "name": "Icon",
+     "icon": "trash-2"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Button"
+  },
+  {
+   "id": "GhLVV",
+   "name": "Icon button/24/Default",
+   "type": "frame",
+   "width": 24,
+   "height": 24,
+   "texts": [],
+   "icons": [
+    {
+     "id": "m66nLF",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "h68iF",
+   "name": "Icon button/24/Hover",
+   "type": "frame",
+   "width": 24,
+   "height": 24,
+   "texts": [],
+   "icons": [
+    {
+     "id": "tQ6b3",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "s9PEoV",
+   "name": "Icon button/24/Pressed",
+   "type": "frame",
+   "width": 24,
+   "height": 24,
+   "texts": [],
+   "icons": [
+    {
+     "id": "v1Zzc",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "V2tpdd",
+   "name": "Icon button/24/Selected",
+   "type": "frame",
+   "width": 24,
+   "height": 24,
+   "texts": [],
+   "icons": [
+    {
+     "id": "DhUmM",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "uEuBV",
+   "name": "Icon button/24/Focus",
+   "type": "frame",
+   "width": 24,
+   "height": 24,
+   "texts": [],
+   "icons": [
+    {
+     "id": "XJd8s",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "rYRWq",
+   "name": "Icon button/24/Disabled",
+   "type": "frame",
+   "width": 24,
+   "height": 24,
+   "texts": [],
+   "icons": [
+    {
+     "id": "kCV4r",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "u136l9",
+   "name": "Icon button/28/Default",
+   "type": "frame",
+   "width": 28,
+   "height": 28,
+   "texts": [],
+   "icons": [
+    {
+     "id": "iRae4",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "vB2Oi",
+   "name": "Icon button/28/Hover",
+   "type": "frame",
+   "width": 28,
+   "height": 28,
+   "texts": [],
+   "icons": [
+    {
+     "id": "lYm3O",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "zj7xY",
+   "name": "Icon button/28/Pressed",
+   "type": "frame",
+   "width": 28,
+   "height": 28,
+   "texts": [],
+   "icons": [
+    {
+     "id": "Cxnlh",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "G1kQXQ",
+   "name": "Icon button/28/Selected",
+   "type": "frame",
+   "width": 28,
+   "height": 28,
+   "texts": [],
+   "icons": [
+    {
+     "id": "H7AES",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "Uo8bs",
+   "name": "Icon button/28/Focus",
+   "type": "frame",
+   "width": 28,
+   "height": 28,
+   "texts": [],
+   "icons": [
+    {
+     "id": "XncvC",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "znWZq",
+   "name": "Icon button/28/Disabled",
+   "type": "frame",
+   "width": 28,
+   "height": 28,
+   "texts": [],
+   "icons": [
+    {
+     "id": "GJkRG",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "sIYGe",
+   "name": "Icon button/32/Default",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "cyCig",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "zbvdQ",
+   "name": "Icon button/32/Hover",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "qWFQ2",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "y19Fw",
+   "name": "Icon button/32/Pressed",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "KeoVs",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "tDwIb",
+   "name": "Icon button/32/Selected",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "hYNK7",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "iktKH",
+   "name": "Icon button/32/Focus",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "AiHIQ",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "lesQs",
+   "name": "Icon button/32/Disabled",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "RMARA",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Icon button"
+  },
+  {
+   "id": "jqSJc",
+   "name": "Link/Inline/Default",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "bNRhj",
+     "name": "Label",
+     "content": "privacy policy"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "MxiVk",
+   "name": "Link/Inline/Hover",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "hqehe",
+     "name": "Label",
+     "content": "privacy policy"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "TgC4j",
+   "name": "Link/Inline/Focus",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "TWGcG",
+     "name": "Label",
+     "content": "privacy policy"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "C7EPrB",
+   "name": "Link/Inline/Disabled",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "TWB6w",
+     "name": "Label",
+     "content": "privacy policy"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "p2yXh",
+   "name": "Link/Chevron/Default",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "HcsiV",
+     "name": "Label",
+     "content": "All plans"
+    }
+   ],
+   "icons": [
+    {
+     "id": "w52qyJ",
+     "name": "Chevron",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "skrBX",
+   "name": "Link/Chevron/Hover",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "Y0SHkP",
+     "name": "Label",
+     "content": "All plans"
+    }
+   ],
+   "icons": [
+    {
+     "id": "YgWX9",
+     "name": "Chevron",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "j6cjq5",
+   "name": "Link/Chevron/Focus",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "tVhiS",
+     "name": "Label",
+     "content": "All plans"
+    }
+   ],
+   "icons": [
+    {
+     "id": "WWKUX",
+     "name": "Chevron",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "v21gQc",
+   "name": "Link/Chevron/Disabled",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "B2JtNw",
+     "name": "Label",
+     "content": "All plans"
+    }
+   ],
+   "icons": [
+    {
+     "id": "HhPsv",
+     "name": "Chevron",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "U5sXXo",
+   "name": "Link/Muted/Default",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "iJKre",
+     "name": "Label",
+     "content": "Learn more"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "IUNtu",
+   "name": "Link/Muted/Hover",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "neVqC",
+     "name": "Label",
+     "content": "Learn more"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "JrLyF",
+   "name": "Link/Muted/Focus",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "aytze",
+     "name": "Label",
+     "content": "Learn more"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "vrSOX",
+   "name": "Link/Muted/Disabled",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "mUYG1",
+     "name": "Label",
+     "content": "Learn more"
+    }
+   ],
+   "icons": [],
+   "board": "FIZL5",
+   "section": "Link"
+  },
+  {
+   "id": "t721zI",
+   "name": "Field/Default",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "LT1jl",
+     "name": "Label",
+     "content": "Email"
+    },
+    {
+     "id": "DB8hr",
+     "name": "Value",
+     "content": "name@example.com"
+    },
+    {
+     "id": "O4mdU",
+     "name": "Helper",
+     "content": "We send sign-in codes here"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Text field"
+  },
+  {
+   "id": "y4aQEi",
+   "name": "Field/Hover",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "zxLGO",
+     "name": "Label",
+     "content": "Email"
+    },
+    {
+     "id": "E3QnNy",
+     "name": "Value",
+     "content": "name@example.com"
+    },
+    {
+     "id": "o6PiGO",
+     "name": "Helper",
+     "content": "We send sign-in codes here"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Text field"
+  },
+  {
+   "id": "W2pEPZ",
+   "name": "Field/Focus",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "oyc7e",
+     "name": "Label",
+     "content": "Email"
+    },
+    {
+     "id": "vpAqw",
+     "name": "Value",
+     "content": "linh.nguyen@gmail.com"
+    },
+    {
+     "id": "RrGMO",
+     "name": "Helper",
+     "content": "We send sign-in codes here"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Text field"
+  },
+  {
+   "id": "tdRnE",
+   "name": "Field/Filled",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "TMOi1",
+     "name": "Label",
+     "content": "Email"
+    },
+    {
+     "id": "oVkyg",
+     "name": "Value",
+     "content": "linh.nguyen@gmail.com"
+    },
+    {
+     "id": "LBS5u",
+     "name": "Helper",
+     "content": "We send sign-in codes here"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Text field"
+  },
+  {
+   "id": "YbK1R",
+   "name": "Field/Error",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "QGjKo",
+     "name": "Label",
+     "content": "Email"
+    },
+    {
+     "id": "U9zt5S",
+     "name": "Value",
+     "content": "linh.nguyen@"
+    },
+    {
+     "id": "B3Fu9",
+     "name": "Error",
+     "content": "Use a full email, like name@example.com"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Text field"
+  },
+  {
+   "id": "t6OJT",
+   "name": "Field/Disabled",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "Z25DC",
+     "name": "Label",
+     "content": "Email"
+    },
+    {
+     "id": "SVNim",
+     "name": "Value",
+     "content": "name@example.com"
+    },
+    {
+     "id": "PmZoC",
+     "name": "Helper",
+     "content": "We send sign-in codes here"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Text field"
+  },
+  {
+   "id": "za5E2",
+   "name": "Search/Default",
+   "type": "frame",
+   "width": "fill_container",
+   "height": 36,
+   "texts": [
+    {
+     "id": "I3p5cT",
+     "name": "Value",
+     "content": "Search integrations"
+    }
+   ],
+   "icons": [
+    {
+     "id": "XHHh4",
+     "name": "Icon",
+     "icon": "search"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Search"
+  },
+  {
+   "id": "injtH",
+   "name": "Search/Focus",
+   "type": "frame",
+   "width": "fill_container",
+   "height": 36,
+   "texts": [
+    {
+     "id": "eHwa5",
+     "name": "Value",
+     "content": "Search integrations"
+    }
+   ],
+   "icons": [
+    {
+     "id": "HcMu2",
+     "name": "Icon",
+     "icon": "search"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Search"
+  },
+  {
+   "id": "e8qf2B",
+   "name": "Search/Filled",
+   "type": "frame",
+   "width": "fill_container",
+   "height": 36,
+   "texts": [
+    {
+     "id": "xN72q",
+     "name": "Value",
+     "content": "zoom"
+    }
+   ],
+   "icons": [
+    {
+     "id": "kAyQG",
+     "name": "Icon",
+     "icon": "search"
+    },
+    {
+     "id": "jVEpY",
+     "name": "Clear",
+     "icon": "x"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Search"
+  },
+  {
+   "id": "K7EGWZ",
+   "name": "Search/Disabled",
+   "type": "frame",
+   "width": "fill_container",
+   "height": 36,
+   "texts": [
+    {
+     "id": "IPkwI",
+     "name": "Value",
+     "content": "Search integrations"
+    }
+   ],
+   "icons": [
+    {
+     "id": "o2mObM",
+     "name": "Icon",
+     "icon": "search"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Search"
+  },
+  {
+   "id": "HYHkO",
+   "name": "Select/Default",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "csqQK",
+     "name": "Value",
+     "content": "Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "X0E2m",
+     "name": "Chevron",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Select"
+  },
+  {
+   "id": "rJ0uv",
+   "name": "Select/Hover",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "adt6a",
+     "name": "Value",
+     "content": "Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "tQcCJ",
+     "name": "Chevron",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Select"
+  },
+  {
+   "id": "fxJzH",
+   "name": "Select/Focus",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "OIPix",
+     "name": "Value",
+     "content": "Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "db8QO",
+     "name": "Chevron",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Select"
+  },
+  {
+   "id": "SAtRy",
+   "name": "Select/Open",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "ODDLK",
+     "name": "Value",
+     "content": "Apply"
+    },
+    {
+     "id": "zyNlT",
+     "name": "",
+     "content": "Inbox"
+    },
+    {
+     "id": "yAXJm",
+     "name": "",
+     "content": "Coach"
+    },
+    {
+     "id": "F004q",
+     "name": "",
+     "content": "Paper"
+    },
+    {
+     "id": "a83lh",
+     "name": "",
+     "content": "Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "KksF0",
+     "name": "Chevron",
+     "icon": "chevron-up"
+    },
+    {
+     "id": "TJCWi",
+     "name": "",
+     "icon": "check"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Select"
+  },
+  {
+   "id": "OZiUT",
+   "name": "Select/Disabled",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "F2MWWP",
+     "name": "Value",
+     "content": "Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "T3Xsvu",
+     "name": "Chevron",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Select"
+  },
+  {
+   "id": "bUrsV",
+   "name": "Segmented/Default",
+   "type": "frame",
+   "height": 30,
+   "texts": [
+    {
+     "id": "kwfwZ",
+     "name": "",
+     "content": "English"
+    },
+    {
+     "id": "hxEG6",
+     "name": "",
+     "content": "Tiếng Việt"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Segmented control"
+  },
+  {
+   "id": "FPzZe",
+   "name": "Segmented/Hover",
+   "type": "frame",
+   "height": 30,
+   "texts": [
+    {
+     "id": "nlVQL",
+     "name": "",
+     "content": "English"
+    },
+    {
+     "id": "CWK8z",
+     "name": "",
+     "content": "Tiếng Việt"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Segmented control"
+  },
+  {
+   "id": "A9TiNk",
+   "name": "Segmented/Three",
+   "type": "frame",
+   "height": 30,
+   "texts": [
+    {
+     "id": "oc8Jd",
+     "name": "",
+     "content": "Board"
+    },
+    {
+     "id": "PsZeC",
+     "name": "",
+     "content": "List"
+    },
+    {
+     "id": "wun9m",
+     "name": "",
+     "content": "Calendar"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Segmented control"
+  },
+  {
+   "id": "D7rXs",
+   "name": "Segmented/Disabled",
+   "type": "frame",
+   "height": 30,
+   "texts": [
+    {
+     "id": "k9F7e",
+     "name": "",
+     "content": "Direct"
+    },
+    {
+     "id": "MARdx",
+     "name": "",
+     "content": "Friendly"
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Segmented control"
+  },
+  {
+   "id": "OOoTq",
+   "name": "Switch/On/Default",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "NHrBG",
+   "name": "Switch/Off/Default",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "wdGKs",
+   "name": "Switch/On/Hover",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "vNW8o",
+   "name": "Switch/Off/Hover",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "v04BYW",
+   "name": "Switch/On/Focus",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "JczMI",
+   "name": "Switch/Off/Focus",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "IUNRW",
+   "name": "Switch/On/Disabled",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "BFnxh",
+   "name": "Switch/Off/Disabled",
+   "type": "frame",
+   "width": 32,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "GfMc3",
+   "name": "Checkbox/On/Default",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [
+    {
+     "id": "ZYJE4",
+     "name": "",
+     "icon": "check"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "Utixx",
+   "name": "Checkbox/Off/Default",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "vSrjj",
+   "name": "Checkbox/Mixed/Default",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "MpcKq",
+   "name": "Checkbox/On/Hover",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [
+    {
+     "id": "awSRP",
+     "name": "",
+     "icon": "check"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "KaDs7",
+   "name": "Checkbox/Off/Hover",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "XqWtf",
+   "name": "Checkbox/Mixed/Hover",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "rc23R",
+   "name": "Checkbox/On/Focus",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [
+    {
+     "id": "kEsB3",
+     "name": "",
+     "icon": "check"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "EBFk1",
+   "name": "Checkbox/Off/Focus",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "kyO8W",
+   "name": "Checkbox/Mixed/Focus",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "aaEFB",
+   "name": "Checkbox/On/Disabled",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [
+    {
+     "id": "WzX6A",
+     "name": "",
+     "icon": "check"
+    }
+   ],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "w9tZb",
+   "name": "Checkbox/Off/Disabled",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "welhc",
+   "name": "Checkbox/Mixed/Disabled",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "KLvrJ",
+   "name": "Radio/On/Default",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "WCALc",
+   "name": "Radio/Off/Default",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "RRUJV",
+   "name": "Radio/On/Hover",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "m6sPIm",
+   "name": "Radio/Off/Hover",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "YjzJi",
+   "name": "Radio/On/Focus",
+   "type": "frame",
+   "width": 22,
+   "height": 22,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "p7ugT",
+   "name": "Radio/Off/Focus",
+   "type": "frame",
+   "width": 22,
+   "height": 22,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "U7uQD",
+   "name": "Radio/On/Disabled",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "yo5qS",
+   "name": "Radio/Off/Disabled",
+   "type": "frame",
+   "width": 16,
+   "height": 16,
+   "texts": [],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Switch, checkbox, radio"
+  },
+  {
+   "id": "SsgPy",
+   "name": "Textarea/Default",
+   "type": "frame",
+   "width": "fill_container",
+   "height": 96,
+   "texts": [
+    {
+     "id": "LziSc",
+     "name": "",
+     "content": "Leave a note..."
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Textarea"
+  },
+  {
+   "id": "PmS6i",
+   "name": "Textarea/Focus",
+   "type": "frame",
+   "width": "fill_container",
+   "height": 96,
+   "texts": [
+    {
+     "id": "dNaC4",
+     "name": "",
+     "content": "Asked about the savings app. Follow up Friday with the checkout study."
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Textarea"
+  },
+  {
+   "id": "K4o81",
+   "name": "Textarea/Filled",
+   "type": "frame",
+   "width": "fill_container",
+   "height": 96,
+   "texts": [
+    {
+     "id": "He34Y",
+     "name": "",
+     "content": "Asked about the savings app. Follow up Friday with the checkout study."
+    }
+   ],
+   "icons": [],
+   "board": "B4iHj",
+   "section": "Textarea"
+  },
+  {
+   "id": "Lvgad",
+   "name": "Badge/Neutral",
+   "type": "frame",
+   "height": 20,
+   "texts": [
+    {
+     "id": "N4tbk9",
+     "name": "",
+     "content": "Draft"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Badge"
+  },
+  {
+   "id": "Sy7pL",
+   "name": "Badge/Success",
+   "type": "frame",
+   "height": 20,
+   "texts": [
+    {
+     "id": "BnuuA",
+     "name": "",
+     "content": "Offer"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Badge"
+  },
+  {
+   "id": "Vq6lo",
+   "name": "Badge/Warning",
+   "type": "frame",
+   "height": 20,
+   "texts": [
+    {
+     "id": "TwD8l",
+     "name": "",
+     "content": "Closes soon"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Badge"
+  },
+  {
+   "id": "xqfUX",
+   "name": "Badge/Danger",
+   "type": "frame",
+   "height": 20,
+   "texts": [
+    {
+     "id": "N9YBc",
+     "name": "",
+     "content": "Expired"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Badge"
+  },
+  {
+   "id": "OIKFi",
+   "name": "Badge/Info",
+   "type": "frame",
+   "height": 20,
+   "texts": [
+    {
+     "id": "FuYk6",
+     "name": "",
+     "content": "New"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Badge"
+  },
+  {
+   "id": "hGdMb",
+   "name": "Chip/Default",
+   "type": "frame",
+   "height": 24,
+   "texts": [
+    {
+     "id": "LtKvX",
+     "name": "",
+     "content": "Hanoi"
+    }
+   ],
+   "icons": [
+    {
+     "id": "xSV3V",
+     "name": "Icon",
+     "icon": "map-pin"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Chip"
+  },
+  {
+   "id": "US4Dl",
+   "name": "Chip/Hover",
+   "type": "frame",
+   "height": 24,
+   "texts": [
+    {
+     "id": "O3t2jI",
+     "name": "",
+     "content": "Hanoi"
+    }
+   ],
+   "icons": [
+    {
+     "id": "iKorm",
+     "name": "Icon",
+     "icon": "map-pin"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Chip"
+  },
+  {
+   "id": "y6ctx",
+   "name": "Chip/Selected",
+   "type": "frame",
+   "height": 24,
+   "texts": [
+    {
+     "id": "ipakP",
+     "name": "",
+     "content": "Interview"
+    }
+   ],
+   "icons": [
+    {
+     "id": "fAhuP",
+     "name": "Icon",
+     "icon": "calendar"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Chip"
+  },
+  {
+   "id": "fy7y6",
+   "name": "Chip/Removable",
+   "type": "frame",
+   "height": 24,
+   "texts": [
+    {
+     "id": "hE4EK",
+     "name": "",
+     "content": "Remote"
+    }
+   ],
+   "icons": [
+    {
+     "id": "RzQTa",
+     "name": "Icon",
+     "icon": "map-pin"
+    },
+    {
+     "id": "GNnfZ",
+     "name": "Remove",
+     "icon": "x"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Chip"
+  },
+  {
+   "id": "PnDY2",
+   "name": "Chip/Text",
+   "type": "frame",
+   "height": 24,
+   "texts": [
+    {
+     "id": "NfLZH",
+     "name": "",
+     "content": "Follow-up"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Chip"
+  },
+  {
+   "id": "bqUZV",
+   "name": "Stage/Saved",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "Gf5lp",
+     "name": "",
+     "content": "Saved"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "xEcSG",
+   "name": "Stage/Applied",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "soSED",
+     "name": "",
+     "content": "Applied"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "eGlmr",
+   "name": "Stage/Interview",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "i4hhxK",
+     "name": "",
+     "content": "Interview"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "PJKFy",
+   "name": "Stage/Offer",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "aNjmX",
+     "name": "",
+     "content": "Offer"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "ZfoX7",
+   "name": "Stage/Closed",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "fY4eH",
+     "name": "",
+     "content": "Closed"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "O8bkJ",
+   "name": "Status/Enabled",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "b9ibIF",
+     "name": "",
+     "content": "Enabled"
+    }
+   ],
+   "icons": [
+    {
+     "id": "YRimD",
+     "name": "Chevron",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "spYhq",
+   "name": "Status/Disabled",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "zarp4",
+     "name": "",
+     "content": "Disabled"
+    }
+   ],
+   "icons": [
+    {
+     "id": "J1KD8",
+     "name": "Chevron",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "dgPGr",
+   "name": "Status/Connected",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "rPZ0v",
+     "name": "",
+     "content": "Enabled"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "OZr9t",
+   "name": "Status/Expired",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "cBXUP",
+     "name": "",
+     "content": "Access expired"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Stage and status"
+  },
+  {
+   "id": "qa4TB",
+   "name": "Avatar/20",
+   "type": "frame",
+   "width": 20,
+   "height": 20,
+   "texts": [
+    {
+     "id": "t8iJF",
+     "name": "",
+     "content": "LN"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Avatar and tiles"
+  },
+  {
+   "id": "Bazl7",
+   "name": "Avatar/24",
+   "type": "frame",
+   "width": 24,
+   "height": 24,
+   "texts": [
+    {
+     "id": "KA24l",
+     "name": "",
+     "content": "LN"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Avatar and tiles"
+  },
+  {
+   "id": "Y6G5K",
+   "name": "Avatar/32",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [
+    {
+     "id": "pc2bn",
+     "name": "",
+     "content": "LN"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Avatar and tiles"
+  },
+  {
+   "id": "Bjaf2",
+   "name": "Avatar/44",
+   "type": "frame",
+   "width": 44,
+   "height": 44,
+   "texts": [
+    {
+     "id": "u8HoJ0",
+     "name": "",
+     "content": "LN"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Avatar and tiles"
+  },
+  {
+   "id": "i5ZjsQ",
+   "name": "Tile/Icon",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [
+    {
+     "id": "rQxp1",
+     "name": "Icon",
+     "icon": "file-text"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Avatar and tiles"
+  },
+  {
+   "id": "ZRXLT",
+   "name": "Tile/Logo/32",
+   "type": "frame",
+   "width": 32,
+   "height": 32,
+   "texts": [],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Avatar and tiles"
+  },
+  {
+   "id": "YauwQ",
+   "name": "Tile/Logo/64",
+   "type": "frame",
+   "width": 64,
+   "height": 64,
+   "texts": [],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Avatar and tiles"
+  },
+  {
+   "id": "Ha6gJ",
+   "name": "Meter/Normal",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "r3N8w",
+     "name": "",
+     "content": "Current session"
+    },
+    {
+     "id": "hGAv1",
+     "name": "",
+     "content": "34% used"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Meter"
+  },
+  {
+   "id": "h1S5wr",
+   "name": "Meter/High",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "Eh2Kc",
+     "name": "",
+     "content": "This week"
+    },
+    {
+     "id": "Pa3F3",
+     "name": "",
+     "content": "86% used"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Meter"
+  },
+  {
+   "id": "Kegtg",
+   "name": "Meter/Full",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "enKtm",
+     "name": "",
+     "content": "This week"
+    },
+    {
+     "id": "nju7P",
+     "name": "",
+     "content": "Limit reached"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Meter"
+  },
+  {
+   "id": "atGEb",
+   "name": "Steps/Working",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "JVNmg",
+     "name": "",
+     "content": "Read Junior Marketing CV"
+    },
+    {
+     "id": "VxUOW",
+     "name": "",
+     "content": "2 roles, 6 bullets"
+    },
+    {
+     "id": "gHCBu",
+     "name": "",
+     "content": "Read the job post"
+    },
+    {
+     "id": "j6cc7",
+     "name": "",
+     "content": "Junior Marketing, HCMC"
+    },
+    {
+     "id": "L2pBc8",
+     "name": "",
+     "content": "Drafting bullet rewrites"
+    },
+    {
+     "id": "jKabt",
+     "name": "",
+     "content": "3 of 6"
+    },
+    {
+     "id": "Z4lfq7",
+     "name": "",
+     "content": "Check it still fits one page"
+    }
+   ],
+   "icons": [
+    {
+     "id": "WVo6M",
+     "name": "Icon",
+     "icon": "circle-check"
+    },
+    {
+     "id": "EPK9W",
+     "name": "Icon",
+     "icon": "circle-check"
+    },
+    {
+     "id": "UcgXI",
+     "name": "Icon",
+     "icon": "loader-circle"
+    },
+    {
+     "id": "I1It1i",
+     "name": "Icon",
+     "icon": "circle"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Working steps"
+  },
+  {
+   "id": "sEEYU",
+   "name": "Tooltip",
+   "type": "frame",
+   "height": 26,
+   "texts": [
+    {
+     "id": "nGACP",
+     "name": "",
+     "content": "Filter"
+    },
+    {
+     "id": "UBqk0",
+     "name": "",
+     "content": "F"
+    }
+   ],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Tooltip and skeleton"
+  },
+  {
+   "id": "Ivb1w",
+   "name": "Skeleton/Row",
+   "type": "frame",
+   "width": 420,
+   "texts": [],
+   "icons": [],
+   "board": "L1W32E",
+   "section": "Tooltip and skeleton"
+  },
+  {
+   "id": "a6L3eW",
+   "name": "Toast/Success",
+   "type": "frame",
+   "height": 40,
+   "texts": [
+    {
+     "id": "EpbM4",
+     "name": "",
+     "content": "Saved to Paper"
+    },
+    {
+     "id": "w1pmX",
+     "name": "",
+     "content": "Undo"
+    }
+   ],
+   "icons": [
+    {
+     "id": "jewNA",
+     "name": "Icon",
+     "icon": "circle-check"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Toast"
+  },
+  {
+   "id": "i52X7L",
+   "name": "Toast/Info",
+   "type": "frame",
+   "height": 40,
+   "texts": [
+    {
+     "id": "g6t9B",
+     "name": "",
+     "content": "Job moved to Applied"
+    }
+   ],
+   "icons": [
+    {
+     "id": "B9kqu",
+     "name": "Icon",
+     "icon": "info"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Toast"
+  },
+  {
+   "id": "N15ZQ",
+   "name": "Toast/Error",
+   "type": "frame",
+   "height": 40,
+   "texts": [
+    {
+     "id": "b21ISd",
+     "name": "",
+     "content": "Couldn't save. Check your connection."
+    },
+    {
+     "id": "Um8tD",
+     "name": "",
+     "content": "Retry"
+    }
+   ],
+   "icons": [
+    {
+     "id": "NHJFO",
+     "name": "Icon",
+     "icon": "circle-alert"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Toast"
+  },
+  {
+   "id": "Y2JI5Y",
+   "name": "Banner/Info",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "jdK8r",
+     "name": "",
+     "content": "Demo content"
+    },
+    {
+     "id": "acqXM",
+     "name": "",
+     "content": "A sample to show how it works. Clear it when you add your own."
+    },
+    {
+     "id": "g1dwI",
+     "name": "",
+     "content": "Clear demo"
+    }
+   ],
+   "icons": [
+    {
+     "id": "f6qszq",
+     "name": "Icon",
+     "icon": "info"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Banner"
+  },
+  {
+   "id": "l5qkQ1",
+   "name": "Banner/Warning",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "vhq6L",
+     "name": "",
+     "content": "Outlook access expired"
+    },
+    {
+     "id": "ly6TK",
+     "name": "",
+     "content": "Reconnect to keep jobs in sync."
+    },
+    {
+     "id": "yjX4G",
+     "name": "",
+     "content": "Reconnect"
+    }
+   ],
+   "icons": [
+    {
+     "id": "fQAFF",
+     "name": "Icon",
+     "icon": "triangle-alert"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Banner"
+  },
+  {
+   "id": "jU8fs",
+   "name": "Banner/Success",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "V8J6a",
+     "name": "",
+     "content": "Gmail enabled"
+    },
+    {
+     "id": "WdptC",
+     "name": "",
+     "content": "Recruiter replies now move jobs for you."
+    }
+   ],
+   "icons": [
+    {
+     "id": "rUo7Q",
+     "name": "Icon",
+     "icon": "circle-check"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Banner"
+  },
+  {
+   "id": "wNDBy",
+   "name": "Banner/Danger",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "WPour",
+     "name": "",
+     "content": "Payment failed"
+    },
+    {
+     "id": "AvJSj",
+     "name": "",
+     "content": "Update your card to keep Pro."
+    },
+    {
+     "id": "GEeS2",
+     "name": "",
+     "content": "Update card"
+    }
+   ],
+   "icons": [
+    {
+     "id": "jmDSj",
+     "name": "Icon",
+     "icon": "circle-alert"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Banner"
+  },
+  {
+   "id": "Q2FGh6",
+   "name": "Dialog/Default",
+   "type": "frame",
+   "width": 440,
+   "texts": [
+    {
+     "id": "LZXvL",
+     "name": "",
+     "content": "Leave this page?"
+    },
+    {
+     "id": "plQIi",
+     "name": "",
+     "content": "Your changes are saved."
+    }
+   ],
+   "icons": [
+    {
+     "id": "oByrk",
+     "name": "Close",
+     "icon": "x"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Dialog"
+  },
+  {
+   "id": "qnQrM",
+   "name": "Dialog/Destructive",
+   "type": "frame",
+   "width": 440,
+   "texts": [
+    {
+     "id": "f8sTZ",
+     "name": "",
+     "content": "Delete Associate PM intern?"
+    },
+    {
+     "id": "GcDEN",
+     "name": "",
+     "content": "This can't be undone."
+    }
+   ],
+   "icons": [
+    {
+     "id": "MSKYV",
+     "name": "Close",
+     "icon": "x"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Dialog"
+  },
+  {
+   "id": "l9ybbN",
+   "name": "State/Empty",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "pysKu",
+     "name": "",
+     "content": "Track your first job"
+    },
+    {
+     "id": "V2W0O9",
+     "name": "",
+     "content": "Add the jobs you are applying to."
+    }
+   ],
+   "icons": [
+    {
+     "id": "XkTv5",
+     "name": "",
+     "icon": "kanban"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Page states"
+  },
+  {
+   "id": "VXMb8",
+   "name": "State/Error",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "akMR2",
+     "name": "",
+     "content": "Can't load your jobs"
+    },
+    {
+     "id": "kph3G",
+     "name": "",
+     "content": "Check your connection and try again."
+    }
+   ],
+   "icons": [
+    {
+     "id": "m2Yyy",
+     "name": "",
+     "icon": "circle-alert"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Page states"
+  },
+  {
+   "id": "SqdQ6",
+   "name": "State/No results",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "Nzqyd",
+     "name": "",
+     "content": "No jobs match"
+    },
+    {
+     "id": "BKWTC",
+     "name": "",
+     "content": "Try fewer filters."
+    }
+   ],
+   "icons": [
+    {
+     "id": "CeuOa",
+     "name": "",
+     "icon": "search"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Page states"
+  },
+  {
+   "id": "hegPJ",
+   "name": "State/Loading",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "J12COH",
+     "name": "",
+     "content": "Loading your jobs"
+    },
+    {
+     "id": "Il9WV",
+     "name": "",
+     "content": "This takes a second."
+    }
+   ],
+   "icons": [
+    {
+     "id": "FNWZK",
+     "name": "",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "L1W32E",
+   "section": "Page states"
+  },
+  {
+   "id": "Ozv2h",
+   "name": "Nav item/Default",
+   "type": "frame",
+   "width": 220,
+   "height": 28,
+   "texts": [
+    {
+     "id": "lEDwZ",
+     "name": "Label",
+     "content": "Inbox"
+    },
+    {
+     "id": "e6fsKI",
+     "name": "Count",
+     "content": "4"
+    }
+   ],
+   "icons": [
+    {
+     "id": "g9HORV",
+     "name": "Icon",
+     "icon": "inbox"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Sidebar item"
+  },
+  {
+   "id": "NFIpx",
+   "name": "Nav item/Hover",
+   "type": "frame",
+   "width": 220,
+   "height": 28,
+   "texts": [
+    {
+     "id": "OaMvy",
+     "name": "Label",
+     "content": "Inbox"
+    },
+    {
+     "id": "ciqsc",
+     "name": "Count",
+     "content": "4"
+    }
+   ],
+   "icons": [
+    {
+     "id": "OrVVC",
+     "name": "Icon",
+     "icon": "inbox"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Sidebar item"
+  },
+  {
+   "id": "eYyNy",
+   "name": "Nav item/Active",
+   "type": "frame",
+   "width": 220,
+   "height": 28,
+   "texts": [
+    {
+     "id": "pcgtq",
+     "name": "Label",
+     "content": "Inbox"
+    },
+    {
+     "id": "EUXT9",
+     "name": "Count",
+     "content": "4"
+    }
+   ],
+   "icons": [
+    {
+     "id": "k9nno3",
+     "name": "Icon",
+     "icon": "inbox"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Sidebar item"
+  },
+  {
+   "id": "RDTaN",
+   "name": "Settings nav item/Default",
+   "type": "frame",
+   "width": 220,
+   "height": 28,
+   "texts": [
+    {
+     "id": "ifj9L",
+     "name": "Label",
+     "content": "Integrations"
+    }
+   ],
+   "icons": [
+    {
+     "id": "UOUwm",
+     "name": "Icon",
+     "icon": "plug"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Sidebar item"
+  },
+  {
+   "id": "O4qPtZ",
+   "name": "Settings nav item/Hover",
+   "type": "frame",
+   "width": 220,
+   "height": 28,
+   "texts": [
+    {
+     "id": "FCeC3",
+     "name": "Label",
+     "content": "Integrations"
+    }
+   ],
+   "icons": [
+    {
+     "id": "UU1n4",
+     "name": "Icon",
+     "icon": "plug"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Sidebar item"
+  },
+  {
+   "id": "mD51H",
+   "name": "Settings nav item/Active",
+   "type": "frame",
+   "width": 220,
+   "height": 28,
+   "texts": [
+    {
+     "id": "w9iQ8",
+     "name": "Label",
+     "content": "Integrations"
+    }
+   ],
+   "icons": [
+    {
+     "id": "dnaPV",
+     "name": "Icon",
+     "icon": "plug"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Sidebar item"
+  },
+  {
+   "id": "cbwiI",
+   "name": "View tab/Selected",
+   "type": "frame",
+   "height": 26,
+   "texts": [
+    {
+     "id": "I4gOf",
+     "name": "",
+     "content": "Board"
+    }
+   ],
+   "icons": [
+    {
+     "id": "z7TCX",
+     "name": "Icon",
+     "icon": "kanban"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "View tabs and breadcrumb"
+  },
+  {
+   "id": "o97OIp",
+   "name": "View tab/Default",
+   "type": "frame",
+   "height": 26,
+   "texts": [
+    {
+     "id": "k4eWy0",
+     "name": "",
+     "content": "List"
+    }
+   ],
+   "icons": [
+    {
+     "id": "JmpaZ",
+     "name": "Icon",
+     "icon": "list"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "View tabs and breadcrumb"
+  },
+  {
+   "id": "NDNlf",
+   "name": "View tab/Hover",
+   "type": "frame",
+   "height": 26,
+   "texts": [
+    {
+     "id": "m1Qph",
+     "name": "",
+     "content": "Calendar"
+    }
+   ],
+   "icons": [
+    {
+     "id": "T6OpB",
+     "name": "Icon",
+     "icon": "calendar"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "View tabs and breadcrumb"
+  },
+  {
+   "id": "T9noN",
+   "name": "Breadcrumb",
+   "type": "frame",
+   "texts": [
+    {
+     "id": "y2zoOO",
+     "name": "",
+     "content": "Apply"
+    },
+    {
+     "id": "ENnxu",
+     "name": "",
+     "content": "Associate PM intern"
+    }
+   ],
+   "icons": [
+    {
+     "id": "r1rs72",
+     "name": "",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "Eltyf",
+     "name": "",
+     "icon": "rocket"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "View tabs and breadcrumb"
+  },
+  {
+   "id": "y9PEi",
+   "name": "Menu item/Default",
+   "type": "frame",
+   "width": 220,
+   "height": 30,
+   "texts": [
+    {
+     "id": "uiaXs",
+     "name": "Label",
+     "content": "Open"
+    },
+    {
+     "id": "mprBE",
+     "name": "",
+     "content": "O"
+    }
+   ],
+   "icons": [
+    {
+     "id": "v0V2Q",
+     "name": "Icon",
+     "icon": "arrow-up-right"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Menu item"
+  },
+  {
+   "id": "sTtbh",
+   "name": "Menu item/Hover",
+   "type": "frame",
+   "width": 220,
+   "height": 30,
+   "texts": [
+    {
+     "id": "v7lS2",
+     "name": "Label",
+     "content": "Duplicate"
+    },
+    {
+     "id": "VElvh",
+     "name": "",
+     "content": "D"
+    }
+   ],
+   "icons": [
+    {
+     "id": "cSr7G",
+     "name": "Icon",
+     "icon": "copy"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Menu item"
+  },
+  {
+   "id": "E2IA9N",
+   "name": "Menu item/Selected",
+   "type": "frame",
+   "width": 220,
+   "height": 30,
+   "texts": [
+    {
+     "id": "wQOe0",
+     "name": "Label",
+     "content": "Interview"
+    }
+   ],
+   "icons": [
+    {
+     "id": "LL2VD",
+     "name": "Icon",
+     "icon": "calendar"
+    },
+    {
+     "id": "av37N",
+     "name": "Check",
+     "icon": "check"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Menu item"
+  },
+  {
+   "id": "T8vYxb",
+   "name": "Menu item/Disabled",
+   "type": "frame",
+   "width": 220,
+   "height": 30,
+   "texts": [
+    {
+     "id": "dGIvm",
+     "name": "Label",
+     "content": "Move to Offer"
+    }
+   ],
+   "icons": [
+    {
+     "id": "SF8Dv",
+     "name": "Icon",
+     "icon": "circle-check"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Menu item"
+  },
+  {
+   "id": "BKwU1",
+   "name": "Menu item/Destructive",
+   "type": "frame",
+   "width": 220,
+   "height": 30,
+   "texts": [
+    {
+     "id": "y17Vh",
+     "name": "Label",
+     "content": "Delete job"
+    },
+    {
+     "id": "plbEc",
+     "name": "",
+     "content": "⌫"
+    }
+   ],
+   "icons": [
+    {
+     "id": "D6jdq5",
+     "name": "Icon",
+     "icon": "trash-2"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Menu item"
+  },
+  {
+   "id": "A6d1Z",
+   "name": "Settings row/Link/Default",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "C9vYq",
+     "name": "Label",
+     "content": "Email updates"
+    },
+    {
+     "id": "xOUf2",
+     "name": "Desc",
+     "content": "Move jobs when a recruiter replies in Gmail"
+    },
+    {
+     "id": "xKMqm",
+     "name": "",
+     "content": "Enabled"
+    }
+   ],
+   "icons": [
+    {
+     "id": "DZUF5",
+     "name": "",
+     "icon": "mail"
+    },
+    {
+     "id": "wzcMC",
+     "name": "",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "x55xL",
+   "name": "Settings row/Link/Hover",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "FUoUu",
+     "name": "Label",
+     "content": "Email updates"
+    },
+    {
+     "id": "nPkxa",
+     "name": "Desc",
+     "content": "Move jobs when a recruiter replies in Gmail"
+    },
+    {
+     "id": "kDIMT",
+     "name": "",
+     "content": "Enabled"
+    }
+   ],
+   "icons": [
+    {
+     "id": "ElRlb",
+     "name": "",
+     "icon": "mail"
+    },
+    {
+     "id": "fxagH",
+     "name": "",
+     "icon": "chevron-right"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "Okqcv",
+   "name": "Settings row/Toggle/Default",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "ee9ek",
+     "name": "Label",
+     "content": "Enable memory"
+    },
+    {
+     "id": "kU8BF",
+     "name": "Desc",
+     "content": "Coach remembers past chats"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "NzT67",
+   "name": "Settings row/Toggle/Hover",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "NIRFc",
+     "name": "Label",
+     "content": "Enable memory"
+    },
+    {
+     "id": "X5IbeK",
+     "name": "Desc",
+     "content": "Coach remembers past chats"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "G1UPmp",
+   "name": "Settings row/Select/Default",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "rgd1h",
+     "name": "Label",
+     "content": "Start page"
+    },
+    {
+     "id": "r8yfyY",
+     "name": "Desc",
+     "content": "What opens when you sign in"
+    },
+    {
+     "id": "VAShh",
+     "name": "",
+     "content": "Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "UOenD",
+     "name": "",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "vb8Hh",
+   "name": "Settings row/Select/Hover",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "bnaXw",
+     "name": "Label",
+     "content": "Start page"
+    },
+    {
+     "id": "w3sXtx",
+     "name": "Desc",
+     "content": "What opens when you sign in"
+    },
+    {
+     "id": "zK66L",
+     "name": "",
+     "content": "Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "o5fAhq",
+     "name": "",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "GgriK",
+   "name": "Settings row/Button/Default",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "FpRip",
+     "name": "Label",
+     "content": "Export your data"
+    },
+    {
+     "id": "JaSBa",
+     "name": "Desc",
+     "content": "Paper, Apply and Pitch as files"
+    },
+    {
+     "id": "wxKMM",
+     "name": "",
+     "content": "Export"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "ACdVt",
+   "name": "Settings row/Button/Hover",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "Eg9mn",
+     "name": "Label",
+     "content": "Export your data"
+    },
+    {
+     "id": "HCKB0",
+     "name": "Desc",
+     "content": "Paper, Apply and Pitch as files"
+    },
+    {
+     "id": "gCWcB",
+     "name": "",
+     "content": "Export"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Settings row"
+  },
+  {
+   "id": "i3RhBk",
+   "name": "Integration card/Available",
+   "type": "frame",
+   "width": 220,
+   "texts": [
+    {
+     "id": "Mv2Qx",
+     "name": "",
+     "content": "Zoom"
+    },
+    {
+     "id": "pTpl8",
+     "name": "",
+     "content": "Add interview calls"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Integration card"
+  },
+  {
+   "id": "hmmsn",
+   "name": "Integration card/Hover",
+   "type": "frame",
+   "width": 220,
+   "texts": [
+    {
+     "id": "e5z7m",
+     "name": "",
+     "content": "Zoom"
+    },
+    {
+     "id": "l5Q6G",
+     "name": "",
+     "content": "Add interview calls"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Integration card"
+  },
+  {
+   "id": "NILDu",
+   "name": "Integration card/Enabled",
+   "type": "frame",
+   "width": 220,
+   "texts": [
+    {
+     "id": "ssGPi",
+     "name": "",
+     "content": "Gmail"
+    },
+    {
+     "id": "gwGUC",
+     "name": "",
+     "content": "Enabled"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Integration card"
+  },
+  {
+   "id": "XyLop",
+   "name": "Integration card/Expired",
+   "type": "frame",
+   "width": 220,
+   "texts": [
+    {
+     "id": "HYMM2",
+     "name": "",
+     "content": "Outlook"
+    },
+    {
+     "id": "e8s0eD",
+     "name": "",
+     "content": "Access expired"
+    }
+   ],
+   "icons": [],
+   "board": "CiMk0",
+   "section": "Integration card"
+  },
+  {
+   "id": "WizjX",
+   "name": "Layout/App shell",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "aa6YN",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "XURKT",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "xxmno",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "dpT0a",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "YWnef",
+     "name": "",
+     "content": "Header"
+    },
+    {
+     "id": "ly6tD",
+     "name": "",
+     "content": "h52 px20"
+    },
+    {
+     "id": "y5dc9U",
+     "name": "",
+     "content": "Main panel"
+    },
+    {
+     "id": "d7PIdf",
+     "name": "",
+     "content": "r8, inset 8"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "fed35",
+   "name": "Layout/List and reading pane",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "QPoBy",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "yGdIm",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "Q7QNE",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "asCcj",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "JtBHM",
+     "name": "",
+     "content": "List pane"
+    },
+    {
+     "id": "NvPDJ",
+     "name": "",
+     "content": "w460"
+    },
+    {
+     "id": "TrooO",
+     "name": "",
+     "content": "Detail header"
+    },
+    {
+     "id": "QcYIv",
+     "name": "",
+     "content": "h44"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "tqDO9",
+   "name": "Layout/Board, list, calendar",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "B6DyAJ",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "ElYA7",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "Pz9xw",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "lgxL5",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "ecCrJ",
+     "name": "",
+     "content": "Header"
+    },
+    {
+     "id": "Urip7",
+     "name": "",
+     "content": "h52"
+    },
+    {
+     "id": "KeKoi",
+     "name": "",
+     "content": "Toolbar"
+    },
+    {
+     "id": "awTRp",
+     "name": "",
+     "content": "h44, view tabs"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "D25I0",
+   "name": "Layout/Detail with rail",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "A8V8vR",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "SdPzT",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "a6KQK9",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "z3UDG",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "g8mFM",
+     "name": "",
+     "content": "Header"
+    },
+    {
+     "id": "aXJWG",
+     "name": "",
+     "content": "breadcrumb, 1/7"
+    },
+    {
+     "id": "P65BeK",
+     "name": "",
+     "content": "Main column"
+    },
+    {
+     "id": "F00s5r",
+     "name": "",
+     "content": "max 720"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "NuHB6",
+   "name": "Layout/Document",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "ALaKX",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "F34Mj",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "p05RJ",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "K5zkm",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "oiUG7",
+     "name": "",
+     "content": "Top bar"
+    },
+    {
+     "id": "Obwnn",
+     "name": "",
+     "content": "breadcrumb, Edited"
+    },
+    {
+     "id": "gaGPd",
+     "name": "",
+     "content": "Page"
+    },
+    {
+     "id": "Dy1gy",
+     "name": "",
+     "content": "w560, A4 ratio"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "n2l7t",
+   "name": "Layout/Gallery",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "iLH3k",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "wxvao",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "i7LeZQ",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "CcESL",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "oyeoM",
+     "name": "",
+     "content": "Header"
+    },
+    {
+     "id": "oHGln",
+     "name": "",
+     "content": "search, New"
+    },
+    {
+     "id": "scsEE",
+     "name": "",
+     "content": "Card"
+    },
+    {
+     "id": "M7jwj",
+     "name": "",
+     "content": "r8"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "y4orp",
+   "name": "Layout/Chat",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "YfZeW",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "vaGkO",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "uzpU3",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "harKH",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "EZE1k",
+     "name": "",
+     "content": "Header"
+    },
+    {
+     "id": "liedE",
+     "name": "",
+     "content": "title, history"
+    },
+    {
+     "id": "xa1kS",
+     "name": "",
+     "content": "Thread"
+    },
+    {
+     "id": "T7FYf",
+     "name": "",
+     "content": "w720"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "wayJC",
+   "name": "Layout/Settings",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "XiCEA",
+     "name": "",
+     "content": "Settings nav"
+    },
+    {
+     "id": "lTTFO",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "c7v10V",
+     "name": "",
+     "content": "Column"
+    },
+    {
+     "id": "LcA5b",
+     "name": "",
+     "content": "w640, pt56"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "cMOIR",
+   "name": "Layout/Auth split",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "etOlH",
+     "name": "",
+     "content": "Form"
+    },
+    {
+     "id": "X3X0u",
+     "name": "",
+     "content": "w330, centered"
+    },
+    {
+     "id": "kfYGn",
+     "name": "",
+     "content": "Art panel"
+    },
+    {
+     "id": "g4q6R3",
+     "name": "",
+     "content": "50%, dark"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "s5OwY",
+   "name": "Layout/Centered state",
+   "type": "frame",
+   "width": 576,
+   "height": 360,
+   "texts": [
+    {
+     "id": "DUWGM",
+     "name": "",
+     "content": "Sidebar"
+    },
+    {
+     "id": "kWFzM",
+     "name": "",
+     "content": "244"
+    },
+    {
+     "id": "ul71S",
+     "name": "",
+     "content": "Dock"
+    },
+    {
+     "id": "ez21A",
+     "name": "",
+     "content": "h40"
+    },
+    {
+     "id": "eu2hZ",
+     "name": "",
+     "content": "State"
+    },
+    {
+     "id": "gDH9K",
+     "name": "",
+     "content": "w360, centered"
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Layouts"
+  },
+  {
+   "id": "ojNtV",
+   "name": "Header/Page",
+   "type": "frame",
+   "width": 1080,
+   "height": 52,
+   "texts": [
+    {
+     "id": "nwx8R",
+     "name": "Apply",
+     "content": "Apply"
+    },
+    {
+     "id": "y4mk1",
+     "name": "Add opportunity",
+     "content": "New job"
+    }
+   ],
+   "icons": [
+    {
+     "id": "LLNmA",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "t2VfE",
+   "name": "Header/Toolbar",
+   "type": "frame",
+   "width": 1080,
+   "height": 44,
+   "texts": [
+    {
+     "id": "BKfKx",
+     "name": "Label",
+     "content": "Board"
+    },
+    {
+     "id": "iFh3i",
+     "name": "Label",
+     "content": "List"
+    },
+    {
+     "id": "lDUnj",
+     "name": "Label",
+     "content": "Calendar"
+    }
+   ],
+   "icons": [
+    {
+     "id": "uN5aL",
+     "name": "Icon",
+     "icon": "kanban"
+    },
+    {
+     "id": "ZTxPc",
+     "name": "Icon",
+     "icon": "list"
+    },
+    {
+     "id": "rkmee",
+     "name": "Icon",
+     "icon": "calendar"
+    },
+    {
+     "id": "Ob5XD",
+     "name": "Icon",
+     "icon": "layers-plus"
+    },
+    {
+     "id": "grlLM",
+     "name": "Icon",
+     "icon": "funnel"
+    },
+    {
+     "id": "PS4Zi",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "IqU5C",
+   "name": "Header/List",
+   "type": "frame",
+   "width": 1080,
+   "height": 52,
+   "texts": [
+    {
+     "id": "R9xR4",
+     "name": "Inbox",
+     "content": "Inbox"
+    }
+   ],
+   "icons": [
+    {
+     "id": "YXGsB",
+     "name": "Icon",
+     "icon": "ellipsis"
+    },
+    {
+     "id": "JUoNT",
+     "name": "Icon",
+     "icon": "clock-3"
+    },
+    {
+     "id": "wnVqK",
+     "name": "Icon",
+     "icon": "funnel"
+    },
+    {
+     "id": "DbMWP",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "kkXDu",
+   "name": "Header/Document",
+   "type": "frame",
+   "width": 1080,
+   "height": 48,
+   "texts": [
+    {
+     "id": "izNEf",
+     "name": "Paper",
+     "content": "Paper"
+    },
+    {
+     "id": "yXhZH",
+     "name": "CVs",
+     "content": "CVs"
+    },
+    {
+     "id": "ZCzFK",
+     "name": "Untitled CV",
+     "content": "New CV"
+    },
+    {
+     "id": "Ak4vz",
+     "name": "Edited just now",
+     "content": "Edited just now"
+    }
+   ],
+   "icons": [
+    {
+     "id": "sA78h",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "OjcEW",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "G5S92",
+     "name": "Icon",
+     "icon": "file-text"
+    },
+    {
+     "id": "g8o3h",
+     "name": "Icon",
+     "icon": "star"
+    },
+    {
+     "id": "GitRq",
+     "name": "Icon",
+     "icon": "ellipsis"
+    },
+    {
+     "id": "cGDFR",
+     "name": "Icon",
+     "icon": "sliders-horizontal"
+    }
+   ],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "KGYnZ",
+   "name": "Header/Detail",
+   "type": "frame",
+   "width": 1080,
+   "height": 52,
+   "texts": [
+    {
+     "id": "u8tBSB",
+     "name": "Apply",
+     "content": "Apply"
+    },
+    {
+     "id": "ZRD5J",
+     "name": "Label",
+     "content": "Associate PM intern"
+    },
+    {
+     "id": "U4ESI",
+     "name": "Pos",
+     "content": "1 / 7"
+    }
+   ],
+   "icons": [
+    {
+     "id": "Eynk4",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "PTgmg",
+     "name": "Icon",
+     "icon": "rocket"
+    },
+    {
+     "id": "EBM5L",
+     "name": "Icon",
+     "icon": "star"
+    },
+    {
+     "id": "XPg4c",
+     "name": "Icon",
+     "icon": "ellipsis"
+    },
+    {
+     "id": "pgobA",
+     "name": "Icon",
+     "icon": "chevron-up"
+    },
+    {
+     "id": "vvuAE",
+     "name": "Icon",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "jbAd0",
+   "name": "Header/Reading",
+   "type": "frame",
+   "width": 1080,
+   "height": 52,
+   "texts": [
+    {
+     "id": "pgYNK",
+     "name": "Done",
+     "content": "Done"
+    },
+    {
+     "id": "KILF0",
+     "name": "Snooze",
+     "content": "Snooze"
+    },
+    {
+     "id": "E8wNI",
+     "name": "1 of 6",
+     "content": "1 of 6"
+    }
+   ],
+   "icons": [
+    {
+     "id": "QDsNb",
+     "name": "Icon",
+     "icon": "check"
+    },
+    {
+     "id": "SN7if",
+     "name": "Icon",
+     "icon": "clock-3"
+    },
+    {
+     "id": "vzR7y",
+     "name": "Icon",
+     "icon": "ellipsis"
+    },
+    {
+     "id": "x60o8",
+     "name": "Icon",
+     "icon": "chevron-up"
+    },
+    {
+     "id": "gdIMa",
+     "name": "Icon",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "gzrXW",
+   "name": "Header/Chat",
+   "type": "frame",
+   "width": 1080,
+   "height": 44,
+   "texts": [
+    {
+     "id": "j7ZhF4",
+     "name": "Home",
+     "content": "New chat"
+    }
+   ],
+   "icons": [
+    {
+     "id": "GynjP",
+     "name": "Caret",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "We19f",
+     "name": "Icon",
+     "icon": "history"
+    }
+   ],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "ugrSt",
+   "name": "Header/Settings",
+   "type": "frame",
+   "width": 640,
+   "texts": [
+    {
+     "id": "y6k3NH",
+     "name": "Title",
+     "content": "Integrations"
+    },
+    {
+     "id": "lcW1Q",
+     "name": "Sub",
+     "content": "Connect the apps you already use."
+    }
+   ],
+   "icons": [],
+   "board": "EK8si",
+   "section": "Header"
+  },
+  {
+   "id": "qGE4Y",
+   "name": "Inbox row/Unread",
+   "type": "frame",
+   "width": 760,
+   "height": 44,
+   "texts": [
+    {
+     "id": "EpPG8",
+     "name": "",
+     "content": "RB"
+    },
+    {
+     "id": "eDoVx",
+     "name": "From",
+     "content": "Regional bank"
+    },
+    {
+     "id": "uHGGr",
+     "name": "",
+     "content": "Can we do a call Thursday?"
+    },
+    {
+     "id": "prBiR",
+     "name": "Time",
+     "content": "9:41"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Inbox row"
+  },
+  {
+   "id": "c5B0a",
+   "name": "Inbox row/Read",
+   "type": "frame",
+   "width": 760,
+   "height": 44,
+   "texts": [
+    {
+     "id": "Hzr87",
+     "name": "",
+     "content": "AG"
+    },
+    {
+     "id": "qF93e",
+     "name": "From",
+     "content": "Agency"
+    },
+    {
+     "id": "zHj1J",
+     "name": "",
+     "content": "Not moving forward this time"
+    },
+    {
+     "id": "YkWn9",
+     "name": "Time",
+     "content": "Sat"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Inbox row"
+  },
+  {
+   "id": "wL67k",
+   "name": "Inbox row/Urgent",
+   "type": "frame",
+   "width": 760,
+   "height": 44,
+   "texts": [
+    {
+     "id": "b6spwi",
+     "name": "",
+     "content": "LC"
+    },
+    {
+     "id": "f1AOY0",
+     "name": "From",
+     "content": "Lumière"
+    },
+    {
+     "id": "V72LK",
+     "name": "",
+     "content": "Closes in 2 days"
+    },
+    {
+     "id": "smocE",
+     "name": "Time",
+     "content": "7:00"
+    }
+   ],
+   "icons": [
+    {
+     "id": "xtGbB",
+     "name": "",
+     "icon": "clock-3"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Inbox row"
+  },
+  {
+   "id": "f9ipNR",
+   "name": "Inbox row/Hover",
+   "type": "frame",
+   "width": 760,
+   "height": 44,
+   "texts": [
+    {
+     "id": "Kg91N",
+     "name": "",
+     "content": "LS"
+    },
+    {
+     "id": "QCHdC",
+     "name": "From",
+     "content": "Local startup"
+    },
+    {
+     "id": "qpXCD",
+     "name": "",
+     "content": "Interview invite, Thu 10:00"
+    },
+    {
+     "id": "cS40w",
+     "name": "Time",
+     "content": "8:02"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Inbox row"
+  },
+  {
+   "id": "cvv07",
+   "name": "Inbox row/Selected",
+   "type": "frame",
+   "width": 760,
+   "height": 44,
+   "texts": [
+    {
+     "id": "uIqID",
+     "name": "",
+     "content": "RB"
+    },
+    {
+     "id": "DUZlz",
+     "name": "From",
+     "content": "Regional bank"
+    },
+    {
+     "id": "D82RX",
+     "name": "",
+     "content": "Can we do a call Thursday?"
+    },
+    {
+     "id": "raAOb",
+     "name": "Time",
+     "content": "9:41"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Inbox row"
+  },
+  {
+   "id": "e33gB",
+   "name": "Job row/Default",
+   "type": "frame",
+   "width": 760,
+   "height": 40,
+   "texts": [
+    {
+     "id": "PF6mY",
+     "name": "Role",
+     "content": "Associate PM intern"
+    },
+    {
+     "id": "M8IQex",
+     "name": "Company",
+     "content": "Local startup"
+    },
+    {
+     "id": "o3Rr4J",
+     "name": "",
+     "content": "Thu 10:00"
+    },
+    {
+     "id": "iPzLl",
+     "name": "Date",
+     "content": "Oct 12"
+    }
+   ],
+   "icons": [
+    {
+     "id": "nJeqt",
+     "name": "",
+     "icon": "rocket"
+    },
+    {
+     "id": "DvV9F",
+     "name": "",
+     "icon": "calendar"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Job row"
+  },
+  {
+   "id": "Kt1vD",
+   "name": "Job row/Hover",
+   "type": "frame",
+   "width": 760,
+   "height": 40,
+   "texts": [
+    {
+     "id": "S99nb",
+     "name": "Role",
+     "content": "Associate PM intern"
+    },
+    {
+     "id": "pIgiv",
+     "name": "Company",
+     "content": "Local startup"
+    },
+    {
+     "id": "Z6BXA",
+     "name": "",
+     "content": "Thu 10:00"
+    },
+    {
+     "id": "VGWYC",
+     "name": "Date",
+     "content": "Oct 12"
+    }
+   ],
+   "icons": [
+    {
+     "id": "U1YyZ",
+     "name": "",
+     "icon": "rocket"
+    },
+    {
+     "id": "DdeG0",
+     "name": "",
+     "icon": "calendar"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Job row"
+  },
+  {
+   "id": "St3kS",
+   "name": "Job row/Selected",
+   "type": "frame",
+   "width": 760,
+   "height": 40,
+   "texts": [
+    {
+     "id": "i03t4m",
+     "name": "Role",
+     "content": "Associate PM intern"
+    },
+    {
+     "id": "EBWxI",
+     "name": "Company",
+     "content": "Local startup"
+    },
+    {
+     "id": "V3D0j",
+     "name": "",
+     "content": "Thu 10:00"
+    },
+    {
+     "id": "Bt4Gy",
+     "name": "Date",
+     "content": "Oct 12"
+    }
+   ],
+   "icons": [
+    {
+     "id": "Wf9Vc",
+     "name": "",
+     "icon": "rocket"
+    },
+    {
+     "id": "bHXmw",
+     "name": "",
+     "icon": "calendar"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Job row"
+  },
+  {
+   "id": "HibCb",
+   "name": "List group/Expanded",
+   "type": "frame",
+   "width": 760,
+   "height": 36,
+   "texts": [
+    {
+     "id": "gpbOQ",
+     "name": "",
+     "content": "Applied"
+    },
+    {
+     "id": "Vyi0E",
+     "name": "",
+     "content": "2"
+    }
+   ],
+   "icons": [
+    {
+     "id": "R6Ey6x",
+     "name": "Caret",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "PWLAE",
+     "name": "Add",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "List group"
+  },
+  {
+   "id": "UWYTg",
+   "name": "List group/Collapsed",
+   "type": "frame",
+   "width": 760,
+   "height": 36,
+   "texts": [
+    {
+     "id": "vzK70",
+     "name": "",
+     "content": "Applied"
+    },
+    {
+     "id": "kdO10",
+     "name": "",
+     "content": "2"
+    }
+   ],
+   "icons": [
+    {
+     "id": "mVrOM",
+     "name": "Caret",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "p8PbD",
+     "name": "Add",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "List group"
+  },
+  {
+   "id": "gE7d1",
+   "name": "Board lane/Default",
+   "type": "frame",
+   "width": 244,
+   "height": 420,
+   "texts": [
+    {
+     "id": "xBFKB",
+     "name": "",
+     "content": "Saved"
+    },
+    {
+     "id": "mFqoP",
+     "name": "",
+     "content": "2"
+    }
+   ],
+   "icons": [
+    {
+     "id": "QgEyc",
+     "name": "",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Board lane"
+  },
+  {
+   "id": "MB3vw",
+   "name": "Board lane/Empty",
+   "type": "frame",
+   "width": 244,
+   "height": 420,
+   "texts": [
+    {
+     "id": "jwYWO",
+     "name": "",
+     "content": "Offer"
+    },
+    {
+     "id": "G3jRD",
+     "name": "",
+     "content": "0"
+    },
+    {
+     "id": "kujnO",
+     "name": "",
+     "content": "Drop a job here"
+    }
+   ],
+   "icons": [
+    {
+     "id": "SdPZ9",
+     "name": "",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Board lane"
+  },
+  {
+   "id": "y4ckI",
+   "name": "Board lane/Drop target",
+   "type": "frame",
+   "width": 244,
+   "height": 420,
+   "texts": [
+    {
+     "id": "jSaI4",
+     "name": "",
+     "content": "Saved"
+    },
+    {
+     "id": "Nc9gx",
+     "name": "",
+     "content": "2"
+    }
+   ],
+   "icons": [
+    {
+     "id": "rp8J1",
+     "name": "",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Board lane"
+  },
+  {
+   "id": "q8OEA",
+   "name": "Calendar cell/Default",
+   "type": "frame",
+   "width": 150,
+   "height": 120,
+   "texts": [
+    {
+     "id": "A56CP",
+     "name": "",
+     "content": "14"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "WTTrI",
+   "name": "Calendar cell/Other month",
+   "type": "frame",
+   "width": 150,
+   "height": 120,
+   "texts": [
+    {
+     "id": "dXopQ",
+     "name": "",
+     "content": "30"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "I1m5Xi",
+   "name": "Calendar cell/Today",
+   "type": "frame",
+   "width": 150,
+   "height": 120,
+   "texts": [
+    {
+     "id": "Tgo7H",
+     "name": "",
+     "content": "26"
+    },
+    {
+     "id": "p2vFG",
+     "name": "",
+     "content": "Business analyst"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "JzhaC",
+   "name": "Calendar cell/Events",
+   "type": "frame",
+   "width": 150,
+   "height": 120,
+   "texts": [
+    {
+     "id": "b7T95c",
+     "name": "",
+     "content": "14"
+    },
+    {
+     "id": "BZaLL",
+     "name": "",
+     "content": "Business analyst"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "krLJ4",
+   "name": "Calendar cell/Overflow",
+   "type": "frame",
+   "width": 150,
+   "height": 120,
+   "texts": [
+    {
+     "id": "xbZWq",
+     "name": "",
+     "content": "14"
+    },
+    {
+     "id": "uH3P9",
+     "name": "",
+     "content": "Product analyst"
+    },
+    {
+     "id": "NGwwj",
+     "name": "",
+     "content": "Marketing intern"
+    },
+    {
+     "id": "xrN2O",
+     "name": "",
+     "content": "2 more"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "pmfde",
+   "name": "Week event/Interview",
+   "type": "frame",
+   "width": 170,
+   "height": 64,
+   "texts": [
+    {
+     "id": "G8RLNG",
+     "name": "",
+     "content": "Product analyst"
+    },
+    {
+     "id": "vM2iO",
+     "name": "",
+     "content": "Round 2 interview"
+    },
+    {
+     "id": "U6R51",
+     "name": "",
+     "content": "14:00 to 15:00"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "csvHL",
+   "name": "Week event/Deadline",
+   "type": "frame",
+   "width": 170,
+   "height": 64,
+   "texts": [
+    {
+     "id": "Bgemj",
+     "name": "",
+     "content": "UX research intern"
+    },
+    {
+     "id": "jh7xt",
+     "name": "",
+     "content": "Application due"
+    },
+    {
+     "id": "e2YmU",
+     "name": "",
+     "content": "All day"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "IS0X8",
+   "name": "Week event/Selected",
+   "type": "frame",
+   "width": 170,
+   "height": 64,
+   "texts": [
+    {
+     "id": "WD3Fd",
+     "name": "",
+     "content": "Product analyst"
+    },
+    {
+     "id": "AnFYK",
+     "name": "",
+     "content": "Round 2 interview"
+    },
+    {
+     "id": "L67wV",
+     "name": "",
+     "content": "14:00 to 15:00"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Calendar"
+  },
+  {
+   "id": "raQDK",
+   "name": "Property/Stage",
+   "type": "frame",
+   "width": 240,
+   "height": 32,
+   "texts": [
+    {
+     "id": "BUj9B",
+     "name": "Label",
+     "content": "Interview"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Property"
+  },
+  {
+   "id": "KRyyj",
+   "name": "Property/Location",
+   "type": "frame",
+   "width": 240,
+   "height": 32,
+   "texts": [
+    {
+     "id": "v9Di4",
+     "name": "Label",
+     "content": "Hanoi"
+    }
+   ],
+   "icons": [
+    {
+     "id": "Qgfg8",
+     "name": "Icon",
+     "icon": "map-pin"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Property"
+  },
+  {
+   "id": "GC6hp",
+   "name": "Property/Date",
+   "type": "frame",
+   "width": 240,
+   "height": 32,
+   "texts": [
+    {
+     "id": "XVdrd",
+     "name": "Label",
+     "content": "Interview Oct 29, 10:00"
+    }
+   ],
+   "icons": [
+    {
+     "id": "vigKL",
+     "name": "Icon",
+     "icon": "calendar"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Property"
+  },
+  {
+   "id": "I12EHk",
+   "name": "Property/Empty",
+   "type": "frame",
+   "width": 240,
+   "height": 32,
+   "texts": [
+    {
+     "id": "FgTJ6",
+     "name": "Label",
+     "content": "Add deadline"
+    }
+   ],
+   "icons": [
+    {
+     "id": "hI01z",
+     "name": "Icon",
+     "icon": "flag"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Property"
+  },
+  {
+   "id": "B8h4j0",
+   "name": "Property/Hover",
+   "type": "frame",
+   "width": 240,
+   "height": 32,
+   "texts": [
+    {
+     "id": "hBIng",
+     "name": "Label",
+     "content": "itviec.com"
+    }
+   ],
+   "icons": [
+    {
+     "id": "PGR5u",
+     "name": "Icon",
+     "icon": "link"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Property"
+  },
+  {
+   "id": "S8aoN",
+   "name": "Property/Paper",
+   "type": "frame",
+   "width": 240,
+   "height": 32,
+   "texts": [
+    {
+     "id": "LqasQ",
+     "name": "Label",
+     "content": "Junior Marketing CV"
+    }
+   ],
+   "icons": [
+    {
+     "id": "x9F3z",
+     "name": "Icon",
+     "icon": "file-text"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Property"
+  },
+  {
+   "id": "KnFU1",
+   "name": "Checklist head",
+   "type": "frame",
+   "width": 420,
+   "height": 28,
+   "texts": [
+    {
+     "id": "r8kRzL",
+     "name": "",
+     "content": "Interview prep"
+    },
+    {
+     "id": "ujaWv",
+     "name": "",
+     "content": "1/3"
+    }
+   ],
+   "icons": [
+    {
+     "id": "QGuT9",
+     "name": "",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "m1rp68",
+     "name": "",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Checklist"
+  },
+  {
+   "id": "Dhmyx",
+   "name": "Checklist item/Done",
+   "type": "frame",
+   "width": 420,
+   "height": 32,
+   "texts": [
+    {
+     "id": "n7DLgT",
+     "name": "Text",
+     "content": "Read about their savings app"
+    }
+   ],
+   "icons": [
+    {
+     "id": "V3mTbc",
+     "name": "",
+     "icon": "check"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Checklist"
+  },
+  {
+   "id": "YQ1Ti",
+   "name": "Checklist item/Hover",
+   "type": "frame",
+   "width": 420,
+   "height": 32,
+   "texts": [
+    {
+     "id": "SH0V2",
+     "name": "Text",
+     "content": "Practise three PM questions"
+    }
+   ],
+   "icons": [
+    {
+     "id": "myofO",
+     "name": "",
+     "icon": "ellipsis"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Checklist"
+  },
+  {
+   "id": "WpgIu",
+   "name": "Checklist item/Todo",
+   "type": "frame",
+   "width": 420,
+   "height": 32,
+   "texts": [
+    {
+     "id": "B5yDKz",
+     "name": "Text",
+     "content": "Bring the checkout study"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Checklist"
+  },
+  {
+   "id": "H8GXA",
+   "name": "Activity item",
+   "type": "frame",
+   "width": 440,
+   "height": 28,
+   "texts": [
+    {
+     "id": "t7xiw",
+     "name": "",
+     "content": "You added this job from ITviec"
+    },
+    {
+     "id": "T1eYCQ",
+     "name": "",
+     "content": "Oct 10"
+    }
+   ],
+   "icons": [
+    {
+     "id": "bdrKG",
+     "name": "",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Checklist"
+  },
+  {
+   "id": "x1qA9",
+   "name": "Note composer",
+   "type": "frame",
+   "width": 440,
+   "texts": [
+    {
+     "id": "ymnZH",
+     "name": "",
+     "content": "Leave a note..."
+    }
+   ],
+   "icons": [
+    {
+     "id": "fWPZk",
+     "name": "",
+     "icon": "paperclip"
+    },
+    {
+     "id": "r71gge",
+     "name": "",
+     "icon": "arrow-up"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Checklist"
+  },
+  {
+   "id": "OFuJ4",
+   "name": "Gallery card/Default",
+   "type": "frame",
+   "width": 150,
+   "texts": [
+    {
+     "id": "HA83E",
+     "name": "",
+     "content": "Junior Marketing CV"
+    },
+    {
+     "id": "m0zbSx",
+     "name": "",
+     "content": "Edited today"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Gallery card"
+  },
+  {
+   "id": "poqBI",
+   "name": "Gallery card/Hover",
+   "type": "frame",
+   "width": 150,
+   "texts": [
+    {
+     "id": "E9VsTh",
+     "name": "",
+     "content": "Junior Marketing CV"
+    },
+    {
+     "id": "MfWxr",
+     "name": "",
+     "content": "Edited today"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Gallery card"
+  },
+  {
+   "id": "SR804",
+   "name": "Gallery card/Selected",
+   "type": "frame",
+   "width": 150,
+   "texts": [
+    {
+     "id": "y79vnx",
+     "name": "",
+     "content": "Use template"
+    },
+    {
+     "id": "MqfOO",
+     "name": "",
+     "content": "Classic"
+    },
+    {
+     "id": "M2tV5A",
+     "name": "",
+     "content": "Template"
+    }
+   ],
+   "icons": [],
+   "board": "JufVz",
+   "section": "Gallery card"
+  },
+  {
+   "id": "cBHbt",
+   "name": "Gallery card/New",
+   "type": "frame",
+   "width": 150,
+   "height": 212,
+   "texts": [
+    {
+     "id": "tUtw5",
+     "name": "",
+     "content": "New CV"
+    }
+   ],
+   "icons": [
+    {
+     "id": "F7A1z",
+     "name": "",
+     "icon": "plus"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Gallery card"
+  },
+  {
+   "id": "q4sL5G",
+   "name": "Section head",
+   "type": "frame",
+   "width": 320,
+   "height": 32,
+   "texts": [
+    {
+     "id": "Uw9PE",
+     "name": "",
+     "content": "CVs"
+    },
+    {
+     "id": "QwMWW",
+     "name": "",
+     "content": "3"
+    }
+   ],
+   "icons": [
+    {
+     "id": "K98uC",
+     "name": "",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "JufVz",
+   "section": "Gallery card"
+  },
+  {
+   "id": "h2hu1",
+   "name": "Coach/Home",
+   "type": "frame",
+   "width": 680,
+   "texts": [
+    {
+     "id": "p9DOO",
+     "name": "Where should we start?",
+     "content": "How can I help?"
+    },
+    {
+     "id": "cqdNu",
+     "name": "More ideas",
+     "content": "More ideas"
+    },
+    {
+     "id": "MnMXc",
+     "name": "Review my CV",
+     "content": "Review my CV"
+    },
+    {
+     "id": "TfdHU",
+     "name": "Find roles",
+     "content": "Find roles"
+    },
+    {
+     "id": "ElLU6",
+     "name": "Prep an interview",
+     "content": "Prep an interview"
+    },
+    {
+     "id": "A6YDvt",
+     "name": "Write a cover letter",
+     "content": "Write a cover letter"
+    },
+    {
+     "id": "x3ike",
+     "name": "Plan my week",
+     "content": "Plan my week"
+    },
+    {
+     "id": "H4palp",
+     "name": "Negotiate an offer",
+     "content": "Negotiate an offer"
+    }
+   ],
+   "icons": [
+    {
+     "id": "faE62",
+     "name": "Icon",
+     "icon": "refresh-cw"
+    },
+    {
+     "id": "JPpA2",
+     "name": "Icon",
+     "icon": "file-text"
+    },
+    {
+     "id": "wTNkq",
+     "name": "Icon",
+     "icon": "briefcase"
+    },
+    {
+     "id": "dujAl",
+     "name": "Icon",
+     "icon": "messages-square"
+    },
+    {
+     "id": "I8ed4Y",
+     "name": "Icon",
+     "icon": "mail"
+    },
+    {
+     "id": "ltFUZ",
+     "name": "Icon",
+     "icon": "calendar"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Coach home"
+  },
+  {
+   "id": "Om2Zo",
+   "name": "Message/User",
+   "type": "frame",
+   "width": 720,
+   "texts": [
+    {
+     "id": "ghKJk",
+     "name": "Lên kế hoạch apply 10 chỗ thực",
+     "content": "Plan 10 internship applications for November"
+    }
+   ],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Messages"
+  },
+  {
+   "id": "gzDyX",
+   "name": "Message/Coach",
+   "type": "frame",
+   "width": 720,
+   "texts": [
+    {
+     "id": "pKYsH",
+     "name": "Worked for 21s",
+     "content": "Worked for 21s"
+    },
+    {
+     "id": "pxz53",
+     "name": "Đây là kế hoạch 4 tuần: tuần 1",
+     "content": "Here is a 4-week plan. Week 1, tighten your CV. Week 2, apply to four roles that fit. Week 3, follow up on each one. Week 4, prep for the interviews you land."
+    },
+    {
+     "id": "RWsg8",
+     "name": "Which 4 should I apply to firs",
+     "content": "Which 4 should I apply to first?"
+    },
+    {
+     "id": "gGbj2",
+     "name": "Draft follow-up emails for wee",
+     "content": "Draft follow-up emails for week 4"
+    }
+   ],
+   "icons": [
+    {
+     "id": "t2KRpX",
+     "name": "Icon",
+     "icon": "lightbulb"
+    },
+    {
+     "id": "vbdrc",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "B88TCA",
+     "name": "Icon",
+     "icon": "copy"
+    },
+    {
+     "id": "A7THc9",
+     "name": "Icon",
+     "icon": "redo-2"
+    },
+    {
+     "id": "Yahxs",
+     "name": "Icon",
+     "icon": "thumbs-up"
+    },
+    {
+     "id": "OpbnF",
+     "name": "Icon",
+     "icon": "thumbs-down"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Messages"
+  },
+  {
+   "id": "J3jfY",
+   "name": "Coach/Result card",
+   "type": "frame",
+   "width": 420,
+   "texts": [
+    {
+     "id": "agBlw",
+     "name": "Junior Marketing CV",
+     "content": "Junior Marketing CV"
+    },
+    {
+     "id": "th7FX",
+     "name": "3 changes",
+     "content": "3 changes"
+    },
+    {
+     "id": "nHnxD",
+     "name": "Open",
+     "content": "Open"
+    }
+   ],
+   "icons": [
+    {
+     "id": "qfiWm",
+     "name": "Icon",
+     "icon": "file-text"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Messages"
+  },
+  {
+   "id": "ekKND",
+   "name": "Composer/Working",
+   "type": "ref",
+   "width": 720,
+   "texts": [],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Composer"
+  },
+  {
+   "id": "Kj3JO",
+   "name": "Composer/At limit",
+   "type": "frame",
+   "width": 720,
+   "texts": [
+    {
+     "id": "ObCdG",
+     "name": "You've used today's 20 Free tu",
+     "content": "You've reached today's Free limit"
+    },
+    {
+     "id": "hfdyk",
+     "name": "Free resets at 7:00. Upgrade f",
+     "content": "Resets at 7:00. Pro has unlimited Coach chats."
+    },
+    {
+     "id": "A4eKn",
+     "name": "Upgrade",
+     "content": "Upgrade"
+    },
+    {
+     "id": "JD7Zh",
+     "name": "Coach is back at 7:00",
+     "content": "Coach is back at 7:00"
+    },
+    {
+     "id": "kb4Tq",
+     "name": "Free",
+     "content": "Free"
+    }
+   ],
+   "icons": [
+    {
+     "id": "yqNr7",
+     "name": "Icon",
+     "icon": "hourglass"
+    },
+    {
+     "id": "XeOZz",
+     "name": "Icon",
+     "icon": "plus"
+    },
+    {
+     "id": "mk3fM",
+     "name": "Icon",
+     "icon": "leaf"
+    },
+    {
+     "id": "gXp0w",
+     "name": "Icon",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "i9grD",
+     "name": "Icon",
+     "icon": "arrow-up"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Composer"
+  },
+  {
+   "id": "YtoP7",
+   "name": "Block/Name",
+   "type": "text",
+   "texts": [],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Document blocks"
+  },
+  {
+   "id": "LWL2X",
+   "name": "Block/Contact",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "R392S",
+     "name": "linh.nguyen@gmail.com",
+     "content": "linh.nguyen@gmail.com"
+    },
+    {
+     "id": "J64lj3",
+     "name": "|",
+     "content": "|"
+    },
+    {
+     "id": "o7ftLf",
+     "name": "090 123 4567",
+     "content": "090 123 4567"
+    },
+    {
+     "id": "JMpuj",
+     "name": "|",
+     "content": "|"
+    },
+    {
+     "id": "Hknnl",
+     "name": "Ho Chi Minh City",
+     "content": "Ho Chi Minh City"
+    }
+   ],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Document blocks"
+  },
+  {
+   "id": "MUc32",
+   "name": "Block/Section",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "z3lBJ",
+     "name": "EXPERIENCE",
+     "content": "EXPERIENCE"
+    }
+   ],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Document blocks"
+  },
+  {
+   "id": "yceL9",
+   "name": "Block/Entry",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "HlPSc",
+     "name": "Marketing Intern, Lumière",
+     "content": "Marketing Intern, Lumière"
+    },
+    {
+     "id": "WHOCY",
+     "name": "Jun 2025 to now",
+     "content": "Jun 2025 to now"
+    }
+   ],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Document blocks"
+  },
+  {
+   "id": "qATKE",
+   "name": "Block/Bullet",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "eALyf",
+     "name": "•",
+     "content": "•"
+    },
+    {
+     "id": "O0hlk3",
+     "name": "Ran 12 social campaigns and gr",
+     "content": "Ran 12 social campaigns and grew followers by 38% in four months."
+    }
+   ],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Document blocks"
+  },
+  {
+   "id": "NuojG",
+   "name": "Block/Bullet hover",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "ZbnXe",
+     "name": "•",
+     "content": "•"
+    },
+    {
+     "id": "i1J11B",
+     "name": "Wrote weekly TikTok scripts; t",
+     "content": "Wrote weekly TikTok scripts; three passed 100k views."
+    }
+   ],
+   "icons": [
+    {
+     "id": "t32ABM",
+     "name": "",
+     "icon": "plus"
+    },
+    {
+     "id": "jrwq2",
+     "name": "",
+     "icon": "grip-vertical"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Document blocks"
+  },
+  {
+   "id": "zgEQ4",
+   "name": "Block/Bullet selected",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "ntndB",
+     "name": "•",
+     "content": "•"
+    },
+    {
+     "id": "iU9K4",
+     "name": "Wrote weekly TikTok scripts; t",
+     "content": "Wrote weekly TikTok scripts; three passed 100k views."
+    }
+   ],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Document blocks"
+  },
+  {
+   "id": "g4ARNL",
+   "name": "Editor/Slash menu",
+   "type": "frame",
+   "width": 300,
+   "texts": [
+    {
+     "id": "EPoBp",
+     "name": "CV sections",
+     "content": "CV sections"
+    },
+    {
+     "id": "QDh4z",
+     "name": "Summary",
+     "content": "Summary"
+    },
+    {
+     "id": "b4PW1c",
+     "name": "2 to 3 lines",
+     "content": "2 to 3 lines"
+    },
+    {
+     "id": "yIRhk",
+     "name": "Projects",
+     "content": "Projects"
+    },
+    {
+     "id": "rRPhD",
+     "name": "Things you built",
+     "content": "Things you built"
+    },
+    {
+     "id": "EYlkN",
+     "name": "Activities",
+     "content": "Activities"
+    },
+    {
+     "id": "Y0L2DB",
+     "name": "Clubs, volunteering",
+     "content": "Clubs, volunteering"
+    },
+    {
+     "id": "ftCTI",
+     "name": "Awards",
+     "content": "Awards"
+    }
+   ],
+   "icons": [
+    {
+     "id": "sdwnz",
+     "name": "Icon",
+     "icon": "text-align-start"
+    },
+    {
+     "id": "DyXEE",
+     "name": "Icon",
+     "icon": "folder-kanban"
+    },
+    {
+     "id": "IoEq6",
+     "name": "Icon",
+     "icon": "users"
+    },
+    {
+     "id": "yuw7y",
+     "name": "Icon",
+     "icon": "award"
+    },
+    {
+     "id": "VSE7g",
+     "name": "Icon",
+     "icon": "languages"
+    },
+    {
+     "id": "KlcdJ",
+     "name": "Icon",
+     "icon": "type"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Editor tools"
+  },
+  {
+   "id": "tZGOb",
+   "name": "Editor/Block menu",
+   "type": "frame",
+   "width": 232,
+   "texts": [
+    {
+     "id": "E6CJyG",
+     "name": "Turn into",
+     "content": "Turn into"
+    },
+    {
+     "id": "ZEPK9",
+     "name": "Duplicate",
+     "content": "Duplicate"
+    },
+    {
+     "id": "JCqxa",
+     "name": "⌘ D",
+     "content": "⌘ D"
+    },
+    {
+     "id": "w7KAka",
+     "name": "Move up",
+     "content": "Move up"
+    },
+    {
+     "id": "zxReN",
+     "name": "⌘ ⇧ ↑",
+     "content": "⌘ ⇧ ↑"
+    },
+    {
+     "id": "N1jhv",
+     "name": "Move down",
+     "content": "Move down"
+    },
+    {
+     "id": "fxfRX",
+     "name": "⌘ ⇧ ↓",
+     "content": "⌘ ⇧ ↓"
+    },
+    {
+     "id": "IZFwI",
+     "name": "Ask Coach",
+     "content": "Ask Coach"
+    }
+   ],
+   "icons": [
+    {
+     "id": "iJ73H",
+     "name": "Icon",
+     "icon": "repeat-2"
+    },
+    {
+     "id": "ms6mk",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "Hkukn",
+     "name": "Icon",
+     "icon": "copy"
+    },
+    {
+     "id": "KdHqr",
+     "name": "Icon",
+     "icon": "arrow-up"
+    },
+    {
+     "id": "fyj1m",
+     "name": "Icon",
+     "icon": "arrow-down"
+    },
+    {
+     "id": "blmj1",
+     "name": "Icon",
+     "icon": "message-circle"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Editor tools"
+  },
+  {
+   "id": "gpw0z",
+   "name": "Editor/Selection toolbar",
+   "type": "frame",
+   "height": 26,
+   "texts": [
+    {
+     "id": "V3An0",
+     "name": "Improve",
+     "content": "Coach"
+    },
+    {
+     "id": "eQA3Q",
+     "name": "Text",
+     "content": "Text"
+    }
+   ],
+   "icons": [
+    {
+     "id": "T6VDq",
+     "name": "Icon",
+     "icon": "message-circle"
+    },
+    {
+     "id": "B3MHX",
+     "name": "Icon",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "psnJ1",
+     "name": "Icon",
+     "icon": "bold"
+    },
+    {
+     "id": "ej0Wc",
+     "name": "Icon",
+     "icon": "italic"
+    },
+    {
+     "id": "UkXHX",
+     "name": "Icon",
+     "icon": "underline"
+    },
+    {
+     "id": "eFaan",
+     "name": "Icon",
+     "icon": "link"
+    }
+   ],
+   "board": "hzktK",
+   "section": "Editor tools"
+  },
+  {
+   "id": "G877Ld",
+   "name": "Editor/Outline",
+   "type": "frame",
+   "texts": [],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Editor tools"
+  },
+  {
+   "id": "a8JM2U",
+   "name": "Editor/Missing field",
+   "type": "ref",
+   "texts": [],
+   "icons": [],
+   "board": "hzktK",
+   "section": "Coach in the document"
+  },
+  {
+   "id": "fLvsL",
+   "name": "Flow/Sign in/Email",
+   "type": "frame",
+   "width": 340,
+   "texts": [
+    {
+     "id": "MdH9h",
+     "name": "Lead",
+     "content": "Log in to"
+    },
+    {
+     "id": "Sm7WY",
+     "name": "Wordmark",
+     "content": "opencv"
+    },
+    {
+     "id": "dWhqb",
+     "name": "Log in or create an account. N",
+     "content": "No password needed."
+    },
+    {
+     "id": "atHzz",
+     "name": "Continue with Google",
+     "content": "Continue with Google"
+    },
+    {
+     "id": "R8saK6",
+     "name": "or",
+     "content": "or"
+    },
+    {
+     "id": "w5fPLs",
+     "name": "Email",
+     "content": "Email"
+    },
+    {
+     "id": "DZusv",
+     "name": "linh.nguyen@gmail.com",
+     "content": "Enter your email address"
+    },
+    {
+     "id": "j8SGpJ",
+     "name": "Continue with email",
+     "content": "Continue"
+    }
+   ],
+   "icons": [],
+   "board": "SMI9p",
+   "section": "Sign in"
+  },
+  {
+   "id": "SA5ZF",
+   "name": "Flow/Sign in/Code",
+   "type": "frame",
+   "width": 340,
+   "texts": [
+    {
+     "id": "YcJm4",
+     "name": "Check your email",
+     "content": "Check your email"
+    },
+    {
+     "id": "rnP7c",
+     "name": "We sent a 6-digit code to",
+     "content": "We sent a 6-digit code to"
+    },
+    {
+     "id": "wgPoL",
+     "name": "linh.nguyen@gmail.com",
+     "content": "linh.nguyen@gmail.com"
+    },
+    {
+     "id": "YYBUq",
+     "name": "Change",
+     "content": "Change"
+    },
+    {
+     "id": "Nwap6",
+     "name": "4",
+     "content": "4"
+    },
+    {
+     "id": "BMBoR",
+     "name": "8",
+     "content": "8"
+    },
+    {
+     "id": "u6oRcG",
+     "name": "1",
+     "content": "1"
+    },
+    {
+     "id": "ikgJq",
+     "name": "Open Gmail",
+     "content": "Open email"
+    }
+   ],
+   "icons": [
+    {
+     "id": "pRt3r",
+     "name": "Icon",
+     "icon": "mail"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Sign in"
+  },
+  {
+   "id": "V48sry",
+   "name": "Flow/Sign in/Verifying",
+   "type": "frame",
+   "width": 340,
+   "texts": [
+    {
+     "id": "GN6NC",
+     "name": "Check your email",
+     "content": "Check your email"
+    },
+    {
+     "id": "QFfp1",
+     "name": "We sent a 6-digit code to",
+     "content": "We sent a 6-digit code to"
+    },
+    {
+     "id": "vzmRV",
+     "name": "linh.nguyen@gmail.com",
+     "content": "linh.nguyen@gmail.com"
+    },
+    {
+     "id": "pXznp",
+     "name": "Change",
+     "content": "Change"
+    },
+    {
+     "id": "ZzJ4v",
+     "name": "4",
+     "content": "4"
+    },
+    {
+     "id": "ETAFa",
+     "name": "8",
+     "content": "8"
+    },
+    {
+     "id": "BQSwQ",
+     "name": "1",
+     "content": "1"
+    },
+    {
+     "id": "vNmWS",
+     "name": "9",
+     "content": "9"
+    }
+   ],
+   "icons": [
+    {
+     "id": "vDm0D",
+     "name": "Spinner",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Sign in"
+  },
+  {
+   "id": "dgN1Z",
+   "name": "Flow/Sign in/Welcome",
+   "type": "frame",
+   "width": 340,
+   "texts": [
+    {
+     "id": "ITpUF",
+     "name": "Lead",
+     "content": "Welcome to"
+    },
+    {
+     "id": "PeMx5",
+     "name": "Wordmark",
+     "content": "opencv"
+    },
+    {
+     "id": "pq1Lb",
+     "name": "Account created",
+     "content": "Account created"
+    },
+    {
+     "id": "fkRap",
+     "name": "Workspace ready",
+     "content": "Workspace ready"
+    },
+    {
+     "id": "KyrNX",
+     "name": "Getting your coach ready",
+     "content": "Getting your coach ready"
+    }
+   ],
+   "icons": [
+    {
+     "id": "FR4Md",
+     "name": "Icon",
+     "icon": "check"
+    },
+    {
+     "id": "VZEG4",
+     "name": "Icon",
+     "icon": "check"
+    },
+    {
+     "id": "rA2i2",
+     "name": "Icon",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Sign in"
+  },
+  {
+   "id": "Sps51",
+   "name": "Flow/Sign in/Wrong code",
+   "type": "frame",
+   "width": 340,
+   "texts": [
+    {
+     "id": "cA7I9",
+     "name": "Check your email",
+     "content": "Check your email"
+    },
+    {
+     "id": "l69b0w",
+     "name": "We sent a 6-digit code to",
+     "content": "We sent a 6-digit code to"
+    },
+    {
+     "id": "xMV1X",
+     "name": "linh.nguyen@gmail.com",
+     "content": "linh.nguyen@gmail.com"
+    },
+    {
+     "id": "EdHeD",
+     "name": "Change",
+     "content": "Change"
+    },
+    {
+     "id": "VRTqo",
+     "name": "4",
+     "content": "4"
+    },
+    {
+     "id": "X7jwy",
+     "name": "8",
+     "content": "8"
+    },
+    {
+     "id": "vDA96",
+     "name": "1",
+     "content": "1"
+    },
+    {
+     "id": "W3Sqj",
+     "name": "9",
+     "content": "9"
+    }
+   ],
+   "icons": [
+    {
+     "id": "ZCvfE",
+     "name": "Icon",
+     "icon": "circle-alert"
+    },
+    {
+     "id": "j8DDk",
+     "name": "Icon",
+     "icon": "mail"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Sign in"
+  },
+  {
+   "id": "RqLE0",
+   "name": "Flow/Sign in/Session expired",
+   "type": "frame",
+   "width": 420,
+   "texts": [
+    {
+     "id": "AUD8l",
+     "name": "Your session ended",
+     "content": "You've been logged out"
+    },
+    {
+     "id": "HIfpV",
+     "name": "Log in again to keep working. ",
+     "content": "Log in again. Your work is saved."
+    },
+    {
+     "id": "KnvaL",
+     "name": "Continue as linh.nguyen@gmail.",
+     "content": "Continue as linh.nguyen@gmail.com"
+    },
+    {
+     "id": "pDygP",
+     "name": "Use a password instead",
+     "content": "Email me a code"
+    },
+    {
+     "id": "X1Fkt",
+     "name": "Log out",
+     "content": "Log out"
+    }
+   ],
+   "icons": [
+    {
+     "id": "SXz09",
+     "name": "Icon",
+     "icon": "clock-3"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Sign in"
+  },
+  {
+   "id": "G5ymk",
+   "name": "Flow/Add job/Empty",
+   "type": "frame",
+   "width": 620,
+   "texts": [
+    {
+     "id": "i5oiw",
+     "name": "Space",
+     "content": "Apply"
+    },
+    {
+     "id": "P3olE",
+     "name": "Page",
+     "content": "New job"
+    },
+    {
+     "id": "lcMb0",
+     "name": "Placeholder",
+     "content": "Paste the job link"
+    },
+    {
+     "id": "MEyAe",
+     "name": "Label",
+     "content": "Paste"
+    },
+    {
+     "id": "J3jnu9",
+     "name": "Role",
+     "content": "Role title"
+    },
+    {
+     "id": "Wo7MU",
+     "name": "Company",
+     "content": "Company"
+    },
+    {
+     "id": "yXY7O",
+     "name": "Placeholder",
+     "content": "Add the job description…"
+    },
+    {
+     "id": "ACk1q",
+     "name": "Label",
+     "content": "Saved"
+    }
+   ],
+   "icons": [
+    {
+     "id": "ugSmD",
+     "name": "Icon",
+     "icon": "kanban"
+    },
+    {
+     "id": "rSe27",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "T8Qqm",
+     "name": "Icon",
+     "icon": "x"
+    },
+    {
+     "id": "OZNN4",
+     "name": "Icon",
+     "icon": "link"
+    },
+    {
+     "id": "k0QKlX",
+     "name": "Icon",
+     "icon": "clipboard-paste"
+    },
+    {
+     "id": "uQFbk",
+     "name": "Icon",
+     "icon": "calendar"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Add a job"
+  },
+  {
+   "id": "rc9uC",
+   "name": "Flow/Add job/Filled",
+   "type": "frame",
+   "width": 620,
+   "texts": [
+    {
+     "id": "rqD93",
+     "name": "Space",
+     "content": "Apply"
+    },
+    {
+     "id": "O9ugkh",
+     "name": "Page",
+     "content": "New job"
+    },
+    {
+     "id": "e5auWv",
+     "name": "Placeholder",
+     "content": "topcv.vn/viec-lam/junior-marketing-lumiere"
+    },
+    {
+     "id": "Osgu8",
+     "name": "Label",
+     "content": "Filled"
+    },
+    {
+     "id": "jRUso",
+     "name": "Role",
+     "content": "Junior Marketing"
+    },
+    {
+     "id": "a6Fsp",
+     "name": "Company",
+     "content": "Lumière Cosmetics"
+    },
+    {
+     "id": "BiNoz",
+     "name": "Placeholder",
+     "content": "Plan and run social campaigns for three skincare brands. Write short posts and TikTok scripts, and report weekly reach. Vietnamese and English."
+    },
+    {
+     "id": "HLUN7",
+     "name": "Label",
+     "content": "Saved"
+    }
+   ],
+   "icons": [
+    {
+     "id": "Jo4qS",
+     "name": "Icon",
+     "icon": "kanban"
+    },
+    {
+     "id": "G4S5hA",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "cLG8y",
+     "name": "Icon",
+     "icon": "x"
+    },
+    {
+     "id": "U5iTOw",
+     "name": "Icon",
+     "icon": "link"
+    },
+    {
+     "id": "DapCw",
+     "name": "Icon",
+     "icon": "check"
+    },
+    {
+     "id": "iEtgP",
+     "name": "Icon",
+     "icon": "x"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Add a job"
+  },
+  {
+   "id": "gkWRp",
+   "name": "Flow/Add job/Company missing",
+   "type": "frame",
+   "width": 620,
+   "texts": [
+    {
+     "id": "o6r9RT",
+     "name": "Space",
+     "content": "Apply"
+    },
+    {
+     "id": "pLs07",
+     "name": "Page",
+     "content": "New job"
+    },
+    {
+     "id": "tYBpg",
+     "name": "Placeholder",
+     "content": "topcv.vn/viec-lam/junior-marketing-lumiere"
+    },
+    {
+     "id": "uM8Nd",
+     "name": "Label",
+     "content": "Paste"
+    },
+    {
+     "id": "lJ4Yl",
+     "name": "Role",
+     "content": "Junior Marketing"
+    },
+    {
+     "id": "Q3DmA",
+     "name": "Company",
+     "content": "Company"
+    },
+    {
+     "id": "TTds8",
+     "name": "Text",
+     "content": "Add the company name to save this job."
+    },
+    {
+     "id": "f3GM8",
+     "name": "Placeholder",
+     "content": "Plan and run social campaigns for three skincare brands. Write short posts and TikTok scripts, and report weekly reach."
+    }
+   ],
+   "icons": [
+    {
+     "id": "sPwWU",
+     "name": "Icon",
+     "icon": "kanban"
+    },
+    {
+     "id": "KITou",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "JRYKn",
+     "name": "Icon",
+     "icon": "x"
+    },
+    {
+     "id": "lGQUV",
+     "name": "Icon",
+     "icon": "link"
+    },
+    {
+     "id": "qKZbs",
+     "name": "Icon",
+     "icon": "clipboard-paste"
+    },
+    {
+     "id": "P4DV8x",
+     "name": "Icon",
+     "icon": "x"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Add a job"
+  },
+  {
+   "id": "ZTpUQ",
+   "name": "Flow/Add job/Duplicate",
+   "type": "frame",
+   "width": 620,
+   "texts": [
+    {
+     "id": "W6mOrj",
+     "name": "Space",
+     "content": "Apply"
+    },
+    {
+     "id": "DGq6C",
+     "name": "Page",
+     "content": "New job"
+    },
+    {
+     "id": "qYETt",
+     "name": "Placeholder",
+     "content": "itviec.com/it-jobs/apm-intern"
+    },
+    {
+     "id": "aUSgW",
+     "name": "Label",
+     "content": "Paste"
+    },
+    {
+     "id": "AlMek",
+     "name": "Title",
+     "content": "Already on your board"
+    },
+    {
+     "id": "Lb9km",
+     "name": "Meta",
+     "content": "Associate PM intern at Local startup, in Interview"
+    },
+    {
+     "id": "cPiYz",
+     "name": "Label",
+     "content": "Open"
+    },
+    {
+     "id": "jmJ38",
+     "name": "Role",
+     "content": "Company"
+    }
+   ],
+   "icons": [
+    {
+     "id": "x8sb7U",
+     "name": "Icon",
+     "icon": "kanban"
+    },
+    {
+     "id": "y5igY",
+     "name": "Icon",
+     "icon": "chevron-right"
+    },
+    {
+     "id": "pWOjs",
+     "name": "Icon",
+     "icon": "x"
+    },
+    {
+     "id": "FS9Sz",
+     "name": "Icon",
+     "icon": "link"
+    },
+    {
+     "id": "mKSSF",
+     "name": "Icon",
+     "icon": "clipboard-paste"
+    },
+    {
+     "id": "J9nBPu",
+     "name": "Icon",
+     "icon": "rocket"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Add a job"
+  },
+  {
+   "id": "YDW6e",
+   "name": "Flow/Upgrade/Card",
+   "type": "frame",
+   "width": "fill_container",
+   "texts": [
+    {
+     "id": "C1Ur39",
+     "name": "",
+     "content": "Upgrade to Pro"
+    },
+    {
+     "id": "mxWie",
+     "name": "",
+     "content": "$9 a month. Cancel anytime."
+    },
+    {
+     "id": "E81ww",
+     "name": "",
+     "content": "Upgrade now"
+    },
+    {
+     "id": "k9337G",
+     "name": "",
+     "content": "Unlimited Coach chats"
+    },
+    {
+     "id": "n9Agyq",
+     "name": "",
+     "content": "Stronger Coach model"
+    },
+    {
+     "id": "l38DUA",
+     "name": "",
+     "content": "Priority support"
+    },
+    {
+     "id": "OiKrL",
+     "name": "",
+     "content": "Early access to Proof"
+    }
+   ],
+   "icons": [
+    {
+     "id": "A5HHz",
+     "name": "",
+     "icon": "check"
+    },
+    {
+     "id": "tXSRe",
+     "name": "",
+     "icon": "check"
+    },
+    {
+     "id": "g2KqO",
+     "name": "",
+     "icon": "check"
+    },
+    {
+     "id": "sx7JF",
+     "name": "",
+     "icon": "check"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Limits and upgrade"
+  },
+  {
+   "id": "qyhIz",
+   "name": "Flow/Import/Cannot read",
+   "type": "ref",
+   "texts": [],
+   "icons": [],
+   "board": "SMI9p",
+   "section": "Import a CV"
+  },
+  {
+   "id": "fAGKX",
+   "name": "Flow/Coming soon/Hero",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "zw1wm",
+     "name": "Coming soon",
+     "content": "Coming soon"
+    },
+    {
+     "id": "SWsJB",
+     "name": "Jobs, matched to you",
+     "content": "Jobs, matched to you"
+    },
+    {
+     "id": "g7tiX",
+     "name": "Openings across Vietnam, ranke",
+     "content": "Openings across Vietnam, ranked by how well you fit. We're building it now."
+    },
+    {
+     "id": "gU2iq",
+     "name": "Notify me",
+     "content": "Notify me"
+    },
+    {
+     "id": "M1JYR",
+     "name": "Track a job in Apply",
+     "content": "Track a job in Apply"
+    }
+   ],
+   "icons": [
+    {
+     "id": "pWOtu",
+     "name": "Icon",
+     "icon": "bell"
+    },
+    {
+     "id": "u9fmy",
+     "name": "Icon",
+     "icon": "arrow-right"
+    }
+   ],
+   "board": "SMI9p",
+   "section": "Coming soon"
+  },
+  {
+   "id": "cxAxL",
+   "name": "OC App shell",
+   "type": "frame",
+   "width": 1440,
+   "height": 900,
+   "texts": [
+    {
+     "id": "rdEtZ",
+     "name": "Tailor your CV for Lumière",
+     "content": "Tailor your CV for Lumière"
+    },
+    {
+     "id": "TSWjA",
+     "name": "Prep for Local startup interview",
+     "content": "Prep for Local startup interview"
+    },
+    {
+     "id": "M5qkE",
+     "name": "Coach",
+     "content": "Coach"
+    }
+   ],
+   "icons": [
+    {
+     "id": "oG2eY",
+     "name": "Icon",
+     "icon": "message-circle"
+    },
+    {
+     "id": "oGdyW",
+     "name": "Icon",
+     "icon": "history"
+    }
+   ],
+   "board": "hvocI",
+   "section": "App shell"
+  },
+  {
+   "id": "Zi9iS",
+   "name": "OC Sidebar",
+   "type": "frame",
+   "width": 244,
+   "height": 640,
+   "texts": [
+    {
+     "id": "qMQxS",
+     "name": "Wordmark",
+     "content": "opencv"
+    },
+    {
+     "id": "HQOy0",
+     "name": "Your work",
+     "content": "Your work"
+    },
+    {
+     "id": "k42tGQ",
+     "name": "Your work",
+     "content": "Favorites"
+    },
+    {
+     "id": "nl64q",
+     "name": "User name",
+     "content": "Linh Nguyen"
+    }
+   ],
+   "icons": [
+    {
+     "id": "WB7jW",
+     "name": "Icon",
+     "icon": "search"
+    },
+    {
+     "id": "OGutD",
+     "name": "Icon",
+     "icon": "square-pen"
+    },
+    {
+     "id": "C6st5",
+     "name": "Icon",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "mZVEP",
+     "name": "Icon",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "q3Ymi",
+     "name": "Icon",
+     "icon": "settings"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Sidebar and nav item"
+  },
+  {
+   "id": "V1kLM",
+   "name": "OC Nav item",
+   "type": "frame",
+   "width": 224,
+   "height": 28,
+   "texts": [
+    {
+     "id": "ygZNM",
+     "name": "Label",
+     "content": "Home"
+    },
+    {
+     "id": "FUWoS",
+     "name": "Hint",
+     "content": "⌘K"
+    }
+   ],
+   "icons": [
+    {
+     "id": "lCbJB",
+     "name": "Icon",
+     "icon": "house"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Sidebar and nav item"
+  },
+  {
+   "id": "FRVf9",
+   "name": "OC Coach dock",
+   "type": "frame",
+   "width": 720,
+   "texts": [
+    {
+     "id": "i7a2aX",
+     "name": "Input",
+     "content": "Ask Coach anything"
+    },
+    {
+     "id": "BvplJ",
+     "name": "Context label",
+     "content": "Junior Marketing CV"
+    },
+    {
+     "id": "kZIZY",
+     "name": "Free",
+     "content": "Free"
+    }
+   ],
+   "icons": [
+    {
+     "id": "c0p6x",
+     "name": "Icon",
+     "icon": "plus"
+    },
+    {
+     "id": "vokBW",
+     "name": "Icon",
+     "icon": "file-text"
+    },
+    {
+     "id": "l7wkAV",
+     "name": "Icon",
+     "icon": "leaf"
+    },
+    {
+     "id": "byQqe",
+     "name": "Chevron",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "z2fZD",
+     "name": "Icon",
+     "icon": "mic"
+    },
+    {
+     "id": "lWZhi",
+     "name": "Send icon",
+     "icon": "arrow-up"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Coach dock, composer and chat panel"
+  },
+  {
+   "id": "idtEC",
+   "name": "OC Coach composer",
+   "type": "frame",
+   "width": 680,
+   "texts": [
+    {
+     "id": "wRl0O",
+     "name": "Placeholder",
+     "content": "Ask the Coach"
+    },
+    {
+     "id": "MX450",
+     "name": "Free",
+     "content": "Free"
+    }
+   ],
+   "icons": [
+    {
+     "id": "Ipyqx",
+     "name": "Icon",
+     "icon": "leaf"
+    },
+    {
+     "id": "inPdu",
+     "name": "Chevron",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "m2TaSR",
+     "name": "Icon",
+     "icon": "arrow-up"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Coach dock, composer and chat panel"
+  },
+  {
+   "id": "REfNk",
+   "name": "OC Chat panel",
+   "type": "frame",
+   "width": 400,
+   "height": 600,
+   "texts": [
+    {
+     "id": "Z5s08",
+     "name": "Title",
+     "content": "New chat"
+    },
+    {
+     "id": "rWPAT",
+     "name": "Input",
+     "content": "Reply…"
+    }
+   ],
+   "icons": [
+    {
+     "id": "WTh5R",
+     "name": "Icon",
+     "icon": "chevron-down"
+    },
+    {
+     "id": "w5vkjc",
+     "name": "Icon",
+     "icon": "minus"
+    },
+    {
+     "id": "qbbgj",
+     "name": "Icon",
+     "icon": "maximize-2"
+    },
+    {
+     "id": "j7Mswg",
+     "name": "Icon",
+     "icon": "x"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Coach dock, composer and chat panel"
+  },
+  {
+   "id": "P23Lk",
+   "name": "OC Auth layout",
+   "type": "frame",
+   "width": 1440,
+   "height": 900,
+   "texts": [
+    {
+     "id": "Q2HAM",
+     "name": "opencv",
+     "content": "opencv"
+    },
+    {
+     "id": "c7lUJ",
+     "name": "Terms",
+     "content": "By continuing, you agree to the Terms of Service and Privacy Policy."
+    },
+    {
+     "id": "GhLhc",
+     "name": "Write the CV with a coach.\nTra",
+     "content": "Write your CV with a coach.\nTrack every application."
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Auth layout"
+  },
+  {
+   "id": "Cfj4F",
+   "name": "OC Stage Saved",
+   "type": "frame",
+   "width": 14,
+   "height": 14,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "anzDA",
+   "name": "OC Stage Applied",
+   "type": "frame",
+   "width": 14,
+   "height": 14,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "Q6oOZa",
+   "name": "OC Stage Interview",
+   "type": "frame",
+   "width": 14,
+   "height": 14,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "RKlNn",
+   "name": "OC Stage Offer",
+   "type": "frame",
+   "width": 14,
+   "height": 14,
+   "texts": [],
+   "icons": [
+    {
+     "id": "hhLA7",
+     "name": "Check",
+     "icon": "check"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "mIjuF",
+   "name": "OC Stage Closed",
+   "type": "frame",
+   "width": 14,
+   "height": 14,
+   "texts": [],
+   "icons": [
+    {
+     "id": "WPxEs",
+     "name": "Icon",
+     "icon": "x"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "Ru1A6",
+   "name": "OC Job card",
+   "type": "frame",
+   "width": 240,
+   "texts": [
+    {
+     "id": "j1qTQs",
+     "name": "Initials",
+     "content": "LC"
+    },
+    {
+     "id": "hS49f",
+     "name": "Role",
+     "content": "Role title"
+    },
+    {
+     "id": "q8GcOs",
+     "name": "Company",
+     "content": "Company"
+    },
+    {
+     "id": "r8LJlf",
+     "name": "Label",
+     "content": "Meta"
+    },
+    {
+     "id": "qUrVH",
+     "name": "Label",
+     "content": "HCMC"
+    },
+    {
+     "id": "AQPnK",
+     "name": "Date",
+     "content": "Oct 25"
+    }
+   ],
+   "icons": [
+    {
+     "id": "OrbT9",
+     "name": "Logo",
+     "icon": "building-2"
+    },
+    {
+     "id": "H1T4yM",
+     "name": "Icon",
+     "icon": "calendar"
+    },
+    {
+     "id": "Y0egRR",
+     "name": "Icon",
+     "icon": "signal-high"
+    },
+    {
+     "id": "RK0td",
+     "name": "Icon",
+     "icon": "map-pin"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "U175h6",
+   "name": "OC Job row",
+   "type": "frame",
+   "width": 780,
+   "height": 40,
+   "texts": [
+    {
+     "id": "DorMW",
+     "name": "Initials",
+     "content": "LC"
+    },
+    {
+     "id": "yYhCA",
+     "name": "Role",
+     "content": "Role title"
+    },
+    {
+     "id": "HqIvb",
+     "name": "Company",
+     "content": "Company"
+    },
+    {
+     "id": "B1fCf",
+     "name": "Label",
+     "content": "Meta"
+    },
+    {
+     "id": "QRJTv",
+     "name": "Date",
+     "content": "Oct 25"
+    }
+   ],
+   "icons": [
+    {
+     "id": "HRG0s",
+     "name": "Logo",
+     "icon": "building-2"
+    },
+    {
+     "id": "ZSRwr",
+     "name": "Icon",
+     "icon": "calendar"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "sF4Vd",
+   "name": "OC List group",
+   "type": "frame",
+   "width": 780,
+   "height": 34,
+   "texts": [
+    {
+     "id": "cxt4S",
+     "name": "Name",
+     "content": "Stage"
+    },
+    {
+     "id": "oySvv",
+     "name": "Count",
+     "content": "0"
+    }
+   ],
+   "icons": [
+    {
+     "id": "GPo46",
+     "name": "Caret",
+     "icon": "chevron-down"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Apply"
+  },
+  {
+   "id": "DZL3M",
+   "name": "OC Inbox row",
+   "type": "frame",
+   "width": 444,
+   "height": 44,
+   "texts": [
+    {
+     "id": "pBZAB",
+     "name": "Initials",
+     "content": "RB"
+    },
+    {
+     "id": "gNhIp",
+     "name": "Company",
+     "content": "Regional bank"
+    },
+    {
+     "id": "Upwq6",
+     "name": "Role",
+     "content": "Business Analyst"
+    },
+    {
+     "id": "LHaU0",
+     "name": "Event",
+     "content": "Can we do a call Thursday?"
+    },
+    {
+     "id": "t4PLu7",
+     "name": "Time",
+     "content": "9:41"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Inbox row"
+  },
+  {
+   "id": "ABQ42",
+   "name": "OC Paper label",
+   "type": "frame",
+   "width": 150,
+   "texts": [
+    {
+     "id": "fgnp9",
+     "name": "Title",
+     "content": "Junior Marketing CV"
+    },
+    {
+     "id": "iuB9C",
+     "name": "Time",
+     "content": "2h ago"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Paper label and brand"
+  },
+  {
+   "id": "BGvRz",
+   "name": "OC Mark",
+   "type": "frame",
+   "width": 20,
+   "height": 20,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Paper label and brand"
+  },
+  {
+   "id": "tvP20",
+   "name": "OC Avatar",
+   "type": "frame",
+   "width": 20,
+   "height": 20,
+   "texts": [
+    {
+     "id": "BwITb",
+     "name": "Initials",
+     "content": "T"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Paper label and brand"
+  },
+  {
+   "id": "AjGd4",
+   "name": "OC Google G",
+   "type": "frame",
+   "width": 18,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Paper label and brand"
+  },
+  {
+   "id": "EKeVv",
+   "name": "OC Gmail M",
+   "type": "frame",
+   "width": 20,
+   "height": 15,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Paper label and brand"
+  },
+  {
+   "id": "FiUu3",
+   "name": "OC Outlook O",
+   "type": "frame",
+   "width": 19,
+   "height": 18,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Paper label and brand"
+  },
+  {
+   "id": "o9qor",
+   "name": "Deprecated / OC Button primary",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "VzCpa",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [
+    {
+     "id": "kJqcI",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "tHZVt",
+   "name": "Deprecated / OC Button secondary",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "eL5P6",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [
+    {
+     "id": "CE16q",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "SHvK6",
+   "name": "Deprecated / OC Button ghost",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "Q7nZuu",
+     "name": "Label",
+     "content": "Button"
+    }
+   ],
+   "icons": [
+    {
+     "id": "MqKMq",
+     "name": "Icon",
+     "icon": "plus"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "OvPGt",
+   "name": "Deprecated / OC Button danger",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "jdSCz",
+     "name": "Label",
+     "content": "Delete"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "FXRDC",
+   "name": "Deprecated / OC Icon button",
+   "type": "frame",
+   "width": 28,
+   "height": 28,
+   "texts": [],
+   "icons": [
+    {
+     "id": "j7oGY",
+     "name": "Icon",
+     "icon": "ellipsis"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "I6MgBP",
+   "name": "Deprecated / OC Badge",
+   "type": "frame",
+   "height": 20,
+   "texts": [
+    {
+     "id": "RANbN",
+     "name": "Label",
+     "content": "Draft"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "IMeKE",
+   "name": "Deprecated / OC Kbd",
+   "type": "frame",
+   "height": 18,
+   "texts": [
+    {
+     "id": "T6JKe0",
+     "name": "Label",
+     "content": "⌘K"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "zUUPy",
+   "name": "Deprecated / OC Page header",
+   "type": "frame",
+   "width": 900,
+   "height": 44,
+   "texts": [
+    {
+     "id": "FQOC1",
+     "name": "Title",
+     "content": "Paper"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "S9egLY",
+   "name": "Deprecated / OC Input",
+   "type": "frame",
+   "width": 280,
+   "height": 32,
+   "texts": [
+    {
+     "id": "xnnaO",
+     "name": "Value",
+     "content": "Search"
+    }
+   ],
+   "icons": [
+    {
+     "id": "jtF39",
+     "name": "Icon",
+     "icon": "search"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "Lhuar",
+   "name": "Deprecated / OC Field",
+   "type": "frame",
+   "width": 320,
+   "texts": [
+    {
+     "id": "r19Z7",
+     "name": "Label",
+     "content": "Email"
+    },
+    {
+     "id": "ycjnw",
+     "name": "Value",
+     "content": "you@example.com"
+    },
+    {
+     "id": "qSNIe",
+     "name": "Helper",
+     "content": "Helper text"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "K6Tt8u",
+   "name": "Deprecated / OC Segmented",
+   "type": "frame",
+   "height": 28,
+   "texts": [
+    {
+     "id": "u0D9fI",
+     "name": "Label",
+     "content": "Free"
+    },
+    {
+     "id": "PKQd8",
+     "name": "Label",
+     "content": "Light"
+    },
+    {
+     "id": "IXuKk",
+     "name": "Max",
+     "content": "Max"
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "XUvwV",
+   "name": "Deprecated / OC Menu item",
+   "type": "frame",
+   "width": 232,
+   "height": 30,
+   "texts": [
+    {
+     "id": "Hdk34",
+     "name": "Label",
+     "content": "Menu item"
+    },
+    {
+     "id": "AHR68",
+     "name": "Hint"
+    }
+   ],
+   "icons": [
+    {
+     "id": "scVTq",
+     "name": "Icon",
+     "icon": "file-text"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "PqONv",
+   "name": "Deprecated / OC Menu",
+   "type": "frame",
+   "width": 240,
+   "texts": [],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "T0TI1U",
+   "name": "Deprecated / OC Dialog",
+   "type": "frame",
+   "width": 480,
+   "texts": [
+    {
+     "id": "YdYAU",
+     "name": "Title",
+     "content": "Dialog title"
+    },
+    {
+     "id": "DZ8fF",
+     "name": "Text",
+     "content": "Body copy goes here."
+    }
+   ],
+   "icons": [],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "Dvglx",
+   "name": "Deprecated / OC Toast",
+   "type": "frame",
+   "height": 40,
+   "texts": [
+    {
+     "id": "R7xGWn",
+     "name": "Message",
+     "content": "Saved to Paper"
+    },
+    {
+     "id": "Cga5W",
+     "name": "Label",
+     "content": "Undo"
+    }
+   ],
+   "icons": [
+    {
+     "id": "RzVQk",
+     "name": "Icon",
+     "icon": "circle-check"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "A8e3ym",
+   "name": "Deprecated / OC Banner",
+   "type": "frame",
+   "width": 560,
+   "texts": [
+    {
+     "id": "pJbcb",
+     "name": "Title",
+     "content": "Demo content"
+    },
+    {
+     "id": "HViI0",
+     "name": "Body",
+     "content": "This is a sample. Clear it when you add your own."
+    }
+   ],
+   "icons": [
+    {
+     "id": "MnmYg",
+     "name": "Icon",
+     "icon": "info"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "NSnMF",
+   "name": "Deprecated / OC Opportunity card",
+   "type": "frame",
+   "width": 248,
+   "texts": [
+    {
+     "id": "TYg0G",
+     "name": "Title",
+     "content": "Associate PM intern"
+    },
+    {
+     "id": "dG0K4",
+     "name": "Name",
+     "content": "Local startup"
+    },
+    {
+     "id": "qPhl6",
+     "name": "Label",
+     "content": "Oct 25"
+    }
+   ],
+   "icons": [
+    {
+     "id": "gXVbE",
+     "name": "Icon",
+     "icon": "calendar"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "H3vHkR",
+   "name": "Deprecated / OC Table row",
+   "type": "frame",
+   "width": 900,
+   "height": 44,
+   "texts": [
+    {
+     "id": "M3lYCr",
+     "name": "Name",
+     "content": "Sample internship CV"
+    },
+    {
+     "id": "KRMdU",
+     "name": "Updated",
+     "content": "Today"
+    }
+   ],
+   "icons": [
+    {
+     "id": "a45wy",
+     "name": "Icon",
+     "icon": "file-text"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "QYdbJ",
+   "name": "Deprecated / OC Chip",
+   "type": "frame",
+   "height": 34,
+   "texts": [
+    {
+     "id": "xFVhT",
+     "name": "Label",
+     "content": "Review my CV"
+    }
+   ],
+   "icons": [
+    {
+     "id": "BIiel",
+     "name": "Icon",
+     "icon": "file-text"
+    }
+   ],
+   "board": "hvocI",
+   "section": "Deprecated"
+  },
+  {
+   "id": "P0K3Qd",
+   "name": "OC Floating pill",
+   "type": "frame",
+   "height": 36,
+   "texts": [
+    {
+     "id": "DZ1MJ",
+     "name": "Label",
+     "content": "Label"
+    },
+    {
+     "id": "w9pIR0",
+     "name": "Meta",
+     "content": "Meta"
+    },
+    {
+     "id": "PsCNG",
+     "name": "Text",
+     "content": "Secondary"
+    },
+    {
+     "id": "UeTT0",
+     "name": "Text",
+     "content": "Primary"
+    }
+   ],
+   "icons": [
+    {
+     "id": "h2wONf",
+     "name": "Icon",
+     "icon": "loader-circle"
+    }
+   ],
+   "board": "S1JHUS",
+   "section": "FloatingPill"
+  },
+  {
+   "id": "dWXt1",
+   "name": "OC Suggestion",
+   "type": "frame",
+   "width": 260,
+   "texts": [
+    {
+     "id": "p2PSY",
+     "name": "Title",
+     "content": "Title"
+    },
+    {
+     "id": "kJxN8",
+     "name": "Body",
+     "content": "One or two lines on why it matters."
+    },
+    {
+     "id": "jjwNT",
+     "name": "Text",
+     "content": "Primary"
+    },
+    {
+     "id": "G7Da1w",
+     "name": "Text",
+     "content": "Secondary"
+    }
+   ],
+   "icons": [
+    {
+     "id": "BNHlG",
+     "name": "Icon",
+     "icon": "message-circle"
+    },
+    {
+     "id": "PzepQ",
+     "name": "Icon",
+     "icon": "x"
+    }
+   ],
+   "board": "S1JHUS",
+   "section": "Suggestion"
+  },
+  {
+   "id": "D1oOhJ",
+   "name": "OC Notice bar",
+   "type": "frame",
+   "width": 560,
+   "height": 46,
+   "texts": [
+    {
+     "id": "S9TDw",
+     "name": "Message",
+     "content": "Message"
+    },
+    {
+     "id": "xbXVs",
+     "name": "Text",
+     "content": "Status"
+    },
+    {
+     "id": "boyyg",
+     "name": "Text",
+     "content": "Action"
+    }
+   ],
+   "icons": [
+    {
+     "id": "G8WZUA",
+     "name": "Icon",
+     "icon": "file-up"
+    },
+    {
+     "id": "H59ZZ",
+     "name": "Next",
+     "icon": "arrow-down"
+    }
+   ],
+   "board": "S1JHUS",
+   "section": "NoticeBar"
+  },
+  {
+   "id": "y5Jup",
+   "name": "OC State message",
+   "type": "frame",
+   "width": 360,
+   "texts": [
+    {
+     "id": "PxHCi",
+     "name": "Title",
+     "content": "Title"
+    },
+    {
+     "id": "khaTZ",
+     "name": "Helper",
+     "content": "One helper line"
+    },
+    {
+     "id": "erB0K",
+     "name": "Text",
+     "content": "Primary"
+    },
+    {
+     "id": "sNpJ9",
+     "name": "Text",
+     "content": "Secondary"
+    }
+   ],
+   "icons": [
+    {
+     "id": "EHVmr",
+     "name": "Icon",
+     "icon": "file-x"
+    }
+   ],
+   "board": "S1JHUS",
+   "section": "StateMessage"
+  }
+ ],
+ "variables": {
+  "l-bg": {
+   "type": "color",
+   "value": "#FCFCFD"
+  },
+  "l-surface": {
+   "type": "color",
+   "value": "#FFFFFF"
+  },
+  "l-panel": {
+   "type": "color",
+   "value": "#F5F5F6"
+  },
+  "l-line": {
+   "type": "color",
+   "value": "#E8E8EB"
+  },
+  "l-text": {
+   "type": "color",
+   "value": "#1B1B1F"
+  },
+  "l-muted": {
+   "type": "color",
+   "value": "#6E6E78"
+  },
+  "l-faint": {
+   "type": "color",
+   "value": "#A0A0A9"
+  },
+  "l-accent": {
+   "type": "color",
+   "value": "#E8542A"
+  },
+  "ds-bg-sidebar": {
+   "type": "color",
+   "value": "#EFEFF0"
+  },
+  "ds-bg-canvas": {
+   "type": "color",
+   "value": "#F9F9FA"
+  },
+  "ds-bg-surface": {
+   "type": "color",
+   "value": "#FFFFFF"
+  },
+  "ds-bg-hover": {
+   "type": "color",
+   "value": "#E8E8E9"
+  },
+  "ds-bg-active": {
+   "type": "color",
+   "value": "#E1E1E2"
+  },
+  "ds-border": {
+   "type": "color",
+   "value": "#E2E2E2"
+  },
+  "ds-border-strong": {
+   "type": "color",
+   "value": "#CFCFD2"
+  },
+  "ds-text-primary": {
+   "type": "color",
+   "value": "#1A1A1A"
+  },
+  "ds-text-secondary": {
+   "type": "color",
+   "value": "#59595B"
+  },
+  "ds-text-tertiary": {
+   "type": "color",
+   "value": "#969799"
+  },
+  "ds-action": {
+   "type": "color",
+   "value": "#2F2F31"
+  },
+  "ds-action-fg": {
+   "type": "color",
+   "value": "#FFFFFF"
+  },
+  "ds-accent": {
+   "type": "color",
+   "value": "#E8542A"
+  },
+  "ds-accent-soft": {
+   "type": "color",
+   "value": "#FBE7E0"
+  },
+  "ds-success": {
+   "type": "color",
+   "value": "#4CB782"
+  },
+  "ds-danger": {
+   "type": "color",
+   "value": "#EB5757"
+  },
+  "ds-info": {
+   "type": "color",
+   "value": "#5D85FF"
+  },
+  "ds-warning": {
+   "type": "color",
+   "value": "#CC9F00"
+  },
+  "ds-font": {
+   "type": "string",
+   "value": "Inter"
+  },
+  "ds-fs-caption": {
+   "type": "number",
+   "value": 11
+  },
+  "ds-fs-small": {
+   "type": "number",
+   "value": 12
+  },
+  "ds-fs-body": {
+   "type": "number",
+   "value": 13
+  },
+  "ds-fs-title": {
+   "type": "number",
+   "value": 15
+  },
+  "ds-fs-h2": {
+   "type": "number",
+   "value": 20
+  },
+  "ds-fs-display": {
+   "type": "number",
+   "value": 36
+  },
+  "ds-r-sm": {
+   "type": "number",
+   "value": 4
+  },
+  "ds-r-md": {
+   "type": "number",
+   "value": 8
+  },
+  "ds-r-lg": {
+   "type": "number",
+   "value": 12
+  },
+  "ds-r-pill": {
+   "type": "number",
+   "value": 9999
+  },
+  "ds-s-1": {
+   "type": "number",
+   "value": 4
+  },
+  "ds-s-2": {
+   "type": "number",
+   "value": 8
+  },
+  "ds-s-3": {
+   "type": "number",
+   "value": 12
+  },
+  "ds-s-4": {
+   "type": "number",
+   "value": 16
+  },
+  "ds-s-6": {
+   "type": "number",
+   "value": 24
+  },
+  "ds-s-8": {
+   "type": "number",
+   "value": 32
+  },
+  "ds-text-placeholder": {
+   "type": "color",
+   "value": "#A0A0A2"
+  },
+  "ds-r-xl": {
+   "type": "number",
+   "value": 10
+  },
+  "ds-bg-chip": {
+   "type": "color",
+   "value": "#F0F0F0"
+  },
+  "ds-text-title": {
+   "type": "color",
+   "value": "#2F2F31"
+  },
+  "ds-text-muted": {
+   "type": "color",
+   "value": "#5C5C5E"
+  },
+  "ds-text-doc": {
+   "type": "color",
+   "value": "#9C9D9F"
+  },
+  "ds-label-red": {
+   "type": "color",
+   "value": "#EB5757"
+  },
+  "ds-label-green": {
+   "type": "color",
+   "value": "#4CB782"
+  },
+  "ds-label-blue": {
+   "type": "color",
+   "value": "#5D85FF"
+  },
+  "ds-label-pink": {
+   "type": "color",
+   "value": "#FF0080"
+  },
+  "ds-label-yellow": {
+   "type": "color",
+   "value": "#CC9F00"
+  },
+  "ds-label-magenta": {
+   "type": "color",
+   "value": "#F184E3"
+  },
+  "ds-label-indigo": {
+   "type": "color",
+   "value": "#6D78D5"
+  },
+  "ds-fs-doc": {
+   "type": "number",
+   "value": 24
+  },
+  "ds-r-input": {
+   "type": "number",
+   "value": 7
+  },
+  "ds-h-row": {
+   "type": "number",
+   "value": 28
+  },
+  "ds-h-bar": {
+   "type": "number",
+   "value": 44
+  },
+  "ds-h-dock": {
+   "type": "number",
+   "value": 28
+  },
+  "ds-w-sidebar": {
+   "type": "number",
+   "value": 244
+  },
+  "ds-w-composer": {
+   "type": "number",
+   "value": 712
+  },
+  "ds-icon": {
+   "type": "number",
+   "value": 14
+  },
+  "ds-bw": {
+   "type": "number",
+   "value": 0.5
+  },
+  "ds-pad-row": {
+   "type": "number",
+   "value": 8
+  },
+  "ds-gap-row": {
+   "type": "number",
+   "value": 6
+  },
+  "ds-focus": {
+   "type": "color",
+   "value": "#6D78D5"
+  },
+  "ds-danger-soft": {
+   "type": "color",
+   "value": "#FCE9E9"
+  },
+  "ds-success-soft": {
+   "type": "color",
+   "value": "#E4F4EC"
+  },
+  "ds-warning-soft": {
+   "type": "color",
+   "value": "#F8F0D0"
+  },
+  "ds-info-soft": {
+   "type": "color",
+   "value": "#E6ECFF"
+  },
+  "ds-overlay": {
+   "type": "color",
+   "value": "#1A1A1A66"
+  },
+  "ds-fs-h3": {
+   "type": "number",
+   "value": 15
+  },
+  "ds-bg-subtle": {
+   "type": "color",
+   "value": "#F4F4F5"
+  },
+  "ds-bg-block-hover": {
+   "type": "color",
+   "value": "#F6F6F7"
+  },
+  "ds-drag": {
+   "type": "color",
+   "value": "#2383E2"
+  },
+  "ds-selection": {
+   "type": "color",
+   "value": "#DCDCE0"
+  },
+  "ds-stage-saved": {
+   "type": "color",
+   "value": "#A0A0A2"
+  },
+  "ds-stage-applied": {
+   "type": "color",
+   "value": "#E2A400"
+  },
+  "ds-stage-interview": {
+   "type": "color",
+   "value": "#3FA66B"
+  },
+  "ds-stage-offer": {
+   "type": "color",
+   "value": "#5E6AD2"
+  },
+  "ds-stage-closed": {
+   "type": "color",
+   "value": "#A0A0A2"
+  }
+ },
+ "screens": [
+  {
+   "id": "qCgR7",
+   "name": "W12.1 Preferences",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "K5FuN",
+   "name": "W12.3 Integrations",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "dgd0V",
+   "name": "W12.6 Account",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "x1ht5a",
+   "name": "W1.1 Continue",
+   "type": "ref",
+   "ref": "P23Lk"
+  },
+  {
+   "id": "Vm0eJ",
+   "name": "W3.5 Coach working",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "wiQ9M",
+   "name": "W3.6 Free cap reached",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "YC0lV",
+   "name": "W5.1 Paper first run",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "VH2fp",
+   "name": "W5.3 Paper menus",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "O7zOJK",
+   "name": "W5.4 No results",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "YCAbn",
+   "name": "W5.5 Delete confirm",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "L3V6y",
+   "name": "W6.2 Blank doc",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "TtBmY",
+   "name": "W6.4 Editing",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "jcbPS",
+   "name": "W6.7 CV done",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "DPAVo",
+   "name": "W6.8 Importing a file",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "Uh2Ku",
+   "name": "W6.9 Check import",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "gWPIB",
+   "name": "W6.10 Can't read file",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "k8HycK",
+   "name": "W6.11 Over one page",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "aLOFO",
+   "name": "W9.3 Board",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "U4613",
+   "name": "W9.7 Calendar month",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "ZA60d",
+   "name": "W9.8 Calendar week",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "DhG87",
+   "name": "W1.6 Session expired",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "yGwdJ",
+   "name": "W1.2 Enter code",
+   "type": "ref",
+   "ref": "P23Lk"
+  },
+  {
+   "id": "b1m7SA",
+   "name": "W1.4 Code wrong or expired",
+   "type": "ref",
+   "ref": "P23Lk"
+  },
+  {
+   "id": "iAwJ7",
+   "name": "W1.3 Verifying",
+   "type": "ref",
+   "ref": "P23Lk"
+  },
+  {
+   "id": "NAXQk",
+   "name": "W1.5 Welcome",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "FUipv",
+   "name": "W3.1 New chat",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "kfJuz",
+   "name": "W3.4 Composer menus",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "F2Ofg0",
+   "name": "W2.1 Connect Gmail",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "nKD1b",
+   "name": "W2.2 Scanning",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "eXcUw",
+   "name": "W2.3 Inbox",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "PSHPF",
+   "name": "W2.4 Recruiter reply",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "lOO77",
+   "name": "W3.3 More ideas",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "kmUTI",
+   "name": "W3.7 Coach panel",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "NHq3j",
+   "name": "W4.1 Jobs coming soon",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "mkEKx",
+   "name": "W5.2 Paper library",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "aZiLz",
+   "name": "W6.1 Start: blank or template",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "pCOLZ",
+   "name": "W6.3 Slash menu",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "F0BP4A",
+   "name": "W6.5 Block menu",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "mOKD3",
+   "name": "W6.6 Drag a block",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "ISnTZ",
+   "name": "W3.2 Chat history",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "NgYML",
+   "name": "W7.1 Start: pick the job",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "tsfNR",
+   "name": "W7.2 Drafting",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "sgAtL",
+   "name": "W7.3 Letter + suggestion",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "D1s74Z",
+   "name": "W7.4 Can't read job link",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "ZhUZN",
+   "name": "W8.6 Proof done",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "ngta9",
+   "name": "W8.2 Start: pick a CV line",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "KzbRd",
+   "name": "W8.3 Draft: answer the prompts",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "N480hG",
+   "name": "W8.4 Add evidence",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "vkaLy",
+   "name": "W8.5 Ask to vouch",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "tUepH",
+   "name": "W8.7 On your CV",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "n0LkvU",
+   "name": "W8.8 What recruiters see",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "FCDYX",
+   "name": "W8.1 Proof coming soon",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "RAl5t",
+   "name": "W11.1 Pitch coming soon",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "D8PoQ6",
+   "name": "W9.1 Board empty",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "NsAiG",
+   "name": "W9.5 Filters no results",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "f0rS0",
+   "name": "W9.4 List",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "c4KwjR",
+   "name": "W9.2 New job",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "a3PFL",
+   "name": "W9.6 Drag to stage",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "Z3OFW",
+   "name": "W10.1 Filled in",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "tNZ73",
+   "name": "W10.2 Company missing",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "pD2lq",
+   "name": "W10.3 Already on your board",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "qSuLB",
+   "name": "W10.4 Job detail",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "jHl7W",
+   "name": "W10.7 Delete job",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "MWsZM",
+   "name": "W10.5 Link from Paper",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "Wlp2X",
+   "name": "W10.6 Closed job",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "LG57z",
+   "name": "W12.7 Delete account",
+   "type": "frame",
+   "ref": null
+  },
+  {
+   "id": "LiQPl",
+   "name": "W12.2 Coach",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "U6XwWT",
+   "name": "W12.4 Usage & limits",
+   "type": "ref",
+   "ref": "cxAxL"
+  },
+  {
+   "id": "vOOtp",
+   "name": "W12.5 Billing",
+   "type": "ref",
+   "ref": "cxAxL"
+  }
+ ]
+}
