@@ -203,9 +203,8 @@ export function SignInScreen() {
     <AuthFrame language={language} onLanguage={chooseLanguage}>
       {step === "email" ? (
         <form className="flex w-full flex-col gap-6" onSubmit={onContinue}>
-          <h1 className="text-center text-[26px] font-semibold tracking-[-0.7px]">
-            {"Log in to "}
-            <Brand size={26} />
+          <h1 className="flex flex-wrap items-center justify-center gap-x-2 text-[26px] font-semibold tracking-[-0.7px]">
+            <span>Log in to</span> <Brand size={26} />
           </h1>
           {googleNotice ? (
             <p role="alert" className="text-center text-sm text-destructive">
