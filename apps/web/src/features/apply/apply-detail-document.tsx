@@ -16,6 +16,10 @@ import {
   TITLE_TEXT,
 } from "./apply-detail-parts.tsx"
 import { companyInitials, monthDay } from "./apply-stages.ts"
+import { FAINT_TEXT } from "./apply-tone.ts"
+
+const NOTE_PLACEHOLDER =
+  "placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,var(--card))]"
 
 const POSTING = [
   ["What you'll do", "duties"],
@@ -34,7 +38,9 @@ function lines(text: string) {
 
 function SectionHeading({ children }: { children: string }) {
   return (
-    <h2 className="text-[13.5px] font-semibold text-foreground">{children}</h2>
+    <h2 className="text-[13.5px] leading-[16px] font-semibold text-foreground">
+      {children}
+    </h2>
   )
 }
 
@@ -56,7 +62,7 @@ function Bullets({ text }: { text: string }) {
     <ul className="flex flex-col">
       {lines(text).map((line, index) => (
         <li key={`${index}-${line}`} className="flex gap-2.5 pb-1">
-          <span className="text-[14px] leading-[1.65] text-muted-foreground">
+          <span className={cn("text-[14px] leading-[1.65]", FAINT_TEXT.card)}>
             •
           </span>
           <span className={cn("flex-1 text-[14px] leading-[1.65]", TITLE_TEXT)}>
@@ -108,7 +114,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           variant="ghost"
           aria-expanded={open}
           onClick={() => setOpen(!open)}
-          className="h-7 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground"
+          className="h-4 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground"
         >
           <ChevronDown
             aria-hidden
@@ -119,7 +125,12 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           />
           <span>Interview prep</span>
           {total > 0 ? (
-            <span className="text-[12.5px] font-normal">
+            <span
+              className={cn(
+                "text-[12.5px] leading-[15px] font-normal",
+                FAINT_TEXT.card
+              )}
+            >
               {done}/{total}
             </span>
           ) : null}
@@ -129,7 +140,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           variant="ghost"
           size="icon-xs"
           aria-label="Add a step"
-          className="text-muted-foreground"
+          className="-my-1 text-muted-foreground"
           onClick={() => {
             setOpen(true)
             setAdding(true)
@@ -211,7 +222,7 @@ function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
         </span>
         <time
           dateTime={row.createdAt}
-          className="text-[12.5px] text-muted-foreground"
+          className={cn("text-[12.5px]", FAINT_TEXT.card)}
         >
           {monthDay(new Date(row.createdAt))}
         </time>
@@ -253,7 +264,10 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
         value={note}
         rows={1}
         placeholder="Leave a note…"
-        className="min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent"
+        className={cn(
+          "min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent",
+          NOTE_PLACEHOLDER
+        )}
         onChange={(event) => setNote(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) {
@@ -289,9 +303,10 @@ export function JobDocument({
   const ordered = [...rows].sort((a, b) =>
     a.createdAt.localeCompare(b.createdAt)
   )
+  const hasPrep = job.checklist.length > 0 || job.stage !== "closed"
   return (
     <div className="mx-auto flex w-full max-w-[680px] flex-col">
-      <h1 className="text-2xl font-semibold tracking-[-0.5px] text-foreground">
+      <h1 className="text-2xl leading-[29px] font-semibold tracking-[-0.5px] text-foreground">
         {job.title}
       </h1>
       <div className="mt-1.5 flex items-center gap-2">
@@ -306,13 +321,18 @@ export function JobDocument({
       <div className="mt-[22px]">
         <Posting job={job} />
       </div>
-      {job.checklist.length > 0 || job.stage !== "closed" ? (
+      {hasPrep ? (
         <div className="mt-[22px]">
           <InterviewPrep job={job} />
         </div>
       ) : null}
-      <section aria-label="Activity" className="mt-[30px] flex flex-col">
-        <h2 className="text-[14px] font-semibold text-foreground">Activity</h2>
+      <section
+        aria-label="Activity"
+        className={cn("flex flex-col", hasPrep ? "mt-[30px]" : "mt-[58px]")}
+      >
+        <h2 className="text-[14px] leading-[17px] font-semibold text-foreground">
+          Activity
+        </h2>
         <ul className="mt-3 flex flex-col gap-0">
           {ordered.map((row) =>
             row.command === "job.addNote" ? (

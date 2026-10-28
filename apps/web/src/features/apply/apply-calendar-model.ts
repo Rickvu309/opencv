@@ -1,5 +1,6 @@
 import type { JobView } from "@workspace/domain"
 
+import { FAINT_TEXT } from "./apply-tone.ts"
 import { PROFILE_ZONE, deadlineInstant, zonedYmd } from "./apply-stages.ts"
 
 export const WEEKDAYS = [
@@ -184,13 +185,10 @@ export function placeInterviews(events: CalendarEvent[]): Placed[] {
   return placed
 }
 
-/**
- * The pen's tertiary and out-of-month greys fail WCAG contrast on white, so
- * labels and out-of-month days keep muted-foreground, as the landing does.
- */
 export const TONE = {
-  label: "text-muted-foreground",
-  faint: "text-muted-foreground",
+  label: FAINT_TEXT.card,
+  faint: FAINT_TEXT.card,
+  faintOnTint: FAINT_TEXT.background,
   number:
     "text-[color-mix(in_oklab,var(--foreground),var(--muted-foreground)_53%)]",
 } as const

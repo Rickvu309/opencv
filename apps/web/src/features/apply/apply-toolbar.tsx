@@ -23,6 +23,7 @@ import {
   type ApplyFilters,
   type ApplyView,
 } from "./apply-search.ts"
+import { FAINT_TEXT } from "./apply-tone.ts"
 
 export function ApplyHeader({ onNewJob }: { onNewJob: () => void }) {
   return (
@@ -103,7 +104,7 @@ export function ApplyToolbar({
               variant="ghost"
               aria-label="Filter"
               className={cn(
-                "ml-auto h-7 rounded-full border border-border text-xs text-muted-foreground",
+                "mr-[34px] ml-auto h-7 rounded-full border border-border text-xs text-muted-foreground",
                 count > 0
                   ? "gap-[5px] bg-accent px-2.5 hover:bg-accent"
                   : "w-7 bg-card"
@@ -157,7 +158,7 @@ function FilterChip({
       data-slot="filter-chip"
       className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-card pr-1 pl-2.5 text-xs"
     >
-      <span className="text-muted-foreground">{name}</span>
+      <span className={FAINT_TEXT.card}>{name}</span>
       <span className="font-medium text-foreground">{value}</span>
       <Button
         type="button"

@@ -13,6 +13,7 @@ import { createConnection } from "node:net"
 
 import {
   faintPenColour,
+  LAYOUT_EXCEPTIONS,
   MARKS_NOT_DRAWN,
   NOT_SHOWN,
 } from "./lib/apply-pen-gaps.mjs"
@@ -22,6 +23,7 @@ import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
 import { comparePen, penProbeSource, stylesPath } from "./lib/pen-parity.mjs"
 import {
+  colorMatches,
   comparePenLayout,
   formatMismatch,
   TEXT_TOKENS,
@@ -126,14 +128,15 @@ async function main() {
       const measured = await page.evaluate(penProbeSource(root))
       must(measured, `${slug}: ${root} on the page`)
       const notShown = NOT_SHOWN[slug] ?? {}
-      const result = comparePen(stylesPath(repo, "apply", slug), measured, {
-        notShown,
-        marksNotDrawn: MARKS_NOT_DRAWN[slug] ?? 0,
-      })
       const layoutFile = stylesPath(repo, "apply", slug).replace(
         /\.styles\.json$/,
         ".layout.json"
       )
+      const result = comparePen(stylesPath(repo, "apply", slug), measured, {
+        notShown,
+        marksNotDrawn: MARKS_NOT_DRAWN[slug] ?? 0,
+        colour: !existsSync(layoutFile),
+      })
       if (existsSync(layoutFile)) {
         const full = JSON.parse(readFileSync(layoutFile, "utf8"))
         const layout = {
@@ -154,13 +157,21 @@ async function main() {
           layout,
           measured: box.measured,
           tokens: box.tokens,
+          exceptions: LAYOUT_EXCEPTIONS,
         })
-        const kept = mismatches.filter((m) => {
-          if (m.property !== "color") return true
-          const index = layout.texts.findIndex((t) => t.text === m.text)
-          const got = box.measured[index]
-          return !(got && faintPenColour(layout.texts[index], got))
-        })
+        // A colour mismatch stands unless every copy of that text that misses
+        // the colour rule is a faint pen grey shipped as the lightest AA grey.
+        const faintOnly = (text) =>
+          layout.texts.every((want, index) => {
+            const got = box.measured[index]
+            if (want.text !== text || !got) return true
+            return (
+              colorMatches(want, got, box.tokens) || faintPenColour(want, got)
+            )
+          })
+        const kept = mismatches.filter(
+          (m) => m.property !== "color" || !faintOnly(m.text)
+        )
         result.failures.push(...kept.map((m) => formatMismatch(layout, m)))
         result.layout = layout.texts.length
       }

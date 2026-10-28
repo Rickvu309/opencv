@@ -27,7 +27,12 @@ import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { previewJob, useApplyCards } from "./apply-api.ts"
 import { ALL_STAGES } from "./apply-stages.ts"
-import { AlreadyTracked, Hint } from "./apply-new-job-parts.tsx"
+import {
+  AlreadyTracked,
+  Hint,
+  PLACEHOLDER_CARD,
+  PLACEHOLDER_SECONDARY,
+} from "./apply-new-job-parts.tsx"
 import { NewJobProperties } from "./apply-new-job-properties.tsx"
 
 const COMPANY_REQUIRED = "Add the company name to save this job."
@@ -260,7 +265,7 @@ export function NewJobDialog({
               aria-label="Paste the job link"
               placeholder="Paste the job link"
               value={draft.url}
-              className={`${INLINE_FIELD} h-full flex-1 text-[13px] text-foreground md:text-[13px]`}
+              className={`${INLINE_FIELD} h-full flex-1 text-[13px] text-foreground md:text-[13px] ${PLACEHOLDER_SECONDARY}`}
               onChange={(event) => patch({ url: event.target.value })}
               onBlur={(event) => {
                 const url = event.currentTarget.value.trim()
@@ -329,7 +334,7 @@ export function NewJobDialog({
                 placeholder="Role title"
                 value={draft.title}
                 aria-invalid={titleError ? true : undefined}
-                className={`${INLINE_FIELD} mt-5 text-xl font-semibold tracking-[-0.3px] text-foreground md:text-xl`}
+                className={`${INLINE_FIELD} mt-5 text-xl leading-6 font-semibold tracking-[-0.3px] text-foreground md:text-xl ${PLACEHOLDER_CARD}`}
                 onChange={(event) => {
                   patch({ title: event.target.value })
                   if (event.target.value.trim()) setTitleError("")
@@ -345,7 +350,7 @@ export function NewJobDialog({
                 aria-describedby={
                   companyError ? "job-company-error" : undefined
                 }
-                className={`${INLINE_FIELD} mt-1.5 text-[15px] text-muted-foreground md:text-[15px]`}
+                className={`${INLINE_FIELD} mt-1.5 text-[15px] leading-[18px] text-muted-foreground md:text-[15px] ${PLACEHOLDER_CARD}`}
                 onChange={(event) => {
                   patch({ company: event.target.value })
                   if (event.target.value.trim()) setCompanyError("")
@@ -358,7 +363,7 @@ export function NewJobDialog({
                 aria-label="Add the job description"
                 placeholder="Add the job description…"
                 value={draft.description}
-                className="mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
+                className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent ${PLACEHOLDER_CARD}`}
                 onChange={(event) => patch({ description: event.target.value })}
                 onBlur={() => {
                   if (
@@ -413,7 +418,7 @@ export function NewJobDialog({
                 className="h-[30px] gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
               >
                 <span>Add job</span>
-                <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/50">
+                <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/63">
                   ↵
                 </Kbd>
               </Button>

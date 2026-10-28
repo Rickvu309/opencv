@@ -1,6 +1,7 @@
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { FAINT_TEXT } from "./apply-tone.ts"
 import {
   TONE,
   WEEKDAYS,
@@ -26,7 +27,7 @@ function MonthChip({ event }: { event: CalendarEvent }) {
       <span
         className={cn(
           "truncate text-[11.5px] font-medium",
-          job.stage === "closed" ? "text-muted-foreground" : "text-foreground"
+          job.stage === "closed" ? FAINT_TEXT.secondary : "text-foreground"
         )}
       >
         {label}
@@ -52,7 +53,7 @@ export function MonthGrid({
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="text-[11px] font-semibold text-muted-foreground"
+            className={cn("text-[11px] font-semibold", TONE.label)}
           >
             {day}
           </div>
@@ -74,7 +75,11 @@ export function MonthGrid({
               <span
                 className={cn(
                   "flex size-[22px] items-center justify-center rounded-full text-xs font-medium",
-                  day.slice(0, 7) === month ? TONE.number : TONE.faint,
+                  day.slice(0, 7) === month
+                    ? TONE.number
+                    : column > 4
+                      ? TONE.faintOnTint
+                      : TONE.faint,
                   day === today && "bg-foreground font-bold text-background"
                 )}
               >

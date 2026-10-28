@@ -57,24 +57,26 @@ export function ApplyEmpty({
       data-slot="apply-empty"
       className="flex min-h-0 flex-1 flex-col items-center justify-center bg-background pb-20"
     >
-      <StageCoins />
-      <h2 className="mt-7 text-[15px] font-semibold">Track your first job</h2>
-      <p className="mt-2 text-[13px] text-muted-foreground">
-        Add the jobs you're applying to.
-      </p>
-      <Button
-        type="button"
-        variant={dialogOpen ? "ghost" : "glow"}
-        aria-label="Add job"
-        aria-keyshortcuts="N"
-        className="mt-5 h-8 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
-        onClick={onAdd}
-      >
-        <span>Add job</span>
-        <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/50">
-          N
-        </Kbd>
-      </Button>
+      <div className="flex flex-col items-start">
+        <StageCoins />
+        <h2 className="mt-7 text-[15px] font-semibold">Track your first job</h2>
+        <p className="mt-2 text-[13px] text-muted-foreground">
+          Add the jobs you're applying to.
+        </p>
+        <Button
+          type="button"
+          variant={dialogOpen ? "ghost" : "glow"}
+          aria-label="Add job"
+          aria-keyshortcuts="N"
+          className="mt-5 h-8 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
+          onClick={onAdd}
+        >
+          <span>Add job</span>
+          <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/62">
+            N
+          </Kbd>
+        </Button>
+      </div>
     </div>
   )
 }

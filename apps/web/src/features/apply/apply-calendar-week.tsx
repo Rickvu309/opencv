@@ -15,7 +15,7 @@ import {
   type CalendarEvent,
 } from "./apply-calendar-model.ts"
 
-const HOUR_PX = 56
+const HOUR_PX = 58
 const BODY_MINUTES = HOURS.length * 60
 
 function EventBlock({
@@ -50,7 +50,7 @@ function EventBlock({
       <span className="truncate text-[11.5px] text-[color-mix(in_oklab,var(--chart-2),var(--foreground)_19%)]">
         {job.company}
       </span>
-      <span className="truncate text-[11px] text-chart-2">
+      <span className="truncate text-[11px] text-[color-mix(in_srgb,var(--chart-2)_68%,var(--foreground))]">
         {`${clock(event.startMinutes)} to ${clock(event.endMinutes)}`}
       </span>
     </div>
@@ -82,7 +82,7 @@ export function WeekGrid({
             {WEEKDAYS[weekdayIndex(day)]} {Number(day.slice(8))}
           </div>
         ))}
-        <div className="pt-2 pr-3 text-right text-[10px] text-muted-foreground">
+        <div className={cn("pt-2 pr-3 text-right text-[10px]", TONE.label)}>
           All day
         </div>
         {days.map((day, column) => (
@@ -116,7 +116,12 @@ export function WeekGrid({
         <div>
           {HOURS.map((hour) => (
             <div key={hour} style={{ height: HOUR_PX }}>
-              <span className="block w-10 -translate-y-1/2 text-right text-[10.5px] text-muted-foreground">
+              <span
+                className={cn(
+                  "block w-10 -translate-y-1/2 text-right text-[10.5px]",
+                  TONE.label
+                )}
+              >
                 {hour}:00
               </span>
             </div>

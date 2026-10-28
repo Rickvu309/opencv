@@ -40,6 +40,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   const run = useRunCommand()
   const { data: session } = authClient.useSession()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [railOpen, setRailOpen] = useState(true)
   const detail = useQuery({
     queryKey: jobGetKey(id),
     queryFn: () => getJob(id),
@@ -118,6 +119,8 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         total={ordered.length}
         onPrevious={open(previous)}
         onNext={open(next)}
+        railOpen={railOpen}
+        onToggleRail={() => setRailOpen((current) => !current)}
         onToggleStar={() =>
           void run("job.star", { jobId: id, starred: !job.starred })
         }
@@ -131,7 +134,9 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
             author={session?.user.name ?? "You"}
           />
         </div>
-        <JobRail job={job} onStage={(stage) => void changeStage(stage)} />
+        {railOpen ? (
+          <JobRail job={job} onStage={(stage) => void changeStage(stage)} />
+        ) : null}
       </div>
       <DeleteJobDialog
         open={deleteOpen}

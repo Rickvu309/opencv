@@ -123,7 +123,7 @@ export function ApplyCalendar({
           size="sm"
           value={span}
           onChange={onSpan}
-          className="[--ui-segc-card-shadow:0_1px_2px_rgb(0_0_0/0.1)]! [--ui-segc-pad:3px]! [--ui-segc-text:var(--muted-foreground)]! [--ui-segc-track:var(--secondary)]!"
+          className="[--ui-segc-card-shadow:0_1px_2px_rgb(0_0_0/0.1)]! [--ui-segc-pad:3px]! [--ui-segc-text:color-mix(in_srgb,var(--muted-foreground)_88%,var(--secondary))]! [--ui-segc-track:var(--secondary)]!"
           options={[
             { value: "week", label: "Week" },
             { value: "month", label: "Month" },

@@ -57,6 +57,7 @@ import {
   priorityLabel,
   stageLabel,
 } from "./apply-stages.ts"
+import { FAINT_TEXT } from "./apply-tone.ts"
 
 const POPOVER =
   "w-[270px] gap-0.5 rounded-[10px] p-1.5 shadow-[0_2px_4px_rgb(0_0_0/0.06),0_24px_60px_rgb(0_0_0/0.14)] ring-foreground/6"
@@ -81,9 +82,7 @@ function interviewLabel(iso: string) {
 
 function Label({ children, empty }: { children: ReactNode; empty?: boolean }) {
   return (
-    <span className={cn("truncate", empty && "text-muted-foreground")}>
-      {children}
-    </span>
+    <span className={cn("truncate", empty && FAINT_TEXT.card)}>{children}</span>
   )
 }
 

@@ -5,6 +5,8 @@ import {
   ChevronRight,
   ChevronUp,
   Ellipsis,
+  Link as LinkIcon,
+  PanelRight,
   Star,
 } from "lucide-react"
 
@@ -16,8 +18,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import { toast } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { FAINT_TEXT } from "./apply-tone.ts"
 import { TITLE_TEXT } from "./apply-detail-parts.tsx"
 
 const ICON_BUTTON =
@@ -29,6 +33,8 @@ export function JobHeader({
   total,
   onPrevious,
   onNext,
+  railOpen,
+  onToggleRail,
   onToggleStar,
   onDelete,
 }: {
@@ -37,9 +43,18 @@ export function JobHeader({
   total: number
   onPrevious: (() => void) | null
   onNext: (() => void) | null
+  railOpen: boolean
+  onToggleRail: () => void
   onToggleStar: () => void
   onDelete: () => void
 }) {
+  function copyLink() {
+    navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => toast("Link copied"))
+      .catch(() => toast("Could not copy the link. Try again."))
+  }
+
   return (
     <nav
       aria-label="Breadcrumb"
@@ -89,7 +104,12 @@ export function JobHeader({
         </DropdownMenuContent>
       </DropdownMenu>
       <span className="flex-1" />
-      <span className="mr-1.5 text-[12.5px] whitespace-nowrap text-muted-foreground">
+      <span
+        className={cn(
+          "mr-1.5 text-[12.5px] leading-[15px] whitespace-nowrap",
+          FAINT_TEXT.card
+        )}
+      >
         {position > 0 ? `${position} / ${total}` : ""}
       </span>
       <Button
@@ -111,6 +131,25 @@ export function JobHeader({
         onClick={() => onNext?.()}
       >
         <ChevronDown aria-hidden className="size-7 p-[6.5px]" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        aria-label="Copy link"
+        className={cn("size-7", ICON_BUTTON)}
+        onClick={copyLink}
+      >
+        <LinkIcon aria-hidden className="size-7 p-[6.5px]" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        aria-label="Properties panel"
+        aria-pressed={railOpen}
+        className={cn("size-7", ICON_BUTTON)}
+        onClick={onToggleRail}
+      >
+        <PanelRight aria-hidden className="size-7 p-[6.5px]" />
       </Button>
     </nav>
   )

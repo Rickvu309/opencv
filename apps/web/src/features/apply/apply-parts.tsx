@@ -1,6 +1,7 @@
 import { Calendar, MapPin } from "lucide-react"
 
 import { StageIcon } from "@workspace/ui/components/stage-icon"
+import { cn } from "@workspace/ui/lib/utils"
 
 import type { JobPriority, JobStage, JobView } from "@workspace/domain"
 
@@ -10,6 +11,7 @@ import {
   monthDay,
   priorityLabel,
 } from "./apply-stages.ts"
+import { FAINT_TEXT } from "./apply-tone.ts"
 
 export function PriorityBars({ level }: { level: JobPriority }) {
   const filled = level === "low" ? 1 : level === "high" ? 3 : 2
@@ -158,7 +160,7 @@ export function BoardLane({
       <h2 className="text-[13px] font-normal" tabIndex={0}>
         {name}
       </h2>
-      <span className="flex-1 text-xs font-normal text-muted-foreground">
+      <span className={cn("flex-1 text-xs font-normal", FAINT_TEXT.background)}>
         {count}
       </span>
     </div>

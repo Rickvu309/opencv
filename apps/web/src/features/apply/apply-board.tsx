@@ -33,6 +33,7 @@ import {
   cardName,
   stageLabel,
 } from "./apply-stages.ts"
+import { FAINT_TEXT } from "./apply-tone.ts"
 
 type Card = {
   id: string
@@ -286,7 +287,7 @@ function HiddenColumns({
         >
           <StageIcon stage="closed" />
           <span>Closed</span>
-          <span className="text-muted-foreground">{count}</span>
+          <span className={FAINT_TEXT.card}>{count}</span>
         </Button>
       ) : null}
     </div>

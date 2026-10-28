@@ -128,10 +128,11 @@ const norm = (s) => s.replace(/[‘']/g, "’").replace(/\s+/g, " ").trim()
 
 // notShown: { text: reason } for pen texts the product cannot show.
 // marksNotDrawn: how many pen marks belong to data the product does not have.
+// colour: false leaves colour to pen-layout's AA rule when a layout file exists.
 export function comparePen(
   stylesFile,
   measured,
-  { notShown = {}, marksNotDrawn = 0 } = {}
+  { notShown = {}, marksNotDrawn = 0, colour = true } = {}
 ) {
   const styles = JSON.parse(readFileSync(stylesFile, "utf8"))
   const pen = styles.sections.flatMap((section) =>
@@ -156,7 +157,7 @@ export function comparePen(
     const found = pool[Math.min(seen, pool.length - 1)]
     compared += 1
     const problems = []
-    if (/^#[0-9A-F]{6}$/.test(spec.fill ?? "")) {
+    if (colour && /^#[0-9A-F]{6}$/.test(spec.fill ?? "")) {
       const a = oklch(found.color)
       const b = oklch(fromHex(spec.fill))
       const close = Math.abs(a.L - b.L) <= 0.02 && Math.abs(a.C - b.C) <= 0.02

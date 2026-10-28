@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
@@ -262,5 +262,26 @@ describe("job detail", () => {
     ).toEqual(["Cancel", "Delete job"])
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }))
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+  })
+
+  it("copies the job link and hides and shows the properties panel from the header", async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
+    setMockJobs([mockJob({ id, title: "First role", company: "Acme" })])
+    renderApp(`/apply/${id}`)
+    const crumb = await screen.findByRole("navigation", { name: "Breadcrumb" })
+    fireEvent.click(within(crumb).getByRole("button", { name: "Copy link" }))
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(window.location.href)
+    )
+    const panel = within(crumb).getByRole("button", {
+      name: "Properties panel",
+    })
+    expect(panel).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("region", { name: "Properties" })).toBeTruthy()
+    fireEvent.click(panel)
+    expect(panel).toHaveAttribute("aria-pressed", "false")
+    expect(screen.queryByRole("region", { name: "Properties" })).toBeNull()
+    vi.unstubAllGlobals()
   })
 })

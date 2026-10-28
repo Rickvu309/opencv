@@ -15,6 +15,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import type { ChecklistItem } from "./apply-api.ts"
 import { railStageLabel } from "./apply-detail-labels.ts"
 import { monthDay, stageLabel } from "./apply-stages.ts"
+import { FAINT_TEXT } from "./apply-tone.ts"
 
 export const TITLE_TEXT =
   "text-[color-mix(in_oklch,var(--foreground)_65%,var(--muted-foreground))]"
@@ -106,7 +107,11 @@ export function RailSection({
         variant="ghost"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="h-7 w-full justify-start gap-1.5 rounded-[6px] px-2 text-xs font-medium text-muted-foreground hover:bg-secondary aria-expanded:bg-transparent aria-expanded:text-muted-foreground"
+        className={cn(
+          "h-7 w-full justify-start gap-1.5 rounded-[6px] px-2 text-xs font-medium hover:bg-secondary aria-expanded:bg-transparent",
+          FAINT_TEXT.card,
+          "aria-expanded:text-[color-mix(in_srgb,var(--muted-foreground)_84%,var(--card))]"
+        )}
       >
         {title}
         <ChevronDown
@@ -152,7 +157,7 @@ export function ChecklistItemRow({
           className="size-[15px] shrink-0 rounded-full ring-[1.2px] ring-input ring-inset"
         />
       )}
-      <span className={item.done ? "text-muted-foreground" : "text-foreground"}>
+      <span className={item.done ? FAINT_TEXT.card : "text-foreground"}>
         {item.label}
       </span>
     </Button>
@@ -192,7 +197,9 @@ export function ActivityItem({ row }: { row: ActivityFeedRow }) {
     >
       <ActivityIcon row={row} />
       <span>{activityText(row)}</span>
-      <time dateTime={row.createdAt}>{monthDay(new Date(row.createdAt))}</time>
+      <time dateTime={row.createdAt} className={FAINT_TEXT.card}>
+        {monthDay(new Date(row.createdAt))}
+      </time>
     </li>
   )
 }

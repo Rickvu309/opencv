@@ -6,12 +6,17 @@ import { Button } from "@workspace/ui/components/button"
 import { stageLabel } from "./apply-stages.ts"
 import type { JobStage } from "@workspace/domain"
 
+export const PLACEHOLDER_CARD =
+  "placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,var(--card))]"
+export const PLACEHOLDER_SECONDARY =
+  "placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_88%,var(--secondary))]"
+
 export function Hint({ id, children }: { id?: string; children: ReactNode }) {
   return (
     <p
       id={id}
       role="alert"
-      className="flex items-center gap-1.5 pt-1 pb-0.5 text-[12.5px] text-foreground"
+      className="flex items-center gap-1.5 pt-1 pb-0.5 text-[12.5px] leading-[15px] text-foreground"
     >
       <CircleAlert className="size-[13px] shrink-0" aria-hidden />
       {children}

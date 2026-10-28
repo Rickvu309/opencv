@@ -59,9 +59,9 @@ const NOT_SHOWN: Record<string, Record<string, string>> = {
 // Icons a frame draws for data the product does not have.
 const ICONS_NOT_DRAWN: Record<string, { count: number; reason: string }> = {
   detail: {
-    count: 3,
+    count: 1,
     reason:
-      "header link and panel buttons and the note paperclip have no behavior",
+      "the note composer paperclip has no behavior",
   },
 }
 

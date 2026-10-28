@@ -3,6 +3,7 @@ import { Calendar, ChevronDown, ChevronRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
+import { cn } from "@workspace/ui/lib/utils"
 
 import type { JobStage, JobView } from "@workspace/domain"
 
@@ -12,6 +13,7 @@ import {
   monthDay,
   stageLabel,
 } from "./apply-stages.ts"
+import { FAINT_TEXT } from "./apply-tone.ts"
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -62,7 +64,7 @@ export function ListGroup({
             <StageIcon stage={stage} />
           </span>
           <span>{name}</span>
-          <span className="text-muted-foreground">{count}</span>
+          <span className={FAINT_TEXT.secondary}>{count}</span>
         </Button>
       </h2>
       {open ? children : null}
@@ -89,7 +91,7 @@ export function JobRow({ job, onOpen }: { job: JobView; onOpen: () => void }) {
         {companyInitials(job.company)}
       </span>
       <span className="min-w-0 truncate font-medium">{job.title}</span>
-      <span className="min-w-0 truncate text-muted-foreground">
+      <span className={cn("min-w-0 truncate", FAINT_TEXT.card)}>
         {job.company}
       </span>
       <span className="flex-1" />
@@ -97,15 +99,16 @@ export function JobRow({ job, onOpen }: { job: JobView; onOpen: () => void }) {
         {phrase.soon ? (
           <Calendar className="size-3 text-chart-3" aria-hidden />
         ) : null}
-        <span
-          className={phrase.soon ? "text-foreground" : "text-muted-foreground"}
-        >
+        <span className={phrase.soon ? "text-foreground" : FAINT_TEXT.card}>
           {phrase.text}
         </span>
       </span>
       <time
         dateTime={job.createdAt}
-        className="hidden w-[52px] shrink-0 text-right text-xs text-muted-foreground md:block"
+        className={cn(
+          "hidden w-[52px] shrink-0 text-right text-xs md:block",
+          FAINT_TEXT.card
+        )}
       >
         {monthDay(new Date(job.createdAt))}
       </time>

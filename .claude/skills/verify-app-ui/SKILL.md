@@ -34,7 +34,7 @@ Reading a FAIL: the measured value is what the app does, the rule is what it sho
 
 ## Apply against opencv.pen
 
-`PORT=4454 heavy -- pnpm --filter web verify:apply-pen` runs `scripts/verify-apply-pen.mjs`. It signs up Linh Nguyen on its own stack, saves the jobs the W9 and W10 frames draw, fixes the page clock at Sunday 25 October 2026 09:00 in Asia/Ho_Chi_Minh, and opens each state (board, list, filters, month, week, New job and its three states, job detail, Paper picker, closed job, delete). For each state it compares every pen text's colour, size, weight, line height and tracking, and every drawn icon's size, with `apps/web/src/features/apply/design/<slug>.styles.json`. A text the live stack cannot draw (server dates, data the product does not store) sits in `NOT_SHOWN` with its reason. Pen greys under 4.5:1 count as matched when the app uses muted-foreground. `VERIFY_APP_UI_SHOTS=<dir>` saves one screenshot per state. W9.6 (mid-drag) is checked by `apply-design-parity.test.tsx`, which also checks every frame's texts and icon count with fixed data.
+`PORT=4454 heavy -- pnpm --filter web verify:apply-pen` holds every Apply state to its pen frame. See [apply-pen.md](apply-pen.md).
 
 ## The properties
 
