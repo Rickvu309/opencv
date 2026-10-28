@@ -37,41 +37,61 @@ function parts(date: Date, zone: string): Parts {
   }
 }
 
-function weekKey(part: Parts) {
-  const date = new Date(
-    Date.UTC(Number(part.year), Number(part.month) - 1, Number(part.day))
+function dayNumber(part: Parts) {
+  return Math.round(
+    Date.UTC(Number(part.year), Number(part.month) - 1, Number(part.day)) /
+      86400000
   )
-  const dayNum = date.getUTCDay() || 7
-  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
-  const week = Math.ceil(
-    ((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
-  )
-  return `${date.getUTCFullYear()}-${week}`
 }
 
 function clock(part: Parts) {
   return `${Number(part.hour)}:${part.minute}`
 }
 
+const RECENT_DAYS = 3
+
+/** Clock today, weekday for the last few days, month and day after that. */
 export function inboxWhen(iso: string, now = new Date(), zone = PROFILE_ZONE) {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ""
   const then = parts(date, zone)
-  const today = parts(now, zone)
-  if (
-    then.year === today.year &&
-    then.month === today.month &&
-    then.day === today.day
-  ) {
-    return clock(then)
-  }
-  if (weekKey(then) === weekKey(today)) return then.weekday
+  const ago = dayNumber(parts(now, zone)) - dayNumber(then)
+  if (ago === 0) return clock(then)
+  if (ago > 0 && ago <= RECENT_DAYS) return then.weekday
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     timeZone: zone,
   }).format(date)
+}
+
+function plural(count: number, unit: string) {
+  return `${count} ${unit}${count === 1 ? "" : "s"} ago`
+}
+
+function ago(then: Date, now: Date) {
+  const minutes = Math.floor((now.getTime() - then.getTime()) / 60000)
+  if (minutes < 1) return "just now"
+  if (minutes < 60) return plural(minutes, "minute")
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return plural(hours, "hour")
+  const days = Math.floor(hours / 24)
+  if (days < 60) return plural(days, "day")
+  return plural(Math.floor(days / 30), "month")
+}
+
+/** "Mon, Oct 26, 9:41 (2 hours ago)". */
+export function inboxStamp(iso: string, now = new Date(), zone = PROFILE_ZONE) {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ""
+  const then = parts(date, zone)
+  const monthDay = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: zone,
+  }).format(date)
+  const stamp = `${then.weekday}, ${monthDay}, ${clock(then)}`
+  return date.getTime() > now.getTime() ? stamp : `${stamp} (${ago(date, now)})`
 }
 
 export function inboxChip(iso: string, zone = PROFILE_ZONE) {

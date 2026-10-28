@@ -1,8 +1,46 @@
+import type { ComponentProps, ReactNode } from "react"
 import type { InboxThread } from "@workspace/domain"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { companyInitials } from "@/features/apply/apply-stages.ts"
+
+export const SOFT_TEXT = "text-muted-foreground/70"
+export const FAINT_TEXT = "text-muted-foreground/55"
+
+export function GmailMark({ className }: { className?: string }) {
+  return (
+    <img
+      src="/brands/gmail.svg"
+      alt=""
+      aria-hidden="true"
+      className={cn("shrink-0", className)}
+    />
+  )
+}
+
+/** A control the pen draws that the product has no command for yet. */
+export function InboxIconButton({
+  label,
+  className,
+  children,
+  ...props
+}: { label: string; children: ReactNode } & ComponentProps<typeof Button>) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      aria-label={label}
+      className={cn("size-7 rounded-md text-muted-foreground", className)}
+      {...props}
+    >
+      {children}
+    </Button>
+  )
+}
 
 export function InboxRow({
   thread,
@@ -15,54 +53,90 @@ export function InboxRow({
   active: boolean
   onOpen: () => void
 }) {
+  const unread = thread.unread && thread.status === "open"
   return (
     <Button
-      variant={active ? "secondary" : "ghost"}
-      className="h-auto w-full justify-start gap-3 px-3 py-2 text-left"
+      variant="ghost"
+      className={cn(
+        "h-11 w-full justify-start gap-2.5 rounded-[10px] py-0 ps-2.5 pe-3.5 text-left text-[13px] font-normal hover:bg-muted/60",
+        active && "bg-muted hover:bg-muted"
+      )}
       data-slot="inbox-row"
       aria-label={`${thread.role}, ${thread.company}, ${thread.summary}`}
       aria-current={active ? "true" : undefined}
       onClick={onOpen}
     >
-      <Avatar>
-        <AvatarFallback>{companyInitials(thread.company)}</AvatarFallback>
+      <span
+        aria-hidden
+        className={cn(
+          "size-1.75 shrink-0 rounded-full",
+          unread ? "bg-foreground" : "bg-transparent"
+        )}
+      />
+      <Avatar size="sm">
+        <AvatarFallback className="bg-accent text-[8.5px] font-semibold">
+          {companyInitials(thread.company)}
+        </AvatarFallback>
       </Avatar>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-baseline gap-2">
-          <span className="truncate font-medium">{thread.role}</span>
-          <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-            {time}
-          </span>
-        </span>
-        <span className="block truncate text-sm text-muted-foreground">
-          {thread.company}
-        </span>
-        <span className="block truncate text-sm text-muted-foreground">
-          {thread.summary}
-        </span>
+      <span
+        className={cn(
+          "w-27 shrink-0 truncate font-semibold",
+          unread ? "text-foreground" : "text-muted-foreground"
+        )}
+      >
+        {thread.company}
       </span>
-      {thread.unread && thread.status === "open" ? (
-        <span
-          aria-hidden
-          className="size-2 shrink-0 rounded-full bg-foreground"
-        />
-      ) : null}
+      <span className="min-w-0 flex-1 truncate">{thread.summary}</span>
+      <span className={cn("w-10 shrink-0 text-right text-xs", FAINT_TEXT)}>
+        {time}
+      </span>
     </Button>
   )
 }
 
-export function CompanyTile({ name }: { name: string }) {
+const SKELETON_BARS = [
+  [150, 220],
+  [187, 273],
+  [224, 236],
+  [181, 289],
+  [218, 252],
+  [175, 305],
+] as const
+
+export function InboxSkeletonRows() {
   return (
-    <li
-      data-slot="company-tile"
-      className="flex w-16 flex-col items-center gap-2 motion-safe:animate-pulse motion-reduce:animate-none"
-    >
-      <Avatar>
-        <AvatarFallback>{companyInitials(name)}</AvatarFallback>
+    <ul aria-hidden className="flex flex-col gap-0.5 p-2">
+      {SKELETON_BARS.map(([top, bottom], row) => (
+        <li
+          key={top}
+          className="flex h-14.5 items-center gap-3 px-3"
+          style={{ opacity: row === 1 ? 0.86 : row === 2 ? 0.72 : undefined }}
+        >
+          <Skeleton className="size-7 shrink-0 rounded-full" />
+          <span className="flex min-w-0 flex-1 flex-col gap-2">
+            <Skeleton
+              className="h-2 max-w-full rounded-sm"
+              style={{ width: top }}
+            />
+            <Skeleton
+              className="h-1.75 max-w-full rounded-sm opacity-60"
+              style={{ width: bottom }}
+            />
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function CompanyChip({ name }: { name: string }) {
+  return (
+    <li data-slot="company-tile" title={name}>
+      <Avatar className="size-6.5 motion-safe:animate-pulse motion-reduce:animate-none">
+        <AvatarFallback className="bg-accent text-[9px] font-semibold">
+          {companyInitials(name)}
+        </AvatarFallback>
       </Avatar>
-      <span className="w-full truncate text-center text-xs text-muted-foreground">
-        {name}
-      </span>
     </li>
   )
 }

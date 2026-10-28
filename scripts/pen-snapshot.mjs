@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Write a stable JSON snapshot of one frame in a .pen file.
-//   node scripts/pen-snapshot.mjs [--pricing] <pen file> <frame id> <out.json|out.ts> [--assets <dir>]
-// Sections are the frame's direct children, in order. Each section's texts
+//   node scripts/pen-snapshot.mjs [--pricing] <pen file> <frame id> <out.json|out.ts> [--assets <dir>] [--root <node id>]
+// Sections are the frame's direct children, in order. With --root, they are
+// the direct children of the resolved descendant with that id instead, and
+// source.root records it. Each section's texts
 // are every text node's content in document order: newlines become one space,
 // the result is trimmed, and empty strings are dropped.
 // Nodes with enabled === false are skipped, with their subtree.
@@ -24,6 +26,7 @@ const args = process.argv.slice(2)
 const positional = []
 let assetsDir = null
 let pricing = false
+let rootId = null
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index]
   if (arg === "--pricing") {
@@ -40,6 +43,16 @@ for (let index = 0; index < args.length; index += 1) {
     index += 1
     continue
   }
+  if (arg === "--root") {
+    const next = args[index + 1]
+    if (!next) {
+      console.error("usage: --root <node id> needs a node id")
+      process.exit(1)
+    }
+    rootId = next
+    index += 1
+    continue
+  }
   positional.push(arg)
 }
 
@@ -47,7 +60,7 @@ const [penFile, frameId, outFile] = positional
 
 if (!penFile || !frameId || !outFile) {
   console.error(
-    "usage: node scripts/pen-snapshot.mjs [--pricing] <pen file> <frame id> <out.json|out.ts> [--assets <dir>]"
+    "usage: node scripts/pen-snapshot.mjs [--pricing] <pen file> <frame id> <out.json|out.ts> [--assets <dir>] [--root <node id>]"
   )
   process.exit(1)
 }
@@ -257,6 +270,16 @@ if (!frame) {
   process.exit(1)
 }
 
+let sectionRoot = frame
+if (rootId) {
+  const found = findNode(frame, rootId)
+  if (!found) {
+    console.error(`root not found in ${frameId}: ${rootId}`)
+    process.exit(1)
+  }
+  sectionRoot = found
+}
+
 const shaderUrls = []
 function textSnapshot(sourceFrame) {
   const sections = (
@@ -276,7 +299,8 @@ function textSnapshot(sourceFrame) {
       fills,
     }
   })
-  return { source: sourceOf(requested), sections }
+  const source = sourceOf(requested)
+  return { source: rootId ? { ...source, root: rootId } : source, sections }
 }
 
 function sourceOf(sourceFrame) {
@@ -297,7 +321,7 @@ if (pricing) {
     process.exit(1)
   }
 } else {
-  snapshot = textSnapshot(frame)
+  snapshot = textSnapshot(sectionRoot)
 }
 
 if (assetsDir) {

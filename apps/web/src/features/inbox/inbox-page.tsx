@@ -1,22 +1,27 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "@workspace/ui/components/sonner"
-import { PageHeader } from "@workspace/ui/components/page-header"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
 import { queryKey, useRunCommand } from "@/lib/contract-client.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
-import { InboxConnect } from "./inbox-connect.tsx"
+import { InboxConnect, InboxTitleBar } from "./inbox-connect.tsx"
 import {
   fetchConnect,
   fetchInbox,
   fetchThread,
   inboxListKey,
 } from "./inbox-api.ts"
-import { InboxEmpty, InboxList } from "./inbox-list.tsx"
-import { CompanyTile } from "./inbox-parts.tsx"
+import {
+  InboxEmpty,
+  InboxList,
+  InboxListHeader,
+  InboxListPane,
+  InboxOverview,
+} from "./inbox-list.tsx"
+import { CompanyChip, GmailMark, InboxSkeletonRows } from "./inbox-parts.tsx"
 import { InboxReader } from "./inbox-reader.tsx"
 import { inboxConnectKey } from "@/lib/requests.ts"
 
@@ -47,7 +52,7 @@ export function InboxPage() {
     ? openId
     : openId && threads.some((thread) => thread.id === openId)
       ? openId
-      : (threads[0]?.id ?? null)
+      : null
   const detail = useQuery({
     queryKey: queryKey({
       query: "inbox.get",
@@ -87,9 +92,15 @@ export function InboxPage() {
 
   const index = threads.findIndex((thread) => thread.id === shownId)
 
+  const pending = list.isLoading || list.isError
+  const titled =
+    pending ||
+    (!scanning && showConnect) ||
+    (!scanning && Boolean(list.data) && !showConnect && threads.length === 0)
+
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden">
-      <PageHeader title="Inbox" />
+      {titled ? <InboxTitleBar /> : null}
       {list.isLoading ? (
         <p className="px-5 py-6 text-sm text-muted-foreground">
           Loading inbox.
@@ -100,7 +111,17 @@ export function InboxPage() {
           Could not load inbox. Refresh the page.
         </p>
       ) : null}
-      {scanning ? <Scanning progress={scanning} /> : null}
+      {scanning ? (
+        <div className="flex min-h-0 min-w-0 flex-1">
+          {narrow ? null : (
+            <InboxListPane narrow={false}>
+              <InboxListHeader scanning onScan={() => void onScan()} />
+              <InboxSkeletonRows />
+            </InboxListPane>
+          )}
+          <Scanning progress={scanning} />
+        </div>
+      ) : null}
       {!scanning && showConnect ? (
         <InboxConnect
           url={connect.data?.url ?? null}
@@ -114,13 +135,7 @@ export function InboxPage() {
       {!scanning && threads.length > 0 ? (
         <div className="flex min-h-0 min-w-0 flex-1">
           {narrow && shownId ? null : (
-            <div
-              className={
-                narrow
-                  ? "min-w-0 flex-1"
-                  : "w-[28rem] max-w-full shrink-0 border-r border-border"
-              }
-            >
+            <InboxListPane narrow={narrow}>
               <InboxList
                 threads={threads}
                 openId={shownId}
@@ -130,8 +145,9 @@ export function InboxPage() {
                 onOpen={setOpenId}
                 onScan={() => void onScan()}
               />
-            </div>
+            </InboxListPane>
           )}
+          {!narrow && !shownId ? <InboxOverview threads={threads} /> : null}
           {shownId && detail.data ? (
             <InboxReader
               key={detail.data.id}
@@ -176,21 +192,38 @@ type ScanProgress = {
 
 function Scanning({ progress }: { progress: ScanProgress }) {
   return (
-    <div className="flex flex-col gap-4 px-5 py-8">
-      <h2 className="text-lg font-medium" data-user-content>
+    <section
+      aria-label="Scanning"
+      data-pen-section="Detail pane"
+      className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-4 pb-10"
+    >
+      <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-card shadow-xs">
+        <GmailMark className="h-3.75 w-5" />
+      </span>
+      <h2
+        className="text-[15px] font-semibold text-foreground"
+        data-user-content
+      >
         Finding your job emails
       </h2>
+      <div
+        role="progressbar"
+        aria-label="Scanning"
+        className="h-1 w-65 max-w-full overflow-hidden rounded-full bg-muted"
+      >
+        <div className="h-full w-5/8 rounded-full bg-foreground motion-safe:animate-pulse motion-reduce:animate-none" />
+      </div>
       {progress.emails != null && progress.companies != null ? (
-        <p data-user-content>
-          {progress.emails} emails from {progress.companies} companies so far
+        <p data-user-content className="text-[12.5px] text-muted-foreground/70">
+          {`${progress.emails} emails from ${progress.companies} companies so far`}
         </p>
       ) : null}
-      <ul className="flex flex-wrap gap-4">
-        {progress.names.map((name, tile) => (
-          <CompanyTile key={`${name}-${tile}`} name={name} />
+      <ul className="flex flex-wrap justify-center gap-1.5 pt-1">
+        {progress.names.map((name, chip) => (
+          <CompanyChip key={`${name}-${chip}`} name={name} />
         ))}
       </ul>
-    </div>
+    </section>
   )
 }
 

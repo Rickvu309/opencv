@@ -1,0 +1,44 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "eXcUw",
+    "frameName": "W2.3 Inbox",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "xEn43",
+      "name": "List pane",
+      "texts": [
+        "Inbox",
+        "RB",
+        "Regional bank",
+        "Can we do a call Thursday?",
+        "9:41",
+        "LS",
+        "Local startup",
+        "Interview invite, Thu 10:00",
+        "8:02",
+        "LC",
+        "Lumière",
+        "Closes in 2 days",
+        "7:00",
+        "FA",
+        "Fintech app",
+        "No reply in 11 days",
+        "Sun",
+        "AG",
+        "Agency",
+        "Not moving forward",
+        "Sat",
+        "EC",
+        "E-commerce co.",
+        "Application received",
+        "Oct 21"
+      ],
+      "fills": []
+    },
+    { "id": "eIBoR", "name": "Detail pane", "texts": ["4 unread"], "fills": [] }
+  ]
+}

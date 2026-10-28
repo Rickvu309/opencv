@@ -1,0 +1,26 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "nKD1b",
+    "frameName": "W2.2 Scanning",
+    "root": "GIhbq"
+  },
+  "sections": [
+    { "id": "hs9bJ", "name": "List pane", "texts": ["Inbox"], "fills": [] },
+    {
+      "id": "CzAfT",
+      "name": "Detail pane",
+      "texts": [
+        "Finding your job emails",
+        "12 emails from 5 companies so far",
+        "RB",
+        "LS",
+        "LC",
+        "EC",
+        "AG"
+      ],
+      "fills": []
+    }
+  ]
+}

@@ -65,6 +65,27 @@ describe("inbox page", () => {
     expect(posts).toEqual(["/api/commands/inbox.skip"])
   })
 
+  it("opens no thread on desktop until a row is picked", async () => {
+    const paths: string[] = []
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const path = pathOf(input)
+      paths.push(path)
+      if (path === "/api/inbox") {
+        return jsonOk({
+          connected: false,
+          skipped: true,
+          timeZone: "Asia/Ho_Chi_Minh",
+          threads: INBOX_THREADS,
+        })
+      }
+      return jsonOk(REGIONAL_DETAIL)
+    })
+    renderPage()
+    expect(await screen.findByText("4 unread")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Snooze" })).toBeNull()
+    expect(paths.filter((path) => path.startsWith("/api/inbox/"))).toEqual([])
+  })
+
   it("opens a row into the reader with Back to inbox when narrow", async () => {
     vi.stubGlobal("matchMedia", (query: string) => ({
       matches: query.includes("max-width"),
@@ -130,6 +151,11 @@ describe("inbox page", () => {
       }
     )
     renderPage()
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: /Business Analyst, Regional bank/,
+      })
+    )
     expect(
       await screen.findByRole("button", { name: "Thu 15:30" })
     ).toBeInTheDocument()
@@ -163,6 +189,11 @@ describe("inbox page", () => {
       }
     )
     renderPage()
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: /Business Analyst, Regional bank/,
+      })
+    )
     await screen.findByRole("button", { name: "Snooze" })
     const threadPath = `/api/inbox/${REGIONAL_DETAIL.id}`
     const count = (path: string) => reads.filter((read) => read === path).length
