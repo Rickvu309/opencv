@@ -14,6 +14,7 @@ import {
   dbDriverFromEnv,
   authEmailFromFromEnv,
   gmailEnabledFromEnv,
+  logAuthMailFromEnv,
   googleClientIdFromEnv,
   googleClientSecretFromEnv,
   googleEnabledFromEnv,
@@ -88,6 +89,7 @@ const app = createApp({
   googleClientSecret: googleClientSecretFromEnv(process.env),
   resendApiKey: resendApiKeyFromEnv(process.env),
   authEmailFrom: authEmailFromFromEnv(process.env),
+  logAuthMail: logAuthMailFromEnv(process.env),
   interpretPostings:
     coachRuntimeMode !== "fake" &&
     Boolean(coachEnv.OPENROUTER_API_KEY || coachEnv.ANTHROPIC_API_KEY),

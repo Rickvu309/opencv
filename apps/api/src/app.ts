@@ -15,7 +15,11 @@ import { bindAuth, createAuth, type AuthDatabase } from "./auth.js"
 import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createChatRoutes } from "./chat/index.js"
 import { createCoachRoutes, interpretPosting } from "./coach/index.js"
-import { setCoachModelEnv, type CoachModelEnv } from "./config.js"
+import {
+  logAuthMailFromEnv,
+  setCoachModelEnv,
+  type CoachModelEnv,
+} from "./config.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
 import { createInboxRoutes } from "./inbox/index.js"
@@ -46,6 +50,7 @@ export type AppConfig = {
   googleClientSecret?: string
   resendApiKey?: string
   authEmailFrom?: string
+  logAuthMail?: boolean
   /** When set, job.preview may call the free model. Fake runs leave this off. */
   interpretPostings?: boolean
   fetchJobPosting?: FetchJobPosting
@@ -66,6 +71,7 @@ export function createApp({
   googleClientSecret,
   resendApiKey,
   authEmailFrom,
+  logAuthMail = logAuthMailFromEnv(process.env),
   interpretPostings = false,
   fetchJobPosting,
 }: AppConfig) {
@@ -112,6 +118,7 @@ export function createApp({
           rateLimitEnabled,
           resendApiKey,
           authEmailFrom,
+          logAuthMail,
           googleClientId: googleEnabled ? googleClientId : undefined,
           googleClientSecret: googleEnabled ? googleClientSecret : undefined,
         })

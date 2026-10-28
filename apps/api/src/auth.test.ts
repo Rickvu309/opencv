@@ -1,15 +1,7 @@
 import { eq } from "drizzle-orm"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { createApp } from "./app.js"
 import { cookieAttributesForAuthUrl } from "./auth.js"
@@ -21,110 +13,19 @@ import {
   createMigratedTestDb,
   createTestApp,
   testAuthUrl,
-  testSessionSecret,
-  testWebOrigin,
 } from "./test/harness.js"
 
-const webOrigin = testWebOrigin
-const sessionSecret = testSessionSecret
-
-const codeLine = /^\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})$/
-
-function cookieHeader(res: Response) {
-  return res.headers
-    .getSetCookie()
-    .map((cookie) => cookie.split(";")[0])
-    .filter(Boolean)
-    .join("; ")
-}
-
-function sessionSetCookie(res: Response) {
-  return (
-    res.headers
-      .getSetCookie()
-      .find((cookie) => cookie.toLowerCase().includes("session_token")) ?? ""
-  )
-}
-
-function createAuthedApp(
-  db: ReturnType<typeof drizzle>,
-  authUrl: string,
-  options?: {
-    rateLimitEnabled?: boolean
-    resendApiKey?: string
-    authEmailFrom?: string
-    googleEnabled?: boolean
-    googleClientId?: string
-    googleClientSecret?: string
-  }
-) {
-  return createApp({
-    webOrigins: [webOrigin],
-    sessionSecret,
-    authUrl,
-    db,
-    rateLimitEnabled: options?.rateLimitEnabled ?? false,
-    resendApiKey: options?.resendApiKey,
-    authEmailFrom: options?.authEmailFrom,
-    googleEnabled: options?.googleEnabled ?? false,
-    googleClientId: options?.googleClientId,
-    googleClientSecret: options?.googleClientSecret,
-  })
-}
-
-function jsonHeaders(extra?: Record<string, string>) {
-  return {
-    Origin: webOrigin,
-    "Content-Type": "application/json",
-    ...extra,
-  }
-}
-
-function postJson(
-  app: ReturnType<typeof createApp>,
-  path: string,
-  body: unknown,
-  extra?: Record<string, string>
-) {
-  return app.request(path, {
-    method: "POST",
-    headers: jsonHeaders(extra),
-    body: JSON.stringify(body),
-  })
-}
-
-async function sendSignInCode(
-  app: ReturnType<typeof createApp>,
-  email: string
-) {
-  const log = vi.spyOn(console, "log").mockImplementation(() => {})
-  try {
-    const res = await postJson(
-      app,
-      "/api/auth/email-otp/send-verification-otp",
-      {
-        email,
-        type: "sign-in",
-      }
-    )
-    const lines = log.mock.calls.map((call) => String(call[0]))
-    const match = lines
-      .map((line) => line.match(codeLine))
-      .find((row) => row?.[1] === email.toLowerCase() && row[2] === "sign-in")
-    return { res, lines, code: match?.[3] }
-  } finally {
-    log.mockRestore()
-  }
-}
-
-async function signInWithCode(
-  app: ReturnType<typeof createApp>,
-  email: string,
-  otp: string,
-  extra?: { name?: string }
-) {
-  return postJson(app, "/api/auth/sign-in/email-otp", { email, otp, ...extra })
-}
+import {
+  codeLine,
+  cookieHeader,
+  sessionSetCookie,
+  createAuthedApp,
+  jsonHeaders,
+  postJson,
+  sendSignInCode,
+  signInWithCode,
+  webOrigin,
+} from "./auth.fixtures.js"
 
 describe("cookieAttributesForAuthUrl", () => {
   it("uses SameSite=None; Secure when the auth URL is https", () => {
@@ -442,117 +343,6 @@ describe("auth cookie round-trip", () => {
       })
     } finally {
       log.mockRestore()
-    }
-  })
-})
-
-describe("auth code delivery", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    vi.restoreAllMocks()
-  })
-
-  it("logs the code and does not call fetch when Resend is unset", async () => {
-    const fetchMock = vi.fn()
-    vi.stubGlobal("fetch", fetchMock)
-    const { client, db } = await createMigratedTestDb()
-    try {
-      const app = createTestApp(db)
-      const issued = await sendSignInCode(app, "log@verify.local")
-      expect(issued.res.status).toBe(200)
-      expect(issued.code).toMatch(/^[0-9]{6}$/)
-      expect(fetchMock).not.toHaveBeenCalled()
-    } finally {
-      await client.close()
-    }
-  })
-
-  it("posts the code to Resend and hides it from the log", async () => {
-    const fetchMock = vi.fn<
-      (u: string, init?: RequestInit) => Promise<Response>
-    >(async () => new Response("{}", { status: 200 }))
-    vi.stubGlobal("fetch", fetchMock)
-    const log = vi.spyOn(console, "log").mockImplementation(() => {})
-    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {})
-    const { client, db } = await createMigratedTestDb()
-    const key = "test-resend-key"
-    try {
-      const app = createAuthedApp(db, testAuthUrl, {
-        resendApiKey: key,
-        authEmailFrom: "opencv <codes@opencv.me>",
-      })
-      const res = await postJson(
-        app,
-        "/api/auth/email-otp/send-verification-otp",
-        {
-          email: "resend@verify.local",
-          type: "sign-in",
-        }
-      )
-      expect(res.status).toBe(200)
-      const init = fetchMock.mock.calls[0]?.[1] as RequestInit
-      expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-        "https://api.resend.com/emails"
-      )
-      expect(new Headers(init.headers).get("Authorization")).toBe(
-        `Bearer ${key}`
-      )
-      const body = JSON.parse(String(init.body)) as {
-        from: string
-        to: string
-        subject: string
-        text: string
-      }
-      expect(body).toMatchObject({
-        from: "opencv <codes@opencv.me>",
-        to: "resend@verify.local",
-        subject: "Your opencv code",
-      })
-      expect(body.text).toMatch(/[0-9]{6}/)
-      const logged = [...log.mock.calls, ...errorLog.mock.calls].join(" ")
-      expect(logged).not.toContain(key)
-      expect(logged).not.toMatch(/\[auth\] email code/)
-    } finally {
-      log.mockRestore()
-      errorLog.mockRestore()
-      await client.close()
-    }
-  })
-
-  it("logs a Resend failure without the code or the key", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("nope", { status: 500 }))
-    )
-    const log = vi.spyOn(console, "log").mockImplementation(() => {})
-    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {})
-    const { client, db } = await createMigratedTestDb()
-    const key = "test-resend-key"
-    try {
-      const app = createAuthedApp(db, testAuthUrl, {
-        resendApiKey: key,
-        authEmailFrom: "codes@opencv.me",
-      })
-      const res = await postJson(
-        app,
-        "/api/auth/email-otp/send-verification-otp",
-        {
-          email: "resend-fail@verify.local",
-          type: "sign-in",
-        }
-      )
-      const logged = [...log.mock.calls, ...errorLog.mock.calls].join(" ")
-      expect(logged).toContain(
-        "[auth] email send failed for resend-fail@verify.local type sign-in status 500"
-      )
-      expect(logged).not.toContain(key)
-      expect(logged).not.toMatch(/\[auth\] email code/)
-      expect(logged).not.toMatch(/\b\d{6}\b/)
-      expect(res.status).toBe(200)
-    } finally {
-      log.mockRestore()
-      errorLog.mockRestore()
-      await client.close()
     }
   })
 })

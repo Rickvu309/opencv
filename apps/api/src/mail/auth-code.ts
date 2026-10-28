@@ -9,6 +9,12 @@ type AuthCodeInput = {
   type: AuthCodeType
 }
 
+type AuthEndpointContext = {
+  context?: object
+}
+
+const authMailFailure = Symbol("authMailFailure")
+
 function codeText(type: AuthCodeType, otp: string) {
   const line =
     type === "change-email"
@@ -29,35 +35,55 @@ function failLine(email: string, type: string, status: number) {
   )
 }
 
-/**
- * Resend when both values are set. Otherwise one log line and no network.
- * A failed send rejects so the caller can see the code was not delivered.
- * better-auth 1.7.1 still returns 200: it swallows that rejection.
- */
+function markAuthMailFailed(ctx: AuthEndpointContext | undefined) {
+  const target = ctx?.context
+  if (!target) return
+  Object.defineProperty(target, authMailFailure, {
+    value: true,
+    enumerable: false,
+  })
+}
+
+export function authMailFailed(ctx: AuthEndpointContext | undefined) {
+  const target = ctx?.context
+  return Boolean(target && authMailFailure in target)
+}
+
+function rejectAuthMail(ctx: AuthEndpointContext | undefined): never {
+  markAuthMailFailed(ctx)
+  throw new Error("auth email send failed")
+}
+
 export function createAuthCodeSender({
   resendApiKey,
   from,
+  logOtp,
 }: {
   resendApiKey?: string
   from?: string
+  logOtp: boolean
 }) {
   const key = resendApiKey?.trim()
   const sender = from?.trim()
   const useResend = Boolean(key && sender)
 
-  return async function sendVerificationOTP({
-    email,
-    otp,
-    type,
-  }: AuthCodeInput) {
+  return async function sendVerificationOTP(
+    { email, otp, type }: AuthCodeInput,
+    ctx?: AuthEndpointContext
+  ) {
     const address = email.toLowerCase()
     if (!useResend || !key || !sender) {
-      console.log(`[auth] email code for ${address} type ${type}: ${otp}`)
-      return
+      if (logOtp) {
+        console.log(`[auth] email code for ${address} type ${type}: ${otp}`)
+        return
+      }
+      console.log("[auth] email send failed: mail is not configured")
+      rejectAuthMail(ctx)
     }
 
+    let res: Response
     try {
-      const res = await fetch("https://api.resend.com/emails", {
+      res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${key}`,
@@ -70,19 +96,13 @@ export function createAuthCodeSender({
           text: codeText(type, otp),
         }),
       })
-      if (!res.ok) {
-        failLine(address, type, res.status)
-        throw new Error("auth email send failed")
-      }
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "auth email send failed"
-      ) {
-        throw error
-      }
+    } catch {
       failLine(address, type, 0)
-      throw error
+      rejectAuthMail(ctx)
+    }
+    if (!res.ok) {
+      failLine(address, type, res.status)
+      rejectAuthMail(ctx)
     }
   }
 }
