@@ -350,8 +350,6 @@ const settingsRoute = createRoute({
   ),
 })
 
-// Misses stay off the product layout. A session renders the 404 inside the shell.
-// No session renders the bare 404. Legacy /app/* is stripped before this match.
 const userRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/u/$slug",
