@@ -7,6 +7,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 
 import { gate, selectTier } from "../../../verify-app-ui/scripts/lib/tier.mjs"
+import { recordSpec } from "../design-spec.mjs"
 import { designChecks } from "./design-checks.mjs"
 import { KINDS } from "./kinds.mjs"
 import { pageChecks } from "./page-checks.mjs"
@@ -125,4 +126,45 @@ test("29 reads the button size from the spec", () => {
   const taller = structuredClone(spec)
   taller["29"].buttons.nav.height = 36
   assert.equal(status(taller), "FAIL")
+})
+
+test("the recorder turns measurements into the committed spec shape, with a band around the gap", () => {
+  const spec = loadSpec()
+  const button = (h, over = {}) => ({
+    h,
+    fontSize: "13px",
+    fontWeight: "500",
+    padInline: 12,
+    inset: true,
+    outer: true,
+    borderVisible: false,
+    radius: h / 2,
+    ...over,
+  })
+  const measured = {
+    benefitArt: {
+      section: true,
+      count: 3,
+      viewBoxes: ["0 0 300 300", "0 0 300 300", "0 0 300 300"],
+      shapes: 94,
+      hex: 0,
+    },
+    navLockup: { gap: 11.04, fontSize: "16px", fontWeight: "600" },
+    ctas: {
+      nav: button(32),
+      close: button(44, { fontSize: "16px", padInline: 20 }),
+      sample: button(44, {
+        fontSize: "16px",
+        padInline: 20,
+        inset: false,
+        outer: false,
+      }),
+    },
+  }
+  assert.deepEqual(recordSpec(spec, measured), spec)
+  measured.navLockup.gap = 14.4
+  const moved = recordSpec(spec, measured)["28"]
+  assert.deepEqual([moved.gapMin, moved.gapMax], [12, 16])
+  measured.ctas.nav = null
+  assert.throws(() => recordSpec(spec, measured), /no nav button/)
 })
