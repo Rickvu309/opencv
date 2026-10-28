@@ -7,6 +7,7 @@ import {
   type CvDocument as CvDocumentData,
 } from "@workspace/domain"
 
+import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { CvDocument } from "./paper-cv-document.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
 import { printLayout } from "./paper-templates.ts"
@@ -69,7 +70,9 @@ export function PaperSharePage() {
       <h1 className="text-lg font-medium">{doc.name}</h1>
       <div inert className="min-w-0">
         {cv ? (
-          <CvDocument data={cv} onChange={() => undefined} />
+          <CvPhotoFrame value={{ shareToken: token }}>
+            <CvDocument data={cv} onChange={() => undefined} />
+          </CvPhotoFrame>
         ) : (
           <article className="rounded-lg border border-border bg-card p-6 whitespace-pre-wrap">
             {markdown}

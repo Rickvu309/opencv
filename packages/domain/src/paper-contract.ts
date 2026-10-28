@@ -10,6 +10,7 @@ import { fileIdSchema, paperIdSchema } from "./ids.js"
 import { cvDocumentV1Schema, letterDocumentV1Schema } from "./paper-codecs.js"
 import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
 import {
+  paperAttachPhotoInputSchema,
   paperCreateInputSchema,
   paperDeleteFileInputSchema,
   paperDeleteInputSchema,
@@ -270,6 +271,15 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Set status",
+    invalidates: docChanged,
+  }),
+  "paper.attachPhoto": commandEntry({
+    description: "Attach an uploaded photo to a CV.",
+    input: paperAttachPhotoInputSchema,
+    output: paperViewSchema.extend({ previousDocument }).strict(),
+    coach: "auto",
+    destructive: false,
+    step: () => "Add a photo",
     invalidates: docChanged,
   }),
   "paper.deleteFile": commandEntry({

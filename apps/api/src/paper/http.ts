@@ -2,6 +2,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  parseFileId,
   parseUserId,
   personActor,
   successEnvelope,
@@ -13,15 +14,59 @@ import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../http-json.js"
 import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
+import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { renderPdf, saveFile } from "./store.js"
+import {
+  readOwnedPhoto,
+  readSharedPhoto,
+  renderPdf,
+  saveFile,
+} from "./store.js"
 
 function person(userId: string) {
   return personActor(userId)
 }
 
+const PHOTO_EXTENSION: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+}
+
+function photoBytes(
+  photo: { mediaType: string; bytes: Uint8Array },
+  cacheControl: string
+) {
+  const ext = PHOTO_EXTENSION[photo.mediaType] ?? "bin"
+  return new Response(new Uint8Array(photo.bytes), {
+    status: 200,
+    headers: {
+      "content-type": photo.mediaType,
+      "x-content-type-options": "nosniff",
+      "content-disposition": `inline; filename="photo.${ext}"`,
+      "cache-control": cacheControl,
+    },
+  })
+}
+
+function fileIdOrMissing(value: string) {
+  try {
+    return parseFileId(value)
+  } catch {
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
+  }
+}
+
 export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
+
+  routes.get("/shared/:token/photo", async (c) => {
+    return photoBytes(
+      await readSharedPhoto(c.req.param("token")),
+      "public, max-age=60"
+    )
+  })
 
   routes.get("/shared/:token", async (c) => {
     const data = await registry.read(
@@ -85,6 +130,37 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   routes.get("/files", async (c) => {
     const data = await registry.read("paper.files", {}, person(c.var.userId))
     return c.json(successEnvelope(data))
+  })
+
+  routes.post("/files", async (c) => {
+    const body = await c.req.parseBody()
+    const file = body.file
+    if (!(file instanceof File)) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Choose an image to upload."
+        ),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+    const saved = await saveFile({
+      userId: parseUserId(c.var.userId),
+      name: file.name,
+      mediaType: file.type || "application/octet-stream",
+      bytes: Buffer.from(await file.arrayBuffer()),
+      purpose: "avatar",
+    })
+    return c.json(successEnvelope({ id: saved.id }))
+  })
+
+  routes.get("/files/:id/bytes", async (c) => {
+    const photo = await readOwnedPhoto(
+      parseUserId(c.var.userId),
+      fileIdOrMissing(c.req.param("id"))
+    )
+    return photoBytes(photo, "private, no-store")
   })
 
   routes.get("/:id/pdf", async (c) => {

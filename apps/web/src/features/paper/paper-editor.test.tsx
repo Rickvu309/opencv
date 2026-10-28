@@ -382,4 +382,71 @@ describe("CV editor chrome", () => {
       reloaded.container.querySelector(".cv-template-internship")
     ).toBeNull()
   })
+
+  it("saves typed text before a photo attaches inside the autosave window", async () => {
+    const fileId = "11111111-1111-4111-8111-111111111111"
+    const calls: { url: string; body?: { input?: Record<string, unknown> } }[] =
+      []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const body =
+        typeof init?.body === "string"
+          ? (JSON.parse(init.body) as { input?: Record<string, unknown> })
+          : undefined
+      calls.push({ url, body })
+      if (url.includes("/api/paper/files") && init?.method === "POST") {
+        return Promise.resolve(ok({ id: fileId }))
+      }
+      if (url.includes("/api/commands/paper.attachPhoto")) {
+        return Promise.resolve(
+          ok({
+            ...record,
+            templateId: "with-photo",
+            contentVersion: 3,
+            activityId: "33333333-3333-4333-8333-333333333333",
+          })
+        )
+      }
+      if (url.includes("/api/commands/paper.replace")) {
+        return Promise.resolve(ok({ ...record, contentVersion: 2 }))
+      }
+      return Promise.resolve(ok({}))
+    })
+
+    const docId = "22222222-2222-4222-8222-222222222222"
+    const view = render(
+      <PaperCvEditor
+        initial={{ ...record, id: docId, templateId: "with-photo" }}
+        pages={{ docId, pages: 1, pageChoice: "unset" }}
+        onBack={() => undefined}
+      />
+    )
+    const summary = screen.getByRole("textbox", { name: "Summary" })
+    summary.textContent = "Kept with the photo"
+    fireEvent.input(summary)
+    const input = view.container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    expect(input).toBeTruthy()
+    fireEvent.change(input, {
+      target: {
+        files: [
+          new File([new Uint8Array(8)], "face.png", { type: "image/png" }),
+        ],
+      },
+    })
+    await vi.waitFor(() => {
+      expect(calls.some((call) => call.url.includes("paper.attachPhoto"))).toBe(
+        true
+      )
+    })
+    const replace = calls.find((call) => call.url.includes("paper.replace"))
+    const attach = calls.find((call) => call.url.includes("paper.attachPhoto"))
+    expect(replace?.body?.input).toMatchObject({
+      contentVersion: 1,
+      document: { summary: "Kept with the photo" },
+    })
+    expect(calls.indexOf(replace!)).toBeLessThan(calls.indexOf(attach!))
+    expect(attach?.body?.input).toMatchObject({ fileId })
+  })
 })

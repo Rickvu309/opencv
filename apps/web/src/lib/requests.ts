@@ -16,8 +16,10 @@ export const endpoints = {
   paperOfKind: (kind: "cv" | "letter") => `/api/paper?kind=${kind}`,
   paperDoc: (docId: string) => `/api/paper/${docId}`,
   paperFiles: "/api/paper/files",
+  paperFileBytes: (fileId: string) => `/api/paper/files/${fileId}/bytes`,
   paperPages: (docId: string) => `/api/paper/${docId}/pages`,
   paperShared: (token: string) => `/api/paper/shared/${token}`,
+  paperSharedPhoto: (token: string) => `/api/paper/shared/${token}/photo`,
   paperImport: "/api/paper/import",
   paperPdf: (docId: string) => `/api/paper/${docId}/pdf`,
   chats: "/api/chats",
@@ -39,4 +41,22 @@ export const inboxConnectKey = ["inbox-connect"] as const
 /** For requests `apiFetch` cannot carry: uploads, file downloads and bare JSON reads outside the envelope. */
 export function fetchBinary(path: string, init?: RequestInit) {
   return fetch(new URL(path, apiBaseUrl), init)
+}
+
+export function resolvePhotoSrc(
+  stored: string | undefined,
+  shareToken?: string
+) {
+  if (!stored || stored.startsWith("blob:")) return undefined
+  if (stored.startsWith("file:")) {
+    const id = stored.slice("file:".length)
+    if (!id) return undefined
+    const path = shareToken
+      ? endpoints.paperSharedPhoto(shareToken)
+      : endpoints.paperFileBytes(id)
+    return new URL(path, apiBaseUrl).href
+  }
+  if (stored.startsWith("https://") || stored.startsWith("http://"))
+    return stored
+  return undefined
 }

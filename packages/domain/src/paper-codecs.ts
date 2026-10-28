@@ -2,7 +2,11 @@ import { z } from "zod"
 
 import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
 import type { CvBlockDocument } from "./paper-blocks/document.js"
-import { PAPER_CONTENT_VERSION, type PaperContentKind } from "./paper.js"
+import {
+  PAPER_CONTENT_VERSION,
+  paperPhotoValueSchema,
+  type PaperContentKind,
+} from "./paper.js"
 
 export const cvTemplateIdSchema = z.enum([
   "internship",
@@ -66,7 +70,7 @@ export const cvDocumentV1Schema = z
     skills: z.array(cvSkillGroupSchema),
     projects: z.array(cvProjectSchema).optional(),
     languages: z.array(z.string()).optional(),
-    photoUrl: z.string().optional(),
+    photoUrl: paperPhotoValueSchema.optional(),
   })
   .strict()
 

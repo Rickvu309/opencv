@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { paperPhotoValueSchema } from "../paper.js"
 import { blockRegistry } from "./registry.js"
 import { blockIdSchema } from "./schema.js"
 
@@ -50,7 +51,7 @@ export const cvBlockDocumentSchema = z
         phone: z.string(),
         city: z.string(),
         linkedin: z.string(),
-        photo: z.string().optional(),
+        photo: paperPhotoValueSchema.optional(),
       })
       .strict(),
     sections: z.array(

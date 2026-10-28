@@ -8,8 +8,12 @@ import {
   emptyCvDocument,
   emptyLetterDocument,
   isCvBlockDocument,
+  isCvDocument,
+  paperPhotoFileId,
+  paperPhotoRef,
   parseFileId,
   parsePaperId,
+  parseUserId,
   type PaperView,
   type Actor,
   type FileId,
@@ -21,7 +25,7 @@ import {
 } from "@workspace/domain"
 import { and, desc, eq } from "drizzle-orm"
 
-import { getDb } from "../db/context.js"
+import { getDb, transaction } from "../db/context.js"
 import { files, jobs, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
@@ -207,8 +211,12 @@ export async function duplicatePaper(actor: Actor, docId: PaperId) {
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {
-  await ownedPaper(actor.userId, docId)
-  await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
+  const current = await ownedPaper(actor.userId, docId)
+  const avatarId = paperPhotoFileId(photoRefOf(toPaper(current).document))
+  await transaction(async () => {
+    await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
+    if (avatarId) await deleteAvatar(actor.userId, avatarId)
+  })
   return { id: docId }
 }
 
@@ -306,6 +314,108 @@ trailer<< /Root 1 0 R >>
   return Buffer.from(body, "utf8")
 }
 
+function photoRefOf(document: PaperView["document"]) {
+  if (isCvBlockDocument(document)) return document.header.photo
+  if (isCvDocument(document)) return document.photoUrl
+  return undefined
+}
+
+function withPhotoRef(document: PaperView["document"], ref: string) {
+  if (isCvBlockDocument(document)) {
+    return { ...document, header: { ...document.header, photo: ref } }
+  }
+  if (isCvDocument(document)) return { ...document, photoUrl: ref }
+  throw new CommandError(
+    ERROR_CODES.VALIDATION_ERROR,
+    "A photo belongs on a CV."
+  )
+}
+
+async function requireAvatarFile(userId: UserId, fileId: FileId) {
+  const rows = await getDb()
+    .select({
+      purpose: files.purpose,
+      mediaType: files.mediaType,
+    })
+    .from(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
+    .limit(1)
+  const row = rows[0]
+  if (!row || row.purpose !== "avatar" || !row.mediaType.startsWith("image/")) {
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
+  }
+  return row
+}
+
+export async function readOwnedPhoto(userId: UserId, fileId: FileId) {
+  const meta = await requireAvatarFile(userId, fileId)
+  const rows = await getDb()
+    .select({ bytes: files.bytes })
+    .from(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
+    .limit(1)
+  const bytes = rows[0]?.bytes
+  if (!bytes) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
+  return { mediaType: meta.mediaType, bytes }
+}
+
+export async function readSharedPhoto(token: string) {
+  const rows = await getDb()
+    .select({ doc: paperDocs })
+    .from(paperShares)
+    .innerJoin(paperDocs, eq(paperDocs.id, paperShares.docId))
+    .where(eq(paperShares.token, token))
+    .limit(1)
+  const row = rows[0]
+  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
+  const fileId = paperPhotoFileId(photoRefOf(toPaper(row.doc).document))
+  if (!fileId) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
+  return readOwnedPhoto(parseUserId(row.doc.userId), parseFileId(fileId))
+}
+
+export async function attachPhoto(
+  actor: Actor,
+  docId: PaperId,
+  fileId: FileId
+) {
+  const current = await ownedPaper(actor.userId, docId)
+  await requireAvatarFile(actor.userId, fileId)
+  const view = toPaper(current)
+  const previousAvatarId = paperPhotoFileId(photoRefOf(view.document))
+  const document = requireDocument(
+    current.kind,
+    withPhotoRef(view.document, paperPhotoRef(fileId))
+  )
+  const updatedAt = new Date()
+  const contentVersion = current.contentVersion + 1
+  const written = await transaction(async () => {
+    const result = await getDb()
+      .update(paperDocs)
+      .set({ document, contentVersion, updatedAt })
+      .where(
+        and(
+          eq(paperDocs.id, current.id),
+          eq(paperDocs.contentVersion, current.contentVersion)
+        )
+      )
+    if ((result.rowCount ?? 0) === 0) return result
+    if (previousAvatarId && previousAvatarId !== fileId) {
+      await deleteAvatar(actor.userId, previousAvatarId)
+    }
+    return result
+  })
+  if ((written.rowCount ?? 0) === 0) {
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "This document changed. Reload it and try again."
+    )
+  }
+  return {
+    ...toPaper({ ...current, document, contentVersion, updatedAt }),
+    previousDocument: view.document,
+  }
+}
+
 export async function readShared(token: string) {
   const rows = await getDb()
     .select({ doc: paperDocs })
@@ -317,6 +427,51 @@ export async function readShared(token: string) {
   if (!row)
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
   return toPaper(row.doc)
+}
+
+function deleteAvatar(userId: UserId, fileId: string) {
+  return getDb()
+    .delete(files)
+    .where(
+      and(
+        eq(files.id, fileId),
+        eq(files.userId, userId),
+        eq(files.purpose, "avatar")
+      )
+    )
+}
+
+/** Type comes from the bytes. The client Content-Type is not trusted. */
+function avatarMediaType(bytes: Buffer) {
+  if (
+    bytes.length >= 4 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  ) {
+    return "image/png"
+  }
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff
+  ) {
+    return "image/jpeg"
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes.toString("ascii", 0, 4) === "RIFF" &&
+    bytes.toString("ascii", 8, 12) === "WEBP"
+  ) {
+    return "image/webp"
+  }
+  if (bytes.length >= 6) {
+    const sig = bytes.toString("ascii", 0, 6)
+    if (sig === "GIF87a" || sig === "GIF89a") return "image/gif"
+  }
+  throw new CommandError(ERROR_CODES.FILE_UNSUPPORTED, "Upload an image.")
 }
 
 const IMPORT_TYPES = new Set([
@@ -348,9 +503,8 @@ export async function saveFile(input: {
       "Upload a PDF, Word, or text file."
     )
   }
-  if (input.purpose === "avatar" && !input.mediaType.startsWith("image/")) {
-    throw new CommandError(ERROR_CODES.FILE_UNSUPPORTED, "Upload an image.")
-  }
+  const mediaType =
+    input.purpose === "avatar" ? avatarMediaType(input.bytes) : input.mediaType
   const id = createId()
   await getDb()
     .insert(files)
@@ -358,7 +512,7 @@ export async function saveFile(input: {
       id,
       userId: input.userId,
       name: input.name.slice(0, 200) || "file",
-      mediaType: input.mediaType,
+      mediaType,
       byteSize: input.bytes.byteLength,
       purpose: input.purpose,
       bytes: input.bytes,

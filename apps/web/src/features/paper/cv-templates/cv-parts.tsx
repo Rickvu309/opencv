@@ -6,10 +6,24 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import {
+  isCvBlockDocument,
+  isCvDocument,
+  parsePaperId,
+  type FileId,
+} from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
+import { toastWithUndo } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 import { ImagePlus, Plus, User } from "lucide-react"
+
+import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
+import { resolvePhotoSrc } from "@/lib/requests.ts"
+
+import { cvPhotoRejection, getPaper, uploadPaperPhoto } from "../paper-api.ts"
 import { addEducation, EMPTY_SECTION_CTA } from "../paper-cv-edits.ts"
 import { handleCanvasFieldKeyDown } from "../paper-cv-keyboard.ts"
 import {
@@ -312,15 +326,54 @@ export function SectionTitle({
   )
 }
 
-export function CvPhoto({
-  url,
-  onChange,
+export type CvPhotoFrameValue = {
+  docId?: string
+  shareToken?: string
+  beforePhoto?: () => Promise<void>
+  notePhoto?: (ref: string | undefined, version: number) => void
+}
+
+function photoAlt(name?: string) {
+  const trimmed = name?.trim()
+  return trimmed ? trimmed : "Photo"
+}
+
+const CvPhotoFrameContext = createContext<CvPhotoFrameValue>({})
+
+export function CvPhotoFrame({
+  value,
+  children,
 }: {
+  value: CvPhotoFrameValue
+  children: ReactNode
+}) {
+  return (
+    <CvPhotoFrameContext.Provider value={value}>
+      {children}
+    </CvPhotoFrameContext.Provider>
+  )
+}
+
+function storedPhoto(document: unknown) {
+  if (isCvBlockDocument(document)) return document.header.photo
+  if (isCvDocument(document)) return document.photoUrl
+  return undefined
+}
+
+function PhotoSlot({
+  src,
+  url,
+  name,
+  error,
+  onPick,
+}: {
+  src?: string
   url?: string
-  onChange: (url: string | undefined) => void
+  name?: string
+  error?: string
+  onPick: (file: File) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
-
   return (
     <>
       {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
@@ -329,10 +382,10 @@ export function CvPhoto({
         type="file"
         accept="image/*"
         className="sr-only"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) onChange(URL.createObjectURL(file))
-          e.target.value = ""
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) onPick(file)
+          event.target.value = ""
         }}
       />
       <Button
@@ -342,8 +395,12 @@ export function CvPhoto({
         aria-label={url ? "Change profile photo" : "Add profile photo"}
         className="group cv-template-photo-slot relative h-auto shrink-0 overflow-hidden rounded-md border border-foreground/15 bg-muted/30 p-0 hover:border-foreground/30 hover:bg-muted/50"
       >
-        {url ? (
-          <img src={url} alt="" className="size-full object-cover" />
+        {src ? (
+          <img
+            src={src}
+            alt={photoAlt(name)}
+            className="size-full object-cover"
+          />
         ) : (
           <span className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground">
             <User className="size-6 opacity-50" strokeWidth={1.5} />
@@ -354,6 +411,147 @@ export function CvPhoto({
           {url ? "Change" : "Add photo"}
         </span>
       </Button>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </>
   )
+}
+
+function CvPhotoDisplay({
+  url,
+  name,
+  shareToken,
+}: {
+  url?: string
+  name?: string
+  shareToken?: string
+}) {
+  const [error, setError] = useState<string>()
+  return (
+    <PhotoSlot
+      src={resolvePhotoSrc(url, shareToken)}
+      url={url}
+      name={name}
+      error={error}
+      onPick={(file) => {
+        setError(cvPhotoRejection(file) ?? "Open this CV to add a photo.")
+      }}
+    />
+  )
+}
+
+function CvPhotoUploader({
+  url,
+  name,
+  onChange,
+  docId,
+  shareToken,
+  beforePhoto,
+  notePhoto,
+}: {
+  url?: string
+  name?: string
+  onChange: (url: string | undefined) => void
+  docId: string
+  shareToken?: string
+  beforePhoto?: CvPhotoFrameValue["beforePhoto"]
+  notePhoto?: CvPhotoFrameValue["notePhoto"]
+}) {
+  const run = useRunCommand()
+  const queryClient = useQueryClient()
+  const [error, setError] = useState<string>()
+
+  function publish(ref: string | undefined, version: number) {
+    if (notePhoto) notePhoto(ref, version)
+    else onChange(ref)
+  }
+
+  async function undo(activityId: string) {
+    try {
+      await undoActivity(queryClient, activityId)
+      const next = await getPaper(docId)
+      publish(storedPhoto(next.document), next.contentVersion)
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not undo the photo. Try again."
+      )
+    }
+  }
+
+  async function onPick(file: File) {
+    const rejection = cvPhotoRejection(file)
+    if (rejection) {
+      setError(rejection)
+      return
+    }
+    setError(undefined)
+    let uploadedId: FileId | undefined
+    try {
+      await beforePhoto?.()
+      const fileId = await uploadPaperPhoto(file)
+      uploadedId = fileId
+      const saved = await run("paper.attachPhoto", {
+        docId: parsePaperId(docId),
+        fileId,
+      })
+      uploadedId = undefined
+      publish(`file:${fileId}`, saved.contentVersion)
+      const activityId = saved.activityId
+      if (activityId) {
+        toastWithUndo("Photo added", () => {
+          void undo(activityId)
+        })
+      }
+    } catch (caught) {
+      if (uploadedId) {
+        try {
+          await run("paper.deleteFile", { fileId: uploadedId })
+        } catch {
+          // The attach error is the one to show. This delete removes the orphan row.
+        }
+      }
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not add the photo. Try again."
+      )
+    }
+  }
+
+  return (
+    <PhotoSlot
+      src={resolvePhotoSrc(url, shareToken)}
+      url={url}
+      name={name}
+      error={error}
+      onPick={(file) => void onPick(file)}
+    />
+  )
+}
+
+export function CvPhoto({
+  url,
+  name,
+  onChange,
+}: {
+  url?: string
+  name?: string
+  onChange: (url: string | undefined) => void
+}) {
+  const frame = useContext(CvPhotoFrameContext)
+  if (frame.docId) {
+    return (
+      <CvPhotoUploader
+        url={url}
+        name={name}
+        onChange={onChange}
+        docId={frame.docId}
+        shareToken={frame.shareToken}
+        beforePhoto={frame.beforePhoto}
+        notePhoto={frame.notePhoto}
+      />
+    )
+  }
+  return <CvPhotoDisplay url={url} name={name} shareToken={frame.shareToken} />
 }
