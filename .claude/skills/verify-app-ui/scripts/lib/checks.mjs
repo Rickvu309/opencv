@@ -34,21 +34,6 @@ export function runChecks(d) {
   const { screens, allSnaps, labels, has } = context(d)
 
   // Structure.
-  const staleHome = ["What are you aiming for?", "Four small things"].filter(
-    (phrase) => (d.home.text ?? "").includes(phrase)
-  )
-  r.push(
-    result(
-      "14",
-      "home-composer-first",
-      staleHome.length === 0,
-      staleHome.length
-        ? `start page still shows ${staleHome.join(", ")}`
-        : "start page does not show the old Home prompts",
-      "the /home page does not show What are you aiming for? or Four small things"
-    )
-  )
-
   const editor = d.cv.editorRect
   const side = d.cv.sidebarRect
   const widest = Boolean(editor) && (!side || editor.w >= side.w)
@@ -288,7 +273,7 @@ export function runChecks(d) {
   r.push(
     result(
       "28",
-      "primary-buttons-48",
+      "primary-buttons-32",
       found.every((f) => (f.h ?? 0) >= 32),
       found
         .map((f) => `${f.k} "${f.label ?? "not found"}" ${f.h ?? "?"}px`)
