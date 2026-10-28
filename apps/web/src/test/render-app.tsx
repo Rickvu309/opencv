@@ -14,11 +14,10 @@ import { paperApiFetch } from "@/test/paper-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { shellApiFetch } from "@/test/shell-api-mock.ts"
 import { chatApiFetch } from "@/test/chat-api-mock.ts"
-import { bindTestRouter } from "@/test/go-home.ts"
 import { vi } from "vitest"
 
 export function renderApp(
-  initialEntry = "/home",
+  initialEntry: string,
   onRequest?: (input: RequestInfo | URL) => void
 ) {
   vi.stubGlobal(
@@ -45,7 +44,6 @@ export function renderApp(
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   })
-  bindTestRouter(router)
 
   return {
     router,

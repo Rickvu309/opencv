@@ -73,7 +73,7 @@ Check provider settings and the product's data disclosure before a live rollout.
 ## Verification and rollout
 
 The repeatable local walkthrough is
-[home-coach-turn.md](../.claude/skills/verify-opencv/features/home-coach-turn.md).
+[coach-turn.md](../.claude/skills/verify-opencv/features/coach-turn.md).
 It launches an isolated database and scripted runtime with no paid model call.
 
 | Check                       | Evidence target                                                                                                                   |

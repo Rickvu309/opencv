@@ -3,7 +3,6 @@ import { expect, vi } from "vitest"
 
 import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
-import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 
 export const NAV = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
 
@@ -47,15 +46,4 @@ export async function expectApplyLive() {
     await screen.findByRole("heading", { name: "Track your first job" })
   ).toBeInTheDocument()
   expect(screen.queryByText(SURFACE_COPY.apply.body)).not.toBeInTheDocument()
-}
-
-export async function expectHomeIdle() {
-  expect(
-    await screen.findByRole("heading", {
-      level: 1,
-      name: new RegExp(
-        `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
-      ),
-    })
-  ).toBeInTheDocument()
 }

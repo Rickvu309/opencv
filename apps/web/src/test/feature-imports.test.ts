@@ -8,14 +8,13 @@ const srcDir = fileURLToPath(new URL("..", import.meta.url))
 const featuresDir = path.join(srcDir, "features")
 
 const FEATURE_IMPORTS: Record<string, string[]> = {
-  apply: ["home"],
+  apply: [],
   "app-shell": ["apply", "auth", "coach", "command-palette", "inbox", "paper"],
   auth: [],
-  coach: ["app-shell", "commands", "settings"],
+  coach: ["app-shell", "settings"],
   "coming-soon": [],
   "command-palette": ["app-shell"],
   commands: [],
-  home: ["app-shell", "coach", "seed", "settings"],
   inbox: ["apply"],
   landing: ["app-shell"],
   paper: ["apply", "coach", "seed"],

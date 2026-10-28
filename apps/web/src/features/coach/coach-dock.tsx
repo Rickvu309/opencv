@@ -52,7 +52,7 @@ type Props = {
   placeholder?: string
   menuPlacement?: "below" | "above"
   showModePicker?: boolean
-  /** Paper CoachFloat: attach the open doc. Home still routes to Paper. */
+  /** Paper CoachFloat: attach the open doc. Without it, the menu routes to Paper. */
   onAttachFromPaper?: () => void
   onAttachJob?: () => void
   onAttachLink?: () => void

@@ -7,17 +7,17 @@ import {
   within,
 } from "@testing-library/react"
 
-import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import {
   expectApplyLive,
-  expectHomeIdle,
   expectPitch,
   linkNames,
   NAV,
   stubDesktopViewport,
 } from "@/test/app-shell-fixtures.ts"
+import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { failPaperList } from "@/test/paper-api-mock.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"
@@ -272,14 +272,14 @@ describe("app shell layout", () => {
   })
 
   it("opens the Search dialog from the sidebar and stays on the same page", async () => {
-    const { router } = renderApp(HOME_PATH)
-    await expectHomeIdle()
+    const { router } = renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     fireEvent.click(screen.getByRole("button", { name: "Search" }))
     expect(
       await screen.findByRole("dialog", { name: "Search" })
     ).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe(HOME_PATH)
+    expect(router.state.location.pathname).toBe(SURFACE_PATHS.coach)
   })
 
   it("renders a favorite as title then company, and omits the section when empty", async () => {

@@ -31,7 +31,7 @@ test("sourceFiles names a missing folder and still reads the others", () => {
 const snap = { durations: {}, durationSamples: [], redOutsideAlert: [] }
 const surfaces = (over = {}) =>
   Object.fromEntries(
-    ["home", "paper", "cv", "apply", "pitch"].map((k) => [k, over[k] ?? snap])
+    ["coach", "paper", "cv", "apply", "pitch"].map((k) => [k, over[k] ?? snap])
   )
 const GONE = ["apps/web/src/features/gone"]
 const PALETTE = "apps/web/src/features/command-palette"
@@ -63,7 +63,7 @@ test("24: a computed off-token duration FAILs even when a source folder is missi
 
 test("25: reduced-motion motion FAILs even when the palette folder is missing; missing alone is STALE", () => {
   const reduced = {
-    home: {
+    coach: {
       durations: { "500ms": 1 },
       runningAnimations: 0,
       scrollBehavior: "auto",
@@ -71,7 +71,7 @@ test("25: reduced-motion motion FAILs even when the palette folder is missing; m
   }
   const failing = motion({ reduced }, snap, { paletteDir: GONE[0] })
   assert.equal(failing["25"].status, "FAIL")
-  assert.match(failing["25"].measured, /home:500ms.*not judged/)
+  assert.match(failing["25"].measured, /coach:500ms.*not judged/)
   assert.equal(motion({}, snap, { paletteDir: GONE[0] })["25"].status, "STALE")
   assert.equal(motion({}, snap, { paletteDir: PALETTE })["25"].status, "PASS")
 })
@@ -88,7 +88,7 @@ test("27: a silent Coach stub makes only the Coach part unjudged", () => {
     { reduced: {}, ...quiet },
     {
       allSnaps: [snap],
-      screens: surfaces({ home: { ...snap, redOutsideAlert: ["Failed"] } }),
+      screens: surfaces({ coach: { ...snap, redOutsideAlert: ["Failed"] } }),
     },
     { banner: ALERTING }
   ).find((r) => r.id === "27")
@@ -140,14 +140,14 @@ test("28: a too-small button FAILs although another surface has no match", () =>
 
 test("32: a surface past 30 Tab presses FAILs although another has no match", () => {
   const d = {
-    home: buttonSnap([]),
+    coach: buttonSnap([]),
     paper: buttonSnap([{ label: "New" }]),
     apply: buttonSnap([{ label: "New job" }]),
-    tabs: { home: tabsOf(0), paper: tabsOf(45), apply: tabsOf(12) },
+    tabs: { coach: tabsOf(0), paper: tabsOf(45), apply: tabsOf(12) },
   }
   const out = keyboardPrimaryCheck(d)
   assert.equal(out.status, "FAIL")
-  assert.match(out.measured, /not judged: home \(no button matched/)
+  assert.match(out.measured, /not judged: coach \(no button matched/)
   d.tabs.paper = tabsOf(12)
   assert.equal(keyboardPrimaryCheck(d).status, "STALE")
 })

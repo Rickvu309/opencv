@@ -8,7 +8,7 @@ import { probeSource } from "./probe.mjs"
 
 const CV_NAME = "Live Check CV"
 const ROUTES = {
-  home: ["/home", "document.querySelector('h1')"],
+  coach: ["/coach", "document.querySelector('h1')"],
   paper: [
     "/paper",
     `document.body.innerText.includes(${JSON.stringify(CV_NAME)})`,
@@ -19,7 +19,7 @@ const ROUTES = {
 }
 // Also listed under "Constants the checks assume" in coverage.md.
 export const PRIMARY = {
-  home: /^Add /,
+  coach: /^Add$/,
   paper: /^New$/,
   apply: /^(New job|Add job)$/,
   pitch: /^Get early access$/,
@@ -201,7 +201,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     prepared.cv === true && prepared.card === true,
     `creating the tour CV and card failed (${JSON.stringify(prepared)})`
   )
-  await a.goto(`${webUrl}/home`)
+  await a.goto(`${webUrl}/coach`)
   must(
     await a.waitFor("document.querySelector('textarea')", 20000),
     "welcome did not finish"
@@ -217,11 +217,11 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   }
   for (const key of Object.keys(ROUTES)) await visit(key)
 
-  for (const key of ["home", "paper", "apply", "pitch"]) {
+  for (const key of ["coach", "paper", "apply", "pitch"]) {
     must(await visit(key), `${key} did not render at ${ROUTES[key][0]}`)
     d.tabs[key] = await tabWalk(a, key)
     await a.sleep(1200)
-    if (key === "home") {
+    if (key === "coach") {
       const hasComposer = await a.evaluate(
         "Boolean(document.querySelector('textarea'))"
       )
@@ -229,7 +229,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     }
     d[key] = await snap(a)
     await shot(a, `desktop-${key}`)
-    if (key === "home") {
+    if (key === "coach") {
       await a.key("k", { ctrl: true })
       must(
         await a.waitFor("document.querySelector('[role=dialog]')", 4000),
@@ -339,7 +339,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         }
       : null
   )
-  await b.goto(`${webUrl}/home`)
+  await b.goto(`${webUrl}/coach`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"
@@ -352,7 +352,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await shot(b, "desktop-coach-error")
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
-  await b.goto(`${webUrl}/home`)
+  await b.goto(`${webUrl}/coach`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"

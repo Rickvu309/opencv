@@ -22,8 +22,6 @@ import {
   undoActivity,
   useRunCommand,
 } from "@/lib/contract-client.ts"
-import { authClient } from "@/lib/auth-client.ts"
-import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 
 import { jobListKey } from "./apply-api.ts"
 import { BoardLane, JobCard } from "./apply-parts.tsx"
@@ -65,7 +63,6 @@ export function ApplyBoard({
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const run = useRunCommand()
-  const { data: session } = authClient.useSession()
   const tails = useRef(new Map<string, Promise<unknown>>())
   const pendingMoves = useRef(0)
   const [drag, setDrag] = useState<{
@@ -91,8 +88,6 @@ export function ApplyBoard({
     pendingMoves.current += 1
     const move = async () => {
       const result = await run("job.move", input, { refresh: false })
-      const userId = session?.user.id
-      if (userId) recordFirstCafeItem(userId, "apply")
       if (stage === "closed" && result.activityId) {
         const activityId = result.activityId
         toastWithUndo("Moved to Closed", () => {

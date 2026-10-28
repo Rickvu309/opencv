@@ -7,11 +7,10 @@ export const repo = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../.."
 )
-export const SURFACES = ["home", "paper", "cv", "apply", "pitch"]
+export const SURFACES = ["coach", "paper", "cv", "apply", "pitch"]
 // Signed-in app source. Pitch and Proof live in coming-soon (features/pitch went in #389).
 export const FEATURE_DIRS = [
   "coach",
-  "home",
   "paper",
   "apply",
   "coming-soon",
@@ -114,14 +113,14 @@ export function summarize(results) {
 
 export function context(d) {
   const screens = {
-    home: d.home,
+    coach: d.coach,
     paper: d.paper,
     cv: d.cv,
     apply: d.apply,
     pitch: d.pitch,
   }
   const allSnaps = [
-    d.home,
+    d.coach,
     d.palette,
     d.thread,
     d.paper,

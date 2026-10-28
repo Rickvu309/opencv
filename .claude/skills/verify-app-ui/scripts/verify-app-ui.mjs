@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify-app-ui: measures the signed-in app (Home and Coach, Paper, Apply, Pitch) against the mechanical
+// verify-app-ui: measures the signed-in app (Coach, Paper, Apply, Pitch) against the mechanical
 // checks in SKILL.md.
 //   pnpm --filter web verify:app-ui        (api on PORT, web on PORT+1; 4450 and 4451 by default)
 //   VERIFY_APP_UI_SHOTS=<dir> also writes the review screenshots.

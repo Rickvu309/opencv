@@ -173,16 +173,16 @@ test("40 inbox reader glow of 1 passes and 2 fails", () => {
 
 test("40 counts every captured view, including the empty board", () => {
   const views = capturedGlowViews({
-    home: { glowCount: 0 },
+    coach: { glowCount: 0 },
     apply: { glowCount: 1 },
     applyEmpty: { glowCount: 2 },
     mobile: { apply: { glowCount: 0 } },
-    timing: { home: 12 },
+    timing: { coach: 12 },
     logs: [],
   })
   assert.deepEqual(
     views.map((view) => view.name),
-    ["home", "apply", "applyEmpty", "mobile-apply"]
+    ["coach", "apply", "applyEmpty", "mobile-apply"]
   )
   assert.deepEqual(extraGlowPrimaries(views.map((view) => view.count)), [2])
 })

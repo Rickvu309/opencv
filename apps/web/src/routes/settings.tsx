@@ -22,17 +22,12 @@ import { UpgradeScreen } from "@/features/settings/upgrade-screen.tsx"
 import { UsageSection } from "@/features/settings/usage-section.tsx"
 import { fetchProfile, profileKey } from "@/lib/account-api.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
-import { useFirstCafeSurfaceVisit } from "@/features/home/use-first-cafe-surface-visit.ts"
 
 export function SettingsPage() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  const search = useRouterState({
-    select: (state) => state.location.search as { tab?: string },
-  })
   const view = settingsViewFromPath(pathname)
-  useFirstCafeSurfaceVisit(search.tab === "apps" ? "email" : null)
   const profile = useQuery({
     queryKey: profileKey(),
     queryFn: fetchProfile,

@@ -78,12 +78,12 @@ export function contentChecks(d) {
       nouns.length
         ? `${nouns.length}: ${list(nouns.map((n) => `"${n.label}" (${n.why})`))}`
         : "none",
-      "chrome may say Job. Opportunity and Thread fail. Email, document and profile stay banned (word list, heuristic; goal chips, the Connect email row, the account menu, the Paper and Home labels, and the Inbox connect sentences are exempt)"
+      "chrome may say Job. Opportunity and Thread fail. Email, document and profile stay banned (word list, heuristic; goal chips, the Connect email row, the account menu, the Paper labels, and the Inbox connect sentences are exempt)"
     )
   )
 
   const holders = {
-    home: d.home.composerPlaceholder,
+    coach: d.coach.composerPlaceholder,
     thread: d.thread.composerPlaceholder,
     "paper-coach": d.cvCoach.composerPlaceholder,
   }
@@ -96,7 +96,7 @@ export function contentChecks(d) {
       Object.entries(holders)
         .map(([k, v]) => `${k}="${v}"`)
         .join(" | "),
-      "Home, Thread and the Paper Coach float use one placeholder string"
+      "The Coach page, the Thread and the Paper Coach float use one placeholder string"
     )
   )
 

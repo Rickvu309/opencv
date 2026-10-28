@@ -14,9 +14,7 @@ import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { resetMockJobs, setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
-import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { starterCvDocument } from "@/test/starter-cv.ts"
-import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 export function coachFloatButton() {
@@ -85,18 +83,6 @@ export function sampleInternshipCv() {
 
 export function sampleSkillItems() {
   return sampleInternshipCv().content.skills.flatMap((group) => group.items)
-}
-
-export async function goHomeThenPaper() {
-  await goHome()
-  expect(
-    await screen.findByRole("heading", {
-      level: 1,
-      name: /^Good (morning|afternoon|evening),/,
-    })
-  ).toBeInTheDocument()
-  fireEvent.click(screen.getByRole("link", { name: /^Paper$/ }))
-  await expectPaperDrive()
 }
 
 export function coachDialog() {

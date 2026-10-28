@@ -2,13 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 
 import { scriptCoachStream } from "@/test/chat-api-mock.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
-  expectHomeIdle,
+  expectCoachIdle,
   expectSendSettled,
   sendMessage,
   stepButton,
-} from "@/test/home-chat-helpers.ts"
+} from "@/test/coach-chat-helpers.ts"
 
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())
@@ -19,7 +20,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("Home Command receipts", { timeout: 15_000 }, () => {
+describe("Coach Command receipts", { timeout: 15_000 }, () => {
   it("undoes a reversible receipt and marks it undone", async () => {
     scriptCoachStream({
       parts: [
@@ -43,8 +44,8 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
         },
       ],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Move the intern card to Prep")
     await expectSendSettled("Move the intern card to Prep")
 
@@ -78,8 +79,8 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
         },
       ],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Move a card that later vanished")
     await expectSendSettled("Move a card that later vanished")
 
@@ -106,8 +107,8 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
         },
       ],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("What cards do I have?")
     expect(
       await screen.findByRole("button", {
@@ -134,8 +135,8 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
         },
       ],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Move a missing card")
     expect(
       await screen.findByRole("button", {
@@ -161,8 +162,8 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
         },
       ],
     })
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     await sendMessage("Move card 00000000-0000-0000-0000-000000000002 to Prep")
 
     const receipt = await screen.findByRole("button", {

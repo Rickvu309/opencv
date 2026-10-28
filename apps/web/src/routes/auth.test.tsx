@@ -10,8 +10,9 @@ import { SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
 import { setMockGoogle, setMockSession } from "@/test/auth-client-mock.ts"
 import { pathOf } from "@/test/mock-http.ts"
 import { setMockWelcomedAt } from "@/test/profile-api-mock.ts"
+import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 
 afterEach(() => {
   cleanup()
@@ -48,10 +49,8 @@ function refuseCode(code: string, status: number) {
 }
 
 async function openExpired() {
-  renderApp(HOME_PATH)
-  expect(
-    await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
-  ).toBeInTheDocument()
+  renderApp(SURFACE_PATHS.coach)
+  await expectCoachIdle()
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue(
@@ -298,7 +297,7 @@ describe("welcome", () => {
     }))
     const calls: string[] = []
     setMockWelcomedAt(null)
-    renderApp(HOME_PATH, (input) => {
+    renderApp(SURFACE_PATHS.coach, (input) => {
       calls.push(pathOf(input))
     })
     expect(
@@ -317,10 +316,8 @@ describe("welcome", () => {
 
   it("skips welcome when the profile was already welcomed", async () => {
     setMockWelcomedAt("2026-01-02T00:00:00.000Z")
-    renderApp(HOME_PATH)
-    expect(
-      await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
-    ).toBeInTheDocument()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
     expect(
       screen.queryByRole("heading", { name: AUTH_COPY.welcome })
     ).not.toBeInTheDocument()

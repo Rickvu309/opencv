@@ -1,6 +1,6 @@
 # Shell
 
-The signed-in shell wraps every page except Settings. Signed in, `/` redirects to the start page from the profile. The legacy `/app` prefix redirects to the same route without it. Apply is the default. There is no Home heading.
+The signed-in shell wraps every page except Settings. Signed in, `/` redirects to the start page from the profile. The legacy `/app` prefix redirects to the same route without it. Apply is the default.
 
 ## Sub-features
 
@@ -11,14 +11,14 @@ The signed-in shell wraps every page except Settings. Signed in, `/` redirects t
 
 ## How to get to it (user POV)
 
-- Sign up or sign in (see `auth.md`). The app lands on `/apply`, not a Home heading.
+- Sign up or sign in (see `auth.md`). The app lands on `/apply`.
 - Settings (`/settings`) has no sidebar and no dock.
 
 ## Driving it with agent-browser
 
 Preconditions: signed in; `run.env` loaded; session `verify-374`.
 
-- **Start page.** `agent-browser open "$WEB_URL/"`. The URL is `/apply`. The page has a heading Apply. It does not show "What are you aiming for?" or "Four small things".
+- **Start page.** `agent-browser open "$WEB_URL/"`. The URL is `/apply`. The page has a heading Apply.
 - **Sidebar at 1440.** `agent-browser set viewport 1440 900`. Snapshot shows links Inbox, Coach, Jobs, Paper, Apply, Pitch, in that order, plus Search and New chat. The wordmark reads opencv.
 - **Dock.** Snapshot shows Coach and History. With no chats, there is no chip.
 - **Panel on Paper.** Open `/paper`. Click the dock button Coach. The panel shows Minimize, Expand and Close. Click Minimize, then open Coach again, click Expand, then Close.
@@ -34,4 +34,4 @@ Preconditions: signed in; `run.env` loaded; session `verify-374`.
 - The panel body is the existing thread view until #377. Send stays the secondary button.
 - Favorites link to `/apply` and `/paper` until the id routes exist.
 - Inbox shows a count only when the payload items include `unread`.
-- `/home` still renders the old Home page and is not linked from the shell.
+- The retired Home page has no route. Its old paths show the calm 404 with Back to start.
