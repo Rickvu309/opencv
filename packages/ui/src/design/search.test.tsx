@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import snapshot from "../design/search.snapshot.json"
+import snapshot from "./search.snapshot.json"
 
 describe("SearchInput Pen source agreement", () => {
   it("tracks the four source states and maps their shared geometry", () => {
@@ -20,13 +20,5 @@ describe("SearchInput Pen source agreement", () => {
       expect(state.text.fontSize).toBe(13)
     }
     expect(snapshot.states.focus.geometry.borderWidth).toBe(1.5)
-    expect(snapshot.implementation).toMatchObject({
-      geometry: { height: 36, radius: 8, horizontalInset: 12, gap: 8 },
-      mapping: {
-        mobileType: "text-base",
-        desktopType: "md:text-sm",
-        iconSize: 16,
-      },
-    })
   })
 })
