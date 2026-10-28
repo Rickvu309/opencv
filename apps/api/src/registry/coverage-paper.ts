@@ -259,12 +259,14 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         run("paper.attachPhoto", { docId: ctx.docId, fileId: ctx.fileId }),
       assert: async () => {
         const document = record(await paperOf(ctx.docId), "document")
-        expect(text(document, "photoUrl")).toBe(`file:${ctx.fileId}`)
+        expect(text(record(document, "header"), "photo")).toBe(
+          `file:${ctx.fileId}`
+        )
       },
       undoAssert: async (result) => {
         await undo(result)
         const document = record(await paperOf(ctx.docId), "document")
-        expect("photoUrl" in document).toBe(false)
+        expect("photo" in record(document, "header")).toBe(false)
       },
     },
     {
