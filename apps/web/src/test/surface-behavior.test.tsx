@@ -77,7 +77,7 @@ describe("empty api data shows empty states, never sample content", () => {
 
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "One link that sells you",
       })
     ).toBeInTheDocument()
@@ -138,7 +138,7 @@ describe("Pitch makes no third-party requests", () => {
 
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "One link that sells you",
       })
     ).toBeInTheDocument()
@@ -164,7 +164,7 @@ describe("Pitch does not seed a persona", () => {
 
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "One link that sells you",
       })
     ).toBeInTheDocument()

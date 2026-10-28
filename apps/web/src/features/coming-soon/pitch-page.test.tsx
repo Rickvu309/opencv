@@ -1,61 +1,62 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
-import { PitchPage } from "@/features/coming-soon/pitch-page.tsx"
+import { pathOf } from "@/test/mock-http.ts"
+import { renderApp } from "@/test/render-app.tsx"
+import { notifyCalls } from "@/test/shell-api-mock.ts"
 
-const state = vi.hoisted(() => ({
-  pending: false,
-  error: null as string | null,
-  notify: vi.fn(),
-}))
-
-vi.mock("@/features/coming-soon/notify.ts", () => ({
-  useNotify: () => state,
-}))
+beforeEach(() => {
+  vi.stubGlobal("scrollTo", vi.fn())
+})
 
 afterEach(() => {
   cleanup()
-  state.pending = false
-  state.error = null
-  state.notify.mockReset()
+  vi.unstubAllGlobals()
 })
 
 describe("Pitch coming soon", () => {
-  it("titles the page Pitch and reads the headline as one sentence", () => {
-    render(<PitchPage />)
+  it("titles the page Pitch and reads the headline as one sentence", async () => {
+    renderApp("/pitch")
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Pitch" })
+      await screen.findByRole("heading", { level: 1, name: "Pitch" })
     ).toBeInTheDocument()
     expect(
       screen.getByRole("heading", { level: 2, name: "One link that sells you" })
     ).toBeInTheDocument()
-    expect(screen.getByText("Coming soon")).toBeInTheDocument()
+    expect(screen.getByText("Your CV and Proofs on one page.")).toBeVisible()
   })
 
-  it("asks to be notified when the button is pressed", () => {
-    render(<PitchPage />)
+  it("asks to be notified about Pitch", async () => {
+    renderApp("/pitch")
+    const before = notifyCalls().length
 
-    fireEvent.click(screen.getByRole("button", { name: "Get early access" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Get early access" })
+    )
 
-    expect(state.notify).toHaveBeenCalledTimes(1)
-  })
-
-  it("shows an error next to the button", () => {
-    state.error = "Could not save that. Try again."
-    render(<PitchPage />)
-
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Could not save that. Try again."
+    await waitFor(() =>
+      expect(notifyCalls().slice(before)).toEqual([{ topic: "pitch" }])
     )
   })
 
-  it("hides the decorative mock from the accessibility tree", () => {
-    render(<PitchPage />)
+  it("shows an error next to the button when the request fails", async () => {
+    renderApp("/pitch", (input) => {
+      if (pathOf(input) === "/api/commands/notify.request")
+        throw new Error("offline")
+    })
 
-    expect(
-      screen.queryByRole("button", { name: "Download CV" })
-    ).not.toBeInTheDocument()
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Get early access" })
+    )
+
+    expect(await screen.findByRole("alert")).toBeInTheDocument()
+  })
+
+  it("keeps the mock profile out of the accessibility tree", async () => {
+    renderApp("/pitch")
+    await screen.findByRole("heading", { level: 2 })
+
     expect(
       screen
         .getByText("Hanh Tran opened your Pitch")
