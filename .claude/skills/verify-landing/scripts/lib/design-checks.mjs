@@ -1,12 +1,28 @@
 // Checks 27 to 30: the benefit art, the nav lockup and the call-to-action buttons against the pen. Every number
-// they hold lives in landing.spec.json (scripts/design-spec.mjs records it from the app). 27 and 30 go STALE only
+// they hold lives in landing.spec.json (scripts/design-spec.mjs records it from the app). The spec holds design
+// values only; the rules (no inline hex, the pill test) are here, and a flag missing from the spec fails the
+// check rather than skipping it. 27 and 30 go STALE only
 // when #benefits is missing (a benefit card without its art is a FAIL). 28 is STALE when the lockup is not found.
 // 29 judges every CTA it found and names the others as not judged.
 import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
 import { readDesignFile } from "./spec.mjs"
-import { judged, staleIf, verdict } from "./verdict.mjs"
+import { judged, stale, staleIf, verdict } from "./verdict.mjs"
+
+const place = (scope) =>
+  ({ nav: "the header", close: "#close" })[scope] ?? scope
+
+const DESIGN_CHECKS = [
+  ["27", "benefit-art-from-design"],
+  ["28", "nav-lockup-spacing"],
+  ["29", "cta-buttons-match-design"],
+  ["30", "benefit-art-matches-pen"],
+]
 
 export function designChecks(desktop, spec) {
+  if (spec?.error)
+    return DESIGN_CHECKS.map(([id, name]) =>
+      stale(id, name, spec.error, "the design spec holds this check's numbers")
+    )
   const out = []
 
   const s27 = spec["27"]
@@ -17,7 +33,7 @@ export function designChecks(desktop, spec) {
     artBoxes.length === s27.cards &&
     artBoxes.every((box) => box === s27.viewBox) &&
     art.shapes === s27.shapes &&
-    art.hex === s27.inlineHex &&
+    art.hex === 0 &&
     art.perCard?.length === s27.cards &&
     art.perCard.every((n) => n === 1)
   out.push(
@@ -61,7 +77,9 @@ export function designChecks(desktop, spec) {
   const near = (value, target) =>
     typeof value === "number" && Math.abs(value - target) <= s29.tolerance
   // A pill's computed radius is at least half the button height.
-  const pill = (button) => button.radius + s29.tolerance >= button.h / 2
+  const pill = (button) =>
+    Number.isFinite(button.radius) &&
+    button.radius + s29.tolerance >= button.h / 2
   const matches = (button, want) =>
     near(button.h, want.height) &&
     button.fontSize === `${want.fontSize}px` &&
@@ -69,9 +87,8 @@ export function designChecks(desktop, spec) {
     near(button.padInline, want.padInline) &&
     button.inset === want.inset &&
     button.outer === want.outer &&
-    (want.borderVisible === undefined ||
-      button.borderVisible === want.borderVisible) &&
-    (!want.pill || pill(button))
+    button.borderVisible === want.borderVisible &&
+    pill(button) === want.pill
   const wanted = Object.entries(s29.buttons)
   const found = (key) => desktop.ctas?.[key]
   const ctaMatches = wanted.every(
@@ -79,13 +96,13 @@ export function designChecks(desktop, spec) {
   )
   const missingCtas = wanted
     .filter(([key]) => !found(key))
-    .map(([, want]) => `${want.label} in ${want.scope}`)
+    .map(([, want]) => `${want.label} in ${place(want.scope)}`)
   const fmtCta = (button) =>
     button
       ? `${button.h.toFixed(1)}px ${button.fontSize}/${button.fontWeight} pad ${button.padInline} r ${Number(button.radius).toFixed(1)} ${button.inset ? "inset" : "no-inset"} ${button.outer ? "outer" : "no-outer"} border ${button.borderVisible ? "yes" : "no"}`
       : "missing"
   const describe = ([key, want]) =>
-    `${key} "${want.label}" ${want.height}px, ${want.fontSize}px at weight ${s29.fontWeight}, ${want.padInline}px inline padding, ${want.inset ? "an" : "no"} inset ring, ${want.outer ? "an" : "no"} outer shadow${want.borderVisible === false ? ", no visible border" : ""}${want.pill ? ", a border-radius of at least half its height" : ""}`
+    `${key} "${want.label}" ${want.height}px, ${want.fontSize}px at weight ${s29.fontWeight}, ${want.padInline}px inline padding, ${want.inset ? "an" : "no"} inset ring, ${want.outer ? "an" : "no"} outer shadow${want.borderVisible ? ", a visible border" : ", no visible border"}${want.pill ? ", a border-radius of at least half its height" : ", a border-radius under half its height"}`
   out.push(
     judged(
       "29",

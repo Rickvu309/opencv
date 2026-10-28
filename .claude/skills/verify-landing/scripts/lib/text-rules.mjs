@@ -147,17 +147,18 @@ export function textRules(top, want = () => true) {
   const heroSignUp = signUps.filter((l) => l.region === "hero")
   const distinct = new Set(labels.flatMap((l) => l.texts))
   // The design hero is type and a photo. The same action sits in the nav and the close.
-  out.push(
-    verdict(
-      "07",
-      "one-primary-label",
-      "One sign-up label in the nav and one in the closing band, and none in the hero",
-      distinct.size === 1 &&
-        labels.every((l) => l.texts.length === 1) &&
-        heroSignUp.length === 0,
-      `${labels.map((l) => `${l.r}=${quote(l.texts)}`).join(" ")} hero=${heroSignUp.length}`
+  if (want("07"))
+    out.push(
+      verdict(
+        "07",
+        "one-primary-label",
+        "One sign-up label in the nav and one in the closing band, and none in the hero",
+        distinct.size === 1 &&
+          labels.every((l) => l.texts.length === 1) &&
+          heroSignUp.length === 0,
+        `${labels.map((l) => `${l.r}=${quote(l.texts)}`).join(" ")} hero=${heroSignUp.length}`
+      )
     )
-  )
 
   if (want("08")) {
     const label = [...distinct][0] ?? ""
@@ -244,14 +245,15 @@ export function textRules(top, want = () => true) {
   const placeholder = alts.filter((a) =>
     /placeholder|your name|lorem|untitled/i.test(a)
   ).length
-  out.push(
-    verdict(
-      "13",
-      "customer-and-cv-alt",
-      "Some image alt names a customer portrait, some alt names a CV or letter, and none says placeholder",
-      personAlt && cvAlt && placeholder === 0,
-      `person=${personAlt}, cv-or-letter=${cvAlt}, placeholder alts=${placeholder}`
+  if (want("13"))
+    out.push(
+      verdict(
+        "13",
+        "customer-and-cv-alt",
+        "Some image alt names a customer portrait, some alt names a CV or letter, and none says placeholder",
+        personAlt && cvAlt && placeholder === 0,
+        `person=${personAlt}, cv-or-letter=${cvAlt}, placeholder alts=${placeholder}`
+      )
     )
-  )
   return out
 }

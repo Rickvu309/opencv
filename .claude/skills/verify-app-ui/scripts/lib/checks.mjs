@@ -50,16 +50,17 @@ export function runChecks(d, want = () => true) {
   const board = boardLanes(d.apply)
   const hs =
     d.apply.docScroll.sw > d.apply.docScroll.cw || d.apply.hScrollers.length > 0
-  r.push(
-    judged(
-      "16",
-      "apply-five-stages-no-hscroll",
-      "at 1440x900 Apply shows a lane heading for every stage in JOB_STAGES except closed and does not scroll sideways. Closed stays hidden. The 390 pass skips this property",
-      board.missing.length === 0 && !board.hiddenShown && !hs,
-      `stages ${list(board.stages ?? [], 5) || "unread"}; missing lanes: ${board.missing.join(" ") || "none"}; Closed visible: ${board.hiddenShown}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
-      [board.unread]
+  if (want("16"))
+    r.push(
+      judged(
+        "16",
+        "apply-five-stages-no-hscroll",
+        "at 1440x900 Apply shows a lane heading for every stage in JOB_STAGES except closed and does not scroll sideways. Closed stays hidden. The 390 pass skips this property",
+        board.missing.length === 0 && !board.hiddenShown && !hs,
+        `stages ${list(board.stages ?? [], 5) || "unread"}; missing lanes: ${board.missing.join(" ") || "none"}; Closed visible: ${board.hiddenShown}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
+        [board.unread]
+      )
     )
-  )
 
   r.push(
     result(
@@ -93,15 +94,16 @@ export function runChecks(d, want = () => true) {
     }
   }
   const light = SURFACES.every((k) => screens[k].bodyBgLum >= 0.85)
-  r.push(
-    result(
-      "19",
-      "light-field-sparse-accent",
-      light && decor.length === 0,
-      `light: ${light}; decorative dark or tinted fills: ${decor.length ? list(decor, 3) : "none"}`,
-      "background luminance 0.85+; no large dark or tinted decorative fill (heuristic: 6000px2 and up, non-button, non-token chroma 0.08+ or luminance under 0.1)"
+  if (want("19"))
+    r.push(
+      result(
+        "19",
+        "light-field-sparse-accent",
+        light && decor.length === 0,
+        `light: ${light}; decorative dark or tinted fills: ${decor.length ? list(decor, 3) : "none"}`,
+        "background luminance 0.85+; no large dark or tinted decorative fill (heuristic: 6000px2 and up, non-button, non-token chroma 0.08+ or luminance under 0.1)"
+      )
     )
-  )
 
   const sum = (key, f) => allSnaps.reduce((n, s) => n + f(s[key]), 0)
   const cfails = allSnaps.flatMap((s) => s.contrast.fails)
@@ -154,21 +156,22 @@ export function runChecks(d, want = () => true) {
   )
 
   const shown = board.lanes.filter((l) => l.heading)
-  r.push(
-    judged(
-      "23",
-      "stage-word-plus-dot",
-      "every stage in JOB_STAGES except closed is a visible lane headed with its own name. Closed is not a heading until Hidden columns",
-      board.missing.length === 0 &&
-        !board.hiddenShown &&
-        board.misnamed.length === 0,
-      `${shown.length} lane headings of ${board.stages?.length ?? "an unread number of"} stages; ${list(
-        shown.map((l) => l.heading),
-        5
-      )}${board.misnamed.map((l) => `; ${l.stage} lane headed "${l.heading}"`).join("")}`,
-      [board.unread]
+  if (want("23"))
+    r.push(
+      judged(
+        "23",
+        "stage-word-plus-dot",
+        "every stage in JOB_STAGES except closed is a visible lane headed with its own name. Closed is not a heading until Hidden columns",
+        board.missing.length === 0 &&
+          !board.hiddenShown &&
+          board.misnamed.length === 0,
+        `${shown.length} lane headings of ${board.stages?.length ?? "an unread number of"} stages; ${list(
+          shown.map((l) => l.heading),
+          5
+        )}${board.misnamed.map((l) => `; ${l.stage} lane headed "${l.heading}"`).join("")}`,
+        [board.unread]
+      )
     )
-  )
 
   if (want("28")) r.push(primaryButtonCheck(d))
 
@@ -210,16 +213,17 @@ export function runChecks(d, want = () => true) {
   const rule30 =
     "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
   const why30 = scanProblem(scan)
-  r.push(
-    judged(
-      "30",
-      "undo-and-reject",
-      rule30,
-      undo && (reject || why30 !== null),
-      `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
-      [!reject && why30 && `Reject source read (${why30})`]
+  if (want("30"))
+    r.push(
+      judged(
+        "30",
+        "undo-and-reject",
+        rule30,
+        undo && (reject || why30 !== null),
+        `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
+        [!reject && why30 && `Reject source read (${why30})`]
+      )
     )
-  )
 
   // App-wide checks the tour adds.
   const h1s = SURFACES.map((k) => `${k}:${screens[k].h1.length}`)
@@ -388,15 +392,16 @@ export function runChecks(d, want = () => true) {
 
   const glowViews = capturedGlowViews(d)
   const extraGlow = extraGlowPrimaries(glowViews.map((view) => view.count))
-  r.push(
-    result(
-      "40",
-      "one-glow-primary",
-      extraGlow.length === 0,
-      glowViews.map((view) => `${view.name} ${view.count}`).join(", "),
-      "each view has at most one glow primary"
+  if (want("40"))
+    r.push(
+      result(
+        "40",
+        "one-glow-primary",
+        extraGlow.length === 0,
+        glowViews.map((view) => `${view.name} ${view.count}`).join(", "),
+        "each view has at most one glow primary"
+      )
     )
-  )
 
   const dashes = dashViolations(copy)
   r.push(
@@ -410,15 +415,16 @@ export function runChecks(d, want = () => true) {
   )
 
   const toggles = toggleViolations(checkedLabels)
-  r.push(
-    result(
-      "42",
-      "toggle-enabled-disabled",
-      toggles.length === 0,
-      toggles.length ? list(toggles) : "toggles read Enabled or Disabled",
-      "a toggle reads Enabled or Disabled, never On, Off, or Connected"
+  if (want("42"))
+    r.push(
+      result(
+        "42",
+        "toggle-enabled-disabled",
+        toggles.length === 0,
+        toggles.length ? list(toggles) : "toggles read Enabled or Disabled",
+        "a toggle reads Enabled or Disabled, never On, Off, or Connected"
+      )
     )
-  )
 
   const titles = titleBeforeCompany(checkedLabels)
   r.push(

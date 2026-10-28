@@ -19,7 +19,7 @@ test("the art, lockup and CTA checks are STALE on a page with none of them", () 
       ["30", "STALE"],
     ]
   )
-  assert.match(out[2].measured, /Get started in nav/)
+  assert.match(out[2].measured, /Get started in the header/)
 })
 
 test("a found element is still judged, so a wrong lockup is FAIL", () => {
@@ -55,7 +55,7 @@ test("29: a found wrong CTA FAILs although the others are missing; missing alone
   assert.equal(out.status, "FAIL")
   assert.match(
     out.measured,
-    /not judged: no button matched Get started in close/
+    /not judged: no button matched Get started in #close/
   )
   const none = designChecks({ ctas: {}, benefitArt: {} }, spec).find(
     (r) => r.id === "29"

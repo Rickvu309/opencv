@@ -162,18 +162,19 @@ export function contentChecks(d, want = () => true) {
   const rule08 =
     "a Coach write shows Deny and Approve before it runs (source read of JSX labels; the scripted Coach never writes, so no write turn is driven)"
   const src08 = scanProblem(scan)
-  r.push(
-    judged(
-      "08",
-      "confirm-before-write",
-      rule08,
-      src08 !== null || (approve.length > 0 && deny.length > 0),
-      approve.length && deny.length
-        ? "Approve and Deny exist"
-        : `no Approve (${approve.length}) and Deny (${deny.length}) button label in the signed-in feature folders; the banner says "Coach updated" after the write`,
-      [src08 && `source scan (${src08})`]
+  if (want("08"))
+    r.push(
+      judged(
+        "08",
+        "confirm-before-write",
+        rule08,
+        src08 !== null || (approve.length > 0 && deny.length > 0),
+        approve.length && deny.length
+          ? "Approve and Deny exist"
+          : `no Approve (${approve.length}) and Deny (${deny.length}) button label in the signed-in feature folders; the banner says "Coach updated" after the write`,
+        [src08 && `source scan (${src08})`]
+      )
     )
-  )
 
   const tools = d.thread.alerts.filter(
     (t) =>
@@ -192,7 +193,7 @@ export function contentChecks(d, want = () => true) {
     )
   )
 
-  if (want("10")) {
+  {
     // 10. Jobs are deleted through the api. The empty board is one empty state, with no Closed header.
     const ae = d.applyEmpty
     const closedHeader = boardLanes(ae).hiddenShown

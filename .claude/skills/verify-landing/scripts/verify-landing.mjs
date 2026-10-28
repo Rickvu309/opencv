@@ -24,7 +24,7 @@ import { KINDS } from "./lib/kinds.mjs"
 import { pageChecks } from "./lib/page-checks.mjs"
 import { penProbeSource } from "./lib/pen-probe.mjs"
 import { probeSource } from "./lib/probe.mjs"
-import { loadSpec } from "./lib/spec.mjs"
+import { loadSpecOrError } from "./lib/spec.mjs"
 import { textRules } from "./lib/text-rules.mjs"
 import { summarize } from "./lib/verdict.mjs"
 
@@ -88,7 +88,7 @@ async function visit(
     snap.first = await page.evaluate(probeSource("first"))
     await sleep(1500)
     if (wanted.top) snap.top = await page.evaluate(probeSource("top"))
-    if (wanted.design && spec)
+    if (wanted.design && spec && !spec.error)
       snap.design = await page.evaluate(designProbeSource(spec))
     if (keep)
       await page.screenshot(`${shots}/${wanted.shot}-first-view.png`, false)
@@ -120,7 +120,7 @@ async function visit(
         snap.topOpen = await page.evaluate(probeSource("top"))
       }
     }
-    if (wanted.pen && spec) {
+    if (wanted.pen && tier !== "invariant") {
       snap.pen = await page.evaluate(`(async () => {
         await document.fonts.ready
         return ${penProbeSource}
@@ -136,7 +136,7 @@ let server = null
 let browser = null
 let exit = 0
 try {
-  if (tier !== "invariant") spec = loadSpec()
+  if (tier !== "invariant") spec = loadSpecOrError()
   if (await answers()) {
     if (!process.env.VERIFY_LANDING_REUSE) {
       throw new Error(

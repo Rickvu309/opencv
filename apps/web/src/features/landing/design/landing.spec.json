@@ -2,8 +2,7 @@
   "27": {
     "viewBox": "0 0 300 300",
     "cards": 3,
-    "shapes": 94,
-    "inlineHex": 0
+    "shapes": 94
   },
   "28": {
     "gapMin": 9,
@@ -24,6 +23,7 @@
         "padInline": 12,
         "inset": true,
         "outer": true,
+        "borderVisible": false,
         "pill": true
       },
       "close": {
@@ -34,6 +34,7 @@
         "padInline": 20,
         "inset": true,
         "outer": true,
+        "borderVisible": false,
         "pill": true
       },
       "sample": {

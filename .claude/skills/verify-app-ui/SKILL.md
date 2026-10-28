@@ -36,9 +36,9 @@ Reading a FAIL: the measured value is what the app does, the rule is what it sho
 
 ## Tiers
 
-Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properties.md). An invariant check holds for any good design: WCAG, reduced motion, tokens only, writing rules, no sideways scroll, the render budget. A design check holds only for the current one: a pinned copy line, size or surface list (06, 10, 11, 12, 28, 29, 36, 38).
+Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properties.md). An invariant check holds for any good design: WCAG, reduced motion, tokens only, writing rules, no sideways scroll, the render budget. A design check holds only for the current one: a pinned copy line, size, label, theme or surface list (06, 08, 11, 12, 16, 19, 23, 28, 29, 30, 36, 38, 40, 42).
 
-- `VERIFY_TIER=invariant` runs the invariant checks only. The design checks are not computed. The tour still visits every screen, because the invariant checks read its data, so the run takes about as long (163 s measured on the shared machine).
+- `VERIFY_TIER=invariant` runs the invariant checks only. The design checks are not computed. The tour still visits every screen and scenario, because invariant checks read its data (10 reads the empty board, the contrast and layout checks read every snapshot), so the run takes about as long (163 s measured on the shared machine).
 - `VERIFY_TIER=design` reports only the design checks. `VERIFY_TIER=all` (default) runs both.
 - `verify:pen-layout` and `verify:apply-pen` are separate commands and design by nature. The tier does not touch them.
 - Unlike the landing, this checker has no spec file or recorder yet. After a redesign of the signed-in screens, look at the screenshots (`VERIFY_APP_UI_SHOTS`), then edit the pinned copy in the design checks and re-record the layouts with `scripts/pen-layout.mjs`.

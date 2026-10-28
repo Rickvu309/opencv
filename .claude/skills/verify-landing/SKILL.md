@@ -38,13 +38,13 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 
 - `VERIFY_TIER=invariant` runs the invariant checks only. The design checks are not computed: the design probe does not run, nothing is rasterised, and no file under `design/` or `reference/` is read. Use it for any change that is not a redesign. A redesign does not break it.
 - `VERIFY_TIER=design` reports only the design checks. `VERIFY_TIER=all` (default) runs both.
-- The design numbers of 27 to 30 live in `apps/web/src/features/landing/design/landing.spec.json`, not in the checker. 31 reads `landing.styles.json` and `landing.omitted.json` beside it. Checks 06, 08, 11, 12, 15, 16 and 19 are design-tier rules that keep their copy and counts in `text-rules.mjs` and `page-checks.mjs`.
+- The design numbers of 27 to 30 live in `apps/web/src/features/landing/design/landing.spec.json`, not in the checker. 31 reads `landing.styles.json` and `landing.omitted.json` beside it. Checks 06, 07, 08, 11, 12, 13, 14, 15, 16, 17 and 19 are design-tier rules that keep their copy and counts in `text-rules.mjs` and `page-checks.mjs`.
 - `verify:pen-layout` and `verify:apply-pen` are separate commands and design by nature. The tier does not touch them.
 
 After a redesign:
 
 1. Run with `VERIFY_LANDING_SHOTS=<dir>` and look at the screenshots. The next step records whatever is built, so the look comes first.
-2. `node scripts/design-spec.mjs record --from-app <origin>`. It measures the page with the checker's probes and rewrites the spec. `--reference` also takes the Coach art as the new reference picture. The button labels, the Coach card title, the mark inset and the tolerances carry over from the committed spec; edit them by hand when the redesign renames them.
+2. `node scripts/design-spec.mjs record --from-app <origin>`. It measures the page with the checker's probes and rewrites the spec with the measured counts, sizes, type and flags. The spec holds design values only; rules such as "no inline hex" stay in the checker. The recorder keeps the committed tolerances and locators (the nav gap band, the CTA tolerance, the art delta and ratio, the button labels, the Coach card title, the mark inset), and it exits 2 without writing when a measurement is outside a committed tolerance or the Coach art is over its pixel ratio, so a regression cannot be recorded. To redesign, change the numbers or tolerances in the spec by hand, review that diff, then run the recorder. It never writes `reference/coach-art.png`: that picture comes from the design tool or a screenshot a human approved, never from the page it judges. Replace it in its own reviewed commit.
 3. Review the spec diff and commit it.
 
 ## The properties

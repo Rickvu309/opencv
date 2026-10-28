@@ -56,20 +56,21 @@ export function pageChecks({
     ? Math.min(mImg.top + mImg.h, mobile.vh) - Math.max(mImg.top, 0)
     : 0
   // NN/g 3.1
-  out.push(
-    staleIf(
-      desktop.hero ? null : "no hero section (the section holding the h1)",
-      verdict(
-        "14",
-        "hero-photo-in-first-view-1440",
-        "At 1440x900 the H1 and 120px or more of the hero visual (an image or a [role=img] figure) share the first view",
-        desktop.h1Bottom !== null &&
-          desktop.h1Bottom <= desktop.vh &&
-          visibleH >= 120,
-        `h1 bottom ${px(desktop.h1Bottom)}px, frame visible ${px(visibleH)}px of ${img ? px(img.h) : 0} (390x844: ${px(mVisible)}px)`
+  if (want("14"))
+    out.push(
+      staleIf(
+        desktop.hero ? null : "no hero section (the section holding the h1)",
+        verdict(
+          "14",
+          "hero-photo-in-first-view-1440",
+          "At 1440x900 the H1 and 120px or more of the hero visual (an image or a [role=img] figure) share the first view",
+          desktop.h1Bottom !== null &&
+            desktop.h1Bottom <= desktop.vh &&
+            visibleH >= 120,
+          `h1 bottom ${px(desktop.h1Bottom)}px, frame visible ${px(visibleH)}px of ${img ? px(img.h) : 0} (390x844: ${px(mVisible)}px)`
+        )
       )
     )
-  )
 
   if (want("15")) {
     const names = ["product", "stories", "pricing"]
@@ -143,15 +144,16 @@ export function pageChecks({
     values: () => clusters.map((c) => c[0].hex),
   }
   // Refactoring UI, color palette
-  out.push(
-    verdict(
-      "17",
-      "light-field-one-accent",
-      "Background luminance 0.85 or more; at most one saturated hue family (hues within 25 degrees count as one) on marketing text and shapes (chroma >= 0.18, product shots excluded)",
-      light && buckets.size <= 1,
-      `background ${hex(desktop.bg)} (L=${luminance(desktop.bg).toFixed(2)}), ${buckets.size} saturated hue(s)${buckets.size ? `: ${buckets.values().join(" ")}` : ""}`
+  if (want("17"))
+    out.push(
+      verdict(
+        "17",
+        "light-field-one-accent",
+        "Background luminance 0.85 or more; at most one saturated hue family (hues within 25 degrees count as one) on marketing text and shapes (chroma >= 0.18, product shots excluded)",
+        light && buckets.size <= 1,
+        `background ${hex(desktop.bg)} (L=${luminance(desktop.bg).toFixed(2)}), ${buckets.size} saturated hue(s)${buckets.size ? `: ${buckets.values().join(" ")}` : ""}`
+      )
     )
-  )
 
   const h1 = desktop.blocks.find((b) => b.tag === "h1")
   const letters = h1.text.replace(/[^A-Za-z]/g, "")

@@ -13,9 +13,9 @@ Writing and logic:
 - 05 `no-other-product-names` (invariant): no social product name (Instagram, TikTok, Snapchat, Facebook, Twitter, YouTube, Pinterest, WhatsApp, Linktree). Integrations such as GitHub and Gmail are not matched. Connect Gmail is allowed. Source: Apple writing.
 - 06 `starter-cv-name` (design): a new CV's name field placeholder is Name, and the title is not Your name. Source: NN/g empty states.
 - 07 `pitch-starter-no-metric` (invariant): Pitch coming-soon copy has no percentage, no "N percent", and no add-to-cart. Preview text marked aria-hidden is not counted. Source: NN/g hallucinations.
-- 08 `confirm-before-write` (invariant): a JSX label or quoted string Approve and Deny exists in the Coach features (source read; comments and type names do not count; the scripted Coach never writes). Source: shadcn Confirmation; Gemini.
+- 08 `confirm-before-write` (design): a JSX label or quoted string Approve and Deny exists in the Coach features (source read; comments and type names do not count; the scripted Coach never writes). Source: shadcn Confirmation; Gemini.
 - 09 `tool-line-names-object` (invariant): a Coach step status line that is not an error names Apply, CV, Letter, Proof, Pitch, Job or card (case-sensitive; driven with a read turn, not a write). Source: shadcn AI Elements.
-- 10 `empty-board-one-empty-state` (design): the tour deletes the jobs through the api, reloads Apply, and requires 0 cards and exactly one empty state. Closed is not a visible heading. A board that was not confirmed empty is a FAIL. Source: NN/g.
+- 10 `empty-board-one-empty-state` (invariant): the tour deletes the jobs through the api, reloads Apply, and requires 0 cards and exactly one empty state. Closed is not a visible heading. A board that was not confirmed empty is a FAIL. Source: NN/g.
 - 11 `loading-not-empty` (design): while the Paper call is held the page says "Loading documents" or "Loading..." and not "Start a document". Source: NN/g.
 - 12 `unpublished-banner-has-publish` (design): Pitch is coming soon and does not show a Hit Publish banner. The check fails only when that banner is present without a Publish button. The tour does not look for Publish. Source: NN/g.
 - 13 `fit-not-bare-number` (invariant): a percentage on a board card passes only with a basis phrase (because, based on, from your, matches your) inside that same card; a percentage outside any card fails. Source: NN/g.
@@ -24,17 +24,17 @@ Structure:
 
 - 14 retired with the Home page. The id is not reused.
 - 15 `cv-widest-coach-beside` (invariant): with the Coach panel closed, the CV editor is the widest region (at 1440 wide). An open panel belongs to #377. Source: Cursor; Linear.
-- 16 `apply-five-stages-no-hscroll` (invariant): every stage in `JOB_STAGES` (`packages/domain/src/job.ts`, read by `assumes.mjs`) except closed is a visible lane heading at 1440x900, Closed is not, and the board does not scroll sideways. A lane is the `data-slot="board-lane"` element with its `data-stage`. An unreadable stage list is STALE unless a lane check already FAILs. The 390 pass skips this property because the lanes scroll there. Source: the Apply board.
+- 16 `apply-five-stages-no-hscroll` (design): every stage in `JOB_STAGES` (`packages/domain/src/job.ts`, read by `assumes.mjs`) except closed is a visible lane heading at 1440x900, Closed is not, and the board does not scroll sideways. A lane is the `data-slot="board-lane"` element with its `data-stage`. An unreadable stage list is STALE unless a lane check already FAILs. The 390 pass skips this property because the lanes scroll there. Source: the Apply board.
 - 17 `search-key-hint` (invariant): the Search button has a `kbd` inside it and Ctrl-K opens the dialog. Source: Raycast.
 - 18 `paper-no-disabled-filter` (invariant): no Paper control says Coming soon. The Proof card is a link, not a disabled control. Source: Apple feedback.
 
 Visual craft:
 
-- 19 `light-field-sparse-accent` (invariant): body luminance 0.85+; no dark or tinted decorative fill of 6000px2 or more, including gradients (a gradient that fades to transparent is a photo scrim and is skipped). Heuristic. Source: Refactoring UI.
+- 19 `light-field-sparse-accent` (design): body luminance 0.85+; no dark or tinted decorative fill of 6000px2 or more, including gradients (a gradient that fades to transparent is a photo scrim and is skipped). Heuristic. Source: Refactoring UI.
 - 20 `text-contrast` (invariant): 4.5:1, or 3:1 at 24px (18.66px bold). Skipped: text over images and gradients, disabled controls, aria-hidden text and svg. Source: WCAG 1.4.3.
 - 21 `target-size-24` (invariant): every link and button 24x24, or a 24px circle that touches no other target; controls that are hidden until hover are not measured. Source: WCAG 2.5.8.
 - 22 `apply-dot-count-or-absent` (invariant): the Apply link is found by the accessible name Apply. It has no dot, or the dot has a count or an accessible name (an aria-hidden dot has none). A missing Apply link is a FAIL. Source: Apple feedback.
-- 23 `stage-word-plus-dot` (invariant): every `JOB_STAGES` stage except closed has a visible lane headed with its own name (the `applied` lane says Applied, case aside). Closed is not a heading until Hidden columns. No count is pinned. Source: the Apply board.
+- 23 `stage-word-plus-dot` (design): every `JOB_STAGES` stage except closed has a visible lane headed with its own name (the `applied` lane says Applied, case aside). Closed is not a heading until Hidden columns. No count is pinned. Source: the Apply board.
 
 Motion:
 
@@ -47,7 +47,7 @@ Accessibility and performance:
 - 27 `alerts-have-role` (invariant): the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
 - 28 `primary-buttons-32` (design): the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. The button on each surface is the one with `data-primary-action` (`SEL.primary` in `scripts/lib/assumes.mjs`; a surface with more than one visible marked element FAILs, naming the count): New job on Apply, New on the Paper library, Get early access on Pitch. A surface with no marked button is STALE, and the vitest `verify-assumptions` fails first. Source: the design kit.
 - 29 `table-not-mounted-while-loading` (design): while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("Start a document"). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
-- 30 `undo-and-reject` (invariant): Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
+- 30 `undo-and-reject` (design): Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
 
 App-wide:
 
@@ -63,8 +63,21 @@ App-wide:
 Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 
 - 39 `brand-wordmark` (invariant): chrome never contains OpenCV. The brand is the mark plus lowercase opencv. The same 39 to 44 rules also run on `/settings` (desktop, reduced motion, and 390). Those snaps stay off the four surfaces in check 38.
-- 40 `one-glow-primary` (invariant): each toured view, including the 390px pass and the Inbox connect screen, has at most one control wearing the glow utility. The Inbox follows its pen frames and wears no glow.
+- 40 `one-glow-primary` (design): each toured view, including the 390px pass and the Inbox connect screen, has at most one control wearing the glow utility. The Inbox follows its pen frames and wears no glow.
 - 41 `no-dash-in-copy` (invariant): chrome has no em dash, en dash, or middle dot.
-- 42 `toggle-enabled-disabled` (invariant): a toggle label is Enabled or Disabled. On, Off, and Connected fail.
+- 42 `toggle-enabled-disabled` (design): a toggle label is Enabled or Disabled. On, Off, and Connected fail.
 - 43 `title-before-company` (invariant): a job line does not start with "at" and no title.
 - 44 `no-exclamation` (invariant): chrome has no exclamation mark and does not say Oops.
+
+## Kind decisions (#550 review)
+
+| Id  | Kind      | Why                                                                                         |
+| --- | --------- | ------------------------------------------------------------------------------------------- |
+| 08  | design    | needs the labels Approve and Deny                                                           |
+| 16  | design    | needs every JOB_STAGES lane as a heading at 1440 (the 390 no-sideways-scroll part is in 35) |
+| 19  | design    | needs luminance 0.85 or more, so a good dark theme fails                                    |
+| 23  | design    | needs a lane heading per stage and no Closed heading                                        |
+| 30  | design    | needs Undo plus Reject or "Undo this change"                                                |
+| 40  | design    | pins the kit's glow utility                                                                 |
+| 42  | design    | needs Enabled and Disabled, while On and Off is a fine design                               |
+| 10  | invariant | one empty state on an empty board holds for any good design                                 |
