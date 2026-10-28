@@ -50,7 +50,7 @@ Tests that hold this shape, and what each one rejects:
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
 - `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when an old number now names a different decision.
 - `scripts/retired-words.test.mjs` rejects Thread or Opportunity in a source file or file name under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few named exceptions), and says Chat or Job instead. The old Apply stage ids are not guarded until #437 renames them.
-- `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that nothing outside its file imports, and says delete it or import it.
+- `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no non-test file outside its own file imports, and says drop `export` or delete it. A name in its `KEPT_FOR_TESTS` set is the exception.
 
 ### Git
 
