@@ -521,13 +521,14 @@ function probe(kind) {
       tracks: tracks.length,
       copyHidden: tracks.every((track) => {
         const kids = [...track.children]
-        const half = kids.length / 2
         const hidden = (k) => k.getAttribute("aria-hidden") === "true"
+        const copy = kids.filter((k) => !hidden(k)).length
         return (
-          kids.length > 1 &&
-          Number.isInteger(half) &&
-          kids.slice(0, half).every((k) => !hidden(k)) &&
-          kids.slice(half).every(hidden)
+          copy > 0 &&
+          kids.length > copy &&
+          kids.length % copy === 0 &&
+          kids.slice(0, copy).every((k) => !hidden(k)) &&
+          kids.slice(copy).every(hidden)
         )
       }),
     }

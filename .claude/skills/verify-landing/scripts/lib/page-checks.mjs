@@ -267,7 +267,7 @@ export function pageChecks({
 
   const m = desktop.markup
   // 2026-10-28, #491: the operator asked for the logo marquee. #logos may hold one marquee whose
-  // duplicate copy is aria-hidden and which stops under reduced motion. Nothing else is exempt.
+  // repeated copies are aria-hidden and which stops under reduced motion. Nothing else is exempt.
   const marquee = deep.marquee
   const marqueeOk =
     marquee.tracks === 1 &&
@@ -280,9 +280,9 @@ export function pageChecks({
     verdict(
       "22",
       "no-video-or-carousel",
-      "No video, audio, iframe, autoplay or carousel on the page, except one marquee in #logos whose duplicate copy is aria-hidden and which stops under reduced motion (2026-10-28, #491)",
+      "No video, audio, iframe, autoplay or carousel on the page, except one marquee in #logos whose repeated copies are aria-hidden and which stops under reduced motion (2026-10-28, #491)",
       m.media.length + m.autoplay + carousels.length === 0 && !marqueeBad,
-      `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${carousels.length}${carousels[0] ? ` ${JSON.stringify(carousels.slice(0, 2))}` : ""}; #logos marquee: ${marquee.tracks} track(s), duplicate aria-hidden=${marquee.copyHidden}, still running under reduced motion=${reducedDeep.marquee.tracks}`
+      `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${carousels.length}${carousels[0] ? ` ${JSON.stringify(carousels.slice(0, 2))}` : ""}; #logos marquee: ${marquee.tracks} track(s), repeats aria-hidden=${marquee.copyHidden}, still running under reduced motion=${reducedDeep.marquee.tracks}`
     )
   )
 
