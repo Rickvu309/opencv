@@ -122,9 +122,10 @@ export async function createPaper(
 ) {
   const now = new Date()
   const id = createId(now.getTime())
-  const document = input.document
-    ? requireDocument(input.kind, input.document)
-    : blankDocument(input.kind)
+  const document =
+    input.document !== undefined
+      ? requireDocument(input.kind, input.document)
+      : blankDocument(input.kind)
   await getDb()
     .insert(paperDocs)
     .values({

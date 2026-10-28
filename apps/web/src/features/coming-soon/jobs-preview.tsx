@@ -3,19 +3,43 @@ const ROWS = [
     initials: "LC",
     title: "Marketing Executive",
     company: "Lumière Cosmetics, Ho Chi Minh City",
+    fit: "82% fit",
   },
-  { initials: "AG", title: "Content Specialist", company: "Agency, Hanoi" },
+  {
+    initials: "AG",
+    title: "Content Specialist",
+    company: "Agency, Hanoi",
+    fit: "77% fit",
+  },
   {
     initials: "SH",
     title: "Social Media Executive",
     company: "Shopee partner, Remote",
+    fit: "70% fit",
   },
-  { initials: "FA", title: "Growth Marketer", company: "Fintech app, Remote" },
+  {
+    initials: "FA",
+    title: "Growth Marketer",
+    company: "Fintech app, Remote",
+    fit: "66% fit",
+  },
 ] as const
 
 export function JobsPreview() {
   return (
     <div aria-hidden="true" className="flex flex-col">
+      <div className="flex flex-wrap gap-2 border-b border-border px-5 py-4">
+        {["Marketing, Hanoi", "Junior", "Full-time", "Hybrid", "Salary"].map(
+          (filter) => (
+            <span
+              key={filter}
+              className="inline-flex h-7 items-center rounded-full border border-border px-3 text-xs text-muted-foreground"
+            >
+              {filter}
+            </span>
+          )
+        )}
+      </div>
       {ROWS.map((row) => (
         <div
           key={row.title}
@@ -31,6 +55,9 @@ export function JobsPreview() {
             <span className="truncate text-xs text-muted-foreground">
               {row.company}
             </span>
+          </span>
+          <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+            {row.fit}
           </span>
         </div>
       ))}

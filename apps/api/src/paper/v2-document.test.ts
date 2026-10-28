@@ -68,6 +68,50 @@ const v2Fixture: CvBlockDocument = {
 }
 
 describe("version 2 CV documents", () => {
+  it("creates a block CV atomically and validates the initial document", async () => {
+    const { db, client } = await createMigratedTestDb()
+    try {
+      const app = createTestApp(db)
+      const { cookie } = await signUp(app, {
+        name: "Lan",
+        email: "lan-488@example.com",
+      })
+      const headers = authHeaders(cookie)
+      const createdRes = await app.request("/api/commands/paper.create", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          input: { kind: "cv", document: v2Fixture },
+        }),
+      })
+      expect(createdRes.status).toBe(200)
+      const created = await jsonOf(createdRes)
+      const readRes = await app.request(`/api/paper/${created.data?.id}`, {
+        headers,
+      })
+      expect((await jsonOf(readRes)).data?.document).toEqual(v2Fixture)
+
+      const invalidRes = await app.request("/api/commands/paper.create", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          input: { kind: "letter", document: v2Fixture },
+        }),
+      })
+      expect(invalidRes.status).toBe(400)
+      for (const document of [null, false, 0, ""]) {
+        const rejected = await app.request("/api/commands/paper.create", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ input: { kind: "cv", document } }),
+        })
+        expect(rejected.status).toBe(400)
+      }
+    } finally {
+      await client.close()
+    }
+  })
+
   it("stores version 1 on create and still accepts a v1 replace", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)

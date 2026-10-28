@@ -66,6 +66,10 @@ describe("Paper new dialog", () => {
     expect(
       calls.find((call) => call.url.includes("/api/commands/paper.create"))
         ?.body
-    ).toEqual({ kind: "cv", templateId: "simple" })
+    ).toMatchObject({
+      kind: "cv",
+      templateId: "simple",
+      document: { version: 2 },
+    })
   })
 })

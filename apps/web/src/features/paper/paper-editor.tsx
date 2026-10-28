@@ -1,4 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query"
+import { Bell, Ellipsis, LayoutTemplate, Link2, Star } from "lucide-react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import {
   blocksToPreviewModel,
@@ -6,6 +7,7 @@ import {
   isCvBlockDocument,
   isCvDocument,
   paperDocNameSchema,
+  type CvBlockDocument,
   type CvDocument,
   type PaperPages,
   type PaperTemplateId,
@@ -32,11 +34,17 @@ import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperCvSurface } from "./paper-cv-surface.tsx"
+import { PaperBlockEditor } from "./paper-block-editor.tsx"
 import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
-import { getPaper, streamPaperTurn } from "./paper-api.ts"
+import {
+  getPaper,
+  listPaperFiles,
+  paperFilesKey,
+  streamPaperTurn,
+} from "./paper-api.ts"
 import {
   editorEditedLabel,
   previewTemplate,
@@ -44,7 +52,15 @@ import {
 } from "./paper-templates.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
-function applyPhoto(current: CvDocument, ref: string | undefined): CvDocument {
+type EditableCv = CvDocument | CvBlockDocument
+
+function applyPhoto(current: EditableCv, ref: string | undefined): EditableCv {
+  if (isCvBlockDocument(current)) {
+    const header = { ...current.header }
+    if (ref) header.photo = ref
+    else delete header.photo
+    return { ...current, header }
+  }
   if (ref) return { ...current, photoUrl: ref }
   if (!current.photoUrl) return current
   const next = { ...current }
@@ -77,6 +93,15 @@ export function PaperCvEditor({
   const run = useRunCommand()
   const { openChat } = useChatStore()
   const queryClient = useQueryClient()
+  const sourceFiles = useQuery({
+    queryKey: paperFilesKey(),
+    queryFn: listPaperFiles,
+    enabled: Boolean(initial.sourceFileId),
+  })
+  const [checks, setChecks] = useState(initial.checks)
+  const sourceFileName =
+    sourceFiles.data?.find((file) => file.id === initial.sourceFileId)?.name ??
+    null
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
   const [updatedAt, setUpdatedAt] = useState(initial.updatedAt)
@@ -86,20 +111,22 @@ export function PaperCvEditor({
   const [templateId, setTemplateId] = useState(initial.templateId)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [source, setSource] = useState(initial.document)
-  const blockMode = isCvBlockDocument(source)
   const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
-  const cvRef = useRef(cv)
+  const documentRef = useRef<EditableCv>(
+    isCvBlockDocument(source) ? source : cv
+  )
   const dirtyRef = useRef(false)
+  const inputEpochRef = useRef(0)
   useEffect(() => {
-    cvRef.current = cv
-  }, [cv])
-  const { schedule, adopt, versionRef } = usePaperAutosave<CvDocument>({
+    documentRef.current = isCvBlockDocument(source) ? source : cv
+  }, [source, cv])
+  const { schedule, adopt, versionRef } = usePaperAutosave<EditableCv>({
     docId: initial.id,
     initialVersion: initial.contentVersion,
     toDocument: (next) => next,
-    onSaved: (saved) => {
-      adopt(saved.contentVersion)
-      dirtyRef.current = false
+    readInputEpoch: () => inputEpochRef.current,
+    onSaved: (_saved, inputEpoch) => {
+      if (inputEpoch === inputEpochRef.current) dirtyRef.current = false
       setUpdatedAt(new Date().toISOString())
       setConflict(false)
     },
@@ -112,7 +139,7 @@ export function PaperCvEditor({
 
   async function flushBeforePhoto() {
     if (!dirtyRef.current) return
-    const snapshot = cvRef.current
+    const snapshot = documentRef.current
     adopt(versionRef.current)
     dirtyRef.current = false
     try {
@@ -143,6 +170,18 @@ export function PaperCvEditor({
   useEffect(() => {
     setPageState(pages)
   }, [pages])
+
+  async function dismissCheck(checkId: string) {
+    try {
+      const updated = await run("paper.dismissCheck", {
+        docId: initial.id,
+        checkId,
+      })
+      setChecks(updated.checks)
+    } catch (error) {
+      toastError(error, "Could not dismiss this check. Try again.")
+    }
+  }
 
   async function commitName() {
     const parsed = paperDocNameSchema.safeParse(name.trim())
@@ -276,88 +315,110 @@ export function PaperCvEditor({
       data-paper-editor=""
       className="flex min-w-0 flex-col gap-3 p-4"
     >
-      <nav
-        aria-label="Breadcrumb"
-        className="flex flex-wrap items-center gap-2"
-      >
-        <Button type="button" variant="link" onClick={onBack}>
-          Paper
-        </Button>
-        <span className="text-sm text-muted-foreground">CVs</span>
-        <Input
-          aria-label="Name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          onBlur={() => void commitName()}
-          className="max-w-xs"
-        />
-      </nav>
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm text-muted-foreground">
-          {editorEditedLabel(updatedAt)}
-        </p>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={favorite}
-          onClick={() => setFavorite((value) => !value)}
+        <nav
+          aria-label="Breadcrumb"
+          className="flex min-w-0 flex-1 basis-72 items-center gap-2"
         >
-          Favorite
-        </Button>
-        <Button type="button" variant="ghost" onClick={() => void download()}>
-          More
-        </Button>
-        <Button type="button" variant="outline" onClick={() => void copyLink()}>
-          Copy link
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setGalleryOpen(true)}
-        >
-          Change template
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => toast("Notifications are not on yet.")}
-        >
-          Notifications
-        </Button>
+          <Button type="button" variant="link" onClick={onBack}>
+            Paper
+          </Button>
+          <span className="text-sm text-muted-foreground">CVs</span>
+          <Input
+            aria-label="Name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onBlur={() => void commitName()}
+            className="h-8 max-w-48 border-transparent bg-transparent shadow-none"
+          />
+        </nav>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            {editorEditedLabel(updatedAt)}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Favorite"
+            aria-pressed={favorite}
+            onClick={() => setFavorite((value) => !value)}
+          >
+            <Star className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="More"
+            onClick={() => void download()}
+          >
+            <Ellipsis className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Copy link"
+            onClick={() => void copyLink()}
+          >
+            <Link2 className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Change template"
+            onClick={() => setGalleryOpen(true)}
+          >
+            <LayoutTemplate className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Notifications"
+            onClick={() => toast("Notifications are not on yet.")}
+          >
+            <Bell className="size-4" />
+          </Button>
+        </div>
       </div>
-      <div
-        className="flex flex-wrap gap-1"
-        role="toolbar"
-        aria-label="Selection"
-      >
-        <Button type="button" variant="ghost" size="sm" onClick={openCoach}>
-          Coach
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => document.execCommand("bold")}
+      {!isCvBlockDocument(source) ? (
+        <div
+          className="flex flex-wrap gap-1"
+          role="toolbar"
+          aria-label="Selection"
         >
-          Bold
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => document.execCommand("italic")}
-        >
-          Italic
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => document.execCommand("underline")}
-        >
-          Underline
-        </Button>
-      </div>
+          <Button type="button" variant="ghost" size="sm" onClick={openCoach}>
+            Coach
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => document.execCommand("bold")}
+          >
+            Bold
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => document.execCommand("italic")}
+          >
+            Italic
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => document.execCommand("underline")}
+          >
+            Underline
+          </Button>
+        </div>
+      ) : null}
       {conflict ? (
         <PaperEditorConflictBanner onReload={() => void reload()} />
       ) : null}
@@ -387,11 +448,6 @@ export function PaperCvEditor({
           </div>
         </div>
       ) : null}
-      {blockMode ? (
-        <p className="text-sm text-muted-foreground">
-          This CV uses blocks. The block editor is coming.
-        </p>
-      ) : null}
       <div data-template={previewTemplate(templateId)} className="min-w-0">
         <CvPhotoFrame
           value={{
@@ -399,23 +455,42 @@ export function PaperCvEditor({
             beforePhoto: flushBeforePhoto,
             notePhoto: (ref, version) => {
               versionRef.current = version
-              const next = applyPhoto(cvRef.current, ref)
-              cvRef.current = next
+              const next = applyPhoto(documentRef.current, ref)
+              documentRef.current = next
               if (dirtyRef.current) schedule(next)
-              setCv(next)
+              if (isCvBlockDocument(next)) setSource(next)
+              else setCv(next)
             },
           }}
         >
-          <PaperCvSurface
-            data={cv}
-            onChange={(next) => {
-              if (blockMode) return
-              dirtyRef.current = true
-              cvRef.current = next
-              setCv(next)
-              schedule(next)
-            }}
-          />
+          {isCvBlockDocument(source) ? (
+            <PaperBlockEditor
+              document={source}
+              templateId={templateId ?? "simple"}
+              checks={checks}
+              sourceFileName={sourceFileName}
+              onChange={(next) => {
+                dirtyRef.current = true
+                inputEpochRef.current += 1
+                documentRef.current = next
+                setSource(next)
+                schedule(next)
+              }}
+              onAskCoach={openCoach}
+              onDismissCheck={(checkId) => void dismissCheck(checkId)}
+            />
+          ) : (
+            <PaperCvSurface
+              data={cv}
+              onChange={(next) => {
+                dirtyRef.current = true
+                inputEpochRef.current += 1
+                documentRef.current = next
+                setCv(next)
+                schedule(next)
+              }}
+            />
+          )}
         </CvPhotoFrame>
         {pageState.pages > 1 ? (
           <p className="mt-2 text-sm text-muted-foreground">Page 2</p>

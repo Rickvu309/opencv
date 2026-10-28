@@ -26,6 +26,7 @@ import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { previewJob } from "./apply-api.ts"
 import { ALL_STAGES, stageLabel } from "./apply-stages.ts"
+import { CompanyTile } from "./apply-parts.tsx"
 
 const COMPANY_REQUIRED = "Add the company name to save this job."
 const TITLE_REQUIRED = "Add the role title to save this job."
@@ -192,7 +193,7 @@ export function NewJobDialog({
     >
       <DialogContent
         data-slot="new-job-dialog"
-        className="max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none sm:max-w-md"
+        className="max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none sm:max-w-2xl"
         aria-describedby={undefined}
       >
         <DialogTitle>New job</DialogTitle>
@@ -234,12 +235,15 @@ export function NewJobDialog({
             <p>{preview.message || UNREADABLE}</p>
           ) : null}
           {duplicate ? (
-            <div>
-              <p>Already on your board</p>
-              <p>
-                {duplicate.fields.title} at {duplicate.fields.company}, in{" "}
-                {duplicateStageName}
-              </p>
+            <div className="flex items-center gap-3 rounded-md border border-border bg-muted p-3">
+              <CompanyTile company={duplicate.fields.company} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">Already on your board</p>
+                <p className="truncate text-sm">
+                  {duplicate.fields.title} · {duplicate.fields.company} ·{" "}
+                  {duplicateStageName}
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="ghost"
@@ -255,79 +259,103 @@ export function NewJobDialog({
               </Button>
             </div>
           ) : null}
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="job-title">Role title</Label>
-            <Input
-              id="job-title"
-              value={draft.title}
-              aria-invalid={titleError ? true : undefined}
-              onChange={(event) => patch({ title: event.target.value })}
-            />
-            {titleError ? <p>{titleError}</p> : null}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="job-company">Company</Label>
-            <Input
-              id="job-company"
-              ref={companyRef}
-              value={draft.company}
-              aria-invalid={companyError ? true : undefined}
-              aria-describedby={companyError ? "job-company-error" : undefined}
-              onChange={(event) => {
-                patch({ company: event.target.value })
-                if (event.target.value.trim()) setCompanyError("")
-              }}
-            />
-            {companyError ? <p id="job-company-error">{companyError}</p> : null}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Textarea
-              id="job-description"
-              aria-label="Add the job description"
-              value={draft.description}
-              placeholder="Add the job description…"
-              onChange={(event) => patch({ description: event.target.value })}
-              onBlur={() => {
-                if (
-                  preview?.status === "unreadable" &&
-                  draft.description.trim()
-                ) {
-                  void runPreview({ text: draft.description })
-                }
-              }}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label id="job-stage-label">Stage</Label>
-            <Select
-              value={draft.stage}
-              onValueChange={(value) => {
-                if (value) patch({ stage: value as JobStage })
-              }}
-            >
-              <SelectTrigger aria-labelledby="job-stage-label">
-                <SelectValue>{stageName}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {ALL_STAGES.map((stage) => (
-                  <SelectItem key={stage} value={stage}>
-                    {stageLabel(stage)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="job-deadline">Deadline</Label>
-            <Input
-              id="job-deadline"
-              type="date"
-              value={draft.deadline}
-              aria-invalid={dateError ? true : undefined}
-              onChange={(event) => patch({ deadline: event.target.value })}
-            />
-            {dateError ? <p>{dateError}</p> : null}
-          </div>
+          {!duplicate ? (
+            <>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="job-title">Role title</Label>
+                <Input
+                  id="job-title"
+                  value={draft.title}
+                  aria-invalid={titleError ? true : undefined}
+                  onChange={(event) => patch({ title: event.target.value })}
+                />
+                {titleError ? <p>{titleError}</p> : null}
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="job-company">Company</Label>
+                <Input
+                  id="job-company"
+                  ref={companyRef}
+                  value={draft.company}
+                  aria-invalid={companyError ? true : undefined}
+                  aria-describedby={
+                    companyError ? "job-company-error" : undefined
+                  }
+                  onChange={(event) => {
+                    patch({ company: event.target.value })
+                    if (event.target.value.trim()) setCompanyError("")
+                  }}
+                />
+                {companyError ? (
+                  <p id="job-company-error" role="alert">
+                    {companyError}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-col gap-1">
+                <Textarea
+                  id="job-description"
+                  aria-label="Add the job description"
+                  value={draft.description}
+                  placeholder="Add the job description…"
+                  onChange={(event) =>
+                    patch({ description: event.target.value })
+                  }
+                  onBlur={() => {
+                    if (
+                      preview?.status === "unreadable" &&
+                      draft.description.trim()
+                    ) {
+                      void runPreview({ text: draft.description })
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="job-location">Location</Label>
+                <Input
+                  id="job-location"
+                  value={draft.location}
+                  onChange={(event) => patch({ location: event.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <Label id="job-stage-label">Stage</Label>
+                  <Select
+                    value={draft.stage}
+                    onValueChange={(value) => {
+                      if (value) patch({ stage: value as JobStage })
+                    }}
+                  >
+                    <SelectTrigger aria-labelledby="job-stage-label">
+                      <SelectValue>{stageName}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ALL_STAGES.map((stage) => (
+                        <SelectItem key={stage} value={stage}>
+                          {stageLabel(stage)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="job-deadline">Deadline</Label>
+                  <Input
+                    id="job-deadline"
+                    type="date"
+                    value={draft.deadline}
+                    aria-invalid={dateError ? true : undefined}
+                    onChange={(event) =>
+                      patch({ deadline: event.target.value })
+                    }
+                  />
+                  {dateError ? <p>{dateError}</p> : null}
+                </div>
+              </div>
+            </>
+          ) : null}
           <div className="flex justify-end gap-2">
             <Button
               type="button"

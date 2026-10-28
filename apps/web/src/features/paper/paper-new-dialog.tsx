@@ -2,7 +2,11 @@ import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import type { PaperTemplateId, PaperView } from "@workspace/domain"
+import {
+  blankBlockDocument,
+  type PaperTemplateId,
+  type PaperView,
+} from "@workspace/domain"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
 
@@ -23,12 +27,24 @@ export function PaperNewDialog({
 }) {
   const run = useRunCommand()
   const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  async function applyTemplate(templateId: PaperTemplateId) {
+  async function applyTemplate(templateId?: PaperTemplateId) {
     setPending(true)
+    setError(null)
     try {
-      const created = await run("paper.create", { kind: "cv", templateId })
+      const created = await run("paper.create", {
+        kind: "cv",
+        templateId,
+        document: blankBlockDocument(),
+      })
       onCreated(created)
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Could not create this CV. Try again."
+      )
     } finally {
       setPending(false)
     }
@@ -36,10 +52,19 @@ export function PaperNewDialog({
 
   if (step === "gallery") {
     return (
-      <PaperTemplateGallery
-        onUse={(templateId) => void applyTemplate(templateId)}
-        onImport={onImport}
-      />
+      <div className="space-y-3">
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+        <PaperTemplateGallery
+          onUse={(templateId) => void applyTemplate(templateId)}
+          onImport={onImport}
+          onBlank={() => void applyTemplate()}
+          pending={pending}
+        />
+      </div>
     )
   }
 

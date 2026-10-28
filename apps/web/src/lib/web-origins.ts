@@ -17,6 +17,8 @@ const PUBLIC_PATHS = [
   "/about/",
   "/help",
   "/help/",
+  "/stories",
+  "/stories/",
   "/share",
   "/share/*",
   "/u",
