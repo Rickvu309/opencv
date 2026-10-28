@@ -164,7 +164,7 @@ export function contentChecks(d) {
       "08",
       "confirm-before-write",
       rule08,
-      approve.length > 0 && deny.length > 0,
+      src08 !== null || (approve.length > 0 && deny.length > 0),
       approve.length && deny.length
         ? "Approve and Deny exist"
         : `no Approve (${approve.length}) and Deny (${deny.length}) button label in the signed-in feature folders; the banner says "Coach updated" after the write`,

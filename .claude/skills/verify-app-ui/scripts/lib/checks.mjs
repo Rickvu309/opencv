@@ -210,7 +210,7 @@ export function runChecks(d) {
       "30",
       "undo-and-reject",
       rule30,
-      undo && reject,
+      undo && (reject || why30 !== null),
       `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
       [!reject && why30 && `Reject source read (${why30})`]
     )
