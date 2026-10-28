@@ -67,9 +67,10 @@ export function PaperLetterEditor({
   const [updatedAt, setUpdatedAt] = useState(doc.updatedAt)
   const [hiddenGap, setHiddenGap] = useState(false)
   const [conflict, setConflict] = useState(false)
-  const [printNonce, setPrintNonce] = useState(0)
-  const printNameRef = useRef(doc.name)
-  printNameRef.current = doc.name
+  const [printJob, setPrintJob] = useState<{
+    id: number
+    title: string
+  } | null>(null)
   const { schedule, adopt, versionRef } = usePaperAutosave<string>({
     docId: doc.id,
     initialVersion: doc.contentVersion,
@@ -120,9 +121,9 @@ export function PaperLetterEditor({
   }, [doc, markdown, versionRef])
 
   useEffect(() => {
-    if (printNonce === 0) return
-    printPaper(printNameRef.current)
-  }, [printNonce])
+    if (!printJob) return
+    printPaper(printJob.title)
+  }, [printJob])
 
   useEffect(() => {
     const node = editorRef.current
@@ -201,12 +202,17 @@ export function PaperLetterEditor({
         <Button
           type="button"
           variant="outline"
-          onClick={() => setPrintNonce((value) => value + 1)}
+          onClick={() =>
+            setPrintJob((current) => ({
+              id: (current?.id ?? 0) + 1,
+              title: doc.name,
+            }))
+          }
         >
           Download PDF
         </Button>
       </div>
-      {printNonce > 0 ? (
+      {printJob ? (
         <PaperPrintSheet
           name={doc.name}
           kind="letter"

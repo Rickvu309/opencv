@@ -98,9 +98,10 @@ export function PaperCvEditor({
     })
   const previewRef = useRef<HTMLDivElement>(null)
   const [previewPages, setPreviewPages] = useState(1)
-  const [printNonce, setPrintNonce] = useState(0)
-  const printNameRef = useRef(name)
-  printNameRef.current = name
+  const [printJob, setPrintJob] = useState<{
+    id: number
+    title: string
+  } | null>(null)
   const showBanner = previewPages > 1 && pageState.pageChoice === "unset"
 
   useLayoutEffect(() => {
@@ -119,9 +120,9 @@ export function PaperCvEditor({
   }, [doc])
 
   useEffect(() => {
-    if (printNonce === 0) return
-    printPaper(printNameRef.current)
-  }, [printNonce])
+    if (!printJob) return
+    printPaper(printJob.title)
+  }, [printJob])
 
   useEffect(() => {
     setPageState(pages)
@@ -292,7 +293,7 @@ export function PaperCvEditor({
   }
 
   function download() {
-    setPrintNonce((value) => value + 1)
+    setPrintJob((current) => ({ id: (current?.id ?? 0) + 1, title: name }))
   }
 
   async function reload() {
@@ -487,7 +488,7 @@ export function PaperCvEditor({
       {nameError ? (
         <p className="text-sm text-destructive">{nameError}</p>
       ) : null}
-      {printNonce > 0 ? (
+      {printJob ? (
         <PaperPrintSheet
           name={name}
           kind="cv"

@@ -1,6 +1,6 @@
 import { useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import {
   blocksToPreviewModel,
   isCvBlockDocument,
@@ -44,14 +44,15 @@ export function PaperSharePage() {
     queryFn: () => getSharedPaper(token),
     enabled: token.length > 0,
   })
-  const [printNonce, setPrintNonce] = useState(0)
-  const printNameRef = useRef("")
-  printNameRef.current = query.data?.name ?? ""
+  const [printJob, setPrintJob] = useState<{
+    id: number
+    title: string
+  } | null>(null)
 
   useEffect(() => {
-    if (printNonce === 0 || !printNameRef.current) return
-    printPaper(printNameRef.current)
-  }, [printNonce])
+    if (!printJob) return
+    printPaper(printJob.title)
+  }, [printJob])
 
   if (!token || query.isError) {
     return (
@@ -85,12 +86,17 @@ export function PaperSharePage() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => setPrintNonce((value) => value + 1)}
+          onClick={() =>
+            setPrintJob((current) => ({
+              id: (current?.id ?? 0) + 1,
+              title: doc.name,
+            }))
+          }
         >
           Download PDF
         </Button>
       </div>
-      {printNonce > 0 ? (
+      {printJob ? (
         <PaperPrintSheet
           name={doc.name}
           kind={doc.kind}
