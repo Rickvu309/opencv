@@ -318,7 +318,7 @@ export function PaperCvEditor({
       <div className="flex flex-wrap items-center gap-2">
         <nav
           aria-label="Breadcrumb"
-          className="flex min-w-0 flex-1 items-center gap-2"
+          className="flex min-w-0 flex-1 basis-72 items-center gap-2"
         >
           <Button type="button" variant="link" onClick={onBack}>
             Paper
