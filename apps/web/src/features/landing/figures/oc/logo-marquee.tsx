@@ -35,16 +35,19 @@ function Mark({ name }: { name: (typeof LANDING_LOGOS)[number] }) {
 }
 
 /** Brand marks with their names scrolling in an endless loop with faded edges; paused while off screen. */
+/** One copy is narrower than the desktop row, so four copies keep it filled while the track moves one copy per loop. */
+const COPIES = [0, 1, 2, 3]
+
 export function LogoMarquee() {
   const [ref, onScreen] = useOnScreen<HTMLDivElement>()
   return (
     <div ref={ref} className="lm-root" data-paused={onScreen ? undefined : ""}>
       <ul className="lm-track">
-        {[0, 1].map((copy) =>
+        {COPIES.map((copy) =>
           LANDING_LOGOS.map((name) => (
             <li
               key={`${copy}-${name}`}
-              aria-hidden={copy === 1 ? true : undefined}
+              aria-hidden={copy > 0 ? true : undefined}
               className="lm-item"
             >
               <Mark name={name} />
