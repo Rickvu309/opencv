@@ -11,6 +11,18 @@ const domainSrc = path.join(root, "packages/domain/src")
 const PACKAGE = "@workspace/domain"
 const SKIPPED_DIRS = new Set(["node_modules", "dist", ".turbo", ".git"])
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/
+// Read only by tests on purpose: the contract types by registry/contract.type-test.ts,
+// the two schemas by paper-blocks.test.ts, which probes their boundary.
+const KEPT_FOR_TESTS = new Set([
+  "AccountContract",
+  "ChatContract",
+  "InboxContract",
+  "JobContract",
+  "PaperContract",
+  "storedPaperDocumentSchema",
+  "paperCheckSchema",
+])
+const TEST_FILE = /\.(?:type-)?test\.|[\\/]src[\\/]test[\\/]/
 
 function sourceFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -105,12 +117,12 @@ function importedNames(file, sf) {
   return used
 }
 
-test("every export of packages/domain/src is imported somewhere", () => {
+test("every export of packages/domain/src is imported by non-test code", () => {
   const consumers = [
     ...["apps", "packages"].flatMap((dir) => sourceFiles(path.join(root, dir))),
     ...sourceFiles(path.join(root, "scripts")),
     ...sourceFiles(path.join(root, ".claude/skills")),
-  ]
+  ].filter((file) => !TEST_FILE.test(file))
   const used = new Set()
   for (const file of consumers) {
     for (const name of importedNames(file, parse(file))) used.add(name)
@@ -120,9 +132,9 @@ test("every export of packages/domain/src is imported somewhere", () => {
   for (const file of sourceFiles(domainSrc)) {
     if (file === path.join(domainSrc, "index.ts")) continue
     for (const name of exportedNames(parse(file))) {
-      if (!used.has(name)) {
+      if (!used.has(name) && !KEPT_FOR_TESTS.has(name)) {
         unused.push(
-          `${name} in ${path.relative(root, file)}: nothing imports it, delete it or import it`
+          `nothing outside ${path.relative(root, file)} imports ${name}: drop \`export\` if this file uses it, else delete it`
         )
       }
     }

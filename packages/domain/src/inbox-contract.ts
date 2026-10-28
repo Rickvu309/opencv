@@ -54,7 +54,7 @@ const draftSchema = z
   .object({ body: z.string(), times: z.array(z.string()) })
   .strict()
 
-export const inboxDetailSchema = inboxThreadSchema
+const inboxDetailSchema = inboxThreadSchema
   .extend({
     subject: z.string(),
     messages: z.array(inboxMessageSchema),

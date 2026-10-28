@@ -6,7 +6,6 @@ import {
   isCvDocument,
   PAPER_CONTENT_VERSION,
   STARTER_CV_NAME,
-  starterCvDocument,
 } from "@workspace/domain"
 import type { JobStage } from "@workspace/domain"
 import { ownedCvName } from "@/features/paper/paper-data.ts"
@@ -16,6 +15,7 @@ import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { resetMockJobs, setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
+import { starterCvDocument } from "@/test/starter-cv.ts"
 import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 

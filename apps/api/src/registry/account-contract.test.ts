@@ -1,5 +1,5 @@
 import {
-  QUERY_NAMES,
+  queries,
   accountContract,
   accountQueries,
   personActor,
@@ -97,7 +97,7 @@ describe("account contract", () => {
       .filter((query) => query.coach)
       .map((query) => query.name)
     for (const name of Object.keys(accountQueries)) {
-      expect(QUERY_NAMES).toContain(name)
+      expect(Object.keys(queries)).toContain(name)
     }
     expect(coachReads).toContain("profile.get")
     expect(coachReads).toContain("coach.usage")

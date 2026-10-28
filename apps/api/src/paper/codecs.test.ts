@@ -1,11 +1,8 @@
 import {
-  LEGACY_CV_PREFIX,
-  LEGACY_PROOF_PREFIX,
   decodePaperContent,
   emptyCvDocument,
   emptyLetterDocument,
   emptyProofDocument,
-  importLegacyPaperContent,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
@@ -38,7 +35,7 @@ describe("paper codecs", () => {
         'Invalid option: expected one of "internship"|"product"|"service"|"academic"|"photo"',
     })
 
-    const prefixed = decodePaperContent("cv", 1, `${LEGACY_CV_PREFIX}{}`)
+    const prefixed = decodePaperContent("cv", 1, "cv:v1:{}")
     expect(prefixed.ok).toBe(false)
 
     const version = decodePaperContent("letter", 2, { markdown: "" })
@@ -55,32 +52,5 @@ describe("paper codecs", () => {
     const emptyHeader = decodePaperContent("cv", 1, { version: 2, header: {} })
     expect(emptyHeader).toEqual({ ok: false, message: "Invalid content" })
     expect(JSON.stringify(emptyHeader)).not.toContain("expected")
-  })
-
-  it("imports legacy prefixed strings one-way into jsonb documents", () => {
-    const cv = importLegacyPaperContent(
-      `${LEGACY_CV_PREFIX}${JSON.stringify(emptyCvDocument())}`
-    )
-    expect(cv).toEqual({
-      kind: "cv",
-      contentVersion: 1,
-      content: emptyCvDocument(),
-    })
-
-    const proof = importLegacyPaperContent(
-      `${LEGACY_PROOF_PREFIX}${JSON.stringify(emptyProofDocument())}`
-    )
-    expect(proof).toEqual({
-      kind: "proof",
-      contentVersion: 1,
-      content: emptyProofDocument(),
-    })
-
-    const letter = importLegacyPaperContent("Dear hiring team,")
-    expect(letter).toEqual({
-      kind: "letter",
-      contentVersion: 1,
-      content: { markdown: "Dear hiring team," },
-    })
   })
 })

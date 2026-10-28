@@ -42,5 +42,3 @@ export type QueryOutput<N extends QueryName> = z.output<Queries[N]["output"]>
 export type QueryRef = {
   [N in QueryName]: { query: N; input?: Partial<QueryInput<N>> }
 }[QueryName]
-
-export const QUERY_NAMES = Object.keys(queries) as QueryName[]

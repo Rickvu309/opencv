@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest"
 import {
   PAPER_CONTENT_VERSION,
   STARTER_CV_NAME,
-  starterCvDocument,
   type PaperDoc,
 } from "@workspace/domain"
 
@@ -31,6 +30,7 @@ import {
   paperZeroStates,
 } from "./paper-data.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
+import { starterCvDocument } from "@/test/starter-cv.ts"
 
 const paperRoot = fileURLToPath(new URL(".", import.meta.url))
 

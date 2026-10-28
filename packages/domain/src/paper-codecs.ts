@@ -138,9 +138,6 @@ const schemaByKind = {
 } as const
 
 /** Prototype transport leftovers. Importer-only — never a write path. */
-export const LEGACY_CV_PREFIX = "cv:v1:"
-export const LEGACY_PROOF_PREFIX = "proof:v1:"
-
 export function emptyCvDocument(): CvDocument {
   return {
     templateId: "internship",
@@ -163,17 +160,6 @@ export function emptyProofDocument(): ProofDocument {
     viewMode: "chain",
     title: "",
     steps: [],
-  }
-}
-
-export function emptyPaperDocument(kind: PaperContentKind): PaperDocument {
-  switch (kind) {
-    case "cv":
-      return emptyCvDocument()
-    case "letter":
-      return emptyLetterDocument()
-    case "proof":
-      return emptyProofDocument()
   }
 }
 
@@ -214,68 +200,6 @@ export function decodePaperContent(
   }
 
   return { ok: true, data: parsed.data }
-}
-
-function parseLegacyJson(raw: string, label: string): unknown {
-  try {
-    return JSON.parse(raw) as unknown
-  } catch {
-    throw new Error(`Legacy ${label} content is not valid JSON`)
-  }
-}
-
-/**
- * One-way importer from the prototype's prefixed strings (and plain
- * markdown Letters). Used to seed jsonb documents. Not a write path.
- */
-export function importLegacyPaperContent(raw: string): {
-  kind: PaperContentKind
-  contentVersion: number
-  content: PaperDocument
-} {
-  if (raw.startsWith(LEGACY_CV_PREFIX)) {
-    const decoded = decodePaperContent(
-      "cv",
-      PAPER_CONTENT_VERSION,
-      parseLegacyJson(raw.slice(LEGACY_CV_PREFIX.length), "CV")
-    )
-    if (!decoded.ok) {
-      throw new Error(decoded.message)
-    }
-    return {
-      kind: "cv",
-      contentVersion: PAPER_CONTENT_VERSION,
-      content: decoded.data,
-    }
-  }
-
-  if (raw.startsWith(LEGACY_PROOF_PREFIX)) {
-    const decoded = decodePaperContent(
-      "proof",
-      PAPER_CONTENT_VERSION,
-      parseLegacyJson(raw.slice(LEGACY_PROOF_PREFIX.length), "Proof")
-    )
-    if (!decoded.ok) {
-      throw new Error(decoded.message)
-    }
-    return {
-      kind: "proof",
-      contentVersion: PAPER_CONTENT_VERSION,
-      content: decoded.data,
-    }
-  }
-
-  const decoded = decodePaperContent("letter", PAPER_CONTENT_VERSION, {
-    markdown: raw,
-  })
-  if (!decoded.ok) {
-    throw new Error(decoded.message)
-  }
-  return {
-    kind: "letter",
-    contentVersion: PAPER_CONTENT_VERSION,
-    content: decoded.data,
-  }
 }
 
 export function isCvDocument(value: unknown): value is CvDocument {

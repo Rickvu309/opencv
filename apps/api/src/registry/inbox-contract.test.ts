@@ -1,5 +1,5 @@
 import {
-  QUERY_NAMES,
+  queries,
   inboxContract,
   inboxQueries,
   personActor,
@@ -113,7 +113,7 @@ describe("inbox contract", () => {
   it("registers the inbox reads for the person only", () => {
     const registered = installRegistry().list().queries
     for (const name of Object.keys(inboxQueries)) {
-      expect(QUERY_NAMES).toContain(name)
+      expect(Object.keys(queries)).toContain(name)
       expect(registered.find((query) => query.name === name)).toMatchObject({
         coach: false,
       })

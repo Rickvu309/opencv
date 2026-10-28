@@ -1,6 +1,5 @@
 import {
   appendCoachPart,
-  COACH_SSE_EVENTS,
   deterministicChatTitle,
   shouldAutoTitleChat,
   textFromParts,
@@ -565,3 +564,15 @@ export async function chatApiFetchOrThrow(
 export function installChatApiMock() {
   vi.stubGlobal("fetch", chatApiFetchOrThrow)
 }
+
+export const COACH_SSE_EVENTS = {
+  messageStart: "message-start",
+  textDelta: "text-delta",
+  step: "step",
+  toolCall: "tool-call",
+  toolResult: "tool-result",
+  confirm: "confirm",
+  usage: "usage",
+  messageEnd: "message-end",
+  error: "error",
+} as const

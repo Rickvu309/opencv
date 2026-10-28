@@ -13,9 +13,9 @@ export const coachModeSchema = z.enum(["free", "light", "max"])
 export type CoachMode = z.infer<typeof coachModeSchema>
 export const DEFAULT_COACH_MODE: CoachMode = "free"
 
-export const DEFAULT_COACH_MODEL_FREE = "openrouter/free"
-export const DEFAULT_COACH_MODEL_LIGHT = "deepseek/deepseek-chat-v3.1"
-export const DEFAULT_COACH_MODEL_MAX = "anthropic/claude-opus-4"
+const DEFAULT_COACH_MODEL_FREE = "openrouter/free"
+const DEFAULT_COACH_MODEL_LIGHT = "deepseek/deepseek-chat-v3.1"
+const DEFAULT_COACH_MODEL_MAX = "anthropic/claude-opus-4"
 
 export const DEFAULT_COACH_MODELS = {
   free: DEFAULT_COACH_MODEL_FREE,
@@ -135,18 +135,6 @@ export function coachProviderErrorMessage(
   return "The Coach could not finish"
 }
 export const COACH_SSE_HEARTBEAT_MS = 15_000
-
-export const COACH_SSE_EVENTS = {
-  messageStart: "message-start",
-  textDelta: "text-delta",
-  step: "step",
-  toolCall: "tool-call",
-  toolResult: "tool-result",
-  confirm: "confirm",
-  usage: "usage",
-  messageEnd: "message-end",
-  error: "error",
-} as const
 
 export type CoachTurnUsage = {
   model: string
