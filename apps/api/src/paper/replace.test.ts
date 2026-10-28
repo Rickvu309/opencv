@@ -1,10 +1,20 @@
-import { emptyCvDocument, ERROR_CODES, personActor } from "@workspace/domain"
+import {
+  blankBlockDocument,
+  ERROR_CODES,
+  personActor,
+  type CvBlockDocument,
+} from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import { createMigratedTestDb } from "../test/harness.js"
+
+function cvNamed(name: string): CvBlockDocument {
+  const document = blankBlockDocument()
+  return { ...document, header: { ...document.header, name } }
+}
 
 describe("paper.replace", () => {
   it("keeps the first body when two replaces share a content version", async () => {
@@ -28,8 +38,8 @@ describe("paper.replace", () => {
         document: Record<string, unknown>
         contentVersion: number
       }
-      const first = { ...emptyCvDocument(), summary: "First body" }
-      const second = { ...emptyCvDocument(), summary: "Second body" }
+      const first = cvNamed("First body")
+      const second = cvNamed("Second body")
       const replaced = await registry.execute({
         name: "paper.replace",
         input: {
@@ -41,7 +51,7 @@ describe("paper.replace", () => {
       })
       expect(replaced.output).toMatchObject({
         contentVersion: doc.contentVersion + 1,
-        document: { summary: "First body" },
+        document: { version: 2, header: { name: "First body" } },
       })
 
       await expect(
@@ -62,18 +72,17 @@ describe("paper.replace", () => {
         detail: {
           document: {
             contentVersion: doc.contentVersion + 1,
-            document: { summary: "First body" },
+            document: { version: 2, header: { name: "First body" } },
           },
         },
       })
 
-      const read = (await registry.read(
-        "paper.get",
-        { docId: doc.id },
-        actor
-      )) as { contentVersion: number; document: { summary: string } }
+      const read = (await registry.read("paper.get", { docId: doc.id }, actor)) as {
+        contentVersion: number
+        document: CvBlockDocument
+      }
       expect(read.contentVersion).toBe(doc.contentVersion + 1)
-      expect(read.document.summary).toBe("First body")
+      expect(read.document.header.name).toBe("First body")
     })
     await client.close()
   })
@@ -99,7 +108,7 @@ describe("paper.replace", () => {
         document: Record<string, unknown>
         contentVersion: number
       }
-      const next = { ...emptyCvDocument(), summary: "Shipped the note." }
+      const next = cvNamed("Shipped the note.")
       const replaced = await registry.execute({
         name: "paper.replace",
         input: {
@@ -112,7 +121,7 @@ describe("paper.replace", () => {
       expect(replaced.output).toMatchObject({
         contentVersion: doc.contentVersion + 1,
         previousDocument: doc.document,
-        document: { summary: "Shipped the note." },
+        document: { version: 2, header: { name: "Shipped the note." } },
       })
     })
     await client.close()

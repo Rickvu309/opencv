@@ -1,4 +1,4 @@
-import { emptyCvDocument, parseUserId, personActor } from "@workspace/domain"
+import { blankBlockDocument, parseUserId, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
@@ -40,20 +40,27 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.docId = idOf(paper.output)
       },
-      act: () =>
-        run("paper.replace", {
+      act: () => {
+        const document = blankBlockDocument()
+        return run("paper.replace", {
           docId: ctx.docId,
           contentVersion: 1,
-          document: { ...emptyCvDocument(), name: "Ada Lane" },
-        }),
+          document: {
+            ...document,
+            header: { ...document.header, name: "Ada Lane" },
+          },
+        })
+      },
       assert: async () => {
         const doc = await paperOf(ctx.docId)
-        expect(text(record(doc, "document"), "name")).toBe("Ada Lane")
+        expect(text(record(record(doc, "document"), "header"), "name")).toBe(
+          "Ada Lane"
+        )
       },
       undoAssert: async (result) => {
         await undo(result)
         const doc = await paperOf(ctx.docId)
-        expect(text(record(doc, "document"), "name")).toBe("")
+        expect(text(record(record(doc, "document"), "header"), "name")).toBe("")
       },
     },
     {

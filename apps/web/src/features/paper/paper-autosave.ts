@@ -156,7 +156,7 @@ export function usePaperAutosave<T>({
     }
   }, [])
 
-  function schedule(next: T) {
+  function queue(next: T, delay: number) {
     if (conflictRef.current) return
     epochRef.current += 1
     pendingRef.current = next
@@ -164,7 +164,22 @@ export function usePaperAutosave<T>({
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null
       void flush()
-    }, 700)
+    }, delay)
+  }
+
+  function schedule(next: T) {
+    queue(next, 700)
+  }
+
+  function commitNow(next: T) {
+    if (conflictRef.current) return
+    epochRef.current += 1
+    pendingRef.current = next
+    if (timerRef.current != null) {
+      window.clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    void flush()
   }
 
   function adopt(version: number) {
@@ -179,5 +194,5 @@ export function usePaperAutosave<T>({
     }
   }
 
-  return { schedule, adopt, versionRef }
+  return { schedule, commitNow, adopt, versionRef }
 }

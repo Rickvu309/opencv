@@ -106,10 +106,10 @@ describe("CV editor chrome", () => {
     )
     expect(screen.queryByText("Edited just now")).not.toBeInTheDocument()
 
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const role = screen.getByRole("textbox", { name: "Role, company" })
     vi.useFakeTimers()
-    summary.textContent = "Edited for verify."
-    fireEvent.input(summary)
+    role.textContent = "Edited for verify."
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -154,10 +154,10 @@ describe("CV editor chrome", () => {
       ).not.toBeInTheDocument()
     })
 
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const role = screen.getByRole("textbox", { name: "Role, company" })
     vi.useFakeTimers()
-    summary.textContent = "A conflicting edit."
-    fireEvent.input(summary)
+    role.textContent = "A conflicting edit."
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -252,18 +252,18 @@ describe("CV editor chrome", () => {
         onBack={() => undefined}
       />
     )
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const role = screen.getByRole("textbox", { name: "Role, company" })
     vi.useFakeTimers()
-    summary.textContent = "First"
-    fireEvent.input(summary)
+    role.textContent = "First"
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
     expect(replaceCount).toBe(1)
     expect(bodies[0]?.contentVersion).toBe(1)
 
-    summary.textContent = "Second"
-    fireEvent.input(summary)
+    role.textContent = "Second"
+    fireEvent.input(role)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -286,7 +286,9 @@ describe("CV editor chrome", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
-    expect(summary.textContent).toBe("Server text")
+    expect(screen.getByRole("textbox", { name: "Summary" }).textContent).toBe(
+      "Server text"
+    )
     expect(replaceCount).toBe(1)
   })
 
@@ -335,8 +337,11 @@ describe("CV editor chrome", () => {
         onBack={() => undefined}
       />
     )
-    expect(view.container.querySelector(".cv-template-product")).not.toBeNull()
-    expect(view.container.querySelector(".cv-template-internship")).toBeNull()
+    expect(
+      view.container
+        .querySelector("[data-paper-editor] [data-template]")
+        ?.getAttribute("data-template")
+    ).toBe("modern")
   })
 
   it("keeps the chosen layout when a reload leaves the body unchanged", async () => {
@@ -357,15 +362,19 @@ describe("CV editor chrome", () => {
       />
     )
     expect(
-      open.container.querySelector(".cv-template-internship")
-    ).not.toBeNull()
+      open.container
+        .querySelector("[data-paper-editor] [data-template]")
+        ?.getAttribute("data-template")
+    ).toBe("simple")
     fireEvent.click(screen.getByRole("button", { name: "Change template" }))
     fireEvent.click(screen.getByRole("button", { name: "Modern" }))
     fireEvent.click(screen.getByRole("button", { name: "Use template" }))
     await vi.waitFor(() => {
       expect(
-        open.container.querySelector(".cv-template-product")
-      ).not.toBeNull()
+        open.container
+          .querySelector("[data-paper-editor] [data-template]")
+          ?.getAttribute("data-template")
+      ).toBe("modern")
     })
     open.unmount()
 
@@ -377,11 +386,10 @@ describe("CV editor chrome", () => {
       />
     )
     expect(
-      reloaded.container.querySelector(".cv-template-product")
-    ).not.toBeNull()
-    expect(
-      reloaded.container.querySelector(".cv-template-internship")
-    ).toBeNull()
+      reloaded.container
+        .querySelector("[data-paper-editor] [data-template]")
+        ?.getAttribute("data-template")
+    ).toBe("modern")
   })
 
   it.each([1, 2])(

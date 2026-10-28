@@ -14,8 +14,16 @@ afterEach(() => {
 
 function savedSummary() {
   const cv = getMockPaperDocs().find((doc) => doc.name === "PM track CV")
-  const content = cv?.content as { summary?: string } | undefined
-  return content?.summary
+  const content = cv?.content as
+    | {
+        summary?: string
+        sections?: { kind?: string; blocks?: { type?: string; text?: string }[] }[]
+      }
+    | undefined
+  const text = content?.sections
+    ?.find((section) => section.kind === "summary")
+    ?.blocks?.find((block) => block.type === "text")?.text
+  return text ?? content?.summary
 }
 
 async function openCv() {

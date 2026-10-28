@@ -71,9 +71,10 @@ describe("release-one commands", () => {
         contentVersion: number
       }
       expect(doc.contentVersion).toBe(1)
+      const header = doc.document.header as { name: string }
       const next = {
         ...doc.document,
-        summary: "Shipped a small experiment.",
+        header: { ...header, name: "Shipped a small experiment." },
       }
       const replaced = await registry.execute({
         name: "paper.replace",
@@ -98,7 +99,10 @@ describe("release-one commands", () => {
           input: {
             docId: doc.id,
             contentVersion: 1,
-            document: { ...next, summary: "A different edit." },
+            document: {
+              ...next,
+              header: { ...header, name: "A different edit." },
+            },
           },
           actor: person,
         })
@@ -110,7 +114,10 @@ describe("release-one commands", () => {
         expect(commandError.status).toBe(409)
         expect(commandError.detail.document).toMatchObject({
           contentVersion: 2,
-          document: { summary: next.summary },
+          document: {
+            version: 2,
+            header: { name: "Shipped a small experiment." },
+          },
         })
       }
 
