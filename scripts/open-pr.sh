@@ -25,7 +25,7 @@ set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib/disk.sh"
 # shellcheck source=scripts/lib/rules.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
-rule_args=$(printf '%q ' "$@")
+rule_args=; (( $# )) && rule_args=$(printf '%q ' "$@")
 result_begin open-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-([a-z0-9]+(-[a-z0-9]+)*)$'
@@ -120,6 +120,7 @@ if (( have_gh )); then
 fi
 changed_files=$(git diff --name-only origin/main...HEAD 2>/dev/null) || die "cannot diff against origin/main (git fetch origin main)"
 rule_no_workflows "$changed_files" "$top"
+git fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main (git fetch origin main)"
 rule_commits_hooked origin/main HEAD "$top"
 
 [[ -z "$(git status --porcelain)" ]] || die "uncommitted changes. Commit (or stash) them first."

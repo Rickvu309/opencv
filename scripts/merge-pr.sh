@@ -42,7 +42,7 @@ die() { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "merge-pr: $*" >&2; exit 
 review_cmd=${MERGE_PR_REVIEW_CMD:-$here/review-pr.sh}
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
-rule_args=$(printf '%q ' "$@")
+rule_args=; (( $# )) && rule_args=$(printf '%q ' "$@")
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
@@ -93,7 +93,8 @@ head_rules() {
   rule_pushed_through_hook "$sha" "$wt"
   git cat-file -e "$sha^{commit}" 2>/dev/null || git fetch --quiet origin "pull/$pr/head" 2>/dev/null || true
   git cat-file -e "$sha^{commit}" 2>/dev/null || DIE_CAUSE=env die "cannot read commit ${sha:0:9} of PR #$pr to check its commits (git fetch origin pull/$pr/head)"
-  rule_commits_hooked origin/main "$sha" "$wt"
+  git fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main (git fetch origin main)"
+  rule_commits_hooked origin/main "$sha" "$wt" push
   rule_skip_said "$sha" "$pr" "$(gh pr view "$pr" --json body --jq .body)"
   checked_head=$sha
 }

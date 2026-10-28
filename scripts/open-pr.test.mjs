@@ -36,7 +36,8 @@ function run(
   quiet = false,
   lowDisk = false,
   noCommonDir = false,
-  extraEnv = {}
+  extraEnv = {},
+  args = ["--draft", "-d", "push failure proof"]
 ) {
   const scratch = join(homedir(), "tmp")
   mkdirSync(scratch, { recursive: true })
@@ -95,6 +96,7 @@ case "$1" in
     if [ "$PROOF_NOSTAMP" != 1 ]; then mkdir -p "$PROOF_ROOT/work/repo/.git/pre-push-stamps"; echo ok > "$PROOF_ROOT/work/repo/.git/pre-push-stamps/deadbeefdeadbeef"; fi
     if [ "$PROOF_QUIET" != 1 ]; then echo 'push transport diagnostic' >&2; fi
     exit "$PROOF_PUSH_EXIT" ;;
+  fetch) ;;
   ls-remote) echo 'oldremote refs/heads/fix/999-push-failure-proof' ;;
   *) echo "unexpected git call $*" >&2; exit 99 ;;
 esac
@@ -119,7 +121,6 @@ esac
     PROOF_ROOT: root,
     PROOF_PUSH_EXIT: String(pushExit),
     PROOF_QUIET: quiet ? "1" : "0",
-    PROOF_NO_COMMON: noCommonDir ? "1" : "0",
     HOME: join(root, "home"),
     TMPDIR: join(root, "tmpdir"),
     PR_RESULT_DIR: join(root, "results"),
@@ -154,7 +155,7 @@ esac
   }
   const result = spawnSync(
     "bash",
-    [script, "--draft", "-d", "push failure proof"],
+    [script, ...args],
     {
       cwd: root,
       env,
@@ -334,7 +335,7 @@ refuses(
   /workflow files/
 )
 test("R105: the fix removes the files from the worktree, not only from the index", (t) => {
-  const result = run(t, 0, false, false, {
+  const result = run(t, 0, false, false, false, {
     PROOF_DIFF: "README.md\n.github/workflows/ci.yml\n",
   })
   const file = join(
@@ -360,7 +361,7 @@ refuses(
 
 // The fix of R90 is a command: run through a shell it must give back the original arguments, whatever they contain.
 test("R90: the next command parses back to the original arguments", (t) => {
-  const result = run(t, 0, false, false, { HEAVY_SLOT: "" })
+  const result = run(t, 0, false, false, false, { HEAVY_SLOT: "" })
   const file = join(
     result.root,
     "results",
@@ -375,6 +376,19 @@ test("R90: the next command parses back to the original arguments", (t) => {
   assert.equal(echoed.stdout, "--draft\n-d\npush failure proof\n")
 })
 
+test("R90: with no arguments the next command is the bare heavy command", (t) => {
+  const result = run(t, 0, false, false, false, { HEAVY_SLOT: "" }, [])
+  assert.equal(result.status, 1, result.stderr)
+  assert.match(result.stderr, /must run through heavy/)
+  const file = join(
+    result.root,
+    "results",
+    "opencv-open-pr-fix-999-push-failure-proof.json"
+  )
+  const next = JSON.parse(readFileSync(file, "utf8")).next
+  assert.equal(next, "heavy -- scripts/open-pr.sh")
+})
+
 for (const [name, raw] of [
   ["a quoted value", 'PORT="4001"\n'],
   ["an export prefix", "export PORT=4001\n"],
@@ -382,7 +396,7 @@ for (const [name, raw] of [
   ["a CRLF line ending", "PORT=4001\r\n"],
 ]) {
   test(`R76: ${name} in .env is the assigned port`, (t) => {
-    const result = run(t, 0, false, false, { PORT_FILES: "x", PORT_RAW: raw })
+    const result = run(t, 0, false, false, false, { PORT_FILES: "x", PORT_RAW: raw })
     assert.equal(result.status, 0, result.stderr)
   })
 }

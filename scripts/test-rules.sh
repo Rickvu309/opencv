@@ -60,6 +60,8 @@ skip "$(cat "$here/../.github/pull_request_template.md")"
 skip "emergency declared by <who>"; [[ $code -eq 1 ]] || fail "a placeholder name is not a declaration"
 skip "emergency declared by unknown."; [[ $code -eq 1 ]] || fail "unknown is not a declaration"
 skip "SKIP_CHECKS=1, emergency declared by Quan."; [[ $code -eq 0 ]] || fail "a named human is a declaration"
+skip "SKIP_CHECKS=1, emergency declared by Đức."; [[ $code -eq 0 ]] || fail "a non-ASCII name is a declaration"
+skip "no emergency declared by anyone"; [[ $code -eq 1 ]] || fail "prose that merely contains the phrase is not a declaration"
 echo ok >"$stamp"; skip "no mention"; [[ $code -eq 0 ]] || fail "an ok stamp needs no declaration"
 echo "ok: only \"emergency declared by <name>\" declares a SKIP_CHECKS push; the template line and a placeholder do not"
 
@@ -83,14 +85,32 @@ echo a >"$repo/a.txt"; git -C "$repo" add a.txt; git -C "$repo" commit -q -m "fe
 head -c 30000 /dev/zero | tr '\0' 'x' >"$repo/gen.bin"; head -c 30000 /dev/urandom >"$repo/rand.bin"
 printf 'gen.bin linguist-generated\n' >"$repo/.gitattributes"
 git -C "$repo" add -A; git -C "$repo" commit -q -m "feat: generated and binary files may be large"
-printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\ncd "%s"\nrule_commits_hooked main "$1" "${2:-}"\nresult_ok fine\n' "$here" "$here" "$repo" >"$tmp/c.sh"
+printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\ncd "%s"\nrule_commits_hooked main "$1" "${2:-}" "${3:-}"\nresult_ok fine\n' "$here" "$here" "$repo" >"$tmp/c.sh"
 hooked() { set +e; bash "$tmp/c.sh" "$@" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e; }
 hooked HEAD; [[ $code -eq 0 ]] || fail "clean commits, a generated file and a binary file pass"
 git -C "$repo" commit -q --allow-empty -m "feat: b" -m "Generated-""with: a tool"
 hooked HEAD "$repo"; [[ $code -eq 1 ]] && grep -q "Fix: cd $repo && git reset --soft" "$tmp/err" || fail "an attribution trailer in a commit is refused with the fix"
+# The fix runs as written: it squashes the branch onto origin/main with the last subject, drops the trailer, and pushes.
+fix=$(sed -n 's/^Fix: //p' "$tmp/err")
+git init -q --bare "$tmp/origin.git" && git -C "$repo" remote add origin "$tmp/origin.git"
+git -C "$repo" update-ref refs/remotes/origin/main main
+git -C "$repo" switch -q -c feat/9-trailer && git -C "$repo" push -q -u origin feat/9-trailer
+(cd "$tmp" && heavy() { shift; "$@"; } && eval "$fix") >/dev/null 2>&1 || fail "the trailer fix runs: $fix"
+[[ "$(git -C "$repo" log -1 --format=%s)" == "feat: b" && -z "$(git -C "$repo" log -1 --format=%B | grep -i 'generated-with' || true)" ]] || fail "the trailer fix recommits with the subject and no trailer"
+[[ "$(git --git-dir="$tmp/origin.git" rev-parse refs/heads/feat/9-trailer)" == "$(git -C "$repo" rev-parse HEAD)" ]] || fail "the trailer fix pushes the branch"
+hooked HEAD; [[ $code -eq 0 ]] || fail "after the trailer fix the commits pass"
+git -C "$repo" switch -q feat/9-ok
 git -C "$repo" reset -q --hard HEAD~1
 head -c 25000 /dev/zero | tr '\0' 'y' >"$repo/big.txt"; git -C "$repo" add big.txt; git -C "$repo" commit -q -m "feat: big"
-hooked HEAD; [[ $code -eq 1 ]] && grep -q 'big.txt (25000 bytes)' "$tmp/err" || fail "a text file over 20000 bytes is refused"
+hooked HEAD "$repo" push; [[ $code -eq 1 ]] && grep -q 'big.txt (25000 bytes)' "$tmp/err" || fail "a text file over 20000 bytes is refused"
+fix=$(sed -n 's/^Fix: //p' "$tmp/err")
+[[ "$fix" == "cd $repo && git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && heavy -- git push origin HEAD" ]] || fail "the oversize fix is a command that commits and pushes: $fix"
+# The fix runs once the file is split: it commits, pushes to the remote, and the check then passes.
+git -C "$repo" rm -q --cached big.txt && rm "$repo/big.txt"; head -c 12000 /dev/zero | tr '\0' 'y' >"$repo/big-1.txt"; head -c 13000 /dev/zero | tr '\0' 'y' >"$repo/big-2.txt"
+(cd "$tmp" && heavy() { shift; "$@"; } && eval "$fix") >/dev/null 2>&1 || fail "the oversize fix runs"
+[[ -z "$(git -C "$repo" status --porcelain)" ]] || fail "after the oversize fix the worktree is clean"
+[[ "$(git --git-dir="$tmp/origin.git" rev-parse refs/heads/feat/9-ok)" == "$(git -C "$repo" rev-parse HEAD)" ]] || fail "the oversize fix pushes the branch"
+hooked HEAD; [[ $code -eq 0 ]] || fail "after the split the net change has no oversize file, so the check passes"
 echo "ok: a trailer or an oversize text file in a commit is refused; generated and binary files pass"
 
 # R68 and the rest of the checks that run in the main checkout.
@@ -105,7 +125,7 @@ git -C "$repo" ls-files --error-unmatch README.md >/dev/null 2>&1 || { echo base
 echo edit >>"$repo/README.md"
 set +e; bash "$tmp/m.sh" "$repo" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
 fix=$(sed -n 's/^Fix: //p' "$tmp/err")
-[[ $code -eq 1 && "$fix" == "git -C '$repo' diff HEAD > ~/tmp/main-checkout-edits.patch && git -C '$repo' restore --staged --worktree ."* ]] || fail "the R68 fix saves the edits before it restores: $fix"
+[[ $code -eq 1 && "$fix" == "git -C '$repo' diff HEAD > ~/tmp/main-checkout-edits-"[0-9]*".patch && git -C '$repo' restore --staged --worktree ."* ]] || fail "the R68 fix saves the edits before it restores: $fix"
 echo "ok: R68 refuses a detached or unreadable main checkout, and its fix saves the edits first"
 
 echo "all rules tests passed"

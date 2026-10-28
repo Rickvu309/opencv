@@ -48,7 +48,8 @@ chmod +x "$tmp/bin/gh" "$tmp/review"
 # merge-pr.sh runs from the main checkout: a throwaway repo on main stands in for it.
 git init -q -b main "$tmp/repo" && git -C "$tmp/repo" config core.hooksPath /dev/null
 git -C "$tmp/repo" commit -q --allow-empty -m base
-git -C "$tmp/repo" update-ref refs/remotes/origin/main HEAD
+git init -q --bare "$tmp/origin.git" && git -C "$tmp/repo" remote add origin "$tmp/origin.git"
+git -C "$tmp/repo" push -q origin main
 # The PR head is a real commit on a branch off main, so the commit checks have something to read.
 git -C "$tmp/repo" switch -q -c pr-head
 echo x >"$tmp/repo/x.txt"; git -C "$tmp/repo" add x.txt; git -C "$tmp/repo" commit -q -m "feat: x (#9)"
@@ -275,9 +276,25 @@ git -C "$tmp/repo" switch -q main
 for case in "trailer:$trailer_head:attribution trailer" "big:$big_head:over the 20000-byte"; do
   IFS=: read -r name sha want <<<"$case"
   reset; echo ok >"$tmp/repo/.git/pre-push-stamps/$sha"; MP_HEAD=$sha MP_REVIEW_OUT="RESULT: OK (patch id $patch, main 1234567890ab). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $sha" run
-  expect "R97: a $name commit that the commit hooks would refuse is refused before the gate" 1 "$want" "cd <the worktree of this branch> &&"
+  if [[ $name == big ]]; then fixcmd="cd <the worktree of this branch> && git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && heavy -- git push origin HEAD"
+  else fixcmd="cd <the worktree of this branch> &&"; fi
+  expect "R97: a $name commit that the commit hooks would refuse is refused before the gate" 1 "$want" "$fixcmd"
   no_merge "$name"; never_gated "$name"
 done
+
+# A commit on main with a trailer GitHub added is not the branch's: origin/main is fetched before the commits are compared.
+git -C "$tmp/repo" switch -q -c main-next main
+git -C "$tmp/repo" commit -q --allow-empty -m "feat: squash (#8)" -m "Co-""authored-""by: Reviewer <r@example.com>"
+git -C "$tmp/repo" push -q origin main-next:main
+git -C "$tmp/repo" switch -q -c on-new-main main-next
+echo z >"$tmp/repo/z.txt"; git -C "$tmp/repo" add z.txt; git -C "$tmp/repo" commit -q -m "feat: z (#9)"
+new_head=$(git -C "$tmp/repo" rev-parse HEAD)
+git -C "$tmp/repo" switch -q main; git -C "$tmp/repo" branch -q -D main-next
+git -C "$tmp/repo" update-ref refs/remotes/origin/main main
+reset; echo ok >"$tmp/repo/.git/pre-push-stamps/$new_head"
+MP_HEAD=$new_head MP_REVIEW_OUT="RESULT: OK (patch id $patch, main 1234567890ab). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $new_head" run
+expect "R97: a stale origin/main does not blame the branch for a trailer already on main" 0 "merged PR #5"
+git -C "$tmp/repo" push -q origin main --force
 
 reset
 run --nope

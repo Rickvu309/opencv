@@ -13,7 +13,7 @@
 #   rule_stamp_dir                        R97/R98 where pre-push records each pushed sha (ok | skip)
 #   rule_skip_said <sha> <pr#> <body>     R98  a head pushed with SKIP_CHECKS=1 has "emergency declared by <name>" in the PR body
 #   rule_pushed_through_hook <sha> [wt]   R97  the sha was pushed through the pre-push hook (not with the hook-skip flag)
-#   rule_commits_hooked <base> <tip> [wt] R97  the commits pass what commit-msg and pre-commit refuse (not made with the hook-skip flag)
+#   rule_commits_hooked <base> <tip> [wt] [push] R97  the commits pass what commit-msg and pre-commit refuse (not made with the hook-skip flag)
 #   rule_wt_of <branch>                   the worktree that has <branch> checked out
 
 rule_fail() {  # rule_fail <message> <fix command>
@@ -36,13 +36,16 @@ rule_heavy() {  # RULE_ARGS is the original argument list, shell-quoted with pri
 }
 
 rule_main_clean() {
-  local main=$1 branch dirty
+  local main=$1 branch dirty stamp
+  git -C "$main" rev-parse --git-dir >/dev/null 2>&1 ||
+    rule_fail "the main checkout ($main) cannot be read as a git checkout; it stays on main and nobody works in it" "git -C '$main' switch main"
   branch=$(git -C "$main" branch --show-current 2>/dev/null || true)
   [[ "$branch" == main ]] ||
     rule_fail "the main checkout ($main) is on '${branch:-a detached HEAD}'; it stays on main and nobody works in it" "git -C '$main' switch main"
+  stamp=$(date +%Y%m%d-%H%M%S)
   dirty=$(git -C "$main" status --porcelain --untracked-files=no 2>/dev/null | head -n 5 | tr '\n' ' ') || true
   [[ -z "$dirty" ]] ||
-    rule_fail "the main checkout ($main) has edited files, and nobody edits there (AGENTS.md section 2): $dirty" "git -C '$main' diff HEAD > ~/tmp/main-checkout-edits.patch && git -C '$main' restore --staged --worktree .   # saves the edits first; apply the patch in a worktree (scripts/new-task.sh)"
+    rule_fail "the main checkout ($main) has edited files, and nobody edits there (AGENTS.md section 2): $dirty" "git -C '$main' diff HEAD > ~/tmp/main-checkout-edits-$stamp.patch && git -C '$main' restore --staged --worktree .   # saves the edits first; apply the patch in a worktree (scripts/new-task.sh)"
 }
 
 rule_port() {
@@ -82,7 +85,7 @@ rule_skip_said() {  # rule_skip_said <sha> <pr#> <pr body>: the marker open-pr.s
   local sha=$1 pr=$2 body=$3 f who
   f="$(rule_stamp_dir)/$sha"
   [[ -f "$f" && "$(<"$f")" == skip ]] || return 0
-  who=$(grep -oiE 'emergency declared by [A-Za-z0-9_@-]+' <<<"$body" | head -n 1 | sed -E 's/^emergency declared by //I' || true)
+  who=$(grep -oiE '(^|[,(*] *)emergency declared by [^[:space:]*.,;)<>]+' <<<"$body" | head -n 1 | sed -E 's/^.*emergency declared by //I' || true)
   [[ -n "$who" && "${who,,}" != unknown ]] ||
     rule_fail "head ${sha:0:9} was pushed with SKIP_CHECKS=1 (only for an emergency a human declared) and PR #$pr does not say \"emergency declared by <name>\"" "gh api -X PATCH repos/{owner}/{repo}/pulls/$pr -f body=\"SKIP_CHECKS=1: emergency declared by <who>. \$(gh pr view $pr --json body --jq .body)\""
 }
@@ -96,15 +99,15 @@ rule_pushed_through_hook() {  # rule_pushed_through_hook <sha> [wt]
       "$(rule_cd "${2:-}")git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease   # the rebase brings the stamping hook, the push runs it"
 }
 
-rule_commits_hooked() {  # rule_commits_hooked <base> <tip> [wt]: what commit-msg and pre-commit refuse, checked again on the branch (git runs in the current directory; wt is only for the fix)
-  local base=$1 tip=$2 wt=${3:-} sha msg trailer="" over="" meta path blob mode size kept attr
+rule_commits_hooked() {  # rule_commits_hooked <base> <tip> [wt] [push]: what commit-msg and pre-commit refuse, checked again on the branch (git runs in the current directory; wt is only for the fix)
+  local base=$1 tip=$2 wt=${3:-} push=${4:-} sha msg trailer="" over="" meta path blob mode size kept attr
   while read -r sha; do
     msg=$(git log -1 --format=%B "$sha")
     ! grep -qiE '^[[:space:]]*(co-authored-by|generated-with):' <<<"$msg" || trailer+="${sha:0:9} "
   done < <(git rev-list "$base..$tip")
   [[ -z "$trailer" ]] ||
-    rule_fail "commit(s) $trailer carry an attribution trailer, which the commit-msg hook refuses: they were made with the hook-skip flag" \
-      "$(rule_cd "$wt")git reset --soft \"\$(git merge-base origin/main HEAD)\" && git commit -m \"<the message without the trailer>\" && heavy -- git push --force-with-lease"
+    rule_fail "commit(s) ${trailer% } carry an attribution trailer, which the commit-msg hook refuses: they were made without that hook (the hook-skip flag, a cherry-pick or a rebase)" \
+      "$(rule_cd "$wt")git reset --soft \"\$(git merge-base origin/main HEAD)\" && git commit -m \"\$(git log -1 --format=%s ORIG_HEAD)\" && heavy -- git push --force-with-lease"
   while IFS= read -r -d '' meta && IFS= read -r -d '' path; do
     read -r _ mode _ blob _ <<<"${meta#:}"
     [[ "$mode" == 160000 ]] && continue
@@ -117,6 +120,6 @@ rule_commits_hooked() {  # rule_commits_hooked <base> <tip> [wt]: what commit-ms
     over+="$path ($size bytes) "
   done < <(git diff --raw --no-renames --no-abbrev -z --diff-filter=ACMR "$base...$tip")
   [[ -z "$over" ]] ||
-    rule_fail "file(s) over the 20000-byte pre-commit limit: $over; a commit this size passes only with the hook-skip flag" \
-      "$(rule_cd "$wt")split the file as .githooks/pre-commit says, then git add -A && git commit -m \"split <file>\""
+    rule_fail "file(s) over the 20000-byte pre-commit limit: ${over% }; a commit this size passes only with the hook-skip flag. Split each file as .githooks/pre-commit says, then run the fix" \
+      "$(rule_cd "$wt")git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\"${push:+ && heavy -- git push origin HEAD}"
 }
