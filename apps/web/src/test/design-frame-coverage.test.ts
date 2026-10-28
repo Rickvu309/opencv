@@ -89,30 +89,38 @@ function files(dir: string): string[] {
 
 const all = files(srcDir)
 const snapshots = all.filter((file) =>
-  /\.snapshot\.(json|ts)$/.test(path.basename(file))
+  /\.(snapshot|layout)\.(json|ts)$/.test(path.basename(file))
 )
-const tests = all
-  .filter((file) => /\.test\.tsx?$/.test(file))
-  .map((file) => readFileSync(file, "utf8"))
+
+const IMPORT = /^\s*import\s(?:[^;]*?\sfrom\s*)?["']([^"']+)["']/gm
+
+function resolveImport(testFile: string, specifier: string): string | null {
+  if (specifier.startsWith("@/")) return path.join(srcDir, specifier.slice(2))
+  if (specifier.startsWith("."))
+    return path.resolve(path.dirname(testFile), specifier)
+  return null
+}
+
+const imported = new Set(
+  all
+    .filter((file) => /\.test\.tsx?$/.test(file))
+    .flatMap((file) =>
+      [...readFileSync(file, "utf8").matchAll(IMPORT)].flatMap((match) => {
+        const target = resolveImport(file, match[1] ?? "")
+        return target ? [target, `${target}.ts`, `${target}.json`] : []
+      })
+    )
+)
 
 function frameIdOf(file: string): string | null {
   const match = /"?frameId"?\s*:\s*"([^"]+)"/.exec(readFileSync(file, "utf8"))
   return match?.[1] ?? null
 }
 
-function readByTest(file: string): boolean {
-  const stem = path.basename(file).replace(/\.(json|ts)$/, "")
-  return tests.some((source) =>
-    new RegExp(
-      `["'][^"']*/${stem.replaceAll(".", "\\.")}(\\.json|\\.ts)?["']`
-    ).test(source)
-  )
-}
-
 const covered = new Map<string, string>()
 for (const file of snapshots) {
   const id = frameIdOf(file)
-  if (id && readByTest(file)) covered.set(id, path.relative(srcDir, file))
+  if (id && imported.has(file)) covered.set(id, path.relative(srcDir, file))
 }
 
 describe("design frame coverage", () => {
