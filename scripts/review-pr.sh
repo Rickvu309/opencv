@@ -199,7 +199,7 @@ mkdir -p "$wt_root"
 # Test what a squash merge would land: main with the PR merged in, not the PR head alone. merge-tree writes no ref, no
 # index and no commit, so none of the PR's hooks and no git identity take part; the tree is then checked out as is.
 set +e
-merge_out=$(git -C "$main_checkout" --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main "$head_ref" 2>/dev/null)
+merge_out=$(git -C "$main_checkout" -c core.quotePath=false --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main "$head_ref" 2>/dev/null)
 merge_rc=$?
 set -e
 if (( merge_rc == 0 )); then

@@ -8,7 +8,8 @@ set -euo pipefail
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE PR_RESULT_ID
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-tmp=$(mktemp -d)
+mkdir -p "$HOME/tmp"
+tmp=$(mktemp -d "$HOME/tmp/conflict-report.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv
 # shellcheck source=scripts/lib/result.sh
@@ -30,12 +31,15 @@ commit_files() {  # commit_files <subject> <file>...: change every file and comm
 # report <name> <branch> <file>...: run the report for the files; sets $out and leaves the result in $r
 report() {
   local name=$1 branch=$2; shift 2
+  local rc=0
   (
+    set -e
     result_begin review-pr "$name"
     base=$(git -C "$repo" merge-base main "$branch")
     conflict_report "$repo" "$base" main "$branch" "$@"
     exit 1
-  ) >"$tmp/out" 2>&1 || true
+  ) >"$tmp/out" 2>&1 || rc=$?
+  (( rc == 1 )) || fail "report $name exited $rc, expected 1 from the script's own exit"
   r=$PR_RESULT_DIR/opencv-review-pr-$name.json
 }
 check() { node "$here/lib/result-check.mjs" "$r" script=review-pr status=fail cause=merge-conflict "$@" >/dev/null || fail "result $r: $(cat "$r")"; }
@@ -86,12 +90,40 @@ sha3=$(commit_files "refactor: paper editor v2 (no number)" "${f6[2]}" "${f6[3]}
 commit_files "feat: library (#505)" "${f6[5]}" >/dev/null
 report 490 feat/490-x "${f6[@]}"
 check "blockedBy={\"pr\":null,\"commit\":\"$sha3\",\"files\":[\"${f6[2]}\",\"${f6[3]}\",\"${f6[4]}\"]}"
-grep -q "paper-block-field.tsx: changed on main" "$tmp/out" || fail "490 paper-block-field line"
+grep -q "paper-block-field.tsx: not changed on main since the merge base" "$tmp/out" || fail "490 paper-block-field line"
+! grep -q "base paper" "$tmp/out" || fail "490 names a commit from before the merge base"
+
 echo "ok: review-490c (six files) picks the commit that touched most of them, PR null without (#N)"
+
+# Files that main did not touch since the branch point get no commit and no blockedBy, even when an older commit did.
+branch_from_base feat/old-x "${f6[0]}"
+report old feat/old-x "${f6[0]}"
+grep -q "${f6[0]}: not changed on main since the merge base" "$tmp/out" || fail "old-only line: $(cat "$tmp/out")"
+! grep -q 'changed on main in' "$tmp/out" || fail "old-only names a commit: $(cat "$tmp/out")"
+check 'blockedBy=null'
+echo "ok: a file main changed only before the merge base names no commit and sets no blockedBy"
+
+# A glob character in a file name matches only that file, and a non-ASCII name is found unquoted.
+glob='apps/web/[id].tsx'; other='apps/web/i.tsx'; uni='apps/web/café.tsx'
+commit_files "base globs" "$glob" "$other" "$uni" >/dev/null
+branch_from_base feat/glob-x "$glob" "$uni"
+sha_other=$(commit_files "fix: only the lookalike (#600)" "$other")
+sha_uni=$(commit_files "fix: the accent (#601)" "$uni")
+report glob feat/glob-x "$glob" "$uni"
+grep -q "\[id\].tsx: not changed on main since the merge base" "$tmp/out" || fail "glob matched a lookalike: $(cat "$tmp/out")"
+grep -q "café.tsx: changed on main in ${sha_uni:0:9}" "$tmp/out" || fail "non-ASCII name not found: $(cat "$tmp/out")"
+echo "ok: glob characters and non-ASCII names are matched literally"
 
 # The rebase command starts with a cd when this clone has a worktree on the branch.
 git -C "$repo" worktree add -q "$tmp/wt" feat/403-x
 report 403wt feat/403-x apps/api/package.json
 check "next=cd \"$tmp/wt\" && git fetch origin && git rebase origin/main"
 echo "ok: the next command goes to the branch's worktree"
+
+# A worktree path with a dollar sign is escaped so the printed command still runs.
+git -C "$repo" worktree add -q "$tmp/w\$t" -b feat/dollar-x main
+report dollar feat/dollar-x apps/api/package.json
+dollar_cmd=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).next)' "$r")
+[[ "$(bash -c "${dollar_cmd%% && git*} && pwd")" == "$tmp/w\$t" ]] || fail "dollar path not escaped: $dollar_cmd"
+echo "ok: a worktree path with a dollar sign is escaped in the next command"
 echo "all conflict report tests passed"

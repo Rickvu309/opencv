@@ -10,14 +10,13 @@
 
 conflict_report() {
   local repo=$1 base=$2 ref=$3 branch=$4; shift 4
-  local f line sha subj pr best="" best_n=0 best_t=0 n t wt detail="" git=(git -C "$repo" -c core.quotePath=false)
+  local f line sha subj pr best="" best_n=0 best_t=0 n t wt detail="" git=(git --literal-pathspecs -C "$repo" -c core.quotePath=false)
   declare -A of_sha=() n_of=() pr_of=()
   local shas=()
   for f in "$@"; do
     [[ -n "$f" ]] || continue
     line=$("${git[@]}" log -1 --format='%H%x09%s' "$base..$ref" -- "$f" 2>/dev/null || true)
-    [[ -n "$line" ]] || line=$("${git[@]}" log -1 --format='%H%x09%s' "$ref" -- "$f" 2>/dev/null || true)
-    if [[ -z "$line" ]]; then echo "  $f: no commit on ${ref} touches it"; continue; fi
+    if [[ -z "$line" ]]; then echo "  $f: not changed on main since the merge base"; continue; fi
     sha=${line%%$'\t'*}; subj=${line#*$'\t'}
     pr=""; [[ "$subj" =~ \(#([0-9]+)\)[[:space:]]*$ ]] && pr=${BASH_REMATCH[1]}
     echo "  $f: changed on main in ${sha:0:9} \"$subj\"${pr:+ (PR #$pr)}"
@@ -30,8 +29,13 @@ conflict_report() {
     n=${n_of[$sha]}; t=$("${git[@]}" log -1 --format=%ct "$sha" 2>/dev/null || echo 0)
     if (( n > best_n || (n == best_n && t > best_t) )); then best=$sha; best_n=$n; best_t=$t; fi
   done
-  wt=$("${git[@]}" worktree list --porcelain 2>/dev/null | awk -v b="refs/heads/$branch" '/^worktree /{p=substr($0,10)} $1=="branch" && $2==b {print p}' | head -1)
-  CR_NEXT="${wt:+cd \"$wt\" && }git fetch origin && git rebase origin/main"
+  wt=$("${git[@]}" worktree list --porcelain 2>/dev/null | awk -v b="refs/heads/$branch" '/^worktree /{p=substr($0,10)} $1=="branch" && $2==b {print p}' | head -1 || true)
+  # Double quotes keep the usual path readable; a path with a quote, $, backtick or backslash is shell-escaped instead.
+  local cd_to=""
+  if [[ -n "$wt" ]]; then
+    if [[ "$wt" == *[\"\$\`\\]* ]]; then printf -v cd_to 'cd %q && ' "$wt"; else cd_to="cd \"$wt\" && "; fi
+  fi
+  CR_NEXT="${cd_to}git fetch origin && git rebase origin/main"
   echo "  Rebase, resolve these files, then push: $CR_NEXT && heavy -- git push --force-with-lease"
   result_file "$@"
   if [[ -n "$best" ]]; then
