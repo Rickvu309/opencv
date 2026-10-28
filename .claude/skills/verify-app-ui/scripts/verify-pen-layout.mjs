@@ -1,0 +1,148 @@
+#!/usr/bin/env node
+// verify-pen-layout: holds each built screen to the text layout recorded from its pen frame.
+//   pnpm --filter web verify:pen-layout        (api on PORT, web on PORT+1; 4450 and 4451 by default)
+//   VERIFY_PEN_LAYOUT_SHOTS=<dir> saves a 1440x900 screenshot per route.
+//   VERIFY_PEN_LAYOUT_DATA=<file> writes the raw app measurements as JSON.
+// Every apps/web/src/features/**/design/*.layout.json is one screen. Make one with scripts/pen-layout.mjs.
+// Exit 0 all match, 1 any mismatch, 2 the stack, the browser or a route did not work.
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
+import { createConnection } from "node:net"
+import { dirname, join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+
+import { launchBrowser } from "./lib/cdp.mjs"
+import {
+  comparePenLayout,
+  formatMismatch,
+  TEXT_TOKENS,
+} from "./lib/pen-layout-compare.mjs"
+import { probeSource } from "./lib/pen-layout-probe.mjs"
+import { signUpThrowaway } from "./lib/session.mjs"
+import { startStack, stopStack } from "./lib/stack.mjs"
+
+const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
+const features = join(repo, "apps/web/src/features")
+const PANE = '[data-slot="app-shell"] #app-main'
+
+const base = Number(process.env.PORT ?? 4450)
+if (!(base >= 4450 && base <= 4458)) {
+  console.error(
+    "verify-pen-layout error: PORT must be 4450 to 4458 (api uses PORT, web PORT+1)"
+  )
+  process.exit(2)
+}
+const shots = process.env.VERIFY_PEN_LAYOUT_SHOTS
+if (shots) mkdirSync(shots, { recursive: true })
+
+const taken = (port) =>
+  new Promise((done) => {
+    const s = createConnection({ port, host: "127.0.0.1" })
+    s.on("connect", () => (s.destroy(), done(true)))
+    s.on("error", () => done(false))
+  })
+
+const layoutFiles = () =>
+  readdirSync(features, { recursive: true })
+    .filter((file) => /(^|[\\/])design[\\/][^\\/]+\.layout\.json$/.test(file))
+    .sort()
+    .map((file) => join(features, file))
+
+const measure = (layout) =>
+  probeSource({
+    mode: "app",
+    pane: PANE,
+    texts: layout.texts,
+    tokens: TEXT_TOKENS,
+  })
+
+async function measureStable(tab, layout) {
+  let last = null
+  let lastResult = null
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const result = await tab.evaluate(measure(layout))
+    if (result.error) throw new Error(result.error)
+    const text = JSON.stringify(result.measured)
+    if (text === last) return result
+    last = text
+    lastResult = result
+    await tab.sleep(250)
+  }
+  return lastResult
+}
+
+const run = `pen-layout-${process.pid}`
+let browser = null
+const bail = (code) => async () => {
+  try {
+    if (browser) await browser.quit()
+  } catch {}
+  stopStack(run)
+  process.exit(code)
+}
+process.on("SIGINT", bail(130))
+process.on("SIGTERM", bail(143))
+
+let exit = 0
+try {
+  const files = layoutFiles()
+  if (!files.length)
+    throw new Error("no *.layout.json under apps/web/src/features")
+  for (const port of [base, base + 1]) {
+    if (await taken(port))
+      throw new Error(
+        `port ${port} is in use; stop whatever holds it or pick another PORT`
+      )
+  }
+  const stack = startStack({ apiPort: base, webPort: base + 1, run })
+  browser = await launchBrowser()
+  const tab = await browser.openPage({
+    width: 1440,
+    height: 900,
+    mobile: false,
+    reducedMotion: true,
+  })
+  await signUpThrowaway({ page: tab, ...stack })
+
+  let failed = 0
+  const raw = {}
+  for (const file of files) {
+    const layout = JSON.parse(readFileSync(file, "utf8"))
+    await tab.goto(`${stack.webUrl}${layout.route}`)
+    await tab.waitFor("document.fonts.status === 'loaded'", 10000)
+    await tab.waitFor(
+      `(${measure(layout)}).measured?.some((entry) => entry)`,
+      20000
+    )
+    await tab.sleep(400)
+    const { measured, tokens } = await measureStable(tab, layout)
+    raw[layout.frameId] = measured
+    if (shots) {
+      const slug = layout.route
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-|-$/g, "")
+      await tab.screenshot(join(shots, `${layout.frameId}-${slug}.png`), false)
+    }
+    const { texts, mismatches } = comparePenLayout({ layout, measured, tokens })
+    for (const m of mismatches) console.log(formatMismatch(layout, m))
+    console.log(
+      `${mismatches.length ? "FAIL" : "PASS"} ${layout.frameId} ${layout.route}: ${texts} texts, ${mismatches.length} mismatches`
+    )
+    if (mismatches.length) failed += 1
+  }
+  if (process.env.VERIFY_PEN_LAYOUT_DATA)
+    writeFileSync(
+      process.env.VERIFY_PEN_LAYOUT_DATA,
+      JSON.stringify(raw, null, 1)
+    )
+  console.log(
+    `${files.length - failed} PASS, ${failed} FAIL of ${files.length} layouts`
+  )
+  if (failed) exit = 1
+} catch (error) {
+  console.error(`verify-pen-layout error: ${error.message}`)
+  exit = 2
+} finally {
+  if (browser) await browser.quit()
+  stopStack(run)
+}
+process.exit(exit)
