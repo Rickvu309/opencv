@@ -168,9 +168,6 @@ describe("UI package kit surface", () => {
     expect(read("packages/ui/src/hooks/use-media-query.ts")).toMatch(
       /export function useMediaQuery/
     )
-    expect(read("apps/web/src/features/app-shell/focus-ring.ts")).toMatch(
-      /@workspace\/ui\/lib\/focus-ring/
-    )
     expect(read("apps/web/src/features/app-shell/use-media-query.ts")).toMatch(
       /@workspace\/ui\/hooks\/use-media-query/
     )

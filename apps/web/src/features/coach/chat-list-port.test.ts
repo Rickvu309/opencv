@@ -19,9 +19,7 @@ const appShellDir = path.resolve(here, "../app-shell")
 const SHELL_FILES = [
   "app-shell-layout.tsx",
   "app-shell.tsx",
-  "coach-panel.tsx",
   "nav-profile.tsx",
-  "search-modal.tsx",
   "search-chats.ts",
   "sidebar-nav.ts",
 ]

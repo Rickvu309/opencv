@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, expect, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import {
   isCvDocument,

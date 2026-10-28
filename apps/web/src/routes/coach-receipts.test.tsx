@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 
 import { scriptCoachStream } from "@/test/chat-api-mock.ts"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectCoachIdle,

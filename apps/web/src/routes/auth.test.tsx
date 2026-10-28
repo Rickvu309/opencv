@@ -12,7 +12,7 @@ import { pathOf } from "@/test/mock-http.ts"
 import { setMockWelcomedAt } from "@/test/profile-api-mock.ts"
 import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 afterEach(() => {
   cleanup()

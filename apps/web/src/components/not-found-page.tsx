@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
 import { fetchProfile, profileKey } from "@/lib/account-api.ts"
-import { startPagePath } from "@/features/app-shell/start-page.ts"
+import { startPagePath } from "@/lib/product-paths.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { Button } from "@workspace/ui/components/button"
 

@@ -12,7 +12,7 @@ import {
   scriptCoachStream,
 } from "@/test/chat-api-mock.ts"
 import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectCoachIdle,

@@ -7,6 +7,7 @@ import type { Plan } from "./usage.js"
 export const planSchema = z.enum(["free", "pro"])
 export const languageSchema = z.enum(["en", "vi"])
 export const startPageSchema = z.enum(["apply", "paper", "inbox", "coach"])
+export type StartPage = z.infer<typeof startPageSchema>
 
 export const PROFILE_DEFAULTS = {
   plan: "free",

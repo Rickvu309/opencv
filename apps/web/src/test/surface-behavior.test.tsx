@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { setMockProfile } from "@/test/profile-api-mock.ts"

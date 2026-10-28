@@ -3,7 +3,7 @@ import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import type { SurfaceId } from "@/features/app-shell/surfaces.ts"
+import type { SurfaceId } from "@/lib/product-paths.ts"
 import { endpoints } from "@/lib/requests.ts"
 
 export const PALETTE_PAGES: {

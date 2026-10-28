@@ -12,7 +12,7 @@ import {
   type PaletteScope,
   type SearchHits,
 } from "@/features/command-palette/palette-search.ts"
-import type { SurfaceId } from "@/features/app-shell/surfaces.ts"
+import type { SurfaceId } from "@/lib/product-paths.ts"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -35,7 +35,6 @@ const copy = {
 type CommandPaletteProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onOpenChat: (id: string) => void
   onSurface: (id: SurfaceId) => void
 }
 
@@ -68,7 +67,6 @@ function focusSearchButton() {
 export function CommandPalette({
   open,
   onOpenChange,
-  onOpenChat,
   onSurface,
 }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -181,8 +179,7 @@ export function CommandPalette({
       return
     }
     const chatId = row.id.slice("chat:".length)
-    if (requestShellChat({ title: row.title, chatId })) return
-    onOpenChat(chatId)
+    requestShellChat({ title: row.title, chatId })
   }
 
   function onQuery(value: string) {

@@ -1,7 +1,6 @@
 import { screen, within } from "@testing-library/react"
 import { expect, vi } from "vitest"
 
-import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 
 export const NAV = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
@@ -45,5 +44,9 @@ export async function expectApplyLive() {
   expect(
     await screen.findByRole("heading", { name: "Track your first job" })
   ).toBeInTheDocument()
-  expect(screen.queryByText(SURFACE_COPY.apply.body)).not.toBeInTheDocument()
+  expect(
+    screen.queryByText(
+      "Jobs moving through saved, applied, interview, offer, and closed."
+    )
+  ).not.toBeInTheDocument()
 }

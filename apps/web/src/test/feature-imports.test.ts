@@ -13,7 +13,7 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
   auth: [],
   coach: ["app-shell", "settings"],
   "coming-soon": [],
-  "command-palette": ["app-shell"],
+  "command-palette": [],
   commands: [],
   inbox: ["apply"],
   landing: ["app-shell"],

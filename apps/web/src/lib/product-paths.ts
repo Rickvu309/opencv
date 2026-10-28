@@ -1,3 +1,5 @@
+import type { StartPage } from "@workspace/domain"
+
 export const SURFACE_PATHS = {
   coach: "/coach",
   jobs: "/jobs",
@@ -9,12 +11,20 @@ export const SURFACE_PATHS = {
   settings: "/settings",
 } as const
 
+export type SurfaceId = keyof typeof SURFACE_PATHS
+
 export const START_PAGES = {
-  apply: "/apply",
-  paper: "/paper",
-  inbox: "/inbox",
-  coach: "/coach",
-} as const
+  apply: { path: "/apply", label: "Apply" },
+  coach: { path: "/coach", label: "Coach" },
+  paper: { path: "/paper", label: "Paper" },
+  inbox: { path: "/inbox", label: "Inbox" },
+} as const satisfies Record<StartPage, { path: string; label: string }>
+
+export function startPagePath(startPage: unknown) {
+  const known =
+    typeof startPage === "string" && Object.hasOwn(START_PAGES, startPage)
+  return START_PAGES[known ? (startPage as StartPage) : "apply"].path
+}
 
 export function legacyPathname(pathname: string): string | undefined {
   if (pathname === "/app" || pathname === "/app/") return "/"

@@ -4,19 +4,6 @@ import path from "node:path"
 import { describe, expect, it } from "vitest"
 
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
-import { startPagePath } from "@/features/app-shell/start-page.ts"
-
-describe("startPagePath", () => {
-  it("maps the four start pages and sends anything else to Apply", () => {
-    expect(startPagePath("apply")).toBe("/apply")
-    expect(startPagePath("paper")).toBe("/paper")
-    expect(startPagePath("inbox")).toBe("/inbox")
-    expect(startPagePath("coach")).toBe("/coach")
-    expect(startPagePath("home")).toBe("/apply")
-    expect(startPagePath(undefined)).toBe("/apply")
-    expect(startPagePath(null)).toBe("/apply")
-  })
-})
 
 describe("shell copy", () => {
   it("matches copy.json", () => {

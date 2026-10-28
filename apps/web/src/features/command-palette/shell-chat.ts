@@ -12,7 +12,5 @@ export function registerShellChatOpener(next: Opener | null) {
 }
 
 export function requestShellChat(next: ShellChatOpen) {
-  if (!opener) return false
-  opener(next)
-  return true
+  opener?.(next)
 }
