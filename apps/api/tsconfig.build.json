@@ -6,8 +6,7 @@
     // Empty so the emitted api imports the built domain package, not its source.
     "customConditions": [],
     "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
     "sourceMap": true
   },
   "exclude": ["src/**/*.test.ts", "src/coach/eval/**"]
