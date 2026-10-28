@@ -1,0 +1,44 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "pD2lq",
+    "frameName": "W10.3 Already on your board",
+    "root": "q5BDz0"
+  },
+  "sections": [
+    {
+      "id": "BV05N",
+      "name": "Top",
+      "texts": ["Apply", "New job"],
+      "fills": []
+    },
+    { "id": "aKzTr", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "YnrPw",
+      "name": "Job link",
+      "texts": ["itviec.com/it-jobs/apm-intern"],
+      "fills": []
+    },
+    { "id": "W2rCg", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "MgaDv",
+      "name": "Already tracked",
+      "texts": [
+        "Already on your board",
+        "Associate PM intern at Local startup, in Interview",
+        "Open"
+      ],
+      "fills": []
+    },
+    { "id": "O9VkBF", "name": "Gap", "texts": [], "fills": [] },
+    { "id": "Q1nTw", "name": "Divider", "texts": [], "fills": [] },
+    { "id": "q1lC5", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "LLUtc",
+      "name": "Footer",
+      "texts": ["Cancel", "Add anyway"],
+      "fills": []
+    }
+  ]
+}

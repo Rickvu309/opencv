@@ -462,7 +462,9 @@ export const KanbanProvider = <
         {typeof window !== "undefined" &&
           createPortal(
             <DragOverlay>
-              <t.Out />
+              <div data-slot="kanban-overlay">
+                <t.Out />
+              </div>
             </DragOverlay>,
             document.body
           )}

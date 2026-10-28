@@ -1,0 +1,70 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "a3PFL",
+    "frameName": "W9.6 Drag to stage",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "ml0m3",
+      "name": "Header",
+      "texts": ["Apply", "New job"],
+      "fills": []
+    },
+    {
+      "id": "A7a4eI",
+      "name": "Toolbar",
+      "texts": ["Board", "List", "Calendar"],
+      "fills": []
+    },
+    {
+      "id": "QbMl2",
+      "name": "Board",
+      "texts": [
+        "Saved",
+        "2",
+        "Junior Marketing",
+        "Lumière Cosmetics",
+        "HCMC",
+        "Oct 25",
+        "UX research intern",
+        "Agency",
+        "Hanoi",
+        "Oct 22",
+        "Applied",
+        "2",
+        "Business analyst intern",
+        "Regional bank",
+        "HCMC",
+        "Oct 14",
+        "Marketing intern",
+        "E-commerce co.",
+        "Remote",
+        "Oct 21",
+        "Interview",
+        "2",
+        "Associate PM intern",
+        "Local startup",
+        "Interview Thu, 10:00",
+        "Hanoi",
+        "Oct 12",
+        "Product analyst intern",
+        "E-commerce co.",
+        "Remote",
+        "Oct 2",
+        "Offer",
+        "0",
+        "Hidden columns",
+        "Closed",
+        "1",
+        "Business analyst intern",
+        "Regional bank",
+        "HCMC",
+        "Oct 14"
+      ],
+      "fills": []
+    }
+  ]
+}

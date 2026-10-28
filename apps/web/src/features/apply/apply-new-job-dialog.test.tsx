@@ -34,7 +34,7 @@ describe("new job dialog", () => {
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: posting },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     expect(await screen.findByText("Filled")).toBeInTheDocument()
     expect(screen.getByLabelText("Role title")).toHaveValue(
       "Associate Product Manager Intern"
@@ -43,16 +43,97 @@ describe("new job dialog", () => {
     expect(dialog).toBeInTheDocument()
   })
 
-  it("asks for the company and disables Add job", async () => {
+  it("asks for the company and keeps Add job available", async () => {
     await openDialog()
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: "https://jobs.example/company-missing" },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     expect(
       await screen.findByText("Add the company name to save this job.")
     ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Add job" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Add job" })).toBeEnabled()
+  })
+
+  it("shows the hint when Add job is pressed without a company", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Junior Marketing" },
+    })
+    expect(
+      screen.queryByText("Add the company name to save this job.")
+    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    expect(
+      await screen.findByText("Add the company name to save this job.")
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Company")).toHaveFocus()
+    expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+      false
+    )
+  })
+
+  it("pastes the link from the clipboard", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { readText: async () => posting },
+    })
+    await openDialog()
+    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    expect(await screen.findByText("Filled")).toBeInTheDocument()
+    expect(screen.getByLabelText("Paste the job link")).toHaveValue(
+      posting.replace("https://", "")
+    )
+    expect(getMockPreviews().some((preview) => preview.url === posting)).toBe(
+      true
+    )
+  })
+
+  it("sets the stage, deadline and sends them on create", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Junior Marketing" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Lumière Cosmetics" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Deadline" }))
+    fireEvent.change(await screen.findByLabelText("Deadline"), {
+      target: { value: "2026-11-15" },
+    })
+    expect(screen.getByRole("button", { name: "Nov 15" })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.create" && post.input.deadline === "2026-11-15"
+        )
+      ).toBe(true)
+    })
+  })
+
+  it("adds a location to a job typed by hand", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Junior Marketing" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Lumière Cosmetics" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Location" }))
+    fireEvent.change(await screen.findByRole("textbox", { name: "Location" }), {
+      target: { value: "Da Nang" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.create" && post.input.location === "Da Nang"
+        )
+      ).toBe(true)
+    })
   })
 
   it("offers Open and Add anyway for a duplicate", async () => {
@@ -66,7 +147,7 @@ describe("new job dialog", () => {
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: posting },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     expect(await screen.findByText("Already on your board")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Open" })).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Add anyway" }))
@@ -87,7 +168,7 @@ describe("new job dialog", () => {
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: posting },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     await waitFor(() => {
       expect(getMockPreviews().some((preview) => preview.url === posting)).toBe(
         true
@@ -104,7 +185,7 @@ describe("new job dialog", () => {
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: posting },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     expect(await screen.findByText("Filled")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Add job" }))
     await waitFor(() => {
@@ -130,10 +211,10 @@ describe("new job dialog", () => {
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: posting },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     expect(
       await screen.findByText(
-        /Associate Product Manager Intern · Northwind Labs · Interview/
+        /Associate Product Manager Intern at Northwind Labs, in Interview/
       )
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
@@ -142,7 +223,7 @@ describe("new job dialog", () => {
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: "https://jobs.example/company-missing" },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     const error = await screen.findByText(
       "Add the company name to save this job."
     )
@@ -171,13 +252,11 @@ describe("new job dialog", () => {
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: "https://jobs.example/create-duplicate" },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Paste" }))
+    fireEvent.blur(screen.getByLabelText("Paste the job link"))
     expect(await screen.findByText("Filled")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Add job" }))
     expect(
-      await screen.findByText(
-        /Associate Product Manager Intern · Northwind Labs · Interview/
-      )
+      await screen.findByText(/Kept role at Northwind Labs, in Interview/)
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Open" }))
     await waitFor(() => {

@@ -47,21 +47,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   tsfNR: { issue: 498, expires: "2026-12-31" }, // W7.2 Drafting
   sgAtL: { issue: 498, expires: "2026-12-31" }, // W7.3 Letter + suggestion
   D1s74Z: { issue: 498, expires: "2026-12-31" }, // W7.4 Can't read job link
-  D8PoQ6: { issue: 498, expires: "2026-12-31" }, // W9.1 Board empty
-  c4KwjR: { issue: 498, expires: "2026-12-31" }, // W9.2 New job
-  aLOFO: { issue: 498, expires: "2026-12-31" }, // W9.3 Board
-  f0rS0: { issue: 498, expires: "2026-12-31" }, // W9.4 List
-  NsAiG: { issue: 498, expires: "2026-12-31" }, // W9.5 Filters no results
-  a3PFL: { issue: 498, expires: "2026-12-31" }, // W9.6 Drag to stage
-  U4613: { issue: 498, expires: "2026-12-31" }, // W9.7 Calendar month
-  ZA60d: { issue: 498, expires: "2026-12-31" }, // W9.8 Calendar week
-  Z3OFW: { issue: 498, expires: "2026-12-31" }, // W10.1 Filled in
-  tNZ73: { issue: 498, expires: "2026-12-31" }, // W10.2 Company missing
-  pD2lq: { issue: 498, expires: "2026-12-31" }, // W10.3 Already on your board
-  qSuLB: { issue: 498, expires: "2026-12-31" }, // W10.4 Job detail
-  MWsZM: { issue: 498, expires: "2026-12-31" }, // W10.5 Link from Paper
-  Wlp2X: { issue: 498, expires: "2026-12-31" }, // W10.6 Closed job
-  jHl7W: { issue: 498, expires: "2026-12-31" }, // W10.7 Delete job
   qCgR7: { issue: 498, expires: "2026-12-31" }, // W12.1 Preferences
   LiQPl: { issue: 498, expires: "2026-12-31" }, // W12.2 Coach
   K5FuN: { issue: 498, expires: "2026-12-31" }, // W12.3 Integrations

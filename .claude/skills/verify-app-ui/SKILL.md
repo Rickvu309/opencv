@@ -32,6 +32,10 @@ Reading a FAIL: the measured value is what the app does, the rule is what it sho
 2. Is the rule right? If the measurement is right but the rule misjudges (a good screen fails, or a bad screen passes), fix the rule in `checks.mjs`, `checks-content.mjs` or `text-rules.mjs` and add a case to `text-rules.test.mjs` when it is a pure text rule.
 3. Both right: it is a finding about the app. Report it. Do not edit the app unless that was the task.
 
+## Apply against opencv.pen
+
+`PORT=4454 heavy -- pnpm --filter web verify:apply-pen` holds every Apply state to its pen frame. See [apply-pen.md](apply-pen.md).
+
 ## The properties
 
 Forty-four named properties; ids 01 to 30 are the research check numbers, 31 to 38 are app-wide checks the signed-in tour adds, and 39 to 44 are the design text rules (pinned phrases in `scripts/lib/copy.json`). Each has a rule, a source and a note when it is a heuristic: read [properties.md](properties.md). Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 44).

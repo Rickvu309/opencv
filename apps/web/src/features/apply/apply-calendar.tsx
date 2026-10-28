@@ -1,65 +1,26 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { cn } from "@workspace/ui/lib/utils"
+import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
 import type { JobView } from "@workspace/domain"
 
 import { calendarJobs, jobCalendarKey } from "./apply-api.ts"
-import { PROFILE_ZONE, deadlineInstant, zonedYmd } from "./apply-stages.ts"
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const
-const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] as const
-
-function addDays(ymd: string, days: number) {
-  const date = deadlineInstant(ymd)
-  date.setUTCDate(date.getUTCDate() + days)
-  return date.toISOString().slice(0, 10)
-}
-
-function weekdayIndex(ymd: string) {
-  const day = deadlineInstant(ymd).getUTCDay()
-  return day === 0 ? 6 : day - 1
-}
-
-function monthDays(cursor: Date) {
-  const ymd = zonedYmd(cursor)
-  const [year, month] = ymd.split("-")
-  const first = `${year}-${month}-01`
-  const start = addDays(first, -weekdayIndex(first))
-  return Array.from({ length: 42 }, (_, index) => addDays(start, index))
-}
-
-function weekDays(cursor: Date) {
-  const ymd = zonedYmd(cursor)
-  const start = addDays(ymd, -weekdayIndex(ymd))
-  return Array.from({ length: 7 }, (_, index) => addDays(start, index))
-}
-
-function rangeFor(days: string[]) {
-  const from = `${days[0]}T00:00:00.000Z`
-  const to = `${addDays(days.at(-1)!, 1)}T00:00:00.000Z`
-  return { from, to }
-}
-
-function dayName(ymd: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(deadlineInstant(ymd))
-}
-
-function hourOf(iso: string) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: PROFILE_ZONE,
-    hour: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date(iso))
-  return Number(parts.find((part) => part.type === "hour")?.value)
-}
+import {
+  addDays,
+  addMonths,
+  calendarEvents,
+  monthTitle,
+  monthWeeks,
+  rangeFor,
+  weekDays,
+  weekTitle,
+} from "./apply-calendar-model.ts"
+import { MonthGrid } from "./apply-calendar-month.tsx"
+import { WeekGrid } from "./apply-calendar-week.tsx"
+import { zonedYmd } from "./apply-stages.ts"
 
 function matches(job: JobView, company: string, location: string) {
   const companyNeedle = company.trim().toLowerCase()
@@ -89,67 +50,93 @@ export function ApplyCalendar({
   location: string
   showClosed: boolean
 }) {
-  const [cursor, setCursor] = useState(() => new Date())
+  const [anchor, setAnchor] = useState(() => zonedYmd(new Date()))
   const today = zonedYmd(new Date())
-  const monthLabel = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(cursor)
+  const weeks = useMemo(() => monthWeeks(anchor), [anchor])
   const days = useMemo(
-    () => (span === "week" ? weekDays(cursor) : monthDays(cursor)),
-    [span, cursor]
+    () => (span === "week" ? weekDays(anchor) : weeks.flat()),
+    [span, anchor, weeks]
   )
   const range = useMemo(() => rangeFor(days), [days])
   const query = useQuery({
     queryKey: jobCalendarKey(range.from, range.to),
     queryFn: () => calendarJobs(range.from, range.to),
   })
-  const jobs = (query.data ?? []).filter(
-    (job) =>
-      matches(job, company, location) && (showClosed || job.stage !== "closed")
+  const events = useMemo(
+    () =>
+      calendarEvents(
+        (query.data ?? []).filter(
+          (job) =>
+            matches(job, company, location) &&
+            (showClosed || job.stage !== "closed")
+        )
+      ),
+    [query.data, company, location, showClosed]
   )
-
-  function titlesOn(day: string) {
-    return jobs.filter((job) => {
-      if (job.deadline === day) return true
-      return (
-        job.interviewAt != null && zonedYmd(new Date(job.interviewAt)) === day
-      )
-    })
-  }
+  const unit = span === "week" ? "week" : "month"
+  const step = (direction: 1 | -1) =>
+    setAnchor(
+      span === "week"
+        ? addDays(anchor, direction * 7)
+        : addMonths(anchor, direction)
+    )
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="min-w-0 flex-1 text-sm font-medium">{monthLabel}</h2>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setCursor(new Date())}
-        >
-          Today
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={span === "week"}
-          onClick={() => onSpan("week")}
-        >
-          Week
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={span === "month"}
-          onClick={() => onSpan("month")}
-        >
-          Month
-        </Button>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex flex-wrap items-center gap-3 px-6 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <h2 className="text-lg font-semibold tracking-[-0.5px]">
+            {span === "week" ? weekTitle(days) : monthTitle(anchor)}
+          </h2>
+          <span aria-hidden="true" className="w-2" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-md"
+            aria-label={`Previous ${unit}`}
+            onClick={() => step(-1)}
+          >
+            <ChevronLeft className="size-[13px]" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-md"
+            aria-label={`Next ${unit}`}
+            onClick={() => step(1)}
+          >
+            <ChevronRight className="size-[13px]" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-7 rounded-md bg-card px-2.5 text-[12.5px]"
+            onClick={() => setAnchor(today)}
+          >
+            Today
+          </Button>
+        </div>
+        <SegmentedControl
+          aria-label="Calendar span"
+          size="sm"
+          value={span}
+          onChange={onSpan}
+          className="[--ui-segc-card-shadow:0_1px_2px_rgb(0_0_0/0.1)]! [--ui-segc-pad:3px]! [--ui-segc-text:color-mix(in_srgb,var(--muted-foreground)_88%,transparent)]! [--ui-segc-track:var(--secondary)]!"
+          options={[
+            { value: "week", label: "Week" },
+            { value: "month", label: "Month" },
+          ]}
+        />
       </div>
-      {query.isLoading ? <p role="status">Loading jobs</p> : null}
+      {query.isLoading ? (
+        <p role="status" className="px-6">
+          Loading jobs
+        </p>
+      ) : null}
       {query.isError ? (
-        <div>
+        <div className="px-6">
           <p>Could not load jobs. Refresh the page.</p>
           <Button type="button" onClick={() => void query.refetch()}>
             Refresh
@@ -157,137 +144,14 @@ export function ApplyCalendar({
         </div>
       ) : null}
       {span === "month" ? (
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-7">
-          {WEEKDAYS.map((day) => (
-            <div
-              key={day}
-              className="hidden text-xs text-muted-foreground md:block"
-            >
-              {day}
-            </div>
-          ))}
-          {days.map((day) => {
-            const deadlineToday = jobs.some(
-              (job) => job.deadline === day && day === today
-            )
-            return (
-              <div
-                key={day}
-                role="group"
-                aria-label={dayName(day)}
-                className={cn(
-                  "min-h-16 rounded-md border border-border p-1",
-                  day === today && "bg-accent"
-                )}
-              >
-                <span className="text-xs">{Number(day.slice(8))}</span>
-                {titlesOn(day).map((job) => (
-                  <p
-                    key={job.id}
-                    role="group"
-                    aria-label={job.title}
-                    className={cn(
-                      "truncate text-xs",
-                      deadlineToday && job.deadline === day && "bg-accent"
-                    )}
-                  >
-                    {job.title}
-                  </p>
-                ))}
-              </div>
-            )
-          })}
-        </div>
+        <MonthGrid
+          weeks={weeks}
+          month={anchor.slice(0, 7)}
+          today={today}
+          events={events}
+        />
       ) : (
-        <div className="w-full min-w-0 overflow-x-auto">
-          <div className="min-w-3xl">
-            <div className="grid grid-cols-8 border-b border-border">
-              <div aria-hidden="true" />
-              {days.map((day) => (
-                <div
-                  key={day}
-                  role="group"
-                  aria-label={dayName(day)}
-                  className={cn(
-                    "border-s border-border px-2 py-2 text-xs text-muted-foreground",
-                    day === today && "bg-accent"
-                  )}
-                >
-                  {WEEKDAYS[weekdayIndex(day)]} {Number(day.slice(8))}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-8 border-b border-border">
-              <div className="px-2 py-2 text-xs text-muted-foreground">
-                All day
-              </div>
-              {days.map((day) => (
-                <div
-                  key={day}
-                  role="group"
-                  aria-label={`${dayName(day)}, all day`}
-                  className={cn(
-                    "min-h-10 border-s border-border px-2 py-1",
-                    day === today && "bg-accent"
-                  )}
-                >
-                  {jobs
-                    .filter((job) => job.deadline === day)
-                    .map((job) => (
-                      <p
-                        key={job.id}
-                        role="group"
-                        aria-label={job.title}
-                        className="truncate text-xs"
-                      >
-                        {job.title}
-                      </p>
-                    ))}
-                </div>
-              ))}
-            </div>
-            {HOURS.map((hour) => (
-              <div
-                key={hour}
-                className="grid grid-cols-8 border-b border-border"
-              >
-                <div className="px-2 py-2 text-xs text-muted-foreground">
-                  {hour}:00
-                </div>
-                {days.map((day) => {
-                  const atHour = jobs.filter(
-                    (job) =>
-                      job.interviewAt != null &&
-                      zonedYmd(new Date(job.interviewAt)) === day &&
-                      hourOf(job.interviewAt) === hour
-                  )
-                  return (
-                    <div
-                      key={day}
-                      role="group"
-                      aria-label={`${dayName(day)}, ${hour}:00`}
-                      className={cn(
-                        "min-h-10 border-s border-border px-2 py-1",
-                        day === today && "bg-accent"
-                      )}
-                    >
-                      {atHour.map((job) => (
-                        <p
-                          key={job.id}
-                          role="group"
-                          aria-label={job.title}
-                          className="truncate text-xs"
-                        >
-                          {job.title}
-                        </p>
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
+        <WeekGrid days={days} today={today} events={events} />
       )}
     </div>
   )

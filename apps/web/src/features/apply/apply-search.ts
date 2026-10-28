@@ -1,6 +1,15 @@
 export type ApplyView = "board" | "list" | "calendar"
 export type ApplySpan = "month" | "week"
 
+export type ApplyFilters = { company: string; location: string }
+
+export function activeFilterCount(filters: ApplyFilters) {
+  return (
+    Number(filters.company.trim() !== "") +
+    Number(filters.location.trim() !== "")
+  )
+}
+
 export type ApplySearch = {
   view?: ApplyView
   span?: ApplySpan

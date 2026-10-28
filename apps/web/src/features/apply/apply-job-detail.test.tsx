@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
@@ -89,7 +89,9 @@ describe("job detail", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Leave a note" }), {
       target: { value: "Bring the checkout study." },
     })
-    expect(screen.getByRole("img", { name: "Normal" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Priority: Normal" })
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Leave a note" }))
     await waitFor(() => {
       expect(
@@ -100,14 +102,8 @@ describe("job detail", () => {
         )
       ).toBe(true)
     })
-    fireEvent.click(screen.getByRole("button", { name: "More" }))
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete job" }))
-    const dialog = await screen.findByRole("dialog", {
-      name: "Delete Junior Marketing?",
-    })
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Move to Closed" })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Stage: Saved" }))
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Closed" }))
     await waitFor(() => {
       expect(
         getMockJobPosts().some(
@@ -165,5 +161,127 @@ describe("job detail", () => {
       await screen.findByRole("heading", { name: "Next role" })
     ).toBeTruthy()
     expect(screen.queryByRole("dialog")).toBeNull()
+  })
+  it("edits a property from its row, adds a prep step, and unlinks a CV", async () => {
+    setMockJobs([
+      {
+        ...mockJob({
+          id,
+          title: "Junior Marketing",
+          company: "Lumière Cosmetics",
+          location: "Hanoi",
+          interviewAt: "2026-10-29T03:00:00.000Z",
+          recruiterName: "Minh Tran",
+        }),
+        linked: {
+          cv: {
+            id: "01900000-0000-7000-8000-000000000051",
+            name: "Junior Marketing CV",
+          },
+          letter: null,
+        },
+        activity: [
+          {
+            id: "01900000-0000-7000-8000-000000000052",
+            createdAt: "2026-10-21T02:00:00.000Z",
+            actor: "person",
+            command: "job.addNote",
+            subjectKind: "job",
+            subjectId: id,
+            summary: "Minh likes concrete numbers.",
+            undoneAt: null,
+          },
+        ],
+      },
+    ])
+    renderApp(`/apply/${id}`)
+    expect(
+      await screen.findByRole("button", {
+        name: "Interview: Interview Oct 29, 10:00",
+      })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Minh likes concrete numbers.")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Add cover letter" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Location: Hanoi" }))
+    const location = await screen.findByRole("textbox", { name: "Location" })
+    fireEvent.change(location, { target: { value: "Da Nang" } })
+    fireEvent.submit(location.closest("form") as HTMLFormElement)
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.update" &&
+            (post.input.patch as { location?: string }).location === "Da Nang"
+        )
+      ).toBe(true)
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a step" }))
+    const step = await screen.findByRole("textbox", { name: "Add a step" })
+    fireEvent.change(step, { target: { value: "Print the CV" } })
+    fireEvent.submit(step.closest("form") as HTMLFormElement)
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.addChecklistItem" &&
+            post.input.label === "Print the CV"
+        )
+      ).toBe(true)
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "CV: Junior Marketing CV" })
+    )
+    fireEvent.click(await screen.findByRole("button", { name: "Remove" }))
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) => post.name === "job.unlinkPaper" && post.input.kind === "cv"
+        )
+      ).toBe(true)
+    })
+  })
+
+  it("asks Cancel or Delete job and deletes without a Move to Closed shortcut", async () => {
+    setMockJobs([mockJob({ id, title: "First role", company: "Acme" })])
+    renderApp(`/apply/${id}`)
+    fireEvent.click(await screen.findByRole("button", { name: "More" }))
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete job" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Delete First role?",
+    })
+    expect(within(dialog).getByText("This can't be undone.")).toBeTruthy()
+    expect(
+      within(dialog)
+        .getAllByRole("button")
+        .map((b) => b.textContent)
+    ).toEqual(["Cancel", "Delete job"])
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }))
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+  })
+
+  it("copies the job link and hides and shows the properties panel from the header", async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
+    setMockJobs([mockJob({ id, title: "First role", company: "Acme" })])
+    renderApp(`/apply/${id}`)
+    const crumb = await screen.findByRole("navigation", { name: "Breadcrumb" })
+    fireEvent.click(within(crumb).getByRole("button", { name: "Copy link" }))
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(window.location.href)
+    )
+    const panel = within(crumb).getByRole("button", {
+      name: "Properties panel",
+    })
+    expect(panel).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("region", { name: "Properties" })).toBeTruthy()
+    fireEvent.click(panel)
+    expect(panel).toHaveAttribute("aria-pressed", "false")
+    expect(screen.queryByRole("region", { name: "Properties" })).toBeNull()
+    vi.unstubAllGlobals()
   })
 })

@@ -64,11 +64,11 @@ describe("apply board", () => {
     expect(
       screen.queryByRole("region", { name: "Closed" })
     ).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Hidden columns" }))
+    fireEvent.click(screen.getByRole("button", { name: "Closed" }))
     expect(screen.getByRole("region", { name: "Closed" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "New job" })).toHaveAttribute(
       "data-variant",
-      "glow"
+      "ghost"
     )
     fireEvent.click(
       screen.getByRole("button", {
@@ -89,13 +89,93 @@ describe("apply board", () => {
       target: { value: "Nope" },
     })
     expect(
-      await screen.findByText("No jobs match these filters. Try removing one.")
+      await screen.findByRole("heading", {
+        name: "No jobs match these filters",
+      })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Try removing one.")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Remove company filter" })
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }))
     expect(
       await screen.findByRole("button", {
         name: "Junior Marketing, Lumière Cosmetics",
       })
+    ).toBeInTheDocument()
+  })
+
+  it("counts the hidden Closed column and shows its lane on demand", async () => {
+    const closed = mockJob({
+      id: "01900000-0000-7000-8000-000000000014",
+      title: "Content intern",
+      company: "Agency",
+      stage: "closed",
+      position: "a0",
+    })
+    setMockJobs([junior, closed])
+    renderApp("/apply")
+    const rail = await screen.findByRole("button", { name: "Closed" })
+    expect(rail).toHaveTextContent("1")
+    expect(rail).toHaveAttribute("aria-pressed", "false")
+    expect(
+      screen.queryByRole("button", { name: "Content intern, Agency" })
+    ).not.toBeInTheDocument()
+    fireEvent.click(rail)
+    expect(rail).toHaveAttribute("aria-pressed", "true")
+    expect(
+      await screen.findByRole("button", { name: "Content intern, Agency" })
+    ).toBeInTheDocument()
+  })
+
+  it("removes one filter from its chip", async () => {
+    setMockJobs([junior, applied])
+    renderApp("/apply")
+    await screen.findByRole("region", { name: "Saved" })
+    fireEvent.click(screen.getByRole("button", { name: "Filter" }))
+    fireEvent.change(await screen.findByLabelText("Company"), {
+      target: { value: "Regional" },
+    })
+    expect(
+      screen.queryByRole("button", {
+        name: "Junior Marketing, Lumière Cosmetics",
+      })
+    ).not.toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole("button", { name: "Remove company filter" })
+    )
+    expect(
+      await screen.findByRole("button", {
+        name: "Junior Marketing, Lumière Cosmetics",
+      })
+    ).toBeInTheDocument()
+  })
+
+  it("tags an interview inside the next seven days only", async () => {
+    const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
+    const later = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString()
+    setMockJobs([
+      { ...interview, interviewAt: soon },
+      {
+        ...interview,
+        id: "01900000-0000-7000-8000-000000000015",
+        title: "Data intern",
+        interviewAt: later,
+      },
+    ])
+    renderApp("/apply")
+    await screen.findByRole("region", { name: "Interview" })
+    expect(
+      screen.getAllByText(/^Interview \w{3}, \d{1,2}:\d{2}$/)
+    ).toHaveLength(1)
+  })
+
+  it("opens the new job dialog on N and ignores typing", async () => {
+    renderApp("/apply")
+    await screen.findByRole("button", { name: "Add job" })
+    fireEvent.keyDown(document.body, { key: "n" })
+    expect(
+      await screen.findByRole("dialog", { name: "New job" })
     ).toBeInTheDocument()
   })
 

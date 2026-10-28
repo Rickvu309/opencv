@@ -1,0 +1,526 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "Wlp2X",
+    "frameName": "W10.6 Closed job",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "eVDzd",
+      "name": "Header",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Content intern",
+          "fill": "#2F2F31",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "7 / 7",
+          "fill": "#969799",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "wKv3B", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "xHZbV", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "hEqad", "name": "star", "width": 26, "height": 26 },
+        { "id": "VtdEP", "name": "ellipsis", "width": 26, "height": 26 },
+        { "id": "EN0Oi", "name": "chevron-up", "width": 28, "height": 28 },
+        { "id": "xHZtJ", "name": "chevron-down", "width": 28, "height": 28 },
+        { "id": "cmI64", "name": "link", "width": 28, "height": 28 },
+        { "id": "BySw2", "name": "panel-right", "width": 28, "height": 28 }
+      ]
+    },
+    {
+      "id": "o36dLY",
+      "name": "Detail",
+      "texts": [
+        {
+          "content": "Content intern",
+          "fill": "#1A1A1A",
+          "fontSize": 24,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.5
+        },
+        {
+          "content": "Agency",
+          "fill": "#59595B",
+          "fontSize": 14.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "About the role",
+          "fill": "#1A1A1A",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Write for agency clients in beauty and food, from blog posts to social captions.",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "What you'll do",
+          "fill": "#1A1A1A",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Draft two blog posts a week",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Write captions for client social channels",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Join client calls and take notes",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "What they look for",
+          "fill": "#1A1A1A",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Strong writing in Vietnamese",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "A few published samples",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Comfortable with short deadlines",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Details",
+          "fill": "#1A1A1A",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "4-month internship",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "On site in Hanoi",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "•",
+          "fill": "#969799",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Paid, 5 million VND a month",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": 1.65,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Activity",
+          "fill": "#1A1A1A",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Subscribe",
+          "fill": "#969799",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Added from TopCV",
+          "fill": "#59595B",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Sep 20",
+          "fill": "#969799",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Round 2 interview",
+          "fill": "#59595B",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 6",
+          "fill": "#969799",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Closed, not selected",
+          "fill": "#59595B",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 9",
+          "fill": "#969799",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "LN",
+          "fill": "#59595B",
+          "fontSize": 8,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Linh Nguyen",
+          "fill": "#1A1A1A",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Oct 9",
+          "fill": "#969799",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "What I learned: the writing test went well. Next time, bring a sharper story with numbers.",
+          "fill": "#2F2F31",
+          "fontSize": 13.5,
+          "lineHeight": 1.55,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Leave a note…",
+          "fill": "#A0A0A2",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Properties",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Closed, not selected",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Low priority",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Hanoi",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Round 2 on Oct 6",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Add deadline",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "LP",
+          "fill": "#59595B",
+          "fontSize": 7,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Lan Pham",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "topcv.vn",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Paper",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Junior Marketing CV",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Add cover letter",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "RjeBz", "name": "Logo", "width": 22, "height": 22 },
+        { "id": "Sqxsf", "name": "Icon wrap", "width": 20, "height": 20 },
+        { "id": "Dqj2x", "name": "Icon wrap", "width": 20, "height": 20 },
+        { "id": "EA1MF", "name": "Icon wrap", "width": 20, "height": 20 },
+        { "id": "qL7nI", "name": "Avatar", "width": 20, "height": 20 },
+        { "id": "b0T3J", "name": "Icon", "width": 15, "height": 15 },
+        { "id": "Lcyhe", "name": "Send", "width": 28, "height": 28 },
+        { "id": "SBl7b", "name": "Icon", "width": 12, "height": 12 },
+        { "id": "mIjuF", "name": "OC Stage Closed", "width": 14, "height": 14 },
+        { "id": "qbXUN", "name": "Bars", "width": 14, "height": 10 },
+        { "id": "R0uaIM", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "CKOiN", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "l74KRM", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "slLyL", "name": "Avatar", "width": 16, "height": 16 },
+        { "id": "qZmAX", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "h3xphV", "name": "Icon", "width": 12, "height": 12 },
+        { "id": "z66tuz", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "b20uIv", "name": "Icon", "width": 14, "height": 14 }
+      ]
+    }
+  ]
+}

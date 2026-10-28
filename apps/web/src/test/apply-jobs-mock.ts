@@ -181,6 +181,18 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
       },
     }
   }
+  if (url.includes("junior-marketing-lumiere")) {
+    return {
+      status: "filled",
+      fields: {
+        title: "Junior Marketing",
+        company: "Lumière Cosmetics",
+        location: "HCMC",
+        description:
+          "Plan and run social campaigns for three skincare brands. Write short posts and TikTok scripts, and report weekly reach. Vietnamese and English.",
+      },
+    }
+  }
   if (url.includes("unreadable")) {
     return {
       status: "unreadable",

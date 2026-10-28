@@ -91,12 +91,12 @@ function probe(args) {
     }
     return "rgba(255, 255, 255, 1)"
   }
-  const describe = (element, box) => {
-    const style = getComputedStyle(element)
+  const describe = (element, box, pseudo = null) => {
+    const style = getComputedStyle(element, pseudo)
     const spacing = parseFloat(style.letterSpacing)
     const lineHeight = parseFloat(style.lineHeight)
     return {
-      text: ownText(element),
+      text: pseudo || element.value ? "" : ownText(element),
       x: box.left - paneRect.left,
       y: box.top - paneRect.top,
       width: box.right - box.left,
@@ -125,19 +125,65 @@ function probe(args) {
     }
     return { pane: pageSize, texts }
   }
+  // include names extra roots outside the pane (a portal such as a drag
+  // overlay); their texts are measured relative to the pane too.
+  const scopes = [
+    pane,
+    ...(args.include ?? []).flatMap((selector) => [
+      ...document.querySelectorAll(selector),
+    ]),
+  ]
   const byText = new Map()
   const add = (text, element, root) => {
     if (!text) return
     if (!byText.has(text)) byText.set(text, [])
     byText.get(text).push({ element, root })
   }
-  for (const element of pane.querySelectorAll("*")) {
+  for (const element of scopes.flatMap((scope) => [
+    ...scope.querySelectorAll("*"),
+  ])) {
     if (element.children.length === 0 && !element.textContent.trim()) continue
     add(ownText(element), element, element)
   }
-  for (const node of textNodes(pane)) {
+  for (const node of scopes.flatMap((scope) => textNodes(scope))) {
     if (node.parentElement) add(normalize(node.data), node.parentElement, node)
   }
+  // A field's value or placeholder is drawn as text in the pen. Its box starts
+  // at the content edge and is one line high, centred in an input.
+  const fieldBox = (field) => {
+    const rect = field.getBoundingClientRect()
+    const style = getComputedStyle(field)
+    const line =
+      parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2
+    const left =
+      rect.left +
+      parseFloat(style.borderLeftWidth) +
+      parseFloat(style.paddingLeft)
+    const top =
+      field.tagName === "TEXTAREA"
+        ? rect.top +
+          parseFloat(style.borderTopWidth) +
+          parseFloat(style.paddingTop)
+        : rect.top + (rect.height - line) / 2
+    const ctx = document.createElement("canvas").getContext("2d")
+    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+    const text = field.value || field.placeholder
+    const width = Math.min(ctx.measureText(text).width, rect.width)
+    return { left, top, right: left + width, bottom: top + line }
+  }
+  if (args.mode === "app")
+    for (const field of scopes.flatMap((scope) => [
+      ...scope.querySelectorAll("input, textarea"),
+    ])) {
+      const text = normalize(field.value || field.placeholder || "")
+      if (!text || field.getBoundingClientRect().width === 0) continue
+      if (!byText.has(text)) byText.set(text, [])
+      byText.get(text).push({
+        element: field,
+        root: field,
+        field: field.value ? "value" : "placeholder",
+      })
+    }
   const used = new Set()
   const measured = args.texts.map((want) => {
     const candidates = (byText.get(want.text) ?? []).filter(
@@ -146,18 +192,19 @@ function probe(args) {
         ![...root.children].some((child) => ownText(child) === want.text)
     )
     let best = null
-    for (const { element, root } of candidates) {
+    for (const { element, root, field } of candidates) {
       if (used.has(root)) continue
-      const box = visibleBox(element, root)
+      const box = field ? fieldBox(element) : visibleBox(element, root)
       if (!box) continue
       const away =
         Math.abs(box.left - paneRect.left - want.x) +
         Math.abs(box.top - paneRect.top - want.y)
-      if (!best || away < best.away) best = { element, root, box, away }
+      if (!best || away < best.away) best = { element, root, box, away, field }
     }
     if (!best) return null
     used.add(best.root)
-    return { ...describe(best.element, best.box), text: want.text }
+    const pseudo = best.field === "placeholder" ? "::placeholder" : null
+    return { ...describe(best.element, best.box, pseudo), text: want.text }
   })
   const rootStyle = getComputedStyle(document.documentElement)
   const tokens = Object.fromEntries(

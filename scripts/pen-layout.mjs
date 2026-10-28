@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Records where every visible text of a pen frame sits when the frame is rendered at 1440x900 with the
 // app's Inter, so a browser check can hold the built page to the same layout.
-//   node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>]
+//   node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>] [--driver <script>]
 // --pane defaults to GIhbq, the app shell's main panel. Positions are relative to that panel's top-left.
+// --driver names the check that sets the state up (seeded data, an open dialog); verify-pen-layout
+// skips such a layout and that script measures it.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
@@ -14,7 +16,7 @@ import { expandPenRefs, findPenNode, penFrameToDocument } from "./pen-html.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const USAGE =
-  "usage: node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>]"
+  "usage: node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>] [--driver <script>]"
 
 function parseArgs(argv) {
   const positional = []
@@ -32,6 +34,7 @@ function parseArgs(argv) {
     route: flags.route,
     pane: flags.pane ?? "GIhbq",
     png: flags.png ? resolve(flags.png) : null,
+    driver: flags.driver ?? null,
   }
 }
 
@@ -112,6 +115,7 @@ async function main() {
       frameId: args.frameId,
       frameName: source.name ?? frame.name ?? args.frameId,
       route: args.route,
+      ...(args.driver ? { driver: args.driver } : {}),
       viewport,
       pane: {
         width: round(result.pane.width),

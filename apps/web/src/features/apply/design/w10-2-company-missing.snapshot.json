@@ -1,0 +1,93 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "tNZ73",
+    "frameName": "W10.2 Company missing",
+    "root": "GMCMY"
+  },
+  "sections": [
+    {
+      "id": "tHSV6",
+      "name": "Top",
+      "texts": ["Apply", "New job"],
+      "fills": []
+    },
+    { "id": "l0pak", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "s0Ie0K",
+      "name": "Job link",
+      "texts": ["topcv.vn/viec-lam/junior-marketing-lumiere"],
+      "fills": []
+    },
+    { "id": "Z8mRxo", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "cDCWZ",
+      "name": "Role",
+      "texts": ["Junior Marketing"],
+      "fills": []
+    },
+    { "id": "sy2C7", "name": "Gap", "texts": [], "fills": [] },
+    { "id": "gGasa", "name": "Company", "texts": ["Company"], "fills": [] },
+    {
+      "id": "KpyzS",
+      "name": "Hint",
+      "texts": ["Add the company name to save this job."],
+      "fills": []
+    },
+    { "id": "S0MsL", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "eKHa9",
+      "name": "Description",
+      "texts": [
+        "Plan and run social campaigns for three skincare brands. Write short posts and TikTok scripts, and report weekly reach."
+      ],
+      "fills": []
+    },
+    { "id": "pYYIv", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "nv24A",
+      "name": "Properties",
+      "texts": ["Saved", "Nov 15"],
+      "fills": []
+    },
+    { "id": "VJMXa", "name": "Gap", "texts": [], "fills": [] },
+    { "id": "b1pkY", "name": "Divider", "texts": [], "fills": [] },
+    { "id": "tnrBq", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "zV59f",
+      "name": "Footer",
+      "texts": ["Cancel", "Add job", "↵"],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#EAEFFA",
+            "#D6DFF6",
+            "#E7E3F9",
+            "#D0DAF5",
+            "#BCCAF1",
+            "#DCD6F6",
+            "#E6EBF9",
+            "#CED9F4",
+            "#E9E5F9"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.55, 0.6],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        }
+      ]
+    }
+  ]
+}
