@@ -65,10 +65,11 @@ describe("coming soon and the calm 404", () => {
 
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "Back your CV with proof",
       })
     ).toBeInTheDocument()
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1)
     expect(
       screen.queryByRole("link", { name: "Track a job in Apply" })
     ).not.toBeInTheDocument()
@@ -76,17 +77,17 @@ describe("coming soon and the calm 404", () => {
     await waitFor(() => {
       expect(notifyCalls()).toEqual([{ topic: "proof" }])
     })
-    expect(glowCount()).toBe(1)
+    expect(glowCount()).toBe(0)
   })
 
   it("shows Pitch and posts pitch without an editor", async () => {
     renderApp("/pitch")
 
     expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: "One link that sells you",
-      })
+      await screen.findByRole("heading", { level: 1, name: "Pitch" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { level: 2, name: "One link that sells you" })
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Get early access" }))
     await waitFor(() => {
@@ -105,7 +106,7 @@ describe("coming soon and the calm 404", () => {
     const { router } = renderApp("/proof")
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "Back your CV with proof",
       })
     ).toBeInTheDocument()
