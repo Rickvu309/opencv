@@ -62,6 +62,7 @@ export function pageChecks({
   mobile,
   mobileOpen,
   first,
+  mobileFirst,
   reduced,
   deep,
   reducedDeep,
@@ -82,7 +83,7 @@ export function pageChecks({
     verdict(
       "14",
       "hero-photo-in-first-view-1440",
-      "At 1440x900 the H1 and 120px or more of the hero photo share the first view",
+      "At 1440x900 the H1 and 120px or more of the hero visual (an image or a [role=img] figure) share the first view",
       desktop.h1Bottom !== null &&
         desktop.h1Bottom <= desktop.vh &&
         visibleH >= 120,
@@ -184,21 +185,23 @@ export function pageChecks({
   )
 
   // App logos and customer portraits are named by app or person, not by a product surface.
+  // A [role=img] figure has no file; its aria-label is the alt.
   const named = (i) =>
     /^\/landing\/(logo|story)-/.test(i.src ?? "")
       ? Boolean(i.alt)
       : (i.alt ?? "").length >= 20 &&
         /coach|paper|apply|proof|pitch|cv|letter/i.test(i.alt)
   const bad = desktop.imgs.filter(
-    (i) => !i.src?.startsWith("/landing/") || !named(i)
+    (i) => !(i.figure || i.src?.startsWith("/landing/")) || !named(i)
   )
+  const figureCount = desktop.imgs.filter((i) => i.figure).length
   out.push(
     verdict(
       "19",
       "images-named-and-local",
       "Every marketing image is from /landing/ and its alt names Coach, Paper, Apply, Proof, Pitch, a CV or a letter (app logos and customer portraits need only an alt)",
       desktop.imgs.length > 0 && bad.length === 0,
-      `${desktop.imgs.length} images, ${bad.length} without a surface-naming alt${bad[0] ? `: ${bad[0].src}` : ""}`
+      `${desktop.imgs.length} images (${figureCount} figures), ${bad.length} without a surface-naming alt${bad[0] ? `: ${bad[0].src ?? bad[0].alt}` : ""}`
     )
   )
 
@@ -206,11 +209,21 @@ export function pageChecks({
     list.length
       ? `${list.length} elements, e.g. ${list
           .slice(0, 2)
-          .map((a) => `${a.region} "${a.text}" (${a.why.join("+")})`)
+          .map(
+            (a) =>
+              `${a.region} "${a.text}" (${a.why.join("+")}${a.y === undefined ? "" : ` at ${px(a.y)}px`})`
+          )
           .join("; ")}`
       : "none"
   const lead = first.animatedText.filter((a) => a.lead)
-  const rest = first.animatedText.filter((a) => !a.lead)
+  // 2026-10-28, #491: the operator asked for the scroll text reveal. Text whose top is below the
+  // first view of its run may start hidden and reveal on scroll; reduced motion settles it (21).
+  const inFirstView = (snap) => snap.animatedText.filter((a) => a.y < snap.vh)
+  const rest = [
+    ...inFirstView(first).filter((a) => !a.lead),
+    ...inFirstView(mobileFirst),
+  ]
+  const belowFold = first.animatedText.length - inFirstView(first).length
   // NN/g 5.3, the tagline is immediately visible
   out.push(
     verdict(
@@ -226,9 +239,9 @@ export function pageChecks({
     verdict(
       "20b",
       "other-text-visible-at-first-paint",
-      "No other text on the page starts hidden, blurred or animated, so nothing waits for a scroll trigger",
+      "No other text inside the first view at 1440x900 or 390x844 starts hidden, blurred or animated. Text below the first view may play a one-time reveal on scroll (2026-10-28, #491); 21 requires it settled under reduced motion",
       rest.length === 0,
-      describe(rest)
+      `${describe(rest)}; ${belowFold} text element(s) below the 1440x900 first view reveal on scroll`
     )
   )
 
@@ -253,14 +266,23 @@ export function pageChecks({
   )
 
   const m = desktop.markup
+  // 2026-10-28, #491: the operator asked for the logo marquee. #logos may hold one marquee whose
+  // duplicate copy is aria-hidden and which stops under reduced motion. Nothing else is exempt.
+  const marquee = deep.marquee
+  const marqueeOk =
+    marquee.tracks === 1 &&
+    marquee.copyHidden &&
+    reducedDeep.marquee.tracks === 0
+  const carousels = m.carousel.filter((c) => !(c.marquee && marqueeOk))
+  const marqueeBad = marquee.tracks > 0 && !marqueeOk
   // NN/g 5.2
   out.push(
     verdict(
       "22",
       "no-video-or-carousel",
-      "No video, audio, iframe, autoplay or carousel on the page",
-      m.media.length + m.autoplay + m.carousel === 0,
-      `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${m.carousel}`
+      "No video, audio, iframe, autoplay or carousel on the page, except one marquee in #logos whose duplicate copy is aria-hidden and which stops under reduced motion (2026-10-28, #491)",
+      m.media.length + m.autoplay + carousels.length === 0 && !marqueeBad,
+      `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${carousels.length}${carousels[0] ? ` ${JSON.stringify(carousels.slice(0, 2))}` : ""}; #logos marquee: ${marquee.tracks} track(s), duplicate aria-hidden=${marquee.copyHidden}, still running under reduced motion=${reducedDeep.marquee.tracks}`
     )
   )
 
@@ -311,10 +333,16 @@ export function pageChecks({
 
   const hi = desktop.imgs.find((i) => i.region === "hero")
   const miss = []
-  if (!hi?.width) miss.push("width")
-  if (!hi?.height) miss.push("height")
-  if (hi?.fetchpriority !== "high") miss.push("fetchpriority=high")
-  if (hi?.loading === "lazy") miss.push("loading=lazy")
+  // width, height, fetchpriority and loading belong to <img>. A figure is DOM, so it needs a box
+  // at first paint instead (its aspect ratio holds the space) and must not start at opacity 0.
+  if (first.heroImg?.figure) {
+    if (!(first.heroImg.w > 0 && first.heroImg.h > 0)) miss.push("box")
+  } else {
+    if (!hi?.width) miss.push("width")
+    if (!hi?.height) miss.push("height")
+    if (hi?.fetchpriority !== "high") miss.push("fetchpriority=high")
+    if (hi?.loading === "lazy") miss.push("loading=lazy")
+  }
   const invisible =
     first.heroImg?.startsInvisible || (first.heroImg?.opacity ?? 1) < 0.95
   // web.dev CLS and LCP
@@ -322,9 +350,9 @@ export function pageChecks({
     verdict(
       "25",
       "hero-image-attrs-and-paint",
-      "Hero image has width, height, fetchpriority=high, is not lazy, and does not start at opacity 0",
+      "Hero image has width, height, fetchpriority=high, is not lazy, and does not start at opacity 0. A [role=img] hero figure instead has a non-zero box at first paint and does not start at opacity 0",
       miss.length === 0 && !invisible,
-      `missing=${miss.join(",") || "none"}, starts invisible=${Boolean(invisible)} (opacity ${first.heroImg?.opacity})`
+      `${first.heroImg?.figure ? "figure" : "img"} missing=${miss.join(",") || "none"}, starts invisible=${Boolean(invisible)} (opacity ${first.heroImg?.opacity})`
     )
   )
 

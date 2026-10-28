@@ -23,8 +23,10 @@ function penProbe() {
       .replace(/'/g, "\u2019")
       .replace(/\s+/g, " ")
       .trim()
+  // A product figure is one image; its inner text is picture, not section copy.
   const hiddenText = (el) =>
-    el.closest("[aria-hidden='true'], .sr-only") || !visible(el)
+    el.closest("[aria-hidden='true'], .sr-only, [role='img']:not(svg)") ||
+    !visible(el)
   const establishesLines = (el) => {
     const display = cs(el).display
     return (
@@ -151,7 +153,13 @@ function penProbe() {
       continue
     }
     const texts = [...rootEl.querySelectorAll("*")]
-      .filter((el) => !hiddenText(el) && normText(el.textContent) !== "")
+      // .rv-w wraps one word of a revealed text; the word is not a pen text of its own.
+      .filter(
+        (el) =>
+          !hiddenText(el) &&
+          !el.classList.contains("rv-w") &&
+          normText(el.textContent) !== ""
+      )
       .map((el) => {
         const measure = (node) => {
           const style = cs(node)

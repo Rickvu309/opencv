@@ -6,7 +6,8 @@ function probe(kind) {
       const started = performance.now()
       const tick = () => {
         const ready =
-          document.querySelector("h1") && document.querySelector("main img")
+          document.querySelector("h1") &&
+          document.querySelector("main img, main [role='img']:not(svg)")
         if (ready || performance.now() - started > 20000)
           resolve(probe("first-now"))
         else requestAnimationFrame(tick)
@@ -68,6 +69,10 @@ function probe(kind) {
     return r.width > 0 && r.height > 0 && cs(el).visibility !== "hidden"
   }
   const root = [header, main, footer].filter(Boolean)
+  // A [role=img] box is one image: a product figure drawn in DOM, so its inner text is part of the picture.
+  // An svg with that role is a glyph, not a figure.
+  const FIGURE = "[role='img']:not(svg)"
+  const inFigure = (el) => Boolean(el.closest(FIGURE))
   const ownTextEls = () =>
     [...document.querySelectorAll("header *, main *, footer *")].filter(
       (el) =>
@@ -75,7 +80,8 @@ function probe(kind) {
           (c) => c.nodeType === 3 && c.textContent.trim()
         ) &&
         el.tagName !== "STYLE" &&
-        el.tagName !== "SCRIPT"
+        el.tagName !== "SCRIPT" &&
+        !inFigure(el)
     )
 
   if (kind === "first-now") {
@@ -91,6 +97,7 @@ function probe(kind) {
         return why.length
           ? {
               region: regionOf(el),
+              y: el.getBoundingClientRect().top + scrollY,
               lead: Boolean(
                 el.closest("h1") || (heroSub && heroSub.contains(el))
               ),
@@ -100,15 +107,20 @@ function probe(kind) {
           : null
       })
       .filter(Boolean)
-    const img = hero ? hero.querySelector("img") : null
+    const img = hero ? hero.querySelector(`img, ${FIGURE}`) : null
     const frames = img
       ? img.getAnimations().flatMap((a) => a.effect.getKeyframes())
       : []
+    const box = img && img.getBoundingClientRect()
     return {
+      vh: innerHeight,
       animatedText,
       heroImg: img && {
+        figure: img.tagName !== "IMG",
         opacity: Number(cs(img).opacity),
         startsInvisible: frames.some((k) => Number(k.opacity) === 0),
+        w: box.width,
+        h: box.height,
       },
     }
   }
@@ -144,17 +156,23 @@ function probe(kind) {
         buttonLike: bg[3] > 0.05 || parseFloat(s.borderTopWidth) > 0,
       }
     })
-    const imgs = [...document.querySelectorAll("main img")].map((el) => ({
-      region: regionOf(el),
-      src: el.getAttribute("src"),
-      alt: el.getAttribute("alt"),
-      width: el.getAttribute("width"),
-      height: el.getAttribute("height"),
-      fetchpriority: el.getAttribute("fetchpriority"),
-      loading: el.getAttribute("loading"),
-      rect: rectOf(el),
-    }))
-    const heroImg = hero ? hero.querySelector("img") : null
+    const imgs = [...document.querySelectorAll(`main img, main ${FIGURE}`)].map(
+      (el) => ({
+        region: regionOf(el),
+        figure: el.tagName !== "IMG",
+        src: el.getAttribute("src"),
+        alt:
+          el.tagName === "IMG"
+            ? el.getAttribute("alt")
+            : el.getAttribute("aria-label"),
+        width: el.getAttribute("width"),
+        height: el.getAttribute("height"),
+        fetchpriority: el.getAttribute("fetchpriority"),
+        loading: el.getAttribute("loading"),
+        rect: rectOf(el),
+      })
+    )
+    const heroImg = hero ? hero.querySelector(`img, ${FIGURE}`) : null
     const h1el = h1
     const benefitSection = document.querySelector("#benefits")
     const benefitSvgs = benefitSection
@@ -306,14 +324,23 @@ function probe(kind) {
           ...document.querySelectorAll("video,audio,iframe,embed,object"),
         ].map((n) => n.tagName.toLowerCase()),
         autoplay: document.querySelectorAll("[autoplay]").length,
-        carousel: [...document.querySelectorAll("*")].filter(
-          (n) =>
-            /carousel|slider|swiper|slick|marquee/i.test(
-              n.getAttribute("class") ?? ""
-            ) ||
-            n.getAttribute("aria-roledescription") === "carousel" ||
-            (cs(n).scrollSnapType !== "none" && cs(n).overflowX !== "visible")
-        ).length,
+        carousel: [...document.querySelectorAll("*")]
+          .filter(
+            (n) =>
+              (!(n instanceof SVGElement) &&
+                /carousel|slider|swiper|slick|marquee/i.test(
+                  n.getAttribute("class") ?? ""
+                )) ||
+              n.getAttribute("aria-roledescription") === "carousel" ||
+              (cs(n).scrollSnapType !== "none" && cs(n).overflowX !== "visible")
+          )
+          .map((n) => ({
+            tag: n.tagName.toLowerCase(),
+            cls: (n.getAttribute("class") ?? "").slice(0, 40),
+            marquee:
+              /marquee/i.test(n.getAttribute("class") ?? "") &&
+              Boolean(n.closest("#logos")),
+          })),
         logoImgs: [...document.querySelectorAll("main img")].filter((i) =>
           /logo|partner|customer|trusted|universit/i.test(
             `${i.getAttribute("src")} ${i.getAttribute("alt")}`
@@ -423,7 +450,8 @@ function probe(kind) {
       })
       .filter(Boolean)
     const colors = []
-    const isShot = (el) => el.closest("picture") || el.tagName === "IMG"
+    const isShot = (el) =>
+      el.closest("picture") || el.tagName === "IMG" || inFigure(el)
     for (const el of document.querySelectorAll("header *, main *, footer *")) {
       if (isShot(el) || !visible(el) || effOpacity(el) < 0.05) continue
       const s = cs(el)
@@ -481,7 +509,30 @@ function probe(kind) {
       if (effOpacity(el) < 0.95 || cs(el).filter !== "none")
         hidden.push(el.textContent.trim().slice(0, 24))
     }
+    const logos = document.querySelector("#logos")
+    const tracks = logos
+      ? [...logos.querySelectorAll("*")].filter((el) =>
+          el
+            .getAnimations()
+            .some((a) => a.effect?.getComputedTiming().iterations === Infinity)
+        )
+      : []
+    const marquee = {
+      tracks: tracks.length,
+      copyHidden: tracks.every((track) => {
+        const kids = [...track.children]
+        const half = kids.length / 2
+        const hidden = (k) => k.getAttribute("aria-hidden") === "true"
+        return (
+          kids.length > 1 &&
+          Number.isInteger(half) &&
+          kids.slice(0, half).every((k) => !hidden(k)) &&
+          kids.slice(half).every(hidden)
+        )
+      }),
+    }
     return {
+      marquee,
       contrast,
       colors,
       targets,
