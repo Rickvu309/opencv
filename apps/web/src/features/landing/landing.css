@@ -313,7 +313,8 @@ html:has(.landing-root) {
   display: none;
 }
 
-@media (min-width: 80rem) {
+/* Only where the lead, mark and "opencv helps" fit on one line. */
+@media (min-width: 90rem) {
   .landing-statement-break {
     display: initial;
   }
