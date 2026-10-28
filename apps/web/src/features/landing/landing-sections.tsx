@@ -20,11 +20,6 @@ import {
 } from "./landing-copy.ts"
 import { LandingFigures } from "./landing-figures.tsx"
 
-const wordCount = (text: string) => text.split(/\s+/).length
-const STATEMENT_STAGGER = 45
-const LEAD_WORDS = wordCount(LANDING_STATEMENT_LEAD)
-const BRAND_WORDS = wordCount(LANDING_STATEMENT_BRAND)
-
 export function LandingLogos() {
   return (
     <section
@@ -48,19 +43,13 @@ export function LandingStatement() {
       className="landing-section"
     >
       <p id="product-statement" className="landing-statement">
-        <RevealText className="text-foreground" text={LANDING_STATEMENT_LEAD} />{" "}
+        <span className="text-foreground">{LANDING_STATEMENT_LEAD}</span>{" "}
         <OpenCvMark className="landing-statement-mark" />{" "}
-        <RevealText
-          className="landing-statement-rest"
-          text={LANDING_STATEMENT_BRAND}
-          delay={LEAD_WORDS * STATEMENT_STAGGER}
-        />{" "}
+        <span className="landing-statement-rest">
+          {LANDING_STATEMENT_BRAND}
+        </span>{" "}
         <br className="landing-statement-break" />
-        <RevealText
-          className="landing-statement-rest"
-          text={LANDING_STATEMENT_REST}
-          delay={(LEAD_WORDS + BRAND_WORDS) * STATEMENT_STAGGER}
-        />
+        <span className="landing-statement-rest">{LANDING_STATEMENT_REST}</span>
       </p>
     </section>
   )
