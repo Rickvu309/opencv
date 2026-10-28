@@ -11,7 +11,7 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
   apply: [],
   "app-shell": ["apply", "auth", "coach", "command-palette", "inbox", "paper"],
   auth: [],
-  coach: ["app-shell", "commands", "settings"],
+  coach: ["app-shell", "settings"],
   "coming-soon": [],
   "command-palette": ["app-shell"],
   commands: [],
