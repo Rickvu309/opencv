@@ -11,14 +11,9 @@ export type BlogBlock =
   | { kind: "h2"; text: string }
   | { kind: "quote"; text: string }
 
-export type BlogCoverKey =
-  | "b2b-sales"
-  | "show-work"
-  | "fewer-applications"
-  | "top-third"
-  | "follow-up"
-  | "discovery"
-  | "in-public"
+import type { BlogCoverKey } from "./blog-cover-stories.ts"
+
+export type { BlogCoverKey } from "./blog-cover-stories.ts"
 
 export type BlogPost = {
   slug: string
