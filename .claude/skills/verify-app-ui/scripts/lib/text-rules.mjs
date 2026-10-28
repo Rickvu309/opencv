@@ -30,7 +30,7 @@ const BANNED_NOUNS = [
 ]
 const LEGACY_NOUNS = new Set(copy.legacyNounLabels ?? [])
 // Goal chips that start with A or An, the Connect email row, the account menu label, the Paper empty
-// sentence, and legacyNounLabels (Paper and Home strings #378 and #380 still own) are exempt.
+// sentence, and legacyNounLabels (Paper strings #378 still owns) are exempt.
 const EMPLOYMENT_SENSE =
   /\b(part-time|full-time|first|dream|summer)\s+jobs?\b/gi
 const GOAL_CHIP = /^an?\s/i

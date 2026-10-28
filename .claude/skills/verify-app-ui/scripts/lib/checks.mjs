@@ -67,8 +67,8 @@ export function runChecks(d) {
     result(
       "17",
       "search-key-hint",
-      d.home.searchHasKbd && Boolean(d.palette.dialog),
-      `Search button has a kbd: ${d.home.searchHasKbd}; Ctrl-K opens a dialog: ${Boolean(d.palette.dialog)}`,
+      d.coach.searchHasKbd && Boolean(d.palette.dialog),
+      `Search button has a kbd: ${d.coach.searchHasKbd}; Ctrl-K opens a dialog: ${Boolean(d.palette.dialog)}`,
       "the Search button shows a key hint and Ctrl-K opens the dialog"
     )
   )
@@ -86,7 +86,7 @@ export function runChecks(d) {
 
   // Visual craft.
   const decor = []
-  for (const k of ["home", "paper", "apply", "pitch", "pitchEdit"]) {
+  for (const k of ["coach", "paper", "apply", "pitch", "pitchEdit"]) {
     for (const f of d[k].fills) {
       if (f.lum < 0.1 || (f.chroma >= 0.08 && !f.token))
         decor.push(
@@ -139,8 +139,8 @@ export function runChecks(d) {
     )
   )
 
-  const found22 = d.home.applyDots !== null
-  const dots = (d.home.applyDots ?? []).filter((x) => !x.text && !x.named)
+  const found22 = d.coach.applyDots !== null
+  const dots = (d.coach.applyDots ?? []).filter((x) => !x.text && !x.named)
   r.push(
     result(
       "22",

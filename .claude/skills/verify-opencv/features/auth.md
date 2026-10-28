@@ -1,6 +1,6 @@
 # Auth
 
-Auth lets a visitor sign in with an email code, sign out, and sign in again. The first code writes profile defaults only. Home has no sample CV, no Apply cards, and no welcome thread. The account name stays empty.
+Auth lets a visitor sign in with an email code, sign out, and sign in again. The first code writes profile defaults only. A new account has no sample CV, no Apply cards, and no welcome thread. The account name stays empty.
 
 ## Sub-features
 
@@ -31,7 +31,7 @@ Preconditions: a green `doctor.sh <run>`; `export AGENT_BROWSER_SESSION=verify-<
 - **Sign in again.** Request a new code, fill it, and `agent-browser wait --url "**/apply"`. Welcome does not show. Save `agent-browser screenshot "$EVIDENCE_DIR/signin.png"`.
 - **Language.** On the code step, choose `VI`. The heading stays English. After sign-in, `GET /api/profile` has `"language":"vi"`.
 - **390.** Set the viewport to 390 wide. The hero line `Write your CV with a coach.` is not visible. The form is. Save `agent-browser screenshot "$EVIDENCE_DIR/signin-390.png"`.
-- **Proof.** `signup.png` shows Welcome. `signin.png` shows Home after the second sign-in. The session read returns `"ok":true` after each sign-in. The wrong-code step left the URL on `/sign-in`.
+- **Proof.** `signup.png` shows Welcome. `signin.png` shows the start page after the second sign-in. The session read returns `"ok":true` after each sign-in. The wrong-code step left the URL on `/sign-in`.
 - **Session expired.** Not driven in the browser. The unit test covers Continue as, Email me a code, and Log out.
 
 ## Gotchas

@@ -2,7 +2,7 @@
 
 Ten judged items for the app interior, each scored 0, 1 or 2. The anchors for 0 and 2 are in the reviewer prompt below, which is the single source; 1 sits between them. The rules come from the APPUI research (Apple HIG writing, layout and feedback; NN/g empty states and onboarding; Linear; Refactoring UI; shadcn AI Elements; WCAG 2.2). Each item says which mechanical checks inform it. The checks decide what a program can; these items decide what a program cannot.
 
-- J1 The Coach composer is the first task on Home (checks 02, 14)
+- J1 The Coach composer is the first task on the Coach page (check 02)
 - J2 Each empty or starter state says what belongs there and links the next step (checks 06, 10, 11, 12)
 - J3 The Coach shows what it did and asks before it changes work (checks 04, 08, 09, 30)
 - J4 The starter data tells the right story (checks 06, 07, 12)
@@ -26,10 +26,10 @@ Ten judged items for the app interior, each scored 0, 1 or 2. The anchors for 0 
 Copy this exactly, replacing the image folder.
 
 ```text
-You are reviewing the signed-in app of OpenCV, a career coach for Vietnamese students and new graduates who want a first job. It has four surfaces: Home with the Coach, Paper (CV, Letter, Proof), Apply (a board of Opportunities in five stages) and Pitch (a public page). You see screenshots in <folder>: desktop-home.png, desktop-thread.png (a Coach turn), desktop-paper.png, desktop-paper-cv-coach.png (a CV open with the Coach beside it), desktop-apply.png, desktop-apply-empty.png (a board with no cards), desktop-pitch.png, desktop-coach-error.png (a failed Coach send), and mobile-home.png, mobile-paper.png, mobile-apply.png, mobile-pitch.png (390x844). Judge only what you can see and read; do not open the code or run anything.
+You are reviewing the signed-in app of OpenCV, a career coach for Vietnamese students and new graduates who want a first job. It has four surfaces: the Coach, Paper (CV, Letter, Proof), Apply (a board of Opportunities in five stages) and Pitch (a public page). You see screenshots in <folder>: desktop-coach.png, desktop-thread.png (a Coach turn), desktop-paper.png, desktop-paper-cv-coach.png (a CV open with the Coach beside it), desktop-apply.png, desktop-apply-empty.png (a board with no cards), desktop-pitch.png, desktop-coach-error.png (a failed Coach send), and mobile-coach.png, mobile-paper.png, mobile-apply.png, mobile-pitch.png (390x844). Judge only what you can see and read; do not open the code or run anything.
 
 Score each item 0, 1 or 2, using the anchors. 1 sits between them.
-J1 The Coach composer is the first task on Home. 0: cards, chips and prompts compete with it, and a stranger would not know where to start. 2: the composer is the obvious first action and everything else is quiet or folded away.
+J1 The Coach composer is the first task on the Coach page. 0: cards, chips and prompts compete with it, and a stranger would not know where to start. 2: the composer is the obvious first action and everything else is quiet or folded away.
 J2 Each empty or starter state says what belongs there and links the next step. 0: a blank well, a placeholder shown as a name, or a banner that names a control that is not in view. 2: each empty state names what goes there and offers the way to add it in the same place.
 J3 The Coach shows what it did and asks before it changes work. 0: a generic line such as "Worked for 1s", or a change that arrives with no step named and no way to refuse it. 2: each step names the object it touched, and a change waits for Approve or Deny.
 J4 The starter data tells the right story. 0: a stranger, stock photos, an invented result such as a percent, or a sample that argues with its own "sample" banner. 2: a student's first role or school project, no invented number, and the sample and its banner agree.

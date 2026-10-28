@@ -45,7 +45,7 @@ Open `features/README.md`, pick the feature file for what changed, and follow it
 
 - `features/auth.md`
 - `features/shell.md`
-- `features/home-coach-turn.md`
+- `features/coach-turn.md`
 - `features/paper-edit-save.md`
 - `features/apply-board-and-scan.md`
 - `features/coming-soon.md`
