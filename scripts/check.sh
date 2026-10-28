@@ -17,7 +17,8 @@
 # `git merge-base origin/main HEAD`: committed, staged, unstaged and untracked (not ignored). Then:
 #   - lint, typecheck, test: turbo, only for the changed workspace packages and their dependents
 #     (turbo run <task> --filter "...{./<dir>}"), plus prettier --check on the changed files,
-#     plus the scripts/ tests when their files changed.
+#     plus the scripts/ tests when their files changed, plus the web tests when a verify-app-ui or
+#     verify-landing file changed (apps/web/src/test/verify-assumptions.test.ts reads their assumptions).
 #   - A global file (root package.json, lockfile, workspace, turbo.json, root configs, .npmrc, check.sh)
 #     or a missing origin/main falls back to the full run.
 #
@@ -139,6 +140,10 @@ if (( changed_mode )); then
           echo "==> $t: no workspace package changed, nothing to run"
         fi
         if [[ "$t" == "test" ]]; then
+          if has_changed '.claude/skills/verify-app-ui/*' '.claude/skills/verify-landing/*' && [[ " ${scope_dirs[*]:-} " != *" apps/web "* ]]; then
+            echo "==> web tests (verify-assumptions reads the verify skills' assumptions)"
+            run "$pm" --filter web test || failed+=(verify-assumptions)
+          fi
           if has_changed scripts/codeowners-lib.sh scripts/test-codeowners.sh scripts/review-pr.sh .github/CODEOWNERS; then
             echo "==> scripts/test-codeowners.sh"
             run scripts/test-codeowners.sh || failed+=(codeowners-tests)
