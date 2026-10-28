@@ -11,8 +11,8 @@ export type UserId = Brand<"UserId">
 export type ChatId = Brand<"ChatId">
 export type PaperId = Brand<"PaperId">
 export type JobId = Brand<"JobId">
-export type ActivityId = Brand<"ActivityId">
-export type PendingActionId = Brand<"PendingActionId">
+type ActivityId = Brand<"ActivityId">
+type PendingActionId = Brand<"PendingActionId">
 export type FileId = Brand<"FileId">
 
 export function parseUserId(value: string): UserId {

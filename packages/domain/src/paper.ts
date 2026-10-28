@@ -3,7 +3,7 @@ import { z } from "zod"
 import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
 
 export const PAPER_CONTENT_VERSION = 1
-export const PAPER_DOC_NAME_MAX = 200
+const PAPER_DOC_NAME_MAX = 200
 
 export const PAPER_KIND_LABEL = {
   cv: "CV",
@@ -28,26 +28,21 @@ export const paperDocNameSchema = z
   .min(1, "Name is required")
   .max(PAPER_DOC_NAME_MAX, "Name is too long")
 
-export const paperContentVersionSchema = z
-  .number()
-  .int()
-  .positive("Content version must be a positive integer")
-
-export const paperRenameDocInputSchema = z
+const paperRenameDocInputSchema = z
   .object({
     docId: paperDocIdSchema,
     name: paperDocNameSchema,
   })
   .strict()
 
-export const paperSetStatusInputSchema = z
+const paperSetStatusInputSchema = z
   .object({
     docId: paperDocIdSchema,
     status: paperDocStatusSchema,
   })
   .strict()
 
-export const paperDeleteDocInputSchema = z
+const paperDeleteDocInputSchema = z
   .object({
     docId: paperDocIdSchema,
   })
@@ -172,8 +167,6 @@ export const paperAttachPhotoInputSchema = z
   })
   .strict()
 
-export type PaperAttachPhotoInput = z.infer<typeof paperAttachPhotoInputSchema>
-
 export const paperPhotoValueSchema = z
   .string()
   .refine(
@@ -181,7 +174,7 @@ export const paperPhotoValueSchema = z
     "Store a file id, not a browser blob URL."
   )
 
-export const PAPER_PHOTO_FILE_PREFIX = "file:"
+const PAPER_PHOTO_FILE_PREFIX = "file:"
 
 export function paperPhotoRef(fileId: string) {
   return `${PAPER_PHOTO_FILE_PREFIX}${fileId}`
@@ -197,7 +190,6 @@ export function paperPhotoFileId(value: string | null | undefined) {
 }
 
 export type PaperReplaceInput = z.infer<typeof paperReplaceInputSchema>
-export type PaperImportInput = z.infer<typeof paperImportInputSchema>
 
 const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])
 

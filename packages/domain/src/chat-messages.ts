@@ -8,12 +8,21 @@ export {
   coachSelectionSchema,
 } from "./chat.js"
 import { coachModeSchema } from "./coach.js"
-import { reversalDescriptorSchema } from "./commands.js"
 import {
   paperContentKindSchema,
   paperDocIdSchema,
   paperDocStatusSchema,
 } from "./paper.js"
+
+export const reversalDescriptorSchema = z.object({
+  possible: z.boolean(),
+  description: z.string(),
+  command: z.string().optional(),
+  /** Input for `command` when this descriptor is attached to a receipt. */
+  input: z.unknown().optional(),
+})
+
+export type ReversalDescriptor = z.infer<typeof reversalDescriptorSchema>
 
 // Stored on untitled chat rows and matched to detect them. Render titles
 // through chatDisplayTitle.
@@ -24,15 +33,13 @@ export function chatDisplayTitle(title: string | null | undefined) {
   return !trimmed || trimmed === DEFAULT_CHAT_TITLE ? "New chat" : trimmed
 }
 
-export const messageRoleSchema = z.enum(["user", "coach"])
-
-export const chatMessageTextSchema = z
+const chatMessageTextSchema = z
   .string()
   .trim()
   .min(1, "Message text is required")
   .max(CHAT_MESSAGE_MAX, "Message text is too long")
 
-export const coachContextItemSchema = z
+const coachContextItemSchema = z
   .object({
     kind: z.enum(["paper", "job", "link", "file"]),
     id: z.string().trim().min(1).max(2000),
@@ -115,7 +122,7 @@ export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
 
 export type CoachReceiptDetail = z.infer<typeof coachReceiptDetailSchema>
 
-export type MessageRole = z.infer<typeof messageRoleSchema>
+type MessageRole = "user" | "coach"
 
 export const chatMessageStatusSchema = z.enum(["final", "error", "aborted"])
 
@@ -146,15 +153,10 @@ export const chatToolPartSchema = z
   })
   .strict()
 
-export const chatEntryPartSchema = z.discriminatedUnion("type", [
-  chatTextPartSchema,
-  chatToolPartSchema,
-])
-
 export type ChatMessageStatus = z.infer<typeof chatMessageStatusSchema>
-export type ChatTextPart = z.infer<typeof chatTextPartSchema>
+type ChatTextPart = z.infer<typeof chatTextPartSchema>
 export type ChatToolPart = z.infer<typeof chatToolPartSchema>
-export type ChatEntryPart = z.infer<typeof chatEntryPartSchema>
+export type ChatEntryPart = ChatTextPart | ChatToolPart
 
 /** Concatenate text parts in order. `text` on the row stays this value. */
 export function textFromParts(parts: readonly ChatEntryPart[]): string {

@@ -24,11 +24,11 @@ import {
   chatToolPartSchema,
 } from "./chat-messages.js"
 
-export const chatAttachmentPartSchema = chatAttachmentSchema.extend({
+const chatAttachmentPartSchema = chatAttachmentSchema.extend({
   type: z.literal("attachment"),
 })
 
-export const chatMessagePartSchema = z.discriminatedUnion("type", [
+const chatMessagePartSchema = z.discriminatedUnion("type", [
   chatTextPartSchema,
   chatToolPartSchema,
   chatAttachmentPartSchema,
@@ -36,7 +36,7 @@ export const chatMessagePartSchema = z.discriminatedUnion("type", [
 
 export type ChatMessagePart = z.output<typeof chatMessagePartSchema>
 
-export const chatListItemSchema = z
+const chatListItemSchema = z
   .object({
     id: z.string(),
     title: z.string(),
@@ -49,7 +49,7 @@ export const chatListItemSchema = z
 
 export type ChatListItem = z.output<typeof chatListItemSchema>
 
-export const chatMessageSchema = z
+const chatMessageSchema = z
   .object({
     id: z.string(),
     chatId: z.string(),
@@ -73,7 +73,7 @@ export type ChatDetail = z.output<typeof chatDetailSchema>
 export const chatListSchema = z.array(chatListItemSchema)
 
 /** The activity table row, as the api returns it. */
-export const activityRowSchema = z
+const activityRowSchema = z
   .object({
     id: z.string(),
     userId: z.string(),
@@ -94,7 +94,7 @@ export const activityRowSchema = z
 
 export type ActivityRow = z.output<typeof activityRowSchema>
 
-export const pendingActionRowSchema = z
+const pendingActionRowSchema = z
   .object({
     id: z.string(),
     userId: z.string(),
@@ -119,7 +119,7 @@ const chatChanged = (input: { chatId: ChatId }): QueryRef[] => [
  * A Coach action or an undo can write any feature, and the contract cannot
  * say which. These are the reads a person looks at, so they all refresh.
  */
-export const anyWriteChanged = (): QueryRef[] => [
+const anyWriteChanged = (): QueryRef[] => [
   { query: "job.list" },
   { query: "job.get" },
   { query: "job.calendar" },

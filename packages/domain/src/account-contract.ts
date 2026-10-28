@@ -23,7 +23,7 @@ import type { QueryRef } from "./queries.js"
 
 const emptyInput = z.object({}).strict()
 
-export const profileSchema = z
+const profileSchema = z
   .object({
     id: z.string(),
     name: z.string(),
@@ -76,7 +76,7 @@ const dayUsageSchema = z.discriminatedUnion("capped", [
   z.object({ capped: z.literal(false), resetsAt: z.string() }).strict(),
 ])
 
-export const usageSnapshotSchema = z
+const usageSnapshotSchema = z
   .object({
     plan: planSchema,
     mode: coachModeSchema,
@@ -86,13 +86,9 @@ export const usageSnapshotSchema = z
   })
   .strict()
 
-export const integrationStatusSchema = z.enum([
-  "enabled",
-  "disabled",
-  "unavailable",
-])
+const integrationStatusSchema = z.enum(["enabled", "disabled", "unavailable"])
 
-export const integrationsSchema = z
+const integrationsSchema = z
   .object({
     groups: z.array(
       z
@@ -115,7 +111,7 @@ export const integrationsSchema = z
   })
   .strict()
 
-export const billingSchema = z
+const billingSchema = z
   .object({
     plan: planSchema,
     free: z.object({ price: z.string(), line: z.string() }).strict(),
@@ -131,7 +127,7 @@ export const billingSchema = z
   })
   .strict()
 
-export const activityFeedRowSchema = z
+const activityFeedRowSchema = z
   .object({
     id: z.string(),
     createdAt: z.string().datetime(),

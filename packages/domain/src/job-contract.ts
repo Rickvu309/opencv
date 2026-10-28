@@ -28,7 +28,7 @@ import type { QueryRef } from "./queries.js"
 
 const nullableText = z.string().nullable()
 
-export const jobViewSchema = z
+const jobViewSchema = z
   .object({
     id: jobIdSchema,
     title: z.string(),
@@ -60,7 +60,7 @@ const linkedPaperSchema = z
   .strict()
   .nullable()
 
-export const jobChecklistItemSchema = z
+const jobChecklistItemSchema = z
   .object({
     id: z.string(),
     label: z.string(),
@@ -69,7 +69,7 @@ export const jobChecklistItemSchema = z
   })
   .strict()
 
-export const jobDetailSchema = jobViewSchema
+const jobDetailSchema = jobViewSchema
   .extend({
     note: z.string(),
     checklist: z.array(jobChecklistItemSchema),
@@ -85,7 +85,7 @@ const previewFieldsSchema = z
   .object({ title: z.string(), company: z.string(), location: z.string() })
   .strict()
 
-export const jobPreviewSchema = z.discriminatedUnion("status", [
+const jobPreviewSchema = z.discriminatedUnion("status", [
   z
     .object({
       status: z.literal("unreadable"),

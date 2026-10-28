@@ -2,8 +2,11 @@ import { z } from "zod"
 
 import type { ChatToolName } from "./chat-turn.js"
 import type { CommandEnvelope } from "./envelope.js"
-import type { ReversalDescriptor } from "./commands.js"
-import type { CoachReceiptDetail, CoachSelection } from "./chat-messages.js"
+import type {
+  CoachReceiptDetail,
+  CoachSelection,
+  ReversalDescriptor,
+} from "./chat-messages.js"
 import type { ChatEntry, ChatEntryPart } from "./chat-messages.js"
 
 export const coachModeSchema = z.enum(["free", "light", "max"])
@@ -20,23 +23,23 @@ export const DEFAULT_COACH_MODELS = {
   max: DEFAULT_COACH_MODEL_MAX,
 } as const satisfies Record<CoachMode, string>
 
-export const DEFAULT_COACH_DAILY_TURN_LIMIT_FREE = 50
-export const DEFAULT_COACH_DAILY_TURN_LIMIT_LIGHT = 30
-export const DEFAULT_COACH_DAILY_TURN_LIMIT_MAX = 10
+const DEFAULT_COACH_DAILY_TURN_LIMIT_FREE = 50
+const DEFAULT_COACH_DAILY_TURN_LIMIT_LIGHT = 30
+const DEFAULT_COACH_DAILY_TURN_LIMIT_MAX = 10
 
-export const DEFAULT_COACH_DAILY_TURN_LIMITS = {
+const DEFAULT_COACH_DAILY_TURN_LIMITS = {
   free: DEFAULT_COACH_DAILY_TURN_LIMIT_FREE,
   light: DEFAULT_COACH_DAILY_TURN_LIMIT_LIGHT,
   max: DEFAULT_COACH_DAILY_TURN_LIMIT_MAX,
 } as const satisfies Record<CoachMode, number>
 
-export type CoachModelEnv = {
+type CoachModelEnv = {
   COACH_MODEL_FREE?: string
   COACH_MODEL_LIGHT?: string
   COACH_MODEL_MAX?: string
 }
 
-export type CoachDailyTurnLimitEnv = {
+type CoachDailyTurnLimitEnv = {
   COACH_DAILY_TURN_LIMIT_FREE?: string
   COACH_DAILY_TURN_LIMIT_LIGHT?: string
   COACH_DAILY_TURN_LIMIT_MAX?: string
@@ -145,9 +148,6 @@ export const COACH_SSE_EVENTS = {
   error: "error",
 } as const
 
-export const coachUsageRatingSchemaValues = ["up", "down"] as const
-export const coachUsageRatingSchema = z.enum(coachUsageRatingSchemaValues)
-
 export type CoachTurnUsage = {
   model: string
   mode?: CoachMode
@@ -157,12 +157,12 @@ export type CoachTurnUsage = {
   finishReason?: string
 }
 
-export type CoachTextDeltaPart = {
+type CoachTextDeltaPart = {
   type: "text-delta"
   text: string
 }
 
-export type CoachToolCallPart = {
+type CoachToolCallPart = {
   type: "tool-call"
   toolCallId: string
   name: ChatToolName
@@ -183,13 +183,13 @@ export type CoachToolResultPart = {
   command?: string
 }
 
-export type CoachFinishPart = {
+type CoachFinishPart = {
   type: "finish"
   finishReason: string
   usage: CoachTurnUsage
 }
 
-export type CoachErrorPart = {
+type CoachErrorPart = {
   type: "error"
   message: string
 }

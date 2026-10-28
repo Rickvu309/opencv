@@ -1,8 +1,8 @@
 /** User-facing fail copy when a Command dies on bad input. */
-export const INVALID_COMMAND_INPUT_COPY = "The input wasn't valid"
+const INVALID_COMMAND_INPUT_COPY = "The input wasn't valid"
 
 /** User-facing fail copy when the dumped error is about a card id / UUID. */
-export const INVALID_CARD_ID_COPY = "That card id isn't valid"
+const INVALID_CARD_ID_COPY = "That card id isn't valid"
 
 const MACHINE_FAIL = [
   /invalid input for tool/i,
@@ -33,7 +33,7 @@ export function humanizeCommandFailCopy(message: string): string {
   return text
 }
 
-export function isMachineFailCopy(message: string): boolean {
+function isMachineFailCopy(message: string): boolean {
   const text = message.trim()
   if (!text) return true
   if (text.length > 160) return true

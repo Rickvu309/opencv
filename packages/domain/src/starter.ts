@@ -4,7 +4,7 @@ import type { CvDocument } from "./paper-codecs.js"
 export const STARTER_CV_NAME = "Sample internship CV"
 
 /** The sample CV starts with an empty name field, labelled "Your name" in the editor. */
-export const STARTER_CV_PERSON_NAME = ""
+const STARTER_CV_PERSON_NAME = ""
 
 /** Name text that sample CVs created before the empty field still carry. */
 export const LEGACY_STARTER_CV_PERSON_NAME = "Your name"

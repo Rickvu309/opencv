@@ -9,11 +9,11 @@ import {
 import { jobStageSchema } from "./job.js"
 import type { QueryRef } from "./queries.js"
 
-export const inboxStatusSchema = z.enum(["open", "done", "snoozed"])
+const inboxStatusSchema = z.enum(["open", "done", "snoozed"])
 
 const suggestedStageSchema = z.enum(["interview"]).nullable()
 
-export const inboxThreadSchema = z
+const inboxThreadSchema = z
   .object({
     id: z.string(),
     company: z.string(),
@@ -29,7 +29,7 @@ export const inboxThreadSchema = z
 
 export type InboxThread = z.output<typeof inboxThreadSchema>
 
-export const inboxListSchema = z
+const inboxListSchema = z
   .object({
     connected: z.boolean(),
     skipped: z.boolean(),
@@ -38,9 +38,7 @@ export const inboxListSchema = z
   })
   .strict()
 
-export type InboxList = z.output<typeof inboxListSchema>
-
-export const inboxMessageSchema = z
+const inboxMessageSchema = z
   .object({
     id: z.string(),
     direction: z.enum(["in", "out"]),

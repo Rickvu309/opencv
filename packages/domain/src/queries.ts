@@ -34,7 +34,7 @@ export const queries = queryContract({
   }),
 })
 
-export type Queries = typeof queries
+type Queries = typeof queries
 export type QueryName = keyof Queries & string
 export type QueryInput<N extends QueryName> = z.output<Queries[N]["input"]>
 export type QueryOutput<N extends QueryName> = z.output<Queries[N]["output"]>

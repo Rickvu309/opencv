@@ -38,7 +38,7 @@ export const PROFILE_DEFAULTS = {
   agentWeekly: boolean
 }
 
-export const ACCOUNT_DELETE_CONFIRM = "DELETE"
+const ACCOUNT_DELETE_CONFIRM = "DELETE"
 export const PLAN_REQUIRED_MESSAGE =
   "Light and Max need Pro. Stay on Free, or upgrade to change mode."
 

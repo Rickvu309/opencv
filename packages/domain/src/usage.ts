@@ -1,56 +1,55 @@
 import type { CoachMode } from "./coach.js"
 
-export const DAY_START_HOUR = 7
-export const DEFAULT_SESSION_HOURS = 4
-export const DEFAULT_DAILY_TURN_LIMIT_FREE = 20
-export const DEFAULT_DAILY_TURN_LIMIT_LIGHT = 10
-export const DEFAULT_DAILY_TURN_LIMIT_MAX = 5
-export const DEFAULT_DAILY_TURN_LIMIT_PRO_FREE = 0
+const DAY_START_HOUR = 7
+const DEFAULT_SESSION_HOURS = 4
+const DEFAULT_DAILY_TURN_LIMIT_FREE = 20
+const DEFAULT_DAILY_TURN_LIMIT_LIGHT = 10
+const DEFAULT_DAILY_TURN_LIMIT_MAX = 5
+const DEFAULT_DAILY_TURN_LIMIT_PRO_FREE = 0
 
-export const ROUTED_MODEL_FREE = "openrouter/free"
-export const ROUTED_MODEL_PRO_FREE = "claude-haiku-5-5"
-export const ROUTED_MODEL_LIGHT = "claude-sonnet-5-5"
-export const ROUTED_MODEL_MAX = "claude-opus-5-5"
+const ROUTED_MODEL_FREE = "openrouter/free"
+const ROUTED_MODEL_PRO_FREE = "claude-haiku-5-5"
+const ROUTED_MODEL_LIGHT = "claude-sonnet-5-5"
+const ROUTED_MODEL_MAX = "claude-opus-5-5"
 
-export const planSchemaValues = ["free", "pro"] as const
-export type Plan = (typeof planSchemaValues)[number]
+export type Plan = "free" | "pro"
 
-export type DailyLimitEnv = {
+type DailyLimitEnv = {
   COACH_DAILY_TURN_LIMIT_FREE?: string
   COACH_DAILY_TURN_LIMIT_LIGHT?: string
   COACH_DAILY_TURN_LIMIT_MAX?: string
   COACH_DAILY_TURN_LIMIT_PRO_FREE?: string
 }
 
-export type ModelRouteEnv = {
+type ModelRouteEnv = {
   COACH_MODEL_FREE?: string
   COACH_MODEL_PRO_FREE?: string
   COACH_MODEL_LIGHT?: string
   COACH_MODEL_MAX?: string
 }
 
-export type SessionHoursEnv = {
+type SessionHoursEnv = {
   COACH_SESSION_HOURS?: string
 }
 
-export type CoachProviderName = "openrouter" | "anthropic"
+type CoachProviderName = "openrouter" | "anthropic"
 
-export type ModelRoute =
+type ModelRoute =
   | { ok: true; provider: CoachProviderName; modelId: string }
   | { ok: false; code: "PLAN_REQUIRED" }
 
-export type CappedPercent = {
+type CappedPercent = {
   capped: true
   percent: number
   resetsAt: string
 }
 
-export type UncappedWindow = {
+type UncappedWindow = {
   capped: false
   resetsAt: string
 }
 
-export type DayUsage =
+type DayUsage =
   | {
       capped: true
       used: number
@@ -60,7 +59,7 @@ export type DayUsage =
     }
   | UncappedWindow
 
-export type UsageSnapshot = {
+type UsageSnapshot = {
   plan: Plan
   mode: CoachMode
   session: CappedPercent | UncappedWindow
@@ -181,7 +180,7 @@ export function coachLimitMessage(plan: Plan, mode: CoachMode) {
   return `You've reached today's ${label} limit. Resets at 7:00.`
 }
 
-export function zonedParts(instant: Date, timeZone: string): ZonedParts {
+function zonedParts(instant: Date, timeZone: string): ZonedParts {
   const formatted = new Intl.DateTimeFormat("en-US", {
     timeZone,
     hourCycle: "h23",
@@ -221,7 +220,7 @@ function offsetMs(instant: Date, timeZone: string) {
   return asUtc - instant.getTime()
 }
 
-export function zonedTimeToUtc(
+function zonedTimeToUtc(
   year: number,
   month: number,
   day: number,
@@ -310,7 +309,7 @@ export function sessionWindow(
   return { start, resetsAt: new Date(start.getTime() + span) }
 }
 
-export function percentOf(used: number, cap: number) {
+function percentOf(used: number, cap: number) {
   if (cap <= 0) return 0
   return Math.min(100, Math.round((used / cap) * 100))
 }

@@ -1,6 +1,6 @@
 import type { ZodType } from "zod"
 
-export type ListItem = { id: string; text: string }
+type ListItem = { id: string; text: string }
 
 export type TextBlock = { id: string; type: "text"; text: string }
 export type HeadingBlock = { id: string; type: "heading"; text: string }

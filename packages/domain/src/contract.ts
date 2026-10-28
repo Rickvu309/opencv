@@ -2,7 +2,7 @@ import type { z } from "zod"
 
 import type { QueryRef } from "./queries.js"
 
-export type CoachPolicy =
+type CoachPolicy =
   | { coach: "auto"; destructive: false }
   | { coach: "confirm" | "never"; destructive: boolean }
 
@@ -15,7 +15,7 @@ type Schema = z.ZodType
  */
 export type IdempotencyPolicy = "keyed" | "none"
 
-export type QueryEntry<I extends Schema = Schema, O extends Schema = Schema> = {
+type QueryEntry<I extends Schema = Schema, O extends Schema = Schema> = {
   input: I
   output: O
 }
@@ -32,7 +32,7 @@ export function queryContract<const T extends Record<string, QueryEntry>>(
   return queries
 }
 
-export type CommandEntry<
+type CommandEntry<
   I extends Schema = Schema,
   O extends Schema = Schema,
 > = CoachPolicy & {

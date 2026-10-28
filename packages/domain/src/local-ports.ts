@@ -2,7 +2,7 @@ const DEFAULT_API_PORT = 3001
 const DEFAULT_WEB_PORT = 5173
 const WEB_PORT_OFFSET = 1000
 
-export interface LocalDevUrls {
+interface LocalDevUrls {
   apiPort: number
   webPort: number
   apiUrl: string

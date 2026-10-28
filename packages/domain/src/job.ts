@@ -2,13 +2,7 @@ import { z } from "zod"
 
 import { jobIdSchema, paperIdSchema } from "./ids.js"
 
-export const JOB_STAGES = [
-  "saved",
-  "applied",
-  "interview",
-  "offer",
-  "closed",
-] as const
+const JOB_STAGES = ["saved", "applied", "interview", "offer", "closed"] as const
 
 export const jobStageSchema = z.enum(JOB_STAGES)
 export type JobStage = z.infer<typeof jobStageSchema>
@@ -46,8 +40,6 @@ export const jobPostingSchema = z
     details: z.string(),
   })
   .strict()
-
-export type JobPosting = z.infer<typeof jobPostingSchema>
 
 export const jobPatchSchema = z
   .object({

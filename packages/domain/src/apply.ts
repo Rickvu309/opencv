@@ -1,12 +1,8 @@
 import { z } from "zod"
 
 export { generateKeyBetween } from "./apply-position.js"
-
-export const APPLY_TITLE_MAX = 200
-export const APPLY_COMPANY_MAX = 200
-export const APPLY_NOTE_MAX = 8000
-export const APPLY_JOB_URL_MAX = 2000
-export const APPLY_JD_TEXT_MAX = 20_000
+const APPLY_JOB_URL_MAX = 2000
+const APPLY_JD_TEXT_MAX = 20_000
 
 export const applyStageSchema = z.enum([
   "inbox",
@@ -16,32 +12,7 @@ export const applyStageSchema = z.enum([
   "closed",
 ])
 
-export const applyTrackKindSchema = z.enum([
-  "interview",
-  "deadline",
-  "followup",
-  "applied",
-])
-
-export const applyCardIdSchema = z.string().uuid()
-
-export const applyTitleSchema = z
-  .string()
-  .trim()
-  .min(1, "Title is required")
-  .max(APPLY_TITLE_MAX, "Title is too long")
-
-export const applyCompanySchema = z
-  .string()
-  .trim()
-  .min(1, "Company is required")
-  .max(APPLY_COMPANY_MAX, "Company is too long")
-
-export const applyNoteSchema = z
-  .string()
-  .max(APPLY_NOTE_MAX, "Note is too long")
-
-export const applyJobUrlSchema = z
+const applyJobUrlSchema = z
   .string()
   .trim()
   .max(APPLY_JOB_URL_MAX, "Job URL is too long")
@@ -49,7 +20,7 @@ export const applyJobUrlSchema = z
 
 const HAS_URL_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/
 
-export const APPLY_JOB_URL_INVALID = "That posting link isn't a valid web URL."
+const APPLY_JOB_URL_INVALID = "That posting link isn't a valid web URL."
 export const APPLY_SCAN_EMPTY =
   "Paste a posting link or the posting text to scan."
 export const APPLY_SCAN_FETCH_FAILED =
@@ -63,10 +34,10 @@ export const APPLY_SCAN_UNAVAILABLE =
  * Fake job-board host used by older Apply seeds. It NXDOMAINs.
  * Do not open it, persist it, or show Open job posting for it (QVE-217).
  */
-export const DEMO_APPLY_JOB_HOST = "jobs.example.com"
+const DEMO_APPLY_JOB_HOST = "jobs.example.com"
 
 /** Prefix https:// when a café-student paste has no scheme. */
-export function normalizeApplyJobUrl(raw: string): string {
+function normalizeApplyJobUrl(raw: string): string {
   const trimmed = raw.trim()
   return HAS_URL_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`
 }
@@ -98,7 +69,7 @@ export function openableApplyJobUrl(
   return candidate
 }
 
-export function parseApplyJobUrlInput(
+function parseApplyJobUrlInput(
   raw: string
 ): { ok: true; jobUrl: string | null } | { ok: false; message: string } {
   const trimmed = raw.trim()
@@ -111,11 +82,7 @@ export function parseApplyJobUrlInput(
   return { ok: true, jobUrl }
 }
 
-export const applyTrackDateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Track date must be YYYY-MM-DD")
-
-export const applyJdTextSchema = z
+const applyJdTextSchema = z
   .string()
   .max(APPLY_JD_TEXT_MAX, "Posting text is too long")
 
@@ -126,18 +93,13 @@ export const applyScanInputSchema = z
   })
   .strict()
 
-export const applyScanResultSchema = z
-  .object({
-    title: z.string().trim().max(APPLY_TITLE_MAX).nullable(),
-    company: z.string().trim().max(APPLY_COMPANY_MAX).nullable(),
-    note: z.string().trim().max(APPLY_NOTE_MAX).nullable(),
-  })
-  .strict()
-
-export type ApplyStage = z.infer<typeof applyStageSchema>
-export type ApplyTrackKind = z.infer<typeof applyTrackKindSchema>
+type ApplyStage = z.infer<typeof applyStageSchema>
 export type ApplyScanInput = z.infer<typeof applyScanInputSchema>
-export type ApplyScanResult = z.infer<typeof applyScanResultSchema>
+export type ApplyScanResult = {
+  title: string | null
+  company: string | null
+  note: string | null
+}
 
 /**
  * Public Apply card. `fit` is stored on the row and never appears here
@@ -156,7 +118,7 @@ export type ApplyCard = {
   /** Signup sample. Omitted on cards the person added. */
   demo: boolean
   trackDate: string
-  trackKind: ApplyTrackKind
+  trackKind: "interview" | "deadline" | "followup" | "applied"
   createdAt: string
   updatedAt: string
 }
@@ -182,7 +144,7 @@ export function parseApplyScanInput(raw: {
 }
 
 /** Collapse case, whitespace, and diacritics so a café paste still grounds. */
-export function foldApplyScanText(raw: string): string {
+function foldApplyScanText(raw: string): string {
   return raw
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
@@ -191,7 +153,7 @@ export function foldApplyScanText(raw: string): string {
     .trim()
 }
 
-export function applyScanFieldGrounded(
+function applyScanFieldGrounded(
   source: string,
   value: string | null | undefined
 ): value is string {
@@ -201,9 +163,7 @@ export function applyScanFieldGrounded(
   return foldApplyScanText(source).includes(needle)
 }
 
-export function emptyApplyScanField(
-  value: string | null | undefined
-): string | null {
+function emptyApplyScanField(value: string | null | undefined): string | null {
   if (value == null) return null
   const trimmed = value.trim()
   if (!trimmed || trimmed.toLowerCase() === "null") return null
@@ -322,7 +282,7 @@ export function isUnreadableApplyPosting(text: string): boolean {
 }
 
 /** Extracted title/note is error-page chrome — never persist it as a fill. */
-export function applyScanFieldLooksUnreadable(
+function applyScanFieldLooksUnreadable(
   value: string | null | undefined
 ): boolean {
   if (value == null) return false
