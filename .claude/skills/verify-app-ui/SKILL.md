@@ -44,7 +44,7 @@ Forty-three named properties (id 14 retired with the Home page and is not reused
 
 ## Baseline at the sync commit
 
-At `b031ebf3` plus the assumptions change (#531) the checker prints 36 PASS, 7 FAIL and 0 STALE: FAIL 01 02 20 27 28 30 41. 30 FAILs since `2fdcca38` (#522) deleted the unmounted Paper suggestion bar: its "Undo this change" string was the only Reject the source scan found, and no Coach Reject control is mounted. Check 34 (first render within 2000 ms) is load-sensitive on this box and failed once in two runs, at Pitch 2151 ms. 04 now drives its Coach stub (`POST /api/chats/<id>/turns`, one hit in each scenario) and passes. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
+At `b031ebf3` plus the assumptions change (#531) the checker prints 36 PASS, 7 FAIL and 0 STALE: FAIL 01 20 27 28 30 34 41. 02 passes since #516 left one Coach composer placeholder. 30 FAILs since `2fdcca38` (#522) deleted the unmounted Paper suggestion bar: its "Undo this change" string was the only Reject the source scan found, and no Coach Reject control is mounted. Check 34 (first render within 2000 ms) is load-sensitive on this box and failed in the latest run, at Paper 2270 ms and Coach 2258 ms. 04 now drives its Coach stub (`POST /api/chats/<id>/turns`, one hit in each scenario) and passes. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
 
 - 20: eight text nodes under 4.5:1, all on the Inbox connect screen, such as "Skip for now" at 3.36:1 and "Reads job emails only. Nothing is sent without you." at 2.45:1. `inbox-parts.tsx` `SOFT_TEXT` (`text-muted-foreground/70`) and `FAINT_TEXT` (`/55`) copy the pen greys #8A8A8E and #A0A0A2, which fail AA on white. Introduced by `682a1ea7` (#505). Apply ships such greys as the lightest AA grey (`apply-tone.ts`); Inbox does not.
 - 28: Apply's New job is 28px (`apply-toolbar.tsx` `h-7`, from `aa89ba79`, #509). The pen draws that control (node BmWvu) as a 28px ghost header action, so check 28 and the pen disagree. The operator decides which one moves. Paper New is 32px and Pitch Get early access is 40px.
@@ -53,9 +53,9 @@ At `b031ebf3` plus the assumptions change (#531) the checker prints 36 PASS, 7 F
 Seen in the #526 run and not judged in the design pass:
 
 - 27: the Paper conflict banner is `role="region"` (`paper-editor-conflict-banner.tsx`, from `7ea61e9c`, #396), not `role="alert"`. The Coach error is in a live region. The banner part is judged even when the Coach stub never fires.
-- 32: passes. Coach's primary is the Add control of the composer (`data-primary-action` in `coach-dock.tsx`); Tab reaches it in NN presses, Paper 13, Apply 12, Pitch 12.
+- 32: passes. Coach's primary is the Add control of the composer (`data-primary-action` in `coach-dock.tsx`); Tab reaches it in 15 presses, Paper 13, Apply 12, Pitch 12.
 - 36: passes. The Paper library has been a card grid since #396, so the probe's table-row locator found nothing. The probe now reads the Paper cards (`PaperCard`'s open button) and the line counts them.
-- 01 and 02 stay unjudged.
+- 01 stays unjudged.
 
 ## Pen layout check
 

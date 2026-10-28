@@ -11,7 +11,7 @@ import {
   jobStages,
 } from "../../../../.claude/skills/verify-app-ui/scripts/lib/assumes.mjs"
 import { ASSUMES as landing } from "../../../../.claude/skills/verify-landing/scripts/lib/assumes.mjs"
-import { HOME_PATH, SURFACE_PATHS } from "../lib/product-paths.ts"
+import { SURFACE_PATHS } from "../lib/product-paths.ts"
 
 type Assumes = {
   folders: string[]
@@ -45,7 +45,7 @@ const corpus = ["apps/web/src", "packages/ui/src"]
   .join("\n")
 const router = readFileSync(abs("apps/web/src/router.tsx"), "utf8")
 const routerPaths = [...router.matchAll(/path: "([^"]+)"/g)].map((m) => m[1])
-const productPaths = [HOME_PATH, ...Object.values(SURFACE_PATHS)]
+const productPaths = Object.values(SURFACE_PATHS)
 
 const appears = (name: string) =>
   new RegExp(
@@ -128,7 +128,7 @@ describe("verify-app-ui", () => {
   it("marks one primary action on each toured surface", () => {
     expect(appUi.markers.map((m) => m.surface).sort()).toEqual([
       "apply",
-      "home",
+      "coach",
       "paper",
       "pitch",
     ])
