@@ -1,0 +1,70 @@
+.oc-root * {
+  box-sizing: border-box;
+}
+.oc-in-left {
+  animation: oc-fade-right var(--duration-panel) var(--ease-panel)
+    var(--landing-delay, 0ms) both;
+}
+.oc-in-up {
+  animation: oc-fade-up var(--duration-panel) var(--ease-panel)
+    var(--landing-delay, 0ms) both;
+}
+.oc-panel {
+  animation: oc-panel-in var(--duration-panel) var(--ease-panel) 60ms both;
+}
+.oc-loop {
+  animation-duration: 8s;
+  animation-delay: 1.8s;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+@keyframes oc-fade-right {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes oc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes oc-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.oc-static .oc-in-left,
+.oc-static .oc-in-up,
+.oc-static .oc-panel,
+.oc-static .oc-loop {
+  animation: none !important;
+}
+.oc-static .oc-ghost {
+  opacity: 0 !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-root .oc-in-left,
+  .oc-root .oc-in-up,
+  .oc-root .oc-panel,
+  .oc-root .oc-loop {
+    animation: none !important;
+  }
+  .oc-root .oc-ghost {
+    opacity: 0 !important;
+  }
+}

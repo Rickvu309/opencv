@@ -1,30 +1,20 @@
-import {
-  LANDING_HEADLINE_LINES,
-  LANDING_HERO_SHOT,
-  LANDING_SUBHEAD,
-} from "./landing-copy.ts"
+import { LandingFigure } from "./figures/landing-figure.tsx"
+import { RevealText } from "./figures/oc/reveal.tsx"
+import { LANDING_HEADLINE_LINES, LANDING_SUBHEAD } from "./landing-copy.ts"
 
 export function LandingHero() {
   return (
     <section id="hero" className="landing-hero" aria-labelledby="landing-hero">
       <div className="landing-hero-text landing-inset">
         <h1 id="landing-hero" className="landing-h1">
-          {LANDING_HEADLINE_LINES[0]} <br />
-          {LANDING_HEADLINE_LINES[1]}
+          <RevealText text={LANDING_HEADLINE_LINES.join("\n")} />
         </h1>
-        <p className="landing-subhead">{LANDING_SUBHEAD}</p>
+        <p className="landing-subhead">
+          <RevealText text={LANDING_SUBHEAD} delay={200} />
+        </p>
       </div>
       <div className="landing-panel landing-gradient" data-crop="hero">
-        <img
-          src={LANDING_HERO_SHOT.src}
-          alt={LANDING_HERO_SHOT.alt}
-          width={LANDING_HERO_SHOT.width}
-          height={LANDING_HERO_SHOT.height}
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-          className="landing-screen"
-        />
+        <LandingFigure id="apply-board" />
       </div>
     </section>
   )

@@ -1,0 +1,19 @@
+.landing-figure {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.landing-figure-stage {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 1600px;
+  block-size: 1000px;
+  transform-origin: 0 0;
+}
+
+/* Entrances wait too, so each figure plays from its first frame when it scrolls in. */
+.landing-figure[data-paused] * {
+  animation-play-state: paused !important;
+}

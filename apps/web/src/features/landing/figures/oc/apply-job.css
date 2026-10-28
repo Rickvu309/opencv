@@ -1,0 +1,156 @@
+.oc-cursor {
+  animation-name: oc-job-cursor;
+}
+.oc-check {
+  animation-name: oc-job-check;
+}
+.oc-check-text {
+  animation-name: oc-job-check-text;
+}
+.oc-count-old {
+  animation-name: oc-job-count-old;
+}
+.oc-count-new {
+  animation-name: oc-job-count-new;
+}
+.oc-scroll {
+  animation-name: oc-job-scroll;
+}
+.oc-activity-new {
+  animation-name: oc-job-activity;
+}
+
+@keyframes oc-job-cursor {
+  0% {
+    opacity: 0;
+    transform: translate(70px, 46px);
+    animation-timing-function: var(--ease-micro);
+  }
+  10% {
+    opacity: 1;
+    transform: none;
+  }
+  14% {
+    opacity: 1;
+    transform: scale(0.86);
+  }
+  17%,
+  28% {
+    opacity: 1;
+    transform: none;
+  }
+  36%,
+  100% {
+    opacity: 0;
+    transform: translate(14px, 16px);
+  }
+}
+@keyframes oc-job-check {
+  0%,
+  14% {
+    opacity: 0;
+    transform: scale(0.4);
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  23%,
+  88% {
+    opacity: 1;
+    transform: none;
+    animation-timing-function: ease-in;
+  }
+  93%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes oc-job-check-text {
+  0%,
+  15% {
+    color: var(--foreground);
+  }
+  21%,
+  88% {
+    color: var(--chart-5);
+  }
+  94%,
+  100% {
+    color: var(--foreground);
+  }
+}
+@keyframes oc-job-count-old {
+  0%,
+  17% {
+    opacity: 1;
+    transform: none;
+  }
+  21%,
+  89% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  89.5% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  95%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes oc-job-count-new {
+  0%,
+  17% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  21%,
+  89% {
+    opacity: 1;
+    transform: none;
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+@keyframes oc-job-scroll {
+  0%,
+  30% {
+    transform: none;
+    animation-timing-function: var(--ease-micro);
+  }
+  42%,
+  87% {
+    transform: translateY(-46px);
+    animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  96%,
+  100% {
+    transform: none;
+  }
+}
+@keyframes oc-job-activity {
+  0%,
+  38% {
+    opacity: 0;
+    transform: translateY(8px);
+    animation-timing-function: var(--ease-micro);
+  }
+  48%,
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+  91%,
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
