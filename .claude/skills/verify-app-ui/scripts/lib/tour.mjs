@@ -155,14 +155,38 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
           docId: paper.id,
           contentVersion: paper.contentVersion,
           document: {
-            templateId: 'internship',
-            name: 'Live Check',
-            headline: 'Product intern',
-            contact: { email: 'tour@verify.local', phone: '', location: '' },
-            summary: 'A CV created for this check.',
-            experience: [{ role: 'Intern', company: 'Lab', period: '2025', bullets: ['Shipped a small study.'] }],
-            education: [],
-            skills: [],
+            version: 2,
+            header: {
+              name: 'Live Check',
+              email: 'tour@verify.local',
+              phone: '',
+              city: '',
+              linkedin: '',
+            },
+            sections: [
+              {
+                id: 'summary',
+                kind: 'summary',
+                blocks: [
+                  { id: 'headline', type: 'heading', text: 'Product intern' },
+                  { id: 'summary', type: 'text', text: 'A CV created for this check.' },
+                ],
+              },
+              {
+                id: 'experience',
+                kind: 'experience',
+                blocks: [
+                  {
+                    id: 'role',
+                    type: 'experience-entry',
+                    role: 'Intern',
+                    company: 'Lab',
+                    period: '2025',
+                    bullets: [{ id: 'bullet', text: 'Shipped a small study.' }],
+                  },
+                ],
+              },
+            ],
           },
         })
       : { ok: false }

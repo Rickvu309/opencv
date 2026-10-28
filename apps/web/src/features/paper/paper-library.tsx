@@ -30,7 +30,7 @@ import { importPaperFile, latestActivityId } from "./paper-api.ts"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
-import { PaperImportInput } from "./paper-cv-surface.tsx"
+import { PaperImportInput } from "./paper-import-input.tsx"
 import {
   PaperImportScreen,
   type PaperImportState,

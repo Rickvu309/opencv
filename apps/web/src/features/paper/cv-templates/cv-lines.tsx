@@ -1,4 +1,4 @@
-import type { CvData } from "../paper-cv-types.ts"
+import type { CvData } from "./cv-types.ts"
 import { CvType, SectionTitle } from "./cv-parts.tsx"
 
 type WithLines = CvData & {
@@ -34,5 +34,47 @@ export function ActivitiesAndAwards({ data }: { data: CvData }) {
       <LineSection title="Activities" items={linesOf(data, "activities")} />
       <LineSection title="Awards" items={linesOf(data, "awards")} />
     </>
+  )
+}
+
+/** Summary sentence for layouts that do not already print data.summary. */
+export function SummaryBlock({ data }: { data: CvData }) {
+  if (!data.summary.trim()) return null
+  return (
+    <section className="mt-5">
+      <SectionTitle>Summary</SectionTitle>
+      <CvType role="body">{data.summary}</CvType>
+    </section>
+  )
+}
+
+/** Projects for layouts that do not already print data.projects. */
+export function ProjectsBlock({ data }: { data: CvData }) {
+  const projects = (data.projects ?? []).filter(
+    (project) => project.name.trim().length > 0 || project.detail.trim().length > 0
+  )
+  if (projects.length === 0) return null
+  return (
+    <section className="mt-5">
+      <SectionTitle>Projects</SectionTitle>
+      {projects.map((project) => (
+        <div key={`${project.name}-${project.detail}`}>
+          <CvType role="label">{project.name}</CvType>
+          <CvType role="body">{project.detail}</CvType>
+        </div>
+      ))}
+    </section>
+  )
+}
+
+/** Languages for every layout. None of the five templates printed this field. */
+export function LanguagesBlock({ data }: { data: CvData }) {
+  const languages = (data.languages ?? []).filter((language) => language.trim().length > 0)
+  if (languages.length === 0) return null
+  return (
+    <section className="mt-5">
+      <SectionTitle>Languages</SectionTitle>
+      <CvType role="body">{languages.join(", ")}</CvType>
+    </section>
   )
 }

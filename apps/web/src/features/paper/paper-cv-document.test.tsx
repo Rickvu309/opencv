@@ -11,8 +11,8 @@ import {
   PAPER_CANVAS_BLOCK_CLASS,
   PAPER_CANVAS_FIELD_CLASS,
   PAPER_CANVAS_NEXT_STEP_CLASS,
-} from "./paper-cv-document.tsx"
-import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./paper-cv-edits.ts"
+} from "./cv-print-document.tsx"
+import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./cv-templates/cv-edits.ts"
 import {
   CV_TEMPLATES,
   CV_TYPE_ROLES,

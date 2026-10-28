@@ -134,7 +134,7 @@ describe("CV editor version 2", () => {
         onBack={() => undefined}
       />
     )
-    const role = screen.getByRole("textbox", { name: "Role, company" })
+    const role = screen.getByRole("textbox", { name: "Role" })
     vi.useFakeTimers()
     role.textContent = "PM"
     fireEvent.input(role)
@@ -241,7 +241,7 @@ describe("CV editor version 2", () => {
         onBack={() => undefined}
       />
     )
-    const role = screen.getByRole("textbox", { name: "Role, company" })
+    const role = screen.getByRole("textbox", { name: "Role" })
     vi.useFakeTimers()
     role.textContent = "Queued before fit"
     fireEvent.input(role)

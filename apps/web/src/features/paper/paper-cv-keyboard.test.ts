@@ -5,7 +5,7 @@ import {
   focusAdjacentCanvasField,
   handleCanvasFieldKeyDown,
   listCanvasFields,
-} from "./paper-cv-keyboard.ts"
+} from "./cv-templates/cv-keyboard.ts"
 
 afterEach(() => {
   document.body.innerHTML = ""

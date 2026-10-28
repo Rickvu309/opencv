@@ -9,8 +9,8 @@ import {
 
 import { render } from "@/test/render-with-client.tsx"
 
+import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhoto, CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
-import { PaperCvSurface } from "./paper-cv-surface.tsx"
 import { PaperSharePage } from "./paper-share-page.tsx"
 import {
   CV_PHOTO_SIZE_REJECTION,
@@ -45,7 +45,7 @@ function photoData() {
 describe("CV photo", () => {
   it("renders a stored file id as the byte url on the A4 preview", () => {
     const view = render(
-      <PaperCvSurface data={photoData()} onChange={() => undefined} />
+      <CvDocument data={photoData()} onChange={() => undefined} />
     )
     const img = view.container.querySelector("img")
     expect(img?.getAttribute("src")).toContain(

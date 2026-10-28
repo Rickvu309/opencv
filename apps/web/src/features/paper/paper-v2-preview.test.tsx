@@ -288,4 +288,36 @@ describe("version 2 preview", () => {
       ).toBeInTheDocument()
     }
   })
+
+  it("renders summary, projects and languages on every share layout", async () => {
+    const blocks = cvCodecToBlocks({
+      ...fixture,
+      projects: [{ name: "OpenCV", detail: "A CV editor" }],
+      languages: ["English"],
+    })
+    const layouts = ["simple", "modern", "compact", "academic", "with-photo"] as const
+    for (const templateId of layouts) {
+      cleanup()
+      vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes("/api/paper/shared/tok")) {
+          return Promise.resolve(
+            Response.json({
+              ok: true,
+              data: { ...view(blocks), templateId },
+            })
+          )
+        }
+        return Promise.resolve(Response.json({ ok: true, data: {} }))
+      })
+      render(<PaperSharePage />)
+      expect(
+        await screen.findByRole("heading", { name: "Lan CV" })
+      ).toBeInTheDocument()
+      expect(screen.getAllByText("Ships small experiments.").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("OpenCV").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("A CV editor").length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/English/).length).toBeGreaterThan(0)
+    }
+  })
 })

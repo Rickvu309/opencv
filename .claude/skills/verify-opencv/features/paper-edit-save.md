@@ -23,8 +23,8 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 
 - **Library.** `agent-browser open "$WEB_URL/paper"`. The heading `Start a document` is visible. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-library-empty.png"`.
 - **Create.** `agent-browser find role button click --name "CV"`. `agent-browser find role button click --name "Simple"`. `agent-browser find role button click --name "Use template"`. Wait until the URL matches `/paper/` plus an id. The region name starts with `Editing`.
-- **Blank.** The editor shows textboxes named Email, Phone, City, LinkedIn, Role, company, Dates, What you did, and what changed because of it, School, degree, and Tools, software and languages. Each has an empty stored value. `GET /api/paper/{id}` has `"version":2`.
-- **Edit.** `agent-browser find role textbox fill "Edited for verify." --name "Role, company"`. Typing on a CV field persists where fill does not. Prefer `agent-browser find role textbox click --name "Role, company"` and then `agent-browser keyboard type "Edited for verify."`.
+- **Blank.** The editor shows textboxes named Email, Phone, City, LinkedIn, Role (placeholder `Role, company`), Company, Dates, What you did, and what changed because of it, Location, School (placeholder `School, degree`), Degree, and Tools, software and languages. Each has an empty stored value. `GET /api/paper/{id}` has `"version":2`.
+- **Edit.** `agent-browser find role textbox click --name "Role"` and then `agent-browser keyboard type "Edited for verify."`. Typing on a CV field persists where fill does not. The Role placeholder stays `Role, company`.
 - **Wait for the save.** Wait until the text `Edited just now` is visible. That is the save. There is no Save button.
 - **Reload.** `agent-browser reload`. The role field still reads `Edited for verify.`
 - **Read back.** `agent-browser eval "fetch('$API_URL/api/paper/' + location.pathname.split('/').pop(),{credentials:'include'}).then(r=>r.text())"` contains `Edited for verify.` and `"version":2`.
@@ -36,7 +36,7 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 - **Share.** Open the share URL. The CV text renders.
 - **Narrow.** At 390px wide, `/` in an empty block opens the Insert list upward.
 - **Reduced motion.** With prefers-reduced-motion, a dragged block sets no transform.
-- **Keyboard.** Tab reaches one stop per block. Enter moves into the field. Escape returns to the block. Shortcuts Duplicate, Move up, Move down, and Delete run while the block is selected.
+- **Keyboard.** Tab from the Name field inside the level 1 heading reaches Email, Phone, City, LinkedIn, then one stop per block. The empty experience block is named `Role, company`. Enter moves into Role. Tab reaches Company, Dates, then the bullet What you did, and what changed because of it, then Location. Escape returns to the block. Shortcuts Duplicate, Move up, Move down, and Delete run while the block is selected.
 - **Proof.** `agent-browser screenshot "$EVIDENCE_DIR/paper-edit-saved.png"` of the reloaded editor, plus the api read above.
 - **Letter.** Create a job with `POST /api/commands/job.create` and body `{"title":"Associate PM","company":"Northwind"}`. Open `/paper`, choose `Cover letter`, choose the button `Associate PM, Northwind`, choose `Start blank`. The URL is `/paper/{id}`. Fill the letter textbox with `One line for verify.` Wait 2 s. Reload. The line is still there. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-letter-saved.png"`.
 - **Letter caret.** Click the letter textbox, put the caret inside a word, and type one letter. Wait 2 s. The new letter stays inside that word and the caret stays just after it. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-letter-caret.png"`.
@@ -47,7 +47,7 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 
 - The editor is URL-addressed. Reload the doc URL. Do not expect a documents table. `/app/paper` redirects to `/paper`.
 - The name field on the page is `Name`. Do not look for `Your name`.
-- A blank CV has no Summary field. The role placeholder is `Role, company`. A filled role is named `Role`.
+- A blank CV has no Summary field. Role and Company are separate fields. The Role placeholder is `Role, company`. School and Degree are separate fields. The School placeholder is `School, degree`. Location sits after the bullets. Bold, Italic, and Underline are not in the toolbar.
 - The document title in the breadcrumb is also named `Name`. The CV header name sits in the level 1 heading.
 - Fit to one page is not part of this recipe. The scripted Coach may not return a `paper.replace` tool result. Report that step as not driven when a later pass tries it.
 - The card menu, search with no match, Copy link, and the suggestion card are not part of this recipe.

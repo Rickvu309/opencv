@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import type { BlockType, CvBlock, CvSectionKind } from "@workspace/domain"
 
 import {
@@ -15,7 +15,25 @@ function textLabel(kind: CvSectionKind, type: "text" | "heading") {
   return type === "heading" ? "Heading" : "Text"
 }
 
-function TextBlockField({ block, sectionKind, onChange, onSlash }: BlockFieldProps) {
+/** Accessible name of a block that has no stored text yet. */
+export function blockPlaceholder(block: CvBlock, sectionKind: CvSectionKind) {
+  if (block.type === "text" || block.type === "heading") {
+    return textLabel(sectionKind, block.type)
+  }
+  if (block.type === "experience-entry") return "Role, company"
+  if (block.type === "education-entry") return "School, degree"
+  if (block.type === "skills-group") return "Tools, software and languages"
+  if (block.type === "divider") return "Divider"
+  return "List item"
+}
+
+function TextBlockField({
+  block,
+  sectionKind,
+  editing,
+  onChange,
+  onSlash,
+}: BlockFieldProps) {
   if (block.type !== "text" && block.type !== "heading") return null
   const label = textLabel(sectionKind, block.type)
   return (
@@ -23,24 +41,26 @@ function TextBlockField({ block, sectionKind, onChange, onSlash }: BlockFieldPro
       label={label}
       value={block.text}
       placeholder={label}
+      tabIndex={editing ? 0 : -1}
       onChange={(text) => onChange({ ...block, text })}
       onSlash={onSlash}
     />
   )
 }
 
-function ListBlockField({ block, onChange, onCommit, onSlash }: BlockFieldProps) {
+function ListBlockField({
+  block,
+  editing,
+  onChange,
+  onCommit,
+  onSlash,
+}: BlockFieldProps) {
+  const [draftId] = useState(newId)
   if (block.type !== "bulleted-list" && block.type !== "numbered-list") {
     return null
   }
-  const items = block.items.length > 0 ? block.items : [{ id: "draft-item", text: "" }]
-  function write(next: { id: string; text: string }[]) {
-    const stored = next.filter((item) => item.id !== "draft-item" || item.text)
-    const normalized = stored.map((item) =>
-      item.id === "draft-item" ? { id: newId(), text: item.text } : item
-    )
-    onChange({ ...block, items: normalized } as CvBlock)
-  }
+  const items =
+    block.items.length > 0 ? block.items : [{ id: draftId, text: "" }]
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       {items.map((item, index) => (
@@ -52,6 +72,7 @@ function ListBlockField({ block, onChange, onCommit, onSlash }: BlockFieldProps)
             label="List item"
             value={item.text}
             placeholder="List item"
+            tabIndex={editing ? 0 : -1}
             onSlash={onSlash}
             onEnter={() => {
               const next = items.slice()
@@ -59,7 +80,12 @@ function ListBlockField({ block, onChange, onCommit, onSlash }: BlockFieldProps)
               onCommit({ ...block, items: next } as CvBlock)
             }}
             onChange={(text) =>
-              write(items.map((row) => (row.id === item.id ? { ...row, text } : row)))
+              onChange({
+                ...block,
+                items: items.map((row) =>
+                  row.id === item.id ? { ...row, text } : row
+                ),
+              } as CvBlock)
             }
           />
         </div>
@@ -111,6 +137,7 @@ export function PaperBlockHeader({
           label="Name"
           value={header.name}
           placeholder="Name"
+          tabIndex={0}
           onChange={(value) => onChange("name", value)}
         />
       </h1>
@@ -121,6 +148,7 @@ export function PaperBlockHeader({
             label={field.label}
             value={header[field.key]}
             placeholder={field.label}
+            tabIndex={0}
             onChange={(value) => onChange(field.key, value)}
           />
         ))}

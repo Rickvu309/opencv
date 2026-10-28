@@ -1,6 +1,6 @@
 import { cn } from "@workspace/ui/lib/utils"
 import { X } from "lucide-react"
-import { removeEducation } from "../paper-cv-edits.ts"
+import { removeEducation } from "./cv-edits.ts"
 import {
   CvType,
   EditableField,
@@ -12,7 +12,7 @@ import {
   SectionTitle,
 } from "./cv-parts.tsx"
 import { ExperienceList, SkillChips } from "./cv-entries.tsx"
-import { ActivitiesAndAwards } from "./cv-lines.tsx"
+import { ActivitiesAndAwards, LanguagesBlock, SummaryBlock } from "./cv-lines.tsx"
 
 export function AcademicCv({
   data,
@@ -149,6 +149,8 @@ export function AcademicCv({
           </div>
         </section>
       ) : null}
+      <SummaryBlock data={data} />
+      <LanguagesBlock data={data} />
       <ActivitiesAndAwards data={data} />
 
       <section className="mb-5">

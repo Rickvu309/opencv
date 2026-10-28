@@ -1,5 +1,6 @@
 import {
   blankBlockDocument,
+  blockRegistry,
   cvCodecToBlocks,
   isCvBlockDocument,
   isCvDocument,
@@ -79,51 +80,24 @@ export function patchBlock(
   return withBlock(document, block.id, block)
 }
 
-const blockMakers: Record<BlockType, (id: string, text: string) => CvBlock> = {
-  text: (id, text) => ({ id, type: "text", text }),
-  heading: (id, text) => ({ id, type: "heading", text }),
-  "bulleted-list": (id, text) => ({
-    id,
-    type: "bulleted-list",
-    items: text ? [{ id: newId(), text }] : [],
-  }),
-  "numbered-list": (id, text) => ({
-    id,
-    type: "numbered-list",
-    items: text ? [{ id: newId(), text }] : [],
-  }),
-  divider: (id) => ({ id, type: "divider" }),
-  "experience-entry": (id, text) => ({
-    id,
-    type: "experience-entry",
-    role: text,
-    company: "",
-    period: "",
-    bullets: [],
-  }),
-  "education-entry": (id, text) => ({
-    id,
-    type: "education-entry",
-    school: text,
-    degree: "",
-    period: "",
-    detail: "",
-  }),
-  "skills-group": (id, text) => ({
-    id,
-    type: "skills-group",
-    label: "",
-    items: text
-      ? text
-          .split(",")
-          .map((item) => item.trim())
-          .filter((item) => item.length > 0)
-      : [],
-  }),
+export const blockMakers: Record<BlockType, () => CvBlock> = Object.fromEntries(
+  blockRegistry.map((entry) => [entry.type, () => entry.empty()])
+) as Record<BlockType, () => CvBlock>
+
+function withPlainText(block: CvBlock, text: string): CvBlock {
+  if (!text) return block
+  if (block.type === "text" || block.type === "heading") return { ...block, text }
+  if (block.type === "bulleted-list" || block.type === "numbered-list") {
+    return { ...block, items: [{ id: newId(), text }] }
+  }
+  if (block.type === "experience-entry") return { ...block, role: text }
+  if (block.type === "education-entry") return { ...block, school: text }
+  if (block.type === "skills-group") return { ...block, items: [text] }
+  return block
 }
 
 export function blockMakerKeys() {
-  return Object.keys(blockMakers)
+  return blockRegistry.map((entry) => entry.type)
 }
 
 export function blockFromPlain(
@@ -131,7 +105,7 @@ export function blockFromPlain(
   id: string,
   text: string
 ): CvBlock {
-  return blockMakers[type](id, text)
+  return withPlainText({ ...blockMakers[type](), id }, text)
 }
 
 export function placeBlock(

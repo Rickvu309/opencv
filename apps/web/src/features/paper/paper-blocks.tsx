@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react"
+import { useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -13,23 +13,19 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
 import {
   plainTextOf,
-  type BlockType,
   type CvBlock,
   type CvBlockDocument,
   type CvSectionKind,
 } from "@workspace/domain"
 
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
-import { PaperBlockMenu } from "./paper-block-menu.tsx"
-import { PaperSlashMenu, type SlashChoice } from "./paper-slash-menu.tsx"
-import { blockFields, PaperBlockHeader } from "./paper-block-fields.tsx"
-import { reducedMotion } from "./paper-block-field.tsx"
+import { type SlashChoice } from "./paper-slash-menu.tsx"
+import { PaperBlockHeader } from "./paper-block-fields.tsx"
+import { SortableBlock } from "./paper-sortable-block.tsx"
 import {
   blockFromPlain,
   deleteBlock,
@@ -265,13 +261,18 @@ function SectionBlock({
             onSlashActive={onSlashActive}
             onPick={onPick}
             onCloseSlash={onCloseSlash}
-            onDuplicate={() =>
+            onDuplicate={() => {
+              if (!section.blocks.some((item) => item.id === block.id)) return
               onCommit(duplicateBlock(document, block.id), "change")
-            }
-            onMove={(direction) =>
+            }}
+            onMove={(direction) => {
+              if (!section.blocks.some((item) => item.id === block.id)) return
               onCommit(moveBlock(document, block.id, direction), "change")
-            }
-            onDelete={() => onCommit(deleteBlock(document, block.id), "delete")}
+            }}
+            onDelete={() => {
+              if (!section.blocks.some((item) => item.id === block.id)) return
+              onCommit(deleteBlock(document, block.id), "delete")
+            }}
             onTurnInto={(type) =>
               onCommit(
                 section.blocks.some((item) => item.id === block.id)
@@ -289,109 +290,6 @@ function SectionBlock({
           />
         ))}
       </SortableContext>
-    </div>
-  )
-}
-
-function SortableBlock({
-  block,
-  sectionKind,
-  slash,
-  onChange,
-  onCommit,
-  onOpenSlash,
-  onSlashQuery,
-  onSlashActive,
-  onPick,
-  onCloseSlash,
-  onDuplicate,
-  onMove,
-  onDelete,
-  onTurnInto,
-  onAskCoach,
-}: {
-  block: CvBlock
-  sectionKind: CvSectionKind
-  slash: SlashState | null
-  onChange: (block: CvBlock) => void
-  onCommit: (block: CvBlock) => void
-  onOpenSlash: (node: HTMLElement) => void
-  onSlashQuery: (query: string) => void
-  onSlashActive: (index: number) => void
-  onPick: (choice: SlashChoice) => void
-  onCloseSlash: () => void
-  onDuplicate: () => void
-  onMove: (direction: -1 | 1) => void
-  onDelete: () => void
-  onTurnInto: (type: BlockType) => void
-  onAskCoach: () => void
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: block.id,
-  })
-  const style = reducedMotion()
-    ? undefined
-    : { transform: CSS.Transform.toString(transform), transition }
-  const Field = blockFields[block.type]
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.target !== event.currentTarget) return
-    const meta = event.metaKey || event.ctrlKey
-    if (event.key === "Enter") {
-      event.preventDefault()
-      event.currentTarget.querySelector<HTMLElement>("[role='textbox']")?.focus()
-    } else if (meta && event.key.toLowerCase() === "d") {
-      event.preventDefault()
-      onDuplicate()
-    } else if (meta && event.shiftKey && event.key === "ArrowUp") {
-      event.preventDefault()
-      onMove(-1)
-    } else if (meta && event.shiftKey && event.key === "ArrowDown") {
-      event.preventDefault()
-      onMove(1)
-    } else if (event.key === "Delete") {
-      event.preventDefault()
-      onDelete()
-    }
-  }
-  return (
-    <div
-      ref={setNodeRef}
-      data-sortable-block={block.id}
-      style={style}
-      tabIndex={0}
-      aria-label={plainTextOf(block) || "Empty block"}
-      className="relative flex items-start gap-1"
-      onKeyDown={onKeyDown}
-    >
-      <PaperBlockMenu
-        type={block.type}
-        dragAttributes={attributes as unknown as Record<string, unknown>}
-        dragListeners={listeners as unknown as Record<string, unknown>}
-        onTurnInto={onTurnInto}
-        onDuplicate={onDuplicate}
-        onMoveUp={() => onMove(-1)}
-        onMoveDown={() => onMove(1)}
-        onAskCoach={onAskCoach}
-        onDelete={onDelete}
-      />
-      <Field
-        block={block}
-        sectionKind={sectionKind}
-        onChange={onChange}
-        onCommit={onCommit}
-        onSlash={onOpenSlash}
-      />
-      {slash ? (
-        <PaperSlashMenu
-          query={slash.query}
-          activeIndex={slash.index}
-          side={slash.side}
-          onQuery={onSlashQuery}
-          onActive={onSlashActive}
-          onPick={onPick}
-          onClose={onCloseSlash}
-        />
-      ) : null}
     </div>
   )
 }

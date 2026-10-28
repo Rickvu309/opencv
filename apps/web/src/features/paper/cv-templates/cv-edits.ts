@@ -3,7 +3,7 @@ import type {
   CvExperience,
   CvProject,
   CvSkillGroup,
-} from "./paper-cv-types.ts"
+} from "./cv-types.ts"
 
 /** Quiet next-step copy for empty Experience / Education / Skills (QVE-209). */
 export const EMPTY_SECTION_CTA = {

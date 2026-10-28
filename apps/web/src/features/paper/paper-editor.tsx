@@ -1,3 +1,4 @@
+import { Bell, Ellipsis, LayoutTemplate, Link2, Star } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -20,11 +21,13 @@ import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { useChatStore } from "@/features/coach/use-chat-store.ts"
+import { ApiError } from "@/lib/api-error.ts"
 import { publishCoachDraft } from "@/lib/coach-draft.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
 import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
+import { CvPhoto, CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperBlocks, type BlockCommit } from "./paper-blocks.tsx"
 import { readEditorDocument } from "./paper-block-ops.ts"
@@ -38,6 +41,13 @@ import { editorEditedLabel, previewTemplate } from "./paper-templates.ts"
 
 function toastError(error: unknown, fallback: string) {
   toast(error instanceof Error ? error.message : fallback)
+}
+
+function applyPhoto(current: CvBlockDocument, ref: string | undefined): CvBlockDocument {
+  const header = { ...current.header }
+  if (ref) header.photo = ref
+  else delete header.photo
+  return { ...current, header }
 }
 
 export function PaperCvEditor({
@@ -55,6 +65,7 @@ export function PaperCvEditor({
   const dirtyRef = useRef(false)
   const inputCountRef = useRef(0)
   const [doc, setDoc] = useState(() => readEditorDocument(initial.document))
+  const docRef = useRef(doc)
   const [undoDoc, setUndoDoc] = useState<CvBlockDocument | null>(null)
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -98,30 +109,75 @@ export function PaperCvEditor({
       return
     }
     adopt(initial.contentVersion)
+    setUndoDoc(null)
+    docRef.current = next
     setDoc(next)
   }, [initial, doc, adopt, versionRef])
 
   function edit(next: CvBlockDocument) {
     inputCountRef.current += 1
     dirtyRef.current = true
+    docRef.current = next
     setDoc(next)
     schedule(next)
   }
 
+  async function flushBeforePhoto() {
+    if (!dirtyRef.current) return
+    const snapshot = docRef.current
+    adopt(versionRef.current)
+    dirtyRef.current = false
+    try {
+      const saved = await run(
+        "paper.replace",
+        {
+          docId: initial.id,
+          contentVersion: versionRef.current,
+          document: snapshot,
+        },
+        { refresh: false }
+      )
+      if (dirtyRef.current) versionRef.current = saved.contentVersion
+      else adopt(saved.contentVersion)
+      setUpdatedAt(new Date().toISOString())
+      setConflict(false)
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "CONFLICT") {
+        setConflict(true)
+      } else {
+        dirtyRef.current = true
+        schedule(snapshot)
+      }
+      throw error
+    }
+  }
+
+  function notePhoto(ref: string | undefined, version: number) {
+    versionRef.current = version
+    const next = applyPhoto(docRef.current, ref)
+    docRef.current = next
+    if (dirtyRef.current) schedule(next)
+    setDoc(next)
+  }
+
   function commit(next: CvBlockDocument, kind: BlockCommit) {
-    if (kind === "drop" || kind === "delete") setUndoDoc(doc)
+    void kind
+    if (JSON.stringify(next) === JSON.stringify(doc)) return
+    setUndoDoc(doc)
     inputCountRef.current += 1
     dirtyRef.current = true
+    docRef.current = next
     setDoc(next)
     commitNow(next)
   }
 
   function undo() {
-    if (!undoDoc) return
+    if (conflict || !undoDoc) return
     const next = undoDoc
     setUndoDoc(null)
     inputCountRef.current += 1
     dirtyRef.current = true
+    docRef.current = next
     setDoc(next)
     commitNow(next)
   }
@@ -166,7 +222,10 @@ export function PaperCvEditor({
   function adoptDocument(next: PaperView) {
     dirtyRef.current = false
     adopt(next.contentVersion)
-    setDoc(readEditorDocument(next.document))
+    setUndoDoc(null)
+    const read = readEditorDocument(next.document)
+    docRef.current = read
+    setDoc(read)
     setUpdatedAt(next.updatedAt)
     setConflict(false)
   }
@@ -253,78 +312,81 @@ export function PaperCvEditor({
       data-paper-editor=""
       className="flex min-w-0 flex-col gap-3 p-4"
     >
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="link" onClick={onBack}>
-          Paper
-        </Button>
-        <span className="text-sm text-muted-foreground">CVs</span>
-        <Input
-          aria-label="Name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          onBlur={() => void commitName()}
-          className="max-w-xs"
-        />
-      </nav>
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm text-muted-foreground">
-          {editorEditedLabel(updatedAt)}
-        </p>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={favorite}
-          onClick={() => setFavorite((value) => !value)}
+        <nav
+          aria-label="Breadcrumb"
+          className="flex min-w-0 flex-1 basis-72 items-center gap-2"
         >
-          Favorite
-        </Button>
-        <Button type="button" variant="ghost" onClick={() => void download()}>
-          More
-        </Button>
-        <Button type="button" variant="outline" onClick={() => void copyLink()}>
-          Copy link
-        </Button>
-        <Button type="button" variant="outline" onClick={() => setGalleryOpen(true)}>
-          Change template
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => toast("Notifications are not on yet.")}
-        >
-          Notifications
-        </Button>
+          <Button type="button" variant="link" onClick={onBack}>
+            Paper
+          </Button>
+          <span className="text-sm text-muted-foreground">CVs</span>
+          <Input
+            aria-label="Name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onBlur={() => void commitName()}
+            className="h-8 max-w-48 border-transparent bg-transparent shadow-none"
+          />
+        </nav>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            {editorEditedLabel(updatedAt)}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Favorite"
+            aria-pressed={favorite}
+            onClick={() => setFavorite((value) => !value)}
+          >
+            <Star className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="More"
+            onClick={() => void download()}
+          >
+            <Ellipsis className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Copy link"
+            onClick={() => void copyLink()}
+          >
+            <Link2 className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Change template"
+            onClick={() => setGalleryOpen(true)}
+          >
+            <LayoutTemplate className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Notifications"
+            onClick={() => toast("Notifications are not on yet.")}
+          >
+            <Bell className="size-4" />
+          </Button>
+        </div>
       </div>
       <div className="flex flex-wrap gap-1" role="toolbar" aria-label="Selection">
         <Button type="button" variant="ghost" size="sm" onClick={() => askCoach("")}>
           Coach
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={undo}>
+        <Button type="button" variant="ghost" size="sm" onClick={undo} disabled={conflict}>
           Undo
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => document.execCommand("bold")}
-        >
-          Bold
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => document.execCommand("italic")}
-        >
-          Italic
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => document.execCommand("underline")}
-        >
-          Underline
         </Button>
       </div>
       {conflict ? (
@@ -349,12 +411,33 @@ export function PaperCvEditor({
         </div>
       ) : null}
       <div data-template={previewTemplate(templateId)} className="min-w-0">
-        <PaperBlocks
-          document={doc}
-          onChange={edit}
-          onCommit={commit}
-          onAskCoach={askCoach}
-        />
+        <CvPhotoFrame
+          value={{
+            docId: initial.id,
+            beforePhoto: flushBeforePhoto,
+            notePhoto,
+          }}
+        >
+          {templateId === "with-photo" ? (
+            <CvPhoto
+              url={doc.header.photo}
+              name={doc.header.name}
+              onChange={(ref) => {
+                const next = applyPhoto(docRef.current, ref)
+                docRef.current = next
+                dirtyRef.current = true
+                setDoc(next)
+                schedule(next)
+              }}
+            />
+          ) : null}
+          <PaperBlocks
+            document={doc}
+            onChange={edit}
+            onCommit={commit}
+            onAskCoach={askCoach}
+          />
+        </CvPhotoFrame>
         {pageState.pages > 1 ? (
           <p className="mt-2 text-sm text-muted-foreground">Page 2</p>
         ) : null}

@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -19,68 +20,66 @@ import { GripVertical } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import { BlockField, reducedMotion, type BlockFieldProps } from "./paper-block-field.tsx"
+import {
+  BlockField,
+  useReducedMotion,
+  type BlockFieldProps,
+} from "./paper-block-field.tsx"
 import { moveBullet, newId } from "./paper-block-ops.ts"
+
+function stop(editing: boolean) {
+  return editing ? 0 : -1
+}
 
 export function ExperienceBlockField({
   block,
+  editing,
   onChange,
   onCommit,
   onSlash,
 }: BlockFieldProps) {
   if (block.type !== "experience-entry") return null
-  const empty =
-    !block.role && !block.company && !block.period && block.bullets.length === 0
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
-      {empty || !block.company ? (
+      <div className="flex flex-wrap gap-2">
         <BlockField
-          label={block.role ? "Role" : "Role, company"}
+          label="Role"
           value={block.role}
           placeholder="Role, company"
           className="block"
+          tabIndex={stop(editing)}
           onSlash={onSlash}
-          onChange={(value) => {
-            const comma = value.indexOf(",")
-            if (comma < 0) onChange({ ...block, role: value })
-            else {
-              onChange({
-                ...block,
-                role: value.slice(0, comma).trim(),
-                company: value.slice(comma + 1).trim(),
-              })
-            }
-          }}
+          onChange={(role) => onChange({ ...block, role })}
         />
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          <BlockField
-            label="Role"
-            value={block.role}
-            placeholder="Role, company"
-            className="block"
-            onChange={(role) => onChange({ ...block, role })}
-          />
-          <BlockField
-            label="Company"
-            value={block.company}
-            placeholder="Company"
-            onChange={(company) => onChange({ ...block, company })}
-          />
-        </div>
-      )}
+        <BlockField
+          label="Company"
+          value={block.company}
+          placeholder="Company"
+          tabIndex={stop(editing)}
+          onChange={(company) => onChange({ ...block, company })}
+        />
+      </div>
       <BlockField
         label={block.period ? "Period" : "Dates"}
         value={block.period}
         placeholder="Dates"
         className="block"
+        tabIndex={stop(editing)}
         onChange={(period) => onChange({ ...block, period })}
       />
       <BulletList
         bullets={block.bullets}
+        editing={editing}
         onChange={(bullets) => onChange({ ...block, bullets })}
         onCommit={(bullets) => onCommit({ ...block, bullets })}
         onSlash={onSlash}
+      />
+      <BlockField
+        label="Location"
+        value={block.location ?? ""}
+        placeholder="Location"
+        tabIndex={stop(editing)}
+        onChange={(location) => onChange({ ...block, location })}
       />
     </div>
   )
@@ -88,16 +87,19 @@ export function ExperienceBlockField({
 
 function BulletList({
   bullets,
+  editing,
   onChange,
   onCommit,
   onSlash,
 }: {
   bullets: { id: string; text: string }[]
+  editing: boolean
   onChange: (bullets: { id: string; text: string }[]) => void
   onCommit: (bullets: { id: string; text: string }[]) => void
   onSlash?: (node: HTMLElement) => void
 }) {
-  const shown = bullets.length > 0 ? bullets : [{ id: "draft-bullet", text: "" }]
+  const [draftId] = useState(newId)
+  const shown = bullets.length > 0 ? bullets : [{ id: draftId, text: "" }]
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, {
@@ -105,11 +107,6 @@ function BulletList({
     }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
-  function stored(next: { id: string; text: string }[]) {
-    return next.map((bullet) =>
-      bullet.id === "draft-bullet" ? { id: newId(), text: bullet.text } : bullet
-    )
-  }
   function onDragEnd(event: DragEndEvent) {
     const overId = event.over ? String(event.over.id) : ""
     const current = {
@@ -137,18 +134,17 @@ function BulletList({
           <BulletRow
             key={bullet.id}
             bullet={bullet}
+            editing={editing}
             onSlash={onSlash}
             onEnter={() => {
               const next = shown.slice()
               next.splice(index + 1, 0, { id: newId(), text: "" })
-              onCommit(stored(next))
+              onCommit(next)
             }}
             onChange={(text) =>
               onChange(
-                stored(
-                  shown.map((row) =>
-                    row.id === bullet.id ? { ...row, text } : row
-                  )
+                shown.map((row) =>
+                  row.id === bullet.id ? { ...row, text } : row
                 )
               )
             }
@@ -161,24 +157,26 @@ function BulletList({
 
 function BulletRow({
   bullet,
+  editing,
   onChange,
   onEnter,
   onSlash,
 }: {
   bullet: { id: string; text: string }
+  editing: boolean
   onChange: (text: string) => void
   onEnter: () => void
   onSlash?: (node: HTMLElement) => void
 }) {
+  const reduced = useReducedMotion()
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: bullet.id })
-  const style = reducedMotion()
+  const style = reduced
     ? undefined
     : { transform: CSS.Transform.toString(transform), transition }
   const label = bullet.text
     ? "Bullet point"
     : "What you did, and what changed because of it"
-  // The handle is not a tab stop. dnd-kit's attributes include tabIndex 0.
   const drag: Record<string, unknown> = { ...attributes }
   delete drag.tabIndex
   return (
@@ -198,6 +196,7 @@ function BulletRow({
         label={label}
         value={bullet.text}
         placeholder="What you did, and what changed because of it"
+        tabIndex={stop(editing)}
         onChange={onChange}
         onEnter={onEnter}
         onSlash={onSlash}
@@ -206,29 +205,13 @@ function BulletRow({
   )
 }
 
-export function EducationBlockField({ block, onChange, onSlash }: BlockFieldProps) {
+export function EducationBlockField({
+  block,
+  editing,
+  onChange,
+  onSlash,
+}: BlockFieldProps) {
   if (block.type !== "education-entry") return null
-  // Stay on one field until a comma splits school and degree, so the caret
-  // is not dropped on the first letter.
-  const simple = !block.degree && !block.period && !block.detail
-  if (simple) {
-    return (
-      <BlockField
-        label="School, degree"
-        value={block.school}
-        placeholder="School, degree"
-        onSlash={onSlash}
-        onChange={(value) => {
-          const comma = value.indexOf(",")
-          onChange({
-            ...block,
-            school: comma < 0 ? value : value.slice(0, comma).trim(),
-            degree: comma < 0 ? "" : value.slice(comma + 1).trim(),
-          })
-        }}
-      />
-    )
-  }
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div className="flex flex-wrap gap-2">
@@ -236,12 +219,15 @@ export function EducationBlockField({ block, onChange, onSlash }: BlockFieldProp
           label="School"
           value={block.school}
           placeholder="School, degree"
+          tabIndex={stop(editing)}
+          onSlash={onSlash}
           onChange={(school) => onChange({ ...block, school })}
         />
         <BlockField
           label="Degree"
           value={block.degree}
           placeholder="Degree"
+          tabIndex={stop(editing)}
           onChange={(degree) => onChange({ ...block, degree })}
         />
       </div>
@@ -249,19 +235,26 @@ export function EducationBlockField({ block, onChange, onSlash }: BlockFieldProp
         label={block.period ? "Period" : "Dates"}
         value={block.period}
         placeholder="Dates"
+        tabIndex={stop(editing)}
         onChange={(period) => onChange({ ...block, period })}
       />
       <BlockField
         label="Education detail"
         value={block.detail}
         placeholder="Education detail"
+        tabIndex={stop(editing)}
         onChange={(detail) => onChange({ ...block, detail })}
       />
     </div>
   )
 }
 
-export function SkillsBlockField({ block, onChange, onSlash }: BlockFieldProps) {
+export function SkillsBlockField({
+  block,
+  editing,
+  onChange,
+  onSlash,
+}: BlockFieldProps) {
   if (block.type !== "skills-group") return null
   if (!block.label && block.items.length <= 1) {
     return (
@@ -269,15 +262,10 @@ export function SkillsBlockField({ block, onChange, onSlash }: BlockFieldProps) 
         label="Tools, software and languages"
         value={block.items[0] ?? ""}
         placeholder="Tools, software and languages"
+        tabIndex={stop(editing)}
         onSlash={onSlash}
         onChange={(value) =>
-          onChange({
-            ...block,
-            items: value
-              .split(",")
-              .map((item) => item.trim())
-              .filter((item) => item.length > 0),
-          })
+          onChange({ ...block, items: value.length > 0 ? [value] : [] })
         }
       />
     )
@@ -288,14 +276,16 @@ export function SkillsBlockField({ block, onChange, onSlash }: BlockFieldProps) 
         label="Skill group"
         value={block.label}
         placeholder="Skill group"
+        tabIndex={stop(editing)}
         onChange={(label) => onChange({ ...block, label })}
       />
       {block.items.map((item, index) => (
         <BlockField
-          key={`${block.id}-${index}`}
+          key={`${block.id}-skill-${index}`}
           label="Skill"
           value={item}
           placeholder="Skill"
+          tabIndex={stop(editing)}
           onChange={(text) =>
             onChange({
               ...block,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import type { CvBlock, CvSectionKind } from "@workspace/domain"
 
 import { cn } from "@workspace/ui/lib/utils"
@@ -13,11 +13,26 @@ export function reducedMotion() {
   )
 }
 
+/** Subscribes so a drag started after the preference changes does not animate. */
+export function useReducedMotion() {
+  const [reduced, setReduced] = useState(reducedMotion)
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const onChange = () => setReduced(query.matches)
+    onChange()
+    query.addEventListener("change", onChange)
+    return () => query.removeEventListener("change", onChange)
+  }, [])
+  return reduced
+}
+
 export function BlockField({
   label,
   value,
   placeholder,
   className,
+  tabIndex = -1,
   onChange,
   onSlash,
   onEnter,
@@ -26,6 +41,7 @@ export function BlockField({
   value: string
   placeholder: string
   className?: string
+  tabIndex?: number
   onChange: (value: string) => void
   onSlash?: (node: HTMLElement) => void
   onEnter?: () => void
@@ -42,7 +58,7 @@ export function BlockField({
       role="textbox"
       aria-label={label}
       aria-multiline="true"
-      tabIndex={-1}
+      tabIndex={tabIndex}
       data-placeholder={placeholder}
       contentEditable
       suppressContentEditableWarning
@@ -74,6 +90,7 @@ function onFieldKey(
 export type BlockFieldProps = {
   block: CvBlock
   sectionKind: CvSectionKind
+  editing: boolean
   onChange: (block: CvBlock) => void
   onCommit: (block: CvBlock) => void
   onSlash: (node: HTMLElement) => void

@@ -1,18 +1,26 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import type { ReactElement } from "react"
-import { BLOCK_TYPES, type PaperPages, type PaperView } from "@workspace/domain"
+import { BLOCK_TYPES, blockRegistry, type PaperPages, type PaperView } from "@workspace/domain"
 
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
 
 import { blockFields } from "./paper-block-fields.tsx"
-import { blockMakerKeys } from "./paper-block-ops.ts"
+import { blockMakerKeys, blockMakers } from "./paper-block-ops.ts"
 import { PaperCvEditor } from "./paper-editor.tsx"
+import { SLASH_ITEMS } from "./paper-slash-menu.tsx"
 
 function render(ui: ReactElement) {
-  return renderWithClient(<ChatStoreProvider>{ui}</ChatStoreProvider>)
+  const wrap = (content: ReactElement) => (
+    <ChatStoreProvider>{content}</ChatStoreProvider>
+  )
+  const view = renderWithClient(wrap(ui))
+  return {
+    ...view,
+    rerender: (next: ReactElement) => view.rerender(wrap(next)),
+  }
 }
 
 const record: PaperView = {
@@ -240,5 +248,124 @@ describe("block editor", () => {
     }
     fireEvent.keyDown(block!, { key: "d", metaKey: true })
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(1)
+  })
+
+  it("restores the document after duplicate", async () => {
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(ok({ ...record, contentVersion: 2 }))
+    )
+    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Duplicate/ }))
+    expect(screen.getAllByText("Alpha")).toHaveLength(2)
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    expect(screen.getAllByText("Alpha")).toHaveLength(1)
+  })
+
+  it("does not save a delete of an unsaved draft", async () => {
+    const bodies: unknown[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/api/commands/paper.replace")) {
+        bodies.push(init?.body)
+      }
+      return Promise.resolve(ok({ ...record, contentVersion: 2 }))
+    })
+    render(
+      <PaperCvEditor
+        initial={{ ...record, document: { ...record.document, version: 2, sections: [] } }}
+        pages={pages}
+        onBack={() => undefined}
+      />
+    )
+    fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Delete/ }))
+    expect(bodies).toEqual([])
+  })
+
+  it("moves a block down and up and deletes it with the Delete key", async () => {
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(ok({ ...record, contentVersion: 2 }))
+    )
+    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Move down/ }))
+    const afterDown = screen
+      .getAllByRole("textbox", { name: "Text" })
+      .map((node) => node.textContent)
+    expect(afterDown.slice(0, 2)).toEqual(["Beta", "Alpha"])
+    fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[1]!)
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Move up/ }))
+    expect(
+      screen.getAllByRole("textbox", { name: "Text" }).map((node) => node.textContent).slice(0, 2)
+    ).toEqual(["Alpha", "Beta"])
+    const block = document.querySelector("[data-sortable-block='a']")
+    block?.focus()
+    fireEvent.keyDown(block!, { key: "Delete" })
+    expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+  })
+
+  it("builds slash blocks from the registry empty blocks", () => {
+    const labels = SLASH_ITEMS.filter((item) => item.group === "block").map(
+      (item) => item.label
+    )
+    expect(labels).toEqual(
+      blockRegistry.flatMap((entry) => (entry.slash ? [entry.slash.label] : []))
+    )
+    for (const entry of blockRegistry) {
+      expect(blockMakers[entry.type]()).toEqual(entry.empty())
+    }
+  })
+
+  it("does not undo across a Coach save", async () => {
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(ok({ ...record, contentVersion: 2 }))
+    )
+    const view = render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
+    fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Duplicate/ }))
+    expect(screen.getAllByText("Alpha")).toHaveLength(2)
+    await act(async () => {
+      await Promise.resolve()
+    })
+    view.rerender(
+      <PaperCvEditor
+        initial={{
+          ...record,
+          contentVersion: 5,
+          document: {
+            version: 2,
+            header: { name: "Ada", email: "", phone: "", city: "", linkedin: "" },
+            sections: [
+              {
+                id: "section-experience",
+                kind: "experience",
+                blocks: [{ id: "a", type: "text", text: "Coach kept" }],
+              },
+            ],
+          },
+        }}
+        pages={pages}
+        onBack={() => undefined}
+      />
+    )
+    expect(screen.getByText("Coach kept")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    expect(screen.getByText("Coach kept")).toBeInTheDocument()
+    expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+  })
+
+  it("opens the block menu upward near the bottom of a short window", async () => {
+    vi.spyOn(window, "innerHeight", "get").mockReturnValue(390)
+    HTMLElement.prototype.getBoundingClientRect = () => box(300, 40)
+    vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
+    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    const menu = screen.getAllByRole("button", { name: "Block menu" })[0]!
+    fireEvent.focus(menu)
+    fireEvent.click(menu)
+    const popup = await screen.findByRole("menu")
+    expect(popup.getAttribute("data-side") ?? popup.className).toMatch(/top/)
   })
 })

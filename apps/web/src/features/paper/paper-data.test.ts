@@ -186,7 +186,7 @@ describe("prefixed-string retirement", () => {
       "paper-templates.ts",
       "paper-share-page.tsx",
       "paper-api.ts",
-      "paper-cv-surface.tsx",
+      "paper-import-input.tsx",
       "paper-proof-toolbar.tsx",
       "coach-float-chips.tsx",
       ...readdirSync(paperRoot).filter((file) =>
