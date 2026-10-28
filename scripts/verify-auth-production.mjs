@@ -1,38 +1,14 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process"
 import { writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import { pathToFileURL } from "node:url"
+import { cli, listDeployments, railwayScope } from "./lib/railway-deploy.mjs"
 
 const api = "https://api.opencv.me"
 const origin = "https://app.opencv.me"
-const railwayScope = [
-  "--project",
-  "opencv",
-  "--service",
-  "api",
-  "--environment",
-  "production",
-]
 
 function requireProof(condition, message) {
   if (!condition) throw new Error(message)
-}
-
-function cli(command, args) {
-  try {
-    return JSON.parse(
-      execFileSync(command, args, {
-        encoding: "utf8",
-        timeout: 30_000,
-        stdio: ["ignore", "pipe", "pipe"],
-      })
-    )
-  } catch {
-    throw new Error(
-      `${command} ${args[0]} failed. Check the installed CLI and its authenticated account; output withheld because it may contain secrets.`
-    )
-  }
 }
 
 async function request(path, { body, cookie } = {}) {
@@ -79,14 +55,7 @@ export async function verifyAuthProduction(
     "Use --email with an address you control. This sends and consumes a sign-in code."
   )
   email = email.toLowerCase()
-  const deployments = io.cli("railway", [
-    "deployment",
-    "list",
-    ...railwayScope,
-    "--limit",
-    "20",
-    "--json",
-  ])
+  const deployments = listDeployments("api", io)
   const deployed = deployments.find(
     (deployment) => deployment.status === "SUCCESS"
   )
@@ -97,7 +66,7 @@ export async function verifyAuthProduction(
   const variables = io.cli("railway", [
     "variable",
     "list",
-    ...railwayScope,
+    ...railwayScope("api"),
     "--json",
   ])
   requireProof(
