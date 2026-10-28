@@ -1,8 +1,9 @@
 import type { ReactNode } from "react"
-import { Brand, Mark } from "@workspace/ui/components/brand"
+import { Mark } from "@workspace/ui/components/brand"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
 import { AUTH_COPY } from "./auth-copy.ts"
+import { AuthShaderPanel } from "./auth-shader-panel.tsx"
 
 export function AuthFrame({
   language,
@@ -14,31 +15,45 @@ export function AuthFrame({
   children: ReactNode
 }) {
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr] bg-background text-foreground lg:grid-cols-2">
-      <header className="col-start-1 row-start-1 flex items-center px-4 py-4 sm:px-6 lg:col-span-2">
-        <Brand size={16} />
-      </header>
-      <div className="col-start-1 row-start-2 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-[340px]">{children}</div>
-      </div>
-      <div className="hidden min-h-0 flex-col justify-between bg-foreground p-10 text-background lg:col-start-2 lg:row-start-2 lg:flex">
-        <div className="flex max-w-sm flex-col gap-3 text-2xl font-semibold">
-          <p>{AUTH_COPY.hero1}</p>
-          <p>{AUTH_COPY.hero2}</p>
+    <div
+      data-pen-frame
+      className="grid min-h-dvh bg-background text-foreground lg:grid-cols-2"
+    >
+      <div
+        data-pen-section="Left"
+        className="grid min-h-dvh grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_1fr_auto] items-center px-8 py-7"
+      >
+        <div
+          data-pen-region="brand"
+          className="col-start-1 row-start-1 inline-flex items-center gap-2 justify-self-start text-[15px] font-semibold tracking-[-0.5px]"
+        >
+          <Mark size={15} />
+          <span>opencv</span>
         </div>
-        <Mark size={56} className="text-background" />
+        <div
+          data-pen-region="form"
+          className="col-span-2 row-start-2 w-full max-w-[340px] justify-self-center"
+        >
+          {children}
+        </div>
+        <p
+          data-pen-region="terms"
+          className="col-span-2 row-start-3 text-center text-xs text-muted-foreground"
+        >
+          {AUTH_COPY.terms}
+        </p>
+        <SegmentedControl
+          aria-label={AUTH_COPY.language}
+          className="col-start-2 row-start-1 justify-self-end"
+          value={language}
+          onChange={onLanguage}
+          options={[
+            { value: "en", label: AUTH_COPY.en },
+            { value: "vi", label: AUTH_COPY.vi },
+          ]}
+        />
       </div>
-      <SegmentedControl
-        aria-label={AUTH_COPY.language}
-        className="col-start-1 row-start-1 me-4 self-center justify-self-end sm:me-6 lg:col-span-2"
-        size="sm"
-        value={language}
-        onChange={onLanguage}
-        options={[
-          { value: "en", label: AUTH_COPY.en },
-          { value: "vi", label: AUTH_COPY.vi },
-        ]}
-      />
+      <AuthShaderPanel />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
+import { Brand } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -191,18 +192,22 @@ export function SignInScreen() {
       notice === "send")
   const noticeText = notice ? NOTICE[notice] : null
 
+  const codeAreas =
+    step === "verifying"
+      ? "[grid-template-areas:'title_title_title_title'_'sent_sent_sent_sent'_'._email_change_.'_'digits_digits_digits_digits'_'follow_follow_follow_follow']"
+      : noticeText || inbox
+        ? "[grid-template-areas:'title_title_title_title'_'sent_sent_sent_sent'_'._email_change_.'_'digits_digits_digits_digits'_'follow_follow_follow_follow'_'resend_resend_resend_resend']"
+        : "[grid-template-areas:'title_title_title_title'_'sent_sent_sent_sent'_'._email_change_.'_'digits_digits_digits_digits'_'resend_resend_resend_resend']"
+
   return (
     <AuthFrame language={language} onLanguage={chooseLanguage}>
       {step === "email" ? (
-        <form className="flex flex-col gap-4" onSubmit={onContinue}>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-semibold">{AUTH_COPY.logIn}</h1>
-            <p className="text-sm text-muted-foreground">
-              {AUTH_COPY.noPassword}
-            </p>
-          </div>
+        <form className="flex w-full flex-col gap-6" onSubmit={onContinue}>
+          <h1 className="flex flex-wrap items-center justify-center gap-x-2 text-[26px] font-semibold tracking-[-0.7px]">
+            <span>Log in to</span> <Brand size={26} />
+          </h1>
           {googleNotice ? (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="text-center text-sm text-destructive">
               {AUTH_COPY.googleUnavailable}
             </p>
           ) : null}
@@ -210,19 +215,25 @@ export function SignInScreen() {
             <>
               <Button
                 type="button"
-                className="w-full"
+                className="h-[46px] w-full rounded-[10px]"
                 onClick={() => void onGoogle()}
               >
                 <img src={googleG} alt="" className="size-4" />
                 {AUTH_COPY.google}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                {AUTH_COPY.or}
-              </p>
+              <div className="flex w-full items-center gap-3">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">
+                  {AUTH_COPY.or}
+                </span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
             </>
           ) : null}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="sign-in-email">{AUTH_COPY.email}</Label>
+          <div className="flex w-full flex-col gap-1.5">
+            <Label htmlFor="sign-in-email" className="text-[13px] font-medium">
+              {AUTH_COPY.email}
+            </Label>
             <Input
               id="sign-in-email"
               type="email"
@@ -230,6 +241,7 @@ export function SignInScreen() {
               placeholder={AUTH_COPY.emailPlaceholder}
               value={email}
               onChange={(event) => setEmail(event.currentTarget.value)}
+              className="h-[46px] rounded-[10px] px-3.5 text-[15px] md:text-[15px]"
             />
           </div>
           {noticeText ? (
@@ -240,33 +252,26 @@ export function SignInScreen() {
           <Button
             type="submit"
             variant="glow"
-            className="w-full"
+            className="h-[46px] w-full rounded-[10px]"
             disabled={sending}
           >
             {AUTH_COPY.continue}
           </Button>
-          <p className="text-sm text-muted-foreground">
-            {AUTH_COPY.codePromise}
-          </p>
         </form>
       ) : (
         <div
-          className={
-            step === "verifying"
-              ? "grid gap-4 [grid-template-areas:'intro'_'change'_'digits'_'follow']"
-              : noticeText || inbox
-                ? "grid gap-4 [grid-template-areas:'intro'_'change'_'digits'_'follow'_'resend']"
-                : "grid gap-4 [grid-template-areas:'intro'_'change'_'digits'_'resend']"
-          }
+          className={`grid w-full grid-cols-[1fr_auto_auto_1fr] items-center gap-x-2 gap-y-2 ${codeAreas}`}
         >
-          <div className="flex flex-col gap-1 [grid-area:intro]">
-            <h1 className="text-xl font-semibold">{AUTH_COPY.checkEmail}</h1>
-            <p className="text-sm text-muted-foreground">
-              {AUTH_COPY.sentTo}{" "}
-              <span className="text-foreground">{email}</span>
-            </p>
-          </div>
-          <div className="[grid-area:digits]">
+          <h1 className="text-center text-[26px] font-semibold tracking-[-0.7px] [grid-area:title]">
+            {AUTH_COPY.checkEmail}
+          </h1>
+          <p className="text-center text-sm text-muted-foreground [grid-area:sent]">
+            {AUTH_COPY.sentTo}
+          </p>
+          <span className="max-w-56 truncate font-semibold [grid-area:email]">
+            {email}
+          </span>
+          <div className="mbs-4 w-full [grid-area:digits]">
             <CodeInput
               value={code}
               disabled={step === "verifying"}
@@ -275,39 +280,9 @@ export function SignInScreen() {
               onComplete={(otp) => void onComplete(otp)}
             />
           </div>
-          {step === "verifying" ? null : (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground [grid-area:resend]">
-              <span>{AUTH_COPY.didntGet}</span>
-              {showResend ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={sending}
-                  onClick={() => void sendCode(email.trim())}
-                >
-                  {AUTH_COPY.sendNew}
-                </Button>
-              ) : (
-                <span>{resendLabel(seconds)}</span>
-              )}
-            </div>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-fit justify-self-start [grid-area:change]"
-            onClick={() => {
-              setStep("email")
-              setNotice(null)
-              setCode("")
-              setSeconds(0)
-            }}
-          >
-            {AUTH_COPY.change}
-          </Button>
           {step === "verifying" ? (
             <p
-              className="flex items-center gap-2 text-sm text-muted-foreground [grid-area:follow]"
+              className="mbs-4 flex items-center justify-center gap-2 text-sm text-muted-foreground [grid-area:follow]"
               role="status"
             >
               <span
@@ -317,7 +292,7 @@ export function SignInScreen() {
               {AUTH_COPY.verifying}
             </p>
           ) : noticeText || inbox ? (
-            <div className="flex flex-col gap-4 [grid-area:follow]">
+            <div className="mbs-4 flex flex-col items-center gap-4 [grid-area:follow]">
               {noticeText ? (
                 <p role="alert" className="text-sm text-destructive">
                   {noticeText}
@@ -335,6 +310,36 @@ export function SignInScreen() {
               ) : null}
             </div>
           ) : null}
+          {step === "verifying" ? null : (
+            <div className="mbs-4 flex items-center justify-center gap-2 text-sm text-muted-foreground [grid-area:resend]">
+              <span>{AUTH_COPY.didntGet}</span>
+              {showResend ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={sending}
+                  onClick={() => void sendCode(email.trim())}
+                >
+                  {AUTH_COPY.sendNew}
+                </Button>
+              ) : (
+                <span>{resendLabel(seconds)}</span>
+              )}
+            </div>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-auto px-1 py-0 text-sm font-medium text-muted-foreground [grid-area:change]"
+            onClick={() => {
+              setStep("email")
+              setNotice(null)
+              setCode("")
+              setSeconds(0)
+            }}
+          >
+            {AUTH_COPY.change}
+          </Button>
         </div>
       )}
     </AuthFrame>
