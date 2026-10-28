@@ -38,7 +38,9 @@ if [[ "$*" == "--filter api... run build" ]]; then
 fi
 exit "${REVIEW_TEST_PNPM_EXIT:-0}"
 STUB
-chmod +x "$tmp/bin/gh" "$tmp/bin/pnpm"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$tmp/bin/chrome"
+chmod +x "$tmp/bin/gh" "$tmp/bin/pnpm" "$tmp/bin/chrome"
+export CHROME_BIN=$tmp/bin/chrome
 export PATH=$tmp/bin:$PATH
 export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv HEAVY_SLOT=1
 export REVIEW_TEST_ISSUE=7
@@ -66,6 +68,29 @@ exit 0
 CHK
 chmod +x scripts/check.sh
 cp "$here/codeowners-lib.sh" scripts/codeowners-lib.sh
+# The two verify checkers are stubs at the real paths, run by node from apps/web like the real ones. A stub counts its
+# calls in $REVIEW_TEST_CALLED-<name>, logs its env to $REVIEW_TEST_VERIFY_CALLS, prints the file REVIEW_TEST_<APP_UI|LANDING>_OUT
+# (REVIEW_TEST_..._OUT2 on a later call) and exits with REVIEW_TEST_..._EXIT (..._EXIT2 on a later call).
+mkdir -p apps/web .claude/skills/verify-app-ui/scripts/lib .claude/skills/verify-landing/scripts/lib
+touch apps/web/.gitkeep
+cat >.claude/skills/verify-app-ui/scripts/verify-app-ui.mjs <<'STUBJS'
+import { appendFileSync, existsSync, readFileSync } from "node:fs"
+import { basename } from "node:path"
+const name = basename(process.argv[1]).includes("landing") ? "landing" : "app-ui"
+const key = name === "landing" ? "LANDING" : "APP_UI"
+const counter = `${process.env.REVIEW_TEST_CALLED}-${name}`
+const later = existsSync(counter) && readFileSync(counter, "utf8").length > 0
+appendFileSync(counter, "x")
+appendFileSync(process.env.REVIEW_TEST_VERIFY_CALLS, `${name} PORT=${process.env.PORT} VERIFY_TIER=${process.env.VERIFY_TIER} cwd=${process.cwd().split("/").slice(-2).join("/")}\n`)
+if (process.env.REVIEW_TEST_SLEEP) await new Promise((r) => setTimeout(r, Number(process.env.REVIEW_TEST_SLEEP)))
+const pick = (suffix) => (later ? process.env[`REVIEW_TEST_${key}_${suffix}2`] : undefined) ?? process.env[`REVIEW_TEST_${key}_${suffix}`]
+process.stdout.write(readFileSync(pick("OUT"), "utf8"))
+process.exit(Number(pick("EXIT") ?? 0))
+STUBJS
+cp .claude/skills/verify-app-ui/scripts/verify-app-ui.mjs .claude/skills/verify-landing/scripts/verify-landing.mjs
+printf '{\n  "01": "invariant",\n  "20": "invariant",\n  "30": "design",\n}\n' >.claude/skills/verify-app-ui/scripts/lib/kinds.mjs
+cp .claude/skills/verify-app-ui/scripts/lib/kinds.mjs .claude/skills/verify-landing/scripts/lib/kinds.mjs
+echo '[{"id":"20","issue":553,"since":"2026-10-29","note":"contrast"}]' >.claude/skills/verify-app-ui/known-findings.json
 echo '* @owner' >.github/CODEOWNERS
 echo base >file.txt
 git add -A && git commit -q -m "base"
@@ -88,11 +113,12 @@ main_checkout=$tmp/repo
 git clone -q "$origin" "$main_checkout"
 quiet_repo "$main_checkout"
 cp "$script" "$main_checkout/scripts/review-pr.sh"
-mkdir -p "$main_checkout/scripts/lib" && cp "$here/lib/result.sh" "$here/lib/conflict-report.sh" "$here/lib/rules.sh" "$main_checkout/scripts/lib/"
-export REVIEW_TEST_RUNS=$tmp/runs
+mkdir -p "$main_checkout/scripts/lib" && cp "$here/lib/result.sh" "$here/lib/conflict-report.sh" "$here/lib/rules.sh" "$here/lib/verify-tier.sh" "$here/lib/verify-gate.mjs" "$main_checkout/scripts/lib/"
+export REVIEW_TEST_RUNS=$tmp/runs REVIEW_TEST_CALLED=$tmp/called VERIFY_LOCK_DIR=$tmp/locks
 : >"$REVIEW_TEST_RUNS"
 
 run() {
+  rm -f "$REVIEW_TEST_CALLED"-*
   set +e
   (cd "$main_checkout" && scripts/review-pr.sh 1 "$@") >"$tmp/out" 2>"$tmp/err"
   code=$?
@@ -275,6 +301,10 @@ expect "non-ASCII conflict" 1 "resolve: café.txt other.txt" "café.txt: changed
 absent "non-ASCII conflict" '\303'
 result status=fail cause=merge-conflict 'files=["café.txt","other.txt"]' "blockedBy={\"pr\":42,\"commit\":\"$accent_sha\",\"files\":[\"café.txt\",\"other.txt\"]}"
 want_runs "non-ASCII conflict" 14
+
+# The invariant verify tier cases share this file's helpers.
+. "$here/lib/review-pr-verify-cases.sh"
+
 
 if git -C "$main_checkout" worktree list | grep -q review-pr-; then fail "cleanup" "review worktree left behind"; fi
 echo "all review-pr tests passed"

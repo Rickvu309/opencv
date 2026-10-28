@@ -9,6 +9,12 @@
 # The checks run on the merge of origin/main and the PR head, which is what a squash merge lands, so a branch behind
 # main needs no rebase. Only a merge conflict does. A passing check is cached by the tested tree (--no-cache reruns it).
 # After check.sh passes, the worktree builds the API and web. A failed build is a FAIL. The cache covers both.
+# A PR that touches apps/web, apps/api, packages/ui, packages/domain or a verify skill then runs both UI checkers at the
+# invariant tier (VERIFY_TIER=invariant). The allowed FAILs are each skill's known-findings.json on origin/main minus the
+# entries the PR deletes, so a fix PR removes its entry and no PR excuses its own FAIL. A PR may add an entry only when it
+# changes nothing but known-findings.json files (the tier is then skipped, with a note). Any other FAIL (a NEW FAIL must
+# fail in two runs), a listed finding that now passes, a STALE or a checker error is a FAIL of the review. No skip flag.
+# The cache covers it and keys on main's copies of both lists, both checkers' scripts/ trees and scripts/lib/verify-{gate,tier}.
 # The patch id it prints is stable across a rebase that leaves the diff text unchanged; record it with the independent
 # review and the verify evidence so they stay valid for the same patch on a new base. Needs git 2.39 or later.
 #
@@ -26,6 +32,8 @@ set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib/conflict-report.sh"
 # shellcheck source=scripts/lib/rules.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
+# shellcheck source=scripts/lib/verify-tier.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/verify-tier.sh"
 result_begin review-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-[a-z0-9]+(-[a-z0-9]+)*$'
@@ -36,6 +44,10 @@ APP_DELETE_PCT=80
 # A real env file (not a template) committed by mistake. Templates such as .env.example stay allowed.
 ENV_FILE_RE='(^|/)(\.env|[A-Za-z0-9_-]+\.env)(\.[A-Za-z0-9_-]+)*$'   # matched case-insensitively
 ENV_TEMPLATE_RE='\.(example|sample|template)$'
+# Anything that feeds the stack the app-ui checker drives (web, api, domain, ui), the checkers, and the script that starts the stack.
+VERIFY_RE='^(apps/(web|api)/|packages/(ui|domain)/|\.claude/skills/verify-(app-ui|landing)/|\.claude/skills/verify-opencv/scripts/)'
+VERIFY_EDIT_RE='^\.claude/skills/verify-(app-ui|landing|opencv)/(known-findings\.json|scripts/)'
+VERIFY_LIST_RE='^\.claude/skills/verify-(app-ui|landing)/known-findings\.json$'
 
 die() { result_fail "${DIE_CAUSE:-other}" "$*"; echo "error: $*" >&2; exit 1; }
 fails=(); humans=(); notes=()
@@ -172,6 +184,12 @@ if [[ -n "$env_files" ]]; then bad "commits a real env file (secrets): $(tr '\n'
 
 gate=$(grep -E '^(package\.json|scripts/|\.githooks/|\.github/)' <<<"$files" || true)
 [[ -z "$gate" ]] || note "changes workflow/check files, review them closely: $(tr '\n' ' ' <<<"$gate")"
+verify_edits=$(grep -E "$VERIFY_EDIT_RE" <<<"$files" || true)
+[[ -z "$verify_edits" ]] || note "edits a verify known-findings.json or checker script, so the review must read that diff: $(tr '\n' ' ' <<<"$verify_edits")"
+verify_scripts=$(git -C "$main_checkout" diff --no-color --no-ext-diff -U0 "origin/main...$head_ref" -- apps/web/package.json apps/api/package.json | grep -E '^[+-].*"(verify:[^"]*|dev)"' || true)
+[[ -z "$verify_scripts" ]] || note "edits a verify:* or dev script in apps/web/package.json or apps/api/package.json (the verify launcher runs them), so the review must read that diff"
+verify_needed=0
+if grep -qE "$VERIFY_RE" <<<"$files"; then verify_needed=1; else note "touches no apps/web, apps/api, packages/ui, packages/domain or verify skill file; the verify tier is skipped"; fi
 
 echo
 echo "Merge with main and checks"
@@ -209,6 +227,18 @@ set -e
 if (( merge_rc == 0 )); then
   tree=${merge_out%%$'\n'*}
   ok "merges cleanly with main (tested tree ${tree:0:12})"
+  # The allowed list is main's, minus what the PR deletes. A PR adds an entry only alone, in a PR that changes nothing but known-findings.json files.
+  list_adds=$(verify_list_adds)
+  if [[ -n "$list_adds" ]]; then
+    if grep -q ' ERROR ' <<<"$list_adds"; then
+      bad "a known-findings.json does not parse: $(grep ' ERROR ' <<<"$list_adds" | head -1)"
+    elif grep -qvE "$VERIFY_LIST_RE" <<<"$files"; then
+      bad "adds known finding(s) ($(sed 's/ ADDED /:/' <<<"$list_adds" | tr '\n' ' ')) and changes other files; land the entry in its own PR, with its issue, that changes only known-findings.json"
+    else
+      verify_list_only=1
+      note "adds known finding(s) ($(sed 's/ ADDED /:/' <<<"$list_adds" | tr '\n' ' ')) and changes nothing else; the verify tier runs with the PR's whole list and fails an entry whose check passes. The review must read that diff and check each entry's issue is open"
+    fi
+  fi
   git -C "$main_checkout" worktree add --quiet --detach --no-checkout "$wt" origin/main
   # The checkout writes the PR's .githooks/ too; hooks stay off for this one command so none of them fires here.
   git -C "$wt" -c core.hooksPath=/dev/null read-tree -u --reset "$tree"
@@ -220,11 +250,12 @@ if (( merge_rc == 0 )); then
     checker_blob=$(git -C "$main_checkout" rev-parse --verify --quiet origin/main:scripts/check.sh || true)
     cache_dir="$wt_root/.review-pr-cache"
     # Older gates did not build both apps, so their cached results cannot skip these builds.
-    cache_hit="$cache_dir/$tree-$checker_blob-install$install-apibuild-webbuild"
+    cache_hit="$cache_dir/$tree-$checker_blob-install$install-apibuild-webbuild-verify$verify_needed-listonly$verify_list_only-$(verify_tier_key)"
     if (( use_cache )) && [[ -n "$checker_blob" && -f "$cache_hit" ]]; then
       ok "lint, typecheck, test passed for this exact tree on $(cat "$cache_hit") (cached; --no-cache reruns)"
       ok "api build passed for this exact tree (cached; --no-cache reruns)"
       ok "web build passed for this exact tree (cached; --no-cache reruns)"
+      (( ! verify_needed )) || ok "verify invariant tier passed for this exact tree and these main copies of its lists and checkers (cached; --no-cache reruns)"
     else
       fails_before=${#fails[@]}
       [[ -f "$wt/.env.example" ]] && cp "$wt/.env.example" "$wt/.env"
@@ -254,7 +285,8 @@ if (( merge_rc == 0 )); then
           else
             bad "web build failed"; result_fail build "web build failed"
           fi
-          if (( ${#fails[@]} == fails_before )); then mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"; fi
+          if (( verify_needed && ${#fails[@]} == fails_before )); then run_verify_tier; fi
+          if (( ${#fails[@]} == fails_before && ! verify_flaky )); then mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"; fi
         else
           bad "scripts/check.sh failed"
           result_adopt "$(result_path check)" || result_fail test "scripts/check.sh failed"

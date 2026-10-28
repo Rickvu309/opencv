@@ -104,6 +104,15 @@ web_ok() { [[ "$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/")" == 200 ]];
 wait_for "api /health" "$WAIT_SECONDS" health_ok || fail "api did not answer /health"
 wait_for "web root" "$WAIT_SECONDS" web_ok || fail "web did not answer 200"
 
+# A health answer proves a server runs on the port, not that this launch started it: a run that raced for the port
+# would otherwise drive the winner's tree. Stop what was started and report the port taken.
+for owner in "$API_PORT:$API_PGID" "$WEB_PORT:$WEB_PGID"; do
+  if ! taken=$(bash "$HERE/port-owner.sh" "${owner%%:*}" "${owner##*:}" 2>&1); then
+    echo "launch failed: $taken" >&2
+    KEEP_DATA="$had_data" bash "$HERE/cleanup.sh" "$RUN" >&2 || true
+    exit 1
+  fi
+done
 API_PID=$(listener_pid "$API_PORT")
 WEB_PID=$(listener_pid "$WEB_PORT")
 [[ -n "$API_PID" && -n "$WEB_PID" ]] || fail "could not find the listener pid for a port"
