@@ -306,7 +306,3 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
 
   return routes
 }
-
-export async function readOptionalJson(c: Parameters<typeof readJsonBody>[0]) {
-  return readJsonBody(c)
-}

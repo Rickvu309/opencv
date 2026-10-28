@@ -28,7 +28,7 @@ import {
 import { and, desc, eq } from "drizzle-orm"
 
 import { getDb, transaction } from "../db/context.js"
-import { files, jobs, paperDocs, paperShares } from "../db/schema.js"
+import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import {
@@ -646,23 +646,4 @@ export async function importPaper(actor: Actor, fileId: FileId) {
     })
     .where(eq(paperDocs.id, created.id))
   return toPaper(await ownedPaper(actor.userId, parsePaperId(created.id)))
-}
-
-export async function linkedJobId(docId: PaperId) {
-  const rows = await getDb()
-    .select({
-      id: jobs.id,
-      cvDocId: jobs.cvDocId,
-      letterDocId: jobs.letterDocId,
-    })
-    .from(jobs)
-    .where(eq(jobs.cvDocId, docId))
-    .limit(1)
-  if (rows[0]) return rows[0].id
-  const letters = await getDb()
-    .select({ id: jobs.id })
-    .from(jobs)
-    .where(eq(jobs.letterDocId, docId))
-    .limit(1)
-  return letters[0]?.id ?? null
 }
