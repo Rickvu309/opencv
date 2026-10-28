@@ -3,6 +3,7 @@
 import { join } from "node:path"
 import { existsSync } from "node:fs"
 
+import { SOURCE_FILES } from "./assumes.mjs"
 import {
   SURFACES,
   appSourceDirs,
@@ -17,7 +18,7 @@ import {
   stubSilent,
 } from "./check-util.mjs"
 
-const BANNER = "apps/web/src/features/paper/paper-editor-conflict-banner.tsx"
+const BANNER = SOURCE_FILES.conflictBanner
 
 export function motionChecks(
   d,

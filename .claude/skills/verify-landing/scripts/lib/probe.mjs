@@ -1,6 +1,8 @@
 // Runs inside the page. Self-contained: it is serialised with toString(), so it cannot close over anything.
 // It only measures. Every decision lives in checks-*.mjs, which read the JSON this returns.
-function probe(kind) {
+import { SEL } from "./assumes.mjs"
+
+function probe(kind, SEL) {
   if (kind === "first") {
     return new Promise((resolve) => {
       const started = performance.now()
@@ -175,7 +177,7 @@ function probe(kind) {
     )
     const heroImg = hero ? hero.querySelector(`img, ${FIGURE}`) : null
     const h1el = h1
-    const benefitSection = document.querySelector("#benefits")
+    const benefitSection = document.querySelector(SEL.benefits)
     const benefitSvgs = benefitSection
       ? [...benefitSection.querySelectorAll("svg")]
       : []
@@ -279,7 +281,7 @@ function probe(kind) {
         radius,
       }
     }
-    const closeBand = document.querySelector("#close")
+    const closeBand = document.querySelector(SEL.close)
     const ctas = {
       nav: buttonOf(header, "Get started"),
       close: buttonOf(closeBand, "Get started"),
@@ -304,7 +306,7 @@ function probe(kind) {
         shapes: benefitShapes,
         hex: benefitHex,
         perCard: [
-          ...document.querySelectorAll("#benefits .landing-benefit"),
+          ...document.querySelectorAll(`${SEL.benefits} ${SEL.benefitCard}`),
         ].map((card) => card.querySelectorAll("svg").length),
       },
       navLockup,
@@ -342,7 +344,7 @@ function probe(kind) {
             cls: (n.getAttribute("class") ?? "").slice(0, 40),
             marquee:
               /marquee/i.test(n.getAttribute("class") ?? "") &&
-              Boolean(n.closest("#logos")),
+              Boolean(n.closest(SEL.logos)),
           })),
         logoImgs: [...document.querySelectorAll("main img")].filter((i) =>
           /logo|partner|customer|trusted|universit/i.test(
@@ -352,7 +354,7 @@ function probe(kind) {
       },
       bg: (() => {
         for (
-          let n = document.querySelector(".landing-root") ?? document.body;
+          let n = document.querySelector(SEL.root) ?? document.body;
           n;
           n = n.parentElement
         ) {
@@ -368,7 +370,7 @@ function probe(kind) {
       const titleEl = card.querySelector("h2")
       const title = titleEl ? readText(titleEl) : ""
       if (!svg) return { title, png: null, error: "no svg" }
-      const shot = card.querySelector(".landing-benefit-shot")
+      const shot = card.querySelector(SEL.benefitShot)
       const bg = shot ? cs(shot).backgroundColor : "rgb(240, 240, 240)"
       const clone = svg.cloneNode(true)
       clone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
@@ -407,7 +409,7 @@ function probe(kind) {
       }
     }
     return Promise.all(
-      [...document.querySelectorAll("#benefits .landing-benefit")].map(
+      [...document.querySelectorAll(`${SEL.benefits} ${SEL.benefitCard}`)].map(
         rasterCard
       )
     ).then((benefitRasters) => ({ ...snapshot, benefitRasters }))
@@ -512,7 +514,7 @@ function probe(kind) {
       if (effOpacity(el) < 0.95 || cs(el).filter !== "none")
         hidden.push(el.textContent.trim().slice(0, 24))
     }
-    const logos = document.querySelector("#logos")
+    const logos = document.querySelector(SEL.logos)
     const tracks = logos
       ? [...logos.querySelectorAll("*")].filter((el) =>
           el
@@ -553,4 +555,5 @@ function probe(kind) {
   throw new Error(`unknown probe ${kind}`)
 }
 
-export const probeSource = (kind) => `(${probe})(${JSON.stringify(kind)})`
+export const probeSource = (kind) =>
+  `(${probe})(${JSON.stringify(kind)}, ${JSON.stringify(SEL)})`

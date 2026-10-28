@@ -1,6 +1,8 @@
 // Runs inside the page. Self-contained: it is serialised with toString(), so it cannot close over anything.
 // It only measures and returns JSON. Every decision lives in checks.mjs.
-function probe() {
+import { SEL } from "./assumes.mjs"
+
+function probe(SEL) {
   const canvas = document.createElement("canvas")
   canvas.width = canvas.height = 1
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
@@ -67,8 +69,7 @@ function probe() {
       tag === "A" ||
       ["button", "menuitem", "tab"].includes(el.getAttribute("role") ?? "")
     ) {
-      if (el.closest("[data-card-id], tr[data-row], [data-user-content]"))
-        continue
+      if (el.closest(`${SEL.card}, tr[data-row], ${SEL.userContent}`)) continue
       const l = label(el)
       if (l) chrome.add(l)
     }
@@ -121,8 +122,10 @@ function probe() {
           e.disabled === true || e.getAttribute("aria-disabled") === "true",
         isPrimary: bg[3] > 0.9 && near(bg, primary),
         inSidebar: Boolean(e.closest("aside")),
+        primary: e.matches(SEL.primary),
       }
     })
+  out.primaryMarks = document.querySelectorAll(SEL.primary).length
 
   // Motion: durations in effect on every visible element, and loops that run without a trigger.
   const dur = {}
@@ -311,7 +314,7 @@ function probe() {
   out.sidebarRect = sidebar ? rect(sidebar) : null
   // The card title is the deepest element inside the card whose text is the title taken from the card's
   // aria-label ("<title>, <company>" or the older "<title> at <company>"). None found means titleLines is null.
-  out.cards = [...document.querySelectorAll("[data-card-id]")].map((c) => {
+  out.cards = [...document.querySelectorAll(SEL.card)].map((c) => {
     const aria = c.getAttribute("aria-label") ?? ""
     const wants = []
     const comma = aria.indexOf(", ")
@@ -343,12 +346,27 @@ function probe() {
   out.skeletons = visible.filter((e) =>
     e.matches('[data-slot="skeleton"], [class*="animate-pulse"]')
   ).length
-  out.emptyStates = visible.filter((e) =>
-    e.matches('[data-slot="empty"]')
-  ).length
-  out.rows = [...document.querySelectorAll("tbody tr, [role=row]")]
+  out.emptyStates = visible.filter((e) => e.matches(SEL.emptyState)).length
+  // A Paper library card is a button named "<name>, <edited>" holding those two texts as its spans.
+  out.paperCards = [...document.querySelectorAll("main button[aria-label]")]
     .filter(shown)
-    .map((r) => Math.round(r.getBoundingClientRect().height))
+    .flatMap((c) => {
+      const [name, edited] = [...c.querySelectorAll(":scope > span")]
+      if (
+        !name ||
+        !edited ||
+        c.getAttribute("aria-label") !==
+          `${clean(name.textContent)}, ${clean(edited.textContent)}`
+      )
+        return []
+      const lh = parseFloat(cs(name).lineHeight) || 20
+      return [
+        {
+          h: Math.round(c.getBoundingClientRect().height),
+          titleLines: Math.round(name.getBoundingClientRect().height / lh),
+        },
+      ]
+    })
   out.hasTable = Boolean(
     document.querySelector("table, [role=table], [role=grid], tbody tr")
   )
@@ -399,9 +417,12 @@ function probe() {
     )
     .map((el) => clean(el.textContent).slice(0, 60))
     .slice(0, 5)
-  out.headingsText = [...document.querySelectorAll("h1,h2,h3")]
+  out.lanes = [...document.querySelectorAll(SEL.lane)]
     .filter(shown)
-    .map((e) => clean(e.textContent))
+    .map((e) => ({
+      stage: e.getAttribute("data-stage"),
+      heading: clean(e.querySelector("h1,h2,h3")?.textContent),
+    }))
   const dialog = document.querySelector("[role=dialog]")
   out.dialog = dialog ? clean(dialog.textContent).slice(0, 80) : null
   out.imgs = [...document.querySelectorAll("img")]
@@ -424,13 +445,11 @@ function probe() {
     }
     out.cvRect = rect(cv)
   }
-  const editor = document.querySelector("[data-paper-editor]")
+  const editor = document.querySelector(SEL.paperEditor)
   if (editor && shown(editor)) out.editorRect = rect(editor)
   const aside = document.querySelector("aside")
   if (aside && shown(aside)) out.sidebarRect = rect(aside)
-  out.coachFloat = Boolean(
-    document.querySelector("[data-coach-float], [data-coach-float-pill]")
-  )
+  out.coachFloat = Boolean(document.querySelector(SEL.coachFloat))
   if (composer) {
     let panel = null
     for (
@@ -501,4 +520,4 @@ function probe() {
   return out
 }
 
-export const probeSource = `(${probe.toString()})()`
+export const probeSource = `(${probe.toString()})(${JSON.stringify(SEL)})`

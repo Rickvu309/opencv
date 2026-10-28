@@ -109,6 +109,7 @@ export function CoachDock({
             />
           }
           aria-label={menuOpen ? "Close menu" : "Add"}
+          data-primary-action
         >
           {menuOpen ? <X /> : <Plus />}
         </DropdownMenuTrigger>

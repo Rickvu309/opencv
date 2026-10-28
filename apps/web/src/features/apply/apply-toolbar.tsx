@@ -37,6 +37,7 @@ export function ApplyHeader({ onNewJob }: { onNewJob: () => void }) {
       <Button
         type="button"
         variant="ghost"
+        data-primary-action
         className="h-7 gap-1.5 rounded-[6px] px-2 text-[13px] font-normal"
         onClick={onNewJob}
       >

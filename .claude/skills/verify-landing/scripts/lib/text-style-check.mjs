@@ -3,14 +3,12 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { srgbToOklch } from "../../../verify-app-ui/scripts/lib/oklch.mjs"
+import { FILES } from "./assumes.mjs"
 import { verdict } from "./verdict.mjs"
 
-const landingDir = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../../../../apps/web/src/features/landing/design"
-)
-const landingStylesPath = join(landingDir, "landing.styles.json")
-const landingOmittedPath = join(landingDir, "landing.omitted.json")
+const repo = join(dirname(fileURLToPath(import.meta.url)), "../../../../..")
+const landingStylesPath = join(repo, FILES.styles)
+const landingOmittedPath = join(repo, FILES.omitted)
 
 // Contrast floors. Each entry must still describe a live mismatch; a match fails the check.
 const TEXT_STYLE_EXCEPTIONS = [

@@ -336,6 +336,7 @@ export function PaperLibrary({
         <Button
           type="button"
           variant={dialogOpen ? "outline" : "glow"}
+          data-primary-action
           onClick={() => setMode({ type: "new", step: "kind" })}
         >
           New

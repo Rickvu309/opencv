@@ -1,17 +1,17 @@
-// Checks 28 and 32: the primary action of each surface. Each judges every surface whose primary button was found;
-// a surface with no matching button is named as not judged, so it never hides a small or unreachable button elsewhere.
+// Checks 28 and 32: the primary action of each surface, found by SEL.primary, the data-primary-action marker the app
+// sets on it. Each judges every surface whose marker was found; a surface with no marker is named as not judged, so it
+// never hides a small or unreachable action elsewhere.
+import { SEL } from "./assumes.mjs"
 import { judged } from "./check-util.mjs"
-import { PRIMARY } from "./tour.mjs"
 
-// The Paper primary is New on the library; the CV editor has had no Save or Make mine since #396.
+const noMarker = (k) => `${k} (no ${SEL.primary} on the screen)`
+
+// The Paper primary is New on the library; the CV editor has had no Save or Make mine since #396. Coach's primary is
+// the composer's Add icon control, so only the labelled button surfaces are measured here.
 export function primaryButtonCheck(d) {
-  const need = {
-    apply: [d.apply, PRIMARY.apply],
-    paper: [d.paper, PRIMARY.paper],
-    pitch: [d.pitchEdit, PRIMARY.pitch],
-  }
-  const found = Object.entries(need).map(([k, [s, re]]) => {
-    const b = s.buttons.find((x) => re.test(x.label))
+  const need = { apply: d.apply, paper: d.paper, pitch: d.pitchEdit }
+  const found = Object.entries(need).map(([k, s]) => {
+    const b = s.buttons.find((x) => x.primary)
     return { k, label: b?.label, h: b?.h }
   })
   return judged(
@@ -22,9 +22,7 @@ export function primaryButtonCheck(d) {
     found
       .map((f) => (f.label ? `${f.k} "${f.label}" ${f.h}px` : `${f.k} none`))
       .join(", "),
-    found
-      .filter((f) => !f.label)
-      .map((f) => `${f.k} (no button matched ${need[f.k][1]})`)
+    found.filter((f) => !f.label).map((f) => noMarker(f.k))
   )
 }
 
@@ -32,12 +30,7 @@ export function keyboardPrimaryCheck(d) {
   const tabs = Object.entries(d.tabs).map(
     ([k, v]) => `${k}:${v.reached ?? "none in 60"}`
   )
-  const lost = Object.entries(d.tabs)
-    .filter(
-      ([k, v]) =>
-        !v.reached && !d[k].buttons.some((b) => PRIMARY[k].test(b.label))
-    )
-    .map(([k]) => k)
+  const lost = Object.keys(d.tabs).filter((k) => !(d[k].primaryMarks > 0))
   return judged(
     "32",
     "keyboard-reaches-primary",
@@ -46,6 +39,6 @@ export function keyboardPrimaryCheck(d) {
       .filter(([k]) => !lost.includes(k))
       .every(([, v]) => v.reached && v.reached <= 30),
     `Tab presses to the primary action: ${tabs.join(" ")}`,
-    lost.map((k) => `${k} (no button matched ${PRIMARY[k]})`)
+    lost.map(noMarker)
   )
 }

@@ -3,23 +3,13 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { PALETTE_DIR, ROUTES_DIR, featureFolders } from "./assumes.mjs"
+
 export const repo = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../.."
 )
 export const SURFACES = ["coach", "paper", "cv", "apply", "pitch"]
-// Signed-in app source. Pitch and Proof live in coming-soon (features/pitch went in #389).
-export const FEATURE_DIRS = [
-  "coach",
-  "paper",
-  "apply",
-  "coming-soon",
-  "inbox",
-  "settings",
-  "command-palette",
-  "commands",
-  "app-shell",
-]
 
 // Returns the files and the folders that do not exist, so a check can go STALE instead of passing on nothing.
 export function sourceFiles(dirs) {
@@ -39,9 +29,8 @@ export function sourceFiles(dirs) {
   }
   return { files, missing }
 }
-export const featureDirs = () =>
-  FEATURE_DIRS.map((d) => `apps/web/src/features/${d}`)
-export const appSourceDirs = () => [...featureDirs(), "apps/web/src/routes"]
+export const featureDirs = featureFolders
+export const appSourceDirs = () => [...featureDirs(), ROUTES_DIR]
 export const scanProblem = (...scans) => {
   const missing = scans.flatMap((scan) => scan.missing)
   if (missing.length) return `source folder missing: ${missing.join(", ")}`
@@ -147,7 +136,7 @@ export function context(d) {
   }
 }
 
-export function paletteScan(dir = "apps/web/src/features/command-palette") {
+export function paletteScan(dir = PALETTE_DIR) {
   const scan = sourceFiles([dir])
   const uses = scan.files.some((file) =>
     /duration-\(--duration-panel\)/.test(read(file))

@@ -36,6 +36,7 @@ export function PitchPage() {
             type="button"
             disabled={pending}
             aria-busy={pending}
+            data-primary-action
             onClick={() => void notify()}
             className="mt-8 h-10 w-fit gap-2 rounded-[10px] bg-foreground pr-3.5 pl-4 text-[14px] font-semibold text-background ring-0 hover:bg-foreground/90"
           >
