@@ -19,7 +19,7 @@ export const ERROR_CODES = {
   COMPANY_REQUIRED: "COMPANY_REQUIRED",
 } as const
 
-export type ErrorDetail = {
+type ErrorDetail = {
   code: string
   message: string
   resetsAt?: string
@@ -30,12 +30,12 @@ export type ErrorDetail = {
   jobId?: string
 }
 
-export type ErrorEnvelope = {
+type ErrorEnvelope = {
   ok: false
   error: ErrorDetail
 }
 
-export type SuccessEnvelope<T> = {
+type SuccessEnvelope<T> = {
   ok: true
   data: T
 }

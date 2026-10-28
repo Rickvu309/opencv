@@ -48,9 +48,9 @@ export const paperCheckSchema = z
   })
   .strict()
 
-export const paperPageChoiceSchema = z.enum(["unset", "keep"])
+const paperPageChoiceSchema = z.enum(["unset", "keep"])
 
-export const paperViewSchema = z
+const paperViewSchema = z
   .object({
     id: paperIdSchema,
     name: z.string(),
@@ -69,7 +69,7 @@ export const paperViewSchema = z
 
 export type PaperView = z.output<typeof paperViewSchema>
 
-export const paperFileSchema = z
+const paperFileSchema = z
   .object({
     id: fileIdSchema,
     name: z.string(),
@@ -81,7 +81,7 @@ export const paperFileSchema = z
 
 export type PaperFile = z.output<typeof paperFileSchema>
 
-export const paperPagesSchema = z
+const paperPagesSchema = z
   .object({
     docId: paperIdSchema,
     pages: z.number().int().positive(),

@@ -1,6 +1,6 @@
 import { jobContract, type Plan } from "@workspace/domain"
-import type { FetchJobPosting } from "../apply/fetch-posting.js"
-import { fetchJobPosting } from "../apply/fetch-posting.js"
+import type { FetchJobPosting } from "./fetch-posting.js"
+import { fetchJobPosting } from "./fetch-posting.js"
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import {

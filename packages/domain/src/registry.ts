@@ -5,7 +5,7 @@ import type { IdempotencyPolicy } from "./contract.js"
 
 export type CoachAccess = "auto" | "confirm" | "never"
 
-export type PersonActor = {
+type PersonActor = {
   type: "person"
   userId: UserId
 }
@@ -30,7 +30,7 @@ export function coachActor(userId: string, chatId: string): CoachActor {
 
 export type Actor = PersonActor | CoachActor
 
-export type SubjectKind = "chat" | "paper" | "job" | "inbox" | "account"
+type SubjectKind = "chat" | "paper" | "job" | "inbox" | "account"
 
 export type ActivityDraft = {
   subjectKind: SubjectKind

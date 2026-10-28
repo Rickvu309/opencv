@@ -8,7 +8,7 @@ import {
   type PaperContentKind,
 } from "./paper.js"
 
-export const cvTemplateIdSchema = z.enum([
+const cvTemplateIdSchema = z.enum([
   "internship",
   "product",
   "service",
@@ -16,7 +16,7 @@ export const cvTemplateIdSchema = z.enum([
   "photo",
 ])
 
-export const cvContactSchema = z
+const cvContactSchema = z
   .object({
     email: z.string(),
     phone: z.string(),
@@ -25,7 +25,7 @@ export const cvContactSchema = z
   })
   .strict()
 
-export const cvEducationSchema = z
+const cvEducationSchema = z
   .object({
     school: z.string(),
     degree: z.string(),
@@ -34,7 +34,7 @@ export const cvEducationSchema = z
   })
   .strict()
 
-export const cvExperienceSchema = z
+const cvExperienceSchema = z
   .object({
     role: z.string(),
     company: z.string(),
@@ -44,14 +44,14 @@ export const cvExperienceSchema = z
   })
   .strict()
 
-export const cvSkillGroupSchema = z
+const cvSkillGroupSchema = z
   .object({
     label: z.string(),
     items: z.array(z.string()),
   })
   .strict()
 
-export const cvProjectSchema = z
+const cvProjectSchema = z
   .object({
     name: z.string(),
     detail: z.string(),
@@ -80,15 +80,10 @@ export const letterDocumentV1Schema = z
   })
   .strict()
 
-export const proofViewModeSchema = z.enum(["chain", "timeline"])
-export const proofStepTypeSchema = z.enum([
-  "context",
-  "action",
-  "outcome",
-  "note",
-])
+const proofViewModeSchema = z.enum(["chain", "timeline"])
+const proofStepTypeSchema = z.enum(["context", "action", "outcome", "note"])
 
-export const proofPhotoSchema = z
+const proofPhotoSchema = z
   .object({
     id: z.string(),
     url: z.string(),
@@ -96,7 +91,7 @@ export const proofPhotoSchema = z
   })
   .strict()
 
-export const proofStepSchema = z
+const proofStepSchema = z
   .object({
     id: z.string(),
     type: proofStepTypeSchema,
@@ -108,7 +103,7 @@ export const proofStepSchema = z
   })
   .strict()
 
-export const proofDocumentV1Schema = z
+const proofDocumentV1Schema = z
   .object({
     viewMode: proofViewModeSchema,
     title: z.string(),
@@ -124,17 +119,17 @@ export type CvExperience = z.infer<typeof cvExperienceSchema>
 export type CvSkillGroup = z.infer<typeof cvSkillGroupSchema>
 export type CvProject = z.infer<typeof cvProjectSchema>
 export type CvDocument = z.infer<typeof cvDocumentV1Schema>
-export type LetterDocument = z.infer<typeof letterDocumentV1Schema>
+type LetterDocument = z.infer<typeof letterDocumentV1Schema>
 export type ProofViewMode = z.infer<typeof proofViewModeSchema>
 export type ProofStepType = z.infer<typeof proofStepTypeSchema>
 export type ProofPhoto = z.infer<typeof proofPhotoSchema>
 export type ProofStep = z.infer<typeof proofStepSchema>
 export type ProofDocument = z.infer<typeof proofDocumentV1Schema>
 
-export type PaperDocument =
+type PaperDocument =
   CvDocument | CvBlockDocument | LetterDocument | ProofDocument
 
-export type PaperContentDecode =
+type PaperContentDecode =
   { ok: true; data: PaperDocument } | { ok: false; message: string }
 
 const schemaByKind = {
@@ -143,9 +138,6 @@ const schemaByKind = {
 } as const
 
 /** Prototype transport leftovers. Importer-only — never a write path. */
-export const LEGACY_CV_PREFIX = "cv:v1:"
-export const LEGACY_PROOF_PREFIX = "proof:v1:"
-
 export function emptyCvDocument(): CvDocument {
   return {
     templateId: "internship",
@@ -168,17 +160,6 @@ export function emptyProofDocument(): ProofDocument {
     viewMode: "chain",
     title: "",
     steps: [],
-  }
-}
-
-export function emptyPaperDocument(kind: PaperContentKind): PaperDocument {
-  switch (kind) {
-    case "cv":
-      return emptyCvDocument()
-    case "letter":
-      return emptyLetterDocument()
-    case "proof":
-      return emptyProofDocument()
   }
 }
 
@@ -219,68 +200,6 @@ export function decodePaperContent(
   }
 
   return { ok: true, data: parsed.data }
-}
-
-function parseLegacyJson(raw: string, label: string): unknown {
-  try {
-    return JSON.parse(raw) as unknown
-  } catch {
-    throw new Error(`Legacy ${label} content is not valid JSON`)
-  }
-}
-
-/**
- * One-way importer from the prototype's prefixed strings (and plain
- * markdown Letters). Used to seed jsonb documents. Not a write path.
- */
-export function importLegacyPaperContent(raw: string): {
-  kind: PaperContentKind
-  contentVersion: number
-  content: PaperDocument
-} {
-  if (raw.startsWith(LEGACY_CV_PREFIX)) {
-    const decoded = decodePaperContent(
-      "cv",
-      PAPER_CONTENT_VERSION,
-      parseLegacyJson(raw.slice(LEGACY_CV_PREFIX.length), "CV")
-    )
-    if (!decoded.ok) {
-      throw new Error(decoded.message)
-    }
-    return {
-      kind: "cv",
-      contentVersion: PAPER_CONTENT_VERSION,
-      content: decoded.data,
-    }
-  }
-
-  if (raw.startsWith(LEGACY_PROOF_PREFIX)) {
-    const decoded = decodePaperContent(
-      "proof",
-      PAPER_CONTENT_VERSION,
-      parseLegacyJson(raw.slice(LEGACY_PROOF_PREFIX.length), "Proof")
-    )
-    if (!decoded.ok) {
-      throw new Error(decoded.message)
-    }
-    return {
-      kind: "proof",
-      contentVersion: PAPER_CONTENT_VERSION,
-      content: decoded.data,
-    }
-  }
-
-  const decoded = decodePaperContent("letter", PAPER_CONTENT_VERSION, {
-    markdown: raw,
-  })
-  if (!decoded.ok) {
-    throw new Error(decoded.message)
-  }
-  return {
-    kind: "letter",
-    contentVersion: PAPER_CONTENT_VERSION,
-    content: decoded.data,
-  }
 }
 
 export function isCvDocument(value: unknown): value is CvDocument {

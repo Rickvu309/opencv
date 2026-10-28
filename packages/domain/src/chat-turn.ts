@@ -1,7 +1,9 @@
 import { z } from "zod"
 
-import { coachReceiptDetailSchema } from "./chat-messages.js"
-import { reversalDescriptorSchema } from "./commands.js"
+import {
+  coachReceiptDetailSchema,
+  reversalDescriptorSchema,
+} from "./chat-messages.js"
 import { commands, type ContractCommandName } from "./contract-commands.js"
 import type { CommandEnvelope } from "./envelope.js"
 import { queries, type QueryName } from "./queries.js"
@@ -33,7 +35,7 @@ const commandEnvelopeSchema = z.custom<CommandEnvelope>(
  * The SSE contract of one Coach turn (ADR-0010, item 4). The `type` is the
  * SSE `event:` name and the rest of the object is the JSON `data:` payload.
  */
-export const chatTurnEventSchema = z.discriminatedUnion("type", [
+const chatTurnEventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("message-start"), chatId: z.string() }).strict(),
   z.object({ type: z.literal("text-delta"), text: z.string() }).strict(),
   z.object({ type: z.literal("step"), label: z.string() }).strict(),
@@ -79,7 +81,7 @@ export const chatTurnEventSchema = z.discriminatedUnion("type", [
 ])
 
 export type ChatTurnEvent = z.output<typeof chatTurnEventSchema>
-export type ChatTurnEventType = ChatTurnEvent["type"]
+type ChatTurnEventType = ChatTurnEvent["type"]
 export type ChatTurnEventOf<T extends ChatTurnEventType> = Extract<
   ChatTurnEvent,
   { type: T }

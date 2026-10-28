@@ -1,5 +1,5 @@
 /** Lexicographic alphabet for fractional-index `position` keys. */
-export const POSITION_DIGITS =
+const POSITION_DIGITS =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 const BASE = POSITION_DIGITS.length

@@ -1,5 +1,4 @@
 import {
-  QUERY_NAMES,
   commands,
   jobContract,
   jobQueries,
@@ -117,8 +116,7 @@ describe("job contract", () => {
         .list()
         .queries.map((query) => query.name)
         .sort()
-    ).toEqual([...QUERY_NAMES].sort())
-    expect(Object.keys(queries).sort()).toEqual([...QUERY_NAMES].sort())
+    ).toEqual(Object.keys(queries).sort())
   })
 
   it("keeps the contract policy and the registry on the same names", () => {

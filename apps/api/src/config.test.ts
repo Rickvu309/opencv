@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  DEFAULT_COACH_MODEL_FREE,
-  DEFAULT_COACH_MODEL_LIGHT,
-  DEFAULT_COACH_MODEL_MAX,
-} from "@workspace/domain"
+import { DEFAULT_COACH_MODELS } from "@workspace/domain"
 
 import {
   apiPortFromEnv,
@@ -155,11 +151,11 @@ describe("openRouterBaseUrlFromEnv", () => {
 
 describe("coachModelForModeFromEnv", () => {
   it("reads the per-mode vars and falls back to the mode defaults", () => {
-    expect(coachModelForModeFromEnv("free", {})).toBe(DEFAULT_COACH_MODEL_FREE)
+    expect(coachModelForModeFromEnv("free", {})).toBe(DEFAULT_COACH_MODELS.free)
     expect(coachModelForModeFromEnv("light", {})).toBe(
-      DEFAULT_COACH_MODEL_LIGHT
+      DEFAULT_COACH_MODELS.light
     )
-    expect(coachModelForModeFromEnv("max", {})).toBe(DEFAULT_COACH_MODEL_MAX)
+    expect(coachModelForModeFromEnv("max", {})).toBe(DEFAULT_COACH_MODELS.max)
     expect(
       coachModelForModeFromEnv("max", {
         COACH_MODEL_MAX: "  anthropic/claude-fable-5  ",

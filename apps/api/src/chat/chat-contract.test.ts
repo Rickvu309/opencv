@@ -1,5 +1,4 @@
 import {
-  QUERY_NAMES,
   chatContract,
   coachActor,
   personActor,
@@ -219,7 +218,7 @@ describe("chat contract", () => {
   })
 
   it("keeps the chat reads on the query table", () => {
-    expect(QUERY_NAMES).toContain("chat.list")
-    expect(QUERY_NAMES).toContain("chat.get")
+    expect(Object.keys(queries)).toContain("chat.list")
+    expect(Object.keys(queries)).toContain("chat.get")
   })
 })

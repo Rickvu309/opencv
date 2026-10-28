@@ -2,10 +2,10 @@ import { CHAT_TITLE_MAX } from "./chat.js"
 import { DEFAULT_CHAT_TITLE } from "./chat-messages.js"
 
 /** First-line History title taken from the User's opening message. */
-export const FIRST_LINE_TITLE_MAX = 36
+const FIRST_LINE_TITLE_MAX = 36
 
 /** Generated titles stay short enough to scan in History. */
-export const AUTO_CHAT_TITLE_MAX = 48
+const AUTO_CHAT_TITLE_MAX = 48
 
 const CLAIMED_ACTION_START =
   /^(?:i\s+)?(?:successfully\s+)?(?:moved|created|renamed|updated|starred|unstarred|added|set|linked|posted|wrote|edited|saved|changed|done)\b/i
@@ -16,12 +16,12 @@ const GREETING_ONLY =
 const LEAD_IN =
   /^(?:please\s+)?(?:(?:can|could|would)\s+you\s+)?(?:help\s+(?:me|us)\s+(?:to\s+)?)?(?:should\s+i\s+|can\s+i\s+|could\s+i\s+|do\s+i\s+|how\s+do\s+i\s+|how\s+can\s+i\s+|what(?:'s| is)\s+|i\s+want\s+to\s+|i\s+need\s+to\s+)?/i
 
-export type ChatTitleTurn = {
+type ChatTitleTurn = {
   userText: string
   coachText: string
 }
 
-export type ChatTitleCandidate = {
+type ChatTitleCandidate = {
   role: "user" | "coach"
   text: string
   status?: string | null
@@ -37,16 +37,16 @@ export function titleFrom(text: string) {
   return `${clean.slice(0, FIRST_LINE_TITLE_MAX)}…`
 }
 
-export function isDefaultChatTitle(title: string) {
+function isDefaultChatTitle(title: string) {
   return title.trim() === DEFAULT_CHAT_TITLE
 }
 
-export function isFirstLineChatTitle(title: string, firstUserText: string) {
+function isFirstLineChatTitle(title: string, firstUserText: string) {
   return title.trim() === titleFrom(firstUserText)
 }
 
 /** Default or first-line titles may be replaced. User-renamed titles may not. */
-export function isAutoTitleEligible(title: string, firstUserText: string) {
+function isAutoTitleEligible(title: string, firstUserText: string) {
   return isDefaultChatTitle(title) || isFirstLineChatTitle(title, firstUserText)
 }
 
@@ -55,7 +55,7 @@ export function isAutoTitleEligible(title: string, firstUserText: string) {
  * status. Aborted and error turns do not count, so a later successful turn
  * can still title the Chat.
  */
-export function hasCompletedCoachTurn(messages: readonly ChatTitleCandidate[]) {
+function hasCompletedCoachTurn(messages: readonly ChatTitleCandidate[]) {
   return messages.some(
     (message) =>
       message.role === "coach" &&
@@ -78,7 +78,7 @@ export function shouldAutoTitleChat(input: {
   return { userText: firstUser.text }
 }
 
-export function sanitizeChatTitle(raw: string): string {
+function sanitizeChatTitle(raw: string): string {
   const stripped = raw
     .replace(/!/g, "")
     .replace(/^[\s"'“”‘’`]+|[\s"'“”‘’`]+$/g, "")

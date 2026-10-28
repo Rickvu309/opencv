@@ -1,4 +1,4 @@
-import { coachActor, inboxDetailSchema, personActor } from "@workspace/domain"
+import { coachActor, personActor, type InboxDetail } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -333,9 +333,11 @@ describe("inbox commands", () => {
           input: { threadId, hint: "a later day" },
           actor,
         })
-        const drafted = inboxDetailSchema.parse(
-          await registry.read("inbox.get", { threadId }, actor)
-        )
+        const drafted = (await registry.read(
+          "inbox.get",
+          { threadId },
+          actor
+        )) as InboxDetail
         expect(drafted.draft?.body).toContain("Thanks for reaching out")
         expect(drafted.draft?.body).not.toContain("Apply")
         const rows = await db

@@ -10,9 +10,9 @@ import {
 } from "./paper-codecs.js"
 import type { PaperContentKind } from "./paper.js"
 
-export type DiffLineKind = "eq" | "del" | "add"
+type DiffLineKind = "eq" | "del" | "add"
 
-export type DiffLine = {
+type DiffLine = {
   kind: DiffLineKind
   text: string
 }
@@ -25,7 +25,7 @@ export type DiffHunk = {
 
 const LINE_CAP = 180
 
-export function truncateDiffLine(text: string, cap = LINE_CAP) {
+function truncateDiffLine(text: string, cap = LINE_CAP) {
   const trimmed = text.replace(/\s+/g, " ").trim()
   if (trimmed.length <= cap) return trimmed
   return `${trimmed.slice(0, cap - 1).trimEnd()}…`

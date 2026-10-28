@@ -1,4 +1,18 @@
-import type { ApplyCard } from "@workspace/domain"
+export type ApplyCard = {
+  id: string
+  title: string
+  company: string
+  note: string
+  stage: "inbox" | "prep" | "sent" | "live" | "closed"
+  position: string
+  starred: boolean
+  jobUrl: string | null
+  demo: boolean
+  trackDate: string
+  trackKind: "interview" | "deadline" | "followup" | "applied"
+  createdAt: string
+  updatedAt: string
+}
 
 function iso(daysAgo: number) {
   return new Date(Date.UTC(2026, 7, 25 - daysAgo, 12, 0, 0)).toISOString()

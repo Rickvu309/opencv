@@ -13,7 +13,7 @@ export type MailThread = {
   messages: MailMessage[]
 }
 
-export type MailDraft = {
+type MailDraft = {
   body: string
   times: string[]
 }
@@ -28,7 +28,7 @@ export type MailMessage = {
   sentAt: string
 }
 
-export type MailEventInput = {
+type MailEventInput = {
   title: string
   start: string
   end: string
