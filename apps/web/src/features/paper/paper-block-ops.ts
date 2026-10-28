@@ -39,6 +39,34 @@ export function isStarterKind(kind: CvSectionKind) {
   return KEEPERS.has(kind)
 }
 
+/** The placeholder the editor shows while a starter section has no stored blocks. */
+export function starterBlock(kind: CvSectionKind, id: string): CvBlock | null {
+  if (kind === "experience") {
+    return {
+      id,
+      type: "experience-entry",
+      role: "",
+      company: "",
+      period: "",
+      bullets: [],
+    }
+  }
+  if (kind === "education") {
+    return {
+      id,
+      type: "education-entry",
+      school: "",
+      degree: "",
+      period: "",
+      detail: "",
+    }
+  }
+  if (kind === "skills") {
+    return { id, type: "skills-group", label: "", items: [] }
+  }
+  return null
+}
+
 function prune(document: CvBlockDocument): CvBlockDocument {
   return {
     ...document,
@@ -86,7 +114,8 @@ export const blockMakers: Record<BlockType, () => CvBlock> = Object.fromEntries(
 
 function withPlainText(block: CvBlock, text: string): CvBlock {
   if (!text) return block
-  if (block.type === "text" || block.type === "heading") return { ...block, text }
+  if (block.type === "text" || block.type === "heading")
+    return { ...block, text }
   if (block.type === "bulleted-list" || block.type === "numbered-list") {
     return { ...block, items: [{ id: newId(), text }] }
   }
@@ -245,6 +274,34 @@ function sectionOf(document: CvBlockDocument, blockId: string) {
   )
 }
 
+function headingSectionId(document: CvBlockDocument, overId: string) {
+  if (!overId.startsWith("section:") || overId.startsWith("section:ghost-")) {
+    return null
+  }
+  const sectionId = overId.slice("section:".length)
+  return document.sections.some((section) => section.id === sectionId)
+    ? sectionId
+    : null
+}
+
+function unsavedStarterSection(document: CvBlockDocument, overId: string) {
+  if (!overId.startsWith("draft-")) return null
+  const sectionId = overId.slice("draft-".length)
+  const section = document.sections.find((item) => item.id === sectionId)
+  if (!section || section.blocks.some((item) => item.id === overId)) return null
+  return sectionId
+}
+
+function blocksOnHeading(
+  section: CvBlockDocument["sections"][number],
+  block: CvBlock
+) {
+  const kept = section.blocks.filter((item) => item.id !== block.id)
+  if (section.blocks.length > 0) return [...kept, block]
+  const starter = starterBlock(section.kind, `draft-${section.id}`)
+  return starter ? [starter, block] : [block]
+}
+
 export function dropBlock(
   document: CvBlockDocument,
   activeId: string,
@@ -265,7 +322,10 @@ export function dropBlock(
         ...document,
         sections: document.sections.map((section) =>
           section.id === from.id
-            ? { ...section, blocks: reorder(section.blocks, oldIndex, newIndex) }
+            ? {
+                ...section,
+                blocks: reorder(section.blocks, oldIndex, newIndex),
+              }
             : section
         ),
       }
@@ -286,22 +346,30 @@ export function dropBlock(
 
   if (overId.startsWith("section:ghost-")) {
     const kind = overId.slice("section:ghost-".length) as CvSectionKind
+    const id = newId()
+    const starter = starterBlock(kind, `draft-${id}`)
     return {
       ...stripped,
-      sections: [...stripped.sections, { id: newId(), kind, blocks: [block] }],
+      sections: [
+        ...stripped.sections,
+        { id, kind, blocks: starter ? [starter, block] : [block] },
+      ],
     }
   }
 
-  if (overId.startsWith("section:")) {
-    const sectionId = overId.slice("section:".length)
-    if (!stripped.sections.some((section) => section.id === sectionId)) {
-      return document
-    }
+  const sectionId =
+    headingSectionId(document, overId) ??
+    unsavedStarterSection(document, overId)
+  if (sectionId) {
+    const original = document.sections.find(
+      (section) => section.id === sectionId
+    )
+    if (!original) return document
     return {
       ...stripped,
       sections: stripped.sections.map((section) =>
         section.id === sectionId
-          ? { ...section, blocks: [...section.blocks, block] }
+          ? { ...section, blocks: blocksOnHeading(original, block) }
           : section
       ),
     }
