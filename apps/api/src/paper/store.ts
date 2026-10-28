@@ -146,13 +146,6 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
   ) {
     return { ...view, previousDocument: view.document }
   }
-  if (current.contentVersion !== input.contentVersion) {
-    throw new CommandError(
-      ERROR_CODES.CONFLICT,
-      "This document changed. Reload it and try again.",
-      { document: view }
-    )
-  }
   const updatedAt = new Date()
   const contentVersion = current.contentVersion + 1
   const written = await getDb()

@@ -53,11 +53,18 @@ describe("paper.replace", () => {
             document: second,
           },
           actor,
-        })
+        }),
+        "PGlite is one connection, so this sequential call is the race the UPDATE version predicate protects"
       ).rejects.toMatchObject({
         name: "CommandError",
         code: ERROR_CODES.CONFLICT,
         message: "This document changed. Reload it and try again.",
+        detail: {
+          document: {
+            contentVersion: doc.contentVersion + 1,
+            document: { summary: "First body" },
+          },
+        },
       })
 
       const read = (await registry.read(
