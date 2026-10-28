@@ -1,6 +1,6 @@
 import type { JobView, PaperView } from "@workspace/domain"
-import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 
 import { PaperLetterEditor, PaperLetterStart } from "./paper-letter.tsx"
@@ -177,5 +177,182 @@ describe("Cover letter", () => {
     expect(
       screen.queryByRole("button", { name: "Skip" })
     ).not.toBeInTheDocument()
+  })
+})
+
+type Recorded = { url: string; body: unknown; keepalive?: boolean }
+
+function installEditorFetch() {
+  const calls: Recorded[] = []
+  vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input)
+    const body = typeof init?.body === "string" ? JSON.parse(init.body) : null
+    calls.push({ url, body, keepalive: init?.keepalive })
+    const version = contentVersionOf(body)
+    if (url.includes("/api/commands/paper.replace")) {
+      return Promise.resolve(ok({ ...letter, contentVersion: version + 1 }))
+    }
+    return Promise.resolve(ok({}))
+  })
+  return calls
+}
+
+function contentVersionOf(body: unknown) {
+  if (!body || typeof body !== "object" || !("input" in body)) return 1
+  const input = (body as { input?: { contentVersion?: number } }).input
+  return input?.contentVersion ?? 1
+}
+
+function savedMarkdown(calls: Recorded[]) {
+  const save = calls.find((call) => call.url.includes("paper.replace"))
+  const input = (
+    save?.body as { input?: { document?: { markdown?: string } } } | undefined
+  )?.input
+  return { save, markdown: input?.document?.markdown }
+}
+
+function caretOffset(node: HTMLElement) {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return -1
+  if (!node.contains(selection.anchorNode)) return -1
+  const range = selection.getRangeAt(0)
+  const before = range.cloneRange()
+  before.selectNodeContents(node)
+  before.setEnd(range.endContainer, range.endOffset)
+  return before.toString().length
+}
+
+function placeCaret(node: HTMLElement, offset: number) {
+  const text = node.firstChild
+  if (!text) throw new Error("letter has no text")
+  const range = document.createRange()
+  range.setStart(text, offset)
+  range.collapse(true)
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+}
+
+function renderLetter() {
+  return render(
+    <PaperLetterEditor
+      doc={letter}
+      job={job}
+      cvName="PM track CV"
+      onBack={() => undefined}
+    />
+  )
+}
+
+async function advance(ms: number) {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(ms)
+  })
+}
+
+describe("Letter edits survive autosave and leaving", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("keeps the caret when autosave returns a new content version", async () => {
+    const calls = installEditorFetch()
+    renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    expect(box.textContent).toBe("I write clearly.")
+    box.focus()
+    box.textContent = "abcXdef"
+    placeCaret(box, 4)
+    fireEvent.input(box)
+    expect(caretOffset(box)).toBe(4)
+
+    await advance(700)
+
+    expect(savedMarkdown(calls).markdown).toBe("abcXdef")
+    expect(box.textContent).toBe("abcXdef")
+    expect(caretOffset(box)).toBe(4)
+  })
+
+  it("saves a word typed 200 ms before the editor unmounts", async () => {
+    const calls = installEditorFetch()
+    const view = renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    box.focus()
+    box.textContent = "harbor"
+    fireEvent.input(box)
+
+    await advance(200)
+    expect(savedMarkdown(calls).markdown).toBeUndefined()
+    view.unmount()
+    await advance(0)
+
+    expect(savedMarkdown(calls).markdown).toBe("harbor")
+    expect(savedMarkdown(calls).save?.keepalive).not.toBe(true)
+  })
+
+  it("saves a word with keepalive when the page hides", async () => {
+    const calls = installEditorFetch()
+    renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    box.focus()
+    box.textContent = "harbor"
+    fireEvent.input(box)
+
+    await advance(200)
+    await act(async () => {
+      window.dispatchEvent(new Event("pagehide"))
+    })
+    await advance(0)
+
+    const saved = savedMarkdown(calls)
+    expect(saved.markdown).toBe("harbor")
+    expect(saved.save?.keepalive).toBe(true)
+  })
+
+  it("shows a later copy of the letter when the person has not typed", () => {
+    installEditorFetch()
+    const view = renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    const next: PaperView = {
+      ...letter,
+      contentVersion: 4,
+      document: { markdown: "I write clearly. harbor" },
+    }
+    view.rerender(
+      <PaperLetterEditor
+        doc={next}
+        job={job}
+        cvName="PM track CV"
+        onBack={() => undefined}
+      />
+    )
+    expect(box.textContent).toBe("I write clearly. harbor")
+  })
+
+  it("keeps typed text when a stale copy of the letter arrives", () => {
+    installEditorFetch()
+    const view = renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    box.focus()
+    box.textContent = "harbor"
+    fireEvent.input(box)
+    const next: PaperView = {
+      ...letter,
+      contentVersion: 4,
+      document: { markdown: "I write clearly." },
+    }
+    view.rerender(
+      <PaperLetterEditor
+        doc={next}
+        job={job}
+        cvName="PM track CV"
+        onBack={() => undefined}
+      />
+    )
+    expect(box.textContent).toBe("harbor")
   })
 })

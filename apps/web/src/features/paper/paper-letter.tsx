@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { keywordGap, type JobView, type PaperView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -25,6 +25,29 @@ import { editorEditedLabel } from "./paper-templates.ts"
 
 function unreadableLink(value: string) {
   return /docs\.google\.com|linkedin\.com/i.test(value)
+}
+
+function caretOffset(node: HTMLElement) {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return null
+  if (!node.contains(selection.anchorNode)) return null
+  const range = selection.getRangeAt(0)
+  const before = range.cloneRange()
+  before.selectNodeContents(node)
+  before.setEnd(range.endContainer, range.endOffset)
+  return before.toString().length
+}
+
+function placeCaret(node: HTMLElement, offset: number) {
+  const text = node.firstChild
+  if (!text) return
+  const range = document.createRange()
+  const clamped = Math.max(0, Math.min(offset, text.textContent?.length ?? 0))
+  range.setStart(text, clamped)
+  range.collapse(true)
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
 }
 
 function markdownOf(document: unknown) {
@@ -273,7 +296,9 @@ export function PaperLetterEditor({
   onBack: () => void
 }) {
   const run = useRunCommand()
+  const queryClient = useQueryClient()
   const editorRef = useRef<HTMLDivElement>(null)
+  const dirtyRef = useRef(false)
   const [markdown, setMarkdown] = useState(markdownOf(doc.document))
   const [updatedAt, setUpdatedAt] = useState(doc.updatedAt)
   const [hiddenGap, setHiddenGap] = useState(false)
@@ -282,9 +307,10 @@ export function PaperLetterEditor({
     docId: doc.id,
     initialVersion: doc.contentVersion,
     toDocument: (next) => ({ markdown: next }),
-    onSaved: () => {
+    onSaved: (saved) => {
       setUpdatedAt(new Date().toISOString())
       setConflict(false)
+      queryClient.setQueryData(paperGetKey(doc.id), saved)
     },
     onConflict: () => setConflict(true),
     onError: (error) => {
@@ -293,20 +319,46 @@ export function PaperLetterEditor({
       )
     },
   })
+  const scheduleRef = useRef(schedule)
+  scheduleRef.current = schedule
+  const adoptRef = useRef(adopt)
+  adoptRef.current = adopt
+  const caretRef = useRef<number | null>(null)
+  const onLetterInput = useCallback(() => {
+    const node = editorRef.current
+    const next = node?.textContent ?? ""
+    dirtyRef.current = true
+    caretRef.current = node ? caretOffset(node) : null
+    setMarkdown(next)
+    scheduleRef.current(next)
+  }, [])
   const gap = hiddenGap
     ? null
     : keywordGap(markdown, job?.posting?.requirements ?? "")
 
   useEffect(() => {
+    if (dirtyRef.current) return
+    const next = markdownOf(doc.document)
+    if (doc.contentVersion === versionRef.current && next === markdown) return
+    adoptRef.current(doc.contentVersion)
+    setMarkdown(next)
+  }, [doc, markdown])
+
+  useEffect(() => {
     const node = editorRef.current
-    if (!node || document.activeElement === node) return
-    if (node.textContent !== markdown) node.textContent = markdown
+    if (!node || node.textContent === markdown) return
+    const focused = document.activeElement === node
+    if (focused && dirtyRef.current && node.textContent !== "") return
+    const offset = focused ? (caretRef.current ?? markdown.length) : null
+    node.textContent = markdown
+    if (offset != null) placeCaret(node, offset)
   }, [markdown])
 
   async function reloadLetter() {
     try {
       const next = await getPaper(doc.id)
       const text = markdownOf(next.document)
+      dirtyRef.current = false
       adopt(next.contentVersion)
       setMarkdown(text)
       const node = editorRef.current
@@ -373,11 +425,7 @@ export function PaperLetterEditor({
           <PaperLetterArticle
             doc={doc}
             editorRef={editorRef}
-            onInput={() => {
-              const next = editorRef.current?.textContent ?? ""
-              setMarkdown(next)
-              schedule(next)
-            }}
+            onInput={onLetterInput}
           />
         </div>
         {gap ? (

@@ -28,6 +28,9 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 - **Read back.** `agent-browser eval "fetch('$API_URL/api/paper/' + location.pathname.split('/').pop(),{credentials:'include'}).then(r=>r.text())"` contains `Edited for verify.`
 - **Proof.** `agent-browser screenshot "$EVIDENCE_DIR/paper-edit-saved.png"` of the reloaded editor, plus the api read above.
 - **Letter.** Create a job with `POST /api/commands/job.create` and body `{"title":"Associate PM","company":"Northwind"}`. Open `/app/paper`, choose `Cover letter`, choose the button `Associate PM, Northwind`, choose `Start blank`. The URL is `/app/paper/{id}`. Fill the letter textbox with `One line for verify.` Wait 2 s. Reload. The line is still there. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-letter-saved.png"`.
+- **Letter caret.** Click the letter textbox, put the caret inside a word, and type one letter. Wait 2 s. The new letter stays inside that word and the caret stays just after it. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-letter-caret.png"`.
+- **Letter leave.** Type a word and choose `Paper` within 300 ms. Choose the cover letter card. The word is in the letter. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-letter-left.png"`.
+- **Letter reload.** Type another word and reload within 300 ms. The word is still in the letter and in `GET /api/paper/{id}`. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-letter-reloaded.png"`.
 
 ## Gotchas
 

@@ -20,6 +20,8 @@ type Options<T> = {
  * the queue drains. One save at a time. A completion older than the latest scheduled edit
  * updates the version and does not count as the current document. A conflict
  * drops the pending edit and refuses further schedules until adopt().
+ * pagehide sends the pending edit with keepalive, because a reload cancels
+ * a normal fetch before it lands.
  */
 export function usePaperAutosave<T>({
   docId,
@@ -38,6 +40,7 @@ export function usePaperAutosave<T>({
   const epochRef = useRef(0)
   const appliedEpochRef = useRef(0)
   const conflictRef = useRef(false)
+  const unloadRef = useRef(false)
   const onSavedRef = useRef(onSaved)
   const onConflictRef = useRef(onConflict)
   const onErrorRef = useRef(onError)
@@ -66,7 +69,10 @@ export function usePaperAutosave<T>({
               contentVersion: versionRef.current,
               document: toDocumentRef.current(next),
             },
-            { refresh: false }
+            {
+              refresh: false,
+              ...(unloadRef.current ? { keepalive: true } : {}),
+            }
           )
           saves += 1
           if (sentEpoch < appliedEpochRef.current) continue
@@ -107,7 +113,18 @@ export function usePaperAutosave<T>({
     flushRef.current = flush
   }, [flush])
   useEffect(() => {
+    const onPageHide = () => {
+      unloadRef.current = true
+      if (timerRef.current != null) {
+        window.clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+      void flushRef.current()
+    }
+    window.addEventListener("pagehide", onPageHide)
     return () => {
+      window.removeEventListener("pagehide", onPageHide)
+      if (document.visibilityState === "hidden") unloadRef.current = true
       if (timerRef.current != null) window.clearTimeout(timerRef.current)
       void flushRef.current()
     }
