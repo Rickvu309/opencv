@@ -140,6 +140,17 @@ export function PaperLibrary({
     }
   }
 
+  async function discardImport(created: PaperView) {
+    try {
+      if (created.sourceFileId) {
+        await run("paper.deleteFile", { fileId: created.sourceFileId })
+      }
+      await run("paper.delete", { docId: created.id })
+    } catch {
+      // The server may already have dropped the row.
+    }
+  }
+
   async function onImport(file: File) {
     importRequest.current?.abort()
     const request = new AbortController()
@@ -148,7 +159,10 @@ export function PaperLibrary({
     setImportState({ type: "importing", name: file.name })
     try {
       const created = await importPaperFile(file, request.signal)
-      if (request.signal.aborted) return
+      if (request.signal.aborted) {
+        await discardImport(created)
+        return
+      }
       void refreshQueries(queryClient, [
         { query: "paper.list" },
         { query: "paper.files" },
@@ -170,10 +184,6 @@ export function PaperLibrary({
     importRequest.current?.abort()
     importRequest.current = null
     setImportState({ type: "idle" })
-    void refreshQueries(queryClient, [
-      { query: "paper.list" },
-      { query: "paper.files" },
-    ])
   }
 
   async function startBlank() {

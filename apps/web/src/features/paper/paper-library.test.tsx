@@ -68,6 +68,57 @@ describe("Paper library", () => {
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
+  it("deletes the uploaded file when a cancelled import still returns", async () => {
+    const created = {
+      ...cv("sample"),
+      sourceFileId: "22222222-2222-4222-8222-222222222222" as PaperView["sourceFileId"],
+    }
+    let finish: (value: PaperView) => void = () => undefined
+    vi.mocked(importPaperFile).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        })
+    )
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      calls.push(String(input))
+      return Promise.resolve(
+        Response.json({
+          ok: true,
+          data: { id: created.id, fileId: created.sourceFileId },
+        })
+      )
+    })
+    const onOpen = vi.fn()
+    render(
+      <PaperLibrary
+        docs={[]}
+        files={[]}
+        loading={false}
+        error={null}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />
+    )
+    const input = document.querySelector('input[type="file"]')
+    if (!input) throw new Error("Missing import input")
+    fireEvent.change(input, {
+      target: {
+        files: [new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })],
+      },
+    })
+    expect(await screen.findByRole("status")).toHaveTextContent("Linh_CV.pdf")
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+    await act(async () => {
+      finish(created)
+      await Promise.resolve()
+    })
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(calls.some((url) => url.includes("paper.deleteFile"))).toBe(true)
+    expect(screen.getByText("Start a document")).toBeInTheDocument()
+  })
+
   it("shows a failed import and lets the user retry with another file", async () => {
     vi.mocked(importPaperFile).mockRejectedValueOnce(
       new Error("Pages files aren't supported. Try a PDF or Word file.")

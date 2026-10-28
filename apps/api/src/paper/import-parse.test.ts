@@ -5,7 +5,7 @@ import {
   IMPORT_PHONE_MESSAGE,
   emptyCvDocument,
 } from "@workspace/domain"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 
 import { files, paperDocs } from "../db/schema.js"
 import {
@@ -15,10 +15,11 @@ import {
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
-import { textDocx, textPdf } from "./import-fixtures.test.js"
+import { pagedPdf, textDocx, textPdf } from "./import-fixtures.test.js"
 import {
   IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
+  importParsers,
 } from "./import-parse.js"
 import { IMPORT_SIZE_MESSAGE } from "./store.js"
 
@@ -222,7 +223,7 @@ describe("paper import", () => {
     const unknown = await postFile(
       app,
       owner.cookie,
-      Buffer.from("nope"),
+      Buffer.from([0, 1, 2, 3, 255]),
       "sample.xyz",
       "application/octet-stream"
     )
@@ -283,6 +284,239 @@ describe("paper import", () => {
 
     expect(await db.select().from(paperDocs)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
+    await client.close()
+  })
+})
+
+const realPdfText = importParsers.pdfText
+const realDocxText = importParsers.docxText
+
+afterEach(() => {
+  importParsers.timeoutMs = 10_000
+  importParsers.pdfText = realPdfText
+  importParsers.docxText = realDocxText
+})
+
+describe("paper import bounds", () => {
+  it("reads only the first 20 pages of a 200-page PDF", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Page",
+      email: "page-import@example.com",
+    })
+    const pages = Array.from({ length: 200 }, (_, index) => {
+      if (index === 0) return "FIRST-PAGE"
+      if (index === 19) return "CAP-PAGE"
+      if (index === 20) return "PAST-CAP"
+      if (index === 199) return "LAST-PAGE"
+      return ""
+    })
+    const response = await postFile(
+      app,
+      owner.cookie,
+      pagedPdf(pages),
+      "many.pdf",
+      "application/pdf"
+    )
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as { data: Stored }
+    const text = JSON.stringify(body.data.document)
+    expect(text).toContain("FIRST-PAGE")
+    expect(text).toContain("CAP-PAGE")
+    expect(text).not.toContain("PAST-CAP")
+    expect(text).not.toContain("LAST-PAGE")
+    await client.close()
+  })
+
+  it("returns the failure sentence when the parser exceeds the deadline", async () => {
+    importParsers.timeoutMs = 40
+    importParsers.pdfText = () =>
+      new Promise((resolve) => {
+        setTimeout(() => resolve("LATE"), 400)
+      })
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Slow",
+      email: "slow-import@example.com",
+    })
+    const response = await postFile(
+      app,
+      owner.cookie,
+      textPdf("Campus newsletter"),
+      "slow.pdf",
+      "application/pdf"
+    )
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({
+      error: { message: IMPORT_FAILED_MESSAGE },
+    })
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(files)).toEqual([])
+    await client.close()
+  })
+
+  it("refuses a declared length over the cap before parsing", async () => {
+    let parsed = false
+    importParsers.pdfText = async () => {
+      parsed = true
+      return "Secret"
+    }
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Huge",
+      email: "huge-import@example.com",
+    })
+    const response = await app.request("/api/paper/import", {
+      method: "POST",
+      headers: {
+        Origin: testWebOrigin,
+        Cookie: owner.cookie,
+        "content-length": "9000000",
+      },
+      body: formFile(textPdf("Secret"), "sample.pdf", "application/pdf"),
+    })
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({
+      error: { message: IMPORT_SIZE_MESSAGE },
+    })
+    expect(parsed).toBe(false)
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(files)).toEqual([])
+    await client.close()
+  })
+
+  it("leaves no document and no file when the request is cancelled", async () => {
+    let release: (text: string) => void = () => undefined
+    let markStarted: () => void = () => undefined
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve
+    })
+    importParsers.pdfText = () =>
+      new Promise((resolve) => {
+        markStarted()
+        release = resolve
+      })
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Stop",
+      email: "stop-import@example.com",
+    })
+    const controller = new AbortController()
+    const pending = Promise.resolve(
+      app.request("/api/paper/import", {
+        method: "POST",
+        headers: { Origin: testWebOrigin, Cookie: owner.cookie },
+        body: formFile(
+          textPdf("Campus newsletter"),
+          "slow.pdf",
+          "application/pdf"
+        ),
+        signal: controller.signal,
+      })
+    )
+    await started
+    controller.abort()
+    release("Campus newsletter")
+    await pending.catch(() => undefined)
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(files)).toEqual([])
+    await client.close()
+  })
+
+  it("stores at most 200 KB of DOCX text and refuses a zip with too many entries", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Doc",
+      email: "doc-import@example.com",
+    })
+    const capped = await postFile(
+      app,
+      owner.cookie,
+      textDocx(`${"A".repeat(200_000)}DOCX-TAIL`),
+      "long.docx",
+      WORD
+    )
+    expect(capped.status).toBe(200)
+    const cappedBody = (await capped.json()) as { data: Stored }
+    const text = JSON.stringify(cappedBody.data.document)
+    expect(text).toContain("A")
+    expect(text).not.toContain("DOCX-TAIL")
+
+    const bomb = await postFile(
+      app,
+      owner.cookie,
+      textDocx("Hello zip cap", 300),
+      "bomb.docx",
+      WORD
+    )
+    expect(bomb.status).toBe(400)
+    expect(await bomb.json()).toMatchObject({
+      error: { message: IMPORT_FAILED_MESSAGE },
+    })
+    expect(await db.select().from(files)).toHaveLength(1)
+    await client.close()
+  })
+
+  it("sniffs PDF, DOCX, and text bytes instead of the declared type", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Sniff",
+      email: "sniff-import@example.com",
+    })
+
+    const pdf = await postFile(
+      app,
+      owner.cookie,
+      textPdf("Campus newsletter"),
+      "sample.pdf",
+      ""
+    )
+    expect(pdf.status).toBe(200)
+    const pdfBody = (await pdf.json()) as { data: Stored }
+    expect(JSON.stringify(pdfBody.data.document)).toContain("Campus newsletter")
+
+    const docx = await postFile(
+      app,
+      owner.cookie,
+      textDocx("Weekly newsletter for students"),
+      "notes.docx",
+      ""
+    )
+    expect(docx.status).toBe(200)
+    const docxBody = (await docx.json()) as { data: Stored }
+    expect(JSON.stringify(docxBody.data.document)).toContain(
+      "Weekly newsletter for students"
+    )
+
+    const renamed = await postFile(
+      app,
+      owner.cookie,
+      Buffer.from("Plain sentence from a text file"),
+      "notes.pdf",
+      "application/pdf"
+    )
+    expect(renamed.status).toBe(200)
+    const renamedBody = (await renamed.json()) as { data: Stored }
+    expect(JSON.stringify(renamedBody.data.document)).toContain(
+      "Plain sentence from a text file"
+    )
+
+    const text = await postFile(
+      app,
+      owner.cookie,
+      Buffer.from("First paragraph"),
+      "notes.txt",
+      ""
+    )
+    expect(text.status).toBe(200)
+    const textBody = (await text.json()) as { data: Stored }
+    expect(JSON.stringify(textBody.data.document)).toContain("First paragraph")
     await client.close()
   })
 })

@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState, type RefObject } from "react"
-import type { CvBlockDocument, PaperId, PaperView } from "@workspace/domain"
+import {
+  findImportChecks,
+  hasPhoneRun,
+  type CvBlockDocument,
+  type PaperId,
+  type PaperView,
+} from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -15,40 +21,23 @@ function openChecks(checks: PaperView["checks"]) {
   )
 }
 
-function blockFilled(document: CvBlockDocument, blockId: string) {
-  for (const section of document.sections) {
-    for (const block of section.blocks) {
-      if (block.id !== blockId) continue
-      if (
-        block.type === "experience-entry" ||
-        block.type === "education-entry"
-      ) {
-        return block.period.trim().length > 0
-      }
-      if (block.type === "text" || block.type === "heading") {
-        return block.text.trim().length > 0
-      }
-    }
-  }
-  return false
-}
-
 export function filledImportCheckIds(
   document: CvBlockDocument,
   checks: PaperView["checks"]
 ) {
+  const stillOpen = findImportChecks(document)
   const ids: string[] = []
   for (const check of checks) {
     if (check.resolved === true) continue
-    if (check.kind === "phone" && document.header.phone.trim())
+    if (check.kind === "phone" && hasPhoneRun(document.header.phone)) {
       ids.push(check.id)
-    if (
-      check.kind === "dates" &&
-      check.blockId &&
-      blockFilled(document, check.blockId)
-    ) {
-      ids.push(check.id)
+      continue
     }
+    if (check.kind !== "dates" || !check.blockId) continue
+    const open = stillOpen.some(
+      (item) => item.kind === "dates" && item.blockId === check.blockId
+    )
+    if (!open) ids.push(check.id)
   }
   return ids
 }

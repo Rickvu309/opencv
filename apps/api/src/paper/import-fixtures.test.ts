@@ -1,15 +1,6 @@
 /** Test-only PDF and DOCX builders. Production modules do not import this file. */
 
-export function textPdf(text: string): Buffer {
-  const safe = text.replace(/[()\\]/g, " ")
-  const stream = `BT /F1 24 Tf 72 720 Td (${safe}) Tj ET\n`
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Count 1 /Kids [3 0 R] >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
-    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}endstream`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-  ]
+function pdfDocument(objects: string[]): Buffer {
   let body = "%PDF-1.4\n"
   const offsets = [0]
   for (let index = 0; index < objects.length; index += 1) {
@@ -23,6 +14,34 @@ export function textPdf(text: string): Buffer {
   }
   body += `${table}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
   return Buffer.from(body, "utf8")
+}
+
+export function textPdf(text: string): Buffer {
+  return pagedPdf([text])
+}
+
+/** One page per string. An empty string is a blank page. */
+export function pagedPdf(pages: string[]): Buffer {
+  const count = Math.max(pages.length, 1)
+  const fontId = 3 + count * 2
+  const kids: string[] = []
+  const objects = ["<< /Type /Catalog /Pages 2 0 R >>", ""]
+  for (let index = 0; index < count; index += 1) {
+    const pageId = 3 + index * 2
+    const contentId = pageId + 1
+    kids.push(`${pageId} 0 R`)
+    const safe = (pages[index] ?? "").replace(/[()\\]/g, " ")
+    const stream = safe ? `BT /F1 24 Tf 72 720 Td (${safe}) Tj ET\n` : ""
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ${contentId} 0 R /Resources << /Font << /F1 ${fontId} 0 R >> >> >>`
+    )
+    objects.push(
+      `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}endstream`
+    )
+  }
+  objects[1] = `<< /Type /Pages /Count ${count} /Kids [${kids.join(" ")}] >>`
+  objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+  return pdfDocument(objects)
 }
 
 function crc32(data: Buffer) {
@@ -109,7 +128,7 @@ function zipStore(entries: { name: string; data: Buffer }[]) {
   return Buffer.concat([...parts, directory, end])
 }
 
-export function textDocx(paragraph: string) {
+export function textDocx(paragraph: string, extraFiles = 0) {
   const safe = paragraph
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -120,11 +139,18 @@ export function textDocx(paragraph: string) {
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`
-  return zipStore([
+  const entries = [
     { name: "[Content_Types].xml", data: Buffer.from(types) },
     { name: "_rels/.rels", data: Buffer.from(rels) },
     { name: "word/document.xml", data: Buffer.from(document) },
-  ])
+  ]
+  for (let index = 0; index < extraFiles; index += 1) {
+    entries.push({
+      name: `word/extra-${index}.xml`,
+      data: Buffer.from("<extra/>"),
+    })
+  }
+  return zipStore(entries)
 }
 
 const runner = (

@@ -200,4 +200,59 @@ describe("import check bar", () => {
     expect(screen.queryByText("Phone missing")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument()
   })
+
+  it("settles the phone check and leaves dates open until the period has a year", async () => {
+    const dated = {
+      ...record,
+      document: {
+        ...cvDocument,
+        sections: [
+          {
+            ...cvDocument.sections[0]!,
+            blocks: [
+              {
+                ...cvDocument.sections[0]!.blocks[0]!,
+                period: "Recently",
+              },
+            ],
+          },
+        ],
+      },
+    }
+    const calls = installFetch(dated)
+    render(editor(dated))
+    expect(screen.getByText("Phone missing")).toBeInTheDocument()
+    expect(screen.getByText("Dates missing")).toBeInTheDocument()
+
+    vi.useFakeTimers()
+    const phone = screen.getByRole("textbox", { name: "Phone" })
+    phone.textContent = "555 0100"
+    fireEvent.input(phone)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+
+    const dismissed = calls
+      .filter((call) => call.url.includes("paper.dismissCheck"))
+      .map((call) => call.input.checkId)
+    expect(dismissed).toEqual(["phone"])
+    expect(screen.queryByText("Phone missing")).not.toBeInTheDocument()
+    expect(screen.getByText("Dates missing")).toBeInTheDocument()
+    expect(screen.getByText("1 to check")).toBeInTheDocument()
+
+    const period = screen.getByRole("textbox", { name: "Period" })
+    period.textContent = "2024"
+    fireEvent.input(period)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    expect(
+      calls.some(
+        (call) =>
+          call.url.includes("paper.dismissCheck") &&
+          call.input.checkId === "dates"
+      )
+    ).toBe(true)
+    expect(screen.queryByText("Dates missing")).not.toBeInTheDocument()
+  })
 })

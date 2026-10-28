@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks"
 import { randomBytes } from "node:crypto"
 
 import {
@@ -33,8 +34,16 @@ import { CommandError } from "../registry/errors.js"
 import {
   IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
+  classifyImport,
+  mediaTypeForImport,
   parseImportFile,
 } from "./import-parse.js"
+
+const importAbort = new AsyncLocalStorage<AbortSignal>()
+
+export function withImportSignal<T>(signal: AbortSignal, run: () => Promise<T>) {
+  return importAbort.run(signal, run)
+}
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
@@ -466,13 +475,6 @@ function avatarMediaType(bytes: Buffer) {
   throw new CommandError(ERROR_CODES.FILE_UNSUPPORTED, "Upload an image.")
 }
 
-const IMPORT_TYPES = new Set([
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-  "application/json",
-])
-
 export async function saveFile(input: {
   userId: UserId
   name: string
@@ -489,20 +491,23 @@ export async function saveFile(input: {
         : IMPORT_SIZE_MESSAGE
     )
   }
-  const pagesFile =
-    input.name.toLowerCase().endsWith(".pages") ||
-    input.mediaType === "application/vnd.apple.pages"
-  if (
-    input.purpose === "import" &&
-    (pagesFile || !IMPORT_TYPES.has(input.mediaType))
-  ) {
-    throw new CommandError(
-      ERROR_CODES.FILE_UNSUPPORTED,
-      pagesFile ? IMPORT_PAGES_MESSAGE : IMPORT_GENERIC_MESSAGE
-    )
+  let mediaType = input.mediaType
+  if (input.purpose === "import") {
+    const kind = classifyImport({
+      name: input.name,
+      mediaType: input.mediaType,
+      bytes: input.bytes,
+    })
+    if (kind === "pages" || kind === "unknown") {
+      throw new CommandError(
+        ERROR_CODES.FILE_UNSUPPORTED,
+        kind === "pages" ? IMPORT_PAGES_MESSAGE : IMPORT_GENERIC_MESSAGE
+      )
+    }
+    mediaType = mediaTypeForImport(kind)
   }
-  const mediaType =
-    input.purpose === "avatar" ? avatarMediaType(input.bytes) : input.mediaType
+  const storedType =
+    input.purpose === "avatar" ? avatarMediaType(input.bytes) : mediaType
   const id = createId()
   await getDb()
     .insert(files)
@@ -510,7 +515,7 @@ export async function saveFile(input: {
       id,
       userId: input.userId,
       name: input.name.slice(0, 200) || "file",
-      mediaType,
+      mediaType: storedType,
       byteSize: input.bytes.byteLength,
       purpose: input.purpose,
       bytes: input.bytes,
@@ -598,6 +603,10 @@ export async function importPaper(actor: Actor, fileId: FileId) {
         : ERROR_CODES.FILE_UNSUPPORTED,
       parsed.message
     )
+  }
+  if (importAbort.getStore()?.aborted) {
+    await removeImportFile(actor.userId, file.id)
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
   }
   let created: PaperView
   try {
