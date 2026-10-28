@@ -106,9 +106,8 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 #### 6. Merge and clean up
 
-- Merge only with squash: `gh pr merge --squash`.
-- An agent running under the owner's account (`@quanvu309`) merges its own PR with `gh pr merge <pr#> --squash --admin` only after `scripts/review-pr.sh` prints OK and the gates lane report at the exact head is green; never before. The ruleset's one-approval rule cannot be met by the only human approving their own agent's PR, so `--admin` is the bypass; it skips the ruleset, so it also needs an independent review with no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or a result of `HUMAN REQUIRED`.
-- `scripts/review-pr.sh` prints a patch id that a rebase keeps as long as the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so a rebase or a fresh `main` that keeps the patch id needs no new review or verify round, only a rerun of `heavy -- scripts/review-pr.sh` (free when the merge tree is unchanged). Before merging, rerun it if `origin/main` is no longer the commit its OK line printed, and merge with `--match-head-commit <head sha>`.
+- Merge only with squash. An agent under the owner's account (`@quanvu309`) merges its own PR with `heavy -- scripts/merge-pr.sh <pr#>` from the main checkout, never by hand. It refuses another author's PR, reruns `scripts/review-pr.sh`, and requires a comment or review that names the current patch id and says `Independent review` (plus `verify` when the PR changes `apps/`): `review-pr.sh: OK (patch id <id>, main <sha>). Independent review: <who>, approved. verify-<skill>: <result>`. Then it posts the `gates/review-pr` status and runs `gh pr merge --squash --admin --match-head-commit <head>`. `--dry-run` stops before those two.
+- `--admin` skips the ruleset, so the independent review must have no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or `HUMAN REQUIRED`.
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
 
@@ -125,7 +124,7 @@ For the agent that reviews PRs. Run from the main checkout, for every PR marked 
 2. Result `HUMAN REQUIRED` (exit 2): the PR has `needs-human-review` or is a mass deletion. **Do not merge.** Comment your findings and leave it to a human.
 3. Result `FAIL` (exit 1), including a committed real `.env` file or a requested-changes review: `gh pr review <pr#> --comment --body "FAIL: <what to fix>"`. Don't merge.
 4. Result `OK` (exit 0): check the verify-opencv evidence for the changed flow, then read the diff (scope, tests, no secrets; look closely at `package.json` scripts, `scripts/`, `.githooks/`, `.github/`).
-5. All good: `gh pr review <pr#> --comment --body "review-pr.sh: OK"`, then merge with `gh pr merge <pr#> --squash`. Otherwise comment what to fix. (One account: GitHub won't take an approval or "request changes" from the PR author.)
+5. All good: post the evidence comment (format in section 6), then `heavy -- scripts/merge-pr.sh <pr#>`. Otherwise comment what to fix. (One account: GitHub won't take an approval or "request changes" from the PR author.)
 
 Full checklist: `docs/git-workflow/review-and-approval.md`.
 
