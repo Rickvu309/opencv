@@ -18,6 +18,36 @@
         "Help",
         "Log in",
         "Get started"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#EAEFFA",
+            "#D6DFF6",
+            "#E7E3F9",
+            "#D0DAF5",
+            "#BCCAF1",
+            "#DCD6F6",
+            "#E6EBF9",
+            "#CED9F4",
+            "#E9E5F9"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.55, 0.6],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        }
       ]
     },
     {
@@ -26,12 +56,49 @@
       "texts": [
         "Get your butt in your dream seat.",
         "Tailor your CV for every job. Track every application. Prep with Coach."
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#E4E9F6",
+            "#C3CFEE",
+            "#DCD9F2",
+            "#B9C8EC",
+            "#8EA4E0",
+            "#C7C2EC",
+            "#D9E1F4",
+            "#AFC0EA",
+            "#E2E0F5"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.62, 0.55],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/landing/aLOFO.png",
+          "mode": "cover"
+        }
       ]
     },
     {
       "id": "FVT93",
       "name": "Logos",
-      "texts": ["PEOPLE USING OPENCV HAVE INTERVIEWED AT"]
+      "texts": ["PEOPLE USING OPENCV HAVE INTERVIEWED AT"],
+      "fills": []
     },
     {
       "id": "XWAX6",
@@ -40,7 +107,8 @@
         "You’ve done more than your CV says.",
         "opencv helps",
         "you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
-      ]
+      ],
+      "fills": []
     },
     {
       "id": "IEtud",
@@ -52,7 +120,8 @@
         "Save jobs from any link and see what to do next on one board.",
         "A coach that does the work",
         "Ask Coach to tailor, prep or follow up. It reads your work first."
-      ]
+      ],
+      "fills": []
     },
     {
       "id": "MGDsx",
@@ -66,6 +135,42 @@
         "Import a CV",
         "Cover letters",
         "One-page check"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#E9E7F4",
+            "#CFCAEB",
+            "#E4E8F5",
+            "#C6C0E8",
+            "#A79FDD",
+            "#C9D1EE",
+            "#ECEAF6",
+            "#D1CCEC",
+            "#E6E9F5"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.38, 0.5],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/landing/jcbPS.png",
+          "mode": "cover"
+        }
       ]
     },
     {
@@ -80,6 +185,42 @@
         "Job details",
         "Calendar",
         "Interview prep"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#E2EEF3",
+            "#BFDCE8",
+            "#DCE6F4",
+            "#B3D3E3",
+            "#86B6D3",
+            "#BBCDEA",
+            "#E4EFF4",
+            "#BCD8E6",
+            "#DFE8F4"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.6, 0.45],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/landing/qSuLB.png",
+          "mode": "cover"
+        }
       ]
     },
     {
@@ -94,6 +235,42 @@
         "Prep an interview",
         "Write a letter",
         "Email updates"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#E4F1F2",
+            "#C6E3E6",
+            "#DCE3F5",
+            "#BCDDE2",
+            "#93C4CF",
+            "#B9C6EE",
+            "#E7F2F3",
+            "#C3DFE4",
+            "#E0E6F6"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.45, 0.55],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/landing/Vm0eJ.png",
+          "mode": "cover"
+        }
       ]
     },
     {
@@ -103,6 +280,80 @@
         "Works with your apps",
         "Bring in your mail, calendar, files and profiles. Coach uses them to keep Apply up to date.",
         "See all integrations"
+      ],
+      "fills": [
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/gmail.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/google-calendar.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/zoom.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/google-meet.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/microsoft-teams.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/drive.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/microsoft-onedrive.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/notion.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/figma.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/canva.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/linkedin.png",
+          "mode": "contain"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/logos/github.png",
+          "mode": "contain"
+        }
       ]
     },
     {
@@ -116,6 +367,76 @@
         "Turn a CV line into evidence.",
         "Pitch",
         "Your CV and Proofs on one page."
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#E3F0EC",
+            "#C2E1D8",
+            "#DDE8F2",
+            "#B5DACF",
+            "#8CC3B6",
+            "#BCD3EA",
+            "#E6F1EE",
+            "#C0DED6",
+            "#DFE9F3"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.6, 0.5],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/landing/FCDYX.png",
+          "mode": "cover"
+        },
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#E8E6F6",
+            "#CDC8EE",
+            "#E1E8F6",
+            "#C3BDEB",
+            "#A49BE0",
+            "#C2CFEE",
+            "#EAE8F6",
+            "#CBC6EC",
+            "#E3E9F6"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.4, 0.5],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "images/landing/RAl5t.png",
+          "mode": "cover"
+        }
       ]
     },
     {
@@ -130,6 +451,48 @@
         "UX Designer, Seoul",
         "opencv helps people go from a first note to an offer. From first jobs to senior roles.",
         "Read all stories"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#F3F4FA",
+            "#E4E8F6",
+            "#EEF0F8",
+            "#E0E5F5",
+            "#CBD5F0",
+            "#E3E1F4",
+            "#F4F5FA",
+            "#E6E9F6",
+            "#F1F0F8"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.35, 0.5],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "https://images.unsplash.com/photo-1736092540139-6b7f8202f888?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTMwMDI5Nzl8&ixlib=rb-4.1.0&q=80&w=1080",
+          "mode": "cover"
+        },
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "https://images.unsplash.com/photo-1625400743989-e4f5eecf6338?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTMwMDI4OTh8&ixlib=rb-4.1.0&q=80&w=1080",
+          "mode": "cover"
+        }
       ]
     },
     {
@@ -139,6 +502,36 @@
         "Be the obvious hire. Start today.",
         "Get started",
         "See a sample"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#EAEFFA",
+            "#D6DFF6",
+            "#E7E3F9",
+            "#D0DAF5",
+            "#BCCAF1",
+            "#DCD6F6",
+            "#E6EBF9",
+            "#CED9F4",
+            "#E9E5F9"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.55, 0.6],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        }
       ]
     },
     {
@@ -163,7 +556,8 @@
         "LinkedIn",
         "© 2026 opencv",
         "Privacy    Terms"
-      ]
+      ],
+      "fills": []
     }
   ]
 }
