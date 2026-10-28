@@ -1,8 +1,5 @@
-import {
-  LANDING_HEADLINE_LINES,
-  LANDING_HERO_SHOT,
-  LANDING_SUBHEAD,
-} from "./landing-copy.ts"
+import { LandingFigure } from "./figures/landing-figure.tsx"
+import { LANDING_HEADLINE_LINES, LANDING_SUBHEAD } from "./landing-copy.ts"
 
 export function LandingHero() {
   return (
@@ -15,16 +12,7 @@ export function LandingHero() {
         <p className="landing-subhead">{LANDING_SUBHEAD}</p>
       </div>
       <div className="landing-panel landing-gradient" data-crop="hero">
-        <img
-          src={LANDING_HERO_SHOT.src}
-          alt={LANDING_HERO_SHOT.alt}
-          width={LANDING_HERO_SHOT.width}
-          height={LANDING_HERO_SHOT.height}
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-          className="landing-screen"
-        />
+        <LandingFigure id="apply-board" />
       </div>
     </section>
   )

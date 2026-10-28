@@ -69,7 +69,9 @@ describe("landing page", () => {
 
     expect(headline).toHaveTextContent(HEADLINE)
     expect(headline.querySelectorAll("br")).toHaveLength(1)
-    expect(screen.getByText(SUBHEAD)).toBeInTheDocument()
+    expect(document.querySelector(".landing-subhead")).toHaveTextContent(
+      SUBHEAD
+    )
     expect(router.state.location.pathname).toBe("/")
   })
 

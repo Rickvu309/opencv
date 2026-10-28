@@ -3,13 +3,14 @@ import { Link } from "@tanstack/react-router"
 
 import { OpenCvMark } from "@/features/app-shell/app-logo.tsx"
 
+import { LogoMarquee } from "./figures/oc/logo-marquee.tsx"
+import { Reveal, RevealText } from "./figures/oc/reveal.tsx"
 import { landingButton } from "./landing-button.ts"
 
 import {
   LANDING_CUSTOMERS_LABEL,
   LANDING_CUSTOMERS_LINE,
   LANDING_LOGO_LABEL,
-  LANDING_LOGOS,
   LANDING_PRIMARY_LABEL,
   LANDING_STORIES,
   LANDING_SAMPLE_LABEL,
@@ -26,11 +27,7 @@ export function LandingLogos() {
       aria-labelledby="landing-logos"
       className="landing-section landing-stack landing-logos"
     >
-      <ul className="landing-logo-row">
-        {LANDING_LOGOS.map((name) => (
-          <li key={name}>{name}</li>
-        ))}
-      </ul>
+      <LogoMarquee />
       <h2 id="landing-logos" className="landing-kicker">
         {LANDING_LOGO_LABEL}
       </h2>
@@ -148,10 +145,9 @@ export function LandingClose() {
       className="landing-section landing-stack"
     >
       <p className="landing-close">
-        Be the obvious hire. <br />
-        Start today.
+        <RevealText text={"Be the obvious hire.\nStart today."} />
       </p>
-      <div className="landing-close-actions">
+      <Reveal className="landing-close-actions" delay={300}>
         <a
           href={documentHref("/sign-in")}
           className={landingButton({ tone: "primary", size: "close" })}
@@ -165,7 +161,7 @@ export function LandingClose() {
         >
           {LANDING_SAMPLE_LABEL}
         </Link>
-      </div>
+      </Reveal>
     </section>
   )
 }

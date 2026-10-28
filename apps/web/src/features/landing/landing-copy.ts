@@ -50,18 +50,22 @@ export const LANDING_NAV_LINKS: readonly LandingNavLink[] = [
   { label: "Help", href: "/help" },
 ]
 
-export type LandingShot = {
-  src: string
-  width: number
-  height: number
-  alt: string
-}
+export type LandingFigureId =
+  "apply-board" | "paper" | "apply" | "coach" | "proof" | "pitch"
 
-export const LANDING_HERO_SHOT: LandingShot = {
-  src: "/landing/apply-board.webp",
-  width: 1600,
-  height: 1000,
-  alt: "The Apply board with jobs in Saved, Applied and Interview columns, each card showing its company, city and date.",
+export const LANDING_FIGURE_LABELS: Record<LandingFigureId, string> = {
+  "apply-board":
+    "The Apply board with jobs in Saved, Applied and Interview columns, each card showing its company, city and date.",
+  paper:
+    "The Paper editor with Linh Nguyen's Junior Marketing CV open on a single page, with experience, education and skills.",
+  apply:
+    "An Apply job page for an Associate PM intern, with the role details, an interview date, a linked CV and an interview prep checklist.",
+  coach:
+    "A Coach chat asking for a CV for a cosmetics brand, with steps ticking off as Coach reads the CV and the posting and drafts bullet rewrites.",
+  proof:
+    "The Proof page, with a CV line about growing followers by 38 percent backed by a rising chart and a manager confirmation.",
+  pitch:
+    "The Pitch page, with a public profile for Linh Nguyen showing a Download CV button, proof charts and a view count.",
 }
 
 export type LandingBenefit = {
@@ -94,7 +98,7 @@ export type LandingProduct = {
   id: "paper" | "apply" | "coach"
   title: string
   body: string
-  shot: LandingShot
+  figure: LandingFigureId
   features: readonly [string, string, string, string]
 }
 
@@ -103,12 +107,7 @@ export const LANDING_PRODUCTS: readonly LandingProduct[] = [
     id: "paper",
     title: "Paper",
     body: "Write your CV and letters in a clean editor. Coach tailors them to each job and keeps it to one page.",
-    shot: {
-      src: "/landing/paper.webp",
-      width: 1600,
-      height: 1000,
-      alt: "The Paper editor with Linh Nguyen's Junior Marketing CV open on a single page, with experience, education and skills.",
-    },
+    figure: "paper",
     features: [
       "Tailored CVs",
       "Import a CV",
@@ -120,24 +119,14 @@ export const LANDING_PRODUCTS: readonly LandingProduct[] = [
     id: "apply",
     title: "Apply",
     body: "Save any job from a link, move it from Saved to Offer, and never miss an interview or a deadline.",
-    shot: {
-      src: "/landing/apply.webp",
-      width: 1600,
-      height: 1000,
-      alt: "An Apply job page for an Associate PM intern, with the role details, an interview date, a linked CV and an interview prep checklist.",
-    },
+    figure: "apply",
     features: ["Board and list", "Job details", "Calendar", "Interview prep"],
   },
   {
     id: "coach",
     title: "Coach",
     body: "Ask in plain words. Coach reads your CV and the job, then does the work while you watch.",
-    shot: {
-      src: "/landing/coach.webp",
-      width: 1600,
-      height: 1000,
-      alt: "A Coach chat asking for a CV for a cosmetics brand, with steps ticking off as Coach reads the CV and the posting and drafts bullet rewrites.",
-    },
+    figure: "coach",
     features: [
       "Tailor a CV",
       "Prep an interview",
@@ -199,7 +188,7 @@ export type LandingComingNext = {
   id: "proof" | "pitch"
   title: string
   body: string
-  shot: LandingShot
+  figure: LandingFigureId
 }
 
 export const LANDING_COMING_NEXT: readonly LandingComingNext[] = [
@@ -207,23 +196,13 @@ export const LANDING_COMING_NEXT: readonly LandingComingNext[] = [
     id: "proof",
     title: "Proof",
     body: "Turn a CV line into evidence.",
-    shot: {
-      src: "/landing/proof.webp",
-      width: 1200,
-      height: 750,
-      alt: "The Proof page, with a CV line about growing followers by 38 percent backed by a rising chart and a manager confirmation.",
-    },
+    figure: "proof",
   },
   {
     id: "pitch",
     title: "Pitch",
     body: "Your CV and Proofs on one page.",
-    shot: {
-      src: "/landing/pitch.webp",
-      width: 1200,
-      height: 750,
-      alt: "The Pitch page, with a public profile for Linh Nguyen showing a Download CV button, proof charts and a view count.",
-    },
+    figure: "pitch",
   },
 ]
 

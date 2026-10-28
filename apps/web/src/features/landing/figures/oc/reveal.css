@@ -1,0 +1,49 @@
+.rv-w {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.38em);
+  filter: blur(6px);
+}
+.rv-on .rv-w {
+  animation: rv-word var(--duration-panel) var(--ease-panel)
+    var(--landing-delay, 0ms) both;
+}
+@keyframes rv-word {
+  from {
+    opacity: 0;
+    transform: translateY(0.38em);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.rv-b {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.rv-b.rv-on {
+  animation: rv-block var(--duration-panel) var(--ease-panel)
+    var(--landing-delay, 0ms) both;
+}
+@keyframes rv-block {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-w,
+  .rv-b {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    animation: none !important;
+  }
+}

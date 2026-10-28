@@ -1,0 +1,245 @@
+.pp-window-in {
+  animation: pp-window-in var(--duration-panel) var(--ease-panel) 380ms both;
+}
+@keyframes pp-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pp-float-a {
+  animation: pp-float 6s ease-in-out 1s infinite alternate;
+}
+.pp-float-b {
+  animation: pp-float 7s ease-in-out 1.6s infinite alternate-reverse;
+}
+.pp-float-c {
+  animation: pp-float 6.5s ease-in-out 2.2s infinite alternate;
+}
+@keyframes pp-float {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
+
+.oc-static .pp-window-in,
+.oc-static .pp-float-a,
+.oc-static .pp-float-b,
+.oc-static .pp-float-c {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-root .pp-window-in,
+  .oc-root .pp-float-a,
+  .oc-root .pp-float-b,
+  .oc-root .pp-float-c {
+    animation: none !important;
+  }
+}
+
+.pp-notif {
+  animation-name: pp-notif;
+}
+@keyframes pp-notif {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translate(-18px, 10px) scale(0.96);
+    animation-timing-function: cubic-bezier(0.34, 1.35, 0.64, 1);
+  }
+  13%,
+  82% {
+    opacity: 1;
+    transform: none;
+    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  }
+  90%,
+  100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.pp-bar {
+  animation-name: pp-bar;
+  transform-origin: 50% 100%;
+}
+@keyframes pp-bar {
+  0%,
+  14% {
+    transform: scaleY(0.6);
+    animation-timing-function: var(--ease-micro);
+  }
+  22%,
+  93% {
+    transform: none;
+    animation-timing-function: ease-in-out;
+  }
+  100% {
+    transform: scaleY(0.6);
+  }
+}
+.pp-v-old {
+  animation-name: pp-old-18;
+}
+.pp-v-new {
+  animation-name: pp-new-18;
+}
+@keyframes pp-old-18 {
+  0%,
+  16% {
+    opacity: 1;
+    transform: none;
+  }
+  20%,
+  94% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  94.5% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  99%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pp-new-18 {
+  0%,
+  16% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  20%,
+  94% {
+    opacity: 1;
+    transform: none;
+  }
+  98%,
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.pp-dl {
+  animation-name: pp-dl;
+}
+@keyframes pp-dl {
+  0%,
+  30% {
+    transform: none;
+    animation-timing-function: var(--ease-micro);
+  }
+  33% {
+    transform: scale(1.06);
+    animation-timing-function: cubic-bezier(0.34, 1.35, 0.64, 1);
+  }
+  37%,
+  100% {
+    transform: none;
+  }
+}
+.pp-d-old {
+  animation-name: pp-old-31;
+}
+.pp-d-new {
+  animation-name: pp-new-31;
+}
+@keyframes pp-old-31 {
+  0%,
+  30% {
+    opacity: 1;
+    transform: none;
+  }
+  34%,
+  94% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  94.5% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  99%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pp-new-31 {
+  0%,
+  30% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  34%,
+  94% {
+    opacity: 1;
+    transform: none;
+  }
+  98%,
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.pp-line {
+  animation-name: pp-line;
+}
+@keyframes pp-line {
+  0%,
+  4% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+  30%,
+  92% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  96% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  96.5%,
+  100% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+}
+.pp-dot {
+  animation-name: pp-dot;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes pp-dot {
+  0%,
+  28% {
+    opacity: 0;
+    transform: scale(0.4);
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  32%,
+  92% {
+    opacity: 1;
+    transform: none;
+  }
+  96%,
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}

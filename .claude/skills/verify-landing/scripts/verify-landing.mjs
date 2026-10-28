@@ -76,10 +76,12 @@ async function visit(
     if (keep)
       await page.screenshot(`${shots}/${wanted.shot}-first-view.png`, false)
     if (wanted.deep || keep) {
+      // Headless Chromium delivers IntersectionObserver callbacks about 300 ms after a scroll; at
+      // 120 ms a step the scroll reveals never fired and the text stayed hidden for 21 and 23.
       await page.evaluate(`(async () => {
         for (let y = 0; y <= document.documentElement.scrollHeight; y += innerHeight * 0.7) {
           scrollTo(0, y)
-          await new Promise((r) => setTimeout(r, 120))
+          await new Promise((r) => setTimeout(r, 400))
         }
       })()`)
       await sleep(1500)
@@ -151,6 +153,7 @@ try {
       mobile: mobile.top,
       mobileOpen: mobile.topOpen ?? null,
       first: desktop.first,
+      mobileFirst: mobile.first,
       reduced: reduced.first,
       deep: desktop.deep,
       reducedDeep: reduced.deep,

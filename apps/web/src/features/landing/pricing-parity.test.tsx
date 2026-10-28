@@ -253,6 +253,8 @@ describe("pricing page", () => {
     const footer = document.querySelector(".pricing-footer") as HTMLElement
     expect(prefooter.style.paddingTop).toBe("224px")
     expect(footer.style.marginTop).toBe("160px")
-    expect(screen.getByText(/Be the obvious hire/)).toBeInTheDocument()
+    expect(document.querySelector(".landing-close")).toHaveTextContent(
+      /Be the obvious hire/
+    )
   })
 })

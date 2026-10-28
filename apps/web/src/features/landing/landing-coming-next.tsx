@@ -1,3 +1,4 @@
+import { LandingFigure } from "./figures/landing-figure.tsx"
 import {
   LANDING_COMING_NEXT,
   LANDING_COMING_NEXT_HEADER,
@@ -20,15 +21,7 @@ export function LandingComingNext() {
         {LANDING_COMING_NEXT.map((item) => (
           <article key={item.id}>
             <div className="landing-card-panel landing-gradient">
-              <img
-                src={item.shot.src}
-                alt={item.shot.alt}
-                width={item.shot.width}
-                height={item.shot.height}
-                loading="lazy"
-                decoding="async"
-                className="landing-screen"
-              />
+              <LandingFigure id={item.figure} />
             </div>
             <div className="landing-card-text landing-inset">
               <h3>{item.title}</h3>
