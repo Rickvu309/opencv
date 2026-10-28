@@ -108,11 +108,13 @@ fi
 [[ -z "$(git status --porcelain)" ]] || die "uncommitted changes. Commit (or stash) them first."
 [[ -n "$(git rev-list origin/main..HEAD 2>/dev/null)" ]] || die "no commits on $branch beyond origin/main"
 
+checked=0
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
   echo "WARNING: SKIP_CHECKS=1, checks skipped. Emergencies only." >&2
 else
   # Quick check of what changed; the full check runs once, in scripts/review-pr.sh.
   info "Running scripts/check.sh --changed"
+  checked=1
   export CHECK_RETRY_FAILED_TESTS=1
   if ! env -u CHECK_DRY_RUN scripts/check.sh --changed; then
     result_adopt "$(result_path check)" || true
@@ -120,17 +122,17 @@ else
   fi
 fi
 
-result_adopt_retried "$(result_path check)"
+(( ! checked )) || result_adopt_retried "$(result_path check)"
 info "Pushing $branch"
 git push -u origin HEAD || DIE_CAUSE=other die "push failed; no PR created. Fix the push error and retry."
-result_adopt_retried "$(result_path check)"
+(( ! checked )) || result_adopt_retried "$(result_path check)"
+(( ${#R_RETRIED[@]} == 0 )) || echo "WARN passed only on retry: ${R_RETRIED[*]}"
 
 args=(--base main --head "$branch" --title "$title" --body "$body")
 (( draft )) && args+=(--draft)
 info "Creating PR"
 pr_url=$(gh pr create "${args[@]}") || DIE_CAUSE=other die "gh pr create failed; the branch is pushed. Run open-pr.sh again."
 [[ -z "$pr_url" ]] || echo "$pr_url"
-(( ${#R_RETRIED[@]} == 0 )) || echo "WARN passed only on retry: ${R_RETRIED[*]}"
 if [[ "${pr_url##*/}" =~ ^[0-9]+$ ]]; then
   result_id "${pr_url##*/}"
   result_ok "opened ${pr_url}" "cd \"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)")\" && heavy -- scripts/review-pr.sh ${pr_url##*/}"

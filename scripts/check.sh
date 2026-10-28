@@ -15,8 +15,9 @@
 #   CHECK_RETRY_FAILED_TESTS=1 scripts/check.sh --changed   rerun a failed vitest file once, alone (set by open-pr.sh only,
 #     so its quick check and the pre-push check of its push; review-pr.sh and plain runs never retry). If every failed file
 #     passes: warn "passed only on retry: <files>", record them in the result file's `retried`, exit 0. Else fail as before.
-#     Only when `test` is the one failed task and at most CHECK_RETRY_MAX_FILES (5) files failed. Turbo runs with
-#     --continue then, so a failure in one package cannot stop the tests of another from running.
+#     Only when `test` is the one failed task, at most CHECK_RETRY_MAX_FILES (5, digits only) files failed, turbo's
+#     "Failed:" line names only packages that have a retried file, and the log has no vitest unhandled error. Turbo runs
+#     with --continue then, so every package runs; a package that failed without a FAIL line keeps the run failed.
 #
 # --changed (pnpm only; may be combined with task names) looks at the files that differ from
 # `git merge-base origin/main HEAD`: committed, staged, unstaged and untracked (not ignored). Then:
@@ -88,6 +89,31 @@ failed_test_files() {
     fi
     [[ "$seen" == *" $dir$file "* ]] || { seen+="$dir$file "; echo "$dir$file"; }
   done < <(sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -E 'FAIL ' | head -n 200)
+}
+
+# Directories of the packages turbo reports as failed ("Failed:    web#test, @workspace/domain#test"), one per line.
+# Prints nothing and returns 1 when the log has no such line or a name maps to no workspace package.
+failed_test_dirs() {
+  [[ -n "$check_log" && -s "$check_log" ]] || return 1
+  local list tok pkg d found=0
+  list=$(sed $'s/\033\\[[0-9;]*m//g' "$check_log" | sed -nE 's/^[[:space:]]*Failed:[[:space:]]+//p' | tr ',' '\n')
+  while read -r tok; do
+    [[ -n "$tok" ]] || continue
+    [[ "$tok" == *"#test" ]] || return 1
+    pkg=${tok%"#test"}; found=0
+    for d in apps/*/package.json packages/*/package.json; do
+      [[ -f "$d" ]] || continue
+      if [[ "$(node -p "require('./$d').name" 2>/dev/null)" == "$pkg" ]]; then dirname "$d"; found=1; break; fi
+    done
+    (( found )) || return 1
+  done <<<"$list"
+  [[ -n "$list" ]]
+}
+
+# True when the log shows a vitest unhandled error or rejection: that run failed without a FAIL line for it.
+has_unhandled_errors() {
+  [[ -n "$check_log" && -s "$check_log" ]] || return 1
+  sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -qiE 'unhandled (errors?|rejections?)'
 }
 
 if [[ ! -f package.json ]]; then
@@ -214,7 +240,7 @@ if (( changed_mode )); then
             echo "==> scripts/test-review-pr.sh"
             run scripts/test-review-pr.sh || failed+=(review-pr-tests)
           fi
-          if has_changed scripts/check.sh scripts/test-check-retry.sh scripts/fixtures/check-flaky-home-chat.txt scripts/fixtures/check-flaky-registry-behavior.txt; then
+          if has_changed scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs 'scripts/fixtures/check-flaky-*.txt'; then
             echo "==> scripts/test-check-retry.sh"
             run scripts/test-check-retry.sh || failed+=(check-retry-tests)
           fi
@@ -273,9 +299,26 @@ retry_attempted=0; still_failing=(); passed_on_retry=()
 retry_failed_tests() {
   [[ "${CHECK_RETRY_FAILED_TESTS:-}" == 1 && ${#failed[@]} -eq 1 && "${failed[0]}" == test ]] || return 0
   (( changed_mode && ! dry )) || return 0
-  local files=() f d rel max=${CHECK_RETRY_MAX_FILES:-5}
+  local files=() f d rel max=${CHECK_RETRY_MAX_FILES:-5} failed_dirs=() covered=" " dirs_out
+  [[ "$max" =~ ^[0-9]+$ ]] || max=5
   mapfile -t files < <(failed_test_files)
   [[ ${#files[@]} -gt 0 ]] || return 0
+  if has_unhandled_errors; then
+    echo "check: the test output has an unhandled error; not retrying, a retry of the failed files would not cover it."
+    return 0
+  fi
+  for f in "${files[@]}"; do covered+="$(cut -d/ -f1-2 <<<"$f") "; done
+  if ! dirs_out=$(failed_test_dirs); then
+    echo "check: turbo's failed packages are not known; not retrying."
+    return 0
+  fi
+  mapfile -t failed_dirs <<<"$dirs_out"
+  for d in "${failed_dirs[@]}"; do
+    if [[ "$covered" != *" $d "* ]]; then
+      echo "check: $d failed without a failed test file to retry; not retrying."
+      return 0
+    fi
+  done
   if (( ${#files[@]} > max )); then
     echo "check: ${#files[@]} test files failed (more than $max); not retrying, this looks like a real failure."
     return 0

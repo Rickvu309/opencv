@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # test-check-retry.sh: the retry-once of scripts/check.sh (CHECK_RETRY_FAILED_TESTS=1, set by open-pr.sh only).
 # The failures are real vitest FAIL lines from past runs that passed on the next run (scripts/fixtures/check-flaky-*.txt,
-# from pstack-run 20261028T014507Z-nmimjadj and 20261026T205005Z-gzts2402). pnpm is a stub that prints them, so no suite runs.
+# from pstack-run 20261028T014507Z-nmimjadj and 20261026T205005Z-gzts2402) with turbo's closing "Failed:" line. pnpm is a
+# stub that prints them, so no suite runs.
 # Usage: scripts/test-check-retry.sh
 set -euo pipefail
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE CHECK_DRY_RUN CHECK_BASE_REF CHECK_RETRY_FAILED_TESTS PR_RESULT_ID
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-tmp=$(mktemp -d)
+mkdir -p "$HOME/tmp"
+tmp=$(mktemp -d "$HOME/tmp/check-retry-test-XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv STUB_LOG=$tmp/pnpm.log
 
@@ -28,15 +30,16 @@ chmod +x "$tmp/bin/pnpm"
 export PATH=$tmp/bin:$PATH
 
 repo=$tmp/repo
-mkdir -p "$repo/scripts/lib" "$repo/apps/web/src" "$repo/apps/api/src"
+mkdir -p "$repo/scripts/lib" "$repo/apps/web/src" "$repo/apps/api/src" "$repo/packages/domain/src"
+printf '#!/usr/bin/env bash\nexit "${STUB_CODEOWNERS_RC:-0}"\n' >"$repo/scripts/test-codeowners.sh"; chmod +x "$repo/scripts/test-codeowners.sh"
 cp "$here/check.sh" "$repo/scripts/check.sh"; cp "$here/lib/result.sh" "$repo/scripts/lib/result.sh"
-echo '{"name":"web"}' >"$repo/apps/web/package.json"; echo '{"name":"api"}' >"$repo/apps/api/package.json"
+echo '{"name":"web"}' >"$repo/apps/web/package.json"; echo '{"name":"api"}' >"$repo/apps/api/package.json"; echo '{"name":"@workspace/domain"}' >"$repo/packages/domain/package.json"
 echo '{"name":"root","scripts":{}}' >"$repo/package.json"; : >"$repo/pnpm-lock.yaml"
 git -C "$repo" init -q -b main && git -C "$repo" config core.hooksPath /dev/null
 git -C "$repo" add -A && git -C "$repo" commit -q -m base
 git -C "$repo" update-ref refs/remotes/origin/main HEAD
 git -C "$repo" checkout -q -b feat/9-a-b
-echo x >"$repo/apps/web/src/a.ts"; echo y >"$repo/apps/api/src/b.ts"
+echo x >"$repo/apps/web/src/a.ts"; echo y >"$repo/apps/api/src/b.ts"; echo z >"$repo/packages/domain/src/c.ts"; echo '# changed' >>"$repo/scripts/test-codeowners.sh"
 git -C "$repo" add -A && git -C "$repo" commit -q -m change
 
 fail() { printf 'FAIL %s\n' "$1" >&2; cat "$tmp/out" "$tmp/err" "$STUB_LOG" >&2 2>/dev/null || true; exit 1; }
@@ -48,8 +51,11 @@ check() {  # check [VAR=value ...]: run check.sh --changed with the stub pnpm
 result() { node "$here/lib/result-check.mjs" "$c" script=check "$@" >/dev/null || fail "result: $(cat "$c")"; }
 retries() { grep -c -- '^--dir .* run test ' "$STUB_LOG" || true; }
 home=apps/web/src/routes/home-chat.test.tsx
-cat "$here/fixtures/check-flaky-home-chat.txt" >"$tmp/one.txt"
-cat "$here/fixtures/check-flaky-home-chat.txt" "$here/fixtures/check-flaky-registry-behavior.txt" >"$tmp/two.txt"
+# A turbo run's output: the FAIL lines, then its summary naming the failed packages.
+turbo_out() { local out=$1 failed=$2; shift 2; { cat "$@"; printf ' Tasks:    1 successful, 4 total\n Failed:    %s\n' "$failed"; } >"$out"; }
+flaky_home=$here/fixtures/check-flaky-home-chat.txt flaky_reg=$here/fixtures/check-flaky-registry-behavior.txt
+turbo_out "$tmp/one.txt" web#test "$flaky_home"
+turbo_out "$tmp/two.txt" web#test,\ api#test "$flaky_home" "$flaky_reg"
 
 # Retry is off by default: a failed test file fails the run and nothing is rerun (and turbo has no --continue).
 check STUB_TEST_OUT="$tmp/one.txt"
@@ -87,6 +93,7 @@ echo "ok: no retry when lint failed too"
 
 # Many failing files is a real break, not a flake.
 for i in 1 2 3 4 5 6; do echo "web:test:  FAIL  |shared-modules| src/f$i.test.ts > suite > case"; done >"$tmp/many.txt"
+echo ' Failed:    web#test' >>"$tmp/many.txt"
 check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/many.txt"
 [[ $code -eq 1 && $(retries) -eq 0 ]] || fail "many files: exit $code, retries $(retries)"
 grep -q 'looks like a real failure' "$tmp/out" || fail "many files: no explanation"
@@ -97,4 +104,41 @@ echo "something broke" >"$tmp/crash.txt"
 check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/crash.txt"
 [[ $code -eq 1 && $(retries) -eq 0 ]] || fail "no file: exit $code, retries $(retries)"
 echo "ok: a failure that names no test file is not retried"
+# A real failure that prints no vitest FAIL line (node:test in packages/domain) beside a flaky file: turbo --continue
+# runs both, the flaky file passes alone, and the run must still fail. Before the fix this exited 0 with status ok.
+turbo_out "$tmp/hidden.txt" web#test,\ @workspace/domain#test "$flaky_home"
+printf 'domain:test: not ok 1 - parses a paper\n' >>"$tmp/hidden.txt"
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/hidden.txt"
+[[ $code -eq 1 ]] || fail "hidden failure: exit $code, want 1"
+grep -q 'WARN passed only on retry' "$tmp/out" && fail "hidden failure: WARN printed"
+[[ $(retries) -eq 0 ]] || fail "hidden failure: retried"
+grep -q 'packages/domain failed without a failed test file' "$tmp/out" || fail "hidden failure: no explanation"
+result status=fail cause=test 'retried=[]'
+echo "ok: a package that failed with no FAIL line is not hidden by a flaky file elsewhere"
+
+# Vitest unhandled errors exit 1 with no FAIL line for the cause, even inside the package of the flaky file.
+turbo_out "$tmp/unhandled.txt" web#test "$flaky_home"
+printf 'web:test:  Vitest caught 1 unhandled error during the test run.\nweb:test: ⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯\n' >>"$tmp/unhandled.txt"
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/unhandled.txt"
+[[ $code -eq 1 && $(retries) -eq 0 ]] || fail "unhandled: exit $code, retries $(retries)"
+grep -q 'unhandled error; not retrying' "$tmp/out" || fail "unhandled: no explanation"
+echo "ok: an unhandled error in the output blocks the retry"
+
+# Without turbo's Failed line the failed packages are unknown, so nothing is retried.
+cat "$flaky_home" >"$tmp/nosummary.txt"
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/nosummary.txt"
+[[ $code -eq 1 && $(retries) -eq 0 ]] || fail "no summary: exit $code, retries $(retries)"
+echo "ok: no turbo Failed line, no retry"
+
+# A script test failing beside turbo test is a second failed task: no retry.
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/one.txt" STUB_CODEOWNERS_RC=1
+[[ $code -eq 1 && $(retries) -eq 0 ]] || fail "script test: exit $code, retries $(retries)"
+grep -q 'FAILED: test codeowners-tests' "$tmp/err" || fail "script test: both tasks not reported"
+echo "ok: no retry when a scripts/ test failed too"
+
+# A CHECK_RETRY_MAX_FILES that is not a number falls back to 5 instead of aborting.
+check CHECK_RETRY_FAILED_TESTS=1 CHECK_RETRY_MAX_FILES=abc STUB_TEST_OUT="$tmp/one.txt"
+[[ $code -eq 0 ]] || fail "bad max: exit $code, want 0"
+grep -q "WARN passed only on retry: $home" "$tmp/out" || fail "bad max: no WARN line"
+echo "ok: a non-numeric CHECK_RETRY_MAX_FILES means 5"
 echo "all check retry tests passed"

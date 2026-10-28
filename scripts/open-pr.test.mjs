@@ -30,7 +30,14 @@ function assertResult(result, id, ...expects) {
   )
 }
 
-function run(t, pushExit, quiet = false, lowDisk = false, noCommonDir = false) {
+function run(
+  t,
+  pushExit,
+  quiet = false,
+  lowDisk = false,
+  noCommonDir = false,
+  extraEnv = {}
+) {
   const scratch = join(homedir(), "tmp")
   mkdirSync(scratch, { recursive: true })
   const root = mkdtempSync(join(scratch, "open-pr-test-"))
@@ -54,6 +61,8 @@ function run(t, pushExit, quiet = false, lowDisk = false, noCommonDir = false) {
     "work/repo/scripts/check.sh",
     `#!/bin/sh
 printf 'check retry=%s\\n' "\${CHECK_RETRY_FAILED_TESTS-unset}" >> "$PROOF_ROOT/env"
+mkdir -p "$PR_RESULT_DIR"
+[ -z "$PROOF_RETRIED" ] || printf '{"retried":[%s]}' "$PROOF_RETRIED" > "$PR_RESULT_DIR/opencv-check-fix-999-push-failure-proof.json"
 exit 0
 `
   )
@@ -104,6 +113,15 @@ esac
     PR_RESULT_DIR: join(root, "results"),
     PR_RESULT_REPO: "opencv",
     PR_DISK_MIN_MB: lowDisk ? "2048" : "1", // the real disk's free space must not decide a test
+    ...extraEnv,
+  }
+  if (extraEnv.PROOF_OLD_RETRIED) {
+    // A check result an earlier run left for this branch.
+    mkdirSync(join(root, "results"), { recursive: true })
+    writeFileSync(
+      join(root, "results", "opencv-check-fix-999-push-failure-proof.json"),
+      `{"retried":[${extraEnv.PROOF_OLD_RETRIED}]}`
+    )
   }
   const result = spawnSync(
     "bash",
@@ -150,6 +168,33 @@ test("the quick check and the push's pre-push check retry a failed test file onc
   const result = run(t, 0)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.env, "check retry=1\npush retry=1\n")
+})
+
+const retried = '"apps/web/a.test.tsx","apps/api/b.test.ts"'
+
+test("files that passed only on retry are warned about and recorded in result.json", (t) => {
+  const result = run(t, 0, false, false, false, { PROOF_RETRIED: retried })
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(
+    result.stdout,
+    /^WARN passed only on retry: apps\/web\/a\.test\.tsx apps\/api\/b\.test\.ts$/m
+  )
+  assertResult(
+    result,
+    "77",
+    "status=ok",
+    'retried=["apps/web/a.test.tsx","apps/api/b.test.ts"]'
+  )
+})
+
+test("with SKIP_CHECKS=1 an old check result's retried list is not adopted", (t) => {
+  const result = run(t, 0, false, false, false, {
+    SKIP_CHECKS: "1",
+    PROOF_OLD_RETRIED: retried,
+  })
+  assert.equal(result.status, 0, result.stderr)
+  assert.doesNotMatch(result.stdout, /passed only on retry/)
+  assertResult(result, "77", "status=ok", "retried=[]")
 })
 
 test("successful push with no output still creates a PR", (t) => {
