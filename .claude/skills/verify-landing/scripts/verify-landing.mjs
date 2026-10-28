@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url"
 
 import { launchBrowser } from "./lib/cdp.mjs"
 import { pageChecks } from "./lib/page-checks.mjs"
+import { penProbeSource } from "./lib/pen-probe.mjs"
 import { probeSource } from "./lib/probe.mjs"
 import { textRules } from "./lib/text-rules.mjs"
 
@@ -100,6 +101,12 @@ async function visit(
         snap.topOpen = await page.evaluate(probeSource("top"))
       }
     }
+    if (wanted.pen) {
+      snap.pen = await page.evaluate(`(async () => {
+        await document.fonts.ready
+        return ${penProbeSource}
+      })()`)
+    }
     return snap
   } finally {
     await page.close()
@@ -123,7 +130,7 @@ try {
   const desktop = await visit(
     browser,
     { width: 1440, height: 900, mobile: false, reducedMotion: false },
-    { top: true, deep: true, shot: "desktop" }
+    { top: true, deep: true, shot: "desktop", pen: true }
   )
   const mobile = await visit(
     browser,
@@ -147,6 +154,7 @@ try {
       reduced: reduced.first,
       deep: desktop.deep,
       reducedDeep: reduced.deep,
+      penSections: desktop.pen,
     }),
   ]
   const failed = results.filter((r) => !r.pass)

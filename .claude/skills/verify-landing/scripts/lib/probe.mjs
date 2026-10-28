@@ -260,76 +260,6 @@ function probe(kind) {
         radius,
       }
     }
-    const SECTION_SELECTOR = {
-      Nav: "header.landing-nav",
-      Hero: "#hero",
-      Logos: "#logos",
-      Statement: "#product",
-      Benefits: "#benefits",
-      "Paper Wrap": "#paper",
-      "Apply Wrap": "#apply",
-      "Coach Wrap": "#coach",
-      "Integrations Wrap": "#integrations",
-      "Coming next Wrap": "#coming-next",
-      Customers: "#stories",
-      Prefooter: "#close",
-      "Footer Wrap": "footer",
-    }
-    const normText = (value) =>
-      value
-        .replace(/\u2018/g, "\u2019")
-        .replace(/'/g, "\u2019")
-        .replace(/\s+/g, " ")
-        .trim()
-    const hiddenText = (el) =>
-      el.closest("[aria-hidden='true'], .sr-only") || !visible(el)
-    const penSections = {}
-    for (const [name, selector] of Object.entries(SECTION_SELECTOR)) {
-      const rootEl = document.querySelector(selector)
-      if (!rootEl) {
-        penSections[name] = null
-        continue
-      }
-      const texts = [...rootEl.querySelectorAll("*")]
-        .filter((el) => !hiddenText(el) && normText(el.textContent) !== "")
-        .map((el) => {
-          const measure = (node) => {
-            const s = cs(node)
-            const fontSize = parseFloat(s.fontSize)
-            return {
-              color: rgba(s.color).slice(0, 3),
-              fontSize,
-              lineHeight:
-                s.lineHeight === "normal"
-                  ? "normal"
-                  : parseFloat(s.lineHeight) / fontSize,
-              fontWeight: String(s.fontWeight),
-              letterSpacing:
-                s.letterSpacing === "normal" ? 0 : parseFloat(s.letterSpacing),
-            }
-          }
-          const runs = []
-          const walk = (node) => {
-            if (node.nodeType === 3) {
-              if (!node.textContent.trim()) return
-              const parent = node.parentElement
-              if (parent && !hiddenText(parent)) runs.push(measure(parent))
-              return
-            }
-            if (node.nodeType !== 1 || (node !== el && hiddenText(node))) return
-            for (const child of node.childNodes) walk(child)
-          }
-          walk(el)
-          return { text: normText(el.textContent), ...measure(el), runs }
-        })
-      const marks = [...rootEl.querySelectorAll("svg, img")]
-        .filter((el) => visible(el))
-        .map((el) => {
-          const box = el.getBoundingClientRect()
-          return { tag: el.tagName.toLowerCase(), w: box.width, h: box.height }
-        })
-      penSections[name] = { texts, marks }
-    }
     const closeBand = document.querySelector("#close")
     const ctas = {
       nav: buttonOf(header, "Get started"),
@@ -358,7 +288,6 @@ function probe(kind) {
       },
       navLockup,
       ctas,
-      penSections,
       benefitRasters: [],
       pageWidth: document.documentElement.scrollWidth,
       viewWidth: document.documentElement.clientWidth,

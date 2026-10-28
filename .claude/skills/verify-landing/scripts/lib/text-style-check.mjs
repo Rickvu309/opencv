@@ -138,6 +138,16 @@ function weightValue(value) {
   return Number.isNaN(parsed) ? text : String(parsed)
 }
 
+function clip(text) {
+  return text.length > 48 ? `${text.slice(0, 48)}…` : text
+}
+
+function textStartsLine(found, want) {
+  const at = found.text.indexOf(want)
+  if (at < 0) return false
+  return Array.isArray(found.lineStarts) && found.lineStarts.includes(at)
+}
+
 function rgbHex(color) {
   return `#${color
     .map((channel) => Math.round(channel).toString(16).padStart(2, "0"))
@@ -155,7 +165,7 @@ function hexRgb(fill) {
 
 export function textStyleVerdict(penSections) {
   const rule =
-    "At 1440 each landing text matches the fields opencv.pen sets (OKLCH colour within 0.02 lightness and 0.02 chroma, size within 0.5px, line-height ratio within 0.03, weight exact, tracking within 0.15px) and each inline mark has an svg or img within 2px. A pen text missing from its section fails unless design/landing.omitted.json omits it. Match opencv.pen or add a dated exception."
+    "At 1440 each landing text matches the fields opencv.pen sets (OKLCH colour within 0.02 lightness and 0.02 chroma, size within 0.5px, line-height ratio within 0.03, weight exact, tracking within 0.15px) and each inline mark has an svg or img within 2px. A pen text with startsLine fails when that text does not start a line. The line-start check runs at 1440 only. A pen text missing from its section fails unless design/landing.omitted.json omits it. Match opencv.pen or add a dated exception."
   let styles
   let omittedRows
   try {
@@ -196,11 +206,19 @@ export function textStyleVerdict(penSections) {
           section: section.name,
           text: spec.content,
           property: "presence",
-          line: `[${section.name}] "${spec.content.length > 48 ? `${spec.content.slice(0, 48)}…` : spec.content}" text measured missing pen present`,
+          line: `[${section.name}] "${clip(spec.content)}" text measured missing pen present`,
         })
         continue
       }
       compared += 1
+      if (spec.startsLine === true && !textStartsLine(found, want)) {
+        mismatches.push({
+          section: section.name,
+          text: spec.content,
+          property: "lineStart",
+          line: `[${section.name}] "${clip(spec.content)}" lineStart measured mid-line pen starts a line`,
+        })
+      }
       const seen = new Set()
       const runs = found.runs?.length ? found.runs : [found]
       for (const run of runs) {
@@ -261,7 +279,7 @@ export function textStyleVerdict(penSections) {
           }
         }
         for (const problem of problems) {
-          const line = `[${section.name}] "${spec.content.length > 48 ? `${spec.content.slice(0, 48)}…` : spec.content}" ${problem.property} measured ${problem.measured} pen ${problem.pen}`
+          const line = `[${section.name}] "${clip(spec.content)}" ${problem.property} measured ${problem.measured} pen ${problem.pen}`
           if (seen.has(line)) continue
           seen.add(line)
           mismatches.push({
@@ -317,7 +335,7 @@ export function textStyleVerdict(penSections) {
   for (const entry of TEXT_STYLE_EXCEPTIONS) {
     if (covered.has(entry)) continue
     failures.push(
-      `[${entry.section}] "${entry.text.length > 48 ? `${entry.text.slice(0, 48)}…` : entry.text}" ${entry.property} exception is stale`
+      `[${entry.section}] "${clip(entry.text)}" ${entry.property} exception is stale`
     )
   }
   // The printed line keeps 230 characters. Lead with the statement mark and the

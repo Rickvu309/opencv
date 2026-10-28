@@ -65,6 +65,7 @@ export function pageChecks({
   reduced,
   deep,
   reducedDeep,
+  penSections,
 }) {
   const out = []
 
@@ -462,6 +463,6 @@ export function pageChecks({
     )
   )
 
-  out.push(textStyleVerdict(desktop.penSections))
+  out.push(textStyleVerdict(penSections))
   return out
 }
