@@ -21,7 +21,8 @@ export const START_PAGES = {
 /** True only for the path segment `app`, never for `/apply` or `/application`. */
 export function legacyPathname(pathname: string): string | undefined {
   if (pathname === "/app" || pathname === "/app/") return "/"
-  if (pathname.startsWith("/app/")) return pathname.slice("/app".length).replace(/^\/+/, "/")
+  if (pathname.startsWith("/app/"))
+    return pathname.slice("/app".length).replace(/^\/+/, "/")
   return undefined
 }
 
