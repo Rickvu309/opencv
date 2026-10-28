@@ -27,6 +27,7 @@ import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
+import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperCvSurface } from "./paper-cv-surface.tsx"
@@ -41,6 +42,14 @@ import {
   printLayout,
 } from "./paper-templates.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
+
+function applyPhoto(current: CvDocument, ref: string | undefined): CvDocument {
+  if (ref) return { ...current, photoUrl: ref }
+  if (!current.photoUrl) return current
+  const next = { ...current }
+  delete next.photoUrl
+  return next
+}
 
 function cvOf(document: unknown, rowTemplateId: string | null): CvDocument {
   const layout = printLayout(rowTemplateId)
@@ -347,14 +356,24 @@ export function PaperCvEditor({
         </p>
       ) : null}
       <div data-template={previewTemplate(templateId)} className="min-w-0">
-        <PaperCvSurface
-          data={cv}
-          onChange={(next) => {
-            if (blockMode) return
-            setCv(next)
-            schedule(next)
+        <CvPhotoFrame
+          value={{
+            docId: initial.id,
+            notePhoto: (ref, version) => {
+              adopt(version)
+              setCv((current) => applyPhoto(current, ref))
+            },
           }}
-        />
+        >
+          <PaperCvSurface
+            data={cv}
+            onChange={(next) => {
+              if (blockMode) return
+              setCv(next)
+              schedule(next)
+            }}
+          />
+        </CvPhotoFrame>
         {pageState.pages > 1 ? (
           <p className="mt-2 text-sm text-muted-foreground">Page 2</p>
         ) : null}

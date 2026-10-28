@@ -8,8 +8,12 @@ import {
   emptyCvDocument,
   emptyLetterDocument,
   isCvBlockDocument,
+  isCvDocument,
+  paperPhotoFileId,
+  paperPhotoRef,
   parseFileId,
   parsePaperId,
+  parseUserId,
   type PaperView,
   type Actor,
   type FileId,
@@ -304,6 +308,100 @@ endstream endobj
 trailer<< /Root 1 0 R >>
 %%EOF`
   return Buffer.from(body, "utf8")
+}
+
+function photoRefOf(document: PaperView["document"]) {
+  if (isCvBlockDocument(document)) return document.header.photo
+  if (isCvDocument(document)) return document.photoUrl
+  return undefined
+}
+
+function withPhotoRef(document: PaperView["document"], ref: string) {
+  if (isCvBlockDocument(document)) {
+    return { ...document, header: { ...document.header, photo: ref } }
+  }
+  if (isCvDocument(document)) return { ...document, photoUrl: ref }
+  throw new CommandError(
+    ERROR_CODES.VALIDATION_ERROR,
+    "A photo belongs on a CV."
+  )
+}
+
+async function requireAvatarFile(userId: UserId, fileId: FileId) {
+  const rows = await getDb()
+    .select({
+      purpose: files.purpose,
+      mediaType: files.mediaType,
+    })
+    .from(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
+    .limit(1)
+  const row = rows[0]
+  if (!row || row.purpose !== "avatar" || !row.mediaType.startsWith("image/")) {
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
+  }
+  return row
+}
+
+export async function readOwnedPhoto(userId: UserId, fileId: FileId) {
+  const meta = await requireAvatarFile(userId, fileId)
+  const rows = await getDb()
+    .select({ bytes: files.bytes })
+    .from(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
+    .limit(1)
+  const bytes = rows[0]?.bytes
+  if (!bytes) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
+  return { mediaType: meta.mediaType, bytes }
+}
+
+export async function readSharedPhoto(token: string) {
+  const rows = await getDb()
+    .select({ doc: paperDocs })
+    .from(paperShares)
+    .innerJoin(paperDocs, eq(paperDocs.id, paperShares.docId))
+    .where(eq(paperShares.token, token))
+    .limit(1)
+  const row = rows[0]
+  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
+  const fileId = paperPhotoFileId(photoRefOf(toPaper(row.doc).document))
+  if (!fileId) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
+  return readOwnedPhoto(parseUserId(row.doc.userId), parseFileId(fileId))
+}
+
+export async function attachPhoto(
+  actor: Actor,
+  docId: PaperId,
+  fileId: FileId
+) {
+  const current = await ownedPaper(actor.userId, docId)
+  await requireAvatarFile(actor.userId, fileId)
+  const view = toPaper(current)
+  const document = requireDocument(
+    current.kind,
+    withPhotoRef(view.document, paperPhotoRef(fileId))
+  )
+  const updatedAt = new Date()
+  const contentVersion = current.contentVersion + 1
+  const written = await getDb()
+    .update(paperDocs)
+    .set({ document, contentVersion, updatedAt })
+    .where(
+      and(
+        eq(paperDocs.id, current.id),
+        eq(paperDocs.contentVersion, current.contentVersion)
+      )
+    )
+  if ((written.rowCount ?? 0) === 0) {
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "This document changed. Reload it and try again."
+    )
+  }
+  return {
+    ...toPaper({ ...current, document, contentVersion, updatedAt }),
+    previousDocument: view.document,
+  }
 }
 
 export async function readShared(token: string) {

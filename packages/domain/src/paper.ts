@@ -164,6 +164,37 @@ export const paperDeleteFileInputSchema = z
   })
   .strict()
 
+export const paperAttachPhotoInputSchema = z
+  .object({
+    docId: paperDocIdSchema,
+    fileId: fileIdSchema,
+  })
+  .strict()
+
+export type PaperAttachPhotoInput = z.infer<typeof paperAttachPhotoInputSchema>
+
+export const paperPhotoValueSchema = z
+  .string()
+  .refine(
+    (value) => !value.startsWith("blob:"),
+    "Store a file id, not a browser blob URL."
+  )
+
+export const PAPER_PHOTO_FILE_PREFIX = "file:"
+
+export function paperPhotoRef(fileId: string) {
+  return `${PAPER_PHOTO_FILE_PREFIX}${fileId}`
+}
+
+const PHOTO_FILE_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function paperPhotoFileId(value: string | null | undefined) {
+  if (!value?.startsWith(PAPER_PHOTO_FILE_PREFIX)) return null
+  const id = value.slice(PAPER_PHOTO_FILE_PREFIX.length)
+  return PHOTO_FILE_ID.test(id) ? id : null
+}
+
 export type PaperReplaceInput = z.infer<typeof paperReplaceInputSchema>
 export type PaperImportInput = z.infer<typeof paperImportInputSchema>
 

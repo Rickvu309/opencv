@@ -78,6 +78,14 @@ describe("paper contract", () => {
         bytes: Buffer.from("not json"),
         purpose: "import",
       })
+      const photo = await saveFile({
+        userId: parseUserId(userId),
+        name: "face.png",
+        mediaType: "image/png",
+        bytes: Buffer.from("png"),
+        purpose: "avatar",
+      })
+      await run("paper.attachPhoto", { docId: cv, fileId: photo.id })
       const imported = idOf(await run("paper.import", { fileId: upload.id }))
       await run("paper.dismissCheck", { docId: imported, checkId: "import" })
 

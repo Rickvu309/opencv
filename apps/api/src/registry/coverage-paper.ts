@@ -232,6 +232,35 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
+      name: "paper.attachPhoto",
+      arrange: async () => {
+        const paper = await run("paper.create", {
+          kind: "cv",
+          name: "Photo CV",
+        })
+        ctx.docId = idOf(paper.output)
+        const file = await saveFile({
+          userId: parseUserId(userId),
+          name: "face.png",
+          mediaType: "image/png",
+          bytes: Buffer.from("png"),
+          purpose: "avatar",
+        })
+        ctx.fileId = file.id
+      },
+      act: () =>
+        run("paper.attachPhoto", { docId: ctx.docId, fileId: ctx.fileId }),
+      assert: async () => {
+        const document = record(await paperOf(ctx.docId), "document")
+        expect(text(document, "photoUrl")).toBe(`file:${ctx.fileId}`)
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        const document = record(await paperOf(ctx.docId), "document")
+        expect("photoUrl" in document).toBe(false)
+      },
+    },
+    {
       name: "paper.deleteFile",
       arrange: async () => {
         const file = await saveFile({

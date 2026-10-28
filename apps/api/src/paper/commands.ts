@@ -3,6 +3,7 @@ import { keywordGap, paperContract } from "@workspace/domain"
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import {
+  attachPhoto,
   createPaper,
   deleteFile,
   deletePaper,
@@ -150,6 +151,22 @@ export function registerPaper(registry: Registry) {
         setPaperStatus(actor, input.docId, input.status),
       reversal: noReversal,
       activity: noActivity,
+    },
+    "paper.attachPhoto": {
+      handler: (input, actor) => attachPhoto(actor, input.docId, input.fileId),
+      reversal: (input, output) => ({
+        command: "paper.replace",
+        input: {
+          docId: input.docId,
+          contentVersion: output.contentVersion,
+          document: output.previousDocument,
+        },
+      }),
+      activity: (_input, output) => ({
+        subjectKind: "paper",
+        subjectId: output.id,
+        summary: "Added a photo",
+      }),
     },
     "paper.deleteFile": {
       handler: (input, actor) => deleteFile(actor, input.fileId),
