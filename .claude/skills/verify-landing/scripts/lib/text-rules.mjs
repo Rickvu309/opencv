@@ -1,6 +1,8 @@
 // Writing, logic and proof-markup properties. Each reads the "top" snapshot and returns
-// { id, name, rule, pass, measured }. The id is the check number in the landing research,
+// { id, name, rule, status, measured }. The id is the check number in the landing research,
 // section 5. The source of each rule is in the comment above it and in SKILL.md.
+import { staleIf, verdict } from "./verdict.mjs"
+
 const SURFACES = ["paper", "apply", "coach"]
 // The app signs up and logs in on /sign-in; only the label tells the two apart.
 export const isSignUpLink = (l) =>
@@ -9,13 +11,6 @@ const words = (s) => s.split(/\s+/).filter(Boolean)
 const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean)
 const quote = (list) =>
   list.length ? list.map((s) => `"${s}"`).join(", ") : "none"
-const verdict = (id, name, rule, pass, measured) => ({
-  id,
-  name,
-  rule,
-  pass,
-  measured,
-})
 
 const OUTCOME =
   /\b(job|jobs|role|roles|offer|interview|interviews|career|cv|hired|internship|seat)\b/i
@@ -42,8 +37,8 @@ const sentenceTexts = (top) =>
 
 export function textRules(top) {
   const h1 = top.blocks.find((b) => b.tag === "h1")?.text ?? ""
-  const sub =
-    part(top, (r) => r === "hero").find((b) => b.tag === "p")?.text ?? ""
+  const subBlock = part(top, (r) => r === "hero").find((b) => b.tag === "p")
+  const sub = subBlock?.text ?? ""
   const subSentences = sentences(sub)
   const out = []
 
@@ -112,17 +107,18 @@ export function textRules(top) {
       "05",
       "plain-sentences",
       "Hero and feature sentences are 24 words or fewer and not passive (regex heuristic for passive). The design's plan line is 21 words.",
-      long.length + passive.length === 0,
+      all.length > 0 && long.length + passive.length === 0,
       `${all.length} sentences, ${long.length} over 24 words, ${passive.length} passive${passive[0] ? `: ${quote([passive[0].text])}` : ""}`
     )
   )
 
   const titles = SURFACES.map((name) => {
-    const h2 =
-      top.blocks.find((b) => b.region === `surface:${name}` && b.tag === "h2")
-        ?.text ?? ""
+    const block = top.blocks.find(
+      (b) => b.region === `surface:${name}` && b.tag === "h2"
+    )
+    const h2 = block?.text ?? ""
     const count = words(h2).length
-    return { name, h2, ok: count >= 1 && count <= 3 }
+    return { name, h2, found: Boolean(block), ok: count >= 1 && count <= 3 }
   })
   const bad = titles.filter((t) => !t.ok)
   // The three product titles are the surface names: one to three words.
@@ -130,10 +126,10 @@ export function textRules(top) {
     verdict(
       "06",
       "product-titles-name-the-surface",
-      "Each product title (paper, apply, coach) is 1 to 3 words",
+      "Each product title (paper, apply, coach) is 1 to 3 words; a surface with no h2 is off",
       bad.length === 0,
       bad.length
-        ? `off: ${bad.map((t) => `${t.name}->"${t.h2}"`).join(", ")}`
+        ? `off: ${bad.map((t) => `${t.name}->${t.found ? `"${t.h2}"` : "no h2"}`).join(", ")}`
         : "all three titles are 1 to 3 words"
     )
   )
@@ -185,30 +181,33 @@ export function textRules(top) {
     firstSurface > 0 && objectionAt >= 0 && objectionAt < firstSurface
   // Shapiro, answer the objection before the scroll
   out.push(
-    verdict(
-      "10",
-      "objection-above-first-surface",
-      "A block earlier than the first feature section mentions the reader's own CV or work (the statement)",
-      answered,
-      `objection at block ${objectionAt}, first surface at block ${firstSurface} (answered above: ${answered})`
+    staleIf(
+      firstSurface < 0 ? "no block in a surface: region" : null,
+      verdict(
+        "10",
+        "objection-above-first-surface",
+        "A block earlier than the first feature section mentions the reader's own CV or work (the statement)",
+        answered,
+        `objection at block ${objectionAt}, first surface at block ${firstSurface} (answered above: ${answered})`
+      )
     )
   )
 
   const facts =
     /\b(cv|proof|role|roles|letter|site|claim|interview|job|jobs)\b/i
   const firsts = SURFACES.map((name) => {
-    const body =
-      top.blocks.find((b) => b.region === `surface:${name}` && b.tag === "p")
-        ?.text ?? ""
-    return { name, ok: facts.test(body) }
+    const block = top.blocks.find(
+      (b) => b.region === `surface:${name}` && b.tag === "p"
+    )
+    return { name, found: Boolean(block), ok: facts.test(block?.text ?? "") }
   })
   out.push(
     verdict(
       "11",
       "product-body-ties-to-hero",
-      "Each product's intro paragraph names proof, a CV, a role, a letter, a site, or a claim",
+      "Each product's intro paragraph names proof, a CV, a role, a letter, a site, or a claim; a surface with no intro paragraph is off",
       firsts.every((f) => f.ok),
-      `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => f.name))}`
+      `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => (f.found ? f.name : `${f.name} (no p)`)))}`
     )
   )
 

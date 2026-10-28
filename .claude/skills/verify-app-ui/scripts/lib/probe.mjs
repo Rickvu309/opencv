@@ -120,9 +120,7 @@ function probe() {
         disabled:
           e.disabled === true || e.getAttribute("aria-disabled") === "true",
         isPrimary: bg[3] > 0.9 && near(bg, primary),
-        inSidebar: Boolean(
-          e.closest("aside, [data-sidebar], nav[aria-label=Surfaces]")
-        ),
+        inSidebar: Boolean(e.closest("aside")),
       }
     })
 
@@ -279,12 +277,8 @@ function probe() {
   }
 
   // Screen facts used by single checks.
-  const sidebar =
-    document.querySelector("aside, [data-sidebar]") ??
-    document.querySelector("nav[aria-label=Surfaces]")
-  const navLinks = [
-    ...document.querySelectorAll("nav[aria-label=Surfaces] a, aside a"),
-  ]
+  const sidebar = document.querySelector("aside")
+  const navLinks = [...document.querySelectorAll("aside a")]
   const searchItem = [...document.querySelectorAll("button")].find((b) =>
     /^search$/i.test(label(b))
   )

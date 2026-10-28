@@ -22,24 +22,34 @@ export const FEATURE_DIRS = [
   "app-shell",
 ]
 
+// Returns the files and the folders that do not exist, so a check can go STALE instead of passing on nothing.
 export function sourceFiles(dirs) {
-  const out = []
+  const files = []
+  const missing = []
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
       const p = join(dir, name)
       if (statSync(p).isDirectory()) walk(p)
-      else if (/\.(tsx|ts)$/.test(name) && !/\.test\./.test(name)) out.push(p)
+      else if (/\.(tsx|ts)$/.test(name) && !/\.test\./.test(name)) files.push(p)
     }
   }
   for (const d of dirs) {
     const abs = join(repo, d)
-    if (!existsSync(abs)) continue
-    walk(abs)
+    if (existsSync(abs)) walk(abs)
+    else missing.push(d)
   }
-  return out
+  return { files, missing }
 }
-export const featureFiles = () =>
-  sourceFiles(FEATURE_DIRS.map((d) => `apps/web/src/features/${d}`))
+export const featureDirs = () =>
+  FEATURE_DIRS.map((d) => `apps/web/src/features/${d}`)
+export const appSourceDirs = () => [...featureDirs(), "apps/web/src/routes"]
+export const scanProblem = (...scans) => {
+  const missing = scans.flatMap((scan) => scan.missing)
+  if (missing.length) return `source folder missing: ${missing.join(", ")}`
+  if (scans.some((scan) => scan.files.length === 0))
+    return "the source scan read zero files"
+  return null
+}
 export const read = (f) => readFileSync(f, "utf8")
 export const rel = (f) => f.replace(`${repo}/`, "")
 export const list = (xs, n = 4) =>
@@ -47,10 +57,60 @@ export const list = (xs, n = 4) =>
 export const result = (id, name, pass, measured, rule) => ({
   id,
   name,
-  pass,
+  status: pass ? "PASS" : "FAIL",
   measured: String(measured),
   rule,
 })
+// The check's own precondition did not hold, so it says nothing about the app.
+export const stale = (id, name, why, rule) => ({
+  id,
+  name,
+  status: "STALE",
+  measured: String(why),
+  rule,
+})
+// One check, parts it could judge and parts it could not locate. A judged part that breaks the rule is a FAIL even
+// when another part was missing; with none broken, a missing part makes it STALE; otherwise PASS.
+export const judged = (id, name, rule, pass, measured, unjudged = []) => {
+  const missing = unjudged.filter(Boolean)
+  if (!pass)
+    return result(
+      id,
+      name,
+      false,
+      missing.length
+        ? `${measured}; not judged: ${missing.join("; ")}`
+        : measured,
+      rule
+    )
+  if (missing.length)
+    return stale(
+      id,
+      name,
+      `not judged: ${missing.join("; ")}; ${measured}`,
+      rule
+    )
+  return result(id, name, true, measured, rule)
+}
+// A scenario stub that answered nothing means the app made a call the tour no longer expects.
+export const stubSilent = (...snaps) => {
+  const quiet = snaps.filter((snap) => !(snap?.stubHits > 0))
+  return quiet.length ? "the scenario stub never fired" : null
+}
+
+export function summarize(results) {
+  const lines = results.map(
+    (r) =>
+      `${r.status} ${r.id} ${r.name}: ${r.measured.slice(0, 230)} | rule: ${r.rule}`
+  )
+  const by = (status) => results.filter((r) => r.status === status)
+  const [failed, staled] = [by("FAIL"), by("STALE")]
+  const ids = [...failed, ...staled].map((r) => r.id)
+  lines.push(
+    `${by("PASS").length} PASS, ${failed.length} FAIL, ${staled.length} STALE${ids.length ? `: ${ids.join(" ")}` : ""}`
+  )
+  return { lines, exit: staled.length ? 3 : failed.length ? 1 : 0 }
+}
 
 export function context(d) {
   const screens = {
@@ -77,18 +137,21 @@ export function context(d) {
     d.applyEmpty,
     ...(d.inbox ? [d.inbox] : []),
   ]
-  const files = featureFiles()
-  const has = (re) => files.filter((f) => re.test(read(f))).map(rel)
+  const scan = sourceFiles(featureDirs())
+  const has = (re) => scan.files.filter((f) => re.test(read(f))).map(rel)
   return {
+    scan,
     screens,
     allSnaps,
     labels: [...new Set(allSnaps.flatMap((s) => s.chrome))],
-    files,
     has,
   }
 }
 
-export function paletteUsesPanelDuration() {
-  const files = sourceFiles(["apps/web/src/features/command-palette"])
-  return files.some((file) => /duration-\(--duration-panel\)/.test(read(file)))
+export function paletteScan(dir = "apps/web/src/features/command-palette") {
+  const scan = sourceFiles([dir])
+  const uses = scan.files.some((file) =>
+    /duration-\(--duration-panel\)/.test(read(file))
+  )
+  return { scan, uses }
 }

@@ -1,6 +1,6 @@
 ---
 name: verify-landing
-description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures 31 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button), or the landing copy, and when asked whether the landing is good.
+description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures its properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button), or the landing copy, and when asked whether the landing is good.
 ---
 
 # verify-landing
@@ -22,7 +22,9 @@ PORT=4399 pnpm --filter web verify:landing
 - About 20 s warm. One browser process, so do not run it beside install, vitest or another browser run on the shared machine.
 - `VERIFY_LANDING_SHOTS=<dir>` also writes `desktop-first-view.png`, `desktop-full.png`, `mobile-first-view.png`, `mobile-full.png` (1440x900 and 390x844) for the taste review.
 
-Output is one line per property, `PASS|FAIL <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL: <ids>`. Exit 0 all pass, 1 any FAIL, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). Under 40 lines. The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+Output is one line per property, `PASS|FAIL|STALE <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL, K STALE: <ids>`. A check judges every part it can find. Any found part that breaks the rule makes it FAIL. With none broken, a part it could not locate (the hero section, `#benefits`, the nav lockup, a call-to-action button, the first product section) makes it STALE, and the line names it. A missing object the property is about (the hero figure, the benefit art, a product title) is a FAIL, not a STALE. Exit 0 all PASS, 1 any FAIL and no STALE, 3 any STALE, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+
+Reading a STALE: it means the check could not run that part, and the measured value names it ("not judged: ..."). A STALE hides nothing that was found, since any FAIL in the same check would have shown. Decide whether the checker's setup or the page changed. If the page dropped the section or button on purpose, repair the locator in `probe.mjs` or the check. If it lost it by accident, that is the regression: fix the page. A check that cannot run never counts as a pass.
 
 Reading a FAIL: the measured value is what the page does, the rule is what it should do. Decide whether the page or the checker is wrong, in this order:
 
@@ -32,7 +34,7 @@ Reading a FAIL: the measured value is what the page does, the rule is what it sh
 
 ## The properties
 
-Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 30, including 20b, are in `scripts/lib/page-checks.mjs`. Check 31 is in `scripts/lib/text-style-check.mjs`. Id 09 is judged only.
+Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 26, including 20b, are in `scripts/lib/page-checks.mjs`, and 27 to 30 are in `scripts/lib/design-checks.mjs`. Check 31 is in `scripts/lib/text-style-check.mjs`. Id 09 is judged only.
 
 - 01 `h1-length-and-aim`: 12 words or fewer; an outcome or audience word. Source: Shapiro litmus test; NN/g 2.2.
 - 02 `statement-names-cv`: a block outside the nav names opencv and CV.
@@ -66,11 +68,11 @@ Ids are the check numbers. The current page is the first-release marketing site.
 - 30 `benefit-art-matches-pen`: Coach benefit art matches `reference/coach-art.png`. Source: opencv.pen node oWS4Z. Crop and tolerance in `properties.md`.
 - 31 `text-style-matches-pen`: at 1440, each text in `landing.styles.json` that is on the page matches the fields opencv.pen sets (OKLCH colour, size, line height, weight, tracking), and each inline mark has an svg or img within 2px. A text the pen marks `startsLine` must start a line. That check runs at 1440 only. Dated exceptions cover the contrast-floor colours. A pen text missing from its section fails unless `design/landing.omitted.json` omits it. A heading split across inline elements is matched on the element's text, and each text run inside that element is checked. Text inside a `[role="img"]` figure is not looked up, and the per-word `.rv-w` spans of a revealed text are not texts of their own. Source: opencv.pen frame w7zeGR.
 
-Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](taste-review.md). It is not one of the 31 measured lines. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
+Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](taste-review.md). It is not a measured line. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
 
 ### Baseline at the sync commit
 
-At `ceb07502` (main, checked in #510) the checker prints 30 PASS and 1 FAIL: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
+At `ceb07502` (main, checked in #510) the checker prints 30 PASS, 1 FAIL and 0 STALE: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
 
 ## Taste review (judged layer)
 

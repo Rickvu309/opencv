@@ -115,6 +115,7 @@ function probe(kind) {
     return {
       vh: innerHeight,
       animatedText,
+      hero: Boolean(hero),
       heroImg: img && {
         figure: img.tagName !== "IMG",
         opacity: Number(cs(img).opacity),
@@ -290,12 +291,14 @@ function probe(kind) {
       blocks,
       links,
       imgs,
+      hero: Boolean(hero),
       heroImg: heroImg && {
         ...rectOf(heroImg),
         top: heroImg.getBoundingClientRect().top,
       },
       h1Bottom: h1el ? h1el.getBoundingClientRect().bottom : null,
       benefitArt: {
+        section: Boolean(benefitSection),
         count: benefitSvgs.length,
         viewBoxes: benefitViewBoxes,
         shapes: benefitShapes,
@@ -518,6 +521,7 @@ function probe(kind) {
         )
       : []
     const marquee = {
+      section: Boolean(logos),
       tracks: tracks.length,
       copyHidden: tracks.every((track) => {
         const kids = [...track.children]

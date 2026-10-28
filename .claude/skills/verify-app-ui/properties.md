@@ -1,6 +1,6 @@
 # verify-app-ui properties
 
-The full list the checker measures. `SKILL.md` links here.
+The list the checker measures. `SKILL.md` links here.
 
 Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the signed-in tour adds. 39 to 44 are the design text rules, and their pinned phrases live in `scripts/lib/copy.json`. A heuristic is a word list or threshold that can misjudge; it says so in its rule text. Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 44).
 
@@ -22,7 +22,6 @@ Writing and logic:
 
 Structure:
 
-- 14 `home-composer-first`: the `/home` page does not show "What are you aiming for?" or "Four small things". Home is gone until the Coach page replaces this check. Source: Apple layout.
 - 15 `cv-widest-coach-beside`: with the Coach panel closed, the CV editor is the widest region and no second Coach float covers the sheet (at 1440 wide). An open panel belongs to #377. Source: Cursor; Linear.
 - 16 `apply-five-stages-no-hscroll`: Saved, Applied, Interview and Offer are visible column headings at 1440x900, Closed is not, and the board does not scroll sideways. The 390 pass skips this property because the lanes scroll there. Source: the Apply board.
 - 17 `search-key-hint`: the Search button has a `kbd` inside it and Ctrl-K opens the dialog. Source: Raycast.
@@ -45,7 +44,7 @@ Motion:
 Accessibility and performance:
 
 - 27 `alerts-have-role`: the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
-- 28 `primary-buttons-48`: the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. The buttons are the `PRIMARY` labels in `scripts/lib/tour.mjs`: New job on Apply, New on the Paper library, Get early access on Pitch. Source: the design kit.
+- 28 `primary-buttons-32`: the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. The buttons are the `PRIMARY` labels in `scripts/lib/tour.mjs`: New job on Apply, New on the Paper library, Get early access on Pitch. Source: the design kit.
 - 29 `table-not-mounted-while-loading`: while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("Start a document"). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
 - 30 `undo-and-reject`: Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
 

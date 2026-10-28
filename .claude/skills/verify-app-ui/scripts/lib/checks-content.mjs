@@ -1,7 +1,15 @@
 // Checks 01 to 13: writing and logic. Sources: Apple writing, feedback; WCAG 3.2.4; NN/g empty states
 // and hallucinations; shadcn AI Elements. A heuristic says so in its rule text. A scenario that did not
-// reach its state is a FAIL, never a pass.
-import { context, list, result } from "./check-util.mjs"
+// reach its state is a FAIL, never a pass. A stubbed call that never fired, or a source folder that is
+// missing, leaves only that part unjudged: a found FAIL still FAILs, otherwise the check is STALE.
+import {
+  context,
+  judged,
+  list,
+  result,
+  scanProblem,
+  stubSilent,
+} from "./check-util.mjs"
 import {
   emptyActionLabels,
   hasBasisSentence,
@@ -14,9 +22,52 @@ import {
 const NOT_ERRORS = /^Worked for|Listed your|^Free$/
 const errorTexts = (snap) => snap.alerts.filter((t) => t && !NOT_ERRORS.test(t))
 
+// 04. Two failures are driven: the api answers 404 with a raw message, and the connection is refused.
+export function coachErrorCheck(d) {
+  const raw = "User not found."
+  const api = errorTexts(d.coachError)
+  const net = errorTexts(d.coachNet)
+  const rawShown = api.some((t) => showsRawMessage(t, raw))
+  const transport = net.some((t) =>
+    /failed to fetch|networkerror|typeerror|err_/i.test(t)
+  )
+  const apiQuiet = stubSilent(d.coachError)
+  const netQuiet = stubSilent(d.coachNet)
+  const m4 = [
+    apiQuiet
+      ? "404 answer not judged"
+      : !api.length
+        ? "no error appeared after the 404 answer"
+        : rawShown
+          ? `404 answer shows the raw api message "${raw}"`
+          : `404 answer: "${api[0].slice(0, 50)}"`,
+    netQuiet
+      ? "refused connection not judged"
+      : !net.length
+        ? "no error appeared after the refused connection"
+        : transport
+          ? `refused connection shows "${net[0].slice(0, 60)}"`
+          : `refused connection: "${net[0].slice(0, 50)}"`,
+  ].join("; ")
+  const rule04 =
+    "a failed Coach send shows an error, and it is a sentence, never the api's raw message or a transport error (driven twice: 404 USER_NOT_FOUND, then a refused connection; no error shown is a FAIL)"
+  return judged(
+    "04",
+    "coach-error-not-raw",
+    rule04,
+    (apiQuiet !== null || (api.length > 0 && !rawShown)) &&
+      (netQuiet !== null || (net.length > 0 && !transport)),
+    m4,
+    [
+      apiQuiet && `404 answer (${apiQuiet})`,
+      netQuiet && `refused connection (${netQuiet})`,
+    ]
+  )
+}
+
 export function contentChecks(d) {
   const r = []
-  const { allSnaps, labels, has } = context(d)
+  const { allSnaps, labels, has, scan } = context(d)
 
   const nouns = nounViolations(labels)
   r.push(
@@ -60,30 +111,7 @@ export function contentChecks(d) {
     )
   )
 
-  // 04. Two failures are driven: the api answers 404 with a raw message, and the connection is refused.
-  const raw = "User not found."
-  const api = errorTexts(d.coachError)
-  const net = errorTexts(d.coachNet)
-  const rawShown = api.some((t) => showsRawMessage(t, raw))
-  const transport = net.some((t) =>
-    /failed to fetch|networkerror|typeerror|err_/i.test(t)
-  )
-  let m4
-  if (!api.length || !net.length)
-    m4 = `no error appeared after ${!api.length ? "the 404 answer" : "the refused connection"}`
-  else if (rawShown) m4 = `404 answer shows the raw api message "${raw}"`
-  else if (transport) m4 = `refused connection shows "${net[0].slice(0, 60)}"`
-  else
-    m4 = `404 answer: "${api[0].slice(0, 50)}"; refused connection: "${net[0].slice(0, 50)}"`
-  r.push(
-    result(
-      "04",
-      "coach-error-not-raw",
-      api.length > 0 && net.length > 0 && !rawShown && !transport,
-      m4,
-      "a failed Coach send shows an error, and it is a sentence, never the api's raw message or a transport error (driven twice: 404 USER_NOT_FOUND, then a refused connection; no error shown is a FAIL)"
-    )
-  )
+  r.push(coachErrorCheck(d))
 
   const others = otherProductNames(allSnaps.map((s) => s.text).join(" "))
   r.push(
@@ -128,15 +156,19 @@ export function contentChecks(d) {
   const label = (word) => new RegExp(`>\\s*${word}\\s*<|["'\`]${word}["'\`]`)
   const approve = has(label("Approve"))
   const deny = has(label("Deny"))
+  const rule08 =
+    "a Coach write shows Deny and Approve before it runs (source read of JSX labels; the scripted Coach never writes, so no write turn is driven)"
+  const src08 = scanProblem(scan)
   r.push(
-    result(
+    judged(
       "08",
       "confirm-before-write",
-      approve.length > 0 && deny.length > 0,
+      rule08,
+      src08 !== null || (approve.length > 0 && deny.length > 0),
       approve.length && deny.length
         ? "Approve and Deny exist"
-        : `no Approve (${approve.length}) and Deny (${deny.length}) button label in features/{coach,home,paper,apply,pitch}; the banner says "Coach updated" after the write`,
-      "a Coach write shows Deny and Approve before it runs (source read of JSX labels; the scripted Coach never writes, so no write turn is driven)"
+        : `no Approve (${approve.length}) and Deny (${deny.length}) button label in the signed-in feature folders; the banner says "Coach updated" after the write`,
+      [src08 && `source scan (${src08})`]
     )
   )
 
@@ -177,13 +209,17 @@ export function contentChecks(d) {
   const pl = d.paperLoading.text
   const loading = /Loading documents|Loading…|Loading\.\.\./.test(pl)
   const emptyCopy = /Start a document/i.test(pl)
+  const rule11 =
+    "a loading list says it is loading (Loading documents, Loading...) and never shows Start a document"
+  const silent11 = stubSilent(d.paperLoading)
   r.push(
-    result(
+    judged(
       "11",
       "loading-not-empty",
-      loading && !emptyCopy,
+      rule11,
+      silent11 !== null || (loading && !emptyCopy),
       `while GET /api/paper is held: loading text ${loading}, empty copy ${emptyCopy}`,
-      "a loading list says it is loading (Loading documents, Loading...) and never shows Start a document"
+      [silent11 && `held list (${silent11})`]
     )
   )
 

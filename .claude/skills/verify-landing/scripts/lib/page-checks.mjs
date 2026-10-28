@@ -1,35 +1,10 @@
-import { readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-
-import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
+import { designChecks } from "./design-checks.mjs"
 import { textStyleVerdict } from "./text-style-check.mjs"
 import { isSignUpLink } from "./text-rules.mjs"
-
-// Pixels whose max RGB channel delta exceeds this are a mismatch.
-// The corrected Coach art stays under COACH_ART_MAX. The old centre-rotated
-// art (ellipses spun around their own centre) sits well above it.
-// One wrong ellipse moves about 150 pixels, inside this band. Check 30 is the
-// whole-art smoke test. landing-art-rotation.test.ts pins each ellipse.
-const COACH_ART_CHANNEL = 48
-// Corrected art measured 1.05% (943/90000) on three identical runs. The old
-// centre-rotated art measured 1.47% (1327/90000). 1.25% (1125/90000) sits
-// between them. Leave the limit here: it is not a single-mark check.
-const COACH_ART_MAX = 0.0125
-const coachReferencePath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../reference/coach-art.png"
-)
+import { staleIf, verdict } from "./verdict.mjs"
 
 // Layout, craft, motion, accessibility and performance properties. They read the snapshots that
 // probe.mjs takes at 1440x900 (desktop), 390x844 (mobile) and 1440x900 with reduced motion.
-const verdict = (id, name, rule, pass, measured) => ({
-  id,
-  name,
-  rule,
-  pass,
-  measured,
-})
 const px = (n) => Math.round(n)
 
 const luminance = ([r, g, b]) => {
@@ -80,14 +55,17 @@ export function pageChecks({
     : 0
   // NN/g 3.1
   out.push(
-    verdict(
-      "14",
-      "hero-photo-in-first-view-1440",
-      "At 1440x900 the H1 and 120px or more of the hero visual (an image or a [role=img] figure) share the first view",
-      desktop.h1Bottom !== null &&
-        desktop.h1Bottom <= desktop.vh &&
-        visibleH >= 120,
-      `h1 bottom ${px(desktop.h1Bottom)}px, frame visible ${px(visibleH)}px of ${img ? px(img.h) : 0} (390x844: ${px(mVisible)}px)`
+    staleIf(
+      desktop.hero ? null : "no hero section (the section holding the h1)",
+      verdict(
+        "14",
+        "hero-photo-in-first-view-1440",
+        "At 1440x900 the H1 and 120px or more of the hero visual (an image or a [role=img] figure) share the first view",
+        desktop.h1Bottom !== null &&
+          desktop.h1Bottom <= desktop.vh &&
+          visibleH >= 120,
+        `h1 bottom ${px(desktop.h1Bottom)}px, frame visible ${px(visibleH)}px of ${img ? px(img.h) : 0} (390x844: ${px(mVisible)}px)`
+      )
     )
   )
 
@@ -282,7 +260,7 @@ export function pageChecks({
       "no-video-or-carousel",
       "No video, audio, iframe, autoplay or carousel on the page, except one marquee in #logos whose repeated copies are aria-hidden and which stops under reduced motion (2026-10-28, #491)",
       m.media.length + m.autoplay + carousels.length === 0 && !marqueeBad,
-      `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${carousels.length}${carousels[0] ? ` ${JSON.stringify(carousels.slice(0, 2))}` : ""}; #logos marquee: ${marquee.tracks} track(s), repeats aria-hidden=${marquee.copyHidden}, still running under reduced motion=${reducedDeep.marquee.tracks}`
+      `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${carousels.length}${carousels[0] ? ` ${JSON.stringify(carousels.slice(0, 2))}` : ""}; #logos present=${marquee.section}, marquee: ${marquee.tracks} track(s), repeats aria-hidden=${marquee.copyHidden}, still running under reduced motion=${reducedDeep.marquee.tracks}`
     )
   )
 
@@ -347,12 +325,15 @@ export function pageChecks({
     first.heroImg?.startsInvisible || (first.heroImg?.opacity ?? 1) < 0.95
   // web.dev CLS and LCP
   out.push(
-    verdict(
-      "25",
-      "hero-image-attrs-and-paint",
-      "Hero image has width, height, fetchpriority=high, is not lazy, and does not start at opacity 0. A [role=img] hero figure instead has a non-zero box at first paint and does not start at opacity 0",
-      miss.length === 0 && !invisible,
-      `${first.heroImg?.figure ? "figure" : "img"} missing=${miss.join(",") || "none"}, starts invisible=${Boolean(invisible)} (opacity ${first.heroImg?.opacity})`
+    staleIf(
+      first.hero ? null : "no hero section (the section holding the h1)",
+      verdict(
+        "25",
+        "hero-image-attrs-and-paint",
+        "Hero image has width, height, fetchpriority=high, is not lazy, and does not start at opacity 0. A [role=img] hero figure instead has a non-zero box at first paint and does not start at opacity 0",
+        miss.length === 0 && !invisible,
+        `${first.heroImg?.figure ? "figure" : "img"} missing=${miss.join(",") || "none"}, starts invisible=${Boolean(invisible)} (opacity ${first.heroImg?.opacity})`
+      )
     )
   )
 
@@ -371,125 +352,7 @@ export function pageChecks({
     )
   )
 
-  // 94 = paths + ellipses in the Benefits art frames UfIKe (11), PLjP0 (37) and oWS4Z (46).
-  const art = desktop.benefitArt
-  const artBoxes = art?.viewBoxes ?? []
-  const artMatches =
-    art?.count === 3 &&
-    artBoxes.length === 3 &&
-    artBoxes.every((box) => box === "0 0 300 300") &&
-    art.shapes === 94 &&
-    art.hex === 0 &&
-    art.perCard?.length === 3 &&
-    art.perCard.every((n) => n === 1)
-  out.push(
-    verdict(
-      "27",
-      "benefit-art-from-design",
-      "Each of the three benefit cards contains one svg with viewBox 0 0 300 300, together they hold 94 paths and ellipses (the design art), and no element inside uses an inline hex colour",
-      artMatches,
-      `${art?.count ?? 0} svg (per card ${art?.perCard?.join("/") ?? "none"}), viewBox ${artBoxes.join(" | ") || "none"}, ${art?.shapes ?? 0} shapes, ${art?.hex ?? 0} hex`
-    )
-  )
-
-  const lockup = desktop.navLockup
-  const gap = lockup?.gap
-  const lockupMatches =
-    Boolean(lockup) &&
-    gap >= 9 &&
-    gap <= 13 &&
-    lockup.fontSize === "16px" &&
-    Number(lockup.fontWeight) === 600
-  out.push(
-    verdict(
-      "28",
-      "nav-lockup-spacing",
-      "At 1440 the visible gap from the nav mark's right edge to the wordmark is 9 to 13 px (the mark box has 2 px of inner padding) and the wordmark is 16px at weight 600",
-      lockupMatches,
-      lockup
-        ? `gap ${gap.toFixed(2)}px, font ${lockup.fontSize} weight ${lockup.fontWeight}`
-        : "nav lockup not found"
-    )
-  )
-
-  const near = (value, target) =>
-    typeof value === "number" && Math.abs(value - target) <= 0.6
-  const sized = (button, height, font, pad) =>
-    Boolean(button) &&
-    near(button.h, height) &&
-    button.fontSize === font &&
-    Number(button.fontWeight) === 500 &&
-    near(button.padInline, pad)
-  // A pill's computed radius is at least half the button height. 0.6 matches near().
-  const pill = (button) =>
-    Boolean(button) && button.radius + 0.6 >= button.h / 2
-  const navCta = desktop.ctas?.nav
-  const closeCta = desktop.ctas?.close
-  const sampleCta = desktop.ctas?.sample
-  const ctaMatches =
-    sized(navCta, 32, "13px", 12) &&
-    navCta.inset &&
-    navCta.outer &&
-    pill(navCta) &&
-    sized(closeCta, 44, "16px", 20) &&
-    closeCta.inset &&
-    closeCta.outer &&
-    pill(closeCta) &&
-    sized(sampleCta, 44, "16px", 20) &&
-    sampleCta.inset === false &&
-    sampleCta.outer === false &&
-    sampleCta.borderVisible === false &&
-    pill(sampleCta)
-  const fmtCta = (button) =>
-    button
-      ? `${button.h.toFixed(1)}px ${button.fontSize}/${button.fontWeight} pad ${button.padInline} r ${Number(button.radius).toFixed(1)} ${button.inset ? "inset" : "no-inset"} ${button.outer ? "outer" : "no-outer"} border ${button.borderVisible ? "yes" : "no"}`
-      : "missing"
-  out.push(
-    verdict(
-      "29",
-      "cta-buttons-match-design",
-      "At 1440 the nav Get started is 32px tall, 13px at weight 500, with 12px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; the close Get started is 44px tall, 16px at weight 500, with 20px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; See a sample is the same size with a border-radius of at least half its height, no inset ring, no outer shadow, and no visible border",
-      ctaMatches,
-      `nav ${fmtCta(navCta)}; close ${fmtCta(closeCta)}; sample ${fmtCta(sampleCta)}`
-    )
-  )
-
-  const rasters = desktop.benefitRasters ?? []
-  const coach = rasters.find(
-    (item) => item.title === "A coach that does the work"
-  )
-  let artMatchesPen = false
-  let artMeasured = "coach raster missing"
-  if (!coach?.png) {
-    artMeasured = coach?.error
-      ? `coach raster failed: ${coach.error}`
-      : `coach raster missing (${rasters.length} cards)`
-  } else if (rasters.length < 3 || rasters.some((item) => !item.png)) {
-    artMeasured = `rasterised ${rasters.filter((item) => item.png).length} of ${rasters.length} benefit svgs`
-  } else {
-    try {
-      const diff = pngMismatch(
-        decodeDataUrl(coach.png),
-        decodePng(readFileSync(coachReferencePath)),
-        COACH_ART_CHANNEL
-      )
-      artMatchesPen = diff.reason === "" && diff.ratio <= COACH_ART_MAX
-      artMeasured = diff.reason
-        ? diff.reason
-        : `${(diff.ratio * 100).toFixed(2)}% of pixels differ by more than ${COACH_ART_CHANNEL} (limit ${(COACH_ART_MAX * 100).toFixed(2)}%), ${rasters.length} svgs rasterised`
-    } catch (error) {
-      artMeasured = `compare failed: ${error.message}`
-    }
-  }
-  out.push(
-    verdict(
-      "30",
-      "benefit-art-matches-pen",
-      `Each benefit card's svg is rasterised in the page. The Coach art matches the pen.dev ground truth (reference/coach-art.png, cropped from a pen.dev screenshot): at most ${(COACH_ART_MAX * 100).toFixed(2)}% of pixels may differ by more than ${COACH_ART_CHANNEL} on any RGB channel. This catches a whole-art regression, not a single wrong mark`,
-      artMatchesPen,
-      artMeasured
-    )
-  )
+  out.push(...designChecks(desktop))
 
   out.push(textStyleVerdict(penSections))
   return out
