@@ -8,7 +8,7 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "test": "node --test scripts/open-pr.test.mjs scripts/adr-citations.test.mjs scripts/retired-words.test.mjs scripts/verify-auth-production.test.mjs scripts/verify-deploy.test.mjs .claude/skills/verify-app-ui/scripts/lib/pen-layout-compare.test.mjs scripts/skill-routes.test.mjs scripts/skill-paths.test.mjs .claude/skills/verify-app-ui/scripts/lib/checks-stale.test.mjs .claude/skills/verify-landing/scripts/lib/verdict.test.mjs && turbo test"
+    "test": "node --test scripts/open-pr.test.mjs scripts/adr-citations.test.mjs scripts/retired-words.test.mjs scripts/verify-auth-production.test.mjs scripts/verify-deploy.test.mjs .claude/skills/verify-app-ui/scripts/lib/pen-layout-compare.test.mjs scripts/skill-routes.test.mjs scripts/skill-paths.test.mjs .claude/skills/verify-app-ui/scripts/lib/checks-stale.test.mjs .claude/skills/verify-landing/scripts/lib/verdict.test.mjs .claude/skills/verify-app-ui/scripts/lib/text-rules.test.mjs .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs && turbo test"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
