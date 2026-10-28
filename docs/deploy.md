@@ -166,19 +166,34 @@ Apply and Threads reads are untouched. Do not fail the deploy or the healthcheck
 for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
 `api` variables.
 
-| Variable                       | Required              | Default                                    | Notes                                                                                       |
-| ------------------------------ | --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on production. Pass it on stdin so it never hits shell history.                         |
-| `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on production.**            |
-| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id. Free Models Router. The answering model can change between turns.             |
-| `COACH_MODEL_LIGHT`            | No                    | `deepseek/deepseek-chat-v3.1`              | Light mode id.                                                                              |
-| `COACH_MODEL_MAX`              | No                    | `anthropic/claude-opus-4`                  | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`.        |
-| `COACH_DAILY_TURN_LIMIT_FREE`  | No                    | `50`                                       | Free-mode daily turn cap.                                                                   |
-| `COACH_DAILY_TURN_LIMIT_LIGHT` | No                    | `30`                                       | Light-mode daily turn cap.                                                                  |
-| `COACH_DAILY_TURN_LIMIT_MAX`   | No                    | `10`                                       | Max-mode daily turn cap.                                                                    |
-| `COACH_RUNTIME`                | No                    | unset (OpenRouter when the key is present) | `fake` injects the scripted runtime for `curl -N` protocol checks. **Never on production.** |
+| Variable                          | Required               | Default             | Notes                                           |
+| --------------------------------- | ---------------------- | ------------------- | ----------------------------------------------- |
+| `OPENROUTER_API_KEY`              | Yes, for Free accounts | none                | Free routes through OpenRouter.                 |
+| `ANTHROPIC_API_KEY`               | Yes, for Pro accounts  | none                | Pro routes directly to Anthropic.               |
+| `OPENROUTER_BASE_URL`             | No                     | provider URL        | Local stub only; never production.              |
+| `COACH_MODEL_FREE`                | No                     | `openrouter/free`   | Free account model; the answering model varies. |
+| `COACH_MODEL_PRO_FREE`            | No                     | `claude-haiku-5-5`  | Pro account, Free mode.                         |
+| `COACH_MODEL_LIGHT`               | No                     | `claude-sonnet-5-5` | Pro account, Light mode.                        |
+| `COACH_MODEL_MAX`                 | No                     | `claude-opus-5-5`   | Pro account, Max mode.                          |
+| `COACH_DAILY_TURN_LIMIT_FREE`     | No                     | `20`                | Free account daily cap.                         |
+| `COACH_DAILY_TURN_LIMIT_PRO_FREE` | No                     | `0`                 | Pro Free mode; zero means uncapped.             |
+| `COACH_DAILY_TURN_LIMIT_LIGHT`    | No                     | `10`                | Pro Light daily cap.                            |
+| `COACH_DAILY_TURN_LIMIT_MAX`      | No                     | `5`                 | Pro Max daily cap.                              |
+| `COACH_SESSION_HOURS`             | No                     | `4`                 | Session usage display window.                   |
+| `COACH_RUNTIME`                   | No                     | live provider       | `fake` is for local protocol checks only.       |
 
-The defaults in this table are what the api ships today. Release one changes the daily caps to 20, 10 and 5, and routes Pro to Claude. See `docs/adr/0004-plans-and-coach-tiers.md`.
+These are the routes and caps implemented by `packages/domain/src/usage.ts`.
+Daily windows start at 07:00 in the person's timezone. Session and weekly
+meters describe usage; only the daily mode cap rejects a turn. Admission counts
+an attempted turn, including an error or Stop. Model IDs can be overridden
+without changing code; check access with the deployment account before rollout.
+
+Keep one API process for now: explicit Stop uses process-local controllers.
+Provider calls have a two-minute turn timeout, a 30-second idle chunk timeout,
+one provider retry, a 4,096-token output ceiling and at most eight tool steps.
+An unfinished usage row blocks a second turn in the same chat for five minutes.
+After a crash, wait for that window before retrying. Regenerate only generates
+text; it does not repeat earlier commands. See [Coach research and release scope](coach.md).
 
 ```bash
 printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
@@ -192,7 +207,7 @@ COACH_SMOKE_API=https://api.opencv.me COACH_SMOKE_MODE=production pnpm --filter 
 ```
 
 Production mode asks for advice that cites workspace state and a Command
-(`apply.moveCard`) and looks for the receipt.
+(`job.move`) and looks for the receipt.
 
 ## Domains and DNS
 
