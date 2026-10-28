@@ -8,13 +8,17 @@ export const repo = resolve(
   "../../../../.."
 )
 export const SURFACES = ["home", "paper", "cv", "apply", "pitch"]
+// Signed-in app source. Pitch and Proof live in coming-soon (features/pitch went in #389).
 export const FEATURE_DIRS = [
   "coach",
   "home",
   "paper",
   "apply",
-  "pitch",
+  "coming-soon",
   "inbox",
+  "settings",
+  "command-palette",
+  "commands",
   "app-shell",
 ]
 
