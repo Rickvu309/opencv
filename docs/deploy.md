@@ -8,7 +8,9 @@ deployment (see Rollback). This file is the runbook.
 
 Each service redeploys from `main` when a file under its watch paths changes.
 No CI gates a deploy (the repo runs no GitHub Actions), so the local pre-push
-check and the review before merge are the gate.
+check and the review before merge are the gate. The review gate runs
+`pnpm --filter api... run build` after the checks, the same command the api
+service builds with, and a failure there blocks the merge.
 
 ## Layout
 
