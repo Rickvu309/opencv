@@ -33,7 +33,7 @@ export function JobsPreview() {
       <div className="flex h-11 items-center gap-2.5 rounded-[12px] border border-border bg-background px-3.5">
         <Search className="size-[15px] text-muted-foreground" />
         <span className="text-sm text-foreground">Marketing, Hanoi</span>
-        <span className="ml-auto flex gap-1.5">
+        <span className="ml-auto hidden gap-1.5 sm:flex">
           {["Junior", "Full-time", "Hybrid", "Salary"].map((filter) => (
             <span
               key={filter}
