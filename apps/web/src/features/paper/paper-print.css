@@ -174,7 +174,10 @@
     page-break-inside: avoid;
   }
 
-  body[data-print="paper"] [data-paper-print] .cv-print-entry li:nth-child(-n + 2) {
+  body[data-print="paper"]
+    [data-paper-print]
+    .cv-print-entry
+    li:nth-child(-n + 2) {
     break-before: avoid;
     break-inside: avoid;
     page-break-before: avoid;
@@ -182,7 +185,10 @@
   }
 
   /* A lone last bullet must not start the next page when the line above fits with it. */
-  body[data-print="paper"] [data-paper-print] .cv-print-entry li:nth-last-child(2) {
+  body[data-print="paper"]
+    [data-paper-print]
+    .cv-print-entry
+    li:nth-last-child(2) {
     break-after: avoid;
     page-break-after: avoid;
   }

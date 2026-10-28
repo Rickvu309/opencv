@@ -231,11 +231,13 @@ describe("CV editor chrome", () => {
   it("counts the printed template, not the taller editor canvas", async () => {
     let printed = 1
     const seen: string[] = []
-    vi.spyOn(paperPrint, "readPreviewPageCount").mockImplementation((element) => {
-      if (element?.hasAttribute("data-cv-preview")) seen.push("canvas")
-      if (element?.hasAttribute("data-paper-measure")) seen.push("print")
-      return printed
-    })
+    vi.spyOn(paperPrint, "readPreviewPageCount").mockImplementation(
+      (element) => {
+        if (element?.hasAttribute("data-cv-preview")) seen.push("canvas")
+        if (element?.hasAttribute("data-paper-measure")) seen.push("print")
+        return printed
+      }
+    )
     installFetch()
     const view = render(
       <PaperCvEditor

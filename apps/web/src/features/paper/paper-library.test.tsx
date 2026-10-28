@@ -150,9 +150,9 @@ describe("Paper library", () => {
   it("prints a letter card from Download PDF", async () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {
       expect(document.body).toHaveAttribute("data-print", "paper")
-      expect(document.querySelector("[data-paper-letter]")?.textContent).toContain(
-        "One line for the letter."
-      )
+      expect(
+        document.querySelector("[data-paper-letter]")?.textContent
+      ).toContain("One line for the letter.")
       window.dispatchEvent(new Event("afterprint"))
     })
     const letter: PaperView = {

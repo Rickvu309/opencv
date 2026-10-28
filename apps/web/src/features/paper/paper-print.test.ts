@@ -148,9 +148,13 @@ describe("print paper", () => {
     )
     expect(css).toMatch(/\.cv-print-entry-head[\s\S]*break-after:\s*avoid/)
     expect(css).toMatch(/\.cv-print-entry-head[\s\S]*break-inside:\s*avoid/)
-    expect(css).toMatch(/cv-print-entry li:nth-child\(-n \+ 2\)/)
-    expect(css).toMatch(/cv-print-entry li:nth-last-child\(2\)[\s\S]*break-after:\s*avoid/)
-    expect(css).toMatch(/cv-print-entry li:last-child[\s\S]*break-before:\s*avoid/)
+    expect(css).toMatch(/cv-print-entry\s+li:nth-child\(-n \+ 2\)/)
+    expect(css).toMatch(
+      /cv-print-entry\s+li:nth-last-child\(2\)[\s\S]*break-after:\s*avoid/
+    )
+    expect(css).toMatch(
+      /cv-print-entry li:last-child[\s\S]*break-before:\s*avoid/
+    )
     expect(css).toMatch(/orphans:\s*2/)
     expect(css).toMatch(/widows:\s*2/)
     expect(css).toMatch(/cv-type-section-title[\s\S]*break-after:\s*avoid/)
