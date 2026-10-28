@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest"
-import { act, fireEvent, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type { PaperView } from "@workspace/domain"
 
@@ -49,6 +49,11 @@ const entryDocument = {
     },
   ],
 }
+
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 function renderEditor() {
   return renderWithClient(
