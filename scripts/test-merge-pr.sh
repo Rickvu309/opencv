@@ -15,7 +15,8 @@ echo "$*" >>"$MP_LOG"
 case "$1 $2" in
   "api user") echo "$MP_ME" ;;
   "repo view") echo "owner/repo" ;;
-  "pr diff") printf '%s\n' $MP_FILES ;;
+  "pr diff") [[ -z "${MP_DIFF_FAIL:-}" ]] || exit 1; printf '%s\n' $MP_FILES ;;
+  "api repos/owner/repo/branches/main") echo "${MP_MAIN:-1234567890ab00000000000000000000000000ff}" ;;
   "pr merge" | "api repos/owner/repo/statuses/"*) ;;
   "pr view")
     case "$*" in
@@ -95,6 +96,22 @@ no_writes "no OK line"
 reset; MP_EVIDENCE=$(evidence "review-pr.sh: OK (patch id $old, main 1234567890ab). Independent review: sol-loop, approved. verify-opencv: PASS") run
 expect "stale patch id refuses and names the current id" 1 "$patch"
 no_writes "stale"
+
+reset; MP_EVIDENCE=$(evidence "review-pr.sh: OK (patch id ${patch}0, main 1234567890ab). Independent review: x, approved. verify: PASS") run
+expect "a longer id that contains the patch id refuses" 1 "$patch"
+no_writes "suffixed id"
+
+reset; MP_EVIDENCE=$(evidence "review-pr.sh: OK (patch id a${patch}, main 1234567890ab). Independent review: x, approved. verify: PASS") run
+expect "a prefixed id refuses" 1 "$patch"
+no_writes "prefixed id"
+
+reset; MP_DIFF_FAIL=1 run
+expect "a failed diff listing refuses" 1 "could not list the files"
+no_writes "diff failure"
+
+reset; MP_MAIN=9999999999990000000000000000000000000000 run
+expect "main moved during the review refuses" 1 "main moved from 1234567890ab"
+never "main moved" "api repos/owner/repo/statuses/"; never "main moved" "pr merge"
 
 reset; MP_EVIDENCE=$(evidence "looks good, patch id $patch") run
 expect "no independent review refuses" 1 "Independent review"

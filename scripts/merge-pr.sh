@@ -11,7 +11,7 @@
 #   2. scripts/review-pr.sh <pr#> exits 0 (override the command with MERGE_PR_REVIEW_CMD)
 #   3. a PR comment or review body names the current patch id and says "Independent review"; a PR that changes
 #      anything under apps/ also needs a body with that patch id that says "verify"
-#   4. gh api posts state=success for context gates/review-pr on the head the review tested
+#   4. main is still the commit the review tested, then gh api posts state=success for context gates/review-pr on the head the review tested
 #   5. gh pr merge --squash --admin --match-head-commit <that head>
 #   6. prints the merge commit and the deploy check to run next
 # --dry-run does 1-3, prints what 4 and 5 would run and changes nothing.
@@ -76,15 +76,17 @@ case "$review_rc" in
 esac
 
 echo "==> PR #$pr: evidence for patch id $rec_patch"
+# The id must stand alone, so a longer hex string that contains it does not count.
 bodies_with() {
   gh pr view "$pr" --json comments,reviews --jq \
-    "[.comments[].body, .reviews[].body] | map(select(contains(\"$rec_patch\") and test(\"$1\"; \"i\"))) | length"
+    "[.comments[].body, .reviews[].body] | map(select(test(\"(^|[^0-9a-f])$rec_patch(\$|[^0-9a-f])\") and test(\"$1\"; \"i\"))) | length"
 }
 stale() {
   die "no PR comment or review names the current patch id $rec_patch with '$1'. Evidence for an older patch does not count; post a new comment: review-pr.sh: OK (patch id $rec_patch, main $rec_main). Independent review: <who>, approved. verify-<skill>: <result>"
 }
 (( $(bodies_with 'independent review') > 0 )) || stale "Independent review"
-if gh pr diff "$pr" --name-only | grep -q '^apps/'; then
+changed=$(gh pr diff "$pr" --name-only) || die "could not list the files PR #$pr changes"
+if grep -q '^apps/' <<<"$changed"; then
   (( $(bodies_with 'verify') > 0 )) || stale "verify"
 fi
 echo "  ok    evidence names patch id $rec_patch"
@@ -101,6 +103,9 @@ if (( dry_run )); then
 fi
 
 echo "==> PR #$pr: status and merge"
+main_now=$(gh api "repos/$repo/branches/main" --jq .commit.sha) || die "could not read the current main"
+[[ "$main_now" == "$rec_main"* ]] ||
+  die "main moved from $rec_main to ${main_now:0:12} during the review. Rerun: heavy -- scripts/merge-pr.sh $pr"
 "${status_cmd[@]}" >/dev/null
 "${merge_cmd[@]}"
 
