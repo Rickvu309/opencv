@@ -1,3 +1,5 @@
+import { legacyAppPath } from "./product-paths.ts"
+
 const AUTH_PATHS = new Set(["/sign-in", "/sign-up"])
 
 export const SIGNED_OUT_EMAIL_KEY = "opencv.signedOutEmail"
@@ -9,13 +11,21 @@ export const SIGNED_OUT_EMAIL_KEY = "opencv.signedOutEmail"
 export function safeRedirectPath(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined
 
-  const path = value.trim()
-  if (!path.startsWith("/")) return undefined
-  if (path.startsWith("//")) return undefined
-  if (path.includes("://")) return undefined
+  const trimmed = value.trim()
+  if (!trimmed.startsWith("/")) return undefined
+  if (trimmed.startsWith("//")) return undefined
+  if (trimmed.includes("://")) return undefined
+
+  const path = legacyAppPath(trimmed) ?? trimmed
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) {
+    return undefined
+  }
 
   const pathname = path.split(/[?#]/, 1)[0] ?? path
   if (AUTH_PATHS.has(pathname)) return undefined
+  if (pathname === "/" && !path.includes("?") && !path.includes("#")) {
+    return undefined
+  }
 
   return path
 }
@@ -55,7 +65,7 @@ export function signInHref(currentPath: string): string {
   if (isAuthPath(currentPath)) return "/sign-in"
 
   const redirect = safeRedirectPath(currentPath)
-  if (!redirect || redirect === "/app") return "/sign-in"
+  if (!redirect) return "/sign-in"
 
   return `/sign-in?redirect=${encodeURIComponent(redirect)}`
 }

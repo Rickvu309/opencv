@@ -67,34 +67,37 @@ try {
     })
   })
   const cases = [
-    [
-      publicHost,
-      "/sign-in?redirect=%2Fapp%2Fpaper",
-      `${appOrigin}/sign-in?redirect=%2Fapp%2Fpaper`,
-    ],
-    [publicHost, "/sign-up", `${appOrigin}/sign-up`],
-    [publicHost, "/app", `${appOrigin}/app`],
+    [publicHost, "/app", `${appOrigin}/`],
+    [publicHost, "/app?utm=a%2Fb", `${appOrigin}/?utm=a%2Fb`],
     [
       publicHost,
       "/app/paper?doc=a%2Fb&x=1",
-      `${appOrigin}/app/paper?doc=a%2Fb&x=1`,
+      `${appOrigin}/paper?doc=a%2Fb&x=1`,
     ],
-    [appHost, "/", `${appOrigin}/app`],
-    [appHost, "/?utm=a%2Fb&x=1", `${appOrigin}/app?utm=a%2Fb&x=1`],
+    [publicHost, "/coach?x=1", `${appOrigin}/coach?x=1`],
+    [
+      publicHost,
+      "/sign-in?redirect=%2Fpaper",
+      `${appOrigin}/sign-in?redirect=%2Fpaper`,
+    ],
+    [publicHost, "/sign-up", `${appOrigin}/sign-up`],
+    [publicHost, "/", null],
+    [publicHost, "/pricing", null],
+    [publicHost, "/application", null],
+    [appHost, "/", null],
+    [appHost, "/?utm=a%2Fb", null],
+    [appHost, "/app/paper", `${appOrigin}/paper`],
+    [appHost, "/coach", null],
     [appHost, "/pricing", `${publicOrigin}/pricing`],
     [appHost, "/about", `${publicOrigin}/about`],
     [appHost, "/help", `${publicOrigin}/help`],
     [appHost, "/share/token?x=a%2Fb", `${publicOrigin}/share/token?x=a%2Fb`],
     [appHost, "/u/future", `${publicOrigin}/u/future`],
-    [publicHost, "/", null],
-    [publicHost, "/pricing", null],
-    [publicHost, "/application", null],
-    [appHost, "/app/paper", null],
     [appHost, "/unknown", null],
     ["preview.example", "/app", null],
   ]
   if (publicHost === "opencv.me") {
-    cases.push(["www.opencv.me", "/app/paper", `${appOrigin}/app/paper`])
+    cases.push(["www.opencv.me", "/app/paper", `${appOrigin}/paper`])
     cases.push(["www.opencv.me", "/pricing", null])
   }
   for (const [host, pathname, target] of cases) {

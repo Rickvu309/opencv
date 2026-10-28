@@ -231,7 +231,7 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
             {usage.data?.mode === "free" ? "Free" : usage.data?.mode} limit.
             Coach is back at {resetTime}.{" "}
             <a
-              href="/app/settings/billing/upgrade"
+              href="/settings/billing/upgrade"
               className="underline underline-offset-2"
             >
               Upgrade
@@ -240,10 +240,7 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
         ) : !enabled ? (
           <p role="status" className="text-sm">
             Coach is turned off.{" "}
-            <a
-              href="/app/settings/coach"
-              className="underline underline-offset-2"
-            >
+            <a href="/settings/coach" className="underline underline-offset-2">
               Open Settings
             </a>
           </p>

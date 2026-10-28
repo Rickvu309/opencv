@@ -241,7 +241,7 @@ export function PaperLetterStart({
         <div>
           <p>You&apos;ve reached today&apos;s Free limit.</p>
           <p>{limit.message}</p>
-          <a href="/app/settings">Upgrade</a>
+          <a href="/settings">Upgrade</a>
         </div>
       ) : null}
       {error ? <p>{error}</p> : null}

@@ -1,13 +1,14 @@
-const START_PAGES = {
-  apply: "/app/apply",
-  paper: "/app/paper",
-  inbox: "/app/inbox",
-  coach: "/app/coach",
-} as const
+import { START_PAGES } from "@/lib/product-paths.ts"
+
+export { START_PAGES }
+
+function isStartPage(value: string): value is keyof typeof START_PAGES {
+  return value in START_PAGES
+}
 
 export function startPagePath(startPage: unknown) {
-  if (typeof startPage === "string" && startPage in START_PAGES) {
-    return START_PAGES[startPage as keyof typeof START_PAGES]
+  if (typeof startPage === "string" && isStartPage(startPage)) {
+    return START_PAGES[startPage]
   }
   return START_PAGES.apply
 }

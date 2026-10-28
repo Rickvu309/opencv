@@ -32,7 +32,7 @@ export function PaperPage() {
       }
       onRetry={() => void docs.refetch()}
       onOpen={(id) =>
-        void navigate({ to: "/app/paper/$docId", params: { docId: id } })
+        void navigate({ to: "/paper/$docId", params: { docId: id } })
       }
     />
   )

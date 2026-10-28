@@ -37,7 +37,7 @@ describe("apply board", () => {
   })
 
   it("shows one empty action and hides Closed", async () => {
-    renderApp("/app/apply")
+    renderApp("/apply")
     expect(
       await screen.findByRole("heading", { name: "Track your first job" })
     ).toBeInTheDocument()
@@ -52,7 +52,7 @@ describe("apply board", () => {
 
   it("names the four lanes and opens a card", async () => {
     setMockJobs([junior, applied, interview])
-    const { router } = renderApp("/app/apply")
+    const { router } = renderApp("/apply")
     expect(
       await screen.findByRole("region", { name: "Saved" })
     ).toBeInTheDocument()
@@ -76,13 +76,13 @@ describe("apply board", () => {
       })
     )
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(`/app/apply/${junior.id}`)
+      expect(router.state.location.pathname).toBe(`/apply/${junior.id}`)
     })
   })
 
   it("shows one clear-filters empty state", async () => {
     setMockJobs([junior])
-    renderApp("/app/apply")
+    renderApp("/apply")
     await screen.findByRole("region", { name: "Saved" })
     fireEvent.click(screen.getByRole("button", { name: "Filter" }))
     fireEvent.change(await screen.findByLabelText("Company"), {
@@ -100,7 +100,7 @@ describe("apply board", () => {
   })
 
   it("keeps one glow while the new job dialog is open", async () => {
-    renderApp("/app/apply")
+    renderApp("/apply")
     const add = await screen.findByRole("button", { name: "Add job" })
     expect(add).toHaveAttribute("data-variant", "glow")
     fireEvent.click(add)
@@ -131,7 +131,7 @@ describe("apply board", () => {
       })
     try {
       setMockJobs([junior, applied])
-      renderApp("/app/apply")
+      renderApp("/apply")
       const card = await screen.findByRole("button", {
         name: "Junior Marketing, Lumière Cosmetics",
       })
@@ -196,7 +196,7 @@ describe("apply board", () => {
       })
     try {
       setMockJobs([applied, offer])
-      renderApp("/app/apply")
+      renderApp("/apply")
       const card = await screen.findByRole("button", {
         name: "Business Analyst, Regional bank",
       })

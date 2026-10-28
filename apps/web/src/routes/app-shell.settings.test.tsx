@@ -33,7 +33,7 @@ describe("settings workspace", () => {
       await screen.findByRole("heading", { level: 1, name: "Integrations" })
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/app/settings/integrations")
+      expect(router.state.location.pathname).toBe("/settings/integrations")
     })
     expect(
       screen.queryByRole("tab", { name: "Connected apps" })

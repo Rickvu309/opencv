@@ -43,7 +43,7 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
           {detail.docId ? (
             <a
               className="underline underline-offset-2"
-              href={`/app/paper/${detail.docId}`}
+              href={`/paper/${detail.docId}`}
             >
               {detail.docName} · Open
             </a>
@@ -160,7 +160,7 @@ function CreateDocBody({
         {detail.docId ? (
           <a
             className="underline underline-offset-2"
-            href={`/app/paper/${detail.docId}`}
+            href={`/paper/${detail.docId}`}
           >
             {detail.name}
           </a>

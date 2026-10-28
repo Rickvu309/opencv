@@ -159,7 +159,7 @@ export function SignInScreen() {
         setFocusNonce((nonce) => nonce + 1)
         return
       }
-      await navigate({ href: redirectTo ?? "/app" })
+      await navigate({ href: redirectTo ?? "/" })
     } catch {
       setNotice("send")
       setCode("")
@@ -170,7 +170,7 @@ export function SignInScreen() {
 
   async function onGoogle() {
     setGoogleNotice(false)
-    const path = redirectTo ?? "/app"
+    const path = redirectTo ?? "/"
     const callbackURL = new URL(path, window.location.origin).href
     const result = await authClient.signIn.social({
       provider: "google",

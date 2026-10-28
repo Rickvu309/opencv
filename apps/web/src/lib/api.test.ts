@@ -196,10 +196,11 @@ describe("apiStream", () => {
   it("assigns sign-in when nothing is listening", async () => {
     const assign = vi.fn()
     vi.stubGlobal("location", {
-      pathname: "/app",
+      pathname: "/coach",
       search: "",
+      hash: "",
       origin: "http://localhost:3000",
-      href: "http://localhost:3000/app",
+      href: "http://localhost:3000/coach",
       assign,
     })
     vi.stubGlobal(
@@ -227,10 +228,11 @@ describe("apiStream", () => {
   it("skips navigation when a session-expired listener is registered", async () => {
     const assign = vi.fn()
     vi.stubGlobal("location", {
-      pathname: "/app",
+      pathname: "/coach",
       search: "",
+      hash: "",
       origin: "http://localhost:3000",
-      href: "http://localhost:3000/app",
+      href: "http://localhost:3000/coach",
       assign,
     })
     const listener = vi.fn()

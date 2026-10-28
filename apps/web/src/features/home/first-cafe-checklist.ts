@@ -198,7 +198,7 @@ export function nextFirstCafeNudge(input: {
 }
 
 /**
- * Exact leaf path only — never a parent `/app` prefix, never more than
+ * Exact leaf path only. `/app` is not a surface. Never more than
  * one item. This maps a real surface URL to its item; it is not a visit
  * signal by itself. Visiting Apply must not complete Sample CV or Pitch.
  */

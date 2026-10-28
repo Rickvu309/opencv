@@ -96,7 +96,7 @@ describe("app shell layout", () => {
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(root.router.state.location.pathname).toBe("/app/apply")
+      expect(root.router.state.location.pathname).toBe("/apply")
     })
 
     cleanup()
@@ -105,7 +105,7 @@ describe("app shell layout", () => {
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(app.router.state.location.pathname).toBe("/app/apply")
+      expect(app.router.state.location.pathname).toBe("/apply")
     })
   })
 
@@ -119,7 +119,7 @@ describe("app shell layout", () => {
     const paper = renderApp("/app")
     await expectPaperDrive()
     await waitFor(() => {
-      expect(paper.router.state.location.pathname).toBe("/app/paper")
+      expect(paper.router.state.location.pathname).toBe("/paper")
     })
 
     cleanup()
@@ -132,7 +132,7 @@ describe("app shell layout", () => {
     const apply = renderApp("/app")
     await expectApplyLive()
     await waitFor(() => {
-      expect(apply.router.state.location.pathname).toBe("/app/apply")
+      expect(apply.router.state.location.pathname).toBe("/apply")
     })
 
     cleanup()
@@ -142,9 +142,9 @@ describe("app shell layout", () => {
       startPage: "paper",
       timeZone: null,
     })
-    const deep = renderApp("/app/paper")
+    const deep = renderApp("/paper")
     await expectPaperDrive()
-    expect(deep.router.state.location.pathname).toBe("/app/paper")
+    expect(deep.router.state.location.pathname).toBe("/paper")
   })
 
   it("falls back to Apply when the profile call fails", async () => {
@@ -156,42 +156,54 @@ describe("app shell layout", () => {
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/app/apply")
+      expect(router.state.location.pathname).toBe("/apply")
     })
     expect(screen.getByText(SAMPLE_AUTHOR_NAME)).toBeInTheDocument()
   })
 
-  it("sends /app to Apply when the session read throws", async () => {
+  it("leaves / on the landing when the session read throws", async () => {
     const session = vi
       .spyOn(authClient, "getSession")
       .mockRejectedValue(new TypeError("Failed to fetch"))
     try {
-      const { router } = renderApp("/app")
-      expect(
-        await screen.findByRole("heading", { level: 1, name: "Apply" })
-      ).toBeInTheDocument()
+      const { router } = renderApp("/")
       await waitFor(() => {
-        expect(router.state.location.pathname).toBe("/app/apply")
+        expect(router.state.location.pathname).toBe("/")
       })
-      expect(screen.queryByText("Something went wrong")).not.toBeInTheDocument()
-      expect(screen.queryByText("Failed to fetch")).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("heading", { level: 1, name: "Apply" })
+      ).not.toBeInTheDocument()
     } finally {
       session.mockRestore()
     }
   })
 
-  it("sends a signed-out visitor from /app to sign-in", async () => {
+  it("keeps a signed-out visitor on the landing from /app", async () => {
     setMockSession(null)
     const { router } = renderApp("/app")
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Get your butt in your dream seat.",
+      })
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/")
+    })
+  })
+
+  it("sends a signed-out visitor from Coach to sign-in", async () => {
+    setMockSession(null)
+    const { router } = renderApp("/coach?x=1#h")
     expect(
       await screen.findByRole("heading", { name: "Log in to opencv" })
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/sign-in")
     })
-    expect(
-      screen.queryByRole("heading", { level: 1, name: "Apply" })
-    ).toBeNull()
+    expect(router.state.location.search).toEqual({
+      redirect: "/coach?x=1#h",
+    })
   })
 
   it("opens each surface at a stable URL", async () => {
@@ -207,7 +219,7 @@ describe("app shell layout", () => {
     await expectPitch()
 
     cleanup()
-    renderApp("/app/jobs")
+    renderApp("/jobs")
     expect(
       await screen.findByRole("heading", {
         level: 1,
@@ -216,13 +228,13 @@ describe("app shell layout", () => {
     ).toBeInTheDocument()
 
     cleanup()
-    renderApp("/app/inbox")
+    renderApp("/inbox")
     expect(
       await screen.findByRole("heading", { level: 1, name: "Inbox" })
     ).toBeInTheDocument()
 
     cleanup()
-    renderApp("/app/coach")
+    renderApp("/coach")
     expect(await screen.findByRole("textbox")).toBeInTheDocument()
 
     cleanup()

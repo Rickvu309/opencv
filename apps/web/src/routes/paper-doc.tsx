@@ -15,13 +15,16 @@ import {
   paperPagesKey,
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 const NO_DOC = parsePaperId("00000000-0000-4000-8000-000000000000")
+const PAPER_PREFIX = `${SURFACE_PATHS.paper}/`
 
 function docIdFromPath(pathname: string) {
-  const prefix = "/app/paper/"
-  if (!pathname.startsWith(prefix)) return ""
-  return decodeURIComponent(pathname.slice(prefix.length).split("/")[0] ?? "")
+  if (!pathname.startsWith(PAPER_PREFIX)) return ""
+  return decodeURIComponent(
+    pathname.slice(PAPER_PREFIX.length).split("/")[0] ?? ""
+  )
 }
 
 export function PaperDocPage() {
@@ -52,7 +55,7 @@ export function PaperDocPage() {
     queryFn: listPaper,
     enabled: docQuery.data?.kind === "letter",
   })
-  const back = () => void navigate({ to: "/app/paper" })
+  const back = () => void navigate({ to: SURFACE_PATHS.paper })
 
   if (docQuery.isLoading) {
     return (

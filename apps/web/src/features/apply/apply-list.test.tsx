@@ -32,7 +32,7 @@ describe("apply list", () => {
         updatedAt: "2026-10-14T04:00:00.000Z",
       }),
     ])
-    renderApp("/app/apply?view=list")
+    renderApp("/apply?view=list")
     expect(await screen.findByText("Saved today")).toBeInTheDocument()
     expect(screen.getByText("Apply by Nov 8")).toBeInTheDocument()
     expect(screen.getByText("Applied Oct 14")).toBeInTheDocument()

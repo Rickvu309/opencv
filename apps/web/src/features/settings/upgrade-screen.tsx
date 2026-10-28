@@ -14,7 +14,7 @@ export function UpgradeScreen() {
       <Button
         type="button"
         variant="glow"
-        onClick={() => void navigate({ href: "/app/settings/billing" })}
+        onClick={() => void navigate({ href: "/settings/billing" })}
       >
         Back to billing
       </Button>

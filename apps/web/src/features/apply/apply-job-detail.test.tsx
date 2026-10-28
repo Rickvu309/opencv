@@ -58,7 +58,7 @@ describe("job detail", () => {
         position: "a0",
       }),
     ])
-    renderApp(`/app/apply/${id}`)
+    renderApp(`/apply/${id}`)
     const crumb = await screen.findByRole("navigation", { name: "Breadcrumb" })
     expect(
       within(crumb).getByRole("link", { name: "Apply" })
@@ -131,7 +131,7 @@ describe("job detail", () => {
   })
 
   it("shows a message instead of crashing when the link has a bad job id", async () => {
-    renderApp("/app/apply/not-a-job-id")
+    renderApp("/apply/not-a-job-id")
     expect(
       await screen.findByText("Could not load jobs. Check the link.")
     ).toBeTruthy()
@@ -154,7 +154,7 @@ describe("job detail", () => {
         position: "a1",
       }),
     ])
-    renderApp(`/app/apply/${id}`)
+    renderApp(`/apply/${id}`)
     fireEvent.click(await screen.findByRole("button", { name: "More" }))
     fireEvent.click(await screen.findByRole("menuitem", { name: "Delete job" }))
     const dialog = await screen.findByRole("dialog", {

@@ -9,7 +9,7 @@ describe("inbox route", () => {
   })
 
   it("renders the connect screen inside the app shell", async () => {
-    renderApp("/app/inbox")
+    renderApp("/inbox")
     expect(
       await screen.findByRole("heading", { level: 1, name: "Inbox" })
     ).toBeInTheDocument()

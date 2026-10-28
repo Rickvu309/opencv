@@ -153,7 +153,7 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
             {favorites.jobs.map((job) => (
               <Link
                 key={job.id || job.title}
-                to="/app/apply"
+                to="/apply"
                 aria-label={
                   job.company ? `${job.title} ${job.company}` : job.title
                 }
@@ -171,7 +171,7 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
             {favorites.docs.map((doc) => (
               <Link
                 key={doc.id || doc.name}
-                to="/app/paper"
+                to="/paper"
                 onClick={onNavigate}
                 className={linkClass(false)}
               >
@@ -398,7 +398,7 @@ export function AppShell({ onSearch }: AppShellProps) {
               }
               onHistory={() => {
                 closePanel()
-                void navigate({ to: "/app/coach" })
+                void navigate({ to: "/coach" })
               }}
             />
           ) : null}

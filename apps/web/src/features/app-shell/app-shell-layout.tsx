@@ -16,7 +16,7 @@ export function AppShellLayout() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  if (pathname.startsWith("/app/settings")) {
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) {
     return (
       <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
         <Outlet />

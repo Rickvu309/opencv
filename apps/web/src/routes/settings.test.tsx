@@ -51,10 +51,10 @@ async function expectUpgradePlaceholder() {
 
 describe("settings", () => {
   it("shows Back to app and the six sections, with Preferences current", async () => {
-    renderApp("/app/settings")
+    renderApp("/settings")
     expect(
       await screen.findByRole("link", { name: "Back to app" })
-    ).toHaveAttribute("href", "/app/apply")
+    ).toHaveAttribute("href", "/apply")
     for (const name of SECTIONS) {
       expect(screen.getByRole("link", { name })).toBeInTheDocument()
     }
@@ -65,7 +65,7 @@ describe("settings", () => {
   })
 
   it("stores Tiếng Việt and keeps the page in English", async () => {
-    renderApp("/app/settings")
+    renderApp("/settings")
     expect(
       await screen.findByRole("radio", { name: "English" })
     ).toHaveAttribute("aria-checked", "true")
@@ -81,7 +81,7 @@ describe("settings", () => {
   })
 
   it("posts the Singapore time zone", async () => {
-    renderApp("/app/settings")
+    renderApp("/settings")
     await screen.findByRole("heading", { name: "Preferences" })
     await choose("Time zone", "Singapore (UTC+8)")
     await waitFor(() => {
@@ -90,7 +90,7 @@ describe("settings", () => {
   })
 
   it("posts Inbox as the start page", async () => {
-    renderApp("/app/settings")
+    renderApp("/settings")
     await screen.findByRole("heading", { name: "Preferences" })
     await choose("Start page", "Inbox")
     await waitFor(() => {
@@ -99,7 +99,7 @@ describe("settings", () => {
   })
 
   it("toggles email notifications from Enabled to Disabled", async () => {
-    renderApp("/app/settings")
+    renderApp("/settings")
     const email = await screen.findByRole("button", { name: /^Email/ })
     expect(email).toHaveTextContent("Enabled")
     fireEvent.click(email)
@@ -112,7 +112,7 @@ describe("settings", () => {
   })
 
   it("turns memory off", async () => {
-    renderApp("/app/settings/coach")
+    renderApp("/settings/coach")
     const memory = await screen.findByRole("switch", { name: /Enable memory/ })
     fireEvent.click(memory)
     await waitFor(() => {
@@ -121,7 +121,7 @@ describe("settings", () => {
   })
 
   it("turns the weekly plan on from Disabled", async () => {
-    renderApp("/app/settings/coach")
+    renderApp("/settings/coach")
     const row = await screen.findByRole("button", { name: /Weekly plan/ })
     expect(row).toHaveTextContent("Disabled")
     fireEvent.click(row)
@@ -131,7 +131,7 @@ describe("settings", () => {
   })
 
   it("turns interview prep off", async () => {
-    renderApp("/app/settings/coach")
+    renderApp("/settings/coach")
     fireEvent.click(
       await screen.findByRole("button", { name: /Interview prep/ })
     )
@@ -141,7 +141,7 @@ describe("settings", () => {
   })
 
   it("shows the week percent and hides the raw turn count", async () => {
-    renderApp("/app/settings/usage")
+    renderApp("/settings/usage")
     expect(await screen.findByText("52% used")).toBeInTheDocument()
     expect(screen.queryByText("17")).not.toBeInTheDocument()
     expect(screen.queryByText(/turns/i)).not.toBeInTheDocument()
@@ -149,14 +149,14 @@ describe("settings", () => {
 
   it("shows the uncapped week sentence", async () => {
     setMockWeekUncapped()
-    renderApp("/app/settings/usage")
+    renderApp("/settings/usage")
     expect(
       await screen.findByText("No weekly cap on this mode.")
     ).toBeInTheDocument()
   })
 
   it("opens the upgrade placeholder from usage with no card field", async () => {
-    renderApp("/app/settings/usage")
+    renderApp("/settings/usage")
     fireEvent.click(
       await screen.findByRole("button", { name: "Upgrade to Pro" })
     )
@@ -167,7 +167,7 @@ describe("settings", () => {
   })
 
   it("shows the free plan and a single Upgrade now glow", async () => {
-    renderApp("/app/settings/billing")
+    renderApp("/settings/billing")
     expect(await screen.findByText("Free plan")).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Upgrade now" })
@@ -183,7 +183,7 @@ describe("settings", () => {
 
   it("keeps Upgrade now as the only glow on Pro", async () => {
     setMockPlan("pro")
-    renderApp("/app/settings/billing")
+    renderApp("/settings/billing")
     expect(
       await screen.findByText("You're on the Pro plan.")
     ).toBeInTheDocument()
@@ -197,7 +197,7 @@ describe("settings", () => {
   it("downloads the export and does not open a card form", async () => {
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:export")
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {})
-    renderApp("/app/settings/account")
+    renderApp("/settings/account")
     fireEvent.click(await screen.findByRole("button", { name: "Export" }))
     await waitFor(() => {
       expect(getProfileMockPaths()).toContain("/api/account/export")
@@ -208,7 +208,7 @@ describe("settings", () => {
   })
 
   it("rejects an incomplete email and does not post", async () => {
-    renderApp("/app/settings/account")
+    renderApp("/settings/account")
     fireEvent.click(await screen.findByRole("button", { name: "Change email" }))
     const dialog = await screen.findByRole("dialog")
     fireEvent.change(within(dialog).getByRole("textbox", { name: "Email" }), {
@@ -226,7 +226,7 @@ describe("settings", () => {
   })
 
   it("deletes the account only after DELETE", async () => {
-    renderApp("/app/settings/account")
+    renderApp("/settings/account")
     fireEvent.click(
       await screen.findByRole("button", { name: "Delete account" })
     )
@@ -254,7 +254,7 @@ describe("settings", () => {
   })
 
   it("signs out through the auth client", async () => {
-    renderApp("/app/settings/account")
+    renderApp("/settings/account")
     fireEvent.click(await screen.findByRole("button", { name: "Sign out" }))
     expect(
       await screen.findByRole("heading", { name: "Log in to opencv" })
@@ -263,7 +263,7 @@ describe("settings", () => {
   })
 
   it("keeps Free when profile.update asks for a Pro mode", async () => {
-    renderApp("/app/settings/coach")
+    renderApp("/settings/coach")
     expect(
       await screen.findByRole("heading", { name: "Coach" })
     ).toBeInTheDocument()
@@ -288,7 +288,7 @@ describe("settings", () => {
       sent: false,
       message: "Mailbox refused the code. Try again.",
     })
-    renderApp("/app/settings/account")
+    renderApp("/settings/account")
     fireEvent.click(await screen.findByRole("button", { name: "Change email" }))
     const dialog = await screen.findByRole("dialog")
     fireEvent.change(within(dialog).getByRole("textbox", { name: "Email" }), {
@@ -306,7 +306,7 @@ describe("settings", () => {
 
   it("shows a failed send from the command error and keeps the dialog open", async () => {
     setMockEmailChange({ error: "We could not send the code. Try again." })
-    renderApp("/app/settings/account")
+    renderApp("/settings/account")
     fireEvent.click(await screen.findByRole("button", { name: "Change email" }))
     const dialog = await screen.findByRole("dialog")
     fireEvent.change(within(dialog).getByRole("textbox", { name: "Email" }), {
@@ -332,7 +332,7 @@ describe("settings", () => {
       removeListener: () => {},
       dispatchEvent: () => false,
     }))
-    renderApp("/app/settings")
+    renderApp("/settings")
     expect(
       await screen.findByRole("combobox", { name: /Section/ })
     ).toBeInTheDocument()

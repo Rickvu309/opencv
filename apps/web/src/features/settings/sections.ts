@@ -1,3 +1,5 @@
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+
 export const SETTINGS_SECTIONS = [
   { id: "preferences", label: "Preferences" },
   { id: "coach", label: "Coach" },
@@ -27,7 +29,9 @@ export function settingsViewFromPath(pathname: string): SettingsView {
 }
 
 export function settingsSectionHref(id: SettingsSectionId) {
-  return id === "preferences" ? "/app/settings" : `/app/settings/${id}`
+  return id === "preferences"
+    ? SURFACE_PATHS.settings
+    : `${SURFACE_PATHS.settings}/${id}`
 }
 
 export function validateSettingsSearch(search: Record<string, unknown>): {

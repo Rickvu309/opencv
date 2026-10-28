@@ -36,7 +36,7 @@ export function BillingSection() {
     data.plan === "pro" ? "You're on the Pro plan." : "You're on the Free plan."
 
   function openUpgrade() {
-    void navigate({ href: "/app/settings/billing/upgrade" })
+    void navigate({ href: "/settings/billing/upgrade" })
   }
 
   return (

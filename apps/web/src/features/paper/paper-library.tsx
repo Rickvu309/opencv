@@ -284,7 +284,7 @@ export function PaperLibrary({
             <NewPaperCard
               title="Proof"
               body="Show the work behind a line."
-              href="/app/proof"
+              href="/proof"
             />
           </div>
           <div className="rounded-lg border border-border p-4">

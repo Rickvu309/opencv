@@ -73,7 +73,7 @@ export function ApplyPage() {
 
   function setView(next: ApplyView) {
     void navigate({
-      to: "/app/apply",
+      to: "/apply",
       search:
         next === "board"
           ? {}
@@ -231,7 +231,7 @@ export function ApplyPage() {
             showClosed={showClosed}
             onSpan={(next) =>
               void navigate({
-                to: "/app/apply",
+                to: "/apply",
                 search: { view: "calendar", span: next },
               })
             }

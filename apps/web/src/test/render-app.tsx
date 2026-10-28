@@ -18,7 +18,7 @@ import { bindTestRouter } from "@/test/go-home.ts"
 import { vi } from "vitest"
 
 export function renderApp(
-  initialEntry = "/app/home",
+  initialEntry = "/home",
   onRequest?: (input: RequestInfo | URL) => void
 ) {
   vi.stubGlobal(

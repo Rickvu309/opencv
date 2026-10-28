@@ -20,7 +20,7 @@ function glowCount() {
 
 describe("coming soon and the calm 404", () => {
   it("shows Jobs with one glow and a hidden preview", async () => {
-    renderApp("/app/jobs")
+    renderApp("/jobs")
 
     expect(
       await screen.findByRole("heading", {
@@ -34,7 +34,7 @@ describe("coming soon and the calm 404", () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole("link", { name: "Track a job in Apply" })
-    ).toHaveAttribute("href", "/app/apply")
+    ).toHaveAttribute("href", "/apply")
     expect(glowCount()).toBe(1)
     const previewTitle = screen.getByText("Marketing Executive", {
       hidden: true,
@@ -46,7 +46,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("posts jobs once and toasts the repeat", async () => {
-    renderApp("/app/jobs")
+    renderApp("/jobs")
     const notify = await screen.findByRole("button", { name: "Notify me" })
 
     fireEvent.click(notify)
@@ -61,7 +61,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("shows Proofs with one action that posts proof", async () => {
-    renderApp("/app/proofs")
+    renderApp("/proofs")
 
     expect(
       await screen.findByRole("heading", {
@@ -80,7 +80,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("shows Pitch and posts pitch without an editor", async () => {
-    renderApp("/app/pitch")
+    renderApp("/pitch")
 
     expect(
       await screen.findByRole("heading", {
@@ -101,15 +101,15 @@ describe("coming soon and the calm 404", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
   })
 
-  it("redirects /app/proof to /app/proofs", async () => {
-    const { router } = renderApp("/app/proof")
+  it("redirects /proof to /proofs", async () => {
+    const { router } = renderApp("/proof")
     expect(
       await screen.findByRole("heading", {
         level: 1,
         name: "Back your CV with proof",
       })
     ).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/app/proofs")
+    expect(router.state.location.pathname).toBe("/proofs")
   })
 
   it("sends a signed-out profile path to sign in", async () => {
@@ -132,7 +132,7 @@ describe("coming soon and the calm 404", () => {
       await screen.findByRole("button", { name: "Back to start" })
     )
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/app/apply")
+      expect(router.state.location.pathname).toBe("/apply")
     })
   })
 
@@ -161,7 +161,7 @@ describe("coming soon and the calm 404", () => {
       level: 1,
       name: "Page not found",
     })
-    expect(router.state.location.pathname).toBe("/app/nothing")
+    expect(router.state.location.pathname).toBe("/nothing")
     expect(document.querySelector("[data-slot='app-shell']")).toBeNull()
     expect(screen.getAllByRole("main")).toHaveLength(1)
     expect(screen.getByRole("main")).toContainElement(heading)
@@ -172,7 +172,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("renders a signed-in unknown app path inside one shell main", async () => {
-    renderApp("/app/nothing")
+    const { router } = renderApp("/app/nothing")
 
     const heading = await screen.findByRole("heading", {
       level: 1,
@@ -186,6 +186,7 @@ describe("coming soon and the calm 404", () => {
     expect(
       screen.getByRole("button", { name: "Back to start" })
     ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/nothing")
   })
 
   it("renders a signed-in root miss inside the shell", async () => {
