@@ -30,10 +30,10 @@ conflict_report() {
     if (( n > best_n || (n == best_n && t > best_t) )); then best=$sha; best_n=$n; best_t=$t; fi
   done
   wt=$("${git[@]}" worktree list --porcelain 2>/dev/null | awk -v b="refs/heads/$branch" '/^worktree /{p=substr($0,10)} $1=="branch" && $2==b {print p}' | head -1 || true)
-  # Double quotes keep the usual path readable; a path with a quote, $, backtick or backslash is shell-escaped instead.
+  # Double quotes keep the usual path readable; a path with a quote, $, backtick, backslash or ! is shell-escaped instead.
   local cd_to=""
   if [[ -n "$wt" ]]; then
-    if [[ "$wt" == *[\"\$\`\\]* ]]; then printf -v cd_to 'cd %q && ' "$wt"; else cd_to="cd \"$wt\" && "; fi
+    if [[ "$wt" == *[\"\$\`\\!]* ]]; then printf -v cd_to 'cd %q && ' "$wt"; else cd_to="cd \"$wt\" && "; fi
   fi
   CR_NEXT="${cd_to}git fetch origin && git rebase origin/main"
   echo "  Rebase, resolve these files, then push: $CR_NEXT && heavy -- git push --force-with-lease"

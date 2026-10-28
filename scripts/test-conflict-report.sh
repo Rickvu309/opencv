@@ -28,17 +28,23 @@ commit_files() {  # commit_files <subject> <file>...: change every file and comm
   git -C "$repo" rev-parse HEAD
 }
 
-# report <name> <branch> <file>...: run the report for the files; sets $out and leaves the result in $r
+# report <name> <branch> <file>...: run the report for the files; sets $out and leaves the result in $r. The report runs
+# under set -e as review-pr.sh does, with the errexit state its own caller has: the subshell is not on the left of ||.
+# $report_path replaces PATH for the run; a report that aborts early exits with that command's status, not 1.
+report_path=$PATH
 report() {
-  local name=$1 branch=$2; shift 2
-  local rc=0
+  local name=$1 branch=$2 rc; shift 2
+  set +e
   (
     set -e
+    PATH=$report_path
     result_begin review-pr "$name"
     base=$(git -C "$repo" merge-base main "$branch")
     conflict_report "$repo" "$base" main "$branch" "$@"
     exit 1
-  ) >"$tmp/out" 2>&1 || rc=$?
+  ) >"$tmp/out" 2>&1
+  rc=$?
+  set -e
   (( rc == 1 )) || fail "report $name exited $rc, expected 1 from the script's own exit"
   r=$PR_RESULT_DIR/opencv-review-pr-$name.json
 }
@@ -103,16 +109,16 @@ grep -q "${f6[0]}: not changed on main since the merge base" "$tmp/out" || fail 
 check 'blockedBy=null'
 echo "ok: a file main changed only before the merge base names no commit and sets no blockedBy"
 
-# A glob character in a file name matches only that file, and a non-ASCII name is found unquoted.
+# A glob character in a file name matches only that file, and a non-ASCII name is a valid pathspec.
 glob='apps/web/[id].tsx'; other='apps/web/i.tsx'; uni='apps/web/café.tsx'
 commit_files "base globs" "$glob" "$other" "$uni" >/dev/null
 branch_from_base feat/glob-x "$glob" "$uni"
-sha_other=$(commit_files "fix: only the lookalike (#600)" "$other")
+commit_files "fix: only the lookalike (#600)" "$other" >/dev/null
 sha_uni=$(commit_files "fix: the accent (#601)" "$uni")
 report glob feat/glob-x "$glob" "$uni"
 grep -q "\[id\].tsx: not changed on main since the merge base" "$tmp/out" || fail "glob matched a lookalike: $(cat "$tmp/out")"
 grep -q "café.tsx: changed on main in ${sha_uni:0:9}" "$tmp/out" || fail "non-ASCII name not found: $(cat "$tmp/out")"
-echo "ok: glob characters and non-ASCII names are matched literally"
+echo "ok: glob characters and non-ASCII names are matched literally as pathspecs"
 
 # The rebase command starts with a cd when this clone has a worktree on the branch.
 git -C "$repo" worktree add -q "$tmp/wt" feat/403-x
@@ -120,10 +126,31 @@ report 403wt feat/403-x apps/api/package.json
 check "next=cd \"$tmp/wt\" && git fetch origin && git rebase origin/main"
 echo "ok: the next command goes to the branch's worktree"
 
-# A worktree path with a dollar sign is escaped so the printed command still runs.
-git -C "$repo" worktree add -q "$tmp/w\$t" -b feat/dollar-x main
-report dollar feat/dollar-x apps/api/package.json
-dollar_cmd=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).next)' "$r")
-[[ "$(bash -c "${dollar_cmd%% && git*} && pwd")" == "$tmp/w\$t" ]] || fail "dollar path not escaped: $dollar_cmd"
-echo "ok: a worktree path with a dollar sign is escaped in the next command"
+
+# Escaping holds for the characters bash treats specially in a double-quoted word, and the whole next command runs.
+git -C "$repo" remote add origin "$repo"
+git -C "$repo" fetch -q origin
+i=0
+for odd in 'w!t' 'w$t' 'w`t' 'w"t' 'w\t'; do
+  i=$((i + 1))
+  git -C "$repo" worktree add -q "$tmp/$odd" -b "feat/odd-$i" main
+  report "odd$i" "feat/odd-$i" apps/api/package.json
+  cmd=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).next)' "$r")
+  [[ "$(bash -c "${cmd%% && git*} && pwd")" == "$tmp/$odd" ]] || fail "path $odd not escaped: $cmd"
+  [[ $odd != *'!'* || $cmd != *'"'* ]] || fail "a path with ! is double-quoted, so interactive history expansion would change it: $cmd"
+  bash -c "$cmd" >/dev/null 2>&1 || fail "next does not run for $odd: $cmd"
+done
+echo "ok: the next command runs from a worktree path with !, \$, backtick, quote or backslash"
+
+# A failing git inside the report (here worktree list) must not abort it: the report is still written. The shim exits 7,
+# so a report that aborts under set -e exits 7 instead of reaching the script's own exit 1.
+mkdir "$tmp/shim"
+real_git=$(command -v git)
+printf '#!/usr/bin/env bash\nfor a in "$@"; do [[ $a == worktree ]] && exit 7; done\nexec %q "$@"\n' "$real_git" >"$tmp/shim/git"
+chmod +x "$tmp/shim/git"
+report_path=$tmp/shim:$PATH
+report shim feat/403-x apps/api/package.json
+report_path=$PATH
+check 'next=git fetch origin && git rebase origin/main'
+echo "ok: a failing worktree lookup still gives the report and the plain rebase command"
 echo "all conflict report tests passed"
