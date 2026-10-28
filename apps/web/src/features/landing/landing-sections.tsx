@@ -131,6 +131,9 @@ export function LandingCustomers() {
       </div>
       <div className="landing-story-foot">
         <p className="landing-customers-line">{LANDING_CUSTOMERS_LINE}</p>
+        <Link to="/stories" className="landing-link">
+          Read all stories
+        </Link>
       </div>
     </section>
   )

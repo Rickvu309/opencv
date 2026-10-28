@@ -191,7 +191,7 @@ describe("landing page", () => {
       "Blog",
     ])
     expect(companyLinks[0]).toHaveAttribute("href", "/about")
-    expect(companyLinks[1]).toHaveAttribute("href", "/#stories")
+    expect(companyLinks[1]).toHaveAttribute("href", "/stories")
     expect(companyLinks[2]).toHaveAttribute("href", "/blog")
     expect(
       within(screen.getByRole("navigation", { name: "Primary" })).queryByRole(
@@ -207,13 +207,16 @@ describe("landing page", () => {
 
     for (const gone of [
       /^examples$/i,
-      /read all stories/i,
       /^careers$/i,
       /^privacy$/i,
       /^terms$/i,
     ]) {
       expect(screen.queryByRole("link", { name: gone })).not.toBeInTheDocument()
     }
+
+    expect(
+      screen.getByRole("link", { name: /read all stories/i })
+    ).toHaveAttribute("href", "/stories")
     expect(container.querySelector('a[href*="/u/"]')).toBeNull()
   })
 

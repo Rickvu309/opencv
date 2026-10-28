@@ -1,0 +1,96 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "qIdzL",
+    "frameName": "Stories (Linear layout)"
+  },
+  "title": "Stories",
+  "description": "How people use opencv to land the job they wanted.",
+  "featured": {
+    "name": "Nguyễn Thảo Vy",
+    "role": "Brand Marketing Associate",
+    "context": "Brand marketing, Ho Chi Minh City",
+    "quote": "I stopped listing duties and showed the one campaign I actually ran. The recruiter called me back in four days.",
+    "photo": {
+      "src": "/landing/stories/story-vy.jpg",
+      "width": 1080,
+      "height": 1620,
+      "alt": "Portrait of Nguyễn Thảo Vy, Brand Marketing Associate."
+    },
+    "stats": [
+      { "value": "5", "label": "applications" },
+      { "value": "3", "label": "interviews" },
+      { "value": "2 weeks", "label": "to an offer" }
+    ],
+    "readLabel": "Read her story"
+  },
+  "stories": [
+    {
+      "name": "Kim Ji-woo",
+      "role": "UX Designer, Seoul",
+      "quote": "I sent fewer applications and treated each one like a pitch.",
+      "photo": {
+        "src": "/landing/stories/story-kim.jpg",
+        "width": 1080,
+        "height": 1620,
+        "alt": "Portrait of Kim Ji-woo, UX Designer."
+      }
+    },
+    {
+      "name": "Lê Minh Anh",
+      "role": "Data Analyst Intern, Hanoi",
+      "quote": "My CV finally said what I actually did.",
+      "photo": {
+        "src": "/landing/stories/story-le-minh-anh.jpg",
+        "width": 1080,
+        "height": 720,
+        "alt": "Portrait of Lê Minh Anh, Data Analyst Intern."
+      }
+    },
+    {
+      "name": "Trần Bảo Ngọc",
+      "role": "Product Manager, Ho Chi Minh City",
+      "quote": "From operations to product in six weeks.",
+      "photo": {
+        "src": "/landing/stories/story-tran-bao-ngoc.jpg",
+        "width": 1080,
+        "height": 1080,
+        "alt": "Portrait of Trần Bảo Ngọc, Product Manager."
+      }
+    },
+    {
+      "name": "Park Seo-yeon",
+      "role": "Software Engineer, Seoul",
+      "quote": "Coach found the one project that mattered for each role.",
+      "photo": {
+        "src": "/landing/stories/story-park-seo-yeon.jpg",
+        "width": 1080,
+        "height": 1620,
+        "alt": "Portrait of Park Seo-yeon, Software Engineer."
+      }
+    },
+    {
+      "name": "Phạm Hà My",
+      "role": "Account Executive, Da Nang",
+      "quote": "I followed up on every job. Two replied that week.",
+      "photo": {
+        "src": "/landing/stories/story-pham-ha-my.jpg",
+        "width": 1080,
+        "height": 608,
+        "alt": "Portrait of Phạm Hà My, Account Executive."
+      }
+    },
+    {
+      "name": "Đỗ Khánh Linh",
+      "role": "Business Analyst, Ho Chi Minh City",
+      "quote": "The board kept me calm through fourteen applications.",
+      "photo": {
+        "src": "/landing/stories/story-do-khanh-linh.jpg",
+        "width": 1080,
+        "height": 1920,
+        "alt": "Portrait of Đỗ Khánh Linh, Business Analyst."
+      }
+    }
+  ]
+}

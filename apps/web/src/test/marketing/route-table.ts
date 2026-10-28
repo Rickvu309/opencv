@@ -24,6 +24,7 @@ export const ROUTE_TABLE: readonly RouteClass[] = [
   { id: "/pricing", fullPath: "/pricing", kind: "marketing" },
   { id: "/about", fullPath: "/about", kind: "marketing" },
   { id: "/help", fullPath: "/help", kind: "marketing" },
+  { id: "/stories", fullPath: "/stories", kind: "marketing" },
   { id: "/blog", fullPath: "/blog", kind: "marketing" },
   {
     id: "/blog/$slug",

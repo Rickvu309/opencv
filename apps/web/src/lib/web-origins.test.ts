@@ -70,6 +70,11 @@ describe("web destinations", () => {
     ["https://app.opencv.me/coach", null],
     ["https://app.opencv.me/pricing", "https://opencv.me/pricing"],
     [
+      "https://app.opencv.me/stories?from=nav",
+      "https://opencv.me/stories?from=nav",
+    ],
+    ["https://app.opencv.me/stories/", "https://opencv.me/stories/"],
+    [
       "https://app.opencv.me/share/token?x=1#page",
       "https://opencv.me/share/token?x=1#page",
     ],
@@ -78,6 +83,7 @@ describe("web destinations", () => {
     ["https://opencv.me/pricing", null],
     ["https://opencv.me/application", null],
     ["https://opencv.me/blog", null],
+    ["https://opencv.me/stories", null],
     ["https://www.opencv.me/pricing", null],
     ["https://app.opencv.me/unknown", null],
     ["https://app.opencv.me/assets/index.js", null],

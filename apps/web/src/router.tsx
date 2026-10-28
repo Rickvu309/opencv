@@ -68,6 +68,15 @@ const helpRoute = createRoute({
   ),
 })
 
+const storiesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/stories",
+  component: lazyRouteComponent(
+    () => import("@/routes/landing-stories.tsx"),
+    "LandingStoriesPage"
+  ),
+})
+
 const blogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/blog",
@@ -381,6 +390,7 @@ const routeTree = rootRoute.addChildren([
   pricingRoute,
   aboutRoute,
   helpRoute,
+  storiesRoute,
   blogRoute,
   blogPostRoute,
   signInRoute,
