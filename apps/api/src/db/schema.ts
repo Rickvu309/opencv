@@ -152,8 +152,15 @@ export const paperDocs = opencvApp.table(
       .$type<"draft" | "ready" | "published">()
       .notNull()
       .default("draft"),
-    checks:
-      jsonb("checks").$type<{ id: string; kind: string; message: string }[]>(),
+    checks: jsonb("checks").$type<
+      {
+        id: string
+        kind: string
+        message: string
+        blockId?: string
+        resolved?: boolean
+      }[]
+    >(),
     pageChoice: text("page_choice")
       .$type<"unset" | "keep">()
       .notNull()

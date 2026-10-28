@@ -16,7 +16,15 @@ import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { readOwnedPhoto, readSharedPhoto, saveFile } from "./store.js"
+import { parseImportLink } from "./import-parse.js"
+import {
+  IMPORT_FILE_CAP,
+  IMPORT_SIZE_MESSAGE,
+  deleteFile,
+  readOwnedPhoto,
+  readSharedPhoto,
+  saveFile,
+} from "./store.js"
 
 function person(userId: string) {
   return personActor(userId)
@@ -51,6 +59,25 @@ function fileIdOrMissing(value: string) {
   } catch {
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
   }
+}
+
+function refuseImportLink(
+  c: Parameters<typeof jsonWithStatus>[0],
+  value: string
+) {
+  const parsed = parseImportLink(value)
+  if (!parsed || parsed.ok) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Choose a file to import."),
+      httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+    )
+  }
+  return jsonWithStatus(
+    c,
+    errorEnvelope(parsed.code, parsed.message),
+    httpStatusForError(parsed.code)
+  )
 }
 
 export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
@@ -98,13 +125,35 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   routes.post("/import", async (c) => {
+    const contentType = c.req.header("content-type") ?? ""
+    if (contentType.includes("application/json")) {
+      const parsed = await readJsonBody(c)
+      if (!parsed.ok) return parsed.response
+      const link =
+        parsed.value &&
+        typeof parsed.value === "object" &&
+        "link" in parsed.value
+          ? parsed.value.link
+          : ""
+      return refuseImportLink(c, typeof link === "string" ? link : "")
+    }
     const body = await c.req.parseBody()
+    if (typeof body.link === "string" && body.link.trim()) {
+      return refuseImportLink(c, body.link)
+    }
     const file = body.file
     if (!(file instanceof File)) {
       return jsonWithStatus(
         c,
         errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Choose a file to import."),
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+    if (file.size > IMPORT_FILE_CAP) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, IMPORT_SIZE_MESSAGE),
+        413
       )
     }
     const saved = await saveFile({
@@ -114,12 +163,20 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       bytes: Buffer.from(await file.arrayBuffer()),
       purpose: "import",
     })
-    const imported = await registry.execute({
-      name: "paper.import",
-      input: { fileId: saved.id },
-      actor: person(c.var.userId),
-    })
-    return c.json(successEnvelope(imported.output))
+    try {
+      const imported = await registry.execute({
+        name: "paper.import",
+        input: { fileId: saved.id },
+        actor: person(c.var.userId),
+      })
+      return c.json(successEnvelope(imported.output))
+    } catch (error) {
+      // The command transaction rolls back its own delete. Drop the row here.
+      await deleteFile(person(c.var.userId), parseFileId(saved.id)).catch(
+        () => undefined
+      )
+      throw error
+    }
   })
 
   routes.get("/files", async (c) => {

@@ -28,6 +28,12 @@ import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
 import { CvPhoto, CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { usePaperAutosave } from "./paper-autosave.ts"
+import {
+  PaperCheckBar,
+  focusDatesField,
+  focusPhoneField,
+  useImportCheckBar,
+} from "./paper-check-bar.tsx"
 import { PaperBlocks, type BlockCommit } from "./paper-blocks.tsx"
 import { readEditorDocument } from "./paper-block-ops.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
@@ -74,6 +80,12 @@ export function PaperCvEditor({
   const inputCountRef = useRef(0)
   const [doc, setDoc] = useState(() => readEditorDocument(initial.document))
   const docRef = useRef(doc)
+  const importBar = useImportCheckBar({
+    docId: initial.id,
+    initial,
+    readDocument: () => docRef.current,
+    dirtyRef,
+  })
   const [undoDoc, setUndoDoc] = useState<CvBlockDocument | null>(null)
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -94,6 +106,7 @@ export function PaperCvEditor({
         adopt(saved.contentVersion)
         setUpdatedAt(new Date().toISOString())
         setConflict(false)
+        void importBar.settle()
       },
       onConflict: () => setConflict(true),
       onError: (error) => {
@@ -445,6 +458,14 @@ export function PaperCvEditor({
           </div>
         </div>
       ) : null}
+      <PaperCheckBar
+        checks={importBar.checks}
+        hidden={importBar.hidden}
+        onAddPhone={focusPhoneField}
+        onAddDates={focusDatesField}
+        onSkip={importBar.skip}
+        onDone={importBar.done}
+      />
       <div data-template={previewTemplate(templateId)} className="min-w-0">
         <CvPhotoFrame
           value={{

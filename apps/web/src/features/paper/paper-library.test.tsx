@@ -5,11 +5,12 @@ import { render } from "@/test/render-with-client.tsx"
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
-import { importPaperFile } from "./paper-api.ts"
+import { importPaperFile, importPaperLink } from "./paper-api.ts"
 
 vi.mock("./paper-api.ts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./paper-api.ts")>()),
   importPaperFile: vi.fn(),
+  importPaperLink: vi.fn(),
 }))
 
 function cv(name: string): PaperView {
@@ -91,6 +92,46 @@ describe("Paper library", () => {
     const picker = vi.spyOn(retryInput, "click")
     fireEvent.click(screen.getByRole("button", { name: "Choose another file" }))
     expect(picker).toHaveBeenCalledOnce()
+  })
+
+  it("drops a file on the import row and starts the same import", async () => {
+    vi.mocked(importPaperFile).mockImplementation(
+      () => new Promise(() => undefined)
+    )
+    renderLibrary([])
+    const file = new File(["CV"], "Dropped.pdf", { type: "application/pdf" })
+    fireEvent.drop(screen.getByRole("region", { name: "Import a file" }), {
+      dataTransfer: { files: [file] },
+    })
+    expect(await screen.findByRole("status")).toHaveTextContent("Dropped.pdf")
+    expect(
+      screen.getByRole("heading", { name: "Importing…" })
+    ).toBeInTheDocument()
+    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(
+      file,
+      expect.any(AbortSignal)
+    )
+  })
+
+  it("posts a pasted link and shows the server sentence", async () => {
+    vi.mocked(importPaperLink).mockRejectedValueOnce(
+      new Error("Google Docs aren't supported. Download a PDF or Word file.")
+    )
+    renderLibrary([])
+    const field = screen.getByRole("textbox", { name: "Paste a link" })
+    fireEvent.change(field, {
+      target: { value: "https://docs.google.com/document/d/abc" },
+    })
+    fireEvent.keyDown(field, { key: "Enter" })
+    expect(
+      await screen.findByRole("heading", { name: "Can't read this file" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Google Docs aren't supported. Download a PDF or Word file."
+    )
+    expect(vi.mocked(importPaperLink)).toHaveBeenCalledWith(
+      "https://docs.google.com/document/d/abc"
+    )
   })
 
   it("shows the three start cards and the import row when there are no documents", () => {
