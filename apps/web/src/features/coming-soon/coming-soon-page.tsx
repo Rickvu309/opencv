@@ -49,27 +49,34 @@ export function ComingSoonPage({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden bg-background">
-      <PageHeader title={pageTitle} />
+      <PageHeader
+        title={
+          <span className="text-[13px] text-foreground/90">{pageTitle}</span>
+        }
+      />
       <div className="flex min-h-0 flex-1 flex-col items-center gap-10 overflow-y-auto pt-18">
         <div className="flex w-[min(560px,calc(100%-3rem))] flex-col items-center gap-4 text-center">
-          <Badge variant="outline" className="h-7 gap-1.5 rounded-[14px] px-3">
+          <Badge
+            variant="outline"
+            className="h-7 gap-1.5 rounded-[14px] px-3 text-[12.5px] text-foreground/90"
+          >
             <span
               aria-hidden="true"
               className="size-1.5 shrink-0 rounded-full bg-muted-foreground"
             />
             {soonCopy.kicker}
           </Badge>
-          <h2 className="text-[38px] leading-tight font-semibold tracking-tight text-balance text-foreground">
+          <h2 className="text-[38px] leading-tight font-semibold tracking-[-1.4px] text-balance text-foreground">
             {title}
           </h2>
-          <p className="max-w-[460px] text-[15.5px] leading-normal text-muted-foreground">
+          <p className="max-w-[460px] text-[15.5px] leading-normal text-foreground/65">
             {body}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Button
               type="button"
               variant="glow"
-              className="h-[42px] gap-2 rounded-[10px] px-[18px]"
+              className="h-[42px] gap-2 rounded-[10px] px-[18px] font-semibold"
               disabled={pending}
               aria-busy={pending}
               onClick={() => void onNotify()}
@@ -80,7 +87,7 @@ export function ComingSoonPage({
             {secondary ? (
               <Link
                 to={secondary.to}
-                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-muted-foreground hover:text-foreground"
               >
                 {secondary.label}
                 <ArrowRight className="size-[13px]" aria-hidden="true" />

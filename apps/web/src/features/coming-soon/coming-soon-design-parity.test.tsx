@@ -3,6 +3,7 @@ import { cleanup, screen } from "@testing-library/react"
 
 import { renderApp } from "@/test/render-app.tsx"
 
+import jobsLayout from "./design/jobs.layout.json"
 import pitchLayout from "./design/pitch.layout.json"
 import proofLayout from "./design/proof.layout.json"
 
@@ -19,7 +20,7 @@ afterEach(() => {
 
 const normalize = (text: string) => text.replaceAll(/\s+/g, " ").trim()
 
-describe.each([pitchLayout, proofLayout])(
+describe.each([jobsLayout, pitchLayout, proofLayout])(
   "$frameName ($frameId) on $route",
   (layout) => {
     it("renders every pen text", async () => {
