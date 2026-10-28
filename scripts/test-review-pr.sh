@@ -33,6 +33,9 @@ STUB
 cat >"$tmp/bin/pnpm" <<'STUB'
 #!/usr/bin/env bash
 mkdir -p node_modules
+if [[ "$*" == "--filter api... run build" ]]; then
+  exit "${REVIEW_TEST_API_BUILD_EXIT:-0}"
+fi
 exit "${REVIEW_TEST_PNPM_EXIT:-0}"
 STUB
 chmod +x "$tmp/bin/gh" "$tmp/bin/pnpm"
@@ -191,16 +194,31 @@ run
 expect "install pass is cached" 0 "(cached; --no-cache reruns)"
 want_runs "install cached" 8
 
+echo api-build >"$work/api-build.txt"
+pr_commit "check the API production build"
+REVIEW_TEST_API_BUILD_EXIT=1 run
+expect "failed API build fails" 1 "api build failed" "RESULT: FAIL"
+want_runs "failed API build" 9
+REVIEW_TEST_API_BUILD_EXIT=1 run
+expect "failed API build is not cached" 1 "api build failed" "RESULT: FAIL"
+want_runs "failed API build rerun" 10
+run
+expect "API build passes" 0 "api build passed" "RESULT: OK"
+want_runs "API build passes" 11
+run
+expect "API build pass is cached" 0 "api build passed for this exact tree (cached; --no-cache reruns)"
+want_runs "API build cached" 11
+
 # A PR cannot weaken the gate: main's check.sh runs, not the PR's copy.
 printf '#!/usr/bin/env bash\nexit 0\n' >"$work/scripts/check.sh"
 touch "$work/FAIL_CHECK"
 pr_commit "replace check.sh and break the check"
 run --no-install
 expect "main's check.sh runs, not the PR's" 1 "scripts/check.sh failed" "RESULT: FAIL"
-want_runs "gate" 9
+want_runs "gate" 12
 run --no-install
 expect "failing check is not cached" 1 "scripts/check.sh failed"
-want_runs "not cached" 10
+want_runs "not cached" 13
 
 # A PR whose net diff is empty gets no patch id and still passes.
 git -C "$work" reset -q --hard main
@@ -217,7 +235,7 @@ echo conflict-main >"$work/other.txt"
 git -C "$work" add -A && git -C "$work" commit -q -m "conflicts with the PR" && git -C "$work" push -q origin main
 run --no-install
 expect "merge conflict" 1 "does not merge cleanly with main; author must rebase" "resolve: other.txt" "RESULT: FAIL"
-want_runs "conflict" 11
+want_runs "conflict" 14
 
 if git -C "$main_checkout" worktree list | grep -q review-pr-; then fail "cleanup" "review worktree left behind"; fi
 echo "all review-pr tests passed"
