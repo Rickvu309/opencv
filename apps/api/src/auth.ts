@@ -122,7 +122,7 @@ export function createAuth({
     telemetry: { enabled: false },
     hooks: {
       // Same per-request context the sender stamps. The send stays awaited.
-      after: createAuthMiddleware(async (ctx) => {
+      after: createAuthMiddleware(async (ctx): Promise<Response | undefined> => {
         if (
           ctx.path !== "/email-otp/send-verification-otp" ||
           ctx.body?.type !== "sign-in" ||

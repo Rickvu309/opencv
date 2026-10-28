@@ -8,7 +8,7 @@
 #
 # The checks run on the merge of origin/main and the PR head, which is what a squash merge lands, so a branch behind
 # main needs no rebase. Only a merge conflict does. A passing check is cached by the tested tree (--no-cache reruns it).
-# After check.sh passes, the worktree runs `pnpm --filter web build`. A failed build is a FAIL. The cache covers both.
+# After check.sh passes, the worktree builds the API and web. A failed build is a FAIL. The cache covers both.
 # The patch id it prints is stable across a rebase that leaves the diff text unchanged; record it with the independent
 # review and the verify evidence so they stay valid for the same patch on a new base. Needs git 2.39 or later.
 #
@@ -207,10 +207,11 @@ if (( merge_rc == 0 )); then
     # tested tree and that checker, so a rerun that lands the same tree is free. Cached only when this step adds no FAIL.
     checker_blob=$(git -C "$main_checkout" rev-parse --verify --quiet origin/main:scripts/check.sh || true)
     cache_dir="$wt_root/.review-pr-cache"
-    # The suffix keeps a cache from the old gate, which never built the web app, from skipping this step.
-    cache_hit="$cache_dir/$tree-$checker_blob-install$install-webbuild"
+    # Older gates did not build both apps, so their cached results cannot skip these builds.
+    cache_hit="$cache_dir/$tree-$checker_blob-install$install-apibuild-webbuild"
     if (( use_cache )) && [[ -n "$checker_blob" && -f "$cache_hit" ]]; then
       ok "lint, typecheck, test passed for this exact tree on $(cat "$cache_hit") (cached; --no-cache reruns)"
+      ok "api build passed for this exact tree (cached; --no-cache reruns)"
       ok "web build passed for this exact tree (cached; --no-cache reruns)"
     else
       fails_before=${#fails[@]}
@@ -229,6 +230,12 @@ if (( merge_rc == 0 )); then
         # A stray CHECK_DRY_RUN, CHECK_BASE_REF in the reviewer shell must not turn the full run into a no-op.
         if (cd "$wt" && env -u CHECK_DRY_RUN -u CHECK_BASE_REF "$checker"); then
           ok "lint, typecheck, test passed"
+          note "running pnpm --filter api... run build"
+          if (cd "$wt" && pnpm --filter api... run build); then
+            ok "api build passed"
+          else
+            bad "api build failed"
+          fi
           note "running pnpm --filter web build"
           if (cd "$wt" && pnpm --filter web build); then
             ok "web build passed"
