@@ -1,10 +1,8 @@
 // Decisions. Each check reads the tour data and returns { id, name, pass, measured, rule }.
 // Ids 01 to 30 are the research section 5 check numbers; 31 and up are the app-wide checks the
 // signed-in tour adds. A rule says when it is a heuristic. Source reads are named as such.
-import { join } from "node:path"
-import { readFileSync } from "node:fs"
-
 import { contentChecks } from "./checks-content.mjs"
+import { motionChecks } from "./checks-source.mjs"
 import {
   brandViolations,
   capturedGlowViews,
@@ -16,22 +14,20 @@ import {
   toggleViolations,
 } from "./text-rules.mjs"
 import {
-  FEATURE_DIRS,
   SURFACES,
   context,
   list,
-  paletteUsesPanelDuration,
-  read,
-  rel,
-  repo,
   result,
-  sourceFiles,
+  scanProblem,
+  stale,
+  stubSilent,
 } from "./check-util.mjs"
 import { PRIMARY } from "./tour.mjs"
 
 export function runChecks(d) {
   const r = contentChecks(d)
-  const { screens, allSnaps, labels, has } = context(d)
+  const { screens, allSnaps, labels, has, scan } = context(d)
+  r.push(...motionChecks(d, { allSnaps, screens }))
 
   // Structure.
   const editor = d.cv.editorRect
@@ -172,94 +168,6 @@ export function runChecks(d) {
     )
   )
 
-  const dur = {}
-  for (const s of allSnaps)
-    for (const [k, n] of Object.entries(s.durations))
-      if (!["150ms", "280ms"].includes(k)) dur[k] = (dur[k] ?? 0) + n
-  const examples = allSnaps
-    .flatMap((s) => s.durationSamples)
-    .filter((x) => !["150ms", "280ms"].includes(x.k))
-  const srcMotion = []
-  for (const f of sourceFiles([
-    ...FEATURE_DIRS.map((x) => `apps/web/src/features/${x}`),
-    "apps/web/src/routes",
-  ])) {
-    for (const m of read(f).matchAll(
-      /\bduration-(\d+|fast|slow)\b|\bduration-\[(\d+)ms\]|\b(\d+)ms\b/g
-    )) {
-      const ms =
-        m[1] === "fast"
-          ? 100
-          : m[1] === "slow"
-            ? 200
-            : Number(m[1] ?? m[2] ?? m[3])
-      if (![0, 150, 280].includes(ms))
-        srcMotion.push(`${rel(f).split("/").pop()}: ${m[0]}`)
-    }
-  }
-  r.push(
-    result(
-      "24",
-      "motion-tokens",
-      Object.keys(dur).length === 0 && srcMotion.length === 0,
-      `computed off-token durations: ${
-        Object.entries(dur)
-          .map(([k, n]) => `${k} x${n}`)
-          .join(", ") || "none"
-      }${examples[0] ? ` e.g. ${examples[0].t}.${examples[0].c.slice(0, 40)}` : ""}; in feature source: ${list([...new Set(srcMotion)], 3) || "none"}`,
-      "every transition and animation runs 150ms or 280ms, measured on the toured screens and as duration-N classes or Nms values in the signed-in feature folders and routes (looping spinners and skeletons skipped)"
-    )
-  )
-
-  const reducedBad = Object.entries(d.reduced).flatMap(([k, s]) => [
-    ...Object.keys(s.durations)
-      .filter((v) => parseFloat(v) > 1)
-      .map((v) => `${k}:${v}`),
-    ...(s.runningAnimations ? [`${k}:${s.runningAnimations} running`] : []),
-    ...(s.scrollBehavior.includes("smooth") ? [`${k}:smooth scroll`] : []),
-  ])
-  const paletteMotion = paletteUsesPanelDuration()
-  r.push(
-    result(
-      "25",
-      "reduced-motion",
-      reducedBad.length === 0 && paletteMotion,
-      `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; palette panel duration: ${paletteMotion}`,
-      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and the command palette open transition uses the panel duration token (source read)"
-    )
-  )
-
-  const reveal = sourceFiles([
-    ...FEATURE_DIRS.map((x) => `apps/web/src/features/${x}`),
-    "apps/web/src/routes",
-  ]).filter((f) => /text-reveal|TextReveal/.test(read(f)))
-  r.push(
-    result(
-      "26",
-      "no-text-reveal",
-      reveal.length === 0,
-      reveal.length ? list(reveal.map(rel)) : "no import",
-      "no app screen imports text-reveal (source read)"
-    )
-  )
-
-  const banner = read(
-    join(repo, "apps/web/src/features/paper/paper-editor-conflict-banner.tsx")
-  )
-  const errText = d.coachError.alerts.some((t) =>
-    /not found|Retry|wrong|unavailable|reach/i.test(t)
-  )
-  const red = SURFACES.flatMap((k) => screens[k].redOutsideAlert)
-  r.push(
-    result(
-      "27",
-      "alerts-have-role",
-      errText && red.length === 0 && /role="alert"/.test(banner),
-      `Coach error inside a live region: ${errText}; red text outside one: ${red.length ? list(red, 2) : "none"}; conflict banner role=alert: ${/role="alert"/.test(banner)}`,
-      "the Coach error and the Paper conflict banner expose a live region role"
-    )
-  )
-
   // The Paper primary is New on the library; the CV editor has had no Save or Make mine since #396.
   const need = {
     apply: [d.apply, PRIMARY.apply],
@@ -270,16 +178,28 @@ export function runChecks(d) {
     const b = s.buttons.find((x) => re.test(x.label))
     return { k, label: b?.label, h: b?.h }
   })
+  const rule28 =
+    "the primary button on Apply, Paper and Pitch is 32px high or more (the kit glow button is h-8)"
+  const unmatched28 = Object.entries(need).filter(
+    ([k]) => !found.find((f) => f.k === k).label
+  )
   r.push(
-    result(
-      "28",
-      "primary-buttons-32",
-      found.every((f) => (f.h ?? 0) >= 32),
-      found
-        .map((f) => `${f.k} "${f.label ?? "not found"}" ${f.h ?? "?"}px`)
-        .join(", "),
-      "the primary button on Apply, Paper and Pitch is 32px high or more (the kit glow button is h-8)"
-    )
+    unmatched28.length
+      ? stale(
+          "28",
+          "primary-buttons-32",
+          unmatched28
+            .map(([k, [, re]]) => `no button matched ${re} on ${k}`)
+            .join("; "),
+          rule28
+        )
+      : result(
+          "28",
+          "primary-buttons-32",
+          found.every((f) => (f.h ?? 0) >= 32),
+          found.map((f) => `${f.k} "${f.label}" ${f.h}px`).join(", "),
+          rule28
+        )
   )
 
   const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
@@ -287,17 +207,22 @@ export function runChecks(d) {
   )?.[0]
   const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
   const emptyCopy = /Start a document/.exec(d.paperEmpty.text)?.[0]
+  const rule29 =
+    "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
+  const silent29 = stubSilent(d.paperLoading, d.paperEmpty)
   r.push(
-    result(
-      "29",
-      "table-not-mounted-while-loading",
-      loadingOwn &&
-        !d.paperLoading.hasTable &&
-        Boolean(emptyCopy) &&
-        emptyCopy !== loadingCopy,
-      `loading: ${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}; empty (list answered with none): ${emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
-      "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
-    )
+    silent29
+      ? stale("29", "table-not-mounted-while-loading", silent29, rule29)
+      : result(
+          "29",
+          "table-not-mounted-while-loading",
+          loadingOwn &&
+            !d.paperLoading.hasTable &&
+            Boolean(emptyCopy) &&
+            emptyCopy !== loadingCopy,
+          `loading: ${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}; empty (list answered with none): ${emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
+          rule29
+        )
   )
 
   const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
@@ -305,14 +230,19 @@ export function runChecks(d) {
     [...d.cv.buttons, ...d.cvCoach.buttons].some((b) =>
       /reject|undo this change/i.test(b.label)
     ) || has(/>\s*Reject\s*<|["'`](Reject|Undo this change)["'`]/).length > 0
+  const rule30 =
+    "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
+  const why30 = scanProblem(scan)
   r.push(
-    result(
-      "30",
-      "undo-and-reject",
-      undo && reject,
-      `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
-      "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
-    )
+    why30
+      ? stale("30", "undo-and-reject", why30, rule30)
+      : result(
+          "30",
+          "undo-and-reject",
+          undo && reject,
+          `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
+          rule30
+        )
   )
 
   // App-wide checks the tour adds.
@@ -330,14 +260,29 @@ export function runChecks(d) {
   const tabs = Object.entries(d.tabs).map(
     ([k, v]) => `${k}:${v.reached ?? "none in 60"}`
   )
+  const rule32 =
+    "the primary action of each surface takes focus within 30 Tab presses"
+  const unmatched32 = Object.entries(d.tabs).filter(
+    ([k, v]) =>
+      !v.reached && !d[k].buttons.some((b) => PRIMARY[k].test(b.label))
+  )
   r.push(
-    result(
-      "32",
-      "keyboard-reaches-primary",
-      Object.values(d.tabs).every((v) => v.reached && v.reached <= 30),
-      `Tab presses to the primary action: ${tabs.join(" ")}`,
-      "the primary action of each surface takes focus within 30 Tab presses"
-    )
+    unmatched32.length
+      ? stale(
+          "32",
+          "keyboard-reaches-primary",
+          unmatched32
+            .map(([k]) => `no button matched ${PRIMARY[k]} on ${k}`)
+            .join("; "),
+          rule32
+        )
+      : result(
+          "32",
+          "keyboard-reaches-primary",
+          Object.values(d.tabs).every((v) => v.reached && v.reached <= 30),
+          `Tab presses to the primary action: ${tabs.join(" ")}`,
+          rule32
+        )
   )
 
   const logs = [
@@ -545,5 +490,5 @@ export function runChecks(d) {
       "chrome copy has no exclamation mark and does not say Oops"
     )
   )
-  return r
+  return r.sort((a, b) => a.id.localeCompare(b.id))
 }

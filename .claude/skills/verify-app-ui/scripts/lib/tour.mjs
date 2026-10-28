@@ -309,6 +309,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await b.goto(`${webUrl}/paper`)
   await b.sleep(2500)
   d.paperLoading = await snap(b)
+  d.paperLoading.stubHits = b.interceptHits()
   b.setIntercept(null)
   await b.release()
 
@@ -321,11 +322,12 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await b.waitFor("document.body.innerText.includes('Start a document')", 10000)
   await b.sleep(800)
   d.paperEmpty = await snap(b)
+  d.paperEmpty.stubHits = b.interceptHits()
   b.setIntercept(null)
 
   const coachCall = (r) =>
     r.method === "POST" &&
-    /\/api\/threads\/[^/]+\/coach$/.test(new URL(r.url).pathname)
+    /^\/api\/chats\/[^/]+\/turns$/.test(new URL(r.url).pathname)
   b.setIntercept((r) =>
     coachCall(r)
       ? {
@@ -346,6 +348,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await b.waitFor("document.querySelector('[role=alert]')", 8000)
   await b.sleep(800)
   d.coachError = await snap(b)
+  d.coachError.stubHits = b.interceptHits()
   await shot(b, "desktop-coach-error")
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
@@ -358,6 +361,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await b.waitFor("document.querySelector('[role=alert]')", 8000)
   await b.sleep(800)
   d.coachNet = await snap(b)
+  d.coachNet.stubHits = b.interceptHits()
   b.setIntercept(null)
   await b.close()
 

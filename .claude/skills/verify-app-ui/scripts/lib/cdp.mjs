@@ -122,6 +122,7 @@ export async function launchBrowser() {
     const logs = []
     const held = []
     let handler = intercept ?? null
+    let hits = 0
     listeners.push((message) => {
       if (message.sessionId !== sessionId) return
       const { method, params } = message
@@ -149,6 +150,7 @@ export async function launchBrowser() {
         const verdict =
           handler && request.url.includes("/api/") ? handler(request) : null
         if (!verdict) return call("Fetch.continueRequest", { requestId })
+        hits++
         if (verdict === "hold") return held.push(requestId)
         if (verdict === "fail")
           return call("Fetch.failRequest", {
@@ -275,9 +277,12 @@ export async function launchBrowser() {
       for (const requestId of held.splice(0))
         await call("Fetch.continueRequest", { requestId })
     }
+    // Counts the requests the current intercept answered, held or failed, so a stub that never matched shows as zero.
     const setIntercept = (fn) => {
       handler = fn
+      hits = 0
     }
+    const interceptHits = () => hits
     const close = () => send("Target.closeTarget", { targetId })
     return {
       evaluate,
@@ -288,6 +293,7 @@ export async function launchBrowser() {
       screenshot,
       release,
       setIntercept,
+      interceptHits,
       logs,
       close,
       sleep,

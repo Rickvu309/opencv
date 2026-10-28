@@ -518,6 +518,7 @@ function probe(kind) {
         )
       : []
     const marquee = {
+      section: Boolean(logos),
       tracks: tracks.length,
       copyHidden: tracks.every((track) => {
         const kids = [...track.children]

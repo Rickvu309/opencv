@@ -3,6 +3,7 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { srgbToOklch } from "../../../verify-app-ui/scripts/lib/oklch.mjs"
+import { verdict } from "./verdict.mjs"
 
 const landingDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -50,14 +51,6 @@ const TEXT_STYLE_EXCEPTIONS = [
     approvedBy: "pending operator (quanvu309)",
   },
 ]
-
-const verdict = (id, name, rule, pass, measured) => ({
-  id,
-  name,
-  rule,
-  pass,
-  measured,
-})
 
 function normPen(value) {
   return value

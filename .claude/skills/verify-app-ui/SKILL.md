@@ -22,9 +22,11 @@ PORT=4450 pnpm --filter web verify:app-ui
 - About 2 to 4 minutes on a loaded machine (stack start, 4 routes, 8 steps, 4 scenarios, 2 more passes). One browser plus the two servers, so do not run it beside install, vitest or another browser run on the shared machine.
 - `VERIFY_APP_UI_SHOTS=<dir>` writes the screenshots the reviewers need (list in `rubric.md`). `VERIFY_APP_UI_DATA=<file>` writes every raw measurement as JSON, which is the way to see what a FAIL measured.
 
-Output is one line per property, `PASS|FAIL <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL: <ids>`. Exit 0 all pass, 1 any FAIL, 2 the stack, the browser or a screen did not work (an error, not a verdict). The pure text and color rules have unit tests: `node --test .claude/skills/verify-app-ui/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+Output is one line per property, `PASS|FAIL|STALE <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL, K STALE: <ids>`. STALE means the check's own precondition did not hold: a source folder it scans is missing, a stubbed request never fired, or the button it looks for matched nothing. A STALE line says nothing about the app; fix the checker. Exit 0 all PASS, 1 any FAIL and no STALE, 3 any STALE, 2 the stack, the browser or a screen did not work (an error, not a verdict). The pure text and color rules have unit tests: `node --test .claude/skills/verify-app-ui/scripts/lib/text-rules.test.mjs` (no browser, under a second).
 
 What the tour does, in order, signed in at 1440x900: visits every route once to warm the dev server; then for Home, Paper, Apply and Pitch it loads the route and times it, walks Tab to the primary action, and measures the screen. On Home it opens Search with Ctrl-K and sends "Review my CV" for a scripted Coach turn. On Paper it opens the sample CV and the Coach float. On Pitch it reads the coming-soon page and does not open a story. Scenario pages follow: `GET /api/paper` held while the page is read, `GET /api/paper` answered with an empty list, the Coach send answered with `404 USER_NOT_FOUND "User not found."`, and the Coach send with the connection refused. A reduced-motion pass and a 390x844 mobile pass visit the four routes again. Last, the tour deletes the four seeded Apply cards through the api (`apply.deleteCard`) and reads the empty board. A step that does not happen (a click finds nothing, a screen never renders, the deletes fail) throws and the run exits 2; it is never a pass. The api answers are the only mocks, apart from the scripted Coach and the stub posting scan that verify-opencv already isolates; say so in a report. The throwaway account is not reused, and the stack and its data are removed at the end.
+
+Reading a STALE: the measured value names what was missing. Repair the tour, the probe or the folder list (`FEATURE_DIRS`, `PRIMARY`, the stub pattern in `tour.mjs`) until the line is PASS or FAIL again. A check that cannot run never counts as a pass.
 
 Reading a FAIL: the measured value is what the app does, the rule is what it should do. Decide whether the app or the checker is wrong, in this order:
 
@@ -42,13 +44,18 @@ Ids 01 to 30 are the research check numbers, 31 to 38 are app-wide checks the si
 
 ## Baseline at the sync commit
 
-At `ceb07502` the checker prints 34 PASS and 9 FAIL: 01 02 04 20 27 28 32 36 41. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
+At `8b5f640a` plus #526 the checker prints 35 PASS, 7 FAIL and 1 STALE: FAIL 01 02 20 27 28 36 41, STALE 32. 04 now drives its Coach stub (`POST /api/chats/<id>/turns`, one hit in each scenario) and passes. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
 
 - 20: eight text nodes under 4.5:1, all on the Inbox connect screen, such as "Skip for now" at 3.36:1 and "Reads job emails only. Nothing is sent without you." at 2.45:1. `inbox-parts.tsx` `SOFT_TEXT` (`text-muted-foreground/70`) and `FAINT_TEXT` (`/55`) copy the pen greys #8A8A8E and #A0A0A2, which fail AA on white. Introduced by `682a1ea7` (#505). Apply ships such greys as the lightest AA grey (`apply-tone.ts`); Inbox does not.
 - 28: Apply's New job is 28px (`apply-toolbar.tsx` `h-7`, from `aa89ba79`, #509). The pen draws that control (node BmWvu) as a 28px ghost header action, so check 28 and the pen disagree. The operator decides which one moves. Paper New is 32px and Pitch Get early access is 40px.
 - 41: the Coach mode picker labels "Light · Pro" and "Max · Pro" carry a middle dot (`coach-dock.tsx` `MODE_SEGMENTS`, from `2c62f760`, #476). The pen labels the segment "Light".
 
-Not judged in that pass: 01, 02, 04, 27, 32 and 36. Known drift for 04 and 27: the Coach error scenarios in `tour.mjs` intercept `POST /api/threads/<id>/coach`, a call the web has not made since `77b5a78f` (#418). The send now goes to `POST /api/chats/<id>/turns` (`lib/coach-stream.ts`), so no error is mocked and those two FAILs say nothing about the app until the tour is fixed. A change that fixes one finding should flip its line to PASS and nothing else.
+Seen in the #526 run and not judged in the design pass:
+
+- 27: the Paper conflict banner is `role="region"` (`paper-editor-conflict-banner.tsx`, from `7ea61e9c`, #396), not `role="alert"`. The Coach error is in a live region. This FAIL was hidden while the Coach stub never fired.
+- 32: Home has no button starting `Add `, so the `PRIMARY.home` label matched nothing and the line is STALE. Apply, Paper and Pitch reach their primary within 30 Tab presses.
+- 36: the Paper library page has no table rows the probe counts, so the rows list is empty and the line reads `Paper rows ;`.
+- 01 and 02 stay unjudged.
 
 ## Pen layout check
 

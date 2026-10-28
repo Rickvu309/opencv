@@ -22,7 +22,7 @@ PORT=4399 pnpm --filter web verify:landing
 - About 20 s warm. One browser process, so do not run it beside install, vitest or another browser run on the shared machine.
 - `VERIFY_LANDING_SHOTS=<dir>` also writes `desktop-first-view.png`, `desktop-full.png`, `mobile-first-view.png`, `mobile-full.png` (1440x900 and 390x844) for the taste review.
 
-Output is one line per property, `PASS|FAIL <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL: <ids>`. Exit 0 all pass, 1 any FAIL, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+Output is one line per property, `PASS|FAIL|STALE <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL, K STALE: <ids>`. STALE means the locator the check measures (the hero figure, the nav lockup, a call-to-action button, the benefit cards, `#logos`, a product section) matched nothing, so the line says nothing about the page; fix the checker or the locator. Exit 0 all PASS, 1 any FAIL and no STALE, 3 any STALE, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
 
 Reading a FAIL: the measured value is what the page does, the rule is what it should do. Decide whether the page or the checker is wrong, in this order:
 
@@ -70,7 +70,7 @@ Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](
 
 ### Baseline at the sync commit
 
-At `ceb07502` (main, checked in #510) the checker prints 30 PASS and 1 FAIL: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
+At `ceb07502` (main, checked in #510) the checker prints 30 PASS, 1 FAIL and 0 STALE: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
 
 ## Taste review (judged layer)
 

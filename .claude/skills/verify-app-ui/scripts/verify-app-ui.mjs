@@ -6,13 +6,15 @@
 //   VERIFY_APP_UI_DATA=<file> writes the raw measurements as JSON for inspection.
 // Starts the api (PGlite, scripted Coach) and the web dev server through the verify-opencv skill's
 // launch.sh, signs up a throwaway account, drives headless Chromium over the DevTools protocol, prints
-// one PASS or FAIL line per property, tears everything down, and exits 1 when any property fails.
+// one PASS, FAIL or STALE line per property, tears everything down, and exits 3 when any check is STALE
+// (its own precondition did not hold), else 1 when any property fails.
 // It never edits the app. Exit 2 means the stack, the browser or a screen did not work (an error, not a verdict).
 import { mkdirSync, writeFileSync } from "node:fs"
 import { createConnection } from "node:net"
 
 import { launchBrowser } from "./lib/cdp.mjs"
 import { runChecks } from "./lib/checks.mjs"
+import { summarize } from "./lib/check-util.mjs"
 import { startStack, stopStack } from "./lib/stack.mjs"
 import { runTour } from "./lib/tour.mjs"
 
@@ -57,20 +59,12 @@ try {
   const data = await runTour({ browser, ...stack, shots })
   if (process.env.VERIFY_APP_UI_DATA)
     writeFileSync(process.env.VERIFY_APP_UI_DATA, JSON.stringify(data, null, 1))
-  const results = runChecks(data)
-  const failed = results.filter((r) => !r.pass)
+  const { lines, exit: code } = summarize(runChecks(data))
   console.log(
     `verify-app-ui api=${stack.apiUrl} web=${stack.webUrl} (1440x900, 390x844, reduced motion)`
   )
-  for (const r of results) {
-    console.log(
-      `${r.pass ? "PASS" : "FAIL"} ${r.id} ${r.name}: ${r.measured.slice(0, 230)} | rule: ${r.rule}`
-    )
-  }
-  console.log(
-    `${results.length - failed.length} PASS, ${failed.length} FAIL${failed.length ? `: ${failed.map((r) => r.id).join(" ")}` : ""}`
-  )
-  if (failed.length) exit = 1
+  for (const line of lines) console.log(line)
+  exit = code
 } catch (error) {
   console.error(`verify-app-ui error: ${error.message}`)
   exit = 2

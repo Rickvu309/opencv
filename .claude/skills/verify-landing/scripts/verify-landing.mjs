@@ -3,8 +3,9 @@
 //   pnpm --filter web verify:landing        (PORT=4399 by default)
 //   VERIFY_LANDING_SHOTS=<dir> also writes the review screenshots (first view and full page, both viewports).
 // Starts the Vite dev server on PORT unless something already answers there, drives headless
-// Chromium over the DevTools protocol, prints one PASS or FAIL line per property, and exits 1
-// when any property fails. It never edits the app. Exit 2 means the page did not render.
+// Chromium over the DevTools protocol, prints one PASS, FAIL or STALE line per property, and exits 3
+// when any check is STALE (its locator matched nothing), else 1 when any property fails. It never edits the app.
+// Exit 2 means the page did not render.
 import { spawn } from "node:child_process"
 import { mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
@@ -15,6 +16,7 @@ import { pageChecks } from "./lib/page-checks.mjs"
 import { penProbeSource } from "./lib/pen-probe.mjs"
 import { probeSource } from "./lib/probe.mjs"
 import { textRules } from "./lib/text-rules.mjs"
+import { summarize } from "./lib/verdict.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const port = process.env.PORT ?? "4399"
@@ -160,17 +162,10 @@ try {
       penSections: desktop.pen,
     }),
   ]
-  const failed = results.filter((r) => !r.pass)
+  const { lines, exit: code } = summarize(results)
   console.log(`verify-landing ${url} (1440x900, 390x844, reduced motion)`)
-  for (const r of results) {
-    console.log(
-      `${r.pass ? "PASS" : "FAIL"} ${r.id} ${r.name}: ${r.measured.slice(0, 230)} | rule: ${r.rule}`
-    )
-  }
-  console.log(
-    `${results.length - failed.length} PASS, ${failed.length} FAIL${failed.length ? `: ${failed.map((r) => r.id).join(" ")}` : ""}`
-  )
-  if (failed.length) exit = 1
+  for (const line of lines) console.log(line)
+  exit = code
 } catch (error) {
   console.error(`verify-landing error: ${error.message}`)
   exit = 2
