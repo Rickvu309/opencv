@@ -84,6 +84,8 @@ case "$1" in
     done
     printf 'push skip=%s\\n' "\${SKIP_CHECKS-unset}" >> "$PROOF_ROOT/events"
     printf 'push retry=%s\\n' "\${CHECK_RETRY_FAILED_TESTS-unset}" >> "$PROOF_ROOT/env"
+    mkdir -p "$PR_RESULT_DIR"
+    [ -z "$PROOF_PUSH_RETRIED" ] || printf '{"retried":[%s]}' "$PROOF_PUSH_RETRIED" > "$PR_RESULT_DIR/opencv-check-fix-999-push-failure-proof.json"
     if [ "$PROOF_QUIET" != 1 ]; then echo 'push transport diagnostic' >&2; fi
     exit "$PROOF_PUSH_EXIT" ;;
   ls-remote) echo 'oldremote refs/heads/fix/999-push-failure-proof' ;;
@@ -97,7 +99,10 @@ esac
 case "$1 $2" in
   'auth status'|'pr list') exit 0 ;;
   'issue view') echo OPEN ;;
-  'pr create') echo create >> "$PROOF_ROOT/events"; echo https://github.com/o/r/pull/77 ;;
+  'pr create')
+    echo create >> "$PROOF_ROOT/events"
+    [ "\${PROOF_CREATE_EXIT-0}" = 0 ] || { echo 'create refused' >&2; exit "$PROOF_CREATE_EXIT"; }
+    echo https://github.com/o/r/pull/77 ;;
   *) echo "unexpected gh call $*" >&2; exit 99 ;;
 esac
 `
@@ -174,6 +179,38 @@ const retried = '"apps/web/a.test.tsx","apps/api/b.test.ts"'
 
 test("files that passed only on retry are warned about and recorded in result.json", (t) => {
   const result = run(t, 0, false, false, false, { PROOF_RETRIED: retried })
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(
+    result.stdout,
+    /^WARN passed only on retry: apps\/web\/a\.test\.tsx apps\/api\/b\.test\.ts$/m
+  )
+  assertResult(
+    result,
+    "77",
+    "status=ok",
+    'retried=["apps/web/a.test.tsx","apps/api/b.test.ts"]'
+  )
+})
+
+test("the retry WARN is printed even when gh pr create fails", (t) => {
+  const result = run(t, 0, false, false, {
+    PROOF_RETRIED: retried,
+    PROOF_CREATE_EXIT: "1",
+  })
+  assert.equal(result.status, 1)
+  assert.equal(result.events, "push skip=unset\ncreate\n")
+  assert.match(
+    result.stdout,
+    /^WARN passed only on retry: apps\/web\/a\.test\.tsx apps\/api\/b\.test\.ts$/m
+  )
+  assert.match(result.stderr, /gh pr create failed/)
+})
+
+test("files retried by the quick check and by the push's check are all recorded", (t) => {
+  const result = run(t, 0, false, false, {
+    PROOF_RETRIED: '"apps/web/a.test.tsx"',
+    PROOF_PUSH_RETRIED: '"apps/api/b.test.ts"',
+  })
   assert.equal(result.status, 0, result.stderr)
   assert.match(
     result.stdout,

@@ -110,10 +110,17 @@ failed_test_dirs() {
   [[ -n "$list" ]]
 }
 
-# True when the log shows a vitest unhandled error or rejection: that run failed without a FAIL line for it.
+# Count of lines in the log, color codes stripped, that match an extended regex. grep reads the whole stream (never -q on
+# a pipe: it exits at the first match, sed gets SIGPIPE on a long log, and pipefail then reports no match).
+log_count() {
+  [[ -n "$check_log" && -s "$check_log" ]] || { echo 0; return 0; }
+  sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -cE "$@" || true
+}
+
+# True when the log shows vitest's own unhandled error report ("Vitest caught 1 unhandled error", the "Unhandled Errors"
+# header): that run failed without a FAIL line for it. An app log line that says "unhandled error" does not count.
 has_unhandled_errors() {
-  [[ -n "$check_log" && -s "$check_log" ]] || return 1
-  sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -qiE 'unhandled (errors?|rejections?)'
+  (( $(log_count -i 'Vitest caught [0-9]+ unhandled|⎯ Unhandled (Errors?|Rejections?) ⎯') > 0 ))
 }
 
 if [[ ! -f package.json ]]; then
@@ -353,7 +360,7 @@ if [[ ${#failed[@]} -gt 0 ]]; then
     *) cause=test ;;
   esac
   # Only vitest's own error line counts ("Error: Hook timed out in 10000ms."), not a test that prints those words.
-  if [[ "$cause" == test && -n "$check_log" ]] && sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -qE '^([A-Za-z0-9@/_.-]+:test: )? *Error: (Hook|Test) timed out in [0-9]+ ?ms'; then cause=timing-test; fi
+  if [[ "$cause" == test ]] && (( $(log_count '^([A-Za-z0-9@/_.-]+:test: )? *Error: (Hook|Test) timed out in [0-9]+ ?ms') > 0 )); then cause=timing-test; fi
   mapfile -t failing_files < <(failed_test_files)
   if (( retry_attempted )); then failing_files=("${still_failing[@]}"); fi
   [[ ${#failing_files[@]} -eq 0 ]] || result_file "${failing_files[@]}"

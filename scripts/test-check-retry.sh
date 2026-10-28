@@ -105,7 +105,7 @@ check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/crash.txt"
 [[ $code -eq 1 && $(retries) -eq 0 ]] || fail "no file: exit $code, retries $(retries)"
 echo "ok: a failure that names no test file is not retried"
 # A real failure that prints no vitest FAIL line (node:test in packages/domain) beside a flaky file: turbo --continue
-# runs both, the flaky file passes alone, and the run must still fail. Before the fix this exited 0 with status ok.
+# runs both, and the flaky file passes alone: the run must still fail.
 turbo_out "$tmp/hidden.txt" web#test,\ @workspace/domain#test "$flaky_home"
 printf 'domain:test: not ok 1 - parses a paper\n' >>"$tmp/hidden.txt"
 check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/hidden.txt"
@@ -124,10 +124,39 @@ check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/unhandled.txt"
 grep -q 'unhandled error; not retrying' "$tmp/out" || fail "unhandled: no explanation"
 echo "ok: an unhandled error in the output blocks the retry"
 
+# The same with a long log after the report (error stacks, DOM dumps, the other package's output): the guard reads the
+# whole log, not the first match, so a long tail cannot hide it.
+tail_lines() { for i in $(seq 1 "$1"); do printf 'api:test: stdout | line %s of unrelated output that keeps the log long enough to fill a pipe\n' "$i"; done; }
+turbo_out "$tmp/unhandled-long.txt" web#test "$flaky_home"
+printf 'web:test:  Vitest caught 1 unhandled error during the test run.\nweb:test: ⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯\n' >>"$tmp/unhandled-long.txt"
+tail_lines 4000 >>"$tmp/unhandled-long.txt"
+(( $(wc -c <"$tmp/unhandled-long.txt") > 300000 )) || fail "long log fixture is too short"
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/unhandled-long.txt"
+[[ $code -eq 1 && $(retries) -eq 0 ]] || fail "unhandled long: exit $code, retries $(retries)"
+grep -q 'unhandled error; not retrying' "$tmp/out" || fail "unhandled long: no explanation"
+echo "ok: an unhandled error followed by a long log still blocks the retry"
+
+# An app log line that says "unhandled error" is not vitest's report: the flaky file is still retried.
+turbo_out "$tmp/applog.txt" web#test "$flaky_home"
+printf 'api:test: {"level":"error","msg":"unhandled error","error":"Error"}\n' >>"$tmp/applog.txt"
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/applog.txt"
+[[ $code -eq 0 && $(retries) -eq 1 ]] || fail "app log: exit $code, retries $(retries)"
+echo "ok: an app log line saying unhandled error does not block the retry"
+
+# A vitest timeout far from the end of a long log is still a timing test.
+turbo_out "$tmp/timeout-long.txt" web#test "$flaky_home"
+printf 'web:test: Error: Hook timed out in 10000ms.\n' >>"$tmp/timeout-long.txt"
+tail_lines 4000 >>"$tmp/timeout-long.txt"
+check STUB_TEST_OUT="$tmp/timeout-long.txt"
+[[ $code -eq 1 ]] || fail "timeout long: exit $code, want 1"
+result status=fail cause=timing-test
+echo "ok: a timeout line followed by a long log is classified as a timing test"
+
 # Without turbo's Failed line the failed packages are unknown, so nothing is retried.
 cat "$flaky_home" >"$tmp/nosummary.txt"
 check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/nosummary.txt"
 [[ $code -eq 1 && $(retries) -eq 0 ]] || fail "no summary: exit $code, retries $(retries)"
+grep -q "turbo's failed packages are not known" "$tmp/out" || fail "no summary: no explanation"
 echo "ok: no turbo Failed line, no retry"
 
 # A script test failing beside turbo test is a second failed task: no retry.
