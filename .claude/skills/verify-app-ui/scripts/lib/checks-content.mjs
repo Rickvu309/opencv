@@ -1,13 +1,13 @@
 // Checks 01 to 13: writing and logic. Sources: Apple writing, feedback; WCAG 3.2.4; NN/g empty states
 // and hallucinations; shadcn AI Elements. A heuristic says so in its rule text. A scenario that did not
 // reach its state is a FAIL, never a pass. A stubbed call that never fired, or a source folder that is
-// missing, is STALE: the check cannot say anything about the app.
+// missing, leaves only that part unjudged: a found FAIL still FAILs, otherwise the check is STALE.
 import {
   context,
+  judged,
   list,
   result,
   scanProblem,
-  stale,
   stubSilent,
 } from "./check-util.mjs"
 import {
@@ -31,25 +31,38 @@ export function coachErrorCheck(d) {
   const transport = net.some((t) =>
     /failed to fetch|networkerror|typeerror|err_/i.test(t)
   )
-  let m4
-  if (!api.length || !net.length)
-    m4 = `no error appeared after ${!api.length ? "the 404 answer" : "the refused connection"}`
-  else if (rawShown) m4 = `404 answer shows the raw api message "${raw}"`
-  else if (transport) m4 = `refused connection shows "${net[0].slice(0, 60)}"`
-  else
-    m4 = `404 answer: "${api[0].slice(0, 50)}"; refused connection: "${net[0].slice(0, 50)}"`
+  const apiQuiet = stubSilent(d.coachError)
+  const netQuiet = stubSilent(d.coachNet)
+  const m4 = [
+    apiQuiet
+      ? "404 answer not judged"
+      : !api.length
+        ? "no error appeared after the 404 answer"
+        : rawShown
+          ? `404 answer shows the raw api message "${raw}"`
+          : `404 answer: "${api[0].slice(0, 50)}"`,
+    netQuiet
+      ? "refused connection not judged"
+      : !net.length
+        ? "no error appeared after the refused connection"
+        : transport
+          ? `refused connection shows "${net[0].slice(0, 60)}"`
+          : `refused connection: "${net[0].slice(0, 50)}"`,
+  ].join("; ")
   const rule04 =
     "a failed Coach send shows an error, and it is a sentence, never the api's raw message or a transport error (driven twice: 404 USER_NOT_FOUND, then a refused connection; no error shown is a FAIL)"
-  const silent04 = stubSilent(d.coachError, d.coachNet)
-  return silent04
-    ? stale("04", "coach-error-not-raw", silent04, rule04)
-    : result(
-        "04",
-        "coach-error-not-raw",
-        api.length > 0 && net.length > 0 && !rawShown && !transport,
-        m4,
-        rule04
-      )
+  return judged(
+    "04",
+    "coach-error-not-raw",
+    rule04,
+    (apiQuiet !== null || (api.length > 0 && !rawShown)) &&
+      (netQuiet !== null || (net.length > 0 && !transport)),
+    m4,
+    [
+      apiQuiet && `404 answer (${apiQuiet})`,
+      netQuiet && `refused connection (${netQuiet})`,
+    ]
+  )
 }
 
 export function contentChecks(d) {
@@ -147,17 +160,16 @@ export function contentChecks(d) {
     "a Coach write shows Deny and Approve before it runs (source read of JSX labels; the scripted Coach never writes, so no write turn is driven)"
   const src08 = scanProblem(scan)
   r.push(
-    src08
-      ? stale("08", "confirm-before-write", src08, rule08)
-      : result(
-          "08",
-          "confirm-before-write",
-          approve.length > 0 && deny.length > 0,
-          approve.length && deny.length
-            ? "Approve and Deny exist"
-            : `no Approve (${approve.length}) and Deny (${deny.length}) button label in the signed-in feature folders; the banner says "Coach updated" after the write`,
-          rule08
-        )
+    judged(
+      "08",
+      "confirm-before-write",
+      rule08,
+      approve.length > 0 && deny.length > 0,
+      approve.length && deny.length
+        ? "Approve and Deny exist"
+        : `no Approve (${approve.length}) and Deny (${deny.length}) button label in the signed-in feature folders; the banner says "Coach updated" after the write`,
+      [src08 && `source scan (${src08})`]
+    )
   )
 
   const tools = d.thread.alerts.filter(
@@ -201,15 +213,14 @@ export function contentChecks(d) {
     "a loading list says it is loading (Loading documents, Loading...) and never shows Start a document"
   const silent11 = stubSilent(d.paperLoading)
   r.push(
-    silent11
-      ? stale("11", "loading-not-empty", silent11, rule11)
-      : result(
-          "11",
-          "loading-not-empty",
-          loading && !emptyCopy,
-          `while GET /api/paper is held: loading text ${loading}, empty copy ${emptyCopy}`,
-          rule11
-        )
+    judged(
+      "11",
+      "loading-not-empty",
+      rule11,
+      silent11 !== null || (loading && !emptyCopy),
+      `while GET /api/paper is held: loading text ${loading}, empty copy ${emptyCopy}`,
+      [silent11 && `held list (${silent11})`]
+    )
   )
 
   const hit = /Hit Publish/i.test(d.pitch.text)

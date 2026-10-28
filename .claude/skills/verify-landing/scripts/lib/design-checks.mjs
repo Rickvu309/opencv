@@ -1,11 +1,12 @@
-// Checks 27 to 30: the benefit art, the nav lockup and the call-to-action buttons against the pen. Each goes
-// STALE when the element it measures is not on the page.
+// Checks 27 to 30: the benefit art, the nav lockup and the call-to-action buttons against the pen. 27 and 30
+// go STALE only when #benefits is missing (a benefit card without its art is a FAIL). 28 is STALE when the
+// lockup is not found. 29 judges every CTA it found and names the others as not judged.
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
-import { staleIf, verdict } from "./verdict.mjs"
+import { judged, staleIf, verdict } from "./verdict.mjs"
 
 // Pixels whose max RGB channel delta exceeds this are a mismatch.
 // The corrected Coach art stays under COACH_ART_MAX. The old centre-rotated
@@ -38,7 +39,7 @@ export function designChecks(desktop) {
     art.perCard.every((n) => n === 1)
   out.push(
     staleIf(
-      art?.count ? null : "no svg under #benefits",
+      art?.section ? null : "no #benefits section on the page",
       verdict(
         "27",
         "benefit-art-from-design",
@@ -87,19 +88,22 @@ export function designChecks(desktop) {
   const closeCta = desktop.ctas?.close
   const sampleCta = desktop.ctas?.sample
   const ctaMatches =
-    sized(navCta, 32, "13px", 12) &&
-    navCta.inset &&
-    navCta.outer &&
-    pill(navCta) &&
-    sized(closeCta, 44, "16px", 20) &&
-    closeCta.inset &&
-    closeCta.outer &&
-    pill(closeCta) &&
-    sized(sampleCta, 44, "16px", 20) &&
-    sampleCta.inset === false &&
-    sampleCta.outer === false &&
-    sampleCta.borderVisible === false &&
-    pill(sampleCta)
+    (!navCta ||
+      (sized(navCta, 32, "13px", 12) &&
+        navCta.inset &&
+        navCta.outer &&
+        pill(navCta))) &&
+    (!closeCta ||
+      (sized(closeCta, 44, "16px", 20) &&
+        closeCta.inset &&
+        closeCta.outer &&
+        pill(closeCta))) &&
+    (!sampleCta ||
+      (sized(sampleCta, 44, "16px", 20) &&
+        sampleCta.inset === false &&
+        sampleCta.outer === false &&
+        sampleCta.borderVisible === false &&
+        pill(sampleCta)))
   const missingCtas = [
     navCta ? null : "Get started in the header",
     closeCta ? null : "Get started in #close",
@@ -110,15 +114,13 @@ export function designChecks(desktop) {
       ? `${button.h.toFixed(1)}px ${button.fontSize}/${button.fontWeight} pad ${button.padInline} r ${Number(button.radius).toFixed(1)} ${button.inset ? "inset" : "no-inset"} ${button.outer ? "outer" : "no-outer"} border ${button.borderVisible ? "yes" : "no"}`
       : "missing"
   out.push(
-    staleIf(
-      missingCtas.length ? `no button matched ${missingCtas.join(", ")}` : null,
-      verdict(
-        "29",
-        "cta-buttons-match-design",
-        "At 1440 the nav Get started is 32px tall, 13px at weight 500, with 12px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; the close Get started is 44px tall, 16px at weight 500, with 20px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; See a sample is the same size with a border-radius of at least half its height, no inset ring, no outer shadow, and no visible border",
-        ctaMatches,
-        `nav ${fmtCta(navCta)}; close ${fmtCta(closeCta)}; sample ${fmtCta(sampleCta)}`
-      )
+    judged(
+      "29",
+      "cta-buttons-match-design",
+      "At 1440 the nav Get started is 32px tall, 13px at weight 500, with 12px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; the close Get started is 44px tall, 16px at weight 500, with 20px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; See a sample is the same size with a border-radius of at least half its height, no inset ring, no outer shadow, and no visible border",
+      ctaMatches,
+      `nav ${fmtCta(navCta)}; close ${fmtCta(closeCta)}; sample ${fmtCta(sampleCta)}`,
+      missingCtas.map((name) => `no button matched ${name}`)
     )
   )
 
@@ -150,11 +152,7 @@ export function designChecks(desktop) {
   }
   out.push(
     staleIf(
-      coach
-        ? null
-        : rasters.length
-          ? `no benefit card titled "${COACH_TITLE}" among ${rasters.length}`
-          : "no benefit svg under #benefits",
+      art?.section ? null : "no #benefits section on the page",
       verdict(
         "30",
         "benefit-art-matches-pen",

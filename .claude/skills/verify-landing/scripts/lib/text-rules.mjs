@@ -76,15 +76,12 @@ export function textRules(top) {
   )
   // The design subhead is two beats. The statement, not the subhead, defines the product.
   out.push(
-    staleIf(
-      subBlock ? null : "no p matched in the hero region",
-      verdict(
-        "03",
-        "subhead-two-beats",
-        "Subhead is 1 to 2 sentences and is not a 3+ item feature list",
-        subSentences.length >= 1 && subSentences.length <= 2 && listItems < 3,
-        `${subSentences.length} sentence(s), longest list=${listItems} items`
-      )
+    verdict(
+      "03",
+      "subhead-two-beats",
+      "Subhead is 1 to 2 sentences and is not a 3+ item feature list",
+      subSentences.length >= 1 && subSentences.length <= 2 && listItems < 3,
+      `${subSentences.length} sentence(s), longest list=${listItems} items`
     )
   )
 
@@ -106,15 +103,12 @@ export function textRules(top) {
   const passive = all.filter((s) => PASSIVE.test(s.text))
   // OPM plain language, 15 to 20 words
   out.push(
-    staleIf(
-      all.length ? null : "no p matched in the hero or a surface region",
-      verdict(
-        "05",
-        "plain-sentences",
-        "Hero and feature sentences are 24 words or fewer and not passive (regex heuristic for passive). The design's plan line is 21 words.",
-        long.length + passive.length === 0,
-        `${all.length} sentences, ${long.length} over 24 words, ${passive.length} passive${passive[0] ? `: ${quote([passive[0].text])}` : ""}`
-      )
+    verdict(
+      "05",
+      "plain-sentences",
+      "Hero and feature sentences are 24 words or fewer and not passive (regex heuristic for passive). The design's plan line is 21 words.",
+      all.length > 0 && long.length + passive.length === 0,
+      `${all.length} sentences, ${long.length} over 24 words, ${passive.length} passive${passive[0] ? `: ${quote([passive[0].text])}` : ""}`
     )
   )
 
@@ -129,22 +123,14 @@ export function textRules(top) {
   const bad = titles.filter((t) => !t.ok)
   // The three product titles are the surface names: one to three words.
   out.push(
-    staleIf(
-      titles.some((t) => !t.found)
-        ? `no h2 matched in ${titles
-            .filter((t) => !t.found)
-            .map((t) => `surface:${t.name}`)
-            .join(", ")}`
-        : null,
-      verdict(
-        "06",
-        "product-titles-name-the-surface",
-        "Each product title (paper, apply, coach) is 1 to 3 words",
-        bad.length === 0,
-        bad.length
-          ? `off: ${bad.map((t) => `${t.name}->"${t.h2}"`).join(", ")}`
-          : "all three titles are 1 to 3 words"
-      )
+    verdict(
+      "06",
+      "product-titles-name-the-surface",
+      "Each product title (paper, apply, coach) is 1 to 3 words; a surface with no h2 is off",
+      bad.length === 0,
+      bad.length
+        ? `off: ${bad.map((t) => `${t.name}->${t.found ? `"${t.h2}"` : "no h2"}`).join(", ")}`
+        : "all three titles are 1 to 3 words"
     )
   )
 
@@ -216,20 +202,12 @@ export function textRules(top) {
     return { name, found: Boolean(block), ok: facts.test(block?.text ?? "") }
   })
   out.push(
-    staleIf(
-      firsts.some((f) => !f.found)
-        ? `no p matched in ${firsts
-            .filter((f) => !f.found)
-            .map((f) => `surface:${f.name}`)
-            .join(", ")}`
-        : null,
-      verdict(
-        "11",
-        "product-body-ties-to-hero",
-        "Each product's intro paragraph names proof, a CV, a role, a letter, a site, or a claim",
-        firsts.every((f) => f.ok),
-        `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => f.name))}`
-      )
+    verdict(
+      "11",
+      "product-body-ties-to-hero",
+      "Each product's intro paragraph names proof, a CV, a role, a letter, a site, or a claim; a surface with no intro paragraph is off",
+      firsts.every((f) => f.ok),
+      `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => (f.found ? f.name : `${f.name} (no p)`)))}`
     )
   )
 

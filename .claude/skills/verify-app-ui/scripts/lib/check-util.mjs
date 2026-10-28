@@ -69,6 +69,29 @@ export const stale = (id, name, why, rule) => ({
   measured: String(why),
   rule,
 })
+// One check, parts it could judge and parts it could not locate. A judged part that breaks the rule is a FAIL even
+// when another part was missing; with none broken, a missing part makes it STALE; otherwise PASS.
+export const judged = (id, name, rule, pass, measured, unjudged = []) => {
+  const missing = unjudged.filter(Boolean)
+  if (!pass)
+    return result(
+      id,
+      name,
+      false,
+      missing.length
+        ? `${measured}; not judged: ${missing.join("; ")}`
+        : measured,
+      rule
+    )
+  if (missing.length)
+    return stale(
+      id,
+      name,
+      `not judged: ${missing.join("; ")}; ${measured}`,
+      rule
+    )
+  return result(id, name, true, measured, rule)
+}
 // A scenario stub that answered nothing means the app made a call the tour no longer expects.
 export const stubSilent = (...snaps) => {
   const quiet = snaps.filter((snap) => !(snap?.stubHits > 0))
@@ -125,8 +148,8 @@ export function context(d) {
   }
 }
 
-export function paletteScan() {
-  const scan = sourceFiles(["apps/web/src/features/command-palette"])
+export function paletteScan(dir = "apps/web/src/features/command-palette") {
+  const scan = sourceFiles([dir])
   const uses = scan.files.some((file) =>
     /duration-\(--duration-panel\)/.test(read(file))
   )

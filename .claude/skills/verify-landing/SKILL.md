@@ -22,7 +22,9 @@ PORT=4399 pnpm --filter web verify:landing
 - About 20 s warm. One browser process, so do not run it beside install, vitest or another browser run on the shared machine.
 - `VERIFY_LANDING_SHOTS=<dir>` also writes `desktop-first-view.png`, `desktop-full.png`, `mobile-first-view.png`, `mobile-full.png` (1440x900 and 390x844) for the taste review.
 
-Output is one line per property, `PASS|FAIL|STALE <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL, K STALE: <ids>`. STALE means the locator the check measures (the hero figure, the nav lockup, a call-to-action button, the benefit cards, `#logos`, a product section) matched nothing, so the line says nothing about the page; fix the checker or the locator. Exit 0 all PASS, 1 any FAIL and no STALE, 3 any STALE, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+Output is one line per property, `PASS|FAIL|STALE <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL, K STALE: <ids>`. A check judges every part it can find. Any found part that breaks the rule makes it FAIL. With none broken, a part it could not locate (the hero section, `#benefits`, the nav lockup, a call-to-action button, the first product section) makes it STALE, and the line names it. A missing object the property is about (the hero figure, the benefit art, a product title) is a FAIL, not a STALE. Exit 0 all PASS, 1 any FAIL and no STALE, 3 any STALE, 2 the page did not render, the browser failed or the port was taken (an error, not a verdict). The pure text rules also have unit tests: `node --test .claude/skills/verify-landing/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+
+Reading a STALE: it means the check could not run that part, and the measured value names it ("not judged: ..."). A STALE hides nothing that was found, since any FAIL in the same check would have shown. Decide whether the checker's setup or the page changed. If the page dropped the section or button on purpose, repair the locator in `probe.mjs` or the check. If it lost it by accident, that is the regression: fix the page. A check that cannot run never counts as a pass.
 
 Reading a FAIL: the measured value is what the page does, the rule is what it should do. Decide whether the page or the checker is wrong, in this order:
 
@@ -32,7 +34,7 @@ Reading a FAIL: the measured value is what the page does, the rule is what it sh
 
 ## The properties
 
-Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 30, including 20b, are in `scripts/lib/page-checks.mjs`. Check 31 is in `scripts/lib/text-style-check.mjs`. Id 09 is judged only.
+Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 26, including 20b, are in `scripts/lib/page-checks.mjs`, and 27 to 30 are in `scripts/lib/design-checks.mjs`. Check 31 is in `scripts/lib/text-style-check.mjs`. Id 09 is judged only.
 
 - 01 `h1-length-and-aim`: 12 words or fewer; an outcome or audience word. Source: Shapiro litmus test; NN/g 2.2.
 - 02 `statement-names-cv`: a block outside the nav names opencv and CV.

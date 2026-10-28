@@ -56,9 +56,7 @@ export function pageChecks({
   // NN/g 3.1
   out.push(
     staleIf(
-      img
-        ? null
-        : "no hero visual (an img or a [role=img] figure) matched in the hero",
+      desktop.hero ? null : "no hero section (the section holding the h1)",
       verdict(
         "14",
         "hero-photo-in-first-view-1440",
@@ -257,15 +255,12 @@ export function pageChecks({
   const marqueeBad = marquee.tracks > 0 && !marqueeOk
   // NN/g 5.2
   out.push(
-    staleIf(
-      marquee.section ? null : "no #logos element on the page",
-      verdict(
-        "22",
-        "no-video-or-carousel",
-        "No video, audio, iframe, autoplay or carousel on the page, except one marquee in #logos whose repeated copies are aria-hidden and which stops under reduced motion (2026-10-28, #491)",
-        m.media.length + m.autoplay + carousels.length === 0 && !marqueeBad,
-        `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${carousels.length}${carousels[0] ? ` ${JSON.stringify(carousels.slice(0, 2))}` : ""}; #logos marquee: ${marquee.tracks} track(s), repeats aria-hidden=${marquee.copyHidden}, still running under reduced motion=${reducedDeep.marquee.tracks}`
-      )
+    verdict(
+      "22",
+      "no-video-or-carousel",
+      "No video, audio, iframe, autoplay or carousel on the page, except one marquee in #logos whose repeated copies are aria-hidden and which stops under reduced motion (2026-10-28, #491)",
+      m.media.length + m.autoplay + carousels.length === 0 && !marqueeBad,
+      `media=${m.media.join(",") || "none"} autoplay=${m.autoplay} carousel-like=${carousels.length}${carousels[0] ? ` ${JSON.stringify(carousels.slice(0, 2))}` : ""}; #logos present=${marquee.section}, marquee: ${marquee.tracks} track(s), repeats aria-hidden=${marquee.copyHidden}, still running under reduced motion=${reducedDeep.marquee.tracks}`
     )
   )
 
@@ -331,9 +326,7 @@ export function pageChecks({
   // web.dev CLS and LCP
   out.push(
     staleIf(
-      first.heroImg
-        ? null
-        : "no hero visual (an img or a [role=img] figure) matched in the hero",
+      first.hero ? null : "no hero section (the section holding the h1)",
       verdict(
         "25",
         "hero-image-attrs-and-paint",

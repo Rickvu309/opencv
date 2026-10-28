@@ -16,13 +16,13 @@ import {
 import {
   SURFACES,
   context,
+  judged,
   list,
   result,
   scanProblem,
-  stale,
   stubSilent,
 } from "./check-util.mjs"
-import { PRIMARY } from "./tour.mjs"
+import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
 
 export function runChecks(d) {
   const r = contentChecks(d)
@@ -168,39 +168,7 @@ export function runChecks(d) {
     )
   )
 
-  // The Paper primary is New on the library; the CV editor has had no Save or Make mine since #396.
-  const need = {
-    apply: [d.apply, PRIMARY.apply],
-    paper: [d.paper, PRIMARY.paper],
-    pitch: [d.pitchEdit, PRIMARY.pitch],
-  }
-  const found = Object.entries(need).map(([k, [s, re]]) => {
-    const b = s.buttons.find((x) => re.test(x.label))
-    return { k, label: b?.label, h: b?.h }
-  })
-  const rule28 =
-    "the primary button on Apply, Paper and Pitch is 32px high or more (the kit glow button is h-8)"
-  const unmatched28 = Object.entries(need).filter(
-    ([k]) => !found.find((f) => f.k === k).label
-  )
-  r.push(
-    unmatched28.length
-      ? stale(
-          "28",
-          "primary-buttons-32",
-          unmatched28
-            .map(([k, [, re]]) => `no button matched ${re} on ${k}`)
-            .join("; "),
-          rule28
-        )
-      : result(
-          "28",
-          "primary-buttons-32",
-          found.every((f) => (f.h ?? 0) >= 32),
-          found.map((f) => `${f.k} "${f.label}" ${f.h}px`).join(", "),
-          rule28
-        )
-  )
+  r.push(primaryButtonCheck(d))
 
   const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
     d.paperLoading.text
@@ -209,20 +177,24 @@ export function runChecks(d) {
   const emptyCopy = /Start a document/.exec(d.paperEmpty.text)?.[0]
   const rule29 =
     "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
-  const silent29 = stubSilent(d.paperLoading, d.paperEmpty)
+  const loadQuiet = stubSilent(d.paperLoading)
+  const emptyQuiet = stubSilent(d.paperEmpty)
+  const loadOk = loadQuiet !== null || (loadingOwn && !d.paperLoading.hasTable)
+  const emptyOk =
+    emptyQuiet !== null ||
+    (Boolean(emptyCopy) && (loadQuiet !== null || emptyCopy !== loadingCopy))
   r.push(
-    silent29
-      ? stale("29", "table-not-mounted-while-loading", silent29, rule29)
-      : result(
-          "29",
-          "table-not-mounted-while-loading",
-          loadingOwn &&
-            !d.paperLoading.hasTable &&
-            Boolean(emptyCopy) &&
-            emptyCopy !== loadingCopy,
-          `loading: ${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}; empty (list answered with none): ${emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
-          rule29
-        )
+    judged(
+      "29",
+      "table-not-mounted-while-loading",
+      rule29,
+      loadOk && emptyOk,
+      `loading: ${loadQuiet ? "not judged" : `${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}`}; empty (list answered with none): ${emptyQuiet ? "not judged" : emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
+      [
+        loadQuiet && `loading part (${loadQuiet})`,
+        emptyQuiet && `empty part (${emptyQuiet})`,
+      ]
+    )
   )
 
   const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
@@ -234,15 +206,14 @@ export function runChecks(d) {
     "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
   const why30 = scanProblem(scan)
   r.push(
-    why30
-      ? stale("30", "undo-and-reject", why30, rule30)
-      : result(
-          "30",
-          "undo-and-reject",
-          undo && reject,
-          `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
-          rule30
-        )
+    judged(
+      "30",
+      "undo-and-reject",
+      rule30,
+      undo && reject,
+      `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
+      [!reject && why30 && `Reject source read (${why30})`]
+    )
   )
 
   // App-wide checks the tour adds.
@@ -257,33 +228,7 @@ export function runChecks(d) {
     )
   )
 
-  const tabs = Object.entries(d.tabs).map(
-    ([k, v]) => `${k}:${v.reached ?? "none in 60"}`
-  )
-  const rule32 =
-    "the primary action of each surface takes focus within 30 Tab presses"
-  const unmatched32 = Object.entries(d.tabs).filter(
-    ([k, v]) =>
-      !v.reached && !d[k].buttons.some((b) => PRIMARY[k].test(b.label))
-  )
-  r.push(
-    unmatched32.length
-      ? stale(
-          "32",
-          "keyboard-reaches-primary",
-          unmatched32
-            .map(([k]) => `no button matched ${PRIMARY[k]} on ${k}`)
-            .join("; "),
-          rule32
-        )
-      : result(
-          "32",
-          "keyboard-reaches-primary",
-          Object.values(d.tabs).every((v) => v.reached && v.reached <= 30),
-          `Tab presses to the primary action: ${tabs.join(" ")}`,
-          rule32
-        )
-  )
+  r.push(keyboardPrimaryCheck(d))
 
   const logs = [
     ...new Set(d.logs.map((l) => `${l.kind} ${l.text.slice(0, 90)}`)),

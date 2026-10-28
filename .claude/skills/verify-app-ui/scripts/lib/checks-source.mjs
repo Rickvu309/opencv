@@ -1,26 +1,29 @@
-// Checks 24 to 27: motion and live regions. 24, 25 and 26 read source, 27 reads a banner file, and each goes
-// STALE when what it reads is missing or the Coach stub never fired.
+// Checks 24 to 27: motion and live regions. Each judges every part it could find; a missing source folder, banner
+// file or silent Coach stub makes only that part unjudged, so a found FAIL still FAILs and otherwise the check is STALE.
 import { join } from "node:path"
 import { existsSync } from "node:fs"
 
 import {
   SURFACES,
   appSourceDirs,
+  judged,
   list,
   paletteScan,
   read,
   rel,
   repo,
-  result,
   scanProblem,
   sourceFiles,
-  stale,
   stubSilent,
 } from "./check-util.mjs"
 
 const BANNER = "apps/web/src/features/paper/paper-editor-conflict-banner.tsx"
 
-export function motionChecks(d, { allSnaps, screens }, dirs = appSourceDirs()) {
+export function motionChecks(
+  d,
+  { allSnaps, screens },
+  { dirs = appSourceDirs(), paletteDir, banner = BANNER } = {}
+) {
   const r = []
   const appScan = sourceFiles(dirs)
   const dur = {}
@@ -49,19 +52,18 @@ export function motionChecks(d, { allSnaps, screens }, dirs = appSourceDirs()) {
     "every transition and animation runs 150ms or 280ms, measured on the toured screens and as duration-N classes or Nms values in the signed-in feature folders and routes (looping spinners and skeletons skipped)"
   const why24 = scanProblem(appScan)
   r.push(
-    why24
-      ? stale("24", "motion-tokens", why24, rule24)
-      : result(
-          "24",
-          "motion-tokens",
-          Object.keys(dur).length === 0 && srcMotion.length === 0,
-          `computed off-token durations: ${
-            Object.entries(dur)
-              .map(([k, n]) => `${k} x${n}`)
-              .join(", ") || "none"
-          }${examples[0] ? ` e.g. ${examples[0].t}.${examples[0].c.slice(0, 40)}` : ""}; in feature source: ${list([...new Set(srcMotion)], 3) || "none"}`,
-          rule24
-        )
+    judged(
+      "24",
+      "motion-tokens",
+      rule24,
+      Object.keys(dur).length === 0 && srcMotion.length === 0,
+      `computed off-token durations: ${
+        Object.entries(dur)
+          .map(([k, n]) => `${k} x${n}`)
+          .join(", ") || "none"
+      }${examples[0] ? ` e.g. ${examples[0].t}.${examples[0].c.slice(0, 40)}` : ""}; in feature source: ${list([...new Set(srcMotion)], 3) || "none"}`,
+      [why24 && `source scan (${why24})`]
+    )
   )
 
   const reducedBad = Object.entries(d.reduced).flatMap(([k, s]) => [
@@ -71,59 +73,53 @@ export function motionChecks(d, { allSnaps, screens }, dirs = appSourceDirs()) {
     ...(s.runningAnimations ? [`${k}:${s.runningAnimations} running`] : []),
     ...(s.scrollBehavior.includes("smooth") ? [`${k}:smooth scroll`] : []),
   ])
-  const palette = paletteScan()
-  const rule25 =
-    "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and the command palette open transition uses the panel duration token (source read)"
+  const palette = paletteScan(paletteDir)
   const why25 = scanProblem(palette.scan)
   r.push(
-    why25
-      ? stale("25", "reduced-motion", why25, rule25)
-      : result(
-          "25",
-          "reduced-motion",
-          reducedBad.length === 0 && palette.uses,
-          `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; palette panel duration: ${palette.uses}`,
-          rule25
-        )
+    judged(
+      "25",
+      "reduced-motion",
+      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and the command palette open transition uses the panel duration token (source read)",
+      reducedBad.length === 0 && (why25 !== null || palette.uses),
+      `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; palette panel duration: ${why25 ? "not read" : palette.uses}`,
+      [why25 && `palette source scan (${why25})`]
+    )
   )
 
   const reveal = appScan.files.filter((f) =>
     /text-reveal|TextReveal/.test(read(f))
   )
-  const rule26 = "no app screen imports text-reveal (source read)"
   r.push(
-    why24
-      ? stale("26", "no-text-reveal", why24, rule26)
-      : result(
-          "26",
-          "no-text-reveal",
-          reveal.length === 0,
-          reveal.length ? list(reveal.map(rel)) : "no import",
-          rule26
-        )
+    judged(
+      "26",
+      "no-text-reveal",
+      "no app screen imports text-reveal (source read)",
+      reveal.length === 0,
+      reveal.length ? list(reveal.map(rel)) : "no import",
+      [why24 && `source scan (${why24})`]
+    )
   )
 
-  const rule27 =
-    "the Coach error and the Paper conflict banner expose a live region role"
-  const why27 =
-    stubSilent(d.coachError) ??
-    (existsSync(join(repo, BANNER)) ? null : `source file missing: ${BANNER}`)
-  if (why27) {
-    r.push(stale("27", "alerts-have-role", why27, rule27))
-    return r
-  }
-  const bannerRole = /role="alert"/.test(read(join(repo, BANNER)))
+  const bannerFile = existsSync(join(repo, banner))
+  const bannerRole = bannerFile && /role="alert"/.test(read(join(repo, banner)))
+  const coachQuiet = stubSilent(d.coachError)
   const errText = d.coachError.alerts.some((t) =>
     /not found|Retry|wrong|unavailable|reach/i.test(t)
   )
   const red = SURFACES.flatMap((k) => screens[k].redOutsideAlert)
   r.push(
-    result(
+    judged(
       "27",
       "alerts-have-role",
-      errText && red.length === 0 && bannerRole,
-      `Coach error inside a live region: ${errText}; red text outside one: ${red.length ? list(red, 2) : "none"}; conflict banner role=alert: ${bannerRole}`,
-      rule27
+      "the Coach error and the Paper conflict banner expose a live region role",
+      (coachQuiet !== null || errText) &&
+        red.length === 0 &&
+        (!bannerFile || bannerRole),
+      `Coach error inside a live region: ${coachQuiet ? "not judged" : errText}; red text outside one: ${red.length ? list(red, 2) : "none"}; conflict banner role=alert: ${bannerFile ? bannerRole : "not read"}`,
+      [
+        coachQuiet && `Coach error (${coachQuiet})`,
+        !bannerFile && `conflict banner (source file missing: ${banner})`,
+      ]
     )
   )
   return r

@@ -97,3 +97,18 @@ test("02 needs a block that names opencv and a CV", () => {
   )
   assert.equal(passOf(page("Get your butt in your dream seat."), "02"), false)
 })
+
+test("03, 06 and 11 are FAIL, not STALE, when the hero subhead or a product title or intro is gone", () => {
+  const out = textRules(base([block("hero", "Hi", "h1")]))
+  for (const id of ["03", "06", "11"])
+    assert.equal(out.find((r) => r.id === id).status, "FAIL", id)
+  assert.match(out.find((r) => r.id === "06").measured, /no h2/)
+})
+
+test("06 judges the titles it found: a long one FAILs next to a missing one", () => {
+  const out = textRules(
+    base([block("surface:paper", "One two three four five", "h2")])
+  ).find((r) => r.id === "06")
+  assert.equal(out.status, "FAIL")
+  assert.match(out.measured, /paper->"One two three four five"/)
+})

@@ -77,6 +77,11 @@ function missingPath(word, skill) {
 
 test("every path a verify skill doc names exists", () => {
   const missing = []
+  let checked = 0
+  assert.ok(
+    ["verify-app-ui", "verify-landing"].every((n) => verifySkills.includes(n)),
+    `verify-app-ui and verify-landing are not both under ${skills}; the test would check nothing`
+  )
   for (const { file, skill } of docs) {
     const seen = new Set()
     for (const { word, inline } of codeWords(readFileSync(file, "utf8"))) {
@@ -84,10 +89,12 @@ test("every path a verify skill doc names exists", () => {
       if (!inline && !REPO_PREFIX.test(candidate)) continue
       if (seen.has(candidate)) continue
       seen.add(candidate)
+      checked += 1
       if (missingPath(candidate, skill))
         missing.push(`${path.relative(root, file)}: ${candidate}`)
     }
   }
+  assert.ok(checked > 0, "the doc scan found no path to check")
   assert.deepEqual(
     missing,
     [],
@@ -132,7 +139,7 @@ function compare(documented, emitted, where) {
 test("verify-app-ui properties.md and the checker list the same ids", () => {
   const emitted = sourceIds(
     "verify-app-ui",
-    /(?:result|stale)\(\s*"(\d+[a-z]?)",\s*"([^"]+)"/g
+    /(?:result|stale|judged)\(\s*"(\d+[a-z]?)",\s*"([^"]+)"/g
   )
   assert.ok(emitted.size > 0, "found no check ids in the checker")
   const problems = compare(
@@ -146,7 +153,7 @@ test("verify-app-ui properties.md and the checker list the same ids", () => {
 test("verify-landing SKILL.md and the checker list the same ids", () => {
   const emitted = sourceIds(
     "verify-landing",
-    /(?:verdict|stale)\(\s*"(\d+[a-z]?)",\s*"([^"]+)"/g
+    /(?:verdict|stale|judged)\(\s*"(\d+[a-z]?)",\s*"([^"]+)"/g
   )
   assert.ok(emitted.size > 0, "found no check ids in the checker")
   const problems = compare(

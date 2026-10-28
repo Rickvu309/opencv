@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import { designChecks } from "./design-checks.mjs"
-import { stale, summarize, verdict } from "./verdict.mjs"
+import { judged, stale, summarize, verdict } from "./verdict.mjs"
 
 test("the art, lockup and CTA checks are STALE on a page with none of them", () => {
   const out = designChecks({ ctas: {}, benefitArt: { count: 0 } })
@@ -26,6 +26,51 @@ test("a found element is still judged, so a wrong lockup is FAIL", () => {
     navLockup: { gap: 2, fontSize: "16px", fontWeight: "600" },
   })
   assert.equal(out.find((r) => r.id === "28").status, "FAIL")
+})
+
+const wrongCta = {
+  h: 20,
+  fontSize: "13px",
+  fontWeight: "500",
+  padInline: 12,
+  radius: 10,
+  inset: true,
+  outer: true,
+}
+
+test("29: a found wrong CTA FAILs although the others are missing; missing alone is STALE", () => {
+  const out = designChecks({
+    ctas: { nav: wrongCta },
+    benefitArt: { section: true, count: 0 },
+  }).find((r) => r.id === "29")
+  assert.equal(out.status, "FAIL")
+  assert.match(
+    out.measured,
+    /not judged: no button matched Get started in #close/
+  )
+  const none = designChecks({ ctas: {}, benefitArt: {} }).find(
+    (r) => r.id === "29"
+  )
+  assert.equal(none.status, "STALE")
+})
+
+test("27 and 30: #benefits present without its art is FAIL, only a missing #benefits is STALE", () => {
+  const out = designChecks({
+    ctas: {},
+    benefitArt: { section: true, count: 0 },
+  })
+  for (const id of ["27", "30"])
+    assert.equal(out.find((r) => r.id === id).status, "FAIL", id)
+})
+
+test("judged: a found FAIL wins over a missing part, a missing part alone is STALE", () => {
+  assert.equal(judged("01", "a", "r", false, "bad", ["x"]).status, "FAIL")
+  assert.match(
+    judged("01", "a", "r", false, "bad", ["x"]).measured,
+    /not judged: x/
+  )
+  assert.equal(judged("01", "a", "r", true, "ok", ["x"]).status, "STALE")
+  assert.equal(judged("01", "a", "r", true, "ok").status, "PASS")
 })
 
 test("summary and exit code: STALE is 3, FAIL is 1, all PASS is 0", () => {
