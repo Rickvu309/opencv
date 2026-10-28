@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
+import type { CvBlockDocument } from "./paper-blocks/document.js"
 import { PAPER_CONTENT_VERSION, type PaperContentKind } from "./paper.js"
 
 export const cvTemplateIdSchema = z.enum([
@@ -125,14 +127,13 @@ export type ProofPhoto = z.infer<typeof proofPhotoSchema>
 export type ProofStep = z.infer<typeof proofStepSchema>
 export type ProofDocument = z.infer<typeof proofDocumentV1Schema>
 
-export type PaperDocument = CvDocument | LetterDocument | ProofDocument
+export type PaperDocument =
+  CvDocument | CvBlockDocument | LetterDocument | ProofDocument
 
 export type PaperContentDecode =
-  | { ok: true; data: PaperDocument }
-  | { ok: false; message: string }
+  { ok: true; data: PaperDocument } | { ok: false; message: string }
 
 const schemaByKind = {
-  cv: cvDocumentV1Schema,
   letter: letterDocumentV1Schema,
   proof: proofDocumentV1Schema,
 } as const
@@ -181,6 +182,25 @@ function firstIssueMessage(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Invalid content"
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function decodeCvContent(content: unknown): PaperContentDecode {
+  if (isRecord(content) && "version" in content) {
+    const parsed = cvBlockDocumentSchema.safeParse(content)
+    if (!parsed.success) {
+      return { ok: false, message: firstIssueMessage(parsed.error) }
+    }
+    return { ok: true, data: parsed.data }
+  }
+  const parsed = cvDocumentV1Schema.safeParse(content)
+  if (!parsed.success) {
+    return { ok: false, message: firstIssueMessage(parsed.error) }
+  }
+  return { ok: true, data: parsed.data }
+}
+
 export function decodePaperContent(
   kind: PaperContentKind,
   version: number,
@@ -189,6 +209,7 @@ export function decodePaperContent(
   if (version !== PAPER_CONTENT_VERSION) {
     return { ok: false, message: "Unsupported content version" }
   }
+  if (kind === "cv") return decodeCvContent(content)
 
   const parsed = schemaByKind[kind].safeParse(content)
   if (!parsed.success) {

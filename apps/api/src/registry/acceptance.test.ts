@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { ERROR_CODES, personActor } from "@workspace/domain"
+import { emptyCvDocument, ERROR_CODES, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -72,7 +72,7 @@ describe("release-one commands", () => {
       }
       expect(doc.contentVersion).toBe(1)
       const next = {
-        ...doc.document,
+        ...emptyCvDocument(),
         summary: "Shipped a small experiment.",
       }
       const replaced = await registry.execute({

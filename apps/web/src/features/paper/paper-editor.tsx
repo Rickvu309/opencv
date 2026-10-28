@@ -1,9 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import {
+  blocksToPreviewModel,
   emptyCvDocument,
+  isCvBlockDocument,
   isCvDocument,
   paperDocNameSchema,
+  previewToCvDocument,
   type CvDocument,
   type PaperPages,
   type PaperTemplateId,
@@ -42,6 +45,9 @@ import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 function cvOf(document: unknown, rowTemplateId: string | null): CvDocument {
   const layout = printLayout(rowTemplateId)
+  if (isCvBlockDocument(document)) {
+    return previewToCvDocument(blocksToPreviewModel(document, layout))
+  }
   if (isCvDocument(document)) return { ...document, templateId: layout }
   return { ...emptyCvDocument(), templateId: layout }
 }

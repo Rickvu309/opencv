@@ -4,8 +4,8 @@ import {
   DEFAULT_PAPER_DOC_NAME,
   ERROR_CODES,
   PAPER_CONTENT_VERSION,
+  blankBlockDocument,
   decodePaperContent,
-  emptyCvDocument,
   emptyLetterDocument,
   parseFileId,
   parsePaperId,
@@ -83,10 +83,9 @@ function requireDocument(kind: PaperStoredKind, document: unknown) {
 }
 
 function blankDocument(kind: PaperStoredKind) {
-  return (kind === "cv" ? emptyCvDocument() : emptyLetterDocument()) as Record<
-    string,
-    unknown
-  >
+  return (
+    kind === "cv" ? blankBlockDocument() : emptyLetterDocument()
+  ) as Record<string, unknown>
 }
 
 export async function listPapers(

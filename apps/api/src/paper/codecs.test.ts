@@ -42,6 +42,12 @@ describe("paper codecs", () => {
       ok: false,
       message: "Unsupported content version",
     })
+
+    const blockVersion = decodePaperContent("cv", 1, { version: 3 })
+    expect(blockVersion.ok).toBe(false)
+    if (blockVersion.ok) throw new Error("expected failure")
+    expect(blockVersion.message).not.toBe("Unsupported content version")
+    expect(blockVersion.message.length).toBeGreaterThan(0)
   })
 
   it("imports legacy prefixed strings one-way into jsonb documents", () => {
