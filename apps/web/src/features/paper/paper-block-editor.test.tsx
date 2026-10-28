@@ -5,9 +5,14 @@ import {
   render,
   screen,
   within,
+  waitFor,
 } from "@testing-library/react"
 import { useState } from "react"
-import type { CvBlockDocument, PaperView } from "@workspace/domain"
+import type {
+  CvBlockDocument,
+  PaperView,
+  PaperTemplateId,
+} from "@workspace/domain"
 import { PaperBlockEditor } from "./paper-block-editor.tsx"
 
 const initial: CvBlockDocument = {
@@ -32,16 +37,19 @@ function Harness({
   onChange = vi.fn(),
   onDismissCheck = vi.fn(),
   checks: currentChecks = checks,
+  templateId,
 }: {
   value?: CvBlockDocument
   onChange?: (document: CvBlockDocument) => void
   onDismissCheck?: (id: string) => void
   checks?: PaperView["checks"]
+  templateId?: PaperTemplateId
 }) {
   const [document, setDocument] = useState(value)
   return (
     <PaperBlockEditor
       document={document}
+      templateId={templateId}
       checks={currentChecks}
       sourceFileName={currentChecks.length ? "resume.pdf" : null}
       onChange={(next) => {
@@ -199,5 +207,55 @@ describe("PaperBlockEditor", () => {
     ).not.toBeInTheDocument()
     fireEvent.change(name, { target: { value: "Ada/" } })
     expect(name).toHaveValue("Ada/")
+  })
+})
+
+describe("With photo template", () => {
+  it("displays a saved profile photo", () => {
+    render(
+      <Harness
+        templateId="with-photo"
+        value={{
+          ...initial,
+          header: { ...initial.header, photo: "data:image/png;base64,YQ==" },
+        }}
+      />
+    )
+    expect(
+      screen
+        .getByRole("button", { name: "Change profile photo" })
+        .querySelector("img")
+    ).toHaveAttribute("src", "data:image/png;base64,YQ==")
+  })
+
+  it("stores an uploaded photo in the document so it survives reload", async () => {
+    const onChange = vi.fn<(document: CvBlockDocument) => void>()
+    const { container } = render(
+      <Harness templateId="with-photo" onChange={onChange} />
+    )
+    expect(
+      screen.getByRole("button", { name: "Add profile photo" })
+    ).toBeInTheDocument()
+    const input = container.querySelector('input[type="file"]')
+    if (!input) throw new Error("Photo picker is missing")
+    fireEvent.change(input, {
+      target: {
+        files: [new File(["photo"], "portrait.png", { type: "image/png" })],
+      },
+    })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          header: expect.objectContaining({
+            photo: "data:image/png;base64,cGhvdG8=",
+          }),
+        })
+      )
+    )
+    expect(
+      screen
+        .getByRole("button", { name: "Change profile photo" })
+        .querySelector("img")
+    ).toHaveAttribute("src", "data:image/png;base64,cGhvdG8=")
   })
 })

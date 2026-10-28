@@ -14,6 +14,7 @@ import { printLayout } from "./paper-templates.ts"
 import { BlockField } from "./paper-block-field.tsx"
 import { makeId, emptyBlock } from "./paper-block-operations.ts"
 import { PaperEditorBlock } from "./paper-editor-block.tsx"
+import { CvPhoto } from "./cv-templates/cv-parts.tsx"
 
 type Props = {
   document: CvBlockDocument
@@ -254,50 +255,63 @@ export function PaperBlockEditor({
               layout === "academic"
                 ? "border-b-2 border-foreground pb-3"
                 : layout === "photo"
-                  ? "border-b border-border pb-4"
+                  ? "flex items-start gap-5 border-b border-border pb-4"
                   : layout === "internship"
                     ? "text-left"
                     : "border-b border-border pb-3 text-left"
             }`}
           >
-            <BlockField
-              label="Name"
-              value={document.header.name}
-              placeholder="Your name"
-              className="cv-type-page-title h-10 text-left font-bold"
-              onChange={(value) => updateHeader("name", value)}
-            />
-            <div
-              className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground ${
-                layout === "academic"
-                  ? "justify-end text-right"
-                  : "justify-start"
-              }`}
-            >
-              <BlockField
-                label="Email"
-                value={document.header.email}
-                className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
-                onChange={(value) => updateHeader("email", value)}
+            {layout === "photo" ? (
+              <CvPhoto
+                url={document.header.photo}
+                onChange={(photo) =>
+                  onChange({
+                    ...document,
+                    header: { ...document.header, photo },
+                  })
+                }
               />
+            ) : null}
+            <div className="min-w-0 flex-1">
               <BlockField
-                label="Phone"
-                value={document.header.phone}
-                className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
-                onChange={(value) => updateHeader("phone", value)}
+                label="Name"
+                value={document.header.name}
+                placeholder="Your name"
+                className="cv-type-page-title h-10 text-left font-bold"
+                onChange={(value) => updateHeader("name", value)}
               />
-              <BlockField
-                label="City"
-                value={document.header.city}
-                className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
-                onChange={(value) => updateHeader("city", value)}
-              />
-              <BlockField
-                label="LinkedIn"
-                value={document.header.linkedin}
-                className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
-                onChange={(value) => updateHeader("linkedin", value)}
-              />
+              <div
+                className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground ${
+                  layout === "academic"
+                    ? "justify-end text-right"
+                    : "justify-start"
+                }`}
+              >
+                <BlockField
+                  label="Email"
+                  value={document.header.email}
+                  className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
+                  onChange={(value) => updateHeader("email", value)}
+                />
+                <BlockField
+                  label="Phone"
+                  value={document.header.phone}
+                  className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
+                  onChange={(value) => updateHeader("phone", value)}
+                />
+                <BlockField
+                  label="City"
+                  value={document.header.city}
+                  className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
+                  onChange={(value) => updateHeader("city", value)}
+                />
+                <BlockField
+                  label="LinkedIn"
+                  value={document.header.linkedin}
+                  className={`w-24 text-xs ${layout === "academic" ? "text-right" : "text-left"}`}
+                  onChange={(value) => updateHeader("linkedin", value)}
+                />
+              </div>
             </div>
           </header>
           <div
