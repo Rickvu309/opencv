@@ -13,6 +13,7 @@ import {
   isCvBlockDocument,
   isCvDocument,
   parsePaperId,
+  type FileId,
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { toastWithUndo } from "@workspace/ui/components/sonner"
@@ -328,7 +329,13 @@ export function SectionTitle({
 export type CvPhotoFrameValue = {
   docId?: string
   shareToken?: string
+  beforePhoto?: () => Promise<void>
   notePhoto?: (ref: string | undefined, version: number) => void
+}
+
+function photoAlt(name?: string) {
+  const trimmed = name?.trim()
+  return trimmed ? trimmed : "Photo"
 }
 
 const CvPhotoFrameContext = createContext<CvPhotoFrameValue>({})
@@ -356,11 +363,13 @@ function storedPhoto(document: unknown) {
 function PhotoSlot({
   src,
   url,
+  name,
   error,
   onPick,
 }: {
   src?: string
   url?: string
+  name?: string
   error?: string
   onPick: (file: File) => void
 }) {
@@ -387,7 +396,11 @@ function PhotoSlot({
         className="group cv-template-photo-slot relative h-auto shrink-0 overflow-hidden rounded-md border border-foreground/15 bg-muted/30 p-0 hover:border-foreground/30 hover:bg-muted/50"
       >
         {src ? (
-          <img src={src} alt="" className="size-full object-cover" />
+          <img
+            src={src}
+            alt={photoAlt(name)}
+            className="size-full object-cover"
+          />
         ) : (
           <span className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground">
             <User className="size-6 opacity-50" strokeWidth={1.5} />
@@ -405,9 +418,11 @@ function PhotoSlot({
 
 function CvPhotoDisplay({
   url,
+  name,
   shareToken,
 }: {
   url?: string
+  name?: string
   shareToken?: string
 }) {
   const [error, setError] = useState<string>()
@@ -415,6 +430,7 @@ function CvPhotoDisplay({
     <PhotoSlot
       src={resolvePhotoSrc(url, shareToken)}
       url={url}
+      name={name}
       error={error}
       onPick={(file) => {
         setError(cvPhotoRejection(file) ?? "Open this CV to add a photo.")
@@ -425,15 +441,19 @@ function CvPhotoDisplay({
 
 function CvPhotoUploader({
   url,
+  name,
   onChange,
   docId,
   shareToken,
+  beforePhoto,
   notePhoto,
 }: {
   url?: string
+  name?: string
   onChange: (url: string | undefined) => void
   docId: string
   shareToken?: string
+  beforePhoto?: CvPhotoFrameValue["beforePhoto"]
   notePhoto?: CvPhotoFrameValue["notePhoto"]
 }) {
   const run = useRunCommand()
@@ -466,12 +486,16 @@ function CvPhotoUploader({
       return
     }
     setError(undefined)
+    let uploadedId: FileId | undefined
     try {
+      await beforePhoto?.()
       const fileId = await uploadPaperPhoto(file)
+      uploadedId = fileId
       const saved = await run("paper.attachPhoto", {
         docId: parsePaperId(docId),
         fileId,
       })
+      uploadedId = undefined
       publish(`file:${fileId}`, saved.contentVersion)
       const activityId = saved.activityId
       if (activityId) {
@@ -480,6 +504,13 @@ function CvPhotoUploader({
         })
       }
     } catch (caught) {
+      if (uploadedId) {
+        try {
+          await run("paper.deleteFile", { fileId: uploadedId })
+        } catch {
+          // The attach error is the one to show. This delete removes the orphan row.
+        }
+      }
       setError(
         caught instanceof Error
           ? caught.message
@@ -492,6 +523,7 @@ function CvPhotoUploader({
     <PhotoSlot
       src={resolvePhotoSrc(url, shareToken)}
       url={url}
+      name={name}
       error={error}
       onPick={(file) => void onPick(file)}
     />
@@ -500,9 +532,11 @@ function CvPhotoUploader({
 
 export function CvPhoto({
   url,
+  name,
   onChange,
 }: {
   url?: string
+  name?: string
   onChange: (url: string | undefined) => void
 }) {
   const frame = useContext(CvPhotoFrameContext)
@@ -510,12 +544,14 @@ export function CvPhoto({
     return (
       <CvPhotoUploader
         url={url}
+        name={name}
         onChange={onChange}
         docId={frame.docId}
         shareToken={frame.shareToken}
+        beforePhoto={frame.beforePhoto}
         notePhoto={frame.notePhoto}
       />
     )
   }
-  return <CvPhotoDisplay url={url} shareToken={frame.shareToken} />
+  return <CvPhotoDisplay url={url} name={name} shareToken={frame.shareToken} />
 }

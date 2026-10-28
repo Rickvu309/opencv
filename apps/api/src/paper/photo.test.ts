@@ -1,6 +1,5 @@
 import {
   blankBlockDocument,
-  emptyCvDocument,
   paperPhotoRef,
   personActor,
 } from "@workspace/domain"
@@ -176,20 +175,19 @@ describe("CV photo bytes", () => {
         },
         actor,
       })
+      const blobDocument = blankBlockDocument()
+      blobDocument.header.photo = "blob:http://localhost/photo"
       await expect(
         registry.execute({
           name: "paper.replace",
           input: {
             docId,
             contentVersion: 2,
-            document: {
-              ...emptyCvDocument(),
-              photoUrl: "blob:http://localhost/photo",
-            },
+            document: blobDocument,
           },
           actor,
         })
-      ).rejects.toThrow(/blob/i)
+      ).rejects.toThrow("Invalid content")
 
       const saved = await saveFile({
         userId: parseUserId(userId),
@@ -221,4 +219,242 @@ describe("CV photo bytes", () => {
     })
     await client.close()
   })
+
+  it("sniffs avatar bytes, rejects other types, and sets safe response headers", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Ada",
+      email: "ada-sniff@example.com",
+    })
+    const created = await app.request("/api/commands/paper.create", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({
+        input: { kind: "cv", templateId: "with-photo", name: "Sniff CV" },
+      }),
+    })
+    const docId = ((await created.json()) as { data: { id: string } }).data.id
+
+    const svg = await postAvatar(
+      app,
+      owner.cookie,
+      new TextEncoder().encode(
+        "<svg xmlns='http://www.w3.org/2000/svg'></svg>"
+      ),
+      "face.svg",
+      "image/svg+xml"
+    )
+    expect(svg.status).toBe(415)
+    expect(await svg.json()).toMatchObject({
+      error: { message: "Upload an image." },
+    })
+
+    const text = await postAvatar(
+      app,
+      owner.cookie,
+      new TextEncoder().encode("not an image file"),
+      "not-image.png",
+      "image/png"
+    )
+    expect(text.status).toBe(415)
+    expect(await text.json()).toMatchObject({
+      error: { message: "Upload an image." },
+    })
+
+    const lying = await postAvatar(
+      app,
+      owner.cookie,
+      png,
+      "face.svg",
+      "image/svg+xml"
+    )
+    expect(lying.status).toBe(200)
+    const fileId = ((await lying.json()) as { data: { id: string } }).data.id
+    const listed = await app.request("/api/paper/files", {
+      headers: authHeaders(owner.cookie),
+    })
+    const files = (
+      (await listed.json()) as { data: { id: string; mediaType: string }[] }
+    ).data
+    expect(files.find((file) => file.id === fileId)?.mediaType).toBe(
+      "image/png"
+    )
+
+    const bytes = await app.request(`/api/paper/files/${fileId}/bytes`, {
+      headers: authHeaders(owner.cookie),
+    })
+    expectPhotoHeaders(bytes, "image/png", "png", "private, no-store")
+
+    const jpeg = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0])
+    const jpegSaved = await postAvatar(
+      app,
+      owner.cookie,
+      jpeg,
+      "face.png",
+      "image/png"
+    )
+    const jpegId = ((await jpegSaved.json()) as { data: { id: string } }).data
+      .id
+    const jpegBytes = await app.request(`/api/paper/files/${jpegId}/bytes`, {
+      headers: authHeaders(owner.cookie),
+    })
+    expectPhotoHeaders(jpegBytes, "image/jpeg", "jpg", "private, no-store")
+
+    const webp = Uint8Array.from([
+      0x52, 0x49, 0x46, 0x46, 0x18, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+    ])
+    const webpSaved = await postAvatar(
+      app,
+      owner.cookie,
+      webp,
+      "face.gif",
+      "image/gif"
+    )
+    const webpId = ((await webpSaved.json()) as { data: { id: string } }).data
+      .id
+    const webpBytes = await app.request(`/api/paper/files/${webpId}/bytes`, {
+      headers: authHeaders(owner.cookie),
+    })
+    expectPhotoHeaders(webpBytes, "image/webp", "webp", "private, no-store")
+
+    const gif = new TextEncoder().encode("GIF89a")
+    const gifSaved = await postAvatar(
+      app,
+      owner.cookie,
+      gif,
+      "face.png",
+      "image/png"
+    )
+    const gifId = ((await gifSaved.json()) as { data: { id: string } }).data.id
+    const gifBytes = await app.request(`/api/paper/files/${gifId}/bytes`, {
+      headers: authHeaders(owner.cookie),
+    })
+    expectPhotoHeaders(gifBytes, "image/gif", "gif", "private, no-store")
+
+    const attached = await app.request("/api/commands/paper.attachPhoto", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ input: { docId, fileId } }),
+    })
+    expect(attached.status).toBe(200)
+    const shared = await app.request("/api/commands/paper.share", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ input: { docId } }),
+    })
+    const token = ((await shared.json()) as { data: { token: string } }).data
+      .token
+    const publicPhoto = await app.request(`/api/paper/shared/${token}/photo`)
+    expectPhotoHeaders(publicPhoto, "image/png", "png", "public, max-age=60")
+
+    await client.close()
+  })
+
+  it("deletes the previous avatar on replace and the avatar when the CV is deleted", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Ada",
+      email: "ada-orphan@example.com",
+    })
+    const created = await app.request("/api/commands/paper.create", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({
+        input: { kind: "cv", templateId: "with-photo", name: "Orphan CV" },
+      }),
+    })
+    const docId = ((await created.json()) as { data: { id: string } }).data.id
+    const first = await postAvatar(
+      app,
+      owner.cookie,
+      png,
+      "one.png",
+      "image/png"
+    )
+    const firstId = ((await first.json()) as { data: { id: string } }).data.id
+    const secondBytes = Uint8Array.from([...png, 0x02])
+    const second = await postAvatar(
+      app,
+      owner.cookie,
+      secondBytes,
+      "two.png",
+      "image/png"
+    )
+    const secondId = ((await second.json()) as { data: { id: string } }).data.id
+
+    const attach = (fileId: string) =>
+      app.request("/api/commands/paper.attachPhoto", {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ input: { docId, fileId } }),
+      })
+    expect((await attach(firstId)).status).toBe(200)
+    expect((await attach(secondId)).status).toBe(200)
+
+    const afterReplace = await app.request("/api/paper/files", {
+      headers: authHeaders(owner.cookie),
+    })
+    const ids = (
+      (await afterReplace.json()) as { data: { id: string }[] }
+    ).data.map((file) => file.id)
+    expect(ids).toEqual([secondId])
+    const gone = await app.request(`/api/paper/files/${firstId}/bytes`, {
+      headers: authHeaders(owner.cookie),
+    })
+    expect(gone.status).toBe(404)
+    const stored = await app.request(`/api/paper/${docId}`, {
+      headers: authHeaders(owner.cookie),
+    })
+    expect(await stored.text()).toContain(paperPhotoRef(secondId))
+
+    const deleted = await app.request("/api/commands/paper.delete", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ input: { docId } }),
+    })
+    expect(deleted.status).toBe(200)
+    const afterDelete = await app.request("/api/paper/files", {
+      headers: authHeaders(owner.cookie),
+    })
+    expect(((await afterDelete.json()) as { data: unknown[] }).data).toEqual([])
+
+    await client.close()
+  })
 })
+
+function formFile(bytes: Uint8Array, name: string, type: string) {
+  const form = new FormData()
+  form.set("file", imageFile(bytes, name, type))
+  return form
+}
+
+function postAvatar(
+  app: ReturnType<typeof createTestApp>,
+  cookie: string,
+  bytes: Uint8Array,
+  name: string,
+  type: string
+) {
+  return app.request("/api/paper/files", {
+    method: "POST",
+    headers: { Origin: testWebOrigin, Cookie: cookie },
+    body: formFile(bytes, name, type),
+  })
+}
+
+function expectPhotoHeaders(
+  res: Response,
+  mime: string,
+  ext: string,
+  cache: string
+) {
+  expect(res.status).toBe(200)
+  expect(res.headers.get("content-type")).toBe(mime)
+  expect(res.headers.get("x-content-type-options")).toBe("nosniff")
+  expect(res.headers.get("content-disposition")).toBe(
+    `inline; filename="photo.${ext}"`
+  )
+  expect(res.headers.get("cache-control")).toBe(cache)
+}

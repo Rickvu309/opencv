@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   blocksToPreviewModel,
   emptyCvDocument,
@@ -24,6 +24,7 @@ import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { useChatStore } from "@/features/coach/use-chat-store.ts"
+import { ApiError } from "@/lib/api-error.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
@@ -76,7 +77,6 @@ export function PaperCvEditor({
   const run = useRunCommand()
   const { openChat } = useChatStore()
   const queryClient = useQueryClient()
-  const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
   const [updatedAt, setUpdatedAt] = useState(initial.updatedAt)
@@ -87,12 +87,19 @@ export function PaperCvEditor({
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [source, setSource] = useState(initial.document)
   const blockMode = isCvBlockDocument(source)
-  const { schedule, adopt } = usePaperAutosave<CvDocument>({
+  const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
+  const cvRef = useRef(cv)
+  const dirtyRef = useRef(false)
+  useEffect(() => {
+    cvRef.current = cv
+  }, [cv])
+  const { schedule, adopt, versionRef } = usePaperAutosave<CvDocument>({
     docId: initial.id,
     initialVersion: initial.contentVersion,
     toDocument: (next) => next,
     onSaved: (saved) => {
       adopt(saved.contentVersion)
+      dirtyRef.current = false
       setUpdatedAt(new Date().toISOString())
       setConflict(false)
     },
@@ -102,6 +109,36 @@ export function PaperCvEditor({
     },
   })
   const showBanner = pageState.pages > 1 && pageState.pageChoice === "unset"
+
+  async function flushBeforePhoto() {
+    if (!dirtyRef.current) return
+    const snapshot = cvRef.current
+    adopt(versionRef.current)
+    dirtyRef.current = false
+    try {
+      const saved = await run(
+        "paper.replace",
+        {
+          docId: initial.id,
+          contentVersion: versionRef.current,
+          document: snapshot,
+        },
+        { refresh: false }
+      )
+      if (dirtyRef.current) versionRef.current = saved.contentVersion
+      else adopt(saved.contentVersion)
+      setUpdatedAt(new Date().toISOString())
+      setConflict(false)
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "CONFLICT") {
+        setConflict(true)
+      } else {
+        dirtyRef.current = true
+        schedule(snapshot)
+      }
+      throw error
+    }
+  }
 
   useEffect(() => {
     setPageState(pages)
@@ -359,9 +396,13 @@ export function PaperCvEditor({
         <CvPhotoFrame
           value={{
             docId: initial.id,
+            beforePhoto: flushBeforePhoto,
             notePhoto: (ref, version) => {
-              adopt(version)
-              setCv((current) => applyPhoto(current, ref))
+              versionRef.current = version
+              const next = applyPhoto(cvRef.current, ref)
+              cvRef.current = next
+              if (dirtyRef.current) schedule(next)
+              setCv(next)
             },
           }}
         >
@@ -369,6 +410,8 @@ export function PaperCvEditor({
             data={cv}
             onChange={(next) => {
               if (blockMode) return
+              dirtyRef.current = true
+              cvRef.current = next
               setCv(next)
               schedule(next)
             }}

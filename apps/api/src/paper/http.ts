@@ -27,10 +27,26 @@ function person(userId: string) {
   return personActor(userId)
 }
 
-function photoBytes(photo: { mediaType: string; bytes: Uint8Array }) {
+const PHOTO_EXTENSION: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+}
+
+function photoBytes(
+  photo: { mediaType: string; bytes: Uint8Array },
+  cacheControl: string
+) {
+  const ext = PHOTO_EXTENSION[photo.mediaType] ?? "bin"
   return new Response(new Uint8Array(photo.bytes), {
     status: 200,
-    headers: { "content-type": photo.mediaType },
+    headers: {
+      "content-type": photo.mediaType,
+      "x-content-type-options": "nosniff",
+      "content-disposition": `inline; filename="photo.${ext}"`,
+      "cache-control": cacheControl,
+    },
   })
 }
 
@@ -46,7 +62,10 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
 
   routes.get("/shared/:token/photo", async (c) => {
-    return photoBytes(await readSharedPhoto(c.req.param("token")))
+    return photoBytes(
+      await readSharedPhoto(c.req.param("token")),
+      "public, max-age=60"
+    )
   })
 
   routes.get("/shared/:token", async (c) => {
@@ -141,7 +160,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       parseUserId(c.var.userId),
       fileIdOrMissing(c.req.param("id"))
     )
-    return photoBytes(photo)
+    return photoBytes(photo, "private, no-store")
   })
 
   routes.get("/:id/pdf", async (c) => {

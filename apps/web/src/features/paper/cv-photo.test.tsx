@@ -52,6 +52,7 @@ describe("CV photo", () => {
       `/api/paper/files/${FILE_ID}/bytes`
     )
     expect(img?.getAttribute("src")).not.toContain("blob:")
+    expect(img?.getAttribute("alt")).toBe("Photo")
   })
 
   it("never stores a blob url and shows the size and type sentences", async () => {
@@ -141,8 +142,67 @@ describe("CV photo", () => {
     expect(view.container.innerHTML).not.toContain("blob:")
   })
 
+  it("deletes the uploaded file when attach fails", async () => {
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      calls.push(`${init?.method ?? "GET"} ${url}`)
+      if (url.includes("/api/commands/paper.attachPhoto")) {
+        return Promise.resolve(
+          Response.json(
+            {
+              ok: false,
+              error: {
+                code: "CONFLICT",
+                message: "This document changed. Reload it and try again.",
+              },
+            },
+            { status: 409 }
+          )
+        )
+      }
+      if (url.includes("/api/paper/files")) {
+        return Promise.resolve(
+          Response.json({ ok: true, data: { id: FILE_ID } })
+        )
+      }
+      if (url.includes("/api/commands/paper.deleteFile")) {
+        return Promise.resolve(
+          Response.json({ ok: true, data: { fileId: FILE_ID } })
+        )
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+
+    function Harness() {
+      const [url, setUrl] = useState<string | undefined>()
+      return (
+        <CvPhotoFrame value={{ docId: DOC_ID }}>
+          <CvPhoto url={url} onChange={setUrl} />
+        </CvPhotoFrame>
+      )
+    }
+    const view = render(<Harness />)
+    const input = view.container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    fireEvent.change(input, {
+      target: {
+        files: [
+          new File([new Uint8Array(8)], "face.png", { type: "image/png" }),
+        ],
+      },
+    })
+    expect(
+      await screen.findByText("This document changed. Reload it and try again.")
+    ).toBeInTheDocument()
+    expect(calls.some((call) => call.includes("paper.deleteFile"))).toBe(true)
+    expect(view.container.querySelector("img")).toBeNull()
+  })
+
   it("renders the file id as the public photo on the share page", async () => {
     const blocks = blankBlockDocument()
+    blocks.header.name = "Ada Lovelace"
     blocks.header.photo = `file:${FILE_ID}`
     const shared: PaperView = {
       id: DOC_ID,
@@ -169,9 +229,9 @@ describe("CV photo", () => {
     expect(
       await screen.findByRole("heading", { name: "Photo CV" })
     ).toBeInTheDocument()
-    expect(view.container.querySelector("img")?.getAttribute("src")).toContain(
-      "/api/paper/shared/tok/photo"
-    )
+    const img = view.container.querySelector("img")
+    expect(img?.getAttribute("src")).toContain("/api/paper/shared/tok/photo")
+    expect(img?.getAttribute("alt")).toBe("Ada Lovelace")
     expect(view.container.innerHTML).not.toContain("blob:")
   })
 })

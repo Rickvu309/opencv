@@ -23,6 +23,7 @@ export function PhotoCv({
       <header className="mb-5 flex gap-4 border-b border-foreground/10 pb-4">
         <CvPhoto
           url={data.photoUrl}
+          name={data.name}
           onChange={(photoUrl) => patch("photoUrl", photoUrl)}
         />
         <div className="min-w-0 flex-1">
