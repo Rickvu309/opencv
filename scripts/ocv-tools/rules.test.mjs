@@ -266,6 +266,36 @@ test("every checked rule has a failing and a passing fact", () => {
     { commits: {} },
     "commit(s) abc1234 carry an attribution trailer, which the commit-msg hook refuses: they were made without that hook (the hook-skip flag, a cherry-pick or a rebase)"
   )
+  check(
+    "NOT_HIGH_RISK",
+    { issue: { n: 90, risk: "normal" } },
+    { issue: { n: 90, risk: "high" } },
+    "#90 is normal risk, so no approval is needed"
+  )
+  check(
+    "MISSING_FILE",
+    { picture: { path: "a.png", exists: false } },
+    { picture: { path: "a.png", exists: true } },
+    "a.png does not exist"
+  )
+  check(
+    "BAD_PICTURE",
+    { picture: { path: "a.txt", bytesChecked: false } },
+    { picture: { path: "a.png", type: "png" } },
+    "a.txt is not a png, jpg, gif or webp (checked the file bytes)"
+  )
+  check(
+    "TOO_BIG",
+    { picture: { path: "a.png", bytes: 10 * 1024 * 1024 + 1 } },
+    { picture: { path: "a.png", bytes: 100 } },
+    "a.png is over 10 MB"
+  )
+  check(
+    "TOO_MANY",
+    { shot: { count: 21 } },
+    { shot: { count: 20 } },
+    "shot takes at most 20 pictures per run (21 given)"
+  )
   for (const row of RULES) {
     if (!row.check) {
       assert.equal(row.kind, "judgment", row.id)

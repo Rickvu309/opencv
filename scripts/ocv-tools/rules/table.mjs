@@ -46,17 +46,60 @@ function notATask(facts) {
 function notAnIssue(facts) {
   const issue = facts.issue
   if (issue && !issue.missing) return null
+  if (issue?.kind === "pr") return `#${issue.n} is not a pull request`
   return `#${issue?.n ?? "?"} is not an issue`
 }
 
+function notAnIssueFix(facts) {
+  if (facts.issue?.kind === "pr")
+    return "Pass a pull request number to --pr. Run: gh pr list"
+  if (facts.issue?.shot)
+    return "Pass an issue number to --issue. Run: gh issue list"
+  return FIXES.NOT_AN_ISSUE
+}
+
+function notATaskFix(facts) {
+  if (facts.here?.shot)
+    return "Pass --issue <n> or --pr <n>, or run shot inside the task worktree."
+  return FIXES.NOT_A_TASK
+}
+
 function unknown(facts) {
-  const history = facts.history
-  if (!history || history.kind === "complete") return null
-  if (history.kind === "stuck")
-    return `claim history for #${history.n} stopped before the first comment (the page cursor did not move)`
-  if (history.kind === "cap")
-    return `claim history for #${history.n} is incomplete: ${history.pageCap} pages were read and older comments remain`
+  const h = facts.history
+  if (!h || h.kind === "complete") return null
+  const pull = h.list === "pull"
+  const noun = pull ? "pull request" : "issue"
+  const nouns = pull ? "pull requests" : "issues"
+  const moved = "(the page cursor did not move)"
+  const claim = (tail) => `claim history for #${h.n} ${tail}`
+  const pages = h.pageCap
+  if (h.kind === "board-stuck")
+    return `the open ${noun} list stopped before the last page ${moved}`
+  if (h.kind === "board-cap")
+    return `the open ${noun} list is incomplete: ${pages} pages were read and more ${nouns} remain`
+  if (h.kind === "stuck")
+    return claim(`stopped before the first comment ${moved}`)
+  if (h.kind === "cap")
+    return claim(
+      `is incomplete: ${pages} pages were read and older comments remain`
+    )
+  if (h.kind === "comments-open")
+    return claim("did not say whether more comments exist")
+  if (h.kind === "comments-cap")
+    return claim(
+      `is incomplete: ${pages} pages were read and more comments remain`
+    )
+  if (h.kind === "comments-stuck")
+    return claim(`stopped before the last comment ${moved}`)
+  if (h.kind === "comment-size")
+    return "one picture comment is over 60000 characters"
   return null
+}
+
+function unknownFix(facts) {
+  if (facts.history?.kind === "comment-size")
+    return "Use a shorter --name. Run: scripts/ocv-tools.mjs help"
+  return FIXES.UNKNOWN
 }
 
 function closed(facts) {
@@ -99,10 +142,22 @@ function assigned(facts) {
 }
 
 function notOwner(facts) {
+  if (facts.account && facts.issue) {
+    const me = String(facts.account.login ?? "").trim()
+    const owner = String(facts.account.owner ?? "").trim()
+    if (me.toLowerCase() === owner.toLowerCase()) return null
+    return `signed in as ${me || "nobody"}, but only ${owner} can approve #${facts.issue.n}`
+  }
   if (!facts.claim || !facts.issue) return null
   if (holds(facts.claim, facts.me)) return null
   const who = facts.claim.agent ? `; ${facts.claim.agent} does` : ""
   return `you (${facts.me ?? "no agent id"}) do not hold #${facts.issue.n}${who}`
+}
+
+function notOwnerFix(facts) {
+  if (facts.account)
+    return "run this as the owner account; take only accepts the owner's /approve"
+  return FIXES.NOT_OWNER
 }
 
 function lost(facts) {
@@ -236,9 +291,63 @@ function unknownFlag(facts) {
 function badArgs(facts) {
   const args = facts.args
   if (!args || args.ok) return null
+  if (args.shot) return "pass --pr or --issue, not both"
   return args.both
     ? "pass an issue number or a title, not both"
     : `expected one target, got ${args.count}`
+}
+
+function badArgsFix(facts) {
+  if (facts.args?.shot)
+    return "Pass one of --pr or --issue. Run: scripts/ocv-tools.mjs help"
+  return FIXES.BAD_ARGS
+}
+
+const PICTURE_BYTES = 10 * 1024 * 1024
+
+function missingFile(facts) {
+  const p = facts.picture
+  if (!p || p.exists !== false) return null
+  return `${p.path} does not exist`
+}
+
+function badPicture(facts) {
+  const p = facts.picture
+  if (!p) return null
+  const bad = `${p.path} is not a png, jpg, gif or webp`
+  if (p.file === false) return bad
+  if (p.bytesChecked === false) return `${bad} (checked the file bytes)`
+  if (p.asset) return `two files would be named ${p.asset}`
+  return null
+}
+
+function badPictureFix(facts) {
+  if (facts.picture?.asset)
+    return "Pass --name, or rename one file so the pictures stay distinct."
+  return FIXES.BAD_PICTURE
+}
+
+function tooBig(facts) {
+  const p = facts.picture
+  if (!p || p.bytes == null || p.bytes <= PICTURE_BYTES) return null
+  return `${p.path} is over 10 MB`
+}
+
+function tooMany(facts) {
+  const count = facts.shot?.count
+  if (count == null || count <= 20) return null
+  return `shot takes at most 20 pictures per run (${count} given)`
+}
+
+function notHighRisk(facts) {
+  const issue = facts.issue
+  if (!issue || issue.risk === "high") return null
+  return `#${issue.n} is ${issue.risk ?? "unset"} risk, so no approval is needed`
+}
+
+function notHighRiskFix(facts) {
+  const n = facts.issue?.n ?? "<n>"
+  return `No approval is needed. Run: scripts/ocv-tools.mjs take ${n}`
 }
 
 function badIssue(facts) {
@@ -274,39 +383,53 @@ const rows = [
     kind: "precondition",
     section: "2",
     says: "This folder must be a linked task worktree on a type and issue branch.",
-    jobs: ["save", "release", "cleanup"],
+    jobs: ["save", "release", "cleanup", "shot"],
     needs: ["here"],
     stop: true,
     check: notATask,
+    fix: notATaskFix,
   }),
   rule({
     id: "NOT_AN_ISSUE",
     kind: "precondition",
     section: "1",
     says: "The number must be an issue, not a pull request.",
-    jobs: ["take", "status", "save", "release"],
+    jobs: ["take", "status", "save", "release", "shot"],
     needs: ["issue"],
     stop: true,
     check: notAnIssue,
+    fix: notAnIssueFix,
   }),
   rule({
     id: "UNKNOWN",
     kind: "precondition",
     section: "1",
-    says: "Claim history must be complete before a holder is decided.",
-    jobs: ["take", "status", "save", "release"],
+    says: "Claim history and board pages must be complete before a holder is decided.",
+    jobs: ["take", "status", "save", "release", "board", "shot"],
     needs: ["history"],
     stop: true,
     check: unknown,
+    fix: unknownFix,
   }),
   rule({
     id: "CLOSED",
     section: "1",
     says: "A closed issue is not a task, unless its pull request is already merged.",
-    jobs: ["take", "status"],
+    jobs: ["take", "status", "approve"],
     needs: ["issue"],
     stop: true,
     check: closed,
+  }),
+  rule({
+    id: "NOT_HIGH_RISK",
+    kind: "precondition",
+    section: "1",
+    says: "Approve is only for a risk:high issue. Any other risk needs no approval.",
+    jobs: ["approve"],
+    needs: ["issue"],
+    stop: true,
+    check: notHighRisk,
+    fix: notHighRiskFix,
   }),
   rule({
     id: "READY_FOR_HUMAN",
@@ -345,10 +468,11 @@ const rows = [
     id: "NOT_OWNER",
     kind: "precondition",
     section: "2",
-    says: "Only the agent that holds the issue can release it.",
-    jobs: ["release"],
+    says: "Only the holding agent can release an issue, and only the repository owner can approve one.",
+    jobs: ["release", "approve"],
     needs: ["claim", "me", "issue"],
     check: notOwner,
+    fix: notOwnerFix,
   }),
   rule({
     id: "LOST",
@@ -399,7 +523,7 @@ const rows = [
     kind: "precondition",
     section: "1",
     says: "A task needs its type, title, description and the flags the command asked for.",
-    jobs: ["file", "take", "cli"],
+    jobs: ["file", "take", "cli", "shot"],
     needs: ["flags"],
     stop: true,
     check: missingFields,
@@ -461,7 +585,7 @@ const rows = [
     id: "UNKNOWN_FLAG",
     kind: "precondition",
     says: "A flag must be one this command accepts.",
-    jobs: ["cli"],
+    jobs: ["cli", "shot"],
     needs: ["flag"],
     check: unknownFlag,
   }),
@@ -469,9 +593,10 @@ const rows = [
     id: "BAD_ARGS",
     kind: "precondition",
     says: "Pass one target, an issue number or a title.",
-    jobs: ["cli"],
+    jobs: ["cli", "shot"],
     needs: ["args"],
     check: badArgs,
+    fix: badArgsFix,
   }),
   rule({
     id: "BAD_ISSUE",
@@ -480,6 +605,43 @@ const rows = [
     jobs: ["cli"],
     needs: ["token"],
     check: badIssue,
+  }),
+  rule({
+    id: "MISSING_FILE",
+    kind: "precondition",
+    says: "A picture passed to shot must exist on disk.",
+    jobs: ["shot"],
+    needs: ["picture"],
+    stop: true,
+    check: missingFile,
+  }),
+  rule({
+    id: "BAD_PICTURE",
+    kind: "precondition",
+    says: "A shot picture must be a png, jpg, gif or webp, with its own name.",
+    jobs: ["shot"],
+    needs: ["picture"],
+    stop: true,
+    check: badPicture,
+    fix: badPictureFix,
+  }),
+  rule({
+    id: "TOO_BIG",
+    kind: "precondition",
+    says: "A shot picture must be 10 MB or smaller.",
+    jobs: ["shot"],
+    needs: ["picture"],
+    stop: true,
+    check: tooBig,
+  }),
+  rule({
+    id: "TOO_MANY",
+    kind: "precondition",
+    says: "Shot takes at most 20 pictures in one run.",
+    jobs: ["shot"],
+    needs: ["shot"],
+    stop: true,
+    check: tooMany,
   }),
   ...bashRows,
   judgment({

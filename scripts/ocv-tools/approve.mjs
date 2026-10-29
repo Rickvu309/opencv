@@ -1,6 +1,6 @@
 // `approve`: relay the owner's "approved" from chat onto a risk:high issue.
 import { agentIdFor, envAgent } from "./claim.mjs"
-import { Refused } from "./result.mjs"
+import { evaluate, refusalError } from "./rules/decide.mjs"
 
 const WARN =
   'The agent must only run this after the owner said "approved" in this chat.'
@@ -18,16 +18,18 @@ function relayAgent(ctx) {
   return agentIdFor(ctx, here.gitDir) || "unknown"
 }
 
+function refuse(id, facts) {
+  const hit = evaluate(id, facts)
+  if (!hit) throw new Error(`approve expected ${id} to refuse`)
+  throw refusalError(hit)
+}
+
 export function approve(ctx, n) {
   const { issue } = ctx.facts.load(n, ["issue"])
   if (String(issue.state).toUpperCase() !== "OPEN")
-    throw new Refused("CLOSED", `#${n} is closed`)
-  if (issue.risk !== "high")
-    throw new Refused(
-      "NOT_HIGH_RISK",
-      `#${n} is ${issue.risk ?? "unset"} risk, so no approval is needed`,
-      `No approval is needed. Run: scripts/ocv-tools.mjs take ${n}`
-    )
+    refuse("CLOSED", { issue: { ...issue, state: "CLOSED" } })
+  const risk = evaluate("NOT_HIGH_RISK", { issue })
+  if (risk) throw refusalError(risk)
   if (issue.approved)
     return {
       lines: [
@@ -38,12 +40,13 @@ export function approve(ctx, n) {
     }
   const me = String(ctx.ports.gh.login() ?? "").trim()
   const owner = String(ctx.ports.gh.repo().owner ?? "").trim()
-  if (me.toLowerCase() !== owner.toLowerCase())
-    throw new Refused(
-      "NOT_OWNER",
-      `signed in as ${me || "nobody"}, but only ${owner} can approve #${n}`,
-      "run this as the owner account; take only accepts the owner's /approve"
-    )
+  const held = evaluate("NOT_OWNER", {
+    issue,
+    claim: { state: "none" },
+    me: null,
+    account: { login: me, owner },
+  })
+  if (held) throw refusalError(held)
   ctx.ports.gh.comment(n, approveComment(relayAgent(ctx)))
   return {
     lines: [`Posted /approve on #${n}.`, WARN],

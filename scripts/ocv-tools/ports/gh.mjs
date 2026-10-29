@@ -1,6 +1,6 @@
 // GitHub adapter. Domain verbs over `gh`. Callers get plain records, not argv.
 import { readServerNow, parseUpdatedAt } from "../clock.mjs"
-import { Refused } from "../result.mjs"
+import { evaluate, refusalError } from "../rules/decide.mjs"
 
 // Stop rather than treat a cut-off comment list as the whole claim history.
 export const COMMENT_PAGE_CAP = 100
@@ -42,7 +42,11 @@ export function ghAdapter(run) {
     return JSON.parse(q.out)
   }
 
-  function pageAll({ query, pick, cap, stuck, incomplete, repo: view }) {
+  function refuseHistory(history) {
+    throw refusalError(evaluate("UNKNOWN", { history }))
+  }
+
+  function pageAll({ query, pick, cap, list, repo: view }) {
     const items = []
     const seen = new Set()
     let cursor = null
@@ -54,7 +58,7 @@ export function ghAdapter(run) {
       })
       const conn = pick(data)
       if (!conn?.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean")
-        throw new Refused("UNKNOWN", stuck)
+        refuseHistory({ kind: "board-stuck", list })
       for (const node of conn.nodes ?? []) {
         if (seen.has(node.number)) continue
         seen.add(node.number)
@@ -63,8 +67,9 @@ export function ghAdapter(run) {
       const info = conn.pageInfo
       if (!info.hasNextPage) return items
       if (!info.endCursor || info.endCursor === cursor)
-        throw new Refused("UNKNOWN", stuck)
-      if (page === cap - 1) throw new Refused("UNKNOWN", incomplete)
+        refuseHistory({ kind: "board-stuck", list })
+      if (page === cap - 1)
+        refuseHistory({ kind: "board-cap", list, pageCap: cap })
       cursor = info.endCursor
     }
     return items
@@ -74,21 +79,21 @@ export function ghAdapter(run) {
   function completeComments(view, issue) {
     const conn = issue.comments ?? {}
     if (!conn.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean")
-      throw new Refused(
-        "UNKNOWN",
-        `claim history for #${issue.number} did not say whether more comments exist`
-      )
+      refuseHistory({ kind: "comments-open", n: issue.number })
     const nodes = [...(conn.nodes ?? [])]
     let info = conn.pageInfo
     let cursor = info.endCursor ?? null
     let pages = 1
     while (info.hasNextPage) {
       if (!cursor || pages >= COMMENT_PAGE_CAP)
-        throw new Refused(
-          "UNKNOWN",
+        refuseHistory(
           pages >= COMMENT_PAGE_CAP
-            ? `claim history for #${issue.number} is incomplete: ${COMMENT_PAGE_CAP} pages were read and more comments remain`
-            : `claim history for #${issue.number} stopped before the last comment (the page cursor did not move)`
+            ? {
+                kind: "comments-cap",
+                n: issue.number,
+                pageCap: COMMENT_PAGE_CAP,
+              }
+            : { kind: "comments-stuck", n: issue.number }
         )
       const data = graphql(COMMENT_AFTER, {
         owner: view.owner,
@@ -103,10 +108,7 @@ export function ghAdapter(run) {
         (pageInfo.hasNextPage &&
           (!pageInfo.endCursor || pageInfo.endCursor === cursor))
       )
-        throw new Refused(
-          "UNKNOWN",
-          `claim history for #${issue.number} stopped before the last comment (the page cursor did not move)`
-        )
+        refuseHistory({ kind: "comments-stuck", n: issue.number })
       nodes.push(...(next.nodes ?? []))
       info = pageInfo
       cursor = pageInfo.endCursor ?? null
@@ -130,18 +132,14 @@ export function ghAdapter(run) {
       query: ISSUE_LIST,
       pick: (data) => data.data?.repository?.issues,
       cap: LIST_CAP,
-      stuck:
-        "the open issue list stopped before the last page (the page cursor did not move)",
-      incomplete: `the open issue list is incomplete: ${LIST_CAP} pages were read and more issues remain`,
+      list: "issue",
       repo: view,
     })
     const pulls = pageAll({
       query: PR_LIST,
       pick: (data) => data.data?.repository?.pullRequests,
       cap: LIST_CAP,
-      stuck:
-        "the open pull request list stopped before the last page (the page cursor did not move)",
-      incomplete: `the open pull request list is incomplete: ${LIST_CAP} pages were read and more pull requests remain`,
+      list: "pull",
       repo: view,
     })
     return {
