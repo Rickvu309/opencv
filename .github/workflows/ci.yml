@@ -48,9 +48,9 @@ jobs:
             esac
           done < <(git diff --name-only -z "$base" HEAD)
           if (( full )); then
-            pnpm exec prettier --check .
+            pnpm exec prettier --check --ignore-unknown -- .
           else
-            git diff --name-only --no-renames --diff-filter=ACMR -z "$base" HEAD | xargs -0 -r pnpm exec prettier --check
+            git diff --name-only --no-renames --diff-filter=ACMR -z "$base" HEAD | xargs -0 -r pnpm exec prettier --check --ignore-unknown --
           fi
 
   typecheck:
