@@ -30,6 +30,25 @@ function assertResult(result, id, ...expects) {
   )
 }
 
+const GOOD_BODY = `## Summary
+
+on(save)
++  skip unchanged
+
+## Evidence
+
+- **Before:** failing test
+  **After:** passing test
+
+## Merge Danger
+
+**Door:** two-way
+
+**Blast Radius:** none
+`
+
+const DEFAULT_ARGS = ["--draft", "-d", "push failure proof"]
+
 function run(
   t,
   pushExit,
@@ -37,8 +56,10 @@ function run(
   lowDisk = false,
   noCommonDir = false,
   extraEnv = {},
-  args = ["--draft", "-d", "push failure proof"]
+  args = DEFAULT_ARGS,
+  bodyText = GOOD_BODY
 ) {
+  if (args === DEFAULT_ARGS) args = [...args, "--body-file", "BODY"]
   const scratch = join(homedir(), "tmp")
   mkdirSync(scratch, { recursive: true })
   const root = mkdtempSync(join(scratch, "open-pr-test-"))
@@ -165,12 +186,17 @@ esac
       extraEnv.PORT_RAW ?? `PORT=${extraEnv.PORT_FILES}\n`
     )
   }
-  const result = spawnSync("bash", [script, ...args], {
-    cwd: root,
-    env,
-    encoding: "utf8",
-    timeout: 10_000,
-  })
+  writeFileSync(join(root, "body.md"), bodyText ?? "")
+  const result = spawnSync(
+    "bash",
+    [script, ...args.map((a) => (a === "BODY" ? join(root, "body.md") : a))],
+    {
+      cwd: root,
+      env,
+      encoding: "utf8",
+      timeout: 10_000,
+    }
+  )
   assert.ifError(result.error)
   return {
     ...result,
@@ -407,4 +433,41 @@ test("R97: a push that skipped the pre-push hook creates no PR", (t) => {
   assert.equal(result.status, 1, result.stderr)
   assert.match(result.stderr, /no pre-push stamp/)
   assert.equal(result.events, "push skip=unset\n")
+})
+
+test("a body without the pr skill parts, or still a placeholder, is refused before any push", (t) => {
+  for (const [name, body, message] of [
+    ["no body file", null, /pass --body-file/],
+    [
+      "no Evidence",
+      "## Summary\nx\n\n## Merge Danger\n\n**Door:** two-way\n\n**Blast Radius:** none\n",
+      /lacks the line '## Evidence'/,
+    ],
+    [
+      "door unset",
+      GOOD_BODY.replace("two-way", "<one-way or two-way>"),
+      /Door/,
+    ],
+    [
+      "placeholder",
+      GOOD_BODY.replace("on(save)", "<diagram, diff-sketch, or tree>"),
+      /placeholder/,
+    ],
+  ]) {
+    const result = run(
+      t,
+      0,
+      false,
+      false,
+      false,
+      {},
+      body === null
+        ? ["--draft", "-d", "x"]
+        : ["--draft", "-d", "x", "--body-file", "BODY"],
+      body
+    )
+    assert.equal(result.status, 1, name)
+    assert.match(result.stderr, message, name)
+    assert.equal(result.events, "", `${name}: nothing pushed or created`)
+  }
 })

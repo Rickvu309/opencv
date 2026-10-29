@@ -32,8 +32,8 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 
 - Branch: `type/<issue#>-short-description`, for example `feat/42-login-page`.
 - Title: `type: description (#<issue>)`. It becomes the squash commit subject on `main`.
-- Body: `.github/pull_request_template.md`, with `Closes #<issue>`.
-- Open it with `scripts/open-pr.sh [--draft]`. Merge it with `scripts/merge-pr.sh <pr#>` once the `ci` check on the head is green. The script refuses a draft, another author, and a `needs-human-review` label.
+- Body: written with the `pr` skill in the shape of `.github/pull_request_template.md`, passed as `scripts/open-pr.sh --body-file <file>`, which adds `Closes #<issue>`.
+- Open it with `scripts/open-pr.sh [--draft] --body-file <file>`. Merge it with `scripts/merge-pr.sh <pr#>` once the `ci` check on the head is green. The script refuses a draft, another author, and a `needs-human-review` label.
 - Squash is the only merge method. The only GitHub Action is `ci.yml`, which runs on GitHub-hosted runners.
 - Details: `CONTRIBUTING.md` and `docs/git-workflow/`.
 

@@ -1,24 +1,23 @@
 <!--
 Title format: type: short description (#<issue>)
-Example:      feat: add login page (#42)
-Types: feat | fix | hotfix | refactor | chore | docs
-The title becomes the squash commit message on main.
+Write this body with the pr skill. scripts/open-pr.sh --body-file <this file> adds "Closes #<issue>" and refuses a body
+that lacks the three parts below or still has a placeholder. The title becomes the squash commit message on main.
 -->
 
-Closes #<!-- issue number, required -->
+## Summary
 
-## What changed
+<diagram, diff-sketch, or tree>
 
--
+## Evidence
 
-## Why
+- **Before:** <screenshot/output/failing test run>
+  **After:** <screenshot/output/passing test run>
 
--
+## Merge Danger
 
-## How to test
+**Door:** <one-way or two-way>
 
-1. Run a verify skill by hand when you want one (`.claude/skills/verify-opencv`):
-2.
+**Blast Radius:** <one-word description>
 
 ## Checklist
 

@@ -2,14 +2,15 @@
 # open-pr.sh: validate the branch, run the quick check, push, and open the PR in the agreed format.
 #
 # Usage (inside your task worktree):
-#   scripts/open-pr.sh [-d "description"] [--draft] [--dry-run]
+#   scripts/open-pr.sh --body-file FILE [-d "description"] [--draft] [--dry-run]
 #
+#   --body-file FILE  the PR body, written with the pr skill: Summary, Evidence, Merge Danger (Door, Blast Radius). Required.
 #   -d, --desc TEXT   PR description part of the title (default: issue title, else branch words)
 #   --draft           open as a draft PR
 #   --dry-run         validate and print title/body; don't run checks, push, or create the PR
 #
 # Title:  type: description (#N)       e.g. feat: add login page (#42)
-# Body:   .github/pull_request_template.md with "Closes #N" filled in
+# Body:   "Closes #N", then your --body-file (the shape of .github/pull_request_template.md); refused when a part is missing or still a placeholder
 #
 #
 # Emergency only, declared by a human: SKIP_CHECKS=1 SKIP_CHECKS_DECLARED_BY=<who> scripts/open-pr.sh   (the PR body says so)
@@ -30,10 +31,11 @@ TITLE_RE='^(feat|fix|hotfix|refactor|chore|docs)(\([a-z0-9-]+\))?!?: [^ ].* \(#(
 die()  { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 
-desc=""; draft=0; dry=0
+desc=""; draft=0; dry=0; body_file=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -d|--desc) [[ $# -ge 2 ]] || die "$1 needs a value"; desc=$2; shift 2 ;;
+    --body-file) [[ $# -ge 2 ]] || die "$1 needs a value"; body_file=$2; shift 2 ;;
     --draft) draft=1; shift ;;
     --dry-run) dry=1; shift ;;
     -h|--help) awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 0 ;;
@@ -85,13 +87,17 @@ desc="$(printf '%s' "${desc:0:1}" | tr '[:upper:]' '[:lower:]')${desc:1}"
 title="${type}: ${desc} (#${issue})"
 [[ "$title" =~ $TITLE_RE ]] || die "built an invalid title: $title"
 
-template=".github/pull_request_template.md"
-if [[ -f "$template" ]]; then
-  body=$(sed -E "s/^Closes #.*$/Closes #${issue}/" "$template")
-  grep -qx "Closes #${issue}" <<<"$body" || body="Closes #${issue}"$'\n\n'"$body"
-else
-  body="Closes #${issue}"
-fi
+# The body is written, never filled from a blank form: pr skill parts, each with content (docs/git-workflow/commit-and-pr-conventions.md).
+[[ -n "$body_file" ]] || die "pass --body-file <file>: a PR body written with the pr skill (## Summary, ## Evidence, ## Merge Danger with **Door:** and **Blast Radius:**). Start from .github/pull_request_template.md"
+[[ -f "$body_file" ]] || die "--body-file $body_file does not exist"
+written=$(<"$body_file")
+for part in '## Summary' '## Evidence' '## Merge Danger'; do
+  grep -qx "$part" <<<"$written" || die "the PR body lacks the line '$part'. Write it with the pr skill; the template shows the parts"
+done
+grep -Eq '^\*\*Door:\*\* (one-way|two-way)' <<<"$written" || die "the PR body needs '**Door:** one-way' or '**Door:** two-way' under Merge Danger"
+grep -Eq '^\*\*Blast Radius:\*\* [^<[:space:]]' <<<"$written" || die "the PR body needs '**Blast Radius:** <one word>' under Merge Danger"
+! grep -Eq '<(diagram|screenshot|one-way|optional)[^>]*>' <<<"$written" || die "the PR body still has a template placeholder in angle brackets; replace it"
+body="Closes #${issue}"$'\n\n'"$written"
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
   body="**Checks were skipped (SKIP_CHECKS=1), emergency declared by ${SKIP_CHECKS_DECLARED_BY:-unknown}. Reviewer: run scripts/check.sh.**"$'\n\n'"$body"
 fi
