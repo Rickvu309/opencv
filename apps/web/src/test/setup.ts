@@ -13,7 +13,11 @@ import { resetProfileApiMock } from "./profile-api-mock.ts"
 import { resetShellApiMock } from "./shell-api-mock.ts"
 import { resetChatApiMock } from "./chat-api-mock.ts"
 
-import { cleanupTestResources } from "./test-resources.ts"
+import {
+  cleanupTestResources,
+  registerTestCleanup,
+  registerSonnerTimers,
+} from "./test-resources.ts"
 
 configure({ asyncUtilTimeout: 5000 })
 
@@ -72,7 +76,10 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   })
 }
 
+let cleanupTimers: () => Promise<void>
+
 beforeEach(() => {
+  cleanupTimers = registerSonnerTimers()
   toast.dismiss()
   resetMockSession()
   resetUnauthorizedHandler()
@@ -85,9 +92,11 @@ beforeEach(() => {
 
 afterEach(async () => {
   try {
+    toast.dismiss()
     cleanup()
   } finally {
     try {
+      registerTestCleanup(cleanupTimers)
       await act(() => cleanupTestResources())
     } finally {
       if (typeof sessionStorage !== "undefined") sessionStorage.clear()
