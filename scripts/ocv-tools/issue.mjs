@@ -109,7 +109,7 @@ export function file(ctx, { flags }) {
     ],
     next:
       parseRisk(body) === "high"
-        ? "Ask the owner to comment /approve on the issue before anyone takes it."
+        ? "Ask a project admin to comment /approve on the issue before anyone takes it."
         : `scripts/ocv-tools.mjs take ${created.n}`,
   }
 }

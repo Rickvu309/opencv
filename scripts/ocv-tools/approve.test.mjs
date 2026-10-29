@@ -10,8 +10,11 @@ const posted = (ports) => ports.effects.find((e) => e.op === "comment")
 
 function run(over = {}, extra = {}) {
   const ports = fakePorts({
-    owner: "owner",
+    owner: extra.owner ?? "owner",
     login: extra.login ?? "owner",
+    ownerType: extra.ownerType,
+    admins: extra.admins,
+    approversError: extra.approversError,
     env: extra.env,
     files: extra.files,
     issues: [
@@ -41,7 +44,7 @@ test("approve posts /approve and names the agent that relayed it", () => {
   )
   assert.equal(
     approvalValid({
-      owner: "owner",
+      approvers: ["owner"],
       createdAt: "2026-10-01T00:00:00Z",
       lastEditedAt: "2026-10-29T11:00:00Z",
       comments: [
@@ -167,8 +170,44 @@ test("approve refuses a collaborator and does not post", () => {
   assert.match(text, /signed in as collaborator/)
   assert.match(
     text,
-    /Fix: run this as the owner account; take only accepts the owner's \/approve/
+    /Fix: run this as an account with admin rights on the project/
   )
+  assert.equal(posted(ports), undefined)
+})
+
+test("an organization admin can approve, while a non-admin cannot", () => {
+  const admin = run(
+    {},
+    {
+      owner: "Rickvu309",
+      ownerType: "Organization",
+      admins: ["RickVu", "admin-person"],
+      login: "ADMIN-PERSON",
+    }
+  )
+  assert.equal(runCli(["approve", "90"], admin.ctx).code, 0)
+  assert.match(posted(admin.ports).body, /^\/approve/)
+
+  const member = run(
+    {},
+    {
+      owner: "Rickvu309",
+      ownerType: "Organization",
+      admins: ["admin-person"],
+      login: "ordinary-member",
+    }
+  )
+  const result = runCli(["approve", "90"], member.ctx)
+  assert.equal(result.code, 2)
+  assert.match(result.text, /REFUSED NOT_OWNER/)
+  assert.equal(posted(member.ports), undefined)
+})
+
+test("approve fails loudly when the admin collaborators read fails", () => {
+  const { ports, ctx } = run({}, { approversError: "permission denied" })
+  const result = runCli(["approve", "90"], ctx)
+  assert.equal(result.code, 1)
+  assert.match(result.text, /permission denied/)
   assert.equal(posted(ports), undefined)
 })
 
@@ -181,5 +220,5 @@ test("approve usage", () => {
   assert.match(text, /approve <n>/)
   assert.match(text, /NOT_HIGH_RISK/)
   assert.match(text, /NOT_OWNER/)
-  assert.match(text, /repository owner/)
+  assert.match(text, /admin rights/)
 })

@@ -17,6 +17,10 @@ function scriptedCtx(rules) {
         out: "Date: Thu, 29 Oct 2026 12:00:00 GMT\r\n\r\n{}",
         err: "",
       }
+    if (line.includes("collaborators?permission=admin"))
+      return { ok: true, out: "owner\n", err: "" }
+    if (line.includes("api repos/owner/opencv --jq .owner.type"))
+      return { ok: true, out: "User\n", err: "" }
     for (const [match, result] of rules)
       if (line.includes(match))
         return typeof result === "function"

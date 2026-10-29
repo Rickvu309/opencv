@@ -42,6 +42,8 @@ function scripted(onGraphql) {
         out: '{"owner":{"login":"owner"},"name":"opencv"}',
         err: "",
       }
+    if (line.includes("api repos/owner/opencv --jq .owner.type"))
+      return { ok: true, out: "User\n", err: "" }
     if (line.includes("rate_limit")) return { ok: true, out: DATE, err: "" }
     if (line.includes("api graphql")) return onGraphql(line)
     return { ok: false, out: "", err: `unmocked: ${line}` }
@@ -50,6 +52,61 @@ function scripted(onGraphql) {
 }
 
 const graphqlCalls = (calls) => calls.filter((c) => c.includes("api graphql"))
+
+test("approvers use the user owner and every paginated admin collaborator once", () => {
+  const calls = []
+  const run = (_cmd, args) => {
+    calls.push(args.join(" "))
+    if (args[0] === "repo")
+      return { ok: true, out: '{"owner":{"login":"RickVu"},"name":"opencv"}' }
+    if (args[0] === "api" && args[1] === "repos/RickVu/opencv")
+      return { ok: true, out: "User\n" }
+    if (args[1]?.startsWith("repos/RickVu/opencv/collaborators"))
+      return { ok: true, out: "RICKVU\nAdmin-One\nadmin-one\nAdmin-Two\n" }
+    return { ok: false, out: "", err: "unexpected call" }
+  }
+  const gh = ghAdapter(run)
+  assert.deepEqual(gh.approvers(), ["rickvu", "admin-one", "admin-two"])
+  assert.deepEqual(gh.approvers(), ["rickvu", "admin-one", "admin-two"])
+  assert.equal(calls.filter((args) => args.startsWith("repo view")).length, 1)
+  assert.ok(calls.some((args) => args.includes("--paginate")))
+})
+
+test("organization owner alone is not an approver; empty admins stay empty", () => {
+  let result = ""
+  const run = (_cmd, args) => {
+    if (args[0] === "repo")
+      return { ok: true, out: '{"owner":{"login":"Org"},"name":"repo"}' }
+    if (args[1] === "repos/Org/repo") return { ok: true, out: "Organization\n" }
+    if (args[1]?.startsWith("repos/Org/repo/collaborators"))
+      return { ok: true, out: result }
+    return { ok: false, out: "", err: "unexpected call" }
+  }
+  const gh = ghAdapter(run)
+  assert.deepEqual(gh.approvers(), [])
+  result = "Admin\n"
+  assert.deepEqual(gh.approvers(), ["admin"])
+})
+
+test("approvers propagate runner errors as plain Errors and explain missing access", () => {
+  const adapter = (failure) =>
+    ghAdapter((_cmd, args) => {
+      if (args[0] === "repo")
+        return { ok: true, out: '{"owner":{"login":"Org"},"name":"repo"}' }
+      if (args[1] === "repos/Org/repo")
+        return { ok: true, out: "Organization\n" }
+      if (args[1]?.startsWith("repos/Org/repo/collaborators")) return failure
+      return { ok: false, out: "", err: "unexpected call" }
+    })
+  assert.throws(
+    () => adapter({ ok: false, out: "", err: "offline" }).approvers(),
+    (error) => error.constructor === Error && /offline/.test(error.message)
+  )
+  assert.throws(
+    () => adapter({ ok: false, out: "", err: "HTTP 403" }).approvers(),
+    /needs push access to the project/
+  )
+})
 
 test("a live claim older than 100 later comments is still the holder", () => {
   const all = [

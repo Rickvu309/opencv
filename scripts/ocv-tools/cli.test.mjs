@@ -5,7 +5,7 @@ import { approvalValid, nextStep } from "./report.mjs"
 import { ctxFor, fakePorts, issue, pr } from "./ports/fake.mjs"
 
 function run(over = {}, extra = {}) {
-  const ports = fakePorts(over)
+  const ports = fakePorts({ ...over, ...extra })
   return { ports, ctx: ctxFor(ports, extra) }
 }
 
@@ -103,7 +103,7 @@ test("file for a high-risk issue says it needs the owner", () => {
   ]
   const { text } = runCli(args, ctx)
   assert.match(text, /label risk:high|Label: risk:high/)
-  assert.match(text, /Next: Ask the owner to comment \/approve/)
+  assert.match(text, /Next: Ask a project admin to comment \/approve/)
 })
 
 test("file refuses jargon with exit 2 UNREADABLE and creates nothing", () => {
@@ -178,7 +178,7 @@ test("status of a high-risk issue without approval says to ask the owner", () =>
   assert.equal(code, 0)
   assert.match(text, /Risk: high/)
   assert.match(text, /Approval: NOT approved/)
-  assert.match(text, /Next: Ask the owner to comment \/approve/)
+  assert.match(text, /Next: Ask a project admin to comment \/approve/)
 })
 
 test("status sees an owner /approve after the last edit", () => {
@@ -208,8 +208,46 @@ test("status sees an owner /approve after the last edit", () => {
       ],
     }).ctx
   )
-  assert.match(text, /Approval: owner approved/)
+  assert.match(text, /Approval: admin approved/)
   assert.match(text, /Next: scripts\/ocv-tools\.mjs take 90/)
+})
+
+test("organization login approval counts only when listed as an admin collaborator", () => {
+  const base = {
+    owner: "OrgLogin",
+    ownerType: "Organization",
+    issues: [
+      issue(90, {
+        labels: ["risk:high"],
+        createdAt: "2026-10-29T10:00:00Z",
+        lastEditedAt: "2026-10-29T11:00:00Z",
+        comments: [
+          {
+            author: { login: "OrgLogin" },
+            body: "/approve",
+            createdAt: "2026-10-29T12:00:00Z",
+          },
+        ],
+      }),
+    ],
+  }
+  const refused = runCli(["status", "90"], run(base).ctx)
+  assert.match(refused.text, /NOT approved/)
+  const accepted = runCli(
+    ["status", "90"],
+    run({ ...base, admins: ["OrgLogin"] }).ctx
+  )
+  assert.match(accepted.text, /approved after the last edit/)
+})
+
+test("status reports an API error when the admin collaborator list cannot be read", () => {
+  const { ctx } = run(
+    { issues: [issue(90, { labels: ["risk:high"] })] },
+    { approversError: "HTTP 403" }
+  )
+  const result = runCli(["status", "90"], ctx)
+  assert.equal(result.code, 1)
+  assert.match(result.text, /HTTP 403/)
 })
 
 test("status shows branch, worktree and an open draft PR", () => {
@@ -279,7 +317,7 @@ test("nextStep covers merged, branch-only and nothing started", () => {
   )
 })
 
-test("approvalValid needs the owner and a comment after the edit", () => {
+test("approvalValid accepts only an approver after the issue's last edit", () => {
   const owner = "quanvu309"
   const comment = (login, createdAt) => ({
     author: { login },
@@ -287,7 +325,7 @@ test("approvalValid needs the owner and a comment after the edit", () => {
     createdAt,
   })
   const base = {
-    owner,
+    approvers: [owner],
     lastEditedAt: "2026-10-29T10:00:00Z",
     createdAt: "2026-10-28T10:00:00Z",
   }
@@ -313,6 +351,30 @@ test("approvalValid needs the owner and a comment after the edit", () => {
     false
   )
   assert.equal(approvalValid({ ...base, comments: [] }), false)
+  assert.equal(
+    approvalValid({
+      ...base,
+      approvers: [],
+      comments: [comment(owner, "2026-10-29T11:00:00Z")],
+    }),
+    false
+  )
+  assert.equal(
+    approvalValid({
+      ...base,
+      approvers: ["admin-person"],
+      comments: [comment("ADMIN-PERSON", "2026-10-29T11:00:00Z")],
+    }),
+    true
+  )
+  assert.equal(
+    approvalValid({
+      ...base,
+      approvers: ["admin-person"],
+      comments: [comment("member", "2026-10-29T11:00:00Z")],
+    }),
+    false
+  )
 })
 
 test("doctor passes on a healthy machine", () => {

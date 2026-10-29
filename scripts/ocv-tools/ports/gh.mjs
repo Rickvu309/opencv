@@ -14,6 +14,7 @@ const PR_LIST = `query($owner:String!,$name:String!,$cursor:String){repository(o
 const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
 
 export function ghAdapter(run) {
+  let repoView
   const gh = (...args) => {
     const r = run("gh", args)
     if (!r.ok)
@@ -24,9 +25,52 @@ export function ghAdapter(run) {
   }
 
   function repo() {
+    if (repoView) return repoView
     const data = JSON.parse(gh("repo", "view", "--json", "owner,name"))
     const owner = data.owner.login
-    return { owner, name: data.name, nameWithOwner: `${owner}/${data.name}` }
+    const nameWithOwner = `${owner}/${data.name}`
+    const ownerType = gh(
+      "api",
+      `repos/${nameWithOwner}`,
+      "--jq",
+      ".owner.type"
+    ).trim()
+    repoView = {
+      owner,
+      ownerType,
+      name: data.name,
+      nameWithOwner,
+    }
+    return repoView
+  }
+
+  function approvers(project = repo()) {
+    let admins
+    try {
+      admins = gh(
+        "api",
+        `repos/${project.nameWithOwner}/collaborators?permission=admin`,
+        "--paginate",
+        "--jq",
+        ".[].login"
+      )
+    } catch (error) {
+      if (
+        /failed:.*(?:HTTP 403|HTTP 404|status(?: code)? 403|status(?: code)? 404)/i.test(
+          error.message
+        )
+      )
+        throw new Error(
+          `${error.message}; this account needs push access to the project; ask an admin to grant it`
+        )
+      throw error
+    }
+    return [
+      ...(project.ownerType === "User" ? [project.owner] : []),
+      ...admins.split(/\r?\n/).filter(Boolean),
+    ]
+      .map((login) => login.toLowerCase())
+      .filter((login, index, all) => all.indexOf(login) === index)
   }
 
   function graphql(query, vars) {
@@ -144,6 +188,7 @@ export function ghAdapter(run) {
     })
     return {
       owner: view.owner,
+      approvers: approvers(view),
       name: view.name,
       nameWithOwner: view.nameWithOwner,
       serverNow,
@@ -277,6 +322,7 @@ export function ghAdapter(run) {
 
   return {
     repo,
+    approvers,
     serverNow() {
       return readServerNow({ run })
     },

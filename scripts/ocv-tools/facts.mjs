@@ -12,12 +12,20 @@ const loginOf = (author) =>
 
 // The newest owner comment starting with /approve must follow the last body edit
 // (or the creation, if the body was never edited).
-export function approvalValid({ comments, owner, lastEditedAt, createdAt }) {
+export function approvalValid({
+  comments,
+  approvers,
+  lastEditedAt,
+  createdAt,
+}) {
   const since = Date.parse(lastEditedAt || createdAt)
   if (Number.isNaN(since)) return false
+  const allowed = new Set(
+    [...(approvers ?? [])].map((login) => String(login).toLowerCase())
+  )
   let newest = null
   for (const c of comments ?? []) {
-    if (loginOf(c.author) !== String(owner ?? "").toLowerCase()) continue
+    if (!allowed.has(loginOf(c.author))) continue
     if (!/^\/approve\b/.test(String(c.body ?? "").trimStart())) continue
     const at = Date.parse(c.createdAt)
     if (Number.isNaN(at)) continue
@@ -35,7 +43,7 @@ export function riskOf(labels, body = "") {
   return parseRisk(body)
 }
 
-function issueFact(record, owner) {
+function issueFact(record, owner, approvers) {
   const labels = record.labels ?? []
   const comments = Object.freeze(
     (record.comments ?? []).map((c) => Object.freeze({ ...c }))
@@ -52,6 +60,7 @@ function issueFact(record, owner) {
     assignees: Object.freeze([...(record.assignees ?? [])]),
     comments,
     owner,
+    approvers: Object.freeze([...approvers]),
     risk: riskOf(labels, record.body ?? ""),
     type:
       TYPES.find(
@@ -59,7 +68,7 @@ function issueFact(record, owner) {
       ) ?? null,
     approved: approvalValid({
       comments,
-      owner,
+      approvers,
       lastEditedAt: record.lastEditedAt,
       createdAt: record.createdAt,
     }),
@@ -72,6 +81,7 @@ function prefixOf(n) {
 
 export function createFacts(ports, cwdOf = () => undefined) {
   const cache = new Map()
+  let approvers
   const cwd = () => (typeof cwdOf === "function" ? cwdOf() : cwdOf)
 
   function invalidate(n, kinds) {
@@ -114,7 +124,8 @@ export function createFacts(ports, cwdOf = () => undefined) {
       throw refusalError(
         evaluate("NOT_AN_ISSUE", { issue: { n, missing: true } })
       )
-    const issue = issueFact(loaded.record, loaded.owner)
+    if (!approvers) approvers = Object.freeze(ports.gh.approvers())
+    const issue = issueFact(loaded.record, loaded.owner, approvers)
     const claim = Object.freeze(holderOf(issue.comments, loaded.serverNow))
     cache.set(key, issue)
     cache.set(`claim:${n}`, claim)

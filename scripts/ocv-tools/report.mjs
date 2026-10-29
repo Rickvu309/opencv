@@ -24,13 +24,13 @@ export const COMMANDS = [
   {
     name: "status",
     usage: "status <n>",
-    when: "See where one issue stands: state, risk, owner approval (needed only for risk:high), branch, worktree, pull request, and the next step.",
+    when: "See where one issue stands: state, risk, admin approval (needed only for risk:high), branch, worktree, pull request, and the next step.",
   },
   {
     name: "take",
     usage:
       "take <n | title> [-d <words>] [--type <t>] [--resume] [--no-install] [--no-assign] [--take]",
-    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch an idle holder already pushed (fast-forwards a local branch that is behind origin, refuses one that diverged), --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
+    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch an idle holder already pushed (fast-forwards a local branch that is behind origin, refuses one that diverged), --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without an admin /approve, or already has a worktree.",
   },
   {
     name: "save",
@@ -50,7 +50,7 @@ export const COMMANDS = [
   {
     name: "approve",
     usage: "approve <n>",
-    when: 'Post /approve on a risk:high issue only after the owner said "approved" in this chat. The comment says this agent relayed it. Refused for any other risk (NOT_HIGH_RISK: no approval is needed), a closed issue (CLOSED), a number that is not an issue (NOT_AN_ISSUE), or when the signed-in account is not the repository owner (NOT_OWNER). A second valid approve does nothing and exits 0.',
+    when: 'Post /approve on a risk:high issue only after an admin said "approved" in this chat. The comment says this agent relayed it. Refused for any other risk (NOT_HIGH_RISK: no approval is needed), a closed issue (CLOSED), a number that is not an issue (NOT_AN_ISSUE), or when the signed-in account does not have admin rights (NOT_OWNER). A second valid approve does nothing and exits 0.',
   },
   {
     name: "board",
@@ -98,7 +98,7 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
       ? `gh pr ready ${pr.number}, then scripts/merge-pr.sh ${pr.number} once ci is green`
       : `scripts/merge-pr.sh ${pr.number} once ci is green`
   if (risk === "high" && !approved)
-    return "Ask the owner to comment /approve on the issue (high risk needs it after the last edit)."
+    return "Ask a project admin to comment /approve on the issue (high risk needs it after the last edit)."
   if (worktree) return `Work in ${worktree}, then scripts/open-pr.sh --draft`
   if (branch)
     return `git worktree add ../opencv.worktrees/${n}-work ${branch} (from the main checkout)`
@@ -128,8 +128,8 @@ export function status(ctx, n) {
   const approval =
     risk === "high"
       ? approved
-        ? "owner approved after the last edit"
-        : "NOT approved (owner must comment /approve after the last edit)"
+        ? "admin approved after the last edit"
+        : "NOT approved (a project admin must comment /approve after the last edit)"
       : "not needed"
   const lines = [
     `#${n} ${issue.title}`,
