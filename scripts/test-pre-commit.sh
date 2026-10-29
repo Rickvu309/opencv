@@ -5,7 +5,8 @@ set -euo pipefail
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-hook=$(cd "$here/.." && pwd)/.githooks/pre-commit
+root=$(cd "$here/.." && pwd)
+hook=$root/.githooks/pre-commit
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -19,7 +20,24 @@ fresh() {
   git -C "$repo" config user.name test
   git -C "$repo" config user.email test@example.com
   git -C "$repo" config core.hooksPath /dev/null
+  ln -s "$root/node_modules" "$repo/node_modules"
+  # The size cases stage files that are not valid prettier input; the format cases call fresh_format instead.
+  echo '*' >"$repo/.prettierignore"
   cd "$repo"
+}
+
+fresh_format() {
+  fresh
+  rm .prettierignore
+  echo '{ "semi": false }' >.prettierrc
+  printf '%s\n' node_modules >.gitignore
+  git add .prettierrc .gitignore
+  git commit -q -m seed
+}
+
+expect_staged() {
+  local name=$1 path=$2 want=$3
+  [[ "$(git show ":$path")" == "$want" ]] || fail "$name" "staged $path is not '$want'"
 }
 
 bytes_of() {
@@ -162,5 +180,86 @@ set -e
 [[ "$code" -ne 0 ]] || fail 'git commit -a with a grown file' 'commit succeeded'
 grep -F -q 'grow.ts: 7500 tokens' "$tmp/err" || fail 'git commit -a with a grown file' 'stderr missing grow.ts'
 printf 'ok: git commit -a with a grown file (exit %s)\n' "$code"
+
+fresh_format
+printf 'const a  =  1;\n' >a.ts
+git add a.ts
+expect_pass 'fully staged unformatted file'
+expect_staged 'fully staged unformatted file' a.ts 'const a = 1'
+[[ "$(cat a.ts)" == 'const a = 1' ]] || fail 'fully staged unformatted file' 'worktree file not formatted'
+
+fresh_format
+printf 'const a = 1\n' >a.ts
+git add a.ts
+expect_pass 'already formatted file'
+expect_staged 'already formatted file' a.ts 'const a = 1'
+
+fresh_format
+printf 'const a  =  1;\n' >a.ts
+git add a.ts
+printf 'const a  =  1;\nconst b  =  2;\n' >a.ts
+before=$(git show :a.ts)
+run
+[[ "$code" -eq 1 ]] || fail 'partly staged unformatted file' "exit $code, want 1"
+grep -F -q "pnpm exec prettier --write 'a.ts' && git add 'a.ts'" "$tmp/err" || fail 'partly staged unformatted file' 'stderr missing the fix command'
+[[ "$(git show :a.ts)" == "$before" ]] || fail 'partly staged unformatted file' 'index changed'
+[[ "$(cat a.ts)" == $'const a  =  1;\nconst b  =  2;' ]] || fail 'partly staged unformatted file' 'worktree changed'
+printf 'ok: partly staged unformatted file (exit 1)\n'
+
+fresh_format
+printf 'const a = 1\n' >a.ts
+git add a.ts
+printf 'const a  =  1;\nconst b  =  2;\n' >a.ts
+expect_pass 'partly staged file with formatted staged content'
+[[ "$(cat a.ts)" == $'const a  =  1;\nconst b  =  2;' ]] || fail 'partly staged file with formatted staged content' 'worktree changed'
+
+fresh_format
+printf 'const a = 1\n' >gone.ts
+git add gone.ts
+git commit -q -m add
+git rm -q gone.ts
+printf 'const b  =  2;\n' >b.ts
+git add b.ts
+expect_pass 'staged deletion next to an unformatted file'
+expect_staged 'staged deletion next to an unformatted file' b.ts 'const b = 2'
+
+fresh_format
+printf 'const a = 1\n' >gone.ts
+git add gone.ts
+git commit -q -m add
+rm gone.ts
+git add -u
+expect_pass 'file deleted from the working tree and the index'
+
+fresh_format
+printf 'a\n' >notes.unknown
+git add notes.unknown
+expect_pass 'file type prettier does not handle'
+
+fresh_format
+printf 'const a  =  \n' >bad.ts
+git add bad.ts
+run
+[[ "$code" -eq 0 ]] || fail 'file prettier cannot parse' "exit $code, want 0"
+grep -F -q 'prettier could not format' "$tmp/err" || fail 'file prettier cannot parse' 'stderr missing the warning'
+printf 'ok: file prettier cannot parse (exit 0, warns)\n'
+
+fresh_format
+rm node_modules
+printf 'const a  =  1;\n' >a.ts
+git add a.ts
+run
+[[ "$code" -eq 0 ]] || fail 'prettier missing' "exit $code, want 0"
+grep -F -q 'node_modules/.bin/prettier is missing' "$tmp/err" || fail 'prettier missing' 'stderr missing the warning'
+expect_staged 'prettier missing' a.ts 'const a  =  1;'
+printf 'ok: prettier missing (exit 0, warns)\n'
+
+fresh_format
+git config core.hooksPath "$(dirname "$hook")"
+printf 'const a  =  1;\n' >a.ts
+git add a.ts
+git commit -q -m x
+[[ "$(git show HEAD:a.ts)" == 'const a = 1' ]] || fail 'git commit of an unformatted file' 'commit holds unformatted content'
+printf 'ok: git commit of an unformatted file commits it formatted\n'
 
 echo 'ok: pre-commit hook'

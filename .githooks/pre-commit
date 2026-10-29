@@ -1,10 +1,54 @@
 #!/usr/bin/env bash
-# pre-commit: keep authored files small enough for an agent to read in one pass.
+# pre-commit: format what is committed, then keep authored files small enough for an agent to read in one pass.
+#   - runs prettier --write on a fully staged file (no unstaged change) and stages the result; it never touches
+#     unstaged hunks, so a partly staged file that prettier would change is refused with the command to fix it
+#   - warns and skips when node_modules/prettier is missing; a file prettier cannot parse is left as it is
 #   - rejects a commit when a staged file is over 5000 tokens (tokens = bytes / 4, so 20000 bytes)
 #   - size is the staged blob, not the working-tree file
 #   - skips deletions, submodules, binary files (NUL in the staged blob) and files marked linguist-generated
 #     in .gitattributes, which is the only place that lists machine-written files
 set -euo pipefail
+
+prettier=node_modules/.bin/prettier
+
+format_staged() {
+  local path unstaged_path formatted full=() partial=()
+  declare -A unstaged=()
+  while IFS= read -r -d '' unstaged_path; do unstaged["$unstaged_path"]=1; done < <(git diff --name-only --no-renames -z)
+  while IFS= read -r -d '' path; do
+    if [[ -n "${unstaged["$path"]:-}" ]]; then partial+=("$path"); else full+=("$path"); fi
+  done < <(git diff --cached --name-only --no-renames --diff-filter=ACMR -z)
+
+  if (( ${#full[@]} > 0 )); then
+    # A parse error is for lint to report; a commit is not blocked by it.
+    "$prettier" --write --ignore-unknown --log-level warn -- "${full[@]}" >&2 || echo "pre-commit: prettier could not format every staged file; committing them as they are." >&2
+    git add -- "${full[@]}"
+  fi
+
+  # Judge the staged blob, not the working tree: only the staged content is committed.
+  local unformatted=""
+  for path in ${partial[@]+"${partial[@]}"}; do
+    # The trailing x keeps a final newline that $(...) would drop.
+    if formatted=$(git show ":$path" | "$prettier" --stdin-filepath "$path" 2>/dev/null && printf x) \
+      && [[ "$formatted" != "$(git show ":$path"; printf x)" ]]; then
+      unformatted+="  $path: pnpm exec prettier --write '$path' && git add '$path'"$'\n'
+    fi
+  done
+  if [[ -n "$unformatted" ]]; then
+    {
+      echo "pre-commit: staged file(s) that prettier would change, with unstaged edits too, so the hook leaves them alone."
+      echo "Format and stage each one, then commit again:"
+      printf '%s' "$unformatted"
+    } >&2
+    exit 1
+  fi
+}
+
+if [[ -x "$prettier" ]]; then
+  format_staged
+else
+  echo "pre-commit: node_modules/.bin/prettier is missing (run pnpm install); skipping the format step." >&2
+fi
 
 limit_tokens=5000
 limit_bytes=$((limit_tokens * 4))
