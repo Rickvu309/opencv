@@ -1,12 +1,19 @@
 import { useEffect, useReducer } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { commands, type JobId, type JobStage } from "@workspace/domain"
+import {
+  commands,
+  ERROR_CODES,
+  type JobId,
+  type JobStage,
+} from "@workspace/domain"
 import { useNavigate } from "@tanstack/react-router"
 
 import { Button } from "@workspace/ui/components/button"
 import { toastWithUndo } from "@workspace/ui/components/sonner"
 
 import { authClient } from "@/lib/auth-client.ts"
+import { ApiError } from "@/lib/api-error.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
   activityKey,
   refreshQueries,
@@ -101,6 +108,22 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   }
 
   if (detail.isLoading) return <p role="status">Loading jobs</p>
+  if (
+    detail.error instanceof ApiError &&
+    detail.error.code === ERROR_CODES.NOT_FOUND
+  ) {
+    return (
+      <div>
+        <p>Job not found.</p>
+        <Button
+          type="button"
+          onClick={() => void navigate({ to: SURFACE_PATHS.apply })}
+        >
+          Apply
+        </Button>
+      </div>
+    )
+  }
   if (detail.isError || !job) {
     return (
       <div>
