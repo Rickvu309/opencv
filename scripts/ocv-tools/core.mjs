@@ -28,6 +28,13 @@ export const FIXES = {
   HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: scripts/ocv-tools.mjs status <n>",
   WORKTREE_EXISTS:
     "Work in that worktree, or finish it. Run: scripts/ocv-tools.mjs status <n>",
+  READY_FOR_HUMAN:
+    "Pick another issue: gh issue list --search 'no:assignee -label:ready-for-human'",
+  ASSIGNED: "Pick another issue, or pass --take if the owner agreed.",
+  BRANCH_EXISTS:
+    "Someone is already working on it. Run: scripts/ocv-tools.mjs status <n>",
+  DISK: "Free space: scripts/ocv-tools.mjs cleanup --all --dry-run lists finished worktrees to remove.",
+  NOT_A_REPO: "Run this inside the opencv repository.",
   NOT_A_TASK:
     "Run this from inside a task worktree (../opencv.worktrees/<n>-...), or pass the issue number.",
   NO_WORKTREE: "Nothing to remove. Run: git worktree list",
@@ -64,10 +71,11 @@ export function gh(ctx, ...args) {
 }
 
 // A result is { lines: [...], next } or { lines, fix }. Joined into the text the command prints.
-export function render({ lines, next, fix }) {
+export function render({ lines, next, fix, tail }) {
   const out = [...lines]
   if (next) out.push(`Next: ${next}`)
   if (fix) out.push(`Fix: ${fix}`)
+  if (tail) out.push(tail)
   return out.join("\n")
 }
 
@@ -78,6 +86,7 @@ export function failure(error) {
       text: render({
         lines: [`REFUSED ${error.code}: ${error.message}`],
         fix: FIXES[error.code] ?? FIXES.ERROR,
+        tail: error.tail,
       }),
     }
   return {
@@ -85,6 +94,7 @@ export function failure(error) {
     text: render({
       lines: [`ERROR: ${String(error.message).slice(0, 800)}`],
       fix: FIXES.ERROR,
+      tail: error.tail,
     }),
   }
 }

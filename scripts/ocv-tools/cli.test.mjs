@@ -76,7 +76,7 @@ test("file creates the issue with the risk and type labels", () => {
   const { code, text } = runCli(fileArgs, ctx)
   assert.equal(code, 0)
   assert.match(text, /FILED #77/)
-  assert.match(text, /new-task\.sh feat 77/)
+  assert.match(text, /ocv-tools\.mjs take 77/)
   const create = ctx.calls.find((c) => c.includes("issue create"))
   assert.match(create, /--label risk:low --label feat/)
   assert.match(create, /--title feat: Keep my search/)
@@ -211,7 +211,7 @@ test("status sees an owner /approve after the last edit", () => {
   })
   const { text } = runCli(["status", "90"], fakeCtx(statusRules(issue)))
   assert.match(text, /Approval: owner approved/)
-  assert.match(text, /Next: scripts\/new-task\.sh fix 90/)
+  assert.match(text, /Next: scripts\/ocv-tools\.mjs take 90/)
 })
 
 test("status shows branch, worktree and an open draft PR", () => {
@@ -263,7 +263,7 @@ test("status refuses a pull request number and a closed issue", () => {
 test("nextStep covers merged, branch-only and nothing started", () => {
   assert.match(
     nextStep({ n: 5, pr: { state: "MERGED" } }),
-    /cleanup-worktree\.sh 5/
+    /ocv-tools\.mjs cleanup 5/
   )
   assert.match(
     nextStep({ n: 5, type: "feat", risk: "low", branch: "feat/5-x" }),
@@ -271,7 +271,7 @@ test("nextStep covers merged, branch-only and nothing started", () => {
   )
   assert.match(
     nextStep({ n: 5, type: "feat", risk: "low" }),
-    /new-task\.sh feat 5/
+    /ocv-tools\.mjs take 5/
   )
 })
 

@@ -24,8 +24,9 @@ export const COMMANDS = [
   },
   {
     name: "take",
-    usage: "take <n>",
-    when: "Take an issue: makes its worktree with new-task.sh, records your claim on the issue, prints the path, branch and port. Refused when the issue is closed, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
+    usage:
+      "take <n | title> [-d <words>] [--no-install] [--no-assign] [--take]",
+    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`). -d sets the branch words, --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
   },
   {
     name: "save",
@@ -39,8 +40,8 @@ export const COMMANDS = [
   },
   {
     name: "cleanup",
-    usage: "cleanup [<n>]",
-    when: "After the merge: remove the worktree and branch and list what was removed. Refused while there is unsaved work or the pull request is not merged. Without <n> it uses the current worktree.",
+    usage: "cleanup [<n>] [--all] [--dry-run] [--force]",
+    when: "After the merge: remove the worktree and branch and list what was removed. Refused while there is unsaved work or the pull request is not merged. Without <n> it uses the current worktree; --all handles every finished worktree, --dry-run only lists, --force also removes unsaved work.",
   },
   {
     name: "doctor",
@@ -99,7 +100,7 @@ export function riskOf(labels, body = "") {
 
 // Pure: picks the one next step from what status found.
 export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
-  if (pr?.state === "MERGED") return `scripts/cleanup-worktree.sh ${n}`
+  if (pr?.state === "MERGED") return `scripts/ocv-tools.mjs cleanup ${n}`
   if (pr?.state === "OPEN")
     return pr.isDraft
       ? `scripts/review-pr.sh ${pr.number}, then gh pr ready ${pr.number}`
@@ -109,10 +110,10 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   if (worktree) return `Work in ${worktree}, then scripts/open-pr.sh --draft`
   if (branch)
     return `git worktree add ../opencv.worktrees/${n}-work ${branch} (from the main checkout)`
-  return `scripts/new-task.sh ${type ?? "<type>"} ${n} -d "short description"`
+  return `scripts/ocv-tools.mjs take ${n}`
 }
 
-const QUERY = `query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(last:100){nodes{databaseId author{login} body createdAt}}}}}`
+const QUERY = `query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100){nodes{databaseId author{login} body createdAt}}}}}`
 
 // Reads one issue with its risk, type, owner approval and comments. Refuses NOT_AN_ISSUE.
 export function loadIssue(ctx, n) {

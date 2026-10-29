@@ -3,7 +3,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { EXIT, Refused, SCRATCH, failure, realRun, render } from "./core.mjs"
 import { TEMPLATE_FIELDS } from "./fields.mjs"
-import { release, take } from "./claim.mjs"
+import { release } from "./claim.mjs"
+import { take } from "./take.mjs"
 import { file } from "./issue.mjs"
 import { COMMANDS, doctor, renderHelp, status } from "./report.mjs"
 import { cleanup, save } from "./work.mjs"
@@ -29,6 +30,7 @@ export function parseArgs(argv) {
     "--title",
     "--body-file",
     "-m",
+    "-d",
     "--reason",
     ...TEMPLATE_FIELDS.map((f) => f.flag),
   ])
@@ -59,8 +61,10 @@ function command(ctx, cmd, rest) {
       return file(ctx, { flags })
     case "status":
       return status(ctx, issueNumber(pos[0], "status <n>"))
-    case "take":
-      return take(ctx, issueNumber(pos[0], "take <n>"))
+    case "take": {
+      if (!pos[0]) throw new Error("usage: ocv-tools take <n | title>")
+      return take(ctx, pos[0], flags)
+    }
     case "save":
       return save(ctx, { message: flags["-m"] })
     case "release":
@@ -69,7 +73,10 @@ function command(ctx, cmd, rest) {
         reason: flags["--reason"],
       })
     case "cleanup":
-      return cleanup(ctx, pos[0] ? issueNumber(pos[0], "cleanup [<n>]") : null)
+      return cleanup(ctx, {
+        n: pos[0] ? issueNumber(pos[0], "cleanup [<n> | --all]") : null,
+        flags,
+      })
     case "doctor":
       return doctor(ctx)
     default:

@@ -9,15 +9,16 @@ import {
   holderOf,
   releaseMarker,
 } from "./claim-marker.mjs"
-import { loadIssue, worktreeFor } from "./report.mjs"
+import { loadIssue } from "./report.mjs"
 
 export const nowOf = (ctx) => ctx.now?.() ?? Date.now()
 export const git = (ctx, ...args) => ctx.run("git", args, { cwd: ctx.cwd })
 
-const envAgent = (ctx) => (ctx.env ?? process.env).OCV_TASK_AGENT || null
-const newAgent = () => `agent-${randomBytes(4).toString("hex")}`
+export const envOf = (ctx) => ctx.env ?? process.env
+export const envAgent = (ctx) => envOf(ctx).OCV_TOOLS_AGENT || null
+export const newAgent = () => `agent-${randomBytes(4).toString("hex")}`
 
-// The agent id of this worktree: OCV_TASK_AGENT, else the id file in the worktree's git dir.
+// The agent id of this worktree: OCV_TOOLS_AGENT, else the id file in the worktree's git dir.
 export function agentIdFor(ctx, gitDir) {
   const env = envAgent(ctx)
   if (env) return env
@@ -67,90 +68,6 @@ export function heartbeat(ctx, n, h, agent) {
       `body=${body}`
     )
   else gh(ctx, "issue", "comment", String(n), "--body", body)
-}
-
-const bodyType = (body) =>
-  TYPES.find((t) => new RegExp(`^### Type\\s+${t}\\s*$`, "m").test(body ?? ""))
-
-export function take(ctx, n) {
-  const { issue, risk, type, approved } = loadIssue(ctx, n)
-  if (issue.state === "CLOSED") throw new Refused("CLOSED", `#${n} is closed`)
-  const me = envAgent(ctx) ?? newAgent()
-  const held = holderOf(issue.comments.nodes, nowOf(ctx))
-  if (held.state === "live" && held.agent !== me)
-    throw new Refused(
-      "HELD",
-      `#${n} is held by ${held.agent} (last saved ${held.idleMinutes} min ago; free after ${CLAIM_IDLE_MINUTES})`
-    )
-  if (risk === "high" && !approved)
-    throw new Refused(
-      "NEEDS_APPROVAL",
-      `#${n} is risk:high and the owner has not commented /approve after its last edit`
-    )
-  const existing = worktreeFor(ctx, n)
-  if (existing.worktree)
-    throw new Refused(
-      "WORKTREE_EXISTS",
-      `#${n} already has a worktree: ${existing.worktree} (${existing.branch})`
-    )
-  const kind = type ?? bodyType(issue.body)
-  if (!kind)
-    throw new Refused(
-      "MISSING_FIELDS",
-      `#${n} has no Type (${TYPES.join(", ")})`
-    )
-
-  const root = git(ctx, "rev-parse", "--show-toplevel").out
-  const desc = issue.title
-    .replace(/^[a-z]+(\([^)]*\))?!?:\s*/i, "")
-    .toLowerCase()
-  const made = ctx.run(
-    join(root, "scripts/new-task.sh"),
-    [kind, String(n), "-d", desc],
-    { cwd: root }
-  )
-  if (!made.ok)
-    throw new Error(`new-task.sh failed: ${made.err || made.out}`.slice(0, 800))
-
-  const { worktree, branch } = worktreeFor(ctx, n)
-  if (!worktree)
-    throw new Error(`new-task.sh ran but no worktree for #${n} was found`)
-  const gitDir = ctx.run("git", [
-    "-C",
-    worktree,
-    "rev-parse",
-    "--absolute-git-dir",
-  ]).out
-  if (!envAgent(ctx)) ctx.writeFile(join(gitDir, "ocv-tools-agent"), `${me}\n`)
-  let port = "unknown"
-  try {
-    port = ctx.readFile(join(gitDir, "assigned-port")).trim()
-  } catch {}
-  const at = new Date(nowOf(ctx)).toISOString()
-  try {
-    gh(
-      ctx,
-      "issue",
-      "comment",
-      String(n),
-      "--body",
-      claimBody({ agent: me, at, branch })
-    )
-  } catch (e) {
-    throw new Error(
-      `worktree ${worktree} is ready but the claim could not be recorded: ${e.message}`
-    )
-  }
-  return {
-    lines: [
-      `Took #${n} ${issue.title}${held.state === "idle" ? ` (took over idle claim of ${held.agent})` : ""}`,
-      `Worktree: ${worktree}`,
-      `Branch: ${branch}`,
-      `Port: ${port}`,
-      `Agent: ${me}`,
-    ],
-    next: `cd ${worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes`,
-  }
 }
 
 export function release(ctx, { n: given, reason }) {

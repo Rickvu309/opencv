@@ -1,9 +1,10 @@
 // save and cleanup: keep work safe while holding an issue, and remove the workspace after the merge.
-import { dirname, join } from "node:path"
+import { rmdirSync } from "node:fs"
 import { EXIT, FIXES, Refused, gh } from "./core.mjs"
 import { holderOf } from "./claim-marker.mjs"
 import { agentIdFor, git, heartbeat, nowOf, taskHere } from "./claim.mjs"
-import { loadIssue, worktreeFor } from "./report.mjs"
+import { loadIssue } from "./report.mjs"
+import { locate } from "./worktree.mjs"
 
 const withIssueSuffix = (message, n) =>
   /\(#\d+\)\s*$/.test(message) ? message : `${message} (#${n})`
@@ -79,59 +80,135 @@ export function save(ctx, { message }) {
   }
 }
 
-export function cleanup(ctx, given) {
-  const n = given ?? taskHere(ctx).n
-  const { worktree, branch } = worktreeFor(ctx, n)
-  if (!worktree)
-    throw new Refused("NO_WORKTREE", `#${n} has no local worktree to clean up`)
-  const dirty = ctx.run("git", ["-C", worktree, "status", "--porcelain"]).out
-  if (dirty)
+// Every worktree of the clone that sits under the worktree root, with its branch.
+function listTaskWorktrees(ctx, main, root) {
+  const out = ctx.run("git", [
+    "-C",
+    main,
+    "worktree",
+    "list",
+    "--porcelain",
+  ]).out
+  const found = []
+  let path = null
+  for (const line of `${out}\n`.split("\n")) {
+    if (line.startsWith("worktree ")) path = line.slice(9)
+    if (line.startsWith("branch ") && path?.startsWith(`${root}/`))
+      found.push({ path, branch: line.slice(18) })
+  }
+  return found
+}
+
+// Decides one worktree: { verdict: "remove" } or { verdict: "keep"|"skip", code, why }.
+function judge(ctx, wt, { force, dirtyFirst }) {
+  const merged = () =>
+    JSON.parse(
+      gh(
+        ctx,
+        "pr",
+        "list",
+        "--state",
+        "merged",
+        "--head",
+        wt.branch,
+        "--json",
+        "number"
+      )
+    ).length > 0
+  const dirty = () =>
+    ctx.run("git", ["-C", wt.path, "status", "--porcelain"]).out
+  const checks = dirtyFirst ? ["dirty", "merged"] : ["merged", "dirty"]
+  for (const c of checks) {
+    if (c === "merged" && !merged())
+      return {
+        verdict: "keep",
+        code: "NOT_MERGED",
+        why: `${wt.branch} has no merged pull request`,
+      }
+    if (c === "dirty" && !force) {
+      const d = dirty()
+      if (d)
+        return {
+          verdict: "skip",
+          code: "DIRTY",
+          why: `${wt.path} has unsaved work:\n${d.split("\n").slice(0, 8).join("\n")}`,
+        }
+    }
+  }
+  return { verdict: "remove" }
+}
+
+// Port of scripts/cleanup-worktree.sh: only worktrees under the worktree root, only merged ones,
+// never one with unsaved work unless --force. --all handles every worktree, --dry-run removes none.
+export function cleanup(ctx, { n: given, flags = {} }) {
+  const force = Boolean(flags["--force"])
+  const dry = Boolean(flags["--dry-run"])
+  const { main, root } = locate(ctx)
+  const n = flags["--all"] ? null : (given ?? taskHere(ctx).n)
+  const fetched = ctx.run("git", [
+    "-C",
+    main,
+    "fetch",
+    "--quiet",
+    "--prune",
+    "origin",
+  ])
+  const lines = fetched.ok
+    ? []
+    : [`Warning: could not fetch origin: ${fetched.err}`]
+  const all = listTaskWorktrees(ctx, main, root)
+  const targets = n
+    ? all.filter((w) => new RegExp(`^[a-z]+/${n}-`).test(w.branch))
+    : all
+  if (n && !targets.length)
     throw new Refused(
-      "DIRTY",
-      `${worktree} has unsaved work:\n${dirty.split("\n").slice(0, 8).join("\n")}`
+      "NO_WORKTREE",
+      `#${n} has no local worktree under ${root} to clean up`
     )
-  const prs = JSON.parse(
-    gh(
-      ctx,
-      "pr",
-      "list",
-      "--state",
-      "all",
-      "--head",
-      branch,
-      "--json",
-      "number,state"
-    )
-  )
-  if (!prs.some((p) => p.state === "MERGED"))
-    throw new Refused(
-      "NOT_MERGED",
-      `${branch} has no merged pull request${prs.length ? ` (found #${prs[0].number} ${prs[0].state.toLowerCase()})` : ""}`
-    )
-  const common = git(
-    ctx,
-    "rev-parse",
-    "--path-format=absolute",
-    "--git-common-dir"
-  ).out
-  const main = dirname(common)
-  const r = ctx.run(join(main, "scripts/cleanup-worktree.sh"), [String(n)], {
-    cwd: main,
-  })
-  if (!r.ok)
-    throw new Error(
-      `cleanup-worktree.sh failed: ${r.err || r.out}`.slice(0, 800)
-    )
-  const removed = r.out
-    .split("\n")
-    .filter((l) => /^\s*removed\s/.test(l))
-    .map((l) => l.trim().replace(/^removed\s+/, ""))
-  if (!removed.length)
-    throw new Error(
-      `cleanup-worktree.sh removed nothing:\n${r.out}`.slice(0, 800)
-    )
+
+  const removed = []
+  for (const wt of targets) {
+    const j = judge(ctx, wt, { force, dirtyFirst: Boolean(n) })
+    if (j.verdict !== "remove") {
+      if (n) throw new Refused(j.code, j.why)
+      lines.push(
+        `${j.verdict === "keep" ? "kept" : "skipped"} ${wt.branch}: ${j.why.split("\n")[0]}`
+      )
+      continue
+    }
+    if (dry) {
+      lines.push(`would remove ${wt.path}  (${wt.branch})`)
+      continue
+    }
+    const rm = ctx.run("git", [
+      "-C",
+      main,
+      "worktree",
+      "remove",
+      ...(force ? ["--force"] : []),
+      wt.path,
+    ])
+    if (!rm.ok)
+      throw new Error(`git worktree remove failed: ${rm.err}`.slice(0, 800))
+    ctx.run("git", ["-C", main, "branch", "-D", wt.branch])
+    removed.push(`${wt.path}  (${wt.branch})`)
+  }
+  if (!dry) {
+    ctx.run("git", ["-C", main, "worktree", "prune"])
+    try {
+      rmdirSync(root)
+    } catch {}
+  }
   return {
-    lines: [`Cleaned up #${n}. Removed:`, ...removed.map((x) => `  ${x}`)],
+    lines: [
+      ...lines,
+      removed.length
+        ? "Removed:"
+        : dry
+          ? "Dry run: nothing removed."
+          : "Nothing removed.",
+      ...removed.map((x) => `  ${x}`),
+    ],
     next: "gh issue list",
   }
 }

@@ -123,6 +123,6 @@ export function file(ctx, { flags }) {
     next:
       parseRisk(body) === "high"
         ? "Ask the owner to comment /approve on the issue before anyone takes it."
-        : `scripts/new-task.sh ${type} ${number} -d "short description"`,
+        : `scripts/ocv-tools.mjs take ${number}`,
   }
 }

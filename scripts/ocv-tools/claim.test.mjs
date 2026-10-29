@@ -44,12 +44,12 @@ test("markers round trip and the newest marker decides the holder", () => {
 })
 
 const takeRules = (data, extra = []) => [
-  ...extra.filter(([m]) => m.startsWith("-C ")),
   ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
   ["api graphql", data],
+  ["api user", "me"],
   ["rev-parse --show-toplevel", "/repo"],
   ["rev-parse --absolute-git-dir", "/repo/.git/worktrees/90-keep"],
-  ...extra.filter(([m]) => !m.startsWith("-C ")),
+  ...extra,
 ]
 const afterMade = [
   [
@@ -78,19 +78,16 @@ test("take refuses a pull request number, a closed issue and a live claim by ano
   assert.match(held.text, /\nFix: /)
 })
 
-test("take refuses a worktree that already exists and never runs new-task.sh", () => {
+test("take refuses a worktree that already exists and creates nothing", () => {
   const ctx = fakeCtx(takeRules(issueData(), afterMade))
   assert.match(runCli(["take", "90"], ctx).text, /REFUSED WORKTREE_EXISTS/)
-  assert.ok(!ctx.calls.some((c) => c.includes("new-task.sh")))
+  assert.ok(!ctx.calls.some((c) => c.includes("worktree add")))
 })
 
-test("take: risk:high needs an /approve after the last edit; other risks do not", () => {
+test("take: risk:high needs an /approve after the last edit", () => {
   const high = {
     labels: { nodes: [{ name: "risk:high" }] },
     lastEditedAt: "2026-10-10T00:00:00Z",
-  }
-  const before = {
-    ...high,
     comments: {
       nodes: [
         {
@@ -101,90 +98,19 @@ test("take: risk:high needs an /approve after the last edit; other risks do not"
       ],
     },
   }
-  const r = runCli(["take", "90"], fakeCtx(takeRules(issueData(before))))
+  const r = runCli(["take", "90"], fakeCtx(takeRules(issueData(high))))
   assert.match(r.text, /REFUSED NEEDS_APPROVAL/)
-  const after = {
-    ...high,
-    comments: {
-      nodes: [
-        {
-          author: { login: "owner" },
-          body: "/approve",
-          createdAt: "2026-10-11T00:00:00Z",
-        },
-      ],
-    },
-  }
-  const ok = fakeCtx(
-    takeRules(issueData(after), [
-      ["new-task.sh", "ok"],
-      ["issue comment", ""],
-    ]),
-    {}
-  )
-  assert.match(
-    runCli(["take", "90"], ok).text,
-    /unmocked: git worktree list|no worktree/
-  )
-  assert.ok(ok.calls.some((c) => c.includes("new-task.sh feat 90")))
 })
 
-test("take makes the worktree, records the claim and prints where to work", () => {
-  let made = false
-  const rules = takeRules(
-    issueData({ comments: { nodes: [claim("old", 400)] } }),
-    [
-      ["new-task.sh", () => ((made = true), { ok: true, out: "ok", err: "" })],
-      [
-        "worktree list",
-        () => ({
-          ok: true,
-          err: "",
-          out: made
-            ? "worktree /wt/90-keep-my-search\nbranch refs/heads/feat/90-keep-my-search\n"
-            : "worktree /repo\nbranch refs/heads/main\n",
-        }),
-      ],
-      ["-C /wt/90-keep-my-search rev-parse", "/g/wt"],
-      ["issue comment", ""],
-    ]
-  )
-  const ctx = fakeCtx(rules, { files: { "/g/wt/assigned-port": "4090\n" } })
-  const { code, text } = runCli(["take", "90"], ctx)
-  assert.equal(code, 0, text)
-  assert.match(text, /took over idle claim of old/)
-  assert.match(text, /Worktree: \/wt\/90-keep-my-search/)
-  assert.match(text, /Branch: feat\/90-keep-my-search/)
-  assert.match(text, /Port: 4090/)
-  assert.match(text, /\nNext: /)
-  assert.ok(ctx.calls.some((c) => c.includes("-d keep my search")))
-  const comment = ctx.calls.find((c) => c.includes("issue comment 90"))
+test("take refuses ready-for-human and an issue assigned to someone else unless --take", () => {
+  const human = issueData({ labels: { nodes: [{ name: "ready-for-human" }] } })
   assert.match(
-    comment,
-    /<!-- ocv-tools claim agent=agent-[0-9a-f]+ at=2026-10-29T12:00:00.000Z branch=feat\/90-keep-my-search -->/
+    runCli(["take", "90"], fakeCtx(takeRules(human))).text,
+    /REFUSED READY_FOR_HUMAN/
   )
-  assert.match(ctx.written["/g/wt/ocv-tools-agent"], /^agent-/)
-})
-
-test("OCV_TASK_AGENT is the agent id and no id file is written", () => {
-  let made = false
-  const rules = takeRules(issueData(), [
-    ["new-task.sh", () => ((made = true), { ok: true, out: "", err: "" })],
-    [
-      "worktree list",
-      () => ({
-        ok: true,
-        err: "",
-        out: made ? "worktree /wt/90-k\nbranch refs/heads/feat/90-k\n" : "",
-      }),
-    ],
-    ["-C /wt/90-k rev-parse", "/g/wt"],
-    ["issue comment", ""],
-  ])
-  const ctx = fakeCtx(rules, { env: { OCV_TASK_AGENT: "me" } })
-  const r = runCli(["take", "90"], ctx)
-  assert.match(r.text, /Agent: me/)
-  assert.deepEqual(Object.keys(ctx.written), [])
+  const other = issueData({ assignees: { nodes: [{ login: "someone" }] } })
+  const r = runCli(["take", "90"], fakeCtx(takeRules(other)))
+  assert.match(r.text, /REFUSED ASSIGNED.*someone/)
 })
 
 const releaseRules = (comments) => [
@@ -198,7 +124,7 @@ const releaseRules = (comments) => [
 
 test("release posts a release marker for the holder and refuses anyone else", () => {
   const mine = fakeCtx(releaseRules([claim("me", 10)]), {
-    env: { OCV_TASK_AGENT: "me" },
+    env: { OCV_TOOLS_AGENT: "me" },
   })
   const r = runCli(["release", "--reason", "blocked on a decision"], mine)
   assert.equal(r.code, 0, r.text)
@@ -210,7 +136,7 @@ test("release posts a release marker for the holder and refuses anyone else", ()
     )
   )
   const other = fakeCtx(releaseRules([claim("a1", 10)]), {
-    env: { OCV_TASK_AGENT: "me" },
+    env: { OCV_TOOLS_AGENT: "me" },
   })
   const no = runCli(["release", "--reason", "x"], other)
   assert.equal(no.code, 2)

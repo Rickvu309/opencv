@@ -1,6 +1,13 @@
+import { execFileSync } from "node:child_process"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+
 // Test helper: a fake gh/git runner plus in-memory files. Each rule is [substring, result].
 // The first rule whose substring is in "cmd args" wins; unmatched calls fail loudly.
 export const NOW = Date.parse("2026-10-29T12:00:00Z")
+
+const RESULTS = mkdtempSync(join(tmpdir(), "ocv-tools-results-"))
 
 export function fakeCtx(rules, { files = {}, env = {} } = {}) {
   const calls = []
@@ -8,7 +15,7 @@ export function fakeCtx(rules, { files = {}, env = {} } = {}) {
   return {
     calls,
     written,
-    env,
+    env: { PR_RESULT_DIR: RESULTS, PR_RESULT_REPO: "opencv", ...env },
     now: () => NOW,
     nodeVersion: "v22.1.0",
     readFile: (path) => {
@@ -45,6 +52,7 @@ export function issueData(over = {}) {
     createdAt: "2026-10-01T00:00:00Z",
     lastEditedAt: null,
     labels: { nodes: [{ name: "risk:normal" }] },
+    assignees: { nodes: [] },
     comments: { nodes: [] },
     ...over,
   }
@@ -54,3 +62,31 @@ export function issueData(over = {}) {
 }
 
 export const minutesAgo = (m) => new Date(NOW - m * 60000).toISOString()
+
+// A real clone with a bare origin (main has .githooks/, .env.example, package.json). Only gh is faked.
+export function tempClone() {
+  const root = mkdtempSync(join(tmpdir(), "ocv-tools-clone-"))
+  const sh = (cwd, ...a) => execFileSync("git", a, { cwd, encoding: "utf8" })
+  sh(root, "init", "-q", "--bare", "-b", "main", "origin.git")
+  sh(root, "clone", "-q", "origin.git", "opencv")
+  const work = join(root, "opencv")
+  for (const [k, v] of [
+    ["user.name", "t"],
+    ["user.email", "t@example.com"],
+    ["core.hooksPath", "/dev/null"],
+  ])
+    sh(work, "config", k, v)
+  mkdirSync(join(work, ".githooks"))
+  writeFileSync(join(work, ".githooks", "pre-push"), "#!/bin/sh\n")
+  writeFileSync(join(work, ".env.example"), "A=1\nPORT=3001\n")
+  writeFileSync(join(work, "package.json"), "{}\n")
+  sh(work, "add", "-A")
+  sh(work, "commit", "-q", "-m", "init")
+  sh(work, "push", "-q", "origin", "main")
+  return {
+    root,
+    work,
+    sh,
+    done: () => rmSync(root, { recursive: true, force: true }),
+  }
+}
