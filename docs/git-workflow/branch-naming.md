@@ -16,14 +16,14 @@ Examples: `feat/42-login-page`, `fix/57-cart-total`, `hotfix/88-checkout-500-err
 - Branch from the latest `origin/main`. Never branch from another task branch.
 - One issue = one branch. Need a second branch? Create a sub-issue.
 
-| Type | Use for | Issue form |
-|---|---|---|
-| `feat` | New features, user-visible changes | Feature |
-| `fix` | Bug fixes | Bug |
-| `hotfix` | Urgent production fixes | Bug (relabel `hotfix`) |
-| `refactor` | Code changes with no behavior change | Chore |
-| `chore` | Dependencies, config, tooling | Chore |
-| `docs` | Documentation only | Chore |
+| Type       | Use for                              | Issue form             |
+| ---------- | ------------------------------------ | ---------------------- |
+| `feat`     | New features, user-visible changes   | Feature                |
+| `fix`      | Bug fixes                            | Bug                    |
+| `hotfix`   | Urgent production fixes              | Bug (relabel `hotfix`) |
+| `refactor` | Code changes with no behavior change | Chore                  |
+| `chore`    | Dependencies, config, tooling        | Chore                  |
+| `docs`     | Documentation only                   | Chore                  |
 
 ## Allowed exceptions
 
@@ -43,14 +43,14 @@ Both use:
 ^(dependabot|renovate)/
 ```
 
-| Branch | Result |
-|---|---|
-| `feat/42-login-page` | OK |
-| `feat/login-page` | Fails: no issue number |
-| `feature/42-login` | Fails: unknown type |
-| `feat/42-Login-Page` | Fails: uppercase |
-| `feat/42_login_page` | Fails: underscores |
-| `fix/42` | Fails: no description |
+| Branch               | Result                 |
+| -------------------- | ---------------------- |
+| `feat/42-login-page` | OK                     |
+| `feat/login-page`    | Fails: no issue number |
+| `feature/42-login`   | Fails: unknown type    |
+| `feat/42-Login-Page` | Fails: uppercase       |
+| `feat/42_login_page` | Fails: underscores     |
+| `fix/42`             | Fails: no description  |
 
 More than 5 words is a guideline, not a failure.
 

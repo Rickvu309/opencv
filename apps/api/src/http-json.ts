@@ -22,7 +22,10 @@ export async function readJsonBody(c: Context) {
       ok: false as const,
       response: jsonWithStatus(
         c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Request body must be JSON"),
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Request body must be JSON"
+        ),
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       ),
     }

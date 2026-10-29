@@ -34,7 +34,11 @@ describe("usage windows", () => {
   })
 
   it("aligns a session to the block that contains now", () => {
-    const afternoon = sessionWindow(new Date("2026-10-26T08:00:00.000Z"), zone, 4)
+    const afternoon = sessionWindow(
+      new Date("2026-10-26T08:00:00.000Z"),
+      zone,
+      4
+    )
     assert.equal(afternoon.start.toISOString(), "2026-10-26T08:00:00.000Z")
     assert.equal(afternoon.resetsAt.toISOString(), "2026-10-26T12:00:00.000Z")
 

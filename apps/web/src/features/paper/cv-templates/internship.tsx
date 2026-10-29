@@ -6,7 +6,11 @@ import {
   SectionTitle,
 } from "./cv-parts.tsx"
 import { ExperienceList, EducationList, SkillChips } from "./cv-entries.tsx"
-import { ActivitiesAndAwards, LanguagesBlock, ProjectsBlock } from "./cv-lines.tsx"
+import {
+  ActivitiesAndAwards,
+  LanguagesBlock,
+  ProjectsBlock,
+} from "./cv-lines.tsx"
 
 export function InternshipCv({
   data,

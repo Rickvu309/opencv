@@ -28,6 +28,8 @@
 #   - A global file (root package.json, lockfile, workspace, turbo.json, root configs, .npmrc, check.sh)
 #     or a missing origin/main falls back to the full run.
 #
+# The full run (no --changed) adds a whole-repo prettier --check after `lint`.
+#
 # Called by the pre-push hook and scripts/open-pr.sh (both with --changed), and by scripts/review-pr.sh (full).
 # Exit code: 0 all passed (or a dry run, which runs nothing), 1 something failed.
 set -euo pipefail
@@ -70,6 +72,13 @@ run() {
   local rc=0
   "$@" 2>&1 | tee -a "$check_log" || rc=${PIPESTATUS[0]}
   return "$rc"
+}
+
+# prettier --check on the given files (or "." for the whole repo); a failure counts as the prettier task, cause lint.
+prettier_check() {
+  local what=$1; shift
+  echo "==> prettier --check ($what)"
+  run pnpm exec prettier --check --ignore-unknown -- "$@" || failed+=(prettier)
 }
 
 # Failing test files named in the kept output, as repo-relative paths. Vitest prints "FAIL [|project|] <file> > ..."
@@ -205,8 +214,7 @@ if (( changed_mode )); then
           run pnpm exec turbo run lint --concurrency=$conc "${filters[@]}" || failed+=(lint)
         fi
         if [[ ${#existing[@]} -gt 0 ]]; then
-          echo "==> prettier --check (${#existing[@]} files)"
-          run pnpm exec prettier --check --ignore-unknown -- "${existing[@]}" || failed+=(prettier)
+          prettier_check "${#existing[@]} files" "${existing[@]}"
         fi
         ;;
       typecheck|test)
@@ -289,6 +297,7 @@ else
       echo "==> $pm run $t"
       extra=(); [[ -n "${CHECK_CONCURRENCY:-}" ]] && extra+=("--concurrency=$CHECK_CONCURRENCY")
       if ! run "$pm" run "$t" ${extra[@]+"${extra[@]}"}; then failed+=("$t"); fi
+      if [[ "$t" == lint && "$pm" == pnpm ]]; then prettier_check "whole repo" .; fi
     elif [[ "${STRICT_SCRIPTS:-0}" == "1" ]]; then
       echo "check: package.json has no '$t' script (STRICT_SCRIPTS=1)." >&2
       failed+=("$t")

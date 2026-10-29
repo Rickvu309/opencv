@@ -15,7 +15,8 @@ export function migrationConfig() {
 }
 
 function isPglite(db: object) {
-  const client = (db as { $client?: { constructor?: { name?: string } } }).$client
+  const client = (db as { $client?: { constructor?: { name?: string } } })
+    .$client
   return client?.constructor?.name === "PGlite"
 }
 

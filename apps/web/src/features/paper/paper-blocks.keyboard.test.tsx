@@ -70,7 +70,9 @@ function renderEditor() {
 describe("block editor keyboard", () => {
   it("tabs from Name through the header into the block and through an entry", async () => {
     const user = userEvent.setup()
-    vi.stubGlobal("fetch", () => Promise.resolve(Response.json({ ok: true, data: {} })))
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(Response.json({ ok: true, data: {} }))
+    )
     renderEditor()
     const headerName = screen
       .getByRole("heading", { level: 1 })
@@ -86,7 +88,10 @@ describe("block editor keyboard", () => {
     await user.tab()
     expect(document.activeElement).toHaveAttribute("aria-label", "LinkedIn")
     await user.tab()
-    expect(document.activeElement).toHaveAttribute("data-sortable-block", "entry")
+    expect(document.activeElement).toHaveAttribute(
+      "data-sortable-block",
+      "entry"
+    )
     expect(document.activeElement).toHaveAccessibleName("Role, company")
     fireEvent.keyDown(document.activeElement!, { key: "Enter" })
     await vi.waitFor(() => {
@@ -104,11 +109,16 @@ describe("block editor keyboard", () => {
     await user.tab()
     expect(document.activeElement).toHaveAttribute("aria-label", "Location")
     fireEvent.keyDown(document.activeElement!, { key: "Escape" })
-    expect(document.activeElement).toHaveAttribute("data-sortable-block", "entry")
+    expect(document.activeElement).toHaveAttribute(
+      "data-sortable-block",
+      "entry"
+    )
   })
 
   it("keeps later fields tabbable when focusout still reports the body", async () => {
-    vi.stubGlobal("fetch", () => Promise.resolve(Response.json({ ok: true, data: {} })))
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(Response.json({ ok: true, data: {} }))
+    )
     renderEditor()
     const block = document.querySelector("[data-sortable-block='entry']")
     fireEvent.keyDown(block!, { key: "Enter" })
@@ -137,7 +147,9 @@ describe("block editor keyboard", () => {
   })
 
   it("keeps Engineer, Northwind in Role and a full first bullet", () => {
-    vi.stubGlobal("fetch", () => Promise.resolve(Response.json({ ok: true, data: {} })))
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(Response.json({ ok: true, data: {} }))
+    )
     renderEditor()
     const role =
       screen.queryByRole("textbox", { name: "Role" }) ??
@@ -145,7 +157,10 @@ describe("block editor keyboard", () => {
     role.focus()
     for (const ch of "Engineer, Northwind") {
       const target = document.activeElement
-      if (!(target instanceof HTMLElement) || target.getAttribute("role") !== "textbox") {
+      if (
+        !(target instanceof HTMLElement) ||
+        target.getAttribute("role") !== "textbox"
+      ) {
         break
       }
       target.textContent = `${target.textContent ?? ""}${ch}`
@@ -160,14 +175,17 @@ describe("block editor keyboard", () => {
     bullet.focus()
     for (const ch of "Shipped the billing page") {
       const target = document.activeElement
-      if (!(target instanceof HTMLElement) || target.getAttribute("role") !== "textbox") {
+      if (
+        !(target instanceof HTMLElement) ||
+        target.getAttribute("role") !== "textbox"
+      ) {
         break
       }
       target.textContent = `${target.textContent ?? ""}${ch}`
       fireEvent.input(target)
     }
-    expect(screen.getByRole("textbox", { name: "Bullet point" }).textContent).toBe(
-      "Shipped the billing page"
-    )
+    expect(
+      screen.getByRole("textbox", { name: "Bullet point" }).textContent
+    ).toBe("Shipped the billing page")
   })
 })

@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { plainTextOf, type BlockType, type CvBlock, type CvSectionKind } from "@workspace/domain"
+import {
+  plainTextOf,
+  type BlockType,
+  type CvBlock,
+  type CvSectionKind,
+} from "@workspace/domain"
 
 import { PaperBlockMenu } from "./paper-block-menu.tsx"
 import { PaperSlashMenu, type SlashChoice } from "./paper-slash-menu.tsx"
@@ -45,9 +50,10 @@ export function SortableBlock({
   const focusField = useRef(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const reduced = useReducedMotion()
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: block.id,
-  })
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: block.id,
+    })
   const style = reduced
     ? undefined
     : { transform: CSS.Transform.toString(transform), transition }
@@ -71,7 +77,9 @@ export function SortableBlock({
     if (event.key === "Enter") {
       event.preventDefault()
       if (editing) {
-        event.currentTarget.querySelector<HTMLElement>("[role='textbox']")?.focus()
+        event.currentTarget
+          .querySelector<HTMLElement>("[role='textbox']")
+          ?.focus()
         return
       }
       focusField.current = true

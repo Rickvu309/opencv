@@ -98,7 +98,10 @@ function DividerBlockField() {
   return <hr className="my-1 w-full border-border" />
 }
 
-export const blockFields: Record<BlockType, (props: BlockFieldProps) => ReactNode> = {
+export const blockFields: Record<
+  BlockType,
+  (props: BlockFieldProps) => ReactNode
+> = {
   text: (props) => <TextBlockField {...props} />,
   heading: (props) => <TextBlockField {...props} />,
   "bulleted-list": (props) => <ListBlockField {...props} />,
@@ -109,7 +112,10 @@ export const blockFields: Record<BlockType, (props: BlockFieldProps) => ReactNod
   "skills-group": (props) => <SkillsBlockField {...props} />,
 }
 
-const HEADER: { key: "name" | "email" | "phone" | "city" | "linkedin"; label: string }[] = [
+const HEADER: {
+  key: "name" | "email" | "phone" | "city" | "linkedin"
+  label: string
+}[] = [
   { key: "name", label: "Name" },
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },
@@ -128,7 +134,10 @@ export function PaperBlockHeader({
     city: string
     linkedin: string
   }
-  onChange: (key: "name" | "email" | "phone" | "city" | "linkedin", value: string) => void
+  onChange: (
+    key: "name" | "email" | "phone" | "city" | "linkedin",
+    value: string
+  ) => void
 }) {
   return (
     <div className="flex flex-col gap-1">

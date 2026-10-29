@@ -31,7 +31,10 @@ import { summarize } from "./lib/verdict.mjs"
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const port = process.env.PORT ?? "4399"
 const url = `http://127.0.0.1:${port}/`
-const portOwner = resolve(repo, ".claude/skills/verify-opencv/scripts/port-owner.sh")
+const portOwner = resolve(
+  repo,
+  ".claude/skills/verify-opencv/scripts/port-owner.sh"
+)
 const tier = tierFromEnv()
 const want = gate(KINDS, tier)
 let spec = null
@@ -65,10 +68,15 @@ async function startServer() {
   )
   for (let i = 0; i < 120; i++) {
     if (await answers()) {
-      const owner = spawnSync("bash", [portOwner, port, String(child.pid)], { encoding: "utf8" })
+      const owner = spawnSync("bash", [portOwner, port, String(child.pid)], {
+        encoding: "utf8",
+      })
       if (owner.status === 0) return child
       process.kill(-child.pid, "SIGKILL")
-      throw new Error(owner.stderr.trim() || `port ${port} is in use by a server this run did not start`)
+      throw new Error(
+        owner.stderr.trim() ||
+          `port ${port} is in use by a server this run did not start`
+      )
     }
     await sleep(1000)
   }
