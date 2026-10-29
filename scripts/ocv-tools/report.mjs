@@ -1,10 +1,10 @@
 // help, status and doctor: where things stand, with one next step or one fix per problem.
-import { gh } from "./core.mjs"
+import { holderLine } from "./claim-marker.mjs"
+import { approvalValid, riskOf } from "./facts.mjs"
+import { RISK_LABELS, TYPES } from "./fields.mjs"
 import { EXIT, Refused, exitText } from "./result.mjs"
-import { RISK_LABELS, RISKS, TYPES } from "./fields.mjs"
-import { parseRisk } from "./lint.mjs"
-import { holderLine, holderOf } from "./claim-marker.mjs"
-import { readServerNow } from "./clock.mjs"
+
+export { approvalValid, riskOf }
 
 // The one list of commands. The dispatcher and `help` read it, so a command cannot exist
 // without a line saying when to use it.
@@ -67,36 +67,6 @@ export function renderHelp() {
   ].join("\n")
 }
 
-const loginOf = (author) =>
-  String(
-    typeof author === "string" ? author : (author?.login ?? "")
-  ).toLowerCase()
-
-// The newest owner comment starting with /approve must follow the last body edit
-// (or the creation, if the body was never edited).
-export function approvalValid({ comments, owner, lastEditedAt, createdAt }) {
-  const since = Date.parse(lastEditedAt || createdAt)
-  if (Number.isNaN(since)) return false
-  let newest = null
-  for (const c of comments ?? []) {
-    if (loginOf(c.author) !== String(owner ?? "").toLowerCase()) continue
-    if (!/^\/approve\b/.test(String(c.body ?? "").trimStart())) continue
-    const at = Date.parse(c.createdAt)
-    if (Number.isNaN(at)) continue
-    if (newest === null || at > newest) newest = at
-  }
-  return newest !== null && newest > since
-}
-
-// Approval must never fail open: a conflicting label set counts as high, and a
-// missing label falls back to the Risk answer in the issue body.
-export function riskOf(labels, body = "") {
-  const found = RISKS.filter((r) => labels.includes(`risk:${r}`))
-  if (found.length > 1) return "high"
-  if (found.length === 1) return found[0]
-  return parseRisk(body)
-}
-
 // Pure: picks the one next step from what status found.
 export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   if (pr?.state === "MERGED") return `scripts/ocv-tools.mjs cleanup ${n}`
@@ -112,127 +82,26 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   return `scripts/ocv-tools.mjs take ${n}`
 }
 
-const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
-
-// Stop rather than treat a cut-off comment list as the whole claim history.
-export const COMMENT_PAGE_CAP = 100
-
-function graphqlIssue(ctx, repo, n, cursor) {
-  const args = [
-    "api",
-    "graphql",
-    "-f",
-    `query=${QUERY}`,
-    "-f",
-    `owner=${repo.owner.login}`,
-    "-f",
-    `name=${repo.name}`,
-    "-F",
-    `n=${n}`,
-  ]
-  if (cursor) args.push("-f", `cursor=${cursor}`)
-  return ctx.run("gh", args)
-}
-
-// Reads one issue with its risk, type, owner approval and every comment (paged,
-// so a live claim cannot fall out of a last:100 window). Refuses NOT_AN_ISSUE.
-// A history that still has older pages at the cap, or a cursor that does not
-// advance, is refused instead of being treated as complete.
-// serverNow is the GitHub Date header from this read.
-export function loadIssue(ctx, n) {
-  const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
-  const serverNow = readServerNow(ctx)
-  const pages = []
-  let cursor = null
-  let issue = null
-  let owner = repo.owner.login
-  for (let page = 0; page < COMMENT_PAGE_CAP; page++) {
-    const q = graphqlIssue(ctx, repo, n, cursor)
-    if (!q.ok) {
-      if (issue)
-        throw new Error(
-          `gh api graphql failed: ${q.err || q.out}`.slice(0, 400)
-        )
-      break
-    }
-    const data = JSON.parse(q.out).data.repository
-    issue = data.issue
-    owner = data.owner?.login ?? owner
-    if (!issue) break
-    const conn = issue.comments ?? {}
-    pages.push(conn.nodes ?? [])
-    const info = conn.pageInfo ?? {}
-    if (!info.hasPreviousPage) break
-    const prev = info.startCursor
-    if (!prev || prev === cursor)
-      throw new Refused(
-        "UNKNOWN",
-        `claim history for #${n} stopped before the first comment (the page cursor did not move)`
-      )
-    if (page === COMMENT_PAGE_CAP - 1)
-      throw new Refused(
-        "UNKNOWN",
-        `claim history for #${n} is incomplete: ${COMMENT_PAGE_CAP} pages were read and older comments remain`
-      )
-    cursor = prev
-  }
-  if (!issue) throw new Refused("NOT_AN_ISSUE", `#${n} is not an issue`)
-  issue = { ...issue, comments: { nodes: pages.toReversed().flat() } }
-
-  const labels = issue.labels.nodes.map((l) => l.name)
-  const risk = riskOf(labels, issue.body)
-  const type = TYPES.find(
-    (t) => labels.includes(t) || issue.title.startsWith(`${t}:`)
-  )
-  const approved = approvalValid({
-    comments: issue.comments.nodes,
-    owner,
-    lastEditedAt: issue.lastEditedAt,
-    createdAt: issue.createdAt,
-  })
-  return { issue, labels, risk, type, approved, serverNow }
-}
-
-// The local worktree and branch of an issue's task branch, if any (`type/<n>-...`).
+// The local worktree of an issue's task branch, if any (`type/<n>-...`).
+// Remote-only branches stay in the facts loader so this list is parsed once.
 export function worktreeFor(ctx, n) {
   const prefix = new RegExp(`^(?:${TYPES.join("|")})/${n}-`)
-  const wt = ctx.run("git", ["worktree", "list", "--porcelain"])
-  let path = null
-  for (const line of wt.out.split("\n")) {
-    if (line.startsWith("worktree ")) path = line.slice(9)
-    if (line.startsWith("branch ") && prefix.test(line.slice(18)))
-      return { worktree: path, branch: line.slice(18), prefix }
+  const hit = ctx.ports.git
+    .worktrees(ctx.cwd)
+    .find((w) => prefix.test(w.branch))
+  return {
+    worktree: hit?.path ?? null,
+    branch: hit?.branch ?? null,
+    prefix,
   }
-  return { worktree: null, branch: null, prefix }
 }
 
 export function status(ctx, n) {
-  const { issue, risk, type, approved, serverNow } = loadIssue(ctx, n)
-  const { worktree, prefix, branch: localBranch } = worktreeFor(ctx, n)
-  let branch = localBranch
-  const prs = JSON.parse(
-    gh(
-      ctx,
-      "pr",
-      "list",
-      "--state",
-      "all",
-      "--limit",
-      "200",
-      "--json",
-      "number,state,isDraft,headRefName"
-    )
-  ).filter((p) => prefix.test(p.headRefName))
-  const pr = prs.find((p) => p.state === "OPEN") ?? prs[0] ?? null
-
-  if (!branch) {
-    const remote = ctx.run("git", ["ls-remote", "--heads", "origin"])
-    for (const line of remote.out.split("\n")) {
-      const name = line.split("\t")[1]?.replace("refs/heads/", "")
-      if (name && prefix.test(name)) branch = name
-    }
-  }
-
+  const loaded = ctx.facts.load(Number(n), ["issue", "claim", "local", "pr"])
+  const { issue, claim } = loaded
+  const { worktree, branch } = loaded.local
+  const pr = loaded.pr.current
+  const { risk, type, approved } = issue
   const approval =
     risk === "high"
       ? approved
@@ -245,13 +114,11 @@ export function status(ctx, n) {
     `Risk: ${risk ?? "none (no risk label)"}`,
     `Approval: ${approval}`,
     `Branch: ${branch ?? "none"}${worktree ? ` (worktree ${worktree})` : ""}`,
-    holderLine(holderOf(issue.comments.nodes, serverNow)),
+    holderLine(claim),
     `Pull request: ${pr ? `#${pr.number} ${pr.state.toLowerCase()}${pr.isDraft ? " (draft)" : ""}` : "none"}`,
   ]
-  if (issue.state === "CLOSED" && pr?.state !== "MERGED") {
-    const e = new Refused("CLOSED", `#${n} is closed\n${lines.join("\n")}`)
-    throw e
-  }
+  if (issue.state === "CLOSED" && pr?.state !== "MERGED")
+    throw new Refused("CLOSED", `#${n} is closed\n${lines.join("\n")}`)
   return {
     lines,
     next: nextStep({ n, type, risk, approved, worktree, branch, pr }),
@@ -267,28 +134,15 @@ export function doctor(ctx) {
   }
   const major = Number(String(ctx.nodeVersion).replace(/^v/, "").split(".")[0])
   check(`node ${ctx.nodeVersion}`, major >= 20, "Install node 20 or newer.")
-  check(
-    "gh signed in",
-    ctx.run("gh", ["auth", "status"]).ok,
-    "Run: gh auth login"
-  )
-  const hooks = ctx.run("git", ["config", "core.hooksPath"]).out
+  check("gh signed in", ctx.ports.gh.authed(), "Run: gh auth login")
+  const hooks = ctx.ports.git.config(ctx.cwd, "core.hooksPath")
   check(
     "git hooks path is .githooks",
     hooks === ".githooks",
     "Run: git config core.hooksPath .githooks"
   )
-  const names = ctx.run("gh", [
-    "label",
-    "list",
-    "--json",
-    "name",
-    "--limit",
-    "200",
-  ])
-  const have = new Set(
-    names.ok ? JSON.parse(names.out || "[]").map((l) => l.name) : []
-  )
+  const names = ctx.ports.gh.labels()
+  const have = new Set(names.names)
   for (const label of RISK_LABELS)
     check(
       `label ${label} exists`,

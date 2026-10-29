@@ -1,21 +1,10 @@
 // save and cleanup: keep work safe while holding an issue, and remove the workspace after the merge.
-import { rmdirSync } from "node:fs"
-import { EXIT, FIXES, Refused, gh } from "./core.mjs"
-import {
-  agentIdFor,
-  git,
-  heartbeat,
-  nowOf,
-  readClaim,
-  taskHere,
-} from "./claim.mjs"
+import { EXIT, FIXES, Refused } from "./result.mjs"
+import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
 import { locate } from "./worktree.mjs"
 
 const withIssueSuffix = (message, n) =>
   /\(#\d+\)\s*$/.test(message) ? message : `${message} (#${n})`
-
-const gitRaw = (ctx, ...args) =>
-  ctx.run("git", args, { cwd: ctx.cwd, raw: true })
 
 function holds(h, me) {
   return (
@@ -29,7 +18,8 @@ function holds(h, me) {
 // The diff is raw stdout. Trimming drops a blank context line (a single
 // space) and the hunk no longer applies.
 function savedPatch(ctx, n) {
-  const add = git(ctx, "add", "-A")
+  const git = ctx.ports.git
+  const add = git.add(ctx.cwd)
   if (!add.ok)
     throw new Error(
       `could not save the lost work: git add failed: ${add.err || add.out}`.slice(
@@ -37,10 +27,8 @@ function savedPatch(ctx, n) {
         800
       )
     )
-  const againstMain = gitRaw(ctx, "diff", "--cached", "--binary", "origin/main")
-  const diff = againstMain.ok
-    ? againstMain
-    : gitRaw(ctx, "diff", "--cached", "--binary", "HEAD")
+  const againstMain = git.diffCached(ctx.cwd, "origin/main")
+  const diff = againstMain.ok ? againstMain : git.diffCached(ctx.cwd, "HEAD")
   if (!diff.ok)
     throw new Error(
       `could not save the lost work: git diff failed: ${diff.err || diff.out}`.slice(
@@ -74,7 +62,7 @@ function lostPushed(ctx, t, holder) {
   const lines = [
     `LOST #${t.n}: your push already reached origin/${t.branch}; ${who} now holds #${t.n}.`,
   ]
-  if (git(ctx, "status", "--porcelain").out) {
+  if (ctx.ports.git.status(ctx.cwd).out) {
     const path = savedPatch(ctx, t.n)
     lines.push(`Your uncommitted work is saved as a patch: ${path}`)
   }
@@ -90,19 +78,18 @@ export function save(ctx, { message }) {
   const t = taskHere(ctx)
   if (!message) throw new Error("usage: ocv-tools save -m <message>")
   const me = agentIdFor(ctx, t.gitDir)
+  const git = ctx.ports.git
   const h = readClaim(ctx, t.n).holder
   if (!holds(h, me)) return lost(ctx, t, h)
 
-  const dirty = git(ctx, "status", "--porcelain").out
-  const upstream = git(ctx, "rev-parse", "--verify", `origin/${t.branch}`)
-  const ahead = git(
-    ctx,
-    "rev-list",
-    "--count",
+  const dirty = git.status(ctx.cwd).out
+  const upstream = git.verify(ctx.cwd, `origin/${t.branch}`)
+  const ahead = git.ahead(
+    ctx.cwd,
     `${upstream.ok ? `origin/${t.branch}` : "origin/main"}..HEAD`
   ).out
   if (!dirty && !Number(ahead)) {
-    const still = readClaim(ctx, t.n).holder
+    const still = readClaim(ctx, t.n, true).holder
     if (!holds(still, me)) return lost(ctx, t, still)
     heartbeat(ctx, t.n, still, me)
     return {
@@ -113,9 +100,9 @@ export function save(ctx, { message }) {
     }
   }
   if (dirty) {
-    const add = git(ctx, "add", "-A")
+    const add = git.add(ctx.cwd)
     const commit = add.ok
-      ? git(ctx, "commit", "-m", withIssueSuffix(message, t.n))
+      ? git.commit(ctx.cwd, withIssueSuffix(message, t.n))
       : add
     if (!commit.ok)
       throw new Error(
@@ -123,12 +110,12 @@ export function save(ctx, { message }) {
       )
   }
   // Re-read before the push. A takeover during commit must not publish.
-  const again = readClaim(ctx, t.n).holder
+  const again = readClaim(ctx, t.n, true).holder
   if (!holds(again, me)) return lost(ctx, t, again)
   // Refresh immediately before git push. The pre-push check can take long
   // enough to expire a claim that was fresh at the previous heartbeat.
   heartbeat(ctx, t.n, again, me)
-  const pushed = git(ctx, "push", "-u", "origin", "HEAD")
+  const pushed = git.push(ctx.cwd)
   if (!pushed.ok)
     throw new Error(
       `push failed (the pre-push check may have found a problem; your commit is safe locally): ${pushed.err || pushed.out}`.slice(
@@ -139,55 +126,23 @@ export function save(ctx, { message }) {
   // patch of the claim. A takeover during the hook must not look like success.
   // A comment that arrives after this read can still win. That gap is the
   // residual race.
-  const after = readClaim(ctx, t.n).holder
+  const after = readClaim(ctx, t.n, true).holder
   if (!holds(after, me)) return lostPushed(ctx, t, after)
   heartbeat(ctx, t.n, after, me)
   return {
     lines: [
-      `Saved #${t.n} on ${t.branch} at ${git(ctx, "rev-parse", "--short", "HEAD").out}.`,
+      `Saved #${t.n} on ${t.branch} at ${git.shortHead(ctx.cwd)}.`,
       "Pushed, and the claim is refreshed.",
     ],
     next: "Keep working and save again, or run scripts/open-pr.sh --draft when it is done",
   }
 }
 
-// Every worktree of the clone that sits under the worktree root, with its branch.
-function listTaskWorktrees(ctx, main, root) {
-  const out = ctx.run("git", [
-    "-C",
-    main,
-    "worktree",
-    "list",
-    "--porcelain",
-  ]).out
-  const found = []
-  let path = null
-  for (const line of `${out}\n`.split("\n")) {
-    if (line.startsWith("worktree ")) path = line.slice(9)
-    if (line.startsWith("branch ") && path?.startsWith(`${root}/`))
-      found.push({ path, branch: line.slice(18) })
-  }
-  return found
-}
-
 // Decides one worktree: { verdict: "remove" } or { verdict: "keep"|"skip", code, why }.
 function judge(ctx, wt, { force, dirtyFirst }) {
   const merged = () =>
-    JSON.parse(
-      gh(
-        ctx,
-        "pr",
-        "list",
-        "--state",
-        "merged",
-        "--head",
-        wt.branch,
-        "--json",
-        "number"
-      )
-    ).length > 0
-  const dirty = () =>
-    ctx.run("git", ["-C", wt.path, "status", "--porcelain"]).out
+    ctx.ports.gh.prs({ state: "merged", head: wt.branch }).length > 0
+  const dirty = () => ctx.ports.git.status(wt.path).out
   const checks = dirtyFirst ? ["dirty", "merged"] : ["merged", "dirty"]
   for (const c of checks) {
     if (c === "merged" && !merged())
@@ -216,18 +171,13 @@ export function cleanup(ctx, { n: given, flags = {} }) {
   const dry = Boolean(flags["--dry-run"])
   const { main, root } = locate(ctx)
   const n = flags["--all"] ? null : (given ?? taskHere(ctx).n)
-  const fetched = ctx.run("git", [
-    "-C",
-    main,
-    "fetch",
-    "--quiet",
-    "--prune",
-    "origin",
-  ])
+  const fetched = ctx.ports.git.fetch(main, undefined, { prune: true })
   const lines = fetched.ok
     ? []
     : [`Warning: could not fetch origin: ${fetched.err}`]
-  const all = listTaskWorktrees(ctx, main, root)
+  const all = ctx.ports.git
+    .worktrees(main)
+    .filter((w) => w.path.startsWith(`${root}/`))
   const targets = n
     ? all.filter((w) => new RegExp(`^[a-z]+/${n}-`).test(w.branch))
     : all
@@ -251,24 +201,19 @@ export function cleanup(ctx, { n: given, flags = {} }) {
       lines.push(`would remove ${wt.path}  (${wt.branch})`)
       continue
     }
-    const rm = ctx.run("git", [
-      "-C",
-      main,
-      "worktree",
-      "remove",
-      ...(force ? ["--force"] : []),
-      wt.path,
-    ])
+    const rm = ctx.ports.git.removeWorktree(main, wt.path, force)
     if (!rm.ok)
       throw new Error(`git worktree remove failed: ${rm.err}`.slice(0, 800))
-    ctx.run("git", ["-C", main, "branch", "-D", wt.branch])
+    ctx.ports.git.deleteBranch(main, wt.branch)
     removed.push(`${wt.path}  (${wt.branch})`)
   }
   if (!dry) {
-    ctx.run("git", ["-C", main, "worktree", "prune"])
+    ctx.ports.git.prune(main)
     try {
-      rmdirSync(root)
-    } catch {}
+      ctx.ports.fs.rmdir(root)
+    } catch {
+      // the root stays while another worktree still uses it
+    }
   }
   return {
     lines: [

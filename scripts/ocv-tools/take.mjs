@@ -2,7 +2,7 @@
 // issue, makes the branch and worktree, assigns the issue, records the claim comment and writes
 // the workflow result file (script "new-task").
 import { basename, join } from "node:path"
-import { EXIT, FIXES, Refused, gh } from "./core.mjs"
+import { EXIT, FIXES, Refused } from "./result.mjs"
 import { TYPES } from "./fields.mjs"
 import { CLAIM_IDLE_MINUTES } from "./claim-marker.mjs"
 import {
@@ -78,7 +78,7 @@ export function take(ctx, target, flags = {}) {
 
 function ensureDisk(ctx) {
   const { main, root } = locate(ctx)
-  const problem = diskProblem(envOf(ctx), { main, root })
+  const problem = diskProblem(ctx.ports.fs, envOf(ctx), { main, root })
   if (!problem) return
   const e = new Refused("DISK", problem.text)
   e.cause = problem.cause
@@ -148,10 +148,10 @@ function takeInner(ctx, target, flags, setId) {
       "NEEDS_APPROVAL",
       `#${n} is risk:high and the owner has not commented /approve after its last edit`
     )
-  const login = ctx.run("gh", ["api", "user", "--jq", ".login"]).out
-  const others = (issue.assignees?.nodes ?? [])
-    .map((a) => a.login)
-    .filter((a) => a.toLowerCase() !== login.toLowerCase())
+  const login = ctx.ports.gh.login()
+  const others = (issue.assignees ?? []).filter(
+    (a) => a.toLowerCase() !== login.toLowerCase()
+  )
   if (others.length && !flags["--take"])
     throw new Refused(
       "ASSIGNED",
@@ -179,7 +179,7 @@ function takeInner(ctx, target, flags, setId) {
     resume: Boolean(flags["--resume"]),
     held,
   })
-  const observed = readClaim(ctx, n)
+  const observed = readClaim(ctx, n, true)
   const mid = observed.holder
   if (mid.state === "live" && mid.agent !== me) {
     discardWorktree(ctx, made)
@@ -187,31 +187,18 @@ function takeInner(ctx, target, flags, setId) {
   }
   const at = new Date(observed.serverNow).toISOString()
   try {
-    gh(
-      ctx,
-      "issue",
-      "comment",
-      String(n),
-      "--body",
-      claimBody({ agent: me, at, branch: made.branch })
-    )
+    ctx.ports.gh.comment(n, claimBody({ agent: me, at, branch: made.branch }))
   } catch (e) {
     throw new Error(
       `worktree ${made.worktree} is ready but the claim could not be recorded: ${e.message}`
     )
   }
-  const won = readClaim(ctx, n).holder
+  const won = readClaim(ctx, n, true).holder
   if (!(won.state === "live" && won.agent === me))
     return lostTake(ctx, made, n, won)
   if (!flags["--no-assign"]) {
-    const a = ctx.run("gh", [
-      "issue",
-      "edit",
-      String(n),
-      "--add-assignee",
-      "@me",
-    ])
-    if (!a.ok) made.warnings.push(`could not assign #${n} to you`)
+    if (!ctx.ports.gh.assignMe(n))
+      made.warnings.push(`could not assign #${n} to you`)
   }
   if (!envAgent(ctx))
     ctx.writeFile(join(made.gitDir, "ocv-tools-agent"), `${me}\n`)

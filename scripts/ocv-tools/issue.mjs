@@ -1,6 +1,6 @@
 // `ocv-tools file`: builds the issue from the form fields, lints the plain words and creates it.
 import { readFileSync } from "node:fs"
-import { Refused, gh } from "./core.mjs"
+import { Refused } from "./result.mjs"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import {
   PLAIN_RULE,
@@ -80,19 +80,9 @@ export function file(ctx, { flags }) {
     }
   }
 
-  const open = JSON.parse(
-    gh(
-      ctx,
-      "issue",
-      "list",
-      "--state",
-      "open",
-      "--limit",
-      "200",
-      "--json",
-      "number,title"
-    ) || "[]"
-  ).find((i) => i.title.trim().toLowerCase() === title.trim().toLowerCase())
+  const open = ctx.ports.gh
+    .openIssues()
+    .find((i) => i.title.trim().toLowerCase() === title.trim().toLowerCase())
   if (open)
     return {
       lines: [`ALREADY FILED: #${open.number} has this title and is open.`],
@@ -100,29 +90,20 @@ export function file(ctx, { flags }) {
     }
 
   const bodyPath = ctx.writeScratch(`issue-body-${process.pid}.md`, body)
-  const url = gh(
-    ctx,
-    "issue",
-    "create",
-    "--title",
+  const created = ctx.ports.gh.createIssue({
     title,
-    "--body-file",
     bodyPath,
-    "--label",
-    `risk:${parseRisk(body)}`,
-    "--label",
-    type
-  )
-  const number = Number(url.split("/").pop())
+    labels: [`risk:${parseRisk(body)}`, type],
+  })
   return {
     lines: [
-      `FILED #${number}: ${title}`,
-      url,
+      `FILED #${created.n}: ${title}`,
+      created.url,
       `Label: risk:${parseRisk(body)}. ${grade}`,
     ],
     next:
       parseRisk(body) === "high"
         ? "Ask the owner to comment /approve on the issue before anyone takes it."
-        : `scripts/ocv-tools.mjs take ${number}`,
+        : `scripts/ocv-tools.mjs take ${created.n}`,
   }
 }

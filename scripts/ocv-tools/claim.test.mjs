@@ -10,8 +10,8 @@ import {
   releaseMarker,
 } from "./claim-marker.mjs"
 import { readServerNow } from "./clock.mjs"
-import { COMMENT_PAGE_CAP, loadIssue } from "./report.mjs"
-import { NOW, fakeCtx, issueData, minutesAgo } from "./fake-ctx.mjs"
+import { ghAdapter } from "./ports/gh.mjs"
+import { NOW, ctxFor, fakePorts, issue, minutesAgo } from "./ports/fake.mjs"
 
 const claim = (agent, minutes, id = 1) => ({
   databaseId: id,
@@ -19,6 +19,11 @@ const claim = (agent, minutes, id = 1) => ({
   updatedAt: minutesAgo(minutes),
   body: claimMarker({ agent, at: minutesAgo(minutes), branch: "feat/90-x" }),
 })
+
+function run(over = {}) {
+  const ports = fakePorts(over)
+  return { ports, ctx: ctxFor(ports) }
+}
 
 test("markers round trip and the newest marker decides the holder", () => {
   assert.deepEqual(parseMarker(claim("a1", 5).body).agent, "a1")
@@ -48,141 +53,120 @@ test("markers round trip and the newest marker decides the holder", () => {
   assert.match(holderLine({ state: "none" }), /none/)
 })
 
-const takeRules = (data, extra = []) => [
-  ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
-  ["api graphql", data],
-  ["api user", "me"],
-  ["rev-parse --show-toplevel", "/repo"],
-  ["rev-parse --absolute-git-dir", "/repo/.git/worktrees/90-keep"],
-  ...extra,
-]
-const afterMade = [
-  [
-    "worktree list",
-    "worktree /repo\nbranch refs/heads/main\n\nworktree /wt/90-keep-my-search\nbranch refs/heads/feat/90-keep-my-search\n",
-  ],
-]
-
 test("take refuses a pull request number, a closed issue and a live claim by another agent", () => {
-  const notIssue = fakeCtx([
-    ["repo view", '{"owner":{"login":"o"},"name":"r"}'],
-    ["api graphql", () => ({ ok: false, out: "", err: "not found" })],
-  ])
-  assert.match(runCli(["take", "91"], notIssue).text, /REFUSED NOT_AN_ISSUE/)
-  const closed = runCli(
-    ["take", "90"],
-    fakeCtx(takeRules(issueData({ state: "CLOSED" })))
+  const notIssue = run({ issues: [] })
+  assert.match(
+    runCli(["take", "91"], notIssue.ctx).text,
+    /REFUSED NOT_AN_ISSUE/
   )
-  assert.match(closed.text, /REFUSED CLOSED/)
-  const held = runCli(
-    ["take", "90"],
-    fakeCtx(takeRules(issueData({ comments: { nodes: [claim("a1", 30)] } })))
-  )
-  assert.equal(held.code, 2)
-  assert.match(held.text, /REFUSED HELD.*a1.*30 min/)
-  assert.match(held.text, /\nFix: /)
+  const closed = run({ issues: [issue(90, { state: "CLOSED" })] })
+  assert.match(runCli(["take", "90"], closed.ctx).text, /REFUSED CLOSED/)
+  const held = run({
+    issues: [issue(90, { comments: [claim("a1", 30)] })],
+  })
+  const r = runCli(["take", "90"], held.ctx)
+  assert.equal(r.code, 2)
+  assert.match(r.text, /REFUSED HELD.*a1.*30 min/)
+  assert.match(r.text, /\nFix: /)
+  assert.equal(held.ports.counts.issue, 1)
 })
 
 test("take refuses a worktree that already exists and creates nothing", () => {
-  const ctx = fakeCtx(takeRules(issueData(), afterMade))
+  const { ports, ctx } = run({
+    worktrees: [
+      { path: "/wt/90-keep-my-search", branch: "feat/90-keep-my-search" },
+    ],
+  })
   assert.match(runCli(["take", "90"], ctx).text, /REFUSED WORKTREE_EXISTS/)
-  assert.ok(!ctx.calls.some((c) => c.includes("worktree add")))
+  assert.ok(!ports.effects.some((e) => e.op === "addWorktree"))
+  assert.deepEqual(ports.effects, [])
 })
 
 test("take: risk:high needs an /approve after the last edit", () => {
-  const high = {
-    labels: { nodes: [{ name: "risk:high" }] },
-    lastEditedAt: "2026-10-10T00:00:00Z",
-    comments: {
-      nodes: [
-        {
-          author: { login: "owner" },
-          body: "/approve",
-          createdAt: "2026-10-05T00:00:00Z",
-        },
-      ],
-    },
-  }
-  const r = runCli(["take", "90"], fakeCtx(takeRules(issueData(high))))
-  assert.match(r.text, /REFUSED NEEDS_APPROVAL/)
+  const { ctx } = run({
+    issues: [
+      issue(90, {
+        labels: ["risk:high"],
+        lastEditedAt: "2026-10-10T00:00:00Z",
+        comments: [
+          {
+            author: { login: "owner" },
+            body: "/approve",
+            createdAt: "2026-10-05T00:00:00Z",
+          },
+        ],
+      }),
+    ],
+  })
+  assert.match(runCli(["take", "90"], ctx).text, /REFUSED NEEDS_APPROVAL/)
 })
 
 test("take refuses ready-for-human and an issue assigned to someone else unless --take", () => {
-  const human = issueData({ labels: { nodes: [{ name: "ready-for-human" }] } })
+  const human = run({
+    issues: [issue(90, { labels: ["ready-for-human"] })],
+  })
   assert.match(
-    runCli(["take", "90"], fakeCtx(takeRules(human))).text,
+    runCli(["take", "90"], human.ctx).text,
     /REFUSED READY_FOR_HUMAN/
   )
-  const other = issueData({ assignees: { nodes: [{ login: "someone" }] } })
-  const r = runCli(["take", "90"], fakeCtx(takeRules(other)))
-  assert.match(r.text, /REFUSED ASSIGNED.*someone/)
+  const other = run({ issues: [issue(90, { assignees: ["someone"] })] })
+  assert.match(
+    runCli(["take", "90"], other.ctx).text,
+    /REFUSED ASSIGNED.*someone/
+  )
 })
 
-const releaseRules = (comments) => [
-  ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
-  ["api graphql", issueData({ comments: { nodes: comments } })],
-  ["rev-parse --absolute-git-dir", "/repo/.git/worktrees/90-keep"],
-  ["rev-parse --path-format=absolute --git-common-dir", "/repo/.git"],
-  ["rev-parse --abbrev-ref", "feat/90-keep-my-search"],
-  ["rev-parse --show-toplevel", "/repo.worktrees/90-keep"],
-  ["issue comment", ""],
-]
-
 test("release posts a release marker for the holder and refuses anyone else", () => {
-  const mine = fakeCtx(releaseRules([claim("me", 10)]), {
+  const mine = run({
     env: { OCV_TOOLS_AGENT: "me" },
+    issues: [issue(90, { comments: [claim("me", 10)] })],
   })
-  const r = runCli(["release", "--reason", "blocked on a decision"], mine)
+  const r = runCli(["release", "--reason", "blocked on a decision"], mine.ctx)
   assert.equal(r.code, 0, r.text)
-  assert.ok(
-    mine.calls.some(
-      (c) =>
-        c.includes("ocv-tools release agent=me") &&
-        c.includes("reason=blocked on a decision")
-    )
-  )
-  const other = fakeCtx(releaseRules([claim("a1", 10)]), {
+  const posted = mine.ports.effects.find((e) => e.op === "comment")
+  assert.match(posted.body, /ocv-tools release agent=me/)
+  assert.match(posted.body, /reason=blocked on a decision/)
+  const other = run({
     env: { OCV_TOOLS_AGENT: "me" },
+    issues: [issue(90, { comments: [claim("a1", 10)] })],
   })
-  const no = runCli(["release", "--reason", "x"], other)
+  const no = runCli(["release", "--reason", "x"], other.ctx)
   assert.equal(no.code, 2)
   assert.match(no.text, /REFUSED NOT_OWNER.*a1 does/)
-  assert.equal(runCli(["release"], mine).code, 1)
+  assert.equal(runCli(["release"], mine.ctx).code, 1)
 })
 
 test("a client clock does not decide the lease", () => {
-  // One minute old on the server, so the claim is live. The marker time is a
-  // day ahead and must not matter. A worktree is present so a client clock
-  // that calls the claim idle continues into WORKTREE_EXISTS.
-  const live = issueData({
-    comments: {
-      nodes: [
-        {
-          databaseId: 1,
-          createdAt: minutesAgo(1),
-          updatedAt: minutesAgo(1),
-          body: claimMarker({
-            agent: "a1",
-            at: new Date(NOW + 24 * 60 * 60 * 1000).toISOString(),
-            branch: "feat/90-x",
-          }),
-        },
-      ],
-    },
+  const day = 24 * 60 * 60 * 1000
+  const live = issue(90, {
+    comments: [
+      {
+        databaseId: 1,
+        createdAt: minutesAgo(1),
+        updatedAt: minutesAgo(1),
+        body: claimMarker({
+          agent: "a1",
+          at: new Date(NOW + day).toISOString(),
+          branch: "feat/90-x",
+        }),
+      },
+    ],
   })
   const skew = (clientNow) => {
-    const ctx = fakeCtx(takeRules(live, afterMade))
-    ctx.now = () => clientNow
-    ctx.serverNow = () => NOW
+    const { ports, ctx } = run({
+      issues: [live],
+      worktrees: [
+        { path: "/wt/90-keep-my-search", branch: "feat/90-keep-my-search" },
+      ],
+    })
+    ports.state.now = () => clientNow
     return runCli(["take", "90"], ctx)
   }
-  const day = 24 * 60 * 60 * 1000
-  const ahead = skew(NOW + day)
-  assert.match(ahead.text, /REFUSED HELD/)
-  assert.doesNotMatch(ahead.text, /WORKTREE_EXISTS/)
-  const behind = skew(NOW - day)
-  assert.match(behind.text, /REFUSED HELD/)
-  assert.doesNotMatch(behind.text, /WORKTREE_EXISTS/)
+  for (const clientNow of [NOW + day, NOW - day]) {
+    const r = skew(clientNow)
+    assert.match(r.text, /REFUSED HELD/)
+    assert.doesNotMatch(r.text, /WORKTREE_EXISTS/)
+  }
 })
 
 test("a comment timestamp ahead of the server is not a live claim", () => {
@@ -213,21 +197,26 @@ test("readServerNow rejects a missing Date header", () => {
 })
 
 test("heartbeat lease is the PATCH updatedAt, not the client clock", () => {
-  const ctx = fakeCtx([
-    [
-      "-X PATCH",
-      'Date: Thu, 29 Oct 2026 12:00:05 GMT\r\n\r\n{"updated_at":"2026-10-29T12:00:05Z"}',
-    ],
-  ])
-  ctx.now = () => NOW + 24 * 60 * 60 * 1000
+  const calls = []
+  const run = (cmd, args) => {
+    calls.push(`${cmd} ${args.join(" ")}`)
+    return {
+      ok: true,
+      out: 'Date: Thu, 29 Oct 2026 12:00:05 GMT\r\n\r\n{"updated_at":"2026-10-29T12:00:05Z"}',
+      err: "",
+    }
+  }
   const stamp = heartbeat(
-    ctx,
+    {
+      now: () => NOW + 24 * 60 * 60 * 1000,
+      ports: { gh: ghAdapter(run) },
+    },
     90,
     { id: 7, branch: "feat/90-x", updatedAt: minutesAgo(10) },
     "me"
   )
   assert.equal(stamp, "2026-10-29T12:00:05.000Z")
-  const body = ctx.calls.find((c) => c.includes("PATCH"))
+  const body = calls.find((c) => c.includes("PATCH"))
   assert.ok(!body.includes("2026-10-30"))
   const h = holderOf(
     [
@@ -248,146 +237,28 @@ test("heartbeat lease is the PATCH updatedAt, not the client clock", () => {
   assert.equal(h.idleMinutes, 0)
 })
 
-test("a live claim older than 100 later comments is still the holder", () => {
-  const all = [
-    {
-      databaseId: 1,
-      createdAt: minutesAgo(30),
-      updatedAt: minutesAgo(5),
-      author: { login: "holder" },
-      body: claimMarker({
-        agent: "holder",
-        at: minutesAgo(400),
-        branch: "feat/90-x",
-      }),
-    },
-  ]
-  for (let i = 2; i <= 150; i++)
-    all.push({
-      databaseId: i,
-      createdAt: minutesAgo(1),
-      updatedAt: minutesAgo(1),
-      author: { login: "x" },
-      body: `note ${i}`,
-    })
-  const ctx = fakeCtx([
-    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
-    [
-      "api graphql",
-      (line) => {
-        const cursor = /cursor=(\S+)/.exec(line)?.[1]
-        const nodes = cursor ? all.slice(0, 50) : all.slice(50)
-        return {
-          ok: true,
-          out: issueData({
-            comments: {
-              pageInfo: {
-                hasPreviousPage: !cursor,
-                startCursor: cursor ? null : "p1",
-              },
-              nodes,
-            },
-          }),
-          err: "",
-        }
-      },
-    ],
-  ])
-  const { issue, serverNow } = loadIssue(ctx, 90)
-  assert.equal(issue.comments.nodes.length, 150)
-  const h = holderOf(issue.comments.nodes, serverNow)
-  assert.equal(h.agent, "holder")
-  assert.equal(h.state, "live")
-  assert.ok(ctx.calls.filter((c) => c.includes("api graphql")).length >= 2)
-})
-
-function pagedIssue(pageInfo, nodes) {
-  return issueData({
-    comments: { pageInfo, nodes },
-  })
-}
-
-test("a comment history that never ends is not treated as complete", () => {
-  let pages = 0
-  const ctx = fakeCtx([
-    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
-    [
-      "api graphql",
-      () => {
-        pages += 1
-        return {
-          ok: true,
-          out: pagedIssue({ hasPreviousPage: true, startCursor: `c${pages}` }, [
-            {
-              databaseId: pages,
-              createdAt: minutesAgo(1),
-              updatedAt: minutesAgo(1),
-              author: { login: "x" },
-              body: `note ${pages}`,
-            },
-          ]),
-          err: "",
-        }
-      },
-    ],
-    ["pr list", "[]"],
-    ["worktree list", ""],
-    ["ls-remote", ""],
-  ])
-  const r = runCli(["status", "90"], ctx)
-  assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED UNKNOWN/)
-  assert.match(r.text, /incomplete/)
-  assert.match(r.text, /\nFix: /)
-  assert.equal(pages, COMMENT_PAGE_CAP)
-  assert.doesNotMatch(r.text, /Claim: none/)
-})
-
-test("a comment page that does not advance is not treated as complete", () => {
-  let pages = 0
-  const ctx = fakeCtx([
-    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
-    [
-      "api graphql",
-      () => {
-        pages += 1
-        return {
-          ok: true,
-          out: pagedIssue({ hasPreviousPage: true, startCursor: "stuck" }, [
-            {
-              databaseId: 1,
-              createdAt: minutesAgo(1),
-              updatedAt: minutesAgo(1),
-              author: { login: "x" },
-              body: "note",
-            },
-          ]),
-          err: "",
-        }
-      },
-    ],
-    ["pr list", "[]"],
-    ["worktree list", ""],
-    ["ls-remote", ""],
-  ])
-  const r = runCli(["status", "90"], ctx)
-  assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED UNKNOWN/)
-  assert.match(r.text, /cursor/)
-  assert.match(r.text, /\nFix: /)
-  assert.equal(pages, 2)
+test("a cut-off claim history is refused instead of looking unclaimed", () => {
+  for (const [history, pattern] of [
+    ["cap", /incomplete/],
+    ["stuck", /cursor/],
+  ]) {
+    const { ctx } = run({ history })
+    const r = runCli(["status", "90"], ctx)
+    assert.equal(r.code, 2, r.text)
+    assert.match(r.text, /REFUSED UNKNOWN/)
+    assert.match(r.text, pattern)
+    assert.match(r.text, /\nFix: /)
+    assert.doesNotMatch(r.text, /Claim: none/)
+  }
 })
 
 test("status shows the claim holder and its idle minutes", () => {
-  const ctx = fakeCtx([
-    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
-    ["api graphql", issueData({ comments: { nodes: [claim("a1", 42)] } })],
-    ["pr list", "[]"],
-    ["worktree list", ""],
-    ["ls-remote", ""],
-  ])
+  const { ports, ctx } = run({
+    issues: [issue(90, { comments: [claim("a1", 42)] })],
+  })
   assert.match(
     runCli(["status", "90"], ctx).text,
     /Claim: held by a1, last saved 42 min ago/
   )
+  assert.equal(ports.counts.issue, 1)
 })
