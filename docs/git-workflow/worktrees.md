@@ -22,8 +22,10 @@ The worktree folder is `../opencv.worktrees/<issue#>-short-description`, next to
 ```bash
 cd ~/code/myapp                                       # any checkout of the repo works
 scripts/ocv-tools.mjs take 42 -d "login page"           # existing issue
-scripts/ocv-tools.mjs take "Cart total rounds wrong" --what ... --done ... --risk low   # files the issue, then starts
+scripts/ocv-tools.mjs take "fix: Cart total rounds wrong" --what ... --done ... --risk low   # files the issue, then starts
 ```
+
+A title with no type prefix needs `--type`: `scripts/ocv-tools.mjs take "Cart total rounds wrong" --type fix --what ... --done ... --risk low`.
 
 The script:
 
@@ -35,7 +37,9 @@ The script:
 6. Turns on the local hooks for the clone: `git config core.hooksPath .githooks` (shared by all worktrees).
 7. Prints the path, branch, and port.
 
-Options: `-d` description, `-b` issue body, `--no-install`, `--no-assign`, `--take`. Run with `--help`.
+Options: `-d` branch words, `--type` (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `--no-install`, `--no-assign`, `--take`, `--resume`. A new title takes the same fields as `file`: `--what`, `--done`, `--risk`, `--could-go-wrong`, `--questions`, `--out-of-scope`, `--details`. `--body-file <path>` replaces those fields. Every command and flag is listed by `scripts/ocv-tools.mjs help`.
+
+`--resume` checks out a branch an idle holder already pushed (`scripts/ocv-tools.mjs take 42 --resume`) and records your claim. Without it, take refuses that branch and prints the resume command.
 
 When the work is ready for a PR, run `scripts/open-pr.sh --draft` inside the worktree.
 

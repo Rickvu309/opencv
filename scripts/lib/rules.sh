@@ -48,7 +48,7 @@ rule_main_clean() {
   stamp=$(date +%Y%m%d-%H%M%S)
   dirty=$(git -C "$main" status --porcelain --untracked-files=no 2>/dev/null | head -n 5 | tr '\n' ' ') || true
   [[ -z "$dirty" ]] ||
-    rule_fail "the main checkout ($main) has edited files, and nobody edits there (AGENTS.md section 2): $dirty" "git -C '$main' diff HEAD > ~/tmp/main-checkout-edits-$stamp.patch && git -C '$main' restore --staged --worktree .   # saves the edits first; apply the patch in a worktree (scripts/new-task.sh)"
+    rule_fail "the main checkout ($main) has edited files, and nobody edits there (AGENTS.md section 2): $dirty" "git -C '$main' diff HEAD > ~/tmp/main-checkout-edits-$stamp.patch && git -C '$main' restore --staged --worktree .   # saves the edits first; apply the patch in a worktree (scripts/ocv-tools.mjs take)"
 }
 
 rule_port() {
