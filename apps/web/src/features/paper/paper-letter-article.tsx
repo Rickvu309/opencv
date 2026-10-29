@@ -53,7 +53,7 @@ export const PaperLetterArticle = memo(function PaperLetterArticle({
       </div>
       <div
         ref={editorRef}
-        contentEditable
+        contentEditable="plaintext-only"
         role="textbox"
         suppressContentEditableWarning
         onInput={onInput}
