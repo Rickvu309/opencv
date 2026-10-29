@@ -100,7 +100,7 @@ describe("UI package kit surface", () => {
       "--foreground: oklch(0.218 0 0);",
       "--ring: oklch(0.607 0.141 276.281);",
       "--chart-1: oklch(0.649 0.186 267.396);",
-      "--chart-2: oklch(0.650 0.130 154.934);",
+      "--chart-2: oklch(0.65 0.13 154.934);",
       "--chart-3: oklch(0.567 0.159 275.206);",
       "--chart-4: oklch(0.758 0.156 81.298);",
       "--chart-5: oklch(0.706 0.003 286.326);",
