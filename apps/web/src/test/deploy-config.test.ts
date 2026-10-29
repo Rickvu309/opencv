@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { execFileSync } from "node:child_process"
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -9,6 +10,15 @@ import railwayConfig, { partial } from "../../../../.railway/railway"
 
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const repoRoot = path.resolve(webRoot, "../..")
+
+const hostedRepo = () => {
+  if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY
+  const url = execFileSync("git", ["config", "--get", "remote.origin.url"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).trim()
+  return url.replace(/^.*github\.com[:/]/, "").replace(/\.git$/, "")
+}
 
 const read = (file: string) => readFileSync(path.join(repoRoot, file), "utf8")
 
@@ -108,7 +118,7 @@ describe(".railway/railway.ts", () => {
         "service.web",
       ])
       expect(api).toMatchObject({
-        source: { type: "github", repo: "quanvu309/opencv", branch: "main" },
+        source: { type: "github", repo: "Rickvu309/opencv", branch: "main" },
         deploy: { preDeployCommand: ["pnpm --filter api run migrate"] },
       })
       expect(api?.variables).toEqual({
@@ -135,7 +145,7 @@ describe(".railway/railway.ts", () => {
       .find((resource) => resource.address === "service.web")
 
     expect(web).toMatchObject({
-      source: { type: "github", repo: "quanvu309/opencv", branch: "main" },
+      source: { type: "github", repo: "Rickvu309/opencv", branch: "main" },
       build: { builder: "DOCKERFILE", dockerfilePath: "apps/web/Dockerfile" },
       deploy: { healthcheckPath: "/health" },
       variables: { VITE_API_URL: { type: "literal", value: apiUrl } },
@@ -164,5 +174,19 @@ describe(".env.example", () => {
       expect(documented).toContain(reference.replace("import.meta.env.", ""))
     }
     expect(used.size).toBeGreaterThan(0)
+  })
+
+  it("builds both services from the repository that hosts this code", () => {
+    const sources = railwayConfig(
+      createRailwayContext({ environment: "production" })
+    )
+      .resources?.flat()
+      .map(
+        (resource) => (resource as { source?: { repo?: string } }).source?.repo
+      )
+
+    expect(sources).toHaveLength(2)
+    for (const repo of sources ?? [])
+      expect(repo?.toLowerCase()).toBe(hostedRepo().toLowerCase())
   })
 })
