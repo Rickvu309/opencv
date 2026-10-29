@@ -1,4 +1,4 @@
-// `ocv-task file`: builds the issue from the form fields, lints the plain words and creates it.
+// `ocv-tools file`: builds the issue from the form fields, lints the plain words and creates it.
 import { readFileSync } from "node:fs"
 import { Refused, gh } from "./core.mjs"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
@@ -96,7 +96,7 @@ export function file(ctx, { flags }) {
   if (open)
     return {
       lines: [`ALREADY FILED: #${open.number} has this title and is open.`],
-      next: `scripts/ocv-task.mjs status ${open.number}`,
+      next: `scripts/ocv-tools.mjs status ${open.number}`,
     }
 
   const bodyPath = ctx.writeScratch(`issue-body-${process.pid}.md`, body)
@@ -123,6 +123,6 @@ export function file(ctx, { flags }) {
     next:
       parseRisk(body) === "high"
         ? "Ask the owner to comment /approve on the issue before anyone takes it."
-        : `scripts/new-task.sh ${type} ${number} -d "short description"`,
+        : `scripts/ocv-tools.mjs take ${number}`,
   }
 }

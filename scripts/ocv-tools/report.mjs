@@ -2,6 +2,8 @@
 import { EXIT, Refused, gh } from "./core.mjs"
 import { RISK_LABELS, RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
+import { holderLine, holderOf } from "./claim-marker.mjs"
+import { readServerNow } from "./clock.mjs"
 
 // The one list of commands. The dispatcher and `help` read it, so a command cannot exist
 // without a line saying when to use it.
@@ -22,6 +24,27 @@ export const COMMANDS = [
     when: "See where one issue stands: state, risk, owner approval (needed only for risk:high), branch, worktree, pull request, and the next step.",
   },
   {
+    name: "take",
+    usage:
+      "take <n | title> [-d <words>] [--type <t>] [--resume] [--no-install] [--no-assign] [--take]",
+    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch an idle holder already pushed (fast-forwards a local branch that is behind origin, refuses one that diverged), --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
+  },
+  {
+    name: "save",
+    usage: "save -m <message>",
+    when: "From inside the task worktree: commit everything, refresh the claim, push through the pre-push check and refresh again. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: uncommitted work goes to a patch under ~/tmp/ocv-tools/lost. A push that already reached origin is reported as lost and the old claim comment is left alone.",
+  },
+  {
+    name: "release",
+    usage: "release --reason <why> [<n>]",
+    when: "Give the issue back so others can take it. Only the holder can.",
+  },
+  {
+    name: "cleanup",
+    usage: "cleanup [<n>] [--all] [--dry-run] [--force]",
+    when: "After the merge: remove the worktree and branch and list what was removed. Refused while there is unsaved work or the pull request is not merged. Without <n> it uses the current worktree; --all handles every finished worktree, --dry-run only lists, --force also removes unsaved work.",
+  },
+  {
     name: "doctor",
     usage: "doctor",
     when: "Check this machine is set up: node, gh sign-in, the hooks path and the risk labels. One Fix line per problem.",
@@ -31,18 +54,19 @@ export const COMMANDS = [
 export function renderHelp() {
   const rows = COMMANDS.map((c) => `  ${c.usage}\n      ${c.when}`).join("\n")
   return [
-    "ocv-task: file, check and track opencv tasks.",
+    "ocv-tools: file, check and track opencv tasks.",
     "",
-    "Usage: scripts/ocv-task.mjs <command> [flags]",
+    "Usage: scripts/ocv-tools.mjs <command> [flags]",
     "",
     rows,
     "",
     "Exit codes: 0 ok, 1 error, 2 refused with a named code (UNKNOWN_COMMAND, UNREADABLE,",
-    "NOT_AN_ISSUE, NEEDS_APPROVAL, CLOSED, MISSING_FIELDS), 3 LOST (reserved: another agent",
-    "took the claim; later slices use it).",
+    "NOT_AN_ISSUE, NEEDS_APPROVAL, CLOSED, MISSING_FIELDS, HELD, WORKTREE_EXISTS, NOT_A_TASK,",
+    "NO_WORKTREE, NOT_OWNER, DIRTY, NOT_MERGED, UNKNOWN_FLAG, BAD_ARGS, BAD_ISSUE, DIVERGED,",
+    "UNKNOWN), 3 LOST (another agent took the claim).",
     "Every result ends with a Next: or Fix: line.",
     "",
-    "Later slices add take, save, release, cleanup, check, finish, shot and board.",
+    "Later slices add check, finish, shot and board.",
   ].join("\n")
 }
 
@@ -78,7 +102,7 @@ export function riskOf(labels, body = "") {
 
 // Pure: picks the one next step from what status found.
 export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
-  if (pr?.state === "MERGED") return `scripts/cleanup-worktree.sh ${n}`
+  if (pr?.state === "MERGED") return `scripts/ocv-tools.mjs cleanup ${n}`
   if (pr?.state === "OPEN")
     return pr.isDraft
       ? `scripts/review-pr.sh ${pr.number}, then gh pr ready ${pr.number}`
@@ -88,14 +112,16 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   if (worktree) return `Work in ${worktree}, then scripts/open-pr.sh --draft`
   if (branch)
     return `git worktree add ../opencv.worktrees/${n}-work ${branch} (from the main checkout)`
-  return `scripts/new-task.sh ${type ?? "<type>"} ${n} -d "short description"`
+  return `scripts/ocv-tools.mjs take ${n}`
 }
 
-const QUERY = `query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(last:100){nodes{author{login} body createdAt}}}}}`
+const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
 
-export function status(ctx, n) {
-  const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
-  const q = ctx.run("gh", [
+// Stop rather than treat a cut-off comment list as the whole claim history.
+export const COMMENT_PAGE_CAP = 100
+
+function graphqlIssue(ctx, repo, n, cursor) {
+  const args = [
     "api",
     "graphql",
     "-f",
@@ -106,15 +132,55 @@ export function status(ctx, n) {
     `name=${repo.name}`,
     "-F",
     `n=${n}`,
-  ])
+  ]
+  if (cursor) args.push("-f", `cursor=${cursor}`)
+  return ctx.run("gh", args)
+}
+
+// Reads one issue with its risk, type, owner approval and every comment (paged,
+// so a live claim cannot fall out of a last:100 window). Refuses NOT_AN_ISSUE.
+// A history that still has older pages at the cap, or a cursor that does not
+// advance, is refused instead of being treated as complete.
+// serverNow is the GitHub Date header from this read.
+export function loadIssue(ctx, n) {
+  const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
+  const serverNow = readServerNow(ctx)
+  const pages = []
+  let cursor = null
   let issue = null
   let owner = repo.owner.login
-  if (q.ok) {
+  for (let page = 0; page < COMMENT_PAGE_CAP; page++) {
+    const q = graphqlIssue(ctx, repo, n, cursor)
+    if (!q.ok) {
+      if (issue)
+        throw new Error(
+          `gh api graphql failed: ${q.err || q.out}`.slice(0, 400)
+        )
+      break
+    }
     const data = JSON.parse(q.out).data.repository
     issue = data.issue
-    owner = data.owner.login
+    owner = data.owner?.login ?? owner
+    if (!issue) break
+    const conn = issue.comments ?? {}
+    pages.push(conn.nodes ?? [])
+    const info = conn.pageInfo ?? {}
+    if (!info.hasPreviousPage) break
+    const prev = info.startCursor
+    if (!prev || prev === cursor)
+      throw new Refused(
+        "UNKNOWN",
+        `claim history for #${n} stopped before the first comment (the page cursor did not move)`
+      )
+    if (page === COMMENT_PAGE_CAP - 1)
+      throw new Refused(
+        "UNKNOWN",
+        `claim history for #${n} is incomplete: ${COMMENT_PAGE_CAP} pages were read and older comments remain`
+      )
+    cursor = prev
   }
   if (!issue) throw new Refused("NOT_AN_ISSUE", `#${n} is not an issue`)
+  issue = { ...issue, comments: { nodes: pages.toReversed().flat() } }
 
   const labels = issue.labels.nodes.map((l) => l.name)
   const risk = riskOf(labels, issue.body)
@@ -127,8 +193,26 @@ export function status(ctx, n) {
     lastEditedAt: issue.lastEditedAt,
     createdAt: issue.createdAt,
   })
+  return { issue, labels, risk, type, approved, serverNow }
+}
 
+// The local worktree and branch of an issue's task branch, if any (`type/<n>-...`).
+export function worktreeFor(ctx, n) {
   const prefix = new RegExp(`^(?:${TYPES.join("|")})/${n}-`)
+  const wt = ctx.run("git", ["worktree", "list", "--porcelain"])
+  let path = null
+  for (const line of wt.out.split("\n")) {
+    if (line.startsWith("worktree ")) path = line.slice(9)
+    if (line.startsWith("branch ") && prefix.test(line.slice(18)))
+      return { worktree: path, branch: line.slice(18), prefix }
+  }
+  return { worktree: null, branch: null, prefix }
+}
+
+export function status(ctx, n) {
+  const { issue, risk, type, approved, serverNow } = loadIssue(ctx, n)
+  const { worktree, prefix, branch: localBranch } = worktreeFor(ctx, n)
+  let branch = localBranch
   const prs = JSON.parse(
     gh(
       ctx,
@@ -144,17 +228,6 @@ export function status(ctx, n) {
   ).filter((p) => prefix.test(p.headRefName))
   const pr = prs.find((p) => p.state === "OPEN") ?? prs[0] ?? null
 
-  const wt = ctx.run("git", ["worktree", "list", "--porcelain"])
-  let worktree = null
-  let branch = null
-  let path = null
-  for (const line of wt.out.split("\n")) {
-    if (line.startsWith("worktree ")) path = line.slice(9)
-    if (line.startsWith("branch ") && prefix.test(line.slice(18))) {
-      branch = line.slice(18)
-      worktree = path
-    }
-  }
   if (!branch) {
     const remote = ctx.run("git", ["ls-remote", "--heads", "origin"])
     for (const line of remote.out.split("\n")) {
@@ -175,6 +248,7 @@ export function status(ctx, n) {
     `Risk: ${risk ?? "none (no risk label)"}`,
     `Approval: ${approval}`,
     `Branch: ${branch ?? "none"}${worktree ? ` (worktree ${worktree})` : ""}`,
+    holderLine(holderOf(issue.comments.nodes, serverNow)),
     `Pull request: ${pr ? `#${pr.number} ${pr.state.toLowerCase()}${pr.isDraft ? " (draft)" : ""}` : "none"}`,
   ]
   if (issue.state === "CLOSED" && pr?.state !== "MERGED") {
@@ -238,6 +312,6 @@ export function doctor(ctx) {
     }
   return {
     lines: [...lines, "", "All checks pass."],
-    next: "scripts/ocv-task.mjs help",
+    next: "scripts/ocv-tools.mjs help",
   }
 }

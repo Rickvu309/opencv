@@ -11,7 +11,7 @@ msg_file=$1
 branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
 
 if [[ "$branch" == "main" ]]; then
-  echo "commit-msg: committing on main is not allowed. Start a task: scripts/new-task.sh <type> <issue#>" >&2
+  echo "commit-msg: committing on main is not allowed. Start a task: scripts/ocv-tools.mjs take <issue#>" >&2
   exit 1
 fi
 

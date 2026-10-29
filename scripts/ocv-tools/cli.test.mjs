@@ -19,6 +19,12 @@ function fakeCtx(rules, files = {}) {
     run(cmd, args) {
       const line = `${cmd} ${args.join(" ")}`
       calls.push(line)
+      if (line.includes("api --include /rate_limit"))
+        return {
+          ok: true,
+          out: "Date: Thu, 29 Oct 2026 12:00:00 GMT\r\n\r\n{}",
+          err: "",
+        }
       for (const [match, result] of rules)
         if (line.includes(match))
           return typeof result === "function"
@@ -40,6 +46,37 @@ const fileArgs = [
   "--risk",
   "low",
 ]
+
+test("take refuses bad arguments before any git or gh call", () => {
+  const check = (args, code, pattern) => {
+    const ctx = fakeCtx([])
+    const r = runCli(["take", ...args], ctx)
+    assert.equal(r.code, 2, `${args.join(" ")} -> ${r.text}`)
+    assert.match(r.text, new RegExp(`REFUSED ${code}`))
+    assert.match(r.text, /\nFix: /)
+    assert.deepEqual(ctx.calls, [])
+    if (pattern) assert.match(r.text, pattern)
+  }
+  check(["90", "--no-asign"], "UNKNOWN_FLAG", /unknown option: --no-asign/)
+  check(
+    ["90", "--desc", "chosen branch words"],
+    "UNKNOWN_FLAG",
+    /unknown option: --desc \(use -d\)/
+  )
+  check(["90", "-b", "body text"], "UNKNOWN_FLAG", /--body-file/)
+  check(["90", "--help"], "UNKNOWN_FLAG", /help/)
+  check(["90", "-d"], "MISSING_FIELDS", /-d needs a value/)
+  check(["90", "--type"], "MISSING_FIELDS", /--type needs a value/)
+  check(["90", "-d", "--no-assign"], "MISSING_FIELDS", /-d needs a value/)
+  check(["90", "--type", "feature"], "MISSING_FIELDS", /type must be one of/)
+  check(["0"], "BAD_ISSUE", /not an issue number/)
+  check(["#0"], "BAD_ISSUE")
+  check(["90.5"], "BAD_ISSUE")
+  check(["#abc"], "BAD_ISSUE")
+  check(["90", "Cart total rounds wrong"], "BAD_ARGS", /not both/)
+  check(["90", "-d", ""], "MISSING_FIELDS", /no usable characters/)
+  check(["90", "-d", "!!!"], "MISSING_FIELDS", /no usable characters/)
+})
 
 test("help lists the jobs and ends with Next", () => {
   const { code, text } = runCli(["help"], fakeCtx([]))
@@ -76,7 +113,7 @@ test("file creates the issue with the risk and type labels", () => {
   const { code, text } = runCli(fileArgs, ctx)
   assert.equal(code, 0)
   assert.match(text, /FILED #77/)
-  assert.match(text, /new-task\.sh feat 77/)
+  assert.match(text, /ocv-tools\.mjs take 77/)
   const create = ctx.calls.find((c) => c.includes("issue create"))
   assert.match(create, /--label risk:low --label feat/)
   assert.match(create, /--title feat: Keep my search/)
@@ -211,7 +248,7 @@ test("status sees an owner /approve after the last edit", () => {
   })
   const { text } = runCli(["status", "90"], fakeCtx(statusRules(issue)))
   assert.match(text, /Approval: owner approved/)
-  assert.match(text, /Next: scripts\/new-task\.sh fix 90/)
+  assert.match(text, /Next: scripts\/ocv-tools\.mjs take 90/)
 })
 
 test("status shows branch, worktree and an open draft PR", () => {
@@ -263,7 +300,7 @@ test("status refuses a pull request number and a closed issue", () => {
 test("nextStep covers merged, branch-only and nothing started", () => {
   assert.match(
     nextStep({ n: 5, pr: { state: "MERGED" } }),
-    /cleanup-worktree\.sh 5/
+    /ocv-tools\.mjs cleanup 5/
   )
   assert.match(
     nextStep({ n: 5, type: "feat", risk: "low", branch: "feat/5-x" }),
@@ -271,7 +308,7 @@ test("nextStep covers merged, branch-only and nothing started", () => {
   )
   assert.match(
     nextStep({ n: 5, type: "feat", risk: "low" }),
-    /new-task\.sh feat 5/
+    /ocv-tools\.mjs take 5/
   )
 })
 

@@ -48,7 +48,7 @@ top=$(git rev-parse --show-toplevel 2>/dev/null) || die "run this inside your ta
 cd "$top"
 branch=$(git symbolic-ref --quiet --short HEAD) || die "detached HEAD; check out your task branch"
 
-[[ "$branch" != "main" ]] || die "you are on main. Start a task: scripts/new-task.sh <type> <issue#>"
+[[ "$branch" != "main" ]] || die "you are on main. Start a task: scripts/ocv-tools.mjs take <issue#>"
 [[ "$branch" =~ $BRANCH_RE ]] || die "branch '$branch' is not type/<issue#>-short-description (see docs/git-workflow/branch-naming.md)"
 type=${BASH_REMATCH[1]}; issue=${BASH_REMATCH[2]}; slug=${BASH_REMATCH[3]}
 result_id "$branch"

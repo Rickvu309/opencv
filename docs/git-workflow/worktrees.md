@@ -21,9 +21,11 @@ The worktree folder is `../opencv.worktrees/<issue#>-short-description`, next to
 
 ```bash
 cd ~/code/myapp                                       # any checkout of the repo works
-scripts/new-task.sh feat 42 -d "login page"           # existing issue
-scripts/new-task.sh fix "Cart total rounds wrong"     # creates the issue, then starts
+scripts/ocv-tools.mjs take 42 -d "login page"           # existing issue
+scripts/ocv-tools.mjs take "fix: Cart total rounds wrong" --what ... --done ... --risk low   # files the issue, then starts
 ```
+
+A title with no type prefix needs `--type`: `scripts/ocv-tools.mjs take "Cart total rounds wrong" --type fix --what ... --done ... --risk low`.
 
 The script:
 
@@ -35,14 +37,16 @@ The script:
 6. Turns on the local hooks for the clone: `git config core.hooksPath .githooks` (shared by all worktrees).
 7. Prints the path, branch, and port.
 
-Options: `-d` description, `-b` issue body, `--no-install`, `--no-assign`, `--take`. Run with `--help`.
+Options: `-d` branch words, `--type` (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `--no-install`, `--no-assign`, `--take`, `--resume`. A new title takes the same fields as `file`: `--what`, `--done`, `--risk`, `--could-go-wrong`, `--questions`, `--out-of-scope`, `--details`. `--body-file <path>` replaces those fields. Every command and flag is listed by `scripts/ocv-tools.mjs help`.
+
+`--resume` checks out a branch an idle holder already pushed (`scripts/ocv-tools.mjs take 42 --resume`) and records your claim. A local branch that is behind that push is fast-forwarded. A local branch that has diverged is refused, with a Fix line, so the pushed commits are not dropped. Without `--resume`, take refuses that branch and prints the resume command.
 
 When the work is ready for a PR, run `scripts/open-pr.sh --draft` inside the worktree.
 
 ## Rules
 
 - One issue, one branch, one worktree. Git refuses to check out a branch that is already checked out in another worktree, which stops two agents from sharing a branch.
-- The main checkout stays on `main`. Use it only to `git fetch`, run `new-task.sh`, and run `cleanup-worktree.sh`.
+- The main checkout stays on `main`. Use it only to `git fetch`, run `ocv-tools.mjs take`, and run `ocv-tools.mjs cleanup`.
 - Each worktree has its own `node_modules`. pnpm shares its package store between worktrees automatically, so it is the cheapest option.
 - Each worktree has its own `.env`. Fill in real values by hand or from your secret store. Never commit it.
 - Each worktree has its own dev server port. Only use the port in your worktree's `.env`.
@@ -61,9 +65,9 @@ The 4000-4999 range avoids common local services (3000 default dev server, 3306 
 
 ```bash
 cd ~/code/myapp
-scripts/cleanup-worktree.sh --dry-run     # see what would go
-scripts/cleanup-worktree.sh               # remove every merged worktree
-scripts/cleanup-worktree.sh 42            # just issue 42
+scripts/ocv-tools.mjs cleanup --all --dry-run   # see what would go
+scripts/ocv-tools.mjs cleanup --all             # remove every merged worktree
+scripts/ocv-tools.mjs cleanup 42              # just issue 42
 ```
 
 It removes a worktree only when its PR is merged (checked with `gh`; without `gh`, when the remote branch was deleted). It skips worktrees with uncommitted changes unless you pass `--force`. It then deletes the local branch and runs `git worktree prune`.

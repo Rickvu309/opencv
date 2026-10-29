@@ -147,7 +147,7 @@ esac
     )
   }
   if (extraEnv.PORT_FILES) {
-    // R76: new-task.sh recorded port 4001; .env says otherwise.
+    // R76: ocv-tools take recorded port 4001; .env says otherwise.
     mkdirSync(join(root, "gitdir"))
     writeFileSync(join(root, "gitdir", "assigned-port"), "4001\n")
     writeFileSync(
@@ -269,7 +269,7 @@ test("a nearly full disk fails with cause disk before the check, push or PR", (t
   assert.equal(result.status, 1)
   assert.equal(result.events, "")
   assert.match(result.stderr, /disk preflight failed: only 1024 MiB free/)
-  assert.match(result.stderr, /scripts\/cleanup-worktree\.sh/)
+  assert.match(result.stderr, /scripts\/ocv-tools\.mjs cleanup/)
   assertResult(
     result,
     "fix-999-push-failure-proof",
@@ -318,7 +318,7 @@ refuses(
 refuses(
   "R76: a changed PORT in .env refuses and restores the assigned port",
   { PORT_FILES: "4999" },
-  /new-task\.sh assigned port 4001/
+  /ocv-tools take assigned port 4001/
 )
 refuses(
   "R103: an issue labeled ready-for-human refuses",

@@ -1,4 +1,4 @@
-// Plain-words lint, modeled on Cam's lintIssue. It runs only in `ocv-task file`: hand-written
+// Plain-words lint, modeled on Cam's lintIssue. It runs only in `ocv-tools file`: hand-written
 // issues are never linted. The owner reads issues, so everything outside the exempt sections
 // must be plain words.
 import { RISKS, TEMPLATE_FIELDS } from "./fields.mjs"

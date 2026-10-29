@@ -4,7 +4,7 @@
 # "/bin/bash: line 2: pwd: write error: Disk quota exceeded"), which the session then dodged with TMPDIR=~/.cache/ad-tmp.
 # It is reproduced with TMPDIR unset and a dd that fails only for files under /tmp. The 1 GiB free case is a filesystem
 # below the limit, not a recorded state. df and dd are stubbed; no disk is filled.
-# The new-task.sh and open-pr.sh runs are in test-new-task.sh and open-pr.test.mjs. Usage: scripts/test-disk-preflight.sh
+# The take and open-pr.sh runs are in take.test.mjs and open-pr.test.mjs. Usage: scripts/test-disk-preflight.sh
 set -euo pipefail
 unset PR_RESULT_ID
 
@@ -52,8 +52,8 @@ echo "ok: enough room starts the script and leaves no probe file"
 guard "PATH=$tmp/stub-df:$PATH"
 [[ $code -eq 1 ]] || fail "low space: exit $code, want 1"
 node "$here/lib/result-check.mjs" "$r" status=fail cause=disk >/dev/null || fail "low space: result"
-grep -q 'only 1024 MiB free' "$r" && grep -q 'du -sh' "$r" && grep -q 'scripts/cleanup-worktree.sh' "$r" || fail "low space: detail or next"
-grep -q 'cleanup-worktree.sh <issue#>' "$tmp/err" || fail "low space: stderr does not name the cleanup command"
+grep -q 'only 1024 MiB free' "$r" && grep -q 'du -sh' "$r" && grep -q 'scripts/ocv-tools.mjs cleanup' "$r" || fail "low space: detail or next"
+grep -q 'ocv-tools.mjs cleanup <issue#>' "$tmp/err" || fail "low space: stderr does not name the cleanup command"
 [[ "$(tail -n1 "$tmp/out")" == "RESULT_JSON: $r" ]] || fail "low space: RESULT_JSON is not the last line"
 echo "ok: 1 GiB free fails with cause disk and the cleanup commands"
 

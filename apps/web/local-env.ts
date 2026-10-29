@@ -4,7 +4,7 @@ import { loadEnv } from "vite"
 import { localDevUrls } from "../../packages/domain/src/local-ports"
 
 /**
- * Reads the repo-root `.env` (the file `scripts/new-task.sh` writes) and, when
+ * Reads the repo-root `.env` (the file `scripts/ocv-tools.mjs take` writes) and, when
  * `VITE_API_URL` is not set anywhere, derives it from `PORT`. An explicit
  * `VITE_API_URL` always wins, so Railway builds are unchanged.
  */

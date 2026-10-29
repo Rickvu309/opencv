@@ -32,7 +32,7 @@ flowchart LR
 - The only PRs without an issue are Dependabot/Renovate dependency updates.
 - If an issue needs more than a few days of work, split it into sub-issues. Each sub-issue gets its own branch and PR.
 - Assign yourself before you start, so nobody duplicates the work.
-- Use the Task form (type, What and why, Done when, Risk), or `scripts/ocv-task.mjs file`.
+- Use the Task form (type, What and why, Done when, Risk), or `scripts/ocv-tools.mjs file`.
 
 ## 3. Branch naming
 
@@ -60,7 +60,7 @@ flowchart LR
 - Each worktree has its own dependency install, its own `.env` (copied from `.env.example`), and its own dev port.
 - Git refuses to check out one branch in two worktrees, so two agents can't work on the same branch.
 - Remove the worktree after the PR merges.
-- `scripts/new-task.sh` and `scripts/cleanup-worktree.sh` do all of this. See `docs/git-workflow/worktrees.md`.
+- `scripts/ocv-tools.mjs take` and `cleanup` do all of this. See `docs/git-workflow/worktrees.md`.
 
 ## 5. Pull requests
 
@@ -120,7 +120,7 @@ If the fix is risky or will take time, first roll back to the previous productio
 | Labels                  | GitHub       | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                                                |
 | `scripts/pr.mjs doctor` | Local        | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                                     |
 
-Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/new-task.sh` does it). Anyone can skip them with `--no-verify`. Don't, because the reviewer re-runs everything.
+Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/ocv-tools.mjs take` does it). Anyone can skip them with `--no-verify`. Don't, because the reviewer re-runs everything.
 
 ### Setup
 
@@ -137,12 +137,12 @@ Hosting is Railway behind Cloudflare (web, api and Postgres); `docs/deploy.md` d
 ## Cheatsheet
 
 ```bash
-# One-time per clone: turn on the local hooks (new-task.sh also does this)
+# One-time per clone: turn on the local hooks (`take` also does this)
 git config core.hooksPath .githooks
 
 # Start a task (creates branch + worktree from origin/main, .env, port, install)
-scripts/new-task.sh feat 42 -d "login page"
-scripts/new-task.sh fix "Cart total rounds wrong"     # creates the issue first
+scripts/ocv-tools.mjs take 42 -d "login page"
+scripts/ocv-tools.mjs take "Cart total rounds wrong" --what ... --done ... --risk low   # files the issue first
 
 # Work
 cd ../opencv.worktrees/42-login-page
@@ -166,8 +166,8 @@ gh pr edit --add-label needs-human-review
 scripts/review-pr.sh 57                       # OK: gh pr merge 57 --squash
 
 # Clean up merged worktrees (run from the main checkout)
-scripts/cleanup-worktree.sh             # all merged
-scripts/cleanup-worktree.sh 42          # just #42
+scripts/ocv-tools.mjs cleanup --all       # all merged
+scripts/ocv-tools.mjs cleanup 42          # just #42
 git worktree list
 
 # Without the script (people who don't use worktrees)

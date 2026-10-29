@@ -59,7 +59,7 @@ The `ci` workflow runs the quick check on the self-hosted runner. The same check
 | `scripts/open-pr.sh` | itself                 | Branch name, `scripts/check.sh --changed`, correct title and `Closes #`                                                                                                                                                              |
 | Review               | `scripts/review-pr.sh` | Branch, title, `Closes #`, issue open, merges cleanly with `main`, full `scripts/check.sh` on that merge in a clean worktree (the one full run per PR), mass deletion and `needs-human-review` (human required), committed env files |
 
-Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/new-task.sh` does it).
+Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/ocv-tools.mjs take` does it).
 
 **Skipping checks:** `SKIP_CHECKS=1 git push` skips lint/typecheck/test in the hook (the main-branch and naming rules still apply). Use it only in a production emergency, and say so in the PR. `--no-verify` skips the hooks entirely; never use it. Either way, the reviewer runs the checks again.
 

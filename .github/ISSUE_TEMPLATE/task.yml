@@ -1,5 +1,5 @@
 name: Task
-description: One unit of work. Becomes one branch, one worktree and one PR. Plain words; `scripts/ocv-task.mjs file` fills this form for you.
+description: One unit of work. Becomes one branch, one worktree and one PR. Plain words; `scripts/ocv-tools.mjs file` fills this form for you.
 title: "type: "
 body:
   - type: dropdown

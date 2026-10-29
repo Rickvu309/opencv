@@ -66,7 +66,7 @@ The files are `design/opencv.pen`, `design/exports`, and `design/cli`. From that
 Every change starts with a GitHub issue, and every issue gets its own branch and worktree. One workflow, `ci.yml`, runs the quick check on this machine's runner; local hooks and `scripts/review-pr.sh` are the other gates.
 
 ```bash
-scripts/new-task.sh <type> <issue#> -d "short description"   # branch + worktree
+scripts/ocv-tools.mjs take <issue#> -d "short description"   # branch + worktree
 scripts/open-pr.sh --draft                          # checks, push, PR
 ```
 
