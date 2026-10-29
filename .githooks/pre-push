@@ -3,10 +3,10 @@
 #   1. Never push to main (or delete it).
 #   2. Branch names must be type/<issue#>-short-description.
 #   3. Run scripts/check.sh --changed: a quick lint/typecheck/test scoped to what changed since origin/main.
-#      The full check runs once per PR, in scripts/review-pr.sh.
+#      ci.yml runs this same quick check. Nothing runs the full check before a merge.
 #
 # Emergency only, discouraged: SKIP_CHECKS=1 git push ...   skips step 3 (rules 1-2 still apply).
-# `git push --no-verify` skips this hook entirely. Never use it; the reviewer will catch it anyway.
+# `git push --no-verify` skips this hook entirely. Never use it. A skipped hook is not caught again at merge.
 set -euo pipefail
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$'
@@ -17,8 +17,8 @@ fail() { echo "pre-push: $*" >&2; exit 1; }
 
 run_checks=0
 shas=()
-# Record each pushed sha as "ok" or "skip" in the clone's git dir (shared by its worktrees). scripts/open-pr.sh and
-# scripts/merge-pr.sh refuse a head with no stamp: it was pushed with the hook-skip flag. "skip" is a SKIP_CHECKS=1 push.
+# Record each pushed sha as "ok" or "skip" in the clone's git dir (shared by its worktrees). scripts/open-pr.sh
+# refuses a head with no stamp: it was pushed with the hook-skip flag. "skip" is a SKIP_CHECKS=1 push.
 stamp() {
   local dir s
   dir="$(git rev-parse --path-format=absolute --git-common-dir)/pre-push-stamps"

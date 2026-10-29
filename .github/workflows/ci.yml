@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   # The quick check on what the PR changed, on this machine's runner (free, no Actions minutes).
-  # The runner runs one job at a time. The full check stays in scripts/review-pr.sh.
+  # The runner runs one job at a time. This job is the quick check; nothing runs the full check before a merge.
   check:
     runs-on: [self-hosted, opencv-local]
     timeout-minutes: 45

@@ -31,12 +31,9 @@ Bot branches are allowed without an issue: `dependabot/...` and `renovate/...`.
 
 ## Enforcement
 
-Two layers enforce the name (the `ci` check does not):
+The local **pre-push hook** (`.githooks/pre-push`) refuses to push any other name, and refuses any push to `main`. It's on once `git config core.hooksPath .githooks` is set (`scripts/ocv-tools.mjs take` does this). The `ci` check does not check the name. Hooks can be skipped with `--no-verify`, and a skipped hook is not caught again at merge.
 
-1. The local **pre-push hook** (`.githooks/pre-push`) refuses to push any other name, and refuses any push to `main`. It's on once `git config core.hooksPath .githooks` is set (`scripts/ocv-tools.mjs take` does this).
-2. The **reviewer** (`scripts/review-pr.sh`) fails any PR whose branch doesn't match. Hooks can be skipped with `--no-verify`; the review can't.
-
-Both use:
+The hook uses:
 
 ```
 ^(feat|fix|hotfix|refactor|chore|docs)/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-result.sh: scripts/lib/result.sh (the shared result.json writer) and the result of scripts/check.sh.
-# The take, open-pr, review-pr and merge-pr results are asserted in their own test scripts.
+# The take, open-pr and merge-pr results are asserted in their own test scripts.
 # Fixtures in scripts/fixtures/ are lines from real failing runs (see the names). Usage: scripts/test-result.sh
 set -euo pipefail
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE CHECK_DRY_RUN CHECK_BASE_REF PR_RESULT_ID
@@ -98,7 +98,7 @@ ok "an unwritable result directory is reported and never changes the exit code"
 repo=$tmp/repo
 mkdir -p "$repo/scripts/lib" "$repo/apps/api" "$repo/apps/web"
 cp "$here/check.sh" "$repo/scripts/check.sh"; cp "$here/lib/result.sh" "$repo/scripts/lib/result.sh"
-for t in commit-msg pre-commit codeowners review-pr merge-pr; do printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-$t.sh"; done
+for t in commit-msg pre-commit merge-pr; do printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-$t.sh"; done
 chmod +x "$repo/scripts/"*.sh
 echo '{"name":"api"}' >"$repo/apps/api/package.json"; echo '{"name":"web"}' >"$repo/apps/web/package.json"
 git -C "$repo" init -q -b feat/9-a-b

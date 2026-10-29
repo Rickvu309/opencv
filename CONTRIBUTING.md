@@ -3,7 +3,7 @@
 This is how we work in the opencv repo. It applies to people and coding agents alike.
 Agents: read `AGENTS.md` first. Details for each topic live in `docs/git-workflow/`.
 
-**CI is one workflow on a free self-hosted runner** (`.github/workflows/ci.yml`; no GitHub-hosted Actions minutes). Rules are enforced by GitHub settings (ruleset, CODEOWNERS), local Git hooks, the scripts in `scripts/`, and the review checklist. Local hooks can be bypassed, so the review is the real gate.
+**CI is one workflow on a free self-hosted runner** (`.github/workflows/ci.yml`; no GitHub-hosted Actions minutes). GitHub requires a pull request and a green `ci` check. Local hooks catch mistakes early. A skipped hook is not caught again at merge.
 
 ## The short version
 
@@ -13,7 +13,7 @@ Every change starts as a GitHub issue, gets its own short-lived branch, comes ba
 flowchart LR
     A["Issue #42"] --> B["Branch feat/42-login-page<br/>(own worktree)"]
     B --> C["Draft PR<br/>feat: add login page (#42)<br/>Closes #42"]
-    C --> D["Local checks + verify-opencv<br/>evidence + review checklist"]
+    C --> D["Green ci check<br/>scripts/check.sh --changed"]
     D --> E["Squash-merge to main"]
     E --> F["Production deploy"]
     E --> G["Issue closes,<br/>branch deleted,<br/>worktree removed"]
@@ -50,7 +50,7 @@ flowchart LR
 - The issue number is always required.
 - Lowercase kebab-case, 3-5 words.
 - Always branch from the latest `origin/main`.
-- The pre-push hook rejects any other name, and the reviewer checks it. See `docs/git-workflow/branch-naming.md`.
+- The pre-push hook rejects any other name. The `ci` check does not. See `docs/git-workflow/branch-naming.md`.
 
 ## 4. Worktrees
 
@@ -67,25 +67,23 @@ flowchart LR
 - Open the PR early. A draft is fine. Use `scripts/open-pr.sh [--draft]`: it validates the branch, runs the quick check (`scripts/check.sh --changed`), pushes, and fills in the title and body.
 - Title: `type: description (#<issue>)`, for example `feat: add login page (#42)`. It becomes the commit message on `main`.
 - Body: the PR template with the `Closes #42` line.
-- Before merge, the PR needs:
-  - passing checks: the quick `scripts/check.sh --changed` on each push, and the full `scripts/check.sh` (lint, typecheck, test) once, by the reviewer
-  - local verification with the verify-opencv skill (`.claude/skills/verify-opencv`), with its evidence attached to the PR
-  - an approval after the review checklist
-- A branch behind `main` needs no rebase: the reviewer tests the merge of `main` and the PR. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
+- Before merge, the PR needs a green `ci` check. That check is the quick `scripts/check.sh --changed`. Nothing runs the full lint, typecheck and test before a merge.
+- Run the verify-opencv skill (`.claude/skills/verify-opencv`) by hand when you want it. Nothing requires its evidence.
+- Rebase when the PR does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
 - See `docs/git-workflow/commit-and-pr-conventions.md`.
 
 ### Who approves
 
-- The **review agent** clears PRs once its checklist passes (`scripts/review-pr.sh`) and an independent review has no open finding. Then the PR merges; no human approval is needed, env and secrets changes included (a committed real `.env` file fails the checklist).
-- A **human** decides only super important changes: a mass deletion (the PR deletes 25% or more of the files on `main` or 80% or more of one app or package; a rename counts as a deletion) or a big decision.
-- **Anyone** can add the `needs-human-review` label to flag a big decision. Then only a human may approve it. The review agent never merges a labeled PR.
-- People can read, comment on, and block (request changes on) any PR.
+- An agent under the owner's account merges its own PR with `scripts/merge-pr.sh` once `ci` is green. One account, so no approval. Env and secrets changes included. Do not commit a real `.env` file.
+- A **human** decides a big decision. Flag it with `needs-human-review`. A mass deletion is not detected; add the label yourself.
+- **Anyone** can add the `needs-human-review` label. An agent never merges a labeled PR.
+- People can read and comment on any PR.
 - See `docs/git-workflow/review-and-approval.md`.
 
 ## 6. Merging and deploying
 
 - Squash-merge is the only merge method. Each PR lands as one commit on `main`.
-- There are no preview deploys yet: verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence.
+- There are no preview deploys yet. Run the verify-opencv skill (`.claude/skills/verify-opencv`) by hand when you want it.
 - A merge to `main` deploys **straight to production**. There is no staging environment and no staging step.
 - After the merge, the issue closes automatically (from `Closes #42`), the remote branch is deleted automatically, and you remove your worktree.
 
@@ -93,7 +91,7 @@ flowchart LR
 
 1. Open an issue (Bug form, `hotfix` label).
 2. Branch `hotfix/<issue#>-short-description` from `main`.
-3. Open the PR right away (`scripts/open-pr.sh`). Checks must still pass. The review agent runs its checklist immediately.
+3. Open the PR right away (`scripts/open-pr.sh`). `ci` must be green. Merge with `scripts/merge-pr.sh`.
 4. Squash-merge. It deploys like any other change.
 
 If the fix is risky or will take time, first roll back to the previous production deploy on the hosting platform, then fix forward calmly. See `docs/git-workflow/deploys-and-hotfixes.md`.
@@ -106,21 +104,21 @@ If the fix is risky or will take time, first roll back to the previous productio
 
 ## 9. Guardrails (set up once per repo)
 
-| Guardrail               | Where        | What it does                                                                                                                                                                                                 |
-| ----------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Ruleset on `main`       | GitHub       | Requires a PR, the `ci` check and `gates/review-pr` (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
-| Merge settings          | GitHub       | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                                   |
-| `CODEOWNERS`            | GitHub       | Names the owner of every path; `review-pr.sh` notes env/secrets paths                                                                                                                                        |
-| `pre-push` hook         | Local        | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed)                                                                                              |
-| `commit-msg` hook       | Local        | Blocks commits on `main`; rejects empty messages                                                                                                                                                             |
-| `pre-commit` hook       | Local        | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                                              |
-| `scripts/open-pr.sh`    | Local        | Correct PR title and `Closes #`, quick check before push                                                                                                                                                     |
-| `scripts/review-pr.sh`  | Review agent | Verifies the PR and runs the checks in a clean worktree                                                                                                                                                      |
-| Templates               | GitHub       | PR template; Task issue form                                                                                                                                                                                 |
-| Labels                  | GitHub       | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                                                |
-| `scripts/pr.mjs doctor` | Local        | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                                     |
+| Guardrail               | Where       | What it does                                                                                                                                                                              |
+| ----------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ruleset on `main`       | GitHub      | Requires a PR and the `ci` check (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
+| Merge settings          | GitHub      | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                |
+| `CODEOWNERS`            | GitHub      | Names the owner of every path, including env and secrets paths                                                                                                                            |
+| `pre-push` hook         | Local       | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed)                                                                           |
+| `commit-msg` hook       | Local       | Blocks commits on `main`; rejects empty messages                                                                                                                                          |
+| `pre-commit` hook       | Local       | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                           |
+| `scripts/open-pr.sh`    | Local       | Correct PR title and `Closes #`, quick check before push                                                                                                                                  |
+| `scripts/merge-pr.sh`   | Owner agent | Merges when `ci` is green: owner author, not a draft, no `needs-human-review`, gate files carry `risk:high`                                                                               |
+| Templates               | GitHub      | PR template; Task issue form                                                                                                                                                              |
+| Labels                  | GitHub      | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                             |
+| `scripts/pr.mjs doctor` | Local       | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                  |
 
-Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/ocv-tools.mjs take` does it). Anyone can skip them with `--no-verify`. Don't, because the reviewer re-runs everything.
+Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/ocv-tools.mjs take` does it). Anyone can skip them with `--no-verify`. Don't. A skipped hook is not caught again at merge. `ci` still runs the quick check.
 
 ### Setup
 
@@ -152,18 +150,15 @@ scripts/check.sh --changed                             # quick lint, typecheck, 
 # Open a draft PR (validates, runs the quick check, pushes, fills title + Closes #)
 scripts/open-pr.sh --draft
 
-# Rebase only when the review reports a merge conflict (a branch behind main is fine)
+# Rebase when the PR does not merge cleanly with main
 git fetch origin && git rebase origin/main && git push --force-with-lease
 
-# Ready for review / merge
+# Ready, then merge once ci is green (from the main checkout)
 gh pr ready
-gh pr merge --squash            # or --auto
+scripts/merge-pr.sh 57
 
-# Flag a big decision for a human
+# Flag a big decision for a human. An agent will not merge it.
 gh pr edit --add-label needs-human-review
-
-# Review a PR (review agent, from the main checkout)
-scripts/review-pr.sh 57                       # OK: gh pr merge 57 --squash
 
 # Clean up merged worktrees (run from the main checkout)
 scripts/ocv-tools.mjs cleanup --all       # all merged

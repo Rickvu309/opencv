@@ -14,8 +14,8 @@ There is one environment: production. There is no staging branch and no staging 
 There are no per-branch preview deploys. Verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence.
 
 - Run the `verify-opencv` skill: it starts the web app and the api on PGlite with a scripted Coach, drives the changed flow, and captures proof.
-- Attach that evidence to the PR before marking it ready. Reviewers check it.
-- The ruleset has no required status check, so GitHub does not block on it; `scripts/review-pr.sh` and the reviewer do.
+- Attach that evidence to the PR when you have it. Nothing requires it before merge.
+- The ruleset requires the `ci` check. GitHub blocks the merge until it is green, and `scripts/merge-pr.sh` reads the same check.
 
 ## Railway setup
 
@@ -42,8 +42,8 @@ When production is broken:
    scripts/ocv-tools.mjs take <issue#> -d "short description"   # type hotfix
    ```
 4. **Fix, then open the PR right away** (not as a draft): `scripts/open-pr.sh`. That gives `hotfix: restore checkout button (#88)` with `Closes #88`.
-5. **Fast-track review.** Checks must still pass. `SKIP_CHECKS=1` is allowed only if a human declares it, and the PR body says so. The review agent runs its checklist (including the checks) immediately. A mass deletion or a `needs-human-review` label still needs a human.
-6. **Squash-merge.** It deploys to production like any other change. If `ci` is red or the runner is off, see "When ci is red or the runner is off" in `review-and-approval.md` (owner only).
+5. **Wait for `ci`.** `SKIP_CHECKS=1` is allowed only if a human declares it, and the PR body says so. A `needs-human-review` label still needs a human: an agent does not merge it. A mass deletion is not detected; add the label yourself.
+6. **Squash-merge** with `scripts/merge-pr.sh`. It deploys to production like any other change. If `ci` is red or the runner is off, see "When ci is red or the runner is off" in `review-and-approval.md` (owner only).
 7. **Verify** production, then clean up the worktree. If you rolled back in step 2, make sure the new production deploy includes everything that was rolled back plus the fix.
 
 There are no hotfix branches off old versions and no backporting: `main` is the only line of code.

@@ -59,7 +59,7 @@ Tests that hold this shape:
 These rules are not optional.
 Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks: `docs/git-workflow/rule-enforcement.md`.
 
-`.github/workflows/ci.yml` runs the quick check on the free runner `opencv-local` (required `ci` status). Never bypass the local hooks (`.githooks/`) or the review checklist.
+`.github/workflows/ci.yml` runs the quick check on the free runner `opencv-local` (required `ci` status). Never bypass the local hooks (`.githooks/`). Wait for green `ci` before `scripts/merge-pr.sh`.
 
 #### 1. Issue first
 
@@ -70,7 +70,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 2. Always work in your own worktree
 
-- Never edit files in the main checkout. It stays on `main` and is only used to fetch, create worktrees, and review.
+- Never edit files in the main checkout. It stays on `main` and is only used to fetch, create worktrees, and merge.
 - Start every task with:
   ```bash
   scripts/ocv-tools.mjs take <issue#> -d "short description"
@@ -89,12 +89,11 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 4. Checks, commits, and PRs
 
-- The pre-push hook runs the quick check, `scripts/check.sh --changed`. The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
-- For a PR that touches `apps/web/`, `apps/api/`, `packages/ui/`, `packages/domain/` or a verify skill, `scripts/review-pr.sh` also runs `verify:app-ui` and `verify:landing` at `VERIFY_TIER=invariant`. The allowed FAILs are each skill's `known-findings.json` on `main` minus the entries the PR deletes, so a fix PR deletes its entry. A NEW FAIL is rerun once, cold, and counts only when it fails in both runs. Check 34 (render timing) is advisory. A new FAIL, a fixed finding still listed, a STALE or a checker error fails the review. To add a known finding, open an issue first, then land the entry in its own PR that changes only `known-findings.json` files; the tier runs for it, so an entry whose check passes fails. A PR that adds an entry and changes anything else fails.
+- The pre-push hook runs the quick check, `scripts/check.sh --changed`. That is also what `ci` runs. Nothing runs the full lint, typecheck and test before a merge.
 - Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
-- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet.
+- Mark it ready with `gh pr ready` when the quick check passes. Run a verify skill by hand when you want one (`.claude/skills/verify-opencv`). There are no preview deploys yet.
 - The runner `opencv-local` runs CI one job at a time; locally run one check at a time. `scripts/check.sh` defaults `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
-- A branch behind `main` needs no rebase: `scripts/review-pr.sh` tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
+- Rebase when the branch does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
 #### 5. Never
@@ -104,7 +103,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - Never use `SKIP_CHECKS=1` unless a human declared a production emergency, and then say so in the PR.
 - Never approve your own PR, and never use the review agent's identity to approve your own work.
 - Never remove the `needs-human-review` label or edit `.github/CODEOWNERS` to get around a human review.
-- Human review is only for super important changes: a mass deletion (`review-pr.sh` flags a PR that deletes 25% or more of the files on `main` or 80% or more of one app or package; a rename counts as a deletion) or a big decision, which you flag with the `needs-human-review` label (for example dropping a product, a data-losing migration, changing pricing or the legal entity). Everything else merges without a human.
+- Human review is only for a big decision. Flag it with the `needs-human-review` label (for example dropping a product, a data-losing migration, changing pricing or the legal entity). An agent never merges a PR with that label. A mass deletion is not stopped by a script; add the label yourself.
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.
 - Never create `develop`, `staging`, or `release/` branches.
@@ -112,27 +111,21 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 6. Merge and clean up
 
-- Merge only with squash. An agent under the owner's account (`@quanvu309`) merges its own PR with `scripts/merge-pr.sh <pr#>` from the main checkout, never by hand. It refuses another author's PR, reruns `scripts/review-pr.sh`, and requires a comment or review that names the current patch id and says `Independent review` (plus `verify` when the PR changes `apps/`): `review-pr.sh: OK (patch id <id>, main <sha>). Independent review: <who>, approved. verify-<skill>: <result>`. Then it posts the `gates/review-pr` status and runs `gh pr merge --squash --match-head-commit <head>`. `--dry-run` stops before those two.
-- No `--admin`, no bypass. GitHub requires `ci` and `gates/review-pr`, no approval. The independent review stays a local gate with no open finding; `HUMAN REQUIRED` is never merged.
+- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `scripts/check.sh` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It squash-merges with `--match-head-commit`.
+- No `--admin`, no bypass. GitHub requires `ci` and no approval.
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
 
 #### 7. Production is broken
 
-- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/open-pr.sh`, and ask for immediate review.
+- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/open-pr.sh`, and merge with `scripts/merge-pr.sh` once `ci` is green.
 - If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
 
 #### Review agent checklist
 
-For the agent that reviews PRs. Run from the main checkout, for every PR marked ready (hotfixes immediately):
+Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>`. One account, so no approval. A PR with `needs-human-review` is never merged by an agent.
 
-1. `scripts/review-pr.sh <pr#>`. It checks the branch name, title, `Closes #`, issue, label, mass deletion, committed env files and `main` freshness, then runs the full `scripts/check.sh` once, in a throwaway worktree of the PR.
-2. Result `HUMAN REQUIRED` (exit 2): the PR has `needs-human-review` or is a mass deletion. **Do not merge.** Comment your findings and leave it to a human.
-3. Result `FAIL` (exit 1), including a committed real `.env` file or a requested-changes review: `gh pr review <pr#> --comment --body "FAIL: <what to fix>"`. Don't merge.
-4. Result `OK` (exit 0): check the verify-opencv evidence for the changed flow, then read the diff (scope, tests, no secrets; look closely at `package.json` scripts, `scripts/`, `.githooks/`, `.github/`).
-5. All good: post the evidence comment (format in section 6), then `scripts/merge-pr.sh <pr#>`. Otherwise comment what to fix. (One account: GitHub won't take an approval or "request changes" from the PR author.)
-
-Full checklist: `docs/git-workflow/review-and-approval.md`.
+Full notes: `docs/git-workflow/review-and-approval.md`.
 
 ### Production recovery
 

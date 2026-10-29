@@ -17,15 +17,14 @@ Closes #<!-- issue number, required -->
 
 ## How to test
 
-1. Verify locally with the verify-opencv skill and attach its evidence:
+1. Run a verify skill by hand when you want one (`.claude/skills/verify-opencv`):
 2.
 
 ## Checklist
 
-- [ ] Branch is `type/<issue#>-short-description` (a branch behind `main` is fine; the review tests the merge)
+- [ ] Branch is `type/<issue#>-short-description`
 - [ ] Title is `type: description (#<issue>)`
-- [ ] `scripts/check.sh` passes (lint, typecheck, test). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
-- [ ] verify-opencv evidence attached (web or api change)
-- [ ] Merge with `scripts/merge-pr.sh <pr#>` once the evidence comment names the current patch id
+- [ ] `ci` is green (`scripts/check.sh --changed` is what it runs). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
+- [ ] Merge with `scripts/merge-pr.sh <pr#>` once `ci` is green and the PR is not a draft
 - [ ] Env/secrets handling touched? Check no real secret or `.env` file is committed
-- [ ] A big decision, or deletes much of the code base? Add the `needs-human-review` label (then only a human approves)
+- [ ] A big decision, or deletes much of the code base? Add the `needs-human-review` label (an agent will not merge it)
