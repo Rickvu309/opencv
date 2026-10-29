@@ -10,51 +10,53 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.
+Single-context (`CONTEXT.md` and `docs/adr/`). See `docs/agents/domain.md`.
 
 ### Code map
 
 - `packages/domain/src` is pure TypeScript and zod, with no database, server or AI SDK import. It holds the typed contract.
   - `<surface>-contract.ts` declares each surface's commands and most of its reads (`paper`, `job`, `inbox`, `account`, and `chat` for commands).
-  - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads, `link.get` and `workspace.search` itself.
+  - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads, `link.get` and `workspace.search`.
   - `chat-turn.ts` holds `ChatTurnEvent`, the Coach stream events.
   - `job-posting.ts` holds the posting link guard (`openableApplyJobUrl`) and the board stage enum, `job-position.ts` the board order keys.
 - `apps/api/src/<module>/` is one product module: `account`, `chat`, `paper`, `job` and `inbox`. Other modules import it only through its `index.ts`.
   - `commands.ts` binds the module's contract commands with `bindCommands` and its reads with `tableQuery`. `account` binds its reads in `queries.ts`.
-  - `job` also holds the posting fetch (`fetch-posting.ts`, the guard against internal hosts) and reads a posting into fields in `store.ts` (`fetchPosting`, `parsePostingText`), and can add the Coach's `interpretPosting` when `interpretPostings` is on.
-  - `http.ts` mounts its routes. `store.ts` holds most of its database writes. Only files under the module's own directory write its tables, plus `auth.ts` for the auth tables. `registry/ownership.test.ts` holds the owner list.
+  - `job` also holds the posting fetch (`fetch-posting.ts`, the internal-host guard) and reads a posting into fields in `store.ts` (`fetchPosting`, `parsePostingText`), with the Coach's `interpretPosting` when `interpretPostings` is on.
+  - `http.ts` mounts its routes. `store.ts` holds most of its writes. Only files under the module's directory write its tables, plus `auth.ts` for the auth tables (owner list: `registry/ownership.test.ts`).
 - Other api folders:
   - `registry/` runs every command, writes the `activity`, `pending_actions` and idempotency rows, and builds the Coach's tools.
-  - `coach/` runs a Coach turn and is the only importer of the AI SDK. It has no contract commands.
+  - `coach/` runs a Coach turn and is the only importer of the AI SDK. It has no contract commands. See `docs/coach.md`.
   - `mail/` sends sign-in codes. `db/schema.ts` is the schema.
 - `apps/web/src` is the SPA. `routes/` holds pages, `features/<surface>/` each surface's code and tests, `components/` and `lib/` what features share. Only `lib/` calls the api.
   - `contract-client.ts` runs commands and owns read keys and refresh.
-  - `api.ts` (`apiFetch`) and `requests.ts` (`endpoints`) fetch reads.
-  - `coach-stream.ts` reads the Coach stream.
+  - `api.ts` (`apiFetch`) and `requests.ts` (`endpoints`) fetch reads. `coach-stream.ts` reads the Coach stream.
+  - `features/<surface>/*-api.ts` wraps a surface's api calls over `lib/`.
 - `packages/ui/src/components` is the shadcn kit. See Design system below.
 
 To add a product action, follow `docs/adr/0010-one-typed-contract-for-commands-and-reads.md`:
 
 1. Add a command entry to `packages/domain/src/<surface>-contract.ts`, with `invalidates` naming the reads it makes stale.
 2. Bind it in `apps/api/src/<surface>/commands.ts` with its handler, reversal and activity line. A missing binding is a type error.
-3. Call it from the web with `runContractCommand` from `apps/web/src/lib/contract-client.ts`. The Coach tool, step label, Undo and screen refresh follow from the entry.
+3. Add a case to `apps/api/src/registry/coverage-<surface>.ts` (`arrange`, `act`, `assert`, optional `undoAssert`). `coverage.test.ts` fails on a command with no case.
+4. Call it from the web with `runContractCommand` from `apps/web/src/lib/contract-client.ts`. The Coach tool, step label, Undo and screen refresh follow from the entry.
 
-Tests that hold this shape, and what each one rejects:
+Tests that hold this shape:
 
 - `apps/api/src/registry/boundaries.test.ts` rejects an import into another api module that skips its `index.ts`.
-- `apps/api/src/registry/ownership.test.ts` rejects a write to a table from outside its owning module's directory.
-- `apps/api/src/registry/names.test.ts` rejects a command, read or Coach tool name used in the web, the fake Coach or the domain that the registry does not have.
+- `apps/api/src/registry/ownership.test.ts` rejects a table write from outside the owning module's directory.
+- `apps/api/src/registry/names.test.ts` rejects a command, read or Coach tool name in the web, fake Coach or domain that the registry lacks.
 - `apps/api/src/**/*-contract.test.ts` and `apps/api/src/registry/contract.type-test.ts` reject a binding that drifts from the contract.
 - `apps/web/src/test/request-boundary.test.ts` rejects an API path, `fetch` or query invalidation outside `apps/web/src/lib`.
-- `apps/web/src/test/feature-imports.test.ts` rejects an import from one `apps/web/src/features` folder into another that its `FEATURE_IMPORTS` table does not list, a folder with no row, a row for a folder that is gone, and an edge no import uses.
+- `apps/web/src/test/feature-imports.test.ts` rejects an import between `apps/web/src/features` folders that its `FEATURE_IMPORTS` table does not list, a folder with no row, a row for a gone folder, and an edge no import uses.
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
 - `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when an old number now names a different decision.
-- `scripts/retired-words.test.mjs` rejects Thread or Opportunity in a source file or file name under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few named exceptions), and says Chat or Job instead. The old Apply stage ids are not guarded until #437 renames them.
-- `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no non-test file outside its own file imports, and says drop `export` or delete it. A name in its `KEPT_ON_PURPOSE` set is the exception.
+- `scripts/doc-paths.test.mjs` rejects a backticked repo path in AGENTS.md, CONTEXT.md, `docs/` or `.claude/skills/` that does not exist, with file and line.
+- `scripts/retired-words.test.mjs` rejects Thread or Opportunity in source or file names under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few exceptions); say Chat or Job. The old Apply stage ids are unguarded until #437.
+- `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no other non-test file imports; drop `export` or delete it. `KEPT_ON_PURPOSE` lists the exceptions.
 
 ### Git
 
-Follow these rules in this repo. They are not optional.
+These rules are not optional.
 Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks: `docs/git-workflow/rule-enforcement.md`.
 
 There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review checklist are the only gates, so never bypass them.
@@ -87,11 +89,11 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 #### 4. Checks, commits, and PRs
 
-- Pushes run a quick check scoped to what changed: `scripts/check.sh --changed` (the pre-push hook does it). The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
+- The pre-push hook runs the quick check, `scripts/check.sh --changed`. The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
 - For a PR that touches `apps/web/`, `apps/api/`, `packages/ui/`, `packages/domain/` or a verify skill, `scripts/review-pr.sh` also runs `verify:app-ui` and `verify:landing` at `VERIFY_TIER=invariant`. The allowed FAILs are each skill's `known-findings.json` on `main` minus the entries the PR deletes, so a fix PR deletes its entry. A NEW FAIL is rerun once, cold, and counts only when it fails in both runs. Check 34 (render timing) is advisory. A new FAIL, a fixed finding still listed, a STALE or a checker error fails the review. To add a known finding, open an issue first, then land the entry in its own PR that changes only `known-findings.json` files; the tier runs for it, so an entry whose check passes fails. A PR that adds an entry and changes anything else fails.
 - Open the PR with `heavy -- scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
-- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet; verify locally with verify-opencv.
-- Heavy commands run through `heavy`: the full `scripts/check.sh`, `scripts/review-pr.sh`, and `scripts/open-pr.sh` or any push that triggers the pre-push hook, for example `heavy --label review-123 -- scripts/review-pr.sh 123`. It admits two heavy jobs at a time on this box, caps each at 4 cores and 4 GB, gives a waiting OpenCV job the next free slot, and exports `CHECK_CONCURRENCY=2` and `VITEST_MAX_WORKERS=2`, which `scripts/check.sh` and vitest honor. The PR scripts refuse to run without it. Never run two of your own at once. `heavy status` shows who holds the slots.
+- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet.
+- Heavy commands run through `heavy`: the full `scripts/check.sh`, `scripts/review-pr.sh`, and `scripts/open-pr.sh` or any push that triggers the pre-push hook, for example `heavy --label review-123 -- scripts/review-pr.sh 123`. It admits two jobs at a time, caps each at 4 cores and 4 GB, and exports `CHECK_CONCURRENCY=2` and `VITEST_MAX_WORKERS=2`. The PR scripts refuse to run without it. Never run two of your own at once. `heavy status` shows who holds the slots.
 - A branch behind `main` needs no rebase: `scripts/review-pr.sh` tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && heavy -- git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
@@ -124,7 +126,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 For the agent that reviews PRs. Run from the main checkout, for every PR marked ready (hotfixes immediately):
 
-1. `heavy -- scripts/review-pr.sh <pr#>`. It checks the branch name, title, `Closes #`, the issue, the label, mass deletion, committed env files, and up-to-date with `main`, then runs the full `scripts/check.sh` (lint, typecheck, test) once, in a throwaway worktree of the PR.
+1. `heavy -- scripts/review-pr.sh <pr#>`. It checks the branch name, title, `Closes #`, issue, label, mass deletion, committed env files and `main` freshness, then runs the full `scripts/check.sh` once, in a throwaway worktree of the PR.
 2. Result `HUMAN REQUIRED` (exit 2): the PR has `needs-human-review` or is a mass deletion. **Do not merge.** Comment your findings and leave it to a human.
 3. Result `FAIL` (exit 1), including a committed real `.env` file or a requested-changes review: `gh pr review <pr#> --comment --body "FAIL: <what to fix>"`. Don't merge.
 4. Result `OK` (exit 0): check the verify-opencv evidence for the changed flow, then read the diff (scope, tests, no secrets; look closely at `package.json` scripts, `scripts/`, `.githooks/`, `.github/`).
@@ -138,7 +140,7 @@ Production sign-in recovery needs checks beyond a local OTP or HTTP 200. See `do
 
 ### Design system
 
-Stock shadcn/ui on `base-nova` (Base UI) in `packages/ui`, consumed as source by `apps/web`. `docs/adr/0006-design-system-values-and-the-kit-as-generator.md` carries the design-system rule. Import through `@workspace/ui/components/<name>` and `@workspace/ui/globals.css`, and prefer kit components over raw `<button>`/`<input>`/`<textarea>`/`<select>`. Sources in order: shadcn/ui, AI Elements patterns copied into `apps/web/src/components/ai-elements/`, Kibo UI for heavy app pieces, then Cult UI, Magic UI and free affectUI items for showpieces. App code uses shadcn's own CSS variables only (`--background`, `--primary`, `--muted-foreground`, `--chart-1..5`, `--sidebar-*` and the rest of the stock set) and stock Tailwind sizes, with no raw hex or named palette classes (`bg-red-500`) outside the CV print paper. Motion has two token pairs, `--duration-micro` 150 ms with `--ease-micro` and `--duration-panel` 280 ms with `--ease-panel`, defined once in `globals.css`. `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce all of it, and `pnpm --filter web test` fails on a violation.
+Stock shadcn/ui on `base-nova` (Base UI) in `packages/ui`, consumed as source by `apps/web`. `docs/adr/0006-design-system-values-and-the-kit-as-generator.md` carries the design-system rule. Import through `@workspace/ui/components/<name>` and `@workspace/ui/globals.css`, and prefer kit components over raw `<button>`/`<input>`/`<textarea>`/`<select>`. Sources in order: shadcn/ui, AI Elements patterns copied into `apps/web/src/components/ai-elements/`, Kibo UI for heavy app pieces, then Cult UI, Magic UI and free affectUI items for showpieces. App code uses shadcn's own CSS variables only (`--background`, `--primary`, `--muted-foreground`, `--chart-1..5`, `--sidebar-*` and so on) and stock Tailwind sizes, with no raw hex or named palette classes (`bg-red-500`) outside the CV print paper. Motion has two token pairs, `--duration-micro` 150 ms with `--ease-micro` and `--duration-panel` 280 ms with `--ease-panel`, defined once in `globals.css`. `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce all of it, and `pnpm --filter web test` fails on a violation.
 
 Install: `pnpm dlx shadcn@latest add <name> -c apps/web` for shadcn, `pnpm dlx shadcn@latest add https://www.kibo-ui.com/r/<name>.json -c apps/web` for Kibo UI, `https://www.cult-ui.com/r/<name>.json` for Cult UI, `@magicui/<name>` for Magic UI and `https://www.affectui.com/r/<name>.json` for affectUI. After every install run `node scripts/ds-codemod.mjs` to rename retired class names. Never add a token; if a registry piece brings one, map it to a shadcn variable.
 

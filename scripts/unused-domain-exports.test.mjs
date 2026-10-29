@@ -6,6 +6,12 @@ import { fileURLToPath } from "node:url"
 
 import ts from "typescript"
 
+// Limits. A use counts only as a named import or re-export (`import { x }`,
+// `export { x } from`) or an `import("...").x` type. A default import, a namespace
+// import and a destructured `await import("@workspace/domain")` are not seen, so
+// an export used only that way is reported as unused. None exist in domain today.
+// Like the other root scripts/*.test.mjs guards it runs in the full check
+// (root `pnpm test`, review-pr.sh), not in `scripts/check.sh --changed`.
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const domainSrc = path.join(root, "packages/domain/src")
 const PACKAGE = "@workspace/domain"
