@@ -25,6 +25,8 @@ jobs:
       # The runner service does not load the login PATH; pnpm lives in ~/.local/bin.
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: pnpm install --frozen-lockfile
+      # @workspace/domain points its types at ./dist, which a clean checkout does not have.
+      - run: pnpm --filter @workspace/domain build
       - run: scripts/check.sh --changed
 
   # The one required check. The main ruleset requires the context "ci", so keep this name.
