@@ -1,16 +1,10 @@
 // `board`: every open issue, grouped, with risk, claim, idle minutes, pull request and checks.
-// One repo lookup, one server clock and one paged issue query per run. Comment
-// pages are fetched only when the first page says more exist.
-import { Refused, gh } from "./core.mjs"
-import { TYPES } from "./fields.mjs"
-import { readServerNow } from "./clock.mjs"
+// The gh adapter reads the repo once, then pages issues and open pull requests.
+// Comment pages are fetched only when the first page says more exist.
 import { holderOf } from "./claim-marker.mjs"
-import { COMMENT_PAGE_CAP, approvalValid, riskOf } from "./report.mjs"
+import { approvalValid, riskOf } from "./facts.mjs"
+import { TYPES } from "./fields.mjs"
 
-const ISSUE_QUERY = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){issues(states:OPEN,first:50,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(first:100){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}}`
-const COMMENT_QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){issue(number:$n){comments(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
-const PR_QUERY = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number state headRefName headRefOid}}}}`
-const LIST_CAP = 40
 const FAILING = new Set([
   "FAILURE",
   "TIMED_OUT",
@@ -67,93 +61,6 @@ export function prFor(prs, n) {
   )
 }
 
-function graphql(ctx, query, vars) {
-  const args = ["api", "graphql", "-f", `query=${query}`]
-  for (const [key, value] of Object.entries(vars)) {
-    if (value == null || value === "") continue
-    if (typeof value === "number") args.push("-F", `${key}=${value}`)
-    else args.push("-f", `${key}=${value}`)
-  }
-  const q = ctx.run("gh", args)
-  if (!q.ok)
-    throw new Error(`gh api graphql failed: ${q.err || q.out}`.slice(0, 400))
-  return JSON.parse(q.out)
-}
-
-function pageAll(ctx, repo, { query, pick, cap, stuck, incomplete }) {
-  const items = []
-  const seen = new Set()
-  let cursor = null
-  for (let page = 0; page < cap; page++) {
-    const data = graphql(ctx, query, {
-      owner: repo.owner.login,
-      name: repo.name,
-      cursor,
-    })
-    const conn = pick(data)
-    if (!conn?.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean")
-      throw new Refused("UNKNOWN", stuck)
-    for (const node of conn.nodes ?? []) {
-      if (seen.has(node.number)) continue
-      seen.add(node.number)
-      items.push(node)
-    }
-    const info = conn.pageInfo
-    if (!info.hasNextPage) return items
-    if (!info.endCursor || info.endCursor === cursor)
-      throw new Refused("UNKNOWN", stuck)
-    if (page === cap - 1) throw new Refused("UNKNOWN", incomplete)
-    cursor = info.endCursor
-  }
-  return items
-}
-
-// First page is oldest-first. A later page can hold the live claim, so a
-// hasNextPage result is never treated as the whole history.
-function completeComments(ctx, repo, issue) {
-  const conn = issue.comments ?? {}
-  if (!conn.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean")
-    throw new Refused(
-      "UNKNOWN",
-      `claim history for #${issue.number} did not say whether more comments exist`
-    )
-  const nodes = [...(conn.nodes ?? [])]
-  let info = conn.pageInfo
-  let cursor = info.endCursor ?? null
-  let pages = 1
-  while (info.hasNextPage) {
-    if (!cursor || pages >= COMMENT_PAGE_CAP)
-      throw new Refused(
-        "UNKNOWN",
-        pages >= COMMENT_PAGE_CAP
-          ? `claim history for #${issue.number} is incomplete: ${COMMENT_PAGE_CAP} pages were read and more comments remain`
-          : `claim history for #${issue.number} stopped before the last comment (the page cursor did not move)`
-      )
-    const data = graphql(ctx, COMMENT_QUERY, {
-      owner: repo.owner.login,
-      name: repo.name,
-      n: issue.number,
-      cursor,
-    })
-    const next = data.data?.repository?.issue?.comments ?? {}
-    const pageInfo = next.pageInfo ?? {}
-    if (
-      typeof pageInfo.hasNextPage !== "boolean" ||
-      (pageInfo.hasNextPage &&
-        (!pageInfo.endCursor || pageInfo.endCursor === cursor))
-    )
-      throw new Refused(
-        "UNKNOWN",
-        `claim history for #${issue.number} stopped before the last comment (the page cursor did not move)`
-      )
-    nodes.push(...(next.nodes ?? []))
-    info = pageInfo
-    cursor = pageInfo.endCursor ?? null
-    pages++
-  }
-  return nodes
-}
-
 function latestCi(runs) {
   let best = null
   let bestAt = -1
@@ -169,22 +76,9 @@ function latestCi(runs) {
 }
 
 // One call per open pull request we show: the latest check run named ci.
-function ciChecks(ctx, sha) {
-  if (!sha) return "none"
-  const out = gh(
-    ctx,
-    "api",
-    "--method",
-    "GET",
-    `repos/{owner}/{repo}/commits/${sha}/check-runs`,
-    "-f",
-    "check_name=ci",
-    "-f",
-    "filter=latest",
-    "-f",
-    "per_page=10"
-  )
-  const best = latestCi(JSON.parse(out).check_runs ?? [])
+function checksFor(gh, pr) {
+  if (!pr?.headRefOid) return pr ? "none" : null
+  const best = latestCi(gh.checkRuns(pr.headRefOid))
   if (!best) return "none"
   return checkState([
     {
@@ -201,16 +95,16 @@ function idleMinutes(holder) {
   return Number.isFinite(holder.idleMinutes) ? holder.idleMinutes : null
 }
 
-function rowFrom(issue, thread, owner, serverNow, pr, checks) {
-  const labels = (issue.labels?.nodes ?? []).map((label) => label.name)
+function rowFrom(issue, owner, serverNow, pr, checks) {
+  const labels = issue.labels ?? []
   const risk = riskOf(labels, issue.body ?? "")
   const approved = approvalValid({
-    comments: thread,
+    comments: issue.comments,
     owner,
     lastEditedAt: issue.lastEditedAt,
     createdAt: issue.createdAt,
   })
-  const holder = holderOf(thread, serverNow)
+  const holder = holderOf(issue.comments, serverNow)
   const open = Boolean(pr) && String(pr.state).toUpperCase() === "OPEN"
   const group = groupOf({
     risk,
@@ -294,31 +188,20 @@ function boardNext(groups) {
 }
 
 export function board(ctx, { json = false } = {}) {
-  const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
-  const issues = pageAll(ctx, repo, {
-    query: ISSUE_QUERY,
-    pick: (data) => data.data?.repository?.issues,
-    cap: LIST_CAP,
-    stuck:
-      "the open issue list stopped before the last page (the page cursor did not move)",
-    incomplete: `the open issue list is incomplete: ${LIST_CAP} pages were read and more issues remain`,
-  })
-  const serverNow = readServerNow(ctx)
-  const prs = pageAll(ctx, repo, {
-    query: PR_QUERY,
-    pick: (data) => data.data?.repository?.pullRequests,
-    cap: LIST_CAP,
-    stuck:
-      "the open pull request list stopped before the last page (the page cursor did not move)",
-    incomplete: `the open pull request list is incomplete: ${LIST_CAP} pages were read and more pull requests remain`,
-  })
+  const snap = ctx.ports.gh.openBoard()
   const rows = []
-  for (const issue of issues) {
+  for (const issue of snap.issues) {
     if (String(issue.state).toUpperCase() !== "OPEN") continue
-    const thread = completeComments(ctx, repo, issue)
-    const pr = prFor(prs, issue.number)
-    const checks = pr ? ciChecks(ctx, pr.headRefOid) : null
-    rows.push(rowFrom(issue, thread, repo.owner.login, serverNow, pr, checks))
+    const pr = prFor(snap.pulls, issue.number)
+    rows.push(
+      rowFrom(
+        issue,
+        snap.owner,
+        snap.serverNow,
+        pr,
+        checksFor(ctx.ports.gh, pr)
+      )
+    )
   }
   rows.sort((a, b) => a.number - b.number)
   const groups = {

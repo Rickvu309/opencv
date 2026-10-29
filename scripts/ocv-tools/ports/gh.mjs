@@ -1,8 +1,15 @@
 // GitHub adapter. Domain verbs over `gh`. Callers get plain records, not argv.
 import { readServerNow, parseUpdatedAt } from "../clock.mjs"
+import { Refused } from "../result.mjs"
 
 // Stop rather than treat a cut-off comment list as the whole claim history.
 export const COMMENT_PAGE_CAP = 100
+
+// Board reads open issues and open pull requests in pages, not one call each.
+const LIST_CAP = 40
+const ISSUE_LIST = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){issues(states:OPEN,first:50,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(first:100){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}}`
+const COMMENT_AFTER = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){issue(number:$n){comments(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
+const PR_LIST = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number state headRefName headRefOid}}}}`
 
 const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
 
@@ -18,7 +25,160 @@ export function ghAdapter(run) {
 
   function repo() {
     const data = JSON.parse(gh("repo", "view", "--json", "owner,name"))
-    return { owner: data.owner.login, name: data.name }
+    const owner = data.owner.login
+    return { owner, name: data.name, nameWithOwner: `${owner}/${data.name}` }
+  }
+
+  function graphql(query, vars) {
+    const args = ["api", "graphql", "-f", `query=${query}`]
+    for (const [key, value] of Object.entries(vars)) {
+      if (value == null || value === "") continue
+      if (typeof value === "number") args.push("-F", `${key}=${value}`)
+      else args.push("-f", `${key}=${value}`)
+    }
+    const q = run("gh", args)
+    if (!q.ok)
+      throw new Error(`gh api graphql failed: ${q.err || q.out}`.slice(0, 400))
+    return JSON.parse(q.out)
+  }
+
+  function pageAll({ query, pick, cap, stuck, incomplete, repo: view }) {
+    const items = []
+    const seen = new Set()
+    let cursor = null
+    for (let page = 0; page < cap; page++) {
+      const data = graphql(query, {
+        owner: view.owner,
+        name: view.name,
+        cursor,
+      })
+      const conn = pick(data)
+      if (!conn?.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean")
+        throw new Refused("UNKNOWN", stuck)
+      for (const node of conn.nodes ?? []) {
+        if (seen.has(node.number)) continue
+        seen.add(node.number)
+        items.push(node)
+      }
+      const info = conn.pageInfo
+      if (!info.hasNextPage) return items
+      if (!info.endCursor || info.endCursor === cursor)
+        throw new Refused("UNKNOWN", stuck)
+      if (page === cap - 1) throw new Refused("UNKNOWN", incomplete)
+      cursor = info.endCursor
+    }
+    return items
+  }
+
+  // First page is oldest-first. A later page can hold the live claim.
+  function completeComments(view, issue) {
+    const conn = issue.comments ?? {}
+    if (!conn.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean")
+      throw new Refused(
+        "UNKNOWN",
+        `claim history for #${issue.number} did not say whether more comments exist`
+      )
+    const nodes = [...(conn.nodes ?? [])]
+    let info = conn.pageInfo
+    let cursor = info.endCursor ?? null
+    let pages = 1
+    while (info.hasNextPage) {
+      if (!cursor || pages >= COMMENT_PAGE_CAP)
+        throw new Refused(
+          "UNKNOWN",
+          pages >= COMMENT_PAGE_CAP
+            ? `claim history for #${issue.number} is incomplete: ${COMMENT_PAGE_CAP} pages were read and more comments remain`
+            : `claim history for #${issue.number} stopped before the last comment (the page cursor did not move)`
+        )
+      const data = graphql(COMMENT_AFTER, {
+        owner: view.owner,
+        name: view.name,
+        n: issue.number,
+        cursor,
+      })
+      const next = data.data?.repository?.issue?.comments ?? {}
+      const pageInfo = next.pageInfo ?? {}
+      if (
+        typeof pageInfo.hasNextPage !== "boolean" ||
+        (pageInfo.hasNextPage &&
+          (!pageInfo.endCursor || pageInfo.endCursor === cursor))
+      )
+        throw new Refused(
+          "UNKNOWN",
+          `claim history for #${issue.number} stopped before the last comment (the page cursor did not move)`
+        )
+      nodes.push(...(next.nodes ?? []))
+      info = pageInfo
+      cursor = pageInfo.endCursor ?? null
+      pages++
+    }
+    return nodes.map((c) => ({
+      databaseId: c.databaseId,
+      author: c.author,
+      body: c.body,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }))
+  }
+
+  // One repo view, one clock, one paged issue query and one paged pull query.
+  // Comment pages are fetched only when the first page says more exist.
+  function openBoard() {
+    const view = repo()
+    const serverNow = readServerNow({ run })
+    const issues = pageAll({
+      query: ISSUE_LIST,
+      pick: (data) => data.data?.repository?.issues,
+      cap: LIST_CAP,
+      stuck:
+        "the open issue list stopped before the last page (the page cursor did not move)",
+      incomplete: `the open issue list is incomplete: ${LIST_CAP} pages were read and more issues remain`,
+      repo: view,
+    })
+    const pulls = pageAll({
+      query: PR_LIST,
+      pick: (data) => data.data?.repository?.pullRequests,
+      cap: LIST_CAP,
+      stuck:
+        "the open pull request list stopped before the last page (the page cursor did not move)",
+      incomplete: `the open pull request list is incomplete: ${LIST_CAP} pages were read and more pull requests remain`,
+      repo: view,
+    })
+    return {
+      owner: view.owner,
+      name: view.name,
+      nameWithOwner: view.nameWithOwner,
+      serverNow,
+      issues: issues
+        .filter((issue) => String(issue.state).toUpperCase() === "OPEN")
+        .map((issue) => ({
+          number: issue.number,
+          title: issue.title,
+          state: issue.state,
+          body: issue.body ?? "",
+          createdAt: issue.createdAt,
+          lastEditedAt: issue.lastEditedAt,
+          labels: (issue.labels?.nodes ?? []).map((label) => label.name),
+          comments: completeComments(view, issue),
+        })),
+      pulls,
+    }
+  }
+
+  function checkRuns(sha) {
+    const out = gh(
+      "api",
+      "--method",
+      "GET",
+      `repos/{owner}/{repo}/commits/${sha}/check-runs`,
+      "-f",
+      "check_name=ci",
+      "-f",
+      "filter=latest",
+      "-f",
+      "per_page=10"
+    )
+    return JSON.parse(out).check_runs ?? []
   }
 
   // One issue plus every comment page. history is complete, stuck, or cap.
@@ -200,6 +360,37 @@ export function ghAdapter(run) {
     },
     authed() {
       return run("gh", ["auth", "status"]).ok
+    },
+    openBoard,
+    checkRuns,
+    releaseView(tag) {
+      return run("gh", ["release", "view", tag]).ok
+    },
+    releaseCreate(tag, { title, notes, target }) {
+      gh(
+        "release",
+        "create",
+        tag,
+        "--title",
+        title,
+        "--notes",
+        notes,
+        "--prerelease",
+        "--target",
+        target
+      )
+    },
+    releaseUpload(tag, files) {
+      gh("release", "upload", tag, ...files, "--clobber")
+    },
+    viewIssue(n) {
+      return run("gh", ["issue", "view", String(n), "--json", "number"]).ok
+    },
+    viewPr(n) {
+      return run("gh", ["pr", "view", String(n), "--json", "number"]).ok
+    },
+    commentPr(n, body) {
+      gh("pr", "comment", String(n), "--body", body)
     },
   }
 }

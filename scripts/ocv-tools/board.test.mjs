@@ -3,7 +3,33 @@ import test from "node:test"
 import { checkState, groupOf, prFor } from "./board.mjs"
 import { claimMarker } from "./claim-marker.mjs"
 import { runCli } from "./cli.mjs"
-import { fakeCtx, minutesAgo } from "./fake-ctx.mjs"
+import { ghAdapter } from "./ports/gh.mjs"
+import { ctxFor, fakePorts, minutesAgo } from "./ports/fake.mjs"
+
+function scriptedCtx(rules) {
+  const calls = []
+  const run = (cmd, args) => {
+    const line = `${cmd} ${args.join(" ")}`
+    calls.push(line)
+    if (line.includes("api --include /rate_limit"))
+      return {
+        ok: true,
+        out: "Date: Thu, 29 Oct 2026 12:00:00 GMT\r\n\r\n{}",
+        err: "",
+      }
+    for (const [match, result] of rules)
+      if (line.includes(match))
+        return typeof result === "function"
+          ? result(line)
+          : { ok: true, out: result, err: "" }
+    return { ok: false, out: "", err: `unmocked: ${line}` }
+  }
+  const ports = fakePorts({ issues: [] })
+  ports.gh = ghAdapter(run)
+  const ctx = ctxFor(ports)
+  ctx.calls = calls
+  return ctx
+}
 
 const claim = (agent, minutes, id = 1) => ({
   databaseId: id,
@@ -174,7 +200,7 @@ function graphql(line) {
 }
 
 function ctxOf(graph = graphql) {
-  return fakeCtx([
+  return scriptedCtx([
     ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
     ["api graphql", (line) => ({ ok: true, out: graph(line), err: "" })],
     ["check-runs", checkRuns],
@@ -288,7 +314,7 @@ test("board --json prints the same groups", () => {
 
 test("board reads 50 issues with a constant handful of gh calls", () => {
   const once = (count) => {
-    const ctx = fakeCtx([
+    const ctx = scriptedCtx([
       ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
       [
         "api graphql",
@@ -347,7 +373,7 @@ test("an open pull request behind newer closed ones stays in review", () => {
     state: "CLOSED",
     headRefName: `chore/${1000 + i}-done`,
   }))
-  const ctx = fakeCtx([
+  const ctx = scriptedCtx([
     ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
     [
       "api graphql",
@@ -475,8 +501,11 @@ test("board refuses a stuck issue page, a stuck comment page, an unknown flag an
   const partial = runCli(["board"], cut)
   assert.equal(partial.code, 2, partial.text)
   assert.match(partial.text, /REFUSED UNKNOWN/)
-  assert.match(runCli(["board", "--publish"], fakeCtx([])).text, /UNKNOWN_FLAG/)
-  assert.equal(runCli(["board", "10"], fakeCtx([])).code, 1)
+  assert.match(
+    runCli(["board", "--publish"], scriptedCtx([])).text,
+    /UNKNOWN_FLAG/
+  )
+  assert.equal(runCli(["board", "10"], scriptedCtx([])).code, 1)
 })
 
 test("an empty board still ends with Next", () => {
@@ -493,7 +522,7 @@ test("an empty board still ends with Next", () => {
 })
 
 test("help lists board", () => {
-  const { text } = runCli(["help"], fakeCtx([]))
+  const { text } = runCli(["help"], scriptedCtx([]))
   assert.match(text, /board \[--json\]/)
   assert.match(text, /waiting for approval/)
 })

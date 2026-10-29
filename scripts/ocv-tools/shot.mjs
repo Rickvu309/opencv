@@ -11,8 +11,9 @@ import {
   statSync,
 } from "node:fs"
 import { basename, join } from "node:path"
-import { Refused, SCRATCH, gh } from "./core.mjs"
 import { taskHere } from "./claim.mjs"
+import { SCRATCH } from "./ports/fs.mjs"
+import { Refused } from "./result.mjs"
 
 const USAGE =
   "usage: ocv-tools shot <file...> [--pr <n> | --issue <n>] [--name <what>] [--no-comment]"
@@ -189,28 +190,14 @@ function targetOf(ctx, { pr, issue }) {
   }
 }
 
-function ensureRelease(ctx) {
-  const view = ctx.run("gh", ["release", "view", RELEASE])
-  if (view.ok) return
-  gh(
-    ctx,
-    "release",
-    "create",
-    RELEASE,
-    "--title",
-    RELEASE,
-    "--notes",
-    NOTES,
-    "--prerelease",
-    "--target",
-    "main"
-  )
+function ensureRelease(gh) {
+  if (gh.releaseView(RELEASE)) return
+  gh.releaseCreate(RELEASE, { title: RELEASE, notes: NOTES, target: "main" })
 }
 
-function requireTarget(ctx, { kind, n }) {
-  const cmd = kind === "pr" ? "pr" : "issue"
-  const view = ctx.run("gh", [cmd, "view", String(n), "--json", "number"])
-  if (view.ok) return
+function requireTarget(gh, { kind, n }) {
+  const ok = kind === "pr" ? gh.viewPr(n) : gh.viewIssue(n)
+  if (ok) return
   throw new Refused(
     "NOT_AN_ISSUE",
     kind === "pr" ? `#${n} is not a pull request` : `#${n} is not an issue`,
@@ -248,12 +235,10 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
     n: target.n,
     name: flags["--name"],
   })
-  const repo = JSON.parse(
-    gh(ctx, "repo", "view", "--json", "nameWithOwner")
-  ).nameWithOwner
+  const repo = ctx.ports.gh.repo().nameWithOwner
   const bodies = flags["--no-comment"] ? [] : shotComments(repo, items)
-  requireTarget(ctx, target)
-  ensureRelease(ctx)
+  requireTarget(ctx.ports.gh, target)
+  ensureRelease(ctx.ports.gh)
   const dir = ctx.shotDir ?? join(SCRATCH, "shots")
   mkdirSync(dir, { recursive: true })
   const staged = []
@@ -263,16 +248,11 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
       copyFileSync(item.file, to)
       staged.push(to)
     }
-    gh(ctx, "release", "upload", RELEASE, ...staged, "--clobber")
-    for (const body of bodies)
-      gh(
-        ctx,
-        target.kind === "pr" ? "pr" : "issue",
-        "comment",
-        String(target.n),
-        "--body",
-        body
-      )
+    ctx.ports.gh.releaseUpload(RELEASE, staged)
+    for (const body of bodies) {
+      if (target.kind === "pr") ctx.ports.gh.commentPr(target.n, body)
+      else ctx.ports.gh.comment(target.n, body)
+    }
   } finally {
     for (const path of staged) rmSync(path, { force: true })
   }

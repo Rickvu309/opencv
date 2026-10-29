@@ -3,38 +3,30 @@ import { join } from "node:path"
 import test from "node:test"
 import { approveComment } from "./approve.mjs"
 import { runCli } from "./cli.mjs"
-import { fakeCtx, issueData } from "./fake-ctx.mjs"
 import { approvalValid } from "./report.mjs"
+import { ctxFor, fakePorts, issue } from "./ports/fake.mjs"
 
-const repo = ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}']
+const posted = (ports) => ports.effects.find((e) => e.op === "comment")
 
-function high(over = {}) {
-  return issueData({
-    state: "OPEN",
-    labels: { nodes: [{ name: "risk:high" }] },
-    comments: { nodes: [] },
-    ...over,
-  })
-}
-
-function ctxFor(issue, extra = {}) {
-  return fakeCtx(
-    [
-      ...(extra.first ?? []),
-      repo,
-      ["api user", extra.login ?? "owner"],
-      ["api graphql", issue],
-      ["issue comment", ""],
-      ...(extra.rules ?? []),
+function run(over = {}, extra = {}) {
+  const ports = fakePorts({
+    owner: "owner",
+    login: extra.login ?? "owner",
+    env: extra.env,
+    files: extra.files,
+    issues: [
+      issue(90, {
+        labels: ["risk:high"],
+        comments: [],
+        ...over,
+      }),
     ],
-    extra
-  )
+  })
+  return { ports, ctx: ctxFor(ports, extra) }
 }
-
-const posted = (ctx) => ctx.calls.find((c) => c.includes("issue comment"))
 
 test("approve posts /approve and names the agent that relayed it", () => {
-  const ctx = ctxFor(high(), { env: { OCV_TOOLS_AGENT: "agent-7" } })
+  const { ports, ctx } = run({}, { env: { OCV_TOOLS_AGENT: "agent-7" } })
   const { code, text } = runCli(["approve", "#90"], ctx)
   assert.equal(code, 0, text)
   assert.match(text, /Posted \/approve on #90/)
@@ -43,9 +35,9 @@ test("approve posts /approve and names the agent that relayed it", () => {
     /The agent must only run this after the owner said "approved" in this chat\./
   )
   assert.match(text, /\nNext: scripts\/ocv-tools\.mjs take 90/)
-  assert.match(
-    posted(ctx),
-    /--body \/approve\nRelayed by agent agent-7 from the owner in chat\./
+  assert.equal(
+    posted(ports).body,
+    "/approve\nRelayed by agent agent-7 from the owner in chat."
   )
   assert.equal(
     approvalValid({
@@ -65,87 +57,63 @@ test("approve posts /approve and names the agent that relayed it", () => {
 })
 
 test("approve reads the agent id from the worktree when the env is unset", () => {
-  const gitDir = "/repo/.git/worktrees/90"
-  const ctx = ctxFor(high(), {
-    files: { [join(gitDir, "ocv-tools-agent")]: "agent-file\n" },
-    rules: [
-      [
-        "rev-parse",
-        (line) =>
-          line.includes("--absolute-git-dir")
-            ? { ok: true, out: gitDir, err: "" }
-            : { ok: false, out: "", err: "unmocked" },
-      ],
-    ],
-  })
+  const gitDir = "/tmp/opencv/.git/worktrees/90-keep"
+  const { ports, ctx } = run(
+    {},
+    { files: { [join(gitDir, "ocv-tools-agent")]: "agent-file\n" } }
+  )
   const { code, text } = runCli(["approve", "90"], ctx)
   assert.equal(code, 0, text)
-  assert.match(
-    posted(ctx),
-    /Relayed by agent agent-file from the owner in chat\./
+  assert.equal(
+    posted(ports).body,
+    "/approve\nRelayed by agent agent-file from the owner in chat."
   )
 })
 
 test("approve refuses anything that is not an open risk:high issue", () => {
-  const normal = runCli(
-    ["approve", "90"],
-    ctxFor(issueData({ labels: { nodes: [{ name: "risk:normal" }] } }))
-  )
-  assert.equal(normal.code, 2)
-  assert.match(normal.text, /REFUSED NOT_HIGH_RISK/)
-  assert.match(normal.text, /No approval is needed/)
-  assert.match(normal.text, /\nFix: /)
-  const low = runCli(
-    ["approve", "90"],
-    ctxFor(issueData({ labels: { nodes: [{ name: "risk:low" }] } }))
-  )
+  const normal = run({ labels: ["risk:normal"] })
+  const normalResult = runCli(["approve", "90"], normal.ctx)
+  assert.equal(normalResult.code, 2)
+  assert.match(normalResult.text, /REFUSED NOT_HIGH_RISK/)
+  assert.match(normalResult.text, /No approval is needed/)
+  assert.match(normalResult.text, /\nFix: /)
+  const low = runCli(["approve", "90"], run({ labels: ["risk:low"] }).ctx)
   assert.match(low.text, /NOT_HIGH_RISK/)
   assert.match(low.text, /no approval is needed/)
   const unset = runCli(
     ["approve", "90"],
-    ctxFor(issueData({ labels: { nodes: [] }, body: "no risk section" }))
+    run({ labels: [], body: "no risk section" }).ctx
   )
   assert.match(unset.text, /NOT_HIGH_RISK/)
-  const closed = runCli(["approve", "90"], ctxFor(high({ state: "CLOSED" })))
+  const closed = runCli(["approve", "90"], run({ state: "CLOSED" }).ctx)
   assert.equal(closed.code, 2)
   assert.match(closed.text, /REFUSED CLOSED/)
   const closedLow = runCli(
     ["approve", "90"],
-    ctxFor(
-      issueData({
-        state: "CLOSED",
-        labels: { nodes: [{ name: "risk:low" }] },
-      })
-    )
+    run({ state: "CLOSED", labels: ["risk:low"] }).ctx
   )
   assert.match(closedLow.text, /REFUSED CLOSED/)
-  const missing = runCli(
-    ["approve", "91"],
-    ctxFor(
-      JSON.stringify({
-        data: { repository: { owner: { login: "owner" }, issue: null } },
-      })
-    )
-  )
+  const missingPorts = fakePorts({ issues: [issue(90)], login: "owner" })
+  const missing = runCli(["approve", "91"], ctxFor(missingPorts))
   assert.equal(missing.code, 2)
   assert.match(missing.text, /REFUSED NOT_AN_ISSUE/)
-  for (const result of [normal, low, closed, missing])
+  assert.equal(posted(normal.ports), undefined)
+  assert.equal(posted(missingPorts), undefined)
+  for (const result of [normalResult, low, closed, missing])
     assert.ok(!result.text.includes("issue comment"))
 })
 
 test("a valid /approve after the last edit is left as it is", () => {
-  const ctx = ctxFor(
-    high({
-      comments: {
-        nodes: [
-          {
-            author: { login: "owner" },
-            body: "/approve\nRelayed by agent old from the owner in chat.",
-            createdAt: "2026-10-29T11:00:00Z",
-          },
-        ],
-      },
-    }),
+  const { ports, ctx } = run(
+    {
+      comments: [
+        {
+          author: { login: "owner" },
+          body: "/approve\nRelayed by agent old from the owner in chat.",
+          createdAt: "2026-10-29T11:00:00Z",
+        },
+      ],
+    },
     { env: { OCV_TOOLS_AGENT: "agent-7" } }
   )
   const { code, text } = runCli(["approve", "90"], ctx)
@@ -153,70 +121,63 @@ test("a valid /approve after the last edit is left as it is", () => {
   assert.match(text, /already has a valid \/approve/)
   assert.match(text, /Nothing posted/)
   assert.match(text, /owner said "approved"/)
-  assert.equal(posted(ctx), undefined)
+  assert.equal(posted(ports), undefined)
 })
 
 test("an older or foreign /approve does not count, so a new one is posted", () => {
-  const stale = ctxFor(
-    high({
+  const stale = run(
+    {
       lastEditedAt: "2026-10-29T12:00:00Z",
-      comments: {
-        nodes: [
-          {
-            author: { login: "owner" },
-            body: "/approve",
-            createdAt: "2026-10-29T11:00:00Z",
-          },
-        ],
-      },
-    }),
+      comments: [
+        {
+          author: { login: "owner" },
+          body: "/approve",
+          createdAt: "2026-10-29T11:00:00Z",
+        },
+      ],
+    },
     { env: { OCV_TOOLS_AGENT: "agent-7" } }
   )
-  assert.equal(runCli(["approve", "90"], stale).code, 0)
-  assert.match(posted(stale), /Relayed by agent agent-7/)
-  const foreign = ctxFor(
-    high({
-      comments: {
-        nodes: [
-          {
-            author: { login: "someone" },
-            body: "/approve",
-            createdAt: "2026-10-29T11:00:00Z",
-          },
-        ],
-      },
-    }),
+  assert.equal(runCli(["approve", "90"], stale.ctx).code, 0)
+  assert.match(posted(stale.ports).body, /Relayed by agent agent-7/)
+  const foreign = run(
+    {
+      comments: [
+        {
+          author: { login: "someone" },
+          body: "/approve",
+          createdAt: "2026-10-29T11:00:00Z",
+        },
+      ],
+    },
     { env: { OCV_TOOLS_AGENT: "agent-7" } }
   )
-  assert.equal(runCli(["approve", "90"], foreign).code, 0)
-  assert.match(posted(foreign), /--body \/approve\n/)
+  assert.equal(runCli(["approve", "90"], foreign.ctx).code, 0)
+  assert.match(posted(foreign.ports).body, /^\/approve\n/)
 })
 
 test("approve refuses a collaborator and does not post", () => {
-  const ctx = ctxFor(high(), {
-    login: "collaborator",
-    env: { OCV_TOOLS_AGENT: "agent-7" },
-  })
+  const { ports, ctx } = run(
+    {},
+    { login: "collaborator", env: { OCV_TOOLS_AGENT: "agent-7" } }
+  )
   const { code, text } = runCli(["approve", "90"], ctx)
   assert.equal(code, 2, text)
   assert.match(text, /REFUSED NOT_OWNER/)
+  assert.match(text, /signed in as collaborator/)
   assert.match(
     text,
     /Fix: run this as the owner account; take only accepts the owner's \/approve/
   )
-  assert.equal(posted(ctx), undefined)
-  assert.ok(ctx.calls.some((c) => c.includes("api user --jq .login")))
-  assert.ok(!ctx.calls.some((c) => c.includes("issue comment")))
+  assert.equal(posted(ports), undefined)
 })
 
 test("approve usage", () => {
-  assert.equal(runCli(["approve"], fakeCtx([])).code, 1)
-  assert.equal(runCli(["approve", "0"], fakeCtx([])).code, 1)
-  assert.match(
-    runCli(["approve", "90", "--yes"], fakeCtx([])).text,
-    /UNKNOWN_FLAG/
-  )
-  const { text } = runCli(["help"], fakeCtx([]))
+  const ctx = ctxFor(fakePorts())
+  assert.equal(runCli(["approve"], ctx).code, 1)
+  assert.equal(runCli(["approve", "0"], ctx).code, 1)
+  assert.match(runCli(["approve", "90", "--yes"], ctx).text, /UNKNOWN_FLAG/)
+  const { text } = runCli(["help"], ctx)
   assert.match(text, /approve <n>/)
   assert.match(text, /NOT_HIGH_RISK/)
   assert.match(text, /NOT_OWNER/)
