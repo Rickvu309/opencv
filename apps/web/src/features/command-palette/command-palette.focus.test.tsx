@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { focusSearchButton } from "./command-palette.tsx"
+import { focusSearchButton } from "./focus-search-button.ts"
 
 beforeEach(() => {
   vi.useFakeTimers()

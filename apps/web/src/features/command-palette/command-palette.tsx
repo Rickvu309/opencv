@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
+import { focusSearchButton } from "./focus-search-button.ts"
+
 import { requestShellChat } from "@/features/command-palette/shell-chat.ts"
 import {
   PALETTE_SCOPES,
@@ -52,18 +54,6 @@ function RowDetail({ title, detail }: { title: string; detail: string }) {
       <span className="text-xs text-muted-foreground">{detail}</span>
     </span>
   )
-}
-
-export function focusSearchButton() {
-  const timer = window.setTimeout(() => {
-    if (typeof document === "undefined") return
-    const buttons = [
-      ...document.querySelectorAll<HTMLElement>('button[aria-label="Search"]'),
-    ]
-    const visible = buttons.find((button) => button.getClientRects().length > 0)
-    ;(visible ?? buttons[0])?.focus()
-  }, 30)
-  return () => window.clearTimeout(timer)
 }
 
 export function CommandPalette({
