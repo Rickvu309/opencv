@@ -422,6 +422,64 @@ describe("CV photo bytes", () => {
 
     await client.close()
   })
+
+  it("sweeps avatar rows older than a day that no document references", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Ada",
+      email: "ada-sweep@example.com",
+    })
+    const created = await app.request("/api/commands/paper.create", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({
+        input: { kind: "cv", templateId: "with-photo", name: "Sweep CV" },
+      }),
+    })
+    expect(created.status).toBe(200)
+    const docId = ((await created.json()) as { data: { id: string } }).data.id
+
+    const upload = async (bytes: Uint8Array, name: string) =>
+      (
+        (await (
+          await postAvatar(app, owner.cookie, bytes, name, "image/png")
+        ).json()) as { data: { id: string } }
+      ).data.id
+    const attachedId = await upload(png, "kept.png")
+    const orphanId = await upload(Uint8Array.from([...png, 0x02]), "orphan.png")
+    const freshId = await upload(Uint8Array.from([...png, 0x03]), "fresh.png")
+    const attached = await app.request("/api/commands/paper.attachPhoto", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ input: { docId, fileId: attachedId } }),
+    })
+    expect(attached.status).toBe(200)
+
+    const { files } = await import("../db/schema.js")
+    const { inArray } = await import("drizzle-orm")
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+    await db
+      .update(files)
+      .set({ createdAt: twoDaysAgo })
+      .where(inArray(files.id, [attachedId, orphanId]))
+
+    const swept = await withDatabase(db, async () => {
+      const { sweepUnattachedPhotos } = await import("./photo-sweep.js")
+      return sweepUnattachedPhotos()
+    })
+    expect(swept).toEqual([orphanId])
+
+    const bytes = async (fileId: string) =>
+      app.request(`/api/paper/files/${fileId}/bytes`, {
+        headers: authHeaders(owner.cookie),
+      })
+    expect((await bytes(attachedId)).status).toBe(200)
+    expect((await bytes(freshId)).status).toBe(200)
+    expect((await bytes(orphanId)).status).toBe(404)
+
+    await client.close()
+  })
 })
 
 function formFile(bytes: Uint8Array, name: string, type: string) {

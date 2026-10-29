@@ -8,6 +8,7 @@ import {
 } from "@workspace/domain"
 
 import { render } from "@/test/render-with-client.tsx"
+import { Toaster } from "@workspace/ui/components/sonner"
 
 import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhoto, CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
@@ -197,6 +198,92 @@ describe("CV photo", () => {
       await screen.findByText("This document changed. Reload it and try again.")
     ).toBeInTheDocument()
     expect(calls.some((call) => call.includes("paper.deleteFile"))).toBe(true)
+    expect(view.container.querySelector("img")).toBeNull()
+  })
+
+  it("deletes the uploaded file when the person cancels the attach from the toast", async () => {
+    const calls: { url: string; body?: string }[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      calls.push({ url, body: init?.body ? String(init.body) : undefined })
+      if (url.includes("/api/commands/paper.attachPhoto")) {
+        return Promise.resolve(
+          Response.json({
+            ok: true,
+            data: {
+              id: DOC_ID,
+              contentVersion: 2,
+              activityId: "33333333-3333-4333-8333-333333333333",
+            },
+          })
+        )
+      }
+      if (url.includes("/api/commands/activity.undo")) {
+        return Promise.resolve(Response.json({ ok: true, data: {} }))
+      }
+      if (url.includes(`/api/paper/${DOC_ID}`)) {
+        const restored = blankBlockDocument()
+        return Promise.resolve(
+          Response.json({
+            ok: true,
+            data: {
+              id: DOC_ID,
+              contentVersion: 3,
+              document: restored,
+            },
+          })
+        )
+      }
+      if (url.includes("/api/commands/paper.deleteFile")) {
+        return Promise.resolve(
+          Response.json({ ok: true, data: { fileId: FILE_ID } })
+        )
+      }
+      if (url.includes("/api/paper/files")) {
+        return Promise.resolve(
+          Response.json({ ok: true, data: { id: FILE_ID } })
+        )
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+
+    function Harness() {
+      const [url, setUrl] = useState<string | undefined>()
+      return (
+        <>
+          <CvPhotoFrame value={{ docId: DOC_ID }}>
+            <CvPhoto url={url} onChange={setUrl} />
+          </CvPhotoFrame>
+          <Toaster />
+        </>
+      )
+    }
+    const view = render(<Harness />)
+    const input = view.container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    fireEvent.change(input, {
+      target: {
+        files: [
+          new File([new Uint8Array(8)], "face.png", { type: "image/png" }),
+        ],
+      },
+    })
+    await waitFor(() => {
+      expect(
+        view.container.querySelector("img")?.getAttribute("src")
+      ).toContain(`/api/paper/files/${FILE_ID}/bytes`)
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    await waitFor(() => {
+      expect(
+        calls.some(
+          (call) =>
+            call.url.includes("paper.deleteFile") &&
+            call.body?.includes(FILE_ID)
+        )
+      ).toBe(true)
+    })
     expect(view.container.querySelector("img")).toBeNull()
   })
 

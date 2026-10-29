@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import {
   isCvBlockDocument,
   isCvDocument,
+  paperPhotoFileId,
   parsePaperId,
   type FileId,
 } from "@workspace/domain"
@@ -493,11 +494,19 @@ function CvPhotoUploader({
     else onChange(ref)
   }
 
-  async function undo(activityId: string) {
+  async function undo(activityId: string, fileId?: FileId) {
     try {
       await undoActivity(queryClient, activityId)
       const next = await getPaper(docId)
-      publish(storedPhoto(next.document), next.contentVersion)
+      const restoredPhoto = storedPhoto(next.document)
+      publish(restoredPhoto, next.contentVersion)
+      if (fileId && paperPhotoFileId(restoredPhoto) !== fileId) {
+        try {
+          await run("paper.deleteFile", { fileId })
+        } catch {
+          // The undo already succeeded. The api sweep removes the row later.
+        }
+      }
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -528,7 +537,7 @@ function CvPhotoUploader({
       const activityId = saved.activityId
       if (activityId) {
         toastWithUndo("Photo added", () => {
-          void undo(activityId)
+          void undo(activityId, fileId)
         })
       }
     } catch (caught) {

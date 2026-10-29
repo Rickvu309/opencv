@@ -320,7 +320,7 @@ export async function pageCount(actor: Actor, docId: PaperId) {
   return { docId, pages: weight > 3500 ? 2 : 1, pageChoice: doc.pageChoice }
 }
 
-function photoRefOf(document: PaperView["document"]) {
+export function photoRefOf(document: PaperView["document"]) {
   if (isCvBlockDocument(document)) return document.header.photo
   if (isCvDocument(document)) return document.photoUrl
   return undefined
