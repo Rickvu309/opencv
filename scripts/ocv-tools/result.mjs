@@ -21,7 +21,6 @@ export const SCHEMA = Object.freeze({
   scripts: Object.freeze([
     "new-task",
     "open-pr",
-    "review-pr",
     "merge-pr",
     "check",
     "release",
