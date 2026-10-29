@@ -107,7 +107,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.
 - Never create `develop`, `staging`, or `release/` branches.
-- CI runs on GitHub-hosted runners; workflows other than `ci.yml` are not added without an issue. `ci.yml` changes are `risk:high`.
+- CI runs on GitHub-hosted runners; a rule refuses any workflow file besides `ci.yml` until #615 allows more. `ci.yml` changes are `risk:high`.
 
 #### 6. Merge and clean up
 

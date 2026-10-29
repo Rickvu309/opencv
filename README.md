@@ -63,7 +63,7 @@ The files are `design/opencv.pen`, `design/exports`, and `design/cli`. From that
 
 ## How work happens
 
-Every change starts with a GitHub issue, and every issue gets its own branch and worktree. One workflow, `ci.yml`, runs the quick check on this machine's runner. Local hooks are the other gate. A pull request merges when that check is green.
+Every change starts with a GitHub issue, and every issue gets its own branch and worktree. One workflow, `ci.yml`, runs the quick check on GitHub-hosted runners. Local hooks are the other gate. A pull request merges when that check is green.
 
 ```bash
 scripts/ocv-tools.mjs take <issue#> -d "short description"   # branch + worktree
