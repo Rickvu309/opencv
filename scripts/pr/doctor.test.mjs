@@ -168,11 +168,11 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
   )
 
   const extra = liveRuleset()
-  extra.rules.push({ type: "required_status_checks" })
+  extra.rules.push({ type: "required_signatures" })
   drift = await doctor(fakeIo({ ruleset: async () => extra }))
   assert.match(
     drift[0].detail,
-    /\[required_status_checks\]: on GitHub, not in git/
+    /\[required_signatures\]: on GitHub, not in git/
   )
 
   const loose = liveRuleset()
