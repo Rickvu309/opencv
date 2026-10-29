@@ -71,9 +71,9 @@ const clean = (word) =>
     .replace(/^\(+/, "")
 
 /**
- * A path under a repo folder must exist, from the repo root, from the folder of
- * the doc that cites it, or from the skill's own folder (skill docs write
- * `scripts/lib/probe.mjs` for the skill's scripts). A shorter path such as
+ * A path under a repo folder must exist, from the repo root or from the skill's
+ * own folder (skill docs write `scripts/lib/probe.mjs` for the skill's
+ * scripts). A shorter path such as
  * `features/home/x.tsx` or a bare `x.tsx` is a file name a table gives under
  * a folder it names, so some tracked file must end with it.
  */

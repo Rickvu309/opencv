@@ -30,7 +30,7 @@ Single-context (`CONTEXT.md` and `docs/adr/`). See `docs/agents/domain.md`.
 - `apps/web/src` is the SPA. `routes/` holds pages, `features/<surface>/` each surface's code and tests, `components/` and `lib/` what features share. Only `lib/` calls the api.
   - `contract-client.ts` runs commands and owns read keys and refresh.
   - `api.ts` (`apiFetch`) and `requests.ts` (`endpoints`) fetch reads. `coach-stream.ts` reads the Coach stream.
-  - `features/<surface>/*-api.ts` wraps a surface's reads (keys, fetchers, error types) over `lib/`.
+  - `features/<surface>/*-api.ts` wraps a surface's api calls over `lib/`.
 - `packages/ui/src/components` is the shadcn kit. See Design system below.
 
 To add a product action, follow `docs/adr/0010-one-typed-contract-for-commands-and-reads.md`:
@@ -92,8 +92,8 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - The pre-push hook runs the quick check, `scripts/check.sh --changed`. The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
 - For a PR that touches `apps/web/`, `apps/api/`, `packages/ui/`, `packages/domain/` or a verify skill, `scripts/review-pr.sh` also runs `verify:app-ui` and `verify:landing` at `VERIFY_TIER=invariant`. The allowed FAILs are each skill's `known-findings.json` on `main` minus the entries the PR deletes, so a fix PR deletes its entry. A NEW FAIL is rerun once, cold, and counts only when it fails in both runs. Check 34 (render timing) is advisory. A new FAIL, a fixed finding still listed, a STALE or a checker error fails the review. To add a known finding, open an issue first, then land the entry in its own PR that changes only `known-findings.json` files; the tier runs for it, so an entry whose check passes fails. A PR that adds an entry and changes anything else fails.
 - Open the PR with `heavy -- scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
-- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR.
-- Heavy commands run through `heavy`: the full `scripts/check.sh`, `scripts/review-pr.sh`, and `scripts/open-pr.sh` or any push that triggers the pre-push hook, for example `heavy --label review-123 -- scripts/review-pr.sh 123`. It admits two heavy jobs at a time on this box, caps each at 4 cores and 4 GB, gives a waiting OpenCV job the next free slot, and exports `CHECK_CONCURRENCY=2` and `VITEST_MAX_WORKERS=2`. The PR scripts refuse to run without it. Never run two of your own at once. `heavy status` shows who holds the slots.
+- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet.
+- Heavy commands run through `heavy`: the full `scripts/check.sh`, `scripts/review-pr.sh`, and `scripts/open-pr.sh` or any push that triggers the pre-push hook, for example `heavy --label review-123 -- scripts/review-pr.sh 123`. It admits two jobs at a time, caps each at 4 cores and 4 GB, and exports `CHECK_CONCURRENCY=2` and `VITEST_MAX_WORKERS=2`. The PR scripts refuse to run without it. Never run two of your own at once. `heavy status` shows who holds the slots.
 - A branch behind `main` needs no rebase: `scripts/review-pr.sh` tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && heavy -- git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
@@ -104,7 +104,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - Never use `SKIP_CHECKS=1` unless a human declared a production emergency, and then say so in the PR.
 - Never approve your own PR, and never use the review agent's identity to approve your own work.
 - Never remove the `needs-human-review` label or edit `.github/CODEOWNERS` to get around a human review.
-- Human review is only for super important changes: a mass deletion (`review-pr.sh` flags a PR that deletes 25% or more of the files on `main` or 80% or more of one app or package; a rename counts as a deletion) or a big decision, which you flag with the `needs-human-review` label (dropping a product, a data-losing migration, changing pricing or the legal entity). Everything else merges without a human.
+- Human review is only for super important changes: a mass deletion (`review-pr.sh` flags a PR that deletes 25% or more of the files on `main` or 80% or more of one app or package; a rename counts as a deletion) or a big decision, which you flag with the `needs-human-review` label (for example dropping a product, a data-losing migration, changing pricing or the legal entity). Everything else merges without a human.
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.
 - Never create `develop`, `staging`, or `release/` branches.
