@@ -1,5 +1,5 @@
-import type { DragEvent } from "react"
-import { LoaderCircle } from "lucide-react"
+import { useState, type DragEvent } from "react"
+import { FileUp, LoaderCircle } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -24,38 +24,62 @@ export function PaperImportRow({
   onChooseFile: () => void
   onDropFile: (event: DragEvent<HTMLDivElement>) => void
 }) {
+  const [linkOpen, setLinkOpen] = useState(false)
   return (
     <div
       role="region"
       aria-label="Import a file"
-      className="rounded-lg border border-border p-4"
+      className="w-full max-w-170 rounded-2xl border border-border bg-card px-4 py-4"
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDropFile}
     >
-      <p className="text-sm font-medium">Import a file</p>
-      <p className="text-sm text-muted-foreground">
-        Drop a PDF, Word or Google Doc, or paste a LinkedIn link.
-      </p>
-      <Input
-        aria-label="Paste a link"
-        placeholder="Paste a link"
-        value={link}
-        className="mt-3"
-        onChange={(event) => onLinkChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter") return
-          event.preventDefault()
-          onSubmitLink()
-        }}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        className="mt-3"
-        onClick={onChooseFile}
-      >
-        Choose file
-      </Button>
+      <div className="flex flex-wrap items-center gap-3.5">
+        <span
+          aria-hidden
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary"
+        >
+          <FileUp className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1 basis-48">
+          <p className="text-sm font-semibold">Import a file</p>
+          <p className="text-xs text-muted-foreground/85">
+            Drop a PDF, Word or Google Doc, or{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-xs font-normal text-muted-foreground/85"
+              onClick={() => setLinkOpen((open) => !open)}
+              aria-expanded={linkOpen}
+              aria-controls="paper-import-link"
+            >
+              paste a LinkedIn link.
+            </Button>
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 bg-card"
+          onClick={onChooseFile}
+        >
+          Choose file
+        </Button>
+      </div>
+      {linkOpen ? (
+        <div id="paper-import-link" className="pt-3">
+          <Input
+            aria-label="Paste a link"
+            placeholder="Paste a link"
+            value={link}
+            onChange={(event) => onLinkChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return
+              event.preventDefault()
+              onSubmitLink()
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react"
 import { useEffect, useRef, useState, type DragEvent } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -31,16 +32,13 @@ import {
   importPaperLink,
   latestActivityId,
 } from "./paper-api.ts"
-import {
-  CantReadDialog,
-  ImportProgressDialog,
-  PaperImportRow,
-} from "./paper-import.tsx"
+import { CantReadDialog, ImportProgressDialog } from "./paper-import.tsx"
+import { PaperFirstRun } from "./paper-first-run.tsx"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
-import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
+import { PaperCard, SectionHead } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { paperEditedLabel } from "./paper-templates.ts"
@@ -115,7 +113,12 @@ export function PaperLibrary({
   )
   const noResults =
     needle !== "" && visible.length === 0 && visibleFiles.length === 0
-  const firstRun = !loading && !error && documents.length === 0 && needle === ""
+  const firstRun =
+    !loading &&
+    !error &&
+    documents.length === 0 &&
+    files.length === 0 &&
+    needle === ""
 
   useEffect(() => () => importRequest.current?.abort(), [])
 
@@ -315,7 +318,7 @@ export function PaperLibrary({
   return (
     <section
       aria-label="Paper"
-      className="flex min-w-0 flex-col gap-6 p-4 sm:p-6"
+      className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto"
     >
       <PaperImportInput
         inputRef={importRef}
@@ -331,23 +334,29 @@ export function PaperLibrary({
           docId={printTarget.id}
         />
       ) : null}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-medium">Paper</h1>
+      <div className="flex h-13 shrink-0 items-center justify-between gap-3 border-b border-border/40 bg-card px-5">
+        <h1 className="text-sm font-medium text-foreground/90">Paper</h1>
         <Button
           type="button"
           variant={dialogOpen ? "outline" : "glow"}
+          className="font-semibold"
           data-primary-action
           onClick={() => setMode({ type: "new", step: "kind" })}
         >
+          <Plus aria-hidden className="size-3.5" />
           New
         </Button>
       </div>
-      <Input
-        aria-label="Search Paper"
-        placeholder="Search Paper"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
+      {!firstRun ? (
+        <div className="px-5 pt-5">
+          <Input
+            aria-label="Search Paper"
+            placeholder="Search Paper"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+      ) : null}
       {loading ? <p>Loading documents</p> : null}
       {error ? (
         <div className="flex flex-col items-start gap-3">
@@ -358,38 +367,15 @@ export function PaperLibrary({
         </div>
       ) : null}
       {firstRun ? (
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-base font-medium">Start a document</h2>
-            <p className="text-sm text-muted-foreground">
-              Pick a page, or bring a file you already have.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <NewPaperCard
-              title="CV"
-              body="A page you can send."
-              onClick={() => setMode({ type: "new", step: "gallery" })}
-            />
-            <NewPaperCard
-              title="Cover letter"
-              body="A letter for one job."
-              onClick={() => setMode({ type: "letter" })}
-            />
-            <NewPaperCard
-              title="Proof"
-              body="Show the work behind a line."
-              href="/proof"
-            />
-          </div>
-          <PaperImportRow
-            link={link}
-            onLinkChange={setLink}
-            onSubmitLink={() => void onPasteLink()}
-            onChooseFile={chooseFile}
-            onDropFile={onDropFile}
-          />
-        </div>
+        <PaperFirstRun
+          onStartCv={() => setMode({ type: "new", step: "gallery" })}
+          onStartLetter={() => setMode({ type: "letter" })}
+          link={link}
+          onLinkChange={setLink}
+          onSubmitLink={() => void onPasteLink()}
+          onChooseFile={chooseFile}
+          onDropFile={onDropFile}
+        />
       ) : null}
       {!loading && !error && noResults ? (
         <div>
@@ -400,7 +386,7 @@ export function PaperLibrary({
         </div>
       ) : null}
       {!loading && !error && !firstRun && !noResults ? (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 p-5">
           <section className="flex flex-col gap-3">
             <SectionHead>CVs</SectionHead>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

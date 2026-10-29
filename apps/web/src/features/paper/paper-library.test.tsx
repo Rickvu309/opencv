@@ -2,10 +2,15 @@ import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
-import { emptyCvDocument, type PaperView } from "@workspace/domain"
+import {
+  emptyCvDocument,
+  type PaperFile,
+  type PaperView,
+} from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
 import { importPaperFile, importPaperLink } from "./paper-api.ts"
+import firstRunSnapshot from "./design/first-run.snapshot.json"
 
 vi.mock("./paper-api.ts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./paper-api.ts")>()),
@@ -37,11 +42,11 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function renderLibrary(docs: PaperView[]) {
+function renderLibrary(docs: PaperView[], files: PaperFile[] = []) {
   render(
     <PaperLibrary
       docs={docs}
-      files={[]}
+      files={files}
       loading={false}
       error={null}
       onRetry={() => undefined}
@@ -51,6 +56,43 @@ function renderLibrary(docs: PaperView[]) {
 }
 
 describe("Paper library", () => {
+  it("keeps uploaded files searchable before a document exists", () => {
+    renderLibrary(
+      [],
+      [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Original CV.pdf",
+          mediaType: "application/pdf",
+          byteSize: 1024,
+          createdAt: "2026-08-25T12:00:00.000Z",
+        },
+      ]
+    )
+    const search = screen.getByRole("textbox", { name: "Search Paper" })
+    expect(screen.getByText("Original CV.pdf")).toBeInTheDocument()
+    fireEvent.change(search, { target: { value: "unmatched" } })
+    expect(screen.queryByText("Original CV.pdf")).toBeNull()
+    expect(screen.getByText('No results for "unmatched"')).toBeInTheDocument()
+    fireEvent.change(search, { target: { value: "original" } })
+    expect(screen.getByText("Original CV.pdf")).toBeInTheDocument()
+    fireEvent.change(search, { target: { value: "" } })
+    expect(screen.getByText("Original CV.pdf")).toBeInTheDocument()
+    expect(screen.queryByText("Start a document")).toBeNull()
+  })
+
+  it("shows the first-run frame's Paper content", () => {
+    renderLibrary([])
+    const main = firstRunSnapshot.sections.find(
+      (section) => section.name === "Main wrap"
+    )
+    if (!main) throw new Error("Missing Paper main frame")
+    const texts = main.texts.slice(0, main.texts.indexOf("Choose file") + 1)
+    const paper = screen.getByRole("region", { name: "Paper" })
+    for (const text of texts) expect(paper).toHaveTextContent(text)
+    expect(screen.queryByRole("textbox", { name: "Search Paper" })).toBeNull()
+  })
+
   it("shows import progress and cancels without opening a document", async () => {
     vi.mocked(importPaperFile).mockImplementation(
       () => new Promise(() => undefined)
@@ -172,6 +214,9 @@ describe("Paper library", () => {
       new Error("Google Docs aren't supported. Download a PDF or Word file.")
     )
     renderLibrary([])
+    fireEvent.click(
+      screen.getByRole("button", { name: "paste a LinkedIn link." })
+    )
     const field = screen.getByRole("textbox", { name: "Paste a link" })
     fireEvent.change(field, {
       target: { value: "https://docs.google.com/document/d/abc" },

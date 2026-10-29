@@ -1,0 +1,88 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "YC0lV",
+    "frameName": "W5.1 Paper first run"
+  },
+  "sections": [
+    {
+      "id": "Zi9iS",
+      "name": "OC Sidebar",
+      "texts": [
+        "opencv",
+        "Inbox",
+        "4",
+        "Coach",
+        "Jobs",
+        "Your work",
+        "Paper",
+        "Apply",
+        "Pitch",
+        "Favorites",
+        "Junior Marketing CV",
+        "Lumière application",
+        "Checkout UX study",
+        "LN",
+        "Linh Nguyen"
+      ],
+      "fills": []
+    },
+    {
+      "id": "PVaFN",
+      "name": "Main wrap",
+      "texts": [
+        "Paper",
+        "New",
+        "Start a document",
+        "Pick a page, or bring a file you already have.",
+        "Linh Nguyen",
+        "EXPERIENCE",
+        "EDUCATION",
+        "SKILLS",
+        "CV",
+        "Linh Nguyen",
+        "Dear Hiring Team,",
+        "Cover letter",
+        "Your project",
+        "Proof",
+        "Import a file",
+        "Drop a PDF, Word or Google Doc, or paste a LinkedIn link.",
+        "Choose file",
+        "Tailor your CV for Lumière",
+        "Prep for Local startup interview",
+        "Coach"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#EAEFFA",
+            "#D6DFF6",
+            "#E7E3F9",
+            "#D0DAF5",
+            "#BCCAF1",
+            "#DCD6F6",
+            "#E6EBF9",
+            "#CED9F4",
+            "#E9E5F9"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.55, 0.6],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        }
+      ]
+    }
+  ]
+}

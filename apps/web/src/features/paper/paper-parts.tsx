@@ -7,7 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { cn } from "@workspace/ui/lib/utils"
+import { PreviewChoice } from "@workspace/ui/components/preview-choice"
+import { PaperStartPreview } from "./paper-start-preview.tsx"
 
 import { previewTemplate } from "./paper-templates.ts"
 
@@ -35,38 +36,25 @@ export function MiniCv({ templateId }: { templateId: string }) {
 
 export function NewPaperCard({
   title,
-  body,
+  kind,
   onClick,
   href,
 }: {
   title: string
-  body: string
-  onClick?: () => void
-  href?: string
-}) {
-  const className = cn(
-    "flex h-full flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left",
-    "hover:bg-muted"
-  )
-  if (href) {
-    return (
-      <a href={href} aria-label={title} className={className}>
-        <span className="text-sm font-medium">{title}</span>
-        <span className="text-sm text-muted-foreground">{body}</span>
-      </a>
-    )
-  }
+  kind: "cv" | "letter" | "proof"
+} & (
+  { href: string; onClick?: never } | { href?: never; onClick: () => void }
+)) {
+  const action = href !== undefined ? { href } : { onClick }
   return (
-    <Button
-      type="button"
-      variant="outline"
-      aria-label={title}
-      className={cn(className, "h-auto whitespace-normal")}
-      onClick={onClick}
+    <PreviewChoice
+      label={title}
+      outlined={kind === "cv"}
+      className="w-50"
+      {...action}
     >
-      <span className="text-sm font-medium">{title}</span>
-      <span className="text-sm font-normal text-muted-foreground">{body}</span>
-    </Button>
+      <PaperStartPreview kind={kind} />
+    </PreviewChoice>
   )
 }
 
