@@ -2,11 +2,12 @@ import { readFileSync, readdirSync } from "node:fs"
 import path from "node:path"
 import { PGlite } from "@electric-sql/pglite"
 import { sql } from "drizzle-orm"
+import { readMigrationFiles } from "drizzle-orm/migrator"
 import { drizzle } from "drizzle-orm/pglite"
 import { describe, expect, it } from "vitest"
 
 import type { AppDatabase } from "./context.js"
-import { runMigrations } from "./migrate.js"
+import { migrationConfig, runMigrations } from "./migrate.js"
 import { migrationsFolder } from "./paths.js"
 
 const productTables = [
@@ -61,6 +62,7 @@ describe("opencv_app migrations", () => {
       "0000_opencv_app",
       "0001_account_issuer_optional",
       "0002_chat_reply_supersession",
+      "0003_paper_favorites",
     ])
     const sqlFiles = readdirSync(migrationsFolder).filter((name) =>
       name.endsWith(".sql")
@@ -69,6 +71,7 @@ describe("opencv_app migrations", () => {
       "0000_opencv_app.sql",
       "0001_account_issuer_optional.sql",
       "0002_chat_reply_supersession.sql",
+      "0003_paper_favorites.sql",
     ])
     const source = readFileSync(
       path.join(migrationsFolder, "0000_opencv_app.sql"),
@@ -76,6 +79,52 @@ describe("opencv_app migrations", () => {
     )
     expect(source.includes(legacySchema)).toBe(false)
     await client.close()
+  })
+
+  it("upgrades existing papers to unfavorited without changing their content", async () => {
+    const client = new PGlite()
+    const db = drizzle({ client })
+    try {
+      const migrations = readMigrationFiles(migrationConfig())
+      const previous = migrations.slice(0, -1)
+      for (const migration of previous) {
+        for (const statement of migration.sql) await client.exec(statement)
+      }
+      const last = previous.at(-1)!
+      await client.exec(`
+        create table "opencv_app"."migrations" (
+          id serial primary key, hash text not null, created_at bigint
+        );
+        insert into "opencv_app"."user" (id, name, email)
+          values ('favorite-upgrade', 'Ada', 'favorite-upgrade@example.com');
+        insert into "opencv_app"."paper_docs"
+          (id, user_id, name, kind, document, content_version, updated_at)
+          values ('00000000-0000-4000-8000-000000000659', 'favorite-upgrade',
+            'Existing CV', 'cv', '{"version":2}', 7, '2026-01-01T00:00:00Z');
+      `)
+      await db.execute(sql`
+        insert into "opencv_app"."migrations" (hash, created_at)
+        values (${last.hash}, ${last.folderMillis})
+      `)
+      const before = await client.query<Record<string, unknown>>(
+        'select document, content_version, updated_at from "opencv_app"."paper_docs"'
+      )
+      await runMigrations(db as unknown as AppDatabase)
+      const after = await client.query(
+        'select document, content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
+      )
+      expect(after.rows).toEqual([{ ...before.rows[0], is_favorite: false }])
+      await runMigrations(db as unknown as AppDatabase)
+      expect(
+        (
+          await client.query(
+            'select is_favorite from "opencv_app"."paper_docs"'
+          )
+        ).rows
+      ).toEqual([{ is_favorite: false }])
+    } finally {
+      await client.close()
+    }
   })
 
   it("leaves a legacy schema and its journal untouched", async () => {

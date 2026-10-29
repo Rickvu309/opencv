@@ -22,7 +22,11 @@ import {
 } from "@/test/app-shell-fixtures.ts"
 import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
-import { failPaperList } from "@/test/paper-api-mock.ts"
+import {
+  failPaperList,
+  getMockPaperDocs,
+  setMockPaperFavorite,
+} from "@/test/paper-api-mock.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
@@ -59,6 +63,54 @@ afterEach(() => {
 })
 
 describe("app shell layout", () => {
+  it("persists a favorite through query refresh and a fresh app mount", async () => {
+    const path = "/paper/11111111-1111-7111-8111-111111111111"
+    renderApp(path)
+    const favorite = await screen.findByRole("button", { name: "Favorite" })
+    expect(favorite).toHaveAttribute("aria-pressed", "false")
+    fireEvent.click(favorite)
+    await waitFor(() =>
+      expect(favorite).toHaveAttribute("aria-pressed", "true")
+    )
+    expect(
+      await screen.findByRole("link", { name: "PM track CV" })
+    ).toBeInTheDocument()
+
+    cleanup()
+    renderApp(path)
+    const restored = await screen.findByRole("button", { name: "Favorite" })
+    expect(restored).toHaveAttribute("aria-pressed", "true")
+    fireEvent.click(restored)
+    await waitFor(() =>
+      expect(restored).toHaveAttribute("aria-pressed", "false")
+    )
+    await waitFor(() =>
+      expect(screen.queryByRole("link", { name: "PM track CV" })).toBeNull()
+    )
+  })
+
+  it("filters paper favorites before showing recent CVs", async () => {
+    const docs = getMockPaperDocs()
+    const cv = docs.find((doc) => doc.kind === "cv")!
+    docs.push({
+      ...cv,
+      id: "33333333-3333-7333-8333-333333333333",
+      name: "Newer unselected CV",
+      updatedAt: "2099-01-01T00:00:00.000Z",
+    })
+    setMockPaperFavorite("11111111-1111-7111-8111-111111111111", true)
+    renderApp(SURFACE_PATHS.pitch)
+    expect(
+      await screen.findByRole("link", { name: "PM track CV" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Newer unselected CV" })
+    ).toBeNull()
+    expect(
+      screen.queryByRole("link", { name: /Cover: Associate PM intern/ })
+    ).toBeNull()
+  })
+
   it("lists the nav in order, with Your work, Favorites, Search and New chat", async () => {
     setMockJobs([
       {
@@ -322,6 +374,7 @@ describe("app shell layout", () => {
     "opens the chosen favorite CV with desktop=%s",
     async (desktop) => {
       stubDesktopViewport(desktop)
+      setMockPaperFavorite("11111111-1111-7111-8111-111111111111", true)
       const { router } = renderApp(SURFACE_PATHS.pitch)
       await expectPitch()
       if (!desktop) {

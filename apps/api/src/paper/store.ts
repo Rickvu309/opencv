@@ -72,6 +72,7 @@ export function toPaper(row: typeof paperDocs.$inferSelect): PaperView {
     sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
+    isFavorite: row.isFavorite,
   }
 }
 
@@ -219,6 +220,21 @@ export async function renamePaper(actor: Actor, docId: PaperId, name: string) {
     ...toPaper({ ...current, name, updatedAt }),
     previousName: current.name,
   }
+}
+
+export async function setPaperFavorite(
+  userId: UserId,
+  docId: PaperId,
+  isFavorite: boolean
+) {
+  const rows = await getDb()
+    .update(paperDocs)
+    .set({ isFavorite })
+    .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
+    .returning({ id: paperDocs.id })
+  if (!rows[0])
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
+  return { docId, isFavorite }
 }
 
 export async function duplicatePaper(actor: Actor, docId: PaperId) {
@@ -432,7 +448,9 @@ export async function readShared(token: string) {
   const row = rows[0]
   if (!row)
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
-  return toPaper(row.doc)
+  const { isFavorite: _isFavorite, ...shared } = toPaper(row.doc)
+  void _isFavorite
+  return shared
 }
 
 function deleteAvatar(userId: UserId, fileId: string) {

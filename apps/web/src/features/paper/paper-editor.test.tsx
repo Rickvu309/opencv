@@ -1,58 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
-import { StrictMode, type ReactElement } from "react"
-import { render as renderWithClient } from "@/test/render-with-client.tsx"
-import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
-import {
-  emptyCvDocument,
-  type PaperPages,
-  type PaperView,
-} from "@workspace/domain"
+import { StrictMode } from "react"
+import { emptyCvDocument } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
+import {
+  render,
+  record,
+  pages,
+  inputOf,
+  ok,
+  fail,
+} from "./paper-editor.fixtures.tsx"
 import * as paperPrint from "./paper-print.ts"
-
-function render(ui: ReactElement) {
-  const wrap = (content: ReactElement) => (
-    <ChatStoreProvider>{content}</ChatStoreProvider>
-  )
-  const view = renderWithClient(wrap(ui))
-  return {
-    ...view,
-    rerender: (next: ReactElement) => view.rerender(wrap(next)),
-  }
-}
-
-const record: PaperView = {
-  id: "doc-1",
-  name: "PM track CV",
-  kind: "cv",
-  templateId: "simple",
-  status: "draft",
-  document: emptyCvDocument(),
-  contentVersion: 1,
-  checks: [],
-  pageChoice: "unset",
-  sourceFileId: null,
-  createdAt: "2020-01-01T00:00:00.000Z",
-  updatedAt: "2020-01-01T00:00:00.000Z",
-}
-
-function pages(count: number): PaperPages {
-  return { docId: record.id, pages: count, pageChoice: "unset" }
-}
-
-function inputOf<T>(init?: RequestInit) {
-  return (JSON.parse(String(init?.body)) as { input: T }).input
-}
-
-function ok(data: unknown) {
-  return Response.json({ ok: true, data })
-}
-
-function fail(status: number, code: string, message: string) {
-  return Response.json({ ok: false, error: { code, message } }, { status })
-}
 
 function installFetch(conflict = false) {
   const calls: string[] = []

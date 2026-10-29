@@ -89,7 +89,7 @@ export function PaperCvEditor({
       updatedAt,
       pageState,
       conflict,
-      favorite,
+      favoritePending,
       templateId,
       galleryOpen,
       previewPages,
@@ -276,6 +276,21 @@ export function PaperCvEditor({
     dispatch({ type: "document_adopted", doc: read, updatedAt: next.updatedAt })
   }
 
+  async function toggleFavorite() {
+    if (favoritePending) return
+    dispatch({ type: "favorite_started" })
+    try {
+      await run("paper.setFavorite", {
+        docId: initial.id,
+        isFavorite: !initial.isFavorite,
+      })
+    } catch (error) {
+      toastError(error, "Could not update favorite. Try again.")
+    } finally {
+      dispatch({ type: "favorite_finished" })
+    }
+  }
+
   async function fitOnePage() {
     try {
       const chat = await run("chat.create", { title: "Fit to one page" })
@@ -373,10 +388,13 @@ export function PaperCvEditor({
             variant="ghost"
             size="icon-sm"
             aria-label="Favorite"
-            aria-pressed={favorite}
-            onClick={() => dispatch({ type: "favorite_toggled" })}
+            aria-pressed={initial.isFavorite}
+            disabled={favoritePending}
+            onClick={() => void toggleFavorite()}
           >
-            <Star className="size-4" />
+            <Star
+              className={initial.isFavorite ? "size-4 fill-current" : "size-4"}
+            />
           </Button>
           <Button
             type="button"

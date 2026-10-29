@@ -79,6 +79,7 @@ function view(document: PaperView["document"]): PaperView {
     contentVersion: 1,
     checks: [],
     pageChoice: "unset",
+    isFavorite: false,
     sourceFileId: null,
     createdAt: "2020-01-01T00:00:00.000Z",
     updatedAt: "2020-01-01T00:00:00.000Z",

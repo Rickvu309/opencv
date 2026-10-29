@@ -30,6 +30,7 @@ export function useShellFavorites() {
   const favoriteDocs = docs.isError
     ? []
     : [...(docs.data ?? [])]
+        .filter((doc) => doc.isFavorite && doc.kind === "cv")
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
         .slice(0, 3)
   return {

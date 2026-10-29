@@ -13,7 +13,7 @@ export type EditorState = {
   updatedAt: PaperView["updatedAt"]
   pageState: PaperPages
   conflict: boolean
-  favorite: boolean
+  favoritePending: boolean
   templateId: PaperTemplateId | null
   galleryOpen: boolean
   previewPages: number
@@ -28,12 +28,13 @@ export type EditorAction =
   | { type: "document_adopted"; doc: CvBlockDocument; updatedAt: string }
   | { type: "saved"; at: string }
   | { type: "conflict_detected" }
+  | { type: "favorite_started" }
+  | { type: "favorite_finished" }
   | { type: "name_typed"; name: string }
   | { type: "name_rejected"; message: string }
   | { type: "name_accepted" }
   | { type: "pages_loaded"; pages: PaperPages }
   | { type: "two_pages_kept" }
-  | { type: "favorite_toggled" }
   | { type: "template_changed"; templateId: PaperTemplateId | null }
   | { type: "template_applied"; templateId: PaperTemplateId | null }
   | { type: "gallery_opened" }
@@ -55,7 +56,7 @@ export function initialEditor(
     updatedAt: initial.updatedAt,
     pageState: pages,
     conflict: false,
-    favorite: false,
+    favoritePending: false,
     templateId: initial.templateId,
     galleryOpen: false,
     previewPages: 1,
@@ -88,6 +89,10 @@ export function editorReducer(
       return { ...state, updatedAt: action.at, conflict: false }
     case "conflict_detected":
       return { ...state, conflict: true }
+    case "favorite_started":
+      return { ...state, favoritePending: true }
+    case "favorite_finished":
+      return { ...state, favoritePending: false }
     case "name_typed":
       return { ...state, name: action.name }
     case "name_rejected":
@@ -100,8 +105,6 @@ export function editorReducer(
         : { ...state, pageState: action.pages }
     case "two_pages_kept":
       return { ...state, pageState: { ...state.pageState, pageChoice: "keep" } }
-    case "favorite_toggled":
-      return { ...state, favorite: !state.favorite }
     case "template_changed":
       return { ...state, templateId: action.templateId }
     case "template_applied":
