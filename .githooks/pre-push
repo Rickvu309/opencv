@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pre-push: local guardrails (no CI). Enable once per clone:  git config core.hooksPath .githooks
+# pre-push: local guardrails (the ci workflow reruns the quick check). Enable once per clone:  git config core.hooksPath .githooks
 #   1. Never push to main (or delete it).
 #   2. Branch names must be type/<issue#>-short-description.
 #   3. Run scripts/check.sh --changed: a quick lint/typecheck/test scoped to what changed since origin/main.

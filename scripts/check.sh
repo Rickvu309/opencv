@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check.sh: run lint, typecheck, and test locally (this repo runs no CI).
+# check.sh: run lint, typecheck, and test locally (the ci workflow runs it too).
 # Detects pnpm / yarn / npm from the lockfile and runs the root package.json scripts that exist (they call turbo).
 #
 # Usage:

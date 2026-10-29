@@ -34,7 +34,7 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 - Title: `type: description (#<issue>)`. It becomes the squash commit subject on `main`.
 - Body: `.github/pull_request_template.md`, with `Closes #<issue>`.
 - Open it with `scripts/open-pr.sh [--draft]`; check it with `scripts/review-pr.sh <pr#>` (the gates lane: branch, title, body, human-needed check, secrets scan, full `scripts/check.sh` in a throwaway worktree). It prints OK, FAIL or HUMAN REQUIRED and never approves.
-- Squash is the only merge method. The repo runs no GitHub Actions.
+- Squash is the only merge method. The only GitHub Action is `ci.yml`, which runs on the local runner.
 - Details: `CONTRIBUTING.md` and `docs/git-workflow/`.
 
 ## Protection
