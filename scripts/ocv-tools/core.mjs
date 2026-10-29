@@ -45,6 +45,15 @@ export const FIXES = {
     'Save first: scripts/ocv-tools.mjs save -m "<what you did>", then run cleanup again.',
   NOT_MERGED:
     "Cleanup waits for the merge. Run: scripts/ocv-tools.mjs status <n>",
+  UNKNOWN_FLAG: "That flag is not supported. Run: scripts/ocv-tools.mjs help",
+  BAD_ARGS:
+    "Pass one target: an issue number or a title, not both. Run: scripts/ocv-tools.mjs help",
+  BAD_ISSUE:
+    "Pass an issue number of 1 or more, such as 90 or #90. Run: gh issue list",
+  DIVERGED:
+    "The local branch and origin have diverged. Reconcile both tips, then run take --resume again.",
+  UNKNOWN:
+    "The claim history is incomplete, so no holder was decided. Run the command again.",
   LOST: "Another agent took the claim. Your work is saved as a patch under ~/tmp/ocv-tools/lost. Stop and pick another issue.",
   ERROR: "Read the message, fix the cause, and run the command again.",
 }

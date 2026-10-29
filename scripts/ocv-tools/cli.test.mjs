@@ -47,6 +47,37 @@ const fileArgs = [
   "low",
 ]
 
+test("take refuses bad arguments before any git or gh call", () => {
+  const check = (args, code, pattern) => {
+    const ctx = fakeCtx([])
+    const r = runCli(["take", ...args], ctx)
+    assert.equal(r.code, 2, `${args.join(" ")} -> ${r.text}`)
+    assert.match(r.text, new RegExp(`REFUSED ${code}`))
+    assert.match(r.text, /\nFix: /)
+    assert.deepEqual(ctx.calls, [])
+    if (pattern) assert.match(r.text, pattern)
+  }
+  check(["90", "--no-asign"], "UNKNOWN_FLAG", /unknown option: --no-asign/)
+  check(
+    ["90", "--desc", "chosen branch words"],
+    "UNKNOWN_FLAG",
+    /unknown option: --desc \(use -d\)/
+  )
+  check(["90", "-b", "body text"], "UNKNOWN_FLAG", /--body-file/)
+  check(["90", "--help"], "UNKNOWN_FLAG", /help/)
+  check(["90", "-d"], "MISSING_FIELDS", /-d needs a value/)
+  check(["90", "--type"], "MISSING_FIELDS", /--type needs a value/)
+  check(["90", "-d", "--no-assign"], "MISSING_FIELDS", /-d needs a value/)
+  check(["90", "--type", "feature"], "MISSING_FIELDS", /type must be one of/)
+  check(["0"], "BAD_ISSUE", /not an issue number/)
+  check(["#0"], "BAD_ISSUE")
+  check(["90.5"], "BAD_ISSUE")
+  check(["#abc"], "BAD_ISSUE")
+  check(["90", "Cart total rounds wrong"], "BAD_ARGS", /not both/)
+  check(["90", "-d", ""], "MISSING_FIELDS", /no usable characters/)
+  check(["90", "-d", "!!!"], "MISSING_FIELDS", /no usable characters/)
+})
+
 test("help lists the jobs and ends with Next", () => {
   const { code, text } = runCli(["help"], fakeCtx([]))
   assert.equal(code, 0)
