@@ -51,7 +51,8 @@ export function SummaryBlock({ data }: { data: CvData }) {
 /** Projects for layouts that do not already print data.projects. */
 export function ProjectsBlock({ data }: { data: CvData }) {
   const projects = (data.projects ?? []).filter(
-    (project) => project.name.trim().length > 0 || project.detail.trim().length > 0
+    (project) =>
+      project.name.trim().length > 0 || project.detail.trim().length > 0
   )
   if (projects.length === 0) return null
   return (
@@ -69,7 +70,9 @@ export function ProjectsBlock({ data }: { data: CvData }) {
 
 /** Languages for every layout. None of the five templates printed this field. */
 export function LanguagesBlock({ data }: { data: CvData }) {
-  const languages = (data.languages ?? []).filter((language) => language.trim().length > 0)
+  const languages = (data.languages ?? []).filter(
+    (language) => language.trim().length > 0
+  )
   if (languages.length === 0) return null
   return (
     <section className="mt-5">

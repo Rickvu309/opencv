@@ -77,7 +77,11 @@ describe("paper.replace", () => {
         },
       })
 
-      const read = (await registry.read("paper.get", { docId: doc.id }, actor)) as {
+      const read = (await registry.read(
+        "paper.get",
+        { docId: doc.id },
+        actor
+      )) as {
         contentVersion: number
         document: CvBlockDocument
       }

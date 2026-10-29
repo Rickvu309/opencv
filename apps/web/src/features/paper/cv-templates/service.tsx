@@ -12,7 +12,11 @@ import {
   SectionTitle,
 } from "./cv-parts.tsx"
 import { ExperienceList, SkillChips } from "./cv-entries.tsx"
-import { ActivitiesAndAwards, LanguagesBlock, ProjectsBlock } from "./cv-lines.tsx"
+import {
+  ActivitiesAndAwards,
+  LanguagesBlock,
+  ProjectsBlock,
+} from "./cv-lines.tsx"
 
 export function ServiceCv({
   data,

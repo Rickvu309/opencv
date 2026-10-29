@@ -17,11 +17,12 @@ mkdir "$tmp/bin"
 cat >"$tmp/bin/pnpm" <<'STUB'
 #!/usr/bin/env bash
 # turbo test prints STUB_TEST_OUT and exits STUB_TEST_RC; a retry (--dir <d> run test <file>) fails when its file name
-# contains STUB_RETRY_FAIL; turbo lint exits STUB_LINT_RC; everything else (typecheck, prettier) passes.
+# contains STUB_RETRY_FAIL; turbo lint exits STUB_LINT_RC; prettier exits STUB_PRETTIER_RC; everything else passes.
 echo "$*" >>"$STUB_LOG"
 case "$*" in
   "exec turbo run test "*) cat "$STUB_TEST_OUT"; exit "${STUB_TEST_RC:-1}" ;;
   "exec turbo run lint "*) exit "${STUB_LINT_RC:-0}" ;;
+  "exec prettier "*) exit "${STUB_PRETTIER_RC:-0}" ;;
   "--dir "*" run test "*) [[ -z "${STUB_RETRY_FAIL:-}" || "$*" != *"$STUB_RETRY_FAIL"* ]]; exit $? ;;
   *) exit 0 ;;
 esac
@@ -34,7 +35,7 @@ mkdir -p "$repo/scripts/lib" "$repo/apps/web/src" "$repo/apps/api/src" "$repo/pa
 printf '#!/usr/bin/env bash\nexit "${STUB_CODEOWNERS_RC:-0}"\n' >"$repo/scripts/test-codeowners.sh"; chmod +x "$repo/scripts/test-codeowners.sh"
 cp "$here/check.sh" "$repo/scripts/check.sh"; cp "$here/lib/result.sh" "$repo/scripts/lib/result.sh"
 echo '{"name":"web"}' >"$repo/apps/web/package.json"; echo '{"name":"api"}' >"$repo/apps/api/package.json"; echo '{"name":"@workspace/domain"}' >"$repo/packages/domain/package.json"
-echo '{"name":"root","scripts":{}}' >"$repo/package.json"; : >"$repo/pnpm-lock.yaml"
+echo '{"name":"root","scripts":{"lint":"turbo lint"}}' >"$repo/package.json"; : >"$repo/pnpm-lock.yaml"
 git -C "$repo" init -q -b main && git -C "$repo" config core.hooksPath /dev/null
 git -C "$repo" add -A && git -C "$repo" commit -q -m base
 git -C "$repo" update-ref refs/remotes/origin/main HEAD
@@ -170,4 +171,18 @@ check CHECK_RETRY_FAILED_TESTS=1 CHECK_RETRY_MAX_FILES=abc STUB_TEST_OUT="$tmp/o
 [[ $code -eq 0 ]] || fail "bad max: exit $code, want 0"
 grep -q "WARN passed only on retry: $home" "$tmp/out" || fail "bad max: no WARN line"
 echo "ok: a non-numeric CHECK_RETRY_MAX_FILES means 5"
+# The full run checks formatting of the whole repo after lint; the quick run only its changed files.
+(cd "$repo" && CHECK_DRY_RUN=1 scripts/check.sh lint) >"$tmp/out" 2>&1
+grep -q '^\[dry-run\] pnpm exec prettier --check --ignore-unknown -- \.$' "$tmp/out" || fail "full dry run: no whole-repo prettier step"
+(cd "$repo" && CHECK_DRY_RUN=1 scripts/check.sh --changed lint) >"$tmp/out" 2>&1
+! grep -q -- ' -- \.$' "$tmp/out" || fail "changed dry run: whole-repo prettier step"
+echo "ok: full mode runs prettier --check . after lint, --changed does not"
+
+# A prettier failure in the full run fails it with cause lint.
+: >"$STUB_LOG"
+set +e; (cd "$repo" && STUB_PRETTIER_RC=1 scripts/check.sh lint) >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
+[[ $code -eq 1 ]] || fail "full prettier fail: exit $code, want 1"
+grep -q 'FAILED: prettier' "$tmp/err" || fail "full prettier fail: prettier not reported"
+result status=fail cause=lint
+echo "ok: a whole-repo prettier failure fails the full run with cause lint"
 echo "all check retry tests passed"

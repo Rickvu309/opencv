@@ -142,7 +142,10 @@ esac
     mkdirSync(join(root, "work", "repo", ".git", "pre-push-stamps"), {
       recursive: true,
     })
-    writeFileSync(join(root, "work", "repo", ".git", "pre-push-stamps", "0123abcd"), "ok\n")
+    writeFileSync(
+      join(root, "work", "repo", ".git", "pre-push-stamps", "0123abcd"),
+      "ok\n"
+    )
   }
   if (extraEnv.PORT_FILES) {
     // R76: new-task.sh recorded port 4001; .env says otherwise.
@@ -153,16 +156,12 @@ esac
       extraEnv.PORT_RAW ?? `PORT=${extraEnv.PORT_FILES}\n`
     )
   }
-  const result = spawnSync(
-    "bash",
-    [script, ...args],
-    {
-      cwd: root,
-      env,
-      encoding: "utf8",
-      timeout: 10_000,
-    }
-  )
+  const result = spawnSync("bash", [script, ...args], {
+    cwd: root,
+    env,
+    encoding: "utf8",
+    timeout: 10_000,
+  })
   assert.ifError(result.error)
   return {
     ...result,
@@ -283,7 +282,11 @@ test("a nearly full disk fails with cause disk before the check, push or PR", (t
 test("a disk failure names the main checkout in next, also when git cannot find the common dir", (t) => {
   for (const noCommonDir of [false, true]) {
     const result = run(t, 0, false, true, noCommonDir)
-    const file = join(result.root, "results", "opencv-open-pr-fix-999-push-failure-proof.json")
+    const file = join(
+      result.root,
+      "results",
+      "opencv-open-pr-fix-999-push-failure-proof.json"
+    )
     const next = JSON.parse(readFileSync(file, "utf8")).next
     assert.ok(
       next.startsWith(`cd ${join(result.root, "work", "repo")} && `),
@@ -397,7 +400,10 @@ for (const [name, raw] of [
   ["a CRLF line ending", "PORT=4001\r\n"],
 ]) {
   test(`R76: ${name} in .env is the assigned port`, (t) => {
-    const result = run(t, 0, false, false, false, { PORT_FILES: "x", PORT_RAW: raw })
+    const result = run(t, 0, false, false, false, {
+      PORT_FILES: "x",
+      PORT_RAW: raw,
+    })
     assert.equal(result.status, 0, result.stderr)
   })
 }

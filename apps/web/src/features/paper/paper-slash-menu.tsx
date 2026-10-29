@@ -1,5 +1,9 @@
 import { useEffect, useRef } from "react"
-import { blockRegistry, type BlockType, type CvSectionKind } from "@workspace/domain"
+import {
+  blockRegistry,
+  type BlockType,
+  type CvSectionKind,
+} from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -37,7 +41,13 @@ export const SLASH_ITEMS: SlashChoice[] = [
   },
   ...blockRegistry.flatMap((entry) =>
     entry.slash
-      ? [{ group: "block" as const, type: entry.type, label: entry.slash.label }]
+      ? [
+          {
+            group: "block" as const,
+            type: entry.type,
+            label: entry.slash.label,
+          },
+        ]
       : []
   ),
 ]

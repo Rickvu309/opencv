@@ -78,7 +78,7 @@ Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 | 16  | design    | needs every JOB_STAGES lane as a heading at 1440 (the page-level sideways scroll is check 45) |
 | 19  | design    | needs luminance 0.85 or more, so a good dark theme fails                                      |
 | 23  | design    | needs a lane heading per stage and no Closed heading                                          |
-| 30  | design    | needs a named Undo on the live CV toolbar; Reject is optional and reported                   |
+| 30  | design    | needs a named Undo on the live CV toolbar; Reject is optional and reported                    |
 | 40  | design    | pins the kit's glow utility                                                                   |
 | 42  | design    | needs Enabled and Disabled, while On and Off is a fine design                                 |
 | 10  | invariant | one empty state on an empty board holds for any good design                                   |

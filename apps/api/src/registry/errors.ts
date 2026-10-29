@@ -24,7 +24,8 @@ export function isUniqueViolation(error: unknown) {
   while (current && typeof current === "object" && !seen.has(current)) {
     seen.add(current)
     if ("code" in current && current.code === "23505") return true
-    current = "cause" in current ? (current as { cause?: unknown }).cause : undefined
+    current =
+      "cause" in current ? (current as { cause?: unknown }).cause : undefined
   }
   const message = error instanceof Error ? error.message : ""
   return /duplicate key|unique constraint/i.test(message)
