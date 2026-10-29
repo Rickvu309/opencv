@@ -57,11 +57,12 @@ if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
 fi
 
 top=$(git rev-parse --show-toplevel)
-if ! command -v pnpm >/dev/null 2>&1 || [[ ! -x "$top/scripts/check.sh" ]]; then
-  echo "pre-push: pnpm or scripts/check.sh not found; skipping checks." >&2
+if [[ ! -x "$top/scripts/check.sh" ]]; then
+  echo "pre-push: scripts/check.sh not found; skipping checks." >&2
   stamp ok
   exit 0
 fi
+command -v pnpm >/dev/null 2>&1 || fail "pnpm is not on this shell's PATH, so the quick check cannot run. Install it (corepack enable) or push from a shell that has it."
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
   echo "pre-push: note: you have uncommitted changes; checks run on the working tree, not only on what you push." >&2
 fi
