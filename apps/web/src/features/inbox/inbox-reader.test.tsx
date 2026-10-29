@@ -33,9 +33,12 @@ function postsOf() {
   return posts
 }
 
-function renderReader(detail: typeof LOCAL_DETAIL) {
+function renderReader(
+  detail: typeof LOCAL_DETAIL,
+  client = createQueryClient()
+) {
   return render(
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={client}>
       <InboxReader
         detail={detail}
         index={1}
@@ -51,6 +54,76 @@ function renderReader(detail: typeof LOCAL_DETAIL) {
 }
 
 describe("inbox reader", () => {
+  it("shows a newly received saved reply when the detail refreshes", () => {
+    const posts = postsOf()
+    const client = createQueryClient()
+    const view = renderReader(REGIONAL_DETAIL, client)
+    const refreshed = {
+      ...REGIONAL_DETAIL,
+      draft: { ...REGIONAL_DETAIL.draft!, body: "Updated from another view." },
+    }
+
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <InboxReader
+          detail={refreshed}
+          index={1}
+          count={6}
+          narrow={false}
+          now={INBOX_NOW}
+          onBack={vi.fn()}
+          onPrevious={vi.fn()}
+          onNext={vi.fn()}
+        />
+      </QueryClientProvider>
+    )
+
+    expect(screen.getByRole("textbox", { name: "Reply" })).toHaveValue(
+      "Updated from another view."
+    )
+    expect(posts).toEqual([])
+  })
+
+  it("keeps a dirty reply across refresh and saves it on blur", async () => {
+    const posts = postsOf()
+    const client = createQueryClient()
+    const view = renderReader(REGIONAL_DETAIL, client)
+    const reply = screen.getByRole("textbox", { name: "Reply" })
+    await userEvent.clear(reply)
+    await userEvent.type(reply, "My in-progress reply.")
+
+    const refreshed = {
+      ...REGIONAL_DETAIL,
+      draft: { ...REGIONAL_DETAIL.draft!, body: "A newer saved reply." },
+    }
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <InboxReader
+          detail={refreshed}
+          index={1}
+          count={6}
+          narrow={false}
+          now={INBOX_NOW}
+          onBack={vi.fn()}
+          onPrevious={vi.fn()}
+          onNext={vi.fn()}
+        />
+      </QueryClientProvider>
+    )
+
+    expect(reply).toHaveValue("My in-progress reply.")
+    await userEvent.tab()
+    expect(posts.map((post) => post.path)).toEqual([
+      "/api/commands/inbox.updateDraft",
+    ])
+    expect(posts.map((post) => post.input)).toEqual([
+      {
+        threadId: REGIONAL_DETAIL.id,
+        body: "My in-progress reply.",
+      },
+    ])
+  })
+
   it("offers the interview move and does not offer Send", async () => {
     const posts = postsOf()
     renderReader(LOCAL_DETAIL)
