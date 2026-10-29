@@ -3,7 +3,7 @@
 import { holderOf } from "./claim-marker.mjs"
 import { RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
-import { Refused } from "./result.mjs"
+import { evaluate, refusalError } from "./rules/decide.mjs"
 
 const loginOf = (author) =>
   String(
@@ -103,17 +103,17 @@ export function createFacts(ports, cwdOf = () => undefined) {
       }
     const loaded = ports.gh.issue(n)
     if (loaded.history === "stuck")
-      throw new Refused(
-        "UNKNOWN",
-        `claim history for #${n} stopped before the first comment (the page cursor did not move)`
-      )
+      throw refusalError(evaluate("UNKNOWN", { history: { kind: "stuck", n } }))
     if (loaded.history === "cap")
-      throw new Refused(
-        "UNKNOWN",
-        `claim history for #${n} is incomplete: ${loaded.pageCap} pages were read and older comments remain`
+      throw refusalError(
+        evaluate("UNKNOWN", {
+          history: { kind: "cap", n, pageCap: loaded.pageCap },
+        })
       )
     if (!loaded.record)
-      throw new Refused("NOT_AN_ISSUE", `#${n} is not an issue`)
+      throw refusalError(
+        evaluate("NOT_AN_ISSUE", { issue: { n, missing: true } })
+      )
     const issue = issueFact(loaded.record, loaded.owner)
     const claim = Object.freeze(holderOf(issue.comments, loaded.serverNow))
     cache.set(key, issue)
