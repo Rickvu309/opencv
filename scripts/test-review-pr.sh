@@ -67,7 +67,6 @@ echo "retry=${CHECK_RETRY_FAILED_TESTS-unset}" >>"$REVIEW_TEST_RUNS.env"
 exit 0
 CHK
 chmod +x scripts/check.sh
-cp "$here/codeowners-lib.sh" scripts/codeowners-lib.sh
 # The two verify checkers are stubs at the real paths, run by node from apps/web like the real ones. A stub counts its
 # calls in $REVIEW_TEST_CALLED-<name>, logs its env to $REVIEW_TEST_VERIFY_CALLS, prints the file REVIEW_TEST_<APP_UI|LANDING>_OUT
 # (REVIEW_TEST_..._OUT2 on a later call) and exits with REVIEW_TEST_..._EXIT (..._EXIT2 on a later call).
@@ -91,7 +90,6 @@ cp .claude/skills/verify-app-ui/scripts/verify-app-ui.mjs .claude/skills/verify-
 printf '{\n  "01": "invariant",\n  "20": "invariant",\n  "30": "design",\n}\n' >.claude/skills/verify-app-ui/scripts/lib/kinds.mjs
 cp .claude/skills/verify-app-ui/scripts/lib/kinds.mjs .claude/skills/verify-landing/scripts/lib/kinds.mjs
 echo '[{"id":"20","issue":553,"since":"2026-10-29","note":"contrast"}]' >.claude/skills/verify-app-ui/known-findings.json
-echo '* @owner' >.github/CODEOWNERS
 echo base >file.txt
 git add -A && git commit -q -m "base"
 git remote add origin "$origin"
@@ -305,6 +303,22 @@ want_runs "non-ASCII conflict" 14
 # The invariant verify tier cases share this file's helpers.
 . "$here/lib/review-pr-verify-cases.sh"
 
+
+# The env/secrets note (it replaced the CODEOWNERS list): each path below is named in the note, and a routine PR gets none.
+git -C "$work" checkout -q "$REVIEW_TEST_BRANCH"
+git -C "$work" reset -q --hard main
+secret_paths=(.env.example apps/server/src/env.ts packages/core/src/env/index.ts config/envs.mjs apps/web/src/secrets.ts packages/core/src/my-secret-store.ts)
+for f in "${secret_paths[@]}"; do mkdir -p "$work/$(dirname "$f")"; echo x >"$work/$f"; done
+pr_commit "touch secret paths"
+run --no-install
+expect "secret paths are noted" 0 "touches env/secrets paths, check no real secret is added" "RESULT: OK"
+for f in "${secret_paths[@]}"; do grep -F "touches env/secrets paths" "$tmp/out" | grep -qF -- "$f" || fail "secret paths" "note does not name $f"; done
+git -C "$work" reset -q --hard main
+for f in apps/server/src/environment.ts README.md package.json docs/environment-setup.md; do mkdir -p "$work/$(dirname "$f")"; echo x >"$work/$f"; done
+pr_commit "routine paths"
+run --no-install
+expect "routine paths get no note" 0 "no env/secrets paths touched" "RESULT: OK"
+absent "routine paths" "touches env/secrets paths"
 
 if git -C "$main_checkout" worktree list | grep -q review-pr-; then fail "cleanup" "review worktree left behind"; fi
 echo "all review-pr tests passed"

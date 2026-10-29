@@ -2,11 +2,11 @@
 
 ### Issue tracker
 
-Issues live in GitHub issues of `quanvu309/opencv`, created from the issue forms in `.github/ISSUE_TEMPLATE/`. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub issues of `quanvu309/opencv`, created from the Task form in `.github/ISSUE_TEMPLATE/task.yml`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+Only `ready-for-human` is a label; the other triage roles are read from the issue and its PRs. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
@@ -64,7 +64,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 #### 1. Issue first
 
 - Never start work without a GitHub issue.
-- If no issue exists, create one with `gh issue create` (or the issue forms), or let `scripts/new-task.sh <type> "Issue title"` create it.
+- If no issue exists, create one with `gh issue create` (or the Task form), or let `scripts/new-task.sh <type> "Issue title"` create it.
 - If the issue is assigned to someone else, or a branch for it exists, stop and pick another issue.
 - If the work will take more than a few days, split it into sub-issues and do one at a time.
 
@@ -103,7 +103,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - Never use `git push --no-verify` or `git commit --no-verify`.
 - Never use `SKIP_CHECKS=1` unless a human declared a production emergency, and then say so in the PR.
 - Never approve your own PR, and never use the review agent's identity to approve your own work.
-- Never remove the `needs-human-review` label or edit `.github/CODEOWNERS` to get around a human review.
+- Never remove the `needs-human-review` label to get around a human review.
 - Human review is only for super important changes: a mass deletion (`review-pr.sh` flags a PR that deletes 25% or more of the files on `main` or 80% or more of one app or package; a rename counts as a deletion) or a big decision, which you flag with the `needs-human-review` label (for example dropping a product, a data-losing migration, changing pricing or the legal entity). Everything else merges without a human.
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.

@@ -1,15 +1,15 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+The skills speak in terms of five canonical triage roles. Only one of them is a label here. The others are read from the issue and its pull requests, so nothing has to be set or cleared by hand.
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                                           |
-| -------------------------- | -------------------- | ----------------------------------------------------------------- |
-| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue                           |
-| `needs-info`               | `needs-info`         | Waiting on reporter for more information                          |
-| `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent                           |
-| `ready-for-human`          | `ready-for-human`    | A decision for a human — never picked up by implementation agents |
-| `wontfix`                  | `wontfix`            | Will not be actioned                                              |
+| Role in mattpocock/skills | In this tracker                                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `needs-triage`            | The issue has no PR yet (`gh pr list --search "<issue#> in:body"` is empty).                             |
+| `needs-info`              | The body lacks the Goal, Acceptance or Proof the Task form asks for. Ask in a comment.                   |
+| `ready-for-agent`         | The body has Goal, Acceptance and Proof, and no open PR closes it.                                       |
+| `ready-for-human`         | The label `ready-for-human`. `scripts/new-task.sh` and `scripts/open-pr.sh` refuse an issue that has it. |
+| `wontfix`                 | `gh issue close <n> --reason "not planned"`.                                                             |
 
-When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+The labels in `.github/labels.yml` are the type labels, `needs-human-review`, `ready-for-human` and `broken` (written by tooling when a merge breaks production). `node scripts/pr.mjs doctor` lists any other label on GitHub.
 
-Edit the right-hand column to match whatever vocabulary you actually use.
+When a skill mentions a role, use the entry in this table.

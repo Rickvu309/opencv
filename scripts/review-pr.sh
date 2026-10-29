@@ -44,6 +44,8 @@ APP_DELETE_PCT=80
 # A real env file (not a template) committed by mistake. Templates such as .env.example stay allowed.
 ENV_FILE_RE='(^|/)(\.env|[A-Za-z0-9_-]+\.env)(\.[A-Za-z0-9_-]+)*$'   # matched case-insensitively
 ENV_TEMPLATE_RE='\.(example|sample|template)$'
+# Paths whose change the review reads for a real secret: env files, env loading code, anything named secret.
+SECRET_PATH_RE='(^|/)(\.env[^/]*|[^/]*\.env|env\.[^/]*|[^/]*secret[^/]*)(/|$)|(^|/)env/|^config/env'
 # Anything that feeds the stack the app-ui checker drives (web, api, domain, ui), the checkers, and the script that starts the stack.
 VERIFY_RE='^(apps/(web|api)/|packages/(ui|domain)/|\.claude/skills/verify-(app-ui|landing)/|\.claude/skills/verify-opencv/scripts/)'
 VERIFY_EDIT_RE='^\.claude/skills/verify-(app-ui|landing|opencv)/(known-findings\.json|scripts/)'
@@ -75,9 +77,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# shellcheck source=scripts/codeowners-lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/codeowners-lib.sh"
-
 if ! { command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; }; then DIE_CAUSE=env die "gh must be installed and logged in"; fi
 common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
 main_checkout=$(dirname "$common_dir")
@@ -95,7 +94,8 @@ labels=$(view labels '.labels[].name')
 git -C "$main_checkout" fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main"
 git -C "$main_checkout" fetch --quiet origin "pull/$pr/head:refs/remotes/origin/pr/$pr" --force || DIE_CAUSE=env die "cannot fetch the head of PR #$pr"
 head_ref="refs/remotes/origin/pr/$pr"
-files=$(pr_changed_files "$main_checkout" "origin/main...$head_ref")
+# --no-renames lists both sides of a rename, so moving a secret path away still counts; -z keeps odd names whole and is not capped at 100 files like `gh pr view --json files`.
+files=$(git -C "$main_checkout" diff --name-only -z --no-renames "origin/main...$head_ref" | tr '\0' '\n')
 
 echo "PR #$pr  $title"
 echo "  $branch -> $base"
@@ -169,12 +169,9 @@ read -r repo_owner repo_short <<<"$slug"
 open_threads=$(gh api graphql -F n="$pr" -f o="$repo_owner" -f r="$repo_short" -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){pageInfo{hasNextPage} nodes{isResolved}}}}}' --jq '.data.repository.pullRequest.reviewThreads | ([.nodes[] | select(.isResolved == false)] | length) + (if .pageInfo.hasNextPage then 100 else 0 end)') || die "cannot read review threads"
 if (( open_threads > 0 )); then soft_bad "$open_threads unresolved review thread(s)"; else ok "no unresolved review threads"; fi
 
-# CODEOWNERS from origin/main (not the PR's copy). The catch-all line is ignored; see codeowners-lib.sh.
-owners=$(git -C "$main_checkout" show origin/main:.github/CODEOWNERS 2>/dev/null || true)
-[[ -n "$owners" ]] || note "no .github/CODEOWNERS on main"
-mapfile -t protected < <(codeowners_protected "$owners" "$files")
-if [[ ${#protected[@]} -gt 0 ]]; then
-  note "touches env/secrets paths, check no real secret is added: ${protected[*]}"
+protected=$(grep -E "$SECRET_PATH_RE" <<<"$files" | tr '\n' ' ' || true)
+if [[ -n "$protected" ]]; then
+  note "touches env/secrets paths, check no real secret is added: ${protected% }"
 else
   ok "no env/secrets paths touched"
 fi

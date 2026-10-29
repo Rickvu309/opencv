@@ -256,11 +256,10 @@ if (( changed_mode )); then
           fi
           # label | script | files whose change runs it (globs allowed)
           script_tests=(
-            "codeowners-tests|scripts/test-codeowners.sh|scripts/codeowners-lib.sh scripts/test-codeowners.sh scripts/review-pr.sh .github/CODEOWNERS"
             "commit-msg-tests|scripts/test-commit-msg.sh|.githooks/commit-msg scripts/test-commit-msg.sh"
             "new-task-tests|scripts/test-new-task.sh|scripts/new-task.sh scripts/test-new-task.sh scripts/lib/result.sh scripts/lib/disk.sh scripts/lib/rules.sh"
             "pre-commit-tests|scripts/test-pre-commit.sh|.githooks/pre-commit scripts/test-pre-commit.sh .gitattributes"
-            "review-pr-tests|scripts/test-review-pr.sh|scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh scripts/lib/rules.sh scripts/lib/verify-tier.sh scripts/lib/verify-gate.mjs scripts/lib/review-pr-verify-cases.sh"
+            "review-pr-tests|scripts/test-review-pr.sh|scripts/review-pr.sh scripts/test-review-pr.sh scripts/lib/result.sh scripts/lib/conflict-report.sh scripts/lib/rules.sh scripts/lib/verify-tier.sh scripts/lib/verify-gate.mjs scripts/lib/review-pr-verify-cases.sh"
             "rules-tests|scripts/test-rules.sh|scripts/lib/rules.sh scripts/test-rules.sh .githooks/pre-push"
             "check-retry-tests|scripts/test-check-retry.sh|scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs scripts/fixtures/check-flaky-*.txt"
             "check-guards-tests|scripts/test-check-guards.sh|scripts/test-check-guards.sh scripts/lib/result.sh"
@@ -305,7 +304,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-check-guards test-rules; do
+    for t in test-commit-msg test-pre-commit test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-check-guards test-rules; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done

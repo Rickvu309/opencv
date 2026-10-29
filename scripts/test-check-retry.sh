@@ -32,7 +32,7 @@ export PATH=$tmp/bin:$PATH
 
 repo=$tmp/repo
 mkdir -p "$repo/scripts/lib" "$repo/apps/web/src" "$repo/apps/api/src" "$repo/packages/domain/src"
-printf '#!/usr/bin/env bash\nexit "${STUB_CODEOWNERS_RC:-0}"\n' >"$repo/scripts/test-codeowners.sh"; chmod +x "$repo/scripts/test-codeowners.sh"
+printf '#!/usr/bin/env bash\nexit "${STUB_SCRIPT_RC:-0}"\n' >"$repo/scripts/test-new-task.sh"; chmod +x "$repo/scripts/test-new-task.sh"
 cp "$here/check.sh" "$repo/scripts/check.sh"; cp "$here/lib/result.sh" "$repo/scripts/lib/result.sh"
 echo '{"name":"web"}' >"$repo/apps/web/package.json"; echo '{"name":"api"}' >"$repo/apps/api/package.json"; echo '{"name":"@workspace/domain"}' >"$repo/packages/domain/package.json"
 echo '{"name":"root","scripts":{"lint":"turbo lint","test":"node --test scripts/guard.test.mjs"}}' >"$repo/package.json"; : >"$repo/pnpm-lock.yaml"
@@ -41,7 +41,7 @@ git -C "$repo" init -q -b main && git -C "$repo" config core.hooksPath /dev/null
 git -C "$repo" add -A && git -C "$repo" commit -q -m base
 git -C "$repo" update-ref refs/remotes/origin/main HEAD
 git -C "$repo" checkout -q -b feat/9-a-b
-echo x >"$repo/apps/web/src/a.ts"; echo y >"$repo/apps/api/src/b.ts"; echo z >"$repo/packages/domain/src/c.ts"; echo '# changed' >>"$repo/scripts/test-codeowners.sh"
+echo x >"$repo/apps/web/src/a.ts"; echo y >"$repo/apps/api/src/b.ts"; echo z >"$repo/packages/domain/src/c.ts"; echo '# changed' >>"$repo/scripts/test-new-task.sh"
 git -C "$repo" add -A && git -C "$repo" commit -q -m change
 
 fail() { printf 'FAIL %s\n' "$1" >&2; cat "$tmp/out" "$tmp/err" "$STUB_LOG" >&2 2>/dev/null || true; exit 1; }
@@ -162,9 +162,9 @@ grep -q "turbo's failed packages are not known" "$tmp/out" || fail "no summary: 
 echo "ok: no turbo Failed line, no retry"
 
 # A script test failing beside turbo test is a second failed task: no retry.
-check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/one.txt" STUB_CODEOWNERS_RC=1
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/one.txt" STUB_SCRIPT_RC=1
 [[ $code -eq 1 && $(retries) -eq 0 ]] || fail "script test: exit $code, retries $(retries)"
-grep -q 'FAILED: test codeowners-tests' "$tmp/err" || fail "script test: both tasks not reported"
+grep -q 'FAILED: test new-task-tests' "$tmp/err" || fail "script test: both tasks not reported"
 echo "ok: no retry when a scripts/ test failed too"
 
 # A CHECK_RETRY_MAX_FILES that is not a number falls back to 5 instead of aborting.

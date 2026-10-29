@@ -3,7 +3,7 @@
 This is how we work in the opencv repo. It applies to people and coding agents alike.
 Agents: read `AGENTS.md` first. Details for each topic live in `docs/git-workflow/`.
 
-**There is no CI (no GitHub Actions).** Rules are enforced by GitHub settings (ruleset, CODEOWNERS), local Git hooks, the scripts in `scripts/`, and the review checklist. Local hooks can be bypassed, so the review is the real gate.
+**There is no CI (no GitHub Actions).** Rules are enforced by GitHub settings (ruleset), local Git hooks, the scripts in `scripts/`, and the review checklist. Local hooks can be bypassed, so the review is the real gate.
 
 ## The short version
 
@@ -32,7 +32,7 @@ flowchart LR
 - The only PRs without an issue are Dependabot/Renovate dependency updates.
 - If an issue needs more than a few days of work, split it into sub-issues. Each sub-issue gets its own branch and PR.
 - Assign yourself before you start, so nobody duplicates the work.
-- Use the issue forms: Feature, Bug, or Chore/refactor/docs.
+- Use the Task form (type, Goal, Acceptance, Proof).
 
 ## 3. Branch naming
 
@@ -106,19 +106,18 @@ If the fix is risky or will take time, first roll back to the previous productio
 
 ## 9. Guardrails (set up once per repo)
 
-| Guardrail              | Where        | What it does                                                                                                                            |
-| ---------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Ruleset on `main`      | GitHub       | Requires a PR (1 approval: one account, see `docs/git-workflow/review-and-approval.md`), linear history; blocks force-push and deletion |
-| Merge settings         | GitHub       | Squash only, PR title as commit message, branches auto-deleted after merge                                                              |
-| `CODEOWNERS`           | GitHub       | Names the owner of every path; `review-pr.sh` notes env/secrets paths                                                                   |
-| `pre-push` hook        | Local        | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed)                         |
-| `commit-msg` hook      | Local        | Blocks commits on `main`; rejects empty messages                                                                                        |
-| `pre-commit` hook      | Local        | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped         |
-| `scripts/open-pr.sh`   | Local        | Correct PR title and `Closes #`, quick check before push                                                                                |
-| `scripts/review-pr.sh` | Review agent | Verifies the PR and runs the checks in a clean worktree                                                                                 |
-| Templates              | GitHub       | PR template; Feature, Bug, Chore issue forms                                                                                            |
-| Labels                 | GitHub       | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`                                                              |
-| Dependabot             | GitHub       | Weekly grouped npm version updates (no GitHub Actions)                                                                                  |
+| Guardrail               | Where        | What it does                                                                                                                            |
+| ----------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Ruleset on `main`       | GitHub       | Requires a PR (1 approval: one account, see `docs/git-workflow/review-and-approval.md`), linear history; blocks force-push and deletion |
+| Merge settings          | GitHub       | Squash only, PR title as commit message, branches auto-deleted after merge                                                              |
+| `pre-push` hook         | Local        | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed)                         |
+| `commit-msg` hook       | Local        | Blocks commits on `main`; rejects empty messages                                                                                        |
+| `pre-commit` hook       | Local        | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped         |
+| `scripts/open-pr.sh`    | Local        | Correct PR title and `Closes #`, quick check before push                                                                                |
+| `scripts/review-pr.sh`  | Review agent | Verifies the PR, notes env/secrets paths, and runs the checks in a clean worktree                                                       |
+| Templates               | GitHub       | PR template; Task issue form                                                                                                            |
+| Labels                  | GitHub       | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`, `broken`                                 |
+| `scripts/pr.mjs doctor` | Local        | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                |
 
 Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/new-task.sh` does it). Anyone can skip them with `--no-verify`. Don't, because the reviewer re-runs everything.
 
@@ -129,8 +128,7 @@ Run these once per repo (the owner does the GitHub settings steps):
 1. `git config core.hooksPath .githooks` in the main checkout; worktrees share it.
 2. Apply the ruleset: `gh api -X POST repos/quanvu309/opencv/rulesets --input .github/rulesets/main.json` (or `PUT` it to the existing id, see `docs/git-workflow/review-and-approval.md`).
 3. Merge settings: squash only, PR title as the squash title, blank squash message, auto-merge off, delete branch on merge.
-4. Check `gh api repos/quanvu309/opencv/codeowners/errors --jq '.errors | length'` reads `0`.
-5. Labels (`.github/labels.yml` is the source of truth): create each one with `gh label create <name> --color <hex> --description <text> --force`.
+4. Labels, ruleset and repo settings: `node scripts/pr.mjs doctor` lists every drift from git with the `gh` command that fixes it (`.github/labels.yml` is the label source of truth).
 
 Hosting is Railway behind Cloudflare (web, api and Postgres); `docs/deploy.md` describes it. Per-branch previews are pending.
 

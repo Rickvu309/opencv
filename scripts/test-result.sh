@@ -98,7 +98,7 @@ ok "an unwritable result directory is reported and never changes the exit code"
 repo=$tmp/repo
 mkdir -p "$repo/scripts/lib" "$repo/apps/api" "$repo/apps/web"
 cp "$here/check.sh" "$repo/scripts/check.sh"; cp "$here/lib/result.sh" "$repo/scripts/lib/result.sh"
-for t in commit-msg pre-commit codeowners new-task review-pr merge-pr; do printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-$t.sh"; done
+for t in commit-msg pre-commit new-task review-pr merge-pr; do printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-$t.sh"; done
 chmod +x "$repo/scripts/"*.sh
 echo '{"name":"api"}' >"$repo/apps/api/package.json"; echo '{"name":"web"}' >"$repo/apps/web/package.json"
 git -C "$repo" init -q -b feat/9-a-b
