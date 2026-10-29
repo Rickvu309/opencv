@@ -161,11 +161,11 @@ check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/nosummary.txt"
 grep -q "turbo's failed packages are not known" "$tmp/out" || fail "no summary: no explanation"
 echo "ok: no turbo Failed line, no retry"
 
-# A script test failing beside turbo test is a second failed task: no retry.
-check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/one.txt" STUB_RULES_RC=1
-[[ $code -eq 1 && $(retries) -eq 0 ]] || fail "script test: exit $code, retries $(retries)"
-grep -q 'FAILED: test rules-tests' "$tmp/err" || fail "script test: both tasks not reported"
-echo "ok: no retry when a scripts/ test failed too"
+# Script suites are part of the guards package and are not launched as a second check.sh task.
+check CHECK_RETRY_FAILED_TESTS=1 STUB_TEST_OUT="$tmp/one.txt"
+[[ $code -eq 0 && $(retries) -eq 1 ]] || fail "guard package test: exit $code, retries $(retries)"
+! grep -q '^scripts/test-' "$STUB_LOG" || fail "guard package test: shell suite ran outside turbo"
+echo "ok: guard and shell tests are not launched as a second task"
 
 # A CHECK_RETRY_MAX_FILES that is not a number falls back to 5 instead of aborting.
 check CHECK_RETRY_FAILED_TESTS=1 CHECK_RETRY_MAX_FILES=abc STUB_TEST_OUT="$tmp/one.txt"
@@ -187,68 +187,10 @@ grep -q 'FAILED: prettier' "$tmp/err" || fail "full prettier fail: prettier not 
 result status=fail cause=lint
 echo "ok: a whole-repo prettier failure fails the full run with cause lint"
 
-# Full mode discovers tracked scripts/test-*.sh. The result label stays the file name without .sh.
-printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-extra.sh"
-chmod +x "$repo/scripts/test-extra.sh"
-git -C "$repo" add scripts/test-extra.sh && git -C "$repo" commit -q -m 'add extra suite'
-full_dry() {
-  set +e
-  (cd "$repo" && CHECK_DRY_RUN=1 scripts/check.sh) >"$tmp/out" 2>"$tmp/err"
-  code=$?
-  set -e
-  [[ $code -eq 0 ]] || fail "shell suites: dry run exit $code"
-}
-listed() { grep -E '^\[dry-run\] scripts/test-.*\.sh$' "$tmp/out" | sed 's/^\[dry-run\] //' | sort || true; }
-tracked() { git -C "$repo" ls-files 'scripts/test-*.sh' | sort; }
-same_suites() {
-  local want got
-  want=$(tracked)
-  got=$(listed)
-  [[ "$got" == "$want" ]] || fail "shell suites: got [$(printf '%s' "$got" | tr '\n' ' ')] want [$(printf '%s' "$want" | tr '\n' ' ')]"
-}
-full_dry
-same_suites
-echo "ok: full dry run lists exactly the tracked shell suites"
-
-git -C "$repo" rm -q scripts/test-rules.sh && git -C "$repo" commit -q -m 'drop rules suite'
-full_dry
-same_suites
-echo "ok: a deleted suite is absent and the full dry run passes"
-
-printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-new-suite.sh"
-chmod +x "$repo/scripts/test-new-suite.sh"
-git -C "$repo" add scripts/test-new-suite.sh && git -C "$repo" commit -q -m 'add new suite'
-full_dry
-same_suites
-echo "ok: a new tracked suite is picked up"
-
-printf '#!/usr/bin/env bash\nexit 1\n' >"$repo/scripts/test-new-suite.sh"
-set +e
-(cd "$repo" && scripts/check.sh test) >"$tmp/out" 2>"$tmp/err"
-code=$?
-set -e
-[[ $code -eq 1 ]] || fail "suite label: exit $code, want 1"
-result status=fail cause=test 'detail=failed: test-new-suite'
-echo "ok: a failing suite is named by its file name, without .sh"
-# Zero suites, and a failed listing, must fail the gate: an empty loop would pass with nothing run.
-git -C "$repo" rm -q -f -r -- 'scripts/test-*.sh' && git -C "$repo" commit -q -m 'drop every suite'
-set +e
-(cd "$repo" && scripts/check.sh test) >"$tmp/out" 2>"$tmp/err"
-code=$?
-set -e
-[[ $code -eq 1 ]] || fail "no suites: exit $code, want 1"
-grep -q "found no scripts/test-\*.sh suite" "$tmp/err" || fail "no suites: message missing: $(cat "$tmp/err")"
-echo "ok: finding no suite fails the gate"
-
-mkdir -p "$tmp/badgit"
-printf '#!/usr/bin/env bash\n[[ "$1" == ls-files ]] && exit 128\nexec %s "$@"\n' "$(command -v git)" >"$tmp/badgit/git"
-chmod +x "$tmp/badgit/git"
-git -C "$repo" reset -q --hard HEAD~1
-set +e
-(cd "$repo" && PATH="$tmp/badgit:$PATH" scripts/check.sh test) >"$tmp/out" 2>"$tmp/err"
-code=$?
-set -e
-[[ $code -eq 1 ]] || fail "listing error: exit $code, want 1"
-grep -q "could not list the shell suites" "$tmp/err" || fail "listing error: message missing: $(cat "$tmp/err")"
-echo "ok: a failed listing fails the gate"
-echo "all check retry tests passed"
+# Shell suites are owned by @workspace/guards and are not run a second time by check.sh.
+: >"$STUB_LOG"
+(cd "$repo" && CHECK_DRY_RUN=1 scripts/check.sh test) >"$tmp/out" 2>&1 || fail "full test dry run failed"
+grep -q '^\[dry-run\] pnpm run test --concurrency=2$' "$tmp/out" || fail "full test: root test script not run"
+! grep -q '^\[dry-run\] scripts/test-.*\.sh$' "$tmp/out" || fail "full test: shell suite ran outside turbo"
+! grep -q '^\[dry-run\] node --test' "$tmp/out" || fail "full test: guard list ran outside turbo"
+echo "ok: full check delegates guard and shell suites to root turbo test once"

@@ -23,15 +23,13 @@
 # `git merge-base origin/main HEAD`: committed, staged, unstaged and untracked (not ignored). Then:
 #   - lint, typecheck, test: turbo, only for the changed workspace packages and their dependents
 #     (turbo run <task> --filter "...{./<dir>}"), plus prettier --check on the changed files,
-#     plus the scripts/ tests when their files changed, plus the web tests when a verify-app-ui or
-#     verify-landing file changed (apps/web/src/test/verify-assumptions.test.ts reads their assumptions).
-#   - test always runs the root node:test guards (the .test.mjs files of the root package.json `test` script, 2.5 s),
-#     because a guard reads docs, skills and config no workspace package owns; an empty list fails. scripts/open-pr.test.mjs
-#     (40 s) runs only when scripts/open-pr.sh, scripts/lib/* or the test itself changed.
+#     plus the web tests when a verify-app-ui or verify-landing file changed
+#     (apps/web/src/test/verify-assumptions.test.ts reads their assumptions).
+#   - test always includes @workspace/guards; scripts/open-pr.test.mjs runs only when its inputs changed.
 #   - A global file (root package.json, lockfile, workspace, turbo.json, root configs, .npmrc, check.sh)
 #     or a missing origin/main falls back to the full run.
 #
-# The full run (no --changed) adds a whole-repo prettier --check after `lint`, then every tracked scripts/test-*.sh.
+# The full run (no --changed) adds a whole-repo prettier --check after `lint`. @workspace/guards owns shell suites.
 #
 # Called by the pre-push hook and scripts/open-pr.sh (both with --changed). ci.yml runs the same quick check.
 # Exit code: 0 all passed (or a dry run, which runs nothing), 1 something failed.
@@ -155,15 +153,6 @@ if [[ "$needs_install" == "1" && ! -d node_modules ]]; then
   exit 1
 fi
 
-# The root guard tests: the .test.mjs files named by the root package.json `test` script, so the list lives in one place.
-root_guard_tests() {
-  node -e '
-    const fs = require("fs");
-    for (const f of require("./package.json").scripts?.test?.split(/\s+/) ?? [])
-      if (f.endsWith(".test.mjs") && fs.existsSync(f)) console.log(f);
-  '
-}
-
 has_script() { node -e "process.exit(require('./package.json').scripts?.[process.argv[1]] ? 0 : 1)" "$1"; }
 
 failed=()
@@ -235,9 +224,16 @@ if (( changed_mode )); then
         if [[ ${#scope_dirs[@]} -gt 0 ]]; then
           echo "==> turbo $t (${#scope_dirs[@]} changed packages + dependents)"
           cont=(); [[ "$t" == test && "${CHECK_RETRY_FAILED_TESTS:-}" == 1 ]] && cont=(--continue)
+          if [[ "$t" == test ]]; then filters+=(--filter=@workspace/guards); fi
           run pnpm exec turbo run "$t" --concurrency=$conc ${cont[@]+"${cont[@]}"} "${filters[@]}" || failed+=("$t")
         else
-          echo "==> $t: no workspace package changed, nothing to run"
+          if [[ "$t" == test ]]; then
+            echo "==> turbo test (@workspace/guards; no other workspace package changed)"
+            cont=(); [[ "${CHECK_RETRY_FAILED_TESTS:-}" == 1 ]] && cont=(--continue)
+            run pnpm exec turbo run test --concurrency=$conc ${cont[@]+"${cont[@]}"} --filter=@workspace/guards || failed+=(test)
+          else
+            echo "==> $t: no workspace package changed, nothing to run"
+          fi
         fi
         if [[ "$t" == "test" ]]; then
           web_in_scope=0
@@ -245,37 +241,15 @@ if (( changed_mode )); then
             scoped=$(pnpm ls -r --depth -1 --parseable "${filters[@]}" 2>/dev/null || true)
             [[ $'\n'"$scoped"$'\n' == *"/apps/web"$'\n'* ]] && web_in_scope=1
           fi
-          [[ -n "$(root_guard_tests)" ]] || { echo "check: the package.json \`test\` script names no .test.mjs files." >&2; failed+=(guard-tests); }
-          mapfile -t guards < <(root_guard_tests | grep -vFx scripts/open-pr.test.mjs || true)
-          if has_changed scripts/open-pr.sh 'scripts/lib/*' scripts/open-pr.test.mjs; then guards+=(scripts/open-pr.test.mjs); fi
-          if [[ ${#guards[@]} -gt 0 ]]; then
-            echo "==> root guard tests (${#guards[@]} files)"
-            run node --test "${guards[@]}" || failed+=(guard-tests)
+          if has_changed scripts/open-pr.sh scripts/open-pr.test.mjs 'scripts/lib/*'; then
+            echo "==> turbo test:open-pr (@workspace/guards; inputs changed)"
+            run pnpm exec turbo run test:open-pr --concurrency=$conc --filter=@workspace/guards || failed+=(test:open-pr)
           fi
           if has_changed '.claude/skills/verify-app-ui/*' '.claude/skills/verify-landing/*' && (( ! web_in_scope )); then
             echo "==> web tests (verify-assumptions reads the verify skills' assumptions)"
             run "$pm" --filter web test || failed+=(verify-assumptions)
           fi
-          # label | script | files whose change runs it (globs allowed)
-          script_tests=(
-            "commit-msg-tests|scripts/test-commit-msg.sh|.githooks/commit-msg scripts/test-commit-msg.sh"
-            "pre-commit-tests|scripts/test-pre-commit.sh|.githooks/pre-commit scripts/test-pre-commit.sh .gitattributes"
-            "rules-tests|scripts/test-rules.sh|scripts/lib/rules.sh scripts/test-rules.sh .githooks/pre-push"
-            "check-retry-tests|scripts/test-check-retry.sh|scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs scripts/fixtures/check-flaky-*.txt"
-            "check-guards-tests|scripts/test-check-guards.sh|scripts/test-check-guards.sh scripts/lib/result.sh"
-            "disk-tests|scripts/test-disk-preflight.sh|scripts/lib/disk.sh scripts/test-disk-preflight.sh"
-            "result-tests|scripts/test-result.sh|scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh"
-            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/*.sh"
-            "merge-pr-gates-tests|scripts/test-merge-pr-gates.sh|scripts/merge-pr.sh scripts/test-merge-pr-gates.sh scripts/lib/*.sh"
-          )
-          for entry in "${script_tests[@]}"; do
-            IFS="|" read -r label script inputs <<<"$entry"
-            read -ra inputs <<<"$inputs"
-            if has_changed "${inputs[@]}"; then
-              echo "==> $script"
-              run "$script" || failed+=("$label")
-            fi
-          done
+
         fi
         ;;
       *)
@@ -304,23 +278,8 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    # Sorted tracked names. A deleted suite is absent; a new scripts/test-*.sh runs with no edit here.
-    # Zero suites, or a failed listing, must fail the gate: an empty loop would pass with nothing run.
-    shell_suites=()
-    if ! suite_list=$(git ls-files 'scripts/test-*.sh'); then
-      echo "check: could not list the shell suites (git ls-files failed)" >&2
-      failed+=("discover-shell-suites")
-    else
-      mapfile -t shell_suites < <(sort <<<"$suite_list" | sed '/^$/d')
-      if ((${#shell_suites[@]} == 0)); then
-        echo "check: found no scripts/test-*.sh suite to run" >&2
-        failed+=("discover-shell-suites")
-      fi
-    fi
-    for script in "${shell_suites[@]}"; do
-      echo "==> $script"
-      run "$script" || failed+=("$(basename "$script" .sh)")
-    done
+    echo "==> turbo test:open-pr (@workspace/guards; full check)"
+    run pnpm exec turbo run test:open-pr --concurrency=$conc --filter=@workspace/guards || failed+=(test:open-pr)
   fi
 fi
 

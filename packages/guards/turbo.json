@@ -1,0 +1,39 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../scripts/**/*.mjs",
+        "../../scripts/**/*.sh",
+        "../../scripts/**/*.json",
+        "../../scripts/fixtures/**",
+        "../../.claude/skills/**/*.mjs",
+        "../../.claude/skills/**/*.sh",
+        "../../.claude/skills/**/*.json",
+        "../../docs/**",
+        "../../.github/**",
+        "../../.githooks/**"
+      ]
+    },
+    "test:open-pr": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../scripts/open-pr.sh",
+        "../../scripts/open-pr.test.mjs",
+        "../../scripts/lib/**"
+      ],
+      "outputs": []
+    },
+    "test:shell": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../scripts/**/*.sh",
+        "../../scripts/**/*.mjs",
+        "../../scripts/fixtures/**",
+        "../../.githooks/**"
+      ],
+      "outputs": []
+    }
+  }
+}
