@@ -21,7 +21,7 @@ import {
   type ProfileUpdateInput,
 } from "@workspace/domain"
 
-import { START_PAGES } from "@/lib/product-paths.ts"
+import { START_PAGES, startPageEntry } from "@/lib/product-paths.ts"
 
 const ZONES = [
   { value: "Asia/Ho_Chi_Minh", label: "Ho Chi Minh City (UTC+7)" },
@@ -47,7 +47,7 @@ export function PreferencesSection({
   const zoneLabel =
     zones.find((zone) => zone.value === profile.timeZone)?.label ??
     profile.timeZone
-  const startLabel = START_PAGES[profile.startPage].label
+  const startLabel = startPageEntry(profile.startPage).label
   return (
     <>
       <SettingsTitle title="Preferences" />

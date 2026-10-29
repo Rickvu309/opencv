@@ -20,10 +20,14 @@ export const START_PAGES = {
   inbox: { path: "/inbox", label: "Inbox" },
 } as const satisfies Record<StartPage, { path: string; label: string }>
 
-export function startPagePath(startPage: unknown) {
+export function startPageEntry(startPage: unknown) {
   const known =
     typeof startPage === "string" && Object.hasOwn(START_PAGES, startPage)
-  return START_PAGES[known ? (startPage as StartPage) : "apply"].path
+  return START_PAGES[known ? (startPage as StartPage) : "apply"]
+}
+
+export function startPagePath(startPage: unknown) {
+  return startPageEntry(startPage).path
 }
 
 export function legacyPathname(pathname: string): string | undefined {

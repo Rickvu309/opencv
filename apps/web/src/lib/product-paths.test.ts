@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   legacyAppPath,
   legacyPathname,
+  startPageEntry,
   startPagePath,
 } from "./product-paths.ts"
 
@@ -37,5 +38,6 @@ describe("startPagePath", () => {
     expect(startPagePath("home")).toBe("/apply")
     expect(startPagePath(undefined)).toBe("/apply")
     expect(startPagePath(null)).toBe("/apply")
+    expect(startPageEntry("home").label).toBe("Apply")
   })
 })
