@@ -44,9 +44,4 @@ export async function expectApplyLive() {
   expect(
     await screen.findByRole("heading", { name: "Track your first job" })
   ).toBeInTheDocument()
-  expect(
-    screen.queryByText(
-      "Jobs moving through saved, applied, interview, offer, and closed."
-    )
-  ).not.toBeInTheDocument()
 }

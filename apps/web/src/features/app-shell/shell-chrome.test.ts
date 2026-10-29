@@ -9,7 +9,6 @@ const SHELL_FILES = [
   "app-shell-layout.tsx",
   "app-shell.tsx",
   "nav-profile.tsx",
-  "search-chats.ts",
   "sidebar-nav.ts",
 ]
 
