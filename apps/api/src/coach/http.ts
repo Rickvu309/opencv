@@ -160,6 +160,14 @@ async function startTurn(
     (last, message, index) => (message.role === "person" ? index : last),
     -1
   )
+  const latestCoachIndex = detail.messages.reduce(
+    (last, message, index) => (message.role === "coach" ? index : last),
+    -1
+  )
+  const supersedesMessageId =
+    parsed.data.regenerate && latestCoachIndex > lastPerson
+      ? detail.messages[latestCoachIndex]?.id
+      : undefined
   const transcript = parsed.data.regenerate
     ? detail.messages.slice(0, lastPerson + 1)
     : detail.messages
@@ -181,6 +189,7 @@ async function startTurn(
     await runCoachTurn({
       stream,
       usageId,
+      supersedesMessageId,
       runtime: coach,
       model,
       userId: c.var.userId,

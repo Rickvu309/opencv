@@ -160,7 +160,7 @@ describe("useCoachTurn turn lifecycle", () => {
           result.current.regenerate()
         })
         second.release(2)
-        await waitFor(() => expect(coachTexts()).toContain("Second partial"))
+        await waitFor(() => expect(coachTexts()).toEqual(["Second partial"]))
         let hideSecondReply = true
         vi.stubGlobal(
           "fetch",
@@ -185,7 +185,7 @@ describe("useCoachTurn turn lifecycle", () => {
         )
         act(() => result.current.stop())
         await waitFor(() => expect(result.current.phase).toBe("idle"))
-        expect(coachTexts()).toEqual(["Partial reply", "Second partial"])
+        expect(coachTexts()).toEqual(["Second partial"])
       }
 
       scriptCoachStream({ texts: ["Fresh reply"] })
@@ -194,11 +194,7 @@ describe("useCoachTurn turn lifecycle", () => {
       })
       await waitFor(() => expect(coachTexts()).toContain("Fresh reply"))
       await waitFor(() => expect(result.current.phase).toBe("idle"))
-      expect(coachTexts()).toEqual(
-        delayed
-          ? ["Partial reply", "Second partial", "Fresh reply"]
-          : ["Partial reply", "Fresh reply"]
-      )
+      expect(coachTexts()).toEqual(["Fresh reply"])
       const ids = result.current.messages.map((message) => message.id)
       expect(new Set(ids).size).toBe(ids.length)
       expect(ids).not.toContain(STREAMING_COACH_ID)

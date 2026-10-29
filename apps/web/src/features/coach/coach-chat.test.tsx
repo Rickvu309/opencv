@@ -278,7 +278,7 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     ).not.toBeInTheDocument()
   })
 
-  it("regenerates the latest Coach turn as a new row and keeps the prior one", async () => {
+  it("regenerates the latest Coach turn with one current answer", async () => {
     scriptCoachStream({ texts: ["First answer"] })
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
@@ -293,14 +293,13 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     expect(await screen.findByText("Second answer")).toBeInTheDocument()
 
     const chat = screen.getByRole("log", { name: "Chat" })
-    expect(within(chat).getByText("First answer")).toBeInTheDocument()
+    expect(within(chat).queryByText("First answer")).not.toBeInTheDocument()
     expect(within(chat).getByText("Second answer")).toBeInTheDocument()
     expect(within(chat).getAllByText("Help me plan the week")).toHaveLength(1)
 
     const regenerates = screen.getAllByRole("button", { name: "Regenerate" })
-    expect(regenerates).toHaveLength(2)
-    expect(regenerates[0]).toBeDisabled()
-    expect(regenerates[1]).toBeEnabled()
+    expect(regenerates).toHaveLength(1)
+    expect(regenerates[0]).toBeEnabled()
   })
 
   it("keeps prior Command receipts when regenerating", async () => {

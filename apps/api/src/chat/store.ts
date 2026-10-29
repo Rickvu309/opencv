@@ -12,9 +12,9 @@ import {
   type ChatSetFocusInput,
   type UserId,
 } from "@workspace/domain"
-import { and, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
+import { and, asc, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
 
-import { getDb } from "../db/context.js"
+import { getDb, transaction } from "../db/context.js"
 import { activity, chatMessages, chats } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
@@ -78,15 +78,16 @@ export async function getChat(userId: UserId, chatId: ChatId) {
     .select()
     .from(chatMessages)
     .where(eq(chatMessages.chatId, chatId))
-    .orderBy(chatMessages.createdAt)
+    .orderBy(asc(chatMessages.createdAt), asc(chatMessages.id))
+  const visible = projectCurrentMessages(messages)
   const undone = await undoneActivityIds(userId, messages)
   const confirmations = new Map(
     (await registry.confirmations(userId, chatId)).map((row) => [row.id, row])
   )
   return {
     ...toChat(row),
-    messages: messages.map((message) => {
-      const result = withUndone(toMessage(message), undone)
+    messages: visible.map((message) => {
+      const result = withUndone(message, undone)
       return {
         ...result,
         parts: result.parts.map((part) =>
@@ -103,6 +104,40 @@ export async function getChat(userId: UserId, chatId: ChatId) {
       }
     }),
   }
+}
+
+function projectCurrentMessages(rows: (typeof chatMessages.$inferSelect)[]) {
+  const byId = new Map(rows.map((row) => [row.id, row]))
+  const superseded = new Set(
+    rows.flatMap((row) =>
+      row.supersedesMessageId ? [row.supersedesMessageId] : []
+    )
+  )
+  return rows
+    .filter((row) => !superseded.has(row.id))
+    .map((row) => {
+      const receipts: ChatMessagePart[] = []
+      const seen = new Set([row.id])
+      let predecessorId = row.supersedesMessageId
+      while (predecessorId && !seen.has(predecessorId)) {
+        seen.add(predecessorId)
+        const predecessor = byId.get(predecessorId)
+        if (!predecessor) break
+        receipts.unshift(
+          ...readStoredParts(predecessor.parts).filter(
+            (part) => part.type === "tool"
+          )
+        )
+        predecessorId = predecessor.supersedesMessageId
+      }
+      const message = toMessage(row)
+      return receipts.length > 0
+        ? {
+            ...message,
+            parts: [...receipts, ...message.parts],
+          }
+        : message
+    })
 }
 
 function toolActivityId(part: unknown) {
@@ -264,24 +299,65 @@ export async function insertCoachMessage(input: {
   parts: unknown[]
   status: "final" | "error" | "aborted"
   workedMs: number
+  supersedesMessageId?: string | null
 }) {
   await ownedChat(input.userId, input.chatId)
   const now = new Date()
   const id = createId(now.getTime())
-  await getDb().insert(chatMessages).values({
-    id,
-    chatId: input.chatId,
-    role: "coach",
-    text: input.text,
-    parts: input.parts,
-    status: input.status,
-    workedMs: input.workedMs,
-    createdAt: now,
+  const savedId = await transaction(async () => {
+    let supersedesMessageId: string | null = null
+    if (input.supersedesMessageId) {
+      await getDb()
+        .select({ id: chats.id })
+        .from(chats)
+        .where(eq(chats.id, input.chatId))
+        .for("update")
+      const rows = await getDb()
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.chatId, input.chatId))
+        .orderBy(asc(chatMessages.createdAt), asc(chatMessages.id))
+      const targetIndex = rows.findIndex(
+        (row) => row.id === input.supersedesMessageId && row.role === "coach"
+      )
+      const latestPersonIndex = rows.reduce(
+        (last, row, index) => (row.role === "person" ? index : last),
+        -1
+      )
+      if (targetIndex <= latestPersonIndex) return null
+      supersedesMessageId = input.supersedesMessageId
+      while (true) {
+        const child = rows.find(
+          (row) => row.supersedesMessageId === supersedesMessageId
+        )
+        if (!child) break
+        if (child.role !== "coach")
+          throw new CommandError(
+            ERROR_CODES.INTERNAL_ERROR,
+            "Invalid reply revision"
+          )
+        supersedesMessageId = child.id
+      }
+    }
+    const tx = getDb()
+    await tx.insert(chatMessages).values({
+      id,
+      chatId: input.chatId,
+      role: "coach",
+      text: input.text,
+      parts: input.parts,
+      status: input.status,
+      workedMs: input.workedMs,
+      supersedesMessageId,
+      createdAt: now,
+    })
+    await tx
+      .update(chats)
+      .set({ updatedAt: now })
+      .where(eq(chats.id, input.chatId))
+    return id
   })
-  await getDb()
-    .update(chats)
-    .set({ updatedAt: now })
-    .where(eq(chats.id, input.chatId))
+  if (!savedId) return null
   const detail = await getChat(input.userId, input.chatId)
   const message = detail.messages.find((item) => item.id === id)
   if (!message)

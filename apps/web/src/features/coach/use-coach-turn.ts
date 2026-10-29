@@ -25,6 +25,7 @@ import {
 } from "@/features/coach/chat-api.ts"
 import {
   STREAMING_COACH_ID,
+  latestCoachMessageId,
   toChatViewMessages,
   type ChatViewMessage,
 } from "@/features/coach/chat-messages.ts"
@@ -197,6 +198,21 @@ export function useCoachTurn({
       let ended = false
       let streamError: string | undefined
       let id: string | null = chatId
+      const lastUserIndex = prefix.findLastIndex(
+        (message) => message.role === "user"
+      )
+      const targetCoach =
+        kind === "regenerate"
+          ? prefix.findLast(
+              (message, index) =>
+                message.role === "coach" && index > lastUserIndex
+            )
+          : undefined
+      const stablePrefix = targetCoach
+        ? prefix.filter((message) => message.id !== targetCoach.id)
+        : prefix
+      const inheritedReceipts =
+        targetCoach?.parts?.filter((part) => part.type === "tool") ?? []
 
       const settled = (chatKey: string) => {
         const detail = queryClient.getQueryData<ChatRecord>(
@@ -206,13 +222,15 @@ export function useCoachTurn({
       }
       const paint = (next: ChatEntryPart[]) => {
         parts = next
+        const replacing =
+          kind === "regenerate" && Boolean(textFromParts(parts).trim())
         painted = [
-          ...prefix,
+          ...(replacing ? stablePrefix : prefix),
           {
             id: STREAMING_COACH_ID,
             role: "coach",
             text: textFromParts(parts),
-            parts,
+            parts: replacing ? [...inheritedReceipts, ...parts] : parts,
           },
         ]
         dispatch({ type: "delta", messages: painted })
@@ -224,16 +242,22 @@ export function useCoachTurn({
         }
         const detail = await hydrateChat(chatKey)
         if (stale()) return
-        const previousReplies = prefix.filter(
-          (message) => message.role === "coach"
-        ).length
-        const savedReplies = detail?.messages.filter(
-          (message) => message.role === "coach"
-        ).length
         const hasSavedReply =
-          savedReplies != null && savedReplies > previousReplies
-        if (!hasSavedReply && parts.length > 0)
-          keepStreamedCoach(chatKey, user, parts)
+          kind === "regenerate"
+            ? Boolean(
+                detail &&
+                latestCoachMessageId(detail.messages) !==
+                  latestCoachMessageId(prefix)
+              )
+            : (detail?.messages.filter((message) => message.role === "coach")
+                .length ?? 0) >
+              prefix.filter((message) => message.role === "coach").length
+        if (
+          !hasSavedReply &&
+          parts.length > 0 &&
+          (kind !== "regenerate" || textFromParts(parts).trim())
+        )
+          keepStreamedCoach(chatKey, user, parts, targetCoach?.id)
         dispatch({ type: "abort", messages: settled(chatKey) })
       }
       const handlers: CoachStreamHandlers = {
@@ -282,7 +306,20 @@ export function useCoachTurn({
         if (ended) {
           const detail = await hydrateChat(id)
           if (stale()) return
-          if (!detail && parts.length > 0) keepStreamedCoach(id, user, parts)
+          const hasSavedReply =
+            kind === "regenerate"
+              ? Boolean(
+                  detail &&
+                  latestCoachMessageId(detail.messages) !==
+                    latestCoachMessageId(prefix)
+                )
+              : Boolean(detail)
+          if (
+            !hasSavedReply &&
+            parts.length > 0 &&
+            (kind !== "regenerate" || textFromParts(parts).trim())
+          )
+            keepStreamedCoach(id, user, parts, targetCoach?.id)
           if (!streamError) {
             dispatch({ type: "finish", messages: null })
             return

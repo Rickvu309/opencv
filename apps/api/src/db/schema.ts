@@ -1,8 +1,10 @@
 import type { CoachMode } from "@workspace/domain"
+import { sql } from "drizzle-orm"
 import {
   boolean,
   customType,
   date,
+  type AnyPgColumn,
   index,
   integer,
   jsonb,
@@ -370,6 +372,10 @@ export const chatMessages = opencvApp.table(
     parts: jsonb("parts").$type<unknown[]>(),
     status: text("status").$type<"final" | "error" | "aborted">(),
     workedMs: integer("worked_ms"),
+    supersedesMessageId: uuid("supersedes_message_id").references(
+      (): AnyPgColumn => chatMessages.id,
+      { onDelete: "set null" }
+    ),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -377,6 +383,9 @@ export const chatMessages = opencvApp.table(
       table.chatId,
       table.createdAt
     ),
+    uniqueIndex("chat_messages_supersedes_message_id_uidx")
+      .on(table.supersedesMessageId)
+      .where(sql`${table.supersedesMessageId} is not null`),
   ]
 )
 
