@@ -1,33 +1,40 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "turbo.json",
+    "tsconfig.json",
+    ".npmrc"
+  ],
+  "globalEnv": ["VITEST_MAX_WORKERS"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "src/**", "tsconfig.build.json"],
       "env": ["VITE_API_URL", "VITE_PUBLIC_ORIGIN", "VITE_APP_ORIGIN"],
       "outputs": ["dist/**", ".generated/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^build"]
     },
     "format": {
       "dependsOn": ["^format"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^build"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "test": {
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "passThroughEnv": ["VITEST_MAX_WORKERS"],
-      "dependsOn": ["transit"]
-    },
-    "transit": {
-      "dependsOn": ["^transit"]
+      "outputs": []
     }
   }
 }
