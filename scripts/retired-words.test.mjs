@@ -67,12 +67,6 @@ const RETIRED = [
         why: "a chat can point at an inbox thread",
       },
       {
-        path: /^packages\/domain\/src\/chat-messages\.ts$/,
-        match: /^Thread$/,
-        line: /"New Thread"/,
-        why: 'DEFAULT_CHAT_TITLE = "New Thread" is a stored value existing chats carry',
-      },
-      {
         path: /^packages\/ui\/src\/components\/comment-thread\.tsx$/,
         why: "the ui comment-thread component is a stack of review comments, not a conversation with the Coach",
       },

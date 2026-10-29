@@ -158,6 +158,23 @@ describe("chat API client", () => {
     expect(inputOf(call)).toEqual({ title: "Help me plan the week" })
   })
 
+  it("creates a chat without focus or title as New chat", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(envelope(chatRow({ title: DEFAULT_CHAT_TITLE })))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(createChat(new QueryClient(), {})).resolves.toMatchObject({
+      id: CHAT_ID,
+      title: "New chat",
+    })
+
+    const call = callOf(fetchMock)
+    expect(call.url).toBe(`${apiBaseUrl}/api/commands/chat.create`)
+    expect(call.init.method).toBe("POST")
+    expect(inputOf(call)).toEqual({})
+  })
+
   it("opens the Paper chat and names a fresh one", async () => {
     const fetchMock = vi
       .fn()

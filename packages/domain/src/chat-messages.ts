@@ -26,7 +26,7 @@ export type ReversalDescriptor = z.infer<typeof reversalDescriptorSchema>
 
 // Stored on untitled chat rows and matched to detect them. Render titles
 // through chatDisplayTitle.
-export const DEFAULT_CHAT_TITLE = "New Thread"
+export const DEFAULT_CHAT_TITLE = "New chat"
 
 export function chatDisplayTitle(title: string | null | undefined) {
   const trimmed = title?.trim() ?? ""

@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import type { ReactElement } from "react"
-import { BLOCK_TYPES, blockRegistry, type PaperPages, type PaperView } from "@workspace/domain"
+import {
+  BLOCK_TYPES,
+  DEFAULT_CHAT_TITLE,
+  blockRegistry,
+  type PaperPages,
+  type PaperView,
+} from "@workspace/domain"
 
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
@@ -99,7 +105,10 @@ describe("block editor", () => {
     vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
     render(
       <PaperCvEditor
-        initial={{ ...record, document: { ...record.document, version: 2, sections: [] } }}
+        initial={{
+          ...record,
+          document: { ...record.document, version: 2, sections: [] },
+        }}
         pages={pages}
         onBack={() => undefined}
       />
@@ -109,14 +118,18 @@ describe("block editor", () => {
     })
     fireEvent.keyDown(impact, { key: "/" })
     expect(screen.getByRole("listbox", { name: "Insert" })).toBeInTheDocument()
-    expect(screen.getByRole("group", { name: "CV sections" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("group", { name: "CV sections" })
+    ).toBeInTheDocument()
     expect(screen.getByRole("group", { name: "Blocks" })).toBeInTheDocument()
     const filter = screen.getByRole("textbox", { name: "Type to filter" })
     fireEvent.keyDown(filter, { key: "ArrowDown" })
     fireEvent.keyDown(filter, { key: "Enter" })
     expect(document.querySelector("[data-section='projects']")).not.toBeNull()
     expect(impact.textContent).toBe("")
-    expect(screen.queryByRole("listbox", { name: "Insert" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("listbox", { name: "Insert" })
+    ).not.toBeInTheDocument()
   })
 
   it("opens the slash menu upward near the bottom of a short window", () => {
@@ -143,27 +156,69 @@ describe("block editor", () => {
         onBack={() => undefined}
       />
     )
-    fireEvent.keyDown(screen.getByRole("textbox", { name: "Text" }), { key: "/" })
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Text" }), {
+      key: "/",
+    })
     expect(screen.getByRole("listbox", { name: "Insert" }).className).toContain(
       "bottom-full"
     )
   })
 
   it("lists block menu actions and asks Coach with the block text", async () => {
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+    const urls: string[] = []
+    const bodies: unknown[] = []
+    const chatId = "018f3a3a-3456-7890-abcd-ef0123456789"
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
+      urls.push(url)
+      if (init?.body) {
+        try {
+          bodies.push(JSON.parse(String(init.body)))
+        } catch {
+          // ignore
+        }
+      }
       if (url.includes("/api/commands/chat.open")) {
-        return Promise.resolve(ok({ id: "chat-1" }))
+        return Promise.resolve(
+          ok({
+            id: chatId,
+            title: DEFAULT_CHAT_TITLE,
+            focusKind: "paper",
+            focusId: "doc-1",
+          })
+        )
+      }
+      if (url.includes("/api/commands/chat.rename")) {
+        return Promise.resolve(
+          ok({
+            id: chatId,
+            title: "About PM track CV",
+            focusKind: "paper",
+            focusId: "doc-1",
+          })
+        )
       }
       return Promise.resolve(ok({}))
     })
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
-    expect(await screen.findByRole("menuitem", { name: "Turn into" })).toBeInTheDocument()
-    expect(screen.getByRole("menuitem", { name: /Duplicate/ })).toHaveTextContent("⌘ D")
-    expect(screen.getByRole("menuitem", { name: /Move up/ })).toHaveTextContent("⌘ ⇧ ↑")
-    expect(screen.getByRole("menuitem", { name: /Move down/ })).toHaveTextContent("⌘ ⇧ ↓")
-    expect(screen.getByRole("menuitem", { name: /Delete/ })).toHaveTextContent("Del")
+    expect(
+      await screen.findByRole("menuitem", { name: "Turn into" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("menuitem", { name: /Duplicate/ })
+    ).toHaveTextContent("⌘ D")
+    expect(screen.getByRole("menuitem", { name: /Move up/ })).toHaveTextContent(
+      "⌘ ⇧ ↑"
+    )
+    expect(
+      screen.getByRole("menuitem", { name: /Move down/ })
+    ).toHaveTextContent("⌘ ⇧ ↓")
+    expect(screen.getByRole("menuitem", { name: /Delete/ })).toHaveTextContent(
+      "Del"
+    )
     let taken: string | null = null
     const stop = subscribeCoachDraft(() => {
       taken = takeCoachDraft()
@@ -172,6 +227,16 @@ describe("block editor", () => {
     await vi.waitFor(() => {
       expect(taken).toBe("Alpha")
     })
+    expect(urls.some((url) => url.includes("/api/commands/chat.open"))).toBe(
+      true
+    )
+    expect(
+      bodies.some(
+        (body) =>
+          (body as { input?: { title?: string } })?.input?.title ===
+          "About PM track CV"
+      )
+    ).toBe(true)
     stop()
   })
 
@@ -179,7 +244,9 @@ describe("block editor", () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(ok({ ...record, contentVersion: 2 }))
     )
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
     fireEvent.click(await screen.findByRole("menuitem", { name: /Delete/ }))
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
@@ -206,7 +273,9 @@ describe("block editor", () => {
       }
       return Promise.resolve(ok({}))
     })
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     const handle = screen.getAllByRole("button", { name: "Block menu" })[0]!
     handle.focus()
     await key(handle, "Space")
@@ -214,7 +283,9 @@ describe("block editor", () => {
     await key(document, "Space")
     expect(bodies).toHaveLength(1)
     expect(
-      bodies[0]?.input?.document?.sections?.[0]?.blocks?.map((block) => block.id)
+      bodies[0]?.input?.document?.sections?.[0]?.blocks?.map(
+        (block) => block.id
+      )
     ).toEqual(["b", "a"])
   })
 
@@ -232,7 +303,9 @@ describe("block editor", () => {
       onchange: null,
     }))
     vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     const node = document.querySelector("[data-sortable-block]")
     expect(node?.getAttribute("style") ?? "").not.toMatch(/transform/)
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument()
@@ -240,10 +313,13 @@ describe("block editor", () => {
 
   it("keeps one tab stop on the block", () => {
     vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     const block = document.querySelector("[data-sortable-block='a']")
     expect(block).toHaveAttribute("tabindex", "0")
-    for (const inner of block?.querySelectorAll("button, [role='textbox']") ?? []) {
+    for (const inner of block?.querySelectorAll("button, [role='textbox']") ??
+      []) {
       expect(inner).toHaveAttribute("tabindex", "-1")
     }
     fireEvent.keyDown(block!, { key: "d", metaKey: true })
@@ -254,7 +330,9 @@ describe("block editor", () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(ok({ ...record, contentVersion: 2 }))
     )
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
     fireEvent.click(await screen.findByRole("menuitem", { name: /Duplicate/ }))
     expect(screen.getAllByText("Alpha")).toHaveLength(2)
@@ -273,7 +351,10 @@ describe("block editor", () => {
     })
     render(
       <PaperCvEditor
-        initial={{ ...record, document: { ...record.document, version: 2, sections: [] } }}
+        initial={{
+          ...record,
+          document: { ...record.document, version: 2, sections: [] },
+        }}
         pages={pages}
         onBack={() => undefined}
       />
@@ -287,7 +368,9 @@ describe("block editor", () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(ok({ ...record, contentVersion: 2 }))
     )
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
     fireEvent.click(await screen.findByRole("menuitem", { name: /Move down/ }))
     const afterDown = screen
@@ -297,7 +380,10 @@ describe("block editor", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[1]!)
     fireEvent.click(await screen.findByRole("menuitem", { name: /Move up/ }))
     expect(
-      screen.getAllByRole("textbox", { name: "Text" }).map((node) => node.textContent).slice(0, 2)
+      screen
+        .getAllByRole("textbox", { name: "Text" })
+        .map((node) => node.textContent)
+        .slice(0, 2)
     ).toEqual(["Alpha", "Beta"])
     const block = document.querySelector("[data-sortable-block='a']")
     block?.focus()
@@ -337,7 +423,13 @@ describe("block editor", () => {
           contentVersion: 5,
           document: {
             version: 2,
-            header: { name: "Ada", email: "", phone: "", city: "", linkedin: "" },
+            header: {
+              name: "Ada",
+              email: "",
+              phone: "",
+              city: "",
+              linkedin: "",
+            },
             sections: [
               {
                 id: "section-experience",
@@ -361,7 +453,9 @@ describe("block editor", () => {
     vi.spyOn(window, "innerHeight", "get").mockReturnValue(390)
     HTMLElement.prototype.getBoundingClientRect = () => box(300, 40)
     vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
-    render(<PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />)
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
     const menu = screen.getAllByRole("button", { name: "Block menu" })[0]!
     fireEvent.focus(menu)
     fireEvent.click(menu)

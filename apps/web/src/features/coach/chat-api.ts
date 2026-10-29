@@ -93,7 +93,7 @@ export async function createChat(
   const opened = await runContractCommand(queryClient, "chat.open", {
     focus: { kind: "paper", id: input.focusDocId },
   })
-  if (!input.title || opened.title !== DEFAULT_CHAT_TITLE) {
+  if (!input.title || (opened.title && opened.title !== DEFAULT_CHAT_TITLE)) {
     return asChat(opened)
   }
   return asChat(
