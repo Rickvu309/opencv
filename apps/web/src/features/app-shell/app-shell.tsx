@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import { Link, Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -55,6 +55,49 @@ const CLOSED_PANEL: PanelState = {
   mode: "dock",
   title: "",
   chatId: null,
+}
+
+type ShellState = { panel: PanelState; drawerOpen: boolean }
+
+type ShellAction =
+  | { type: "panel_opened"; title: string; chatId: string | null }
+  | { type: "panel_closed" }
+  | { type: "panel_minimized" }
+  | { type: "panel_expanded" }
+  | { type: "drawer_opened" }
+  | { type: "drawer_closed" }
+
+const SHELL_START: ShellState = { panel: CLOSED_PANEL, drawerOpen: false }
+
+function shellReducer(state: ShellState, action: ShellAction): ShellState {
+  switch (action.type) {
+    case "panel_opened":
+      return {
+        ...state,
+        panel: {
+          open: true,
+          mode: "side",
+          title: action.title,
+          chatId: action.chatId,
+        },
+      }
+    case "panel_closed":
+      return { ...state, panel: CLOSED_PANEL }
+    case "panel_minimized":
+      return { ...state, panel: { ...state.panel, mode: "dock" } }
+    case "panel_expanded":
+      return {
+        ...state,
+        panel: {
+          ...state.panel,
+          mode: state.panel.mode === "full" ? "side" : "full",
+        },
+      }
+    case "drawer_opened":
+      return { ...state, drawerOpen: true }
+    case "drawer_closed":
+      return { ...state, drawerOpen: false }
+  }
 }
 
 type ShellNavProps = {
@@ -219,8 +262,10 @@ export function AppShell({ onSearch }: AppShellProps) {
   const queryClient = useQueryClient()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
   const chats = useShellChats()
-  const [panel, setPanel] = useState<PanelState>(CLOSED_PANEL)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [{ panel, drawerOpen }, dispatch] = useReducer(
+    shellReducer,
+    SHELL_START
+  )
   const openerRef = useRef<HTMLElement | null>(null)
   const openPanelRef = useRef<
     (next: { title: string; chatId: string | null }) => void
@@ -241,7 +286,7 @@ export function AppShell({ onSearch }: AppShellProps) {
     function onKey(event: KeyboardEvent) {
       if (event.key !== "Escape") return
       event.preventDefault()
-      setPanel(CLOSED_PANEL)
+      dispatch({ type: "panel_closed" })
       openerRef.current?.focus()
     }
     window.addEventListener("keydown", onKey)
@@ -271,12 +316,7 @@ export function AppShell({ onSearch }: AppShellProps) {
 
   function openPanel(next: { title: string; chatId: string | null }) {
     rememberOpener()
-    setPanel({
-      open: true,
-      mode: "side",
-      title: next.title,
-      chatId: next.chatId,
-    })
+    dispatch({ type: "panel_opened", title: next.title, chatId: next.chatId })
   }
 
   useEffect(() => {
@@ -284,7 +324,7 @@ export function AppShell({ onSearch }: AppShellProps) {
   })
 
   function closePanel() {
-    setPanel(CLOSED_PANEL)
+    dispatch({ type: "panel_closed" })
     openerRef.current?.focus()
   }
 
@@ -292,9 +332,8 @@ export function AppShell({ onSearch }: AppShellProps) {
     rememberOpener()
     try {
       const chat = await runContractCommand(queryClient, "chat.create", {})
-      setPanel({
-        open: true,
-        mode: "side",
+      dispatch({
+        type: "panel_opened",
         title: chatDisplayTitle(chat.title),
         chatId: chat.id,
       })
@@ -304,7 +343,7 @@ export function AppShell({ onSearch }: AppShellProps) {
   }
 
   function closeDrawer() {
-    setDrawerOpen(false)
+    dispatch({ type: "drawer_closed" })
     menuRef.current?.focus()
   }
 
@@ -324,15 +363,8 @@ export function AppShell({ onSearch }: AppShellProps) {
           title={panel.title}
           open
           mode={panel.mode === "dock" ? "side" : panel.mode}
-          onMinimize={() =>
-            setPanel((current) => ({ ...current, mode: "dock" }))
-          }
-          onExpand={() =>
-            setPanel((current) => ({
-              ...current,
-              mode: current.mode === "full" ? "side" : "full",
-            }))
-          }
+          onMinimize={() => dispatch({ type: "panel_minimized" })}
+          onExpand={() => dispatch({ type: "panel_expanded" })}
           onClose={closePanel}
         >
           <CoachWorkspace chatId={panel.chatId} />
@@ -376,7 +408,7 @@ export function AppShell({ onSearch }: AppShellProps) {
             variant="ghost"
             size="icon-sm"
             aria-label={shellCopy.menu}
-            onClick={() => setDrawerOpen(true)}
+            onClick={() => dispatch({ type: "drawer_opened" })}
           >
             <Menu />
           </Button>

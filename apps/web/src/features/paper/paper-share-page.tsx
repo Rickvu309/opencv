@@ -1,6 +1,6 @@
 import { useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import {
   blocksToPreviewModel,
   isCvBlockDocument,
@@ -15,6 +15,7 @@ import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper, quietPaperChrome } from "./paper-print.ts"
+import { printJobReducer } from "./paper-print-job.reducer.ts"
 import { printLayout } from "./paper-templates.ts"
 
 function sharedCv(
@@ -44,10 +45,7 @@ export function PaperSharePage() {
     queryFn: () => getSharedPaper(token),
     enabled: token.length > 0,
   })
-  const [printJob, setPrintJob] = useState<{
-    id: number
-    title: string
-  } | null>(null)
+  const [printJob, dispatchPrint] = useReducer(printJobReducer, null)
   const quietRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -56,7 +54,9 @@ export function PaperSharePage() {
 
   useEffect(() => {
     if (!printJob) return
-    return printPaper(printJob.title, () => setPrintJob(null))
+    return printPaper(printJob.title, () =>
+      dispatchPrint({ type: "print_finished" })
+    )
   }, [printJob])
 
   if (!token || query.isError) {
@@ -92,10 +92,7 @@ export function PaperSharePage() {
           type="button"
           variant="outline"
           onClick={() =>
-            setPrintJob((current) => ({
-              id: (current?.id ?? 0) + 1,
-              title: doc.name,
-            }))
+            dispatchPrint({ type: "print_requested", title: doc.name })
           }
         >
           Download PDF

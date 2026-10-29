@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
+import { useEffectReducer, type EffectReducer } from "use-effect-reducer"
 import { Link } from "@tanstack/react-router"
 import {
   Calendar,
@@ -103,8 +104,10 @@ function EditRow({
   value: string
   onSave: (value: string) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState(value)
+  const [{ open, draft }, dispatch] = useReducer(editReducer, {
+    open: false,
+    draft: value,
+  })
 
   function commit() {
     if (draft !== value) onSave(draft)
@@ -114,9 +117,8 @@ function EditRow({
     <Popover
       open={open}
       onOpenChange={(next, details) => {
-        if (next) setDraft(value)
-        else if (details.reason !== "escape-key") commit()
-        setOpen(next)
+        if (!next && details.reason !== "escape-key") commit()
+        dispatch(next ? { type: "opened", value } : { type: "closed" })
       }}
     >
       <PopoverTrigger
@@ -137,14 +139,16 @@ function EditRow({
           onSubmit={(event) => {
             event.preventDefault()
             commit()
-            setOpen(false)
+            dispatch({ type: "closed" })
           }}
         >
           <Input
             aria-label={ariaLabel}
             type={inputType}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) =>
+              dispatch({ type: "typed", value: event.target.value })
+            }
             className="h-8 rounded-[6px] text-[13px] md:text-[13px]"
           />
         </form>
@@ -231,6 +235,24 @@ function PriorityRow({
   )
 }
 
+type EditState = { open: boolean; draft: string }
+
+type EditAction =
+  | { type: "opened"; value: string }
+  | { type: "closed" }
+  | { type: "typed"; value: string }
+
+function editReducer(state: EditState, action: EditAction): EditState {
+  switch (action.type) {
+    case "opened":
+      return { open: true, draft: action.value }
+    case "closed":
+      return { ...state, open: false }
+    case "typed":
+      return { ...state, draft: action.value }
+  }
+}
+
 type PickerDoc = PaperListItem & { status?: string; updatedAt?: string }
 
 function docMeta(doc: PickerDoc) {
@@ -240,29 +262,62 @@ function docMeta(doc: PickerDoc) {
   return draft ? `Draft, edited ${edited}` : `Edited ${edited}`
 }
 
+type PickerState = { open: boolean; docs: PickerDoc[] | null; search: string }
+
+type PickerEvent =
+  | { type: "opened"; kind: "cv" | "letter" }
+  | { type: "closed" }
+  | { type: "search_typed"; value: string }
+  | { type: "docs_loaded"; docs: PickerDoc[] }
+
+const pickerReducer: EffectReducer<PickerState, PickerEvent> = (
+  state,
+  event,
+  exec
+) => {
+  switch (event.type) {
+    case "opened":
+      exec((_state, _effect, dispatch) => {
+        void listPaper(event.kind)
+          .then((rows) =>
+            dispatch({
+              type: "docs_loaded",
+              docs: rows.filter((row) => row.kind === event.kind),
+            })
+          )
+          .catch(() => dispatch({ type: "docs_loaded", docs: [] }))
+      })
+      return { ...state, open: true, search: "" }
+    case "closed":
+      return { ...state, open: false }
+    case "search_typed":
+      return { ...state, search: event.value }
+    case "docs_loaded":
+      return { ...state, docs: event.docs }
+  }
+}
+
 function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
   const run = useRunCommand()
   const linked = kind === "cv" ? job.linked.cv : job.linked.letter
-  const [open, setOpen] = useState(false)
-  const [docs, setDocs] = useState<PickerDoc[] | null>(null)
-  const [search, setSearch] = useState("")
+  const [{ open, docs, search }, dispatch] = useEffectReducer(pickerReducer, {
+    open: false,
+    docs: null,
+    search: "",
+  })
   const DocIcon = kind === "cv" ? FileText : Mail
   const addLabel = kind === "cv" ? "Add CV" : "Add cover letter"
   const shown = (docs ?? []).filter((doc) =>
     doc.name.toLowerCase().includes(search.trim().toLowerCase())
   )
 
-  function toggle(next: boolean) {
-    setOpen(next)
-    if (!next) return
-    setSearch("")
-    void listPaper(kind)
-      .then((rows) => setDocs(rows.filter((row) => row.kind === kind)))
-      .catch(() => setDocs([]))
-  }
-
   return (
-    <Popover open={open} onOpenChange={toggle}>
+    <Popover
+      open={open}
+      onOpenChange={(next) =>
+        dispatch(next ? { type: "opened", kind } : { type: "closed" })
+      }
+    >
       <PopoverTrigger
         render={
           <Button
@@ -292,7 +347,9 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
             value={search}
             placeholder="Find in Paper"
             className="h-8 border-0 bg-transparent px-0 text-[12.5px] shadow-none focus-visible:ring-0 md:text-[12.5px] dark:bg-transparent"
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) =>
+              dispatch({ type: "search_typed", value: event.target.value })
+            }
           />
         </div>
         <div className="mt-1 flex flex-col gap-0.5">
@@ -308,7 +365,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
                   docId: parsePaperId(doc.id),
                   kind,
                 })
-                setOpen(false)
+                dispatch({ type: "closed" })
               }}
             >
               <DocIcon aria-hidden className="size-3.5 text-muted-foreground" />
@@ -333,7 +390,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
             className={cn(PICKER_ROW, "h-8")}
             onClick={() => {
               void run("job.unlinkPaper", { jobId: job.id, kind })
-              setOpen(false)
+              dispatch({ type: "closed" })
             }}
           >
             <X aria-hidden className="size-3.5 text-muted-foreground" />

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
 import { Calendar, ChevronDown, ChevronRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -42,7 +42,7 @@ export function ListGroup({
   children: ReactNode
 }) {
   const name = stageLabel(stage)
-  const [flipped, setFlipped] = useState(false)
+  const [flipped, toggleFlipped] = useReducer((value: boolean) => !value, false)
   const open = (count > 0 && stage !== "closed") !== flipped
   const Caret = open ? ChevronDown : ChevronRight
   return (
@@ -57,7 +57,7 @@ export function ListGroup({
           variant="ghost"
           aria-expanded={open}
           className="h-[34px] w-full justify-start gap-2 rounded-[6px] bg-secondary px-2.5 text-[13px] font-normal hover:bg-accent aria-expanded:bg-secondary aria-expanded:hover:bg-accent"
-          onClick={() => setFlipped(!flipped)}
+          onClick={toggleFlipped}
         >
           <Caret className="size-3 text-muted-foreground" aria-hidden />
           <span aria-hidden className="flex">

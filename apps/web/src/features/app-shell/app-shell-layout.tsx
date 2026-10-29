@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useReducer } from "react"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
 import { AppShell } from "@/features/app-shell/app-shell.tsx"
@@ -27,15 +27,25 @@ export function AppShellLayout() {
   )
 }
 
+type SearchAction =
+  | { type: "shortcut_pressed" }
+  | { type: "search_requested" }
+  | { type: "palette_closed" }
+
+function searchReducer(open: boolean, action: SearchAction) {
+  if (action.type === "shortcut_pressed") return !open
+  return action.type === "search_requested"
+}
+
 function AppShellChrome() {
   const navigate = useNavigate()
-  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchOpen, dispatchSearch] = useReducer(searchReducer, false)
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault()
-        setSearchOpen((open) => !open)
+        dispatchSearch({ type: "shortcut_pressed" })
       }
     }
     window.addEventListener("keydown", onKey)
@@ -48,10 +58,12 @@ function AppShellChrome() {
 
   return (
     <>
-      <AppShell onSearch={() => setSearchOpen(true)} />
+      <AppShell onSearch={() => dispatchSearch({ type: "search_requested" })} />
       <CommandPalette
         open={searchOpen}
-        onOpenChange={setSearchOpen}
+        onOpenChange={(open) =>
+          dispatchSearch({ type: open ? "search_requested" : "palette_closed" })
+        }
         onSurface={goSurface}
       />
     </>

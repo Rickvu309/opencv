@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { ChevronDown } from "lucide-react"
@@ -40,6 +40,24 @@ type Card = {
   job: JobView
 }
 
+type Drag = { id: string; over: JobStage | null } | null
+
+type DragAction =
+  | { type: "started"; id: string }
+  | { type: "moved_over"; id: string; over: JobStage | null }
+  | { type: "ended" }
+
+function dragReducer(_drag: Drag, action: DragAction): Drag {
+  switch (action.type) {
+    case "started":
+      return { id: action.id, over: null }
+    case "moved_over":
+      return { id: action.id, over: action.over }
+    case "ended":
+      return null
+  }
+}
+
 function toCards(jobs: JobView[], stages: readonly JobStage[]): Card[] {
   return jobs
     .filter((job) => stages.includes(job.stage))
@@ -65,10 +83,7 @@ export function ApplyBoard({
   const run = useRunCommand()
   const tails = useRef(new Map<string, Promise<unknown>>())
   const pendingMoves = useRef(0)
-  const [drag, setDrag] = useState<{
-    id: string
-    over: JobStage | null
-  } | null>(null)
+  const [drag, dispatchDrag] = useReducer(dragReducer, null)
   const stages = showClosed ? ALL_STAGES : BOARD_STAGES
   const columns = stages.map((stage) => ({
     id: stage,
@@ -156,19 +171,20 @@ export function ApplyBoard({
         columns={columns}
         data={data}
         onDragStart={(event) =>
-          setDrag({ id: String(event.active.id), over: null })
+          dispatchDrag({ type: "started", id: String(event.active.id) })
         }
         onDragOver={(event) =>
-          setDrag({
+          dispatchDrag({
+            type: "moved_over",
             id: String(event.active.id),
             over: event.over ? stageOf(String(event.over.id)) : null,
           })
         }
         onDragEnd={(event) => {
-          setDrag(null)
+          dispatchDrag({ type: "ended" })
           onDragEnd(event)
         }}
-        onDragCancel={() => setDrag(null)}
+        onDragCancel={() => dispatchDrag({ type: "ended" })}
         className="h-full min-h-80 w-max auto-cols-[244px] gap-2.5"
       >
         {(column) => {
@@ -247,7 +263,7 @@ function HiddenColumns({
   showClosed: boolean
   onShowClosed: (show: boolean) => void
 }) {
-  const [open, setOpen] = useState(true)
+  const [open, toggleOpen] = useReducer((value: boolean) => !value, true)
   return (
     <div
       data-slot="hidden-columns"
@@ -258,7 +274,7 @@ function HiddenColumns({
         variant="ghost"
         aria-expanded={open}
         className="h-6 justify-start gap-1.5 rounded-[6px] px-1 text-xs font-medium text-muted-foreground aria-expanded:bg-transparent aria-expanded:text-muted-foreground aria-expanded:hover:bg-muted"
-        onClick={() => setOpen((current) => !current)}
+        onClick={toggleOpen}
       >
         <ChevronDown
           className={cn(

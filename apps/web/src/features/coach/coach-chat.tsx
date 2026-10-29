@@ -1,10 +1,16 @@
-import { useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
 
 import { Chat, ChatLog } from "@/components/ai-elements/chat.tsx"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 import { CoachDock } from "./coach-dock.tsx"
 import { CoachTurns } from "./coach-turns.tsx"
+
+type DraftAction = { type: "typed"; value: string } | { type: "sent" }
+
+function draftReducer(_draft: string, action: DraftAction) {
+  return action.type === "typed" ? action.value : ""
+}
 
 type Props = {
   messages: readonly ChatViewMessage[]
@@ -36,7 +42,7 @@ export function CoachChat({
   onAttachFromPaper,
   ...turns
 }: Props) {
-  const [draft, setDraft] = useState("")
+  const [draft, dispatch] = useReducer(draftReducer, "")
   const isEmpty = messages.length === 0 && !turnActive && !error
 
   return (
@@ -57,9 +63,9 @@ export function CoachChat({
         {beforeComposer}
         <CoachDock
           draft={draft}
-          setDraft={setDraft}
+          setDraft={(value) => dispatch({ type: "typed", value })}
           onSend={() => {
-            if (send(draft)) setDraft("")
+            if (send(draft)) dispatch({ type: "sent" })
           }}
           onStop={stop}
           turnActive={turnActive}

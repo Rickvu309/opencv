@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 import {
@@ -41,6 +41,10 @@ function photoData() {
     templateId: "photo" as const,
     photoUrl: `file:${FILE_ID}`,
   }
+}
+
+function replaceUrl(_: string | undefined, next: string | undefined) {
+  return next
 }
 
 describe("CV photo", () => {
@@ -93,7 +97,7 @@ describe("CV photo", () => {
     })
 
     function Harness() {
-      const [url, setUrl] = useState<string | undefined>()
+      const [url, setUrl] = useReducer(replaceUrl, undefined)
       return (
         <CvPhotoFrame value={{ docId: DOC_ID }}>
           <CvPhoto url={url} onChange={setUrl} />
@@ -176,7 +180,7 @@ describe("CV photo", () => {
     })
 
     function Harness() {
-      const [url, setUrl] = useState<string | undefined>()
+      const [url, setUrl] = useReducer(replaceUrl, undefined)
       return (
         <CvPhotoFrame value={{ docId: DOC_ID }}>
           <CvPhoto url={url} onChange={setUrl} />
@@ -248,7 +252,7 @@ describe("CV photo", () => {
     })
 
     function Harness() {
-      const [url, setUrl] = useState<string | undefined>()
+      const [url, setUrl] = useReducer(replaceUrl, undefined)
       return (
         <>
           <CvPhotoFrame value={{ docId: DOC_ID }}>

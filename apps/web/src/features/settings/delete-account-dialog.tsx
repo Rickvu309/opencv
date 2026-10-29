@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -14,6 +14,32 @@ import { Input } from "@workspace/ui/components/input"
 import { authClient } from "@/lib/auth-client.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
+type DeleteState = { confirm: string; error?: string; pending: boolean }
+
+type DeleteAction =
+  | { type: "confirm_typed"; value: string }
+  | { type: "dismissed" }
+  | { type: "delete_started" }
+  | { type: "delete_failed"; message: string }
+  | { type: "delete_ended" }
+
+const DELETE_START: DeleteState = { confirm: "", pending: false }
+
+function deleteReducer(state: DeleteState, action: DeleteAction): DeleteState {
+  switch (action.type) {
+    case "confirm_typed":
+      return { ...state, confirm: action.value }
+    case "dismissed":
+      return { ...state, confirm: "", error: undefined }
+    case "delete_started":
+      return { ...state, pending: true, error: undefined }
+    case "delete_failed":
+      return { ...state, error: action.message }
+    case "delete_ended":
+      return { ...state, pending: false }
+  }
+}
+
 export function DeleteAccountDialog({
   open,
   onOpenChange,
@@ -23,31 +49,33 @@ export function DeleteAccountDialog({
 }) {
   const navigate = useNavigate()
   const runCommand = useRunCommand()
-  const [confirm, setConfirm] = useState("")
-  const [error, setError] = useState<string>()
-  const [pending, setPending] = useState(false)
+  const [{ confirm, error, pending }, dispatch] = useReducer(
+    deleteReducer,
+    DELETE_START
+  )
   const ready = confirm === "DELETE"
 
   function close(next: boolean) {
     if (!next) {
-      setConfirm("")
-      setError(undefined)
+      dispatch({ type: "dismissed" })
     }
     onOpenChange(next)
   }
 
   async function onDelete() {
     if (!ready) return
-    setPending(true)
-    setError(undefined)
+    dispatch({ type: "delete_started" })
     try {
       await runCommand("account.delete", { confirm: "DELETE" })
       await authClient.signOut()
       await navigate({ href: "/sign-in" })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Try again.")
+      dispatch({
+        type: "delete_failed",
+        message: caught instanceof Error ? caught.message : "Try again.",
+      })
     } finally {
-      setPending(false)
+      dispatch({ type: "delete_ended" })
     }
   }
 
@@ -65,7 +93,9 @@ export function DeleteAccountDialog({
           <Input
             value={confirm}
             autoFocus
-            onChange={(event) => setConfirm(event.target.value)}
+            onChange={(event) =>
+              dispatch({ type: "confirm_typed", value: event.target.value })
+            }
           />
         </Field>
         <div className="flex justify-end gap-2">

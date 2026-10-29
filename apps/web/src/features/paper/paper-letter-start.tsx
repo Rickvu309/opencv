@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import type { JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -17,6 +17,10 @@ import {
   stopPaperChat,
   streamPaperTurn,
 } from "./paper-api.ts"
+import {
+  initialLetterStart,
+  letterStartReducer,
+} from "./paper-letter-start.reducer.ts"
 
 function unreadableLink(value: string) {
   return /docs\.google\.com|linkedin\.com/i.test(value)
@@ -45,13 +49,8 @@ export function PaperLetterStart({
 }) {
   const run = useRunCommand()
   const queryClient = useQueryClient()
-  const [jobs, setJobs] = useState<JobView[]>(jobsProp ?? [])
-  const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<JobView | null>(null)
-  const [drafting, setDrafting] = useState(false)
-  const [text, setText] = useState("")
-  const [limit, setLimit] = useState<PaperLimitError | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [{ jobs, query, selected, drafting, text, limit, error }, dispatch] =
+    useReducer(letterStartReducer, jobsProp ?? [], initialLetterStart)
   const abortRef = useRef<AbortController | null>(null)
   const chatRef = useRef<string | null>(null)
   const textRef = useRef("")
@@ -66,27 +65,26 @@ export function PaperLetterStart({
 
   useEffect(() => {
     if (jobsProp) {
-      setJobs(jobsProp)
+      dispatch({ type: "jobs_loaded", jobs: jobsProp })
       return
     }
     void listJobs()
-      .then(setJobs)
+      .then((loaded) => dispatch({ type: "jobs_loaded", jobs: loaded }))
       .catch((err: unknown) => {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Could not load jobs. Refresh the page."
-        )
+        dispatch({
+          type: "jobs_failed",
+          message:
+            err instanceof Error
+              ? err.message
+              : "Could not load jobs. Refresh the page.",
+        })
       })
   }, [jobsProp])
 
   async function draft() {
     if (!selected && query.trim() === "") return
-    setLimit(null)
-    setError(null)
-    setDrafting(true)
+    dispatch({ type: "draft_started" })
     textRef.current = ""
-    setText("")
     const controller = new AbortController()
     abortRef.current = controller
     try {
@@ -114,7 +112,7 @@ export function PaperLetterStart({
         signal: controller.signal,
         onText: (delta) => {
           textRef.current += delta
-          setText(textRef.current)
+          dispatch({ type: "draft_text_streamed", text: textRef.current })
         },
         onToolResult: (tool) => {
           if (tool === "paper.replace") {
@@ -138,23 +136,25 @@ export function PaperLetterStart({
     } catch (err) {
       if (isAbortError(err)) return
       if (err instanceof PaperLimitError) {
-        setLimit(err)
+        dispatch({ type: "draft_limited", limit: err })
         return
       }
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Could not draft the letter. Try again."
-      )
+      dispatch({
+        type: "draft_failed",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Could not draft the letter. Try again.",
+      })
     } finally {
-      setDrafting(false)
+      dispatch({ type: "draft_ended" })
     }
   }
 
   function stop() {
     abortRef.current?.abort()
     if (chatRef.current) void stopPaperChat(chatRef.current)
-    setDrafting(false)
+    dispatch({ type: "draft_ended" })
   }
 
   async function startBlank() {
@@ -165,11 +165,13 @@ export function PaperLetterStart({
       })
       onCreated(created.id)
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Could not start a letter. Try again."
-      )
+      dispatch({
+        type: "blank_failed",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Could not start a letter. Try again.",
+      })
     }
   }
 
@@ -183,7 +185,9 @@ export function PaperLetterStart({
         aria-label="Search jobs, paste a link or attach a file"
         placeholder="Search jobs, paste a link or attach a file"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) =>
+          dispatch({ type: "query_typed", query: event.target.value })
+        }
       />
       {unread ? (
         <p>Can&apos;t read this link. Paste the job text or attach a file.</p>
@@ -196,7 +200,7 @@ export function PaperLetterStart({
             variant={selected?.id === job.id ? "secondary" : "outline"}
             className="h-auto justify-start whitespace-normal"
             aria-pressed={selected?.id === job.id}
-            onClick={() => setSelected(job)}
+            onClick={() => dispatch({ type: "picked_job", job })}
           >
             {job.title}, {job.company}
           </Button>

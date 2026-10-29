@@ -1,6 +1,6 @@
 import { Bell, Ellipsis, LayoutTemplate, Link2, Star } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useReducer, useRef } from "react"
 import {
   paperDocNameSchema,
   type CvBlockDocument,
@@ -35,6 +35,7 @@ import {
   focusPhoneField,
   useImportCheckBar,
 } from "./paper-check-bar.tsx"
+import { editorReducer, initialEditor } from "./paper-editor.reducer.ts"
 import { PaperBlocks, type BlockCommit } from "./paper-blocks.tsx"
 import { readEditorDocument } from "./paper-block-ops.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
@@ -79,7 +80,25 @@ export function PaperCvEditor({
   const queryClient = useQueryClient()
   const dirtyRef = useRef(false)
   const inputCountRef = useRef(0)
-  const [doc, setDoc] = useState(() => readEditorDocument(initial.document))
+  const [
+    {
+      doc,
+      undoDoc,
+      name,
+      nameError,
+      updatedAt,
+      pageState,
+      conflict,
+      favorite,
+      templateId,
+      galleryOpen,
+      previewPages,
+      printJob,
+    },
+    dispatch,
+  ] = useReducer(editorReducer, undefined, () =>
+    initialEditor(initial, pages, readEditorDocument(initial.document))
+  )
   const docRef = useRef(doc)
   const importBar = useImportCheckBar({
     docId: initial.id,
@@ -87,15 +106,6 @@ export function PaperCvEditor({
     readDocument: () => docRef.current,
     dirtyRef,
   })
-  const [undoDoc, setUndoDoc] = useState<CvBlockDocument | null>(null)
-  const [name, setName] = useState(initial.name)
-  const [nameError, setNameError] = useState<string | null>(null)
-  const [updatedAt, setUpdatedAt] = useState(initial.updatedAt)
-  const [pageState, setPageState] = useState(pages)
-  const [conflict, setConflict] = useState(false)
-  const [favorite, setFavorite] = useState(false)
-  const [templateId, setTemplateId] = useState(initial.templateId)
-  const [galleryOpen, setGalleryOpen] = useState(false)
   const { schedule, commitNow, adopt, versionRef } =
     usePaperAutosave<CvBlockDocument>({
       docId: initial.id,
@@ -105,37 +115,33 @@ export function PaperCvEditor({
       onSaved: (saved, inputEpoch) => {
         if (inputEpoch === inputCountRef.current) dirtyRef.current = false
         adopt(saved.contentVersion)
-        setUpdatedAt(new Date().toISOString())
-        setConflict(false)
+        dispatch({ type: "saved", at: new Date().toISOString() })
         void importBar.settle()
       },
-      onConflict: () => setConflict(true),
+      onConflict: () => dispatch({ type: "conflict_detected" }),
       onError: (error) => {
         toastError(error, "Could not save. Try again.")
       },
     })
   const measureRef = useRef<HTMLDivElement>(null)
-  const [previewPages, setPreviewPages] = useState(1)
-  const [printJob, setPrintJob] = useState<{
-    id: number
-    title: string
-  } | null>(null)
   const showBanner = previewPages > 1 && pageState.pageChoice === "unset"
 
   useLayoutEffect(() => {
     return bindPrintPageCount(() => {
       const next = readPreviewPageCount(measureRef.current)
-      setPreviewPages((current) => (current === next ? current : next))
+      dispatch({ type: "preview_measured", pages: next })
     })
   }, [doc, templateId])
 
   useEffect(() => {
     if (!printJob) return
-    return printPaper(printJob.title, () => setPrintJob(null))
+    return printPaper(printJob.title, () =>
+      dispatch({ type: "print_finished" })
+    )
   }, [printJob])
 
   useEffect(() => {
-    setPageState(pages)
+    dispatch({ type: "pages_loaded", pages })
   }, [pages])
 
   useEffect(() => {
@@ -149,16 +155,15 @@ export function PaperCvEditor({
       return
     }
     adopt(initial.contentVersion)
-    setUndoDoc(null)
     docRef.current = next
-    setDoc(next)
+    dispatch({ type: "document_synced", doc: next })
   }, [initial, doc, adopt, versionRef])
 
   function edit(next: CvBlockDocument) {
     inputCountRef.current += 1
     dirtyRef.current = true
     docRef.current = next
-    setDoc(next)
+    dispatch({ type: "document_edited", doc: next })
     schedule(next)
   }
 
@@ -179,11 +184,10 @@ export function PaperCvEditor({
       )
       if (dirtyRef.current) versionRef.current = saved.contentVersion
       else adopt(saved.contentVersion)
-      setUpdatedAt(new Date().toISOString())
-      setConflict(false)
+      dispatch({ type: "saved", at: new Date().toISOString() })
     } catch (error) {
       if (error instanceof ApiError && error.code === "CONFLICT") {
-        setConflict(true)
+        dispatch({ type: "conflict_detected" })
       } else {
         dirtyRef.current = true
         schedule(snapshot)
@@ -197,45 +201,50 @@ export function PaperCvEditor({
     const next = applyPhoto(docRef.current, ref)
     docRef.current = next
     if (dirtyRef.current) schedule(next)
-    setDoc(next)
+    dispatch({ type: "document_edited", doc: next })
   }
 
   function commit(next: CvBlockDocument, kind: BlockCommit) {
     void kind
     if (JSON.stringify(next) === JSON.stringify(doc)) return
-    setUndoDoc(doc)
     inputCountRef.current += 1
     dirtyRef.current = true
     docRef.current = next
-    setDoc(next)
+    dispatch({ type: "document_committed", doc: next })
     commitNow(next)
   }
 
   function undo() {
     if (conflict || !undoDoc) return
     const next = undoDoc
-    setUndoDoc(null)
     inputCountRef.current += 1
     dirtyRef.current = true
     docRef.current = next
-    setDoc(next)
+    dispatch({ type: "edit_undone" })
     commitNow(next)
   }
 
   async function commitName() {
     const parsed = paperDocNameSchema.safeParse(name.trim())
     if (!parsed.success) {
-      setNameError(parsed.error.issues[0]?.message ?? "Name is required")
+      dispatch({
+        type: "name_rejected",
+        message: parsed.error.issues[0]?.message ?? "Name is required",
+      })
       return
     }
-    setNameError(null)
+    dispatch({ type: "name_accepted" })
     if (parsed.data === initial.name) return
     try {
       await run("paper.rename", { docId: initial.id, name: parsed.data })
     } catch (error) {
-      setNameError(
-        error instanceof Error ? error.message : "Could not rename. Try again."
-      )
+      dispatch({
+        type: "name_rejected",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not rename. Try again.",
+      })
     }
   }
 
@@ -253,7 +262,7 @@ export function PaperCvEditor({
   async function keepPages() {
     try {
       await run("paper.keepTwoPages", { docId: initial.id })
-      setPageState((current) => ({ ...current, pageChoice: "keep" }))
+      dispatch({ type: "two_pages_kept" })
     } catch (error) {
       toastError(error, "Could not keep two pages. Try again.")
     }
@@ -262,12 +271,9 @@ export function PaperCvEditor({
   function adoptDocument(next: PaperView) {
     dirtyRef.current = false
     adopt(next.contentVersion)
-    setUndoDoc(null)
     const read = readEditorDocument(next.document)
     docRef.current = read
-    setDoc(read)
-    setUpdatedAt(next.updatedAt)
-    setConflict(false)
+    dispatch({ type: "document_adopted", doc: read, updatedAt: next.updatedAt })
   }
 
   async function fitOnePage() {
@@ -308,13 +314,13 @@ export function PaperCvEditor({
   }
 
   function download() {
-    setPrintJob((current) => ({ id: (current?.id ?? 0) + 1, title: name }))
+    dispatch({ type: "print_requested", title: name })
   }
 
   async function reload() {
     try {
       const next = await getPaper(initial.id)
-      setTemplateId(next.templateId)
+      dispatch({ type: "template_changed", templateId: next.templateId })
       adoptDocument(next)
     } catch (error) {
       toastError(error, "Could not reload. Refresh the page.")
@@ -327,8 +333,7 @@ export function PaperCvEditor({
         docId: initial.id,
         templateId: nextTemplateId,
       })
-      setTemplateId(saved.templateId)
-      setGalleryOpen(false)
+      dispatch({ type: "template_applied", templateId: saved.templateId })
     } catch (error) {
       toastError(error, "Could not change the template. Try again.")
     }
@@ -352,7 +357,9 @@ export function PaperCvEditor({
           <Input
             aria-label="Name"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) =>
+              dispatch({ type: "name_typed", name: event.target.value })
+            }
             onBlur={() => void commitName()}
             className="h-8 max-w-48 border-transparent bg-transparent shadow-none"
           />
@@ -367,7 +374,7 @@ export function PaperCvEditor({
             size="icon-sm"
             aria-label="Favorite"
             aria-pressed={favorite}
-            onClick={() => setFavorite((value) => !value)}
+            onClick={() => dispatch({ type: "favorite_toggled" })}
           >
             <Star className="size-4" />
           </Button>
@@ -394,7 +401,7 @@ export function PaperCvEditor({
             variant="outline"
             size="icon-sm"
             aria-label="Change template"
-            onClick={() => setGalleryOpen(true)}
+            onClick={() => dispatch({ type: "gallery_opened" })}
           >
             <LayoutTemplate className="size-4" />
           </Button>
@@ -488,7 +495,7 @@ export function PaperCvEditor({
                 const next = applyPhoto(docRef.current, ref)
                 docRef.current = next
                 dirtyRef.current = true
-                setDoc(next)
+                dispatch({ type: "document_edited", doc: next })
                 schedule(next)
               }}
             />
@@ -527,7 +534,7 @@ export function PaperCvEditor({
       <Dialog
         open={galleryOpen}
         onOpenChange={(open) => {
-          if (!open) setGalleryOpen(false)
+          if (!open) dispatch({ type: "gallery_closed" })
         }}
       >
         <DialogContent className={PAPER_GALLERY_DIALOG_CLASS}>

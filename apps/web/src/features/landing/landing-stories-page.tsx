@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { ArrowRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -68,19 +68,39 @@ function StoryDialog({
   )
 }
 
+type StoryDialog = { open: boolean; story: Story | null }
+type StoryDialogAction =
+  | { type: "featured_opened" }
+  | { type: "story_opened"; story: Story }
+  | { type: "open_changed"; open: boolean }
+
+function storyDialogReducer(
+  state: StoryDialog,
+  action: StoryDialogAction
+): StoryDialog {
+  switch (action.type) {
+    case "featured_opened":
+      return { open: true, story: null }
+    case "story_opened":
+      return { open: true, story: action.story }
+    case "open_changed":
+      return { ...state, open: action.open }
+  }
+}
+
 export function StoriesPage() {
   const featured = snapshot.featured
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [activeStory, setActiveStory] = useState<Story | null>(null)
+  const [{ open: dialogOpen, story: activeStory }, dispatch] = useReducer(
+    storyDialogReducer,
+    { open: false, story: null }
+  )
 
   function openFeatured() {
-    setActiveStory(null)
-    setDialogOpen(true)
+    dispatch({ type: "featured_opened" })
   }
 
   function openStory(story: Story) {
-    setActiveStory(story)
-    setDialogOpen(true)
+    dispatch({ type: "story_opened", story })
   }
 
   return (
@@ -198,7 +218,7 @@ export function StoriesPage() {
       <StoryDialog
         story={activeStory}
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(open) => dispatch({ type: "open_changed", open })}
       />
     </div>
   )

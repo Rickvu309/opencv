@@ -1,8 +1,8 @@
 import {
   useEffect,
   useLayoutEffect,
+  useReducer,
   useRef,
-  useState,
   type RefObject,
 } from "react"
 import { createPortal } from "react-dom"
@@ -43,7 +43,10 @@ function useQuietPaper<T extends HTMLElement>(rootRef: RefObject<T | null>) {
 
 function useMeasureMount(measureRef: RefObject<HTMLDivElement | null>) {
   const hostRef = useRef<HTMLDivElement>(null)
-  const [mount, setMount] = useState<HTMLDivElement | null>(null)
+  const [mount, dispatchMount] = useReducer(
+    (_: HTMLDivElement | null, node: HTMLDivElement) => node,
+    null
+  )
 
   useLayoutEffect(() => {
     const host = hostRef.current
@@ -70,7 +73,7 @@ function useMeasureMount(measureRef: RefObject<HTMLDivElement | null>) {
       shadow.append(node)
     }
     measureRef.current = node
-    setMount(node)
+    dispatchMount(node)
     return () => {
       if (measureRef.current === node) measureRef.current = null
     }

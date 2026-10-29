@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
@@ -41,7 +41,10 @@ describe("Paper new dialog", () => {
     })
 
     function Harness() {
-      const [step, setStep] = useState<"kind" | "gallery">("kind")
+      const [step, setStep] = useReducer(
+        (_: "kind" | "gallery", next: "kind" | "gallery") => next,
+        "kind"
+      )
       return (
         <PaperNewDialog
           step={step}

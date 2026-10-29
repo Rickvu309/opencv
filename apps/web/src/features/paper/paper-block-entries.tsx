@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -26,6 +26,10 @@ import {
   type BlockFieldProps,
 } from "./paper-block-field.tsx"
 import { moveBullet, newId } from "./paper-block-ops.ts"
+
+function keepId(id: string) {
+  return id
+}
 
 function stop(editing: boolean) {
   return editing ? 0 : -1
@@ -98,7 +102,7 @@ function BulletList({
   onCommit: (bullets: { id: string; text: string }[]) => void
   onSlash?: (node: HTMLElement) => void
 }) {
-  const [draftId] = useState(newId)
+  const [draftId] = useReducer(keepId, undefined, newId)
   const shown = bullets.length > 0 ? bullets : [{ id: draftId, text: "" }]
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import type { InboxDetail } from "@workspace/domain"
 import {
@@ -29,7 +29,8 @@ import {
 } from "@/features/apply/apply-stages.ts"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
-import { InboxLimitError, inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
+import { inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
+import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
 import {
   FAINT_TEXT,
   GmailMark,
@@ -84,14 +85,10 @@ export function InboxReader({
   const runCommand = useRunCommand()
   const saved = draft?.body ?? ""
   const times = draft?.times ?? []
-  const [body, setBody] = useState(saved)
-  const [savedBody, setSavedBody] = useState(saved)
-  const [selected, setSelected] = useState(0)
-  const [limit, setLimit] = useState<InboxLimitError | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [{ body, savedBody, selected, limit, busy, opened }, dispatch] =
+    useReducer(readerReducer, saved, initialReaderState)
   const prompt = Boolean(detail.jobId && detail.suggestedStage === "interview")
   const hasDraft = draft != null
-  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
   const earlier = detail.messages.slice(0, -1)
   const current = detail.messages.at(-1) ?? null
   const inbound = detail.messages.findLast(
@@ -107,12 +104,12 @@ export function InboxReader({
   }
 
   async function run(task: () => Promise<void>) {
-    setBusy(true)
+    dispatch({ type: "task_started" })
     try {
       await task()
     } catch (error) {
       if (isCoachLimit(error)) {
-        setLimit(await inboxLimitFrom(error))
+        dispatch({ type: "limit_reached", limit: await inboxLimitFrom(error) })
         return
       }
       toast(
@@ -121,7 +118,7 @@ export function InboxReader({
           : "Could not load inbox. Refresh the page."
       )
     } finally {
-      setBusy(false)
+      dispatch({ type: "task_ended" })
     }
   }
 
@@ -307,11 +304,7 @@ export function InboxReader({
                       aria-expanded={open}
                       className="h-13 w-full justify-start gap-3 rounded-none px-0 text-left font-normal hover:bg-transparent"
                       onClick={() =>
-                        setOpened((previous) => {
-                          const next = new Set(previous)
-                          if (!next.delete(message.id)) next.add(message.id)
-                          return next
-                        })
+                        dispatch({ type: "earlier_toggled", id: message.id })
                       }
                     >
                       <PersonAvatar name={message.fromName} />
@@ -402,11 +395,9 @@ export function InboxReader({
                     aria-pressed={chip === selected}
                     onClick={() => {
                       if (chip === selected) return
-                      setSelected(chip)
                       const clock = chipClock(time, zone)
                       const next = body.replace(/\b\d{1,2}:\d{2}\b/, clock)
-                      setBody(next)
-                      setSavedBody(next)
+                      dispatch({ type: "time_chosen", index: chip, body: next })
                       void saveDraft(next)
                     }}
                   >
@@ -423,9 +414,7 @@ export function InboxReader({
                         threadId: detail.id,
                         hint: "another time",
                       })
-                      setBody(next.body)
-                      setSavedBody(next.body)
-                      setLimit(null)
+                      dispatch({ type: "reply_suggested", body: next.body })
                     })
                   }
                 >
@@ -454,11 +443,13 @@ export function InboxReader({
                   aria-label="Reply"
                   className="min-h-0 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-relaxed shadow-none focus-visible:ring-0 dark:bg-transparent"
                   value={body}
-                  onChange={(event) => setBody(event.target.value)}
+                  onChange={(event) =>
+                    dispatch({ type: "reply_typed", value: event.target.value })
+                  }
                   onBlur={() => {
                     if (body === savedBody) return
                     void saveDraft(body)
-                      .then(() => setSavedBody(body))
+                      .then(() => dispatch({ type: "draft_saved", body }))
                       .catch((error: unknown) => {
                         toast(
                           error instanceof ApiError
@@ -477,7 +468,7 @@ export function InboxReader({
                     run(async () => {
                       if (body !== savedBody) {
                         await saveDraft(body)
-                        setSavedBody(body)
+                        dispatch({ type: "draft_saved", body })
                       }
                       await runCommand("inbox.send", { threadId: detail.id })
                       toast("Reply sent")

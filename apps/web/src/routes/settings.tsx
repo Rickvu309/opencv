@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import type { ProfileUpdateInput } from "@workspace/domain"
@@ -66,18 +66,33 @@ export function SettingsPage() {
   )
 }
 
+type SaveState = { pending: boolean; errorKey?: string; error?: string }
+type SaveAction =
+  | { type: "save_started" }
+  | { type: "save_rejected"; key: string; message: string }
+  | { type: "save_settled" }
+
+function saveReducer(state: SaveState, action: SaveAction): SaveState {
+  switch (action.type) {
+    case "save_started":
+      return { pending: true }
+    case "save_rejected":
+      return { ...state, errorKey: action.key, error: action.message }
+    case "save_settled":
+      return { ...state, pending: false }
+  }
+}
+
 function useSettingsSave() {
   const runCommand = useRunCommand()
   const navigate = useNavigate()
-  const [pending, setPending] = useState(false)
-  const [errorKey, setErrorKey] = useState<string>()
-  const [error, setError] = useState<string>()
+  const [{ pending, errorKey, error }, dispatch] = useReducer(saveReducer, {
+    pending: false,
+  })
 
   async function onSave(patch: ProfileUpdateInput) {
     const key = Object.keys(patch)[0]
-    setPending(true)
-    setError(undefined)
-    setErrorKey(undefined)
+    dispatch({ type: "save_started" })
     try {
       await runCommand("profile.update", patch)
     } catch (caught) {
@@ -85,16 +100,18 @@ function useSettingsSave() {
         await navigate({ href: "/settings/billing/upgrade" })
         return
       }
-      setErrorKey(key)
-      setError(
-        key === "timeZone"
-          ? TIME_ZONE_REJECTION
-          : caught instanceof Error && caught.message.trim()
-            ? caught.message
-            : "Try again."
-      )
+      dispatch({
+        type: "save_rejected",
+        key,
+        message:
+          key === "timeZone"
+            ? TIME_ZONE_REJECTION
+            : caught instanceof Error && caught.message.trim()
+              ? caught.message
+              : "Try again.",
+      })
     } finally {
-      setPending(false)
+      dispatch({ type: "save_settled" })
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -11,6 +11,24 @@ import {
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
+
+type CreateState = { pending: boolean; error: string | null }
+
+type CreateAction =
+  | { type: "create_started" }
+  | { type: "create_failed"; message: string }
+  | { type: "create_settled" }
+
+function createReducer(state: CreateState, action: CreateAction): CreateState {
+  switch (action.type) {
+    case "create_started":
+      return { pending: true, error: null }
+    case "create_failed":
+      return { ...state, error: action.message }
+    case "create_settled":
+      return { ...state, pending: false }
+  }
+}
 
 export function PaperNewDialog({
   step,
@@ -26,12 +44,13 @@ export function PaperNewDialog({
   onImport: () => void
 }) {
   const run = useRunCommand()
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [{ pending, error }, dispatch] = useReducer(createReducer, {
+    pending: false,
+    error: null,
+  })
 
   async function applyTemplate(templateId?: PaperTemplateId) {
-    setPending(true)
-    setError(null)
+    dispatch({ type: "create_started" })
     try {
       const created = await run("paper.create", {
         kind: "cv",
@@ -40,13 +59,15 @@ export function PaperNewDialog({
       })
       onCreated(created)
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Could not create this CV. Try again."
-      )
+      dispatch({
+        type: "create_failed",
+        message:
+          cause instanceof Error
+            ? cause.message
+            : "Could not create this CV. Try again.",
+      })
     } finally {
-      setPending(false)
+      dispatch({ type: "create_settled" })
     }
   }
 

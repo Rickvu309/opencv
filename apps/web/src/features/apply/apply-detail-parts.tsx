@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
 import {
   ArrowRight,
   Check,
@@ -95,7 +95,7 @@ export function RailSection({
   children: ReactNode
   className?: string
 }) {
-  const [open, setOpen] = useState(true)
+  const [open, toggleOpen] = useReducer((value: boolean) => !value, true)
   return (
     <section
       aria-label={title}
@@ -105,7 +105,7 @@ export function RailSection({
         type="button"
         variant="ghost"
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         className={cn(
           "h-7 w-full justify-start gap-1.5 rounded-[6px] px-2 text-xs font-medium hover:bg-secondary aria-expanded:bg-transparent",
           FAINT_TEXT.card,

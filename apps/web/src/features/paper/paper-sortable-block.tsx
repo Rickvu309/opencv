@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useReducer, useRef, type KeyboardEvent } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
@@ -46,7 +46,11 @@ export function SortableBlock({
   onTurnInto: (type: BlockType) => void
   onAskCoach: () => void
 }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, dispatchEditing] = useReducer(
+    (_: boolean, action: "editing_started" | "editing_ended") =>
+      action === "editing_started",
+    false
+  )
   const focusField = useRef(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const reduced = useReducedMotion()
@@ -83,7 +87,7 @@ export function SortableBlock({
         return
       }
       focusField.current = true
-      setEditing(true)
+      dispatchEditing("editing_started")
     } else if (meta && event.key.toLowerCase() === "d") {
       event.preventDefault()
       onDuplicate()
@@ -109,7 +113,8 @@ export function SortableBlock({
       className="relative flex items-start gap-1"
       onKeyDown={onKeyDown}
       onFocus={(event) => {
-        if (event.target === event.currentTarget) setEditing(false)
+        if (event.target === event.currentTarget)
+          dispatchEditing("editing_ended")
       }}
       onBlur={(event) => {
         // Chrome reports document.activeElement as body during focusout, before
@@ -117,7 +122,7 @@ export function SortableBlock({
         const next = event.relatedTarget
         const root = rootRef.current
         if (root && next instanceof Node && root.contains(next)) return
-        setEditing(false)
+        dispatchEditing("editing_ended")
       }}
     >
       <PaperBlockMenu

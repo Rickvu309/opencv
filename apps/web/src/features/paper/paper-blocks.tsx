@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useReducer, useRef } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -85,6 +85,28 @@ type SlashState = {
   side: "top" | "bottom"
 }
 
+type SlashAction =
+  | { type: "opened"; slash: SlashState }
+  | { type: "query_typed"; query: string }
+  | { type: "item_highlighted"; index: number }
+  | { type: "closed" }
+
+function slashReducer(
+  state: SlashState | null,
+  action: SlashAction
+): SlashState | null {
+  switch (action.type) {
+    case "opened":
+      return action.slash
+    case "query_typed":
+      return state ? { ...state, query: action.query, index: 0 } : state
+    case "item_highlighted":
+      return state ? { ...state, index: action.index } : state
+    case "closed":
+      return null
+  }
+}
+
 export function PaperBlocks({
   document,
   onChange,
@@ -97,7 +119,7 @@ export function PaperBlocks({
   onAskCoach: (text: string) => void
 }) {
   const releasedHeading = useRef<string | null>(null)
-  const [slash, setSlash] = useState<SlashState | null>(null)
+  const [slash, dispatchSlash] = useReducer(slashReducer, null)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, {
@@ -125,19 +147,22 @@ export function PaperBlocks({
     node: HTMLElement
   ) {
     const space = window.innerHeight - node.getBoundingClientRect().bottom
-    setSlash({
-      sectionId,
-      blockId,
-      query: "",
-      index: 0,
-      side: space < 280 ? "top" : "bottom",
+    dispatchSlash({
+      type: "opened",
+      slash: {
+        sectionId,
+        blockId,
+        query: "",
+        index: 0,
+        side: space < 280 ? "top" : "bottom",
+      },
     })
   }
 
   function pick(choice: SlashChoice) {
     if (!slash) return
     const current = slash
-    setSlash(null)
+    dispatchSlash({ type: "closed" })
     if (choice.group === "section") {
       onCommit(
         insertSection(document, current.sectionId, choice.kind),
@@ -212,17 +237,13 @@ export function PaperBlocks({
               onAskCoach={onAskCoach}
               onOpenSlash={openSlash}
               onSlashQuery={(query) =>
-                setSlash((current) =>
-                  current ? { ...current, query, index: 0 } : current
-                )
+                dispatchSlash({ type: "query_typed", query })
               }
               onSlashActive={(index) =>
-                setSlash((current) =>
-                  current ? { ...current, index } : current
-                )
+                dispatchSlash({ type: "item_highlighted", index })
               }
               onPick={pick}
-              onCloseSlash={() => setSlash(null)}
+              onCloseSlash={() => dispatchSlash({ type: "closed" })}
             />
           ))}
         </DndContext>

@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef } from "react"
 
 import { focusSearchButton } from "./focus-search-button.ts"
 
+import {
+  initialPaletteState,
+  paletteReducer,
+} from "@/features/command-palette/command-palette.reducer.ts"
 import { requestShellChat } from "@/features/command-palette/shell-chat.ts"
 import {
   PALETTE_SCOPES,
@@ -9,10 +13,7 @@ import {
   paletteRows,
   rowProperties,
   searchWorkspace,
-  type PaletteChat,
   type PaletteRow,
-  type PaletteScope,
-  type SearchHits,
 } from "@/features/command-palette/palette-search.ts"
 import type { SurfaceId } from "@/lib/product-paths.ts"
 import { Button } from "@workspace/ui/components/button"
@@ -62,25 +63,11 @@ export function CommandPalette({
   onSurface,
 }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [query, setQuery] = useState("")
-  const [scope, setScope] = useState<PaletteScope>("all")
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [hits, setHits] = useState<SearchHits | null>(null)
-  const [recent, setRecent] = useState<PaletteChat[]>([])
-  const [failed, setFailed] = useState(false)
-  const [wasOpen, setWasOpen] = useState(open)
+  const [{ query, scope, activeId, hits, recent, failed, wasOpen }, dispatch] =
+    useReducer(paletteReducer, open, initialPaletteState)
   const sawOpen = useRef(false)
 
-  if (open !== wasOpen) {
-    setWasOpen(open)
-    if (open) {
-      setQuery("")
-      setScope("all")
-      setActiveId(null)
-      setHits(null)
-      setFailed(false)
-    }
-  }
+  if (open !== wasOpen) dispatch({ type: open ? "opened" : "closed" })
 
   useEffect(() => {
     if (!open) return
@@ -98,7 +85,7 @@ export function CommandPalette({
     if (!open) return
     let cancelled = false
     void listPaletteChats().then((chats) => {
-      if (!cancelled) setRecent(chats)
+      if (!cancelled) dispatch({ type: "recent_loaded", chats })
     })
     return () => {
       cancelled = true
@@ -113,12 +100,11 @@ export function CommandPalette({
     void searchWorkspace(trimmed).then(
       (next) => {
         if (cancelled) return
-        setHits(next)
-        setFailed(false)
+        dispatch({ type: "search_succeeded", hits: next })
       },
       () => {
         if (cancelled) return
-        setFailed(true)
+        dispatch({ type: "search_failed" })
       }
     )
     return () => {
@@ -153,7 +139,7 @@ export function CommandPalette({
     if (!active || rows.length === 0) return
     const index = rows.findIndex((row) => row.id === active.id)
     const next = (index + delta + rows.length) % rows.length
-    setActiveId(rows[next]!.id)
+    dispatch({ type: "row_focused", id: rows[next]!.id })
   }
 
   function activate(row: PaletteRow) {
@@ -175,9 +161,7 @@ export function CommandPalette({
   }
 
   function onQuery(value: string) {
-    setQuery(value)
-    if (value.trim()) setFailed(false)
-    else setHits(null)
+    dispatch({ type: "query_typed", value })
   }
 
   return (
@@ -221,7 +205,7 @@ export function CommandPalette({
               size="sm"
               variant={scope === item.id ? "secondary" : "ghost"}
               aria-pressed={scope === item.id}
-              onClick={() => setScope(item.id)}
+              onClick={() => dispatch({ type: "scope_chosen", scope: item.id })}
             >
               {item.label}
             </Button>
@@ -266,7 +250,9 @@ export function CommandPalette({
                           ? `${row.name} ${row.kindLabel}`
                           : undefined
                       }
-                      onMouseEnter={() => setActiveId(row.id)}
+                      onMouseEnter={() =>
+                        dispatch({ type: "row_focused", id: row.id })
+                      }
                       onClick={() => activate(row)}
                       className={cn(
                         "h-auto w-full justify-start px-3 py-2 text-left whitespace-normal",

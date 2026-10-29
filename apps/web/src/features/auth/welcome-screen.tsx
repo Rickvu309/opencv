@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useReducer } from "react"
 import { Check } from "lucide-react"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
@@ -13,7 +13,7 @@ function prefersReducedMotion() {
 
 export function WelcomeScreen({ onDone }: { onDone: () => void }) {
   const runCommand = useRunCommand()
-  const [coachReady, setCoachReady] = useState(false)
+  const [coachReady, markCoachReady] = useReducer(() => true, false)
 
   useEffect(() => {
     let cancelled = false
@@ -36,7 +36,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
         }
       }
       if (cancelled) return
-      setCoachReady(true)
+      markCoachReady()
       try {
         await runCommand("profile.markWelcomed", {})
       } catch {

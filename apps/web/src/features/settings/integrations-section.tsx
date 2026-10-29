@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { QueryOutput } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
@@ -14,13 +14,35 @@ import {
 import { connectGmail, GMAIL_UNAVAILABLE } from "./settings-api.ts"
 import { fetchIntegrations, integrationsKey } from "@/lib/account-api.ts"
 
+type IntegrationsState = { search: string; notice?: string }
+
+type IntegrationsAction =
+  | { type: "search_typed"; value: string }
+  | { type: "connect_started" }
+  | { type: "connect_unavailable"; notice: string }
+
+function integrationsReducer(
+  state: IntegrationsState,
+  action: IntegrationsAction
+): IntegrationsState {
+  switch (action.type) {
+    case "search_typed":
+      return { ...state, search: action.value }
+    case "connect_started":
+      return { ...state, notice: undefined }
+    case "connect_unavailable":
+      return { ...state, notice: action.notice }
+  }
+}
+
 export function IntegrationsSection() {
   const catalog = useQuery({
     queryKey: integrationsKey(),
     queryFn: fetchIntegrations,
   })
-  const [search, setSearch] = useState("")
-  const [notice, setNotice] = useState<string>()
+  const [{ search, notice }, dispatch] = useReducer(integrationsReducer, {
+    search: "",
+  })
 
   if (catalog.isPending) {
     return (
@@ -50,13 +72,13 @@ export function IntegrationsSection() {
     .filter((group) => group.items.length > 0)
 
   async function onConnect() {
-    setNotice(undefined)
+    dispatch({ type: "connect_started" })
     const result = await connectGmail()
     if (result.url) {
       window.location.assign(result.url)
       return
     }
-    setNotice(GMAIL_UNAVAILABLE)
+    dispatch({ type: "connect_unavailable", notice: GMAIL_UNAVAILABLE })
   }
 
   return (
@@ -68,7 +90,7 @@ export function IntegrationsSection() {
         aria-label="Search integrations"
         placeholder="Search integrations"
         value={search}
-        onValueChange={setSearch}
+        onValueChange={(value) => dispatch({ type: "search_typed", value })}
       />
       {groups.length === 0 ? (
         <div className="mt-6 flex flex-col gap-1">

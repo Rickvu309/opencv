@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
-import { createElement, useState } from "react"
+import { createElement, useReducer } from "react"
 import { afterEach, describe, expect, it } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 
@@ -34,9 +34,13 @@ const paperCss = readFileSync(
   "utf8"
 )
 
+function replaceData(_: CvData, next: CvData) {
+  return next
+}
+
 function renderCv(templateId: CvTemplateId, seed?: CvData) {
   function Harness() {
-    const [data, setData] = useState(() =>
+    const [data, setData] = useReducer(replaceData, undefined, () =>
       applyCvTemplate(seed ?? defaultCvData(), templateId)
     )
     return createElement(CvDocument, { data, onChange: setData })
@@ -217,7 +221,7 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
   it("keeps internship skill add and rename after remount", () => {
     let latest = applyCvTemplate(defaultCvData(), "internship")
     function Harness() {
-      const [data, setData] = useState(latest)
+      const [data, setData] = useReducer(replaceData, latest)
       return createElement(CvDocument, {
         data,
         onChange: (next: typeof data) => {

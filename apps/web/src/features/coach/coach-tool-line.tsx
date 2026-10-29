@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
 import { useChatStore } from "./use-chat-store.ts"
 import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
-import { useState } from "react"
+import { useReducer } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { ToolCallCard } from "@workspace/ui/components/tool-call-card"
@@ -18,6 +18,26 @@ import type { CoachToolPart } from "./coach-parts.ts"
 
 export const UNDO_FAILED_COPY =
   "Couldn't undo this change. Try again, or edit it yourself."
+
+type ActionState = { busy: boolean; error: string | null }
+
+type ActionEvent =
+  | { type: "started" }
+  | { type: "failed"; message: string }
+  | { type: "settled" }
+
+const IDLE_ACTION: ActionState = { busy: false, error: null }
+
+function actionReducer(state: ActionState, event: ActionEvent): ActionState {
+  switch (event.type) {
+    case "started":
+      return { busy: true, error: null }
+    case "failed":
+      return { ...state, error: event.message }
+    case "settled":
+      return { ...state, busy: false }
+  }
+}
 
 // eslint-disable-next-line react-refresh/only-export-components -- shared with the grouped renderer
 export function toolCardProps(tool: CoachToolPart) {
@@ -58,19 +78,20 @@ export function CoachToolExtras({
 }: ExtrasProps) {
   const { part } = tool
   const note = receiptReversalNote(part)
-  const [pending, setPending] = useState(false)
-  const [undoError, setUndoError] = useState<string | null>(null)
+  const [{ busy: pending, error: undoError }, dispatch] = useReducer(
+    actionReducer,
+    IDLE_ACTION
+  )
 
   async function undo() {
     if (!onUndo || pending) return
-    setPending(true)
-    setUndoError(null)
+    dispatch({ type: "started" })
     try {
       await onUndo()
     } catch {
-      setUndoError(UNDO_FAILED_COPY)
+      dispatch({ type: "failed", message: UNDO_FAILED_COPY })
     } finally {
-      setPending(false)
+      dispatch({ type: "settled" })
     }
   }
 
@@ -127,12 +148,13 @@ function CoachApproval({
 }) {
   const client = useQueryClient()
   const { activeChatId } = useChatStore()
-  const [working, setWorking] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [{ busy: working, error }, dispatch] = useReducer(
+    actionReducer,
+    IDLE_ACTION
+  )
   async function decide(approve: boolean) {
     if (working) return
-    setWorking(true)
-    setError(null)
+    dispatch({ type: "started" })
     try {
       await runContractCommand(
         client,
@@ -145,13 +167,15 @@ function CoachApproval({
           { query: "chat.get", input: { chatId: parseChatId(activeChatId) } },
         ])
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Could not update this action. Try again."
-      )
+      dispatch({
+        type: "failed",
+        message:
+          cause instanceof Error
+            ? cause.message
+            : "Could not update this action. Try again.",
+      })
     } finally {
-      setWorking(false)
+      dispatch({ type: "settled" })
     }
   }
   return (

@@ -1,5 +1,5 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
-import { useState } from "react"
+import { useReducer } from "react"
 import { Link } from "@tanstack/react-router"
 import { ChevronDown } from "lucide-react"
 
@@ -27,7 +27,7 @@ import { HelpFigure } from "./help-figures.tsx"
 import "./help.css"
 
 export function HelpPage() {
-  const [query, setQuery] = useState("")
+  const [query, typed] = useReducer((_: string, value: string) => value, "")
   const topics = filterHelpTopics(HELP_TOPICS, query)
 
   return (
@@ -50,7 +50,7 @@ export function HelpPage() {
                 type="search"
                 value={query}
                 autoComplete="off"
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => typed(event.target.value)}
               />
             </Field>
           </div>

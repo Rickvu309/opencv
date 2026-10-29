@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { ArrowRight, Bell } from "lucide-react"
@@ -11,6 +11,10 @@ import { PageHeader } from "@workspace/ui/components/page-header"
 
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { requestNotify } from "@/features/coming-soon/notify.ts"
+import {
+  initialNotifyState,
+  notifyReducer,
+} from "@/features/coming-soon/notify.reducer.ts"
 
 type ComingSoonPageProps = {
   pageTitle: string
@@ -30,20 +34,24 @@ export function ComingSoonPage({
   preview,
 }: ComingSoonPageProps) {
   const queryClient = useQueryClient()
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [{ pending, error }, dispatch] = useReducer(
+    notifyReducer,
+    initialNotifyState
+  )
 
   async function onNotify() {
-    setPending(true)
-    setError(null)
+    dispatch({ type: "requested" })
     try {
       const result = await requestNotify(queryClient, primary.topic)
       toast(result.already ? soonCopy.already : soonCopy.onList)
     } catch (caught) {
       const message = caught instanceof Error ? caught.message.trim() : ""
-      setError(message || "Could not save that. Try again.")
+      dispatch({
+        type: "failed",
+        message: message || "Could not save that. Try again.",
+      })
     } finally {
-      setPending(false)
+      dispatch({ type: "settled" })
     }
   }
 
