@@ -85,8 +85,13 @@ export function InboxReader({
   const runCommand = useRunCommand()
   const saved = draft?.body ?? ""
   const times = draft?.times ?? []
-  const [{ body, savedBody, selected, limit, busy, opened }, dispatch] =
-    useReducer(readerReducer, saved, initialReaderState)
+  const [
+    { body, savedBody, receivedBody, selected, limit, busy, opened },
+    dispatch,
+  ] = useReducer(readerReducer, saved, initialReaderState)
+  if (receivedBody !== saved) {
+    dispatch({ type: "draft_received", body: saved })
+  }
   const prompt = Boolean(detail.jobId && detail.suggestedStage === "interview")
   const hasDraft = draft != null
   const earlier = detail.messages.slice(0, -1)
@@ -449,7 +454,9 @@ export function InboxReader({
                   onBlur={() => {
                     if (body === savedBody) return
                     void saveDraft(body)
-                      .then(() => dispatch({ type: "draft_saved", body }))
+                      .then(() =>
+                        dispatch({ type: "draft_saved", body, receivedBody })
+                      )
                       .catch((error: unknown) => {
                         toast(
                           error instanceof ApiError
@@ -468,7 +475,7 @@ export function InboxReader({
                     run(async () => {
                       if (body !== savedBody) {
                         await saveDraft(body)
-                        dispatch({ type: "draft_saved", body })
+                        dispatch({ type: "draft_saved", body, receivedBody })
                       }
                       await runCommand("inbox.send", { threadId: detail.id })
                       toast("Reply sent")

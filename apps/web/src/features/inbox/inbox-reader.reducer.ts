@@ -3,6 +3,7 @@ import type { InboxLimitError } from "./inbox-api.ts"
 export type ReaderState = {
   body: string
   savedBody: string
+  receivedBody: string
   selected: number
   limit: InboxLimitError | null
   busy: boolean
@@ -11,8 +12,9 @@ export type ReaderState = {
 
 export type ReaderAction =
   | { type: "reply_typed"; value: string }
+  | { type: "draft_received"; body: string }
   | { type: "time_chosen"; index: number; body: string }
-  | { type: "draft_saved"; body: string }
+  | { type: "draft_saved"; body: string; receivedBody: string }
   | { type: "reply_suggested"; body: string }
   | { type: "limit_reached"; limit: InboxLimitError }
   | { type: "task_started" }
@@ -23,6 +25,7 @@ export function initialReaderState(saved: string): ReaderState {
   return {
     body: saved,
     savedBody: saved,
+    receivedBody: saved,
     selected: 0,
     limit: null,
     busy: false,
@@ -37,6 +40,13 @@ export function readerReducer(
   switch (action.type) {
     case "reply_typed":
       return { ...state, body: action.value }
+    case "draft_received":
+      return {
+        ...state,
+        body: state.body === state.savedBody ? action.body : state.body,
+        savedBody: action.body,
+        receivedBody: action.body,
+      }
     case "time_chosen":
       return {
         ...state,
@@ -45,7 +55,9 @@ export function readerReducer(
         savedBody: action.body,
       }
     case "draft_saved":
-      return { ...state, savedBody: action.body }
+      return state.receivedBody === action.receivedBody
+        ? { ...state, savedBody: action.body }
+        : state
     case "reply_suggested":
       return {
         ...state,
