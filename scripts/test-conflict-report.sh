@@ -65,7 +65,7 @@ report 403 feat/403-x apps/api/package.json
 grep -q "apps/api/package.json: changed on main in ${sha:0:9} \"chore: bump the api deps (#398)\" (PR #398)" "$tmp/out" || fail "403 report: $(cat "$tmp/out")"
 check 'files=["apps/api/package.json"]' "blockedBy={\"pr\":398,\"commit\":\"$sha\",\"files\":[\"apps/api/package.json\"]}" \
   'next=git fetch origin && git rebase origin/main'
-grep -q 'git rebase origin/main && heavy -- git push --force-with-lease' "$tmp/out" || fail "403 rebase command"
+grep -q 'git rebase origin/main && git push --force-with-lease' "$tmp/out" || fail "403 rebase command"
 echo "ok: review-403 (apps/api/package.json) names the commit and PR #398"
 
 # 527 and ds4b/331: the root manifest and the lockfile change together on main, in one commit.

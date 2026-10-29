@@ -4,7 +4,6 @@
 # The rule table in docs/git-workflow/rule-enforcement.md pairs every rule with its enforcer; a rule with no check there is a judgment rule.
 # A fix that changes a branch starts with cd <worktree>: merge-pr.sh runs in the main checkout, which nobody edits.
 #
-#   rule_heavy <command>                  R90  heavy commands run through heavy (heavy exports HEAVY_SLOT)
 #   rule_main_clean <main_checkout>       R68  the main checkout stays on main with no edited tracked file
 #   rule_port <worktree>                  R76  the worktree's .env still has the port new-task.sh assigned
 #   rule_not_ready_for_human <labels>     R103 the issue is not labeled ready-for-human
@@ -37,11 +36,6 @@ rule_cd() {  # rule_cd [wt]: the prefix that puts a fix in the branch's worktree
 rule_wt_of() {
   git worktree list --porcelain 2>/dev/null |
     awk -v b="refs/heads/$1" '/^worktree /{w=substr($0,10)} $0=="branch " b {print w; exit}' || true
-}
-
-rule_heavy() {  # RULE_ARGS is the original argument list, shell-quoted with printf '%q '
-  [[ -n "${HEAVY_SLOT:-}" ]] ||
-    rule_fail "$1 is a heavy command and must run through heavy (AGENTS.md section 4); it ran without a heavy slot" "heavy -- $1${RULE_ARGS:+ ${RULE_ARGS% }}"
 }
 
 rule_main_clean() {
@@ -79,7 +73,7 @@ rule_no_workflows() {  # rule_no_workflows <files> [wt] [push]: push adds the fo
   (( ${#bad[@]} )) || return 0
   q=$(printf '%q ' "${bad[@]}")
   rule_fail "the change adds GitHub Actions workflow files other than ci.yml (the one workflow runs on the local runner; a new one needs the owner): ${bad[*]:0:3}" \
-    "$(rule_cd "${2:-}")git rm -rf -- ${q% } && git commit --amend --no-edit${3:+ && heavy -- git push --force-with-lease}"
+    "$(rule_cd "${2:-}")git rm -rf -- ${q% } && git commit --amend --no-edit${3:+ && git push --force-with-lease}"
 }
 
 rule_ci_workflow_kept() {  # rule_ci_workflow_kept <files> <sha> [wt]: ci.yml in the diff but gone at the sha means the PR deletes it
@@ -100,7 +94,7 @@ rule_risk_high_for_ci() {  # rule_risk_high_for_ci <files> <issue labels> [wt]
 rule_skip_declared() {
   [[ "${SKIP_CHECKS:-}" == 1 ]] || return 0
   [[ -n "${SKIP_CHECKS_DECLARED_BY:-}" ]] ||
-    rule_fail "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named" "env -u SKIP_CHECKS heavy -- scripts/open-pr.sh${RULE_ARGS:+ ${RULE_ARGS% }}   # or, only when a human declared the emergency: SKIP_CHECKS_DECLARED_BY=<their name> in front"
+    rule_fail "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named" "env -u SKIP_CHECKS scripts/open-pr.sh${RULE_ARGS:+ ${RULE_ARGS% }}   # or, only when a human declared the emergency: SKIP_CHECKS_DECLARED_BY=<their name> in front"
 }
 
 rule_stamp_dir() { printf '%s/pre-push-stamps' "$(git rev-parse --path-format=absolute --git-common-dir)"; }
@@ -120,7 +114,7 @@ rule_pushed_through_hook() {  # rule_pushed_through_hook <sha> [wt]
   [[ -d "$dir" ]] || return 0   # a clone whose hook never stamped: nothing to compare with
   [[ -f "$dir/$sha" ]] ||
     rule_fail "commit ${sha:0:9} has no pre-push stamp: it was pushed without the pre-push hook (the hook-skip flag, or a branch cut before the stamping hook landed, whose worktree still runs the old .githooks/pre-push)" \
-      "$(rule_cd "${2:-}")git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease   # the rebase brings the stamping hook, the push runs it"
+      "$(rule_cd "${2:-}")git fetch origin main && git rebase origin/main && git commit --amend --no-edit && git push --force-with-lease   # the rebase brings the stamping hook, the push runs it"
 }
 
 rule_commits_hooked() {  # rule_commits_hooked <base> <tip> [wt] [push]: what commit-msg and pre-commit refuse, checked again on the branch (git runs in the current directory; wt is only for the fix)
@@ -131,7 +125,7 @@ rule_commits_hooked() {  # rule_commits_hooked <base> <tip> [wt] [push]: what co
   done < <(git rev-list "$base..$tip")
   [[ -z "$trailer" ]] ||
     rule_fail "commit(s) ${trailer% } carry an attribution trailer, which the commit-msg hook refuses: they were made without that hook (the hook-skip flag, a cherry-pick or a rebase)" \
-      "$(rule_cd "$wt")git reset --soft \"\$(git merge-base origin/main HEAD)\" && git commit -m \"\$(git log -1 --format=%s ORIG_HEAD)\" && heavy -- git push --force-with-lease"
+      "$(rule_cd "$wt")git reset --soft \"\$(git merge-base origin/main HEAD)\" && git commit -m \"\$(git log -1 --format=%s ORIG_HEAD)\" && git push --force-with-lease"
   while IFS= read -r -d '' meta && IFS= read -r -d '' path; do
     read -r _ mode _ blob _ <<<"${meta#:}"
     [[ "$mode" == 160000 ]] && continue
@@ -145,5 +139,5 @@ rule_commits_hooked() {  # rule_commits_hooked <base> <tip> [wt] [push]: what co
   done < <(git diff --raw --no-renames --no-abbrev -z --diff-filter=ACMR "$base...$tip")
   [[ -z "$over" ]] ||
     rule_fail "file(s) over the 20000-byte pre-commit limit: ${over% }; a commit this size passes only with the hook-skip flag. Split each file as .githooks/pre-commit says, then run the fix" \
-      "$(rule_cd "$wt")git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\"${push:+ && heavy -- git push origin HEAD}"
+      "$(rule_cd "$wt")git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\"${push:+ && git push origin HEAD}"
 }

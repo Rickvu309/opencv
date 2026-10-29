@@ -218,7 +218,7 @@ if (( do_install )) && [[ -f "$wt_path/package.json" ]]; then
   (cd "$wt_path" && "${cmd[@]}") || warn "install failed; run '${cmd[*]}' in $wt_path"
 fi
 
-result_ok "worktree $wt_path on $branch (issue #$issue, port $port)" "cd $(printf '%q' "$wt_path") && heavy -- scripts/open-pr.sh --draft"
+result_ok "worktree $wt_path on $branch (issue #$issue, port $port)" "cd $(printf '%q' "$wt_path") && scripts/open-pr.sh --draft"
 cat <<MSG
 
 Ready.

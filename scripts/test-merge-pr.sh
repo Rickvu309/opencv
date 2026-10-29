@@ -54,8 +54,8 @@ expect "a failed diff listing refuses" 1 "could not list the files"
 no_writes "diff failure"
 
 reset; MP_MAIN=9999999999990000000000000000000000000000 run
-expect "main moved during the review refuses and names --regate" 1 "main moved from 1234567890ab" "heavy -- scripts/merge-pr.sh 5 --regate"
-result status=fail cause=behind-main "next=heavy -- scripts/merge-pr.sh 5 --regate"
+expect "main moved during the review refuses and names --regate" 1 "main moved from 1234567890ab" "scripts/merge-pr.sh 5 --regate"
+result status=fail cause=behind-main "next=scripts/merge-pr.sh 5 --regate"
 [[ "$(cat "$MP_COUNT")" == 1 ]] || fail "main moved" "the gate reran without --regate"
 never "main moved" "api repos/owner/repo/statuses/"; never "main moved" "pr merge"
 
@@ -124,12 +124,6 @@ no_merge "dry run"
 reset; MP_AUTHOR=contributor run --dry-run
 expect "dry run still refuses a non-author" 1 "contributor"
 
-# The rules of AGENTS.md that merge-pr.sh enforces. Past cases: review-pr.sh 248 and 255 were run with no heavy
-# (calls.jsonl, session b3bc055a, 2026-10-23T23:32 and 23:44); the others are synthetic, no past violation was recorded.
-reset; unset HEAVY_SLOT; run
-expect "R90: without heavy it refuses and names the heavy command" 1 "must run through heavy" "heavy -- scripts/merge-pr.sh 5"
-result status=fail cause=hygiene "next=heavy -- scripts/merge-pr.sh 5"
-no_writes "no heavy"; never "no heavy" "pr view"
 
 reset; echo one >"$tmp/repo/README"; git -C "$tmp/repo" add README; git -C "$tmp/repo" commit -q -m readme; echo more >>"$tmp/repo/README"
 run
@@ -148,7 +142,7 @@ no_merge "workflow"; never_gated "workflow"
 lookup_gone='wt=$(git worktree list --porcelain | awk -v b=refs/heads/feat/9-gone '"'"'/^worktree /{w=substr($0,10)} $0=="branch " b {print w; exit}'"'"') && [ -n "$wt" ] && cd "$wt" &&'
 # The fix runs in the branch's worktree, never in the main checkout where merge-pr.sh runs, and removes the files for real.
 fix=$(grep '^Fix: ' "$tmp/err" | sed 's/^Fix: //')
-[[ "$fix" == "$lookup_gone git rm -rf -- .github/workflows/extra.yml && git commit --amend --no-edit && heavy -- git push --force-with-lease" ]] || fail "R105 fix" "wrong fix: $fix"
+[[ "$fix" == "$lookup_gone git rm -rf -- .github/workflows/extra.yml && git commit --amend --no-edit && git push --force-with-lease" ]] || fail "R105 fix" "wrong fix: $fix"
 git -C "$tmp/repo" worktree add -q -b feat/9-wt "$tmp/wt" pr-head
 reset; MP_BRANCH=feat/9-wt MP_FILES=".github/workflows/extra.yml" run
 expect "R105: the fix goes to the worktree that has the branch" 1 "Fix: cd $tmp/wt && git rm -rf -- .github/workflows/extra.yml"
@@ -156,7 +150,7 @@ git -C "$tmp/repo" worktree remove --force "$tmp/wt"; git -C "$tmp/repo" branch 
 
 reset; rm "$tmp/repo/.git/pre-push-stamps/$head"; echo ok >"$tmp/repo/.git/pre-push-stamps/other"
 run
-expect "R97: a head with no pre-push stamp refuses before the gate and says to rebase" 1 "was pushed without the pre-push hook" "$lookup_gone git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease"
+expect "R97: a head with no pre-push stamp refuses before the gate and says to rebase" 1 "was pushed without the pre-push hook" "$lookup_gone git fetch origin main && git rebase origin/main && git commit --amend --no-edit && git push --force-with-lease"
 no_merge "no stamp"; never_gated "no stamp"
 
 reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"
@@ -186,7 +180,7 @@ git -C "$tmp/repo" switch -q main
 for case in "trailer:$trailer_head:attribution trailer" "big:$big_head:over the 20000-byte"; do
   IFS=: read -r name sha want <<<"$case"
   reset; echo ok >"$tmp/repo/.git/pre-push-stamps/$sha"; MP_HEAD=$sha MP_REVIEW_OUT="RESULT: OK (patch id $patch, main 1234567890ab). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $sha" run
-  if [[ $name == big ]]; then fixcmd="$lookup_gone git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && heavy -- git push origin HEAD"
+  if [[ $name == big ]]; then fixcmd="$lookup_gone git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && git push origin HEAD"
   else fixcmd="$lookup_gone"; fi
   expect "R97: a $name commit that the commit hooks would refuse is refused before the gate" 1 "$want" "$fixcmd"
   no_merge "$name"; never_gated "$name"

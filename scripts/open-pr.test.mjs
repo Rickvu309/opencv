@@ -126,7 +126,6 @@ esac
     PR_RESULT_DIR: join(root, "results"),
     PR_RESULT_REPO: "opencv",
     PR_DISK_MIN_MB: lowDisk ? "2048" : "1", // the real disk's free space must not decide a test
-    HEAVY_SLOT: "1",
     ...extraEnv,
   }
   if (extraEnv.PROOF_OLD_RETRIED) {
@@ -295,8 +294,7 @@ test("a disk failure names the main checkout in next, also when git cannot find 
   }
 })
 
-// The workflow rules open-pr.sh enforces. Recorded: review-pr.sh run with no heavy (calls.jsonl, session b3bc055a,
-// 2026-10-23T23:32), and issue 255 carrying ready-for-human (label removed by hand at 23:44). The rest are synthetic.
+// The workflow rules open-pr.sh enforces. Recorded: issue 255 carrying ready-for-human (label removed by hand at 23:44). The rest are synthetic.
 const refuses = (name, extra, pattern, ...more) =>
   test(name, (t) => {
     const result = run(t, 0, false, false, false, extra)
@@ -312,12 +310,6 @@ const refuses = (name, extra, pattern, ...more) =>
     )
   })
 
-refuses(
-  "R90: without heavy it refuses and names the heavy command",
-  { HEAVY_SLOT: "" },
-  /must run through heavy/,
-  "next=heavy -- scripts/open-pr.sh --draft -d push\\ failure\\ proof"
-)
 refuses(
   "R68: an edited file in the main checkout refuses",
   { PROOF_DIRTY: " M README.md\n" },
@@ -362,36 +354,6 @@ refuses(
   { PROOF_DIFF_FAIL: "1" },
   /cannot diff against origin\/main/
 )
-
-// The fix of R90 is a command: run through a shell it must give back the original arguments, whatever they contain.
-test("R90: the next command parses back to the original arguments", (t) => {
-  const result = run(t, 0, false, false, false, { HEAVY_SLOT: "" })
-  const file = join(
-    result.root,
-    "results",
-    "opencv-open-pr-fix-999-push-failure-proof.json"
-  )
-  const next = JSON.parse(readFileSync(file, "utf8")).next
-  const echoed = spawnSync(
-    "bash",
-    ["-c", `heavy() { shift; shift; printf '%s\\n' "$@"; }; ${next}`],
-    { encoding: "utf8" }
-  )
-  assert.equal(echoed.stdout, "--draft\n-d\npush failure proof\n")
-})
-
-test("R90: with no arguments the next command is the bare heavy command", (t) => {
-  const result = run(t, 0, false, false, false, { HEAVY_SLOT: "" }, [])
-  assert.equal(result.status, 1, result.stderr)
-  assert.match(result.stderr, /must run through heavy/)
-  const file = join(
-    result.root,
-    "results",
-    "opencv-open-pr-fix-999-push-failure-proof.json"
-  )
-  const next = JSON.parse(readFileSync(file, "utf8")).next
-  assert.equal(next, "heavy -- scripts/open-pr.sh")
-})
 
 for (const [name, raw] of [
   ["a quoted value", 'PORT="4001"\n'],

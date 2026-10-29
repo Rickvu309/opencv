@@ -88,7 +88,7 @@ After cleanup, `ls ~/tmp/opencv-verify/<run>/` must still list the proof files.
 
 ## Helpers
 
-- Failed launch: read the `api.log:` and `web.log:` tails it printed. If PGlite fails with `ErrnoError` on first boot under heavy machine load, retry with a larger `LAUNCH_WAIT_SECONDS`.
+- Failed launch: read the `api.log:` and `web.log:` tails it printed. If PGlite fails with `ErrnoError` on first boot under machine load, retry with a larger `LAUNCH_WAIT_SECONDS`.
 - Port in use: choose other ports with `OPENCV_API_PORT` and `OPENCV_WEB_PORT`, or let the script pick.
 - Run already live: `launch.sh` refuses a run id whose processes are still up. Run cleanup or pick a new id.
 - `apps/api/.data/` is gitignored. The skill folder is un-ignored in `.gitignore`.

@@ -37,7 +37,7 @@ The script:
 
 Options: `-d` description, `-b` issue body, `--no-install`, `--no-assign`, `--take`. Run with `--help`.
 
-When the work is ready for a PR, run `heavy -- scripts/open-pr.sh --draft` (`heavy` caps the run; see AGENTS.md section 4) inside the worktree.
+When the work is ready for a PR, run `scripts/open-pr.sh --draft` inside the worktree.
 
 ## Rules
 

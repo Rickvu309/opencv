@@ -16,7 +16,6 @@
 # This is done with CHECK_RETRY_FAILED_TESTS=1 for this script's own check.sh runs only; scripts/review-pr.sh never retries.
 #
 # Emergency only, declared by a human: SKIP_CHECKS=1 SKIP_CHECKS_DECLARED_BY=<who> scripts/open-pr.sh   (the PR body says so)
-# Heavy: run it as heavy -- scripts/open-pr.sh (the HEAVY_SLOT check); --dry-run needs no slot.
 set -euo pipefail
 
 # shellcheck source=scripts/lib/result.sh
@@ -70,7 +69,7 @@ if (( have_gh )); then
   if [[ -n "$existing" ]]; then
     echo "A PR is already open for $branch: $existing"
     result_id "${existing##*/}"
-    result_ok "a PR is already open: $existing" "cd $(printf '%q' "$main_checkout") && heavy -- scripts/review-pr.sh ${existing##*/}"
+    result_ok "a PR is already open: $existing" "cd $(printf '%q' "$main_checkout") && scripts/review-pr.sh ${existing##*/}"
     exit 0
   fi
   state=$(gh issue view "$issue" --json state --jq .state 2>/dev/null) || die "issue #$issue not found"
@@ -109,8 +108,7 @@ if (( dry )); then
   exit 0
 fi
 
-# The workflow rules that a script can check (docs/git-workflow/rule-enforcement.md): heavy, SKIP_CHECKS, main checkout, port, issue label, workflows, hook-skipped commits.
-RULE_ARGS=$rule_args rule_heavy scripts/open-pr.sh
+# The workflow rules that a script can check (docs/git-workflow/rule-enforcement.md): SKIP_CHECKS, main checkout, port, issue label, workflows, hook-skipped commits.
 RULE_ARGS=$rule_args rule_skip_declared
 rule_main_clean "$main_checkout"
 rule_port "$top"
@@ -155,7 +153,7 @@ pr_url=$(gh pr create "${args[@]}") || DIE_CAUSE=other die "gh pr create failed;
 [[ -z "$pr_url" ]] || echo "$pr_url"
 if [[ "${pr_url##*/}" =~ ^[0-9]+$ ]]; then
   result_id "${pr_url##*/}"
-  result_ok "opened ${pr_url}" "cd $(printf '%q' "$main_checkout") && heavy -- scripts/review-pr.sh ${pr_url##*/}"
+  result_ok "opened ${pr_url}" "cd $(printf '%q' "$main_checkout") && scripts/review-pr.sh ${pr_url##*/}"
 else
   result_ok "PR created"
 fi

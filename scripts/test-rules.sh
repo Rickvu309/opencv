@@ -45,7 +45,7 @@ printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/
 set +e; bash "$tmp/r.sh" "$sha" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
 [[ $code -eq 0 ]] || fail "a stamped sha passes"
 set +e; bash "$tmp/r.sh" "0123456789abcdef0123456789abcdef01234567" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
-[[ $code -eq 1 ]] && grep -q 'Fix: git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease' "$tmp/err" || fail "an unstamped sha is refused with the fix"
+[[ $code -eq 1 ]] && grep -q 'Fix: git fetch origin main && git rebase origin/main && git commit --amend --no-edit && git push --force-with-lease' "$tmp/err" || fail "an unstamped sha is refused with the fix"
 rm -rf "$repo/.git/pre-push-stamps"
 set +e; bash "$tmp/r.sh" "0123456789abcdef0123456789abcdef01234567" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
 [[ $code -eq 0 ]] || fail "a clone whose hook never stamped is not blocked"
@@ -151,7 +151,7 @@ fix=$(sed -n 's/^Fix: //p' "$tmp/err")
 git init -q --bare "$tmp/origin.git" && git -C "$repo" remote add origin "$tmp/origin.git"
 git -C "$repo" update-ref refs/remotes/origin/main main
 git -C "$repo" switch -q -c feat/9-trailer && git -C "$repo" push -q -u origin feat/9-trailer
-(cd "$tmp" && heavy() { shift; "$@"; } && eval "$fix") >/dev/null 2>&1 || fail "the trailer fix runs: $fix"
+(cd "$tmp" && eval "$fix") >/dev/null 2>&1 || fail "the trailer fix runs: $fix"
 [[ "$(git -C "$repo" log -1 --format=%s)" == "feat: b" && -z "$(git -C "$repo" log -1 --format=%B | grep -i 'generated-with' || true)" ]] || fail "the trailer fix recommits with the subject and no trailer"
 [[ "$(git --git-dir="$tmp/origin.git" rev-parse refs/heads/feat/9-trailer)" == "$(git -C "$repo" rev-parse HEAD)" ]] || fail "the trailer fix pushes the branch"
 hooked HEAD; [[ $code -eq 0 ]] || fail "after the trailer fix the commits pass"
@@ -160,10 +160,10 @@ git -C "$repo" reset -q --hard HEAD~1
 head -c 25000 /dev/zero | tr '\0' 'y' >"$repo/big.txt"; git -C "$repo" add big.txt; git -C "$repo" commit -q -m "feat: big"
 hooked HEAD "$repo" push; [[ $code -eq 1 ]] && grep -q 'big.txt (25000 bytes)' "$tmp/err" || fail "a text file over 20000 bytes is refused"
 fix=$(sed -n 's/^Fix: //p' "$tmp/err")
-[[ "$fix" == "cd $repo && git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && heavy -- git push origin HEAD" ]] || fail "the oversize fix is a command that commits and pushes: $fix"
+[[ "$fix" == "cd $repo && git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && git push origin HEAD" ]] || fail "the oversize fix is a command that commits and pushes: $fix"
 # The fix runs once the file is split: it commits, pushes to the remote, and the check then passes.
 git -C "$repo" rm -q --cached big.txt && rm "$repo/big.txt"; head -c 12000 /dev/zero | tr '\0' 'y' >"$repo/big-1.txt"; head -c 13000 /dev/zero | tr '\0' 'y' >"$repo/big-2.txt"
-(cd "$tmp" && heavy() { shift; "$@"; } && eval "$fix") >/dev/null 2>&1 || fail "the oversize fix runs"
+(cd "$tmp" && eval "$fix") >/dev/null 2>&1 || fail "the oversize fix runs"
 [[ -z "$(git -C "$repo" status --porcelain)" ]] || fail "after the oversize fix the worktree is clean"
 [[ "$(git --git-dir="$tmp/origin.git" rev-parse refs/heads/feat/9-ok)" == "$(git -C "$repo" rev-parse HEAD)" ]] || fail "the oversize fix pushes the branch"
 hooked HEAD; [[ $code -eq 0 ]] || fail "after the split the net change has no oversize file, so the check passes"
