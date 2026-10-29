@@ -33,8 +33,6 @@ const fileArgs = [
   "file",
   "--title",
   "feat: Keep my search",
-  "--your-words",
-  '"Keep my search."',
   "--what",
   "The page forgets your search. This keeps it.",
   "--done",
@@ -83,7 +81,7 @@ test("file creates the issue with the risk and type labels", () => {
   assert.match(create, /--label risk:low --label feat/)
   assert.match(create, /--title feat: Keep my search/)
   const [body] = Object.values(ctx.written)
-  assert.match(body, /### Type\n\nfeat\n\n### Your words/)
+  assert.match(body, /### Type\n\nfeat\n\n### What and why/)
   assert.match(body, /### Risk\n\nlow/)
 })
 
@@ -118,7 +116,7 @@ test("file refuses jargon with exit 2 UNREADABLE and creates nothing", () => {
 test("file refuses missing fields and high risk without --could-go-wrong", () => {
   const missing = runCli(["file", "--title", "feat: x"], fakeCtx([]))
   assert.equal(missing.code, 2)
-  assert.match(missing.text, /MISSING_FIELDS: missing --your-words/)
+  assert.match(missing.text, /MISSING_FIELDS: missing --what/)
   const high = runCli([...fileArgs.slice(0, -1), "high"], fakeCtx([]))
   assert.match(high.text, /missing --could-go-wrong/)
 })

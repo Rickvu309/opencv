@@ -5,7 +5,6 @@ import { buildIssueBody, lintIssue, parseRisk, readingGrade } from "./lint.mjs"
 
 const base = {
   type: "feat",
-  "your-words": '"Keep my search."',
   what: "The page forgets your search. This keeps it.",
   done: "- I search, leave, and come back. The box still has my words.",
   risk: "low",
@@ -41,14 +40,6 @@ test("backticks and file names are refused outside Details for the agent", () =>
   )
   assert.deepEqual(
     lint({ details: "Edit `apps/web/jobs.tsx` and the API." }).reasons,
-    []
-  )
-})
-
-test("Your words is exempt from the plain-words checks", () => {
-  assert.deepEqual(
-    lint({ "your-words": '"Fix the API in `x.ts`, the worker is slow."' })
-      .reasons,
     []
   )
 })

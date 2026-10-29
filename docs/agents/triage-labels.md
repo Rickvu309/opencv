@@ -5,8 +5,8 @@ The skills speak in terms of five canonical triage roles. Only one of them is a 
 | Role in mattpocock/skills | In this tracker                                                                                          |
 | ------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `needs-triage`            | The issue has no PR yet (`gh pr list --search "<issue#> in:body"` is empty).                             |
-| `needs-info`              | The body lacks the Your words, What and why or Done when the Task form asks for. Ask in a comment.       |
-| `ready-for-agent`         | The body has Your words, What and why and Done when, and no open PR closes it.                           |
+| `needs-info`              | The body lacks the What and why or Done when the Task form asks for. Ask in a comment.                   |
+| `ready-for-agent`         | The body has What and why and Done when, and no open PR closes it.                                       |
 | `ready-for-human`         | The label `ready-for-human`. `scripts/new-task.sh` and `scripts/open-pr.sh` refuse an issue that has it. |
 | `wontfix`                 | `gh issue close <n> --reason "not planned"`.                                                             |
 

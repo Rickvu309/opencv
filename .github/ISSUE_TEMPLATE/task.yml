@@ -17,13 +17,6 @@ body:
     validations:
       required: true
   - type: textarea
-    id: your-words
-    attributes:
-      label: Your words
-      description: What the owner asked for, in the owner's own words. Quote them. Never write your own choices here.
-    validations:
-      required: true
-  - type: textarea
     id: what
     attributes:
       label: What and why
