@@ -40,6 +40,8 @@ import {
   parseImportFile,
 } from "./import-parse.js"
 
+import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
+
 const importAbort = new AsyncLocalStorage<AbortSignal>()
 
 export function withImportSignal<T>(
@@ -332,12 +334,6 @@ export async function pageCount(actor: Actor, docId: PaperId) {
   return { docId, pages: weight > 3500 ? 2 : 1, pageChoice: doc.pageChoice }
 }
 
-export function photoRefOf(document: PaperView["document"]) {
-  if (isCvBlockDocument(document)) return document.header.photo
-  if (isCvDocument(document)) return document.photoUrl
-  return undefined
-}
-
 function withPhotoRef(document: PaperView["document"], ref: string) {
   if (isCvBlockDocument(document)) {
     return { ...document, header: { ...document.header, photo: ref } }
@@ -561,6 +557,12 @@ export async function listFiles(userId: UserId) {
 
 export async function deleteFile(actor: Actor, fileId: FileId) {
   await readFileMeta(actor.userId, fileId)
+  if ((await referencedPhotoFileIds(actor.userId)).has(fileId)) {
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "This photo is still in use by a CV, your profile, or Undo."
+    )
+  }
   await getDb()
     .delete(files)
     .where(and(eq(files.id, fileId), eq(files.userId, actor.userId)))
