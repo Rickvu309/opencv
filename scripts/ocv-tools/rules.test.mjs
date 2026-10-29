@@ -347,6 +347,21 @@ test("variant messages stay the ones the jobs print", () => {
     evaluate("BRANCH_EXISTS", { branch: remote, issue: { n: 90 } }).fix,
     "scripts/ocv-tools.mjs take 90 --resume"
   )
+  const bothTips = {
+    stage: "create",
+    name: "feat/90-keep-my-search",
+    local: true,
+    remote: true,
+    resume: false,
+  }
+  assert.equal(
+    at("BRANCH_EXISTS", { branch: bothTips, issue: { n: 90 } }),
+    "branch feat/90-keep-my-search already exists locally (git worktree list)"
+  )
+  assert.equal(
+    evaluate("BRANCH_EXISTS", { branch: bothTips, issue: { n: 90 } }).fix,
+    "Someone is already working on it. Run: scripts/ocv-tools.mjs status <n>"
+  )
   assert.equal(
     evaluate("BRANCH_EXISTS", {
       branch: { stage: "create", name: "feat/90-keep", resume: true },

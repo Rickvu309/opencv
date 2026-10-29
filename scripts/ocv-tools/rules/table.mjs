@@ -192,6 +192,8 @@ function branchFix(facts) {
   const n = facts.issue?.n ?? "<n>"
   if (branch.resume && !branch.local && !branch.remote)
     return `scripts/ocv-tools.mjs take ${n}`
+  // Same order as branchExists: a local tip wins, even when origin has it too.
+  if (!branch.resume && branch.local) return FIXES.BRANCH_EXISTS
   if (!branch.resume && branch.remote)
     return `scripts/ocv-tools.mjs take ${n} --resume`
   return FIXES.BRANCH_EXISTS
