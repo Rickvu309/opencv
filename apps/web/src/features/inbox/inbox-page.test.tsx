@@ -141,28 +141,27 @@ describe("inbox page", () => {
       },
     }))
     let snoozed = false
-    vi.stubGlobal(
-      "fetch",
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = pathOf(input)
-        if (path === "/api/inbox") {
-          return jsonOk({
-            connected: false,
-            skipped: true,
-            threads: snoozed
-              ? INBOX_THREADS.filter((thread) => thread.id !== LOCAL_DETAIL.id)
-              : INBOX_THREADS.slice(0, 2),
-          })
-        }
-        if (path === "/api/commands/inbox.snooze") snoozed = true
-        if (path.startsWith("/api/inbox/")) {
-          return path.endsWith(LOCAL_DETAIL.id)
-            ? jsonOk(LOCAL_DETAIL)
-            : jsonOk(REGIONAL_DETAIL)
-        }
-        return jsonOk({})
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const path = pathOf(input)
+      if (path === "/api/inbox") {
+        return jsonOk({
+          connected: false,
+          skipped: true,
+          threads: snoozed
+            ? INBOX_THREADS.slice(0, 2).filter(
+                (thread) => thread.id !== LOCAL_DETAIL.id
+              )
+            : INBOX_THREADS.slice(0, 2),
+        })
       }
-    )
+      if (path === "/api/commands/inbox.snooze") snoozed = true
+      if (path.startsWith("/api/inbox/")) {
+        return path.endsWith(LOCAL_DETAIL.id)
+          ? jsonOk(LOCAL_DETAIL)
+          : jsonOk(REGIONAL_DETAIL)
+      }
+      return jsonOk({})
+    })
     renderPage()
     await userEvent.click(
       await screen.findByRole("button", {
@@ -183,6 +182,7 @@ describe("inbox page", () => {
     expect(
       await screen.findByRole("button", { name: "Snooze" })
     ).toBeInTheDocument()
+    expect(screen.getByText("1 of 1")).toBeInTheDocument()
   })
 
   it("uses the profile zone from the inbox list for chips and snooze", async () => {
