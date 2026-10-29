@@ -35,12 +35,10 @@ import {
 import type { SSEStreamingApi } from "hono/streaming"
 
 import { readUsage } from "../account/index.js"
-import { coachModelEnv } from "../config.js"
 import { getChat, insertCoachMessage, trackChatTurn } from "../chat/index.js"
 import { registry as defaultRegistry } from "../registry/registry.js"
 import type { Registry, ToolEntry } from "../registry/registry.js"
 import { toolResultFromExecute } from "./receipt.js"
-import { titleFromModel } from "./router.js"
 import {
   eventForPart,
   isDisconnected,
@@ -245,8 +243,8 @@ export async function runCoachTurn(options: {
       coachText: textFromParts(parts),
       status,
       currentMessageId: saved.id,
-      plan: options.plan,
-      runtime: Boolean(options.runtime),
+    }).catch(() => {
+      console.error("Coach automatic title failed", { chatId: options.chatId })
     })
     if (!isDisconnected(options.stream, signal)) {
       const snapshot = await readUsage(options.userId).catch(() => null)
@@ -276,9 +274,8 @@ async function maybeTitle(input: {
   coachText: string
   status: string
   currentMessageId: string
-  plan: Plan
-  runtime: boolean
 }) {
+  if (input.status !== "final") return
   const chat = await getChat(
     parseUserId(input.userId),
     parseChatId(input.chatId)
@@ -296,23 +293,10 @@ async function maybeTitle(input: {
     status: input.status,
   })
   if (!decision) return
-  let title = deterministicChatTitle({
+  const title = deterministicChatTitle({
     userText: decision.userText,
     coachText: input.coachText,
   })
-  if (!input.runtime) {
-    try {
-      const generated = await titleFromModel({
-        plan: input.plan,
-        userText: decision.userText,
-        coachText: input.coachText,
-        env: coachModelEnv(),
-      })
-      if (generated) title = generated
-    } catch {
-      // A missing key keeps the deterministic title and does not open a usage row.
-    }
-  }
   if (!title || title === chat.title) return
   await input.registry.execute({
     name: "chat.rename",

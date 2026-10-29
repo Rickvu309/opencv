@@ -1,6 +1,6 @@
 export { createCoachRoutes } from "./http.js"
 export { runCoachTurn } from "./turn.js"
-export { interpretPosting, routeCoachModel, titleFromModel } from "./router.js"
+export { interpretPosting, routeCoachModel } from "./router.js"
 export {
   createDemoCoachRuntime,
   createScriptedCoachRuntime,

@@ -70,27 +70,6 @@ export async function completeFree(
   return result.text
 }
 
-export async function titleFromModel(input: {
-  plan: Plan
-  userText: string
-  coachText: string
-  env: ModelEnv
-  factories?: ModelFactories
-  complete?: FreeComplete
-}): Promise<string> {
-  const model = routeCoachModel({
-    plan: input.plan,
-    mode: "free",
-    env: input.env,
-    factories: input.factories,
-  })
-  const text = await (input.complete ?? completeFree)(
-    model,
-    `Write a short title for this chat. Reply with the title only.\nPerson: ${input.userText}\nCoach: ${input.coachText}`
-  )
-  return text.trim().replace(/\s+/g, " ").slice(0, 80)
-}
-
 export async function interpretPosting(input: {
   plan: Plan
   text: string

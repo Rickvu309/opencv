@@ -2,7 +2,7 @@ import type { LanguageModel } from "ai"
 import { describe, expect, it } from "vitest"
 
 import { CommandError } from "../registry/errors.js"
-import { interpretPosting, routeCoachModel, titleFromModel } from "./router.js"
+import { interpretPosting, routeCoachModel } from "./router.js"
 
 const stub = (id: string) => ({ id }) as unknown as LanguageModel
 
@@ -61,18 +61,6 @@ describe("free reads", () => {
     openrouter: (modelId: string) => stub(modelId),
     anthropic: (modelId: string) => stub(modelId),
   }
-
-  it("titles a chat on the free route", async () => {
-    const title = await titleFromModel({
-      plan: "free",
-      userText: "Help me prepare for a product intern interview",
-      coachText: "Prep the starred one next.",
-      env: { OPENROUTER_API_KEY: "test" },
-      factories,
-      complete: async () => "Interview prep",
-    })
-    expect(title).toBe("Interview prep")
-  })
 
   it("reads a posting on the free route", async () => {
     const fields = await interpretPosting({
