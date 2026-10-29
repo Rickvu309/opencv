@@ -78,7 +78,7 @@ export function subsetDrift(declared, live, path = "") {
             `${path}: git ${JSON.stringify(declared)}, GitHub ${JSON.stringify(live)}`,
           ]
     }
-    const key = (item) => item.type ?? item.actor_id
+    const key = (item) => item.type ?? item.actor_id ?? item.context
     const problems = []
     for (const item of declared) {
       const found = live.find((other) => key(other) === key(item))
