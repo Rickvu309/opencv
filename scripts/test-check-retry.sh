@@ -35,7 +35,8 @@ mkdir -p "$repo/scripts/lib" "$repo/apps/web/src" "$repo/apps/api/src" "$repo/pa
 printf '#!/usr/bin/env bash\nexit "${STUB_CODEOWNERS_RC:-0}"\n' >"$repo/scripts/test-codeowners.sh"; chmod +x "$repo/scripts/test-codeowners.sh"
 cp "$here/check.sh" "$repo/scripts/check.sh"; cp "$here/lib/result.sh" "$repo/scripts/lib/result.sh"
 echo '{"name":"web"}' >"$repo/apps/web/package.json"; echo '{"name":"api"}' >"$repo/apps/api/package.json"; echo '{"name":"@workspace/domain"}' >"$repo/packages/domain/package.json"
-echo '{"name":"root","scripts":{"lint":"turbo lint"}}' >"$repo/package.json"; : >"$repo/pnpm-lock.yaml"
+echo '{"name":"root","scripts":{"lint":"turbo lint","test":"node --test scripts/guard.test.mjs"}}' >"$repo/package.json"; : >"$repo/pnpm-lock.yaml"
+: >"$repo/scripts/guard.test.mjs"
 git -C "$repo" init -q -b main && git -C "$repo" config core.hooksPath /dev/null
 git -C "$repo" add -A && git -C "$repo" commit -q -m base
 git -C "$repo" update-ref refs/remotes/origin/main HEAD
