@@ -10,7 +10,7 @@ function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) return sourceFiles(full)
-    return /\.tsx?$/.test(entry.name) ? [full] : []
+    return /\.[cm]?[jt]sx?$/.test(entry.name) ? [full] : []
   })
 }
 
