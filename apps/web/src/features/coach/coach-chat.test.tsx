@@ -421,6 +421,34 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     expect(screen.getByText("Try again")).toBeInTheDocument()
   })
 
+  it.each([false, true])(
+    "shows safe copy and recovers after a streamed error with omitEnd=%s",
+    async (omitEnd) => {
+      const rawError = "Provider failed: private upstream diagnostics"
+      scriptCoachStream({
+        texts: ["Partial answer"],
+        streamError: rawError,
+        omitEnd,
+      })
+      renderApp(SURFACE_PATHS.coach)
+      await expectCoachIdle()
+      await sendMessage("Help me prepare")
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Something went wrong sending that. Try again."
+      )
+      expect(screen.queryByText(rawError)).not.toBeInTheDocument()
+      expect(screen.getByText("Partial answer")).toBeInTheDocument()
+
+      scriptCoachStream({ texts: ["Recovered answer"] })
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }))
+      expect(await screen.findByText("Recovered answer")).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+      })
+    }
+  )
+
   it("shows a failed bubble with Retry after a send error, then recovers", async () => {
     scriptCoachStream({
       httpError: {

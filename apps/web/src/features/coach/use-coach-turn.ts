@@ -268,7 +268,7 @@ export function useCoachTurn({
           ended = true
         },
         onError({ message }) {
-          streamError = message
+          streamError = coachSendErrorMessage(new Error(message))
         },
       }
 
