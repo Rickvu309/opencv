@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import type { DroppableContainer } from "@dnd-kit/core"
 import type { CvBlockDocument, CvSectionKind } from "@workspace/domain"
 
@@ -17,7 +17,11 @@ const kinds = [
   "languages",
 ] as const satisfies readonly CvSectionKind[]
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 function rect(top: number, height: number): DOMRect {
   return new DOMRect(0, top, 240, height)
@@ -95,6 +99,65 @@ describe.each(kinds)("%s heading drop", (kind) => {
         next.sections
           .find((section) => section.id === "target")
           ?.blocks.map((item) => item.id)
+      ).toEqual(y <= 128 ? ["first", "drag"] : ["drag", "first"])
+    }
+  )
+})
+
+describe("release pointer", () => {
+  it.each([100, 114, 128])(
+    "uses the release at y=%s even when the last move was on a block",
+    async (y) => {
+      vi.stubGlobal("PointerEvent", MouseEvent)
+      const document: CvBlockDocument = {
+        version: 2,
+        header: { name: "", email: "", phone: "", city: "", linkedin: "" },
+        sections: [
+          {
+            id: "source",
+            kind: "experience",
+            blocks: [{ id: "drag", type: "text", text: "Move" }],
+          },
+          {
+            id: "target",
+            kind: "activities",
+            blocks: [{ id: "first", type: "text", text: "Stay" }],
+          },
+        ],
+      }
+      const commit = vi.fn()
+      render(
+        <PaperBlocks
+          document={document}
+          onChange={vi.fn()}
+          onCommit={commit}
+          onAskCoach={vi.fn()}
+        />
+      )
+      const heading = screen.getByRole("heading", { name: "Activities" })
+      const source = screen
+        .getAllByRole("textbox", { name: "Text" })[0]!
+        .closest<HTMLElement>("[data-sortable-block]")!
+      vi.spyOn(
+        HTMLElement.prototype,
+        "getBoundingClientRect"
+      ).mockImplementation(function (this: HTMLElement) {
+        if (this === heading) return rect(100, 28)
+        if (this.dataset.sortableBlock === "drag") return rect(0, 80)
+        return rect(132, 80)
+      })
+      const handle = source.querySelector("button")!
+      fireEvent.mouseDown(handle, { button: 0, clientX: 20, clientY: 20 })
+      fireEvent.mouseMove(window.document, { clientX: 40, clientY: 40 })
+      await act(async () => {})
+      fireEvent.mouseMove(window.document, { clientX: 120, clientY: 140 })
+      await act(async () => {})
+      fireEvent.pointerUp(heading, { clientX: 120, clientY: y })
+      fireEvent.mouseUp(window.document, { clientX: 120, clientY: y })
+      expect(commit).toHaveBeenCalledTimes(1)
+      const next: CvBlockDocument = commit.mock.calls[0]![0]
+      expect(
+        next.sections.find((s) => s.id === "target")?.blocks.map((b) => b.id)
       ).toEqual(y <= 128 ? ["first", "drag"] : ["drag", "first"])
     }
   )

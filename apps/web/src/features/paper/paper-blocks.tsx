@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -96,6 +96,7 @@ export function PaperBlocks({
   onCommit: (next: CvBlockDocument, kind: BlockCommit) => void
   onAskCoach: (text: string) => void
 }) {
+  const releasedHeading = useRef<string | null>(null)
   const [slash, setSlash] = useState<SlashState | null>(null)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -110,7 +111,9 @@ export function PaperBlocks({
   const sections = editorSections(document)
 
   function onDragEnd(event: DragEndEvent) {
-    const overId = event.over ? String(event.over.id) : ""
+    const overId =
+      releasedHeading.current ?? (event.over ? String(event.over.id) : "")
+    releasedHeading.current = null
     const next = dropBlock(document, String(event.active.id), overId)
     if (next === document) return
     onCommit(next, "drop")
@@ -166,13 +169,35 @@ export function PaperBlocks({
 
   return (
     <CvA4Canvas>
-      <div className="flex flex-col gap-4 p-6">
+      <div
+        className="flex flex-col gap-4 p-6"
+        onPointerUpCapture={(event) => {
+          releasedHeading.current = null
+          for (const heading of event.currentTarget.querySelectorAll<HTMLElement>(
+            "[data-section-drop]"
+          )) {
+            const rect = heading.getBoundingClientRect()
+            if (
+              event.clientX >= rect.left &&
+              event.clientX <= rect.right &&
+              event.clientY >= rect.top &&
+              event.clientY <= rect.bottom
+            ) {
+              releasedHeading.current = heading.dataset.sectionDrop ?? null
+              break
+            }
+          }
+        }}
+      >
         <PaperBlockHeader
           header={document.header}
           onChange={(key, value) => onChange(patchHeader(document, key, value))}
         />
         <DndContext
           sensors={sensors}
+          onDragStart={() => {
+            releasedHeading.current = null
+          }}
           collisionDetection={headingPointerCollision}
           onDragEnd={onDragEnd}
         >
@@ -251,7 +276,11 @@ function SectionBlock({
 
   return (
     <div data-section={section.kind} className="flex flex-col gap-2">
-      <h2 ref={setNodeRef} className="-my-1 py-1 text-sm font-medium">
+      <h2
+        ref={setNodeRef}
+        data-section-drop={`section:${section.id}`}
+        className="-my-1 py-1 text-sm font-medium"
+      >
         {SECTION_LABEL[section.kind]}
       </h2>
       <SortableContext
