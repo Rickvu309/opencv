@@ -26,7 +26,26 @@ export function ghAdapter(run) {
   function repo() {
     const data = JSON.parse(gh("repo", "view", "--json", "owner,name"))
     const owner = data.owner.login
-    return { owner, name: data.name, nameWithOwner: `${owner}/${data.name}` }
+    return {
+      owner,
+      ownerType: data.owner.type,
+      name: data.name,
+      nameWithOwner: `${owner}/${data.name}`,
+    }
+  }
+
+  function approvers(project = repo()) {
+    const admins = gh(
+      "api",
+      `repos/${project.nameWithOwner}/collaborators?permission=admin`,
+      "--paginate",
+      "--jq",
+      ".[].login"
+    )
+    return [
+      ...(project.ownerType === "User" ? [project.owner] : []),
+      ...admins.split(/\r?\n/).filter(Boolean),
+    ].map((login) => login.toLowerCase())
   }
 
   function graphql(query, vars) {
@@ -144,6 +163,7 @@ export function ghAdapter(run) {
     })
     return {
       owner: view.owner,
+      approvers: approvers(view),
       name: view.name,
       nameWithOwner: view.nameWithOwner,
       serverNow,
@@ -277,6 +297,7 @@ export function ghAdapter(run) {
 
   return {
     repo,
+    approvers,
     serverNow() {
       return readServerNow({ run })
     },

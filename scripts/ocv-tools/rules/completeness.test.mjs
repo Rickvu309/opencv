@@ -245,22 +245,22 @@ test("shot, approve and board refusals keep their messages and fixes", () => {
     issue: { n: 90 },
     claim: { state: "none" },
     me: null,
-    account: { login: "collaborator", owner: "owner" },
+    account: { login: "collaborator", approvers: ["owner"] },
   })
   assert.equal(
     signed.message,
-    "signed in as collaborator, but only owner can approve #90"
+    "signed in as collaborator, without admin rights to approve #90"
   )
   assert.equal(
     signed.fix,
-    "run this as the owner account; take only accepts the owner's /approve"
+    "run this as an account with admin rights on the project"
   )
   assert.equal(
     hit("NOT_OWNER", {
       issue: { n: 90 },
       claim: { state: "none" },
       me: null,
-      account: { login: "Owner", owner: "owner" },
+      account: { login: "Owner", approvers: ["owner"] },
     }),
     null
   )

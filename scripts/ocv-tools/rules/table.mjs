@@ -144,9 +144,11 @@ function assigned(facts) {
 function notOwner(facts) {
   if (facts.account && facts.issue) {
     const me = String(facts.account.login ?? "").trim()
-    const owner = String(facts.account.owner ?? "").trim()
-    if (me.toLowerCase() === owner.toLowerCase()) return null
-    return `signed in as ${me || "nobody"}, but only ${owner} can approve #${facts.issue.n}`
+    const approvers = (facts.account.approvers ?? []).map((login) =>
+      String(login).toLowerCase()
+    )
+    if (approvers.includes(me.toLowerCase())) return null
+    return `signed in as ${me || "nobody"}, without admin rights to approve #${facts.issue.n}`
   }
   if (!facts.claim || !facts.issue) return null
   if (holds(facts.claim, facts.me)) return null
@@ -156,7 +158,7 @@ function notOwner(facts) {
 
 function notOwnerFix(facts) {
   if (facts.account)
-    return "run this as the owner account; take only accepts the owner's /approve"
+    return "run this as an account with admin rights on the project"
   return FIXES.NOT_OWNER
 }
 
@@ -468,7 +470,7 @@ const rows = [
     id: "NOT_OWNER",
     kind: "precondition",
     section: "2",
-    says: "Only the holding agent can release an issue, and only the repository owner can approve one.",
+    says: "Only the holding agent can release an issue, and only a project admin can approve one.",
     jobs: ["release", "approve"],
     needs: ["claim", "me", "issue"],
     check: notOwner,

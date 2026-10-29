@@ -50,7 +50,7 @@ export const COMMANDS = [
   {
     name: "approve",
     usage: "approve <n>",
-    when: 'Post /approve on a risk:high issue only after the owner said "approved" in this chat. The comment says this agent relayed it. Refused for any other risk (NOT_HIGH_RISK: no approval is needed), a closed issue (CLOSED), a number that is not an issue (NOT_AN_ISSUE), or when the signed-in account is not the repository owner (NOT_OWNER). A second valid approve does nothing and exits 0.',
+    when: 'Post /approve on a risk:high issue only after an admin said "approved" in this chat. The comment says this agent relayed it. Refused for any other risk (NOT_HIGH_RISK: no approval is needed), a closed issue (CLOSED), a number that is not an issue (NOT_AN_ISSUE), or when the signed-in account does not have admin rights (NOT_OWNER). A second valid approve does nothing and exits 0.',
   },
   {
     name: "board",

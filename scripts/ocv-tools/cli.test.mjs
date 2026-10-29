@@ -279,7 +279,7 @@ test("nextStep covers merged, branch-only and nothing started", () => {
   )
 })
 
-test("approvalValid needs the owner and a comment after the edit", () => {
+test("approvalValid accepts only an approver after the issue's last edit", () => {
   const owner = "quanvu309"
   const comment = (login, createdAt) => ({
     author: { login },
@@ -287,7 +287,7 @@ test("approvalValid needs the owner and a comment after the edit", () => {
     createdAt,
   })
   const base = {
-    owner,
+    approvers: [owner],
     lastEditedAt: "2026-10-29T10:00:00Z",
     createdAt: "2026-10-28T10:00:00Z",
   }
@@ -313,6 +313,30 @@ test("approvalValid needs the owner and a comment after the edit", () => {
     false
   )
   assert.equal(approvalValid({ ...base, comments: [] }), false)
+  assert.equal(
+    approvalValid({
+      ...base,
+      approvers: [],
+      comments: [comment(owner, "2026-10-29T11:00:00Z")],
+    }),
+    false
+  )
+  assert.equal(
+    approvalValid({
+      ...base,
+      approvers: ["admin-person"],
+      comments: [comment("ADMIN-PERSON", "2026-10-29T11:00:00Z")],
+    }),
+    true
+  )
+  assert.equal(
+    approvalValid({
+      ...base,
+      approvers: ["admin-person"],
+      comments: [comment("member", "2026-10-29T11:00:00Z")],
+    }),
+    false
+  )
 })
 
 test("doctor passes on a healthy machine", () => {

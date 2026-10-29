@@ -1,4 +1,4 @@
-// `approve`: relay the owner's "approved" from chat onto a risk:high issue.
+// `approve`: relay an admin's "approved" from chat onto a risk:high issue.
 import { agentIdFor, envAgent } from "./claim.mjs"
 import { evaluate, refusalError } from "./rules/decide.mjs"
 
@@ -39,12 +39,12 @@ export function approve(ctx, n) {
       next: `scripts/ocv-tools.mjs take ${n}`,
     }
   const me = String(ctx.ports.gh.login() ?? "").trim()
-  const owner = String(ctx.ports.gh.repo().owner ?? "").trim()
+  const approvers = issue.approvers
   const held = evaluate("NOT_OWNER", {
     issue,
     claim: { state: "none" },
     me: null,
-    account: { login: me, owner },
+    account: { login: me, approvers },
   })
   if (held) throw refusalError(held)
   ctx.ports.gh.comment(n, approveComment(relayAgent(ctx)))

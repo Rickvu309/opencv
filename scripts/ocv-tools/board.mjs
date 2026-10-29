@@ -95,12 +95,12 @@ function idleMinutes(holder) {
   return Number.isFinite(holder.idleMinutes) ? holder.idleMinutes : null
 }
 
-function rowFrom(issue, owner, serverNow, pr, checks) {
+function rowFrom(issue, approvers, serverNow, pr, checks) {
   const labels = issue.labels ?? []
   const risk = riskOf(labels, issue.body ?? "")
   const approved = approvalValid({
     comments: issue.comments,
-    owner,
+    approvers,
     lastEditedAt: issue.lastEditedAt,
     createdAt: issue.createdAt,
   })
@@ -196,7 +196,7 @@ export function board(ctx, { json = false } = {}) {
     rows.push(
       rowFrom(
         issue,
-        snap.owner,
+        snap.approvers,
         snap.serverNow,
         pr,
         checksFor(ctx.ports.gh, pr)

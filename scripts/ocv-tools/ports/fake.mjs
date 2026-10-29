@@ -68,6 +68,8 @@ export function fakePorts(world = {}) {
     main,
     root,
     owner: world.owner ?? "owner",
+    ownerType: world.ownerType ?? "User",
+    approvers: world.approvers ?? [world.owner ?? "owner"],
     login: world.login ?? "me",
     serverNow: world.serverNow ?? NOW,
     now: world.now ?? NOW,
@@ -195,9 +197,14 @@ export function fakePorts(world = {}) {
   const gh = {
     repo: () => ({
       owner: state.owner,
+      ownerType: state.ownerType,
       name: "opencv",
       nameWithOwner: state.nameWithOwner ?? `${state.owner}/opencv`,
     }),
+    approvers() {
+      if (world.approversError) throw new Error(world.approversError)
+      return [...state.approvers]
+    },
     serverNow,
     issue(n) {
       counts.issue += 1
@@ -320,6 +327,7 @@ export function fakePorts(world = {}) {
         .map((item) => ({ ...item }))
       return {
         owner: state.owner,
+        approvers: [...state.approvers],
         name: "opencv",
         nameWithOwner: state.nameWithOwner ?? `${state.owner}/opencv`,
         serverNow: serverNow(),
