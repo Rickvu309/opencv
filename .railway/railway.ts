@@ -9,7 +9,7 @@ export default defineRailway((ctx) => {
   const production = ctx.isEnvironment("production")
 
   const api = service("api", {
-    source: github("quanvu309/opencv", { branch: "main" }),
+    source: github("Rickvu309/opencv", { branch: "main" }),
     env: {
       ANTHROPIC_API_KEY: preserve(),
       AUTH_EMAIL_FROM: preserve(),
@@ -46,7 +46,7 @@ export default defineRailway((ctx) => {
   })
 
   const web = service("web", {
-    source: github("quanvu309/opencv", { branch: "main" }),
+    source: github("Rickvu309/opencv", { branch: "main" }),
     build: {
       builder: "DOCKERFILE",
       dockerfilePath: "apps/web/Dockerfile",
