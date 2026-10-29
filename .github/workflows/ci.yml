@@ -25,7 +25,7 @@ jobs:
       # The runner service does not load the login PATH; pnpm and heavy live in ~/.local/bin.
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: pnpm install --frozen-lockfile
-      - run: heavy --label ci-${{ github.event.pull_request.number }} -- scripts/check.sh --changed
+      - run: heavy --repo opencv --label ci-${{ github.event.pull_request.number }} -- scripts/check.sh --changed
 
   # The one required check. The main ruleset requires the context "ci", so keep this name.
   ci:
