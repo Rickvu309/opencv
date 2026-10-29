@@ -10,7 +10,7 @@ import {
   releaseMarker,
 } from "./claim-marker.mjs"
 import { readServerNow } from "./clock.mjs"
-import { loadIssue } from "./report.mjs"
+import { COMMENT_PAGE_CAP, loadIssue } from "./report.mjs"
 import { NOW, fakeCtx, issueData, minutesAgo } from "./fake-ctx.mjs"
 
 const claim = (agent, minutes, id = 1) => ({
@@ -320,6 +320,83 @@ test("a live claim older than 100 later comments is still the holder", () => {
   assert.equal(h.agent, "holder")
   assert.equal(h.state, "live")
   assert.ok(ctx.calls.filter((c) => c.includes("api graphql")).length >= 2)
+})
+
+function pagedIssue(pageInfo, nodes) {
+  return issueData({
+    comments: { pageInfo, nodes },
+  })
+}
+
+test("a comment history that never ends is not treated as complete", () => {
+  let pages = 0
+  const ctx = fakeCtx([
+    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
+    [
+      "api graphql",
+      () => {
+        pages += 1
+        return {
+          ok: true,
+          out: pagedIssue({ hasPreviousPage: true, startCursor: `c${pages}` }, [
+            {
+              databaseId: pages,
+              createdAt: minutesAgo(1),
+              updatedAt: minutesAgo(1),
+              author: { login: "x" },
+              body: `note ${pages}`,
+            },
+          ]),
+          err: "",
+        }
+      },
+    ],
+    ["pr list", "[]"],
+    ["worktree list", ""],
+    ["ls-remote", ""],
+  ])
+  const r = runCli(["status", "90"], ctx)
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /REFUSED UNKNOWN/)
+  assert.match(r.text, /incomplete/)
+  assert.match(r.text, /\nFix: /)
+  assert.equal(pages, COMMENT_PAGE_CAP)
+  assert.doesNotMatch(r.text, /Claim: none/)
+})
+
+test("a comment page that does not advance is not treated as complete", () => {
+  let pages = 0
+  const ctx = fakeCtx([
+    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
+    [
+      "api graphql",
+      () => {
+        pages += 1
+        return {
+          ok: true,
+          out: pagedIssue({ hasPreviousPage: true, startCursor: "stuck" }, [
+            {
+              databaseId: 1,
+              createdAt: minutesAgo(1),
+              updatedAt: minutesAgo(1),
+              author: { login: "x" },
+              body: "note",
+            },
+          ]),
+          err: "",
+        }
+      },
+    ],
+    ["pr list", "[]"],
+    ["worktree list", ""],
+    ["ls-remote", ""],
+  ])
+  const r = runCli(["status", "90"], ctx)
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /REFUSED UNKNOWN/)
+  assert.match(r.text, /cursor/)
+  assert.match(r.text, /\nFix: /)
+  assert.equal(pages, 2)
 })
 
 test("status shows the claim holder and its idle minutes", () => {

@@ -27,12 +27,12 @@ export const COMMANDS = [
     name: "take",
     usage:
       "take <n | title> [-d <words>] [--type <t>] [--resume] [--no-install] [--no-assign] [--take]",
-    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch an idle holder already pushed, --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
+    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch an idle holder already pushed (fast-forwards a local branch that is behind origin, refuses one that diverged), --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
   },
   {
     name: "save",
     usage: "save -m <message>",
-    when: "From inside the task worktree: commit everything, push through the pre-push check and refresh your claim. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: your work goes to a patch under ~/tmp/ocv-tools/lost.",
+    when: "From inside the task worktree: commit everything, refresh the claim, push through the pre-push check and refresh again. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: uncommitted work goes to a patch under ~/tmp/ocv-tools/lost. A push that already reached origin is reported as lost and the old claim comment is left alone.",
   },
   {
     name: "release",
@@ -62,7 +62,8 @@ export function renderHelp() {
     "",
     "Exit codes: 0 ok, 1 error, 2 refused with a named code (UNKNOWN_COMMAND, UNREADABLE,",
     "NOT_AN_ISSUE, NEEDS_APPROVAL, CLOSED, MISSING_FIELDS, HELD, WORKTREE_EXISTS, NOT_A_TASK,",
-    "NO_WORKTREE, NOT_OWNER, DIRTY, NOT_MERGED), 3 LOST (another agent took the claim).",
+    "NO_WORKTREE, NOT_OWNER, DIRTY, NOT_MERGED, UNKNOWN_FLAG, BAD_ARGS, BAD_ISSUE, DIVERGED,",
+    "UNKNOWN), 3 LOST (another agent took the claim).",
     "Every result ends with a Next: or Fix: line.",
     "",
     "Later slices add check, finish, shot and board.",
@@ -116,6 +117,9 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
 
 const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
 
+// Stop rather than treat a cut-off comment list as the whole claim history.
+export const COMMENT_PAGE_CAP = 100
+
 function graphqlIssue(ctx, repo, n, cursor) {
   const args = [
     "api",
@@ -135,6 +139,8 @@ function graphqlIssue(ctx, repo, n, cursor) {
 
 // Reads one issue with its risk, type, owner approval and every comment (paged,
 // so a live claim cannot fall out of a last:100 window). Refuses NOT_AN_ISSUE.
+// A history that still has older pages at the cap, or a cursor that does not
+// advance, is refused instead of being treated as complete.
 // serverNow is the GitHub Date header from this read.
 export function loadIssue(ctx, n) {
   const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
@@ -143,7 +149,7 @@ export function loadIssue(ctx, n) {
   let cursor = null
   let issue = null
   let owner = repo.owner.login
-  for (let page = 0; page < 100; page++) {
+  for (let page = 0; page < COMMENT_PAGE_CAP; page++) {
     const q = graphqlIssue(ctx, repo, n, cursor)
     if (!q.ok) {
       if (issue)
@@ -158,8 +164,19 @@ export function loadIssue(ctx, n) {
     if (!issue) break
     const conn = issue.comments ?? {}
     pages.push(conn.nodes ?? [])
-    const prev = conn.pageInfo?.hasPreviousPage && conn.pageInfo.startCursor
-    if (!prev || prev === cursor) break
+    const info = conn.pageInfo ?? {}
+    if (!info.hasPreviousPage) break
+    const prev = info.startCursor
+    if (!prev || prev === cursor)
+      throw new Refused(
+        "UNKNOWN",
+        `claim history for #${n} stopped before the first comment (the page cursor did not move)`
+      )
+    if (page === COMMENT_PAGE_CAP - 1)
+      throw new Refused(
+        "UNKNOWN",
+        `claim history for #${n} is incomplete: ${COMMENT_PAGE_CAP} pages were read and older comments remain`
+      )
     cursor = prev
   }
   if (!issue) throw new Refused("NOT_AN_ISSUE", `#${n} is not an issue`)
