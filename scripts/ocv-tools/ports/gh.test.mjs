@@ -42,6 +42,8 @@ function scripted(onGraphql) {
         out: '{"owner":{"login":"owner"},"name":"opencv"}',
         err: "",
       }
+    if (line.includes("api repos/owner/opencv --jq .owner.type"))
+      return { ok: true, out: "User\n", err: "" }
     if (line.includes("rate_limit")) return { ok: true, out: DATE, err: "" }
     if (line.includes("api graphql")) return onGraphql(line)
     return { ok: false, out: "", err: `unmocked: ${line}` }

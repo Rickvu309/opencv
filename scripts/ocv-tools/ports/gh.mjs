@@ -26,11 +26,18 @@ export function ghAdapter(run) {
   function repo() {
     const data = JSON.parse(gh("repo", "view", "--json", "owner,name"))
     const owner = data.owner.login
+    const nameWithOwner = `${owner}/${data.name}`
+    const ownerType = gh(
+      "api",
+      `repos/${nameWithOwner}`,
+      "--jq",
+      ".owner.type"
+    ).trim()
     return {
       owner,
-      ownerType: data.owner.type,
+      ownerType,
       name: data.name,
-      nameWithOwner: `${owner}/${data.name}`,
+      nameWithOwner,
     }
   }
 

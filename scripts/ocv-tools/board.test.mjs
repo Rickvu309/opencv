@@ -19,6 +19,8 @@ function scriptedCtx(rules) {
       }
     if (line.includes("collaborators?permission=admin"))
       return { ok: true, out: "owner\n", err: "" }
+    if (line.includes("api repos/owner/opencv --jq .owner.type"))
+      return { ok: true, out: "User\n", err: "" }
     for (const [match, result] of rules)
       if (line.includes(match))
         return typeof result === "function"
@@ -203,7 +205,7 @@ function graphql(line) {
 
 function ctxOf(graph = graphql) {
   return scriptedCtx([
-    ["repo view", '{"owner":{"login":"owner","type":"User"},"name":"opencv"}'],
+    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
     ["api graphql", (line) => ({ ok: true, out: graph(line), err: "" })],
     ["check-runs", checkRuns],
   ])
@@ -317,10 +319,7 @@ test("board --json prints the same groups", () => {
 test("board reads 50 issues with a constant handful of gh calls", () => {
   const once = (count) => {
     const ctx = scriptedCtx([
-      [
-        "repo view",
-        '{"owner":{"login":"owner","type":"User"},"name":"opencv"}',
-      ],
+      ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
       [
         "api graphql",
         (line) => {
@@ -379,7 +378,7 @@ test("an open pull request behind newer closed ones stays in review", () => {
     headRefName: `chore/${1000 + i}-done`,
   }))
   const ctx = scriptedCtx([
-    ["repo view", '{"owner":{"login":"owner","type":"User"},"name":"opencv"}'],
+    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
     [
       "api graphql",
       (line) => {
