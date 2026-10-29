@@ -107,11 +107,11 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.
 - Never create `develop`, `staging`, or `release/` branches.
-- CI runs on GitHub-hosted runners; a rule refuses any workflow file besides `ci.yml` and allows setup actions. Workflow and action changes need `risk:high`.
+- CI runs on GitHub-hosted runners; a rule refuses any workflow file besides `ci.yml` and `nightly.yml` and allows setup actions. Workflow and action changes need `risk:high`.
 
 #### 6. Merge and clean up
 
-- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `.github/actions/**`, `scripts/check.mjs` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
+- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
 - When the queue merges, the issue closes and the remote branch is deleted.
 - From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.

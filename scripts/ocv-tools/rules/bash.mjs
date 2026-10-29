@@ -60,10 +60,11 @@ function noWorkflows(facts) {
   const bad = workflowFiles(facts).filter(
     (file) =>
       file.startsWith(".github/workflows/") &&
-      file !== ".github/workflows/ci.yml"
+      file !== ".github/workflows/ci.yml" &&
+      file !== ".github/workflows/nightly.yml"
   )
   if (!bad.length) return null
-  return `workflows other than ci.yml are not added without an issue: ${bad.slice(0, 3).join(" ")}`
+  return `workflows other than ci.yml and nightly.yml are not added without an issue: ${bad.slice(0, 3).join(" ")}`
 }
 
 function ciKept(facts) {
@@ -75,7 +76,7 @@ function ciKept(facts) {
 function riskHigh(facts) {
   const watched = [
     ".github/workflows/ci.yml",
-    "scripts/check.mjs",
+    ".github/workflows/nightly.yml",
     "scripts/check.mjs",
     ".github/rulesets/main.json",
   ]
@@ -86,7 +87,7 @@ function riskHigh(facts) {
   )
     return null
   if (asLines(facts.diff?.labels).includes("risk:high")) return null
-  return "the change touches ci.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+  return "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
 }
 
 function skipDeclared(facts) {
@@ -155,7 +156,7 @@ export const bashRows = [
   rule({
     id: "NO_WORKFLOWS",
     section: "5",
-    says: "Only ci.yml is a workflow; .github/actions/setup/** is allowed.",
+    says: "Only ci.yml and nightly.yml are workflows; .github/actions/setup/** is allowed.",
     jobs: ["open"],
     needs: ["diff"],
     check: noWorkflows,
@@ -176,7 +177,7 @@ export const bashRows = [
   rule({
     id: "RISK_HIGH_FOR_CI",
     section: "5",
-    says: "A change to ci.yml, a composite action, checks or the main ruleset needs the risk:high label.",
+    says: "A change to ci.yml, nightly.yml, a composite action, check.mjs or the main ruleset needs the risk:high label.",
     jobs: ["merge"],
     needs: ["diff"],
     check: riskHigh,

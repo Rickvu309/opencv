@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import test from "node:test"
+import { spawnSync } from "node:child_process"
 import ts from "typescript"
 import { fileURLToPath } from "node:url"
 import { evaluate } from "./decide.mjs"
@@ -124,6 +125,64 @@ test("every raised refusal code has a row, and every row is raised", () => {
   assert.ok(history.jobs.includes("board"))
   assert.ok(history.jobs.includes("shot"))
   assert.match(history.says, /board/)
+})
+
+test("R105 allows exactly ci.yml and nightly.yml in both rule implementations", () => {
+  const shell = fileURLToPath(new URL("../../lib/rules.sh", import.meta.url))
+  for (const [name, allowed] of [
+    ["ci.yml", true],
+    ["nightly.yml", true],
+    ["extra.yml", false],
+    ["ci.yaml", false],
+    ["nightly.yaml", false],
+    ["nested/nightly.yml", false],
+    ["nightly.yml.bak", false],
+    ["ci.yml\n.github/workflows/extra.yml", false],
+  ]) {
+    const files = `.github/workflows/${name}`
+    assert.equal(
+      evaluate("NO_WORKFLOWS", { diff: { files } }) === null,
+      allowed,
+      name
+    )
+    const result = spawnSync(
+      "bash",
+      [
+        "-c",
+        'source "$1"; rule_fail() { return 1; }; rule_no_workflows "$2"',
+        "r105",
+        shell,
+        files,
+      ],
+      { encoding: "utf8" }
+    )
+    assert.equal(result.status, allowed ? 0 : 1, `${name}: ${result.stderr}`)
+  }
+})
+
+test("nightly.yml requires risk:high in both rule implementations", () => {
+  const files = ".github/workflows/nightly.yml"
+  const shell = fileURLToPath(new URL("../../lib/rules.sh", import.meta.url))
+  for (const labels of [[], ["risk:high"]]) {
+    const allowed = labels.includes("risk:high")
+    assert.equal(
+      evaluate("RISK_HIGH_FOR_CI", { diff: { files, labels } }) === null,
+      allowed
+    )
+    const result = spawnSync(
+      "bash",
+      [
+        "-c",
+        'source "$1"; rule_fail() { return 1; }; rule_risk_high_for_ci "$2" "$3"',
+        "risk",
+        shell,
+        files,
+        labels.join("\n"),
+      ],
+      { encoding: "utf8" }
+    )
+    assert.equal(result.status, allowed ? 0 : 1, result.stderr)
+  }
 })
 
 test("coverage rejects new calls without rows for every raising helper", () => {

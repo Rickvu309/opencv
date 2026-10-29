@@ -122,9 +122,9 @@ fix=$(sed -n 's/^Fix: //p' "$tmp/err")
 [[ -z "$(git -C "$wt" status --porcelain)" ]] || fail "after the R105 fix the worktree must be clean, got: $(git -C "$wt" status --porcelain)"
 [[ -z "$(git -C "$wt" diff --name-only main...HEAD | grep '^\.github/workflows/' || true)" ]] || fail "after the R105 fix no workflow file is in the diff"
 echo "ok: the R105 fix removes the files from the worktree and leaves it clean (no untracked leftovers)"
-printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\nrule_no_workflows ".github/workflows/ci.yml"\nresult_ok fine\n' "$here" "$here" >"$tmp/ci.sh"
+printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\nrule_no_workflows ".github/workflows/ci.yml\n.github/workflows/nightly.yml"\nresult_ok fine\n' "$here" "$here" >"$tmp/ci.sh"
 bash "$tmp/ci.sh" >/dev/null 2>&1 || fail "R105 lets .github/workflows/ci.yml through"
-echo "ok: R105 allows ci.yml"
+echo "ok: R105 allows ci.yml and nightly.yml"
 
 # R105: ci.yml may change but not vanish; a change to it, check.mjs or the ruleset needs risk:high on the issue.
 rule_run() { printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\n%s\nresult_ok fine\n' "$here" "$here" "$1" >"$tmp/r.sh"; set +e; (cd "$repo" && bash "$tmp/r.sh") >"$tmp/out" 2>"$tmp/err"; code=$?; set -e; }

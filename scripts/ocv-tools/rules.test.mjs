@@ -227,13 +227,13 @@ test("every checked rule has a failing and a passing fact", () => {
     "NO_WORKFLOWS",
     { diff: { files: [".github/workflows/extra.yml"] } },
     { diff: { files: [".github/workflows/ci.yml"] } },
-    "workflows other than ci.yml are not added without an issue: .github/workflows/extra.yml"
+    "workflows other than ci.yml and nightly.yml are not added without an issue: .github/workflows/extra.yml"
   )
   check(
     "NO_WORKFLOWS",
     { diff: { files: [".github/workflows/another.yml"] } },
     { diff: { files: [".github/actions/setup/action.yml"] } },
-    "workflows other than ci.yml are not added without an issue: .github/workflows/another.yml"
+    "workflows other than ci.yml and nightly.yml are not added without an issue: .github/workflows/another.yml"
   )
   check(
     "RISK_HIGH_FOR_CI",
@@ -244,7 +244,7 @@ test("every checked rule has a failing and a passing fact", () => {
         labels: ["risk:high"],
       },
     },
-    "the change touches ci.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+    "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
   )
   check(
     "CI_WORKFLOW_KEPT",
@@ -256,7 +256,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "RISK_HIGH_FOR_CI",
     { diff: { files: ["scripts/check.mjs"], labels: ["risk:low"] } },
     { diff: { files: ["scripts/check.mjs"], labels: ["risk:high"] } },
-    "the change touches ci.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+    "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
   )
   check(
     "SKIP_DECLARED",
