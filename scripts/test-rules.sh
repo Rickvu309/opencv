@@ -17,6 +17,10 @@ mkdir -p "$repo/scripts" "$repo/.githooks"
 git init -q -b main "$repo" && git -C "$repo" config core.hooksPath /dev/null
 cp "$here/../.githooks/pre-push" "$repo/.githooks/pre-push"
 printf '#!/usr/bin/env bash\n[[ ! -f "$PWD/FAIL_CHECK" ]]\n' >"$repo/scripts/check.sh"; chmod +x "$repo/scripts/check.sh" "$repo/.githooks/pre-push"
+# The hook runs `pnpm check` (here: a stub that logs its argument and runs the quick check).
+mkdir "$tmp/bin"
+printf '#!/usr/bin/env bash\necho "$*" >>"%s"\n[[ "$1" == check ]] && exec scripts/check.sh --changed\nexit 99\n' "$tmp/pnpm.log" >"$tmp/bin/pnpm"
+chmod +x "$tmp/bin/pnpm"; export PATH="$tmp/bin:$PATH"
 git -C "$repo" add -A && git -C "$repo" commit -q -m base
 sha=$(git -C "$repo" rev-parse HEAD)
 push() {  # push [VAR=value ...]: the hook as git runs it for a push of $sha to a task branch
@@ -28,6 +32,7 @@ stamp=$repo/.git/pre-push-stamps/$sha
 
 push X=1
 [[ $code -eq 0 && "$(cat "$stamp")" == ok ]] || fail "a passing push is stamped ok"
+[[ "$(cat "$tmp/pnpm.log")" == check ]] || fail "the push runs pnpm check: $(cat "$tmp/pnpm.log")"
 echo "ok: a push through the hook leaves an ok stamp for the pushed sha"
 
 rm -rf "$repo/.git/pre-push-stamps"; touch "$repo/FAIL_CHECK"
