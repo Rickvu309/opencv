@@ -31,7 +31,7 @@ const BENEFITS = [
   {
     icon: Kanban,
     title: "Board stays current.",
-    text: "Invites move jobs to Live. Rejections close them.",
+    text: "Invites move jobs to Interview. Rejections close them.",
   },
   {
     icon: Send,
@@ -201,12 +201,12 @@ export function InboxConnect({
               <div className="flex items-center gap-2">
                 <span className="flex h-6 items-center gap-1.25 rounded-full px-2.5 text-xs text-muted-foreground/55">
                   <Send className="size-3" />
-                  Sent
+                  Applied
                 </span>
                 <ArrowRight className="size-3.25 text-muted-foreground/80" />
                 <span className="flex h-6 items-center gap-1.25 rounded-full bg-foreground px-2.5 text-xs font-semibold text-background">
                   <MessagesSquare className="size-3" />
-                  Live
+                  Interview
                 </span>
                 <span className="flex-1" />
                 <span className="text-[11.5px] text-muted-foreground/70">

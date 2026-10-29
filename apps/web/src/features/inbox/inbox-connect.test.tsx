@@ -12,6 +12,13 @@ describe("inbox connect", () => {
   it("disables Connect Gmail without a url and still offers Skip", async () => {
     const onSkip = vi.fn()
     render(<InboxConnect url={null} pending={false} onSkip={onSkip} />)
+    expect(
+      screen.getByText("Invites move jobs to Interview. Rejections close them.")
+    ).toBeInTheDocument()
+    expect(screen.getByText("Applied")).toBeInTheDocument()
+    expect(screen.getByText("Interview")).toBeInTheDocument()
+    expect(screen.queryByText("Sent")).not.toBeInTheDocument()
+    expect(screen.queryByText("Live")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Connect Gmail" })).toBeDisabled()
     expect(
       screen.getByText(
