@@ -174,6 +174,8 @@ function ciChecks(ctx, sha) {
   const out = gh(
     ctx,
     "api",
+    "--method",
+    "GET",
     `repos/{owner}/{repo}/commits/${sha}/check-runs`,
     "-f",
     "check_name=ci",

@@ -443,6 +443,8 @@ test("an open pull request behind newer closed ones stays in review", () => {
   assert.match(checks[0], /sha14/)
   assert.match(checks[0], /check_name=ci/)
   assert.match(checks[0], /filter=latest/)
+  // gh api switches to POST when -f fields are given, and the check-runs listing is a GET.
+  assert.match(checks[0], /--method GET/)
 })
 
 test("board refuses a stuck issue page, a stuck comment page, an unknown flag and an extra argument", () => {
