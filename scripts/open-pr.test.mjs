@@ -81,7 +81,7 @@ function run(
     )
   }
   executable(
-    "work/repo/scripts/check.sh",
+    "work/repo/scripts/check.mjs",
     `#!/bin/sh
 printf 'check retry=%s\\n' "\${CHECK_RETRY_FAILED_TESTS-unset}" >> "$PROOF_ROOT/env"
 [ -z "$PROOF_CHECK_FAIL" ] || exit 1
@@ -95,7 +95,7 @@ exit 0
     `#!/bin/sh
 printf '%s\\n' "$*" >> "$PROOF_ROOT/pnpm"
 [ "$1" = check ] || { echo "unexpected pnpm call $*" >&2; exit 99; }
-exec sh "$PROOF_ROOT/work/repo/scripts/check.sh" --changed
+exec sh "$PROOF_ROOT/work/repo/scripts/check.mjs" --changed
 `
   )
   executable(

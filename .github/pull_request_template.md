@@ -23,7 +23,7 @@ that lacks the three parts below or still has a placeholder. The title becomes t
 
 - [ ] Branch is `type/<issue#>-short-description`
 - [ ] Title is `type: description (#<issue>)`
-- [ ] `ci` is green (`scripts/check.sh --changed` is what it runs). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
+- [ ] `ci` is green (parallel affected jobs and guards). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
 - [ ] Merge with `scripts/merge-pr.sh <pr#>` once `ci` is green and the PR is not a draft
 - [ ] Env/secrets handling touched? Check no real secret or `.env` file is committed
 - [ ] A big decision, or deletes much of the code base? Add the `needs-human-review` label (an agent will not merge it)

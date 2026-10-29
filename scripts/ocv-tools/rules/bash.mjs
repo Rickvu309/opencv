@@ -76,6 +76,7 @@ function riskHigh(facts) {
   const watched = [
     ".github/workflows/ci.yml",
     "scripts/check.sh",
+    "scripts/check.mjs",
     ".github/rulesets/main.json",
   ]
   if (
@@ -175,7 +176,7 @@ export const bashRows = [
   rule({
     id: "RISK_HIGH_FOR_CI",
     section: "5",
-    says: "A change to ci.yml, a composite action, check.sh or the main ruleset needs the risk:high label.",
+    says: "A change to ci.yml, a composite action, checks or the main ruleset needs the risk:high label.",
     jobs: ["merge"],
     needs: ["diff"],
     check: riskHigh,

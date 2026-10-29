@@ -9,8 +9,8 @@
     "format": "turbo format",
     "typecheck": "turbo typecheck",
     "test": "turbo test test:open-pr",
-    "check": "scripts/check.sh --changed",
-    "check:full": "scripts/check.sh"
+    "check": "node scripts/check.mjs",
+    "check:full": "node scripts/check.mjs --full"
   },
   "devDependencies": {
     "prettier": "^3.9.10",

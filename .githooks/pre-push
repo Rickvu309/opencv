@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# pre-push: local guardrails (the ci workflow reruns the quick check). Enable once per clone:  git config core.hooksPath .githooks
+# pre-push: local guardrails (CI runs parallel affected jobs). Enable once per clone:  git config core.hooksPath .githooks
 #   1. Never push to main (or delete it).
 #   2. Branch names must be type/<issue#>-short-description.
-#   3. Run `pnpm check` (scripts/check.sh --changed): a quick lint/typecheck/test scoped to what changed since origin/main.
-#      ci.yml runs this same quick check. Nothing runs the full check before a merge.
+#   3. Run `pnpm check` (node scripts/check.mjs): a quick lint/typecheck/test scoped to what changed since origin/main.
+#      CI runs affected jobs and guards; pnpm check:full covers every package.
 #
 # Emergency only, discouraged: SKIP_CHECKS=1 git push ...   skips step 3 (rules 1-2 still apply).
 # `git push --no-verify` skips this hook entirely. Never use it. A skipped hook is not caught again at merge.
@@ -57,10 +57,8 @@ if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
 fi
 
 top=$(git rev-parse --show-toplevel)
-if [[ ! -x "$top/scripts/check.sh" ]]; then
-  echo "pre-push: scripts/check.sh not found; skipping checks." >&2
-  stamp ok
-  exit 0
+if [[ ! -f "$top/scripts/check.mjs" ]]; then
+  fail "scripts/check.mjs not found; restore the check runner before pushing."
 fi
 command -v pnpm >/dev/null 2>&1 || fail "pnpm is not on this shell's PATH, so the quick check cannot run. Install it (corepack enable) or push from a shell that has it."
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then

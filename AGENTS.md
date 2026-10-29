@@ -89,10 +89,10 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 4. Checks, commits, and PRs
 
-- The pre-push hook runs `pnpm check`. PR CI runs affected checks; the queue runs full checks.
+- The pre-push hook runs `pnpm check`: affected tasks, guards and formatting. CI runs affected lint, types, build and tests, plus guards.
 - Open the PR with `scripts/open-pr.sh --draft --body-file <file>`, a body written with the `pr` skill (Summary, Evidence, Merge Danger). It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
 - Mark it ready with `gh pr ready` when the quick check passes. Run verify skills by hand (`.claude/skills/verify-opencv`). No preview deploys.
-- CI runs on GitHub-hosted runners; locally run one check at a time. `scripts/check.sh` defaults `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
+- CI is hosted. Run local checks serially. `scripts/check.mjs` sets `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
 - Rebase when the branch does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 

@@ -254,8 +254,8 @@ test("every checked rule has a failing and a passing fact", () => {
   )
   check(
     "RISK_HIGH_FOR_CI",
-    { diff: { files: ["scripts/check.sh"], labels: ["risk:low"] } },
-    { diff: { files: ["scripts/check.sh"], labels: ["risk:high"] } },
+    { diff: { files: ["scripts/check.mjs"], labels: ["risk:low"] } },
+    { diff: { files: ["scripts/check.mjs"], labels: ["risk:high"] } },
     "the change touches ci.yml, composite actions, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
   )
   check(

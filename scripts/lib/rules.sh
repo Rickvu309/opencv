@@ -86,7 +86,7 @@ rule_ci_workflow_kept() {  # rule_ci_workflow_kept <files> <sha> [wt]: ci.yml in
 
 # Owner /approve for these files is slice 5 of epic #582; until then the label is the only mechanical gate.
 rule_risk_high_for_ci() {  # rule_risk_high_for_ci <files> <issue labels> [wt]
-  grep -qxE '\.github/workflows/ci\.yml|\.github/actions/.*|scripts/check\.sh|\.github/rulesets/main\.json' <<<"$1" || return 0
+  grep -qxE '\.github/workflows/ci\.yml|\.github/actions/.*|scripts/check\.(sh|mjs)|\.github/rulesets/main\.json' <<<"$1" || return 0
   grep -qx 'risk:high' <<<"$2" && return 0
   rule_fail "the change touches ci.yml, composite actions, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)" \
     "gh issue edit <issue#> --add-label risk:high   # then ask the owner for /approve"

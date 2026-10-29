@@ -1,1 +1,0 @@
-[32mapi:test: [0m FAIL  src/registry/behavior.test.ts > registry > confirms, approves once, denies, and undoes once

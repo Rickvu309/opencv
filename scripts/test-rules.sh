@@ -16,10 +16,10 @@ repo=$tmp/repo
 mkdir -p "$repo/scripts" "$repo/.githooks"
 git init -q -b main "$repo" && git -C "$repo" config core.hooksPath /dev/null
 cp "$here/../.githooks/pre-push" "$repo/.githooks/pre-push"
-printf '#!/usr/bin/env bash\n[[ ! -f "$PWD/FAIL_CHECK" ]]\n' >"$repo/scripts/check.sh"; chmod +x "$repo/scripts/check.sh" "$repo/.githooks/pre-push"
+printf '#!/usr/bin/env bash\n[[ ! -f "$PWD/FAIL_CHECK" ]]\n' >"$repo/scripts/check.mjs"; chmod +x "$repo/scripts/check.mjs" "$repo/.githooks/pre-push"
 # The hook runs `pnpm check` (here: a stub that logs its argument and runs the quick check).
 mkdir "$tmp/bin"
-printf '#!/usr/bin/env bash\necho "$*" >>"%s"\necho "${CHECK_RETRY_FAILED_TESTS-unset}" >>"%s"\n[[ "$1" == check ]] && exec scripts/check.sh --changed\nexit 99\n' "$tmp/pnpm.log" "$tmp/retry.log" >"$tmp/bin/pnpm"
+printf '#!/usr/bin/env bash\necho "$*" >>"%s"\necho "${CHECK_RETRY_FAILED_TESTS-unset}" >>"%s"\n[[ "$1" == check ]] && exec scripts/check.mjs --changed\nexit 99\n' "$tmp/pnpm.log" "$tmp/retry.log" >"$tmp/bin/pnpm"
 chmod +x "$tmp/bin/pnpm"; export PATH="$tmp/bin:$PATH"
 git -C "$repo" add -A && git -C "$repo" commit -q -m base
 sha=$(git -C "$repo" rev-parse HEAD)
@@ -126,7 +126,7 @@ printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/
 bash "$tmp/ci.sh" >/dev/null 2>&1 || fail "R105 lets .github/workflows/ci.yml through"
 echo "ok: R105 allows ci.yml"
 
-# R105: ci.yml may change but not vanish; a change to it, check.sh or the ruleset needs risk:high on the issue.
+# R105: ci.yml may change but not vanish; a change to it, check.mjs or the ruleset needs risk:high on the issue.
 rule_run() { printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\n%s\nresult_ok fine\n' "$here" "$here" "$1" >"$tmp/r.sh"; set +e; (cd "$repo" && bash "$tmp/r.sh") >"$tmp/out" 2>"$tmp/err"; code=$?; set -e; }
 rule_run 'rule_ci_workflow_kept ".github/workflows/ci.yml" HEAD'
 [[ $code -eq 1 ]] && grep -q 'deletes .github/workflows/ci.yml' "$tmp/err" || fail "R105 refuses a ci.yml that is gone at the sha"
@@ -137,8 +137,8 @@ rule_run "rule_ci_workflow_kept .github/workflows/ci.yml $ci_sha"
 [[ $code -eq 0 ]] || fail "R105 lets a changed ci.yml that still exists through"
 git -C "$repo" reset -q --hard HEAD~1
 echo "ok: R105 refuses deleting ci.yml"
-rule_run 'rule_risk_high_for_ci "scripts/check.sh" "chore"'
-[[ $code -eq 1 ]] && grep -q 'risk:high' "$tmp/err" || fail "a check.sh change without risk:high is refused"
+rule_run 'rule_risk_high_for_ci "scripts/check.mjs" "chore"'
+[[ $code -eq 1 ]] && grep -q 'risk:high' "$tmp/err" || fail "a check.mjs change without risk:high is refused"
 rule_run 'rule_risk_high_for_ci ".github/workflows/ci.yml" "chore risk:normal"'
 [[ $code -eq 1 ]] || fail "risk:normal does not count"
 rule_run 'rule_risk_high_for_ci ".github/rulesets/main.json" "risk:high"'
@@ -151,7 +151,7 @@ rule_run 'rule_risk_high_for_ci ".github/actions/setup/action.yml" "risk:high"'
 [[ $code -eq 0 ]] || fail "approved action allowed"
 rule_run 'rule_risk_high_for_ci ".github/actions/setup/action.yml" ""'
 [[ $code -eq 1 ]] && grep -q 'risk:high' "$tmp/err" || fail "action without risk:high refused"
-echo "ok: ci.yml, check.sh and the ruleset need risk:high"
+echo "ok: ci.yml, check.mjs and the ruleset need risk:high"
 
 # R97 for a commit made with the commit hooks skipped: an attribution trailer, a file over 20000 bytes.
 git -C "$repo" switch -q -c feat/9-ok main
