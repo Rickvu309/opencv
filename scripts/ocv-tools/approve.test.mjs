@@ -13,7 +13,7 @@ function run(over = {}, extra = {}) {
     owner: extra.owner ?? "owner",
     login: extra.login ?? "owner",
     ownerType: extra.ownerType,
-    approvers: extra.approvers,
+    admins: extra.admins,
     approversError: extra.approversError,
     env: extra.env,
     files: extra.files,
@@ -181,7 +181,7 @@ test("an organization admin can approve, while a non-admin cannot", () => {
     {
       owner: "Rickvu309",
       ownerType: "Organization",
-      approvers: ["RickVu", "admin-person"],
+      admins: ["RickVu", "admin-person"],
       login: "ADMIN-PERSON",
     }
   )
@@ -193,7 +193,7 @@ test("an organization admin can approve, while a non-admin cannot", () => {
     {
       owner: "Rickvu309",
       ownerType: "Organization",
-      approvers: ["admin-person"],
+      admins: ["admin-person"],
       login: "ordinary-member",
     }
   )

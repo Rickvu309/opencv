@@ -177,7 +177,7 @@ function boardNext(groups) {
   if (groups.free[0])
     return `scripts/ocv-tools.mjs take ${groups.free[0].number}`
   if (groups.waiting[0])
-    return `Ask the owner to say approved, then run: scripts/ocv-tools.mjs approve ${groups.waiting[0].number}`
+    return `Ask a project admin to say approved, then run: scripts/ocv-tools.mjs approve ${groups.waiting[0].number}`
   if (groups.idle[0])
     return `scripts/ocv-tools.mjs take ${groups.idle[0].number}`
   if (groups.inReview[0]?.pr)

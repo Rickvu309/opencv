@@ -69,7 +69,7 @@ export function fakePorts(world = {}) {
     root,
     owner: world.owner ?? "owner",
     ownerType: world.ownerType ?? "User",
-    approvers: world.approvers ?? [world.owner ?? "owner"],
+    admins: world.admins ?? [],
     login: world.login ?? "me",
     serverNow: world.serverNow ?? NOW,
     now: world.now ?? NOW,
@@ -203,7 +203,12 @@ export function fakePorts(world = {}) {
     }),
     approvers() {
       if (world.approversError) throw new Error(world.approversError)
-      return [...state.approvers]
+      return [
+        ...(state.ownerType === "User" ? [state.owner] : []),
+        ...state.admins,
+      ]
+        .map((login) => String(login).toLowerCase())
+        .filter((login, index, all) => all.indexOf(login) === index)
     },
     serverNow,
     issue(n) {
@@ -327,7 +332,10 @@ export function fakePorts(world = {}) {
         .map((item) => ({ ...item }))
       return {
         owner: state.owner,
-        approvers: [...state.approvers],
+        approvers: [
+          ...(state.ownerType === "User" ? [state.owner] : []),
+          ...state.admins,
+        ],
         name: "opencv",
         nameWithOwner: state.nameWithOwner ?? `${state.owner}/opencv`,
         serverNow: serverNow(),

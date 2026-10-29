@@ -73,7 +73,7 @@ export const FIXES = {
     "Rewrite the plain sections the way `file --dry-run` explains and copy a model issue. Move technical notes under Details for the agent.",
   NOT_AN_ISSUE:
     "That number is not an issue (it may be a pull request). Run: gh issue list",
-  NEEDS_APPROVAL: "Ask the owner to comment /approve on the issue.",
+  NEEDS_APPROVAL: "Ask a project admin to comment /approve on the issue.",
   CLOSED: "The issue is closed. Run: gh issue list, and pick another.",
   MISSING_FIELDS: "Pass the missing flags. Run: scripts/ocv-tools.mjs help",
   HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: scripts/ocv-tools.mjs status <n>",
