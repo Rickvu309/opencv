@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { RULES_DOC, rulesDocMatches } from "./ocv-tools/rules/doc.mjs"
 import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
@@ -176,4 +177,8 @@ test("verify-landing SKILL.md and the checker list the same ids", () => {
     "SKILL.md"
   )
   assert.deepEqual(problems, [], problems.join("\n"))
+})
+
+test("rule-enforcement.md matches the ocv-tools rule table", () => {
+  assert.equal(rulesDocMatches(readFileSync(RULES_DOC, "utf8")), true)
 })

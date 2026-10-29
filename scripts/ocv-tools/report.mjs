@@ -2,7 +2,9 @@
 import { holderLine } from "./claim-marker.mjs"
 import { approvalValid, riskOf } from "./facts.mjs"
 import { RISK_LABELS, TYPES } from "./fields.mjs"
-import { EXIT, Refused, exitText } from "./result.mjs"
+import { EXIT, exitText } from "./result.mjs"
+import { decide, refusalError } from "./rules/decide.mjs"
+import { RULES } from "./rules/table.mjs"
 
 export { approvalValid, riskOf }
 
@@ -65,6 +67,11 @@ export const COMMANDS = [
     name: "doctor",
     usage: "doctor",
     when: "Check this machine is set up: node, gh sign-in, the hooks path and the risk labels. One Fix line per problem.",
+  },
+  {
+    name: "rules",
+    usage: "rules [--write|--check|--list]",
+    when: "Show the workflow rules. --check fails when the guide is stale, --write refreshes it, --list prints each rule.",
   },
 ]
 
@@ -133,8 +140,13 @@ export function status(ctx, n) {
     holderLine(claim),
     `Pull request: ${pr ? `#${pr.number} ${pr.state.toLowerCase()}${pr.isDraft ? " (draft)" : ""}` : "none"}`,
   ]
-  if (issue.state === "CLOSED" && pr?.state !== "MERGED")
-    throw new Refused("CLOSED", `#${n} is closed\n${lines.join("\n")}`)
+  const verdict = decide("status", {
+    issue,
+    history: { kind: "complete" },
+    pr: loaded.pr,
+    report: lines.join("\n"),
+  })
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
   return {
     lines,
     next: nextStep({ n, type, risk, approved, worktree, branch, pr }),
@@ -167,6 +179,11 @@ export function doctor(ctx) {
         ? `Run: node scripts/pr.mjs doctor, then run the gh label create line it prints for ${label}`
         : "Fix gh sign-in first, then run: node scripts/pr.mjs doctor"
     )
+  const listed = [
+    "",
+    "Rules:",
+    ...RULES.map((row) => `  ${row.id}: ${row.says}`),
+  ]
   if (problems.length)
     return {
       exit: EXIT.error,
@@ -175,10 +192,11 @@ export function doctor(ctx) {
         "",
         `${problems.length} problem(s).`,
         ...problems.map((p) => `Fix: ${p}`),
+        ...listed,
       ],
     }
   return {
-    lines: [...lines, "", "All checks pass."],
+    lines: [...lines, "", "All checks pass.", ...listed],
     next: "scripts/ocv-tools.mjs help",
   }
 }
