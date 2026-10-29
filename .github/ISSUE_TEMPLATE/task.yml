@@ -1,5 +1,5 @@
 name: Task
-description: One unit of work. Becomes one branch, one worktree and one PR.
+description: One unit of work. Becomes one branch, one worktree and one PR. Plain words; `scripts/ocv-task.mjs file` fills this form for you.
 title: "type: "
 body:
   - type: dropdown
@@ -17,31 +17,64 @@ body:
     validations:
       required: true
   - type: textarea
-    id: goal
+    id: your-words
     attributes:
-      label: Goal
-      description: What is true when this is done, and why it matters.
+      label: Your words
+      description: What the owner asked for, in the owner's own words. Quote them. Never write your own choices here.
     validations:
       required: true
   - type: textarea
-    id: acceptance
+    id: what
     attributes:
-      label: Acceptance
-      description: The checks that decide it is done.
+      label: What and why
+      description: What changes and why it matters, in short plain sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Up to 6 lines. Each line names something the owner can see or try.
       placeholder: |
         - ...
     validations:
       required: true
-  - type: textarea
-    id: proof
+  - type: dropdown
+    id: risk
     attributes:
-      label: Proof
-      description: The command, test or screenshot that shows each acceptance item.
+      label: Risk
+      description: Only high risk needs the owner to comment /approve before work starts.
+      options:
+        - low
+        - normal
+        - high
+      default: 1
     validations:
       required: true
   - type: textarea
-    id: notes
+    id: could-go-wrong
     attributes:
-      label: Notes
+      label: What could go wrong
+      description: Required when risk is high.
+    validations:
+      required: false
+  - type: textarea
+    id: questions
+    attributes:
+      label: Questions for you
+      description: Choices that are the owner's to make. Ask here instead of deciding.
+    validations:
+      required: false
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+    validations:
+      required: false
+  - type: textarea
+    id: details
+    attributes:
+      label: Details for the agent
+      description: Technical notes, file names, commands and code. This section is not checked for plain words.
     validations:
       required: false

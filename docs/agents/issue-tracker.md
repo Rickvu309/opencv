@@ -4,9 +4,9 @@ Issues and specs for this repo live in GitHub issues of `quanvu309/opencv`. Do n
 
 ## Conventions
 
-- Create issues from the Task form in `.github/ISSUE_TEMPLATE/task.yml` (type, Goal, Acceptance, Proof, optional Notes). Agents use `gh issue create --title "type: ..." --body "..." --label <type>` with a body that has the same `### Goal`, `### Acceptance` and `### Proof` headings.
+- Create issues from the Task form in `.github/ISSUE_TEMPLATE/task.yml` (Type, Your words, What and why, Done when, Risk, then optional What could go wrong, Questions for you, Out of scope and Details for the agent). Agents file through `scripts/ocv-task.mjs file`, which builds the body from `scripts/ocv-task/fields.mjs` (a test compares it with the form), checks the plain words and adds the `risk:*` label. Run it with `--dry-run` to see the writing guide. A hand-written issue is not checked.
 - Read an issue with `gh issue view <number>`; list open work with `gh issue list`.
-- Labels come from `.github/labels.yml`: the type labels (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `needs-human-review`, and `ready-for-human`. `docs/agents/triage-labels.md` maps the triage roles to what replaces them. `node scripts/pr.mjs doctor` diffs GitHub against the file.
+- Labels come from `.github/labels.yml`: the type labels (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `needs-human-review`, `ready-for-human`, and `risk:low`, `risk:normal`, `risk:high` (only `risk:high` needs the owner's `/approve`). `docs/agents/triage-labels.md` maps the triage roles to what replaces them. `node scripts/pr.mjs doctor` diffs GitHub against the file.
 - Assign yourself before you start. One issue is one branch is one PR.
 
 ## When a skill says "publish to the issue tracker"
