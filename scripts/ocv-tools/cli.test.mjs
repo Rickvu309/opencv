@@ -19,6 +19,12 @@ function fakeCtx(rules, files = {}) {
     run(cmd, args) {
       const line = `${cmd} ${args.join(" ")}`
       calls.push(line)
+      if (line.includes("api --include /rate_limit"))
+        return {
+          ok: true,
+          out: "Date: Thu, 29 Oct 2026 12:00:00 GMT\r\n\r\n{}",
+          err: "",
+        }
       for (const [match, result] of rules)
         if (line.includes(match))
           return typeof result === "function"

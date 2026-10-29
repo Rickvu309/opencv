@@ -89,7 +89,11 @@ function installCommand(wt) {
 }
 
 // Makes the branch and worktree. Returns { main, worktree, branch, port, warnings }.
-export function createWorktree(ctx, { type, issue, desc, install = true }) {
+// resume checks out a branch that already exists instead of creating one.
+export function createWorktree(
+  ctx,
+  { type, issue, desc, install = true, resume = false, held = null }
+) {
   if (!TYPES.includes(type))
     throw new Refused(
       "MISSING_FIELDS",
@@ -127,28 +131,56 @@ export function createWorktree(ctx, { type, issue, desc, install = true }) {
   const fetched = g("fetch", "--quiet", "origin", "main")
   if (!fetched.ok)
     throw new Error(`git fetch origin main failed: ${fetched.err}`)
-  if (g("show-ref", "--verify", "--quiet", `refs/heads/${branch}`).ok)
+  const local = g("show-ref", "--verify", "--quiet", `refs/heads/${branch}`).ok
+  const remote = g("ls-remote", "--exit-code", "--heads", "origin", branch).ok
+  if (!resume && local)
     throw new Refused(
       "BRANCH_EXISTS",
       `branch ${branch} already exists locally (git worktree list)`
     )
-  if (g("ls-remote", "--exit-code", "--heads", "origin", branch).ok)
+  if (!resume && remote)
     throw new Refused(
       "BRANCH_EXISTS",
-      `branch ${branch} already exists on origin; someone is already working on it`
+      held?.state === "idle"
+        ? `the idle holder ${held.agent} already pushed branch ${branch}`
+        : `branch ${branch} already exists on origin; someone is already working on it`,
+      `scripts/ocv-tools.mjs take ${issue} --resume`
+    )
+  if (resume && !local && !remote)
+    throw new Refused(
+      "BRANCH_EXISTS",
+      `branch ${branch} is not on origin, so there is nothing to resume`,
+      `scripts/ocv-tools.mjs take ${issue}`
     )
 
   mkdirSync(root, { recursive: true })
-  const added = g(
-    "worktree",
-    "add",
-    "--quiet",
-    "--no-track",
-    "-b",
-    branch,
-    worktree,
-    "origin/main"
-  )
+  let added
+  if (resume && local) added = g("worktree", "add", "--quiet", worktree, branch)
+  else if (resume) {
+    const got = g("fetch", "--quiet", "origin", branch)
+    if (!got.ok)
+      throw new Error(`git fetch origin ${branch} failed: ${got.err}`)
+    added = g(
+      "worktree",
+      "add",
+      "--quiet",
+      "--track",
+      "-b",
+      branch,
+      worktree,
+      `origin/${branch}`
+    )
+  } else
+    added = g(
+      "worktree",
+      "add",
+      "--quiet",
+      "--no-track",
+      "-b",
+      branch,
+      worktree,
+      "origin/main"
+    )
   if (!added.ok) throw new Error(`git worktree add failed: ${added.err}`)
   if (existsSync(join(worktree, ".githooks"))) {
     if (g("config", "--get", "core.hooksPath").out !== ".githooks")
@@ -186,4 +218,33 @@ export function createWorktree(ctx, { type, issue, desc, install = true }) {
       )
   }
   return { main, worktree, branch, port, gitDir, warnings }
+}
+
+// Drop a worktree take just created when it has no commits and no tracked edits.
+// Untracked setup files (.env) do not count. Returns false when it stays.
+export function discardWorktree(ctx, { main, worktree, branch }) {
+  const status = ctx.run("git", ["-C", worktree, "status", "--porcelain"])
+  if (!status.ok) return false
+  const tracked = status.out
+    .split("\n")
+    .filter((line) => line && !line.startsWith("??"))
+  const ahead = ctx.run("git", [
+    "-C",
+    worktree,
+    "rev-list",
+    "--count",
+    "origin/main..HEAD",
+  ])
+  if (tracked.length || !ahead.ok || Number(ahead.out) > 0) return false
+  const rm = ctx.run("git", [
+    "-C",
+    main,
+    "worktree",
+    "remove",
+    "--force",
+    worktree,
+  ])
+  if (!rm.ok) return false
+  ctx.run("git", ["-C", main, "branch", "-D", branch])
+  return true
 }

@@ -1,16 +1,28 @@
 // take: do the whole start-of-work job in Node (it replaces scripts/new-task.sh). Checks the
 // issue, makes the branch and worktree, assigns the issue, records the claim comment and writes
 // the workflow result file (script "new-task").
-import { join } from "node:path"
-import { Refused, gh } from "./core.mjs"
+import { basename, join } from "node:path"
+import { EXIT, FIXES, Refused, gh } from "./core.mjs"
 import { TYPES } from "./fields.mjs"
-import { CLAIM_IDLE_MINUTES, holderOf } from "./claim-marker.mjs"
-import { claimBody, envAgent, envOf, newAgent, nowOf } from "./claim.mjs"
+import { CLAIM_IDLE_MINUTES } from "./claim-marker.mjs"
+import {
+  claimBody,
+  envAgent,
+  envOf,
+  newAgent,
+  nowOf,
+  readClaim,
+} from "./claim.mjs"
+import { diskProblem } from "./disk.mjs"
 import { file } from "./issue.mjs"
-import { loadIssue, worktreeFor } from "./report.mjs"
+import { worktreeFor } from "./report.mjs"
 import { writeResult } from "./result.mjs"
-import { basename } from "node:path"
-import { createWorktree, descFromTitle, locate } from "./worktree.mjs"
+import {
+  createWorktree,
+  descFromTitle,
+  discardWorktree,
+  locate,
+} from "./worktree.mjs"
 
 function repoName(ctx) {
   try {
@@ -49,6 +61,11 @@ export function take(ctx, target, flags = {}) {
   try {
     const r = takeInner(ctx, target, flags, (v) => (id = v))
     if (r.noResult) return r
+    if (r.exit === EXIT.LOST)
+      return {
+        ...r,
+        tail: done("fail", { cause: "other", detail: r.lines[0] }),
+      }
     return { ...r, tail: done("ok", { detail: r.lines[0], next: r.next }) }
   } catch (error) {
     error.tail = done("fail", {
@@ -59,16 +76,61 @@ export function take(ctx, target, flags = {}) {
   }
 }
 
+function ensureDisk(ctx) {
+  const { main, root } = locate(ctx)
+  const problem = diskProblem(envOf(ctx), { main, root })
+  if (!problem) return
+  const e = new Refused("DISK", problem.text)
+  e.cause = problem.cause
+  throw e
+}
+
+function heldError(n, h) {
+  return new Refused(
+    "HELD",
+    `#${n} is held by ${h.agent} (last saved ${h.idleMinutes} min ago; free after ${CLAIM_IDLE_MINUTES})`
+  )
+}
+
+// GitHub has no atomic claim: issue comments are not a compare-and-swap.
+// take re-reads after install and after posting; the newest live marker wins.
+// save re-reads again immediately before push. A comment that arrives after
+// that last read can still win. That gap is the residual race.
+function lostTake(ctx, made, n, h) {
+  const removed = discardWorktree(ctx, made)
+  return {
+    exit: EXIT.LOST,
+    lines: [
+      `LOST #${n}: ${h.agent ? `${h.agent} holds the claim now` : "you no longer hold the claim"}.`,
+      removed
+        ? "The new worktree had no changes, so it was removed."
+        : `The worktree was kept: ${made.worktree}`,
+      "Stop working on this issue.",
+    ],
+    fix: FIXES.LOST,
+  }
+}
+
 function takeInner(ctx, target, flags, setId) {
   let n = Number(String(target).replace(/^#/, ""))
   if (!Number.isInteger(n) || n < 1) {
+    // A title files an issue. Check the disk before that write, so a full
+    // disk makes zero GitHub calls.
+    ensureDisk(ctx)
     const filed = fileFirst(ctx, String(target), flags)
     if (filed.done) {
       return { ...filed.done, noResult: true }
     }
     n = filed.n
   }
-  const { issue, labels, risk, type, approved } = loadIssue(ctx, n)
+  const {
+    issue,
+    labels,
+    risk,
+    type,
+    approved,
+    holder: held,
+  } = readClaim(ctx, n)
   const kind = flags["--type"] ?? type ?? bodyType(issue.body)
   setId(`${kind ?? "task"}-${n}`)
   if (issue.state === "CLOSED") throw new Refused("CLOSED", `#${n} is closed`)
@@ -78,12 +140,7 @@ function takeInner(ctx, target, flags, setId) {
       `#${n} is labeled ready-for-human: it is a decision for a human, never an agent task`
     )
   const me = envAgent(ctx) ?? newAgent()
-  const held = holderOf(issue.comments.nodes, nowOf(ctx))
-  if (held.state === "live" && held.agent !== me)
-    throw new Refused(
-      "HELD",
-      `#${n} is held by ${held.agent} (last saved ${held.idleMinutes} min ago; free after ${CLAIM_IDLE_MINUTES})`
-    )
+  if (held.state === "live" && held.agent !== me) throw heldError(n, held)
   if (risk === "high" && !approved)
     throw new Refused(
       "NEEDS_APPROVAL",
@@ -110,25 +167,23 @@ function takeInner(ctx, target, flags, setId) {
       `#${n} has no Type (${TYPES.join(", ")})`
     )
 
+  // After the reads above, before the worktree and the claim comment.
+  ensureDisk(ctx)
   const made = createWorktree(ctx, {
     type: kind,
     issue: n,
     desc: flags["-d"] ?? descFromTitle(issue.title),
     install: !flags["--no-install"],
+    resume: Boolean(flags["--resume"]),
+    held,
   })
-  if (!flags["--no-assign"]) {
-    const a = ctx.run("gh", [
-      "issue",
-      "edit",
-      String(n),
-      "--add-assignee",
-      "@me",
-    ])
-    if (!a.ok) made.warnings.push(`could not assign #${n} to you`)
+  const observed = readClaim(ctx, n)
+  const mid = observed.holder
+  if (mid.state === "live" && mid.agent !== me) {
+    discardWorktree(ctx, made)
+    throw heldError(n, mid)
   }
-  if (!envAgent(ctx))
-    ctx.writeFile(join(made.gitDir, "ocv-tools-agent"), `${me}\n`)
-  const at = new Date(nowOf(ctx)).toISOString()
+  const at = new Date(observed.serverNow).toISOString()
   try {
     gh(
       ctx,
@@ -143,6 +198,22 @@ function takeInner(ctx, target, flags, setId) {
       `worktree ${made.worktree} is ready but the claim could not be recorded: ${e.message}`
     )
   }
+  const won = readClaim(ctx, n).holder
+  if (!(won.state === "live" && won.agent === me))
+    return lostTake(ctx, made, n, won)
+  if (!flags["--no-assign"]) {
+    const a = ctx.run("gh", [
+      "issue",
+      "edit",
+      String(n),
+      "--add-assignee",
+      "@me",
+    ])
+    if (!a.ok) made.warnings.push(`could not assign #${n} to you`)
+  }
+  if (!envAgent(ctx))
+    ctx.writeFile(join(made.gitDir, "ocv-tools-agent"), `${me}\n`)
+  setId(made.branch)
   return {
     lines: [
       `Took #${n} ${issue.title}${held.state === "idle" ? ` (took over idle claim of ${held.agent})` : ""}`,

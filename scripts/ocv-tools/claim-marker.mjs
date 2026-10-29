@@ -1,6 +1,9 @@
 // The claim record: a machine marker inside an issue comment. Pure, so status, take, save and
 // release read the same rules. The single claim comment is edited on every save (the heartbeat).
 export const CLAIM_IDLE_MINUTES = 180
+// GitHub's Date header and a comment's updatedAt can disagree by a few seconds.
+// A stamp further ahead than this is untrusted and does not keep a claim live.
+export const CLAIM_SKEW_MS = 2 * 60 * 1000
 
 const MARKER =
   /<!-- ocv-tools (claim|release) agent=(\S+) at=(\S+)(?: branch=(\S+))?(?: reason=(.*?))? -->/
@@ -20,19 +23,36 @@ export function parseMarker(body) {
   return { kind: m[1], agent: m[2], at: m[3], branch: m[4], reason: m[5] }
 }
 
+// Lease instant from the comment GitHub stored (updatedAt, else createdAt).
+// The marker's at= is text the client wrote. It is not the clock. A stamp
+// ahead of server now by more than CLAIM_SKEW_MS is rejected (idle).
+export function leaseAt(comment, serverNow) {
+  const raw = Date.parse(comment?.updatedAt || comment?.createdAt || "")
+  if (Number.isNaN(raw)) return null
+  if (typeof serverNow !== "number" || raw > serverNow + CLAIM_SKEW_MS)
+    return null
+  return raw
+}
+
 // The newest marker decides. state: none, released, live (heartbeat under the idle limit) or idle.
-export function holderOf(comments, now = Date.now()) {
+// `now` is a GitHub server timestamp (Date header), not the machine clock.
+export function holderOf(comments, now) {
   let last = null
   for (const c of comments ?? []) {
     const m = parseMarker(c.body)
-    if (m) last = { ...m, id: c.databaseId }
+    if (m)
+      last = {
+        ...m,
+        id: c.databaseId,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      }
   }
   if (!last) return { state: "none" }
   if (last.kind === "release") return { ...last, state: "released" }
-  const at = Date.parse(last.at)
-  const idleMinutes = Number.isNaN(at)
-    ? Infinity
-    : Math.max(0, Math.floor((now - at) / 60000))
+  const at = leaseAt(last, now)
+  const idleMinutes =
+    at == null ? Infinity : Math.max(0, Math.floor((now - at) / 60000))
   return {
     ...last,
     idleMinutes,

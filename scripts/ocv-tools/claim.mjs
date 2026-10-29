@@ -1,6 +1,6 @@
 // take and release: the claim on an issue, and the shared helpers save and cleanup use.
 import { randomBytes } from "node:crypto"
-import { join } from "node:path"
+import { join, resolve, sep } from "node:path"
 import { Refused, gh } from "./core.mjs"
 import { TYPES } from "./fields.mjs"
 import {
@@ -9,7 +9,9 @@ import {
   holderOf,
   releaseMarker,
 } from "./claim-marker.mjs"
+import { parseUpdatedAt } from "./clock.mjs"
 import { loadIssue } from "./report.mjs"
+import { locate } from "./worktree.mjs"
 
 export const nowOf = (ctx) => ctx.now?.() ?? Date.now()
 export const git = (ctx, ...args) => ctx.run("git", args, { cwd: ctx.cwd })
@@ -29,45 +31,73 @@ export function agentIdFor(ctx, gitDir) {
   }
 }
 
-// Where we are: the issue number and branch of the task worktree the command runs in.
+// Where we are: a linked worktree under the clone's ../<repo>.worktrees root,
+// on a task branch. A normal clone, even on a task branch, is not a task.
 export function taskHere(ctx) {
   const top = git(ctx, "rev-parse", "--show-toplevel")
   const branch = git(ctx, "rev-parse", "--abbrev-ref", "HEAD").out
+  const gitDir = git(ctx, "rev-parse", "--absolute-git-dir")
+  const common = git(
+    ctx,
+    "rev-parse",
+    "--path-format=absolute",
+    "--git-common-dir"
+  )
   const m = new RegExp(`^(?:${TYPES.join("|")})/(\\d+)-`).exec(branch)
-  if (!top.ok || !m)
+  let linked = false
+  let under = false
+  if (top.ok && gitDir.ok && common.ok) {
+    linked = resolve(gitDir.out) !== resolve(common.out)
+    try {
+      const root = resolve(locate(ctx).root)
+      under = resolve(top.out).startsWith(root + sep)
+    } catch {
+      under = false
+    }
+  }
+  if (!top.ok || !m || !linked || !under)
     throw new Refused(
       "NOT_A_TASK",
-      "this folder is not a task worktree (branch type/<n>-description)"
+      "this folder is not a linked task worktree under ../opencv.worktrees on branch type/<n>-description"
     )
+  return { n: Number(m[1]), branch, top: top.out, gitDir: gitDir.out }
+}
+
+// One read of the issue plus the holder, timed on GitHub's clock.
+export function readClaim(ctx, n) {
+  const loaded = loadIssue(ctx, n)
   return {
-    n: Number(m[1]),
-    branch,
-    top: top.out,
-    gitDir: git(ctx, "rev-parse", "--absolute-git-dir").out,
+    ...loaded,
+    holder: holderOf(loaded.issue.comments.nodes, loaded.serverNow),
   }
 }
 
 export const claimBody = ({ agent, at, branch }) =>
   `${claimMarker({ agent, at, branch })}\nocv-tools: ${agent} holds this issue on branch ${branch}. Last saved ${at}. The claim can be taken over after ${CLAIM_IDLE_MINUTES} idle minutes.`
 
-// Move the single claim comment's timestamp forward.
+// Move the single claim comment forward. The lease is the comment's updatedAt
+// in the PATCH response, not a time this process writes into the marker.
 export function heartbeat(ctx, n, h, agent) {
   const body = claimBody({
     agent,
-    at: new Date(nowOf(ctx)).toISOString(),
+    at: h.updatedAt || h.createdAt || "server",
     branch: h.branch,
   })
-  if (h.id)
-    gh(
-      ctx,
-      "api",
-      "-X",
-      "PATCH",
-      `repos/{owner}/{repo}/issues/comments/${h.id}`,
-      "-f",
-      `body=${body}`
-    )
-  else gh(ctx, "issue", "comment", String(n), "--body", body)
+  if (!h.id) return gh(ctx, "issue", "comment", String(n), "--body", body)
+  const out = gh(
+    ctx,
+    "api",
+    "--include",
+    "-X",
+    "PATCH",
+    `repos/{owner}/{repo}/issues/comments/${h.id}`,
+    "-f",
+    `body=${body}`
+  )
+  const stamp = parseUpdatedAt(out)
+  if (!stamp)
+    throw new Error("claim refresh did not return updatedAt from GitHub")
+  return stamp
 }
 
 export function release(ctx, { n: given, reason }) {
@@ -76,14 +106,13 @@ export function release(ctx, { n: given, reason }) {
   const n = given ?? here.n
   const gitDir = here?.gitDir ?? git(ctx, "rev-parse", "--absolute-git-dir").out
   const me = agentIdFor(ctx, gitDir)
-  const { issue } = loadIssue(ctx, n)
-  const h = holderOf(issue.comments.nodes, nowOf(ctx))
+  const { holder: h, serverNow } = readClaim(ctx, n)
   if (!me || h.state === "none" || h.state === "released" || h.agent !== me)
     throw new Refused(
       "NOT_OWNER",
       `you (${me ?? "no agent id"}) do not hold #${n}${h.agent ? `; ${h.agent} does` : ""}`
     )
-  const at = new Date(nowOf(ctx)).toISOString()
+  const at = new Date(serverNow).toISOString()
   gh(
     ctx,
     "issue",

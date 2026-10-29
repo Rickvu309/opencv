@@ -1,21 +1,57 @@
 // save and cleanup: keep work safe while holding an issue, and remove the workspace after the merge.
 import { rmdirSync } from "node:fs"
 import { EXIT, FIXES, Refused, gh } from "./core.mjs"
-import { holderOf } from "./claim-marker.mjs"
-import { agentIdFor, git, heartbeat, nowOf, taskHere } from "./claim.mjs"
-import { loadIssue } from "./report.mjs"
+import {
+  agentIdFor,
+  git,
+  heartbeat,
+  nowOf,
+  readClaim,
+  taskHere,
+} from "./claim.mjs"
 import { locate } from "./worktree.mjs"
 
 const withIssueSuffix = (message, n) =>
   /\(#\d+\)\s*$/.test(message) ? message : `${message} (#${n})`
 
+const gitRaw = (ctx, ...args) =>
+  ctx.run("git", args, { cwd: ctx.cwd, raw: true })
+
+function holds(h, me) {
+  return (
+    Boolean(me) &&
+    h.agent === me &&
+    h.state !== "none" &&
+    h.state !== "released"
+  )
+}
+
 // Another agent holds the claim: keep our work as a patch and stop.
+// The diff is raw stdout. Trimming drops a blank context line (a single
+// space) and the hunk no longer applies.
 function lost(ctx, { n }, holder) {
-  git(ctx, "add", "-A")
-  const base = git(ctx, "diff", "--cached", "--binary", "origin/main")
-  const diff = base.ok ? base : git(ctx, "diff", "--cached", "--binary", "HEAD")
+  const add = git(ctx, "add", "-A")
+  if (!add.ok)
+    throw new Error(
+      `could not save the lost work: git add failed: ${add.err || add.out}`.slice(
+        0,
+        800
+      )
+    )
+  const againstMain = gitRaw(ctx, "diff", "--cached", "--binary", "origin/main")
+  const diff = againstMain.ok
+    ? againstMain
+    : gitRaw(ctx, "diff", "--cached", "--binary", "HEAD")
+  if (!diff.ok)
+    throw new Error(
+      `could not save the lost work: git diff failed: ${diff.err || diff.out}`.slice(
+        0,
+        800
+      )
+    )
   const stamp = new Date(nowOf(ctx)).toISOString().replace(/[:.]/g, "-")
-  const path = ctx.writeScratch(`lost/${n}-${stamp}.patch`, `${diff.out}\n`)
+  const patch = diff.out.endsWith("\n") ? diff.out : `${diff.out}\n`
+  const path = ctx.writeScratch(`lost/${n}-${stamp}.patch`, patch)
   return {
     exit: EXIT.LOST,
     lines: [
@@ -31,10 +67,8 @@ export function save(ctx, { message }) {
   const t = taskHere(ctx)
   if (!message) throw new Error("usage: ocv-tools save -m <message>")
   const me = agentIdFor(ctx, t.gitDir)
-  const { issue } = loadIssue(ctx, t.n)
-  const h = holderOf(issue.comments.nodes, nowOf(ctx))
-  if (!me || h.state === "none" || h.state === "released" || h.agent !== me)
-    return lost(ctx, t, h)
+  const h = readClaim(ctx, t.n).holder
+  if (!holds(h, me)) return lost(ctx, t, h)
 
   const dirty = git(ctx, "status", "--porcelain").out
   const upstream = git(ctx, "rev-parse", "--verify", `origin/${t.branch}`)
@@ -45,7 +79,9 @@ export function save(ctx, { message }) {
     `${upstream.ok ? `origin/${t.branch}` : "origin/main"}..HEAD`
   ).out
   if (!dirty && !Number(ahead)) {
-    heartbeat(ctx, t.n, h, me)
+    const still = readClaim(ctx, t.n).holder
+    if (!holds(still, me)) return lost(ctx, t, still)
+    heartbeat(ctx, t.n, still, me)
     return {
       lines: [
         `Nothing to save in #${t.n}: no changes and nothing waiting to upload. The claim is refreshed.`,
@@ -63,6 +99,12 @@ export function save(ctx, { message }) {
         `commit failed: ${commit.err || commit.out}`.slice(0, 800)
       )
   }
+  // Re-read immediately before push. GitHub has no atomic claim, so a
+  // takeover during commit must not publish these commits. A comment that
+  // arrives after this read and before the server accepts the push can
+  // still win. That gap is the residual race.
+  const again = readClaim(ctx, t.n).holder
+  if (!holds(again, me)) return lost(ctx, t, again)
   const pushed = git(ctx, "push", "-u", "origin", "HEAD")
   if (!pushed.ok)
     throw new Error(
@@ -70,7 +112,7 @@ export function save(ctx, { message }) {
         -800
       )
     )
-  heartbeat(ctx, t.n, h, me)
+  heartbeat(ctx, t.n, again, me)
   return {
     lines: [
       `Saved #${t.n} on ${t.branch} at ${git(ctx, "rev-parse", "--short", "HEAD").out}.`,

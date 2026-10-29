@@ -10,9 +10,10 @@ export const EXIT = { OK: 0, ERROR: 1, REFUSED: 2, LOST: 3 }
 export const SCRATCH = join(homedir(), "tmp", "ocv-tools")
 
 export class Refused extends Error {
-  constructor(code, message) {
+  constructor(code, message, fix) {
     super(message)
     this.code = code
+    if (fix) this.fix = fix
   }
 }
 
@@ -54,9 +55,12 @@ export function realRun(cmd, args, options = {}) {
     cwd: options.cwd,
     maxBuffer: 32 * 1024 * 1024,
   })
+  const stdout = r.stdout ?? ""
   return {
     ok: r.status === 0,
-    out: (r.stdout ?? "").trim(),
+    // raw keeps patch bytes. trim() drops a trailing context line that is
+    // only a space, and git apply then rejects the hunk.
+    out: options.raw ? stdout : stdout.trim(),
     err: (r.stderr ?? r.error?.message ?? "").trim(),
   }
 }
@@ -85,7 +89,7 @@ export function failure(error) {
       code: EXIT.REFUSED,
       text: render({
         lines: [`REFUSED ${error.code}: ${error.message}`],
-        fix: FIXES[error.code] ?? FIXES.ERROR,
+        fix: error.fix ?? FIXES[error.code] ?? FIXES.ERROR,
         tail: error.tail,
       }),
     }

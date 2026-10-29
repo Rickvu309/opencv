@@ -3,6 +3,7 @@ import { EXIT, Refused, gh } from "./core.mjs"
 import { RISK_LABELS, RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
 import { holderLine, holderOf } from "./claim-marker.mjs"
+import { readServerNow } from "./clock.mjs"
 
 // The one list of commands. The dispatcher and `help` read it, so a command cannot exist
 // without a line saying when to use it.
@@ -25,8 +26,8 @@ export const COMMANDS = [
   {
     name: "take",
     usage:
-      "take <n | title> [-d <words>] [--no-install] [--no-assign] [--take]",
-    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`). -d sets the branch words, --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
+      "take <n | title> [-d <words>] [--type <t>] [--resume] [--no-install] [--no-assign] [--take]",
+    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch an idle holder already pushed, --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
   },
   {
     name: "save",
@@ -113,12 +114,10 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   return `scripts/ocv-tools.mjs take ${n}`
 }
 
-const QUERY = `query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100){nodes{databaseId author{login} body createdAt}}}}}`
+const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
 
-// Reads one issue with its risk, type, owner approval and comments. Refuses NOT_AN_ISSUE.
-export function loadIssue(ctx, n) {
-  const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
-  const q = ctx.run("gh", [
+function graphqlIssue(ctx, repo, n, cursor) {
+  const args = [
     "api",
     "graphql",
     "-f",
@@ -129,15 +128,42 @@ export function loadIssue(ctx, n) {
     `name=${repo.name}`,
     "-F",
     `n=${n}`,
-  ])
+  ]
+  if (cursor) args.push("-f", `cursor=${cursor}`)
+  return ctx.run("gh", args)
+}
+
+// Reads one issue with its risk, type, owner approval and every comment (paged,
+// so a live claim cannot fall out of a last:100 window). Refuses NOT_AN_ISSUE.
+// serverNow is the GitHub Date header from this read.
+export function loadIssue(ctx, n) {
+  const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
+  const serverNow = readServerNow(ctx)
+  const pages = []
+  let cursor = null
   let issue = null
   let owner = repo.owner.login
-  if (q.ok) {
+  for (let page = 0; page < 100; page++) {
+    const q = graphqlIssue(ctx, repo, n, cursor)
+    if (!q.ok) {
+      if (issue)
+        throw new Error(
+          `gh api graphql failed: ${q.err || q.out}`.slice(0, 400)
+        )
+      break
+    }
     const data = JSON.parse(q.out).data.repository
     issue = data.issue
-    owner = data.owner.login
+    owner = data.owner?.login ?? owner
+    if (!issue) break
+    const conn = issue.comments ?? {}
+    pages.push(conn.nodes ?? [])
+    const prev = conn.pageInfo?.hasPreviousPage && conn.pageInfo.startCursor
+    if (!prev || prev === cursor) break
+    cursor = prev
   }
   if (!issue) throw new Refused("NOT_AN_ISSUE", `#${n} is not an issue`)
+  issue = { ...issue, comments: { nodes: pages.toReversed().flat() } }
 
   const labels = issue.labels.nodes.map((l) => l.name)
   const risk = riskOf(labels, issue.body)
@@ -150,7 +176,7 @@ export function loadIssue(ctx, n) {
     lastEditedAt: issue.lastEditedAt,
     createdAt: issue.createdAt,
   })
-  return { issue, labels, risk, type, approved }
+  return { issue, labels, risk, type, approved, serverNow }
 }
 
 // The local worktree and branch of an issue's task branch, if any (`type/<n>-...`).
@@ -167,7 +193,7 @@ export function worktreeFor(ctx, n) {
 }
 
 export function status(ctx, n) {
-  const { issue, risk, type, approved } = loadIssue(ctx, n)
+  const { issue, risk, type, approved, serverNow } = loadIssue(ctx, n)
   const { worktree, prefix, branch: localBranch } = worktreeFor(ctx, n)
   let branch = localBranch
   const prs = JSON.parse(
@@ -205,7 +231,7 @@ export function status(ctx, n) {
     `Risk: ${risk ?? "none (no risk label)"}`,
     `Approval: ${approval}`,
     `Branch: ${branch ?? "none"}${worktree ? ` (worktree ${worktree})` : ""}`,
-    holderLine(holderOf(issue.comments.nodes, ctx.now?.() ?? Date.now())),
+    holderLine(holderOf(issue.comments.nodes, serverNow)),
     `Pull request: ${pr ? `#${pr.number} ${pr.state.toLowerCase()}${pr.isDraft ? " (draft)" : ""}` : "none"}`,
   ]
   if (issue.state === "CLOSED" && pr?.state !== "MERGED") {

@@ -9,34 +9,54 @@ import { claimMarker } from "./claim-marker.mjs"
 import { realRun } from "./core.mjs"
 import { fakeCtx, issueData, minutesAgo, tempClone } from "./fake-ctx.mjs"
 
-const claim = (agent, minutes) => ({
-  databaseId: 7,
-  body: claimMarker({ agent, at: minutesAgo(minutes), branch: "feat/90-x" }),
+const claim = (agent, minutes, id = 7) => ({
+  databaseId: id,
+  createdAt: minutesAgo(minutes),
+  updatedAt: minutesAgo(minutes),
+  body: claimMarker({ agent, at: "client", branch: "feat/90-x" }),
 })
 const ghRules = (comments) => [
   ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
-  ["api graphql", issueData({ comments: { nodes: comments } })],
-  ["api -X PATCH", ""],
+  [
+    "api graphql",
+    () => ({
+      ok: true,
+      out: issueData({ comments: { nodes: comments } }),
+      err: "",
+    }),
+  ],
+  ["-X PATCH", '{"updated_at":"2026-10-29T12:00:05Z"}'],
 ]
 
-// A real temp repo with a bare origin; only gh is faked.
-function tempRepo(comments, env = { OCV_TOOLS_AGENT: "me" }) {
+// A linked task worktree under opencv.worktrees, with a bare origin. Only gh is faked.
+function tempRepo(comments, env = { OCV_TOOLS_AGENT: "me" }, seed) {
   const root = mkdtempSync(join(tmpdir(), "ocv-tools-test-"))
   const sh = (cwd, ...a) => execFileSync("git", a, { cwd, encoding: "utf8" })
   sh(root, "init", "--bare", "-b", "main", "origin.git")
-  sh(root, "clone", "-q", "origin.git", "work")
-  const work = join(root, "work")
+  sh(root, "clone", "-q", "origin.git", "opencv")
+  const main = join(root, "opencv")
   for (const [k, v] of [
     ["user.name", "t"],
     ["user.email", "t@example.com"],
     ["core.hooksPath", "/dev/null"],
   ])
-    sh(work, "config", k, v)
-  writeFileSync(join(work, "a.txt"), "a\n")
-  sh(work, "add", "-A")
-  sh(work, "commit", "-q", "-m", "init")
-  sh(work, "push", "-q", "origin", "main")
-  sh(work, "checkout", "-q", "-b", "feat/90-keep-my-search")
+    sh(main, "config", k, v)
+  writeFileSync(join(main, "a.txt"), "a\n")
+  if (seed) seed(main)
+  sh(main, "add", "-A")
+  sh(main, "commit", "-q", "-m", "init")
+  sh(main, "push", "-q", "origin", "main")
+  const work = join(root, "opencv.worktrees", "90-keep-my-search")
+  sh(
+    main,
+    "worktree",
+    "add",
+    "-q",
+    "-b",
+    "feat/90-keep-my-search",
+    work,
+    "main"
+  )
   const calls = []
   const fake = fakeCtx(ghRules(comments), { env })
   const ctx = {
@@ -52,6 +72,7 @@ function tempRepo(comments, env = { OCV_TOOLS_AGENT: "me" }) {
   return {
     ctx,
     work,
+    main,
     root,
     sh,
     done: () => rmSync(root, { recursive: true, force: true }),
@@ -73,11 +94,11 @@ test("save commits with the issue suffix, pushes and refreshes the single claim 
       /feat\/90-keep-my-search/
     )
     const patch = t.ctx.ghCalls.find((c) =>
-      c.includes("api -X PATCH repos/{owner}/{repo}/issues/comments/7")
+      c.includes("-X PATCH repos/{owner}/{repo}/issues/comments/7")
     )
     assert.match(
       patch,
-      /claim agent=me at=2026-10-29T12:00:00.000Z branch=feat\/90-x/
+      /claim agent=me at=2026-10-29T10:20:00.000Z branch=feat\/90-x/
     )
     // a message that already names the issue is kept; nothing left to save refreshes only
     const again = runCli(["save", "-m", "x (#90)"], t.ctx)
@@ -121,9 +142,130 @@ test("save with no agent id, outside a task and without -m is refused plainly", 
   try {
     assert.equal(runCli(["save", "-m", "x"], t.ctx).code, 3)
     assert.equal(runCli(["save"], t.ctx).code, 1)
-    t.sh(t.work, "checkout", "-q", "main")
+    t.sh(t.work, "checkout", "-q", "-b", "scratch")
     const r = runCli(["save", "-m", "x"], t.ctx)
     assert.match(r.text, /REFUSED NOT_A_TASK/)
+  } finally {
+    t.done()
+  }
+})
+
+test("a LOST patch applies, including a blank context line and a binary file", () => {
+  const t = tempRepo([claim("other", 1)], { OCV_TOOLS_AGENT: "me" }, (main) => {
+    writeFileSync(join(main, "blank.txt"), "old\n\n")
+    writeFileSync(join(main, "pic.bin"), Buffer.from([0, 1, 2, 255, 10]))
+  })
+  try {
+    writeFileSync(join(t.work, "blank.txt"), "new\n\n")
+    writeFileSync(join(t.work, "pic.bin"), Buffer.from([0, 1, 9, 255, 10]))
+    const r = runCli(["save", "-m", "feat: edit blank"], t.ctx)
+    assert.equal(r.code, 3, r.text)
+    const name = "lost/90-2026-10-29T12-00-00-000Z.patch"
+    const patch = t.ctx.written[name]
+    assert.ok(patch.split("\n").includes(" "))
+    const dst = join(t.root, "apply")
+    t.sh(t.root, "clone", "-q", join(t.root, "origin.git"), "apply")
+    writeFileSync(join(dst, "lost.patch"), patch)
+    t.sh(dst, "apply", "--check", "lost.patch")
+  } finally {
+    t.done()
+  }
+})
+
+test("LOST does not claim the work was saved when git add or diff fails", () => {
+  const rules = [
+    ["rev-parse --show-toplevel", "/repo.worktrees/90-keep-my-search"],
+    ["rev-parse --abbrev-ref", "feat/90-keep-my-search"],
+    ["rev-parse --absolute-git-dir", "/repo/.git/worktrees/90-keep"],
+    ["rev-parse --path-format=absolute --git-common-dir", "/repo/.git"],
+    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
+    [
+      "api graphql",
+      () => ({
+        ok: true,
+        out: issueData({ comments: { nodes: [claim("other", 1, 8)] } }),
+        err: "",
+      }),
+    ],
+  ]
+  const add = fakeCtx(
+    [...rules, ["add -A", () => ({ ok: false, out: "", err: "add broke" })]],
+    { env: { OCV_TOOLS_AGENT: "me" } }
+  )
+  const added = runCli(["save", "-m", "feat: x"], add)
+  assert.equal(added.code, 1)
+  assert.match(added.text, /git add failed: add broke/)
+  assert.equal(add.written["lost/90-2026-10-29T12-00-00-000Z.patch"], undefined)
+
+  const diff = fakeCtx(
+    [
+      ...rules,
+      ["add -A", ""],
+      [
+        "diff --cached --binary",
+        () => ({ ok: false, out: "", err: "diff broke" }),
+      ],
+    ],
+    { env: { OCV_TOOLS_AGENT: "me" } }
+  )
+  const differed = runCli(["save", "-m", "feat: x"], diff)
+  assert.equal(differed.code, 1)
+  assert.match(differed.text, /git diff failed: diff broke/)
+})
+
+test("save refuses a normal clone and a worktree outside the worktree root", () => {
+  const t = tempRepo([claim("me", 5)])
+  try {
+    t.sh(t.main, "checkout", "-q", "-b", "feat/91-not-linked")
+    writeFileSync(join(t.main, "sneak.txt"), "x\n")
+    const clone = runCli(["save", "-m", "feat: sneak"], {
+      ...t.ctx,
+      cwd: t.main,
+    })
+    assert.match(clone.text, /REFUSED NOT_A_TASK/)
+    assert.equal(t.sh(t.main, "log", "-1", "--format=%s"), "init\n")
+    assert.match(t.sh(t.main, "status", "--porcelain"), /sneak\.txt/)
+
+    const outside = join(t.root, "elsewhere")
+    t.sh(
+      t.main,
+      "worktree",
+      "add",
+      "-q",
+      "-b",
+      "feat/92-outside-here",
+      outside,
+      "main"
+    )
+    const out = runCli(["save", "-m", "feat: no"], { ...t.ctx, cwd: outside })
+    assert.match(out.text, /REFUSED NOT_A_TASK/)
+    assert.equal(t.sh(outside, "log", "-1", "--format=%s"), "init\n")
+  } finally {
+    t.done()
+  }
+})
+
+test("save does not push when another agent takes the claim before the push", () => {
+  const comments = [claim("me", 10)]
+  const t = tempRepo(comments)
+  try {
+    const orig = t.ctx.run
+    t.ctx.run = (cmd, args, options) => {
+      const r = orig(cmd, args, options)
+      if (cmd === "git" && args[0] === "commit")
+        comments.push(claim("other", 1, 8))
+      return r
+    }
+    writeFileSync(join(t.work, "b.txt"), "b\n")
+    const r = runCli(["save", "-m", "feat: add b"], t.ctx)
+    assert.equal(r.code, 3, r.text)
+    assert.match(r.text, /LOST #90: other holds/)
+    assert.match(t.sh(t.work, "log", "-1", "--format=%s"), /add b/)
+    assert.doesNotMatch(
+      t.sh(t.work, "ls-remote", "--heads", "origin"),
+      /feat\/90/
+    )
+    assert.ok(!t.ctx.ghCalls.some((c) => c.includes("PATCH")))
   } finally {
     t.done()
   }

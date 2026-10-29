@@ -12,11 +12,20 @@ const RESULTS = mkdtempSync(join(tmpdir(), "ocv-tools-results-"))
 export function fakeCtx(rules, { files = {}, env = {} } = {}) {
   const calls = []
   const written = {}
-  return {
+  const ctx = {
     calls,
     written,
-    env: { PR_RESULT_DIR: RESULTS, PR_RESULT_REPO: "opencv", ...env },
+    env: {
+      PR_RESULT_DIR: RESULTS,
+      PR_RESULT_REPO: "opencv",
+      PR_DISK_MIN_MB: "1",
+      PR_TMP_MIN_MB: "1",
+      ...env,
+    },
     now: () => NOW,
+    // Injected GitHub clock. Production reads the Date header; tests set this
+    // and the rate_limit fake below turns it into that header.
+    serverNow: () => NOW,
     nodeVersion: "v22.1.0",
     readFile: (path) => {
       if (path in written) return written[path]
@@ -33,6 +42,13 @@ export function fakeCtx(rules, { files = {}, env = {} } = {}) {
     run(cmd, args) {
       const line = `${cmd} ${args.join(" ")}`
       calls.push(line)
+      if (line.includes("api --include /rate_limit")) {
+        const stamp = new Date(ctx.serverNow())
+        const header = Number.isNaN(stamp.getTime())
+          ? "not-a-date"
+          : stamp.toUTCString()
+        return { ok: true, out: `Date: ${header}\r\n\r\n{}`, err: "" }
+      }
       for (const [match, result] of rules)
         if (line.includes(match))
           return typeof result === "function"
@@ -41,6 +57,7 @@ export function fakeCtx(rules, { files = {}, env = {} } = {}) {
       return { ok: false, out: "", err: `unmocked: ${line}` }
     },
   }
+  return ctx
 }
 
 export function issueData(over = {}) {
