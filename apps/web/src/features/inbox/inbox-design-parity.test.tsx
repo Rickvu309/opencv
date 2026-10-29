@@ -28,6 +28,10 @@ const SHOWN_INSTEAD: Readonly<Record<string, string>> = {
   "Move this job from Sent to Live?":
     "Move this job from Applied to Interview?",
   "Move to Live": "Move to Interview",
+  "Invites move jobs to Live. Rejections close them.":
+    "Invites move jobs to Interview. Rejections close them.",
+  Sent: "Applied",
+  Live: "Interview",
   // The pen types the Lumière chip as LC. Every avatar takes its initials
   // from the company name through companyInitials, which gives LU.
   LC: "LU",
