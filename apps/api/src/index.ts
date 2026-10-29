@@ -14,6 +14,7 @@ import {
   databaseUrlFromEnv,
   dbDriverFromEnv,
   authEmailFromFromEnv,
+  commitShaFromEnv,
   gmailEnabledFromEnv,
   logAuthMailFromEnv,
   googleClientIdFromEnv,
@@ -103,6 +104,7 @@ const app = createApp({
   resendApiKey: resendApiKeyFromEnv(process.env),
   authEmailFrom: authEmailFromFromEnv(process.env),
   logAuthMail: logAuthMailFromEnv(process.env),
+  commitSha: commitShaFromEnv(process.env),
   interpretPostings:
     coachRuntimeMode !== "fake" &&
     Boolean(coachEnv.OPENROUTER_API_KEY || coachEnv.ANTHROPIC_API_KEY),

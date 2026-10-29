@@ -98,7 +98,7 @@ WEB_PGID=$(cat "$EVIDENCE/.web.pgid")
 rm -f "$EVIDENCE/.api.pgid" "$EVIDENCE/.web.pgid"
 printf 'RUN=%s\nAPI_PGID=%s\nWEB_PGID=%s\n' "$RUN" "$API_PGID" "$WEB_PGID" > "$RUN_ENV"
 
-health_ok() { [[ "$(curl -s "$API_URL/health")" == '{"ok":true}' ]]; }
+health_ok() { [[ "$(curl -s "$API_URL/health")" == *'"ok":true'* ]]; }
 web_ok() { [[ "$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/")" == 200 ]]; }
 
 wait_for "api /health" "$WAIT_SECONDS" health_ok || fail "api did not answer /health"

@@ -214,7 +214,7 @@ COACH_SMOKE_API=https://api.opencv.me COACH_SMOKE_MODE=production pnpm --filter 
 Production mode asks for advice that cites workspace state and a Command
 (`job.move`) and looks for the receipt.
 
-Sign-in recovery: [auth verification](deploy/auth.md). After a merge: [deploy check](deploy/verify.md).
+Sign-in recovery: [auth](deploy/auth.md). After a merge: [check](deploy/verify.md), [health](deploy/health.md).
 
 ## Domains and DNS
 

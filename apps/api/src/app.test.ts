@@ -6,7 +6,16 @@ describe("GET /health", () => {
   it("returns success", async () => {
     const res = await createApp({ webOrigins: [] }).request("/health")
     expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual({ ok: true })
+    await expect(res.json()).resolves.toEqual({ ok: true, sha: null })
+  })
+
+  it("names the commit it serves", async () => {
+    const res = await createApp({
+      webOrigins: [],
+      commitSha: "90a4a1cb",
+    }).request("/health")
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toEqual({ ok: true, sha: "90a4a1cb" })
   })
 
   it("serves 200 when constructed with no database, even if DATABASE_URL is set", async () => {
@@ -16,7 +25,7 @@ describe("GET /health", () => {
     try {
       const res = await createApp({ webOrigins: [] }).request("/health")
       expect(res.status).toBe(200)
-      await expect(res.json()).resolves.toEqual({ ok: true })
+      await expect(res.json()).resolves.toEqual({ ok: true, sha: null })
     } finally {
       if (previous === undefined) {
         delete process.env.DATABASE_URL
@@ -35,7 +44,7 @@ describe("GET /health", () => {
     try {
       const res = await createApp({ webOrigins: [] }).request("/health")
       expect(res.status).toBe(200)
-      await expect(res.json()).resolves.toEqual({ ok: true })
+      await expect(res.json()).resolves.toEqual({ ok: true, sha: null })
     } finally {
       for (const [key, value] of Object.entries(previous)) {
         if (value === undefined) {

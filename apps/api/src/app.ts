@@ -21,6 +21,7 @@ import {
 } from "./config.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
+import { createHealthRoutes } from "./health.js"
 import { createInboxRoutes } from "./inbox/index.js"
 import { createJobRoutes, type FetchJobPosting } from "./job/index.js"
 import {
@@ -28,6 +29,7 @@ import {
   notFoundEnvelopeResponse,
   requireSession,
 } from "./middleware.js"
+import { authMailConfigured } from "./mail/auth-code.js"
 import { isAllowedOrigin } from "./origin.js"
 import { createPaperRoutes } from "./paper/index.js"
 import { createCommandRoutes } from "./registry/http.js"
@@ -53,6 +55,9 @@ export type AppConfig = {
   /** When set, job.preview may call the free model. Fake runs leave this off. */
   interpretPostings?: boolean
   fetchJobPosting?: FetchJobPosting
+  /** Commit this process serves, from `RAILWAY_GIT_COMMIT_SHA`. */
+  commitSha?: string
+  healthDbTimeoutMs?: number
 }
 
 export function createApp({
@@ -73,6 +78,8 @@ export function createApp({
   logAuthMail = logAuthMailFromEnv(process.env),
   interpretPostings = false,
   fetchJobPosting,
+  commitSha,
+  healthDbTimeoutMs = 2000,
 }: AppConfig) {
   const registry = installRegistry({
     ...(fetchJobPosting ? { fetch: fetchJobPosting } : {}),
@@ -105,7 +112,19 @@ export function createApp({
 
   app.onError(handleApiError)
   app.notFound(notFoundEnvelopeResponse)
-  app.get("/health", (c) => c.json({ ok: true }))
+  app.route(
+    "/",
+    createHealthRoutes({
+      db: database,
+      sha: commitSha ?? null,
+      mailConfigured: authMailConfigured({
+        resendApiKey,
+        from: authEmailFrom,
+        logOtp: logAuthMail,
+      }),
+      dbTimeoutMs: healthDbTimeoutMs,
+    })
+  )
 
   const auth =
     db && sessionSecret && authUrl

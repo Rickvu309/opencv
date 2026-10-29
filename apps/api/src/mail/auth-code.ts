@@ -65,6 +65,19 @@ function rejectAuthMail(ctx: AuthEndpointContext | undefined): never {
   throw new Error("auth email send failed")
 }
 
+/** Whether a sign-in code can leave this process: Resend, or the local log. */
+export function authMailConfigured({
+  resendApiKey,
+  from,
+  logOtp,
+}: {
+  resendApiKey?: string
+  from?: string
+  logOtp: boolean
+}) {
+  return logOtp || Boolean(resendApiKey?.trim() && from?.trim())
+}
+
 export function createAuthCodeSender({
   resendApiKey,
   from,
