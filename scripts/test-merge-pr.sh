@@ -43,5 +43,4 @@ run --nope
 expect "unknown option" 1 "unknown option"
 no_merge "unknown option"
 
-bash "$here/test-merge-pr-gates.sh"
 echo "all merge-pr cases passed"

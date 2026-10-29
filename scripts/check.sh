@@ -31,7 +31,7 @@
 #   - A global file (root package.json, lockfile, workspace, turbo.json, root configs, .npmrc, check.sh)
 #     or a missing origin/main falls back to the full run.
 #
-# The full run (no --changed) adds a whole-repo prettier --check after `lint`.
+# The full run (no --changed) adds a whole-repo prettier --check after `lint`, then every tracked scripts/test-*.sh.
 #
 # Called by the pre-push hook and scripts/open-pr.sh (both with --changed). ci.yml runs the same quick check.
 # Exit code: 0 all passed (or a dry run, which runs nothing), 1 something failed.
@@ -265,7 +265,8 @@ if (( changed_mode )); then
             "check-guards-tests|scripts/test-check-guards.sh|scripts/test-check-guards.sh scripts/lib/result.sh"
             "disk-tests|scripts/test-disk-preflight.sh|scripts/lib/disk.sh scripts/test-disk-preflight.sh"
             "result-tests|scripts/test-result.sh|scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh"
-            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr*.sh scripts/lib/*.sh"
+            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/*.sh"
+            "merge-pr-gates-tests|scripts/test-merge-pr-gates.sh|scripts/merge-pr.sh scripts/test-merge-pr-gates.sh scripts/lib/*.sh"
           )
           for entry in "${script_tests[@]}"; do
             IFS="|" read -r label script inputs <<<"$entry"
@@ -303,9 +304,22 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-merge-pr test-result test-disk-preflight test-check-retry test-check-guards test-rules; do
-      echo "==> scripts/$t.sh"
-      run "scripts/$t.sh" || failed+=("$t")
+    # Sorted tracked names. A deleted suite is absent; a new scripts/test-*.sh runs with no edit here.
+    # Zero suites, or a failed listing, must fail the gate: an empty loop would pass with nothing run.
+    shell_suites=()
+    if ! suite_list=$(git ls-files 'scripts/test-*.sh'); then
+      echo "check: could not list the shell suites (git ls-files failed)" >&2
+      failed+=("discover-shell-suites")
+    else
+      mapfile -t shell_suites < <(sort <<<"$suite_list" | sed '/^$/d')
+      if ((${#shell_suites[@]} == 0)); then
+        echo "check: found no scripts/test-*.sh suite to run" >&2
+        failed+=("discover-shell-suites")
+      fi
+    fi
+    for script in "${shell_suites[@]}"; do
+      echo "==> $script"
+      run "$script" || failed+=("$(basename "$script" .sh)")
     done
   fi
 fi
