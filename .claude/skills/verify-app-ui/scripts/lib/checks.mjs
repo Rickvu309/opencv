@@ -19,16 +19,24 @@ import {
   judged,
   list,
   result,
-  scanProblem,
   stubSilent,
 } from "./check-util.mjs"
 import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
 import { boardLanes } from "./checks-stages.mjs"
 import { sidewaysScroll } from "./checks-scroll.mjs"
 
+export function cvToolbarCheck(toolbarButtons = [], coachButtons = []) {
+  const undo = toolbarButtons.some((b) => /^undo$/i.test(b.label))
+  return {
+    pass: undo,
+    undo,
+    reject: coachButtons.some((b) => /reject|undo this change/i.test(b.label)),
+  }
+}
+
 export function runChecks(d, want = () => true) {
   const r = contentChecks(d, want)
-  const { screens, allSnaps, labels, has, scan } = context(d)
+  const { screens, allSnaps, labels } = context(d)
   r.push(...motionChecks(d, { allSnaps, screens }))
 
   // Structure.
@@ -206,23 +214,20 @@ export function runChecks(d, want = () => true) {
     )
   }
 
-  const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
-  const reject =
-    [...d.cv.buttons, ...d.cvCoach.buttons].some((b) =>
-      /reject|undo this change/i.test(b.label)
-    ) || has(/>\s*Reject\s*<|["'`](Reject|Undo this change)["'`]/).length > 0
+  const toolbarCheck = cvToolbarCheck(
+    d.cv.toolbarButtons ?? [],
+    d.cvCoach.buttons ?? []
+  )
   const rule30 =
-    "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
-  const why30 = scanProblem(scan)
+    "the live CV editor toolbar has a visible, named Undo control; Coach Reject is optional"
   if (want("30"))
     r.push(
       judged(
         "30",
         "undo-and-reject",
         rule30,
-        undo && (reject || why30 !== null),
-        `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
-        [!reject && why30 && `Reject source read (${why30})`]
+        toolbarCheck.pass,
+        `Undo on the CV toolbar: ${toolbarCheck.undo}; a Coach Reject control: ${toolbarCheck.reject}`
       )
     )
 

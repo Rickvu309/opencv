@@ -446,7 +446,12 @@ function probe(SEL) {
     out.cvRect = rect(cv)
   }
   const editor = document.querySelector(SEL.paperEditor)
-  if (editor && shown(editor)) out.editorRect = rect(editor)
+  if (editor && shown(editor)) {
+    out.editorRect = rect(editor)
+    out.toolbarButtons = [...editor.querySelectorAll('[role="toolbar"] button')]
+      .filter(shown)
+      .map((e) => ({ label: label(e).slice(0, 60) }))
+  }
   const aside = document.querySelector("aside")
   if (aside && shown(aside)) out.sidebarRect = rect(aside)
   if (composer) {
