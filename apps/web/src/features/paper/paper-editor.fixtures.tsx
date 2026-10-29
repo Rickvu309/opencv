@@ -1,6 +1,7 @@
 import type { ReactElement } from "react"
 import {
   emptyCvDocument,
+  parsePaperId,
   type PaperPages,
   type PaperView,
 } from "@workspace/domain"
@@ -23,7 +24,7 @@ export function render(ui: ReactElement) {
 }
 
 export const record: PaperView = {
-  id: "doc-1",
+  id: parsePaperId("11111111-1111-7111-8111-111111111111"),
   name: "PM track CV",
   kind: "cv",
   templateId: "simple",
