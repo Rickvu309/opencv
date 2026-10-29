@@ -1,4 +1,12 @@
-import { coachActor, personActor } from "@workspace/domain"
+import {
+  accountContract,
+  chatContract,
+  coachActor,
+  inboxContract,
+  jobContract,
+  paperContract,
+  personActor,
+} from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -13,6 +21,38 @@ import { jobCases } from "./coverage-job.js"
 import { paperCases } from "./coverage-paper.js"
 import { installRegistry } from "./install.js"
 import type { ExecuteResult, Registry } from "./registry.js"
+
+const surfaces = {
+  account: accountContract,
+  chat: chatContract,
+  inbox: inboxContract,
+  job: jobContract,
+  paper: paperContract,
+}
+
+function coverageProblems(covered: string[]) {
+  const bound = new Set(installRegistry().commandNames())
+  const problems: string[] = []
+  for (const name of [...bound].sort()) {
+    if (covered.includes(name)) continue
+    const surface = Object.entries(surfaces).find(
+      ([, contract]) => name in contract
+    )?.[0]
+    problems.push(
+      `${name} has no coverage case. Add one to apps/api/src/registry/coverage-${surface ?? "<surface>"}.ts (arrange, act, assert, undoAssert if it has a reversal).`
+    )
+  }
+  for (const name of [...new Set(covered)].sort()) {
+    if (!bound.has(name))
+      problems.push(
+        `${name} has a coverage case but no registered command. Delete the case or bind the command.`
+      )
+  }
+  const repeated = covered.filter((name, i) => covered.indexOf(name) !== i)
+  for (const name of new Set(repeated))
+    problems.push(`${name} has more than one coverage case. Keep one.`)
+  return problems
+}
 
 describe("registry command coverage", () => {
   it("runs every command as the person and undoes a reversal", async () => {
@@ -96,9 +136,7 @@ describe("registry command coverage", () => {
         await row.assert(result)
         if (row.undoAssert) await row.undoAssert(result)
       }
-      expect(cases.map((row) => row.name).sort()).toEqual(
-        registry.commandNames().sort()
-      )
+      expect(coverageProblems(cases.map((row) => row.name))).toEqual([])
     })
     await client.close()
   })
