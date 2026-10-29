@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# merge-pr.sh gates: the required ci check, and risk:high for ci.yml, check.sh and the ruleset.
+# merge-pr.sh gates: the required ci check, and risk:high for ci.yml, check.mjs and the ruleset.
 # Same stubs as test-merge-pr.sh (scripts/lib/merge-pr-harness.sh).
 set -euo pipefail
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -29,11 +29,11 @@ reset; MP_CI='{"check_runs":[{"id":2,"name":"ci","status":"queued","conclusion":
 expect "a newer queued ci run beats an older success" 1 "is pending" "gh run rerun"
 no_merge "newer queued ci"
 
-# ci.yml, check.sh and the ruleset attest the ci check, so the issue must carry risk:high.
-reset; MP_FILES="scripts/check.sh docs/y.md" run
-expect "a check.sh change without risk:high refuses" 1 "risk:high" "gh issue edit"
+# ci.yml, check.mjs and the ruleset attest the ci check, so the issue must carry risk:high.
+reset; MP_FILES="scripts/check.mjs docs/y.md" run
+expect "a check.mjs change without risk:high refuses" 1 "risk:high" "gh issue edit"
 no_merge "risk"
-reset; MP_FILES="scripts/check.sh" MP_LABELS="chore risk:normal" run
+reset; MP_FILES="scripts/check.mjs" MP_LABELS="chore risk:normal" run
 expect "another risk label does not count" 1 "risk:high"
 no_merge "risk normal"
 reset; MP_FILES=".github/workflows/ci.yml" run

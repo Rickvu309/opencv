@@ -244,7 +244,7 @@ test("every checked rule has a failing and a passing fact", () => {
         labels: ["risk:high"],
       },
     },
-    "the change touches ci.yml, composite actions, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+    "the change touches ci.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
   )
   check(
     "CI_WORKFLOW_KEPT",
@@ -256,7 +256,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "RISK_HIGH_FOR_CI",
     { diff: { files: ["scripts/check.mjs"], labels: ["risk:low"] } },
     { diff: { files: ["scripts/check.mjs"], labels: ["risk:high"] } },
-    "the change touches ci.yml, composite actions, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+    "the change touches ci.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
   )
   check(
     "SKIP_DECLARED",

@@ -111,7 +111,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 6. Merge and clean up
 
-- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `.github/actions/**`, `scripts/check.sh` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
+- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `.github/actions/**`, `scripts/check.mjs` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
 - When the queue merges, the issue closes and the remote branch is deleted.
 - From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
