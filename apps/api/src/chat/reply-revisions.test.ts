@@ -13,6 +13,14 @@ import { installRegistry } from "../registry/install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { createChat, getChat, insertCoachMessage } from "./store.js"
 
+function deferred() {
+  let resolve = () => {}
+  const promise = new Promise<void>((done) => {
+    resolve = done
+  })
+  return { promise, resolve }
+}
+
 it.each(["Usable answer", ""])(
   "keeps legacy reply %j and every receipt through migration and regeneration",
   async (answer) => {
@@ -144,8 +152,8 @@ it("returns each committed reply identity when another regeneration supersedes i
         workedMs: 1,
       }
       const original = await insertCoachMessage(input)
-      const committed = Promise.withResolvers<void>()
-      const release = Promise.withResolvers<void>()
+      const committed = deferred()
+      const release = deferred()
       const transact = db.transaction.bind(db)
       const spy = vi
         .spyOn(db, "transaction")

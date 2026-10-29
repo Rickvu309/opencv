@@ -127,7 +127,7 @@ function projectCurrentMessages(rows: (typeof chatMessages.$inferSelect)[]) {
         predecessorId = predecessor.supersedesMessageId
       }
       const current =
-        revisions.findLast((revision) => revision.text.trim()) ?? row
+        [...revisions].reverse().find((revision) => revision.text.trim()) ?? row
       return {
         ...toMessage(current),
         parts: revisions.flatMap((revision) =>
