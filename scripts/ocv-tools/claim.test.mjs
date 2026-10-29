@@ -151,59 +151,38 @@ test("release posts a release marker for the holder and refuses anyone else", ()
 })
 
 test("a client clock does not decide the lease", () => {
-  const behind = fakeCtx(
-    takeRules(
-      issueData({
-        comments: {
-          nodes: [
-            {
-              databaseId: 1,
-              createdAt: minutesAgo(1),
-              updatedAt: minutesAgo(1),
-              body: claimMarker({
-                agent: "a1",
-                at: minutesAgo(240),
-                branch: "feat/90-x",
-              }),
-            },
-          ],
+  // One minute old on the server, so the claim is live. The marker time is a
+  // day ahead and must not matter. A worktree is present so a client clock
+  // that calls the claim idle continues into WORKTREE_EXISTS.
+  const live = issueData({
+    comments: {
+      nodes: [
+        {
+          databaseId: 1,
+          createdAt: minutesAgo(1),
+          updatedAt: minutesAgo(1),
+          body: claimMarker({
+            agent: "a1",
+            at: new Date(NOW + 24 * 60 * 60 * 1000).toISOString(),
+            branch: "feat/90-x",
+          }),
         },
-      })
-    )
-  )
-  behind.now = () => NOW - 4 * 60 * 60 * 1000
-  behind.serverNow = () => NOW
-  assert.match(runCli(["take", "90"], behind).text, /REFUSED HELD/)
-
-  const ahead = fakeCtx(
-    takeRules(
-      issueData({
-        comments: {
-          nodes: [
-            {
-              databaseId: 1,
-              createdAt: minutesAgo(200),
-              updatedAt: minutesAgo(200),
-              body: claimMarker({
-                agent: "a1",
-                at: new Date(NOW + 24 * 60 * 60 * 1000).toISOString(),
-                branch: "feat/90-x",
-              }),
-            },
-          ],
-        },
-      }),
-      [
-        [
-          "worktree list",
-          "worktree /wt\nbranch refs/heads/feat/90-keep-my-search\n",
-        ],
-      ]
-    )
-  )
-  ahead.now = () => NOW + 24 * 60 * 60 * 1000
-  ahead.serverNow = () => NOW
-  assert.match(runCli(["take", "90"], ahead).text, /REFUSED WORKTREE_EXISTS/)
+      ],
+    },
+  })
+  const skew = (clientNow) => {
+    const ctx = fakeCtx(takeRules(live, afterMade))
+    ctx.now = () => clientNow
+    ctx.serverNow = () => NOW
+    return runCli(["take", "90"], ctx)
+  }
+  const day = 24 * 60 * 60 * 1000
+  const ahead = skew(NOW + day)
+  assert.match(ahead.text, /REFUSED HELD/)
+  assert.doesNotMatch(ahead.text, /WORKTREE_EXISTS/)
+  const behind = skew(NOW - day)
+  assert.match(behind.text, /REFUSED HELD/)
+  assert.doesNotMatch(behind.text, /WORKTREE_EXISTS/)
 })
 
 test("a comment timestamp ahead of the server is not a live claim", () => {
