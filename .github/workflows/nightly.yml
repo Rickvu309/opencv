@@ -7,6 +7,7 @@ on:
     - cron: "17 19 * * *"
   workflow_dispatch:
 
+# A newer pending run replaces an older pending one. A failure then names the newer sha, which still contains the older commit.
 concurrency:
   group: nightly-main
   cancel-in-progress: false
@@ -49,11 +50,11 @@ jobs:
             const url = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
             const body = `The full check failed on main at ${context.sha}.\n\n[Run logs](${url}) (attempt ${process.env.GITHUB_RUN_ATTEMPT}).\n\nInvestigate before closing this issue. Successful runs do not close it automatically.`;
             const issues = await github.paginate(github.rest.issues.listForRepo, {
-              owner, repo, state: 'open', per_page: 100
+              owner, repo, state: 'open', labels: 'ci-full', per_page: 100
             });
             const existing = issues.find(issue => !issue.pull_request && issue.title === title);
             if (existing) {
-              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
             } else {
               try {
                 await github.rest.issues.createLabel({ owner, repo, name: 'ci-full', color: 'b60205' });
