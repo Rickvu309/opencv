@@ -30,7 +30,7 @@ async function chooseMode(label: "Free" | "Light" | "Max") {
   const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
   fireEvent.click(
     within(group).getByRole("radio", {
-      name: label === "Free" ? label : `${label} · Pro`,
+      name: label,
     })
   )
 }
@@ -38,7 +38,7 @@ async function chooseMode(label: "Free" | "Light" | "Max") {
 function expectChecked(group: HTMLElement, label: string) {
   expect(
     within(group).getByRole("radio", {
-      name: label === "Free" ? label : `${label} · Pro`,
+      name: label,
     })
   ).toBeChecked()
 }
@@ -64,7 +64,7 @@ describe("Coach mode control", () => {
       within(group)
         .getAllByRole("radio")
         .map((radio) => radio.textContent)
-    ).toEqual([expect.stringMatching(/^Free/), "Light · Pro", "Max · Pro"])
+    ).toEqual([expect.stringMatching(/^Free/), "Light", "Max"])
     expectChecked(group, "Free")
     expect(screen.queryByRole("menuitem")).not.toBeInTheDocument()
   })
@@ -105,12 +105,9 @@ describe("Coach mode control", () => {
     await waitFor(() => {
       expect(getMockCoachMode()).toBe("light")
     })
-    fireEvent.keyDown(
-      within(group).getByRole("radio", { name: "Light · Pro" }),
-      {
-        key: "ArrowRight",
-      }
-    )
+    fireEvent.keyDown(within(group).getByRole("radio", { name: "Light" }), {
+      key: "ArrowRight",
+    })
     await waitFor(() => {
       expect(getMockCoachMode()).toBe("max")
     })

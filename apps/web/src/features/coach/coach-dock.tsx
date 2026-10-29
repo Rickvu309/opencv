@@ -40,7 +40,7 @@ type MenuId = (typeof DOCK_MENU)[number]["id"]
 
 const MODE_SEGMENTS = COACH_MODE_OPTIONS.map(({ id, label }) => ({
   value: id,
-  label: id === "free" ? label : `${label} · Pro`,
+  label,
 }))
 
 type MenuAction = { type: "opened" } | { type: "closed" }
