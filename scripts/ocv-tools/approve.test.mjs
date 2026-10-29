@@ -20,7 +20,9 @@ function high(over = {}) {
 function ctxFor(issue, extra = {}) {
   return fakeCtx(
     [
+      ...(extra.first ?? []),
       repo,
+      ["api user", extra.login ?? "owner"],
       ["api graphql", issue],
       ["issue comment", ""],
       ...(extra.rules ?? []),
@@ -190,6 +192,23 @@ test("an older or foreign /approve does not count, so a new one is posted", () =
   assert.match(posted(foreign), /--body \/approve\n/)
 })
 
+test("approve refuses a collaborator and does not post", () => {
+  const ctx = ctxFor(high(), {
+    login: "collaborator",
+    env: { OCV_TOOLS_AGENT: "agent-7" },
+  })
+  const { code, text } = runCli(["approve", "90"], ctx)
+  assert.equal(code, 2, text)
+  assert.match(text, /REFUSED NOT_OWNER/)
+  assert.match(
+    text,
+    /Fix: run this as the owner account; take only accepts the owner's \/approve/
+  )
+  assert.equal(posted(ctx), undefined)
+  assert.ok(ctx.calls.some((c) => c.includes("api user --jq .login")))
+  assert.ok(!ctx.calls.some((c) => c.includes("issue comment")))
+})
+
 test("approve usage", () => {
   assert.equal(runCli(["approve"], fakeCtx([])).code, 1)
   assert.equal(runCli(["approve", "0"], fakeCtx([])).code, 1)
@@ -200,4 +219,6 @@ test("approve usage", () => {
   const { text } = runCli(["help"], fakeCtx([]))
   assert.match(text, /approve <n>/)
   assert.match(text, /NOT_HIGH_RISK/)
+  assert.match(text, /NOT_OWNER/)
+  assert.match(text, /repository owner/)
 })

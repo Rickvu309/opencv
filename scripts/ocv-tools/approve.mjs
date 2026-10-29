@@ -37,6 +37,16 @@ export function approve(ctx, n) {
       ],
       next: `scripts/ocv-tools.mjs take ${n}`,
     }
+  const me = gh(ctx, "api", "user", "--jq", ".login").trim()
+  const owner = String(
+    JSON.parse(gh(ctx, "repo", "view", "--json", "owner")).owner?.login ?? ""
+  ).trim()
+  if (me.toLowerCase() !== owner.toLowerCase())
+    throw new Refused(
+      "NOT_OWNER",
+      `signed in as ${me || "nobody"}, but only ${owner} can approve #${n}`,
+      "run this as the owner account; take only accepts the owner's /approve"
+    )
   const body = approveComment(relayAgent(ctx))
   gh(ctx, "issue", "comment", String(n), "--body", body)
   return {
