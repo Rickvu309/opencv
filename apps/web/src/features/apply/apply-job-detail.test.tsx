@@ -284,4 +284,25 @@ describe("job detail", () => {
     expect(screen.queryByRole("region", { name: "Properties" })).toBeNull()
     vi.unstubAllGlobals()
   })
+
+  it("explains an overlong prep step and keeps the draft", async () => {
+    setMockJobs([
+      mockJob({ id, title: "Junior Marketing", company: "Lumière Cosmetics" }),
+    ])
+    renderApp(`/apply/${id}`)
+
+    fireEvent.click(await screen.findByRole("button", { name: "Add a step" }))
+    const step = await screen.findByRole("textbox", { name: "Add a step" })
+    const draft = "x".repeat(203)
+    fireEvent.change(step, { target: { value: draft } })
+    fireEvent.submit(step.closest("form") as HTMLFormElement)
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "200 characters or fewer"
+    )
+    expect(step).toHaveValue(draft)
+    expect(
+      getMockJobPosts().some((post) => post.name === "job.addChecklistItem")
+    ).toBe(false)
+  })
 })
