@@ -1,6 +1,10 @@
 import { useReducer, useRef } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { parseJobId, type JobStage } from "@workspace/domain"
+import {
+  jobCreateInputSchema,
+  parseJobId,
+  type JobStage,
+} from "@workspace/domain"
 import {
   ChevronRight,
   ClipboardPaste,
@@ -75,7 +79,16 @@ export function NewJobDialog({
   const companyRef = useRef<HTMLInputElement>(null)
   const linkRef = useRef<HTMLInputElement>(null)
   const [
-    { draft, preview, titleError, companyError, dateError, busy },
+    {
+      draft,
+      preview,
+      titleError,
+      companyError,
+      dateError,
+      descriptionError,
+      saveError,
+      busy,
+    },
     dispatch,
   ] = useReducer(dialogReducer, DIALOG_START)
 
@@ -133,22 +146,47 @@ export function NewJobDialog({
       ;(title ? companyRef : titleRef).current?.focus()
       return
     }
-    if (draft.deadline && !/^\d{4}-\d{2}-\d{2}$/.test(draft.deadline)) {
-      dispatch({ type: "date_rejected" })
+    const input = {
+      title,
+      company,
+      stage: draft.stage,
+      ...(draft.description ? { description: draft.description } : {}),
+      ...(draft.location ? { location: draft.location } : {}),
+      ...(draft.url.trim() ? { jobUrl: fullUrl(draft.url) } : {}),
+      ...(draft.deadline ? { deadline: draft.deadline } : {}),
+      ...(anyway ? { anyway: true } : {}),
+    }
+    const parsed = jobCreateInputSchema.safeParse(input)
+    if (!parsed.success) {
+      const errors = {
+        titleError: "",
+        companyError: "",
+        descriptionError: "",
+        dateError: "",
+        saveError: "",
+      }
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0]
+        const message =
+          issue.code === "too_big"
+            ? `Use ${issue.maximum} characters or fewer.`
+            : issue.message
+        if (field === "title") errors.titleError = message
+        else if (field === "company") errors.companyError = message
+        else if (field === "description") errors.descriptionError = message
+        else if (field === "deadline") errors.dateError = "Use a real date."
+        else if (field === "location") errors.saveError = `Location: ${message}`
+        else if (field === "jobUrl") errors.saveError = `Job link: ${message}`
+        else errors.saveError = "Check the job details and try again."
+      }
+      dispatch({ type: "validation_rejected", ...errors })
+      if (errors.titleError) titleRef.current?.focus()
+      else if (errors.companyError) companyRef.current?.focus()
       return
     }
     dispatch({ type: "save_started" })
     try {
-      const created = await run("job.create", {
-        title,
-        company,
-        stage: draft.stage,
-        ...(draft.description ? { description: draft.description } : {}),
-        ...(draft.location ? { location: draft.location } : {}),
-        ...(draft.url.trim() ? { jobUrl: fullUrl(draft.url) } : {}),
-        ...(draft.deadline ? { deadline: draft.deadline } : {}),
-        ...(anyway ? { anyway: true } : {}),
-      })
+      const created = await run("job.create", parsed.data)
       if (created.stage === "saved") toast("Job added to Saved")
       reset()
       onOpenChange(false)
@@ -173,6 +211,8 @@ export function NewJobDialog({
       ) {
         dispatch({ type: "company_required" })
         companyRef.current?.focus()
+      } else {
+        dispatch({ type: "save_failed" })
       }
     } finally {
       dispatch({ type: "save_ended" })
@@ -309,12 +349,15 @@ export function NewJobDialog({
                 placeholder="Role title"
                 value={draft.title}
                 aria-invalid={titleError ? true : undefined}
+                aria-describedby={titleError ? "job-title-error" : undefined}
                 className={`${INLINE_FIELD} mt-5 text-xl leading-6 font-semibold tracking-[-0.3px] text-foreground md:text-xl ${PLACEHOLDER_CARD}`}
                 onChange={(event) => {
                   dispatch({ type: "title_typed", value: event.target.value })
                 }}
               />
-              {titleError ? <Hint>{titleError}</Hint> : null}
+              {titleError ? (
+                <Hint id="job-title-error">{titleError}</Hint>
+              ) : null}
               <Input
                 ref={companyRef}
                 aria-label="Company"
@@ -336,6 +379,10 @@ export function NewJobDialog({
                 aria-label="Add the job description"
                 placeholder="Add the job description…"
                 value={draft.description}
+                aria-invalid={descriptionError ? true : undefined}
+                aria-describedby={
+                  descriptionError ? "job-description-error" : undefined
+                }
                 className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent ${PLACEHOLDER_CARD}`}
                 onChange={(event) => patch({ description: event.target.value })}
                 onBlur={() => {
@@ -347,6 +394,9 @@ export function NewJobDialog({
                   }
                 }}
               />
+              {descriptionError ? (
+                <Hint id="job-description-error">{descriptionError}</Hint>
+              ) : null}
               <div className="mt-2">
                 <NewJobProperties
                   stage={draft.stage}
@@ -361,6 +411,7 @@ export function NewJobDialog({
               </div>
             </>
           )}
+          {saveError ? <Hint id="job-save-error">{saveError}</Hint> : null}
           <div className="mt-3.5 h-px bg-border" />
           <div className="mt-3 flex items-center justify-end gap-2">
             <Button

@@ -198,6 +198,134 @@ describe("new job dialog", () => {
     })
   })
 
+  it("rejects title and company over the contract limit before creating", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: ` ${"T".repeat(201)} ` },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Northwind Labs" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    expect(
+      await screen.findByText(/200 characters or fewer/i)
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Role title")).toHaveFocus()
+    expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+      false
+    )
+    expect(screen.getByLabelText("Role title")).toHaveValue(
+      ` ${"T".repeat(201)} `
+    )
+
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: ` ${"T".repeat(200)} ` },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+        true
+      )
+    })
+    expect(
+      getMockJobPosts().find((post) => post.name === "job.create")?.input.title
+    ).toBe("T".repeat(200))
+  })
+
+  it("rejects an overlong company before creating and accepts the boundary", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Role" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "C".repeat(201) },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    expect(
+      await screen.findByText(/200 characters or fewer/i)
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Company")).toHaveFocus()
+    expect(screen.getByLabelText("Company")).toHaveAttribute(
+      "aria-describedby",
+      "job-company-error"
+    )
+    expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+      false
+    )
+    expect(screen.getByLabelText("Company")).toHaveValue("C".repeat(201))
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: ` ${"C".repeat(200)} ` },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+        true
+      )
+    })
+    expect(
+      getMockJobPosts().find((post) => post.name === "job.create")?.input
+        .company
+    ).toBe("C".repeat(200))
+  })
+
+  it("shows a safe save error and keeps the draft after a rejected create", async () => {
+    let shouldReject = true
+    await openDialog((input) => {
+      if (
+        shouldReject &&
+        requestUrl(input).includes("/api/commands/job.create")
+      ) {
+        shouldReject = false
+        throw new Error("sensitive server detail")
+      }
+    })
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Kept title" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Kept company" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /couldn’t save this job/i
+    )
+    expect(screen.getByRole("alert")).not.toHaveTextContent(
+      "sensitive server detail"
+    )
+    expect(screen.getByLabelText("Role title")).toHaveValue("Kept title")
+    expect(screen.getByLabelText("Company")).toHaveValue("Kept company")
+
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Corrected title" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+        true
+      )
+    })
+  })
+
+  it("validates the description using the create schema", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Role" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Company" },
+    })
+    fireEvent.change(screen.getByLabelText("Add the job description"), {
+      target: { value: "D".repeat(20_001) },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    expect(
+      await screen.findByText(/20000 characters or fewer/i)
+    ).toBeInTheDocument()
+    expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+      false
+    )
+  })
+
   it("names the existing stage and describes the company error", async () => {
     setMockJobs([
       mockJob({
