@@ -201,7 +201,9 @@ printf 'const a  =  1;\nconst b  =  2;\n' >a.ts
 before=$(git show :a.ts)
 run
 [[ "$code" -eq 1 ]] || fail 'partly staged unformatted file' "exit $code, want 1"
-grep -F -q "pnpm exec prettier --write 'a.ts' && git add 'a.ts'" "$tmp/err" || fail 'partly staged unformatted file' 'stderr missing the fix command'
+grep -F -q "pnpm exec prettier --write 'a.ts'" "$tmp/err" || fail 'partly staged unformatted file' 'stderr missing the fix command'
+grep -F -q "git add -p" "$tmp/err" || fail 'partly staged unformatted file' 'stderr missing git add -p'
+! grep -F -q "&& git add 'a.ts'" "$tmp/err" || fail 'partly staged unformatted file' 'stderr advises staging the whole file'
 [[ "$(git show :a.ts)" == "$before" ]] || fail 'partly staged unformatted file' 'index changed'
 [[ "$(cat a.ts)" == $'const a  =  1;\nconst b  =  2;' ]] || fail 'partly staged unformatted file' 'worktree changed'
 printf 'ok: partly staged unformatted file (exit 1)\n'
@@ -261,5 +263,29 @@ git add a.ts
 git commit -q -m x
 [[ "$(git show HEAD:a.ts)" == 'const a = 1' ]] || fail 'git commit of an unformatted file' 'commit holds unformatted content'
 printf 'ok: git commit of an unformatted file commits it formatted\n'
+
+fresh_format
+git config core.hooksPath "$(dirname "$hook")"
+printf 'const a = 1\n' >a.ts
+printf 'other\n' >other.txt
+git add a.ts other.txt
+git commit -q -m base
+printf 'const a  =  2;\n' >a.ts
+printf 'changed\n' >other.txt
+git add other.txt
+set +e
+git commit -q -m 'path commit' a.ts >"$tmp/out" 2>"$tmp/err"
+code=$?
+set -e
+[[ "$code" -eq 1 ]] || fail 'git commit <path> of an unformatted file' "exit $code, want 1"
+grep -F -q "pnpm exec prettier --write 'a.ts'" "$tmp/err" || fail 'git commit <path> of an unformatted file' 'stderr missing the fix command'
+[[ "$(git log --format=%s -1)" == base ]] || fail 'git commit <path> of an unformatted file' 'a commit was made'
+[[ "$(git status --porcelain)" == $' M a.ts\nM  other.txt' ]] || fail 'git commit <path> of an unformatted file' "status is not ' M a.ts' + 'M  other.txt': $(git status --porcelain)"
+pnpm_prettier=$root/node_modules/.bin/prettier
+"$pnpm_prettier" --write a.ts >/dev/null
+git commit -q -m 'path commit' a.ts 2>"$tmp/err" || fail 'git commit <path> after formatting' 'commit refused'
+git commit -q -m 'other' 2>"$tmp/err" || fail 'git commit after a path commit' 'next commit refused'
+[[ -z "$(git status --porcelain)" ]] || fail 'git commit <path> after formatting' "tree not clean: $(git status --porcelain)"
+printf 'ok: git commit <path> refuses an unformatted file, leaves the index alone, passes once formatted\n'
 
 echo 'ok: pre-commit hook'

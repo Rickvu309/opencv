@@ -6,11 +6,11 @@
 #   scripts/check.sh                 full run: lint, typecheck, test (what scripts/review-pr.sh runs, once per PR)
 #   scripts/check.sh lint test       run only these
 #   scripts/check.sh --changed       quick run scoped to what changed since origin/main (what pushes run)
-#   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing (recommended once all exist)
-#   CHECK_DRY_RUN=1 scripts/check.sh ...   print the plan and the commands, run nothing
+#   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing
+#   CHECK_DRY_RUN=1 scripts/check.sh ...   print the plan and commands, run nothing
 #   CHECK_BASE_REF=<ref> scripts/check.sh --changed   compare with <ref> instead of origin/main
-#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo task concurrency (--concurrency; default: turbo's own for the full run, 2 for --changed)
-#   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (vitest reads it itself; turbo passes it through)
+#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo --concurrency (default: turbo's own for the full run, 2 for --changed)
+#   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (turbo passes it through)
 #   `heavy -- scripts/check.sh` sets both to 2 (see AGENTS.md section 4)
 #   CHECK_RETRY_FAILED_TESTS=1 scripts/check.sh --changed   rerun a failed vitest file once, alone (set by open-pr.sh only,
 #     so its quick check and the pre-push check of its push; review-pr.sh and plain runs never retry). If every failed file
@@ -25,8 +25,8 @@
 #     (turbo run <task> --filter "...{./<dir>}"), plus prettier --check on the changed files,
 #     plus the scripts/ tests when their files changed, plus the web tests when a verify-app-ui or
 #     verify-landing file changed (apps/web/src/test/verify-assumptions.test.ts reads their assumptions).
-#   - test always runs the root node:test guards (the *.test.mjs files of the root package.json `test` script, about 2.5 s),
-#     whatever changed, because a guard reads docs, skills and config that no workspace package owns. scripts/open-pr.test.mjs
+#   - test always runs the root node:test guards (the .test.mjs files of the root package.json `test` script, 2.5 s),
+#     because a guard reads docs, skills and config no workspace package owns; an empty list fails. scripts/open-pr.test.mjs
 #     (40 s) runs only when scripts/open-pr.sh, scripts/lib/* or the test itself changed.
 #   - A global file (root package.json, lockfile, workspace, turbo.json, root configs, .npmrc, check.sh)
 #     or a missing origin/main falls back to the full run.
@@ -243,6 +243,7 @@ if (( changed_mode )); then
             scoped=$(pnpm ls -r --depth -1 --parseable "${filters[@]}" 2>/dev/null || true)
             [[ $'\n'"$scoped"$'\n' == *"/apps/web"$'\n'* ]] && web_in_scope=1
           fi
+          [[ -n "$(root_guard_tests)" ]] || { echo "check: the package.json \`test\` script names no .test.mjs files." >&2; failed+=(guard-tests); }
           mapfile -t guards < <(root_guard_tests | grep -vFx scripts/open-pr.test.mjs || true)
           if has_changed scripts/open-pr.sh 'scripts/lib/*' scripts/open-pr.test.mjs; then guards+=(scripts/open-pr.test.mjs); fi
           if [[ ${#guards[@]} -gt 0 ]]; then

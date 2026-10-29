@@ -2,6 +2,8 @@
 # pre-commit: format what is committed, then keep authored files small enough for an agent to read in one pass.
 #   - runs prettier --write on a fully staged file (no unstaged change) and stages the result; it never touches
 #     unstaged hunks, so a partly staged file that prettier would change is refused with the command to fix it
+#   - under `git commit <path>` git runs the hook on a temporary index that is dropped afterwards, so a rewrite would
+#     leave the real index stale; there the hook only checks and refuses, as for a partly staged file
 #   - warns and skips when node_modules/prettier is missing; a file prettier cannot parse is left as it is
 #   - rejects a commit when a staged file is over 5000 tokens (tokens = bytes / 4, so 20000 bytes)
 #   - size is the staged blob, not the working-tree file
@@ -11,12 +13,22 @@ set -euo pipefail
 
 prettier=node_modules/.bin/prettier
 
+# `git commit <path>` (and --only) hands the hook a throwaway index; plain commits and -a use index or index.lock.
+temporary_index() {
+  [[ -n "${GIT_INDEX_FILE:-}" ]] || return 1
+  local gitdir idx
+  gitdir=$(git rev-parse --absolute-git-dir)
+  idx=$(realpath -m -- "$GIT_INDEX_FILE")
+  [[ "$idx" != "$gitdir/index" && "$idx" != "$gitdir/index.lock" ]]
+}
+
 format_staged() {
-  local path unstaged_path formatted full=() partial=()
+  local path unstaged_path formatted full=() partial=() only=0
+  temporary_index && only=1
   declare -A unstaged=()
   while IFS= read -r -d '' unstaged_path; do unstaged["$unstaged_path"]=1; done < <(git diff --name-only --no-renames -z)
   while IFS= read -r -d '' path; do
-    if [[ -n "${unstaged["$path"]:-}" ]]; then partial+=("$path"); else full+=("$path"); fi
+    if (( only )) || [[ -n "${unstaged["$path"]:-}" ]]; then partial+=("$path"); else full+=("$path"); fi
   done < <(git diff --cached --name-only --no-renames --diff-filter=ACMR -z)
 
   if (( ${#full[@]} > 0 )); then
@@ -31,13 +43,18 @@ format_staged() {
     # The trailing x keeps a final newline that $(...) would drop.
     if formatted=$(git show ":$path" | "$prettier" --stdin-filepath "$path" 2>/dev/null && printf x) \
       && [[ "$formatted" != "$(git show ":$path"; printf x)" ]]; then
-      unformatted+="  $path: pnpm exec prettier --write '$path' && git add '$path'"$'\n'
+      unformatted+="  $path: pnpm exec prettier --write '$path'"$'\n'
     fi
   done
   if [[ -n "$unformatted" ]]; then
     {
-      echo "pre-commit: staged file(s) that prettier would change, with unstaged edits too, so the hook leaves them alone."
-      echo "Format and stage each one, then commit again:"
+      if (( only )); then
+        echo "pre-commit: file(s) named in 'git commit <path>' that prettier would change; the hook cannot rewrite them in this mode."
+        echo "Format each one, then run the same git commit again:"
+      else
+        echo "pre-commit: staged file(s) that prettier would change, with unstaged edits too, so the hook leaves them alone."
+        echo "Format each one, then 'git add -p <file>' to stage only the hunks you mean to commit, then commit again:"
+      fi
       printf '%s' "$unformatted"
     } >&2
     exit 1

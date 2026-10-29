@@ -61,4 +61,14 @@ for f in scripts/open-pr.sh scripts/lib/rules.sh scripts/open-pr.test.mjs; do
   runs scripts/open-pr.test.mjs || fail "$f edit: open-pr.test.mjs did not run"
 done
 echo "ok: open-pr.sh, scripts/lib/* and its own test run open-pr.test.mjs"
+echo '{"name":"root","scripts":{"test":"node --test \"scripts/*.test.mjs\" && turbo test"}}' >"$repo/package.json"
+git -C "$repo" commit -q -am glob && git -C "$repo" update-ref refs/remotes/origin/main HEAD
+mkdir -p "$repo/apps/web/src" && echo change >>"$repo/apps/web/src/a.ts"
+set +e
+(cd "$repo" && CHECK_DRY_RUN=1 scripts/check.sh --changed test) >"$tmp/out" 2>&1
+code=$?
+set -e
+[[ "$code" -ne 0 ]] || fail "empty guard list: check passed"
+grep -q 'the package.json `test` script names no .test.mjs files' "$tmp/out" || fail "empty guard list: message missing"
+echo "ok: a package.json test script that yields no guard files fails the check"
 echo "all check guard tests passed"
