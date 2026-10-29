@@ -50,3 +50,6 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 - `release --reason <why>` gives the issue back. Only the holder can.
 - `cleanup [<n>]` removes the worktree and branch after the merge (it replaces the old cleanup script). Refused: DIRTY, NOT_MERGED. `--all`, `--dry-run` and `--force` as before.
 - `status <n>` also shows who holds the claim and how long it has been idle.
+- `shot <file...>` uploads png, jpg, gif and webp pictures to the `screenshots` release (a prerelease, created when missing) and posts them on this task's issue, or on `--pr` / `--issue`. `--no-comment` only uploads. Pictures are never committed. Refused: MISSING_FILE, BAD_PICTURE.
+- `board` lists every open issue grouped as waiting for approval, open and free, taken, idle and in review, with the claim holder, idle minutes, pull request and checks. `--json` prints the same groups.
+- `approve <n>` posts `/approve` on a `risk:high` issue after the owner said approved in chat. Any other risk is refused (`NOT_HIGH_RISK`: no approval is needed). A second valid approve does nothing.
