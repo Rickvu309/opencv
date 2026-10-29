@@ -25,12 +25,16 @@ which services the commit had to rebuild, then checks the sha each one serves:
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `LIVE`            | A rebuilt service serves this commit (or a later one that contains it) and, for `api`, `/health/deep` is 200. A service the commit did not touch is `LIVE` once Railway says no deployment was needed. |
 | `PENDING`         | Railway has not posted a final status, or its build has not reached the public sha yet.                                                                                                                |
-| `BROKEN`          | Railway posted a failure, or `/health/deep` is not 200 on the new `api`. Production still serves the old build.                                                                                        |
+| `BROKEN`          | Railway posted a failure (production still serves the old build), or `/health/deep` is not 200 on the new `api` (the new build is already serving).                                                    |
 | `RELEASE_BLOCKED` | The commit changed files the service watches but Railway skipped it, or the build succeeded and production still serves another sha when the wait ends.                                                |
 
 The overall outcome is the worst of the services. Exit codes: 0 `LIVE`, 3
 `PENDING` (run the `next` command later), 1 `BROKEN`, `RELEASE_BLOCKED` or a
 check that could not run.
+
+`--wait` takes at most 3600 seconds. A GitHub status read that fails counts as
+`PENDING` for that round and is retried. Any other crash writes a result with
+status `error`, so a result file for the commit is never stale.
 
 A `PENDING` that outlasts `--wait 600` means Railway never started or never
 finished the deploy. Check the Railway dashboard before merging again.

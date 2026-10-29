@@ -1,10 +1,16 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdtempSync, readFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
-import { format, readStatus, release, runCli } from "./release.mjs"
+import {
+  format,
+  isAncestorWith,
+  readStatus,
+  release,
+  runCli,
+} from "./release.mjs"
 
 const commit = "5201a8823b0fc9df52cc319512177b254b446efd"
 const later = "86237ebf0000000000000000000000000000000a"
@@ -257,6 +263,106 @@ test("--wait gives up PENDING at the deadline", async () => {
   assert.equal(reads.at(-1), 30_000)
 })
 
+test("--wait backs off from 5 s and caps each sleep at 30 s", async () => {
+  const { io, reads } = boundary({ statuses: [pending(api), pending(web)] })
+  await release({ commit, wait: 600 }, io)
+  const gaps = reads.slice(1).map((at, i) => at - reads[i])
+  assert.deepEqual(gaps.slice(0, 4), [5000, 7500, 11250, 16875])
+  assert.ok(gaps.slice(4, -1).every((gap) => gap > 16875 && gap <= 30_000))
+  assert.ok(gaps.includes(30_000) && gaps.every((gap) => gap <= 30_000))
+})
+
+test("a failed GitHub status read is retried while --wait lasts", async () => {
+  const good = [built(api, "api.opencv.me"), built(web, "app.opencv.me")]
+  const { io, reads } = boundary({
+    statuses: (now) => {
+      if (now < 12_000) throw new Error("gh: HTTP 502")
+      return good
+    },
+    urls: healthy,
+  })
+  const r = await release({ commit, wait: 600 }, io)
+  assert.equal(r.outcome, "LIVE")
+  assert.ok(reads.length >= 3)
+})
+
+test("a status read that never works ends PENDING, not LIVE", async () => {
+  const { io } = boundary({
+    statuses: () => {
+      throw new Error("gh: HTTP 502")
+    },
+    urls: healthy,
+  })
+  const r = await release({ commit, wait: 20 }, io)
+  assert.equal(r.outcome, "PENDING")
+  assert.match(r.services[0].detail, /cannot read commit statuses.*HTTP 502/)
+})
+
+test("a served commit missing from the clone says cannot tell", async () => {
+  const { io } = boundary({
+    statuses: [built(api, "api.opencv.me"), built(web, "app.opencv.me")],
+    urls: {
+      ...healthy,
+      "https://api.opencv.me/health": sha(later),
+    },
+  })
+  io.isAncestor = () => null
+  const r = await release({ commit, wait: 10 }, io)
+  assert.equal(r.outcome, "RELEASE_BLOCKED")
+  assert.match(
+    r.services[0].detail,
+    /cannot tell: served commit 86237eb not in this clone/
+  )
+  assert.doesNotMatch(r.services[0].detail, /not 5201a88/)
+})
+
+// A fake git: `script` maps a command's first word to a result or a thrown status.
+function fakeGit(script) {
+  const calls = []
+  const run = (args) => {
+    calls.push(args.join(" "))
+    const answer = script(args, calls)
+    if (answer instanceof Error) throw answer
+    return ""
+  }
+  return { run, calls }
+}
+const exit = (status) => Object.assign(new Error(`exit ${status}`), { status })
+
+test("isAncestorWith answers from the clone without fetching", () => {
+  const yes = fakeGit(() => "")
+  assert.equal(isAncestorWith(yes.run)("a", "b"), true)
+  assert.deepEqual(yes.calls, ["merge-base --is-ancestor a b"])
+  const no = fakeGit(() => exit(1))
+  assert.equal(isAncestorWith(no.run)("a", "b"), false)
+  assert.equal(no.calls.length, 1)
+})
+
+test("isAncestorWith fetches once when the served commit is missing", () => {
+  let fetched = false
+  const git = fakeGit((args) => {
+    if (args[0] === "fetch") {
+      fetched = true
+      return ""
+    }
+    return fetched ? "" : exit(128)
+  })
+  assert.equal(isAncestorWith(git.run)("a", "b"), true)
+  assert.deepEqual(git.calls, [
+    "merge-base --is-ancestor a b",
+    "fetch --quiet origin",
+    "merge-base --is-ancestor a b",
+  ])
+})
+
+test("isAncestorWith gives null when the commit is still missing or fetch fails", () => {
+  const stillMissing = fakeGit((args) => (args[0] === "fetch" ? "" : exit(128)))
+  assert.equal(isAncestorWith(stillMissing.run)("a", "b"), null)
+  const offline = fakeGit((args) => exit(128))
+  assert.equal(isAncestorWith(offline.run)("a", "b"), null)
+  assert.equal(offline.calls.length, 2)
+})
+
 test("BROKEN wins over PENDING and PENDING over LIVE", async () => {
   const mixed = (a, w) => boundary({ statuses: [a, w], urls: healthy }).io
   assert.equal(
@@ -297,4 +403,70 @@ test("the CLI exits by outcome and writes a valid result file", async () => {
   assert.equal(JSON.parse(readFileSync(file, "utf8")).status, "fail")
   const checker = new URL("../lib/result-check.mjs", import.meta.url).pathname
   execFileSync("node", [checker, file, "cause=deploy", "script=release"])
+})
+
+async function cli(args, io) {
+  const lines = []
+  const log = console.log
+  const err = console.error
+  console.log = (line) => lines.push(line)
+  console.error = () => {}
+  try {
+    return { code: await runCli(args, io), lines }
+  } finally {
+    console.log = log
+    console.error = err
+  }
+}
+
+test("a crash writes a status error result over a stale one", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "pr-release-"))
+  process.env.PR_RESULT_DIR = dir
+  process.env.PR_RESULT_REPO = "opencv"
+  const head = execFileSync("git", ["rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim()
+  const file = join(dir, `opencv-release-${head.slice(0, 7)}.json`)
+  writeFileSync(file, '{"status":"ok","stale":true}\n')
+  const { io } = boundary()
+  io.changedFiles = () => {
+    throw new Error("git diff failed")
+  }
+  const { code, lines } = await cli([head], io)
+  assert.equal(code, 1)
+  assert.equal(lines.at(-1), `RESULT_JSON: ${file}`)
+  const written = JSON.parse(readFileSync(file, "utf8"))
+  assert.equal(written.status, "error")
+  assert.match(written.detail, /git diff failed/)
+  const checker = new URL("../lib/result-check.mjs", import.meta.url).pathname
+  execFileSync("node", [checker, file, "script=release"])
+})
+
+test("a status read error with no --wait writes a fresh PENDING result", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "pr-release-"))
+  process.env.PR_RESULT_DIR = dir
+  process.env.PR_RESULT_REPO = "opencv"
+  const head = execFileSync("git", ["rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim()
+  const { io } = boundary()
+  io.statuses = () => {
+    throw new Error("gh: HTTP 502")
+  }
+  const { code, lines } = await cli([head], io)
+  assert.equal(code, 3)
+  const file = join(dir, `opencv-release-${head.slice(0, 7)}.json`)
+  assert.equal(lines.at(-1), `RESULT_JSON: ${file}`)
+  assert.match(JSON.parse(readFileSync(file, "utf8")).detail, /HTTP 502/)
+})
+
+test("--wait above one hour is a usage error", async () => {
+  await assert.rejects(
+    runCli(["abc", "--wait", "3601"], boundary().io),
+    /--wait is at most 3600/
+  )
+  await assert.rejects(
+    runCli(["abc", "--wait", "1e306"], boundary().io),
+    /--wait is at most 3600/
+  )
 })

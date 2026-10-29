@@ -35,11 +35,17 @@ async function serving(service, commit, final, io) {
       `Railway succeeded but ${service.shaUrl} is unreadable: ${error.message}`
     )
   }
-  const contains = fullSha.test(live ?? "") && io.isAncestor(commit, live)
-  if (live !== commit && !contains)
-    return unconfirmed(
-      `Railway succeeded but ${service.shaUrl} serves ${short(String(live))}, not ${short(commit)}`
-    )
+  if (live !== commit) {
+    const contains = fullSha.test(live ?? "") && io.isAncestor(commit, live)
+    if (contains === null)
+      return unconfirmed(
+        `Railway succeeded but cannot tell: served commit ${short(live)} not in this clone`
+      )
+    if (!contains)
+      return unconfirmed(
+        `Railway succeeded but ${service.shaUrl} serves ${short(String(live))}, not ${short(commit)}`
+      )
+  }
   const via =
     live === commit ? "serves it" : `serves ${short(live)}, which contains it`
   if (!service.deepUrl) return { outcome: "LIVE", detail: via }
@@ -77,7 +83,7 @@ async function classify(service, commit, affected, status, final, io) {
 }
 
 // io: { changedFiles(sha), statuses(sha) newest first, fetch(url) -> {status, body},
-//       isAncestor(a, b), now(), sleep(ms) }
+//       isAncestor(a, b) -> true|false|null (null: b is not in this clone), now(), sleep(ms) }
 export async function release({ commit, wait = 0 }, io) {
   const affected = new Set(
     affectedServices(io.changedFiles(commit)).map((s) => s.name)
@@ -86,15 +92,31 @@ export async function release({ commit, wait = 0 }, io) {
   let delay = 5000
   for (;;) {
     const final = io.now() >= deadline
-    const statuses = io.statuses(commit)
     const reports = []
+    let statuses
+    let unread
+    try {
+      statuses = io.statuses(commit)
+    } catch (error) {
+      unread = {
+        outcome: "PENDING",
+        detail: `cannot read commit statuses from GitHub: ${error.message}`,
+      }
+    }
     for (const service of services) {
-      const status = statuses.find((s) => s.context === service.context)
       const isAffected = affected.has(service.name)
       reports.push({
         service: service.name,
         affected: isAffected,
-        ...(await classify(service, commit, isAffected, status, final, io)),
+        ...(unread ??
+          (await classify(
+            service,
+            commit,
+            isAffected,
+            statuses.find((s) => s.context === service.context),
+            final,
+            io
+          ))),
       })
     }
     const outcome = severity.find((o) => reports.some((r) => r.outcome === o))
@@ -119,10 +141,11 @@ const git = (args) =>
     stdio: ["ignore", "pipe", "ignore"],
   })
 
-function isAncestor(ancestor, descendant) {
+// null when production serves a commit this clone lacks even after a fetch.
+export const isAncestorWith = (run) => (ancestor, descendant) => {
   const ask = () => {
     try {
-      git(["merge-base", "--is-ancestor", ancestor, descendant])
+      run(["merge-base", "--is-ancestor", ancestor, descendant])
       return true
     } catch (error) {
       if (error.status === 1) return false
@@ -132,12 +155,11 @@ function isAncestor(ancestor, descendant) {
   try {
     return ask()
   } catch {
-    // The clone may not have the commit production serves yet.
     try {
-      git(["fetch", "--quiet", "origin"])
+      run(["fetch", "--quiet", "origin"])
       return ask()
     } catch {
-      return false
+      return null
     }
   }
 }
@@ -167,10 +189,13 @@ const liveIo = {
     })
     return { status: response.status, body: await response.text() }
   },
-  isAncestor,
+  isAncestor: isAncestorWith(git),
   now: Date.now,
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }
+
+const maxWait = 3600
+const usage = "Usage: scripts/pr.mjs release <sha> [--wait <seconds>] [--json]"
 
 export async function runCli(args, io = liveIo) {
   const { values, positionals } = parseArgs({
@@ -180,9 +205,9 @@ export async function runCli(args, io = liveIo) {
   })
   const wait = Number(values.wait ?? 0)
   if (positionals.length !== 1 || !Number.isFinite(wait) || wait < 0)
-    throw new Error(
-      "Usage: scripts/pr.mjs release <sha> [--wait <seconds>] [--json]"
-    )
+    throw new Error(usage)
+  if (wait > maxWait)
+    throw new Error(`--wait is at most ${maxWait} seconds. ${usage}`)
   let commit
   try {
     commit = git([
@@ -196,24 +221,40 @@ export async function runCli(args, io = liveIo) {
       `commit ${positionals[0]} is not in this clone. Run git fetch first.`
     )
   }
+  const id = short(commit)
   const startedAt = new Date()
-  const result = await release({ commit, wait }, io)
-  console.log(values.json ? JSON.stringify(result, null, 2) : format(result))
-  const detail = result.services
-    .map((r) => `${r.service} ${r.outcome} (${r.detail})`)
-    .join("; ")
-  const file = writeResult({
-    script: "release",
-    id: short(commit),
-    status: result.outcome === "LIVE" ? "ok" : "fail",
-    cause: "deploy",
-    detail: `${result.outcome} ${short(commit)}: ${detail}`,
-    next:
-      result.outcome === "PENDING"
-        ? `node scripts/pr.mjs release ${commit} --wait 600`
-        : null,
-    startedAt,
-  })
-  console.log(`RESULT_JSON: ${file}`)
-  return exitCodes[result.outcome]
+  try {
+    const result = await release({ commit, wait }, io)
+    console.log(values.json ? JSON.stringify(result, null, 2) : format(result))
+    const detail = result.services
+      .map((r) => `${r.service} ${r.outcome} (${r.detail})`)
+      .join("; ")
+    const file = writeResult({
+      script: "release",
+      id,
+      status: result.outcome === "LIVE" ? "ok" : "fail",
+      cause: "deploy",
+      detail: `${result.outcome} ${id}: ${detail}`,
+      next:
+        result.outcome === "PENDING"
+          ? `node scripts/pr.mjs release ${commit} --wait 600`
+          : null,
+      startedAt,
+    })
+    console.log(`RESULT_JSON: ${file}`)
+    return exitCodes[result.outcome]
+  } catch (error) {
+    // Replaces any earlier result for this commit so nobody reads it as current.
+    console.error(`ERROR pr release: ${error.message}`)
+    const file = writeResult({
+      script: "release",
+      id,
+      status: "error",
+      cause: "env",
+      detail: `release check crashed: ${error.message}`,
+      startedAt,
+    })
+    console.log(`RESULT_JSON: ${file}`)
+    return 1
+  }
 }
