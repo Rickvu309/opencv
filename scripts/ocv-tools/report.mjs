@@ -46,6 +46,22 @@ export const COMMANDS = [
     when: "After the merge: remove the worktree and branch and list what was removed. Refused while there is unsaved work or the pull request is not merged. Without <n> it uses the current worktree; --all handles every finished worktree, --dry-run only lists, --force also removes unsaved work.",
   },
   {
+    name: "approve",
+    usage: "approve <n>",
+    when: 'Post /approve on a risk:high issue only after the owner said "approved" in this chat. The comment says this agent relayed it. Refused for any other risk (NOT_HIGH_RISK: no approval is needed), a closed issue (CLOSED), or a number that is not an issue (NOT_AN_ISSUE). A second valid approve does nothing and exits 0.',
+  },
+  {
+    name: "board",
+    usage: "board [--json]",
+    when: "List every open issue with its risk, claim holder, idle minutes, pull request and checks. Groups: waiting for approval (risk:high without a valid /approve), open and free, taken (live), idle (past 180 minutes) and in review (pull request open). --json prints those groups.",
+  },
+  {
+    name: "shot",
+    usage:
+      "shot <file...> [--pr <n> | --issue <n>] [--name <what>] [--no-comment]",
+    when: "Upload png, jpg, gif and webp pictures (checked by their bytes) to the screenshots release and post one comment that shows them. The release is created as a prerelease when it is missing. Pictures are never committed. Defaults to this task's issue. --pr or --issue picks the target, --name names the files, --no-comment only uploads. Refused: MISSING_FILE, BAD_PICTURE.",
+  },
+  {
     name: "doctor",
     usage: "doctor",
     when: "Check this machine is set up: node, gh sign-in, the hooks path and the risk labels. One Fix line per problem.",
@@ -63,7 +79,7 @@ export function renderHelp() {
     "",
     exitText(),
     "",
-    "Later slices add check, finish, shot and board.",
+    "Later slices add check and finish.",
   ].join("\n")
 }
 

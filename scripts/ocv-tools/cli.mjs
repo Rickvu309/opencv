@@ -9,6 +9,9 @@ import { take } from "./take.mjs"
 import { file } from "./issue.mjs"
 import { COMMANDS, doctor, renderHelp, status } from "./report.mjs"
 import { cleanup, save } from "./work.mjs"
+import { shot } from "./shot.mjs"
+import { board } from "./board.mjs"
+import { approve } from "./approve.mjs"
 
 export function realCtx() {
   const ports = realPorts()
@@ -31,6 +34,9 @@ export function parseArgs(argv) {
     "-m",
     "-d",
     "--reason",
+    "--pr",
+    "--issue",
+    "--name",
     ...TEMPLATE_FIELDS.map((f) => f.flag),
   ])
   const flags = {}
@@ -171,6 +177,22 @@ function command(ctx, cmd, rest) {
         n: pos[0] ? issueNumber(pos[0], "cleanup [<n> | --all]") : null,
         flags,
       })
+    case "approve": {
+      const unknown = Object.keys(flags)[0]
+      if (unknown)
+        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (pos.length !== 1) throw new Error("usage: ocv-tools approve <n>")
+      return approve(ctx, issueNumber(pos[0], "approve <n>"))
+    }
+    case "board": {
+      const unknown = Object.keys(flags).find((key) => key !== "--json")
+      if (unknown)
+        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (pos.length) throw new Error("usage: ocv-tools board [--json]")
+      return board(ctx, { json: Boolean(flags["--json"]) })
+    }
+    case "shot":
+      return shot(ctx, { files: pos, flags })
     case "doctor":
       return doctor(ctx)
     default:
