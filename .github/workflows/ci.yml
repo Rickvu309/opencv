@@ -10,35 +10,98 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  TURBO_CACHE_DIR: .turbo-cache
+  TURBO_SCM_BASE: origin/main
+  VITEST_MAX_WORKERS: 2
+
 jobs:
-  check:
+  guards:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      # A fresh hosted VM has no git identity, and the test suites make throwaway commits in temp repos.
-      # This identity lives only on this VM; nothing it commits leaves the job.
-      - run: |
-          git config --global user.name ci
-          git config --global user.email ci@users.noreply.github.com
-      # A pull_request checkout has no local main; the take tests clone it.
-      - run: git branch -f main origin/main
-      - run: pnpm check
-        env:
-          VITEST_MAX_WORKERS: 2
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run test --filter=@workspace/guards
+      - run: pnpm exec turbo run test:open-pr --filter=@workspace/guards
+      - run: pnpm exec turbo run test:assumptions --filter=web
 
-  # The one required check. The main ruleset requires the context "ci", so keep this name.
-  ci:
-    needs: [check]
-    if: ${{ !cancelled() }}
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - run: test "${{ needs.check.result }}" = success
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run lint --affected
+      - name: Prettier changed files
+        run: |
+          set -o pipefail
+          base=$(git merge-base origin/main HEAD)
+          full=0
+          while IFS= read -r -d '' file; do
+            case "$file" in
+              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|.npmrc|.nvmrc|.node-version|.pnpmfile.cjs|vitest.*|scripts/check.sh|.railway/railway.ts|.gitattributes) full=1 ;;
+              */*) ;;
+              *.config.*|tsconfig*.json|.eslint*|.prettier*) full=1 ;;
+            esac
+          done < <(git diff --name-only -z "$base" HEAD)
+          if (( full )); then
+            pnpm exec prettier --check .
+          else
+            git diff --name-only --no-renames --diff-filter=ACMR -z "$base" HEAD | xargs -0 -r pnpm exec prettier --check
+          fi
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run typecheck --affected
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run build --affected
+
+  test-api:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run test --affected --filter='!web' --filter='!@workspace/ui' --filter='!@workspace/guards'
+
+  test-web:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run test --affected --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/2
+
+  ci:
+    needs: [guards, lint, typecheck, build, test-api, test-web]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every job to succeed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          node -e 'const needs = JSON.parse(process.env.NEEDS); const failures = Object.entries(needs).filter(([, job]) => job.result !== "success"); if (failures.length) { console.error(failures.map(([name, job]) => `${name}: ${job.result}`).join("\n")); process.exit(1); }'

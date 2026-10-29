@@ -1,0 +1,20 @@
+name: Setup workspace
+description: Set up pnpm, Node, dependencies, and the CI test git environment.
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+    # This identity lives only on the hosted VM; tests make throwaway commits.
+    - run: |
+        git config --global user.name ci
+        git config --global user.email ci@users.noreply.github.com
+      shell: bash
+    # A pull_request checkout has no local main; take tests clone it.
+    - run: git branch -f main origin/main
+      shell: bash

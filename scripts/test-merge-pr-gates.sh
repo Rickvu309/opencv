@@ -42,4 +42,10 @@ no_merge "ci delete"
 reset; MP_FILES=".github/rulesets/main.json" MP_LABELS="chore risk:high" run
 expect "risk:high lets a ruleset change through" 0 "merged PR #5"
 
+reset; MP_FILES=".github/actions/setup/action.yml" run
+expect "an action change without risk:high refuses" 1 "risk:high"
+no_merge "action risk"
+reset; MP_FILES=".github/actions/setup/action.yml" MP_LABELS="chore risk:high" run
+expect "risk:high lets an action change through" 0 "merged PR #5"
+
 echo "all merge-pr gate cases passed"

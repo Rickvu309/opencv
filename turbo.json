@@ -7,7 +7,18 @@
     "pnpm-workspace.yaml",
     "turbo.json",
     "tsconfig.json",
-    ".npmrc"
+    ".npmrc",
+    ".nvmrc",
+    ".node-version",
+    ".pnpmfile.cjs",
+    "vitest.*",
+    "scripts/check.sh",
+    ".railway/railway.ts",
+    ".gitattributes",
+    "*.config.*",
+    "tsconfig*.json",
+    ".eslint*",
+    ".prettier*"
   ],
   "globalEnv": ["VITEST_MAX_WORKERS"],
   "tasks": {
@@ -30,6 +41,9 @@
       "cache": false,
       "persistent": true
     },
+    "@workspace/guards#test": { "cache": false },
+    "test:open-pr": { "cache": false },
+    "test:assumptions": { "dependsOn": ["^build"], "cache": false },
     "test": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
