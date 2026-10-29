@@ -59,7 +59,7 @@ fi
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 echo "==> PR #$pr: ci check"
 state=$(gh api "repos/$repo/commits/$head/check-runs?check_name=ci" --jq \
-  '[.check_runs[] | select(.name == "ci")] | sort_by(.started_at) | last | if . == null then "missing" else (.conclusion // "pending") end') ||
+  '[.check_runs[] | select(.name == "ci")] | sort_by(.id) | last | if . == null then "missing" else (.conclusion // "pending") end') ||
   die "could not read the ci check of ${head:0:9}"
 if [[ "$state" != success ]]; then
   result_next "gh run list --workflow ci.yml --commit $head"

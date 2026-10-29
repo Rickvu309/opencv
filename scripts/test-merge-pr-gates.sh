@@ -24,6 +24,10 @@ for case in "failure:{\"check_runs\":[{\"name\":\"ci\",\"conclusion\":\"failure\
 done
 reset; MP_CI='{"check_runs":[{"name":"ci","conclusion":"failure","started_at":"2026-01-01T00:00:00Z"},{"name":"ci","conclusion":"success","started_at":"2026-01-02T00:00:00Z"}]}' run
 expect "the latest ci run counts, a rerun that passed merges" 0 "merged PR #5"
+# A newer queued ci run has no start time yet; it must still beat an older success (latest = highest id).
+reset; MP_CI='{"check_runs":[{"id":2,"name":"ci","status":"queued","conclusion":null,"started_at":null},{"id":1,"name":"ci","status":"completed","conclusion":"success","started_at":"2026-01-01T00:00:00Z"}]}' run
+expect "a newer queued ci run beats an older success" 1 "is pending" "gh run rerun"
+no_merge "newer queued ci"
 
 # ci.yml, check.sh and the ruleset attest the ci check, so the issue must carry risk:high.
 reset; MP_FILES="scripts/check.sh docs/y.md" run
