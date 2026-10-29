@@ -186,4 +186,48 @@ set +e; (cd "$repo" && STUB_PRETTIER_RC=1 scripts/check.sh lint) >"$tmp/out" 2>"
 grep -q 'FAILED: prettier' "$tmp/err" || fail "full prettier fail: prettier not reported"
 result status=fail cause=lint
 echo "ok: a whole-repo prettier failure fails the full run with cause lint"
+
+# Full mode discovers tracked scripts/test-*.sh. The result label stays the file name without .sh.
+printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-extra.sh"
+chmod +x "$repo/scripts/test-extra.sh"
+git -C "$repo" add scripts/test-extra.sh && git -C "$repo" commit -q -m 'add extra suite'
+full_dry() {
+  set +e
+  (cd "$repo" && CHECK_DRY_RUN=1 scripts/check.sh) >"$tmp/out" 2>"$tmp/err"
+  code=$?
+  set -e
+  [[ $code -eq 0 ]] || fail "shell suites: dry run exit $code"
+}
+listed() { grep -E '^\[dry-run\] scripts/test-.*\.sh$' "$tmp/out" | sed 's/^\[dry-run\] //' | sort || true; }
+tracked() { git -C "$repo" ls-files 'scripts/test-*.sh' | sort; }
+same_suites() {
+  local want got
+  want=$(tracked)
+  got=$(listed)
+  [[ "$got" == "$want" ]] || fail "shell suites: got [$(printf '%s' "$got" | tr '\n' ' ')] want [$(printf '%s' "$want" | tr '\n' ' ')]"
+}
+full_dry
+same_suites
+echo "ok: full dry run lists exactly the tracked shell suites"
+
+git -C "$repo" rm -q scripts/test-rules.sh && git -C "$repo" commit -q -m 'drop rules suite'
+full_dry
+same_suites
+echo "ok: a deleted suite is absent and the full dry run passes"
+
+printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/scripts/test-new-suite.sh"
+chmod +x "$repo/scripts/test-new-suite.sh"
+git -C "$repo" add scripts/test-new-suite.sh && git -C "$repo" commit -q -m 'add new suite'
+full_dry
+same_suites
+echo "ok: a new tracked suite is picked up"
+
+printf '#!/usr/bin/env bash\nexit 1\n' >"$repo/scripts/test-new-suite.sh"
+set +e
+(cd "$repo" && scripts/check.sh test) >"$tmp/out" 2>"$tmp/err"
+code=$?
+set -e
+[[ $code -eq 1 ]] || fail "suite label: exit $code, want 1"
+result status=fail cause=test 'detail=failed: test-new-suite'
+echo "ok: a failing suite is named by its file name, without .sh"
 echo "all check retry tests passed"

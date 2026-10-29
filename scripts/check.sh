@@ -31,7 +31,7 @@
 #   - A global file (root package.json, lockfile, workspace, turbo.json, root configs, .npmrc, check.sh)
 #     or a missing origin/main falls back to the full run.
 #
-# The full run (no --changed) adds a whole-repo prettier --check after `lint`.
+# The full run (no --changed) adds a whole-repo prettier --check after `lint`, then every tracked scripts/test-*.sh.
 #
 # Called by the pre-push hook and scripts/open-pr.sh (both with --changed). ci.yml runs the same quick check.
 # Exit code: 0 all passed (or a dry run, which runs nothing), 1 something failed.
@@ -303,9 +303,11 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-merge-pr test-result test-disk-preflight test-check-retry test-check-guards test-rules; do
-      echo "==> scripts/$t.sh"
-      run "scripts/$t.sh" || failed+=("$t")
+    # Sorted tracked names. A deleted suite is absent; a new scripts/test-*.sh runs with no edit here.
+    mapfile -t shell_suites < <(git ls-files 'scripts/test-*.sh' | sort)
+    for script in "${shell_suites[@]}"; do
+      echo "==> $script"
+      run "$script" || failed+=("$(basename "$script" .sh)")
     done
   fi
 fi
