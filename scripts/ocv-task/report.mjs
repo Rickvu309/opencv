@@ -81,12 +81,11 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   if (pr?.state === "MERGED") return `scripts/cleanup-worktree.sh ${n}`
   if (pr?.state === "OPEN")
     return pr.isDraft
-      ? `heavy -- scripts/review-pr.sh ${pr.number}, then gh pr ready ${pr.number}`
-      : `heavy -- scripts/review-pr.sh ${pr.number}`
+      ? `scripts/review-pr.sh ${pr.number}, then gh pr ready ${pr.number}`
+      : `scripts/review-pr.sh ${pr.number}`
   if (risk === "high" && !approved)
     return "Ask the owner to comment /approve on the issue (high risk needs it after the last edit)."
-  if (worktree)
-    return `Work in ${worktree}, then heavy -- scripts/open-pr.sh --draft`
+  if (worktree) return `Work in ${worktree}, then scripts/open-pr.sh --draft`
   if (branch)
     return `git worktree add ../opencv.worktrees/${n}-work ${branch} (from the main checkout)`
   return `scripts/new-task.sh ${type ?? "<type>"} ${n} -d "short description"`

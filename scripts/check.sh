@@ -9,9 +9,9 @@
 #   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing
 #   CHECK_DRY_RUN=1 scripts/check.sh ...   print the plan and commands, run nothing
 #   CHECK_BASE_REF=<ref> scripts/check.sh --changed   compare with <ref> instead of origin/main
-#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo --concurrency (default: turbo's own for the full run, 2 for --changed)
+#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo --concurrency (default 2)
 #   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (turbo passes it through)
-#   `heavy -- scripts/check.sh` sets both to 2 (see AGENTS.md section 4)
+#   Both default to 2
 #   CHECK_RETRY_FAILED_TESTS=1 scripts/check.sh --changed   rerun a failed vitest file once, alone (set by open-pr.sh only,
 #     so its quick check and the pre-push check of its push; review-pr.sh and plain runs never retry). If every failed file
 #     passes: warn "passed only on retry: <files>", record them in the result file's `retried`, exit 0. Else fail as before.
@@ -66,7 +66,9 @@ for a in "$@"; do
 done
 [[ ${#tasks[@]} -gt 0 ]] || tasks=(lint typecheck test)
 dry=0; [[ "${CHECK_DRY_RUN:-}" == "1" ]] && dry=1
-conc=${CHECK_CONCURRENCY:-2}
+: "${CHECK_CONCURRENCY:=2}"
+export VITEST_MAX_WORKERS="${VITEST_MAX_WORKERS:-2}"
+conc=$CHECK_CONCURRENCY
 
 # Run a command, or only print it when CHECK_DRY_RUN=1. The output is also kept in $check_log for the result file.
 run() {
@@ -376,7 +378,7 @@ if [[ ${#failed[@]} -gt 0 ]]; then
   if (( retry_attempted )); then failing_files=("${still_failing[@]}"); fi
   [[ ${#failing_files[@]} -eq 0 ]] || result_file "${failing_files[@]}"
   [[ -z "$check_log" ]] || result_log "$check_log"
-  rerun="heavy -- scripts/check.sh"; (( ! changed_mode )) || rerun+=" --changed"
+  rerun="scripts/check.sh"; (( ! changed_mode )) || rerun+=" --changed"
   result_fail "$cause" "failed: ${failed[*]}" "$rerun ${tasks[*]}"
   exit 1
 fi

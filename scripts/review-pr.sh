@@ -60,11 +60,9 @@ human() { echo "  HUMAN $*"; humans+=("$*"); }
 note()  { echo "  note  $*"; notes+=("$*"); }
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
-rule_args=; (( $# )) && rule_args=$(printf '%q ' "$@")
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
-RULE_ARGS=$rule_args rule_heavy scripts/review-pr.sh
 keep=0; install=1; use_cache=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -325,7 +323,7 @@ elif [[ ${#humans[@]} -gt 0 ]]; then
   echo "RESULT: HUMAN REQUIRED. Do NOT merge. Comment with your findings and leave the decision to a human."
   exit 2
 else
-  result_ok "patch id ${patch_id:-none}, main ${main_sha:0:12}, head ${head_sha:0:12}" "heavy -- scripts/merge-pr.sh $pr"
+  result_ok "patch id ${patch_id:-none}, main ${main_sha:0:12}, head ${head_sha:0:12}" "scripts/merge-pr.sh $pr"
   echo "RESULT: OK (patch id ${patch_id:-none}, main ${main_sha:0:12}). Check the verify-opencv evidence and the independent review, then: gh pr merge $pr --squash --match-head-commit $head_sha"
   exit 0
 fi

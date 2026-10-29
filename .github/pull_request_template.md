@@ -24,8 +24,8 @@ Closes #<!-- issue number, required -->
 
 - [ ] Branch is `type/<issue#>-short-description` (a branch behind `main` is fine; the review tests the merge)
 - [ ] Title is `type: description (#<issue>)`
-- [ ] `heavy -- scripts/check.sh` passes (lint, typecheck, test). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
+- [ ] `scripts/check.sh` passes (lint, typecheck, test). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
 - [ ] verify-opencv evidence attached (web or api change)
-- [ ] Merge with `heavy -- scripts/merge-pr.sh <pr#>` once the evidence comment names the current patch id
+- [ ] Merge with `scripts/merge-pr.sh <pr#>` once the evidence comment names the current patch id
 - [ ] Env/secrets handling touched? Check no real secret or `.env` file is committed
 - [ ] A big decision, or deletes much of the code base? Add the `needs-human-review` label (then only a human approves)

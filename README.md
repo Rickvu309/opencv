@@ -67,7 +67,7 @@ Every change starts with a GitHub issue, and every issue gets its own branch and
 
 ```bash
 scripts/new-task.sh <type> <issue#> -d "short description"   # branch + worktree
-heavy -- scripts/open-pr.sh --draft                          # checks, push, PR
+scripts/open-pr.sh --draft                          # checks, push, PR
 ```
 
 Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow.

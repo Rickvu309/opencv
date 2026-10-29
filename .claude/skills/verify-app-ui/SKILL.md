@@ -49,7 +49,7 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 
 ## Apply against opencv.pen
 
-`PORT=4454 heavy -- pnpm --filter web verify:apply-pen` holds every Apply state to its pen frame. See [apply-pen.md](apply-pen.md).
+`PORT=4454 pnpm --filter web verify:apply-pen` holds every Apply state to its pen frame. See [apply-pen.md](apply-pen.md).
 
 ## The properties
 
@@ -107,7 +107,7 @@ Never edit the app to make a check pass unless that was the task. A FAIL on toda
 ## Helpers
 
 - `verify-app-ui error: port 4450 is in use`: another run holds it. Pick `PORT=4452`, or stop the holder. Never kill a stack you did not start.
-- `stack launch failed`: the message ends with the api and web log tails. A first boot under heavy load can need more time; rerun.
+- `stack launch failed`: the message ends with the api and web log tails. A first boot under load can need more time; rerun.
 - `coach did not render at /coach` (or another route): the stack came up but the screen never showed its content. Open the URL by hand from `~/tmp/verify-app-ui/stack/<run>/run.env`, or rerun with `VERIFY_APP_UI_SHOTS`.
 - `chrome did not start`: set `CHROME_BIN` to a Chromium or Chrome binary.
 - A crashed run can leave the stack up: `OPENCV_VERIFY_ROOT=~/tmp/verify-app-ui/stack bash .claude/skills/verify-opencv/scripts/cleanup.sh app-ui-<pid>` (the run id is `app-ui-` and the node pid, listed under `~/tmp/verify-app-ui/stack/`).

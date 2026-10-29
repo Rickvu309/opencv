@@ -41,7 +41,7 @@ When production is broken:
    ```bash
    scripts/new-task.sh hotfix <issue#> -d "short description"
    ```
-4. **Fix, then open the PR right away** (not as a draft): `heavy -- scripts/open-pr.sh` (`heavy` caps the run; see AGENTS.md section 4). That gives `hotfix: restore checkout button (#88)` with `Closes #88`.
+4. **Fix, then open the PR right away** (not as a draft): `scripts/open-pr.sh`. That gives `hotfix: restore checkout button (#88)` with `Closes #88`.
 5. **Fast-track review.** Checks must still pass. `SKIP_CHECKS=1` is allowed only if a human declares it, and the PR body says so. The review agent runs its checklist (including the checks) immediately. A mass deletion or a `needs-human-review` label still needs a human.
 6. **Squash-merge.** It deploys to production like any other change. If `ci` is red or the runner is off, see "When ci is red or the runner is off" in `review-and-approval.md` (owner only).
 7. **Verify** production, then clean up the worktree. If you rolled back in step 2, make sure the new production deploy includes everything that was rolled back plus the fix.
@@ -57,7 +57,7 @@ The fastest safe undo is a revert PR:
 scripts/new-task.sh fix 95 -d "revert login page"
 cd ../opencv.worktrees/95-revert-login-page
 git revert <squash-commit-sha>
-heavy -- scripts/open-pr.sh -d "revert login page"
+scripts/open-pr.sh -d "revert login page"
 ```
 
 Never fix production by pushing to `main` or force-pushing.

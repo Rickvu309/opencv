@@ -56,7 +56,7 @@ git -C "$tmp/repo" switch -q -c pr-head
 echo x >"$tmp/repo/x.txt"; git -C "$tmp/repo" add x.txt; git -C "$tmp/repo" commit -q -m "feat: x (#9)"
 head=$(git -C "$tmp/repo" rev-parse HEAD)
 git -C "$tmp/repo" switch -q main
-export HEAVY_SLOT=1 MP_HEAD=$head
+export MP_HEAD=$head
 export PATH=$tmp/bin:$PATH MP_LOG=$tmp/gh.log MERGE_PR_REVIEW_CMD=$tmp/review
 export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv MP_COUNT=$tmp/review-count
 
@@ -68,7 +68,7 @@ full="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review:
 review_only="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: sol-loop, approved."
 
 reset() {
-  : >"$MP_LOG"; rm -f "$MP_COUNT"; unset MP_BODY MP_BRANCH; export MP_HEAD=$head; rm -rf "$tmp/repo/.git/pre-push-stamps"; export HEAVY_SLOT=1
+  : >"$MP_LOG"; rm -f "$MP_COUNT"; unset MP_BODY MP_BRANCH; export MP_HEAD=$head; rm -rf "$tmp/repo/.git/pre-push-stamps"
   mkdir -p "$tmp/repo/.git/pre-push-stamps"; echo ok >"$tmp/repo/.git/pre-push-stamps/$head"
   git -C "$tmp/repo" switch -q main 2>/dev/null || true; git -C "$tmp/repo" reset -q --hard; unset MP_CI MP_LABELS MP_REVIEW_OUT2 MP_REVIEW_RC2 MP_COMPARE_FILES MP_COMPARE_FAIL MP_MAIN
   export MP_ME=owner MP_AUTHOR=owner MP_REVIEW_RC=0 MP_REVIEW_OUT=$ok_line MP_FILES="scripts/x.sh docs/y.md"

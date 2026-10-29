@@ -28,7 +28,7 @@ last_line_is_path success; validate "$f" status=ok cause=none next="do nothing" 
 ok "success writes a valid file and prints its path last"
 
 helper 'result_fail test "two \"quoted\" words
-on a second line \ and a backslash" "heavy -- scripts/check.sh test"; result_file "a b/c.test.ts" d.ts; result_retried r.test.ts; result_blocked_by 12 abc123 x.ts y.ts; echo out; exit 1'
+on a second line \ and a backslash" "scripts/check.sh test"; result_file "a b/c.test.ts" d.ts; result_retried r.test.ts; result_blocked_by 12 abc123 x.ts y.ts; echo out; exit 1'
 [[ $code -eq 1 ]] || fail "failure keeps its exit code"
 validate "$f" status=fail cause=test 'files=["a b/c.test.ts","d.ts"]' 'retried=["r.test.ts"]' 'blockedBy={"pr":12,"commit":"abc123","files":["x.ts","y.ts"]}'
 node -e 'const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); if(r.detail!=="two \"quoted\" words on a second line \\ and a backslash") process.exit(1)' "$f" || fail "detail is not escaped"
@@ -118,7 +118,7 @@ ok "check.sh success writes status ok and prints the path last"
 cpkg 'echo web:lint:  1 problem; exit 1' 'exit 0'
 check lint
 [[ $code -eq 1 ]] || fail "lint failure exit"
-validate "$c" status=fail cause=lint 'next=heavy -- scripts/check.sh lint'
+validate "$c" status=fail cause=lint 'next=scripts/check.sh lint'
 last_line_is_path_c "check lint"
 ok "check.sh lint failure: cause lint"
 

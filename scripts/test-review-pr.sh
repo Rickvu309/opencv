@@ -42,7 +42,7 @@ printf '#!/usr/bin/env bash\nexit 0\n' >"$tmp/bin/chrome"
 chmod +x "$tmp/bin/gh" "$tmp/bin/pnpm" "$tmp/bin/chrome"
 export CHROME_BIN=$tmp/bin/chrome
 export PATH=$tmp/bin:$PATH
-export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv HEAVY_SLOT=1
+export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv
 export REVIEW_TEST_ISSUE=7
 export REVIEW_TEST_BRANCH=chore/7-thing
 export REVIEW_TEST_TITLE='chore: thing (#7)'
@@ -151,19 +151,13 @@ CHECK_RETRY_FAILED_TESTS=1 run --no-install
 expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "running pnpm --filter web build" "web build passed" "RESULT: OK (patch id" "--match-head-commit $(git -C "$work" rev-parse "$REVIEW_TEST_BRANCH")"
 want_runs "behind main" 1
 [[ "$(cat "$REVIEW_TEST_RUNS.env")" == "retry=unset" ]] || fail "gate" "the gate's check ran with CHECK_RETRY_FAILED_TESTS set: it must never retry"
-result status=ok cause=none next="heavy -- scripts/merge-pr.sh 1"
+result status=ok cause=none next="scripts/merge-pr.sh 1"
 grep -q "patch id" "$PR_RESULT_DIR/opencv-review-pr-1.json" || fail "ok result" "detail has no patch id"
 grep -q "ran on $(merge_tree)" "$REVIEW_TEST_RUNS" || fail "behind main" "check did not run on the merge tree $(merge_tree)"
 patch1=$(patch_id)
 GIT_CONFIG_PARAMETERS="'color.ui=always' 'diff.noprefix=true'" run --no-install
 expect "patch id ignores color and prefix config" 0 "$patch1"
 
-# R90: review-pr.sh 248 and 255 were run without heavy (calls.jsonl, session b3bc055a, 2026-10-23T23:32 and 23:44).
-HEAVY_SLOT= run --no-install
-[[ $code -eq 1 ]] && grep -q 'must run through heavy' "$tmp/err" && grep -qx 'Fix: heavy -- scripts/review-pr.sh 1 --no-install' "$tmp/err" || fail "R90" "no heavy was not refused with the fix"
-result status=fail cause=hygiene "next=heavy -- scripts/review-pr.sh 1 --no-install"
-echo "ok: R90 without heavy it refuses and names the heavy command"
-want_runs "no heavy" 1
 run --no-install
 expect "same tree is cached" 0 "(cached; --no-cache reruns)" "RESULT: OK"
 want_runs "cached" 1
@@ -286,7 +280,7 @@ conflict_sha=$(git -C "$work" rev-parse HEAD)
 run --no-install
 expect "merge conflict" 1 "does not merge cleanly with main; author must rebase" "resolve: other.txt" "RESULT: FAIL"
 result status=fail cause=merge-conflict 'files=["other.txt"]' 'next=git fetch origin && git rebase origin/main' "blockedBy={\"pr\":41,\"commit\":\"$conflict_sha\",\"files\":[\"other.txt\"]}"
-expect "conflict report names the commit on main" 1 "other.txt: changed on main in ${conflict_sha:0:9} \"feat: change other.txt, which the PR also changes (#41)\" (PR #41)" "git fetch origin && git rebase origin/main && heavy -- git push --force-with-lease"
+expect "conflict report names the commit on main" 1 "other.txt: changed on main in ${conflict_sha:0:9} \"feat: change other.txt, which the PR also changes (#41)\" (PR #41)" "git fetch origin && git rebase origin/main && git push --force-with-lease"
 want_runs "conflict" 14
 
 # A conflict on a non-ASCII path is reported under its real name, not as git's quoted octal form.

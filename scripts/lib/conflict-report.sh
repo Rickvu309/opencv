@@ -36,7 +36,7 @@ conflict_report() {
     if [[ "$wt" == *[\"\$\`\\!]* ]]; then printf -v cd_to 'cd %q && ' "$wt"; else cd_to="cd \"$wt\" && "; fi
   fi
   CR_NEXT="${cd_to}git fetch origin && git rebase origin/main"
-  echo "  Rebase, resolve these files, then push: $CR_NEXT && heavy -- git push --force-with-lease"
+  echo "  Rebase, resolve these files, then push: $CR_NEXT && git push --force-with-lease"
   result_file "$@"
   if [[ -n "$best" ]]; then
     local blocked=()

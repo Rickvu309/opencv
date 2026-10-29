@@ -3,11 +3,11 @@
 # gates/review-pr status on the head and squash-merges. For an agent under the owner's account and the
 # owner's own PRs only; a contributor's PR is refused.
 #
-# Usage (from the main checkout, through heavy like review-pr.sh):
-#   heavy -- scripts/merge-pr.sh <pr#> [--dry-run] [--regate]
+# Usage (from the main checkout):
+#   scripts/merge-pr.sh <pr#> [--dry-run] [--regate]
 #
 # Steps, stopping at the first failure:
-#   0. it runs through heavy and the main checkout is on main with no edited file (docs/git-workflow/rule-enforcement.md)
+#   0. the main checkout is on main with no edited file (docs/git-workflow/rule-enforcement.md)
 #   1. the PR author is the authenticated gh user, and the head passes the workflow rules (no workflow file, pushed
 #      through the pre-push hook, commits that pass the commit hooks, SKIP_CHECKS named), before the gate spends a slot
 #   2. scripts/review-pr.sh <pr#> exits 0 (override the command with MERGE_PR_REVIEW_CMD)
@@ -43,11 +43,9 @@ die() { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "merge-pr: $*" >&2; exit 
 review_cmd=${MERGE_PR_REVIEW_CMD:-$here/review-pr.sh}
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
-rule_args=; (( $# )) && rule_args=$(printf '%q ' "$@")
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
-RULE_ARGS=$rule_args rule_heavy scripts/merge-pr.sh
 rule_main_clean "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
 dry_run=0; regate=0
 while [[ $# -gt 0 ]]; do
@@ -82,7 +80,7 @@ me=$(gh api user --jq .login)
 review_out=$(mktemp)
 result_cleanup() { rm -f "$review_out"; }
 
-# The workflow rules about the head, checked before the gate takes a heavy slot, and again if the head moved during it.
+# The workflow rules about the head, checked before the gate runs, and again if the head moved during it.
 # The fix commands run in the branch's worktree: this script runs in the main checkout, which nobody edits.
 checked_head=""
 head_rules() {
@@ -182,7 +180,7 @@ while :; do
   if (( dry_run )); then
     echo "==> dry run, nothing changed. Would run:"
     printf '  %s\n' "${status_cmd[*]}" "${merge_cmd[*]}"
-    result_ok "dry run for patch id $rec_patch, nothing changed" "heavy -- scripts/merge-pr.sh $pr"
+    result_ok "dry run for patch id $rec_patch, nothing changed" "scripts/merge-pr.sh $pr"
     exit 0
   fi
 
@@ -194,8 +192,8 @@ while :; do
     attempt=2
     continue
   fi
-  result_next "heavy -- scripts/merge-pr.sh $pr --regate"
-  DIE_CAUSE=behind-main die "main moved from $rec_main to ${main_now:0:12} during the review. Rerun the gate against the new main: heavy -- scripts/merge-pr.sh $pr --regate"
+  result_next "scripts/merge-pr.sh $pr --regate"
+  DIE_CAUSE=behind-main die "main moved from $rec_main to ${main_now:0:12} during the review. Rerun the gate against the new main: scripts/merge-pr.sh $pr --regate"
 done
 "${status_cmd[@]}" >/dev/null
 "${merge_cmd[@]}" || die "GitHub refused the merge; the gates/review-pr status was already posted on ${rec_head:0:9}. Run node scripts/pr.mjs doctor; if the ruleset drifted, apply it: gh api -X PUT repos/quanvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json. Never add --admin."

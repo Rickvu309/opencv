@@ -30,19 +30,19 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 ## Lifecycle
 
-1. Open a **draft** PR as soon as you have a first commit. Run this inside your worktree (`heavy` caps the run; see AGENTS.md section 4):
+1. Open a **draft** PR as soon as you have a first commit. Run this inside your worktree:
    ```bash
-   heavy -- scripts/open-pr.sh --draft
+   scripts/open-pr.sh --draft
    ```
    It checks the branch name, runs `scripts/check.sh --changed` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is the PR template with `Closes #N` filled in. Use `--dry-run` to preview.
-2. Keep working; push through `heavy -- git push`. The pre-push hook runs the quick check.
+2. Keep working; push through `git push`. The pre-push hook runs the quick check.
 3. When done: checks pass, the verify-opencv evidence is attached, and the checklist is ticked. Run `gh pr ready`.
 4. Review (see `review-and-approval.md`). Fix comments in new commits and resolve the threads.
 5. A branch behind `main` needs no rebase: the reviewer tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict:
    ```bash
    git fetch origin
    git rebase origin/main
-   heavy -- git push --force-with-lease
+   git push --force-with-lease
    ```
    `scripts/review-pr.sh` prints a patch id that such a rebase keeps when the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so only the script reruns, and its passing check is cached by the tested tree. GitHub still dismisses a human approval on every push (the ruleset), so a contributor's PR needs that approval again.
 6. Squash-merge: `gh pr merge --squash`.

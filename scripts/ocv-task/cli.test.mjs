@@ -235,7 +235,7 @@ test("status shows branch, worktree and an open draft PR", () => {
     /Branch: fix\/90-two-emails \(worktree \/home\/quan\/projects\/opencv\.worktrees\/90-two-emails\)/
   )
   assert.match(text, /Pull request: #95 open \(draft\)/)
-  assert.match(text, /Next: heavy -- scripts\/review-pr\.sh 95/)
+  assert.match(text, /Next: scripts\/review-pr\.sh 95/)
 })
 
 test("status refuses a pull request number and a closed issue", () => {
