@@ -168,7 +168,7 @@ ci_gate() {
     die "could not read the ci check of ${rec_head:0:9}"
   [[ "$state" == success ]] && { echo "  ok    ci check passed on ${rec_head:0:9}"; return 0; }
   result_next "gh run list --workflow ci.yml --commit $rec_head"
-  die "the ci check on head ${rec_head:0:9} is $state, not success. Fix: wait for the run to finish, or gh run rerun <run id> (gh run list --workflow ci.yml --commit $rec_head); the runner service must be online"
+  die "the ci check on head ${rec_head:0:9} is $state, not success. Fix: wait for the run to finish, or gh run rerun <run id> (gh run list --workflow ci.yml --commit $rec_head); the runner opencv-local must be online"
 }
 
 attempt=1
@@ -198,7 +198,7 @@ while :; do
   DIE_CAUSE=behind-main die "main moved from $rec_main to ${main_now:0:12} during the review. Rerun the gate against the new main: heavy -- scripts/merge-pr.sh $pr --regate"
 done
 "${status_cmd[@]}" >/dev/null
-"${merge_cmd[@]}"
+"${merge_cmd[@]}" || die "GitHub refused the merge; the gates/review-pr status was already posted on ${rec_head:0:9}. Run node scripts/pr.mjs doctor; if the ruleset drifted, apply it: gh api -X PUT repos/quanvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json. Never add --admin."
 
 merge_sha=$(gh pr view "$pr" --json mergeCommit --jq .mergeCommit.oid)
 echo "==> merged PR #$pr as $merge_sha"

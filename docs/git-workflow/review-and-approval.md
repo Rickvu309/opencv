@@ -2,7 +2,7 @@
 
 Every PR goes through review before it merges.
 
-**Owner-only merge.** The `main` ruleset requires a PR, the `ci` check and squash merge, with no approving review (GitHub never lets an account approve its own PR, and one account runs everything), no code-owner review, no thread rule and no bypass actor. `CODEOWNERS` still names `@quanvu309`. Contributors have Write access: they push branches and open PRs, and the review agent under the owner's account merges after `gh pr review <pr#> --comment`. An agent working under that account merges its own routine PRs with `heavy -- scripts/merge-pr.sh <pr#>` once the independent review has no open finding; it never uses `--admin`. `scripts/review-pr.sh` checks requested changes and unresolved threads before it reports OK, and `merge-pr.sh` reads the `ci` check too. It never merges a contributor's PR or a PR that needs a human (step 4). Direct pushes to `main` stay blocked for everyone. Apply `.github/rulesets/main.json` after editing it (the file only takes effect once applied, and the bypass goes away only then):
+**Owner-only merge.** The `main` ruleset requires a PR, the `ci` check, the `gates/review-pr` status (posted only by `merge-pr.sh` on the reviewed head, so `HUMAN REQUIRED`, the patch-id evidence and the full review hold) and squash merge, with no approving review (GitHub never lets an account approve its own PR, and one account runs everything), no code-owner review, no thread rule and no bypass actor. `CODEOWNERS` still names `@quanvu309`. GitHub no longer blocks a Write collaborator's merge: the repo relies on being single-collaborator (as `rule-enforcement.md` says of the runner), and adding a collaborator needs the approval rule (and the runner decision) back first. The review agent under the owner's account merges after `gh pr review <pr#> --comment`. An agent working under that account merges its own routine PRs with `heavy -- scripts/merge-pr.sh <pr#>` once the independent review has no open finding; it never uses `--admin`. `scripts/review-pr.sh` checks requested changes and unresolved threads before it reports OK, and `merge-pr.sh` reads the `ci` check too. It never merges a contributor's PR or a PR that needs a human (step 4). Direct pushes to `main` stay blocked for everyone. Apply `.github/rulesets/main.json` after editing it (the file only takes effect once applied, and the bypass goes away only then):
 
 ```bash
 id=$(gh api repos/quanvu309/opencv/rulesets --jq '.[] | select(.name=="main") | .id')
@@ -16,11 +16,11 @@ so **the review is the real gate**. Nothing merges without the checklist below.
 
 **Human review only for super important changes.** Owner decision, 2026-10-23: a human reviews a PR only when it is a mass deletion (it deletes 25% or more of the files tracked on `main`, or 80% or more of one app or package) or a big decision flagged with the `needs-human-review` label. Everything else, env and secrets changes included, merges once the checklist passes and the independent review has no open finding.
 
-| PR                                                                                       | Who approves                                                                                                          |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Any change, env and secrets included                                                     | `@quanvu309`'s agent merges after the checklist passes and the independent review is clean. Contributors cannot merge |
-| Mass deletion (25% or more of the files on `main`, or 80% or more of one app or package) | A human (`review-pr.sh` reports `HUMAN REQUIRED`)                                                                     |
-| Has the `needs-human-review` label (a big decision)                                      | A human (enforced by rule: the review agent never merges it)                                                          |
+| PR                                                                                       | Who approves                                                                                                               |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Any change, env and secrets included                                                     | `@quanvu309`'s agent merges after the checklist passes and the independent review is clean. Run through `merge-pr.sh` only |
+| Mass deletion (25% or more of the files on `main`, or 80% or more of one app or package) | A human (`review-pr.sh` reports `HUMAN REQUIRED`)                                                                          |
+| Has the `needs-human-review` label (a big decision)                                      | A human (enforced by rule: the review agent never merges it)                                                               |
 
 People can read, comment on, and **request changes** on any PR at any time. A "changes requested" review blocks merge until that person approves or the review is dismissed.
 
@@ -78,7 +78,7 @@ Env and secrets changes no longer need a human. `.github/CODEOWNERS` lists env/s
 - anything named `*secret*`
 - `.github/CODEOWNERS` itself, so nobody can remove these rules without a human
 
-GitHub blocks every merge without `@quanvu309`'s approval or bypass, so contributors still cannot merge them. An agent under the owner's account merges them like any other PR once the checklist passes. A committed real env file fails the checklist.
+GitHub does not block a collaborator's merge of them (see Owner-only merge). An agent under the owner's account merges them like any other PR once the checklist passes. A committed real env file fails the checklist.
 
 If you change how env or secrets are handled in a file not covered by `CODEOWNERS`, add the path to `CODEOWNERS` in the same PR.
 
@@ -93,3 +93,7 @@ If you change how env or secrets are handled in a file not covered by `CODEOWNER
 
 - A new push dismisses existing approvals. Rebasing on `main` therefore needs a re-approval, and re-running the checklist.
 - All review conversations must be resolved before merge.
+
+## When ci is red or the runner is off
+
+If a hotfix must land while `ci` is red or the runner `opencv-local` is offline, only the owner acts, in the GitHub UI, never an agent: remove the `ci` rule in Settings > Rules > main (or PUT an edited copy of `.github/rulesets/main.json`), merge, reapply `.github/rulesets/main.json` with `gh api -X PUT repos/quanvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json`, and confirm with `node scripts/pr.mjs doctor`.

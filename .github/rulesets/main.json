@@ -17,7 +17,8 @@
       "type": "required_status_checks",
       "parameters": {
         "required_status_checks": [
-          { "context": "ci", "integration_id": 15368 }
+          { "context": "ci", "integration_id": 15368 },
+          { "context": "gates/review-pr" }
         ],
         "strict_required_status_checks_policy": false,
         "do_not_enforce_on_create": false

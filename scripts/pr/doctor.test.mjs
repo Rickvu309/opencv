@@ -194,6 +194,15 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
     ["bypass_actors[5]", "conditions.ref_name.include"]
   )
 
+  const nogate = liveRuleset()
+  const checks = nogate.rules.find((r) => r.type === "required_status_checks")
+  checks.parameters.required_status_checks.pop()
+  drift = await doctor(fakeIo({ ruleset: async () => nogate }))
+  assert.match(
+    drift[0].detail,
+    /\[gates\/review-pr\]: in git, missing on GitHub/
+  )
+
   drift = await doctor(fakeIo({ ruleset: async () => null }))
   assert.equal(
     drift[0].fix,
@@ -207,10 +216,14 @@ test("ruleset: required checks are matched by context, not by position", async (
   const missing = liveRuleset()
   checks(missing).required_status_checks = []
   let drift = await doctor(fakeIo({ ruleset: async () => missing }))
-  assert.equal(drift.length, 1)
+  assert.equal(drift.length, 2)
   assert.match(
     drift[0].detail,
     /required_status_checks\[ci\]: in git, missing on GitHub/
+  )
+  assert.match(
+    drift[1].detail,
+    /required_status_checks\[gates\/review-pr\]: in git, missing on GitHub/
   )
 
   const extra = liveRuleset()
