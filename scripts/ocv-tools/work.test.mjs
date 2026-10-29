@@ -245,6 +245,76 @@ test("save refuses a normal clone and a worktree outside the worktree root", () 
   }
 })
 
+test("save reports LOST when ownership flips while git push runs", () => {
+  const comments = [claim("me", 10)]
+  const t = tempRepo(comments)
+  try {
+    const orig = t.ctx.run
+    const log = []
+    t.ctx.run = (cmd, args, options) => {
+      log.push(`${cmd} ${args.join(" ")}`)
+      if (cmd === "git" && args[0] === "push")
+        comments.push(claim("other", 1, 9))
+      return orig(cmd, args, options)
+    }
+    writeFileSync(join(t.work, "b.txt"), "b\n")
+    const r = runCli(["save", "-m", "feat: add b"], t.ctx)
+    assert.equal(r.code, 3, r.text)
+    assert.match(
+      r.text,
+      /your push already reached origin\/feat\/90-keep-my-search; other now holds #90/
+    )
+    assert.match(r.text, /\nFix: /)
+    assert.doesNotMatch(r.text, /claim is refreshed/)
+    assert.match(
+      t.sh(t.work, "ls-remote", "--heads", "origin"),
+      /feat\/90-keep-my-search/
+    )
+    const patches = log.filter((line) => line.includes("-X PATCH"))
+    const pushAt = log.findIndex((line) => line.startsWith("git push "))
+    assert.equal(patches.length, 1)
+    assert.ok(log.indexOf(patches[0]) < pushAt)
+    assert.match(patches[0], /agent=me/)
+    assert.equal(
+      t.ctx.written["lost/90-2026-10-29T12-00-00-000Z.patch"],
+      undefined
+    )
+  } finally {
+    t.done()
+  }
+})
+
+test("save keeps a patch when ownership flips during push and work is uncommitted", () => {
+  const comments = [claim("me", 10)]
+  const t = tempRepo(comments)
+  try {
+    const orig = t.ctx.run
+    t.ctx.run = (cmd, args, options) => {
+      if (cmd === "git" && args[0] === "push") {
+        comments.push(claim("other", 1, 9))
+        writeFileSync(join(t.work, "during.txt"), "during\n")
+      }
+      return orig(cmd, args, options)
+    }
+    writeFileSync(join(t.work, "b.txt"), "b\n")
+    const r = runCli(["save", "-m", "feat: add b"], t.ctx)
+    assert.equal(r.code, 3, r.text)
+    assert.match(
+      r.text,
+      /your push already reached origin\/feat\/90-keep-my-search; other now holds #90/
+    )
+    assert.match(r.text, /patch: \/tmp\/lost\/90-/)
+    assert.match(
+      t.ctx.written["lost/90-2026-10-29T12-00-00-000Z.patch"],
+      /during/
+    )
+    const patchCalls = t.ctx.ghCalls.filter((c) => c.includes("-X PATCH"))
+    assert.equal(patchCalls.length, 1)
+  } finally {
+    t.done()
+  }
+})
+
 test("save does not push when another agent takes the claim before the push", () => {
   const comments = [claim("me", 10)]
   const t = tempRepo(comments)

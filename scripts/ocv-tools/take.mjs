@@ -94,8 +94,10 @@ function heldError(n, h) {
 
 // GitHub has no atomic claim: issue comments are not a compare-and-swap.
 // take re-reads after install and after posting; the newest live marker wins.
-// save re-reads again immediately before push. A comment that arrives after
-// that last read can still win. That gap is the residual race.
+// save refreshes the claim immediately before push, then re-reads after the
+// push returns and does not report success if the holder changed. A comment
+// that arrives after that post-push read can still win. That gap is the
+// residual race.
 function lostTake(ctx, made, n, h) {
   const removed = discardWorktree(ctx, made)
   return {

@@ -26,10 +26,9 @@ function holds(h, me) {
   )
 }
 
-// Another agent holds the claim: keep our work as a patch and stop.
 // The diff is raw stdout. Trimming drops a blank context line (a single
 // space) and the hunk no longer applies.
-function lost(ctx, { n }, holder) {
+function savedPatch(ctx, n) {
   const add = git(ctx, "add", "-A")
   if (!add.ok)
     throw new Error(
@@ -51,7 +50,12 @@ function lost(ctx, { n }, holder) {
     )
   const stamp = new Date(nowOf(ctx)).toISOString().replace(/[:.]/g, "-")
   const patch = diff.out.endsWith("\n") ? diff.out : `${diff.out}\n`
-  const path = ctx.writeScratch(`lost/${n}-${stamp}.patch`, patch)
+  return ctx.writeScratch(`lost/${n}-${stamp}.patch`, patch)
+}
+
+// Another agent holds the claim: keep our work as a patch and stop.
+function lost(ctx, { n }, holder) {
+  const path = savedPatch(ctx, n)
   return {
     exit: EXIT.LOST,
     lines: [
@@ -60,6 +64,25 @@ function lost(ctx, { n }, holder) {
       "Stop working on this issue.",
     ],
     fix: FIXES.LOST,
+  }
+}
+
+// The push already happened. Say so, and do not patch the old claim comment.
+// Uncommitted work still goes to a patch under ~/tmp/ocv-tools/lost.
+function lostPushed(ctx, t, holder) {
+  const who = holder.agent || "another agent"
+  const lines = [
+    `LOST #${t.n}: your push already reached origin/${t.branch}; ${who} now holds #${t.n}.`,
+  ]
+  if (git(ctx, "status", "--porcelain").out) {
+    const path = savedPatch(ctx, t.n)
+    lines.push(`Your uncommitted work is saved as a patch: ${path}`)
+  }
+  lines.push("Stop working on this issue.")
+  return {
+    exit: EXIT.LOST,
+    lines,
+    fix: `The commits are already on origin/${t.branch}. ${who} holds #${t.n}. Stop working in this worktree and do not edit the claim. Run: scripts/ocv-tools.mjs status ${t.n}`,
   }
 }
 
@@ -99,12 +122,12 @@ export function save(ctx, { message }) {
         `commit failed: ${commit.err || commit.out}`.slice(0, 800)
       )
   }
-  // Re-read immediately before push. GitHub has no atomic claim, so a
-  // takeover during commit must not publish these commits. A comment that
-  // arrives after this read and before the server accepts the push can
-  // still win. That gap is the residual race.
+  // Re-read before the push. A takeover during commit must not publish.
   const again = readClaim(ctx, t.n).holder
   if (!holds(again, me)) return lost(ctx, t, again)
+  // Refresh immediately before git push. The pre-push check can take long
+  // enough to expire a claim that was fresh at the previous heartbeat.
+  heartbeat(ctx, t.n, again, me)
   const pushed = git(ctx, "push", "-u", "origin", "HEAD")
   if (!pushed.ok)
     throw new Error(
@@ -112,7 +135,13 @@ export function save(ctx, { message }) {
         -800
       )
     )
-  heartbeat(ctx, t.n, again, me)
+  // Re-read after the push returns, before any success report or a second
+  // patch of the claim. A takeover during the hook must not look like success.
+  // A comment that arrives after this read can still win. That gap is the
+  // residual race.
+  const after = readClaim(ctx, t.n).holder
+  if (!holds(after, me)) return lostPushed(ctx, t, after)
+  heartbeat(ctx, t.n, after, me)
   return {
     lines: [
       `Saved #${t.n} on ${t.branch} at ${git(ctx, "rev-parse", "--short", "HEAD").out}.`,
