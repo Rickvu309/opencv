@@ -102,7 +102,7 @@ export function SessionExpiredDialog({
             <Button
               type="button"
               variant="glow"
-              className="w-full"
+              className="h-auto min-h-8 w-full min-w-0 [overflow-wrap:anywhere] whitespace-normal"
               autoFocus
               disabled={pending}
               onClick={() => void continueAs()}
