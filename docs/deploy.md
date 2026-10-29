@@ -37,7 +37,7 @@ partial does not already own them. Check `railway config partials list --json`
 and the structured plan before any apply. Do not rename the partial without
 an ownership transfer. See [Railway's ownership rules](https://docs.railway.com/infrastructure-as-code#ownership-rules).
 
-The API retains GitHub source `quanvu309/opencv` on `main`. Its `AUTH_URL`,
+The API retains GitHub source `Rickvu309/opencv` on `main`. Its `AUTH_URL`,
 `WEB_ORIGINS`, `DATABASE_URL`, `OPENROUTER_API_KEY` and `SESSION_SECRET` are
 explicit `preserve()` declarations: values stay in Railway. The file declares
 no secret values or domains. The cutover flips `AUTH_URL` and `WEB_ORIGINS`

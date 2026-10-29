@@ -1,6 +1,6 @@
 # Issue tracker: GitHub issues
 
-Issues and specs for this repo live in GitHub issues of `quanvu309/opencv`. Do not use Linear or `.scratch/` for new work. Older tickets in the Linear project OpenCV (team key `QVE`) stay where they are.
+Issues and specs for this repo live in GitHub issues of `Rickvu309/opencv`. Do not use Linear or `.scratch/` for new work. Older tickets in the Linear project OpenCV (team key `QVE`) stay where they are.
 
 ## Conventions
 

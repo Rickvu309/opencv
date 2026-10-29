@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Issues live in GitHub issues of `quanvu309/opencv`, created from the Task form in `.github/ISSUE_TEMPLATE/task.yml`. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub issues of `Rickvu309/opencv`, created from the Task form in `.github/ISSUE_TEMPLATE/task.yml`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

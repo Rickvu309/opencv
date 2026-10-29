@@ -69,7 +69,7 @@ echo "  ok    ci check passed on ${head:0:9}"
 
 echo "==> PR #$pr: merge"
 gh pr merge "$pr" --squash --match-head-commit "$head" ||
-  die "GitHub refused the merge of PR #$pr. Run node scripts/pr.mjs doctor; if the ruleset drifted, apply it: gh api -X PUT repos/quanvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json. Never add --admin."
+  die "GitHub refused the merge of PR #$pr. Run node scripts/pr.mjs doctor; if the ruleset drifted, apply it: gh api -X PUT repos/$repo/rulesets/25725442 --input .github/rulesets/main.json. Never add --admin."
 
 merge_sha=$(gh pr view "$pr" --json mergeCommit --jq .mergeCommit.oid)
 echo "==> merged PR #$pr as $merge_sha"
