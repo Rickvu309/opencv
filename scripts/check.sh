@@ -3,7 +3,7 @@
 # Detects pnpm / yarn / npm from the lockfile and runs the root package.json scripts that exist (they call turbo).
 #
 # Usage:
-#   scripts/check.sh                 full run: lint, typecheck, test (what scripts/review-pr.sh runs, once per PR)
+#   scripts/check.sh                 full run: lint, typecheck, test (nothing runs this before a merge; ci runs --changed)
 #   scripts/check.sh lint test       run only these
 #   scripts/check.sh --changed       quick run scoped to what changed since origin/main (what pushes run)
 #   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing
@@ -13,7 +13,7 @@
 #   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (turbo passes it through)
 #   Both default to 2
 #   CHECK_RETRY_FAILED_TESTS=1 scripts/check.sh --changed   rerun a failed vitest file once, alone (set by open-pr.sh only,
-#     so its quick check and the pre-push check of its push; review-pr.sh and plain runs never retry). If every failed file
+#     so its quick check and the pre-push check of its push; a plain run never retries). If every failed file
 #     passes: warn "passed only on retry: <files>", record them in the result file's `retried`, exit 0. Else fail as before.
 #     Only when `test` is the one failed task, at most CHECK_RETRY_MAX_FILES (5, digits only) files failed, turbo's
 #     "Failed:" line names only packages that have a retried file, and the log has no vitest unhandled error. Turbo runs
@@ -33,7 +33,7 @@
 #
 # The full run (no --changed) adds a whole-repo prettier --check after `lint`.
 #
-# Called by the pre-push hook and scripts/open-pr.sh (both with --changed), and by scripts/review-pr.sh (full).
+# Called by the pre-push hook and scripts/open-pr.sh (both with --changed). ci.yml runs the same quick check.
 # Exit code: 0 all passed (or a dry run, which runs nothing), 1 something failed.
 set -euo pipefail
 
@@ -43,8 +43,8 @@ esac
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-# One JSON result per run (scripts/lib/result.sh). review-pr.sh runs a copy of this file from main, so the helper is read
-# from the tree being checked; without it the run still works and writes nothing.
+# One JSON result per run (scripts/lib/result.sh). The helper is read from the tree being checked; without it the
+# run still works and writes nothing.
 if [[ -f scripts/lib/result.sh ]]; then
   # shellcheck source=scripts/lib/result.sh
   . scripts/lib/result.sh
@@ -258,14 +258,11 @@ if (( changed_mode )); then
           fi
           # label | script | files whose change runs it (globs allowed)
           script_tests=(
-            "codeowners-tests|scripts/test-codeowners.sh|scripts/codeowners-lib.sh scripts/test-codeowners.sh scripts/review-pr.sh .github/CODEOWNERS"
             "commit-msg-tests|scripts/test-commit-msg.sh|.githooks/commit-msg scripts/test-commit-msg.sh"
             "pre-commit-tests|scripts/test-pre-commit.sh|.githooks/pre-commit scripts/test-pre-commit.sh .gitattributes"
-            "review-pr-tests|scripts/test-review-pr.sh|scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh scripts/lib/rules.sh scripts/lib/verify-tier.sh scripts/lib/verify-gate.mjs scripts/lib/review-pr-verify-cases.sh"
             "rules-tests|scripts/test-rules.sh|scripts/lib/rules.sh scripts/test-rules.sh .githooks/pre-push"
             "check-retry-tests|scripts/test-check-retry.sh|scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs scripts/fixtures/check-flaky-*.txt"
             "check-guards-tests|scripts/test-check-guards.sh|scripts/test-check-guards.sh scripts/lib/result.sh"
-            "conflict-report-tests|scripts/test-conflict-report.sh|scripts/lib/conflict-report.sh scripts/test-conflict-report.sh"
             "disk-tests|scripts/test-disk-preflight.sh|scripts/lib/disk.sh scripts/test-disk-preflight.sh"
             "result-tests|scripts/test-result.sh|scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh"
             "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr*.sh scripts/lib/*.sh"
@@ -306,7 +303,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-check-guards test-rules; do
+    for t in test-commit-msg test-pre-commit test-merge-pr test-result test-disk-preflight test-check-retry test-check-guards test-rules; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done

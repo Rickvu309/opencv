@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # result.sh: one JSON result per workflow script run. Source it, then:
 #
-#   result_begin <script> [id]      script: new-task | open-pr | review-pr | merge-pr | check. Installs the EXIT trap.
+#   result_begin <script> [id]      script: new-task | open-pr | merge-pr | check. Installs the EXIT trap.
 #   result_id <id>                  set the id later (PR number, else the branch; "/" becomes "-")
 #   result_fail <cause> <detail> [next]    status fail, first call wins (cause: see CAUSES)
 #   result_human <detail> [next]    status human

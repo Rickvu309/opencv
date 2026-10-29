@@ -4,14 +4,7 @@
 // Prints the file's one-line summary and exits 0 when valid, prints the problems to stderr and exits 1 otherwise.
 import { readFileSync } from "node:fs"
 
-const SCRIPTS = [
-  "new-task",
-  "open-pr",
-  "review-pr",
-  "merge-pr",
-  "check",
-  "release",
-]
+const SCRIPTS = ["new-task", "open-pr", "merge-pr", "check", "release"]
 const STATUS = ["ok", "fail", "human", "error"]
 const CAUSES = [
   "none",

@@ -2,7 +2,8 @@
 # rules.sh: mechanical checks for the PR-workflow rules in AGENTS.md (sections 2 to 6). Source scripts/lib/result.sh first.
 # Each check prints one line that names the fix, records cause "hygiene" with that fix as `next`, and exits 1.
 # The rule table in docs/git-workflow/rule-enforcement.md pairs every rule with its enforcer; a rule with no check there is a judgment rule.
-# A fix that changes a branch starts with cd <worktree>: merge-pr.sh runs in the main checkout, which nobody edits.
+# A fix that changes a branch starts with cd <worktree>. merge-pr.sh calls only rule_ci_workflow_kept and
+# rule_risk_high_for_ci. open-pr.sh calls the rest. Both run where the branch is not checked out.
 #
 #   rule_main_clean <main_checkout>       R68  the main checkout stays on main with no edited tracked file
 #   rule_port <worktree>                  R76  the worktree's .env still has the port ocv-tools take assigned

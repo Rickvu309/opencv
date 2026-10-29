@@ -13,7 +13,7 @@
 #
 # A test file that fails in the quick check or in the pre-push check of the push is rerun once, alone. If it passes the
 # run goes on with "WARN passed only on retry: <files>" and the files are in result.json (retried); a second failure fails.
-# This is done with CHECK_RETRY_FAILED_TESTS=1 for this script's own check.sh runs only; scripts/review-pr.sh never retries.
+# This is done with CHECK_RETRY_FAILED_TESTS=1 for this script's own check.sh runs only; a plain check never retries.
 #
 # Emergency only, declared by a human: SKIP_CHECKS=1 SKIP_CHECKS_DECLARED_BY=<who> scripts/open-pr.sh   (the PR body says so)
 set -euo pipefail
@@ -69,7 +69,7 @@ if (( have_gh )); then
   if [[ -n "$existing" ]]; then
     echo "A PR is already open for $branch: $existing"
     result_id "${existing##*/}"
-    result_ok "a PR is already open: $existing" "cd $(printf '%q' "$main_checkout") && scripts/review-pr.sh ${existing##*/}"
+    result_ok "a PR is already open: $existing" "cd $(printf '%q' "$main_checkout") && scripts/merge-pr.sh ${existing##*/}"
     exit 0
   fi
   state=$(gh issue view "$issue" --json state --jq .state 2>/dev/null) || die "issue #$issue not found"
@@ -129,7 +129,7 @@ checked=0
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
   echo "WARNING: SKIP_CHECKS=1, checks skipped. Emergencies only." >&2
 else
-  # Quick check of what changed; the full check runs once, in scripts/review-pr.sh.
+  # Quick check of what changed. ci runs the same check; nothing runs the full check before a merge.
   info "Running scripts/check.sh --changed"
   checked=1
   export CHECK_RETRY_FAILED_TESTS=1
@@ -153,7 +153,7 @@ pr_url=$(gh pr create "${args[@]}") || DIE_CAUSE=other die "gh pr create failed;
 [[ -z "$pr_url" ]] || echo "$pr_url"
 if [[ "${pr_url##*/}" =~ ^[0-9]+$ ]]; then
   result_id "${pr_url##*/}"
-  result_ok "opened ${pr_url}" "cd $(printf '%q' "$main_checkout") && scripts/review-pr.sh ${pr_url##*/}"
+  result_ok "opened ${pr_url}" "cd $(printf '%q' "$main_checkout") && scripts/merge-pr.sh ${pr_url##*/}"
 else
   result_ok "PR created"
 fi
