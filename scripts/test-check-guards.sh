@@ -32,9 +32,17 @@ plan() {
   git -C "$repo" checkout -q -- . && git -C "$repo" clean -qfd
 }
 runs() { grep -q "^\[dry-run\] pnpm exec turbo run test .*--filter=@workspace/guards" "$tmp/out"; }
+# A global file runs the whole check, and `pnpm run test` is turbo test over every package, guards included.
+full_runs() { grep -q "is a global file; running the full check" "$tmp/out" && grep -q "^\[dry-run\] pnpm run test" "$tmp/out"; }
 
 plan docs/adr/0010-one-typed-contract-for-commands-and-reads.md
 runs || fail "docs edit: guard package not run"
+plan .railway/railway.ts
+runs || full_runs || fail ".railway edit: guards not run"
+plan .gitattributes
+runs || full_runs || fail ".gitattributes edit: guards not run"
+plan AGENTS.md
+runs || fail "AGENTS edit: guard package not run"
 ! grep -q '^\[dry-run\] node --test' "$tmp/out" || fail "root guard list ran outside turbo"
 ! grep -q '^\[dry-run\] scripts/test-.*\.sh$' "$tmp/out" || fail "shell suite ran outside turbo"
 echo "ok: changed tests run guards through turbo once"

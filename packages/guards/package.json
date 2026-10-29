@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "cd ../.. && node --test scripts/ocv-tools/adapters.test.mjs scripts/ocv-tools/approve.test.mjs scripts/ocv-tools/board.test.mjs scripts/ocv-tools/claim.test.mjs scripts/ocv-tools/cli.test.mjs scripts/ocv-tools/facts.test.mjs scripts/ocv-tools/fields.test.mjs scripts/ocv-tools/lint.test.mjs scripts/ocv-tools/ports/gh.test.mjs scripts/ocv-tools/ports/git.test.mjs scripts/ocv-tools/result.test.mjs scripts/ocv-tools/rules.test.mjs scripts/ocv-tools/rules/completeness.test.mjs scripts/ocv-tools/shot.test.mjs scripts/ocv-tools/take.test.mjs scripts/ocv-tools/work.test.mjs scripts/pr/doctor.test.mjs scripts/pr/release.test.mjs scripts/pr/services.test.mjs packages/guards/shell-suites.test.mjs packages/guards/workspace-scripts.test.mjs",
-    "test:open-pr": "cd ../.. && node --test scripts/open-pr.test.mjs",
-    "test:shell": "cd ../.. && node --test packages/guards/shell-suites.test.mjs"
+    "test": "node run-tests.mjs",
+    "test:open-pr": "node run-tests.mjs --open-pr"
   }
 }

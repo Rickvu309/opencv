@@ -12,6 +12,16 @@
         "../../.claude/skills/**/*.sh",
         "../../.claude/skills/**/*.json",
         "../../docs/**",
+        "../../AGENTS.md",
+        "../../CONTEXT.md",
+        "../../CONTRIBUTING.md",
+        "../../apps/**/src/**",
+        "../../packages/**/src/**",
+        "../../.railway/**",
+        "../../.gitattributes",
+        "../../.githooks/**",
+        "../../.claude/skills/**",
+        "../../scripts/**",
         "../../.github/**",
         "../../.githooks/**"
       ]

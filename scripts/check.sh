@@ -171,6 +171,7 @@ if (( changed_mode )); then
   for f in "${files[@]}"; do
     case "$f" in
       package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|.npmrc|.nvmrc|.node-version|.pnpmfile.cjs|vitest.*|scripts/check.sh) global="$f" ;;
+      .railway/railway.ts|.gitattributes) global="$f" ;;
       */*) global="" ;;
       *.config.*|tsconfig*.json|.eslint*|.prettier*) global="$f" ;;
       *) global="" ;;
