@@ -90,9 +90,9 @@ Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](
 
 At `ceb07502` (main, checked in #510) the checker prints 30 PASS, 1 FAIL and 0 STALE: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
 
-## In the PR review
+## Run it by hand
 
-`scripts/review-pr.sh` runs this checker at `VERIFY_TIER=invariant` for a PR that touches `apps/web/`, `apps/api/`, `packages/ui/`, `packages/domain/` or a verify skill. `known-findings.json` next to this file lists the invariant FAILs that are allowed, each tracked by an issue: `[{ "id": "<check id>", "issue": <number>, "since": "<date>", "note": "..." }]`, empty today. The review allows the entries on `main` that the PR still has, so a fix PR deletes its entry (if the check still FAILs, that is a new FAIL). A NEW FAIL is rerun once, cold, and counts only when it fails in both runs. A FAIL not listed, a listed check that now passes, a STALE and a checker exit other than 0, 1 or 3 each fail the review. Add an entry only after the issue exists, in its own PR that changes nothing but `known-findings.json` files; the tier still runs for it with the PR's whole list, so an entry whose check passes fails. A PR that adds an entry and changes anything else fails.
+Nothing runs this checker before a merge. Run it when you want it (`PORT=4399 pnpm --filter web verify:landing`). `known-findings.json` next to this file lists invariant FAILs you may treat as known, each `{ "id", "issue", "since", "note" }`.
 
 ## Taste review (judged layer)
 

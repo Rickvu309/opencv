@@ -33,13 +33,13 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 - Branch: `type/<issue#>-short-description`, for example `feat/42-login-page`.
 - Title: `type: description (#<issue>)`. It becomes the squash commit subject on `main`.
 - Body: `.github/pull_request_template.md`, with `Closes #<issue>`.
-- Open it with `scripts/open-pr.sh [--draft]`; check it with `scripts/review-pr.sh <pr#>` (the gates lane: branch, title, body, human-needed check, secrets scan, full `scripts/check.sh` in a throwaway worktree). It prints OK, FAIL or HUMAN REQUIRED and never approves.
+- Open it with `scripts/open-pr.sh [--draft]`. Merge it with `scripts/merge-pr.sh <pr#>` once the `ci` check on the head is green. The script refuses a draft, another author, and a `needs-human-review` label.
 - Squash is the only merge method. The only GitHub Action is `ci.yml`, which runs on the local runner.
 - Details: `CONTRIBUTING.md` and `docs/git-workflow/`.
 
 ## Protection
 
-`main` is protected by the ruleset in `.github/rulesets/main.json`: no deletion or force-push, linear history, squash merge only, and the required `ci` and `gates/review-pr` checks. It has no bypass actor and asks for no approving review (one account); the independent review and `scripts/review-pr.sh` are local gates.
+`main` is protected by the ruleset in `.github/rulesets/main.json`: no deletion or force-push, linear history, squash merge only, and the required `ci` check. It has no bypass actor and asks for no approving review (one account).
 
 ## ocv-tools jobs
 

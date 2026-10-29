@@ -51,7 +51,6 @@ When the work is ready for a PR, run `scripts/open-pr.sh --draft` inside the wor
 - Each worktree has its own `.env`. Fill in real values by hand or from your secret store. Never commit it.
 - Each worktree has its own dev server port. Only use the port in your worktree's `.env`.
 - Don't put worktrees inside the repo folder.
-- The review agent's throwaway worktrees (`review-pr-<n>`) live in the same folder and are removed by `scripts/review-pr.sh`.
 
 ## Ports
 
