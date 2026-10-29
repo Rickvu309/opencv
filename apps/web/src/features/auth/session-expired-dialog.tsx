@@ -1,5 +1,5 @@
 import { useReducer } from "react"
-import { useNavigate } from "@tanstack/react-router"
+import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
 } from "@workspace/ui/components/dialog"
 
 import { authClient } from "@/lib/auth-client.ts"
-import { SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
+import { safeRedirectPath, SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
 
 import {
   AUTH_COPY,
@@ -41,6 +41,9 @@ export function SessionExpiredDialog({
   email: string | null
 }) {
   const navigate = useNavigate()
+  const redirect = useRouterState({
+    select: (state) => safeRedirectPath(state.location.href),
+  })
   const [{ notice, pending }, dispatch] = useReducer(sendReducer, {
     notice: null,
     pending: false,
@@ -58,7 +61,7 @@ export function SessionExpiredDialog({
         dispatch({ type: "send_failed" })
         return
       }
-      await navigate({ to: "/sign-in", search: { email } })
+      await navigate({ to: "/sign-in", search: { email, redirect } })
     } catch {
       dispatch({ type: "send_failed" })
     } finally {
@@ -112,7 +115,9 @@ export function SessionExpiredDialog({
             variant="outline"
             className="w-full"
             autoFocus={!email}
-            onClick={() => void navigate({ to: "/sign-in" })}
+            onClick={() =>
+              void navigate({ to: "/sign-in", search: { redirect } })
+            }
           >
             {AUTH_COPY.emailMe}
           </Button>
