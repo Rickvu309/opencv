@@ -1,7 +1,7 @@
-// Dispatcher. runCli returns { code, text } so tests drive it with an injected runner.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { EXIT, Refused, SCRATCH, failure, realRun, render } from "./core.mjs"
+// Dispatcher. runCli returns { code, text } so tests drive it with injected ports.
+import { EXIT, Refused, failure, render } from "./result.mjs"
+import { createFacts } from "./facts.mjs"
+import { realPorts } from "./ports/index.mjs"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import { slugify } from "./worktree.mjs"
 import { release } from "./claim.mjs"
@@ -11,18 +11,16 @@ import { COMMANDS, doctor, renderHelp, status } from "./report.mjs"
 import { cleanup, save } from "./work.mjs"
 
 export function realCtx() {
+  const ports = realPorts()
   return {
-    run: realRun,
-    readFile: (path) => readFileSync(path, "utf8"),
-    writeScratch: (name, text) => {
-      const path = join(SCRATCH, name)
-      mkdirSync(dirname(path), { recursive: true })
-      writeFileSync(path, text)
-      return path
-    },
-    writeFile: (path, text) => writeFileSync(path, text),
-    now: () => Date.now(),
+    ports,
+    env: ports.env,
+    now: () => ports.clock.now(),
     nodeVersion: process.version,
+    cwd: process.cwd(),
+    readFile: (path) => ports.fs.read(path),
+    writeFile: (path, text) => ports.fs.write(path, text),
+    writeScratch: (name, text) => ports.fs.scratch(name, text),
   }
 }
 
@@ -184,11 +182,12 @@ function command(ctx, cmd, rest) {
 }
 
 export function runCli(argv, ctx = realCtx()) {
+  ctx.facts = createFacts(ctx.ports, () => ctx.cwd)
   try {
     const [cmd, ...rest] = argv
     const result = command(ctx, cmd, rest)
     return {
-      code: result.exit ?? EXIT.OK,
+      code: result.exit ?? EXIT.ok,
       text: render(result),
     }
   } catch (error) {

@@ -2,7 +2,7 @@
 // Railway posts (`opencv - api`, `opencv - web`) and the sha each service serves.
 import { execFileSync } from "node:child_process"
 import { parseArgs } from "node:util"
-import { writeResult } from "./result.mjs"
+import { writeResult } from "../ocv-tools/result.mjs"
 import { affectedServices, services } from "./services.mjs"
 
 // Worst first: the overall outcome is the first one any service has.

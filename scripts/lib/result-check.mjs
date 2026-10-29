@@ -3,40 +3,12 @@
 //   key=value asserts the field equals the value (strings, numbers, or the word null).
 // Prints the file's one-line summary and exits 0 when valid, prints the problems to stderr and exits 1 otherwise.
 import { readFileSync } from "node:fs"
+import { SCHEMA } from "../ocv-tools/result.mjs"
 
-const SCRIPTS = ["new-task", "open-pr", "merge-pr", "check", "release"]
-const STATUS = ["ok", "fail", "human", "error"]
-const CAUSES = [
-  "none",
-  "behind-main",
-  "merge-conflict",
-  "test",
-  "timing-test",
-  "lint",
-  "typecheck",
-  "build",
-  "env",
-  "disk",
-  "hygiene",
-  "deploy",
-  "other",
-]
-const FIELDS = [
-  "schema",
-  "script",
-  "repo",
-  "id",
-  "status",
-  "cause",
-  "detail",
-  "files",
-  "blockedBy",
-  "retried",
-  "next",
-  "log",
-  "startedAt",
-  "durSec",
-]
+const SCRIPTS = SCHEMA.scripts
+const STATUS = SCHEMA.status
+const CAUSES = SCHEMA.causes
+const FIELDS = SCHEMA.fields
 
 const [file, ...expects] = process.argv.slice(2)
 const problems = []
