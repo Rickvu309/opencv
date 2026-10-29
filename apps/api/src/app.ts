@@ -1,5 +1,6 @@
 import type { CoachRuntime } from "@workspace/domain"
 import { Hono } from "hono"
+import { bodyLimit } from "hono/body-limit"
 import { cors } from "hono/cors"
 
 import {
@@ -95,6 +96,8 @@ export function createApp({
   })
   setCoachModelEnv(coachEnv ?? {})
   const app = new Hono()
+
+  app.use("/*", bodyLimit({ maxSize: 9_000_000 }))
 
   app.use(
     "/*",

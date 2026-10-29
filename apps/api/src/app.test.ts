@@ -57,6 +57,23 @@ describe("GET /health", () => {
   })
 })
 
+describe("request body limit", () => {
+  it("returns the API 413 envelope when a request body exceeds 9 MB", async () => {
+    const body = new Uint8Array(9_000_001)
+    const res = await createApp({ webOrigins: [] }).request("/health", {
+      method: "POST",
+      headers: { "content-type": "application/octet-stream" },
+      body,
+    })
+
+    expect(res.status).toBe(413)
+    await expect(res.json()).resolves.toMatchObject({
+      ok: false,
+      error: { code: "VALIDATION_ERROR", message: "Request body is too large" },
+    })
+  })
+})
+
 describe("CORS", () => {
   it("lets the configured web origin read the health response", async () => {
     const api = createApp({ webOrigins: ["https://opencv.me"] })
