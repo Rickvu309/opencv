@@ -23,6 +23,7 @@ import { CodeInput } from "@/features/auth/code-input.tsx"
 import { profileKey } from "@/lib/account-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
+import { resolveProfileImageSrc } from "@/lib/requests.ts"
 
 import {
   ACCOUNT_START,
@@ -58,11 +59,12 @@ export function AccountSection({
   const queryClient = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
   const [
-    { photoUrl, photoError, draftName, nameError, emailOpen, deleteOpen },
+    { photoError, draftName, nameError, emailOpen, deleteOpen },
     dispatch,
   ] = useReducer(accountReducer, ACCOUNT_START)
   const name =
     draftName !== null && draftName !== profile.name ? draftName : profile.name
+  const photoSrc = resolveProfileImageSrc(profile.image)
 
   function onPhoto(file: File | undefined) {
     if (!file) return
@@ -75,7 +77,6 @@ export function AccountSection({
     void uploadPhoto(file)
       .then((next) => {
         queryClient.setQueryData(profileKey(), next)
-        dispatch({ type: "photo_uploaded", url: URL.createObjectURL(file) })
       })
       .catch((caught: unknown) => {
         dispatch({
@@ -97,7 +98,7 @@ export function AccountSection({
             control={
               <>
                 <Avatar size="lg">
-                  {photoUrl ? <AvatarImage alt="" src={photoUrl} /> : null}
+                  {photoSrc ? <AvatarImage alt="" src={photoSrc} /> : null}
                   <AvatarFallback>{initials(profile.name)}</AvatarFallback>
                 </Avatar>
                 <Button

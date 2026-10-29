@@ -1,3 +1,5 @@
+import { fileIdSchema } from "@workspace/domain"
+
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
 /** Every API path the web app reads or posts outside the command route. */
@@ -58,4 +60,13 @@ export function resolvePhotoSrc(
   if (stored.startsWith("https://") || stored.startsWith("http://"))
     return stored
   return undefined
+}
+
+/** Profile images store uploaded file IDs, while Better Auth may supply URLs. */
+export function resolveProfileImageSrc(stored: string | null | undefined) {
+  if (!stored || stored.startsWith("blob:")) return undefined
+  if (stored.startsWith("https://") || stored.startsWith("http://"))
+    return stored
+  if (!fileIdSchema.safeParse(stored).success) return undefined
+  return new URL(endpoints.paperFileBytes(stored), apiBaseUrl).href
 }

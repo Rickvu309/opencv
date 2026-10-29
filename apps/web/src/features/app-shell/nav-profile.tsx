@@ -11,6 +11,7 @@ import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
+import { resolveProfileImageSrc } from "@/lib/requests.ts"
 
 type Props = {
   onNavigate?: () => void
@@ -18,11 +19,12 @@ type Props = {
 
 export function NavProfile({ onNavigate }: Props) {
   const { name, image } = useShellProfile()
+  const imageSrc = resolveProfileImageSrc(image)
 
   return (
     <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-sidebar-border px-2 py-2">
       <Avatar size="sm" className="size-6">
-        {image ? <AvatarImage src={image} alt="" /> : null}
+        {imageSrc ? <AvatarImage src={imageSrc} alt="" /> : null}
         <AvatarFallback className="text-xs">
           {profileInitials(name)}
         </AvatarFallback>

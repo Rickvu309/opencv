@@ -19,6 +19,7 @@ import {
   getProfileMockPaths,
   setMockEmailChange,
   setMockPlan,
+  setMockProfile,
   setMockWeekUncapped,
 } from "@/test/profile-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -26,6 +27,7 @@ import { renderApp } from "@/test/render-app.tsx"
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 const SECTIONS = [
@@ -50,6 +52,33 @@ async function expectUpgradePlaceholder() {
 }
 
 describe("settings", () => {
+  it("shows a persisted profile photo after reopening Account", async () => {
+    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(
+      true
+    )
+    vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(
+      180
+    )
+    const fileId = "68800000-0000-4000-8000-000000000001"
+    setMockProfile({ image: fileId })
+    renderApp("/settings/account")
+    const photoPath = `/api/paper/files/${fileId}/bytes`
+    await waitFor(() => {
+      expect(document.querySelector("img[src]")).toHaveAttribute(
+        "src",
+        expect.stringContaining(photoPath)
+      )
+    })
+    cleanup()
+    renderApp("/settings/account")
+    await waitFor(() => {
+      expect(document.querySelector("img[src]")).toHaveAttribute(
+        "src",
+        expect.stringContaining(photoPath)
+      )
+    })
+  })
+
   it("filters integrations and restores the full catalog after clearing", async () => {
     const user = userEvent.setup()
     renderApp("/settings")
