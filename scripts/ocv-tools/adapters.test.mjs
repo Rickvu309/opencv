@@ -64,4 +64,7 @@ test("a fake comment edit fails like GitHub when the id is gone", () => {
   ports.state.commentEditError = "gh api --include failed: HTTP 500"
   assert.throws(() => ports.gh.editComment(5, "new"), /HTTP 500/)
   assert.equal(row.body, "old")
+  ports.state.commentEditError = null
+  ports.gh.editComment(5, "new")
+  assert.equal(row.lastEditedAt, ports.state.commentUpdatedAt)
 })

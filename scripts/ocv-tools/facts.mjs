@@ -27,6 +27,7 @@ export function approvalValid({
   for (const c of comments ?? []) {
     if (!allowed.has(loginOf(c.author))) continue
     if (!/^\/approve\b/.test(String(c.body ?? "").trimStart())) continue
+    if (c.lastEditedAt != null) continue
     const at = Date.parse(c.createdAt)
     if (Number.isNaN(at)) continue
     if (newest === null || at > newest) newest = at

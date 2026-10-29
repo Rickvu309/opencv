@@ -251,6 +251,7 @@ export function fakePorts(world = {}) {
         databaseId: state.nextCommentId++,
         author: { login: state.login },
         createdAt: at,
+        lastEditedAt: null,
         updatedAt: at,
         body,
       }
@@ -269,6 +270,7 @@ export function fakePorts(world = {}) {
         if (!row) continue
         found = true
         row.body = body
+        row.lastEditedAt = stamp
         row.updatedAt = stamp
       }
       if (!found)

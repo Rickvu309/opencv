@@ -7,11 +7,11 @@ export const COMMENT_PAGE_CAP = 100
 
 // Board reads open issues and open pull requests in pages, not one call each.
 const LIST_CAP = 40
-const ISSUE_LIST = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){issues(states:OPEN,first:50,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(first:100){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}}`
-const COMMENT_AFTER = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){issue(number:$n){comments(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
+const ISSUE_LIST = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){issues(states:OPEN,first:50,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(first:100){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt lastEditedAt updatedAt}}}}}}`
+const COMMENT_AFTER = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){issue(number:$n){comments(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt lastEditedAt updatedAt}}}}}`
 const PR_LIST = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number state headRefName headRefOid}}}}`
 
-const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt updatedAt}}}}}`
+const QUERY = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt updatedAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(last:100, before:$cursor){pageInfo{hasPreviousPage startCursor} nodes{databaseId author{login} body createdAt lastEditedAt updatedAt}}}}}`
 
 export function ghAdapter(run) {
   let repoView
@@ -163,6 +163,7 @@ export function ghAdapter(run) {
       author: c.author,
       body: c.body,
       createdAt: c.createdAt,
+      lastEditedAt: c.lastEditedAt,
       updatedAt: c.updatedAt,
     }))
   }
@@ -298,6 +299,7 @@ export function ghAdapter(run) {
         author: c.author,
         body: c.body,
         createdAt: c.createdAt,
+        lastEditedAt: c.lastEditedAt,
         updatedAt: c.updatedAt,
       }))
     return {
