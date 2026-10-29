@@ -96,4 +96,4 @@ If you change how env or secrets are handled in a file not covered by `CODEOWNER
 
 ## When ci is red or the runner is off
 
-If a hotfix must land while `ci` is red or the runner `opencv-local` is offline, only the owner acts, in the GitHub UI, never an agent: remove the `ci` rule in Settings > Rules > main (or PUT an edited copy of `.github/rulesets/main.json`), merge, reapply `.github/rulesets/main.json` with `gh api -X PUT repos/quanvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json`, and confirm with `node scripts/pr.mjs doctor`.
+If a hotfix must land while `ci` is red or the runner `opencv-local` is offline, only the owner acts, in the GitHub UI, never an agent: remove both required checks, `ci` and `gates/review-pr`, in Settings > Rules > main (or PUT an edited copy of `.github/rulesets/main.json`; `merge-pr.sh` stops at a red `ci` before it posts `gates/review-pr`, so removing only `ci` is not enough), merge, reapply `.github/rulesets/main.json` with `gh api -X PUT repos/quanvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json`, and confirm with `node scripts/pr.mjs doctor`.
