@@ -1,11 +1,10 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
   closestCenter,
-  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
@@ -44,13 +43,24 @@ import {
 } from "./paper-block-ops.ts"
 import { dropBlock } from "./paper-block-drop.ts"
 
-// The handle sits on top of a tall block, so the block center can sit on the
-// first entry while the pointer is still inside the heading. Prefer that heading.
 export const headingPointerCollision: CollisionDetection = (args) => {
-  const heading = pointerWithin(args).find((collision) =>
-    String(collision.id).startsWith("section:")
-  )
-  if (heading) return [heading]
+  const pointer = args.pointerCoordinates
+  if (pointer) {
+    for (const container of args.droppableContainers) {
+      if (!String(container.id).startsWith("section:") || container.disabled)
+        continue
+      const rect = container.node.current?.getBoundingClientRect()
+      if (
+        rect &&
+        pointer.x >= rect.left &&
+        pointer.x <= rect.right &&
+        pointer.y >= rect.top &&
+        pointer.y <= rect.bottom
+      ) {
+        return [{ id: container.id }]
+      }
+    }
+  }
   return closestCenter(args)
 }
 
@@ -86,6 +96,7 @@ export function PaperBlocks({
   onCommit: (next: CvBlockDocument, kind: BlockCommit) => void
   onAskCoach: (text: string) => void
 }) {
+  const releasedHeading = useRef<string | null>(null)
   const [slash, setSlash] = useState<SlashState | null>(null)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -100,7 +111,9 @@ export function PaperBlocks({
   const sections = editorSections(document)
 
   function onDragEnd(event: DragEndEvent) {
-    const overId = event.over ? String(event.over.id) : ""
+    const overId =
+      releasedHeading.current ?? (event.over ? String(event.over.id) : "")
+    releasedHeading.current = null
     const next = dropBlock(document, String(event.active.id), overId)
     if (next === document) return
     onCommit(next, "drop")
@@ -156,13 +169,35 @@ export function PaperBlocks({
 
   return (
     <CvA4Canvas>
-      <div className="flex flex-col gap-4 p-6">
+      <div
+        className="flex flex-col gap-4 p-6"
+        onPointerUpCapture={(event) => {
+          releasedHeading.current = null
+          for (const heading of event.currentTarget.querySelectorAll<HTMLElement>(
+            "[data-section-drop]"
+          )) {
+            const rect = heading.getBoundingClientRect()
+            if (
+              event.clientX >= rect.left &&
+              event.clientX <= rect.right &&
+              event.clientY >= rect.top &&
+              event.clientY <= rect.bottom
+            ) {
+              releasedHeading.current = heading.dataset.sectionDrop ?? null
+              break
+            }
+          }
+        }}
+      >
         <PaperBlockHeader
           header={document.header}
           onChange={(key, value) => onChange(patchHeader(document, key, value))}
         />
         <DndContext
           sensors={sensors}
+          onDragStart={() => {
+            releasedHeading.current = null
+          }}
           collisionDetection={headingPointerCollision}
           onDragEnd={onDragEnd}
         >
@@ -241,7 +276,11 @@ function SectionBlock({
 
   return (
     <div data-section={section.kind} className="flex flex-col gap-2">
-      <h2 ref={setNodeRef} className="text-sm font-medium">
+      <h2
+        ref={setNodeRef}
+        data-section-drop={`section:${section.id}`}
+        className="-my-1 py-1 text-sm font-medium"
+      >
         {SECTION_LABEL[section.kind]}
       </h2>
       <SortableContext
