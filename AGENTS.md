@@ -103,7 +103,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - Never use `git push --no-verify` or `git commit --no-verify`.
 - Never use `SKIP_CHECKS=1` unless a human declared a production emergency, and then say so in the PR.
 - Never approve your own PR, and never use the review agent's identity to approve your own work.
-- Never remove the `needs-human-review` label to get around a human review.
+- Never remove the `needs-human-review` label or edit `.github/CODEOWNERS` to get around a human review.
 - Human review is only for super important changes: a mass deletion (`review-pr.sh` flags a PR that deletes 25% or more of the files on `main` or 80% or more of one app or package; a rename counts as a deletion) or a big decision, which you flag with the `needs-human-review` label (for example dropping a product, a data-losing migration, changing pricing or the legal entity). Everything else merges without a human.
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.

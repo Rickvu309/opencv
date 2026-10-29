@@ -64,7 +64,7 @@ function fakeIo(overrides = {}) {
   }
 }
 
-test("labels.yml keeps the readers' labels and the broken label", () => {
+test("labels.yml keeps only the labels something reads", () => {
   assert.deepEqual(
     declaredLabels.map((l) => l.name),
     [
@@ -76,12 +76,7 @@ test("labels.yml keeps the readers' labels and the broken label", () => {
       "docs",
       "needs-human-review",
       "ready-for-human",
-      "broken",
     ]
-  )
-  assert.equal(
-    declaredLabels.at(-1).description,
-    "Production is broken by this change; written by tooling"
   )
 })
 
@@ -97,7 +92,7 @@ test("the drift found on 2026-10-29 is reported with its fix", async () => {
   const drift = await doctor(
     fakeIo({
       labels: async () => [
-        ...live.filter((l) => l.name !== "broken"),
+        ...live,
         {
           name: "bug",
           color: "d73a4a",
@@ -111,7 +106,6 @@ test("the drift found on 2026-10-29 is reported with its fix", async () => {
   )
   const fixes = drift.map((d) => d.fix)
   assert.deepEqual(fixes, [
-    'gh label create "broken" --color e11d21 --description "Production is broken by this change; written by tooling"',
     'gh label delete "bug" --yes',
     'gh label delete "javascript" --yes',
     "gh api -X PATCH repos/{owner}/{repo} -F has_projects=false",

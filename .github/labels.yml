@@ -24,6 +24,3 @@
 - name: ready-for-human
   color: "5319e7"
   description: A decision for a human, never picked up by implementation agents
-- name: broken
-  color: "e11d21"
-  description: Production is broken by this change; written by tooling

@@ -10,6 +10,6 @@ The skills speak in terms of five canonical triage roles. Only one of them is a 
 | `ready-for-human`         | The label `ready-for-human`. `scripts/new-task.sh` and `scripts/open-pr.sh` refuse an issue that has it. |
 | `wontfix`                 | `gh issue close <n> --reason "not planned"`.                                                             |
 
-The labels in `.github/labels.yml` are the type labels, `needs-human-review`, `ready-for-human` and `broken` (written by tooling when a merge breaks production). `node scripts/pr.mjs doctor` lists any other label on GitHub.
+The labels in `.github/labels.yml` are the type labels, `needs-human-review`, and `ready-for-human`. `node scripts/pr.mjs doctor` lists any other label on GitHub.
 
 When a skill mentions a role, use the entry in this table.
