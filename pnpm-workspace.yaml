@@ -10,3 +10,5 @@ overrides:
   # deepmerge 4.3.1 (shadcn registry tooling) has no patch; accepted low risk.
   # It is not used by the API or the sign-in flow. Revisit when upstream patches it.
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
+
+# ci probe: forces the full check on a hosted runner (revert before merge)
