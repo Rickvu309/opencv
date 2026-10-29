@@ -81,6 +81,7 @@ export async function runCoachTurn(options: {
   signal?: AbortSignal
   usageId?: string
   allowTools?: boolean
+  supersedesMessageId?: string
 }) {
   const startedAt = Date.now()
   const registry = options.registry ?? defaultRegistry
@@ -150,6 +151,12 @@ export async function runCoachTurn(options: {
       if (isDisconnected(options.stream, signal)) {
         status = "aborted"
         break
+      }
+      if (
+        options.allowTools === false &&
+        (part.type === "tool-call" || part.type === "tool-result")
+      ) {
+        continue
       }
       if (part.type === "tool-call" || part.type === "tool-result") {
         called.add(part.name)
@@ -221,31 +228,39 @@ export async function runCoachTurn(options: {
       status = "aborted"
     }
     const workedMs = Math.max(0, Date.now() - startedAt)
-    const saved = await insertCoachMessage({
-      chatId: parseChatId(options.chatId),
-      userId: parseUserId(options.userId),
-      text: textFromParts(parts),
-      parts,
-      status,
-      workedMs,
-    })
+    const text = textFromParts(parts)
+    const saved =
+      options.supersedesMessageId && !text.trim()
+        ? null
+        : await insertCoachMessage({
+            chatId: parseChatId(options.chatId),
+            userId: parseUserId(options.userId),
+            text,
+            parts,
+            status,
+            workedMs,
+            supersedesMessageId: options.supersedesMessageId,
+          })
     await finishCoachUsage({
       id: usageId,
-      messageId: saved.id,
+      messageId: saved?.id ?? null,
       finishReason: usage.finishReason ?? status,
       latencyMs: workedMs,
       model: usage.model,
     })
-    await maybeTitle({
-      registry,
-      userId: options.userId,
-      chatId: options.chatId,
-      coachText: textFromParts(parts),
-      status,
-      currentMessageId: saved.id,
-    }).catch(() => {
-      console.error("Coach automatic title failed", { chatId: options.chatId })
-    })
+    if (saved)
+      await maybeTitle({
+        registry,
+        userId: options.userId,
+        chatId: options.chatId,
+        coachText: text,
+        status,
+        currentMessageId: saved.id,
+      }).catch(() => {
+        console.error("Coach automatic title failed", {
+          chatId: options.chatId,
+        })
+      })
     if (!isDisconnected(options.stream, signal)) {
       const snapshot = await readUsage(options.userId).catch(() => null)
       await emit({

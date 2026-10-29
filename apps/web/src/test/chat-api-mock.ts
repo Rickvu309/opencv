@@ -89,10 +89,15 @@ function persistCoach(
   chat: ChatRecord,
   parts: ChatEntryPart[],
   status: ChatMessageStatus,
-  workedMs = script.workedMs ?? DEFAULT_COACH_WORKED_MS
-): ChatEntry {
+  workedMs = script.workedMs ?? DEFAULT_COACH_WORKED_MS,
+  supersedesId?: string
+): ChatEntry | null {
   const now = isoNow()
   const text = textFromParts(parts)
+  const predecessor = supersedesId
+    ? chat.messages.find((message) => message.id === supersedesId)
+    : undefined
+  if (predecessor && !text.trim()) return null
   const message: ChatEntry = {
     id: crypto.randomUUID(),
     role: "coach",
@@ -100,11 +105,20 @@ function persistCoach(
     createdAt: now,
     status,
     workedMs,
-    parts,
+    parts: predecessor
+      ? [
+          ...(predecessor.parts ?? []).filter((part) => part.type === "tool"),
+          ...parts,
+        ]
+      : parts,
   }
-  chat.messages.push(message)
+  if (predecessor) {
+    chat.messages = chat.messages.map((item) =>
+      item.id === predecessor.id ? message : item
+    )
+  } else chat.messages.push(message)
   chat.updatedAt = now
-  maybeAutoTitle(chat, status, text)
+  if (!predecessor) maybeAutoTitle(chat, status, text)
   return message
 }
 
@@ -173,7 +187,11 @@ async function waitDelay(ms: number, signal?: AbortSignal) {
   })
 }
 
-function coachStreamResponse(chat: ChatRecord, signal?: AbortSignal) {
+function coachStreamResponse(
+  chat: ChatRecord,
+  signal?: AbortSignal,
+  supersedesId?: string
+) {
   const encoder = new TextEncoder()
   const partsToEmit = scriptedParts()
   const streamError = script.streamError
@@ -191,7 +209,13 @@ function coachStreamResponse(chat: ChatRecord, signal?: AbortSignal) {
       const persistOnce = (status: ChatMessageStatus) => {
         if (persisted) return undefined
         persisted = true
-        return persistCoach(chat, streamedParts, status)
+        return persistCoach(
+          chat,
+          streamedParts,
+          status,
+          undefined,
+          supersedesId
+        )
       }
 
       const emit = async (event: string, data: unknown) => {
@@ -478,7 +502,17 @@ export async function chatApiFetch(
       })
     }
     chat.updatedAt = now
-    return coachStreamResponse(chat, init?.signal ?? undefined)
+    const lastUserIndex = chat.messages.findLastIndex(
+      (message) => message.role === "user"
+    )
+    const currentCoach = chat.messages.findLast(
+      (message, index) => message.role === "coach" && index > lastUserIndex
+    )
+    return coachStreamResponse(
+      chat,
+      init?.signal ?? undefined,
+      body.regenerate ? currentCoach?.id : undefined
+    )
   }
 
   const detail = /^\/api\/chats\/([^/]+)$/.exec(path)

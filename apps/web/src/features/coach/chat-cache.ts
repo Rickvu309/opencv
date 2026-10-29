@@ -23,6 +23,7 @@ type KeepAbortedInput = {
   prev: ChatRecord | undefined
   user: ChatViewMessage | undefined
   parts: ChatEntryPart[]
+  supersedesId?: string
   title: (text: string) => string
   focusDocId: string | null | undefined
 }
@@ -32,6 +33,7 @@ export function withAbortedCoach({
   prev,
   user,
   parts,
+  supersedesId,
   title,
   focusDocId,
 }: KeepAbortedInput): ChatRecord | null {
@@ -50,8 +52,19 @@ export function withAbortedCoach({
     text,
     createdAt: now,
     status: "aborted",
-    parts,
+    parts: supersedesId
+      ? [
+          ...(
+            existing.find((message) => message.id === supersedesId)?.parts ?? []
+          ).filter((part) => part.type === "tool"),
+          ...parts,
+        ]
+      : parts,
   }
+
+  const replaces = supersedesId
+    ? existing.some((message) => message.id === supersedesId)
+    : false
 
   return {
     id,
@@ -59,7 +72,11 @@ export function withAbortedCoach({
     createdAt: prev?.createdAt ?? now,
     updatedAt: now,
     focusDocId: prev?.focusDocId ?? focusDocId ?? null,
-    messages: [...existing, ...userRow, coachRow],
+    messages: replaces
+      ? existing.map((message) =>
+          message.id === supersedesId ? coachRow : message
+        )
+      : [...existing, ...userRow, coachRow],
   }
 }
 
@@ -107,12 +124,18 @@ export function useChatCache({ titleForCreate, focusDocId }: ChatCacheOptions) {
   )
 
   const keepStreamedCoach = useCallback(
-    (id: string, user: ChatViewMessage | undefined, parts: ChatEntryPart[]) => {
+    (
+      id: string,
+      user: ChatViewMessage | undefined,
+      parts: ChatEntryPart[],
+      supersedesId?: string
+    ) => {
       const next = withAbortedCoach({
         id,
         prev: queryClient.getQueryData<ChatRecord>(chatDetailKey(id)),
         user,
         parts,
+        supersedesId,
         title: titleForCreate,
         focusDocId,
       })

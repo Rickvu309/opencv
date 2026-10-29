@@ -15,6 +15,13 @@
       "when": 1793255642818,
       "tag": "0001_account_issuer_optional",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793370000000,
+      "tag": "0002_chat_reply_supersession",
+      "breakpoints": true
     }
   ]
 }
