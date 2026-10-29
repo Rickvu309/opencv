@@ -127,6 +127,64 @@ describe("inbox page", () => {
     })
   })
 
+  it("closes a narrow reader when snooze removes its thread from the inbox", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("max-width"),
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent() {
+        return false
+      },
+    }))
+    let snoozed = false
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const path = pathOf(input)
+      if (path === "/api/inbox") {
+        return jsonOk({
+          connected: false,
+          skipped: true,
+          threads: snoozed
+            ? INBOX_THREADS.slice(0, 2).filter(
+                (thread) => thread.id !== LOCAL_DETAIL.id
+              )
+            : INBOX_THREADS.slice(0, 2),
+        })
+      }
+      if (path === "/api/commands/inbox.snooze") snoozed = true
+      if (path.startsWith("/api/inbox/")) {
+        return path.endsWith(LOCAL_DETAIL.id)
+          ? jsonOk(LOCAL_DETAIL)
+          : jsonOk(REGIONAL_DETAIL)
+      }
+      return jsonOk({})
+    })
+    renderPage()
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: /Associate PM, Local startup/,
+      })
+    )
+    await userEvent.click(await screen.findByRole("button", { name: "Snooze" }))
+    expect(
+      await screen.findByRole("button", {
+        name: /Business Analyst, Regional bank/,
+      })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Back to inbox" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Snooze" })).toBeNull()
+    await userEvent.click(
+      screen.getByRole("button", { name: /Business Analyst, Regional bank/ })
+    )
+    expect(
+      await screen.findByRole("button", { name: "Snooze" })
+    ).toBeInTheDocument()
+    expect(screen.getByText("1 of 1")).toBeInTheDocument()
+  })
+
   it("uses the profile zone from the inbox list for chips and snooze", async () => {
     const posts: { path: string; input: unknown }[] = []
     vi.stubGlobal(

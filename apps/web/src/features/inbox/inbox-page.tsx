@@ -92,11 +92,8 @@ export function InboxPage() {
   )
   const threads = list.data?.threads ?? []
   const zone = list.data?.timeZone || PROFILE_ZONE
-  const shownId = narrow
-    ? openId
-    : openId && threads.some((thread) => thread.id === openId)
-      ? openId
-      : null
+  const shownId =
+    openId && threads.some((thread) => thread.id === openId) ? openId : null
   const detail = useQuery({
     queryKey: queryKey({
       query: "inbox.get",
