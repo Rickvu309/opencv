@@ -20,6 +20,7 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
+import { createChat } from "@/features/coach/chat-api.ts"
 import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { publishCoachDraft } from "@/lib/coach-draft.ts"
@@ -290,7 +291,12 @@ export function PaperCvEditor({
   }
 
   function askCoach(text: string) {
-    void run("chat.open", { focus: { kind: "paper", id: initial.id } })
+    const paperName = (name || initial.name || "").trim()
+    const title = paperName ? `About ${paperName}` : undefined
+    void createChat(queryClient, {
+      title,
+      focusDocId: initial.id,
+    })
       .then((chat) => {
         openChat(chat.id)
         if (text) publishCoachDraft(text)

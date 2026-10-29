@@ -66,11 +66,12 @@ const RETIRED = [
         line: /inbox thread/,
         why: "a chat can point at an inbox thread",
       },
+      // #548: Legacy chat rows stored before #548 carry "New Thread".
       {
         path: /^packages\/domain\/src\/chat-messages\.ts$/,
         match: /^Thread$/,
         line: /"New Thread"/,
-        why: 'DEFAULT_CHAT_TITLE = "New Thread" is a stored value existing chats carry',
+        why: 'LEGACY_CHAT_TITLE = "New Thread" allows legacy rows to display and rename as New chat (#548)',
       },
       {
         path: /^packages\/ui\/src\/components\/comment-thread\.tsx$/,

@@ -1,4 +1,5 @@
 import {
+  DEFAULT_CHAT_TITLE,
   chatContract,
   coachActor,
   personActor,
@@ -53,7 +54,19 @@ describe("chat contract", () => {
       }
       const chatId = created.id
       await run("chat.rename", { chatId, title: "Plan v2" })
-      await run("chat.open", {})
+      const untitled = (await run("chat.open", {})).output as {
+        id: string
+        title: string
+      }
+      expect(untitled.title).toBe(DEFAULT_CHAT_TITLE)
+      expect(untitled.title).toBe("New chat")
+
+      const bare = (await run("chat.create", {})).output as {
+        id: string
+        title: string
+      }
+      expect(bare.title).toBe(DEFAULT_CHAT_TITLE)
+      expect(bare.title).toBe("New chat")
       const job = await registry.execute({
         name: "job.create",
         input: { title: "Associate PM", company: "Northwind" },

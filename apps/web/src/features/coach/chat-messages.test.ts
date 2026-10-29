@@ -1,12 +1,29 @@
 import { describe, expect, it } from "vitest"
 
-import { titleFrom } from "@workspace/domain"
+import {
+  DEFAULT_CHAT_TITLE,
+  LEGACY_CHAT_TITLE,
+  chatDisplayTitle,
+  titleFrom,
+} from "@workspace/domain"
 
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
   toChatViewMessages,
 } from "@/features/coach/chat-messages.ts"
+
+describe("chatDisplayTitle", () => {
+  it("renders untitled chats, DEFAULT_CHAT_TITLE, and LEGACY_CHAT_TITLE as New chat", () => {
+    expect(DEFAULT_CHAT_TITLE).toBe("New chat")
+    expect(chatDisplayTitle(null)).toBe("New chat")
+    expect(chatDisplayTitle("")).toBe("New chat")
+    expect(chatDisplayTitle(DEFAULT_CHAT_TITLE)).toBe("New chat")
+    expect(chatDisplayTitle(LEGACY_CHAT_TITLE)).toBe("New chat")
+    expect(chatDisplayTitle(` ${LEGACY_CHAT_TITLE} `)).toBe("New chat")
+    expect(chatDisplayTitle("About PM track CV")).toBe("About PM track CV")
+  })
+})
 
 describe("titleFrom", () => {
   it("keeps short text and trims long titles", () => {

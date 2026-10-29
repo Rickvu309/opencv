@@ -1,5 +1,7 @@
 import {
+  CHAT_TITLE_MAX,
   DEFAULT_CHAT_TITLE,
+  LEGACY_CHAT_TITLE,
   parseChatId,
   type ChatDetail,
   type ChatTurnEventOf,
@@ -79,27 +81,40 @@ export async function getChatByFocusDoc(
   return chats.find((chat) => chat.focusDocId === focusDocId) ?? null
 }
 
+function clipTitle(title: string | undefined): string | undefined {
+  const trimmed = title?.trim()
+  if (!trimmed) return undefined
+  return trimmed.slice(0, CHAT_TITLE_MAX).trimEnd()
+}
+
 export async function createChat(
   queryClient: QueryClient,
   input: { title?: string; focusDocId?: string }
 ): Promise<ChatSummary> {
+  const title = clipTitle(input.title)
   if (!input.focusDocId) {
     return asChat(
       await runContractCommand(queryClient, "chat.create", {
-        ...(input.title ? { title: input.title } : {}),
+        ...(title ? { title } : {}),
       })
     )
   }
   const opened = await runContractCommand(queryClient, "chat.open", {
     focus: { kind: "paper", id: input.focusDocId },
   })
-  if (!input.title || opened.title !== DEFAULT_CHAT_TITLE) {
+  const openedTitle = opened.title?.trim()
+  if (
+    !title ||
+    (openedTitle &&
+      openedTitle !== DEFAULT_CHAT_TITLE &&
+      openedTitle !== LEGACY_CHAT_TITLE)
+  ) {
     return asChat(opened)
   }
   return asChat(
     await runContractCommand(queryClient, "chat.rename", {
       chatId: parseChatId(opened.id),
-      title: input.title,
+      title,
     })
   )
 }
