@@ -85,8 +85,13 @@ export function InboxReader({
   const runCommand = useRunCommand()
   const saved = draft?.body ?? ""
   const times = draft?.times ?? []
-  const [{ body, savedBody, selected, limit, busy, opened }, dispatch] =
-    useReducer(readerReducer, saved, initialReaderState)
+  const [
+    { body, savedBody, receivedBody, selected, limit, busy, opened },
+    dispatch,
+  ] = useReducer(readerReducer, saved, initialReaderState)
+  if (receivedBody !== saved) {
+    dispatch({ type: "draft_received", body: saved })
+  }
   const prompt = Boolean(detail.jobId && detail.suggestedStage === "interview")
   const hasDraft = draft != null
   const earlier = detail.messages.slice(0, -1)
