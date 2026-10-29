@@ -15,11 +15,7 @@ import {
   testWebOrigin,
 } from "../test/harness.js"
 
-const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-function imageFile(bytes: Uint8Array, name: string, type = "image/png") {
-  return new File([bytes], name, { type })
-}
+import { imageFile, png, postAvatar } from "./photo.fixtures.js"
 
 describe("CV photo bytes", () => {
   it("stores a file id, serves the owner and a share, and rejects another user or 3 MB", async () => {
@@ -506,26 +502,6 @@ describe("CV photo bytes", () => {
     await client.close()
   })
 })
-
-function formFile(bytes: Uint8Array, name: string, type: string) {
-  const form = new FormData()
-  form.set("file", imageFile(bytes, name, type))
-  return form
-}
-
-function postAvatar(
-  app: ReturnType<typeof createTestApp>,
-  cookie: string,
-  bytes: Uint8Array,
-  name: string,
-  type: string
-) {
-  return app.request("/api/paper/files", {
-    method: "POST",
-    headers: { Origin: testWebOrigin, Cookie: cookie },
-    body: formFile(bytes, name, type),
-  })
-}
 
 function expectPhotoHeaders(
   res: Response,
