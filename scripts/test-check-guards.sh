@@ -38,7 +38,7 @@ plan() {  # plan <file>: the dry-run plan of a branch that changes only <file>
 }
 runs() { grep -q "^\[dry-run\] node --test .*$1" "$tmp/out"; }
 
-plan docs/adr/0001-x.md
+plan docs/adr/0010-one-typed-contract-for-commands-and-reads.md
 runs scripts/adr-citations.test.mjs || fail "adr edit: adr-citations not run"
 ! runs scripts/open-pr.test.mjs || fail "adr edit: open-pr.test.mjs ran"
 echo "ok: a docs/adr edit runs adr-citations"
