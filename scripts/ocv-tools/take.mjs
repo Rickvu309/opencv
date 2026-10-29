@@ -2,8 +2,7 @@
 // issue, makes the branch and worktree, assigns the issue, records the claim comment and writes
 // the workflow result file (script "new-task").
 import { basename, join } from "node:path"
-import { EXIT, FIXES, Refused } from "./result.mjs"
-import { TYPES } from "./fields.mjs"
+import { EXIT, FIXES, writeResult } from "./result.mjs"
 import { CLAIM_IDLE_MINUTES } from "./claim-marker.mjs"
 import {
   claimBody,
@@ -16,7 +15,8 @@ import {
 import { diskProblem } from "./disk.mjs"
 import { file } from "./issue.mjs"
 import { worktreeFor } from "./report.mjs"
-import { writeResult } from "./result.mjs"
+import { evaluate, refusalError } from "./rules/decide.mjs"
+import { RULES, issueKind } from "./rules/table.mjs"
 import {
   createWorktree,
   descFromTitle,
@@ -31,9 +31,6 @@ function repoName(ctx) {
     return "unknown"
   }
 }
-
-const bodyType = (body) =>
-  TYPES.find((t) => new RegExp(`^### Type\\s+${t}\\s*$`, "m").test(body ?? ""))
 
 // A title instead of a number files the issue first (the plain-words lint applies).
 function fileFirst(ctx, title, flags) {
@@ -80,16 +77,33 @@ function ensureDisk(ctx) {
   const { main, root } = locate(ctx)
   const problem = diskProblem(ctx.ports.fs, envOf(ctx), { main, root })
   if (!problem) return
-  const e = new Refused("DISK", problem.text)
-  e.cause = problem.cause
-  throw e
+  throw refusalError(evaluate("DISK", { disk: problem }))
 }
 
-function heldError(n, h) {
-  return new Refused(
-    "HELD",
-    `#${n} is held by ${h.agent} (last saved ${h.idleMinutes} min ago; free after ${CLAIM_IDLE_MINUTES})`
-  )
+// Later rules ask for login and the worktree list. Load a kind only when the
+// next row needs it, so a closed issue never pays for a fallible read.
+function loadTakeFact(ctx, n, need, id) {
+  if (need === "login") return ctx.ports.gh.login()
+  if (need === "local") {
+    const existing = worktreeFor(ctx, n)
+    return { worktree: existing.worktree, branch: existing.branch }
+  }
+  if (need === "disk") return {}
+  if (need === "branch") return { stage: "later" }
+  if (need === "repo") return { ok: true }
+  throw new Error(`take did not gather ${need} for ${id}`)
+}
+
+function decideTake(ctx, n, facts) {
+  for (const row of RULES) {
+    if (!row.jobs.includes("take") || !row.check) continue
+    for (const need of row.needs) {
+      if (need in facts) continue
+      facts[need] = loadTakeFact(ctx, n, need, row.id)
+    }
+    const hit = evaluate(row.id, facts)
+    if (hit) throw refusalError(hit)
+  }
 }
 
 // GitHub has no atomic claim: issue comments are not a compare-and-swap.
@@ -125,49 +139,18 @@ function takeInner(ctx, target, flags, setId) {
     }
     n = filed.n
   }
-  const {
-    issue,
-    labels,
-    risk,
-    type,
-    approved,
-    holder: held,
-  } = readClaim(ctx, n)
-  const kind = flags["--type"] ?? type ?? bodyType(issue.body)
+  const { issue, holder: held } = readClaim(ctx, n)
+  const kind = issueKind(issue, flags)
   setId(`${kind ?? "task"}-${n}`)
-  if (issue.state === "CLOSED") throw new Refused("CLOSED", `#${n} is closed`)
-  if (labels.includes("ready-for-human"))
-    throw new Refused(
-      "READY_FOR_HUMAN",
-      `#${n} is labeled ready-for-human: it is a decision for a human, never an agent task`
-    )
   const me = envAgent(ctx) ?? newAgent()
-  if (held.state === "live" && held.agent !== me) throw heldError(n, held)
-  if (risk === "high" && !approved)
-    throw new Refused(
-      "NEEDS_APPROVAL",
-      `#${n} is risk:high and the owner has not commented /approve after its last edit`
-    )
-  const login = ctx.ports.gh.login()
-  const others = (issue.assignees ?? []).filter(
-    (a) => a.toLowerCase() !== login.toLowerCase()
-  )
-  if (others.length && !flags["--take"])
-    throw new Refused(
-      "ASSIGNED",
-      `#${n} is assigned to ${others.join(", ")}; pick another issue, or pass --take if this is agreed`
-    )
-  const existing = worktreeFor(ctx, n)
-  if (existing.worktree)
-    throw new Refused(
-      "WORKTREE_EXISTS",
-      `#${n} already has a worktree: ${existing.worktree} (${existing.branch})`
-    )
-  if (!kind)
-    throw new Refused(
-      "MISSING_FIELDS",
-      `#${n} has no Type (${TYPES.join(", ")})`
-    )
+  decideTake(ctx, n, {
+    history: { kind: "complete" },
+    issue,
+    claim: held,
+    me,
+    flags,
+    requireKind: true,
+  })
 
   // After the reads above, before the worktree and the claim comment.
   ensureDisk(ctx)
@@ -181,9 +164,10 @@ function takeInner(ctx, target, flags, setId) {
   })
   const observed = readClaim(ctx, n, true)
   const mid = observed.holder
-  if (mid.state === "live" && mid.agent !== me) {
+  const raced = evaluate("HELD", { issue, claim: mid, me })
+  if (raced) {
     discardWorktree(ctx, made)
-    throw heldError(n, mid)
+    throw refusalError(raced)
   }
   const at = new Date(observed.serverNow).toISOString()
   try {

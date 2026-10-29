@@ -4,7 +4,7 @@
 import { join } from "node:path"
 import { diskProblem } from "./disk.mjs"
 import { TYPES } from "./fields.mjs"
-import { Refused } from "./result.mjs"
+import { evaluate, refusalError } from "./rules/decide.mjs"
 
 export const BRANCH_RE =
   /^(feat|fix|hotfix|refactor|chore|docs)\/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$/
@@ -28,9 +28,9 @@ export const descFromTitle = (title) =>
 export function locate(ctx) {
   const repo = ctx.ports.git.repo(ctx.cwd)
   if (!repo)
-    throw new Refused("NOT_A_REPO", "run this inside the opencv repository")
+    throw refusalError(evaluate("NOT_A_REPO", { repo: { missing: true } }))
   if (repo.bare)
-    throw new Refused("NOT_A_REPO", `expected a non-bare repo (${repo.bare})`)
+    throw refusalError(evaluate("NOT_A_REPO", { repo: { bare: repo.bare } }))
   return { main: repo.main, root: repo.root }
 }
 
@@ -82,10 +82,11 @@ function alignResume(git, main, branch, issue) {
       throw new Error(`could not fast-forward ${branch}: ${moved.err}`)
     return
   }
-  throw new Refused(
-    "DIVERGED",
-    `local ${branch} and origin/${branch} have diverged, so resume would keep the stale local history`,
-    `Keep both tips. From the main checkout run: git fetch origin ${branch} && git log --oneline --left-right ${branch}...origin/${branch}. Reconcile them, then run: scripts/ocv-tools.mjs take ${issue} --resume`
+  throw refusalError(
+    evaluate("DIVERGED", {
+      branch: { name: branch, relation: "diverged" },
+      issue: { n: issue },
+    })
   )
 }
 
@@ -96,24 +97,16 @@ export function createWorktree(
   { type, issue, desc, install = true, resume = false, held = null }
 ) {
   if (!TYPES.includes(type))
-    throw new Refused(
-      "MISSING_FIELDS",
-      `type must be one of: ${TYPES.join(", ")}`
-    )
+    throw refusalError(evaluate("MISSING_FIELDS", { flags: {}, type }))
   const { main, root } = locate(ctx)
   const env = ctx.env ?? process.env
   const problem = diskProblem(ctx.ports.fs, env, { main, root })
-  if (problem) {
-    const error = new Refused("DISK", problem.text)
-    error.cause = problem.cause
-    throw error
-  }
+  if (problem) throw refusalError(evaluate("DISK", { disk: problem }))
   const warnings = []
   const slug = slugify(desc ?? "")
   if (!slug)
-    throw new Refused(
-      "MISSING_FIELDS",
-      `description "${desc}" has no usable characters; pass -d`
+    throw refusalError(
+      evaluate("MISSING_FIELDS", { flags: {}, desc: desc ?? "" })
     )
   const branch = `${type}/${issue}-${slug}`
   if (!BRANCH_RE.test(branch))
@@ -125,9 +118,12 @@ export function createWorktree(
   const worktree = join(root, `${issue}-${slug}`)
   const fs = ctx.ports.fs
   if (fs.exists(worktree))
-    throw new Refused(
-      "WORKTREE_EXISTS",
-      `worktree path already exists: ${worktree}`
+    throw refusalError(
+      evaluate("WORKTREE_EXISTS", {
+        path: worktree,
+        issue: { n: issue },
+        local: {},
+      })
     )
 
   const git = ctx.ports.git
@@ -136,25 +132,18 @@ export function createWorktree(
     throw new Error(`git fetch origin main failed: ${fetched.err}`)
   const local = git.localHead(main, branch)
   const remote = git.remoteHead(main, branch)
-  if (!resume && local)
-    throw new Refused(
-      "BRANCH_EXISTS",
-      `branch ${branch} already exists locally (git worktree list)`
-    )
-  if (!resume && remote)
-    throw new Refused(
-      "BRANCH_EXISTS",
-      held?.state === "idle"
-        ? `the idle holder ${held.agent} already pushed branch ${branch}`
-        : `branch ${branch} already exists on origin; someone is already working on it`,
-      `scripts/ocv-tools.mjs take ${issue} --resume`
-    )
-  if (resume && !local && !remote)
-    throw new Refused(
-      "BRANCH_EXISTS",
-      `branch ${branch} is not on origin, so there is nothing to resume`,
-      `scripts/ocv-tools.mjs take ${issue}`
-    )
+  const branchHit = evaluate("BRANCH_EXISTS", {
+    branch: {
+      stage: "create",
+      name: branch,
+      resume,
+      local: Boolean(local),
+      remote: Boolean(remote),
+      held,
+    },
+    issue: { n: issue },
+  })
+  if (branchHit) throw refusalError(branchHit)
   if (resume && remote) {
     const got = git.fetch(main, branch)
     if (!got.ok)

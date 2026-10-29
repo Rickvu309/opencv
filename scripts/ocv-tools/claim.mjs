@@ -7,7 +7,7 @@ import {
   releaseMarker,
 } from "./claim-marker.mjs"
 import { TYPES } from "./fields.mjs"
-import { Refused } from "./result.mjs"
+import { decide, refusalError } from "./rules/decide.mjs"
 import { locate } from "./worktree.mjs"
 
 export const nowOf = (ctx) => ctx.now?.() ?? Date.now()
@@ -29,27 +29,41 @@ export function agentIdFor(ctx, gitDir) {
 
 // Where we are: a linked worktree under the clone's ../<repo>.worktrees root,
 // on a task branch. A normal clone, even on a task branch, is not a task.
-export function taskHere(ctx) {
+// locate() failing stays NOT_A_TASK, the same as the old catch.
+function hereFact(ctx) {
   const here = ctx.ports.git.here(ctx.cwd)
   const branch = here.branch
   const m = new RegExp(`^(?:${TYPES.join("|")})/(\\d+)-`).exec(branch ?? "")
   let linked = false
   let under = false
+  let place = null
   if (here.topOk && here.gitDirOk && here.commonOk) {
     linked = resolve(here.gitDir) !== resolve(here.common)
     try {
-      const root = resolve(locate(ctx).root)
-      under = resolve(here.top).startsWith(root + sep)
+      place = locate(ctx)
+      under = resolve(here.top).startsWith(resolve(place.root) + sep)
     } catch {
       under = false
     }
   }
-  if (!here.topOk || !m || !linked || !under)
-    throw new Refused(
-      "NOT_A_TASK",
-      "this folder is not a linked task worktree under ../opencv.worktrees on branch type/<n>-description"
-    )
-  return { n: Number(m[1]), branch, top: here.top, gitDir: here.gitDir }
+  return {
+    ok: Boolean(here.topOk && m && linked && under),
+    n: m ? Number(m[1]) : null,
+    branch,
+    top: here.top,
+    gitDir: here.gitDir,
+    main: place?.main ?? null,
+    root: place?.root ?? null,
+  }
+}
+
+export function taskHere(ctx, job = "save") {
+  const here = hereFact(ctx)
+  if (!here.ok) {
+    const verdict = decide(job, { here })
+    throw refusalError(verdict.refusals[0])
+  }
+  return here
 }
 
 // One read of the issue plus the holder, timed on GitHub's clock.
@@ -87,16 +101,22 @@ export function heartbeat(ctx, n, h, agent) {
 
 export function release(ctx, { n: given, reason }) {
   if (!reason) throw new Error("usage: ocv-tools release --reason <why> [<n>]")
-  const here = given ? null : taskHere(ctx)
+  const here = given ? { ok: true } : taskHere(ctx, "release")
   const n = given ?? here.n
-  const gitDir = here?.gitDir ?? ctx.ports.git.here(ctx.cwd).gitDir
+  const gitDir = given ? ctx.ports.git.here(ctx.cwd).gitDir : here.gitDir
   const me = agentIdFor(ctx, gitDir)
-  const { holder: h, serverNow } = readClaim(ctx, n, true)
-  if (!me || h.state === "none" || h.state === "released" || h.agent !== me)
-    throw new Refused(
-      "NOT_OWNER",
-      `you (${me ?? "no agent id"}) do not hold #${n}${h.agent ? `; ${h.agent} does` : ""}`
-    )
+  const read = readClaim(ctx, n, true)
+  const h = read.holder
+  const verdict = decide("release", {
+    here,
+    issue: read.issue,
+    claim: h,
+    me,
+    history: { kind: "complete" },
+    repo: { ok: true },
+  })
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
+  const { serverNow } = read
   const at = new Date(serverNow).toISOString()
   ctx.ports.gh.comment(
     n,

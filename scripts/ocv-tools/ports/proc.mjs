@@ -1,11 +1,22 @@
 // The process runner every real adapter sits on. Jobs never spawn a process themselves.
 import { spawnSync } from "node:child_process"
 
+// Prompt locks go to every child. GIT_EDITOR=true only for git, and only when
+// the caller has not chosen an editor, so a commit or rebase cannot open one.
+export function childEnv(cmd, options = {}, base = process.env) {
+  const env = { ...base, ...(options.env ?? {}) }
+  env.GH_PROMPT_DISABLED = "1"
+  env.GIT_TERMINAL_PROMPT = "0"
+  if (cmd === "git" && !env.GIT_EDITOR) env.GIT_EDITOR = "true"
+  return env
+}
+
 export function realRunner() {
   return function run(cmd, args, options = {}) {
     const r = spawnSync(cmd, args, {
       encoding: "utf8",
       cwd: options.cwd,
+      env: childEnv(cmd, options),
       maxBuffer: 32 * 1024 * 1024,
     })
     const stdout = r.stdout ?? ""

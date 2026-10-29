@@ -1,7 +1,7 @@
 // `ocv-tools file`: builds the issue from the form fields, lints the plain words and creates it.
-import { readFileSync } from "node:fs"
-import { Refused } from "./result.mjs"
+import { fileURLToPath } from "node:url"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
+import { decide, evaluate, refusalError } from "./rules/decide.mjs"
 import {
   PLAIN_RULE,
   buildIssueBody,
@@ -11,10 +11,10 @@ import {
 } from "./lint.mjs"
 
 // Model issues live in one file so the writing guide and the tests show the same ones.
-export function exampleIssues() {
-  return splitIssues(
-    readFileSync(new URL("./examples.md", import.meta.url), "utf8")
-  )
+export const EXAMPLES = fileURLToPath(new URL("./examples.md", import.meta.url))
+
+export function exampleIssues(text) {
+  return splitIssues(text)
 }
 
 const TITLE_PREFIX = new RegExp(`^(${TYPES.join("|")}): `)
@@ -23,14 +23,21 @@ const TITLE_PREFIX = new RegExp(`^(${TYPES.join("|")}): `)
 export function titleWithType(title, type) {
   if (TITLE_PREFIX.test(title)) return title
   if (type && TYPES.includes(type)) return `${type}: ${title}`
-  throw new Refused(
-    "MISSING_FIELDS",
-    `the title must start with one of ${TYPES.join(", ")} and a colon, for example "fix: ..."`
+  throw refusalError(
+    evaluate("MISSING_FIELDS", {
+      flags: { "--title": title, "--type": type },
+      draft: { badTitle: true },
+    })
   )
 }
 
+function refuseFile(flags, draft) {
+  const verdict = decide("file", { flags, draft })
+  throw refusalError(verdict.refusals[0])
+}
+
 export function file(ctx, { flags }) {
-  if (!flags["--title"]) throw new Refused("MISSING_FIELDS", "no --title")
+  if (!flags["--title"]) refuseFile(flags, { missingTitle: true })
   const title = titleWithType(flags["--title"], flags["--type"])
   const type = title.match(TITLE_PREFIX)[1]
   let body
@@ -44,7 +51,7 @@ export function file(ctx, { flags }) {
         type,
       })
     } catch (e) {
-      throw new Refused("MISSING_FIELDS", e.message)
+      refuseFile(flags, { bodyError: e.message })
     }
   }
   const lint = lintIssue({ title, body })
@@ -52,12 +59,11 @@ export function file(ctx, { flags }) {
     lint.reasons.unshift(
       'the body has no "Risk" section with low, normal or high'
     )
-  if (lint.reasons.length)
-    throw new Refused("UNREADABLE", lint.reasons.join("; "))
+  if (lint.reasons.length) refuseFile(flags, { reasons: lint.reasons })
   const grade = `Reading level: grade ${lint.grade.toFixed(1)} (aim for 6 or lower; above 8 is refused).`
 
   if (flags["--dry-run"]) {
-    const models = exampleIssues()
+    const models = exampleIssues(ctx.ports.fs.read(EXAMPLES))
       .map((x) => `# ${x.title}\n\n${x.body}`)
       .join("\n")
     return {

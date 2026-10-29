@@ -2,6 +2,7 @@
 import { existsSync, mkdtempSync, readFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"
+import { EXAMPLES } from "../issue.mjs"
 import { createFacts } from "../facts.mjs"
 
 export const NOW = Date.parse("2026-10-29T12:00:00Z")
@@ -39,6 +40,7 @@ export function fakePorts(world = {}) {
   const effects = []
   const written = {}
   const files = new Map(Object.entries(world.files ?? {}))
+  if (!files.has(EXAMPLES)) files.set(EXAMPLES, readFileSync(EXAMPLES, "utf8"))
   const dirs = new Set()
   const counts = { issue: 0, worktrees: 0, prs: 0, remoteHeads: 0 }
   const env = {
@@ -247,13 +249,18 @@ export function fakePorts(world = {}) {
     },
     editComment(id, body) {
       effect("editComment", { id, body })
+      if (state.commentEditError) throw new Error(state.commentEditError)
       const stamp = state.commentUpdatedAt
+      let found = false
       for (const item of state.issues.values()) {
         const row = item.comments.find((c) => c.databaseId === id)
         if (!row) continue
+        found = true
         row.body = body
         row.updatedAt = stamp
       }
+      if (!found)
+        throw new Error(`gh api --include failed: comment ${id} was not found`)
       return stamp
     },
     assignMe(n) {

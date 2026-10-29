@@ -97,6 +97,24 @@ test("take picks the next free port when another worktree holds the first", () =
   assert.match(r.text, /Port: 4091 /, r.text)
 })
 
+test("a closed issue is refused before login or a worktree read", () => {
+  const ports = fakePorts({
+    issues: [issue(90, { state: "CLOSED" })],
+  })
+  ports.gh.login = () => {
+    throw new Error("login failed")
+  }
+  const r = runCli(["take", "90", "--no-install"], ctxFor(ports))
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /REFUSED CLOSED: #90 is closed/)
+  assert.match(
+    r.text,
+    /Fix: The issue is closed\. Run: gh issue list, and pick another\./
+  )
+  assert.equal(ports.counts.worktrees, 0)
+  assert.equal(ports.counts.issue, 1)
+})
+
 test("take refuses on low disk before touching gh writes, git or the worktree, and records cause disk", () => {
   const { ports, ctx } = run({ diskFreeMb: 4 })
   const r = runCli(["take", "90"], ctx)

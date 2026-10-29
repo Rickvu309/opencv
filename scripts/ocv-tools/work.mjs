@@ -1,18 +1,14 @@
 // save and cleanup: keep work safe while holding an issue, and remove the workspace after the merge.
-import { EXIT, FIXES, Refused } from "./result.mjs"
+import { EXIT, FIXES } from "./result.mjs"
 import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
+import { decide, evaluate, refusalError } from "./rules/decide.mjs"
 import { locate } from "./worktree.mjs"
 
 const withIssueSuffix = (message, n) =>
   /\(#\d+\)\s*$/.test(message) ? message : `${message} (#${n})`
 
-function holds(h, me) {
-  return (
-    Boolean(me) &&
-    h.agent === me &&
-    h.state !== "none" &&
-    h.state !== "released"
-  )
+function lostNow(facts) {
+  return evaluate("LOST", facts)
 }
 
 // The diff is raw stdout. Trimming drops a blank context line (a single
@@ -75,12 +71,25 @@ function lostPushed(ctx, t, holder) {
 }
 
 export function save(ctx, { message }) {
-  const t = taskHere(ctx)
+  const t = taskHere(ctx, "save")
   if (!message) throw new Error("usage: ocv-tools save -m <message>")
   const me = agentIdFor(ctx, t.gitDir)
   const git = ctx.ports.git
-  const h = readClaim(ctx, t.n).holder
-  if (!holds(h, me)) return lost(ctx, t, h)
+  const read = readClaim(ctx, t.n)
+  const h = read.holder
+  const verdict = decide("save", {
+    here: t,
+    issue: read.issue,
+    claim: h,
+    me,
+    history: { kind: "complete" },
+    repo: { ok: true },
+  })
+  // LOST is exit 3 and a patch, not a REFUSED line.
+  if (!verdict.ok) {
+    if (verdict.refusals[0].id === "LOST") return lost(ctx, t, h)
+    throw refusalError(verdict.refusals[0])
+  }
 
   const dirty = git.status(ctx.cwd).out
   const upstream = git.verify(ctx.cwd, `origin/${t.branch}`)
@@ -89,8 +98,10 @@ export function save(ctx, { message }) {
     `${upstream.ok ? `origin/${t.branch}` : "origin/main"}..HEAD`
   ).out
   if (!dirty && !Number(ahead)) {
-    const still = readClaim(ctx, t.n, true).holder
-    if (!holds(still, me)) return lost(ctx, t, still)
+    const stillRead = readClaim(ctx, t.n, true)
+    const still = stillRead.holder
+    if (lostNow({ claim: still, me, issue: stillRead.issue }))
+      return lost(ctx, t, still)
     heartbeat(ctx, t.n, still, me)
     return {
       lines: [
@@ -110,8 +121,10 @@ export function save(ctx, { message }) {
       )
   }
   // Re-read before the push. A takeover during commit must not publish.
-  const again = readClaim(ctx, t.n, true).holder
-  if (!holds(again, me)) return lost(ctx, t, again)
+  const againRead = readClaim(ctx, t.n, true)
+  const again = againRead.holder
+  if (lostNow({ claim: again, me, issue: againRead.issue }))
+    return lost(ctx, t, again)
   // Refresh immediately before git push. The pre-push check can take long
   // enough to expire a claim that was fresh at the previous heartbeat.
   heartbeat(ctx, t.n, again, me)
@@ -126,8 +139,10 @@ export function save(ctx, { message }) {
   // patch of the claim. A takeover during the hook must not look like success.
   // A comment that arrives after this read can still win. That gap is the
   // residual race.
-  const after = readClaim(ctx, t.n, true).holder
-  if (!holds(after, me)) return lostPushed(ctx, t, after)
+  const afterRead = readClaim(ctx, t.n, true)
+  const after = afterRead.holder
+  if (lostNow({ claim: after, me, issue: afterRead.issue }))
+    return lostPushed(ctx, t, after)
   heartbeat(ctx, t.n, after, me)
   return {
     lines: [
@@ -138,30 +153,35 @@ export function save(ctx, { message }) {
   }
 }
 
-// Decides one worktree: { verdict: "remove" } or { verdict: "keep"|"skip", code, why }.
-function judge(ctx, wt, { force, dirtyFirst }) {
-  const merged = () =>
-    ctx.ports.gh.prs({ state: "merged", head: wt.branch }).length > 0
-  const dirty = () => ctx.ports.git.status(wt.path).out
-  const checks = dirtyFirst ? ["dirty", "merged"] : ["merged", "dirty"]
-  for (const c of checks) {
-    if (c === "merged" && !merged())
-      return {
-        verdict: "keep",
-        code: "NOT_MERGED",
-        why: `${wt.branch} has no merged pull request`,
-      }
-    if (c === "dirty" && !force) {
-      const d = dirty()
-      if (d)
-        return {
-          verdict: "skip",
-          code: "DIRTY",
-          why: `${wt.path} has unsaved work:\n${d.split("\n").slice(0, 8).join("\n")}`,
-        }
-    }
+function workOf(ctx, wt, force) {
+  return {
+    force,
+    path: wt.path,
+    dirty: ctx.ports.git.status(wt.path).out,
+    branch: wt.branch,
+    merged: ctx.ports.gh.prs({ state: "merged", head: wt.branch }).length > 0,
   }
-  return { verdict: "remove" }
+}
+
+// One numbered worktree uses decide (dirty, then not merged). --all asks
+// merged first, which one table order cannot express, so it uses evaluate.
+function judge(ctx, wt, { force, n, root }) {
+  const work = workOf(ctx, wt, force)
+  if (n) {
+    const verdict = decide("cleanup", {
+      here: { ok: true },
+      local: { required: true, found: true, n, root },
+      work,
+      repo: { ok: true },
+    })
+    if (!verdict.ok) throw refusalError(verdict.refusals[0])
+    return null
+  }
+  const unmerged = evaluate("NOT_MERGED", { work })
+  if (unmerged) return { verb: "kept", message: unmerged.message }
+  const unsaved = evaluate("DIRTY", { work })
+  if (unsaved) return { verb: "skipped", message: unsaved.message }
+  return null
 }
 
 // Port of scripts/cleanup-worktree.sh: only worktrees under the worktree root, only merged ones,
@@ -169,32 +189,44 @@ function judge(ctx, wt, { force, dirtyFirst }) {
 export function cleanup(ctx, { n: given, flags = {} }) {
   const force = Boolean(flags["--force"])
   const dry = Boolean(flags["--dry-run"])
-  const { main, root } = locate(ctx)
-  const n = flags["--all"] ? null : (given ?? taskHere(ctx).n)
+  const all = Boolean(flags["--all"])
+  let main
+  let root
+  let n
+  if (all || given) {
+    const place = locate(ctx)
+    main = place.main
+    root = place.root
+    n = all ? null : given
+  } else {
+    const here = taskHere(ctx, "cleanup")
+    main = here.main
+    root = here.root
+    n = here.n
+  }
   const fetched = ctx.ports.git.fetch(main, undefined, { prune: true })
   const lines = fetched.ok
     ? []
     : [`Warning: could not fetch origin: ${fetched.err}`]
-  const all = ctx.ports.git
+  const trees = ctx.ports.git
     .worktrees(main)
     .filter((w) => w.path.startsWith(`${root}/`))
   const targets = n
-    ? all.filter((w) => new RegExp(`^[a-z]+/${n}-`).test(w.branch))
-    : all
-  if (n && !targets.length)
-    throw new Refused(
-      "NO_WORKTREE",
-      `#${n} has no local worktree under ${root} to clean up`
-    )
+    ? trees.filter((w) => new RegExp(`^[a-z]+/${n}-`).test(w.branch))
+    : trees
+  if (n && !targets.length) {
+    const verdict = decide("cleanup", {
+      here: { ok: true },
+      local: { required: true, found: false, n, root },
+    })
+    throw refusalError(verdict.refusals[0])
+  }
 
   const removed = []
   for (const wt of targets) {
-    const j = judge(ctx, wt, { force, dirtyFirst: Boolean(n) })
-    if (j.verdict !== "remove") {
-      if (n) throw new Refused(j.code, j.why)
-      lines.push(
-        `${j.verdict === "keep" ? "kept" : "skipped"} ${wt.branch}: ${j.why.split("\n")[0]}`
-      )
+    const j = judge(ctx, wt, { force, n, root })
+    if (j) {
+      lines.push(`${j.verb} ${wt.branch}: ${j.message.split("\n")[0]}`)
       continue
     }
     if (dry) {

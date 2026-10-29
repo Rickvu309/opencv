@@ -8,6 +8,7 @@ import { release } from "./claim.mjs"
 import { take } from "./take.mjs"
 import { file } from "./issue.mjs"
 import { COMMANDS, doctor, renderHelp, status } from "./report.mjs"
+import { rulesJob } from "./rules/command.mjs"
 import { cleanup, save } from "./work.mjs"
 import { shot } from "./shot.mjs"
 import { board } from "./board.mjs"
@@ -195,6 +196,8 @@ function command(ctx, cmd, rest) {
       return shot(ctx, { files: pos, flags })
     case "doctor":
       return doctor(ctx)
+    case "rules":
+      return rulesJob(ctx, { flags })
     default:
       throw new Refused(
         "UNKNOWN_COMMAND",

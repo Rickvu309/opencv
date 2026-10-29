@@ -14,14 +14,13 @@ import { basename, join } from "node:path"
 import { taskHere } from "./claim.mjs"
 import { SCRATCH } from "./ports/fs.mjs"
 import { Refused } from "./result.mjs"
+import { evaluate, refusalError } from "./rules/decide.mjs"
 
 const USAGE =
   "usage: ocv-tools shot <file...> [--pr <n> | --issue <n>] [--name <what>] [--no-comment]"
 const FLAGS = new Set(["--pr", "--issue", "--name", "--no-comment"])
 const RELEASE = "screenshots"
 const NOTES = "Pictures for issues and pull requests. Not a product release."
-const MAX_PICTURES = 20
-const MAX_BYTES = 10 * 1024 * 1024
 const COMMENT_MAX = 60000
 const SLUG_MAX = 40
 
@@ -78,44 +77,28 @@ function readHead(path) {
   }
 }
 
+function refuse(id, facts) {
+  const hit = evaluate(id, facts)
+  if (!hit) throw new Error(`shot expected ${id} to refuse`)
+  throw refusalError(hit)
+}
+
 function inspect(path) {
   if (!existsSync(path))
-    throw new Refused(
-      "MISSING_FILE",
-      `${path} does not exist`,
-      "Check the path and pass a picture that exists."
-    )
+    refuse("MISSING_FILE", { picture: { path, exists: false } })
   let st
   try {
     st = statSync(path)
   } catch (error) {
     if (error?.code === "ENOENT")
-      throw new Refused(
-        "MISSING_FILE",
-        `${path} does not exist`,
-        "Check the path and pass a picture that exists."
-      )
+      refuse("MISSING_FILE", { picture: { path, exists: false } })
     throw error
   }
-  if (!st.isFile())
-    throw new Refused(
-      "BAD_PICTURE",
-      `${path} is not a png, jpg, gif or webp`,
-      "Pass a picture file (.png, .jpg, .gif or .webp)."
-    )
-  if (st.size > MAX_BYTES)
-    throw new Refused(
-      "TOO_BIG",
-      `${path} is over 10 MB`,
-      "Pass a picture under 10 MB."
-    )
+  if (!st.isFile()) refuse("BAD_PICTURE", { picture: { path, file: false } })
+  const big = evaluate("TOO_BIG", { picture: { path, bytes: st.size } })
+  if (big) throw refusalError(big)
   const type = pictureType(readHead(path))
-  if (!type)
-    throw new Refused(
-      "BAD_PICTURE",
-      `${path} is not a png, jpg, gif or webp (checked the file bytes)`,
-      "Pass a picture file (.png, .jpg, .gif or .webp)."
-    )
+  if (!type) refuse("BAD_PICTURE", { picture: { path, bytesChecked: false } })
   return { file: path, type }
 }
 
@@ -129,12 +112,7 @@ export function shotAssets(items, { kind, n, name }) {
     const base = basename(item.file).replace(/\.[^.]+$/, "")
     const what = shared ? `${shared}-${i + 1}` : slug(name || base)
     const asset = `${kind}-${n}-${what}.${item.type}`
-    if (seen.has(asset))
-      throw new Refused(
-        "BAD_PICTURE",
-        `two files would be named ${asset}`,
-        "Pass --name, or rename one file so the pictures stay distinct."
-      )
+    if (seen.has(asset)) refuse("BAD_PICTURE", { picture: { asset } })
     seen.add(asset)
     return { ...item, asset, alt: what.replaceAll("-", " ") }
   })
@@ -153,11 +131,7 @@ export function shotComments(repo, items) {
   const take = (group) => {
     const body = shotBody(repo, group)
     if (body.length >= COMMENT_MAX)
-      throw new Refused(
-        "UNKNOWN",
-        "one picture comment is over 60000 characters",
-        "Use a shorter --name. Run: scripts/ocv-tools.mjs help"
-      )
+      refuse("UNKNOWN", { history: { kind: "comment-size" } })
     chunks.push(body)
   }
   for (const item of items) {
@@ -181,11 +155,7 @@ function targetOf(ctx, { pr, issue }) {
     return { kind: "issue", n: taskHere(ctx).n }
   } catch (error) {
     if (error instanceof Refused && error.code === "NOT_A_TASK")
-      throw new Refused(
-        "NOT_A_TASK",
-        error.message,
-        "Pass --issue <n> or --pr <n>, or run shot inside the task worktree."
-      )
+      refuse("NOT_A_TASK", { here: { ok: false, shot: true } })
     throw error
   }
 }
@@ -198,33 +168,21 @@ function ensureRelease(gh) {
 function requireTarget(gh, { kind, n }) {
   const ok = kind === "pr" ? gh.viewPr(n) : gh.viewIssue(n)
   if (ok) return
-  throw new Refused(
-    "NOT_AN_ISSUE",
-    kind === "pr" ? `#${n} is not a pull request` : `#${n} is not an issue`,
-    kind === "pr"
-      ? "Pass a pull request number to --pr. Run: gh pr list"
-      : "Pass an issue number to --issue. Run: gh issue list"
-  )
+  refuse("NOT_AN_ISSUE", {
+    issue: { n, missing: true, kind, shot: true },
+  })
 }
 
 export function shot(ctx, { files = [], flags = {} } = {}) {
   const unknown = Object.keys(flags).find((key) => !FLAGS.has(key))
-  if (unknown) throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+  if (unknown) refuse("UNKNOWN_FLAG", { flag: { name: unknown } })
   if (!files.length) throw new Error(USAGE)
-  if (files.length > MAX_PICTURES)
-    throw new Refused(
-      "TOO_MANY",
-      `shot takes at most 20 pictures per run (${files.length} given)`,
-      "Pass at most 20 pictures in one run."
-    )
+  const many = evaluate("TOO_MANY", { shot: { count: files.length } })
+  if (many) throw refusalError(many)
   if ("--pr" in flags && "--issue" in flags)
-    throw new Refused(
-      "BAD_ARGS",
-      "pass --pr or --issue, not both",
-      "Pass one of --pr or --issue. Run: scripts/ocv-tools.mjs help"
-    )
+    refuse("BAD_ARGS", { args: { shot: true } })
   if ("--name" in flags && !flags["--name"])
-    throw new Refused("MISSING_FIELDS", "--name needs a value")
+    refuse("MISSING_FIELDS", { flags: {}, missingValue: "--name" })
   const pr = "--pr" in flags ? positive(flags["--pr"]) : null
   const issue = "--issue" in flags ? positive(flags["--issue"]) : null
   // Bytes first, so a bad picture never reaches git or GitHub.
