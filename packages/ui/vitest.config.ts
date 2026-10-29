@@ -4,5 +4,6 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.tsx"],
+    maxWorkers: Number(process.env.VITEST_MAX_WORKERS ?? 2),
   },
 })
