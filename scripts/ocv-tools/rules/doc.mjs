@@ -13,6 +13,52 @@ const cell = (value) =>
     .replace(/\|/g, "\\|")
     .replace(/\n/g, " ")
 
+// Prettier pads the committed table. Compare cells, not column width.
+function rowCells(line) {
+  const trimmed = line.trim()
+  if (!trimmed.startsWith("|")) return null
+  const cells = []
+  let current = ""
+  for (let i = 1; i < trimmed.length; i++) {
+    const ch = trimmed[i]
+    if (ch === "\\" && trimmed[i + 1] === "|") {
+      current += "\\|"
+      i++
+      continue
+    }
+    if (ch === "|") {
+      cells.push(current.trim().replace(/ +/g, " "))
+      current = ""
+      continue
+    }
+    current += ch
+  }
+  if (current.trim() !== "") return null
+  return cells
+}
+
+function normalizeTable(text) {
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const cells = rowCells(line)
+      if (!cells) return line.replace(/ +/g, " ")
+      if (cells.every((item) => /^:?-+:?$/.test(item)))
+        return `|${cells.map(() => "---").join("|")}|`
+      return `|${cells.join("|")}|`
+    })
+    .join("\n")
+}
+
+function markedBlock(text) {
+  const begin = text.indexOf(BEGIN)
+  const end = text.indexOf(END)
+  if (begin === -1 || end === -1 || end < begin) return null
+  return text.slice(begin + BEGIN.length, end)
+}
+
 export function renderRulesDoc(table = RULES) {
   const lines = [
     "| rule | what makes it fail | fix | jobs |",
@@ -47,10 +93,11 @@ export function applyRulesDoc(text, table = RULES) {
     return { text: next, ok: false, missing: true }
   }
   const next = text.slice(0, begin) + block + text.slice(end + END.length)
-  return { text: next, ok: text === next, missing: false }
+  return { text: next, ok: rulesDocMatches(text, table), missing: false }
 }
 
 export function rulesDocMatches(text, table = RULES) {
-  const applied = applyRulesDoc(text, table)
-  return applied.ok && !applied.missing
+  const block = markedBlock(text)
+  if (block == null) return false
+  return normalizeTable(block) === normalizeTable(renderRulesDoc(table))
 }
