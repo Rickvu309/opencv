@@ -12,6 +12,21 @@ export { approvalValid, riskOf }
 // without a line saying when to use it.
 export const COMMANDS = [
   {
+    name: "check",
+    usage: "check",
+    when: "Run the quick check and save proof for the committed tree and origin/main.",
+  },
+  {
+    name: "finish",
+    usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
+    when: "Require a passing check, push through hooks and open the PR with check proof.",
+  },
+  {
+    name: "merge",
+    usage: "merge <pr#>",
+    when: "Require ci success on the head and enqueue a squash merge. Run again after the queue merges to confirm linked issues are closed, closing them if needed.",
+  },
+  {
     name: "help",
     usage: "help",
     when: "See every job and when to use it.",
@@ -86,7 +101,6 @@ export function renderHelp() {
     "",
     exitText(),
     "",
-    "Later slices add check and finish.",
   ].join("\n")
 }
 
@@ -95,11 +109,12 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   if (pr?.state === "MERGED") return `scripts/ocv-tools.mjs cleanup ${n}`
   if (pr?.state === "OPEN")
     return pr.isDraft
-      ? `gh pr ready ${pr.number}, then scripts/merge-pr.sh ${pr.number} once ci is green`
-      : `scripts/merge-pr.sh ${pr.number} once ci is green`
+      ? `gh pr ready ${pr.number}, then scripts/ocv-tools.mjs merge ${pr.number} once ci is green`
+      : `scripts/ocv-tools.mjs merge ${pr.number} once ci is green`
   if (risk === "high" && !approved)
     return "Ask a project admin to comment /approve on the issue (high risk needs it after the last edit)."
-  if (worktree) return `Work in ${worktree}, then scripts/open-pr.sh --draft`
+  if (worktree)
+    return `Work in ${worktree}, then scripts/ocv-tools.mjs check, then scripts/ocv-tools.mjs finish --body-file <file> --draft`
   if (branch)
     return `git worktree add ../opencv.worktrees/${n}-work ${branch} (from the main checkout)`
   return `scripts/ocv-tools.mjs take ${n}`

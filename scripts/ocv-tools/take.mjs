@@ -196,6 +196,6 @@ function takeInner(ctx, target, flags, setId) {
       `Agent: ${me}`,
       ...made.warnings.map((w) => `Warning: ${w}`),
     ],
-    next: `cd ${made.worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes, then scripts/open-pr.sh --draft`,
+    next: `cd ${made.worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes, then scripts/ocv-tools.mjs check, then scripts/ocv-tools.mjs finish --draft --body-file <file>`,
   }
 }

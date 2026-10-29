@@ -516,8 +516,9 @@ export function fakePorts(world = {}) {
     git,
     fs,
     proc: {
-      run(cmd, args) {
+      run(cmd, args, options) {
         effect("proc", { cmd, args })
+        if (world.run) return world.run(cmd, args, options)
         return { ok: true, out: "", err: "" }
       },
       listening(port) {

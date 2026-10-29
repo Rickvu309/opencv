@@ -6,7 +6,12 @@ import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { COMMANDS } from "./report.mjs"
 import { decide, evaluate, needsOf } from "./rules/decide.mjs"
-import { RULES_DOC, renderRulesDoc, rulesDocMatches } from "./rules/doc.mjs"
+import {
+  RULES_DOC,
+  RULE_GUIDES,
+  renderRulesDoc,
+  rulesDocMatches,
+} from "./rules/doc.mjs"
 import { RULES } from "./rules/table.mjs"
 
 const TYPE_LIST = "feat, fix, hotfix, refactor, chore, docs"
@@ -319,6 +324,14 @@ test("every checked rule has a failing and a passing fact", () => {
     { shot: { count: 20 } },
     "shot takes at most 20 pictures per run (21 given)"
   )
+  for (const row of RULES.filter((row) => row.needs.includes("delivery"))) {
+    check(
+      row.id,
+      { delivery: { id: row.id } },
+      { delivery: { id: "other" } },
+      row.says
+    )
+  }
   for (const row of RULES) {
     if (!row.check) {
       assert.equal(row.kind, "judgment", row.id)
@@ -555,7 +568,8 @@ test("the rules guide is generated from the table", () => {
   assert.match(md, /\| rule \| what makes it fail \| fix \| jobs \|/)
   for (const row of RULES) assert.ok(md.includes(row.id), row.id)
   assert.match(md, /OTHER_WORKTREE \(2\).*Nothing/)
-  assert.equal(rulesDocMatches(readFileSync(RULES_DOC, "utf8")), true)
+  for (const { path, table } of RULE_GUIDES)
+    assert.equal(rulesDocMatches(readFileSync(path, "utf8"), table), true)
 })
 
 test("rules --check fails on a stale block and --write repairs the fake", () => {
@@ -570,6 +584,14 @@ test("rules --check fails on a stale block and --write repairs the fake", () => 
   const stale = runCli(["rules", "--check"], ctx)
   assert.equal(stale.code, 1)
   assert.match(stale.text, /Fix: Run: scripts\/ocv-tools\.mjs rules --write/)
+  assert.equal(runCli(["rules", "--write"], ctx).code, 0)
+  assert.equal(runCli(["rules", "--check"], ctx).code, 0)
+  const delivery = RULE_GUIDES[1].path
+  ports.fs.write(
+    delivery,
+    ports.fs.read(delivery).replaceAll("CHECK_REQUIRED", "STALE")
+  )
+  assert.equal(runCli(["rules", "--check"], ctx).code, 1)
   assert.equal(runCli(["rules", "--write"], ctx).code, 0)
   assert.equal(runCli(["rules", "--check"], ctx).code, 0)
   const listed = runCli(["rules", "--list"], ctx)

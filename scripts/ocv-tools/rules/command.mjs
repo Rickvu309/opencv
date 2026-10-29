@@ -1,6 +1,6 @@
 // ocv-tools rules [--write|--check|--list]
 import { EXIT } from "../result.mjs"
-import { RULES_DOC, applyRulesDoc } from "./doc.mjs"
+import { RULE_GUIDES, applyRulesDoc } from "./doc.mjs"
 import { RULES } from "./table.mjs"
 
 function listResult() {
@@ -12,21 +12,23 @@ function listResult() {
 
 export function rulesJob(ctx, { flags = {} } = {}) {
   if (flags["--write"]) {
-    const next = applyRulesDoc(ctx.ports.fs.read(RULES_DOC)).text
-    ctx.ports.fs.write(RULES_DOC, next)
+    for (const { path, table } of RULE_GUIDES) {
+      const next = applyRulesDoc(ctx.ports.fs.read(path), table).text
+      ctx.ports.fs.write(path, next)
+    }
     return {
       lines: ["Wrote the rules block."],
       next: "scripts/ocv-tools.mjs rules --check",
     }
   }
   if (flags["--check"]) {
-    const applied = applyRulesDoc(ctx.ports.fs.read(RULES_DOC))
-    if (!applied.ok)
+    const stale = RULE_GUIDES.find(
+      ({ path, table }) => !applyRulesDoc(ctx.ports.fs.read(path), table).ok
+    )
+    if (stale)
       return {
         exit: EXIT.error,
-        lines: [
-          "The rules block in docs/git-workflow/rule-enforcement.md does not match the table.",
-        ],
+        lines: [`The rules block in ${stale.path} does not match the table.`],
         fix: "Run: scripts/ocv-tools.mjs rules --write",
       }
     return {

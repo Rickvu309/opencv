@@ -1,6 +1,6 @@
 // Rules whose check still runs in scripts/lib/rules.sh. The pure check here is
 // what the table, the guide and the row tests use. open-pr.sh and merge-pr.sh
-// are unchanged.
+// remain compatibility entry points.
 import { FIXES } from "../result.mjs"
 
 function asLines(value) {
@@ -191,7 +191,7 @@ export const bashRows = [
     jobs: ["open"],
     needs: ["env"],
     check: skipDeclared,
-    fix: () => "env -u SKIP_CHECKS scripts/open-pr.sh",
+    fix: () => "env -u SKIP_CHECKS scripts/ocv-tools.mjs check",
     impl: "bash:rule_skip_declared",
   }),
   rule({
