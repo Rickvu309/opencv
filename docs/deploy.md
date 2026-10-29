@@ -89,7 +89,7 @@ pnpm --filter web preview   # serves apps/web/dist
 HTTP check from `apps/web`, with `PORT` set to your assigned web port:
 
 ```bash
-PORT=5450 node scripts/verify-host-routing.mjs
+PORT=5450 node apps/web/scripts/verify-host-routing.mjs
 ```
 
 Set `CADDY` to the binary path if it is not on `PATH`. The check starts Caddy

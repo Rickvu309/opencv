@@ -28,77 +28,99 @@ function* walk(dir) {
 const verifySkills = readdirSync(skills).filter((name) =>
   name.startsWith("verify-")
 )
-const docs = verifySkills.flatMap((skill) =>
-  [...walk(path.join(skills, skill))]
-    .filter((file) => file.endsWith(".md"))
-    .map((file) => ({ file, skill }))
-)
 
-const REPO_PREFIX = /^(?:apps|packages|scripts|docs|\.claude)\//
+const REPO_PREFIX =
+  /^(?:apps|packages|scripts|docs|\.claude|\.githooks|\.github)\//
 const PLACEHOLDER = /[<>*{$]|\.\.\./
 // Screenshots and downloads are outputs a run writes, so only code and docs are looked up by file name.
 const CODE_EXT = /\.(?:tsx?|mjs|css|md|sh)$/
-const GENERATED = /^apps\/api\/\.data\//
+const GENERATED = /^apps\/api\/\.data\/|\/dist(?:\/|$)/
+// Named to say it must stay absent: AGENTS.md bans GitHub Actions workflows.
+const ABSENT_ON_PURPOSE = new Set([".github/workflows/"])
+const ROOT_DOCS = ["AGENTS.md", "CONTEXT.md"]
+
+const docs = tracked.filter(
+  (file) =>
+    ROOT_DOCS.includes(file) ||
+    (file.endsWith(".md") && /^(?:docs|\.claude\/skills)\//.test(file))
+)
 
 function* codeWords(markdown) {
-  const fenced = /```[^\n]*\n([\s\S]*?)```/g
-  for (const [, block] of markdown.matchAll(fenced))
-    for (const word of block.split(/\s+/)) yield { word, inline: false }
-  const inline = markdown.replace(fenced, "")
-  for (const [, span] of inline.matchAll(/`([^`\n]+)`/g))
-    for (const word of span.split(/\s+/)) yield { word, inline: true }
+  let fenced = false
+  const lines = markdown.split("\n")
+  for (const [index, text] of lines.entries()) {
+    const line = index + 1
+    if (/^\s*```/.test(text)) {
+      fenced = !fenced
+      continue
+    }
+    const spans = fenced
+      ? [text]
+      : [...text.matchAll(/`([^`\n]+)`/g)].map((m) => m[1])
+    for (const span of spans)
+      for (const word of span.split(/\s+/))
+        yield { word, inline: !fenced, line }
+  }
 }
 
 const clean = (word) =>
   word
+    .replace(/#.*$/, "")
     .replace(/:\d+(?:-\d+)?$/, "")
     .replace(/[),.;:]+$/, "")
     .replace(/^\(+/, "")
 
 /**
- * A path under a repo folder must exist, from the repo root or from the skill's
- * own folder (the docs write `scripts/lib/probe.mjs` for the skill's scripts).
- * A shorter path such as `features/home/x.tsx` or a bare `x.tsx` is a file name
- * the table gives for apps/web/src, so some tracked file must end with it.
+ * A path under a repo folder must exist, from the repo root, from the folder of
+ * the doc that cites it, or from the skill's own folder (skill docs write
+ * `scripts/lib/probe.mjs` for the skill's scripts). A shorter path such as
+ * `features/home/x.tsx` or a bare `x.tsx` is a file name a table gives under
+ * a folder it names, so some tracked file must end with it.
  */
-function missingPath(word, skill) {
-  if (!word || PLACEHOLDER.test(word) || GENERATED.test(word)) return false
+function missingPath(word, file) {
+  if (
+    !word ||
+    PLACEHOLDER.test(word) ||
+    GENERATED.test(word) ||
+    ABSENT_ON_PURPOSE.has(word)
+  )
+    return false
   if (REPO_PREFIX.test(word)) {
+    const skill = /^\.claude\/skills\/[^/]+/.exec(file)?.[0]
     return !(
       existsSync(path.join(root, word)) ||
-      existsSync(path.join(skills, skill, word))
+      (skill && existsSync(path.join(root, skill, word)))
     )
   }
-  if (word.startsWith("~") || word.startsWith("/") || word.startsWith("-"))
-    return false
+  if (/^[~/@-]/.test(word)) return false
   if (!CODE_EXT.test(word)) return false
-  return !tracked.some((file) => file === word || file.endsWith(`/${word}`))
+  return !tracked.some((name) => name === word || name.endsWith(`/${word}`))
 }
 
-test("every path a verify skill doc names exists", () => {
+test("every repo path a doc cites in backticks exists", () => {
   const missing = []
   let checked = 0
   assert.ok(
     ["verify-app-ui", "verify-landing"].every((n) => verifySkills.includes(n)),
     `verify-app-ui and verify-landing are not both under ${skills}; the test would check nothing`
   )
-  for (const { file, skill } of docs) {
-    const seen = new Set()
-    for (const { word, inline } of codeWords(readFileSync(file, "utf8"))) {
+  assert.ok(docs.includes("AGENTS.md"), "the doc list lost AGENTS.md")
+  for (const file of docs) {
+    for (const { word, inline, line } of codeWords(
+      readFileSync(path.join(root, file), "utf8")
+    )) {
       const candidate = clean(word)
       if (!inline && !REPO_PREFIX.test(candidate)) continue
-      if (seen.has(candidate)) continue
-      seen.add(candidate)
       checked += 1
-      if (missingPath(candidate, skill))
-        missing.push(`${path.relative(root, file)}: ${candidate}`)
+      if (missingPath(candidate, file))
+        missing.push(`${file}:${line} cites ${candidate}`)
     }
   }
   assert.ok(checked > 0, "the doc scan found no path to check")
   assert.deepEqual(
     missing,
     [],
-    `A verify skill names a file that is gone. Name the file that holds the code now, or delete the mention.\n${missing.join("\n")}`
+    `A doc cites a file that is gone. Name the file that holds the code now, or delete the mention.\n${missing.join("\n")}`
   )
 })
 

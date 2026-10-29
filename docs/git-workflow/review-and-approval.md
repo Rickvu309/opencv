@@ -73,7 +73,7 @@ cd - && git worktree remove --force ../opencv.worktrees/review-pr-<pr#>
 Env and secrets changes no longer need a human. `.github/CODEOWNERS` lists env/secrets paths with the human team as owners, and `scripts/review-pr.sh` notes when a PR touches them so the reviewer checks no real secret is added:
 
 - `.env*` and `*.env` files anywhere (including `.env.example`)
-- `env.*` files and `env/` folders anywhere (env loading/validation code, e.g. `src/env.ts`)
+- `env.*` files and `env/` folders anywhere (env loading and validation code)
 - `/config/env*`
 - anything named `*secret*`
 - `.github/CODEOWNERS` itself, so nobody can remove these rules without a human
