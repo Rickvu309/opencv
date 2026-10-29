@@ -74,7 +74,7 @@ export const account = opencvApp.table(
   "account",
   {
     id: text("id").primaryKey(),
-    issuer: text("issuer").notNull(),
+    issuer: text("issuer"),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
@@ -90,13 +90,7 @@ export const account = opencvApp.table(
     createdAt: timestamptz("created_at").notNull().defaultNow(),
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
-  (table) => [
-    uniqueIndex("account_issuer_account_id_uidx").on(
-      table.issuer,
-      table.accountId
-    ),
-    index("account_user_id_idx").on(table.userId),
-  ]
+  (table) => [index("account_user_id_idx").on(table.userId)]
 )
 
 export const verification = opencvApp.table(

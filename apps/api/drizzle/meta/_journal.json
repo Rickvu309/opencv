@@ -8,6 +8,13 @@
       "when": 1793023585161,
       "tag": "0000_opencv_app",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793255642818,
+      "tag": "0001_account_issuer_optional",
+      "breakpoints": true
     }
   ]
 }
