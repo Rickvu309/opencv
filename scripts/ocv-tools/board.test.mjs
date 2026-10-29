@@ -37,6 +37,7 @@ function scriptedCtx(rules) {
 
 const claim = (agent, minutes, id = 1) => ({
   databaseId: id,
+  lastEditedAt: null,
   author: { login: agent },
   createdAt: minutesAgo(minutes),
   updatedAt: minutesAgo(minutes),
@@ -45,6 +46,7 @@ const claim = (agent, minutes, id = 1) => ({
 
 const approved = {
   databaseId: 9,
+  lastEditedAt: null,
   author: { login: "owner" },
   createdAt: "2026-10-29T11:00:00Z",
   updatedAt: "2026-10-29T11:00:00Z",
@@ -182,6 +184,7 @@ function graphql(line) {
                   databaseId: 2,
                   author: { login: "x" },
                   createdAt: minutesAgo(1),
+                  lastEditedAt: null,
                   updatedAt: minutesAgo(1),
                   body: "later note",
                 },
@@ -350,6 +353,7 @@ test("board reads 50 issues with a constant handful of gh calls", () => {
                     databaseId: i + 1,
                     author: { login: "owner" },
                     createdAt: minutesAgo(1),
+                    lastEditedAt: null,
                     updatedAt: minutesAgo(1),
                     body: "note",
                   },

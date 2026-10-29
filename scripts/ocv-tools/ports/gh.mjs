@@ -2,6 +2,16 @@
 import { readServerNow, parseUpdatedAt } from "../clock.mjs"
 import { evaluate, refusalError } from "../rules/decide.mjs"
 
+// An approval is valid only for a comment that was never edited. GitHub returns null for that case,
+// so a comment without the field means the query lost it and must fail loudly.
+function editStamp(c) {
+  if (c.lastEditedAt === undefined)
+    throw new Error(
+      "GitHub comment is missing lastEditedAt; the comments query must request it"
+    )
+  return c.lastEditedAt
+}
+
 // Stop rather than treat a cut-off comment list as the whole claim history.
 export const COMMENT_PAGE_CAP = 100
 
@@ -163,7 +173,7 @@ export function ghAdapter(run) {
       author: c.author,
       body: c.body,
       createdAt: c.createdAt,
-      lastEditedAt: c.lastEditedAt,
+      lastEditedAt: editStamp(c),
       updatedAt: c.updatedAt,
     }))
   }
@@ -299,7 +309,7 @@ export function ghAdapter(run) {
         author: c.author,
         body: c.body,
         createdAt: c.createdAt,
-        lastEditedAt: c.lastEditedAt,
+        lastEditedAt: editStamp(c),
         updatedAt: c.updatedAt,
       }))
     return {

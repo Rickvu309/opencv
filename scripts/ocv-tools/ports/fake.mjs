@@ -327,7 +327,10 @@ export function fakePorts(world = {}) {
           createdAt: item.createdAt,
           lastEditedAt: item.lastEditedAt,
           labels: [...(item.labels ?? [])],
-          comments: (item.comments ?? []).map((c) => ({ ...c })),
+          comments: (item.comments ?? []).map((c) => ({
+            lastEditedAt: null,
+            ...c,
+          })),
         }))
       const pulls = state.prs
         .filter((item) => String(item.state).toUpperCase() === "OPEN")
