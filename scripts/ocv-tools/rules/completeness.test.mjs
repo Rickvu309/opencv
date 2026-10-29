@@ -1,7 +1,8 @@
 import assert from "node:assert/strict"
 import { readdirSync, readFileSync, statSync } from "node:fs"
-import { join } from "node:path"
+import { join, relative } from "node:path"
 import test from "node:test"
+import ts from "typescript"
 import { fileURLToPath } from "node:url"
 import { evaluate } from "./decide.mjs"
 import { RULES } from "./table.mjs"
@@ -21,24 +22,81 @@ function sources(dir, out = []) {
   return out
 }
 
-// ERROR is the fallback for a thrown Error, not a refusal a job raises.
-const NOT_A_RULE = new Set(["ERROR"])
+// These are forwarding sites, not independently raised codes. Fail closed on
+// every other dynamic argument so a new construction cannot evade coverage.
+const FORWARDING = new Set([
+  "rules/decide.mjs:Refused:refusal.id", // Converts a decide/evaluate result.
+  "shot.mjs:evaluate:id", // refuse forwards its literal caller's id.
+  "approve.mjs:evaluate:id", // Same wrapper as shot.
+])
 
-function raisedCodes() {
+function raisedCodes(inputs, rows) {
   const codes = new Set()
-  const literal = /[Rr]efused\(\s*"([A-Z][A-Z0-9_]*)"/g
-  for (const path of sources(root)) {
-    const source = readFileSync(path, "utf8")
-    for (const match of source.matchAll(literal)) codes.add(match[1])
-    if (!path.endsWith(`${join("ocv-tools", "result.mjs")}`)) continue
-    const start = source.indexOf("export const FIXES = {")
-    const end = source.indexOf("\n}", start)
-    const body = source.slice(start, end)
-    for (const match of body.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm))
-      codes.add(match[1])
+  const jobs = new Set()
+  for (const [path, source] of inputs) {
+    if (!path.endsWith(".mjs") || path.endsWith(".test.mjs")) continue
+    const ast = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true)
+    function visit(node) {
+      if (
+        (ts.isCallExpression(node) || ts.isNewExpression(node)) &&
+        ts.isIdentifier(node.expression) &&
+        ["Refused", "refused", "refuse", "evaluate", "decide"].includes(
+          node.expression.text
+        )
+      ) {
+        const name = node.expression.text
+        const arg = node.arguments?.[0]
+        if (arg && ts.isStringLiteralLike(arg)) {
+          const target = name === "decide" ? jobs : codes
+          target.add(arg.text)
+        } else {
+          const site = `${path}:${name}:${arg?.getText(ast)}`
+          if (site === "take.mjs:evaluate:row.id") {
+            // decideTake evaluates checked rows for take lazily, in table order.
+            jobs.add("take")
+          } else if (site === "claim.mjs:decide:job") {
+            // taskHere defaults to save; its other callers pass release/cleanup.
+            // Only NOT_A_TASK is reachable with its sole fact { here }.
+            codes.add("NOT_A_TASK")
+          } else {
+            assert.ok(FORWARDING.has(site), `unlisted dynamic refusal: ${site}`)
+          }
+        }
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(ast)
+  }
+  for (const row of rows) {
+    if (row.check && row.jobs.some((job) => jobs.has(job))) codes.add(row.id)
   }
   return codes
 }
+
+function checkCoverage(inputs, rows, rulesSh = "") {
+  const raised = raisedCodes(inputs, rows)
+  const ids = new Set(rows.map((row) => row.id))
+  const gaps = []
+  for (const code of raised) {
+    if (!ids.has(code)) gaps.push(`${code} has no table row`)
+  }
+  for (const row of rows) {
+    if (row.kind === "judgment" || raised.has(row.id)) continue
+    // Bash-only gates raise their refusal through the named shell function.
+    if (row.impl?.startsWith("bash:")) {
+      const name = row.impl.slice("bash:".length)
+      if (new RegExp(`^${name}\\(\\)`, "m").test(rulesSh)) continue
+    }
+    gaps.push(`${row.id} is not raised`)
+  }
+  assert.deepEqual(gaps, [], gaps.join("\n"))
+}
+
+const inputs = () =>
+  sources(root).map((path) => [
+    relative(root, path),
+    readFileSync(path, "utf8"),
+  ])
 
 test("rule markers and hereFact stay private", () => {
   const doc = text("./doc.mjs")
@@ -52,23 +110,7 @@ test("rule markers and hereFact stay private", () => {
 })
 
 test("every raised refusal code has a row, and every row is raised", () => {
-  const raised = raisedCodes()
-  const ids = new Set(RULES.map((row) => row.id))
-  const rulesSh = text("../../lib/rules.sh")
-  for (const code of raised) {
-    if (NOT_A_RULE.has(code)) continue
-    assert.ok(ids.has(code), `${code} has no table row`)
-  }
-  for (const row of RULES) {
-    if (row.kind === "judgment") continue
-    if (raised.has(row.id)) continue
-    if (row.impl?.startsWith("bash:")) {
-      const name = row.impl.slice("bash:".length)
-      assert.match(rulesSh, new RegExp(`^${name}\\(\\)`, "m"), row.id)
-      continue
-    }
-    assert.fail(`${row.id} is not raised`)
-  }
+  checkCoverage(inputs(), RULES, text("../../lib/rules.sh"))
   for (const id of ["MISSING_FILE", "BAD_PICTURE", "TOO_BIG", "TOO_MANY"])
     assert.ok(RULES.find((row) => row.id === id).jobs.includes("shot"), id)
   const approval = RULES.find((row) => row.id === "NOT_HIGH_RISK")
@@ -82,6 +124,83 @@ test("every raised refusal code has a row, and every row is raised", () => {
   assert.ok(history.jobs.includes("board"))
   assert.ok(history.jobs.includes("shot"))
   assert.match(history.says, /board/)
+})
+
+test("coverage rejects new calls without rows for every raising helper", () => {
+  for (const call of [
+    'new Refused("NEW_CODE_X", "bad")',
+    "refused('NEW_CODE_X', 'bad')",
+    'refuse("NEW_CODE_X", {})',
+    'evaluate("NEW_CODE_X", {})',
+  ]) {
+    assert.throws(
+      () => checkCoverage([["injected.mjs", call]], []),
+      /NEW_CODE_X has no table row/
+    )
+  }
+  assert.throws(
+    () =>
+      checkCoverage(
+        [...inputs(), ["injected.mjs", 'refuse("NEW_CODE_X", {})']],
+        RULES,
+        text("../../lib/rules.sh")
+      ),
+    /NEW_CODE_X has no table row/
+  )
+})
+
+test("coverage rejects dead rows, including codes only present in FIXES", () => {
+  const row = { id: "DEAD_CODE_Y", kind: "precondition", jobs: ["unused"] }
+  assert.throws(() => checkCoverage([], [row]), /DEAD_CODE_Y is not raised/)
+  assert.throws(
+    () =>
+      checkCoverage(
+        [["result.mjs", 'export const FIXES = { DEAD_CODE_Y: "fix" }']],
+        [row]
+      ),
+    /DEAD_CODE_Y is not raised/
+  )
+  assert.throws(
+    () => checkCoverage(inputs(), [...RULES, row], text("../../lib/rules.sh")),
+    /DEAD_CODE_Y is not raised/
+  )
+})
+
+test("coverage ignores comments, prose, definitions and test sources", () => {
+  checkCoverage(
+    [
+      [
+        "data.mjs",
+        `
+      // refuse("COMMENT_CODE", {})
+      /* new Refused("COMMENT_CODE", "bad") */
+      const docs = 'evaluate("DOC_CODE", {})'
+      const row = { id: "ROW_CODE" }
+      function refuse(id, facts) {}
+    `,
+      ],
+      ["ignored.test.mjs", 'refuse("TEST_CODE", {})'],
+    ],
+    []
+  )
+})
+
+test("coverage follows decide jobs and refuses unknown dynamic calls", () => {
+  const row = {
+    id: "JOB_CODE",
+    kind: "rule",
+    jobs: ["save"],
+    check: () => "bad",
+  }
+  checkCoverage([["job.mjs", 'decide("save", {})']], [row])
+  assert.throws(
+    () => checkCoverage([["job.mjs", 'decide("other", {})']], [row]),
+    /JOB_CODE is not raised/
+  )
+  assert.throws(
+    () => checkCoverage([["job.mjs", "refuse(prefix + suffix, {})"]], []),
+    /unlisted dynamic refusal/
+  )
 })
 
 test("shot, approve and board refusals keep their messages and fixes", () => {
