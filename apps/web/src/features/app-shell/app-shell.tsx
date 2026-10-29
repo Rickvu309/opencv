@@ -220,7 +220,8 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
             {favorites.jobs.map((job) => (
               <Link
                 key={job.id || job.title}
-                to="/apply"
+                to="/apply/$jobId"
+                params={{ jobId: job.id }}
                 aria-label={
                   job.company ? `${job.title} ${job.company}` : job.title
                 }
@@ -238,7 +239,8 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
             {favorites.docs.map((doc) => (
               <Link
                 key={doc.id || doc.name}
-                to="/paper"
+                to="/paper/$docId"
+                params={{ docId: doc.id }}
                 onClick={onNavigate}
                 className={linkClass(false)}
               >

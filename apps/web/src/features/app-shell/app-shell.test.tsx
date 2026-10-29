@@ -7,6 +7,9 @@ import {
   within,
 } from "@testing-library/react"
 
+import { mockJob } from "@/test/apply-job-fixtures.ts"
+import { setMockJobs as setApplyJobs } from "@/test/apply-jobs-mock.ts"
+
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { authClient } from "@/lib/auth-client.ts"
@@ -314,6 +317,52 @@ describe("app shell layout", () => {
     await expectPitch()
     expect(screen.queryByText("Favorites")).not.toBeInTheDocument()
   })
+
+  it.each([true, false])(
+    "opens the chosen favorite CV with desktop=%s",
+    async (desktop) => {
+      stubDesktopViewport(desktop)
+      const { router } = renderApp(SURFACE_PATHS.pitch)
+      await expectPitch()
+      if (!desktop) {
+        fireEvent.click(await screen.findByRole("button", { name: "Menu" }))
+      }
+      const favorite = await screen.findByRole("link", { name: "PM track CV" })
+      const path = "/paper/11111111-1111-7111-8111-111111111111"
+      expect(favorite).toHaveAttribute("href", path)
+      fireEvent.click(favorite)
+      expect(
+        await screen.findByRole("region", { name: "Editing PM track CV" })
+      ).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe(path)
+      if (!desktop) expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    }
+  )
+
+  it.each([true, false])(
+    "opens the chosen favorite job with desktop=%s",
+    async (desktop) => {
+      stubDesktopViewport(desktop)
+      const job = mockJob({ starred: true })
+      setApplyJobs([job])
+      const { router } = renderApp(SURFACE_PATHS.pitch)
+      await expectPitch()
+      if (!desktop) {
+        fireEvent.click(await screen.findByRole("button", { name: "Menu" }))
+      }
+      const favorite = await screen.findByRole("link", {
+        name: `${job.title} ${job.company}`,
+      })
+      const path = `/apply/${job.id}`
+      expect(favorite).toHaveAttribute("href", path)
+      fireEvent.click(favorite)
+      expect(
+        await screen.findByRole("navigation", { name: "Breadcrumb" })
+      ).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe(path)
+      if (!desktop) expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    }
+  )
 
   it("shows an Inbox count for unread threads on the inbox object", async () => {
     renderApp(SURFACE_PATHS.pitch)
