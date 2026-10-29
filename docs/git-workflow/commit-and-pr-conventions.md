@@ -34,7 +34,7 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
    ```bash
    scripts/open-pr.sh --draft
    ```
-   It checks the branch name, runs `scripts/check.sh --changed` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is the PR template with `Closes #N` filled in. Use `--dry-run` to preview.
+   It checks the branch name, runs `pnpm check` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is the PR template with `Closes #N` filled in. Use `--dry-run` to preview.
 2. Keep working; push through `git push`. The pre-push hook runs the quick check.
 3. When done: checks pass, the verify-opencv evidence is attached, and the checklist is ticked. Run `gh pr ready`.
 4. Read comments, fix them in new commits, and resolve the threads. See `review-and-approval.md`.
@@ -54,8 +54,8 @@ The `ci` workflow runs the quick check on the self-hosted runner. The same check
 | -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `git commit`         | `commit-msg` hook     | No commits on `main`; no empty message                                                                                           |
 | `git commit`         | `pre-commit` hook     | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files                                        |
-| `git push`           | `pre-push` hook       | No push to `main`; branch name format; `scripts/check.sh --changed` (quick lint, typecheck, test of what changed)                |
-| `scripts/open-pr.sh` | itself                | Branch name, `scripts/check.sh --changed`, correct title and `Closes #`                                                          |
+| `git push`           | `pre-push` hook       | No push to `main`; branch name format; `pnpm check` (quick lint, typecheck, test of what changed)                                |
+| `scripts/open-pr.sh` | itself                | Branch name, `pnpm check`, correct title and `Closes #`                                                                          |
 | Merge                | `scripts/merge-pr.sh` | Author is the owner, PR is not a draft, no `needs-human-review` label, `ci` is success on the head, gate files carry `risk:high` |
 
 Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/ocv-tools.mjs take` does it).

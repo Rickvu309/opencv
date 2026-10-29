@@ -89,7 +89,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 4. Checks, commits, and PRs
 
-- The pre-push hook runs the quick check, `scripts/check.sh --changed`. That is also what `ci` runs. Nothing runs the full lint, typecheck and test before a merge.
+- The pre-push hook runs the quick check, `pnpm check`. `ci` runs the same check. Nothing runs the full lint, typecheck and test before a merge.
 - Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
 - Mark it ready with `gh pr ready` when the quick check passes. Run a verify skill by hand when you want one (`.claude/skills/verify-opencv`). There are no preview deploys yet.
 - The runner `opencv-local` runs CI one job at a time; locally run one check at a time. `scripts/check.sh` defaults `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
