@@ -61,6 +61,6 @@ and anyone can write one with `touch`; they catch a skipped hook by mistake, not
 The `heavy` wrapper and its rule were removed in #591.
 scripts/review-pr.sh was removed in #600. A pull request merges when the ci check is green.
 
-Why the runner is safe. `ci.yml` runs on a self-hosted runner as the owner's user, so PR code (its own `ci.yml`, `pnpm install` scripts and `check.sh`) runs on this machine before any review. That is acceptable only while the repo is private, `quanvu309` is its sole collaborator, fork PR workflows are off, and the workflow token is read-only; every PR author is already an owner-account agent running the same code locally. It breaks the moment a collaborator is added, fork runs are enabled, or a bot opens PRs. With the runner off, `ci` queues for up to 24 hours and `merge-pr.sh` refuses until it is green.
+Runner safety. `ci.yml` runs on GitHub-hosted runners. The repository is private, the workflow has only `contents: read`, and PR code runs in GitHub's sandbox rather than on the owner's machine.
 
 Not enforced yet, and why: splitting long work into sub-issues (a size judgment), verify evidence before `gh pr ready` (run a verify skill by hand; nothing checks it at merge), never approving with another identity (one account), and the post-merge cleanup (`ocv-tools cleanup` is run by hand).

@@ -3,7 +3,7 @@
 This is how we work in the opencv repo. It applies to people and coding agents alike.
 Agents: read `AGENTS.md` first. Details for each topic live in `docs/git-workflow/`.
 
-**CI is one workflow on a free self-hosted runner** (`.github/workflows/ci.yml`; no GitHub-hosted Actions minutes). GitHub requires a pull request and a green `ci` check. Local hooks catch mistakes early. A skipped hook is not caught again at merge.
+**CI runs on GitHub-hosted runners** (`.github/workflows/ci.yml`). GitHub requires a pull request and a green `ci` check. Local hooks catch mistakes early. A skipped hook is not caught again at merge.
 
 ## The short version
 

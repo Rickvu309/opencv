@@ -4,35 +4,38 @@ on:
   pull_request:
 
 concurrency:
-  group: checks-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  # The quick check on what the PR changed, on this machine's runner (free, no Actions minutes).
-  # The runner runs one job at a time. This job is the quick check; nothing runs the full check before a merge.
   check:
-    runs-on: [self-hosted, opencv-local]
-    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       # A pull_request checkout has no local main; the take tests clone it.
       - run: git branch -f main origin/main
-      # The runner service does not load the login PATH; pnpm lives in ~/.local/bin.
-      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: pnpm install --frozen-lockfile
-      # @workspace/domain points its types at ./dist, which a clean checkout does not have.
-      - run: pnpm --filter @workspace/domain build
-      - run: scripts/check.sh --changed
+      - run: pnpm check
+        env:
+          VITEST_MAX_WORKERS: 2
 
   # The one required check. The main ruleset requires the context "ci", so keep this name.
   ci:
     needs: [check]
     if: ${{ !cancelled() }}
-    runs-on: [self-hosted, opencv-local]
+    runs-on: ubuntu-latest
     steps:
       - run: test "${{ needs.check.result }}" = success

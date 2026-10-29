@@ -73,7 +73,7 @@ rule_no_workflows() {  # rule_no_workflows <files> [wt] [push]: push adds the fo
   mapfile -t bad < <(grep -E '^\.github/workflows/' <<<"$1" | grep -vxF '.github/workflows/ci.yml' || true)
   (( ${#bad[@]} )) || return 0
   q=$(printf '%q ' "${bad[@]}")
-  rule_fail "the change adds GitHub Actions workflow files other than ci.yml (the one workflow runs on the local runner; a new one needs the owner): ${bad[*]:0:3}" \
+  rule_fail "workflows other than ci.yml are not added without an issue: ${bad[*]:0:3}" \
     "$(rule_cd "${2:-}")git rm -rf -- ${q% } && git commit --amend --no-edit${3:+ && git push --force-with-lease}"
 }
 

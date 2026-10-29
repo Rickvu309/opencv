@@ -48,7 +48,7 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 ## Checks
 
-The `ci` workflow runs the quick check on the self-hosted runner. The same checks run locally at these points:
+The `ci` workflow runs the quick check on GitHub-hosted runners. The same checks run locally at these points:
 
 | When                 | What runs             | What it enforces                                                                                                                 |
 | -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
