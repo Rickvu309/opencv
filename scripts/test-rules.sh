@@ -145,6 +145,12 @@ rule_run 'rule_risk_high_for_ci ".github/rulesets/main.json" "risk:high"'
 [[ $code -eq 0 ]] || fail "risk:high lets a ruleset change through"
 rule_run 'rule_risk_high_for_ci "README.md" ""'
 [[ $code -eq 0 ]] || fail "an unrelated change needs no label"
+rule_run 'rule_no_workflows ".github/actions/setup/action.yml"'
+[[ $code -eq 0 ]] || fail "setup action allowed"
+rule_run 'rule_risk_high_for_ci ".github/actions/setup/action.yml" "risk:high"'
+[[ $code -eq 0 ]] || fail "approved action allowed"
+rule_run 'rule_risk_high_for_ci ".github/actions/setup/action.yml" ""'
+[[ $code -eq 1 ]] && grep -q 'risk:high' "$tmp/err" || fail "action without risk:high refused"
 echo "ok: ci.yml, check.sh and the ruleset need risk:high"
 
 # R97 for a commit made with the commit hooks skipped: an attribution trailer, a file over 20000 bytes.

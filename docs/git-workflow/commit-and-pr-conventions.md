@@ -48,7 +48,7 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 ## Checks
 
-The `ci` workflow runs the quick check on GitHub-hosted runners. The same checks run locally at these points:
+The `ci` workflow runs parallel affected guards, lint, typecheck, build, API tests and two web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The same checks run locally at these points:
 
 | When                 | What runs             | What it enforces                                                                                                                 |
 | -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -60,7 +60,7 @@ The `ci` workflow runs the quick check on GitHub-hosted runners. The same checks
 
 Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/ocv-tools.mjs take` does it).
 
-**Skipping checks:** `SKIP_CHECKS=1 git push` skips lint/typecheck/test in the hook (the main-branch and naming rules still apply). Use it only in a production emergency, and say so in the PR. `--no-verify` skips the hooks entirely; never use it. A skipped hook is not caught again at merge. `ci` still runs the quick check.
+**Skipping checks:** `SKIP_CHECKS=1 git push` skips lint/typecheck/test in the hook (the main-branch and naming rules still apply). Use it only in a production emergency, and say so in the PR. `--no-verify` skips the hooks entirely; never use it. A skipped hook is not caught again at merge. `ci` still requires every parallel job to succeed.
 
 ## Keep PRs small
 

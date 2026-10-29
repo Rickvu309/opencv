@@ -3,7 +3,7 @@
 # Detects pnpm / yarn / npm from the lockfile and runs the root package.json scripts that exist (they call turbo).
 #
 # Usage:
-#   scripts/check.sh                 full run: lint, typecheck, test (nothing runs this before a merge; ci runs --changed)
+#   scripts/check.sh                 full run: lint, typecheck, test (nothing runs this before a merge; CI runs the affected checks as parallel jobs)
 #   scripts/check.sh lint test       run only these
 #   scripts/check.sh --changed       quick run scoped to what changed since origin/main (what pushes run)
 #   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing

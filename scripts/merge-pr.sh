@@ -51,7 +51,7 @@ git cat-file -e "$head^{commit}" 2>/dev/null || git fetch --quiet origin "pull/$
 git cat-file -e "$head^{commit}" 2>/dev/null || DIE_CAUSE=env die "cannot read commit ${head:0:9} of PR #$pr (git fetch origin pull/$pr/head)"
 changed=$(gh pr diff "$pr" --name-only) || die "could not list the files PR #$pr changes"
 rule_ci_workflow_kept "$changed" "$head" "$wt"
-if grep -qxE '\.github/workflows/ci\.yml|scripts/check\.sh|\.github/rulesets/main\.json' <<<"$changed"; then
+if grep -qxE '\.github/workflows/ci\.yml|\.github/actions/.*|scripts/check\.sh|\.github/rulesets/main\.json' <<<"$changed"; then
   [[ "$branch" =~ ^[a-z]+/([0-9]+)- ]] || die "branch $branch names no issue, so its risk label cannot be read"
   rule_risk_high_for_ci "$changed" "$(gh issue view "${BASH_REMATCH[1]}" --json labels --jq '.labels[].name')" "$wt"
 fi

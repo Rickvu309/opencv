@@ -230,6 +230,23 @@ test("every checked rule has a failing and a passing fact", () => {
     "workflows other than ci.yml are not added without an issue: .github/workflows/extra.yml"
   )
   check(
+    "NO_WORKFLOWS",
+    { diff: { files: [".github/workflows/another.yml"] } },
+    { diff: { files: [".github/actions/setup/action.yml"] } },
+    "workflows other than ci.yml are not added without an issue: .github/workflows/another.yml"
+  )
+  check(
+    "RISK_HIGH_FOR_CI",
+    { diff: { files: [".github/actions/setup/action.yml"], labels: [] } },
+    {
+      diff: {
+        files: [".github/actions/setup/action.yml"],
+        labels: ["risk:high"],
+      },
+    },
+    "the change touches ci.yml, composite actions, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+  )
+  check(
     "CI_WORKFLOW_KEPT",
     { diff: { files: ".github/workflows/ci.yml", ciYmlAtHead: false } },
     { diff: { files: ".github/workflows/ci.yml", ciYmlAtHead: true } },
@@ -239,7 +256,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "RISK_HIGH_FOR_CI",
     { diff: { files: ["scripts/check.sh"], labels: ["risk:low"] } },
     { diff: { files: ["scripts/check.sh"], labels: ["risk:high"] } },
-    "the change touches ci.yml, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+    "the change touches ci.yml, composite actions, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
   )
   check(
     "SKIP_DECLARED",
