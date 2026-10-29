@@ -21,7 +21,7 @@ const ghRules = (comments) => [
 
 // A real temp repo with a bare origin; only gh is faked.
 function tempRepo(comments, env = { OCV_TASK_AGENT: "me" }) {
-  const root = mkdtempSync(join(tmpdir(), "ocv-task-test-"))
+  const root = mkdtempSync(join(tmpdir(), "ocv-tools-test-"))
   const sh = (cwd, ...a) => execFileSync("git", a, { cwd, encoding: "utf8" })
   sh(root, "init", "--bare", "-b", "main", "origin.git")
   sh(root, "clone", "-q", "origin.git", "work")

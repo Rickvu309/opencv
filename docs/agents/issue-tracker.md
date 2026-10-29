@@ -4,7 +4,7 @@ Issues and specs for this repo live in GitHub issues of `quanvu309/opencv`. Do n
 
 ## Conventions
 
-- Create issues from the Task form in `.github/ISSUE_TEMPLATE/task.yml` (Type, What and why, Done when, Risk, then optional What could go wrong, Questions for you, Out of scope and Details for the agent). Agents file through `scripts/ocv-task.mjs file`, which builds the body from `scripts/ocv-task/fields.mjs` (a test compares it with the form), checks the plain words and adds the `risk:*` label. Run it with `--dry-run` to see the writing guide. A hand-written issue is not checked.
+- Create issues from the Task form in `.github/ISSUE_TEMPLATE/task.yml` (Type, What and why, Done when, Risk, then optional What could go wrong, Questions for you, Out of scope and Details for the agent). Agents file through `scripts/ocv-tools.mjs file`, which builds the body from `scripts/ocv-tools/fields.mjs` (a test compares it with the form), checks the plain words and adds the `risk:*` label. Run it with `--dry-run` to see the writing guide. A hand-written issue is not checked.
 - Read an issue with `gh issue view <number>`; list open work with `gh issue list`.
 - Labels come from `.github/labels.yml`: the type labels (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `needs-human-review`, `ready-for-human`, and `risk:low`, `risk:normal`, `risk:high` (only `risk:high` needs the owner's `/approve`). `docs/agents/triage-labels.md` maps the triage roles to what replaces them. `node scripts/pr.mjs doctor` diffs GitHub against the file.
 - Assign yourself before you start. One issue is one branch is one PR.
@@ -41,12 +41,12 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 
 `main` is protected by the ruleset in `.github/rulesets/main.json`: no deletion or force-push, linear history, squash merge only, and the required `ci` and `gates/review-pr` checks. It has no bypass actor and asks for no approving review (one account); the independent review and `scripts/review-pr.sh` are local gates.
 
-## ocv-task jobs
+## ocv-tools jobs
 
-`scripts/ocv-task.mjs help` lists every job. The ones for working an issue:
+`scripts/ocv-tools.mjs help` lists every job. The ones for working an issue:
 
 - `take <n>` makes the worktree (through `scripts/new-task.sh`) and records your claim in an issue comment. Refused: NOT_AN_ISSUE, CLOSED, HELD, NEEDS_APPROVAL (risk:high only), WORKTREE_EXISTS.
-- `save -m <message>` commits, pushes through the pre-push check and refreshes the claim. A claim idle for 180 minutes can be taken over; the old holder's next save exits 3 (LOST) and writes a patch under `~/tmp/ocv-task/lost/`.
+- `save -m <message>` commits, pushes through the pre-push check and refreshes the claim. A claim idle for 180 minutes can be taken over; the old holder's next save exits 3 (LOST) and writes a patch under `~/tmp/ocv-tools/lost/`.
 - `release --reason <why>` gives the issue back. Only the holder can.
 - `cleanup [<n>]` runs `scripts/cleanup-worktree.sh` after the merge. Refused: DIRTY, NOT_MERGED.
 - `status <n>` also shows who holds the claim and how long it has been idle.

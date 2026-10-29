@@ -3,16 +3,16 @@
 export const CLAIM_IDLE_MINUTES = 180
 
 const MARKER =
-  /<!-- ocv-task (claim|release) agent=(\S+) at=(\S+)(?: branch=(\S+))?(?: reason=(.*?))? -->/
+  /<!-- ocv-tools (claim|release) agent=(\S+) at=(\S+)(?: branch=(\S+))?(?: reason=(.*?))? -->/
 
 const oneLine = (text) =>
   String(text).replace(/\s+/g, " ").replaceAll("-->", "--").trim()
 
 export const claimMarker = ({ agent, at, branch }) =>
-  `<!-- ocv-task claim agent=${agent} at=${at} branch=${branch} -->`
+  `<!-- ocv-tools claim agent=${agent} at=${at} branch=${branch} -->`
 
 export const releaseMarker = ({ agent, at, reason }) =>
-  `<!-- ocv-task release agent=${agent} at=${at} reason=${oneLine(reason)} -->`
+  `<!-- ocv-tools release agent=${agent} at=${at} reason=${oneLine(reason)} -->`
 
 export function parseMarker(body) {
   const m = MARKER.exec(String(body ?? ""))

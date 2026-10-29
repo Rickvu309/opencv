@@ -161,9 +161,9 @@ test("take makes the worktree, records the claim and prints where to work", () =
   const comment = ctx.calls.find((c) => c.includes("issue comment 90"))
   assert.match(
     comment,
-    /<!-- ocv-task claim agent=agent-[0-9a-f]+ at=2026-10-29T12:00:00.000Z branch=feat\/90-keep-my-search -->/
+    /<!-- ocv-tools claim agent=agent-[0-9a-f]+ at=2026-10-29T12:00:00.000Z branch=feat\/90-keep-my-search -->/
   )
-  assert.match(ctx.written["/g/wt/ocv-task-agent"], /^agent-/)
+  assert.match(ctx.written["/g/wt/ocv-tools-agent"], /^agent-/)
 })
 
 test("OCV_TASK_AGENT is the agent id and no id file is written", () => {
@@ -205,7 +205,7 @@ test("release posts a release marker for the holder and refuses anyone else", ()
   assert.ok(
     mine.calls.some(
       (c) =>
-        c.includes("ocv-task release agent=me") &&
+        c.includes("ocv-tools release agent=me") &&
         c.includes("reason=blocked on a decision")
     )
   )

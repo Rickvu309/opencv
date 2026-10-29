@@ -28,7 +28,7 @@ function lost(ctx, { n }, holder) {
 
 export function save(ctx, { message }) {
   const t = taskHere(ctx)
-  if (!message) throw new Error("usage: ocv-task save -m <message>")
+  if (!message) throw new Error("usage: ocv-tools save -m <message>")
   const me = agentIdFor(ctx, t.gitDir)
   const { issue } = loadIssue(ctx, t.n)
   const h = holderOf(issue.comments.nodes, nowOf(ctx))

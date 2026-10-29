@@ -22,7 +22,7 @@ export function agentIdFor(ctx, gitDir) {
   const env = envAgent(ctx)
   if (env) return env
   try {
-    return ctx.readFile(join(gitDir, "ocv-task-agent")).trim() || null
+    return ctx.readFile(join(gitDir, "ocv-tools-agent")).trim() || null
   } catch {
     return null
   }
@@ -47,7 +47,7 @@ export function taskHere(ctx) {
 }
 
 export const claimBody = ({ agent, at, branch }) =>
-  `${claimMarker({ agent, at, branch })}\nocv-task: ${agent} holds this issue on branch ${branch}. Last saved ${at}. The claim can be taken over after ${CLAIM_IDLE_MINUTES} idle minutes.`
+  `${claimMarker({ agent, at, branch })}\nocv-tools: ${agent} holds this issue on branch ${branch}. Last saved ${at}. The claim can be taken over after ${CLAIM_IDLE_MINUTES} idle minutes.`
 
 // Move the single claim comment's timestamp forward.
 export function heartbeat(ctx, n, h, agent) {
@@ -121,7 +121,7 @@ export function take(ctx, n) {
     "rev-parse",
     "--absolute-git-dir",
   ]).out
-  if (!envAgent(ctx)) ctx.writeFile(join(gitDir, "ocv-task-agent"), `${me}\n`)
+  if (!envAgent(ctx)) ctx.writeFile(join(gitDir, "ocv-tools-agent"), `${me}\n`)
   let port = "unknown"
   try {
     port = ctx.readFile(join(gitDir, "assigned-port")).trim()
@@ -149,12 +149,12 @@ export function take(ctx, n) {
       `Port: ${port}`,
       `Agent: ${me}`,
     ],
-    next: `cd ${worktree}, do the work, run scripts/ocv-task.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes`,
+    next: `cd ${worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes`,
   }
 }
 
 export function release(ctx, { n: given, reason }) {
-  if (!reason) throw new Error("usage: ocv-task release --reason <why> [<n>]")
+  if (!reason) throw new Error("usage: ocv-tools release --reason <why> [<n>]")
   const here = given ? null : taskHere(ctx)
   const n = given ?? here.n
   const gitDir = here?.gitDir ?? git(ctx, "rev-parse", "--absolute-git-dir").out
@@ -173,10 +173,10 @@ export function release(ctx, { n: given, reason }) {
     "comment",
     String(n),
     "--body",
-    `${releaseMarker({ agent: me, at, reason })}\nocv-task: ${me} gave this issue back. Reason: ${reason}`
+    `${releaseMarker({ agent: me, at, reason })}\nocv-tools: ${me} gave this issue back. Reason: ${reason}`
   )
   return {
     lines: [`Released #${n}: ${reason}`],
-    next: `Another agent can run: scripts/ocv-task.mjs take ${n}`,
+    next: `Another agent can run: scripts/ocv-tools.mjs take ${n}`,
   }
 }

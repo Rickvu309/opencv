@@ -30,7 +30,7 @@ export const COMMANDS = [
   {
     name: "save",
     usage: "save -m <message>",
-    when: "From inside the task worktree: commit everything, push through the pre-push check and refresh your claim. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: your work goes to a patch under ~/tmp/ocv-task/lost.",
+    when: "From inside the task worktree: commit everything, push through the pre-push check and refresh your claim. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: your work goes to a patch under ~/tmp/ocv-tools/lost.",
   },
   {
     name: "release",
@@ -52,9 +52,9 @@ export const COMMANDS = [
 export function renderHelp() {
   const rows = COMMANDS.map((c) => `  ${c.usage}\n      ${c.when}`).join("\n")
   return [
-    "ocv-task: file, check and track opencv tasks.",
+    "ocv-tools: file, check and track opencv tasks.",
     "",
-    "Usage: scripts/ocv-task.mjs <command> [flags]",
+    "Usage: scripts/ocv-tools.mjs <command> [flags]",
     "",
     rows,
     "",
@@ -268,6 +268,6 @@ export function doctor(ctx) {
     }
   return {
     lines: [...lines, "", "All checks pass."],
-    next: "scripts/ocv-task.mjs help",
+    next: "scripts/ocv-tools.mjs help",
   }
 }

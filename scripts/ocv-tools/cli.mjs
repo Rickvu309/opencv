@@ -44,7 +44,8 @@ export function parseArgs(argv) {
 
 function issueNumber(text, usage) {
   const n = Number(String(text ?? "").replace(/^#/, ""))
-  if (!Number.isInteger(n) || n < 1) throw new Error(`usage: ocv-task ${usage}`)
+  if (!Number.isInteger(n) || n < 1)
+    throw new Error(`usage: ocv-tools ${usage}`)
   return n
 }
 
@@ -53,7 +54,7 @@ function command(ctx, cmd, rest) {
   switch (cmd) {
     case undefined:
     case "help":
-      return { lines: [renderHelp()], next: "scripts/ocv-task.mjs doctor" }
+      return { lines: [renderHelp()], next: "scripts/ocv-tools.mjs doctor" }
     case "file":
       return file(ctx, { flags })
     case "status":

@@ -7,7 +7,7 @@ import { join } from "node:path"
 // Exit codes: 0 ok, 1 error, 2 refused with a named code, 3 LOST (another agent took the claim; save returns it).
 export const EXIT = { OK: 0, ERROR: 1, REFUSED: 2, LOST: 3 }
 
-export const SCRATCH = join(homedir(), "tmp", "ocv-task")
+export const SCRATCH = join(homedir(), "tmp", "ocv-tools")
 
 export class Refused extends Error {
   constructor(code, message) {
@@ -17,27 +17,27 @@ export class Refused extends Error {
 }
 
 export const FIXES = {
-  UNKNOWN_COMMAND: "Run: scripts/ocv-task.mjs help",
+  UNKNOWN_COMMAND: "Run: scripts/ocv-tools.mjs help",
   UNREADABLE:
     "Rewrite the plain sections the way `file --dry-run` explains and copy a model issue. Move technical notes under Details for the agent.",
   NOT_AN_ISSUE:
     "That number is not an issue (it may be a pull request). Run: gh issue list",
   NEEDS_APPROVAL: "Ask the owner to comment /approve on the issue.",
   CLOSED: "The issue is closed. Run: gh issue list, and pick another.",
-  MISSING_FIELDS: "Pass the missing flags. Run: scripts/ocv-task.mjs help",
-  HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: scripts/ocv-task.mjs status <n>",
+  MISSING_FIELDS: "Pass the missing flags. Run: scripts/ocv-tools.mjs help",
+  HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: scripts/ocv-tools.mjs status <n>",
   WORKTREE_EXISTS:
-    "Work in that worktree, or finish it. Run: scripts/ocv-task.mjs status <n>",
+    "Work in that worktree, or finish it. Run: scripts/ocv-tools.mjs status <n>",
   NOT_A_TASK:
     "Run this from inside a task worktree (../opencv.worktrees/<n>-...), or pass the issue number.",
   NO_WORKTREE: "Nothing to remove. Run: git worktree list",
   NOT_OWNER:
-    "Only the agent that holds the issue can release it. Run: scripts/ocv-task.mjs status <n>",
+    "Only the agent that holds the issue can release it. Run: scripts/ocv-tools.mjs status <n>",
   DIRTY:
-    'Save first: scripts/ocv-task.mjs save -m "<what you did>", then run cleanup again.',
+    'Save first: scripts/ocv-tools.mjs save -m "<what you did>", then run cleanup again.',
   NOT_MERGED:
-    "Cleanup waits for the merge. Run: scripts/ocv-task.mjs status <n>",
-  LOST: "Another agent took the claim. Your work is saved as a patch under ~/tmp/ocv-task/lost. Stop and pick another issue.",
+    "Cleanup waits for the merge. Run: scripts/ocv-tools.mjs status <n>",
+  LOST: "Another agent took the claim. Your work is saved as a patch under ~/tmp/ocv-tools/lost. Stop and pick another issue.",
   ERROR: "Read the message, fix the cause, and run the command again.",
 }
 
