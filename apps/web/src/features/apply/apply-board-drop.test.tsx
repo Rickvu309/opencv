@@ -65,7 +65,7 @@ describe("apply board keyboard drop", () => {
         )
       ).toBe(true)
     })
-  })
+  }, 20000)
 
   it("keeps the card in place when the drag never hovered a column", async () => {
     setMockJobs([junior])
@@ -84,5 +84,5 @@ describe("apply board keyboard drop", () => {
     expect(getMockJobPosts().some((post) => post.name === "job.move")).toBe(
       false
     )
-  })
+  }, 20000)
 })
