@@ -27,7 +27,7 @@ export function cli(command, args) {
   }
 }
 
-export const deploymentLimit = 20
+const deploymentLimit = 20
 
 // Newest first, as the Railway CLI returns them.
 export function listDeployments(service, io) {
@@ -39,13 +39,4 @@ export function listDeployments(service, io) {
     String(deploymentLimit),
     "--json",
   ])
-}
-
-export async function healthStatus(origin) {
-  const response = await fetch(`${origin}/health`, {
-    headers: { "User-Agent": "curl/8.0 opencv-deploy-proof" },
-    signal: AbortSignal.timeout(30_000),
-    redirect: "error",
-  })
-  return response.status
 }

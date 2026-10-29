@@ -184,5 +184,5 @@ done
 
 merge_sha=$(gh pr view "$pr" --json mergeCommit --jq .mergeCommit.oid)
 echo "==> merged PR #$pr as $merge_sha"
-result_ok "merged PR #$pr as $merge_sha" "node scripts/verify-deploy.mjs --commit $merge_sha"
-echo "Next: node scripts/verify-deploy.mjs --commit $merge_sha"
+result_ok "merged PR #$pr as $merge_sha" "node scripts/pr.mjs release $merge_sha --wait 600"
+echo "Next: node scripts/pr.mjs release $merge_sha --wait 600"
