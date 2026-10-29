@@ -120,6 +120,7 @@ if (( have_gh )); then
 fi
 changed_files=$(git diff --name-only origin/main...HEAD 2>/dev/null) || die "cannot diff against origin/main (git fetch origin main)"
 rule_no_workflows "$changed_files" "$top"
+rule_ci_workflow_kept "$changed_files" HEAD "$top"
 git fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main (git fetch origin main)"
 rule_commits_hooked origin/main HEAD "$top"
 

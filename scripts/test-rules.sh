@@ -114,6 +114,27 @@ printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/
 bash "$tmp/ci.sh" >/dev/null 2>&1 || fail "R105 lets .github/workflows/ci.yml through"
 echo "ok: R105 allows ci.yml"
 
+# R105: ci.yml may change but not vanish; a change to it, check.sh or the ruleset needs risk:high on the issue.
+rule_run() { printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\n%s\nresult_ok fine\n' "$here" "$here" "$1" >"$tmp/r.sh"; set +e; (cd "$repo" && bash "$tmp/r.sh") >"$tmp/out" 2>"$tmp/err"; code=$?; set -e; }
+rule_run 'rule_ci_workflow_kept ".github/workflows/ci.yml" HEAD'
+[[ $code -eq 1 ]] && grep -q 'deletes .github/workflows/ci.yml' "$tmp/err" || fail "R105 refuses a ci.yml that is gone at the sha"
+rule_run 'rule_ci_workflow_kept "README.md" HEAD'
+[[ $code -eq 0 ]] || fail "R105 ignores a diff without ci.yml"
+mkdir -p "$repo/.github/workflows" && echo on >"$repo/.github/workflows/ci.yml" && git -C "$repo" add -A && git -C "$repo" commit -q -m "feat: ci" && ci_sha=$(git -C "$repo" rev-parse HEAD)
+rule_run "rule_ci_workflow_kept .github/workflows/ci.yml $ci_sha"
+[[ $code -eq 0 ]] || fail "R105 lets a changed ci.yml that still exists through"
+git -C "$repo" reset -q --hard HEAD~1
+echo "ok: R105 refuses deleting ci.yml"
+rule_run 'rule_risk_high_for_ci "scripts/check.sh" "chore"'
+[[ $code -eq 1 ]] && grep -q 'risk:high' "$tmp/err" || fail "a check.sh change without risk:high is refused"
+rule_run 'rule_risk_high_for_ci ".github/workflows/ci.yml" "chore risk:normal"'
+[[ $code -eq 1 ]] || fail "risk:normal does not count"
+rule_run 'rule_risk_high_for_ci ".github/rulesets/main.json" "risk:high"'
+[[ $code -eq 0 ]] || fail "risk:high lets a ruleset change through"
+rule_run 'rule_risk_high_for_ci "README.md" ""'
+[[ $code -eq 0 ]] || fail "an unrelated change needs no label"
+echo "ok: ci.yml, check.sh and the ruleset need risk:high"
+
 # R97 for a commit made with the commit hooks skipped: an attribution trailer, a file over 20000 bytes.
 git -C "$repo" switch -q -c feat/9-ok main
 echo a >"$repo/a.txt"; git -C "$repo" add a.txt; git -C "$repo" commit -q -m "feat: a"
