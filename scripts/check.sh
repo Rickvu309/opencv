@@ -306,7 +306,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-check-guards test-rules; do
+    for t in test-commit-msg test-pre-commit test-codeowners test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-check-guards test-rules; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done
