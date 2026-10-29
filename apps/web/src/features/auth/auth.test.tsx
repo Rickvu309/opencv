@@ -244,6 +244,11 @@ describe("email code", () => {
     expect(
       await screen.findByRole("button", { name: AUTH_COPY.sendNew })
     ).toBeInTheDocument()
+    // The resend button can appear before CodeInput's passive focus effect.
+    // Start tabbing only after the rejected submission has restored focus.
+    await waitFor(() => {
+      expect(screen.getByRole("textbox", { name: "Digit 1" })).toHaveFocus()
+    })
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }
