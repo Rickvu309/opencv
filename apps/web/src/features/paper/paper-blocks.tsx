@@ -5,7 +5,6 @@ import {
   MouseSensor,
   TouchSensor,
   closestCenter,
-  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
@@ -44,13 +43,24 @@ import {
 } from "./paper-block-ops.ts"
 import { dropBlock } from "./paper-block-drop.ts"
 
-// The handle sits on top of a tall block, so the block center can sit on the
-// first entry while the pointer is still inside the heading. Prefer that heading.
 export const headingPointerCollision: CollisionDetection = (args) => {
-  const heading = pointerWithin(args).find((collision) =>
-    String(collision.id).startsWith("section:")
-  )
-  if (heading) return [heading]
+  const pointer = args.pointerCoordinates
+  if (pointer) {
+    for (const container of args.droppableContainers) {
+      if (!String(container.id).startsWith("section:") || container.disabled)
+        continue
+      const rect = container.node.current?.getBoundingClientRect()
+      if (
+        rect &&
+        pointer.x >= rect.left &&
+        pointer.x <= rect.right &&
+        pointer.y >= rect.top &&
+        pointer.y <= rect.bottom
+      ) {
+        return [{ id: container.id }]
+      }
+    }
+  }
   return closestCenter(args)
 }
 
@@ -241,7 +251,7 @@ function SectionBlock({
 
   return (
     <div data-section={section.kind} className="flex flex-col gap-2">
-      <h2 ref={setNodeRef} className="text-sm font-medium">
+      <h2 ref={setNodeRef} className="-my-1 py-1 text-sm font-medium">
         {SECTION_LABEL[section.kind]}
       </h2>
       <SortableContext
