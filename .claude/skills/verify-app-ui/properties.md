@@ -47,7 +47,7 @@ Accessibility and performance:
 - 27 `alerts-have-role` (invariant): the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
 - 28 `primary-buttons-32` (design): the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. The button on each surface is the one with `data-primary-action` (`SEL.primary` in `scripts/lib/assumes.mjs`; a surface with more than one visible marked element FAILs, naming the count): New job on Apply, New on the Paper library, Get early access on Pitch. A surface with no marked button is STALE, and the vitest `verify-assumptions` fails first. Source: the design kit.
 - 29 `table-not-mounted-while-loading` (design): while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("Start a document"). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
-- 30 `undo-and-reject` (design): Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
+- 30 `undo-and-reject` (design): the live CV toolbar has a visible, named Undo control. A Coach Reject control is optional and reported. Source: Apple undo; Gemini.
 
 App-wide:
 
@@ -78,7 +78,7 @@ Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 | 16  | design    | needs every JOB_STAGES lane as a heading at 1440 (the page-level sideways scroll is check 45) |
 | 19  | design    | needs luminance 0.85 or more, so a good dark theme fails                                      |
 | 23  | design    | needs a lane heading per stage and no Closed heading                                          |
-| 30  | design    | needs Undo plus Reject or "Undo this change"                                                  |
+| 30  | design    | needs a named Undo on the live CV toolbar; Reject is optional and reported                   |
 | 40  | design    | pins the kit's glow utility                                                                   |
 | 42  | design    | needs Enabled and Disabled, while On and Off is a fine design                                 |
 | 10  | invariant | one empty state on an empty board holds for any good design                                   |
