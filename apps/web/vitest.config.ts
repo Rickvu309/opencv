@@ -6,9 +6,14 @@ import { applyLocalApiUrl } from "./local-env"
 
 applyLocalApiUrl("test")
 
-// These files assert first-load module state, so each needs a fresh module graph.
+// First-load assertions and module mocks need fresh import graphs. Mocks can
+// leave cached lazy-route consumers bound to a mocked router or another context.
 const ISOLATED_FILES = [
   "src/router-lazy.test.tsx",
+  "src/features/coach/coach-workspace.test.tsx",
+  "src/features/paper/cv-photo.test.tsx",
+  "src/features/paper/paper-share.test.tsx",
+  "src/features/paper/paper-v2-preview.test.tsx",
   "src/features/paper/paper-library.test.tsx",
   "src/features/app-shell/app-shell.test.tsx",
 ]
@@ -29,6 +34,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     // Files share one module graph (isolate: false below); drop fetch stubs between files.
     unstubGlobals: true,
+    // Drain setup-owned routers/queries before file hooks restore fetch stubs.
+    sequence: { hooks: "list" },
     // Home/Paper RTL suites mount the full app. On contended CI the first
     // tests in a file can exceed Vitest's 5s default before the stream settles.
     testTimeout: 15_000,

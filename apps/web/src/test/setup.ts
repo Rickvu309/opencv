@@ -1,4 +1,4 @@
-import { configure } from "@testing-library/react"
+import { act, cleanup, configure } from "@testing-library/react"
 import { toast } from "sonner"
 import { afterEach, beforeEach, vi } from "vitest"
 
@@ -12,6 +12,8 @@ import { resetPaperApiMock } from "./paper-api-mock.ts"
 import { resetProfileApiMock } from "./profile-api-mock.ts"
 import { resetShellApiMock } from "./shell-api-mock.ts"
 import { resetChatApiMock } from "./chat-api-mock.ts"
+
+import { cleanupTestResources } from "./test-resources.ts"
 
 configure({ asyncUtilTimeout: 5000 })
 
@@ -81,11 +83,15 @@ beforeEach(() => {
   resetShellApiMock()
 })
 
-afterEach(() => {
-  if (typeof sessionStorage !== "undefined") {
-    sessionStorage.clear()
-  }
-  if (typeof localStorage !== "undefined") {
-    localStorage.clear()
+afterEach(async () => {
+  try {
+    cleanup()
+  } finally {
+    try {
+      await act(() => cleanupTestResources())
+    } finally {
+      if (typeof sessionStorage !== "undefined") sessionStorage.clear()
+      if (typeof localStorage !== "undefined") localStorage.clear()
+    }
   }
 })
