@@ -15,6 +15,8 @@ runs:
         git config --global user.name ci
         git config --global user.email ci@users.noreply.github.com
       shell: bash
-    # A pull_request checkout has no local main; take tests clone it.
-    - run: git branch -f main origin/main
+    # PR and queue checkouts need a local main for tests that clone it.
+    - run: |
+        git show-ref --verify --quiet refs/remotes/origin/main || git fetch origin main:refs/remotes/origin/main
+        git branch -f main origin/main
       shell: bash

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# merge-pr.sh: squash-merge a PR once ci is green. The owner's own PRs only.
+# merge-pr.sh: enqueue a PR once ci is green (merge directly before queue activation). The owner's own PRs only.
 #
 # Usage (from the main checkout):
 #   scripts/merge-pr.sh <pr#>
@@ -10,7 +10,7 @@
 # Then: gh pr merge <pr#> --squash --match-head-commit <head>
 #
 # Exit code:
-#   0  merged
+#   0  queued or merged
 #   1  refused or failed
 set -euo pipefail
 
@@ -69,9 +69,14 @@ echo "  ok    ci check passed on ${head:0:9}"
 
 echo "==> PR #$pr: merge"
 gh pr merge "$pr" --squash --match-head-commit "$head" ||
-  die "GitHub refused the merge of PR #$pr. Run node scripts/pr.mjs doctor; if the ruleset drifted, apply it: gh api -X PUT repos/$repo/rulesets/25725442 --input .github/rulesets/main.json. Never add --admin."
+  die "GitHub refused the merge/enqueue of PR #$pr. Fix: if auto-merge is not allowed, the owner must enable it: gh api -X PATCH repos/$repo -F allow_auto_merge=true. Run node scripts/pr.mjs doctor; if the ruleset drifted, apply it: gh api -X PUT repos/$repo/rulesets/25725442 --input .github/rulesets/main.json. Never add --admin."
 
 merge_sha=$(gh pr view "$pr" --json mergeCommit --jq .mergeCommit.oid)
+if [[ -z "$merge_sha" || "$merge_sha" == null ]]; then
+  echo "==> QUEUED PR #$pr at $head; the issue closes when the queue merges."
+  result_ok "queued PR #$pr at $head" "scripts/ocv-tools.mjs status"
+  exit 0
+fi
 echo "==> merged PR #$pr as $merge_sha"
 result_ok "merged PR #$pr as $merge_sha" "node scripts/pr.mjs release $merge_sha --wait 600"
 echo "Next: node scripts/pr.mjs release $merge_sha --wait 600"

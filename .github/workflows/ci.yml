@@ -2,16 +2,19 @@ name: Checks
 
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 env:
   TURBO_SCM_BASE: origin/main
+  TURBO_SCOPE: ${{ github.event_name == 'pull_request' && '--affected' || '' }}
   VITEST_MAX_WORKERS: 2
 
 jobs:
@@ -35,10 +38,14 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run lint --affected
-      - name: Prettier changed files
+      - run: pnpm exec turbo run lint $TURBO_SCOPE
+      - name: Prettier
         run: |
           set -o pipefail
+          if [[ "$GITHUB_EVENT_NAME" == merge_group ]]; then
+            pnpm exec prettier --check --ignore-unknown -- .
+            exit 0
+          fi
           base=$(git merge-base origin/main HEAD)
           full=0
           while IFS= read -r -d '' file; do
@@ -62,7 +69,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run typecheck --affected
+      - run: pnpm exec turbo run typecheck $TURBO_SCOPE
 
   build:
     runs-on: ubuntu-latest
@@ -72,7 +79,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run build --affected
+      - run: pnpm exec turbo run build $TURBO_SCOPE
 
   test-api:
     needs: build
@@ -83,7 +90,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test --affected --filter='!web' --filter='!@workspace/ui' --filter='!@workspace/guards'
+      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!web' --filter='!@workspace/ui' --filter='!@workspace/guards'
 
   test-web:
     needs: build
@@ -98,7 +105,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test --affected --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/2
+      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/2
 
   ci:
     needs: [guards, lint, typecheck, build, test-api, test-web]

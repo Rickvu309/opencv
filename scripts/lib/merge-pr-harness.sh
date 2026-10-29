@@ -27,7 +27,7 @@ case "$1 $2" in
       *"--json author"*) jq -r "${@: -1}" <<<"{\"author\":{\"login\":\"$MP_AUTHOR\"}}" ;;
       *"--json isDraft"*) echo "${MP_DRAFT:-false}" ;;
       *"--json labels"*) printf '%s\n' ${MP_PR_LABELS:-} ;;
-      *"--json mergeCommit"*) jq -r "${@: -1}" <<<'{"mergeCommit":{"oid":"cafe0000cafe0000cafe0000cafe0000cafe0000"}}' ;;
+      *"--json mergeCommit"*) [[ -z "${MP_QUEUED:-}" ]] || { echo null; exit 0; }; jq -r "${@: -1}" <<<'{"mergeCommit":{"oid":"cafe0000cafe0000cafe0000cafe0000cafe0000"}}' ;;
       *) echo "stub gh: unexpected: $*" >&2; exit 1 ;;
     esac ;;
   *) echo "stub gh: unexpected: $*" >&2; exit 1 ;;
@@ -51,7 +51,7 @@ reset() {
   : >"$MP_LOG"
   git -C "$tmp/repo" switch -q main 2>/dev/null || true
   git -C "$tmp/repo" reset -q --hard
-  unset MP_CI MP_LABELS MP_PR_LABELS MP_DRAFT MP_DIFF_FAIL MP_MERGE_FAIL
+  unset MP_CI MP_LABELS MP_PR_LABELS MP_DRAFT MP_DIFF_FAIL MP_MERGE_FAIL MP_QUEUED
   export MP_ME=owner MP_AUTHOR=owner MP_HEAD=$head MP_FILES="scripts/x.sh docs/y.md" MP_BRANCH=feat/9-gone
 }
 run() {

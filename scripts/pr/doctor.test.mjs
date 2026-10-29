@@ -271,3 +271,24 @@ test("--json prints the drift list", async () => {
   assert.equal(code, 1)
   assert.equal(JSON.parse(logged[0]).drift[0].subject, "vulnerability alerts")
 })
+
+test("doctor detects a missing queue rule and queue parameter drift", async () => {
+  for (const change of [
+    (ruleset) => {
+      ruleset.rules = ruleset.rules.filter(
+        (rule) => rule.type !== "merge_queue"
+      )
+    },
+    (ruleset) => {
+      ruleset.rules.find(
+        (rule) => rule.type === "merge_queue"
+      ).parameters.max_entries_to_build = 2
+    },
+  ]) {
+    const ruleset = liveRuleset()
+    change(ruleset)
+    const drift = await doctor(fakeIo({ ruleset: async () => ruleset }))
+    assert.equal(drift.length, 1)
+    assert.match(drift[0].fix, /gh api -X PUT .*rulesets/)
+  }
+})

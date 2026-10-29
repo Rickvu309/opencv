@@ -69,7 +69,7 @@ scripts/ocv-tools.mjs cleanup --all             # remove every merged worktree
 scripts/ocv-tools.mjs cleanup 42              # just issue 42
 ```
 
-It removes a worktree only when its PR is merged (checked with `gh`; without `gh`, when the remote branch was deleted). It skips worktrees with uncommitted changes unless you pass `--force`. It then deletes the local branch and runs `git worktree prune`.
+The issue closes when the queue merges, not when enqueued. Cleanup waits for that merge. It removes a worktree only when its PR is merged (checked with `gh`; without `gh`, when the remote branch was deleted). It skips worktrees with uncommitted changes unless you pass `--force`. It then deletes the local branch and runs `git worktree prune`.
 
 By hand:
 
