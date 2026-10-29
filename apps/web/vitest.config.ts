@@ -39,6 +39,8 @@ export default defineConfig({
     // Home/Paper RTL suites mount the full app. On contended CI the first
     // tests in a file can exceed Vitest's 5s default before the stream settles.
     testTimeout: 15_000,
+    // Vitest 5: maxWorkers is the pool size. poolOptions was removed.
+    maxWorkers: Number(process.env.VITEST_MAX_WORKERS ?? 2),
     projects: [
       {
         extends: true,

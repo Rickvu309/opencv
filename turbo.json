@@ -1,6 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "turbo.json",
+    "tsconfig.json",
+    ".npmrc"
+  ],
+  "globalEnv": ["VITEST_MAX_WORKERS"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -9,25 +18,26 @@
       "outputs": ["dist/**", ".generated/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^build"]
     },
     "format": {
       "dependsOn": ["^format"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^build"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "test": {
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "passThroughEnv": ["VITEST_MAX_WORKERS"],
-      "dependsOn": ["transit"]
-    },
-    "transit": {
-      "dependsOn": ["^transit"]
+      "outputs": []
     }
+  },
+  "futureFlags": {
+    "affectedUsingTaskInputs": true
   }
 }
