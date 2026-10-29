@@ -170,9 +170,7 @@ describe("CV editor chrome", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
-    expect(
-      screen.getByRole("region", { name: "Document changed" })
-    ).toBeInTheDocument()
+    expect(screen.getByRole("alert")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled()
   })
 

@@ -7,8 +7,7 @@ type Props = {
 export function PaperEditorConflictBanner({ onReload }: Props) {
   return (
     <div
-      role="region"
-      aria-label="Document changed"
+      role="alert"
       className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/60 px-5 py-2 text-sm"
     >
       <p>This document changed. Reload it and try again.</p>
