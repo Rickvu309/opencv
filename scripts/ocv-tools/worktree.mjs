@@ -88,6 +88,30 @@ function installCommand(wt) {
   return ["npm", ["install"]]
 }
 
+// Local and origin both have the branch. Fast-forward when local is a strict
+// ancestor. Refuse when the tips have diverged so resume cannot drop the push.
+function alignResume(g, branch, issue) {
+  const localSha = g("rev-parse", "--verify", `refs/heads/${branch}`)
+  const remoteSha = g("rev-parse", "--verify", `refs/remotes/origin/${branch}`)
+  if (!localSha.ok || !remoteSha.ok)
+    throw new Error(
+      `could not compare ${branch} with origin/${branch}: ${localSha.err || remoteSha.err}`
+    )
+  if (localSha.out === remoteSha.out) return
+  if (g("merge-base", "--is-ancestor", localSha.out, remoteSha.out).ok) {
+    const moved = g("update-ref", `refs/heads/${branch}`, remoteSha.out)
+    if (!moved.ok)
+      throw new Error(`could not fast-forward ${branch}: ${moved.err}`)
+    return
+  }
+  if (g("merge-base", "--is-ancestor", remoteSha.out, localSha.out).ok) return
+  throw new Refused(
+    "DIVERGED",
+    `local ${branch} and origin/${branch} have diverged, so resume would keep the stale local history`,
+    `Keep both tips. From the main checkout run: git fetch origin ${branch} && git log --oneline --left-right ${branch}...origin/${branch}. Reconcile them, then run: scripts/ocv-tools.mjs take ${issue} --resume`
+  )
+}
+
 // Makes the branch and worktree. Returns { main, worktree, branch, port, warnings }.
 // resume checks out a branch that already exists instead of creating one.
 export function createWorktree(
@@ -152,14 +176,18 @@ export function createWorktree(
       `branch ${branch} is not on origin, so there is nothing to resume`,
       `scripts/ocv-tools.mjs take ${issue}`
     )
+  if (resume && remote) {
+    const got = g("fetch", "--quiet", "origin", branch)
+    if (!got.ok)
+      throw new Error(`git fetch origin ${branch} failed: ${got.err}`)
+  }
+  // A stale local branch must not hide commits another clone already pushed.
+  if (resume && local && remote) alignResume(g, branch, issue)
 
   mkdirSync(root, { recursive: true })
   let added
   if (resume && local) added = g("worktree", "add", "--quiet", worktree, branch)
   else if (resume) {
-    const got = g("fetch", "--quiet", "origin", branch)
-    if (!got.ok)
-      throw new Error(`git fetch origin ${branch} failed: ${got.err}`)
     added = g(
       "worktree",
       "add",

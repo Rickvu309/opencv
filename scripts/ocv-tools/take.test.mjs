@@ -300,6 +300,69 @@ test("take --resume checks out a branch an idle holder already pushed", () => {
   }
 })
 
+test("take --resume fast-forwards a local branch that is behind origin", () => {
+  const t = tempClone()
+  try {
+    const branch = "feat/90-keep-my-search"
+    t.sh(t.work, "checkout", "-q", "-b", branch)
+    writeFileSync(join(t.work, "kept.txt"), "base\n")
+    t.sh(t.work, "add", "kept.txt")
+    t.sh(t.work, "commit", "-q", "-m", "base")
+    t.sh(t.work, "push", "-q", "origin", branch)
+    writeFileSync(join(t.work, "kept.txt"), "remote\n")
+    t.sh(t.work, "add", "kept.txt")
+    t.sh(t.work, "commit", "-q", "-m", "remote tip")
+    t.sh(t.work, "push", "-q", "origin", branch)
+    t.sh(t.work, "reset", "--hard", "HEAD~1")
+    t.sh(t.work, "checkout", "-q", "main")
+    const data = issueData({ comments: { nodes: [claim("old", 400)] } })
+    const ok = runCli(
+      ["take", "90", "--resume", "--no-install"],
+      realCtx(t, ghRules(data), { OCV_TOOLS_AGENT: "next" })
+    )
+    assert.equal(ok.code, 0, ok.text)
+    const wt = join(t.root, "opencv.worktrees", "90-keep-my-search")
+    assert.equal(readFileSync(join(wt, "kept.txt"), "utf8"), "remote\n")
+    assert.match(t.sh(wt, "log", "-1", "--format=%s"), /remote tip/)
+  } finally {
+    t.done()
+  }
+})
+
+test("take --resume refuses a local branch that diverged from origin", () => {
+  const t = tempClone()
+  try {
+    const branch = "feat/90-keep-my-search"
+    t.sh(t.work, "checkout", "-q", "-b", branch)
+    writeFileSync(join(t.work, "kept.txt"), "base\n")
+    t.sh(t.work, "add", "kept.txt")
+    t.sh(t.work, "commit", "-q", "-m", "base")
+    t.sh(t.work, "push", "-q", "origin", branch)
+    writeFileSync(join(t.work, "kept.txt"), "local\n")
+    t.sh(t.work, "commit", "-aq", "-m", "local only")
+    t.sh(t.work, "checkout", "-q", "--detach", "HEAD~1")
+    writeFileSync(join(t.work, "kept.txt"), "remote\n")
+    t.sh(t.work, "commit", "-aq", "-m", "remote only")
+    t.sh(t.work, "push", "-q", "origin", `HEAD:${branch}`)
+    t.sh(t.work, "checkout", "-q", "main")
+    const data = issueData({ comments: { nodes: [claim("old", 400)] } })
+    const r = runCli(
+      ["take", "90", "--resume", "--no-install"],
+      realCtx(t, ghRules(data), { OCV_TOOLS_AGENT: "next" })
+    )
+    assert.equal(r.code, 2, r.text)
+    assert.match(r.text, /REFUSED DIVERGED/)
+    assert.match(r.text, /\nFix: /)
+    assert.match(r.text, /git log --oneline --left-right/)
+    assert.ok(
+      !existsSync(join(t.root, "opencv.worktrees", "90-keep-my-search"))
+    )
+    assert.match(t.sh(t.work, "log", "-1", "--format=%s", branch), /local only/)
+  } finally {
+    t.done()
+  }
+})
+
 test("after install, a live claim from someone else is HELD and the worktree is removed", () => {
   const t = tempClone()
   try {

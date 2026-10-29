@@ -39,7 +39,7 @@ The script:
 
 Options: `-d` branch words, `--type` (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `--no-install`, `--no-assign`, `--take`, `--resume`. A new title takes the same fields as `file`: `--what`, `--done`, `--risk`, `--could-go-wrong`, `--questions`, `--out-of-scope`, `--details`. `--body-file <path>` replaces those fields. Every command and flag is listed by `scripts/ocv-tools.mjs help`.
 
-`--resume` checks out a branch an idle holder already pushed (`scripts/ocv-tools.mjs take 42 --resume`) and records your claim. Without it, take refuses that branch and prints the resume command.
+`--resume` checks out a branch an idle holder already pushed (`scripts/ocv-tools.mjs take 42 --resume`) and records your claim. A local branch that is behind that push is fast-forwarded. A local branch that has diverged is refused, with a Fix line, so the pushed commits are not dropped. Without `--resume`, take refuses that branch and prints the resume command.
 
 When the work is ready for a PR, run `scripts/open-pr.sh --draft` inside the worktree.
 
