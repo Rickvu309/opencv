@@ -64,7 +64,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 #### 1. Issue first
 
 - Never start work without a GitHub issue.
-- If no issue exists, create one with `gh issue create` (or the Task form), or let `scripts/new-task.sh <type> "Issue title"` create it.
+- If no issue exists, create one with `gh issue create` (or the Task form), or let `scripts/ocv-tools.mjs take "Issue title"` create it.
 - If the issue is assigned to someone else, or a branch for it exists, stop and pick another issue.
 - If the work will take more than a few days, split it into sub-issues and do one at a time.
 
@@ -73,8 +73,8 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - Never edit files in the main checkout. It stays on `main` and is only used to fetch, create worktrees, and review.
 - Start every task with:
   ```bash
-  scripts/new-task.sh <type> <issue#> -d "short description"
-  scripts/new-task.sh <type> "Issue title"          # creates the issue first
+  scripts/ocv-tools.mjs take <issue#> -d "short description"
+  scripts/ocv-tools.mjs take "Issue title"          # creates the issue first
   ```
   It also turns on the local hooks (`git config core.hooksPath .githooks`).
 - Work only inside the printed worktree path (`../opencv.worktrees/<issue#>-short-description`).
@@ -115,11 +115,11 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - Merge only with squash. An agent under the owner's account (`@quanvu309`) merges its own PR with `scripts/merge-pr.sh <pr#>` from the main checkout, never by hand. It refuses another author's PR, reruns `scripts/review-pr.sh`, and requires a comment or review that names the current patch id and says `Independent review` (plus `verify` when the PR changes `apps/`): `review-pr.sh: OK (patch id <id>, main <sha>). Independent review: <who>, approved. verify-<skill>: <result>`. Then it posts the `gates/review-pr` status and runs `gh pr merge --squash --match-head-commit <head>`. `--dry-run` stops before those two.
 - No `--admin`, no bypass. GitHub requires `ci` and `gates/review-pr`, no approval. The independent review stays a local gate with no open finding; `HUMAN REQUIRED` is never merged.
 - After merge, the issue closes and the remote branch is deleted automatically.
-- From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
+- From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
 
 #### 7. Production is broken
 
-- Open an issue, run `scripts/new-task.sh hotfix <issue#> -d "..."`, fix, run `scripts/open-pr.sh`, and ask for immediate review.
+- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/open-pr.sh`, and ask for immediate review.
 - If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
 
 #### Review agent checklist

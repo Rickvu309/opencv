@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-rules.sh: the pre-push stamps (R97, R98) that scripts/open-pr.sh and scripts/merge-pr.sh read, and scripts/lib/rules.sh.
-# The checks inside open-pr.sh, merge-pr.sh, review-pr.sh and new-task.sh are asserted in their own tests
-# (open-pr.test.mjs, test-merge-pr.sh, test-review-pr.sh, test-new-task.sh). Usage: scripts/test-rules.sh
+# The checks inside open-pr.sh, merge-pr.sh, review-pr.sh and ocv-tools take are asserted in their own tests
+# (open-pr.test.mjs, test-merge-pr.sh, test-review-pr.sh, take.test.mjs). Usage: scripts/test-rules.sh
 set -euo pipefail
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE CHECK_DRY_RUN SKIP_CHECKS PR_RESULT_ID
 

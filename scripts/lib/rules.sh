@@ -5,7 +5,7 @@
 # A fix that changes a branch starts with cd <worktree>: merge-pr.sh runs in the main checkout, which nobody edits.
 #
 #   rule_main_clean <main_checkout>       R68  the main checkout stays on main with no edited tracked file
-#   rule_port <worktree>                  R76  the worktree's .env still has the port new-task.sh assigned
+#   rule_port <worktree>                  R76  the worktree's .env still has the port ocv-tools take assigned
 #   rule_not_ready_for_human <labels>     R103 the issue is not labeled ready-for-human
 #   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/ except ci.yml
 #   rule_ci_workflow_kept <files> <sha> [wt] R105 ci.yml may change but never vanish
@@ -59,7 +59,7 @@ rule_port() {
   have=$(grep -E '^[[:space:]]*(export[[:space:]]+)?PORT=' "$wt/.env" | tail -n1 |
     sed -E 's/\r$//; s/^[^=]*=//; s/[[:space:]]+#.*$//; s/[[:space:]]+$//; s/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/' || true)
   [[ "$have" == "$assigned" ]] ||
-    rule_fail "PORT in $wt/.env is '${have:-unset}', but new-task.sh assigned port $assigned to this worktree; use only your assigned port" "sed -i -E 's/^PORT=.*/PORT=$assigned/' '$wt/.env'"
+    rule_fail "PORT in $wt/.env is '${have:-unset}', but ocv-tools take assigned port $assigned to this worktree; use only your assigned port" "sed -i -E 's/^PORT=.*/PORT=$assigned/' '$wt/.env'"
 }
 
 rule_not_ready_for_human() {

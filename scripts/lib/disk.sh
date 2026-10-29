@@ -53,7 +53,7 @@ _disk_fail() {
     if [[ "$1" == disk ]]; then
       echo "Free space, then run this again. Largest directories, and the finished worktrees that can go:"
       echo "  $3"
-      echo "Remove one finished worktree with: scripts/cleanup-worktree.sh <issue#>"
+      echo "Remove one finished worktree with: scripts/ocv-tools.mjs cleanup <issue#>"
     fi
   } >&2
   exit 1
@@ -81,7 +81,7 @@ disk_guard() {
     IFS=$'\t' read -r cause problem <<<"$out"
     big=$root
     case "$dir" in "$main"|"$(dirname "$root")"|"$root") ;; *) big=$dir ;; esac
-    printf -v next 'cd %q && { du -sh %q/* 2>/dev/null | sort -h | tail -n 8; scripts/cleanup-worktree.sh --dry-run; }' "$main" "$big"
+    printf -v next 'cd %q && { du -sh %q/* 2>/dev/null | sort -h | tail -n 8; scripts/ocv-tools.mjs cleanup --all --dry-run; }' "$main" "$big"
     [[ "$cause" == disk ]] || next=""
     _disk_fail "${cause:-env}" "${problem:-cannot probe $dir}" "$next"
   done

@@ -39,7 +39,7 @@ When production is broken:
 2. **Decide: roll back first?** If the fix is risky, unclear, or will take more than a few minutes, roll back to the previous production deploy on the hosting platform now. Then fix forward calmly.
 3. **Branch** from the latest `main`:
    ```bash
-   scripts/new-task.sh hotfix <issue#> -d "short description"
+   scripts/ocv-tools.mjs take <issue#> -d "short description"   # type hotfix
    ```
 4. **Fix, then open the PR right away** (not as a draft): `scripts/open-pr.sh`. That gives `hotfix: restore checkout button (#88)` with `Closes #88`.
 5. **Fast-track review.** Checks must still pass. `SKIP_CHECKS=1` is allowed only if a human declares it, and the PR body says so. The review agent runs its checklist (including the checks) immediately. A mass deletion or a `needs-human-review` label still needs a human.
@@ -54,7 +54,7 @@ The fastest safe undo is a revert PR:
 
 ```bash
 # open an issue first, e.g. #95 "Revert login page"
-scripts/new-task.sh fix 95 -d "revert login page"
+scripts/ocv-tools.mjs take 95 -d "revert login page"
 cd ../opencv.worktrees/95-revert-login-page
 git revert <squash-commit-sha>
 scripts/open-pr.sh -d "revert login page"
