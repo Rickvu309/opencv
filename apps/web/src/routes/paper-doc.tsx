@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { paperIdSchema, parsePaperId } from "@workspace/domain"
+import { ERROR_CODES, paperIdSchema, parsePaperId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -16,6 +16,7 @@ import {
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+import { ApiError } from "@/lib/api-error.ts"
 
 const NO_DOC = parsePaperId("00000000-0000-4000-8000-000000000000")
 const PAPER_PREFIX = `${SURFACE_PATHS.paper}/`
@@ -65,12 +66,20 @@ export function PaperDocPage() {
     )
   }
   if (!docQuery.data) {
+    const missing =
+      validId === null ||
+      (docQuery.error instanceof ApiError &&
+        docQuery.error.code === ERROR_CODES.NOT_FOUND)
     return (
       <section
         aria-label="Paper"
         className="flex flex-col items-start gap-3 p-4"
       >
-        <p>Could not load documents. Refresh the page.</p>
+        <p>
+          {missing
+            ? "Document not found."
+            : "Could not load documents. Refresh the page."}
+        </p>
         <Button type="button" variant="outline" onClick={back}>
           Paper
         </Button>
