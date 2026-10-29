@@ -5,6 +5,7 @@ import { Pool } from "pg"
 import { createApp } from "./app.js"
 import type { FetchJobPosting } from "./job/index.js"
 import { createDemoCoachRuntime, withScanJobPosting } from "./coach/index.js"
+import { sweepUnattachedPhotos } from "./paper/index.js"
 import {
   apiPortFromEnv,
   authUrlFromEnv,
@@ -65,6 +66,18 @@ const db =
       : undefined
 
 if (db) bindDatabase(db as AppDatabase)
+
+if (db && !process.env.VITEST) {
+  // Startup and then hourly: an avatar uploaded but never attached (a closed
+  // tab, a crash) leaves a row nothing references. The web deletes what it can.
+  const sweepUnattached = () =>
+    sweepUnattachedPhotos().catch((error) =>
+      console.error("[paper] unattached photo sweep failed", error)
+    )
+  void sweepUnattached()
+  const sweepTimer = setInterval(sweepUnattached, 60 * 60 * 1000)
+  sweepTimer.unref()
+}
 
 const coachRuntimeMode = coachRuntimeModeFromEnv(process.env)
 const coachEnv = coachModelEnvFromEnv(process.env)
