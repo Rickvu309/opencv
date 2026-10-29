@@ -126,7 +126,7 @@ checked=0
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
   echo "WARNING: SKIP_CHECKS=1, checks skipped. Emergencies only." >&2
 else
-  # Quick check of what changed. ci runs the same check; nothing runs the full check before a merge.
+  # Quick check of what changed. CI runs the same checks as parallel jobs; nothing runs the full check before a merge.
   info "Running pnpm check"
   checked=1
   if ! env -u CHECK_DRY_RUN pnpm check; then
