@@ -1,7 +1,12 @@
-import { useReducer } from "react"
+import { useId, useReducer } from "react"
 import { ArrowUp, Briefcase, ChevronDown, Plus } from "lucide-react"
 
-import type { ActivityFeedRow, JobDetail, JobId } from "@workspace/domain"
+import {
+  jobAddChecklistItemInputSchema,
+  type ActivityFeedRow,
+  type JobDetail,
+  type JobId,
+} from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -27,6 +32,8 @@ const POSTING = [
 ] as const
 
 const BULLET_PREFIX = /^\s*(?:[-*•]\s+)/
+const PREP_STEP_MAX_LENGTH =
+  jobAddChecklistItemInputSchema.shape.label.maxLength
 
 function lines(text: string) {
   return text
@@ -95,7 +102,12 @@ function Posting({ job }: { job: JobDetail }) {
   )
 }
 
-type PrepState = { open: boolean; adding: boolean; step: string }
+type PrepState = {
+  open: boolean
+  adding: boolean
+  step: string
+  message: string | null
+}
 
 type PrepAction =
   | { type: "toggled" }
@@ -103,27 +115,42 @@ type PrepAction =
   | { type: "step_typed"; value: string }
   | { type: "step_added" }
   | { type: "add_cancelled" }
+  | { type: "message_set"; message: string }
+  | { type: "message_cleared" }
 
-const PREP_START: PrepState = { open: true, adding: false, step: "" }
+const PREP_START: PrepState = {
+  open: true,
+  adding: false,
+  step: "",
+  message: null,
+}
 
 function prepReducer(state: PrepState, action: PrepAction): PrepState {
   switch (action.type) {
     case "toggled":
       return { ...state, open: !state.open }
     case "add_started":
-      return { ...state, open: true, adding: true }
+      return { ...state, open: true, adding: true, message: null }
     case "step_typed":
-      return { ...state, step: action.value }
+      return { ...state, step: action.value, message: null }
     case "step_added":
-      return { ...state, step: "" }
+      return { ...state, step: "", message: null }
     case "add_cancelled":
-      return { ...state, step: "", adding: false }
+      return { ...state, step: "", adding: false, message: null }
+    case "message_set":
+      return { ...state, message: action.message }
+    case "message_cleared":
+      return { ...state, message: null }
   }
 }
 
 function InterviewPrep({ job }: { job: JobDetail }) {
   const run = useRunCommand()
-  const [{ open, adding, step }, dispatch] = useReducer(prepReducer, PREP_START)
+  const [{ open, adding, step, message }, dispatch] = useReducer(
+    prepReducer,
+    PREP_START
+  )
+  const messageId = useId()
   const done = job.checklist.filter((item) => item.done).length
   const total = job.checklist.length
   const name =
@@ -188,38 +215,77 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           ))}
           {adding ? (
             <form
-              className="flex h-[34px] items-center gap-2.5 px-2"
+              className="flex flex-col px-2"
               onSubmit={(event) => {
                 event.preventDefault()
-                const label = step.trim()
-                if (!label) return
-                void run("job.addChecklistItem", {
+                const parsed = jobAddChecklistItemInputSchema.safeParse({
                   jobId: job.id,
-                  label,
-                }).then(() => {
-                  dispatch({ type: "step_added" })
+                  label: step,
                 })
+                if (!parsed.success) {
+                  const labelIssue = parsed.error.issues.find(
+                    (issue) => issue.path[0] === "label"
+                  )
+                  const message =
+                    labelIssue?.code === "too_big"
+                      ? `Keep a prep step to ${labelIssue.maximum} characters or fewer.`
+                      : labelIssue?.code === "too_small"
+                        ? "Enter a prep step."
+                        : "Check this prep step and try again."
+                  dispatch({ type: "message_set", message })
+                  return
+                }
+                dispatch({ type: "message_cleared" })
+                void run("job.addChecklistItem", parsed.data)
+                  .then(() => dispatch({ type: "step_added" }))
+                  .catch(() =>
+                    dispatch({
+                      type: "message_set",
+                      message: "Could not add this prep step. Try again.",
+                    })
+                  )
               }}
             >
-              <span
-                aria-hidden
-                className="size-[15px] shrink-0 rounded-full ring-[1.2px] ring-input ring-inset"
-              />
-              <Input
-                aria-label="Add a step"
-                autoFocus
-                value={step}
-                placeholder="Add a step"
-                className="h-7 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:text-[13.5px] dark:bg-transparent"
-                onChange={(event) =>
-                  dispatch({ type: "step_typed", value: event.target.value })
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    dispatch({ type: "add_cancelled" })
+              <div className="flex h-[34px] items-center gap-2.5">
+                <span
+                  aria-hidden
+                  className="size-[15px] shrink-0 rounded-full ring-[1.2px] ring-input ring-inset"
+                />
+                <Input
+                  aria-label="Add a step"
+                  aria-describedby={`${messageId}-hint${message ? ` ${messageId}` : ""}`}
+                  aria-invalid={message ? true : undefined}
+                  autoFocus
+                  value={step}
+                  placeholder="Add a step"
+                  className="h-7 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:text-[13.5px] dark:bg-transparent"
+                  onChange={(event) =>
+                    dispatch({ type: "step_typed", value: event.target.value })
                   }
-                }}
-              />
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      dispatch({ type: "add_cancelled" })
+                    }
+                  }}
+                />
+              </div>
+              {PREP_STEP_MAX_LENGTH !== null ? (
+                <p
+                  id={`${messageId}-hint`}
+                  className="pb-1 text-xs text-muted-foreground"
+                >
+                  Up to {PREP_STEP_MAX_LENGTH} characters.
+                </p>
+              ) : null}
+              {message ? (
+                <p
+                  id={messageId}
+                  role="alert"
+                  className="pb-1 text-xs text-destructive"
+                >
+                  {message}
+                </p>
+              ) : null}
             </form>
           ) : null}
         </div>
