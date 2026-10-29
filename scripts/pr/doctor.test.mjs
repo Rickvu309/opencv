@@ -76,6 +76,9 @@ test("labels.yml keeps only the labels something reads", () => {
       "docs",
       "needs-human-review",
       "ready-for-human",
+      "risk:low",
+      "risk:normal",
+      "risk:high",
     ]
   )
 })
