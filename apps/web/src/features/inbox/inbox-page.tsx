@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "@workspace/ui/components/sonner"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
@@ -27,6 +27,49 @@ import { inboxConnectKey } from "@/lib/requests.ts"
 
 const NARROW = "(max-width: 767px)"
 
+type InboxState = {
+  openId: string | null
+  scanning: ScanProgress | null
+  skipping: boolean
+}
+
+type InboxAction =
+  | { type: "thread_opened"; id: string }
+  | { type: "thread_closed" }
+  | { type: "skip_started" }
+  | { type: "skip_ended" }
+  | { type: "scan_started" }
+  | { type: "scan_found"; progress: ScanProgress }
+  | { type: "scan_ended" }
+
+const INBOX_START: InboxState = {
+  openId: null,
+  scanning: null,
+  skipping: false,
+}
+
+function inboxReducer(state: InboxState, action: InboxAction): InboxState {
+  switch (action.type) {
+    case "thread_opened":
+      return { ...state, openId: action.id }
+    case "thread_closed":
+      return { ...state, openId: null }
+    case "skip_started":
+      return { ...state, skipping: true }
+    case "skip_ended":
+      return { ...state, skipping: false }
+    case "scan_started":
+      return {
+        ...state,
+        scanning: { emails: null, companies: null, names: [] },
+      }
+    case "scan_found":
+      return { ...state, scanning: action.progress }
+    case "scan_ended":
+      return { ...state, scanning: null }
+  }
+}
+
 export function InboxPage() {
   const runCommand = useRunCommand()
   const narrow = useMediaQuery(NARROW, false)
@@ -43,9 +86,10 @@ export function InboxPage() {
     queryFn: fetchConnect,
     enabled: showConnect,
   })
-  const [openId, setOpenId] = useState<string | null>(null)
-  const [scanning, setScanning] = useState<ScanProgress | null>(null)
-  const [skipping, setSkipping] = useState(false)
+  const [{ openId, scanning, skipping }, dispatch] = useReducer(
+    inboxReducer,
+    INBOX_START
+  )
   const threads = list.data?.threads ?? []
   const zone = list.data?.timeZone || PROFILE_ZONE
   const shownId = narrow
@@ -63,30 +107,33 @@ export function InboxPage() {
   })
 
   async function onSkip() {
-    setSkipping(true)
+    dispatch({ type: "skip_started" })
     try {
       await runCommand("inbox.skip", {})
     } catch (error) {
       toast(messageOf(error))
     } finally {
-      setSkipping(false)
+      dispatch({ type: "skip_ended" })
     }
   }
 
   async function onScan() {
-    setScanning({ emails: null, companies: null, names: [] })
+    dispatch({ type: "scan_started" })
     try {
       const result = await runCommand("inbox.scan", {})
-      setScanning({
-        emails: result.emailCount,
-        companies: result.companyCount,
-        names: result.threads.map((thread) => thread.company),
+      dispatch({
+        type: "scan_found",
+        progress: {
+          emails: result.emailCount,
+          companies: result.companyCount,
+          names: result.threads.map((thread) => thread.company),
+        },
       })
       await panelHold()
     } catch (error) {
       toast(messageOf(error))
     } finally {
-      setScanning(null)
+      dispatch({ type: "scan_ended" })
     }
   }
 
@@ -142,7 +189,7 @@ export function InboxPage() {
                 now={now}
                 zone={zone}
                 scanning={false}
-                onOpen={setOpenId}
+                onOpen={(id) => dispatch({ type: "thread_opened", id })}
                 onScan={() => void onScan()}
               />
             </InboxListPane>
@@ -157,14 +204,15 @@ export function InboxPage() {
               narrow={narrow}
               now={now}
               zone={zone}
-              onBack={() => setOpenId(null)}
+              onBack={() => dispatch({ type: "thread_closed" })}
               onPrevious={() => {
                 const previous = threads[index - 1]
-                if (previous) setOpenId(previous.id)
+                if (previous)
+                  dispatch({ type: "thread_opened", id: previous.id })
               }}
               onNext={() => {
                 const next = threads[index + 1]
-                if (next) setOpenId(next.id)
+                if (next) dispatch({ type: "thread_opened", id: next.id })
               }}
             />
           ) : null}

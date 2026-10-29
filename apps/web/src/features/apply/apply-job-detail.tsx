@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useReducer } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { commands, type JobId, type JobStage } from "@workspace/domain"
 import { useNavigate } from "@tanstack/react-router"
@@ -33,13 +33,33 @@ function fieldTarget(target: EventTarget | null) {
   return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable
 }
 
+type DetailState = { deleteOpen: boolean; railOpen: boolean }
+
+type DetailAction =
+  | { type: "delete_requested" }
+  | { type: "delete_dismissed" }
+  | { type: "rail_toggled" }
+
+function detailReducer(state: DetailState, action: DetailAction): DetailState {
+  switch (action.type) {
+    case "delete_requested":
+      return { ...state, deleteOpen: true }
+    case "delete_dismissed":
+      return { ...state, deleteOpen: false }
+    case "rail_toggled":
+      return { ...state, railOpen: !state.railOpen }
+  }
+}
+
 export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const run = useRunCommand()
   const { data: session } = authClient.useSession()
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [railOpen, setRailOpen] = useState(true)
+  const [{ deleteOpen, railOpen }, dispatch] = useReducer(detailReducer, {
+    deleteOpen: false,
+    railOpen: true,
+  })
   const detail = useQuery({
     queryKey: jobGetKey(id),
     queryFn: () => getJob(id),
@@ -58,7 +78,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
       if (event.key !== "Delete" && event.key !== "Backspace") return
       if (fieldTarget(event.target)) return
       event.preventDefault()
-      setDeleteOpen(true)
+      dispatch({ type: "delete_requested" })
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
@@ -113,11 +133,11 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         onPrevious={open(previous)}
         onNext={open(next)}
         railOpen={railOpen}
-        onToggleRail={() => setRailOpen((current) => !current)}
+        onToggleRail={() => dispatch({ type: "rail_toggled" })}
         onToggleStar={() =>
           void run("job.star", { jobId: id, starred: !job.starred })
         }
-        onDelete={() => setDeleteOpen(true)}
+        onDelete={() => dispatch({ type: "delete_requested" })}
       />
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         <div className="min-w-0 flex-1 px-6 pt-10 pb-6 lg:overflow-y-auto lg:px-12">
@@ -134,7 +154,9 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
       <DeleteJobDialog
         open={deleteOpen}
         title={job.title}
-        onOpenChange={setDeleteOpen}
+        onOpenChange={(open) =>
+          dispatch({ type: open ? "delete_requested" : "delete_dismissed" })
+        }
         onDelete={() => {
           // Navigate before refreshing, so the deleted job's own read is
           // not refetched into an error on screen.
@@ -153,7 +175,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
               queryClient,
               commands["job.delete"].invalidates({ jobId: id })
             )
-            setDeleteOpen(false)
+            dispatch({ type: "delete_dismissed" })
           })
         }}
       />

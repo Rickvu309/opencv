@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef } from "react"
 
 /**
  * True while the element is in view. With `once`, it stays true after the
@@ -9,17 +9,20 @@ export function useOnScreen<T extends Element>({
   threshold = 0,
 }: { once?: boolean; threshold?: number } = {}) {
   const ref = useRef<T>(null)
-  const [onScreen, setOnScreen] = useState(false)
+  const [onScreen, visibilityChanged] = useReducer(
+    (_: boolean, visible: boolean) => visible,
+    false
+  )
 
   useEffect(() => {
     const element = ref.current
     if (!element || typeof IntersectionObserver === "undefined") {
-      setOnScreen(true)
+      visibilityChanged(true)
       return
     }
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setOnScreen(entry.isIntersecting)
+        visibilityChanged(entry.isIntersecting)
         if (entry.isIntersecting && once) observer.disconnect()
       },
       { threshold }

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { CalendarIcon, MapPin } from "lucide-react"
 import type { JobStage } from "@workspace/domain"
 
@@ -25,6 +25,13 @@ import {
   stageLabel,
 } from "./apply-stages.ts"
 
+function locationReducer(
+  _open: boolean,
+  action: { type: "opened" | "closed" }
+) {
+  return action.type === "opened"
+}
+
 const CHIP =
   "h-7 gap-1.5 rounded-full border-border px-[9px] text-xs font-normal text-foreground [&_svg:not([class*='size-'])]:size-[13px]"
 
@@ -45,7 +52,7 @@ export function NewJobProperties({
   onDeadline: (deadline: string) => void
   onLocation: (location: string) => void
 }) {
-  const [locationOpen, setLocationOpen] = useState(false)
+  const [locationOpen, dispatchLocation] = useReducer(locationReducer, false)
   const deadlineValid = /^\d{4}-\d{2}-\d{2}$/.test(deadline)
   const deadlineText = deadlineValid
     ? monthDay(deadlineInstant(deadline), "UTC")
@@ -104,7 +111,12 @@ export function NewJobProperties({
         </PopoverContent>
       </Popover>
       {
-        <Popover open={locationOpen} onOpenChange={setLocationOpen}>
+        <Popover
+          open={locationOpen}
+          onOpenChange={(open) =>
+            dispatchLocation({ type: open ? "opened" : "closed" })
+          }
+        >
           <PopoverTrigger
             render={<Button type="button" variant="ghost" className={CHIP} />}
           >

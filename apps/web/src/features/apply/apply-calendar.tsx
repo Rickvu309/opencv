@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -37,6 +37,13 @@ function matches(job: JobView, company: string, location: string) {
   return true
 }
 
+type AnchorAction =
+  { type: "stepped"; next: string } | { type: "today_chosen"; today: string }
+
+function anchorReducer(_anchor: string, action: AnchorAction) {
+  return action.type === "stepped" ? action.next : action.today
+}
+
 export function ApplyCalendar({
   span,
   onSpan,
@@ -50,7 +57,9 @@ export function ApplyCalendar({
   location: string
   showClosed: boolean
 }) {
-  const [anchor, setAnchor] = useState(() => zonedYmd(new Date()))
+  const [anchor, dispatchAnchor] = useReducer(anchorReducer, undefined, () =>
+    zonedYmd(new Date())
+  )
   const today = zonedYmd(new Date())
   const weeks = useMemo(() => monthWeeks(anchor), [anchor])
   const days = useMemo(
@@ -75,11 +84,13 @@ export function ApplyCalendar({
   )
   const unit = span === "week" ? "week" : "month"
   const step = (direction: 1 | -1) =>
-    setAnchor(
-      span === "week"
-        ? addDays(anchor, direction * 7)
-        : addMonths(anchor, direction)
-    )
+    dispatchAnchor({
+      type: "stepped",
+      next:
+        span === "week"
+          ? addDays(anchor, direction * 7)
+          : addMonths(anchor, direction),
+    })
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -113,7 +124,7 @@ export function ApplyCalendar({
             type="button"
             variant="outline"
             className="h-7 rounded-md bg-card px-2.5 text-[12.5px]"
-            onClick={() => setAnchor(today)}
+            onClick={() => dispatchAnchor({ type: "today_chosen", today })}
           >
             Today
           </Button>

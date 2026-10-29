@@ -1,7 +1,7 @@
 import { chatDetailSchema } from "@workspace/domain"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, renderHook, waitFor } from "@testing-library/react"
-import { createElement, useState, type ReactNode } from "react"
+import { createElement, useReducer, type ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
@@ -18,6 +18,13 @@ import { useCoachTurn } from "./use-coach-turn.ts"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const webSrc = path.join(here, "../..")
+
+function chatIdReducer(
+  _chatId: string | null,
+  action: { type: "active_chat_opened"; id: string }
+) {
+  return action.id
+}
 
 function read(rel: string) {
   return readFileSync(path.join(webSrc, rel), "utf8")
@@ -85,10 +92,10 @@ describe("useCoachTurn turn lifecycle", () => {
         createElement(QueryClientProvider, { client: queryClient }, children)
       const { result } = renderHook(
         () => {
-          const [chatId, setChatId] = useState<string | null>(null)
+          const [chatId, dispatch] = useReducer(chatIdReducer, null)
           return useCoachTurn({
             chatId,
-            setChatId,
+            setChatId: (id) => dispatch({ type: "active_chat_opened", id }),
             titleForCreate: (text) => text,
           })
         },
@@ -206,10 +213,10 @@ describe("useCoachTurn turn lifecycle", () => {
       createElement(QueryClientProvider, { client: queryClient }, children)
     const { result } = renderHook(
       () => {
-        const [chatId, setChatId] = useState<string | null>(null)
+        const [chatId, dispatch] = useReducer(chatIdReducer, null)
         return useCoachTurn({
           chatId,
-          setChatId,
+          setChatId: (id) => dispatch({ type: "active_chat_opened", id }),
           titleForCreate: (text) => text,
         })
       },

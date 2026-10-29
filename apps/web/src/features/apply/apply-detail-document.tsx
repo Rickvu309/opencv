@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { ArrowUp, Briefcase, ChevronDown, Plus } from "lucide-react"
 
 import type { ActivityFeedRow, JobDetail, JobId } from "@workspace/domain"
@@ -95,11 +95,35 @@ function Posting({ job }: { job: JobDetail }) {
   )
 }
 
+type PrepState = { open: boolean; adding: boolean; step: string }
+
+type PrepAction =
+  | { type: "toggled" }
+  | { type: "add_started" }
+  | { type: "step_typed"; value: string }
+  | { type: "step_added" }
+  | { type: "add_cancelled" }
+
+const PREP_START: PrepState = { open: true, adding: false, step: "" }
+
+function prepReducer(state: PrepState, action: PrepAction): PrepState {
+  switch (action.type) {
+    case "toggled":
+      return { ...state, open: !state.open }
+    case "add_started":
+      return { ...state, open: true, adding: true }
+    case "step_typed":
+      return { ...state, step: action.value }
+    case "step_added":
+      return { ...state, step: "" }
+    case "add_cancelled":
+      return { ...state, step: "", adding: false }
+  }
+}
+
 function InterviewPrep({ job }: { job: JobDetail }) {
   const run = useRunCommand()
-  const [open, setOpen] = useState(true)
-  const [adding, setAdding] = useState(false)
-  const [step, setStep] = useState("")
+  const [{ open, adding, step }, dispatch] = useReducer(prepReducer, PREP_START)
   const done = job.checklist.filter((item) => item.done).length
   const total = job.checklist.length
   const name =
@@ -112,7 +136,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           type="button"
           variant="ghost"
           aria-expanded={open}
-          onClick={() => setOpen(!open)}
+          onClick={() => dispatch({ type: "toggled" })}
           className="h-4 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground"
         >
           <ChevronDown
@@ -141,8 +165,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           aria-label="Add a step"
           className="-my-1 text-muted-foreground"
           onClick={() => {
-            setOpen(true)
-            setAdding(true)
+            dispatch({ type: "add_started" })
           }}
         >
           <Plus aria-hidden className="size-3.5" />
@@ -174,7 +197,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
                   jobId: job.id,
                   label,
                 }).then(() => {
-                  setStep("")
+                  dispatch({ type: "step_added" })
                 })
               }}
             >
@@ -188,11 +211,12 @@ function InterviewPrep({ job }: { job: JobDetail }) {
                 value={step}
                 placeholder="Add a step"
                 className="h-7 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:text-[13.5px] dark:bg-transparent"
-                onChange={(event) => setStep(event.target.value)}
+                onChange={(event) =>
+                  dispatch({ type: "step_typed", value: event.target.value })
+                }
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
-                    setStep("")
-                    setAdding(false)
+                    dispatch({ type: "add_cancelled" })
                   }
                 }}
               />
@@ -238,15 +262,21 @@ function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
   )
 }
 
+type NoteAction = { type: "typed"; value: string } | { type: "saved" }
+
+function noteReducer(_note: string, action: NoteAction) {
+  return action.type === "typed" ? action.value : ""
+}
+
 function NoteComposer({ jobId }: { jobId: JobId }) {
   const run = useRunCommand()
-  const [note, setNote] = useState("")
+  const [note, dispatch] = useReducer(noteReducer, "")
 
   function submit() {
     const body = note.trim()
     if (!body) return
     void run("job.addNote", { jobId, body }).then(() => {
-      setNote("")
+      dispatch({ type: "saved" })
     })
   }
 
@@ -267,7 +297,9 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
           "min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent",
           NOTE_PLACEHOLDER
         )}
-        onChange={(event) => setNote(event.target.value)}
+        onChange={(event) =>
+          dispatch({ type: "typed", value: event.target.value })
+        }
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault()

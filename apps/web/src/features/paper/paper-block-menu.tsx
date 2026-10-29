@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react"
+import { useReducer, type KeyboardEvent } from "react"
 import { GripVertical } from "lucide-react"
 import { blockEntry, type BlockType } from "@workspace/domain"
 
@@ -48,11 +48,14 @@ export function PaperBlockMenu({
   onAskCoach: () => void
   onDelete: () => void
 }) {
-  const [side, setSide] = useState<"top" | "bottom">("bottom")
+  const [side, dispatchSide] = useReducer(
+    (_: "top" | "bottom", measured: "top" | "bottom") => measured,
+    "bottom"
+  )
   const turns = blockEntry(type).turnInto
 
   function place(node: HTMLElement) {
-    setSide(openSide(node))
+    dispatchSide(openSide(node))
   }
 
   function onKeyDownCapture(event: KeyboardEvent<HTMLButtonElement>) {

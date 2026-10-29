@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useMemo, useReducer, useRef, useState } from "react"
+import { useCallback, useMemo, useReducer, useRef } from "react"
 import {
   appendCoachPart,
   parsePaperId,
@@ -70,6 +70,15 @@ type CoachStreamRun = {
   ) => SendError
 }
 
+type StepAction = { type: "cleared" } | { type: "reported"; label: string }
+
+function stepReducer(current: string | null, action: StepAction) {
+  if (action.type === "cleared") return null
+  return current?.split("\n").includes(action.label)
+    ? current
+    : [current, action.label].filter(Boolean).join("\n")
+}
+
 export function useCoachTurn({
   chatId,
   setChatId,
@@ -79,7 +88,7 @@ export function useCoachTurn({
 }: UseCoachTurnOptions) {
   const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(turnReducer, IDLE_TURN)
-  const [step, setStep] = useState<string | null>(null)
+  const [step, stepDispatch] = useReducer(stepReducer, null)
   const sendGeneration = useRef(0)
   const abortRef = useRef<AbortController | null>(null)
   const { mode } = useCoachMode()
@@ -180,7 +189,7 @@ export function useCoachTurn({
       const controller = new AbortController()
       abortRef.current = controller
       const stale = () => generation !== sendGeneration.current
-      setStep(null)
+      stepDispatch({ type: "cleared" })
       dispatch({ type: "start", kind, messages: prefix })
 
       let parts: ChatEntryPart[] = []
@@ -229,12 +238,7 @@ export function useCoachTurn({
       }
       const handlers: CoachStreamHandlers = {
         onStep({ label }) {
-          if (!stale())
-            setStep((current) =>
-              current?.split("\n").includes(label)
-                ? current
-                : [current, label].filter(Boolean).join("\n")
-            )
+          if (!stale()) stepDispatch({ type: "reported", label })
         },
         onTextDelta({ text }) {
           if (stale()) return

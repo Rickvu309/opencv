@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import { useLayoutEffect, useReducer, useRef, type ReactNode } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
 const A4_HEIGHT_FALLBACK_PX = 1123
@@ -43,10 +43,27 @@ type Props = {
   preview?: boolean
 }
 
+type CanvasState = { pageCount: number; pageHeight: number }
+
+function canvasReducer(
+  state: CanvasState,
+  action: CanvasState & { type: "measured" }
+): CanvasState {
+  if (
+    state.pageCount === action.pageCount &&
+    state.pageHeight === action.pageHeight
+  ) {
+    return state
+  }
+  return { pageCount: action.pageCount, pageHeight: action.pageHeight }
+}
+
 export function CvA4Canvas({ children, className, preview = false }: Props) {
   const contentRef = useRef<HTMLDivElement>(null)
-  const [pageCount, setPageCount] = useState(1)
-  const [pageHeight, setPageHeight] = useState(A4_HEIGHT_FALLBACK_PX)
+  const [{ pageCount, pageHeight }, dispatch] = useReducer(canvasReducer, {
+    pageCount: 1,
+    pageHeight: A4_HEIGHT_FALLBACK_PX,
+  })
 
   useLayoutEffect(() => {
     const el = contentRef.current
@@ -56,8 +73,11 @@ export function CvA4Canvas({ children, className, preview = false }: Props) {
 
     function measure() {
       const heightPx = readA4HeightPx(page ?? document.documentElement)
-      setPageHeight(heightPx)
-      setPageCount(Math.max(1, Math.ceil(node.scrollHeight / heightPx)))
+      dispatch({
+        type: "measured",
+        pageHeight: heightPx,
+        pageCount: Math.max(1, Math.ceil(node.scrollHeight / heightPx)),
+      })
     }
 
     measure()

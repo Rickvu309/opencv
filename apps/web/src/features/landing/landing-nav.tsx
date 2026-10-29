@@ -1,5 +1,5 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
-import { useEffect, useState } from "react"
+import { useEffect, useReducer } from "react"
 import { Link } from "@tanstack/react-router"
 
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
@@ -24,10 +24,13 @@ function pageHref(href: NavHref): Exclude<NavHref, `/#${string}`> | null {
 }
 
 export function LandingNav() {
-  const [scrolled, setScrolled] = useState(false)
+  const [scrolled, scrollChanged] = useReducer(
+    (_: boolean, scrolled: boolean) => scrolled,
+    false
+  )
 
   useEffect(() => {
-    const update = () => setScrolled(window.scrollY > 8)
+    const update = () => scrollChanged(window.scrollY > 8)
     update()
     window.addEventListener("scroll", update, { passive: true })
     return () => window.removeEventListener("scroll", update)

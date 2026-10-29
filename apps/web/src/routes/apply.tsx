@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import type { JobView } from "@workspace/domain"
@@ -25,6 +25,40 @@ import {
   ApplyHeader,
   ApplyToolbar,
 } from "@/features/apply/apply-toolbar.tsx"
+
+type ApplyState = {
+  filters: ApplyFilters
+  dialogOpen: boolean
+  showClosed: boolean
+}
+
+type ApplyAction =
+  | { type: "filters_changed"; filters: ApplyFilters }
+  | { type: "filters_cleared" }
+  | { type: "dialog_opened" }
+  | { type: "dialog_toggled"; open: boolean }
+  | { type: "closed_toggled"; show: boolean }
+
+const initialApplyState: ApplyState = {
+  filters: { company: "", location: "" },
+  dialogOpen: false,
+  showClosed: false,
+}
+
+function applyReducer(state: ApplyState, action: ApplyAction): ApplyState {
+  switch (action.type) {
+    case "filters_changed":
+      return { ...state, filters: action.filters }
+    case "filters_cleared":
+      return { ...state, filters: initialApplyState.filters }
+    case "dialog_opened":
+      return { ...state, dialogOpen: true }
+    case "dialog_toggled":
+      return { ...state, dialogOpen: action.open }
+    case "closed_toggled":
+      return { ...state, showClosed: action.show }
+  }
+}
 
 function matches(job: JobView, { company, location }: ApplyFilters) {
   const companyNeedle = company.trim().toLowerCase()
@@ -61,12 +95,10 @@ export function ApplyPage() {
     queryKey: jobListKey(),
     queryFn: listJobs,
   })
-  const [filters, setFilters] = useState<ApplyFilters>({
-    company: "",
-    location: "",
-  })
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [showClosed, setShowClosed] = useState(false)
+  const [{ filters, dialogOpen, showClosed }, dispatch] = useReducer(
+    applyReducer,
+    initialApplyState
+  )
   const filtering = activeFilterCount(filters) > 0
   const filtered = (jobs.data ?? []).filter((job) => matches(job, filters))
   const empty =
@@ -85,7 +117,7 @@ export function ApplyPage() {
       if (event.metaKey || event.ctrlKey || event.altKey) return
       if (typingIn(event.target)) return
       event.preventDefault()
-      setDialogOpen(true)
+      dispatch({ type: "dialog_opened" })
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
@@ -105,14 +137,21 @@ export function ApplyPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-card">
-      <ApplyHeader onNewJob={() => setDialogOpen(true)} />
+      <ApplyHeader onNewJob={() => dispatch({ type: "dialog_opened" })} />
       <ApplyToolbar
         view={view}
         onView={setView}
         filters={filters}
-        onFilters={setFilters}
+        onFilters={(next) =>
+          dispatch({ type: "filters_changed", filters: next })
+        }
       />
-      <ActiveFilters filters={filters} onFilters={setFilters} />
+      <ActiveFilters
+        filters={filters}
+        onFilters={(next) =>
+          dispatch({ type: "filters_changed", filters: next })
+        }
+      />
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
         {jobs.isLoading ? (
           <p role="status" className="px-5 text-sm">
@@ -130,19 +169,19 @@ export function ApplyPage() {
         {empty ? (
           <ApplyEmpty
             dialogOpen={dialogOpen}
-            onAdd={() => setDialogOpen(true)}
+            onAdd={() => dispatch({ type: "dialog_opened" })}
           />
         ) : null}
         {noMatch ? (
           <ApplyNoResults
-            onClear={() => setFilters({ company: "", location: "" })}
+            onClear={() => dispatch({ type: "filters_cleared" })}
           />
         ) : null}
         {ready && view === "board" ? (
           <ApplyBoard
             jobs={filtered}
             showClosed={showClosed}
-            onShowClosed={setShowClosed}
+            onShowClosed={(show) => dispatch({ type: "closed_toggled", show })}
           />
         ) : null}
         {ready && view === "list" ? (
@@ -163,7 +202,10 @@ export function ApplyPage() {
           />
         ) : null}
       </div>
-      <NewJobDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <NewJobDialog
+        open={dialogOpen}
+        onOpenChange={(open) => dispatch({ type: "dialog_toggled", open })}
+      />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { createElement, useState } from "react"
+import { createElement, useReducer } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   act,
@@ -145,7 +145,7 @@ describe("ChatView steps", () => {
 
   it("shows Undone and the replacement step after an undo", async () => {
     function Harness() {
-      const [undone, setUndone] = useState(false)
+      const [undone, markUndone] = useReducer(() => true, false)
       const parts = undone
         ? [
             { type: "text" as const, text: "Moved it." },
@@ -162,7 +162,7 @@ describe("ChatView steps", () => {
       return createElement(ChatView, {
         messages: [coachTurn(parts)],
         onUndo: async () => {
-          setUndone(true)
+          markUndone()
         },
       })
     }

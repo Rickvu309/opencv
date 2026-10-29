@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react"
+import { useEffect, useId, useReducer, useRef, type ReactNode } from "react"
 
 /*
  * Layer Stack – an interactive card illustration, in a single self-contained file.
@@ -50,6 +50,27 @@ const THICK = 9 // layer thickness
 const CX = 168 // stack centre
 const TOP = 109 // y of the top layer's back corner when nothing is lifted
 
+type StackState = { active: number; paused: boolean }
+
+type StackAction =
+  | { type: "advanced"; length: number }
+  | { type: "picked"; index: number }
+  | { type: "paused" }
+  | { type: "resumed" }
+
+function stackReducer(state: StackState, action: StackAction): StackState {
+  switch (action.type) {
+    case "advanced":
+      return { ...state, active: (state.active + 1) % action.length }
+    case "picked":
+      return { ...state, active: action.index }
+    case "paused":
+      return { ...state, paused: true }
+    case "resumed":
+      return { ...state, paused: false }
+  }
+}
+
 export function LayerStack({
   items = defaultItems,
   defaultIndex = 0,
@@ -59,8 +80,14 @@ export function LayerStack({
 }: LayerStackProps) {
   const id = "ui-lyr" + useId().replace(/[^a-zA-Z0-9_-]/g, "")
   const list = items.slice(0, 5)
-  const [active, setActive] = useState(Math.min(defaultIndex, list.length - 1))
-  const [paused, setPaused] = useState(false)
+  const [{ active, paused }, dispatch] = useReducer(
+    stackReducer,
+    undefined,
+    () => ({
+      active: Math.min(defaultIndex, list.length - 1),
+      paused: false,
+    })
+  )
   const touched = useRef(false)
 
   // Step through the entries on its own until someone interacts; never with reduced motion
@@ -68,7 +95,7 @@ export function LayerStack({
     if (paused || touched.current || list.length < 2) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     const timer = window.setInterval(
-      () => setActive((i) => (i + 1) % list.length),
+      () => dispatch({ type: "advanced", length: list.length }),
       interval
     )
     return () => window.clearInterval(timer)
@@ -76,7 +103,7 @@ export function LayerStack({
 
   const pick = (i: number) => {
     touched.current = true
-    setActive(i)
+    dispatch({ type: "picked", index: i })
     onChange?.(i)
   }
 
@@ -91,10 +118,10 @@ export function LayerStack({
   return (
     <div
       className={["ui-lyr", className].filter(Boolean).join(" ")}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
+      onMouseEnter={() => dispatch({ type: "paused" })}
+      onMouseLeave={() => dispatch({ type: "resumed" })}
+      onFocus={() => dispatch({ type: "paused" })}
+      onBlur={() => dispatch({ type: "resumed" })}
     >
       {/* React 19 hoists this into <head> once, no matter how many instances render */}
       <style href="ui-layer-stack" precedence="default">

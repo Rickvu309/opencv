@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type ComponentType } from "react"
+import { useLayoutEffect, useReducer, type ComponentType } from "react"
 
 import { LANDING_FIGURE_LABELS, type LandingFigureId } from "../landing-copy.ts"
 import { ApplyBoardAnimated } from "./oc/apply-board.tsx"
@@ -25,12 +25,15 @@ const FIGURES = {
 export function LandingFigure({ id }: { id: LandingFigureId }) {
   const Figure = FIGURES[id]
   const [ref, onScreen] = useOnScreen<HTMLDivElement>()
-  const [scale, setScale] = useState(0)
+  const [scale, measured] = useReducer(
+    (_: number, width: number) => width / FRAME_WIDTH,
+    0
+  )
 
   useLayoutEffect(() => {
     const frame = ref.current
     if (!frame) return
-    const measure = () => setScale(frame.clientWidth / FRAME_WIDTH)
+    const measure = () => measured(frame.clientWidth)
     measure()
     if (typeof ResizeObserver === "undefined") return
     const observer = new ResizeObserver(measure)

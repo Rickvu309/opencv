@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
 import type { BlockType, CvBlock, CvSectionKind } from "@workspace/domain"
 
 import {
@@ -8,6 +8,10 @@ import {
 } from "./paper-block-entries.tsx"
 import { BlockField, type BlockFieldProps } from "./paper-block-field.tsx"
 import { newId } from "./paper-block-ops.ts"
+
+function keepId(id: string) {
+  return id
+}
 
 function textLabel(kind: CvSectionKind, type: "text" | "heading") {
   if (kind === "summary" && type === "heading") return "Headline"
@@ -55,7 +59,7 @@ function ListBlockField({
   onCommit,
   onSlash,
 }: BlockFieldProps) {
-  const [draftId] = useState(newId)
+  const [draftId] = useReducer(keepId, undefined, newId)
   if (block.type !== "bulleted-list" && block.type !== "numbered-list") {
     return null
   }

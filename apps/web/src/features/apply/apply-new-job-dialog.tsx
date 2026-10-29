@@ -1,6 +1,6 @@
-import { useRef, useState } from "react"
+import { useReducer, useRef } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { parseJobId, type JobPreview, type JobStage } from "@workspace/domain"
+import { parseJobId, type JobStage } from "@workspace/domain"
 import {
   ChevronRight,
   ClipboardPaste,
@@ -33,31 +33,14 @@ import {
   PLACEHOLDER_CARD,
   PLACEHOLDER_SECONDARY,
 } from "./apply-new-job-parts.tsx"
+import {
+  DIALOG_START,
+  dialogReducer,
+  type Draft,
+} from "./apply-new-job-dialog.reducer.ts"
 import { NewJobProperties } from "./apply-new-job-properties.tsx"
 
-const COMPANY_REQUIRED = "Add the company name to save this job."
-const TITLE_REQUIRED = "Add the role title to save this job."
 const UNREADABLE = "Can't read this link. Paste the job text below."
-
-type Draft = {
-  url: string
-  title: string
-  company: string
-  location: string
-  description: string
-  stage: JobStage
-  deadline: string
-}
-
-const EMPTY: Draft = {
-  url: "",
-  title: "",
-  company: "",
-  location: "",
-  description: "",
-  stage: "saved",
-  deadline: "",
-}
 
 function asStage(value: string | undefined): JobStage | null {
   if (!value) return null
@@ -91,28 +74,21 @@ export function NewJobDialog({
   const titleRef = useRef<HTMLInputElement>(null)
   const companyRef = useRef<HTMLInputElement>(null)
   const linkRef = useRef<HTMLInputElement>(null)
-  const [draft, setDraft] = useState<Draft>(EMPTY)
-  const [preview, setPreview] = useState<JobPreview | null>(null)
-  const [titleError, setTitleError] = useState("")
-  const [companyError, setCompanyError] = useState("")
-  const [dateError, setDateError] = useState("")
-  const [busy, setBusy] = useState(false)
+  const [
+    { draft, preview, titleError, companyError, dateError, busy },
+    dispatch,
+  ] = useReducer(dialogReducer, DIALOG_START)
 
-  function patch(next: Partial<Draft>) {
-    setDraft((current) => ({ ...current, ...next }))
+  function patch(fields: Partial<Draft>) {
+    dispatch({ type: "fields_edited", fields })
   }
 
   function reset() {
-    setDraft(EMPTY)
-    setPreview(null)
-    setTitleError("")
-    setCompanyError("")
-    setDateError("")
+    dispatch({ type: "closed" })
   }
 
   async function runPreview(input: { url?: string; text?: string }) {
     const result = await previewJob(input)
-    setPreview(result)
     const next: Partial<Draft> = {}
     if (result.status !== "unreadable") {
       if (result.fields.title) next.title = result.fields.title
@@ -122,13 +98,8 @@ export function NewJobDialog({
     if (result.status === "filled" && result.fields.description) {
       next.description = result.fields.description
     }
-    if (Object.keys(next).length > 0) patch(next)
-    if (result.status === "company-missing") {
-      setCompanyError(COMPANY_REQUIRED)
-      companyRef.current?.focus()
-    } else {
-      setCompanyError("")
-    }
+    dispatch({ type: "preview_read", preview: result, fields: next })
+    if (result.status === "company-missing") companyRef.current?.focus()
     return result
   }
 
@@ -153,18 +124,20 @@ export function NewJobDialog({
   async function save(anyway = false) {
     const title = draft.title.trim()
     const company = draft.company.trim()
-    setTitleError(title ? "" : TITLE_REQUIRED)
-    setCompanyError(company ? "" : COMPANY_REQUIRED)
+    dispatch({
+      type: "save_checked",
+      titleMissing: !title,
+      companyMissing: !company,
+    })
     if (!title || !company) {
       ;(title ? companyRef : titleRef).current?.focus()
       return
     }
     if (draft.deadline && !/^\d{4}-\d{2}-\d{2}$/.test(draft.deadline)) {
-      setDateError("Use a real date.")
+      dispatch({ type: "date_rejected" })
       return
     }
-    setDateError("")
-    setBusy(true)
+    dispatch({ type: "save_started" })
     try {
       const created = await run("job.create", {
         title,
@@ -185,21 +158,24 @@ export function NewJobDialog({
         error.code === "DUPLICATE_JOB" &&
         error.jobId
       ) {
-        setPreview({
-          status: "duplicate",
-          jobId: parseJobId(error.jobId),
-          stage: asStage(error.stage) ?? "saved",
-          fields: { title, company, location: draft.location },
+        dispatch({
+          type: "duplicate_found",
+          preview: {
+            status: "duplicate",
+            jobId: parseJobId(error.jobId),
+            stage: asStage(error.stage) ?? "saved",
+            fields: { title, company, location: draft.location },
+          },
         })
       } else if (
         error instanceof ApiError &&
         error.code === "COMPANY_REQUIRED"
       ) {
-        setCompanyError(COMPANY_REQUIRED)
+        dispatch({ type: "company_required" })
         companyRef.current?.focus()
       }
     } finally {
-      setBusy(false)
+      dispatch({ type: "save_ended" })
     }
   }
 
@@ -282,8 +258,7 @@ export function NewJobDialog({
                 aria-label="Clear link"
                 className="size-6 rounded-md text-muted-foreground"
                 onClick={() => {
-                  patch({ url: "" })
-                  setPreview(null)
+                  dispatch({ type: "link_cleared" })
                   linkRef.current?.focus()
                 }}
               >
@@ -336,8 +311,7 @@ export function NewJobDialog({
                 aria-invalid={titleError ? true : undefined}
                 className={`${INLINE_FIELD} mt-5 text-xl leading-6 font-semibold tracking-[-0.3px] text-foreground md:text-xl ${PLACEHOLDER_CARD}`}
                 onChange={(event) => {
-                  patch({ title: event.target.value })
-                  if (event.target.value.trim()) setTitleError("")
+                  dispatch({ type: "title_typed", value: event.target.value })
                 }}
               />
               {titleError ? <Hint>{titleError}</Hint> : null}
@@ -352,8 +326,7 @@ export function NewJobDialog({
                 }
                 className={`${INLINE_FIELD} mt-1.5 text-[15px] leading-[18px] text-muted-foreground md:text-[15px] ${PLACEHOLDER_CARD}`}
                 onChange={(event) => {
-                  patch({ company: event.target.value })
-                  if (event.target.value.trim()) setCompanyError("")
+                  dispatch({ type: "company_typed", value: event.target.value })
                 }}
               />
               {companyError ? (

@@ -1,6 +1,5 @@
-import { useEffect, useEffectEvent, useState } from "react"
+import { useEffect, useEffectEvent, useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
-import type { CoachContextItem } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -24,6 +23,11 @@ import { queryKey } from "@/lib/contract-client.ts"
 import { CoachDock } from "./coach-dock.tsx"
 import { ChatView } from "./chat-view.tsx"
 import { useChatStore } from "./use-chat-store.ts"
+import {
+  initialWorkspaceState,
+  workspaceReducer,
+} from "./coach-workspace.reducer.ts"
+import type { Attachment } from "./coach-workspace.reducer.ts"
 
 const STARTERS = [
   "Review my CV",
@@ -47,9 +51,6 @@ const MORE_STARTERS = [
   "Set a weekly goal",
 ]
 
-type Attachment = CoachContextItem & { label: string }
-type Picker = "paper" | "job" | "link" | null
-
 function historyGroup(date: string) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -72,14 +73,22 @@ export function CoachWorkspace({
 }) {
   const store = useChatStore()
   const { activeChatId, messages, phase, error, step, chats, openChat } = store
-  const [draft, setDraft] = useState(() => takeCoachDraft() ?? "")
-  const [moreIdeas, setMoreIdeas] = useState(false)
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [search, setSearch] = useState("")
-  const [picker, setPicker] = useState<Picker>(null)
-  const [attachments, setAttachments] = useState<Attachment[]>([])
-  const [link, setLink] = useState("")
-  const [linkError, setLinkError] = useState("")
+  const [
+    {
+      draft,
+      moreIdeas,
+      historyOpen,
+      search,
+      picker,
+      attachments,
+      link,
+      linkError,
+      draftChatId,
+    },
+    dispatch,
+  ] = useReducer(workspaceReducer, undefined, () =>
+    initialWorkspaceState(takeCoachDraft() ?? "", activeChatId)
+  )
   const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
   const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
   const papers = useQuery({
@@ -107,17 +116,17 @@ export function CoachWorkspace({
   useEffect(() => {
     if (chatId) openRequestedChat(chatId)
   }, [chatId])
-  useEffect(() => subscribeCoachDraft(setDraft), [])
-  const [draftChatId, setDraftChatId] = useState(activeChatId)
+  useEffect(
+    () =>
+      subscribeCoachDraft((value) => dispatch({ type: "draft_typed", value })),
+    []
+  )
   if (draftChatId !== activeChatId) {
-    const seeded = takeCoachDraft()
-    setDraftChatId(activeChatId)
-    if (draftChatId !== null) {
-      setDraft(seeded ?? "")
-      setAttachments([])
-    } else if (seeded) {
-      setDraft(seeded)
-    }
+    dispatch({
+      type: "active_chat_changed",
+      chatId: activeChatId,
+      seeded: takeCoachDraft(),
+    })
   }
 
   function send(text = draft) {
@@ -127,27 +136,23 @@ export function CoachWorkspace({
         context: attachments.map(({ kind, id }) => ({ kind, id })),
       })
     )
-      setDraft("")
+      dispatch({ type: "draft_sent" })
   }
 
   function attach(item: Attachment) {
-    setAttachments((current) =>
-      current.some((a) => a.kind === item.kind && a.id === item.id)
-        ? current
-        : [...current, item].slice(0, 8)
-    )
-    setPicker(null)
+    dispatch({ type: "attached", item })
   }
 
   function attachLink() {
     try {
       const url = new URL(link)
       if (!["http:", "https:"].includes(url.protocol)) throw new Error()
-      attach({ kind: "link", id: url.href, label: url.hostname })
-      setLink("")
-      setLinkError("")
+      dispatch({
+        type: "link_attached",
+        item: { kind: "link", id: url.href, label: url.hostname },
+      })
     } catch {
-      setLinkError("Paste a full link.")
+      dispatch({ type: "link_rejected" })
     }
   }
 
@@ -159,7 +164,7 @@ export function CoachWorkspace({
   const coachDock = (
     <CoachDock
       draft={draft}
-      setDraft={setDraft}
+      setDraft={(value) => dispatch({ type: "draft_typed", value })}
       onSend={() => send()}
       onStop={store.stop}
       turnActive={active}
@@ -168,9 +173,11 @@ export function CoachWorkspace({
         capped ? `Coach is back at ${resetTime}` : "Ask Coach anything"
       }
       menuPlacement={showHome ? "below" : "above"}
-      onAttachFromPaper={() => setPicker("paper")}
-      onAttachJob={() => setPicker("job")}
-      onAttachLink={() => setPicker("link")}
+      onAttachFromPaper={() =>
+        dispatch({ type: "picker_opened", picker: "paper" })
+      }
+      onAttachJob={() => dispatch({ type: "picker_opened", picker: "job" })}
+      onAttachLink={() => dispatch({ type: "picker_opened", picker: "link" })}
       primaryAction={primaryAction}
     />
   )
@@ -183,7 +190,7 @@ export function CoachWorkspace({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setHistoryOpen(true)}
+            onClick={() => dispatch({ type: "history_opened" })}
           >
             History
           </Button>
@@ -203,7 +210,7 @@ export function CoachWorkspace({
               <Button
                 variant="ghost"
                 className="mx-auto h-10 rounded-full px-4"
-                onClick={() => setMoreIdeas((value) => !value)}
+                onClick={() => dispatch({ type: "more_ideas_toggled" })}
               >
                 More ideas
               </Button>
@@ -215,7 +222,9 @@ export function CoachWorkspace({
                       variant="outline"
                       className="h-10 rounded-full px-4 text-left whitespace-normal"
                       disabled={!enabled || capped}
-                      onClick={() => setDraft(starter)}
+                      onClick={() =>
+                        dispatch({ type: "draft_typed", value: starter })
+                      }
                     >
                       {starter}
                     </Button>
@@ -252,9 +261,7 @@ export function CoachWorkspace({
                 key={`${item.kind}:${item.id}`}
                 variant="secondary"
                 size="xs"
-                onClick={() =>
-                  setAttachments((current) => current.filter((a) => a !== item))
-                }
+                onClick={() => dispatch({ type: "attachment_removed", item })}
                 aria-label={`Remove ${item.label}`}
               >
                 {item.label} ×
@@ -300,7 +307,12 @@ export function CoachWorkspace({
         ) : null}
         {!showHome ? coachDock : null}
       </div>
-      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+      <Dialog
+        open={historyOpen}
+        onOpenChange={(open) =>
+          dispatch({ type: "history_open_changed", open })
+        }
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chat history</DialogTitle>
@@ -312,7 +324,9 @@ export function CoachWorkspace({
             aria-label="Search chat history"
             placeholder="Search chats"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) =>
+              dispatch({ type: "search_typed", value: event.target.value })
+            }
           />
           <div className="max-h-96 space-y-4 overflow-auto">
             {groups.map((group) => {
@@ -331,7 +345,7 @@ export function CoachWorkspace({
                       className="h-auto w-full justify-start text-left whitespace-normal"
                       onClick={() => {
                         openChat(chat.id)
-                        setHistoryOpen(false)
+                        dispatch({ type: "history_open_changed", open: false })
                       }}
                     >
                       {chat.title}
@@ -349,7 +363,7 @@ export function CoachWorkspace({
       <Dialog
         open={picker !== null}
         onOpenChange={(open) => {
-          if (!open) setPicker(null)
+          if (!open) dispatch({ type: "picker_closed" })
         }}
       >
         <DialogContent>
@@ -373,7 +387,9 @@ export function CoachWorkspace({
                 aria-label="Link URL"
                 placeholder="https://…"
                 value={link}
-                onChange={(event) => setLink(event.target.value)}
+                onChange={(event) =>
+                  dispatch({ type: "link_typed", value: event.target.value })
+                }
               />
               {linkError ? (
                 <p role="alert" className="text-sm text-destructive">

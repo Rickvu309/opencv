@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useReducer, type FormEvent } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { Brand } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
@@ -19,10 +19,12 @@ import {
 } from "./auth-copy.ts"
 import { CodeInput } from "./code-input.tsx"
 import googleG from "./google-g.svg?url"
+import {
+  initSignInState,
+  signInReducer,
+  type Notice,
+} from "./sign-in-screen.reducer.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
-
-type Step = "email" | "code" | "verifying"
-type Notice = "email" | "bad" | "locked" | "rate" | "send" | null
 
 type AuthError = {
   code?: string
@@ -62,16 +64,23 @@ export function SignInScreen() {
     select: (state) =>
       state.location.search as { email?: string; error?: string },
   })
-  const [language, setLanguage] = useState(readLanguage)
-  const [email, setEmail] = useState(search.email ?? "")
-  const [step, setStep] = useState<Step>(search.email ? "code" : "email")
-  const [code, setCode] = useState("")
-  const [notice, setNotice] = useState<Notice>(null)
-  const [googleNotice, setGoogleNotice] = useState(search.error === "google")
-  const [google, setGoogle] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [seconds, setSeconds] = useState(search.email ? 60 : 0)
-  const [focusNonce, setFocusNonce] = useState(search.email ? 1 : 0)
+  const [
+    {
+      language,
+      email,
+      step,
+      code,
+      notice,
+      googleNotice,
+      google,
+      sending,
+      seconds,
+      focusNonce,
+    },
+    dispatch,
+  ] = useReducer(signInReducer, undefined, () =>
+    initSignInState(search, readLanguage())
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -82,10 +91,11 @@ export function SignInScreen() {
         return body.google === true
       })
       .then((enabled) => {
-        if (!cancelled) setGoogle(enabled)
+        if (!cancelled) dispatch({ type: "google_config_loaded", enabled })
       })
       .catch(() => {
-        if (!cancelled) setGoogle(false)
+        if (!cancelled)
+          dispatch({ type: "google_config_loaded", enabled: false })
       })
     return () => {
       cancelled = true
@@ -95,39 +105,34 @@ export function SignInScreen() {
   useEffect(() => {
     if (step !== "code" || seconds <= 0) return
     const timer = window.setInterval(() => {
-      setSeconds((current) => (current <= 1 ? 0 : current - 1))
+      dispatch({ type: "resend_ticked" })
     }, 1000)
     return () => window.clearInterval(timer)
   }, [step, seconds])
 
   function chooseLanguage(value: "en" | "vi") {
-    setLanguage(value)
+    dispatch({ type: "language_chosen", language: value })
     storeLanguage(value)
   }
 
   async function sendCode(address: string) {
-    setSending(true)
-    setNotice(null)
+    dispatch({ type: "send_started" })
     try {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email: address,
         type: "sign-in",
       })
       if (result.error) {
-        setNotice(noticeForSend(result.error))
+        dispatch({ type: "send_rejected", notice: noticeForSend(result.error) })
         return false
       }
-      setEmail(address)
-      setCode("")
-      setStep("code")
-      setSeconds(60)
-      setFocusNonce((nonce) => nonce + 1)
+      dispatch({ type: "send_succeeded", address })
       return true
     } catch {
-      setNotice("send")
+      dispatch({ type: "send_rejected", notice: "send" })
       return false
     } finally {
-      setSending(false)
+      dispatch({ type: "send_settled" })
     }
   }
 
@@ -135,7 +140,7 @@ export function SignInScreen() {
     event.preventDefault()
     const address = email.trim()
     if (!EMAIL_PATTERN.test(address)) {
-      setNotice("email")
+      dispatch({ type: "email_invalid" })
       return
     }
     await sendCode(address)
@@ -143,8 +148,7 @@ export function SignInScreen() {
 
   async function onComplete(otp: string) {
     if (step === "verifying") return
-    setStep("verifying")
-    setNotice(null)
+    dispatch({ type: "verify_started" })
     try {
       const result = await authClient.signIn.emailOtp({
         email: email.trim(),
@@ -152,24 +156,17 @@ export function SignInScreen() {
       })
       if (result.error) {
         const next = noticeForCode(result.error)
-        setNotice(next)
-        setCode("")
-        setStep("code")
-        setSeconds(next === "bad" || next === "locked" ? 0 : seconds)
-        setFocusNonce((nonce) => nonce + 1)
+        dispatch({ type: "verify_rejected", notice: next })
         return
       }
       await navigate({ href: redirectTo ?? "/" })
     } catch {
-      setNotice("send")
-      setCode("")
-      setStep("code")
-      setFocusNonce((nonce) => nonce + 1)
+      dispatch({ type: "verify_failed" })
     }
   }
 
   async function onGoogle() {
-    setGoogleNotice(false)
+    dispatch({ type: "google_started" })
     const path = redirectTo ?? "/"
     const callbackURL = new URL(path, window.location.origin).href
     const result = await authClient.signIn.social({
@@ -179,7 +176,7 @@ export function SignInScreen() {
       errorCallbackURL: new URL("/sign-in?error=google", window.location.origin)
         .href,
     })
-    if (result.error) setGoogleNotice(true)
+    if (result.error) dispatch({ type: "google_failed" })
   }
 
   const inbox = openEmailHref(email)
@@ -240,7 +237,12 @@ export function SignInScreen() {
               autoComplete="email"
               placeholder={AUTH_COPY.emailPlaceholder}
               value={email}
-              onChange={(event) => setEmail(event.currentTarget.value)}
+              onChange={(event) =>
+                dispatch({
+                  type: "email_typed",
+                  value: event.currentTarget.value,
+                })
+              }
               className="h-[46px] rounded-[10px] px-3.5 text-[15px] md:text-[15px]"
             />
           </div>
@@ -276,7 +278,7 @@ export function SignInScreen() {
               value={code}
               disabled={step === "verifying"}
               focusNonce={focusNonce}
-              onChange={setCode}
+              onChange={(value) => dispatch({ type: "code_typed", value })}
               onComplete={(otp) => void onComplete(otp)}
             />
           </div>
@@ -332,10 +334,7 @@ export function SignInScreen() {
             variant="ghost"
             className="h-auto px-1 py-0 text-sm font-medium text-muted-foreground [grid-area:change]"
             onClick={() => {
-              setStep("email")
-              setNotice(null)
-              setCode("")
-              setSeconds(0)
+              dispatch({ type: "email_change_requested" })
             }}
           >
             {AUTH_COPY.change}

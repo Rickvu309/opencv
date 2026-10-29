@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
@@ -43,6 +43,12 @@ const MODE_SEGMENTS = COACH_MODE_OPTIONS.map(({ id, label }) => ({
   label: id === "free" ? label : `${label} · Pro`,
 }))
 
+type MenuAction = { type: "opened" } | { type: "closed" }
+
+function menuReducer(_open: boolean, action: MenuAction) {
+  return action.type === "opened"
+}
+
 type Props = {
   draft: string
   setDraft: (value: string) => void
@@ -76,13 +82,13 @@ export function CoachDock({
   primaryAction = false,
 }: Props) {
   const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpen, menuDispatch] = useReducer(menuReducer, false)
   const { mode, setMode, plan } = useCoachMode()
   const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
   const canSend = draft.trim().length > 0 && !disabled
 
   function handleMenuAction(id: MenuId) {
-    setMenuOpen(false)
+    menuDispatch({ type: "closed" })
     if (id === "job") {
       if (onAttachJob) onAttachJob()
       else void navigate({ to: SURFACE_PATHS.apply })
@@ -96,7 +102,12 @@ export function CoachDock({
 
   const tools = (
     <>
-      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+      <DropdownMenu
+        open={menuOpen}
+        onOpenChange={(open) =>
+          menuDispatch({ type: open ? "opened" : "closed" })
+        }
+      >
         <DropdownMenuTrigger
           render={
             <InputGroupButton

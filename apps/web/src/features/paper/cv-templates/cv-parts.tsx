@@ -7,7 +7,7 @@ import {
   useContext,
   useEffect,
   useRef,
-  useState,
+  useReducer,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -445,6 +445,16 @@ function PhotoSlot({
   )
 }
 
+type PhotoErrorAction =
+  { type: "error_shown"; message: string } | { type: "error_cleared" }
+
+function photoErrorReducer(
+  _: string | undefined,
+  action: PhotoErrorAction
+): string | undefined {
+  return action.type === "error_shown" ? action.message : undefined
+}
+
 function CvPhotoDisplay({
   url,
   name,
@@ -454,7 +464,7 @@ function CvPhotoDisplay({
   name?: string
   shareToken?: string
 }) {
-  const [error, setError] = useState<string>()
+  const [error, dispatchError] = useReducer(photoErrorReducer, undefined)
   return (
     <PhotoSlot
       src={resolvePhotoSrc(url, shareToken)}
@@ -462,7 +472,10 @@ function CvPhotoDisplay({
       name={name}
       error={error}
       onPick={(file) => {
-        setError(cvPhotoRejection(file) ?? "Open this CV to add a photo.")
+        dispatchError({
+          type: "error_shown",
+          message: cvPhotoRejection(file) ?? "Open this CV to add a photo.",
+        })
       }}
     />
   )
@@ -487,7 +500,7 @@ function CvPhotoUploader({
 }) {
   const run = useRunCommand()
   const queryClient = useQueryClient()
-  const [error, setError] = useState<string>()
+  const [error, dispatchError] = useReducer(photoErrorReducer, undefined)
 
   function publish(ref: string | undefined, version: number) {
     if (notePhoto) notePhoto(ref, version)
@@ -508,21 +521,23 @@ function CvPhotoUploader({
         }
       }
     } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Could not undo the photo. Try again."
-      )
+      dispatchError({
+        type: "error_shown",
+        message:
+          caught instanceof Error
+            ? caught.message
+            : "Could not undo the photo. Try again.",
+      })
     }
   }
 
   async function onPick(file: File) {
     const rejection = cvPhotoRejection(file)
     if (rejection) {
-      setError(rejection)
+      dispatchError({ type: "error_shown", message: rejection })
       return
     }
-    setError(undefined)
+    dispatchError({ type: "error_cleared" })
     let uploadedId: FileId | undefined
     try {
       await beforePhoto?.()
@@ -548,11 +563,13 @@ function CvPhotoUploader({
           // The attach error is the one to show. This delete removes the orphan row.
         }
       }
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Could not add the photo. Try again."
-      )
+      dispatchError({
+        type: "error_shown",
+        message:
+          caught instanceof Error
+            ? caught.message
+            : "Could not add the photo. Try again.",
+      })
     }
   }
 

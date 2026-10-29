@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useReducer, useRef } from "react"
 import { keywordGap, type JobView, type PaperView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -12,6 +12,7 @@ import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
+import { letterReducer } from "./paper-letter.reducer.ts"
 import { PaperLetterArticle } from "./paper-letter-article.tsx"
 import { editorEditedLabel } from "./paper-templates.ts"
 
@@ -63,14 +64,14 @@ export function PaperLetterEditor({
   const editorRef = useRef<HTMLDivElement>(null)
   const dirtyRef = useRef(false)
   const inputCountRef = useRef(0)
-  const [markdown, setMarkdown] = useState(markdownOf(doc.document))
-  const [updatedAt, setUpdatedAt] = useState(doc.updatedAt)
-  const [hiddenGap, setHiddenGap] = useState(false)
-  const [conflict, setConflict] = useState(false)
-  const [printJob, setPrintJob] = useState<{
-    id: number
-    title: string
-  } | null>(null)
+  const [{ markdown, updatedAt, hiddenGap, conflict, printJob }, dispatch] =
+    useReducer(letterReducer, {
+      markdown: markdownOf(doc.document),
+      updatedAt: doc.updatedAt,
+      hiddenGap: false,
+      conflict: false,
+      printJob: null,
+    })
   const { schedule, adopt, versionRef } = usePaperAutosave<string>({
     docId: doc.id,
     initialVersion: doc.contentVersion,
@@ -78,11 +79,10 @@ export function PaperLetterEditor({
     readInputEpoch: () => inputCountRef.current,
     onSaved: (saved, inputEpoch) => {
       if (inputEpoch === inputCountRef.current) dirtyRef.current = false
-      setUpdatedAt(new Date().toISOString())
-      setConflict(false)
+      dispatch({ type: "saved", at: new Date().toISOString() })
       queryClient.setQueryData(paperGetKey(doc.id), saved)
     },
-    onConflict: () => setConflict(true),
+    onConflict: () => dispatch({ type: "conflict_detected" }),
     onError: (error) => {
       toast(
         error instanceof Error ? error.message : "Could not save. Try again."
@@ -102,7 +102,7 @@ export function PaperLetterEditor({
     inputCountRef.current += 1
     dirtyRef.current = true
     caretRef.current = node ? caretOffset(node) : null
-    setMarkdown(next)
+    dispatch({ type: "letter_typed", markdown: next })
     scheduleRef.current(next)
   }, [])
   const gap = hiddenGap
@@ -117,12 +117,14 @@ export function PaperLetterEditor({
     if (doc.contentVersion === versionRef.current && next === markdown) return
     caretRef.current = null
     adoptRef.current(doc.contentVersion)
-    setMarkdown(next)
+    dispatch({ type: "letter_synced", markdown: next })
   }, [doc, markdown, versionRef])
 
   useEffect(() => {
     if (!printJob) return
-    return printPaper(printJob.title, () => setPrintJob(null))
+    return printPaper(printJob.title, () =>
+      dispatch({ type: "print_finished" })
+    )
   }, [printJob])
 
   useEffect(() => {
@@ -143,14 +145,16 @@ export function PaperLetterEditor({
       caretRef.current = null
       adopt(next.contentVersion)
       queryClient.setQueryData(paperGetKey(doc.id), next)
-      setMarkdown(text)
       const node = editorRef.current
       if (node) {
         node.textContent = text
         if (document.activeElement === node) placeCaret(node, text.length)
       }
-      setUpdatedAt(next.updatedAt)
-      setConflict(false)
+      dispatch({
+        type: "letter_reloaded",
+        markdown: text,
+        updatedAt: next.updatedAt,
+      })
     } catch (error) {
       toast(
         error instanceof Error
@@ -165,7 +169,7 @@ export function PaperLetterEditor({
     const next = markdown.includes(gap.keyword)
       ? markdown
       : `${markdown}\n${gap.keyword}`
-    setMarkdown(next)
+    dispatch({ type: "keyword_added", markdown: next })
     const node = editorRef.current
     if (node) node.textContent = next
     try {
@@ -175,8 +179,7 @@ export function PaperLetterEditor({
         document: { markdown: next },
       })
       versionRef.current = saved.contentVersion
-      setUpdatedAt(new Date().toISOString())
-      setHiddenGap(true)
+      dispatch({ type: "keyword_saved", at: new Date().toISOString() })
     } catch (error) {
       toast(
         error instanceof Error
@@ -202,12 +205,7 @@ export function PaperLetterEditor({
         <Button
           type="button"
           variant="outline"
-          onClick={() =>
-            setPrintJob((current) => ({
-              id: (current?.id ?? 0) + 1,
-              title: doc.name,
-            }))
-          }
+          onClick={() => dispatch({ type: "print_requested", title: doc.name })}
         >
           Download PDF
         </Button>
@@ -249,7 +247,7 @@ export function PaperLetterEditor({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setHiddenGap(true)}
+                onClick={() => dispatch({ type: "gap_dismissed" })}
               >
                 Skip
               </Button>

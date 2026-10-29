@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useReducer, useRef, type KeyboardEvent } from "react"
 import type { CvBlock, CvSectionKind } from "@workspace/domain"
 
 import { cn } from "@workspace/ui/lib/utils"
@@ -15,11 +15,15 @@ export function reducedMotion() {
 
 /** Subscribes so a drag started after the preference changes does not animate. */
 export function useReducedMotion() {
-  const [reduced, setReduced] = useState(reducedMotion)
+  const [reduced, dispatchReduced] = useReducer(
+    (_: boolean, matches: boolean) => matches,
+    undefined,
+    reducedMotion
+  )
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return
     const query = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const onChange = () => setReduced(query.matches)
+    const onChange = () => dispatchReduced(query.matches)
     onChange()
     query.addEventListener("change", onChange)
     return () => query.removeEventListener("change", onChange)

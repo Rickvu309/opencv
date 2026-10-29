@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, type DragEvent } from "react"
+import { useEffect, useReducer, useRef, type DragEvent } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   paperDocNameSchema,
   blankBlockDocument,
-  type JobView,
   type PaperFile,
   type PaperView,
 } from "@workspace/domain"
@@ -18,7 +17,6 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
-import { ApiError } from "@/lib/api-error.ts"
 import {
   undoActivity,
   refreshQueries,
@@ -43,30 +41,9 @@ import { PaperImportInput } from "./paper-import-input.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
+import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
+import { IMPORT_ACCEPT, messageOf } from "./paper-library-support.ts"
 import { paperEditedLabel } from "./paper-templates.ts"
-
-const IMPORT_ACCEPT =
-  ".pdf,.docx,.txt,.json,.pages,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json,application/vnd.apple.pages"
-
-type PaperImportState =
-  | { type: "idle" }
-  | { type: "importing"; name: string }
-  | { type: "error"; message: string }
-
-type Mode =
-  | { type: "new"; step: "kind" | "gallery" }
-  | { type: "letter" }
-  | { type: "rename"; doc: PaperView }
-  | { type: "delete"; doc: PaperView }
-  | { type: "link"; doc: PaperView }
-  | { type: "delete-file"; file: PaperFile }
-  | null
-
-function messageOf(error: unknown, fallback: string) {
-  if (error instanceof ApiError) return error.message
-  if (error instanceof Error && error.message) return error.message
-  return fallback
-}
 
 export function PaperLibrary({
   docs,
@@ -87,19 +64,22 @@ export function PaperLibrary({
   const queryClient = useQueryClient()
   const importRef = useRef<HTMLInputElement>(null)
   const importRequest = useRef<AbortController | null>(null)
-  const [importState, setImportState] = useState<PaperImportState>({
-    type: "idle",
-  })
-  const [creatingBlank, setCreatingBlank] = useState(false)
-  const [query, setQuery] = useState("")
-  const [mode, setMode] = useState<Mode>(null)
-  const [rename, setRename] = useState("")
-  const [renameError, setRenameError] = useState<string | null>(null)
-  const [jobs, setJobs] = useState<JobView[]>([])
-  const [jobsError, setJobsError] = useState<string | null>(null)
-  const [printTarget, setPrintTarget] = useState<PaperView | null>(null)
-  const [printNonce, setPrintNonce] = useState(0)
-  const [link, setLink] = useState("")
+  const [
+    {
+      importState,
+      creatingBlank,
+      query,
+      mode,
+      rename,
+      renameError,
+      jobs,
+      jobsError,
+      printTarget,
+      printNonce,
+      link,
+    },
+    dispatch,
+  ] = useReducer(libraryReducer, initialLibrary)
   const dialogOpen = mode !== null || importState.type !== "idle"
   const needle = query.trim().toLowerCase()
   const documents = docs.filter(
@@ -122,8 +102,7 @@ export function PaperLibrary({
   useEffect(() => {
     if (printNonce === 0 || !printTarget) return
     return printPaper(printTarget.name, () => {
-      setPrintTarget(null)
-      setPrintNonce(0)
+      dispatch({ type: "print_finished" })
     })
   }, [printNonce, printTarget])
 
@@ -153,8 +132,7 @@ export function PaperLibrary({
     importRequest.current?.abort()
     const request = new AbortController()
     importRequest.current = request
-    setMode(null)
-    setImportState({ type: "importing", name: file.name })
+    dispatch({ type: "import_started", name: file.name })
     try {
       // Do not pass this signal to the upload. A keep-alive cancel does not
       // abort the server request, and aborting the fetch drops the id.
@@ -167,12 +145,12 @@ export function PaperLibrary({
         { query: "paper.list" },
         { query: "paper.files" },
       ])
-      setImportState({ type: "idle" })
+      dispatch({ type: "import_ended" })
       onOpen(created.id)
     } catch (err) {
       if (request.signal.aborted) return
-      setImportState({
-        type: "error",
+      dispatch({
+        type: "import_failed",
         message: messageOf(err, "Could not import that file. Try it again."),
       })
     } finally {
@@ -183,26 +161,26 @@ export function PaperLibrary({
   function cancelImport() {
     importRequest.current?.abort()
     importRequest.current = null
-    setImportState({ type: "idle" })
+    dispatch({ type: "import_ended" })
   }
 
   async function startBlank() {
     if (creatingBlank) return
-    setCreatingBlank(true)
+    dispatch({ type: "blank_started" })
     try {
       const created = await run("paper.create", {
         kind: "cv",
         document: blankBlockDocument(),
       })
-      setImportState({ type: "idle" })
+      dispatch({ type: "import_ended" })
       onOpen(created.id)
     } catch (err) {
-      setImportState({
-        type: "error",
+      dispatch({
+        type: "import_failed",
         message: messageOf(err, "Could not create a CV. Try again."),
       })
     } finally {
-      setCreatingBlank(false)
+      dispatch({ type: "blank_ended" })
     }
   }
 
@@ -216,8 +194,8 @@ export function PaperLibrary({
     try {
       await importPaperLink(value)
     } catch (err) {
-      setImportState({
-        type: "error",
+      dispatch({
+        type: "import_failed",
         message: messageOf(err, "Could not import that file. Try it again."),
       })
     }
@@ -230,12 +208,14 @@ export function PaperLibrary({
   }
 
   async function openLink(doc: PaperView) {
-    setMode({ type: "link", doc })
-    setJobsError(null)
+    dispatch({ type: "link_dialog_opened", doc })
     try {
-      setJobs(await listJobs())
+      dispatch({ type: "jobs_loaded", jobs: await listJobs() })
     } catch (err) {
-      setJobsError(messageOf(err, "Could not load jobs. Refresh the page."))
+      dispatch({
+        type: "jobs_failed",
+        message: messageOf(err, "Could not load jobs. Refresh the page."),
+      })
     }
   }
 
@@ -243,14 +223,20 @@ export function PaperLibrary({
     if (!mode || mode.type !== "rename") return
     const parsed = paperDocNameSchema.safeParse(rename.trim())
     if (!parsed.success) {
-      setRenameError(parsed.error.issues[0]?.message ?? "Name is required")
+      dispatch({
+        type: "rename_rejected",
+        message: parsed.error.issues[0]?.message ?? "Name is required",
+      })
       return
     }
     try {
       await run("paper.rename", { docId: mode.doc.id, name: parsed.data })
-      setMode(null)
+      dispatch({ type: "dialog_closed" })
     } catch (err) {
-      setRenameError(messageOf(err, "Could not rename. Try again."))
+      dispatch({
+        type: "rename_rejected",
+        message: messageOf(err, "Could not rename. Try again."),
+      })
     }
   }
 
@@ -260,7 +246,7 @@ export function PaperLibrary({
     try {
       await run("paper.delete", { docId: mode.doc.id })
       toast(`Deleted ${name}`)
-      setMode(null)
+      dispatch({ type: "dialog_closed" })
     } catch (err) {
       toast(messageOf(err, "Could not delete. Try again."))
     }
@@ -271,7 +257,7 @@ export function PaperLibrary({
     try {
       await run("paper.deleteFile", { fileId: mode.file.id })
       toast(`Deleted ${mode.file.name}`)
-      setMode(null)
+      dispatch({ type: "dialog_closed" })
     } catch (err) {
       toast(messageOf(err, "Could not delete that file. Try again."))
     }
@@ -287,8 +273,7 @@ export function PaperLibrary({
   }
 
   function download(doc: PaperView) {
-    setPrintTarget(doc)
-    setPrintNonce((value) => value + 1)
+    dispatch({ type: "print_requested", doc })
   }
 
   function renderCard(doc: PaperView) {
@@ -300,14 +285,12 @@ export function PaperLibrary({
         templateId={doc.templateId ?? "simple"}
         onOpen={() => onOpen(doc.id)}
         onRename={() => {
-          setRename(doc.name)
-          setRenameError(null)
-          setMode({ type: "rename", doc })
+          dispatch({ type: "rename_requested", doc })
         }}
         onDuplicate={() => void duplicate(doc)}
         onLink={() => void openLink(doc)}
         onDownload={() => void download(doc)}
-        onDelete={() => setMode({ type: "delete", doc })}
+        onDelete={() => dispatch({ type: "delete_requested", doc })}
       />
     )
   }
@@ -337,7 +320,7 @@ export function PaperLibrary({
           type="button"
           variant={dialogOpen ? "outline" : "glow"}
           data-primary-action
-          onClick={() => setMode({ type: "new", step: "kind" })}
+          onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}
         >
           New
         </Button>
@@ -346,7 +329,9 @@ export function PaperLibrary({
         aria-label="Search Paper"
         placeholder="Search Paper"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) =>
+          dispatch({ type: "search_typed", query: event.target.value })
+        }
       />
       {loading ? <p>Loading documents</p> : null}
       {error ? (
@@ -369,12 +354,14 @@ export function PaperLibrary({
             <NewPaperCard
               title="CV"
               body="A page you can send."
-              onClick={() => setMode({ type: "new", step: "gallery" })}
+              onClick={() =>
+                dispatch({ type: "new_dialog_opened", step: "gallery" })
+              }
             />
             <NewPaperCard
               title="Cover letter"
               body="A letter for one job."
-              onClick={() => setMode({ type: "letter" })}
+              onClick={() => dispatch({ type: "letter_dialog_opened" })}
             />
             <NewPaperCard
               title="Proof"
@@ -384,7 +371,9 @@ export function PaperLibrary({
           </div>
           <PaperImportRow
             link={link}
-            onLinkChange={setLink}
+            onLinkChange={(next) =>
+              dispatch({ type: "link_typed", link: next })
+            }
             onSubmitLink={() => void onPasteLink()}
             onChooseFile={chooseFile}
             onDropFile={onDropFile}
@@ -429,7 +418,9 @@ export function PaperLibrary({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setMode({ type: "delete-file", file })}
+                    onClick={() =>
+                      dispatch({ type: "delete_file_requested", file })
+                    }
                   >
                     Delete
                   </Button>
@@ -443,7 +434,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "new"}
         onOpenChange={(open) => {
-          if (!open) setMode(null)
+          if (!open) dispatch({ type: "dialog_closed" })
         }}
       >
         <DialogContent
@@ -466,13 +457,15 @@ export function PaperLibrary({
           {mode?.type === "new" ? (
             <PaperNewDialog
               step={mode.step}
-              onStepChange={(step) => setMode({ type: "new", step })}
+              onStepChange={(step) =>
+                dispatch({ type: "new_dialog_opened", step })
+              }
               onCreated={(doc) => {
-                setMode(null)
+                dispatch({ type: "dialog_closed" })
                 void rememberUndo(doc.id, `Created ${doc.name}`)
                 onOpen(doc.id)
               }}
-              onChooseLetter={() => setMode({ type: "letter" })}
+              onChooseLetter={() => dispatch({ type: "letter_dialog_opened" })}
               onImport={chooseFile}
             />
           ) : null}
@@ -482,7 +475,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "letter"}
         onOpenChange={(open) => {
-          if (!open) setMode(null)
+          if (!open) dispatch({ type: "dialog_closed" })
         }}
       >
         <DialogContent className="max-w-lg">
@@ -500,7 +493,7 @@ export function PaperLibrary({
                 ?.name ?? null
             }
             onCreated={(id) => {
-              setMode(null)
+              dispatch({ type: "dialog_closed" })
               onOpen(id)
             }}
             onImport={chooseFile}
@@ -511,7 +504,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "rename"}
         onOpenChange={(open) => {
-          if (!open) setMode(null)
+          if (!open) dispatch({ type: "dialog_closed" })
         }}
       >
         <DialogContent>
@@ -522,13 +515,19 @@ export function PaperLibrary({
           <Input
             aria-label="Name"
             value={rename}
-            onChange={(event) => setRename(event.target.value)}
+            onChange={(event) =>
+              dispatch({ type: "rename_typed", value: event.target.value })
+            }
           />
           {renameError ? (
             <p className="text-sm text-destructive">{renameError}</p>
           ) : null}
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setMode(null)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => dispatch({ type: "dialog_closed" })}
+            >
               Cancel
             </Button>
             <Button
@@ -545,7 +544,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "delete" || mode?.type === "delete-file"}
         onOpenChange={(open) => {
-          if (!open) setMode(null)
+          if (!open) dispatch({ type: "dialog_closed" })
         }}
       >
         <DialogContent>
@@ -560,7 +559,11 @@ export function PaperLibrary({
             <DialogDescription>This can&apos;t be undone.</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setMode(null)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => dispatch({ type: "dialog_closed" })}
+            >
               Cancel
             </Button>
             <Button
@@ -588,14 +591,14 @@ export function PaperLibrary({
         sentence={importState.type === "error" ? importState.message : ""}
         onChoose={chooseFile}
         onBlank={() => void startBlank()}
-        onClose={() => setImportState({ type: "idle" })}
+        onClose={() => dispatch({ type: "import_ended" })}
         blankPending={creatingBlank}
       />
 
       <Dialog
         open={mode?.type === "link"}
         onOpenChange={(open) => {
-          if (!open) setMode(null)
+          if (!open) dispatch({ type: "dialog_closed" })
         }}
       >
         <DialogContent>
@@ -623,7 +626,7 @@ export function PaperLibrary({
                   })
                     .then(() => {
                       toast(`Linked to ${job.title}`)
-                      setMode(null)
+                      dispatch({ type: "dialog_closed" })
                     })
                     .catch((err: unknown) => {
                       toast(messageOf(err, "Could not link. Try again."))

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { Profile } from "@workspace/domain"
@@ -24,6 +24,12 @@ import { profileKey } from "@/lib/account-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
+import {
+  ACCOUNT_START,
+  accountReducer,
+  emailReducer,
+  initialEmailState,
+} from "./account-section.reducer.ts"
 import { DeleteAccountDialog } from "./delete-account-dialog.tsx"
 import {
   SettingsCard,
@@ -51,32 +57,31 @@ export function AccountSection({
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
-  const [photoError, setPhotoError] = useState<string>()
-  const [draftName, setDraftName] = useState<string | null>(null)
+  const [
+    { photoUrl, photoError, draftName, nameError, emailOpen, deleteOpen },
+    dispatch,
+  ] = useReducer(accountReducer, ACCOUNT_START)
   const name =
     draftName !== null && draftName !== profile.name ? draftName : profile.name
-  const [nameError, setNameError] = useState<string>()
-  const [emailOpen, setEmailOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
 
   function onPhoto(file: File | undefined) {
     if (!file) return
     const rejection = photoRejection(file)
     if (rejection) {
-      setPhotoError(rejection)
+      dispatch({ type: "photo_rejected", message: rejection })
       return
     }
-    setPhotoError(undefined)
+    dispatch({ type: "photo_upload_started" })
     void uploadPhoto(file)
       .then((next) => {
         queryClient.setQueryData(profileKey(), next)
-        setPhotoUrl(URL.createObjectURL(file))
+        dispatch({ type: "photo_uploaded", url: URL.createObjectURL(file) })
       })
       .catch((caught: unknown) => {
-        setPhotoError(
-          caught instanceof Error ? caught.message : PHOTO_REJECTION
-        )
+        dispatch({
+          type: "photo_upload_failed",
+          message: caught instanceof Error ? caught.message : PHOTO_REJECTION,
+        })
       })
   }
 
@@ -126,15 +131,16 @@ export function AccountSection({
                 aria-label="Name"
                 value={name}
                 disabled={pending}
-                onChange={(event) => setDraftName(event.target.value)}
+                onChange={(event) =>
+                  dispatch({ type: "name_typed", value: event.target.value })
+                }
                 onBlur={() => {
                   const next = name.trim()
                   if (!next) {
-                    setNameError(NAME_REJECTION)
+                    dispatch({ type: "name_rejected", message: NAME_REJECTION })
                     return
                   }
-                  setNameError(undefined)
-                  setDraftName(next)
+                  dispatch({ type: "name_committed", name: next })
                   if (next !== profile.name) onSave({ name: next })
                 }}
               />
@@ -147,7 +153,9 @@ export function AccountSection({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setEmailOpen(true)}
+                onClick={() =>
+                  dispatch({ type: "email_dialog_changed", open: true })
+                }
               >
                 Change email
               </Button>
@@ -203,7 +211,9 @@ export function AccountSection({
             <Button
               type="button"
               variant="destructive"
-              onClick={() => setDeleteOpen(true)}
+              onClick={() =>
+                dispatch({ type: "delete_dialog_changed", open: true })
+              }
             >
               Delete account
             </Button>
@@ -213,9 +223,16 @@ export function AccountSection({
       <ChangeEmailDialog
         open={emailOpen}
         current={profile.email}
-        onOpenChange={setEmailOpen}
+        onOpenChange={(open) =>
+          dispatch({ type: "email_dialog_changed", open })
+        }
       />
-      <DeleteAccountDialog open={deleteOpen} onOpenChange={setDeleteOpen} />
+      <DeleteAccountDialog
+        open={deleteOpen}
+        onOpenChange={(open) =>
+          dispatch({ type: "delete_dialog_changed", open })
+        }
+      />
     </>
   )
 }
@@ -230,18 +247,12 @@ function ChangeEmailDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const runCommand = useRunCommand()
-  const [email, setEmail] = useState(current)
-  const [error, setError] = useState<string>()
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
-  const [code, setCode] = useState("")
-  const [focusNonce, setFocusNonce] = useState(0)
+  const [{ email, error, pendingEmail, code, focusNonce }, dispatch] =
+    useReducer(emailReducer, current, initialEmailState)
 
   function close(next: boolean) {
     if (!next) {
-      setError(undefined)
-      setPendingEmail(null)
-      setCode("")
-      setEmail(current)
+      dispatch({ type: "dismissed", current })
     }
     onOpenChange(next)
   }
@@ -249,22 +260,24 @@ function ChangeEmailDialog({
   async function submit() {
     const rejection = emailRejection(email)
     if (rejection) {
-      setError(rejection)
+      dispatch({ type: "failed", message: rejection })
       return
     }
-    setError(undefined)
+    dispatch({ type: "submit_started" })
     try {
       const result = await runCommand("account.requestEmailChange", {
         email: email.trim(),
       })
       if (!result.sent) {
-        setError(result.message?.trim() ? result.message : "Try again.")
+        dispatch({
+          type: "failed",
+          message: result.message?.trim() ? result.message : "Try again.",
+        })
         return
       }
-      setPendingEmail(result.email)
-      setFocusNonce((value) => value + 1)
+      dispatch({ type: "code_sent", email: result.email })
     } catch (caught) {
-      setError(serverMessage(caught))
+      dispatch({ type: "failed", message: serverMessage(caught) })
     }
   }
 
@@ -277,7 +290,7 @@ function ChangeEmailDialog({
       }) => Promise<{ error: { message?: string } | null }>
     }
     if (!otpClient.changeEmail) {
-      setError("Try again.")
+      dispatch({ type: "failed", message: "Try again." })
       return
     }
     const result = await otpClient.changeEmail({
@@ -285,9 +298,12 @@ function ChangeEmailDialog({
       otp,
     })
     if (result.error) {
-      setError(
-        result.error.message?.trim() ? result.error.message : "Try again."
-      )
+      dispatch({
+        type: "failed",
+        message: result.error.message?.trim()
+          ? result.error.message
+          : "Try again.",
+      })
       return
     }
     close(false)
@@ -305,7 +321,7 @@ function ChangeEmailDialog({
             value={code}
             disabled={false}
             focusNonce={focusNonce}
-            onChange={setCode}
+            onChange={(value) => dispatch({ type: "code_typed", value })}
             onComplete={(otp) => void onCode(otp)}
           />
         ) : (
@@ -314,7 +330,9 @@ function ChangeEmailDialog({
               type="email"
               autoFocus
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) =>
+                dispatch({ type: "email_typed", value: event.target.value })
+              }
             />
           </Field>
         )}

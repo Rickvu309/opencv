@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react"
+import { useEffect, useReducer, useRef, type RefObject } from "react"
 import {
   findImportChecks,
   hasPhoneRun,
@@ -136,6 +136,26 @@ export function PaperCheckBar({
   )
 }
 
+type CheckBarState = { checks: PaperView["checks"]; hidden: boolean }
+
+type CheckBarAction =
+  | { type: "checks_synced"; checks: PaperView["checks"] }
+  | { type: "check_dismissed"; checks: PaperView["checks"] }
+  | { type: "bar_hidden" }
+
+function checkBarReducer(
+  state: CheckBarState,
+  action: CheckBarAction
+): CheckBarState {
+  switch (action.type) {
+    case "checks_synced":
+    case "check_dismissed":
+      return { ...state, checks: action.checks }
+    case "bar_hidden":
+      return { ...state, hidden: true }
+  }
+}
+
 export function useImportCheckBar({
   docId,
   initial,
@@ -148,8 +168,10 @@ export function useImportCheckBar({
   dirtyRef: RefObject<boolean>
 }) {
   const run = useRunCommand()
-  const [checks, setChecks] = useState(initial.checks)
-  const [hidden, setHidden] = useState(false)
+  const [{ checks, hidden }, dispatch] = useReducer(checkBarReducer, {
+    checks: initial.checks,
+    hidden: false,
+  })
   const checksRef = useRef(checks)
   const stamp = useRef(initial.updatedAt)
   const readRef = useRef(readDocument)
@@ -163,7 +185,7 @@ export function useImportCheckBar({
     if (dirtyRef.current) return
     if (initial.updatedAt < stamp.current) return
     stamp.current = initial.updatedAt
-    setChecks(initial.checks)
+    dispatch({ type: "checks_synced", checks: initial.checks })
   }, [initial, dirtyRef])
 
   async function dismiss(checkId: string) {
@@ -171,7 +193,7 @@ export function useImportCheckBar({
     const saved = await run("paper.dismissCheck", { docId, checkId })
     stamp.current = saved.updatedAt
     checksRef.current = saved.checks
-    setChecks(saved.checks)
+    dispatch({ type: "check_dismissed", checks: saved.checks })
   }
 
   async function settle() {
@@ -184,7 +206,7 @@ export function useImportCheckBar({
   }
 
   function done() {
-    setHidden(true)
+    dispatch({ type: "bar_hidden" })
     const source = checksRef.current.find((check) => check.kind === "source")
     if (source) void dismiss(source.id)
   }

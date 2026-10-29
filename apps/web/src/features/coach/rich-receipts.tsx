@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { FilePlus, FileText } from "lucide-react"
 
 import { Badge } from "@workspace/ui/components/badge"
@@ -29,7 +29,7 @@ type UpdateContentDetail = Extract<
 >
 
 export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, toggleExpanded] = useReducer((open: boolean) => !open, false)
   const changed = countChangedLines(detail.hunks)
   const hunks = expanded ? detail.hunks : collapsedHunks(detail.hunks)
   const hidden = Math.max(0, changed - countChangedLines(hunks))
@@ -89,7 +89,7 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
           type="button"
           variant="ghost"
           size="xs"
-          onClick={() => setExpanded((value) => !value)}
+          onClick={() => toggleExpanded()}
         >
           {expanded
             ? "Show fewer changes"

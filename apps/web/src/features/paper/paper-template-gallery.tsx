@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useReducer } from "react"
 
 import type { PaperTemplateId } from "@workspace/domain"
 
@@ -12,6 +12,27 @@ import { PAPER_TEMPLATE_LABELS, previewTemplate } from "./paper-templates.ts"
 export const PAPER_GALLERY_DIALOG_CLASS =
   "max-h-[90vh] overflow-y-auto sm:max-w-3xl"
 
+type GalleryState = { query: string; selected: PaperTemplateId }
+
+type GalleryAction =
+  | { type: "query_typed"; query: string }
+  | { type: "query_cleared" }
+  | { type: "template_picked"; id: PaperTemplateId }
+
+function galleryReducer(
+  state: GalleryState,
+  action: GalleryAction
+): GalleryState {
+  switch (action.type) {
+    case "query_typed":
+      return { ...state, query: action.query }
+    case "query_cleared":
+      return { ...state, query: "" }
+    case "template_picked":
+      return { ...state, selected: action.id }
+  }
+}
+
 export function PaperTemplateGallery({
   onUse,
   onImport,
@@ -23,8 +44,10 @@ export function PaperTemplateGallery({
   onBlank?: () => void
   pending?: boolean
 }) {
-  const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<PaperTemplateId>("simple")
+  const [{ query, selected }, dispatch] = useReducer(galleryReducer, {
+    query: "",
+    selected: "simple",
+  })
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return PAPER_TEMPLATE_LABELS
@@ -42,7 +65,9 @@ export function PaperTemplateGallery({
         aria-label="Search templates"
         placeholder="Search templates"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) =>
+          dispatch({ type: "query_typed", query: event.target.value })
+        }
       />
       <div
         data-template-gallery=""
@@ -56,7 +81,7 @@ export function PaperTemplateGallery({
             type="button"
             size="sm"
             variant={query === "" ? "secondary" : "outline"}
-            onClick={() => setQuery("")}
+            onClick={() => dispatch({ type: "query_cleared" })}
           >
             All
           </Button>
@@ -66,7 +91,7 @@ export function PaperTemplateGallery({
               type="button"
               size="sm"
               variant={item.id === selected ? "secondary" : "outline"}
-              onClick={() => setSelected(item.id)}
+              onClick={() => dispatch({ type: "template_picked", id: item.id })}
             >
               {item.label}
             </Button>

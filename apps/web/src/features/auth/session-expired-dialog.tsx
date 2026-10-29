@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -18,6 +18,21 @@ import {
   LANGUAGE_STORAGE_KEY,
 } from "./auth-copy.ts"
 
+type SendState = { notice: string | null; pending: boolean }
+type SendAction =
+  { type: "send_started" } | { type: "send_failed" } | { type: "send_settled" }
+
+function sendReducer(state: SendState, action: SendAction): SendState {
+  switch (action.type) {
+    case "send_started":
+      return { notice: null, pending: true }
+    case "send_failed":
+      return { ...state, notice: AUTH_COPY.sendFailed }
+    case "send_settled":
+      return { ...state, pending: false }
+  }
+}
+
 export function SessionExpiredDialog({
   open,
   email,
@@ -26,27 +41,28 @@ export function SessionExpiredDialog({
   email: string | null
 }) {
   const navigate = useNavigate()
-  const [notice, setNotice] = useState<string | null>(null)
-  const [pending, setPending] = useState(false)
+  const [{ notice, pending }, dispatch] = useReducer(sendReducer, {
+    notice: null,
+    pending: false,
+  })
 
   async function continueAs() {
     if (!email) return
-    setPending(true)
-    setNotice(null)
+    dispatch({ type: "send_started" })
     try {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email,
         type: "sign-in",
       })
       if (result.error) {
-        setNotice(AUTH_COPY.sendFailed)
+        dispatch({ type: "send_failed" })
         return
       }
       await navigate({ to: "/sign-in", search: { email } })
     } catch {
-      setNotice(AUTH_COPY.sendFailed)
+      dispatch({ type: "send_failed" })
     } finally {
-      setPending(false)
+      dispatch({ type: "send_settled" })
     }
   }
 
