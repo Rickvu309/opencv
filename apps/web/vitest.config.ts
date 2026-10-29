@@ -10,7 +10,7 @@ applyLocalApiUrl("test")
 const ISOLATED_FILES = [
   "src/router-lazy.test.tsx",
   "src/features/paper/paper-library.test.tsx",
-  "src/routes/app-shell.test.tsx",
+  "src/features/app-shell/app-shell.test.tsx",
 ]
 
 export default defineConfig({

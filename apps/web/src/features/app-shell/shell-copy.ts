@@ -14,7 +14,4 @@ export const shellCopy = {
   menu: "Menu",
   closeMenu: "Close menu",
   history: "History",
-  minimize: "Minimize",
-  expand: "Expand",
-  close: "Close",
 } as const

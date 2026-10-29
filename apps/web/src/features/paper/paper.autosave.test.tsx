@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -17,7 +17,10 @@ function savedSummary() {
   const content = cv?.content as
     | {
         summary?: string
-        sections?: { kind?: string; blocks?: { type?: string; text?: string }[] }[]
+        sections?: {
+          kind?: string
+          blocks?: { type?: string; text?: string }[]
+        }[]
       }
     | undefined
   const text = content?.sections

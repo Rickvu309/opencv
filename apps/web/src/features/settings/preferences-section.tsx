@@ -15,18 +15,17 @@ import {
   SettingsTitle,
   StateWord,
 } from "./settings-layout.tsx"
-import type { Profile, ProfileUpdateInput } from "@workspace/domain"
+import {
+  startPageSchema,
+  type Profile,
+  type ProfileUpdateInput,
+} from "@workspace/domain"
+
+import { START_PAGES, startPageEntry } from "@/lib/product-paths.ts"
 
 const ZONES = [
   { value: "Asia/Ho_Chi_Minh", label: "Ho Chi Minh City (UTC+7)" },
   { value: "Asia/Singapore", label: "Singapore (UTC+8)" },
-] as const
-
-const START_PAGES = [
-  { value: "apply", label: "Apply" },
-  { value: "coach", label: "Coach" },
-  { value: "paper", label: "Paper" },
-  { value: "inbox", label: "Inbox" },
 ] as const
 
 export function PreferencesSection({
@@ -48,9 +47,7 @@ export function PreferencesSection({
   const zoneLabel =
     zones.find((zone) => zone.value === profile.timeZone)?.label ??
     profile.timeZone
-  const startLabel =
-    START_PAGES.find((page) => page.value === profile.startPage)?.label ??
-    "Apply"
+  const startLabel = startPageEntry(profile.startPage).label
   return (
     <>
       <SettingsTitle title="Preferences" />
@@ -105,23 +102,17 @@ export function PreferencesSection({
             control={
               <Select
                 value={profile.startPage}
-                onValueChange={(startPage) => {
-                  if (
-                    startPage === "apply" ||
-                    startPage === "coach" ||
-                    startPage === "paper" ||
-                    startPage === "inbox"
-                  ) {
-                    onSave({ startPage })
-                  }
+                onValueChange={(value) => {
+                  const startPage = startPageSchema.safeParse(value)
+                  if (startPage.success) onSave({ startPage: startPage.data })
                 }}
               >
                 <SelectTrigger aria-label="Start page" disabled={pending}>
                   <SelectValue>{startLabel}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {START_PAGES.map((page) => (
-                    <SelectItem key={page.value} value={page.value}>
+                  {Object.entries(START_PAGES).map(([value, page]) => (
+                    <SelectItem key={value} value={value}>
                       {page.label}
                     </SelectItem>
                   ))}

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { legacyAppPath, legacyPathname } from "./product-paths.ts"
+import {
+  legacyAppPath,
+  legacyPathname,
+  startPageEntry,
+  startPagePath,
+} from "./product-paths.ts"
 
 describe("legacy product paths", () => {
   it("strips only the app segment and keeps query and hash", () => {
@@ -21,5 +26,18 @@ describe("legacy product paths", () => {
     expect(legacyAppPath("/apply")).toBeUndefined()
     expect(legacyAppPath("/application")).toBeUndefined()
     expect(legacyAppPath("/coach")).toBeUndefined()
+  })
+})
+
+describe("startPagePath", () => {
+  it("maps the four start pages and sends anything else to Apply", () => {
+    expect(startPagePath("apply")).toBe("/apply")
+    expect(startPagePath("paper")).toBe("/paper")
+    expect(startPagePath("inbox")).toBe("/inbox")
+    expect(startPagePath("coach")).toBe("/coach")
+    expect(startPagePath("home")).toBe("/apply")
+    expect(startPagePath(undefined)).toBe("/apply")
+    expect(startPagePath(null)).toBe("/apply")
+    expect(startPageEntry("home").label).toBe("Apply")
   })
 })

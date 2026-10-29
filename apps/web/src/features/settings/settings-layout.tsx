@@ -14,10 +14,8 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
-import {
-  DESKTOP_MEDIA_QUERY,
-  useMediaQuery,
-} from "@/features/app-shell/use-media-query.ts"
+import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
+import { startPagePath } from "@/lib/product-paths.ts"
 
 import {
   SETTINGS_SECTIONS,
@@ -25,7 +23,7 @@ import {
   type SettingsSectionId,
   type SettingsView,
 } from "./sections.ts"
-import { LOAD_ERROR, startPageHref } from "./settings-api.ts"
+import { LOAD_ERROR } from "./settings-api.ts"
 
 export function SettingsLayout({
   view,
@@ -50,7 +48,7 @@ export function SettingsLayout({
           className="flex w-60 shrink-0 flex-col gap-1 px-3 py-3"
           aria-label="Settings"
         >
-          <BackLink href={startPageHref(startPage)} />
+          <BackLink href={startPagePath(startPage)} />
           <p className="flex h-6 items-center px-2 text-sm text-muted-foreground">
             Settings
           </p>
@@ -73,7 +71,7 @@ export function SettingsLayout({
         </aside>
       ) : (
         <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-          <BackLink href={startPageHref(startPage)} />
+          <BackLink href={startPagePath(startPage)} />
           <SectionSelect current={current} />
         </div>
       )}

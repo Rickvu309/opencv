@@ -18,10 +18,7 @@ import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
-import {
-  DESKTOP_MEDIA_QUERY,
-  useMediaQuery,
-} from "@/features/app-shell/use-media-query.ts"
+import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
 import {
   useInboxUnread,
   useShellChats,
@@ -30,8 +27,8 @@ import {
 import {
   CoachPanel,
   type CoachPanelMode,
-} from "@/features/app-shell/coach-panel.tsx"
-import { ShellChatBody } from "@/features/app-shell/shell-chat-body.tsx"
+} from "@/features/coach/coach-panel.tsx"
+import { CoachWorkspace } from "@/features/coach/coach-workspace.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
@@ -338,7 +335,7 @@ export function AppShell({ onSearch }: AppShellProps) {
           }
           onClose={closePanel}
         >
-          <ShellChatBody chatId={panel.chatId} />
+          <CoachWorkspace chatId={panel.chatId} />
         </CoachPanel>
       ) : null}
     </div>

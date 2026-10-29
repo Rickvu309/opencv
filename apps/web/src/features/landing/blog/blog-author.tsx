@@ -1,4 +1,4 @@
-import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
+import { OpenCvLogo } from "@/components/app-logo.tsx"
 
 import { BLOG_AUTHOR } from "./blog-copy.ts"
 

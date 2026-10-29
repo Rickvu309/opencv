@@ -24,7 +24,7 @@ import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
 import { fetchUsage, usageKey } from "@/lib/account-api.ts"
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { COACH_MODE_OPTIONS } from "@/features/coach/coach-mode.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
 import { settingsSectionHref } from "@/features/settings/sections.ts"
@@ -52,8 +52,7 @@ type Props = {
   placeholder?: string
   menuPlacement?: "below" | "above"
   showModePicker?: boolean
-  /** Paper CoachFloat: attach the open doc. Without it, the menu routes to Paper. */
-  onAttachFromPaper?: () => void
+  onAttachFromPaper: () => void
   onAttachJob?: () => void
   onAttachLink?: () => void
   disabled?: boolean
@@ -92,13 +91,7 @@ export function CoachDock({
     if (id === "connector") {
       void navigate({ href: settingsSectionHref("integrations") })
     }
-    if (id === "attach") {
-      if (onAttachFromPaper) {
-        onAttachFromPaper()
-        return
-      }
-      void navigate({ to: SURFACE_PATHS.paper })
-    }
+    if (id === "attach") onAttachFromPaper()
   }
 
   const tools = (

@@ -19,7 +19,7 @@ type Props = {
   onRetry?: () => void
   onRegenerate?: () => void
   onUndo?: (activityId: string) => Promise<void>
-  onAttachFromPaper?: () => void
+  onAttachFromPaper: () => void
   messageCite?: (message: ChatViewMessage) => ReactNode
 }
 

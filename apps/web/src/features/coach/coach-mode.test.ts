@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { coachModeHelper, coachModeLabel } from "@/features/coach/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {

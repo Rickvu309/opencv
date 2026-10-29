@@ -8,7 +8,7 @@ import {
 
 import { profileInitials } from "@/features/app-shell/profile-display.ts"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 

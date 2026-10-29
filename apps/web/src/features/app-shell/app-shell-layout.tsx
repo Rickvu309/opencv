@@ -2,11 +2,10 @@ import { useEffect, useState } from "react"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
 import { AppShell } from "@/features/app-shell/app-shell.tsx"
-import { SearchModal } from "@/features/app-shell/search-modal.tsx"
-import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS, type SurfaceId } from "@/lib/product-paths.ts"
 import { ShellOverlays } from "@/features/auth/shell-overlays.tsx"
+import { CommandPalette } from "@/features/command-palette/command-palette.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
-import { useChatList } from "@/features/coach/use-chat-list.ts"
 
 export function AppShellLayout() {
   const pathname = useRouterState({
@@ -30,7 +29,6 @@ export function AppShellLayout() {
 
 function AppShellChrome() {
   const navigate = useNavigate()
-  const { openChat } = useChatList()
   const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
@@ -44,11 +42,6 @@ function AppShellChrome() {
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  function handleOpenChat(id: string) {
-    openChat(id)
-    void navigate({ to: SURFACE_PATHS.coach })
-  }
-
   function goSurface(id: SurfaceId) {
     void navigate({ to: SURFACE_PATHS[id] })
   }
@@ -56,10 +49,9 @@ function AppShellChrome() {
   return (
     <>
       <AppShell onSearch={() => setSearchOpen(true)} />
-      <SearchModal
+      <CommandPalette
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        onOpenChat={handleOpenChat}
         onSurface={goSurface}
       />
     </>

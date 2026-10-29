@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-router"
 
 import { fetchProfile } from "@/lib/account-api.ts"
-import { startPagePath } from "@/features/app-shell/start-page.ts"
+import { startPagePath } from "@/lib/product-paths.ts"
 import { SURFACE_PATHS, legacyAppPath } from "@/lib/product-paths.ts"
 
 import { NotFoundPage, UnknownShell } from "@/components/not-found-page.tsx"
