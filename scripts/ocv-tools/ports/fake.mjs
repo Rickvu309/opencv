@@ -251,6 +251,7 @@ export function fakePorts(world = {}) {
         databaseId: state.nextCommentId++,
         author: { login: state.login },
         createdAt: at,
+        lastEditedAt: null,
         updatedAt: at,
         body,
       }
@@ -269,6 +270,7 @@ export function fakePorts(world = {}) {
         if (!row) continue
         found = true
         row.body = body
+        row.lastEditedAt = stamp
         row.updatedAt = stamp
       }
       if (!found)
@@ -325,7 +327,10 @@ export function fakePorts(world = {}) {
           createdAt: item.createdAt,
           lastEditedAt: item.lastEditedAt,
           labels: [...(item.labels ?? [])],
-          comments: (item.comments ?? []).map((c) => ({ ...c })),
+          comments: (item.comments ?? []).map((c) => ({
+            lastEditedAt: null,
+            ...c,
+          })),
         }))
       const pulls = state.prs
         .filter((item) => String(item.state).toUpperCase() === "OPEN")

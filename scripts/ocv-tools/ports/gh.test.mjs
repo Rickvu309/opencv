@@ -1,4 +1,6 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 import test from "node:test"
 import { claimMarker, holderOf } from "../claim-marker.mjs"
 import { COMMENT_PAGE_CAP, ghAdapter } from "./gh.mjs"
@@ -113,6 +115,7 @@ test("a live claim older than 100 later comments is still the holder", () => {
     {
       databaseId: 1,
       createdAt: minutesAgo(30),
+      lastEditedAt: null,
       updatedAt: minutesAgo(5),
       author: { login: "holder" },
       body: claimMarker({
@@ -126,6 +129,7 @@ test("a live claim older than 100 later comments is still the holder", () => {
     all.push({
       databaseId: i,
       createdAt: minutesAgo(1),
+      lastEditedAt: null,
       updatedAt: minutesAgo(1),
       author: { login: "x" },
       body: `note ${i}`,
@@ -157,6 +161,7 @@ test("a comment history that never ends is cap, not complete", () => {
         {
           databaseId: pages,
           createdAt: minutesAgo(1),
+          lastEditedAt: null,
           updatedAt: minutesAgo(1),
           author: { login: "x" },
           body: `note ${pages}`,
@@ -181,6 +186,7 @@ test("a comment page that does not advance is stuck", () => {
         {
           databaseId: 1,
           createdAt: minutesAgo(1),
+          lastEditedAt: null,
           updatedAt: minutesAgo(1),
           author: { login: "x" },
           body: "note",
@@ -204,6 +210,36 @@ test("a failed first page is not an issue", () => {
   const loaded = gh.issue(91)
   assert.equal(loaded.record, null)
   assert.equal(loaded.history, "complete")
+})
+
+test("the real adapter rejects comment nodes without lastEditedAt", () => {
+  const { gh } = scripted(() =>
+    page(
+      [
+        {
+          databaseId: 7,
+          author: { login: "owner" },
+          body: "/approve",
+          createdAt: "2026-10-29T11:00:00Z",
+        },
+      ],
+      { hasPreviousPage: false, startCursor: null }
+    )
+  )
+  assert.throws(
+    () => gh.issue(90),
+    (error) => error.constructor === Error && /lastEditedAt/.test(error.message)
+  )
+})
+
+test("every GraphQL query with comments requests lastEditedAt", () => {
+  const source = readFileSync(
+    fileURLToPath(new URL("./gh.mjs", import.meta.url)),
+    "utf8"
+  )
+  const commentQueries = source.match(/const \w+ = `[^`]*comments[^`]*`/g) ?? []
+  assert.ok(commentQueries.length > 0)
+  for (const query of commentQueries) assert.match(query, /lastEditedAt/)
 })
 
 test("shot releases and check runs use the flags GitHub requires", () => {

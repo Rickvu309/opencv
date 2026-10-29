@@ -74,7 +74,13 @@ test("every checked rule has a failing and a passing fact", () => {
     "NEEDS_APPROVAL",
     { issue: { n: 90, risk: "high", approved: false } },
     { issue: { n: 90, risk: "high", approved: true } },
-    "#90 is risk:high and the owner has not commented /approve after its last edit"
+    "#90 is risk:high and the owner has not posted an unedited /approve after its last edit"
+  )
+  assert.equal(
+    evaluate("NEEDS_APPROVAL", {
+      issue: { n: 90, risk: "high", approved: false },
+    }).fix,
+    "Post a fresh /approve comment as a project admin."
   )
   check(
     "ASSIGNED",

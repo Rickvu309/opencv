@@ -37,6 +37,7 @@ function scriptedCtx(rules) {
 
 const claim = (agent, minutes, id = 1) => ({
   databaseId: id,
+  lastEditedAt: null,
   author: { login: agent },
   createdAt: minutesAgo(minutes),
   updatedAt: minutesAgo(minutes),
@@ -45,6 +46,7 @@ const claim = (agent, minutes, id = 1) => ({
 
 const approved = {
   databaseId: 9,
+  lastEditedAt: null,
   author: { login: "owner" },
   createdAt: "2026-10-29T11:00:00Z",
   updatedAt: "2026-10-29T11:00:00Z",
@@ -182,6 +184,7 @@ function graphql(line) {
                   databaseId: 2,
                   author: { login: "x" },
                   createdAt: minutesAgo(1),
+                  lastEditedAt: null,
                   updatedAt: minutesAgo(1),
                   body: "later note",
                 },
@@ -316,6 +319,21 @@ test("board --json prints the same groups", () => {
   assert.match(next, /take 11/)
 })
 
+test("board treats an edited admin approval as waiting for approval", () => {
+  const ctx = ctxOf((line) => {
+    const result = JSON.parse(graphql(line))
+    const nodes = result.data?.repository?.issues?.nodes
+    const approvedIssue = nodes?.find((item) => item.number === 16)
+    if (approvedIssue)
+      approvedIssue.comments.nodes[0].lastEditedAt = "2026-10-29T11:30:00Z"
+    return JSON.stringify(result)
+  })
+  const { code, text } = runCli(["board", "--json"], ctx)
+  assert.equal(code, 0, text)
+  const groups = JSON.parse(split(text).body)
+  assert.ok(groups.waiting.some((item) => item.number === 16))
+})
+
 test("board reads 50 issues with a constant handful of gh calls", () => {
   const once = (count) => {
     const ctx = scriptedCtx([
@@ -335,6 +353,7 @@ test("board reads 50 issues with a constant handful of gh calls", () => {
                     databaseId: i + 1,
                     author: { login: "owner" },
                     createdAt: minutesAgo(1),
+                    lastEditedAt: null,
                     updatedAt: minutesAgo(1),
                     body: "note",
                   },

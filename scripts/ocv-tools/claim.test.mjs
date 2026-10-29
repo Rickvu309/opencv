@@ -98,7 +98,32 @@ test("take: risk:high needs an /approve after the last edit", () => {
       }),
     ],
   })
-  assert.match(runCli(["take", "90"], ctx).text, /REFUSED NEEDS_APPROVAL/)
+  const result = runCli(["take", "90"], ctx)
+  assert.match(result.text, /REFUSED NEEDS_APPROVAL/)
+  assert.match(
+    result.text,
+    /Fix: Post a fresh \/approve comment as a project admin\./
+  )
+  const edited = run({
+    issues: [
+      issue(90, {
+        labels: ["risk:high"],
+        lastEditedAt: "2026-10-10T00:00:00Z",
+        comments: [
+          {
+            databaseId: 71,
+            author: { login: "owner" },
+            body: "/approve",
+            createdAt: "2026-10-11T00:00:00Z",
+          },
+        ],
+      }),
+    ],
+  })
+  edited.ports.gh.editComment(71, "/approve")
+  const editedResult = runCli(["take", "90"], edited.ctx)
+  assert.match(editedResult.text, /REFUSED NEEDS_APPROVAL/)
+  assert.match(editedResult.text, /Post a fresh \/approve comment/)
 })
 
 test("take refuses ready-for-human and an issue assigned to someone else unless --take", () => {

@@ -127,7 +127,7 @@ function held(facts) {
 function needsApproval(facts) {
   const issue = facts.issue
   if (!issue || issue.risk !== "high" || issue.approved) return null
-  return `#${issue.n} is risk:high and the owner has not commented /approve after its last edit`
+  return `#${issue.n} is risk:high and the owner has not posted an unedited /approve after its last edit`
 }
 
 function assigned(facts) {
@@ -453,7 +453,7 @@ const rows = [
   rule({
     id: "NEEDS_APPROVAL",
     section: "1",
-    says: "A risk:high issue needs an owner /approve comment after its last edit.",
+    says: "A risk:high issue needs a fresh unedited owner /approve after its last edit.",
     jobs: ["take"],
     needs: ["issue"],
     check: needsApproval,

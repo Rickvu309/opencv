@@ -197,11 +197,13 @@ test("status sees an owner /approve after the last edit", () => {
               author: { login: "quanvu309" },
               body: "/approve",
               createdAt: "2026-10-29T12:00:00Z",
+              lastEditedAt: null,
             },
             {
               author: { login: "someone" },
               body: "/approve",
               createdAt: "2026-10-29T13:00:00Z",
+              lastEditedAt: null,
             },
           ],
         }),
@@ -226,6 +228,7 @@ test("organization login approval counts only when listed as an admin collaborat
             author: { login: "OrgLogin" },
             body: "/approve",
             createdAt: "2026-10-29T12:00:00Z",
+            lastEditedAt: null,
           },
         ],
       }),
@@ -323,6 +326,7 @@ test("approvalValid accepts only an approver after the issue's last edit", () =>
     author: { login },
     body: "/approve please",
     createdAt,
+    lastEditedAt: null,
   })
   const base = {
     approvers: [owner],
@@ -375,6 +379,82 @@ test("approvalValid accepts only an approver after the issue's last edit", () =>
     }),
     false
   )
+})
+
+test("edited approvals do not count, but a fresh repost does", () => {
+  const base = {
+    approvers: ["owner", "admin"],
+    lastEditedAt: "2026-10-29T10:00:00Z",
+    createdAt: "2026-10-28T10:00:00Z",
+  }
+  const edited = {
+    author: { login: "owner" },
+    body: "/approve",
+    createdAt: "2026-10-29T11:00:00Z",
+    lastEditedAt: "2026-10-29T11:30:00Z",
+  }
+  assert.equal(approvalValid({ ...base, comments: [edited] }), false)
+  assert.equal(
+    approvalValid({
+      ...base,
+      comments: [
+        edited,
+        {
+          author: { login: "admin" },
+          body: "/approve",
+          createdAt: "2026-10-29T12:00:00Z",
+          lastEditedAt: null,
+        },
+      ],
+    }),
+    true
+  )
+})
+
+test("approvalValid requires the lastEditedAt field and accepts explicit null", () => {
+  const base = {
+    approvers: ["owner"],
+    lastEditedAt: "2026-10-29T10:00:00Z",
+    createdAt: "2026-10-28T10:00:00Z",
+  }
+  const comment = {
+    author: { login: "owner" },
+    body: "/approve",
+    createdAt: "2026-10-29T11:00:00Z",
+  }
+  assert.equal(approvalValid({ ...base, comments: [comment] }), false)
+  assert.equal(
+    approvalValid({
+      ...base,
+      comments: [{ ...comment, lastEditedAt: null }],
+    }),
+    true
+  )
+})
+
+test("status rejects an admin approval edited by someone else", () => {
+  const { ports, ctx } = run({
+    owner: "repo-owner",
+    admins: ["admin"],
+    issues: [
+      issue(90, {
+        labels: ["risk:high"],
+        createdAt: "2026-10-29T10:00:00Z",
+        lastEditedAt: "2026-10-29T10:30:00Z",
+        comments: [
+          {
+            databaseId: 72,
+            author: { login: "admin" },
+            body: "/approve",
+            createdAt: "2026-10-29T11:00:00Z",
+          },
+        ],
+      }),
+    ],
+  })
+  ports.gh.editComment(72, "/approve")
+  const { text } = runCli(["status", "90"], ctx)
+  assert.match(text, /Approval: NOT approved/)
 })
 
 test("doctor passes on a healthy machine", () => {
