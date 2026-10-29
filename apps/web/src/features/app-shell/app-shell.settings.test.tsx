@@ -23,6 +23,24 @@ afterEach(() => {
 })
 
 describe("settings workspace", () => {
+  it("keeps the chat store available while navigating from Coach to Settings", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Add connector" })
+    )
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Integrations" })
+    ).toBeInTheDocument()
+    expect(consoleError.mock.calls.flat().join(" ")).not.toContain(
+      "useChatStore must be used within ChatStoreProvider"
+    )
+  })
+
   it("opens Integrations from Add connector in the Coach menu", async () => {
     const { router } = renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()

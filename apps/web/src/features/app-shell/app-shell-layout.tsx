@@ -13,9 +13,11 @@ export function AppShellLayout() {
   })
   if (pathname === "/settings" || pathname.startsWith("/settings/")) {
     return (
-      <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
-        <Outlet />
-      </div>
+      <ChatStoreProvider>
+        <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
+          <Outlet />
+        </div>
+      </ChatStoreProvider>
     )
   }
   return (
