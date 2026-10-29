@@ -65,45 +65,41 @@ function rejectAuthMail(ctx: AuthEndpointContext | undefined): never {
   throw new Error("auth email send failed")
 }
 
-/** Whether a sign-in code can leave this process: Resend, or the local log. */
-export function authMailConfigured({
-  resendApiKey,
-  from,
-  logOtp,
-}: {
+type AuthMailConfig = {
   resendApiKey?: string
   from?: string
   logOtp: boolean
-}) {
-  return logOtp || Boolean(resendApiKey?.trim() && from?.trim())
 }
 
-export function createAuthCodeSender({
-  resendApiKey,
-  from,
-  logOtp,
-}: {
-  resendApiKey?: string
-  from?: string
-  logOtp: boolean
-}) {
+/** How a sign-in code leaves this process. The sender and /health/deep both read it. */
+function authMailRoute({ resendApiKey, from, logOtp }: AuthMailConfig) {
   const key = resendApiKey?.trim()
   const sender = from?.trim()
-  const useResend = Boolean(key && sender)
+  if (key && sender) return { kind: "resend", key, sender } as const
+  return { kind: logOtp ? "log" : "none" } as const
+}
+
+export function authMailConfigured(config: AuthMailConfig) {
+  return authMailRoute(config).kind !== "none"
+}
+
+export function createAuthCodeSender(config: AuthMailConfig) {
+  const route = authMailRoute(config)
 
   return async function sendVerificationOTP(
     { email, otp, type }: AuthCodeInput,
     ctx?: AuthEndpointContext
   ) {
     const address = email.toLowerCase()
-    if (!useResend || !key || !sender) {
-      if (logOtp) {
-        console.log(`[auth] email code for ${address} type ${type}: ${otp}`)
-        return
-      }
+    if (route.kind === "log") {
+      console.log(`[auth] email code for ${address} type ${type}: ${otp}`)
+      return
+    }
+    if (route.kind === "none") {
       console.log("[auth] email send failed: mail is not configured")
       rejectAuthMail(ctx)
     }
+    const { key, sender } = route
 
     let res: Response
     try {
