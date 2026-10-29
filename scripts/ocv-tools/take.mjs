@@ -15,8 +15,8 @@ import {
 import { diskProblem } from "./disk.mjs"
 import { file } from "./issue.mjs"
 import { worktreeFor } from "./report.mjs"
-import { decide, evaluate, refusalError } from "./rules/decide.mjs"
-import { issueKind } from "./rules/table.mjs"
+import { evaluate, refusalError } from "./rules/decide.mjs"
+import { RULES, issueKind } from "./rules/table.mjs"
 import {
   createWorktree,
   descFromTitle,
@@ -80,6 +80,32 @@ function ensureDisk(ctx) {
   throw refusalError(evaluate("DISK", { disk: problem }))
 }
 
+// Later rules ask for login and the worktree list. Load a kind only when the
+// next row needs it, so a closed issue never pays for a fallible read.
+function loadTakeFact(ctx, n, need, id) {
+  if (need === "login") return ctx.ports.gh.login()
+  if (need === "local") {
+    const existing = worktreeFor(ctx, n)
+    return { worktree: existing.worktree, branch: existing.branch }
+  }
+  if (need === "disk") return {}
+  if (need === "branch") return { stage: "later" }
+  if (need === "repo") return { ok: true }
+  throw new Error(`take did not gather ${need} for ${id}`)
+}
+
+function decideTake(ctx, n, facts) {
+  for (const row of RULES) {
+    if (!row.jobs.includes("take") || !row.check) continue
+    for (const need of row.needs) {
+      if (need in facts) continue
+      facts[need] = loadTakeFact(ctx, n, need, row.id)
+    }
+    const hit = evaluate(row.id, facts)
+    if (hit) throw refusalError(hit)
+  }
+}
+
 // GitHub has no atomic claim: issue comments are not a compare-and-swap.
 // take re-reads after install and after posting; the newest live marker wins.
 // save refreshes the claim immediately before push, then re-reads after the
@@ -117,21 +143,14 @@ function takeInner(ctx, target, flags, setId) {
   const kind = issueKind(issue, flags)
   setId(`${kind ?? "task"}-${n}`)
   const me = envAgent(ctx) ?? newAgent()
-  const existing = worktreeFor(ctx, n)
-  const verdict = decide("take", {
+  decideTake(ctx, n, {
     history: { kind: "complete" },
     issue,
     claim: held,
     me,
     flags,
-    login: ctx.ports.gh.login(),
-    local: { worktree: existing.worktree, branch: existing.branch },
-    disk: {},
-    branch: { stage: "later" },
-    repo: { ok: true },
     requireKind: true,
   })
-  if (!verdict.ok) throw refusalError(verdict.refusals[0])
 
   // After the reads above, before the worktree and the claim comment.
   ensureDisk(ctx)
