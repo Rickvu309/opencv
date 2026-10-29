@@ -162,7 +162,7 @@ export function InboxConnect({
                   <p className="text-[13px] font-semibold text-foreground">
                     Hanh Tran
                   </p>
-                  <p className="text-[11.5px] text-muted-foreground/70">
+                  <p className="text-[11.5px] text-muted-foreground">
                     Recruiter, Regional bank
                   </p>
                 </div>
@@ -189,17 +189,17 @@ export function InboxConnect({
                   <p className="text-[13px] font-semibold text-foreground">
                     Business Analyst
                   </p>
-                  <p className="text-[11.5px] text-muted-foreground/70">
+                  <p className="text-[11.5px] text-muted-foreground">
                     Regional bank
                   </p>
                 </div>
                 <span className="flex-1" />
-                <span className="text-[11.5px] font-medium text-muted-foreground/70">
+                <span className="text-[11.5px] font-medium text-muted-foreground">
                   Apply
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex h-6 items-center gap-1.25 rounded-full px-2.5 text-xs text-muted-foreground/55">
+                <span className="flex h-6 items-center gap-1.25 rounded-full px-2.5 text-xs text-muted-foreground">
                   <Send className="size-3" />
                   Sent
                 </span>
@@ -209,7 +209,7 @@ export function InboxConnect({
                   Live
                 </span>
                 <span className="flex-1" />
-                <span className="text-[11.5px] text-muted-foreground/70">
+                <span className="text-[11.5px] text-muted-foreground">
                   Moved automatically
                 </span>
               </div>
@@ -222,7 +222,7 @@ export function InboxConnect({
                 Hi Hanh, Thursday at 14:30 works for me. Best, Linh
               </p>
               <div className="flex items-center gap-1.5">
-                <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground/70">
+                <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <Reply className="size-3" />
                   To Hanh Tran
                 </span>
