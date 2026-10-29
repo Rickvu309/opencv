@@ -18,7 +18,7 @@ const PACKAGE = "@workspace/domain"
 const SKIPPED_DIRS = new Set(["node_modules", "dist", ".turbo", ".git"])
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/
 // Exported with no outside importer on purpose. The contract types are read by
-// registry/contract.type-test.ts, the two schemas by paper-blocks.test.ts. The two
+// registry/contract.type-test.ts, paperCheckSchema by paper-blocks.test.ts. The two
 // id types must stay exported or the declaration build cannot name `brand` (TS4023).
 // DiffHunk is named in the signatures of the exported paper-diff functions.
 const KEPT_ON_PURPOSE = new Set([
@@ -30,7 +30,6 @@ const KEPT_ON_PURPOSE = new Set([
   "InboxContract",
   "JobContract",
   "PaperContract",
-  "storedPaperDocumentSchema",
   "paperCheckSchema",
 ])
 const TEST_FILE = /\.(?:type-)?test\.|[\\/]src[\\/]test[\\/]/
