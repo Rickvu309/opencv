@@ -155,7 +155,18 @@ test("coverage rejects dead rows, including codes only present in FIXES", () => 
   assert.throws(
     () =>
       checkCoverage(
-        [["result.mjs", 'export const FIXES = { DEAD_CODE_Y: "fix" }']],
+        [
+          [
+            "result.mjs",
+            [
+              "export const FIXES = {",
+              '  UNKNOWN_COMMAND: "Run: scripts/ocv-tools.mjs help",',
+              "  DEAD_CODE_Y:",
+              '    "Pick another issue. Run: gh issue list",',
+              "}",
+            ].join("\n"),
+          ],
+        ],
         [row]
       ),
     /DEAD_CODE_Y is not raised/
