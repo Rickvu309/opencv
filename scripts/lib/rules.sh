@@ -8,7 +8,7 @@
 #   rule_main_clean <main_checkout>       R68  the main checkout stays on main with no edited tracked file
 #   rule_port <worktree>                  R76  the worktree's .env still has the port new-task.sh assigned
 #   rule_not_ready_for_human <labels>     R103 the issue is not labeled ready-for-human
-#   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/
+#   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/ except ci.yml
 #   rule_skip_declared                    R98  SKIP_CHECKS=1 needs SKIP_CHECKS_DECLARED_BY=<human>
 #   rule_stamp_dir                        R97/R98 where pre-push records each pushed sha (ok | skip)
 #   rule_skip_said <sha> <pr#> <body>     R98  a head pushed with SKIP_CHECKS=1 has "emergency declared by <name>" in the PR body
@@ -73,10 +73,10 @@ rule_not_ready_for_human() {
 
 rule_no_workflows() {  # rule_no_workflows <files> [wt] [push]: push adds the force push (merge-pr; open-pr pushes on its next run)
   local bad=() q
-  mapfile -t bad < <(grep -E '^\.github/workflows/' <<<"$1" || true)
+  mapfile -t bad < <(grep -E '^\.github/workflows/' <<<"$1" | grep -vxF '.github/workflows/ci.yml' || true)
   (( ${#bad[@]} )) || return 0
   q=$(printf '%q ' "${bad[@]}")
-  rule_fail "the change adds GitHub Actions workflow files (the account has no Actions budget): ${bad[*]:0:3}" \
+  rule_fail "the change adds GitHub Actions workflow files other than ci.yml (the one workflow runs on the local runner; a new one needs the owner): ${bad[*]:0:3}" \
     "$(rule_cd "${2:-}")git rm -rf -- ${q% } && git commit --amend --no-edit${3:+ && heavy -- git push --force-with-lease}"
 }
 

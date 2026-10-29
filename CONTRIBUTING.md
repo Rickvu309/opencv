@@ -3,7 +3,7 @@
 This is how we work in the opencv repo. It applies to people and coding agents alike.
 Agents: read `AGENTS.md` first. Details for each topic live in `docs/git-workflow/`.
 
-**There is no CI (no GitHub Actions).** Rules are enforced by GitHub settings (ruleset, CODEOWNERS), local Git hooks, the scripts in `scripts/`, and the review checklist. Local hooks can be bypassed, so the review is the real gate.
+**CI is one workflow on a free self-hosted runner** (`.github/workflows/ci.yml`; no GitHub-hosted Actions minutes). Rules are enforced by GitHub settings (ruleset, CODEOWNERS), local Git hooks, the scripts in `scripts/`, and the review checklist. Local hooks can be bypassed, so the review is the real gate.
 
 ## The short version
 

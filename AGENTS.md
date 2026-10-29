@@ -59,7 +59,7 @@ Tests that hold this shape:
 These rules are not optional.
 Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks: `docs/git-workflow/rule-enforcement.md`.
 
-There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review checklist are the only gates, so never bypass them.
+`.github/workflows/ci.yml` runs the quick check on the free runner `opencv-local` (required `ci` status). Never bypass the local hooks (`.githooks/`) or the review checklist.
 
 #### 1. Issue first
 
@@ -108,7 +108,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.
 - Never create `develop`, `staging`, or `release/` branches.
-- Never add GitHub Actions workflows (`.github/workflows/`). The account has no Actions budget.
+- Never add a workflow besides `ci.yml` or use a hosted runner (no budget). `ci.yml` changes are `risk:high`.
 
 #### 6. Merge and clean up
 

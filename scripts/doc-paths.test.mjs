@@ -35,8 +35,8 @@ const PLACEHOLDER = /[<>*{$]|\.\.\./
 // Screenshots and downloads are outputs a run writes, so only code and docs are looked up by file name.
 const CODE_EXT = /\.(?:tsx?|mjs|css|md|sh)$/
 const GENERATED = /^apps\/api\/\.data\/|\/dist(?:\/|$)/
-// Named to say it must stay absent: AGENTS.md bans GitHub Actions workflows.
-const ABSENT_ON_PURPOSE = new Set([".github/workflows/"])
+// Named to say it must stay absent: AGENTS.md allows only .github/workflows/ci.yml.
+const ABSENT_ON_PURPOSE = new Set([])
 const ROOT_DOCS = ["AGENTS.md", "CONTEXT.md"]
 
 const docs = tracked.filter(

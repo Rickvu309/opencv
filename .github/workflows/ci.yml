@@ -1,0 +1,32 @@
+name: Checks
+
+on:
+  pull_request:
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The quick check on what the PR changed, on this machine's runner (free, no Actions minutes).
+  # `heavy` keeps it inside the machine's two-job slots. The full check stays in scripts/review-pr.sh.
+  check:
+    runs-on: [self-hosted, opencv-local]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: pnpm install --frozen-lockfile
+      - run: heavy --label ci-${{ github.event.pull_request.number }} -- scripts/check.sh --changed
+
+  # The one required check. The main ruleset requires the context "ci", so keep this name.
+  ci:
+    needs: [check]
+    if: always()
+    runs-on: [self-hosted, opencv-local]
+    steps:
+      - run: test "${{ needs.check.result }}" = success
