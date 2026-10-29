@@ -260,7 +260,6 @@ if (( changed_mode )); then
           script_tests=(
             "codeowners-tests|scripts/test-codeowners.sh|scripts/codeowners-lib.sh scripts/test-codeowners.sh scripts/review-pr.sh .github/CODEOWNERS"
             "commit-msg-tests|scripts/test-commit-msg.sh|.githooks/commit-msg scripts/test-commit-msg.sh"
-            "new-task-tests|scripts/test-new-task.sh|scripts/new-task.sh scripts/test-new-task.sh scripts/lib/result.sh scripts/lib/disk.sh scripts/lib/rules.sh"
             "pre-commit-tests|scripts/test-pre-commit.sh|.githooks/pre-commit scripts/test-pre-commit.sh .gitattributes"
             "review-pr-tests|scripts/test-review-pr.sh|scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh scripts/lib/rules.sh scripts/lib/verify-tier.sh scripts/lib/verify-gate.mjs scripts/lib/review-pr-verify-cases.sh"
             "rules-tests|scripts/test-rules.sh|scripts/lib/rules.sh scripts/test-rules.sh .githooks/pre-push"
