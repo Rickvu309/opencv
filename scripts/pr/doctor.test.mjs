@@ -119,6 +119,16 @@ test("the drift found on 2026-10-29 is reported with its fix", async () => {
   assert.equal(run.code, 1)
 })
 
+test("a label in git but missing on GitHub is created", () => {
+  const drift = labelDrift(
+    declaredLabels,
+    live.filter((l) => l.name !== "ready-for-human")
+  )
+  assert.equal(drift.length, 1)
+  assert.match(drift[0].fix, /^gh label create "ready-for-human" --color /)
+  assert.match(drift[0].detail, /missing on GitHub/)
+})
+
 test("a label with another colour or description is edited, not recreated", () => {
   const drift = labelDrift(declaredLabels, [
     ...live.filter((l) => l.name !== "docs" && l.name !== "fix"),
