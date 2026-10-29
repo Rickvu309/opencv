@@ -54,14 +54,16 @@ function RowDetail({ title, detail }: { title: string; detail: string }) {
   )
 }
 
-function focusSearchButton() {
-  window.setTimeout(() => {
+export function focusSearchButton() {
+  const timer = window.setTimeout(() => {
+    if (typeof document === "undefined") return
     const buttons = [
       ...document.querySelectorAll<HTMLElement>('button[aria-label="Search"]'),
     ]
     const visible = buttons.find((button) => button.getClientRects().length > 0)
     ;(visible ?? buttons[0])?.focus()
   }, 30)
+  return () => window.clearTimeout(timer)
 }
 
 export function CommandPalette({
@@ -97,8 +99,9 @@ export function CommandPalette({
   }, [open])
 
   useEffect(() => {
-    if (sawOpen.current && !open) focusSearchButton()
+    const wasOpen = sawOpen.current
     sawOpen.current = open
+    if (wasOpen && !open) return focusSearchButton()
   }, [open])
 
   useEffect(() => {
@@ -140,7 +143,6 @@ export function CommandPalette({
       event.preventDefault()
       event.stopImmediatePropagation()
       onOpenChange(false)
-      focusSearchButton()
     }
     document.addEventListener("keydown", onKey, true)
     return () => document.removeEventListener("keydown", onKey, true)
