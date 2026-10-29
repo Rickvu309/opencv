@@ -112,8 +112,8 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 6. Merge and clean up
 
-- Merge only with squash. An agent under the owner's account (`@quanvu309`) merges its own PR with `heavy -- scripts/merge-pr.sh <pr#>` from the main checkout, never by hand. It refuses another author's PR, reruns `scripts/review-pr.sh`, and requires a comment or review that names the current patch id and says `Independent review` (plus `verify` when the PR changes `apps/`): `review-pr.sh: OK (patch id <id>, main <sha>). Independent review: <who>, approved. verify-<skill>: <result>`. Then it posts the `gates/review-pr` status and runs `gh pr merge --squash --admin --match-head-commit <head>`. `--dry-run` stops before those two.
-- `--admin` skips the ruleset, so the independent review must have no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or `HUMAN REQUIRED`.
+- Merge only with squash. An agent under the owner's account (`@quanvu309`) merges its own PR with `heavy -- scripts/merge-pr.sh <pr#>` from the main checkout, never by hand. It refuses another author's PR, reruns `scripts/review-pr.sh`, and requires a comment or review that names the current patch id and says `Independent review` (plus `verify` when the PR changes `apps/`): `review-pr.sh: OK (patch id <id>, main <sha>). Independent review: <who>, approved. verify-<skill>: <result>`. Then it posts the `gates/review-pr` status and runs `gh pr merge --squash --match-head-commit <head>`. `--dry-run` stops before those two.
+- No `--admin`, no bypass. GitHub requires `ci` and `gates/review-pr`, no approval. The independent review stays a local gate with no open finding; `HUMAN REQUIRED` is never merged.
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
 

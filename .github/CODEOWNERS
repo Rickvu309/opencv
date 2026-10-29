@@ -1,8 +1,8 @@
 # CODEOWNERS: paths listed here need approval from a listed owner before merge
-# (the main ruleset has "require code owner review" turned on).
+# (the main ruleset does not require code owner review; this file names the owner).
 #
-# Rule: every path needs @quanvu309's approval, so contributors
-# can open PRs but cannot merge them. Only @quanvu309 bypasses the ruleset.
+# Rule: @quanvu309 owns every path. GitHub no longer blocks a Write
+# collaborator's merge; the repo relies on having one collaborator.
 # The review agent must NOT be listed here.
 #
 # Owners: @quanvu309 (the only human). Do not add contributors as owners.

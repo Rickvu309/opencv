@@ -21,7 +21,8 @@ case "$1 $2" in
   "api repos/owner/repo/compare/"*) [[ -z "${MP_COMPARE_FAIL:-}" ]] || exit 1; printf '%s\n' ${MP_COMPARE_FILES:-} ;;
   "api repos/owner/repo/commits/"*) jq -r "${@: -1}" <<<"${MP_CI:-$ci_ok}" ;;
   "issue view") printf '%s\n' ${MP_LABELS:-} ;;
-  "pr merge" | "api repos/owner/repo/statuses/"*) ;;
+  "pr merge") [[ -z "${MP_MERGE_FAIL:-}" ]] || exit 1 ;;
+  "api repos/owner/repo/statuses/"*) ;;
   "pr view")
     case "$*" in
       *"--json body"*) jq -r "${@: -1}" < <(jq -nc --arg b "${MP_BODY:-}" '{body:$b}') ;;

@@ -155,12 +155,12 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
   const changed = liveRuleset()
   changed.rules.find(
     (r) => r.type === "pull_request"
-  ).parameters.require_code_owner_review = false
+  ).parameters.require_code_owner_review = true
   let drift = await doctor(fakeIo({ ruleset: async () => changed }))
   assert.equal(drift.length, 1)
   assert.match(
     drift[0].detail,
-    /require_code_owner_review: git true, GitHub false/
+    /require_code_owner_review: git false, GitHub true/
   )
   assert.equal(
     drift[0].fix,
@@ -184,12 +184,23 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
   )
 
   const loose = liveRuleset()
-  loose.bypass_actors = []
+  loose.bypass_actors = [
+    { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
+  ]
   loose.conditions.ref_name.include = ["refs/heads/dev"]
   drift = await doctor(fakeIo({ ruleset: async () => loose }))
   assert.deepEqual(
     drift.map((d) => d.detail.split(":")[0]),
     ["bypass_actors[5]", "conditions.ref_name.include"]
+  )
+
+  const nogate = liveRuleset()
+  const checks = nogate.rules.find((r) => r.type === "required_status_checks")
+  checks.parameters.required_status_checks.pop()
+  drift = await doctor(fakeIo({ ruleset: async () => nogate }))
+  assert.match(
+    drift[0].detail,
+    /\[gates\/review-pr\]: in git, missing on GitHub/
   )
 
   drift = await doctor(fakeIo({ ruleset: async () => null }))
@@ -205,10 +216,14 @@ test("ruleset: required checks are matched by context, not by position", async (
   const missing = liveRuleset()
   checks(missing).required_status_checks = []
   let drift = await doctor(fakeIo({ ruleset: async () => missing }))
-  assert.equal(drift.length, 1)
+  assert.equal(drift.length, 2)
   assert.match(
     drift[0].detail,
     /required_status_checks\[ci\]: in git, missing on GitHub/
+  )
+  assert.match(
+    drift[1].detail,
+    /required_status_checks\[gates\/review-pr\]: in git, missing on GitHub/
   )
 
   const extra = liveRuleset()
