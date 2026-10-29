@@ -23,7 +23,7 @@ describe("GET /health/deep", () => {
       sha: "abc1234",
       db: true,
       mail: false,
-      schemaVersion: "0000_opencv_app",
+      schemaVersion: "0001_account_issuer_optional",
     })
 
     const shallow = await app.request("/health")
@@ -47,7 +47,7 @@ describe("GET /health/deep", () => {
       sha: "abc1234",
       db: true,
       mail: true,
-      schemaVersion: "0000_opencv_app",
+      schemaVersion: "0001_account_issuer_optional",
     })
     expect(text).not.toContain(mail.resendApiKey)
     expect(text).not.toContain(mail.authEmailFrom)

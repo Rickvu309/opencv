@@ -59,11 +59,15 @@ describe("opencv_app migrations", () => {
     ) as { entries: { tag: string }[] }
     expect(journal.entries.map((entry) => entry.tag)).toEqual([
       "0000_opencv_app",
+      "0001_account_issuer_optional",
     ])
     const sqlFiles = readdirSync(migrationsFolder).filter((name) =>
       name.endsWith(".sql")
     )
-    expect(sqlFiles).toEqual(["0000_opencv_app.sql"])
+    expect(sqlFiles).toEqual([
+      "0000_opencv_app.sql",
+      "0001_account_issuer_optional.sql",
+    ])
     const source = readFileSync(
       path.join(migrationsFolder, "0000_opencv_app.sql"),
       "utf8"
