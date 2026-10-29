@@ -15,14 +15,6 @@ export const TEMPLATE_FIELDS = [
     options: TYPES,
   },
   {
-    id: "your-words",
-    label: "Your words",
-    flag: "--your-words",
-    kind: "textarea",
-    required: true,
-    exempt: true,
-  },
-  {
     id: "what",
     label: "What and why",
     flag: "--what",

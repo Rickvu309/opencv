@@ -73,7 +73,7 @@ const PATHY = [
   /(?:^|\s)\.[a-z]+\//i,
 ]
 
-export const PLAIN_RULE = `Write it like one person talking to another. Short sentences (under ${SENTENCE_LIMIT} words), everyday words, one idea per sentence. Say what changes for the owner and how they will see it, not how the code works. Quote the owner's own words under "Your words", and never present your own choices as theirs; ask under "Questions for you" instead. Every "Done when" line names something the owner can see or try, at most ${DONE_LIMIT} lines. No backticks, no file names, no jargon. Keep technical notes under "Details for the agent". Reading grade ${GRADE_LIMIT} or lower.`
+export const PLAIN_RULE = `Write it like one person talking to another. Short sentences (under ${SENTENCE_LIMIT} words), everyday words, one idea per sentence. Say what changes for the owner and how they will see it, not how the code works. Never present your own choices as the owner's; ask under "Questions for you" instead. Every "Done when" line names something the owner can see or try, at most ${DONE_LIMIT} lines. No backticks, no file names, no jargon. Keep technical notes under "Details for the agent". Reading grade ${GRADE_LIMIT} or lower.`
 
 function plainSections(body) {
   return String(body ?? "")

@@ -32,7 +32,7 @@ flowchart LR
 - The only PRs without an issue are Dependabot/Renovate dependency updates.
 - If an issue needs more than a few days of work, split it into sub-issues. Each sub-issue gets its own branch and PR.
 - Assign yourself before you start, so nobody duplicates the work.
-- Use the Task form (type, Your words, What and why, Done when, Risk), or `scripts/ocv-task.mjs file`.
+- Use the Task form (type, What and why, Done when, Risk), or `scripts/ocv-task.mjs file`.
 
 ## 3. Branch naming
 

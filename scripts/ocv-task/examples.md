@@ -4,10 +4,6 @@
 
 feat
 
-### Your words
-
-"When I come back to the jobs page I want my last search to still be there."
-
 ### What and why
 
 The jobs page forgets what you typed. You have to type it again each visit. This keeps your last search so you can pick up where you left off.
@@ -35,10 +31,6 @@ Store it per user in the jobs read. Keep the web side in the jobs feature folder
 ### Type
 
 fix
-
-### Your words
-
-"I got two codes in my inbox. Only the second one worked."
 
 ### What and why
 
