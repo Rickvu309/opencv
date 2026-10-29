@@ -92,6 +92,10 @@ export function fakePorts(world = {}) {
     nextIssue: world.nextIssue ?? 77,
     nextCommentId: world.nextCommentId ?? 1000,
     commentUpdatedAt: world.commentUpdatedAt ?? "2026-10-29T12:00:05.000Z",
+    releases: new Set(world.releases ?? []),
+    uploadErr: world.uploadErr ?? null,
+    nameWithOwner: world.nameWithOwner ?? null,
+    checks: { ...(world.checks ?? {}) },
     listening: new Set(world.listening ?? []),
     assignOk: world.assignOk !== false,
     notRepo: Boolean(world.notRepo),
@@ -187,7 +191,11 @@ export function fakePorts(world = {}) {
   }
 
   const gh = {
-    repo: () => ({ owner: state.owner, name: "opencv" }),
+    repo: () => ({
+      owner: state.owner,
+      name: "opencv",
+      nameWithOwner: state.nameWithOwner ?? `${state.owner}/opencv`,
+    }),
     serverNow,
     issue(n) {
       counts.issue += 1
@@ -287,6 +295,61 @@ export function fakePorts(world = {}) {
       return { ok: true, names: [...state.labels] }
     },
     authed: () => state.authed,
+    openBoard() {
+      const issues = [...state.issues.values()]
+        .filter((item) => String(item.state).toUpperCase() === "OPEN")
+        .map((item) => ({
+          number: item.n,
+          title: item.title,
+          state: item.state,
+          body: item.body ?? "",
+          createdAt: item.createdAt,
+          lastEditedAt: item.lastEditedAt,
+          labels: [...(item.labels ?? [])],
+          comments: (item.comments ?? []).map((c) => ({ ...c })),
+        }))
+      const pulls = state.prs
+        .filter((item) => String(item.state).toUpperCase() === "OPEN")
+        .map((item) => ({ ...item }))
+      return {
+        owner: state.owner,
+        name: "opencv",
+        nameWithOwner: state.nameWithOwner ?? `${state.owner}/opencv`,
+        serverNow: serverNow(),
+        issues,
+        pulls,
+      }
+    },
+    checkRuns(sha) {
+      return state.checks[sha] ?? []
+    },
+    releaseView(tag) {
+      effect("releaseView", { tag })
+      return state.releases.has(tag)
+    },
+    releaseCreate(tag, { title, notes, target }) {
+      effect("releaseCreate", {
+        tag,
+        title,
+        notes,
+        target,
+        prerelease: true,
+      })
+      state.releases.add(tag)
+    },
+    releaseUpload(tag, files) {
+      effect("releaseUpload", { tag, files: [...files], clobber: true })
+      if (state.uploadErr) throw new Error(state.uploadErr)
+    },
+    viewIssue(n) {
+      return state.issues.has(Number(n))
+    },
+    viewPr(n) {
+      return state.prs.some((item) => item.number === Number(n))
+    },
+    commentPr(n, body) {
+      effect("prComment", { n: Number(n), body })
+    },
   }
 
   const git = {

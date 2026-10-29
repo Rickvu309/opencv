@@ -104,6 +104,11 @@ export const FIXES = {
     "The local branch and origin have diverged. Reconcile both tips, then run take --resume again.",
   UNKNOWN:
     "The claim history is incomplete, so no holder was decided. Run the command again.",
+  NOT_HIGH_RISK: "No approval is needed. Run: scripts/ocv-tools.mjs take <n>",
+  BAD_PICTURE: "Pass a picture file (.png, .jpg, .gif or .webp).",
+  MISSING_FILE: "Check the path and pass a picture that exists.",
+  TOO_BIG: "Pass a picture under 10 MB.",
+  TOO_MANY: "Pass at most 20 pictures in one run.",
   LOST: "Another agent took the claim. Your work is saved as a patch under ~/tmp/ocv-tools/lost. Stop and pick another issue.",
   ERROR: "Read the message, fix the cause, and run the command again.",
 }

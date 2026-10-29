@@ -149,6 +149,38 @@ test("a failed first page is not an issue", () => {
   assert.equal(loaded.history, "complete")
 })
 
+test("shot releases and check runs use the flags GitHub requires", () => {
+  const calls = []
+  const run = (cmd, args) => {
+    calls.push(`${cmd} ${args.join(" ")}`)
+    if (args.some((arg) => String(arg).includes("check-runs")))
+      return { ok: true, out: '{"check_runs":[]}', err: "" }
+    return { ok: true, out: "", err: "" }
+  }
+  const gh = ghAdapter(run)
+  assert.equal(gh.releaseView("screenshots"), true)
+  gh.releaseCreate("screenshots", {
+    title: "screenshots",
+    notes: "n",
+    target: "main",
+  })
+  gh.releaseUpload("screenshots", ["/tmp/a.png"])
+  gh.checkRuns("abc")
+  assert.equal(gh.viewIssue(90), true)
+  assert.equal(gh.viewPr(12), true)
+  const create = calls.find((c) => c.includes("release create"))
+  assert.match(create, /--prerelease/)
+  assert.match(create, /--target main/)
+  const upload = calls.find((c) => c.includes("release upload"))
+  assert.match(upload, /--clobber/)
+  assert.match(upload, /\/tmp\/a\.png/)
+  const checks = calls.find((c) => c.includes("check-runs"))
+  assert.match(checks, /--method GET/)
+  assert.match(checks, /check_name=ci/)
+  assert.match(checks, /filter=latest/)
+  assert.match(checks, /commits\/abc\/check-runs/)
+})
+
 test("editComment returns the PATCH updated_at", () => {
   const run = () => ({
     ok: true,

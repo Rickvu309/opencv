@@ -46,6 +46,22 @@ export const COMMANDS = [
     when: "After the merge: remove the worktree and branch and list what was removed. Refused while there is unsaved work or the pull request is not merged. Without <n> it uses the current worktree; --all handles every finished worktree, --dry-run only lists, --force also removes unsaved work.",
   },
   {
+    name: "approve",
+    usage: "approve <n>",
+    when: 'Post /approve on a risk:high issue only after the owner said "approved" in this chat. The comment says this agent relayed it. Refused for any other risk (NOT_HIGH_RISK: no approval is needed), a closed issue (CLOSED), a number that is not an issue (NOT_AN_ISSUE), or when the signed-in account is not the repository owner (NOT_OWNER). A second valid approve does nothing and exits 0.',
+  },
+  {
+    name: "board",
+    usage: "board [--json]",
+    when: "List every open issue with its risk, claim holder, idle minutes, pull request and checks. Groups: waiting for approval (risk:high without a valid /approve), open and free, taken (live), idle (past 180 minutes) and in review (pull request open). Checks are the latest ci run on the open pull request. --json prints those groups.",
+  },
+  {
+    name: "shot",
+    usage:
+      "shot <file...> [--pr <n> | --issue <n>] [--name <what>] [--no-comment]",
+    when: "Upload png, jpg, gif and webp pictures (checked by their bytes) to the screenshots release and post them. The release is created as a prerelease when it is missing. Pictures are never committed, and staging copies are removed after the upload. Defaults to this task's issue. --pr or --issue picks the target, --name names the files, --no-comment only uploads. At most 20 pictures, each at most 10 MB. A long comment is split under 60000 characters. Refused: MISSING_FILE, BAD_PICTURE, TOO_BIG, TOO_MANY.",
+  },
+  {
     name: "doctor",
     usage: "doctor",
     when: "Check this machine is set up: node, gh sign-in, the hooks path and the risk labels. One Fix line per problem.",
@@ -63,7 +79,7 @@ export function renderHelp() {
     "",
     exitText(),
     "",
-    "Later slices add check, finish, shot and board.",
+    "Later slices add check and finish.",
   ].join("\n")
 }
 
