@@ -17,7 +17,7 @@ All paths below are relative to the repo (or worktree) root.
 bash .claude/skills/verify-opencv/scripts/launch.sh <run>
 ```
 
-- Prints `READY api=<port> web=<port> run=<run>` and exits 0 only after `GET /health` returns `{"ok":true}`, a probe sign-in by email code succeeds, and the web root answers 200. Any other outcome prints `launch failed: <reason>` plus the log tails, cleans up what it started, and exits 1.
+- Prints `READY api=<port> web=<port> run=<run>` and exits 0 only after `GET /health` returns an `"ok":true` body, a probe sign-in by email code succeeds, and the web root answers 200. Any other outcome prints `launch failed: <reason>` plus the log tails, cleans up what it started, and exits 1.
 - Writes `~/tmp/opencv-verify/<run>/run.env` (ports, pids, process groups, data dir, head SHA) and appends to `api.log` and `web.log` in that directory.
 - Cold start takes about 25 s, warm start about 10 s on an idle machine. `LAUNCH_WAIT_SECONDS` (default 240) bounds each readiness wait. `OPENCV_API_PORT` and `OPENCV_WEB_PORT` pin the ports.
 - The launch environment unsets `OPENROUTER_API_KEY`, `DATABASE_URL` and `NODE_ENV`, so the run cannot reach a real model or database.

@@ -11,6 +11,11 @@
 		respond "ok" 200
 	}
 
+	handle /version.txt {
+		header Cache-Control "no-store"
+		file_server
+	}
+
 	handle /assets/* {
 		header {
 			Cache-Control "public, max-age=31536000, immutable"

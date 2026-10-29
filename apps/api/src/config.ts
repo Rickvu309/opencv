@@ -216,3 +216,8 @@ export function googleClientSecretFromEnv(env: NodeJS.ProcessEnv) {
 export function googleEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
   return Boolean(googleClientIdFromEnv(env) && googleClientSecretFromEnv(env))
 }
+
+/** Commit Railway built this deploy from; unset locally. */
+export function commitShaFromEnv(env: NodeJS.ProcessEnv) {
+  return presentEnv(env.RAILWAY_GIT_COMMIT_SHA)
+}

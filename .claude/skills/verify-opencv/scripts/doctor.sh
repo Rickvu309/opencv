@@ -33,7 +33,7 @@ listener_pid() {
 alive() { kill -0 "$1" 2>/dev/null; }
 owns_port() { [[ "$(listener_pid "$2")" == "$1" ]]; }
 marked() { tr '\0' '\n' < "/proc/$1/environ" 2>/dev/null | grep -qx "OPENCV_VERIFY_RUN=$RUN"; }
-health_ok() { [[ "$(curl -s --max-time 5 "$API_URL/health")" == '{"ok":true}' ]]; }
+health_ok() { [[ "$(curl -s --max-time 5 "$API_URL/health")" == *'"ok":true'* ]]; }
 session_ok() {
   local code
   code=$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' "$API_URL/api/session")

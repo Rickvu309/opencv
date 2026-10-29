@@ -22,6 +22,12 @@ describe("apps/web/Caddyfile", () => {
     expect(caddyfile).toContain("file_server")
   })
 
+  it("serves /version.txt uncached so a deploy check never reads a stale sha", () => {
+    expect(caddyfile).toMatch(
+      /handle \/version\.txt \{\s*header Cache-Control "no-store"\s*file_server/
+    )
+  })
+
   it("caches hashed assets forever and never caches index.html", () => {
     expect(caddyfile).toMatch(
       /handle \/assets\/\*[\s\S]*immutable[\s\S]*match status 2xx/
@@ -43,6 +49,22 @@ describe("apps/web/Dockerfile", () => {
     expect(arg).toBeGreaterThan(-1)
     expect(build).toBeGreaterThan(arg)
     expect(dockerfile).toContain("ENV VITE_API_URL=$VITE_API_URL")
+  })
+
+  it("declares RAILWAY_GIT_COMMIT_SHA and writes it, or unknown, into dist/version.txt", () => {
+    const arg = lines.findIndex(
+      (line) => line.trim() === "ARG RAILWAY_GIT_COMMIT_SHA"
+    )
+    const write = lines.findIndex((line) =>
+      line.includes("apps/web/dist/version.txt")
+    )
+    const build = lines.findIndex((line) =>
+      line.includes("pnpm turbo build --filter=web")
+    )
+
+    expect(arg).toBeGreaterThan(build)
+    expect(write).toBeGreaterThan(arg)
+    expect(lines[write]).toContain("${RAILWAY_GIT_COMMIT_SHA:-unknown}")
   })
 
   it("builds with the frozen lockfile and ships dist next to the Caddyfile", () => {
