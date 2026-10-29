@@ -152,8 +152,6 @@ export async function runCoachTurn(options: {
         status = "aborted"
         break
       }
-      // Scripted runtimes can emit tool-shaped parts without consulting the
-      // live tool set. Regeneration must never replay or display new actions.
       if (
         options.allowTools === false &&
         (part.type === "tool-call" || part.type === "tool-result")

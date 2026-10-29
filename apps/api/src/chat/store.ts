@@ -116,27 +116,26 @@ function projectCurrentMessages(rows: (typeof chatMessages.$inferSelect)[]) {
   return rows
     .filter((row) => !superseded.has(row.id))
     .map((row) => {
-      const receipts: ChatMessagePart[] = []
+      const revisions = [row]
       const seen = new Set([row.id])
       let predecessorId = row.supersedesMessageId
       while (predecessorId && !seen.has(predecessorId)) {
         seen.add(predecessorId)
         const predecessor = byId.get(predecessorId)
         if (!predecessor) break
-        receipts.unshift(
-          ...readStoredParts(predecessor.parts).filter(
-            (part) => part.type === "tool"
-          )
-        )
+        revisions.unshift(predecessor)
         predecessorId = predecessor.supersedesMessageId
       }
-      const message = toMessage(row)
-      return receipts.length > 0
-        ? {
-            ...message,
-            parts: [...receipts, ...message.parts],
-          }
-        : message
+      const current =
+        revisions.findLast((revision) => revision.text.trim()) ?? row
+      return {
+        ...toMessage(current),
+        parts: revisions.flatMap((revision) =>
+          readStoredParts(revision.parts).filter(
+            (part) => revision.id === current.id || part.type === "tool"
+          )
+        ),
+      }
     })
 }
 
@@ -357,12 +356,7 @@ export async function insertCoachMessage(input: {
       .where(eq(chats.id, input.chatId))
     return id
   })
-  if (!savedId) return null
-  const detail = await getChat(input.userId, input.chatId)
-  const message = detail.messages.find((item) => item.id === id)
-  if (!message)
-    throw new CommandError(ERROR_CODES.INTERNAL_ERROR, "Message was not saved")
-  return message
+  return savedId ? { id: savedId } : null
 }
 
 export async function deleteChat(actor: Actor, chatId: ChatId) {
