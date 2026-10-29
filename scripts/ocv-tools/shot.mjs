@@ -7,6 +7,7 @@ import {
   mkdirSync,
   openSync,
   readSync,
+  rmSync,
   statSync,
 } from "node:fs"
 import { basename, join } from "node:path"
@@ -18,13 +19,20 @@ const USAGE =
 const FLAGS = new Set(["--pr", "--issue", "--name", "--no-comment"])
 const RELEASE = "screenshots"
 const NOTES = "Pictures for issues and pull requests. Not a product release."
+const MAX_PICTURES = 20
+const MAX_BYTES = 10 * 1024 * 1024
+const COMMENT_MAX = 60000
+const SLUG_MAX = 40
 
-const slug = (text) =>
-  String(text)
+const slug = (text, max = SLUG_MAX) => {
+  const raw = String(text)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 40) || "picture"
+    .slice(0, Math.max(1, max))
+    .replace(/-+$/g, "")
+  return raw || "picture"
+}
 
 function positive(text) {
   if (text == null || text === true || text === "") throw new Error(USAGE)
@@ -33,33 +41,28 @@ function positive(text) {
   return n
 }
 
+const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+const JPG = [0xff, 0xd8, 0xff]
+const GIF87 = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]
+const GIF89 = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]
+const RIFF = [0x52, 0x49, 0x46, 0x46]
+const WEBP = [0x57, 0x45, 0x42, 0x50]
+
+// Exact bytes. ASCII decoding drops the high bit and would accept non-pictures.
+const at = (buf, start, sig) => {
+  if (buf.length < start + sig.length) return false
+  for (let i = 0; i < sig.length; i++)
+    if (buf[start + i] !== sig[i]) return false
+  return true
+}
+
 // png, jpg, gif and webp, by the leading bytes. The file name is not trusted.
 export function pictureType(bytes) {
   const b = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes)
-  if (
-    b.length >= 8 &&
-    b[0] === 0x89 &&
-    b[1] === 0x50 &&
-    b[2] === 0x4e &&
-    b[3] === 0x47 &&
-    b[4] === 0x0d &&
-    b[5] === 0x0a &&
-    b[6] === 0x1a &&
-    b[7] === 0x0a
-  )
-    return "png"
-  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
-    return "jpg"
-  if (b.length >= 6) {
-    const head = b.subarray(0, 6).toString("ascii")
-    if (head === "GIF87a" || head === "GIF89a") return "gif"
-  }
-  if (
-    b.length >= 12 &&
-    b.subarray(0, 4).toString("ascii") === "RIFF" &&
-    b.subarray(8, 12).toString("ascii") === "WEBP"
-  )
-    return "webp"
+  if (at(b, 0, PNG)) return "png"
+  if (at(b, 0, JPG)) return "jpg"
+  if (at(b, 0, GIF87) || at(b, 0, GIF89)) return "gif"
+  if (at(b, 0, RIFF) && at(b, 8, WEBP)) return "webp"
   return null
 }
 
@@ -99,6 +102,12 @@ function inspect(path) {
       `${path} is not a png, jpg, gif or webp`,
       "Pass a picture file (.png, .jpg, .gif or .webp)."
     )
+  if (st.size > MAX_BYTES)
+    throw new Refused(
+      "TOO_BIG",
+      `${path} is over 10 MB`,
+      "Pass a picture under 10 MB."
+    )
   const type = pictureType(readHead(path))
   if (!type)
     throw new Refused(
@@ -112,11 +121,12 @@ function inspect(path) {
 // Names carry the target, so two tasks do not overwrite each other.
 export function shotAssets(items, { kind, n, name }) {
   const seen = new Set()
+  const many = Boolean(name) && items.length > 1
+  const reserve = many ? String(items.length).length + 1 : 0
+  const shared = many ? slug(name, SLUG_MAX - reserve) : null
   return items.map((item, i) => {
     const base = basename(item.file).replace(/\.[^.]+$/, "")
-    const what = slug(
-      name ? (items.length > 1 ? `${name}-${i + 1}` : name) : base
-    )
+    const what = shared ? `${shared}-${i + 1}` : slug(name || base)
     const asset = `${kind}-${n}-${what}.${item.type}`
     if (seen.has(asset))
       throw new Refused(
@@ -134,6 +144,34 @@ export const shotLink = (repo, item) =>
 
 export const shotBody = (repo, items) =>
   `Pictures from the agent:\n\n${items.map((item) => shotLink(repo, item)).join("\n\n")}`
+
+// GitHub rejects an issue comment at 65536 characters. Stay under 60000.
+export function shotComments(repo, items) {
+  const chunks = []
+  let batch = []
+  const take = (group) => {
+    const body = shotBody(repo, group)
+    if (body.length >= COMMENT_MAX)
+      throw new Refused(
+        "UNKNOWN",
+        "one picture comment is over 60000 characters",
+        "Use a shorter --name. Run: scripts/ocv-tools.mjs help"
+      )
+    chunks.push(body)
+  }
+  for (const item of items) {
+    if (
+      batch.length &&
+      shotBody(repo, [...batch, item]).length >= COMMENT_MAX
+    ) {
+      take(batch)
+      batch = []
+    }
+    batch.push(item)
+  }
+  if (batch.length) take(batch)
+  return chunks
+}
 
 function targetOf(ctx, { pr, issue }) {
   if (pr) return { kind: "pr", n: pr }
@@ -186,6 +224,12 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
   const unknown = Object.keys(flags).find((key) => !FLAGS.has(key))
   if (unknown) throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
   if (!files.length) throw new Error(USAGE)
+  if (files.length > MAX_PICTURES)
+    throw new Refused(
+      "TOO_MANY",
+      `shot takes at most 20 pictures per run (${files.length} given)`,
+      "Pass at most 20 pictures in one run."
+    )
   if ("--pr" in flags && "--issue" in flags)
     throw new Refused(
       "BAD_ARGS",
@@ -207,29 +251,33 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
   const repo = JSON.parse(
     gh(ctx, "repo", "view", "--json", "nameWithOwner")
   ).nameWithOwner
+  const bodies = flags["--no-comment"] ? [] : shotComments(repo, items)
   requireTarget(ctx, target)
   ensureRelease(ctx)
   const dir = ctx.shotDir ?? join(SCRATCH, "shots")
   mkdirSync(dir, { recursive: true })
-  const staged = items.map((item) => {
-    const to = join(dir, item.asset)
-    copyFileSync(item.file, to)
-    return to
-  })
-  gh(ctx, "release", "upload", RELEASE, ...staged, "--clobber")
-  const links = items.map((item) => shotLink(repo, item))
-  let commented = false
-  if (!flags["--no-comment"]) {
-    gh(
-      ctx,
-      target.kind === "pr" ? "pr" : "issue",
-      "comment",
-      String(target.n),
-      "--body",
-      shotBody(repo, items)
-    )
-    commented = true
+  const staged = []
+  try {
+    for (const item of items) {
+      const to = join(dir, item.asset)
+      copyFileSync(item.file, to)
+      staged.push(to)
+    }
+    gh(ctx, "release", "upload", RELEASE, ...staged, "--clobber")
+    for (const body of bodies)
+      gh(
+        ctx,
+        target.kind === "pr" ? "pr" : "issue",
+        "comment",
+        String(target.n),
+        "--body",
+        body
+      )
+  } finally {
+    for (const path of staged) rmSync(path, { force: true })
   }
+  const links = items.map((item) => shotLink(repo, item))
+  const commented = bodies.length > 0
   const where =
     target.kind === "pr" ? `pull request #${target.n}` : `#${target.n}`
   return {
