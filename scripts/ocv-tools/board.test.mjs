@@ -3,7 +3,7 @@ import test from "node:test"
 import { checkState, groupOf, prFor } from "./board.mjs"
 import { claimMarker } from "./claim-marker.mjs"
 import { runCli } from "./cli.mjs"
-import { fakeCtx, issueData, minutesAgo } from "./fake-ctx.mjs"
+import { fakeCtx, minutesAgo } from "./fake-ctx.mjs"
 
 const claim = (agent, minutes, id = 1) => ({
   databaseId: id,
@@ -42,15 +42,23 @@ const DETAILS = {
   },
 }
 
-function issue(n, over = {}) {
+function comments(nodes, hasNextPage = false, endCursor = null) {
+  return { pageInfo: { hasNextPage, endCursor }, nodes }
+}
+
+function issueNode(n, over = {}) {
   const spec = { ...DETAILS[n], ...over }
-  return issueData({
+  const given = spec.comments
+  return {
     number: n,
     title: spec.title ?? `feat: Issue ${n}`,
-    labels: { nodes: [{ name: `risk:${spec.risk ?? "normal"}` }] },
-    comments: spec.comments ?? { nodes: [] },
+    state: spec.state ?? "OPEN",
+    body: spec.body ?? "### Risk\n\nnormal\n",
+    createdAt: "2026-10-01T00:00:00Z",
     lastEditedAt: spec.lastEditedAt ?? null,
-  })
+    labels: { nodes: [{ name: `risk:${spec.risk ?? "normal"}` }] },
+    comments: given?.pageInfo ? given : comments(given?.nodes ?? []),
+  }
 }
 
 function listPage(nodes, hasNextPage, endCursor) {
@@ -63,83 +71,113 @@ function listPage(nodes, hasNextPage, endCursor) {
   })
 }
 
-function graphql(line) {
-  if (line.includes("issues(states:OPEN")) {
-    const cursor = / -f cursor=(\S+)/.exec(line)?.[1]
-    if (!cursor)
-      return listPage([{ number: 10 }, { number: 11 }], true, "list2")
-    if (cursor === "list2")
-      return listPage(
-        [12, 13, 14, 15, 16].map((number) => ({ number })),
-        false,
-        null
-      )
-    return listPage([{ number: 12 }], true, "list2")
-  }
-  const n = Number(/ -F n=(\d+)/.exec(line)?.[1])
-  const cursor = / -f cursor=(\S+)/.exec(line)?.[1]
-  if (n === 12) {
-    if (!cursor)
-      return issue(12, {
-        title: "feat: Held work",
-        risk: "normal",
-        comments: {
-          pageInfo: { hasPreviousPage: true, startCursor: "c1" },
-          nodes: [
-            {
-              databaseId: 2,
-              author: { login: "x" },
-              createdAt: minutesAgo(1),
-              updatedAt: minutesAgo(1),
-              body: "later note",
-            },
-          ],
-        },
-      })
-    return issue(12, {
-      title: "feat: Held work",
-      risk: "normal",
-      comments: {
-        pageInfo: { hasPreviousPage: false, startCursor: null },
-        nodes: [claim("ada", 10)],
+function prPage(nodes, hasNextPage, endCursor) {
+  return JSON.stringify({
+    data: {
+      repository: {
+        pullRequests: { pageInfo: { hasNextPage, endCursor }, nodes },
       },
-    })
-  }
-  return issue(n)
+    },
+  })
 }
 
-const PRS = JSON.stringify([
+function commentPage(nodes, hasNextPage = false, endCursor = null) {
+  return JSON.stringify({
+    data: {
+      repository: {
+        issue: { comments: comments(nodes, hasNextPage, endCursor) },
+      },
+    },
+  })
+}
+
+const OPEN_PRS = [
   {
     number: 140,
     state: "OPEN",
     headRefName: "feat/14-work",
-    statusCheckRollup: [{ status: "COMPLETED", conclusion: "FAILURE" }],
+    headRefOid: "sha140",
   },
   {
     number: 160,
     state: "OPEN",
     headRefName: "feat/16-work",
-    statusCheckRollup: [{ status: "COMPLETED", conclusion: "SUCCESS" }],
-  },
-  {
-    number: 161,
-    state: "MERGED",
-    headRefName: "feat/16-old",
-    statusCheckRollup: [],
+    headRefOid: "sha160",
   },
   {
     number: 900,
     state: "OPEN",
     headRefName: "feat/900-other",
-    statusCheckRollup: [],
+    headRefOid: "sha900",
   },
-])
+]
+
+function checkRuns(line) {
+  const run = (conclusion) => [
+    {
+      name: "ci",
+      status: "completed",
+      conclusion,
+      started_at: "2026-10-29T11:00:00Z",
+    },
+  ]
+  const check_runs = line.includes("sha140")
+    ? run("failure")
+    : line.includes("sha160")
+      ? run("success")
+      : []
+  return { ok: true, out: JSON.stringify({ check_runs }), err: "" }
+}
+
+function graphql(line) {
+  if (line.includes("pullRequests(states:OPEN"))
+    return prPage(OPEN_PRS, false, null)
+  if (line.includes("comments(first:100,after:")) {
+    const n = Number(/ -F n=(\d+)/.exec(line)?.[1])
+    if (n === 12) return commentPage([claim("ada", 10)])
+    return commentPage([])
+  }
+  if (line.includes("issues(states:OPEN")) {
+    const cursor = / -f cursor=(\S+)/.exec(line)?.[1]
+    if (!cursor) return listPage([issueNode(10), issueNode(11)], true, "list2")
+    if (cursor === "list2")
+      return listPage(
+        [
+          issueNode(12, {
+            title: "feat: Held work",
+            risk: "normal",
+            comments: comments(
+              [
+                {
+                  databaseId: 2,
+                  author: { login: "x" },
+                  createdAt: minutesAgo(1),
+                  updatedAt: minutesAgo(1),
+                  body: "later note",
+                },
+              ],
+              true,
+              "c1"
+            ),
+          }),
+          issueNode(13),
+          issueNode(14),
+          issueNode(15),
+          issueNode(16),
+        ],
+        false,
+        null
+      )
+    return listPage([issueNode(12)], true, "list2")
+  }
+  throw new Error(`unexpected graphql ${line.slice(0, 160)}`)
+}
 
 function ctxOf(graph = graphql) {
   return fakeCtx([
     ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
     ["api graphql", (line) => ({ ok: true, out: graph(line), err: "" })],
-    ["pr list", PRS],
+    ["check-runs", checkRuns],
   ])
 }
 
@@ -179,12 +217,7 @@ test("checkState, groupOf and prFor", () => {
     "idle"
   )
   assert.equal(
-    groupOf({
-      risk: "low",
-      approved: false,
-      claim: "released",
-      prOpen: false,
-    }),
+    groupOf({ risk: "low", approved: false, claim: "released", prOpen: false }),
     "free"
   )
   assert.equal(
@@ -219,10 +252,13 @@ test("board groups open issues and reads a claim past the first comment page", (
   assert.doesNotMatch(body, /#900/)
   assert.match(next, /ocv-tools\.mjs take 11/)
   const issue12 = ctx.calls.filter((c) => c.includes("-F n=12"))
-  assert.ok(issue12.length >= 2, issue12.join("\n"))
+  assert.equal(issue12.length, 1, issue12.join("\n"))
+  assert.match(issue12[0], /cursor=c1/)
   const lists = ctx.calls.filter((c) => c.includes("issues(states:OPEN"))
   assert.equal(lists.length, 2)
   assert.match(lists[1], /cursor=list2/)
+  assert.equal(ctx.calls.filter((c) => c.includes("repo view")).length, 1)
+  assert.equal(ctx.calls.filter((c) => c.includes("/rate_limit")).length, 1)
   assert.ok(!ctx.calls.some((c) => /issue comment|release |git /.test(c)))
 })
 
@@ -250,24 +286,203 @@ test("board --json prints the same groups", () => {
   assert.match(next, /take 11/)
 })
 
-test("board refuses a stuck issue page, an unknown flag and an extra argument", () => {
+test("board reads 50 issues with a constant handful of gh calls", () => {
+  const once = (count) => {
+    const ctx = fakeCtx([
+      ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
+      [
+        "api graphql",
+        (line) => {
+          if (line.includes("pullRequests(states:OPEN"))
+            return { ok: true, out: prPage([], false, null), err: "" }
+          if (line.includes("issues(states:OPEN")) {
+            const nodes = Array.from({ length: count }, (_, i) =>
+              issueNode(i + 1, {
+                title: `feat: Issue ${i + 1}`,
+                risk: "normal",
+                comments: comments([
+                  {
+                    databaseId: i + 1,
+                    author: { login: "owner" },
+                    createdAt: minutesAgo(1),
+                    updatedAt: minutesAgo(1),
+                    body: "note",
+                  },
+                ]),
+              })
+            )
+            return { ok: true, out: listPage(nodes, false, null), err: "" }
+          }
+          return { ok: false, out: "", err: `unexpected ${line.slice(0, 120)}` }
+        },
+      ],
+    ])
+    const { code, text } = runCli(["board", "--json"], ctx)
+    assert.equal(code, 0, text)
+    const groups = JSON.parse(split(text).body)
+    assert.equal(groups.free.length, count)
+    return ctx.calls
+  }
+  const small = once(1)
+  const many = once(50)
+  assert.equal(small.length, many.length)
+  assert.ok(many.length <= 6, `${many.length}\n${many.join("\n")}`)
+  assert.equal(many.filter((c) => c.includes("repo view")).length, 1)
+  assert.equal(many.filter((c) => c.includes("/rate_limit")).length, 1)
+  assert.equal(many.filter((c) => c.includes("issues(states:OPEN")).length, 1)
+  assert.match(
+    many.find((c) => c.includes("issues(states:OPEN")),
+    /comments\(first:100\)/
+  )
+  assert.equal(many.filter((c) => c.includes("-F n=")).length, 0)
+  assert.equal(
+    many.filter((c) => c.includes("pullRequests(states:OPEN")).length,
+    1
+  )
+})
+
+test("an open pull request behind newer closed ones stays in review", () => {
+  const closed = Array.from({ length: 200 }, (_, i) => ({
+    number: 1000 + i,
+    state: "CLOSED",
+    headRefName: `chore/${1000 + i}-done`,
+  }))
+  const ctx = fakeCtx([
+    ["repo view", '{"owner":{"login":"owner"},"name":"opencv"}'],
+    [
+      "api graphql",
+      (line) => {
+        if (line.includes("issues(states:OPEN"))
+          return {
+            ok: true,
+            out: listPage(
+              [issueNode(14, { title: "feat: Old review", risk: "normal" })],
+              false,
+              null
+            ),
+            err: "",
+          }
+        if (line.includes("pullRequests(states:OPEN")) {
+          const cursor = / -f cursor=(\S+)/.exec(line)?.[1]
+          if (!cursor)
+            return {
+              ok: true,
+              out: prPage(
+                [
+                  {
+                    number: 8,
+                    state: "OPEN",
+                    headRefName: "feat/8-other",
+                    headRefOid: "sha8",
+                  },
+                ],
+                true,
+                "pr2"
+              ),
+              err: "",
+            }
+          return {
+            ok: true,
+            out: prPage(
+              [
+                {
+                  number: 14,
+                  state: "OPEN",
+                  headRefName: "feat/14-work",
+                  headRefOid: "sha14",
+                },
+              ],
+              false,
+              null
+            ),
+            err: "",
+          }
+        }
+        return { ok: false, out: "", err: `unexpected ${line.slice(0, 120)}` }
+      },
+    ],
+    ["pr list", JSON.stringify(closed)],
+    [
+      "check-runs",
+      () => ({
+        ok: true,
+        out: JSON.stringify({
+          check_runs: [
+            {
+              name: "ci",
+              status: "completed",
+              conclusion: "failure",
+              started_at: "2026-10-29T09:00:00Z",
+            },
+            {
+              name: "ci",
+              status: "completed",
+              conclusion: "success",
+              started_at: "2026-10-29T11:00:00Z",
+            },
+          ],
+        }),
+        err: "",
+      }),
+    ],
+  ])
+  const { code, text } = runCli(["board", "--json"], ctx)
+  assert.equal(code, 0, text)
+  const groups = JSON.parse(split(text).body)
+  const row = groups.inReview.find((item) => item.number === 14)
+  assert.ok(row, text)
+  assert.equal(row.pr.number, 14)
+  assert.equal(row.pr.state, "open")
+  assert.equal(row.checks, "passing")
+  assert.ok(!ctx.calls.some((c) => c.includes("pr list")))
+  const pages = ctx.calls.filter((c) => c.includes("pullRequests(states:OPEN"))
+  assert.equal(pages.length, 2)
+  assert.match(pages[1], /cursor=pr2/)
+  const checks = ctx.calls.filter((c) => c.includes("check-runs"))
+  assert.equal(checks.length, 1)
+  assert.match(checks[0], /sha14/)
+  assert.match(checks[0], /check_name=ci/)
+  assert.match(checks[0], /filter=latest/)
+})
+
+test("board refuses a stuck issue page, a stuck comment page, an unknown flag and an extra argument", () => {
   const stuck = ctxOf((line) => {
+    if (line.includes("pullRequests(states:OPEN"))
+      return prPage([], false, null)
     if (line.includes("issues(states:OPEN"))
-      return listPage([{ number: 10 }], true, "stuck")
-    return issue(10)
+      return listPage([issueNode(10)], true, "stuck")
+    throw new Error(`unexpected ${line.slice(0, 120)}`)
   })
   const refused = runCli(["board"], stuck)
   assert.equal(refused.code, 2, refused.text)
   assert.match(refused.text, /REFUSED UNKNOWN/)
   assert.match(refused.text, /\nFix: /)
+  const cut = ctxOf((line) => {
+    if (line.includes("pullRequests(states:OPEN"))
+      return prPage([], false, null)
+    if (line.includes("comments(first:100,after:"))
+      return commentPage([], true, "c1")
+    if (line.includes("issues(states:OPEN"))
+      return listPage(
+        [issueNode(10, { comments: comments([], true, "c1") })],
+        false,
+        null
+      )
+    throw new Error(`unexpected ${line.slice(0, 120)}`)
+  })
+  const partial = runCli(["board"], cut)
+  assert.equal(partial.code, 2, partial.text)
+  assert.match(partial.text, /REFUSED UNKNOWN/)
   assert.match(runCli(["board", "--publish"], fakeCtx([])).text, /UNKNOWN_FLAG/)
   assert.equal(runCli(["board", "10"], fakeCtx([])).code, 1)
 })
 
 test("an empty board still ends with Next", () => {
   const ctx = ctxOf((line) => {
+    if (line.includes("pullRequests(states:OPEN"))
+      return prPage([], false, null)
     if (line.includes("issues(states:OPEN")) return listPage([], false, null)
-    return issue(1)
+    throw new Error(`unexpected ${line.slice(0, 120)}`)
   })
   const { code, text } = runCli(["board"], ctx)
   assert.equal(code, 0, text)
