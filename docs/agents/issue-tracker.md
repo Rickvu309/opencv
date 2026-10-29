@@ -4,9 +4,9 @@ Issues and specs for this repo live in GitHub issues of `quanvu309/opencv`. Do n
 
 ## Conventions
 
-- Create issues from the forms in `.github/ISSUE_TEMPLATE/` (Feature, Bug, Chore / refactor / docs). Agents can use `gh issue create --title "..." --body "..." --label <type>`.
+- Create issues from the Task form in `.github/ISSUE_TEMPLATE/task.yml` (type, Goal, Acceptance, Proof, optional Notes). Agents use `gh issue create --title "type: ..." --body "..." --label <type>` with a body that has the same `### Goal`, `### Acceptance` and `### Proof` headings.
 - Read an issue with `gh issue view <number>`; list open work with `gh issue list`.
-- Labels come from `.github/labels.yml`: the type labels (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `needs-human-review`, and the triage vocabulary in `docs/agents/triage-labels.md`.
+- Labels come from `.github/labels.yml`: the type labels (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`), `needs-human-review`, and `ready-for-human`. `docs/agents/triage-labels.md` maps the triage roles to what replaces them. `node scripts/pr.mjs doctor` diffs GitHub against the file.
 - Assign yourself before you start. One issue is one branch is one PR.
 
 ## When a skill says "publish to the issue tracker"

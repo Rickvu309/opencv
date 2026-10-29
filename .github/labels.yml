@@ -1,5 +1,5 @@
-# Source of truth for repo labels. Apply with the commands in CONTRIBUTING.md ("Setup").
-# Format is compatible with common label-sync actions (name / color / description).
+# Source of truth for repo labels: only labels something reads. `node scripts/pr.mjs doctor` diffs GitHub against this file
+# and prints the gh command that fixes each drift.
 - name: feat
   color: "0e8a16"
   description: New feature (branch feat/)
@@ -21,18 +21,6 @@
 - name: needs-human-review
   color: "fbca04"
   description: A big decision. Blocks merge until a human approves
-- name: needs-triage
-  color: "ededed"
-  description: Maintainer needs to evaluate this issue
-- name: needs-info
-  color: "d876e3"
-  description: Waiting on reporter for more information
-- name: ready-for-agent
-  color: "0e8a16"
-  description: Fully specified, ready for an AFK agent
 - name: ready-for-human
   color: "5319e7"
   description: A decision for a human, never picked up by implementation agents
-- name: wontfix
-  color: "ffffff"
-  description: Will not be actioned

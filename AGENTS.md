@@ -2,11 +2,11 @@
 
 ### Issue tracker
 
-Issues live in GitHub issues of `quanvu309/opencv`, created from the issue forms in `.github/ISSUE_TEMPLATE/`. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub issues of `quanvu309/opencv`, created from the Task form in `.github/ISSUE_TEMPLATE/task.yml`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+Only `ready-for-human` is a label; the other triage roles are read from the issue and its PRs. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
@@ -64,7 +64,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 #### 1. Issue first
 
 - Never start work without a GitHub issue.
-- If no issue exists, create one with `gh issue create` (or the issue forms), or let `scripts/new-task.sh <type> "Issue title"` create it.
+- If no issue exists, create one with `gh issue create` (or the Task form), or let `scripts/new-task.sh <type> "Issue title"` create it.
 - If the issue is assigned to someone else, or a branch for it exists, stop and pick another issue.
 - If the work will take more than a few days, split it into sub-issues and do one at a time.
 
