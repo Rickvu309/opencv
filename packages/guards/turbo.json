@@ -4,26 +4,13 @@
     "test": {
       "inputs": [
         "$TURBO_DEFAULT$",
-        "../../scripts/**/*.mjs",
-        "../../scripts/**/*.sh",
-        "../../scripts/**/*.json",
-        "../../scripts/fixtures/**",
-        "../../.claude/skills/**/*.mjs",
-        "../../.claude/skills/**/*.sh",
-        "../../.claude/skills/**/*.json",
-        "../../docs/**",
-        "../../AGENTS.md",
-        "../../CONTEXT.md",
-        "../../CONTRIBUTING.md",
-        "../../apps/**/src/**",
-        "../../packages/**/src/**",
-        "../../.railway/**",
-        "../../.gitattributes",
-        "../../.githooks/**",
-        "../../.claude/skills/**",
-        "../../scripts/**",
-        "../../.github/**",
-        "../../.githooks/**"
+        "../../**",
+        "!../../**/node_modules/**",
+        "!../../**/dist/**",
+        "!../../**/.turbo/**",
+        "!../../.git/**",
+        "!../../apps/api/.data/**",
+        "!../../**/coverage/**"
       ]
     },
     "test:open-pr": {
@@ -32,16 +19,6 @@
         "../../scripts/open-pr.sh",
         "../../scripts/open-pr.test.mjs",
         "../../scripts/lib/**"
-      ],
-      "outputs": []
-    },
-    "test:shell": {
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "../../scripts/**/*.sh",
-        "../../scripts/**/*.mjs",
-        "../../scripts/fixtures/**",
-        "../../.githooks/**"
       ],
       "outputs": []
     }

@@ -278,10 +278,6 @@ else
     fi
   done
 
-  if [[ " ${tasks[*]} " == *" test "* ]]; then
-    echo "==> turbo test:open-pr (@workspace/guards; full check)"
-    run pnpm exec turbo run test:open-pr --concurrency=$conc --filter=@workspace/guards || failed+=(test:open-pr)
-  fi
 fi
 
 # Retry (CHECK_RETRY_FAILED_TESTS=1, see the header): sets failed=() when every failed file passes alone.
