@@ -188,7 +188,7 @@ export function runCli(argv, ctx = realCtx()) {
     const [cmd, ...rest] = argv
     const result = command(ctx, cmd, rest)
     return {
-      code: result.exit ?? EXIT.OK,
+      code: result.exit ?? EXIT.ok,
       text: render(result),
     }
   } catch (error) {

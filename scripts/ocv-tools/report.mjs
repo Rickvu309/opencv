@@ -1,5 +1,6 @@
 // help, status and doctor: where things stand, with one next step or one fix per problem.
-import { EXIT, Refused, gh } from "./core.mjs"
+import { gh } from "./core.mjs"
+import { EXIT, Refused, exitText } from "./result.mjs"
 import { RISK_LABELS, RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
 import { holderLine, holderOf } from "./claim-marker.mjs"
@@ -60,11 +61,7 @@ export function renderHelp() {
     "",
     rows,
     "",
-    "Exit codes: 0 ok, 1 error, 2 refused with a named code (UNKNOWN_COMMAND, UNREADABLE,",
-    "NOT_AN_ISSUE, NEEDS_APPROVAL, CLOSED, MISSING_FIELDS, HELD, WORKTREE_EXISTS, NOT_A_TASK,",
-    "NO_WORKTREE, NOT_OWNER, DIRTY, NOT_MERGED, UNKNOWN_FLAG, BAD_ARGS, BAD_ISSUE, DIVERGED,",
-    "UNKNOWN), 3 LOST (another agent took the claim).",
-    "Every result ends with a Next: or Fix: line.",
+    exitText(),
     "",
     "Later slices add check, finish, shot and board.",
   ].join("\n")
@@ -302,7 +299,7 @@ export function doctor(ctx) {
     )
   if (problems.length)
     return {
-      exit: EXIT.ERROR,
+      exit: EXIT.error,
       lines: [
         ...lines,
         "",

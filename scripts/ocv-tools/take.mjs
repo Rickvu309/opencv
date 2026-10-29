@@ -61,7 +61,7 @@ export function take(ctx, target, flags = {}) {
   try {
     const r = takeInner(ctx, target, flags, (v) => (id = v))
     if (r.noResult) return r
-    if (r.exit === EXIT.LOST)
+    if (r.exit === EXIT.lost)
       return {
         ...r,
         tail: done("fail", { cause: "other", detail: r.lines[0] }),
@@ -101,7 +101,7 @@ function heldError(n, h) {
 function lostTake(ctx, made, n, h) {
   const removed = discardWorktree(ctx, made)
   return {
-    exit: EXIT.LOST,
+    exit: EXIT.lost,
     lines: [
       `LOST #${n}: ${h.agent ? `${h.agent} holds the claim now` : "you no longer hold the claim"}.`,
       removed

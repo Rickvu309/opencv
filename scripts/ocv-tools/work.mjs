@@ -57,7 +57,7 @@ function savedPatch(ctx, n) {
 function lost(ctx, { n }, holder) {
   const path = savedPatch(ctx, n)
   return {
-    exit: EXIT.LOST,
+    exit: EXIT.lost,
     lines: [
       `LOST #${n}: ${holder.agent ? `${holder.agent} holds the claim now` : "you no longer hold the claim"}.`,
       `Your work is saved as a patch: ${path}`,
@@ -80,7 +80,7 @@ function lostPushed(ctx, t, holder) {
   }
   lines.push("Stop working on this issue.")
   return {
-    exit: EXIT.LOST,
+    exit: EXIT.lost,
     lines,
     fix: `The commits are already on origin/${t.branch}. ${who} holds #${t.n}. Stop working in this worktree and do not edit the claim. Run: scripts/ocv-tools.mjs status ${t.n}`,
   }
