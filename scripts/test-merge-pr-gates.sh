@@ -5,7 +5,7 @@ set -euo pipefail
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=scripts/lib/merge-pr-harness.sh
 . "$here/lib/merge-pr-harness.sh"
-# The required ci check gates the --admin merge: only a success on the reviewed head passes.
+# The required ci check gates the merge: only a success on the reviewed head passes.
 for case in "failure:{\"check_runs\":[{\"name\":\"ci\",\"conclusion\":\"failure\",\"started_at\":\"2026-01-01T00:00:00Z\"}]}:is failure" \
   "pending:{\"check_runs\":[{\"name\":\"ci\",\"conclusion\":null,\"started_at\":\"2026-01-01T00:00:00Z\"}]}:is pending" \
   "missing:{\"check_runs\":[]}:is missing" \

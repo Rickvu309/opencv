@@ -13,7 +13,7 @@ reset
 run
 expect "ok path merges" 0 "merged PR #5 as cafe0000cafe0000cafe0000cafe0000cafe0000" "node scripts/pr.mjs release cafe0000cafe0000cafe0000cafe0000cafe0000 --wait 600"
 called "ok path" "api repos/owner/repo/statuses/$head -f state=success -f context=gates/review-pr -f description=OK patch ${patch:0:12} main 1234567890ab"
-called "ok path" "pr merge 5 --squash --admin --match-head-commit $head"
+called "ok path" "pr merge 5 --squash --match-head-commit $head"
 status_line=$(grep -n 'statuses/' "$MP_LOG" | head -1 | cut -d: -f1); merge_line=$(grep -n 'pr merge' "$MP_LOG" | head -1 | cut -d: -f1)
 (( status_line < merge_line )) || fail "ok path" "status was not posted before the merge"
 result status=ok cause=none "next=node scripts/pr.mjs release cafe0000cafe0000cafe0000cafe0000cafe0000 --wait 600"
@@ -68,7 +68,7 @@ expect "--regate with disjoint files reruns the gate and merges" 0 "main moved f
 [[ "$(cat "$MP_COUNT")" == 2 ]] || fail "regate disjoint" "the gate ran $(cat "$MP_COUNT") times, want 2"
 called "regate disjoint" "api repos/owner/repo/compare/1234567890ab...$moved"
 called "regate disjoint" "description=OK patch ${patch:0:12} main 999999999999"
-called "regate disjoint" "pr merge 5 --squash --admin --match-head-commit $head"
+called "regate disjoint" "pr merge 5 --squash --match-head-commit $head"
 result status=ok cause=none
 
 reset; MP_MAIN=$moved MP_REVIEW_OUT2=$ok_line2 MP_COMPARE_FILES="scripts/x.sh apps/web/a.tsx" run --regate
@@ -112,13 +112,13 @@ reset; MP_EVIDENCE=$(jq -nc --arg a "$review_only" --arg b "verify-opencv PASS f
 expect "evidence may come from a comment and a review" 0 "merged PR #5"
 
 reset; MP_AUTHOR=contributor run
-expect "non-author refuses" 1 "contributor" "never merged with --admin"
+expect "non-author refuses" 1 "contributor" "never merged here"
 never "non-author" "api repos/"; never "non-author" "pr merge"
 [[ ! -s "$tmp/out" ]] || ! grep -q 'review-pr: working' "$tmp/out" || fail "non-author" "the review ran before the author check"
 
 reset
 run --dry-run
-expect "dry run passes and prints the commands" 0 "dry run, nothing changed" "context=gates/review-pr" "pr merge 5 --squash --admin --match-head-commit $head"
+expect "dry run passes and prints the commands" 0 "dry run, nothing changed" "context=gates/review-pr" "pr merge 5 --squash --match-head-commit $head"
 no_merge "dry run"
 
 reset; MP_AUTHOR=contributor run --dry-run

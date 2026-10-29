@@ -39,4 +39,4 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 
 ## Protection
 
-`main` is protected by the ruleset in `.github/rulesets/main.json`: no deletion or force-push, linear history, squash merge only, one approving review with code-owner review (`.github/CODEOWNERS`), and resolved review threads. It names no required status check; the gates lane (`scripts/review-pr.sh`) stands in for CI.
+`main` is protected by the ruleset in `.github/rulesets/main.json`: no deletion or force-push, linear history, squash merge only, and the required `ci` check. It has no bypass actor and asks for no approving review (one account); the independent review and `scripts/review-pr.sh` are local gates.

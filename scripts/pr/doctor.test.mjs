@@ -155,12 +155,12 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
   const changed = liveRuleset()
   changed.rules.find(
     (r) => r.type === "pull_request"
-  ).parameters.require_code_owner_review = false
+  ).parameters.require_code_owner_review = true
   let drift = await doctor(fakeIo({ ruleset: async () => changed }))
   assert.equal(drift.length, 1)
   assert.match(
     drift[0].detail,
-    /require_code_owner_review: git true, GitHub false/
+    /require_code_owner_review: git false, GitHub true/
   )
   assert.equal(
     drift[0].fix,
@@ -184,7 +184,9 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
   )
 
   const loose = liveRuleset()
-  loose.bypass_actors = []
+  loose.bypass_actors = [
+    { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
+  ]
   loose.conditions.ref_name.include = ["refs/heads/dev"]
   drift = await doctor(fakeIo({ ruleset: async () => loose }))
   assert.deepEqual(

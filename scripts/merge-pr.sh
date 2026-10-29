@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # merge-pr.sh: the owner's merge command. Reruns the review gate, checks the evidence for the exact patch, posts the
-# gates/review-pr status on the head and squash-merges with --admin. For an agent under the owner's account and the
+# gates/review-pr status on the head and squash-merges. For an agent under the owner's account and the
 # owner's own PRs only; a contributor's PR is refused.
 #
 # Usage (from the main checkout, through heavy like review-pr.sh):
@@ -13,9 +13,9 @@
 #   2. scripts/review-pr.sh <pr#> exits 0 (override the command with MERGE_PR_REVIEW_CMD)
 #   3. a PR comment or review body names the current patch id and says "Independent review"; a PR that changes
 #      anything under apps/ also needs a body with that patch id that says "verify"
-#   3b. the check-run named ci is success on the head the review tested (--admin skips the ruleset, so it is read here)
+#   3b. the check-run named ci is success on the head the review tested (GitHub requires it too; read here as a second guard)
 #   4. main is still the commit the review tested, then gh api posts state=success for context gates/review-pr on the head the review tested
-#   5. gh pr merge --squash --admin --match-head-commit <that head>
+#   5. gh pr merge --squash --match-head-commit <that head>
 #   6. prints the merge commit and the deploy check to run next
 # --dry-run does 1-3, prints what 4 and 5 would run and changes nothing.
 # --regate: if main moved while the gate ran (step 4 fails), print whether the files that changed on main are disjoint
@@ -77,7 +77,7 @@ parse_review() {
 echo "==> PR #$pr: author"
 author=$(gh pr view "$pr" --json author --jq .author.login)
 me=$(gh api user --jq .login)
-[[ "$author" == "$me" ]] || die "PR #$pr is by $author, not $me. A contributor's PR is never merged with --admin."
+[[ "$author" == "$me" ]] || die "PR #$pr is by $author, not $me. A contributor's PR is never merged here."
 
 review_out=$(mktemp)
 result_cleanup() { rm -f "$review_out"; }
@@ -160,7 +160,7 @@ report_main_moved() {
   fi
 }
 
-# --admin skips the ruleset, so the required ci check is read here: a green run on the exact head the review tested.
+# GitHub also requires ci on main; read here too, belt and braces: a green run on the exact head the review tested.
 ci_gate() {
   local state
   state=$(gh api "repos/$repo/commits/$rec_head/check-runs?check_name=ci" --jq \
@@ -177,7 +177,7 @@ while :; do
   ci_gate
   status_cmd=(gh api "repos/$repo/statuses/$rec_head" -f state=success -f context=gates/review-pr
     -f "description=OK patch ${rec_patch:0:12} main ${rec_main:0:12}")
-  merge_cmd=(gh pr merge "$pr" --squash --admin --match-head-commit "$rec_head")
+  merge_cmd=(gh pr merge "$pr" --squash --match-head-commit "$rec_head")
 
   if (( dry_run )); then
     echo "==> dry run, nothing changed. Would run:"

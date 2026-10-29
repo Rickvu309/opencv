@@ -106,19 +106,19 @@ If the fix is risky or will take time, first roll back to the previous productio
 
 ## 9. Guardrails (set up once per repo)
 
-| Guardrail               | Where        | What it does                                                                                                                            |
-| ----------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Ruleset on `main`       | GitHub       | Requires a PR (1 approval: one account, see `docs/git-workflow/review-and-approval.md`), linear history; blocks force-push and deletion |
-| Merge settings          | GitHub       | Squash only, PR title as commit message, branches auto-deleted after merge                                                              |
-| `CODEOWNERS`            | GitHub       | Names the owner of every path; `review-pr.sh` notes env/secrets paths                                                                   |
-| `pre-push` hook         | Local        | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed)                         |
-| `commit-msg` hook       | Local        | Blocks commits on `main`; rejects empty messages                                                                                        |
-| `pre-commit` hook       | Local        | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped         |
-| `scripts/open-pr.sh`    | Local        | Correct PR title and `Closes #`, quick check before push                                                                                |
-| `scripts/review-pr.sh`  | Review agent | Verifies the PR and runs the checks in a clean worktree                                                                                 |
-| Templates               | GitHub       | PR template; Task issue form                                                                                                            |
-| Labels                  | GitHub       | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                           |
-| `scripts/pr.mjs doctor` | Local        | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                |
+| Guardrail               | Where        | What it does                                                                                                                                                                              |
+| ----------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ruleset on `main`       | GitHub       | Requires a PR and the `ci` check (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
+| Merge settings          | GitHub       | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                |
+| `CODEOWNERS`            | GitHub       | Names the owner of every path; `review-pr.sh` notes env/secrets paths                                                                                                                     |
+| `pre-push` hook         | Local        | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed)                                                                           |
+| `commit-msg` hook       | Local        | Blocks commits on `main`; rejects empty messages                                                                                                                                          |
+| `pre-commit` hook       | Local        | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                           |
+| `scripts/open-pr.sh`    | Local        | Correct PR title and `Closes #`, quick check before push                                                                                                                                  |
+| `scripts/review-pr.sh`  | Review agent | Verifies the PR and runs the checks in a clean worktree                                                                                                                                   |
+| Templates               | GitHub       | PR template; Task issue form                                                                                                                                                              |
+| Labels                  | GitHub       | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                             |
+| `scripts/pr.mjs doctor` | Local        | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                  |
 
 Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/new-task.sh` does it). Anyone can skip them with `--no-verify`. Don't, because the reviewer re-runs everything.
 
