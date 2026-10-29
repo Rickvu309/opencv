@@ -27,7 +27,7 @@ import {
 } from "@workspace/domain"
 import { and, desc, eq } from "drizzle-orm"
 
-import { getDb, transaction } from "../db/context.js"
+import { getDb } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
@@ -248,12 +248,8 @@ export async function duplicatePaper(actor: Actor, docId: PaperId) {
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {
-  const current = await ownedPaper(actor.userId, docId)
-  const avatarId = paperPhotoFileId(photoRefOf(toPaper(current).document))
-  await transaction(async () => {
-    await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
-    if (avatarId) await deleteAvatar(actor.userId, avatarId)
-  })
+  await ownedPaper(actor.userId, docId)
+  await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
   return { id: docId }
 }
 
@@ -443,18 +439,6 @@ export async function readShared(token: string) {
   const { isFavorite: _isFavorite, ...shared } = toPaper(row.doc)
   void _isFavorite
   return shared
-}
-
-function deleteAvatar(userId: UserId, fileId: string) {
-  return getDb()
-    .delete(files)
-    .where(
-      and(
-        eq(files.id, fileId),
-        eq(files.userId, userId),
-        eq(files.purpose, "avatar")
-      )
-    )
 }
 
 /** Type comes from the bytes. The client Content-Type is not trusted. */
