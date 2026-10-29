@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   DEFAULT_CHAT_TITLE,
+  LEGACY_CHAT_TITLE,
   chatDisplayTitle,
   titleFrom,
 } from "@workspace/domain"
@@ -13,11 +14,13 @@ import {
 } from "@/features/coach/chat-messages.ts"
 
 describe("chatDisplayTitle", () => {
-  it("renders untitled chats and DEFAULT_CHAT_TITLE as New chat", () => {
+  it("renders untitled chats, DEFAULT_CHAT_TITLE, and LEGACY_CHAT_TITLE as New chat", () => {
     expect(DEFAULT_CHAT_TITLE).toBe("New chat")
     expect(chatDisplayTitle(null)).toBe("New chat")
     expect(chatDisplayTitle("")).toBe("New chat")
     expect(chatDisplayTitle(DEFAULT_CHAT_TITLE)).toBe("New chat")
+    expect(chatDisplayTitle(LEGACY_CHAT_TITLE)).toBe("New chat")
+    expect(chatDisplayTitle(` ${LEGACY_CHAT_TITLE} `)).toBe("New chat")
     expect(chatDisplayTitle("About PM track CV")).toBe("About PM track CV")
   })
 })

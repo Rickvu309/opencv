@@ -1,5 +1,7 @@
 import {
+  CHAT_TITLE_MAX,
   DEFAULT_CHAT_TITLE,
+  LEGACY_CHAT_TITLE,
   type ChatRecord,
   type ChatSummary,
 } from "@workspace/domain"
@@ -214,6 +216,70 @@ describe("chat API client", () => {
       chatId: CHAT_ID,
       title: "PM track CV",
     })
+  })
+
+  it("renames a Paper chat that carries the legacy title", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        envelope(
+          chatRow({
+            title: LEGACY_CHAT_TITLE,
+            focusKind: "paper",
+            focusId: DOC_ID,
+          })
+        )
+      )
+      .mockResolvedValueOnce(
+        envelope(
+          chatRow({ title: "PM track CV", focusKind: "paper", focusId: DOC_ID })
+        )
+      )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(
+      createChat(new QueryClient(), {
+        title: "PM track CV",
+        focusDocId: DOC_ID,
+      })
+    ).resolves.toMatchObject({ title: "PM track CV", focusDocId: DOC_ID })
+
+    expect(callOf(fetchMock, 1).url).toBe(
+      `${apiBaseUrl}/api/commands/chat.rename`
+    )
+    expect(inputOf(callOf(fetchMock, 1))).toEqual({
+      chatId: CHAT_ID,
+      title: "PM track CV",
+    })
+  })
+
+  it("clips long chat titles to CHAT_TITLE_MAX without trailing space", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        envelope(
+          chatRow({
+            title: DEFAULT_CHAT_TITLE,
+            focusKind: "paper",
+            focusId: DOC_ID,
+          })
+        )
+      )
+      .mockResolvedValueOnce(
+        envelope(chatRow({ focusKind: "paper", focusId: DOC_ID }))
+      )
+    vi.stubGlobal("fetch", fetchMock)
+
+    const longTitle = `About ${"a".repeat(194)} trailing   `
+    await createChat(new QueryClient(), {
+      title: longTitle,
+      focusDocId: DOC_ID,
+    })
+
+    const renameInput = inputOf(callOf(fetchMock, 1))
+    expect(renameInput.title.length).toBeLessThanOrEqual(CHAT_TITLE_MAX)
+    expect(renameInput.title).toBe(`About ${"a".repeat(194)}`)
+    expect(renameInput.title.endsWith(" ")).toBe(false)
   })
 
   it("keeps the title of a reused Paper chat", async () => {

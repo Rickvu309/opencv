@@ -240,6 +240,72 @@ describe("block editor", () => {
     stop()
   })
 
+  it("asks Coach with a 200-character CV name and caps rename title at 200 characters", async () => {
+    const urls: string[] = []
+    const bodies: { input?: { title?: string } }[] = []
+    const chatId = "018f3a3a-3456-7890-abcd-ef0123456789"
+    const longName = "A".repeat(200)
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      urls.push(url)
+      if (init?.body) {
+        try {
+          bodies.push(JSON.parse(String(init.body)))
+        } catch {
+          // ignore
+        }
+      }
+      if (url.includes("/api/commands/chat.open")) {
+        return Promise.resolve(
+          ok({
+            id: chatId,
+            title: DEFAULT_CHAT_TITLE,
+            focusKind: "paper",
+            focusId: "doc-1",
+          })
+        )
+      }
+      if (url.includes("/api/commands/chat.rename")) {
+        const body = JSON.parse(String(init?.body))
+        return Promise.resolve(
+          ok({
+            id: chatId,
+            title: body.input.title,
+            focusKind: "paper",
+            focusId: "doc-1",
+          })
+        )
+      }
+      return Promise.resolve(ok({}))
+    })
+
+    let taken: string | null = null
+    const stop = subscribeCoachDraft(() => {
+      taken = takeCoachDraft()
+    })
+
+    render(
+      <PaperCvEditor
+        initial={{ ...record, name: longName }}
+        pages={pages}
+        onBack={() => undefined}
+      />
+    )
+    fireEvent.click(screen.getAllByRole("button", { name: "Block menu" })[0]!)
+    fireEvent.click(screen.getByRole("menuitem", { name: "Ask Coach" }))
+
+    await vi.waitFor(() => {
+      expect(taken).toBe("Alpha")
+    })
+
+    const renameCall = bodies.find((b) => b?.input?.title !== undefined)
+    expect(renameCall?.input?.title).toBeDefined()
+    expect(renameCall!.input!.title!.length).toBeLessThanOrEqual(200)
+    expect(renameCall!.input!.title).toBe(`About ${"A".repeat(194)}`)
+    expect(renameCall!.input!.title!.endsWith(" ")).toBe(false)
+    stop()
+  })
+
   it("undoes a delete", async () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(ok({ ...record, contentVersion: 2 }))
