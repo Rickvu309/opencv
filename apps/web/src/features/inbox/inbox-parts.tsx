@@ -7,8 +7,8 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { companyInitials } from "@/features/apply/apply-stages.ts"
 
-export const SOFT_TEXT = "text-muted-foreground/70"
-export const FAINT_TEXT = "text-muted-foreground/55"
+export const SOFT_TEXT = "text-muted-foreground"
+export const FAINT_TEXT = "text-muted-foreground"
 
 export function GmailMark({ className }: { className?: string }) {
   return (
