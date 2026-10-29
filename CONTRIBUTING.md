@@ -125,9 +125,9 @@ Local hooks are on once `git config core.hooksPath .githooks` is set in your clo
 Run these once per repo (the owner does the GitHub settings steps):
 
 1. `git config core.hooksPath .githooks` in the main checkout; worktrees share it.
-2. Apply the ruleset: `gh api -X POST repos/quanvu309/opencv/rulesets --input .github/rulesets/main.json` (or `PUT` it to the existing id, see `docs/git-workflow/review-and-approval.md`).
+2. Apply the ruleset: `gh api -X POST repos/Rickvu309/opencv/rulesets --input .github/rulesets/main.json` (or `PUT` it to the existing id, see `docs/git-workflow/review-and-approval.md`).
 3. Merge settings: squash only, PR title as the squash title, blank squash message, auto-merge off, delete branch on merge.
-4. Check `gh api repos/quanvu309/opencv/codeowners/errors --jq '.errors | length'` reads `0`.
+4. Check `gh api repos/Rickvu309/opencv/codeowners/errors --jq '.errors | length'` reads `0`.
 5. Labels, ruleset and repo settings: `node scripts/pr.mjs doctor` lists every drift from git with the `gh` command that fixes it (`.github/labels.yml` is the label source of truth).
 
 Hosting is Railway behind Cloudflare (web, api and Postgres); `docs/deploy.md` describes it. Per-branch previews are pending.
