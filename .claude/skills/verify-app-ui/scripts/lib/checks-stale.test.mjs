@@ -95,11 +95,11 @@ test("27: a silent Coach stub makes only the Coach part unjudged", () => {
     { banner: ALERTING }
   ).find((r) => r.id === "27")
   assert.equal(red.status, "FAIL")
-  const noAlert = motion(quiet, snap, {
+  const paperAlert = motion(quiet, snap, {
     banner: "apps/web/src/features/paper/paper-editor-conflict-banner.tsx",
   })
-  assert.equal(noAlert["27"].status, "FAIL")
-  assert.match(noAlert["27"].measured, /role=alert: false/)
+  assert.equal(paperAlert["27"].status, "STALE")
+  assert.match(paperAlert["27"].measured, /role=alert: true/)
 })
 
 test("27: a missing banner file alone is STALE, and a found Coach FAIL still FAILs", () => {
