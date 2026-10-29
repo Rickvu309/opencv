@@ -16,6 +16,8 @@ import { shellApiFetch } from "@/test/shell-api-mock.ts"
 import { chatApiFetch } from "@/test/chat-api-mock.ts"
 import { vi } from "vitest"
 
+import { registerTestCleanup } from "./test-resources.ts"
+
 export function renderApp(
   initialEntry: string,
   onRequest?: (input: RequestInfo | URL) => void
@@ -43,6 +45,26 @@ export function renderApp(
   const queryClient = createQueryClient()
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
+  })
+
+  // Unmounting RouterProvider only unsubscribes from history. A loader can
+  // still finish a lazy import or start a fetch after that unmount.
+  const startTransition = router.startTransition
+  const loads: Promise<void>[] = []
+  const load = router.load.bind(router)
+  router.load = (...args) => {
+    const pending = load(...args)
+    loads.push(pending)
+    return pending
+  }
+  registerTestCleanup(async () => {
+    // RouterProvider installs a React transition that cannot commit after unmount.
+    router.startTransition = startTransition
+    await Promise.all(loads)
+    router.clearCache()
+    router.history.destroy()
+    await queryClient.cancelQueries()
+    queryClient.clear()
   })
 
   return {

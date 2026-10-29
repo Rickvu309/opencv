@@ -168,6 +168,7 @@ describe("app shell layout", () => {
     try {
       const { router } = renderApp("/")
       await waitFor(() => {
+        expect(router.state.isLoading).toBe(false)
         expect(router.state.location.pathname).toBe("/")
       })
       expect(
