@@ -14,7 +14,7 @@ export type ReaderAction =
   | { type: "reply_typed"; value: string }
   | { type: "draft_received"; body: string }
   | { type: "time_chosen"; index: number; body: string }
-  | { type: "draft_saved"; body: string }
+  | { type: "draft_saved"; body: string; receivedBody: string }
   | { type: "reply_suggested"; body: string }
   | { type: "limit_reached"; limit: InboxLimitError }
   | { type: "task_started" }
@@ -55,7 +55,9 @@ export function readerReducer(
         savedBody: action.body,
       }
     case "draft_saved":
-      return { ...state, savedBody: action.body }
+      return state.receivedBody === action.receivedBody
+        ? { ...state, savedBody: action.body }
+        : state
     case "reply_suggested":
       return {
         ...state,

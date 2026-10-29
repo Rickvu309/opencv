@@ -454,7 +454,9 @@ export function InboxReader({
                   onBlur={() => {
                     if (body === savedBody) return
                     void saveDraft(body)
-                      .then(() => dispatch({ type: "draft_saved", body }))
+                      .then(() =>
+                        dispatch({ type: "draft_saved", body, receivedBody })
+                      )
                       .catch((error: unknown) => {
                         toast(
                           error instanceof ApiError
@@ -473,7 +475,7 @@ export function InboxReader({
                     run(async () => {
                       if (body !== savedBody) {
                         await saveDraft(body)
-                        dispatch({ type: "draft_saved", body })
+                        dispatch({ type: "draft_saved", body, receivedBody })
                       }
                       await runCommand("inbox.send", { threadId: detail.id })
                       toast("Reply sent")

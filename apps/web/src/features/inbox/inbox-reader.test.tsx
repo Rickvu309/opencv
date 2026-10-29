@@ -11,6 +11,7 @@ import {
   REGIONAL_DETAIL,
 } from "@/test/inbox-fixtures.ts"
 
+import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
 import { InboxReader } from "./inbox-reader.tsx"
 
 afterEach(() => {
@@ -122,6 +123,26 @@ describe("inbox reader", () => {
         body: "My in-progress reply.",
       },
     ])
+  })
+
+  it("keeps a reply dirty when a newer refresh precedes its save acknowledgement", () => {
+    const initial = initialReaderState("Original reply.")
+    const typing = readerReducer(initial, {
+      type: "reply_typed",
+      value: "My reply.",
+    })
+    const refreshed = readerReducer(typing, {
+      type: "draft_received",
+      body: "Newer reply from another view.",
+    })
+    const acknowledged = readerReducer(refreshed, {
+      type: "draft_saved",
+      body: "My reply.",
+      receivedBody: initial.receivedBody,
+    })
+
+    expect(acknowledged.body).toBe("My reply.")
+    expect(acknowledged.savedBody).toBe("Newer reply from another view.")
   })
 
   it("offers the interview move and does not offer Send", async () => {
