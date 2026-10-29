@@ -230,4 +230,25 @@ set -e
 [[ $code -eq 1 ]] || fail "suite label: exit $code, want 1"
 result status=fail cause=test 'detail=failed: test-new-suite'
 echo "ok: a failing suite is named by its file name, without .sh"
+# Zero suites, and a failed listing, must fail the gate: an empty loop would pass with nothing run.
+git -C "$repo" rm -q -f -r -- 'scripts/test-*.sh' && git -C "$repo" commit -q -m 'drop every suite'
+set +e
+(cd "$repo" && scripts/check.sh test) >"$tmp/out" 2>"$tmp/err"
+code=$?
+set -e
+[[ $code -eq 1 ]] || fail "no suites: exit $code, want 1"
+grep -q "found no scripts/test-\*.sh suite" "$tmp/err" || fail "no suites: message missing: $(cat "$tmp/err")"
+echo "ok: finding no suite fails the gate"
+
+mkdir -p "$tmp/badgit"
+printf '#!/usr/bin/env bash\n[[ "$1" == ls-files ]] && exit 128\nexec %s "$@"\n' "$(command -v git)" >"$tmp/badgit/git"
+chmod +x "$tmp/badgit/git"
+git -C "$repo" reset -q --hard HEAD~1
+set +e
+(cd "$repo" && PATH="$tmp/badgit:$PATH" scripts/check.sh test) >"$tmp/out" 2>"$tmp/err"
+code=$?
+set -e
+[[ $code -eq 1 ]] || fail "listing error: exit $code, want 1"
+grep -q "could not list the shell suites" "$tmp/err" || fail "listing error: message missing: $(cat "$tmp/err")"
+echo "ok: a failed listing fails the gate"
 echo "all check retry tests passed"

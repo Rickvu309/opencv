@@ -265,7 +265,8 @@ if (( changed_mode )); then
             "check-guards-tests|scripts/test-check-guards.sh|scripts/test-check-guards.sh scripts/lib/result.sh"
             "disk-tests|scripts/test-disk-preflight.sh|scripts/lib/disk.sh scripts/test-disk-preflight.sh"
             "result-tests|scripts/test-result.sh|scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh"
-            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr*.sh scripts/lib/*.sh"
+            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/*.sh"
+            "merge-pr-gates-tests|scripts/test-merge-pr-gates.sh|scripts/merge-pr.sh scripts/test-merge-pr-gates.sh scripts/lib/*.sh"
           )
           for entry in "${script_tests[@]}"; do
             IFS="|" read -r label script inputs <<<"$entry"
@@ -304,7 +305,18 @@ else
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
     # Sorted tracked names. A deleted suite is absent; a new scripts/test-*.sh runs with no edit here.
-    mapfile -t shell_suites < <(git ls-files 'scripts/test-*.sh' | sort)
+    # Zero suites, or a failed listing, must fail the gate: an empty loop would pass with nothing run.
+    shell_suites=()
+    if ! suite_list=$(git ls-files 'scripts/test-*.sh'); then
+      echo "check: could not list the shell suites (git ls-files failed)" >&2
+      failed+=("discover-shell-suites")
+    else
+      mapfile -t shell_suites < <(sort <<<"$suite_list" | sed '/^$/d')
+      if ((${#shell_suites[@]} == 0)); then
+        echo "check: found no scripts/test-*.sh suite to run" >&2
+        failed+=("discover-shell-suites")
+      fi
+    fi
     for script in "${shell_suites[@]}"; do
       echo "==> $script"
       run "$script" || failed+=("$(basename "$script" .sh)")
