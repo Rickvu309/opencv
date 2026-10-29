@@ -114,3 +114,22 @@ test("a bad risk or missing required field throws a plain message", () => {
   )
   assert.throws(() => buildIssueBody({ ...base, done: "" }), /missing --done/)
 })
+
+test("jargon matches plurals and other word forms", () => {
+  const body = `### Type\n\nfeat\n\n### What and why\n\nVisitors get faster APIs.\n\n### Done when\n\n- A visitor sees a page.\n\n### Risk\n\nlow\n`
+  assert.ok(
+    lintIssue({ title: "feat: x", body }).reasons.some((r) => /jargon/.test(r))
+  )
+})
+
+test("text before the first heading is linted", () => {
+  const body = `\`scripts/x.mjs\` api worktree\n\n### What and why\n\nA visitor sees a page.\n\n### Done when\n\n- A visitor sees a page.\n\n### Risk\n\nlow\n`
+  assert.ok(lintIssue({ title: "feat: x", body }).reasons.length > 0)
+})
+
+test("an empty required section is refused", () => {
+  const body = `### What and why\n\n\n### Done when\n\n- A visitor sees a page.\n\n### Risk\n\nlow\n`
+  assert.ok(
+    lintIssue({ title: "feat: x", body }).reasons.some((r) => /empty/.test(r))
+  )
+})

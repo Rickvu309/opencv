@@ -345,3 +345,10 @@ test("doctor gives one Fix line per problem", () => {
   assert.match(text, /risk:normal/)
   assert.match(text, /Fix: Install node 20/)
 })
+
+test("riskOf never fails open", async () => {
+  const { riskOf } = await import("./report.mjs")
+  assert.equal(riskOf(["risk:high", "risk:normal"]), "high")
+  assert.equal(riskOf([], "### Risk\n\nhigh\n"), "high")
+  assert.equal(riskOf(["risk:low"]), "low")
+})

@@ -129,13 +129,22 @@ const inChecked = (issue, fn) =>
 const CHECKS = [
   {
     id: "sections",
-    run: ({ headings, risk }) => {
+    run: ({ headings, risk, bodies }) => {
       const need = [...REQUIRED_SECTIONS]
       for (const f of TEMPLATE_FIELDS)
         if (f.requiredForRisk === risk) need.push(f.label.toLowerCase())
       return need
         .filter((n) => n !== "type" && !headings.includes(n))
         .map((n) => `missing the "${n}" section`)
+        .concat(
+          need
+            .filter((n) => n !== "type" && headings.includes(n))
+            .filter((n) => {
+              const text = bodies[n] ?? ""
+              return !text || /^_no response_$/i.test(text)
+            })
+            .map((n) => `the "${n}" section is empty`)
+        )
     },
   },
   {
@@ -165,7 +174,9 @@ const CHECKS = [
     id: "jargon",
     run: (i) =>
       inChecked(i, (h, t) =>
-        JARGON.filter((w) => new RegExp(`\\b${w}\\b`, "i").test(t)).map(
+        JARGON.filter((w) =>
+          new RegExp(`\\b${w}(?:s|es|ed|ing|ment|ments)?\\b`, "i").test(t)
+        ).map(
           (w) => `"${h}" uses the jargon word "${w}"; say it in plain words`
         )
       ),
@@ -226,6 +237,10 @@ const CHECKS = [
 
 export function lintIssue({ title, body }) {
   const sections = plainSections(body)
+  const preamble = String(body ?? "")
+    .split(/^###[ \t]+/m)[0]
+    .trim()
+  if (preamble) sections.unshift({ heading: "intro", text: preamble })
   const risk = parseRisk(body)
   const live = sections.filter((x) => !EXEMPT.has(x.heading.toLowerCase()))
   const checked = [
@@ -246,6 +261,9 @@ export function lintIssue({ title, body }) {
   )
   const issue = {
     headings: sections.map((x) => x.heading.toLowerCase()),
+    bodies: Object.fromEntries(
+      sections.map((x) => [x.heading.toLowerCase(), x.text])
+    ),
     checked,
     done,
     risk,

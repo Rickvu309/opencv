@@ -1,6 +1,7 @@
 // help, status and doctor: where things stand, with one next step or one fix per problem.
 import { EXIT, Refused, gh } from "./core.mjs"
 import { RISK_LABELS, RISKS, TYPES } from "./fields.mjs"
+import { parseRisk } from "./lint.mjs"
 
 // The one list of commands. The dispatcher and `help` read it, so a command cannot exist
 // without a line saying when to use it.
@@ -67,9 +68,13 @@ export function approvalValid({ comments, owner, lastEditedAt, createdAt }) {
   return newest !== null && newest > since
 }
 
-export function riskOf(labels) {
+// Approval must never fail open: a conflicting label set counts as high, and a
+// missing label falls back to the Risk answer in the issue body.
+export function riskOf(labels, body = "") {
   const found = RISKS.filter((r) => labels.includes(`risk:${r}`))
-  return found.length === 1 ? found[0] : null
+  if (found.length > 1) return "high"
+  if (found.length === 1) return found[0]
+  return parseRisk(body)
 }
 
 // Pure: picks the one next step from what status found.
@@ -97,9 +102,9 @@ export function status(ctx, n) {
     "graphql",
     "-f",
     `query=${QUERY}`,
-    "-F",
+    "-f",
     `owner=${repo.owner.login}`,
-    "-F",
+    "-f",
     `name=${repo.name}`,
     "-F",
     `n=${n}`,
@@ -114,7 +119,7 @@ export function status(ctx, n) {
   if (!issue) throw new Refused("NOT_AN_ISSUE", `#${n} is not an issue`)
 
   const labels = issue.labels.nodes.map((l) => l.name)
-  const risk = riskOf(labels)
+  const risk = riskOf(labels, issue.body)
   const type = TYPES.find(
     (t) => labels.includes(t) || issue.title.startsWith(`${t}:`)
   )
