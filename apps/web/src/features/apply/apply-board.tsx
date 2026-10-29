@@ -83,6 +83,9 @@ export function ApplyBoard({
   const run = useRunCommand()
   const tails = useRef(new Map<string, Promise<unknown>>())
   const pendingMoves = useRef(0)
+  // A keyboard drop can report no column under the card; the last column the
+  // drag hovered is where the announcement said it would land.
+  const lastOver = useRef<JobStage | null>(null)
   const [drag, dispatchDrag] = useReducer(dragReducer, null)
   const stages = showClosed ? ALL_STAGES : BOARD_STAGES
   const columns = stages.map((stage) => ({
@@ -138,13 +141,15 @@ export function ApplyBoard({
     return card.column as JobStage
   }
 
-  function onDragEnd(event: {
-    active: { id: string | number }
-    over: { id: string | number } | null
-  }) {
-    if (!event.over) return
+  function onDragEnd(
+    event: {
+      active: { id: string | number }
+      over: { id: string | number } | null
+    },
+    hovered: JobStage | null
+  ) {
     const jobId = String(event.active.id)
-    const stage = stageOf(String(event.over.id))
+    const stage = event.over ? stageOf(String(event.over.id)) : hovered
     const before = data.find((card) => card.id === jobId)
     if (!before || !stage || before.column === stage) return
     void (async () => {
@@ -170,21 +175,28 @@ export function ApplyBoard({
       <KanbanProvider
         columns={columns}
         data={data}
-        onDragStart={(event) =>
+        onDragStart={(event) => {
+          lastOver.current = null
           dispatchDrag({ type: "started", id: String(event.active.id) })
-        }
-        onDragOver={(event) =>
+        }}
+        onDragOver={(event) => {
+          const over = event.over ? stageOf(String(event.over.id)) : null
+          if (over) lastOver.current = over
           dispatchDrag({
             type: "moved_over",
             id: String(event.active.id),
-            over: event.over ? stageOf(String(event.over.id)) : null,
+            over,
           })
-        }
+        }}
         onDragEnd={(event) => {
           dispatchDrag({ type: "ended" })
-          onDragEnd(event)
+          onDragEnd(event, lastOver.current)
+          lastOver.current = null
         }}
-        onDragCancel={() => dispatchDrag({ type: "ended" })}
+        onDragCancel={() => {
+          lastOver.current = null
+          dispatchDrag({ type: "ended" })
+        }}
         className="h-full min-h-80 w-max auto-cols-[244px] gap-2.5"
       >
         {(column) => {

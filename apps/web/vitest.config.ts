@@ -16,6 +16,7 @@ const ISOLATED_FILES = [
   "src/features/paper/paper-v2-preview.test.tsx",
   "src/features/paper/paper-library.test.tsx",
   "src/features/app-shell/app-shell.test.tsx",
+  "src/features/apply/apply-board-drop.test.tsx",
 ]
 
 export default defineConfig({
