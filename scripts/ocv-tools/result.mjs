@@ -94,7 +94,7 @@ export const FIXES = {
   DIRTY:
     'Save first: scripts/ocv-tools.mjs save -m "<what you did>", then run cleanup again.',
   NOT_MERGED:
-    "Cleanup waits for the merge. Run: scripts/ocv-tools.mjs status <n>",
+    "Cleanup waits for the queue to merge; the issue closes then. Run: scripts/ocv-tools.mjs status <n>",
   UNKNOWN_FLAG: "That flag is not supported. Run: scripts/ocv-tools.mjs help",
   BAD_ARGS:
     "Pass one target: an issue number or a title, not both. Run: scripts/ocv-tools.mjs help",

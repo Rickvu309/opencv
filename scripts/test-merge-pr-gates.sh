@@ -7,7 +7,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 . "$here/lib/merge-pr-harness.sh"
 
 reset; MP_MERGE_FAIL=1 run
-expect "refused merge says so" 1 "GitHub refused the merge" "Never add --admin"
+expect "refused merge says so" 1 "GitHub refused the merge/enqueue" "allow_auto_merge=true" "Never add --admin"
 called "refused merge" "pr merge 5 --squash --match-head-commit $head"
 never "refused merge" "statuses/"
 

@@ -515,7 +515,7 @@ const rows = [
   rule({
     id: "NOT_MERGED",
     section: "6",
-    says: "Cleanup waits until the pull request is merged.",
+    says: "Cleanup waits for the queue to merge.",
     jobs: ["cleanup"],
     needs: ["work"],
     check: notMerged,

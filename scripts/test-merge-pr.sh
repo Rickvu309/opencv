@@ -15,6 +15,11 @@ called "ok path" "pr merge 5 --squash --match-head-commit $head"
 never "ok path" "statuses/"
 result status=ok cause=none "next=node scripts/pr.mjs release cafe0000cafe0000cafe0000cafe0000cafe0000 --wait 600"
 
+reset; MP_QUEUED=1 run
+expect "queue path enqueues" 0 "QUEUED PR #5" "issue closes when the queue merges"
+called "queue path" "pr merge 5 --squash --match-head-commit $head"
+result status=ok cause=none "next=scripts/ocv-tools.mjs status"
+
 reset; MP_AUTHOR=contributor run
 expect "non-author refuses" 1 "contributor" "never merged here"
 never "non-author" "api repos/"; never "non-author" "pr merge"

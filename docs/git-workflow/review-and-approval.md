@@ -2,7 +2,7 @@
 
 A pull request merges when the automatic `ci` check is green.
 
-**Owner-only merge.** The `main` ruleset requires a PR, the `ci` check and squash merge, with no approving review (one account runs everything), no code-owner review, no thread rule and no bypass actor. `CODEOWNERS` still names `@quanvu309`. GitHub does not block a Write collaborator's merge: the repo relies on being single-collaborator, and adding a collaborator needs the approval rule back first. An agent under the owner's account merges its own PR with `scripts/merge-pr.sh <pr#>` from the main checkout. It refuses another author's PR, a draft, a PR labeled `needs-human-review`, a `ci` check that is not success on the head, a deleted `.github/workflows/ci.yml`, and a change to `ci.yml`, `.github/actions/**`, `scripts/check.sh` or `.github/rulesets/main.json` whose issue is not labeled `risk:high`. It never uses `--admin`. Direct pushes to `main` stay blocked. Apply `.github/rulesets/main.json` after editing it (the file only takes effect once applied):
+**Owner-only merge.** The `main` ruleset requires a PR, the `ci` check, merge queue and squash merge, with no approving review (one account runs everything), no code-owner review, no thread rule and no bypass actor. `CODEOWNERS` still names `@quanvu309`. GitHub does not block a Write collaborator's merge: the repo relies on being single-collaborator, and adding a collaborator needs the approval rule back first. An agent under the owner's account merges its own PR with `scripts/merge-pr.sh <pr#>` from the main checkout. It refuses another author's PR, a draft, a PR labeled `needs-human-review`, a `ci` check that is not success on the head, a deleted `.github/workflows/ci.yml`, and a change to `ci.yml`, `.github/actions/**`, `scripts/check.sh` or `.github/rulesets/main.json` whose issue is not labeled `risk:high`. It never uses `--admin`. Direct pushes to `main` stay blocked. Apply `.github/rulesets/main.json` after editing it (the file only takes effect once applied):
 
 ```bash
 gh api -X PUT repos/Rickvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json
@@ -23,7 +23,10 @@ The `ci` check runs parallel affected guards, lint, typecheck, build, API tests 
 
 1. Open the PR with `scripts/open-pr.sh`. A draft stays a draft until `gh pr ready <pr#>`.
 2. Wait until the `ci` check on the PR head is success.
-3. From the main checkout, `scripts/merge-pr.sh <pr#>`.
+3. From the main checkout, `scripts/merge-pr.sh <pr#>` enqueues the PR with `--squash --match-head-commit`.
+4. Wait for the queue to merge. Its `merge_group` run checks all packages and whole-repo formatting; every job must succeed for `ci` to pass. The issue closes only when the queue merges, then cleanup can remove the worktree.
+
+Before the queue rule is applied, the same command merges directly. With the queue enabled, GitHub enqueues a green PR without requiring `--auto`. If GitHub refuses because auto-merge is disabled, the owner enables it with `gh api -X PATCH repos/Rickvu309/opencv -F allow_auto_merge=true`. Never use `--admin`.
 
 One account, so GitHub approval is not required and an agent cannot approve its own PR. A PR with `needs-human-review` is never merged by an agent.
 
