@@ -59,7 +59,7 @@ Tests that hold this shape:
 These rules are not optional.
 Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks: `docs/git-workflow/rule-enforcement.md`.
 
-`.github/workflows/ci.yml` runs the quick check on the free runner `opencv-local` (required `ci` status). Never bypass the local hooks (`.githooks/`). Wait for green `ci` before `scripts/merge-pr.sh`.
+`.github/workflows/ci.yml` runs the quick check on GitHub-hosted runners (required `ci` status). Never bypass the local hooks (`.githooks/`). Wait for green `ci` before `scripts/merge-pr.sh`.
 
 #### 1. Issue first
 
@@ -92,7 +92,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - The pre-push hook runs the quick check, `pnpm check`. `ci` runs the same check. Nothing runs the full lint, typecheck and test before a merge.
 - Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
 - Mark it ready with `gh pr ready` when the quick check passes. Run a verify skill by hand when you want one (`.claude/skills/verify-opencv`). There are no preview deploys yet.
-- The runner `opencv-local` runs CI one job at a time; locally run one check at a time. `scripts/check.sh` defaults `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
+- CI runs on GitHub-hosted runners; locally run one check at a time. `scripts/check.sh` defaults `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
 - Rebase when the branch does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
@@ -107,7 +107,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - Never commit `.env` or real secrets.
 - Never pick up an issue labeled `ready-for-human`; it is a decision for a human.
 - Never create `develop`, `staging`, or `release/` branches.
-- Never add a workflow besides `ci.yml` or use a hosted runner (no budget). `ci.yml` changes are `risk:high`.
+- CI runs on GitHub-hosted runners; a rule refuses any workflow file besides `ci.yml` until #615 allows more. `ci.yml` changes are `risk:high`.
 
 #### 6. Merge and clean up
 

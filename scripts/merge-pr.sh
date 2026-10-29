@@ -63,7 +63,7 @@ state=$(gh api "repos/$repo/commits/$head/check-runs?check_name=ci" --jq \
   die "could not read the ci check of ${head:0:9}"
 if [[ "$state" != success ]]; then
   result_next "gh run list --workflow ci.yml --commit $head"
-  die "the ci check on head ${head:0:9} is $state, not success. Fix: wait for the run to finish, or gh run rerun <run id> (gh run list --workflow ci.yml --commit $head); the runner opencv-local must be online"
+  die "the ci check on head ${head:0:9} is $state, not success. Fix: wait for the run to finish, or gh run rerun <run id> (gh run list --workflow ci.yml --commit $head)"
 fi
 echo "  ok    ci check passed on ${head:0:9}"
 

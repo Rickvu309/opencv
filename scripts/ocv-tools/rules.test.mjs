@@ -221,7 +221,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "NO_WORKFLOWS",
     { diff: { files: [".github/workflows/extra.yml"] } },
     { diff: { files: [".github/workflows/ci.yml"] } },
-    "the change adds GitHub Actions workflow files other than ci.yml (the one workflow runs on the local runner; a new one needs the owner): .github/workflows/extra.yml"
+    "workflows other than ci.yml are not added without an issue: .github/workflows/extra.yml"
   )
   check(
     "CI_WORKFLOW_KEPT",

@@ -63,7 +63,7 @@ function noWorkflows(facts) {
       file !== ".github/workflows/ci.yml"
   )
   if (!bad.length) return null
-  return `the change adds GitHub Actions workflow files other than ci.yml (the one workflow runs on the local runner; a new one needs the owner): ${bad.slice(0, 3).join(" ")}`
+  return `workflows other than ci.yml are not added without an issue: ${bad.slice(0, 3).join(" ")}`
 }
 
 function ciKept(facts) {
