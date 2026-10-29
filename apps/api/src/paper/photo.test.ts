@@ -441,8 +441,11 @@ describe("CV photo bytes", () => {
     const docId = ((await created.json()) as { data: { id: string } }).data.id
 
     const upload = async (bytes: Uint8Array, name: string) =>
-      ((await (await postAvatar(app, owner.cookie, bytes, name, "image/png"))
-        .json()) as { data: { id: string } }).data.id
+      (
+        (await (
+          await postAvatar(app, owner.cookie, bytes, name, "image/png")
+        ).json()) as { data: { id: string } }
+      ).data.id
     const attachedId = await upload(png, "kept.png")
     const orphanId = await upload(Uint8Array.from([...png, 0x02]), "orphan.png")
     const freshId = await upload(Uint8Array.from([...png, 0x03]), "fresh.png")
