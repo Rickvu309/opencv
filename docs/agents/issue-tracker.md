@@ -40,3 +40,13 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 ## Protection
 
 `main` is protected by the ruleset in `.github/rulesets/main.json`: no deletion or force-push, linear history, squash merge only, and the required `ci` and `gates/review-pr` checks. It has no bypass actor and asks for no approving review (one account); the independent review and `scripts/review-pr.sh` are local gates.
+
+## ocv-task jobs
+
+`scripts/ocv-task.mjs help` lists every job. The ones for working an issue:
+
+- `take <n>` makes the worktree (through `scripts/new-task.sh`) and records your claim in an issue comment. Refused: NOT_AN_ISSUE, CLOSED, HELD, NEEDS_APPROVAL (risk:high only), WORKTREE_EXISTS.
+- `save -m <message>` commits, pushes through the pre-push check and refreshes the claim. A claim idle for 180 minutes can be taken over; the old holder's next save exits 3 (LOST) and writes a patch under `~/tmp/ocv-task/lost/`.
+- `release --reason <why>` gives the issue back. Only the holder can.
+- `cleanup [<n>]` runs `scripts/cleanup-worktree.sh` after the merge. Refused: DIRTY, NOT_MERGED.
+- `status <n>` also shows who holds the claim and how long it has been idle.

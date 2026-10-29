@@ -1,21 +1,25 @@
 // Dispatcher. runCli returns { code, text } so tests drive it with an injected runner.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { EXIT, Refused, SCRATCH, failure, realRun, render } from "./core.mjs"
 import { TEMPLATE_FIELDS } from "./fields.mjs"
+import { release, take } from "./claim.mjs"
 import { file } from "./issue.mjs"
 import { COMMANDS, doctor, renderHelp, status } from "./report.mjs"
+import { cleanup, save } from "./work.mjs"
 
 export function realCtx() {
   return {
     run: realRun,
     readFile: (path) => readFileSync(path, "utf8"),
     writeScratch: (name, text) => {
-      mkdirSync(SCRATCH, { recursive: true })
       const path = join(SCRATCH, name)
+      mkdirSync(dirname(path), { recursive: true })
       writeFileSync(path, text)
       return path
     },
+    writeFile: (path, text) => writeFileSync(path, text),
+    now: () => Date.now(),
     nodeVersion: process.version,
   }
 }
@@ -24,6 +28,8 @@ export function parseArgs(argv) {
   const valued = new Set([
     "--title",
     "--body-file",
+    "-m",
+    "--reason",
     ...TEMPLATE_FIELDS.map((f) => f.flag),
   ])
   const flags = {}
@@ -36,6 +42,12 @@ export function parseArgs(argv) {
   return { flags, pos }
 }
 
+function issueNumber(text, usage) {
+  const n = Number(String(text ?? "").replace(/^#/, ""))
+  if (!Number.isInteger(n) || n < 1) throw new Error(`usage: ocv-task ${usage}`)
+  return n
+}
+
 function command(ctx, cmd, rest) {
   const { flags, pos } = parseArgs(rest)
   switch (cmd) {
@@ -44,12 +56,19 @@ function command(ctx, cmd, rest) {
       return { lines: [renderHelp()], next: "scripts/ocv-task.mjs doctor" }
     case "file":
       return file(ctx, { flags })
-    case "status": {
-      const n = Number(pos[0])
-      if (!Number.isInteger(n) || n < 1)
-        throw new Error("usage: ocv-task status <n>")
-      return status(ctx, n)
-    }
+    case "status":
+      return status(ctx, issueNumber(pos[0], "status <n>"))
+    case "take":
+      return take(ctx, issueNumber(pos[0], "take <n>"))
+    case "save":
+      return save(ctx, { message: flags["-m"] })
+    case "release":
+      return release(ctx, {
+        n: pos[0] ? issueNumber(pos[0], "release --reason <why> [<n>]") : null,
+        reason: flags["--reason"],
+      })
+    case "cleanup":
+      return cleanup(ctx, pos[0] ? issueNumber(pos[0], "cleanup [<n>]") : null)
     case "doctor":
       return doctor(ctx)
     default:

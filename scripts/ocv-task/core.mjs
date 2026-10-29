@@ -4,8 +4,7 @@ import { spawnSync } from "node:child_process"
 import { homedir } from "node:os"
 import { join } from "node:path"
 
-// Exit codes: 0 ok, 1 error, 2 refused with a named code, 3 LOST (reserved for the later
-// take/save slices: another agent took the claim; nothing in this slice throws it).
+// Exit codes: 0 ok, 1 error, 2 refused with a named code, 3 LOST (another agent took the claim; save returns it).
 export const EXIT = { OK: 0, ERROR: 1, REFUSED: 2, LOST: 3 }
 
 export const SCRATCH = join(homedir(), "tmp", "ocv-task")
@@ -26,7 +25,19 @@ export const FIXES = {
   NEEDS_APPROVAL: "Ask the owner to comment /approve on the issue.",
   CLOSED: "The issue is closed. Run: gh issue list, and pick another.",
   MISSING_FIELDS: "Pass the missing flags. Run: scripts/ocv-task.mjs help",
-  LOST: "Another agent took the claim. Your work is saved as a patch under ~/tmp.",
+  HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: scripts/ocv-task.mjs status <n>",
+  WORKTREE_EXISTS:
+    "Work in that worktree, or finish it. Run: scripts/ocv-task.mjs status <n>",
+  NOT_A_TASK:
+    "Run this from inside a task worktree (../opencv.worktrees/<n>-...), or pass the issue number.",
+  NO_WORKTREE: "Nothing to remove. Run: git worktree list",
+  NOT_OWNER:
+    "Only the agent that holds the issue can release it. Run: scripts/ocv-task.mjs status <n>",
+  DIRTY:
+    'Save first: scripts/ocv-task.mjs save -m "<what you did>", then run cleanup again.',
+  NOT_MERGED:
+    "Cleanup waits for the merge. Run: scripts/ocv-task.mjs status <n>",
+  LOST: "Another agent took the claim. Your work is saved as a patch under ~/tmp/ocv-task/lost. Stop and pick another issue.",
   ERROR: "Read the message, fix the cause, and run the command again.",
 }
 

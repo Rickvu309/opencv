@@ -2,6 +2,7 @@
 import { EXIT, Refused, gh } from "./core.mjs"
 import { RISK_LABELS, RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
+import { holderLine, holderOf } from "./claim-marker.mjs"
 
 // The one list of commands. The dispatcher and `help` read it, so a command cannot exist
 // without a line saying when to use it.
@@ -22,6 +23,26 @@ export const COMMANDS = [
     when: "See where one issue stands: state, risk, owner approval (needed only for risk:high), branch, worktree, pull request, and the next step.",
   },
   {
+    name: "take",
+    usage: "take <n>",
+    when: "Take an issue: makes its worktree with new-task.sh, records your claim on the issue, prints the path, branch and port. Refused when the issue is closed, held by a live claim (saved in the last 180 minutes), risk:high without the owner /approve, or already has a worktree.",
+  },
+  {
+    name: "save",
+    usage: "save -m <message>",
+    when: "From inside the task worktree: commit everything, push through the pre-push check and refresh your claim. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: your work goes to a patch under ~/tmp/ocv-task/lost.",
+  },
+  {
+    name: "release",
+    usage: "release --reason <why> [<n>]",
+    when: "Give the issue back so others can take it. Only the holder can.",
+  },
+  {
+    name: "cleanup",
+    usage: "cleanup [<n>]",
+    when: "After the merge: remove the worktree and branch and list what was removed. Refused while there is unsaved work or the pull request is not merged. Without <n> it uses the current worktree.",
+  },
+  {
     name: "doctor",
     usage: "doctor",
     when: "Check this machine is set up: node, gh sign-in, the hooks path and the risk labels. One Fix line per problem.",
@@ -38,11 +59,11 @@ export function renderHelp() {
     rows,
     "",
     "Exit codes: 0 ok, 1 error, 2 refused with a named code (UNKNOWN_COMMAND, UNREADABLE,",
-    "NOT_AN_ISSUE, NEEDS_APPROVAL, CLOSED, MISSING_FIELDS), 3 LOST (reserved: another agent",
-    "took the claim; later slices use it).",
+    "NOT_AN_ISSUE, NEEDS_APPROVAL, CLOSED, MISSING_FIELDS, HELD, WORKTREE_EXISTS, NOT_A_TASK,",
+    "NO_WORKTREE, NOT_OWNER, DIRTY, NOT_MERGED), 3 LOST (another agent took the claim).",
     "Every result ends with a Next: or Fix: line.",
     "",
-    "Later slices add take, save, release, cleanup, check, finish, shot and board.",
+    "Later slices add check, finish, shot and board.",
   ].join("\n")
 }
 
@@ -91,9 +112,10 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   return `scripts/new-task.sh ${type ?? "<type>"} ${n} -d "short description"`
 }
 
-const QUERY = `query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(last:100){nodes{author{login} body createdAt}}}}}`
+const QUERY = `query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){owner{login} issue(number:$n){number title state body createdAt lastEditedAt labels(first:50){nodes{name}} comments(last:100){nodes{databaseId author{login} body createdAt}}}}}`
 
-export function status(ctx, n) {
+// Reads one issue with its risk, type, owner approval and comments. Refuses NOT_AN_ISSUE.
+export function loadIssue(ctx, n) {
   const repo = JSON.parse(gh(ctx, "repo", "view", "--json", "owner,name"))
   const q = ctx.run("gh", [
     "api",
@@ -127,8 +149,26 @@ export function status(ctx, n) {
     lastEditedAt: issue.lastEditedAt,
     createdAt: issue.createdAt,
   })
+  return { issue, labels, risk, type, approved }
+}
 
+// The local worktree and branch of an issue's task branch, if any (`type/<n>-...`).
+export function worktreeFor(ctx, n) {
   const prefix = new RegExp(`^(?:${TYPES.join("|")})/${n}-`)
+  const wt = ctx.run("git", ["worktree", "list", "--porcelain"])
+  let path = null
+  for (const line of wt.out.split("\n")) {
+    if (line.startsWith("worktree ")) path = line.slice(9)
+    if (line.startsWith("branch ") && prefix.test(line.slice(18)))
+      return { worktree: path, branch: line.slice(18), prefix }
+  }
+  return { worktree: null, branch: null, prefix }
+}
+
+export function status(ctx, n) {
+  const { issue, risk, type, approved } = loadIssue(ctx, n)
+  const { worktree, prefix, branch: localBranch } = worktreeFor(ctx, n)
+  let branch = localBranch
   const prs = JSON.parse(
     gh(
       ctx,
@@ -144,17 +184,6 @@ export function status(ctx, n) {
   ).filter((p) => prefix.test(p.headRefName))
   const pr = prs.find((p) => p.state === "OPEN") ?? prs[0] ?? null
 
-  const wt = ctx.run("git", ["worktree", "list", "--porcelain"])
-  let worktree = null
-  let branch = null
-  let path = null
-  for (const line of wt.out.split("\n")) {
-    if (line.startsWith("worktree ")) path = line.slice(9)
-    if (line.startsWith("branch ") && prefix.test(line.slice(18))) {
-      branch = line.slice(18)
-      worktree = path
-    }
-  }
   if (!branch) {
     const remote = ctx.run("git", ["ls-remote", "--heads", "origin"])
     for (const line of remote.out.split("\n")) {
@@ -175,6 +204,7 @@ export function status(ctx, n) {
     `Risk: ${risk ?? "none (no risk label)"}`,
     `Approval: ${approval}`,
     `Branch: ${branch ?? "none"}${worktree ? ` (worktree ${worktree})` : ""}`,
+    holderLine(holderOf(issue.comments.nodes, ctx.now?.() ?? Date.now())),
     `Pull request: ${pr ? `#${pr.number} ${pr.state.toLowerCase()}${pr.isDraft ? " (draft)" : ""}` : "none"}`,
   ]
   if (issue.state === "CLOSED" && pr?.state !== "MERGED") {
