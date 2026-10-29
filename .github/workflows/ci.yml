@@ -20,6 +20,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # A pull_request checkout has no local main; test-new-task.sh clones it.
+      - run: git branch -f main origin/main
       # The runner service does not load the login PATH; pnpm and heavy live in ~/.local/bin.
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: pnpm install --frozen-lockfile
