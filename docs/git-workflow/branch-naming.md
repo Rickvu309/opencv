@@ -31,7 +31,7 @@ Bot branches are allowed without an issue: `dependabot/...` and `renovate/...`.
 
 ## Enforcement
 
-There is no CI. Two layers enforce the name:
+Two layers enforce the name (the `ci` check does not):
 
 1. The local **pre-push hook** (`.githooks/pre-push`) refuses to push any other name, and refuses any push to `main`. It's on once `git config core.hooksPath .githooks` is set (`scripts/new-task.sh` does this).
 2. The **reviewer** (`scripts/review-pr.sh`) fails any PR whose branch doesn't match. Hooks can be skipped with `--no-verify`; the review can't.

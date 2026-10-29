@@ -8,7 +8,9 @@
 #   rule_main_clean <main_checkout>       R68  the main checkout stays on main with no edited tracked file
 #   rule_port <worktree>                  R76  the worktree's .env still has the port new-task.sh assigned
 #   rule_not_ready_for_human <labels>     R103 the issue is not labeled ready-for-human
-#   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/
+#   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/ except ci.yml
+#   rule_ci_workflow_kept <files> <sha> [wt] R105 ci.yml may change but never vanish
+#   rule_risk_high_for_ci <files> <labels> [wt] R105 a change to ci.yml, check.sh or the ruleset needs risk:high on the issue
 #   rule_skip_declared                    R98  SKIP_CHECKS=1 needs SKIP_CHECKS_DECLARED_BY=<human>
 #   rule_stamp_dir                        R97/R98 where pre-push records each pushed sha (ok | skip)
 #   rule_skip_said <sha> <pr#> <body>     R98  a head pushed with SKIP_CHECKS=1 has "emergency declared by <name>" in the PR body
@@ -73,11 +75,26 @@ rule_not_ready_for_human() {
 
 rule_no_workflows() {  # rule_no_workflows <files> [wt] [push]: push adds the force push (merge-pr; open-pr pushes on its next run)
   local bad=() q
-  mapfile -t bad < <(grep -E '^\.github/workflows/' <<<"$1" || true)
+  mapfile -t bad < <(grep -E '^\.github/workflows/' <<<"$1" | grep -vxF '.github/workflows/ci.yml' || true)
   (( ${#bad[@]} )) || return 0
   q=$(printf '%q ' "${bad[@]}")
-  rule_fail "the change adds GitHub Actions workflow files (the account has no Actions budget): ${bad[*]:0:3}" \
+  rule_fail "the change adds GitHub Actions workflow files other than ci.yml (the one workflow runs on the local runner; a new one needs the owner): ${bad[*]:0:3}" \
     "$(rule_cd "${2:-}")git rm -rf -- ${q% } && git commit --amend --no-edit${3:+ && heavy -- git push --force-with-lease}"
+}
+
+rule_ci_workflow_kept() {  # rule_ci_workflow_kept <files> <sha> [wt]: ci.yml in the diff but gone at the sha means the PR deletes it
+  grep -qxF '.github/workflows/ci.yml' <<<"$1" || return 0
+  git cat-file -e "$2:.github/workflows/ci.yml" 2>/dev/null && return 0
+  rule_fail "the change deletes .github/workflows/ci.yml: the file may change, never vanish (the required ci check runs from it)" \
+    "$(rule_cd "${3:-}")git checkout origin/main -- .github/workflows/ci.yml && git commit --amend --no-edit"
+}
+
+# Owner /approve for these files is slice 5 of epic #582; until then the label is the only mechanical gate.
+rule_risk_high_for_ci() {  # rule_risk_high_for_ci <files> <issue labels> [wt]
+  grep -qxE '\.github/workflows/ci\.yml|scripts/check\.sh|\.github/rulesets/main\.json' <<<"$1" || return 0
+  grep -qx 'risk:high' <<<"$2" && return 0
+  rule_fail "the change touches ci.yml, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)" \
+    "gh issue edit <issue#> --add-label risk:high   # then ask the owner for /approve"
 }
 
 rule_skip_declared() {

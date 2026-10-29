@@ -47,9 +47,9 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
    `scripts/review-pr.sh` prints a patch id that such a rebase keeps when the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so only the script reruns, and its passing check is cached by the tested tree. GitHub still dismisses a human approval on every push (the ruleset), so a contributor's PR needs that approval again.
 6. Squash-merge: `gh pr merge --squash`.
 
-## Checks (no CI)
+## Checks
 
-There is no GitHub Actions CI. The same checks run locally at these points:
+The `ci` workflow runs the quick check on the self-hosted runner. The same checks run locally at these points:
 
 | When                 | What runs              | What it enforces                                                                                                                                                                                                                     |
 | -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

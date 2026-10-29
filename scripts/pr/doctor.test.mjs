@@ -168,11 +168,19 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
   )
 
   const extra = liveRuleset()
-  extra.rules.push({ type: "required_status_checks" })
+  extra.rules.push({ type: "required_signatures" })
   drift = await doctor(fakeIo({ ruleset: async () => extra }))
   assert.match(
     drift[0].detail,
-    /\[required_status_checks\]: on GitHub, not in git/
+    /\[required_signatures\]: on GitHub, not in git/
+  )
+
+  const other = liveRuleset()
+  other.rules.push({ type: "required_signatures" })
+  drift = await doctor(fakeIo({ ruleset: async () => other }))
+  assert.match(
+    drift[0].detail,
+    /\[required_signatures\]: on GitHub, not in git/
   )
 
   const loose = liveRuleset()
@@ -189,6 +197,41 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
     drift[0].fix,
     "gh api -X POST repos/{owner}/{repo}/rulesets --input .github/rulesets/main.json"
   )
+})
+
+test("ruleset: required checks are matched by context, not by position", async () => {
+  const checks = (live) =>
+    live.rules.find((r) => r.type === "required_status_checks").parameters
+  const missing = liveRuleset()
+  checks(missing).required_status_checks = []
+  let drift = await doctor(fakeIo({ ruleset: async () => missing }))
+  assert.equal(drift.length, 1)
+  assert.match(
+    drift[0].detail,
+    /required_status_checks\[ci\]: in git, missing on GitHub/
+  )
+
+  const extra = liveRuleset()
+  checks(extra).required_status_checks.push({
+    context: "other",
+    integration_id: 1,
+  })
+  drift = await doctor(fakeIo({ ruleset: async () => extra }))
+  assert.equal(drift.length, 1)
+  assert.match(
+    drift[0].detail,
+    /required_status_checks\[other\]: on GitHub, not in git/
+  )
+
+  const reordered = liveRuleset()
+  checks(reordered).required_status_checks.unshift({
+    context: "other",
+    integration_id: 1,
+  })
+  drift = await doctor(fakeIo({ ruleset: async () => reordered }))
+  assert.equal(drift.length, 1)
+  assert.doesNotMatch(drift[0].detail, /\[ci\]/)
+  assert.match(drift[0].detail, /\[other\]: on GitHub, not in git/)
 })
 
 test("settings: each declared setting that differs is reported with its PATCH", async () => {

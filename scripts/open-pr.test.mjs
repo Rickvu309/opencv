@@ -335,12 +335,12 @@ refuses(
 )
 refuses(
   "R105: a workflow file refuses",
-  { PROOF_DIFF: "README.md\n.github/workflows/ci.yml\n" },
+  { PROOF_DIFF: "README.md\n.github/workflows/extra.yml\n" },
   /workflow files/
 )
 test("R105: the fix removes the files from the worktree, not only from the index", (t) => {
   const result = run(t, 0, false, false, false, {
-    PROOF_DIFF: "README.md\n.github/workflows/ci.yml\n",
+    PROOF_DIFF: "README.md\n.github/workflows/extra.yml\n",
   })
   const file = join(
     result.root,
@@ -349,7 +349,7 @@ test("R105: the fix removes the files from the worktree, not only from the index
   )
   assert.match(
     JSON.parse(readFileSync(file, "utf8")).next,
-    /^cd \S+ && git rm -rf -- \.github\/workflows\/ci\.yml && git commit --amend --no-edit$/
+    /^cd \S+ && git rm -rf -- \.github\/workflows\/extra\.yml && git commit --amend --no-edit$/
   )
 })
 refuses(

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check.sh: run lint, typecheck, and test locally (this repo runs no CI).
+# check.sh: run lint, typecheck, and test locally (the ci workflow runs it too).
 # Detects pnpm / yarn / npm from the lockfile and runs the root package.json scripts that exist (they call turbo).
 #
 # Usage:
@@ -267,7 +267,7 @@ if (( changed_mode )); then
             "conflict-report-tests|scripts/test-conflict-report.sh|scripts/lib/conflict-report.sh scripts/test-conflict-report.sh"
             "disk-tests|scripts/test-disk-preflight.sh|scripts/lib/disk.sh scripts/test-disk-preflight.sh"
             "result-tests|scripts/test-result.sh|scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh"
-            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/result.sh scripts/lib/rules.sh"
+            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr*.sh scripts/lib/*.sh"
           )
           for entry in "${script_tests[@]}"; do
             IFS="|" read -r label script inputs <<<"$entry"

@@ -100,16 +100,40 @@ echo "ok: only \"emergency declared by <name>\" declares a SKIP_CHECKS push; the
 # R105: running the named fix in the worktree leaves it clean and the branch free of workflow files.
 wt=$tmp/wt
 git -C "$repo" worktree add -q -b feat/9-wf "$wt"
-mkdir -p "$wt/.github/workflows" && echo on >"$wt/.github/workflows/ci.yml" && echo more >"$wt/other.txt" && git -C "$wt" add -A && git -C "$wt" commit -q -m "feat: workflow"
+mkdir -p "$wt/.github/workflows" && echo on >"$wt/.github/workflows/extra.yml" && echo more >"$wt/other.txt" && git -C "$wt" add -A && git -C "$wt" commit -q -m "feat: workflow"
 printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\ncd "%s"\nrule_no_workflows "$(git diff --name-only main...HEAD)" "$1" "${2:-}"\nresult_ok fine\n' "$here" "$here" "$wt" >"$tmp/w.sh"
 set +e; bash "$tmp/w.sh" "$wt" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
 [[ $code -eq 1 ]] || fail "a workflow file is refused"
 fix=$(sed -n 's/^Fix: //p' "$tmp/err")
-[[ "$fix" == "cd $wt && git rm -rf -- .github/workflows/ci.yml && git commit --amend --no-edit" ]] || fail "R105 fix names the worktree and removes the files: $fix"
+[[ "$fix" == "cd $wt && git rm -rf -- .github/workflows/extra.yml && git commit --amend --no-edit" ]] || fail "R105 fix names the worktree and removes the files: $fix"
 (cd "$tmp" && eval "$fix") >/dev/null 2>&1 || fail "the R105 fix runs"
 [[ -z "$(git -C "$wt" status --porcelain)" ]] || fail "after the R105 fix the worktree must be clean, got: $(git -C "$wt" status --porcelain)"
 [[ -z "$(git -C "$wt" diff --name-only main...HEAD | grep '^\.github/workflows/' || true)" ]] || fail "after the R105 fix no workflow file is in the diff"
 echo "ok: the R105 fix removes the files from the worktree and leaves it clean (no untracked leftovers)"
+printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\nrule_no_workflows ".github/workflows/ci.yml"\nresult_ok fine\n' "$here" "$here" >"$tmp/ci.sh"
+bash "$tmp/ci.sh" >/dev/null 2>&1 || fail "R105 lets .github/workflows/ci.yml through"
+echo "ok: R105 allows ci.yml"
+
+# R105: ci.yml may change but not vanish; a change to it, check.sh or the ruleset needs risk:high on the issue.
+rule_run() { printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\n%s\nresult_ok fine\n' "$here" "$here" "$1" >"$tmp/r.sh"; set +e; (cd "$repo" && bash "$tmp/r.sh") >"$tmp/out" 2>"$tmp/err"; code=$?; set -e; }
+rule_run 'rule_ci_workflow_kept ".github/workflows/ci.yml" HEAD'
+[[ $code -eq 1 ]] && grep -q 'deletes .github/workflows/ci.yml' "$tmp/err" || fail "R105 refuses a ci.yml that is gone at the sha"
+rule_run 'rule_ci_workflow_kept "README.md" HEAD'
+[[ $code -eq 0 ]] || fail "R105 ignores a diff without ci.yml"
+mkdir -p "$repo/.github/workflows" && echo on >"$repo/.github/workflows/ci.yml" && git -C "$repo" add -A && git -C "$repo" commit -q -m "feat: ci" && ci_sha=$(git -C "$repo" rev-parse HEAD)
+rule_run "rule_ci_workflow_kept .github/workflows/ci.yml $ci_sha"
+[[ $code -eq 0 ]] || fail "R105 lets a changed ci.yml that still exists through"
+git -C "$repo" reset -q --hard HEAD~1
+echo "ok: R105 refuses deleting ci.yml"
+rule_run 'rule_risk_high_for_ci "scripts/check.sh" "chore"'
+[[ $code -eq 1 ]] && grep -q 'risk:high' "$tmp/err" || fail "a check.sh change without risk:high is refused"
+rule_run 'rule_risk_high_for_ci ".github/workflows/ci.yml" "chore risk:normal"'
+[[ $code -eq 1 ]] || fail "risk:normal does not count"
+rule_run 'rule_risk_high_for_ci ".github/rulesets/main.json" "risk:high"'
+[[ $code -eq 0 ]] || fail "risk:high lets a ruleset change through"
+rule_run 'rule_risk_high_for_ci "README.md" ""'
+[[ $code -eq 0 ]] || fail "an unrelated change needs no label"
+echo "ok: ci.yml, check.sh and the ruleset need risk:high"
 
 # R97 for a commit made with the commit hooks skipped: an attribution trailer, a file over 20000 bytes.
 git -C "$repo" switch -q -c feat/9-ok main

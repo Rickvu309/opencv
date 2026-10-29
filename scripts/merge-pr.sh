@@ -13,6 +13,7 @@
 #   2. scripts/review-pr.sh <pr#> exits 0 (override the command with MERGE_PR_REVIEW_CMD)
 #   3. a PR comment or review body names the current patch id and says "Independent review"; a PR that changes
 #      anything under apps/ also needs a body with that patch id that says "verify"
+#   3b. the check-run named ci is success on the head the review tested (--admin skips the ruleset, so it is read here)
 #   4. main is still the commit the review tested, then gh api posts state=success for context gates/review-pr on the head the review tested
 #   5. gh pr merge --squash --admin --match-head-commit <that head>
 #   6. prints the merge commit and the deploy check to run next
@@ -96,6 +97,11 @@ head_rules() {
   git cat-file -e "$sha^{commit}" 2>/dev/null || DIE_CAUSE=env die "cannot read commit ${sha:0:9} of PR #$pr to check its commits (git fetch origin pull/$pr/head)"
   git fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main (git fetch origin main)"
   rule_commits_hooked origin/main "$sha" "$wt" push
+  rule_ci_workflow_kept "$changed" "$sha" "$wt"
+  if grep -qxE '\.github/workflows/ci\.yml|scripts/check\.sh|\.github/rulesets/main\.json' <<<"$changed"; then
+    [[ "$branch" =~ ^[a-z]+/([0-9]+)- ]] || die "branch $branch names no issue, so its risk label cannot be read"
+    rule_risk_high_for_ci "$changed" "$(gh issue view "${BASH_REMATCH[1]}" --json labels --jq '.labels[].name')" "$wt"
+  fi
   rule_skip_said "$sha" "$pr" "$(gh pr view "$pr" --json body --jq .body)"
   checked_head=$sha
 }
@@ -154,9 +160,21 @@ report_main_moved() {
   fi
 }
 
+# --admin skips the ruleset, so the required ci check is read here: a green run on the exact head the review tested.
+ci_gate() {
+  local state
+  state=$(gh api "repos/$repo/commits/$rec_head/check-runs?check_name=ci" --jq \
+    '[.check_runs[] | select(.name == "ci")] | sort_by(.started_at) | last | if . == null then "missing" else (.conclusion // "pending") end') ||
+    die "could not read the ci check of ${rec_head:0:9}"
+  [[ "$state" == success ]] && { echo "  ok    ci check passed on ${rec_head:0:9}"; return 0; }
+  result_next "gh run list --workflow ci.yml --commit $rec_head"
+  die "the ci check on head ${rec_head:0:9} is $state, not success. Fix: wait for the run to finish, or gh run rerun <run id> (gh run list --workflow ci.yml --commit $rec_head); the runner service must be online"
+}
+
 attempt=1
 while :; do
   gate "$([[ $attempt == 1 ]] || echo "regate: main moved")"
+  ci_gate
   status_cmd=(gh api "repos/$repo/statuses/$rec_head" -f state=success -f context=gates/review-pr
     -f "description=OK patch ${rec_patch:0:12} main ${rec_main:0:12}")
   merge_cmd=(gh pr merge "$pr" --squash --admin --match-head-commit "$rec_head")

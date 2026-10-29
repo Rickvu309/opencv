@@ -11,7 +11,7 @@ gh api -X PUT "repos/quanvu309/opencv/rulesets/$id" --input .github/rulesets/mai
 
 Write access cannot be made merge-proof by role alone, and contributors can still edit labels, so the `needs-human-review` rule below stays a convention.
 
-There is no CI. Local hooks catch mistakes early, but anyone can bypass them (`git push --no-verify`),
+The `ci` check runs the quick check on the local runner, and local hooks catch mistakes early, but anyone can bypass the hooks (`git push --no-verify`),
 so **the review is the real gate**. Nothing merges without the checklist below.
 
 **Human review only for super important changes.** Owner decision, 2026-10-23: a human reviews a PR only when it is a mass deletion (it deletes 25% or more of the files tracked on `main`, or 80% or more of one app or package) or a big decision flagged with the `needs-human-review` label. Everything else, env and secrets changes included, merges once the checklist passes and the independent review has no open finding.

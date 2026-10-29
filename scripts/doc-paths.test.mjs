@@ -35,8 +35,6 @@ const PLACEHOLDER = /[<>*{$]|\.\.\./
 // Screenshots and downloads are outputs a run writes, so only code and docs are looked up by file name.
 const CODE_EXT = /\.(?:tsx?|mjs|css|md|sh)$/
 const GENERATED = /^apps\/api\/\.data\/|\/dist(?:\/|$)/
-// Named to say it must stay absent: AGENTS.md bans GitHub Actions workflows.
-const ABSENT_ON_PURPOSE = new Set([".github/workflows/"])
 const ROOT_DOCS = ["AGENTS.md", "CONTEXT.md"]
 
 const docs = tracked.filter(
@@ -78,13 +76,7 @@ const clean = (word) =>
  * a folder it names, so some tracked file must end with it.
  */
 function missingPath(word, file) {
-  if (
-    !word ||
-    PLACEHOLDER.test(word) ||
-    GENERATED.test(word) ||
-    ABSENT_ON_PURPOSE.has(word)
-  )
-    return false
+  if (!word || PLACEHOLDER.test(word) || GENERATED.test(word)) return false
   if (REPO_PREFIX.test(word)) {
     const skill = /^\.claude\/skills\/[^/]+/.exec(file)?.[0]
     return !(
