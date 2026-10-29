@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
-import { exampleIssues } from "./issue.mjs"
+import { EXAMPLES, exampleIssues } from "./issue.mjs"
 import { buildIssueBody, lintIssue, parseRisk, readingGrade } from "./lint.mjs"
 
 const base = {
@@ -13,7 +14,7 @@ const lint = (over = {}, title = "feat: Keep my search") =>
   lintIssue({ title, body: buildIssueBody({ ...base, ...over }) })
 
 test("the model issues pass the lint", () => {
-  const models = exampleIssues()
+  const models = exampleIssues(readFileSync(EXAMPLES, "utf8"))
   assert.equal(models.length, 2)
   for (const m of models) {
     const result = lintIssue(m)

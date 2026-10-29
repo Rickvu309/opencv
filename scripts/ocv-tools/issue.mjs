@@ -1,5 +1,5 @@
 // `ocv-tools file`: builds the issue from the form fields, lints the plain words and creates it.
-import { readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 import { Refused } from "./result.mjs"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import {
@@ -11,10 +11,10 @@ import {
 } from "./lint.mjs"
 
 // Model issues live in one file so the writing guide and the tests show the same ones.
-export function exampleIssues() {
-  return splitIssues(
-    readFileSync(new URL("./examples.md", import.meta.url), "utf8")
-  )
+export const EXAMPLES = fileURLToPath(new URL("./examples.md", import.meta.url))
+
+export function exampleIssues(text) {
+  return splitIssues(text)
 }
 
 const TITLE_PREFIX = new RegExp(`^(${TYPES.join("|")}): `)
@@ -57,7 +57,7 @@ export function file(ctx, { flags }) {
   const grade = `Reading level: grade ${lint.grade.toFixed(1)} (aim for 6 or lower; above 8 is refused).`
 
   if (flags["--dry-run"]) {
-    const models = exampleIssues()
+    const models = exampleIssues(ctx.ports.fs.read(EXAMPLES))
       .map((x) => `# ${x.title}\n\n${x.body}`)
       .join("\n")
     return {
