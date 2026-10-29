@@ -1,3 +1,4 @@
+import { setTimeout, clearTimeout } from "node:timers"
 import { createElement } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
@@ -58,13 +59,54 @@ export function renderApp(
     return pending
   }
   registerTestCleanup(async () => {
-    // RouterProvider installs a React transition that cannot commit after unmount.
-    router.startTransition = startTransition
-    await Promise.all(loads)
-    router.clearCache()
-    router.history.destroy()
-    await queryClient.cancelQueries()
-    queryClient.clear()
+    const errors: unknown[] = []
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      // RouterProvider installs a React transition that cannot commit after unmount.
+      router.startTransition = startTransition
+      // Transitioner leaves this typed acknowledgement behind on unmount. Settle
+      // it as unrendered, just as Transitioner does when superseding an offer.
+      const owner = router._rendered
+      const settle = owner?.[1]
+      if (owner) owner.length = 0
+      settle?.(false)
+
+      const results = await Promise.race([
+        Promise.allSettled(loads),
+        new Promise<never>((_, reject) => {
+          // A real deadline also works when a test left Vitest timers mocked.
+          timer = setTimeout(() => {
+            reject(new Error("Router cleanup timed out after 2000ms"))
+          }, 2000)
+        }),
+      ])
+      for (const result of results) {
+        if (result.status === "rejected") errors.push(result.reason)
+      }
+    } catch (error) {
+      errors.push(error)
+    } finally {
+      clearTimeout(timer)
+      // Every disposal runs, including when loading failed or never settled.
+      for (const dispose of [
+        () => router.clearCache(),
+        () => router.history.destroy(),
+        () => queryClient.cancelQueries(),
+        () => queryClient.clear(),
+      ]) {
+        try {
+          await dispose()
+        } catch (error) {
+          errors.push(error)
+        }
+      }
+    }
+    if (errors.length) {
+      throw new AggregateError(
+        errors,
+        `Router cleanup failed for ${initialEntry}: ${errors.map(String).join("; ")}`
+      )
+    }
   })
 
   return {

@@ -10,8 +10,11 @@ export function render(ui: ReactElement) {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   registerTestCleanup(async () => {
-    await client.cancelQueries()
-    client.clear()
+    try {
+      await client.cancelQueries()
+    } finally {
+      client.clear()
+    }
   })
   return rtlRender(ui, {
     wrapper: ({ children }) => (

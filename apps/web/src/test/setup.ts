@@ -84,12 +84,14 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  cleanup()
-  await act(() => cleanupTestResources())
-  if (typeof sessionStorage !== "undefined") {
-    sessionStorage.clear()
-  }
-  if (typeof localStorage !== "undefined") {
-    localStorage.clear()
+  try {
+    cleanup()
+  } finally {
+    try {
+      await act(() => cleanupTestResources())
+    } finally {
+      if (typeof sessionStorage !== "undefined") sessionStorage.clear()
+      if (typeof localStorage !== "undefined") localStorage.clear()
+    }
   }
 })
