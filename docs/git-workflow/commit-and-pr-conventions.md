@@ -20,7 +20,7 @@ type: description (#<issue>)
 
 ## PR body
 
-Use the template (`.github/pull_request_template.md`). It must contain:
+Write the body with the `pr` skill, using `.github/pull_request_template.md` as the shape: `## Summary`, `## Evidence` (before and after), and `## Merge Danger` with `**Door:**` (one-way or two-way) and `**Blast Radius:**`. Save it to a file and pass it as `scripts/open-pr.sh --body-file <file>`. The script refuses a body that lacks a part or still has a placeholder in angle brackets, and puts this line on top:
 
 ```
 Closes #42
@@ -32,9 +32,9 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 1. Open a **draft** PR as soon as you have a first commit. Run this inside your worktree:
    ```bash
-   scripts/open-pr.sh --draft
+   scripts/open-pr.sh --draft --body-file <file>
    ```
-   It checks the branch name, runs `pnpm check` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is the PR template with `Closes #N` filled in. Use `--dry-run` to preview.
+   It checks the branch name, runs `pnpm check` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is your `--body-file` with `Closes #N` on top. Use `--dry-run` to preview.
 2. Keep working; push through `git push`. The pre-push hook runs the quick check.
 3. When done: checks pass, the verify-opencv evidence is attached, and the checklist is ticked. Run `gh pr ready`.
 4. Read comments, fix them in new commits, and resolve the threads. See `review-and-approval.md`.
