@@ -30,7 +30,7 @@ export function agentIdFor(ctx, gitDir) {
 // Where we are: a linked worktree under the clone's ../<repo>.worktrees root,
 // on a task branch. A normal clone, even on a task branch, is not a task.
 // locate() failing stays NOT_A_TASK, the same as the old catch.
-export function hereFact(ctx) {
+function hereFact(ctx) {
   const here = ctx.ports.git.here(ctx.cwd)
   const branch = here.branch
   const m = new RegExp(`^(?:${TYPES.join("|")})/(\\d+)-`).exec(branch ?? "")

@@ -2,8 +2,8 @@
 import { fileURLToPath } from "node:url"
 import { RULES } from "./table.mjs"
 
-export const BEGIN = "<!-- rules:begin -->"
-export const END = "<!-- rules:end -->"
+const BEGIN = "<!-- rules:begin -->"
+const END = "<!-- rules:end -->"
 export const RULES_DOC = fileURLToPath(
   new URL("../../../docs/git-workflow/rule-enforcement.md", import.meta.url)
 )
