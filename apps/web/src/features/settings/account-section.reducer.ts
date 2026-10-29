@@ -1,5 +1,4 @@
 export type AccountState = {
-  photoUrl: string | null
   photoError?: string
   draftName: string | null
   nameError?: string
@@ -10,7 +9,6 @@ export type AccountState = {
 export type AccountAction =
   | { type: "photo_rejected"; message: string }
   | { type: "photo_upload_started" }
-  | { type: "photo_uploaded"; url: string }
   | { type: "photo_upload_failed"; message: string }
   | { type: "name_typed"; value: string }
   | { type: "name_rejected"; message: string }
@@ -19,7 +17,6 @@ export type AccountAction =
   | { type: "delete_dialog_changed"; open: boolean }
 
 export const ACCOUNT_START: AccountState = {
-  photoUrl: null,
   draftName: null,
   emailOpen: false,
   deleteOpen: false,
@@ -34,8 +31,6 @@ export function accountReducer(
       return { ...state, photoError: action.message }
     case "photo_upload_started":
       return { ...state, photoError: undefined }
-    case "photo_uploaded":
-      return { ...state, photoUrl: action.url }
     case "photo_upload_failed":
       return { ...state, photoError: action.message }
     case "name_typed":
