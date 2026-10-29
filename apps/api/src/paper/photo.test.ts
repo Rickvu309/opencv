@@ -351,7 +351,7 @@ describe("CV photo bytes", () => {
     await client.close()
   })
 
-  it("deletes the previous avatar on replace and the avatar when the CV is deleted", async () => {
+  it("restores replaced photo bytes through Undo, including after the daily sweep", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
@@ -391,39 +391,53 @@ describe("CV photo bytes", () => {
         body: JSON.stringify({ input: { docId, fileId } }),
       })
     expect((await attach(firstId)).status).toBe(200)
-    expect((await attach(secondId)).status).toBe(200)
+    const replacement = await attach(secondId)
+    expect(replacement.status).toBe(200)
+    const replacementActivity = (await replacement.json()) as {
+      data: { activityId: string }
+    }
 
-    const afterReplace = await app.request("/api/paper/files", {
-      headers: authHeaders(owner.cookie),
-    })
-    const ids = (
-      (await afterReplace.json()) as { data: { id: string }[] }
-    ).data.map((file) => file.id)
-    expect(ids).toEqual([secondId])
-    const gone = await app.request(`/api/paper/files/${firstId}/bytes`, {
-      headers: authHeaders(owner.cookie),
-    })
-    expect(gone.status).toBe(404)
-    const stored = await app.request(`/api/paper/${docId}`, {
-      headers: authHeaders(owner.cookie),
-    })
-    expect(await stored.text()).toContain(paperPhotoRef(secondId))
+    const bytes = (fileId: string) =>
+      app.request(`/api/paper/files/${fileId}/bytes`, {
+        headers: authHeaders(owner.cookie),
+      })
+    const oldPhoto = await bytes(firstId)
+    expect(oldPhoto.status).toBe(200)
+    expect(new Uint8Array(await oldPhoto.arrayBuffer())).toEqual(png)
 
-    const deleted = await app.request("/api/commands/paper.delete", {
+    const afterTwoDays = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+    const sweep = () =>
+      withDatabase(db, async () => {
+        const { sweepUnattachedPhotos } = await import("./photo-sweep.js")
+        return sweepUnattachedPhotos(afterTwoDays)
+      })
+    expect(await sweep()).not.toContain(firstId)
+    expect((await bytes(firstId)).status).toBe(200)
+
+    const undone = await app.request("/api/commands/activity.undo", {
       method: "POST",
       headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId } }),
+      body: JSON.stringify({
+        input: { activityId: replacementActivity.data.activityId },
+      }),
     })
-    expect(deleted.status).toBe(200)
-    const afterDelete = await app.request("/api/paper/files", {
+    expect(undone.status).toBe(200)
+    const reopened = await app.request(`/api/paper/${docId}`, {
       headers: authHeaders(owner.cookie),
     })
-    expect(((await afterDelete.json()) as { data: unknown[] }).data).toEqual([])
+    expect(await reopened.text()).toContain(paperPhotoRef(firstId))
+    const restored = await bytes(firstId)
+    expect(restored.status).toBe(200)
+    expect(new Uint8Array(await restored.arrayBuffer())).toEqual(png)
+
+    expect(await sweep()).toContain(secondId)
+    expect((await bytes(firstId)).status).toBe(200)
+    expect((await bytes(secondId)).status).toBe(404)
 
     await client.close()
   })
 
-  it("sweeps avatar rows older than a day that no document references", async () => {
+  it("sweeps old orphan avatars while retaining document and profile photos", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
@@ -449,6 +463,16 @@ describe("CV photo bytes", () => {
     const attachedId = await upload(png, "kept.png")
     const orphanId = await upload(Uint8Array.from([...png, 0x02]), "orphan.png")
     const freshId = await upload(Uint8Array.from([...png, 0x03]), "fresh.png")
+    const profileId = await upload(
+      Uint8Array.from([...png, 0x04]),
+      "profile.png"
+    )
+    const profile = await app.request("/api/commands/profile.setPhoto", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ input: { fileId: profileId } }),
+    })
+    expect(profile.status).toBe(200)
     const attached = await app.request("/api/commands/paper.attachPhoto", {
       method: "POST",
       headers: authHeaders(owner.cookie),
@@ -462,7 +486,7 @@ describe("CV photo bytes", () => {
     await db
       .update(files)
       .set({ createdAt: twoDaysAgo })
-      .where(inArray(files.id, [attachedId, orphanId]))
+      .where(inArray(files.id, [attachedId, orphanId, profileId]))
 
     const swept = await withDatabase(db, async () => {
       const { sweepUnattachedPhotos } = await import("./photo-sweep.js")
@@ -476,6 +500,7 @@ describe("CV photo bytes", () => {
       })
     expect((await bytes(attachedId)).status).toBe(200)
     expect((await bytes(freshId)).status).toBe(200)
+    expect((await bytes(profileId)).status).toBe(200)
     expect((await bytes(orphanId)).status).toBe(404)
 
     await client.close()

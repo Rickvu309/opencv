@@ -403,29 +403,21 @@ export async function attachPhoto(
   const current = await ownedPaper(actor.userId, docId)
   await requireAvatarFile(actor.userId, fileId)
   const view = toPaper(current)
-  const previousAvatarId = paperPhotoFileId(photoRefOf(view.document))
   const document = requireDocument(
     current.kind,
     withPhotoRef(view.document, paperPhotoRef(fileId))
   )
   const updatedAt = new Date()
   const contentVersion = current.contentVersion + 1
-  const written = await transaction(async () => {
-    const result = await getDb()
-      .update(paperDocs)
-      .set({ document, contentVersion, updatedAt })
-      .where(
-        and(
-          eq(paperDocs.id, current.id),
-          eq(paperDocs.contentVersion, current.contentVersion)
-        )
+  const written = await getDb()
+    .update(paperDocs)
+    .set({ document, contentVersion, updatedAt })
+    .where(
+      and(
+        eq(paperDocs.id, current.id),
+        eq(paperDocs.contentVersion, current.contentVersion)
       )
-    if ((result.rowCount ?? 0) === 0) return result
-    if (previousAvatarId && previousAvatarId !== fileId) {
-      await deleteAvatar(actor.userId, previousAvatarId)
-    }
-    return result
-  })
+    )
   if ((written.rowCount ?? 0) === 0) {
     throw new CommandError(
       ERROR_CODES.CONFLICT,
