@@ -6,11 +6,11 @@
 #   scripts/check.sh                 full run: lint, typecheck, test (what scripts/review-pr.sh runs, once per PR)
 #   scripts/check.sh lint test       run only these
 #   scripts/check.sh --changed       quick run scoped to what changed since origin/main (what pushes run)
-#   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing (recommended once all exist)
-#   CHECK_DRY_RUN=1 scripts/check.sh ...   print the plan and the commands, run nothing
+#   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing
+#   CHECK_DRY_RUN=1 scripts/check.sh ...   print the plan and commands, run nothing
 #   CHECK_BASE_REF=<ref> scripts/check.sh --changed   compare with <ref> instead of origin/main
-#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo task concurrency (--concurrency; default: turbo's own for the full run, 2 for --changed)
-#   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (vitest reads it itself; turbo passes it through)
+#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo --concurrency (default: turbo's own for the full run, 2 for --changed)
+#   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (turbo passes it through)
 #   `heavy -- scripts/check.sh` sets both to 2 (see AGENTS.md section 4)
 #   CHECK_RETRY_FAILED_TESTS=1 scripts/check.sh --changed   rerun a failed vitest file once, alone (set by open-pr.sh only,
 #     so its quick check and the pre-push check of its push; review-pr.sh and plain runs never retry). If every failed file
@@ -25,6 +25,9 @@
 #     (turbo run <task> --filter "...{./<dir>}"), plus prettier --check on the changed files,
 #     plus the scripts/ tests when their files changed, plus the web tests when a verify-app-ui or
 #     verify-landing file changed (apps/web/src/test/verify-assumptions.test.ts reads their assumptions).
+#   - test always runs the root node:test guards (the .test.mjs files of the root package.json `test` script, 2.5 s),
+#     because a guard reads docs, skills and config no workspace package owns; an empty list fails. scripts/open-pr.test.mjs
+#     (40 s) runs only when scripts/open-pr.sh, scripts/lib/* or the test itself changed.
 #   - A global file (root package.json, lockfile, workspace, turbo.json, root configs, .npmrc, check.sh)
 #     or a missing origin/main falls back to the full run.
 #
@@ -150,6 +153,15 @@ if [[ "$needs_install" == "1" && ! -d node_modules ]]; then
   exit 1
 fi
 
+# The root guard tests: the .test.mjs files named by the root package.json `test` script, so the list lives in one place.
+root_guard_tests() {
+  node -e '
+    const fs = require("fs");
+    for (const f of require("./package.json").scripts?.test?.split(/\s+/) ?? [])
+      if (f.endsWith(".test.mjs") && fs.existsSync(f)) console.log(f);
+  '
+}
+
 has_script() { node -e "process.exit(require('./package.json').scripts?.[process.argv[1]] ? 0 : 1)" "$1"; }
 
 failed=()
@@ -231,54 +243,40 @@ if (( changed_mode )); then
             scoped=$(pnpm ls -r --depth -1 --parseable "${filters[@]}" 2>/dev/null || true)
             [[ $'\n'"$scoped"$'\n' == *"/apps/web"$'\n'* ]] && web_in_scope=1
           fi
+          [[ -n "$(root_guard_tests)" ]] || { echo "check: the package.json \`test\` script names no .test.mjs files." >&2; failed+=(guard-tests); }
+          mapfile -t guards < <(root_guard_tests | grep -vFx scripts/open-pr.test.mjs || true)
+          if has_changed scripts/open-pr.sh 'scripts/lib/*' scripts/open-pr.test.mjs; then guards+=(scripts/open-pr.test.mjs); fi
+          if [[ ${#guards[@]} -gt 0 ]]; then
+            echo "==> root guard tests (${#guards[@]} files)"
+            run node --test "${guards[@]}" || failed+=(guard-tests)
+          fi
           if has_changed '.claude/skills/verify-app-ui/*' '.claude/skills/verify-landing/*' && (( ! web_in_scope )); then
             echo "==> web tests (verify-assumptions reads the verify skills' assumptions)"
             run "$pm" --filter web test || failed+=(verify-assumptions)
           fi
-          if has_changed scripts/codeowners-lib.sh scripts/test-codeowners.sh scripts/review-pr.sh .github/CODEOWNERS; then
-            echo "==> scripts/test-codeowners.sh"
-            run scripts/test-codeowners.sh || failed+=(codeowners-tests)
-          fi
-          if has_changed .githooks/commit-msg scripts/test-commit-msg.sh; then
-            echo "==> scripts/test-commit-msg.sh"
-            run scripts/test-commit-msg.sh || failed+=(commit-msg-tests)
-          fi
-          if has_changed scripts/new-task.sh scripts/test-new-task.sh scripts/lib/result.sh scripts/lib/disk.sh scripts/lib/rules.sh; then
-            echo "==> scripts/test-new-task.sh"
-            run scripts/test-new-task.sh || failed+=(new-task-tests)
-          fi
-          if has_changed .githooks/pre-commit scripts/test-pre-commit.sh .gitattributes; then
-            echo "==> scripts/test-pre-commit.sh"
-            run scripts/test-pre-commit.sh || failed+=(pre-commit-tests)
-          fi
-          if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh scripts/lib/rules.sh scripts/lib/verify-tier.sh scripts/lib/verify-gate.mjs scripts/lib/review-pr-verify-cases.sh; then
-            echo "==> scripts/test-review-pr.sh"
-            run scripts/test-review-pr.sh || failed+=(review-pr-tests)
-          fi
-          if has_changed scripts/lib/rules.sh scripts/test-rules.sh .githooks/pre-push; then
-            echo "==> scripts/test-rules.sh"
-            run scripts/test-rules.sh || failed+=(rules-tests)
-          fi
-          if has_changed scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs 'scripts/fixtures/check-flaky-*.txt'; then
-            echo "==> scripts/test-check-retry.sh"
-            run scripts/test-check-retry.sh || failed+=(check-retry-tests)
-          fi
-          if has_changed scripts/lib/conflict-report.sh scripts/test-conflict-report.sh; then
-            echo "==> scripts/test-conflict-report.sh"
-            run scripts/test-conflict-report.sh || failed+=(conflict-report-tests)
-          fi
-          if has_changed scripts/lib/disk.sh scripts/test-disk-preflight.sh; then
-            echo "==> scripts/test-disk-preflight.sh"
-            run scripts/test-disk-preflight.sh || failed+=(disk-tests)
-          fi
-          if has_changed scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh; then
-            echo "==> scripts/test-result.sh"
-            run scripts/test-result.sh || failed+=(result-tests)
-          fi
-          if has_changed scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/result.sh scripts/lib/rules.sh; then
-            echo "==> scripts/test-merge-pr.sh"
-            run scripts/test-merge-pr.sh || failed+=(merge-pr-tests)
-          fi
+          # label | script | files whose change runs it (globs allowed)
+          script_tests=(
+            "codeowners-tests|scripts/test-codeowners.sh|scripts/codeowners-lib.sh scripts/test-codeowners.sh scripts/review-pr.sh .github/CODEOWNERS"
+            "commit-msg-tests|scripts/test-commit-msg.sh|.githooks/commit-msg scripts/test-commit-msg.sh"
+            "new-task-tests|scripts/test-new-task.sh|scripts/new-task.sh scripts/test-new-task.sh scripts/lib/result.sh scripts/lib/disk.sh scripts/lib/rules.sh"
+            "pre-commit-tests|scripts/test-pre-commit.sh|.githooks/pre-commit scripts/test-pre-commit.sh .gitattributes"
+            "review-pr-tests|scripts/test-review-pr.sh|scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh scripts/lib/rules.sh scripts/lib/verify-tier.sh scripts/lib/verify-gate.mjs scripts/lib/review-pr-verify-cases.sh"
+            "rules-tests|scripts/test-rules.sh|scripts/lib/rules.sh scripts/test-rules.sh .githooks/pre-push"
+            "check-retry-tests|scripts/test-check-retry.sh|scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs scripts/fixtures/check-flaky-*.txt"
+            "check-guards-tests|scripts/test-check-guards.sh|scripts/test-check-guards.sh scripts/lib/result.sh"
+            "conflict-report-tests|scripts/test-conflict-report.sh|scripts/lib/conflict-report.sh scripts/test-conflict-report.sh"
+            "disk-tests|scripts/test-disk-preflight.sh|scripts/lib/disk.sh scripts/test-disk-preflight.sh"
+            "result-tests|scripts/test-result.sh|scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh"
+            "merge-pr-tests|scripts/test-merge-pr.sh|scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/result.sh scripts/lib/rules.sh"
+          )
+          for entry in "${script_tests[@]}"; do
+            IFS="|" read -r label script inputs <<<"$entry"
+            read -ra inputs <<<"$inputs"
+            if has_changed "${inputs[@]}"; then
+              echo "==> $script"
+              run "$script" || failed+=("$label")
+            fi
+          done
         fi
         ;;
       *)
@@ -307,7 +305,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-rules; do
+    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-check-guards test-rules; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done
