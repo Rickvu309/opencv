@@ -19,7 +19,7 @@
 # is status "error", and so is a kill by SIGINT, SIGTERM or SIGHUP (detail "killed by SIG<name>"). Writing never changes the exit code.
 #
 # Fields (all present, null when unknown): schema, script, repo, id, status (ok|fail|human|error),
-# cause (none|behind-main|merge-conflict|test|timing-test|lint|typecheck|build|env|disk|hygiene|other), detail,
+# cause (none|behind-main|merge-conflict|test|timing-test|lint|typecheck|build|env|disk|hygiene|deploy|other), detail,
 # files, blockedBy {pr, commit, files}, retried, next, log, startedAt (UTC ISO-8601), durSec.
 # PR_RESULT_REPO overrides the repo name; PR_RESULT_ID gives a nested script the id of the script that called it.
 
