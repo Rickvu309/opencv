@@ -23,6 +23,7 @@ const record: PaperView = {
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",
+  isFavorite: false,
   sourceFileId: null,
   createdAt: "2026-08-25T12:00:00.000Z",
   updatedAt: "2026-08-25T12:00:00.000Z",

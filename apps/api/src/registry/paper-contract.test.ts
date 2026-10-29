@@ -71,6 +71,20 @@ describe("paper contract", () => {
         },
       })
       await run("paper.rename", { docId: cv, name: "Ada CV" })
+      const beforeFavorite = paperQueries["paper.get"].output.parse(
+        await read("paper.get", { docId: cv })
+      )
+      expect(beforeFavorite.isFavorite).toBe(false)
+      await run("paper.setFavorite", { docId: cv, isFavorite: true })
+      const favorite = await read("paper.get", { docId: cv })
+      expect(favorite).toEqual({ ...beforeFavorite, isFavorite: true })
+      await expect(
+        registry.execute({
+          name: "paper.setFavorite",
+          input: { docId: cv, isFavorite: false },
+          actor: personActor("user-paper-outsider"),
+        })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" })
       const copy = idOf(await run("paper.duplicate", { docId: cv }))
       await run("paper.setTemplate", { docId: cv, templateId: "modern" })
       await run("paper.setStatus", { docId: cv, status: "ready" })
@@ -117,6 +131,7 @@ describe("paper contract", () => {
         },
         personActor("public")
       )) as unknown
+      expect(shared).not.toHaveProperty("isFavorite")
       expect(
         paperQueries["paper.shared"].output.safeParse(shared).success
       ).toBe(true)

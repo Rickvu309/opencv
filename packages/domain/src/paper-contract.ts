@@ -61,6 +61,7 @@ const paperViewSchema = z
     contentVersion: z.number().int(),
     checks: z.array(paperCheckSchema),
     pageChoice: paperPageChoiceSchema,
+    isFavorite: z.boolean(),
     sourceFileId: fileIdSchema.nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
@@ -113,7 +114,7 @@ export const paperQueries = queryContract({
   }),
   "paper.shared": queryEntry({
     input: z.object({ token: z.string().min(8) }).strict(),
-    output: paperViewSchema,
+    output: paperViewSchema.omit({ isFavorite: true }).strict(),
   }),
   "file.get": queryEntry({
     input: z.object({ fileId: fileIdSchema }).strict(),
@@ -185,6 +186,20 @@ export const paperContract = commandContract({
     destructive: false,
     step: () => "Rename the document",
     invalidates: docChanged,
+  }),
+  "paper.setFavorite": commandEntry({
+    description: "Set whether a document is a favorite.",
+    input: z.object({ docId: paperIdSchema, isFavorite: z.boolean() }).strict(),
+    output: z
+      .object({ docId: paperIdSchema, isFavorite: z.boolean() })
+      .strict(),
+    coach: "never",
+    destructive: false,
+    step: () => "Set favorite",
+    invalidates: (input) => [
+      { query: "paper.get", input: { docId: input.docId } },
+      { query: "paper.list" },
+    ],
   }),
   "paper.duplicate": commandEntry({
     description: "Duplicate a document.",

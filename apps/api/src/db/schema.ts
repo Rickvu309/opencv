@@ -161,6 +161,7 @@ export const paperDocs = opencvApp.table(
       .$type<"unset" | "keep">()
       .notNull()
       .default("unset"),
+    isFavorite: boolean("is_favorite").notNull().default(false),
     sourceFileId: uuid("source_file_id").references(() => files.id, {
       onDelete: "set null",
     }),

@@ -7,6 +7,7 @@ import { saveFile } from "../paper/index.js"
 import {
   idOf,
   list,
+  flag,
   record,
   text,
   type CoverageCase,
@@ -79,6 +80,51 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       undoAssert: async (result) => {
         await undo(result)
         expect(text(await paperOf(ctx.docId), "name")).toBe("Rename CV")
+      },
+    },
+    {
+      name: "paper.setFavorite",
+      arrange: async () => {
+        const paper = await run("paper.create", {
+          kind: "cv",
+          name: "Favorite CV",
+        })
+        ctx.docId = idOf(paper.output)
+      },
+      act: () =>
+        run("paper.setFavorite", { docId: ctx.docId, isFavorite: true }),
+      assert: async (result) => {
+        expect(result.output).toEqual({ docId: ctx.docId, isFavorite: true })
+        const first = await paperOf(ctx.docId)
+        expect(flag(first, "isFavorite")).toBe(true)
+        const beforeUpdatedAt = text(first, "updatedAt")
+        const beforeVersion = (first as { contentVersion: number })
+          .contentVersion
+        const repeated = await run("paper.setFavorite", {
+          docId: ctx.docId,
+          isFavorite: true,
+        })
+        expect(repeated.output).toEqual(result.output)
+        const after = await paperOf(ctx.docId)
+        expect(flag(after, "isFavorite")).toBe(true)
+        expect(text(after, "updatedAt")).toBe(beforeUpdatedAt)
+        expect((after as { contentVersion: number }).contentVersion).toBe(
+          beforeVersion
+        )
+        await run("paper.setFavorite", { docId: ctx.docId, isFavorite: false })
+        expect(flag(await paperOf(ctx.docId), "isFavorite")).toBe(false)
+        await run("paper.setFavorite", { docId: ctx.docId, isFavorite: true })
+        const listed = (await registry.read(
+          "paper.list",
+          {},
+          personActor(userId)
+        )) as {
+          id: string
+          isFavorite: boolean
+        }[]
+        expect(listed.find((paper) => paper.id === ctx.docId)?.isFavorite).toBe(
+          true
+        )
       },
     },
     {

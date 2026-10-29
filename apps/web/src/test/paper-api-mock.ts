@@ -14,6 +14,7 @@ type Store = {
   failNext: { command: string; message: string } | null
   listGate: Promise<void> | null
   failList: boolean
+  favoriteIds: Set<string>
 }
 
 const store: Store = {
@@ -21,6 +22,7 @@ const store: Store = {
   failNext: null,
   listGate: null,
   failList: false,
+  favoriteIds: new Set(),
 }
 
 function cloneDocs(docs: PaperDoc[]): PaperDoc[] {
@@ -51,6 +53,7 @@ function toWire(doc: PaperDoc) {
     sourceFileId: null,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
+    isFavorite: store.favoriteIds.has(doc.id),
   }
 }
 
@@ -67,6 +70,12 @@ export function resetPaperApiMock() {
   store.failNext = null
   store.listGate = null
   store.failList = false
+  store.favoriteIds = new Set()
+}
+
+export function setMockPaperFavorite(docId: string, isFavorite: boolean) {
+  if (isFavorite) store.favoriteIds.add(docId)
+  else store.favoriteIds.delete(docId)
 }
 
 export function failPaperList(fail = true) {
@@ -226,6 +235,17 @@ export async function paperApiFetch(
     doc.name = body.name?.trim() || doc.name
     doc.updatedAt = isoNow()
     return jsonOk(toWire(doc))
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.setFavorite") {
+    const body = (await readBody(init)) as {
+      docId?: string
+      isFavorite?: boolean
+    }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    setMockPaperFavorite(doc.id, body.isFavorite === true)
+    return jsonOk({ docId: doc.id, isFavorite: body.isFavorite === true })
   }
 
   if (method === "POST" && path === "/api/commands/paper.duplicate") {

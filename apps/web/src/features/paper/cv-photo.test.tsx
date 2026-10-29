@@ -295,7 +295,7 @@ describe("CV photo", () => {
     const blocks = blankBlockDocument()
     blocks.header.name = "Ada Lovelace"
     blocks.header.photo = `file:${FILE_ID}`
-    const shared: PaperView = {
+    const shared: Omit<PaperView, "isFavorite"> = {
       id: DOC_ID,
       name: "Photo CV",
       kind: "cv",

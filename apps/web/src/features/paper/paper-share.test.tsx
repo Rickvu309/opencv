@@ -14,7 +14,7 @@ vi.mock("@tanstack/react-router", () => ({
   }) => options.select({ location: { pathname: state.pathname } }),
 }))
 
-const shared: PaperView = {
+const shared: Omit<PaperView, "isFavorite"> = {
   id: "doc-1",
   name: "PM track CV",
   kind: "cv",
@@ -79,7 +79,7 @@ describe("Paper share page", () => {
   })
 
   it("shows no placeholder for an empty summary or an empty company", async () => {
-    const quiet: PaperView = {
+    const quiet: Omit<PaperView, "isFavorite"> = {
       ...shared,
       templateId: "simple",
       document: {

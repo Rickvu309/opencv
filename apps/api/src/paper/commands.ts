@@ -26,6 +26,7 @@ import {
   renamePaper,
   replacePaper,
   setPaperStatus,
+  setPaperFavorite,
   setPaperTemplate,
   sharePaper,
   toPaper,
@@ -95,6 +96,12 @@ export function registerPaper(registry: Registry) {
         command: "paper.rename",
         input: { docId: input.docId, name: output.previousName },
       }),
+      activity: noActivity,
+    },
+    "paper.setFavorite": {
+      handler: (input, actor) =>
+        setPaperFavorite(actor.userId, input.docId, input.isFavorite),
+      reversal: noReversal,
       activity: noActivity,
     },
     "paper.duplicate": {
