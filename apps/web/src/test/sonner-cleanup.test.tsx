@@ -1,24 +1,40 @@
 import { act, fireEvent, render, screen, cleanup } from "@testing-library/react"
-import { afterAll, beforeAll, expect, it, vi } from "vitest"
+import { expect, it, vi } from "vitest"
 import { toast, Toaster } from "sonner"
 
-beforeAll(() => vi.useFakeTimers())
-afterAll(() => vi.useRealTimers())
+import {
+  cleanupSonnerTimers,
+  pendingSonnerTimerCount,
+} from "./test-resources.ts"
 
-it("leaves Sonner's exit timer for the shared teardown to cancel", async () => {
+it("recognizes and cancels Sonner's exit timer", async () => {
   render(<Toaster closeButton />)
-  act(() => {
-    toast.success("Saved", { duration: Infinity })
-    vi.advanceTimersByTime(0)
-  })
+  act(() => toast.success("Saved", { duration: Infinity }))
+  await screen.findByText("Saved")
   fireEvent.click(screen.getByRole("button", { name: "Close toast" }))
   cleanup()
-  // Sonner 2.0.8 deleteToast schedules a 200ms callback with no effect cleanup.
-  expect(vi.getTimerCount()).toBeGreaterThan(0)
+
+  expect(
+    pendingSonnerTimerCount(),
+    "Sonner exit timer was not recognized; check its scheduling stack"
+  ).toBeGreaterThan(0)
+  const clearTimer = vi.spyOn(globalThis, "clearTimeout")
+  try {
+    await cleanupSonnerTimers()
+    expect(
+      clearTimer,
+      "Sonner exit timer was not canceled during cleanup"
+    ).toHaveBeenCalled()
+  } finally {
+    clearTimer.mockRestore()
+  }
 })
 
-it("starts the next test without a callback retaining the unmounted Toaster", async () => {
-  expect(vi.getTimerCount()).toBe(0)
-  await act(async () => vi.advanceTimersByTimeAsync(200))
-  expect(vi.getTimerCount()).toBe(0)
+it("restores the single timer wrapper after fake timers", () => {
+  const wrapper = globalThis.setTimeout
+  vi.useFakeTimers()
+  globalThis.setTimeout(() => {}, 1)
+  vi.useRealTimers()
+
+  expect(globalThis.setTimeout).toBe(wrapper)
 })

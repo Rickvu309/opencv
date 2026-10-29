@@ -16,7 +16,8 @@ import { resetChatApiMock } from "./chat-api-mock.ts"
 import {
   cleanupTestResources,
   registerTestCleanup,
-  registerSonnerTimers,
+  installSonnerTimerTracker,
+  cleanupSonnerTimers,
 } from "./test-resources.ts"
 
 configure({ asyncUtilTimeout: 5000 })
@@ -76,10 +77,9 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   })
 }
 
-let cleanupTimers: () => Promise<void>
+installSonnerTimerTracker()
 
 beforeEach(() => {
-  cleanupTimers = registerSonnerTimers()
   toast.dismiss()
   resetMockSession()
   resetUnauthorizedHandler()
@@ -92,11 +92,10 @@ beforeEach(() => {
 
 afterEach(async () => {
   try {
-    toast.dismiss()
     cleanup()
   } finally {
     try {
-      registerTestCleanup(cleanupTimers)
+      registerTestCleanup(cleanupSonnerTimers)
       await act(() => cleanupTestResources())
     } finally {
       if (typeof sessionStorage !== "undefined") sessionStorage.clear()
