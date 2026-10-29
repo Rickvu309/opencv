@@ -2,7 +2,7 @@
 # pre-push: local guardrails (the ci workflow reruns the quick check). Enable once per clone:  git config core.hooksPath .githooks
 #   1. Never push to main (or delete it).
 #   2. Branch names must be type/<issue#>-short-description.
-#   3. Run scripts/check.sh --changed: a quick lint/typecheck/test scoped to what changed since origin/main.
+#   3. Run `pnpm check` (scripts/check.sh --changed): a quick lint/typecheck/test scoped to what changed since origin/main.
 #      ci.yml runs this same quick check. Nothing runs the full check before a merge.
 #
 # Emergency only, discouraged: SKIP_CHECKS=1 git push ...   skips step 3 (rules 1-2 still apply).
@@ -62,9 +62,10 @@ if [[ ! -x "$top/scripts/check.sh" ]]; then
   stamp ok
   exit 0
 fi
+command -v pnpm >/dev/null 2>&1 || fail "pnpm is not on this shell's PATH, so the quick check cannot run. Install it (corepack enable) or push from a shell that has it."
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
   echo "pre-push: note: you have uncommitted changes; checks run on the working tree, not only on what you push." >&2
 fi
-echo "pre-push: running scripts/check.sh --changed (quick check of what changed)..." >&2
-env -u CHECK_DRY_RUN "$top/scripts/check.sh" --changed || fail "checks failed. Fix them before pushing."
+echo "pre-push: running pnpm check (quick check of what changed)..." >&2
+(cd "$top" && env -u CHECK_DRY_RUN pnpm check) || fail "checks failed. Fix them before pushing."
 stamp ok

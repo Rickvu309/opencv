@@ -51,6 +51,7 @@ function run(
     writeFileSync(join(root, path), text, { mode: 0o755 })
   writeFileSync(join(root, "events"), "")
   writeFileSync(join(root, "env"), "")
+  writeFileSync(join(root, "pnpm"), "")
   if (lowDisk) {
     // A nearly full filesystem (99% used, 1 GiB free), below the 2 GiB limit.
     executable(
@@ -62,9 +63,18 @@ function run(
     "work/repo/scripts/check.sh",
     `#!/bin/sh
 printf 'check retry=%s\\n' "\${CHECK_RETRY_FAILED_TESTS-unset}" >> "$PROOF_ROOT/env"
+[ -z "$PROOF_CHECK_FAIL" ] || exit 1
 mkdir -p "$PR_RESULT_DIR"
 [ -z "$PROOF_RETRIED" ] || printf '{"retried":[%s]}' "$PROOF_RETRIED" > "$PR_RESULT_DIR/opencv-check-fix-999-push-failure-proof.json"
 exit 0
+`
+  )
+  executable(
+    "bin/pnpm",
+    `#!/bin/sh
+printf '%s\\n' "$*" >> "$PROOF_ROOT/pnpm"
+[ "$1" = check ] || { echo "unexpected pnpm call $*" >&2; exit 99; }
+exec sh "$PROOF_ROOT/work/repo/scripts/check.sh" --changed
 `
   )
   executable(
@@ -167,6 +177,7 @@ esac
     root,
     events: readFileSync(join(root, "events"), "utf8"),
     env: readFileSync(join(root, "env"), "utf8"),
+    pnpm: readFileSync(join(root, "pnpm"), "utf8"),
   }
 }
 
@@ -192,10 +203,18 @@ test("successful push preserves hooks and creates a PR", (t) => {
   assert.match(result.stderr, /push transport diagnostic/)
 })
 
-test("the quick check and the push's pre-push check retry a failed test file once, nothing else does", (t) => {
+test("the quick check runs as pnpm check and neither it nor the push gets CHECK_RETRY_FAILED_TESTS", (t) => {
   const result = run(t, 0)
   assert.equal(result.status, 0, result.stderr)
-  assert.equal(result.env, "check retry=1\npush retry=1\n")
+  assert.equal(result.pnpm, "check\n")
+  assert.equal(result.env, "check retry=unset\npush retry=unset\n")
+})
+
+test("a failed quick check fails on its first attempt, with no retry", (t) => {
+  const result = run(t, 0, false, false, false, { PROOF_CHECK_FAIL: "1" })
+  assert.equal(result.status, 1, result.stderr)
+  assert.equal(result.pnpm, "check\n")
+  assert.equal(result.env, "check retry=unset\n")
 })
 
 const retried = '"apps/web/a.test.tsx","apps/api/b.test.ts"'

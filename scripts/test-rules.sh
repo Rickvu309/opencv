@@ -17,6 +17,10 @@ mkdir -p "$repo/scripts" "$repo/.githooks"
 git init -q -b main "$repo" && git -C "$repo" config core.hooksPath /dev/null
 cp "$here/../.githooks/pre-push" "$repo/.githooks/pre-push"
 printf '#!/usr/bin/env bash\n[[ ! -f "$PWD/FAIL_CHECK" ]]\n' >"$repo/scripts/check.sh"; chmod +x "$repo/scripts/check.sh" "$repo/.githooks/pre-push"
+# The hook runs `pnpm check` (here: a stub that logs its argument and runs the quick check).
+mkdir "$tmp/bin"
+printf '#!/usr/bin/env bash\necho "$*" >>"%s"\necho "${CHECK_RETRY_FAILED_TESTS-unset}" >>"%s"\n[[ "$1" == check ]] && exec scripts/check.sh --changed\nexit 99\n' "$tmp/pnpm.log" "$tmp/retry.log" >"$tmp/bin/pnpm"
+chmod +x "$tmp/bin/pnpm"; export PATH="$tmp/bin:$PATH"
 git -C "$repo" add -A && git -C "$repo" commit -q -m base
 sha=$(git -C "$repo" rev-parse HEAD)
 push() {  # push [VAR=value ...]: the hook as git runs it for a push of $sha to a task branch
@@ -28,6 +32,8 @@ stamp=$repo/.git/pre-push-stamps/$sha
 
 push X=1
 [[ $code -eq 0 && "$(cat "$stamp")" == ok ]] || fail "a passing push is stamped ok"
+[[ "$(cat "$tmp/pnpm.log")" == check ]] || fail "the push runs pnpm check: $(cat "$tmp/pnpm.log")"
+[[ "$(cat "$tmp/retry.log")" == unset ]] || fail "the hook must not set CHECK_RETRY_FAILED_TESTS: $(cat "$tmp/retry.log")"
 echo "ok: a push through the hook leaves an ok stamp for the pushed sha"
 
 rm -rf "$repo/.git/pre-push-stamps"; touch "$repo/FAIL_CHECK"
@@ -35,6 +41,12 @@ push X=1
 [[ $code -ne 0 && ! -e "$stamp" ]] || fail "a push whose check failed must not be stamped"
 rm "$repo/FAIL_CHECK"
 echo "ok: a push whose quick check failed is not stamped"
+
+rm -rf "$repo/.git/pre-push-stamps"
+push PATH=/usr/bin:/bin
+[[ $code -ne 0 && ! -e "$stamp" ]] || fail "a push without pnpm on PATH must fail and not be stamped"
+cat "$tmp/out" "$tmp/err" 2>/dev/null | grep -q "pnpm is not on this shell" || fail "missing pnpm must say what to do: $(cat "$tmp/err")"
+echo "ok: a push without pnpm on PATH fails closed and is not stamped"
 
 push SKIP_CHECKS=1
 [[ $code -eq 0 && "$(cat "$stamp")" == skip ]] || fail "a SKIP_CHECKS push is stamped skip"
