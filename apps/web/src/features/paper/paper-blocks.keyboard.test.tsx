@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type { PaperView } from "@workspace/domain"
 
@@ -56,11 +56,11 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function renderEditor() {
+function renderEditor(document: PaperView["document"] = entryDocument) {
   return renderWithClient(
     <ChatStoreProvider>
       <PaperCvEditor
-        initial={{ ...record, document: entryDocument }}
+        initial={{ ...record, document }}
         pages={pages}
         onBack={() => undefined}
       />
@@ -69,6 +69,53 @@ function renderEditor() {
 }
 
 describe("block editor keyboard", () => {
+  it.each(["experience-entry", "text"] as const)(
+    "reaches the %s menu with Tab, opens it with Enter and returns focus on Escape",
+    async (type) => {
+      const user = userEvent.setup()
+      vi.stubGlobal("fetch", () =>
+        Promise.resolve(Response.json({ ok: true, data: {} }))
+      )
+      renderEditor({
+        ...entryDocument,
+        sections: [
+          {
+            id: "section",
+            kind: "experience",
+            blocks: [
+              type === "text"
+                ? { id: "entry", type, text: "Project details" }
+                : {
+                    id: "entry",
+                    type,
+                    role: "Engineer",
+                    company: "",
+                    period: "",
+                    bullets: [],
+                  },
+            ],
+          },
+        ],
+      })
+      const block = document.querySelector<HTMLElement>(
+        "[data-sortable-block='entry']"
+      )
+      if (!block) throw new Error("missing entry block")
+      block.focus()
+      await user.tab()
+      const trigger = within(block).getByRole("button", { name: "Block menu" })
+      expect(trigger).toHaveFocus()
+      await user.keyboard("{Enter}")
+      expect(await screen.findByRole("menu")).toBeVisible()
+      await vi.waitFor(() => {
+        expect(document.activeElement).toHaveAttribute("role", "menuitem")
+      })
+      await user.keyboard("{Escape}")
+      await vi.waitFor(() => expect(trigger).toHaveFocus())
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument()
+    }
+  )
+
   it("tabs from Name through the header into the block and through an entry", async () => {
     const user = userEvent.setup()
     vi.stubGlobal("fetch", () =>
