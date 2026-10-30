@@ -96,7 +96,7 @@ function loadTakeFact(ctx, n, need, id) {
 
 function decideTake(ctx, n, facts) {
   for (const row of RULES) {
-    if (!row.jobs.includes("take") || !row.check) continue
+    if (!row.at.includes("take") || !row.check) continue
     for (const need of row.needs) {
       if (need in facts) continue
       facts[need] = loadTakeFact(ctx, n, need, row.id)
@@ -196,6 +196,6 @@ function takeInner(ctx, target, flags, setId) {
       `Agent: ${me}`,
       ...made.warnings.map((w) => `Warning: ${w}`),
     ],
-    next: `cd ${made.worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes, then scripts/ocv-tools.mjs check, then scripts/ocv-tools.mjs finish --draft --body-file <file>`,
+    next: `cd ${made.worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes, then scripts/ocv-tools.mjs finish --body-file <file>`,
   }
 }

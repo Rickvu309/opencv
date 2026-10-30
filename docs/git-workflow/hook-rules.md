@@ -1,0 +1,17 @@
+# Git hook rules
+
+These rules run in the git hooks at commit and push. `.githooks/commit-msg`, `.githooks/pre-commit` and `.githooks/pre-push` are shims over `scripts/ocv-tools.mjs hook`, which calls the one rule table. The table comes from the same rule table as [workflow rules](rule-enforcement.md). Run `scripts/ocv-tools.mjs rules --write` to refresh every guide; `rules --check` checks them all.
+
+<!-- rules:begin -->
+
+| rule                  | what makes it fail                                                                                      | fix                                                                                                                                                         | at                 | holds against main |
+| --------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ |
+| SKIP_DECLARED (5)     | SKIP_CHECKS=1 needs a human named in SKIP_CHECKS_DECLARED_BY.                                           | unset SKIP_CHECKS, or name the human who declared the emergency in SKIP_CHECKS_DECLARED_BY                                                                  | push, finish       | no                 |
+| NO_PUSH_MAIN (5)      | Nothing is pushed to main or deletes it; main changes only through the merge queue.                     | Push your task branch and open a PR: scripts/ocv-tools.mjs finish --body-file <file>                                                                        | push               | no                 |
+| BRANCH_NAME (3)       | A pushed branch is named type/<issue#>-short-description (bot branches dependabot/ and renovate/ pass). | Rename it: git branch -m type/<issue#>-short-description (see docs/git-workflow/branch-naming.md)                                                           | push               | no                 |
+| ON_MAIN (2)           | No commit is made on main; work on a task branch in your own worktree.                                  | scripts/ocv-tools.mjs take <issue#>                                                                                                                         | commit             | no                 |
+| EMPTY_MESSAGE (4)     | A commit message needs a first line.                                                                    | git commit -m "type: what changed"                                                                                                                          | commit             | no                 |
+| NO_AI_ATTRIBUTION (5) | No commit carries a Co-Authored-By or Generated-With attribution trailer.                               | git reset --soft "$(git merge-base origin/main HEAD)" && git commit -m "$(git log -1 --format=%s ORIG_HEAD)" && git push --force-with-lease                 | commit, finish, pr | yes                |
+| FILE_SIZE (5)         | No authored file in the change is over the 20000-byte pre-commit limit.                                 | Split each file by responsibility (code into sibling modules, tests by describe block, docs by section), never by minifying; then re-stage and commit again | commit, finish, pr | yes                |
+
+<!-- rules:end -->

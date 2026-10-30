@@ -1,4 +1,3 @@
-import { join } from "node:path"
 import { Refused, writeResult } from "../result.mjs"
 import { jobRows, evaluate, refusalError } from "../rules/index.mjs"
 
@@ -18,10 +17,6 @@ export function must(ctx, cmd, args, options) {
 export const git = (ctx, ...args) => must(ctx, "git", args)
 export const gh = (ctx, ...args) => must(ctx, "gh", args)
 export const json = (ctx, ...args) => JSON.parse(gh(ctx, ...args))
-export function gate(id, facts) {
-  const hit = evaluate(id, facts)
-  if (hit) throw refusalError(hit)
-}
 export function refuse(code, message, fix) {
   if (jobRows.some((row) => row.id === code))
     throw refusalError(evaluate(code, { delivery: { id: code, message, fix } }))
@@ -46,14 +41,13 @@ export function task(ctx) {
 }
 export function snapshot(ctx, t) {
   if (git(ctx, "status", "--porcelain"))
-    refuse("DIRTY", "Commit the changes before checking or finishing.")
+    refuse("DIRTY", "Commit the changes before finishing.")
   return {
     tree: git(ctx, "rev-parse", "HEAD^{tree}"),
     base: git(ctx, "rev-parse", "origin/main"),
     branch: t.branch,
   }
 }
-export const proofPath = (t) => join(t.gitDir, "ocv-tools-check.json")
 export function recorded(ctx, script, action) {
   const startedAt = new Date(ctx.now()).toISOString()
   try {

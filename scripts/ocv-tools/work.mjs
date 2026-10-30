@@ -107,7 +107,7 @@ export function save(ctx, { message }) {
       lines: [
         `Nothing to save in #${t.n}: no changes and nothing waiting to upload. The claim is refreshed.`,
       ],
-      next: "Keep working, or run scripts/ocv-tools.mjs check, then scripts/ocv-tools.mjs finish --draft --body-file <file> when it is done",
+      next: "Keep working, or run scripts/ocv-tools.mjs finish --body-file <file> when it is done",
     }
   }
   if (dirty) {
@@ -149,7 +149,7 @@ export function save(ctx, { message }) {
       `Saved #${t.n} on ${t.branch} at ${git.shortHead(ctx.cwd)}.`,
       "Pushed, and the claim is refreshed.",
     ],
-    next: "Keep working and save again, or run scripts/ocv-tools.mjs check, then scripts/ocv-tools.mjs finish --draft --body-file <file> when it is done",
+    next: "Keep working and save again, or run scripts/ocv-tools.mjs finish --body-file <file> when it is done",
   }
 }
 

@@ -7,7 +7,6 @@ function rule(spec) {
   return {
     kind: "rule",
     needs: [],
-    jobs: [],
     fix: () => FIXES[spec.id],
     ...spec,
   }
@@ -43,8 +42,7 @@ export const pullRows = [
     id: "READY_FOR_HUMAN",
     section: "5",
     says: "An issue labeled ready-for-human is a decision for a human, never an agent task.",
-    jobs: ["take", "open"],
-    at: ["take", "pr"],
+    at: ["take", "finish", "pr"],
     needs: ["issue"],
     check: readyForHuman,
   }),
@@ -52,8 +50,7 @@ export const pullRows = [
     id: "PR_METADATA",
     section: "4",
     says: "The title is type: description (#n), the body says Closes #n, and issue n is open.",
-    jobs: ["merge"],
-    at: ["pr"],
+    at: ["finish", "pr"],
     needs: ["pull"],
     check: prMetadata,
     fix: () =>

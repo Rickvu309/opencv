@@ -41,7 +41,7 @@ When production is broken:
    ```bash
    scripts/ocv-tools.mjs take <issue#> -d "short description"   # type hotfix
    ```
-4. **Fix, then open the PR right away** (not as a draft): `scripts/ocv-tools.mjs check`, then `scripts/ocv-tools.mjs finish --body-file <file>`. That gives `hotfix: restore checkout button (#88)` with `Closes #88`.
+4. **Fix, then open the PR right away** (not as a draft): `scripts/ocv-tools.mjs finish --body-file <file>`. That gives `hotfix: restore checkout button (#88)` with `Closes #88`.
 5. **Wait for `ci`.** `SKIP_CHECKS=1` is allowed only if a human declares it, and the PR body says so. A `needs-human-review` label still needs a human: an agent does not merge it. A mass deletion is not detected; add the label yourself.
 6. **Enqueue** with `scripts/ocv-tools.mjs merge`. Wait for full queue CI and the squash merge before production deploys. If `ci` is red, see "When ci is red" in `review-and-approval.md` (owner only).
 7. **Verify** production, then clean up the worktree. If you rolled back in step 2, make sure the new production deploy includes everything that was rolled back plus the fix.
@@ -57,7 +57,6 @@ The fastest safe undo is a revert PR:
 scripts/ocv-tools.mjs take 95 -d "revert login page"
 cd ../opencv.worktrees/95-revert-login-page
 git revert <squash-commit-sha>
-scripts/ocv-tools.mjs check
 scripts/ocv-tools.mjs finish -d "revert login page" --body-file <file>
 ```
 

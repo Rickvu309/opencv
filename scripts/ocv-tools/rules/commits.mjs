@@ -1,52 +1,84 @@
-// Rules about the commits on the branch: no AI attribution trailers and no
-// file over the pre-commit size limit. The commit-msg and pre-commit hooks
-// hold these at commit; finish and the policy job re-read them from the
-// gathered commit facts.
+// Rules about the commits on the branch: not on main, a message, no AI
+// attribution trailers and no file over the size limit. The commit-msg and
+// pre-commit hooks hold these at commit; finish and the policy job re-read
+// the last two from the gathered commit facts.
 import { FIXES } from "../result.mjs"
 
 function rule(spec) {
   return {
     kind: "rule",
     needs: [],
-    jobs: [],
     fix: () => FIXES[spec.id],
     ...spec,
   }
 }
 
+function onMain(facts) {
+  if (facts.commit?.branch !== "main") return null
+  return "committing on main is not allowed; work on a task branch in your own worktree"
+}
+
+// first is null when the hook did not read the message (pre-commit).
+function emptyMessage(facts) {
+  if (facts.commit?.first == null || facts.commit.first !== "") return null
+  return "the commit message has no first line"
+}
+
 function noAiAttribution(facts) {
   const commits = facts.commits
   if (!commits?.trailers) return null
+  if (commits.trailers === "this message")
+    return "the commit message carries an attribution trailer"
   return `commit(s) ${String(commits.trailers).trim()} carry an attribution trailer, which the commit-msg hook refuses: they were made without that hook (the hook-skip flag, a cherry-pick or a rebase)`
 }
 
 function fileSize(facts) {
   const commits = facts.commits
   if (!commits?.oversize) return null
-  return `file(s) over the 20000-byte pre-commit limit: ${String(commits.oversize).trim()}; a commit this size passes only with the hook-skip flag. Split each file as .githooks/pre-commit says, then run the fix`
+  return `file(s) over the 20000-byte limit (5000 tokens): ${String(commits.oversize).trim()}`
 }
 
+const SPLIT_GUIDE =
+  "Split each file by responsibility (code into sibling modules, tests by describe block, docs by section), never by minifying; then re-stage and commit again"
+
 export const commitRows = [
+  rule({
+    id: "ON_MAIN",
+    section: "2",
+    says: "No commit is made on main; work on a task branch in your own worktree.",
+    at: ["commit"],
+    needs: ["commit"],
+    check: onMain,
+    fix: () => "scripts/ocv-tools.mjs take <issue#>",
+  }),
+  rule({
+    id: "EMPTY_MESSAGE",
+    section: "4",
+    says: "A commit message needs a first line.",
+    at: ["commit"],
+    needs: ["commit"],
+    check: emptyMessage,
+    fix: () => 'git commit -m "type: what changed"',
+  }),
   rule({
     id: "NO_AI_ATTRIBUTION",
     section: "5",
     says: "No commit carries a Co-Authored-By or Generated-With attribution trailer.",
-    jobs: ["open"],
     at: ["commit", "finish", "pr"],
     needs: ["commits"],
     check: noAiAttribution,
-    fix: () =>
-      'git reset --soft "$(git merge-base origin/main HEAD)" && git commit -m "$(git log -1 --format=%s ORIG_HEAD)" && git push --force-with-lease',
+    fix: (facts) =>
+      facts?.commits?.trailers === "this message"
+        ? "Delete the attribution trailer line from the commit message and commit again"
+        : 'git reset --soft "$(git merge-base origin/main HEAD)" && git commit -m "$(git log -1 --format=%s ORIG_HEAD)" && git push --force-with-lease',
   }),
   rule({
     id: "FILE_SIZE",
     section: "5",
     says: "No authored file in the change is over the 20000-byte pre-commit limit.",
-    jobs: ["open"],
     at: ["commit", "finish", "pr"],
     needs: ["commits"],
     check: fileSize,
-    fix: () =>
-      'git add -A && git commit -m "fix: split oversize files under the 20000-byte limit"',
+    fix: () => SPLIT_GUIDE,
   }),
 ]

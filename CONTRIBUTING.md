@@ -64,7 +64,7 @@ flowchart LR
 
 ## 5. Pull requests
 
-- Open the PR early. A draft is fine. Run `scripts/ocv-tools.mjs check`, then `scripts/ocv-tools.mjs finish [--draft] --body-file <file>`: finish requires a passing check for the saved tree and base, pushes, and fills in the title and body.
+- Open the PR early. A draft is fine but not required. Run `scripts/ocv-tools.mjs finish [--draft] --body-file <file>`: finish runs the pull request rules early, pushes through the hooks, and fills in the title and body.
 - Title: `type: description (#<issue>)`, for example `feat: add login page (#42)`. It becomes the commit message on `main`.
 - Body: the PR template with the `Closes #42` line.
 - Before merge, the PR needs a green `ci` check. CI runs parallel affected Turbo jobs and guards. Local `pnpm check` runs affected tasks, guards and formatting; `pnpm check:full` also builds every package.
@@ -91,7 +91,7 @@ flowchart LR
 
 1. Open an issue (Bug form, `hotfix` label).
 2. Branch `hotfix/<issue#>-short-description` from `main`.
-3. Run `scripts/ocv-tools.mjs check`, then open the PR with `scripts/ocv-tools.mjs finish --body-file <file>`. `ci` must be green. Merge with `scripts/ocv-tools.mjs merge`.
+3. Open the PR with `scripts/ocv-tools.mjs finish --body-file <file>`. `ci` must be green. Merge with `scripts/ocv-tools.mjs merge`.
 4. Squash-merge. It deploys like any other change.
 
 If the fix is risky or will take time, first roll back to the previous production deploy on the hosting platform, then fix forward calmly. See `docs/git-workflow/deploys-and-hotfixes.md`.
@@ -109,10 +109,10 @@ If the fix is risky or will take time, first roll back to the previous productio
 | Ruleset on `main`              | GitHub      | Requires a PR and the `ci` check (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
 | Merge settings                 | GitHub      | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                |
 | `CODEOWNERS`                   | GitHub      | Names the owner of every path, including env and secrets paths                                                                                                                            |
-| `pre-push` hook                | Local       | Blocks pushes to `main` and bad branch names; runs `pnpm check` (quick, scoped to what changed)                                                                                           |
+| `pre-push` hook                | Local       | Shim over the rule table: blocks pushes to `main` and bad branch names; runs `pnpm check` (quick, scoped to what changed)                                                                 |
 | `commit-msg` hook              | Local       | Blocks commits on `main`; rejects empty messages                                                                                                                                          |
 | `pre-commit` hook              | Local       | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                           |
-| `scripts/ocv-tools.mjs finish` | Local       | Correct PR title and `Closes #`, passing check proof before push                                                                                                                          |
+| `scripts/ocv-tools.mjs finish` | Local       | The pull request rules (title, `Closes #`, workflows, size, attribution) before the push                                                                                                  |
 | `scripts/ocv-tools.mjs merge`  | Owner agent | Merges when `ci` is green: owner author, not a draft, no `needs-human-review`, no mass deletion, title, `Closes #n` and open issue, gate files carry `risk:high`                          |
 | Templates                      | GitHub      | PR template; Task issue form                                                                                                                                                              |
 | Labels                         | GitHub      | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                             |
@@ -147,9 +147,8 @@ cd ../opencv.worktrees/42-login-page
 git add -p && git commit -m "add login form"
 pnpm check                                         # quick lint, typecheck, test of what changed (full run: pnpm check:full)
 
-# Check the saved work, then open a draft PR
-scripts/ocv-tools.mjs check
-scripts/ocv-tools.mjs finish --draft --body-file <file>
+# Open the PR (add --draft for a draft)
+scripts/ocv-tools.mjs finish --body-file <file>
 
 # Rebase when the PR does not merge cleanly with main
 git fetch origin && git rebase origin/main && git push --force-with-lease

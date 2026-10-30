@@ -3,11 +3,10 @@
 // Git, files and process checks go through ports.
 import { join } from "node:path"
 import { diskProblem } from "./disk.mjs"
-import { TYPES } from "./fields.mjs"
+import { BRANCH_RE, TYPES } from "./fields.mjs"
 import { evaluate, refusalError } from "./rules/index.mjs"
 
-export const BRANCH_RE =
-  /^(feat|fix|hotfix|refactor|chore|docs)\/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$/
+export { BRANCH_RE } from "./fields.mjs"
 export const MAX_WORDS = 5
 
 export function slugify(text) {

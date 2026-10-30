@@ -2,17 +2,7 @@ import { join, resolve } from "node:path"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
-import {
-  recorded,
-  task,
-  snapshot,
-  proofPath,
-  git,
-  gh,
-  json,
-  gate,
-  refuse,
-} from "./common.mjs"
+import { recorded, task, snapshot, git, gh, json, refuse } from "./common.mjs"
 
 function bodyText(text) {
   for (const heading of ["Summary", "Evidence", "Merge Danger"])
@@ -60,9 +50,6 @@ export function finish(ctx, { flags }) {
     )
     if (issue.state !== "OPEN")
       refuse("CLOSED", `Issue #${t.n} is ${issue.state}.`)
-    gate("READY_FOR_HUMAN", {
-      issue: { n: t.n, labels: issue.labels.map((l) => l.name) },
-    })
     if (!flags["--body-file"] || flags["--body-file"] === true)
       refuse("BAD_BODY", "Pass --body-file <file>.")
     const written = bodyText(
@@ -83,26 +70,25 @@ export function finish(ctx, { flags }) {
     if (flags["--dry-run"])
       return {
         lines: [`Title: ${title}`, `Closes #${t.n}\n\n${written}`],
-        next: "scripts/ocv-tools.mjs check",
+        next: "scripts/ocv-tools.mjs finish --body-file <file>",
       }
     const disk = diskProblem(ctx.ports.fs, ctx.env, t)
     if (disk) refuse("DISK", disk.text)
-    gate("MAIN_CLEAN", {
-      main: {
-        path: t.main,
-        branch: git(ctx, "-C", t.main, "branch", "--show-current"),
-        dirty: git(
-          ctx,
-          "-C",
-          t.main,
-          "status",
-          "--porcelain",
-          "--untracked-files=no"
-        ),
-      },
-    })
+    const main = {
+      path: t.main,
+      branch: git(ctx, "-C", t.main, "branch", "--show-current"),
+      dirty: git(
+        ctx,
+        "-C",
+        t.main,
+        "status",
+        "--porcelain",
+        "--untracked-files=no"
+      ),
+    }
     const assigned = join(t.gitDir, "assigned-port"),
       env = join(t.top, ".env")
+    let port = null
     if (ctx.ports.fs.exists(assigned) && ctx.ports.fs.exists(env)) {
       const values = [
         ...ctx.readFile(env).matchAll(/^\s*(?:export\s+)?PORT=(.*)$/gm),
@@ -112,60 +98,36 @@ export function finish(ctx, { flags }) {
         .replace(/\s+#.*$/, "")
         .trim()
         .replace(/^["'](.*)["']$/, "$1")
-      gate("PORT", {
-        port: {
-          assigned: ctx.readFile(assigned).trim(),
-          env: value,
-          worktree: t.top,
-        },
-      })
+      port = {
+        assigned: ctx.readFile(assigned).trim(),
+        env: value,
+        worktree: t.top,
+      }
     }
-    gate("SKIP_DECLARED", { env: ctx.env })
     git(ctx, "fetch", "--quiet", "origin", "main")
     const current = snapshot(ctx, t)
     if (!Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")))
       refuse("NO_COMMITS", "No commits beyond origin/main.")
-    // The pr rows run here early, on the facts planPull builds from the
-    // branch, the body text and the local commits.
-    const plan = planPull(ctx, {
-      n: t.n,
-      title,
-      body: `Closes #${t.n}\n\n${written}`,
-      issue: { state: issue.state, labels: issue.labels.map((l) => l.name) },
-    })
-    gate("NO_WORKFLOWS", plan)
-    gate("CI_WORKFLOW_KEPT", plan)
-    gate("NO_AI_ATTRIBUTION", plan)
-    gate("FILE_SIZE", plan)
-    const preview = decide("pr", plan)
-    if (!preview.ok) throw refusalError(preview.refusals[0])
-    let proof
-    try {
-      proof = JSON.parse(ctx.readFile(proofPath(t)))
-    } catch {
-      /* Missing proof is refused below. */
+    // One fact set, one decision: the rows at finish, which include the pr
+    // rows, run here early on the branch, the body text and the local commits.
+    const body = `Closes #${t.n}\n\n${written}`
+    const facts = {
+      ...planPull(ctx, {
+        n: t.n,
+        title,
+        body,
+        issue: { state: issue.state, labels: issue.labels.map((l) => l.name) },
+      }),
+      main,
+      port,
+      env: ctx.env,
     }
-    if (
-      !proof ||
-      proof.schema !== 1 ||
-      proof.status !== "ok" ||
-      ["tree", "base", "branch"].some((key) => proof[key] !== current[key])
-    )
-      refuse(
-        "CHECK_REQUIRED",
-        "A passing check for this saved tree and origin/main is required.",
-        "Run: scripts/ocv-tools.mjs check"
-      )
-    let body = `Closes #${t.n}\n\n${written}\n\nQuick check passed for tree \`${proof.tree}\` against \`${proof.base}\` at ${proof.checkedAt}.`
-    if (proof.retried?.length)
-      body += `\n\nPassed only on retry: ${proof.retried.join(", ")}.`
+    const verdict = decide("finish", facts)
+    if (!verdict.ok) throw refusalError(verdict.refusals[0])
     const bodyFile = ctx.writeScratch(`finish/${t.n}-body.md`, body)
     git(ctx, "push", "-u", "origin", t.branch)
     if (JSON.stringify(snapshot(ctx, t)) !== JSON.stringify(current))
-      refuse(
-        "STALE_CHECK",
-        "The saved work changed during push. Check and finish again."
-      )
+      refuse("STALE_CHECK", "The saved work changed during push. Finish again.")
     const url = gh(
       ctx,
       "pr",

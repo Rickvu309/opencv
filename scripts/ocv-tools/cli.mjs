@@ -1,4 +1,5 @@
 // Dispatcher. runCli returns { code, text } so tests drive it with injected ports.
+import { readFileSync } from "node:fs"
 import { EXIT, Refused, failure, render } from "./result.mjs"
 import { createFacts } from "./facts.mjs"
 import { realPorts } from "./ports/index.mjs"
@@ -13,8 +14,8 @@ import { cleanup, save } from "./work.mjs"
 import { shot } from "./shot.mjs"
 import { board } from "./board.mjs"
 import { approve } from "./approve.mjs"
-import { check } from "./jobs/check.mjs"
 import { finish } from "./jobs/finish.mjs"
+import { hook } from "./jobs/hook.mjs"
 import { merge } from "./jobs/merge.mjs"
 import { policyReport } from "./jobs/policy.mjs"
 import { pullFacts } from "./jobs/pull-facts.mjs"
@@ -28,6 +29,13 @@ export function realCtx() {
     pause: (seconds) => ports.clock.pause(seconds),
     nodeVersion: process.version,
     cwd: process.cwd(),
+    readStdin: () => {
+      try {
+        return readFileSync(0, "utf8")
+      } catch {
+        return ""
+      }
+    },
     readFile: (path) => ports.fs.read(path),
     writeFile: (path, text) => ports.fs.write(path, text),
     writeScratch: (name, text) => ports.fs.scratch(name, text),
@@ -173,7 +181,6 @@ function command(ctx, cmd, rest) {
       guardTake(parsed.flags, parsed.pos)
       return take(ctx, parsed.pos[0], parsed.flags)
     }
-    case "check":
     case "finish":
     case "merge": {
       const allowed =
@@ -195,7 +202,6 @@ function command(ctx, cmd, rest) {
         throw new Error(
           `usage: ocv-tools ${cmd}${cmd === "merge" ? " <pr#>" : ""}`
         )
-      if (cmd === "check") return check(ctx)
       if (cmd === "finish") return finish(ctx, { flags })
       return merge(ctx, issueNumber(pos[0], "merge <pr#>"), {
         wait: Boolean(flags["--wait"]),
@@ -222,6 +228,16 @@ function command(ctx, cmd, rest) {
       return policyReport(n, pullFacts(ctx, n), {
         annotate: ctx.env.GITHUB_ACTIONS === "true",
       })
+    }
+    case "hook": {
+      const unknown = Object.keys(flags)[0]
+      if (unknown)
+        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (!pos.length)
+        throw new Error(
+          "usage: ocv-tools hook <commit-msg|pre-commit|pre-push>"
+        )
+      return hook(ctx, pos[0], pos.slice(1))
     }
     case "approve": {
       const unknown = Object.keys(flags)[0]
