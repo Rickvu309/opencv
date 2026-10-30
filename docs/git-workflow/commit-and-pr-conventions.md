@@ -49,15 +49,9 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 ## Checks
 
-The `ci` workflow runs parallel affected guards, lint, typecheck, build, API tests and two web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The same checks run locally at these points:
+The `ci` workflow runs parallel affected guards, lint, typecheck, build, API tests and two web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed.
 
-| When                           | What runs                     | What it enforces                                                                                                                                                                      |
-| ------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `git commit`                   | `commit-msg` hook             | No commits on `main`; no empty message                                                                                                                                                |
-| `git commit`                   | `pre-commit` hook             | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files                                                                                             |
-| `git push`                     | `pre-push` hook               | No push to `main`; branch name format; `pnpm check` (quick lint, typecheck, test of what changed)                                                                                     |
-| `scripts/ocv-tools.mjs finish` | itself                        | Branch name, passing check proof, correct title and `Closes #`                                                                                                                        |
-| Merge                          | `scripts/ocv-tools.mjs merge` | Author is the owner, PR is not a draft, no `needs-human-review` label, no mass deletion, title, `Closes #n` and open issue, `ci` is success on the head, gate files carry `risk:high` |
+The hooks are listed in `CONTRIBUTING.md`; the refusals of `finish` and `merge` are in [delivery rules](delivery-rules.md).
 
 Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/ocv-tools.mjs take` does it).
 

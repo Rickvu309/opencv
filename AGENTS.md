@@ -56,76 +56,35 @@ Tests that hold this shape:
 
 ### Git
 
-These rules are not optional.
-Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks: `docs/git-workflow/rule-enforcement.md`.
+Tool: `scripts/ocv-tools.mjs`. `help` lists every job and flag; `doctor` checks this machine. Full notes: `CONTRIBUTING.md` and `docs/git-workflow/`. The rule table is generated: `scripts/ocv-tools.mjs rules --list` prints it, `docs/git-workflow/rule-enforcement.md` and `delivery-rules.md` hold it with the fix for each. Never bypass hooks.
 
-`ci.yml` runs affected jobs for PRs and full jobs for merge groups. Aggregate `ci` requires every job to succeed. Never bypass hooks. Wait for green `ci` before `scripts/ocv-tools.mjs merge`.
+Jobs:
 
-#### 1. Issue first
+- Issues: `file` writes an issue, `status <n>` shows where it stands, `board` lists all open issues, `approve <n>` relays an admin's `/approve` on a `risk:high` issue.
+- Work: `take <n | title>` makes the worktree and records your claim, `save -m` commits and pushes, `release` gives the issue back, `shot` posts pictures.
+- Deliver: `check` runs the quick check, `finish --body-file <file> [--draft]` opens the PR, `merge <pr#>` enqueues it once `ci` is green. `scripts/open-pr.sh` and `scripts/merge-pr.sh` still work.
+- After the merge: `cleanup [<n> | --all]` removes the worktree and branch.
+- Other: `doctor`, `rules`, `help`.
 
-- Never start work without a GitHub issue.
-- If no issue exists, create one with `gh issue create` (or the Task form), or let `scripts/ocv-tools.mjs take "Issue title"` create it.
-- If the issue is assigned to someone else, or a branch for it exists, stop and pick another issue.
-- If the work will take more than a few days, split it into sub-issues and do one at a time.
+| #   | Rule                                                                                                                               | What makes it fail                                  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 1   | Every task has an issue; use `take`. Skip one assigned, held or `ready-for-human`.                                                 | `take` (ASSIGNED, HELD, READY_FOR_HUMAN)            |
+| 1   | Split long work into sub-issues.                                                                                                   | Nothing                                             |
+| 2   | Work only in your own worktree and port; the main checkout stays clean on `main`.                                                  | `take`, `merge` (MAIN_CLEAN, PORT)                  |
+| 2   | Never touch another agent's worktree.                                                                                              | Nothing                                             |
+| 3   | Branch `type/<issue#>-short-description` from `origin/main`.                                                                       | `pre-push`, `finish` (BAD_BRANCH)                   |
+| 4   | PR title `type: description (#n)`; body has Summary, Evidence, Merge Danger, `Closes #n`.                                          | `finish` (BAD_TITLE, BAD_BODY)                      |
+| 4   | `check`, then `finish`. A draft stays a draft until `gh pr ready`.                                                                 | `finish` (CHECK_REQUIRED), `merge` (DRAFT)          |
+| 4   | Verify by hand (`.claude/skills/verify-opencv`) before ready.                                                                      | Nothing                                             |
+| 5   | Never push or commit on `main`, use `--no-verify`, or commit `.env`.                                                               | Hooks, ruleset on `main`                            |
+| 5   | `SKIP_CHECKS=1` only for a human-declared emergency, named in the PR.                                                              | `pre-push` (SKIP_DECLARED, SKIP_SAID)               |
+| 5   | Gate files (`ci.yml`, `.github/actions/**`, `scripts/check.mjs`, ruleset) need `risk:high`; `risk:high` needs an admin `/approve`. | `merge` (RISK_HIGH_FOR_CI), `take` (NEEDS_APPROVAL) |
+| 5   | Big decisions and mass deletions carry `needs-human-review`; an agent never merges it.                                             | `merge` (NEEDS_HUMAN_REVIEW, MASS_DELETE)           |
+| 5   | Never approve your own PR or use another identity.                                                                                 | Nothing                                             |
+| 6   | Merge only on green `ci` with `merge <pr#>` from the main checkout. No `--admin`.                                                  | `merge` (CI_REQUIRED), ruleset                      |
+| 6   | After the merge run `cleanup <n>`.                                                                                                 | Nothing                                             |
 
-#### 2. Always work in your own worktree
-
-- Never edit files in the main checkout. It stays on `main` and is only used to fetch, create worktrees, and merge.
-- Start every task with:
-  ```bash
-  scripts/ocv-tools.mjs take <issue#> -d "short description"
-  scripts/ocv-tools.mjs take "Issue title"          # creates the issue first
-  ```
-  It also turns on the local hooks (`git config core.hooksPath .githooks`).
-- Work only inside the printed worktree path (`../opencv.worktrees/<issue#>-short-description`).
-- Use only your assigned port (printed by the script, stored as `PORT` in the worktree's `.env`).
-- One agent, one issue, one branch, one worktree. Never touch another agent's worktree.
-
-#### 3. Branch naming
-
-- Format: `type/<issue#>-short-description`, e.g. `feat/42-login-page`.
-- Types: `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`.
-- Lowercase kebab-case, 3-5 words, branched from the latest `origin/main`. The pre-push hook rejects other names.
-
-#### 4. Checks, commits, and PRs
-
-- The pre-push hook runs `pnpm check`: affected tasks, guards and formatting. CI runs affected lint, types, build and tests, plus guards.
-- Run `scripts/ocv-tools.mjs check`, then `scripts/ocv-tools.mjs finish --draft --body-file <file>`. Use the `pr` skill (Summary, Evidence, Merge Danger). Finish requires proof for the saved tree and base, pushes, and opens `type: description (#<issue>)` with `Closes #<issue>`.
-- Mark it ready with `gh pr ready` when the quick check passes. Run verify skills by hand (`.claude/skills/verify-opencv`). No preview deploys.
-- CI is hosted. Run local checks serially. `scripts/check.mjs` sets `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
-- Rebase when the branch does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
-  Force-push only ever goes to your own task branch.
-
-#### 5. Never
-
-- Never push to `main`, commit on `main`, or merge into `main` locally.
-- Never use `git push --no-verify` or `git commit --no-verify`.
-- Never use `SKIP_CHECKS=1` unless a human declared a production emergency, and then say so in the PR.
-- Never approve your own PR, and never use the review agent's identity to approve your own work.
-- Never remove the `needs-human-review` label or edit `.github/CODEOWNERS` to get around a human review.
-- Human review is only for a big decision. Flag it with the `needs-human-review` label (for example dropping a product, a data-losing migration, changing pricing or the legal entity). An agent never merges a PR with that label. A mass deletion is not stopped by a script; add the label yourself.
-- Never commit `.env` or real secrets.
-- Never pick up an issue labeled `ready-for-human`; it is a decision for a human.
-- Never create `develop`, `staging`, or `release/` branches.
-- CI runs on GitHub-hosted runners; a rule refuses any workflow file besides `ci.yml` and `nightly.yml` and allows setup actions. Workflow and action changes need `risk:high`.
-
-#### 6. Merge and clean up
-
-- From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, a mass deletion (over 25 authored files, 2000 lines or 10% of authored files; add `needs-human-review`), a wrong title, missing `Closes #n` or a closed issue, ci without success on the head, and gate changes without `risk:high` (`ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs`, `.github/rulesets/main.json`). It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
-- No `--admin`, no bypass. GitHub requires `ci` and no approval.
-- After the queue merges, run `scripts/ocv-tools.mjs merge <pr#>` again to confirm linked issues are closed; it closes any still open. The remote branch is deleted.
-- From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
-
-#### 7. Production is broken
-
-- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/ocv-tools.mjs check` then `scripts/ocv-tools.mjs finish --body-file <file>`, and merge with `scripts/ocv-tools.mjs merge` once `ci` is green.
-- If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
-
-#### Review agent checklist
-
-Open the PR, wait for green `ci`, then `scripts/ocv-tools.mjs merge <pr#>`. One account, so no approval. A PR with `needs-human-review` is never merged by an agent.
-
-Full notes: `docs/git-workflow/review-and-approval.md`.
+Rebase when the branch does not merge cleanly: `git fetch origin && git rebase origin/main && git push --force-with-lease` (your own task branch only). If production is broken: open an issue, `take` it as `hotfix`, fix, `check`, `finish`, `merge`; if the fix is risky, tell a human to roll back the previous deploy first.
 
 ### Production recovery
 

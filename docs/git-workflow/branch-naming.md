@@ -53,25 +53,4 @@ More than 5 words is a guideline, not a failure.
 
 ## Wrong name?
 
-Rename the branch on GitHub. Open PRs follow the rename.
-
-```bash
-gh api -X POST repos/{owner}/{repo}/branches/feat%2Flogin-page/rename -f new_name=feat/42-login-page
-git branch -m feat/login-page feat/42-login-page     # in your worktree
-git fetch origin && git branch -u origin/feat/42-login-page
-```
-
-Or use the branch list on GitHub (Code > Branches > rename).
-
-## Creating branches
-
-Agents (and anyone using worktrees): `scripts/ocv-tools.mjs take <issue#> -d "short description"`.
-
-Without worktrees:
-
-```bash
-git fetch origin
-git switch -c feat/42-login-page --no-track origin/main
-```
-
-From the GitHub UI: open the issue, click **Create a branch** under Development, and change the suggested name to add the `type/` prefix.
+Rename the branch on GitHub (open PRs follow), then `git branch -m old new` in your worktree. Create branches with `scripts/ocv-tools.mjs take <issue#> -d "short description"`.

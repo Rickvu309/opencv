@@ -104,19 +104,9 @@ If the fix is risky or will take time, first roll back to the previous productio
 
 ## 9. Guardrails (set up once per repo)
 
-| Guardrail                      | Where       | What it does                                                                                                                                                                              |
-| ------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ruleset on `main`              | GitHub      | Requires a PR and the `ci` check (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
-| Merge settings                 | GitHub      | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                |
-| `CODEOWNERS`                   | GitHub      | Names the owner of every path, including env and secrets paths                                                                                                                            |
-| `pre-push` hook                | Local       | Blocks pushes to `main` and bad branch names; runs `pnpm check` (quick, scoped to what changed)                                                                                           |
-| `commit-msg` hook              | Local       | Blocks commits on `main`; rejects empty messages                                                                                                                                          |
-| `pre-commit` hook              | Local       | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                           |
-| `scripts/ocv-tools.mjs finish` | Local       | Correct PR title and `Closes #`, passing check proof before push                                                                                                                          |
-| `scripts/ocv-tools.mjs merge`  | Owner agent | Merges when `ci` is green: owner author, not a draft, no `needs-human-review`, no mass deletion, title, `Closes #n` and open issue, gate files carry `risk:high`                          |
-| Templates                      | GitHub      | PR template; Task issue form                                                                                                                                                              |
-| Labels                         | GitHub      | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                             |
-| `scripts/pr.mjs doctor`        | Local       | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                  |
+- GitHub: ruleset on `main` (PR, `ci` check, merge queue, squash only, linear history, no bypass), squash-only merge settings with branch auto-delete, `CODEOWNERS`, the PR template and Task form, and the labels (`feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`, `risk:*`). `node scripts/pr.mjs doctor` diffs them against git.
+- Local hooks in `.githooks`: `pre-push` blocks pushes to `main` and bad branch names and runs `pnpm check`; `commit-msg` blocks commits on `main` and empty messages; `pre-commit` rejects a staged file over 5000 tokens.
+- `scripts/ocv-tools.mjs`: `finish` checks title, `Closes #` and check proof; `merge` checks the rest. The refusals are in `docs/git-workflow/delivery-rules.md` and `rule-enforcement.md`.
 
 Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/ocv-tools.mjs take` does it). Anyone can skip them with `--no-verify`. Don't. A skipped hook is not caught again at merge. `ci` still runs the quick check.
 
@@ -134,38 +124,4 @@ Hosting is Railway behind Cloudflare (web, api and Postgres); `docs/deploy.md` d
 
 ## Cheatsheet
 
-```bash
-# One-time per clone: turn on the local hooks (`take` also does this)
-git config core.hooksPath .githooks
-
-# Start a task (creates branch + worktree from origin/main, .env, port, install)
-scripts/ocv-tools.mjs take 42 -d "login page"
-scripts/ocv-tools.mjs take "Cart total rounds wrong" --what ... --done ... --risk low   # files the issue first
-
-# Work
-cd ../opencv.worktrees/42-login-page
-git add -p && git commit -m "add login form"
-pnpm check                                         # quick lint, typecheck, test of what changed (full run: pnpm check:full)
-
-# Check the saved work, then open a draft PR
-scripts/ocv-tools.mjs check
-scripts/ocv-tools.mjs finish --draft --body-file <file>
-
-# Rebase when the PR does not merge cleanly with main
-git fetch origin && git rebase origin/main && git push --force-with-lease
-
-# Ready, then merge once ci is green (from the main checkout)
-gh pr ready
-scripts/ocv-tools.mjs merge 57
-
-# Flag a big decision for a human. An agent will not merge it.
-gh pr edit --add-label needs-human-review
-
-# Clean up merged worktrees (run from the main checkout)
-scripts/ocv-tools.mjs cleanup --all       # all merged
-scripts/ocv-tools.mjs cleanup 42          # just #42
-git worktree list
-
-# Without the script (people who don't use worktrees)
-git fetch origin && git switch -c feat/42-login-page --no-track origin/main
-```
+`scripts/ocv-tools.mjs help` lists every job. The usual path: `take <n>`, work and `save -m`, `check`, `finish --draft --body-file <file>`, `gh pr ready`, `merge <pr#>`, `cleanup <n>`.
