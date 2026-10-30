@@ -22,6 +22,7 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   FUipv: { issue: 498, expires: "2026-12-31" }, // W3.1 New chat
   ISnTZ: { issue: 498, expires: "2026-12-31" }, // W3.2 Chat history
   lOO77: { issue: 498, expires: "2026-12-31" }, // W3.3 More ideas
+  kfJuz: { issue: 498, expires: "2026-12-31" }, // W3.4 mode menu still awaits parity coverage
   Vm0eJ: { issue: 498, expires: "2026-12-31" }, // W3.5 Coach working
   wiQ9M: { issue: 498, expires: "2026-12-31" }, // W3.6 Free cap reached
   kmUTI: { issue: 498, expires: "2026-12-31" }, // W3.7 Coach panel

@@ -21,8 +21,8 @@ import {
 } from "@/test/paper-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
-import layout from "./design/composer-menus.layout.json"
-import snapshot from "./design/composer-menus.snapshot.json"
+import layout from "./design/composer-menus.geometry.json"
+import snapshot from "./design/composer-menus.source.json"
 
 const css = readFileSync(
   path.resolve(
@@ -96,6 +96,7 @@ describe("Coach Add menu against its pen frame (kfJuz popover f0tcTl)", () => {
   it("sizes the panel and rows as the pen does", () => {
     const px = (value: number | undefined) => `${value}px`
     const { popover } = layout
+    expect(declared(MENU, "font-family")).toBe("var(--font-sans)")
     expect(declared(MENU, "width")).toBe(px(popover.width))
     expect(declared(MENU, "border-radius")).toBe(px(popover.cornerRadius))
     expect(declared(MENU, "padding")).toBe(px(popover.padding))

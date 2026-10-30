@@ -25,12 +25,17 @@ afterEach(() => {
 describe("settings workspace", () => {
   it("keeps the chat store available while navigating from Coach to Settings", async () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
-    renderApp(SURFACE_PATHS.coach)
+    const { router } = renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
 
     fireEvent.click(screen.getByRole("link", { name: "Settings" }))
 
-    expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Preferences" })
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.settings)
+    })
     expect(consoleError.mock.calls.flat().join(" ")).not.toContain(
       "useChatStore must be used within ChatStoreProvider"
     )
