@@ -6,6 +6,7 @@ import {
   unauthorizedEnvelope,
 } from "@workspace/domain"
 import type { Context, MiddlewareHandler } from "hono"
+import { HTTPException } from "hono/http-exception"
 
 import type { Auth } from "./auth.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
@@ -51,6 +52,14 @@ export function requireSession(
 }
 
 export function handleApiError(error: Error, c: Context) {
+  if (error instanceof HTTPException && error.status === 413) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Request body is too large"),
+      413
+    )
+  }
+
   if (error instanceof CommandError) {
     return jsonWithStatus(
       c,
