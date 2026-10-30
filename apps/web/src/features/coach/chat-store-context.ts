@@ -12,7 +12,6 @@ export type ChatStoreValue = {
   activeChatId: string | null
   messages: ChatViewMessage[]
   phase: TurnPhase
-  step: string | null
   progress: CoachTurnProgress
   error: string | null
   send: (text: string, options?: CoachSendOptions) => boolean

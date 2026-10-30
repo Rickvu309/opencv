@@ -64,7 +64,13 @@ export function CoachWorking({
   }, [])
   return (
     <div data-slot="coach-working" className="space-y-3">
-      <ThinkingLoader phases={[`Working, ${seconds}s`]} />
+      {/* The ticking seconds stay visual; the live region says Working once. */}
+      <span role="status" className="sr-only">
+        Working
+      </span>
+      <div aria-hidden="true">
+        <ThinkingLoader phases={[`Working, ${seconds}s`]} />
+      </div>
       {rows.length ? (
         <ol
           data-slot="coach-progress"

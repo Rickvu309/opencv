@@ -117,14 +117,6 @@ export function useCoachTurn({
     }),
     [current, phase, progressCalls]
   )
-  // Legacy composer-side step text; the workspace moves to `progress`.
-  const step = useMemo(
-    () =>
-      progressCalls.length
-        ? [...new Set(progressCalls.map((call) => call.label))].join("\n")
-        : null,
-    [progressCalls]
-  )
   const failure = state.status === "error" ? state : null
   const sendError = failure?.kind === "send" ? failure.error : null
 
@@ -542,7 +534,6 @@ export function useCoachTurn({
   return {
     messages,
     phase,
-    step,
     progress,
     error: actionError,
     send,

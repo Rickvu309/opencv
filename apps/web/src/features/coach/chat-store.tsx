@@ -38,7 +38,6 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const {
     messages,
     phase,
-    step,
     progress,
     error,
     send,
@@ -88,7 +87,6 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       activeChatId,
       messages,
       phase,
-      step,
       progress,
       error,
       send,
@@ -105,7 +103,6 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       activeChatId,
       messages,
       phase,
-      step,
       progress,
       error,
       send,

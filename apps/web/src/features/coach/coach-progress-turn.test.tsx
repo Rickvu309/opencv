@@ -3,11 +3,8 @@ import { act, renderHook, waitFor } from "@testing-library/react"
 import { createElement, useReducer, type ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import {
-  chatApiFetchOrThrow,
-  installChatApiMock,
-  scriptCoachStream,
-} from "@/test/chat-api-mock.ts"
+import { installChatApiMock, scriptCoachStream } from "@/test/chat-api-mock.ts"
+import { call, liveTurn, result, step } from "@/test/live-turn.ts"
 
 import type { CoachProgressRow } from "./coach-progress.ts"
 import { useCoachTurn } from "./use-coach-turn.ts"
@@ -18,66 +15,6 @@ function chatIdReducer(
 ) {
   return action.id
 }
-
-/** A turn stream the test feeds one wire event at a time. */
-function liveTurn() {
-  const encoder = new TextEncoder()
-  let controller!: ReadableStreamDefaultController<Uint8Array>
-  const body = new ReadableStream<Uint8Array>({
-    start(c) {
-      controller = c
-    },
-  })
-  vi.stubGlobal(
-    "fetch",
-    async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = new URL(
-        typeof input === "string" ? input : String(input),
-        "http://x"
-      )
-      if (
-        (init?.method ?? "GET").toUpperCase() === "POST" &&
-        /^\/api\/chats\/[^/]+\/turns$/.test(url.pathname)
-      )
-        return new Response(body, {
-          status: 200,
-          headers: { "Content-Type": "text/event-stream" },
-        })
-      return chatApiFetchOrThrow(input, init)
-    }
-  )
-  return {
-    emit(event: string, data: unknown) {
-      controller.enqueue(
-        encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-      )
-    },
-    close() {
-      controller.close()
-    },
-  }
-}
-
-const step = (label: string) => ({ event: "step", data: { label } })
-const call = (toolCallId: string, name: string) => ({
-  event: "tool-call",
-  data: { toolCallId, name, input: {} },
-})
-const result = (
-  toolCallId: string,
-  name: string,
-  extra: Record<string, unknown> = {}
-) => ({
-  event: "tool-result",
-  data: {
-    toolCallId,
-    name,
-    summary: `${name} done`,
-    ok: true,
-    result: { ok: true, data: {} },
-    ...extra,
-  },
-})
 
 function setup() {
   const queryClient = new QueryClient({

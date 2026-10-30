@@ -75,7 +75,8 @@ export function CoachWorkspace({
   primaryAction?: boolean
 }) {
   const store = useChatStore()
-  const { activeChatId, messages, phase, error, step, chats, openChat } = store
+  const { activeChatId, messages, phase, error, progress, chats, openChat } =
+    store
   const [
     {
       draft,
@@ -302,6 +303,7 @@ export function CoachWorkspace({
           <ChatView
             messages={messages}
             waiting={phase === "waiting"}
+            progress={progress}
             error={error}
             onRetry={!capped && enabled ? store.retry : undefined}
             onRegenerate={
@@ -312,15 +314,6 @@ export function CoachWorkspace({
         )}
       </div>
       <div className="mx-auto w-full max-w-2xl shrink-0 space-y-2 px-3 pt-2 pb-3">
-        {active && step ? (
-          <p role="status" className="text-xs text-muted-foreground">
-            {step.split("\n").map((label) => (
-              <span key={label} className="block">
-                {label}
-              </span>
-            ))}
-          </p>
-        ) : null}
         {attachments.length ? (
           <div className="flex flex-wrap gap-1">
             {attachments.map((item) => (
