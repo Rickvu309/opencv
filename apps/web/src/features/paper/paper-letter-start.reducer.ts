@@ -86,7 +86,17 @@ export function letterStartReducer(
     case "blank_failed":
       return { ...state, error: action.message }
     case "query_typed":
-      return { ...state, query: action.query }
+      return {
+        ...state,
+        query: action.query,
+        selected:
+          state.selected &&
+          `${state.selected.title} ${state.selected.company}`
+            .toLowerCase()
+            .includes(action.query.trim().toLowerCase())
+            ? state.selected
+            : null,
+      }
     case "picked_job":
       return { ...state, selected: action.job }
     case "draft_started":
