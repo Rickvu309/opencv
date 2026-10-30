@@ -32,6 +32,8 @@ const posts: Post[] = []
 const previews: { url?: string; text?: string }[] = []
 let failNextChecklistItem = false
 let failNextNote = false
+let failNextJobUpdate = false
+let nextJobUpdate: Promise<void> | null = null
 
 function blankExtra(): Extra {
   return {
@@ -97,6 +99,8 @@ export function resetMockJobs() {
   previews.splice(0)
   failNextChecklistItem = false
   failNextNote = false
+  failNextJobUpdate = false
+  nextJobUpdate = null
 }
 
 export function rejectNextChecklistItem() {
@@ -105,6 +109,18 @@ export function rejectNextChecklistItem() {
 
 export function rejectNextNote() {
   failNextNote = true
+}
+
+export function rejectNextJobUpdate() {
+  failNextJobUpdate = true
+}
+
+export function deferNextJobUpdate() {
+  let release = () => {}
+  nextJobUpdate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  return () => release()
 }
 
 export function setMockJobs(
@@ -405,6 +421,13 @@ export async function jobApiFetch(
       return jsonOk({ ...job, activityId })
     }
     if (name === "job.update") {
+      const pending = nextJobUpdate
+      nextJobUpdate = null
+      if (pending) await pending
+      if (failNextJobUpdate) {
+        failNextJobUpdate = false
+        return jsonError(503, "UNAVAILABLE", "Temporary failure")
+      }
       const patch = (payload.patch ?? {}) as Partial<JobView>
       Object.assign(job, patch, { updatedAt: new Date().toISOString() })
       return jsonOk(job)

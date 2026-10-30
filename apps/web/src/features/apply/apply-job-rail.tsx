@@ -1,4 +1,4 @@
-import { useReducer, type ReactNode } from "react"
+import { useReducer, useRef, type ReactNode } from "react"
 import { useEffectReducer, type EffectReducer } from "use-effect-reducer"
 import { Link } from "@tanstack/react-router"
 import {
@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 
 import {
+  jobPatchSchema,
   parsePaperId,
   type JobDetail,
   type JobPriority,
@@ -87,6 +88,15 @@ function Label({ children, empty }: { children: ReactNode; empty?: boolean }) {
   )
 }
 
+function jobPropertyError(
+  field: "location" | "recruiterName",
+  value: string,
+  label: string
+) {
+  const result = jobPatchSchema.safeParse({ [field]: value || null })
+  return result.success ? null : `${label} must be 200 characters or fewer.`
+}
+
 function EditRow({
   icon,
   label,
@@ -94,6 +104,7 @@ function EditRow({
   ariaLabel,
   inputType = "text",
   value,
+  validate,
   onSave,
 }: {
   icon: ReactNode
@@ -102,23 +113,56 @@ function EditRow({
   ariaLabel: string
   inputType?: "text" | "date" | "datetime-local"
   value: string
-  onSave: (value: string) => void
+  validate?: (value: string) => string | null
+  onSave: (value: string) => Promise<void>
 }) {
-  const [{ open, draft }, dispatch] = useReducer(editReducer, {
+  const [{ open, draft, error, pending }, dispatch] = useReducer(editReducer, {
     open: false,
     draft: value,
+    error: null,
+    pending: false,
   })
 
-  function commit() {
-    if (draft !== value) onSave(draft)
+  const saving = useRef(false)
+
+  async function commit() {
+    if (saving.current) return
+    if (draft === value) {
+      dispatch({ type: "closed" })
+      return
+    }
+    const validationError = validate?.(draft)
+    if (validationError) {
+      dispatch({ type: "failed", error: validationError })
+      return
+    }
+    saving.current = true
+    dispatch({ type: "saving" })
+    try {
+      await onSave(draft)
+      dispatch({ type: "saved" })
+    } catch {
+      dispatch({
+        type: "failed",
+        error: `Could not save ${ariaLabel.toLowerCase()}. Try again.`,
+      })
+    } finally {
+      saving.current = false
+    }
   }
 
   return (
     <Popover
       open={open}
       onOpenChange={(next, details) => {
-        if (!next && details.reason !== "escape-key") commit()
-        dispatch(next ? { type: "opened", value } : { type: "closed" })
+        if (saving.current) return
+        if (next) {
+          dispatch({ type: "opened", value })
+        } else if (details.reason === "escape-key") {
+          dispatch({ type: "closed" })
+        } else {
+          void commit()
+        }
       }}
     >
       <PopoverTrigger
@@ -138,19 +182,24 @@ function EditRow({
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            commit()
-            dispatch({ type: "closed" })
+            void commit()
           }}
         >
           <Input
             aria-label={ariaLabel}
             type={inputType}
             value={draft}
+            disabled={pending}
             onChange={(event) =>
               dispatch({ type: "typed", value: event.target.value })
             }
             className="h-8 rounded-[6px] text-[13px] md:text-[13px]"
           />
+          {error ? (
+            <p role="alert" className="pt-1 text-[12px] text-destructive">
+              {error}
+            </p>
+          ) : null}
         </form>
       </PopoverContent>
     </Popover>
@@ -235,21 +284,35 @@ function PriorityRow({
   )
 }
 
-type EditState = { open: boolean; draft: string }
+type EditState = {
+  open: boolean
+  draft: string
+  error: string | null
+  pending: boolean
+}
 
 type EditAction =
   | { type: "opened"; value: string }
   | { type: "closed" }
   | { type: "typed"; value: string }
+  | { type: "saving" }
+  | { type: "saved" }
+  | { type: "failed"; error: string }
 
 function editReducer(state: EditState, action: EditAction): EditState {
   switch (action.type) {
     case "opened":
-      return { open: true, draft: action.value }
+      return { open: true, draft: action.value, error: null, pending: false }
     case "closed":
-      return { ...state, open: false }
+      return { ...state, open: false, error: null, pending: false }
     case "typed":
-      return { ...state, draft: action.value }
+      return { ...state, draft: action.value, error: null }
+    case "saving":
+      return { ...state, error: null, pending: true }
+    case "saved":
+      return { ...state, open: false, error: null, pending: false }
+    case "failed":
+      return { ...state, open: true, error: action.error, pending: false }
   }
 }
 
@@ -420,8 +483,10 @@ export function JobRail({
 }) {
   const run = useRunCommand()
 
-  function save(patch: Parameters<typeof run<"job.update">>[1]["patch"]) {
-    void run("job.update", { jobId: job.id, patch })
+  function save(
+    patch: Parameters<typeof run<"job.update">>[1]["patch"]
+  ): Promise<void> {
+    return run("job.update", { jobId: job.id, patch }).then(() => undefined)
   }
 
   const location = job.location ?? ""
@@ -444,6 +509,7 @@ export function JobRail({
           empty={!location}
           ariaLabel="Location"
           value={location}
+          validate={(value) => jobPropertyError("location", value, "Location")}
           onSave={(value) => save({ location: value || null })}
         />
         <EditRow
@@ -500,6 +566,9 @@ export function JobRail({
           empty={!recruiter}
           ariaLabel="Recruiter"
           value={recruiter}
+          validate={(value) =>
+            jobPropertyError("recruiterName", value, "Recruiter")
+          }
           onSave={(value) => save({ recruiterName: value || null })}
         />
         {source ? (
