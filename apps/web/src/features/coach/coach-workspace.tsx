@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useReducer } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 
 import { ChevronDown, SquarePen } from "lucide-react"
 
@@ -72,7 +72,6 @@ export function CoachWorkspace({
   ] = useReducer(workspaceReducer, undefined, () =>
     initialWorkspaceState(takeCoachDraft() ?? "", activeChatId)
   )
-  const queryClient = useQueryClient()
   const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
   const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
   const papers = useQuery({
@@ -113,16 +112,6 @@ export function CoachWorkspace({
       subscribeCoachDraft((value) => dispatch({ type: "draft_typed", value })),
     []
   )
-  useEffect(() => {
-    if (!day?.capped || !day.resetsAt) return
-    const delay = new Date(day.resetsAt).getTime() - Date.now()
-    if (delay <= 0) return
-    const id = setTimeout(
-      () => void queryClient.invalidateQueries({ queryKey: usageKey() }),
-      delay
-    )
-    return () => clearTimeout(id)
-  }, [day?.capped, day?.resetsAt, queryClient])
   if (draftChatId !== activeChatId) {
     dispatch({
       type: "active_chat_changed",
