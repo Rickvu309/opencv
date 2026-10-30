@@ -1,7 +1,7 @@
 // `ocv-tools file`: builds the issue from the form fields, lints the plain words and creates it.
 import { fileURLToPath } from "node:url"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
-import { decide, evaluate, refusalError } from "./rules/index.mjs"
+import { decide, refusalError } from "./rules/index.mjs"
 import {
   PLAIN_RULE,
   buildIssueBody,
@@ -20,25 +20,20 @@ export function exampleIssues(text) {
 const TITLE_PREFIX = new RegExp(`^(${TYPES.join("|")}): `)
 
 // The title carries the type prefix. `--type` adds it when the title has none.
+// Returns null when neither the title nor --type names a type.
 export function titleWithType(title, type) {
   if (TITLE_PREFIX.test(title)) return title
   if (type && TYPES.includes(type)) return `${type}: ${title}`
-  throw refusalError(
-    evaluate("MISSING_FIELDS", {
-      flags: { "--title": title, "--type": type },
-      draft: { badTitle: true },
-    })
-  )
+  return null
 }
 
-function refuseFile(flags, draft) {
-  const verdict = decide("file", { flags, draft })
-  throw refusalError(verdict.refusals[0])
-}
-
-export function file(ctx, { flags }) {
-  if (!flags["--title"]) refuseFile(flags, { missingTitle: true })
+// What is wrong with the draft, read off the flags, then the body the form
+// builds, then the plain-words lint. It stops at the first stage with a
+// problem, since each stage needs the one before it.
+function draftOf(ctx, flags) {
+  if (!flags["--title"]) return { draft: { missingTitle: true } }
   const title = titleWithType(flags["--title"], flags["--type"])
+  if (!title) return { draft: { badTitle: true } }
   const type = title.match(TITLE_PREFIX)[1]
   let body
   if (flags["--body-file"]) body = ctx.readFile(flags["--body-file"])
@@ -51,7 +46,7 @@ export function file(ctx, { flags }) {
         type,
       })
     } catch (e) {
-      refuseFile(flags, { bodyError: e.message })
+      return { draft: { bodyError: e.message } }
     }
   }
   const lint = lintIssue({ title, body })
@@ -59,7 +54,13 @@ export function file(ctx, { flags }) {
     lint.reasons.unshift(
       'the body has no "Risk" section with low, normal or high'
     )
-  if (lint.reasons.length) refuseFile(flags, { reasons: lint.reasons })
+  return { draft: { reasons: lint.reasons }, title, type, body, lint }
+}
+
+export function file(ctx, { flags }) {
+  const { draft, title, type, body, lint } = draftOf(ctx, flags)
+  const verdict = decide("file", { flags, draft })
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
   const grade = `Reading level: grade ${lint.grade.toFixed(1)} (aim for 6 or lower; above 8 is refused).`
 
   if (flags["--dry-run"]) {

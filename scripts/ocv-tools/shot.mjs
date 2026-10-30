@@ -11,10 +11,9 @@ import {
   statSync,
 } from "node:fs"
 import { basename, join } from "node:path"
-import { taskHere } from "./claim.mjs"
+import { taskNow } from "./claim.mjs"
 import { SCRATCH } from "./ports/fs.mjs"
-import { Refused } from "./result.mjs"
-import { evaluate, refusalError } from "./rules/index.mjs"
+import { decide, refusalError } from "./rules/index.mjs"
 
 const USAGE =
   "usage: ocv-tools shot <file...> [--pr <n> | --issue <n>] [--name <what>] [--no-comment]"
@@ -77,29 +76,31 @@ function readHead(path) {
   }
 }
 
-function refuse(id, facts) {
-  const hit = evaluate(id, facts)
-  if (!hit) throw new Error(`shot expected ${id} to refuse`)
-  throw refusalError(hit)
-}
-
+// What the shot rows read about one file: it exists, is a file, its size and
+// what its first bytes say it is.
 function inspect(path) {
-  if (!existsSync(path))
-    refuse("MISSING_FILE", { picture: { path, exists: false } })
+  if (!existsSync(path)) return { path, exists: false }
   let st
   try {
     st = statSync(path)
   } catch (error) {
-    if (error?.code === "ENOENT")
-      refuse("MISSING_FILE", { picture: { path, exists: false } })
+    if (error?.code === "ENOENT") return { path, exists: false }
     throw error
   }
-  if (!st.isFile()) refuse("BAD_PICTURE", { picture: { path, file: false } })
-  const big = evaluate("TOO_BIG", { picture: { path, bytes: st.size } })
-  if (big) throw refusalError(big)
+  if (!st.isFile()) return { path, exists: true, file: false }
   const type = pictureType(readHead(path))
-  if (!type) refuse("BAD_PICTURE", { picture: { path, bytesChecked: false } })
-  return { file: path, type }
+  return {
+    path,
+    exists: true,
+    file: true,
+    bytes: st.size,
+    type,
+    bytesChecked: Boolean(type),
+  }
+}
+
+const decided = (verdict) => {
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
 }
 
 // Names carry the target, so two tasks do not overwrite each other.
@@ -112,9 +113,9 @@ export function shotAssets(items, { kind, n, name }) {
     const base = basename(item.file).replace(/\.[^.]+$/, "")
     const what = shared ? `${shared}-${i + 1}` : slug(name || base)
     const asset = `${kind}-${n}-${what}.${item.type}`
-    if (seen.has(asset)) refuse("BAD_PICTURE", { picture: { asset } })
+    const clash = seen.has(asset)
     seen.add(asset)
-    return { ...item, asset, alt: what.replaceAll("-", " ") }
+    return { ...item, asset, clash, alt: what.replaceAll("-", " ") }
   })
 }
 
@@ -124,40 +125,23 @@ export const shotLink = (repo, item) =>
 export const shotBody = (repo, items) =>
   `Pictures from the agent:\n\n${items.map((item) => shotLink(repo, item)).join("\n\n")}`
 
-// GitHub rejects an issue comment at 65536 characters. Stay under 60000.
+// GitHub rejects an issue comment at 65536 characters. Stay under 60000. A
+// chunk at the limit is one picture whose link alone is too long.
 export function shotComments(repo, items) {
   const chunks = []
   let batch = []
-  const take = (group) => {
-    const body = shotBody(repo, group)
-    if (body.length >= COMMENT_MAX)
-      refuse("UNKNOWN", { history: { kind: "comment-size" } })
-    chunks.push(body)
-  }
   for (const item of items) {
     if (
       batch.length &&
       shotBody(repo, [...batch, item]).length >= COMMENT_MAX
     ) {
-      take(batch)
+      chunks.push(shotBody(repo, batch))
       batch = []
     }
     batch.push(item)
   }
-  if (batch.length) take(batch)
+  if (batch.length) chunks.push(shotBody(repo, batch))
   return chunks
-}
-
-function targetOf(ctx, { pr, issue }) {
-  if (pr) return { kind: "pr", n: pr }
-  if (issue) return { kind: "issue", n: issue }
-  try {
-    return { kind: "issue", n: taskHere(ctx).n }
-  } catch (error) {
-    if (error instanceof Refused && error.code === "NOT_A_TASK")
-      refuse("NOT_A_TASK", { here: { ok: false, shot: true } })
-    throw error
-  }
 }
 
 function ensureRelease(gh) {
@@ -165,37 +149,69 @@ function ensureRelease(gh) {
   gh.releaseCreate(RELEASE, { title: RELEASE, notes: NOTES, target: "main" })
 }
 
-function requireTarget(gh, { kind, n }) {
-  const ok = kind === "pr" ? gh.viewPr(n) : gh.viewIssue(n)
-  if (ok) return
-  refuse("NOT_AN_ISSUE", {
-    issue: { n, missing: true, kind, shot: true },
-  })
+function targetFound(gh, { kind, n }) {
+  return Boolean(kind === "pr" ? gh.viewPr(n) : gh.viewIssue(n))
 }
 
 export function shot(ctx, { files = [], flags = {} } = {}) {
   const unknown = Object.keys(flags).find((key) => !FLAGS.has(key))
-  if (unknown) refuse("UNKNOWN_FLAG", { flag: { name: unknown } })
-  if (!files.length) throw new Error(USAGE)
-  const many = evaluate("TOO_MANY", { shot: { count: files.length } })
-  if (many) throw refusalError(many)
-  if ("--pr" in flags && "--issue" in flags)
-    refuse("BAD_ARGS", { args: { shot: true } })
-  if ("--name" in flags && !flags["--name"])
-    refuse("MISSING_FIELDS", { flags: {}, missingValue: "--name" })
-  const pr = "--pr" in flags ? positive(flags["--pr"]) : null
-  const issue = "--issue" in flags ? positive(flags["--issue"]) : null
+  if (!files.length && !unknown) throw new Error(USAGE)
+  let usage = null
+  const number = (flag) => {
+    try {
+      return positive(flags[flag])
+    } catch (error) {
+      usage ??= error
+      return null
+    }
+  }
+  const pr = "--pr" in flags ? number("--pr") : null
+  const issue = "--issue" in flags ? number("--issue") : null
+  const named = "--pr" in flags || "--issue" in flags
+  const here = named
+    ? { ok: true, shot: true }
+    : { ...taskNow(ctx), shot: true }
   // Bytes first, so a bad picture never reaches git or GitHub.
-  const pictures = files.map(inspect)
-  const target = targetOf(ctx, { pr, issue })
-  const items = shotAssets(pictures, {
-    kind: target.kind,
-    n: target.n,
-    name: flags["--name"],
-  })
+  const checked = files.map(inspect)
+  decided(
+    decide("shot", {
+      flags,
+      missingValue: "--name" in flags && !flags["--name"] ? "--name" : null,
+      flag: unknown ? { known: false, name: unknown } : { known: true },
+      args:
+        "--pr" in flags && "--issue" in flags
+          ? { ok: false, shot: true }
+          : { ok: true },
+      shot: { count: files.length },
+      here,
+      pictures: checked,
+    })
+  )
+  if (usage) throw usage
+  const target = pr
+    ? { kind: "pr", n: pr }
+    : issue
+      ? { kind: "issue", n: issue }
+      : { kind: "issue", n: here.n }
+  const items = shotAssets(
+    checked.map((item) => ({ ...item, file: item.path })),
+    { kind: target.kind, n: target.n, name: flags["--name"] }
+  )
   const repo = ctx.ports.gh.repo().nameWithOwner
   const bodies = flags["--no-comment"] ? [] : shotComments(repo, items)
-  requireTarget(ctx.ports.gh, target)
+  const oversize = bodies.some((body) => body.length >= COMMENT_MAX)
+  decided(
+    decide("shot-target", {
+      pictures: items,
+      history: { kind: oversize ? "comment-size" : "complete" },
+      issue: {
+        n: target.n,
+        missing: !targetFound(ctx.ports.gh, target),
+        kind: target.kind,
+        shot: true,
+      },
+    })
+  )
   ensureRelease(ctx.ports.gh)
   const dir = ctx.shotDir ?? join(SCRATCH, "shots")
   mkdirSync(dir, { recursive: true })

@@ -57,6 +57,10 @@ function hereFact(ctx) {
   }
 }
 
+// The same fact without the refusal, for a verb that decides it with its own
+// facts (shot names a target when the folder is not a task).
+export const taskNow = (ctx) => hereFact(ctx)
+
 export function taskHere(ctx, job = "save") {
   const here = hereFact(ctx)
   if (!here.ok) {
@@ -112,8 +116,6 @@ export function release(ctx, { n: given, reason }) {
     issue: read.issue,
     claim: h,
     me,
-    history: { kind: "complete" },
-    repo: { ok: true },
   })
   if (!verdict.ok) throw refusalError(verdict.refusals[0])
   const { serverNow } = read

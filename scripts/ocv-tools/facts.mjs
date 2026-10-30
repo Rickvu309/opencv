@@ -3,7 +3,7 @@
 import { holderOf } from "./claim-marker.mjs"
 import { RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
-import { evaluate, refusalError } from "./rules/index.mjs"
+import { decide, refusalError } from "./rules/index.mjs"
 
 const loginOf = (author) =>
   String(
@@ -114,18 +114,16 @@ export function createFacts(ports, cwdOf = () => undefined) {
         serverNow: cache.get(`server:${n}`),
       }
     const loaded = ports.gh.issue(n)
-    if (loaded.history === "stuck")
-      throw refusalError(evaluate("UNKNOWN", { history: { kind: "stuck", n } }))
-    if (loaded.history === "cap")
-      throw refusalError(
-        evaluate("UNKNOWN", {
-          history: { kind: "cap", n, pageCap: loaded.pageCap },
-        })
-      )
-    if (!loaded.record)
-      throw refusalError(
-        evaluate("NOT_AN_ISSUE", { issue: { n, missing: true } })
-      )
+    // The issue-load moment: a page cursor that stalled or ran past its cap
+    // leaves the claim history unknown; a missing record is not an issue.
+    const incomplete = loaded.history === "stuck" || loaded.history === "cap"
+    const verdict = decide("issue-load", {
+      history: incomplete
+        ? { kind: loaded.history, n, pageCap: loaded.pageCap }
+        : { kind: "complete" },
+      issue: { n, missing: !incomplete && !loaded.record },
+    })
+    if (!verdict.ok) throw refusalError(verdict.refusals[0])
     if (!approvers) approvers = Object.freeze(ports.gh.approvers())
     const issue = issueFact(loaded.record, loaded.owner, approvers)
     const claim = Object.freeze(holderOf(issue.comments, loaded.serverNow))

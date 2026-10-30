@@ -15,13 +15,14 @@ import {
 import { diskProblem } from "./disk.mjs"
 import { file } from "./issue.mjs"
 import { worktreeFor } from "./report.mjs"
-import { evaluate, refusalError } from "./rules/index.mjs"
-import { RULES, issueKind } from "./rules/index.mjs"
+import { lazyFacts } from "./lazy.mjs"
+import { decide, issueKind, refusalError } from "./rules/index.mjs"
 import {
   createWorktree,
   descFromTitle,
   discardWorktree,
   locate,
+  takenPath,
 } from "./worktree.mjs"
 
 function repoName(ctx) {
@@ -73,37 +74,36 @@ export function take(ctx, target, flags = {}) {
   }
 }
 
-function ensureDisk(ctx) {
+function diskOf(ctx) {
   const { main, root } = locate(ctx)
-  const problem = diskProblem(ctx.ports.fs, envOf(ctx), { main, root })
-  if (!problem) return
-  throw refusalError(evaluate("DISK", { disk: problem }))
+  return diskProblem(ctx.ports.fs, envOf(ctx), { main, root }) ?? {}
 }
 
-// Later rules ask for login and the worktree list. Load a kind only when the
-// next row needs it, so a closed issue never pays for a fallible read.
-function loadTakeFact(ctx, n, need, id) {
-  if (need === "login") return ctx.ports.gh.login()
-  if (need === "local") {
-    const existing = worktreeFor(ctx, n)
-    return { worktree: existing.worktree, branch: existing.branch }
-  }
-  if (need === "disk") return {}
-  if (need === "branch") return { stage: "later" }
-  if (need === "repo") return { ok: true }
-  throw new Error(`take did not gather ${need} for ${id}`)
+// A title is filed before there is an issue to read, so only the disk can
+// refuse yet. A full disk makes zero GitHub calls.
+function checkDiskFirst(ctx) {
+  const verdict = decide("take-title", { disk: diskOf(ctx) })
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
 }
 
-function decideTake(ctx, n, facts) {
-  for (const row of RULES) {
-    if (!row.at.includes("take") || !row.check) continue
-    for (const need of row.needs) {
-      if (need in facts) continue
-      facts[need] = loadTakeFact(ctx, n, need, row.id)
+// The take decision. Reads a closed issue never needs (the login, the
+// worktree list, the disk) happen only when a row asks for them.
+function decideTake(ctx, n, { issue, held, me, flags, kind }) {
+  const desc = flags["-d"] ?? descFromTitle(issue.title)
+  const facts = lazyFacts(
+    { issue, claim: held, me, flags, requireKind: true, desc, type: kind },
+    {
+      login: () => ctx.ports.gh.login(),
+      local: () => {
+        const existing = worktreeFor(ctx, n)
+        return { worktree: existing.worktree, branch: existing.branch }
+      },
+      disk: () => diskOf(ctx),
+      path: () => takenPath(ctx, n, desc),
     }
-    const hit = evaluate(row.id, facts)
-    if (hit) throw refusalError(hit)
-  }
+  )
+  const verdict = decide("take", facts)
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
 }
 
 // GitHub has no atomic claim: issue comments are not a compare-and-swap.
@@ -130,9 +130,7 @@ function lostTake(ctx, made, n, h) {
 function takeInner(ctx, target, flags, setId) {
   let n = Number(String(target).replace(/^#/, ""))
   if (!Number.isInteger(n) || n < 1) {
-    // A title files an issue. Check the disk before that write, so a full
-    // disk makes zero GitHub calls.
-    ensureDisk(ctx)
+    checkDiskFirst(ctx)
     const filed = fileFirst(ctx, String(target), flags)
     if (filed.done) {
       return { ...filed.done, noResult: true }
@@ -143,17 +141,7 @@ function takeInner(ctx, target, flags, setId) {
   const kind = issueKind(issue, flags)
   setId(`${kind ?? "task"}-${n}`)
   const me = envAgent(ctx) ?? newAgent()
-  decideTake(ctx, n, {
-    history: { kind: "complete" },
-    issue,
-    claim: held,
-    me,
-    flags,
-    requireKind: true,
-  })
-
-  // After the reads above, before the worktree and the claim comment.
-  ensureDisk(ctx)
+  decideTake(ctx, n, { issue, held, me, flags, kind })
   const made = createWorktree(ctx, {
     type: kind,
     issue: n,
@@ -164,10 +152,10 @@ function takeInner(ctx, target, flags, setId) {
   })
   const observed = readClaim(ctx, n, true)
   const mid = observed.holder
-  const raced = evaluate("HELD", { issue, claim: mid, me })
-  if (raced) {
+  const raced = decide("take-raced", { issue, claim: mid, me })
+  if (!raced.ok) {
     discardWorktree(ctx, made)
-    throw refusalError(raced)
+    throw refusalError(raced.refusals[0])
   }
   const at = new Date(observed.serverNow).toISOString()
   try {

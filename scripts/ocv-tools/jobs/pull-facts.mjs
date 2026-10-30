@@ -111,9 +111,27 @@ export function commitFacts(ctx, base, head) {
   }
 }
 
+// The pull fact of a pull request as GitHub reports it: state, author, labels,
+// head and branch. The merge rows read these without the diff.
+export function pullOf(pull, extra = {}) {
+  return {
+    n: pull.number,
+    title: pull.title,
+    body: pull.body,
+    state: pull.state,
+    isDraft: pull.isDraft,
+    author: pull.author?.login,
+    labels: (pull.labels ?? []).map((l) => l.name),
+    head: pull.headRefOid,
+    branch: pull.headRefName,
+    mergeOid: pull.mergeCommit?.oid,
+    closing: (pull.closingIssuesReferences ?? []).map((i) => i.number),
+    ...extra,
+  }
+}
+
 // The domain facts of a live pull request: its metadata and linked issue, the
-// diff against origin/main, and the branch commits. `delivery` stays empty so
-// the boundary rows stay silent here; they fire only at their own boundary.
+// diff against origin/main, and the branch commits.
 export function pullFacts(ctx, n) {
   const pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
   const head = pull.headRefOid
@@ -138,30 +156,16 @@ export function pullFacts(ctx, n) {
   const facts = diffFacts(ctx, files, head, labels)
   facts.diff.deleted = deletedFacts(ctx, base, head)
   return {
-    pull: {
-      n: pull.number,
-      issue: issue || null,
-      title: pull.title,
-      body: pull.body,
-      issueState: linked?.state,
-      state: pull.state,
-      isDraft: pull.isDraft,
-      author: pull.author?.login,
-      labels: (pull.labels ?? []).map((l) => l.name),
-      head,
-      branch: pull.headRefName,
-      mergeOid: pull.mergeCommit?.oid,
-      closing: (pull.closingIssuesReferences ?? []).map((i) => i.number),
-    },
+    pull: pullOf(pull, { issue: issue || null, issueState: linked?.state }),
     issue: { n: issue, labels },
     diff: facts.diff,
     commits: commitFacts(ctx, base, head),
-    delivery: { id: null },
   }
 }
 
 // The same shape, built locally at finish from the branch, the body text and
-// the local commits, so the pr rows can run before the PR exists.
+// the local commits, so the pr rows can run before the PR exists. commits.count
+// is how many commits the branch has beyond origin/main.
 export function planPull(ctx, { n, title, body, issue }) {
   const files = git(ctx, "diff", "--name-only", "origin/main...HEAD").split(
     "\n"
@@ -174,9 +178,11 @@ export function planPull(ctx, { n, title, body, issue }) {
   )
   return {
     pull: { issue: n, title, body, issueState: issue.state },
-    issue: { n, labels: issue.labels ?? [] },
+    issue: { n, state: issue.state, labels: issue.labels ?? [] },
     diff: facts.diff,
-    commits: commitFacts(ctx, "origin/main", "HEAD"),
-    delivery: { id: null },
+    commits: {
+      ...commitFacts(ctx, "origin/main", "HEAD"),
+      count: Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")),
+    },
   }
 }

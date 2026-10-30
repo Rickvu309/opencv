@@ -1,6 +1,6 @@
 // The generated rules block in docs/git-workflow/rule-enforcement.md.
 import { fileURLToPath } from "node:url"
-import { RULES, layerOf } from "./index.mjs"
+import { RULES, jobRows, layerOf } from "./index.mjs"
 
 const BEGIN = "<!-- rules:begin -->"
 const END = "<!-- rules:end -->"
@@ -8,7 +8,7 @@ export const RULES_DOC = fileURLToPath(
   new URL("../../../docs/git-workflow/rule-enforcement.md", import.meta.url)
 )
 
-// Keep the workflow, delivery and hook tables in separate guides under the file limit.
+// Keep the workflow, finish-and-merge and hook tables in separate guides under the file limit.
 const isHook = (row) => row.at.includes("commit") || row.at.includes("push")
 const guide = (name) =>
   fileURLToPath(new URL(`../../../docs/git-workflow/${name}`, import.meta.url))
@@ -16,13 +16,11 @@ const guide = (name) =>
 export const RULE_GUIDES = [
   {
     path: RULES_DOC,
-    table: RULES.filter(
-      (row) => !row.needs.includes("delivery") && !isHook(row)
-    ),
+    table: RULES.filter((row) => !jobRows.includes(row) && !isHook(row)),
   },
   {
     path: guide("delivery-rules.md"),
-    table: RULES.filter((row) => row.needs.includes("delivery")),
+    table: RULES.filter((row) => jobRows.includes(row)),
   },
   {
     path: guide("hook-rules.md"),

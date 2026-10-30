@@ -1,7 +1,7 @@
 // The one rule table. Rows live in the subject files (pull, diff, commits,
 // workspace, claim, table, jobs) and only this module imports them. Every row
 // has `at`, the moments it runs at (judgments run nowhere); decide(moment,
-// facts) is how a runner fires them.
+// facts) is the only way a job raises a refusal.
 import { Refused } from "../result.mjs"
 import { jobRows } from "./jobs.mjs"
 import { issueRows, claimRows } from "./claim.mjs"
@@ -13,33 +13,71 @@ import { commitRows } from "./commits.mjs"
 
 export { issueKind, jobRows }
 
-// The six moments a rule can run at. commit and push are the git hooks, take
-// and save the claim verbs, finish the PR opening, pr the live pull request
-// (policy and merge).
+// The moments a rule can run at. A moment is a point in a verb where every
+// fact its rows need is known; a runner gathers them and calls
+// decide(moment, facts). commit and push are the git hooks, finish the PR
+// opening, pr the live pull request (policy and merge), merge and queue the
+// merge verb before and during the queue wait. take, take-title, take-branch
+// and take-raced are the claim verb's reads and effect boundaries.
 export const MOMENTS = Object.freeze([
   "commit",
   "push",
+  "cli",
+  "file",
+  "locate",
+  "issue-load",
+  "history",
+  "take-title",
   "take",
+  "take-branch",
+  "take-raced",
   "save",
+  "release",
+  "cleanup",
+  "status",
+  "approve",
+  "shot",
+  "shot-target",
   "finish",
+  "finish-pushed",
   "pr",
+  "merge",
+  "queue",
 ])
 
 // One runner per moment: the file that gathers the moment's facts and fires
-// its rows. The git hooks are shims over the hook job. layers.test.mjs holds this list against the tree.
+// its rows. The git hooks are shims over the hook job. layers.test.mjs holds
+// this list against the tree.
 export const RUNNERS = Object.freeze({
   commit: ["scripts/ocv-tools/jobs/hook.mjs"],
   push: ["scripts/ocv-tools/jobs/hook.mjs"],
+  cli: ["scripts/ocv-tools/input.mjs"],
+  file: ["scripts/ocv-tools/issue.mjs"],
+  locate: ["scripts/ocv-tools/worktree.mjs"],
+  "issue-load": ["scripts/ocv-tools/facts.mjs"],
+  history: ["scripts/ocv-tools/ports/gh.mjs"],
+  "take-title": ["scripts/ocv-tools/take.mjs"],
   take: ["scripts/ocv-tools/take.mjs"],
+  "take-branch": ["scripts/ocv-tools/worktree.mjs"],
+  "take-raced": ["scripts/ocv-tools/take.mjs"],
   save: ["scripts/ocv-tools/work.mjs"],
+  release: ["scripts/ocv-tools/claim.mjs"],
+  cleanup: ["scripts/ocv-tools/work.mjs"],
+  status: ["scripts/ocv-tools/report.mjs"],
+  approve: ["scripts/ocv-tools/approve.mjs"],
+  shot: ["scripts/ocv-tools/shot.mjs"],
+  "shot-target": ["scripts/ocv-tools/shot.mjs"],
   finish: ["scripts/ocv-tools/jobs/finish.mjs"],
+  "finish-pushed": ["scripts/ocv-tools/jobs/finish.mjs"],
   pr: ["scripts/ocv-tools/jobs/policy.mjs", "scripts/ocv-tools/jobs/merge.mjs"],
+  merge: ["scripts/ocv-tools/jobs/merge.mjs"],
+  queue: ["scripts/ocv-tools/jobs/merge.mjs"],
 })
 
 const [notATask, ...workspaceRest] = workspaceRows
 const rows = [
-  ...jobRows,
   notATask,
+  ...jobRows,
   ...issueRows,
   ...pullRows,
   ...claimRows,
@@ -101,8 +139,8 @@ export function needsOf(moment) {
   return kinds
 }
 
-// One row, for a re-read or an effect-time check. A full decide() there can
-// fire a different code than the one this moment is about.
+// Tests only: one row's verdict, to pin its message and fix. A job never calls
+// this; every refusal a job raises is a row fired by decide(moment, facts).
 export function evaluate(id, facts) {
   const row = RULES.find((item) => item.id === id)
   if (!row) throw new Error(`no rule ${id}`)

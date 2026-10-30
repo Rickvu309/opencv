@@ -161,7 +161,6 @@ export function status(ctx, n) {
   ]
   const verdict = decide("status", {
     issue,
-    history: { kind: "complete" },
     pr: loaded.pr,
     report: lines.join("\n"),
   })

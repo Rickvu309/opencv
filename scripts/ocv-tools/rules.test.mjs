@@ -4,7 +4,7 @@ import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { COMMANDS } from "./report.mjs"
-import { decide, evaluate, needsOf, RULES } from "./rules/index.mjs"
+import { decide, evaluate, jobRows, needsOf, RULES } from "./rules/index.mjs"
 import {
   RULES_DOC,
   RULE_GUIDES,
@@ -105,8 +105,12 @@ test("every checked rule has a failing and a passing fact", () => {
   )
   check(
     "WORKTREE_EXISTS",
-    { issue: { n: 90 }, local: { worktree: "/wt/90", branch: "feat/90-keep" } },
-    { issue: { n: 90 }, local: {} },
+    {
+      issue: { n: 90 },
+      local: { worktree: "/wt/90", branch: "feat/90-keep" },
+      path: null,
+    },
+    { issue: { n: 90 }, local: {}, path: null },
     "#90 already has a worktree: /wt/90 (feat/90-keep)"
   )
   check(
@@ -324,20 +328,20 @@ test("every checked rule has a failing and a passing fact", () => {
   )
   check(
     "MISSING_FILE",
-    { picture: { path: "a.png", exists: false } },
-    { picture: { path: "a.png", exists: true } },
+    { pictures: [{ path: "a.png", exists: false }] },
+    { pictures: [{ path: "a.png", exists: true }] },
     "a.png does not exist"
   )
   check(
     "BAD_PICTURE",
-    { picture: { path: "a.txt", bytesChecked: false } },
-    { picture: { path: "a.png", type: "png" } },
+    { pictures: [{ path: "a.txt", bytesChecked: false }] },
+    { pictures: [{ path: "a.png", type: "png" }] },
     "a.txt is not a png, jpg, gif or webp (checked the file bytes)"
   )
   check(
     "TOO_BIG",
-    { picture: { path: "a.png", bytes: 10 * 1024 * 1024 + 1 } },
-    { picture: { path: "a.png", bytes: 100 } },
+    { pictures: [{ path: "a.png", bytes: 10 * 1024 * 1024 + 1 }] },
+    { pictures: [{ path: "a.png", bytes: 100 }] },
     "a.png is over 10 MB"
   )
   check(
@@ -346,14 +350,8 @@ test("every checked rule has a failing and a passing fact", () => {
     { shot: { count: 20 } },
     "shot takes at most 20 pictures per run (21 given)"
   )
-  for (const row of RULES.filter((row) => row.needs.includes("delivery"))) {
-    check(
-      row.id,
-      { delivery: { id: row.id } },
-      { delivery: { id: "other" } },
-      row.says
-    )
-  }
+  // The delivery rows are pinned in rules/delivery.test.mjs.
+  for (const row of jobRows) seen.add(row.id)
   check(
     "MASS_DELETE",
     { diff: { deleted: { files: 26, lines: 5, total: 900 } } },
@@ -516,7 +514,6 @@ test("variant messages stay the ones the jobs print", () => {
 
 test("decide keeps table order, stops, and refuses a missing fact", () => {
   const facts = {
-    history: { kind: "complete" },
     issue: {
       n: 90,
       state: "OPEN",
@@ -532,8 +529,7 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
     flags: {},
     local: {},
     disk: {},
-    branch: { stage: "later" },
-    repo: { ok: true },
+    path: null,
     requireKind: true,
   }
   assert.deepEqual(
@@ -551,25 +547,24 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
   assert.equal(closed.ok, false)
   assert.throws(
     () => decide("take", {}),
-    /take did not gather issue for NOT_AN_ISSUE/
+    /take did not gather issue for CLOSED/
   )
   assert.throws(
     () => decide("take", { issue: { n: 1, state: "OPEN", labels: [] } }),
-    /take did not gather history for UNKNOWN/
+    /take did not gather claim for HELD/
   )
   for (const kind of [
     "issue",
-    "history",
     "claim",
     "me",
     "login",
     "flags",
     "local",
     "disk",
-    "branch",
-    "repo",
+    "path",
   ])
     assert.ok(needsOf("take").includes(kind), kind)
+  assert.ok(needsOf("take-branch").includes("branch"))
   assert.equal(
     decide("save", { here: { ok: false } }).refusals[0].id,
     "NOT_A_TASK"
