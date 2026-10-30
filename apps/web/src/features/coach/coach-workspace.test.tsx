@@ -27,6 +27,35 @@ beforeEach(() => {
   )
 })
 
+function stubUsage(day: { used: number; remaining: number }) {
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/api/coach/usage"))
+        return Response.json({
+          ok: true,
+          data: {
+            plan: "free",
+            mode: "free",
+            session: { capped: false, resetsAt: "2026-10-29T00:00:00Z" },
+            day: {
+              capped: true,
+              cap: 20,
+              resetsAt: "2026-10-29T00:00:00Z",
+              ...day,
+            },
+            week: { capped: false, resetsAt: "2026-11-02T00:00:00Z" },
+          },
+        })
+      return (
+        (await chatApiFetch(input, init)) ??
+        (await profileApiFetch(input, init)) ??
+        new Response("{}", { status: 404 })
+      )
+    }
+  )
+}
+
 describe("Coach workspace", () => {
   it("marks one primary action only when the Coach page asks for it", async () => {
     const view = render(
@@ -124,6 +153,60 @@ describe("Coach workspace", () => {
       screen.getByRole("textbox", { name: "Message Coach" })
     ).toBeDisabled()
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
-    expect(screen.getByRole("status")).toHaveTextContent("Coach is back at")
+    expect(screen.getByRole("status")).toHaveTextContent("Resets at")
+    expect(screen.getByPlaceholderText(/^Coach is back at/)).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Add" })).toBeDisabled()
+    expect(screen.getByRole("radio", { name: "Light" })).toBeEnabled()
+    const card = document.querySelector("[data-slot=coach-composer-card]")
+    expect(card).toContainElement(screen.getByRole("status"))
+    expect(card).toContainElement(screen.getByRole("button", { name: "Send" }))
+  })
+
+  it("names the History trigger with the visible chat title", async () => {
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace />
+      </ChatStoreProvider>
+    )
+    const trigger = await screen.findByRole("button", {
+      name: "History, New chat",
+    })
+    expect(trigger).toHaveAttribute("data-slot", "coach-history-trigger")
+    expect(trigger).toHaveTextContent("New chat")
+    expect(
+      screen.queryByRole("button", { name: "New chat", exact: true })
+    ).not.toBeInTheDocument()
+    fireEvent.click(trigger)
+    expect(
+      await screen.findByRole("dialog", { name: "Chat history" })
+    ).toBeInTheDocument()
+  })
+
+  it("hides the turns left line on home", async () => {
+    stubUsage({ used: 17, remaining: 3 })
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace />
+      </ChatStoreProvider>
+    )
+    await screen.findByText("How can I help?")
+    await waitFor(() =>
+      expect(
+        screen.getByRole("textbox", { name: "Message Coach" })
+      ).toBeEnabled()
+    )
+    expect(screen.queryByText(/turns remaining today/)).not.toBeInTheDocument()
+  })
+
+  it("shows the turns left line in a saved chat", async () => {
+    stubUsage({ used: 17, remaining: 3 })
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace chatId="11111111-1111-4111-8111-111111111111" />
+      </ChatStoreProvider>
+    )
+    expect(
+      await screen.findByText("3 free turns remaining today")
+    ).toBeVisible()
   })
 })

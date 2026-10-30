@@ -1,8 +1,11 @@
 import { useEffect, useEffectEvent, useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 
-import { Button } from "@workspace/ui/components/button"
+import { ChevronDown, Hourglass, SquarePen } from "lucide-react"
+
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -184,25 +187,73 @@ export function CoachWorkspace({
       onAttachJob={() => dispatch({ type: "picker_opened", picker: "job" })}
       onAttachLink={() => dispatch({ type: "picker_opened", picker: "link" })}
       primaryAction={primaryAction}
+      notice={
+        capped ? (
+          <div
+            role="status"
+            data-slot="coach-cap-notice"
+            className="flex flex-wrap items-center justify-between gap-3"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
+              <Hourglass className="size-4 text-muted-foreground" />
+            </span>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <p className="text-sm font-semibold">
+                You’ve reached today’s{" "}
+                {usage.data?.mode === "free" ? "Free" : usage.data?.mode} limit
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Resets at {resetTime}. Pro has unlimited Coach chats.
+              </p>
+            </div>
+            <a
+              className={cn(
+                buttonVariants({ variant: "secondary", size: "sm" }),
+                "font-semibold"
+              )}
+              href="/settings/billing/upgrade"
+            >
+              Upgrade
+            </a>
+          </div>
+        ) : undefined
+      }
     />
   )
+  const headerTitle = showHome
+    ? "New chat"
+    : (chats.find((chat) => chat.id === activeChatId)?.title ?? "New chat")
 
   return (
     <div data-slot="coach-panel-body" className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 py-3">
-        <h1 className="text-sm font-medium">Coach</h1>
-        <div className="flex gap-1">
+      <div
+        data-slot="coach-header"
+        data-home={showHome ? "" : undefined}
+        className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/50 px-3"
+      >
+        <h1 className="sr-only">Coach</h1>
+        <Button
+          variant="ghost"
+          size="sm"
+          data-slot="coach-history-trigger"
+          aria-label={`History, ${headerTitle}`}
+          className="min-w-0 gap-1.5 border-0 px-2 text-[13px] leading-[15.5px] max-md:h-11"
+          onClick={() => dispatch({ type: "history_opened" })}
+        >
+          <span className="truncate">{headerTitle}</span>
+          <ChevronDown className="size-2.75 text-muted-foreground" />
+        </Button>
+        {!showHome ? (
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => dispatch({ type: "history_opened" })}
+            size="icon-sm"
+            aria-label="New chat"
+            className="max-md:size-11"
+            onClick={store.newChat}
           >
-            History
+            <SquarePen className="size-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={store.newChat}>
-            New chat
-          </Button>
-        </div>
+        ) : null}
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {showHome ? (
@@ -243,8 +294,10 @@ export function CoachWorkspace({
             messages={messages}
             waiting={phase === "waiting"}
             error={error}
-            onRetry={store.retry}
-            onRegenerate={!active ? store.regenerate : undefined}
+            onRetry={!capped && enabled ? store.retry : undefined}
+            onRegenerate={
+              !active && !capped && enabled ? store.regenerate : undefined
+            }
             onUndo={!active ? store.undo : undefined}
           />
         )}
@@ -280,26 +333,14 @@ export function CoachWorkspace({
             ))}
           </div>
         ) : null}
-        {capped ? (
-          <p role="status" className="text-sm">
-            You’ve reached today’s{" "}
-            {usage.data?.mode === "free" ? "Free" : usage.data?.mode} limit.
-            Coach is back at {resetTime}.{" "}
-            <a
-              href="/settings/billing/upgrade"
-              className="underline underline-offset-2"
-            >
-              Upgrade
-            </a>
-          </p>
-        ) : !enabled ? (
+        {!enabled ? (
           <p role="status" className="text-sm">
             Coach is turned off.{" "}
             <a href="/settings/coach" className="underline underline-offset-2">
               Open Settings
             </a>
           </p>
-        ) : day?.capped ? (
+        ) : !showHome && !capped && day?.capped ? (
           <p className="text-xs text-muted-foreground">
             {day.remaining} {usage.data?.mode} turns remaining today
           </p>

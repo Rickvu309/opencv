@@ -1,4 +1,4 @@
-import { useReducer } from "react"
+import { useReducer, type ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
@@ -21,6 +21,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { InputGroupButton } from "@workspace/ui/components/input-group"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { fetchUsage, usageKey } from "@/lib/account-api.ts"
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
@@ -62,6 +63,8 @@ type Props = {
   onAttachJob?: () => void
   onAttachLink?: () => void
   disabled?: boolean
+  /** A limit or off notice shown as the top band of the one composer card. */
+  notice?: ReactNode
   /** Marks the Add control as the screen's one primary action. Only the Coach page sets it. */
   primaryAction?: boolean
 }
@@ -79,6 +82,7 @@ export function CoachDock({
   onAttachJob,
   onAttachLink,
   disabled = false,
+  notice,
   primaryAction = false,
 }: Props) {
   const navigate = useNavigate()
@@ -112,9 +116,10 @@ export function CoachDock({
           render={
             <InputGroupButton
               size="icon-sm"
-              className="rounded-full text-muted-foreground"
+              className="rounded-full border border-border text-muted-foreground"
             />
           }
+          disabled={disabled}
           aria-label={menuOpen ? "Close menu" : "Add"}
           data-primary-action={primaryAction ? "" : undefined}
         >
@@ -198,9 +203,13 @@ export function CoachDock({
     </>
   )
 
-  return (
+  const composer = (
     <PromptInput
       data-slot="coach-composer"
+      className={cn(
+        notice &&
+          "rounded-t-none border-0 shadow-none [&_[data-slot=input-group-addon]]:pb-2 [&_textarea]:min-h-10 [&_textarea]:py-2"
+      )}
       value={draft}
       onValueChange={setDraft}
       onSubmit={onSend}
@@ -211,5 +220,18 @@ export function CoachDock({
       tools={tools}
       actions={actions}
     />
+  )
+  return notice ? (
+    <div
+      data-slot="coach-composer-card"
+      className="overflow-hidden rounded-2xl border border-border/60 bg-card"
+    >
+      <div className="border-b border-border/60 bg-muted/40 px-4 py-3">
+        {notice}
+      </div>
+      {composer}
+    </div>
+  ) : (
+    composer
   )
 }
