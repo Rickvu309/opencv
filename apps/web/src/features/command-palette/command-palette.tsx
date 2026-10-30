@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef } from "react"
+import { useNavigate } from "@tanstack/react-router"
 
 import { focusSearchButton } from "./focus-search-button.ts"
 
@@ -63,6 +64,8 @@ export function CommandPalette({
   onSurface,
 }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const resultsRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
   const [{ query, scope, activeId, hits, recent, failed, wasOpen }, dispatch] =
     useReducer(paletteReducer, open, initialPaletteState)
   const sawOpen = useRef(false)
@@ -128,6 +131,13 @@ export function CommandPalette({
   const rows = paletteRows({ query, scope, hits, recent, failed })
   const active = rows.find((row) => row.id === activeId) ?? rows[0] ?? null
   const waiting = trimmed.length > 0 && hits === null && !failed
+
+  useEffect(() => {
+    if (!open || !active) return
+    resultsRef.current
+      ?.querySelector<HTMLElement>('[aria-current="true"]')
+      ?.scrollIntoView({ block: "nearest" })
+  }, [active, open])
   const groups = [
     { label: copy.pages, kind: "page" },
     { label: copy.jobs, kind: "job" },
@@ -149,11 +159,17 @@ export function CommandPalette({
       return
     }
     if (row.kind === "job") {
-      onSurface("apply")
+      void navigate({
+        to: "/apply/$jobId",
+        params: { jobId: row.id.slice("job:".length) },
+      })
       return
     }
     if (row.kind === "paper") {
-      onSurface("paper")
+      void navigate({
+        to: "/paper/$docId",
+        params: { docId: row.id.slice("paper:".length) },
+      })
       return
     }
     const chatId = row.id.slice("chat:".length)
@@ -172,7 +188,7 @@ export function CommandPalette({
         className="top-0 left-0 flex h-dvh max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none bg-background p-0 text-foreground ring-1 ring-border duration-(--duration-panel) ease-(--ease-panel) sm:top-[12vh] sm:left-1/2 sm:h-[min(32rem,70vh)] sm:max-w-3xl sm:-translate-x-1/2 sm:translate-y-0 sm:rounded-xl"
       >
         <DialogTitle className="sr-only">Search</DialogTitle>
-        <div className="border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <Input
             ref={inputRef}
             value={query}
@@ -194,8 +210,17 @@ export function CommandPalette({
             aria-activedescendant={
               active ? `palette-row-${active.id}` : undefined
             }
-            className="h-auto border-0 bg-transparent px-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
+            className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
           />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label="Close search"
+            onClick={() => onOpenChange(false)}
+          >
+            Close
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2 border-b border-border px-4 py-2">
           {PALETTE_SCOPES.map((item) => (
@@ -212,6 +237,7 @@ export function CommandPalette({
           ))}
         </div>
         <div
+          ref={resultsRef}
           id="palette-results"
           className="min-h-0 flex-1 overflow-auto px-2 py-2"
         >
