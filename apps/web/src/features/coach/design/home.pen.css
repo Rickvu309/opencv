@@ -16,6 +16,13 @@
 
 [data-pen-surface="coach"]
   [data-slot="coach-ideas"]
+  button[aria-pressed="true"]
+  svg {
+  color: #3c3c40;
+}
+
+[data-pen-surface="coach"]
+  [data-slot="coach-ideas"]
   button[data-variant="outline"] {
   border-color: #e6e6e9;
   background: #ffffff;
