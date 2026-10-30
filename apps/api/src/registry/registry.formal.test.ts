@@ -28,7 +28,7 @@ import {
   rowsOf,
   storedKeyed,
   trace,
-} from "./registry-formal-support.js"
+} from "../test/registry-formal-support.js"
 
 registerBackendHooks()
 // ---------------------------------------------------------------- P1 ----

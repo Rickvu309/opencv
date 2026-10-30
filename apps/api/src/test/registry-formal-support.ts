@@ -19,10 +19,10 @@ import {
   paperDocs,
   user,
 } from "../db/schema.js"
-import { createMigratedTestDb } from "../test/harness.js"
-import { CommandError } from "./errors.js"
-import { installRegistry } from "./install.js"
-import {} from "./registry.js"
+import { createMigratedTestDb } from "./harness.js"
+import { CommandError } from "../registry/errors.js"
+import { installRegistry } from "../registry/install.js"
+import {} from "../registry/registry.js"
 
 // Formal check of the command registry promise under concurrent calls:
 //   P1  a keyed command runs its effect once and every caller gets the replay

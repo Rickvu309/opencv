@@ -22,7 +22,7 @@ import {
   registry,
   registerBackendHooks,
   storedKeyed,
-} from "./registry-formal-support.js"
+} from "../test/registry-formal-support.js"
 
 registerBackendHooks()
 // ---------------------------------------------------------------- P3 ----

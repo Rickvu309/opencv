@@ -111,7 +111,7 @@ The failing label names the scenario: `P1 job.create N=3 seed=242`, `P2 approve 
 | `isUniqueViolation`           | `apps/api/src/registry/errors.ts` line 21          |
 | `transaction`                 | `apps/api/src/db/context.ts` line 33               |
 
-Check files: `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/registry/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
+Check files: `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 
 Sync commit: `b618ed9f358b23a280d7c00308aca64474ec36ed`. This is the trunk commit the check was last confirmed against.
 
