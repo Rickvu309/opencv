@@ -19,7 +19,7 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
     "seed",
   ],
   auth: [],
-  coach: ["settings"],
+  coach: [],
   "coming-soon": [],
   "command-palette": [],
   commands: [],

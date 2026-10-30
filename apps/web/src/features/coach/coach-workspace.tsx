@@ -23,7 +23,7 @@ import {
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
-import { CoachDock } from "./coach-dock.tsx"
+import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
 import { ChatView } from "./chat-view.tsx"
@@ -60,6 +60,7 @@ export function CoachWorkspace({
       link,
       linkError,
       draftChatId,
+      addMenuOpened,
     },
     dispatch,
   ] = useReducer(workspaceReducer, undefined, () =>
@@ -70,7 +71,7 @@ export function CoachWorkspace({
   const papers = useQuery({
     queryKey: queryKey({ query: "paper.list" }),
     queryFn: coachPaperOptions,
-    enabled: picker === "paper",
+    enabled: picker === "paper" || addMenuOpened,
   })
   const jobs = useQuery({
     queryKey: queryKey({ query: "job.list" }),
@@ -145,6 +146,27 @@ export function CoachWorkspace({
     }
   }
 
+  const recentPapers = [...(papers.data ?? [])]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 2)
+  const recent: DockRecentList = {
+    state: papers.isError ? "error" : papers.data ? "ready" : "loading",
+    items: recentPapers.map((doc) => ({
+      id: doc.id,
+      label: doc.name,
+      kind: doc.kind,
+      attached: attachments.some((a) => a.kind === "paper" && a.id === doc.id),
+    })),
+  }
+
+  function selectRecent(id: string) {
+    const doc = papers.data?.find((item) => item.id === id)
+    if (!doc) return
+    const held = attachments.find((a) => a.kind === "paper" && a.id === id)
+    if (held) dispatch({ type: "attachment_removed", item: held })
+    else attach({ kind: "paper", id, label: doc.name })
+  }
+
   const compact = presentation === "compact"
   const showHome = messages.length === 0 && !active
   const showWelcome = showHome && !compact
@@ -169,6 +191,11 @@ export function CoachWorkspace({
       }
       onAttachJob={() => dispatch({ type: "picker_opened", picker: "job" })}
       onAttachLink={() => dispatch({ type: "picker_opened", picker: "link" })}
+      recent={recent}
+      onRecentSelect={selectRecent}
+      onAddMenuOpenChange={(open) => {
+        if (open) dispatch({ type: "add_menu_opened" })
+      }}
       primaryAction={primaryAction}
       notice={
         capped ? (
