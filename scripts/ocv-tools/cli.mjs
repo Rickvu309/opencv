@@ -23,6 +23,7 @@ export function realCtx() {
     ports,
     env: ports.env,
     now: () => ports.clock.now(),
+    pause: (seconds) => ports.clock.pause(seconds),
     nodeVersion: process.version,
     cwd: process.cwd(),
     readFile: (path) => ports.fs.read(path),
@@ -176,7 +177,9 @@ function command(ctx, cmd, rest) {
       const allowed =
         cmd === "finish"
           ? ["--body-file", "-d", "--desc", "--draft", "--dry-run"]
-          : []
+          : cmd === "merge"
+            ? ["--wait"]
+            : []
       for (const flag of Object.keys(flags)) {
         if (!allowed.includes(flag))
           throw new Refused("UNKNOWN_FLAG", `unknown option: ${flag}`)
@@ -192,7 +195,9 @@ function command(ctx, cmd, rest) {
         )
       if (cmd === "check") return check(ctx)
       if (cmd === "finish") return finish(ctx, { flags })
-      return merge(ctx, issueNumber(pos[0], "merge <pr#>"))
+      return merge(ctx, issueNumber(pos[0], "merge <pr#>"), {
+        wait: Boolean(flags["--wait"]),
+      })
     }
     case "save":
       return save(ctx, { message: flags["-m"] })

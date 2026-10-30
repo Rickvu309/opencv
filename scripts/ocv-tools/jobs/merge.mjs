@@ -38,7 +38,29 @@ function closeIssues(ctx, pull, n) {
   }
 }
 
-export function merge(ctx, n) {
+const WAIT_STEP_SECONDS = 15
+const WAIT_LIMIT_SECONDS = 45 * 60
+
+function waitForMerge(ctx, n) {
+  for (
+    let waited = 0;
+    waited < WAIT_LIMIT_SECONDS;
+    waited += WAIT_STEP_SECONDS
+  ) {
+    const pull = json(ctx, "pr", "view", String(n), "--json", FIELDS)
+    if (pull.state === "MERGED" && pull.mergeCommit?.oid) return pull
+    if (pull.state === "CLOSED")
+      refuse("LEFT_QUEUE", `PR #${n} was closed without merging.`)
+    ctx.pause(WAIT_STEP_SECONDS)
+  }
+  refuse(
+    "QUEUE_TIMEOUT",
+    `PR #${n} is still not merged after ${WAIT_LIMIT_SECONDS / 60} minutes.`,
+    `Run: gh pr view ${n} --json state,statusCheckRollup`
+  )
+}
+
+export function merge(ctx, n, { wait = false } = {}) {
   return recorded(ctx, "merge-pr", () => {
     let pull = json(ctx, "pr", "view", String(n), "--json", FIELDS)
     const me = gh(ctx, "api", "user", "--jq", ".login")
@@ -122,14 +144,17 @@ export function merge(ctx, n) {
         )
       gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
       pull = json(ctx, "pr", "view", String(n), "--json", FIELDS)
-      if (pull.state !== "MERGED" || !pull.mergeCommit?.oid)
-        return {
-          id: n,
-          lines: [
-            `Queued PR #${n} at ${head}. Issue closure waits for the merge; run merge again after the queue completes.`,
-          ],
-          next: `scripts/ocv-tools.mjs merge ${n}`,
-        }
+      if (pull.state !== "MERGED" || !pull.mergeCommit?.oid) {
+        if (!wait)
+          return {
+            id: n,
+            lines: [
+              `Queued PR #${n} at ${head}. Issue closure waits for the merge.`,
+            ],
+            next: `Run in the background and end the turn until it exits: scripts/ocv-tools.mjs merge ${n} --wait`,
+          }
+        pull = waitForMerge(ctx, n)
+      }
     }
     closeIssues(ctx, pull, Number(issue))
     return {

@@ -534,6 +534,10 @@ export function fakePorts(world = {}) {
     },
     clock: {
       now: () => (typeof state.now === "function" ? state.now() : state.now),
+      pause: (seconds) => {
+        state.paused = (state.paused ?? 0) + seconds
+        world.onPause?.(state.paused)
+      },
     },
     env,
     effects,
@@ -550,6 +554,7 @@ export function ctxFor(ports, extra = {}) {
     facts: createFacts(ports, () => extra.cwd ?? ports.state.cwd),
     env: ports.env,
     now: () => ports.clock.now(),
+    pause: (seconds) => ports.clock.pause(seconds),
     nodeVersion: extra.nodeVersion ?? "v22.1.0",
     cwd: extra.cwd ?? ports.state.cwd,
     readFile: (path) => ports.fs.read(path),

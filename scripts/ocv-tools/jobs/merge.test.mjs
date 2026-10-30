@@ -157,3 +157,51 @@ test("a renamed-away ci.yml is seen through the diff without renames", () => {
   assert.equal(r.code, 2)
   assert.match(r.text, /CI_WORKFLOW_KEPT/)
 })
+test("merge --wait stays until the queue merges, then closes the issue", () => {
+  let paused = 0
+  const f = fixture({
+    queue: true,
+    onPause: (total, s) => {
+      paused = total
+      if (total >= 45) {
+        s.pull.state = "MERGED"
+        s.pull.mergeCommit = { oid: "done" }
+      }
+    },
+  })
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /Merged PR #91/)
+  assert.equal(f.s.issueState, "CLOSED")
+  assert.equal(paused, 45)
+})
+test("queued merge names the wait command as the next step", () => {
+  const f = fixture({ queue: true })
+  assert.match(f.call("merge", "91").text, /merge 91 --wait/)
+})
+test("merge --wait fails when the PR closes without merging", () => {
+  const f = fixture({
+    queue: true,
+    onPause: (_, s) => {
+      s.pull.state = "CLOSED"
+    },
+  })
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /LEFT_QUEUE/)
+  assert.equal(f.s.issueState, "OPEN")
+})
+test("merge --wait gives up after 45 minutes", () => {
+  let paused = 0
+  const f = fixture({
+    queue: true,
+    onPause: (total) => {
+      paused = total
+    },
+  })
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /QUEUE_TIMEOUT/)
+  assert.equal(paused, 45 * 60)
+  assert.equal(f.s.issueState, "OPEN")
+})

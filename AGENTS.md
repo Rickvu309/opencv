@@ -113,7 +113,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 - From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, a mass deletion (over 25 authored files, 2000 lines or 10% of authored files; add `needs-human-review`), a wrong title, missing `Closes #n` or a closed issue, ci without success on the head, and gate changes without `risk:high` (`ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs`, `.github/rulesets/main.json`). It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
-- After the queue merges, run `scripts/ocv-tools.mjs merge <pr#>` again to confirm linked issues are closed; it closes any still open. The remote branch is deleted.
+- After the queue accepts the PR, run `scripts/ocv-tools.mjs merge <pr#> --wait` as a background command (`run_in_background`) and end the turn. It exits when the PR merges (and closes the linked issues), when the PR leaves the queue, or after 45 minutes. A PR watcher does not wake you for a queue merge, so a turn that ends without this background job is stuck. When it exits, run `cleanup` in the same turn. The remote branch is deleted.
 - From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
 
 #### 7. Production is broken
