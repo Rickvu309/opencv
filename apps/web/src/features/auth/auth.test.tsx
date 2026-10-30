@@ -342,7 +342,9 @@ describe("session expired", () => {
     expect(
       screen.getByRole("button", { name: AUTH_COPY.logOut })
     ).toBeInTheDocument()
-    expect(dialog.querySelectorAll('[data-variant="glow"]')).toHaveLength(1)
+    expect(
+      dialog.querySelectorAll('[data-slot="session-continue"]')
+    ).toHaveLength(1)
     fireEvent.keyDown(dialog, { key: "Escape" })
     expect(
       screen.getByRole("dialog", { name: AUTH_COPY.loggedOutTitle })

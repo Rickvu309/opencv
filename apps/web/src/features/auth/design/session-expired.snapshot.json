@@ -1,0 +1,30 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "DhG87",
+    "frameName": "W1.6 Session expired",
+    "root": "mjDga"
+  },
+  "sections": [
+    { "id": "os1ip", "name": "Badge", "texts": [], "fills": [] },
+    {
+      "id": "U8Ec9",
+      "name": "Heading",
+      "texts": ["You've been logged out", "Log in again. Your work is saved."],
+      "fills": []
+    },
+    {
+      "id": "RIfMH",
+      "name": "Google",
+      "texts": ["Continue as linh.nguyen@gmail.com"],
+      "fills": []
+    },
+    {
+      "id": "Mfhz9",
+      "name": "Other",
+      "texts": ["Email me a code", "Log out"],
+      "fills": []
+    }
+  ]
+}
