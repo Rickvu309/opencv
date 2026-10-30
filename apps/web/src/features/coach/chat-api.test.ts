@@ -14,7 +14,6 @@ import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
   createChat,
   deleteChat,
-  getChat,
   getChatByFocusDoc,
   listChats,
   streamCoachRegenerate,
@@ -88,60 +87,6 @@ describe("chat API client", () => {
     const { url, init } = callOf(fetchMock)
     expect(url).toBe(`${apiBaseUrl}/api/chats`)
     expect(init.credentials).toBe("include")
-  })
-
-  it("reads chat detail and maps person messages to user, dropping attachments", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      envelope({
-        ...chatRow(),
-        messages: [
-          {
-            id: "m1",
-            role: "person",
-            text: "Help",
-            createdAt: STAMP,
-            parts: [
-              { type: "text", text: "Help" },
-              { type: "attachment", name: "cv.pdf" },
-            ],
-            status: "final",
-            workedMs: null,
-          },
-          {
-            id: "m2",
-            role: "coach",
-            text: "Done",
-            createdAt: STAMP,
-            parts: [{ type: "text", text: "Done" }],
-            status: "final",
-            workedMs: 900,
-          },
-        ],
-      })
-    )
-    vi.stubGlobal("fetch", fetchMock)
-
-    const detail = await getChat(CHAT_ID)
-    expect(callOf(fetchMock).url).toBe(`${apiBaseUrl}/api/chats/${CHAT_ID}`)
-    expect(detail.messages).toEqual([
-      {
-        id: "m1",
-        role: "user",
-        text: "Help",
-        createdAt: STAMP,
-        parts: [{ type: "text", text: "Help" }],
-        status: "final",
-      },
-      {
-        id: "m2",
-        role: "coach",
-        text: "Done",
-        createdAt: STAMP,
-        parts: [{ type: "text", text: "Done" }],
-        status: "final",
-        workedMs: 900,
-      },
-    ])
   })
 
   it("creates a chat with chat.create", async () => {

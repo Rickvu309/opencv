@@ -11,10 +11,9 @@ import {
   type CoachMode,
   type CoachContextItem,
   type CoachSelection,
-  type ChatRecord,
   type ChatSummary,
-  type ChatEntry,
   type ChatEntryPart,
+  type QueryOutput,
 } from "@workspace/domain"
 
 import type { QueryClient } from "@tanstack/react-query"
@@ -24,6 +23,11 @@ import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { endpoints } from "@/lib/requests.ts"
+import type {
+  CoachChatEntry,
+  CoachChatRecord,
+  ChatMessageAttachment,
+} from "./chat-messages.ts"
 
 // The api speaks wire chats (ChatDetail, ChatMessage). The UI renders
 // ChatRecord, ChatSummary and ChatEntry. This is the one place that maps
@@ -38,7 +42,7 @@ function asChat(chat: ChatListItem): ChatSummary {
   }
 }
 
-function asMessage(message: ChatMessage): ChatEntry {
+function asMessage(message: ChatMessage): CoachChatEntry {
   const parts = message.parts.filter(
     (part): part is ChatEntryPart =>
       part.type === "text" || part.type === "tool"
@@ -54,8 +58,68 @@ function asMessage(message: ChatMessage): ChatEntry {
   }
 }
 
-function asDetail(chat: ChatDetail): ChatRecord {
-  return { ...asChat(chat), messages: chat.messages.map(asMessage) }
+function attachmentParts(
+  message: ChatMessage
+): Array<{ kind: "job" | "paper" | "link" | "file"; id: string }> {
+  return message.role === "person"
+    ? message.parts.flatMap((part) =>
+        part.type === "attachment" ? [{ kind: part.kind, id: part.id }] : []
+      )
+    : []
+}
+
+function linkLabel(id: string): string {
+  try {
+    return new URL(id).hostname || "Saved link"
+  } catch {
+    return "Saved link"
+  }
+}
+
+async function resolveAttachments(
+  messages: ChatMessage[]
+): Promise<ChatMessageAttachment[][]> {
+  const refs = messages.flatMap(attachmentParts)
+  const jobIds = new Set(
+    refs.filter((ref) => ref.kind === "job").map((ref) => ref.id)
+  )
+  const paperIds = new Set(
+    refs.filter((ref) => ref.kind === "paper").map((ref) => ref.id)
+  )
+  const [jobs, papers] = await Promise.all([
+    jobIds.size
+      ? apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs)
+          .then(unwrapData)
+          .catch(() => [])
+      : [],
+    paperIds.size
+      ? apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper)
+          .then(unwrapData)
+          .catch(() => [])
+      : [],
+  ])
+  const jobLabels = new Map<string, string>(
+    jobs.map((job) => [
+      job.id,
+      `${job.title}${job.company ? ` at ${job.company}` : ""}`,
+    ])
+  )
+  const paperLabels = new Map<string, string>(
+    papers.map((paper) => [paper.id, paper.name])
+  )
+  return messages.map((message) =>
+    attachmentParts(message).map((ref) => ({
+      ...ref,
+      label:
+        ref.kind === "link"
+          ? linkLabel(ref.id)
+          : ref.kind === "job"
+            ? (jobLabels.get(ref.id) ?? "Saved job")
+            : ref.kind === "paper"
+              ? (paperLabels.get(ref.id) ?? "Saved document")
+              : "Saved file",
+    }))
+  )
 }
 
 export const chatListKey = () => queryKey({ query: "chat.list" })
@@ -69,9 +133,19 @@ export async function listChats(): Promise<ChatSummary[]> {
   return unwrapData(body).map(asChat)
 }
 
-export async function getChat(id: string): Promise<ChatRecord> {
+export async function getChat(id: string): Promise<CoachChatRecord> {
   const body = await apiFetch<SuccessBody<ChatDetail>>(endpoints.chat(id))
-  return asDetail(unwrapData(body))
+  const chat = unwrapData(body)
+  const attachments = await resolveAttachments(chat.messages)
+  return {
+    ...asChat(chat),
+    messages: chat.messages.map((message, index) => ({
+      ...asMessage(message),
+      ...(attachments[index]?.length
+        ? { attachments: attachments[index] }
+        : {}),
+    })),
+  }
 }
 
 export async function getChatByFocusDoc(
@@ -255,7 +329,7 @@ export function upsertChatSummary(
   return [item, ...chats.filter((chat) => chat.id !== item.id)]
 }
 
-export function toListItem(detail: ChatRecord): ChatSummary {
+export function toListItem(detail: CoachChatRecord): ChatSummary {
   return {
     id: detail.id,
     title: detail.title,

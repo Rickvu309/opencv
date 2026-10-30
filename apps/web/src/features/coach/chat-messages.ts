@@ -1,7 +1,9 @@
 import {
   titleFrom,
+  type ChatEntry,
   type ChatEntryPart,
   type ChatMessageStatus,
+  type ChatRecord,
 } from "@workspace/domain"
 
 export { titleFrom }
@@ -12,6 +14,20 @@ export const STREAMING_COACH_ID = "local-coach"
 
 export type MessageRole = "coach" | "user"
 
+export type ChatMessageAttachment = {
+  kind: "job" | "paper" | "link" | "file"
+  id: string
+  label: string
+}
+
+export type CoachChatEntry = ChatEntry & {
+  attachments?: ChatMessageAttachment[]
+}
+
+export type CoachChatRecord = Omit<ChatRecord, "messages"> & {
+  messages: CoachChatEntry[]
+}
+
 export type ChatViewMessage = {
   id: string
   role: MessageRole
@@ -19,6 +35,7 @@ export type ChatViewMessage = {
   workedMs?: number
   status?: ChatMessageStatus
   parts?: ChatEntryPart[]
+  attachments?: ChatMessageAttachment[]
   failed?: boolean
   error?: string
 }
@@ -43,6 +60,7 @@ export function toChatViewMessages(
     workedMs?: number
     status?: ChatMessageStatus
     parts?: ChatEntryPart[]
+    attachments?: ChatMessageAttachment[]
   }>
 ): ChatViewMessage[] {
   return messages.map((message) => ({
@@ -52,5 +70,6 @@ export function toChatViewMessages(
     ...(message.workedMs != null ? { workedMs: message.workedMs } : {}),
     ...(message.status ? { status: message.status } : {}),
     ...(message.parts ? { parts: message.parts } : {}),
+    ...(message.attachments ? { attachments: message.attachments } : {}),
   }))
 }

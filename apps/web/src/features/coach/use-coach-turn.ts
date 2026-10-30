@@ -7,7 +7,6 @@ import {
   type CoachContextItem,
   textFromParts,
   type CoachSelection,
-  type ChatRecord,
   type ChatEntryPart,
 } from "@workspace/domain"
 
@@ -28,6 +27,8 @@ import {
   latestCoachMessageId,
   toChatViewMessages,
   type ChatViewMessage,
+  type CoachChatRecord,
+  type ChatMessageAttachment,
 } from "@/features/coach/chat-messages.ts"
 import { isAbortError } from "@/lib/sse.ts"
 
@@ -44,6 +45,7 @@ export type CoachSendOptions = {
   retrying?: boolean
   selection?: CoachSelection
   context?: CoachContextItem[]
+  attachments?: ChatMessageAttachment[]
 }
 
 export type UseCoachTurnOptions = {
@@ -216,7 +218,7 @@ export function useCoachTurn({
         targetCoach?.parts?.filter((part) => part.type === "tool") ?? []
 
       const settled = (chatKey: string) => {
-        const detail = queryClient.getQueryData<ChatRecord>(
+        const detail = queryClient.getQueryData<CoachChatRecord>(
           chatDetailKey(chatKey)
         )
         return detail ? toChatViewMessages(detail.messages) : prefix
@@ -326,7 +328,7 @@ export function useCoachTurn({
             return
           }
           const lastUser = [
-            ...(queryClient.getQueryData<ChatRecord>(chatDetailKey(id))
+            ...(queryClient.getQueryData<CoachChatRecord>(chatDetailKey(id))
               ?.messages ?? []),
           ]
             .reverse()
@@ -388,6 +390,8 @@ export function useCoachTurn({
       const selection =
         typeof options === "boolean" ? undefined : options.selection
       const context = typeof options === "boolean" ? undefined : options.context
+      const attachments =
+        typeof options === "boolean" ? undefined : options.attachments
       const trimmed = text.trim()
       if (!trimmed || phase !== "idle") return false
 
@@ -397,6 +401,7 @@ export function useCoachTurn({
         id: `local-${crypto.randomUUID()}`,
         role: "user",
         text: trimmed,
+        ...(attachments?.length ? { attachments } : {}),
       }
 
       void runCoachStream({
