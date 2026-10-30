@@ -10,6 +10,8 @@ export const jobRows = Object.entries({
   BAD_BRANCH: "The PR branch must name its issue.",
   CLOSED_PR: "The PR must be open or already merged.",
   CI_REQUIRED: "The newest ci check must succeed on the PR head.",
+  LEFT_QUEUE: "The PR must stay in the queue until it merges.",
+  QUEUE_TIMEOUT: "The queue must merge the PR within 45 minutes.",
 }).map(([id, says]) => ({
   id,
   kind: "precondition",
@@ -19,6 +21,8 @@ export const jobRows = Object.entries({
     "BAD_BRANCH",
     "CLOSED_PR",
     "CI_REQUIRED",
+    "LEFT_QUEUE",
+    "QUEUE_TIMEOUT",
   ].includes(id)
     ? "6"
     : "4",
@@ -29,6 +33,8 @@ export const jobRows = Object.entries({
     "BAD_BRANCH",
     "CLOSED_PR",
     "CI_REQUIRED",
+    "LEFT_QUEUE",
+    "QUEUE_TIMEOUT",
   ].includes(id)
     ? ["merge"]
     : id === "STALE_CHECK"
