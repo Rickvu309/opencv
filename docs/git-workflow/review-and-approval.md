@@ -23,10 +23,10 @@ The `ci` check runs parallel affected guards, lint, typecheck, build, two API te
 
 ## How an agent merges
 
-1. Run `scripts/ocv-tools.mjs check`, then open the PR with `scripts/ocv-tools.mjs finish --body-file <file>`. A draft stays a draft until `gh pr ready <pr#>`.
+1. Open the PR with `scripts/ocv-tools.mjs finish --body-file <file>`. A PR opened with `--draft` stays a draft until `gh pr ready <pr#>`.
 2. Wait until the `ci` check on the PR head is success.
 3. From the main checkout, `scripts/ocv-tools.mjs merge <pr#>` enqueues the PR with `--squash --match-head-commit`.
-4. Wait for the queue to merge. Its `merge_group` run checks all packages and whole-repo formatting; every job must succeed for `ci` to pass. Run `scripts/ocv-tools.mjs merge <pr#> --wait` as a background command; it exits when the PR merges, closes the linked issue, and fails if the PR leaves the queue or 45 minutes pass. A PR watcher does not wake an agent for a queue merge. Then cleanup can remove the worktree.
+4. Wait for the queue to merge. Its `merge_group` run checks all packages and whole-repo formatting; every job must succeed for `ci` to pass. Run `scripts/ocv-tools.mjs merge <pr#> --wait` as a background command; it exits when the PR merges, closes the linked issue, and fails if the PR leaves the queue or 45 minutes pass. A PR watcher does not wake an agent for a queue merge. The merge also removes the worktree and branches; run `scripts/ocv-tools.mjs cleanup <issue#>` only when it says cleanup needs a hand.
 
 Before the queue rule is applied, the same command merges directly. With the queue enabled, GitHub enqueues a green PR without requiring `--auto`. If GitHub refuses because auto-merge is disabled, the owner enables it with `gh api -X PATCH repos/Rickvu309/opencv -F allow_auto_merge=true`. Never use `--admin`.
 

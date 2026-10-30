@@ -274,10 +274,47 @@ test("every checked rule has a failing and a passing fact", () => {
     "commit(s) abc1234 carry an attribution trailer, which the commit-msg hook refuses: they were made without that hook (the hook-skip flag, a cherry-pick or a rebase)"
   )
   check(
+    "NO_AI_ATTRIBUTION",
+    { commits: { trailers: "this message" } },
+    { commits: { trailers: "" } },
+    "the commit message carries an attribution trailer"
+  )
+  check(
+    "ON_MAIN",
+    { commit: { branch: "main", first: "x" } },
+    { commit: { branch: "feat/1-x", first: "x" } },
+    "committing on main is not allowed; work on a task branch in your own worktree"
+  )
+  check(
+    "EMPTY_MESSAGE",
+    { commit: { branch: "feat/1-x", first: "" } },
+    { commit: { branch: "feat/1-x", first: null } },
+    "the commit message has no first line"
+  )
+  check(
+    "NO_PUSH_MAIN",
+    { push: { refs: [{ branch: "main", deleting: false }] } },
+    { push: { refs: [{ branch: "feat/1-x", deleting: false }] } },
+    "pushing to main is not allowed"
+  )
+  check(
+    "BRANCH_NAME",
+    { push: { refs: [{ branch: "bad-name", deleting: false }] } },
+    {
+      push: {
+        refs: [
+          { branch: "bad-name", deleting: true },
+          { branch: "dependabot/npm/x", deleting: false },
+        ],
+      },
+    },
+    `branch 'bad-name' does not match type/<issue#>-short-description (types: ${TYPE_LIST})`
+  )
+  check(
     "FILE_SIZE",
     { commits: { oversize: "big.mjs (20001 bytes) " } },
     { commits: {} },
-    "file(s) over the 20000-byte pre-commit limit: big.mjs (20001 bytes); a commit this size passes only with the hook-skip flag. Split each file as .githooks/pre-commit says, then run the fix"
+    "file(s) over the 20000-byte limit (5000 tokens): big.mjs (20001 bytes)"
   )
   check(
     "NOT_HIGH_RISK",
@@ -538,49 +575,6 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
     "NOT_A_TASK"
   )
   assert.equal(decide("save", { here: { ok: false } }).refusals.length, 1)
-})
-
-test("the rules guide is generated from the table", () => {
-  const md = renderRulesDoc()
-  assert.match(md, /\| rule \| what makes it fail \| fix \| jobs \|/)
-  for (const row of RULES) assert.ok(md.includes(row.id), row.id)
-  assert.match(md, /OTHER_WORKTREE \(2\).*Nothing/)
-  for (const { path, table } of RULE_GUIDES)
-    assert.equal(rulesDocMatches(readFileSync(path, "utf8"), table), true)
-})
-
-test("rules --check fails on a stale block and --write repairs the fake", () => {
-  const ports = fakePorts()
-  const ctx = ctxFor(ports)
-  const fresh = readFileSync(RULES_DOC, "utf8")
-  assert.equal(runCli(["rules", "--check"], ctx).code, 0)
-  ports.fs.write(
-    RULES_DOC,
-    fresh.replaceAll("NOT_AN_ISSUE", "NOT_AN_ISSUE_STALE")
-  )
-  const stale = runCli(["rules", "--check"], ctx)
-  assert.equal(stale.code, 1)
-  assert.match(stale.text, /Fix: Run: scripts\/ocv-tools\.mjs rules --write/)
-  assert.equal(runCli(["rules", "--write"], ctx).code, 0)
-  assert.equal(runCli(["rules", "--check"], ctx).code, 0)
-  const delivery = RULE_GUIDES[1].path
-  ports.fs.write(
-    delivery,
-    ports.fs.read(delivery).replaceAll("CHECK_REQUIRED", "STALE")
-  )
-  assert.equal(runCli(["rules", "--check"], ctx).code, 1)
-  assert.equal(runCli(["rules", "--write"], ctx).code, 0)
-  assert.equal(runCli(["rules", "--check"], ctx).code, 0)
-  const listed = runCli(["rules", "--list"], ctx)
-  assert.equal(listed.code, 0)
-  assert.match(listed.text, /NOT_AN_ISSUE:/)
-  assert.match(listed.text, /\nNext: /)
-})
-
-test("doctor lists every rule from the table", () => {
-  const { text } = runCli(["doctor"], ctxFor(fakePorts()))
-  assert.match(text, /Rules:/)
-  for (const row of RULES) assert.match(text, new RegExp(`  ${row.id}:`))
 })
 
 test("cli refusal text matches the table", () => {

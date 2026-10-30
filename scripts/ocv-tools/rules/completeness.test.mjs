@@ -26,7 +26,6 @@ function sources(dir, out = []) {
 const FORWARDING = new Set([
   "jobs/common.mjs:Refused:code", // Delivery boundary forwards its literal caller code.
   "jobs/common.mjs:evaluate:code", // Delivery precondition with its boundary message.
-  "jobs/common.mjs:evaluate:id", // gate forwards the literal rule id.
   "rules/index.mjs:Refused:refusal.id", // Converts a decide/evaluate result.
   "shot.mjs:evaluate:id", // refuse forwards its literal caller's id.
   "approve.mjs:evaluate:id", // Same wrapper as shot.
@@ -42,7 +41,7 @@ function raisedCodes(inputs, rows) {
       if (
         (ts.isCallExpression(node) || ts.isNewExpression(node)) &&
         ts.isIdentifier(node.expression) &&
-        ["Refused", "refused", "refuse", "gate", "evaluate", "decide"].includes(
+        ["Refused", "refused", "refuse", "evaluate", "decide"].includes(
           node.expression.text
         )
       ) {
@@ -70,7 +69,7 @@ function raisedCodes(inputs, rows) {
     visit(ast)
   }
   for (const row of rows) {
-    const moments = row.at ?? row.jobs
+    const moments = row.at
     if (row.check && moments.some((job) => jobs.has(job))) codes.add(row.id)
   }
   return codes
@@ -110,17 +109,17 @@ test("rule markers and hereFact stay private", () => {
 test("every raised refusal code has a row, and every row is raised", () => {
   checkCoverage(inputs(), RULES)
   for (const id of ["MISSING_FILE", "BAD_PICTURE", "TOO_BIG", "TOO_MANY"])
-    assert.ok(RULES.find((row) => row.id === id).jobs.includes("shot"), id)
+    assert.ok(RULES.find((row) => row.id === id).at.includes("shot"), id)
   const approval = RULES.find((row) => row.id === "NOT_HIGH_RISK")
-  assert.ok(approval.jobs.includes("approve"))
+  assert.ok(approval.at.includes("approve"))
   const owner = RULES.find((row) => row.id === "NOT_OWNER")
-  assert.ok(owner.jobs.includes("release"))
-  assert.ok(owner.jobs.includes("approve"))
+  assert.ok(owner.at.includes("release"))
+  assert.ok(owner.at.includes("approve"))
   assert.match(owner.says, /release/)
   assert.match(owner.says, /approve/)
   const history = RULES.find((row) => row.id === "UNKNOWN")
-  assert.ok(history.jobs.includes("board"))
-  assert.ok(history.jobs.includes("shot"))
+  assert.ok(history.at.includes("board"))
+  assert.ok(history.at.includes("shot"))
   assert.match(history.says, /board/)
 })
 
@@ -178,7 +177,7 @@ test("coverage rejects new calls without rows for every raising helper", () => {
 })
 
 test("coverage rejects dead rows, including codes only present in FIXES", () => {
-  const row = { id: "DEAD_CODE_Y", kind: "precondition", jobs: ["unused"] }
+  const row = { id: "DEAD_CODE_Y", kind: "precondition", at: ["unused"] }
   assert.throws(() => checkCoverage([], [row]), /DEAD_CODE_Y is not raised/)
   assert.throws(
     () =>
@@ -228,7 +227,7 @@ test("coverage follows decide jobs and refuses unknown dynamic calls", () => {
   const row = {
     id: "JOB_CODE",
     kind: "rule",
-    jobs: ["save"],
+    at: ["save"],
     check: () => "bad",
   }
   checkCoverage([["job.mjs", 'decide("save", {})']], [row])

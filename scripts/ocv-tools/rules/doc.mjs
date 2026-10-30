@@ -1,6 +1,6 @@
 // The generated rules block in docs/git-workflow/rule-enforcement.md.
 import { fileURLToPath } from "node:url"
-import { RULES } from "./index.mjs"
+import { RULES, layerOf } from "./index.mjs"
 
 const BEGIN = "<!-- rules:begin -->"
 const END = "<!-- rules:end -->"
@@ -8,17 +8,25 @@ export const RULES_DOC = fileURLToPath(
   new URL("../../../docs/git-workflow/rule-enforcement.md", import.meta.url)
 )
 
-// Keep the workflow and delivery tables in separate guides under the file limit.
+// Keep the workflow, delivery and hook tables in separate guides under the file limit.
+const isHook = (row) => row.at.includes("commit") || row.at.includes("push")
+const guide = (name) =>
+  fileURLToPath(new URL(`../../../docs/git-workflow/${name}`, import.meta.url))
+
 export const RULE_GUIDES = [
   {
     path: RULES_DOC,
-    table: RULES.filter((row) => !row.needs.includes("delivery")),
+    table: RULES.filter(
+      (row) => !row.needs.includes("delivery") && !isHook(row)
+    ),
   },
   {
-    path: fileURLToPath(
-      new URL("../../../docs/git-workflow/delivery-rules.md", import.meta.url)
-    ),
+    path: guide("delivery-rules.md"),
     table: RULES.filter((row) => row.needs.includes("delivery")),
+  },
+  {
+    path: guide("hook-rules.md"),
+    table: RULES.filter(isHook),
   },
 ]
 
@@ -75,20 +83,21 @@ function markedBlock(text) {
 
 export function renderRulesDoc(table = RULES) {
   const lines = [
-    "| rule | what makes it fail | fix | jobs |",
-    "| --- | --- | --- | --- |",
+    "| rule | what makes it fail | fix | at | holds against main |",
+    "| --- | --- | --- | --- | --- |",
   ]
   for (const row of table) {
     const rule = row.section ? `${row.id} (${row.section})` : row.id
     const fail =
       row.kind === "judgment" ? `${row.says} ${row.why ?? ""}`.trim() : row.says
     const fix = row.kind === "judgment" ? "Nothing" : row.fix({})
-    const jobs =
-      row.kind === "judgment" || row.jobs.length === 0
+    const at =
+      row.kind === "judgment" || row.at.length === 0
         ? "Nothing"
-        : row.jobs.join(", ")
+        : row.at.join(", ")
+    const held = layerOf(row) === "server" ? "yes" : "no"
     lines.push(
-      `| ${cell(rule)} | ${cell(fail)} | ${cell(fix)} | ${cell(jobs)} |`
+      `| ${cell(rule)} | ${cell(fail)} | ${cell(fix)} | ${cell(at)} | ${held} |`
     )
   }
   return lines.join("\n")

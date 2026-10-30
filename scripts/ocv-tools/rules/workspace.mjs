@@ -1,13 +1,14 @@
 // Rules about the workstation: the task worktree, the clean main checkout,
 // the assigned port, free disk and the checkout cleanup. Each check takes
 // the facts a job gathered and returns a refusal, or null when the rule holds.
+import { BRANCH_RE, TYPES } from "../fields.mjs"
 import { FIXES } from "../result.mjs"
 
 function rule(spec) {
   return {
     kind: "rule",
     needs: [],
-    jobs: [],
+    at: [],
     fix: () => FIXES[spec.id],
     ...spec,
   }
@@ -64,6 +65,27 @@ function skipDeclared(facts) {
   return "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named"
 }
 
+function noPushMain(facts) {
+  const hit = (facts.push?.refs ?? []).find((ref) => ref.branch === "main")
+  if (!hit) return null
+  return `${hit.deleting ? "deleting" : "pushing to"} main is not allowed`
+}
+
+const BOT_BRANCH = /^(dependabot|renovate)\//
+
+function branchName(facts) {
+  const bad = (facts.push?.refs ?? []).find(
+    (ref) =>
+      ref.branch != null &&
+      ref.branch !== "main" &&
+      !ref.deleting &&
+      !BRANCH_RE.test(ref.branch) &&
+      !BOT_BRANCH.test(ref.branch)
+  )
+  if (!bad) return null
+  return `branch '${bad.branch}' does not match type/<issue#>-short-description (types: ${TYPES.join(", ")})`
+}
+
 function disk(facts) {
   if (!facts.disk?.text) return null
   return facts.disk.text
@@ -110,7 +132,7 @@ export const workspaceRows = [
     kind: "precondition",
     section: "2",
     says: "This folder must be a linked task worktree on a type and issue branch.",
-    jobs: ["save", "release", "cleanup", "shot"],
+    at: ["save", "release", "cleanup", "shot"],
     needs: ["here"],
     stop: true,
     check: notATask,
@@ -120,7 +142,7 @@ export const workspaceRows = [
     id: "MAIN_CLEAN",
     section: "2",
     says: "The main checkout stays on main with no edited tracked file.",
-    jobs: ["open"],
+    at: ["finish"],
     needs: ["main"],
     check: mainClean,
     fix: mainFix,
@@ -129,7 +151,7 @@ export const workspaceRows = [
     id: "PORT",
     section: "2",
     says: "The worktree .env keeps the port ocv-tools take assigned.",
-    jobs: ["open"],
+    at: ["finish"],
     needs: ["port"],
     check: portRule,
     fix: portFix,
@@ -138,17 +160,38 @@ export const workspaceRows = [
     id: "SKIP_DECLARED",
     section: "5",
     says: "SKIP_CHECKS=1 needs a human named in SKIP_CHECKS_DECLARED_BY.",
-    jobs: ["open"],
+    at: ["push", "finish"],
     needs: ["env"],
     check: skipDeclared,
-    fix: () => "env -u SKIP_CHECKS scripts/ocv-tools.mjs check",
+    fix: () =>
+      "unset SKIP_CHECKS, or name the human who declared the emergency in SKIP_CHECKS_DECLARED_BY",
+  }),
+  rule({
+    id: "NO_PUSH_MAIN",
+    section: "5",
+    says: "Nothing is pushed to main or deletes it; main changes only through the merge queue.",
+    at: ["push"],
+    needs: ["push"],
+    check: noPushMain,
+    fix: () =>
+      "Push your task branch and open a PR: scripts/ocv-tools.mjs finish --body-file <file>",
+  }),
+  rule({
+    id: "BRANCH_NAME",
+    section: "3",
+    says: "A pushed branch is named type/<issue#>-short-description (bot branches dependabot/ and renovate/ pass).",
+    at: ["push"],
+    needs: ["push"],
+    check: branchName,
+    fix: () =>
+      "Rename it: git branch -m type/<issue#>-short-description (see docs/git-workflow/branch-naming.md)",
   }),
   rule({
     id: "DISK",
     kind: "precondition",
     section: "2",
     says: "There must be enough free disk for a worktree and an install.",
-    jobs: ["take"],
+    at: ["take"],
     needs: ["disk"],
     cause: (facts) => facts.disk?.cause,
     check: disk,
@@ -157,7 +200,7 @@ export const workspaceRows = [
     id: "WORKTREE_EXISTS",
     section: "2",
     says: "An issue cannot have a second worktree.",
-    jobs: ["take"],
+    at: ["take"],
     needs: ["issue", "local"],
     check: worktreeExists,
   }),
@@ -166,7 +209,7 @@ export const workspaceRows = [
     kind: "precondition",
     section: "6",
     says: "Cleanup needs a local worktree under the worktree root.",
-    jobs: ["cleanup"],
+    at: ["cleanup"],
     needs: ["local"],
     stop: true,
     check: noWorktree,
@@ -175,7 +218,7 @@ export const workspaceRows = [
     id: "DIRTY",
     section: "6",
     says: "Cleanup waits while the worktree has unsaved work.",
-    jobs: ["cleanup"],
+    at: ["cleanup"],
     needs: ["work"],
     check: dirty,
   }),
@@ -183,7 +226,7 @@ export const workspaceRows = [
     id: "NOT_MERGED",
     section: "6",
     says: "Cleanup waits for the queue to merge.",
-    jobs: ["cleanup"],
+    at: ["cleanup"],
     needs: ["work"],
     check: notMerged,
   }),
@@ -192,7 +235,7 @@ export const workspaceRows = [
     kind: "precondition",
     section: "2",
     says: "Commands that touch a checkout run inside the opencv repository.",
-    jobs: ["take", "save", "release", "cleanup"],
+    at: ["take", "save", "release", "cleanup"],
     needs: ["repo"],
     check: notARepo,
   }),

@@ -67,8 +67,7 @@ Every change starts with a GitHub issue, and every issue gets its own branch and
 
 ```bash
 scripts/ocv-tools.mjs take <issue#> -d "short description"   # branch + worktree
-scripts/ocv-tools.mjs check                                  # quick checks
-scripts/ocv-tools.mjs finish --draft --body-file <file>      # push, PR
+scripts/ocv-tools.mjs finish --body-file <file>              # rules, push, PR
 ```
 
 Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow.

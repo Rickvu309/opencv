@@ -561,6 +561,7 @@ export function ctxFor(ports, extra = {}) {
     pause: (seconds) => ports.clock.pause(seconds),
     nodeVersion: extra.nodeVersion ?? "v22.1.0",
     cwd: extra.cwd ?? ports.state.cwd,
+    readStdin: () => extra.stdin ?? "",
     readFile: (path) => ports.fs.read(path),
     writeFile: (path, text) => ports.fs.write(path, text),
     writeScratch: (name, text) => ports.fs.scratch(name, text),

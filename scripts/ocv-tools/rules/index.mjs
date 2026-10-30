@@ -1,8 +1,7 @@
 // The one rule table. Rows live in the subject files (pull, diff, commits,
 // workspace, claim, table, jobs) and only this module imports them. Every row
-// has `at`, the moments it runs at; decide(moment, facts) is how a runner
-// fires them. The old job names stay on `jobs` until the doc table drops the
-// column.
+// has `at`, the moments it runs at (judgments run nowhere); decide(moment,
+// facts) is how a runner fires them.
 import { Refused } from "../result.mjs"
 import { jobRows } from "./jobs.mjs"
 import { issueRows, claimRows } from "./claim.mjs"
@@ -27,29 +26,15 @@ export const MOMENTS = Object.freeze([
 ])
 
 // One runner per moment: the file that gathers the moment's facts and fires
-// its rows. layers.test.mjs holds this list against the tree.
+// its rows. The git hooks are shims over the hook job. layers.test.mjs holds this list against the tree.
 export const RUNNERS = Object.freeze({
-  commit: [".githooks/commit-msg", ".githooks/pre-commit"],
-  push: [".githooks/pre-push"],
+  commit: ["scripts/ocv-tools/jobs/hook.mjs"],
+  push: ["scripts/ocv-tools/jobs/hook.mjs"],
   take: ["scripts/ocv-tools/take.mjs"],
   save: ["scripts/ocv-tools/work.mjs"],
   finish: ["scripts/ocv-tools/jobs/finish.mjs"],
   pr: ["scripts/ocv-tools/jobs/policy.mjs", "scripts/ocv-tools/jobs/merge.mjs"],
 })
-
-// Old job names map onto moments; a job with no moment of its own keeps its
-// name so the old callers keep working.
-const JOB_MOMENTS = { open: "finish", check: "finish", merge: "pr" }
-
-function withMoments(row) {
-  if (row.at) return Object.freeze(row)
-  const at = []
-  for (const job of row.jobs) {
-    const moment = JOB_MOMENTS[job] ?? job
-    if (!at.includes(moment)) at.push(moment)
-  }
-  return Object.freeze({ ...row, at: Object.freeze(at) })
-}
 
 const [notATask, ...workspaceRest] = workspaceRows
 const rows = [
@@ -65,7 +50,7 @@ const rows = [
   ...judgmentRows,
 ]
 
-export const RULES = Object.freeze(rows.map(withMoments))
+export const RULES = Object.freeze(rows.map((row) => Object.freeze(row)))
 
 // A rule is server-held when one of its moments is the live pull request.
 export function layerOf(row) {

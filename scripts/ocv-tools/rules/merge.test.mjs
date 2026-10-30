@@ -18,7 +18,7 @@ test("MASS_DELETE trips on files, lines or percent, each at its own limit", () =
   )
   assert.equal(rule.check(del(10, 0, 100)), null)
   assert.equal(rule.check({ diff: {} }), null)
-  assert.deepEqual(rule.jobs, ["merge"])
+  assert.deepEqual(rule.at, ["finish", "pr"])
   assert.match(rule.fix({}), /needs-human-review/)
 })
 
@@ -44,5 +44,5 @@ test("PR_METADATA wants the title number, the closing line and an open issue", (
     rule.check({ pull: { ...ok, issueState: "CLOSED" } }),
     /issue #9 is closed/
   )
-  assert.deepEqual(rule.jobs, ["merge"])
+  assert.deepEqual(rule.at, ["finish", "pr"])
 })

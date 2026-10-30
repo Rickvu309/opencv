@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# The hook is a shim over `ocv-tools hook pre-commit`; the throwaway repo links this checkout's scripts and
+# node_modules, and refusals print on stdout, so both streams are read.
 # Each case runs the hook in a throwaway repo, because the hook reads the staged index.
 # pre-push exports GIT_DIR, which would make that repo read this worktree.
 set -euo pipefail
@@ -12,7 +14,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
 repo=$tmp/repo
-header='How to split (follow in order):'
+header='Split each file by responsibility'
 
 fresh() {
   rm -rf "$repo"
@@ -21,6 +23,8 @@ fresh() {
   git -C "$repo" config user.email test@example.com
   git -C "$repo" config core.hooksPath /dev/null
   ln -s "$root/node_modules" "$repo/node_modules"
+  ln -s "$root/scripts" "$repo/scripts"
+  printf '%s\n' scripts node_modules >>"$repo/.git/info/exclude"
   # The size cases stage files that are not valid prettier input; the format cases call fresh_format instead.
   echo '*' >"$repo/.prettierignore"
   cd "$repo"
@@ -46,7 +50,7 @@ bytes_of() {
 
 run() {
   set +e
-  "$hook" >"$tmp/out" 2>"$tmp/err"
+  "$hook" >"$tmp/err" 2>&1
   code=$?
   set -e
 }
@@ -69,13 +73,13 @@ expect_block() {
   local name=$1
   shift
   run
-  [[ "$code" -eq 1 ]] || fail "$name" "exit $code, want 1"
+  [[ "$code" -eq 2 ]] || fail "$name" "exit $code, want 2"
   grep -F -q -- "$header" "$tmp/err" || fail "$name" "stderr missing split instructions"
   local needle
   for needle in "$@"; do
     grep -F -q -- "$needle" "$tmp/err" || fail "$name" "stderr missing $needle"
   done
-  printf 'ok: %s (exit 1)\n' "$name"
+  printf 'ok: %s (exit 2)\n' "$name"
 }
 
 fresh
@@ -91,7 +95,7 @@ expect_pass 'exactly 20000 bytes'
 fresh
 bytes_of 20001 >edge.ts
 git add edge.ts
-expect_block '20001 bytes' 'edge.ts: 5001 tokens (20001 bytes), limit 5000 tokens (20000 bytes)' 'at least 2 parts'
+expect_block '20001 bytes' 'edge.ts (20001 bytes)'
 
 fresh
 bytes_of 100 >grow.ts
@@ -103,7 +107,7 @@ fresh
 bytes_of 30000 >trim.ts
 git add trim.ts
 bytes_of 100 >trim.ts
-expect_block 'staged big, worktree trimmed' 'trim.ts: 7500 tokens (30000 bytes)' 'at least 2 parts'
+expect_block 'staged big, worktree trimmed' 'trim.ts (30000 bytes)'
 
 fresh
 { head -c 30000 /dev/zero; echo text; } >blob.glb
@@ -120,12 +124,12 @@ fresh
 bytes_of 30000 >lock.yaml
 printf '%s\n' 'lock.yaml linguist-generated=false' >.gitattributes
 git add lock.yaml .gitattributes
-expect_block 'big file with the attribute unset' 'lock.yaml: 7500 tokens'
+expect_block 'big file with the attribute unset' 'lock.yaml (30000 bytes)'
 
 fresh
 bytes_of 30000 >lock.yaml
 git add lock.yaml
-expect_block 'same big file without the attribute' 'lock.yaml: 7500 tokens'
+expect_block 'same big file without the attribute' 'lock.yaml (30000 bytes)'
 
 fresh
 bytes_of 30000 >old.ts
@@ -137,14 +141,14 @@ expect_pass 'deleting a big committed file'
 fresh
 bytes_of 30000 >'big file.ts'
 git add 'big file.ts'
-expect_block 'big path with a space' 'big file.ts: 7500 tokens'
+expect_block 'big path with a space' 'big file.ts (30000 bytes)'
 
 fresh
 bytes_of 30000 >one.ts
 bytes_of 41000 >two.md
 bytes_of 100 >three.ts
 git add one.ts two.md three.ts
-expect_block 'two big files' 'one.ts: 7500 tokens' 'two.md: 10250 tokens' 'at least 3 parts' '2 staged file(s)'
+expect_block 'two big files' 'one.ts (30000 bytes)' 'two.md (41000 bytes)'
 if grep -F -q 'three.ts' "$tmp/err"; then
   fail 'two big files' 'listed a file under the limit'
 fi
@@ -153,7 +157,7 @@ fresh
 bytes_of 30000 >f.ts
 printf '%s\n' 'f.ts -diff' >.gitattributes
 git add f.ts .gitattributes
-expect_block 'big text file with the -diff attribute' 'f.ts: 7500 tokens'
+expect_block 'big text file with the -diff attribute' 'f.ts (30000 bytes)'
 
 fresh
 bytes_of 30000 >lock.yaml
@@ -165,7 +169,7 @@ expect_pass 'linguist-generated read from the staged .gitattributes'
 fresh
 bytes_of 30000 >'1:big.ts'
 git add -- '1:big.ts'
-expect_block 'big path that looks like a stage revision' '1:big.ts: 7500 tokens'
+expect_block 'big path that looks like a stage revision' '1:big.ts (30000 bytes)'
 
 fresh
 bytes_of 100 >grow.ts
@@ -174,11 +178,11 @@ git commit -q -m seed
 bytes_of 30000 >grow.ts
 git config core.hooksPath "$(dirname "$hook")"
 set +e
-git commit -q -a -m x >"$tmp/out" 2>"$tmp/err"
+git commit -q -a -m x >"$tmp/err" 2>&1
 code=$?
 set -e
 [[ "$code" -ne 0 ]] || fail 'git commit -a with a grown file' 'commit succeeded'
-grep -F -q 'grow.ts: 7500 tokens' "$tmp/err" || fail 'git commit -a with a grown file' 'stderr missing grow.ts'
+grep -F -q 'grow.ts (30000 bytes)' "$tmp/err" || fail 'git commit -a with a grown file' 'stderr missing grow.ts'
 printf 'ok: git commit -a with a grown file (exit %s)\n' "$code"
 
 fresh_format
@@ -200,13 +204,13 @@ git add a.ts
 printf 'const a  =  1;\nconst b  =  2;\n' >a.ts
 before=$(git show :a.ts)
 run
-[[ "$code" -eq 1 ]] || fail 'partly staged unformatted file' "exit $code, want 1"
+[[ "$code" -eq 2 ]] || fail 'partly staged unformatted file' "exit $code, want 2"
 grep -F -q "pnpm exec prettier --write 'a.ts'" "$tmp/err" || fail 'partly staged unformatted file' 'stderr missing the fix command'
 grep -F -q "git add -p" "$tmp/err" || fail 'partly staged unformatted file' 'stderr missing git add -p'
 ! grep -F -q "&& git add 'a.ts'" "$tmp/err" || fail 'partly staged unformatted file' 'stderr advises staging the whole file'
 [[ "$(git show :a.ts)" == "$before" ]] || fail 'partly staged unformatted file' 'index changed'
 [[ "$(cat a.ts)" == $'const a  =  1;\nconst b  =  2;' ]] || fail 'partly staged unformatted file' 'worktree changed'
-printf 'ok: partly staged unformatted file (exit 1)\n'
+printf 'ok: partly staged unformatted file (exit 2)\n'
 
 fresh_format
 printf 'const a = 1\n' >a.ts
@@ -274,7 +278,7 @@ printf 'const a  =  2;\n' >a.ts
 printf 'changed\n' >other.txt
 git add other.txt
 set +e
-git commit -q -m 'path commit' a.ts >"$tmp/out" 2>"$tmp/err"
+git commit -q -m 'path commit' a.ts >"$tmp/err" 2>&1
 code=$?
 set -e
 [[ "$code" -eq 1 ]] || fail 'git commit <path> of an unformatted file' "exit $code, want 1"

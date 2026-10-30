@@ -89,9 +89,9 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 4. Checks, commits, and PRs
 
-- The pre-push hook runs `pnpm check`: affected tasks, guards and formatting. CI runs affected lint, types, build and tests, plus guards.
-- Run `scripts/ocv-tools.mjs check`, then `scripts/ocv-tools.mjs finish --draft --body-file <file>`. Use the `pr` skill (Summary, Evidence, Merge Danger). Finish requires proof for the saved tree and base, pushes, and opens `type: description (#<issue>)` with `Closes #<issue>`.
-- Mark it ready with `gh pr ready` when the quick check passes. Run verify skills by hand (`.claude/skills/verify-opencv`). No preview deploys.
+- The git hooks run the one rule table (`scripts/ocv-tools/rules`). At commit: format, file size and attribution. At push: no push to main, branch name, then `pnpm check` (affected tasks, guards and formatting). CI runs affected lint, types, build, tests and guards, plus the `policy` job.
+- Run `scripts/ocv-tools.mjs finish --body-file <file>` (add `--draft` to open a draft). Use the `pr` skill (Summary, Evidence, Merge Danger). Finish runs the pull request rules early, pushes through the hooks, and opens `type: description (#<issue>)` with `Closes #<issue>`.
+- A draft is optional. Mark a draft ready with `gh pr ready` once the evidence is attached. Run verify skills by hand (`.claude/skills/verify-opencv`). No preview deploys.
 - CI is hosted. Run local checks serially. `scripts/check.mjs` sets `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
 - Rebase when the branch does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
@@ -113,12 +113,11 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 - From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, a mass deletion (over 25 authored files, 2000 lines or 10% of authored files; add `needs-human-review`), a wrong title, missing `Closes #n` or a closed issue, ci without success on the head, and gate changes without `risk:high` (`ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs`, `.github/rulesets/main.json`). It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
-- After the queue accepts the PR, run `scripts/ocv-tools.mjs merge <pr#> --wait` as a background command (`run_in_background`) and end the turn. It exits when the PR merges (and closes the linked issues), when the PR leaves the queue, or after 45 minutes. A PR watcher does not wake you for a queue merge, so a turn that ends without this background job is stuck. When it exits, run `cleanup` in the same turn. The remote branch is deleted.
-- From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
+- After the queue accepts the PR, run `scripts/ocv-tools.mjs merge <pr#> --wait` as a background command (`run_in_background`) and end the turn. It exits when the PR merges (and closes the linked issues), when the PR leaves the queue, or after 45 minutes. A PR watcher does not wake you for a queue merge, so a turn that ends without this background job is stuck. When it exits, the worktree and branches are already removed; run `scripts/ocv-tools.mjs cleanup <issue#>` from the main checkout only when it says cleanup needs a hand.
 
 #### 7. Production is broken
 
-- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/ocv-tools.mjs check` then `scripts/ocv-tools.mjs finish --body-file <file>`, and merge with `scripts/ocv-tools.mjs merge` once `ci` is green.
+- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/ocv-tools.mjs finish --body-file <file>`, and merge with `scripts/ocv-tools.mjs merge` once `ci` is green.
 - If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
 
 #### Review agent checklist

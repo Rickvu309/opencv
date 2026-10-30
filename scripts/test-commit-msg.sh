@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# The hook is a shim over `ocv-tools hook commit-msg`; the refusals print on stdout, so both streams are read.
 # The main-branch case needs its own repo: the hook reads the current HEAD.
 # pre-push exports GIT_DIR, which would make that repo read this worktree.
 set -euo pipefail
@@ -15,7 +16,7 @@ trap 'rm -rf "$tmp"' EXIT
 run() {
   local file=$1
   set +e
-  "$hook" "$file" >"$tmp/out" 2>"$tmp/err"
+  "$hook" "$file" >"$tmp/err" 2>&1
   code=$?
   set -e
 }
@@ -37,13 +38,13 @@ expect() {
 }
 
 printf '%s\n' 'feat: slide editor foundation (#62)' '' 'Co-authored-by: Cursor <cursoragent@cursor.com>' >"$tmp/cursor"
-expect 1 'cursor trailer' "$tmp/cursor" 'refusing attribution trailer'
+expect 2 'cursor trailer' "$tmp/cursor" 'NO_AI_ATTRIBUTION'
 
 printf '%s\n' 'chore: reject attribution trailers (#128)' '' '  CO-AUTHORED-BY: Cursor <cursoragent@cursor.com>' >"$tmp/upper"
-expect 1 'uppercase trailer' "$tmp/upper" 'refusing attribution trailer'
+expect 2 'uppercase trailer' "$tmp/upper" 'NO_AI_ATTRIBUTION'
 
 printf '%s\n' 'chore: reject attribution trailers (#128)' '' 'Generated-with: some-tool' >"$tmp/gen"
-expect 1 'generated-with trailer' "$tmp/gen" 'refusing attribution trailer'
+expect 2 'generated-with trailer' "$tmp/gen" 'NO_AI_ATTRIBUTION'
 
 printf '%s\n' \
   'chore: reject attribution trailers (#128)' \
@@ -52,7 +53,7 @@ printf '%s\n' \
   'See the note on Co-authored-by: it is a trailer only at line start.' \
   >"$tmp/prose"
 expect 0 'prose mention' "$tmp/prose"
-if grep -F -q 'refusing attribution trailer' "$tmp/err"; then
+if grep -F -q 'NO_AI_ATTRIBUTION' "$tmp/err"; then
   echo 'FAIL prose mention: rejected a non-trailer line' >&2
   exit 1
 fi
@@ -61,7 +62,7 @@ printf '%s\n' 'chore: reject attribution trailers (#128)' '# Co-authored-by: Cur
 expect 0 'comment line' "$tmp/comment"
 
 printf '%s\n' '# comment only' '' >"$tmp/empty"
-expect 1 'empty subject' "$tmp/empty" 'empty commit message'
+expect 2 'empty subject' "$tmp/empty" 'EMPTY_MESSAGE'
 
 printf '%s\n' 'chore: reject attribution trailers (#128)' >"$tmp/clean"
 expect 0 'clean subject' "$tmp/clean"
@@ -76,18 +77,19 @@ fi
 
 main_repo=$tmp/main-repo
 git init -q -b main "$main_repo"
+ln -s "$root/scripts" "$main_repo/scripts"
 printf '%s\n' 'chore: reject attribution trailers (#128)' >"$tmp/main-msg"
 (
   cd "$main_repo"
   set +e
-  "$hook" "$tmp/main-msg" >"$tmp/out" 2>"$tmp/err"
+  "$hook" "$tmp/main-msg" >"$tmp/err" 2>&1
   code=$?
   set -e
   if [[ "$code" -eq 0 ]]; then
     echo 'FAIL main branch: hook exited 0' >&2
     exit 1
   fi
-  if ! grep -F -q 'committing on main is not allowed' "$tmp/err"; then
+  if ! grep -F -q 'ON_MAIN: committing on main is not allowed' "$tmp/err"; then
     echo 'FAIL main branch: stderr missing main rejection' >&2
     cat "$tmp/err" >&2
     exit 1

@@ -17,6 +17,9 @@ export function realRunner() {
       encoding: "utf8",
       cwd: options.cwd,
       env: childEnv(cmd, options),
+      input: options.input,
+      // inherit streams the child's output to the terminal and captures none.
+      stdio: options.inherit ? ["ignore", "inherit", "inherit"] : undefined,
       maxBuffer: 32 * 1024 * 1024,
     })
     const stdout = r.stdout ?? ""

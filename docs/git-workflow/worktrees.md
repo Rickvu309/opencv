@@ -41,7 +41,7 @@ Options: `-d` branch words, `--type` (`feat`, `fix`, `hotfix`, `refactor`, `chor
 
 `--resume` checks out a branch an idle holder already pushed (`scripts/ocv-tools.mjs take 42 --resume`) and records your claim. A local branch that is behind that push is fast-forwarded. A local branch that has diverged is refused, with a Fix line, so the pushed commits are not dropped. Without `--resume`, take refuses that branch and prints the resume command.
 
-When the work is ready for a PR, run `scripts/ocv-tools.mjs check`, then `scripts/ocv-tools.mjs finish --draft --body-file <file>` inside the worktree.
+When the work is ready for a PR, run `scripts/ocv-tools.mjs finish --body-file <file>` inside the worktree (add `--draft` to open a draft).
 
 ## Rules
 

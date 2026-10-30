@@ -11,14 +11,9 @@ export { approvalValid, riskOf }
 // without a line saying when to use it.
 export const COMMANDS = [
   {
-    name: "check",
-    usage: "check",
-    when: "Run the quick check and save proof for the committed tree and origin/main.",
-  },
-  {
     name: "finish",
     usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
-    when: "Require a passing check, push through hooks and open the PR with check proof.",
+    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft).",
   },
   {
     name: "merge",
@@ -29,6 +24,11 @@ export const COMMANDS = [
     name: "policy",
     usage: "policy <pr#>",
     when: "Evaluate the server-held PR rules against a live pull request and print one line per refusal, each with its fix. Exit 2 when a rule refuses.",
+  },
+  {
+    name: "hook",
+    usage: "hook <commit-msg <file> | pre-commit | pre-push>",
+    when: "What the git hooks in .githooks run: the commit and push rows of the rule table. Not for hand use.",
   },
   {
     name: "help",
@@ -118,7 +118,7 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   if (risk === "high" && !approved)
     return "Ask a project admin to comment /approve on the issue (high risk needs it after the last edit)."
   if (worktree)
-    return `Work in ${worktree}, then scripts/ocv-tools.mjs check, then scripts/ocv-tools.mjs finish --body-file <file> --draft`
+    return `Work in ${worktree}, then scripts/ocv-tools.mjs finish --body-file <file>`
   if (branch)
     return `git worktree add ../opencv.worktrees/${n}-work ${branch} (from the main checkout)`
   return `scripts/ocv-tools.mjs take ${n}`

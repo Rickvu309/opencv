@@ -10,7 +10,6 @@ export function fixture(over = {}) {
     dirty: "",
     mainDirty: "",
     mainBranch: "main",
-    checkOk: true,
     changed: [],
     commits: "feat: useful change (#90)",
     size: 100,
@@ -58,11 +57,6 @@ export function fixture(over = {}) {
       if (s.intercept) {
         const r = s.intercept(cmd, a, options, s)
         if (r) return r
-      }
-      if (cmd === "node") {
-        s.checkEnv = options.env
-        if (s.changeDuringCheck) s.tree = "changed"
-        return s.checkOk ? ok("checks passed") : fail()
       }
       if (cmd === "git") {
         if (a[0] === "-C")

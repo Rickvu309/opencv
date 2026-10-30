@@ -94,7 +94,7 @@ test("every moment a row uses has a runner that fires rows", () => {
     if (files.every((file) => file.endsWith(".mjs")))
       assert.match(
         text,
-        /decide\(|evaluate\(|gate\(|refuse\(/,
+        /decide\(|evaluate\(|refuse\(/,
         `no runner fires rows at ${moment}`
       )
   }
