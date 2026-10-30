@@ -2,7 +2,7 @@
   "frameId": "NAXQk",
   "frameName": "W1.5 Welcome",
   "route": "/apply",
-  "driver": "hold profile.update at the api boundary, see the 814 report; Welcome is transient",
+  "driver": ".claude/skills/verify-app-ui/scripts/verify-auth-welcome.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

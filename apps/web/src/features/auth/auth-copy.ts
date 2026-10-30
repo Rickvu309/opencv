@@ -24,7 +24,7 @@ export const AUTH_COPY = {
   sendFailed: "We could not send the code. Try again.",
   emailInvalid: "Use a full email, like name@example.com.",
   googleUnavailable: "Google sign-in is not available. Use your email.",
-  welcome: "Welcome to OpenCV",
+  welcome: "Welcome to opencv",
   accountCreated: "Account created",
   workspaceReady: "Workspace ready",
   coachReady: "Getting your coach ready",
