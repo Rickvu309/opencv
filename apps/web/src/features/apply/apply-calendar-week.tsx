@@ -16,21 +16,33 @@ import {
 } from "./apply-calendar-model.ts"
 
 const HOUR_PX = 58
-const BODY_MINUTES = HOURS.length * 60
+
+/** The visible hours, widened so no interview is drawn outside its own time. */
+function hoursFor(events: CalendarEvent[]) {
+  const timed = events.filter((event) => event.kind === "interview")
+  const first = Math.min(
+    FIRST_HOUR,
+    ...timed.map((event) => Math.floor(event.startMinutes / 60))
+  )
+  const last = Math.max(
+    HOURS[HOURS.length - 1] ?? FIRST_HOUR,
+    ...timed.map((event) => Math.ceil(event.endMinutes / 60))
+  )
+  return Array.from({ length: last - first + 1 }, (_, index) => first + index)
+}
 
 function EventBlock({
   event,
   lane,
   lanes,
+  firstHour,
 }: {
   event: CalendarEvent
   lane: number
   lanes: number
+  firstHour: number
 }) {
-  const start = Math.min(
-    Math.max(event.startMinutes - FIRST_HOUR * 60, 0),
-    BODY_MINUTES - 60
-  )
+  const start = event.startMinutes - firstHour * 60
   const { job } = event
   return (
     <div
@@ -66,6 +78,7 @@ export function WeekGrid({
   today: string
   events: CalendarEvent[]
 }) {
+  const hours = hoursFor(events)
   return (
     <div className="min-h-0 flex-1 overflow-x-auto px-6 pb-5">
       <div className="grid min-w-3xl grid-cols-[52px_repeat(7,minmax(0,1fr))]">
@@ -114,7 +127,7 @@ export function WeekGrid({
           </div>
         ))}
         <div>
-          {HOURS.map((hour) => (
+          {hours.map((hour) => (
             <div key={hour} style={{ height: HOUR_PX }}>
               <span
                 className={cn(
@@ -138,7 +151,7 @@ export function WeekGrid({
               column > 4 && "bg-foreground/[0.015]"
             )}
           >
-            {HOURS.map((hour) => (
+            {hours.map((hour) => (
               <div
                 key={hour}
                 className="border-t border-foreground/6"
@@ -155,6 +168,7 @@ export function WeekGrid({
                 event={event}
                 lane={lane}
                 lanes={lanes}
+                firstHour={hours[0] ?? FIRST_HOUR}
               />
             ))}
           </div>
