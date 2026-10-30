@@ -53,10 +53,13 @@
   padding: 10px 16px;
   border: 1px solid #e2e2e2;
   border-radius: 10px;
-  background-color: #ffffff;
   font-size: 14px;
   font-weight: 500;
   color: #1a1a1a;
+}
+
+[data-pen-surface="auth"] [data-slot="session-continue"]:not(:hover) {
+  background-color: #ffffff;
 }
 
 [data-pen-surface="auth"] [data-slot="session-footer"] {
@@ -71,6 +74,9 @@
   padding: 0;
   font-size: 13px;
   line-height: normal;
+}
+
+[data-pen-surface="auth"] [data-slot="session-footer"] button:not(:hover) {
   background-color: transparent;
 }
 
