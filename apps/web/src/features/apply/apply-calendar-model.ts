@@ -172,6 +172,11 @@ export function calendarEvents(jobs: JobView[]): CalendarEvent[] {
   })
 }
 
+export function eventsInDays(events: CalendarEvent[], days: string[]) {
+  const visibleDays = new Set(days)
+  return events.filter((event) => visibleDays.has(event.day))
+}
+
 export function eventsOn(events: CalendarEvent[], day: string) {
   return events
     .filter((event) => event.day === day)

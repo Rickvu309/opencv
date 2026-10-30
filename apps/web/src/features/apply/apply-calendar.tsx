@@ -1,5 +1,6 @@
 import { useMemo, useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -12,6 +13,7 @@ import {
   addDays,
   addMonths,
   calendarEvents,
+  eventsInDays,
   monthTitle,
   monthWeeks,
   rangeFor,
@@ -57,6 +59,7 @@ export function ApplyCalendar({
   location: string
   showClosed: boolean
 }) {
+  const navigate = useNavigate()
   const [anchor, dispatchAnchor] = useReducer(anchorReducer, undefined, () =>
     zonedYmd(new Date())
   )
@@ -73,15 +76,21 @@ export function ApplyCalendar({
   })
   const events = useMemo(
     () =>
-      calendarEvents(
-        (query.data ?? []).filter(
-          (job) =>
-            matches(job, company, location) &&
-            (showClosed || job.stage !== "closed")
-        )
+      eventsInDays(
+        calendarEvents(
+          (query.data ?? []).filter(
+            (job) =>
+              matches(job, company, location) &&
+              (showClosed || job.stage !== "closed")
+          )
+        ),
+        days
       ),
-    [query.data, company, location, showClosed]
+    [query.data, company, location, showClosed, days]
   )
+  const openJob = (jobId: string) => {
+    void navigate({ to: "/apply/$jobId", params: { jobId } })
+  }
   const unit = span === "week" ? "week" : "month"
   const step = (direction: 1 | -1) =>
     dispatchAnchor({
@@ -160,9 +169,15 @@ export function ApplyCalendar({
           month={anchor.slice(0, 7)}
           today={today}
           events={events}
+          onOpenJob={openJob}
         />
       ) : (
-        <WeekGrid days={days} today={today} events={events} />
+        <WeekGrid
+          days={days}
+          today={today}
+          events={events}
+          onOpenJob={openJob}
+        />
       )}
     </div>
   )

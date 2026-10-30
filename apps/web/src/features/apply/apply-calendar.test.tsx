@@ -5,11 +5,13 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
+import { calendarEvents, eventsInDays } from "./apply-calendar-model.ts"
 
 describe("apply calendar", () => {
   afterEach(() => {
@@ -48,7 +50,9 @@ describe("apply calendar", () => {
     expect(screen.getByText("8:00")).toBeInTheDocument()
     expect(screen.getByText("18:00")).toBeInTheDocument()
     const column = screen.getByRole("group", { name: dayLabel })
-    const block = within(column).getByRole("group", { name: "Week interview" })
+    const block = within(column).getByRole("button", {
+      name: "Interview 10:00 to 11:00: Week interview, Lumière Cosmetics",
+    })
     expect(within(block).getByText("10:00 to 11:00")).toBeInTheDocument()
     expect(within(block).getByText("Lumière Cosmetics")).toBeInTheDocument()
   })
@@ -63,8 +67,8 @@ describe("apply calendar", () => {
       }),
     ])
     renderApp("/apply?view=calendar&span=week&date=2026-10-30")
-    const block = await screen.findByRole("group", {
-      name: "Evening interview",
+    const block = await screen.findByRole("button", {
+      name: "Interview 20:00 to 21:00: Evening interview, Lumière Cosmetics",
     })
     expect(within(block).getByText("20:00 to 21:00")).toBeInTheDocument()
     // 08:00 is the first row, so 20:00 sits 12 hours of 58px down (+1px inset).
@@ -126,5 +130,109 @@ describe("apply calendar", () => {
     })
     expect(screen.getByText("Mon")).toBeInTheDocument()
     expect(screen.getByText("Sun")).toBeInTheDocument()
+  })
+
+  it("keeps only events on the displayed local calendar days", () => {
+    const firstDay = mockJob({
+      id: "01900000-0000-7000-8000-000000000041",
+      interviewAt: "2026-10-25T23:30:00.000Z",
+    })
+    const lastDay = mockJob({
+      id: "01900000-0000-7000-8000-000000000042",
+      deadline: "2026-11-01",
+    })
+    const adjacentDay = mockJob({
+      id: "01900000-0000-7000-8000-000000000043",
+      deadline: "2026-11-02",
+    })
+    const visible = eventsInDays(
+      calendarEvents([firstDay, lastDay, adjacentDay]),
+      [
+        "2026-10-26",
+        "2026-10-27",
+        "2026-10-28",
+        "2026-10-29",
+        "2026-10-30",
+        "2026-10-31",
+        "2026-11-01",
+      ]
+    )
+    expect(visible.map((event) => event.day)).toEqual([
+      "2026-10-26",
+      "2026-11-01",
+    ])
+  })
+
+  it("opens a month event's full job detail with its keyboard button", async () => {
+    const job = mockJob({
+      id: "01900000-0000-7000-8000-000000000044",
+      title: "A very long product role title that cannot fit in the month cell",
+      deadline: "2026-10-30",
+    })
+    setMockJobs([job])
+    const { router } = renderApp("/apply?view=calendar&span=month")
+    const user = userEvent.setup()
+    const event = await screen.findByRole("button", {
+      name: `Deadline: ${job.title}, ${job.company}`,
+    })
+    event.focus()
+    expect(event).toHaveFocus()
+    await user.keyboard("{Enter}")
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`/apply/${job.id}`)
+    )
+    expect(
+      await within(
+        await screen.findByRole("navigation", { name: "Breadcrumb" })
+      ).findByText(job.title)
+    ).toBeInTheDocument()
+  })
+
+  it("shows actual early and late interview times and retains the 18:30 start", async () => {
+    setMockJobs([
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000051",
+        title: "Early",
+        interviewAt: "2026-10-29T00:00:00.000Z",
+      }),
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000052",
+        title: "Day",
+        interviewAt: "2026-10-29T03:00:00.000Z",
+      }),
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000053",
+        title: "Evening",
+        interviewAt: "2026-10-29T11:00:00.000Z",
+      }),
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000054",
+        title: "Boundary",
+        interviewAt: "2026-10-29T11:30:00.000Z",
+      }),
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000055",
+        title: "Night",
+        interviewAt: "2026-10-29T13:00:00.000Z",
+      }),
+    ])
+    renderApp("/apply?view=calendar&span=week")
+    expect(
+      await screen.findByRole("button", {
+        name: /Interview 7:00 to 8:00: Early/,
+      })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Interview 10:00 to 11:00: Day/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Interview 18:00 to 19:00: Evening/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Interview 18:30 to 19:30: Boundary/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Interview 20:00 to 21:00: Night/ })
+    ).toBeInTheDocument()
   })
 })
