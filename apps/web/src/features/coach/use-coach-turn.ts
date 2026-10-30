@@ -33,6 +33,7 @@ import {
 import { isAbortError } from "@/lib/sse.ts"
 
 import { useChatCache } from "./chat-cache.ts"
+import { coachProgressReducer, coachProgressRows } from "./coach-progress.ts"
 import {
   IDLE_TURN,
   turnPhase,
@@ -73,15 +74,6 @@ type CoachStreamRun = {
   ) => SendError
 }
 
-type StepAction = { type: "cleared" } | { type: "reported"; label: string }
-
-function stepReducer(current: string | null, action: StepAction) {
-  if (action.type === "cleared") return null
-  return current?.split("\n").includes(action.label)
-    ? current
-    : [current, action.label].filter(Boolean).join("\n")
-}
-
 export function useCoachTurn({
   chatId,
   setChatId,
@@ -91,7 +83,7 @@ export function useCoachTurn({
 }: UseCoachTurnOptions) {
   const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(turnReducer, IDLE_TURN)
-  const [step, stepDispatch] = useReducer(stepReducer, null)
+  const [progressCalls, progressDispatch] = useReducer(coachProgressReducer, [])
   const sendGeneration = useRef(0)
   const abortRef = useRef<AbortController | null>(null)
   const { mode } = useCoachMode()
@@ -113,6 +105,25 @@ export function useCoachTurn({
   const baseline = useMemo(
     () => current.filter((message) => message.id !== STREAMING_COACH_ID),
     [current]
+  )
+  const progress = useMemo(
+    () => ({
+      active: phase !== "idle",
+      rows: coachProgressRows(
+        progressCalls,
+        current.find((message) => message.id === STREAMING_COACH_ID)?.parts ??
+          []
+      ),
+    }),
+    [current, phase, progressCalls]
+  )
+  // Legacy composer-side step text; the workspace moves to `progress`.
+  const step = useMemo(
+    () =>
+      progressCalls.length
+        ? [...new Set(progressCalls.map((call) => call.label))].join("\n")
+        : null,
+    [progressCalls]
   )
   const failure = state.status === "error" ? state : null
   const sendError = failure?.kind === "send" ? failure.error : null
@@ -171,6 +182,7 @@ export function useCoachTurn({
     abortRef.current?.abort()
     abortRef.current = null
     sendGeneration.current += 1
+    progressDispatch({ type: "cleared" })
     dispatch({ type: "reset" })
   }, [])
 
@@ -193,7 +205,8 @@ export function useCoachTurn({
       const controller = new AbortController()
       abortRef.current = controller
       const stale = () => generation !== sendGeneration.current
-      stepDispatch({ type: "cleared" })
+      progressDispatch({ type: "cleared" })
+      let stepSequence = 0
       dispatch({ type: "start", kind, messages: prefix })
 
       let parts: ChatEntryPart[] = []
@@ -265,7 +278,15 @@ export function useCoachTurn({
       }
       const handlers: CoachStreamHandlers = {
         onStep({ label }) {
-          if (!stale()) stepDispatch({ type: "reported", label })
+          if (!stale())
+            progressDispatch({
+              type: "step",
+              id: `step-${++stepSequence}`,
+              label,
+            })
+        },
+        onToolCall({ toolCallId, name }) {
+          if (!stale()) progressDispatch({ type: "call", id: toolCallId, name })
         },
         onTextDelta({ text }) {
           if (stale()) return
@@ -522,6 +543,7 @@ export function useCoachTurn({
     messages,
     phase,
     step,
+    progress,
     error: actionError,
     send,
     stop,

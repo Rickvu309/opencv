@@ -18,11 +18,13 @@ import {
 import { CoachMessageActions } from "./coach-message-actions.tsx"
 import { CoachParts } from "./coach-part-renderers.tsx"
 import { toCoachParts } from "./coach-parts.ts"
+import type { CoachTurnProgress } from "./coach-progress.ts"
 import { CoachWorking } from "./coach-working.tsx"
 
 export type CoachTurnsProps = {
   messages: readonly ChatViewMessage[]
   waiting?: boolean
+  progress?: CoachTurnProgress
   error?: string | null
   onRetry?: () => void
   onRegenerate?: () => void
@@ -58,6 +60,7 @@ function RetryRow({
 export function CoachTurns({
   messages,
   waiting = false,
+  progress,
   error = null,
   onRetry,
   onRegenerate,
@@ -69,8 +72,15 @@ export function CoachTurns({
     message,
     parts: message.role === "coach" ? toCoachParts(message) : [],
   }))
+  // A turn that has only run tools keeps Working until the Coach writes text.
+  const streamingText = turns.some(
+    ({ message, parts }) =>
+      message.id === STREAMING_COACH_ID &&
+      parts.some((part) => part.kind === "text" && part.markdown.trim())
+  )
   const working =
     waiting ||
+    (progress?.active === true && !streamingText) ||
     turns.some(
       ({ message, parts }) =>
         message.id === STREAMING_COACH_ID && parts.length === 0
@@ -149,7 +159,7 @@ export function CoachTurns({
       ) : null}
       {working ? (
         <ChatItem messageId="coach-working">
-          <CoachWorking />
+          <CoachWorking rows={progress?.rows} />
         </ChatItem>
       ) : null}
     </>

@@ -1,6 +1,7 @@
 import { createContext } from "react"
 import type { ChatSummary } from "@workspace/domain"
 
+import type { CoachTurnProgress } from "./coach-progress.ts"
 import type { CoachSendOptions } from "./use-coach-turn.ts"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
@@ -12,6 +13,7 @@ export type ChatStoreValue = {
   messages: ChatViewMessage[]
   phase: TurnPhase
   step: string | null
+  progress: CoachTurnProgress
   error: string | null
   send: (text: string, options?: CoachSendOptions) => boolean
   stop: () => void
