@@ -560,7 +560,7 @@ function CvPhotoUploader({
         try {
           await run("paper.deleteFile", { fileId: uploadedId })
         } catch {
-          // The attach error is the one to show. This delete removes the orphan row.
+          // rejected-ok: the attach error is the one to show. This delete removes the orphan row.
         }
       }
       dispatchError({

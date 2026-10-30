@@ -25,7 +25,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
         try {
           await runCommand("profile.update", { language: "vi" })
         } catch {
-          // A failed language post still lets welcome finish.
+          // rejected-ok: a failed language post still lets welcome finish.
         }
         sessionStorage.removeItem(LANGUAGE_STORAGE_KEY)
       }
@@ -40,7 +40,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
       try {
         await runCommand("profile.markWelcomed", {})
       } catch {
-        // The next signed-in load tries welcome again.
+        // rejected-ok: the next signed-in load tries welcome again.
       }
       if (!cancelled) onDone()
     }

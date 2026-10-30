@@ -340,7 +340,7 @@ export function AppShell({ onSearch }: AppShellProps) {
         chatId: chat.id,
       })
     } catch {
-      // A failed create leaves the panel closed. The page stays usable.
+      // rejected-ok: a failed create leaves the panel closed. The page stays usable.
     }
   }
 

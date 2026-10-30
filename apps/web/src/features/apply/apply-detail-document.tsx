@@ -13,6 +13,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { reportRejected } from "@/lib/command-failure.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import {
@@ -211,7 +212,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
                   jobId: job.id,
                   itemId: item.id,
                   done: !item.done,
-                })
+                }).catch(reportRejected("update this prep step"))
               }
             />
           ))}

@@ -9,6 +9,7 @@ import {
 
 import { Button } from "@workspace/ui/components/button"
 
+import { reportRejected } from "@/lib/command-failure.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 type Check = PaperView["checks"][number]
@@ -202,13 +203,14 @@ export function useImportCheckBar({
   }
 
   function skip(checkId: string) {
-    void dismiss(checkId)
+    void dismiss(checkId).catch(reportRejected("dismiss this check"))
   }
 
   function done() {
     dispatch({ type: "bar_hidden" })
     const source = checksRef.current.find((check) => check.kind === "source")
-    if (source) void dismiss(source.id)
+    if (source)
+      void dismiss(source.id).catch(reportRejected("dismiss this check"))
   }
 
   return { checks, hidden, skip, done, settle }

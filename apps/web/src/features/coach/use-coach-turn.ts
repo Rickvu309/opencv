@@ -175,6 +175,7 @@ export function useCoachTurn({
   const stop = useCallback(() => {
     const controller = abortRef.current
     if (chatId && controller) {
+      // rejected-ok: the stream aborts either way, a missed stop is harmless.
       void runContractCommand(queryClient, "coach.stop", {
         chatId: parseChatId(chatId),
       })
