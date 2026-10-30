@@ -7,7 +7,7 @@
 #   - enough free space: PR_DISK_MIN_MB (default 2048, 2 GiB), or PR_TMP_MIN_MB (default 256) for the temp dir, which
 #     is often a small tmpfs, and
 #   - a successful 64 KiB write (a quota error such as "Disk quota exceeded" shows up here, not in df).
-# Both limits are whole numbers of MiB. A dir that does not exist is skipped.
+# Both limits are whole numbers of MiB without a leading zero (09 and 010 are rejected, not read as octal). A dir that does not exist is skipped.
 # A full disk or a failed write records cause "disk" in result.json with a next command that lists the largest
 # directories and the finished worktrees. A bad limit, a dir that cannot be written for another reason, or a missing
 # tool records cause "env". Either way it prints the same to stderr and exits 1.
@@ -26,10 +26,10 @@ disk_probe() {
   if (( free_mb < min_mb )); then
     printf 'disk\tonly %s MiB free on the filesystem of %s, need %s MiB\n' "$free_mb" "$dir" "$min_mb"; return 1
   fi
-  if ! probe=$(mktemp -p "$dir" .disk-probe.XXXXXX 2>&1); then
+  if ! probe=$(LC_ALL=C mktemp -p "$dir" .disk-probe.XXXXXX 2>&1); then
     out=${probe##*: }; _disk_write_problem "$dir" "$out"; return 1
   fi
-  if ! out=$(dd if=/dev/zero of="$probe" bs=64k count=1 conv=fsync 2>&1 >/dev/null); then
+  if ! out=$(LC_ALL=C dd if=/dev/zero of="$probe" bs=64k count=1 conv=fsync 2>&1 >/dev/null); then
     rm -f "$probe" 2>/dev/null || true
     _disk_write_problem "$dir" "$(tail -n1 <<<"$out")"; return 1
   fi
@@ -63,8 +63,8 @@ disk_guard() {
   local main=$1 root=$2 dir real out cause problem next big seen=$'\n'
   local -a dirs=() mins=(); shift 2
   local min=${PR_DISK_MIN_MB:-2048} tmp_min=${PR_TMP_MIN_MB:-256}
-  [[ "$min" =~ ^[0-9]+$ ]] || _disk_fail env "PR_DISK_MIN_MB must be a whole number of MiB, got '$min'" ""
-  [[ "$tmp_min" =~ ^[0-9]+$ ]] || _disk_fail env "PR_TMP_MIN_MB must be a whole number of MiB, got '$tmp_min'" ""
+  [[ "$min" =~ ^(0|[1-9][0-9]*)$ ]] || _disk_fail env "PR_DISK_MIN_MB must be a whole number of MiB, got '$min'" ""
+  [[ "$tmp_min" =~ ^(0|[1-9][0-9]*)$ ]] || _disk_fail env "PR_TMP_MIN_MB must be a whole number of MiB, got '$tmp_min'" ""
   dirs=("$main" "$(dirname "$root")" "$root")
   [[ -z "${HOME:-}" ]] || dirs+=("$HOME/tmp")
   dirs+=("$@")

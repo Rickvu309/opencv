@@ -157,6 +157,7 @@ esac
     PR_RESULT_DIR: join(root, "results"),
     PR_RESULT_REPO: "opencv",
     PR_DISK_MIN_MB: lowDisk ? "2048" : "1", // the real disk's free space must not decide a test
+    PR_TMP_MIN_MB: "1", // likewise for the temp dir
     ...extraEnv,
   }
   if (extraEnv.PROOF_OLD_RETRIED) {

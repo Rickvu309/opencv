@@ -16,7 +16,7 @@
 #   ${PR_RESULT_DIR:-$HOME/tmp/pr-results}/<repo>-<script>-<id>.json   (overwritten per run)
 #   ...and appends the same line to history.jsonl in that directory,
 # and prints `RESULT_JSON: <path>` as the last stdout line. A crash (non-zero exit with no result_fail/result_human)
-# is status "error", and so is a kill by SIGINT, SIGTERM or SIGHUP (detail "killed by SIG<name>"). Writing never changes the exit code.
+# is status "error", and so is a kill by SIGINT, SIGTERM, SIGHUP or SIGPIPE (detail "killed by SIG<name>"). Writing never changes the exit code.
 #
 # Fields (all present, null when unknown): schema, script, repo, id, status (ok|fail|human|error),
 # cause (none|behind-main|merge-conflict|test|timing-test|lint|typecheck|build|env|disk|hygiene|deploy|other), detail,
@@ -62,7 +62,7 @@ result_begin() {
   R_START_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   trap '_result_exit' EXIT
   local sig n
-  for sig in INT:130 TERM:143 HUP:129; do
+  for sig in INT:130 TERM:143 HUP:129 PIPE:141; do
     n=${sig#*:}
     # shellcheck disable=SC2064
     trap "R_SIGNAL=${sig%:*}; exit $n" "${sig%:*}"
@@ -168,8 +168,14 @@ result_write() {
 _result_exit() {
   local rc=$?
   trap - EXIT
+  trap '' INT TERM HUP PIPE # a second signal must not skip the write
   set +e +u
   if declare -F result_cleanup >/dev/null; then result_cleanup; fi
   result_write "$rc" || true
+  if [[ -n "$R_SIGNAL" ]]; then
+    # Re-raise so the parent sees a death by signal, not a plain exit code.
+    trap - "$R_SIGNAL"
+    kill -s "$R_SIGNAL" $$
+  fi
   exit "$rc"
 }
