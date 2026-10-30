@@ -57,10 +57,28 @@ export function weekDays(anchor: string) {
   return Array.from({ length: 7 }, (_, index) => addDays(start, index))
 }
 
+/** The instant a calendar day starts in the profile zone. */
+function dayStart(ymd: string) {
+  const [year, month, day] = ymd.split("-").map(Number)
+  const utc = Date.UTC(year!, month! - 1, day!)
+  const local = (at: number) => {
+    const [y, m, d] = zonedYmd(new Date(at)).split("-").map(Number)
+    return Date.UTC(y!, m! - 1, d!, ...zonedClock(at))
+  }
+  let guess = utc
+  for (let pass = 0; pass < 2; pass += 1) guess -= local(guess) - utc
+  return new Date(guess)
+}
+
+function zonedClock(at: number): [number, number] {
+  const minutes = minutesOfDay(new Date(at).toISOString())
+  return [Math.floor(minutes / 60), minutes % 60]
+}
+
 export function rangeFor(days: string[]) {
   return {
-    from: `${days[0]}T00:00:00.000Z`,
-    to: `${addDays(days.at(-1)!, 1)}T00:00:00.000Z`,
+    from: dayStart(days[0]!).toISOString(),
+    to: dayStart(addDays(days.at(-1)!, 1)).toISOString(),
   }
 }
 
