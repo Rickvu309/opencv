@@ -258,6 +258,31 @@ test("cleanup refuses unsaved work and an unmerged pull request, then lists what
   assert.match(runCli(["cleanup", "90"], ctx).text, /REFUSED NO_WORKTREE/)
 })
 
+test("cleanup deletes the remote branch only while it still exists, and says nothing when the queue already removed it", () => {
+  const gone = fakePorts({
+    cwd: main,
+    branch: "feat/90-keep",
+    worktrees: [{ path: wt, branch: "feat/90-keep" }],
+    prs: [pr(5, { state: "MERGED", head: "feat/90-keep" })],
+  })
+  const quiet = runCli(["cleanup", "90"], ctxFor(gone))
+  assert.equal(quiet.code, 0, quiet.text)
+  assert.ok(!gone.effects.some((e) => e.op === "deleteRemoteBranch"))
+  assert.doesNotMatch(quiet.text, /Warning|remote ref/)
+
+  const kept = fakePorts({
+    cwd: main,
+    branch: "feat/90-keep",
+    worktrees: [{ path: wt, branch: "feat/90-keep" }],
+    remoteBranches: ["feat/90-keep"],
+    prs: [pr(5, { state: "MERGED", head: "feat/90-keep" })],
+  })
+  const deleted = runCli(["cleanup", "90"], ctxFor(kept))
+  assert.equal(deleted.code, 0, deleted.text)
+  assert.ok(kept.effects.some((e) => e.op === "deleteRemoteBranch"))
+  assert.doesNotMatch(deleted.text, /Warning/)
+})
+
 test("cleanup from inside the worktree infers the issue; --force removes unsaved work; --all keeps unmerged", () => {
   const ports = fakePorts({
     cwd: wt,

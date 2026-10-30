@@ -249,12 +249,15 @@ export function cleanup(ctx, { n: given, flags = {} }) {
     if (!rm.ok)
       throw new Error(`git worktree remove failed: ${rm.err}`.slice(0, 800))
     ctx.ports.git.deleteBranch(main, wt.branch)
-    // Best-effort: the queue may have deleted the remote ref already.
-    const remote = ctx.ports.git.deleteRemoteBranch(main, wt.branch)
-    if (!remote.ok)
-      lines.push(
-        `Warning: could not delete remote branch ${wt.branch}: ${remote.err || remote.out}`
-      )
+    // The queue deletes the remote branch on merge, so a missing ref is the
+    // common case and says nothing; only a delete that really failed warns.
+    if (ctx.ports.git.remoteHead(main, wt.branch)) {
+      const remote = ctx.ports.git.deleteRemoteBranch(main, wt.branch)
+      if (!remote.ok)
+        lines.push(
+          `Warning: could not delete remote branch ${wt.branch}: ${remote.err || remote.out}`
+        )
+    }
     removed.push(`${wt.path}  (${wt.branch})`)
   }
   if (!dry) {
