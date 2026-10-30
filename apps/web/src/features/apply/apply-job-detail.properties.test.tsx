@@ -156,10 +156,9 @@ describe("job property drafts", () => {
       await user.click(trigger)
       const input = await screen.findByRole("textbox", { name: "Recruiter" })
       fireEvent.change(input, { target: { value: "New Recruiter" } })
-      const form = input.closest("form") as HTMLFormElement
       const release = deferNextJobUpdate()
       if (outcome === "failure") rejectNextJobUpdate()
-      fireEvent.submit(form)
+      submitForm(input)
       try {
         await waitFor(() => {
           expect(
@@ -173,7 +172,7 @@ describe("job property drafts", () => {
         )
         await user.click(trigger)
         await act(async () => {
-          fireEvent.submit(form)
+          submitForm(input)
         })
         expect(screen.getByRole("textbox", { name: "Recruiter" })).toBe(input)
         expect(input).toHaveValue("New Recruiter")
