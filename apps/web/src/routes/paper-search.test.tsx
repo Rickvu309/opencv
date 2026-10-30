@@ -20,6 +20,11 @@ describe("Paper search route state", () => {
       })
       fireEvent.change(search, { target: { value: query } })
       await waitFor(() => expect(search).toHaveValue(query))
+      const otherName =
+        name === "PM track CV" ? "Cover: Associate PM intern" : "PM track CV"
+      expect(
+        screen.queryByRole("button", { name: new RegExp(`${otherName},`) })
+      ).not.toBeInTheDocument()
       fireEvent.click(
         await screen.findByRole("button", { name: new RegExp(`${name},`) })
       )
@@ -30,6 +35,9 @@ describe("Paper search route state", () => {
           screen.getByRole("textbox", { name: "Search Paper" })
         ).toHaveValue(query)
       )
+      expect(
+        screen.queryByRole("button", { name: new RegExp(`${otherName},`) })
+      ).not.toBeInTheDocument()
     }
   )
 
@@ -42,6 +50,11 @@ describe("Paper search route state", () => {
       })
       fireEvent.change(search, { target: { value: query } })
       await waitFor(() => expect(search).toHaveValue(query))
+      const otherName =
+        name === "PM track CV" ? "Cover: Associate PM intern" : "PM track CV"
+      expect(
+        screen.queryByRole("button", { name: new RegExp(`${otherName},`) })
+      ).not.toBeInTheDocument()
       fireEvent.click(
         await screen.findByRole("button", { name: new RegExp(`${name},`) })
       )
@@ -54,6 +67,24 @@ describe("Paper search route state", () => {
           screen.getByRole("textbox", { name: "Search Paper" })
         ).toHaveValue(query)
       )
+      expect(
+        screen.queryByRole("button", { name: new RegExp(`${otherName},`) })
+      ).not.toBeInTheDocument()
     }
   )
+
+  it("keeps URL search strings verbatim and removes q when cleared", async () => {
+    const { router } = renderApp("/paper?q=Untitled")
+    const search = await screen.findByRole("textbox", { name: "Search Paper" })
+    expect(search).toHaveValue("Untitled")
+    const special = ' 123 {"n":1} '
+    fireEvent.change(search, { target: { value: special } })
+    await waitFor(() =>
+      expect(router.state.location.search).toEqual({ q: special })
+    )
+    expect(search).toHaveValue(special)
+    fireEvent.change(search, { target: { value: "" } })
+    await waitFor(() => expect(router.state.location.search).toEqual({}))
+    expect(search).toHaveValue("")
+  })
 })

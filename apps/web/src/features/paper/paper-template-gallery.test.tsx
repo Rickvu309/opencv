@@ -102,6 +102,8 @@ describe("Paper template gallery", () => {
         error={null}
         onRetry={() => undefined}
         onOpen={() => undefined}
+        query=""
+        onQueryChange={() => undefined}
       />
     )
     fireEvent.click(screen.getByRole("button", { name: "New" }))

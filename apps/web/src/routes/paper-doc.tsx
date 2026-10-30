@@ -15,6 +15,7 @@ import {
   paperPagesKey,
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { ApiError } from "@/lib/api-error.ts"
 
@@ -33,6 +34,10 @@ export function PaperDocPage() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
+  const routeSearch = useRouterState({
+    select: (state) => state.location.search,
+  })
+  const search = validatePaperSearch(routeSearch)
   const docId = docIdFromPath(pathname)
   const parsedId = paperIdSchema.safeParse(docId)
   const validId = parsedId.success ? parsedId.data : null
@@ -56,7 +61,7 @@ export function PaperDocPage() {
     queryFn: listPaper,
     enabled: docQuery.data?.kind === "letter",
   })
-  const back = () => void navigate({ to: SURFACE_PATHS.paper })
+  const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
 
   if (docQuery.isLoading) {
     return (

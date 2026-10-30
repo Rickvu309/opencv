@@ -81,7 +81,9 @@ export function editorEditedLabel(iso: string, now = Date.now()) {
   return paperEditedLabel(iso, now)
 }
 
-export function validatePaperSearch(search: Record<string, unknown>) {
-  void search
-  return {}
+export type PaperSearch = { q?: string }
+
+export function validatePaperSearch(search: object): PaperSearch {
+  const query = "q" in search ? search.q : undefined
+  return typeof query === "string" && query !== "" ? { q: query } : {}
 }

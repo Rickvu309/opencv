@@ -1,4 +1,4 @@
-import { StrictMode } from "react"
+import { StrictMode, useState } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
@@ -39,16 +39,22 @@ afterEach(() => {
 })
 
 function renderLibrary(docs: PaperView[]) {
-  render(
-    <PaperLibrary
-      docs={docs}
-      files={[]}
-      loading={false}
-      error={null}
-      onRetry={() => undefined}
-      onOpen={() => undefined}
-    />
-  )
+  function Harness() {
+    const [query, setQuery] = useState("")
+    return (
+      <PaperLibrary
+        docs={docs}
+        files={[]}
+        loading={false}
+        error={null}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+        query={query}
+        onQueryChange={setQuery}
+      />
+    )
+  }
+  render(<Harness />)
 }
 
 describe("Paper library", () => {
@@ -100,6 +106,8 @@ describe("Paper library", () => {
         error={null}
         onRetry={() => undefined}
         onOpen={onOpen}
+        query=""
+        onQueryChange={() => undefined}
       />
     )
     const input = document.querySelector('input[type="file"]')
@@ -282,6 +290,8 @@ describe("Paper library", () => {
           error={null}
           onRetry={() => undefined}
           onOpen={() => undefined}
+          query=""
+          onQueryChange={() => undefined}
         />
       </StrictMode>
     )
