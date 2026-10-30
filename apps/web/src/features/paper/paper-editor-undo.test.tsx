@@ -73,6 +73,35 @@ it("undoes a text transaction and disables Undo when history is empty", () => {
   expect(undo).toBeDisabled()
 })
 
+it("disables Undo when typing returns to the original text", () => {
+  vi.stubGlobal("fetch", () =>
+    Promise.resolve(ok({ ...savedCv, contentVersion: 2 }))
+  )
+  render(
+    <PaperCvEditor
+      initial={savedCv}
+      pages={pages(1)}
+      onBack={() => undefined}
+    />
+  )
+  const role = screen.getByRole("textbox", { name: "Role" })
+  const undo = screen.getByRole("button", { name: "Undo" })
+  fireEvent.focus(role)
+  role.textContent = "Beta extra"
+  fireEvent.input(role)
+  expect(undo).toBeEnabled()
+  role.textContent = "Beta"
+  fireEvent.input(role)
+  expect(undo).toBeDisabled()
+  role.textContent = "Gamma"
+  fireEvent.input(role)
+  fireEvent.blur(role)
+  expect(undo).toBeEnabled()
+  fireEvent.click(undo)
+  expect(screen.getByRole("textbox", { name: "Role" }).textContent).toBe("Beta")
+  expect(undo).toBeDisabled()
+})
+
 it("undoes later typing before an earlier duplicated block", async () => {
   vi.stubGlobal("fetch", () =>
     Promise.resolve(ok({ ...savedCv, contentVersion: 2 }))
@@ -94,6 +123,11 @@ it("undoes later typing before an earlier duplicated block", async () => {
   if (!first) throw new Error("Duplicated role missing")
   const original = first.textContent
   fireEvent.focus(first)
+  first.textContent = "Temporary text"
+  fireEvent.input(first)
+  first.textContent = original
+  fireEvent.input(first)
+  expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
   first.textContent = "Gamma"
   fireEvent.input(first)
   fireEvent.blur(first)

@@ -73,7 +73,20 @@ export function editorReducer(
   action: EditorAction
 ): EditorState {
   switch (action.type) {
-    case "document_edited":
+    case "document_edited": {
+      const snapshot =
+        state.editGroup === "text" ? state.history.at(-1) : state.doc
+      if (JSON.stringify(action.doc) === JSON.stringify(snapshot)) {
+        return {
+          ...state,
+          history:
+            state.editGroup === "text"
+              ? state.history.slice(0, -1)
+              : state.history,
+          editGroup: null,
+          doc: action.doc,
+        }
+      }
       return {
         ...state,
         history:
@@ -83,6 +96,7 @@ export function editorReducer(
         editGroup: "text",
         doc: action.doc,
       }
+    }
     case "document_committed":
       return {
         ...state,
