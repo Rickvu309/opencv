@@ -34,6 +34,24 @@ jobs:
       - if: ${{ !cancelled() }}
         run: pnpm exec turbo run test:assumptions --filter=web
 
+  approve-railway:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      GITHUB_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/approve-railway-deploys.mjs
+
   failure:
     needs: full
     if: ${{ always() && needs.full.result == 'failure' }}
