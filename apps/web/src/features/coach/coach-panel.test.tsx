@@ -17,10 +17,21 @@ describe("Coach panel", () => {
       onMinimize: vi.fn(),
       onExpand: vi.fn(),
       onClose: vi.fn(),
+      children: (controls) => (
+        <>
+          {controls}
+          <p>Saved conversation</p>
+        </>
+      ),
     } satisfies ComponentProps<typeof CoachPanel>
     const { rerender } = render(
       <CoachPanel {...props}>
-        <p>Saved conversation</p>
+        {(controls) => (
+          <>
+            {controls}
+            <p>Saved conversation</p>
+          </>
+        )}
       </CoachPanel>
     )
     expect(screen.getByRole("region", { name: title })).toBeVisible()
@@ -30,7 +41,12 @@ describe("Coach panel", () => {
     )
     rerender(
       <CoachPanel {...props} mode="full">
-        <p>Saved conversation</p>
+        {(controls) => (
+          <>
+            {controls}
+            <p>Saved conversation</p>
+          </>
+        )}
       </CoachPanel>
     )
     expect(screen.getByText("Saved conversation")).toBeVisible()
@@ -52,7 +68,9 @@ describe("Coach panel", () => {
         onMinimize={onMinimize}
         onExpand={onExpand}
         onClose={onClose}
-      />
+      >
+        {(controls) => controls}
+      </CoachPanel>
     )
     fireEvent.click(screen.getByRole("button", { name: "Minimize" }))
     expect(onMinimize).toHaveBeenCalledOnce()
@@ -75,7 +93,12 @@ describe("Coach panel", () => {
         onExpand={vi.fn()}
         onClose={vi.fn()}
       >
-        <p>Saved conversation</p>
+        {(controls) => (
+          <>
+            {controls}
+            <p>Saved conversation</p>
+          </>
+        )}
       </CoachPanel>
     )
     expect(screen.queryByRole("region")).not.toBeInTheDocument()

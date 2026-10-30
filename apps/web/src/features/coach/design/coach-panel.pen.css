@@ -17,12 +17,57 @@
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
-  [data-slot="coach-panel-title"] {
-  color: #1a1a1a;
+  [data-slot="coach-panel-header"]
+  button {
+  color: #59595b;
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
   [data-slot="coach-panel-header"]
-  button {
-  color: #59595b;
+  [data-slot="coach-history-trigger"] {
+  color: #1a1a1a;
+  padding-inline: 0;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-history-trigger"]
+  > svg {
+  color: #8a8a8e;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-composer"] {
+  background: #ffffff;
+  border-color: #e4e4e7;
+  border-radius: 14px;
+  padding: 12px 12px 10px;
+  gap: 10px;
+  box-shadow: none;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-composer"]
+  textarea {
+  min-block-size: 17px;
+  padding: 0;
+  line-height: 17px;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-composer"]
+  textarea::placeholder {
+  color: #a0a0a2;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="input-group-addon"] {
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  [data-pen-surface="coach"][data-slot="coach-panel"]
+    [data-slot="coach-composer"]
+    textarea {
+    font-size: 13.5px;
+  }
 }

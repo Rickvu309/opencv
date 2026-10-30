@@ -353,7 +353,7 @@ export function AppShell({ onSearch }: AppShellProps) {
     <div
       hidden={!panelVisible}
       className={cn(
-        "min-h-0 bg-background",
+        "z-10 min-h-0 bg-background",
         panelVisible && "flex flex-col",
         panel.mode === "full" && "absolute inset-0",
         panel.mode === "side" &&
@@ -369,7 +369,13 @@ export function AppShell({ onSearch }: AppShellProps) {
           onExpand={() => dispatch({ type: "panel_expanded" })}
           onClose={closePanel}
         >
-          <CoachWorkspace chatId={panel.chatId} />
+          {(controls) => (
+            <CoachWorkspace
+              chatId={panel.chatId}
+              presentation="compact"
+              headerActions={controls}
+            />
+          )}
         </CoachPanel>
       ) : null}
     </div>
@@ -428,12 +434,12 @@ export function AppShell({ onSearch }: AppShellProps) {
           </aside>
         ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar md:pt-2 md:pr-2">
-          <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background md:rounded-lg md:border md:border-border">
+          <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-lg md:border md:border-border">
             <main
               id="app-main"
               tabIndex={-1}
               hidden={panel.open && panel.mode === "full"}
-              className="min-h-0 min-w-0 flex-1 overflow-hidden"
+              className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]"
             >
               <Outlet />
             </main>

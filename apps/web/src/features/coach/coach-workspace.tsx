@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useReducer } from "react"
+import { useEffect, useEffectEvent, useReducer, type ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 
 import { SquarePen } from "lucide-react"
@@ -37,9 +37,13 @@ import type { Attachment } from "./coach-workspace.reducer.ts"
 export function CoachWorkspace({
   chatId = null,
   primaryAction = false,
+  presentation = "page",
+  headerActions,
 }: {
   chatId?: string | null
   primaryAction?: boolean
+  presentation?: "page" | "compact"
+  headerActions?: ReactNode
 }) {
   const store = useChatStore()
   const { activeChatId, messages, phase, error, progress, chats, openChat } =
@@ -140,7 +144,9 @@ export function CoachWorkspace({
     }
   }
 
+  const compact = presentation === "compact"
   const showHome = messages.length === 0 && !active
+  const showWelcome = showHome && !compact
   const coachDock = (
     <CoachDock
       draft={draft}
@@ -150,9 +156,13 @@ export function CoachWorkspace({
       turnActive={active}
       disabled={capped || !enabled}
       placeholder={
-        capped ? `Coach is back at ${resetTime}` : "Ask Coach anything"
+        capped
+          ? `Coach is back at ${resetTime}`
+          : compact
+            ? "Reply…"
+            : "Ask Coach anything"
       }
-      menuPlacement={showHome ? "below" : "above"}
+      menuPlacement={showWelcome ? "below" : "above"}
       onAttachFromPaper={() =>
         dispatch({ type: "picker_opened", picker: "paper" })
       }
@@ -175,11 +185,18 @@ export function CoachWorkspace({
     : (chats.find((chat) => chat.id === activeChatId)?.title ?? "New chat")
 
   return (
-    <div data-slot="coach-panel-body" className="flex h-full min-h-0 flex-col">
+    <div
+      data-slot="coach-panel-body"
+      data-presentation={presentation}
+      className="flex h-full min-h-0 flex-col"
+    >
       <div
-        data-slot="coach-header"
+        data-slot={compact ? "coach-panel-header" : "coach-header"}
         data-home={showHome ? "" : undefined}
-        className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/50 px-3"
+        className={cn(
+          "flex shrink-0 items-center gap-2 border-b border-border/50",
+          compact ? "h-12 gap-[6px] ps-4 pe-2" : "h-11 justify-between px-3"
+        )}
       >
         <h1 className="sr-only">Coach</h1>
         <CoachHistory
@@ -197,6 +214,7 @@ export function CoachWorkspace({
           }}
           onNewChat={store.newChat}
         />
+        {compact ? <span className="flex-1" /> : null}
         {!showHome ? (
           <Button
             variant="ghost"
@@ -208,9 +226,15 @@ export function CoachWorkspace({
             <SquarePen className="size-4" />
           </Button>
         ) : null}
+        {headerActions}
       </div>
-      <div className="min-h-0 flex-1 overflow-auto">
-        {showHome ? (
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-auto",
+          compact && "px-[18px] py-2"
+        )}
+      >
+        {showWelcome ? (
           <CoachHome
             moreIdeas={moreIdeas}
             onToggleIdeas={() => dispatch({ type: "more_ideas_toggled" })}
@@ -235,7 +259,13 @@ export function CoachWorkspace({
           />
         )}
       </div>
-      <div className="mx-auto w-full max-w-2xl shrink-0 space-y-2 px-3 pt-2 pb-3">
+      <div
+        data-slot="coach-workspace-composer"
+        className={cn(
+          "mx-auto w-full max-w-2xl shrink-0 space-y-2",
+          compact ? "px-2 pb-2" : "px-3 pt-2 pb-3"
+        )}
+      >
         {attachments.length ? (
           <div className="flex flex-wrap gap-1">
             {attachments.map((item) => (
@@ -264,7 +294,7 @@ export function CoachWorkspace({
               Open Settings
             </a>
           </p>
-        ) : !showHome && !capped && day?.capped ? (
+        ) : (!showHome || compact) && !capped && day?.capped ? (
           <p className="text-xs text-muted-foreground">
             {day.remaining} {usage.data?.mode} turns remaining today
           </p>
@@ -281,7 +311,7 @@ export function CoachWorkspace({
             </Button>
           </p>
         ) : null}
-        {!showHome ? coachDock : null}
+        {!showWelcome ? coachDock : null}
       </div>
       <Dialog
         open={picker !== null}

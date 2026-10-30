@@ -14,7 +14,7 @@ type CoachPanelProps = {
   onMinimize: () => void
   onExpand: () => void
   onClose: () => void
-  children?: ReactNode
+  children: (controls: ReactNode) => ReactNode
 }
 
 export function CoachPanel({
@@ -36,49 +36,41 @@ export function CoachPanel({
       aria-label={title}
       className="flex h-full min-h-0 flex-col bg-background duration-(--duration-panel) ease-(--ease-panel)"
     >
-      <div
-        data-slot="coach-panel-header"
-        className="flex h-12 shrink-0 items-center gap-[6px] border-b ps-4 pe-2"
-      >
-        <div
-          data-slot="coach-panel-title"
-          className="min-w-0 flex-1 truncate text-[13px] font-medium"
-        >
-          {title}
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="size-11 shrink-0 rounded-[6px] sm:size-7"
-          aria-label="Minimize"
-          onClick={onMinimize}
-        >
-          <Minus />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="size-11 shrink-0 rounded-[6px] sm:size-7"
-          aria-label="Expand"
-          aria-pressed={mode === "full"}
-          onClick={onExpand}
-        >
-          <Maximize2 />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="size-11 shrink-0 rounded-[6px] sm:size-7"
-          aria-label="Close"
-          onClick={onClose}
-        >
-          <X />
-        </Button>
-      </div>
-      <div className="min-h-0 flex-1">{children}</div>
+      {children(
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-11 shrink-0 rounded-[6px] sm:size-7"
+            aria-label="Minimize"
+            onClick={onMinimize}
+          >
+            <Minus />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-11 shrink-0 rounded-[6px] sm:size-7"
+            aria-label="Expand"
+            aria-pressed={mode === "full"}
+            onClick={onExpand}
+          >
+            <Maximize2 />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-11 shrink-0 rounded-[6px] sm:size-7"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            <X />
+          </Button>
+        </>
+      )}
     </section>
   )
 }
