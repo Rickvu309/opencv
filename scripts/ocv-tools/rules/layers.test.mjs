@@ -31,18 +31,6 @@ function sources(dir, out = []) {
   return out
 }
 
-// Jobs from before the moment split that have no moment of their own.
-const LEGACY_JOBS = [
-  "release",
-  "cleanup",
-  "status",
-  "approve",
-  "shot",
-  "board",
-  "file",
-  "cli",
-]
-
 test("subject row files are imported only by rules/index.mjs", () => {
   const names = SUBJECTS.join("|")
   const sibling = new RegExp(`from\\s+["']\\./(${names})\\.mjs["']`)
@@ -64,10 +52,7 @@ test("every checked row runs at known moments; the layer derives from them", () 
     }
     assert.ok(row.at?.length, `${row.id} has no moment`)
     for (const moment of row.at)
-      assert.ok(
-        MOMENTS.includes(moment) || LEGACY_JOBS.includes(moment),
-        `${row.id}: unknown moment ${moment}`
-      )
+      assert.ok(MOMENTS.includes(moment), `${row.id}: unknown moment ${moment}`)
     assert.equal(
       layerOf(row),
       row.at.includes("pr") ? "server" : "local",
@@ -78,10 +63,9 @@ test("every checked row runs at known moments; the layer derives from them", () 
   assert.ok(needsOf("pr").includes("diff"))
 })
 
-test("every moment a row uses has a runner that fires rows", () => {
-  const used = new Set(RULES.flatMap((row) => row.at))
+test("every moment has a runner that fires its rows with decide", () => {
+  assert.deepEqual(Object.keys(RUNNERS).sort(), [...MOMENTS].sort())
   for (const moment of MOMENTS) {
-    if (!used.has(moment)) continue
     const files = RUNNERS[moment]
     assert.ok(files?.length, `no runner for moment ${moment}`)
     const text = files
@@ -91,12 +75,23 @@ test("every moment a row uses has a runner that fires rows", () => {
         return readFileSync(path, "utf8")
       })
       .join("\n")
-    if (files.every((file) => file.endsWith(".mjs")))
-      assert.match(
-        text,
-        /decide\(|evaluate\(|refuse\(/,
-        `no runner fires rows at ${moment}`
-      )
+    assert.match(text, /decide\(/, `no runner fires rows at ${moment}`)
+  }
+})
+
+test("a moment with no row is a moment nothing decides", () => {
+  const used = new Set(RULES.flatMap((row) => row.at))
+  for (const moment of MOMENTS)
+    assert.ok(used.has(moment), `no row runs at ${moment}`)
+})
+
+test("a refusal is raised only by a row fired with decide", () => {
+  const raw = /\bevaluate\(|\brefuse\(|new Refused\(/
+  for (const path of sources(here)) {
+    if (path.endsWith(join("rules", "index.mjs"))) continue
+    const text = readFileSync(path, "utf8")
+    assert.doesNotMatch(text, raw, `${path} raises a refusal by hand`)
+    assert.doesNotMatch(text, /delivery:/, `${path} names a delivery fact`)
   }
 })
 

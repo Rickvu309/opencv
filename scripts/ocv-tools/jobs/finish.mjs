@@ -2,22 +2,18 @@ import { join, resolve } from "node:path"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
-import { recorded, task, snapshot, git, gh, json, refuse } from "./common.mjs"
+import { recorded, task, snapshot, git, gh, json } from "./common.mjs"
 
-function bodyText(text) {
-  for (const heading of ["Summary", "Evidence", "Merge Danger"])
-    if (!new RegExp(`^## ${heading}\r?$`, "m").test(text))
-      refuse("BAD_BODY", `The PR body needs ## ${heading}.`)
-  if (
-    !/^\*\*Door:\*\* (one-way|two-way)/m.test(text) ||
-    !/^\*\*Blast Radius:\*\* [^<\s]/m.test(text) ||
-    /<(diagram|screenshot|one-way|optional)[^>]*>/.test(text)
-  )
-    refuse(
-      "BAD_BODY",
-      "Fill in Door, Blast Radius and all template placeholders."
-    )
-  return text
+// The body file as the BAD_BODY row reads it: the path and its text, or no
+// path when the flag is missing, or a path that cannot be read.
+function bodyOf(ctx, flag) {
+  if (!flag || flag === true) return { file: null, text: "" }
+  const file = resolve(ctx.cwd, flag)
+  try {
+    return { file, text: ctx.readFile(file) }
+  } catch {
+    return { file, text: "", unreadable: true }
+  }
 }
 
 export function finish(ctx, { flags }) {
@@ -48,13 +44,7 @@ export function finish(ctx, { flags }) {
       "--json",
       "title,state,labels"
     )
-    if (issue.state !== "OPEN")
-      refuse("CLOSED", `Issue #${t.n} is ${issue.state}.`)
-    if (!flags["--body-file"] || flags["--body-file"] === true)
-      refuse("BAD_BODY", "Pass --body-file <file>.")
-    const written = bodyText(
-      ctx.readFile(resolve(ctx.cwd, flags["--body-file"]))
-    )
+    const written = bodyOf(ctx, flags["--body-file"])
     const desc = String(
       flags["-d"] ||
         flags["--desc"] ||
@@ -65,15 +55,7 @@ export function finish(ctx, { flags }) {
       .trim()
       .replace(/\.$/, "")
     const title = `${t.type}: ${desc.charAt(0).toLowerCase()}${desc.slice(1)} (#${t.n})`
-    if (!/^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/.test(title))
-      refuse("BAD_TITLE", "The PR title is invalid.")
-    if (flags["--dry-run"])
-      return {
-        lines: [`Title: ${title}`, `Closes #${t.n}\n\n${written}`],
-        next: "scripts/ocv-tools.mjs finish --body-file <file>",
-      }
-    const disk = diskProblem(ctx.ports.fs, ctx.env, t)
-    if (disk) refuse("DISK", disk.text)
+    const problem = diskProblem(ctx.ports.fs, ctx.env, t)
     const main = {
       path: t.main,
       branch: git(ctx, "-C", t.main, "branch", "--show-current"),
@@ -106,11 +88,9 @@ export function finish(ctx, { flags }) {
     }
     git(ctx, "fetch", "--quiet", "origin", "main")
     const current = snapshot(ctx, t)
-    if (!Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")))
-      refuse("NO_COMMITS", "No commits beyond origin/main.")
     // One fact set, one decision: the rows at finish, which include the pr
-    // rows, run here early on the branch, the body text and the local commits.
-    const body = `Closes #${t.n}\n\n${written}`
+    // rows, run on the issue, the body file, the branch and the local commits.
+    const body = `Closes #${t.n}\n\n${written.text}`
     const facts = {
       ...planPull(ctx, {
         n: t.n,
@@ -118,16 +98,27 @@ export function finish(ctx, { flags }) {
         body,
         issue: { state: issue.state, labels: issue.labels.map((l) => l.name) },
       }),
+      here: { ok: true },
+      body: written,
+      disk: problem ?? {},
+      work: { path: t.top, dirty: current.dirty, force: false, finish: true },
       main,
       port,
       env: ctx.env,
     }
     const verdict = decide("finish", facts)
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
+    if (flags["--dry-run"])
+      return {
+        lines: [`Title: ${title}`, `Closes #${t.n}\n\n${written.text}`],
+        next: "scripts/ocv-tools.mjs finish --body-file <file>",
+      }
     const bodyFile = ctx.writeScratch(`finish/${t.n}-body.md`, body)
     git(ctx, "push", "-u", "origin", t.branch)
-    if (JSON.stringify(snapshot(ctx, t)) !== JSON.stringify(current))
-      refuse("STALE_CHECK", "The saved work changed during push. Finish again.")
+    const pushed = decide("finish-pushed", {
+      snapshot: { before: current, after: snapshot(ctx, t) },
+    })
+    if (!pushed.ok) throw refusalError(pushed.refusals[0])
     const url = gh(
       ctx,
       "pr",

@@ -110,6 +110,12 @@ function dirty(facts) {
   return `${work.path} has unsaved work:\n${preview}`
 }
 
+function dirtyFix(facts) {
+  if (facts.work?.finish)
+    return "Commit the changes, then run scripts/ocv-tools.mjs finish again."
+  return FIXES.DIRTY
+}
+
 function notMerged(facts) {
   const work = facts.work
   if (!work || work.merged !== false) return null
@@ -132,7 +138,7 @@ export const workspaceRows = [
     kind: "precondition",
     section: "2",
     says: "This folder must be a linked task worktree on a type and issue branch.",
-    at: ["save", "release", "cleanup", "shot"],
+    at: ["save", "release", "cleanup", "shot", "finish"],
     needs: ["here"],
     stop: true,
     check: notATask,
@@ -191,7 +197,7 @@ export const workspaceRows = [
     kind: "precondition",
     section: "2",
     says: "There must be enough free disk for a worktree and an install.",
-    at: ["take"],
+    at: ["take-title", "take", "finish"],
     needs: ["disk"],
     cause: (facts) => facts.disk?.cause,
     check: disk,
@@ -201,7 +207,7 @@ export const workspaceRows = [
     section: "2",
     says: "An issue cannot have a second worktree.",
     at: ["take"],
-    needs: ["issue", "local"],
+    needs: ["issue", "local", "path"],
     check: worktreeExists,
   }),
   rule({
@@ -218,9 +224,10 @@ export const workspaceRows = [
     id: "DIRTY",
     section: "6",
     says: "Cleanup waits while the worktree has unsaved work.",
-    at: ["cleanup"],
+    at: ["cleanup", "finish"],
     needs: ["work"],
     check: dirty,
+    fix: dirtyFix,
   }),
   rule({
     id: "NOT_MERGED",
@@ -235,7 +242,7 @@ export const workspaceRows = [
     kind: "precondition",
     section: "2",
     says: "Commands that touch a checkout run inside the opencv repository.",
-    at: ["take", "save", "release", "cleanup"],
+    at: ["locate"],
     needs: ["repo"],
     check: notARepo,
   }),

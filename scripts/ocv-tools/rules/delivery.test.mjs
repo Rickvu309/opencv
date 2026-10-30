@@ -1,0 +1,154 @@
+// The delivery rows (finish, merge, queue) read domain facts, not a verdict
+// the job made itself. Each row has a failing and a passing fact here.
+import assert from "node:assert/strict"
+import test from "node:test"
+import { decide, evaluate, jobRows } from "./index.mjs"
+
+const BODY =
+  "## Summary\n\nA change.\n\n## Evidence\n\nChecked.\n\n## Merge Danger\n\n**Door:** two-way\n**Blast Radius:** jobs\n"
+const pull = {
+  n: 7,
+  isDraft: false,
+  labels: [],
+  branch: "feat/7-keep-search",
+  state: "OPEN",
+  head: "h1",
+  author: "Owner",
+}
+const ci = { status: "completed", conclusion: "success", head: "h1" }
+const queue = (over) => ({
+  queue: { n: 7, notes: [], limitMinutes: 45, ...over },
+  snapshot: { head: "h1" },
+})
+
+const CASES = {
+  STALE_CHECK: [
+    { snapshot: { before: { tree: "a" }, after: { tree: "b" } } },
+    { snapshot: { before: { tree: "a" }, after: { tree: "a" } } },
+    "The saved work changed during push. Finish again.",
+  ],
+  BAD_BODY: [
+    { body: { file: "/b.md", text: "## Summary\nOnly this" } },
+    { body: { file: "/b.md", text: BODY } },
+    "The PR body needs ## Evidence.",
+  ],
+  BAD_TITLE: [
+    { pull: { title: "Add a thing" } },
+    { pull: { title: "feat: add a thing (#7)" } },
+    "The PR title is invalid.",
+  ],
+  NO_COMMITS: [
+    { commits: { count: 0 } },
+    { commits: { count: 2 } },
+    "No commits beyond origin/main.",
+  ],
+  DRAFT: [{ pull: { ...pull, isDraft: true } }, { pull }, "PR #7 is a draft."],
+  NEEDS_HUMAN_REVIEW: [
+    { pull: { ...pull, labels: ["needs-human-review"] } },
+    { pull },
+    "PR #7 needs human review; an agent never merges it.",
+  ],
+  BAD_BRANCH: [
+    { pull: { ...pull, branch: "my-branch" } },
+    { pull },
+    "PR #7 has no linked issue in its branch name.",
+  ],
+  CLOSED_PR: [
+    { pull: { ...pull, state: "CLOSED" } },
+    { pull: { ...pull, state: "MERGED" } },
+    "PR #7 is CLOSED.",
+  ],
+  CI_REQUIRED: [
+    { pull, ci: { ...ci, conclusion: "failure" } },
+    { pull, ci },
+    "The ci check on head h1 is failure, not success.",
+  ],
+  LEFT_QUEUE: [
+    queue({ kind: "LEFT_QUEUE", reason: "CI_FAILURE", at: "noon" }),
+    queue({ kind: "QUEUE_TIMEOUT" }),
+    "PR #7 left the merge queue at noon, reason CI_FAILURE.",
+  ],
+  QUEUE_TIMEOUT: [
+    queue({ kind: "QUEUE_TIMEOUT", queueState: "QUEUED" }),
+    queue({ kind: "LEFT_QUEUE" }),
+    "PR #7 is still not merged after 45 minutes (QUEUED).",
+  ],
+  HEAD_MOVED: [
+    queue({ kind: "HEAD_MOVED", from: "h1", to: "h2" }),
+    queue({ kind: "LEFT_QUEUE" }),
+    "PR #7 head moved from h1 to h2.",
+  ],
+  CI_FAILED: [
+    queue({
+      kind: "CI_FAILED",
+      conclusion: "failure",
+      run: { html_url: "https://run" },
+      notes: ["a.mjs:3 broke", "b.mjs:1 broke"],
+    }),
+    queue({ kind: "LEFT_QUEUE" }),
+    "The ci check on h1 is failure. Failing run: https://run.\na.mjs:3 broke\nb.mjs:1 broke",
+  ],
+}
+
+test("every delivery row has a failing and a passing fact", () => {
+  assert.deepEqual(Object.keys(CASES).sort(), jobRows.map((r) => r.id).sort())
+  for (const row of jobRows) {
+    const [bad, good, message] = CASES[row.id]
+    assert.equal(row.check(bad), message, row.id)
+    assert.equal(row.check(good), null, row.id)
+    assert.ok(evaluate(row.id, bad).fix.length > 0, row.id)
+    assert.ok(row.fix({}).length > 0, row.id)
+    assert.ok(!row.at.includes("pr"), `${row.id} must not run in policy`)
+  }
+})
+
+test("a body needs content under each section, and a readable file", () => {
+  const body = (text, extra) => ({ body: { file: "/b.md", text, ...extra } })
+  const check = (facts) => jobRows.find((r) => r.id === "BAD_BODY").check(facts)
+  assert.equal(
+    check(body("## Summary\n\n## Evidence\nx\n## Merge Danger\nx")),
+    "The PR body needs ## Summary."
+  )
+  assert.equal(
+    check({ body: { file: null, text: "" } }),
+    "Pass --body-file <file>."
+  )
+  assert.match(check(body("", { unreadable: true })), /cannot be read/)
+  assert.match(
+    check(body(BODY.replace("**Door:** two-way", "**Door:** <one-way>"))),
+    /Door, Blast Radius/
+  )
+})
+
+test("merge holds the owner, and the draft passes the pr moment", () => {
+  const facts = { pull: { ...pull, isDraft: true }, me: "owner", ci }
+  assert.deepEqual(
+    decide("merge", facts).refusals.map((r) => r.id),
+    ["DRAFT"]
+  )
+  const other = decide("merge", { ...facts, pull, me: "someone" })
+  assert.equal(other.refusals[0].id, "NOT_OWNER")
+  assert.equal(other.refusals[0].message, "PR #7 is by Owner, not someone.")
+  assert.equal(decide("merge", { ...facts, pull, me: "OWNER" }).ok, true)
+  // A merged PR has no ci to check.
+  const merged = { pull: { ...pull, state: "MERGED" }, me: "owner", ci: null }
+  assert.equal(decide("merge", merged).ok, true)
+})
+
+test("finish refuses a body with no Evidence before it pushes", () => {
+  const verdict = decide("finish", {
+    here: { ok: true },
+    body: { file: "/b.md", text: "## Summary\nOnly this" },
+    pull: { title: "feat: add a thing (#7)", issue: 7, issueState: "OPEN" },
+    commits: { count: 1, trailers: "", oversize: "" },
+    issue: { n: 7, state: "OPEN", labels: [] },
+    disk: {},
+    work: { path: "/wt", dirty: "", finish: true },
+    main: { path: "/m", branch: "main", dirty: "" },
+    port: null,
+    env: {},
+    diff: { files: "", labels: [], ciYmlAtHead: true, deleted: {} },
+  })
+  assert.equal(verdict.refusals[0].id, "BAD_BODY")
+  assert.equal(verdict.refusals[0].message, "The PR body needs ## Evidence.")
+})

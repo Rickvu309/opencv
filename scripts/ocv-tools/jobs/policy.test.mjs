@@ -28,7 +28,6 @@ const clean = {
     deleted: { files: 0, lines: 0, total: 100 },
   },
   commits: { trailers: "", oversize: "" },
-  delivery: { id: null },
 }
 
 test("a clean pull request passes with exit 0", () => {

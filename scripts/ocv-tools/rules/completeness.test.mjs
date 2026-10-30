@@ -24,11 +24,7 @@ function sources(dir, out = []) {
 // These are forwarding sites, not independently raised codes. Fail closed on
 // every other dynamic argument so a new construction cannot evade coverage.
 const FORWARDING = new Set([
-  "jobs/common.mjs:Refused:code", // Delivery boundary forwards its literal caller code.
-  "jobs/common.mjs:evaluate:code", // Delivery precondition with its boundary message.
-  "rules/index.mjs:Refused:refusal.id", // Converts a decide/evaluate result.
-  "shot.mjs:evaluate:id", // refuse forwards its literal caller's id.
-  "approve.mjs:evaluate:id", // Same wrapper as shot.
+  "rules/index.mjs:Refused:refusal.id", // Converts a decide result.
 ])
 
 function raisedCodes(inputs, rows) {
@@ -52,10 +48,7 @@ function raisedCodes(inputs, rows) {
           target.add(arg.text)
         } else {
           const site = `${path}:${name}:${arg?.getText(ast)}`
-          if (site === "take.mjs:evaluate:row.id") {
-            // decideTake evaluates checked rows for take lazily, in table order.
-            jobs.add("take")
-          } else if (site === "claim.mjs:decide:job") {
+          if (site === "claim.mjs:decide:job") {
             // taskHere defaults to save; its other callers pass release/cleanup.
             // Only NOT_A_TASK is reachable with its sole fact { here }.
             codes.add("NOT_A_TASK")
@@ -118,8 +111,9 @@ test("every raised refusal code has a row, and every row is raised", () => {
   assert.match(owner.says, /release/)
   assert.match(owner.says, /approve/)
   const history = RULES.find((row) => row.id === "UNKNOWN")
-  assert.ok(history.at.includes("board"))
-  assert.ok(history.at.includes("shot"))
+  assert.ok(history.at.includes("history"))
+  assert.ok(history.at.includes("issue-load"))
+  assert.ok(history.at.includes("shot-target"))
   assert.match(history.says, /board/)
 })
 
@@ -244,20 +238,25 @@ test("coverage follows decide jobs and refuses unknown dynamic calls", () => {
 test("shot, approve and board refusals keep their messages and fixes", () => {
   const hit = (id, facts) => evaluate(id, facts)
   assert.equal(
-    hit("MISSING_FILE", { picture: { path: "shot.png", exists: false } })
-      .message,
+    hit("MISSING_FILE", {
+      pictures: [{ path: "shot.png", exists: false }],
+    }).message,
     "shot.png does not exist"
   )
   assert.equal(
-    hit("BAD_PICTURE", { picture: { path: "notes", file: false } }).message,
+    hit("BAD_PICTURE", { pictures: [{ path: "notes", file: false }] }).message,
     "notes is not a png, jpg, gif or webp"
   )
   assert.equal(
-    hit("BAD_PICTURE", { picture: { asset: "issue-90-a.png" } }).fix,
+    hit("BAD_PICTURE", {
+      pictures: [{ path: "a.png", asset: "issue-90-a.png", clash: true }],
+    }).fix,
     "Pass --name, or rename one file so the pictures stay distinct."
   )
   assert.equal(
-    hit("TOO_BIG", { picture: { path: "big.png", bytes: 10 * 1024 * 1024 } }),
+    hit("TOO_BIG", {
+      pictures: [{ path: "big.png", bytes: 10 * 1024 * 1024 }],
+    }),
     null
   )
   assert.equal(

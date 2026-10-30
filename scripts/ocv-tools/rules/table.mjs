@@ -59,7 +59,8 @@ function unreadable(facts) {
 function unknownCommand(facts) {
   const command = facts.command
   if (!command || command.known) return null
-  return `no command "${command.name}"; commands are ${command.names}`
+  const noun = command.noun ?? "command"
+  return `no ${noun} "${command.name}"; ${noun}s are ${command.names}`
 }
 
 function unknownFlag(facts) {
@@ -94,31 +95,31 @@ function badIssue(facts) {
 const PICTURE_BYTES = 10 * 1024 * 1024
 
 function missingFile(facts) {
-  const p = facts.picture
-  if (!p || p.exists !== false) return null
-  return `${p.path} does not exist`
+  const p = facts.pictures.find((item) => item.exists === false)
+  return p ? `${p.path} does not exist` : null
 }
 
 function badPicture(facts) {
-  const p = facts.picture
-  if (!p) return null
-  const bad = `${p.path} is not a png, jpg, gif or webp`
-  if (p.file === false) return bad
-  if (p.bytesChecked === false) return `${bad} (checked the file bytes)`
-  if (p.asset) return `two files would be named ${p.asset}`
+  for (const p of facts.pictures) {
+    const bad = `${p.path} is not a png, jpg, gif or webp`
+    if (p.file === false) return bad
+    if (p.bytesChecked === false) return `${bad} (checked the file bytes)`
+    if (p.clash) return `two files would be named ${p.asset}`
+  }
   return null
 }
 
 function badPictureFix(facts) {
-  if (facts.picture?.asset)
+  if (facts.pictures?.some((item) => item.clash))
     return "Pass --name, or rename one file so the pictures stay distinct."
   return FIXES.BAD_PICTURE
 }
 
 function tooBig(facts) {
-  const p = facts.picture
-  if (!p || p.bytes == null || p.bytes <= PICTURE_BYTES) return null
-  return `${p.path} is over 10 MB`
+  const p = facts.pictures.find(
+    (item) => item.bytes != null && item.bytes > PICTURE_BYTES
+  )
+  return p ? `${p.path} is over 10 MB` : null
 }
 
 function tooMany(facts) {
@@ -205,7 +206,7 @@ export const tableRows = [
     kind: "precondition",
     says: "A picture passed to shot must exist on disk.",
     at: ["shot"],
-    needs: ["picture"],
+    needs: ["pictures"],
     stop: true,
     check: missingFile,
   }),
@@ -213,8 +214,8 @@ export const tableRows = [
     id: "BAD_PICTURE",
     kind: "precondition",
     says: "A shot picture must be a png, jpg, gif or webp, with its own name.",
-    at: ["shot"],
-    needs: ["picture"],
+    at: ["shot", "shot-target"],
+    needs: ["pictures"],
     stop: true,
     check: badPicture,
     fix: badPictureFix,
@@ -224,7 +225,7 @@ export const tableRows = [
     kind: "precondition",
     says: "A shot picture must be 10 MB or smaller.",
     at: ["shot"],
-    needs: ["picture"],
+    needs: ["pictures"],
     stop: true,
     check: tooBig,
   }),

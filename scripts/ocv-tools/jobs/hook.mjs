@@ -3,7 +3,8 @@
 // of the rule table with decide(); a refusal blocks the git command. Keep
 // imports to node: builtins and scripts/ocv-tools/.
 import { join, resolve } from "node:path"
-import { EXIT, Refused } from "../result.mjs"
+import { EXIT } from "../result.mjs"
+import { badInput } from "../input.mjs"
 import { decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
 
@@ -274,9 +275,13 @@ export function hook(ctx, name, args = []) {
     case "pre-push":
       return prePush(ctx)
     default:
-      throw new Refused(
-        "UNKNOWN_COMMAND",
-        `no hook "${name}"; hooks are commit-msg, pre-commit, pre-push`
-      )
+      return badInput({
+        command: {
+          known: false,
+          noun: "hook",
+          name,
+          names: "commit-msg, pre-commit, pre-push",
+        },
+      })
   }
 }

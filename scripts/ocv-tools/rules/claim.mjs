@@ -121,7 +121,16 @@ function assigned(facts) {
 }
 
 function notOwner(facts) {
-  if (facts.account && facts.issue) {
+  if (facts.pull) {
+    const author = String(facts.pull.author ?? "")
+    const me = String(facts.me ?? "")
+    if (author.toLowerCase() === me.toLowerCase()) return null
+    return `PR #${facts.pull.n} is by ${author}, not ${me}.`
+  }
+  if (!("claim" in facts && "issue" in facts))
+    throw new Error("NOT_OWNER needs a claim and an issue, or a pull request")
+  if ("account" in facts && facts.issue) {
+    if (facts.issue.approved) return null
     const me = String(facts.account.login ?? "").trim()
     const approvers = (facts.account.approvers ?? []).map((login) =>
       String(login).toLowerCase()
@@ -196,7 +205,7 @@ export const issueRows = [
     kind: "precondition",
     section: "1",
     says: "The number must be an issue, not a pull request.",
-    at: ["take", "status", "save", "release", "shot"],
+    at: ["issue-load", "shot-target"],
     needs: ["issue"],
     stop: true,
     check: notAnIssue,
@@ -207,7 +216,7 @@ export const issueRows = [
     kind: "precondition",
     section: "1",
     says: "Claim history and board pages must be complete before a holder is decided.",
-    at: ["take", "status", "save", "release", "board", "shot"],
+    at: ["issue-load", "history", "shot-target"],
     needs: ["history"],
     stop: true,
     check: unknown,
@@ -217,7 +226,7 @@ export const issueRows = [
     id: "CLOSED",
     section: "1",
     says: "A closed issue is not a task, unless its pull request is already merged.",
-    at: ["take", "status", "approve"],
+    at: ["take", "status", "approve", "finish"],
     needs: ["issue"],
     stop: true,
     check: closed,
@@ -240,7 +249,7 @@ export const claimRows = [
     id: "HELD",
     section: "2",
     says: "Never take an issue another agent saved within the last 180 minutes.",
-    at: ["take"],
+    at: ["take", "take-raced"],
     needs: ["issue", "claim", "me"],
     check: held,
   }),
@@ -265,8 +274,8 @@ export const claimRows = [
     kind: "precondition",
     section: "2",
     says: "Only the holding agent can release an issue, and only a project admin can approve one.",
-    at: ["release", "approve"],
-    needs: ["claim", "me", "issue"],
+    at: ["release", "approve", "merge"],
+    needs: ["me"],
     check: notOwner,
     fix: notOwnerFix,
   }),
@@ -284,7 +293,7 @@ export const claimRows = [
     id: "BRANCH_EXISTS",
     section: "3",
     says: "Do not create a branch that already exists locally or on origin.",
-    at: ["take"],
+    at: ["take-branch"],
     needs: ["branch", "issue"],
     check: branchExists,
     fix: branchFix,
@@ -293,7 +302,7 @@ export const claimRows = [
     id: "DIVERGED",
     section: "3",
     says: "Resume refuses when the local branch and origin have diverged.",
-    at: ["take"],
+    at: ["take-branch"],
     needs: ["branch", "issue"],
     check: diverged,
     fix: divergedFix,

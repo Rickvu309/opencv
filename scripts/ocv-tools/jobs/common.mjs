@@ -1,5 +1,5 @@
 import { Refused, writeResult } from "../result.mjs"
-import { jobRows, evaluate, refusalError } from "../rules/index.mjs"
+import { decide, refusalError } from "../rules/index.mjs"
 
 export function run(ctx, cmd, args, options = {}) {
   return ctx.ports.proc.run(cmd, args, { cwd: ctx.cwd, ...options })
@@ -17,11 +17,6 @@ export function must(ctx, cmd, args, options) {
 export const git = (ctx, ...args) => must(ctx, "git", args)
 export const gh = (ctx, ...args) => must(ctx, "gh", args)
 export const json = (ctx, ...args) => JSON.parse(gh(ctx, ...args))
-export function refuse(code, message, fix) {
-  if (jobRows.some((row) => row.id === code))
-    throw refusalError(evaluate(code, { delivery: { id: code, message, fix } }))
-  throw new Refused(code, message, fix)
-}
 export function task(ctx) {
   const here = ctx.ports.git.here(ctx.cwd)
   const m =
@@ -35,14 +30,17 @@ export function task(ctx) {
     !repo?.root ||
     here.gitDir === here.common ||
     !here.top.startsWith(`${repo.root}/`)
-  )
-    refuse("NOT_A_TASK", "Run this inside your task worktree.")
+  ) {
+    const verdict = decide("finish", { here: { ok: false } })
+    throw refusalError(verdict.refusals[0])
+  }
   return { ...here, ...repo, type: m[1], n: Number(m[2]), slug: m[3] }
 }
+// What finish holds still while it pushes: the tree, the base and whether
+// anything is unsaved. finish-pushed compares the one before with the one after.
 export function snapshot(ctx, t) {
-  if (git(ctx, "status", "--porcelain"))
-    refuse("DIRTY", "Commit the changes before finishing.")
   return {
+    dirty: git(ctx, "status", "--porcelain"),
     tree: git(ctx, "rev-parse", "HEAD^{tree}"),
     base: git(ctx, "rev-parse", "origin/main"),
     branch: t.branch,

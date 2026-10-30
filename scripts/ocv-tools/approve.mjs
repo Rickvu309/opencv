@@ -1,6 +1,7 @@
 // `approve`: relay an admin's "approved" from chat onto a risk:high issue.
 import { agentIdFor, envAgent } from "./claim.mjs"
-import { evaluate, refusalError } from "./rules/index.mjs"
+import { lazyFacts } from "./lazy.mjs"
+import { decide, refusalError } from "./rules/index.mjs"
 
 const WARN =
   'The agent must only run this after the owner said "approved" in this chat.'
@@ -18,18 +19,28 @@ function relayAgent(ctx) {
   return agentIdFor(ctx, here.gitDir) || "unknown"
 }
 
-function refuse(id, facts) {
-  const hit = evaluate(id, facts)
-  if (!hit) throw new Error(`approve expected ${id} to refuse`)
-  throw refusalError(hit)
-}
-
 export function approve(ctx, n) {
   const { issue } = ctx.facts.load(n, ["issue"])
-  if (String(issue.state).toUpperCase() !== "OPEN")
-    refuse("CLOSED", { issue: { ...issue, state: "CLOSED" } })
-  const risk = evaluate("NOT_HIGH_RISK", { issue })
-  if (risk) throw refusalError(risk)
+  const open = String(issue.state).toUpperCase() === "OPEN"
+  // The signed-in account is read only when the earlier rows pass and the
+  // issue is not already approved.
+  const verdict = decide(
+    "approve",
+    lazyFacts(
+      {
+        issue: { ...issue, state: open ? "OPEN" : "CLOSED" },
+        claim: { state: "none" },
+        me: null,
+      },
+      {
+        account: () => ({
+          login: String(ctx.ports.gh.login() ?? "").trim(),
+          approvers: issue.approvers,
+        }),
+      }
+    )
+  )
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
   if (issue.approved)
     return {
       lines: [
@@ -38,15 +49,6 @@ export function approve(ctx, n) {
       ],
       next: `scripts/ocv-tools.mjs take ${n}`,
     }
-  const me = String(ctx.ports.gh.login() ?? "").trim()
-  const approvers = issue.approvers
-  const held = evaluate("NOT_OWNER", {
-    issue,
-    claim: { state: "none" },
-    me: null,
-    account: { login: me, approvers },
-  })
-  if (held) throw refusalError(held)
   ctx.ports.gh.comment(n, approveComment(relayAgent(ctx)))
   return {
     lines: [`Posted /approve on #${n}.`, WARN],

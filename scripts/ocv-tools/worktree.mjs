@@ -2,9 +2,8 @@
 // origin/main, .env with a free port, hooks, install. Ported from the old scripts/new-task.sh.
 // Git, files and process checks go through ports.
 import { join } from "node:path"
-import { diskProblem } from "./disk.mjs"
 import { BRANCH_RE, TYPES } from "./fields.mjs"
-import { evaluate, refusalError } from "./rules/index.mjs"
+import { decide, refusalError } from "./rules/index.mjs"
 
 export { BRANCH_RE } from "./fields.mjs"
 export const MAX_WORDS = 5
@@ -24,13 +23,25 @@ export const descFromTitle = (title) =>
   String(title).replace(/^[a-zA-Z]+(\([^)]*\))?!?:\s*/, "")
 
 // The main checkout and the worktree root, from any worktree of the clone.
+// The locate moment: a missing or bare repository refuses here.
 export function locate(ctx) {
   const repo = ctx.ports.git.repo(ctx.cwd)
-  if (!repo)
-    throw refusalError(evaluate("NOT_A_REPO", { repo: { missing: true } }))
-  if (repo.bare)
-    throw refusalError(evaluate("NOT_A_REPO", { repo: { bare: repo.bare } }))
+  const fact = !repo
+    ? { ok: false, missing: true }
+    : repo.bare
+      ? { ok: false, bare: repo.bare }
+      : { ok: true }
+  const verdict = decide("locate", { repo: fact })
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
   return { main: repo.main, root: repo.root }
+}
+
+// The path the new worktree would take, when something is already there.
+export function takenPath(ctx, issue, desc) {
+  const slug = slugify(desc ?? "")
+  if (!slug) return null
+  const path = join(locate(ctx).root, `${issue}-${slug}`)
+  return ctx.ports.fs.exists(path) ? path : null
 }
 
 // Ports other worktrees already hold in their .env (their servers may not run yet).
@@ -66,27 +77,11 @@ function installCommand(fs, wt) {
   return ["npm", ["install"]]
 }
 
-// Local and origin both have the branch. Fast-forward when local is a strict
-// ancestor. Refuse when the tips have diverged so resume cannot drop the push.
-function alignResume(git, main, branch, issue) {
-  const facts = git.branchFacts(main, branch)
-  if (!facts.local || !facts.remote)
-    throw new Error(
-      `could not compare ${branch} with origin/${branch}: ${facts.err}`
-    )
-  if (facts.relation === "same" || facts.relation === "ahead") return
-  if (facts.relation === "behind") {
-    const moved = git.fastForward(main, branch, facts.remote)
-    if (!moved.ok)
-      throw new Error(`could not fast-forward ${branch}: ${moved.err}`)
-    return
-  }
-  throw refusalError(
-    evaluate("DIVERGED", {
-      branch: { name: branch, relation: "diverged" },
-      issue: { n: issue },
-    })
-  )
+// Local is a strict ancestor of origin: fast-forward so resume keeps the push.
+function fastForward(git, main, branch, remote) {
+  const moved = git.fastForward(main, branch, remote)
+  if (!moved.ok)
+    throw new Error(`could not fast-forward ${branch}: ${moved.err}`)
 }
 
 // Makes the branch and worktree. Returns { main, worktree, branch, port, warnings }.
@@ -96,17 +91,11 @@ export function createWorktree(
   { type, issue, desc, install = true, resume = false, held = null }
 ) {
   if (!TYPES.includes(type))
-    throw refusalError(evaluate("MISSING_FIELDS", { flags: {}, type }))
+    throw new Error(`type must be one of: ${TYPES.join(", ")}`)
   const { main, root } = locate(ctx)
-  const env = ctx.env ?? process.env
-  const problem = diskProblem(ctx.ports.fs, env, { main, root })
-  if (problem) throw refusalError(evaluate("DISK", { disk: problem }))
   const warnings = []
   const slug = slugify(desc ?? "")
-  if (!slug)
-    throw refusalError(
-      evaluate("MISSING_FIELDS", { flags: {}, desc: desc ?? "" })
-    )
+  if (!slug) throw new Error(`description "${desc ?? ""}" has no usable words`)
   const branch = `${type}/${issue}-${slug}`
   if (!BRANCH_RE.test(branch))
     throw new Error(`built an invalid branch name: ${branch}`)
@@ -116,14 +105,6 @@ export function createWorktree(
     )
   const worktree = join(root, `${issue}-${slug}`)
   const fs = ctx.ports.fs
-  if (fs.exists(worktree))
-    throw refusalError(
-      evaluate("WORKTREE_EXISTS", {
-        path: worktree,
-        issue: { n: issue },
-        local: {},
-      })
-    )
 
   const git = ctx.ports.git
   const fetched = git.fetch(main, "main")
@@ -131,7 +112,23 @@ export function createWorktree(
     throw new Error(`git fetch origin main failed: ${fetched.err}`)
   const local = git.localHead(main, branch)
   const remote = git.remoteHead(main, branch)
-  const branchHit = evaluate("BRANCH_EXISTS", {
+  // Resume reads origin's tip first, so the decision sees how the two tips
+  // relate. A stale local branch must not hide commits another clone pushed.
+  if (resume && remote) {
+    const got = git.fetch(main, branch)
+    if (!got.ok)
+      throw new Error(`git fetch origin ${branch} failed: ${got.err}`)
+  }
+  let relation = null
+  if (resume && local && remote) {
+    const facts = git.branchFacts(main, branch)
+    if (!facts.local || !facts.remote)
+      throw new Error(
+        `could not compare ${branch} with origin/${branch}: ${facts.err}`
+      )
+    relation = facts.relation
+  }
+  const verdict = decide("take-branch", {
     branch: {
       stage: "create",
       name: branch,
@@ -139,17 +136,12 @@ export function createWorktree(
       local: Boolean(local),
       remote: Boolean(remote),
       held,
+      relation,
     },
     issue: { n: issue },
   })
-  if (branchHit) throw refusalError(branchHit)
-  if (resume && remote) {
-    const got = git.fetch(main, branch)
-    if (!got.ok)
-      throw new Error(`git fetch origin ${branch} failed: ${got.err}`)
-  }
-  // A stale local branch must not hide commits another clone already pushed.
-  if (resume && local && remote) alignResume(git, main, branch, issue)
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
+  if (relation === "behind") fastForward(git, main, branch, remote)
 
   fs.mkdir(root)
   const added = git.addWorktree(main, {

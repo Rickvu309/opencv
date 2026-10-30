@@ -1,7 +1,7 @@
 // merge <pr#> [--wait]: enqueue the squash merge, then with --wait watch the
 // queue through one GraphQL snapshot per step until classify() settles it.
-import { PR_FIELDS, pullFacts } from "./pull-facts.mjs"
-import { recorded, json, gh, refuse } from "./common.mjs"
+import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
+import { recorded, json, gh } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { cleanup } from "../work.mjs"
 
@@ -162,35 +162,40 @@ function failedCheck(ctx, repo, head) {
   return { run: failed, notes }
 }
 
+// The wait ended without a merge: the queue rows name why. The failed check's
+// annotations are read only for a ci failure, so the agent sees what ci saw.
 function failWait(ctx, repo, n, verdict, snapshot) {
-  if (verdict.kind === "HEAD_MOVED")
-    refuse(
-      "HEAD_MOVED",
-      `PR #${n} head moved from ${verdict.from} to ${verdict.to}.`,
-      `Run: scripts/ocv-tools.mjs merge ${n} --wait`
-    )
-  if (verdict.kind === "CI_FAILED") {
-    const failed = failedCheck(ctx, repo, snapshot.head)
-    const notes = (failed?.notes ?? [])
-      .slice(0, 5)
-      .map((a) => `${a.path}:${a.start_line ?? 1} ${a.message}`)
-    refuse(
-      "CI_FAILED",
-      `The ci check on ${snapshot.head} is ${verdict.conclusion}.${failed?.run?.html_url ? ` Failing run: ${failed.run.html_url}.` : ""}${notes.length ? `\n${notes.join("\n")}` : ""}`,
-      `Run: gh pr checks ${n}, fix what it names, then gh run rerun <id> --failed`
-    )
-  }
-  if (verdict.kind === "LEFT_QUEUE")
-    refuse(
-      "LEFT_QUEUE",
-      `PR #${n} left the merge queue${verdict.at ? ` at ${verdict.at}` : ""}, reason ${verdict.reason}.`,
-      `Run: gh run list --branch 'gh-readonly-queue/main/pr-${n}-*' --limit 1`
-    )
-  refuse(
-    "QUEUE_TIMEOUT",
-    `PR #${n} is still not merged after ${WAIT_LIMIT_SECONDS / 60} minutes${verdict.queueState ? ` (${verdict.queueState})` : ""}.`,
-    `Run: scripts/ocv-tools.mjs merge ${n} --wait`
+  const failed =
+    verdict.kind === "CI_FAILED" ? failedCheck(ctx, repo, snapshot.head) : null
+  const notes = (failed?.notes ?? [])
+    .slice(0, 5)
+    .map((a) => `${a.path}:${a.start_line ?? 1} ${a.message}`)
+  const found = decide("queue", {
+    queue: {
+      ...verdict,
+      n,
+      notes,
+      run: failed?.run,
+      limitMinutes: WAIT_LIMIT_SECONDS / 60,
+    },
+    snapshot,
+  })
+  throw refusalError(found.refusals[0])
+}
+
+// The newest ci check run on the head, as the CI_REQUIRED row reads it.
+function newestCi(ctx, repo, head) {
+  const checks = json(
+    ctx,
+    "api",
+    `repos/${repo}/commits/${head}/check-runs?check_name=ci&per_page=100`
   )
+  const ci = checks.check_runs
+    .filter((c) => c.name === "ci")
+    .sort((a, b) => b.id - a.id)[0]
+  return ci
+    ? { status: ci.status, conclusion: ci.conclusion, head: ci.head_sha }
+    : null
 }
 
 function waitForMerge(ctx, n, startHead, repo) {
@@ -208,29 +213,22 @@ export function merge(ctx, n, { wait = false } = {}) {
   return recorded(ctx, "merge-pr", () => {
     let pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
     const me = gh(ctx, "api", "user", "--jq", ".login")
-    if (pull.author.login.toLowerCase() !== me.toLowerCase())
-      refuse("NOT_OWNER", `PR #${n} is by ${pull.author.login}, not ${me}.`)
-    if (pull.isDraft)
-      refuse("DRAFT", `PR #${n} is a draft.`, `Run: gh pr ready ${n}`)
-    if (pull.labels.some((l) => l.name === "needs-human-review"))
-      refuse(
-        "NEEDS_HUMAN_REVIEW",
-        `PR #${n} needs human review; an agent never merges it.`
-      )
     const issue = /^(?:feat|fix|hotfix|refactor|chore|docs)\/(\d+)-/.exec(
       pull.headRefName
     )?.[1]
-    if (!issue)
-      refuse("BAD_BRANCH", `PR #${n} has no linked issue in its branch name.`)
     const head = pull.headRefOid
-    if (pull.state !== "MERGED") {
-      if (pull.state !== "OPEN")
-        refuse("CLOSED_PR", `PR #${n} is ${pull.state}.`)
-      // The pr rows run against the live pull request so a refusal is learned
-      // here, not after the queue's policy job.
-      const verdict = decide("pr", pullFacts(ctx, n))
-      if (!verdict.ok) throw refusalError(verdict.refusals[0])
-      const repo = gh(
+    let repo = null
+    // An open PR is read in full: the pr rows (the same ones policy runs) first,
+    // then the merge rows with the newest ci check. A merged or closed PR needs
+    // only the merge rows, which read its state.
+    const open = pull.state === "OPEN"
+    const facts = open
+      ? { ...pullFacts(ctx, n), me }
+      : { pull: pullOf(pull), me, ci: null }
+    if (open) {
+      const live = decide("pr", facts)
+      if (!live.ok) throw refusalError(live.refusals[0])
+      repo = gh(
         ctx,
         "repo",
         "view",
@@ -239,25 +237,11 @@ export function merge(ctx, n, { wait = false } = {}) {
         "--jq",
         ".nameWithOwner"
       )
-      const checks = json(
-        ctx,
-        "api",
-        `repos/${repo}/commits/${head}/check-runs?check_name=ci&per_page=100`
-      )
-      const ci = checks.check_runs
-        .filter((c) => c.name === "ci")
-        .sort((a, b) => b.id - a.id)[0]
-      if (
-        !ci ||
-        ci.status !== "completed" ||
-        ci.conclusion !== "success" ||
-        ci.head_sha !== head
-      )
-        refuse(
-          "CI_REQUIRED",
-          `The ci check on head ${head} is ${ci?.conclusion ?? "pending or missing"}, not success.`,
-          `Run: gh run list --workflow ci.yml --commit ${head}`
-        )
+      facts.ci = newestCi(ctx, repo, head)
+    }
+    const ready = decide("merge", facts)
+    if (!ready.ok) throw refusalError(ready.refusals[0])
+    if (pull.state !== "MERGED") {
       gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
       pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
       if (pull.state !== "MERGED" || !pull.mergeCommit?.oid) {

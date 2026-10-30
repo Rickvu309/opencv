@@ -1,6 +1,7 @@
 // Dispatcher. runCli returns { code, text } so tests drive it with injected ports.
 import { readFileSync } from "node:fs"
-import { EXIT, Refused, failure, render } from "./result.mjs"
+import { EXIT, failure, render } from "./result.mjs"
+import { badInput, needsValue, unknownOption } from "./input.mjs"
 import { createFacts } from "./facts.mjs"
 import { realPorts } from "./ports/index.mjs"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
@@ -111,8 +112,7 @@ function parseTakeArgs(argv) {
       const value = argv[i + 1]
       // A missing value, or another flag. A leading dash in prose ("- I ...")
       // is a real value.
-      if (value == null || /^--?[A-Za-z]/.test(value))
-        throw new Refused("MISSING_FIELDS", `${arg} needs a value`)
+      if (value == null || /^--?[A-Za-z]/.test(value)) needsValue(arg)
       flags[arg] = value
       i += 1
       continue
@@ -122,11 +122,7 @@ function parseTakeArgs(argv) {
       continue
     }
     if (arg.startsWith("-")) {
-      const hint = RETIRED_FLAG[arg]
-      throw new Refused(
-        "UNKNOWN_FLAG",
-        hint ? `unknown option: ${arg} (use ${hint})` : `unknown option: ${arg}`
-      )
+      unknownOption(arg, RETIRED_FLAG[arg])
     }
     pos.push(arg)
   }
@@ -138,25 +134,14 @@ function guardTake(flags, pos) {
   if (pos.length > 1) {
     const kinds = pos.map(targetKind)
     const both = kinds.some((k) => k !== "title") && kinds.includes("title")
-    throw new Refused(
-      "BAD_ARGS",
-      both
-        ? "pass an issue number or a title, not both"
-        : `expected one target, got ${pos.length}`
-    )
+    badInput({ args: { ok: false, both, count: pos.length } })
   }
   if (targetKind(pos[0]) === "bad")
-    throw new Refused("BAD_ISSUE", `"${pos[0]}" is not an issue number`)
+    badInput({ token: { ok: false, text: pos[0] } })
   if (flags["--type"] != null && !TYPES.includes(flags["--type"]))
-    throw new Refused(
-      "MISSING_FIELDS",
-      `type must be one of: ${TYPES.join(", ")}`
-    )
+    badInput({ flags, validateType: true })
   if (flags["-d"] != null && !slugify(flags["-d"]))
-    throw new Refused(
-      "MISSING_FIELDS",
-      `description "${flags["-d"]}" has no usable characters; pass -d`
-    )
+    badInput({ flags, desc: flags["-d"] })
 }
 
 function issueNumber(text, usage) {
@@ -190,13 +175,12 @@ function command(ctx, cmd, rest) {
             ? ["--wait"]
             : []
       for (const flag of Object.keys(flags)) {
-        if (!allowed.includes(flag))
-          throw new Refused("UNKNOWN_FLAG", `unknown option: ${flag}`)
+        if (!allowed.includes(flag)) unknownOption(flag)
         if (
           ["--body-file", "-d", "--desc"].includes(flag) &&
           (flags[flag] == null || String(flags[flag]).startsWith("--"))
         )
-          throw new Refused("MISSING_FIELDS", `${flag} needs a value`)
+          needsValue(flag)
       }
       if (pos.length !== (cmd === "merge" ? 1 : 0))
         throw new Error(
@@ -221,8 +205,7 @@ function command(ctx, cmd, rest) {
       })
     case "policy": {
       const unknown = Object.keys(flags)[0]
-      if (unknown)
-        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (unknown) unknownOption(unknown)
       if (pos.length !== 1) throw new Error("usage: ocv-tools policy <pr#>")
       const n = issueNumber(pos[0], "policy <pr#>")
       return policyReport(n, pullFacts(ctx, n), {
@@ -231,8 +214,7 @@ function command(ctx, cmd, rest) {
     }
     case "hook": {
       const unknown = Object.keys(flags)[0]
-      if (unknown)
-        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (unknown) unknownOption(unknown)
       if (!pos.length)
         throw new Error(
           "usage: ocv-tools hook <commit-msg|pre-commit|pre-push>"
@@ -241,15 +223,13 @@ function command(ctx, cmd, rest) {
     }
     case "approve": {
       const unknown = Object.keys(flags)[0]
-      if (unknown)
-        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (unknown) unknownOption(unknown)
       if (pos.length !== 1) throw new Error("usage: ocv-tools approve <n>")
       return approve(ctx, issueNumber(pos[0], "approve <n>"))
     }
     case "board": {
       const unknown = Object.keys(flags).find((key) => key !== "--json")
-      if (unknown)
-        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (unknown) unknownOption(unknown)
       if (pos.length) throw new Error("usage: ocv-tools board [--json]")
       return board(ctx, { json: Boolean(flags["--json"]) })
     }
@@ -260,10 +240,13 @@ function command(ctx, cmd, rest) {
     case "rules":
       return rulesJob(ctx, { flags })
     default:
-      throw new Refused(
-        "UNKNOWN_COMMAND",
-        `no command "${cmd}"; commands are ${COMMANDS.map((c) => c.name).join(", ")}`
-      )
+      return badInput({
+        command: {
+          known: false,
+          name: cmd,
+          names: COMMANDS.map((c) => c.name).join(", "),
+        },
+      })
   }
 }
 
