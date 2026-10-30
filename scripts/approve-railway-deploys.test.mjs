@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { readFileSync } from "node:fs"
 
 import { pickApprovals } from "./approve-railway-deploys.mjs"
 
@@ -46,4 +47,18 @@ test("approves only merge queue releases of main in this repo", () => {
     make("fork", "docs", "NEEDS_APPROVAL", { repo: "other/opencv" }),
   ]
   assert.deepEqual(ids(list), [])
+})
+
+test("approval job can check out the private repository without write access", () => {
+  const workflow = readFileSync(
+    new URL("../.github/workflows/nightly.yml", import.meta.url),
+    "utf8"
+  )
+  const job = workflow
+    .split("  approve-railway:\n")[1]
+    ?.split(/^  [a-z][a-z-]*:/m)[0]
+  assert.ok(job, "release approval job exists")
+  assert.match(job, /^    permissions:\n      contents: read$/m)
+  assert.doesNotMatch(job, /: write\b|write-all/)
+  assert.match(job, /uses: actions\/checkout@v4/)
 })

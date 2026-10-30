@@ -38,7 +38,8 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions: {}
+    permissions:
+      contents: read
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       GITHUB_REPOSITORY: ${{ github.repository }}
