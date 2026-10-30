@@ -1,0 +1,86 @@
+{
+  "frameId": "DhG87",
+  "frameName": "W1.6 Session expired",
+  "route": "/apply",
+  "driver": ".claude/skills/verify-app-ui/scripts/verify-session-expired.mjs",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "pane": {
+    "width": 420,
+    "height": 272.5
+  },
+  "texts": [
+    {
+      "text": "You've been logged out",
+      "x": 100.5,
+      "y": 92,
+      "width": 219.5,
+      "height": 24,
+      "fontSize": 20,
+      "fontWeight": 600,
+      "letterSpacing": -0.4,
+      "lineHeight": 24,
+      "color": "rgba(26, 26, 26, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Log in again. Your work is saved.",
+      "x": 101,
+      "y": 126,
+      "width": 217.5,
+      "height": 17,
+      "fontSize": 14,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 21,
+      "color": "rgba(107, 107, 111, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "center"
+    },
+    {
+      "text": "Continue as linh.nguyen@gmail.com",
+      "x": 101.5,
+      "y": 177.5,
+      "width": 244.5,
+      "height": 17,
+      "fontSize": 14,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "lineHeight": 17,
+      "color": "rgba(26, 26, 26, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Email me a code",
+      "x": 28,
+      "y": 228,
+      "width": 101.5,
+      "height": 16,
+      "fontSize": 13,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "lineHeight": 15.5,
+      "color": "rgba(89, 89, 91, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Log out",
+      "x": 345.5,
+      "y": 228,
+      "width": 46.5,
+      "height": 16,
+      "fontSize": 13,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 15.5,
+      "color": "rgba(150, 151, 153, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { useReducer } from "react"
+import { Clock3 } from "lucide-react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -12,6 +13,7 @@ import {
 import { authClient } from "@/lib/auth-client.ts"
 import { safeRedirectPath, SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
 
+import "./design/session-expired.pen.css"
 import {
   AUTH_COPY,
   continueAsLabel,
@@ -86,8 +88,12 @@ export function SessionExpiredDialog({
     >
       <DialogContent
         showCloseButton={false}
-        className="max-md:max-w-[calc(100%-2rem)]"
+        data-pen-surface="auth"
+        overlayClassName="bg-foreground/35 backdrop-blur-[4px]"
       >
+        <div data-slot="session-badge" aria-hidden="true">
+          <Clock3 />
+        </div>
         <DialogHeader>
           <DialogTitle>{AUTH_COPY.loggedOutTitle}</DialogTitle>
           <DialogDescription>{AUTH_COPY.loggedOutBody}</DialogDescription>
@@ -97,23 +103,23 @@ export function SessionExpiredDialog({
             {notice}
           </p>
         ) : null}
-        <div className="flex flex-col gap-2">
-          {email ? (
-            <Button
-              type="button"
-              variant="glow"
-              className="h-auto min-h-8 w-full min-w-0 [overflow-wrap:anywhere] whitespace-normal"
-              autoFocus
-              disabled={pending}
-              onClick={() => void continueAs()}
-            >
-              {continueAsLabel(email)}
-            </Button>
-          ) : null}
+        {email ? (
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            data-slot="session-continue"
+            className="h-auto min-w-0 [overflow-wrap:anywhere] whitespace-normal"
+            autoFocus
+            disabled={pending}
+            onClick={() => void continueAs()}
+          >
+            {continueAsLabel(email)}
+          </Button>
+        ) : null}
+        <div data-slot="session-footer">
+          <Button
+            type="button"
+            variant="ghost"
             autoFocus={!email}
             onClick={() =>
               void navigate({ to: "/sign-in", search: { redirect } })
@@ -121,12 +127,7 @@ export function SessionExpiredDialog({
           >
             {AUTH_COPY.emailMe}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => void logOut()}
-          >
+          <Button type="button" variant="ghost" onClick={() => void logOut()}>
             {AUTH_COPY.logOut}
           </Button>
         </div>

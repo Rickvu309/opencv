@@ -1,0 +1,98 @@
+[data-pen-surface="auth"][data-slot="dialog-content"] {
+  width: 420px;
+  max-width: calc(100% - 32px);
+  gap: 20px;
+  padding: 28px;
+  border-radius: 18px;
+  background-color: #ffffff;
+  justify-items: center;
+  box-shadow:
+    0 4px 10px 0 #0000000f,
+    0 30px 80px 0 #00000040;
+}
+
+[data-pen-surface="auth"] [data-slot="session-badge"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: #f3f3f4;
+  color: #1a1a1a;
+}
+
+[data-pen-surface="auth"] [data-slot="session-badge"] svg {
+  width: 20px;
+  height: 20px;
+}
+
+[data-pen-surface="auth"] [data-slot="dialog-header"] {
+  width: 100%;
+  gap: 8px;
+  text-align: center;
+}
+
+[data-pen-surface="auth"] [data-slot="dialog-title"] {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: -0.4px;
+  color: #1a1a1a;
+}
+
+[data-pen-surface="auth"] [data-slot="dialog-description"] {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b6b6f;
+}
+
+[data-pen-surface="auth"] [data-slot="session-continue"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #e2e2e2;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+[data-pen-surface="auth"] [data-slot="session-continue"]:not(:hover) {
+  background-color: #ffffff;
+}
+
+[data-pen-surface="auth"] [data-slot="session-footer"] {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[data-pen-surface="auth"] [data-slot="session-footer"] button {
+  height: auto;
+  padding: 0;
+  font-size: 13px;
+  line-height: normal;
+}
+
+[data-pen-surface="auth"] [data-slot="session-footer"] button:not(:hover) {
+  background-color: transparent;
+}
+
+[data-pen-surface="auth"] [data-slot="session-footer"] button:first-child {
+  font-weight: 500;
+  color: #59595b;
+}
+
+[data-pen-surface="auth"] [data-slot="session-footer"] button:last-child {
+  font-weight: 400;
+  color: #969799;
+}
+
+@media (min-width: 768px) and (min-height: 700px) {
+  [data-pen-surface="auth"][data-slot="dialog-content"] {
+    top: 230px;
+    translate: -50% 0;
+  }
+}

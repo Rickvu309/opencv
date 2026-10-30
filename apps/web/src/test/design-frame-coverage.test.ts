@@ -15,7 +15,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   Cs3hj: { issue: 498, expires: "2026-12-31" }, // Blog (Linear layout)
   EKv2D: { issue: 498, expires: "2026-12-31" }, // Blog post (Linear layout)
   NAXQk: { issue: 498, expires: "2026-12-31" }, // W1.5 Welcome
-  DhG87: { issue: 498, expires: "2026-12-31" }, // W1.6 Session expired
   FUipv: { issue: 498, expires: "2026-12-31" }, // W3.1 New chat
   ISnTZ: { issue: 498, expires: "2026-12-31" }, // W3.2 Chat history
   lOO77: { issue: 498, expires: "2026-12-31" }, // W3.3 More ideas
