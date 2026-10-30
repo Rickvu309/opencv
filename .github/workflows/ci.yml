@@ -82,7 +82,10 @@ jobs:
       - run: pnpm exec turbo run build $TURBO_SCOPE
 
   test-api:
-    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -90,14 +93,15 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!web' --filter='!@workspace/ui' --filter='!@workspace/guards'
+      - run: pnpm exec turbo run test $TURBO_SCOPE --filter=api -- --shard=${{ matrix.shard }}/2
+      - if: matrix.shard == 1
+        run: pnpm exec turbo run test $TURBO_SCOPE --filter=@workspace/domain
 
   test-web:
-    needs: build
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -105,7 +109,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/2
+      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/3
 
   ci:
     needs: [guards, lint, typecheck, build, test-api, test-web]

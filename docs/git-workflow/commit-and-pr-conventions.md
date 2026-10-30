@@ -49,7 +49,7 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 ## Checks
 
-The `ci` workflow runs parallel affected guards, lint, typecheck, build, API tests and two web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The same checks run locally at these points:
+The `ci` workflow runs parallel affected guards, lint, typecheck, build, two API test shards and three web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The same checks run locally at these points:
 
 | When                           | What runs                     | What it enforces                                                                                                                                                                      |
 | ------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

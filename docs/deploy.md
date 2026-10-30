@@ -8,8 +8,8 @@ deployment (see Rollback). This file is the runbook.
 
 Each service redeploys from `main` when a file under its watch paths changes.
 Required `ci` runs affected PR checks, then full checks and whole-repo Prettier
-on the queued merge result. Hosted lint, typecheck, build, guards, API tests and
-two web shards must all succeed; skipped or cancelled jobs fail `ci`.
+on the queued merge result. Hosted lint, typecheck, build, guards, API test shards and
+the web shards must all succeed; skipped or cancelled jobs fail `ci`.
 Production verification stays separate.
 
 ## Layout
