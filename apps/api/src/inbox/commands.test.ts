@@ -287,6 +287,12 @@ describe("inbox commands", () => {
     expect(doneBody.data).not.toHaveProperty("previousSnoozeUntil")
     expect(doneBody.data).not.toHaveProperty("previousStage")
     expect(doneBody.data.activityId).toEqual(expect.any(String))
+    const afterDone = (await (
+      await app.request("/api/inbox", { headers })
+    ).json()) as { data: { threads: { id: string }[] } }
+    expect(afterDone.data.threads.map((thread) => thread.id)).not.toContain(
+      doneId
+    )
     const undone = await app.request("/api/commands/activity.undo", {
       method: "POST",
       headers,
