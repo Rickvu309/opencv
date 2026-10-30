@@ -31,6 +31,7 @@ const extras = new Map<string, Extra>()
 const posts: Post[] = []
 const previews: { url?: string; text?: string }[] = []
 let failNextChecklistItem = false
+let failNextNote = false
 
 function blankExtra(): Extra {
   return {
@@ -95,10 +96,15 @@ export function resetMockJobs() {
   posts.splice(0)
   previews.splice(0)
   failNextChecklistItem = false
+  failNextNote = false
 }
 
 export function rejectNextChecklistItem() {
   failNextChecklistItem = true
+}
+
+export function rejectNextNote() {
+  failNextNote = true
 }
 
 export function setMockJobs(
@@ -440,6 +446,10 @@ export async function jobApiFetch(
       return jsonOk({ id: String(payload.itemId) })
     }
     if (name === "job.addNote") {
+      if (failNextNote) {
+        failNextNote = false
+        return jsonError(503, "UNAVAILABLE", "Temporary failure")
+      }
       extra(job.id).note = String(payload.body ?? "")
       return jsonOk({ jobId, body: payload.body })
     }
