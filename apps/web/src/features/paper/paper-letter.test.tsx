@@ -51,7 +51,7 @@ function installFetch(mode: "tool" | "stop" | "limit") {
     if (url.includes("/api/paper/letter-attachment"))
       return Promise.resolve(
         ok({
-          name: "job.txt",
+          name: "role-description.txt",
           text: "Lead customer research and delivery.",
           truncated: false,
         })
@@ -156,13 +156,17 @@ describe("Cover letter", () => {
     const calls = installFetch("tool")
     const onCreated = vi.fn()
     render(<PaperLetterStart jobs={[]} onCreated={onCreated} />)
-    const file = new File(["Lead customer research and delivery."], "job.txt", {
-      type: "text/plain",
-    })
+    const file = new File(
+      ["Lead customer research and delivery."],
+      "role-description.txt",
+      {
+        type: "text/plain",
+      }
+    )
     fireEvent.change(screen.getByLabelText("Attach letter context"), {
       target: { files: [file] },
     })
-    await screen.findByText("Context: job.txt")
+    await screen.findByText("Context: role-description.txt")
     expect(onCreated).not.toHaveBeenCalled()
     expect(calls.filter((call) => call.url.includes("/commands/"))).toEqual([])
     expect(screen.queryByText(/From CV/)).not.toBeInTheDocument()
@@ -189,12 +193,14 @@ describe("Cover letter", () => {
     installFetch("tool")
     render(<PaperLetterStart jobs={[]} onCreated={() => undefined} />)
     fireEvent.change(screen.getByLabelText("Attach letter context"), {
-      target: { files: [new File(["Job"], "job.txt")] },
+      target: { files: [new File(["Job"], "role-description.txt")] },
     })
-    await screen.findByText("Context: job.txt")
+    await screen.findByText("Context: role-description.txt")
     expect(screen.getByRole("button", { name: "Draft letter" })).toBeEnabled()
     fireEvent.click(screen.getByRole("button", { name: "Remove attachment" }))
-    expect(screen.queryByText("Context: job.txt")).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("Context: role-description.txt")
+    ).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
   })
 

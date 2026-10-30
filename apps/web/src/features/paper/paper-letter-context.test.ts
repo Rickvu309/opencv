@@ -4,7 +4,7 @@ import { letterDraftText } from "./paper-letter-context.ts"
 
 describe("letter attachment context", () => {
   const attachment = {
-    name: "job.txt",
+    name: "role-description.txt",
     text: "Research customers",
     truncated: false,
   }
@@ -28,7 +28,7 @@ describe("letter attachment context", () => {
     })
     expect(text.length).toBeLessThanOrEqual(CHAT_MESSAGE_MAX)
     expect(text.startsWith(base)).toBe(true)
-    expect(text).toContain('"name":"job.txt"')
+    expect(text).toContain('"name":"role-description.txt"')
   })
   it("rejects oversized job text before any document can be created", () => {
     expect(() =>
