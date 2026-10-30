@@ -52,15 +52,21 @@ describe("Coach Working block", () => {
     vi.useFakeTimers()
     render(<CoachWorking />)
     expect(screen.getByRole("status").textContent).toBe("Working")
-    expect(screen.getByText("Working, 0s").getAttribute("aria-hidden")).toBe(
-      "true"
-    )
+    expect(
+      screen
+        .getByText("Working, 0s")
+        .closest("[aria-hidden]")
+        ?.getAttribute("aria-hidden")
+    ).toBe("true")
 
     act(() => vi.advanceTimersByTime(9000))
 
-    expect(screen.getByText("Working, 9s").getAttribute("aria-hidden")).toBe(
-      "true"
-    )
+    expect(
+      screen
+        .getByText("Working, 9s")
+        .closest("[aria-hidden]")
+        ?.getAttribute("aria-hidden")
+    ).toBe("true")
     expect(screen.getByRole("status").textContent).toBe("Working")
   })
 

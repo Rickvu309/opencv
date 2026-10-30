@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from "react"
-import { CircleCheck, Circle, Clock, X } from "lucide-react"
+import { CircleCheck, Circle, Clock, Lightbulb, X } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
 import "./design/working.pen.css"
 
@@ -72,7 +72,8 @@ export function CoachWorking({
             Working
           </span>
           <div data-slot="coach-working-heading" aria-hidden="true">
-            Working, {seconds}s
+            <Lightbulb className="size-[14px] shrink-0" />
+            <span>Working, {seconds}s</span>
           </div>
         </>
       ) : null}
