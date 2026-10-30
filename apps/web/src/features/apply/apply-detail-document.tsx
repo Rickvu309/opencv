@@ -3,6 +3,7 @@ import { ArrowUp, Briefcase, ChevronDown, Plus } from "lucide-react"
 
 import {
   jobAddChecklistItemInputSchema,
+  jobAddNoteInputSchema,
   type ActivityFeedRow,
   type JobDetail,
   type JobId,
@@ -34,6 +35,7 @@ const POSTING = [
 const BULLET_PREFIX = /^\s*(?:[-*•]\s+)/
 const PREP_STEP_MAX_LENGTH =
   jobAddChecklistItemInputSchema.shape.label.maxLength
+const NOTE_MAX_LENGTH = jobAddNoteInputSchema.shape.body.maxLength
 
 function lines(text: string) {
   return text
@@ -328,63 +330,114 @@ function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
   )
 }
 
-type NoteAction = { type: "typed"; value: string } | { type: "saved" }
+type NoteState = {
+  note: string
+  message: { text: string; invalid: boolean } | null
+}
+type NoteAction =
+  | { type: "typed"; value: string }
+  | { type: "invalid" }
+  | { type: "failed" }
+  | { type: "saved" }
 
-function noteReducer(_note: string, action: NoteAction) {
-  return action.type === "typed" ? action.value : ""
+function noteReducer(state: NoteState, action: NoteAction): NoteState {
+  if (action.type === "typed") return { note: action.value, message: null }
+  if (action.type === "invalid") {
+    return {
+      ...state,
+      message: {
+        text: `Keep a note to ${NOTE_MAX_LENGTH.toLocaleString()} characters or fewer.`,
+        invalid: true,
+      },
+    }
+  }
+  if (action.type === "failed") {
+    return {
+      ...state,
+      message: { text: "Could not save the note. Try again.", invalid: false },
+    }
+  }
+  return { note: "", message: null }
 }
 
 function NoteComposer({ jobId }: { jobId: JobId }) {
   const run = useRunCommand()
-  const [note, dispatch] = useReducer(noteReducer, "")
+  const hintId = useId()
+  const messageId = useId()
+  const [state, dispatch] = useReducer(noteReducer, {
+    note: "",
+    message: null,
+  })
 
-  function submit() {
-    const body = note.trim()
-    if (!body) return
-    void run("job.addNote", { jobId, body }).then(() => {
-      dispatch({ type: "saved" })
+  async function submit() {
+    const parsed = jobAddNoteInputSchema.safeParse({
+      jobId,
+      body: state.note,
     })
+    if (!parsed.success) {
+      dispatch({ type: "invalid" })
+      return
+    }
+    if (!parsed.data.body) return
+    try {
+      await run("job.addNote", parsed.data)
+      dispatch({ type: "saved" })
+    } catch {
+      dispatch({ type: "failed" })
+    }
   }
 
   return (
-    <form
-      className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border py-1.5 pr-2 pl-3.5 focus-within:ring-3 focus-within:ring-ring/50"
-      onSubmit={(event) => {
-        event.preventDefault()
-        submit()
-      }}
-    >
-      <Textarea
-        aria-label="Leave a note"
-        value={note}
-        rows={1}
-        placeholder="Leave a note…"
-        className={cn(
-          "min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent",
-          NOTE_PLACEHOLDER
-        )}
-        onChange={(event) =>
-          dispatch({ type: "typed", value: event.target.value })
-        }
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault()
-            submit()
-          }
+    <div className="flex flex-col gap-1.5">
+      <form
+        className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border py-1.5 pr-2 pl-3.5 focus-within:ring-3 focus-within:ring-ring/50"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submit()
         }}
-      />
-      <Button
-        type="submit"
-        variant="ghost"
-        aria-label="Leave a note"
-        className="size-7 shrink-0 rounded-full p-0 hover:bg-transparent"
       >
-        <ArrowUp
-          aria-hidden
-          className="size-7 rounded-full bg-secondary p-[7px] text-muted-foreground"
+        <Textarea
+          aria-label="Leave a note"
+          aria-describedby={state.message ? `${hintId} ${messageId}` : hintId}
+          aria-invalid={state.message?.invalid || undefined}
+          value={state.note}
+          rows={1}
+          placeholder="Leave a note…"
+          className={cn(
+            "min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent",
+            NOTE_PLACEHOLDER
+          )}
+          onChange={(event) =>
+            dispatch({ type: "typed", value: event.target.value })
+          }
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault()
+              void submit()
+            }
+          }}
         />
-      </Button>
-    </form>
+        <Button
+          type="submit"
+          variant="ghost"
+          aria-label="Leave a note"
+          className="size-7 shrink-0 rounded-full p-0 hover:bg-transparent"
+        >
+          <ArrowUp
+            aria-hidden
+            className="size-7 rounded-full bg-secondary p-[7px] text-muted-foreground"
+          />
+        </Button>
+      </form>
+      <p id={hintId} className="text-xs text-muted-foreground">
+        Up to {NOTE_MAX_LENGTH.toLocaleString()} characters.
+      </p>
+      {state.message ? (
+        <p id={messageId} role="alert" className="text-sm text-destructive">
+          {state.message.text}
+        </p>
+      ) : null}
+    </div>
   )
 }
 

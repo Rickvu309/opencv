@@ -12,6 +12,7 @@ import { mockJob } from "@/test/apply-job-fixtures.ts"
 import {
   getMockJobPosts,
   rejectNextChecklistItem,
+  rejectNextNote,
   setMockJobs,
 } from "@/test/apply-jobs-mock.ts"
 
@@ -70,6 +71,27 @@ describe("job detail", () => {
       ).toBe(true)
     })
     await waitFor(() => expect(note).toHaveValue(""))
+  })
+
+  it("keeps a note draft and offers a retry when saving fails", async () => {
+    setMockJobs([
+      mockJob({ id, title: "Junior Marketing", company: "Lumière" }),
+    ])
+    rejectNextNote()
+    renderApp(`/apply/${id}`)
+    const note = await screen.findByRole("textbox", { name: "Leave a note" })
+    fireEvent.change(note, {
+      target: { value: "Try the hiring manager again." },
+    })
+    fireEvent.keyDown(note, { key: "Enter" })
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /could not save/i
+    )
+    expect(note).toHaveValue("Try the hiring manager again.")
+    fireEvent.change(note, { target: { value: "Updated draft" } })
+    expect(screen.queryByRole("alert")).toBeNull()
+    expect(note).toHaveValue("Updated draft")
   })
 
   it("walks jobs, toggles the checklist, adds a note, and can move to Closed", async () => {
