@@ -11,6 +11,7 @@ import { isAbortError } from "@/lib/sse.ts"
 import { useQueryClient } from "@tanstack/react-query"
 
 import {
+  extractLetterAttachment,
   getPaper,
   paperGetKey,
   PaperLimitError,
@@ -21,6 +22,8 @@ import {
   initialLetterStart,
   letterStartReducer,
 } from "./paper-letter-start.reducer.ts"
+
+import { letterDraftText } from "./paper-letter-context.ts"
 
 function unreadableLink(value: string) {
   return /docs\.google\.com|linkedin\.com/i.test(value)
@@ -38,21 +41,24 @@ function resetClock(iso: string | null) {
 
 export function PaperLetterStart({
   jobs: jobsProp,
-  cvName,
   onCreated,
-  onImport,
 }: {
   jobs?: JobView[]
-  cvName: string | null
   onCreated: (id: string) => void
-  onImport: () => void
 }) {
   const run = useRunCommand()
   const guidanceId = useId()
   const queryClient = useQueryClient()
-  const [{ jobs, query, selected, drafting, text, limit, error }, dispatch] =
-    useReducer(letterStartReducer, jobsProp ?? [], initialLetterStart)
-  const needsContext = !selected && query.trim() === ""
+  const [
+    { jobs, query, selected, drafting, text, limit, error, attachment },
+    dispatch,
+  ] = useReducer(letterStartReducer, jobsProp ?? [], initialLetterStart)
+  const attachmentInput = useRef<HTMLInputElement>(null)
+  const attachmentAbort = useRef<AbortController | null>(null)
+  const attached = attachment.status === "ready" ? attachment.context : null
+  const attaching = attachment.status === "loading"
+  const needsContext = !selected && !query.trim() && !attached
+
   const abortRef = useRef<AbortController | null>(null)
   const chatRef = useRef<string | null>(null)
   const textRef = useRef("")
@@ -83,13 +89,42 @@ export function PaperLetterStart({
       })
   }, [jobsProp])
 
+  useEffect(() => () => attachmentAbort.current?.abort(), [])
+
+  async function attach(file: File) {
+    attachmentAbort.current?.abort()
+    const controller = new AbortController()
+    attachmentAbort.current = controller
+    dispatch({ type: "attachment_started" })
+    try {
+      const context = await extractLetterAttachment(file, controller.signal)
+      if (!controller.signal.aborted)
+        dispatch({ type: "attachment_loaded", context })
+    } catch (err) {
+      if (!controller.signal.aborted)
+        dispatch({
+          type: "attachment_failed",
+          message:
+            err instanceof ApiError
+              ? err.message
+              : "Could not read that file. Try again.",
+        })
+    }
+  }
+
   async function draft() {
-    if (!selected && query.trim() === "") return
+    if (attaching || needsContext) return
     dispatch({ type: "draft_started" })
     textRef.current = ""
     const controller = new AbortController()
     abortRef.current = controller
     try {
+      const turnText = letterDraftText(
+        unread || !selected
+          ? query.trim()
+          : `Draft a cover letter for ${selected.title} at ${selected.company}.`,
+        attached
+      )
       const created = await run("paper.create", {
         kind: "letter",
         ...(selected
@@ -100,10 +135,6 @@ export function PaperLetterStart({
         title: selected ? `Cover letter, ${selected.company}` : "Cover letter",
       })
       chatRef.current = chat.id
-      const turnText =
-        unread || !selected
-          ? query.trim()
-          : `Draft a cover letter for ${selected.title} at ${selected.company}.`
       let replaced = false
       await streamPaperTurn({
         queryClient,
@@ -146,7 +177,9 @@ export function PaperLetterStart({
         message:
           err instanceof ApiError
             ? err.message
-            : "Could not draft the letter. Try again.",
+            : err instanceof Error
+              ? err.message
+              : "Could not draft the letter. Try again.",
       })
     } finally {
       dispatch({ type: "draft_ended" })
@@ -184,6 +217,18 @@ export function PaperLetterStart({
   return (
     <div className="flex flex-col gap-3">
       <Input
+        ref={attachmentInput}
+        type="file"
+        className="hidden"
+        aria-label="Attach letter context"
+        accept=".pdf,.docx,.txt,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0]
+          event.currentTarget.value = ""
+          if (file) void attach(file)
+        }}
+      />
+      <Input
         aria-label="Search jobs, paste a link or attach a file"
         placeholder="Search jobs, paste a link or attach a file"
         value={query}
@@ -208,8 +253,32 @@ export function PaperLetterStart({
           </Button>
         ))}
       </div>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onImport}>
+      {attaching ? <p role="status">Reading attachment…</p> : null}
+      {attached ? (
+        <div className="min-w-0 text-sm">
+          <p className="break-words">Context: {attached.name}</p>
+          <p>
+            Extracted text is used for this draft, up to the first 6,000
+            characters.
+            {attached.truncated ? " Longer text was shortened." : ""}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={drafting}
+            onClick={() => dispatch({ type: "attachment_removed" })}
+          >
+            Remove attachment
+          </Button>
+        </div>
+      ) : null}
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={drafting || attaching}
+          onClick={() => attachmentInput.current?.click()}
+        >
           Attach a file
         </Button>
         <Button type="button" variant="ghost" onClick={() => void startBlank()}>
@@ -223,7 +292,7 @@ export function PaperLetterStart({
           <Button
             type="button"
             variant={limit ? "outline" : "glow"}
-            disabled={Boolean(limit) || needsContext}
+            disabled={Boolean(limit) || attaching || needsContext}
             aria-describedby={needsContext ? guidanceId : undefined}
             onClick={() => void draft()}
           >
@@ -233,13 +302,13 @@ export function PaperLetterStart({
       </div>
       {needsContext ? (
         <p id={guidanceId}>
-          Choose a job or paste job text or a link to draft a letter.
+          Choose a job, paste job text or a link, or attach a file to draft a
+          letter.
         </p>
       ) : null}
       {drafting ? (
         <div>
           <p>Coach is writing…</p>
-          {cvName ? <p>From {cvName}</p> : null}
           <p>
             {text}
             <span

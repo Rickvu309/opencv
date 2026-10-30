@@ -1,5 +1,7 @@
 import {
   IMPORT_PAGES_MESSAGE,
+  LETTER_ATTACHMENT_TEXT_MAX,
+  type LetterAttachmentContext,
   findImportChecks,
   isCvDocument,
   isCvBlockDocument,
@@ -269,11 +271,51 @@ export function parseImportLink(value: string): ImportParseResult | null {
   return refused("LINK_UNREADABLE", message)
 }
 
-export async function parseImportFile(input: {
-  name: string
-  mediaType: string
-  bytes: Buffer
-}): Promise<ImportParseResult> {
+type ImportFileInput = { name: string; mediaType: string; bytes: Buffer }
+
+async function extractedText(input: ImportFileInput) {
+  const kind = classifyImport(input)
+  if (kind === "pdf") return importParsers.pdfText(input.bytes)
+  if (kind === "docx") return withDeadline(importParsers.docxText(input.bytes))
+  return input.bytes.toString("utf8")
+}
+
+export async function extractLetterAttachment(
+  input: ImportFileInput
+): Promise<
+  | { ok: true; context: LetterAttachmentContext }
+  | { ok: false; code: "FILE_UNSUPPORTED"; message: string }
+> {
+  const kind = classifyImport(input)
+  if (kind === "pages" || kind === "unknown" || kind === "json") {
+    return {
+      ok: false,
+      code: "FILE_UNSUPPORTED",
+      message: IMPORT_GENERIC_MESSAGE,
+    }
+  }
+  const raw = (await extractedText(input)).trim()
+  if (!raw) {
+    return {
+      ok: false,
+      code: "FILE_UNSUPPORTED",
+      message:
+        "No readable text found. Paste the job text or choose another file.",
+    }
+  }
+  return {
+    ok: true,
+    context: {
+      name: input.name.slice(0, 200) || "Attachment",
+      text: raw.slice(0, LETTER_ATTACHMENT_TEXT_MAX),
+      truncated: raw.length > LETTER_ATTACHMENT_TEXT_MAX,
+    },
+  }
+}
+
+export async function parseImportFile(
+  input: ImportFileInput
+): Promise<ImportParseResult> {
   const kind = classifyImport(input)
   if (kind === "pages") {
     return refused("FILE_UNSUPPORTED", IMPORT_PAGES_MESSAGE)
@@ -281,13 +323,7 @@ export async function parseImportFile(input: {
   if (kind === "unknown") {
     return refused("FILE_UNSUPPORTED", IMPORT_GENERIC_MESSAGE)
   }
-  if (kind === "pdf") {
-    return textBlocks(await importParsers.pdfText(input.bytes))
-  }
-  if (kind === "docx") {
-    return textBlocks(await withDeadline(importParsers.docxText(input.bytes)))
-  }
-  const raw = input.bytes.toString("utf8")
+  const raw = await extractedText(input)
   if (kind === "json") return jsonDocument(raw)
   return textBlocks(raw)
 }

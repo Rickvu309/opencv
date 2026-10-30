@@ -487,17 +487,10 @@ export function PaperLibrary({
             </DialogDescription>
           </DialogHeader>
           <PaperLetterStart
-            cvName={
-              [...docs]
-                .filter((doc) => doc.kind === "cv")
-                .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]
-                ?.name ?? null
-            }
             onCreated={(id) => {
               dispatch({ type: "dialog_closed" })
               onOpen(id)
             }}
-            onImport={chooseFile}
           />
         </DialogContent>
       </Dialog>

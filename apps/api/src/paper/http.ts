@@ -16,7 +16,7 @@ import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { parseImportLink } from "./import-parse.js"
+import { extractLetterAttachment, parseImportLink } from "./import-parse.js"
 import {
   IMPORT_FILE_CAP,
   IMPORT_SIZE_MESSAGE,
@@ -177,6 +177,50 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     if (kind === "cv" || kind === "letter") input.kind = kind
     const data = await registry.read("paper.list", input, person(c.var.userId))
     return c.json(successEnvelope(data))
+  })
+
+  routes.post("/letter-attachment", async (c) => {
+    const uploaded = await readImportUpload(c)
+    if (uploaded.over) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, IMPORT_SIZE_MESSAGE),
+        413
+      )
+    }
+    if (!uploaded.file || uploaded.link.trim()) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Choose a PDF, Word, or text file."
+        ),
+        400
+      )
+    }
+    try {
+      const result = await extractLetterAttachment({
+        name: uploaded.file.name,
+        mediaType: uploaded.file.type,
+        bytes: Buffer.from(await uploaded.file.arrayBuffer()),
+      })
+      if (!result.ok)
+        return jsonWithStatus(
+          c,
+          errorEnvelope(result.code, result.message),
+          400
+        )
+      return c.json(successEnvelope(result.context))
+    } catch {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Could not read that file. Try another file or paste the job text."
+        ),
+        400
+      )
+    }
   })
 
   routes.post("/import", async (c) => {

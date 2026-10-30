@@ -9,9 +9,7 @@ import { PaperLetterEditor } from "@/features/paper/paper-letter.tsx"
 import {
   getPaper,
   getPaperPages,
-  listPaper,
   paperGetKey,
-  paperListKey,
   paperPagesKey,
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
@@ -56,11 +54,6 @@ export function PaperDocPage() {
     queryFn: listJobs,
     enabled: docQuery.data?.kind === "letter",
   })
-  const listQuery = useQuery({
-    queryKey: paperListKey(),
-    queryFn: listPaper,
-    enabled: docQuery.data?.kind === "letter",
-  })
   const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
 
   if (docQuery.isLoading) {
@@ -95,20 +88,7 @@ export function PaperDocPage() {
   if (doc.kind === "letter") {
     const job =
       jobsQuery.data?.find((item) => item.letterDocId === doc.id) ?? null
-    const cvs = (listQuery.data ?? []).filter((item) => item.kind === "cv")
-    const linked = cvs.find((item) => item.id === job?.cvDocId)
-    const latest = [...cvs].sort((a, b) =>
-      b.updatedAt.localeCompare(a.updatedAt)
-    )[0]
-    return (
-      <PaperLetterEditor
-        key={doc.id}
-        doc={doc}
-        job={job}
-        cvName={linked?.name ?? latest?.name ?? null}
-        onBack={back}
-      />
-    )
+    return <PaperLetterEditor key={doc.id} doc={doc} job={job} onBack={back} />
   }
   return (
     <PaperCvEditor

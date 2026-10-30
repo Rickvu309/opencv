@@ -51,12 +51,12 @@ function markdownOf(document: unknown) {
 export function PaperLetterEditor({
   doc,
   job,
-  cvName,
+
   onBack,
 }: {
   doc: PaperView
   job: JobView | null
-  cvName: string | null
+
   onBack: () => void
 }) {
   const run = useRunCommand()
@@ -223,9 +223,6 @@ export function PaperLetterEditor({
       ) : null}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
-          {cvName ? (
-            <p className="mb-2 text-sm text-muted-foreground">From {cvName}</p>
-          ) : null}
           <PaperLetterArticle
             doc={doc}
             editorRef={editorRef}
