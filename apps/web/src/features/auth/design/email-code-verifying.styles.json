@@ -1,0 +1,351 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "iAwJ7",
+    "frameName": "W1.3 Verifying"
+  },
+  "sections": [
+    {
+      "id": "m7ACxO",
+      "name": "Left",
+      "texts": [
+        {
+          "content": "opencv",
+          "fill": "#1A1A1A",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.5,
+          "startsLine": true
+        },
+        {
+          "content": "EN",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "VI",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Check your email",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.7
+        },
+        {
+          "content": "We sent a 6-digit code to",
+          "fill": "#6B6B6F",
+          "fontSize": 14.5,
+          "lineHeight": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "linh.nguyen@gmail.com",
+          "fill": "#1A1A1A",
+          "fontSize": 14.5,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Change",
+          "fill": "#6B6B6F",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "4",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "8",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "1",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "9",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "0",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "2",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Verifying…",
+          "fill": "#1A1A1A",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "By continuing, you agree to the Terms of Service and Privacy Policy.",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "A5Egys", "name": "Mark", "width": 20, "height": 20 },
+        { "id": "qpRLZ", "name": "Spinner", "width": 16, "height": 16 }
+      ]
+    },
+    {
+      "id": "jRikN",
+      "name": "Right",
+      "texts": [
+        {
+          "content": "Write your CV with a coach. Track every application.",
+          "fill": "#FFFFFF",
+          "fontSize": 34,
+          "lineHeight": 1.15,
+          "fontWeight": "600",
+          "letterSpacing": -1.2
+        }
+      ],
+      "marks": []
+    }
+  ],
+  "borders": [
+    { "id": "aRzCw", "stroke": "#1B1B1F", "strokeWidth": 2 },
+    { "id": "kJuUw", "stroke": "#E2E2E2", "strokeWidth": 1 },
+    { "id": "fsJhm", "stroke": "#E2E2E2", "strokeWidth": 1 },
+    { "id": "tPqz0", "stroke": "#E2E2E2", "strokeWidth": 1 },
+    { "id": "S0J9s9", "stroke": "#E2E2E2", "strokeWidth": 1 },
+    { "id": "VWSN5", "stroke": "#E2E2E2", "strokeWidth": 1 },
+    { "id": "Q3ZhY2", "stroke": "#E2E2E2", "strokeWidth": 1 }
+  ],
+  "paints": [
+    { "id": "iAwJ7", "path": "", "fill": "#FFFFFF" },
+    {
+      "id": "aRzCw",
+      "path": "/children/0/children/0/children/0/children/0/children/0",
+      "fill": "#00000000",
+      "stroke": "#1B1B1F"
+    },
+    {
+      "id": "e3hlpQ",
+      "path": "/children/0/children/0/children/0/children/0/children/1",
+      "fill": "#00000000"
+    },
+    {
+      "id": "RnVtW",
+      "path": "/children/0/children/0/children/0/children/0/children/1/children/0",
+      "fill": "#1B1B1F"
+    },
+    {
+      "id": "Q2HAM",
+      "path": "/children/0/children/0/children/0/children/1",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "pmNNX",
+      "path": "/children/0/children/0/children/1",
+      "fill": "#F4F4F5"
+    },
+    {
+      "id": "EjD6e",
+      "path": "/children/0/children/0/children/1/children/0",
+      "fill": "#FFFFFF",
+      "effect": {
+        "type": "shadow",
+        "shadowType": "outer",
+        "color": "#0000001A",
+        "offset": { "x": 0, "y": 1 },
+        "blur": 2
+      }
+    },
+    {
+      "id": "h3lB8f",
+      "path": "/children/0/children/0/children/1/children/0/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "E2sLMC",
+      "path": "/children/0/children/0/children/1/children/1/children/0",
+      "fill": "#8A8F98"
+    },
+    {
+      "id": "tjBRi",
+      "path": "/children/0/children/1/children/0/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "hbUcV",
+      "path": "/children/0/children/1/children/0/children/1",
+      "fill": "#6B6B6F"
+    },
+    {
+      "id": "loYf2",
+      "path": "/children/0/children/1/children/0/children/2/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "Rh6Hr",
+      "path": "/children/0/children/1/children/0/children/2/children/1",
+      "fill": "#6B6B6F"
+    },
+    {
+      "id": "kJuUw",
+      "path": "/children/0/children/1/children/1/children/0",
+      "fill": "#F7F7F8",
+      "stroke": "#E2E2E2"
+    },
+    {
+      "id": "tPepJ",
+      "path": "/children/0/children/1/children/1/children/0/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "fsJhm",
+      "path": "/children/0/children/1/children/1/children/1",
+      "fill": "#F7F7F8",
+      "stroke": "#E2E2E2"
+    },
+    {
+      "id": "QbtNv",
+      "path": "/children/0/children/1/children/1/children/1/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "tPqz0",
+      "path": "/children/0/children/1/children/1/children/2",
+      "fill": "#F7F7F8",
+      "stroke": "#E2E2E2"
+    },
+    {
+      "id": "H0QTA6",
+      "path": "/children/0/children/1/children/1/children/2/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "f6oYq",
+      "path": "/children/0/children/1/children/1/children/3",
+      "fill": "#C9C9CC"
+    },
+    {
+      "id": "S0J9s9",
+      "path": "/children/0/children/1/children/1/children/4",
+      "fill": "#F7F7F8",
+      "stroke": "#E2E2E2"
+    },
+    {
+      "id": "P01Co",
+      "path": "/children/0/children/1/children/1/children/4/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "VWSN5",
+      "path": "/children/0/children/1/children/1/children/5",
+      "fill": "#F7F7F8",
+      "stroke": "#E2E2E2"
+    },
+    {
+      "id": "uGu5v",
+      "path": "/children/0/children/1/children/1/children/5/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "Q3ZhY2",
+      "path": "/children/0/children/1/children/1/children/6",
+      "fill": "#F7F7F8",
+      "stroke": "#E2E2E2"
+    },
+    {
+      "id": "F8sTP",
+      "path": "/children/0/children/1/children/1/children/6/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "qpRLZ",
+      "path": "/children/0/children/1/children/2/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "BxZNW",
+      "path": "/children/0/children/1/children/2/children/1",
+      "fill": "#1A1A1A"
+    },
+    { "id": "c7lUJ", "path": "/children/0/children/2", "fill": "#969799" },
+    {
+      "id": "jRikN",
+      "path": "/children/1",
+      "fill": {
+        "type": "shader",
+        "enabled": true,
+        "url": "shaders/auth-quadrant-v2.glsl",
+        "uniforms": {
+          "u_size": 0.74,
+          "u_beam": 1,
+          "u_rim": 1.2,
+          "u_grain": 0.05
+        }
+      }
+    },
+    {
+      "id": "GhLhc",
+      "path": "/children/1/children/0/children/0",
+      "fill": "#FFFFFF"
+    }
+  ]
+}

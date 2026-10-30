@@ -14,9 +14,6 @@ import manifest from "./design-frames.json"
 const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   Cs3hj: { issue: 498, expires: "2026-12-31" }, // Blog (Linear layout)
   EKv2D: { issue: 498, expires: "2026-12-31" }, // Blog post (Linear layout)
-  yGwdJ: { issue: 498, expires: "2026-12-31" }, // W1.2 Enter code
-  iAwJ7: { issue: 498, expires: "2026-12-31" }, // W1.3 Verifying
-  b1m7SA: { issue: 498, expires: "2026-12-31" }, // W1.4 Code wrong or expired
   NAXQk: { issue: 498, expires: "2026-12-31" }, // W1.5 Welcome
   DhG87: { issue: 498, expires: "2026-12-31" }, // W1.6 Session expired
   FUipv: { issue: 498, expires: "2026-12-31" }, // W3.1 New chat

@@ -148,17 +148,25 @@ function probe(args) {
   for (const node of scopes.flatMap((scope) => textNodes(scope))) {
     if (node.parentElement) add(normalize(node.data), node.parentElement, node)
   }
-  // A field's value or placeholder is drawn as text in the pen. Its box starts
-  // at the content edge and is one line high, centred in an input.
+  // Measure the rendered text within the field's content box, including its
+  // alignment. The input border box is not the text's position.
   const fieldBox = (field) => {
     const rect = field.getBoundingClientRect()
     const style = getComputedStyle(field)
     const line =
       parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2
-    const left =
+    const contentLeft =
       rect.left +
       parseFloat(style.borderLeftWidth) +
       parseFloat(style.paddingLeft)
+    const contentWidth = Math.max(
+      0,
+      rect.width -
+        parseFloat(style.borderLeftWidth) -
+        parseFloat(style.borderRightWidth) -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight)
+    )
     const top =
       field.tagName === "TEXTAREA"
         ? rect.top +
@@ -167,8 +175,21 @@ function probe(args) {
         : rect.top + (rect.height - line) / 2
     const ctx = document.createElement("canvas").getContext("2d")
     ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+    ctx.letterSpacing = style.letterSpacing
     const text = field.value || field.placeholder
-    const width = Math.min(ctx.measureText(text).width, rect.width)
+    const width = Math.min(ctx.measureText(text).width, contentWidth)
+    const align = style.textAlign
+    const right =
+      align === "right" ||
+      (align === "start" && style.direction === "rtl") ||
+      (align === "end" && style.direction !== "rtl")
+    const left =
+      contentLeft +
+      (align === "center"
+        ? (contentWidth - width) / 2
+        : right
+          ? contentWidth - width
+          : 0)
     return { left, top, right: left + width, bottom: top + line }
   }
   if (args.mode === "app")

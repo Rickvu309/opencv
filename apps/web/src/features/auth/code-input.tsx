@@ -15,12 +15,14 @@ const LABELS = [
 export function CodeInput({
   value,
   disabled,
+  invalid = false,
   focusNonce,
   onChange,
   onComplete,
 }: {
   value: string
   disabled: boolean
+  invalid?: boolean
   focusNonce: number
   onChange: (next: string) => void
   onComplete: (code: string) => void
@@ -73,12 +75,17 @@ export function CodeInput({
     <div
       role="group"
       aria-label={AUTH_COPY.codeGroup}
-      className="flex min-w-0 items-center gap-1.5"
+      data-slot="email-code-digits"
+      className="flex w-full min-w-0 items-center gap-2"
     >
       {digits.map((digit, index) => (
         <span key={LABELS[index]} className="contents">
           {index === 3 ? (
-            <span aria-hidden className="h-px w-2 shrink-0 bg-border" />
+            <span
+              aria-hidden
+              data-slot="email-code-dash"
+              className="h-0.5 w-2.5 shrink-0 rounded-[1px] bg-border"
+            />
           ) : null}
           <Input
             ref={(node) => {
@@ -88,8 +95,10 @@ export function CodeInput({
             inputMode="numeric"
             autoComplete={index === 0 ? "one-time-code" : "off"}
             disabled={disabled}
+            aria-invalid={invalid || undefined}
+            data-filled={digit !== ""}
             value={digit}
-            className="size-11 min-w-0 shrink px-0 text-center text-base"
+            className="h-[60px] min-w-0 flex-1 rounded-xl px-0 text-center text-[26px] font-semibold md:text-[26px]"
             onFocus={(event) => event.currentTarget.select()}
             onPaste={(event) => {
               event.preventDefault()
