@@ -141,23 +141,23 @@ export function ChecklistItemRow({
       role="checkbox"
       aria-checked={item.done}
       aria-label={item.label}
-      className="h-auto min-h-[34px] w-full items-start justify-start gap-2.5 rounded-[6px] border-0 border-b border-foreground/6 px-2 py-[6px] text-[13.5px] font-normal hover:bg-secondary"
+      className="h-auto min-h-[34px] w-full items-start justify-start gap-2.5 rounded-[6px] border-0 border-b border-foreground/6 px-2 py-1.5 text-[13.5px] font-normal hover:bg-secondary"
       onClick={onToggle}
     >
       {item.done ? (
         <Check
           aria-hidden
           strokeWidth={2.5}
-          className="mt-[2.5px] size-[15px] shrink-0 rounded-full bg-chart-3 p-[2.5px] text-card"
+          className="mbs-[2.5px] size-[15px] shrink-0 rounded-full bg-chart-3 p-[2.5px] text-card"
         />
       ) : (
         <span
           aria-hidden
-          className="mt-[2.5px] size-[15px] shrink-0 rounded-full ring-[1.2px] ring-input ring-inset"
+          className="mbs-[2.5px] size-[15px] shrink-0 rounded-full ring-[1.2px] ring-input ring-inset"
         />
       )}
       <span
-        className={`min-w-0 text-start break-words whitespace-normal ${item.done ? FAINT_TEXT.card : "text-foreground"}`}
+        className={`min-w-0 text-start wrap-break-word whitespace-normal ${item.done ? FAINT_TEXT.card : "text-foreground"}`}
       >
         {item.label}
       </span>
