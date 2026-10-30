@@ -432,6 +432,7 @@ async function upsertMessages(threadId: string, messages: MailMessage[]) {
 }
 
 function visibleWhileSnoozed(row: ThreadRow, now: number) {
+  if (row.status === "done") return false
   if (row.status !== "snoozed" || !row.snoozeUntil) return true
   return row.snoozeUntil.getTime() <= now
 }
