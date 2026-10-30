@@ -96,7 +96,7 @@ export function PaperBlockMenu({
             {...dragAttributes}
             {...dragListeners}
             aria-label="Block menu"
-            tabIndex={-1}
+            tabIndex={0}
             onFocus={(event) => place(event.currentTarget)}
             onPointerDown={(event) => place(event.currentTarget)}
             onKeyDownCapture={onKeyDownCapture}

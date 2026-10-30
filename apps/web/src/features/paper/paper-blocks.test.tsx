@@ -378,15 +378,14 @@ describe("block editor", () => {
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument()
   })
 
-  it("keeps one tab stop on the block", () => {
+  it("keeps fields outside the tab order until the block is entered", () => {
     vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
     render(
       <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
     )
     const block = document.querySelector("[data-sortable-block='a']")
     expect(block).toHaveAttribute("tabindex", "0")
-    for (const inner of block?.querySelectorAll("button, [role='textbox']") ??
-      []) {
+    for (const inner of block?.querySelectorAll("[role='textbox']") ?? []) {
       expect(inner).toHaveAttribute("tabindex", "-1")
     }
     fireEvent.keyDown(block!, { key: "d", metaKey: true })
