@@ -106,6 +106,9 @@ export function eventForPart(part: CoachStreamPart): ChatTurnEvent | null {
         ...(part.reversal ? { reversal: part.reversal } : {}),
         ...(part.detail ? { detail: part.detail } : {}),
         ...(part.activityId ? { activityId: part.activityId } : {}),
+        ...(part.pendingActionId
+          ? { pendingActionId: part.pendingActionId }
+          : {}),
       }
     default:
       return null

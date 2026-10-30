@@ -52,7 +52,7 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     const working = within(screen.getByRole("log", { name: "Chat" })).getByRole(
       "status"
     )
-    expect(working).toHaveTextContent("Working,")
+    expect(working).toHaveTextContent(/^Working$/)
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()
     expect(
