@@ -1,7 +1,20 @@
-import { fireEvent, screen, waitFor, cleanup } from "@testing-library/react"
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  cleanup,
+} from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render } from "@/test/render-with-client.tsx"
-import { chatApiFetch } from "@/test/chat-api-mock.ts"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import {
+  fetchProfile,
+  fetchUsage,
+  profileKey,
+  usageKey,
+} from "@/lib/account-api.ts"
+import { chatApiFetch, scriptCoachStream } from "@/test/chat-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { ChatStoreProvider } from "./chat-store.tsx"
 import { CoachWorkspace } from "./coach-workspace.tsx"
@@ -27,7 +40,11 @@ beforeEach(() => {
   )
 })
 
-function stubUsage(day: { used: number; remaining: number }) {
+function stubUsage(
+  day: { used: number; remaining: number },
+  plan: "free" | "pro" = "free",
+  mode: "free" | "light" | "max" = "free"
+) {
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -35,8 +52,8 @@ function stubUsage(day: { used: number; remaining: number }) {
         return Response.json({
           ok: true,
           data: {
-            plan: "free",
-            mode: "free",
+            plan,
+            mode,
             session: { capped: false, resetsAt: "2026-10-29T00:00:00Z" },
             day: {
               capped: true,
@@ -209,4 +226,95 @@ describe("Coach workspace", () => {
       await screen.findByText("3 free turns remaining today")
     ).toBeVisible()
   })
+  it.each(["light", "max"] as const)(
+    "does not upsell a capped Pro %s user",
+    async (mode) => {
+      stubUsage({ used: 20, remaining: 0 }, "pro", mode)
+      render(
+        <ChatStoreProvider>
+          <CoachWorkspace />
+        </ChatStoreProvider>
+      )
+      expect(
+        await screen.findByText(
+          `You’ve reached today’s ${mode === "light" ? "Light" : "Max"} limit`
+        )
+      ).toBeVisible()
+      expect(
+        screen.queryByText(/Pro has unlimited Coach chats/)
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("link", { name: "Upgrade" })
+      ).not.toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
+    }
+  )
+  it.each(["capped", "off"] as const)(
+    "removes Retry and Regenerate when Coach becomes %s",
+    async (blocked) => {
+      stubUsage({ used: 17, remaining: 3 })
+      const usage = await fetchUsage()
+      const profile = await fetchProfile()
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      })
+      scriptCoachStream({
+        httpError: {
+          status: 503,
+          code: "COACH_UNAVAILABLE",
+          message: "The Coach is unavailable right now",
+        },
+      })
+      const view = render(
+        <QueryClientProvider client={client}>
+          <ChatStoreProvider>
+            <CoachWorkspace chatId="11111111-1111-4111-8111-111111111111" />
+          </ChatStoreProvider>
+        </QueryClientProvider>
+      )
+      try {
+        const buttons = await screen.findAllByRole("button", {
+          name: "Regenerate",
+        })
+        expect(
+          buttons.filter((button) => !button.hasAttribute("disabled"))
+        ).toHaveLength(1)
+        const composer = screen.getByRole("textbox", { name: "Message Coach" })
+        await waitFor(() => expect(composer).toBeEnabled())
+        fireEvent.change(composer, { target: { value: "Try this turn" } })
+        fireEvent.click(screen.getByRole("button", { name: "Send" }))
+        expect(
+          await screen.findByRole("button", { name: "Retry" })
+        ).toBeEnabled()
+        act(() => {
+          if (blocked === "capped")
+            client.setQueryData(usageKey(), {
+              ...usage,
+              day: {
+                ...usage.day,
+                capped: true,
+                cap: 20,
+                used: 20,
+                remaining: 0,
+              },
+            })
+          else
+            client.setQueryData(profileKey(), { ...profile, agentChat: false })
+        })
+        await waitFor(() => {
+          expect(
+            screen.queryByRole("button", { name: "Retry" })
+          ).not.toBeInTheDocument()
+          expect(
+            screen.queryByRole("button", { name: "Regenerate" })
+          ).not.toBeInTheDocument()
+          expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
+        })
+      } finally {
+        view.unmount()
+        client.clear()
+        scriptCoachStream()
+      }
+    }
+  )
 })

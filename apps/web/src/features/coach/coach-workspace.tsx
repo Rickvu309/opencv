@@ -108,6 +108,13 @@ export function CoachWorkspace({
   const day = usage.data?.day
   const capped = day?.capped === true && day.remaining === 0
   const enabled = profile.data?.agentChat !== false
+  const showUpgrade = usage.data?.plan === "free" && usage.data.mode === "free"
+  const modeLabel =
+    usage.data?.mode === "light"
+      ? "Light"
+      : usage.data?.mode === "max"
+        ? "Max"
+        : "Free"
   const resetTime = day
     ? new Date(day.resetsAt).toLocaleTimeString([], {
         hour: "numeric",
@@ -199,22 +206,24 @@ export function CoachWorkspace({
             </span>
             <div className="min-w-0 flex-1 space-y-0.5">
               <p className="text-sm font-semibold">
-                You’ve reached today’s{" "}
-                {usage.data?.mode === "free" ? "Free" : usage.data?.mode} limit
+                You’ve reached today’s {modeLabel} limit
               </p>
               <p className="text-xs text-muted-foreground">
-                Resets at {resetTime}. Pro has unlimited Coach chats.
+                Resets at {resetTime}.
+                {showUpgrade ? " Pro has unlimited Coach chats." : ""}
               </p>
             </div>
-            <a
-              className={cn(
-                buttonVariants({ variant: "secondary", size: "sm" }),
-                "font-semibold"
-              )}
-              href="/settings/billing/upgrade"
-            >
-              Upgrade
-            </a>
+            {showUpgrade ? (
+              <a
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "sm" }),
+                  "font-semibold"
+                )}
+                href="/settings/billing/upgrade"
+              >
+                Upgrade
+              </a>
+            ) : null}
           </div>
         ) : undefined
       }
@@ -237,7 +246,7 @@ export function CoachWorkspace({
           size="sm"
           data-slot="coach-history-trigger"
           aria-label={`History, ${headerTitle}`}
-          className="min-w-0 gap-1.5 border-0 px-2 text-[13px] leading-[15.5px] max-md:h-11"
+          className="min-w-0 shrink gap-1.5 border-0 px-2 text-[13px] leading-[15.5px] max-md:h-11"
           onClick={() => dispatch({ type: "history_opened" })}
         >
           <span className="truncate">{headerTitle}</span>
