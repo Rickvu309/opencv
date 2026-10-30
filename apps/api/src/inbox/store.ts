@@ -404,9 +404,12 @@ async function upsertThread(
         ).map((message) => message.providerMessageId)
       )
     : new Set<string>()
-  const hasNewIncoming = messages.some(
-    (message) => message.direction === "in" && !knownIncomingIds.has(message.id)
-  )
+  const hasNewIncoming =
+    existing[0] != null &&
+    messages.some(
+      (message) =>
+        message.direction === "in" && !knownIncomingIds.has(message.id)
+    )
   const fields = {
     company: thread.company,
     role: thread.role,

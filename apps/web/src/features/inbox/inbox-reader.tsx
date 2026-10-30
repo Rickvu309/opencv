@@ -457,6 +457,7 @@ export function InboxReader({
               <div className="px-4 py-3.5">
                 <Textarea
                   aria-label="Reply"
+                  disabled={busy}
                   className="min-h-0 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-relaxed shadow-none focus-visible:ring-0 dark:bg-transparent"
                   value={body}
                   onChange={(event) =>

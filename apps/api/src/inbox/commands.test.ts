@@ -49,6 +49,35 @@ describe("inbox commands", () => {
     await client.close()
   })
 
+  it("preserves provider read state on the first scan", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const fixture = loadFixtureThreads().find(
+      (thread) => thread.id === "regional-bank"
+    )
+    if (!fixture) throw new Error("missing Regional bank fixture")
+    const previousUnread = fixture.unread
+    fixture.unread = false
+    const userId = "user-inbox-first-read"
+    await db
+      .insert(user)
+      .values({ id: userId, name: "Ada", email: "ada-first-read@example.com" })
+    try {
+      await withDatabase(db, async () => {
+        const actor = personActor(userId)
+        await registry.execute({ name: "inbox.scan", input: {}, actor })
+        const [thread] = await db
+          .select()
+          .from(inboxThreads)
+          .where(eq(inboxThreads.providerThreadId, fixture.id))
+        expect(thread).toMatchObject({ unread: false })
+      })
+    } finally {
+      fixture.unread = previousUnread
+      await client.close()
+    }
+  })
+
   it("keeps a sent thread read when a scan finds no new incoming message", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

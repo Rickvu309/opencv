@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query"
-import { cleanup, render, screen } from "@testing-library/react"
+import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -210,6 +210,30 @@ describe("inbox reader", () => {
     expect(posts.map((post) => post.path)).toEqual(["/api/commands/inbox.send"])
     expect(screen.getByRole("textbox", { name: "Reply" })).toHaveValue("")
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
+  })
+
+  it("pauses reply editing until a pending send completes", async () => {
+    let complete: (response: Response) => void = () => {
+      throw new Error("send not started")
+    }
+    vi.stubGlobal(
+      "fetch",
+      () =>
+        new Promise<Response>((resolve) => {
+          complete = resolve
+        })
+    )
+    renderReader(REGIONAL_DETAIL)
+    const reply = screen.getByRole("textbox", { name: "Reply" })
+    await userEvent.click(screen.getByRole("button", { name: "Send" }))
+    expect(reply).toBeDisabled()
+    await userEvent.type(reply, "unsent newer text")
+    expect(reply).toHaveValue(REGIONAL_DETAIL.draft!.body)
+    await act(async () => {
+      complete(jsonOk({ activityId: "00000000-0000-4000-8000-000000000099" }))
+    })
+    expect(reply).toBeEnabled()
+    expect(reply).toHaveValue("")
   })
 
   it("keeps the reply available when sending fails", async () => {
