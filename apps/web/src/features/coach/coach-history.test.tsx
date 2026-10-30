@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, screen } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
@@ -34,9 +34,7 @@ describe("Coach history", () => {
   it("shows New chat and shortcut in the history popover", async () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
-    fireEvent.click(
-      screen.getByRole("button", { name: "History, New chat" })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "History, New chat" }))
     await screen.findByRole("textbox", { name: "Search chat history" })
     expect(screen.getAllByText("New chat").length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText("⌘ N")).toBeInTheDocument()
@@ -47,9 +45,7 @@ describe("Coach history", () => {
     await expectCoachIdle()
     await sendMessage("Should I finish my CV first?")
     await expectSendSettled("Should I finish my CV first?")
-    fireEvent.click(
-      screen.getByRole("button", { name: /History,/i })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /History,/i }))
     await screen.findByRole("textbox", { name: "Search chat history" })
     fireEvent.click(screen.getByText("New chat"))
     expect(

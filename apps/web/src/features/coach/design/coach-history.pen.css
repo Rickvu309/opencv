@@ -1,19 +1,21 @@
-[data-pen-surface="coach"] [data-slot="history-panel"] {
-  background: #FFFFFF;
-  border: 1px solid #E6E6E8;
-  box-shadow: 0px 2px 6px 0px #0000000D, 0px 16px 40px 0px #0000001A;
+[data-pen-surface="coach"][data-slot="history-panel"] {
+  background: #ffffff;
+  border: 1px solid #e6e6e8;
+  box-shadow:
+    0px 2px 6px 0px #0000000d,
+    0px 16px 40px 0px #0000001a;
 }
 
 [data-pen-surface="coach"] [data-slot="history-search-icon"] {
-  color: #8A8A8E;
+  color: #8a8a8e;
 }
 
 [data-pen-surface="coach"] [data-slot="history-search"]::placeholder {
-  color: #A0A0A2;
+  color: #a0a0a2;
 }
 
 [data-pen-surface="coach"] [data-slot="history-section-label"] {
-  color: #8A8A8E;
+  color: #8a8a8e;
 }
 
 [data-pen-surface="coach"] [data-slot="history-item"] {
@@ -21,21 +23,21 @@
 }
 
 [data-pen-surface="coach"] [data-slot="history-item"][data-active="true"] {
-  background: #F0F0F1;
+  background: #f0f0f1;
 }
 
 [data-pen-surface="coach"] [data-slot="history-item-time"] {
-  color: #A0A0A2;
+  color: #a0a0a2;
 }
 
 [data-pen-surface="coach"] [data-slot="history-new-chat"] {
-  color: #1A1A1A;
+  color: #1a1a1a;
 }
 
 [data-pen-surface="coach"] [data-slot="history-shortcut"] {
-  color: #A0A0A2;
+  color: #a0a0a2;
 }
 
 [data-pen-surface="coach"] [data-slot="history-item-icon"] {
-  color: #3C3C40;
+  color: #3c3c40;
 }

@@ -13,7 +13,7 @@ import {
 
 import "@/features/coach/design/coach-history.pen.css"
 
-export function historyGroup(
+function historyGroup(
   date: string
 ): "Today" | "Yesterday" | "Last 7 days" | "Earlier" {
   const today = new Date()
@@ -109,12 +109,12 @@ export function CoachHistory({
         align="start"
         side="bottom"
         sideOffset={4}
-        className="w-[340px] p-0 ring-0"
+        className="w-[min(340px,calc(100dvw-16px))] rounded-[10px] bg-transparent p-0 shadow-none ring-0"
       >
         <div
           data-pen-surface="coach"
           data-slot="history-panel"
-          className="flex w-[340px] flex-col gap-px rounded-[10px] p-1.5"
+          className="flex w-full flex-col gap-px rounded-[10px] p-1.5"
         >
           {/* Search row - 34px height */}
           <div className="flex h-[34px] items-center gap-2 px-2.5">
@@ -141,7 +141,7 @@ export function CoachHistory({
               placeholder="Search chats"
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
-              className="h-auto flex-1 border-0 bg-transparent p-0 text-[13px] leading-[1.2] shadow-none outline-none ring-0 focus-visible:ring-0"
+              className="h-auto flex-1 border-0 bg-transparent p-0 text-[13px] leading-[1.2] shadow-none ring-0 outline-none focus-visible:ring-0"
             />
           </div>
 
@@ -190,7 +190,7 @@ export function CoachHistory({
               <section key={group}>
                 <div
                   data-slot="history-section-label"
-                  className="flex h-7 items-end px-2.5 pb-0 pt-1.5 text-[11.5px] font-medium leading-[1.2]"
+                  className="flex h-7 items-end px-2.5 pt-1.5 pb-0 text-[11.5px] leading-[1.2] font-medium"
                 >
                   {group}
                 </div>
@@ -207,7 +207,9 @@ export function CoachHistory({
                       onOpenChange(false)
                     }}
                   >
-                    <span className="min-w-0 flex-1 truncate">{chat.title}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {chat.title}
+                    </span>
                     <span
                       data-slot="history-item-time"
                       className="shrink-0 text-[11.5px] leading-[1.2]"
