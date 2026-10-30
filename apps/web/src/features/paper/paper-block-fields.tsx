@@ -1,4 +1,4 @@
-import { useReducer, type ReactNode } from "react"
+import { useLayoutEffect, useReducer, useRef, type ReactNode } from "react"
 import type { BlockType, CvBlock, CvSectionKind } from "@workspace/domain"
 
 import {
@@ -59,6 +59,19 @@ function ListBlockField({
   onCommit,
   onSlash,
 }: BlockFieldProps) {
+  const listRef = useRef<HTMLDivElement>(null)
+  const pendingFocus = useRef<string | null>(null)
+  useLayoutEffect(() => {
+    if (!pendingFocus.current) return
+    const row = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("[data-list-item-id]") ??
+        []
+    ).find((node) => node.dataset.listItemId === pendingFocus.current)
+    const field = row?.querySelector<HTMLElement>('[role="textbox"]')
+    if (!field) return
+    field.focus()
+    pendingFocus.current = null
+  }, [block])
   const [draftId] = useReducer(keepId, undefined, newId)
   if (block.type !== "bulleted-list" && block.type !== "numbered-list") {
     return null
@@ -66,9 +79,13 @@ function ListBlockField({
   const items =
     block.items.length > 0 ? block.items : [{ id: draftId, text: "" }]
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1">
+    <div ref={listRef} className="flex min-w-0 flex-1 flex-col gap-1">
       {items.map((item, index) => (
-        <div key={item.id} className="flex items-start gap-2">
+        <div
+          key={item.id}
+          data-list-item-id={item.id}
+          className="flex items-start gap-2"
+        >
           <span className="pt-0.5 text-sm text-muted-foreground" aria-hidden>
             {block.type === "numbered-list" ? `${index + 1}.` : "•"}
           </span>
@@ -80,8 +97,10 @@ function ListBlockField({
             onSlash={onSlash}
             onEnter={() => {
               const next = items.slice()
-              next.splice(index + 1, 0, { id: newId(), text: "" })
-              onCommit({ ...block, items: next } as CvBlock)
+              const id = newId()
+              pendingFocus.current = id
+              next.splice(index + 1, 0, { id, text: "" })
+              onCommit({ ...block, items: next })
             }}
             onChange={(text) =>
               onChange({
@@ -89,7 +108,7 @@ function ListBlockField({
                 items: items.map((row) =>
                   row.id === item.id ? { ...row, text } : row
                 ),
-              } as CvBlock)
+              })
             }
           />
         </div>
