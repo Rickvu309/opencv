@@ -274,3 +274,19 @@ test("cleanup from inside the worktree infers the issue; --force removes unsaved
   assert.equal(forced.code, 0, forced.text)
   assert.equal(ports.state.worktrees.length, 0)
 })
+
+test("cleanup closes an issue a merged pull request left open, with no Closes keyword", () => {
+  const ports = fakePorts({
+    cwd: main,
+    branch: "feat/90-keep",
+    worktrees: [{ path: wt, branch: "feat/90-keep" }],
+  })
+  ports.state.prs = [pr(5, { state: "MERGED", head: "feat/90-keep" })]
+  const dry = runCli(["cleanup", "90", "--dry-run"], ctxFor(ports))
+  assert.doesNotMatch(dry.text, /Closed issue/)
+  assert.equal(ports.state.issues.get(90).state, "OPEN")
+  const ok = runCli(["cleanup", "90"], ctxFor(ports))
+  assert.match(ok.text, /Closed issue #90: PR #5 merged and left it open/)
+  assert.equal(ports.state.issues.get(90).state, "CLOSED")
+  assert.equal(ports.effects.filter((e) => e.op === "closeIssue").length, 1)
+})

@@ -25,6 +25,8 @@ export function fixture(over = {}) {
       author: { login: "owner" },
       isDraft: false,
       labels: [],
+      title: "feat: Keep my search (#90)",
+      body: "Closes #90\n",
       headRefName: "feat/90-keep-my-search",
       headRefOid: "head-1",
       mergeCommit: null,
@@ -68,9 +70,20 @@ export function fixture(over = {}) {
         if (a[0] === "rev-parse")
           return ok(a[1] === "HEAD^{tree}" ? s.tree : s.base)
         if (a[0] === "rev-list") return ok("1")
+        if (a[0] === "merge-base") return ok("base-1")
+        if (a[0] === "diff" && a.includes("--numstat"))
+          return ok(s.numstat ?? "")
+        if (a[0] === "diff" && a.includes("--diff-filter=D"))
+          return ok((s.deleted ?? []).join("\0"))
         if (a[0] === "diff")
           return ok(s.changed.join(a.includes("-z") ? "\0" : "\n"))
         if (a[0] === "log") return ok(s.commits)
+        if (a[0] === "ls-tree" && a.includes("-r"))
+          return ok(
+            (
+              s.treeFiles ?? Array.from({ length: 200 }, (_, i) => `f${i}`)
+            ).join("\0")
+          )
         if (a[0] === "ls-tree") return ok("100644 blob sha\tfile")
         if (a[0] === "cat-file") {
           if (a[1] === "-s") return ok(String(s.size))
@@ -80,7 +93,15 @@ export function fixture(over = {}) {
           return ok()
         }
         if (a[0] === "check-attr")
-          return ok("file: linguist-generated: unspecified")
+          return ok(
+            a
+              .slice(a.indexOf("--") + 1)
+              .map(
+                (f) =>
+                  `${f}: linguist-generated: ${s.generated?.includes(f) ? "set" : "unspecified"}`
+              )
+              .join("\n") || "file: linguist-generated: unspecified"
+          )
         if (a[0] === "push") {
           if (s.changeDuringPush) s.tree = "changed"
           return s.pushOk ? ok() : fail()

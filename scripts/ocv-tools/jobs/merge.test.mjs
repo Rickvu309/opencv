@@ -28,10 +28,12 @@ test("queued merge leaves issues open until a later rerun observes the merge", (
   assert.equal(f.s.issueState, "CLOSED")
   assert.equal(f.effects("gh", "pr merge").length, 1)
 })
-test("already closed issues are left closed; failed closure is reported", () => {
+test("a closed issue refuses; failed closure is reported", () => {
   const f = fixture({ issueState: "CLOSED" })
-  assert.equal(f.call("merge", "91").code, 0)
-  assert.equal(f.effects("gh", "issue close").length, 0)
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 2)
+  assert.match(r.text, /PR_METADATA.*issue #90 is closed/s)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
   const bad = fixture({ closeWorks: false })
   assert.equal(bad.call("merge", "91").code, 1)
   assert.match(bad.call("merge", "91").text, /still open/)
@@ -110,4 +112,48 @@ test("a failed merge never closes the issue", () => {
   assert.equal(f.call("merge", "91").code, 1)
   assert.equal(f.s.issueState, "OPEN")
   assert.equal(f.effects("gh", "issue close").length, 0)
+})
+
+test("a wrong title or a missing closing line cannot merge", () => {
+  for (const over of [{ title: "Keep my search" }, { body: "no keyword" }]) {
+    const f = fixture()
+    Object.assign(f.s.pull, over)
+    const r = f.call("merge", "91")
+    assert.equal(r.code, 2)
+    assert.match(r.text, /PR_METADATA/)
+    assert.equal(f.effects("gh", "pr merge").length, 0)
+  }
+})
+test("a mass deletion cannot merge unless the files are generated", () => {
+  const names = Array.from({ length: 26 }, (_, i) => `d/f${i}.txt`)
+  const f = fixture({ deleted: names })
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 2)
+  assert.match(r.text, /MASS_DELETE.*26 files \(limit 25\)/s)
+  assert.match(r.text, /needs-human-review/)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
+  assert.equal(
+    fixture({ deleted: names, generated: names }).call("merge", "91").code,
+    0
+  )
+  const lines = fixture({ deleted: ["big.txt"], numstat: "0\t2500\tbig.txt" })
+  assert.match(lines.call("merge", "91").text, /2500 lines/)
+})
+test("a renamed-away ci.yml is seen through the diff without renames", () => {
+  const f = fixture({ deleteCi: true })
+  f.s.intercept = (cmd, a) =>
+    cmd === "git" &&
+    a[0] === "diff" &&
+    a.includes("--no-renames") &&
+    !a.includes("--numstat") &&
+    !a.includes("--diff-filter=D")
+      ? {
+          ok: true,
+          out: ".github/workflows/ci.yml\0.github/workflows/nightly.yml",
+          err: "",
+        }
+      : null
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 2)
+  assert.match(r.text, /CI_WORKFLOW_KEPT/)
 })

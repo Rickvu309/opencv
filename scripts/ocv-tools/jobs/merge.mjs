@@ -1,3 +1,4 @@
+import { changedFiles, deletedFacts } from "./pull-facts.mjs"
 import {
   recorded,
   json,
@@ -10,7 +11,7 @@ import {
 } from "./common.mjs"
 
 const FIELDS =
-  "number,url,state,author,isDraft,labels,headRefOid,headRefName,mergeCommit,closingIssuesReferences"
+  "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,mergeCommit,closingIssuesReferences"
 
 function closeIssues(ctx, pull, n) {
   const issues = new Set([
@@ -62,7 +63,13 @@ export function merge(ctx, n) {
       if (!run(ctx, "git", ["cat-file", "-e", `${head}^{commit}`]).ok)
         git(ctx, "fetch", "--quiet", "origin", `pull/${n}/head`)
       git(ctx, "cat-file", "-e", `${head}^{commit}`)
-      const files = gh(ctx, "pr", "diff", String(n), "--name-only").split("\n")
+      const base = git(ctx, "merge-base", "origin/main", head)
+      const files = changedFiles(
+        ctx,
+        gh(ctx, "pr", "diff", String(n), "--name-only").split("\n"),
+        base,
+        head
+      )
       const labels = json(
         ctx,
         "issue",
@@ -72,8 +79,19 @@ export function merge(ctx, n) {
         "labels"
       ).labels.map((l) => l.name)
       const facts = diffFacts(ctx, files, head, labels)
+      facts.diff.deleted = deletedFacts(ctx, base, head)
       gate("CI_WORKFLOW_KEPT", facts)
       gate("RISK_HIGH_FOR_CI", facts)
+      gate("MASS_DELETE", facts)
+      gate("PR_METADATA", {
+        pull: {
+          issue: Number(issue),
+          title: pull.title,
+          body: pull.body,
+          issueState: json(ctx, "issue", "view", issue, "--json", "state")
+            .state,
+        },
+      })
       const repo = gh(
         ctx,
         "repo",

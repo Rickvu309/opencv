@@ -18,6 +18,8 @@ result status=ok cause=none "next=node scripts/pr.mjs release cafe0000cafe0000ca
 reset; MP_QUEUED=1 run
 expect "queue path enqueues" 0 "QUEUED PR #5" "issue closes when the queue merges"
 called "queue path" "pr merge 5 --squash --match-head-commit $head"
+never "queue path" "--admin"; never "queue path" "--auto"; never "queue path" "release"
+grep -F -q "pr.mjs release <merge sha> --wait 600" "$tmp/out" || fail "queue path" "output does not say to run the release after the queue merges"
 result status=ok cause=none "next=scripts/ocv-tools.mjs status"
 
 reset; MP_AUTHOR=contributor run

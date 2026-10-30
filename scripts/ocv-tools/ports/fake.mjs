@@ -378,6 +378,13 @@ export function fakePorts(world = {}) {
     commentPr(n, body) {
       effect("prComment", { n: Number(n), body })
     },
+    closeIssue(n, pr) {
+      const item = state.issues.get(Number(n))
+      if (!item || item.state !== "OPEN") return false
+      item.state = "CLOSED"
+      effect("closeIssue", { n: Number(n), pr })
+      return true
+    },
   }
 
   const git = {

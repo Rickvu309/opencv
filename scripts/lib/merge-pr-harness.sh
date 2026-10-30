@@ -17,7 +17,7 @@ case "$1 $2" in
   "api user") echo "$MP_ME" ;;
   "repo view") echo "owner/repo" ;;
   "pr diff") [[ -z "${MP_DIFF_FAIL:-}" ]] || exit 1; printf '%s\n' $MP_FILES ;;
-  "issue view") printf '%s\n' ${MP_LABELS:-} ;;
+  "issue view") case "$*" in *"--json state"*) echo "${MP_ISSUE_STATE:-OPEN}" ;; *) printf '%s\n' ${MP_LABELS:-} ;; esac ;;
   "pr merge") [[ -z "${MP_MERGE_FAIL:-}" ]] || exit 1 ;;
   "api repos/owner/repo/commits/"*) jq -r "${@: -1}" <<<"${MP_CI:-$ci_ok}" ;;
   "pr view")
@@ -25,6 +25,8 @@ case "$1 $2" in
       *"--json headRefOid"*) echo "$MP_HEAD" ;;
       *"--json headRefName"*) echo "${MP_BRANCH:-feat/9-gone}" ;;
       *"--json author"*) jq -r "${@: -1}" <<<"{\"author\":{\"login\":\"$MP_AUTHOR\"}}" ;;
+      *"--json title"*) echo "${MP_TITLE:-feat: x (#9)}" ;;
+      *"--json body"*) printf '%s\n' "${MP_BODY:-Closes #9}" ;;
       *"--json isDraft"*) echo "${MP_DRAFT:-false}" ;;
       *"--json labels"*) printf '%s\n' ${MP_PR_LABELS:-} ;;
       *"--json mergeCommit"*) [[ -z "${MP_QUEUED:-}" ]] || { echo null; exit 0; }; jq -r "${@: -1}" <<<'{"mergeCommit":{"oid":"cafe0000cafe0000cafe0000cafe0000cafe0000"}}' ;;
@@ -51,7 +53,7 @@ reset() {
   : >"$MP_LOG"
   git -C "$tmp/repo" switch -q main 2>/dev/null || true
   git -C "$tmp/repo" reset -q --hard
-  unset MP_CI MP_LABELS MP_PR_LABELS MP_DRAFT MP_DIFF_FAIL MP_MERGE_FAIL MP_QUEUED
+  unset MP_CI MP_TITLE MP_BODY MP_ISSUE_STATE MP_LABELS MP_PR_LABELS MP_DRAFT MP_DIFF_FAIL MP_MERGE_FAIL MP_QUEUED
   export MP_ME=owner MP_AUTHOR=owner MP_HEAD=$head MP_FILES="scripts/x.sh docs/y.md" MP_BRANCH=feat/9-gone
 }
 run() {
