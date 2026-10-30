@@ -1,6 +1,7 @@
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
 
@@ -29,6 +30,30 @@ function cv(name: string): PaperView {
     createdAt: "2026-08-25T12:00:00.000Z",
     updatedAt: "2026-08-25T12:00:00.000Z",
   }
+}
+
+function letter(name: string): PaperView {
+  return {
+    ...cv(name),
+    id: "22222222-2222-4222-8222-222222222222",
+    kind: "letter",
+    templateId: null,
+    document: { markdown: "A cover letter." },
+  }
+}
+
+async function openRename(doc: PaperView) {
+  const user = userEvent.setup()
+  renderLibrary([doc])
+  await user.click(screen.getByRole("button", { name: `${doc.name} menu` }))
+  await user.click(await screen.findByRole("menuitem", { name: "Rename" }))
+  return user
+}
+
+function renameCommands(fetchMock: ReturnType<typeof vi.fn<typeof fetch>>) {
+  return fetchMock.mock.calls
+    .filter(([url]) => String(url).endsWith("/api/commands/paper.rename"))
+    .map(([, init]) => JSON.parse(String(init?.body)))
 }
 
 afterEach(() => {
@@ -307,4 +332,59 @@ describe("Paper library", () => {
     expect(menu).toHaveTextContent("Rename")
     expect(menu).toHaveTextContent("Delete")
   })
+
+  it.each([
+    ["CV", cv("CV draft")],
+    ["cover letter", letter("Letter draft")],
+  ] as const)("submits a %s rename with Enter", async (_kind, doc) => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ ok: true, data: { id: doc.id } }))
+    vi.stubGlobal("fetch", fetchMock)
+    const user = await openRename(doc)
+    const field = screen.getByRole("textbox", { name: "Name" })
+    await user.clear(field)
+    await user.type(field, "  Updated name  ")
+    await user.keyboard("{Enter}")
+
+    await vi.waitFor(() => {
+      expect(renameCommands(fetchMock)).toHaveLength(1)
+    })
+    expect(renameCommands(fetchMock)[0]).toMatchObject({
+      input: { docId: doc.id, name: "Updated name" },
+    })
+    await vi.waitFor(() => {
+      expect(
+        screen.queryByRole("textbox", { name: "Name" })
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it.each([
+    ["CV", cv("CV draft")],
+    ["cover letter", letter("Letter draft")],
+  ] as const)(
+    "keeps a %s rename draft on Enter validation errors",
+    async (_kind, doc) => {
+      const fetchMock = vi.fn<typeof fetch>()
+      vi.stubGlobal("fetch", fetchMock)
+      const user = await openRename(doc)
+      const field = screen.getByRole("textbox", { name: "Name" })
+
+      for (const [value, error] of [
+        ["", "Name is required"],
+        ["A".repeat(201), "Name is too long"],
+      ]) {
+        await user.clear(field)
+        if (value !== "") await user.type(field, value)
+        await user.keyboard("{Enter}")
+        expect(await screen.findByText(error)).toBeInTheDocument()
+        expect(field).toHaveValue(value)
+        expect(
+          screen.getByRole("textbox", { name: "Name" })
+        ).toBeInTheDocument()
+        expect(renameCommands(fetchMock)).toHaveLength(0)
+      }
+    }
+  )
 })
