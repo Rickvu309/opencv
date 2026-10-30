@@ -7,7 +7,8 @@ import type {
 
 export type EditorState = {
   doc: CvBlockDocument
-  undoDoc: CvBlockDocument | null
+  history: CvBlockDocument[]
+  editGroup: "text" | null
   name: string
   nameError: string | null
   updatedAt: PaperView["updatedAt"]
@@ -24,6 +25,8 @@ export type EditorAction =
   | { type: "document_edited"; doc: CvBlockDocument }
   | { type: "document_committed"; doc: CvBlockDocument }
   | { type: "edit_undone" }
+  | { type: "text_edit_finished" }
+  | { type: "photo_changed"; doc: CvBlockDocument }
   | { type: "document_synced"; doc: CvBlockDocument }
   | { type: "document_adopted"; doc: CvBlockDocument; updatedAt: string }
   | { type: "saved"; at: string }
@@ -50,7 +53,8 @@ export function initialEditor(
 ): EditorState {
   return {
     doc,
-    undoDoc: null,
+    history: [],
+    editGroup: null,
     name: initial.name,
     nameError: null,
     updatedAt: initial.updatedAt,
@@ -69,18 +73,62 @@ export function editorReducer(
   action: EditorAction
 ): EditorState {
   switch (action.type) {
-    case "document_edited":
-      return { ...state, doc: action.doc }
+    case "document_edited": {
+      const snapshot =
+        state.editGroup === "text" ? state.history.at(-1) : state.doc
+      if (JSON.stringify(action.doc) === JSON.stringify(snapshot)) {
+        return {
+          ...state,
+          history:
+            state.editGroup === "text"
+              ? state.history.slice(0, -1)
+              : state.history,
+          editGroup: null,
+          doc: action.doc,
+        }
+      }
+      return {
+        ...state,
+        history:
+          state.editGroup === "text"
+            ? state.history
+            : [...state.history, state.doc],
+        editGroup: "text",
+        doc: action.doc,
+      }
+    }
     case "document_committed":
-      return { ...state, undoDoc: state.doc, doc: action.doc }
+      return {
+        ...state,
+        history: [...state.history, state.doc],
+        editGroup: null,
+        doc: action.doc,
+      }
     case "edit_undone":
-      return { ...state, undoDoc: null, doc: state.undoDoc ?? state.doc }
+      return {
+        ...state,
+        history: state.history.slice(0, -1),
+        editGroup: null,
+        doc: state.history.at(-1) ?? state.doc,
+      }
+    case "text_edit_finished":
+      return { ...state, editGroup: null }
+    case "photo_changed":
+      return {
+        ...state,
+        doc: action.doc,
+        editGroup: null,
+        history: state.history.map((snapshot) =>
+          preservePhoto(snapshot, action.doc)
+        ),
+      }
     case "document_synced":
-      return { ...state, undoDoc: null, doc: action.doc }
+      return { ...state, history: [], editGroup: null, doc: action.doc }
     case "document_adopted":
       return {
         ...state,
-        undoDoc: null,
+        history: [],
+        editGroup: null,
         doc: action.doc,
         updatedAt: action.updatedAt,
         conflict: false,
@@ -125,4 +173,14 @@ export function editorReducer(
     case "print_finished":
       return { ...state, printJob: null }
   }
+}
+
+function preservePhoto(
+  snapshot: CvBlockDocument,
+  current: CvBlockDocument
+): CvBlockDocument {
+  const header = { ...snapshot.header }
+  if (current.header.photo) header.photo = current.header.photo
+  else delete header.photo
+  return { ...snapshot, header }
 }
