@@ -1,0 +1,72 @@
+{
+  "frameId": "NAXQk",
+  "frameName": "W1.5 Welcome",
+  "route": "/apply",
+  "driver": "hold profile.update at the api boundary, see the 814 report; Welcome is transient",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "pane": {
+    "width": 1440,
+    "height": 900
+  },
+  "texts": [
+    {
+      "text": "Welcome to OpenCV",
+      "x": 578,
+      "y": 414,
+      "width": 283.5,
+      "height": 36,
+      "fontSize": 30,
+      "fontWeight": 600,
+      "letterSpacing": -1,
+      "lineHeight": 36,
+      "color": "rgba(26, 26, 26, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Account created",
+      "x": 625,
+      "y": 474,
+      "width": 113.5,
+      "height": 17,
+      "fontSize": 14.5,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 17.5,
+      "color": "rgba(160, 160, 162, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Workspace ready",
+      "x": 625,
+      "y": 503.5,
+      "width": 120.5,
+      "height": 17,
+      "fontSize": 14.5,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 17.5,
+      "color": "rgba(160, 160, 162, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Getting your coach ready",
+      "x": 625,
+      "y": 532.5,
+      "width": 175.5,
+      "height": 17,
+      "fontSize": 14.5,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "lineHeight": 17.5,
+      "color": "rgba(26, 26, 26, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    }
+  ]
+}
