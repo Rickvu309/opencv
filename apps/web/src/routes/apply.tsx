@@ -16,7 +16,9 @@ import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import {
   activeFilterCount,
+  validateApplySearch,
   type ApplyFilters,
+  type ApplySearch,
   type ApplySpan,
   type ApplyView,
 } from "@/features/apply/apply-search.ts"
@@ -27,30 +29,22 @@ import {
 } from "@/features/apply/apply-toolbar.tsx"
 
 type ApplyState = {
-  filters: ApplyFilters
   dialogOpen: boolean
   showClosed: boolean
 }
 
 type ApplyAction =
-  | { type: "filters_changed"; filters: ApplyFilters }
-  | { type: "filters_cleared" }
   | { type: "dialog_opened" }
   | { type: "dialog_toggled"; open: boolean }
   | { type: "closed_toggled"; show: boolean }
 
 const initialApplyState: ApplyState = {
-  filters: { company: "", location: "" },
   dialogOpen: false,
   showClosed: false,
 }
 
 function applyReducer(state: ApplyState, action: ApplyAction): ApplyState {
   switch (action.type) {
-    case "filters_changed":
-      return { ...state, filters: action.filters }
-    case "filters_cleared":
-      return { ...state, filters: initialApplyState.filters }
     case "dialog_opened":
       return { ...state, dialogOpen: true }
     case "dialog_toggled":
@@ -83,19 +77,36 @@ function typingIn(target: EventTarget | null) {
   )
 }
 
+function applySearch(
+  filters: ApplyFilters,
+  view: ApplyView,
+  span: ApplySpan
+): ApplySearch {
+  return {
+    ...(view === "board" ? {} : { view }),
+    ...(view === "calendar" ? { span } : {}),
+    ...(filters.company ? { company: filters.company } : {}),
+    ...(filters.location ? { location: filters.location } : {}),
+  }
+}
+
 export function ApplyPage() {
   const navigate = useNavigate()
-  const search = useRouterState({
-    select: (state) =>
-      state.location.search as { view?: ApplyView; span?: ApplySpan },
+  const routeSearch = useRouterState({
+    select: (state) => state.location.search,
   })
+  const search = validateApplySearch(routeSearch)
   const view = search.view ?? "board"
   const span = search.span ?? "month"
+  const filters: ApplyFilters = {
+    company: search.company ?? "",
+    location: search.location ?? "",
+  }
   const jobs = useQuery({
     queryKey: jobListKey(),
     queryFn: listJobs,
   })
-  const [{ filters, dialogOpen, showClosed }, dispatch] = useReducer(
+  const [{ dialogOpen, showClosed }, dispatch] = useReducer(
     applyReducer,
     initialApplyState
   )
@@ -123,15 +134,19 @@ export function ApplyPage() {
     return () => window.removeEventListener("keydown", onKey)
   }, [dialogOpen])
 
+  function setFilters(next: ApplyFilters) {
+    void navigate({
+      to: "/apply",
+      replace: true,
+      resetScroll: false,
+      search: applySearch(next, view, span),
+    })
+  }
+
   function setView(next: ApplyView) {
     void navigate({
       to: "/apply",
-      search:
-        next === "board"
-          ? {}
-          : next === "list"
-            ? { view: "list" }
-            : { view: "calendar", span },
+      search: applySearch(filters, next, span),
     })
   }
 
@@ -142,16 +157,9 @@ export function ApplyPage() {
         view={view}
         onView={setView}
         filters={filters}
-        onFilters={(next) =>
-          dispatch({ type: "filters_changed", filters: next })
-        }
+        onFilters={setFilters}
       />
-      <ActiveFilters
-        filters={filters}
-        onFilters={(next) =>
-          dispatch({ type: "filters_changed", filters: next })
-        }
-      />
+      <ActiveFilters filters={filters} onFilters={setFilters} />
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
         {jobs.isLoading ? (
           <p role="status" className="px-5 text-sm">
@@ -174,7 +182,7 @@ export function ApplyPage() {
         ) : null}
         {noMatch ? (
           <ApplyNoResults
-            onClear={() => dispatch({ type: "filters_cleared" })}
+            onClear={() => setFilters({ company: "", location: "" })}
           />
         ) : null}
         {ready && view === "board" ? (
@@ -196,7 +204,7 @@ export function ApplyPage() {
             onSpan={(next) =>
               void navigate({
                 to: "/apply",
-                search: { view: "calendar", span: next },
+                search: applySearch(filters, "calendar", next),
               })
             }
           />
