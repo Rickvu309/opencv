@@ -27,13 +27,18 @@ function Mark({ size = 20, className }: { size?: number; className?: string }) {
 function Brand({
   lead,
   size = 13,
+  markSize = Math.round(size * 0.92),
+  gap = Math.round(size * 0.28),
+  letterSpacing = -size * 0.03,
   className,
 }: {
   lead?: string
   size?: number
+  markSize?: number
+  gap?: number
+  letterSpacing?: number
   className?: string
 }) {
-  const gap = Math.round(size * 0.28)
   return (
     <span
       data-slot="brand"
@@ -41,11 +46,11 @@ function Brand({
         "inline-flex flex-wrap items-center justify-center font-semibold",
         className
       )}
-      style={{ fontSize: size, gap, letterSpacing: `${-size * 0.03}px` }}
+      style={{ fontSize: size, gap, letterSpacing: `${letterSpacing}px` }}
     >
       {lead ? <span className="whitespace-nowrap">{lead}</span> : null}
       <span className="inline-flex items-center" style={{ gap }}>
-        <Mark size={Math.round(size * 0.92)} />
+        <Mark size={markSize} />
         <span>opencv</span>
       </span>
     </span>
