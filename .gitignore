@@ -45,6 +45,7 @@ apps/web/.generated/
 .claude/skills/*
 !.claude/skills/verify-opencv/
 !.claude/skills/verify-apply-scan-guard/
+!.claude/skills/verify-command-registry/
 !.claude/skills/verify-landing/
 !.claude/skills/verify-app-ui/
 !.claude/skills/verify-marketing-links/

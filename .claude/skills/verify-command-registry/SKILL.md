@@ -1,0 +1,142 @@
+---
+name: verify-command-registry
+description: Check the command registry's promise under concurrent calls, that a keyed command runs once and replays, a pending action runs at most once, and an activity row is undone at most once. Use after any change to apps/api/src/registry/registry.ts, to execute, approve, deny or undo on the registry, to the activity or idempotency or pending_actions tables in apps/api/src/db/schema.ts, to transaction in apps/api/src/db/context.ts, or when asked whether a double click or a retry can duplicate a job, CV or message.
+---
+
+# verify-command-registry
+
+## The property
+
+However concurrent calls interleave, in `apps/api/src/registry/registry.ts`:
+
+- **P1.** A command called with an idempotency key runs its effect once, and every caller gets the same replayed result with no raw database error.
+- **P2.** A pending action is executed at most once however many `approve` calls race, and `approve` and `deny` never both win.
+- **P3.** An activity row is undone at most once however many `undo` calls race, and `undo` of a row with no reversal is refused.
+
+## The harm
+
+A double click or a retry duplicates a job, CV or message, or runs a reversal twice. A caller who loses a race sees a database error instead of the answer the winner got.
+
+## Why this tool
+
+The question is whether calls that overlap can break a promise, and the promise lives in SQL (a unique index, `FOR UPDATE`, one transaction). A hand model of that would only check itself, so the tool is a vitest test that drives the real `Registry` against a real SQL engine with `Promise.all` of 2 to 4 callers, over several commands and several seeded start orders. The expected outcome of every scenario is a literal rule in the test, never read back from the registry. A pass covers the commands, call counts and orders listed below, not every interleaving.
+
+There are two engines, and the difference matters:
+
+- **PGlite (default).** The embedded test database has one connection, so it runs one transaction at a time. The test measures this and prints it (`max open transactions 1`). Calls still arrive in different orders and the replay, status and reversal checks still bite, but a missing `FOR UPDATE` cannot show here because nothing ever waits on a lock.
+- **A real Postgres server (`FORMAL_DATABASE_URL`).** Transactions run side by side (the run prints `max open transactions 4`). This is the only engine where the lock checks bite and where the natural race behind the known finding happens.
+
+## How to run
+
+```bash
+pnpm --filter api test:formal
+```
+
+- One command, about 15 seconds, runs this check and the Apply scan check (`verify-apply-scan-guard`). Exit 0 means every test passed. `pnpm --filter api test` also runs the file.
+- Expected output: `10 passed | 2 expected fail | 1 skipped` across the three registry files. The two expected failures are the known finding below. The skipped test is the natural race that needs a real server.
+- `FORMAL_SEED=<n>` changes the start-order seed (default 241). Run a few after a change.
+
+Run the same file on a real server before merging any change to a lock, a transaction or a key path:
+
+```bash
+mkdir -p ~/tmp/epg && cd ~/tmp/epg && npm init -y && npm install embedded-postgres@17.5.0-beta.15
+B=~/tmp/epg/node_modules/@embedded-postgres/linux-arm64/native/bin   # use the folder for your platform
+(cd ~/tmp/epg/node_modules/@embedded-postgres/linux-arm64 && node ./scripts/hydrate-symlinks.js)
+$B/initdb -D ~/tmp/epg/pgdata -U postgres --auth=trust -E UTF8
+$B/pg_ctl -D ~/tmp/epg/pgdata -o "-p 54329 -k /tmp -c listen_addresses=127.0.0.1" -l ~/tmp/epg/pg.log -w start
+FORMAL_DATABASE_URL=postgres://postgres@127.0.0.1:54329/postgres pnpm --filter api test:formal
+$B/pg_ctl -D ~/tmp/epg/pgdata stop
+```
+
+Nothing is added to the repo. The test makes its own database per run and drops it. Expected output there: `10 passed | 3 expected fail`, and a printed line `transaction order for 4 racing callers: +2 +3 +4 +1 -3 ...` showing the transactions overlapped. If `max open transactions` prints 1 against a real server, the run proved nothing: stop and find out why.
+
+## Tests
+
+| Test (P1 in `registry.formal.test.ts`, P2 in `registry.pending.formal.test.ts`, P3 in `registry.undo.formal.test.ts`) | Covers                                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1: `job.create`, `paper.create`, `chat.create` one effect per key                                                    | 2 to 4 callers, 3 start orders each, one key. Row count equals one call, one stored key record, every answer identical. `chat.create` writes no activity row, so it covers the `idempotency` table path. Controls: a single call sets the row count, three distinct keys give three effects |
+| P1: measures whether the racing transactions really overlap                                                           | Prints the transaction order. On PGlite asserts exactly 1 open transaction, on a server asserts more than 1                                                                                                                                                                                 |
+| P1: replays the winner when the command is not inside a transaction (two tests)                                       | A rival writes the key first, then the registry's insert hits the unique index. The replay branch returns the rival's row or stored result                                                                                                                                                  |
+| P1: known finding, lost key race inside a transaction (two tests, `it.fails`)                                         | Same, inside the command transaction. Fails today with `25P02`                                                                                                                                                                                                                              |
+| P1: known finding, callers that pass the key lookup together (`it.fails`, server only)                                | A barrier holds 3 callers inside the command so they all passed the key lookup. 2 of 3 get `25P02` today                                                                                                                                                                                    |
+| P2: N racing approves                                                                                                 | 2 to 4 approves of one `job.move` confirmation: one activity row, stage moved once, status `approved`, all callers get one activity id                                                                                                                                                      |
+| P2: approve and deny racing never both win                                                                            | 1 or 2 approves with 1 or 2 denies. Final status is `approved` with one effect, or `denied` with none. Every loser is refused with `CONFLICT`                                                                                                                                               |
+| P3: N racing undos                                                                                                    | 2 to 4 undos of a `job.create` row: one wins, the rest get `CONFLICT` already undone, the reversal's key is recorded once, the job is gone                                                                                                                                                  |
+| P3: an activity row with no reversal                                                                                  | 2 to 4 undos: every one is refused with `CONFLICT` cannot be undone, `undone_at` stays null, no reversal runs                                                                                                                                                                               |
+
+## The known finding
+
+Issue #758. Two callers with the same key both pass the key lookup and both run the command. The first commits its activity row. The second hits the unique index on `(user_id, idempotency_key)`, and Postgres aborts its transaction (`25P02`). The catch blocks at `registry.ts` lines 321-330 and 340-347 then run a select to read the winner's row, and that select fails on the aborted transaction, so the caller gets a database error instead of the replay. The effect is not duplicated, because the loser rolls back. The replay code can only work for a command that runs without a transaction.
+
+The tests handle it so a green run stays honest:
+
+- The two forced `it.fails` tests and the server-only barrier test pin it. They go red when the registry is fixed. Then remove `it.fails` in the same change.
+- On a real server, the natural P1 tests tolerate a caller whose error code is `25P02` and nothing else (`isKnownFinding` in the test), and print how many callers hit it (`knownFindingHits`). After the fix, delete `isKnownFinding` and `KNOWN_FINDING` so any error fails.
+- On PGlite, `25P02` is never tolerated.
+
+## How to read a counterexample
+
+The failing label names the scenario: `P1 job.create N=3 seed=242`, `P2 approve x2 deny x1 seed=241`, `P3 undo x4 seed=243`. Rerun with `FORMAL_SEED=<seed>` to repeat the start order.
+
+- `raw errors` listing `25P02` or `23505` (P1): a caller lost a key race and was not given the replay. Open `execute` at line 239. On PGlite this means the key lookup at line 268 stopped working. On a server it may be the known finding, which is tolerated, so an untolerated code is new. Check the catch blocks at lines 321 and 340.
+- `expected 2 to be 1` on a row count (P1): the effect ran twice and committed. Check that the key lookup and the insert are in one transaction.
+- `activity rows` or `idempotency rows` not 1 (P1): a command wrote its key twice or not at all.
+- P2 `approve and deny racing never both win` with `status: denied` and `moves: 1`: both won. Open `lockPending` at line 551 (`FOR UPDATE`) and the status checks in `approve` at line 425 and `deny` at line 460. This only shows on a real server for a missing lock.
+- P3 `callers that undid` not 1: the reversal ran twice or never. Open `lockActivity` at line 567 and the `undoneAt` check in `undo` at line 485.
+- P3 `cannot be undone` expected but a different message: the `reversalCommand` guard at line 494 is gone or moved after the lookup.
+- A failure with a table row mismatch and unchanged registry code means the test rule is wrong. Check it against the state table in the registry before editing code.
+
+## Bounds and assumptions
+
+- Commands: `job.create`, `paper.create`, `chat.create` for keys, `job.move` (Coach confirm) for approve and deny, `job.create` for undo, and three small test commands. Not every command.
+- Callers per race: 2 to 4. Start orders: 3 seeds, each caller delayed 0 to 2 event-loop turns. A real server adds its own timing, so each run there may differ.
+- One user per scenario. Two users never share a key, because the key is scoped to the user.
+- `expireIfStale` (the 24 hour expiry) is not probed.
+- The forced tests put the rival row inside the loser's own transaction. A real rival commits on another connection first, and the loser's insert then waits for it. The resulting error is the same, and the barrier test shows the natural form on a real server.
+- Only `execute`, `approve`, `deny` and `undo` of `Registry` are driven. The HTTP routes and the Coach tool wrapper in `http.ts` are not.
+
+## Coverage record
+
+| Item                          | Where                                              |
+| ----------------------------- | -------------------------------------------------- |
+| `Registry.execute`            | `apps/api/src/registry/registry.ts` line 239       |
+| key lookup before the run     | `apps/api/src/registry/registry.ts` line 268       |
+| replay on unique violation    | `apps/api/src/registry/registry.ts` lines 321, 340 |
+| `Registry.approve`            | `apps/api/src/registry/registry.ts` line 425       |
+| `Registry.deny`               | `apps/api/src/registry/registry.ts` line 460       |
+| `Registry.undo`               | `apps/api/src/registry/registry.ts` line 485       |
+| `lockPending` (`FOR UPDATE`)  | `apps/api/src/registry/registry.ts` line 551       |
+| `lockActivity` (`FOR UPDATE`) | `apps/api/src/registry/registry.ts` line 567       |
+| `replay`, `replayStored`      | `apps/api/src/registry/registry.ts` lines 611, 624 |
+| `isUniqueViolation`           | `apps/api/src/registry/errors.ts` line 21          |
+| `transaction`                 | `apps/api/src/db/context.ts` line 33               |
+
+Check files: `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
+
+Sync commit: `b618ed9f358b23a280d7c00308aca64474ec36ed`. This is the trunk commit the check was last confirmed against.
+
+## What is not covered
+
+- Interleavings finer than one SQL statement on PGlite. A server run covers them only by chance of timing.
+- The pending action edited by a person between proposal and approval, and the undo of a row whose subject has changed since.
+- The Coach toggles at approve time (`gates.test.ts` covers those) and the expiry path.
+- Commands that run without a transaction other than the steered test command (`account.requestEmailChange`).
+- Pooled-connection limits, deadlock detection and statement timeouts.
+
+If a later run probes one of these and it fails, it is a new finding. Do not shrink the grammar to hide it.
+
+## When the registry changes
+
+1. Run `pnpm --filter api test:formal`. It is green on trunk, so any failure is a new finding or a wrong rule in the test. Then run it on a real server as above.
+2. Fix the registry, never the property or the expected counts, unless a rule disagrees with the registry's documented states.
+3. A new keyed command that creates rows needs a row in `KEYED_CASES`. A new terminal state for a pending action or an activity row needs an assertion in the matching P2 or P3 test.
+4. Prove the check still bites. Make a scratch change, confirm a named failure, then `git checkout` the file and confirm the run is back to where it started. Useful breaks, each confirmed at the sync commit:
+   - Remove the key lookup at line 268 (and the stored-result lookup below it): P1 `one effect per key` fails for all three commands on PGlite.
+   - Change both `isUniqueViolation` guards at lines 321 and 340 to `throw error`: the two `replays the winner when the command is not inside a transaction` tests fail on PGlite.
+   - Change `if (row.undoneAt) {` at line 488 to `if (false) {`: `N racing undos` fails on PGlite.
+   - Change `if (!row.reversalCommand) {` at line 494 to `if (false) {`: `an activity row with no reversal` fails on PGlite.
+   - Change the `denied` or the `status !== "pending"` check in `approve` or `deny` to `if (false) {`: `approve and deny racing never both win` fails on PGlite.
+   - Remove `.for("update")` in `lockPending` (line 556): green on PGlite, and `N racing approves` and `approve and deny racing never both win` fail on a real server.
+   - Remove `.for("update")` in `lockActivity` (line 572): green on PGlite, and `N racing undos` fails on a real server.
+   - Removing the `row.status === "approved"` early return in `approve` changes nothing, because the key lookup in `execute` replays the same row. It is a second guard, not a missing check.
+5. Move the sync commit only after you reread every covered function at the new commit, rerun the check on both engines, and confirm every row of the coverage record still describes the code. Then set it to `git rev-parse origin/main` and fix any line numbers.
