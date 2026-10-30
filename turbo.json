@@ -12,7 +12,7 @@
     ".node-version",
     ".pnpmfile.cjs",
     "vitest.*",
-    "scripts/check.sh",
+    "scripts/check.mjs",
     ".railway/railway.ts",
     ".gitattributes",
     "*.config.*",

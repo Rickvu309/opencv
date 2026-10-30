@@ -99,7 +99,7 @@ grep -Eq '^\*\*Blast Radius:\*\* [^<[:space:]]' <<<"$written" || die "the PR bod
 ! grep -Eq '<(diagram|screenshot|one-way|optional)[^>]*>' <<<"$written" || die "the PR body still has a template placeholder in angle brackets; replace it"
 body="Closes #${issue}"$'\n\n'"$written"
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
-  body="**Checks were skipped (SKIP_CHECKS=1), emergency declared by ${SKIP_CHECKS_DECLARED_BY:-unknown}. Reviewer: run scripts/check.sh.**"$'\n\n'"$body"
+  body="**Checks were skipped (SKIP_CHECKS=1), emergency declared by ${SKIP_CHECKS_DECLARED_BY:-unknown}. Reviewer: run scripts/check.mjs.**"$'\n\n'"$body"
 fi
 
 echo "Title: $title"

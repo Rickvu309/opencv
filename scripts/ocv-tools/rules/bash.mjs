@@ -75,7 +75,8 @@ function ciKept(facts) {
 function riskHigh(facts) {
   const watched = [
     ".github/workflows/ci.yml",
-    "scripts/check.sh",
+    "scripts/check.mjs",
+    "scripts/check.mjs",
     ".github/rulesets/main.json",
   ]
   if (
@@ -85,7 +86,7 @@ function riskHigh(facts) {
   )
     return null
   if (asLines(facts.diff?.labels).includes("risk:high")) return null
-  return "the change touches ci.yml, composite actions, check.sh or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+  return "the change touches ci.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
 }
 
 function skipDeclared(facts) {
@@ -175,7 +176,7 @@ export const bashRows = [
   rule({
     id: "RISK_HIGH_FOR_CI",
     section: "5",
-    says: "A change to ci.yml, a composite action, check.sh or the main ruleset needs the risk:high label.",
+    says: "A change to ci.yml, a composite action, checks or the main ruleset needs the risk:high label.",
     jobs: ["merge"],
     needs: ["diff"],
     check: riskHigh,

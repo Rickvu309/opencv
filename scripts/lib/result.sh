@@ -55,7 +55,7 @@ _r_repo_name() {
 
 result_begin() {
   R_SCRIPT=$1
-  # PR_RESULT_ID is for a check.sh run by another script; any other script names its own id.
+  # PR_RESULT_ID is for a check.mjs run by another script; any other script names its own id.
   R_ID=$(_r_slug "${2:-$([[ "$1" != check ]] || echo "${PR_RESULT_ID:-}")}")
   R_REPO=$(_r_repo_name)
   R_START_EPOCH=$(date +%s)
@@ -96,7 +96,7 @@ result_blocked_by() {
   R_BLOCKED="{\"pr\":$prj,\"commit\":$(_r_json_str "$commit"),\"files\":$(_r_json_array "$@")}"
 }
 
-# Take cause, detail, files, next and log from the result file of a script this one ran (a failed check.sh, say).
+# Take cause, detail, files, next and log from the result file of a script this one ran (a failed check.mjs, say).
 # Returns 1 when the file is missing, unreadable or older than this run (a leftover from an earlier run), so the caller
 # can report its own cause.
 result_adopt() {
@@ -120,7 +120,7 @@ result_adopt() {
   done
 }
 
-# Add the `retried` files of a nested script's result file (the check.sh that open-pr.sh ran) to this one.
+# Add the `retried` files of a nested script's result file (the check.mjs that open-pr.sh ran) to this one.
 result_adopt_retried() {
   local x
   [[ -f "$1" ]] || return 0
@@ -147,7 +147,7 @@ result_json() {
     "$(_r_json_or_null "$R_NEXT")" "$(_r_json_or_null "$R_LOG")" "$(_r_json_str "$R_START_ISO")" "$((now - R_START_EPOCH))"
 }
 
-# Path of this run's result file; result_path check gives the one a nested check.sh wrote for the same id.
+# Path of this run's result file; result_path check gives the one a nested check.mjs wrote for the same id.
 result_path() {
   printf '%s/%s-%s-%s.json' "${PR_RESULT_DIR:-${HOME:-.}/tmp/pr-results}" "${R_REPO:-unknown}" "${1:-$R_SCRIPT}" "${R_ID:-unknown}"
 }

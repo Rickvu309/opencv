@@ -2,6 +2,8 @@ import path from "path"
 import react from "@vitejs/plugin-react"
 import { configDefaults, defineConfig } from "vitest/config"
 
+import { quarantine } from "./vitest.quarantine"
+
 import { applyLocalApiUrl } from "./local-env"
 
 applyLocalApiUrl("test")
@@ -48,12 +50,21 @@ export default defineConfig({
         test: {
           name: "shared-modules",
           isolate: false,
-          exclude: [...configDefaults.exclude, ...ISOLATED_FILES],
+          exclude: [
+            ...configDefaults.exclude,
+            ...quarantine.map((entry) => entry.file),
+            ...ISOLATED_FILES,
+          ],
         },
       },
       {
         extends: true,
-        test: { name: "isolated", isolate: true, include: ISOLATED_FILES },
+        test: {
+          name: "isolated",
+          isolate: true,
+          include: ISOLATED_FILES,
+          exclude: quarantine.map((entry) => entry.file),
+        },
       },
     ],
   },

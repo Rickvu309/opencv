@@ -13,7 +13,7 @@ Every change starts as a GitHub issue, gets its own short-lived branch, comes ba
 flowchart LR
     A["Issue #42"] --> B["Branch feat/42-login-page<br/>(own worktree)"]
     B --> C["Draft PR<br/>feat: add login page (#42)<br/>Closes #42"]
-    C --> D["Green ci check<br/>scripts/check.sh --changed"]
+    C --> D["Green ci check<br/>pnpm check"]
     D --> E["Squash-merge to main"]
     E --> F["Production deploy"]
     E --> G["Issue closes,<br/>branch deleted,<br/>worktree removed"]
@@ -67,7 +67,7 @@ flowchart LR
 - Open the PR early. A draft is fine. Use `scripts/open-pr.sh [--draft]`: it validates the branch, runs the quick check (`pnpm check`), pushes, and fills in the title and body.
 - Title: `type: description (#<issue>)`, for example `feat: add login page (#42)`. It becomes the commit message on `main`.
 - Body: the PR template with the `Closes #42` line.
-- Before merge, the PR needs a green `ci` check. That check is the quick `scripts/check.sh --changed`. Nothing runs the full lint, typecheck and test before a merge.
+- Before merge, the PR needs a green `ci` check. CI runs parallel affected Turbo jobs and guards. Local `pnpm check` runs affected tasks, guards and formatting; `pnpm check:full` also builds every package.
 - Run the verify-opencv skill (`.claude/skills/verify-opencv`) by hand when you want it. Nothing requires its evidence.
 - Rebase when the PR does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
 - See `docs/git-workflow/commit-and-pr-conventions.md`.

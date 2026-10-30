@@ -50,7 +50,7 @@ jobs:
           full=0
           while IFS= read -r -d '' file; do
             case "$file" in
-              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|.npmrc|.nvmrc|.node-version|.pnpmfile.cjs|vitest.*|scripts/check.sh|.railway/railway.ts|.gitattributes) full=1 ;;
+              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|.npmrc|.nvmrc|.node-version|.pnpmfile.cjs|vitest.*|scripts/check.mjs|.railway/railway.ts|.gitattributes) full=1 ;;
               */*) ;;
               *.config.*|tsconfig*.json|.eslint*|.prettier*) full=1 ;;
             esac

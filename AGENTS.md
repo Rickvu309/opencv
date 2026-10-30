@@ -89,10 +89,10 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 4. Checks, commits, and PRs
 
-- The pre-push hook runs `pnpm check`. PR CI runs affected checks; the queue runs full checks.
+- The pre-push hook runs `pnpm check`: affected tasks, guards and formatting. CI runs affected lint, types, build and tests, plus guards.
 - Open the PR with `scripts/open-pr.sh --draft --body-file <file>`, a body written with the `pr` skill (Summary, Evidence, Merge Danger). It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
 - Mark it ready with `gh pr ready` when the quick check passes. Run verify skills by hand (`.claude/skills/verify-opencv`). No preview deploys.
-- CI runs on GitHub-hosted runners; locally run one check at a time. `scripts/check.sh` defaults `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
+- CI is hosted. Run local checks serially. `scripts/check.mjs` sets `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
 - Rebase when the branch does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
@@ -111,7 +111,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 6. Merge and clean up
 
-- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `.github/actions/**`, `scripts/check.sh` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
+- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `.github/actions/**`, `scripts/check.mjs` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
 - When the queue merges, the issue closes and the remote branch is deleted.
 - From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
