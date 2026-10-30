@@ -52,11 +52,11 @@ helper 'result_ok fine; exit 3'
 validate "$f" status=error
 ok "ok followed by a non-zero exit is an error"
 
-for sig in TERM INT HUP; do
+for sig in TERM INT HUP PIPE; do
   printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\nresult_begin check feat/9-a-b\nresult_ok early\necho started\nsleep 30 &\nwait $!\n' "$here" >"$tmp/h.sh"
   rm -f "$f"
   # A background job starts with SIGINT ignored, which bash cannot trap; restore the default first.
-  python3 -I -c 'import os, signal, sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.execvp("bash", ["bash", sys.argv[1]])' "$tmp/h.sh" >"$tmp/out" 2>"$tmp/err" &
+  python3 -I -c 'import os, signal, sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGPIPE, signal.SIG_DFL); os.execvp("bash", ["bash", sys.argv[1]])' "$tmp/h.sh" >"$tmp/out" 2>"$tmp/err" &
   pid=$!
   for _ in $(seq 100); do grep -q started "$tmp/out" 2>/dev/null && break; sleep 0.05; done
   kill -"$sig" "$pid"
@@ -66,7 +66,7 @@ for sig in TERM INT HUP; do
   validate "$f" status=error cause=other
   grep -q "SIG$sig" "$f" || fail "SIG$sig: the signal is not in the detail"
 done
-ok "a script killed by SIGTERM, SIGINT or SIGHUP writes status error and keeps a non-zero exit"
+ok "a script killed by SIGTERM, SIGINT, SIGHUP or SIGPIPE writes status error and keeps a non-zero exit"
 
 # result_adopt takes a nested script's file only when that run started no earlier than this one.
 mkdir -p "$PR_RESULT_DIR"

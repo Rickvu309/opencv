@@ -84,7 +84,7 @@ guard -u TMPDIR PR_DISK_MIN_MB=1 PR_TMP_MIN_MB=1
 [[ $code -eq 0 ]] || fail "enough room in /tmp: exit $code"
 echo "ok: a writable /tmp with room passes"
 
-for bad in 2G abc -5 "1 2"; do
+for bad in 2G abc -5 "1 2" 09 010; do
   guard "PR_DISK_MIN_MB=$bad"
   [[ $code -eq 1 ]] || fail "PR_DISK_MIN_MB='$bad': exit $code, want 1"
   node "$here/lib/result-check.mjs" "$r" status=fail cause=env >/dev/null || fail "PR_DISK_MIN_MB='$bad': cause is not env"
