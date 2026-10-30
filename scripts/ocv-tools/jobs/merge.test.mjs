@@ -1,4 +1,6 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import test from "node:test"
 import { fixture } from "./fixture.mjs"
 
@@ -20,12 +22,21 @@ test("merge pins squash to the checked head and closes the linked issue", () => 
 test("queued merge leaves issues open until a later rerun observes the merge", () => {
   const f = fixture({ queue: true })
   assert.match(f.call("merge", "91").text, /Queued/)
+  const receipt = () =>
+    JSON.parse(
+      readFileSync(
+        join(f.ctx.env.PR_RESULT_DIR, "opencv-merge-pr-91.json"),
+        "utf8"
+      )
+    )
+  assert.equal(receipt().status, "pending")
   assert.equal(f.s.issueState, "OPEN")
   assert.equal(f.effects("gh", "issue close").length, 0)
   f.s.pull.state = "MERGED"
   f.s.pull.mergeCommit = { oid: "done" }
   assert.equal(f.call("merge", "91").code, 0)
   assert.equal(f.s.issueState, "CLOSED")
+  assert.equal(receipt().status, "ok")
   assert.equal(f.effects("gh", "pr merge").length, 1)
 })
 test("a closed issue refuses; failed closure is reported", () => {

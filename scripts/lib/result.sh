@@ -18,7 +18,7 @@
 # and prints `RESULT_JSON: <path>` as the last stdout line. A crash (non-zero exit with no result_fail/result_human)
 # is status "error", and so is a kill by SIGINT, SIGTERM, SIGHUP or SIGPIPE (detail "killed by SIG<name>"). Writing never changes the exit code.
 #
-# Fields (all present, null when unknown): schema, script, repo, id, status (ok|fail|human|error),
+# Fields (all present, null when unknown): schema, script, repo, id, status (ok|pending|fail|human|error),
 # cause (none|behind-main|merge-conflict|test|timing-test|lint|typecheck|build|env|disk|hygiene|deploy|other), detail,
 # files, blockedBy {pr, commit, files}, retried, next, log, startedAt (UTC ISO-8601), durSec.
 # PR_RESULT_REPO overrides the repo name; PR_RESULT_ID gives a nested script the id of the script that called it.
@@ -79,6 +79,7 @@ result_human() {
   R_STATUS=human; R_CAUSE=hygiene; R_DETAIL=$(_r_oneline "${1:-}")
   [[ -z "${2:-}" ]] || R_NEXT=$2
 }
+result_pending() { R_STATUS=pending; R_CAUSE=none; R_DETAIL=$(_r_oneline "${1:-}"); [[ -z "${2:-}" ]] || R_NEXT=$2; }
 result_ok() { R_STATUS=ok; R_CAUSE=none; R_DETAIL=$(_r_oneline "${1:-}"); [[ -z "${2:-}" ]] || R_NEXT=$2; }
 result_file() { R_FILES+=("$@"); }
 result_retried() {
@@ -135,7 +136,7 @@ result_json() {
   now=$(date +%s)
   if [[ -n "$R_SIGNAL" ]]; then
     status=error; cause=other; detail="killed by SIG$R_SIGNAL"
-  elif [[ -z "$status" || ( "$status" == ok && "$rc" != 0 ) ]]; then
+  elif [[ -z "$status" || ( ( "$status" == ok || "$status" == pending ) && "$rc" != 0 ) ]]; then
     if [[ "$rc" == 0 ]]; then status=ok; cause=none
     else status=error; cause=other; detail="exited with code $rc before reporting a result"; fi
   fi
