@@ -1,3 +1,4 @@
+import { letterAttachmentContextSchema } from "@workspace/domain"
 import type { QueryClient } from "@tanstack/react-query"
 import type {
   ChatToolName,
@@ -7,7 +8,7 @@ import type {
   QueryOutput,
 } from "@workspace/domain"
 
-import { ApiError, apiFetch } from "@/lib/api.ts"
+import { ApiError, apiFetch, isErrorEnvelope } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { queryKey } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
@@ -94,6 +95,35 @@ export async function uploadPaperPhoto(file: File): Promise<FileId> {
   }
   const payload = (await res.json()) as SuccessBody<{ id: FileId }>
   return unwrapData(payload).id
+}
+
+export async function extractLetterAttachment(
+  file: File,
+  signal?: AbortSignal
+) {
+  const body = new FormData()
+  body.set("file", file)
+  const response = await fetchBinary(endpoints.letterAttachment, {
+    method: "POST",
+    credentials: "include",
+    body,
+    signal,
+  })
+  const payload: unknown = await response.json()
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      "REQUEST_FAILED",
+      isErrorEnvelope(payload)
+        ? payload.error.message
+        : "Could not read that file. Try again."
+    )
+  }
+  const data =
+    payload && typeof payload === "object" && "data" in payload
+      ? payload.data
+      : null
+  return letterAttachmentContextSchema.parse(data)
 }
 
 export async function importPaperFile(

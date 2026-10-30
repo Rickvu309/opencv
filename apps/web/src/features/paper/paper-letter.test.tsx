@@ -48,6 +48,14 @@ function installFetch(mode: "tool" | "stop" | "limit") {
     const url = String(input)
     const body = typeof init?.body === "string" ? JSON.parse(init.body) : null
     calls.push({ url, body })
+    if (url.includes("/api/paper/letter-attachment"))
+      return Promise.resolve(
+        ok({
+          name: "role-description.txt",
+          text: "Lead customer research and delivery.",
+          truncated: false,
+        })
+      )
     if (url.includes("/api/commands/paper.create"))
       return Promise.resolve(ok(letter))
     if (url.includes("/api/commands/chat.create")) {
@@ -101,9 +109,8 @@ function start() {
   render(
     <PaperLetterStart
       jobs={[job]}
-      cvName="PM track CV"
+
       onCreated={() => undefined}
-      onImport={() => undefined}
     />
   )
   fireEvent.click(
@@ -122,19 +129,12 @@ afterEach(() => {
 describe("Cover letter", () => {
   it("explains the required context and enables drafting for job text or a selected job", () => {
     const calls = installFetch("tool")
-    render(
-      <PaperLetterStart
-        jobs={[job]}
-        cvName={null}
-        onCreated={() => undefined}
-        onImport={() => undefined}
-      />
-    )
+    render(<PaperLetterStart jobs={[job]} onCreated={() => undefined} />)
     const draft = screen.getByRole("button", { name: "Draft letter" })
     const input = screen.getByRole("textbox")
     expect(draft).toBeDisabled()
     expect(draft).toHaveAccessibleDescription(
-      "Choose a job or paste job text or a link to draft a letter."
+      "Choose a job, paste job text or a link, or attach a file to draft a letter."
     )
     fireEvent.click(draft)
     expect(calls).toEqual([])
@@ -152,6 +152,83 @@ describe("Cover letter", () => {
     expect(draft).toBeEnabled()
   })
 
+  it("keeps an upload as Letter context and sends its text without creating a CV", async () => {
+    const calls = installFetch("tool")
+    const onCreated = vi.fn()
+    render(<PaperLetterStart jobs={[]} onCreated={onCreated} />)
+    const file = new File(
+      ["Lead customer research and delivery."],
+      "role-description.txt",
+      {
+        type: "text/plain",
+      }
+    )
+    fireEvent.change(screen.getByLabelText("Attach letter context"), {
+      target: { files: [file] },
+    })
+    await screen.findByText("Context: role-description.txt")
+    expect(onCreated).not.toHaveBeenCalled()
+    expect(calls.filter((call) => call.url.includes("/commands/"))).toEqual([])
+    expect(screen.queryByText(/From CV/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+    await vi.waitFor(() =>
+      expect(calls.some((call) => call.url.includes("/turns"))).toBe(true)
+    )
+    expect(calls.find((call) => call.url.includes("/turns"))?.body).toEqual(
+      expect.objectContaining({
+        text: expect.stringContaining("Lead customer research and delivery."),
+      })
+    )
+    expect(
+      calls.find((call) => call.url.includes("/paper.create"))?.body
+    ).toEqual(
+      expect.objectContaining({
+        input: expect.objectContaining({ kind: "letter" }),
+      })
+    )
+    expect(calls.some((call) => call.url.includes("/paper/import"))).toBe(false)
+  })
+
+  it("removes attached context and requires a job or job text again", async () => {
+    installFetch("tool")
+    render(<PaperLetterStart jobs={[]} onCreated={() => undefined} />)
+    fireEvent.change(screen.getByLabelText("Attach letter context"), {
+      target: { files: [new File(["Job"], "role-description.txt")] },
+    })
+    await screen.findByText("Context: role-description.txt")
+    expect(screen.getByRole("button", { name: "Draft letter" })).toBeEnabled()
+    fireEvent.click(screen.getByRole("button", { name: "Remove attachment" }))
+    expect(
+      screen.queryByText("Context: role-description.txt")
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
+  })
+
+  it("preserves typed job context when an attachment cannot be read", async () => {
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(fail(400, "FILE_UNSUPPORTED", "No readable text found."))
+    )
+    render(<PaperLetterStart jobs={[job]} onCreated={() => undefined} />)
+    const query = screen.getByRole("textbox")
+    fireEvent.change(query, { target: { value: "Product manager in retail" } })
+    fireEvent.change(screen.getByLabelText("Attach letter context"), {
+      target: { files: [new File([""], "blank.txt")] },
+    })
+    await screen.findByText("No readable text found.")
+    expect(query).toHaveValue("Product manager in retail")
+    expect(screen.getByRole("button", { name: "Draft letter" })).toBeEnabled()
+    expect(screen.queryByText(/Context:/)).not.toBeInTheDocument()
+  })
+
+  it("does not claim a CV source in the saved letter editor", () => {
+    installFetch("tool")
+    render(
+      <PaperLetterEditor doc={letter} job={job} onBack={() => undefined} />
+    )
+    expect(screen.queryByText(/^From/)).not.toBeInTheDocument()
+    expect(screen.getByText("I write clearly.")).toBeInTheDocument()
+  })
+
   it("prints the letter from Download PDF", async () => {
     vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
     const print = vi.spyOn(window, "print").mockImplementation(() => {
@@ -164,7 +241,7 @@ describe("Cover letter", () => {
       <PaperLetterEditor
         doc={letter}
         job={job}
-        cvName={null}
+
         onBack={() => undefined}
       />
     )
@@ -183,7 +260,7 @@ describe("Cover letter", () => {
         <PaperLetterEditor
           doc={letter}
           job={job}
-          cvName={null}
+
           onBack={() => undefined}
         />
       </StrictMode>
@@ -246,7 +323,7 @@ describe("Cover letter", () => {
       <PaperLetterEditor
         doc={letter}
         job={job}
-        cvName="PM track CV"
+
         onBack={() => undefined}
       />
     )
@@ -349,7 +426,7 @@ function renderLetter() {
     <PaperLetterEditor
       doc={letter}
       job={job}
-      cvName="PM track CV"
+
       onBack={() => undefined}
     />
   )
@@ -384,7 +461,7 @@ describe("Letter edits survive autosave and leaving", () => {
           document: { markdown: written },
         }}
         job={job}
-        cvName="PM track CV"
+
         onBack={() => undefined}
       />
     )
@@ -442,7 +519,7 @@ describe("Letter edits survive autosave and leaving", () => {
           document: { markdown: coach },
         }}
         job={job}
-        cvName="PM track CV"
+
         onBack={() => undefined}
       />
     )
@@ -474,7 +551,7 @@ describe("Letter edits survive autosave and leaving", () => {
           document: { markdown: written },
         }}
         job={job}
-        cvName="PM track CV"
+
         onBack={() => undefined}
       />
     )
@@ -514,7 +591,7 @@ describe("Letter edits survive autosave and leaving", () => {
       <PaperLetterEditor
         doc={next}
         job={job}
-        cvName="PM track CV"
+
         onBack={() => undefined}
       />
     )
@@ -537,7 +614,7 @@ describe("Letter edits survive autosave and leaving", () => {
       <PaperLetterEditor
         doc={next}
         job={job}
-        cvName="PM track CV"
+
         onBack={() => undefined}
       />
     )

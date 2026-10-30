@@ -2,6 +2,20 @@ import { z } from "zod"
 
 import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
 
+export const LETTER_ATTACHMENT_TEXT_MAX = 6000
+
+export const letterAttachmentContextSchema = z
+  .object({
+    name: z.string().min(1).max(200),
+    text: z.string().trim().min(1).max(LETTER_ATTACHMENT_TEXT_MAX),
+    truncated: z.boolean(),
+  })
+  .strict()
+
+export type LetterAttachmentContext = z.infer<
+  typeof letterAttachmentContextSchema
+>
+
 export const PAPER_CONTENT_VERSION = 1
 const PAPER_DOC_NAME_MAX = 200
 

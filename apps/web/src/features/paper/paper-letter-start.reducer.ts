@@ -1,8 +1,12 @@
-import type { JobView } from "@workspace/domain"
+import type { JobView, LetterAttachmentContext } from "@workspace/domain"
 
 import type { PaperLimitError } from "./paper-api.ts"
 
 export type LetterStartState = {
+  attachment:
+    | { status: "empty" }
+    | { status: "loading"; previous: LetterAttachmentContext | null }
+    | { status: "ready"; context: LetterAttachmentContext }
   jobs: JobView[]
   query: string
   selected: JobView | null
@@ -13,6 +17,10 @@ export type LetterStartState = {
 }
 
 export type LetterStartAction =
+  | { type: "attachment_started" }
+  | { type: "attachment_loaded"; context: LetterAttachmentContext }
+  | { type: "attachment_removed" }
+  | { type: "attachment_failed"; message: string }
   | { type: "jobs_loaded"; jobs: JobView[] }
   | { type: "jobs_failed"; message: string }
   | { type: "query_typed"; query: string }
@@ -26,6 +34,7 @@ export type LetterStartAction =
 
 export function initialLetterStart(jobs: JobView[]): LetterStartState {
   return {
+    attachment: { status: "empty" },
     jobs,
     query: "",
     selected: null,
@@ -41,6 +50,35 @@ export function letterStartReducer(
   action: LetterStartAction
 ): LetterStartState {
   switch (action.type) {
+    case "attachment_started":
+      return {
+        ...state,
+        attachment: {
+          status: "loading",
+          previous:
+            state.attachment.status === "ready"
+              ? state.attachment.context
+              : null,
+        },
+        error: null,
+      }
+    case "attachment_loaded":
+      return {
+        ...state,
+        attachment: { status: "ready", context: action.context },
+        error: null,
+      }
+    case "attachment_removed":
+      return { ...state, attachment: { status: "empty" }, error: null }
+    case "attachment_failed":
+      return {
+        ...state,
+        attachment:
+          state.attachment.status === "loading" && state.attachment.previous
+            ? { status: "ready", context: state.attachment.previous }
+            : { status: "empty" },
+        error: action.message,
+      }
     case "jobs_loaded":
       return { ...state, jobs: action.jobs }
     case "jobs_failed":
