@@ -1,4 +1,4 @@
-import { StrictMode, useState } from "react"
+import { StrictMode, useReducer } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
@@ -40,7 +40,10 @@ afterEach(() => {
 
 function renderLibrary(docs: PaperView[]) {
   function Harness() {
-    const [query, setQuery] = useState("")
+    const [query, setQuery] = useReducer(
+      (_query: string, nextQuery: string) => nextQuery,
+      ""
+    )
     return (
       <PaperLibrary
         docs={docs}
