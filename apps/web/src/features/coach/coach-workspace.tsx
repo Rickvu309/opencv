@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { SquarePen } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import { Input } from "@workspace/ui/components/input"
 import {
   Dialog,
