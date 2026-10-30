@@ -22,6 +22,7 @@ import {
   undoActivity,
   useRunCommand,
 } from "@/lib/contract-client.ts"
+import { reportRejected } from "@/lib/command-failure.ts"
 
 import { jobListKey } from "./apply-api.ts"
 import { BoardLane, JobCard } from "./apply-parts.tsx"
@@ -109,7 +110,9 @@ export function ApplyBoard({
       if (stage === "closed" && result.activityId) {
         const activityId = result.activityId
         toastWithUndo("Moved to Closed", () => {
-          void undoActivity(queryClient, activityId)
+          void undoActivity(queryClient, activityId).catch(
+            reportRejected("undo the move")
+          )
         })
       }
     }

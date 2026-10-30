@@ -39,6 +39,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { reportRejected } from "@/lib/command-failure.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { listPaper, type PaperListItem } from "./apply-api.ts"
@@ -427,7 +428,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
                   jobId: job.id,
                   docId: parsePaperId(doc.id),
                   kind,
-                })
+                }).catch(reportRejected("link this paper"))
                 dispatch({ type: "closed" })
               }}
             >
@@ -452,7 +453,9 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
             variant="ghost"
             className={cn(PICKER_ROW, "h-8")}
             onClick={() => {
-              void run("job.unlinkPaper", { jobId: job.id, kind })
+              void run("job.unlinkPaper", { jobId: job.id, kind }).catch(
+                reportRejected("remove this paper")
+              )
               dispatch({ type: "closed" })
             }}
           >
@@ -501,7 +504,12 @@ export function JobRail({
     >
       <RailSection title="Properties">
         <StageRow job={job} onStage={onStage} />
-        <PriorityRow job={job} onPriority={(priority) => save({ priority })} />
+        <PriorityRow
+          job={job}
+          onPriority={(priority) =>
+            void save({ priority }).catch(reportRejected("set the priority"))
+          }
+        />
         <EditRow
           key={`location-${location}`}
           icon={<MapPin aria-hidden className="size-3.5 text-chart-1" />}

@@ -11,6 +11,8 @@ import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { toastWithUndo } from "@workspace/ui/components/sonner"
 
+import { reportRejected } from "@/lib/command-failure.ts"
+
 import { authClient } from "@/lib/auth-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
@@ -102,7 +104,9 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
     if (stage === "closed" && result.activityId) {
       const activityId = result.activityId
       toastWithUndo("Moved to Closed", () => {
-        void undoActivity(queryClient, activityId)
+        void undoActivity(queryClient, activityId).catch(
+          reportRejected("undo the move")
+        )
       })
     }
   }
@@ -158,7 +162,9 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         railOpen={railOpen}
         onToggleRail={() => dispatch({ type: "rail_toggled" })}
         onToggleStar={() =>
-          void run("job.star", { jobId: id, starred: !job.starred })
+          void run("job.star", { jobId: id, starred: !job.starred }).catch(
+            reportRejected("update the star")
+          )
         }
         onDelete={() => dispatch({ type: "delete_requested" })}
       />
@@ -171,7 +177,12 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
           />
         </div>
         {railOpen ? (
-          <JobRail job={job} onStage={(stage) => void changeStage(stage)} />
+          <JobRail
+            job={job}
+            onStage={(stage) =>
+              void changeStage(stage).catch(reportRejected("move this job"))
+            }
+          />
         ) : null}
       </div>
       <DeleteJobDialog
@@ -183,23 +194,25 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         onDelete={() => {
           // Navigate before refreshing, so the deleted job's own read is
           // not refetched into an error on screen.
-          void run("job.delete", { jobId: id }, { refresh: false }).then(() => {
-            const destination = next ?? previous
-            if (destination) {
-              void navigate({
-                to: "/apply/$jobId",
-                params: { jobId: destination.id },
-              })
-            } else {
-              void navigate({ to: "/apply" })
-            }
-            queryClient.removeQueries({ queryKey: jobGetKey(id) })
-            void refreshQueries(
-              queryClient,
-              commands["job.delete"].invalidates({ jobId: id })
-            )
-            dispatch({ type: "delete_dismissed" })
-          })
+          void run("job.delete", { jobId: id }, { refresh: false })
+            .then(() => {
+              const destination = next ?? previous
+              if (destination) {
+                void navigate({
+                  to: "/apply/$jobId",
+                  params: { jobId: destination.id },
+                })
+              } else {
+                void navigate({ to: "/apply" })
+              }
+              queryClient.removeQueries({ queryKey: jobGetKey(id) })
+              void refreshQueries(
+                queryClient,
+                commands["job.delete"].invalidates({ jobId: id })
+              )
+              dispatch({ type: "delete_dismissed" })
+            })
+            .catch(reportRejected("delete this job"))
         }}
       />
     </div>

@@ -16,6 +16,8 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
+
+import { reportRejected } from "@/lib/command-failure.ts"
 import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -153,7 +155,9 @@ export function InboxReader({
               })
               toastWithUndo("Marked done", () => {
                 if (result.activityId)
-                  void undoActivity(queryClient, result.activityId)
+                  void undoActivity(queryClient, result.activityId).catch(
+                    reportRejected("undo this")
+                  )
               })
             })
           }
@@ -273,7 +277,9 @@ export function InboxReader({
                   })
                   toastWithUndo("Moved to Interview", () => {
                     if (result.activityId)
-                      void undoActivity(queryClient, result.activityId)
+                      void undoActivity(queryClient, result.activityId).catch(
+                        reportRejected("undo this")
+                      )
                   })
                 })
               }
@@ -414,7 +420,9 @@ export function InboxReader({
                       const clock = chipClock(time, zone)
                       const next = body.replace(/\b\d{1,2}:\d{2}\b/, clock)
                       dispatch({ type: "time_chosen", index: chip, body: next })
-                      void saveDraft(next)
+                      void saveDraft(next).catch(
+                        reportRejected("save the draft")
+                      )
                     }}
                   >
                     {inboxChip(time, zone)}
@@ -466,6 +474,7 @@ export function InboxReader({
                   onBlur={() => {
                     if (body === savedBody) return
                     void saveDraft(body)
+                      .catch(reportRejected("save the draft"))
                       .then(() =>
                         dispatch({ type: "draft_saved", body, receivedBody })
                       )

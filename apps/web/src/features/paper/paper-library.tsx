@@ -7,6 +7,8 @@ import {
   type PaperView,
 } from "@workspace/domain"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
+
+import { reportRejected } from "@/lib/command-failure.ts"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -42,7 +44,11 @@ import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
-import { IMPORT_ACCEPT, messageOf } from "./paper-library-support.ts"
+import {
+  IMPORT_ACCEPT,
+  discardImport,
+  messageOf,
+} from "./paper-library-support.ts"
 import { paperEditedLabel } from "./paper-templates.ts"
 
 export function PaperLibrary({
@@ -116,19 +122,16 @@ export function PaperLibrary({
         toast(label)
         return
       }
-      toastWithUndo(label, () => void undoActivity(queryClient, activityId))
+      toastWithUndo(
+        label,
+        () =>
+          void undoActivity(queryClient, activityId).catch(
+            reportRejected("undo this")
+          )
+      )
     } catch {
       toast(label)
     }
-  }
-
-  async function discardImport(created: PaperView) {
-    if (created.sourceFileId) {
-      await run("paper.deleteFile", { fileId: created.sourceFileId }).catch(
-        () => undefined
-      )
-    }
-    await run("paper.delete", { docId: created.id }).catch(() => undefined)
   }
 
   async function onImport(file: File) {
@@ -141,7 +144,7 @@ export function PaperLibrary({
       // abort the server request, and aborting the fetch drops the id.
       const created = await importPaperFile(file)
       if (request.signal.aborted) {
-        await discardImport(created)
+        await discardImport(run, created)
         return
       }
       void refreshQueries(queryClient, [
