@@ -23,8 +23,8 @@ export const COMMANDS = [
   },
   {
     name: "merge",
-    usage: "merge <pr#>",
-    when: "Require ci success on the head and enqueue a squash merge. Run again after the queue merges to confirm linked issues are closed, closing them if needed.",
+    usage: "merge <pr#> [--wait]",
+    when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues. Run it in the background after queuing. Run again later to confirm closure.",
   },
   {
     name: "help",

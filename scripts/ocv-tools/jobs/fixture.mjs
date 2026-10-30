@@ -53,6 +53,7 @@ export function fixture(over = {}) {
   const fail = () => ({ ok: false, out: "", err: "failed" })
   const ports = fakePorts({
     files: { "/tmp/opencv.worktrees/90-keep-my-search/body.md": BODY },
+    onPause: (total) => s.onPause?.(total, s),
     run(cmd, a, options) {
       if (s.intercept) {
         const r = s.intercept(cmd, a, options, s)

@@ -16,5 +16,7 @@ These refusals belong to the delivery jobs. The table comes from the same rule t
 | BAD_BRANCH (6)         | The PR branch must name its issue.                        | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
 | CLOSED_PR (6)          | The PR must be open or already merged.                    | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
 | CI_REQUIRED (6)        | The newest ci check must succeed on the PR head.          | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
+| LEFT_QUEUE (6)         | The PR must stay in the queue until it merges.            | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
+| QUEUE_TIMEOUT (6)      | The queue must merge the PR within 45 minutes.            | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
 
 <!-- rules:end -->

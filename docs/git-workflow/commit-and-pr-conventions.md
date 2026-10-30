@@ -45,7 +45,7 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
    git rebase origin/main
    git push --force-with-lease
    ```
-6. Wait until `ci` is green, then enqueue with `scripts/ocv-tools.mjs merge <pr#>`.
+6. Wait until `ci` is green, then enqueue with `scripts/ocv-tools.mjs merge <pr#>`. Then run `scripts/ocv-tools.mjs merge <pr#> --wait` in the background and end the turn until it exits.
 
 ## Checks
 
