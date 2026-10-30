@@ -22,14 +22,17 @@ export function NavProfile({ onNavigate }: Props) {
   const imageSrc = resolveProfileImageSrc(image)
 
   return (
-    <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-sidebar-border px-2 py-2">
-      <Avatar size="sm" className="size-6">
+    <div
+      data-slot="shell-profile"
+      className="mt-auto flex shrink-0 items-center gap-2 border-t border-sidebar-border px-2 py-2 md:h-8 md:gap-[7px] md:border-t-0 md:py-0 md:ps-[7px] md:pe-0"
+    >
+      <Avatar size="sm" className="size-6 md:data-[size=sm]:size-[18px]">
         {imageSrc ? <AvatarImage src={imageSrc} alt="" /> : null}
-        <AvatarFallback className="text-xs">
+        <AvatarFallback className="text-xs md:font-semibold md:group-data-[size=sm]/avatar:text-[7.5px]">
           {profileInitials(name)}
         </AvatarFallback>
       </Avatar>
-      <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+      <span className="min-w-0 flex-1 truncate text-sm text-foreground md:text-[13px] md:leading-[15.6px] md:font-medium">
         {name}
       </span>
       <Link

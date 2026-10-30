@@ -1,0 +1,80 @@
+[data-pen-surface="app-shell"] nav a,
+[data-pen-surface="app-shell"] [data-slot="shell-nav-top"] button,
+[data-pen-surface="app-shell"] [data-slot="shell-favorite"] {
+  color: #59595b;
+}
+
+[data-pen-surface="app-shell"] [data-slot="shell-nav-section"],
+[data-pen-surface="app-shell"] nav a > span[aria-hidden="true"] {
+  color: #969799;
+}
+
+[data-pen-surface="app-shell"] nav a > svg,
+[data-pen-surface="app-shell"] [data-slot="shell-profile"] svg,
+[data-pen-surface="app-shell"] [data-slot="avatar-fallback"] {
+  color: #59595b;
+}
+
+[data-pen-surface="app-shell"]
+  [data-slot="shell-profile"]
+  > span:not([data-slot]) {
+  color: #1a1a1a;
+}
+
+[data-pen-surface="app-shell"]
+  [data-slot="shell-nav-top"]
+  button[aria-label="New chat"] {
+  color: #1a1a1a;
+}
+
+[data-pen-surface="app-shell"][data-slot="app-dock"] {
+  gap: 6px;
+  padding: 0 0 0 8px;
+}
+
+[data-pen-surface="app-shell"] [data-slot="dock-recent"] {
+  gap: 6px;
+}
+
+[data-pen-surface="app-shell"][data-slot="app-dock"] button {
+  height: 28px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: normal;
+  color: #59595b;
+}
+
+[data-pen-surface="app-shell"] [data-chat-id] {
+  padding-inline: 8px;
+  font-weight: 400;
+}
+
+[data-pen-surface="app-shell"] button[data-dock-coach] {
+  gap: 6px;
+  padding-inline: 10px;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+[data-pen-surface="app-shell"] button[data-dock-coach] svg {
+  width: 14px;
+  height: 14px;
+}
+
+[data-pen-surface="app-shell"][data-slot="app-dock"]
+  button[aria-label="History"] {
+  width: 28px;
+  padding: 0;
+}
+
+[data-pen-surface="app-shell"][data-slot="app-dock"]
+  button[aria-label="History"]
+  svg {
+  width: 16px;
+  height: 16px;
+}
+
+[data-pen-surface="app-shell"][data-slot="app-dock"]
+  button[aria-label="History"]:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--ring);
+}

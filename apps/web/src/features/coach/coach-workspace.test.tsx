@@ -194,7 +194,9 @@ describe("Coach workspace", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Resets at")
     expect(screen.getByPlaceholderText(/^Coach is back at/)).toBeDisabled()
     expect(screen.getByRole("button", { name: "Add" })).toBeDisabled()
-    expect(screen.getByRole("radio", { name: "Light" })).toBeEnabled()
+    expect(
+      screen.getByRole("button", { name: "Choose Coach mode" })
+    ).toBeEnabled()
     const card = document.querySelector("[data-slot=coach-composer-card]")
     expect(card).toContainElement(screen.getByRole("status"))
     expect(card).toContainElement(screen.getByRole("button", { name: "Send" }))

@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import {
-  cleanup,
-  fireEvent,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react"
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { coachModeHelper, coachModeLabel } from "@/features/coach/coach-mode.ts"
@@ -27,20 +21,19 @@ afterEach(() => {
 })
 
 async function chooseMode(label: "Free" | "Light" | "Max") {
-  const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
-  fireEvent.click(
-    within(group).getByRole("radio", {
-      name: label,
-    })
-  )
+  const trigger = await screen.findByRole("button", {
+    name: "Choose Coach mode",
+  })
+  fireEvent.click(trigger)
+  const item = await screen.findByRole("menuitemradio", {
+    name: new RegExp(label),
+  })
+  fireEvent.click(item)
 }
 
-function expectChecked(group: HTMLElement, label: string) {
-  expect(
-    within(group).getByRole("radio", {
-      name: label,
-    })
-  ).toBeChecked()
+function expectModeSelected(label: string) {
+  const trigger = screen.getByRole("button", { name: "Choose Coach mode" })
+  expect(trigger.textContent).toMatch(new RegExp(label, "i"))
 }
 
 describe("coach mode copy", () => {
@@ -56,17 +49,21 @@ describe("coach mode copy", () => {
 })
 
 describe("Coach mode control", () => {
-  it("shows Free, Light, Max in order as one radiogroup in the composer", async () => {
+  it("shows Free, Light, Max in order in the mode picker", async () => {
     renderApp(SURFACE_PATHS.coach)
 
-    const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
-    expect(
-      within(group)
-        .getAllByRole("radio")
-        .map((radio) => radio.textContent)
-    ).toEqual([expect.stringMatching(/^Free/), "Light", "Max"])
-    expectChecked(group, "Free")
-    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument()
+    const trigger = await screen.findByRole("button", {
+      name: "Choose Coach mode",
+    })
+    expect(trigger.textContent).toMatch(/Free/)
+    fireEvent.click(trigger)
+
+    const items = await screen.findAllByRole("menuitemradio")
+    expect(items.map((i) => i.textContent?.trim())).toEqual([
+      expect.stringMatching(/^Free/),
+      expect.stringMatching(/^Light/),
+      expect.stringMatching(/^Max/),
+    ])
   })
 
   it("selects Free, Light, and Max and stores Max as max", async () => {
@@ -75,42 +72,17 @@ describe("Coach mode control", () => {
 
     await chooseMode("Light")
     await waitFor(() => {
-      expectChecked(
-        screen.getByRole("radiogroup", { name: "Coach mode" }),
-        "Light"
-      )
+      expectModeSelected("Light")
       expect(getMockCoachMode()).toBe("light")
     })
 
     await chooseMode("Max")
     await waitFor(() => {
-      expectChecked(
-        screen.getByRole("radiogroup", { name: "Coach mode" }),
-        "Max"
-      )
+      expectModeSelected("Max")
       expect(getMockCoachMode()).toBe("max")
     })
     expect(getProfileMockPaths()).toContain("/api/commands/profile.update")
     expect(getProfileMockPaths().join(" ")).not.toContain("setCoachMode")
-  })
-
-  it("moves the mode with the arrow keys", async () => {
-    setMockPlan("pro")
-    renderApp(SURFACE_PATHS.coach)
-
-    const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
-    const free = within(group).getByRole("radio", { name: "Free" })
-    free.focus()
-    fireEvent.keyDown(free, { key: "ArrowRight" })
-    await waitFor(() => {
-      expect(getMockCoachMode()).toBe("light")
-    })
-    fireEvent.keyDown(within(group).getByRole("radio", { name: "Light" }), {
-      key: "ArrowRight",
-    })
-    await waitFor(() => {
-      expect(getMockCoachMode()).toBe("max")
-    })
   })
 
   it("keeps the chosen mode after remount, on the active Chat, and on the next send", async () => {
@@ -124,10 +96,7 @@ describe("Coach mode control", () => {
 
     renderApp(SURFACE_PATHS.coach)
     await waitFor(() => {
-      expectChecked(
-        screen.getByRole("radiogroup", { name: "Coach mode" }),
-        "Light"
-      )
+      expectModeSelected("Light")
     })
 
     const composer = screen.getByRole("textbox", { name: "Message Coach" })
@@ -138,9 +107,6 @@ describe("Coach mode control", () => {
       expect(getLastCoachRequest()?.mode).toBe("light")
     })
     expect(await screen.findByRole("log", { name: "Chat" })).toBeInTheDocument()
-    expectChecked(
-      screen.getByRole("radiogroup", { name: "Coach mode" }),
-      "Light"
-    )
+    expectModeSelected("Light")
   })
 })

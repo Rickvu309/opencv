@@ -1,15 +1,19 @@
+import "./design/sidebar.pen.css"
+
 import { useEffect, useReducer, useRef } from "react"
 import { Link, Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  BriefcaseBusiness,
-  Columns3,
+  Briefcase,
+  ChevronDown,
   FileText,
+  History,
   Inbox,
-  Link2,
   Menu,
   MessageCircle,
+  Presentation,
   Search,
+  SquareKanban,
   SquarePen,
 } from "lucide-react"
 
@@ -109,18 +113,18 @@ type ShellNavProps = {
 function linkClass(active: boolean) {
   return cn(
     FOCUS_RING,
-    "flex h-7 items-center gap-2 rounded-md px-2 text-sm text-foreground hover:bg-muted",
-    active && "bg-muted"
+    "flex h-7 items-center gap-2 rounded-md px-2 text-sm text-foreground hover:bg-sidebar-accent md:text-[13px] md:leading-[15.6px] md:font-medium",
+    active && "bg-sidebar-accent text-sidebar-accent-foreground"
   )
 }
 
 const navigationIcons = {
   inbox: Inbox,
   coach: MessageCircle,
-  jobs: BriefcaseBusiness,
+  jobs: Briefcase,
   paper: FileText,
-  apply: Columns3,
-  pitch: Link2,
+  apply: SquareKanban,
+  pitch: Presentation,
 }
 
 function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
@@ -131,16 +135,24 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
     favorites.jobs.length === 0 && favorites.docs.length === 0
 
   return (
-    <div className="flex h-full min-h-0 w-[244px] flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-12 shrink-0 items-center justify-between px-3">
-        <Brand size={16} />
-        <div className="flex gap-1">
+    <div
+      data-pen-surface="app-shell"
+      data-slot="shell-nav"
+      className="flex h-full min-h-0 w-[244px] flex-col bg-sidebar text-sidebar-foreground md:gap-px md:px-2.5 md:pt-2.5 md:pb-3"
+    >
+      <div
+        data-slot="shell-nav-top"
+        className="flex h-12 shrink-0 items-center justify-between px-3 md:h-9 md:ps-1.5 md:pe-0.5"
+      >
+        <Brand size={14} markSize={20} gap={6} letterSpacing={0} />
+        <div className="flex gap-1 md:gap-0.5">
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
             aria-label={shellCopy.search}
             aria-keyshortcuts="Control+K Meta+K"
+            className="md:size-7"
             onClick={onSearch}
           >
             <Search />
@@ -151,14 +163,18 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
             variant="ghost"
             size="icon-sm"
             aria-label={shellCopy.newChat}
+            className="md:size-7 md:rounded-full md:border md:border-border md:bg-background md:shadow-xs md:[&_svg]:size-[15px]"
             onClick={onNewChat}
           >
             <SquarePen />
           </Button>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto px-2 pb-2">
-        <nav aria-label="Main" className="mt-2 flex flex-col gap-0.5">
+      <div className="min-h-0 flex-1 overflow-auto px-2 pb-2 md:px-0 md:pb-0">
+        <nav
+          aria-label="Main"
+          className="mt-2 flex flex-col gap-0.5 md:mt-1.5 md:gap-px"
+        >
           {SHELL_PRIMARY.map((item) => {
             const Icon = navigationIcons[item.id]
             return (
@@ -179,7 +195,7 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
                 {item.id === "inbox" && count != null ? (
                   <span
                     aria-hidden="true"
-                    className="ml-auto text-xs text-muted-foreground"
+                    className="ml-auto text-xs text-muted-foreground md:text-[11px] md:font-medium"
                   >
                     {count}
                   </span>
@@ -187,7 +203,14 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
               </Link>
             )
           })}
-          <p className="px-2 pt-3 pb-1 text-xs text-muted-foreground">
+          <p
+            data-slot="shell-nav-section"
+            className="px-2 pt-3 pb-1 text-xs text-muted-foreground md:flex md:h-7 md:items-center md:gap-1 md:py-0 md:font-medium"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className="hidden size-[9px] md:block"
+            />
             {shellCopy.yourWork}
           </p>
           {SHELL_WORK.map((item) => {
@@ -213,12 +236,20 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
         {favorites.pending ? (
           <Skeleton className="mx-2 mt-3 h-7" />
         ) : favoriteEmpty ? null : (
-          <div className="mt-3 flex flex-col gap-0.5">
-            <p className="px-2 pb-1 text-xs text-muted-foreground">
+          <div className="mt-3 flex flex-col gap-0.5 md:gap-px">
+            <p
+              data-slot="shell-nav-section"
+              className="px-2 pb-1 text-xs text-muted-foreground md:flex md:h-7 md:items-center md:gap-1 md:pb-0 md:font-medium"
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className="hidden size-[9px] md:block"
+              />
               {shellCopy.favorites}
             </p>
             {favorites.jobs.map((job) => (
               <Link
+                data-slot="shell-favorite"
                 key={job.id || job.title}
                 to="/apply/$jobId"
                 params={{ jobId: job.id }}
@@ -228,6 +259,7 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
                 onClick={onNavigate}
                 className={linkClass(false)}
               >
+                <Briefcase className="size-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{job.title}</span>
                 {job.company ? (
                   <span className="truncate text-muted-foreground">
@@ -238,12 +270,14 @@ function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
             ))}
             {favorites.docs.map((doc) => (
               <Link
+                data-slot="shell-favorite"
                 key={doc.id || doc.name}
                 to="/paper/$docId"
                 params={{ docId: doc.id }}
                 onClick={onNavigate}
                 className={linkClass(false)}
               >
+                <FileText className="size-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{doc.name}</span>
               </Link>
             ))}
@@ -508,21 +542,25 @@ function ShellDock({
     <div
       ref={dockRef}
       data-slot="app-dock"
-      className="flex h-10 shrink-0 items-center justify-end gap-1 border-t border-border px-2"
+      data-pen-surface="app-shell"
+      className="flex h-10 shrink-0 items-center justify-end"
     >
-      {titles.map((chat) => (
-        <Button
-          key={chat.id}
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="max-w-36"
-          data-chat-id={chat.id}
-          onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
-        >
-          <span className="truncate">{chat.title}</span>
-        </Button>
-      ))}
+      <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
+        {titles.map((chat) => (
+          <Button
+            key={chat.id}
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="max-w-36 shrink-0"
+            data-chat-id={chat.id}
+            title={chat.title}
+            onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
+          >
+            <span className="truncate">{chat.title}</span>
+          </Button>
+        ))}
+      </div>
       <Button
         type="button"
         variant="ghost"
@@ -530,10 +568,17 @@ function ShellDock({
         data-dock-coach=""
         onClick={onCoach}
       >
+        <MessageCircle aria-hidden="true" />
         {shellCopy.coach}
       </Button>
-      <Button type="button" variant="ghost" size="sm" onClick={onHistory}>
-        {shellCopy.history}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label={shellCopy.history}
+        onClick={onHistory}
+      >
+        <History aria-hidden="true" />
       </Button>
     </div>
   )

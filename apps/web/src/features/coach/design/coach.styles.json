@@ -1,0 +1,32 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "FRVf9",
+    "frameName": "W3.1 OC Coach dock"
+  },
+  "sections": [
+    {
+      "id": "FRVf9",
+      "name": "OC Coach dock",
+      "layout": "vertical",
+      "gap": 14,
+      "padding": [16, 12, 12, 18],
+      "composer": {
+        "addButton": {
+          "background": "#ffffff",
+          "border": "#e4e4e7",
+          "color": "#3c3c40"
+        },
+        "modePicker": {
+          "color": "#59595b",
+          "disabledColor": "#c4c4c8"
+        },
+        "modeMenu": {
+          "itemColor": "#1a1a1a",
+          "proBadgeColor": "#5c5c5e"
+        }
+      }
+    }
+  ]
+}

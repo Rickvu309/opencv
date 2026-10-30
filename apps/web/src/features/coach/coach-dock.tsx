@@ -1,8 +1,13 @@
+import "./design/coach.pen.css"
+
 import { useReducer, type ReactNode } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
   ArrowUp,
+  ChevronDown,
+  Leaf,
+  Zap,
+  Rocket,
   Paperclip,
   Plug,
   Plus,
@@ -18,12 +23,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@workspace/ui/components/dropdown-menu"
 import { InputGroupButton } from "@workspace/ui/components/input-group"
-import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { fetchUsage, usageKey } from "@/lib/account-api.ts"
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { COACH_MODE_OPTIONS } from "@/features/coach/coach-mode.ts"
@@ -39,10 +44,7 @@ const DOCK_MENU = [
 
 type MenuId = (typeof DOCK_MENU)[number]["id"]
 
-const MODE_SEGMENTS = COACH_MODE_OPTIONS.map(({ id, label }) => ({
-  value: id,
-  label,
-}))
+const MODE_ICONS = { free: Leaf, light: Zap, max: Rocket }
 
 type MenuAction = { type: "opened" } | { type: "closed" }
 
@@ -87,8 +89,8 @@ export function CoachDock({
 }: Props) {
   const navigate = useNavigate()
   const [menuOpen, menuDispatch] = useReducer(menuReducer, false)
+  const [modeMenuOpen, modeMenuDispatch] = useReducer(menuReducer, false)
   const { mode, setMode, plan } = useCoachMode()
-  const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
   const canSend = draft.trim().length > 0 && !disabled
 
   function handleMenuAction(id: MenuId) {
@@ -105,77 +107,125 @@ export function CoachDock({
   }
 
   const tools = (
-    <>
-      <DropdownMenu
-        open={menuOpen}
-        onOpenChange={(open) =>
-          menuDispatch({ type: open ? "opened" : "closed" })
+    <DropdownMenu
+      open={menuOpen}
+      onOpenChange={(open) =>
+        menuDispatch({ type: open ? "opened" : "closed" })
+      }
+    >
+      <DropdownMenuTrigger
+        render={
+          <InputGroupButton
+            size="icon-sm"
+            className="rounded-full border border-border text-muted-foreground"
+          />
         }
+        disabled={disabled}
+        aria-label={menuOpen ? "Close menu" : "Add"}
+        data-primary-action={primaryAction ? "" : undefined}
       >
-        <DropdownMenuTrigger
-          render={
-            <InputGroupButton
-              size="icon-sm"
-              className="rounded-full border border-border text-muted-foreground"
-            />
+        {menuOpen ? <X /> : <Plus />}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side={menuPlacement === "above" ? "top" : "bottom"}
+        align="start"
+        sideOffset={8}
+        className="w-56 min-w-56"
+      >
+        {DOCK_MENU.filter((item) => item.id !== "link" || onAttachLink).map(
+          (item) => {
+            const Icon = item.icon
+            return (
+              <DropdownMenuItem
+                key={item.id}
+                onClick={() => handleMenuAction(item.id)}
+              >
+                <Icon className="size-4 shrink-0 text-muted-foreground" />
+                {item.label}
+              </DropdownMenuItem>
+            )
           }
-          disabled={disabled}
-          aria-label={menuOpen ? "Close menu" : "Add"}
-          data-primary-action={primaryAction ? "" : undefined}
-        >
-          {menuOpen ? <X /> : <Plus />}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          side={menuPlacement === "above" ? "top" : "bottom"}
-          align="start"
-          sideOffset={8}
-          className="w-56 min-w-56"
-        >
-          {DOCK_MENU.filter((item) => item.id !== "link" || onAttachLink).map(
-            (item) => {
-              const Icon = item.icon
-              return (
-                <DropdownMenuItem
-                  key={item.id}
-                  onClick={() => handleMenuAction(item.id)}
-                >
-                  <Icon className="size-4 shrink-0 text-muted-foreground" />
-                  {item.label}
-                </DropdownMenuItem>
-              )
-            }
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {showModePicker ? (
-        <SegmentedControl
-          aria-label="Coach mode"
-          kind="radio"
-          variant="tray"
-          size="md"
-          options={MODE_SEGMENTS.map((option) => ({
-            ...option,
-            ariaLabel: option.label,
-            count:
-              usage.data?.mode === option.value && usage.data.day.capped
-                ? usage.data.day.remaining
-                : undefined,
-          }))}
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
+  const ModeIcon = MODE_ICONS[mode]
+  const modePicker = showModePicker ? (
+    <DropdownMenu
+      open={modeMenuOpen}
+      onOpenChange={(open) =>
+        modeMenuDispatch({ type: open ? "opened" : "closed" })
+      }
+    >
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            data-slot="coach-mode"
+            className="h-7.5 gap-1.25 rounded-full px-2 text-muted-foreground disabled:font-semibold disabled:text-muted-foreground/70"
+          />
+        }
+        aria-label="Choose Coach mode"
+      >
+        <ModeIcon className="size-3.5" />
+        {COACH_MODE_OPTIONS.find((option) => option.id === mode)?.label}
+        <ChevronDown className="size-3" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side={menuPlacement === "above" ? "top" : "bottom"}
+        align="end"
+        className="w-[268px] rounded-2xl p-2"
+        aria-label="Coach mode"
+        data-pen-surface="coach"
+        data-slot="coach-mode-menu"
+      >
+        <DropdownMenuRadioGroup
+          className="flex flex-col gap-0.5"
           value={mode}
-          onChange={(next) => {
+          onValueChange={(next) => {
+            if (next !== "free" && next !== "light" && next !== "max") return
             if (next !== "free" && plan !== "pro") {
               void navigate({ href: "/settings/billing/upgrade" })
               return
             }
             setMode(next)
           }}
-        />
-      ) : null}
-    </>
-  )
+        >
+          {COACH_MODE_OPTIONS.map((option) => {
+            const Icon = MODE_ICONS[option.id]
+            return (
+              <DropdownMenuRadioItem
+                key={option.id}
+                value={option.id}
+                closeOnClick
+                className="h-10 gap-3.5 rounded-lg px-3 data-checked:pe-8"
+                aria-label={
+                  option.id === "free" ? option.label : `${option.label} · Pro`
+                }
+              >
+                <Icon className="size-4.5 shrink-0 text-muted-foreground" />
+                <span className="flex min-w-0 flex-1">{option.label}</span>
+                {option.id !== "free" ? (
+                  <span
+                    data-slot="coach-pro-badge"
+                    className="ms-auto rounded border border-border px-1.5 text-xs font-medium text-muted-foreground"
+                  >
+                    Pro
+                  </span>
+                ) : null}
+              </DropdownMenuRadioItem>
+            )
+          })}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : null
 
   const actions = (
     <>
+      {modePicker}
       {turnActive ? (
         <Button
           type="button"
@@ -206,6 +256,8 @@ export function CoachDock({
   const composer = (
     <PromptInput
       data-slot="coach-composer"
+      data-pen-surface="coach"
+      data-capped={disabled && Boolean(notice) ? "" : undefined}
       className={cn(
         notice &&
           "rounded-t-none border-0 shadow-none [&_[data-slot=input-group-addon]]:pb-2 [&_textarea]:min-h-10 [&_textarea]:py-2"
