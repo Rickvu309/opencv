@@ -61,3 +61,22 @@ test("the commit rows run at the pr moment", () => {
   assert.ok(r.lines.some((line) => line.startsWith("NO_AI_ATTRIBUTION:")))
   assert.ok(r.lines.some((line) => line.startsWith("FILE_SIZE:")))
 })
+
+test("in Actions each refusal is one error annotation with the rule id", () => {
+  const r = policyReport(
+    91,
+    { ...clean, pull: { ...clean.pull, title: "Keep my search" } },
+    { annotate: true }
+  )
+  assert.equal(r.exit, 2)
+  const line = r.lines.find((l) => l.startsWith("::error title=PR_METADATA::"))
+  assert.ok(line, r.lines.join("\n"))
+  assert.match(line, /fix: gh pr edit/)
+  assert.ok(r.lines.every((l) => l.startsWith("::error title=")))
+})
+
+test("a clean pull request prints no annotation", () => {
+  const r = policyReport(91, clean, { annotate: true })
+  assert.equal(r.exit ?? 0, 0)
+  assert.ok(r.lines.every((l) => !l.startsWith("::")))
+})

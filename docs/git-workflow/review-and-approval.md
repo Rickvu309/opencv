@@ -12,7 +12,7 @@ gh api -X PUT repos/Rickvu309/opencv/rulesets/25725442 --input .github/rulesets/
 
 Write access cannot be made merge-proof by role alone, and contributors can still edit labels, so the `needs-human-review` rule below stays a convention.
 
-The `ci` check runs parallel affected guards, lint, typecheck, build, two API test shards and three web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed. Local hooks catch mistakes early. Anyone can bypass the hooks (`git push --no-verify`). Tests run beside build, and Turbo builds what each test needs; guards always run. Skipped and cancelled jobs fail the aggregate. Full checks and browser verification remain manual.
+The `ci` check runs parallel affected guards, lint, typecheck, build, two API test shards, three web test shards and a `policy` job on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The `policy` job evaluates the server-held pull request rules against the live pull request, in the pull request run and again in the merge queue, so a rule holds even when a pull request is opened or merged by hand. Local hooks catch mistakes early. Anyone can bypass the hooks (`git push --no-verify`). Tests run beside build, and Turbo builds what each test needs; guards always run. Skipped and cancelled jobs fail the aggregate. Full checks and browser verification remain manual.
 
 **Human review only for a big decision.** Add the `needs-human-review` label. `scripts/ocv-tools.mjs merge` then refuses the PR. A mass deletion is not detected anymore; add the label yourself when a PR deletes much of the code base.
 

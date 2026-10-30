@@ -219,7 +219,9 @@ function command(ctx, cmd, rest) {
         throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
       if (pos.length !== 1) throw new Error("usage: ocv-tools policy <pr#>")
       const n = issueNumber(pos[0], "policy <pr#>")
-      return policyReport(n, pullFacts(ctx, n))
+      return policyReport(n, pullFacts(ctx, n), {
+        annotate: ctx.env.GITHUB_ACTIONS === "true",
+      })
     }
     case "approve": {
       const unknown = Object.keys(flags)[0]

@@ -49,7 +49,7 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 ## Checks
 
-The `ci` workflow runs parallel affected guards, lint, typecheck, build, two API test shards and three web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The same checks run locally at these points:
+The `ci` workflow runs parallel affected guards, lint, typecheck, build, two API test shards, three web test shards and a `policy` job on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The `policy` job runs the server-held pull request rules (`scripts/ocv-tools.mjs policy <pr#>`) on every pull request and merge-queue run and prints one error annotation per refusal with its fix. The same checks run locally at these points:
 
 | When                           | What runs                     | What it enforces                                                                                                                                                                      |
 | ------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
