@@ -1,4 +1,4 @@
-import { useReducer } from "react"
+import { useLayoutEffect, useReducer, useRef } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -102,6 +102,18 @@ function BulletList({
   onCommit: (bullets: { id: string; text: string }[]) => void
   onSlash?: (node: HTMLElement) => void
 }) {
+  const listRef = useRef<HTMLDivElement>(null)
+  const pendingFocus = useRef<string | null>(null)
+  useLayoutEffect(() => {
+    if (!pendingFocus.current) return
+    const row = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("[data-bullet-id]") ?? []
+    ).find((node) => node.dataset.bulletId === pendingFocus.current)
+    const field = row?.querySelector<HTMLElement>('[role="textbox"]')
+    if (!field) return
+    field.focus()
+    pendingFocus.current = null
+  }, [bullets])
   const [draftId] = useReducer(keepId, undefined, newId)
   const shown = bullets.length > 0 ? bullets : [{ id: draftId, text: "" }]
   const sensors = useSensors(
@@ -125,37 +137,41 @@ function BulletList({
     if (moved !== current) onCommit(moved.bullets)
   }
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={onDragEnd}
-    >
-      <SortableContext
-        items={shown.map((bullet) => bullet.id)}
-        strategy={verticalListSortingStrategy}
+    <div ref={listRef} className="contents">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
       >
-        {shown.map((bullet, index) => (
-          <BulletRow
-            key={bullet.id}
-            bullet={bullet}
-            editing={editing}
-            onSlash={onSlash}
-            onEnter={() => {
-              const next = shown.slice()
-              next.splice(index + 1, 0, { id: newId(), text: "" })
-              onCommit(next)
-            }}
-            onChange={(text) =>
-              onChange(
-                shown.map((row) =>
-                  row.id === bullet.id ? { ...row, text } : row
+        <SortableContext
+          items={shown.map((bullet) => bullet.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {shown.map((bullet, index) => (
+            <BulletRow
+              key={bullet.id}
+              bullet={bullet}
+              editing={editing}
+              onSlash={onSlash}
+              onEnter={() => {
+                const next = shown.slice()
+                const id = newId()
+                pendingFocus.current = id
+                next.splice(index + 1, 0, { id, text: "" })
+                onCommit(next)
+              }}
+              onChange={(text) =>
+                onChange(
+                  shown.map((row) =>
+                    row.id === bullet.id ? { ...row, text } : row
+                  )
                 )
-              )
-            }
-          />
-        ))}
-      </SortableContext>
-    </DndContext>
+              }
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+    </div>
   )
 }
 
@@ -184,7 +200,12 @@ function BulletRow({
   const drag: Record<string, unknown> = { ...attributes }
   delete drag.tabIndex
   return (
-    <div ref={setNodeRef} style={style} className="flex items-start gap-1">
+    <div
+      ref={setNodeRef}
+      style={style}
+      data-bullet-id={bullet.id}
+      className="flex items-start gap-1"
+    >
       <Button
         type="button"
         variant="ghost"
