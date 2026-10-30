@@ -1,13 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, render, screen, within } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { act, cleanup, render, screen, within } from "@testing-library/react"
 
 import { ChatLog } from "@/components/ai-elements/chat.tsx"
 import { STREAMING_COACH_ID } from "@/features/coach/chat-messages.ts"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 import { CoachTurns } from "@/features/coach/coach-turns.tsx"
 import type { CoachTurnProgress } from "@/features/coach/coach-progress.ts"
+import { CoachWorking } from "@/features/coach/coach-working.tsx"
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 
 const rows: CoachTurnProgress["rows"] = [
   { id: "a", label: "Read document", status: "completed" },
@@ -44,6 +48,28 @@ function renderTurns(
 }
 
 describe("Coach Working block", () => {
+  it("updates the visual timer without changing the spoken status", () => {
+    vi.useFakeTimers()
+    render(<CoachWorking />)
+    expect(screen.getByRole("status").textContent).toBe("Working")
+    expect(
+      screen
+        .getByText("Working, 0s")
+        .closest("[aria-hidden]")
+        ?.getAttribute("aria-hidden")
+    ).toBe("true")
+
+    act(() => vi.advanceTimersByTime(9000))
+
+    expect(
+      screen
+        .getByText("Working, 9s")
+        .closest("[aria-hidden]")
+        ?.getAttribute("aria-hidden")
+    ).toBe("true")
+    expect(screen.getByRole("status").textContent).toBe("Working")
+  })
+
   it("keeps Working and its rows visible after a tool-only result", () => {
     const { container } = renderTurns([toolOnly], { active: true, rows })
     expect(

@@ -1,0 +1,67 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "Vm0eJ",
+    "frameName": "W3.5 Coach working"
+  },
+  "sections": [
+    {
+      "id": "jsloS",
+      "name": "Sidebar",
+      "texts": [
+        "opencv",
+        "Inbox",
+        "4",
+        "Coach",
+        "Jobs",
+        "Your work",
+        "Paper",
+        "Apply",
+        "Pitch",
+        "Favorites",
+        "Junior Marketing CV",
+        "Lumière application",
+        "Checkout UX study",
+        "LN",
+        "Linh Nguyen"
+      ],
+      "fills": []
+    },
+    {
+      "id": "PVaFN",
+      "name": "Main wrap",
+      "texts": [
+        "CV for a cosmetics brand",
+        "Today 9:41",
+        "Viết CV làm Junior Marketing cho một công ty mỹ phẩm",
+        "Working, 9s",
+        "Read Junior Marketing CV",
+        "2 roles, 6 bullets",
+        "Read the Lumière Cosmetics posting",
+        "Junior Marketing, HCMC",
+        "Drafting bullet rewrites",
+        "3 of 6",
+        "Check it still fits one page",
+        "Coach is working. You can keep typing.",
+        "Free",
+        "Tailor your CV for Lumière",
+        "Prep for Local startup interview",
+        "Coach"
+      ],
+      "fills": [
+        {
+          "type": "gradient",
+          "gradientType": "linear",
+          "enabled": true,
+          "rotation": 0,
+          "size": { "height": 1 },
+          "colors": [
+            { "color": "#FFFFFF00", "position": 0 },
+            { "color": "#FFFFFF", "position": 0.35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,7 @@
 import { useEffect, useReducer } from "react"
-import { Check, Circle, Clock, X } from "lucide-react"
+import { CircleCheck, Circle, Clock, Lightbulb, X } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
-import { ThinkingLoader } from "@workspace/ui/components/thinking-loader"
-import { cn } from "@workspace/ui/lib/utils"
+import "./design/working.pen.css"
 
 import type { CoachProgressRow, CoachProgressStatus } from "./coach-progress.ts"
 
@@ -21,7 +20,7 @@ const STATUS_NOTE: Record<CoachProgressStatus, string> = {
   approval: "awaiting confirmation",
 }
 
-const ICON = "mt-0.5 size-3.5 shrink-0"
+const ICON = "size-4 shrink-0"
 
 function StatusIcon({ status }: { status: CoachProgressStatus }) {
   if (status === "running")
@@ -30,12 +29,12 @@ function StatusIcon({ status }: { status: CoachProgressStatus }) {
         role="presentation"
         aria-hidden="true"
         aria-label={undefined}
-        className={cn(ICON, "motion-reduce:animate-none")}
+        className={`${ICON} motion-reduce:animate-none`}
       />
     )
   const Icon =
     status === "completed"
-      ? Check
+      ? CircleCheck
       : status === "failed"
         ? X
         : status === "approval"
@@ -65,15 +64,16 @@ export function CoachWorking({
     return () => clearInterval(timer)
   }, [])
   return (
-    <div data-slot="coach-working" className="space-y-3">
+    <div data-pen-surface="coach" data-slot="coach-working">
       {showHeader ? (
         <>
           {/* The ticking seconds stay visual; the live region says Working once. */}
           <span role="status" className="sr-only">
             Working
           </span>
-          <div aria-hidden="true">
-            <ThinkingLoader phases={[`Working, ${seconds}s`]} />
+          <div data-slot="coach-working-heading" aria-hidden="true">
+            <Lightbulb className="size-[14px] shrink-0" />
+            <span>Working, {seconds}s</span>
           </div>
         </>
       ) : null}
@@ -82,7 +82,6 @@ export function CoachWorking({
           data-slot="coach-progress"
           aria-label="Coach progress"
           aria-live="polite"
-          className="space-y-2 border-s border-border ps-3 text-sm"
         >
           {rows.map(({ id, label, status }) => (
             <li
@@ -90,12 +89,6 @@ export function CoachWorking({
               data-slot="coach-progress-row"
               data-status={status}
               aria-busy={status === "running" ? true : undefined}
-              className={cn(
-                "flex items-start gap-2",
-                status === "completed"
-                  ? "text-foreground"
-                  : "text-muted-foreground"
-              )}
             >
               <StatusIcon status={status} />
               <span>
