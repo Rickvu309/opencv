@@ -19,13 +19,39 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("Coach without the old history nav", () => {
-  it("does not render a History navigation", async () => {
+describe("Coach history", () => {
+  it("opens the history popover when the trigger is clicked", async () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
+    const trigger = screen.getByRole("button", { name: "History, New chat" })
+    expect(trigger).toHaveAttribute("data-slot", "coach-history-trigger")
+    fireEvent.click(trigger)
     expect(
-      screen.queryByRole("navigation", { name: "History" })
+      await screen.findByRole("textbox", { name: "Search chat history" })
+    ).toBeInTheDocument()
+  })
+
+  it("shows New chat and shortcut in the history popover", async () => {
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
+    fireEvent.click(screen.getByRole("button", { name: "History, New chat" }))
+    await screen.findByRole("textbox", { name: "Search chat history" })
+    expect(screen.getAllByText("New chat").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText("⌘ N")).toBeInTheDocument()
+  })
+
+  it("closes the popover when New chat is clicked and starts a fresh chat", async () => {
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
+    await sendMessage("Should I finish my CV first?")
+    await expectSendSettled("Should I finish my CV first?")
+    fireEvent.click(screen.getByRole("button", { name: /History,/i }))
+    await screen.findByRole("textbox", { name: "Search chat history" })
+    fireEvent.click(screen.getByText("New chat"))
+    expect(
+      screen.queryByRole("textbox", { name: "Search chat history" })
     ).not.toBeInTheDocument()
+    await screen.findByText("How can I help?")
   })
 
   it("keeps the open chat after visiting Paper", async () => {
@@ -41,8 +67,5 @@ describe("Coach without the old history nav", () => {
     expect(await screen.findByRole("log", { name: "Chat" })).toHaveTextContent(
       "Should I finish my CV first?"
     )
-    expect(
-      screen.queryByRole("navigation", { name: "History" })
-    ).not.toBeInTheDocument()
   })
 })

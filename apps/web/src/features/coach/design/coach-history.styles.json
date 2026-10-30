@@ -1,0 +1,23 @@
+{
+  "panel": {
+    "background": "#FFFFFF",
+    "border": "#E6E6E8",
+    "shadow1": "#0000000D",
+    "shadow2": "#0000001A"
+  },
+  "activeItem": {
+    "background": "#F0F0F1"
+  },
+  "label": {
+    "section": "#8A8A8E",
+    "placeholder": "#A0A0A2",
+    "timestamp": "#A0A0A2",
+    "shortcut": "#A0A0A2",
+    "icon": "#8A8A8E"
+  },
+  "text": {
+    "primary": "#111111",
+    "newChat": "#1A1A1A",
+    "icon": "#3C3C40"
+  }
+}

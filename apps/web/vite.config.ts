@@ -1,5 +1,5 @@
 import path from "path"
-import { mkdirSync, writeFileSync } from "node:fs"
+import { mkdirSync, realpathSync, writeFileSync } from "node:fs"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig, loadEnv } from "vite"
@@ -44,6 +44,12 @@ export default defineConfig(({ mode }) => {
     envDir: path.resolve(__dirname, "../.."),
     server: {
       port: webPort,
+      fs: {
+        allow: [
+          path.resolve(__dirname, "../.."),
+          realpathSync(path.resolve(__dirname, "../../node_modules/.pnpm")),
+        ],
+      },
       allowedHosts:
         origins.kind === "split"
           ? [...origins.publicHosts, origins.appHost]
