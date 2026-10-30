@@ -512,6 +512,10 @@ export function fakePorts(world = {}) {
       state.local.delete(branch)
       return { ok: true, out: "", err: "" }
     },
+    deleteRemoteBranch(_cwd, branch) {
+      effect("deleteRemoteBranch", { branch })
+      return { ok: true, out: "", err: "" }
+    },
     prune() {
       effect("prune")
       return { ok: true, out: "", err: "" }

@@ -1,7 +1,6 @@
 import { join } from "node:path"
 import { Refused, writeResult } from "../result.mjs"
-import { jobRows } from "../rules/jobs.mjs"
-import { evaluate, refusalError } from "../rules/decide.mjs"
+import { jobRows, evaluate, refusalError } from "../rules/index.mjs"
 
 export function run(ctx, cmd, args, options = {}) {
   return ctx.ports.proc.run(cmd, args, { cwd: ctx.cwd, ...options })

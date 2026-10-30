@@ -1,5 +1,11 @@
-// Facts the merge job feeds the MASS_DELETE and PR_METADATA rules.
-import { run, git } from "./common.mjs"
+// Facts the pr-moment rules read. pullFacts(pr) is the one reader of GitHub
+// PR and issue JSON; planPull builds the same shape locally at finish from
+// the branch, the body text and the local commits. Rows read these domain
+// facts only.
+import { run, git, gh, json, diffFacts } from "./common.mjs"
+
+export const PR_FIELDS =
+  "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,mergeCommit,closingIssuesReferences"
 
 const generated = (out) =>
   out
@@ -65,4 +71,112 @@ export function deletedFacts(ctx, base, head) {
   }
   const all = split(git(ctx, "ls-tree", "-r", "--name-only", "-z", base))
   return { files: gone.length, lines, total: authored(ctx, base, all).length }
+}
+
+// The commit facts FILE_SIZE and NO_AI_ATTRIBUTION read: attribution trailers
+// in the branch messages and authored files over the 20000-byte limit.
+export function commitFacts(ctx, base, head) {
+  const messages = git(ctx, "log", "--format=%B", `${base}..${head}`)
+  let oversize = ""
+  const touched = git(
+    ctx,
+    "diff",
+    "--name-only",
+    "--diff-filter=ACMR",
+    "-z",
+    `${base}...${head}`
+  )
+  for (const file of split(touched)) {
+    const meta = git(ctx, "ls-tree", head, "--", file)
+    if (meta.startsWith("160000")) continue
+    const size = Number(git(ctx, "cat-file", "-s", `${head}:${file}`))
+    if (size <= 20000) continue
+    const blob = git(ctx, "cat-file", "blob", `${head}:${file}`)
+    if (blob.slice(0, 8000).includes("\0")) continue
+    const attr = git(
+      ctx,
+      "check-attr",
+      `--source=${head}`,
+      "linguist-generated",
+      "--",
+      file
+    )
+    if (!/: (set|true)$/.test(attr)) oversize += `${file} (${size} bytes) `
+  }
+  return {
+    trailers: /^\s*(co-authored-by|generated-with):/im.test(messages)
+      ? "on branch"
+      : "",
+    oversize,
+  }
+}
+
+// The domain facts of a live pull request: its metadata and linked issue, the
+// diff against origin/main, and the branch commits. `delivery` stays empty so
+// the boundary rows stay silent here; they fire only at their own boundary.
+export function pullFacts(ctx, n) {
+  const pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
+  const head = pull.headRefOid
+  if (!run(ctx, "git", ["cat-file", "-e", `${head}^{commit}`]).ok)
+    git(ctx, "fetch", "--quiet", "origin", `pull/${n}/head`)
+  const base = git(ctx, "merge-base", "origin/main", head)
+  const files = changedFiles(
+    ctx,
+    gh(ctx, "pr", "diff", String(n), "--name-only").split("\n"),
+    base,
+    head
+  )
+  const issue = Number(
+    /^(?:feat|fix|hotfix|refactor|chore|docs)\/(\d+)-/.exec(
+      pull.headRefName
+    )?.[1]
+  )
+  const linked = issue
+    ? json(ctx, "issue", "view", String(issue), "--json", "state,labels")
+    : null
+  const labels = (linked?.labels ?? []).map((l) => l.name)
+  const facts = diffFacts(ctx, files, head, labels)
+  facts.diff.deleted = deletedFacts(ctx, base, head)
+  return {
+    pull: {
+      n: pull.number,
+      issue: issue || null,
+      title: pull.title,
+      body: pull.body,
+      issueState: linked?.state,
+      state: pull.state,
+      isDraft: pull.isDraft,
+      author: pull.author?.login,
+      labels: (pull.labels ?? []).map((l) => l.name),
+      head,
+      branch: pull.headRefName,
+      mergeOid: pull.mergeCommit?.oid,
+      closing: (pull.closingIssuesReferences ?? []).map((i) => i.number),
+    },
+    issue: { n: issue, labels },
+    diff: facts.diff,
+    commits: commitFacts(ctx, base, head),
+    delivery: { id: null },
+  }
+}
+
+// The same shape, built locally at finish from the branch, the body text and
+// the local commits, so the pr rows can run before the PR exists.
+export function planPull(ctx, { n, title, body, issue }) {
+  const files = git(ctx, "diff", "--name-only", "origin/main...HEAD").split(
+    "\n"
+  )
+  const facts = diffFacts(ctx, files, "HEAD", issue.labels ?? [])
+  facts.diff.deleted = deletedFacts(
+    ctx,
+    git(ctx, "merge-base", "origin/main", "HEAD"),
+    "HEAD"
+  )
+  return {
+    pull: { issue: n, title, body, issueState: issue.state },
+    issue: { n, labels: issue.labels ?? [] },
+    diff: facts.diff,
+    commits: commitFacts(ctx, "origin/main", "HEAD"),
+    delivery: { id: null },
+  }
 }

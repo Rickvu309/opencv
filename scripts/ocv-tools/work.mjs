@@ -1,7 +1,7 @@
 // save and cleanup: keep work safe while holding an issue, and remove the workspace after the merge.
 import { EXIT, FIXES } from "./result.mjs"
 import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
-import { decide, evaluate, refusalError } from "./rules/decide.mjs"
+import { decide, evaluate, refusalError } from "./rules/index.mjs"
 import { locate } from "./worktree.mjs"
 
 const withIssueSuffix = (message, n) =>
@@ -251,6 +251,12 @@ export function cleanup(ctx, { n: given, flags = {} }) {
     if (!rm.ok)
       throw new Error(`git worktree remove failed: ${rm.err}`.slice(0, 800))
     ctx.ports.git.deleteBranch(main, wt.branch)
+    // Best-effort: the queue may have deleted the remote ref already.
+    const remote = ctx.ports.git.deleteRemoteBranch(main, wt.branch)
+    if (!remote.ok)
+      lines.push(
+        `Warning: could not delete remote branch ${wt.branch}: ${remote.err || remote.out}`
+      )
     removed.push(`${wt.path}  (${wt.branch})`)
   }
   if (!dry) {

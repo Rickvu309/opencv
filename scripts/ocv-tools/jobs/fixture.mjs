@@ -126,6 +126,39 @@ export function fixture(over = {}) {
         if (pair === "pr diff") return ok(s.changed.join("\n"))
         if (pair === "repo view") return ok("Rickvu309/opencv")
         if (pair === "api user") return ok("owner")
+        if (pair === "api graphql") {
+          const p = s.pull
+          const inQueue = s.inQueue ?? (s.queue && p.state === "OPEN")
+          return ok({
+            data: {
+              repository: {
+                pullRequest: {
+                  state: p.state,
+                  headRefOid: p.headRefOid,
+                  mergeCommit: p.mergeCommit,
+                  isInMergeQueue: Boolean(inQueue),
+                  mergeQueueEntry: inQueue
+                    ? { state: s.queueState ?? "QUEUED", position: 1 }
+                    : null,
+                  headRef: {
+                    target: {
+                      statusCheckRollup: {
+                        contexts: { nodes: s.rollup ?? [] },
+                      },
+                    },
+                  },
+                  timelineItems: {
+                    nodes: (s.removedEvents ?? []).map((e) => ({
+                      __typename: "RemovedFromMergeQueueEvent",
+                      reason: e.reason,
+                      createdAt: e.at,
+                    })),
+                  },
+                },
+              },
+            },
+          })
+        }
         if (a[0] === "api") return ok({ check_runs: s.checks })
         if (pair === "pr merge") {
           if (!s.queue) {

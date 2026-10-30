@@ -1,6 +1,6 @@
 // The generated rules block in docs/git-workflow/rule-enforcement.md.
 import { fileURLToPath } from "node:url"
-import { RULES } from "./table.mjs"
+import { RULES } from "./index.mjs"
 
 const BEGIN = "<!-- rules:begin -->"
 const END = "<!-- rules:end -->"

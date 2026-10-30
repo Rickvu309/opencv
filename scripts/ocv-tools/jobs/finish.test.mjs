@@ -49,8 +49,8 @@ test("finish preserves issue, checkout, workflow and commit gates", () => {
       { changed: [".github/workflows/ci.yml"], deleteCi: true },
       "CI_WORKFLOW_KEPT",
     ],
-    [{ commits: "Co-Authored-By: other" }, "COMMITS_HOOKED"],
-    [{ changed: ["source.mjs"], size: 20001 }, "COMMITS_HOOKED"],
+    [{ commits: "Co-Authored-By: other" }, "NO_AI_ATTRIBUTION"],
+    [{ changed: ["source.mjs"], size: 20001 }, "FILE_SIZE"],
   ]) {
     const f = fixture(over)
     f.call("check")

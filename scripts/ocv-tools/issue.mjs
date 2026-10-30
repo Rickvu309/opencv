@@ -1,7 +1,7 @@
 // `ocv-tools file`: builds the issue from the form fields, lints the plain words and creates it.
 import { fileURLToPath } from "node:url"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
-import { decide, evaluate, refusalError } from "./rules/decide.mjs"
+import { decide, evaluate, refusalError } from "./rules/index.mjs"
 import {
   PLAIN_RULE,
   buildIssueBody,

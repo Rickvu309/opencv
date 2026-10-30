@@ -14,7 +14,7 @@ import { basename, join } from "node:path"
 import { taskHere } from "./claim.mjs"
 import { SCRATCH } from "./ports/fs.mjs"
 import { Refused } from "./result.mjs"
-import { evaluate, refusalError } from "./rules/decide.mjs"
+import { evaluate, refusalError } from "./rules/index.mjs"
 
 const USAGE =
   "usage: ocv-tools shot <file...> [--pr <n> | --issue <n>] [--name <what>] [--no-comment]"

@@ -3,7 +3,7 @@
 import { holderOf } from "./claim-marker.mjs"
 import { RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
-import { evaluate, refusalError } from "./rules/decide.mjs"
+import { evaluate, refusalError } from "./rules/index.mjs"
 
 const loginOf = (author) =>
   String(

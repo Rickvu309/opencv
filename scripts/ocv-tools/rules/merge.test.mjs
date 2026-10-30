@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { RULES } from "./table.mjs"
+import { RULES } from "./index.mjs"
 
 const row = (id) => RULES.find((item) => item.id === id)
 const del = (files, lines, total) => ({

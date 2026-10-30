@@ -1,6 +1,6 @@
 // `approve`: relay an admin's "approved" from chat onto a risk:high issue.
 import { agentIdFor, envAgent } from "./claim.mjs"
-import { evaluate, refusalError } from "./rules/decide.mjs"
+import { evaluate, refusalError } from "./rules/index.mjs"
 
 const WARN =
   'The agent must only run this after the owner said "approved" in this chat.'

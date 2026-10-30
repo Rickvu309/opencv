@@ -197,6 +197,9 @@ export function gitAdapter(run) {
     deleteBranch(cwd, branch) {
       return git(cwd, ["branch", "-D", branch])
     },
+    deleteRemoteBranch(cwd, branch) {
+      return git(cwd, ["push", "origin", "--delete", branch])
+    },
     prune(cwd) {
       return git(cwd, ["worktree", "prune"])
     },
