@@ -83,7 +83,7 @@ export function PaperCvEditor({
   const [
     {
       doc,
-      undoDoc,
+      history,
       name,
       nameError,
       updatedAt,
@@ -201,7 +201,7 @@ export function PaperCvEditor({
     const next = applyPhoto(docRef.current, ref)
     docRef.current = next
     if (dirtyRef.current) schedule(next)
-    dispatch({ type: "document_edited", doc: next })
+    dispatch({ type: "photo_changed", doc: next })
   }
 
   function commit(next: CvBlockDocument, kind: BlockCommit) {
@@ -215,8 +215,8 @@ export function PaperCvEditor({
   }
 
   function undo() {
-    if (conflict || !undoDoc) return
-    const next = undoDoc
+    const next = history.at(-1)
+    if (conflict || !next) return
     inputCountRef.current += 1
     dirtyRef.current = true
     docRef.current = next
@@ -452,7 +452,7 @@ export function PaperCvEditor({
           variant="ghost"
           size="sm"
           onClick={undo}
-          disabled={conflict}
+          disabled={conflict || history.length === 0}
         >
           Undo
         </Button>
@@ -497,7 +497,11 @@ export function PaperCvEditor({
         onSkip={importBar.skip}
         onDone={importBar.done}
       />
-      <div data-template={previewTemplate(templateId)} className="min-w-0">
+      <div
+        data-template={previewTemplate(templateId)}
+        className="min-w-0"
+        onBlurCapture={() => dispatch({ type: "text_edit_finished" })}
+      >
         <CvPhotoFrame
           value={{
             docId: initial.id,
@@ -513,7 +517,7 @@ export function PaperCvEditor({
                 const next = applyPhoto(docRef.current, ref)
                 docRef.current = next
                 dirtyRef.current = true
-                dispatch({ type: "document_edited", doc: next })
+                dispatch({ type: "photo_changed", doc: next })
                 schedule(next)
               }}
             />
