@@ -357,7 +357,7 @@ export function AppShell({ onSearch }: AppShellProps) {
         panelVisible && "flex flex-col",
         panel.mode === "full" && "absolute inset-0",
         panel.mode === "side" &&
-          "h-full w-96 max-w-full shrink-0 border-l border-border"
+          "inset-e-2 inset-be-2 absolute h-[min(600px,calc(100%_-_16px))] w-[400px] max-w-[calc(100%_-_16px)]"
       )}
     >
       {panel.open ? (

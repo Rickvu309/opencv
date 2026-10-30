@@ -1,0 +1,154 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "REfNk",
+    "frameName": "OC Chat panel"
+  },
+  "sections": [
+    {
+      "id": "mIJmP",
+      "name": "Header",
+      "texts": [
+        {
+          "content": "New chat",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "WTh5R", "name": "Icon", "width": 11, "height": 11 },
+        { "id": "RlLsq", "name": "Minimize", "width": 28, "height": 28 },
+        { "id": "KXQmn", "name": "Expand", "width": 28, "height": 28 },
+        { "id": "nrw9u", "name": "Close", "width": 28, "height": 28 }
+      ]
+    },
+    { "id": "Gz2an", "name": "Body", "texts": [], "marks": [] },
+    {
+      "id": "Sh1cr",
+      "name": "Composer wrap",
+      "texts": [
+        {
+          "content": "Reply…",
+          "fill": "#A0A0A2",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Free",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "hlh5x", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "KHPz2", "name": "Chevron", "width": 12, "height": 12 }
+      ]
+    }
+  ],
+  "borders": [
+    { "id": "REfNk", "stroke": "$ds-border", "strokeWidth": 1 },
+    { "id": "mIJmP", "stroke": "#EDEDEF", "strokeWidth": { "bottom": 1 } },
+    { "id": "FAcND", "stroke": "#E4E4E7", "strokeWidth": 1 },
+    { "id": "nwQlD", "stroke": "#E4E4E7", "strokeWidth": 1 }
+  ],
+  "paints": [
+    {
+      "id": "REfNk",
+      "path": "",
+      "fill": "#FFFFFF",
+      "stroke": "#E2E2E2",
+      "effect": [
+        {
+          "type": "shadow",
+          "shadowType": "outer",
+          "color": "#0000000A",
+          "offset": { "x": 0, "y": 2 },
+          "blur": 4
+        },
+        {
+          "type": "shadow",
+          "shadowType": "outer",
+          "color": "#00000014",
+          "offset": { "x": 0, "y": 16 },
+          "blur": 48
+        }
+      ]
+    },
+    { "id": "mIJmP", "path": "/children/0", "stroke": "#EDEDEF" },
+    { "id": "Z5s08", "path": "/children/0/children/0", "fill": "#1A1A1A" },
+    { "id": "WTh5R", "path": "/children/0/children/1", "fill": "#8A8A8E" },
+    {
+      "id": "w5vkjc",
+      "path": "/children/0/children/3/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "qbbgj",
+      "path": "/children/0/children/4/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "j7Mswg",
+      "path": "/children/0/children/5/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "FAcND",
+      "path": "/children/2/children/0",
+      "fill": "#FFFFFF",
+      "stroke": "#E4E4E7"
+    },
+    {
+      "id": "rWPAT",
+      "path": "/children/2/children/0/children/0",
+      "fill": "#A0A0A2"
+    },
+    {
+      "id": "nwQlD",
+      "path": "/children/2/children/0/children/1/children/0",
+      "stroke": "#E4E4E7"
+    },
+    {
+      "id": "QqzzZ",
+      "path": "/children/2/children/0/children/1/children/0/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "hlh5x",
+      "path": "/children/2/children/0/children/1/children/2/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "TtScO",
+      "path": "/children/2/children/0/children/1/children/2/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "KHPz2",
+      "path": "/children/2/children/0/children/1/children/2/children/2",
+      "fill": "#969799"
+    },
+    {
+      "id": "qm4Ac",
+      "path": "/children/2/children/0/children/1/children/3",
+      "fill": "#E8E8EA"
+    },
+    {
+      "id": "qSQJJ",
+      "path": "/children/2/children/0/children/1/children/3/children/0",
+      "fill": "#A0A0A2"
+    }
+  ]
+}

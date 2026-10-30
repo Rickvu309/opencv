@@ -3,6 +3,8 @@ import { Maximize2, Minus, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 
+import "./design/coach-panel.pen.css"
+
 export type CoachPanelMode = "dock" | "side" | "full"
 
 type CoachPanelProps = {
@@ -29,17 +31,26 @@ export function CoachPanel({
   return (
     <section
       data-slot="coach-panel"
+      data-pen-surface="coach"
+      data-panel-mode={mode}
       aria-label={title}
       className="flex h-full min-h-0 flex-col bg-background duration-(--duration-panel) ease-(--ease-panel)"
     >
-      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-3">
-        <div className="min-w-0 flex-1 truncate text-sm font-medium">
+      <div
+        data-slot="coach-panel-header"
+        className="flex h-12 shrink-0 items-center gap-[6px] border-b ps-4 pe-2"
+      >
+        <div
+          data-slot="coach-panel-title"
+          className="min-w-0 flex-1 truncate text-[13px] font-medium"
+        >
           {title}
         </div>
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
+          className="size-11 shrink-0 rounded-[6px] sm:size-7"
           aria-label="Minimize"
           onClick={onMinimize}
         >
@@ -49,6 +60,7 @@ export function CoachPanel({
           type="button"
           variant="ghost"
           size="icon-sm"
+          className="size-11 shrink-0 rounded-[6px] sm:size-7"
           aria-label="Expand"
           aria-pressed={mode === "full"}
           onClick={onExpand}
@@ -59,6 +71,7 @@ export function CoachPanel({
           type="button"
           variant="ghost"
           size="icon-sm"
+          className="size-11 shrink-0 rounded-[6px] sm:size-7"
           aria-label="Close"
           onClick={onClose}
         >

@@ -1,0 +1,28 @@
+[data-pen-surface="coach"][data-slot="coach-panel"] {
+  background: #ffffff;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"][data-panel-mode="side"] {
+  overflow: clip;
+  border: 1px solid #e2e2e2;
+  border-radius: 12px;
+  box-shadow:
+    0 2px 4px #0000000a,
+    0 16px 48px #00000014;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-panel-header"] {
+  border-color: #ededef;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-panel-title"] {
+  color: #1a1a1a;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-panel-header"]
+  button {
+  color: #59595b;
+}
