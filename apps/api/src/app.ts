@@ -97,7 +97,10 @@ export function createApp({
   setCoachModelEnv(coachEnv ?? {})
   const app = new Hono()
 
-  app.use("/*", bodyLimit({ maxSize: 9_000_000 }))
+  const globalBodyLimit = bodyLimit({ maxSize: 9_000_000 })
+  app.use("/*", (c, next) =>
+    c.req.path === "/api/paper/import" ? next() : globalBodyLimit(c, next)
+  )
 
   app.use(
     "/*",
