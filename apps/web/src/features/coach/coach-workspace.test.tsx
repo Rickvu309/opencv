@@ -195,7 +195,7 @@ describe("Coach workspace", () => {
     ).not.toBeInTheDocument()
     fireEvent.click(trigger)
     expect(
-      await screen.findByRole("dialog", { name: "Chat history" })
+      await screen.findByRole("textbox", { name: "Search chat history" })
     ).toBeInTheDocument()
   })
 

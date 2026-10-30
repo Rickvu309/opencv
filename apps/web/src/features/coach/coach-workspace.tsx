@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 
-import { ChevronDown, SquarePen } from "lucide-react"
+import { SquarePen } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -26,25 +26,13 @@ import { CoachDock } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
 import { ChatView } from "./chat-view.tsx"
+import { CoachHistory } from "./coach-history.tsx"
 import { useChatStore } from "./use-chat-store.ts"
 import {
   initialWorkspaceState,
   workspaceReducer,
 } from "./coach-workspace.reducer.ts"
 import type { Attachment } from "./coach-workspace.reducer.ts"
-
-function historyGroup(date: string) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const timestamp = new Date(date).getTime()
-  if (timestamp >= today.getTime()) return "Today"
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-  if (timestamp >= yesterday.getTime()) return "Yesterday"
-  const week = new Date(today)
-  week.setDate(week.getDate() - 7)
-  return timestamp >= week.getTime() ? "Last 7 days" : "Earlier"
-}
 
 export function CoachWorkspace({
   chatId = null,
@@ -152,10 +140,6 @@ export function CoachWorkspace({
     }
   }
 
-  const filtered = chats.filter((chat) =>
-    chat.title.toLowerCase().includes(search.toLowerCase())
-  )
-  const groups = ["Today", "Yesterday", "Last 7 days", "Earlier"]
   const showHome = messages.length === 0 && !active
   const coachDock = (
     <CoachDock
@@ -198,17 +182,21 @@ export function CoachWorkspace({
         className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/50 px-3"
       >
         <h1 className="sr-only">Coach</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          data-slot="coach-history-trigger"
-          aria-label={`History, ${headerTitle}`}
-          className="min-w-0 shrink gap-1.5 border-0 px-2 text-[13px] leading-[15.5px] max-md:h-11"
-          onClick={() => dispatch({ type: "history_opened" })}
-        >
-          <span className="truncate">{headerTitle}</span>
-          <ChevronDown className="size-2.75 text-muted-foreground" />
-        </Button>
+        <CoachHistory
+          open={historyOpen}
+          onOpenChange={(open) =>
+            dispatch({ type: "history_open_changed", open })
+          }
+          headerTitle={headerTitle}
+          chats={chats}
+          activeChatId={activeChatId}
+          search={search}
+          onSearchChange={(value) => dispatch({ type: "search_typed", value })}
+          onSelect={(id) => {
+            openChat(id)
+          }}
+          onNewChat={store.newChat}
+        />
         {!showHome ? (
           <Button
             variant="ghost"
@@ -295,59 +283,6 @@ export function CoachWorkspace({
         ) : null}
         {!showHome ? coachDock : null}
       </div>
-      <Dialog
-        open={historyOpen}
-        onOpenChange={(open) =>
-          dispatch({ type: "history_open_changed", open })
-        }
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chat history</DialogTitle>
-            <DialogDescription>
-              Search and reopen a conversation.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            aria-label="Search chat history"
-            placeholder="Search chats"
-            value={search}
-            onChange={(event) =>
-              dispatch({ type: "search_typed", value: event.target.value })
-            }
-          />
-          <div className="max-h-96 space-y-4 overflow-auto">
-            {groups.map((group) => {
-              const items = filtered.filter(
-                (chat) => historyGroup(chat.updatedAt) === group
-              )
-              return items.length ? (
-                <section key={group} className="space-y-1">
-                  <h3 className="text-xs font-medium text-muted-foreground">
-                    {group}
-                  </h3>
-                  {items.map((chat) => (
-                    <Button
-                      key={chat.id}
-                      variant="ghost"
-                      className="h-auto w-full justify-start text-left whitespace-normal"
-                      onClick={() => {
-                        openChat(chat.id)
-                        dispatch({ type: "history_open_changed", open: false })
-                      }}
-                    >
-                      {chat.title}
-                    </Button>
-                  ))}
-                </section>
-              ) : null
-            })}
-            {filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No chats found.</p>
-            ) : null}
-          </div>
-        </DialogContent>
-      </Dialog>
       <Dialog
         open={picker !== null}
         onOpenChange={(open) => {
