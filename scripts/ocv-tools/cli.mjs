@@ -16,6 +16,8 @@ import { approve } from "./approve.mjs"
 import { check } from "./jobs/check.mjs"
 import { finish } from "./jobs/finish.mjs"
 import { merge } from "./jobs/merge.mjs"
+import { policyReport } from "./jobs/policy.mjs"
+import { pullFacts } from "./jobs/pull-facts.mjs"
 
 export function realCtx() {
   const ports = realPorts()
@@ -211,6 +213,14 @@ function command(ctx, cmd, rest) {
         n: pos[0] ? issueNumber(pos[0], "cleanup [<n> | --all]") : null,
         flags,
       })
+    case "policy": {
+      const unknown = Object.keys(flags)[0]
+      if (unknown)
+        throw new Refused("UNKNOWN_FLAG", `unknown option: ${unknown}`)
+      if (pos.length !== 1) throw new Error("usage: ocv-tools policy <pr#>")
+      const n = issueNumber(pos[0], "policy <pr#>")
+      return policyReport(n, pullFacts(ctx, n))
+    }
     case "approve": {
       const unknown = Object.keys(flags)[0]
       if (unknown)

@@ -4,14 +4,13 @@ import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { COMMANDS } from "./report.mjs"
-import { decide, evaluate, needsOf } from "./rules/decide.mjs"
+import { decide, evaluate, needsOf, RULES } from "./rules/index.mjs"
 import {
   RULES_DOC,
   RULE_GUIDES,
   renderRulesDoc,
   rulesDocMatches,
 } from "./rules/doc.mjs"
-import { RULES } from "./rules/table.mjs"
 
 const TYPE_LIST = "feat, fix, hotfix, refactor, chore, docs"
 const seen = new Set()
@@ -269,10 +268,16 @@ test("every checked rule has a failing and a passing fact", () => {
     "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named"
   )
   check(
-    "COMMITS_HOOKED",
+    "NO_AI_ATTRIBUTION",
     { commits: { trailers: "abc1234 " } },
     { commits: {} },
     "commit(s) abc1234 carry an attribution trailer, which the commit-msg hook refuses: they were made without that hook (the hook-skip flag, a cherry-pick or a rebase)"
+  )
+  check(
+    "FILE_SIZE",
+    { commits: { oversize: "big.mjs (20001 bytes) " } },
+    { commits: {} },
+    "file(s) over the 20000-byte pre-commit limit: big.mjs (20001 bytes); a commit this size passes only with the hook-skip flag. Split each file as .githooks/pre-commit says, then run the fix"
   )
   check(
     "NOT_HIGH_RISK",
@@ -463,7 +468,7 @@ test("variant messages stay the ones the jobs print", () => {
     null
   )
   assert.match(
-    at("COMMITS_HOOKED", { commits: { oversize: "big.mjs (20001 bytes)" } }),
+    at("FILE_SIZE", { commits: { oversize: "big.mjs (20001 bytes)" } }),
     /20000-byte/
   )
   assert.equal(

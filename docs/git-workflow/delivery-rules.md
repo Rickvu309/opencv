@@ -18,5 +18,7 @@ These refusals belong to the delivery jobs. The table comes from the same rule t
 | CI_REQUIRED (6)        | The newest ci check must succeed on the PR head.          | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
 | LEFT_QUEUE (6)         | The PR must stay in the queue until it merges.            | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
 | QUEUE_TIMEOUT (6)      | The queue must merge the PR within 45 minutes.            | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
+| HEAD_MOVED (6)         | The PR head must stay the commit ci passed.               | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
+| CI_FAILED (6)          | The newest ci check on the PR head must succeed.          | Run scripts/ocv-tools.mjs check before finish; wait for ci before merge. | merge         |
 
 <!-- rules:end -->

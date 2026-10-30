@@ -15,8 +15,8 @@ import {
 import { diskProblem } from "./disk.mjs"
 import { file } from "./issue.mjs"
 import { worktreeFor } from "./report.mjs"
-import { evaluate, refusalError } from "./rules/decide.mjs"
-import { RULES, issueKind } from "./rules/table.mjs"
+import { evaluate, refusalError } from "./rules/index.mjs"
+import { RULES, issueKind } from "./rules/index.mjs"
 import {
   createWorktree,
   descFromTitle,

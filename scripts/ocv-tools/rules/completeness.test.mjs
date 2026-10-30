@@ -4,8 +4,7 @@ import { join, relative } from "node:path"
 import test from "node:test"
 import ts from "typescript"
 import { fileURLToPath } from "node:url"
-import { evaluate } from "./decide.mjs"
-import { RULES } from "./table.mjs"
+import { evaluate, RULES } from "./index.mjs"
 
 const text = (rel) =>
   readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8")
@@ -28,7 +27,7 @@ const FORWARDING = new Set([
   "jobs/common.mjs:Refused:code", // Delivery boundary forwards its literal caller code.
   "jobs/common.mjs:evaluate:code", // Delivery precondition with its boundary message.
   "jobs/common.mjs:evaluate:id", // gate forwards the literal rule id.
-  "rules/decide.mjs:Refused:refusal.id", // Converts a decide/evaluate result.
+  "rules/index.mjs:Refused:refusal.id", // Converts a decide/evaluate result.
   "shot.mjs:evaluate:id", // refuse forwards its literal caller's id.
   "approve.mjs:evaluate:id", // Same wrapper as shot.
 ])
@@ -71,7 +70,8 @@ function raisedCodes(inputs, rows) {
     visit(ast)
   }
   for (const row of rows) {
-    if (row.check && row.jobs.some((job) => jobs.has(job))) codes.add(row.id)
+    const moments = row.at ?? row.jobs
+    if (row.check && moments.some((job) => jobs.has(job))) codes.add(row.id)
   }
   return codes
 }

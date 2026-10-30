@@ -7,7 +7,7 @@ import {
   releaseMarker,
 } from "./claim-marker.mjs"
 import { TYPES } from "./fields.mjs"
-import { decide, refusalError } from "./rules/decide.mjs"
+import { decide, refusalError } from "./rules/index.mjs"
 import { locate } from "./worktree.mjs"
 
 export const nowOf = (ctx) => ctx.now?.() ?? Date.now()

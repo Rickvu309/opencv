@@ -1,7 +1,7 @@
 // ocv-tools rules [--write|--check|--list]
 import { EXIT } from "../result.mjs"
 import { RULE_GUIDES, applyRulesDoc } from "./doc.mjs"
-import { RULES } from "./table.mjs"
+import { RULES } from "./index.mjs"
 
 function listResult() {
   return {

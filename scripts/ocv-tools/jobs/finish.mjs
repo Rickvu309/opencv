@@ -1,5 +1,7 @@
 import { join, resolve } from "node:path"
 import { diskProblem } from "../disk.mjs"
+import { decide, refusalError } from "../rules/index.mjs"
+import { planPull } from "./pull-facts.mjs"
 import {
   recorded,
   task,
@@ -10,7 +12,6 @@ import {
   json,
   gate,
   refuse,
-  diffFacts,
 } from "./common.mjs"
 
 function bodyText(text) {
@@ -27,45 +28,6 @@ function bodyText(text) {
       "Fill in Door, Blast Radius and all template placeholders."
     )
   return text
-}
-
-function hooked(ctx) {
-  const messages = git(ctx, "log", "--format=%B", "origin/main..HEAD")
-  let oversize = ""
-  for (const file of git(
-    ctx,
-    "diff",
-    "--name-only",
-    "--diff-filter=ACMR",
-    "-z",
-    "origin/main...HEAD"
-  )
-    .split("\0")
-    .filter(Boolean)) {
-    const meta = git(ctx, "ls-tree", "HEAD", "--", file)
-    if (meta.startsWith("160000")) continue
-    const size = Number(git(ctx, "cat-file", "-s", `HEAD:${file}`))
-    if (size <= 20000) continue
-    const blob = git(ctx, "cat-file", "blob", `HEAD:${file}`)
-    if (blob.slice(0, 8000).includes("\0")) continue
-    const attr = git(
-      ctx,
-      "check-attr",
-      "--source=HEAD",
-      "linguist-generated",
-      "--",
-      file
-    )
-    if (!/: (set|true)$/.test(attr)) oversize += `${file} (${size} bytes) `
-  }
-  gate("COMMITS_HOOKED", {
-    commits: {
-      trailers: /^\s*(co-authored-by|generated-with):/im.test(messages)
-        ? "on branch"
-        : "",
-      oversize,
-    },
-  })
 }
 
 export function finish(ctx, { flags }) {
@@ -163,13 +125,20 @@ export function finish(ctx, { flags }) {
     const current = snapshot(ctx, t)
     if (!Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")))
       refuse("NO_COMMITS", "No commits beyond origin/main.")
-    const files = git(ctx, "diff", "--name-only", "origin/main...HEAD").split(
-      "\n"
-    )
-    const facts = diffFacts(ctx, files, "HEAD")
-    gate("NO_WORKFLOWS", facts)
-    gate("CI_WORKFLOW_KEPT", facts)
-    hooked(ctx)
+    // The pr rows run here early, on the facts planPull builds from the
+    // branch, the body text and the local commits.
+    const plan = planPull(ctx, {
+      n: t.n,
+      title,
+      body: `Closes #${t.n}\n\n${written}`,
+      issue: { state: issue.state, labels: issue.labels.map((l) => l.name) },
+    })
+    gate("NO_WORKFLOWS", plan)
+    gate("CI_WORKFLOW_KEPT", plan)
+    gate("NO_AI_ATTRIBUTION", plan)
+    gate("FILE_SIZE", plan)
+    const preview = decide("pr", plan)
+    if (!preview.ok) throw refusalError(preview.refusals[0])
     let proof
     try {
       proof = JSON.parse(ctx.readFile(proofPath(t)))

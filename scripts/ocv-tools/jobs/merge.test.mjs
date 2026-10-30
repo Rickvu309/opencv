@@ -3,6 +3,75 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
 import { fixture } from "./fixture.mjs"
+import { classify } from "./merge.mjs"
+
+test("classify settles one snapshot into the five outcomes", () => {
+  const base = {
+    state: "OPEN",
+    head: "h1",
+    inQueue: true,
+    queueState: "AWAITING_CHECKS",
+    ci: null,
+    removed: null,
+    waited: 30,
+  }
+  assert.equal(
+    classify({ ...base, state: "MERGED" }, true, "h1").kind,
+    "MERGED"
+  )
+  assert.deepEqual(classify({ ...base, head: "h2" }, true, "h1"), {
+    kind: "HEAD_MOVED",
+    from: "h1",
+    to: "h2",
+  })
+  assert.equal(
+    classify(
+      {
+        ...base,
+        inQueue: false,
+        ci: { status: "completed", conclusion: "failure" },
+      },
+      true,
+      "h1"
+    ).kind,
+    "CI_FAILED"
+  )
+  assert.deepEqual(
+    classify(
+      {
+        ...base,
+        inQueue: false,
+        removed: { reason: "FAILED_CHECKS", at: "2026-10-30T18:42:00Z" },
+      },
+      true,
+      "h1"
+    ),
+    { kind: "LEFT_QUEUE", reason: "FAILED_CHECKS", at: "2026-10-30T18:42:00Z" }
+  )
+  // The queue's failed build removes the PR; the head's own ci stays green.
+  assert.equal(
+    classify(
+      {
+        ...base,
+        inQueue: false,
+        ci: { status: "completed", conclusion: "success" },
+        removed: { reason: "FAILED_CHECKS", at: "t" },
+      },
+      true,
+      "h1"
+    ).kind,
+    "LEFT_QUEUE"
+  )
+  assert.equal(
+    classify({ ...base, state: "CLOSED" }, true, "h1").kind,
+    "LEFT_QUEUE"
+  )
+  assert.equal(
+    classify({ ...base, waited: 45 * 60 }, true, "h1").kind,
+    "QUEUE_TIMEOUT"
+  )
+  assert.equal(classify(base, true, "h1"), null)
+})
 
 test("merge pins squash to the checked head and closes the linked issue", () => {
   const f = fixture()

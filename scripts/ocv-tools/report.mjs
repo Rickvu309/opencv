@@ -3,8 +3,7 @@ import { holderLine } from "./claim-marker.mjs"
 import { approvalValid, riskOf } from "./facts.mjs"
 import { RISK_LABELS, TYPES } from "./fields.mjs"
 import { EXIT, exitText } from "./result.mjs"
-import { decide, refusalError } from "./rules/decide.mjs"
-import { RULES } from "./rules/table.mjs"
+import { decide, refusalError, RULES } from "./rules/index.mjs"
 
 export { approvalValid, riskOf }
 
@@ -24,7 +23,12 @@ export const COMMANDS = [
   {
     name: "merge",
     usage: "merge <pr#> [--wait]",
-    when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues. Run it in the background after queuing. Run again later to confirm closure.",
+    when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. Run it in the background after queuing. Run again later to confirm closure.",
+  },
+  {
+    name: "policy",
+    usage: "policy <pr#>",
+    when: "Evaluate the server-held PR rules against a live pull request and print one line per refusal, each with its fix. Exit 2 when a rule refuses.",
   },
   {
     name: "help",

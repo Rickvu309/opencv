@@ -1,6 +1,6 @@
 // GitHub adapter. Domain verbs over `gh`. Callers get plain records, not argv.
 import { readServerNow, parseUpdatedAt } from "../clock.mjs"
-import { evaluate, refusalError } from "../rules/decide.mjs"
+import { evaluate, refusalError } from "../rules/index.mjs"
 
 // An approval is valid only for a comment that was never edited. GitHub returns null for that case,
 // so a comment without the field means the query lost it and must fail loudly.

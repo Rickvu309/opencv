@@ -4,7 +4,7 @@
 import { join } from "node:path"
 import { diskProblem } from "./disk.mjs"
 import { TYPES } from "./fields.mjs"
-import { evaluate, refusalError } from "./rules/decide.mjs"
+import { evaluate, refusalError } from "./rules/index.mjs"
 
 export const BRANCH_RE =
   /^(feat|fix|hotfix|refactor|chore|docs)\/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$/
