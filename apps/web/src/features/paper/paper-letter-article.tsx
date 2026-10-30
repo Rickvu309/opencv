@@ -1,9 +1,8 @@
 import { memo, type RefObject } from "react"
 
 import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { FileText, MoreHorizontal } from "lucide-react"
+import { FileText } from "lucide-react"
 
 import type { PaperView } from "@workspace/domain"
 
@@ -40,15 +39,6 @@ export const PaperLetterArticle = memo(function PaperLetterArticle({
               Draft
             </Badge>
           ) : null}
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label="More"
-            className="text-muted-foreground"
-          >
-            <MoreHorizontal className="size-4" />
-          </Button>
         </div>
       </div>
       <div

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from "react"
+import { useEffect, useId, useReducer, useRef } from "react"
 import type { JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -48,9 +48,11 @@ export function PaperLetterStart({
   onImport: () => void
 }) {
   const run = useRunCommand()
+  const guidanceId = useId()
   const queryClient = useQueryClient()
   const [{ jobs, query, selected, drafting, text, limit, error }, dispatch] =
     useReducer(letterStartReducer, jobsProp ?? [], initialLetterStart)
+  const needsContext = !selected && query.trim() === ""
   const abortRef = useRef<AbortController | null>(null)
   const chatRef = useRef<string | null>(null)
   const textRef = useRef("")
@@ -221,13 +223,19 @@ export function PaperLetterStart({
           <Button
             type="button"
             variant={limit ? "outline" : "glow"}
-            disabled={Boolean(limit)}
+            disabled={Boolean(limit) || needsContext}
+            aria-describedby={needsContext ? guidanceId : undefined}
             onClick={() => void draft()}
           >
             {draftName}
           </Button>
         )}
       </div>
+      {needsContext ? (
+        <p id={guidanceId}>
+          Choose a job or paste job text or a link to draft a letter.
+        </p>
+      ) : null}
       {drafting ? (
         <div>
           <p>Coach is writing…</p>
