@@ -320,7 +320,7 @@ function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
       </div>
       <p
         className={cn(
-          "text-[13.5px] leading-[1.55] whitespace-pre-wrap",
+          "text-[13.5px] leading-[1.55] break-words whitespace-pre-wrap",
           TITLE_TEXT
         )}
       >
