@@ -52,6 +52,51 @@ const PALETTE_RE = new RegExp(
   "g"
 )
 
+/** Exact pen colors stay local and must occur in the adjacent source snapshots. */
+function penColorViolations(
+  file: string,
+  source: string,
+  referenceSource?: string
+): string[] | null {
+  const match = /^features\/([a-z-]+)\/design\/[a-z-]+\.pen\.css$/.exec(file)
+  if (!match) return null
+  const feature = match[1]
+  const directory = path.dirname(path.join(srcDir, file))
+  const references =
+    referenceSource ??
+    readdirSync(directory)
+      .filter((name) => name.endsWith(".styles.json"))
+      .map((name) => readFileSync(path.join(directory, name), "utf8"))
+      .join("\n")
+  const colors = new Set(
+    (references.match(/#[0-9a-f]{6}(?:[0-9a-f]{2})?\b/gi) ?? []).map((color) =>
+      color.toLowerCase()
+    )
+  )
+  const violations = (source.match(/#[0-9a-f]{3,8}\b/gi) ?? []).filter(
+    (color) => !colors.has(color.toLowerCase())
+  )
+  for (const rule of source.matchAll(/([^{}]+)\{/g)) {
+    const selector = rule[1].trim()
+    if (selector.startsWith("@media")) continue
+    if (
+      !selector
+        .split(",")
+        .every((part) =>
+          part.trim().startsWith(`[data-pen-surface="${feature}"]`)
+        )
+    )
+      violations.push(`unscoped selector: ${selector}`)
+  }
+  if (/--[\w-]+\s*:/.test(source))
+    violations.push("custom property declaration")
+  violations.push(
+    ...hits(source, PALETTE_RE),
+    ...hits(source, FUNCTIONAL_COLOR_RE)
+  )
+  return violations
+}
+
 const RAW_INTERACTIVE_RE = /<(button|input|textarea|select)\b/g
 
 const STOCK_COLOR_PAIRS = [
@@ -253,14 +298,38 @@ describe("design-system vocabulary", () => {
 
     for (const [file, source] of files) {
       if (allowed.has(rel(file))) continue
-      const found = [HEX_RE, PALETTE_RE, FUNCTIONAL_COLOR_RE].flatMap(
-        (pattern) => hits(source, pattern)
-      )
+      const found =
+        penColorViolations(rel(file), source) ??
+        [HEX_RE, PALETTE_RE, FUNCTIONAL_COLOR_RE].flatMap((pattern) =>
+          hits(source, pattern)
+        )
       if (found.length === 0) continue
       violations.push(`${rel(file)}: ${found.join(", ")}`)
     }
 
     expect(violations, violations.join("\n")).toEqual([])
+  })
+
+  it("limits pen colors to source values inside the feature scope", () => {
+    const file = "features/example/design/example.pen.css"
+    const reference = '{"fill":"#1A1A1A"}'
+    const check = (source: string) =>
+      penColorViolations(file, source, reference)
+    expect(
+      check('[data-pen-surface="example"] h2 { color: #1A1A1A; }')
+    ).toEqual([])
+    expect(
+      check('[data-pen-surface="example"] h2 { color: #123456; }')
+    ).toEqual(["#123456"])
+    expect(check("body { color: #1A1A1A; }")).toEqual([
+      "unscoped selector: body",
+    ])
+    expect(check('[data-pen-surface="example"] { --custom: 1px; }')).toEqual([
+      "custom property declaration",
+    ])
+    expect(
+      penColorViolations("features/example/example.tsx", "#1A1A1A")
+    ).toBeNull()
   })
 
   it("forbids the retired class roots in app and kit code", () => {
