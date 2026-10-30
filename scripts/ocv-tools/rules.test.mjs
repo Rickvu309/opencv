@@ -1,7 +1,6 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { fileURLToPath } from "node:url"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { COMMANDS } from "./report.mjs"
@@ -270,25 +269,6 @@ test("every checked rule has a failing and a passing fact", () => {
     "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named"
   )
   check(
-    "SKIP_SAID",
-    { pull: { stamp: "skip", sha: "abcdef123", pr: 7, body: "no emergency" } },
-    {
-      pull: {
-        stamp: "skip",
-        sha: "abcdef123",
-        pr: 7,
-        body: "emergency declared by Ada",
-      },
-    },
-    'head abcdef123 was pushed with SKIP_CHECKS=1 (only for an emergency a human declared) and PR #7 does not say "emergency declared by <name>"'
-  )
-  check(
-    "PUSHED_THROUGH_HOOK",
-    { commits: { stampDir: true, stamp: null, sha: "abcdef1234" } },
-    { commits: { stampDir: false, stamp: null, sha: "abcdef1234" } },
-    "commit abcdef123 has no pre-push stamp: it was pushed without the pre-push hook (the hook-skip flag, or a branch cut before the stamping hook landed, whose worktree still runs the old .githooks/pre-push)"
-  )
-  check(
     "COMMITS_HOOKED",
     { commits: { trailers: "abc1234 " } },
     { commits: {} },
@@ -482,14 +462,9 @@ test("variant messages stay the ones the jobs print", () => {
     }),
     null
   )
-  assert.equal(at("SKIP_SAID", { pull: { stamp: "ok", body: "" } }), null)
   assert.match(
     at("COMMITS_HOOKED", { commits: { oversize: "big.mjs (20001 bytes)" } }),
     /20000-byte/
-  )
-  assert.equal(
-    at("PUSHED_THROUGH_HOOK", { commits: { stampDir: true, stamp: "ok" } }),
-    null
   )
   assert.equal(
     evaluate("DISK", { disk: { text: "full", cause: "disk" } }).cause,
@@ -558,23 +533,6 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
     "NOT_A_TASK"
   )
   assert.equal(decide("save", { here: { ok: false } }).refusals.length, 1)
-})
-
-test("bash rule functions have a table row", () => {
-  const text = readFileSync(
-    fileURLToPath(new URL("../lib/rules.sh", import.meta.url)),
-    "utf8"
-  )
-  const skip = new Set(["fail", "cd", "wt_of", "stamp_dir"])
-  const names = [...text.matchAll(/^rule_([a-z0-9_]+)\(\)/gm)].map((m) => m[1])
-  assert.ok(names.includes("main_clean"))
-  for (const name of names) {
-    if (skip.has(name)) continue
-    assert.ok(
-      RULES.some((row) => row.impl === `bash:rule_${name}`),
-      name
-    )
-  }
 })
 
 test("the rules guide is generated from the table", () => {

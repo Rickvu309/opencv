@@ -1,6 +1,5 @@
 // Merge-time rules of issue #618: a mass deletion and the pull request details.
-// The shell checks are rule_mass_delete and rule_pr_metadata in scripts/lib/rules.sh;
-// merge-pr.sh calls them. The limits below are the owner's defaults and match that file.
+// The limits below are the owner's defaults.
 export const MASS_DELETE_LIMITS = Object.freeze({
   files: 25,
   lines: 2000,
@@ -48,7 +47,6 @@ export const mergeSpecs = [
     needs: ["diff"],
     check: massDelete,
     fix: () => "gh pr edit <pr> --add-label needs-human-review",
-    impl: "bash:rule_mass_delete",
   },
   {
     id: "PR_METADATA",
@@ -59,6 +57,5 @@ export const mergeSpecs = [
     check: prMetadata,
     fix: () =>
       "gh pr edit <pr> --title 'type: text (#<n>)' --body 'Closes #<n>'",
-    impl: "bash:rule_pr_metadata",
   },
 ]

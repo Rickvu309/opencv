@@ -8,7 +8,7 @@ A pull request merges when the automatic `ci` check is green.
 gh api -X PUT repos/Rickvu309/opencv/rulesets/25725442 --input .github/rulesets/main.json
 ```
 
-**Merge queue.** `scripts/ocv-tools.mjs merge` (and `scripts/merge-pr.sh`) enqueues; the queue tests the merged result and squash-merges, so the ruleset keeps `strict_required_status_checks_policy` false (strict mode would make every queued PR rerun when another lands, for no extra safety). A branch behind `main` needs no rebase for the ruleset; rebase only when it conflicts. After the queue merges, run `node scripts/pr.mjs release <merge sha> --wait 600`, then `scripts/ocv-tools.mjs cleanup <issue#>`, which also closes the issue if the merge left it open. Rollout order for ruleset changes: merge the PR, then apply the file with the `gh api -X PUT` above, then prove an enqueue with a no-op PR.
+**Merge queue.** `scripts/ocv-tools.mjs merge` enqueues; the queue tests the merged result and squash-merges, so the ruleset keeps `strict_required_status_checks_policy` false (strict mode would make every queued PR rerun when another lands, for no extra safety). A branch behind `main` needs no rebase for the ruleset; rebase only when it conflicts. After the queue merges, run `node scripts/pr.mjs release <merge sha> --wait 600`, then `scripts/ocv-tools.mjs cleanup <issue#>`, which also closes the issue if the merge left it open. Rollout order for ruleset changes: merge the PR, then apply the file with the `gh api -X PUT` above, then prove an enqueue with a no-op PR.
 
 Write access cannot be made merge-proof by role alone, and contributors can still edit labels, so the `needs-human-review` rule below stays a convention.
 

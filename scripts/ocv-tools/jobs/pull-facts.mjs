@@ -1,4 +1,4 @@
-// Facts the merge job feeds the MASS_DELETE and PR_METADATA rules (the same checks merge-pr.sh runs).
+// Facts the merge job feeds the MASS_DELETE and PR_METADATA rules.
 import { run, git } from "./common.mjs"
 
 const generated = (out) =>

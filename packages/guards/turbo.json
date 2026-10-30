@@ -14,12 +14,7 @@
       ]
     },
     "test:open-pr": {
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "../../scripts/open-pr.sh",
-        "../../scripts/open-pr.test.mjs",
-        "../../scripts/lib/**"
-      ],
+      "inputs": ["$TURBO_DEFAULT$", "../../scripts/ocv-tools/**"],
       "outputs": []
     }
   }

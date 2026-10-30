@@ -1,4 +1,4 @@
-// Disk preflight (scripts/lib/disk.sh behavior): enough free space and a working 64 KiB write in
+// Disk preflight: enough free space and a working 64 KiB write in
 // the main checkout, the worktree root's parent, the root, ~/tmp and the temp dir.
 // Limits in MiB: PR_DISK_MIN_MB (default 2048), PR_TMP_MIN_MB (default 256).
 // The statfs and write probes go through ports.fs.

@@ -69,6 +69,7 @@ import { homedir } from "node:os"
 import { join, resolve } from "node:path"
 
 test("dry-run executes nothing; first red stays red and writes the consumer result", () => {
+  mkdirSync(join(homedir(), "tmp"), { recursive: true })
   const dir = mkdtempSync(join(homedir(), "tmp/check-node-"))
   try {
     mkdirSync(join(dir, "scripts"))

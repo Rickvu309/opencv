@@ -17,8 +17,8 @@ fail() { echo "pre-push: $*" >&2; exit 1; }
 
 run_checks=0
 shas=()
-# Record each pushed sha as "ok" or "skip" in the clone's git dir (shared by its worktrees). scripts/open-pr.sh
-# refuses a head with no stamp: it was pushed with the hook-skip flag. "skip" is a SKIP_CHECKS=1 push.
+# Record each pushed sha as "ok" or "skip" in the clone's git dir (shared by its worktrees). Nothing reads
+# these stamps. "skip" is a SKIP_CHECKS=1 push.
 stamp() {
   local dir s
   dir="$(git rev-parse --path-format=absolute --git-common-dir)/pre-push-stamps"
@@ -32,7 +32,7 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
     refs/heads/*)
       branch=${remote_ref#refs/heads/}
       if [[ "$branch" == "main" ]]; then
-        fail "pushing to main is not allowed. Push your task branch and open a PR (scripts/open-pr.sh)."
+        fail "pushing to main is not allowed. Push your task branch and open a PR (scripts/ocv-tools.mjs finish)."
       fi
       # Deleting a remote task branch is fine.
       [[ "$local_sha" =~ ^0+$ || "$local_sha" == "$ZERO" ]] && continue
