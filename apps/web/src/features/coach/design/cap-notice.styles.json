@@ -1,0 +1,32 @@
+{
+  "source": {
+    "file": "opencv.pen",
+    "frameId": "wiQ9M",
+    "frameName": "W3.6 Free cap reached",
+    "capNoticeId": "fuk7C",
+    "upgradeButtonId": "uVUzR"
+  },
+  "colors": [
+    "#F4F4F5",
+    "#E6E6E8",
+    "#FFFFFF",
+    "#3C3C40",
+    "#111111",
+    "#6B6B70",
+    "#1B1B1F",
+    "#EAEFFA",
+    "#D6DFF6",
+    "#E7E3F9",
+    "#D0DAF5",
+    "#BCCAF1",
+    "#DCD6F6",
+    "#E6EBF9",
+    "#CED9F4",
+    "#E9E5F9",
+    "#FFFFFFB3",
+    "#8EA4E04D",
+    "#C4C4C8",
+    "#BDBDC2",
+    "#F0F0F1"
+  ]
+}

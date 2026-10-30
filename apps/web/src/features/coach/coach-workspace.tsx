@@ -1,11 +1,10 @@
 import { useEffect, useEffectEvent, useReducer } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { ChevronDown, Hourglass, SquarePen } from "lucide-react"
+import { ChevronDown, SquarePen } from "lucide-react"
 
-import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { cn } from "@workspace/ui/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +24,7 @@ import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
 import { CoachDock } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
+import { CoachCapNotice } from "./coach-cap-notice.tsx"
 import { ChatView } from "./chat-view.tsx"
 import { useChatStore } from "./use-chat-store.ts"
 import {
@@ -72,6 +72,7 @@ export function CoachWorkspace({
   ] = useReducer(workspaceReducer, undefined, () =>
     initialWorkspaceState(takeCoachDraft() ?? "", activeChatId)
   )
+  const queryClient = useQueryClient()
   const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
   const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
   const papers = useQuery({
@@ -99,6 +100,7 @@ export function CoachWorkspace({
     ? new Date(day.resetsAt).toLocaleTimeString([], {
         hour: "numeric",
         minute: "2-digit",
+        hour12: false,
       })
     : "later"
 
@@ -111,6 +113,16 @@ export function CoachWorkspace({
       subscribeCoachDraft((value) => dispatch({ type: "draft_typed", value })),
     []
   )
+  useEffect(() => {
+    if (!day?.capped || !day.resetsAt) return
+    const delay = new Date(day.resetsAt).getTime() - Date.now()
+    if (delay <= 0) return
+    const id = setTimeout(
+      () => void queryClient.invalidateQueries({ queryKey: usageKey() }),
+      delay
+    )
+    return () => clearTimeout(id)
+  }, [day?.capped, day?.resetsAt, queryClient])
   if (draftChatId !== activeChatId) {
     dispatch({
       type: "active_chat_changed",
@@ -176,35 +188,11 @@ export function CoachWorkspace({
       primaryAction={primaryAction}
       notice={
         capped ? (
-          <div
-            role="status"
-            data-slot="coach-cap-notice"
-            className="flex flex-wrap items-center justify-between gap-3"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
-              <Hourglass className="size-4 text-muted-foreground" />
-            </span>
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-sm font-semibold">
-                You’ve reached today’s {modeLabel} limit
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Resets at {resetTime}.
-                {showUpgrade ? " Pro has unlimited Coach chats." : ""}
-              </p>
-            </div>
-            {showUpgrade ? (
-              <a
-                className={cn(
-                  buttonVariants({ variant: "secondary", size: "sm" }),
-                  "font-semibold"
-                )}
-                href="/settings/billing/upgrade"
-              >
-                Upgrade
-              </a>
-            ) : null}
-          </div>
+          <CoachCapNotice
+            modeLabel={modeLabel}
+            resetTime={resetTime}
+            showUpgrade={showUpgrade}
+          />
         ) : undefined
       }
     />
