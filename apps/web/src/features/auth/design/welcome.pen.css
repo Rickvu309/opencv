@@ -1,0 +1,23 @@
+[data-pen-surface="auth"][data-slot="welcome"] {
+  background-color: #ffffff;
+}
+
+[data-pen-surface="auth"] [data-welcome-mark] {
+  color: #1b1b1f;
+}
+
+[data-pen-surface="auth"] [data-welcome-heading] {
+  color: #1a1a1a;
+}
+
+[data-pen-surface="auth"] [data-welcome-step="done"] {
+  color: #a0a0a2;
+  font-weight: 400;
+}
+
+[data-pen-surface="auth"] [data-welcome-step="pending"] {
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+/* W1.5 NAXQk: colors from w1-5-welcome.styles.json */

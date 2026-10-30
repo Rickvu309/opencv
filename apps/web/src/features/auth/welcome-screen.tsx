@@ -1,9 +1,12 @@
 import { useEffect, useReducer } from "react"
-import { Check } from "lucide-react"
+import { Check, LoaderCircle } from "lucide-react"
+
+import { Mark } from "@workspace/ui/components/brand"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { AUTH_COPY, LANGUAGE_STORAGE_KEY, readLanguage } from "./auth-copy.ts"
+import "./design/welcome.pen.css"
 
 const HOLD_MS = 400
 
@@ -52,9 +55,21 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
   }, [onDone, runCommand])
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-4 text-foreground">
-      <h1 className="text-xl font-semibold">{AUTH_COPY.welcome}</h1>
-      <ul className="flex w-full max-w-[340px] flex-col gap-3 text-sm">
+    <div
+      data-pen-surface="auth"
+      data-slot="welcome"
+      className="flex min-h-dvh flex-col items-center justify-center px-4 pb-10"
+    >
+      <span data-welcome-mark className="inline-flex">
+        <Mark size={64} />
+      </span>
+      <h1
+        data-welcome-heading
+        className="mt-10 text-center text-[30px] leading-[normal] font-semibold tracking-[-1px]"
+      >
+        {AUTH_COPY.welcome}
+      </h1>
+      <ul className="mt-6 flex w-[240px] max-w-full flex-col gap-3">
         <WelcomeLine done label={AUTH_COPY.accountCreated} />
         <WelcomeLine done label={AUTH_COPY.workspaceReady} />
         <WelcomeLine done={coachReady} label={AUTH_COPY.coachReady} />
@@ -65,13 +80,16 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
 
 function WelcomeLine({ done, label }: { done: boolean; label: string }) {
   return (
-    <li className="flex items-center gap-2">
+    <li
+      data-welcome-step={done ? "done" : "pending"}
+      className="flex items-center gap-2.5 text-[14.5px] leading-[normal]"
+    >
       {done ? (
-        <Check aria-hidden className="size-4" />
+        <Check aria-hidden strokeWidth={2.5} className="size-[15px] shrink-0" />
       ) : (
-        <span
+        <LoaderCircle
           aria-hidden
-          className="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent motion-reduce:animate-none"
+          className="size-[15px] shrink-0 animate-spin motion-reduce:animate-none"
         />
       )}
       <span>{label}</span>
