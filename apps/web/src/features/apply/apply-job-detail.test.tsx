@@ -29,6 +29,33 @@ describe("job detail", () => {
   afterEach(() => {
     cleanup()
   })
+  it("opens the full saved posting URL through a keyboard-focusable source link", async () => {
+    const jobUrl = "https://careers.example.org/jobs/123?team=design#apply"
+    setMockJobs([mockJob({ id, jobUrl, sourceHost: "careers.example.org" })])
+    renderApp(`/apply/${id}`)
+
+    const source = await screen.findByRole("link", {
+      name: "careers.example.org",
+    })
+    expect(source).toHaveAttribute("href", jobUrl)
+    expect(source).toHaveAttribute("target", "_blank")
+    expect(source).toHaveAttribute("rel", "noopener noreferrer")
+    source.focus()
+    expect(source).toHaveFocus()
+    expect(source.tabIndex).toBe(0)
+  })
+
+  it.each(["javascript:alert(1)", "https://jobs.example.com/role", null])(
+    "keeps a non-openable posting source as text: %s",
+    async (jobUrl) => {
+      setMockJobs([mockJob({ id, jobUrl, sourceHost: "Saved source" })])
+      renderApp(`/apply/${id}`)
+
+      expect(await screen.findByText("Saved source")).toBeVisible()
+      expect(screen.queryByRole("link", { name: "Saved source" })).toBeNull()
+    }
+  )
+
   it("keeps an overlong note editable and explains the limit without posting", async () => {
     setMockJobs([
       mockJob({ id, title: "Junior Marketing", company: "Lumière" }),
