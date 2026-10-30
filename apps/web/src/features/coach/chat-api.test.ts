@@ -14,7 +14,6 @@ import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
   createChat,
   deleteChat,
-  getChat,
   getChatByFocusDoc,
   listChats,
   streamCoachRegenerate,
