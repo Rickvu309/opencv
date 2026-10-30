@@ -112,3 +112,56 @@ Never edit the app to make a check pass unless that was the task. A FAIL on toda
 - `chrome did not start`: set `CHROME_BIN` to a Chromium or Chrome binary.
 - A crashed run can leave the stack up: `OPENCV_VERIFY_ROOT=~/tmp/verify-app-ui/stack bash .claude/skills/verify-opencv/scripts/cleanup.sh app-ui-<pid>` (the run id is `app-ui-` and the node pid, listed under `~/tmp/verify-app-ui/stack/`).
 - Scratch profiles live under `~/tmp/verify-app-ui/` and are removed on exit.
+
+## Audit whole-app acceptance evidence
+
+Run the metadata audit after collecting original references, runtime captures,
+comparisons and two independent full-frame reviews:
+
+```bash
+node .claude/skills/verify-app-ui/scripts/audit-frame-acceptance.mjs \
+  apps/web/src/test/design-frames.json \
+  ~/tmp/opencv-evidence/evidence-manifest.json
+```
+
+Exit 0 means the declared evidence is complete and consistent. Exit 1 lists
+acceptance failures; exit 2 means the input could not be processed. This audit
+never computes image similarity, authenticates reviewer independence or proves
+that captures came from the declared source. Inspect captures and verify their
+provenance separately. A passing metadata audit alone is not visual approval.
+
+The manifest is `{ "frames": [...] }`. Include every release frame whose name
+starts with `W` followed by a digit. Each record has its release `id`, `reference`,
+`actual`, `comparison`, a nonempty `source` array and a `reviews` array. Each
+artifact has a `path` and the SHA-256 of its bytes. Paths in the manifest resolve
+relative to the manifest directory. The reference also declares `kind` as
+`provided-photo` or `native-pen-export`; HTML reconstructions cannot certify
+original-reference parity. Keep the original PNG dimensions.
+
+The comparison artifact is JSON with absolute `reference` and `actual` paths,
+`inputHashes: { reference, actual }`, matching `referenceSize` and `actualSize`
+arrays, `minimum: 95`, `target: 97`, `tolerance: 24`, `passed: true` and `regions`.
+Each region declares `name`, integer `x`, `y`, `width`, `height`, `pixels`,
+`detailPixels`, `matchPercent` and `detailMatchPercent`. Include `whole-frame`
+covering the complete viewport and named detail regions. Both declared scores
+must be at least 95, with positive detail pixel counts. The tolerance is part of
+this comparison receipt policy, not a universal perceptual fidelity threshold.
+PNG validation checks headers and dimensions, not image decoding.
+
+Each review entry declares a distinct nonempty `reviewer`, `scope: "full-frame"`,
+`verdict: "PASS"` and a hashed `report`. Reports are distinct JSON artifacts with
+matching reviewer, scope and verdict, a nonempty `findings` string, `role` set to
+`visual` or `behavior-kit`, and `evidenceSha256`. Both roles are required. Compute
+the digest with the exported `frameEvidenceSha256(frame, manifestDirectory)`
+after freezing all comparison, image and source artifacts. Reviewers inspect
+that frozen evidence before recording a verdict. Refreshing source hashes or a
+capture invalidates prior review digests. A changed-unit pass does not approve
+the whole frame.
+
+The synthetic receipt examples in `scripts/audit-frame-acceptance.test.mjs`
+demonstrate the schema; their scores are fixtures, not measured visual results.
+Run the helper regressions with:
+
+```bash
+node --test .claude/skills/verify-app-ui/scripts/audit-frame-acceptance.test.mjs
+```
