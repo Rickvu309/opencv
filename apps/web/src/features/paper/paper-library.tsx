@@ -512,32 +512,36 @@ export function PaperLibrary({
             <DialogTitle>Rename</DialogTitle>
             <DialogDescription>Name is required.</DialogDescription>
           </DialogHeader>
-          <Input
-            aria-label="Name"
-            value={rename}
-            onChange={(event) =>
-              dispatch({ type: "rename_typed", value: event.target.value })
-            }
-          />
-          {renameError ? (
-            <p className="text-sm text-destructive">{renameError}</p>
-          ) : null}
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => dispatch({ type: "dialog_closed" })}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="glow"
-              onClick={() => void confirmRename()}
-            >
-              Save
-            </Button>
-          </div>
+          <form
+            className="grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void confirmRename()
+            }}
+          >
+            <Input
+              aria-label="Name"
+              value={rename}
+              onChange={(event) =>
+                dispatch({ type: "rename_typed", value: event.target.value })
+              }
+            />
+            {renameError ? (
+              <p className="text-sm text-destructive">{renameError}</p>
+            ) : null}
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => dispatch({ type: "dialog_closed" })}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="glow">
+                Save
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
