@@ -74,6 +74,27 @@ function stubUsage(
 }
 
 describe("Coach workspace", () => {
+  it("keeps the compact conversation empty with one header and a bottom reply composer", async () => {
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace
+          presentation="compact"
+          headerActions={<span>Panel controls</span>}
+        />
+      </ChatStoreProvider>
+    )
+    expect(await screen.findByPlaceholderText("Reply…")).toBeVisible()
+    expect(screen.queryByText("How can I help?")).not.toBeInTheDocument()
+    expect(
+      screen.getAllByRole("button", { name: "History, New chat" })
+    ).toHaveLength(1)
+    expect(screen.getByText("Panel controls")).toBeVisible()
+    fireEvent.click(screen.getByRole("button", { name: "History, New chat" }))
+    expect(
+      await screen.findByRole("textbox", { name: "Search chat history" })
+    ).toBeVisible()
+  })
+
   it("marks one primary action only when the Coach page asks for it", async () => {
     const view = render(
       <ChatStoreProvider>
