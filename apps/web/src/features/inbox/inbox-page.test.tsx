@@ -185,6 +185,64 @@ describe("inbox page", () => {
     expect(screen.getByText("1 of 1")).toBeInTheDocument()
   })
 
+  it("lists snoozed mail and reopens a thread in the inbox early", async () => {
+    let snoozed = true
+    const posts: { path: string; input: unknown }[] = []
+    const snoozedDetail = { ...LOCAL_DETAIL, status: "snoozed" as const }
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = pathOf(input)
+        if ((init?.method ?? "GET") === "POST") {
+          const body = init?.body ? JSON.parse(String(init.body)) : null
+          posts.push({ path, input: body?.input })
+          if (path === "/api/commands/inbox.snooze") snoozed = false
+          return jsonOk({ activityId: "00000000-0000-4000-8000-000000000099" })
+        }
+        if (path === "/api/inbox") {
+          return jsonOk({
+            connected: false,
+            skipped: true,
+            threads: snoozed ? [] : [LOCAL_DETAIL],
+          })
+        }
+        if (path === "/api/inbox/snoozed") {
+          return jsonOk({
+            connected: false,
+            skipped: true,
+            threads: snoozed ? [snoozedDetail] : [],
+          })
+        }
+        if (path.startsWith("/api/inbox/")) {
+          return jsonOk(snoozed ? snoozedDetail : LOCAL_DETAIL)
+        }
+        return jsonOk({})
+      }
+    )
+    renderPage()
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Snoozed" })
+    )
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: /Associate PM, Local startup/,
+      })
+    )
+    expect(
+      await screen.findByRole("button", { name: "Return to inbox" })
+    ).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole("button", { name: "Return to inbox" })
+    )
+    await screen.findByRole("button", {
+      name: /Associate PM, Local startup/,
+    })
+    expect(posts).toContainEqual({
+      path: "/api/commands/inbox.snooze",
+      input: { threadId: LOCAL_DETAIL.id, until: null },
+    })
+  })
+
   it("uses the profile zone from the inbox list for chips and snooze", async () => {
     const posts: { path: string; input: unknown }[] = []
     vi.stubGlobal(

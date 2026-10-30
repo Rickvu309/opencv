@@ -27,11 +27,18 @@ export async function inboxLimitFrom(error: ApiError) {
 }
 
 export const inboxListKey = () => queryKey({ query: "inbox.list" })
+export const snoozedInboxKey = () => queryKey({ query: "inbox.snoozed" })
 
 export function fetchInbox() {
   return apiFetch<SuccessBody<QueryOutput<"inbox.list">>>(endpoints.inbox).then(
     unwrapData
   )
+}
+
+export function fetchSnoozedInbox() {
+  return apiFetch<SuccessBody<QueryOutput<"inbox.snoozed">>>(
+    endpoints.inboxSnoozed
+  ).then(unwrapData)
 }
 
 export function fetchThread(threadId: string) {

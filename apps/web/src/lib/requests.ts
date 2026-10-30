@@ -12,6 +12,7 @@ export const endpoints = {
   accountPhoto: "/api/account/photo",
   accountExport: "/api/account/export",
   inbox: "/api/inbox",
+  inboxSnoozed: "/api/inbox/snoozed",
   inboxConnect: "/api/inbox/connect",
   inboxThread: (threadId: string) => `/api/inbox/${threadId}`,
   paper: "/api/paper",

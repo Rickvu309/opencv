@@ -24,6 +24,15 @@ export function createInboxRoutes(
     return c.json(successEnvelope(data))
   })
 
+  routes.get("/snoozed", async (c) => {
+    const data = await registry.read(
+      "inbox.snoozed",
+      {},
+      personActor(c.var.userId)
+    )
+    return c.json(successEnvelope(data))
+  })
+
   routes.get("/connect", (c) =>
     c.json(successEnvelope({ url: gmailEnabled ? connectUrl() : null }))
   )

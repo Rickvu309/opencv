@@ -24,6 +24,8 @@ describe("inbox list", () => {
         openId={null}
         now={INBOX_NOW}
         scanning={false}
+        view="inbox"
+        onViewChange={vi.fn()}
         onOpen={vi.fn()}
         onScan={vi.fn()}
       />
@@ -63,6 +65,8 @@ describe("inbox list", () => {
         now={INBOX_NOW}
         zone="Asia/Singapore"
         scanning={false}
+        view="inbox"
+        onViewChange={vi.fn()}
         onOpen={vi.fn()}
         onScan={vi.fn()}
       />

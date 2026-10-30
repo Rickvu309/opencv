@@ -63,6 +63,14 @@ function mailProvider(env: NodeJS.ProcessEnv = process.env): MailProvider {
 }
 
 export async function readInbox(userId: string) {
+  return readInboxView(userId, "inbox")
+}
+
+export async function readSnoozedInbox(userId: string) {
+  return readInboxView(userId, "snoozed")
+}
+
+async function readInboxView(userId: string, view: "inbox" | "snoozed") {
   const profile = await profileRow(userId)
   const threads = await getDb()
     .select()
@@ -75,7 +83,11 @@ export async function readInbox(userId: string) {
     skipped: profile.inboxSkippedAt != null,
     timeZone: profile.timeZone,
     threads: threads
-      .filter((row) => visibleWhileSnoozed(row, now))
+      .filter((row) =>
+        view === "snoozed"
+          ? row.status === "snoozed" && (row.snoozeUntil?.getTime() ?? 0) > now
+          : visibleWhileSnoozed(row, now)
+      )
       .map(toListItem),
   }
 }
@@ -138,7 +150,13 @@ export async function scanInbox(actor: Actor) {
     const detail = await provider.getThread(thread.id)
     const messages = detail?.messages ?? thread.messages
     const match = matchInboxJob(thread, jobRows)
-    const row = await upsertThread(actor.userId, connectionId, thread, match)
+    const row = await upsertThread(
+      actor.userId,
+      connectionId,
+      thread,
+      messages,
+      match
+    )
     await upsertMessages(row.id, messages)
     saved.push(toListItem(row))
   }
@@ -358,6 +376,7 @@ async function upsertThread(
   userId: string,
   connectionId: string,
   thread: MailThread,
+  messages: MailMessage[],
   match: { jobId: string | null; suggestedStage: "interview" | null }
 ) {
   const existing = await getDb()
@@ -370,12 +389,37 @@ async function upsertThread(
       )
     )
     .limit(1)
+  const knownIncomingIds = existing[0]
+    ? new Set(
+        (
+          await getDb()
+            .select({ providerMessageId: inboxMessages.providerMessageId })
+            .from(inboxMessages)
+            .where(
+              and(
+                eq(inboxMessages.threadId, existing[0].id),
+                eq(inboxMessages.direction, "in")
+              )
+            )
+        ).map((message) => message.providerMessageId)
+      )
+    : new Set<string>()
+  const hasNewIncoming =
+    existing[0] != null &&
+    messages.some(
+      (message) =>
+        message.direction === "in" && !knownIncomingIds.has(message.id)
+    )
   const fields = {
     company: thread.company,
     role: thread.role,
     summary: thread.summary,
     lastMessageAt: new Date(thread.lastMessageAt),
-    unread: thread.unread,
+    unread: hasNewIncoming
+      ? true
+      : existing[0] && !existing[0].unread && thread.unread
+        ? false
+        : thread.unread,
     jobId: match.jobId,
     suggestedStage: match.suggestedStage,
   }

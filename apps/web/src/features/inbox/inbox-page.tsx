@@ -11,8 +11,10 @@ import { InboxConnect, InboxTitleBar } from "./inbox-connect.tsx"
 import {
   fetchConnect,
   fetchInbox,
+  fetchSnoozedInbox,
   fetchThread,
   inboxListKey,
+  snoozedInboxKey,
 } from "./inbox-api.ts"
 import {
   InboxEmpty,
@@ -29,11 +31,13 @@ const NARROW = "(max-width: 767px)"
 
 type InboxState = {
   openId: string | null
+  view: "inbox" | "snoozed"
   scanning: ScanProgress | null
   skipping: boolean
 }
 
 type InboxAction =
+  | { type: "view_changed"; view: "inbox" | "snoozed" }
   | { type: "thread_opened"; id: string }
   | { type: "thread_closed" }
   | { type: "skip_started" }
@@ -44,12 +48,15 @@ type InboxAction =
 
 const INBOX_START: InboxState = {
   openId: null,
+  view: "inbox",
   scanning: null,
   skipping: false,
 }
 
 function inboxReducer(state: InboxState, action: InboxAction): InboxState {
   switch (action.type) {
+    case "view_changed":
+      return { ...state, view: action.view, openId: null }
     case "thread_opened":
       return { ...state, openId: action.id }
     case "thread_closed":
@@ -78,6 +85,15 @@ export function InboxPage() {
     queryKey: inboxListKey(),
     queryFn: fetchInbox,
   })
+  const [{ openId, scanning, skipping, view }, dispatch] = useReducer(
+    inboxReducer,
+    INBOX_START
+  )
+  const snoozed = useQuery({
+    queryKey: snoozedInboxKey(),
+    queryFn: fetchSnoozedInbox,
+    enabled: view === "snoozed",
+  })
   const showConnect = Boolean(
     list.data && !list.data.connected && !list.data.skipped
   )
@@ -86,11 +102,10 @@ export function InboxPage() {
     queryFn: fetchConnect,
     enabled: showConnect,
   })
-  const [{ openId, scanning, skipping }, dispatch] = useReducer(
-    inboxReducer,
-    INBOX_START
-  )
-  const threads = list.data?.threads ?? []
+  const threads =
+    view === "snoozed"
+      ? (snoozed.data?.threads ?? [])
+      : (list.data?.threads ?? [])
   const zone = list.data?.timeZone || PROFILE_ZONE
   const shownId =
     openId && threads.some((thread) => thread.id === openId) ? openId : null
@@ -145,7 +160,7 @@ export function InboxPage() {
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden">
       {titled ? <InboxTitleBar /> : null}
-      {list.isLoading ? (
+      {list.isLoading || (view === "snoozed" && snoozed.isLoading) ? (
         <p className="px-5 py-6 text-sm text-muted-foreground">
           Loading inbox.
         </p>
@@ -155,11 +170,23 @@ export function InboxPage() {
           Could not load inbox. Refresh the page.
         </p>
       ) : null}
+      {view === "snoozed" && snoozed.isError ? (
+        <p role="alert" className="px-5 py-6 text-sm">
+          Could not load snoozed emails. Refresh the page.
+        </p>
+      ) : null}
       {scanning ? (
         <div className="flex min-h-0 min-w-0 flex-1">
           {narrow ? null : (
             <InboxListPane narrow={false}>
-              <InboxListHeader scanning onScan={() => void onScan()} />
+              <InboxListHeader
+                scanning
+                onScan={() => void onScan()}
+                view={view}
+                onViewChange={(next) =>
+                  dispatch({ type: "view_changed", view: next })
+                }
+              />
               <InboxSkeletonRows />
             </InboxListPane>
           )}
@@ -173,10 +200,21 @@ export function InboxPage() {
           onSkip={() => void onSkip()}
         />
       ) : null}
-      {!scanning && list.data && !showConnect && threads.length === 0 ? (
-        <InboxEmpty scanning={false} onScan={() => void onScan()} />
+      {!scanning &&
+      view === "inbox" &&
+      list.data &&
+      !showConnect &&
+      threads.length === 0 ? (
+        <InboxEmpty
+          scanning={false}
+          onScan={() => void onScan()}
+          view={view}
+          onViewChange={(next) =>
+            dispatch({ type: "view_changed", view: next })
+          }
+        />
       ) : null}
-      {!scanning && threads.length > 0 ? (
+      {!scanning && (threads.length > 0 || view === "snoozed") ? (
         <div className="flex min-h-0 min-w-0 flex-1">
           {narrow && shownId ? null : (
             <InboxListPane narrow={narrow}>
@@ -186,12 +224,18 @@ export function InboxPage() {
                 now={now}
                 zone={zone}
                 scanning={false}
+                view={view}
+                onViewChange={(next) =>
+                  dispatch({ type: "view_changed", view: next })
+                }
                 onOpen={(id) => dispatch({ type: "thread_opened", id })}
                 onScan={() => void onScan()}
               />
             </InboxListPane>
           )}
-          {!narrow && !shownId ? <InboxOverview threads={threads} /> : null}
+          {!narrow && !shownId && view === "inbox" ? (
+            <InboxOverview threads={threads} />
+          ) : null}
           {shownId && detail.data ? (
             <InboxReader
               key={detail.data.id}
@@ -202,6 +246,9 @@ export function InboxPage() {
               now={now}
               zone={zone}
               onBack={() => dispatch({ type: "thread_closed" })}
+              onReturnedToInbox={() =>
+                dispatch({ type: "view_changed", view: "inbox" })
+              }
               onPrevious={() => {
                 const previous = threads[index - 1]
                 if (previous)
