@@ -12,7 +12,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 
 describe("inbox contract", () => {
-  it("parses every inbox command output and both inbox reads", async () => {
+  it("parses every inbox command output and inbox read", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
     const userId = "user-inbox-contract"
@@ -68,6 +68,7 @@ describe("inbox contract", () => {
 
       const listed = await read("inbox.list", {})
       expect(listed.threads).toHaveLength(6)
+      expect((await read("inbox.snoozed", {})).threads).toEqual([])
       expect(await read("inbox.get", { threadId: analyst })).toMatchObject({
         id: analyst,
         role: "Business Analyst",
@@ -78,6 +79,9 @@ describe("inbox contract", () => {
         threadId: analyst,
         until: "2030-01-01T07:00:00.000Z",
       })
+      expect((await read("inbox.snoozed", {})).threads).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: analyst })])
+      )
       await run("inbox.draftReply", { threadId: analyst })
       await run("inbox.updateDraft", {
         threadId: analyst,

@@ -75,10 +75,14 @@ const threadInput = z.object({ threadId: threadIdSchema }).strict()
 
 export const inboxQueries = queryContract({
   "inbox.list": queryEntry({ input: emptyInput, output: inboxListSchema }),
+  "inbox.snoozed": queryEntry({ input: emptyInput, output: inboxListSchema }),
   "inbox.get": queryEntry({ input: threadInput, output: inboxDetailSchema }),
 })
 
-const listChanged = (): QueryRef[] => [{ query: "inbox.list" }]
+const listChanged = (): QueryRef[] => [
+  { query: "inbox.list" },
+  { query: "inbox.snoozed" },
+]
 
 const threadChanged = (input: { threadId: string }): QueryRef[] => [
   { query: "inbox.get", input: { threadId: input.threadId } },

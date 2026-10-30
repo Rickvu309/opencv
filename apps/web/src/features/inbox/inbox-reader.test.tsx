@@ -145,6 +145,20 @@ describe("inbox reader", () => {
     expect(acknowledged.savedBody).toBe("Newer reply from another view.")
   })
 
+  it("does not restore the sent reply from a delayed refresh", () => {
+    const sent = readerReducer(initialReaderState("Draft reply."), {
+      type: "reply_sent",
+      body: "Draft reply.",
+    })
+    const refreshed = readerReducer(sent, {
+      type: "draft_received",
+      body: "Draft reply.",
+    })
+
+    expect(refreshed.body).toBe("")
+    expect(refreshed.savedBody).toBe("")
+  })
+
   it("offers the interview move and does not offer Send", async () => {
     const posts = postsOf()
     renderReader(LOCAL_DETAIL)
@@ -194,6 +208,25 @@ describe("inbox reader", () => {
     expect(posts).toEqual([])
     await userEvent.click(screen.getByRole("button", { name: "Send" }))
     expect(posts.map((post) => post.path)).toEqual(["/api/commands/inbox.send"])
+    expect(screen.getByRole("textbox", { name: "Reply" })).toHaveValue("")
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
+  })
+
+  it("keeps the reply available when sending fails", async () => {
+    vi.stubGlobal("fetch", async () =>
+      Response.json(
+        {
+          ok: false,
+          error: { code: "INTERNAL_ERROR", message: "Could not send." },
+        },
+        { status: 500 }
+      )
+    )
+    renderReader(REGIONAL_DETAIL)
+    await userEvent.click(screen.getByRole("button", { name: "Send" }))
+    expect(screen.getByRole("textbox", { name: "Reply" })).toHaveValue(
+      REGIONAL_DETAIL.draft!.body
+    )
   })
 
   it("disables Suggest another time when the Coach limit is reached", async () => {

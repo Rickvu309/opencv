@@ -64,6 +64,7 @@ export function InboxReader({
   now,
   zone = PROFILE_ZONE,
   onBack,
+  onReturnedToInbox,
   onPrevious,
   onNext,
 }: {
@@ -74,6 +75,7 @@ export function InboxReader({
   now: Date
   zone?: string
   onBack: () => void
+  onReturnedToInbox: () => void
   onPrevious: () => void
   onNext: () => void
 }) {
@@ -165,16 +167,25 @@ export function InboxReader({
           disabled={busy}
           onClick={() =>
             run(async () => {
-              await runCommand("inbox.snooze", {
-                threadId: detail.id,
-                until: nextMorningIso(now, zone),
-              })
-              toast("Snoozed until 7:00")
+              if (detail.status === "snoozed") {
+                await runCommand("inbox.snooze", {
+                  threadId: detail.id,
+                  until: null,
+                })
+                onReturnedToInbox()
+                toast("Returned to inbox")
+              } else {
+                await runCommand("inbox.snooze", {
+                  threadId: detail.id,
+                  until: nextMorningIso(now, zone),
+                })
+                toast("Snoozed until 7:00")
+              }
             })
           }
         >
           <Clock3 className="size-3.75" />
-          Snooze
+          {detail.status === "snoozed" ? "Return to inbox" : "Snooze"}
         </Button>
         <InboxIconButton
           label="More"
@@ -478,6 +489,7 @@ export function InboxReader({
                         dispatch({ type: "draft_saved", body, receivedBody })
                       }
                       await runCommand("inbox.send", { threadId: detail.id })
+                      dispatch({ type: "reply_sent", body })
                       toast("Reply sent")
                     })
                   }

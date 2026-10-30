@@ -9,6 +9,7 @@ import {
   clearSuggestion,
   fixtureDraft,
   readInbox,
+  readSnoozedInbox,
   readInboxThread,
   scanInbox,
   sendReply,
@@ -144,6 +145,15 @@ export function registerInbox(registry: Registry) {
       coach: false,
       step: () => "List email threads",
       read: (_input, actor) => readInbox(actor.userId),
+    })
+  )
+
+  registry.addQuery(
+    tableQuery("inbox.snoozed", {
+      description: "List snoozed email threads.",
+      coach: false,
+      step: () => "List snoozed email threads",
+      read: (_input, actor) => readSnoozedInbox(actor.userId),
     })
   )
 

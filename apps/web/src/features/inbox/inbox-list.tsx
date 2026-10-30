@@ -48,13 +48,19 @@ export function InboxListPane({
 export function InboxListHeader({
   scanning,
   onScan,
+  view,
+  onViewChange,
 }: {
   scanning: boolean
   onScan: () => void
+  view: "inbox" | "snoozed"
+  onViewChange: (view: "inbox" | "snoozed") => void
 }) {
   return (
     <div className="flex h-13 shrink-0 items-center gap-1.5 border-b border-border ps-5 pe-3">
-      <h1 className="text-[13px] font-medium text-foreground">Inbox</h1>
+      <h1 className="text-[13px] font-medium text-foreground">
+        {view === "snoozed" ? "Snoozed" : "Inbox"}
+      </h1>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -70,7 +76,10 @@ export function InboxListHeader({
         </DropdownMenuContent>
       </DropdownMenu>
       <span className="flex-1" />
-      <InboxIconButton label="Snoozed" disabled>
+      <InboxIconButton
+        label={view === "snoozed" ? "Back to inbox" : "Snoozed"}
+        onClick={() => onViewChange(view === "snoozed" ? "inbox" : "snoozed")}
+      >
         <Clock3 />
       </InboxIconButton>
       <InboxIconButton label="Filter" disabled>
@@ -91,6 +100,8 @@ export function InboxList({
   onOpen,
   onScan,
   scanning,
+  view,
+  onViewChange,
 }: {
   threads: InboxThread[]
   openId: string | null
@@ -99,13 +110,20 @@ export function InboxList({
   onOpen: (id: string) => void
   onScan: () => void
   scanning: boolean
+  view: "inbox" | "snoozed"
+  onViewChange: (view: "inbox" | "snoozed") => void
 }) {
   return (
     <section
       aria-label="Messages"
       className="flex min-h-0 min-w-0 flex-1 flex-col"
     >
-      <InboxListHeader scanning={scanning} onScan={onScan} />
+      <InboxListHeader
+        scanning={scanning}
+        onScan={onScan}
+        view={view}
+        onViewChange={onViewChange}
+      />
       <div
         data-user-content
         className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-2"
@@ -119,6 +137,11 @@ export function InboxList({
             onOpen={() => onOpen(thread.id)}
           />
         ))}
+        {threads.length === 0 ? (
+          <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+            {view === "snoozed" ? "No snoozed emails." : "No emails yet."}
+          </p>
+        ) : null}
       </div>
     </section>
   )
@@ -146,25 +169,37 @@ export function InboxOverview({ threads }: { threads: InboxThread[] }) {
 export function InboxEmpty({
   onScan,
   scanning,
+  view,
+  onViewChange,
 }: {
   onScan: () => void
   scanning: boolean
+  view: "inbox" | "snoozed"
+  onViewChange: (view: "inbox" | "snoozed") => void
 }) {
   return (
-    <section
-      aria-label="Messages"
-      className="flex min-h-0 flex-1 items-center justify-center p-6"
-    >
-      <Empty>
-        <EmptyHeader>
-          <EmptyTitle data-user-content>No job emails yet</EmptyTitle>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button variant="ghost" disabled={scanning} onClick={onScan}>
-            Scan
-          </Button>
-        </EmptyContent>
-      </Empty>
-    </section>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <InboxListHeader
+        scanning={scanning}
+        onScan={onScan}
+        view={view}
+        onViewChange={onViewChange}
+      />
+      <section
+        aria-label="Messages"
+        className="flex min-h-0 flex-1 items-center justify-center p-6"
+      >
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle data-user-content>No job emails yet</EmptyTitle>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button variant="ghost" disabled={scanning} onClick={onScan}>
+              Scan
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </section>
+    </div>
   )
 }

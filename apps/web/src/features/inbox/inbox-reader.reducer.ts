@@ -4,6 +4,7 @@ export type ReaderState = {
   body: string
   savedBody: string
   receivedBody: string
+  sentBody: string | null
   selected: number
   limit: InboxLimitError | null
   busy: boolean
@@ -15,6 +16,7 @@ export type ReaderAction =
   | { type: "draft_received"; body: string }
   | { type: "time_chosen"; index: number; body: string }
   | { type: "draft_saved"; body: string; receivedBody: string }
+  | { type: "reply_sent"; body: string }
   | { type: "reply_suggested"; body: string }
   | { type: "limit_reached"; limit: InboxLimitError }
   | { type: "task_started" }
@@ -26,6 +28,7 @@ export function initialReaderState(saved: string): ReaderState {
     body: saved,
     savedBody: saved,
     receivedBody: saved,
+    sentBody: null,
     selected: 0,
     limit: null,
     busy: false,
@@ -39,13 +42,15 @@ export function readerReducer(
 ): ReaderState {
   switch (action.type) {
     case "reply_typed":
-      return { ...state, body: action.value }
+      return { ...state, body: action.value, sentBody: null }
     case "draft_received":
+      if (state.sentBody === action.body) return state
       return {
         ...state,
         body: state.body === state.savedBody ? action.body : state.body,
         savedBody: action.body,
         receivedBody: action.body,
+        sentBody: null,
       }
     case "time_chosen":
       return {
@@ -58,6 +63,14 @@ export function readerReducer(
       return state.receivedBody === action.receivedBody
         ? { ...state, savedBody: action.body }
         : state
+    case "reply_sent":
+      return {
+        ...state,
+        body: "",
+        savedBody: "",
+        receivedBody: action.body,
+        sentBody: action.body,
+      }
     case "reply_suggested":
       return {
         ...state,

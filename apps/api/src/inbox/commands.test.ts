@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
+import { loadFixtureThreads } from "./fixture.js"
 import {
   activity,
   chatMessages,
@@ -46,6 +47,108 @@ describe("inbox commands", () => {
       expect(once).toHaveLength(3)
     })
     await client.close()
+  })
+
+  it("keeps a sent thread read when a scan finds no new incoming message", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-inbox-reply-read"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-inbox-reply-read@example.com",
+    })
+    await withDatabase(db, async () => {
+      const actor = personActor(userId)
+      const scanned = await registry.execute({
+        name: "inbox.scan",
+        input: {},
+        actor,
+      })
+      const rows = (
+        scanned.output as { threads: { id: string; role: string }[] }
+      ).threads
+      const thread = rows.find((row) => row.role === "Business Analyst")
+      if (!thread) throw new Error("missing Business Analyst thread")
+      await registry.execute({
+        name: "inbox.updateDraft",
+        input: { threadId: thread.id, body: "Thanks for the update." },
+        actor,
+      })
+      await registry.execute({
+        name: "inbox.send",
+        input: { threadId: thread.id },
+        actor,
+      })
+      await registry.execute({ name: "inbox.scan", input: {}, actor })
+      const detail = await registry.read(
+        "inbox.get",
+        { threadId: thread.id },
+        actor
+      )
+      expect(detail).toMatchObject({ unread: false })
+    })
+    await client.close()
+  })
+
+  it("marks a read thread unread for a new incoming id at the same timestamp", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-inbox-new-incoming"
+    const fixture = loadFixtureThreads().find(
+      (thread) => thread.id === "regional-bank"
+    )
+    if (!fixture) throw new Error("missing Regional bank fixture")
+    const messageCount = fixture.messages.length
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-inbox-new-incoming@example.com",
+    })
+    try {
+      await withDatabase(db, async () => {
+        const actor = personActor(userId)
+        const scanned = await registry.execute({
+          name: "inbox.scan",
+          input: {},
+          actor,
+        })
+        const thread = (
+          scanned.output as { threads: { id: string; role: string }[] }
+        ).threads.find((row) => row.role === "Business Analyst")
+        if (!thread) throw new Error("missing Business Analyst thread")
+        await registry.execute({
+          name: "inbox.updateDraft",
+          input: { threadId: thread.id, body: "Thanks for the update." },
+          actor,
+        })
+        await registry.execute({
+          name: "inbox.send",
+          input: { threadId: thread.id },
+          actor,
+        })
+        await registry.execute({ name: "inbox.scan", input: {}, actor })
+        expect(
+          await registry.read("inbox.get", { threadId: thread.id }, actor)
+        ).toMatchObject({ unread: false })
+
+        const latestIncoming = fixture.messages
+          .filter((message) => message.direction === "in")
+          .at(-1)
+        if (!latestIncoming) throw new Error("missing incoming fixture message")
+        fixture.messages.push({
+          ...latestIncoming,
+          id: "regional-bank-in-same-time-new-id",
+        })
+        await registry.execute({ name: "inbox.scan", input: {}, actor })
+        expect(
+          await registry.read("inbox.get", { threadId: thread.id }, actor)
+        ).toMatchObject({ unread: true })
+      })
+    } finally {
+      fixture.messages.splice(messageCount)
+      await client.close()
+    }
   })
 
   it("delegates the interview move to job.move", async () => {
