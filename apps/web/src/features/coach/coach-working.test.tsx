@@ -53,7 +53,7 @@ describe("Coach Working block", () => {
       [...container.querySelectorAll("[data-slot='coach-progress-row']")].map(
         (row) => row.getAttribute("data-status")
       )
-    ).toEqual(["completed", "running", "approval", "failed", "reported"])
+    ).toEqual(["completed", "running", "failed", "reported"])
   })
 
   it("gives each state its own spoken note and marks only running rows busy", () => {
@@ -63,7 +63,6 @@ describe("Coach Working block", () => {
     expect(items.map((item) => item.textContent)).toEqual([
       "Read document, completed",
       "Read document, running",
-      "Move card, awaiting confirmation",
       "List jobs, failed",
       "Checking, reported",
     ])
@@ -72,11 +71,11 @@ describe("Coach Working block", () => {
       "true",
       null,
       null,
-      null,
     ])
   })
 
-  it("hides Working once the Coach has written text", () => {
+  it("drops the Working header once the Coach has written text and nothing is running", () => {
+    const settled = rows.filter((row) => row.status === "completed")
     const { container } = renderTurns(
       [
         {
@@ -85,9 +84,49 @@ describe("Coach Working block", () => {
           parts: [...(toolOnly.parts ?? []), { type: "text", text: "Done." }],
         },
       ],
-      { active: true, rows }
+      { active: true, rows: settled }
     )
     expect(container.querySelector("[data-slot='coach-working']")).toBeNull()
+  })
+
+  it("keeps rows, without the header, for calls still running after text", () => {
+    const { container } = renderTurns(
+      [
+        {
+          ...toolOnly,
+          text: "Checking.",
+          parts: [{ type: "text", text: "Checking." }],
+        },
+      ],
+      {
+        active: true,
+        rows: [{ id: "x", label: "List jobs", status: "running" }],
+      }
+    )
+    expect(screen.queryByText(/Working, \d+s/)).toBeNull()
+    expect(screen.queryByText("Working")).toBeNull()
+    expect(
+      [...container.querySelectorAll("[data-slot='coach-progress-row']")].map(
+        (row) => row.getAttribute("data-status")
+      )
+    ).toEqual(["running"])
+  })
+
+  it("leaves approval to the tool card: no approval row and no Working header", () => {
+    const { container } = renderTurns([toolOnly], {
+      active: true,
+      rows: [
+        { id: "m", label: "Move card", status: "approval" },
+        { id: "n", label: "List jobs", status: "completed" },
+      ],
+    })
+    expect(
+      [...container.querySelectorAll("[data-slot='coach-progress-row']")].map(
+        (row) => row.getAttribute("data-status")
+      )
+    ).toEqual(["completed"])
+    expect(screen.queryByText(/Working, \d+s/)).toBeNull()
+    expect(screen.queryByText(/awaiting confirmation/)).toBeNull()
   })
 
   it("does not treat empty streamed text as the Coach having answered", () => {

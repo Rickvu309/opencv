@@ -46,8 +46,10 @@ function StatusIcon({ status }: { status: CoachProgressStatus }) {
 
 export function CoachWorking({
   rows = [],
+  showHeader = true,
 }: {
   rows?: readonly CoachProgressRow[]
+  showHeader?: boolean
 }) {
   const [seconds, dispatch] = useReducer(elapsedReducer, 0)
   useEffect(() => {
@@ -64,13 +66,17 @@ export function CoachWorking({
   }, [])
   return (
     <div data-slot="coach-working" className="space-y-3">
-      {/* The ticking seconds stay visual; the live region says Working once. */}
-      <span role="status" className="sr-only">
-        Working
-      </span>
-      <div aria-hidden="true">
-        <ThinkingLoader phases={[`Working, ${seconds}s`]} />
-      </div>
+      {showHeader ? (
+        <>
+          {/* The ticking seconds stay visual; the live region says Working once. */}
+          <span role="status" className="sr-only">
+            Working
+          </span>
+          <div aria-hidden="true">
+            <ThinkingLoader phases={[`Working, ${seconds}s`]} />
+          </div>
+        </>
+      ) : null}
       {rows.length ? (
         <ol
           data-slot="coach-progress"
