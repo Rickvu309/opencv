@@ -84,6 +84,18 @@ export function CoachTurns({
             <ChatItem key={message.id} messageId={message.id} scrollAnchor>
               <PersonMessage failed={message.failed}>
                 {message.text}
+                {message.attachments?.length ? (
+                  <div className="mt-2 flex max-w-full flex-wrap gap-1">
+                    {message.attachments.map((attachment, index) => (
+                      <span
+                        key={`${attachment.kind}:${attachment.id}:${index}`}
+                        className="max-w-full rounded-md border border-current/20 px-2 py-1 text-xs [overflow-wrap:anywhere]"
+                      >
+                        {attachment.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </PersonMessage>
               {message.failed && message.error ? (
                 <RetryRow

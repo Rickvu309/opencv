@@ -134,6 +134,11 @@ export function CoachWorkspace({
     if (
       store.send(text, {
         context: attachments.map(({ kind, id }) => ({ kind, id })),
+        attachments: attachments.map(({ kind, id, label }) => ({
+          kind,
+          id,
+          label,
+        })),
       })
     )
       dispatch({ type: "draft_sent" })
@@ -261,10 +266,16 @@ export function CoachWorkspace({
                 key={`${item.kind}:${item.id}`}
                 variant="secondary"
                 size="xs"
+                className="h-auto max-w-full min-w-0 text-left [overflow-wrap:anywhere] whitespace-normal"
                 onClick={() => dispatch({ type: "attachment_removed", item })}
                 aria-label={`Remove ${item.label}`}
               >
-                {item.label} ×
+                <span className="min-w-0 [overflow-wrap:anywhere]">
+                  {item.label}
+                </span>
+                <span aria-hidden="true" className="shrink-0">
+                  ×
+                </span>
               </Button>
             ))}
           </div>

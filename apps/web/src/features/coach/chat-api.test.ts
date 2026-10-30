@@ -90,35 +90,53 @@ describe("chat API client", () => {
     expect(init.credentials).toBe("include")
   })
 
-  it("reads chat detail and maps person messages to user, dropping attachments", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      envelope({
-        ...chatRow(),
-        messages: [
-          {
-            id: "m1",
-            role: "person",
-            text: "Help",
-            createdAt: STAMP,
-            parts: [
-              { type: "text", text: "Help" },
-              { type: "attachment", name: "cv.pdf" },
-            ],
-            status: "final",
-            workedMs: null,
-          },
-          {
-            id: "m2",
-            role: "coach",
-            text: "Done",
-            createdAt: STAMP,
-            parts: [{ type: "text", text: "Done" }],
-            status: "final",
-            workedMs: 900,
-          },
-        ],
-      })
-    )
+  it("keeps saved attachments through detail mapping and resolves their labels", async () => {
+    const fetchMock = vi.fn((input: string) => {
+      if (String(input).endsWith("/api/jobs"))
+        return Promise.resolve(
+          envelope([
+            { id: "job-1", title: "Product role", company: "Northwind" },
+          ])
+        )
+      if (String(input).endsWith("/api/paper"))
+        return Promise.resolve(
+          envelope([{ id: "paper-1", name: "Journey CV" }])
+        )
+      return Promise.resolve(
+        envelope({
+          ...chatRow(),
+          messages: [
+            {
+              id: "m1",
+              role: "person",
+              text: "Help",
+              createdAt: STAMP,
+              parts: [
+                { type: "text", text: "Help" },
+                { type: "attachment", kind: "job", id: "job-1" },
+                { type: "attachment", kind: "paper", id: "paper-1" },
+                {
+                  type: "attachment",
+                  kind: "link",
+                  id: "https://example.com/career-guide",
+                },
+              ],
+              status: "final",
+              workedMs: null,
+            },
+            {
+              id: "m2",
+              role: "coach",
+              text: "Done",
+              createdAt: STAMP,
+              parts: [{ type: "text", text: "Done" }],
+              status: "final",
+              workedMs: 900,
+            },
+          ],
+        })
+      )
+    })
     vi.stubGlobal("fetch", fetchMock)
 
     const detail = await getChat(CHAT_ID)
@@ -130,6 +148,15 @@ describe("chat API client", () => {
         text: "Help",
         createdAt: STAMP,
         parts: [{ type: "text", text: "Help" }],
+        attachments: [
+          { kind: "job", id: "job-1", label: "Product role at Northwind" },
+          { kind: "paper", id: "paper-1", label: "Journey CV" },
+          {
+            kind: "link",
+            id: "https://example.com/career-guide",
+            label: "example.com",
+          },
+        ],
         status: "final",
       },
       {
