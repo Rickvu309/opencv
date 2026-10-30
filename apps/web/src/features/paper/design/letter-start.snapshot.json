@@ -1,0 +1,102 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "NgYML",
+    "frameName": "W7.1 Start: pick the job"
+  },
+  "sections": [
+    {
+      "id": "jsloS",
+      "name": "Sidebar",
+      "texts": [
+        "opencv",
+        "Inbox",
+        "4",
+        "Coach",
+        "Jobs",
+        "Your work",
+        "Paper",
+        "Apply",
+        "Pitch",
+        "Favorites",
+        "Junior Marketing CV",
+        "Lumière application",
+        "Checkout UX study",
+        "LN",
+        "Linh Nguyen"
+      ],
+      "fills": []
+    },
+    {
+      "id": "PVaFN",
+      "name": "Main wrap",
+      "texts": [
+        "Paper",
+        "Cover letters",
+        "New cover letter",
+        "Start a cover letter",
+        "Search jobs, paste a link or attach a file",
+        "Marketing Executive",
+        "@Lumière",
+        "Business Analyst",
+        "@Regional bank",
+        "Product Intern",
+        "@Local startup",
+        "Content Writer",
+        "@Tiki",
+        "Brand Assistant",
+        "@Brightside",
+        "Social Media Intern",
+        "@Northwind",
+        "Start blank",
+        "Draft letter",
+        "↵",
+        "Tailor your CV for Lumière",
+        "Prep for Local startup interview",
+        "Coach"
+      ],
+      "fills": [
+        {
+          "type": "gradient",
+          "gradientType": "linear",
+          "enabled": true,
+          "rotation": 180,
+          "size": { "height": 1 },
+          "colors": [
+            { "color": "#F7F7F800", "position": 0 },
+            { "color": "#F7F7F8", "position": 1 }
+          ]
+        },
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#EAEFFA",
+            "#D6DFF6",
+            "#E7E3F9",
+            "#D0DAF5",
+            "#BCCAF1",
+            "#DCD6F6",
+            "#E6EBF9",
+            "#CED9F4",
+            "#E9E5F9"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.55, 0.6],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        }
+      ]
+    }
+  ]
+}

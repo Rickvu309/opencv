@@ -37,7 +37,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   Uh2Ku: { issue: 498, expires: "2026-12-31" }, // W6.9 Check import
   gWPIB: { issue: 498, expires: "2026-12-31" }, // W6.10 Can't read file
   k8HycK: { issue: 498, expires: "2026-12-31" }, // W6.11 Over one page
-  NgYML: { issue: 498, expires: "2026-12-31" }, // W7.1 Start: pick the job
   tsfNR: { issue: 498, expires: "2026-12-31" }, // W7.2 Drafting
   sgAtL: { issue: 498, expires: "2026-12-31" }, // W7.3 Letter + suggestion
   D1s74Z: { issue: 498, expires: "2026-12-31" }, // W7.4 Can't read job link

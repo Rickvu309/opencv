@@ -61,6 +61,7 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 function renderLibrary(docs: PaperView[]) {
@@ -86,6 +87,31 @@ function renderLibrary(docs: PaperView[]) {
 }
 
 describe("Paper library", () => {
+  it("opens the full-page letter picker and returns to Paper", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ ok: true, data: [] }))
+    )
+    renderLibrary([])
+    fireEvent.click(screen.getByRole("button", { name: "Cover letter" }))
+    expect(
+      screen.getByRole("region", { name: "New cover letter" })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Start a cover letter" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Attach a file" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
+    fireEvent.click(screen.getByRole("button", { name: "Paper", exact: true }))
+    expect(screen.getByText("Start a document")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "New", exact: true })
+    ).toHaveFocus()
+  })
+
   it("shows import progress and cancels without opening a document", async () => {
     vi.mocked(importPaperFile).mockImplementation(
       () => new Promise(() => undefined)

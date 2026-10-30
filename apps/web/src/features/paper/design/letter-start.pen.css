@@ -1,0 +1,68 @@
+[data-pen-surface="paper"][data-slot="letter-start-page"] {
+  color: #111111;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-header"] {
+  background: #fafafa;
+  border-color: #ededef;
+  color: #3c3c40;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-start-header"]
+  [aria-current="page"] {
+  color: #111111;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-desk"] {
+  background: #f7f7f8;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-search"] {
+  background: #ffffff;
+  border-color: #e2e2e2;
+  color: #969799;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-search"] input {
+  color: #1a1a1a;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-start-search"]
+  input::placeholder {
+  color: #a0a0a2;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-job"] {
+  background: transparent;
+  color: #1a1a1a;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-job"][aria-pressed="true"] {
+  background: #e8e8e9;
+  border-color: #e2e2e2;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-company"] {
+  color: #969799;
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-pen-surface="paper"] [data-slot="letter-start-job"]:hover {
+    background: #e8e8e9;
+  }
+}
+
+[data-pen-surface="paper"] [data-slot="letter-start-fade"] {
+  background: linear-gradient(#f7f7f800, #f7f7f8);
+}
+[data-pen-surface="paper"] [data-slot="letter-start-blank"]:not(:hover) {
+  color: #1a1a1a;
+  background: #ffffff;
+  border-color: #e2e2e2;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-return"] {
+  background: #1b1b1f0f;
+  color: #1b1b1f80;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-start-header"]
+  .lucide-chevron-right {
+  color: #8a8a8e;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-search"] .lucide-paperclip,
+[data-pen-surface="paper"] [data-slot="letter-start-blank"] .lucide-file-plus {
+  color: #59595b;
+}

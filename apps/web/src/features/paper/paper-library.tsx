@@ -38,7 +38,7 @@ import {
 } from "./paper-import.tsx"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
-import { PaperLetterStart } from "./paper-letter.tsx"
+import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
@@ -73,6 +73,8 @@ export function PaperLibrary({
   const run = useRunCommand()
   const queryClient = useQueryClient()
   const importRef = useRef<HTMLInputElement>(null)
+  const newButtonRef = useRef<HTMLButtonElement>(null)
+  const returnFromLetter = useRef(false)
   const importRequest = useRef<AbortController | null>(null)
   const [
     {
@@ -89,6 +91,12 @@ export function PaperLibrary({
     },
     dispatch,
   ] = useReducer(libraryReducer, initialLibrary)
+  useEffect(() => {
+    if (mode === null && returnFromLetter.current) {
+      returnFromLetter.current = false
+      newButtonRef.current?.focus()
+    }
+  }, [mode])
   const dialogOpen = mode !== null || importState.type !== "idle"
   const needle = query.trim().toLowerCase()
   const documents = docs.filter(
@@ -301,6 +309,21 @@ export function PaperLibrary({
     )
   }
 
+  if (mode?.type === "letter") {
+    return (
+      <PaperLetterStartPage
+        onBack={() => {
+          returnFromLetter.current = true
+          dispatch({ type: "dialog_closed" })
+        }}
+        onCreated={(id) => {
+          dispatch({ type: "dialog_closed" })
+          onOpen(id)
+        }}
+      />
+    )
+  }
+
   return (
     <section
       aria-label="Paper"
@@ -326,6 +349,7 @@ export function PaperLibrary({
           type="button"
           variant={dialogOpen ? "outline" : "glow"}
           data-primary-action
+          ref={newButtonRef}
           onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}
         >
           New
@@ -473,28 +497,6 @@ export function PaperLibrary({
               onImport={chooseFile}
             />
           ) : null}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={mode?.type === "letter"}
-        onOpenChange={(open) => {
-          if (!open) dispatch({ type: "dialog_closed" })
-        }}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Start a cover letter</DialogTitle>
-            <DialogDescription>
-              Search jobs, paste a link or attach a file.
-            </DialogDescription>
-          </DialogHeader>
-          <PaperLetterStart
-            onCreated={(id) => {
-              dispatch({ type: "dialog_closed" })
-              onOpen(id)
-            }}
-          />
         </DialogContent>
       </Dialog>
 

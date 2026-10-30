@@ -1,3 +1,4 @@
+import { Check, FilePlus, Paperclip, Search } from "lucide-react"
 import { useEffect, useId, useReducer, useRef } from "react"
 import type { JobView } from "@workspace/domain"
 
@@ -215,7 +216,7 @@ export function PaperLetterStart({
     : "Draft letter"
 
   return (
-    <div className="flex flex-col gap-3">
+    <div data-slot="letter-start-form" className="relative flex flex-col gap-5">
       <Input
         ref={attachmentInput}
         type="file"
@@ -228,30 +229,87 @@ export function PaperLetterStart({
           if (file) void attach(file)
         }}
       />
-      <Input
-        aria-label="Search jobs, paste a link or attach a file"
-        placeholder="Search jobs, paste a link or attach a file"
-        value={query}
-        onChange={(event) =>
-          dispatch({ type: "query_typed", query: event.target.value })
-        }
-      />
+      <div
+        data-slot="letter-start-search"
+        className="flex h-11 items-center gap-2.5 rounded-[12px] border pr-2 pl-3.5 has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/50"
+      >
+        <Search aria-hidden="true" className="size-[15px] shrink-0" />
+        <Input
+          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px]"
+          aria-label="Search jobs, paste a link or attach a file"
+          placeholder="Search jobs, paste a link or attach a file"
+          value={query}
+          onChange={(event) =>
+            dispatch({ type: "query_typed", query: event.target.value })
+          }
+          onKeyDown={(event) => {
+            if (
+              event.key === "Enter" &&
+              !event.nativeEvent.isComposing &&
+              !drafting &&
+              !attaching &&
+              !needsContext &&
+              !limit
+            ) {
+              event.preventDefault()
+              void draft()
+            }
+          }}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Attach a file"
+          className="size-7 shrink-0 rounded-[7px]"
+          disabled={drafting || attaching}
+          onClick={() => attachmentInput.current?.click()}
+        >
+          <Paperclip aria-hidden="true" className="size-[15px]" />
+        </Button>
+      </div>
       {unread ? (
         <p>Can&apos;t read this link. Paste the job text or attach a file.</p>
       ) : null}
-      <div className="grid max-h-48 gap-1 overflow-auto">
-        {shown.map((job) => (
-          <Button
-            key={job.id}
-            type="button"
-            variant={selected?.id === job.id ? "secondary" : "outline"}
-            className="h-auto justify-start whitespace-normal"
-            aria-pressed={selected?.id === job.id}
-            onClick={() => dispatch({ type: "picked_job", job })}
-          >
-            {job.title}, {job.company}
-          </Button>
-        ))}
+      <div data-slot="letter-start-jobs-wrap" className="relative -mt-3">
+        <div
+          data-slot="letter-start-jobs"
+          className="grid h-[228px] auto-rows-[40px] content-start gap-0.5 overflow-auto"
+        >
+          {shown.map((job) => (
+            <Button
+              key={job.id}
+              type="button"
+              variant={selected?.id === job.id ? "secondary" : "outline"}
+              data-slot="letter-start-job"
+              className="h-10 min-w-0 justify-start gap-[5px] rounded-[8px] border-transparent px-3.5 text-[13px] leading-[15.5px] font-medium"
+              aria-label={`${job.title}, ${job.company}`}
+              aria-pressed={selected?.id === job.id}
+              onClick={() => dispatch({ type: "picked_job", job })}
+            >
+              <span className="truncate">{job.title}</span>
+              <span
+                data-slot="letter-start-company"
+                className="truncate font-normal"
+              >
+                @{job.company}
+              </span>
+              {selected?.id === job.id ? (
+                <Check
+                  aria-hidden="true"
+                  className="ml-auto size-3.5 shrink-0"
+                />
+              ) : null}
+            </Button>
+          ))}
+        </div>
+        {shown.length > 5 ? (
+          <div
+            aria-hidden="true"
+            data-slot="letter-start-fade"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
+          />
+        ) : null}
       </div>
       {attaching ? <p role="status">Reading attachment…</p> : null}
       {attached ? (
@@ -275,13 +333,12 @@ export function PaperLetterStart({
       <div className="flex flex-wrap justify-end gap-2">
         <Button
           type="button"
-          variant="ghost"
-          disabled={drafting || attaching}
-          onClick={() => attachmentInput.current?.click()}
+          variant="outline"
+          data-slot="letter-start-blank"
+          className="mr-auto h-[34px] rounded-[8px] px-3 text-xs font-medium"
+          onClick={() => void startBlank()}
         >
-          Attach a file
-        </Button>
-        <Button type="button" variant="ghost" onClick={() => void startBlank()}>
+          <FilePlus aria-hidden="true" className="size-3.5" />
           Start blank
         </Button>
         {drafting ? (
@@ -291,17 +348,31 @@ export function PaperLetterStart({
         ) : (
           <Button
             type="button"
+            className="h-[34px] gap-2 rounded-[8px] px-3.5 text-[13px] font-semibold"
             variant={limit ? "outline" : "glow"}
             disabled={Boolean(limit) || attaching || needsContext}
+            aria-label={draftName}
             aria-describedby={needsContext ? guidanceId : undefined}
             onClick={() => void draft()}
           >
             {draftName}
+            {!limit ? (
+              <span
+                aria-hidden="true"
+                data-slot="letter-start-return"
+                className="flex size-[18px] items-center justify-center rounded-[4px] text-[11px] font-normal"
+              >
+                ↵
+              </span>
+            ) : null}
           </Button>
         )}
       </div>
       {needsContext ? (
-        <p id={guidanceId}>
+        <p
+          id={guidanceId}
+          className="absolute top-full mt-2 text-xs text-muted-foreground"
+        >
           Choose a job, paste job text or a link, or attach a file to draft a
           letter.
         </p>
