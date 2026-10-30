@@ -125,7 +125,7 @@ describe("search results integration", () => {
       const editor = await screen.findByRole("region", {
         name: `Editing ${selected.name}`,
       })
-      expect(within(editor).getByRole("textbox", { name: "Name" })).toHaveValue(
+      expect(within(editor).getByDisplayValue(selected.name)).toHaveValue(
         selected.name
       )
     }
