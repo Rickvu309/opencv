@@ -41,7 +41,7 @@ test("dirty work and a tree that changes during a check cannot earn proof", () =
 test("check carries retry evidence into the PR body", () => {
   const f = fixture({
     intercept(cmd) {
-      if (cmd === "bash")
+      if (cmd === "node")
         return { ok: true, out: "RESULT_JSON: child-result.json", err: "" }
     },
   })
