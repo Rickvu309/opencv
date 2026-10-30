@@ -162,6 +162,22 @@ function workOf(ctx, wt, force) {
   }
 }
 
+// Worktrees under the root whose pull request already merged: a human merge in
+// the GitHub UI skips merge --wait, so nothing removed them. Best-effort: a
+// GitHub or git failure yields an empty list, never a refusal.
+export function finishedWorktrees(ctx, { main, root }) {
+  try {
+    return ctx.ports.git
+      .worktrees(main)
+      .filter((w) => w.path.startsWith(`${root}/`))
+      .filter(
+        (w) => ctx.ports.gh.prs({ state: "merged", head: w.branch }).length > 0
+      )
+  } catch {
+    return []
+  }
+}
+
 // One numbered worktree refuses on the first row (dirty, then not merged).
 // --all keeps what it cannot remove: merged first, then unsaved work.
 function judge(ctx, wt, { force, n, root }) {

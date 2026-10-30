@@ -4,7 +4,7 @@ import { join } from "node:path"
 import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { claimMarker } from "./claim-marker.mjs"
-import { ctxFor, fakePorts, issue, minutesAgo } from "./ports/fake.mjs"
+import { ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
 import { slugify } from "./worktree.mjs"
 
 const WT = "/tmp/opencv.worktrees/90-keep-my-search"
@@ -70,7 +70,8 @@ test("take builds the branch, worktree, .env, port record, claim and result", ()
     )
   )
   assert.equal(ports.counts.issue, 3)
-  assert.equal(ports.counts.worktrees, 1)
+  // One list to place the worktree, one to find finished worktrees left on disk.
+  assert.equal(ports.counts.worktrees, 2)
   const last = r.text.split("\n").at(-1)
   assert.match(
     last,
@@ -86,6 +87,33 @@ test("take builds the branch, worktree, .env, port record, claim and result", ()
     runCli(["take", "90", "--no-install"], again.ctx).text,
     /REFUSED WORKTREE_EXISTS/
   )
+})
+
+test("take lists finished worktrees a human merge left on disk, and nothing when there are none", () => {
+  const old = {
+    path: "/tmp/opencv.worktrees/80-old-fix",
+    branch: "fix/80-old-fix",
+  }
+  const left = run({
+    dirs: [`${WT}/.githooks`],
+    hooksPath: "/dev/null",
+    worktrees: [old],
+    prs: [pr(7, { state: "MERGED", head: "fix/80-old-fix" })],
+  })
+  const r = runCli(["take", "90", "--no-install"], left.ctx)
+  assert.equal(r.code, 0, r.text)
+  assert.match(
+    r.text,
+    /Finished worktrees still on disk \(their pull requests merged\): \/tmp\/opencv\.worktrees\/80-old-fix \(fix\/80-old-fix\)\. Run: scripts\/ocv-tools\.mjs cleanup --all/
+  )
+  const none = run({
+    dirs: [`${WT}/.githooks`],
+    hooksPath: "/dev/null",
+    worktrees: [old],
+  })
+  const clean = runCli(["take", "90", "--no-install"], none.ctx)
+  assert.equal(clean.code, 0, clean.text)
+  assert.doesNotMatch(clean.text, /Finished worktrees/)
 })
 
 test("take picks the next free port when another worktree holds the first", () => {
