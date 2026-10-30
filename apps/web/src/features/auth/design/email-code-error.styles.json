@@ -1,0 +1,571 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "b1m7SA",
+    "frameName": "W1.4 Code wrong or expired"
+  },
+  "sections": [
+    {
+      "id": "m7ACxO",
+      "name": "Left",
+      "texts": [
+        {
+          "content": "opencv",
+          "fill": "#1A1A1A",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.5,
+          "startsLine": true
+        },
+        {
+          "content": "EN",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "VI",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Check your email",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.7
+        },
+        {
+          "content": "We sent a 6-digit code to",
+          "fill": "#6B6B6F",
+          "fontSize": 14.5,
+          "lineHeight": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "linh.nguyen@gmail.com",
+          "fill": "#1A1A1A",
+          "fontSize": 14.5,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Change",
+          "fill": "#6B6B6F",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "4",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "8",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "1",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "9",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "0",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "2",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "That code is incorrect or expired.",
+          "fill": "#C93C3C",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Open email",
+          "fill": "#1A1A1A",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Didn't get it?",
+          "fill": "#6B6B6F",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Send a new code",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "By continuing, you agree to the Terms of Service and Privacy Policy.",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        {
+          "id": "A5Egys",
+          "name": "Mark",
+          "width": 20,
+          "height": 20
+        },
+        {
+          "id": "V1PtD2",
+          "name": "Icon",
+          "width": 15,
+          "height": 15
+        },
+        {
+          "id": "pTXdA",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        }
+      ]
+    },
+    {
+      "id": "jRikN",
+      "name": "Right",
+      "texts": [
+        {
+          "content": "Write your CV with a coach. Track every application.",
+          "fill": "#FFFFFF",
+          "fontSize": 34,
+          "lineHeight": 1.15,
+          "fontWeight": "600",
+          "letterSpacing": -1.2
+        }
+      ],
+      "marks": []
+    }
+  ],
+  "form": {
+    "type": "frame",
+    "id": "k5PSXG",
+    "name": "Form slot",
+    "slot": [],
+    "width": 340,
+    "height": 360,
+    "layout": "vertical",
+    "gap": 24,
+    "alignItems": "center",
+    "children": [
+      {
+        "type": "frame",
+        "id": "Q9XYFo",
+        "name": "Heading",
+        "width": "fill_container",
+        "layout": "vertical",
+        "gap": 8,
+        "alignItems": "center",
+        "children": [
+          {
+            "type": "text",
+            "id": "qy3XA",
+            "name": "Check your email",
+            "fill": "#1A1A1A",
+            "content": "Check your email",
+            "fontFamily": "Inter",
+            "fontSize": 26,
+            "fontWeight": "600",
+            "letterSpacing": -0.7,
+            "children": []
+          },
+          {
+            "type": "text",
+            "id": "PQEtb",
+            "name": "We sent a 6-digit code to",
+            "fill": "#6B6B6F",
+            "content": "We sent a 6-digit code to",
+            "fontFamily": "Inter",
+            "fontSize": 14.5,
+            "children": []
+          },
+          {
+            "type": "frame",
+            "id": "kluQS",
+            "name": "Email row",
+            "gap": 8,
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "text",
+                "id": "cKbFg",
+                "name": "linh.nguyen@gmail.com",
+                "fill": "#1A1A1A",
+                "content": "linh.nguyen@gmail.com",
+                "fontFamily": "Inter",
+                "fontSize": 14.5,
+                "fontWeight": "600",
+                "children": []
+              },
+              {
+                "type": "text",
+                "id": "br55T",
+                "name": "Change",
+                "fill": "#6B6B6F",
+                "content": "Change",
+                "fontFamily": "Inter",
+                "fontSize": 13.5,
+                "fontWeight": "500",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "id": "Hwux9",
+        "name": "Code",
+        "width": "fill_container",
+        "gap": 8,
+        "alignItems": "center",
+        "children": [
+          {
+            "type": "frame",
+            "id": "WHnc4",
+            "name": "Digit 1",
+            "width": "fill_container",
+            "height": 60,
+            "fill": "#FFF5F5",
+            "cornerRadius": 12,
+            "stroke": "#EB5757",
+            "strokeWidth": 1.5,
+            "justifyContent": "center",
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "text",
+                "id": "r7qyHt",
+                "name": "4",
+                "fill": "#1A1A1A",
+                "content": "4",
+                "fontFamily": "Inter",
+                "fontSize": 26,
+                "fontWeight": "600",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "id": "X2JYF",
+            "name": "Digit 2",
+            "width": "fill_container",
+            "height": 60,
+            "fill": "#FFF5F5",
+            "cornerRadius": 12,
+            "stroke": "#EB5757",
+            "strokeWidth": 1.5,
+            "justifyContent": "center",
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "text",
+                "id": "EZ7Gy",
+                "name": "8",
+                "fill": "#1A1A1A",
+                "content": "8",
+                "fontFamily": "Inter",
+                "fontSize": 26,
+                "fontWeight": "600",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "id": "wnf2O",
+            "name": "Digit 3",
+            "width": "fill_container",
+            "height": 60,
+            "fill": "#FFF5F5",
+            "cornerRadius": 12,
+            "stroke": "#EB5757",
+            "strokeWidth": 1.5,
+            "justifyContent": "center",
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "text",
+                "id": "Aghph",
+                "name": "1",
+                "fill": "#1A1A1A",
+                "content": "1",
+                "fontFamily": "Inter",
+                "fontSize": 26,
+                "fontWeight": "600",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "rectangle",
+            "cornerRadius": 1,
+            "id": "JOuf1",
+            "name": "Dash",
+            "fill": "#C9C9CC",
+            "width": 10,
+            "height": 2,
+            "children": []
+          },
+          {
+            "type": "frame",
+            "id": "E1Bpmg",
+            "name": "Digit 4",
+            "width": "fill_container",
+            "height": 60,
+            "fill": "#FFF5F5",
+            "cornerRadius": 12,
+            "stroke": "#EB5757",
+            "strokeWidth": 1.5,
+            "justifyContent": "center",
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "text",
+                "id": "tUtxY",
+                "name": "9",
+                "fill": "#1A1A1A",
+                "content": "9",
+                "fontFamily": "Inter",
+                "fontSize": 26,
+                "fontWeight": "600",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "id": "cP0Tz",
+            "name": "Digit 5",
+            "width": "fill_container",
+            "height": 60,
+            "fill": "#FFF5F5",
+            "cornerRadius": 12,
+            "stroke": "#EB5757",
+            "strokeWidth": 1.5,
+            "justifyContent": "center",
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "text",
+                "id": "jeDZZ",
+                "name": "0",
+                "fill": "#1A1A1A",
+                "content": "0",
+                "fontFamily": "Inter",
+                "fontSize": 26,
+                "fontWeight": "600",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "id": "pMbP0",
+            "name": "Digit 6",
+            "width": "fill_container",
+            "height": 60,
+            "fill": "#FFF5F5",
+            "cornerRadius": 12,
+            "stroke": "#EB5757",
+            "strokeWidth": 1.5,
+            "justifyContent": "center",
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "text",
+                "id": "dFCPB",
+                "name": "2",
+                "fill": "#1A1A1A",
+                "content": "2",
+                "fontFamily": "Inter",
+                "fontSize": 26,
+                "fontWeight": "600",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "id": "c1Tez",
+        "name": "Error",
+        "gap": 6,
+        "alignItems": "center",
+        "children": [
+          {
+            "type": "icon",
+            "id": "V1PtD2",
+            "name": "Icon",
+            "width": 15,
+            "height": 15,
+            "icon": "circle-alert",
+            "library": "lucide",
+            "fill": "#C93C3C",
+            "children": []
+          },
+          {
+            "type": "text",
+            "id": "U0KLF",
+            "name": "That code is incorrect or expi",
+            "fill": "#C93C3C",
+            "content": "That code is incorrect or expired.",
+            "fontFamily": "Inter",
+            "fontSize": 13,
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "id": "FEvRr",
+        "name": "Mail apps",
+        "width": "fill_container",
+        "gap": 10,
+        "children": [
+          {
+            "type": "frame",
+            "id": "EcsqG",
+            "name": "Open Gmail",
+            "width": "fill_container",
+            "height": 42,
+            "cornerRadius": 10,
+            "stroke": "#E2E2E2",
+            "strokeWidth": 1,
+            "gap": 8,
+            "justifyContent": "center",
+            "alignItems": "center",
+            "children": [
+              {
+                "type": "icon",
+                "id": "pTXdA",
+                "name": "Icon",
+                "width": 16,
+                "height": 16,
+                "icon": "mail",
+                "library": "lucide",
+                "fill": "#1A1A1A",
+                "children": []
+              },
+              {
+                "type": "text",
+                "id": "i5WT0f",
+                "name": "Open Gmail",
+                "fill": "#1A1A1A",
+                "content": "Open email",
+                "fontFamily": "Inter",
+                "fontSize": 13.5,
+                "fontWeight": "500",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "id": "UOSAR",
+        "name": "Resend",
+        "gap": 4,
+        "alignItems": "center",
+        "children": [
+          {
+            "type": "text",
+            "id": "zvDBF",
+            "name": "Didn't get it?",
+            "fill": "#6B6B6F",
+            "content": "Didn't get it?",
+            "fontFamily": "Inter",
+            "fontSize": 13,
+            "children": []
+          },
+          {
+            "type": "text",
+            "id": "sLmK2",
+            "name": "Send a new code",
+            "fill": "#1A1A1A",
+            "content": "Send a new code",
+            "fontFamily": "Inter",
+            "fontSize": 13,
+            "fontWeight": "600",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -253,6 +253,9 @@ describe("email code", () => {
       document.activeElement.blur()
     }
 
+    await user.tab()
+    expect(screen.getByRole("button", { name: AUTH_COPY.change })).toHaveFocus()
+
     for (const name of [
       "Digit 1",
       "Digit 2",
@@ -268,8 +271,6 @@ describe("email code", () => {
     expect(
       screen.getByRole("button", { name: AUTH_COPY.sendNew })
     ).toHaveFocus()
-    await user.tab()
-    expect(screen.getByRole("button", { name: AUTH_COPY.change })).toHaveFocus()
     await user.tab()
     expect(screen.getByRole("radio", { name: AUTH_COPY.en })).toHaveFocus()
   })

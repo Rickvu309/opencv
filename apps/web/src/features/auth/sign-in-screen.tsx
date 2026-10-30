@@ -14,10 +14,9 @@ import {
   EMAIL_PATTERN,
   openEmailHref,
   readLanguage,
-  resendLabel,
   storeLanguage,
 } from "./auth-copy.ts"
-import { CodeInput } from "./code-input.tsx"
+import { EmailCodeScreen } from "./email-code-screen.tsx"
 import googleG from "./google-g.svg?url"
 import {
   initSignInState,
@@ -189,13 +188,6 @@ export function SignInScreen() {
       notice === "send")
   const noticeText = notice ? NOTICE[notice] : null
 
-  const codeAreas =
-    step === "verifying"
-      ? "[grid-template-areas:'title_title_title_title'_'sent_sent_sent_sent'_'._email_change_.'_'digits_digits_digits_digits'_'follow_follow_follow_follow']"
-      : noticeText || inbox
-        ? "[grid-template-areas:'title_title_title_title'_'sent_sent_sent_sent'_'._email_change_.'_'digits_digits_digits_digits'_'follow_follow_follow_follow'_'resend_resend_resend_resend']"
-        : "[grid-template-areas:'title_title_title_title'_'sent_sent_sent_sent'_'._email_change_.'_'digits_digits_digits_digits'_'resend_resend_resend_resend']"
-
   return (
     <AuthFrame language={language} onLanguage={chooseLanguage}>
       {step === "email" ? (
@@ -261,85 +253,22 @@ export function SignInScreen() {
           </Button>
         </form>
       ) : (
-        <div
-          className={`grid w-full grid-cols-[1fr_auto_auto_1fr] items-center gap-x-2 gap-y-2 ${codeAreas}`}
-        >
-          <h1 className="text-center text-[26px] font-semibold tracking-[-0.7px] [grid-area:title]">
-            {AUTH_COPY.checkEmail}
-          </h1>
-          <p className="text-center text-sm text-muted-foreground [grid-area:sent]">
-            {AUTH_COPY.sentTo}
-          </p>
-          <span className="max-w-56 truncate font-semibold [grid-area:email]">
-            {email}
-          </span>
-          <div className="mbs-4 w-full [grid-area:digits]">
-            <CodeInput
-              value={code}
-              disabled={step === "verifying"}
-              focusNonce={focusNonce}
-              onChange={(value) => dispatch({ type: "code_typed", value })}
-              onComplete={(otp) => void onComplete(otp)}
-            />
-          </div>
-          {step === "verifying" ? (
-            <p
-              className="mbs-4 flex items-center justify-center gap-2 text-sm text-muted-foreground [grid-area:follow]"
-              role="status"
-            >
-              <span
-                aria-hidden
-                className="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent motion-reduce:animate-none"
-              />
-              {AUTH_COPY.verifying}
-            </p>
-          ) : noticeText || inbox ? (
-            <div className="mbs-4 flex flex-col items-center gap-4 [grid-area:follow]">
-              {noticeText ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {noticeText}
-                </p>
-              ) : null}
-              {inbox ? (
-                <a
-                  href={inbox}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-medium underline-offset-4 hover:underline"
-                >
-                  {AUTH_COPY.openEmail}
-                </a>
-              ) : null}
-            </div>
-          ) : null}
-          {step === "verifying" ? null : (
-            <div className="mbs-4 flex items-center justify-center gap-2 text-sm text-muted-foreground [grid-area:resend]">
-              <span>{AUTH_COPY.didntGet}</span>
-              {showResend ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={sending}
-                  onClick={() => void sendCode(email.trim())}
-                >
-                  {AUTH_COPY.sendNew}
-                </Button>
-              ) : (
-                <span>{resendLabel(seconds)}</span>
-              )}
-            </div>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-auto px-1 py-0 text-sm font-medium text-muted-foreground [grid-area:change]"
-            onClick={() => {
-              dispatch({ type: "email_change_requested" })
-            }}
-          >
-            {AUTH_COPY.change}
-          </Button>
-        </div>
+        <EmailCodeScreen
+          email={email}
+          code={code}
+          state={step}
+          invalid={notice === "bad"}
+          notice={noticeText}
+          inbox={inbox}
+          seconds={seconds}
+          sending={sending}
+          showResend={showResend}
+          focusNonce={focusNonce}
+          onChange={(value) => dispatch({ type: "code_typed", value })}
+          onComplete={(otp) => void onComplete(otp)}
+          onResend={() => void sendCode(email.trim())}
+          onChangeEmail={() => dispatch({ type: "email_change_requested" })}
+        />
       )}
     </AuthFrame>
   )
