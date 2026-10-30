@@ -24,6 +24,7 @@ import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
 import { CoachDock } from "./coach-dock.tsx"
+import { CoachHome } from "./coach-home.tsx"
 import { ChatView } from "./chat-view.tsx"
 import { useChatStore } from "./use-chat-store.ts"
 import {
@@ -31,28 +32,6 @@ import {
   workspaceReducer,
 } from "./coach-workspace.reducer.ts"
 import type { Attachment } from "./coach-workspace.reducer.ts"
-
-const STARTERS = [
-  "Review my CV",
-  "Find roles",
-  "Prep an interview",
-  "Write a cover letter",
-  "Plan my week",
-  "Negotiate an offer",
-  "Help me reply to a recruiter",
-  "Turn my experience into stronger bullet points",
-  "Help me compare two jobs",
-  "Draft a follow-up after an interview",
-  "Find gaps between my CV and a job",
-]
-
-const MORE_STARTERS = [
-  "Follow up on an application",
-  "Compare two offers",
-  "Improve my LinkedIn",
-  "Companies hiring now",
-  "Set a weekly goal",
-]
 
 function historyGroup(date: string) {
   const today = new Date()
@@ -267,38 +246,16 @@ export function CoachWorkspace({
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {showHome ? (
-          <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col items-center px-4 pt-60 pb-8 sm:px-6">
-            <div className="flex w-full flex-col gap-3">
-              <div className="pb-2 text-center">
-                <h2 className="text-xl font-semibold">How can I help?</h2>
-              </div>
-              {coachDock}
-              <Button
-                variant="ghost"
-                className="mx-auto h-10 rounded-full px-4"
-                onClick={() => dispatch({ type: "more_ideas_toggled" })}
-              >
-                More ideas
-              </Button>
-              <div className="flex flex-wrap justify-center gap-2">
-                {(moreIdeas ? MORE_STARTERS : STARTERS.slice(0, 6)).map(
-                  (starter) => (
-                    <Button
-                      key={starter}
-                      variant="outline"
-                      className="h-10 rounded-full px-4 text-left whitespace-normal"
-                      disabled={!enabled || capped}
-                      onClick={() =>
-                        dispatch({ type: "draft_typed", value: starter })
-                      }
-                    >
-                      {starter}
-                    </Button>
-                  )
-                )}
-              </div>
-            </div>
-          </div>
+          <CoachHome
+            moreIdeas={moreIdeas}
+            onToggleIdeas={() => dispatch({ type: "more_ideas_toggled" })}
+            onChooseStarter={(value) =>
+              dispatch({ type: "draft_typed", value })
+            }
+            disabled={!enabled || capped}
+          >
+            {coachDock}
+          </CoachHome>
         ) : (
           <ChatView
             messages={messages}
