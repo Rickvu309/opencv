@@ -1,0 +1,327 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "lOO77",
+    "frameName": "W3.3 More ideas",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "UHmjj",
+      "name": "Header",
+      "texts": [
+        {
+          "content": "New chat",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "xrJxB", "name": "Caret", "width": 11, "height": 11 }]
+    },
+    {
+      "id": "weI4Y",
+      "name": "Body",
+      "texts": [
+        {
+          "content": "How can I help?",
+          "fill": "#1A1A1A",
+          "fontSize": 26,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.8
+        },
+        {
+          "content": "Ask Coach anything",
+          "fill": "#A0A0A2",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": null,
+          "letterSpacing": null
+        },
+        {
+          "content": "Free",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "More ideas",
+          "fill": "#6B6B70",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Follow up on an application",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Compare two offers",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Improve my LinkedIn",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Companies hiring now",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Set a weekly goal",
+          "fill": "#2F2F31",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "l7wkAV", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "byQqe", "name": "Chevron", "width": 12, "height": 12 },
+        { "id": "QrTAp", "name": "Icon", "width": 16, "height": 16 },
+        { "id": "hdz8X", "name": "Icon", "width": 16, "height": 16 },
+        { "id": "MzWTY", "name": "Icon", "width": 16, "height": 16 },
+        { "id": "suDcW", "name": "Icon", "width": 16, "height": 16 },
+        { "id": "vn2wB", "name": "Icon", "width": 16, "height": 16 },
+        { "id": "CLwEb", "name": "Icon", "width": 16, "height": 16 }
+      ]
+    }
+  ],
+  "borders": [
+    { "id": "GIhbq", "stroke": "$ds-border", "strokeWidth": 0.5 },
+    { "id": "UHmjj", "stroke": "#EDEDEF", "strokeWidth": { "bottom": 1 } },
+    { "id": "uhk28", "stroke": "#E4E4E7", "strokeWidth": 1 },
+    { "id": "r6Wetc", "stroke": "#E4E4E7", "strokeWidth": 1 },
+    { "id": "oQuHS", "stroke": "#00000000", "strokeWidth": null },
+    { "id": "jq2OE", "stroke": "#E6E6E9", "strokeWidth": 1 },
+    { "id": "VSj6o", "stroke": "#E6E6E9", "strokeWidth": 1 },
+    { "id": "J1JJy", "stroke": "#E6E6E9", "strokeWidth": 1 },
+    { "id": "rhA6A", "stroke": "#E6E6E9", "strokeWidth": 1 },
+    { "id": "nqA3b", "stroke": "#E6E6E9", "strokeWidth": 1 }
+  ],
+  "paints": [
+    { "id": "GIhbq", "path": "", "fill": "#FAFAFA", "stroke": "#E2E2E2" },
+    { "id": "UHmjj", "path": "/children/0", "stroke": "#EDEDEF" },
+    {
+      "id": "Y9ebf",
+      "path": "/children/0/children/0/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "xrJxB",
+      "path": "/children/0/children/0/children/1",
+      "fill": "#6B6B70"
+    },
+    {
+      "id": "F8JH9",
+      "path": "/children/1/children/0/children/0/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "uhk28",
+      "path": "/children/1/children/0/children/1",
+      "fill": "#FFFFFF",
+      "stroke": "#E4E4E7",
+      "effect": [
+        {
+          "type": "shadow",
+          "shadowType": "outer",
+          "color": "#00000008",
+          "offset": { "x": 0, "y": 1 },
+          "blur": 2
+        },
+        {
+          "type": "shadow",
+          "shadowType": "outer",
+          "color": "#0000000A",
+          "offset": { "x": 0, "y": 8 },
+          "blur": 24
+        }
+      ]
+    },
+    {
+      "id": "i7a2aX",
+      "path": "/children/1/children/0/children/1/children/0/children/0",
+      "fill": "#A0A0A2"
+    },
+    {
+      "id": "r6Wetc",
+      "path": "/children/1/children/0/children/1/children/1/children/0",
+      "fill": "#FFFFFF",
+      "stroke": "#E4E4E7"
+    },
+    {
+      "id": "c0p6x",
+      "path": "/children/1/children/0/children/1/children/1/children/0/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "l7wkAV",
+      "path": "/children/1/children/0/children/1/children/1/children/2/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "kZIZY",
+      "path": "/children/1/children/0/children/1/children/1/children/2/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "byQqe",
+      "path": "/children/1/children/0/children/1/children/1/children/2/children/2",
+      "fill": "#969799"
+    },
+    {
+      "id": "yiWwj",
+      "path": "/children/1/children/0/children/1/children/1/children/3",
+      "fill": "#E8E8EA"
+    },
+    {
+      "id": "lWZhi",
+      "path": "/children/1/children/0/children/1/children/1/children/3/children/0",
+      "fill": "#A0A0A2"
+    },
+    {
+      "id": "oQuHS",
+      "path": "/children/1/children/0/children/2/children/0",
+      "fill": "#00000000",
+      "stroke": "#00000000"
+    },
+    {
+      "id": "QrTAp",
+      "path": "/children/1/children/0/children/2/children/0/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "FbUJN",
+      "path": "/children/1/children/0/children/2/children/0/children/1",
+      "fill": "#6B6B70"
+    },
+    {
+      "id": "jq2OE",
+      "path": "/children/1/children/0/children/2/children/1",
+      "fill": "#FFFFFF",
+      "stroke": "#E6E6E9"
+    },
+    {
+      "id": "hdz8X",
+      "path": "/children/1/children/0/children/2/children/1/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "CKYUs",
+      "path": "/children/1/children/0/children/2/children/1/children/1",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "VSj6o",
+      "path": "/children/1/children/0/children/2/children/2",
+      "fill": "#FFFFFF",
+      "stroke": "#E6E6E9"
+    },
+    {
+      "id": "MzWTY",
+      "path": "/children/1/children/0/children/2/children/2/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "xLcDE",
+      "path": "/children/1/children/0/children/2/children/2/children/1",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "J1JJy",
+      "path": "/children/1/children/0/children/2/children/3",
+      "fill": "#FFFFFF",
+      "stroke": "#E6E6E9"
+    },
+    {
+      "id": "suDcW",
+      "path": "/children/1/children/0/children/2/children/3/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "Q0kKp",
+      "path": "/children/1/children/0/children/2/children/3/children/1",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "rhA6A",
+      "path": "/children/1/children/0/children/2/children/4",
+      "fill": "#FFFFFF",
+      "stroke": "#E6E6E9"
+    },
+    {
+      "id": "vn2wB",
+      "path": "/children/1/children/0/children/2/children/4/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "S07GE",
+      "path": "/children/1/children/0/children/2/children/4/children/1",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "nqA3b",
+      "path": "/children/1/children/0/children/2/children/5",
+      "fill": "#FFFFFF",
+      "stroke": "#E6E6E9"
+    },
+    {
+      "id": "CLwEb",
+      "path": "/children/1/children/0/children/2/children/5/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "MGVRX",
+      "path": "/children/1/children/0/children/2/children/5/children/1",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "ZQXot",
+      "path": "/children/1/children/0/children/2/children/6",
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 90,
+        "size": { "height": 1 },
+        "colors": [
+          { "color": "#FAFAFA00", "position": 0 },
+          { "color": "#FAFAFA", "position": 1 }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+[data-pen-surface="coach"][data-slot="coach-home"] {
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+[data-pen-surface="coach"] [data-slot="coach-ideas"] button {
+  font-size: 14px;
+  line-height: 17px;
+  font-weight: 500;
+}
+
+[data-pen-surface="coach"] [data-slot="coach-ideas"] button[aria-pressed] {
+  color: #6b6b70;
+  border: 1px dashed #e6e6e9;
+}
+
+[data-pen-surface="coach"]
+  [data-slot="coach-ideas"]
+  button[aria-pressed="true"]
+  svg {
+  color: #3c3c40;
+}
+
+[data-pen-surface="coach"]
+  [data-slot="coach-ideas"]
+  button[data-variant="outline"] {
+  border-color: #e6e6e9;
+  background: #ffffff;
+  color: #2f2f31;
+}
+
+[data-pen-surface="coach"]
+  [data-slot="coach-ideas"]
+  button[data-variant="outline"]
+  svg {
+  color: #3c3c40;
+}
+
+[data-pen-surface="coach"] [data-slot="coach-ideas-fade"] {
+  pointer-events: none;
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: 80px;
+  background: linear-gradient(90deg, #fafafa00, #fafafa);
+}
+
+[data-pen-surface="coach"]
+  [data-slot="coach-ideas"]:focus-within
+  [data-slot="coach-ideas-fade"] {
+  visibility: hidden;
+}
+
+[data-pen-surface="coach"]:not(:has([data-slot="coach-cap-notice"]))
+  [data-slot="coach-composer"] {
+  border-radius: 18px;
+}
+
+[data-pen-surface="coach"]:not(:has([data-slot="coach-cap-notice"]))
+  [data-slot="coach-composer"]:not(:focus-within) {
+  border-color: #e4e4e7;
+  box-shadow:
+    0 1px 2px #00000008,
+    0 8px 24px #0000000a;
+}
+
+[data-pen-surface="coach"] textarea::placeholder {
+  color: #a0a0a2;
+  opacity: 1;
+}
+
+@media (max-width: 767px) {
+  [data-pen-surface="coach"] [data-slot="coach-ideas"] button {
+    min-block-size: 44px;
+  }
+}
