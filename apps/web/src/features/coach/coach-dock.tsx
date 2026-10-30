@@ -1,4 +1,5 @@
 import "./design/coach.pen.css"
+import "./design/composer-menus.pen.css"
 
 import { useReducer, type ReactNode } from "react"
 import { useNavigate } from "@tanstack/react-router"
@@ -8,13 +9,16 @@ import {
   Leaf,
   Zap,
   Rocket,
+  Check,
+  ChevronRight,
+  FileText,
+  Kanban,
+  Link,
+  Mail,
   Paperclip,
-  Plug,
   Plus,
   Square,
   X,
-  Briefcase,
-  Link,
 } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -33,16 +37,30 @@ import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { COACH_MODE_OPTIONS } from "@/features/coach/coach-mode.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
-import { settingsSectionHref } from "@/features/settings/sections.ts"
 
 const DOCK_MENU = [
-  { id: "attach", label: "Attach from Paper", icon: Paperclip },
-  { id: "job", label: "Attach from Apply", icon: Briefcase },
-  { id: "link", label: "Paste a link", icon: Link },
-  { id: "connector", label: "Add connector", icon: Plug },
+  { id: "upload", label: "Upload a file", icon: Paperclip, caret: false },
+  { id: "attach", label: "Add from Paper", icon: FileText, caret: true },
+  { id: "job", label: "Add a job from Apply", icon: Kanban, caret: true },
+  { id: "link", label: "Paste a job link", icon: Link, caret: false },
 ] as const
 
-type MenuId = (typeof DOCK_MENU)[number]["id"]
+type MenuId = Exclude<(typeof DOCK_MENU)[number]["id"], "upload">
+
+/** Coach reads a file by name and size only, and no upload route accepts one for Coach. */
+export const UPLOAD_UNAVAILABLE = "Coach cannot read uploaded files yet."
+
+export type DockRecent = {
+  id: string
+  label: string
+  kind: "cv" | "letter"
+  attached: boolean
+}
+
+export type DockRecentList = {
+  state: "loading" | "error" | "ready"
+  items: readonly DockRecent[]
+}
 
 const MODE_ICONS = { free: Leaf, light: Zap, max: Rocket }
 
@@ -64,6 +82,10 @@ type Props = {
   onAttachFromPaper: () => void
   onAttachJob?: () => void
   onAttachLink?: () => void
+  /** Recent Paper documents for the Add menu. Without it the menu has no Recent section. */
+  recent?: DockRecentList
+  onRecentSelect?: (id: string) => void
+  onAddMenuOpenChange?: (open: boolean) => void
   disabled?: boolean
   /** A limit or off notice shown as the top band of the one composer card. */
   notice?: ReactNode
@@ -83,6 +105,9 @@ export function CoachDock({
   onAttachFromPaper,
   onAttachJob,
   onAttachLink,
+  recent,
+  onRecentSelect,
+  onAddMenuOpenChange,
   disabled = false,
   notice,
   primaryAction = false,
@@ -100,18 +125,16 @@ export function CoachDock({
       else void navigate({ to: SURFACE_PATHS.apply })
     }
     if (id === "link") onAttachLink?.()
-    if (id === "connector") {
-      void navigate({ href: settingsSectionHref("integrations") })
-    }
     if (id === "attach") onAttachFromPaper()
   }
 
   const tools = (
     <DropdownMenu
       open={menuOpen}
-      onOpenChange={(open) =>
+      onOpenChange={(open) => {
         menuDispatch({ type: open ? "opened" : "closed" })
-      }
+        onAddMenuOpenChange?.(open)
+      }}
     >
       <DropdownMenuTrigger
         render={
@@ -130,22 +153,83 @@ export function CoachDock({
         side={menuPlacement === "above" ? "top" : "bottom"}
         align="start"
         sideOffset={8}
-        className="w-56 min-w-56"
+        className="flex flex-col"
+        aria-label="Add to Coach"
+        data-pen-surface="coach"
+        data-slot="coach-add-menu"
       >
         {DOCK_MENU.filter((item) => item.id !== "link" || onAttachLink).map(
           (item) => {
             const Icon = item.icon
+            const unavailable = item.id === "upload"
             return (
               <DropdownMenuItem
                 key={item.id}
-                onClick={() => handleMenuAction(item.id)}
+                data-add-row=""
+                disabled={unavailable}
+                onClick={
+                  item.id === "upload"
+                    ? undefined
+                    : () => handleMenuAction(item.id)
+                }
               >
-                <Icon className="size-4 shrink-0 text-muted-foreground" />
-                {item.label}
+                <Icon />
+                <span data-add-label="">{item.label}</span>
+                {unavailable ? (
+                  <span className="sr-only">{UPLOAD_UNAVAILABLE}</span>
+                ) : null}
+                {item.caret ? <ChevronRight data-add-caret="" /> : null}
               </DropdownMenuItem>
             )
           }
         )}
+        {recent ? (
+          <>
+            <div data-add-divider="">
+              <div />
+            </div>
+            <div data-add-recent-label="" role="presentation">
+              Recent
+            </div>
+            {recent.state === "ready" && recent.items.length === 0 ? (
+              <p data-add-status="">Nothing in Paper yet.</p>
+            ) : null}
+            {recent.state === "loading" ? (
+              <p data-add-status="" role="status">
+                Loading…
+              </p>
+            ) : null}
+            {recent.state === "error" ? (
+              <p data-add-status="" role="alert">
+                Could not load Paper.
+              </p>
+            ) : null}
+            {recent.state === "ready"
+              ? recent.items.map((item) => {
+                  const Icon = item.kind === "letter" ? Mail : FileText
+                  return (
+                    <DropdownMenuItem
+                      key={item.id}
+                      data-add-row=""
+                      aria-label={
+                        item.attached ? `${item.label}, attached` : item.label
+                      }
+                      onClick={() => {
+                        menuDispatch({ type: "closed" })
+                        onRecentSelect?.(item.id)
+                      }}
+                    >
+                      <Icon />
+                      <span data-add-label="" title={item.label}>
+                        {item.label}
+                      </span>
+                      {item.attached ? <Check data-add-check="" /> : null}
+                    </DropdownMenuItem>
+                  )
+                })
+              : null}
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )

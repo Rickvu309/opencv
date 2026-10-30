@@ -1,0 +1,58 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "kfJuz",
+    "frameName": "W3.4 Composer menus"
+  },
+  "sections": [
+    {
+      "id": "jsloS",
+      "name": "Sidebar",
+      "texts": [
+        "opencv",
+        "Inbox",
+        "4",
+        "Coach",
+        "Jobs",
+        "Your work",
+        "Paper",
+        "Apply",
+        "Pitch",
+        "Favorites",
+        "Junior Marketing CV",
+        "Lumière application",
+        "Checkout UX study",
+        "LN",
+        "Linh Nguyen"
+      ],
+      "fills": []
+    },
+    {
+      "id": "PVaFN",
+      "name": "Main wrap",
+      "texts": [
+        "New chat",
+        "How can I help?",
+        "Make my CV fit the Lumière posting",
+        "Free",
+        "Upload a file",
+        "Add from Paper",
+        "Add a job from Apply",
+        "Paste a job link",
+        "Recent",
+        "Junior Marketing CV",
+        "Cover letter, Lumière",
+        "Free",
+        "Light",
+        "Pro",
+        "Max",
+        "Pro",
+        "Tailor your CV for Lumière",
+        "Prep for Local startup interview",
+        "Coach"
+      ],
+      "fills": []
+    }
+  ]
+}

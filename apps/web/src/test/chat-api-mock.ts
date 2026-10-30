@@ -479,6 +479,7 @@ export async function chatApiFetch(
       regenerate?: boolean
       focusDocId?: string
       selection?: CoachSelection
+      context?: { kind: string; id: string }[]
     }
     lastCoachRequest = {
       chatId: turn[1]!,
@@ -487,6 +488,7 @@ export async function chatApiFetch(
       ...(body.regenerate ? { regenerate: true } : {}),
       ...(body.focusDocId ? { focusDocId: body.focusDocId } : {}),
       ...(body.selection ? { selection: body.selection } : {}),
+      ...(body.context ? { context: body.context } : {}),
     }
     const chat = store.chats.find((item) => item.id === turn[1])
     if (!chat) {

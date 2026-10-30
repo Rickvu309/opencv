@@ -13,6 +13,8 @@ export type WorkspaceState = {
   link: string
   linkError: string
   draftChatId: string | null
+  /** The Add menu has opened, so its Recent list may load Paper. */
+  addMenuOpened: boolean
 }
 
 export type WorkspaceAction =
@@ -24,6 +26,7 @@ export type WorkspaceAction =
   | { type: "search_typed"; value: string }
   | { type: "picker_opened"; picker: "paper" | "job" | "link" }
   | { type: "picker_closed" }
+  | { type: "add_menu_opened" }
   | { type: "attached"; item: Attachment }
   | { type: "link_attached"; item: Attachment }
   | { type: "link_rejected" }
@@ -49,6 +52,7 @@ export function initialWorkspaceState(
     link: "",
     linkError: "",
     draftChatId,
+    addMenuOpened: false,
   }
 }
 
@@ -86,6 +90,8 @@ export function workspaceReducer(
       return { ...state, picker: action.picker }
     case "picker_closed":
       return { ...state, picker: null }
+    case "add_menu_opened":
+      return { ...state, addMenuOpened: true }
     case "attached":
       return attached(state, action.item)
     case "link_attached":

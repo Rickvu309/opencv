@@ -1,0 +1,187 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "kfJuz",
+    "frameName": "W3.4 Composer menus",
+    "nodeId": "f0tcTl",
+    "nodeName": "Popover"
+  },
+  "popover": {
+    "width": 268,
+    "cornerRadius": 16,
+    "padding": 8,
+    "gap": 2,
+    "fill": "#FFFFFF",
+    "stroke": "#ECECEE",
+    "strokeWidth": 1,
+    "shadows": [
+      {
+        "type": "shadow",
+        "shadowType": "outer",
+        "color": "#0000000A",
+        "offset": {
+          "x": 0,
+          "y": 2
+        },
+        "blur": 6
+      },
+      {
+        "type": "shadow",
+        "shadowType": "outer",
+        "color": "#00000012",
+        "offset": {
+          "x": 0,
+          "y": 12
+        },
+        "blur": 32
+      }
+    ]
+  },
+  "rows": [
+    {
+      "id": "MDUf4",
+      "name": "Upload a file",
+      "kind": "item",
+      "height": 40,
+      "cornerRadius": 10,
+      "gap": 14,
+      "padding": [0, 12],
+      "text": "Upload a file",
+      "fontSize": 14.5,
+      "fontWeight": "normal",
+      "textFill": "#1A1A1A",
+      "icon": {
+        "name": "paperclip",
+        "size": 18,
+        "fill": "#3C3C40"
+      }
+    },
+    {
+      "id": "CMAK5",
+      "name": "Add from Paper",
+      "kind": "item",
+      "height": 40,
+      "cornerRadius": 10,
+      "gap": 14,
+      "padding": [0, 12],
+      "text": "Add from Paper",
+      "fontSize": 14.5,
+      "fontWeight": "normal",
+      "textFill": "#1A1A1A",
+      "icon": {
+        "name": "file-text",
+        "size": 18,
+        "fill": "#3C3C40"
+      },
+      "trailing": {
+        "role": "caret",
+        "name": "chevron-right",
+        "size": 13,
+        "fill": "#A0A0A2"
+      }
+    },
+    {
+      "id": "QeFgY",
+      "name": "Add a job from Apply",
+      "kind": "item",
+      "height": 40,
+      "cornerRadius": 10,
+      "gap": 14,
+      "padding": [0, 12],
+      "text": "Add a job from Apply",
+      "fontSize": 14.5,
+      "fontWeight": "normal",
+      "textFill": "#1A1A1A",
+      "icon": {
+        "name": "kanban",
+        "size": 18,
+        "fill": "#3C3C40"
+      },
+      "trailing": {
+        "role": "caret",
+        "name": "chevron-right",
+        "size": 13,
+        "fill": "#A0A0A2"
+      }
+    },
+    {
+      "id": "WFaJa",
+      "name": "Paste a job link",
+      "kind": "item",
+      "height": 40,
+      "cornerRadius": 10,
+      "gap": 14,
+      "padding": [0, 12],
+      "text": "Paste a job link",
+      "fontSize": 14.5,
+      "fontWeight": "normal",
+      "textFill": "#1A1A1A",
+      "icon": {
+        "name": "link",
+        "size": 18,
+        "fill": "#3C3C40"
+      }
+    },
+    {
+      "id": "mlvb1",
+      "name": "Divider",
+      "kind": "divider",
+      "padding": [6, 12],
+      "lineHeight": 1,
+      "lineFill": "#EDEDEF"
+    },
+    {
+      "id": "rmWQw",
+      "name": "Recent label",
+      "kind": "label",
+      "padding": [2, 12, 4, 12],
+      "text": "Recent",
+      "fontSize": 12,
+      "fontWeight": "500",
+      "fill": "#A0A0A2"
+    },
+    {
+      "id": "XoY9T",
+      "name": "Junior Marketing CV",
+      "kind": "item",
+      "height": 40,
+      "cornerRadius": 10,
+      "gap": 14,
+      "padding": [0, 12],
+      "text": "Junior Marketing CV",
+      "fontSize": 14.5,
+      "fontWeight": "normal",
+      "textFill": "#1A1A1A",
+      "icon": {
+        "name": "file-text",
+        "size": 18,
+        "fill": "#3C3C40"
+      },
+      "trailing": {
+        "role": "check",
+        "name": "check",
+        "size": 16,
+        "fill": "#3C3C40"
+      }
+    },
+    {
+      "id": "j9t2W",
+      "name": "Cover letter, Lumière",
+      "kind": "item",
+      "height": 40,
+      "cornerRadius": 10,
+      "gap": 14,
+      "padding": [0, 12],
+      "text": "Cover letter, Lumière",
+      "fontSize": 14.5,
+      "fontWeight": "normal",
+      "textFill": "#1A1A1A",
+      "icon": {
+        "name": "mail",
+        "size": 18,
+        "fill": "#3C3C40"
+      }
+    }
+  ]
+}

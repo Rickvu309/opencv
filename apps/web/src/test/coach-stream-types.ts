@@ -44,6 +44,7 @@ export type LastCoachRequest = {
   regenerate?: boolean
   focusDocId?: string
   selection?: CoachSelection
+  context?: { kind: string; id: string }[]
 }
 
 export type GateState = {

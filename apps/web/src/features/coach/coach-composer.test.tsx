@@ -67,7 +67,7 @@ describe("Coach composer", () => {
     })
   })
 
-  it("lists the attach and connector items in the Add menu and offers no voice control", async () => {
+  it("lists the attach items in the Add menu and offers no voice control", async () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
 
@@ -78,10 +78,10 @@ describe("Coach composer", () => {
 
     const menu = await screen.findByRole("menu")
     for (const label of [
-      "Attach from Paper",
-      "Attach from Apply",
-      "Paste a link",
-      "Add connector",
+      /^Upload a file/,
+      "Add from Paper",
+      "Add a job from Apply",
+      "Paste a job link",
     ]) {
       expect(
         await screen.findByRole("menuitem", { name: label })
@@ -90,13 +90,13 @@ describe("Coach composer", () => {
     expect(menu).not.toHaveTextContent("Coming soon")
   })
 
-  it("opens the Paper picker from Attach from Paper", async () => {
+  it("opens the Paper picker from Add from Paper", async () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
 
     fireEvent.click(screen.getByRole("button", { name: "Add" }))
     fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Attach from Paper" })
+      await screen.findByRole("menuitem", { name: "Add from Paper" })
     )
 
     expect(
