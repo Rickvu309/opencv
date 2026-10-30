@@ -1,4 +1,4 @@
-import { Check, FilePlus, Paperclip, Search } from "lucide-react"
+import { Check, FilePlus, Link2Off, Paperclip, Search } from "lucide-react"
 import {
   useEffect,
   useId,
@@ -40,7 +40,22 @@ type DraftOperation = {
 }
 
 function unreadableLink(value: string) {
-  return /docs\.google\.com|linkedin\.com/i.test(value)
+  return value
+    .trim()
+    .split(/\s+/)
+    .every((token) => {
+      const link = token.replace(/^<|>$/g, "")
+      try {
+        const { hostname } = new URL(
+          /^https?:\/\//i.test(link) ? link : `https://${link}`
+        )
+        return ["linkedin.com", "lnkd.in", "docs.google.com"].some(
+          (host) => hostname === host || hostname.endsWith(`.${host}`)
+        )
+      } catch {
+        return false
+      }
+    })
 }
 
 function resetClock(iso: string | null) {
@@ -79,17 +94,15 @@ export function PaperLetterStart({
   const attachmentAbort = useRef<AbortController | null>(null)
   const attached = attachment.status === "ready" ? attachment.context : null
   const attaching = attachment.status === "loading"
-  const needsContext = !selected && !query.trim() && !attached
+  const unread = unreadableLink(query)
+  const needsContext = !selected && (!query.trim() || unread) && !attached
 
   const activeDraft = useRef<DraftOperation | null>(null)
-  const unread = unreadableLink(query)
-  const shown = unread
-    ? jobs
-    : jobs.filter((job) => {
-        const hay = `${job.title} ${job.company}`.toLowerCase()
-        const needle = query.trim().toLowerCase()
-        return needle === "" || hay.includes(needle)
-      })
+  const shown = jobs.filter((job) => {
+    const hay = `${job.title} ${job.company}`.toLowerCase()
+    const needle = query.trim().toLowerCase()
+    return needle === "" || hay.includes(needle)
+  })
 
   useEffect(() => {
     if (jobsProp) {
@@ -333,49 +346,65 @@ export function PaperLetterStart({
           <Paperclip aria-hidden="true" className="size-[15px]" />
         </Button>
       </div>
-      {unread ? (
-        <p>Can&apos;t read this link. Paste the job text or attach a file.</p>
-      ) : null}
-      <div data-slot="letter-start-jobs-wrap" className="relative -mt-3">
+      {unread && !attached ? (
         <div
-          data-slot="letter-start-jobs"
-          className="grid h-[228px] auto-rows-[40px] content-start gap-0.5 overflow-auto"
+          data-slot="letter-unreadable-link"
+          role="status"
+          id={guidanceId}
+          className="-mt-3 flex h-[228px] flex-col items-center justify-center gap-[6px] text-center text-[13px] leading-[15.5px]"
         >
-          {shown.map((job) => (
-            <Button
-              key={job.id}
-              type="button"
-              variant={selected?.id === job.id ? "secondary" : "outline"}
-              data-slot="letter-start-job"
-              className="h-10 min-w-0 justify-start gap-[5px] rounded-[8px] border-transparent px-3.5 text-[13px] leading-[15.5px] font-medium"
-              aria-label={`${job.title}, ${job.company}`}
-              aria-pressed={selected?.id === job.id}
-              onClick={() => dispatch({ type: "picked_job", job })}
-            >
-              <span className="truncate">{job.title}</span>
-              <span
-                data-slot="letter-start-company"
-                className="truncate font-normal"
-              >
-                @{job.company}
-              </span>
-              {selected?.id === job.id ? (
-                <Check
-                  aria-hidden="true"
-                  className="ml-auto size-3.5 shrink-0"
-                />
-              ) : null}
-            </Button>
-          ))}
-        </div>
-        {shown.length > 5 ? (
-          <div
+          <Link2Off
             aria-hidden="true"
-            data-slot="letter-start-fade"
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
+            data-slot="letter-unreadable-icon"
+            className="size-[18px] shrink-0"
           />
-        ) : null}
-      </div>
+          <p className="font-semibold">Can't read this link</p>
+          <p data-slot="letter-unreadable-help">
+            Paste the job text or attach a file.
+          </p>
+        </div>
+      ) : (
+        <div data-slot="letter-start-jobs-wrap" className="relative -mt-3">
+          <div
+            data-slot="letter-start-jobs"
+            className="grid h-[228px] auto-rows-[40px] content-start gap-0.5 overflow-auto"
+          >
+            {shown.map((job) => (
+              <Button
+                key={job.id}
+                type="button"
+                variant={selected?.id === job.id ? "secondary" : "outline"}
+                data-slot="letter-start-job"
+                className="h-10 min-w-0 justify-start gap-[5px] rounded-[8px] border-transparent px-3.5 text-[13px] leading-[15.5px] font-medium"
+                aria-label={`${job.title}, ${job.company}`}
+                aria-pressed={selected?.id === job.id}
+                onClick={() => dispatch({ type: "picked_job", job })}
+              >
+                <span className="truncate">{job.title}</span>
+                <span
+                  data-slot="letter-start-company"
+                  className="truncate font-normal"
+                >
+                  @{job.company}
+                </span>
+                {selected?.id === job.id ? (
+                  <Check
+                    aria-hidden="true"
+                    className="ml-auto size-3.5 shrink-0"
+                  />
+                ) : null}
+              </Button>
+            ))}
+          </div>
+          {shown.length > 5 ? (
+            <div
+              aria-hidden="true"
+              data-slot="letter-start-fade"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
+            />
+          ) : null}
+        </div>
+      )}
       {attaching ? <p role="status">Reading attachment…</p> : null}
       {attached ? (
         <div className="min-w-0 text-sm">
@@ -415,6 +444,7 @@ export function PaperLetterStart({
         ) : (
           <Button
             type="button"
+            data-slot="letter-start-draft"
             className="h-[34px] gap-2 rounded-[8px] px-3.5 text-[13px] font-semibold"
             variant={limit ? "outline" : "glow"}
             disabled={Boolean(limit) || attaching || needsContext}
@@ -435,7 +465,7 @@ export function PaperLetterStart({
           </Button>
         )}
       </div>
-      {needsContext ? (
+      {needsContext && !unread ? (
         <p
           id={guidanceId}
           className="absolute top-full mt-2 text-xs text-muted-foreground"
