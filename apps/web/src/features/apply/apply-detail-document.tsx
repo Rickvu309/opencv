@@ -346,7 +346,10 @@ function noteReducer(state: NoteState, action: NoteAction): NoteState {
     return {
       ...state,
       message: {
-        text: `Keep a note to ${NOTE_MAX_LENGTH.toLocaleString()} characters or fewer.`,
+        text:
+          NOTE_MAX_LENGTH !== null
+            ? `Keep a note to ${NOTE_MAX_LENGTH.toLocaleString()} characters or fewer.`
+            : "Check the note and try again.",
         invalid: true,
       },
     }
@@ -398,7 +401,14 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
       >
         <Textarea
           aria-label="Leave a note"
-          aria-describedby={state.message ? `${hintId} ${messageId}` : hintId}
+          aria-describedby={
+            [
+              NOTE_MAX_LENGTH !== null ? hintId : null,
+              state.message ? messageId : null,
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
           aria-invalid={state.message?.invalid || undefined}
           value={state.note}
           rows={1}
@@ -429,9 +439,11 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
           />
         </Button>
       </form>
-      <p id={hintId} className="text-xs text-muted-foreground">
-        Up to {NOTE_MAX_LENGTH.toLocaleString()} characters.
-      </p>
+      {NOTE_MAX_LENGTH !== null ? (
+        <p id={hintId} className="text-xs text-muted-foreground">
+          Up to {NOTE_MAX_LENGTH.toLocaleString()} characters.
+        </p>
+      ) : null}
       {state.message ? (
         <p id={messageId} role="alert" className="text-sm text-destructive">
           {state.message.text}
