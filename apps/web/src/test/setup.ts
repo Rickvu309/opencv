@@ -41,6 +41,13 @@ if (
   Element.prototype.scrollTo = function scrollTo() {}
 }
 
+if (
+  typeof Element !== "undefined" &&
+  typeof Element.prototype.scrollIntoView !== "function"
+) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {}
+}
+
 if (typeof window !== "undefined") {
   window.scrollTo = () => {}
 }
