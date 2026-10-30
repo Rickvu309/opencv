@@ -1,6 +1,15 @@
 [data-pen-surface="coach"] [data-cap-upgrade] {
-  /* W3.6 cap notice upgrade button gradient – pen frame wiQ9M; colors in cap-notice.styles.json */
-  background: linear-gradient(135deg, #eaeffa 0%, #d0daf5 50%, #e9e5f9 100%);
+  /* W3.6 wiQ9M uVUzR: 3×3 mesh gradient; 9 control points mapped to radial layers; colors in cap-notice.styles.json */
+  background:
+    radial-gradient(at 0% 0%, #eaeffa, transparent 65%),
+    radial-gradient(at 50% 0%, #d6dff6, transparent 55%),
+    radial-gradient(at 100% 0%, #e7e3f9, transparent 65%),
+    radial-gradient(at 0% 50%, #d0daf5, transparent 55%),
+    radial-gradient(at 55% 60%, #bccaf1, transparent 60%),
+    radial-gradient(at 100% 50%, #dcd6f6, transparent 55%),
+    radial-gradient(at 0% 100%, #e6ebf9, transparent 65%),
+    radial-gradient(at 50% 100%, #ced9f4, transparent 55%),
+    radial-gradient(at 100% 100%, #e9e5f9, transparent 65%);
   border: 1px solid #ffffffb3;
   box-shadow: 0 2px 10px #8ea4e04d;
 }
