@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs"
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { createHash } from "node:crypto"
 import {
@@ -15,6 +15,7 @@ const release = {
   ],
 }
 function fixture(run) {
+  mkdirSync(join(process.env.HOME, "tmp"), { recursive: true })
   const base = mkdtempSync(join(process.env.HOME, "tmp", "acceptance-test-"))
   const artifact = (name, content) => {
     const path = join(base, name)
