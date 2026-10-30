@@ -8,9 +8,9 @@
 #   rule_main_clean <main_checkout>       R68  the main checkout stays on main with no edited tracked file
 #   rule_port <worktree>                  R76  the worktree's .env still has the port ocv-tools take assigned
 #   rule_not_ready_for_human <labels>     R103 the issue is not labeled ready-for-human
-#   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/ except ci.yml
+#   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/ except ci.yml and nightly.yml
 #   rule_ci_workflow_kept <files> <sha> [wt] R105 ci.yml may change but never vanish
-#   rule_risk_high_for_ci <files> <labels> [wt] R105 a change to ci.yml, composite actions, check.mjs or the ruleset needs risk:high on the issue
+#   rule_risk_high_for_ci <files> <labels> [wt] R105 a change to ci.yml, nightly.yml, composite actions, check.mjs or the ruleset needs risk:high on the issue
 #   rule_skip_declared                    R98  SKIP_CHECKS=1 needs SKIP_CHECKS_DECLARED_BY=<human>
 #   rule_stamp_dir                        R97/R98 where pre-push records each pushed sha (ok | skip)
 #   rule_skip_said <sha> <pr#> <body>     R98  a head pushed with SKIP_CHECKS=1 has "emergency declared by <name>" in the PR body
@@ -70,10 +70,10 @@ rule_not_ready_for_human() {
 
 rule_no_workflows() {  # rule_no_workflows <files> [wt] [push]: push adds the force push (merge-pr; open-pr pushes on its next run)
   local bad=() q
-  mapfile -t bad < <(grep -E '^\.github/workflows/' <<<"$1" | grep -vxF '.github/workflows/ci.yml' || true)
+  mapfile -t bad < <(grep -E '^\.github/workflows/' <<<"$1" | grep -vxF -e '.github/workflows/ci.yml' -e '.github/workflows/nightly.yml' || true)
   (( ${#bad[@]} )) || return 0
   q=$(printf '%q ' "${bad[@]}")
-  rule_fail "workflows other than ci.yml are not added without an issue: ${bad[*]:0:3}" \
+  rule_fail "workflows other than ci.yml and nightly.yml are not added without an issue: ${bad[*]:0:3}" \
     "$(rule_cd "${2:-}")git rm -rf -- ${q% } && git commit --amend --no-edit${3:+ && git push --force-with-lease}"
 }
 
@@ -86,9 +86,9 @@ rule_ci_workflow_kept() {  # rule_ci_workflow_kept <files> <sha> [wt]: ci.yml in
 
 # Owner /approve for these files is slice 5 of epic #582; until then the label is the only mechanical gate.
 rule_risk_high_for_ci() {  # rule_risk_high_for_ci <files> <issue labels> [wt]
-  grep -qxE '\.github/workflows/ci\.yml|\.github/actions/.*|scripts/check\.(sh|mjs)|\.github/rulesets/main\.json' <<<"$1" || return 0
+  grep -qxE '\.github/workflows/(ci|nightly)\.yml|\.github/actions/.*|scripts/check\.mjs|\.github/rulesets/main\.json' <<<"$1" || return 0
   grep -qx 'risk:high' <<<"$2" && return 0
-  rule_fail "the change touches ci.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)" \
+  rule_fail "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)" \
     "gh issue edit <issue#> --add-label risk:high   # then ask the owner for /approve"
 }
 
