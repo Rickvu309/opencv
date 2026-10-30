@@ -62,7 +62,7 @@ export function recorded(ctx, script, action) {
     writeResult(ctx.env, {
       script,
       id: result.id ?? ctx.ports.git.here(ctx.cwd).branch,
-      status: result.exit ? "fail" : "ok",
+      status: result.exit ? "fail" : (result.status ?? "ok"),
       cause: result.cause,
       detail: result.lines.join(" "),
       next: result.next,

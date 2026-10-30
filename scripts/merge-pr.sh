@@ -86,7 +86,7 @@ merge_sha=$(gh pr view "$pr" --json mergeCommit --jq .mergeCommit.oid)
 if [[ -z "$merge_sha" || "$merge_sha" == null ]]; then
   echo "==> QUEUED PR #$pr at $head; the issue closes when the queue merges."
   echo "Next: when the queue merges, node scripts/pr.mjs release <merge sha> --wait 600, then scripts/ocv-tools.mjs cleanup $issue (it also closes the issue if the merge left it open)."
-  result_ok "queued PR #$pr at $head" "scripts/ocv-tools.mjs status"
+  result_pending "queued PR #$pr at $head" "scripts/ocv-tools.mjs status"
   exit 0
 fi
 echo "==> merged PR #$pr as $merge_sha"

@@ -83,3 +83,47 @@ test("result.sh and result.mjs write the same schema", () => {
     else process.env.PR_RESULT_REPO = prevRepo
   }
 })
+
+test("both result writers preserve pending delivery without claiming success", () => {
+  const dir = mkdtempSync(join(process.env.HOME, "tmp", "ocv-pending-"))
+  const next = "Observe the PR merge before cleanup"
+  const output = execFileSync(
+    "bash",
+    [
+      "-c",
+      `
+    set -euo pipefail
+    source "$1"
+    result_begin merge-pr queued
+    result_pending "queued PR #764" "$2"
+  `,
+      "_",
+      resultSh,
+      next,
+    ],
+    {
+      encoding: "utf8",
+      env: { ...process.env, PR_RESULT_DIR: dir, PR_RESULT_REPO: "opencv" },
+    }
+  )
+  const bashPath = output
+    .trim()
+    .split("\n")
+    .at(-1)
+    .replace(/^RESULT_JSON: /, "")
+  const nodePath = writeResult(
+    { PR_RESULT_DIR: dir, PR_RESULT_REPO: "opencv" },
+    {
+      script: "merge-pr",
+      id: "queued-node",
+      status: "pending",
+      detail: "queued PR #764",
+      next,
+      startedAt: new Date(),
+    }
+  )
+  for (const file of [bashPath, nodePath]) {
+    check(file, "status=pending", "cause=none", `next=${next}`)
+    assert.throws(() => check(file, "status=ok"))
+  }
+})

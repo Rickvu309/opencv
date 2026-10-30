@@ -148,6 +148,7 @@ export function merge(ctx, n, { wait = false } = {}) {
         if (!wait)
           return {
             id: n,
+            status: "pending",
             lines: [
               `Queued PR #${n} at ${head}. Issue closure waits for the merge.`,
             ],

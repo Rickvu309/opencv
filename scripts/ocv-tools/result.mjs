@@ -25,7 +25,7 @@ export const SCHEMA = Object.freeze({
     "check",
     "release",
   ]),
-  status: Object.freeze(["ok", "fail", "human", "error"]),
+  status: Object.freeze(["ok", "pending", "fail", "human", "error"]),
   causes: Object.freeze([
     "none",
     "behind-main",
@@ -206,7 +206,8 @@ function writeRecord(env, r) {
     repo,
     id,
     status,
-    cause: status === "ok" ? "none" : r.cause || "other",
+    cause:
+      status === "ok" || status === "pending" ? "none" : r.cause || "other",
     detail: oneLine(r.detail),
     files: r.files ?? [],
     blockedBy: r.blockedBy ?? null,
