@@ -181,7 +181,11 @@ describe("apply calendar", () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`/apply/${job.id}`)
     )
-    expect(await screen.findByText(job.title)).toBeInTheDocument()
+    expect(
+      await within(
+        await screen.findByRole("navigation", { name: "Breadcrumb" })
+      ).findByText(job.title)
+    ).toBeInTheDocument()
   })
 
   it("shows actual early and late interview times and retains the 18:30 start", async () => {
