@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { useState } from "react"
+import { useReducer } from "react"
 import type { CvBlock } from "@workspace/domain"
 
 import { ExperienceBlockField } from "./paper-block-entries.tsx"
@@ -8,7 +8,7 @@ import { ExperienceBlockField } from "./paper-block-entries.tsx"
 afterEach(cleanup)
 
 function Editor() {
-  const [block, setBlock] = useState<CvBlock>({
+  const [block, setBlock] = useReducer((_: CvBlock, next: CvBlock) => next, {
     id: "experience",
     type: "experience-entry",
     role: "Engineer",
