@@ -114,9 +114,9 @@ async function resolveAttachments(
         ref.kind === "link"
           ? linkLabel(ref.id)
           : ref.kind === "job"
-            ? (jobLabels.get(ref.id) ?? "Saved job (unavailable)")
+            ? (jobLabels.get(ref.id) ?? "Saved job")
             : ref.kind === "paper"
-              ? (paperLabels.get(ref.id) ?? "Saved document (unavailable)")
+              ? (paperLabels.get(ref.id) ?? "Saved document")
               : "Saved file",
     }))
   )
