@@ -1,4 +1,5 @@
 import { StageIcon } from "@workspace/ui/components/stage-icon"
+import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { FAINT_TEXT } from "./apply-tone.ts"
@@ -11,17 +12,29 @@ import {
   type CalendarEvent,
 } from "./apply-calendar-model.ts"
 
-function MonthChip({ event }: { event: CalendarEvent }) {
+function MonthChip({
+  event,
+  onOpenJob,
+}: {
+  event: CalendarEvent
+  onOpenJob: (jobId: string) => void
+}) {
   const { job } = event
   const label =
     event.kind === "interview"
       ? `${clock(event.startMinutes)} ${job.title}`
       : job.title
   return (
-    <div
-      role="group"
-      aria-label={job.title}
-      className="flex h-[22px] items-center gap-1.5 rounded-[5px] bg-secondary px-[7px]"
+    <Button
+      type="button"
+      variant="ghost"
+      aria-label={
+        event.kind === "interview"
+          ? `Interview ${clock(event.startMinutes)}: ${job.title}, ${job.company}`
+          : `Deadline: ${job.title}, ${job.company}`
+      }
+      onClick={() => onOpenJob(job.id)}
+      className="flex h-[22px] min-w-0 items-center justify-start gap-1.5 rounded-[5px] bg-secondary px-[7px] text-start"
     >
       <StageIcon stage={job.stage} size={14} />
       <span
@@ -32,7 +45,7 @@ function MonthChip({ event }: { event: CalendarEvent }) {
       >
         {label}
       </span>
-    </div>
+    </Button>
   )
 }
 
@@ -41,11 +54,13 @@ export function MonthGrid({
   month,
   today,
   events,
+  onOpenJob,
 }: {
   weeks: string[][]
   month: string
   today: string
   events: CalendarEvent[]
+  onOpenJob: (jobId: string) => void
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col px-6 pb-5">
@@ -86,7 +101,11 @@ export function MonthGrid({
                 {Number(day.slice(8))}
               </span>
               {eventsOn(events, day).map((event) => (
-                <MonthChip key={event.key} event={event} />
+                <MonthChip
+                  key={event.key}
+                  event={event}
+                  onOpenJob={onOpenJob}
+                />
               ))}
             </div>
           ))}
