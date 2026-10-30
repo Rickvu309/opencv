@@ -17,7 +17,7 @@
   color: #1a1a1a;
 }
 
-[data-pen-surface="auth"] [data-slot="email-code-open"] {
+[data-pen-surface="auth"] [data-slot="email-code-open"]:not(:focus-visible) {
   background: #ffffff;
   border-color: #e2e2e2;
   box-shadow: none;

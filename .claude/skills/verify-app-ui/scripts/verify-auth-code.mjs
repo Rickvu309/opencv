@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // PORT=4817 node .claude/skills/verify-app-ui/scripts/verify-auth-code.mjs <evidence directory>
+import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
@@ -35,12 +36,25 @@ const sourceFiles = [
       )
   ),
 ].map((file) => join(repo, "apps/web/src/features/auth", file))
+sourceFiles.push(
+  ...[
+    ".claude/skills/verify-app-ui/scripts/verify-auth-code.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/pen-layout-probe.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/pen-layout-compare.mjs",
+    "packages/ui/src/components/button.tsx",
+    "packages/ui/src/components/input.tsx",
+  ].map((file) => join(repo, file))
+)
 const sourceHashes = () =>
   Object.fromEntries(
     sourceFiles.map((file) => [file.slice(repo.length + 1), sha(file)])
   )
 const before = sourceHashes()
 const report = {
+  head: execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repo,
+    encoding: "utf8",
+  }).trim(),
   fixture:
     "HTTP-boundary fixtures: OTP send succeeds, verification holds or returns INVALID_OTP. Does not prove mail delivery or server authentication.",
   scope:
@@ -170,7 +184,38 @@ try {
         }
         const screenshot = `${state}-${width}.png`
         await page.screenshot(join(output, screenshot), false)
+        let keyboardFocus = null
+        if (state !== "verifying") {
+          for (let tab = 0; tab < 12; tab += 1) {
+            await page.key("Tab")
+            if (
+              await page.evaluate(
+                "document.activeElement?.matches('[data-slot=\"email-code-open\"]')"
+              )
+            )
+              break
+          }
+          await paint(page)
+          keyboardFocus = await page.evaluate(`(() => {
+            const link = document.querySelector('[data-slot="email-code-open"]');
+            const style = getComputedStyle(link);
+            return { active: document.activeElement === link, visible: link.matches(':focus-visible'), shadow: style.boxShadow, outline: style.outlineStyle, outlineWidth: style.outlineWidth };
+          })()`)
+          if (
+            !keyboardFocus.active ||
+            !keyboardFocus.visible ||
+            (keyboardFocus.shadow === "none" &&
+              (keyboardFocus.outline === "none" ||
+                keyboardFocus.outlineWidth === "0px"))
+          )
+            failures += 1
+          await page.screenshot(
+            join(output, `focus-${state}-${width}.png`),
+            false
+          )
+        }
         report.captures.push({
+          keyboardFocus,
           state,
           capturedAt: new Date().toISOString(),
           screenshot,
