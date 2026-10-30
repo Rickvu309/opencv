@@ -1,7 +1,7 @@
 import { ApiError } from "@/lib/api-error.ts"
 import type { useRunCommand } from "@/lib/contract-client.ts"
 
-import type { PaperView } from "./paper-api.ts"
+import type { PaperView } from "@workspace/domain"
 
 export const IMPORT_ACCEPT =
   ".pdf,.docx,.txt,.json,.pages,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json,application/vnd.apple.pages"
