@@ -71,7 +71,7 @@ The failure prints witness lines, the first failing sweep tuples, and the `fast-
 
 Check file: `apps/api/src/job/fetch-posting.formal.test.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 
-Sync commit: `2ea68545978b96c2490ebccc4039295158cb8228`. This is the trunk commit the check was last confirmed against. The guard files moved from `apps/api/src/apply/` to `apps/api/src/job/` and from `packages/domain/src/apply.ts` to `job-posting.ts` since the earlier sync (`49debddf`); their content is unchanged, and every line number above still matches.
+Sync commit: `2ea68545978b96c2490ebccc4039295158cb8228`. This is the trunk commit the check was last confirmed against. The guard files moved from the api apply folder to the api job folder, and the domain `openableApplyJobUrl` moved from apply.ts to `job-posting.ts`, since the earlier sync (`49debddf`); their content is unchanged, and every line number above still matches.
 
 ## What is not covered
 
