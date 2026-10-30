@@ -11,6 +11,8 @@
 #   rule_no_workflows <files> [wt] [push] R105 no file under .github/workflows/ except ci.yml and nightly.yml
 #   rule_ci_workflow_kept <files> <sha> [wt] R105 ci.yml may change but never vanish
 #   rule_risk_high_for_ci <files> <labels> [wt] R105 a change to ci.yml, nightly.yml, composite actions, check.mjs or the ruleset needs risk:high on the issue
+#   rule_mass_delete <base> <head> <pr> [wt] R96 a large deletion of authored files needs a human (limits: MASS_DELETE_* below)
+#   rule_pr_metadata <pr> <issue#> <title> <body> <issue state> the title, the closing line and the open issue, read fresh at merge
 #   rule_skip_declared                    R98  SKIP_CHECKS=1 needs SKIP_CHECKS_DECLARED_BY=<human>
 #   rule_stamp_dir                        R97/R98 where pre-push records each pushed sha (ok | skip)
 #   rule_skip_said <sha> <pr#> <body>     R98  a head pushed with SKIP_CHECKS=1 has "emergency declared by <name>" in the PR body
@@ -141,4 +143,46 @@ rule_commits_hooked() {  # rule_commits_hooked <base> <tip> [wt] [push]: what co
   [[ -z "$over" ]] ||
     rule_fail "file(s) over the 20000-byte pre-commit limit: ${over% }; a commit this size passes only with the hook-skip flag. Split each file as .githooks/pre-commit says, then run the fix" \
       "$(rule_cd "$wt")git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\"${push:+ && git push origin HEAD}"
+}
+
+# Limits of #618 (owner defaults, tunable here and in scripts/ocv-tools/rules/merge.mjs). Generated files are read from the
+# base tree's .gitattributes, so a PR cannot exempt its own deletions by editing them.
+MASS_DELETE_FILES=25 MASS_DELETE_LINES=2000 MASS_DELETE_PERCENT=10
+
+authored_paths() {  # stdin NUL paths, arg: tree-ish; prints the paths whose linguist-generated is not set there, NUL separated
+  local path attr val
+  git check-attr --source="$1" -z --stdin linguist-generated |
+    while IFS= read -r -d '' path && IFS= read -r -d '' attr && IFS= read -r -d '' val; do
+      [[ "$val" == set || "$val" == true ]] || printf '%s\0' "$path"
+    done
+}
+
+rule_mass_delete() {  # rule_mass_delete <base ref> <head sha> <pr#>
+  local base=$1 head=$2 pr=$3 mb files=0 lines=0 total add del path over=() rec
+  mb=$(git merge-base "$base" "$head") || rule_fail "cannot find where PR #$pr branched from $base" "git fetch origin main"
+  declare -A gone=()
+  while IFS= read -r -d '' path; do gone[$path]=1; done < <(git diff --no-renames --name-only -z --diff-filter=D "$mb" "$head" | authored_paths "$mb")
+  files=${#gone[@]}
+  while IFS= read -r -d '' rec; do
+    IFS=$'\t' read -r add del path <<<"$rec"
+    [[ -n "${gone[$path]:-}" && "$del" =~ ^[0-9]+$ ]] && lines=$((lines + del))
+  done < <(git diff --no-renames --numstat -z --diff-filter=D "$mb" "$head")
+  total=$(git ls-tree -r --name-only -z "$mb" | authored_paths "$mb" | tr -cd '\0' | wc -c)
+  (( files > MASS_DELETE_FILES )) && over+=("$files files (limit $MASS_DELETE_FILES)")
+  (( lines > MASS_DELETE_LINES )) && over+=("$lines lines (limit $MASS_DELETE_LINES)")
+  (( total > 0 && files * 100 > MASS_DELETE_PERCENT * total )) && over+=("$files of $total authored files (limit $MASS_DELETE_PERCENT%)")
+  (( ${#over[@]} )) || return 0
+  rule_fail "PR #$pr deletes a lot of authored source: $(IFS=,; echo "${over[*]}"); a human must review it first (an agent never merges it)" \
+    "gh pr edit $pr --add-label needs-human-review   # then tell the owner; if the deletion is a mistake, restore the files on the branch"
+}
+
+rule_pr_metadata() {  # rule_pr_metadata <pr#> <issue#> <title> <body> <issue state>: all read from GitHub just before the merge
+  local pr=$1 n=$2 title=$3 body=$4 state=$5 bad=()
+  [[ "$title" =~ ^(feat|fix|hotfix|refactor|chore|docs)(\([a-z0-9-]+\))?\!?:\ [^\ ].*\ \(#([0-9]+)\)$ && "${BASH_REMATCH[3]}" == "$n" ]] ||
+    bad+=("the title is not \"type: description (#$n)\"")
+  grep -qE "(^|[[:space:]])Closes #$n([^0-9]|$)" <<<"$body" || bad+=("the body has no \"Closes #$n\" line")
+  [[ "$state" == OPEN ]] || bad+=("issue #$n is ${state,,}")
+  (( ${#bad[@]} )) || return 0
+  rule_fail "the details of PR #$pr are wrong: $(IFS=';'; echo "${bad[*]}")" \
+    "gh pr edit $pr --title 'type: description (#$n)' --body-file <file whose first line is Closes #$n>   # an issue that is already closed needs a new open issue: gh issue create"
 }

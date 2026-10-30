@@ -223,12 +223,26 @@ export function cleanup(ctx, { n: given, flags = {} }) {
   }
 
   const removed = []
+  const closed = []
   for (const wt of targets) {
     const j = judge(ctx, wt, { force, n, root })
     if (j) {
       lines.push(`${j.verb} ${wt.branch}: ${j.message.split("\n")[0]}`)
       continue
     }
+    // The merge queue can land a PR whose body lacked Closes #n; the issue must still end up closed.
+    const merged = dry
+      ? []
+      : ctx.ports.gh.prs({ state: "merged", head: wt.branch })
+    const issueNo = /^[a-z]+\/(\d+)-/.exec(wt.branch)?.[1]
+    if (
+      merged[0] &&
+      issueNo &&
+      ctx.ports.gh.closeIssue(issueNo, merged[0].number)
+    )
+      closed.push(
+        `Closed issue #${issueNo}: PR #${merged[0].number} merged and left it open.`
+      )
     if (dry) {
       lines.push(`would remove ${wt.path}  (${wt.branch})`)
       continue
@@ -250,6 +264,7 @@ export function cleanup(ctx, { n: given, flags = {} }) {
   return {
     lines: [
       ...lines,
+      ...closed,
       removed.length
         ? "Removed:"
         : dry

@@ -332,6 +332,20 @@ test("every checked rule has a failing and a passing fact", () => {
       row.says
     )
   }
+  check(
+    "MASS_DELETE",
+    { diff: { deleted: { files: 26, lines: 5, total: 900 } } },
+    { diff: { deleted: { files: 25, lines: 5, total: 900 } } },
+    "the change deletes a lot of authored source: 26 files (limit 25); a human must review it first"
+  )
+  check(
+    "PR_METADATA",
+    {
+      pull: { issue: 9, title: "feat: x (#9)", body: "x", issueState: "OPEN" },
+    },
+    { pull: { issue: 9, title: "feat: x (#9)", body: "Closes #9" } },
+    'the pull request details are wrong: the body has no "Closes #9" line'
+  )
   for (const row of RULES) {
     if (!row.check) {
       assert.equal(row.kind, "judgment", row.id)

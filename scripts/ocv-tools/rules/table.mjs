@@ -263,7 +263,7 @@ function diverged(facts) {
 function divergedFix(facts) {
   const name = facts.branch?.name ?? "<branch>"
   const n = facts.issue?.n ?? "<n>"
-  return `Keep both tips. From the main checkout run: git fetch origin ${name} && git log --oneline --left-right ${name}...origin/${name}. Reconcile them, then run: scripts/ocv-tools.mjs take ${n} --resume`
+  return `Keep both tips. In the main checkout: git fetch origin ${name} && git log --oneline --left-right ${name}...origin/${name}; reconcile, then: scripts/ocv-tools.mjs take ${n} --resume`
 }
 
 function notARepo(facts) {

@@ -448,5 +448,25 @@ export function ghAdapter(run) {
     commentPr(n, body) {
       gh("pr", "comment", String(n), "--body", body)
     },
+    // After a merge: close the issue the PR was for if the Closes keyword or the queue left it open.
+    closeIssue(n, pr) {
+      const state = run("gh", [
+        "issue",
+        "view",
+        String(n),
+        "--json",
+        "state",
+        "--jq",
+        ".state",
+      ])
+      if (!state.ok || state.out.trim() !== "OPEN") return false
+      return run("gh", [
+        "issue",
+        "close",
+        String(n),
+        "--comment",
+        `Closed by merged PR #${pr}.`,
+      ]).ok
+    },
   }
 }

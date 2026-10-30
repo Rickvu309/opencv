@@ -2,6 +2,7 @@
 // what the table, the guide and the row tests use. open-pr.sh and merge-pr.sh
 // remain compatibility entry points.
 import { FIXES } from "../result.mjs"
+import { mergeSpecs } from "./merge.mjs"
 
 function asLines(value) {
   if (Array.isArray(value)) return value
@@ -226,4 +227,5 @@ export const bashRows = [
     fix: commitsFix,
     impl: "bash:rule_commits_hooked",
   }),
+  ...mergeSpecs.map(rule),
 ]

@@ -111,7 +111,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 6. Merge and clean up
 
-- From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, ci without success on the head, and gate changes without `risk:high` (`ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs`, `.github/rulesets/main.json`). It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
+- From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, a mass deletion (over 25 authored files, 2000 lines or 10% of authored files; add `needs-human-review`), a wrong title, missing `Closes #n` or a closed issue, ci without success on the head, and gate changes without `risk:high` (`ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs`, `.github/rulesets/main.json`). It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
 - After the queue merges, run `scripts/ocv-tools.mjs merge <pr#>` again to confirm linked issues are closed; it closes any still open. The remote branch is deleted.
 - From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.

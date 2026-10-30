@@ -119,7 +119,7 @@ if (( have_gh )); then
   labels=$(gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null) || die "cannot read the labels of issue #$issue (rule: never pick up ready-for-human); check gh auth and retry"
   rule_not_ready_for_human "$labels"
 fi
-changed_files=$(git diff --name-only origin/main...HEAD 2>/dev/null) || die "cannot diff against origin/main (git fetch origin main)"
+changed_files=$(git diff --no-renames --name-only origin/main...HEAD 2>/dev/null) || die "cannot diff against origin/main (git fetch origin main)"
 rule_no_workflows "$changed_files" "$top"
 rule_ci_workflow_kept "$changed_files" HEAD "$top"
 git fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main (git fetch origin main)"

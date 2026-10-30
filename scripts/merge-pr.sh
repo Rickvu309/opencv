@@ -5,9 +5,12 @@
 #   scripts/merge-pr.sh <pr#>
 #
 # Refuses when the author is not the authenticated gh user, the PR is a draft, the PR has the
-# needs-human-review label, the ci check-run on the head is not success, the PR deletes ci.yml, or the PR
-# changes ci.yml, scripts/check.mjs or .github/rulesets/main.json and the issue is not labeled risk:high.
+# needs-human-review label, the PR deletes a lot of authored source (more than 25 files, 2000 lines or 10 percent
+# of authored files), its title, closing line or issue (open) are wrong, the ci check-run on the head is not
+# success, the PR deletes ci.yml, or the PR changes ci.yml, nightly.yml, .github/actions/**, scripts/check.mjs or
+# .github/rulesets/main.json and the issue is not labeled risk:high. Every refusal prints its Fix.
 # Then: gh pr merge <pr#> --squash --match-head-commit <head>
+# The merge queue tests the merged result, so the ruleset keeps strict_required_status_checks_policy false.
 #
 # Exit code:
 #   0  queued or merged
@@ -49,11 +52,19 @@ RULE_BRANCH=$branch
 wt=$(rule_wt_of "$branch")
 git cat-file -e "$head^{commit}" 2>/dev/null || git fetch --quiet origin "pull/$pr/head" 2>/dev/null || true
 git cat-file -e "$head^{commit}" 2>/dev/null || DIE_CAUSE=env die "cannot read commit ${head:0:9} of PR #$pr (git fetch origin pull/$pr/head)"
-changed=$(gh pr diff "$pr" --name-only) || die "could not list the files PR #$pr changes"
+git fetch --quiet origin main 2>/dev/null || true
+# gh pr diff shows a renamed file under its new name only, so ci.yml renamed to nightly.yml would look untouched.
+# The git diff without rename detection lists the old name too.
+changed=$( { gh pr diff "$pr" --name-only && git diff --no-renames --name-only "$(git merge-base origin/main "$head")" "$head"; } | sort -u ) ||
+  die "could not list the files PR #$pr changes"
+rule_mass_delete origin/main "$head" "$pr"
 rule_ci_workflow_kept "$changed" "$head" "$wt"
+[[ "$branch" =~ ^[a-z]+/([0-9]+)- ]] || die "branch $branch names no issue, so its closing line and risk label cannot be checked. Fix: rename the branch to type/<issue#>-description"
+issue=${BASH_REMATCH[1]}
+rule_pr_metadata "$pr" "$issue" "$(gh pr view "$pr" --json title --jq .title)" "$(gh pr view "$pr" --json body --jq .body)" \
+  "$(gh issue view "$issue" --json state --jq .state)"
 if grep -qxE '\.github/workflows/ci\.yml|\.github/actions/.*|scripts/check\.mjs|\.github/rulesets/main\.json' <<<"$changed"; then
-  [[ "$branch" =~ ^[a-z]+/([0-9]+)- ]] || die "branch $branch names no issue, so its risk label cannot be read"
-  rule_risk_high_for_ci "$changed" "$(gh issue view "${BASH_REMATCH[1]}" --json labels --jq '.labels[].name')" "$wt"
+  rule_risk_high_for_ci "$changed" "$(gh issue view "$issue" --json labels --jq '.labels[].name')" "$wt"
 fi
 
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
@@ -74,6 +85,7 @@ gh pr merge "$pr" --squash --match-head-commit "$head" ||
 merge_sha=$(gh pr view "$pr" --json mergeCommit --jq .mergeCommit.oid)
 if [[ -z "$merge_sha" || "$merge_sha" == null ]]; then
   echo "==> QUEUED PR #$pr at $head; the issue closes when the queue merges."
+  echo "Next: when the queue merges, node scripts/pr.mjs release <merge sha> --wait 600, then scripts/ocv-tools.mjs cleanup $issue (it also closes the issue if the merge left it open)."
   result_ok "queued PR #$pr at $head" "scripts/ocv-tools.mjs status"
   exit 0
 fi
