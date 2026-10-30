@@ -8,6 +8,20 @@ export const RULES_DOC = fileURLToPath(
   new URL("../../../docs/git-workflow/rule-enforcement.md", import.meta.url)
 )
 
+// Keep the workflow and delivery tables in separate guides under the file limit.
+export const RULE_GUIDES = [
+  {
+    path: RULES_DOC,
+    table: RULES.filter((row) => !row.needs.includes("delivery")),
+  },
+  {
+    path: fileURLToPath(
+      new URL("../../../docs/git-workflow/delivery-rules.md", import.meta.url)
+    ),
+    table: RULES.filter((row) => row.needs.includes("delivery")),
+  },
+]
+
 const cell = (value) =>
   String(value ?? "")
     .replace(/\|/g, "\\|")

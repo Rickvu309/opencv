@@ -64,7 +64,7 @@ flowchart LR
 
 ## 5. Pull requests
 
-- Open the PR early. A draft is fine. Use `scripts/open-pr.sh [--draft]`: it validates the branch, runs the quick check (`pnpm check`), pushes, and fills in the title and body.
+- Open the PR early. A draft is fine. Run `scripts/ocv-tools.mjs check`, then `scripts/ocv-tools.mjs finish [--draft] --body-file <file>`: finish requires a passing check for the saved tree and base, pushes, and fills in the title and body.
 - Title: `type: description (#<issue>)`, for example `feat: add login page (#42)`. It becomes the commit message on `main`.
 - Body: the PR template with the `Closes #42` line.
 - Before merge, the PR needs a green `ci` check. CI runs parallel affected Turbo jobs and guards. Local `pnpm check` runs affected tasks, guards and formatting; `pnpm check:full` also builds every package.
@@ -74,7 +74,7 @@ flowchart LR
 
 ### Who approves
 
-- An agent under the owner's account merges its own PR with `scripts/merge-pr.sh` once `ci` is green. One account, so no approval. Env and secrets changes included. Do not commit a real `.env` file.
+- An agent under the owner's account merges its own PR with `scripts/ocv-tools.mjs merge` once `ci` is green. One account, so no approval. Env and secrets changes included. Do not commit a real `.env` file.
 - A **human** decides a big decision. Flag it with `needs-human-review`. A mass deletion is not detected; add the label yourself.
 - **Anyone** can add the `needs-human-review` label. An agent never merges a labeled PR.
 - People can read and comment on any PR.
@@ -91,7 +91,7 @@ flowchart LR
 
 1. Open an issue (Bug form, `hotfix` label).
 2. Branch `hotfix/<issue#>-short-description` from `main`.
-3. Open the PR right away (`scripts/open-pr.sh`). `ci` must be green. Merge with `scripts/merge-pr.sh`.
+3. Run `scripts/ocv-tools.mjs check`, then open the PR with `scripts/ocv-tools.mjs finish --body-file <file>`. `ci` must be green. Merge with `scripts/ocv-tools.mjs merge`.
 4. Squash-merge. It deploys like any other change.
 
 If the fix is risky or will take time, first roll back to the previous production deploy on the hosting platform, then fix forward calmly. See `docs/git-workflow/deploys-and-hotfixes.md`.
@@ -104,19 +104,19 @@ If the fix is risky or will take time, first roll back to the previous productio
 
 ## 9. Guardrails (set up once per repo)
 
-| Guardrail               | Where       | What it does                                                                                                                                                                              |
-| ----------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ruleset on `main`       | GitHub      | Requires a PR and the `ci` check (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
-| Merge settings          | GitHub      | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                |
-| `CODEOWNERS`            | GitHub      | Names the owner of every path, including env and secrets paths                                                                                                                            |
-| `pre-push` hook         | Local       | Blocks pushes to `main` and bad branch names; runs `pnpm check` (quick, scoped to what changed)                                                                                           |
-| `commit-msg` hook       | Local       | Blocks commits on `main`; rejects empty messages                                                                                                                                          |
-| `pre-commit` hook       | Local       | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                           |
-| `scripts/open-pr.sh`    | Local       | Correct PR title and `Closes #`, quick check before push                                                                                                                                  |
-| `scripts/merge-pr.sh`   | Owner agent | Merges when `ci` is green: owner author, not a draft, no `needs-human-review`, gate files carry `risk:high`                                                                               |
-| Templates               | GitHub      | PR template; Task issue form                                                                                                                                                              |
-| Labels                  | GitHub      | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                             |
-| `scripts/pr.mjs doctor` | Local       | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                  |
+| Guardrail                      | Where       | What it does                                                                                                                                                                              |
+| ------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ruleset on `main`              | GitHub      | Requires a PR and the `ci` check (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
+| Merge settings                 | GitHub      | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                |
+| `CODEOWNERS`                   | GitHub      | Names the owner of every path, including env and secrets paths                                                                                                                            |
+| `pre-push` hook                | Local       | Blocks pushes to `main` and bad branch names; runs `pnpm check` (quick, scoped to what changed)                                                                                           |
+| `commit-msg` hook              | Local       | Blocks commits on `main`; rejects empty messages                                                                                                                                          |
+| `pre-commit` hook              | Local       | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                           |
+| `scripts/ocv-tools.mjs finish` | Local       | Correct PR title and `Closes #`, passing check proof before push                                                                                                                          |
+| `scripts/ocv-tools.mjs merge`  | Owner agent | Merges when `ci` is green: owner author, not a draft, no `needs-human-review`, gate files carry `risk:high`                                                                               |
+| Templates                      | GitHub      | PR template; Task issue form                                                                                                                                                              |
+| Labels                         | GitHub      | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                             |
+| `scripts/pr.mjs doctor`        | Local       | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                  |
 
 Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/ocv-tools.mjs take` does it). Anyone can skip them with `--no-verify`. Don't. A skipped hook is not caught again at merge. `ci` still runs the quick check.
 
@@ -147,15 +147,16 @@ cd ../opencv.worktrees/42-login-page
 git add -p && git commit -m "add login form"
 pnpm check                                         # quick lint, typecheck, test of what changed (full run: pnpm check:full)
 
-# Open a draft PR (validates, runs the quick check, pushes, fills title + Closes #)
-scripts/open-pr.sh --draft
+# Check the saved work, then open a draft PR
+scripts/ocv-tools.mjs check
+scripts/ocv-tools.mjs finish --draft --body-file <file>
 
 # Rebase when the PR does not merge cleanly with main
 git fetch origin && git rebase origin/main && git push --force-with-lease
 
 # Ready, then merge once ci is green (from the main checkout)
 gh pr ready
-scripts/merge-pr.sh 57
+scripts/ocv-tools.mjs merge 57
 
 # Flag a big decision for a human. An agent will not merge it.
 gh pr edit --add-label needs-human-review

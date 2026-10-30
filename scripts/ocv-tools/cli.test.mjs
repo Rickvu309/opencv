@@ -281,7 +281,7 @@ test("status shows branch, worktree and an open draft PR", () => {
   assert.match(text, /Pull request: #95 open \(draft\)/)
   assert.match(
     text,
-    /Next: gh pr ready 95, then scripts\/merge-pr\.sh 95 once ci is green/
+    /Next: gh pr ready 95, then scripts\/ocv-tools\.mjs merge 95 once ci is green/
   )
   assert.equal(ports.counts.issue, 1)
   assert.equal(ports.counts.worktrees, 1)

@@ -13,6 +13,9 @@ import { cleanup, save } from "./work.mjs"
 import { shot } from "./shot.mjs"
 import { board } from "./board.mjs"
 import { approve } from "./approve.mjs"
+import { check } from "./jobs/check.mjs"
+import { finish } from "./jobs/finish.mjs"
+import { merge } from "./jobs/merge.mjs"
 
 export function realCtx() {
   const ports = realPorts()
@@ -30,6 +33,7 @@ export function realCtx() {
 
 export function parseArgs(argv) {
   const valued = new Set([
+    "--desc",
     "--title",
     "--body-file",
     "-m",
@@ -165,6 +169,30 @@ function command(ctx, cmd, rest) {
       const parsed = parseTakeArgs(rest)
       guardTake(parsed.flags, parsed.pos)
       return take(ctx, parsed.pos[0], parsed.flags)
+    }
+    case "check":
+    case "finish":
+    case "merge": {
+      const allowed =
+        cmd === "finish"
+          ? ["--body-file", "-d", "--desc", "--draft", "--dry-run"]
+          : []
+      for (const flag of Object.keys(flags)) {
+        if (!allowed.includes(flag))
+          throw new Refused("UNKNOWN_FLAG", `unknown option: ${flag}`)
+        if (
+          ["--body-file", "-d", "--desc"].includes(flag) &&
+          (flags[flag] == null || String(flags[flag]).startsWith("--"))
+        )
+          throw new Refused("MISSING_FIELDS", `${flag} needs a value`)
+      }
+      if (pos.length !== (cmd === "merge" ? 1 : 0))
+        throw new Error(
+          `usage: ocv-tools ${cmd}${cmd === "merge" ? " <pr#>" : ""}`
+        )
+      if (cmd === "check") return check(ctx)
+      if (cmd === "finish") return finish(ctx, { flags })
+      return merge(ctx, issueNumber(pos[0], "merge <pr#>"))
     }
     case "save":
       return save(ctx, { message: flags["-m"] })

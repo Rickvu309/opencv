@@ -59,7 +59,7 @@ Tests that hold this shape:
 These rules are not optional.
 Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks: `docs/git-workflow/rule-enforcement.md`.
 
-`ci.yml` runs affected jobs for PRs and full jobs for merge groups. Aggregate `ci` requires every job to succeed. Never bypass hooks. Wait for green `ci` before `scripts/merge-pr.sh`.
+`ci.yml` runs affected jobs for PRs and full jobs for merge groups. Aggregate `ci` requires every job to succeed. Never bypass hooks. Wait for green `ci` before `scripts/ocv-tools.mjs merge`.
 
 #### 1. Issue first
 
@@ -90,7 +90,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 #### 4. Checks, commits, and PRs
 
 - The pre-push hook runs `pnpm check`: affected tasks, guards and formatting. CI runs affected lint, types, build and tests, plus guards.
-- Open the PR with `scripts/open-pr.sh --draft --body-file <file>`, a body written with the `pr` skill (Summary, Evidence, Merge Danger). It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
+- Run `scripts/ocv-tools.mjs check`, then `scripts/ocv-tools.mjs finish --draft --body-file <file>`. Use the `pr` skill (Summary, Evidence, Merge Danger). Finish requires proof for the saved tree and base, pushes, and opens `type: description (#<issue>)` with `Closes #<issue>`.
 - Mark it ready with `gh pr ready` when the quick check passes. Run verify skills by hand (`.claude/skills/verify-opencv`). No preview deploys.
 - CI is hosted. Run local checks serially. `scripts/check.mjs` sets `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.
 - Rebase when the branch does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
@@ -111,19 +111,19 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 6. Merge and clean up
 
-- Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>` from the main checkout. One account, so no approval. A PR with `needs-human-review` is never merged by an agent. The script also refuses a draft, another author's PR, a `ci` check that is not success on the head, and a change to `ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs` or `.github/rulesets/main.json` whose issue lacks `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
+- From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, ci without success on the head, and gate changes without `risk:high` (`ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs`, `.github/rulesets/main.json`). It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
-- When the queue merges, the issue closes and the remote branch is deleted.
+- After the queue merges, run `scripts/ocv-tools.mjs merge <pr#>` again to confirm linked issues are closed; it closes any still open. The remote branch is deleted.
 - From the main checkout: `scripts/ocv-tools.mjs cleanup <issue#>`.
 
 #### 7. Production is broken
 
-- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/open-pr.sh`, and merge with `scripts/merge-pr.sh` once `ci` is green.
+- Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/ocv-tools.mjs check` then `scripts/ocv-tools.mjs finish --body-file <file>`, and merge with `scripts/ocv-tools.mjs merge` once `ci` is green.
 - If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
 
 #### Review agent checklist
 
-Open the PR, wait for green `ci`, then `scripts/merge-pr.sh <pr#>`. One account, so no approval. A PR with `needs-human-review` is never merged by an agent.
+Open the PR, wait for green `ci`, then `scripts/ocv-tools.mjs merge <pr#>`. One account, so no approval. A PR with `needs-human-review` is never merged by an agent.
 
 Full notes: `docs/git-workflow/review-and-approval.md`.
 

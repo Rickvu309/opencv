@@ -1,6 +1,4 @@
-// Every workflow rule. id is the refusal code. decide() runs the rows whose
-// jobs include the command, in this order. A bash rule keeps its function in
-// scripts/lib/rules.sh and records impl: "bash:rule_<name>".
+import { jobRows } from "./jobs.mjs"
 import { CLAIM_IDLE_MINUTES } from "../claim-marker.mjs"
 import { TYPES } from "../fields.mjs"
 import { FIXES } from "../result.mjs"
@@ -380,6 +378,7 @@ function judgment(spec) {
 }
 
 const rows = [
+  ...jobRows,
   rule({
     id: "NOT_A_TASK",
     kind: "precondition",

@@ -20,7 +20,7 @@ type: description (#<issue>)
 
 ## PR body
 
-Write the body with the `pr` skill, using `.github/pull_request_template.md` as the shape: `## Summary`, `## Evidence` (before and after), and `## Merge Danger` with `**Door:**` (one-way or two-way) and `**Blast Radius:**`. Save it to a file and pass it as `scripts/open-pr.sh --body-file <file>`. The script refuses a body that lacks a part or still has a placeholder in angle brackets, and puts this line on top:
+Write the body with the `pr` skill, using `.github/pull_request_template.md` as the shape: `## Summary`, `## Evidence` (before and after), and `## Merge Danger` with `**Door:**` (one-way or two-way) and `**Blast Radius:**`. Save it to a file and pass it as `scripts/ocv-tools.mjs finish --body-file <file>`. The script refuses a body that lacks a part or still has a placeholder in angle brackets, and puts this line on top:
 
 ```
 Closes #42
@@ -32,9 +32,10 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 1. Open a **draft** PR as soon as you have a first commit. Run this inside your worktree:
    ```bash
-   scripts/open-pr.sh --draft --body-file <file>
+   scripts/ocv-tools.mjs check
+   scripts/ocv-tools.mjs finish --draft --body-file <file>
    ```
-   It checks the branch name, runs `pnpm check` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is your `--body-file` with `Closes #N` on top. Use `--dry-run` to preview.
+   Check runs `node scripts/check.mjs` and saves proof for the tree and base. Finish checks that proof and the branch name, pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is your `--body-file` with `Closes #N` on top. Use `--dry-run` to preview.
 2. Keep working; push through `git push`. The pre-push hook runs the quick check.
 3. When done: checks pass, the verify-opencv evidence is attached, and the checklist is ticked. Run `gh pr ready`.
 4. Read comments, fix them in new commits, and resolve the threads. See `review-and-approval.md`.
@@ -44,19 +45,19 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
    git rebase origin/main
    git push --force-with-lease
    ```
-6. Wait until `ci` is green, then enqueue with `scripts/merge-pr.sh <pr#>`.
+6. Wait until `ci` is green, then enqueue with `scripts/ocv-tools.mjs merge <pr#>`.
 
 ## Checks
 
 The `ci` workflow runs parallel affected guards, lint, typecheck, build, API tests and two web test shards on GitHub-hosted runners; aggregate `ci` requires every job to succeed. The same checks run locally at these points:
 
-| When                 | What runs             | What it enforces                                                                                                                 |
-| -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `git commit`         | `commit-msg` hook     | No commits on `main`; no empty message                                                                                           |
-| `git commit`         | `pre-commit` hook     | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files                                        |
-| `git push`           | `pre-push` hook       | No push to `main`; branch name format; `pnpm check` (quick lint, typecheck, test of what changed)                                |
-| `scripts/open-pr.sh` | itself                | Branch name, `pnpm check`, correct title and `Closes #`                                                                          |
-| Merge                | `scripts/merge-pr.sh` | Author is the owner, PR is not a draft, no `needs-human-review` label, `ci` is success on the head, gate files carry `risk:high` |
+| When                           | What runs                     | What it enforces                                                                                                                 |
+| ------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `git commit`                   | `commit-msg` hook             | No commits on `main`; no empty message                                                                                           |
+| `git commit`                   | `pre-commit` hook             | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files                                        |
+| `git push`                     | `pre-push` hook               | No push to `main`; branch name format; `pnpm check` (quick lint, typecheck, test of what changed)                                |
+| `scripts/ocv-tools.mjs finish` | itself                        | Branch name, passing check proof, correct title and `Closes #`                                                                   |
+| Merge                          | `scripts/ocv-tools.mjs merge` | Author is the owner, PR is not a draft, no `needs-human-review` label, `ci` is success on the head, gate files carry `risk:high` |
 
 Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/ocv-tools.mjs take` does it).
 

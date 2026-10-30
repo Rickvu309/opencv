@@ -26,6 +26,9 @@ function sources(dir, out = []) {
 // These are forwarding sites, not independently raised codes. Fail closed on
 // every other dynamic argument so a new construction cannot evade coverage.
 const FORWARDING = new Set([
+  "jobs/common.mjs:Refused:code", // Delivery boundary forwards its literal caller code.
+  "jobs/common.mjs:evaluate:code", // Delivery precondition with its boundary message.
+  "jobs/common.mjs:evaluate:id", // gate forwards the literal rule id.
   "rules/decide.mjs:Refused:refusal.id", // Converts a decide/evaluate result.
   "shot.mjs:evaluate:id", // refuse forwards its literal caller's id.
   "approve.mjs:evaluate:id", // Same wrapper as shot.
@@ -41,7 +44,7 @@ function raisedCodes(inputs, rows) {
       if (
         (ts.isCallExpression(node) || ts.isNewExpression(node)) &&
         ts.isIdentifier(node.expression) &&
-        ["Refused", "refused", "refuse", "evaluate", "decide"].includes(
+        ["Refused", "refused", "refuse", "gate", "evaluate", "decide"].includes(
           node.expression.text
         )
       ) {
