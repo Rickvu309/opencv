@@ -24,7 +24,7 @@ describe("letter attachment context", () => {
     const base = "Job details ".repeat(200)
     const text = letterDraftText(base, {
       ...attachment,
-      text: '\"\n'.repeat(3000),
+      text: '"\n'.repeat(3000),
     })
     expect(text.length).toBeLessThanOrEqual(CHAT_MESSAGE_MAX)
     expect(text.startsWith(base)).toBe(true)
