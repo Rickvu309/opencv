@@ -120,6 +120,38 @@ afterEach(() => {
 })
 
 describe("Cover letter", () => {
+  it("explains the required context and enables drafting for job text or a selected job", () => {
+    const calls = installFetch("tool")
+    render(
+      <PaperLetterStart
+        jobs={[job]}
+        cvName={null}
+        onCreated={() => undefined}
+        onImport={() => undefined}
+      />
+    )
+    const draft = screen.getByRole("button", { name: "Draft letter" })
+    const input = screen.getByRole("textbox")
+    expect(draft).toBeDisabled()
+    expect(draft).toHaveAccessibleDescription(
+      "Choose a job or paste job text or a link to draft a letter."
+    )
+    fireEvent.click(draft)
+    expect(calls).toEqual([])
+    fireEvent.change(input, { target: { value: "  \n " } })
+    expect(draft).toBeDisabled()
+    fireEvent.change(input, { target: { value: "We need a product manager." } })
+    expect(draft).toBeEnabled()
+    fireEvent.change(input, { target: { value: "https://example.com/job" } })
+    expect(draft).toBeEnabled()
+    fireEvent.change(input, { target: { value: "" } })
+    expect(draft).toBeDisabled()
+    fireEvent.click(
+      screen.getByRole("button", { name: "Associate PM, Northwind" })
+    )
+    expect(draft).toBeEnabled()
+  })
+
   it("prints the letter from Download PDF", async () => {
     vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
     const print = vi.spyOn(window, "print").mockImplementation(() => {
