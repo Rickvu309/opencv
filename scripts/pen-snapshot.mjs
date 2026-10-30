@@ -92,48 +92,46 @@ if (!requested) {
   process.exit(1)
 }
 
-function indexNodes(node, map) {
-  if (!node || typeof node !== "object") return
-  if (typeof node.id === "string") map.set(node.id, node)
-  const children = node.children
-  if (!Array.isArray(children)) return
-  for (const child of children) indexNodes(child, map)
-}
-
 function applyDescendants(root, descendants) {
   if (!descendants || typeof descendants !== "object") return
-  const map = new Map()
-  indexNodes(root, map)
   for (const [id, override] of Object.entries(descendants)) {
     if (!override || typeof override !== "object") continue
-    // A key such as "jsloS/Oydaa" is a path; its last id names the target.
-    const target = map.get(id.split("/").pop())
-    if (!target) continue
-    const { children, ...rest } = override
-    Object.assign(target, rest)
-    if (Array.isArray(children)) {
-      target.children = children
-      for (const child of children) indexNodes(child, map)
+    const ids = id.split("/")
+    let target = root
+    for (const part of ids) {
+      target = findNode(target, part)
+      if (!target) break
     }
+    target ??= findNode(root, ids.at(-1))
+    if (!target) continue
+    Object.assign(target, structuredClone(override))
   }
 }
 
 function resolveNode(node, stack) {
   if (!node || typeof node !== "object") return null
-  if (node.enabled === false) return null
   if (node.type === "ref" && typeof node.ref === "string") {
     if (stack.has(node.ref)) return null
     const component = findNode(doc, node.ref)
-    if (!component || component.enabled === false) return null
-    const expanded = structuredClone(component)
-    applyDescendants(expanded, node.descendants)
-    if (expanded.enabled === false) return null
+    if (!component) return null
     stack.add(node.ref)
+    const expanded = withChildren(component, stack)
+    const { ref, type, descendants, ...own } = node
+    Object.assign(expanded, own)
+    delete expanded.reusable
+    applyDescendants(expanded, descendants)
     const resolved = withChildren(expanded, stack)
     stack.delete(node.ref)
     return resolved
   }
   return withChildren(node, stack)
+}
+
+function visibleTree(node) {
+  if (!node || node.enabled === false) return null
+  if (Array.isArray(node.children))
+    node.children = node.children.map(visibleTree).filter(Boolean)
+  return node
 }
 
 function withChildren(node, stack) {
@@ -283,7 +281,7 @@ function collectMarks(node, marks, icons) {
   }
 }
 
-const frame = resolveNode(requested, new Set())
+const frame = visibleTree(resolveNode(requested, new Set()))
 if (!frame) {
   console.error(`frame not found: ${frameId}`)
   process.exit(1)
@@ -374,6 +372,51 @@ writeFileSync(
 
 const landing = path.basename(outFile) === "landing.snapshot.json"
 if (landing || stylesFlag) {
+  const borders = []
+  function collectBorders(node) {
+    if (node.stroke != null) {
+      borders.push({
+        id: node.id,
+        stroke: node.stroke,
+        strokeWidth: node.strokeWidth ?? null,
+      })
+    }
+    for (const child of node.children ?? []) collectBorders(child)
+  }
+  collectBorders(sectionRoot)
+  const paints = []
+  function paintValue(value, depth = 0) {
+    if (value && typeof value === "object" && value.enabled === false)
+      return undefined
+    if (typeof value === "string" && value.startsWith("$") && depth < 4) {
+      const entry = doc.variables?.[value.slice(1)]
+      const resolved = entry && typeof entry === "object" ? entry.value : entry
+      return resolved == null ? value : paintValue(resolved, depth + 1)
+    }
+    if (Array.isArray(value))
+      return value
+        .map((item) => paintValue(item, depth))
+        .filter((item) => item !== undefined)
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value)
+          .map(([key, item]) => [key, paintValue(item, depth)])
+          .filter(([, item]) => item !== undefined)
+      )
+    return value
+  }
+  function collectPaints(node, nodePath = "") {
+    const properties = {}
+    for (const key of ["fill", "stroke", "effect"]) {
+      const value = paintValue(node[key])
+      if (value !== undefined) properties[key] = value
+    }
+    if (Object.keys(properties).length > 0)
+      paints.push({ id: node.id, path: nodePath, ...properties })
+    for (const [index, child] of (node.children ?? []).entries())
+      collectPaints(child, `${nodePath}/children/${index}`)
+  }
+  collectPaints(sectionRoot)
   const styleSections = (
     Array.isArray(sectionRoot.children) ? sectionRoot.children : []
   ).map((child) => {
@@ -400,6 +443,8 @@ if (landing || stylesFlag) {
           ? { ...sourceOf(requested), root: rootId }
           : sourceOf(requested),
         sections: styleSections,
+        borders,
+        paints,
       }),
       { ...stylesOptions, filepath: stylesFile }
     )
