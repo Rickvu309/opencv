@@ -2,7 +2,8 @@ import { execFileSync, spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 
 const root = fileURLToPath(new URL("../..", import.meta.url))
-export const SLOW = "scripts/open-pr.test.mjs"
+// The finish suite is the slow one, so it runs in its own task (test:open-pr).
+export const SLOW = "scripts/ocv-tools/jobs/finish.test.mjs"
 
 const gitList = () =>
   execFileSync(
@@ -11,7 +12,7 @@ const gitList = () =>
     { cwd: root, encoding: "utf8" }
   )
 
-// Every node:test file in the repo except the slow open-pr suite, which has its own script.
+// Every node:test file in the repo except the slow finish suite, which has its own script.
 // An empty or failed listing throws: running no guards must never read as a pass.
 export function discoverTests(list = gitList) {
   const files = list()

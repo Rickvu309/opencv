@@ -1,6 +1,5 @@
 // The one Result: text layout, exit table, and result.json schema 1.
-// Bash scripts still write through scripts/lib/result.sh. This module is the
-// writer for node (ocv-tools and scripts/pr.mjs). Both match schema 1.
+// It writes result.json for ocv-tools and scripts/pr.mjs.
 import { execFileSync } from "node:child_process"
 import { appendFileSync, mkdirSync, renameSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"

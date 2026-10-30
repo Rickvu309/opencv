@@ -2,7 +2,6 @@ import assert from "node:assert/strict"
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import test from "node:test"
-import { spawnSync } from "node:child_process"
 import ts from "typescript"
 import { fileURLToPath } from "node:url"
 import { evaluate } from "./decide.mjs"
@@ -77,7 +76,7 @@ function raisedCodes(inputs, rows) {
   return codes
 }
 
-function checkCoverage(inputs, rows, rulesSh = "") {
+function checkCoverage(inputs, rows) {
   const raised = raisedCodes(inputs, rows)
   const ids = new Set(rows.map((row) => row.id))
   const gaps = []
@@ -86,11 +85,6 @@ function checkCoverage(inputs, rows, rulesSh = "") {
   }
   for (const row of rows) {
     if (row.kind === "judgment" || raised.has(row.id)) continue
-    // Bash-only gates raise their refusal through the named shell function.
-    if (row.impl?.startsWith("bash:")) {
-      const name = row.impl.slice("bash:".length)
-      if (new RegExp(`^${name}\\(\\)`, "m").test(rulesSh)) continue
-    }
     gaps.push(`${row.id} is not raised`)
   }
   assert.deepEqual(gaps, [], gaps.join("\n"))
@@ -114,7 +108,7 @@ test("rule markers and hereFact stay private", () => {
 })
 
 test("every raised refusal code has a row, and every row is raised", () => {
-  checkCoverage(inputs(), RULES, text("../../lib/rules.sh"))
+  checkCoverage(inputs(), RULES)
   for (const id of ["MISSING_FILE", "BAD_PICTURE", "TOO_BIG", "TOO_MANY"])
     assert.ok(RULES.find((row) => row.id === id).jobs.includes("shot"), id)
   const approval = RULES.find((row) => row.id === "NOT_HIGH_RISK")
@@ -130,8 +124,7 @@ test("every raised refusal code has a row, and every row is raised", () => {
   assert.match(history.says, /board/)
 })
 
-test("R105 allows exactly ci.yml and nightly.yml in both rule implementations", () => {
-  const shell = fileURLToPath(new URL("../../lib/rules.sh", import.meta.url))
+test("R105 allows exactly ci.yml and nightly.yml in the rule table", () => {
   for (const [name, allowed] of [
     ["ci.yml", true],
     ["nightly.yml", true],
@@ -148,43 +141,17 @@ test("R105 allows exactly ci.yml and nightly.yml in both rule implementations", 
       allowed,
       name
     )
-    const result = spawnSync(
-      "bash",
-      [
-        "-c",
-        'source "$1"; rule_fail() { return 1; }; rule_no_workflows "$2"',
-        "r105",
-        shell,
-        files,
-      ],
-      { encoding: "utf8" }
-    )
-    assert.equal(result.status, allowed ? 0 : 1, `${name}: ${result.stderr}`)
   }
 })
 
-test("nightly.yml requires risk:high in both rule implementations", () => {
+test("nightly.yml requires risk:high in the rule table", () => {
   const files = ".github/workflows/nightly.yml"
-  const shell = fileURLToPath(new URL("../../lib/rules.sh", import.meta.url))
   for (const labels of [[], ["risk:high"]]) {
     const allowed = labels.includes("risk:high")
     assert.equal(
       evaluate("RISK_HIGH_FOR_CI", { diff: { files, labels } }) === null,
       allowed
     )
-    const result = spawnSync(
-      "bash",
-      [
-        "-c",
-        'source "$1"; rule_fail() { return 1; }; rule_risk_high_for_ci "$2" "$3"',
-        "risk",
-        shell,
-        files,
-        labels.join("\n"),
-      ],
-      { encoding: "utf8" }
-    )
-    assert.equal(result.status, allowed ? 0 : 1, result.stderr)
   }
 })
 
@@ -204,8 +171,7 @@ test("coverage rejects new calls without rows for every raising helper", () => {
     () =>
       checkCoverage(
         [...inputs(), ["injected.mjs", 'refuse("NEW_CODE_X", {})']],
-        RULES,
-        text("../../lib/rules.sh")
+        RULES
       ),
     /NEW_CODE_X has no table row/
   )
@@ -234,7 +200,7 @@ test("coverage rejects dead rows, including codes only present in FIXES", () => 
     /DEAD_CODE_Y is not raised/
   )
   assert.throws(
-    () => checkCoverage(inputs(), [...RULES, row], text("../../lib/rules.sh")),
+    () => checkCoverage(inputs(), [...RULES, row]),
     /DEAD_CODE_Y is not raised/
   )
 })

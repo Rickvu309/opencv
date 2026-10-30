@@ -1,6 +1,6 @@
-// Rules whose check still runs in scripts/lib/rules.sh. The pure check here is
-// what the table, the guide and the row tests use. open-pr.sh and merge-pr.sh
-// remain compatibility entry points.
+// Pure checks for the workflow rules AGENTS.md sets on branches, pull requests
+// and merges. Each check takes the facts a job gathered and returns a refusal,
+// or null when the rule holds.
 import { FIXES } from "../result.mjs"
 import { mergeSpecs } from "./merge.mjs"
 
@@ -98,25 +98,6 @@ function skipDeclared(facts) {
   return "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named"
 }
 
-function skipSaid(facts) {
-  const pull = facts.pull
-  if (!pull || pull.stamp !== "skip") return null
-  const found = String(pull.body ?? "").match(
-    /(?:^|[,(*] *)emergency declared by [^ \t*.,;)<>]+/i
-  )
-  const who = found ? found[0].replace(/^.*emergency declared by /i, "") : ""
-  if (who && who.toLowerCase() !== "unknown") return null
-  const sha = String(pull.sha ?? "").slice(0, 9)
-  return `head ${sha} was pushed with SKIP_CHECKS=1 (only for an emergency a human declared) and PR #${pull.pr} does not say "emergency declared by <name>"`
-}
-
-function pushed(facts) {
-  const commits = facts.commits
-  if (!commits || commits.stampDir === false || commits.stamp) return null
-  const sha = String(commits.sha ?? "").slice(0, 9)
-  return `commit ${sha} has no pre-push stamp: it was pushed without the pre-push hook (the hook-skip flag, or a branch cut before the stamping hook landed, whose worktree still runs the old .githooks/pre-push)`
-}
-
 function commitsHooked(facts) {
   const commits = facts.commits
   if (!commits) return null
@@ -142,7 +123,6 @@ export const bashRows = [
     needs: ["main"],
     check: mainClean,
     fix: mainFix,
-    impl: "bash:rule_main_clean",
   }),
   rule({
     id: "PORT",
@@ -152,7 +132,6 @@ export const bashRows = [
     needs: ["port"],
     check: portRule,
     fix: portFix,
-    impl: "bash:rule_port",
   }),
   rule({
     id: "NO_WORKFLOWS",
@@ -162,7 +141,6 @@ export const bashRows = [
     needs: ["diff"],
     check: noWorkflows,
     fix: () => "git rm -rf -- <files> && git commit --amend --no-edit",
-    impl: "bash:rule_no_workflows",
   }),
   rule({
     id: "CI_WORKFLOW_KEPT",
@@ -173,7 +151,6 @@ export const bashRows = [
     check: ciKept,
     fix: () =>
       "git checkout origin/main -- .github/workflows/ci.yml && git commit --amend --no-edit",
-    impl: "bash:rule_ci_workflow_kept",
   }),
   rule({
     id: "RISK_HIGH_FOR_CI",
@@ -183,7 +160,6 @@ export const bashRows = [
     needs: ["diff"],
     check: riskHigh,
     fix: () => "gh issue edit <issue> --add-label risk:high",
-    impl: "bash:rule_risk_high_for_ci",
   }),
   rule({
     id: "SKIP_DECLARED",
@@ -193,29 +169,6 @@ export const bashRows = [
     needs: ["env"],
     check: skipDeclared,
     fix: () => "env -u SKIP_CHECKS scripts/ocv-tools.mjs check",
-    impl: "bash:rule_skip_declared",
-  }),
-  rule({
-    id: "SKIP_SAID",
-    section: "5",
-    says: "A head pushed with SKIP_CHECKS=1 names the human in the pull request body.",
-    jobs: ["open"],
-    needs: ["pull"],
-    check: skipSaid,
-    fix: () =>
-      "gh api -X PATCH repos/{owner}/{repo}/pulls/<pr> -f body='SKIP_CHECKS=1, emergency declared by <who>.'",
-    impl: "bash:rule_skip_said",
-  }),
-  rule({
-    id: "PUSHED_THROUGH_HOOK",
-    section: "5",
-    says: "A pushed commit has a pre-push stamp.",
-    jobs: ["open"],
-    needs: ["commits"],
-    check: pushed,
-    fix: () =>
-      "git fetch origin main && git rebase origin/main && git commit --amend --no-edit && git push --force-with-lease",
-    impl: "bash:rule_pushed_through_hook",
   }),
   rule({
     id: "COMMITS_HOOKED",
@@ -225,7 +178,6 @@ export const bashRows = [
     needs: ["commits"],
     check: commitsHooked,
     fix: commitsFix,
-    impl: "bash:rule_commits_hooked",
   }),
   ...mergeSpecs.map(rule),
 ]

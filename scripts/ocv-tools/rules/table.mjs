@@ -439,7 +439,6 @@ const rows = [
     jobs: ["take", "open"],
     needs: ["issue"],
     check: readyForHuman,
-    impl: "bash:rule_not_ready_for_human",
   }),
   rule({
     id: "HELD",
