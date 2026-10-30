@@ -30,6 +30,7 @@ const jobs: JobView[] = []
 const extras = new Map<string, Extra>()
 const posts: Post[] = []
 const previews: { url?: string; text?: string }[] = []
+let failNextChecklistItem = false
 
 function blankExtra(): Extra {
   return {
@@ -93,6 +94,11 @@ export function resetMockJobs() {
   extras.clear()
   posts.splice(0)
   previews.splice(0)
+  failNextChecklistItem = false
+}
+
+export function rejectNextChecklistItem() {
+  failNextChecklistItem = true
 }
 
 export function setMockJobs(
@@ -407,6 +413,10 @@ export async function jobApiFetch(
       return jsonOk({ id: jobId })
     }
     if (name === "job.addChecklistItem") {
+      if (failNextChecklistItem) {
+        failNextChecklistItem = false
+        return jsonError(503, "UNAVAILABLE", "Temporary failure")
+      }
       const item: ChecklistItem = {
         id: crypto.randomUUID(),
         label: String(payload.label ?? ""),

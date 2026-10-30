@@ -9,10 +9,20 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
-import { getMockJobPosts, setMockJobs } from "@/test/apply-jobs-mock.ts"
+import {
+  getMockJobPosts,
+  rejectNextChecklistItem,
+  setMockJobs,
+} from "@/test/apply-jobs-mock.ts"
 
 const id = "01900000-0000-7000-8000-000000000041"
 const other = "01900000-0000-7000-8000-000000000042"
+
+function submitPrepStep(input: HTMLElement) {
+  const form = input.closest("form")
+  if (!form) throw new Error("Prep step input must be inside a form")
+  fireEvent.submit(form)
+}
 
 describe("job detail", () => {
   afterEach(() => {
@@ -222,7 +232,7 @@ describe("job detail", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add a step" }))
     const step = await screen.findByRole("textbox", { name: "Add a step" })
     fireEvent.change(step, { target: { value: "Print the CV" } })
-    fireEvent.submit(step.closest("form") as HTMLFormElement)
+    submitPrepStep(step)
     await waitFor(() => {
       expect(
         getMockJobPosts().some(
@@ -283,5 +293,80 @@ describe("job detail", () => {
     expect(panel).toHaveAttribute("aria-pressed", "false")
     expect(screen.queryByRole("region", { name: "Properties" })).toBeNull()
     vi.unstubAllGlobals()
+  })
+
+  it("explains an overlong prep step and keeps the draft", async () => {
+    setMockJobs([
+      mockJob({ id, title: "Junior Marketing", company: "Lumière Cosmetics" }),
+    ])
+    renderApp(`/apply/${id}`)
+
+    fireEvent.click(await screen.findByRole("button", { name: "Add a step" }))
+    const step = await screen.findByRole("textbox", { name: "Add a step" })
+    const draft = "x".repeat(203)
+    fireEvent.change(step, { target: { value: draft } })
+    submitPrepStep(step)
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "200 characters or fewer"
+    )
+    expect(step).toHaveValue(draft)
+    expect(
+      getMockJobPosts().some((post) => post.name === "job.addChecklistItem")
+    ).toBe(false)
+  })
+
+  it("accepts a 200-character prep step and clears it on success", async () => {
+    setMockJobs([
+      mockJob({ id, title: "Junior Marketing", company: "Lumière Cosmetics" }),
+    ])
+    renderApp(`/apply/${id}`)
+
+    fireEvent.click(await screen.findByRole("button", { name: "Add a step" }))
+    const step = await screen.findByRole("textbox", { name: "Add a step" })
+    const draft = `  ${"x".repeat(200)}  `
+    fireEvent.change(step, { target: { value: draft } })
+    submitPrepStep(step)
+
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.addChecklistItem" &&
+            post.input.label === "x".repeat(200)
+        )
+      ).toBe(true)
+      expect(step).toHaveValue("")
+    })
+  })
+
+  it("shows a command failure and lets the prep step be retried", async () => {
+    setMockJobs([
+      mockJob({ id, title: "Junior Marketing", company: "Lumière Cosmetics" }),
+    ])
+    renderApp(`/apply/${id}`)
+
+    fireEvent.click(await screen.findByRole("button", { name: "Add a step" }))
+    const step = await screen.findByRole("textbox", { name: "Add a step" })
+    const draft = "Prepare two examples"
+    fireEvent.change(step, { target: { value: draft } })
+    rejectNextChecklistItem()
+    submitPrepStep(step)
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not add this prep step. Try again."
+    )
+    expect(step).toHaveValue(draft)
+    submitPrepStep(step)
+    expect(screen.queryByRole("alert")).toBeNull()
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.addChecklistItem" && post.input.label === draft
+        )
+      ).toBe(true)
+      expect(step).toHaveValue("")
+    })
   })
 })
