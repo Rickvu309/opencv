@@ -326,13 +326,24 @@ function docMeta(doc: PickerDoc) {
   return draft ? `Draft, edited ${edited}` : `Edited ${edited}`
 }
 
-type PickerState = { open: boolean; docs: PickerDoc[] | null; search: string }
+type PickerList =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ready"; docs: PickerDoc[] }
+
+type PickerState = {
+  open: boolean
+  list: PickerList
+  search: string
+  request: number
+}
 
 type PickerEvent =
   | { type: "opened"; kind: "cv" | "letter" }
   | { type: "closed" }
   | { type: "search_typed"; value: string }
-  | { type: "docs_loaded"; docs: PickerDoc[] }
+  | { type: "docs_loaded"; docs: PickerDoc[]; request: number }
+  | { type: "docs_failed"; request: number }
 
 const pickerReducer: EffectReducer<PickerState, PickerEvent> = (
   state,
@@ -340,38 +351,56 @@ const pickerReducer: EffectReducer<PickerState, PickerEvent> = (
   exec
 ) => {
   switch (event.type) {
-    case "opened":
+    case "opened": {
+      const request = state.request + 1
       exec((_state, _effect, dispatch) => {
         void listPaper(event.kind)
           .then((rows) =>
             dispatch({
               type: "docs_loaded",
               docs: rows.filter((row) => row.kind === event.kind),
+              request,
             })
           )
-          .catch(() => dispatch({ type: "docs_loaded", docs: [] }))
+          .catch(() => dispatch({ type: "docs_failed", request }))
       })
-      return { ...state, open: true, search: "" }
+      return {
+        ...state,
+        open: true,
+        list: { status: "loading" },
+        search: "",
+        request,
+      }
+    }
     case "closed":
       return { ...state, open: false }
     case "search_typed":
       return { ...state, search: event.value }
     case "docs_loaded":
-      return { ...state, docs: event.docs }
+      return event.request === state.request
+        ? { ...state, list: { status: "ready", docs: event.docs } }
+        : state
+    case "docs_failed":
+      return event.request === state.request
+        ? { ...state, list: { status: "error" } }
+        : state
   }
 }
 
 function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
   const run = useRunCommand()
   const linked = kind === "cv" ? job.linked.cv : job.linked.letter
-  const [{ open, docs, search }, dispatch] = useEffectReducer(pickerReducer, {
+  const [{ open, list, search }, dispatch] = useEffectReducer(pickerReducer, {
     open: false,
-    docs: null,
+    list: { status: "loading" },
     search: "",
+    request: 0,
   })
   const DocIcon = kind === "cv" ? FileText : Mail
   const addLabel = kind === "cv" ? "Add CV" : "Add cover letter"
-  const shown = (docs ?? []).filter((doc) =>
+  const noun = kind === "cv" ? "CVs" : "cover letters"
+  const docs = list.status === "ready" ? list.docs : []
+  const shown = docs.filter((doc) =>
     doc.name.toLowerCase().includes(search.trim().toLowerCase())
   )
 
@@ -417,6 +446,60 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
           />
         </div>
         <div className="mt-1 flex flex-col gap-0.5">
+          {list.status === "loading" ? (
+            <p
+              role="status"
+              className="px-2 py-3 text-sm text-muted-foreground"
+            >
+              Loading Paper…
+            </p>
+          ) : list.status === "error" ? (
+            <>
+              <p
+                role="alert"
+                className="px-2 py-3 text-sm text-muted-foreground"
+              >
+                Could not load Paper. Try again.
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                className={PICKER_ROW}
+                onClick={() => dispatch({ type: "opened", kind })}
+              >
+                Try again
+              </Button>
+            </>
+          ) : shown.length === 0 ? (
+            <>
+              <p
+                role="status"
+                className="px-2 py-3 text-sm text-muted-foreground"
+              >
+                {docs.length === 0
+                  ? `No ${noun} in Paper yet.`
+                  : `No ${noun} match your search.`}
+              </p>
+              {search.trim() ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={PICKER_ROW}
+                  onClick={() => dispatch({ type: "search_typed", value: "" })}
+                >
+                  Clear search
+                </Button>
+              ) : null}
+              {kind === "cv" && docs.length === 0 ? (
+                <Link
+                  to="/paper"
+                  className="px-2 py-2 text-sm text-foreground hover:underline"
+                >
+                  Create a CV in Paper
+                </Link>
+              ) : null}
+            </>
+          ) : null}
           {shown.map((doc) => (
             <Button
               key={doc.id}
