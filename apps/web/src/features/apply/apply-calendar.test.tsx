@@ -53,6 +53,25 @@ describe("apply calendar", () => {
     expect(within(block).getByText("Lumière Cosmetics")).toBeInTheDocument()
   })
 
+  it("places an evening interview at its own time, not in the 18:00 row", async () => {
+    setMockJobs([
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000032",
+        title: "Evening interview",
+        stage: "interview",
+        interviewAt: "2026-10-30T13:00:00.000Z",
+      }),
+    ])
+    renderApp("/apply?view=calendar&span=week&date=2026-10-30")
+    const block = await screen.findByRole("group", {
+      name: "Evening interview",
+    })
+    expect(within(block).getByText("20:00 to 21:00")).toBeInTheDocument()
+    // 08:00 is the first row, so 20:00 sits 12 hours of 58px down (+1px inset).
+    expect(block.style.top).toBe(`${12 * 58 + 1}px`)
+    expect(screen.getByText("21:00")).toBeInTheDocument()
+  })
+
   it("lists a deadline in the all day row", async () => {
     const day = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Ho_Chi_Minh",
