@@ -13,6 +13,8 @@ export function activeFilterCount(filters: ApplyFilters) {
 export type ApplySearch = {
   view?: ApplyView
   span?: ApplySpan
+  company?: string
+  location?: string
 }
 
 function viewOf(value: unknown): ApplyView | undefined {
@@ -26,13 +28,25 @@ function spanOf(value: unknown): ApplySpan | undefined {
 }
 
 /** Unknown values fall back to the board. `open=guide` is dropped. */
-export function validateApplySearch(
-  search: Record<string, unknown>
-): ApplySearch {
-  const view = viewOf(search.view)
-  const span = spanOf(search.span)
+export function validateApplySearch(search: object): ApplySearch {
+  const view = viewOf("view" in search ? search.view : undefined)
+  const span = spanOf("span" in search ? search.span : undefined)
   const next: ApplySearch = {}
   if (view) next.view = view
   if (span) next.span = span
+  if (
+    "company" in search &&
+    typeof search.company === "string" &&
+    search.company !== ""
+  ) {
+    next.company = search.company
+  }
+  if (
+    "location" in search &&
+    typeof search.location === "string" &&
+    search.location !== ""
+  ) {
+    next.location = search.location
+  }
   return next
 }

@@ -157,15 +157,17 @@ function FilterChip({
   return (
     <span
       data-slot="filter-chip"
-      className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-card pr-1 pl-2.5 text-xs"
+      className="inline-flex min-h-7 max-w-full min-w-0 flex-wrap items-center gap-1 rounded-full border border-border bg-card py-1 ps-2.5 pe-1 text-xs"
     >
       <span className={FAINT_TEXT.card}>{name}</span>
-      <span className="font-medium text-foreground">{value}</span>
+      <span className="min-w-0 font-medium break-words text-foreground">
+        {value}
+      </span>
       <Button
         type="button"
         variant="ghost"
         aria-label={`Remove ${name.toLowerCase()} filter`}
-        className="size-[18px] rounded-[5px] p-0 text-muted-foreground hover:text-foreground"
+        className="size-[18px] shrink-0 rounded-[5px] p-0 text-muted-foreground hover:text-foreground"
         onClick={onRemove}
       >
         <X className="size-[18px] p-[3px]" />
@@ -187,7 +189,7 @@ export function ActiveFilters({
   return (
     <div
       data-slot="active-filters"
-      className="flex h-10 shrink-0 items-center gap-1.5 bg-card px-3"
+      className="flex min-h-10 shrink-0 flex-wrap items-center gap-1.5 bg-card px-3 py-1.5"
     >
       {company ? (
         <FilterChip

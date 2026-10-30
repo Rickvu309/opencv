@@ -81,11 +81,16 @@ describe("apply list", () => {
       screen.queryByRole("button", { name: /Northwind Da Nang role/ })
     ).not.toBeInTheDocument()
 
+    await userEvent.keyboard("{Escape}")
     await userEvent.click(
       screen.getByRole("button", { name: /Northwind Hanoi role/ })
     )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`/apply/${matching.id}`)
+    })
+    await screen.findByRole("heading", {
+      name: "Northwind Hanoi role",
+      level: 1,
     })
     router.history.back()
 
