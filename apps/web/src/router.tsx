@@ -246,6 +246,7 @@ const paperRoute = createRoute({
 const paperDocRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/paper/$docId",
+  validateSearch: validatePaperSearch,
   component: lazyRouteComponent(
     () => import("@/routes/paper-doc.tsx"),
     "PaperDocPage"

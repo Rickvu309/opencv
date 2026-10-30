@@ -1,4 +1,4 @@
-import { StrictMode } from "react"
+import { StrictMode, useReducer } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -64,16 +64,25 @@ afterEach(() => {
 })
 
 function renderLibrary(docs: PaperView[]) {
-  render(
-    <PaperLibrary
-      docs={docs}
-      files={[]}
-      loading={false}
-      error={null}
-      onRetry={() => undefined}
-      onOpen={() => undefined}
-    />
-  )
+  function Harness() {
+    const [query, setQuery] = useReducer(
+      (_query: string, nextQuery: string) => nextQuery,
+      ""
+    )
+    return (
+      <PaperLibrary
+        docs={docs}
+        files={[]}
+        loading={false}
+        error={null}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+        query={query}
+        onQueryChange={setQuery}
+      />
+    )
+  }
+  render(<Harness />)
 }
 
 describe("Paper library", () => {
@@ -125,6 +134,8 @@ describe("Paper library", () => {
         error={null}
         onRetry={() => undefined}
         onOpen={onOpen}
+        query=""
+        onQueryChange={() => undefined}
       />
     )
     const input = document.querySelector('input[type="file"]')
@@ -307,6 +318,8 @@ describe("Paper library", () => {
           error={null}
           onRetry={() => undefined}
           onOpen={() => undefined}
+          query=""
+          onQueryChange={() => undefined}
         />
       </StrictMode>
     )

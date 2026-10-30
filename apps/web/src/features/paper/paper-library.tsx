@@ -52,6 +52,8 @@ export function PaperLibrary({
   error,
   onRetry,
   onOpen,
+  query,
+  onQueryChange,
 }: {
   docs: PaperView[]
   files: PaperFile[]
@@ -59,6 +61,8 @@ export function PaperLibrary({
   error: string | null
   onRetry: () => void
   onOpen: (id: string) => void
+  query: string
+  onQueryChange: (query: string) => void
 }) {
   const run = useRunCommand()
   const queryClient = useQueryClient()
@@ -68,7 +72,6 @@ export function PaperLibrary({
     {
       importState,
       creatingBlank,
-      query,
       mode,
       rename,
       renameError,
@@ -329,9 +332,7 @@ export function PaperLibrary({
         aria-label="Search Paper"
         placeholder="Search Paper"
         value={query}
-        onChange={(event) =>
-          dispatch({ type: "search_typed", query: event.target.value })
-        }
+        onChange={(event) => onQueryChange(event.target.value)}
       />
       {loading ? <p>Loading documents</p> : null}
       {error ? (

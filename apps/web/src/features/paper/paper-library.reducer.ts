@@ -17,7 +17,6 @@ export type Mode =
 export type LibraryState = {
   importState: PaperImportState
   creatingBlank: boolean
-  query: string
   mode: Mode
   rename: string
   renameError: string | null
@@ -29,7 +28,6 @@ export type LibraryState = {
 }
 
 export type LibraryAction =
-  | { type: "search_typed"; query: string }
   | { type: "new_dialog_opened"; step: "kind" | "gallery" }
   | { type: "letter_dialog_opened" }
   | { type: "delete_requested"; doc: PaperView }
@@ -53,7 +51,6 @@ export type LibraryAction =
 export const initialLibrary: LibraryState = {
   importState: { type: "idle" },
   creatingBlank: false,
-  query: "",
   mode: null,
   rename: "",
   renameError: null,
@@ -69,8 +66,6 @@ export function libraryReducer(
   action: LibraryAction
 ): LibraryState {
   switch (action.type) {
-    case "search_typed":
-      return { ...state, query: action.query }
     case "new_dialog_opened":
       return { ...state, mode: { type: "new", step: action.step } }
     case "letter_dialog_opened":
