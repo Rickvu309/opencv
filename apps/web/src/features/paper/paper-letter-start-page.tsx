@@ -49,23 +49,22 @@ export function PaperLetterStartPage({
   const stopRef = useRef<(() => void) | null>(null)
   const [draftingState, dispatch] = useReducer(draftingReducer, null)
 
+  const isDrafting = draftingState !== null
+
   useEffect(() => {
+    if (isDrafting) return
     pageRef.current
       ?.querySelector<HTMLInputElement>(
         '[role="textbox"], input:not([type="file"])'
       )
       ?.focus()
-  }, [])
+  }, [isDrafting])
 
   return (
     <section
       ref={pageRef}
       onKeyDown={(event) => {
-        if (
-          !draftingState &&
-          event.key === "Escape" &&
-          !event.nativeEvent.isComposing
-        ) {
+        if (event.key === "Escape" && !event.nativeEvent.isComposing) {
           event.preventDefault()
           onBack()
         }
@@ -78,6 +77,7 @@ export function PaperLetterStartPage({
       {/* Form — always mounted; hidden during drafting so PaperLetterStart's
           async draft/refs survive the transition */}
       <div
+        hidden={isDrafting}
         className={draftingState ? "hidden" : "flex min-h-0 flex-1 flex-col"}
       >
         <header

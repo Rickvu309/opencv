@@ -33,5 +33,9 @@
         }
       ]
     }
-  ]
+  ],
+  "paints": {
+    "paperShadow": "#0000000F",
+    "placeholder": "#EFEFF1"
+  }
 }

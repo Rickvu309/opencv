@@ -1,5 +1,5 @@
 import type { JobView } from "@workspace/domain"
-import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
 import { render } from "@/test/render-with-client.tsx"
 
@@ -120,7 +120,7 @@ function fail(status: number, code: string, message: string) {
   return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
-function installFetch(mode: "stream" | "stop" | "error") {
+function installFetch(mode: "stream" | "stop" | "partial" | "error") {
   const letter = {
     id: "letter-1",
     name: "Cover letter, Lumière",
@@ -136,10 +136,21 @@ function installFetch(mode: "stream" | "stop" | "error") {
     createdAt: "2026-08-25T12:00:00.000Z",
     updatedAt: "2026-08-25T12:00:00.000Z",
   }
-  vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+  const fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
     if (url.includes("/api/commands/paper.create"))
       return Promise.resolve(ok(letter))
+    if (url.includes("/api/commands/paper.replace")) {
+      const body = JSON.parse(String(init?.body))
+      return Promise.resolve(
+        ok({
+          ...letter,
+          document: body.input.document,
+          contentVersion: 2,
+          previousDocument: letter.document,
+        })
+      )
+    }
     if (url.includes("/api/commands/chat.create"))
       return Promise.resolve(ok({ id: "chat-1" }))
     if (url.includes("/api/paper/letter-1")) return Promise.resolve(ok(letter))
@@ -156,6 +167,25 @@ function installFetch(mode: "stream" | "stop" | "error") {
             reject(Object.assign(new Error("aborted"), { name: "AbortError" }))
           })
         })
+      }
+      if (mode === "partial") {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                'event: text-delta\ndata: {"text":"Dear hiring team,"}\n\n'
+              )
+            )
+            init?.signal?.addEventListener("abort", () =>
+              controller.error(new DOMException("Stopped", "AbortError"))
+            )
+          },
+        })
+        return Promise.resolve(
+          new Response(stream, {
+            headers: { "Content-Type": "text/event-stream" },
+          })
+        )
       }
       const stream = new ReadableStream({
         start(controller) {
@@ -180,6 +210,8 @@ function installFetch(mode: "stream" | "stop" | "error") {
     }
     return Promise.resolve(ok({}))
   })
+  vi.stubGlobal("fetch", fetch)
+  return fetch
 }
 
 it("shows the drafting overlay when a draft starts", async () => {
@@ -256,4 +288,57 @@ it("returns form after a draft error and shows the error message", async () => {
     expect(screen.queryByText("Coach is writing…")).not.toBeInTheDocument()
   )
   expect(screen.getByText("Something went wrong.")).toBeInTheDocument()
+})
+
+it("saves the visible partial letter when Stop aborts its stream", async () => {
+  const fetch = installFetch("partial")
+  listJobs.mockResolvedValue([job])
+  const onCreated = vi.fn()
+  render(
+    <PaperLetterStartPage onBack={() => undefined} onCreated={onCreated} />
+  )
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+  await screen.findByText("Dear hiring team,")
+  expect(screen.getByRole("button", { name: "Stop" })).toHaveFocus()
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }))
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  const save = fetch.mock.calls.find(([url]) =>
+    String(url).includes("/commands/paper.replace")
+  )
+  expect(save).toBeDefined()
+  expect(JSON.parse(String(save?.[1]?.body))).toMatchObject({
+    input: { document: { markdown: "Dear hiring team," } },
+  })
+  expect(fetch.mock.calls.some(([url]) => String(url).endsWith("/stop"))).toBe(
+    true
+  )
+})
+
+it("cancels on leaving without saving or reopening the letter", async () => {
+  const fetch = installFetch("partial")
+  listJobs.mockResolvedValue([job])
+  const onCreated = vi.fn()
+  const view = render(
+    <PaperLetterStartPage onBack={() => view.unmount()} onCreated={onCreated} />
+  )
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+  await screen.findByText("Dear hiring team,")
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "Paper" }))
+  )
+  expect(onCreated).not.toHaveBeenCalled()
+  expect(fetch.mock.calls.some(([url]) => String(url).endsWith("/stop"))).toBe(
+    true
+  )
+  expect(
+    fetch.mock.calls.some(([url]) =>
+      String(url).includes("/commands/paper.replace")
+    )
+  ).toBe(false)
 })
