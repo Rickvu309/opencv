@@ -5,7 +5,6 @@ import {
   Calendar,
   FileText,
   Flag,
-  Link as LinkIcon,
   Mail,
   MapPin,
   PenLine,
@@ -60,6 +59,7 @@ import {
   priorityLabel,
   stageLabel,
 } from "./apply-stages.ts"
+import { PostingSource } from "./apply-posting-source.tsx"
 import { FAINT_TEXT } from "./apply-tone.ts"
 
 const POPOVER =
@@ -578,7 +578,6 @@ export function JobRail({
   const location = job.location ?? ""
   const deadline = job.deadline ?? ""
   const recruiter = job.recruiterName ?? ""
-  const source = job.sourceHost || job.jobUrl || ""
 
   return (
     <aside
@@ -662,18 +661,7 @@ export function JobRail({
           }
           onSave={(value) => save({ recruiterName: value || null })}
         />
-        {source ? (
-          <div
-            data-slot="property"
-            className="flex h-8 items-center gap-[9px] px-2 text-[13px] text-foreground"
-          >
-            <LinkIcon
-              aria-hidden
-              className="size-3.5 shrink-0 text-muted-foreground"
-            />
-            <span className="truncate">{source}</span>
-          </div>
-        ) : null}
+        <PostingSource jobUrl={job.jobUrl} sourceHost={job.sourceHost} />
       </RailSection>
       <RailSection title="Paper" className="mt-3.5">
         <PaperRow kind="cv" job={job} />
