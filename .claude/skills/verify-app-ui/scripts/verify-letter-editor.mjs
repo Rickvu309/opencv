@@ -45,6 +45,7 @@ const sources = [
   "apps/web/src/features/paper/paper-autosave.ts",
   "apps/web/src/features/paper/paper-letter-autosave.test.tsx",
   "apps/web/src/test/design-frame-coverage.test.ts",
+  `${design}-paints.styles.json`,
   ...["snapshot.json", "styles.json", "layout.json", "pen.css"].map(
     (s) => `${design}.${s}`
   ),
