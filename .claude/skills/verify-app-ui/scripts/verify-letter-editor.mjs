@@ -188,6 +188,7 @@ const capture = async (page, width, label) => {
 }
 try {
   const setup = await browser.openPage({
+    intercept: false,
     width: 1440,
     height: 900,
     mobile: false,
@@ -211,10 +212,10 @@ try {
       },
     },
   })
+  await setup.close()
   const texts = snapshot.sections.find((s) => s.name === "Main wrap").texts
   const markdown = texts.slice(4, 17).join("\n\n")
   check(markdown.includes("Linh Nguyen"), "source letter fixture loaded")
-  await setup.close()
   for (const [width, height] of [
     [1440, 900],
     [1394, 900],
@@ -227,6 +228,7 @@ try {
     [320, 640],
   ]) {
     const page = await browser.openPage({
+      intercept: false,
       width,
       height,
       mobile: width < 600,
