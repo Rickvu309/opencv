@@ -1,5 +1,11 @@
 import { Check, FilePlus, Paperclip, Search } from "lucide-react"
-import { useEffect, useId, useReducer, useRef } from "react"
+import {
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  type MutableRefObject,
+} from "react"
 import type { JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -43,9 +49,17 @@ function resetClock(iso: string | null) {
 export function PaperLetterStart({
   jobs: jobsProp,
   onCreated,
+  onDraftingStart,
+  onDraftText,
+  onDraftingEnd,
+  stopRef,
 }: {
   jobs?: JobView[]
   onCreated: (id: string) => void
+  onDraftingStart?: (draftName: string, attribution: string | null) => void
+  onDraftText?: (text: string) => void
+  onDraftingEnd?: () => void
+  stopRef?: MutableRefObject<(() => void) | null>
 }) {
   const run = useRunCommand()
   const guidanceId = useId()
@@ -63,6 +77,7 @@ export function PaperLetterStart({
   const abortRef = useRef<AbortController | null>(null)
   const chatRef = useRef<string | null>(null)
   const textRef = useRef("")
+  const draftingCallbackRef = useRef(false)
   const unread = unreadableLink(query)
   const shown = unread
     ? jobs
@@ -115,7 +130,14 @@ export function PaperLetterStart({
 
   async function draft() {
     if (attaching || needsContext) return
+    draftingCallbackRef.current = false
     dispatch({ type: "draft_started" })
+    const draftName = selected
+      ? `Cover letter, ${selected.company}`
+      : "Cover letter"
+    const attribution = attached ? `From ${attached.name}` : null
+    onDraftingStart?.(draftName, attribution)
+    if (stopRef) stopRef.current = stop
     textRef.current = ""
     const controller = new AbortController()
     abortRef.current = controller
@@ -147,6 +169,7 @@ export function PaperLetterStart({
         onText: (delta) => {
           textRef.current += delta
           dispatch({ type: "draft_text_streamed", text: textRef.current })
+          onDraftText?.(textRef.current)
         },
         onToolResult: (tool) => {
           if (tool === "paper.replace") {
@@ -183,14 +206,20 @@ export function PaperLetterStart({
               : "Could not draft the letter. Try again.",
       })
     } finally {
-      dispatch({ type: "draft_ended" })
+      if (!draftingCallbackRef.current) {
+        draftingCallbackRef.current = true
+        dispatch({ type: "draft_ended" })
+        onDraftingEnd?.()
+      }
     }
   }
 
   function stop() {
     abortRef.current?.abort()
     if (chatRef.current) void stopPaperChat(chatRef.current)
+    draftingCallbackRef.current = true
     dispatch({ type: "draft_ended" })
+    onDraftingEnd?.()
   }
 
   async function startBlank() {
@@ -342,9 +371,11 @@ export function PaperLetterStart({
           Start blank
         </Button>
         {drafting ? (
-          <Button type="button" variant="glow" onClick={stop}>
-            Stop
-          </Button>
+          onDraftingStart ? null : (
+            <Button type="button" variant="glow" onClick={stop}>
+              Stop
+            </Button>
+          )
         ) : (
           <Button
             type="button"
@@ -377,7 +408,7 @@ export function PaperLetterStart({
           letter.
         </p>
       ) : null}
-      {drafting ? (
+      {drafting && !onDraftingStart ? (
         <div>
           <p>Coach is writing…</p>
           <p>

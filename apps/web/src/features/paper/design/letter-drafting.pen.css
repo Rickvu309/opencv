@@ -1,0 +1,45 @@
+[data-pen-surface="paper"][data-slot="letter-drafting-page"] {
+  color: #111111;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-header"] {
+  background: #fafafa;
+  border-color: #ededef;
+  color: #3c3c40;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-drafting-header"]
+  [aria-current="page"] {
+  color: #111111;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-status"] {
+  color: #6b6b70;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-desk"] {
+  background: #f7f7f8;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-card"] {
+  background: #ffffff;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-text"] {
+  color: #2f2f31;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-cursor"] {
+  background: #1a1a1a;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-bar"] {
+  background: #ffffff;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-label"] {
+  color: #1a1a1a;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-attribution"] {
+  color: #969799;
+}
+[data-pen-surface="paper"] [data-slot="letter-drafting-stop"] {
+  color: #59595b;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-drafting-header"]
+  .lucide-chevron-right {
+  color: #8a8a8e;
+}
