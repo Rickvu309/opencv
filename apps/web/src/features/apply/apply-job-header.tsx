@@ -58,99 +58,109 @@ export function JobHeader({
   return (
     <nav
       aria-label="Breadcrumb"
-      className="flex h-[52px] shrink-0 items-center gap-2 border-b border-foreground/6 pr-4 pl-5"
+      className="flex min-h-[52px] shrink-0 flex-wrap items-center gap-2 border-b border-foreground/6 px-4 py-2 sm:h-[52px] sm:flex-nowrap sm:py-0 sm:ps-5 sm:pe-4"
     >
-      <Link to="/apply" className="text-[13px] text-muted-foreground">
-        Apply
-      </Link>
-      <ChevronRight aria-hidden className="size-[13px] text-muted-foreground" />
-      <span className="flex min-w-0 items-center gap-1.5">
-        <Briefcase aria-hidden className="size-3.5 shrink-0 text-foreground" />
-        <span className={cn("truncate text-[13px] font-medium", TITLE_TEXT)}>
-          {job.title}
-        </span>
-      </span>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Favorite"
-        aria-pressed={job.starred}
-        className={cn("size-[26px]", ICON_BUTTON)}
-        onClick={onToggleStar}
-      >
-        <Star
+      <div className="flex min-w-0 basis-full items-center gap-2 sm:contents">
+        <Link to="/apply" className="text-[13px] text-muted-foreground">
+          Apply
+        </Link>
+        <ChevronRight
           aria-hidden
-          className={cn(
-            "size-[26px] p-[5.5px]",
-            job.starred && "fill-current text-foreground"
-          )}
+          className="size-[13px] text-muted-foreground"
         />
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              aria-label="More"
-              className={cn("size-[26px]", ICON_BUTTON)}
-            />
-          }
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Briefcase
+            aria-hidden
+            className="size-3.5 shrink-0 text-foreground"
+          />
+          <span className={cn("truncate text-[13px] font-medium", TITLE_TEXT)}>
+            {job.title}
+          </span>
+        </span>
+      </div>
+      <div className="flex min-w-0 basis-full items-center gap-2 sm:contents">
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label="Favorite"
+          aria-pressed={job.starred}
+          className={cn("size-[26px]", ICON_BUTTON)}
+          onClick={onToggleStar}
         >
-          <Ellipsis aria-hidden className="size-[26px] p-[5.5px]" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={onDelete}>Delete job</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <span className="flex-1" />
-      <span
-        className={cn(
-          "mr-1.5 text-[12.5px] leading-[15px] whitespace-nowrap",
-          FAINT_TEXT.card
-        )}
-      >
-        {position > 0 ? `${position} / ${total}` : ""}
-      </span>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Previous job"
-        disabled={!onPrevious}
-        className={cn("size-7", ICON_BUTTON)}
-        onClick={() => onPrevious?.()}
-      >
-        <ChevronUp aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Next job"
-        disabled={!onNext}
-        className={cn("size-7", ICON_BUTTON)}
-        onClick={() => onNext?.()}
-      >
-        <ChevronDown aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Copy link"
-        className={cn("size-7", ICON_BUTTON)}
-        onClick={copyLink}
-      >
-        <LinkIcon aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Properties panel"
-        aria-pressed={railOpen}
-        className={cn("size-7", ICON_BUTTON)}
-        onClick={onToggleRail}
-      >
-        <PanelRight aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
+          <Star
+            aria-hidden
+            className={cn(
+              "size-[26px] p-[5.5px]",
+              job.starred && "fill-current text-foreground"
+            )}
+          />
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                aria-label="More"
+                className={cn("size-[26px]", ICON_BUTTON)}
+              />
+            }
+          >
+            <Ellipsis aria-hidden className="size-[26px] p-[5.5px]" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={onDelete}>Delete job</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <span className="flex-1" />
+        <span
+          className={cn(
+            "mr-1.5 text-[12.5px] leading-[15px] whitespace-nowrap",
+            FAINT_TEXT.card
+          )}
+        >
+          {position > 0 ? `${position} / ${total}` : ""}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label="Previous job"
+          disabled={!onPrevious}
+          className={cn("size-7", ICON_BUTTON)}
+          onClick={() => onPrevious?.()}
+        >
+          <ChevronUp aria-hidden className="size-7 p-[6.5px]" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label="Next job"
+          disabled={!onNext}
+          className={cn("size-7", ICON_BUTTON)}
+          onClick={() => onNext?.()}
+        >
+          <ChevronDown aria-hidden className="size-7 p-[6.5px]" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label="Copy link"
+          className={cn("size-7", ICON_BUTTON)}
+          onClick={copyLink}
+        >
+          <LinkIcon aria-hidden className="size-7 p-[6.5px]" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label="Properties panel"
+          aria-pressed={railOpen}
+          className={cn("size-7", ICON_BUTTON)}
+          onClick={onToggleRail}
+        >
+          <PanelRight aria-hidden className="size-7 p-[6.5px]" />
+        </Button>
+      </div>
     </nav>
   )
 }
