@@ -17,7 +17,6 @@ export type LetterAction =
   | { type: "letter_synced"; markdown: string }
   | { type: "letter_reloaded"; markdown: string; updatedAt: string }
   | { type: "keyword_added"; markdown: string }
-  | { type: "keyword_saved"; at: string }
   | { type: "gap_dismissed" }
   | { type: "saved"; at: string }
   | { type: "conflict_detected" }
@@ -30,8 +29,9 @@ export function letterReducer(
   switch (action.type) {
     case "letter_typed":
     case "letter_synced":
-    case "keyword_added":
       return { ...state, markdown: action.markdown }
+    case "keyword_added":
+      return { ...state, markdown: action.markdown, hiddenGap: true }
     case "letter_reloaded":
       return {
         ...state,
@@ -39,8 +39,6 @@ export function letterReducer(
         updatedAt: action.updatedAt,
         conflict: false,
       }
-    case "keyword_saved":
-      return { ...state, updatedAt: action.at, hiddenGap: true }
     case "gap_dismissed":
       return { ...state, hiddenGap: true }
     case "saved":

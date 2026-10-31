@@ -1,0 +1,57 @@
+[data-pen-surface="paper"][data-slot="letter-editor-page"] {
+  font-family: "Inter Variable", Inter, sans-serif;
+  color: #111111;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-header"] {
+  background: #fafafa;
+  border-color: #ededef;
+  color: #3c3c40;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-editor-header"]
+  .lucide-chevron-right {
+  color: #8a8a8e;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-edited"] {
+  color: #6b6b70;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-desk"] {
+  background: #f7f7f8;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-sheet"] {
+  background: #ffffff;
+  color: #2f2f31;
+  box-shadow:
+    0 1px 2px #0000000f,
+    0 12px 32px #0000000f;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-suggestion"] {
+  background: #ffffff;
+  border-color: #e2e2e2;
+  color: #1a1a1a;
+  box-shadow: 0 4px 16px #0000000a;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-suggestion"] .lucide {
+  color: #969799;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-suggestion-copy"] {
+  color: #59595b;
+}
+@media (max-width: 767px) {
+  [data-pen-surface="paper"] [data-slot="letter-editor-suggestion"] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+[data-pen-surface="paper"] [data-slot="letter-editor-back"] {
+  color: #3c3c40;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-editor-header"]
+  [aria-current="page"] {
+  color: #111111;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-skip"] {
+  color: #59595b;
+}
