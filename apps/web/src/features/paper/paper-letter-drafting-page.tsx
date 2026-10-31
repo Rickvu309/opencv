@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { Fragment, useEffect, useRef } from "react"
 import {
   Bell,
   ChevronRight,
@@ -93,7 +93,12 @@ export function PaperLetterDraftingPage({
             data-slot="letter-drafting-text"
             className="font-sans text-[11px] leading-[17.6px] break-words whitespace-pre-wrap"
           >
-            {streamedText}
+            {streamedText.split("\n").map((line, index) => (
+              <Fragment key={index}>
+                {index > 0 && "\n"}
+                <span>{line}</span>
+              </Fragment>
+            ))}
             <span
               aria-hidden="true"
               data-slot="letter-drafting-cursor"
@@ -117,7 +122,7 @@ export function PaperLetterDraftingPage({
       </div>
       <div
         data-slot="letter-drafting-bar"
-        className="absolute bottom-8 left-1/2 flex h-11 max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-2 rounded-full border pr-[5px] pl-3 md:h-9"
+        className="absolute bottom-8 left-1/2 flex h-11 max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-2 rounded-full border pr-[5px] pl-3 md:left-[calc(50%-21px)] md:h-9"
       >
         <LoaderCircle
           aria-hidden="true"

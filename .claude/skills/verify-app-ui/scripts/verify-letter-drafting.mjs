@@ -53,8 +53,12 @@ const before = hashes()
 const layout = JSON.parse(
   readFileSync(join(repo, `${design}.layout.json`), "utf8")
 )
-const partial =
-  "Dear hiring team,\n\nI am applying for the marketing role at Lumière. My experience includes planning campaigns and measuring their results."
+const referenceFixture = process.env.REFERENCE_FIXTURE === "1"
+const partial = referenceFixture
+  ? [[4, 5], [6], [7, 8, 9], [10], [11], [12]]
+      .map((group) => group.map((index) => layout.texts[index].text).join("\n"))
+      .join("\n\n")
+  : "Dear hiring team,\n\nI am applying for the marketing role at Lumière. My experience includes planning campaigns and measuring their results."
 const report = {
   startedAt: new Date().toISOString(),
   head: execFileSync("git", ["rev-parse", "HEAD"], {
@@ -71,8 +75,9 @@ const report = {
   frame: "tsfNR",
   checks: [],
   captures: [],
+  referenceFixture,
   fixture:
-    "Real local OTP, paper/chat creation, stop and fallback save. Held Coach SSE text fixture; does not prove production AI or mail. Fixture prose differs from the pen, and all resulting layout mismatches remain in the report.",
+    "Real local OTP, paper/chat creation, stop and fallback save. Held Coach SSE text fixture; does not prove production AI or mail. REFERENCE_FIXTURE uses source prose, a real saved job and a real text attachment; default prose differs. All layout mismatches remain in the report.",
   status: "RUNNING",
 }
 const check = (pass, message) => {
@@ -81,6 +86,7 @@ const check = (pass, message) => {
 }
 const browser = await launchBrowser()
 let current
+let seededJobId
 const wait = async (page, expression, message) =>
   check(await page.waitFor(expression, 20000), message)
 const click = async (page, selector) => {
@@ -139,7 +145,27 @@ const start = async (page, mode = "partial") => {
     `!!document.querySelector('[data-slot="letter-start-search"] input')`,
     "letter form opened"
   )
-  await page.evaluate(`(() => {
+  if (referenceFixture) {
+    await wait(
+      page,
+      `!!document.querySelector('[aria-label="Junior Marketing, Lumière"]')`,
+      "source job available"
+    )
+    await click(page, '[aria-label="Junior Marketing, Lumière"]')
+    await page.evaluate(`(() => {
+      const input = document.querySelector('input[aria-label="Attach letter context"]');
+      const transfer = new DataTransfer();
+      transfer.items.add(new File(['Linh Nguyen: campus beauty club interviews and marketing campaigns.'], 'Junior Marketing CV', {type:'text/plain'}));
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+    })()`)
+    await wait(
+      page,
+      `document.body.textContent.includes('Junior Marketing CV') && !document.querySelector('[aria-label="Draft letter"]').disabled`,
+      "real source-named attachment extracted"
+    )
+  } else
+    await page.evaluate(`(() => {
     const field = document.querySelector('[data-slot="letter-start-search"] input');
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(field, 'Draft a marketing cover letter for Lumière.');
     field.dispatchEvent(new Event('input', {bubbles:true}));
@@ -224,11 +250,31 @@ try {
     })
     current = page
     await page.goto(web)
-    if (width === 1440) await signUp(page, api, log)
+    if (width === 1440) {
+      await signUp(page, api, log)
+      if (referenceFixture) {
+        const seeded =
+          await page.evaluate(`fetch(${JSON.stringify(api + "/api/commands/job.create")}, {
+          method:'POST', credentials:'include', headers:{'content-type':'application/json'},
+          body:JSON.stringify({input:{title:'Junior Marketing', company:'Lumière'}, idempotencyKey:crypto.randomUUID()})
+        }).then(async r => ({ok:r.ok, body:await r.json()}))`)
+        check(
+          seeded.ok,
+          "create real source job in throwaway verification account"
+        )
+        const result =
+          seeded.body?.data?.result ?? seeded.body?.data ?? seeded.body
+        seededJobId = result.id
+        must(
+          typeof seededJobId === "string",
+          "created job has an id for cleanup"
+        )
+      }
+    }
     await start(page)
     await wait(
       page,
-      `document.querySelector('[data-slot="letter-drafting-text"]')?.textContent.includes('Dear hiring team,')`,
+      `document.querySelector('[data-slot="letter-drafting-text"]')?.textContent.includes(${JSON.stringify(partial)})`,
       `${width}: active stream visible`
     )
     await capture(page, width, "streaming")
@@ -277,7 +323,7 @@ try {
   await start(current)
   await wait(
     current,
-    `document.querySelector('[data-slot="letter-drafting-text"]')?.textContent.includes('Dear hiring team,')`,
+    `document.querySelector('[data-slot="letter-drafting-text"]')?.textContent.includes(${JSON.stringify(partial)})`,
     "Back fixture has visible partial text"
   )
   await click(current, '[data-slot="letter-drafting-header"] button')
@@ -317,6 +363,14 @@ try {
     file: "320-error.png",
     sha256: digest(join(output, "320-error.png")),
   })
+  if (seededJobId) {
+    const deleted =
+      await current.evaluate(`fetch(${JSON.stringify(api + "/api/commands/job.delete")}, {
+      method:'POST', credentials:'include', headers:{'content-type':'application/json'},
+      body:JSON.stringify({input:{jobId:${JSON.stringify(seededJobId)}}, idempotencyKey:crypto.randomUUID()})
+    }).then(r => r.ok)`)
+    check(deleted, "remove the source fixture job after verification")
+  }
   await current.close()
   report.behaviorStatus = "PASS"
   report.status =
