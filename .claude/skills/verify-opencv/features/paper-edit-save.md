@@ -48,7 +48,7 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 
 ## Gotchas
 
-- The editor is URL-addressed. Reload the doc URL. Do not expect a documents table. `/paper` redirects to `/paper`.
+- The editor is URL-addressed. Reload the doc URL. Do not expect a documents table. the legacy `/app/paper` redirects to `/paper`.
 - The name field on the page is `Name`. Do not look for `Your name`.
 - A blank CV has no Summary field. Role and Company are separate fields. The Role placeholder is `Role, company`. School and Degree are separate fields. The School placeholder is `School, degree`. Location sits after the bullets. Bold, Italic, and Underline are not in the toolbar.
 - The document title in the breadcrumb is also named `Name`. The CV header name sits in the level 1 heading.

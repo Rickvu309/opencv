@@ -33,7 +33,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 ## Sync
 
-Sync commit: `3d7183c0dcd3fd0d9d80f3358f3a2fe4f28bedc8`. The feature files were last read against the app at this commit. Move it forward only after you reread every file below against the code and drive each one live. `/maintain-verification-skill` diffs `apps/web/src` and `apps/api/src` from here.
+Sync commit: `03ff337f8b74426d6e0dbe4354426203bef6d98d`. The feature files were last read against the app at this commit. Move it forward only after you reread every file below against the code and drive each one live. `/maintain-verification-skill` diffs `apps/web/src` and `apps/api/src` from here.
 
 `scripts/verify-feature-map.test.mjs` fails when a feature file is missing from the table, the table names a file that is gone, or the sync commit is not in this history.
 

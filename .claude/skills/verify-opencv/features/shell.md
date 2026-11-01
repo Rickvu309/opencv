@@ -32,6 +32,6 @@ Preconditions: signed in; `run.env` loaded; session `verify-374`.
 ## Gotchas
 
 - The panel body is the existing thread view until #377. Send stays the secondary button.
-- Favorites link to `/apply` and `/paper` until the id routes exist.
+- Favorites link to their own job (`/apply/$jobId`) and document (`/paper/$docId`).
 - Inbox shows a count only when the payload items include `unread`.
 - The retired Home page has no route. Its old paths show the calm 404 with Back to start.

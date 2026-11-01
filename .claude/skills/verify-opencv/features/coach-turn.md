@@ -13,9 +13,9 @@ Use the printed web port and an isolated agent-browser session. Sign in using
 ## Walkthrough
 
 1. Open `/coach`. Check six starter buttons and choose More ideas; check
-   that five more appear below them. Choose a starter and inspect the composer.
+   that the six starters are replaced by five others. Choose a starter and inspect the composer.
 2. Open Add. Attach a Paper document and a saved Apply job when fixtures exist.
-   Choose Paste a link. Reject a `javascript:` URL, then attach an HTTPS URL.
+   Choose Paste a job link (its dialog is titled Paste a link). Reject a `javascript:` URL, then attach an HTTPS URL.
    Check the reference-only disclosure and remove an attachment with its chip.
 3. Send `Help me prepare for a product intern interview`. Wait for
    `Prep the starred one next.` Check one user message, one Coach reply and
@@ -43,7 +43,7 @@ Regenerate without duplicate IDs.
 Use `coach-workspace.test.tsx` for a capped account: the reset time and Upgrade
 link appear and both composer and Send are disabled. Use
 `chat/chat-contract.test.ts` for approval, persisted rich receipt and Undo.
-The SDK adapter test supplies actual SDK stream parts for error and grounding
+The Coach turn tests (`apps/api/src/coach/turn.test.ts`) supply actual SDK stream parts for error and grounding
 checks. These tests complement the browser walkthrough.
 
 ## Evidence and limits

@@ -17,7 +17,7 @@ Auth lets a visitor sign in with an email code, sign out, and sign in again. The
 - Fill Email `ada@verify.local`, choose `Continue`.
 - Read the code from `api.log` with `^\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})$` and `type sign-in`.
 - Fill the six boxes. The heading becomes `Welcome to opencv`, then the URL is `/apply`.
-- Sign out: choose the sidebar link named `profile and settings`, open the `Account` tab, choose `Sign out`.
+- Sign out: choose the sidebar link named `Settings`, open the `Account` link in the Settings sections nav, choose `Sign out`.
 
 ## Driving it with agent-browser
 
@@ -26,7 +26,7 @@ Preconditions: a green `doctor.sh <run>`; `export AGENT_BROWSER_SESSION=verify-<
 - **Sign in.** `agent-browser open "$WEB_URL/sign-in"`. The heading is `Log in to opencv`. There is no Password field. `agent-browser find role textbox fill "ada@verify.local" --name "Email"`, `agent-browser find role button click --name "Continue"`. Read the last matching line from `$EVIDENCE_DIR/api.log`. Fill the six boxes by typing or by pasting the six digits into Digit 1. `agent-browser wait --text "Welcome to opencv"`. Save `agent-browser screenshot "$EVIDENCE_DIR/signup.png"`. Then `agent-browser wait --url "**/apply"`. The account name is empty. Do not wait for a person's name.
 - **Read the session.** `agent-browser eval "fetch('$API_URL/api/session',{credentials:'include'}).then(r=>r.text())"` returns `{"ok":true,"user":{...},"session":{...}}` with the email.
 - **Guard.** After Log out, `agent-browser open "$WEB_URL/apply"` ends on a URL starting `/sign-in?redirect=`.
-- **Sign out.** `agent-browser find role link click --name "profile and settings"`, `agent-browser wait --text "Connected apps"`, `agent-browser find role tab click --name "Account"`, `agent-browser find role button click --name "Sign out"`. The URL becomes `/sign-in`.
+- **Sign out.** `agent-browser find role link click --name "Settings"`, `agent-browser find role link click --name "Account"`, `agent-browser find role button click --name "Sign out"`. The URL becomes `/sign-in`.
 - **Wrong code.** On `/sign-in` choose `Continue` for the same email, then enter `000000`. The alert is `That code is incorrect or expired.` and the URL stays on `/sign-in`.
 - **Sign in again.** Request a new code, fill it, and `agent-browser wait --url "**/apply"`. Welcome does not show. Save `agent-browser screenshot "$EVIDENCE_DIR/signin.png"`.
 - **Language.** On the code step, choose `VI`. The heading stays English. After sign-in, `GET /api/profile` has `"language":"vi"`.
