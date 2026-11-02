@@ -1,0 +1,42 @@
+Closes #273
+
+Part of #468
+
+## What changed
+
+- `paper.attachPhoto` writes `file:<id>` on a CV (`photoUrl` on version 1, `header.photo` on version 2), bumps the content version, and undoes through `paper.replace` of the previous document.
+- `POST /api/paper/files` stores an avatar only when the bytes are PNG, JPEG, WebP, or GIF. The stored type comes from those bytes, not the client header. Anything else, including SVG, returns "Upload an image." The route returns only the file id.
+- `GET /api/paper/files/:id/bytes` serves the owner with `Cache-Control: private, no-store`. `GET /api/paper/shared/:token/photo` serves the photo named by that share, with no session, and `Cache-Control: public, max-age=60`. Both send `X-Content-Type-Options: nosniff` and `Content-Disposition: inline; filename="photo.<ext>"`. Both answer 404 for anyone else.
+- Replacing a photo deletes the previous avatar row in the same transaction. Deleting the CV deletes its avatar row. If attach fails after the upload, the editor deletes that uploaded row.
+- The editor, the A4 preview, and the share page resolve `file:<id>` in one place. A `blob:` value is rejected and never used as an image source. An absolute http(s) URL is left as-is.
+
+## Why
+
+The with-photo template stored `URL.createObjectURL`, which dies on reload and never reaches the public share page.
+
+## How to test
+
+1. Verify locally with the verify-opencv skill and attach its evidence.
+2. Create a CV from With photo, choose an image under 2 MB, reload, and confirm the photo is still there.
+3. Copy link, open the share page signed out, and confirm the photo is there.
+4. Undo the photo before another save. A file over 2 MB shows "Photo must be 2 MB or smaller." and stores nothing.
+
+## Checklist
+
+- [x] Branch is `type/<issue#>-short-description` (a branch behind `main` is fine; the review tests the merge)
+- [x] Title is `type: description (#<issue>)`
+- [x] `heavy -- scripts/check.sh` passes (lint, typecheck, test). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
+- [x] verify-opencv evidence attached (web or api change)
+- [ ] Gates lane report is green on the exact head
+- [x] Env/secrets handling touched? Check no real secret or `.env` file is committed
+- [ ] A big decision, or deletes much of the code base? Add the `needs-human-review` label (then only a human approves)
+
+## Notes
+
+Photo bytes stay on HTTP routes. `file.get` still returns metadata only, so the image is not inlined into JSON or the document.
+
+A typed field inside the autosave window is saved with `paper.replace` before the photo is attached. The photo write then adopts the new content version and does not schedule another `paper.replace`, so Undo still restores the document from before the photo. The photo `alt` is the header name, or `Photo` when that name is empty.
+
+`apps/web/src/features/paper/cv-templates/cv-parts.tsx` is over 400 lines because the file input must stay in that allowlisted file. `apps/api/src/paper/store.ts` was already over 400 lines; the photo read, byte sniff, and attach sit next to `saveFile`. `apps/web/src/features/paper/paper-editor.tsx` is over 400 lines because the pending-edit flush lives next to the autosave hook.
+
+Size note. `apps/api/src/paper/photo.test.ts` (460 lines) holds the upload, byte route, share route, orphan and reversal cases for one feature, and `apps/web/src/features/paper/paper-editor.test.tsx` (452 lines) gains the flush-before-attach cases beside the editor's existing cases; both stay one file per subject. Added by the root after the verifier's hygiene check.

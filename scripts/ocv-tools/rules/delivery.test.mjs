@@ -1,11 +1,12 @@
 // The delivery rows (finish, merge, queue) read domain facts, not a verdict
 // the job made itself. Each row has a failing and a passing fact here.
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 import { decide, evaluate, jobRows } from "./index.mjs"
 
 const BODY =
-  "## Summary\n\nA change.\n\n## Evidence\n\nChecked.\n\n## Merge Danger\n\n**Door:** two-way\n**Blast Radius:** jobs\n"
+  "## Summary\n\nA change.\n\n## Evidence\n\n`node --test scripts/x.test.mjs`: 4 pass.\n\n## Merge Danger\n\n**Door:** two-way\n**Blast Radius:** jobs\n"
 const pull = {
   n: 7,
   isDraft: false,
@@ -28,8 +29,14 @@ const CASES = {
     "The saved work changed during push. Finish again.",
   ],
   BAD_BODY: [
-    { body: { file: "/b.md", text: "## Summary\nOnly this" } },
-    { body: { file: "/b.md", text: BODY } },
+    {
+      body: { file: "/b.md", text: "## Summary\nOnly this" },
+      pull: { title: "feat: add a thing (#7)" },
+    },
+    {
+      body: { file: "/b.md", text: BODY },
+      pull: { title: "feat: add a thing (#7)" },
+    },
     "The PR body needs ## Evidence.",
   ],
   BAD_TITLE: [
@@ -118,6 +125,68 @@ test("a body needs content under each section, and a readable file", () => {
     check(body(BODY.replace("**Door:** two-way", "**Door:** <one-way>"))),
     /Door, Blast Radius/
   )
+})
+
+const fixture = (name) =>
+  readFileSync(new URL(`pr-body-fixtures/${name}`, import.meta.url), "utf8")
+const badBody = (text, title = "feat: add a thing (#7)") =>
+  jobRows
+    .find((r) => r.id === "BAD_BODY")
+    .check({ body: { file: "/b.md", text }, pull: { title } })
+
+test("evidence needs a command with its result, or a picture or link", () => {
+  const withEvidence = (evidence) =>
+    BODY.replace("`node --test scripts/x.test.mjs`: 4 pass.", evidence)
+  const refusal = /^Evidence needs a command line with its result/
+  assert.match(badBody(withEvidence("Checked.")), refusal)
+  assert.match(badBody(withEvidence("`pnpm test`")), refusal)
+  assert.match(badBody(withEvidence("It passed on my machine.")), refusal)
+  assert.equal(badBody(withEvidence("`pnpm test`: exit 0")), null)
+  assert.equal(badBody(withEvidence("```\n$ pnpm test\n12 passed\n```")), null)
+  assert.equal(badBody(withEvidence("![after](https://x.test/a.png)")), null)
+  assert.equal(
+    badBody(withEvidence("https://github.com/o/r/actions/runs/1")),
+    null
+  )
+})
+
+test("the body names no path under the author's own machine", () => {
+  const local = BODY.replace("4 pass.", "4 pass, log at /home/quan/x.log")
+  assert.match(badBody(local), /path on your machine/)
+  assert.match(badBody(BODY.replace("4 pass.", "4 pass ~/tmp/out")), /path on/)
+  assert.match(badBody("/home/quan/tmp/pr-body.md"), /needs ## Summary/)
+})
+
+test("a fix or hotfix PR names who caught the bug and what introduced it", () => {
+  const FIX = "fix: keep the photo (#7)"
+  assert.match(badBody(BODY, FIX), /Caught by:/)
+  assert.equal(badBody(BODY, "chore: tidy (#7)"), null)
+  const caught = `${BODY}\nCaught by: ci\n`
+  assert.match(badBody(caught, FIX), /Introduced by:/)
+  assert.match(
+    badBody(`${caught}Introduced by: someone\n`, FIX),
+    /Introduced by:/
+  )
+  assert.match(
+    badBody(`${BODY}\nCaught by: nobody\nIntroduced by: #9\n`, FIX),
+    /Caught by:/
+  )
+  for (const introduced of ["#911", "unknown", "d29f8b87", "d29f8b87d29f8b87"])
+    assert.equal(
+      badBody(
+        `${caught}Introduced by: ${introduced}\n`,
+        "hotfix: stop it (#7)"
+      ),
+      null,
+      introduced
+    )
+})
+
+test("saved PR bodies: 487 and 915 are refused, a compliant fix passes", () => {
+  const FIX = "fix: change (#7)"
+  assert.match(badBody(fixture("pr-487.txt"), FIX), /needs ## Summary/)
+  assert.match(badBody(fixture("pr-915.txt"), FIX), /Caught by:/)
+  assert.equal(badBody(fixture("compliant-fix.txt"), FIX), null)
 })
 
 test("merge holds the owner, and the draft passes the pr moment", () => {

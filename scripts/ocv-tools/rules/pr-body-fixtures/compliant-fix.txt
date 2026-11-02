@@ -1,0 +1,21 @@
+## Summary
+
+```text
+finish
+  badBody
+    sectionBody
+    hasEvidence
+```
+
+## Evidence
+
+- `node --test scripts/ocv-tools/rules/delivery.test.mjs`: 12 pass, 0 fail.
+- Before: PR 915 body accepted with no origin lines. After: refused with `Caught by:` missing.
+
+Caught by: review
+Introduced by: #911
+
+## Merge Danger
+
+**Door:** two-way
+**Blast Radius:** finish

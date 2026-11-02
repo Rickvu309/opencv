@@ -4,6 +4,17 @@
 const BRANCH_ISSUE = /^(?:feat|fix|hotfix|refactor|chore|docs)\/(\d+)-/
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const SECTIONS = ["Summary", "Evidence", "Merge Danger"]
+const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
+const LOCAL_PATH = /\/home\/|~\/tmp/
+const COMMAND_START =
+  /^\$?\s*(?:[A-Za-z_]+=\S+\s+)*(?:pnpm|npm|npx|node|git|gh|curl|vitest|tsc|bash|docker|make|\.?\/?scripts\/)/
+const COMMAND_RESULT =
+  /\bexit(?:ed)?(?: code| status)?\s*\d+|\b\d+\s+(?:tests?\s+)?(?:pass(?:ed|es)?|fail(?:ed|s)?)\b|\b(?:pass(?:ed|es)?|fail(?:ed|s)?|success|clean|ok)\b|\bHTTP \d{3}\b|\b\d+ tests?\b/i
+const PICTURE_OR_LINK = /!\[[^\]]*\]\([^)]+\)|<img\b|https?:\/\/\S+/i
+const CAUGHT_BY =
+  /^\**Caught by:\**\s*(?:user|ci|review|verify-skill|test|agent-self)\s*$/m
+const INTRODUCED_BY =
+  /^\**Introduced by:\**\s*(?:[0-9a-f]{7,40}|#\d+|unknown)\s*$/m
 const FINISH_FIX = "Fix the cause, then run scripts/ocv-tools.mjs finish again."
 const MERGE_FIX =
   "Wait for a green ci on the PR head, then run scripts/ocv-tools.mjs merge <pr#>."
@@ -15,6 +26,17 @@ function sectionBody(text, heading) {
   const rest = text.slice(start.index + start[0].length)
   const next = /^## /m.exec(rest)
   return (next ? rest.slice(0, next.index) : rest).trim()
+}
+
+function commandLines(text) {
+  const spans = [...text.matchAll(/`([^`\n]+)`/g)].map((m) => m[1])
+  const lines = text.split(/\r?\n/).map((line) => line.trim())
+  return [...spans, ...lines].filter((line) => COMMAND_START.test(line))
+}
+
+function hasRealEvidence(evidence) {
+  if (PICTURE_OR_LINK.test(evidence)) return true
+  return commandLines(evidence).length > 0 && COMMAND_RESULT.test(evidence)
 }
 
 function badBody(facts) {
@@ -30,6 +52,16 @@ function badBody(facts) {
     /<(diagram|screenshot|one-way|optional)[^>]*>/.test(text)
   )
     return "Fill in Door, Blast Radius and all template placeholders."
+  if (LOCAL_PATH.test(text))
+    return "The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture."
+  if (!hasRealEvidence(sectionBody(text, "Evidence")))
+    return "Evidence needs a command line with its result (exit 0, N passed), or an image or URL."
+  if (FIX_TITLE.test(facts.pull?.title ?? "")) {
+    if (!CAUGHT_BY.test(text))
+      return "A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self"
+    if (!INTRODUCED_BY.test(text))
+      return "A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
+  }
   return null
 }
 
@@ -110,9 +142,9 @@ export const jobRows = [
   }),
   row({
     id: "BAD_BODY",
-    says: "The PR body needs a Summary, Evidence and Merge Danger section with content, and no template placeholders.",
+    says: "The PR body needs a Summary, Evidence and Merge Danger section with content, and no template placeholders. Evidence holds a command with its result, or an image or URL. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
     at: ["finish"],
-    needs: ["body"],
+    needs: ["body", "pull"],
     check: badBody,
   }),
   row({
