@@ -206,7 +206,10 @@ export const jobContract = commandContract({
     coach: "confirm",
     destructive: true,
     step: () => "Delete this job",
-    invalidates: jobFieldsChanged,
+    invalidates: (input) => [
+      ...jobFieldsChanged(input),
+      { query: "paper.keywordGap", input: { jobId: input.jobId } },
+    ],
   }),
   "job.addChecklistItem": commandEntry({
     description: "Add an interview checklist item.",

@@ -1,0 +1,461 @@
+import {
+  commands,
+  type AnyCommandEntry,
+  queries,
+  type QueryName,
+  type QueryRef,
+} from "@workspace/domain"
+import { eq, inArray } from "drizzle-orm"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
+
+import { withDatabase, type TestDatabase } from "../db/context.js"
+import {
+  activity,
+  chats,
+  files,
+  inboxThreads,
+  jobs,
+  paperDocs,
+  paperShares,
+  user,
+} from "../db/schema.js"
+import { createMigratedTestDb } from "../test/harness.js"
+import { coverageCases } from "./coverage-setup.js"
+import type { Registry } from "./registry.js"
+import type { Actor } from "@workspace/domain"
+
+type ReadSpec = { query: QueryName; input: Record<string, unknown> }
+type Snapshot = Map<string, string>
+type Observation = {
+  scenario: string
+  command: string
+  inputs: unknown[]
+  changed: ReadSpec[]
+}
+type InvalidatesTable = Record<string, (input: unknown) => QueryRef[]>
+
+type Ids = {
+  jobs: string[]
+  docs: string[]
+  tokens: string[]
+  files: string[]
+  chats: string[]
+  threads: string[]
+  touchesPair: (docId: string, jobId: string) => boolean
+}
+
+const WIDE_CALENDAR = { from: "1970-01-01", to: "2100-01-01" }
+
+const SNAPSHOT_QUERIES: {
+  [N in QueryName]: ((ids: Ids) => Record<string, unknown>[]) | null
+} = {
+  "job.list": () => [{}],
+  "job.get": (ids) => ids.jobs.map((jobId) => ({ jobId })),
+  "job.preview": null,
+  "job.calendar": () => [WIDE_CALENDAR],
+  "inbox.list": () => [{}],
+  "inbox.snoozed": () => [{}],
+  "inbox.get": (ids) => ids.threads.map((threadId) => ({ threadId })),
+  "paper.list": () => [{}],
+  "paper.get": (ids) => ids.docs.map((docId) => ({ docId })),
+  "paper.pageCount": (ids) => ids.docs.map((docId) => ({ docId })),
+  "paper.shared": (ids) => ids.tokens.map((token) => ({ token })),
+  "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
+  "paper.files": () => [{}],
+  "paper.outline": (ids) => ids.docs.map((docId) => ({ docId })),
+  "paper.keywordGap": (ids) =>
+    ids.docs.flatMap((docId) =>
+      ids.jobs
+        .filter((jobId) => ids.touchesPair(docId, jobId))
+        .map((jobId) => ({ docId, jobId }))
+    ),
+  "profile.get": () => [{}],
+  "integrations.list": () => [{}],
+  "billing.get": () => [{}],
+  "coach.usage": () => [{}],
+  "activity.list": null,
+  "chat.list": () => [{}],
+  "chat.get": (ids) => ids.chats.map((chatId) => ({ chatId })),
+  "link.get": null,
+  "workspace.search": null,
+}
+
+const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
+  "activity.list": "every command refreshes it",
+  "job.preview": "reads a posting from the network, not from stored data",
+  "link.get": "reads a link from the network, not from stored data",
+  "workspace.search": "the web never caches it",
+}
+
+const EXEMPT_COMMANDS: Record<string, string> = {
+  "account.delete":
+    "the person is signed out right after, so a refetch would only answer 401",
+}
+
+const PENDING_GAPS: Record<
+  string,
+  { issue: number; expires: string; reads: QueryName[] }
+> = {
+  "paper.sync": {
+    issue: 916,
+    expires: "2026-12-01",
+    reads: ["paper.get", "paper.list", "paper.outline"],
+  },
+}
+
+async function arrangedIds(
+  db: TestDatabase,
+  userId: string,
+  touched: string
+): Promise<Ids> {
+  const owned = async (
+    table: typeof jobs | typeof paperDocs | typeof chats | typeof inboxThreads
+  ) =>
+    (
+      await db
+        .select({ id: table.id })
+        .from(table)
+        .where(eq(table.userId, userId))
+    ).map((row) => row.id)
+  const docIds = (await owned(paperDocs)).sort()
+  const jobIds = (await owned(jobs)).sort()
+  const newestDoc = docIds.at(-1)
+  const newestJob = jobIds.at(-1)
+  const tokens =
+    docIds.length === 0
+      ? []
+      : (
+          await db
+            .select({ token: paperShares.token })
+            .from(paperShares)
+            .where(inArray(paperShares.docId, docIds))
+        ).map((row) => row.token)
+  const fileIds = (
+    await db
+      .select({ id: files.id })
+      .from(files)
+      .where(eq(files.userId, userId))
+  ).map((row) => row.id)
+  return {
+    jobs: jobIds,
+    docs: docIds,
+    tokens,
+    files: fileIds,
+    chats: await owned(chats),
+    threads: await owned(inboxThreads),
+    touchesPair: (docId, jobId) =>
+      touched.includes(docId) ||
+      touched.includes(jobId) ||
+      (docId === newestDoc && jobId === newestJob),
+  }
+}
+
+function keyOf(spec: ReadSpec) {
+  return `${spec.query} ${JSON.stringify(spec.input)}`
+}
+
+function specsFor(ids: Ids): ReadSpec[] {
+  return (Object.keys(SNAPSHOT_QUERIES) as QueryName[]).flatMap((query) => {
+    const inputs = SNAPSHOT_QUERIES[query]
+    return inputs ? inputs(ids).map((input) => ({ query, input })) : []
+  })
+}
+
+async function snapshot(
+  registry: Registry,
+  actor: Actor,
+  specs: ReadSpec[]
+): Promise<Snapshot> {
+  const result: Snapshot = new Map()
+  for (const spec of specs) {
+    try {
+      const output = await registry.read(spec.query, spec.input, actor)
+      result.set(keyOf(spec), JSON.stringify(output))
+    } catch (error) {
+      result.set(
+        keyOf(spec),
+        `ERROR ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+  return result
+}
+
+function changedBetween(
+  specs: ReadSpec[],
+  before: Snapshot,
+  after: Snapshot
+): ReadSpec[] {
+  return specs.filter(
+    (spec) => before.get(keyOf(spec)) !== after.get(keyOf(spec))
+  )
+}
+
+function refreshes(refs: QueryRef[], spec: ReadSpec) {
+  return refs.some(
+    (ref) =>
+      ref.query === spec.query &&
+      Object.entries(ref.input ?? {}).every(
+        ([key, value]) => spec.input[key] === value
+      )
+  )
+}
+
+function invalidatesTable(): InvalidatesTable {
+  return Object.fromEntries(
+    Object.entries(commands as Record<string, AnyCommandEntry>).map(
+      ([name, entry]) => [name, (input: unknown) => entry.invalidates(input)]
+    )
+  )
+}
+
+function without(
+  table: InvalidatesTable,
+  command: string,
+  query: QueryName
+): InvalidatesTable {
+  return {
+    ...table,
+    [command]: (input) =>
+      table[command]!(input).filter((ref) => ref.query !== query),
+  }
+}
+
+function tolerated(command: string, query: QueryName) {
+  return PENDING_GAPS[command]?.reads.includes(query) ?? false
+}
+
+function unlistedChanges(observations: Observation[], table: InvalidatesTable) {
+  return observations.flatMap((observation) => {
+    const refs = table[observation.command]
+    if (!refs) throw new Error(`no invalidates for ${observation.command}`)
+    if (observation.command in EXEMPT_COMMANDS) return []
+    const listed = observation.inputs.flatMap((input) => refs(input))
+    return observation.changed
+      .filter((spec) => !refreshes(listed, spec))
+      .map((spec) => ({ observation, spec }))
+  })
+}
+
+function gapsIn(observations: Observation[], table: InvalidatesTable) {
+  const gaps = new Map<string, string>()
+  for (const { observation, spec } of unlistedChanges(observations, table)) {
+    if (tolerated(observation.command, spec.query)) continue
+    const label = `${observation.scenario} changed ${spec.query}`
+    if (gaps.has(label)) continue
+    gaps.set(
+      label,
+      `${label} ${JSON.stringify(spec.input)} but its invalidates() does not name it. Add { query: "${spec.query}" } to the invalidates of ${observation.command}.`
+    )
+  }
+  return [...gaps.values()].sort()
+}
+
+describe("every changed read is named by the command that changed it", () => {
+  const userId = "user-coverage"
+  const acts: Observation[] = []
+  const undos: Observation[] = []
+  const reversals: Observation[] = []
+  let controlDiffs: ReadSpec[] = []
+  let readCount = 0
+  let errorCount = 0
+  let closeDb: () => Promise<void> = async () => {}
+
+  beforeAll(async () => {
+    const { db, client } = await createMigratedTestDb()
+    closeDb = () => client.close()
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-coverage@example.com",
+    })
+    let scenario = ""
+    let ownCalls = 0
+    let undoSeen = 0
+    const observe = async (
+      registry: Registry,
+      person: Actor,
+      label: string,
+      command: string,
+      input: unknown,
+      touched: string,
+      perform: () => Promise<unknown>
+    ) => {
+      const specs = specsFor(await arrangedIds(db, userId, touched))
+      const before = await snapshot(registry, person, specs)
+      const value = await perform()
+      const after = await snapshot(registry, person, specs)
+      readCount += specs.length
+      errorCount += [...after.values()].filter((entry) =>
+        entry.startsWith("ERROR")
+      ).length
+      return {
+        value,
+        observation: {
+          scenario: label,
+          command,
+          inputs: [input],
+          changed: changedBetween(specs, before, after),
+        },
+      }
+    }
+    const { cases, registry, person } = coverageCases(db, userId, {
+      run: (inner) => async (name, input) => {
+        if (name !== scenario) return inner(name, input)
+        ownCalls += 1
+        const { value, observation } = await observe(
+          currentRegistry(),
+          currentPerson(),
+          name,
+          name,
+          input,
+          JSON.stringify(input),
+          () => inner(name, input)
+        )
+        acts.push(observation)
+        return value as Awaited<ReturnType<typeof inner>>
+      },
+      undo: (inner, undoRegistry) => async (result) => {
+        if (!result.activityId) {
+          const plan = result.reversal
+          if (!plan) return inner(result)
+          const { observation } = await observe(
+            undoRegistry,
+            currentPerson(),
+            `${scenario} reversal`,
+            plan.command,
+            plan.input,
+            JSON.stringify(plan.input),
+            () => inner(result)
+          )
+          reversals.push(observation)
+          return
+        }
+        undoSeen += 1
+        const input = { activityId: result.activityId }
+        const rows = await db
+          .select()
+          .from(activity)
+          .where(eq(activity.id, result.activityId))
+        const touched = JSON.stringify([
+          rows[0]?.subjectId,
+          rows[0]?.reversalInput,
+        ])
+        const { observation } = await observe(
+          undoRegistry,
+          currentPerson(),
+          `${scenario} undo`,
+          "activity.undo",
+          input,
+          touched,
+          () =>
+            undoRegistry.execute({
+              name: "activity.undo",
+              input,
+              actor: currentPerson(),
+            })
+        )
+        undos.push(observation)
+      },
+    })
+    const currentRegistry = () => registry
+    const currentPerson = () => person
+
+    await withDatabase(db, async () => {
+      for (const row of cases) {
+        scenario = row.name
+        ownCalls = 0
+        await row.arrange()
+        ownCalls = 0
+        const result = await row.act()
+        if (ownCalls === 0) {
+          throw new Error(
+            `${row.name}: act must run its own command through run()`
+          )
+        }
+        await row.assert(result)
+        if (row.undoAssert) await row.undoAssert(result)
+      }
+      const finalSpecs = specsFor(await arrangedIds(db, userId, ""))
+      const first = await snapshot(registry, person, finalSpecs)
+      const second = await snapshot(registry, person, finalSpecs)
+      controlDiffs = changedBetween(finalSpecs, first, second)
+    })
+    expect(undoSeen).toBeGreaterThan(0)
+    expect(reversals.length).toBeGreaterThan(0)
+  }, 240_000)
+
+  afterAll(async () => {
+    await closeDb()
+  })
+
+  it("decides every read in queries.ts", () => {
+    const decided = Object.keys(SNAPSHOT_QUERIES).sort()
+    expect(decided).toEqual(Object.keys(queries).sort())
+    for (const [query, inputs] of Object.entries(SNAPSHOT_QUERIES)) {
+      if (inputs) continue
+      expect(NEVER_SNAPSHOT_REASON[query as QueryName], query).toBeTruthy()
+    }
+  })
+
+  it("control: reading twice with no command in between changes nothing", () => {
+    expect(controlDiffs.map(keyOf)).toEqual([])
+  })
+
+  it("the snapshot reads real data, not only refusals", () => {
+    expect(readCount).toBeGreaterThan(500)
+    expect(errorCount / readCount).toBeLessThan(0.5)
+  })
+
+  it("most commands visibly change some read, so the check is not vacuous", () => {
+    const moved = acts.filter((entry) => entry.changed.length > 0)
+    expect(moved.length).toBeGreaterThan(acts.length * 0.6)
+    expect(undos.every((entry) => entry.changed.length > 0)).toBe(true)
+  })
+
+  it("R1: every read a command changes is in its invalidates", () => {
+    expect(gapsIn([...acts, ...reversals], invalidatesTable())).toEqual([])
+  })
+
+  it("R2: an undo changes only reads that activity.undo refreshes", () => {
+    expect(gapsIn(undos, invalidatesTable())).toEqual([])
+  })
+
+  it("mutant R1: paper.setFavorite without paper.list is caught", () => {
+    const mutant = without(
+      invalidatesTable(),
+      "paper.setFavorite",
+      "paper.list"
+    )
+    const gaps = gapsIn(acts, mutant)
+    expect(gaps.join("\n")).toContain("paper.setFavorite changed paper.list")
+  })
+
+  it("mutant R2: activity.undo without paper.list is caught", () => {
+    const mutant = without(invalidatesTable(), "activity.undo", "paper.list")
+    const gaps = gapsIn(undos, mutant)
+    expect(gaps.join("\n")).toContain("changed paper.list")
+  })
+
+  it("every pending gap still happens, names an issue and has not expired", () => {
+    const seen = new Set(
+      unlistedChanges(acts, invalidatesTable()).map(
+        ({ observation, spec }) => `${observation.command} ${spec.query}`
+      )
+    )
+    for (const [command, entry] of Object.entries(PENDING_GAPS)) {
+      expect(entry.issue, command).toBeGreaterThan(0)
+      expect(Date.parse(entry.expires), command).toBeGreaterThan(Date.now())
+      for (const read of entry.reads) {
+        expect(seen.has(`${command} ${read}`), `${command} ${read}`).toBe(true)
+      }
+    }
+  })
+
+  it("every exemption gives a reason and names a bound command", () => {
+    for (const [command, reason] of Object.entries(EXEMPT_COMMANDS)) {
+      expect(reason.length, command).toBeGreaterThan(10)
+      expect(command in commands, command).toBe(true)
+    }
+  })
+})

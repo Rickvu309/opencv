@@ -38,6 +38,13 @@ export const LEDGER = Object.freeze([
       "it checks the formal specs and their runner, added in #917; no earlier mistake to prove yet",
   },
   {
+    id: "read-invalidation",
+    file: "apps/api/src/registry/invalidation.formal.test.ts",
+    historic: null,
+    reason:
+      "its mutants run inside the file (a command without a read it changes, an undo without a read it refreshes); the four earlier stale-screen fixes were web-side and predate the command table",
+  },
+  {
     id: "pointer-capture",
     file: "scripts/pointer-capture.test.mjs",
     detector: {

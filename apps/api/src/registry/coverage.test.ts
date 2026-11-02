@@ -11,16 +11,12 @@ import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { idempotency, jobChecklist, paperShares, user } from "../db/schema.js"
+import { idempotency, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { accountCases } from "./coverage-account.js"
-import { chatCases } from "./coverage-chat.js"
-import { idOf, type CoverageTools } from "./coverage-helpers.js"
-import { inboxCases } from "./coverage-inbox.js"
-import { jobCases } from "./coverage-job.js"
-import { paperCases } from "./coverage-paper.js"
+import { idOf } from "./coverage-helpers.js"
+import { coverageCases } from "./coverage-setup.js"
 import { installRegistry } from "./install.js"
-import type { ExecuteResult, Registry } from "./registry.js"
+import type { Registry } from "./registry.js"
 
 const surfaces = {
   account: accountContract,
@@ -57,77 +53,13 @@ function coverageProblems(covered: string[]) {
 describe("every command has a coverage case that runs it as the person and undoes a reversal", () => {
   it("runs every command as the person and undoes a reversal", async () => {
     const { db, client } = await createMigratedTestDb()
-    const registry = installRegistry()
     const userId = "user-coverage"
     await db.insert(user).values({
       id: userId,
       name: "Ada",
       email: "ada-coverage@example.com",
     })
-    const person = personActor(userId)
-    const ctx = {
-      chatId: "",
-      jobId: "",
-      docId: "",
-      itemId: "",
-      pendingId: "",
-      activityId: "",
-      fileId: "",
-    }
-    const run = (name: string, input: unknown) =>
-      registry.execute({ name, input, actor: person })
-    const jobOf = (jobId: string) => registry.read("job.get", { jobId }, person)
-    const chatOf = (chatId: string) =>
-      registry.read("chat.get", { chatId }, person)
-    const paperOf = (docId: string) =>
-      registry.read("paper.get", { docId }, person)
-    const profileOf = () => registry.read("profile.get", {}, person)
-
-    async function undo(result: ExecuteResult) {
-      const plan = result.reversal
-      if (!plan) throw new Error("missing reversal")
-      await registry.execute({
-        name: plan.command,
-        input: plan.input,
-        actor: person,
-        skipConfirm: true,
-      })
-    }
-
-    async function gone(read: Promise<unknown>) {
-      await expect(read).rejects.toThrow(/not found/i)
-    }
-
-    async function checklist(itemId: string) {
-      return db.select().from(jobChecklist).where(eq(jobChecklist.id, itemId))
-    }
-
-    async function shares(docId: string) {
-      return db.select().from(paperShares).where(eq(paperShares.docId, docId))
-    }
-
-    const tools: CoverageTools = {
-      db,
-      registry,
-      userId,
-      ctx,
-      run,
-      undo,
-      jobOf,
-      chatOf,
-      paperOf,
-      profileOf,
-      gone,
-      checklist,
-      shares,
-    }
-    const cases = [
-      ...chatCases(tools),
-      ...paperCases(tools),
-      ...jobCases(tools),
-      ...inboxCases(tools),
-      ...accountCases(tools),
-    ]
+    const { cases } = coverageCases(db, userId)
 
     await withDatabase(db, async () => {
       for (const row of cases) {

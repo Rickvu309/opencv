@@ -25,7 +25,7 @@ const RETIRED = [
     use: "Chat",
     allowed: [
       {
-        path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox|inbox-contract\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$)/,
+        path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox|inbox-contract\.test|invalidation\.formal\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$)/,
         why: "the inbox modules own the mail thread noun (MailThread, InboxThread, threadId, listThreads, getThread)",
       },
       {
