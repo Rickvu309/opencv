@@ -258,7 +258,7 @@ export async function checkResize({ browser, web, output, check, capture }) {
   await page.hover(3, Y)
   await page.sleep(500)
   await page.evaluate(
-    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)}).focus()`
+    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="nav-item"]`)}).focus()`
   )
   await page.key("Escape")
   await page.sleep(500)
@@ -275,7 +275,7 @@ export async function checkResize({ browser, web, output, check, capture }) {
   await page.hover(3, Y)
   await page.sleep(500)
   const inbox = await page.evaluate(
-    `(() => { const l = [...document.querySelectorAll(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)})].find((e) => e.getAttribute('href') === '/inbox'); const r = l.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`
+    `(() => { const l = [...document.querySelectorAll(${JSON.stringify(`${SIDEBAR} [data-slot="nav-item"]`)})].find((e) => e.getAttribute('href') === '/inbox'); const r = l.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`
   )
   await page.mouse("mouseMoved", inbox.x, inbox.y)
   await page.mouse("mousePressed", inbox.x, inbox.y)
@@ -316,7 +316,7 @@ export async function checkResize({ browser, web, output, check, capture }) {
   )
   await page.evaluate("document.activeElement?.blur()")
   await page.evaluate(
-    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)}).focus()`
+    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="nav-item"]`)}).focus()`
   )
   await page.key("[")
   await page.sleep(400)

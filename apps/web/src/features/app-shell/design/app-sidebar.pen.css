@@ -1,15 +1,15 @@
-[data-pen-surface="app-shell"] [data-slot="sidebar-link"],
-[data-pen-surface="app-shell"] [data-slot="sidebar-link"] svg,
+[data-pen-surface="app-shell"] [data-slot="nav-item"],
+[data-pen-surface="app-shell"] [data-slot="nav-item"] svg,
 [data-pen-surface="app-shell"] button[aria-label="Search"],
 [data-pen-surface="app-shell"] [data-slot="sidebar-toggle"] {
   color: #59595b;
 }
 
-[data-pen-surface="app-shell"] [data-slot="sidebar-link"][aria-current="page"] {
+[data-pen-surface="app-shell"] [data-slot="nav-item"][aria-current="page"] {
   background: #e1e1e2;
 }
 
-[data-pen-surface="app-shell"] [data-slot="sidebar-count"],
+[data-pen-surface="app-shell"] [data-slot="nav-item-badge"],
 [data-pen-surface="app-shell"] [data-slot="sidebar-group-label"] {
   color: #969799;
 }
@@ -53,7 +53,7 @@
   }
 }
 
-[data-pen-surface="app-shell"] [data-slot="sidebar-link"],
+[data-pen-surface="app-shell"] [data-slot="nav-item"],
 [data-pen-surface="app-shell"] [data-slot="sidebar-group-label"],
 [data-pen-surface="app-shell"] button[aria-label="Search"],
 [data-pen-surface="app-shell"] [data-slot="sidebar-toggle"],

@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
+import { NavItem } from "@workspace/ui/components/nav-item"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
@@ -87,17 +87,17 @@ export function SettingsLayout({
 function BackLink({ href }: { href: string }) {
   const navigate = useNavigate()
   return (
-    <a
+    <NavItem
+      tone="muted"
       href={href}
-      className={`${FOCUS_RING} inline-flex h-8 items-center gap-2 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground`}
       onClick={(event) => {
         event.preventDefault()
         void navigate({ href })
       }}
     >
-      <ArrowLeft className="size-4" aria-hidden />
+      <ArrowLeft aria-hidden />
       Back to app
-    </a>
+    </NavItem>
   )
 }
 
@@ -112,17 +112,17 @@ function SectionLink({
 }) {
   const navigate = useNavigate()
   return (
-    <a
+    <NavItem
+      tone="muted"
       href={href}
-      aria-current={current ? "page" : undefined}
-      className={`${FOCUS_RING} flex h-8 items-center rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=page]:bg-muted aria-[current=page]:text-foreground`}
+      active={current}
       onClick={(event) => {
         event.preventDefault()
         void navigate({ href })
       }}
     >
       {children}
-    </a>
+    </NavItem>
   )
 }
 

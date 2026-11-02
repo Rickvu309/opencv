@@ -129,7 +129,7 @@ async function settle(page) {
 
 async function waitSidebar(page, root) {
   const ready = await page.waitFor(
-    `(() => { const nav = document.querySelector(${JSON.stringify(root)}); return !!nav && !!nav.querySelector('[data-slot="sidebar-count"]') && !!nav.querySelector('[data-slot="sidebar-group-label"][aria-controls]') && !nav.querySelector('[data-slot="skeleton"]') && nav.textContent.includes('Junior Marketing CV') && nav.textContent.includes('Lumière application') })()`,
+    `(() => { const nav = document.querySelector(${JSON.stringify(root)}); return !!nav && !!nav.querySelector('[data-slot="nav-item-badge"]') && !!nav.querySelector('[data-slot="sidebar-group-label"][aria-controls]') && !nav.querySelector('[data-slot="skeleton"]') && nav.textContent.includes('Junior Marketing CV') && nav.textContent.includes('Lumière application') })()`,
     20000
   )
   check(ready, `sidebar ready (${root})`)
@@ -271,7 +271,7 @@ try {
     }
     if (width === 1440 && path === "/paper") {
       const rows = await page.evaluate(
-        `[...document.querySelectorAll('${SIDEBAR} [data-slot="sidebar-link"]')].map((a) => a.getAttribute('aria-label') ?? a.textContent.trim())`
+        `[...document.querySelectorAll('${SIDEBAR} [data-slot="nav-item"]')].map((a) => a.getAttribute('aria-label') ?? a.textContent.trim())`
       )
       check(
         rows.join("|") ===
@@ -308,7 +308,7 @@ try {
         `${tag} Your work collapses on activation`
       )
       const hidden = await page.evaluate(
-        `![...document.querySelectorAll('${SIDEBAR} [data-slot="sidebar-link"]')].some((a) => a.offsetParent && a.textContent.trim() === 'Apply')`
+        `![...document.querySelectorAll('${SIDEBAR} [data-slot="nav-item"]')].some((a) => a.offsetParent && a.textContent.trim() === 'Apply')`
       )
       check(hidden, `${tag} the collapsed group hides Paper, Apply, Pitch`)
       const collapsed = `sidebar-1440-paper-collapsed.png`
@@ -394,7 +394,7 @@ try {
   const drawer = await phone.evaluate(`(() => {
     const nav = document.querySelector(${JSON.stringify(DRAWER)});
     const r = nav.getBoundingClientRect();
-    const names = [...nav.querySelectorAll('[data-slot="sidebar-link"], button[aria-label]')].map((e) => (e.getAttribute('aria-label') ?? e.textContent.trim()).replace(/, \\d+ unread$/, ''));
+    const names = [...nav.querySelectorAll('[data-slot="nav-item"], button[aria-label]')].map((e) => (e.getAttribute('aria-label') ?? e.textContent.trim()).replace(/, \\d+ unread$/, ''));
     return { w: r.width, h: r.height, right: r.right, scroll: document.documentElement.scrollWidth, names, name: nav.querySelector('[data-slot="shell-profile"]').textContent.trim() };
   })()`)
   check(
