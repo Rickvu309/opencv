@@ -1,11 +1,5 @@
 [
   {
-    "id": "pen-layout:FCDYX",
-    "reason": "Proofs layout mismatches until the pull request Jobs, Pitch, Proofs and Settings headers merges",
-    "issue": "#894",
-    "expires": "2026-11-16"
-  },
-  {
     "id": "auth-code",
     "reason": "Sign-in code screens report layout mismatches",
     "issue": "#894",
