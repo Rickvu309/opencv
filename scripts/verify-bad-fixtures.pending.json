@@ -1,0 +1,127 @@
+{
+  "notChecks": [
+    ".claude/skills/verify-app-ui/scripts/lib/apply-pen-page.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/apply-pen-seed.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/assumes.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/kinds.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/oklch.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/session.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/stack.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/tier.mjs",
+    ".claude/skills/verify-app-ui/scripts/lib/tour.mjs",
+    ".claude/skills/verify-landing/scripts/lib/assumes.mjs",
+    ".claude/skills/verify-landing/scripts/lib/cdp.mjs",
+    ".claude/skills/verify-landing/scripts/lib/kinds.mjs"
+  ],
+  "pending": [
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/apply-pen-gaps.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "its faint-grey rule needs a measured Apply text"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/checks-source.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it reads the app source folders, so its bad sample needs a stand-in source tree"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/pen-layout-probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/probe-colors.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page; its contrast, target-size and overflow rules need a saved page"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-account-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-collapsed-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-drag-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-geometry.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it measures a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-interactions.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-resize-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-resize-shared.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-round3-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/design-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it judges a measured desktop page and the design spec"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/design-probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/page-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "its contrast and target rules need a saved page measurement"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/pen-probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    }
+  ]
+}

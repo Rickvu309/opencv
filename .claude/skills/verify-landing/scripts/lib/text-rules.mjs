@@ -244,3 +244,65 @@ export function textRules(top, want = () => true) {
     )
   return out
 }
+
+const page = (blocks) => ({
+  blocks,
+  description: "",
+  title: "",
+  links: [],
+  imgs: [],
+  bodyText: "",
+})
+const failed = (top, id) =>
+  textRules(top).find((result) => result.id === id)?.status === "FAIL"
+const longHeading =
+  "We built a tool that does many different useful things for people every day in the world"
+export const badFixture = [
+  {
+    name: "an H1 over 12 words that names no audience or outcome",
+    fails: () =>
+      failed(page([{ region: "hero", tag: "h1", text: longHeading }]), "01"),
+  },
+  {
+    name: "marketing words in a block",
+    fails: () =>
+      failed(
+        page([
+          { region: "hero", tag: "h1", text: "Get hired" },
+          { region: "hero", tag: "p", text: "The best seamless CV tool." },
+        ]),
+        "04"
+      ),
+  },
+  {
+    name: "a hero sentence over 24 words",
+    fails: () =>
+      failed(
+        page([
+          { region: "hero", tag: "h1", text: "Get hired" },
+          { region: "hero", tag: "p", text: `${"word ".repeat(25).trim()}.` },
+        ]),
+        "05"
+      ),
+  },
+  {
+    name: "a passive hero sentence",
+    fails: () =>
+      failed(
+        page([
+          { region: "hero", tag: "h1", text: "Get hired" },
+          { region: "hero", tag: "p", text: "Your CV is written for you." },
+        ]),
+        "05"
+      ),
+  },
+  {
+    name: "a statement that never names the product",
+    fails: () =>
+      failed(page([{ region: "hero", tag: "h1", text: "Get hired" }]), "02"),
+  },
+  {
+    name: "a free-text marketese match",
+    fails: () => findMarketese("Supercharge your search").length > 0,
+  },
+]

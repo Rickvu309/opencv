@@ -224,3 +224,72 @@ export function exclamationViolations(labels) {
   const oops = new RegExp(copy.oops, "i")
   return labels.filter((label) => label.includes("!") || oops.test(label))
 }
+
+const white = [255, 255, 255]
+const pale = [200, 200, 200]
+export const badFixture = [
+  {
+    name: "a retired noun in chrome",
+    fails: () => nounViolations(["Open my threads"]).length > 0,
+  },
+  {
+    name: "a label that gives no action",
+    fails: () => emptyActionLabels(["Click here"]).length > 0,
+  },
+  {
+    name: "another product's name",
+    fails: () => otherProductNames("Share on Instagram").length > 0,
+  },
+  {
+    name: "a metric claim with no basis",
+    fails: () =>
+      metricClaims("Boosts offers by 40%").length > 0 &&
+      !hasBasisSentence("Boosts offers by 40%"),
+  },
+  {
+    name: "the raw api message on the page",
+    fails: () => showsRawMessage("Error: User not found.", "User not found."),
+  },
+  {
+    name: "a duration off the motion tokens",
+    fails: () => offTokenDurations("300ms").length > 0,
+  },
+  {
+    name: "white text on a white background",
+    fails: () => contrastRatio(white, white) < contrastNeeded(14, 400),
+  },
+  {
+    name: "pale grey text on a white background",
+    fails: () => contrastRatio(pale, white) < contrastNeeded(14, 400),
+  },
+  { name: "an off-scale spacing", fails: () => !onSpacingScale(5) },
+  {
+    name: "the brand spelled with capitals",
+    fails: () => brandViolations(["OpenCV home"]).length > 0,
+  },
+  {
+    name: "two glow primaries inside a nested mobile view",
+    fails: () =>
+      extraGlowPrimaries(
+        capturedGlowViews({ mobile: { apply: { glowCount: 2 } } }).map(
+          (view) => view.count
+        )
+      ).length > 0,
+  },
+  {
+    name: "an em dash in copy",
+    fails: () => dashViolations(["Saved — done"]).length > 0,
+  },
+  {
+    name: "a toggle that reads On",
+    fails: () => toggleViolations(["On"]).length > 0,
+  },
+  {
+    name: "a job line that leads with the company",
+    fails: () => titleBeforeCompany(["at Acme"]).length > 0,
+  },
+  {
+    name: "an exclamation mark",
+    fails: () => exclamationViolations(["Saved!"]).length > 0,
+  },
+]

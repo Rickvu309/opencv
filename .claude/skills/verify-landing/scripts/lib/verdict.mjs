@@ -47,3 +47,22 @@ export function summarize(results, tier) {
   const by = (status) => results.some((r) => r.status === status)
   return { lines, exit: by("STALE") ? 3 : by("FAIL") ? 1 : 0 }
 }
+
+const aCheck = ["99", "name", "rule"]
+export const badFixture = [
+  {
+    name: "a judged part that breaks the rule while another part is missing",
+    fails: () =>
+      judged(...aCheck, false, "measured", ["part"]).status === "FAIL",
+  },
+  {
+    name: "a passing check with a part it could not locate",
+    fails: () =>
+      judged(...aCheck, true, "measured", ["part"]).status !== "PASS",
+  },
+  {
+    name: "a run with one failing check",
+    fails: () =>
+      summarize([verdict(...aCheck, false, "measured")], "all").exit === 1,
+  },
+]

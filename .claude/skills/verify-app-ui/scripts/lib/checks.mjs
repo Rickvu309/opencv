@@ -457,3 +457,14 @@ export function runChecks(d, want = () => true) {
   )
   return r.sort((a, b) => a.id.localeCompare(b.id))
 }
+
+export const badFixture = [
+  {
+    name: "a CV toolbar with no undo",
+    fails: () => !cvToolbarCheck([{ label: "Bold" }], []).pass,
+  },
+  {
+    name: "a Coach change with a reject control",
+    fails: () => cvToolbarCheck([], [{ label: "Reject" }]).reject,
+  },
+]

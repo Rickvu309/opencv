@@ -22,3 +22,21 @@ export function boardLanes(snap, stages = boardStages()) {
       : `stage list (JOB_STAGES not readable in ${SOURCE_FILES.jobStages})`,
   }
 }
+
+export const badFixture = [
+  {
+    name: "a stage with no lane",
+    fails: () =>
+      boardLanes({ lanes: [{ stage: "saved", heading: "Saved" }] }, [
+        "saved",
+        "applied",
+      ]).missing.length > 0,
+  },
+  {
+    name: "a lane headed with another stage's name",
+    fails: () =>
+      boardLanes({ lanes: [{ stage: "applied", heading: "Offer" }] }, [
+        "applied",
+      ]).misnamed.length > 0,
+  },
+]

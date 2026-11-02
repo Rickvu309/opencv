@@ -50,3 +50,12 @@ export function sidewaysScroll(d) {
       : []
   )
 }
+
+export const badFixture = [
+  {
+    name: "a toured page wider than its window",
+    fails: () =>
+      sidewaysScroll({ coach: { docScroll: { sw: 2000, cw: 1440 } } })
+        .status === "FAIL",
+  },
+]

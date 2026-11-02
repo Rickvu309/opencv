@@ -37,6 +37,7 @@ A guard marked proven has a row in `scripts/guard-ledger.mjs` showing it fires o
 - `unbounded-spawn.test.mjs` (push, CI, proven): a long tool call with no timeout in scripts is refused
 - `unused-domain-exports.test.mjs` (push, CI): every export of packages/domain/src is imported by non-test code
 - `verify-auth-production.test.mjs` (CI): rejects the incident's successful old image before sending mail
+- `verify-bad-fixtures.test.mjs` (push, CI): every verifier check module has a bad fixture, or is listed with an issue and an expiry
 - `verify-feature-map.test.mjs` (push, CI): every feature file is in the verify-opencv index
 - `web-lint-rules.test.mjs` (CI): a zone that opens the peek straight from onPointerEnter has no hover intent
 - `web-test-clock.test.mjs` (push, CI): every web test starts with the clock pinned to TEST_NOW

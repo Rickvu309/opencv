@@ -137,3 +137,27 @@ export function paletteScan(dir = PALETTE_DIR) {
   )
   return { scan, uses }
 }
+
+const aCheck = ["99", "name", "rule"]
+export const badFixture = [
+  {
+    name: "a judged part that breaks the rule while another part is missing",
+    fails: () =>
+      judged(...aCheck, false, "measured", ["part"]).status === "FAIL",
+  },
+  {
+    name: "a passing check with a part it could not locate",
+    fails: () =>
+      judged(...aCheck, true, "measured", ["part"]).status !== "PASS",
+  },
+  {
+    name: "a scenario stub that never fired",
+    fails: () => stubSilent({ stubHits: 0 }) !== null,
+  },
+  {
+    name: "a run with one failing check",
+    fails: () =>
+      summarize([result(...aCheck.slice(0, 2), false, "m", "r")], "all")
+        .exit === 1,
+  },
+]
