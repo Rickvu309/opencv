@@ -130,4 +130,51 @@ describe("paper.replace", () => {
     })
     await client.close()
   })
+
+  it("never stores an empty or blank letter part", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-paper-replace-letter"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-paper-replace-letter@example.com",
+    })
+    const actor = personActor(userId)
+    await withDatabase(db, async () => {
+      const created = await registry.execute({
+        name: "paper.create",
+        input: { kind: "letter", name: "Letter" },
+        actor,
+      })
+      const doc = created.output as { id: string; contentVersion: number }
+      const replaced = await registry.execute({
+        name: "paper.replace",
+        input: {
+          docId: doc.id,
+          contentVersion: doc.contentVersion,
+          document: {
+            markdown: "Body.",
+            sender: "",
+            contact: "  ",
+            closing: "Regards,",
+          },
+        },
+        actor,
+      })
+      expect(replaced.output).toMatchObject({
+        document: { markdown: "Body.", closing: "Regards," },
+      })
+      const read = (await registry.read(
+        "paper.get",
+        { docId: doc.id },
+        actor
+      )) as { document: Record<string, unknown> }
+      expect(read.document).toStrictEqual({
+        markdown: "Body.",
+        closing: "Regards,",
+      })
+    })
+    await client.close()
+  })
 })

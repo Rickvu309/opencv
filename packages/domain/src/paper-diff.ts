@@ -5,7 +5,10 @@ import {
   isCvDocument,
   isLetterDocument,
   isProofDocument,
+  LETTER_PARTS,
   type CvDocument,
+  type LetterDocument,
+  type LetterPart,
   type ProofDocument,
 } from "./paper-codecs.js"
 import type { PaperContentKind } from "./paper.js"
@@ -138,7 +141,17 @@ function diffCv(before: CvDocument, after: CvDocument): DiffHunk[] {
   return hunks
 }
 
-function diffLetter(before: string, after: string): DiffHunk[] {
+const LETTER_PART_LABELS: Record<LetterPart, string> = {
+  sender: "Sender",
+  contact: "Contact",
+  date: "Date",
+  recipient: "Recipient",
+  salutation: "Salutation",
+  closing: "Closing",
+  signature: "Signature",
+}
+
+function diffLetterBody(before: string, after: string): DiffHunk[] {
   if (before === after) return []
   const prevParas = before
     .split(/\n{2,}/)
@@ -158,6 +171,25 @@ function diffLetter(before: string, after: string): DiffHunk[] {
       nextParas[index] ?? ""
     )
     if (hunk) hunks.push(hunk)
+  }
+  return hunks
+}
+
+function diffLetter(before: LetterDocument, after: LetterDocument): DiffHunk[] {
+  const hunks: DiffHunk[] = []
+  const pushPart = (part: LetterPart) => {
+    const hunk = fieldHunk(
+      LETTER_PART_LABELS[part],
+      `letter-${part}`,
+      (before[part] ?? "").trim(),
+      (after[part] ?? "").trim()
+    )
+    if (hunk) hunks.push(hunk)
+  }
+  for (const part of LETTER_PARTS) {
+    if (part === "closing")
+      hunks.push(...diffLetterBody(before.markdown, after.markdown))
+    pushPart(part)
   }
   return hunks
 }
@@ -262,7 +294,7 @@ export function diffPaperContent(
     isLetterDocument(before) &&
     isLetterDocument(after)
   ) {
-    return diffLetter(before.markdown, after.markdown)
+    return diffLetter(before, after)
   }
   if (kind === "proof" && isProofDocument(before) && isProofDocument(after)) {
     return diffProof(before, after)

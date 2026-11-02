@@ -118,6 +118,40 @@ describe("Paper share page", () => {
     )
   })
 
+  it("shows a shared letter on the letter sheet with its parts", async () => {
+    const letter: Omit<PaperView, "isFavorite"> = {
+      ...shared,
+      name: "Letter for Ada",
+      kind: "letter",
+      templateId: null,
+      document: {
+        markdown: "First.\n\nSecond.",
+        sender: "Ada",
+        date: "May 5",
+        signature: "Ada",
+      },
+    }
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/paper/shared/tok")) {
+        return Promise.resolve(Response.json({ ok: true, data: letter }))
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    render(<PaperSharePage />)
+    expect(
+      await screen.findByRole("heading", { name: "Letter for Ada" })
+    ).toBeInTheDocument()
+    const sheet = document.querySelector(
+      "[data-paper-quiet] [data-slot='letter-sheet']"
+    )
+    expect(sheet).not.toBeNull()
+    expect(
+      [...(sheet?.children ?? [])].map((node) => node.textContent)
+    ).toEqual(["Ada", "May 5", "First.", "Second.", "Ada"])
+    expect(sheet?.querySelector("textarea, [placeholder]")).toBeNull()
+  })
+
   it("prints once in strict mode and unmounts the share sheet", async () => {
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)

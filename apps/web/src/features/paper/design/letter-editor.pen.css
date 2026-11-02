@@ -55,3 +55,33 @@
 [data-pen-surface="paper"] [data-slot="letter-editor-skip"] {
   color: #59595b;
 }
+
+[data-pen-surface="paper"] [data-slot="letter-editor-connector"] {
+  background: #cfcfd2;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-anchor"] {
+  background: #e8542a;
+  border-color: #ffffff;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-header"] .lucide-mail {
+  color: #3c3c40;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-more"] {
+  color: #3c3c40;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-link"] {
+  color: #6b6b70;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  [data-pen-surface="paper"] [data-slot="letter-editor-more"],
+  [data-pen-surface="paper"] [data-slot="letter-editor-link"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+[data-pen-surface="paper"] [data-slot="letter-editor-desk"]:focus-visible {
+  outline: 1px solid #8a8a8e;
+  outline-offset: -2px;
+}

@@ -169,7 +169,8 @@ export const paperContract = commandContract({
     ],
   }),
   "paper.replace": commandEntry({
-    description: "Replace a document when the version matches.",
+    description:
+      "Replace a document when the version matches. A letter keeps only the parts you send, so send every part to keep.",
     input: paperReplaceInputSchema,
     output: paperViewSchema.extend({ previousDocument }).strict(),
     idempotency: "none",

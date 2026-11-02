@@ -8,6 +8,7 @@ import {
   PAPER_CONTENT_VERSION,
   decodePaperContent,
   blankBlockDocument,
+  withoutBlankParts,
   emptyLetterDocument,
   isCvBlockDocument,
   isCvDocument,
@@ -19,6 +20,7 @@ import {
   type PaperView,
   type Actor,
   type FileId,
+  type LetterDocument,
   type PaperId,
   type PaperReplaceInput,
   type PaperStoredKind,
@@ -106,6 +108,12 @@ function requireDocument(kind: PaperStoredKind, document: unknown) {
   const decoded = decodePaperContent(kind, PAPER_CONTENT_VERSION, document)
   if (!decoded.ok) {
     throw new CommandError(ERROR_CODES.VALIDATION_ERROR, decoded.message)
+  }
+  if (kind === "letter") {
+    return withoutBlankParts(decoded.data as LetterDocument) as Record<
+      string,
+      unknown
+    >
   }
   return decoded.data as Record<string, unknown>
 }

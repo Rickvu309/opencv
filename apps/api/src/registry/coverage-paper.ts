@@ -16,6 +16,20 @@ import {
 
 export function paperCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, registry, run, undo, paperOf, gone, shares, userId } = tools
+  let letterId = ""
+  let letterVersion = 1
+  let cvReplace: Awaited<ReturnType<typeof run>> | null = null
+  const letterWithParts = {
+    markdown: "First.\n\nSecond.",
+    sender: "Linh Nguyen",
+    contact: "linh@example.com",
+    date: "October 26, 2026",
+    recipient: "Hiring Team\nLumiere",
+    salutation: "Dear team,",
+    closing: "Warm regards,",
+    signature: "Linh",
+  }
+  const lettersAfter = { markdown: "Only one paragraph.", sender: "Linh" }
   return [
     {
       name: "paper.create",
@@ -40,10 +54,23 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
           name: "Replace CV",
         })
         ctx.docId = idOf(paper.output)
+        const letter = await run("paper.create", {
+          kind: "letter",
+          name: "Replace letter",
+        })
+        letterId = idOf(letter.output)
+        const filled = await run("paper.replace", {
+          docId: letterId,
+          contentVersion: 1,
+          document: letterWithParts,
+        })
+        letterVersion = Number(
+          (filled.output as { contentVersion: number }).contentVersion
+        )
       },
-      act: () => {
+      act: async () => {
         const document = blankBlockDocument()
-        return run("paper.replace", {
+        cvReplace = await run("paper.replace", {
           docId: ctx.docId,
           contentVersion: 1,
           document: {
@@ -51,15 +78,28 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
             header: { ...document.header, name: "Ada Lane" },
           },
         })
+        return run("paper.replace", {
+          docId: letterId,
+          contentVersion: letterVersion,
+          document: lettersAfter,
+        })
       },
       assert: async () => {
         const doc = await paperOf(ctx.docId)
         expect(text(record(record(doc, "document"), "header"), "name")).toBe(
           "Ada Lane"
         )
+        expect(record(await paperOf(letterId), "document")).toEqual(
+          lettersAfter
+        )
       },
       undoAssert: async (result) => {
         await undo(result)
+        expect(record(await paperOf(letterId), "document")).toEqual(
+          letterWithParts
+        )
+        if (!cvReplace) throw new Error("missing cv replace")
+        await undo(cvReplace)
         const doc = await paperOf(ctx.docId)
         expect(text(record(record(doc, "document"), "header"), "name")).toBe("")
       },

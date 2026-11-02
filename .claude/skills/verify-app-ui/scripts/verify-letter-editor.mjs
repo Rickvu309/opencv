@@ -10,7 +10,11 @@ import { join, resolve } from "node:path"
 import { must, signUp } from "./lib/apply-pen-seed.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
-import { comparePenLayout, TEXT_TOKENS } from "./lib/pen-layout-compare.mjs"
+import {
+  comparePenLayout,
+  formatMismatch,
+  TEXT_TOKENS,
+} from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 
 const port = Number(process.env.PORT)
@@ -71,11 +75,21 @@ const report = {
   status: "RUNNING",
   limits: [
     "Native Pencil export is unavailable; source geometry comparison is not a 95% pixel certification.",
-    "The plain-text editor does not reproduce the frame's mixed body typography.",
-    "keywordGap currently extracts Meta from Meta Ads; the fixture does not hardcode the source suggestion.",
+    "The sheet is one labelled textarea per part and per paragraph; the pen comparison measures each field's text, not a pixel render.",
     "DOM input/click dispatch proves UI handlers, not physical pointer or IME behavior.",
+    "The star, bell and sliders glyph of the frame's header are not built (no feature behind them); see the issue's deviation list.",
   ],
 }
+const PEN_LAYOUT_EXCEPTIONS = [
+  {
+    frameId: "sgAtL",
+    text: "Edited just now",
+    property: "x",
+    reason: "no sliders glyph in the pill and no bell button (no feature)",
+    until: "2027-06-30",
+    approvedBy: "#830 header decision",
+  },
+]
 const check = (pass, message) => {
   report.checks.push({ pass: Boolean(pass), message })
   must(pass, message)
@@ -108,6 +122,34 @@ const click = async (page, text) =>
 })()`),
     `click ${text}`
   )
+const pageDownAfterDeskClick = async (page, width) => {
+  const spot = await page.evaluate(`(() => {
+    const desk=document.querySelector('[data-slot="letter-editor-desk"]');
+    desk.scrollTop=0;
+    const r=desk.getBoundingClientRect();
+    return {x:r.left+3,y:r.top+r.height/2,scrollable:desk.scrollHeight>desk.clientHeight+1};
+  })()`)
+  await page.mouse("mousePressed", spot.x, spot.y)
+  await page.mouse("mouseReleased", spot.x, spot.y)
+  const focus = await page.evaluate(`(() => {
+    const d=document.activeElement;
+    return {desk:d?.getAttribute('data-slot')==='letter-editor-desk',ring:getComputedStyle(d).outlineStyle};
+  })()`)
+  check(
+    focus.desk && focus.ring === "none",
+    `${width}: a click on the desk focuses the desk, with no ring for the mouse`
+  )
+  if (!spot.scrollable) return
+  await page.key("PageDown")
+  const moved = await page.waitFor(
+    `document.querySelector('[data-slot="letter-editor-desk"]').scrollTop>0`,
+    3000
+  )
+  check(moved, `${width}: PageDown scrolls the desk after a click on it`)
+  await page.evaluate(
+    `document.querySelector('[data-slot="letter-editor-desk"]').scrollTop=0`
+  )
+}
 const capture = async (page, width, label) => {
   await page.evaluate("document.fonts.ready")
   await page.evaluate(
@@ -131,6 +173,82 @@ const capture = async (page, width, label) => {
     metrics.documentWidth <= metrics.viewport &&
       metrics.rootWidth <= metrics.rootClientWidth + 1,
     `${width} ${label}: no horizontal overflow`
+  )
+  const screen = await page.evaluate(`(() => {
+    const root=document.querySelector('[data-slot="letter-editor-page"]');
+    const desk=root.querySelector('[data-slot="letter-editor-desk"]');
+    const card=root.querySelector('[data-slot="letter-editor-suggestion"]');
+    const sheet=root.querySelector('[data-slot="letter-editor-sheet"]');
+    const fields=[...root.querySelectorAll('[data-slot="letter-sheet"] textarea')];
+    const rect=n=>n?.getBoundingClientRect();
+    desk.scrollTop=desk.scrollHeight;
+    const last=rect(fields[fields.length-1]);
+    const deskBox=rect(desk);
+    const scrolled={scrollable:desk.scrollHeight>desk.clientHeight+1,lastInside:last.bottom<=deskBox.bottom+1&&last.top>=deskBox.top-1,
+      deskInViewport:deskBox.bottom<=innerHeight+1,main:document.getElementById('app-main').scrollTop};
+    desk.scrollTop=0;
+    const beside=card&&getComputedStyle(card).position==='absolute';
+    const connector=root.querySelector('[data-slot="letter-editor-connector"]');
+    const anchor=root.querySelector('[data-slot="letter-editor-anchor"]');
+    const s=rect(sheet),c=rect(card),k=rect(connector),a=rect(anchor);
+    return {scrolled,beside:!!beside,
+      cardGap:beside?c.left-s.right:null,
+      connectorGap:beside&&k?k.left-s.right:null,connectorWidth:k?.width??null,
+      anchorMid:beside&&a?a.left+a.width/2-s.right:null,
+      anchorTop:beside&&a?document.elementFromPoint(a.left+a.width*0.3,a.top+a.height/2)===anchor:null,
+      targets:['letter-editor-more','letter-editor-link'].map(slot=>{const r=rect(root.querySelector('[data-slot="'+slot+'"]'));return{slot,width:r.width,height:r.height}}),
+      closingGap:(()=>{const c=rect(root.querySelector('[data-slot="letter-closing"]')),g=rect(root.querySelector('[data-slot="letter-signature"]'));return g.top-c.bottom})(),
+      paragraphHeights:fields.filter(n=>n.dataset.slot==='letter-paragraph').map(n=>Math.round(rect(n).height*10)/10),
+      header:{more:!!root.querySelector('[aria-label="More"]'),link:!!root.querySelector('[aria-label="Copy share link"]'),
+        pdfButton:!![...root.querySelectorAll('header button')].find(n=>n.textContent.trim()==='Download PDF'),mail:!!root.querySelector('header .lucide-mail')},
+      touch:matchMedia('(max-width: 767px), (pointer: coarse)').matches};
+  })()`)
+  check(
+    screen.scrolled.scrollable === false || screen.scrolled.lastInside,
+    `${width} ${label}: the desk scrolls to the last field`
+  )
+  check(
+    screen.scrolled.deskInViewport && screen.scrolled.main === 0,
+    `${width} ${label}: the desk fits the window and the page itself does not scroll`
+  )
+  check(
+    screen.header.more &&
+      screen.header.link &&
+      screen.header.mail &&
+      !screen.header.pdfButton,
+    `${width} ${label}: header has the mail mark, More and link, and no PDF button`
+  )
+  if (screen.beside) {
+    check(
+      Math.abs(screen.cardGap - 24) <= 1.5 &&
+        Math.abs(screen.connectorGap - 2) <= 1.5 &&
+        Math.abs(screen.connectorWidth - 22) <= 0.5 &&
+        Math.abs(screen.anchorMid) <= 1.5,
+      `${width} ${label}: card sits 24px right of the sheet with its connector and dot`
+    )
+  }
+  if (screen.beside) {
+    check(
+      screen.anchorTop === true,
+      `${width} ${label}: the anchor dot is above the sheet`
+    )
+  }
+  for (const target of screen.targets) {
+    const min = screen.touch ? 44 : 0
+    check(
+      target.width >= min - 0.5 && target.height >= min - 0.5,
+      `${width} ${label}: ${target.slot} is ${target.width}x${target.height}` +
+        (screen.touch ? ", at least 44px on touch" : "")
+    )
+    if (!screen.touch)
+      check(
+        target.width <= 32 && target.height <= 32,
+        `${width} ${label}: ${target.slot} keeps its pen size on desktop`
+      )
+  }
+  check(
+    Math.abs(screen.closingGap - 4) <= 1,
+    `${width} ${label}: the signature sits 4px under the closing (${screen.closingGap})`
   )
   if (width < 600) {
     check(
@@ -172,9 +290,21 @@ const capture = async (page, width, label) => {
       })
     )
     comparison = {
-      ...comparePenLayout({ layout, ...measured }),
+      ...comparePenLayout({
+        layout,
+        ...measured,
+        exceptions: PEN_LAYOUT_EXCEPTIONS,
+      }),
       measured: measured.measured,
     }
+    check(
+      comparison.mismatches.length === 0,
+      `${width}: pen layout, ${comparison.mismatches.length} mismatches` +
+        comparison.mismatches
+          .slice(0, 8)
+          .map((m) => `\n  ${formatMismatch(layout, m)}`)
+          .join("")
+    )
   }
   const file = `${width}-${label}.png`
   await page.screenshot(join(output, file), false)
@@ -214,13 +344,28 @@ try {
   })
   await setup.close()
   const texts = snapshot.sections.find((s) => s.name === "Main wrap").texts
-  const markdown = texts.slice(4, 17).join("\n\n")
-  check(markdown.includes("Linh Nguyen"), "source letter fixture loaded")
+  const penCopyParts = {
+    sender: texts[4],
+    contact: texts[5],
+    date: texts[6],
+    recipient: texts.slice(7, 10).join("\n"),
+    salutation: texts[10],
+    closing: texts[15],
+    signature: texts[16],
+  }
+  const markdown = texts.slice(11, 15).join("\n\n")
+  check(
+    penCopyParts.sender === "Linh Nguyen" &&
+      penCopyParts.signature === "Linh Nguyen",
+    "source letter fixture loaded"
+  )
   for (const [width, height] of [
+    [1920, 1080],
     [1440, 900],
     [1394, 900],
     [1200, 900],
     [1024, 900],
+    [1024, 500],
     [768, 900],
     [600, 900],
     [390, 844],
@@ -238,7 +383,7 @@ try {
     const doc = await command(page, "paper.create", {
       kind: "letter",
       name: "Cover letter, Lumière",
-      document: { markdown },
+      document: { markdown, ...penCopyParts },
       jobId: job.id,
     })
     await page.goto(`${web}/paper/${doc.id}`)
@@ -248,6 +393,7 @@ try {
       `${width}: linked job suggestion shown`
     )
     await capture(page, width, "suggestion")
+    await pageDownAfterDeskClick(page, width)
     await click(page, "Skip")
     await state(
       page,
@@ -262,12 +408,12 @@ try {
     )
     const typed = markdown + "\nMy newest sentence."
     await page.evaluate(
-      `(() => {const n=document.querySelector('[aria-label="Letter text"]');n.textContent=${JSON.stringify(typed)};n.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:'My newest sentence.'}));})()`
+      `(() => {const all=[...document.querySelectorAll('textarea[aria-label^="Paragraph "]')];const n=all[all.length-1];const set=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;set.call(n,${JSON.stringify(typed.slice(typed.lastIndexOf("\n\n") + 2))});n.dispatchEvent(new Event('input',{bubbles:true}));})()`
     )
     await click(page, "Add to letter")
     await state(
       page,
-      `!document.querySelector('[aria-label="Letter suggestion"]') && document.querySelector('[aria-label="Letter text"]').textContent.endsWith('\\nMeta')`,
+      `!document.querySelector('[aria-label="Letter suggestion"]') && ([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).endsWith('\\nMeta Ads')`,
       `${width}: keyword appends to newest text`
     )
     await state(
@@ -278,19 +424,19 @@ try {
     // Wait on the real read API, not a toast or a fixed delay.
     await state(
       page,
-      `window.__letterSaved || (fetch(${JSON.stringify(`${api}/api/paper/` + doc.id)},{credentials:'include'}).then(r=>r.json()).then(r=>{window.__letterSaved=JSON.stringify(r).includes('My newest sentence.')&&JSON.stringify(r).includes('Meta')}), false)`,
+      `window.__letterSaved || (fetch(${JSON.stringify(`${api}/api/paper/` + doc.id)},{credentials:'include'}).then(r=>r.json()).then(r=>{window.__letterSaved=JSON.stringify(r).includes('My newest sentence.')&&JSON.stringify(r).includes('Meta Ads')}), false)`,
       `${width}: saved API contains edit and keyword`
     )
     await capture(page, width, "keyword-added")
     await page.goto(`${web}/paper/${doc.id}`)
     await state(
       page,
-      `document.querySelector('[aria-label="Letter text"]')?.textContent.endsWith('\\nMeta')`,
+      `([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).endsWith('\\nMeta Ads')`,
       `${width}: reload retains keyword`
     )
     check(
       await page.evaluate(
-        `document.querySelector('[aria-label="Letter text"]').textContent.includes('My newest sentence.')`
+        `([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).includes('My newest sentence.')`
       ),
       `${width}: reload retains newest edit`
     )

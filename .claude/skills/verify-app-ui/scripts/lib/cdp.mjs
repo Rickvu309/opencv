@@ -32,6 +32,7 @@ const KEYS = {
   Escape: { code: "Escape", vk: 27 },
   Enter: { code: "Enter", vk: 13 },
   k: { code: "KeyK", vk: 75 },
+  PageDown: { code: "PageDown", vk: 34 },
 }
 
 const GROUP_EXIT_DEADLINE_MS = 3000

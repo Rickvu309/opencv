@@ -245,7 +245,6 @@
   "packages/domain/src/paper-blocks/types.ts": 1,
   "packages/domain/src/paper-codecs.ts": 1,
   "packages/domain/src/paper-contract.ts": 1,
-  "packages/domain/src/paper.ts": 1,
   "packages/domain/src/queries.ts": 1,
   "packages/domain/src/receipt-copy.ts": 6,
   "packages/domain/src/starter.ts": 2,

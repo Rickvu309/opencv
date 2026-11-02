@@ -81,3 +81,51 @@ describe("diffPaperContent version 2", () => {
     assert.ok(hunks.some((hunk) => hunk.section === "Summary"))
   })
 })
+
+describe("diffPaperContent letters", () => {
+  it("still diffs a body-only letter by paragraph", () => {
+    const hunks = diffPaperContent(
+      "letter",
+      { markdown: "One.\n\nTwo." },
+      { markdown: "One.\n\nTwo changed." }
+    )
+    assert.deepEqual(
+      hunks.map((hunk) => hunk.section),
+      ["Paragraph 2"]
+    )
+  })
+
+  it("makes one hunk per changed part", () => {
+    const before = { markdown: "Body.", sender: "Linh" }
+    const after = {
+      markdown: "Body.",
+      sender: "Linh Nguyen",
+      date: "October 26, 2026",
+      signature: "Linh",
+    }
+    const hunks = diffPaperContent("letter", before, after)
+    assert.deepEqual(
+      hunks.map((hunk) => hunk.sectionId),
+      ["letter-sender", "letter-date", "letter-signature"]
+    )
+    assert.deepEqual(hunks[0]?.lines, [
+      { kind: "del", text: "Linh" },
+      { kind: "add", text: "Linh Nguyen" },
+    ])
+  })
+
+  it("reports a header-only change that the body diff would miss", () => {
+    const hunks = diffPaperContent(
+      "letter",
+      { markdown: "Same." },
+      { markdown: "Same.", recipient: "Hiring Team\nAcme" }
+    )
+    assert.equal(hunks.length, 1)
+    assert.equal(hunks[0]?.section, "Recipient")
+  })
+
+  it("reports no hunk when nothing changed", () => {
+    const letter = { markdown: "Same.", closing: "Best," }
+    assert.deepEqual(diffPaperContent("letter", letter, { ...letter }), [])
+  })
+})

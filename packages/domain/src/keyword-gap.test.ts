@@ -10,9 +10,22 @@ describe("keywordGap", () => {
       "The role needs Meta Ads"
     )
     assert.deepEqual(gap, {
-      keyword: "Meta",
-      sentence: "The job asks for Meta. Add it if you've used it.",
+      keyword: "Meta Ads",
+      sentence: "The job asks for Meta Ads. Add it if you've used it.",
     })
+  })
+
+  it("keeps a whole capitalised phrase, not its first word", () => {
+    assert.equal(
+      keywordGap("I ran Meta campaigns.", "needs Google Analytics 4 and Meta")
+        ?.keyword,
+      "Google Analytics"
+    )
+    assert.equal(
+      keywordGap("I used Meta Ads.", "The role needs Meta Ads"),
+      null
+    )
+    assert.equal(keywordGap("", "Strong Figma skills")?.keyword, "Strong Figma")
   })
 
   it("skips stop words, short tokens, and words already in the letter", () => {

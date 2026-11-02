@@ -150,7 +150,7 @@ function probe(args) {
   }
   // Measure the rendered text within the field's content box, including its
   // alignment. The input border box is not the text's position.
-  const fieldBox = (field) => {
+  const fieldBox = (field, lineIndex = 0, lineText = null) => {
     const rect = field.getBoundingClientRect()
     const style = getComputedStyle(field)
     const line =
@@ -171,12 +171,13 @@ function probe(args) {
       field.tagName === "TEXTAREA"
         ? rect.top +
           parseFloat(style.borderTopWidth) +
-          parseFloat(style.paddingTop)
+          parseFloat(style.paddingTop) +
+          lineIndex * line
         : rect.top + (rect.height - line) / 2
     const ctx = document.createElement("canvas").getContext("2d")
     ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
     ctx.letterSpacing = style.letterSpacing
-    const text = field.value || field.placeholder
+    const text = lineText ?? (field.value || field.placeholder)
     const width = Math.min(ctx.measureText(text).width, contentWidth)
     const align = style.textAlign
     const right =
@@ -204,6 +205,18 @@ function probe(args) {
         root: field,
         field: field.value ? "value" : "placeholder",
       })
+      const lines = field.value.split("\n")
+      if (field.tagName === "TEXTAREA" && lines.length > 1)
+        lines.forEach((raw, line) => {
+          const one = normalize(raw)
+          if (!one) return
+          if (!byText.has(one)) byText.set(one, [])
+          byText.get(one).push({
+            element: field,
+            root: { nodeType: 1, children: [], line, text: raw },
+            field: "value",
+          })
+        })
     }
   const used = new Set()
   const measured = args.texts.map((want) => {
@@ -215,7 +228,9 @@ function probe(args) {
     let best = null
     for (const { element, root, field } of candidates) {
       if (used.has(root)) continue
-      const box = field ? fieldBox(element) : visibleBox(element, root)
+      const box = field
+        ? fieldBox(element, root.line ?? 0, root.text ?? null)
+        : visibleBox(element, root)
       if (!box) continue
       const away =
         Math.abs(box.left - paneRect.left - want.x) +

@@ -13,17 +13,12 @@ import {
   type CvDocument as CvDocumentData,
 } from "@workspace/domain"
 
+import { readStoredLetter } from "./letter-sheet-model.ts"
+import { LetterSheet } from "./letter-sheet.tsx"
 import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { quietPaperChrome } from "./paper-print.ts"
 import { printLayout } from "./paper-templates.ts"
-
-function markdownOf(source: unknown) {
-  if (!source || typeof source !== "object" || !("markdown" in source))
-    return ""
-  const markdown = (source as { markdown: unknown }).markdown
-  return typeof markdown === "string" ? markdown : ""
-}
 
 function previewOf(
   source: unknown,
@@ -112,7 +107,6 @@ export function PaperPrintMeasure({
 }
 
 export function PaperPrintSheet({
-  name,
   kind,
   source,
   templateId,
@@ -142,8 +136,7 @@ export function PaperPrintSheet({
         aria-hidden="true"
         inert
       >
-        <h1 className="text-lg font-medium">{name}</h1>
-        <p className="whitespace-pre-wrap">{markdownOf(source)}</p>
+        <LetterSheet letter={readStoredLetter(source)} mode="read" />
       </article>,
       host.body
     )
