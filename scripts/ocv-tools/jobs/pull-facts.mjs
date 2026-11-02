@@ -73,6 +73,27 @@ export function deletedFacts(ctx, base, head) {
   return { files: gone.length, lines, total: authored(ctx, base, all).length }
 }
 
+export function changeFacts(ctx, base, head) {
+  const tokens = git(ctx, "diff", "-M", "--numstat", "-z", base, head).split(
+    "\0"
+  )
+  const changes = []
+  for (let i = 0; i < tokens.length; i++) {
+    const [added, deleted, path] = tokens[i].split("\t")
+    if (deleted === undefined) continue
+    const renamed = path === ""
+    if (renamed) i += 2
+    changes.push({
+      path: renamed ? tokens[i] : path,
+      added: /^\d+$/.test(added) ? Number(added) : 0,
+      deleted: /^\d+$/.test(deleted) ? Number(deleted) : 0,
+    })
+  }
+  const generatedPaths = new Set(changes.map((c) => c.path).filter(Boolean))
+  const kept = new Set(authored(ctx, base, [...generatedPaths]))
+  return changes.map((c) => ({ ...c, generated: !kept.has(c.path) }))
+}
+
 // The commit facts FILE_SIZE and NO_AI_ATTRIBUTION read: attribution trailers
 // in the branch messages and authored files over the 20000-byte limit.
 export function commitFacts(ctx, base, head) {
@@ -155,6 +176,7 @@ export function pullFacts(ctx, n) {
   const labels = (linked?.labels ?? []).map((l) => l.name)
   const facts = diffFacts(ctx, files, head, labels)
   facts.diff.deleted = deletedFacts(ctx, base, head)
+  facts.diff.changes = changeFacts(ctx, base, head)
   return {
     pull: pullOf(pull, { issue: issue || null, issueState: linked?.state }),
     issue: { n: issue, labels },
@@ -171,11 +193,9 @@ export function planPull(ctx, { n, title, body, issue }) {
     "\n"
   )
   const facts = diffFacts(ctx, files, "HEAD", issue.labels ?? [])
-  facts.diff.deleted = deletedFacts(
-    ctx,
-    git(ctx, "merge-base", "origin/main", "HEAD"),
-    "HEAD"
-  )
+  const base = git(ctx, "merge-base", "origin/main", "HEAD")
+  facts.diff.deleted = deletedFacts(ctx, base, "HEAD")
+  facts.diff.changes = changeFacts(ctx, base, "HEAD")
   return {
     pull: { issue: n, title, body, issueState: issue.state },
     issue: { n, state: issue.state, labels: issue.labels ?? [] },

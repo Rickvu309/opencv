@@ -1,0 +1,17 @@
+5	5	apps/web/src/features/coming-soon/coming-soon-page.tsx
+10	0	apps/web/src/features/coming-soon/coming-soon.test.tsx
+12	0	apps/web/src/features/coming-soon/design/page-header.pen.css
+83	0	apps/web/src/features/coming-soon/design/page-header.styles.json
+4	4	apps/web/src/features/coming-soon/design/pitch.layout.json
+8	8	apps/web/src/features/coming-soon/design/proof.layout.json
+14	0	apps/web/src/features/coming-soon/pitch-page.test.tsx
+40	37	apps/web/src/features/coming-soon/pitch-page.tsx
+25	4	apps/web/src/features/coming-soon/proof-page.test.tsx
+34	18	apps/web/src/features/coming-soon/proof-page.tsx
+29	4	apps/web/src/features/settings/settings-layout.tsx
+14	2	apps/web/src/features/settings/settings.test.tsx
+0	26	apps/web/src/test/page-header-guard.test.ts
+9	6	packages/ui/src/components/breadcrumb.tsx
+28	0	packages/ui/src/components/page-header.test.tsx
+11	2	packages/ui/src/components/page-header.tsx
+0	6	scripts/ci-screens.skips.json
