@@ -5,6 +5,7 @@ import { DEFAULT_COACH_MODELS } from "@workspace/domain"
 import {
   apiPortFromEnv,
   authUrlFromEnv,
+  sendCodeLimitEnabledFromEnv,
   coachDailyTurnLimitForModeFromEnv,
   coachModelForModeFromEnv,
   coachRuntimeModeFromEnv,
@@ -30,6 +31,35 @@ describe("logAuthMailFromEnv", () => {
     [{ AUTH_URL: "invalid" }, false],
   ])("uses log delivery only for local development: %j", (env, expected) => {
     expect(logAuthMailFromEnv(env)).toBe(expected)
+  })
+})
+
+describe("sendCodeLimitEnabledFromEnv", () => {
+  const verifyStack = {
+    DB_DRIVER: "pglite",
+    OPENCV_VERIFY_RUN: "ci-screens",
+    AUTH_URL: "http://localhost:4460",
+  }
+
+  it("turns the sign-in code send limit off only for a local verify stack", () => {
+    expect(sendCodeLimitEnabledFromEnv(verifyStack)).toBe(false)
+  })
+
+  it.each([
+    [{}],
+    [{ OPENCV_VERIFY_RUN: "ci-screens" }],
+    [{ DB_DRIVER: "pglite" }],
+    [{ ...verifyStack, NODE_ENV: "production" }],
+    [{ ...verifyStack, AUTH_URL: "https://api.opencv.me" }],
+    [{ ...verifyStack, DB_DRIVER: "" }],
+    [{ ...verifyStack, OPENCV_VERIFY_RUN: "  " }],
+    [{ ...verifyStack, AUTH_URL: undefined }],
+    [{ ...verifyStack, AUTH_URL: "  " }],
+    [{ ...verifyStack, AUTH_URL: "http://10.0.0.5:4460" }],
+    [{ ...verifyStack, DB_DRIVER: "postgres" }],
+    [{ NODE_ENV: "production", DATABASE_URL: "postgres://x" }],
+  ])("keeps the limiter on everywhere else: %j", (env) => {
+    expect(sendCodeLimitEnabledFromEnv(env)).toBe(true)
   })
 })
 

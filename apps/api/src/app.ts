@@ -43,6 +43,7 @@ export type AppConfig = {
   authUrl?: string
   db?: AuthDatabase
   rateLimitEnabled?: boolean
+  sendCodeLimitEnabled?: boolean
   coach?: CoachRuntime
   coachSseHeartbeatMs?: number
   coachEnv?: CoachModelEnv
@@ -67,6 +68,7 @@ export function createApp({
   authUrl,
   db,
   rateLimitEnabled,
+  sendCodeLimitEnabled,
   coach,
   coachSseHeartbeatMs,
   coachEnv,
@@ -140,6 +142,7 @@ export function createApp({
           authUrl,
           webOrigins,
           rateLimitEnabled,
+          sendCodeLimitEnabled,
           resendApiKey,
           authEmailFrom,
           logAuthMail,

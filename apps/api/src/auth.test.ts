@@ -347,6 +347,59 @@ describe("auth cookie round-trip", () => {
   })
 })
 
+describe("auth with the send limit off", () => {
+  const send = (app: ReturnType<typeof createAuthedApp>, email: string) =>
+    postJson(app, "/api/auth/email-otp/send-verification-otp", {
+      email,
+      type: "sign-in",
+    })
+
+  it("lets code sends past the third and keeps the sign-in rate limit", async () => {
+    const { client, db } = await createMigratedTestDb()
+    try {
+      const app = createAuthedApp(db, testAuthUrl, {
+        rateLimitEnabled: true,
+        sendCodeLimitEnabled: false,
+      })
+      const email = "sends@verify.local"
+      for (let i = 0; i < 6; i += 1) {
+        expect((await send(app, email)).status).toBe(200)
+      }
+      const statuses: number[] = []
+      for (let i = 0; i < 4; i += 1) {
+        const res = await signInWithCode(app, email, "000000")
+        statuses.push(res.status)
+      }
+      expect(statuses.slice(0, 3)).not.toContain(429)
+      expect(statuses[3]).toBe(429)
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("keeps the wrong-code attempt lockout", async () => {
+    const { client, db } = await createMigratedTestDb()
+    try {
+      const app = createAuthedApp(db, testAuthUrl, {
+        rateLimitEnabled: false,
+        sendCodeLimitEnabled: false,
+      })
+      const email = "lockout@verify.local"
+      const { res, code } = await sendSignInCode(app, email)
+      expect(res.status).toBe(200)
+      expect(code).toBeTruthy()
+      for (let i = 0; i < 3; i += 1) {
+        const wrong = await signInWithCode(app, email, "000000")
+        expect(wrong.status).not.toBe(200)
+      }
+      const late = await signInWithCode(app, email, code ?? "")
+      expect(late.status).not.toBe(200)
+    } finally {
+      await client.close()
+    }
+  })
+})
+
 describe("auth providers", () => {
   it("rate limits the fourth code send", async () => {
     const { client, db } = await createMigratedTestDb()

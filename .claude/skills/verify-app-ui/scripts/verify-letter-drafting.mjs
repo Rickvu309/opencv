@@ -3,7 +3,8 @@ import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
-import { must, signUp } from "./lib/apply-pen-seed.mjs"
+import { must } from "./lib/apply-pen-seed.mjs"
+import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
 import { comparePenLayout, TEXT_TOKENS } from "./lib/pen-layout-compare.mjs"
@@ -248,7 +249,13 @@ try {
     current = page
     await page.goto(web)
     if (width === 1440) {
-      await signUp(page, api, log)
+      await signInThrowaway({
+        page: page,
+        apiUrl: api,
+        logPath: log,
+        name: "Linh Nguyen",
+        prefix: "apply-pen",
+      })
       if (referenceFixture) {
         const seeded =
           await page.evaluate(`fetch(${JSON.stringify(api + "/api/commands/job.create")}, {

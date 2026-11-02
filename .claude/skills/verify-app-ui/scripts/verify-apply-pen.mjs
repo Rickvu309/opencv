@@ -18,7 +18,8 @@ import {
   NOT_SHOWN,
 } from "./lib/apply-pen-gaps.mjs"
 import { HELPERS } from "./lib/apply-pen-page.mjs"
-import { must, seed, signUp } from "./lib/apply-pen-seed.mjs"
+import { must, seed } from "./lib/apply-pen-seed.mjs"
+import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
 import { comparePen, penProbeSource, stylesPath } from "./lib/pen-parity.mjs"
@@ -182,7 +183,13 @@ async function main() {
     }
 
     await page.goto(`${web}/sign-in`)
-    await signUp(page, stack.apiUrl, stack.logPath)
+    await signInThrowaway({
+      page,
+      apiUrl: stack.apiUrl,
+      logPath: stack.logPath,
+      name: "Linh Nguyen",
+      prefix: "apply-pen",
+    })
     await capture("w9-1-board-empty", MAIN, () =>
       open("/apply", "document.body.innerText.includes('Track your first job')")
     )

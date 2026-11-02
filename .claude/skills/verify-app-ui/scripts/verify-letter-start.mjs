@@ -8,7 +8,8 @@ import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 
-import { must, signUp } from "./lib/apply-pen-seed.mjs"
+import { must } from "./lib/apply-pen-seed.mjs"
+import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
 import { comparePenLayout, TEXT_TOKENS } from "./lib/pen-layout-compare.mjs"
@@ -233,7 +234,13 @@ try {
   })
   current = setup
   await setup.goto(web)
-  await signUp(setup, api, log)
+  await signInThrowaway({
+    page: setup,
+    apiUrl: api,
+    logPath: log,
+    name: "Linh Nguyen",
+    prefix: "apply-pen",
+  })
   for (const [title, company] of jobs) {
     const result =
       await setup.evaluate(`fetch(${JSON.stringify(`${api}/api/commands/job.create`)}, {

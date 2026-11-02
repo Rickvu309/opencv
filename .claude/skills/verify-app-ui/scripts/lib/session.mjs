@@ -16,7 +16,7 @@ function readSignInCode(logPath, email) {
   return null
 }
 
-const SEND_LIMIT_WINDOW_MS = 75000
+const VERIFY_LIMIT_WINDOW_MS = 70000
 
 const postJson = (page, url, body) =>
   page.evaluate(`fetch(${JSON.stringify(url)}, {
@@ -24,33 +24,41 @@ const postJson = (page, url, body) =>
     body: JSON.stringify(${JSON.stringify(body)}),
   }).then((r) => r.status)`)
 
-// Signs a throwaway account in on the page's browser session. The stack logs the sign-in code instead of mailing it.
-export async function signUpThrowaway({ page, webUrl, apiUrl, logPath }) {
-  await page.goto(`${webUrl}/sign-in`)
-  await page.sleep(500)
-  const email = `pen-layout-${Date.now()}@verify.local`
-  const deadline = Date.now() + SEND_LIMIT_WINDOW_MS
-  let sent = 429
-  while (sent === 429 && Date.now() < deadline) {
-    sent = await postJson(
-      page,
-      `${apiUrl}/api/auth/email-otp/send-verification-otp`,
-      { email, type: "sign-in" }
-    )
-    if (sent === 429) await page.sleep(2000)
+export async function signInThrowaway({
+  page,
+  webUrl,
+  apiUrl,
+  logPath,
+  name = "Verify",
+  prefix = "verify",
+}) {
+  if (webUrl) {
+    await page.goto(`${webUrl}/sign-in`)
+    await page.sleep(500)
   }
+  const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@verify.local`
+  const sent = await postJson(
+    page,
+    `${apiUrl}/api/auth/email-otp/send-verification-otp`,
+    { email, type: "sign-in" }
+  )
   if (sent !== 200) throw new Error(`send-verification-otp returned ${sent}`)
   let otp = null
-  for (let attempt = 0; attempt < 20 && !otp; attempt += 1) {
+  for (let attempt = 0; attempt < 50 && !otp; attempt += 1) {
     otp = readSignInCode(logPath, email)
     if (!otp) await page.sleep(100)
   }
   if (!otp) throw new Error("sign-in code was not logged")
-  const status = await postJson(page, `${apiUrl}/api/auth/sign-in/email-otp`, {
-    email,
-    otp,
-    name: "Pen Layout",
-  })
+  const deadline = Date.now() + VERIFY_LIMIT_WINDOW_MS
+  let status = 429
+  while (status === 429 && Date.now() < deadline) {
+    status = await postJson(page, `${apiUrl}/api/auth/sign-in/email-otp`, {
+      email,
+      otp,
+      name,
+    })
+    if (status === 429) await page.sleep(2000)
+  }
   if (status !== 200) throw new Error(`sign-in returned ${status}`)
   return email
 }

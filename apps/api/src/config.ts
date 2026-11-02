@@ -192,6 +192,16 @@ export function logAuthMailFromEnv(env: NodeJS.ProcessEnv): boolean {
   }
 }
 
+export function sendCodeLimitEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
+  const localVerifyStack =
+    env.NODE_ENV !== "production" &&
+    dbDriverFromEnv(env) === "pglite" &&
+    Boolean(env.OPENCV_VERIFY_RUN?.trim()) &&
+    Boolean(env.AUTH_URL?.trim()) &&
+    logAuthMailFromEnv(env)
+  return !localVerifyStack
+}
+
 function presentEnv(value: string | undefined) {
   const trimmed = value?.trim()
   return trimmed ? trimmed : undefined

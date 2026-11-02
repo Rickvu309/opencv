@@ -27,6 +27,7 @@ export type AuthConfig = {
   webOrigins: string[]
   /** Default on. Tests turn this off so sign-in loops do not trip the limiter. */
   rateLimitEnabled?: boolean
+  sendCodeLimitEnabled?: boolean
   resendApiKey?: string
   authEmailFrom?: string
   logAuthMail?: boolean
@@ -58,6 +59,7 @@ export function createAuth({
   authUrl,
   webOrigins,
   rateLimitEnabled = true,
+  sendCodeLimitEnabled = true,
   resendApiKey,
   authEmailFrom,
   logAuthMail = false,
@@ -122,7 +124,12 @@ export function createAuth({
       // policy in vitest and on Railway.
       disableOriginCheck: false,
     },
-    rateLimit: { enabled: rateLimitEnabled },
+    rateLimit: {
+      enabled: rateLimitEnabled,
+      customRules: sendCodeLimitEnabled
+        ? undefined
+        : { "/email-otp/send-verification-otp": false },
+    },
     telemetry: { enabled: false },
     hooks: {
       // Same per-request context the sender stamps. The send stays awaited.

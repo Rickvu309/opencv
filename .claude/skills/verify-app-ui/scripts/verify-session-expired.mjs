@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { comparePenLayout, TEXT_TOKENS } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
-import { signUpThrowaway } from "./lib/session.mjs"
+import { signInThrowaway } from "./lib/session.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const output = process.argv[2]
@@ -58,7 +58,14 @@ try {
     height: 900,
     mobile: false,
   })
-  await signUpThrowaway({ page: signIn, webUrl, apiUrl, logPath })
+  await signInThrowaway({
+    page: signIn,
+    webUrl,
+    apiUrl,
+    logPath,
+    name: "Pen Layout",
+    prefix: "pen-layout",
+  })
   await signIn.goto(`${webUrl}/apply`)
   if (
     !(await signIn.waitFor(
