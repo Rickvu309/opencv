@@ -67,6 +67,8 @@ Tests that hold this shape:
 - `apps/web/src/test/nav-contract.test.tsx` renders each router route under a nav item and rejects an item not current on it, or a count missing from its link name. `nav-pending.json` lists known offenders (PR, expiry); `scripts/nav-pending.test.mjs` fails a stale one.
 - `scripts/paper-save-keeps-parts.test.mjs` rejects an autosave `toDocument` that returns the markdown alone, which would erase a letter's sender, date and closing. Its `PENDING` list works like the one above.
 - `scripts/pointer-capture.test.mjs` rejects `setPointerCapture` in a module with no `pointercancel` and `lostpointercapture` handler.
+- Web lint rejects `onMouseEnter`/`onPointerEnter` (use kit `Popover openOnHover` or `useHoverIntent`).
+- `scripts/web-lint-rules.test.mjs` runs those lint rules on the mistake and on correct code.
 
 ### Git
 

@@ -5,6 +5,14 @@ import reactRefresh from "eslint-plugin-react-refresh"
 import tseslint from "typescript-eslint"
 import { defineConfig, globalIgnores } from "eslint/config"
 
+const HOVER_OVERLAY = [
+  "JSXAttribute[name.name=/^(onMouseEnter|onMouseOver|onPointerEnter|onPointerOver)$/]",
+].map((selector) => ({
+  selector,
+  message:
+    "Hover must not open or close anything straight from onMouseEnter/onPointerEnter. Use the kit Popover or Tooltip (openOnHover, delay, closeDelay) or useHoverIntent from @/lib/use-hover-intent.ts, which add hover intent, a close grace and Escape.",
+}))
+
 export default defineConfig([
   globalIgnores(["dist"]),
   {
@@ -53,11 +61,29 @@ export default defineConfig([
     },
   },
   {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": ["error", ...HOVER_OVERLAY],
+    },
+  },
+  {
+    files: [
+      "src/features/paper/paper-slash-menu.tsx",
+      "src/features/command-palette/command-palette.tsx",
+      "src/components/layer-stack.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": "off",
+    },
+  },
+  {
     files: ["src/features/app-shell/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": [
         "error",
+        ...HOVER_OVERLAY,
         ...[
           "Literal[value=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
           "TemplateElement[value.raw=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
