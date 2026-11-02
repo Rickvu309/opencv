@@ -133,7 +133,6 @@
   "apps/web/src/features/commands/destructive-command-dialog.tsx": 4,
   "apps/web/src/features/inbox/inbox-api.ts": 1,
   "apps/web/src/features/inbox/inbox-design-parity.test.tsx": 9,
-  "apps/web/src/features/inbox/inbox-parts.tsx": 1,
   "apps/web/src/features/inbox/inbox-time.ts": 3,
   "apps/web/src/features/landing/blog/blog.css": 3,
   "apps/web/src/features/landing/design/pricing.snapshot.ts": 1,

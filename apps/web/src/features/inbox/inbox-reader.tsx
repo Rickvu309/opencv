@@ -2,14 +2,9 @@ import { useReducer } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import type { InboxDetail } from "@workspace/domain"
 import {
-  ArrowLeft,
   ArrowUpRight,
   CalendarCheck,
-  Check,
   ChevronDown,
-  ChevronUp,
-  Clock3,
-  Ellipsis,
   Reply,
   Send,
   User,
@@ -32,20 +27,10 @@ import {
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
 import { inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
+import { InboxReaderHeader } from "./inbox-reader-header.tsx"
 import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
-import {
-  FAINT_TEXT,
-  GmailMark,
-  InboxIconButton,
-  SOFT_TEXT,
-} from "./inbox-parts.tsx"
-import {
-  chipClock,
-  inboxChip,
-  inboxStamp,
-  inboxWhen,
-  nextMorningIso,
-} from "./inbox-time.ts"
+import { FAINT_TEXT, GmailMark, SOFT_TEXT } from "./inbox-parts.tsx"
+import { chipClock, inboxChip, inboxStamp, inboxWhen } from "./inbox-time.ts"
 
 function resetClock(iso: string | null, zone: string) {
   if (!iso) return "later"
@@ -137,95 +122,20 @@ export function InboxReader({
       data-pen-section="Detail pane"
       className="flex min-h-0 min-w-0 flex-1 flex-col"
     >
-      <div className="flex h-13 shrink-0 items-center gap-1 border-b border-border ps-9.5 pe-12 max-md:h-auto max-md:min-h-13 max-md:flex-wrap max-md:px-3 max-md:py-1.5">
-        {narrow ? (
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft />
-            Back to inbox
-          </Button>
-        ) : null}
-        <Button
-          variant="ghost"
-          className={TOOLBAR_BUTTON}
-          disabled={busy}
-          onClick={() =>
-            run(async () => {
-              const result = await runCommand("inbox.markDone", {
-                threadId: detail.id,
-              })
-              toastWithUndo("Marked done", () => {
-                if (result.activityId)
-                  void undoActivity(queryClient, result.activityId).catch(
-                    reportRejected("undo this")
-                  )
-              })
-            })
-          }
-        >
-          <Check className="size-3.75" />
-          Done
-        </Button>
-        <Button
-          variant="ghost"
-          className={TOOLBAR_BUTTON}
-          disabled={busy}
-          onClick={() =>
-            run(async () => {
-              if (detail.status === "snoozed") {
-                await runCommand("inbox.snooze", {
-                  threadId: detail.id,
-                  until: null,
-                })
-                onReturnedToInbox()
-                toast("Returned to inbox")
-              } else {
-                await runCommand("inbox.snooze", {
-                  threadId: detail.id,
-                  until: nextMorningIso(now, zone),
-                })
-                toast("Snoozed until 7:00")
-              }
-            })
-          }
-        >
-          <Clock3 className="size-3.75" />
-          {detail.status === "snoozed" ? "Return to inbox" : "Snooze"}
-        </Button>
-        <InboxIconButton
-          label="More"
-          className="size-7.5 rounded-[7px] max-md:hidden"
-          disabled
-        >
-          <Ellipsis />
-        </InboxIconButton>
-        <span className="flex-1" />
-        <span
-          className={cn("shrink-0 text-[12.5px] whitespace-nowrap", SOFT_TEXT)}
-        >
-          {`${index} of ${count}`}
-        </span>
-        <span className="ps-2" />
-        <Button
-          variant="default"
-          size="icon-sm"
-          className="size-7 rounded-[7px]"
-          aria-label="Previous"
-          disabled={index <= 1}
-          onClick={onPrevious}
-        >
-          <ChevronUp className="size-3.25" />
-        </Button>
-        <Button
-          variant="default"
-          size="icon-sm"
-          className="size-7 rounded-[7px]"
-          aria-label="Next"
-          disabled={index >= count}
-          onClick={onNext}
-        >
-          <ChevronDown className="size-3.25" />
-        </Button>
-      </div>
+      <InboxReaderHeader
+        detail={detail}
+        index={index}
+        count={count}
+        narrow={narrow}
+        busy={busy}
+        now={now}
+        zone={zone}
+        run={run}
+        onBack={onBack}
+        onReturnedToInbox={onReturnedToInbox}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-12 pt-7 pb-6 max-md:px-5">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
@@ -353,7 +263,7 @@ export function InboxReader({
           ) : null}
           {current ? (
             <article className="flex flex-col gap-3.5 pt-4.5 pb-1">
-              <header className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <PersonAvatar name={current.fromName} />
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <p className="flex flex-wrap items-baseline gap-x-1.5">
@@ -380,7 +290,7 @@ export function InboxReader({
                 <span className={cn("text-xs", SOFT_TEXT)}>
                   {inboxStamp(current.sentAt, now, zone)}
                 </span>
-              </header>
+              </div>
               <Paragraphs text={current.bodyText} />
             </article>
           ) : null}
@@ -537,8 +447,6 @@ export function InboxReader({
   )
 }
 
-const TOOLBAR_BUTTON =
-  "h-7.5 gap-1.5 rounded-[7px] px-2.5 text-[12.5px] text-foreground/85"
 const CHIP = "h-6.5 rounded-full px-2.5 text-xs"
 const CHIP_ON =
   "border-transparent bg-foreground text-background ring-0 hover:bg-foreground/90"

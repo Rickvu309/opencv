@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/api.ts"
 import { queryKey, useRunCommand } from "@/lib/contract-client.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
+import "./design/page-header.pen.css"
 import { InboxConnect, InboxTitleBar } from "./inbox-connect.tsx"
 import {
   fetchConnect,
@@ -158,7 +159,10 @@ export function InboxPage() {
     (!scanning && Boolean(list.data) && !showConnect && threads.length === 0)
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden">
+    <div
+      data-pen-surface="inbox"
+      className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden"
+    >
       {titled ? <InboxTitleBar /> : null}
       {list.isLoading || (view === "snoozed" && snoozed.isLoading) ? (
         <p className="px-5 py-6 text-sm text-muted-foreground">

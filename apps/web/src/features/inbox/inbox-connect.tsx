@@ -13,6 +13,10 @@ import {
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Mark } from "@workspace/ui/components/brand"
+import {
+  PageHeader,
+  PageHeaderTitle,
+} from "@workspace/ui/components/page-header"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { FAINT_TEXT, GmailMark, SOFT_TEXT } from "./inbox-parts.tsx"
@@ -42,12 +46,9 @@ const BENEFITS = [
 
 export function InboxTitleBar() {
   return (
-    <div
-      data-pen-section="Header"
-      className="flex h-13 shrink-0 items-center border-b border-border px-5"
-    >
-      <h1 className="text-[13px] font-medium text-foreground">Inbox</h1>
-    </div>
+    <PageHeader data-pen-section="Header">
+      <PageHeaderTitle>Inbox</PageHeaderTitle>
+    </PageHeader>
   )
 }
 

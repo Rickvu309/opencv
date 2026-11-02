@@ -176,7 +176,7 @@ function PageHeaderActions({
                       variant="ghost"
                       data-slot="page-header-overflow"
                       aria-label={overflowLabel}
-                      className="size-7 rounded-[6px] max-md:size-11 md:hidden [&_svg]:size-[15px]"
+                      className="size-7 rounded-[6px] max-md:size-11 md:hidden [&_svg:not([class*='size-'])]:size-[15px]"
                     />
                   }
                 />
@@ -200,6 +200,7 @@ function PageHeaderAction({
   icon,
   onSelect,
   collapse = false,
+  showLabel = false,
   pressed,
   disabled,
   render,
@@ -210,9 +211,10 @@ function PageHeaderAction({
   icon: ReactNode
   onSelect?: () => void
   collapse?: boolean
+  showLabel?: boolean
   pressed?: boolean
   disabled?: boolean
-  render?: ReactElement<{ className?: string }>
+  render?: ReactElement<{ className?: string; disabled?: boolean }>
   hint?: ReactNode
   className?: string
 }) {
@@ -236,20 +238,42 @@ function PageHeaderAction({
   }
 
   const classes = cn(
-    "rounded-[6px] max-md:size-11 [&_svg]:size-[15px]",
-    inTitle ? "size-[26px]" : "size-7",
+    "rounded-[6px] [&_svg:not([class*='size-'])]:size-[15px]",
+    showLabel
+      ? "h-7 gap-1.5 px-2 text-[13px] font-normal max-md:h-11"
+      : cn("max-md:size-11", inTitle ? "size-[26px]" : "size-7"),
     collapse && "max-md:hidden",
     className
   )
+
+  if (showLabel) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        data-slot="page-header-action"
+        className={classes}
+        aria-pressed={pressed}
+        disabled={disabled}
+        onClick={onSelect}
+      >
+        {icon}
+        {label}
+      </Button>
+    )
+  }
+
   const control = render ? (
     cloneElement(render, {
       className: cn(classes, render.props.className),
+      disabled,
     })
   ) : (
     <Button
       type="button"
       variant="ghost"
       data-slot="page-header-action"
+      disabled={disabled}
       className={classes}
     />
   )
@@ -260,7 +284,6 @@ function PageHeaderAction({
         render={control}
         aria-label={label}
         aria-pressed={pressed}
-        disabled={disabled}
         onClick={onSelect}
       >
         {icon}
