@@ -262,7 +262,7 @@ export function AppShell({ onSearch }: AppShellProps) {
               id="app-main"
               tabIndex={-1}
               hidden={panel.open && panel.mode === "full"}
-              className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]"
+              className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit] outline-none"
             >
               <Outlet />
             </main>
