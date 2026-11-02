@@ -19,7 +19,7 @@ export const PEN = {
   labelPaddingLeft: 8,
   iconInset: 6,
   chevronInset: 9.5,
-  footerInset: { avatar: 7, gear: 8 },
+  footer: { height: 40, avatar: 24 },
 }
 
 export const ACTIVE_BACKGROUND = "rgb(225, 225, 226)"
@@ -39,8 +39,10 @@ export const geometry = (page, sidebar) =>
       return { text: button.textContent.trim(), textLeft: text.left, textRight: text.right, chevron: box(chevron), button: box(button), radius: radius(button) };
     });
     const profile = one('[data-slot="shell-profile"]');
-    const gear = profile.querySelector('a svg');
-    const gearLink = profile.querySelector('a');
+    const trigger = profile.querySelector('[data-slot="account-trigger"]');
+    const chevron = trigger.querySelector('svg');
+    const accountName = trigger.querySelector('[data-slot="account-name"]');
+    const accountEmail = trigger.querySelector('[data-slot="account-email"]');
     const panelEl = document.querySelector('#app-main')?.parentElement;
     const avatar = profile.querySelector('[data-slot="avatar"]');
     const newChat = one('button[aria-label="New chat"]');
@@ -52,13 +54,15 @@ export const geometry = (page, sidebar) =>
       mark: box(mark),
       search: { ...box(search), radius: radius(search) },
       panel: panelEl ? { ...box(panelEl), radius: radius(panelEl) } : null,
-      gearLink: { ...box(gearLink), radius: radius(gearLink) },
+      trigger: { ...box(trigger), radius: radius(trigger), links: profile.querySelectorAll('a').length },
       newChat: { ...box(newChat), background: getComputedStyle(newChat).backgroundColor, radius: getComputedStyle(newChat).borderTopLeftRadius },
       links: links.map((a) => ({ name: (a.getAttribute('aria-label') ?? a.textContent.trim()).replace(/, \\d+ unread$/, ''), label: a.getAttribute('aria-label'), radius: radius(a), ...box(a), icon: box(a.querySelector('svg')), current: a.getAttribute('aria-current'), background: getComputedStyle(a).backgroundColor })),
       labels,
       profile: box(profile),
       avatar: box(avatar),
-      gear: box(gear),
+      chevron: box(chevron),
+      accountName: { ...box(accountName), size: getComputedStyle(accountName).fontSize, weight: getComputedStyle(accountName).fontWeight, color: getComputedStyle(accountName).color, overflow: getComputedStyle(accountName).textOverflow },
+      accountEmail: { ...box(accountEmail), size: getComputedStyle(accountEmail).fontSize, color: getComputedStyle(accountEmail).color, overflow: getComputedStyle(accountEmail).textOverflow },
       rootBackground: getComputedStyle(root).backgroundColor,
       fontFamily: getComputedStyle(root).fontFamily,
     };
@@ -110,8 +114,8 @@ export function checkGeometry(check, tag, height, shape, active) {
     `${tag} new chat is round (${shape.newChat.radius})`
   )
   check(
-    near(shape.gearLink.radius, PEN.rowRadius),
-    `${tag} settings link corner radius is ${PEN.rowRadius} (${shape.gearLink.radius})`
+    near(shape.trigger.radius, PEN.rowRadius),
+    `${tag} account row corner radius is ${PEN.rowRadius} (${shape.trigger.radius})`
   )
   if (shape.panel)
     check(
@@ -185,20 +189,30 @@ export function checkGeometry(check, tag, height, shape, active) {
     `${tag} group labels are Your work, Favorites`
   )
   check(
-    near(shape.profile.h, 32) &&
+    near(shape.profile.h, PEN.footer.height) &&
       near(shape.profile.y + shape.profile.h, height - 12),
-    `${tag} footer is 32 tall and ends 12px above the bottom`
+    `${tag} account footer is ${PEN.footer.height} tall and ends 12px above the bottom (${shape.profile.h})`
   )
   check(
-    near(shape.avatar.w, 18) &&
-      near(shape.avatar.h, 18) &&
-      near(shape.avatar.y - shape.profile.y, PEN.footerInset.avatar),
-    `${tag} avatar is 18x18, ${PEN.footerInset.avatar}px below the footer top (${(shape.avatar.y - shape.profile.y).toFixed(2)})`
+    near(shape.avatar.w, PEN.footer.avatar) &&
+      near(shape.avatar.h, PEN.footer.avatar) &&
+      near(shape.avatar.y - shape.profile.y, (PEN.footer.height - 24) / 2),
+    `${tag} account avatar is 24x24 and centred in the row (${shape.avatar.w}x${shape.avatar.h})`
   )
   check(
-    near(shape.gear.w, 16) &&
-      near(shape.gear.r, 226) &&
-      near(shape.gear.y - shape.profile.y, PEN.footerInset.gear),
-    `${tag} settings gear is 16 wide, ends at 226 and sits ${PEN.footerInset.gear}px below the footer top (${shape.gear.r}, ${(shape.gear.y - shape.profile.y).toFixed(2)})`
+    shape.accountName.size === "13px" &&
+      shape.accountName.weight === "500" &&
+      shape.accountEmail.size === "12px" &&
+      shape.accountName.overflow === "ellipsis" &&
+      shape.accountEmail.overflow === "ellipsis" &&
+      shape.accountEmail.y > shape.accountName.y,
+    `${tag} account name is 13/500 over a 12px email, both truncated (${shape.accountName.size}/${shape.accountName.weight}, ${shape.accountEmail.size})`
+  )
+  check(
+    near(shape.trigger.w, shape.profile.w) &&
+      shape.trigger.links === 0 &&
+      near(shape.chevron.w, 16) &&
+      near(shape.chevron.r, shape.trigger.r - 8),
+    `${tag} the account row is one full-width button with a chevron at the right and no separate gear (${shape.trigger.w}, ${shape.chevron.r})`
   )
 }

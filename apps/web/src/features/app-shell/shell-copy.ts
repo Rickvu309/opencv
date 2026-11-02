@@ -15,4 +15,10 @@ export const shellCopy = {
   menu: "Menu",
   closeMenu: "Close menu",
   history: "History",
+  resizeSidebar: "Resize sidebar",
+  collapseSidebar: "Collapse sidebar",
+  expandSidebar: "Expand sidebar",
+  pinSidebar: "Pin sidebar",
+  account: "Account",
+  signOut: "Sign out",
 } as const

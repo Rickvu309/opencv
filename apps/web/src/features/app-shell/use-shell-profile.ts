@@ -13,5 +13,6 @@ export function useShellProfile() {
   const name =
     query.data?.name?.trim() || sessionUser?.name?.trim() || "Account"
   const image = query.data?.image || sessionUser?.image || null
-  return { name, image }
+  const email = query.data?.email?.trim() || sessionUser?.email?.trim() || ""
+  return { name, email, image }
 }

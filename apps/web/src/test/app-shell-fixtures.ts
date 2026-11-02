@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { expect, vi } from "vitest"
 
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
@@ -44,4 +45,17 @@ export async function expectApplyLive() {
   expect(
     await screen.findByRole("heading", { name: "Track your first job" })
   ).toBeInTheDocument()
+}
+
+export function accountTrigger() {
+  const trigger = document.querySelector<HTMLElement>(
+    "[data-slot='account-trigger']"
+  )
+  if (!trigger) throw new Error("account trigger is not on screen")
+  return trigger
+}
+
+export async function openAccountMenu() {
+  await userEvent.click(accountTrigger())
+  return screen.findByRole("menu")
 }

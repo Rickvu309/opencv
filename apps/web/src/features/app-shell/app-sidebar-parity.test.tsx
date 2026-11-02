@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it } from "vitest"
 import { cleanup, screen, waitFor, within } from "@testing-library/react"
 
 import { renderApp } from "@/test/render-app.tsx"
-import { stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
+import {
+  accountTrigger,
+  openAccountMenu,
+  stubDesktopViewport,
+} from "@/test/app-shell-fixtures.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
   getMockPaperDocs,
@@ -104,7 +108,6 @@ describe("app sidebar pen parity (YC0lV / jsloS)", () => {
       "Pitch",
       "Junior Marketing CV",
       "Lumière application",
-      "Settings",
     ])
   })
 
@@ -130,12 +133,12 @@ describe("app sidebar pen parity (YC0lV / jsloS)", () => {
     const sidebar = await renderSidebar()
     const marks = styles.sections.flatMap((section) => section.marks)
     const logo = marks.find((mark) => mark.name === "Logo")!
-    const avatar = marks.find((mark) => mark.name === "Avatar")!
     const mark = sidebar.querySelector("[data-slot='mark']")!
     expect(mark.getAttribute("width")).toBe(String(logo.width))
     expect(mark.getAttribute("height")).toBe(String(logo.height))
-    expect(sidebar.querySelector("[data-slot='avatar']")?.className).toContain(
-      `size-[${avatar.width}px]`
+    expect(sidebar.querySelector("[data-slot='avatar']")).toHaveAttribute(
+      "data-size",
+      "sm"
     )
     const icon = sidebar.querySelector("[data-slot='sidebar-link'] svg")!
     expect(icon.getAttribute("class")).toContain("size-4")
@@ -144,7 +147,9 @@ describe("app sidebar pen parity (YC0lV / jsloS)", () => {
   it("shows the person's initials and name in the footer", async () => {
     const sidebar = await renderSidebar()
     const footer = sidebar.querySelector("[data-slot='shell-profile']")!
-    const name = footer.querySelector("span:not([data-slot])")!.textContent!
+    const name = footer.querySelector(
+      "[data-slot='account-name']"
+    )!.textContent!
     expect(name.length).toBeGreaterThan(0)
     expect(footer.querySelector("[data-slot='avatar']")).toHaveTextContent(
       profileInitials(name)
@@ -166,8 +171,14 @@ describe("app sidebar pen parity (YC0lV / jsloS)", () => {
     expect(
       within(sidebar).getByRole("button", { name: "New chat" })
     ).toBeInTheDocument()
+    expect(accountTrigger()).toBeInTheDocument()
     expect(
-      within(sidebar).getByRole("link", { name: "Settings" })
-    ).toHaveAttribute("href", SURFACE_PATHS.settings)
+      within(sidebar).queryByRole("link", { name: "Settings" })
+    ).not.toBeInTheDocument()
+    await openAccountMenu()
+    expect(screen.getByRole("menuitem", { name: "Settings" })).toHaveAttribute(
+      "href",
+      SURFACE_PATHS.settings
+    )
   })
 })

@@ -33,6 +33,9 @@ const KEYS = {
   Enter: { code: "Enter", vk: 13 },
   k: { code: "KeyK", vk: 75 },
   PageDown: { code: "PageDown", vk: 34 },
+  ArrowLeft: { code: "ArrowLeft", vk: 37 },
+  ArrowRight: { code: "ArrowRight", vk: 39 },
+  "[": { code: "BracketLeft", vk: 219, text: "[" },
 }
 
 const GROUP_EXIT_DEADLINE_MS = 3000
@@ -318,17 +321,21 @@ export async function launchBrowser({
         windowsVirtualKeyCode: k.vk,
         modifiers: ctrl ? 2 : 0,
       }
-      await call("Input.dispatchKeyEvent", { type: "rawKeyDown", ...base })
+      await call("Input.dispatchKeyEvent", {
+        type: k.text ? "keyDown" : "rawKeyDown",
+        ...(k.text ? { text: k.text } : {}),
+        ...base,
+      })
       await call("Input.dispatchKeyEvent", { type: "keyUp", ...base })
     }
-    const mouse = (mouseEventType, x, y) =>
+    const mouse = (mouseEventType, x, y, clickCount = 1) =>
       call("Input.dispatchMouseEvent", {
         type: mouseEventType,
         x,
         y,
         button: "left",
         buttons: mouseEventType === "mouseReleased" ? 0 : 1,
-        clickCount: 1,
+        clickCount,
       })
     const hover = (x, y) =>
       call("Input.dispatchMouseEvent", {

@@ -9,6 +9,7 @@ import {
   TEST_SESSION_USER,
   setMockSession,
 } from "@/test/auth-client-mock.ts"
+import { openAccountMenu } from "@/test/app-shell-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {
@@ -28,7 +29,8 @@ describe("settings workspace", () => {
     const { router } = renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
 
-    fireEvent.click(screen.getByRole("link", { name: "Settings" }))
+    await openAccountMenu()
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }))
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Preferences" })
@@ -100,7 +102,8 @@ describe("settings workspace", () => {
       })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("link", { name: "Settings" }))
+    await openAccountMenu()
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }))
     fireEvent.click(await screen.findByRole("link", { name: "Account" }))
     expect(
       await screen.findByRole("heading", { level: 1, name: "Account" })
