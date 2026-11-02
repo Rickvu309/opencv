@@ -14,6 +14,7 @@ import { pathOf } from "@/test/mock-http.ts"
 import { paperApiFetch } from "@/test/paper-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { shellApiFetch } from "@/test/shell-api-mock.ts"
+import "@/test/warm-routes.ts"
 import { chatApiFetch } from "@/test/chat-api-mock.ts"
 import { vi } from "vitest"
 

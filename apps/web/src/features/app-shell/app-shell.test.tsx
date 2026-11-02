@@ -63,9 +63,10 @@ afterEach(() => {
 })
 
 describe("app shell layout", () => {
-  it("persists a favorite through query refresh and a fresh app mount", async () => {
-    const path = "/paper/11111111-1111-7111-8111-111111111111"
-    renderApp(path)
+  const favoritePath = "/paper/11111111-1111-7111-8111-111111111111"
+
+  it("shows a favorite in the sidebar once the query refreshes", async () => {
+    renderApp(favoritePath)
     const favorite = await screen.findByRole("button", { name: "Favorite" })
     expect(favorite).toHaveAttribute("aria-pressed", "false")
     fireEvent.click(favorite)
@@ -75,9 +76,11 @@ describe("app shell layout", () => {
     expect(
       await screen.findByRole("link", { name: "PM track CV" })
     ).toBeInTheDocument()
+  })
 
-    cleanup()
-    renderApp(path)
+  it("restores a favorite on a fresh app mount and removes it again", async () => {
+    setMockPaperFavorite("11111111-1111-7111-8111-111111111111", true)
+    renderApp(favoritePath)
     const restored = await screen.findByRole("button", { name: "Favorite" })
     expect(restored).toHaveAttribute("aria-pressed", "true")
     fireEvent.click(restored)
