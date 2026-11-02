@@ -13,3 +13,16 @@
 5. **Compat is gone.** The compat layer was deleted in #418.
 
 **Consequences.** Adding a product action is one contract entry, one binding, one case in `apps/api/src/registry/coverage-<surface>.ts` (arrange, act, assert, and an undo assertion for a reversal) and one web call. The Coach tool, step label, activity line, Undo and screen refresh follow from the entry. A per-call option where a contract field fits is a review finding. These tests hold the structure: `apps/api/src/registry/names.test.ts`, `coverage.test.ts` (every command has a case), `ownership.test.ts`, `boundaries.test.ts`, the `*-contract.test.ts` files, `contract.type-test.ts`, and `apps/web/src/test/request-boundary.test.ts`.
+
+## Adding a product action
+
+1. Add a command entry to `packages/domain/src/<surface>-contract.ts`, with `invalidates` naming the reads it makes stale.
+2. Bind it in `apps/api/src/<surface>/commands.ts` with its handler, reversal and activity line.
+3. Add a case to `apps/api/src/registry/coverage-<surface>.ts`.
+4. Call it from the web with `runContractCommand` from `apps/web/src/lib/contract-client.ts`.
+
+## Tests that hold this shape
+
+- `apps/api/src/registry/names.test.ts` rejects a command, read or Coach tool name in the web, fake Coach or domain that the registry lacks.
+- `apps/api/src/**/*-contract.test.ts` and `apps/api/src/registry/contract.type-test.ts` reject a binding that drifts from the contract.
+- `apps/api/src/registry/coach-chat-tools.test.ts` bars chat.create.
