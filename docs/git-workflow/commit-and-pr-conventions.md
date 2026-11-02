@@ -20,7 +20,7 @@ type: description (#<issue>)
 
 ## PR body
 
-Write the body with the `pr` skill, using `.github/pull_request_template.md` as the shape: `## Summary`, `## Evidence` (before and after), and `## Merge Danger` with `**Door:**` (one-way or two-way) and `**Blast Radius:**`. Save it to a file and pass it as `scripts/ocv-tools.mjs finish --body-file <file>`. The script refuses a body that lacks a part or still has a placeholder in angle brackets, and puts this line on top:
+Write the body with the `pr` skill, using `.github/pull_request_template.md` as the shape: `## Summary`, `## Evidence` (before and after), and `## Merge Danger` with `**Door:**` (one-way or two-way) and `**Blast Radius:**`. Save it to a file and pass it as `scripts/ocv-tools.mjs finish --body-file <file>`. The script refuses a body that lacks a part or still has a placeholder in angle brackets. Under `## Evidence` put a command line with its result (`pnpm test`: exit 0, `12 passed`), or an image or URL; a body with a `/home/` or `~/tmp` path is refused. A `fix:` or `hotfix:` PR also needs a `Caught by: user|ci|review|verify-skill|test|agent-self` line and an `Introduced by: <sha>|#<pr>|unknown` line. It puts this line on top:
 
 ```
 Closes #42

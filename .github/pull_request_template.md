@@ -1,7 +1,7 @@
 <!--
 Title format: type: short description (#<issue>)
 Write this body with the pr skill. scripts/ocv-tools.mjs finish --body-file <this file> adds "Closes #<issue>" and refuses a body
-that lacks the three parts below or still has a placeholder. The title becomes the squash commit message on main.
+that lacks the three parts below, has no command with its result (or image or URL) under Evidence, names a /home/ or ~/tmp path, or still has a placeholder. The title becomes the squash commit message on main.
 -->
 
 ## Summary
@@ -12,6 +12,13 @@ that lacks the three parts below or still has a placeholder. The title becomes t
 
 - **Before:** <screenshot/output/failing test run>
   **After:** <screenshot/output/passing test run>
+
+Evidence is a command line with its result (`pnpm test`: exit 0, or `12 passed`), or an image or URL. A path on your machine (`/home/`, `~/tmp`) is refused.
+
+For a `fix:` or `hotfix:` PR, add these two lines (the PR is refused without them):
+
+Caught by: <user|ci|review|verify-skill|test|agent-self>
+Introduced by: <sha|#pr|unknown>
 
 ## Merge Danger
 
