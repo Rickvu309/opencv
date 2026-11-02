@@ -1,5 +1,5 @@
 import { useId, useReducer } from "react"
-import { ArrowUp, Briefcase, ChevronDown, Plus } from "lucide-react"
+import { ArrowUp, Briefcase, Plus } from "lucide-react"
 
 import {
   jobAddChecklistItemInputSchema,
@@ -9,6 +9,12 @@ import {
   type JobId,
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleIndicator,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
@@ -160,22 +166,24 @@ function InterviewPrep({ job }: { job: JobDetail }) {
     total > 0 ? `Interview prep, ${done} of ${total}` : "Interview prep"
 
   return (
-    <section aria-label={name} className="flex flex-col">
+    <Collapsible
+      open={open}
+      onOpenChange={() => dispatch({ type: "toggled" })}
+      render={<section />}
+      aria-label={name}
+      className="flex flex-col"
+    >
       <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          aria-expanded={open}
-          onClick={() => dispatch({ type: "toggled" })}
-          className="h-4 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground"
+        <CollapsibleTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-4 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground"
+            />
+          }
         >
-          <ChevronDown
-            aria-hidden
-            className={cn(
-              "size-[13px] transition-transform duration-(--duration-micro) ease-(--ease-micro)",
-              !open && "-rotate-90"
-            )}
-          />
+          <CollapsibleIndicator className="size-[13px]" />
           <span>Interview prep</span>
           {total > 0 ? (
             <span
@@ -187,7 +195,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
               {done}/{total}
             </span>
           ) : null}
-        </Button>
+        </CollapsibleTrigger>
         <Button
           type="button"
           variant="ghost"
@@ -201,99 +209,97 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           <Plus aria-hidden className="size-3.5" />
         </Button>
       </div>
-      {open ? (
-        <div className="mt-1.5 flex flex-col">
-          {job.checklist.map((item) => (
-            <ChecklistItemRow
-              key={item.id}
-              item={item}
-              onToggle={() =>
-                void run("job.setChecklistItem", {
-                  jobId: job.id,
-                  itemId: item.id,
-                  done: !item.done,
-                }).catch(reportRejected("update this prep step"))
+      <CollapsibleContent className="mt-1.5 flex flex-col">
+        {job.checklist.map((item) => (
+          <ChecklistItemRow
+            key={item.id}
+            item={item}
+            onToggle={() =>
+              void run("job.setChecklistItem", {
+                jobId: job.id,
+                itemId: item.id,
+                done: !item.done,
+              }).catch(reportRejected("update this prep step"))
+            }
+          />
+        ))}
+        {adding ? (
+          <form
+            className="flex flex-col px-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const parsed = jobAddChecklistItemInputSchema.safeParse({
+                jobId: job.id,
+                label: step,
+              })
+              if (!parsed.success) {
+                const labelIssue = parsed.error.issues.find(
+                  (issue) => issue.path[0] === "label"
+                )
+                const message =
+                  labelIssue?.code === "too_big"
+                    ? `Keep a prep step to ${labelIssue.maximum} characters or fewer.`
+                    : labelIssue?.code === "too_small"
+                      ? "Enter a prep step."
+                      : "Check this prep step and try again."
+                dispatch({ type: "message_set", message })
+                return
               }
-            />
-          ))}
-          {adding ? (
-            <form
-              className="flex flex-col px-2"
-              onSubmit={(event) => {
-                event.preventDefault()
-                const parsed = jobAddChecklistItemInputSchema.safeParse({
-                  jobId: job.id,
-                  label: step,
-                })
-                if (!parsed.success) {
-                  const labelIssue = parsed.error.issues.find(
-                    (issue) => issue.path[0] === "label"
-                  )
-                  const message =
-                    labelIssue?.code === "too_big"
-                      ? `Keep a prep step to ${labelIssue.maximum} characters or fewer.`
-                      : labelIssue?.code === "too_small"
-                        ? "Enter a prep step."
-                        : "Check this prep step and try again."
-                  dispatch({ type: "message_set", message })
-                  return
+              dispatch({ type: "message_cleared" })
+              void run("job.addChecklistItem", parsed.data)
+                .then(() => dispatch({ type: "step_added" }))
+                .catch(() =>
+                  dispatch({
+                    type: "message_set",
+                    message: "Could not add this prep step. Try again.",
+                  })
+                )
+            }}
+          >
+            <div className="flex h-[34px] items-center gap-2.5">
+              <span
+                aria-hidden
+                className="size-[15px] shrink-0 rounded-full ring-[1.2px] ring-input ring-inset"
+              />
+              <Input
+                aria-label="Add a step"
+                aria-describedby={`${messageId}-hint${message ? ` ${messageId}` : ""}`}
+                aria-invalid={message ? true : undefined}
+                autoFocus
+                value={step}
+                placeholder="Add a step"
+                className="h-7 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:text-[13.5px] dark:bg-transparent"
+                onChange={(event) =>
+                  dispatch({ type: "step_typed", value: event.target.value })
                 }
-                dispatch({ type: "message_cleared" })
-                void run("job.addChecklistItem", parsed.data)
-                  .then(() => dispatch({ type: "step_added" }))
-                  .catch(() =>
-                    dispatch({
-                      type: "message_set",
-                      message: "Could not add this prep step. Try again.",
-                    })
-                  )
-              }}
-            >
-              <div className="flex h-[34px] items-center gap-2.5">
-                <span
-                  aria-hidden
-                  className="size-[15px] shrink-0 rounded-full ring-[1.2px] ring-input ring-inset"
-                />
-                <Input
-                  aria-label="Add a step"
-                  aria-describedby={`${messageId}-hint${message ? ` ${messageId}` : ""}`}
-                  aria-invalid={message ? true : undefined}
-                  autoFocus
-                  value={step}
-                  placeholder="Add a step"
-                  className="h-7 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:text-[13.5px] dark:bg-transparent"
-                  onChange={(event) =>
-                    dispatch({ type: "step_typed", value: event.target.value })
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    dispatch({ type: "add_cancelled" })
                   }
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") {
-                      dispatch({ type: "add_cancelled" })
-                    }
-                  }}
-                />
-              </div>
-              {PREP_STEP_MAX_LENGTH !== null ? (
-                <p
-                  id={`${messageId}-hint`}
-                  className="pb-1 text-xs text-muted-foreground"
-                >
-                  Up to {PREP_STEP_MAX_LENGTH} characters.
-                </p>
-              ) : null}
-              {message ? (
-                <p
-                  id={messageId}
-                  role="alert"
-                  className="pb-1 text-xs text-destructive"
-                >
-                  {message}
-                </p>
-              ) : null}
-            </form>
-          ) : null}
-        </div>
-      ) : null}
-    </section>
+                }}
+              />
+            </div>
+            {PREP_STEP_MAX_LENGTH !== null ? (
+              <p
+                id={`${messageId}-hint`}
+                className="pb-1 text-xs text-muted-foreground"
+              >
+                Up to {PREP_STEP_MAX_LENGTH} characters.
+              </p>
+            ) : null}
+            {message ? (
+              <p
+                id={messageId}
+                role="alert"
+                className="pb-1 text-xs text-destructive"
+              >
+                {message}
+              </p>
+            ) : null}
+          </form>
+        ) : null}
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 

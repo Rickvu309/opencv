@@ -1,10 +1,15 @@
 import { useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { ChevronDown } from "lucide-react"
 import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleIndicator,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
 
 import {
   KanbanBoard,
@@ -278,28 +283,25 @@ function HiddenColumns({
   showClosed: boolean
   onShowClosed: (show: boolean) => void
 }) {
-  const [open, toggleOpen] = useReducer((value: boolean) => !value, true)
   return (
-    <div
+    <Collapsible
+      defaultOpen
       data-slot="hidden-columns"
       className="flex w-32 shrink-0 flex-col gap-1.5 pt-1.5"
     >
-      <Button
-        type="button"
-        variant="ghost"
-        aria-expanded={open}
-        className="h-6 justify-start gap-1.5 rounded-[6px] px-1 text-xs font-medium text-muted-foreground aria-expanded:bg-transparent aria-expanded:text-muted-foreground aria-expanded:hover:bg-muted"
-        onClick={toggleOpen}
+      <CollapsibleTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-6 justify-start gap-1.5 rounded-[6px] px-1 text-xs font-medium text-muted-foreground aria-expanded:bg-transparent aria-expanded:text-muted-foreground aria-expanded:hover:bg-muted"
+          />
+        }
       >
-        <ChevronDown
-          className={cn(
-            "size-3 transition-transform duration-(--duration-micro) ease-(--ease-micro)",
-            !open && "-rotate-90"
-          )}
-        />
+        <CollapsibleIndicator className="size-3" />
         Hidden columns
-      </Button>
-      {open ? (
+      </CollapsibleTrigger>
+      <CollapsibleContent className="flex flex-col">
         <Button
           type="button"
           variant="ghost"
@@ -315,7 +317,7 @@ function HiddenColumns({
           <span>Closed</span>
           <span className={FAINT_TEXT.card}>{count}</span>
         </Button>
-      ) : null}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

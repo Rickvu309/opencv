@@ -1,10 +1,9 @@
 import "./design/app-sidebar.pen.css"
 
-import { useId, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import { Link, useLocation } from "@tanstack/react-router"
 import {
   Briefcase,
-  ChevronDown,
   FileText,
   Inbox,
   MessageCircle,
@@ -34,6 +33,12 @@ import { useSidebarGroup } from "@/features/app-shell/use-sidebar-groups.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { Brand } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleIndicator,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
@@ -73,39 +78,34 @@ function NavGroup({
   children: ReactNode
 }) {
   const { open, toggle } = useSidebarGroup(id)
-  const panelId = useId()
 
   return (
-    <div
+    <Collapsible
+      open={open}
+      onOpenChange={toggle}
       data-slot="sidebar-group"
       className={cn("flex flex-col gap-0.5 md:gap-px", className)}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        data-slot="sidebar-group-label"
-        aria-expanded={open}
-        aria-controls={panelId}
-        className="h-11 w-full justify-start gap-1 border-0 px-2 text-xs font-medium hover:bg-sidebar-accent aria-expanded:bg-transparent aria-expanded:hover:bg-sidebar-accent md:h-7"
-        onClick={toggle}
+      <CollapsibleTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            data-slot="sidebar-group-label"
+            className="h-11 w-full justify-start gap-1 border-0 px-2 text-xs font-medium hover:bg-sidebar-accent aria-expanded:bg-transparent aria-expanded:hover:bg-sidebar-accent md:h-7"
+          />
+        }
       >
         {label}
-        <ChevronDown
-          aria-hidden="true"
-          className={cn(
-            "size-[9px] transition-transform duration-(--duration-micro) ease-(--ease-micro) motion-reduce:transition-none",
-            !open && "-rotate-90"
-          )}
-        />
-      </Button>
-      <div
-        id={panelId}
-        hidden={!open}
+        <CollapsibleIndicator className="size-[9px]" />
+      </CollapsibleTrigger>
+      <CollapsibleContent
+        keepMounted
         className="flex flex-col gap-0.5 md:gap-px"
       >
         {children}
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 
