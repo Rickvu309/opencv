@@ -138,7 +138,7 @@ export const chatContract = commandContract({
     description: "Start a chat.",
     input: chatCreateInputSchema,
     output: chatDetailSchema,
-    coach: "auto",
+    coach: "never",
     destructive: false,
     step: () => "Start a chat",
     invalidates: chatList,
