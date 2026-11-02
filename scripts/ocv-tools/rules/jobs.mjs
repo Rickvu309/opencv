@@ -6,11 +6,23 @@ const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const SECTIONS = ["Summary", "Evidence", "Merge Danger"]
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
 const LOCAL_PATH = /\/home\/|~\/tmp/
-const COMMAND_START =
-  /^\$?\s*(?:[A-Za-z_]+=\S+\s+)*(?:pnpm|npm|npx|node|git|gh|curl|vitest|tsc|bash|docker|make|\.?\/?scripts\/)/
-const COMMAND_RESULT =
-  /\bexit(?:ed)?(?: code| status)?\s*\d+|\b\d+\s+(?:tests?\s+)?(?:pass(?:ed|es)?|fail(?:ed|s)?)\b|\b(?:pass(?:ed|es)?|fail(?:ed|s)?|success|clean|ok)\b|\bHTTP \d{3}\b|\b\d+ tests?\b/i
-const PICTURE_OR_LINK = /!\[[^\]]*\]\([^)]+\)|<img\b|https?:\/\/\S+/i
+const COMMAND_HEAD =
+  /^(?:cd\s+\S+\s*&&\s*)?(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*(?:(?:pnpm|npm|npx|node|git|gh|curl|vitest|tsc|bash|docker|make|python3?)\s+(?:\S*[^\s:])|(?:\.?\/?(?:scripts|\.claude\/skills)\/\S*[\w])|\.\/\S*[\w])/
+const COUNTED_RESULT =
+  /\bexit(?:s|ed)?(?: code| status)?\s*[:=]?\s*\d+|(?<![\w/.-])\d+\/\d+(?![\w/.-])|\b\d+\s+(?:(?:tests?|checks?|assertions?|specs?)\s+)?(?:pass(?:ed|es)?|fail(?:ed|s|ures?)?|ok)\b|\b0\s+(?:mismatch(?:es)?|errors?|failures?|warnings?|violations?|findings?|offenders?|diffs?|differences|issues?)\b|\bno\s+(?:errors?|output|failures?|mismatch(?:es)?|warnings?|violations?|findings?|offenders?|diffs?|differences)\b|\bHTTP \d{3}\b/i
+const VERDICT_WORD =
+  "(?:pass(?:ed|es)?|fail(?:ed|s)?|success(?:ful)?|clean|ok)\\b(?!\\?)"
+const SEPARATED_VERDICT = new RegExp(
+  `(?:[:=(]|(?:^|\\s)(?:[-\u2013\u2014]|->|=>|\u2192)\\s)\\s*${VERDICT_WORD}`,
+  "i"
+)
+const OUTPUT_VERDICT = new RegExp(`\\b${VERDICT_WORD}`, "i")
+const NOT_A_RESULT = /\bnot run\b|\bnever ran\b|\bwould\b|\bshould\b|\bwill\b/i
+const PICTURE = /!\[[^\]]*\]\([^)]+\)|<img\b/i
+const PROOF_URL =
+  /https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/(?:actions\/runs\/\d+|pull\/\d+\/checks)|https?:\/\/\S+\.(?:png|jpe?g|gif|webp|svg|mp4|webm)\b|https?:\/\/github\.com\/user-attachments\//i
+const ANY_URL = /https?:\/\/\S+/i
+const LIST_MARKER = /^(?:[-*+]|\d+[.)]|>|\$)\s+/
 const CAUGHT_BY =
   /^\**Caught by:\**\s*(?:user|ci|review|verify-skill|test|agent-self)\s*$/m
 const INTRODUCED_BY =
@@ -28,15 +40,62 @@ function sectionBody(text, heading) {
   return (next ? rest.slice(0, next.index) : rest).trim()
 }
 
-function commandLines(text) {
-  const spans = [...text.matchAll(/`([^`\n]+)`/g)].map((m) => m[1])
-  const lines = text.split(/\r?\n/).map((line) => line.trim())
-  return [...spans, ...lines].filter((line) => COMMAND_START.test(line))
+const hasResult = (rest) =>
+  COUNTED_RESULT.test(rest) || SEPARATED_VERDICT.test(rest)
+
+function bareLine(line) {
+  let text = line.trim()
+  for (let i = 0; i < 2; i += 1) text = text.replace(LIST_MARKER, "")
+  return text
+}
+
+function commandsIn(line) {
+  const found = []
+  for (const m of line.matchAll(/`([^`\n]+)`/g)) {
+    const head = COMMAND_HEAD.exec(m[1].trim())
+    if (head) found.push(line.slice(m.index + m[0].length))
+  }
+  const head = COMMAND_HEAD.exec(line)
+  if (head) found.push(line.slice(head[0].length))
+  return found
+}
+
+function lineProves(line) {
+  if (NOT_A_RESULT.test(line)) return { proves: false, pending: false }
+  const rests = commandsIn(line)
+  const proves = rests.some(hasResult)
+  const urlProof =
+    PROOF_URL.test(line) || (ANY_URL.test(line) && hasResult(line))
+  return { proves: proves || urlProof, pending: rests.length > 0 }
 }
 
 function hasRealEvidence(evidence) {
-  if (PICTURE_OR_LINK.test(evidence)) return true
-  return commandLines(evidence).length > 0 && COMMAND_RESULT.test(evidence)
+  if (PICTURE.test(evidence)) return true
+  let inFence = false
+  let pendingOutside = false
+  let pendingInside = false
+  for (const raw of evidence.split(/\r?\n/)) {
+    const line = bareLine(raw)
+    if (/^(?:```|~~~)/.test(line)) {
+      pendingInside = !inFence && pendingOutside
+      pendingOutside = false
+      inFence = !inFence
+      continue
+    }
+    if (inFence) {
+      const { proves, pending } = lineProves(line)
+      if (proves) return true
+      if (pending) pendingInside = true
+      else if (pendingInside && OUTPUT_VERDICT.test(line)) return true
+      else if (pendingInside && COUNTED_RESULT.test(line)) return true
+      continue
+    }
+    if (line === "") continue
+    const { proves, pending } = lineProves(line)
+    if (proves) return true
+    pendingOutside = pending
+  }
+  return false
 }
 
 function badBody(facts) {
@@ -55,7 +114,7 @@ function badBody(facts) {
   if (LOCAL_PATH.test(text))
     return "The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture."
   if (!hasRealEvidence(sectionBody(text, "Evidence")))
-    return "Evidence needs a command line with its result (exit 0, N passed), or an image or URL."
+    return "Evidence needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run."
   if (FIX_TITLE.test(facts.pull?.title ?? "")) {
     if (!CAUGHT_BY.test(text))
       return "A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self"
@@ -142,7 +201,7 @@ export const jobRows = [
   }),
   row({
     id: "BAD_BODY",
-    says: "The PR body needs a Summary, Evidence and Merge Danger section with content, and no template placeholders. Evidence holds a command with its result, or an image or URL. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
+    says: "The PR body needs a Summary, Evidence and Merge Danger section with content, and no template placeholders. Evidence holds a command with its result on its line or in the output block under it, an image, or a link to a CI run. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
     at: ["finish"],
     needs: ["body", "pull"],
     check: badBody,

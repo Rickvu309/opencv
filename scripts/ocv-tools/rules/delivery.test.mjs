@@ -3,6 +3,10 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import {
+  ACCEPTED_EVIDENCE,
+  REFUSED_EVIDENCE,
+} from "./pr-body-fixtures/evidence-cases.mjs"
 import { decide, evaluate, jobRows } from "./index.mjs"
 
 const BODY =
@@ -134,20 +138,22 @@ const badBody = (text, title = "feat: add a thing (#7)") =>
     .find((r) => r.id === "BAD_BODY")
     .check({ body: { file: "/b.md", text }, pull: { title } })
 
-test("evidence needs a command with its result, or a picture or link", () => {
-  const withEvidence = (evidence) =>
-    BODY.replace("`node --test scripts/x.test.mjs`: 4 pass.", evidence)
-  const refusal = /^Evidence needs a command line with its result/
-  assert.match(badBody(withEvidence("Checked.")), refusal)
-  assert.match(badBody(withEvidence("`pnpm test`")), refusal)
-  assert.match(badBody(withEvidence("It passed on my machine.")), refusal)
-  assert.equal(badBody(withEvidence("`pnpm test`: exit 0")), null)
-  assert.equal(badBody(withEvidence("```\n$ pnpm test\n12 passed\n```")), null)
-  assert.equal(badBody(withEvidence("![after](https://x.test/a.png)")), null)
-  assert.equal(
-    badBody(withEvidence("https://github.com/o/r/actions/runs/1")),
-    null
-  )
+const withEvidence = (evidence) =>
+  BODY.replace("`node --test scripts/x.test.mjs`: 4 pass.", evidence)
+
+test("evidence needs a command with its result, or a picture or run link", () => {
+  assert.equal(badBody(BODY), null)
+  for (const evidence of REFUSED_EVIDENCE)
+    assert.match(
+      badBody(withEvidence(evidence)),
+      /^Evidence needs a command with its result/,
+      evidence
+    )
+})
+
+test("honest evidence forms are accepted", () => {
+  for (const evidence of ACCEPTED_EVIDENCE)
+    assert.equal(badBody(withEvidence(evidence)), null, evidence)
 })
 
 test("the body names no path under the author's own machine", () => {
