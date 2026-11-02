@@ -168,6 +168,13 @@ describe("email code", () => {
     )
   })
 
+  it("shows the Google error when the api sends back a state error", async () => {
+    renderApp("/sign-in?error=state_mismatch")
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      AUTH_COPY.googleUnavailable
+    )
+  })
+
   it("signs in with a pasted code and follows redirect", async () => {
     const { router } = renderApp(SURFACE_PATHS.paper)
     expect(

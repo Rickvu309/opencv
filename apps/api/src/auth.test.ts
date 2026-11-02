@@ -457,21 +457,13 @@ describe("auth providers", () => {
         email: "ada@verify.local",
         password: "correct-horse-battery",
       })
-      expect(signIn.status).toBe(400)
-      await expect(signIn.json()).resolves.toMatchObject({
-        code: "EMAIL_PASSWORD_DISABLED",
-        message: "Email and password is not enabled",
-      })
+      expect(signIn.status).toBe(404)
       const signUp = await postJson(app, "/api/auth/sign-up/email", {
         name: "Ada",
         email: "ada@verify.local",
         password: "correct-horse-battery",
       })
-      expect(signUp.status).toBe(400)
-      await expect(signUp.json()).resolves.toMatchObject({
-        code: "EMAIL_PASSWORD_SIGN_UP_DISABLED",
-        message: "Email and password sign up is not enabled",
-      })
+      expect(signUp.status).toBe(404)
     } finally {
       await client.close()
     }

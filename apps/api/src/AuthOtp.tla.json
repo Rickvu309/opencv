@@ -1,0 +1,12 @@
+{
+  "module": "better-auth/dist/plugins/email-otp/routes.mjs",
+  "version": "1.7.14",
+  "actions": {
+    "Start": "checkVerificationOTP",
+    "Read": "checkVerificationOTP",
+    "Compare": "checkVerificationOTP",
+    "Write": "checkVerificationOTP",
+    "Finish": "checkVerificationOTP",
+    "Settled": "checkVerificationOTP"
+  }
+}
