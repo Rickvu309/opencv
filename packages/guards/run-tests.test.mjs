@@ -1,12 +1,12 @@
 import assert from "node:assert/strict"
-import { existsSync, mkdtempSync, rmSync, watch, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { existsSync, rmSync, watch, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
 import { runFiles } from "./run-tests.mjs"
+import { makeTempDir } from "../../scripts/lib/temp-dir.mjs"
 
 function fixtures(files) {
-  const dir = mkdtempSync(join(tmpdir(), "guards-runner-"))
+  const dir = makeTempDir("guards-runner-")
   for (const [name, body] of Object.entries(files))
     writeFileSync(join(dir, name), body)
   return dir

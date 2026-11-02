@@ -6,7 +6,6 @@ import {
   readdirSync,
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -17,6 +16,7 @@ import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
 import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
+import { makeTempDir } from "./lib/temp-dir.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const self = path.relative(root, fileURLToPath(import.meta.url))
@@ -78,7 +78,7 @@ for (const launcher of launchers) {
     }
     const scratch = path.join(homedir(), "tmp")
     mkdirSync(scratch, { recursive: true })
-    const dir = mkdtempSync(path.join(scratch, "launcher-guard-"))
+    const dir = makeTempDir("launcher-guard-", scratch)
     const mainPid = path.join(dir, "main.pid")
     const childPid = path.join(dir, "child.pid")
     const fake = path.join(dir, "fake-chrome.sh")
@@ -144,7 +144,7 @@ for (const launcher of launchers) {
     }
     const scratch = path.join(homedir(), "tmp")
     mkdirSync(scratch, { recursive: true })
-    const dir = mkdtempSync(path.join(scratch, "launcher-retry-"))
+    const dir = makeTempDir("launcher-retry-", scratch)
     const counter = path.join(dir, "count")
     const fake = path.join(dir, "fake-chrome.sh")
     writeFileSync(
@@ -231,7 +231,7 @@ for (const launcher of launchers) {
         }
         const scratch = path.join(homedir(), "tmp")
         mkdirSync(scratch, { recursive: true })
-        const dir = mkdtempSync(path.join(scratch, "launcher-orphan-"))
+        const dir = makeTempDir("launcher-orphan-", scratch)
         const mainPid = path.join(dir, "main.pid")
         const childPid = path.join(dir, "child.pid")
         const fifo = path.join(dir, "held")

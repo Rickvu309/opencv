@@ -58,7 +58,6 @@ test("verification skills schedule web assumptions", () => {
 
 import { execFileSync, spawnSync } from "node:child_process"
 import {
-  mkdtempSync,
   mkdirSync,
   writeFileSync,
   copyFileSync,
@@ -67,10 +66,11 @@ import {
 } from "node:fs"
 import { homedir } from "node:os"
 import { join, resolve } from "node:path"
+import { makeTempDir } from "./lib/temp-dir.mjs"
 
 test("dry-run executes nothing; first red stays red and writes the consumer result", () => {
   mkdirSync(join(homedir(), "tmp"), { recursive: true })
-  const dir = mkdtempSync(join(homedir(), "tmp/check-node-"))
+  const dir = makeTempDir("check-node-", join(homedir(), "tmp"))
   try {
     mkdirSync(join(dir, "scripts"))
     mkdirSync(join(dir, "bin"))
