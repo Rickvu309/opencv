@@ -25,6 +25,19 @@ export const RULES = [
     use: "CopyButton, or copyText for a copy that has no button, from @workspace/ui/components/copy-button. It already falls back to execCommand and toasts the result.",
     pending: [],
   },
+  {
+    name: "spinner",
+    scope: /^apps\//,
+    hit: (source) => /animate-spin/.test(source),
+    allowed: [],
+    use: "Spinner from @workspace/ui/components/spinner instead of a spinning LoaderCircle or Loader2 icon.",
+    pending: [
+      "apps/web/src/features/auth/welcome-screen.tsx",
+      "apps/web/src/features/auth/email-code-screen.tsx",
+      "apps/web/src/features/paper/paper-import.tsx",
+      "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
+    ].map((file) => ({ file, issue: "PR #847", expires: "2026-11-09" })),
+  },
 ]
 
 export function offenders(rule, files, read) {
@@ -90,6 +103,16 @@ test("clipboard: the hand-rolled copy-link code that #844 deleted is caught", ()
 test("clipboard: reading the clipboard and mocking execCommand are allowed", () => {
   assert.ok(!byName.clipboard.hit("await navigator.clipboard.readText()"))
   assert.ok(!byName.clipboard.hit("document.execCommand = () => false"))
+})
+
+test("spinner: a spinning icon is caught and the kit Spinner is not", () => {
+  assert.ok(
+    byName.spinner.hit(
+      '<LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" />'
+    )
+  )
+  assert.ok(byName.spinner.hit('cn("motion-safe:animate-spin")'))
+  assert.ok(!byName.spinner.hit("<Spinner />"))
 })
 
 test("the scan sees the kit file that is allowed and the files that are pending", () => {
