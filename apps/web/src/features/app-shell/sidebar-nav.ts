@@ -1,10 +1,27 @@
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
-export const SHELL_ACTIVE_OPTIONS = {
-  exact: false,
-  includeSearch: false,
-} as const
+export function currentNavPath(pathname: string, targets: readonly string[]) {
+  return (
+    targets
+      .filter(
+        (target) => pathname === target || pathname.startsWith(`${target}/`)
+      )
+      .sort((a, b) => b.length - a.length)[0] ?? null
+  )
+}
+
+export function navActiveOptions(path: string, current: string | null) {
+  return { exact: path !== current, includeSearch: false } as const
+}
+
+export function favoriteDocPath(docId: string) {
+  return `${SURFACE_PATHS.paper}/${docId}`
+}
+
+export function favoriteJobPath(jobId: string) {
+  return `${SURFACE_PATHS.apply}/${jobId}`
+}
 
 export function shellNavLabel(
   item: { id: string; label: string },

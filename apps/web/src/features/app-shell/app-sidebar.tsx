@@ -1,7 +1,7 @@
 import "./design/app-sidebar.pen.css"
 
 import { useId, type ReactNode } from "react"
-import { Link } from "@tanstack/react-router"
+import { Link, useLocation } from "@tanstack/react-router"
 import {
   Briefcase,
   ChevronDown,
@@ -17,7 +17,10 @@ import {
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import {
-  SHELL_ACTIVE_OPTIONS,
+  currentNavPath,
+  favoriteDocPath,
+  favoriteJobPath,
+  navActiveOptions,
   SHELL_PRIMARY,
   SHELL_WORK,
   shellNavLabel,
@@ -116,6 +119,13 @@ export function AppSidebar({
   const count = inbox.data ?? null
   const favoriteEmpty =
     favorites.jobs.length === 0 && favorites.docs.length === 0
+  const pathname = useLocation({ select: (location) => location.pathname })
+  const current = currentNavPath(pathname, [
+    ...SHELL_PRIMARY.map((item) => item.to),
+    ...SHELL_WORK.map((item) => item.to),
+    ...favorites.docs.map((doc) => favoriteDocPath(doc.id)),
+    ...favorites.jobs.map((job) => favoriteJobPath(job.id)),
+  ])
 
   return (
     <div
@@ -166,7 +176,7 @@ export function AppSidebar({
                 to={item.to}
                 aria-label={shellNavLabel(item, count)}
                 data-slot="sidebar-link"
-                activeOptions={SHELL_ACTIVE_OPTIONS}
+                activeOptions={navActiveOptions(item.to, current)}
                 onClick={onNavigate}
                 activeProps={{ className: linkClass(true) }}
                 inactiveProps={{ className: linkClass(false) }}
@@ -197,7 +207,7 @@ export function AppSidebar({
                   key={item.id}
                   to={item.to}
                   data-slot="sidebar-link"
-                  activeOptions={SHELL_ACTIVE_OPTIONS}
+                  activeOptions={navActiveOptions(item.to, current)}
                   onClick={onNavigate}
                   activeProps={{ className: linkClass(true) }}
                   inactiveProps={{ className: linkClass(false) }}
@@ -219,6 +229,10 @@ export function AppSidebar({
                 key={doc.id || doc.name}
                 to="/paper/$docId"
                 params={{ docId: doc.id }}
+                activeOptions={navActiveOptions(
+                  favoriteDocPath(doc.id),
+                  current
+                )}
                 onClick={onNavigate}
                 activeProps={{ className: linkClass(true) }}
                 inactiveProps={{ className: linkClass(false) }}
@@ -233,6 +247,10 @@ export function AppSidebar({
                 key={job.id || job.title}
                 to="/apply/$jobId"
                 params={{ jobId: job.id }}
+                activeOptions={navActiveOptions(
+                  favoriteJobPath(job.id),
+                  current
+                )}
                 aria-label={
                   job.company ? `${job.title} ${job.company}` : job.title
                 }
