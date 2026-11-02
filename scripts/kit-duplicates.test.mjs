@@ -31,12 +31,7 @@ export const RULES = [
     hit: (source) => /animate-spin/.test(source),
     allowed: [],
     use: "Spinner from @workspace/ui/components/spinner instead of a spinning LoaderCircle or Loader2 icon.",
-    pending: [
-      "apps/web/src/features/auth/welcome-screen.tsx",
-      "apps/web/src/features/auth/email-code-screen.tsx",
-      "apps/web/src/features/paper/paper-import.tsx",
-      "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
-    ].map((file) => ({ file, issue: "PR #847", expires: "2026-11-09" })),
+    pending: [],
   },
   {
     name: "breadcrumb",
