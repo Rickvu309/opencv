@@ -460,6 +460,13 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
   )
 }
 
+const SHOWN_ELSEWHERE: ReadonlySet<string> = new Set([
+  "job.star",
+  "job.addChecklistItem",
+  "job.setChecklistItem",
+  "job.linkPaper",
+])
+
 export function JobDocument({
   job,
   rows,
@@ -469,9 +476,9 @@ export function JobDocument({
   rows: ActivityFeedRow[]
   author: string
 }) {
-  const ordered = [...rows].sort((a, b) =>
-    a.createdAt.localeCompare(b.createdAt)
-  )
+  const ordered = rows
+    .filter((row) => !SHOWN_ELSEWHERE.has(row.command))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   const hasPrep = job.checklist.length > 0 || job.stage !== "closed"
   return (
     <div className="mx-auto flex w-full max-w-[680px] flex-col">
