@@ -52,7 +52,7 @@ export function CoachHome({
     <div
       data-slot="coach-home"
       data-pen-surface="coach"
-      className="pbs-24 sm:pbs-59 grid min-h-full grid-cols-[minmax(1rem,1fr)_minmax(0,42.5rem)_minmax(1rem,1fr)] content-start gap-y-3.5"
+      className="pbs-22 sm:pbs-57 grid min-h-full grid-cols-[minmax(1rem,1fr)_minmax(0,42.5rem)_minmax(1rem,1fr)] content-start gap-y-3.5"
     >
       <h2 className="pbe-2.5 col-start-2 text-center text-[26px] leading-[31px] font-semibold tracking-[-0.8px]">
         How can I help?

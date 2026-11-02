@@ -73,12 +73,6 @@ export const PENDING_HEADERS: Pending[] = [
     note: "Apply job header",
   },
   {
-    file: "features/coach/coach-workspace.tsx",
-    marker: '"coach-header"',
-    row: 4,
-    note: "Coach page header; the dock panel header stays",
-  },
-  {
     file: "features/coming-soon/coming-soon-page.tsx",
     marker: LEGACY_TITLE,
     row: 5,
@@ -142,6 +136,8 @@ function sourceFiles(dir: string): string[] {
   })
 }
 
+export const PANEL_CHROME = ["features/coach/coach-panel-header.tsx"]
+
 const toolFiles = SCANNED.flatMap((dir) => sourceFiles(path.join(srcDir, dir)))
   .map((file) => path.relative(srcDir, file).split(path.sep).join("/"))
   .filter((file) => !SKIPPED.test(file) && !NOT_PRODUCT_CODE.test(file))
@@ -163,7 +159,7 @@ describe("tool headers are built on the kit PageHeader", () => {
 
   it("has no tool header outside the kit that is not listed as pending", () => {
     const strays = toolFiles
-      .filter((file) => !pending.has(file))
+      .filter((file) => !pending.has(file) && !PANEL_CHROME.includes(file))
       .flatMap((file) => problems(read(file)).map((name) => `${file}: ${name}`))
     expect(
       strays,
@@ -176,6 +172,10 @@ describe("tool headers are built on the kit PageHeader", () => {
       (entry) => !toolFiles.includes(entry.file)
     ).map((entry) => entry.file)
     expect(missing, "Delete the entry of a file that is gone.").toEqual([])
+  })
+
+  it("lists only panel chrome that exists", () => {
+    expect(PANEL_CHROME.filter((file) => !toolFiles.includes(file))).toEqual([])
   })
 
   it("lists a file once", () => {
@@ -196,7 +196,6 @@ describe("tool headers are built on the kit PageHeader", () => {
     const unseen = PENDING_HEADERS.filter(
       (entry) =>
         !entry.file.startsWith("features/settings/") &&
-        !entry.file.startsWith("features/coach/") &&
         !entry.file.startsWith("features/paper/paper-library") &&
         problems(read(entry.file)).length === 0
     ).map((entry) => entry.file)
