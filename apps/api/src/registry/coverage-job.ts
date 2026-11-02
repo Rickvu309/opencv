@@ -201,24 +201,42 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
           title: "Link",
           company: "Northwind",
         })
-        const paper = await run("paper.create", {
+        const first = await run("paper.create", {
           kind: "cv",
-          name: "Link CV",
+          name: "First CV",
+        })
+        const second = await run("paper.create", {
+          kind: "cv",
+          name: "Second CV",
         })
         ctx.jobId = idOf(job.output)
-        ctx.docId = idOf(paper.output)
+        ctx.docId = idOf(first.output)
+        ctx.otherDocId = idOf(second.output)
+        await run("job.linkPaper", {
+          jobId: ctx.jobId,
+          docId: ctx.docId,
+          kind: "cv",
+        })
       },
       act: () =>
         run("job.linkPaper", {
           jobId: ctx.jobId,
-          docId: ctx.docId,
+          docId: ctx.otherDocId,
           kind: "cv",
         }),
       assert: async () => {
-        expect(text(await jobOf(ctx.jobId), "cvDocId")).toBe(ctx.docId)
+        expect(text(await jobOf(ctx.jobId), "cvDocId")).toBe(ctx.otherDocId)
       },
       undoAssert: async (result) => {
         await undo(result)
+        expect(text(await jobOf(ctx.jobId), "cvDocId")).toBe(ctx.docId)
+        await run("job.unlinkPaper", { jobId: ctx.jobId, kind: "cv" })
+        const fresh = await run("job.linkPaper", {
+          jobId: ctx.jobId,
+          docId: ctx.otherDocId,
+          kind: "cv",
+        })
+        await undo(fresh)
         expect(text(await jobOf(ctx.jobId), "cvDocId")).toBeNull()
       },
     },

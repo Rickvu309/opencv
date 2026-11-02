@@ -160,7 +160,7 @@ describe("job detail", () => {
             ["job.star", "You starred it"],
             ["job.addChecklistItem", 'You added "Call them" to the checklist'],
             ["job.setChecklistItem", "You ticked a checklist item"],
-            ["job.linkPaper", "You linked a cv to it"],
+            ["job.linkPaper", "You linked Junior Marketing CV"],
           ].map(([command, summary], index) => ({
             id: `01900000-0000-7000-8000-00000000005${index}`,
             createdAt: "2026-10-27T03:00:00.000Z",
@@ -205,9 +205,11 @@ describe("job detail", () => {
       "You starred it",
       'You added "Call them" to the checklist',
       "You ticked a checklist item",
-      "You linked a cv to it",
     ])
       expect(screen.queryByText(hidden)).not.toBeInTheDocument()
+    expect(
+      screen.getByText("You linked Junior Marketing CV")
+    ).toBeInTheDocument()
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Practise three PM questions" })
     )

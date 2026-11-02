@@ -70,7 +70,9 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
       undoAssert: async (result) => {
         await undo(result)
-        expect(text(await chatOf(ctx.chatId), "focusKind")).toBeNull()
+        const chat = await chatOf(ctx.chatId)
+        expect(text(chat, "focusKind")).toBeNull()
+        expect(text(chat, "focusId")).toBeNull()
       },
     },
     {

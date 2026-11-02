@@ -91,7 +91,7 @@ export function registerChat(registry: Registry) {
         subjectKind: "chat",
         subjectId: input.chatId,
         summary: input.focus
-          ? `You pointed the chat at a ${input.focus.kind}`
+          ? `You pointed the chat at the ${input.focus.kind}`
           : "You cleared what the chat points at",
       }),
     },

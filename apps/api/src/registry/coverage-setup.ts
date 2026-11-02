@@ -32,6 +32,7 @@ export function coverageCases(
     chatId: "",
     jobId: "",
     docId: "",
+    otherDocId: "",
     itemId: "",
     pendingId: "",
     activityId: "",

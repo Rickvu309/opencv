@@ -5,6 +5,7 @@ import {
   jobAddChecklistItemInputSchema,
   jobAddNoteInputSchema,
   type ActivityFeedRow,
+  type ContractCommandName,
   type JobDetail,
   type JobId,
 } from "@workspace/domain"
@@ -460,11 +461,10 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
   )
 }
 
-const SHOWN_ELSEWHERE: ReadonlySet<string> = new Set([
+const SHOWN_ELSEWHERE: ReadonlySet<string> = new Set<ContractCommandName>([
   "job.star",
   "job.addChecklistItem",
   "job.setChecklistItem",
-  "job.linkPaper",
 ])
 
 export function JobDocument({

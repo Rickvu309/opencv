@@ -35,7 +35,7 @@ import {
 import type { SSEStreamingApi } from "hono/streaming"
 
 import { readUsage } from "../account/index.js"
-import { getChat } from "../chat/index.js"
+import { getChat, renameChat } from "../chat/index.js"
 import { registry as defaultRegistry } from "../registry/registry.js"
 import type { Registry, ToolEntry } from "../registry/registry.js"
 import { toolResultFromExecute } from "./receipt.js"
@@ -266,7 +266,6 @@ export async function runCoachTurn(options: {
     }
     if (saved)
       await maybeTitle({
-        registry,
         userId: options.userId,
         chatId: options.chatId,
         coachText: text,
@@ -299,7 +298,6 @@ function askedForEdit(history: ChatEntry[], selection?: CoachSelection) {
 }
 
 async function maybeTitle(input: {
-  registry: Registry
   userId: string
   chatId: string
   coachText: string
@@ -329,11 +327,7 @@ async function maybeTitle(input: {
     coachText: input.coachText,
   })
   if (!title || title === chat.title) return
-  await input.registry.execute({
-    name: "chat.rename",
-    input: { chatId: input.chatId, title },
-    actor: personActor(input.userId),
-  })
+  await renameChat(personActor(input.userId), parseChatId(input.chatId), title)
 }
 
 export async function* liveParts(input: {

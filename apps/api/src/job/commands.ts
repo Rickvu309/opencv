@@ -186,10 +186,10 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
               command: "job.unlinkPaper",
               input: { jobId: input.jobId, kind: input.kind },
             },
-      activity: (input) => ({
+      activity: (input, output) => ({
         subjectKind: "job",
         subjectId: input.jobId,
-        summary: `You linked a ${input.kind} to it`,
+        summary: `You linked ${output.docName}`,
       }),
     },
     "job.unlinkPaper": {
