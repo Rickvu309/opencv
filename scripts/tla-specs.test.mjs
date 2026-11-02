@@ -1,18 +1,38 @@
 import assert from "node:assert/strict"
 import { execFileSync, spawnSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
-import { allRuns, resolveJar, resolveJava, statusOf, tlcArgs } from "./tlc.mjs"
+import {
+  TLC_TIMEOUT_MS,
+  allRuns,
+  outFileName,
+  outputOf,
+  resolveJar,
+  resolveJava,
+  runTlc,
+  statusOf,
+  tlcArgs,
+} from "./tlc.mjs"
+import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 import {
   exportedNames,
   expectedMutantExit,
+  nextActions,
   specProblems,
 } from "./lib/tla-specs.mjs"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
+const CLI_TIMEOUT_MS = 120_000
+const PENDING = [
+  {
+    file: "apps/api/src/coach/CoachTurn.tla.json",
+    issue: "#941",
+    expires: "2026-12-03",
+  },
+]
 const FIXTURE = "scripts/tla/fixtures/Counter"
 
 const tracked = () =>
@@ -120,6 +140,50 @@ test("a map entry for an action the spec does not define is a problem", () => {
   assert.match(problemsOf(files)[0], /Gone is not defined in the \.tla/)
 })
 
+test("a map with no actions is a problem", () => {
+  const files = {
+    ...complete(),
+    "a/Spec.tla.json": JSON.stringify({ module: "spec.mjs", actions: {} }),
+  }
+  assert.match(problemsOf(files)[0], /"actions" is empty/)
+})
+
+test("an action of Next with no map entry is a problem", () => {
+  const tla = `${TLA}Other == x' = 0\nNext == Step \\/ Other\n`
+  const problems = problemsOf({ ...complete(), "a/Spec.tla": tla })
+  assert.equal(problems.length, 1)
+  assert.match(problems[0], /Other is an action of Next but has no entry/)
+})
+
+test("the actions of Next are read from every way a spec writes it", () => {
+  const lines = (...body) =>
+    [
+      "A == x' = 1",
+      "B(t) == x' = t",
+      "C == x' = 3",
+      "Done == UNCHANGED x",
+      ...body,
+      "Spec == Init",
+    ].join("\n")
+  assert.deepEqual(nextActions(lines("Next == A \\/ B(1) \\/ C")), [
+    "A",
+    "B",
+    "C",
+  ])
+  assert.deepEqual(
+    nextActions(
+      lines("Next ==", "  \\/ A", "  \\/ \\E t \\in S : B(t)", "  \\/ C")
+    ),
+    ["A", "B", "C"]
+  )
+  assert.deepEqual(
+    nextActions(lines("Next == A /\\ (x = 1 \\/ x = 2) \\/ UNCHANGED x")),
+    ["A"]
+  )
+  assert.deepEqual(nextActions(lines("Next == Done \\/ A")), ["Done", "A"])
+  assert.deepEqual(nextActions(lines("Init == TRUE")), [])
+})
+
 test("a map whose module is missing or whose shape is wrong is a problem", () => {
   const noModule = without(complete(), "a/spec.mjs")
   assert.match(problemsOf(noModule)[0], /module a\/spec\.mjs not found/)
@@ -145,12 +209,40 @@ test("exports are read from declarations, lists and typescript", () => {
   assert.deepEqual([...names].sort(), ["D", "a", "b", "c", "e", "f", "h"])
 })
 
+const UNMAPPED_ACTIONS = / is an action of Next but has no entry in /
+
+const repoProblems = () =>
+  specProblems(tracked(), (path) => readFileSync(join(root, path), "utf8"))
+
 test("every spec in the repo is complete", () => {
-  const files = tracked()
-  assert.ok(files.some((file) => file.endsWith(".tla")))
+  assert.ok(tracked().some((file) => file.endsWith(".tla")))
+  const pending = new Set(PENDING.map((entry) => entry.file))
   assert.deepEqual(
-    specProblems(files, (path) => readFileSync(join(root, path), "utf8")),
+    repoProblems().filter(
+      (problem) =>
+        !(
+          UNMAPPED_ACTIONS.test(problem) &&
+          pending.has(problem.slice(0, problem.indexOf(":")))
+        )
+    ),
     []
+  )
+})
+
+test("every pending action map is unexpired and still skips an action", () => {
+  assert.equal(expiredMessage(expiredPending(PENDING)), "")
+  const problems = repoProblems()
+  const stale = PENDING.filter(
+    (entry) =>
+      !problems.some(
+        (problem) =>
+          problem.startsWith(`${entry.file}:`) && UNMAPPED_ACTIONS.test(problem)
+      )
+  )
+  assert.deepEqual(
+    stale.map((entry) => entry.file),
+    [],
+    "These maps now name every action. Delete their pending entries."
   )
 })
 
@@ -264,6 +356,39 @@ test("tlc runs one worker on the parallel collector", () => {
   assert.deepEqual(args.slice(5), ["1", "-metadir", "m", "-config", "c", "s"])
 })
 
+test("a java that cannot start puts its error in the output", () => {
+  assert.match(
+    outputOf({ error: new Error("spawn java EACCES"), stdout: "", stderr: "" }),
+    /tlc: spawn java EACCES/
+  )
+  assert.equal(outputOf({ stdout: "a", stderr: "b" }), "ab")
+})
+
+test("a java that cannot start fails the run with its error", (t) => {
+  const home = tempDir(t, "tlc-java-")
+  mkdirSync(join(home, "bin"))
+  writeFileSync(join(home, "bin", "java"), "not a program", { mode: 0o644 })
+  writeFileSync(join(home, "tools.jar"), "")
+  const result = runTlc({
+    spec: `${FIXTURE}.tla`,
+    cfg: `${FIXTURE}.cfg`,
+    toolchain: { env: { JAVA_HOME: home, TLA2TOOLS: join(home, "tools.jar") } },
+  })
+  assert.equal(result.code, 1)
+  assert.match(result.output, /tlc: spawnSync .*EACCES/)
+})
+
+test("every tlc run is bounded by a timeout", () => {
+  assert.ok(TLC_TIMEOUT_MS > 0 && TLC_TIMEOUT_MS <= 30 * 60 * 1000)
+})
+
+test("two specs with the same cfg name write different output files", () => {
+  const first = outFileName("a/b/One.tla", "a/b/Spec.cfg")
+  const second = outFileName("a/c/Two.tla", "a/c/Spec.cfg")
+  assert.notEqual(first, second)
+  assert.equal(first, "a__b__Spec.out")
+})
+
 const toolchain = Boolean(resolveJava() && resolveJar())
 if (!toolchain)
   process.stderr.write(
@@ -277,6 +402,7 @@ function runCli(args) {
   return spawnSync(process.execPath, [join(root, "scripts/tlc.mjs"), ...args], {
     cwd: root,
     encoding: "utf8",
+    timeout: CLI_TIMEOUT_MS,
   })
 }
 
@@ -305,6 +431,7 @@ test("tlc.mjs exits 2 when the toolchain is missing", (t) => {
     {
       cwd: tempDir(t, "tlc-cwd-"),
       encoding: "utf8",
+      timeout: CLI_TIMEOUT_MS,
       env: {
         ...process.env,
         JAVA_HOME: "/nonexistent",
