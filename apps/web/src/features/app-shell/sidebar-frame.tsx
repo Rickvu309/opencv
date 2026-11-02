@@ -3,9 +3,7 @@ import type { CSSProperties, ReactNode } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 import { SidebarResizeHandle } from "@/features/app-shell/sidebar-resize-handle.tsx"
 import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
-import { handoffTarget } from "@/features/app-shell/sidebar-focus.ts"
-import { SidebarToggle } from "@/features/app-shell/sidebar-toggle.tsx"
-import { shellCopy } from "@/features/app-shell/shell-copy.ts"
+import { pageFocusTarget } from "@/features/app-shell/sidebar-focus.ts"
 import type { SidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
 
 type Props = {
@@ -29,24 +27,10 @@ export function SidebarFrame({ layout, children }: Props) {
         collapsed ? "w-9" : "w-(--sidebar-width)"
       )}
     >
-      {collapsed ? (
-        <div
-          data-slot="sidebar-expand"
-          data-pen-surface="app-shell"
-          className="absolute top-3.5 left-1"
-        >
-          <SidebarToggle
-            label={shellCopy.expandSidebar}
-            direction="open"
-            onClick={layout.pin}
-            suppressed={peek}
-          />
-        </div>
-      ) : null}
       <FocusSafeRegion
         as="aside"
         concealed={hidden}
-        focusFallback={handoffTarget}
+        focusFallback={pageFocusTarget}
         aria-label="Sidebar"
         data-peek={peek}
         {...layout.contentProps}

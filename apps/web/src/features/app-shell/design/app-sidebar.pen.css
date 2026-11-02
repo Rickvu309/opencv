@@ -1,7 +1,6 @@
 [data-pen-surface="app-shell"] [data-slot="nav-item"],
 [data-pen-surface="app-shell"] [data-slot="nav-item"] svg,
-[data-pen-surface="app-shell"] button[aria-label="Search"],
-[data-pen-surface="app-shell"] [data-slot="sidebar-toggle"] {
+[data-pen-surface="app-shell"] button[aria-label="Search"] {
   color: #59595b;
 }
 
@@ -56,7 +55,6 @@
 [data-pen-surface="app-shell"] [data-slot="nav-item"],
 [data-pen-surface="app-shell"] [data-slot="sidebar-group-label"],
 [data-pen-surface="app-shell"] button[aria-label="Search"],
-[data-pen-surface="app-shell"] [data-slot="sidebar-toggle"],
 [data-pen-surface="app-shell"] [data-slot="account-trigger"] {
   border-radius: 6px;
 }

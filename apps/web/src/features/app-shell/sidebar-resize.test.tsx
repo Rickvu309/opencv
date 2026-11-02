@@ -155,28 +155,9 @@ describe("collapse and peek", () => {
     localStorage.setItem("opencv.sidebar.collapsed", "1")
     stubDesktopViewport(true)
     renderApp(SURFACE_PATHS.pitch)
-    await screen.findByRole("button", { name: "Expand sidebar" })
-    expect(frame()).toHaveAttribute("data-state", "collapsed")
-  })
-
-  it("offers a visible collapse button and an expand button when hidden", async () => {
-    await renderShell()
-    await userEvent.click(
-      screen.getByRole("button", { name: "Collapse sidebar" })
-    )
-    expect(frame()).toHaveAttribute("data-state", "collapsed")
-    await userEvent.click(
-      screen.getByRole("button", { name: "Expand sidebar" })
-    )
-    expect(frame()).toHaveAttribute("data-state", "open")
-  })
-
-  it("puts the expand button in the page header and no longer in the dock", async () => {
-    const handle = await renderShell()
-    drag(handle, 244, 100)
-    const expand = screen.getByRole("button", { name: "Expand sidebar" })
-    expect(expand.closest('[data-slot="sidebar-expand"]')).not.toBeNull()
-    expect(expand.closest('[data-slot="app-dock"]')).toBeNull()
+    await vi.waitFor(() => {
+      expect(frame()).toHaveAttribute("data-state", "collapsed")
+    })
   })
 })
 
@@ -264,43 +245,37 @@ describe("a drag that does not end with a pointer up", () => {
 })
 
 describe("focus after collapse and expand", () => {
-  it("moves to the expand button after the collapse button is pressed", async () => {
-    await renderShell()
-    await userEvent.click(
-      screen.getByRole("button", { name: "Collapse sidebar" })
-    )
-    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
-  })
+  function pageMain() {
+    return document.getElementById("app-main")!
+  }
 
-  it("moves to the collapse button after the expand button is pressed", async () => {
-    await renderShell()
-    await userEvent.click(
-      screen.getByRole("button", { name: "Collapse sidebar" })
-    )
-    await userEvent.click(
-      screen.getByRole("button", { name: "Expand sidebar" })
-    )
-    expect(
-      screen.getByRole("button", { name: "Collapse sidebar" })
-    ).toHaveFocus()
-  })
-
-  it("moves to the expand button when Enter on the handle collapses", async () => {
+  it("moves focus to the page when Enter on the handle collapses", async () => {
     const handle = await renderShell()
     handle.focus()
     await userEvent.keyboard("{Enter}")
-    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(pageMain()).toHaveFocus()
+    expect(document.body).not.toHaveFocus()
   })
 
-  it("moves to the expand button when [ collapses from a sidebar link", async () => {
+  it("moves focus to the page when [ collapses from a sidebar link", async () => {
     await renderShell()
     screen.getByRole("link", { name: /^Coach/ }).focus()
     await userEvent.keyboard("[[")
-    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(pageMain()).toHaveFocus()
     await userEvent.keyboard("[[")
-    expect(
-      screen.getByRole("button", { name: "Collapse sidebar" })
-    ).toHaveFocus()
+    expect(frame()).toHaveAttribute("data-state", "open")
+    expect(pageMain()).toHaveFocus()
+  })
+
+  it("moves focus to the page when a drag collapses the sidebar from the handle", async () => {
+    const handle = await renderShell()
+    handle.focus()
+    drag(handle, 244, 100)
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(pageMain()).toHaveFocus()
+    expect(document.body).not.toHaveFocus()
   })
 
   it("leaves focus on the page when a drag collapses the sidebar", async () => {

@@ -206,21 +206,8 @@ export function AppShell({ onSearch }: AppShellProps) {
     </div>
   )
 
-  const desktopToggle = layout.peek
-    ? {
-        label: shellCopy.pinSidebar,
-        direction: "open" as const,
-        onClick: layout.pin,
-      }
-    : {
-        label: shellCopy.collapseSidebar,
-        direction: "close" as const,
-        onClick: layout.toggle,
-      }
-
   const nav = (
     <AppSidebar
-      toggle={isDesktop ? desktopToggle : undefined}
       onMenuOpenChange={isDesktop ? layout.menuOpenChange : undefined}
       onNavigate={() => {
         if (isDesktop) layout.peekClose()

@@ -1,8 +1,6 @@
 import { join } from "node:path"
 
 import {
-  clickCenter,
-  focusedLabel,
   FRAME,
   GUTTER,
   HANDLE,
@@ -167,39 +165,12 @@ export async function checkResize({ browser, web, output, check, capture }) {
   )
   const panel = await mainLeft(page)
   check(panel <= GUTTER + 1, `${tag} the panel takes the space (left ${panel})`)
-  const toggle = await page.evaluate(`(() => {
-    const t = document.querySelector('[data-slot="sidebar-expand"] button');
-    if (!t) return null;
-    const r = t.getBoundingClientRect();
-    const card = document.querySelector('#app-main').parentElement.getBoundingClientRect();
-    const title = document.querySelector('#app-main h1, #app-main h2')?.getBoundingClientRect();
-    const overlap = title ? !(r.right <= title.left || r.left >= title.right || r.bottom <= title.top || r.top >= title.bottom) : false;
-    return { x: r.left, y: r.top, right: r.right, card: card.left, overlap, label: t.getAttribute('aria-label'), dock: !!document.querySelector('[data-slot="app-dock"] [data-slot="sidebar-toggle"]'), focused: document.activeElement === t };
-  })()`)
-  check(
-    toggle &&
-      toggle.label === "Expand sidebar" &&
-      toggle.x >= 0 &&
-      toggle.right <= toggle.card &&
-      toggle.y >= 8 &&
-      toggle.y <= 20 &&
-      !toggle.overlap &&
-      !toggle.dock,
-    `${tag} the expand button sits at the top-left beside the page, clear of its title, not in the dock (${toggle && `${toggle.x},${toggle.y}, page at ${toggle.card}`})`
+  const focus = await page.evaluate(
+    `({ main: document.activeElement?.id === "app-main", body: document.activeElement === document.body })`
   )
   check(
-    toggle?.focused === true,
-    `${tag} focus moved to the expand button after the collapse`
-  )
-  const expandAt = await rectOf(page, 'button[aria-label="Expand sidebar"]')
-  await page.hover(expandAt.x + expandAt.w / 2, expandAt.y + expandAt.h / 2)
-  await page.sleep(900)
-  const tip = await page.evaluate(
-    `document.querySelector('[data-slot="tooltip-content"]')?.textContent ?? ''`
-  )
-  check(
-    tip.includes("Expand sidebar") && tip.includes("["),
-    `${tag} the expand button tooltip names the [ shortcut (${tip})`
+    focus.main && !focus.body,
+    `${tag} focus moved to the page after the collapse, not the body`
   )
   await page.hover(720, 450)
   await capture(page, "sidebar-collapsed.png")
@@ -263,11 +234,11 @@ export async function checkResize({ browser, web, output, check, capture }) {
   await page.key("Escape")
   await page.sleep(500)
   const escaped = await page.evaluate(
-    `({ closed: document.querySelector(${JSON.stringify(SIDEBAR)}).inert, focus: document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.tagName })`
+    `({ closed: document.querySelector(${JSON.stringify(SIDEBAR)}).inert, focus: document.activeElement?.id || document.activeElement?.tagName })`
   )
   check(
-    escaped.closed && escaped.focus === "Expand sidebar",
-    `${tag} Escape closes the peek and returns focus to the expand button (${escaped.focus})`
+    escaped.closed && escaped.focus === "app-main",
+    `${tag} Escape closes the peek and moves focus to the page (${escaped.focus})`
   )
   await page.hover(900, Y)
   await page.sleep(500)
@@ -303,16 +274,23 @@ export async function checkResize({ browser, web, output, check, capture }) {
 
   await page.hover(3, Y)
   await page.sleep(500)
-  await clickCenter(page, 'button[aria-label="Pin sidebar"]')
+  await page.hover(3, Y)
+  await page.sleep(500)
+  await page.evaluate(
+    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="nav-item"]`)}).focus()`
+  )
+  await page.key("[")
   await page.sleep(400)
   check(
     (await rectOf(page, SIDEBAR)).w === 228 &&
       (await stored(page, COLLAPSED_KEY)) === "0",
-    `${tag} the pin button in the peek restores the sidebar`
+    `${tag} [ restores the sidebar from the peek`
   )
   check(
-    await focusedLabel(page, "Collapse sidebar"),
-    `${tag} focus moved to the collapse button after the expand`
+    await page.evaluate(
+      `!!document.activeElement?.closest(${JSON.stringify('[data-slot="sidebar-frame"]')})`
+    ),
+    `${tag} focus stays in the sidebar after the peek expands`
   )
   await page.evaluate("document.activeElement?.blur()")
   await page.evaluate(
@@ -325,18 +303,18 @@ export async function checkResize({ browser, web, output, check, capture }) {
     `${tag} [ collapses the sidebar`
   )
   check(
-    await focusedLabel(page, "Expand sidebar"),
-    `${tag} focus moved to the expand button after [`
+    await page.evaluate("document.activeElement?.id === 'app-main'"),
+    `${tag} focus moved to the page after [ collapsed the sidebar`
   )
-  await clickCenter(page, 'button[aria-label="Expand sidebar"]')
+  await page.key("[")
   await page.sleep(400)
   check(
     (await rectOf(page, SIDEBAR)).w === 228,
-    `${tag} the Expand sidebar button brings it back`
+    `${tag} [ expands the sidebar again`
   )
   check(
-    await focusedLabel(page, "Collapse sidebar"),
-    `${tag} focus is on the collapse button after the header button expanded it`
+    await page.evaluate("document.activeElement !== document.body"),
+    `${tag} focus is never on the body after the expand`
   )
   await page.evaluate(
     `(() => { const i = document.createElement('input'); i.id = 'probe'; document.body.append(i); i.focus(); })()`
@@ -351,7 +329,7 @@ export async function checkResize({ browser, web, output, check, capture }) {
 
   await cancelledDrag({ page, check, tag })
   await overDragPreview({ page, check, capture, tag })
-  await clickCenter(page, 'button[aria-label="Expand sidebar"]')
+  if ((await rectOf(page, FRAME)).w <= GUTTER + 1) await page.key("[")
   await page.hover(720, 450)
   await page.sleep(400)
 
