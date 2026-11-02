@@ -16,6 +16,8 @@ function readSignInCode(logPath, email) {
   return null
 }
 
+const SEND_LIMIT_WINDOW_MS = 75000
+
 const postJson = (page, url, body) =>
   page.evaluate(`fetch(${JSON.stringify(url)}, {
     method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
@@ -27,11 +29,16 @@ export async function signUpThrowaway({ page, webUrl, apiUrl, logPath }) {
   await page.goto(`${webUrl}/sign-in`)
   await page.sleep(500)
   const email = `pen-layout-${Date.now()}@verify.local`
-  const sent = await postJson(
-    page,
-    `${apiUrl}/api/auth/email-otp/send-verification-otp`,
-    { email, type: "sign-in" }
-  )
+  const deadline = Date.now() + SEND_LIMIT_WINDOW_MS
+  let sent = 429
+  while (sent === 429 && Date.now() < deadline) {
+    sent = await postJson(
+      page,
+      `${apiUrl}/api/auth/email-otp/send-verification-otp`,
+      { email, type: "sign-in" }
+    )
+    if (sent === 429) await page.sleep(2000)
+  }
   if (sent !== 200) throw new Error(`send-verification-otp returned ${sent}`)
   let otp = null
   for (let attempt = 0; attempt < 20 && !otp; attempt += 1) {
