@@ -207,10 +207,6 @@ export type PaperReplaceInput = z.infer<typeof paperReplaceInputSchema>
 
 const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])
 
-/**
- * First requirement phrase the letter does not already contain. A phrase is a
- * run of capitalised words, so "Meta Ads" is one keyword, not "Meta".
- */
 export function keywordGap(
   letterText: string,
   requirements: string

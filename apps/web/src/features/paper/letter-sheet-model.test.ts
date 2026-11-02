@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest"
 import {
   bodyOf,
   editParagraph,
-  locate,
-  mergeParagraph,
+  paragraphAtJoinOffset,
+  mergeWithPrevious,
   paragraphsOf,
   saveBody,
   splitParagraph,
@@ -65,12 +65,27 @@ describe("letter sheet model: split and join", () => {
   })
 
   it("locates a caret in a join, and moves one inside a separator forward", () => {
-    expect(locate(["ab", "cd"], 0)).toEqual({ index: 0, offset: 0 })
-    expect(locate(["ab", "cd"], 2)).toEqual({ index: 0, offset: 2 })
-    expect(locate(["ab", "cd"], 3)).toEqual({ index: 1, offset: 0 })
-    expect(locate(["ab", "cd"], 6)).toEqual({ index: 1, offset: 2 })
-    expect(locate(["ab", "cd"], 99)).toEqual({ index: 1, offset: 2 })
-    expect(locate(["ab"], -3)).toEqual({ index: 0, offset: 0 })
+    expect(paragraphAtJoinOffset(["ab", "cd"], 0)).toEqual({
+      index: 0,
+      offset: 0,
+    })
+    expect(paragraphAtJoinOffset(["ab", "cd"], 2)).toEqual({
+      index: 0,
+      offset: 2,
+    })
+    expect(paragraphAtJoinOffset(["ab", "cd"], 3)).toEqual({
+      index: 1,
+      offset: 0,
+    })
+    expect(paragraphAtJoinOffset(["ab", "cd"], 6)).toEqual({
+      index: 1,
+      offset: 2,
+    })
+    expect(paragraphAtJoinOffset(["ab", "cd"], 99)).toEqual({
+      index: 1,
+      offset: 2,
+    })
+    expect(paragraphAtJoinOffset(["ab"], -3)).toEqual({ index: 0, offset: 0 })
   })
 })
 
@@ -103,7 +118,6 @@ describe("letter sheet model: editing", () => {
     const edit = editParagraph(["xy"], 0, "xone\n\ntwo\n\nthreey", 17, false)
     expect(edit.paragraphs).toEqual(["xone", "two", "threey"])
     expect(edit.caret).toEqual({ index: 2, offset: 6 })
-    // A paste that ends in a line break stays whole.
     const tail = editParagraph(["ab"], 0, "ab line\n", 8, false)
     expect(tail.paragraphs).toEqual(["ab line\n"])
   })
@@ -117,11 +131,11 @@ describe("letter sheet model: editing", () => {
   })
 
   it("merges into the paragraph above and puts the caret at the joint", () => {
-    const edit = mergeParagraph(["ab", "cd", "ef"], 1)
+    const edit = mergeWithPrevious(["ab", "cd", "ef"], 1)
     expect(edit.paragraphs).toEqual(["abcd", "ef"])
     expect(edit.caret).toEqual({ index: 0, offset: 2 })
-    expect(mergeParagraph(["ab"], 0).paragraphs).toEqual(["ab"])
-    expect(mergeParagraph(["ab"], 3).caret).toBeNull()
+    expect(mergeWithPrevious(["ab"], 0).paragraphs).toEqual(["ab"])
+    expect(mergeWithPrevious(["ab"], 3).caret).toBeNull()
   })
 
   it("saves a line break followed by text exactly, and cuts one at the very end", () => {
@@ -155,9 +169,7 @@ const STEP = fc.oneof(
   })
 )
 
-/** Run one keystroke the way the sheet does, on the paragraph array. The
- * caret is a position in the array: paragraph index and offset. */
-function run(
+function keystrokeOnParagraphs(
   state: { paragraphs: string[]; index: number; offset: number },
   step: Step
 ) {
@@ -191,7 +203,7 @@ function run(
     return settle(splitParagraph(paragraphs, index, at, at), index, 0)
   }
   if (offset === 0) {
-    return settle(mergeParagraph(paragraphs, index), index, 0)
+    return settle(mergeWithPrevious(paragraphs, index), index, 0)
   }
   const value = text.slice(0, offset - 1) + text.slice(offset)
   return put(value, offset - 1, false)
@@ -212,22 +224,18 @@ describe("letter sheet model: edit, save, reload", () => {
             offset: 0,
           }
           for (const step of steps) {
-            // Put the caret somewhere in the field before each key.
-            const index = step.at % state.paragraphs.length
+            const caretParagraph = step.at % state.paragraphs.length
             state = {
               ...state,
-              index,
-              offset: step.at % (state.paragraphs[index]!.length + 1),
+              index: caretParagraph,
+              offset: step.at % (state.paragraphs[caretParagraph]!.length + 1),
             }
-            state = run(state, step)
+            state = keystrokeOnParagraphs(state, step)
             const saved = saveBody(state.paragraphs)
             const reloaded = paragraphsOf(saved)
             const cut = state.paragraphs.map((text) => text.replace(/\n+$/, ""))
-            const transient = cut.some((text) => text.includes("\n\n"))
-            // Two soft breaks in a row are the one state the string cannot
-            // keep as one paragraph; the next key cuts it.
-            if (!transient) expect(reloaded).toEqual(cut)
-            // Saving what was reloaded changes nothing, in every state.
+            const blankLineInside = cut.some((text) => text.includes("\n\n"))
+            if (!blankLineInside) expect(reloaded).toEqual(cut)
             expect(saveBody(reloaded)).toBe(saved)
           }
         }
@@ -277,9 +285,6 @@ describe("letter sheet model: edit, save, reload", () => {
       fc.property(fc.string({ unit: "binary" }), (text) => {
         const loaded = paragraphsOf(text)
         const last = loaded.length - 1
-        // Every paragraph but the last was cut at a blank line, so saving the
-        // loaded paragraphs gives the string back, but for a trailing break
-        // of the last paragraph.
         expect(saveBody(loaded)).toBe(
           bodyOf(loaded.slice(0, last)) +
             (last > 0 ? "\n\n" : "") +

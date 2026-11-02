@@ -1,5 +1,5 @@
 import {
-  compactLetterDocument,
+  withoutBlankParts,
   decodePaperContent,
   emptyCvDocument,
   emptyLetterDocument,
@@ -101,7 +101,7 @@ describe("paper codecs", () => {
 
   it("drops empty and blank letter parts when a writer compacts", () => {
     expect(
-      compactLetterDocument({
+      withoutBlankParts({
         markdown: "Body ",
         sender: "",
         contact: "   ",
@@ -110,7 +110,7 @@ describe("paper codecs", () => {
         signature: "Linh",
       })
     ).toEqual({ markdown: "Body ", recipient: "A\nB", signature: "Linh" })
-    expect(compactLetterDocument({ markdown: "x", date: "" })).toStrictEqual({
+    expect(withoutBlankParts({ markdown: "x", date: "" })).toStrictEqual({
       markdown: "x",
     })
   })

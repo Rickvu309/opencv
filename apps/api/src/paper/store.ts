@@ -8,7 +8,7 @@ import {
   PAPER_CONTENT_VERSION,
   decodePaperContent,
   blankBlockDocument,
-  compactLetterDocument,
+  withoutBlankParts,
   emptyLetterDocument,
   isCvBlockDocument,
   isCvDocument,
@@ -109,9 +109,8 @@ function requireDocument(kind: PaperStoredKind, document: unknown) {
   if (!decoded.ok) {
     throw new CommandError(ERROR_CODES.VALIDATION_ERROR, decoded.message)
   }
-  // A letter never stores an empty or blank part, whoever writes it.
   if (kind === "letter") {
-    return compactLetterDocument(decoded.data as LetterDocument) as Record<
+    return withoutBlankParts(decoded.data as LetterDocument) as Record<
       string,
       unknown
     >

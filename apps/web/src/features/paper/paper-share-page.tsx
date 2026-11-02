@@ -11,7 +11,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 
 import { CvDocument } from "./cv-print-document.tsx"
-import { letterOf } from "./letter-sheet-model.ts"
+import { readStoredLetter } from "./letter-sheet-model.ts"
 import { LetterSheet } from "./letter-sheet.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
@@ -110,7 +110,7 @@ export function PaperSharePage() {
             <CvDocument data={cv} onChange={() => undefined} />
           </CvPhotoFrame>
         ) : doc.kind === "letter" ? (
-          <LetterSheet letter={letterOf(doc.document)} mode="read" />
+          <LetterSheet letter={readStoredLetter(doc.document)} mode="read" />
         ) : null}
       </div>
     </main>

@@ -80,10 +80,7 @@ const report = {
     "The star, bell and sliders glyph of the frame's header are not built (no feature behind them); see the issue's deviation list.",
   ],
 }
-// Deliberate header deviations, decided on #830: the frame draws a sliders glyph
-// in the Edited pill and a bell button, which have no feature behind them, so
-// the Edited text sits to the right of the pen's x. Listed in the issue.
-const EXCEPTIONS = [
+const PEN_LAYOUT_EXCEPTIONS = [
   {
     frameId: "sgAtL",
     text: "Edited just now",
@@ -125,8 +122,7 @@ const click = async (page, text) =>
 })()`),
     `click ${text}`
   )
-// A click on the desk background leaves the desk focused, so PageDown scrolls it.
-const deskKeys = async (page, width) => {
+const pageDownAfterDeskClick = async (page, width) => {
   const spot = await page.evaluate(`(() => {
     const desk=document.querySelector('[data-slot="letter-editor-desk"]');
     desk.scrollTop=0;
@@ -250,8 +246,6 @@ const capture = async (page, width, label) => {
         `${width} ${label}: ${target.slot} keeps its pen size on desktop`
       )
   }
-  // The pen sets the signature 4px under the closing, at every width: the
-  // sheet fields never grow to a touch size.
   check(
     Math.abs(screen.closingGap - 4) <= 1,
     `${width} ${label}: the signature sits 4px under the closing (${screen.closingGap})`
@@ -296,10 +290,13 @@ const capture = async (page, width, label) => {
       })
     )
     comparison = {
-      ...comparePenLayout({ layout, ...measured, exceptions: EXCEPTIONS }),
+      ...comparePenLayout({
+        layout,
+        ...measured,
+        exceptions: PEN_LAYOUT_EXCEPTIONS,
+      }),
       measured: measured.measured,
     }
-    // Every pen text must match, or sit in PEN_LAYOUT_EXCEPTIONS with a reason.
     check(
       comparison.mismatches.length === 0,
       `${width}: pen layout, ${comparison.mismatches.length} mismatches` +
@@ -347,9 +344,7 @@ try {
   })
   await setup.close()
   const texts = snapshot.sections.find((s) => s.name === "Main wrap").texts
-  // The frame's sheet copy goes in as parts: sender, contact, date, recipient
-  // (three lines), salutation, four paragraphs, closing and signature.
-  const parts = {
+  const penCopyParts = {
     sender: texts[4],
     contact: texts[5],
     date: texts[6],
@@ -360,7 +355,8 @@ try {
   }
   const markdown = texts.slice(11, 15).join("\n\n")
   check(
-    parts.sender === "Linh Nguyen" && parts.signature === "Linh Nguyen",
+    penCopyParts.sender === "Linh Nguyen" &&
+      penCopyParts.signature === "Linh Nguyen",
     "source letter fixture loaded"
   )
   for (const [width, height] of [
@@ -387,7 +383,7 @@ try {
     const doc = await command(page, "paper.create", {
       kind: "letter",
       name: "Cover letter, Lumière",
-      document: { markdown, ...parts },
+      document: { markdown, ...penCopyParts },
       jobId: job.id,
     })
     await page.goto(`${web}/paper/${doc.id}`)
@@ -397,7 +393,7 @@ try {
       `${width}: linked job suggestion shown`
     )
     await capture(page, width, "suggestion")
-    await deskKeys(page, width)
+    await pageDownAfterDeskClick(page, width)
     await click(page, "Skip")
     await state(
       page,

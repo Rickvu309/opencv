@@ -16,11 +16,10 @@ import {
 
 export function paperCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, registry, run, undo, paperOf, gone, shares, userId } = tools
-  // A letter keeps its optional parts through a replace and its Undo.
   let letterId = ""
   let letterVersion = 1
   let cvReplace: Awaited<ReturnType<typeof run>> | null = null
-  const lettersBefore = {
+  const letterWithParts = {
     markdown: "First.\n\nSecond.",
     sender: "Linh Nguyen",
     contact: "linh@example.com",
@@ -63,7 +62,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         const filled = await run("paper.replace", {
           docId: letterId,
           contentVersion: 1,
-          document: lettersBefore,
+          document: letterWithParts,
         })
         letterVersion = Number(
           (filled.output as { contentVersion: number }).contentVersion
@@ -97,7 +96,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       undoAssert: async (result) => {
         await undo(result)
         expect(record(await paperOf(letterId), "document")).toEqual(
-          lettersBefore
+          letterWithParts
         )
         if (!cvReplace) throw new Error("missing cv replace")
         await undo(cvReplace)

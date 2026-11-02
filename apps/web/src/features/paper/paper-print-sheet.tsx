@@ -13,7 +13,7 @@ import {
   type CvDocument as CvDocumentData,
 } from "@workspace/domain"
 
-import { letterOf } from "./letter-sheet-model.ts"
+import { readStoredLetter } from "./letter-sheet-model.ts"
 import { LetterSheet } from "./letter-sheet.tsx"
 import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
@@ -136,7 +136,7 @@ export function PaperPrintSheet({
         aria-hidden="true"
         inert
       >
-        <LetterSheet letter={letterOf(source)} mode="read" />
+        <LetterSheet letter={readStoredLetter(source)} mode="read" />
       </article>,
       host.body
     )

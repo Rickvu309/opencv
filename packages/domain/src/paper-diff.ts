@@ -175,7 +175,6 @@ function diffLetterBody(before: string, after: string): DiffHunk[] {
   return hunks
 }
 
-/** One hunk per changed part, in sheet order, with the body in the middle. */
 function diffLetter(before: LetterDocument, after: LetterDocument): DiffHunk[] {
   const hunks: DiffHunk[] = []
   const pushPart = (part: LetterPart) => {

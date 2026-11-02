@@ -8,7 +8,6 @@ import { LetterSheet } from "./letter-sheet.tsx"
 import snapshot from "./design/letter-sheet.snapshot.json"
 import styles from "./design/letter-sheet.styles.json"
 
-// Pen frame sgAtL (W7.3), sheet node pFz5s.
 const css = readFileSync(
   path.join(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -82,12 +81,8 @@ describe("letter sheet matches the pen sheet", () => {
       const block = rule(role)
       expect(block).toContain(`font-size: ${size}px`)
       expect(block).toContain(`font-weight: ${weight}`)
-      // The pen's contact grey is 3.4:1 on white, under AA for 10px text, so the
-      // sheet darkens it toward the sender's black until it passes.
-      const want =
-        role === "contact"
-          ? "color-mix(in srgb, #8a8a8e 80%, #111111)"
-          : fill.toLowerCase()
+      const darkenedContactInk = "color-mix(in srgb, #8a8a8e 80%, #111111)"
+      const want = role === "contact" ? darkenedContactInk : fill.toLowerCase()
       expect(block.toLowerCase()).toContain(`color: ${want}`)
       if (pen.lineHeight)
         expect(block).toContain(`line-height: ${pen.lineHeight}`)

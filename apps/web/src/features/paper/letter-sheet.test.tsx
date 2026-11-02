@@ -438,14 +438,13 @@ describe("LetterSheet edit mode", () => {
     expect(field("Paragraph 1").selectionStart).toBe(2)
   })
 
-  it("grows a field to its content where field-sizing is missing", () => {
+  it("grows a field to its content where field-sizing is missing, and never clips it", () => {
     vi.stubGlobal("CSS", { supports: () => false })
     const heights = vi
       .spyOn(HTMLTextAreaElement.prototype, "scrollHeight", "get")
       .mockReturnValue(48)
     render(<LetterSheet letter={{ markdown: "tall" }} mode="edit" />)
     expect(field("Paragraph 1").style.height).toBe("48px")
-    // Never clip: the fitted field scrolls if it is later outgrown.
     expect(field("Paragraph 1").style.overflowY).toBe("auto")
     heights.mockRestore()
   })

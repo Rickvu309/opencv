@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
 } from "react"
 import {
-  compactLetterDocument,
+  withoutBlankParts,
   type LetterDocument,
   type LetterPart,
 } from "@workspace/domain"
@@ -15,7 +15,7 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import "./design/letter-sheet.pen.css"
 import {
   editParagraph,
-  mergeParagraph,
+  mergeWithPrevious,
   paragraphsOf,
   saveBody,
   splitParagraph,
@@ -75,8 +75,7 @@ function fieldSizingSupported() {
   )
 }
 
-/** The kit Textarea, grown to its content where field-sizing is missing. */
-function SheetField({ ref, ...props }: ComponentProps<typeof Textarea>) {
+function AutoFitTextarea({ ref, ...props }: ComponentProps<typeof Textarea>) {
   const node = useRef<HTMLTextAreaElement | null>(null)
   useLayoutEffect(() => {
     const element = node.current
@@ -88,8 +87,6 @@ function SheetField({ ref, ...props }: ComponentProps<typeof Textarea>) {
       if (element.scrollHeight > 0)
         element.style.height = `${element.scrollHeight}px`
     }
-    // Where the browser cannot size the field, never hide the last lines: the
-    // field scrolls if a rewrap or a late font load outgrows the fitted height.
     element.style.overflowY = "auto"
     fit()
     const observer =
@@ -124,7 +121,7 @@ function oneLine(value: string) {
 }
 
 function ReadSheet({ letter }: { letter: LetterDocument }) {
-  const shown = compactLetterDocument(letter)
+  const shown = withoutBlankParts(letter)
   const paragraphs =
     shown.markdown.trim() === "" ? [] : paragraphsOf(shown.markdown)
   const part = (name: LetterPart) =>
@@ -153,9 +150,7 @@ const viewOf = (markdown: string): SheetView => ({
   known: markdown,
 })
 
-/** The view replaces itself: an edit gives the paragraphs and their string,
- * and a body changed from outside gives them read from the string. */
-const viewReducer = (_view: SheetView, next: SheetView) => next
+const replaceView = (_view: SheetView, next: SheetView) => next
 
 function EditSheet({
   letter,
@@ -169,13 +164,11 @@ function EditSheet({
   const parts = useRef<Partial<Record<LetterPart, HTMLTextAreaElement | null>>>(
     {}
   )
-  const partCaret = useRef<{ part: LetterPart; offset: number } | null>(null)
+  const caretToRestore = useRef<{ part: LetterPart; offset: number } | null>(
+    null
+  )
   const softBreak = useRef(false)
-  // The paragraphs on screen are the source of truth while editing. The body
-  // string is derived from them, so a line break at a paragraph's end stays
-  // where the writer typed it. They are read again from the string only when
-  // it changed from outside (a reload, the keyword card).
-  const [view, setView] = useReducer(viewReducer, letter.markdown, viewOf)
+  const [view, setView] = useReducer(replaceView, letter.markdown, viewOf)
   let current = view
   if (letter.markdown !== view.known) {
     current = viewOf(letter.markdown)
@@ -184,11 +177,9 @@ function EditSheet({
   const paragraphs = current.paragraphs
 
   useLayoutEffect(() => {
-    // A pasted line break in a one-line part becomes a space; keep the caret
-    // where the text went in instead of letting the controlled value reset it.
-    const kept = partCaret.current
+    const kept = caretToRestore.current
     if (kept) {
-      partCaret.current = null
+      caretToRestore.current = null
       const field = parts.current[kept.part]
       if (field && document.activeElement === field)
         field.setSelectionRange(kept.offset, kept.offset)
@@ -217,8 +208,6 @@ function EditSheet({
     const element = event.currentTarget
     const start = element.selectionStart
     const end = element.selectionEnd
-    // Shift+Enter is the browser's own line break, in every position. The
-    // change it causes is flagged so that it never reads as a paragraph break.
     softBreak.current = event.key === "Enter" && event.shiftKey
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
@@ -238,13 +227,13 @@ function EditSheet({
       merge = index + 1
     if (merge === null) return
     event.preventDefault()
-    apply(mergeParagraph(paragraphs, merge))
+    apply(mergeWithPrevious(paragraphs, merge))
   }
 
   const part = (name: LetterPart) => {
     const field = PART_FIELDS[name]
     return (
-      <SheetField
+      <AutoFitTextarea
         key={name}
         ref={(element) => {
           parts.current[name] = element
@@ -257,7 +246,7 @@ function EditSheet({
           const raw = event.target.value
           const value = field.multiline ? raw : oneLine(raw)
           if (value !== raw)
-            partCaret.current = {
+            caretToRestore.current = {
               part: name,
               offset: event.target.selectionStart,
             }
@@ -275,7 +264,7 @@ function EditSheet({
     <div data-pen-surface="paper" data-slot="letter-sheet" data-mode="edit">
       {BEFORE_BODY.map(part)}
       {paragraphs.map((text, index) => (
-        <SheetField
+        <AutoFitTextarea
           key={index}
           ref={(element) => {
             fields.current[index] = element
@@ -307,10 +296,6 @@ function EditSheet({
   )
 }
 
-/**
- * One letter sheet for every surface. Read mode shows the filled parts and the
- * body paragraphs. Edit mode adds a field per part and per paragraph.
- */
 export function LetterSheet({ letter, mode, onChange }: LetterSheetProps) {
   if (mode === "read") return <ReadSheet letter={letter} />
   return <EditSheet letter={letter} onChange={onChange} />

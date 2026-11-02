@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef } from "react"
 import {
-  compactLetterDocument,
+  withoutBlankParts,
   keywordGap,
   type JobView,
   type LetterDocument,
@@ -31,7 +31,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useRunCommand } from "@/lib/contract-client.ts"
 import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
-import { letterOf } from "./letter-sheet-model.ts"
+import { readStoredLetter } from "./letter-sheet-model.ts"
 import { getPaper, paperGetKey } from "./paper-api.ts"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
@@ -45,8 +45,8 @@ export { PaperLetterStart } from "./paper-letter-start.tsx"
 
 function sameLetter(a: LetterDocument, b: LetterDocument) {
   return (
-    JSON.stringify(compactLetterDocument(a)) ===
-    JSON.stringify(compactLetterDocument(b))
+    JSON.stringify(withoutBlankParts(a)) ===
+    JSON.stringify(withoutBlankParts(b))
   )
 }
 
@@ -67,7 +67,7 @@ export function PaperLetterEditor({
   const inputCountRef = useRef(0)
   const [{ letter, updatedAt, hiddenGap, conflict, printJob }, dispatch] =
     useReducer(letterReducer, {
-      letter: letterOf(doc.document),
+      letter: readStoredLetter(doc.document),
       updatedAt: doc.updatedAt,
       hiddenGap: false,
       conflict: false,
@@ -77,7 +77,7 @@ export function PaperLetterEditor({
     usePaperAutosave<LetterDocument>({
       docId: doc.id,
       initialVersion: doc.contentVersion,
-      toDocument: compactLetterDocument,
+      toDocument: withoutBlankParts,
       readInputEpoch: () => inputCountRef.current,
       onSaved: (saved, inputEpoch) => {
         if (inputEpoch === inputCountRef.current) dirtyRef.current = false
@@ -109,7 +109,7 @@ export function PaperLetterEditor({
 
   useEffect(() => {
     if (dirtyRef.current) return
-    const next = letterOf(doc.document)
+    const next = readStoredLetter(doc.document)
     // A reload can be newer than the query prop. Leave that text on screen.
     if (doc.contentVersion < versionRef.current) return
     if (doc.contentVersion === versionRef.current && sameLetter(next, letter))
@@ -133,7 +133,7 @@ export function PaperLetterEditor({
       queryClient.setQueryData(paperGetKey(doc.id), next)
       dispatch({
         type: "letter_reloaded",
-        letter: letterOf(next.document),
+        letter: readStoredLetter(next.document),
         updatedAt: next.updatedAt,
       })
     } catch (error) {
@@ -257,7 +257,7 @@ export function PaperLetterEditor({
         <PaperPrintSheet
           name={doc.name}
           kind="letter"
-          source={compactLetterDocument(letter)}
+          source={withoutBlankParts(letter)}
           templateId={null}
         />
       ) : null}

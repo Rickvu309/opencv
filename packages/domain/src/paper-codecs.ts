@@ -74,10 +74,6 @@ export const cvDocumentV1Schema = z
   })
   .strict()
 
-/**
- * `markdown` holds the letter body as plain text, paragraphs separated by a
- * blank line. The other parts are optional and written only when filled.
- */
 export const letterDocumentV1Schema = z
   .object({
     markdown: z.string(),
@@ -178,8 +174,7 @@ export const LETTER_PARTS = [
 
 export type LetterPart = (typeof LETTER_PARTS)[number]
 
-/** The letter as a writer saves it: empty or blank parts are left out. */
-export function compactLetterDocument(letter: LetterDocument): LetterDocument {
+export function withoutBlankParts(letter: LetterDocument): LetterDocument {
   const next: LetterDocument = { markdown: letter.markdown }
   for (const part of LETTER_PARTS) {
     const value = letter[part]

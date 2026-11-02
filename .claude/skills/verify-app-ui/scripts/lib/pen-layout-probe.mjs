@@ -193,8 +193,6 @@ function probe(args) {
           : 0)
     return { left, top, right: left + width, bottom: top + line }
   }
-  // A textarea whose value has line breaks (an address block) is also offered
-  // line by line, so each pen line finds its own row of the field.
   if (args.mode === "app")
     for (const field of scopes.flatMap((scope) => [
       ...scope.querySelectorAll("input, textarea"),
