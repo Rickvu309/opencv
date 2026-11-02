@@ -56,6 +56,7 @@ Tests that hold this shape:
 - `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included. Explain with a better name or a test. `scripts/no-comments.baseline.json` lists the old ones and only shrinks; lower it with `node scripts/no-comments.mjs --write-baseline`.
 - `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock. `apps/web/src/test/setup.ts` calls `pinTestClock` before every test, so fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts` and never to the real date.
 - `scripts/browser-launcher.test.mjs` rejects a browser started outside a `cdp.mjs` launcher, and a launcher that leaves Chrome or one of its children running after a failed launch (a fake Chrome stands in for the real one).
+- `scripts/layout-comparison-gates.test.mjs` rejects a verify driver that calls `comparePenLayout` and never reads its `mismatches`, so a wrong layout cannot report PASS. A `PENDING` entry with an issue and an expiry date lists a known exception.
 
 ### Git
 
