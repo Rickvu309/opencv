@@ -1,16 +1,28 @@
 {
   "module": "turn-steps.ts",
   "mutants": {
-    "release": 13
+    "release": 13,
+    "crash": 13
   },
   "actions": {
+    "atRest": "finishCoachUsage",
+    "startAny": "openCoachUsage",
     "startTurn": "openCoachUsage",
     "stopTurn": "trackChatTurn",
+    "disconnect": "trackChatTurn",
+    "abortEnd": "createTurnEffects",
     "toolExecute": "createTurnEffects",
     "registryCommit": "createTurnEffects",
     "recordPart": "createTurnEffects",
+    "modelFinish": "createTurnEffects",
+    "providerFail": "createTurnEffects",
     "insertCoachMessageRead": "insertCoachMessage",
     "insertCoachMessage": "insertCoachMessage",
-    "finishCoachUsage": "finishCoachUsage"
+    "insertFails": "insertCoachMessage",
+    "finishCoachUsage": "finishCoachUsage",
+    "maybeTitle": "insertCoachMessage",
+    "crash": "openCoachUsage",
+    "leaseExpire": "openCoachUsage",
+    "recoverOrphan": "saveRepliesForUnsavedTurns"
   }
 }

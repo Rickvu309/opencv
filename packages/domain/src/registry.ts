@@ -14,17 +14,23 @@ export type CoachActor = {
   type: "coach"
   userId: UserId
   chatId: ChatId
+  turnId?: string
 }
 
 export function personActor(userId: string): PersonActor {
   return { type: "person", userId: parseUserId(userId) }
 }
 
-export function coachActor(userId: string, chatId: string): CoachActor {
+export function coachActor(
+  userId: string,
+  chatId: string,
+  turnId?: string
+): CoachActor {
   return {
     type: "coach",
     userId: parseUserId(userId),
     chatId: parseChatId(chatId),
+    ...(turnId ? { turnId } : {}),
   }
 }
 

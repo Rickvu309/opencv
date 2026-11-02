@@ -429,10 +429,16 @@ export const pendingActions = opencvApp.table(
       .$type<"pending" | "approved" | "denied" | "expired">()
       .notNull()
       .default("pending"),
+    turnId: uuid("turn_id").references(() => coachUsage.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [
     index("pending_actions_user_id_idx").on(table.userId, table.status),
+    index("pending_actions_turn_id_idx")
+      .on(table.turnId)
+      .where(sql`${table.turnId} is not null`),
   ]
 )
 
@@ -455,8 +461,14 @@ export const activity = opencvApp.table(
     reversalInput: jsonb("reversal_input"),
     undoneAt: timestamptz("undone_at"),
     idempotencyKey: text("idempotency_key"),
+    turnId: uuid("turn_id").references(() => coachUsage.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => [
+    index("activity_turn_id_idx")
+      .on(table.turnId)
+      .where(sql`${table.turnId} is not null`),
     index("activity_user_subject_idx").on(
       table.userId,
       table.subjectKind,

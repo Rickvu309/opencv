@@ -20,6 +20,7 @@ import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
 import { receiptDetail, reversalOf } from "./receipt.js"
+import { readTurnReceipts, replay, replayStored } from "./turn-receipts.js"
 
 const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
@@ -108,8 +109,6 @@ export type ExecuteResult = {
   detail?: unknown
 }
 
-type ActivityRow = typeof activity.$inferSelect
-
 function zodMessage(error: { issues: { message: string }[] }) {
   return error.issues[0]?.message ?? "Invalid input"
 }
@@ -127,7 +126,7 @@ function parseInput<T>(schema: ZodType<T>, raw: unknown): T {
 
 function brandedActor(actor: Actor): Actor {
   return actor.type === "coach"
-    ? coachActor(actor.userId, actor.chatId)
+    ? coachActor(actor.userId, actor.chatId, actor.turnId)
     : personActor(actor.userId)
 }
 
@@ -326,15 +325,18 @@ export class Registry {
       ) {
         const id = createId()
         const summary = command.step(parsed)
-        await getDb().insert(pendingActions).values({
-          id,
-          userId: actor.userId,
-          chatId: actor.chatId,
-          command: command.name,
-          input: parsed,
-          summary,
-          status: "pending",
-        })
+        await getDb()
+          .insert(pendingActions)
+          .values({
+            id,
+            userId: actor.userId,
+            chatId: actor.chatId,
+            turnId: actor.turnId ?? null,
+            command: command.name,
+            input: parsed,
+            summary,
+            status: "pending",
+          })
         return {
           pending: true,
           pendingActionId: id,
@@ -365,6 +367,7 @@ export class Registry {
               reversalCommand: ran.reversal?.command ?? null,
               reversalInput: ran.reversal?.input ?? null,
               idempotencyKey: idempotencyKey ?? null,
+              turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
             })
         } catch (error) {
           if (!idempotencyKey || !isUniqueViolation(error)) throw error
@@ -424,6 +427,10 @@ export class Registry {
       }
     }
     return query.read(input, branded)
+  }
+
+  turnReceipts(userId: string, turnIds: string[]) {
+    return readTurnReceipts(userId, turnIds)
   }
 
   async confirmations(userId: string, chatId: string) {
@@ -660,28 +667,6 @@ export class Registry {
       .where(and(eq(idempotency.userId, userId), eq(idempotency.key, key)))
       .limit(1)
     return rows[0] ?? null
-  }
-}
-
-function replay(row: ActivityRow): ExecuteResult {
-  return {
-    pending: false,
-    output: row.result,
-    activityId: row.id,
-    reversal: row.reversalCommand
-      ? { command: row.reversalCommand, input: row.reversalInput }
-      : null,
-    detail: row.detail,
-    summary: row.summary,
-  }
-}
-
-function replayStored(result: unknown): ExecuteResult {
-  return {
-    pending: false,
-    output: result,
-    activityId: null,
-    reversal: null,
   }
 }
 

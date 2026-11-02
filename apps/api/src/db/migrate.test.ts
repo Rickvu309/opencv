@@ -66,6 +66,7 @@ describe("opencv_app migrations", () => {
       "0003_paper_favorites",
       "0004_paper_crdt_log",
       "0005_paper_edit_based_on",
+      "0006_coach_turn_receipts",
     ])
     const sqlFiles = readdirSync(migrationsFolder).filter((name) =>
       name.endsWith(".sql")
@@ -77,6 +78,7 @@ describe("opencv_app migrations", () => {
       "0003_paper_favorites.sql",
       "0004_paper_crdt_log.sql",
       "0005_paper_edit_based_on.sql",
+      "0006_coach_turn_receipts.sql",
     ])
     const source = readFileSync(
       path.join(migrationsFolder, "0000_opencv_app.sql"),
