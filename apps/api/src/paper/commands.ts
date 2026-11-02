@@ -4,6 +4,7 @@ import {
   isCvDocument,
   keywordGap,
   paperContract,
+  type PaperDocument,
   type PaperId,
 } from "@workspace/domain"
 
@@ -48,7 +49,7 @@ function restoring(
   output: {
     contentVersion: number
     previousDocument: unknown
-    previousPaper?: unknown
+    previousPaper?: PaperDocument
   }
 ) {
   if (output.previousPaper === undefined) {

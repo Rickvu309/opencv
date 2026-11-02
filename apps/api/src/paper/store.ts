@@ -245,7 +245,7 @@ export async function restorePaper(
     docId: PaperId
     contentVersion: number
     document: unknown
-    paper: unknown
+    paper: PaperDocument
   }
 ) {
   return withContent(actor.userId, input.docId, async (content) => {
@@ -255,7 +255,7 @@ export async function restorePaper(
     }
     const written = await content.edit({
       origin: "person",
-      target: input.paper as PaperDocument,
+      target: input.paper,
       witness: input.document,
     })
     return {

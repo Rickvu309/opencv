@@ -190,7 +190,9 @@ export const paperContract = commandContract({
   "paper.restore": commandEntry({
     description:
       "Put back an earlier version of a document when the version matches.",
-    input: paperReplaceInputSchema.extend({ paper: z.unknown() }).strict(),
+    input: paperReplaceInputSchema
+      .extend({ paper: paperDocumentSchema })
+      .strict(),
     output: paperViewSchema
       .extend({ previousDocument, previousPaper })
       .strict(),
