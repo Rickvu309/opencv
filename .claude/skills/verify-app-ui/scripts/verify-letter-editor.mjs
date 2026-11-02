@@ -262,12 +262,12 @@ try {
     )
     const typed = markdown + "\nMy newest sentence."
     await page.evaluate(
-      `(() => {const n=document.querySelector('[aria-label="Letter text"]');n.textContent=${JSON.stringify(typed)};n.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:'My newest sentence.'}));})()`
+      `(() => {const all=[...document.querySelectorAll('textarea[aria-label^="Paragraph "]')];const n=all[all.length-1];const set=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;set.call(n,${JSON.stringify(typed.slice(typed.lastIndexOf("\n\n") + 2))});n.dispatchEvent(new Event('input',{bubbles:true}));})()`
     )
     await click(page, "Add to letter")
     await state(
       page,
-      `!document.querySelector('[aria-label="Letter suggestion"]') && document.querySelector('[aria-label="Letter text"]').textContent.endsWith('\\nMeta')`,
+      `!document.querySelector('[aria-label="Letter suggestion"]') && ([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).endsWith('\\nMeta')`,
       `${width}: keyword appends to newest text`
     )
     await state(
@@ -285,12 +285,12 @@ try {
     await page.goto(`${web}/paper/${doc.id}`)
     await state(
       page,
-      `document.querySelector('[aria-label="Letter text"]')?.textContent.endsWith('\\nMeta')`,
+      `([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).endsWith('\\nMeta')`,
       `${width}: reload retains keyword`
     )
     check(
       await page.evaluate(
-        `document.querySelector('[aria-label="Letter text"]').textContent.includes('My newest sentence.')`
+        `([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).includes('My newest sentence.')`
       ),
       `${width}: reload retains newest edit`
     )
