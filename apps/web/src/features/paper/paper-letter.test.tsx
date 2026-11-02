@@ -293,11 +293,50 @@ describe("Cover letter", () => {
         onBack={() => undefined}
       />
     )
-    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
+    fireEvent.click(screen.getByRole("button", { name: "More" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Download PDF" })
+    )
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps Download PDF in the More menu and not in the header", () => {
+    vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
+    render(
+      <PaperLetterEditor doc={letter} job={job} onBack={() => undefined} />
+    )
+    expect(
+      screen.queryByRole("button", { name: "Download PDF" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "More" })).toBeInTheDocument()
+  })
+
+  it("copies the share link from the link button and says so", async () => {
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      calls.push(String(input))
+      return Promise.resolve(ok({ token: "tok-123" }))
+    })
+    const writeText = vi.fn(() => Promise.resolve())
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
+    render(
+      <PaperLetterEditor doc={letter} job={job} onBack={() => undefined} />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Copy share link" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(calls.some((url) => url.includes("paper.share"))).toBe(true)
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(String((writeText.mock.calls[0] as unknown[])[0])).toContain(
+      "tok-123"
+    )
   })
 
   it("prints once in strict mode and unmounts the letter sheet", async () => {
@@ -313,7 +352,10 @@ describe("Cover letter", () => {
         />
       </StrictMode>
     )
-    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
+    fireEvent.click(screen.getByRole("button", { name: "More" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Download PDF" })
+    )
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 30))
     })

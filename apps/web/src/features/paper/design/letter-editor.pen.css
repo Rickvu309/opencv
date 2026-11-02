@@ -55,3 +55,20 @@
 [data-pen-surface="paper"] [data-slot="letter-editor-skip"] {
   color: #59595b;
 }
+
+[data-pen-surface="paper"] [data-slot="letter-editor-connector"] {
+  background: #cfcfd2;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-anchor"] {
+  background: #e8542a;
+  border-color: #ffffff;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-header"] .lucide-mail {
+  color: #3c3c40;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-more"] {
+  color: #3c3c40;
+}
+[data-pen-surface="paper"] [data-slot="letter-editor-link"] {
+  color: #6b6b70;
+}

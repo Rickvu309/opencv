@@ -19,7 +19,7 @@ export const PaperLetterArticle = memo(function PaperLetterArticle({
     <article
       aria-label={doc.name}
       data-slot="letter-editor-sheet"
-      className="w-full max-w-[560px] shrink-0 rounded-[2px]"
+      className="w-full max-w-[560px] shrink-0 rounded-[2px] @min-[876px]:-translate-x-[142px] @min-[1128px]:translate-x-0"
     >
       <div
         data-paper-section="letter"

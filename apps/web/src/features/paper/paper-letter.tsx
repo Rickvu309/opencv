@@ -8,12 +8,28 @@ import {
 } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { toast } from "@workspace/ui/components/sonner"
 
-import { ChevronRight, MessageCircle, X } from "lucide-react"
+import {
+  ChevronRight,
+  Ellipsis,
+  Link as LinkIcon,
+  Mail,
+  MessageCircle,
+  X,
+} from "lucide-react"
 
 import "./design/letter-editor.pen.css"
 import { useQueryClient } from "@tanstack/react-query"
+
+import { useRunCommand } from "@/lib/contract-client.ts"
+import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
 import { letterOf } from "./letter-sheet-model.ts"
 import { getPaper, paperGetKey } from "./paper-api.ts"
@@ -46,6 +62,7 @@ export function PaperLetterEditor({
   onBack: () => void
 }) {
   const queryClient = useQueryClient()
+  const run = useRunCommand()
   const dirtyRef = useRef(false)
   const inputCountRef = useRef(0)
   const [{ letter, updatedAt, hiddenGap, conflict, printJob }, dispatch] =
@@ -128,6 +145,20 @@ export function PaperLetterEditor({
     }
   }
 
+  async function copyLink() {
+    try {
+      const { token } = await run("paper.share", { docId: doc.id })
+      await navigator.clipboard.writeText(publicShareUrl(token))
+      toast("Link copied")
+    } catch (error) {
+      toast(
+        error instanceof Error
+          ? error.message
+          : "Could not copy the link. Try again."
+      )
+    }
+  }
+
   function addKeyword() {
     if (!gap || conflict) return
     const next: LetterDocument = {
@@ -148,7 +179,7 @@ export function PaperLetterEditor({
       aria-label={`Editing ${doc.name}`}
       data-pen-surface="paper"
       data-slot="letter-editor-page"
-      className="flex min-w-0 flex-1 flex-col"
+      className="flex h-full min-h-0 min-w-0 flex-1 flex-col"
     >
       <header
         data-slot="letter-editor-header"
@@ -170,24 +201,57 @@ export function PaperLetterEditor({
           <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="shrink-0">Cover letters</span>
           <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
-          <span aria-current="page" className="truncate">
-            {doc.name}
+          <span
+            aria-current="page"
+            className="flex min-w-0 items-center gap-1.5"
+          >
+            <Mail className="size-[15px] shrink-0" aria-hidden="true" />
+            <span className="truncate">{doc.name}</span>
           </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  data-slot="letter-editor-more"
+                  variant="ghost"
+                  size="icon"
+                  className="size-[26px] shrink-0 rounded-[6px]"
+                  aria-label="More"
+                >
+                  <Ellipsis className="size-4" aria-hidden="true" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() =>
+                  dispatch({ type: "print_requested", title: doc.name })
+                }
+              >
+                Download PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
-        <p
-          data-slot="letter-editor-edited"
-          className="flex-1 text-[13.5px] leading-4 md:flex-none"
-        >
-          {editorEditedLabel(updatedAt)}
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-8 text-[12px]"
-          onClick={() => dispatch({ type: "print_requested", title: doc.name })}
-        >
-          Download PDF
-        </Button>
+        <div className="flex flex-1 items-center gap-1 md:flex-none">
+          <p
+            data-slot="letter-editor-edited"
+            className="flex h-7 flex-1 items-center rounded-[7px] px-2 text-[13.5px] leading-4 md:flex-none"
+          >
+            {editorEditedLabel(updatedAt)}
+          </p>
+          <Button
+            type="button"
+            data-slot="letter-editor-link"
+            variant="ghost"
+            className="h-7 w-[30px] shrink-0 rounded-[7px] p-0"
+            aria-label="Copy share link"
+            onClick={() => void copyLink()}
+          >
+            <LinkIcon className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
       </header>
       {printJob ? (
         <PaperPrintSheet
@@ -202,13 +266,13 @@ export function PaperLetterEditor({
       ) : null}
       <div
         data-slot="letter-editor-desk"
-        className="@container relative flex min-w-0 flex-1 flex-col items-center gap-4 overflow-auto px-4 pt-6 pb-6"
+        className="@container relative flex min-h-0 min-w-0 flex-1 flex-col items-center gap-4 overflow-auto px-4 pt-6 pb-6"
       >
         {gap ? (
           <aside
             data-slot="letter-editor-suggestion"
             aria-label="Letter suggestion"
-            className="flex w-full max-w-[260px] flex-col gap-1.5 rounded-xl border pt-2.5 pr-2.5 pb-3 pl-3.5 @min-[1140px]:absolute @min-[1140px]:[inset-inline-end:30px] @min-[1140px]:[inset-block-start:368px]"
+            className="flex w-full max-w-[560px] flex-col gap-1.5 rounded-[12px] border pt-2.5 pr-2.5 pb-3 pl-3.5 @min-[876px]:absolute @min-[876px]:[inset-inline-start:calc(50%+162px)] @min-[876px]:max-w-[260px] @min-[876px]:[inset-block-start:368px] @min-[1128px]:[inset-inline-start:calc(50%+304px)]"
           >
             <div className="flex items-center gap-2">
               <MessageCircle className="size-3.5 shrink-0" aria-hidden="true" />
@@ -219,7 +283,7 @@ export function PaperLetterEditor({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-6 shrink-0"
+                className="size-6 shrink-0 rounded-[6px]"
                 aria-label="Dismiss suggestion"
                 onClick={() => dispatch({ type: "gap_dismissed" })}
               >
@@ -236,7 +300,7 @@ export function PaperLetterEditor({
               <Button
                 type="button"
                 variant="glow"
-                className="h-7 rounded-lg px-2.5 text-[12px] font-semibold"
+                className="h-7 rounded-[7px] px-2.5 text-[12px] font-semibold"
                 disabled={conflict}
                 onClick={addKeyword}
               >
@@ -246,13 +310,27 @@ export function PaperLetterEditor({
                 type="button"
                 data-slot="letter-editor-skip"
                 variant="ghost"
-                className="h-7 rounded-lg px-2.5 text-[12px] font-medium"
+                className="h-7 rounded-[7px] px-2.5 text-[12px] font-medium"
                 onClick={() => dispatch({ type: "gap_dismissed" })}
               >
                 Skip
               </Button>
             </div>
           </aside>
+        ) : null}
+        {gap ? (
+          <>
+            <span
+              aria-hidden="true"
+              data-slot="letter-editor-connector"
+              className="absolute [inset-inline-start:calc(50%+140px)] hidden h-px w-[22px] [inset-block-start:390px] @min-[876px]:block @min-[1128px]:[inset-inline-start:calc(50%+282px)]"
+            />
+            <span
+              aria-hidden="true"
+              data-slot="letter-editor-anchor"
+              className="absolute [inset-inline-start:calc(50%+135px)] hidden size-[7px] rounded-full border-[1.5px] [inset-block-start:387px] @min-[876px]:block @min-[1128px]:[inset-inline-start:calc(50%+277px)]"
+            />
+          </>
         ) : null}
         <PaperLetterArticle
           doc={doc}
