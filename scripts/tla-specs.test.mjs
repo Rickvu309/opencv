@@ -21,6 +21,7 @@ import {
   exportedNames,
   expectedMutantExit,
   nextActions,
+  packageResolver,
   specProblems,
 } from "./lib/tla-specs.mjs"
 
@@ -193,6 +194,80 @@ test("a map whose module is missing or whose shape is wrong is a problem", () =>
   assert.match(problemsOf(notJson)[0], /not valid JSON/)
 })
 
+const PACKAGE_MAP = (extra = {}) =>
+  JSON.stringify({
+    module: "lib-x/dist/steps.mjs",
+    version: "1.2.3",
+    actions: { Step: "step" },
+    ...extra,
+  })
+
+const packageSpec = (map = PACKAGE_MAP()) => ({
+  ...without(complete(), "a/spec.mjs"),
+  "a/Spec.tla.json": map,
+})
+
+const installedAs =
+  (version, text = MODULE) =>
+  (dir, specifier) => {
+    assert.equal(dir, "a")
+    assert.equal(specifier, "lib-x/dist/steps.mjs")
+    return { version, text }
+  }
+
+const packageProblems = (files, installed) =>
+  specProblems(Object.keys(files), (path) => files[path], installed)
+
+test("a map may point at a file in an installed package at the pinned version", () => {
+  assert.deepEqual(packageProblems(packageSpec(), installedAs("1.2.3")), [])
+})
+
+test("a package file that does not export the function is a problem", () => {
+  const problems = packageProblems(
+    packageSpec(),
+    installedAs("1.2.3", "export function other() {}\n")
+  )
+  assert.match(
+    problems[0],
+    /Step names step, which lib-x\/dist\/steps\.mjs does not export/
+  )
+})
+
+test("an installed version that differs from the pinned one is a problem", () => {
+  const problems = packageProblems(packageSpec(), installedAs("1.3.0"))
+  assert.match(problems[0], /pinned to 1\.2\.3 but 1\.3\.0 is installed/)
+})
+
+test("a package that is not installed or a file it lacks is a problem", () => {
+  assert.match(
+    packageProblems(packageSpec(), () => null)[0],
+    /package of lib-x\/dist\/steps\.mjs not installed/
+  )
+  assert.match(
+    packageProblems(packageSpec(), () => ({ version: "1.2.3", text: null }))[0],
+    /module lib-x\/dist\/steps\.mjs not found/
+  )
+})
+
+test("the resolver walks up node_modules from the spec folder and reads the version", (t) => {
+  const repo = tempDir(t, "tla-pkg-")
+  const pkg = join(repo, "node_modules", "@scope", "lib-x")
+  mkdirSync(join(pkg, "dist"), { recursive: true })
+  mkdirSync(join(repo, "a", "b"), { recursive: true })
+  writeFileSync(join(pkg, "package.json"), '{"version":"4.5.6"}')
+  writeFileSync(join(pkg, "dist", "steps.mjs"), MODULE)
+  const resolve = packageResolver(repo)
+  assert.deepEqual(resolve("a/b", "@scope/lib-x/dist/steps.mjs"), {
+    version: "4.5.6",
+    text: MODULE,
+  })
+  assert.deepEqual(resolve("a/b", "@scope/lib-x/dist/none.mjs"), {
+    version: "4.5.6",
+    text: null,
+  })
+  assert.equal(resolve("a/b", "other/dist/steps.mjs"), null)
+})
+
 test("exports are read from declarations, lists and typescript", () => {
   const names = exportedNames(
     [
@@ -212,7 +287,11 @@ test("exports are read from declarations, lists and typescript", () => {
 const UNMAPPED_ACTIONS = / is an action of Next but has no entry in /
 
 const repoProblems = () =>
-  specProblems(tracked(), (path) => readFileSync(join(root, path), "utf8"))
+  specProblems(
+    tracked(),
+    (path) => readFileSync(join(root, path), "utf8"),
+    packageResolver(root)
+  )
 
 test("every spec in the repo is complete", () => {
   assert.ok(tracked().some((file) => file.endsWith(".tla")))

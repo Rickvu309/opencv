@@ -47,15 +47,16 @@ Real Postgres: use the recipe in `verify-command-registry` (embedded-postgres in
 FORMAL_DATABASE_URL=postgres://postgres@127.0.0.1:54329/postgres pnpm --filter api test:formal
 ```
 
-The TLA+ model (Java and the TLC jar are installed under `~/.local`; a TLC runner script wraps this once the toolchain unit lands):
+The TLA+ model (Java and the TLC jar are installed under `~/.local`; `scripts/tlc.mjs` finds them and writes `tlc.out`):
 
 ```bash
-cd apps/api/src
-~/.local/jdk/bin/java -cp ~/.local/tla/tla2tools.jar tlc2.TLC -workers 1 -config AuthOtp.cfg AuthOtp.tla
-~/.local/jdk/bin/java -cp ~/.local/tla/tla2tools.jar tlc2.TLC -workers 1 -config AuthOtp.mutant.cfg AuthOtp.tla
+node scripts/tlc.mjs apps/api/src/AuthOtp.tla
+node scripts/tlc.mjs apps/api/src/AuthOtp.tla --mutant
 ```
 
-Run TLC from a scratch copy of the three files, because it writes a `states` folder next to where you run it. The first command must print `No error has been found` (115 distinct states). The second, `AuthOtp.mutant.cfg`, must fail with `Invariant A1 is violated` (exit 12). Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
+The first must exit 0 and print `No error has been found` in `tlc.out` (115 distinct states). The second runs `AuthOtp.mutant.cfg` and must exit 12 with `Invariant A1 is violated`. Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
+
+`apps/api/src/AuthOtp.tla.json` maps the spec's actions to `checkVerificationOTP` in `better-auth/dist/plugins/email-otp/routes.mjs`, pinned by `"version": "1.7.14"`. `node --test scripts/tla-specs.test.mjs` fails when the installed better-auth version differs, so an upgrade forces the harness and the model to be rechecked, and then `"version"` to be moved.
 
 ## Tests
 
@@ -120,15 +121,15 @@ The failing message names the scenario: `check N=16 seed=241 backend=pglite eval
 | Item                                                            | Where                                                                                     |
 | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `emailOTP` options (`allowedAttempts`, `expiresIn`, `storeOTP`) | `apps/api/src/auth.ts` lines 72-80                                                        |
-| auth mount and the block                                        | `apps/api/src/app.ts` lines 157-163                                                       |
+| auth mount and the guard                                        | `apps/api/src/app.ts` (`app.use("/api/auth/*")`)                                          |
 | served route lists                                              | `apps/api/src/auth-routes.ts`                                                             |
 | `checkVerificationOTP` (read, compare, write back)              | better-auth 1.7.14 dist/plugins/email-otp/routes.mjs lines 222-263, read only             |
 | `signInEmailOTP`, `atomicVerifyOTP`                             | better-auth 1.7.14 dist/plugins/email-otp/routes.mjs lines 386-410 and 770-790, read only |
 | `verifyStoredOTP`, `defaultKeyHasher`                           | better-auth 1.7.14 dist/plugins/email-otp/otp-token.mjs and utils.mjs, read only          |
 
-Check files: `apps/api/src/auth.otp.formal.test.ts`, `apps/api/src/auth-routes.test.ts`, `apps/api/src/AuthOtp.tla`, `AuthOtp.cfg`, `AuthOtp.mutant.cfg`, `AuthOtp.tla.json`. Runner: `apps/api/vitest.formal.config.ts`.
+Check files: `apps/api/src/auth.otp.formal.test.ts`, `apps/api/src/auth-routes.test.ts`, `apps/api/src/AuthOtp.tla`, `AuthOtp.cfg`, `AuthOtp.mutant.cfg`, `AuthOtp.tla.json`. Runners: `apps/api/vitest.formal.config.ts`, `scripts/tlc.mjs`.
 
-Sync commit: `4d674be96d840957100265da3fc30a2af896768e`. This is the trunk commit the check was last confirmed against.
+Sync commit: `42da036ccb608bcc167535b0c87395d6d8eb9c36`. This is the trunk commit the check was last confirmed against.
 
 ## What is not covered
 

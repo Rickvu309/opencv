@@ -1,4 +1,5 @@
-import { dirname, posix } from "node:path"
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join, posix } from "node:path"
 import ts from "typescript"
 
 const MUTANT_SUFFIX = ".mutant.cfg"
@@ -112,7 +113,60 @@ export function nextActions(tlaText) {
   return names
 }
 
-function mapProblems(mapPath, mapText, tlaText, files, read) {
+export function packageResolver(
+  root,
+  { exists = existsSync, readFile = readFileSync } = {}
+) {
+  return (fromDir, specifier) => {
+    const parts = specifier.split("/")
+    const name = parts.slice(0, specifier.startsWith("@") ? 2 : 1).join("/")
+    const inner = parts.slice(name.split("/").length).join("/")
+    let dir = join(root, fromDir)
+    for (;;) {
+      const packageDir = join(dir, "node_modules", name)
+      const manifest = join(packageDir, "package.json")
+      if (exists(manifest)) {
+        const version = JSON.parse(readFile(manifest, "utf8")).version
+        const file = join(packageDir, inner)
+        return {
+          version,
+          text: inner && exists(file) ? readFile(file, "utf8") : null,
+        }
+      }
+      const parent = dirname(dir)
+      if (parent === dir) return null
+      dir = parent
+    }
+  }
+}
+
+function moduleExports(map, mapPath, files, read, installed) {
+  if (map.version === undefined) {
+    const modulePath = posix.join(dirname(mapPath), map.module)
+    return {
+      label: modulePath,
+      problems: [],
+      exports: files.includes(modulePath)
+        ? exportedNames(read(modulePath), modulePath)
+        : null,
+    }
+  }
+  const found = installed(dirname(mapPath), map.module)
+  const problems = []
+  if (!found)
+    problems.push(`${mapPath}: package of ${map.module} not installed`)
+  else if (found.version !== map.version)
+    problems.push(
+      `${mapPath}: ${map.module} is pinned to ${map.version} but ${found.version} is installed; rerun the harness and recheck the spec, then update "version"`
+    )
+  return {
+    label: map.module,
+    problems,
+    exports: found?.text ? exportedNames(found.text, map.module) : null,
+  }
+}
+
+function mapProblems(mapPath, mapText, tlaText, files, read, installed) {
   let map
   try {
     map = JSON.parse(mapText)
@@ -125,7 +179,12 @@ function mapProblems(mapPath, mapText, tlaText, files, read) {
     return [`${mapPath}: needs an "actions" object of Action to function`]
   if (Object.keys(map.actions).length === 0)
     return [`${mapPath}: "actions" is empty; map every action of Next`]
-  const problems = []
+  const {
+    label,
+    exports,
+    problems: found,
+  } = moduleExports(map, mapPath, files, read, installed)
+  const problems = [...found]
   for (const [key, code] of Object.entries(map.mutants ?? {}))
     if (!MUTANT_EXITS.has(code))
       problems.push(
@@ -136,15 +195,12 @@ function mapProblems(mapPath, mapText, tlaText, files, read) {
       problems.push(
         `${mapPath}: ${action} is an action of Next but has no entry in "actions"`
       )
-  const modulePath = posix.join(dirname(mapPath), map.module)
-  const exports = files.includes(modulePath)
-    ? exportedNames(read(modulePath), modulePath)
-    : null
-  if (!exports) problems.push(`${mapPath}: module ${modulePath} not found`)
+  if (!exports && found.length === 0)
+    problems.push(`${mapPath}: module ${label} not found`)
   for (const [action, fn] of Object.entries(map.actions)) {
     if (exports && !exports.has(fn))
       problems.push(
-        `${mapPath}: ${action} names ${fn}, which ${modulePath} does not export; point at the file that defines it, since "export *" is not followed`
+        `${mapPath}: ${action} names ${fn}, which ${label} does not export; point at the file that defines it, since "export *" is not followed`
       )
     if (!definesAction(tlaText, action))
       problems.push(`${mapPath}: ${action} is not defined in the .tla`)
@@ -152,7 +208,7 @@ function mapProblems(mapPath, mapText, tlaText, files, read) {
   return problems
 }
 
-export function specProblems(files, read) {
+export function specProblems(files, read, installed = () => null) {
   const problems = []
   for (const tla of files.filter((file) => file.endsWith(".tla")).sort()) {
     const name = specName(tla)
@@ -165,7 +221,14 @@ export function specProblems(files, read) {
     if (!files.includes(mapPath)) problems.push(`${tla}: no ${mapPath}`)
     else
       problems.push(
-        ...mapProblems(mapPath, read(mapPath), read(tla), files, read)
+        ...mapProblems(
+          mapPath,
+          read(mapPath),
+          read(tla),
+          files,
+          read,
+          installed
+        )
       )
     for (const cfg of configs)
       if (!files.includes(mutantOf(cfg)))
