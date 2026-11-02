@@ -12,6 +12,7 @@ import { useSidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
+import { SidebarExpandContext } from "@/lib/sidebar-expand.tsx"
 import { useShellChats } from "@/features/app-shell/use-shell-chats.ts"
 import {
   CoachPanel,
@@ -206,6 +207,12 @@ export function AppShell({ onSearch }: AppShellProps) {
     </div>
   )
 
+  const collapsedRail = isDesktop && layout.collapsed
+  const sidebarExpand = {
+    collapsed: collapsedRail,
+    expand: layout.expand,
+  }
+
   const nav = (
     <AppSidebar
       onMenuOpenChange={isDesktop ? layout.menuOpenChange : undefined}
@@ -256,16 +263,25 @@ export function AppShell({ onSearch }: AppShellProps) {
       )}
       <div className="flex min-h-0 min-w-0 flex-1">
         {isDesktop ? <SidebarFrame layout={layout}>{nav}</SidebarFrame> : null}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar md:pt-2 md:pr-2">
+        <div
+          data-slot="shell-main"
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar transition-[padding] duration-(--duration-panel) ease-(--ease-panel) motion-reduce:transition-none md:pt-2 md:pr-2",
+            collapsedRail && "md:pl-2",
+            "peer-data-[collapse-preview=true]/frame:md:pl-2"
+          )}
+        >
           <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border">
-            <main
-              id="app-main"
-              tabIndex={-1}
-              hidden={panel.open && panel.mode === "full"}
-              className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit] outline-none"
-            >
-              <Outlet />
-            </main>
+            <SidebarExpandContext value={sidebarExpand}>
+              <main
+                id="app-main"
+                tabIndex={-1}
+                hidden={panel.open && panel.mode === "full"}
+                className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit] outline-none"
+              >
+                <Outlet />
+              </main>
+            </SidebarExpandContext>
             {panelFrame}
           </div>
           <ShellDock

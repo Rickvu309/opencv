@@ -169,7 +169,7 @@ describe("over-drag preview", () => {
     flushFrames()
     expect(frame()).toHaveAttribute("data-collapse-preview", "true")
     expect(frame()).toHaveAttribute("data-state", "open")
-    expect(frame().style.width).toBe("36px")
+    expect(frame().style.width).toBe("0px")
     expect(localStorage.getItem("opencv.sidebar.collapsed")).toBeNull()
     fireEvent.pointerUp(handle, { clientX: 100, pointerId: 1 })
     expect(frame()).toHaveAttribute("data-state", "collapsed")
@@ -246,7 +246,11 @@ describe("a drag that does not end with a pointer up", () => {
 
 describe("focus after collapse and expand", () => {
   function pageMain() {
-    return document.getElementById("app-main")!
+    return (
+      document.querySelector<HTMLElement>(
+        '#app-main [data-slot="sidebar-expand"]'
+      ) ?? document.getElementById("app-main")!
+    )
   }
 
   it("moves focus to the page when Enter on the handle collapses", async () => {
@@ -266,7 +270,7 @@ describe("focus after collapse and expand", () => {
     expect(pageMain()).toHaveFocus()
     await userEvent.keyboard("[[")
     expect(frame()).toHaveAttribute("data-state", "open")
-    expect(pageMain()).toHaveFocus()
+    expect(frame().contains(document.activeElement)).toBe(true)
   })
 
   it("moves focus to the page when a drag collapses the sidebar from the handle", async () => {

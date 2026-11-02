@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { PageHeader } from "@workspace/ui/components/page-header"
+import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { useNotify } from "@/features/coming-soon/notify.ts"
@@ -12,7 +12,7 @@ export function PitchPage() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto bg-background">
-      <PageHeader
+      <WorkspaceHeader
         title={<span className="text-[13.5px]">{soonCopy.pitchPage}</span>}
         className="h-12 bg-background"
       />

@@ -2,6 +2,7 @@ import {
   COLLAPSED_KEY,
   FRAME,
   GUTTER,
+  INSET,
   HANDLE,
   mainLeft,
   peekClosed,
@@ -87,8 +88,8 @@ async function bracketMidDrag({ page, check, tag }) {
   await page.sleep(500)
   check(
     (await rectOf(page, FRAME)).w === GUTTER &&
-      Math.abs((await mainLeft(page)) - GUTTER) <= 1,
-    `${tag} a later [ still leaves the ${GUTTER}px gutter and the page starts after it (frame ${(await rectOf(page, FRAME)).w}, main ${await mainLeft(page)})`
+      Math.abs((await mainLeft(page)) - INSET) <= 1,
+    `${tag} a later [ takes no layout space and the page starts at the ${INSET}px inset (frame ${(await rectOf(page, FRAME)).w}, main ${await mainLeft(page)})`
   )
   await page.key("[")
   await page.sleep(500)
