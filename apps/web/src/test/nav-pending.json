@@ -1,0 +1,35 @@
+[
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/app-shell/app-shell.tsx",
+    "issue": "PR #859",
+    "expires": "2026-11-16"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/app-shell/nav-profile.tsx",
+    "issue": "PR #859",
+    "expires": "2026-11-16"
+  },
+  {
+    "rule": "active-state",
+    "item": "/paper/$docId",
+    "file": "apps/web/src/features/app-shell/app-shell.tsx",
+    "issue": "PR #859",
+    "expires": "2026-11-16"
+  },
+  {
+    "rule": "active-state",
+    "item": "/apply/$jobId",
+    "file": "apps/web/src/features/app-shell/app-shell.tsx",
+    "issue": "PR #859",
+    "expires": "2026-11-16"
+  },
+  {
+    "rule": "count-in-name",
+    "item": "Inbox",
+    "file": "apps/web/src/features/app-shell/app-shell.tsx",
+    "issue": "PR #859",
+    "expires": "2026-11-16"
+  }
+]
