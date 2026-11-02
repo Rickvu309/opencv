@@ -16,7 +16,7 @@ import {
   authEmailFromFromEnv,
   commitShaFromEnv,
   gmailEnabledFromEnv,
-  authRateLimitEnabledFromEnv,
+  sendCodeLimitEnabledFromEnv,
   logAuthMailFromEnv,
   googleClientIdFromEnv,
   googleClientSecretFromEnv,
@@ -90,6 +90,10 @@ const coach =
       )
     : undefined
 
+const sendCodeLimitEnabled = sendCodeLimitEnabledFromEnv(process.env)
+if (!sendCodeLimitEnabled)
+  console.log("sign-in code send limit is off for a local verify run")
+
 const app = createApp({
   webOrigins: webOriginsFromEnv(process.env),
   databaseUrl,
@@ -105,7 +109,7 @@ const app = createApp({
   resendApiKey: resendApiKeyFromEnv(process.env),
   authEmailFrom: authEmailFromFromEnv(process.env),
   logAuthMail: logAuthMailFromEnv(process.env),
-  rateLimitEnabled: authRateLimitEnabledFromEnv(process.env),
+  sendCodeLimitEnabled,
   commitSha: commitShaFromEnv(process.env),
   interpretPostings:
     coachRuntimeMode !== "fake" &&
