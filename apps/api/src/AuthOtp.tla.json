@@ -1,0 +1,8 @@
+{
+  "Start": "checkVerificationOTP",
+  "Read": "checkVerificationOTP",
+  "Compare": "checkVerificationOTP",
+  "Write": "checkVerificationOTP",
+  "Finish": "checkVerificationOTP",
+  "Settled": "checkVerificationOTP"
+}
