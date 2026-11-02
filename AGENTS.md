@@ -59,6 +59,7 @@ Tests that hold this shape:
 - `scripts/layout-comparison-gates.test.mjs` rejects a verify driver that calls `comparePenLayout` and never reads its `mismatches`, so a wrong layout cannot report PASS. A `PENDING` entry with an issue and an expiry date lists a known exception.
 - `scripts/kit-duplicates.test.mjs` rejects `clipboard.writeText` or `execCommand("copy")` in `apps/*` or `packages/*` outside `packages/ui/src/components/copy-button.tsx`; use `CopyButton` or `copyText`.
 - The same guard rejects `animate-spin` in `apps/*`; use the kit `Spinner`. A `pending` entry with a PR and an expiry date lists a caller another PR is migrating.
+- The same guard rejects a hand-built breadcrumb in `apps/*` or `packages/*` outside `packages/ui/src/components/breadcrumb.tsx` (a nav labelled Breadcrumb, or a chevron trail with `aria-current="page"`); use the kit `Breadcrumb`.
 - `scripts/paper-save-keeps-parts.test.mjs` rejects an autosave `toDocument` that returns the markdown alone, which would erase the sender, date and closing parts of a letter on the next keystroke. Its `PENDING` list works like the one above.
 
 ### Git

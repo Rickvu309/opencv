@@ -38,6 +38,27 @@ export const RULES = [
       "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
     ].map((file) => ({ file, issue: "PR #847", expires: "2026-11-09" })),
   },
+  {
+    name: "breadcrumb",
+    scope: /^(?:apps|packages)\//,
+    hit: (source) =>
+      /aria-label\s*=\s*\{?\s*["'`][^"'`]*breadcrumb/i.test(source) ||
+      (/aria-current\s*=\s*["']page["']/.test(source) &&
+        /\bChevronRight(?:Icon)?\b/.test(source)),
+    allowed: ["packages/ui/src/components/breadcrumb.tsx"],
+    use: "Breadcrumb from @workspace/ui/components/breadcrumb instead of a hand-built nav with aria-label Breadcrumb or a crumb trail with aria-current page.",
+    pending: [
+      "apps/web/src/features/apply/apply-job-header.tsx",
+      "apps/web/src/features/paper/paper-editor.tsx",
+      "apps/web/src/features/paper/paper-letter.tsx",
+      "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
+      "apps/web/src/features/paper/paper-letter-start-page.tsx",
+    ].map((file) => ({
+      file,
+      issue: "the kit Breadcrumb change (#845)",
+      expires: "2026-11-09",
+    })),
+  },
 ]
 
 export function offenders(rule, files, read) {
@@ -113,6 +134,26 @@ test("spinner: a spinning icon is caught and the kit Spinner is not", () => {
   )
   assert.ok(byName.spinner.hit('cn("motion-safe:animate-spin")'))
   assert.ok(!byName.spinner.hit("<Spinner />"))
+})
+
+test("breadcrumb: a hand-built nav and a crumb trail are caught", () => {
+  assert.ok(
+    byName.breadcrumb.hit('<nav aria-label="Breadcrumb" className="x">')
+  )
+  assert.ok(byName.breadcrumb.hit("<nav aria-label={'breadcrumbs'}>"))
+  assert.ok(
+    byName.breadcrumb.hit(
+      '<ChevronRight /><span aria-current="page">New cover letter</span>'
+    )
+  )
+})
+
+test("breadcrumb: a nav link that marks the current page is allowed", () => {
+  assert.ok(
+    !byName.breadcrumb.hit('aria-current={current ? "page" : undefined}')
+  )
+  assert.ok(!byName.breadcrumb.hit('<a aria-current="page">Account</a>'))
+  assert.ok(!byName.breadcrumb.hit('<nav aria-label="Settings">'))
 })
 
 test("the scan sees the kit file that is allowed and the files that are pending", () => {
