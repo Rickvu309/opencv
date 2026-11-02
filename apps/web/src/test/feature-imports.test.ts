@@ -73,7 +73,7 @@ function findCycle(graph: Record<string, string[]>): string[] | null {
   return null
 }
 
-describe("feature imports", () => {
+describe("an import between feature folders that FEATURE_IMPORTS does not list is rejected", () => {
   it("lists exactly the folders in features/", () => {
     const folders = readdirSync(featuresDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())

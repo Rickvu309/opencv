@@ -11,7 +11,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 import { CommandError } from "./errors.js"
 
-describe("release-one commands", () => {
+describe("release-one commands honor company, duplicates, paper versions, plan, delete and the day cap", () => {
   it("checks company, duplicates, paper versions, plan, delete, and the day cap", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

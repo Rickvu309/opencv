@@ -13,7 +13,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
 import { installRegistry } from "./install.js"
 
-describe("job contract", () => {
+describe("a job binding that drifts from the job contract is rejected", () => {
   it("parses every job command output and every job query read", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

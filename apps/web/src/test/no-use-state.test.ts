@@ -14,7 +14,7 @@ function sourceFiles(dir: string): string[] {
   })
 }
 
-describe("no useState", () => {
+describe("component state lives in useReducer or useEffectReducer, never useState", () => {
   it("keeps component state in useReducer or useEffectReducer", () => {
     const hits = sourceFiles(srcDir)
       .filter((file) => file !== fileURLToPath(import.meta.url))

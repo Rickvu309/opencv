@@ -58,7 +58,7 @@ function centreRotate(transform: string): boolean {
   return false
 }
 
-describe("generated pen art", () => {
+describe("generated pen art rotates ellipses around the corner", () => {
   it("rotates every ellipse around the node's corner", () => {
     const files = artFiles()
     const rels = files.map((file) =>

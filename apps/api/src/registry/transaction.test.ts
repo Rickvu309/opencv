@@ -106,7 +106,7 @@ function sampleInput(schema: Schema, depth = 0): unknown {
   throw new Error(`cannot sample ${type}`)
 }
 
-describe("registry transactions", () => {
+describe("every command runs in a transaction unless it declares none", () => {
   it("keeps every command in a transaction unless it declares none", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

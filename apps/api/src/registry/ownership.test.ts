@@ -58,7 +58,7 @@ function ownedBy(relative: string, owner: string) {
   return relative === owner || relative.startsWith(`${owner}${path.sep}`)
 }
 
-describe("table ownership", () => {
+describe("a table write from outside the owning module's directory is rejected", () => {
   it("maps every schema table to an owner", () => {
     const schema = readFileSync(path.join(srcRoot, "db/schema.ts"), "utf8")
     const tables = [

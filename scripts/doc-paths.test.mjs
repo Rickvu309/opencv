@@ -36,7 +36,7 @@ const PLACEHOLDER = /[<>*{$]|\.\.\./
 // Screenshots and downloads are outputs a run writes, so only code and docs are looked up by file name.
 const CODE_EXT = /\.(?:tsx?|mjs|css|md|sh)$/
 const GENERATED = /^apps\/api\/\.data\/|\/dist(?:\/|$)/
-const ROOT_DOCS = ["AGENTS.md", "CONTEXT.md"]
+const ROOT_DOCS = ["AGENTS.md", "CODING_STANDARDS.md", "CONTEXT.md"]
 
 const docs = tracked.filter(
   (file) =>

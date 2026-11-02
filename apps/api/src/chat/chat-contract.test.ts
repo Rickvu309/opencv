@@ -14,7 +14,7 @@ import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../registry/install.js"
 
-describe("chat contract", () => {
+describe("a chat binding that drifts from the chat contract is rejected", () => {
   it("parses every chat, actions and activity command output and both chat reads", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

@@ -53,7 +53,7 @@ const coachToolNames = [
   "workspace.search",
 ]
 
-describe("registry", () => {
+describe("the registry refuses what the Coach may not run alone, and approves, denies and undoes once", () => {
   it("refuses a destructive command the Coach could run on its own", () => {
     expect(() =>
       defineCommand({

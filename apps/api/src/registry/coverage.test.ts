@@ -54,7 +54,7 @@ function coverageProblems(covered: string[]) {
   return problems
 }
 
-describe("registry command coverage", () => {
+describe("every command has a coverage case that runs it as the person and undoes a reversal", () => {
   it("runs every command as the person and undoes a reversal", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

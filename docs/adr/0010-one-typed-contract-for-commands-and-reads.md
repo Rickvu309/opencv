@@ -23,6 +23,4 @@
 
 ## Tests that hold this shape
 
-- `apps/api/src/registry/names.test.ts` rejects a command, read or Coach tool name in the web, fake Coach or domain that the registry lacks.
-- `apps/api/src/**/*-contract.test.ts` and `apps/api/src/registry/contract.type-test.ts` reject a binding that drifts from the contract.
-- `apps/api/src/registry/coach-chat-tools.test.ts` bars chat.create.
+`CODING_STANDARDS.md` (Contract) pairs each rule with its check, and `docs/agents/checks.md` lists every guard.

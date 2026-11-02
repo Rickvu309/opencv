@@ -22,7 +22,7 @@ const hostedRepo = () => {
 
 const read = (file: string) => readFileSync(path.join(repoRoot, file), "utf8")
 
-describe("apps/web/Caddyfile", () => {
+describe("the web Caddyfile serves the SPA, /health and /version.txt, and caches by asset type", () => {
   const caddyfile = read("apps/web/Caddyfile")
 
   it("serves the SPA with a fallback to index.html and a /health handler", () => {
