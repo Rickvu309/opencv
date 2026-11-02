@@ -333,8 +333,8 @@ try {
           `${itemsOf(SIDEBAR)}.filter((e) => e.getAttribute('aria-current') === 'page').map((e) => e.getAttribute('aria-label') ?? e.textContent.trim())`
         )
         check(
-          current.includes(surface),
-          `${tag} ${surface} stays the active row on ${href} (${current})`
+          current.length === 1 && current[0] === name,
+          `${tag} only ${name} is the active row on ${href}, not ${surface} (${current})`
         )
       }
     }
