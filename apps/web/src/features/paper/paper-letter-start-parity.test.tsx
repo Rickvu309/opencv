@@ -3,6 +3,7 @@ import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
 import { render } from "@/test/render-with-client.tsx"
 import snapshot from "./design/letter-start.snapshot.json"
+import unreadableSnapshot from "./design/letter-unreadable.snapshot.json"
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 
 const { listJobs } = vi.hoisted(() => ({ listJobs: vi.fn() }))
@@ -54,4 +55,23 @@ it("returns to Paper on Escape", () => {
   render(<PaperLetterStartPage onBack={onBack} onCreated={vi.fn()} />)
   fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" })
   expect(onBack).toHaveBeenCalledOnce()
+})
+
+it("shows the unreadable-link copy from its own pen frame", async () => {
+  listJobs.mockResolvedValue([])
+  render(<PaperLetterStartPage onBack={vi.fn()} onCreated={vi.fn()} />)
+  const texts = unreadableSnapshot.sections.find(
+    (section) => section.name === "Main wrap"
+  )!.texts
+  const link = texts.find((text) => text.startsWith("linkedin.com/"))!
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: link } })
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "Can't read this link"
+  )
+  expect(
+    document.querySelector('[data-slot="letter-unreadable-icon"]')
+  ).toBeInTheDocument()
+  expect(screen.getByText(texts[5])).toBeInTheDocument()
+  expect(screen.getByText(texts[6])).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
 })

@@ -4,6 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 import { PaperLetterStart } from "./paper-letter-start.tsx"
 import { PaperLetterDraftingPage } from "./paper-letter-drafting-page.tsx"
 import "./design/letter-start.pen.css"
+import "./design/letter-unreadable.pen.css"
 
 type DraftingState = {
   draftName: string

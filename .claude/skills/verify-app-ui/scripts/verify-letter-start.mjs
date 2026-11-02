@@ -21,7 +21,7 @@ for (let i = 0; i < args.length; i += 1) {
   if (args[i].startsWith("--")) {
     const key = args[i].slice(2)
     must(
-      ["base-url", "api-url", "api-log", "evidence"].includes(key),
+      ["base-url", "api-url", "api-log", "evidence", "state"].includes(key),
       `known option ${key}`
     )
     must(args[i + 1] && !args[i + 1].startsWith("--"), `value for ${key}`)
@@ -31,6 +31,12 @@ for (let i = 0; i < args.length; i += 1) {
     positional = args[i]
   }
 }
+must(
+  !options.state || options.state === "unreadable",
+  "known verification state"
+)
+const unreadable = options.state === "unreadable"
+const screenName = unreadable ? "letter-unreadable" : "letter-start"
 const port = Number(process.env.PORT)
 const web =
   options["base-url"] ??
@@ -82,6 +88,17 @@ const sources = [
   "apps/web/src/features/paper/design/letter-start.styles.json",
   "apps/web/src/features/paper/design/letter-start.layout.json",
 ]
+if (unreadable) {
+  for (const extension of [
+    "pen.css",
+    "snapshot.json",
+    "styles.json",
+    "layout.json",
+  ])
+    sources.push(
+      `apps/web/src/features/paper/design/letter-unreadable.${extension}`
+    )
+}
 const hashes = () =>
   Object.fromEntries(
     sources.map((file) => [
@@ -93,7 +110,7 @@ const hashes = () =>
   )
 const layout = JSON.parse(
   readFileSync(
-    join(repo, "apps/web/src/features/paper/design/letter-start.layout.json"),
+    join(repo, `apps/web/src/features/paper/design/${screenName}.layout.json`),
     "utf8"
   )
 )
@@ -113,7 +130,7 @@ const report = {
   sourceHashes: before,
   fixture:
     "Real local OTP authentication using the existing signUp helper and six job.create contract commands. No route interception. Does not prove production mail delivery or AI drafting.",
-  frame: "NgYML",
+  frame: layout.frameId,
   jobs,
   captures: [],
   checks: [],
@@ -164,7 +181,10 @@ const capture = async (page, width, state) => {
     };
   })()`)
   let comparison = null
-  if (width === 1440 && state === "source-selected") {
+  if (
+    width === 1440 &&
+    state === (unreadable ? "unreadable" : "source-selected")
+  ) {
     const measured = await page.evaluate(
       probeSource({
         mode: "app",
@@ -183,6 +203,9 @@ const capture = async (page, width, state) => {
   await page.screenshot(join(output, file), false)
   report.captures.push({
     file,
+    sha256: createHash("sha256")
+      .update(readFileSync(join(output, file)))
+      .digest("hex"),
     width,
     state,
     url: await page.evaluate("location.href"),
@@ -308,6 +331,86 @@ try {
       `document.querySelector('[data-slot="letter-start-page"] h1').getBoundingClientRect().top`
     )
     await capture(page, width, "initial")
+    if (unreadable) {
+      await click(page, '[aria-label="Marketing Executive, Lumière"]')
+      await input(page, "linkedin.com/jobs/view/3829174610")
+      await requireState(
+        page,
+        `!!document.querySelector('[data-slot="letter-unreadable-link"]')`,
+        "unreadable link state rendered"
+      )
+      check(
+        await page.evaluate(
+          `document.querySelector('[data-slot="letter-start-draft"]').disabled && !document.querySelector('[data-slot="letter-start-job"]')`
+        ),
+        "unreadable link clears selection, hides jobs and disables Draft"
+      )
+      const papersBefore = await page.evaluate(
+        `fetch(${JSON.stringify(`${api}/api/paper`)}, {credentials:'include'}).then(async r => {if (!r.ok) throw new Error('Paper read failed'); return JSON.stringify(await r.json())})`
+      )
+      await page.evaluate(
+        `document.querySelector('[data-slot="letter-start-search"] input').dispatchEvent(new KeyboardEvent('keydown', {key:'Enter',bubbles:true}))`
+      )
+      check(
+        await page.evaluate(
+          `!!document.querySelector('[data-slot="letter-unreadable-link"]') && !document.querySelector('[data-slot="letter-start-draft"]').textContent.includes('Drafting')`
+        ),
+        "Enter cannot draft the unreadable URL"
+      )
+      check(
+        (await page.evaluate(
+          `fetch(${JSON.stringify(`${api}/api/paper`)}, {credentials:'include'}).then(async r => {if (!r.ok) throw new Error('Paper read failed'); return JSON.stringify(await r.json())})`
+        )) === papersBefore,
+        "blocked Enter creates no Paper document"
+      )
+      check(
+        await page.evaluate(`(() => {
+          const icon = document.querySelector('[data-slot="letter-unreadable-icon"]');
+          return !!icon && icon.getBoundingClientRect().width === 18 && getComputedStyle(icon).color === 'rgb(150, 151, 153)';
+        })()`),
+        "unreadable link icon has source size and color"
+      )
+      await capture(page, width, "unreadable")
+      await page.evaluate(`(() => {
+        const input = document.querySelector('input[type="file"][aria-label="Attach letter context"]');
+        const transfer = new DataTransfer();
+        transfer.items.add(new File(['Hiring a marketing lead to plan campaigns and research customers.'], 'job-context.txt', {type:'text/plain'}));
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', {bubbles:true}));
+      })()`)
+      await requireState(
+        page,
+        `document.body.textContent.includes('Context: job-context.txt') && !document.querySelector('[data-slot="letter-start-draft"]').disabled && !document.querySelector('[data-slot="letter-unreadable-link"]')`,
+        "real attachment extraction recovers drafting and clears the error"
+      )
+      await capture(page, width, "attachment-recovery")
+      await page.evaluate(
+        `[...document.querySelectorAll('button')].find(n => n.textContent.trim() === 'Remove attachment').click()`
+      )
+      await requireState(
+        page,
+        `document.querySelector('[data-slot="letter-start-draft"]').disabled && !document.body.textContent.includes('Context: job-context.txt')`,
+        "removing attachment restores unreadable-link guard"
+      )
+      await input(
+        page,
+        "Lead customer research. Apply at linkedin.com/jobs/view/3829174610"
+      )
+      await requireState(
+        page,
+        `!document.querySelector('[data-slot="letter-unreadable-link"]') && !document.querySelector('[data-slot="letter-start-draft"]').disabled`,
+        "pasted job text mentioning a URL recovers drafting"
+      )
+      await capture(page, width, "text-recovery")
+      await input(page, "")
+      await requireState(
+        page,
+        `document.querySelectorAll('[data-slot="letter-start-job"]').length === 6 && document.querySelector('[data-slot="letter-start-draft"]').disabled`,
+        "clearing query restores jobs without stale selection"
+      )
+      await page.close()
+      continue
+    }
     await input(page, "Regional bank")
     await requireState(
       page,
@@ -391,11 +494,11 @@ try {
 } finally {
   report.finishedAt = new Date().toISOString()
   writeFileSync(
-    join(output, "letter-start.json"),
+    join(output, `${screenName}.json`),
     JSON.stringify(report, null, 2) + "\n"
   )
   await browser.quit()
 }
 console.log(
-  `${report.status}: ${report.captures.length} captures; ${join(output, "letter-start.json")}`
+  `${report.status}: ${report.captures.length} captures; ${join(output, `${screenName}.json`)}`
 )

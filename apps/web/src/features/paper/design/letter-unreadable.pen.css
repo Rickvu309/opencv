@@ -1,0 +1,24 @@
+[data-pen-surface="paper"] [data-slot="letter-unreadable-link"] {
+  color: #1a1a1a;
+}
+[data-pen-surface="paper"] [data-slot="letter-unreadable-help"] {
+  color: #59595b;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-start-form"]:has([data-slot="letter-unreadable-link"])
+  [data-slot="letter-start-draft"]:disabled {
+  color: #969799;
+  background: #e1e1e2;
+  opacity: 1;
+}
+[data-pen-surface="paper"]
+  [data-slot="letter-start-form"]:has([data-slot="letter-unreadable-link"])
+  [data-slot="letter-start-draft"]:disabled
+  [data-slot="letter-start-return"] {
+  color: #969799;
+  background: #0000000a;
+}
+
+[data-pen-surface="paper"] [data-slot="letter-unreadable-icon"] {
+  color: #969799;
+}
