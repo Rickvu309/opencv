@@ -1,10 +1,6 @@
-// Writing, logic and proof-markup properties. Each reads the "top" snapshot and returns
-// { id, name, rule, status, measured }. The id is the check number in the landing research,
-// section 5. The source of each rule is in the comment above it and in SKILL.md.
 import { staleIf, verdict } from "./verdict.mjs"
 
 const SURFACES = ["paper", "apply", "coach"]
-// The app signs up and logs in on /sign-in; only the label tells the two apart.
 export const isSignUpLink = (l) =>
   l.href === "/sign-in" && !/^log in$/i.test(l.text)
 const words = (s) => s.split(/\s+/).filter(Boolean)
@@ -44,7 +40,6 @@ export function textRules(top, want = () => true) {
 
   const outcome = OUTCOME.exec(h1)?.[0]
   const audience = AUDIENCE.exec(h1)?.[0]
-  // Shapiro litmus test (julian.com/guide/startup/landing-pages); NN/g 2.2
   out.push(
     verdict(
       "01",
@@ -59,7 +54,6 @@ export function textRules(top, want = () => true) {
     (b) =>
       b.region !== "nav" && /\bopencv\b/.test(b.text) && /\bCV\b/.test(b.text)
   )
-  // The first-release hero is the outcome line. The statement names opencv and the CV.
   if (want("02"))
     out.push(
       verdict(
@@ -75,7 +69,6 @@ export function textRules(top, want = () => true) {
     0,
     ...subSentences.map((s) => s.split(/,\s*(?:and\s+)?/).length)
   )
-  // The design subhead is two beats. The statement, not the subhead, defines the product.
   out.push(
     verdict(
       "03",
@@ -88,7 +81,6 @@ export function textRules(top, want = () => true) {
 
   const copy = [...top.blocks.map((b) => b.text), top.description, top.title]
   const hits = copy.flatMap(findMarketese)
-  // Nielsen, marketese (nngroup.com/articles/how-users-read-on-the-web)
   out.push(
     verdict(
       "04",
@@ -102,7 +94,6 @@ export function textRules(top, want = () => true) {
   const all = sentenceTexts(top)
   const long = all.filter((s) => words(s.text).length > 24)
   const passive = all.filter((s) => PASSIVE.test(s.text))
-  // OPM plain language, 15 to 20 words
   out.push(
     verdict(
       "05",
@@ -123,7 +114,6 @@ export function textRules(top, want = () => true) {
       return { name, h2, found: Boolean(block), ok: count >= 1 && count <= 3 }
     })
     const bad = titles.filter((t) => !t.ok)
-    // The three product titles are the surface names: one to three words.
     out.push(
       verdict(
         "06",
@@ -147,7 +137,6 @@ export function textRules(top, want = () => true) {
   }))
   const heroSignUp = signUps.filter((l) => l.region === "hero")
   const distinct = new Set(labels.flatMap((l) => l.texts))
-  // The design hero is type and a photo. The same action sits in the nav and the close.
   if (want("07"))
     out.push(
       verdict(
@@ -163,7 +152,6 @@ export function textRules(top, want = () => true) {
 
   if (want("08")) {
     const label = [...distinct][0] ?? ""
-    // NN/g 4.1; Shapiro "Find food", "Start learning"
     out.push(
       verdict(
         "08",
@@ -185,7 +173,6 @@ export function textRules(top, want = () => true) {
   )
   const answered =
     firstSurface > 0 && objectionAt >= 0 && objectionAt < firstSurface
-  // Shapiro, answer the objection before the scroll
   out.push(
     staleIf(
       firstSurface < 0 ? "no block in a surface: region" : null,
@@ -228,7 +215,6 @@ export function textRules(top, want = () => true) {
       /[★⭐]|trusted by|as seen in|\b\d[\d,.]*\+?\s?(users|companies|professionals)\b/i.exec(
         text
       )?.[0]
-    // The design draws a logo row and two quotes. Prices live on /pricing. Invented counts stay off /.
     out.push(
       verdict(
         "12",

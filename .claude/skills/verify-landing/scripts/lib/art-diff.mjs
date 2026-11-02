@@ -1,9 +1,5 @@
 import { inflateSync } from "node:zlib"
 
-// Stdlib PNG decode for the Coach art compare. No new dependency.
-// 8-bit RGB or RGBA, no interlace. That is what canvas.toDataURL and the
-// reference crop both write.
-
 const paeth = (a, b, c) => {
   const p = a + b - c
   const pa = Math.abs(p - a)
@@ -92,9 +88,7 @@ export function decodeDataUrl(dataUrl) {
   return decodePng(Buffer.from(dataUrl.slice(comma + 1), "base64"))
 }
 
-// Fraction of pixels whose largest RGB channel delta is above `channel`.
-// Alpha is ignored: the page fills the card background, the pen crop is opaque.
-export function pngMismatch(live, reference, channel) {
+export function fractionOfPixelsOverDelta(live, reference, channel) {
   if (live.width !== reference.width || live.height !== reference.height) {
     return {
       ratio: 1,

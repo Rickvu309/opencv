@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-// verify-landing: measures the landing page against the mechanical checks in SKILL.md.
-//   pnpm --filter web verify:landing        (PORT=4399 by default)
-//   VERIFY_LANDING_SHOTS=<dir> also writes the review screenshots (first view and full page, both viewports).
-//   VERIFY_TIER=invariant|design|all (default all). invariant skips the design checks: it measures none of
-//   them and reads nothing under a design/ or reference/ folder.
-// Starts the Vite dev server on PORT unless something already answers there, drives headless
-// Chromium over the DevTools protocol, prints one PASS, FAIL or STALE line per property, and exits 3
-// when any check is STALE (its locator matched nothing), else 1 when any property fails. It never edits the app.
-// Exit 2 means the page did not render.
 import { spawn, spawnSync } from "node:child_process"
 import { mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
@@ -27,6 +18,8 @@ import { probeSource } from "./lib/probe.mjs"
 import { loadSpecOrError } from "./lib/spec.mjs"
 import { textRules } from "./lib/text-rules.mjs"
 import { summarize } from "./lib/verdict.mjs"
+
+const REVEAL_SCROLL_STEP_MS = 400
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const port = process.env.PORT ?? "4399"
@@ -108,12 +101,10 @@ async function visit(
     if (keep)
       await page.screenshot(`${shots}/${wanted.shot}-first-view.png`, false)
     if (wanted.deep || keep) {
-      // Headless Chromium delivers IntersectionObserver callbacks about 300 ms after a scroll; at
-      // 120 ms a step the scroll reveals never fired and the text stayed hidden for 21 and 23.
       await page.evaluate(`(async () => {
         for (let y = 0; y <= document.documentElement.scrollHeight; y += innerHeight * 0.7) {
           scrollTo(0, y)
-          await new Promise((r) => setTimeout(r, 400))
+          await new Promise((r) => setTimeout(r, ${REVEAL_SCROLL_STEP_MS}))
         }
       })()`)
       await sleep(1500)

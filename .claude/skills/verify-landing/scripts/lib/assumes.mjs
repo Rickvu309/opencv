@@ -1,8 +1,5 @@
-// Everything the landing checker assumes about the app, in one place. The probes read their selectors from here.
-// apps/web/src/test/verify-assumptions.test.ts holds each entry against the repo on every push.
 export const LANDING_DIR = "apps/web/src/features/landing"
 
-// Pen section name to the selector of the element that renders it.
 export const SECTIONS = {
   Nav: "header.landing-nav",
   Hero: "#hero",

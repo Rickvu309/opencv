@@ -1,5 +1,3 @@
-// Every check id has one kind, the invariant tier computes no design check and reads no design/ or reference/ file,
-// and the design numbers come from the spec. Run: node --test .claude/skills/verify-landing/scripts/lib
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -11,7 +9,7 @@ import {
   artProblem,
   diffLines,
   finish,
-  plan,
+  recorderDecision,
   recordSpec,
 } from "../design-spec.mjs"
 import { designChecks } from "./design-checks.mjs"
@@ -35,8 +33,7 @@ const emittedIds = () => {
   return ids
 }
 
-// A snapshot that answers every property read with another snapshot, so a check runs without a browser.
-const anything = () =>
+const anySnapshot = () =>
   new Proxy(function () {}, {
     get: (_, key) =>
       key === Symbol.toPrimitive
@@ -45,13 +42,13 @@ const anything = () =>
           ? function* () {}
           : key === "then"
             ? undefined
-            : anything(),
-    apply: () => anything(),
+            : anySnapshot(),
+    apply: () => anySnapshot(),
   })
 
 const run = (tier, spec) => {
   const want = gate(KINDS, tier)
-  const snap = anything()
+  const snap = anySnapshot()
   const results = [
     ...textRules(snap, want),
     ...pageChecks({
@@ -205,7 +202,7 @@ test("the recorder turns measurements into the committed spec shape and keeps th
 
 test("dry run: prints one line per value, exits 0 when none differs, and writes nothing", () => {
   const spec = loadSpec()
-  const decision = plan(spec, page(spec))
+  const decision = recorderDecision(spec, page(spec))
   assert.equal(decision.exit, 0)
   assert.equal(decision.write, null)
   assert.ok(decision.lines.length > 20)
@@ -220,7 +217,7 @@ test("dry run: prints committed -> measured for a differing value, exits 1, and 
     m.navLockup.fontSize = "12px"
     m.ctas.nav.inset = false
   })
-  const decision = plan(spec, regressed)
+  const decision = recorderDecision(spec, regressed)
   assert.equal(decision.exit, 1)
   assert.equal(decision.write, null)
   assert.ok(decision.lines.includes("27.cards: 3 -> 2"))
@@ -232,7 +229,7 @@ test("dry run: prints committed -> measured for a differing value, exits 1, and 
 
 test("dry run: a value outside a committed tolerance exits 1 even when no spec value moves", () => {
   const spec = loadSpec()
-  const decision = plan(
+  const decision = recorderDecision(
     spec,
     page(spec, (m) => {
       m.navLockup.gap = 14.4
@@ -248,7 +245,7 @@ test("--accept writes the measured spec, and a second accept of the same page ch
   const redesign = page(spec, (m) => {
     m.benefitArt.count = 2
   })
-  const decision = plan(spec, redesign, { accept: true })
+  const decision = recorderDecision(spec, redesign, { accept: true })
   assert.equal(decision.exit, 0)
   assert.equal(decision.write["27"].cards, 2)
   const done = quiet(decision)
@@ -256,7 +253,7 @@ test("--accept writes the measured spec, and a second accept of the same page ch
   assert.equal(done.written.length, 1)
   assert.equal(done.written[0][0], "out.json")
   assert.deepEqual(JSON.parse(done.written[0][1]), decision.write)
-  const again = plan(decision.write, redesign, { accept: true })
+  const again = recorderDecision(decision.write, redesign, { accept: true })
   assert.ok(again.lines.every((line) => line.endsWith(": unchanged")))
 })
 
@@ -274,7 +271,7 @@ test("--accept refuses a page outside the committed tolerances and writes nothin
     },
   }
   for (const [message, edit] of Object.entries(attempts)) {
-    const decision = plan(spec, page(spec, edit), { accept: true })
+    const decision = recorderDecision(spec, page(spec, edit), { accept: true })
     assert.equal(decision.exit, 2, message)
     assert.equal(decision.write, null, message)
     assert.match(decision.lines.join("\n"), /refusing to record/)
@@ -283,7 +280,7 @@ test("--accept refuses a page outside the committed tolerances and writes nothin
   }
   const narrow = structuredClone(spec)
   narrow["28"].gapMax = 10
-  assert.equal(plan(narrow, page(narrow), { accept: true }).exit, 2)
+  assert.equal(recorderDecision(narrow, page(narrow), { accept: true }).exit, 2)
 })
 
 test("--accept refuses Coach art over the committed pixel ratio, and never writes a reference", () => {
@@ -294,7 +291,7 @@ test("--accept refuses Coach art over the committed pixel ratio, and never write
   const strict = structuredClone(spec)
   strict["30"].maxRatio = -1
   assert.match(artProblem(strict, same), /over the committed/)
-  const decision = plan(strict, page(strict), { accept: true })
+  const decision = recorderDecision(strict, page(strict), { accept: true })
   assert.equal(decision.exit, 2)
   assert.equal(decision.write, null)
   const source = readFileSync(join(here, "../design-spec.mjs"), "utf8")

@@ -1,4 +1,3 @@
-// Unit assertions for the pure rules. Run: node --test .claude/skills/verify-landing/scripts/lib
 import assert from "node:assert/strict"
 import test from "node:test"
 

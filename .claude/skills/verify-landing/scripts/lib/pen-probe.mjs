@@ -1,5 +1,3 @@
-// Runs inside the page. Self-contained: it is serialised with toString(), so it cannot close over anything.
-// Measures the landing sections property 31 reads, including whether a text starts a line.
 import { SECTIONS } from "./assumes.mjs"
 
 function penProbe(SECTIONS) {
@@ -25,8 +23,8 @@ function penProbe(SECTIONS) {
       .replace(/'/g, "\u2019")
       .replace(/\s+/g, " ")
       .trim()
-  // A product figure is one image; its inner text is picture, not section copy.
-  const hiddenText = (el) =>
+  const isRevealWord = (el) => el.classList.contains("rv-w")
+  const notSectionCopy = (el) =>
     el.closest("[aria-hidden='true'], .sr-only, [role='img']:not(svg)") ||
     !visible(el)
   const establishesLines = (el) => {
@@ -64,7 +62,7 @@ function penProbe(SECTIONS) {
         parent &&
         parent.tagName !== "STYLE" &&
         parent.tagName !== "SCRIPT" &&
-        !hiddenText(parent)
+        !notSectionCopy(parent)
       ) {
         const text = node.textContent
         for (let index = 0; index < text.length; index += 1) {
@@ -140,11 +138,10 @@ function penProbe(SECTIONS) {
       continue
     }
     const texts = [...rootEl.querySelectorAll("*")]
-      // .rv-w wraps one word of a revealed text; the word is not a pen text of its own.
       .filter(
         (el) =>
-          !hiddenText(el) &&
-          !el.classList.contains("rv-w") &&
+          !notSectionCopy(el) &&
+          !isRevealWord(el) &&
           normText(el.textContent) !== ""
       )
       .map((el) => {
@@ -170,10 +167,11 @@ function penProbe(SECTIONS) {
           if (node.nodeType === 3) {
             if (!node.textContent.trim()) return
             const parent = node.parentElement
-            if (parent && !hiddenText(parent)) runs.push(measure(parent))
+            if (parent && !notSectionCopy(parent)) runs.push(measure(parent))
             return
           }
-          if (node.nodeType !== 1 || (node !== el && hiddenText(node))) return
+          if (node.nodeType !== 1 || (node !== el && notSectionCopy(node)))
+            return
           for (const child of node.childNodes) walk(child)
         }
         walk(el)

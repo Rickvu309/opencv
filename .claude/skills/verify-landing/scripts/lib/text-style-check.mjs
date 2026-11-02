@@ -3,7 +3,6 @@ import { FILES } from "./assumes.mjs"
 import { readDesignFile } from "./spec.mjs"
 import { verdict } from "./verdict.mjs"
 
-// Contrast floors. Each entry must still describe a live mismatch; a match fails the check.
 const TEXT_STYLE_EXCEPTIONS = [
   {
     section: "Statement",
@@ -301,11 +300,9 @@ export function textStyleVerdict(penSections) {
       `[${entry.section}] "${clip(entry.text)}" ${entry.property} exception is stale`
     )
   }
-  // The printed line keeps 230 characters. Lead with the statement mark and the
-  // #59595B mid gray so a main-checkout failure names both.
-  const rank = (line) =>
+  const leadRank = (line) =>
     line.includes("[Statement] mark") ? 0 : line.includes("#59595B") ? 1 : 2
-  failures.sort((a, b) => rank(a) - rank(b))
+  failures.sort((a, b) => leadRank(a) - leadRank(b))
   const lead = failures.slice(0, 2).join("; ")
   const more = failures.length > 2 ? `; +${failures.length - 2} more` : ""
   const measured = failures.length
