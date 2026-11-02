@@ -74,9 +74,20 @@ export const cvDocumentV1Schema = z
   })
   .strict()
 
+/**
+ * `markdown` holds the letter body as plain text, paragraphs separated by a
+ * blank line. The other parts are optional and written only when filled.
+ */
 export const letterDocumentV1Schema = z
   .object({
     markdown: z.string(),
+    sender: z.string().optional(),
+    contact: z.string().optional(),
+    date: z.string().optional(),
+    recipient: z.string().optional(),
+    salutation: z.string().optional(),
+    closing: z.string().optional(),
+    signature: z.string().optional(),
   })
   .strict()
 
@@ -119,7 +130,7 @@ export type CvExperience = z.infer<typeof cvExperienceSchema>
 export type CvSkillGroup = z.infer<typeof cvSkillGroupSchema>
 export type CvProject = z.infer<typeof cvProjectSchema>
 export type CvDocument = z.infer<typeof cvDocumentV1Schema>
-type LetterDocument = z.infer<typeof letterDocumentV1Schema>
+export type LetterDocument = z.infer<typeof letterDocumentV1Schema>
 export type ProofViewMode = z.infer<typeof proofViewModeSchema>
 export type ProofStepType = z.infer<typeof proofStepTypeSchema>
 export type ProofPhoto = z.infer<typeof proofPhotoSchema>
@@ -153,6 +164,28 @@ export function emptyCvDocument(): CvDocument {
 
 export function emptyLetterDocument(): LetterDocument {
   return { markdown: "" }
+}
+
+export const LETTER_PARTS = [
+  "sender",
+  "contact",
+  "date",
+  "recipient",
+  "salutation",
+  "closing",
+  "signature",
+] as const
+
+export type LetterPart = (typeof LETTER_PARTS)[number]
+
+/** The letter as a writer saves it: empty or blank parts are left out. */
+export function compactLetterDocument(letter: LetterDocument): LetterDocument {
+  const next: LetterDocument = { markdown: letter.markdown }
+  for (const part of LETTER_PARTS) {
+    const value = letter[part]
+    if (value !== undefined && value.trim() !== "") next[part] = value
+  }
+  return next
 }
 
 export function emptyProofDocument(): ProofDocument {
