@@ -121,7 +121,7 @@
   margin-top: 18px;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 480px) {
   [data-pen-surface="paper"][data-slot="letter-sheet"] > textarea {
     min-height: 44px;
   }

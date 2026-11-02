@@ -80,6 +80,19 @@ const report = {
     "The star, bell and sliders glyph of the frame's header are not built (no feature behind them); see the issue's deviation list.",
   ],
 }
+// Deliberate header deviations, decided on #830: the frame draws a sliders glyph
+// in the Edited pill and a bell button, which have no feature behind them, so
+// the Edited text sits to the right of the pen's x. Listed in the issue.
+const EXCEPTIONS = [
+  {
+    frameId: "sgAtL",
+    text: "Edited just now",
+    property: "x",
+    reason: "no sliders glyph in the pill and no bell button (no feature)",
+    until: "2027-06-30",
+    approvedBy: "#830 header decision",
+  },
+]
 const check = (pass, message) => {
   report.checks.push({ pass: Boolean(pass), message })
   must(pass, message)
@@ -160,7 +173,7 @@ const capture = async (page, width, label) => {
       minField:Math.min(...fields.map(n=>rect(n).height)),
       header:{more:!!root.querySelector('[aria-label="More"]'),link:!!root.querySelector('[aria-label="Copy share link"]'),
         pdfButton:!![...root.querySelectorAll('header button')].find(n=>n.textContent.trim()==='Download PDF'),mail:!!root.querySelector('header .lucide-mail')},
-      coarse:matchMedia('(pointer: coarse)').matches};
+      coarse:matchMedia('(pointer: coarse), (max-width: 480px)').matches};
   })()`)
   check(
     screen.scrolled.scrollable === false || screen.scrolled.lastInside,
@@ -232,7 +245,7 @@ const capture = async (page, width, label) => {
       })
     )
     comparison = {
-      ...comparePenLayout({ layout, ...measured }),
+      ...comparePenLayout({ layout, ...measured, exceptions: EXCEPTIONS }),
       measured: measured.measured,
     }
     // Every pen text must match, or sit in PEN_LAYOUT_EXCEPTIONS with a reason.
