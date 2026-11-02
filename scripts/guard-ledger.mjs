@@ -31,6 +31,13 @@ export const LEDGER = Object.freeze([
       "it guards the ledger itself; its fixtures fire on each mistake it catches",
   },
   {
+    id: "tla-specs",
+    file: "scripts/tla-specs.test.mjs",
+    historic: null,
+    reason:
+      "it checks the formal specs and their runner, added in #917; no earlier mistake to prove yet",
+  },
+  {
     id: "pointer-capture",
     file: "scripts/pointer-capture.test.mjs",
     detector: {
