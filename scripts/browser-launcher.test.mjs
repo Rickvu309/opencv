@@ -30,18 +30,20 @@ const tracked = (...patterns) =>
 
 const launchers = tracked(".claude/skills/**/cdp.mjs")
 
-const PENDING = [
-  {
-    file: ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs",
-    issue: "#831",
-    expires: "2026-11-16",
-  },
-]
+const PENDING = []
+
+const isZombie = (pid) => {
+  try {
+    return /^\d+ \(.*\) Z /.test(readFileSync(`/proc/${pid}/stat`, "utf8"))
+  } catch {
+    return false
+  }
+}
 
 const alive = (pid) => {
   try {
     process.kill(pid, 0)
-    return true
+    return !isZombie(pid)
   } catch {
     return false
   }

@@ -26,6 +26,17 @@ function findChrome() {
   return "chromium"
 }
 
+const GROUP_EXIT_DEADLINE_MS = 3000
+
+function processGroupGone(pgid) {
+  try {
+    process.kill(-pgid, 0)
+    return false
+  } catch {
+    return true
+  }
+}
+
 export async function launchBrowser() {
   const root = join(homedir(), "tmp", "verify-landing")
   mkdirSync(root, { recursive: true })
@@ -45,13 +56,16 @@ export async function launchBrowser() {
     ],
     { stdio: ["ignore", "ignore", "pipe"], detached: true }
   )
-  const stop = () => {
+  const killChromeGroupAndCleanUp = async () => {
     try {
       process.kill(-chrome.pid, "SIGKILL")
     } catch {
       chrome.kill("SIGKILL")
     }
     chrome.stderr.destroy()
+    const deadline = Date.now() + GROUP_EXIT_DEADLINE_MS
+    while (!processGroupGone(chrome.pid) && Date.now() < deadline)
+      await new Promise((resolve) => setTimeout(resolve, 10))
     rmSync(profile, { recursive: true, force: true })
   }
   let socket
@@ -85,7 +99,7 @@ export async function launchBrowser() {
       socket.onerror = () => reject(new Error("devtools socket failed"))
     })
   } catch (error) {
-    stop()
+    await killChromeGroupAndCleanUp()
     throw error
   }
   let nextId = 0
@@ -211,7 +225,7 @@ export async function launchBrowser() {
 
   async function quit() {
     socket.close()
-    stop()
+    await killChromeGroupAndCleanUp()
   }
 
   return { openPage, quit }
