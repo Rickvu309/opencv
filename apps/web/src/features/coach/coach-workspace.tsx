@@ -1,8 +1,6 @@
 import { useEffect, useEffectEvent, useReducer, type ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 
-import { SquarePen } from "lucide-react"
-
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { Input } from "@workspace/ui/components/input"
@@ -28,6 +26,8 @@ import { CoachHome } from "./coach-home.tsx"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
 import { ChatView } from "./chat-view.tsx"
 import { CoachHistory } from "./coach-history.tsx"
+import { CoachPanelHeader } from "./coach-panel-header.tsx"
+import { CoachPageHeader } from "./coach-page-header.tsx"
 import { useChatStore } from "./use-chat-store.ts"
 import {
   initialWorkspaceState,
@@ -212,50 +212,46 @@ export function CoachWorkspace({
     ? "New chat"
     : (chats.find((chat) => chat.id === activeChatId)?.title ?? "New chat")
 
+  const history = (
+    <CoachHistory
+      open={historyOpen}
+      onOpenChange={(open) => dispatch({ type: "history_open_changed", open })}
+      headerTitle={headerTitle}
+      chats={chats}
+      activeChatId={activeChatId}
+      search={search}
+      onSearchChange={(value) => dispatch({ type: "search_typed", value })}
+      onSelect={(id) => {
+        openChat(id)
+      }}
+      onNewChat={store.newChat}
+      triggerClassName={compact ? undefined : "-ml-2"}
+    />
+  )
+
   return (
     <div
       data-slot="coach-panel-body"
       data-presentation={presentation}
       className="flex h-full min-h-0 flex-col"
     >
-      <div
-        data-slot={compact ? "coach-panel-header" : "coach-header"}
-        data-home={showHome ? "" : undefined}
-        className={cn(
-          "flex shrink-0 items-center gap-2 border-b border-border/50",
-          compact ? "h-12 gap-[6px] ps-4 pe-2" : "h-11 justify-between px-3"
-        )}
-      >
-        <h1 className="sr-only">Coach</h1>
-        <CoachHistory
-          open={historyOpen}
-          onOpenChange={(open) =>
-            dispatch({ type: "history_open_changed", open })
-          }
-          headerTitle={headerTitle}
-          chats={chats}
-          activeChatId={activeChatId}
-          search={search}
-          onSearchChange={(value) => dispatch({ type: "search_typed", value })}
-          onSelect={(id) => {
-            openChat(id)
-          }}
+      {compact ? (
+        <CoachPanelHeader
+          history={history}
+          showNewChat={!showHome}
           onNewChat={store.newChat}
-        />
-        {compact ? <span className="flex-1" /> : null}
-        {!showHome ? (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="New chat"
-            className="max-md:size-11"
-            onClick={store.newChat}
-          >
-            <SquarePen className="size-4" />
-          </Button>
-        ) : null}
-        {headerActions}
-      </div>
+        >
+          {headerActions}
+        </CoachPanelHeader>
+      ) : (
+        <CoachPageHeader
+          history={history}
+          showNewChat={!showHome}
+          onNewChat={store.newChat}
+        >
+          {headerActions}
+        </CoachPageHeader>
+      )}
       <div
         className={cn(
           "min-h-0 flex-1 overflow-auto",

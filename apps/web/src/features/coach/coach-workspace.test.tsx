@@ -113,6 +113,61 @@ describe("Coach workspace", () => {
     ).toEqual([false, true])
   })
 
+  it("builds the page header on the kit and leaves the leading slot free", async () => {
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace chatId="11111111-1111-4111-8111-111111111111" />
+      </ChatStoreProvider>
+    )
+    await screen.findByText(
+      "I don't know if I should chase internships or finish my CV first."
+    )
+    const header = document.querySelector('[data-slot="page-header"]')
+    expect(header).toBeInTheDocument()
+    expect(header?.tagName).toBe("HEADER")
+    expect(header?.querySelectorAll("h1")).toHaveLength(1)
+    expect(header?.querySelector("h1")).toHaveTextContent("Coach")
+    expect(
+      header?.querySelector('[data-slot="page-header-leading"]')
+    ).toBeNull()
+    const [history, newChat] = Array.from(
+      header?.querySelectorAll("button") ?? []
+    )
+    expect(history).toHaveAttribute("data-slot", "coach-history-trigger")
+    expect(newChat).toHaveAccessibleName("New chat")
+    expect(newChat).toHaveAttribute("data-slot", "page-header-action")
+    expect(
+      document.querySelector('[data-slot="coach-panel-header"]')
+    ).toBeNull()
+  })
+
+  it("shows no New chat action on the home screen", async () => {
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace />
+      </ChatStoreProvider>
+    )
+    await screen.findByText("How can I help?")
+    const header = document.querySelector('[data-slot="page-header"]')
+    expect(header).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "New chat", exact: true })
+    ).not.toBeInTheDocument()
+  })
+
+  it("keeps the compact panel off the page header", async () => {
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace presentation="compact" />
+      </ChatStoreProvider>
+    )
+    await screen.findByPlaceholderText("Reply…")
+    expect(document.querySelector('[data-slot="page-header"]')).toBeNull()
+    expect(
+      document.querySelector('[data-slot="coach-panel-header"]')
+    ).toBeInTheDocument()
+  })
+
   it("keeps New chat selected when the panel was opened with a saved chat", async () => {
     render(
       <ChatStoreProvider>

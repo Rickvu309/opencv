@@ -5,6 +5,7 @@ import type { ChatSummary } from "@workspace/domain"
 import { ChevronDown } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import { Input } from "@workspace/ui/components/input"
 import {
   Popover,
@@ -52,6 +53,7 @@ interface CoachHistoryProps {
   onSearchChange: (value: string) => void
   onSelect: (chatId: string) => void
   onNewChat: () => void
+  triggerClassName?: string
 }
 
 export function CoachHistory({
@@ -64,6 +66,7 @@ export function CoachHistory({
   onSearchChange,
   onSelect,
   onNewChat,
+  triggerClassName,
 }: CoachHistoryProps) {
   const searchRef = useRef<HTMLInputElement>(null)
 
@@ -97,7 +100,10 @@ export function CoachHistory({
             size="sm"
             data-slot="coach-history-trigger"
             aria-label={`History, ${headerTitle}`}
-            className="min-w-0 shrink gap-1.5 border-0 px-2 text-[13px] leading-[15.5px] max-md:h-11"
+            className={cn(
+              "min-w-0 shrink gap-1.5 border-0 px-2 text-[13px] leading-[15.5px] max-md:h-11",
+              triggerClassName
+            )}
           />
         }
       >
