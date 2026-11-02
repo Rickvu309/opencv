@@ -1,0 +1,13 @@
+{
+  "module": "turn-steps.ts",
+  "actions": {
+    "startTurn": "openCoachUsage",
+    "stopTurn": "trackChatTurn",
+    "toolExecute": "createTurnEffects",
+    "registryCommit": "createTurnEffects",
+    "recordPart": "createTurnEffects",
+    "insertCoachMessageRead": "insertCoachMessage",
+    "insertCoachMessage": "insertCoachMessage",
+    "finishCoachUsage": "finishCoachUsage"
+  }
+}

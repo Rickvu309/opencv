@@ -35,7 +35,7 @@ import {
 import type { SSEStreamingApi } from "hono/streaming"
 
 import { readUsage } from "../account/index.js"
-import { getChat, insertCoachMessage, trackChatTurn } from "../chat/index.js"
+import { getChat } from "../chat/index.js"
 import { registry as defaultRegistry } from "../registry/registry.js"
 import type { Registry, ToolEntry } from "../registry/registry.js"
 import { toolResultFromExecute } from "./receipt.js"
@@ -47,7 +47,13 @@ import {
   writeChatEvent,
   writeHeartbeat,
 } from "./sse.js"
-import { finishCoachUsage, openCoachUsage } from "./usage-store.js"
+import {
+  createTurnEffects,
+  finishCoachUsage,
+  insertCoachMessage,
+  openCoachUsage,
+  trackChatTurn,
+} from "./turn-steps.js"
 
 const SYSTEM_PROMPT = [
   "You are the opencv Coach.",
@@ -86,6 +92,7 @@ export async function runCoachTurn(options: {
 }) {
   const startedAt = Date.now()
   const registry = options.registry ?? defaultRegistry
+  const effects = createTurnEffects(registry)
   const actor = coachActor(options.userId, options.chatId)
   const usageId =
     options.usageId ??
@@ -133,12 +140,12 @@ export async function runCoachTurn(options: {
           selection: options.selection,
           note: options.note,
           execute: (call) =>
-            registry.execute({ name: call.name, input: call.input, actor }),
+            effects.execute({ name: call.name, input: call.input, actor }),
         })
       : liveParts({
           model: options.model,
           history: options.history,
-          registry,
+          registry: effects.registry,
           actor,
           toolEntries,
           focusDoc: options.focusDoc,
@@ -230,27 +237,33 @@ export async function runCoachTurn(options: {
     if (isDisconnected(options.stream, signal) && status === "final") {
       status = "aborted"
     }
+    await effects.settleTools()
+    parts = effects.recordMissingReceipts(parts)
     const workedMs = Math.max(0, Date.now() - startedAt)
     const text = textFromParts(parts)
-    const saved =
-      options.supersedesMessageId && !text.trim()
-        ? null
-        : await insertCoachMessage({
-            chatId: parseChatId(options.chatId),
-            userId: parseUserId(options.userId),
-            text,
-            parts,
-            status,
-            workedMs,
-            supersedesMessageId: options.supersedesMessageId,
-          })
-    await finishCoachUsage({
-      id: usageId,
-      messageId: saved?.id ?? null,
-      finishReason: usage.finishReason ?? status,
-      latencyMs: workedMs,
-      model: usage.model,
-    })
+    let saved: { id: string } | null = null
+    try {
+      saved =
+        options.supersedesMessageId && !text.trim()
+          ? null
+          : await insertCoachMessage({
+              chatId: parseChatId(options.chatId),
+              userId: parseUserId(options.userId),
+              text,
+              parts,
+              status,
+              workedMs,
+              supersedesMessageId: options.supersedesMessageId,
+            })
+    } finally {
+      await finishCoachUsage({
+        id: usageId,
+        messageId: saved?.id ?? null,
+        finishReason: usage.finishReason ?? status,
+        latencyMs: workedMs,
+        model: usage.model,
+      })
+    }
     if (saved)
       await maybeTitle({
         registry,
@@ -326,7 +339,7 @@ async function maybeTitle(input: {
 export async function* liveParts(input: {
   model?: LanguageModel
   history: ChatEntry[]
-  registry: Registry
+  registry: Pick<Registry, "read" | "execute">
   actor: CoachActor
   toolEntries: ToolEntry[]
   focusDoc?: CoachFocusDoc
