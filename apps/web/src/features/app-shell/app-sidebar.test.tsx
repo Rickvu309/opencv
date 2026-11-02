@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, fireEvent, screen, within } from "@testing-library/react"
+import { cleanup, screen, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
@@ -86,8 +87,18 @@ describe("app sidebar Inbox name", () => {
   })
 })
 
+async function tabTo(
+  user: ReturnType<typeof userEvent.setup>,
+  target: HTMLElement
+) {
+  for (let step = 0; step < 40 && document.activeElement !== target; step += 1)
+    await user.tab()
+  expect(target).toHaveFocus()
+}
+
 describe("app sidebar groups", () => {
-  it("collapses Your work on activation and keeps it collapsed after a reload", async () => {
+  it("collapses Your work from the keyboard and keeps it collapsed after a remount", async () => {
+    const user = userEvent.setup()
     const sidebar = await renderSidebar(SURFACE_PATHS.pitch)
     const toggle = await within(sidebar).findByRole("button", {
       name: "Your work",
@@ -95,10 +106,13 @@ describe("app sidebar groups", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true")
     expect(within(sidebar).getByRole("link", { name: "Apply" })).toBeVisible()
 
-    fireEvent.click(toggle)
+    await tabTo(user, toggle)
+    await user.keyboard("{Enter}")
     expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(toggle).toHaveFocus()
     expect(within(sidebar).queryByRole("link", { name: "Apply" })).toBeNull()
     expect(within(sidebar).queryByRole("link", { name: "Paper" })).toBeNull()
+    expect(within(sidebar).queryByRole("link", { name: "Pitch" })).toBeNull()
 
     cleanup()
     const reloaded = await renderSidebar(SURFACE_PATHS.pitch)
@@ -108,25 +122,30 @@ describe("app sidebar groups", () => {
     expect(again).toHaveAttribute("aria-expanded", "false")
     expect(within(reloaded).queryByRole("link", { name: "Apply" })).toBeNull()
 
-    fireEvent.click(again)
+    await tabTo(user, again)
+    await user.keyboard(" ")
     expect(again).toHaveAttribute("aria-expanded", "true")
     expect(within(reloaded).getByRole("link", { name: "Apply" })).toBeVisible()
   })
 
-  it("collapses Favorites and keeps it collapsed after a reload", async () => {
+  it("collapses Favorites from the keyboard and keeps it collapsed after a remount", async () => {
     setMockJobs([
       { id: "job-1", title: "Designer", company: "Acme", starred: true },
     ])
+    const user = userEvent.setup()
     const sidebar = await renderSidebar(SURFACE_PATHS.pitch)
     const toggle = await within(sidebar).findByRole("button", {
       name: "Favorites",
     })
     await within(sidebar).findByRole("link", { name: "Designer Acme" })
-    fireEvent.click(toggle)
+
+    await tabTo(user, toggle)
+    await user.keyboard(" ")
     expect(toggle).toHaveAttribute("aria-expanded", "false")
     expect(
       within(sidebar).queryByRole("link", { name: "Designer Acme" })
     ).toBeNull()
+    expect(within(sidebar).getByRole("link", { name: "Apply" })).toBeVisible()
 
     cleanup()
     const reloaded = await renderSidebar(SURFACE_PATHS.pitch)
@@ -137,5 +156,12 @@ describe("app sidebar groups", () => {
     expect(
       within(reloaded).queryByRole("link", { name: "Designer Acme" })
     ).toBeNull()
+
+    await tabTo(user, again)
+    await user.keyboard("{Enter}")
+    expect(again).toHaveAttribute("aria-expanded", "true")
+    expect(
+      await within(reloaded).findByRole("link", { name: "Designer Acme" })
+    ).toBeVisible()
   })
 })
