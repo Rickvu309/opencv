@@ -8,6 +8,7 @@ import {
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
+import { syncContent } from "./content-store.js"
 import {
   attachPhoto,
   createPaper,
@@ -35,6 +36,18 @@ import {
 
 const noReversal = () => null
 const noActivity = () => null
+
+function storedAsBlocks<T>(document: T) {
+  return isCvDocument(document) ? cvCodecToBlocks(document) : document
+}
+
+function bytesOf(encoded: string) {
+  return new Uint8Array(Buffer.from(encoded, "base64"))
+}
+
+function encoded(bytes: Uint8Array) {
+  return Buffer.from(bytes).toString("base64")
+}
 
 export function registerPaper(registry: Registry) {
   bindCommands(registry, paperContract, {
@@ -77,7 +90,7 @@ export function registerPaper(registry: Registry) {
         input: {
           docId: input.docId,
           contentVersion: output.contentVersion,
-          document: output.previousDocument,
+          document: storedAsBlocks(output.previousDocument),
         },
       }),
       activity: (input, output, actor) =>
@@ -89,6 +102,24 @@ export function registerPaper(registry: Registry) {
               detail: { docId: input.docId, name: output.name },
             }
           : null,
+    },
+    "paper.sync": {
+      handler: async (input, actor) => {
+        const reply = await syncContent(actor.userId, input.docId, {
+          epoch: input.epoch,
+          update: bytesOf(input.update),
+          stateVector: bytesOf(input.stateVector),
+        })
+        return {
+          epoch: reply.epoch,
+          revision: reply.revision,
+          reset: reply.reset,
+          update: encoded(reply.update),
+          stateVector: encoded(reply.stateVector),
+        }
+      },
+      reversal: noReversal,
+      activity: noActivity,
     },
     "paper.rename": {
       handler: (input, actor) => renamePaper(actor, input.docId, input.name),
@@ -182,7 +213,7 @@ export function registerPaper(registry: Registry) {
         input: {
           docId: input.docId,
           contentVersion: output.contentVersion,
-          document: output.previousDocument,
+          document: storedAsBlocks(output.previousDocument),
         },
       }),
       activity: (_input, output) => ({

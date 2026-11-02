@@ -60,3 +60,7 @@ export { cvPrintModel, letterPrintModel, paperPlainText } from "./print.js"
 
 export type { StoredShape, Upgraded, UpgradeRefusalReason } from "./upgrade.js"
 export { upgradeStoredPaper } from "./upgrade.js"
+
+export { legacyPaperOf } from "./legacy.js"
+
+export { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"

@@ -30,6 +30,7 @@ const STRING_CANDIDATES = [
   "2026-01-02",
   "https://example.com/job",
   "a",
+  "",
 ]
 
 function sampleInput(schema: Schema, depth = 0): unknown {

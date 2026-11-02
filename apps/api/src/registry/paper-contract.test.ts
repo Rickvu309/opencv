@@ -71,6 +71,12 @@ describe("paper contract", () => {
         },
       })
       await run("paper.rename", { docId: cv, name: "Ada CV" })
+      await run("paper.sync", {
+        docId: cv,
+        epoch: 0,
+        update: "",
+        stateVector: "",
+      })
       const beforeFavorite = paperQueries["paper.get"].output.parse(
         await read("paper.get", { docId: cv })
       )

@@ -10,6 +10,10 @@ import { fileIdSchema, paperIdSchema } from "./ids.js"
 import { cvDocumentV1Schema, letterDocumentV1Schema } from "./paper-codecs.js"
 import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
 import {
+  paperSyncInputSchema,
+  paperSyncOutputSchema,
+} from "./paper-doc/sync.js"
+import {
   paperAttachPhotoInputSchema,
   paperCreateInputSchema,
   paperDeleteFileInputSchema,
@@ -178,6 +182,17 @@ export const paperContract = commandContract({
     destructive: false,
     step: () => "Update the document",
     invalidates: docChanged,
+  }),
+  "paper.sync": commandEntry({
+    description:
+      "Exchange document changes with the server. Sends what the server lacks and returns what the caller lacks.",
+    input: paperSyncInputSchema,
+    output: paperSyncOutputSchema,
+    idempotency: "none",
+    coach: "never",
+    destructive: false,
+    step: () => "Sync the document",
+    invalidates: () => [],
   }),
   "paper.rename": commandEntry({
     description: "Rename a document.",
