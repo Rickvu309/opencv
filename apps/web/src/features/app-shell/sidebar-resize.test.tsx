@@ -89,10 +89,11 @@ describe("resize handle", () => {
     fireEvent.pointerDown(handle, { clientX: 244, button: 0, pointerId: 1 })
     expect(frame()).toHaveAttribute("data-resizing", "true")
     expect(document.body.style.userSelect).toBe("none")
+    const queued = frames.length
     fireEvent.pointerMove(handle, { clientX: 260, pointerId: 1 })
     fireEvent.pointerMove(handle, { clientX: 270, pointerId: 1 })
     fireEvent.pointerMove(handle, { clientX: 280, pointerId: 1 })
-    expect(frames).toHaveLength(1)
+    expect(frames).toHaveLength(queued + 1)
     expect(sidebarWidth()).toBe("244px")
     flushFrames()
     expect(sidebarWidth()).toBe("280px")

@@ -30,7 +30,10 @@ export function SidebarToggle({ label, direction, onClick, className }: Props) {
             data-slot="sidebar-toggle"
             aria-label={label}
             aria-keyshortcuts="["
-            className={cn("hover:bg-sidebar-accent md:size-7", className)}
+            className={cn(
+              "size-11 hover:bg-sidebar-accent md:size-7",
+              className
+            )}
             onClick={onClick}
           />
         }
