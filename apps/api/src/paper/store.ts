@@ -11,12 +11,15 @@ import {
   withoutBlankParts,
   emptyLetterDocument,
   isCvBlockDocument,
-  isCvDocument,
   paperPhotoFileId,
   paperPhotoRef,
   parseFileId,
   parsePaperId,
   parseUserId,
+  legacyPaperOf,
+  mergeLegacyEdit,
+  upgradeStoredPaper,
+  type PaperDocument,
   type PaperView,
   type Actor,
   type FileId,
@@ -42,6 +45,7 @@ import {
   parseImportFile,
 } from "./import-parse.js"
 
+import { seedColumns, withContent } from "./content-store.js"
 import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
 
 const importAbort = new AsyncLocalStorage<AbortSignal>()
@@ -148,12 +152,17 @@ export async function createPaper(
     name?: string
     templateId?: string
     document?: unknown
+    paper?: PaperDocument
   }
 ) {
   const now = new Date()
   const id = createId(now.getTime())
-  const document =
-    input.document !== undefined
+  const document = input.paper
+    ? (legacyPaperOf(input.paper, input.document) as unknown as Record<
+        string,
+        unknown
+      >)
+    : input.document !== undefined
       ? requireDocument(input.kind, input.document)
       : blankDocument(input.kind)
   await getDb()
@@ -165,6 +174,8 @@ export async function createPaper(
       kind: input.kind,
       templateId: input.templateId ?? "simple",
       document,
+      ...seedColumns(input.kind, input.paper ?? document),
+      crdtBaseSeq: 1,
       contentVersion: 1,
       createdAt: now,
       updatedAt: now,
@@ -174,49 +185,85 @@ export async function createPaper(
 }
 
 export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
-  const current = await ownedPaper(actor.userId, input.docId)
-  const document = requireDocument(current.kind, input.document)
-  const view = toPaper(current)
-  if (
-    current.contentVersion === input.contentVersion + 1 &&
-    canonicalJson(current.document) === canonicalJson(document)
-  ) {
-    return { ...view, previousDocument: view.document }
+  const kind = (await ownedPaper(actor.userId, input.docId)).kind
+  const document = requireDocument(kind, input.document)
+  const upgraded = upgradeStoredPaper(kind, document)
+  if (!upgraded.ok) {
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, upgraded.message)
   }
-  // A stored version 2 CV stays on blocks. A version 1 row may still adopt version 2.
-  if (
-    current.kind === "cv" &&
-    isCvBlockDocument(current.document) &&
-    !isCvBlockDocument(document)
-  ) {
-    throw new CommandError(
-      ERROR_CODES.VALIDATION_ERROR,
-      "This CV uses blocks. Send a version 2 document."
-    )
-  }
-  const updatedAt = new Date()
-  const contentVersion = current.contentVersion + 1
-  const written = await getDb()
-    .update(paperDocs)
-    .set({ document, contentVersion, updatedAt })
-    .where(
-      and(
-        eq(paperDocs.id, current.id),
-        eq(paperDocs.contentVersion, input.contentVersion)
+  return withContent(actor.userId, input.docId, async (content) => {
+    const current = content.row
+    const view = toPaper(current)
+    const previousPaper = content.document
+    const merged = mergeLegacyEdit(previousPaper, upgraded.document)
+    const unchanged = canonicalJson(merged) === canonicalJson(previousPaper)
+    const asIs = { ...view, previousDocument: view.document, previousPaper }
+    if (
+      current.contentVersion === input.contentVersion + 1 &&
+      (unchanged || canonicalJson(current.document) === canonicalJson(document))
+    ) {
+      return asIs
+    }
+    if (current.contentVersion !== input.contentVersion) {
+      throw conflict(view)
+    }
+    if (
+      current.kind === "cv" &&
+      isCvBlockDocument(current.document) &&
+      !isCvBlockDocument(document)
+    ) {
+      throw new CommandError(
+        ERROR_CODES.VALIDATION_ERROR,
+        "This CV uses blocks. Send a version 2 document."
       )
-    )
-  if ((written.rowCount ?? 0) === 0) {
-    const latest = toPaper(await ownedPaper(actor.userId, input.docId))
-    throw new CommandError(
-      ERROR_CODES.CONFLICT,
-      "This document changed. Reload it and try again.",
-      { document: latest }
-    )
+    }
+    if (unchanged) return asIs
+    const written = await content.edit({
+      origin: "person",
+      target: merged,
+      witness: document,
+    })
+    return {
+      ...toPaper(written),
+      previousDocument: view.document,
+      previousPaper,
+    }
+  })
+}
+
+function conflict(view: PaperView) {
+  return new CommandError(
+    ERROR_CODES.CONFLICT,
+    "This document changed. Reload it and try again.",
+    { document: view }
+  )
+}
+
+export async function restorePaper(
+  actor: Actor,
+  input: {
+    docId: PaperId
+    contentVersion: number
+    document: unknown
+    paper: PaperDocument
   }
-  return {
-    ...toPaper({ ...current, document, contentVersion, updatedAt }),
-    previousDocument: view.document,
-  }
+) {
+  return withContent(actor.userId, input.docId, async (content) => {
+    const view = toPaper(content.row)
+    if (content.row.contentVersion !== input.contentVersion) {
+      throw conflict(view)
+    }
+    const written = await content.edit({
+      origin: "person",
+      target: input.paper,
+      witness: input.document,
+    })
+    return {
+      ...toPaper(written),
+      previousDocument: view.document,
+      previousPaper: content.document,
+    }
+  })
 }
 
 export async function renamePaper(actor: Actor, docId: PaperId, name: string) {
@@ -254,6 +301,9 @@ export async function duplicatePaper(actor: Actor, docId: PaperId) {
     name: `Copy of ${current.name}`.slice(0, 200),
     templateId: current.templateId ?? undefined,
     document: current.document,
+    ...(current.crdtDocument
+      ? { paper: current.crdtDocument as unknown as PaperDocument }
+      : {}),
   })
 }
 
@@ -342,15 +392,17 @@ export async function pageCount(actor: Actor, docId: PaperId) {
   return { docId, pages: weight > 3500 ? 2 : 1, pageChoice: doc.pageChoice }
 }
 
-function withPhotoRef(document: PaperView["document"], ref: string) {
-  if (isCvBlockDocument(document)) {
-    return { ...document, header: { ...document.header, photo: ref } }
+function withPhotoRef(document: PaperDocument, ref: string): PaperDocument {
+  if (document.kind !== "cv") {
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      "A photo belongs on a CV."
+    )
   }
-  if (isCvDocument(document)) return { ...document, photoUrl: ref }
-  throw new CommandError(
-    ERROR_CODES.VALIDATION_ERROR,
-    "A photo belongs on a CV."
-  )
+  return {
+    ...document,
+    header: { ...document.header, photo: ref },
+  } as PaperDocument
 }
 
 async function requireAvatarFile(userId: UserId, fileId: FileId) {
@@ -400,34 +452,20 @@ export async function attachPhoto(
   docId: PaperId,
   fileId: FileId
 ) {
-  const current = await ownedPaper(actor.userId, docId)
+  await ownedPaper(actor.userId, docId)
   await requireAvatarFile(actor.userId, fileId)
-  const view = toPaper(current)
-  const document = requireDocument(
-    current.kind,
-    withPhotoRef(view.document, paperPhotoRef(fileId))
-  )
-  const updatedAt = new Date()
-  const contentVersion = current.contentVersion + 1
-  const written = await getDb()
-    .update(paperDocs)
-    .set({ document, contentVersion, updatedAt })
-    .where(
-      and(
-        eq(paperDocs.id, current.id),
-        eq(paperDocs.contentVersion, current.contentVersion)
-      )
-    )
-  if ((written.rowCount ?? 0) === 0) {
-    throw new CommandError(
-      ERROR_CODES.CONFLICT,
-      "This document changed. Reload it and try again."
-    )
-  }
-  return {
-    ...toPaper({ ...current, document, contentVersion, updatedAt }),
-    previousDocument: view.document,
-  }
+  return withContent(actor.userId, docId, async (content) => {
+    const before = toPaper(content.row)
+    const written = await content.edit({
+      origin: "server",
+      target: (current) => withPhotoRef(current, paperPhotoRef(fileId)),
+    })
+    return {
+      ...toPaper(written),
+      previousDocument: before.document,
+      previousPaper: content.document,
+    }
+  })
 }
 
 export async function readShared(token: string) {

@@ -6,7 +6,7 @@ import {
   type PaperView,
   type UserId,
 } from "@workspace/domain"
-import { and, eq, isNull, sql } from "drizzle-orm"
+import { and, eq, inArray, isNull, sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { activity, paperDocs, user } from "../db/schema.js"
@@ -41,7 +41,10 @@ export async function referencedPhotoFileIds(userId: UserId) {
         .where(
           and(
             eq(activity.userId, userId),
-            eq(activity.reversalCommand, "paper.replace"),
+            inArray(activity.reversalCommand, [
+              "paper.replace",
+              "paper.restore",
+            ]),
             isNull(activity.undoneAt)
           )
         )

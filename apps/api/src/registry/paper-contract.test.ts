@@ -13,7 +13,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
+import { paperDocs, user } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
@@ -70,7 +70,25 @@ describe("paper contract", () => {
           header: { ...named.header, name: "Ada Lane" },
         },
       })
+      const current = (await read("paper.get", { docId: cv })) as {
+        contentVersion: number
+        document: unknown
+      }
+      await run("paper.restore", {
+        docId: cv,
+        contentVersion: current.contentVersion,
+        document: current.document,
+        paper: (
+          await db.select().from(paperDocs).where(eq(paperDocs.id, cv))
+        )[0]!.crdtDocument,
+      })
       await run("paper.rename", { docId: cv, name: "Ada CV" })
+      await run("paper.sync", {
+        docId: cv,
+        epoch: 0,
+        update: "",
+        stateVector: "",
+      })
       const beforeFavorite = paperQueries["paper.get"].output.parse(
         await read("paper.get", { docId: cv })
       )

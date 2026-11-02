@@ -1,4 +1,11 @@
-import { blankBlockDocument, parseUserId, personActor } from "@workspace/domain"
+import {
+  blankBlockDocument,
+  legacyPaperOf,
+  parseUserId,
+  personActor,
+  type PaperDocument,
+} from "@workspace/domain"
+import { loadYDoc, materialize, writeDocument } from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
@@ -29,6 +36,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     closing: "Warm regards,",
     signature: "Linh",
   }
+  let syncPush = ""
   const lettersAfter = { markdown: "Only one paragraph.", sender: "Linh" }
   return [
     {
@@ -102,6 +110,93 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         await undo(cvReplace)
         const doc = await paperOf(ctx.docId)
         expect(text(record(record(doc, "document"), "header"), "name")).toBe("")
+      },
+    },
+    {
+      name: "paper.sync",
+      arrange: async () => {
+        const paper = await run("paper.create", {
+          kind: "cv",
+          name: "Sync CV",
+        })
+        ctx.docId = idOf(paper.output)
+        const pulled = await run("paper.sync", {
+          docId: ctx.docId,
+          epoch: 0,
+          update: "",
+          stateVector: "",
+        })
+        const pulledUpdate = text(pulled.output, "update") ?? ""
+        const client = loadYDoc(
+          new Uint8Array(Buffer.from(pulledUpdate, "base64")),
+          []
+        )
+        const materialized = materialize(client)
+        if (!materialized.ok || materialized.document.kind !== "cv") {
+          throw new Error("The pulled document did not materialize")
+        }
+        const typed = {
+          ...materialized.document,
+          header: { ...materialized.document.header, name: "Synced name" },
+        }
+        const update = writeDocument(client, typed, "person")
+        syncPush = Buffer.from(update ?? new Uint8Array()).toString("base64")
+      },
+      act: () =>
+        run("paper.sync", {
+          docId: ctx.docId,
+          epoch: 1,
+          update: syncPush,
+          stateVector: "",
+        }),
+      assert: async (result) => {
+        expect(result.output).toMatchObject({
+          epoch: 1,
+          revision: 2,
+          reset: false,
+        })
+        const document = record(await paperOf(ctx.docId), "document")
+        expect(record(document, "header")).toMatchObject({
+          name: "Synced name",
+        })
+      },
+    },
+    {
+      name: "paper.restore",
+      arrange: async () => {
+        const paper = await run("paper.create", {
+          kind: "cv",
+          name: "Restore CV",
+        })
+        ctx.docId = idOf(paper.output)
+      },
+      act: async () => {
+        const row = (
+          await db.select().from(paperDocs).where(eq(paperDocs.id, ctx.docId))
+        )[0]!
+        const stored = row.crdtDocument as unknown as PaperDocument
+        if (stored.kind !== "cv") throw new Error("expected a CV")
+        const restored = {
+          ...stored,
+          header: { ...stored.header, name: "Restored name" },
+        }
+        return run("paper.restore", {
+          docId: ctx.docId,
+          contentVersion: row.contentVersion,
+          document: legacyPaperOf(restored, row.document),
+          paper: restored,
+        })
+      },
+      assert: async () => {
+        const document = record(await paperOf(ctx.docId), "document")
+        expect(record(document, "header")).toMatchObject({
+          name: "Restored name",
+        })
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        const document = record(await paperOf(ctx.docId), "document")
+        expect(record(document, "header")).toMatchObject({ name: "" })
       },
     },
     {

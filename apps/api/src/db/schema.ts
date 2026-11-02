@@ -165,6 +165,10 @@ export const paperDocs = opencvApp.table(
     sourceFileId: uuid("source_file_id").references(() => files.id, {
       onDelete: "set null",
     }),
+    crdtEpoch: integer("crdt_epoch"),
+    crdtBase: bytea("crdt_base"),
+    crdtBaseSeq: integer("crdt_base_seq"),
+    crdtDocument: jsonb("crdt_document").$type<Record<string, unknown>>(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
@@ -174,6 +178,21 @@ export const paperDocs = opencvApp.table(
       table.updatedAt
     ),
   ]
+)
+
+export const paperDocUpdates = opencvApp.table(
+  "paper_doc_updates",
+  {
+    paperId: uuid("paper_id")
+      .notNull()
+      .references(() => paperDocs.id, { onDelete: "cascade" }),
+    seq: integer("seq").notNull(),
+    origin: text("origin").notNull(),
+    editId: text("edit_id"),
+    update: bytea("update").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.paperId, table.seq] })]
 )
 
 export const paperShares = opencvApp.table("paper_shares", {

@@ -167,7 +167,7 @@ function cvFromBlockDocument(legacy: CvBlockDocument): unknown {
   }
 }
 
-function paragraphsOfText(text: string): string[] {
+export function paragraphsOfText(text: string): string[] {
   return text
     .replace(/\r\n?/g, "\n")
     .split(/\n(?:[ \t]*\n)+/)

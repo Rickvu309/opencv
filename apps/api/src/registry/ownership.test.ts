@@ -17,6 +17,7 @@ const owners: Record<string, string[]> = {
   chatMessages: ["chat"],
   files: ["paper"],
   paperDocs: ["paper"],
+  paperDocUpdates: ["paper"],
   paperShares: ["paper"],
   jobs: ["job"],
   jobChecklist: ["job"],

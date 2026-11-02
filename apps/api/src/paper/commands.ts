@@ -4,10 +4,13 @@ import {
   isCvDocument,
   keywordGap,
   paperContract,
+  type PaperDocument,
+  type PaperId,
 } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
+import { syncContent } from "./content-store.js"
 import {
   attachPhoto,
   createPaper,
@@ -25,6 +28,7 @@ import {
   readShared,
   renamePaper,
   replacePaper,
+  restorePaper,
   setPaperStatus,
   setPaperFavorite,
   setPaperTemplate,
@@ -35,6 +39,47 @@ import {
 
 const noReversal = () => null
 const noActivity = () => null
+
+function storedAsBlocks<T>(document: T) {
+  return isCvDocument(document) ? cvCodecToBlocks(document) : document
+}
+
+function restoring(
+  input: { docId: PaperId },
+  output: {
+    contentVersion: number
+    previousDocument: unknown
+    previousPaper?: PaperDocument
+  }
+) {
+  if (output.previousPaper === undefined) {
+    return {
+      command: "paper.replace" as const,
+      input: {
+        docId: input.docId,
+        contentVersion: output.contentVersion,
+        document: storedAsBlocks(output.previousDocument),
+      },
+    }
+  }
+  return {
+    command: "paper.restore" as const,
+    input: {
+      docId: input.docId,
+      contentVersion: output.contentVersion,
+      document: storedAsBlocks(output.previousDocument),
+      paper: output.previousPaper,
+    },
+  }
+}
+
+function bytesOf(encoded: string) {
+  return new Uint8Array(Buffer.from(encoded, "base64"))
+}
+
+function encoded(bytes: Uint8Array) {
+  return Buffer.from(bytes).toString("base64")
+}
 
 export function registerPaper(registry: Registry) {
   bindCommands(registry, paperContract, {
@@ -72,14 +117,7 @@ export function registerPaper(registry: Registry) {
         }
         return replacePaper(actor, { ...input, document })
       },
-      reversal: (input, output) => ({
-        command: "paper.replace",
-        input: {
-          docId: input.docId,
-          contentVersion: output.contentVersion,
-          document: output.previousDocument,
-        },
-      }),
+      reversal: restoring,
       activity: (input, output, actor) =>
         actor.type === "coach"
           ? {
@@ -89,6 +127,29 @@ export function registerPaper(registry: Registry) {
               detail: { docId: input.docId, name: output.name },
             }
           : null,
+    },
+    "paper.sync": {
+      handler: async (input, actor) => {
+        const reply = await syncContent(actor.userId, input.docId, {
+          epoch: input.epoch,
+          update: bytesOf(input.update),
+          stateVector: bytesOf(input.stateVector),
+        })
+        return {
+          epoch: reply.epoch,
+          revision: reply.revision,
+          reset: reply.reset,
+          update: encoded(reply.update),
+          stateVector: encoded(reply.stateVector),
+        }
+      },
+      reversal: noReversal,
+      activity: noActivity,
+    },
+    "paper.restore": {
+      handler: (input, actor) => restorePaper(actor, input),
+      reversal: restoring,
+      activity: noActivity,
     },
     "paper.rename": {
       handler: (input, actor) => renamePaper(actor, input.docId, input.name),
@@ -177,14 +238,7 @@ export function registerPaper(registry: Registry) {
     },
     "paper.attachPhoto": {
       handler: (input, actor) => attachPhoto(actor, input.docId, input.fileId),
-      reversal: (input, output) => ({
-        command: "paper.replace",
-        input: {
-          docId: input.docId,
-          contentVersion: output.contentVersion,
-          document: output.previousDocument,
-        },
-      }),
+      reversal: restoring,
       activity: (_input, output) => ({
         subjectKind: "paper",
         subjectId: output.id,

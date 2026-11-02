@@ -9,6 +9,11 @@ import {
 import { fileIdSchema, paperIdSchema } from "./ids.js"
 import { cvDocumentV1Schema, letterDocumentV1Schema } from "./paper-codecs.js"
 import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
+import { paperDocumentSchema } from "./paper-doc/document.js"
+import {
+  paperSyncInputSchema,
+  paperSyncOutputSchema,
+} from "./paper-doc/sync.js"
 import {
   paperAttachPhotoInputSchema,
   paperCreateInputSchema,
@@ -154,6 +159,7 @@ const docRemoved = (input: DocInput): QueryRef[] => [
 ]
 
 const previousDocument = storedPaperDocumentSchema
+const previousPaper = paperDocumentSchema.optional()
 
 export const paperContract = commandContract({
   "paper.create": commandEntry({
@@ -172,12 +178,40 @@ export const paperContract = commandContract({
     description:
       "Replace a document when the version matches. A letter keeps only the parts you send, so send every part to keep.",
     input: paperReplaceInputSchema,
-    output: paperViewSchema.extend({ previousDocument }).strict(),
+    output: paperViewSchema
+      .extend({ previousDocument, previousPaper })
+      .strict(),
     idempotency: "none",
     coach: "auto",
     destructive: false,
     step: () => "Update the document",
     invalidates: docChanged,
+  }),
+  "paper.restore": commandEntry({
+    description:
+      "Put back an earlier version of a document when the version matches.",
+    input: paperReplaceInputSchema
+      .extend({ paper: paperDocumentSchema })
+      .strict(),
+    output: paperViewSchema
+      .extend({ previousDocument, previousPaper })
+      .strict(),
+    idempotency: "none",
+    coach: "never",
+    destructive: false,
+    step: () => "Restore the document",
+    invalidates: docChanged,
+  }),
+  "paper.sync": commandEntry({
+    description:
+      "Exchange document changes with the server. Sends what the server lacks and returns what the caller lacks.",
+    input: paperSyncInputSchema,
+    output: paperSyncOutputSchema,
+    idempotency: "none",
+    coach: "never",
+    destructive: false,
+    step: () => "Sync the document",
+    invalidates: () => [],
   }),
   "paper.rename": commandEntry({
     description: "Rename a document.",
@@ -288,7 +322,9 @@ export const paperContract = commandContract({
   "paper.attachPhoto": commandEntry({
     description: "Attach an uploaded photo to a CV.",
     input: paperAttachPhotoInputSchema,
-    output: paperViewSchema.extend({ previousDocument }).strict(),
+    output: paperViewSchema
+      .extend({ previousDocument, previousPaper })
+      .strict(),
     coach: "auto",
     destructive: false,
     step: () => "Add a photo",

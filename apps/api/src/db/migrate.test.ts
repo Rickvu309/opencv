@@ -24,6 +24,7 @@ const productTables = [
   "job_checklist",
   "jobs",
   "notify_requests",
+  "paper_doc_updates",
   "paper_docs",
   "paper_shares",
   "pending_actions",
@@ -63,6 +64,7 @@ describe("opencv_app migrations", () => {
       "0001_account_issuer_optional",
       "0002_chat_reply_supersession",
       "0003_paper_favorites",
+      "0004_paper_crdt_log",
     ])
     const sqlFiles = readdirSync(migrationsFolder).filter((name) =>
       name.endsWith(".sql")
@@ -72,6 +74,7 @@ describe("opencv_app migrations", () => {
       "0001_account_issuer_optional.sql",
       "0002_chat_reply_supersession.sql",
       "0003_paper_favorites.sql",
+      "0004_paper_crdt_log.sql",
     ])
     const source = readFileSync(
       path.join(migrationsFolder, "0000_opencv_app.sql"),
