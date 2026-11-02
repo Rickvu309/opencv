@@ -148,6 +148,45 @@ describe("UI package kit surface", () => {
     )
   })
 
+  it("ships the kit breadcrumb and the page header with its parts", () => {
+    const files = readdirSync(path.join(repoRoot, "packages/ui/src/components"))
+    expect(files).toContain("breadcrumb.tsx")
+    expect(files).toContain("page-header.tsx")
+    const breadcrumb = read("packages/ui/src/components/breadcrumb.tsx")
+    for (const part of [
+      "Breadcrumb",
+      "BreadcrumbList",
+      "BreadcrumbItem",
+      "BreadcrumbLink",
+      "BreadcrumbPage",
+      "BreadcrumbSeparator",
+      "BreadcrumbEllipsis",
+    ]) {
+      expect(breadcrumb, part).toMatch(new RegExp(`function ${part}\\(`))
+    }
+    expect(breadcrumb).toContain('aria-label="Breadcrumb"')
+    expect(breadcrumb).toContain('aria-current="page"')
+    const header = read("packages/ui/src/components/page-header.tsx")
+    for (const part of [
+      "PageHeader",
+      "PageHeaderTitle",
+      "PageHeaderLeading",
+      "PageHeaderBack",
+      "PageHeaderTitleActions",
+      "PageHeaderMeta",
+      "PageHeaderActions",
+      "PageHeaderAction",
+      "PageHeaderPrimary",
+    ]) {
+      expect(header, part).toMatch(new RegExp(`function ${part}\\(`))
+    }
+    expect(header).toContain(
+      "flex h-[52px] shrink-0 items-center gap-2 border-b border-border pr-4 pl-5"
+    )
+    expect(header).not.toMatch(/#[0-9A-Fa-f]{3,8}\b/)
+    expect(header).not.toMatch(/\bbg-/)
+  })
+
   it("keeps Paper / CV / print CSS out of the kit stylesheet", () => {
     const kit = read("packages/ui/src/styles/globals.css")
     const paper = read("apps/web/src/styles/paper.css")
