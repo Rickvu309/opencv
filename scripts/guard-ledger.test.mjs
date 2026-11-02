@@ -1,18 +1,24 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import {
+  BASELINE_FILE,
   LEDGER,
+  failureKind,
   fingerprint,
   guardFiles,
+  hashOfFile,
   ledgerProblems,
   prove,
+  readBaseline,
   readProofs,
   realIo,
   root,
+  runCommand,
 } from "./guard-ledger.mjs"
+import { withTempDir } from "./lib/temp-dir.mjs"
 import { listGuardFiles } from "./list-checks.mjs"
 import { CI_ONLY_GUARDS, FAST_GUARDS } from "./ocv-tools/jobs/push-checks.mjs"
 
@@ -27,7 +33,14 @@ const tracked = () =>
 
 const read = (file) => readFileSync(path.join(root, file), "utf8")
 
+const BASELINE_CEILING = 68
+
 const PAST = { mode: "detect", sha: "abc1234", path: "src/a.tsx" }
+const REVERT_PAST = {
+  mode: "revert",
+  fix: "fff0001",
+  command: ["node", "check.mjs"],
+}
 const DETECTOR = { module: "scripts/lib/x.mjs", export: "x" }
 const row = (extra = {}) => ({
   id: "x",
@@ -42,10 +55,11 @@ const problems = (over) =>
     files: ["scripts/x.test.mjs"],
     exists: () => true,
     proofs: {},
+    hashOf: () => "h1",
     ...over,
   })
 
-test("every guard, and every test that imports detect, has a ledger row that names a real file with a passing proof", () => {
+test("every guard, and every test that imports detect, has a ledger row or a baseline entry, and a row with a proof keeps it", () => {
   const files = tracked()
   const found = guardFiles(
     files,
@@ -55,10 +69,43 @@ test("every guard, and every test that imports detect, has a ledger row that nam
   assert.deepEqual(
     ledgerProblems({
       files: found,
+      baseline: readBaseline(),
       exists: (file) => existsSync(path.join(root, file)),
       proofs: readProofs(),
+      hashOf: hashOfFile,
     }),
     []
+  )
+})
+
+test("the baseline of guards without a row only shrinks and stays sorted", () => {
+  const baseline = readBaseline()
+  assert.ok(baseline.length <= BASELINE_CEILING, BASELINE_FILE)
+  assert.deepEqual(baseline, [...baseline].sort())
+})
+
+test("a guard in neither the ledger nor the baseline fails, and a baseline entry that has a row or is gone is stale", () => {
+  assert.match(
+    problems({ files: ["scripts/x.test.mjs", "scripts/y.test.mjs"] })[0],
+    /y\.test\.mjs: guard has no row/
+  )
+  assert.deepEqual(
+    problems({
+      files: ["scripts/x.test.mjs", "scripts/y.test.mjs"],
+      baseline: ["scripts/y.test.mjs"],
+    }),
+    []
+  )
+  assert.match(
+    problems({ baseline: ["scripts/x.test.mjs"] })[0],
+    /x\.test\.mjs: has a row/
+  )
+  assert.match(
+    problems({
+      baseline: ["scripts/z.test.mjs"],
+      exists: (file) => file !== "scripts/z.test.mjs",
+    })[0],
+    /z\.test\.mjs: is gone/
   )
 })
 
@@ -72,25 +119,51 @@ test("a guard with no row, a row for a missing file, and a row with no proof eac
     problems({ exists: () => false })[0],
     /x: scripts\/x\.test\.mjs is missing/
   )
+  assert.deepEqual(
+    problems({ ledger: [row({ historic: PAST, detector: DETECTOR })] }),
+    []
+  )
   assert.match(
-    problems({ ledger: [row({ historic: PAST, detector: DETECTOR })] })[0],
+    problems({ ledger: [row({ historic: REVERT_PAST })] })[0],
     /x: no passing proof.*prove x/
   )
 })
 
-test("a proof counts only while the historic mistake it proved is unchanged", () => {
-  const proven = row({ historic: PAST, detector: DETECTOR })
-  const proofs = { x: { passed: true, fingerprint: fingerprint(proven) } }
+test("a detect row whose path is gone at HEAD is refused unless it names a fixed file", () => {
+  const exists = (file) => file !== PAST.path
+  assert.match(
+    problems({
+      ledger: [row({ historic: PAST, detector: DETECTOR })],
+      exists,
+    })[0],
+    /gone at HEAD.*historic\.fixed/
+  )
+  const fixed = { ...PAST, fixed: { rev: "HEAD", path: "src/b.tsx" } }
+  assert.deepEqual(
+    problems({
+      ledger: [row({ historic: fixed, detector: DETECTOR })],
+      exists,
+    }),
+    []
+  )
+})
+
+test("a proof counts only while the historic mistake and the guard file it proved are unchanged", () => {
+  const proven = row({ historic: REVERT_PAST })
+  const proofs = {
+    x: { passed: true, fingerprint: fingerprint(proven, () => "h1") },
+  }
   assert.deepEqual(problems({ ledger: [proven], proofs }), [])
-  const moved = row({
-    historic: { ...PAST, sha: "def5678" },
-    detector: DETECTOR,
-  })
+  const moved = row({ historic: { ...REVERT_PAST, fix: "def5678" } })
   assert.equal(problems({ ledger: [moved], proofs }).length, 1)
+  assert.equal(
+    problems({ ledger: [proven], proofs, hashOf: () => "h2" }).length,
+    1
+  )
   assert.equal(
     problems({
       ledger: [proven],
-      proofs: { x: { passed: false, fingerprint: fingerprint(proven) } },
+      proofs: { x: { passed: false, fingerprint: proofs.x.fingerprint } },
     }).length,
     1
   )
@@ -134,7 +207,20 @@ test("detect proof passes when the past fires and HEAD stays quiet, and fails on
   )
   assert.equal(pass.ok, true)
   const gone = await prove(proven, detectIo({ abc1234: "MISTAKE" }))
-  assert.equal(gone.ok, true)
+  assert.equal(gone.ok, false)
+  assert.match(gone.lines[1], /vacuous/)
+  const fixedRow = row({
+    historic: { ...PAST, fixed: { rev: "HEAD", path: "src/b.tsx" } },
+    detector: DETECTOR,
+  })
+  const elsewhere = {
+    detector: async () => (text) => text.includes("MISTAKE"),
+    show: (rev, file) =>
+      ({ "abc1234:src/a.tsx": "MISTAKE", "HEAD:src/b.tsx": "clean" })[
+        `${rev}:${file}`
+      ] ?? null,
+  }
+  assert.equal((await prove(fixedRow, elsewhere)).ok, true)
   const silent = await prove(
     proven,
     detectIo({ abc1234: "clean", HEAD: "clean" })
@@ -147,14 +233,21 @@ test("detect proof passes when the past fires and HEAD stays quiet, and fails on
   assert.equal(still.ok, false)
 })
 
-const revertIo = (outcomes) => {
+const ASSERT_OUTPUT = "AssertionError [ERR_ASSERTION]: made a temporary folder"
+const CRASH_OUTPUT =
+  "Error [ERR_MODULE_NOT_FOUND]: Cannot find module './h.mjs'"
+
+const revertIo = (outcomes, applies = true) => {
   const calls = []
   return {
     calls,
     changedFiles: () => ["src/a.ts", "src/a.test.ts", "src/test/b.ts"],
     inScratch: (run) =>
       run({
-        revert: (fix, files) => calls.push(["revert", fix, files]),
+        revert: (fix, files) => {
+          calls.push(["revert", fix, files])
+          if (!applies) throw new Error("patch does not apply\nsecond line")
+        },
         reset: () => calls.push(["reset"]),
         run: () => {
           calls.push(["run"])
@@ -163,12 +256,13 @@ const revertIo = (outcomes) => {
       }),
   }
 }
-const REVERT = row({
-  historic: { mode: "revert", fix: "fff0001", command: ["node", "check.mjs"] },
-})
+const passed = { passed: true, output: "ok" }
+const asserted = { passed: false, output: ASSERT_OUTPUT }
+const crashed = { passed: false, output: CRASH_OUTPUT }
+const REVERT = row({ historic: REVERT_PAST })
 
-test("revert proof reverts only non-test files, expects a failure, resets and expects a pass", () => {
-  const io = revertIo([false, true])
+test("revert proof reverts only non-test files, expects an assertion failure, resets and expects a pass", () => {
+  const io = revertIo([asserted, passed])
   const result = prove(REVERT, io)
   assert.equal(result.ok, true)
   assert.deepEqual(io.calls, [
@@ -177,8 +271,49 @@ test("revert proof reverts only non-test files, expects a failure, resets and ex
     ["reset"],
     ["run"],
   ])
-  assert.equal(prove(REVERT, revertIo([true, true])).ok, false)
-  assert.equal(prove(REVERT, revertIo([false, false])).ok, false)
+  assert.ok(result.lines.some((line) => line.includes(ASSERT_OUTPUT)))
+  assert.equal(prove(REVERT, revertIo([passed, passed])).ok, false)
+  assert.equal(prove(REVERT, revertIo([asserted, asserted])).ok, false)
+})
+
+test("a revert that crashes on an import is the wrong reason, not detection", () => {
+  const result = prove(REVERT, revertIo([crashed, passed]))
+  assert.equal(result.ok, false)
+  assert.match(result.lines[0], /WRONG REASON \(crash/)
+  assert.ok(result.lines.some((line) => line.includes("ERR_MODULE_NOT_FOUND")))
+})
+
+test("a reverse patch that does not apply fails with a line, not a stack trace", () => {
+  const result = prove(REVERT, revertIo([], false))
+  assert.equal(result.ok, false)
+  assert.match(result.lines[0], /does not apply: patch does not apply$/)
+})
+
+test("failureKind tells a crash and an unknown failure from an assertion", () => {
+  assert.equal(failureKind(ASSERT_OUTPUT), "assertion")
+  assert.equal(failureKind(CRASH_OUTPUT), "crash")
+  assert.equal(failureKind("SyntaxError: Unexpected token"), "crash")
+  assert.equal(failureKind("Killed"), "unknown")
+})
+
+test("a mutant that deletes an imported module is reported as the wrong reason on a real run", () => {
+  withTempDir("guard-ledger-fixture-", (dir) => {
+    writeFileSync(path.join(dir, "helper.mjs"), "export const value = 1\n")
+    writeFileSync(
+      path.join(dir, "a.test.mjs"),
+      'import assert from "node:assert/strict"\nimport test from "node:test"\nimport { value } from "./helper.mjs"\ntest("value", () => assert.equal(value, 1))\n'
+    )
+    const command = ["node", "--test", "a.test.mjs"]
+    assert.equal(runCommand(dir, command).passed, true)
+    rmSync(path.join(dir, "helper.mjs"))
+    const crash = runCommand(dir, command)
+    assert.equal(crash.passed, false)
+    assert.equal(failureKind(crash.output), "crash")
+    writeFileSync(path.join(dir, "helper.mjs"), "export const value = 2\n")
+    const wrong = runCommand(dir, command)
+    assert.equal(wrong.passed, false)
+    assert.equal(failureKind(wrong.output), "assertion")
+  })
 })
 
 test("a row whose historic is null has nothing to prove", () => {

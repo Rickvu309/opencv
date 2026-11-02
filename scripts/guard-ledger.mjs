@@ -20,39 +20,19 @@ export const PROOFS_FILE = "scripts/guard-ledger.proofs.json"
 const TEST_FILE = /\.(?:test|type-test)\.[cm]?[jt]sx?$|\/test\//
 const DETECT_IMPORT = /import\s*\{[^}]*\bdetect\b[^}]*\}/
 
-const BACKFILLED = "backfilled with the ledger; no past mistake recorded yet"
-const idOf = (file) =>
-  path.posix
-    .basename(file)
-    .replace(/\.(?:type-)?test\.[cm]?[jt]sx?$/, "")
-    .replace(/-guard$/, "")
-
-const guard = (file, extra = {}) => {
-  const row = { id: idOf(file), file, historic: null, ...extra }
-  if (row.historic === null) row.reason = extra.reason ?? BACKFILLED
-  return row
-}
+export const BASELINE_FILE = "scripts/guard-ledger.baseline.json"
 
 export const LEDGER = Object.freeze([
-  guard("scripts/adr-citations.test.mjs"),
-  guard("scripts/approve-railway-deploys.test.mjs"),
-  guard("scripts/blocknote-dependencies.test.mjs"),
-  guard("scripts/browser-launcher.test.mjs"),
-  guard("scripts/check.test.mjs"),
-  guard("scripts/checks-doc.test.mjs"),
-  guard("scripts/ci-screens.test.mjs"),
-  guard("scripts/ci-workflow.test.mjs"),
-  guard("scripts/doc-paths.test.mjs"),
-  guard("scripts/driver-sign-in.test.mjs"),
-  guard("scripts/focus-indication.test.mjs"),
-  guard("scripts/guard-ledger.test.mjs"),
-  guard("scripts/kit-duplicates.test.mjs"),
-  guard("scripts/layout-comparison-gates.test.mjs"),
-  guard("scripts/nav-pending.test.mjs"),
-  guard("scripts/no-comments.test.mjs"),
-  guard("scripts/paper-save-keeps-parts.test.mjs"),
-  guard("scripts/pen-snapshot.test.mjs"),
-  guard("scripts/pointer-capture.test.mjs", {
+  {
+    id: "guard-ledger",
+    file: "scripts/guard-ledger.test.mjs",
+    historic: null,
+    reason:
+      "it guards the ledger itself; its fixtures fire on each mistake it catches",
+  },
+  {
+    id: "pointer-capture",
+    file: "scripts/pointer-capture.test.mjs",
     detector: {
       module: "scripts/lib/pointer-capture.mjs",
       export: "missingDragEnds",
@@ -61,18 +41,24 @@ export const LEDGER = Object.freeze([
       mode: "detect",
       sha: "70a4c349",
       path: "apps/web/src/features/landing/figures/motion.ts",
+      fixed: {
+        rev: "HEAD",
+        path: "apps/web/src/features/app-shell/sidebar-resize-handle.tsx",
+      },
     },
-  }),
-  guard("scripts/retired-words.test.mjs"),
-  guard("scripts/skill-routes.test.mjs"),
-  guard("scripts/temp-dirs.test.mjs", {
+  },
+  {
+    id: "temp-dirs",
+    file: "scripts/temp-dirs.test.mjs",
     historic: {
       mode: "revert",
       fix: "b680aafb",
       command: ["node", "--test", "scripts/temp-dirs.test.mjs"],
     },
-  }),
-  guard("scripts/touch-targets.test.mjs", {
+  },
+  {
+    id: "touch-targets",
+    file: "scripts/touch-targets.test.mjs",
     detector: {
       module: "scripts/lib/touch-targets.mjs",
       export: "smallTargets",
@@ -82,56 +68,7 @@ export const LEDGER = Object.freeze([
       sha: "6c0514b9^",
       path: "apps/web/src/features/app-shell/app-shell.tsx",
     },
-  }),
-  guard("scripts/unused-domain-exports.test.mjs"),
-  guard("scripts/verify-auth-production.test.mjs"),
-  guard("scripts/verify-feature-map.test.mjs"),
-  guard("scripts/web-lint-rules.test.mjs"),
-  guard("scripts/web-test-clock.test.mjs"),
-  guard("packages/guards/run-tests.test.mjs"),
-  guard("packages/guards/shell-suites.test.mjs"),
-  guard("packages/guards/test-completeness.test.mjs"),
-  guard("packages/guards/wall-clock.test.mjs"),
-  guard("packages/guards/workspace-scripts.test.mjs"),
-  guard("apps/web/src/test/deploy-config.test.ts"),
-  guard("apps/web/src/test/design-frame-coverage.test.ts"),
-  guard("apps/web/src/test/design-vocabulary.test.ts"),
-  guard("apps/web/src/test/disclosure-buttons.test.ts"),
-  guard("apps/web/src/test/feature-imports.test.ts"),
-  guard("apps/web/src/test/landing-art-rotation.test.ts"),
-  guard("apps/web/src/test/landing-button.test.ts"),
-  guard("apps/web/src/test/module-isolation.test.ts"),
-  guard("apps/web/src/test/nav-contract.test.tsx"),
-  guard("apps/web/src/test/no-use-state.test.ts"),
-  guard("apps/web/src/test/page-header-guard.test.ts"),
-  guard("apps/web/src/test/quarantine-expiry.test.ts"),
-  guard("apps/web/src/test/rejected-command.test.ts"),
-  guard("apps/web/src/test/render-app-cleanup.test.tsx"),
-  guard("apps/web/src/test/request-boundary.test.ts"),
-  guard("apps/web/src/test/sonner-cleanup.test.tsx"),
-  guard("apps/web/src/test/surface-behavior.test.tsx"),
-  guard("apps/web/src/test/test-resources.test.ts"),
-  guard("apps/web/src/test/ui-kit-contract.test.ts"),
-  guard("apps/web/src/test/ui-kit-styled.test.ts"),
-  guard("apps/web/src/test/verify-assumptions.test.ts"),
-  guard("apps/web/src/test/warm-routes.test.ts"),
-  guard("apps/api/src/chat/chat-contract.test.ts"),
-  guard("apps/api/src/registry/acceptance.test.ts"),
-  guard("apps/api/src/registry/account-contract.test.ts"),
-  guard("apps/api/src/registry/behavior.test.ts"),
-  guard("apps/api/src/registry/boundaries.test.ts"),
-  guard("apps/api/src/registry/coach-chat-tools.test.ts"),
-  guard("apps/api/src/registry/coverage.test.ts"),
-  guard("apps/api/src/registry/gates.test.ts"),
-  guard("apps/api/src/registry/inbox-contract.test.ts"),
-  guard("apps/api/src/registry/job-contract.test.ts"),
-  guard("apps/api/src/registry/names.test.ts"),
-  guard("apps/api/src/registry/ownership.test.ts"),
-  guard("apps/api/src/registry/paper-contract.test.ts"),
-  guard("apps/api/src/registry/registry.formal.test.ts"),
-  guard("apps/api/src/registry/registry.pending.formal.test.ts"),
-  guard("apps/api/src/registry/registry.undo.formal.test.ts"),
-  guard("apps/api/src/registry/transaction.test.ts"),
+  },
 ])
 
 export function guardFiles(trackedFiles, listGroupFiles, read) {
@@ -143,7 +80,14 @@ export function guardFiles(trackedFiles, listGroupFiles, read) {
   return [...new Set([...grouped, ...detectors])].sort()
 }
 
-export function ledgerProblems({ ledger = LEDGER, files, exists, proofs }) {
+export function ledgerProblems({
+  ledger = LEDGER,
+  baseline = [],
+  files,
+  exists,
+  proofs,
+  hashOf,
+}) {
   const problems = []
   const ids = new Set()
   const listed = new Set()
@@ -157,41 +101,73 @@ export function ledgerProblems({ ledger = LEDGER, files, exists, proofs }) {
         problems.push(`${row.id}: historic is null and gives no reason`)
       continue
     }
+    if (row.historic.mode === "detect") {
+      if (!row.historic.fixed && !exists(row.historic.path))
+        problems.push(
+          `${row.id}: ${row.historic.path} is gone at HEAD, so "stays quiet" proves nothing. Name a fixed file in historic.fixed`
+        )
+      continue
+    }
     const record = proofs[row.id]
-    if (!record?.passed || record.fingerprint !== fingerprint(row))
+    if (!record?.passed || record.fingerprint !== fingerprint(row, hashOf))
       problems.push(
-        `${row.id}: no passing proof for its historic mistake. Run: node scripts/guard-ledger.mjs prove ${row.id}`
+        `${row.id}: no passing proof for its historic mistake, or the guard changed since. Run: node scripts/guard-ledger.mjs prove ${row.id}`
       )
   }
+  const baselined = new Set(baseline)
+  for (const file of baseline) {
+    if (listed.has(file))
+      problems.push(`${file}: has a row, so remove it from ${BASELINE_FILE}`)
+    else if (!exists(file))
+      problems.push(`${file}: is gone, so remove it from ${BASELINE_FILE}`)
+  }
   for (const file of files)
-    if (!listed.has(file))
+    if (!listed.has(file) && !baselined.has(file))
       problems.push(
         `${file}: guard has no row. Add one to LEDGER in scripts/guard-ledger.mjs`
       )
   return problems
 }
 
-export function fingerprint(row) {
+export function fingerprint(row, hashOf) {
   return createHash("sha1")
-    .update(JSON.stringify({ detector: row.detector, historic: row.historic }))
+    .update(JSON.stringify({ historic: row.historic, guard: hashOf(row.file) }))
     .digest("hex")
     .slice(0, 12)
 }
 
 const hit = (result) => (Array.isArray(result) ? result.length > 0 : !!result)
 
+const CRASH =
+  /ERR_MODULE_NOT_FOUND|Cannot find module|SyntaxError|ERR_UNRESOLVED_PACKAGE/
+const ASSERTED = /AssertionError|ERR_ASSERTION|^not ok|\bFAIL\b/m
+
+export function failureKind(output) {
+  if (CRASH.test(output)) return "crash"
+  return ASSERTED.test(output) ? "assertion" : "unknown"
+}
+
+const tailLines = (output, count = 6) =>
+  output
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .slice(-count)
+    .map((line) => `    ${line}`)
+
 export async function proveDetect(row, io) {
   const { sha, path: file } = row.historic
+  const quietAt = row.historic.fixed ?? { rev: "HEAD", path: file }
   const detect = await io.detector(row.detector)
   const past = io.show(sha, file)
-  const now = io.show("HEAD", file)
+  const now = io.show(quietAt.rev, quietAt.path)
   const fires = past !== null && hit(detect(past, file))
-  const quiet = now === null || !hit(detect(now, file))
+  const quiet = now !== null && !hit(detect(now, quietAt.path))
   return {
     ok: fires && quiet,
     lines: [
       `${sha}:${file} ${past === null ? "is missing" : fires ? "FIRES" : "stays quiet"} (must fire)`,
-      `HEAD:${file} ${now === null ? "is gone" : quiet ? "stays quiet" : "FIRES"} (must stay quiet)`,
+      `${quietAt.rev}:${quietAt.path} ${now === null ? "is gone, so this proves nothing (vacuous)" : quiet ? "stays quiet" : "FIRES"} (must stay quiet)`,
     ],
   }
 }
@@ -202,15 +178,27 @@ export function proveRevert(row, io) {
   if (files.length === 0)
     return { ok: false, lines: [`${fix} changes no non-test file`] }
   return io.inScratch((tree) => {
-    tree.revert(fix, files)
+    try {
+      tree.revert(fix, files)
+    } catch (error) {
+      return {
+        ok: false,
+        lines: [
+          `reverse patch of ${fix} does not apply: ${String(error.message).split("\n")[0]}`,
+        ],
+      }
+    }
     const reverted = tree.run(command)
     tree.reset()
     const restored = tree.run(command)
+    const kind = reverted.passed ? "passes" : failureKind(reverted.output)
     return {
-      ok: !reverted && restored,
+      ok: kind === "assertion" && restored.passed,
       lines: [
-        `with ${fix} reverted on ${files.length} file(s): ${reverted ? "PASSES" : "FAILS"} (must fail)`,
-        `at HEAD: ${restored ? "PASSES" : "FAILS"} (must pass)`,
+        `with ${fix} reverted on ${files.length} file(s): ${kind === "assertion" ? "FAILS on an assertion" : kind === "passes" ? "PASSES" : `FAILS FOR THE WRONG REASON (${kind}, not an assertion)`} (must fail on an assertion)`,
+        ...tailLines(reverted.output),
+        `at HEAD: ${restored.passed ? "PASSES" : "FAILS"} (must pass)`,
+        ...(restored.passed ? [] : tailLines(restored.output)),
       ],
     }
   })
@@ -234,6 +222,20 @@ const git = (...args) =>
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   })
+
+export function runCommand(cwd, command) {
+  const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
+  const result = spawnSync(command[0], command.slice(1), {
+    cwd,
+    env,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  return {
+    passed: result.status === 0,
+    output: `${result.stdout ?? ""}${result.stderr ?? ""}`,
+  }
+}
 
 const nodeModuleDirs = () => {
   const dirs = [""]
@@ -261,7 +263,7 @@ export const realIo = {
     }
   },
   changedFiles(fix) {
-    return git("diff", "--name-only", `${fix}^`, fix)
+    return git("diff", "--name-only", "--diff-filter=MD", `${fix}^`, fix)
       .split("\n")
       .filter(Boolean)
   },
@@ -295,18 +297,10 @@ export const realIo = {
               })
             },
             reset() {
-              inTree("checkout", "--", ".")
+              inTree("reset", "--hard")
+              inTree("clean", "-fd")
             },
-            run(command) {
-              const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
-              return (
-                spawnSync(command[0], command.slice(1), {
-                  cwd: tree,
-                  env,
-                  stdio: "ignore",
-                }).status === 0
-              )
-            },
+            run: (command) => runCommand(tree, command),
           })
         } finally {
           git("worktree", "remove", "--force", tree)
@@ -321,6 +315,19 @@ export function readProofs(file = path.join(root, PROOFS_FILE)) {
   return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {}
 }
 
+export const readBaseline = () =>
+  JSON.parse(readFileSync(path.join(root, BASELINE_FILE), "utf8"))
+
+export const hashOfFile = (file) =>
+  createHash("sha1")
+    .update(readFileSync(path.join(root, file)))
+    .digest("hex")
+
+const uncommitted = () =>
+  git("status", "--porcelain")
+    .split("\n")
+    .filter((line) => line && !line.endsWith(PROOFS_FILE))
+
 async function main(argv) {
   const [command, id] = argv
   const row = LEDGER.find((candidate) => candidate.id === id)
@@ -334,6 +341,13 @@ async function main(argv) {
     )
     return 2
   }
+  const dirty = uncommitted()
+  if (dirty.length > 0) {
+    console.error(
+      `commit your changes first; a proof reads committed files.\n${dirty.join("\n")}`
+    )
+    return 2
+  }
   const result = await prove(row, realIo)
   console.log(`${row.id} (${row.historic?.mode ?? "no historic"})`)
   for (const line of result.lines) console.log(`  ${line}`)
@@ -341,8 +355,14 @@ async function main(argv) {
     console.log("FAIL")
     return 1
   }
+  if (row.historic.mode === "detect") {
+    console.log(
+      "PASS (the ledger test re-runs detect proofs, so none is recorded)"
+    )
+    return 0
+  }
   const proofs = readProofs()
-  proofs[row.id] = { passed: true, fingerprint: fingerprint(row) }
+  proofs[row.id] = { passed: true, fingerprint: fingerprint(row, hashOfFile) }
   const sorted = Object.fromEntries(Object.entries(proofs).sort())
   writeFileSync(
     path.join(root, PROOFS_FILE),
