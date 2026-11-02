@@ -70,7 +70,11 @@ export function registerChat(registry: Registry) {
         command: "chat.rename",
         input: { chatId: parseChatId(output.id), title: output.previousTitle },
       }),
-      activity: () => null,
+      activity: (input) => ({
+        subjectKind: "chat",
+        subjectId: input.chatId,
+        summary: `You renamed the chat to ${input.title}`,
+      }),
     },
     "chat.open": {
       handler: (input, actor) => openChat(actor, input),
@@ -83,7 +87,13 @@ export function registerChat(registry: Registry) {
         command: "chat.setFocus",
         input: { chatId: input.chatId, focus: output.previousFocus },
       }),
-      activity: () => null,
+      activity: (input) => ({
+        subjectKind: "chat",
+        subjectId: input.chatId,
+        summary: input.focus
+          ? `You pointed the chat at a ${input.focus.kind}`
+          : "You cleared what the chat points at",
+      }),
     },
     "chat.appendMessage": {
       handler: (input, actor) => appendChatMessage(actor, input),

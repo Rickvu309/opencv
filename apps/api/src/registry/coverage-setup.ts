@@ -44,6 +44,10 @@ export function coverageCases(
   const plainUndo: Undo = async (result: ExecuteResult) => {
     const plan = result.reversal
     if (!plan) throw new Error("missing reversal")
+    if (result.activityId) {
+      await registry.undo(userId, result.activityId)
+      return
+    }
     await registry.execute({
       name: plan.command,
       input: plan.input,

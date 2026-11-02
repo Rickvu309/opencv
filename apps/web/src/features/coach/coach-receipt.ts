@@ -38,6 +38,7 @@ export function receiptHeadline(part: ChatToolPart) {
 export function receiptReversalNote(part: ChatToolPart) {
   if (!part.reversal) return null
   if (part.reversal.possible) {
+    if (!part.activityId) return null
     return `Reversible — ${part.reversal.description}`
   }
   return part.reversal.description

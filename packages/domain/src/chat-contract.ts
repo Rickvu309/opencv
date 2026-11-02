@@ -132,6 +132,7 @@ const anyWriteChanged = (): QueryRef[] => [
   { query: "paper.shared" },
   { query: "inbox.list" },
   { query: "inbox.get" },
+  { query: "chat.list" },
   { query: "chat.get" },
 ]
 
