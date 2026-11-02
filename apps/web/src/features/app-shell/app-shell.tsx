@@ -340,7 +340,7 @@ function ShellDock({
       ref={dockRef}
       data-slot="app-dock"
       data-pen-surface="app-shell"
-      className="flex h-10 shrink-0 items-center justify-end"
+      className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
       <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
         {titles.map((chat) => (
@@ -349,7 +349,7 @@ function ShellDock({
             type="button"
             variant="ghost"
             size="sm"
-            className="max-w-36 shrink-0"
+            className="h-11 max-w-36 shrink-0 md:h-7"
             data-chat-id={chat.id}
             title={chat.title}
             onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
@@ -362,6 +362,7 @@ function ShellDock({
         type="button"
         variant="ghost"
         size="sm"
+        className="h-11 md:h-7"
         data-dock-coach=""
         onClick={onCoach}
       >
@@ -372,6 +373,7 @@ function ShellDock({
         type="button"
         variant="ghost"
         size="icon-sm"
+        className="size-11 md:size-7"
         aria-label={shellCopy.history}
         onClick={onHistory}
       >
