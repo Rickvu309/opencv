@@ -48,6 +48,7 @@ export function useSidebarLayout(enabled: boolean) {
   })
   const menuOpen = useRef(false)
   const inside = useRef(false)
+  const onEdge = useRef(false)
   const handoff = useRef(false)
   const { collapsed } = state
   const peek = collapsed && intent.open
@@ -83,6 +84,12 @@ export function useSidebarLayout(enabled: boolean) {
     return () => window.removeEventListener("keydown", onKey)
   }, [enabled, collapsed, setCollapsed])
 
+  const { contentProps: hoverContent } = intent
+  useEffect(() => {
+    if (!peek || !onEdge.current) return
+    hoverContent.onPointerEnter({ pointerType: "mouse" } as ReactPointerEvent)
+  }, [peek, hoverContent])
+
   useEffect(() => {
     if (!peek) return
     function dismiss() {
@@ -116,9 +123,11 @@ export function useSidebarLayout(enabled: boolean) {
 
   const triggerProps = {
     onPointerEnter: (event: ReactPointerEvent) => {
+      onEdge.current = true
       if (collapsed) intent.triggerProps.onPointerEnter(event)
     },
     onPointerLeave: (event: ReactPointerEvent) => {
+      onEdge.current = false
       if (!menuOpen.current) intent.triggerProps.onPointerLeave(event)
     },
   }

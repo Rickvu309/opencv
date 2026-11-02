@@ -70,6 +70,17 @@ describe("peek hover intent", () => {
     expect(aside()).toHaveAttribute("data-peek", "true")
   })
 
+  it("stays open while the pointer rests on the edge", async () => {
+    await collapsedShell()
+    enterEdge()
+    advance(150)
+    advance(5000)
+    expect(aside()).toHaveAttribute("data-peek", "true")
+    fireEvent.pointerLeave(zone(), mouse())
+    advance(300)
+    expect(aside()).toHaveAttribute("data-peek", "false")
+  })
+
   it("does not open when the pointer sweeps past the edge", async () => {
     await collapsedShell()
     enterEdge()
