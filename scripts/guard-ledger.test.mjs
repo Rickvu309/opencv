@@ -80,7 +80,11 @@ test("every guard, and every test that imports detect, has a ledger row or a bas
 
 test("the baseline of guards without a row only shrinks and stays sorted", () => {
   const baseline = readBaseline()
-  assert.ok(baseline.length <= BASELINE_CEILING, BASELINE_FILE)
+  assert.equal(
+    baseline.length,
+    BASELINE_CEILING,
+    `${BASELINE_FILE} has ${baseline.length} entries but BASELINE_CEILING is ${BASELINE_CEILING}. Removing a baseline entry means lowering BASELINE_CEILING in scripts/guard-ledger.test.mjs in the same commit, so a deleted guard's slot cannot be reused.`
+  )
   assert.deepEqual(baseline, [...baseline].sort())
 })
 
