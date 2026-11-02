@@ -37,7 +37,8 @@ It is refused, and the activity read marks it not reversible, while a newer
 Coach edit made on top of it that changed the same blocks is not undone. It is
 also refused, with nothing written, when the person changed the Coach's words
 since. Typing that reaches the server inside a block the Coach moved or
-removed is not carried by the server; the editor rebases it by block id. Two Coach edits from the same read cannot
+removed is not carried by the server; the editor will rebase it by block id
+(step 5). Two Coach edits from the same read cannot
 both change one block: the second comes back `stale`.
 
 ## What the implementation needs

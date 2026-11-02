@@ -80,3 +80,6 @@ export type { UndoPlan } from "./undo.js"
 export { undoCoachEdit } from "./undo.js"
 
 export { rebuiltBy } from "./tree.js"
+
+export type { PaperRepair } from "./repair.js"
+export { repairPaper } from "./repair.js"

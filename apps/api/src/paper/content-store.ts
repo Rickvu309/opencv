@@ -1,5 +1,6 @@
 import {
   ERROR_CODES,
+  repairPaper,
   legacyPaperOf,
   paperDocumentSchema,
   upgradeStoredPaper,
@@ -12,6 +13,8 @@ import {
   absorbUpdate,
   aliveCharacters,
   forkOf,
+  materializeCandidate,
+  mergedUpdate,
   lostCharacters,
   loadYDoc,
   materialize,
@@ -392,7 +395,15 @@ async function appendLocked(
       typeof change.rebuilt === "function"
     ) {
       const materialized = materialize(entry.yDoc)
-      if (!materialized.ok) throw refuse(materialized.reason)
+      if (!materialized.ok) {
+        live.delete(row.id)
+        return {
+          row: null,
+          problems: [
+            `The merged document would break a rule: ${materialized.reason}`,
+          ],
+        }
+      }
       const merged = validated(materialized.document, row.kind)
       const problems = change.check ? change.check(merged) : []
       if (problems.length > 0) {
@@ -463,6 +474,42 @@ export async function withContent<T>(
   })
 }
 
+function mended(
+  row: PaperRow,
+  entry: Live,
+  effective: Uint8Array | null
+): Uint8Array | null {
+  if (!effective) return effective
+  const read = materializeCandidate(entry.yDoc)
+  if (!read.ok) {
+    console.error(`[paper] cannot read ${row.id} after a sync: ${read.reason}`)
+    return effective
+  }
+  if (!read.repaired && paperDocumentSchema.safeParse(read.candidate).success) {
+    return effective
+  }
+  const fixed = repairPaper(
+    validated(row.crdtDocument, row.kind),
+    read.candidate
+  )
+  if (!fixed) {
+    console.error(`[paper] could not repair ${row.id} after a sync`)
+    return effective
+  }
+  const update = writeDocument(
+    forkOf(entry.yDoc),
+    fixed.document,
+    "server",
+    fixed.moved
+  )
+  if (!update) return effective
+  const absorbed = absorbUpdate(entry.yDoc, update, "server")
+  if (!absorbed.ok) throw refuse(absorbed.reason)
+  return absorbed.effective
+    ? mergedUpdate([effective, absorbed.effective])
+    : effective
+}
+
 export async function syncContent(
   userId: UserId,
   docId: PaperId,
@@ -491,8 +538,9 @@ export async function syncContent(
           ? ({ ok: true, effective: null } as const)
           : absorbUpdate(entry.yDoc, request.update, "person")
       if (!absorbed.ok) throw refuse(absorbed.reason)
-      if (absorbed.effective) {
-        row = await commit(row, entry, absorbed.effective, {
+      const effective = mended(row, entry, absorbed.effective)
+      if (effective) {
+        row = await commit(row, entry, effective, {
           origin: "person",
           witness: row.document,
         })

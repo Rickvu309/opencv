@@ -33,6 +33,8 @@ const stepArbitrary = fc.record({
     "staleType",
     "staleDiff",
     "applyFirst",
+    "staleMove",
+    "staleEntry",
     "bold",
     "editCoach",
     "setText",
@@ -310,6 +312,46 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                     stateVector:
                       step.c % 2 === 0 ? encoded(stateVectorOf(client)) : "",
                   })
+                }
+              } else if (
+                step.kind === "staleMove" ||
+                step.kind === "staleEntry"
+              ) {
+                const local = materialize(client)
+                const view = local.ok
+                  ? (local.document as unknown as Doc)
+                  : null
+                if (view) {
+                  const next = [...view.blocks]
+                  if (step.kind === "staleMove" && next.length > 2) {
+                    const from = 1 + (step.a % (next.length - 1))
+                    const [moved] = next.splice(from, 1)
+                    next.splice(1 + (step.b % next.length), 0, moved!)
+                  } else {
+                    next.splice(step.b % (next.length + 1), 0, {
+                      id: `ne${++counter}`,
+                      type: "experience",
+                      role: "Role",
+                      company: "Co",
+                      period: "",
+                      location: "",
+                      children: [],
+                    } as unknown as Node)
+                  }
+                  await h.run("paper.sync", {
+                    docId,
+                    epoch: 1,
+                    update: typed(client, ((paper: Doc) => ({
+                      ...paper,
+                      blocks: next,
+                    })) as never),
+                    stateVector:
+                      step.c % 2 === 0 ? encoded(stateVectorOf(client)) : "",
+                  })
+                  const kept = (await snapshot(docId)).doc
+                  for (const token of tokens(live, PERSON)) {
+                    expect(tokens(kept, PERSON).has(token)).toBe(true)
+                  }
                 }
               } else if (
                 step.kind === "staleDiff" ||

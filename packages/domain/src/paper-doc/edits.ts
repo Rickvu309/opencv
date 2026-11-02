@@ -368,6 +368,20 @@ function unchangedSubtree(found: Found, id: string): PaperEditOutcome | null {
     : stale(`Block ${id} changed since you read the document`)
 }
 
+const ENTRY_KINDS = ["experience", "education", "skills"]
+
+function leavesEntryUnsectioned(blocks: readonly PaperNode[]): boolean {
+  let sectionSeen = false
+  for (const block of blocks) {
+    if (block.type === "section") sectionSeen = true
+    else if (ENTRY_KINDS.includes(block.type) && !sectionSeen) return true
+  }
+  return false
+}
+
+const NO_SECTION =
+  "That would leave an entry in the live document with no section before it"
+
 function removeEdit(
   work: PaperDocument,
   context: Context,
@@ -376,6 +390,14 @@ function removeEdit(
   const found = find(work, context, edit.blockId)
   if (isOutcome(found)) return found
   if (!found.entry.list) return invalid("The header cannot be removed")
+  if (found.entry.node.type === "section") {
+    const live = context.live.get(edit.blockId)?.list ?? []
+    if (
+      leavesEntryUnsectioned(live.filter((item) => item.id !== edit.blockId))
+    ) {
+      return invalid(NO_SECTION)
+    }
+  }
   const changed = unchangedSubtree(found, edit.blockId)
   if (changed) return changed
   found.entry.list.splice(found.entry.list.indexOf(found.entry.node), 1)
@@ -395,6 +417,16 @@ function moveEdit(
   }
   const changed = unchangedSubtree(found, edit.blockId)
   if (changed) return changed
+  if (found.entry.node.type === "section") {
+    const live = context.live.get(edit.blockId)?.list ?? []
+    const rest = live.filter((item) => item.id !== edit.blockId)
+    const at =
+      edit.after === EDIT_START
+        ? 0
+        : rest.findIndex((item) => item.id === edit.after) + 1
+    const moved = [...rest.slice(0, at), found.entry.node, ...rest.slice(at)]
+    if (leavesEntryUnsectioned(moved)) return invalid(NO_SECTION)
+  }
   const target = anchor(work, context, edit.after)
   if (!isAnchor(target)) return target
   found.entry.list.splice(found.entry.list.indexOf(found.entry.node), 1)

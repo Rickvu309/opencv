@@ -7,11 +7,13 @@ import type { PaperDocument } from "@workspace/domain"
 import * as Y from "yjs"
 
 import {
+  candidateOf,
   fromEditorBlocks,
   toEditorBlocks,
   type PaperResult,
 } from "./mapping.js"
 import { FRAGMENT, META } from "./names.js"
+import { repairBlocks } from "./blocks-repair.js"
 import { groupOf, writeFragment } from "./reconcile.js"
 import { paperSchema, type PaperEditor } from "./schema.js"
 import { alignSkillItems } from "./skills.js"
@@ -89,4 +91,39 @@ export function writeDocument(
     yDoc.off("update", collect)
   }
   return updates[0] ?? null
+}
+
+export type Candidate =
+  | {
+      readonly ok: true
+      readonly candidate: unknown
+      readonly repaired: boolean
+    }
+  | { readonly ok: false; readonly reason: string }
+
+export function materializeCandidate(yDoc: Y.Doc): Candidate {
+  const kind = kindOf(yDoc)
+  if (!kind) return { ok: false, reason: "The document has no kind" }
+  const fragment = yDoc.getXmlFragment(FRAGMENT)
+  if (fragment.length !== 1) {
+    return {
+      ok: false,
+      reason: `The document holds ${fragment.length} roots, not one`,
+    }
+  }
+  const read = yXmlFragmentToBlocks(editor(), fragment)
+  const fixed = repairBlocks(kind, read as never)
+  try {
+    return {
+      ok: true,
+      candidate: candidateOf(kind, fixed.blocks as never),
+      repaired: fixed.repaired,
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      reason:
+        error instanceof Error ? error.message : "Cannot read the document",
+    }
+  }
 }

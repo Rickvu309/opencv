@@ -100,7 +100,12 @@ async function absorbed(
 
 const bytes = (update: string) => new Uint8Array(Buffer.from(update, "base64"))
 
+function ids(nodes: Node[]): string[] {
+  return nodes.flatMap((node) => [node.id, ...ids(node.children ?? [])])
+}
+
 function expectLiveUnchanged(before: Node[], after: Node[]) {
+  expect(ids(after)).toEqual(ids(before))
   for (const block of before) {
     expect(after.find((candidate) => candidate.id === block.id)).toEqual(block)
   }

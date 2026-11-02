@@ -102,11 +102,10 @@ describe("paper.sync", () => {
     })
   })
 
-  it("rolls back an invalid update and accepts the next valid one", async () => {
+  it("repairs a too-deep list, rolls back an unreadable update and accepts the next valid one", async () => {
     await withDatabase(store.db, async () => {
       const docId = await created("Invalid")
       const pulled = (await sync(docId, "", 0)).update
-      const before = await snapshot(docId)
       const tooDeep = typed(clientFrom(pulled), (paper) => {
         let item = {
           id: "deep-5",
@@ -119,11 +118,10 @@ describe("paper.sync", () => {
         }
         return { ...paper, blocks: [...paper.blocks, item] } as PaperDocument
       })
-      await expect(sync(docId, tooDeep)).rejects.toMatchObject({
-        code: ERROR_CODES.VALIDATION_ERROR,
-        message: expect.stringMatching(/nest/i),
-      })
-      expect(await snapshot(docId)).toEqual(before)
+      await sync(docId, tooDeep)
+      const before = await snapshot(docId)
+      expect(JSON.stringify(before.document)).toContain("five")
+      expect(JSON.stringify(before.document)).toContain("deep-1")
 
       const client = clientFrom(pulled)
       typed(client, (paper) => withText(paper, "t1", "Local only"))
