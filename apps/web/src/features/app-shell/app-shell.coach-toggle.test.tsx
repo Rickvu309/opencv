@@ -100,6 +100,43 @@ describe("the Coach button in the dock", () => {
     ).toHaveValue("Half a thought")
   })
 
+  describe.each([
+    [
+      "the X button",
+      () => fireEvent.click(screen.getByRole("button", { name: "Close" })),
+    ],
+    [
+      "Escape",
+      () =>
+        fireEvent.keyDown(
+          screen.getByRole("textbox", { name: "Message Coach" }),
+          { key: "Escape" }
+        ),
+    ],
+    ["the footer button", () => fireEvent.click(coachButton())],
+  ])("closing with %s", (_name, close) => {
+    it("keeps the draft, and puts focus on the footer Coach button", async () => {
+      renderApp(SURFACE_PATHS.pitch)
+      await expectPitch()
+      const box = await openCoach()
+      fireEvent.change(box, { target: { value: "Keep me" } })
+
+      close()
+      await waitFor(() => {
+        expect(coachButton()).toHaveAttribute("aria-expanded", "false")
+      })
+      expect(coachButton()).toHaveFocus()
+      expect(
+        screen.queryByRole("textbox", { name: "Message Coach" })
+      ).toBeNull()
+
+      fireEvent.click(coachButton())
+      expect(
+        await screen.findByRole("textbox", { name: "Message Coach" })
+      ).toHaveValue("Keep me")
+    })
+  })
+
   it("keeps a running turn streaming while closed and shows it on reopen", async () => {
     renderApp(SURFACE_PATHS.pitch)
     await expectPitch()
