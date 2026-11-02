@@ -80,9 +80,26 @@ function SheetField({ ref, ...props }: ComponentProps<typeof Textarea>) {
   useLayoutEffect(() => {
     const element = node.current
     if (!element || fieldSizingSupported()) return
-    element.style.height = "auto"
-    if (element.scrollHeight > 0)
-      element.style.height = `${element.scrollHeight}px`
+    let width = -1
+    const fit = () => {
+      width = element.clientWidth
+      element.style.height = "auto"
+      if (element.scrollHeight > 0)
+        element.style.height = `${element.scrollHeight}px`
+    }
+    // Where the browser cannot size the field, never hide the last lines: the
+    // field scrolls if a rewrap or a late font load outgrows the fitted height.
+    element.style.overflowY = "auto"
+    fit()
+    const observer =
+      typeof ResizeObserver === "function"
+        ? new ResizeObserver(() => {
+            if (element.clientWidth !== width) fit()
+          })
+        : null
+    observer?.observe(element)
+    void document.fonts?.ready?.then(fit)
+    return () => observer?.disconnect()
   }, [props.value])
   return (
     <Textarea
@@ -174,8 +191,11 @@ function EditSheet({
       const from = base + start
       const cleaned =
         letter.markdown.slice(0, from) + letter.markdown.slice(base + end)
-      pending.current = { index: index + 1, offset: 0 }
-      setBody(splitAt(cleaned, from))
+      const split = splitAt(cleaned, from)
+      // The caret sits just after the new break, which is not always at the
+      // start of the next paragraph: a line break before it moves into it.
+      pending.current = locate(paragraphsOf(split), from + 2)
+      setBody(split)
       return
     }
     const collapsed = start === end

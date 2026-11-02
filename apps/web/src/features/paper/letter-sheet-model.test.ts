@@ -49,38 +49,44 @@ describe("letter sheet model", () => {
     expect(paragraphsOf("\n\n\n")).toEqual(["", "\n"])
   })
 
-  it("locates and offsets are inverse for offsets inside a paragraph", () => {
-    const text = "ab\n\n\n\ncd\n\n"
-    const paragraphs = paragraphsOf(text)
-    for (let index = 0; index < paragraphs.length; index += 1) {
-      for (let offset = 0; offset <= paragraphs[index]!.length; offset += 1) {
-        const global = offsetOf(paragraphs, index, offset)
-        expect(locate(paragraphs, global)).toEqual({ index, offset })
-      }
-    }
+  const NEWLINE_PARTS = fc.array(
+    fc.constantFrom("a", "é", "\n", "\r\n", "\n\n", "\n\n\n", " ", "👩"),
+    { maxLength: 30 }
+  )
+
+  it("locates what offsetOf placed, for every position a paragraph holds", () => {
+    fc.assert(
+      fc.property(NEWLINE_PARTS, (parts) => {
+        const paragraphs = paragraphsOf(parts.join(""))
+        for (let index = 0; index < paragraphs.length; index += 1) {
+          for (
+            let offset = 0;
+            offset <= paragraphs[index]!.length;
+            offset += 1
+          ) {
+            const global = offsetOf(paragraphs, index, offset)
+            expect(locate(paragraphs, global)).toEqual({ index, offset })
+          }
+        }
+      })
+    )
   })
 
-  it("offsetOf after locate returns the offset outside a separator", () => {
+  it("moves a caret inside a separator forward, by one character at most", () => {
     fc.assert(
-      fc.property(
-        fc.array(fc.constantFrom("a", "b", "\n", "\n\n", "é"), {
-          maxLength: 30,
-        }),
-        fc.nat(80),
-        (parts, raw) => {
-          const text = parts.join("")
-          const paragraphs = paragraphsOf(text)
-          const offset = raw % (text.length + 1)
-          const position = locate(paragraphs, offset)
-          const back = offsetOf(paragraphs, position.index, position.offset)
-          const inSeparator = back !== offset
-          if (!inSeparator) return
-          // Inside a separator the caret snaps to the end of the paragraph
-          // before it, never past it.
-          expect(back).toBeLessThan(offset)
-          expect(offset - back).toBeLessThan(2)
-        }
-      )
+      fc.property(NEWLINE_PARTS, fc.nat(80), (parts, raw) => {
+        const text = parts.join("")
+        const paragraphs = paragraphsOf(text)
+        const offset = raw % (text.length + 1)
+        const position = locate(paragraphs, offset)
+        expect(position.offset).toBeGreaterThanOrEqual(0)
+        expect(position.offset).toBeLessThanOrEqual(
+          paragraphs[position.index]!.length
+        )
+        const back = offsetOf(paragraphs, position.index, position.offset)
+        expect(back - offset).toBeGreaterThanOrEqual(0)
+        expect(back - offset).toBeLessThanOrEqual(1)
+      })
     )
   })
 
@@ -105,16 +111,46 @@ describe("letter sheet model", () => {
     expect(mergeBefore("ab", 3)).toEqual({ body: "ab", joint: 0 })
   })
 
-  it("splitAt then mergeBefore returns the original body", () => {
+  it("puts the caret after a split at the global offset plus the separator", () => {
     fc.assert(
-      fc.property(fc.string({ maxLength: 60 }), fc.nat(80), (text, raw) => {
+      fc.property(NEWLINE_PARTS, fc.nat(80), (parts, raw) => {
+        const text = parts.join("")
         const offset = raw % (text.length + 1)
         const split = splitAt(text, offset)
-        const position = locate(paragraphsOf(split), offset + 2)
-        if (position.offset === 0 && position.index > 0) {
-          const merged = mergeBefore(split, position.index)
-          expect(merged.body).toBe(text)
-          expect(merged.joint).toBe(offset)
+        const paragraphs = paragraphsOf(split)
+        const where = locate(paragraphs, offset + 2)
+        const back = offsetOf(paragraphs, where.index, where.offset)
+        expect(back - (offset + 2)).toBeGreaterThanOrEqual(0)
+        expect(back - (offset + 2)).toBeLessThanOrEqual(1)
+      })
+    )
+  })
+
+  it("keeps the caret on the line after a split that follows a line break", () => {
+    // "a\nb" with the caret before "b": the new break joins the old one.
+    const split = splitAt("a\nb", 2)
+    expect(paragraphsOf(split)).toEqual(["a", "\nb"])
+    expect(locate(paragraphsOf(split), 4)).toEqual({ index: 1, offset: 1 })
+  })
+
+  it("follows a line break typed at the end of a paragraph into the next one", () => {
+    expect(locate(["ab", "\ncd"], 3)).toEqual({ index: 1, offset: 0 })
+  })
+
+  it("splitAt only inserts the separator, and mergeBefore takes one out", () => {
+    fc.assert(
+      fc.property(NEWLINE_PARTS, fc.nat(80), (parts, raw) => {
+        const text = parts.join("")
+        const offset = raw % (text.length + 1)
+        const split = splitAt(text, offset)
+        expect(split.slice(0, offset) + split.slice(offset + 2)).toBe(text)
+        const paragraphs = paragraphsOf(split)
+        for (let index = 1; index < paragraphs.length; index += 1) {
+          const merged = mergeBefore(split, index)
+          expect(merged.body.length).toBe(split.length - 2)
+          expect(paragraphsOf(merged.body).length).toBeLessThanOrEqual(
+            paragraphs.length
+          )
         }
       })
     )

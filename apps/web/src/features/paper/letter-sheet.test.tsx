@@ -260,13 +260,42 @@ describe("LetterSheet edit mode", () => {
     fireEvent.change(first, {
       target: {
         value: "xone\n\ntwo\n\nthreey",
-        selectionStart: 15,
-        selectionEnd: 15,
+        selectionStart: 17,
+        selectionEnd: 17,
       },
     })
     expect(lastBody(seen)).toBe("xone\n\ntwo\n\nthreey")
     expect(field("Paragraph 3").value).toBe("threey")
     expect(document.activeElement).toBe(field("Paragraph 3"))
+    expect(field("Paragraph 3").selectionStart).toBe(6)
+  })
+
+  it("keeps the caret on the line after Enter just after a line break", () => {
+    const seen: LetterDocument[] = []
+    render(<Harness initial={{ markdown: "a\nb" }} seen={seen} />)
+    const first = field("Paragraph 1")
+    first.focus()
+    first.setSelectionRange(2, 2)
+    fireEvent.keyDown(first, { key: "Enter" })
+    expect(lastBody(seen)).toBe("a\n\n\nb")
+    const second = field("Paragraph 2")
+    expect(second.value).toBe("\nb")
+    expect(document.activeElement).toBe(second)
+    expect(second.selectionStart).toBe(1)
+  })
+
+  it("follows Shift+Enter at a paragraph's end into the line it opens", () => {
+    const seen: LetterDocument[] = []
+    render(<Harness initial={{ markdown: "ab\n\ncd" }} seen={seen} />)
+    const first = field("Paragraph 1")
+    first.focus()
+    fireEvent.change(first, {
+      target: { value: "ab\n", selectionStart: 3, selectionEnd: 3 },
+    })
+    expect(lastBody(seen)).toBe("ab\n\n\ncd")
+    expect(field("Paragraph 1").value).toBe("ab")
+    expect(document.activeElement).toBe(field("Paragraph 2"))
+    expect(field("Paragraph 2").selectionStart).toBe(0)
   })
 
   it("keeps the caret in place for a plain keystroke", async () => {
@@ -287,6 +316,8 @@ describe("LetterSheet edit mode", () => {
       .mockReturnValue(48)
     render(<LetterSheet letter={{ markdown: "tall" }} mode="edit" />)
     expect(field("Paragraph 1").style.height).toBe("48px")
+    // Never clip: the fitted field scrolls if it is later outgrown.
+    expect(field("Paragraph 1").style.overflowY).toBe("auto")
     heights.mockRestore()
   })
 

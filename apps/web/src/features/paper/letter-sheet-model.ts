@@ -1,8 +1,14 @@
 import { isLetterDocument, type LetterDocument } from "@workspace/domain"
 
-/** A stored document as a letter; anything that is not one reads as empty. */
+/** A stored document as a letter. A row that is not a strict letter still
+ * shows its body; anything without one reads as empty. */
 export function letterOf(source: unknown): LetterDocument {
-  return isLetterDocument(source) ? source : { markdown: "" }
+  if (isLetterDocument(source)) return source
+  const markdown =
+    source && typeof source === "object"
+      ? (source as { markdown?: unknown }).markdown
+      : undefined
+  return { markdown: typeof markdown === "string" ? markdown : "" }
 }
 
 /**
@@ -22,7 +28,8 @@ export function bodyOf(paragraphs: readonly string[]): string {
   return paragraphs.join(SEPARATOR)
 }
 
-/** The paragraph and offset inside it for an offset into the whole body. */
+/** The paragraph and offset inside it for an offset into the whole body.
+ * An offset strictly inside a separator reads as the next paragraph's start. */
 export function locate(
   paragraphs: readonly string[],
   globalOffset: number
@@ -32,14 +39,15 @@ export function locate(
     const length = paragraphs[index]!.length
     if (remaining <= length) return { index, offset: remaining }
     remaining -= length + SEPARATOR.length
-    // An offset inside a separator belongs to the end of the paragraph before.
-    if (remaining < 0) return { index, offset: length }
+    // An offset inside a separator moves forward to the start of the next
+    // paragraph, so a line break typed at a paragraph's end is followed.
+    if (remaining < 0) return { index: index + 1, offset: 0 }
   }
   const last = Math.max(0, paragraphs.length - 1)
   return { index: last, offset: paragraphs[last]?.length ?? 0 }
 }
 
-/** The inverse of locate. */
+/** The inverse of locate for every position a paragraph can hold. */
 export function offsetOf(
   paragraphs: readonly string[],
   index: number,

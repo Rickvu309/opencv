@@ -231,5 +231,13 @@
     [data-pen-surface="paper"][data-slot="letter-sheet"] {
     zoom: 1.4173;
     min-height: 0;
+    /* Pages after the first repeat the sheet's top and bottom padding. */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  /* A letter shorter than the page leaves white paper, not the app page tint. */
+  body[data-print="paper"]:has([data-paper-letter]) {
+    background: var(--card);
   }
 }
