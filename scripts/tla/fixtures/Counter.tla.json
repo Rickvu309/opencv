@@ -1,0 +1,7 @@
+{
+  "module": "counter.mjs",
+  "actions": {
+    "Increment": "increment",
+    "Reset": "reset"
+  }
+}

@@ -28,6 +28,7 @@ export const FAST_GUARDS = Object.freeze([
   "scripts/pointer-capture.test.mjs",
   "scripts/retired-words.test.mjs",
   "scripts/skill-routes.test.mjs",
+  "scripts/tla-specs.test.mjs",
   "scripts/temp-dirs.test.mjs",
   "scripts/touch-targets.test.mjs",
   "scripts/unused-domain-exports.test.mjs",
