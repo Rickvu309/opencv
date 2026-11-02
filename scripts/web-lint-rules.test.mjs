@@ -57,3 +57,29 @@ test("useHoverIntent props spread onto an element are not refused", async () => 
     []
   )
 })
+
+test("a region hidden with inert={hidden} can drop focus to the page body", async () => {
+  const found = await messages(
+    `export const a = <aside inert={hidden} />`,
+    SHELL
+  )
+  assert.equal(found.length, 1)
+  assert.match(found[0], /FocusSafeRegion/)
+})
+
+test("a static inert attribute and FocusSafeRegion are allowed", async () => {
+  assert.deepEqual(
+    await messages(
+      `export const a = <div inert />`,
+      "src/features/paper/paper-print-sheet.tsx"
+    ),
+    []
+  )
+  assert.deepEqual(
+    await messages(
+      `export const a = <FocusSafeRegion concealed={hidden} focusFallback={f} />`,
+      SHELL
+    ),
+    []
+  )
+})

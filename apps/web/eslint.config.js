@@ -13,6 +13,14 @@ const HOVER_OVERLAY = [
     "Hover must not open or close anything straight from onMouseEnter/onPointerEnter. Use the kit Popover or Tooltip (openOnHover, delay, closeDelay) or useHoverIntent from @/lib/use-hover-intent.ts, which add hover intent, a close grace and Escape.",
 }))
 
+const DYNAMIC_INERT = ["JSXAttribute[name.name='inert'][value]"].map(
+  (selector) => ({
+    selector,
+    message:
+      "A region that hides while it holds focus drops focus to the page body. Render it with FocusSafeRegion from @/components/focus-safe-region.tsx and pass focusFallback instead of inert={...}.",
+  })
+)
+
 export default defineConfig([
   globalIgnores(["dist"]),
   {
@@ -64,7 +72,7 @@ export default defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": ["error", ...HOVER_OVERLAY],
+      "no-restricted-syntax": ["error", ...HOVER_OVERLAY, ...DYNAMIC_INERT],
     },
   },
   {
@@ -74,7 +82,7 @@ export default defineConfig([
       "src/components/layer-stack.tsx",
     ],
     rules: {
-      "no-restricted-syntax": "off",
+      "no-restricted-syntax": ["error", ...DYNAMIC_INERT],
     },
   },
   {
@@ -84,6 +92,7 @@ export default defineConfig([
       "no-restricted-syntax": [
         "error",
         ...HOVER_OVERLAY,
+        ...DYNAMIC_INERT,
         ...[
           "Literal[value=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
           "TemplateElement[value.raw=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
