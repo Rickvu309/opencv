@@ -381,6 +381,25 @@ function probe(kind, SEL) {
       scrollBehavior: cs(document.documentElement).scrollBehavior,
     }
   }
+  if (kind === "touch") {
+    const theme = document.querySelector('meta[name="theme-color"]')
+    return {
+      coarse: matchMedia("(pointer: coarse)").matches,
+      themeColor: theme ? rgba(theme.content) : null,
+      headerFill: header ? rgba(cs(header).backgroundColor) : null,
+      targets: [
+        ...document.querySelectorAll(
+          "header a,header button,main a,main button,footer a,footer button"
+        ),
+      ]
+        .filter((el) => visible(el) && !inFigure(el))
+        .map((el) => ({
+          text: readText(el).slice(0, 24),
+          region: regionOf(el),
+          ...rectOf(el),
+        })),
+    }
+  }
   throw new Error(`unknown probe ${kind}`)
 }
 

@@ -40,7 +40,7 @@ export function LandingNav() {
     <header data-scrolled={scrolled} className="landing-nav">
       <div className="landing-grid">
         <div className="landing-bar landing-inset">
-          <Link to="/" className={cn("rounded-md", FOCUS_RING)}>
+          <Link to="/" className={cn("landing-brand rounded-md", FOCUS_RING)}>
             <OpenCvLogo
               withWordmark
               className="gap-2.25"

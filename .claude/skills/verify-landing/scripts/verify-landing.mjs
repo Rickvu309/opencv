@@ -102,6 +102,7 @@ async function visit(
     snap.first = await page.evaluate(probeSource("first"))
     await sleep(1500)
     if (wanted.top) snap.top = await page.evaluate(probeSource("top"))
+    if (wanted.touch) snap.touch = await page.evaluate(probeSource("touch"))
     if (wanted.design && spec)
       snap.design = await page.evaluate(designProbeSource(spec))
     if (keep)
@@ -181,7 +182,7 @@ try {
   const mobile = await visit(
     browser,
     { width: 390, height: 844, mobile: true, reducedMotion: false },
-    { top: true, shot: "mobile", menu: true }
+    { top: true, touch: true, shot: "mobile", menu: true }
   )
   const reduced = await visit(
     browser,
@@ -196,6 +197,7 @@ try {
       desktop: { ...desktop.top, ...desktop.design },
       mobile: mobile.top,
       mobileOpen: mobile.topOpen ?? null,
+      touch: mobile.touch,
       first: desktop.first,
       mobileFirst: mobile.first,
       reduced: reduced.first,

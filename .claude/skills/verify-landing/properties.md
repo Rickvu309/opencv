@@ -36,6 +36,8 @@ The checker measures its properties at 1440x900, 390x844 and reduced motion. Ids
 | 29  | design    | cta-buttons-match-design          | Added. At 1440 the nav Get started is 32px, 13px/500, pad 12, with an inset ring, an outer shadow, and a border-radius of at least half its height. The close Get started is 44px, 16px/500, pad 20, with the same inset ring, outer shadow, and pill radius. See a sample is that size and pill, with neither shadow and no visible border.                                                                                |
 | 30  | design    | benefit-art-matches-pen           | Added. Pen.dev ground truth for the whole Coach art; the reference never comes from the page under test (see the crop note). Each benefit svg is rasterised in the page, and reference/coach-art.png may differ by at most 1.25% of pixels on a channel delta above 48. The band catches a whole-art regression, not a single wrong mark. Each rotated ellipse is pinned by apps/web/src/test/landing-art-rotation.test.ts. |
 | 31  | design    | text-style-matches-pen            | Added. At 1440 each text in landing.styles.json matches the pen fields that are set, and each inline mark (Nav 24, Statement 40, Footer 24) has an svg or img within 2px. A startsLine text must start a line (1440 only). Dated exceptions are the contrast-floor colours. A missing pen text fails unless design/landing.omitted.json omits it. Each text run is checked. A stale exception fails.                        |
+| 32  | invariant | touch-target-44-390               | Added (#905). On a 390 touch screen every link and button is at least 44x44. The run emulates touch, so phone-only `(pointer: coarse)` rules are measured.                                                                                                                                                                                                                                                                  |
+| 33  | invariant | theme-color-matches-header        | Added (#905). On a 390 touch screen `theme-color` matches the header fill. A tap-highlight assertion was left out: headless Chromium paints none by default, so it cannot fail.                                                                                                                                                                                                                                             |
 
 Pinned copy the rules read: `LANDING_HEADLINE_LINES`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
 
@@ -51,13 +53,7 @@ Sync commit: e1ff7ab37b54dac73bb31c06c3b18512eb025de3. The checker printed 28 PA
 | 17  | design | needs luminance 0.85 or more, so a good dark theme fails                |
 | 02  | design | a rebrand changes "opencv" and "CV", the pinned brand and product nouns |
 
-## Coach art reference crop (check 30)
-
-The reference comes from the design tool or a human-approved screenshot. The recorder never writes it.
-
-`reference/coach-art.png` was cropped from a pen.dev screenshot of the benefit shot. The screenshot is 812×778, a roughly 2× export of the 405×388 shot (fill about #F4F4F6, radius 16) that centres the 300×300 art node oWS4Z. The art rectangle in shot pixels starts at ((405 − 300) / 2, (388 − 300) / 2) = (52.5, 44). Scaled by 812/405 and 778/388, the crop origin is (105.26, 88.23) and the crop size is (601.48, 601.55). That rectangle was bilinear-resampled to 300×300 and saved as `reference/coach-art.png`.
-
-Check 30 compares the live Coach art with that file. The corrected art mismatched by 1.05% of pixels (943 of 90,000, channel delta above 48) on three identical runs. The old centre-rotated art mismatched by 1.47% (1,327 pixels). The limit stays 1.25% (1,125 pixels). One wrong ellipse moves about 150 pixels, which stays inside the band, so this check catches a whole-art regression, not a single wrong mark. Each rotated ellipse is pinned by `apps/web/src/test/landing-art-rotation.test.ts`.
+The Coach art crop and tolerance for check 30 are in [coach-art-crop.md](coach-art-crop.md).
 
 ## Landing rebuild to the newest frame (#438)
 
