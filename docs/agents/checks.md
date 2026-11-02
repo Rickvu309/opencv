@@ -82,6 +82,7 @@ A guard marked proven has a row in `scripts/guard-ledger.mjs` showing it fires o
 - `registry/coverage.test.ts` (CI): every command has a coverage case that runs it as the person and undoes a reversal
 - `registry/gates.test.ts` (CI): execute refuses a gated command the Coach was not offered
 - `registry/inbox-contract.test.ts` (CI): an inbox binding that drifts from the inbox contract is rejected
+- `registry/invalidation.formal.test.ts` (CI): every changed read is named by the command that changed it
 - `registry/job-contract.test.ts` (CI): a job binding that drifts from the job contract is rejected
 - `registry/names.test.ts` (CI): a command, read or Coach tool name the registry lacks is rejected
 - `registry/ownership.test.ts` (CI): a table write from outside the owning module's directory is rejected

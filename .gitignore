@@ -50,6 +50,7 @@ apps/web/.generated/
 !.claude/skills/verify-app-ui/
 !.claude/skills/verify-marketing-links/
 !.claude/skills/verify-coach-turn/
+!.claude/skills/verify-read-invalidation/
 
 # local PGlite data for DB_DRIVER=pglite
 apps/api/.data/

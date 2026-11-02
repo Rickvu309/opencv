@@ -193,6 +193,8 @@ const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
 const docChanged = (input: DocInput): QueryRef[] => [
   { query: "paper.get", input: { docId: input.docId } },
   { query: "paper.pageCount", input: { docId: input.docId } },
+  { query: "paper.outline", input: { docId: input.docId } },
+  { query: "paper.keywordGap", input: { docId: input.docId } },
   ...listChanged(),
 ]
 
@@ -363,7 +365,7 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Stop sharing",
-    invalidates: () => [],
+    invalidates: () => [{ query: "paper.shared" }],
   }),
   "paper.import": commandEntry({
     description: "Create a CV from an uploaded file.",
@@ -419,7 +421,10 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: true,
     step: () => "Delete this file",
-    invalidates: () => [{ query: "paper.files" }],
+    invalidates: (input) => [
+      { query: "paper.files" },
+      { query: "file.get", input: { fileId: input.fileId } },
+    ],
   }),
 })
 

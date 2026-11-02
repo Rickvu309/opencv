@@ -177,7 +177,10 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: () => "Update the job",
-    invalidates: jobFieldsChanged,
+    invalidates: (input) => [
+      ...jobFieldsChanged(input),
+      { query: "paper.keywordGap", input: { jobId: input.jobId } },
+    ],
   }),
   "job.move": commandEntry({
     description: "Move a job to a stage. This is the only stage writer.",
@@ -206,7 +209,10 @@ export const jobContract = commandContract({
     coach: "confirm",
     destructive: true,
     step: () => "Delete this job",
-    invalidates: jobFieldsChanged,
+    invalidates: (input) => [
+      ...jobFieldsChanged(input),
+      { query: "paper.keywordGap", input: { jobId: input.jobId } },
+    ],
   }),
   "job.addChecklistItem": commandEntry({
     description: "Add an interview checklist item.",

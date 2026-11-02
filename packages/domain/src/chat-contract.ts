@@ -127,6 +127,8 @@ const anyWriteChanged = (): QueryRef[] => [
   { query: "paper.get" },
   { query: "paper.files" },
   { query: "paper.pageCount" },
+  { query: "paper.outline" },
+  { query: "paper.keywordGap" },
   { query: "paper.shared" },
   { query: "inbox.list" },
   { query: "inbox.get" },
@@ -189,7 +191,7 @@ export const chatContract = commandContract({
     coach: "confirm",
     destructive: true,
     step: () => "Delete this chat",
-    invalidates: chatList,
+    invalidates: chatChanged,
   }),
   "coach.stop": commandEntry({
     description: "Stop the chat that is running.",

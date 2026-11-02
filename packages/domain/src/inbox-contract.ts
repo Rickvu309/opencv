@@ -113,7 +113,7 @@ export const inboxContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Skip inbox for now",
-    invalidates: listChanged,
+    invalidates: () => [...listChanged(), { query: "profile.get" }],
   }),
   "inbox.scan": commandEntry({
     description: "Read job emails from the mail provider.",
