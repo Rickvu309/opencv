@@ -1,5 +1,6 @@
 import {
   ERROR_CODES,
+  approvedProposalActor,
   coachActor,
   defineCommand,
   isCoachActor,
@@ -125,9 +126,10 @@ function parseInput<T>(schema: ZodType<T>, raw: unknown): T {
 }
 
 function brandedActor(actor: Actor): Actor {
-  return actor.type === "coach"
+  if (actor.type === "person") return personActor(actor.userId)
+  return actor.turnId
     ? coachActor(actor.userId, actor.chatId, actor.turnId)
-    : personActor(actor.userId)
+    : approvedProposalActor(actor.userId, actor.chatId)
 }
 
 export class Registry {
@@ -500,7 +502,7 @@ export class Registry {
       const result = await this.execute({
         name: row.command,
         input: row.input,
-        actor: coachActor(userId, row.chatId),
+        actor: approvedProposalActor(userId, row.chatId),
         idempotencyKey: row.id,
         skipConfirm: true,
       })

@@ -1,4 +1,4 @@
-import { DEFAULT_CHAT_TITLE, coachActor } from "@workspace/domain"
+import { DEFAULT_CHAT_TITLE } from "@workspace/domain"
 import { expect } from "vitest"
 
 import { stopChat, trackChatTurn } from "../chat/index.js"
@@ -10,6 +10,7 @@ import {
   type CoverageCase,
   type CoverageTools,
 } from "./coverage-helpers.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 
 export function chatCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, run, undo, chatOf, jobOf, gone, registry, userId } = tools
@@ -124,7 +125,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
         const pending = await registry.execute({
           name: "job.move",
           input: { jobId: ctx.jobId, stage: "interview" },
-          actor: coachActor(userId, idOf(chat.output)),
+          actor: await seedCoachActor(userId, idOf(chat.output)),
         })
         if (!pending.pendingActionId) {
           throw new Error("missing pending action")
@@ -148,7 +149,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
         const pending = await registry.execute({
           name: "job.move",
           input: { jobId: ctx.jobId, stage: "interview" },
-          actor: coachActor(userId, idOf(chat.output)),
+          actor: await seedCoachActor(userId, idOf(chat.output)),
         })
         if (!pending.pendingActionId) {
           throw new Error("missing pending action")

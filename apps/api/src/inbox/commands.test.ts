@@ -20,6 +20,7 @@ import {
   createTestApp,
   signUp,
 } from "../test/harness.js"
+import { createId } from "../id.js"
 
 describe("inbox commands", () => {
   it("scans once and does not duplicate threads or messages", async () => {
@@ -256,7 +257,11 @@ describe("inbox commands", () => {
     await withDatabase(db, async () => {
       const names = (
         await registry.tools(
-          coachActor("user-inbox-coach", "00000000-0000-4000-8000-0000000000aa")
+          coachActor(
+            "user-inbox-coach",
+            "00000000-0000-4000-8000-0000000000aa",
+            createId()
+          )
         )
       ).map((entry) => entry.name)
       expect(names).not.toContain("inbox.send")

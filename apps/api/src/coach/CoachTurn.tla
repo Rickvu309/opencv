@@ -51,6 +51,11 @@ ChainEnd(i, depth) ==
 
 admissible(t) == \/ ~LeaseFilter \/ lease = None
 
+Orphan(i) ==
+  /\ i \in Tabs /\ pc[i] \in {"dead", "failed", "done"} /\ ~reply[i] /\ act[i] # {}
+
+Recovered(i) == Recovery /\ Reconcile /\ Orphan(i)
+
 startTurn(t, k) ==
   /\ pc[t] = "idle"
   /\ IF ~admissible(t)
@@ -64,7 +69,11 @@ startTurn(t, k) ==
              /\ ep' = [ep EXCEPT ![t] = epoch']
              /\ target' = [target EXCEPT ![t] =
                   IF k = "regen" THEN CHOOSE i \in Visible : TRUE ELSE None]
-  /\ UNCHANGED <<disc, tool, act, mem, status, hasText, fin, chatLock, reply, parts, supOf, plan>>
+  /\ IF admissible(t)
+        THEN /\ reply' = [i \in Ids |-> reply[i] \/ Recovered(i)]
+             /\ parts' = [i \in Ids |-> IF Recovered(i) THEN act[i] ELSE parts[i]]
+        ELSE UNCHANGED <<reply, parts>>
+  /\ UNCHANGED <<disc, tool, act, mem, status, hasText, fin, chatLock, supOf, plan>>
 
 startAny == \E t \in Tabs, k \in Kinds : startTurn(t, k)
 
@@ -194,15 +203,6 @@ leaseExpire ==
   /\ UNCHANGED <<pc, kind, disc, tool, act, mem, status, hasText, fin, chatLock,
                  epoch, ep, reply, parts, supOf, target, plan>>
 
-recoverOrphan(t) ==
-  /\ Recovery /\ Reconcile
-  /\ pc[t] \in {"dead", "failed", "done"} /\ ~reply[t] /\ act[t] # {}
-  /\ lease # t
-  /\ reply' = [reply EXCEPT ![t] = TRUE]
-  /\ parts' = [parts EXCEPT ![t] = act[t]]
-  /\ UNCHANGED <<pc, kind, disc, tool, act, mem, status, hasText, fin, lease, chatLock,
-                 epoch, ep, supOf, target, plan>>
-
 atRest ==
   /\ \A t \in Tabs : pc[t] \in {"rejected", "done", "dead", "failed"}
   /\ UNCHANGED vars
@@ -215,7 +215,7 @@ Next ==
        \/ disconnect(t) \/ stopTurn(t) \/ abortEnd(t)
        \/ \E b \in BOOLEAN : modelFinish(t, b) \/ providerFail(t, b)
        \/ insertCoachMessageRead(t) \/ insertCoachMessage(t) \/ insertFails(t)
-       \/ finishCoachUsage(t) \/ maybeTitle(t) \/ crash(t) \/ recoverOrphan(t)
+       \/ finishCoachUsage(t) \/ maybeTitle(t) \/ crash(t)
   \/ leaseExpire
 
 Progress ==
@@ -224,7 +224,7 @@ Progress ==
        \/ abortEnd(t)
        \/ \E b \in BOOLEAN : modelFinish(t, b)
        \/ insertCoachMessageRead(t) \/ insertCoachMessage(t)
-       \/ finishCoachUsage(t) \/ recoverOrphan(t)
+       \/ finishCoachUsage(t)
   \/ leaseExpire
 
 Spec == Init /\ [][Next]_vars /\ WF_vars(Progress)
@@ -239,9 +239,8 @@ C1 == Cardinality({t \in Tabs : pc[t] \in Live}) <= 1
 
 C2 == \A t \in Tabs : reply[t] => act[t] \subseteq parts[t]
 
-OrphanRecovered == \A t \in Tabs :
-  [](pc[t] \in {"dead", "failed", "done"} /\ act[t] # {}
-     => <>(reply[t] /\ act[t] \subseteq parts[t]))
+OrphanSaved == \A t, u \in Tabs :
+  ep[u] > ep[t] /\ act[t] # {} => reply[t] /\ act[t] \subseteq parts[t]
 
 ActivityInUndo == \A t \in Tabs : \A k \in act[t] : tool[t][k] = "committed"
 

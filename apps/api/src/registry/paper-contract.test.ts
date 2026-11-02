@@ -1,6 +1,5 @@
 import {
   commands,
-  coachActor,
   blankBlockDocument,
   emptyCvDocument,
   emptyLetterDocument,
@@ -18,6 +17,7 @@ import { saveFile } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
 import { installRegistry } from "./install.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 
 async function seed(
   userId: string,
@@ -210,7 +210,7 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         input: {},
         actor: person,
       })
-      const coach = coachActor(userId, idOf(chat.output))
+      const coach = await seedCoachActor(userId, idOf(chat.output))
       const cv = idOf(
         (
           await registry.execute({

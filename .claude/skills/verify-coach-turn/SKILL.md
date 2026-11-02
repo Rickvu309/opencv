@@ -10,7 +10,7 @@ description: Check the Coach turn lifecycle in apps/api/src/coach, that one turn
 For one chat and two browser tabs, in `apps/api/src/coach/turn.ts`:
 
 - **C1.** At most one Coach turn is running per chat.
-- **C2.** Every activity row the Coach commits in a turn is a tool part in that turn's saved reply, and stays listed in Undo. If the process dies or the save fails, the next admission to that chat saves the reply (`OrphanRecovered`).
+- **C2.** Every activity row the Coach commits in a turn is a tool part in that turn's saved reply, and stays listed in Undo. If the process dies or the save fails, a turn admitted later in that chat saves the orphan's reply first (`OrphanSaved`).
 - **C3.** Every admitted turn reaches a `finishReason`, or its lease expires. A turn that does not crash always reaches it, even when saving the reply fails.
 - **C4.** A regenerate leaves exactly one visible Coach reply after the last person message.
 
@@ -29,7 +29,7 @@ node scripts/tlc.mjs --all
 pnpm --filter api test:formal
 ```
 
-- `tlc.mjs --all` runs every config in `apps/api/src/coach` and expects each real config to pass (exit 0) and each `.mutant.cfg` to fail with exit 12 (invariant), or with the exit the `mutants` entry of `CoachTurn.tla.json` declares (`release` and `crash` are 13, liveness). About 3 minutes on a loaded box; `CoachTurn.cfg` is most of it (300k states).
+- `tlc.mjs --all` runs every config in `apps/api/src/coach` and expects each real config to pass (exit 0) and each `.mutant.cfg` to fail with exit 12 (invariant), or with the exit the `mutants` entry of `CoachTurn.tla.json` declares (`release` is 13, liveness). About 3 minutes on a loaded box; `CoachTurn.cfg` is most of it (300k states).
 - A single config: `node scripts/tlc.mjs apps/api/src/coach/CoachTurn.tla --config apps/api/src/coach/CoachTurn.lock.cfg`.
 - `pnpm --filter api test:formal` runs `turn.abort.formal.test.ts` with the other formal tests. `pnpm --filter api exec vitest run src/coach/turn.abort.formal.test.ts` runs that file alone.
 - Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
@@ -38,31 +38,31 @@ pnpm --filter api test:formal
 
 `CoachTurn.tla.json` maps every action of `Next` to an export of `turn-steps.ts`, which `turn.ts` calls. Steps with no code of their own (`atRest`, `maybeTitle`, `crash`, `leaseExpire`, `disconnect`, `modelFinish`, `providerFail`, `abortEnd`, `insertFails`) name the function whose behavior they change.
 
-| Action                                         | Code                                                                                                                                                                                    |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `startTurn`                                    | `openCoachUsage` (usage-store.ts): user row lock, active lease check, lease row insert                                                                                                  |
-| `toolExecute`, `registryCommit`                | `createTurnEffects().execute` around `registry.execute`; the abort check before it in `liveParts`                                                                                       |
-| `recordPart`                                   | `appendCoachPart` on the loop's tool-result, and `recordMissingReceipts` at finalize: reads `activity` and `pending_actions` by `turn_id` (`Registry.turnReceipts`), not from memory    |
-| `disconnect`, `stopTurn`, `abortEnd`           | `stream.onAbort` and `trackChatTurn` abort the signal; the loop in `runCoachTurn` ends                                                                                                  |
-| `modelFinish`, `providerFail`                  | the `finish` and `error` parts in the loop                                                                                                                                              |
-| settle (the `settled` guard)                   | `settleTools()` in the `finally` block, before the reply is saved                                                                                                                       |
-| `insertCoachMessageRead`, `insertCoachMessage` | `insertCoachMessage` (chat/store.ts): chat row lock, chain walk, stale check, then insert                                                                                               |
-| `finishCoachUsage`                             | `finishCoachUsage`, now in a `finally` around the insert                                                                                                                                |
-| `crash`, `leaseExpire`                         | process death; the `gt(createdAt, now - 5 min)` filter in `openCoachUsage`                                                                                                              |
-| `recoverOrphan`                                | `saveRepliesForUnsavedTurns` (usage-store.ts), called inside the admission transaction of `openCoachUsage`: a turn with no `message_id` and receipts by `turn_id` gets an `error` reply |
+| Action                                         | Code                                                                                                                                                                                                                                                  |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `startTurn`                                    | `openCoachUsage` (usage-store.ts): user row lock, active lease check, lease row insert                                                                                                                                                                |
+| `toolExecute`, `registryCommit`                | `createTurnEffects().execute` around `registry.execute`; the abort check before it in `liveParts`                                                                                                                                                     |
+| `recordPart`                                   | `appendCoachPart` on the loop's tool-result, and `recordMissingReceipts` at finalize: reads `activity` and `pending_actions` by `turn_id` (`Registry.turnReceipts`), not from memory                                                                  |
+| `disconnect`, `stopTurn`, `abortEnd`           | `stream.onAbort` and `trackChatTurn` abort the signal; the loop in `runCoachTurn` ends                                                                                                                                                                |
+| `modelFinish`, `providerFail`                  | the `finish` and `error` parts in the loop                                                                                                                                                                                                            |
+| settle (the `settled` guard)                   | `settleTools()` in the `finally` block, before the reply is saved                                                                                                                                                                                     |
+| `insertCoachMessageRead`, `insertCoachMessage` | `insertCoachMessage` (chat/store.ts): chat row lock, chain walk, stale check, then insert                                                                                                                                                             |
+| `finishCoachUsage`                             | `finishCoachUsage`, now in a `finally` around the insert                                                                                                                                                                                              |
+| `crash`, `leaseExpire`                         | process death; the `gt(createdAt, now - 5 min)` filter in `openCoachUsage`                                                                                                                                                                            |
+| `startTurn` (admitted branch, with `Recovery`) | `saveRepliesForUnsavedTurns` (usage-store.ts), called inside the admission transaction of `openCoachUsage`: a turn with no `message_id` and receipts by `turn_id` gets an `error` reply. Recovery is not a step of its own; no admission, no recovery |
 
 Constants are the code's switches: `Settle`, `RecordOnAbort`, `Reconcile`, `Recovery`, `FinishInFinally`, `LeaseFilter`, `SkipToolPart`, `ReleaseNeedsSaved`, `SupersedeLock`, `LongTurns`, `CrashesOn`. Each `.mutant.cfg` flips exactly the constants named below.
 
 ## Checks and mutants
 
-| Config pair               | Checks                                                         | Mutant (must fail)                                                                                                           |
-| ------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `CoachTurn.cfg`           | C1, C2, C3, Undo listing, C4, `OrphanRecovered`, under crash   | `Settle`, `RecordOnAbort`, `Reconcile` and `Recovery` off: the code before #928. C2 fails (exit 12)                          |
-| `CoachTurn.crash.cfg`     | `OrphanRecovered` and C2, reconcile by `turn_id` plus recovery | `Reconcile` and `Recovery` off, the receipt recorded in memory after execute (#928): a crash after commit loses it (exit 13) |
-| `CoachTurn.part.cfg`      | C2 with the tool part recorded (`Reconcile` off, loop only)    | `SkipToolPart`: skip `appendCoachPart` for `tool-result`. C2 fails                                                           |
-| `CoachTurn.admission.cfg` | C1                                                             | `LeaseFilter` off: delete the whole `if (active) throw` check in `openCoachUsage` (usage-store.ts). C1 fails                 |
-| `CoachTurn.release.cfg`   | C3 (non-crashed turn finishes)                                 | `ReleaseNeedsSaved`: `finishCoachUsage` only when saved. C3 fails (exit 13)                                                  |
-| `CoachTurn.lock.cfg`      | C4 with `LongTurns` (overlap possible)                         | `SupersedeLock` off: drop the chat row lock in `insertCoachMessage`. C4 fails                                                |
+| Config pair               | Checks                                                      | Mutant (must fail)                                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CoachTurn.cfg`           | C1, C2, C3, Undo listing, C4, `OrphanSaved`, under crash    | `Settle`, `RecordOnAbort`, `Reconcile` and `Recovery` off: the code before #928. C2 fails (exit 12)                                                         |
+| `CoachTurn.crash.cfg`     | `OrphanSaved` and C2, reconcile by `turn_id` plus recovery  | `Recovery` off: delete the `saveRepliesForUnsavedTurns` call in `openCoachUsage`. A turn admitted after a crash finds no receipt for the dead one (exit 12) |
+| `CoachTurn.part.cfg`      | C2 with the tool part recorded (`Reconcile` off, loop only) | `SkipToolPart`: skip `appendCoachPart` for `tool-result`. C2 fails                                                                                          |
+| `CoachTurn.admission.cfg` | C1                                                          | `LeaseFilter` off: delete the whole `if (active) throw` check in `openCoachUsage` (usage-store.ts). C1 fails                                                |
+| `CoachTurn.release.cfg`   | C3 (non-crashed turn finishes)                              | `ReleaseNeedsSaved`: `finishCoachUsage` only when saved. C3 fails (exit 13)                                                                                 |
+| `CoachTurn.lock.cfg`      | C4 with `LongTurns` (overlap possible)                      | `SupersedeLock` off: drop the chat row lock in `insertCoachMessage`. C4 fails                                                                               |
 
 The part, admission, release and lock pairs hold `Reconcile` and `Recovery` as they were before this fix, to test their own switch alone.
 

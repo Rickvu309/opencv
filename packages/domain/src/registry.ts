@@ -24,13 +24,24 @@ export function personActor(userId: string): PersonActor {
 export function coachActor(
   userId: string,
   chatId: string,
-  turnId?: string
+  turnId: string
 ): CoachActor {
   return {
     type: "coach",
     userId: parseUserId(userId),
     chatId: parseChatId(chatId),
-    ...(turnId ? { turnId } : {}),
+    turnId,
+  }
+}
+
+export function approvedProposalActor(
+  userId: string,
+  chatId: string
+): CoachActor {
+  return {
+    type: "coach",
+    userId: parseUserId(userId),
+    chatId: parseChatId(chatId),
   }
 }
 

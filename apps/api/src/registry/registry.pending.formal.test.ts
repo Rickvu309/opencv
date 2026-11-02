@@ -1,6 +1,5 @@
 import {} from "node:crypto"
 
-import { coachActor } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import {} from "zod"
@@ -24,6 +23,7 @@ import {
   registry,
   registerBackendHooks,
 } from "../test/registry-formal-support.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 
 registerBackendHooks()
 // ---------------------------------------------------------------- P2 ----
@@ -45,7 +45,7 @@ async function pendingJobMove() {
   const pending = await registry.execute({
     name: "job.move",
     input: { jobId, stage: "applied" },
-    actor: coachActor(userId, chatId),
+    actor: await seedCoachActor(userId, chatId),
   })
   if (!pending.pendingActionId) throw new Error("expected a pending action")
   return { userId, jobId, pendingId: pending.pendingActionId }

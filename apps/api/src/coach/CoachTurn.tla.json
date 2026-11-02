@@ -1,8 +1,7 @@
 {
   "module": "turn-steps.ts",
   "mutants": {
-    "release": 13,
-    "crash": 13
+    "release": 13
   },
   "actions": {
     "atRest": "finishCoachUsage",
@@ -22,7 +21,6 @@
     "finishCoachUsage": "finishCoachUsage",
     "maybeTitle": "insertCoachMessage",
     "crash": "openCoachUsage",
-    "leaseExpire": "openCoachUsage",
-    "recoverOrphan": "saveRepliesForUnsavedTurns"
+    "leaseExpire": "openCoachUsage"
   }
 }

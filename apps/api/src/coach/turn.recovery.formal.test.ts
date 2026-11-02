@@ -1,5 +1,6 @@
 import {
   chatDetailSchema,
+  approvedProposalActor,
   coachActor,
   personActor,
   type CoachRuntime,
@@ -14,6 +15,7 @@ import { withDatabase } from "../db/context.js"
 import { insertCoachMessage } from "../chat/index.js"
 import { activity, chatMessages, coachUsage, user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
+import { coachActivityWithoutTurn } from "../test/coach-turn.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { runCoachTurn, toolResultFromExecute } from "./turn.js"
 import { openCoachUsage } from "./usage-store.js"
@@ -134,6 +136,36 @@ describe("a Coach edit cut short still shows its receipt (C2 under crash)", () =
       expect(edit?.turnId).toBe(usage?.id)
       const person = rows.filter((row) => row.actor === "person")
       expect(person.every((row) => row.turnId === null)).toBe(true)
+    })
+  })
+
+  it("every Coach edit made in a turn carries its turn id", async () => {
+    await inChat(async ({ registry, chatId }) => {
+      await runCoachTurn({
+        stream: quietStream,
+        registry,
+        runtime: editingRuntime,
+        userId: "recovery-user",
+        chatId,
+        mode: "free",
+        plan: "free",
+        provider: "fake",
+        modelId: "fake",
+        history: [],
+        heartbeatMs: 60_000,
+      })
+      expect(await coachActivityWithoutTurn()).toEqual([])
+    })
+  })
+
+  it("reports a Coach edit that has neither a turn id nor an approval", async () => {
+    await inChat(async ({ registry, chatId }) => {
+      await registry.execute({
+        name: "job.create",
+        input: { title: "Role 0", company: "Acme" },
+        actor: approvedProposalActor("recovery-user", chatId),
+      })
+      expect(await coachActivityWithoutTurn()).toHaveLength(1)
     })
   })
 
