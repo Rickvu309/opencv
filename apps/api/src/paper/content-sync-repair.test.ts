@@ -107,8 +107,12 @@ async function expectRepaired(
   return reply
 }
 
-async function laterTypingIsAbsorbed(docId: string, client: Client) {
-  await h.pull(docId, client)
+async function laterTypingIsAbsorbed(
+  docId: string,
+  client: Client,
+  pull = true
+) {
+  if (pull) await h.pull(docId, client)
   const later = bytesOf(
     typed(client, (paper) => withText(paper, "t2", "Second paragraph. LATER"))
   )
@@ -319,3 +323,67 @@ describe("a client that splits a block the Coach moved", () => {
     })
   })
 })
+
+const CLIENT_IDS = [0, 4_294_967_295]
+
+describe.each(CLIENT_IDS)(
+  "a repair with the tab's client id %i",
+  (clientID) => {
+    async function staleMove(coachEdit: unknown[]) {
+      const { docId, client } = await h.created()
+      client.clientID = clientID
+      await h.pull(docId, client)
+      const coach = await h.coach(docId, 1, coachEdit)
+      const update = bytesOf(
+        typed(client, (p) => reorder(p, ["s1", "t2", "t1"]))
+      )
+      await expectRepaired(docId, update, client)
+      return { docId, client, coach }
+    }
+
+    const moveAndRewrite = [
+      { op: "move", blockId: "t2", after: "s1" },
+      { op: "setText", blockId: "t2", text: "Second paragraph. COACH" },
+    ]
+
+    it("keeps the Coach's copy of a pure stale move, once, and Undo works", async () => {
+      await h.inDatabase(async () => {
+        const { docId, coach } = await staleMove(moveAndRewrite)
+        const all = await blocks(docId)
+        expect(all.map((b) => b.id)).toEqual(["s1", "t2", "t1"])
+        expect(textOf(all)).toContain("Second paragraph. COACH")
+        await h.store.registry.undo(userId, coach.activityId!)
+        const undone = await blocks(docId)
+        expect(undone.map((b) => b.id)).toEqual(["s1", "t1", "t2"])
+        expect(textOf(undone)).not.toContain("COACH")
+      })
+    })
+
+    it("makes an old Coach read of the block stale and a fresh one apply", async () => {
+      await h.inDatabase(async () => {
+        const { docId, coach } = await staleMove([
+          { op: "move", blockId: "t2", after: "s1" },
+        ])
+        const old = await h.coach(docId, coach.output.revision, [
+          { op: "setText", blockId: "t2", text: "Second paragraph. OLD" },
+        ])
+        expect(old.output.outcomes[0]).toMatchObject({ status: "stale" })
+        const revision = (await h.rowCount(docId)) + 1
+        const fresh = await h.coach(docId, revision, [
+          { op: "setText", blockId: "t2", text: "Second paragraph. NEW" },
+        ])
+        expect(fresh.output.outcomes[0]).toMatchObject({ status: "applied" })
+        expect(await h.textOf(docId, "t2")).toContain("NEW")
+      })
+    })
+
+    it("keeps the tab's own container so typing sent before the reply is absorbed", async () => {
+      await h.inDatabase(async () => {
+        const { docId, client } = await staleMove([
+          { op: "move", blockId: "t2", after: "s1" },
+        ])
+        await laterTypingIsAbsorbed(docId, client, false)
+      })
+    })
+  }
+)

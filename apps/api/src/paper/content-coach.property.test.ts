@@ -323,10 +323,10 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                   : null
                 if (view) {
                   const next = [...view.blocks]
-                  if (step.kind === "staleMove" && next.length > 2) {
-                    const from = 1 + (step.a % (next.length - 1))
+                  if (step.kind === "staleMove" && next.length > 1) {
+                    const from = step.a % next.length
                     const [moved] = next.splice(from, 1)
-                    next.splice(1 + (step.b % next.length), 0, moved!)
+                    next.splice(step.b % (next.length + 1), 0, moved!)
                   } else {
                     next.splice(step.b % (next.length + 1), 0, {
                       id: `ne${++counter}`,
@@ -512,6 +512,8 @@ describe("random person and Coach edits over blocks, lists and an experience", (
               }
               const now = await snapshot(docId)
               seen.set(now.revision, now.doc)
+              const allIds = flatten(now.doc.blocks).map((node) => node.id)
+              expect(new Set(allIds).size).toBe(allIds.length)
               const found = JSON.stringify(now.doc).match(PERSON) ?? []
               expect(new Set(found).size).toBe(found.length)
               for (const token of found) {

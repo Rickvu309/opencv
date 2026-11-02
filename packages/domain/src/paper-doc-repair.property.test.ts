@@ -131,18 +131,23 @@ describe("repairPaper", () => {
       fc.property(
         fc.constantFrom("cv" as const, "letter" as const),
         fc.array(blockArbitrary, { maxLength: 8 }),
-        (kind, blocks) => {
+        fc.array(blockArbitrary, { maxLength: 8 }),
+        (kind, earlier, blocks) => {
+          const previous = repairPaper(null, candidate(kind, earlier))
+          assert.ok(previous)
           const raw = candidate(kind, blocks)
-          const repaired = repairPaper(null, raw)
+          const repaired = repairPaper(previous.document, raw)
           assert.ok(repaired, "a repair exists")
           assert.ok(paperDocumentSchema.safeParse(repaired.document).success)
-          const after = JSON.stringify(repaired.document)
+          const after = new Set(
+            JSON.stringify(repaired.document).match(/w\d+/g) ?? []
+          )
           for (const kept of JSON.stringify(raw).match(/w\d+/g) ?? []) {
-            assert.ok(after.includes(kept), `${kept} survives`)
+            assert.ok(after.has(kept), `${kept} survives`)
           }
         }
       ),
-      { numRuns: 300, seed: 20261105 }
+      { numRuns: 400, seed: 20261106 }
     )
   })
 

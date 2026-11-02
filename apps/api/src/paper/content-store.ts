@@ -1,5 +1,6 @@
 import {
   ERROR_CODES,
+  nodeFingerprint,
   repairPaper,
   legacyPaperOf,
   paperDocumentSchema,
@@ -14,6 +15,8 @@ import {
   aliveCharacters,
   forkOf,
   materializeCandidate,
+  twinFlags,
+  writeRepair,
   mergedUpdate,
   lostCharacters,
   loadYDoc,
@@ -474,40 +477,83 @@ export async function withContent<T>(
   })
 }
 
-function mended(
+async function staleCopies(
   row: PaperRow,
   entry: Live,
+  ids: readonly string[]
+): Promise<Map<string, string>> {
+  const logged = await loggedRows(row.id, entry.baseSeq)
+  const stale = new Map<string, string>()
+  for (const id of ids) {
+    const rebuilder = [...logged]
+      .reverse()
+      .find(
+        (item) =>
+          (item.origin === "coach" || item.origin === "revert") &&
+          item.rebuilt?.includes(id)
+      )
+    if (!rebuilder) continue
+    const before = materialize(
+      loadYDoc(
+        entry.base,
+        logged
+          .filter((item) => item.seq < rebuilder.seq)
+          .map((item) => item.update)
+      )
+    )
+    const fingerprint = before.ok ? nodeFingerprint(before.document, id) : null
+    if (fingerprint) stale.set(id, fingerprint)
+  }
+  return stale
+}
+
+type Mended = { effective: Uint8Array | null; rebuilt?: string[] }
+
+async function mended(
+  row: PaperRow,
+  entry: Live,
+  request: SyncRequest,
   effective: Uint8Array | null
-): Uint8Array | null {
-  if (!effective) return effective
+): Promise<Mended> {
+  if (!effective) return { effective }
   const read = materializeCandidate(entry.yDoc)
   if (!read.ok) {
     console.error(`[paper] cannot read ${row.id} after a sync: ${read.reason}`)
-    return effective
+    return { effective }
   }
   if (!read.repaired && paperDocumentSchema.safeParse(read.candidate).success) {
-    return effective
+    return { effective }
   }
+  const fresh = twinFlags(entry.yDoc, request.update)
+  const stale = await staleCopies(row, entry, [...fresh.keys()])
   const fixed = repairPaper(
     validated(row.crdtDocument, row.kind),
-    read.candidate
+    read.candidate,
+    {
+      fresh,
+      stale,
+    }
   )
   if (!fixed) {
     console.error(`[paper] could not repair ${row.id} after a sync`)
-    return effective
+    return { effective }
   }
-  const update = writeDocument(
+  const update = writeRepair(
     forkOf(entry.yDoc),
     fixed.document,
     "server",
-    fixed.moved
+    fixed.moved,
+    fixed.keep
   )
-  if (!update) return effective
+  if (!update) return { effective }
   const absorbed = absorbUpdate(entry.yDoc, update, "server")
   if (!absorbed.ok) throw refuse(absorbed.reason)
-  return absorbed.effective
-    ? mergedUpdate([effective, absorbed.effective])
-    : effective
+  return {
+    effective: absorbed.effective
+      ? mergedUpdate([effective, absorbed.effective])
+      : effective,
+    rebuilt: [...fixed.keep.keys(), ...fixed.moved],
+  }
 }
 
 export async function syncContent(
@@ -538,10 +584,11 @@ export async function syncContent(
           ? ({ ok: true, effective: null } as const)
           : absorbUpdate(entry.yDoc, request.update, "person")
       if (!absorbed.ok) throw refuse(absorbed.reason)
-      const effective = mended(row, entry, absorbed.effective)
-      if (effective) {
-        row = await commit(row, entry, effective, {
+      const fixed = await mended(row, entry, request, absorbed.effective)
+      if (fixed.effective) {
+        row = await commit(row, entry, fixed.effective, {
           origin: "person",
+          rebuilt: fixed.rebuilt,
           witness: row.document,
         })
       }

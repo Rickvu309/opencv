@@ -81,5 +81,5 @@ export { undoCoachEdit } from "./undo.js"
 
 export { rebuiltBy } from "./tree.js"
 
-export type { PaperRepair } from "./repair.js"
-export { repairPaper } from "./repair.js"
+export type { PaperRepair, RepairHints } from "./repair.js"
+export { nodeFingerprint, repairPaper } from "./repair.js"

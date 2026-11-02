@@ -349,6 +349,59 @@ describe("applyPaperEdits freshness", () => {
   })
 })
 
+describe("the section rule reads the batch's working document", () => {
+  const lone = parsed({
+    version: 3,
+    kind: "cv",
+    clashes: [],
+    header: {
+      id: "header",
+      type: "header",
+      name: "Ada",
+      email: "",
+      phone: "",
+      city: "",
+      linkedin: "",
+    },
+    blocks: [
+      { id: "s1", type: "section", kind: "experience", title: "Work" },
+      {
+        id: "e1",
+        type: "experience",
+        role: "A",
+        company: "B",
+        period: "",
+        location: "",
+        children: [],
+      },
+    ],
+  })
+
+  it("refuses moving the only section behind its entries", () => {
+    const result = run(lone, [{ op: "move", blockId: "s1", after: "e1" }], lone)
+    assert.equal(result.outcomes[0]?.status, "invalid")
+  })
+
+  it("allows it after an earlier op of the batch added a section first", () => {
+    const result = run(
+      lone,
+      [
+        {
+          op: "insert",
+          after: "@start",
+          blocks: [{ type: "section", kind: "awards" }],
+        },
+        { op: "move", blockId: "s1", after: "e1" },
+      ],
+      lone
+    )
+    assert.deepEqual(
+      result.outcomes.map((outcome) => outcome.status),
+      ["applied", "applied"]
+    )
+  })
+})
+
 describe("paperOutline", () => {
   it("shows ids, kinds, titles, levels, marks, links, nesting and the selection", () => {
     const rich = parsed({

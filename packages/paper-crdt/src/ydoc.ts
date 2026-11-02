@@ -127,3 +127,75 @@ export function materializeCandidate(yDoc: Y.Doc): Candidate {
     }
   }
 }
+
+type Container = { element: Y.XmlElement; id: string }
+
+function aliveContainers(yDoc: Y.Doc, only?: ReadonlySet<string>): Container[] {
+  const found: Container[] = []
+  const visit = (node: Y.XmlFragment | Y.XmlElement) => {
+    for (const child of node.toArray()) {
+      if (!(child instanceof Y.XmlElement)) continue
+      const id = child.getAttribute("id")
+      if (typeof id === "string" && (!only || only.has(id))) {
+        found.push({ element: child, id })
+      }
+      visit(child)
+    }
+  }
+  visit(yDoc.getXmlFragment(FRAGMENT))
+  return found
+}
+
+export function twinFlags(
+  yDoc: Y.Doc,
+  update: Uint8Array
+): Map<string, boolean[]> {
+  const incoming = Y.decodeUpdate(update).structs as unknown as {
+    id: { client: number; clock: number }
+    length: number
+  }[]
+  const fromUpdate = (item: Y.Item) =>
+    incoming.some(
+      (struct) =>
+        struct.id.client === item.id.client &&
+        item.id.clock >= struct.id.clock &&
+        item.id.clock < struct.id.clock + struct.length
+    )
+  const byId = new Map<string, boolean[]>()
+  for (const { element, id } of aliveContainers(yDoc)) {
+    const flags = byId.get(id) ?? []
+    flags.push(element._item ? fromUpdate(element._item) : false)
+    byId.set(id, flags)
+  }
+  return new Map([...byId].filter(([, flags]) => flags.length > 1))
+}
+
+export function writeRepair(
+  yDoc: Y.Doc,
+  target: PaperDocument,
+  origin: string,
+  moved: ReadonlySet<string>,
+  keep: ReadonlyMap<string, number>
+): Uint8Array | null {
+  const updates: Uint8Array[] = []
+  const collect = (update: Uint8Array) => updates.push(update)
+  yDoc.on("update", collect)
+  try {
+    yDoc.transact(() => {
+      const twins = aliveContainers(yDoc, new Set(keep.keys()))
+      for (const [id, index] of keep) {
+        const same = twins.filter((twin) => twin.id === id)
+        same.forEach(({ element }, at) => {
+          if (at === index) return
+          const parent = element.parent as Y.XmlFragment | Y.XmlElement
+          parent.delete(parent.toArray().indexOf(element), 1)
+        })
+      }
+    }, origin)
+    diffInto(yDoc, target, origin, moved)
+  } finally {
+    yDoc.off("update", collect)
+  }
+  if (updates.length === 0) return null
+  return updates.length === 1 ? updates[0]! : Y.mergeUpdates(updates)
+}

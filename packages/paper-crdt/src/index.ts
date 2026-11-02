@@ -9,7 +9,9 @@ export {
   materialize,
   materializeCandidate,
   seedYDoc,
+  twinFlags,
   writeDocument,
+  writeRepair,
 } from "./ydoc.js"
 export type { Candidate } from "./ydoc.js"
 export {

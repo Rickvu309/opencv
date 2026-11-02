@@ -391,12 +391,10 @@ function removeEdit(
   if (isOutcome(found)) return found
   if (!found.entry.list) return invalid("The header cannot be removed")
   if (found.entry.node.type === "section") {
-    const live = context.live.get(edit.blockId)?.list ?? []
-    if (
-      leavesEntryUnsectioned(live.filter((item) => item.id !== edit.blockId))
-    ) {
-      return invalid(NO_SECTION)
-    }
+    const rest = (work.blocks as PaperNode[]).filter(
+      (item) => item.id !== edit.blockId
+    )
+    if (leavesEntryUnsectioned(rest)) return invalid(NO_SECTION)
   }
   const changed = unchangedSubtree(found, edit.blockId)
   if (changed) return changed
@@ -418,12 +416,16 @@ function moveEdit(
   const changed = unchangedSubtree(found, edit.blockId)
   if (changed) return changed
   if (found.entry.node.type === "section") {
-    const live = context.live.get(edit.blockId)?.list ?? []
-    const rest = live.filter((item) => item.id !== edit.blockId)
+    const rest = (work.blocks as PaperNode[]).filter(
+      (item) => item.id !== edit.blockId
+    )
+    const anchorAt = rest.findIndex((item) => item.id === edit.after)
     const at =
       edit.after === EDIT_START
         ? 0
-        : rest.findIndex((item) => item.id === edit.after) + 1
+        : anchorAt === -1
+          ? rest.length
+          : anchorAt + 1
     const moved = [...rest.slice(0, at), found.entry.node, ...rest.slice(at)]
     if (leavesEntryUnsectioned(moved)) return invalid(NO_SECTION)
   }

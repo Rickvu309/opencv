@@ -14,10 +14,16 @@ type Raw = Record<string, unknown> & {
   children?: Raw[]
 }
 
+export type RepairHints = {
+  readonly fresh: ReadonlyMap<string, readonly boolean[]>
+  readonly stale: ReadonlyMap<string, string>
+}
+
 export type PaperRepair = {
   readonly document: PaperDocument
   readonly repairs: string[]
   readonly moved: Set<string>
+  readonly keep: Map<string, number>
 }
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
@@ -29,6 +35,8 @@ type Context = {
   readonly repairs: string[]
   readonly moved: Set<string>
   readonly used: Set<string>
+  readonly keep: Map<string, number>
+  readonly hints: RepairHints
 }
 
 function freshId(context: Context, base: string): string {
@@ -177,20 +185,48 @@ function occurrences(doc: Raw) {
   return found
 }
 
+type Twin = { node: Raw; owner: string; list: Raw[] }
+
+function primaryOf(
+  id: string,
+  list: Twin[],
+  previous: PaperDocument | null,
+  context: Context
+): number {
+  const was = previous ? indexOf(previous).get(id) : undefined
+  const stale = context.hints.stale.get(id)
+  const fresh = context.hints.fresh.get(id) ?? []
+  const open = list
+    .map((_entry, at) => at)
+    .filter((at) => stale === undefined || canonical(list[at]!.node) !== stale)
+  const pool = open.length > 0 ? open : list.map((_entry, at) => at)
+  const narrow = (from: number[], keep: (at: number) => boolean) => {
+    const kept = from.filter(keep)
+    return kept.length > 0 ? kept : from
+  }
+  const equal = narrow(pool, (at) =>
+    was ? canonical(list[at]!.node) === canonical(was.node) : false
+  )
+  const owned = narrow(equal, (at) =>
+    was ? list[at]!.owner === was.owner : false
+  )
+  return narrow(owned, (at) => fresh[at] === true)[0]!
+}
+
 function dedupe(doc: Raw, previous: PaperDocument | null, context: Context) {
-  const before = previous ? indexOf(previous) : null
   for (let round = 0; round < MAX_ROUNDS; round += 1) {
     const clashes = [...occurrences(doc)].filter(([, list]) => list.length > 1)
     if (clashes.length === 0) return
     for (const [id, list] of clashes) {
-      const owned = before?.get(id)?.owner
-      const primary = list.find((entry) => entry.owner === owned) ?? list[0]!
+      const at = primaryOf(id, list, previous, context)
+      if (round === 0) context.keep.set(id, at)
+      const primary = list[at]!
+      const stale = context.hints.stale.get(id)
       for (const entry of list) {
         if (entry === primary) continue
-        if (
-          canonical(entry.node) === canonical(primary.node) &&
-          entry.list.length > 0
-        ) {
+        const sameAsPrimary = canonical(entry.node) === canonical(primary.node)
+        const staleCopy = stale !== undefined && canonical(entry.node) === stale
+        if ((sameAsPrimary || staleCopy) && entry.list.length > 0) {
           entry.list.splice(entry.list.indexOf(entry.node), 1)
           context.repairs.push("dropped a block that appeared twice")
         } else if (entry.node !== doc.header) {
@@ -230,11 +266,18 @@ function sectionBeforeEntries(doc: Raw, context: Context) {
 
 export function repairPaper(
   previous: PaperDocument | null,
-  candidate: unknown
+  candidate: unknown,
+  hints: RepairHints = { fresh: new Map(), stale: new Map() }
 ): PaperRepair | null {
   const doc = cloned(candidate) as Raw
   if (!Array.isArray(doc.blocks)) return null
-  const context: Context = { repairs: [], moved: new Set(), used: new Set() }
+  const context: Context = {
+    repairs: [],
+    moved: new Set(),
+    used: new Set(),
+    keep: new Map(),
+    hints,
+  }
   doc.clashes = []
   for (const node of everyNode(doc))
     if (typeof node.id === "string") context.used.add(node.id)
@@ -249,5 +292,11 @@ export function repairPaper(
     document: parsed.data,
     repairs: context.repairs,
     moved: context.moved,
+    keep: context.keep,
   }
+}
+
+export function nodeFingerprint(doc: PaperDocument, id: string): string | null {
+  const found = indexOf(doc).get(id)
+  return found ? canonical(found.node) : null
 }
