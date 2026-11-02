@@ -3,7 +3,8 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 
-import { must, signUp } from "./lib/apply-pen-seed.mjs"
+import { must } from "./lib/apply-pen-seed.mjs"
+import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
 import { colorDistance } from "./lib/pen-layout-compare.mjs"
@@ -215,7 +216,13 @@ try {
     reducedMotion: true,
   })
   await setup.goto(web)
-  await signUp(setup, api, log)
+  await signInThrowaway({
+    page: setup,
+    apiUrl: api,
+    logPath: log,
+    name: "Linh Nguyen",
+    prefix: "apply-pen",
+  })
   await seed(setup)
   await setup.close()
 

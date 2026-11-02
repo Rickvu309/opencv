@@ -9,7 +9,7 @@ import {
   judgeCoveredText,
   plantCover,
 } from "./lib/covered-text.mjs"
-import { signUpThrowaway } from "./lib/session.mjs"
+import { signInThrowaway } from "./lib/session.mjs"
 import { COLLAPSED_KEY } from "./lib/sidebar-resize-shared.mjs"
 
 const output = process.argv[2]
@@ -45,7 +45,7 @@ try {
     mobile: false,
     reducedMotion: true,
   })
-  await signUpThrowaway({ page: first, webUrl, apiUrl, logPath })
+  await signInThrowaway({ page: first, webUrl, apiUrl, logPath })
   for (const scene of SCENES) {
     const page = await browser.openPage({
       width: scene.width,

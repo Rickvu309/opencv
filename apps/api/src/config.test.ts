@@ -5,6 +5,7 @@ import { DEFAULT_COACH_MODELS } from "@workspace/domain"
 import {
   apiPortFromEnv,
   authUrlFromEnv,
+  authRateLimitEnabledFromEnv,
   coachDailyTurnLimitForModeFromEnv,
   coachModelForModeFromEnv,
   coachRuntimeModeFromEnv,
@@ -30,6 +31,31 @@ describe("logAuthMailFromEnv", () => {
     [{ AUTH_URL: "invalid" }, false],
   ])("uses log delivery only for local development: %j", (env, expected) => {
     expect(logAuthMailFromEnv(env)).toBe(expected)
+  })
+})
+
+describe("authRateLimitEnabledFromEnv", () => {
+  const verifyStack = {
+    DB_DRIVER: "pglite",
+    OPENCV_VERIFY_RUN: "ci-screens",
+    AUTH_URL: "http://localhost:4460",
+  }
+
+  it("turns the sign-in code limiter off only for a local verify stack", () => {
+    expect(authRateLimitEnabledFromEnv(verifyStack)).toBe(false)
+  })
+
+  it.each([
+    [{}],
+    [{ OPENCV_VERIFY_RUN: "ci-screens" }],
+    [{ DB_DRIVER: "pglite" }],
+    [{ ...verifyStack, NODE_ENV: "production" }],
+    [{ ...verifyStack, AUTH_URL: "https://api.opencv.me" }],
+    [{ ...verifyStack, DB_DRIVER: "" }],
+    [{ ...verifyStack, OPENCV_VERIFY_RUN: "  " }],
+    [{ NODE_ENV: "production", DATABASE_URL: "postgres://x" }],
+  ])("keeps the limiter on everywhere else: %j", (env) => {
+    expect(authRateLimitEnabledFromEnv(env)).toBe(true)
   })
 })
 

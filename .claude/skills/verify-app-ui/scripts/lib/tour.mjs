@@ -1,8 +1,6 @@
 // Drives one signed-in tour and returns raw measurements. It decides nothing.
 // Sign-up no longer seeds a workspace, so the tour creates one CV and one Apply card.
 // A step that does not happen throws (exit 2); it is never counted as a pass.
-import { readFileSync } from "node:fs"
-
 import {
   API,
   JOBS_PATH,
@@ -14,6 +12,7 @@ import {
 } from "./assumes.mjs"
 import { colorsSource } from "./probe-colors.mjs"
 import { probeSource } from "./probe.mjs"
+import { signInThrowaway } from "./session.mjs"
 
 const CV_NAME = "Live Check CV"
 const ROUTES = {
@@ -75,21 +74,6 @@ async function tabWalk(page) {
   return { reached: null }
 }
 
-function readSignInCode(logPath, email) {
-  let text = ""
-  try {
-    text = readFileSync(logPath, "utf8")
-  } catch {
-    return null
-  }
-  const re = /\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})/
-  for (const line of text.split("\n").reverse()) {
-    const match = line.match(re)
-    if (match && match[1] === email && match[2] === "sign-in") return match[3]
-  }
-  return null
-}
-
 export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   const d = { timing: {}, tabs: {}, logs: [] }
   const shot = (page, name) =>
@@ -117,27 +101,14 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     mobile: false,
     reducedMotion: false,
   })
-  await a.goto(`${webUrl}${PATHS.signIn}`)
-  await a.sleep(500)
-  const email = `tour-${Date.now()}@verify.local`
-  const sent =
-    await a.evaluate(`fetch(${JSON.stringify(`${apiUrl}/api/auth/email-otp/send-verification-otp`)}, {
-    method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: ${JSON.stringify(email)}, type: 'sign-in' }),
-  }).then((r) => r.status)`)
-  must(sent === 200, `send-verification-otp returned ${sent}`)
-  let otp = null
-  for (let attempt = 0; attempt < 20 && !otp; attempt += 1) {
-    otp = readSignInCode(logPath, email)
-    if (!otp) await a.sleep(100)
-  }
-  must(otp, "probe code was not logged")
-  const status =
-    await a.evaluate(`fetch(${JSON.stringify(`${apiUrl}/api/auth/sign-in/email-otp`)}, {
-    method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: ${JSON.stringify(email)}, otp: ${JSON.stringify(otp)}, name: 'Live Check' }),
-  }).then((r) => r.status)`)
-  must(status === 200, `sign-in returned ${status}`)
+  await signInThrowaway({
+    page: a,
+    webUrl,
+    apiUrl,
+    logPath,
+    name: "Live Check",
+    prefix: "tour",
+  })
   const prepared = await a.evaluate(`(async () => {
     const post = (path, body) => fetch(${JSON.stringify(apiUrl)} + path, {
       method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },

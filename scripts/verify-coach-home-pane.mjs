@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 import { launchBrowser } from "../.claude/skills/verify-app-ui/scripts/lib/cdp.mjs"
-import { signUpThrowaway } from "../.claude/skills/verify-app-ui/scripts/lib/session.mjs"
+import { signInThrowaway } from "../.claude/skills/verify-app-ui/scripts/lib/session.mjs"
 
 const [webUrl, apiUrl, logPath, output] = process.argv.slice(2)
 assert(
@@ -48,7 +48,14 @@ try {
     })
     try {
       if (width === 1440)
-        await signUpThrowaway({ page, webUrl, apiUrl, logPath })
+        await signInThrowaway({
+          page,
+          webUrl,
+          apiUrl,
+          logPath,
+          name: "Pen Layout",
+          prefix: "pen-layout",
+        })
       await page.goto(`${webUrl}/coach`)
       assert(
         await page.waitFor(

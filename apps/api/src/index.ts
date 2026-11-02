@@ -16,6 +16,7 @@ import {
   authEmailFromFromEnv,
   commitShaFromEnv,
   gmailEnabledFromEnv,
+  authRateLimitEnabledFromEnv,
   logAuthMailFromEnv,
   googleClientIdFromEnv,
   googleClientSecretFromEnv,
@@ -104,6 +105,7 @@ const app = createApp({
   resendApiKey: resendApiKeyFromEnv(process.env),
   authEmailFrom: authEmailFromFromEnv(process.env),
   logAuthMail: logAuthMailFromEnv(process.env),
+  rateLimitEnabled: authRateLimitEnabledFromEnv(process.env),
   commitSha: commitShaFromEnv(process.env),
   interpretPostings:
     coachRuntimeMode !== "fake" &&

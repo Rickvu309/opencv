@@ -17,7 +17,7 @@ import {
   TEXT_TOKENS,
 } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
-import { signUpThrowaway } from "./lib/session.mjs"
+import { signInThrowaway } from "./lib/session.mjs"
 import { startStack, stopStack } from "./lib/stack.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
@@ -101,7 +101,12 @@ try {
     mobile: false,
     reducedMotion: true,
   })
-  await signUpThrowaway({ page: tab, ...stack })
+  await signInThrowaway({
+    page: tab,
+    ...stack,
+    name: "Pen Layout",
+    prefix: "pen-layout",
+  })
 
   let failed = 0
   let skipped = 0

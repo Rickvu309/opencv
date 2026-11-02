@@ -1,45 +1,5 @@
-// Signs up Linh Nguyen and saves the jobs, papers, steps and notes the W9 and W10 frames draw.
-import { readFileSync } from "node:fs"
-
 export const must = (ok, what) => {
   if (!ok) throw new Error(`step did not happen: ${what}`)
-}
-
-export async function signUp(page, apiUrl, logPath) {
-  const email = `apply-pen-${Date.now()}@verify.local`
-  const post = (path, body) =>
-    page.evaluate(`fetch(${JSON.stringify(apiUrl + path)}, {
-      method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-      body: ${JSON.stringify(JSON.stringify(body))},
-    }).then((r) => r.status)`)
-  must(
-    (await post("/api/auth/email-otp/send-verification-otp", {
-      email,
-      type: "sign-in",
-    })) === 200,
-    "send the sign-in code"
-  )
-  let otp = null
-  for (let attempt = 0; attempt < 50 && !otp; attempt += 1) {
-    const line = readFileSync(logPath, "utf8")
-      .split("\n")
-      .reverse()
-      .map((l) =>
-        /\[auth\] email code for (.+) type sign-in: ([0-9]{6})/.exec(l)
-      )
-      .find((m) => m && m[1] === email)
-    otp = line?.[2] ?? null
-    if (!otp) await page.sleep(100)
-  }
-  must(otp, "read the sign-in code from api.log")
-  must(
-    (await post("/api/auth/sign-in/email-otp", {
-      email,
-      otp,
-      name: "Linh Nguyen",
-    })) === 200,
-    "sign in"
-  )
 }
 
 async function command(page, apiUrl, name, input) {
