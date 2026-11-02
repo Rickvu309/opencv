@@ -1,5 +1,5 @@
 // In-memory GitHub, git, files and disk. Tests assert effects, not argv.
-import { existsSync, mkdtempSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { EXAMPLES } from "../issue.mjs"
@@ -45,8 +45,7 @@ export function fakePorts(world = {}) {
   const counts = { issue: 0, worktrees: 0, prs: 0, remoteHeads: 0 }
   const env = {
     PR_RESULT_REPO: "opencv",
-    PR_RESULT_DIR:
-      world.resultDir ?? mkdtempSync(join(tmpdir(), "ocv-tools-results-")),
+    PR_RESULT_DIR: world.resultDir ?? "/tmp/opencv-fake-results",
     ...(world.env ?? {}),
   }
   const main = world.main ?? "/tmp/opencv"

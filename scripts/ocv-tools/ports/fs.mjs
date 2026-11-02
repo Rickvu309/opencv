@@ -2,16 +2,15 @@
 import {
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   readdirSync,
   rmdirSync,
-  rmSync,
   statfsSync,
   writeFileSync,
 } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
+import { withTempDir } from "../../lib/temp-dir.mjs"
 
 export const SCRATCH = join(homedir(), "tmp", "ocv-tools")
 
@@ -52,18 +51,21 @@ export function fsAdapter() {
     },
     // null when a 64 KiB write works, else { full, message }.
     writeProbe(dir) {
-      let tmp
       try {
-        tmp = mkdtempSync(join(dir, ".disk-probe-"))
-        writeFileSync(join(tmp, "probe"), Buffer.alloc(65536))
+        withTempDir(
+          ".disk-probe-",
+          (tmp) => {
+            writeFileSync(join(tmp, "probe"), Buffer.alloc(65536))
+          },
+          dir,
+          { create: false }
+        )
         return null
       } catch (error) {
         return {
           full: /quota|no space|disk full|too large/i.test(error.message),
           message: error.message,
         }
-      } finally {
-        if (tmp) rmSync(tmp, { recursive: true, force: true })
       }
     },
   }

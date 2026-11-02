@@ -4,7 +4,6 @@ import {
   existsSync,
   ftruncateSync,
   mkdirSync,
-  mkdtempSync,
   openSync,
   readdirSync,
   readFileSync,
@@ -12,12 +11,12 @@ import {
   writeFileSync,
   writeSync,
 } from "node:fs"
-import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts, issue, pr } from "./ports/fake.mjs"
 import { pictureType, shotAssets, shotLink } from "./shot.mjs"
+import { makeTempDir } from "../lib/temp-dir.mjs"
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0])
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0])
@@ -29,7 +28,7 @@ const WEBP = Buffer.concat([
 ])
 
 function sandbox() {
-  const dir = mkdtempSync(join(tmpdir(), "ocv-shot-"))
+  const dir = makeTempDir("ocv-shot-")
   return {
     dir,
     file(name, bytes) {
@@ -45,7 +44,7 @@ function sandbox() {
 
 function ready(over = {}) {
   const box = sandbox()
-  const stage = mkdtempSync(join(tmpdir(), "ocv-shot-stage-"))
+  const stage = makeTempDir("ocv-shot-stage-")
   const ports = fakePorts({
     owner: "quanvu309",
     login: "quanvu309",
@@ -300,7 +299,7 @@ function hugePicture(path) {
 
 test("shot refuses a file over 10 MB and more than 20 pictures before any copy or upload", () => {
   const box = sandbox()
-  const stage = mkdtempSync(join(tmpdir(), "ocv-shot-stage-"))
+  const stage = makeTempDir("ocv-shot-stage-")
   try {
     const big = join(box.dir, "big.png")
     hugePicture(big)

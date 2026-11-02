@@ -1,19 +1,14 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs"
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
+import { makeTempDir } from "./lib/temp-dir.mjs"
 
 test("snapshot preserves instance identity and resolves nested visible overrides", () => {
   mkdirSync(join(homedir(), "tmp"), { recursive: true })
-  const scratch = mkdtempSync(join(homedir(), "tmp", "pen-snapshot-test-"))
+  const scratch = makeTempDir("pen-snapshot-test-", join(homedir(), "tmp"))
   try {
     const pen = join(scratch, "source.pen")
     const out = join(scratch, "snapshot.json")
@@ -109,7 +104,7 @@ test("snapshot preserves instance identity and resolves nested visible overrides
 
 test("paint provenance distinguishes repeated instances and preserves visible source values", () => {
   mkdirSync(join(homedir(), "tmp"), { recursive: true })
-  const scratch = mkdtempSync(join(homedir(), "tmp", "pen-paints-test-"))
+  const scratch = makeTempDir("pen-paints-test-", join(homedir(), "tmp"))
   try {
     const pen = join(scratch, "source.pen")
     const out = join(scratch, "snapshot.json")

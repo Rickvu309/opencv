@@ -1,6 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { readFileSync, rmSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { test } from "node:test"
 import {
@@ -16,6 +15,7 @@ import {
   scanFiles,
   serializeBaseline,
 } from "./no-comments.mjs"
+import { makeTempDir } from "./lib/temp-dir.mjs"
 
 const banned = (file, text) => bannedComments(file, text).map((c) => c.line)
 
@@ -149,7 +149,7 @@ test("writing the baseline lowers counts and drops files that are clean", () => 
 })
 
 test("the baseline file round-trips through disk in sorted order", () => {
-  const dir = mkdtempSync(path.join(tmpdir(), "no-comments-"))
+  const dir = makeTempDir("no-comments-")
   try {
     const file = path.join(dir, "baseline.json")
     assert.equal(readBaseline(file), null)

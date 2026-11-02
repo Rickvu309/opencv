@@ -1,14 +1,9 @@
 import { spawn } from "node:child_process"
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync,
-} from "node:fs"
+import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { makeTempDir } from "./temp-dir.mjs"
 
 const GROUP_EXIT_DEADLINE_MS = 3000
 const START_DEADLINE_MS = 20000
@@ -52,7 +47,7 @@ const killGroup = (chrome) => {
 function startChrome({ name, startDeadlineMs, extraArgs, maxLifetimeMs }) {
   const root = join(homedir(), "tmp", name)
   mkdirSync(root, { recursive: true })
-  const profile = mkdtempSync(join(root, "profile-"))
+  const profile = makeTempDir("profile-", root)
   const chrome = spawn(
     findChrome(),
     [

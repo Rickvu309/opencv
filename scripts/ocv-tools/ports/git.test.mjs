@@ -3,19 +3,18 @@ import { execFileSync } from "node:child_process"
 import {
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs"
-import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import test from "node:test"
 import { gitAdapter } from "./git.mjs"
 import { realRunner } from "./proc.mjs"
+import { makeTempDir } from "../../lib/temp-dir.mjs"
 
 function tempClone() {
-  const root = mkdtempSync(join(tmpdir(), "ocv-tools-git-"))
+  const root = makeTempDir("ocv-tools-git-")
   const sh = (cwd, ...args) =>
     execFileSync("git", args, { cwd, encoding: "utf8" })
   sh(root, "init", "-q", "--bare", "-b", "main", "origin.git")
