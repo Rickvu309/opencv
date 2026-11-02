@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, rmSync, watch, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
@@ -12,20 +12,55 @@ function fixtures(files) {
   return dir
 }
 
+function manualTimers() {
+  const pending = new Set()
+  return {
+    timers: {
+      start: (callback) => {
+        const handle = { callback }
+        pending.add(handle)
+        return handle
+      },
+      stop: (handle) => pending.delete(handle),
+    },
+    expire: () => {
+      for (const handle of [...pending]) handle.callback()
+    },
+  }
+}
+
+function fileAppears(dir, name) {
+  return new Promise((resolve) => {
+    const watcher = watch(dir, () => {
+      if (!existsSync(join(dir, name))) return
+      watcher.close()
+      resolve()
+    })
+    if (existsSync(join(dir, name))) {
+      watcher.close()
+      resolve()
+    }
+  })
+}
+
 test("a file that passes its tests but never exits fails with its name instead of hanging", async () => {
   const dir = fixtures({
     "fine.test.mjs": `import { test } from "node:test"\ntest("fine", () => {})\n`,
-    "stuck.test.mjs": `import { test } from "node:test"\ntest("done", () => {})\nsetInterval(() => {}, 1000)\n`,
+    "stuck.test.mjs": `import { test } from "node:test"\nimport { writeFileSync } from "node:fs"\nimport { createServer } from "node:net"\ntest("done", () => {})\ncreateServer().listen(0)\nwriteFileSync("stuck-ready", "")\n`,
   })
   const lines = []
+  const clock = manualTimers()
   try {
-    const started = Date.now()
-    const results = await runFiles(["fine.test.mjs", "stuck.test.mjs"], {
+    const running = runFiles(["fine.test.mjs", "stuck.test.mjs"], {
       timeoutMs: 3000,
+      concurrency: 1,
+      timers: clock.timers,
       cwd: dir,
       log: (line) => lines.push(line),
     })
-    assert.ok(Date.now() - started < 20000, "returned within the deadline")
+    await fileAppears(dir, "stuck-ready")
+    clock.expire()
+    const results = await running
     const byFile = Object.fromEntries(results.map((r) => [r.file, r]))
     assert.equal(byFile["fine.test.mjs"].ok, true)
     assert.equal(byFile["stuck.test.mjs"].ok, false)
@@ -44,11 +79,13 @@ test("a test that never settles fails with its file and test name", async () => 
   const lines = []
   try {
     const [result] = await runFiles(["wait.test.mjs"], {
-      timeoutMs: 2000,
+      timeoutMs: 500,
+      timers: manualTimers().timers,
       cwd: dir,
       log: (line) => lines.push(line),
     })
     assert.equal(result.ok, false)
+    assert.equal(result.timedOut, false)
     assert.match(lines.join("\n"), /never settles/)
     assert.match(lines.join("\n"), /wait\.test\.mjs/)
   } finally {
@@ -65,6 +102,7 @@ test("a failing file is reported by name and does not stop the others", async ()
   try {
     const results = await runFiles(["bad.test.mjs", "good.test.mjs"], {
       timeoutMs: 5000,
+      timers: manualTimers().timers,
       cwd: dir,
       log: (line) => lines.push(line),
     })

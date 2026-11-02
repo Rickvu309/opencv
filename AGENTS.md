@@ -49,14 +49,15 @@ Tests that hold this shape:
 - `apps/web/src/test/request-boundary.test.ts` rejects an API path, `fetch` or query invalidation outside `apps/web/src/lib`.
 - `apps/web/src/test/feature-imports.test.ts` rejects an import between `apps/web/src/features` folders that its `FEATURE_IMPORTS` table does not list, a folder with no row, a row for a gone folder, and an edge no import uses.
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
-- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when an old number now names a different decision.
+- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when a number now names another decision.
 - `scripts/doc-paths.test.mjs` rejects a backticked repo path in AGENTS.md, CONTEXT.md, `docs/` or `.claude/skills/` that does not exist, with file and line.
-- `scripts/retired-words.test.mjs` rejects Thread or Opportunity in source or file names under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few exceptions); say Chat or Job. The old Apply stage ids are unguarded until #437.
+- `scripts/retired-words.test.mjs` rejects Thread or Opportunity in source or file names under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few exceptions); say Chat or Job. Old Apply stage ids are unguarded until #437.
 - `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no other non-test file imports; drop `export` or delete it. `KEPT_ON_PURPOSE` lists the exceptions.
 - `apps/api/src/registry/coach-chat-tools.test.ts` bars chat.create.
 - `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included. Explain with a better name or a test. `scripts/no-comments.baseline.json` lists the old ones and only shrinks; lower it with `node scripts/no-comments.mjs --write-baseline`.
 - `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock. `apps/web/src/test/setup.ts` calls `pinTestClock` before every test, so fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts` and never to the real date.
 - `scripts/browser-launcher.test.mjs` rejects a browser started outside a `cdp.mjs` launcher, a launcher that leaves Chrome or one of its children running after a failed launch, and a launcher that does not start Chrome once more when the first start is silent (a fake Chrome stands in for the real one).
+- `packages/guards/wall-clock.test.mjs` rejects a node test that waits on or reads the real clock; inject `timers` instead.
 - `scripts/layout-comparison-gates.test.mjs` rejects a verify driver that calls `comparePenLayout` and never reads its `mismatches`, so a wrong layout cannot report PASS. A `PENDING` entry with an issue and an expiry date lists a known exception.
 - `scripts/kit-duplicates.test.mjs` rejects `clipboard.writeText` or `execCommand("copy")` in `apps/*` or `packages/*` outside `packages/ui/src/components/copy-button.tsx`; use `CopyButton` or `copyText`.
 - The same guard rejects `animate-spin` in `apps/*`; use the kit `Spinner`. A `pending` entry with a PR and an expiry date lists a caller another PR is migrating.
