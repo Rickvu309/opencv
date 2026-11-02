@@ -28,6 +28,8 @@ const CAUGHT_BY =
 const INTRODUCED_BY =
   /^\**Introduced by:\**\s*(?:[0-9a-f]{7,40}|#\d+|unknown)\s*$/m
 const FINISH_FIX = "Fix the cause, then run scripts/ocv-tools.mjs finish again."
+const REBASE =
+  "git fetch origin && git rebase origin/main && git push --force-with-lease"
 const MERGE_FIX =
   "Wait for a green ci on the PR head, then run scripts/ocv-tools.mjs merge <pr#>."
 
@@ -178,6 +180,44 @@ const failedRun = (queue) =>
 const failedNotes = (queue) =>
   queue.notes?.length ? `\n${queue.notes.join("\n")}` : ""
 
+const FILES_SHOWN = 8
+
+const fileList = (files) =>
+  files.length > FILES_SHOWN
+    ? `${files.slice(0, FILES_SHOWN).join(", ")} and ${files.length - FILES_SHOWN} more`
+    : files.join(", ")
+
+const mergeConflict = ({ mergeResult }) =>
+  mergeResult.conflicts?.length
+    ? `PR #${mergeResult.n} conflicts with origin/main in ${fileList(mergeResult.conflicts)}.`
+    : null
+
+const mergedTreeFails = ({ mergeResult }) =>
+  mergeResult.failed?.length
+    ? `PR #${mergeResult.n} merged with origin/main fails the quick guards: ${fileList(mergeResult.failed)}.`
+    : null
+
+const rebaseThenMerge = ({ mergeResult }) =>
+  `From the PR worktree run: ${REBASE}; then fix what is named and run scripts/ocv-tools.mjs merge ${mergeResult?.n ?? "<pr#>"}`
+
+const leftQueueMessage = (queue) => {
+  const where = `PR #${queue.n} left the merge queue${queue.at ? ` at ${queue.at}` : ""}, reason ${queue.reason}.`
+  if (queue.conflicts?.length)
+    return `${where} It conflicts with origin/main in ${fileList(queue.conflicts)}.`
+  if (queue.infra)
+    return `${where} Infra: run ${queue.infra} ran no step in any job.`
+  return where
+}
+
+const leftQueueFix = (facts) => {
+  const n = facts.queue?.n ?? "<pr#>"
+  if (facts.queue?.conflicts?.length)
+    return `From the PR worktree run: ${REBASE}; resolve ${fileList(facts.queue.conflicts)}, then run scripts/ocv-tools.mjs merge ${n} --wait`
+  if (facts.queue?.infra)
+    return `Run scripts/ocv-tools.mjs merge ${n} --wait to enqueue it again; the failure was the runner, not the change`
+  return `Run: gh run list --branch 'gh-readonly-queue/main/pr-${n}-*' --limit 1`
+}
+
 const waitAgain = (facts) =>
   `Run: scripts/ocv-tools.mjs merge ${facts.queue?.n ?? "<pr#>"} --wait`
 
@@ -270,18 +310,31 @@ export const jobRows = [
         : MERGE_FIX,
   }),
   row({
+    id: "MERGE_CONFLICT",
+    section: "6",
+    says: "The PR head must merge into origin/main without a conflict.",
+    at: ["merge-result"],
+    needs: ["mergeResult"],
+    check: mergeConflict,
+    fix: rebaseThenMerge,
+  }),
+  row({
+    id: "MERGED_TREE_FAILS",
+    section: "6",
+    says: "The PR merged with origin/main must pass the quick guards.",
+    at: ["merge-result"],
+    needs: ["mergeResult"],
+    check: mergedTreeFails,
+    fix: rebaseThenMerge,
+  }),
+  row({
     id: "LEFT_QUEUE",
     section: "6",
     says: "The PR must stay in the queue until it merges.",
     at: ["queue"],
     needs: ["queue"],
-    check: queueKind(
-      "LEFT_QUEUE",
-      (queue) =>
-        `PR #${queue.n} left the merge queue${queue.at ? ` at ${queue.at}` : ""}, reason ${queue.reason}.`
-    ),
-    fix: (facts) =>
-      `Run: gh run list --branch 'gh-readonly-queue/main/pr-${facts.queue?.n ?? "<pr#>"}-*' --limit 1`,
+    check: queueKind("LEFT_QUEUE", leftQueueMessage),
+    fix: leftQueueFix,
   }),
   row({
     id: "QUEUE_TIMEOUT",

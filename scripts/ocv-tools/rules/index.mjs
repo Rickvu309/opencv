@@ -42,6 +42,7 @@ export const MOMENTS = Object.freeze([
   "finish-pushed",
   "pr",
   "merge",
+  "merge-result",
   "queue",
 ])
 
@@ -71,6 +72,7 @@ export const RUNNERS = Object.freeze({
   "finish-pushed": ["scripts/ocv-tools/jobs/finish.mjs"],
   pr: ["scripts/ocv-tools/jobs/policy.mjs", "scripts/ocv-tools/jobs/merge.mjs"],
   merge: ["scripts/ocv-tools/jobs/merge.mjs"],
+  "merge-result": ["scripts/ocv-tools/jobs/merge.mjs"],
   queue: ["scripts/ocv-tools/jobs/merge.mjs"],
 })
 
