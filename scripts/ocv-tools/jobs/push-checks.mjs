@@ -19,6 +19,7 @@ export const FAST_GUARDS = Object.freeze([
   "scripts/ci-screens.test.mjs",
   "scripts/ci-workflow.test.mjs",
   "scripts/doc-paths.test.mjs",
+  "scripts/guard-ledger.test.mjs",
   "scripts/driver-sign-in.test.mjs",
   "scripts/focus-indication.test.mjs",
   "scripts/kit-duplicates.test.mjs",

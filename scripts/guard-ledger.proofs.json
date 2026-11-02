@@ -1,0 +1,14 @@
+{
+  "pointer-capture": {
+    "passed": true,
+    "fingerprint": "fbc7d121fecd"
+  },
+  "temp-dirs": {
+    "passed": true,
+    "fingerprint": "5049b9bf8e30"
+  },
+  "touch-targets": {
+    "passed": true,
+    "fingerprint": "957935b73774"
+  }
+}
