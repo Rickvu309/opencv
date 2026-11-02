@@ -7,7 +7,7 @@ description: Check the OpenCV landing page for quality and taste, writing, logic
 
 Two layers. The checker (`scripts/verify-landing.mjs`) decides what a program can: counts, words, boxes, colors, computed styles, first-paint state. The rubric in [taste-review.md](taste-review.md) decides the rest, and three reviewers from different model families score it. Neither layer replaces the other. A green checker says the page follows the written rules. It does not say the page is good.
 
-All paths are relative to the repo (or worktree) root. The rules come from the landing research (kept outside the repo) plus the pen parity checks. A property names its source when the checker comment still cites one.
+All paths are relative to the repo (or worktree) root. The rules come from the landing research (kept outside the repo) plus the pen parity checks. Each check names its source in the `Source:` text of its line below.
 
 ## Run the checker
 
