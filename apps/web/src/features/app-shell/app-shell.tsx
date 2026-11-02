@@ -244,6 +244,7 @@ export function AppShell({ onSearch }: AppShellProps) {
             type="button"
             variant="ghost"
             size="icon-sm"
+            className="size-11"
             aria-label={shellCopy.menu}
             onClick={() => dispatch({ type: "drawer_opened" })}
           >
@@ -263,7 +264,7 @@ export function AppShell({ onSearch }: AppShellProps) {
           </aside>
         ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar md:pt-2 md:pr-2">
-          <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-lg md:border md:border-border">
+          <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border">
             <main
               id="app-main"
               tabIndex={-1}
@@ -306,6 +307,7 @@ export function AppShell({ onSearch }: AppShellProps) {
                 type="button"
                 variant="secondary"
                 size="icon-sm"
+                className="size-11"
                 aria-label={shellCopy.closeMenu}
                 onClick={closeDrawer}
               >

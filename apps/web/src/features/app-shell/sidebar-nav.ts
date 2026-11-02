@@ -1,6 +1,20 @@
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
+export const SHELL_ACTIVE_OPTIONS = {
+  exact: false,
+  includeSearch: false,
+} as const
+
+export function shellNavLabel(
+  item: { id: string; label: string },
+  inboxUnread: number | null
+) {
+  return item.id === "inbox" && inboxUnread
+    ? `${item.label}, ${inboxUnread} ${shellCopy.unread}`
+    : item.label
+}
+
 export const SHELL_PRIMARY = [
   { id: "inbox", label: shellCopy.inbox, to: SURFACE_PATHS.inbox },
   { id: "coach", label: shellCopy.coach, to: SURFACE_PATHS.coach },

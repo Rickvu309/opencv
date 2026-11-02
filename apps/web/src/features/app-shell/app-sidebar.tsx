@@ -16,7 +16,12 @@ import {
 
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
-import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
+import {
+  SHELL_ACTIVE_OPTIONS,
+  SHELL_PRIMARY,
+  SHELL_WORK,
+  shellNavLabel,
+} from "@/features/app-shell/sidebar-nav.ts"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import {
   useInboxUnread,
@@ -39,7 +44,7 @@ type AppSidebarProps = {
 function linkClass(active: boolean) {
   return cn(
     FOCUS_RING,
-    "flex h-7 items-center gap-2 rounded-md px-2 text-sm text-foreground hover:bg-sidebar-accent md:text-[13px] md:leading-[15.6px] md:font-medium",
+    "flex h-11 items-center gap-2 px-2 text-sm text-foreground hover:bg-sidebar-accent md:h-7 md:text-[13px] md:leading-[15.6px] md:font-medium",
     active && "bg-sidebar-accent text-sidebar-accent-foreground"
   )
 }
@@ -78,7 +83,7 @@ function NavGroup({
         data-slot="sidebar-group-label"
         aria-expanded={open}
         aria-controls={panelId}
-        className="h-7 w-full justify-start gap-1 rounded-md px-2 text-xs font-medium hover:bg-transparent aria-expanded:bg-transparent"
+        className="h-11 w-full justify-start gap-1 border-0 px-2 text-xs font-medium hover:bg-sidebar-accent aria-expanded:bg-transparent aria-expanded:hover:bg-sidebar-accent md:h-7"
         onClick={toggle}
       >
         {label}
@@ -130,7 +135,7 @@ export function AppSidebar({
             size="icon-sm"
             aria-label={shellCopy.search}
             aria-keyshortcuts="Control+K Meta+K"
-            className="md:size-7"
+            className="size-11 hover:bg-sidebar-accent aria-expanded:bg-sidebar-accent md:size-7"
             onClick={onSearch}
           >
             <Search />
@@ -141,7 +146,7 @@ export function AppSidebar({
             variant="ghost"
             size="icon-sm"
             aria-label={shellCopy.newChat}
-            className="md:size-7 md:rounded-full md:border md:[&_svg]:size-[15px]"
+            className="size-11 md:size-7 md:rounded-full md:border md:[&_svg]:size-[15px]"
             onClick={onNewChat}
           >
             <SquarePen />
@@ -151,7 +156,7 @@ export function AppSidebar({
       <div className="min-h-0 flex-1 overflow-auto px-2 pb-2 md:px-0 md:pb-0">
         <nav
           aria-label="Main"
-          className="mt-2 flex flex-col gap-0.5 md:mt-1.5 md:gap-px"
+          className="mt-2 flex flex-col gap-0.5 md:mt-[7px] md:gap-px"
         >
           {SHELL_PRIMARY.map((item) => {
             const Icon = navigationIcons[item.id]
@@ -159,9 +164,9 @@ export function AppSidebar({
               <Link
                 key={item.id}
                 to={item.to}
-                aria-label={item.label}
+                aria-label={shellNavLabel(item, count)}
                 data-slot="sidebar-link"
-                activeOptions={{ exact: true }}
+                activeOptions={SHELL_ACTIVE_OPTIONS}
                 onClick={onNavigate}
                 activeProps={{ className: linkClass(true) }}
                 inactiveProps={{ className: linkClass(false) }}
@@ -180,7 +185,11 @@ export function AppSidebar({
               </Link>
             )
           })}
-          <NavGroup id="work" label={shellCopy.yourWork} className="mt-3">
+          <NavGroup
+            id="work"
+            label={shellCopy.yourWork}
+            className="mt-3 md:mt-[11px]"
+          >
             {SHELL_WORK.map((item) => {
               const Icon = navigationIcons[item.id]
               return (
@@ -188,7 +197,7 @@ export function AppSidebar({
                   key={item.id}
                   to={item.to}
                   data-slot="sidebar-link"
-                  activeOptions={{ exact: true }}
+                  activeOptions={SHELL_ACTIVE_OPTIONS}
                   onClick={onNavigate}
                   activeProps={{ className: linkClass(true) }}
                   inactiveProps={{ className: linkClass(false) }}
@@ -211,7 +220,8 @@ export function AppSidebar({
                 to="/paper/$docId"
                 params={{ docId: doc.id }}
                 onClick={onNavigate}
-                className={linkClass(false)}
+                activeProps={{ className: linkClass(true) }}
+                inactiveProps={{ className: linkClass(false) }}
               >
                 <FileText className="size-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{doc.name}</span>
@@ -228,7 +238,8 @@ export function AppSidebar({
                 }
                 title={job.company ? `${job.title}, ${job.company}` : job.title}
                 onClick={onNavigate}
-                className={linkClass(false)}
+                activeProps={{ className: linkClass(true) }}
+                inactiveProps={{ className: linkClass(false) }}
               >
                 <Briefcase className="size-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{job.title}</span>

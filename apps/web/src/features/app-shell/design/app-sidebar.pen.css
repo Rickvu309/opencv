@@ -23,8 +23,29 @@
 [data-pen-surface="app-shell"] button[aria-label="New chat"] {
   color: #1a1a1a;
   background: #ffffff;
+}
+
+[data-pen-surface="app-shell"]
+  button[aria-label="New chat"]:not(:focus-visible) {
   border-color: #e2e2e2;
   box-shadow: 0 1px 2px #0000000a;
+}
+
+@media (hover: hover) {
+  [data-pen-surface="app-shell"] button[aria-label="New chat"]:hover {
+    background: var(--sidebar-accent);
+  }
+}
+
+[data-pen-surface="app-shell"] [data-slot="sidebar-link"],
+[data-pen-surface="app-shell"] [data-slot="sidebar-group-label"],
+[data-pen-surface="app-shell"] button[aria-label="Search"],
+[data-pen-surface="app-shell"] [data-slot="shell-profile"] a {
+  border-radius: 6px;
+}
+
+[data-pen-surface="app-shell"] [data-slot="brand"] [data-slot="mark"] + span {
+  translate: 0 -1px;
 }
 
 [data-pen-surface="app-shell"] [data-slot="shell-profile"] svg,

@@ -19,6 +19,7 @@ describe("shell copy", () => {
       "shell.search": shellCopy.search,
       "shell.newChat": shellCopy.newChat,
       "shell.inbox": shellCopy.inbox,
+      "shell.unread": shellCopy.unread,
       "shell.coach": shellCopy.coach,
       "shell.jobs": shellCopy.jobs,
       "shell.yourWork": shellCopy.yourWork,

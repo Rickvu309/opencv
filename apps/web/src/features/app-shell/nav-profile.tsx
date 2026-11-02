@@ -38,7 +38,7 @@ export function NavProfile({ onNavigate }: Props) {
       <Link
         to={SURFACE_PATHS.settings}
         onClick={onNavigate}
-        className={`${FOCUS_RING} inline-flex h-7 items-center rounded-md px-2 text-sm text-foreground hover:bg-muted`}
+        className={`${FOCUS_RING} inline-flex h-11 min-w-11 items-center justify-center px-2 text-sm text-foreground hover:bg-sidebar-accent md:h-7 md:min-w-0`}
       >
         <Settings className="size-4" aria-hidden="true" />
         <span className="sr-only">{shellCopy.settings}</span>
