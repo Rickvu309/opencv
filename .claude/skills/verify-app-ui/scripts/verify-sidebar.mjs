@@ -8,14 +8,19 @@ import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
 import { colorDistance } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
+import { checkGeometry, geometry } from "./lib/sidebar-geometry.mjs"
+import {
+  checkInteractions,
+  itemsOf,
+  MIN_TARGET,
+} from "./lib/sidebar-interactions.mjs"
 
 const USAGE =
   "usage: PORT=<api port> VERIFY_API_LOG=<api.log> node verify-sidebar.mjs <evidence directory> [--pen-dir <dir>] (or --base-url, --api-url, --api-log, --evidence)"
-const POSITION = 2
+const POSITION = 0.75
 const FONT_SIZE = 0.25
 const COLOR = 0.02
 const NO_DATA = new Set(["Checkout UX study"])
-const ACTIVE_BACKGROUND = "rgb(225, 225, 226)"
 
 const args = process.argv.slice(2)
 const options = {}
@@ -176,126 +181,6 @@ const measureText = async (page, tag, height, active) => {
   compare(tag, height, active, result.measured)
 }
 
-const geometry = (page) =>
-  page.evaluate(`(() => {
-    const root = document.querySelector(${JSON.stringify(SIDEBAR)});
-    const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right }; };
-    const one = (selector) => root.querySelector(selector);
-    const links = [...root.querySelectorAll('[data-slot="sidebar-link"]')].filter((a) => a.offsetParent);
-    const labels = [...root.querySelectorAll('[data-slot="sidebar-group-label"]')].map((button) => {
-      const range = document.createRange();
-      range.selectNodeContents([...button.childNodes].find((n) => n.nodeType === 3));
-      const text = range.getBoundingClientRect();
-      const chevron = button.querySelector('svg');
-      return { text: button.textContent.trim(), textRight: text.right, chevron: box(chevron), button: box(button) };
-    });
-    const profile = one('[data-slot="shell-profile"]');
-    const gear = profile.querySelector('a svg');
-    const avatar = profile.querySelector('[data-slot="avatar"]');
-    const newChat = one('button[aria-label="New chat"]');
-    const search = one('button[aria-label="Search"]');
-    const mark = one('[data-slot="mark"]');
-    return {
-      root: box(root),
-      mark: box(mark),
-      search: box(search),
-      newChat: { ...box(newChat), background: getComputedStyle(newChat).backgroundColor, radius: getComputedStyle(newChat).borderTopLeftRadius },
-      links: links.map((a) => ({ name: a.getAttribute('aria-label') ?? a.textContent.trim(), ...box(a), icon: box(a.querySelector('svg')), current: a.getAttribute('aria-current'), background: getComputedStyle(a).backgroundColor })),
-      labels,
-      profile: box(profile),
-      avatar: box(avatar),
-      gear: box(gear),
-      rootBackground: getComputedStyle(root).backgroundColor,
-      fontFamily: getComputedStyle(root).fontFamily,
-    };
-  })()`)
-
-const near = (a, b, tolerance = POSITION) => Math.abs(a - b) <= tolerance
-
-function checkGeometry(tag, height, shape, active) {
-  check(shape.root.w === 244, `${tag} sidebar is 244px wide (${shape.root.w})`)
-  check(
-    near(shape.mark.w, 20) && near(shape.mark.h, 20),
-    `${tag} logo mark is 20x20`
-  )
-  check(
-    near(shape.mark.x, 16) && near(shape.mark.y, 18),
-    `${tag} logo mark sits at 16,18 (${shape.mark.x},${shape.mark.y})`
-  )
-  check(
-    near(shape.search.w, 28) &&
-      near(shape.search.h, 28) &&
-      near(shape.newChat.w, 28) &&
-      near(shape.newChat.h, 28),
-    `${tag} search and new chat buttons are 28x28`
-  )
-  check(
-    near(shape.search.r, 202) && near(shape.newChat.r, 232),
-    `${tag} search and new chat sit at the top right (${shape.search.r}, ${shape.newChat.r})`
-  )
-  check(
-    shape.newChat.background === "rgb(255, 255, 255)" &&
-      parseFloat(shape.newChat.radius) >= 14,
-    `${tag} new chat is a white circle`
-  )
-  for (const link of shape.links) {
-    check(
-      near(link.h, 28) && near(link.w, 224) && near(link.x, 10),
-      `${tag} row "${link.name}" is 224x28 at x 10 (${link.w}x${link.h} at ${link.x})`
-    )
-    check(
-      near(link.icon.w, 16) && near(link.icon.h, 16) && near(link.icon.x, 18),
-      `${tag} row "${link.name}" icon is 16x16 at x 18`
-    )
-  }
-  const current = shape.links.filter((link) => link.current === "page")
-  check(
-    current.length === 1 && current[0].name === active,
-    `${tag} exactly "${active}" is the current page (${current.map((l) => l.name)})`
-  )
-  check(
-    current[0]?.background === ACTIVE_BACKGROUND,
-    `${tag} the active row is filled ${ACTIVE_BACKGROUND} (${current[0]?.background})`
-  )
-  check(
-    shape.links
-      .filter((link) => link.current !== "page")
-      .every((link) => link.background === "rgba(0, 0, 0, 0)"),
-    `${tag} no other row is filled`
-  )
-  for (const label of shape.labels) {
-    check(
-      near(label.chevron.w, 9) && near(label.chevron.h, 9),
-      `${tag} "${label.text}" chevron is 9x9`
-    )
-    check(
-      near(label.chevron.x - label.textRight, 4),
-      `${tag} "${label.text}" chevron follows the label by 4px (${(label.chevron.x - label.textRight).toFixed(2)})`
-    )
-    check(
-      near(label.button.h, 28),
-      `${tag} "${label.text}" group row is 28 tall`
-    )
-  }
-  check(
-    shape.labels.map((label) => label.text).join("|") === "Your work|Favorites",
-    `${tag} group labels are Your work, Favorites`
-  )
-  check(
-    near(shape.profile.h, 32) &&
-      near(shape.profile.y + shape.profile.h, height - 12),
-    `${tag} footer is 32 tall and ends 12px above the bottom`
-  )
-  check(
-    near(shape.avatar.w, 18) && near(shape.avatar.h, 18),
-    `${tag} avatar is 18x18`
-  )
-  check(
-    near(shape.gear.w, 16) && near(shape.gear.r, 226),
-    `${tag} settings gear is 16 wide and ends at 226 (${shape.gear.r})`
-  )
-}
-
 async function sheet(page, name, penFile, appFile, height) {
   if (!penFile || !existsSync(penFile)) return null
   const html = join(output, `${name}-sheet.html`)
@@ -308,7 +193,9 @@ async function sheet(page, name, penFile, appFile, height) {
   return html
 }
 
-const browser = await launchBrowser()
+const browser = await launchBrowser({
+  extraArgs: ["--blink-settings=primaryHoverType=2,availableHoverTypes=2"],
+})
 try {
   const setup = await browser.openPage({
     width: 1440,
@@ -339,8 +226,8 @@ try {
     await page.goto(`${web}${path}`)
     await waitSidebar(page, SIDEBAR)
     await measureText(page, tag, height, active)
-    const shape = await geometry(page)
-    checkGeometry(tag, height, shape, active)
+    const shape = await geometry(page, SIDEBAR)
+    checkGeometry(check, tag, height, shape, active)
     check(
       /Inter/.test(shape.fontFamily) &&
         (await page.evaluate(
@@ -378,7 +265,7 @@ try {
       )
       check(
         rows.join("|") ===
-          "Inbox|Coach|Jobs|Paper|Apply|Pitch|Junior Marketing CV|Lumière application Lumière",
+          "Inbox, 4 unread|Coach|Jobs|Paper|Apply|Pitch|Junior Marketing CV|Lumière application Lumière",
         `${tag} rows in pen order, CV before application (${rows.join("|")})`
       )
       await page.evaluate(`document.querySelector('${SIDEBAR} a').focus()`)
@@ -432,6 +319,24 @@ try {
         `${tag} the collapsed group stays closed after reload`
       )
       check((await toggle()) === "true", `${tag} Your work expands again`)
+      await checkInteractions(page, tag, check, SIDEBAR)
+      for (const [name, surface] of [
+        ["Junior Marketing CV", "Paper"],
+        ["Lumière application Lumière", "Apply"],
+      ]) {
+        const href = await page.evaluate(
+          `${itemsOf(SIDEBAR)}.find((e) => (e.getAttribute('aria-label') ?? e.textContent.trim()) === ${JSON.stringify(name)}).getAttribute('href')`
+        )
+        await page.goto(`${web}${href}`)
+        await waitSidebar(page, SIDEBAR)
+        const current = await page.evaluate(
+          `${itemsOf(SIDEBAR)}.filter((e) => e.getAttribute('aria-current') === 'page').map((e) => e.getAttribute('aria-label') ?? e.textContent.trim())`
+        )
+        check(
+          current.includes(surface),
+          `${tag} ${surface} stays the active row on ${href} (${current})`
+        )
+      }
     }
     await page.close()
   }
@@ -489,6 +394,13 @@ try {
   check(
     overlap.clear && overlap.close < 390,
     `390 Close menu does not cover New chat and stays on screen (left ${overlap.close})`
+  )
+  const small = await phone.evaluate(
+    `[...document.querySelectorAll('[role="dialog"] a, [role="dialog"] button, button[aria-label="Close menu"]')].filter((e) => e.offsetParent).map((e) => { const r = e.getBoundingClientRect(); return { name: e.getAttribute('aria-label') ?? e.textContent.trim(), w: r.width, h: r.height }; }).filter((t) => t.w < ${MIN_TARGET} || t.h < ${MIN_TARGET})`
+  )
+  check(
+    small.length === 0,
+    `390 every drawer target is at least ${MIN_TARGET}px (${small.map((t) => `${t.name} ${t.w}x${t.h}`).join(", ") || "all"})`
   )
   await phone.screenshot(join(output, "sidebar-390-drawer.png"), false)
   report.captures.push("sidebar-390-drawer.png")

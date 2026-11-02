@@ -48,7 +48,7 @@ function processGroupGone(pgid) {
   }
 }
 
-function startChrome(startDeadlineMs) {
+function startChrome(startDeadlineMs, extraArgs = []) {
   const root = join(homedir(), "tmp", "verify-app-ui")
   mkdirSync(root, { recursive: true })
   const profile = mkdtempSync(join(root, "profile-"))
@@ -63,6 +63,7 @@ function startChrome(startDeadlineMs) {
       "--hide-scrollbars",
       "--no-first-run",
       "--force-color-profile=srgb",
+      ...extraArgs,
       "about:blank",
     ],
     { stdio: ["ignore", "ignore", "pipe"], detached: true }
@@ -111,13 +112,14 @@ function startChrome(startDeadlineMs) {
 
 export async function launchBrowser({
   startDeadlineMs = START_DEADLINE_MS,
+  extraArgs = [],
 } = {}) {
   let attempt = 0
   let started
   let wsUrl
   while (!wsUrl) {
     attempt += 1
-    started = startChrome(startDeadlineMs)
+    started = startChrome(startDeadlineMs, extraArgs)
     try {
       wsUrl = await started.wsUrl
     } catch (error) {
@@ -205,7 +207,8 @@ export async function launchBrowser({
         const { requestId, request } = params
         const verdict =
           handler && request.url.includes("/api/") ? handler(request) : null
-        if (!verdict) return call("Fetch.continueRequest", { requestId })
+        if (!verdict)
+          return call("Fetch.continueRequest", { requestId }).catch(() => {})
         interceptedRequests++
         if (verdict === "hold") return held.push(requestId)
         if (verdict === "fail")
@@ -327,6 +330,14 @@ export async function launchBrowser({
         buttons: mouseEventType === "mouseReleased" ? 0 : 1,
         clickCount: 1,
       })
+    const hover = (x, y) =>
+      call("Input.dispatchMouseEvent", {
+        type: "mouseMoved",
+        x,
+        y,
+        button: "none",
+        buttons: 0,
+      })
     const screenshot = async (file, fullPage, clip) => {
       const { data } = await call("Page.captureScreenshot", {
         format: "png",
@@ -351,6 +362,7 @@ export async function launchBrowser({
       waitFor,
       key,
       mouse,
+      hover,
       screenshot,
       release,
       setIntercept,
