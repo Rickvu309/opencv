@@ -1,6 +1,3 @@
-// A tiny Chrome DevTools Protocol client, copied from verify-landing and extended for a signed-in tour:
-// console capture, request interception (answer or hold an api call), key presses and polling.
-// No dependency: Node 24 has a global WebSocket.
 import { spawn } from "node:child_process"
 import {
   existsSync,
@@ -56,9 +53,7 @@ export async function launchBrowser() {
     ],
     { stdio: ["ignore", "ignore", "pipe"], detached: true }
   )
-  // Chrome runs in its own process group so one kill takes its renderer and gpu children too.
-  // Children that outlive the browser keep its stderr pipe open, and an open pipe keeps node alive.
-  const stop = () => {
+  const killChromeGroupAndCleanUp = () => {
     try {
       process.kill(-chrome.pid, "SIGKILL")
     } catch {
@@ -98,8 +93,7 @@ export async function launchBrowser() {
       socket.onerror = () => reject(new Error("devtools socket failed"))
     })
   } catch (error) {
-    // A failed launch must not leave Chrome running: it would keep node alive after the test failed.
-    stop()
+    killChromeGroupAndCleanUp()
     throw error
   }
   let nextId = 0
@@ -123,11 +117,6 @@ export async function launchBrowser() {
       socket.send(JSON.stringify({ id, method, params, sessionId }))
     })
 
-  // intercept(request) returns null (let it through), "hold" (keep it paused until release()),
-  // "fail" (refuse the connection, as if the api were down) or { status, body } (answer it without reaching the api). Only /api/ calls are offered to it.
-  // Pass intercept: false for real-network tours that never install an interceptor.
-  // timezone (an IANA name) and now (an ISO instant the page clock starts at) let a check
-  // reproduce a design frame's dates; the page clock then runs forward from now.
   async function openPage({
     width,
     height,
@@ -148,7 +137,7 @@ export async function launchBrowser() {
     const logs = []
     const held = []
     let handler = intercept ?? null
-    let hits = 0
+    let interceptedRequests = 0
     listeners.push((message) => {
       if (message.sessionId !== sessionId) return
       const { method, params } = message
@@ -176,7 +165,7 @@ export async function launchBrowser() {
         const verdict =
           handler && request.url.includes("/api/") ? handler(request) : null
         if (!verdict) return call("Fetch.continueRequest", { requestId })
-        hits++
+        interceptedRequests++
         if (verdict === "hold") return held.push(requestId)
         if (verdict === "fail")
           return call("Fetch.failRequest", {
@@ -288,14 +277,13 @@ export async function launchBrowser() {
       await call("Input.dispatchKeyEvent", { type: "rawKeyDown", ...base })
       await call("Input.dispatchKeyEvent", { type: "keyUp", ...base })
     }
-    // type is mousePressed, mouseMoved or mouseReleased; the left button is held between them.
-    const mouse = (type, x, y) =>
+    const mouse = (mouseEventType, x, y) =>
       call("Input.dispatchMouseEvent", {
-        type,
+        type: mouseEventType,
         x,
         y,
         button: "left",
-        buttons: type === "mouseReleased" ? 0 : 1,
+        buttons: mouseEventType === "mouseReleased" ? 0 : 1,
         clickCount: 1,
       })
     const screenshot = async (file, fullPage) => {
@@ -309,12 +297,11 @@ export async function launchBrowser() {
       for (const requestId of held.splice(0))
         await call("Fetch.continueRequest", { requestId })
     }
-    // Counts the requests the current intercept answered, held or failed, so a stub that never matched shows as zero.
     const setIntercept = (fn) => {
       handler = fn
-      hits = 0
+      interceptedRequests = 0
     }
-    const interceptHits = () => hits
+    const interceptHits = () => interceptedRequests
     const close = () => send("Target.closeTarget", { targetId })
     return {
       evaluate,
@@ -334,7 +321,7 @@ export async function launchBrowser() {
 
   async function quit() {
     socket.close()
-    stop()
+    killChromeGroupAndCleanUp()
   }
 
   return { openPage, quit }
