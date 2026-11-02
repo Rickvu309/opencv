@@ -7,6 +7,9 @@ import { useQueryClient } from "@tanstack/react-query"
 import { History, Menu, MessageCircle } from "lucide-react"
 
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
+import { SidebarFrame } from "@/features/app-shell/sidebar-frame.tsx"
+import { SidebarToggle } from "@/features/app-shell/sidebar-toggle.tsx"
+import { useSidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
@@ -94,6 +97,7 @@ export function AppShell({ onSearch }: AppShellProps) {
   const queryClient = useQueryClient()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
   const chats = useShellChats()
+  const layout = useSidebarLayout(isDesktop)
   const [{ panel, drawerOpen }, dispatch] = useReducer(
     shellReducer,
     SHELL_START
@@ -209,8 +213,22 @@ export function AppShell({ onSearch }: AppShellProps) {
     </div>
   )
 
+  const desktopToggle = layout.peek
+    ? {
+        label: shellCopy.pinSidebar,
+        direction: "open" as const,
+        onClick: layout.pin,
+      }
+    : {
+        label: shellCopy.collapseSidebar,
+        direction: "close" as const,
+        onClick: layout.toggle,
+      }
+
   const nav = (
     <AppSidebar
+      toggle={isDesktop ? desktopToggle : undefined}
+      onMenuOpenChange={isDesktop ? layout.menuOpenChange : undefined}
       onNavigate={() => {
         if (!isDesktop) closeDrawer()
       }}
@@ -254,14 +272,7 @@ export function AppShell({ onSearch }: AppShellProps) {
         </div>
       )}
       <div className="flex min-h-0 min-w-0 flex-1">
-        {isDesktop ? (
-          <aside
-            aria-label="Sidebar"
-            className="flex w-[244px] shrink-0 bg-sidebar"
-          >
-            {nav}
-          </aside>
-        ) : null}
+        {isDesktop ? <SidebarFrame layout={layout}>{nav}</SidebarFrame> : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar md:pt-2 md:pr-2">
           <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border">
             <main
@@ -276,6 +287,7 @@ export function AppShell({ onSearch }: AppShellProps) {
           </div>
           <ShellDock
             dockRef={dockRef}
+            expand={layout.collapsed && isDesktop ? () => layout.pin() : null}
             titles={(chats.data ?? []).map((chat) => ({
               id: chat.id,
               title: chatDisplayTitle(chat.title),
@@ -323,12 +335,14 @@ export function AppShell({ onSearch }: AppShellProps) {
 
 function ShellDock({
   dockRef,
+  expand,
   titles,
   onOpenChat,
   onCoach,
   onHistory,
 }: {
   dockRef: { current: HTMLDivElement | null }
+  expand: (() => void) | null
   titles: { id: string; title: string }[]
   onOpenChat: (chat: { title: string; chatId: string }) => void
   onCoach: () => void
@@ -341,6 +355,14 @@ function ShellDock({
       data-pen-surface="app-shell"
       className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
+      {expand ? (
+        <SidebarToggle
+          label={shellCopy.expandSidebar}
+          direction="open"
+          onClick={expand}
+          className="ms-1 me-auto"
+        />
+      ) : null}
       <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
         {titles.map((chat) => (
           <Button

@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
+import { SidebarToggle } from "@/features/app-shell/sidebar-toggle.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import {
   currentNavPath,
@@ -44,6 +45,12 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 
 type AppSidebarProps = {
+  toggle?: {
+    label: string
+    direction: "close" | "open"
+    onClick: () => void
+  }
+  onMenuOpenChange?: (open: boolean) => void
   onNavigate?: () => void
   onSearch: () => void
   onNewChat: () => void
@@ -110,6 +117,8 @@ function NavGroup({
 }
 
 export function AppSidebar({
+  toggle,
+  onMenuOpenChange,
   onNavigate,
   onSearch,
   onNewChat,
@@ -131,14 +140,22 @@ export function AppSidebar({
     <div
       data-pen-surface="app-shell"
       data-slot="shell-nav"
-      className="flex h-full min-h-0 w-[244px] flex-col bg-sidebar text-sidebar-foreground md:gap-px md:px-2.5 md:pt-2.5 md:pb-3"
+      className="flex h-full min-h-0 w-full min-w-0 flex-col bg-sidebar text-sidebar-foreground md:gap-px md:px-2.5 md:pt-2.5 md:pb-3"
     >
       <div
         data-slot="sidebar-top"
-        className="flex h-12 shrink-0 items-center justify-between px-3 md:h-9 md:ps-1.5 md:pe-0.5"
+        className="flex h-12 shrink-0 items-center px-3 md:h-9 md:ps-1.5 md:pe-0.5"
       >
         <Brand size={14} markSize={20} gap={6} letterSpacing={0} />
-        <div className="flex gap-1 md:gap-0.5">
+        {toggle ? (
+          <SidebarToggle
+            label={toggle.label}
+            direction={toggle.direction}
+            onClick={toggle.onClick}
+            className="ms-2 shrink-0"
+          />
+        ) : null}
+        <div className="ml-auto flex gap-1 md:gap-0.5">
           <Button
             type="button"
             variant="ghost"
@@ -266,7 +283,7 @@ export function AppSidebar({
           </NavGroup>
         )}
       </div>
-      <NavProfile onNavigate={onNavigate} />
+      <NavProfile onNavigate={onNavigate} onMenuOpenChange={onMenuOpenChange} />
     </div>
   )
 }
