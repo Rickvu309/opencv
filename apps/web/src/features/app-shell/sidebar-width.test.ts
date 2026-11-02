@@ -33,9 +33,9 @@ describe("sidebar width", () => {
     expect(readSidebarWidth()).toBe(DEFAULT_SIDEBAR_WIDTH)
   })
 
-  it("clamps to 200 and 360", () => {
+  it("clamps to 216 and 360", () => {
     expect(clampSidebarWidth(120)).toBe(MIN_SIDEBAR_WIDTH)
-    expect(clampSidebarWidth(199)).toBe(200)
+    expect(clampSidebarWidth(215)).toBe(216)
     expect(clampSidebarWidth(280)).toBe(280)
     expect(clampSidebarWidth(361)).toBe(MAX_SIDEBAR_WIDTH)
     expect(clampSidebarWidth(Number.NaN)).toBe(DEFAULT_SIDEBAR_WIDTH)

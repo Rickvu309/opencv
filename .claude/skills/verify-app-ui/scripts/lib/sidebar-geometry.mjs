@@ -202,11 +202,11 @@ export function checkGeometry(check, tag, height, shape, active) {
   check(
     shape.accountName.size === "13px" &&
       shape.accountName.weight === "500" &&
-      shape.accountEmail.size === "11px" &&
+      shape.accountEmail.size === "12px" &&
       shape.accountName.overflow === "ellipsis" &&
       shape.accountEmail.overflow === "ellipsis" &&
       shape.accountEmail.y > shape.accountName.y,
-    `${tag} account name is 13/500 over an 11px email, both truncated (${shape.accountName.size}/${shape.accountName.weight}, ${shape.accountEmail.size})`
+    `${tag} account name is 13/500 over a 12px email, both truncated (${shape.accountName.size}/${shape.accountName.weight}, ${shape.accountEmail.size})`
   )
   check(
     near(shape.trigger.w, shape.profile.w) &&

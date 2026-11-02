@@ -1,7 +1,7 @@
 import { readStored, writeStored } from "@/lib/local-storage.ts"
 
 export const DEFAULT_SIDEBAR_WIDTH = 244
-export const MIN_SIDEBAR_WIDTH = 200
+export const MIN_SIDEBAR_WIDTH = 216
 export const MAX_SIDEBAR_WIDTH = 360
 export const COLLAPSE_BELOW_WIDTH = 140
 export const SIDEBAR_KEY_STEP = 16

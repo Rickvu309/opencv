@@ -26,9 +26,36 @@ export async function accountMenu({ page, check, capture, tag }) {
   check(
     menu.rowEmail.size < menu.rowName.size &&
       menu.rowEmail.color !== menu.rowName.color &&
-      menu.rowEmail.color !== menu.navColor &&
       menu.itemIconX === menu.avatarX,
-    `${tag} the row email is smaller and lighter than the name and the nav, and the menu icons align with the avatar (email ${menu.rowEmail.size}px ${menu.rowEmail.color}, nav ${menu.navColor}, icon x ${menu.itemIconX}, avatar x ${menu.avatarX})`
+    `${tag} the row email is smaller and lighter than the name, and the menu icons align with the avatar (email ${menu.rowEmail.size}px ${menu.rowEmail.color}, nav ${menu.navColor}, icon x ${menu.itemIconX}, avatar x ${menu.avatarX})`
+  )
+  const details = await page.evaluate(`(() => {
+    const m = document.querySelector('[role="menu"]');
+    const items = [...m.querySelectorAll('[role="menuitem"]')];
+    const color = (e) => getComputedStyle(e).color;
+    const header = m.querySelector('[data-slot="account-menu-email"]');
+    const signOut = items[1].getBoundingClientRect();
+    return { header: color(header), headerSize: parseFloat(getComputedStyle(header).fontSize), row: color(document.querySelector('[data-slot="account-email"]')), settingsIcon: color(items[0].querySelector('svg')), signOutIcon: color(items[1].querySelector('svg')), signOutX: signOut.left + signOut.width / 2, signOutY: signOut.top + signOut.height / 2, text: color(items[1]) };
+  })()`)
+  check(
+    details.header === details.row && details.headerSize === 12,
+    `${tag} the email is one grey and size in the row and the menu header (row ${details.row}, menu ${details.header} ${details.headerSize}px)`
+  )
+  await page.hover(details.signOutX, details.signOutY)
+  await page.sleep(200)
+  const hovered = await page.evaluate(
+    `getComputedStyle([...document.querySelectorAll('[role="menuitem"]')][1]).color`
+  )
+  const settingsIcon = await page.evaluate(
+    `getComputedStyle([...document.querySelectorAll('[role="menuitem"]')][0].querySelector('svg')).color`
+  )
+  check(
+    settingsIcon === details.signOutIcon,
+    `${tag} the Settings and Sign out icons rest in one colour (${settingsIcon} / ${details.signOutIcon})`
+  )
+  check(
+    hovered === details.text,
+    `${tag} Sign out stays neutral on hover instead of turning red (${details.text} then ${hovered})`
   )
   await page.hover(900, 200)
   await capture(page, "sidebar-account-menu.png", {
@@ -45,4 +72,23 @@ export async function accountMenu({ page, check, capture, tag }) {
     ),
     `${tag} Escape closes the account menu and returns focus to the row`
   )
+}
+
+export async function phoneAccountMenu({ phone, check }) {
+  await phone.evaluate(
+    `document.querySelector('[role="dialog"] [data-slot="account-trigger"]').click()`
+  )
+  await phone.waitFor(`document.querySelector('[role="menu"]')`, 5000)
+  await phone.sleep(400)
+  const m = await phone.evaluate(`(() => {
+    const menu = document.querySelector('[role="menu"]');
+    const row = document.querySelector('[role="dialog"] [data-slot="account-trigger"]').getBoundingClientRect();
+    return { menuX: Math.round(menu.getBoundingClientRect().left), cls: menu.className.includes('max-md:-translate-x-2'), tr: getComputedStyle(menu).translate, rowX: Math.round(row.left), icon: Math.round(menu.querySelector('[role="menuitem"] svg').getBoundingClientRect().left), avatar: Math.round(document.querySelector('[role="dialog"] [data-slot="account-trigger"] [data-slot="avatar"]').getBoundingClientRect().left) };
+  })()`)
+  check(
+    m.icon === m.avatar,
+    `390 the account menu icons line up with the avatar (icon x ${m.icon}, avatar x ${m.avatar}, menu x ${m.menuX}, row x ${m.rowX}, ${m.cls} ${m.tr})`
+  )
+  await phone.key("Escape")
+  await phone.sleep(300)
 }

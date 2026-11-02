@@ -18,18 +18,35 @@ import {
   writeSidebarWidth,
 } from "@/features/app-shell/sidebar-width.ts"
 
-type LayoutState = { width: number; collapsed: boolean }
+export type SidebarMode = "expanded" | "dragging" | "collapsed" | "peeking"
+
+type LayoutState = { width: number; collapsed: boolean; dragging: boolean }
 
 type LayoutAction =
   | { type: "resized"; width: number }
-  | { type: "collapse_set"; collapsed: boolean }
+  | { type: "collapse_requested"; collapsed: boolean }
+  | { type: "drag_started" }
+  | { type: "drag_cancelled" }
+  | { type: "drag_collapsed" }
 
 function layoutReducer(state: LayoutState, action: LayoutAction): LayoutState {
   switch (action.type) {
     case "resized":
-      return { ...state, width: clampSidebarWidth(action.width) }
-    case "collapse_set":
+      return {
+        ...state,
+        dragging: false,
+        width: clampSidebarWidth(action.width),
+      }
+    case "collapse_requested":
+      if (state.dragging) return state
       return { ...state, collapsed: action.collapsed }
+    case "drag_started":
+      if (state.collapsed) return state
+      return { ...state, dragging: true }
+    case "drag_cancelled":
+      return { ...state, dragging: false }
+    case "drag_collapsed":
+      return { ...state, dragging: false, collapsed: true }
   }
 }
 
@@ -37,6 +54,7 @@ function initialLayout(): LayoutState {
   return {
     width: readSidebarWidth(),
     collapsed: readSidebarCollapsed(),
+    dragging: false,
   }
 }
 
@@ -50,19 +68,37 @@ export function useSidebarLayout(enabled: boolean) {
   const inside = useRef(false)
   const onEdge = useRef(false)
   const handoff = useRef(false)
-  const { collapsed } = state
-  const peek = collapsed && intent.open
+  const { collapsed, dragging } = state
+  const peek = collapsed && !dragging && intent.open
+  const mode: SidebarMode = dragging
+    ? "dragging"
+    : peek
+      ? "peeking"
+      : collapsed
+        ? "collapsed"
+        : "expanded"
   const { close: closeIntent } = intent
 
   const setCollapsed = useCallback(
     (next: boolean) => {
+      if (dragging) return
       handoff.current = focusNeedsHandoff()
       closeIntent()
       writeSidebarCollapsed(next)
-      dispatch({ type: "collapse_set", collapsed: next })
+      dispatch({ type: "collapse_requested", collapsed: next })
     },
-    [closeIntent]
+    [closeIntent, dragging]
   )
+
+  const dragCollapse = useCallback(() => {
+    handoff.current = focusNeedsHandoff()
+    closeIntent()
+    writeSidebarCollapsed(true)
+    dispatch({ type: "drag_collapsed" })
+  }, [closeIntent])
+
+  const dragStart = useCallback(() => dispatch({ type: "drag_started" }), [])
+  const dragCancel = useCallback(() => dispatch({ type: "drag_cancelled" }), [])
 
   useEffect(() => {
     if (!handoff.current) return
@@ -144,10 +180,14 @@ export function useSidebarLayout(enabled: boolean) {
   }
 
   return {
-    ...state,
+    width: state.width,
+    collapsed,
+    mode,
     peek,
     toggle: () => setCollapsed(!collapsed),
-    collapse: () => setCollapsed(true),
+    dragStart,
+    dragCancel,
+    dragCollapse,
     pin: () => setCollapsed(false),
     setWidth: (width: number) => {
       const next = clampSidebarWidth(width)

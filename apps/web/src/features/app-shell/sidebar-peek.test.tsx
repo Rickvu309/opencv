@@ -228,7 +228,9 @@ describe("peek navigation", () => {
   it("pins from the panel and focuses the collapse button", async () => {
     await collapsedShell()
     openPeek()
-    fireEvent.click(screen.getByRole("button", { name: "Pin sidebar" }))
+    const pin = screen.getByRole("button", { name: "Pin sidebar" })
+    pin.focus()
+    fireEvent.click(pin)
     expect(frame()).toHaveAttribute("data-state", "open")
     expect(
       screen.getByRole("button", { name: "Collapse sidebar" })

@@ -13,18 +13,25 @@ export function focusIsInSidebar() {
   return active.closest('[data-slot="sidebar-frame"]') !== null
 }
 
+export const HANDOFF_ATTRIBUTE = "data-handoff"
+
 export function focusNeedsHandoff() {
   const active = activeElement()
-  if (active === null || active === document.body) return true
+  if (active === null || active === document.body) return false
   if (active.closest('[data-slot="sidebar-toggle"]')) return true
   return focusIsInSidebar()
 }
 
-export function focusSidebarToggle(direction: "expand" | "collapse") {
-  const selector = direction === "expand" ? EXPAND_TOGGLE : COLLAPSE_TOGGLE
-  document.querySelector<HTMLElement>(selector)?.focus()
+function markHandoff(element: HTMLElement | null) {
+  element?.setAttribute(HANDOFF_ATTRIBUTE, "")
+  return element
 }
 
-export function expandToggleElement() {
-  return document.querySelector<HTMLElement>(EXPAND_TOGGLE)
+export function focusSidebarToggle(direction: "expand" | "collapse") {
+  const selector = direction === "expand" ? EXPAND_TOGGLE : COLLAPSE_TOGGLE
+  markHandoff(document.querySelector<HTMLElement>(selector))?.focus()
+}
+
+export function handoffTarget() {
+  return markHandoff(document.querySelector<HTMLElement>(EXPAND_TOGGLE))
 }

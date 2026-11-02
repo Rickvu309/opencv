@@ -10,6 +10,8 @@ import { colorDistance } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 import { checkGeometry, geometry } from "./lib/sidebar-geometry.mjs"
 import { checkResize } from "./lib/sidebar-resize-checks.mjs"
+import { checkRound3 } from "./lib/sidebar-round3-checks.mjs"
+import { phoneAccountMenu } from "./lib/sidebar-account-checks.mjs"
 import {
   checkInteractions,
   itemsOf,
@@ -360,6 +362,16 @@ try {
     },
   })
 
+  await checkRound3({
+    browser,
+    web,
+    check,
+    capture: async (page, file, clip) => {
+      await page.screenshot(join(output, file), false, clip)
+      report.captures.push(file)
+    },
+  })
+
   const phone = await browser.openPage({
     width: 390,
     height: 844,
@@ -423,6 +435,7 @@ try {
   )
   await phone.screenshot(join(output, "sidebar-390-drawer.png"), false)
   report.captures.push("sidebar-390-drawer.png")
+  await phoneAccountMenu({ phone, check })
   await phone.key("Escape")
   await phone.sleep(400)
   check(

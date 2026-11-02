@@ -16,6 +16,8 @@ type Props = {
   width: number
   onCommit: (width: number) => void
   onCollapse: () => void
+  onDragStart: () => void
+  onDragCancel: () => void
   onToggle: () => void
   onReset: () => void
 }
@@ -56,6 +58,8 @@ export function SidebarResizeHandle({
   width,
   onCommit,
   onCollapse,
+  onDragStart,
+  onDragCancel,
   onToggle,
   onReset,
 }: Props) {
@@ -72,7 +76,8 @@ export function SidebarResizeHandle({
       String(Math.round(drag.startWidth))
     )
     releaseDocument()
-  }, [])
+    onDragCancel()
+  }, [onDragCancel])
 
   useEffect(() => {
     window.addEventListener("blur", abandonDrag)
@@ -100,6 +105,7 @@ export function SidebarResizeHandle({
     }
     document.body.style.setProperty("user-select", "none")
     document.body.style.setProperty("cursor", "col-resize")
+    onDragStart()
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {

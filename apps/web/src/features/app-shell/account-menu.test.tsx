@@ -76,6 +76,21 @@ describe("account row", () => {
     expect(within(menu).queryByText(/shortcuts/i)).not.toBeInTheDocument()
   })
 
+  it("styles both items alike, with muted icons and a neutral Sign out", async () => {
+    await renderShell()
+    const menu = await openAccountMenu()
+    const settings = within(menu).getByRole("menuitem", { name: "Settings" })
+    const signOut = within(menu).getByRole("menuitem", { name: "Sign out" })
+    expect(signOut).not.toHaveAttribute("data-variant", "destructive")
+    expect(settings.className).toBe(signOut.className)
+    expect(settings.querySelector("svg")).toHaveClass("text-muted-foreground")
+    expect(signOut.querySelector("svg")).toHaveClass("text-muted-foreground")
+    expect(within(menu).getByText("minh@example.com")).toHaveClass(
+      "text-muted-foreground",
+      "text-xs"
+    )
+  })
+
   it("opens Settings from the menu", async () => {
     const { router } = await renderShell()
     await openAccountMenu()

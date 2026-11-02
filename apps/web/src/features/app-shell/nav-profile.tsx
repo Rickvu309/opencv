@@ -78,12 +78,13 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
           align="start"
           sideOffset={6}
           alignOffset={-4}
+          className="max-md:-translate-x-2"
         >
           <DropdownMenuGroup>
             <DropdownMenuLabel
               data-slot="account-menu-email"
               title={email}
-              className="truncate px-2 pt-1.5 pb-1 text-[11px] font-normal"
+              className="truncate px-2 pt-1.5 pb-1 text-xs font-normal"
             >
               {email}
             </DropdownMenuLabel>
@@ -91,18 +92,17 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
               className="h-8 gap-2 ps-2 text-[13px]"
               render={<Link to={SURFACE_PATHS.settings} onClick={onNavigate} />}
             >
-              <Settings aria-hidden="true" />
+              <Settings aria-hidden="true" className="text-muted-foreground" />
               {shellCopy.settings}
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem
-              variant="destructive"
-              className="h-8 gap-2 ps-2 text-[13px] data-[variant=destructive]:text-foreground data-[variant=destructive]:*:[svg]:text-muted-foreground data-[variant=destructive]:focus:*:[svg]:text-destructive"
+              className="h-8 gap-2 ps-2 text-[13px]"
               onClick={signOut}
             >
-              <LogOut aria-hidden="true" />
+              <LogOut aria-hidden="true" className="text-muted-foreground" />
               {shellCopy.signOut}
             </DropdownMenuItem>
           </DropdownMenuGroup>

@@ -44,7 +44,7 @@ describe("resize handle", () => {
   it("describes itself as a vertical separator with its range", async () => {
     const handle = await renderShell()
     expect(handle).toHaveAttribute("aria-orientation", "vertical")
-    expect(handle).toHaveAttribute("aria-valuemin", "200")
+    expect(handle).toHaveAttribute("aria-valuemin", "216")
     expect(handle).toHaveAttribute("aria-valuemax", "360")
     expect(handle).toHaveAttribute("aria-valuenow", "244")
     expect(handle).toHaveAttribute("tabindex", "0")
@@ -60,8 +60,8 @@ describe("resize handle", () => {
     drag(handle, 300, 900)
     expect(sidebarWidth()).toBe("360px")
     drag(handle, 360, 170)
-    expect(sidebarWidth()).toBe("200px")
-    expect(localStorage.getItem("opencv.sidebar.width")).toBe("200")
+    expect(sidebarWidth()).toBe("216px")
+    expect(localStorage.getItem("opencv.sidebar.width")).toBe("216")
   })
 
   it("draws the first frame at the saved width", async () => {
@@ -112,8 +112,8 @@ describe("resize handle", () => {
     await userEvent.keyboard("{ArrowLeft}{ArrowLeft}")
     expect(handle).toHaveAttribute("aria-valuenow", "228")
     for (let i = 0; i < 4; i += 1) await userEvent.keyboard("{ArrowLeft}")
-    expect(handle).toHaveAttribute("aria-valuenow", "200")
-    expect(localStorage.getItem("opencv.sidebar.width")).toBe("200")
+    expect(handle).toHaveAttribute("aria-valuenow", "216")
+    expect(localStorage.getItem("opencv.sidebar.width")).toBe("216")
   })
 })
 
@@ -303,10 +303,11 @@ describe("focus after collapse and expand", () => {
     ).toHaveFocus()
   })
 
-  it("moves to the expand button when a drag collapses the sidebar", async () => {
+  it("leaves focus on the page when a drag collapses the sidebar", async () => {
     const handle = await renderShell()
     drag(handle, 244, 100)
-    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(document.body).toHaveFocus()
   })
 
   it("leaves focus alone when it is in the page", async () => {

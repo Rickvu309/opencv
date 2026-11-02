@@ -26,9 +26,9 @@
 }
 
 [data-pen-surface="app-shell"] [data-slot="account-email"] {
-  color: #969799;
-  font-size: 11px;
-  line-height: 14px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 400;
 }
 

@@ -47,7 +47,7 @@ export async function checkResize({ browser, web, output, check, capture }) {
       handle.orientation === "vertical" &&
       handle.label === "Resize sidebar" &&
       handle.now === "244" &&
-      handle.min === "200" &&
+      handle.min === "216" &&
       handle.max === "360" &&
       handle.tab === 0,
     `${tag} the handle is a focusable vertical separator with its range (${handle.role} ${handle.now}/${handle.min}-${handle.max})`
@@ -112,17 +112,17 @@ export async function checkResize({ browser, web, output, check, capture }) {
   await dragTo(page, 360, 160)
   await release(page, 160)
   check(
-    (await rectOf(page, SIDEBAR)).w === 200,
-    `${tag} dragging to 160 stops at 200 without collapsing`
+    (await rectOf(page, SIDEBAR)).w === 216,
+    `${tag} dragging to 160 stops at 216 without collapsing`
   )
   await page.hover(720, 450)
   await capture(page, "sidebar-resize-min.png")
 
-  await page.hover(200, 300)
-  await page.mouse("mousePressed", 200, 300, 1)
-  await page.mouse("mouseReleased", 200, 300, 1)
-  await page.mouse("mousePressed", 200, 300, 2)
-  await page.mouse("mouseReleased", 200, 300, 2)
+  await page.hover(216, 300)
+  await page.mouse("mousePressed", 216, 300, 1)
+  await page.mouse("mouseReleased", 216, 300, 1)
+  await page.mouse("mousePressed", 216, 300, 2)
+  await page.mouse("mouseReleased", 216, 300, 2)
   await page.sleep(150)
   check(
     (await rectOf(page, SIDEBAR)).w === 244 &&
@@ -191,7 +191,8 @@ export async function checkResize({ browser, web, output, check, capture }) {
     toggle?.focused === true,
     `${tag} focus moved to the expand button after the collapse`
   )
-  await page.hover(40, 30)
+  const expandAt = await rectOf(page, 'button[aria-label="Expand sidebar"]')
+  await page.hover(expandAt.x + expandAt.w / 2, expandAt.y + expandAt.h / 2)
   await page.sleep(900)
   const tip = await page.evaluate(
     `document.querySelector('[data-slot="tooltip-content"]')?.textContent ?? ''`
@@ -314,6 +315,9 @@ export async function checkResize({ browser, web, output, check, capture }) {
     `${tag} focus moved to the collapse button after the expand`
   )
   await page.evaluate("document.activeElement?.blur()")
+  await page.evaluate(
+    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)}).focus()`
+  )
   await page.key("[")
   await page.sleep(400)
   check(
