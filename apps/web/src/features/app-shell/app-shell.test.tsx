@@ -29,6 +29,7 @@ import {
 } from "@/test/paper-api-mock.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
+import "@/test/warm-routes.ts"
 import {
   chatCreateCalls,
   resetShellApiMock,

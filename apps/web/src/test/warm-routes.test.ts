@@ -9,8 +9,10 @@ const importsOf = (source: string) =>
   [...source.matchAll(/import\("([^"]+)"\)/g)].map((match) => match[1])
 
 describe("renderApp loads the signed-in routes before a test starts", () => {
-  it("imports warm-routes.ts", () => {
-    expect(read("render-app.tsx")).toMatch(/import "@\/test\/warm-routes\.ts"/)
+  it("the favorites test imports warm-routes.ts", () => {
+    expect(read("../features/app-shell/app-shell.test.tsx")).toMatch(
+      /import "@\/test\/warm-routes\.ts"/
+    )
   })
 
   it("warms every lazy route module that the router names, except marketing pages", () => {
