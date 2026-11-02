@@ -17,6 +17,7 @@ export const CI_ONLY_GUARDS = Object.freeze([
   "scripts/approve-railway-deploys.test.mjs",
   "scripts/browser-launcher.test.mjs",
   "scripts/no-comments.test.mjs",
+  "scripts/pen-html.test.mjs",
   "scripts/pen-snapshot.test.mjs",
   "scripts/verify-auth-production.test.mjs",
   "scripts/web-lint-rules.test.mjs",
