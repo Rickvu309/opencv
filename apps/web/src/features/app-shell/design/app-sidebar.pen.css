@@ -1,0 +1,58 @@
+[data-pen-surface="app-shell"] [data-slot="sidebar-link"],
+[data-pen-surface="app-shell"] [data-slot="sidebar-link"] svg,
+[data-pen-surface="app-shell"] button[aria-label="Search"] {
+  color: #59595b;
+}
+
+[data-pen-surface="app-shell"] [data-slot="sidebar-link"][aria-current="page"] {
+  background: #e1e1e2;
+}
+
+[data-pen-surface="app-shell"] [data-slot="sidebar-count"],
+[data-pen-surface="app-shell"] [data-slot="sidebar-group-label"] {
+  color: #969799;
+}
+
+[data-pen-surface="app-shell"] [data-slot="brand"],
+[data-pen-surface="app-shell"]
+  [data-slot="shell-profile"]
+  > span:not([data-slot]) {
+  color: #1a1a1a;
+}
+
+[data-pen-surface="app-shell"] button[aria-label="New chat"] {
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+[data-pen-surface="app-shell"]
+  button[aria-label="New chat"]:not(:focus-visible) {
+  border-color: #e2e2e2;
+  box-shadow: 0 1px 2px #0000000a;
+}
+
+@media (hover: hover) {
+  [data-pen-surface="app-shell"] button[aria-label="New chat"]:hover {
+    background: var(--sidebar-accent);
+  }
+}
+
+[data-pen-surface="app-shell"] [data-slot="sidebar-link"],
+[data-pen-surface="app-shell"] [data-slot="sidebar-group-label"],
+[data-pen-surface="app-shell"] button[aria-label="Search"],
+[data-pen-surface="app-shell"] [data-slot="shell-profile"] a {
+  border-radius: 6px;
+}
+
+[data-pen-surface="app-shell"] [data-slot="brand"] [data-slot="mark"] + span {
+  translate: 0 -1px;
+}
+
+[data-pen-surface="app-shell"] [data-slot="shell-profile"] svg,
+[data-pen-surface="app-shell"] [data-slot="avatar-fallback"] {
+  color: #59595b;
+}
+
+[data-pen-surface="app-shell"] [data-slot="avatar-fallback"] {
+  background: #e1e1e2;
+}

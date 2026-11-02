@@ -3,6 +3,7 @@ export const shellCopy = {
   search: "Search",
   newChat: "New chat",
   inbox: "Inbox",
+  unread: "unread",
   coach: "Coach",
   jobs: "Jobs",
   yourWork: "Your work",

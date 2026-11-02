@@ -1,33 +1,15 @@
-import "./design/sidebar.pen.css"
+import "./design/dock.pen.css"
 
 import { useEffect, useReducer, useRef } from "react"
-import { Link, Outlet, useNavigate } from "@tanstack/react-router"
+import { Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
-import {
-  Briefcase,
-  ChevronDown,
-  FileText,
-  History,
-  Inbox,
-  Menu,
-  MessageCircle,
-  Presentation,
-  Search,
-  SquareKanban,
-  SquarePen,
-} from "lucide-react"
+import { History, Menu, MessageCircle } from "lucide-react"
 
-import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
-import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
-import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
+import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
-import {
-  useInboxUnread,
-  useShellChats,
-  useShellFavorites,
-} from "@/features/app-shell/use-shell-chats.ts"
+import { useShellChats } from "@/features/app-shell/use-shell-chats.ts"
 import {
   CoachPanel,
   type CoachPanelMode,
@@ -36,15 +18,13 @@ import { CoachWorkspace } from "@/features/coach/coach-workspace.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
-import { Brand, Mark } from "@workspace/ui/components/brand"
+import { Mark } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { Kbd } from "@workspace/ui/components/kbd"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 
 type PanelState = {
@@ -102,191 +82,6 @@ function shellReducer(state: ShellState, action: ShellAction): ShellState {
     case "drawer_closed":
       return { ...state, drawerOpen: false }
   }
-}
-
-type ShellNavProps = {
-  onNavigate?: () => void
-  onSearch: () => void
-  onNewChat: () => void
-}
-
-function linkClass(active: boolean) {
-  return cn(
-    FOCUS_RING,
-    "flex h-7 items-center gap-2 rounded-md px-2 text-sm text-foreground hover:bg-sidebar-accent md:text-[13px] md:leading-[15.6px] md:font-medium",
-    active && "bg-sidebar-accent text-sidebar-accent-foreground"
-  )
-}
-
-const navigationIcons = {
-  inbox: Inbox,
-  coach: MessageCircle,
-  jobs: Briefcase,
-  paper: FileText,
-  apply: SquareKanban,
-  pitch: Presentation,
-}
-
-function ShellNav({ onNavigate, onSearch, onNewChat }: ShellNavProps) {
-  const inbox = useInboxUnread()
-  const favorites = useShellFavorites()
-  const count = inbox.data ?? null
-  const favoriteEmpty =
-    favorites.jobs.length === 0 && favorites.docs.length === 0
-
-  return (
-    <div
-      data-pen-surface="app-shell"
-      data-slot="shell-nav"
-      className="flex h-full min-h-0 w-[244px] flex-col bg-sidebar text-sidebar-foreground md:gap-px md:px-2.5 md:pt-2.5 md:pb-3"
-    >
-      <div
-        data-slot="shell-nav-top"
-        className="flex h-12 shrink-0 items-center justify-between px-3 md:h-9 md:ps-1.5 md:pe-0.5"
-      >
-        <Brand size={14} markSize={20} gap={6} letterSpacing={0} />
-        <div className="flex gap-1 md:gap-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={shellCopy.search}
-            aria-keyshortcuts="Control+K Meta+K"
-            className="md:size-7"
-            onClick={onSearch}
-          >
-            <Search />
-            <Kbd className="sr-only">{searchShortcutLabel()}</Kbd>
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={shellCopy.newChat}
-            className="md:size-7 md:rounded-full md:border md:border-border md:bg-background md:shadow-xs md:[&_svg]:size-[15px]"
-            onClick={onNewChat}
-          >
-            <SquarePen />
-          </Button>
-        </div>
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto px-2 pb-2 md:px-0 md:pb-0">
-        <nav
-          aria-label="Main"
-          className="mt-2 flex flex-col gap-0.5 md:mt-1.5 md:gap-px"
-        >
-          {SHELL_PRIMARY.map((item) => {
-            const Icon = navigationIcons[item.id]
-            return (
-              <Link
-                key={item.id}
-                to={item.to}
-                aria-label={item.label}
-                activeOptions={{ exact: true }}
-                onClick={onNavigate}
-                activeProps={{ className: linkClass(true) }}
-                inactiveProps={{ className: linkClass(false) }}
-              >
-                <Icon
-                  className="size-4 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <span>{item.label}</span>
-                {item.id === "inbox" && count != null ? (
-                  <span
-                    aria-hidden="true"
-                    className="ml-auto text-xs text-muted-foreground md:text-[11px] md:font-medium"
-                  >
-                    {count}
-                  </span>
-                ) : null}
-              </Link>
-            )
-          })}
-          <p
-            data-slot="shell-nav-section"
-            className="px-2 pt-3 pb-1 text-xs text-muted-foreground md:flex md:h-7 md:items-center md:gap-1 md:py-0 md:font-medium"
-          >
-            <ChevronDown
-              aria-hidden="true"
-              className="hidden size-[9px] md:block"
-            />
-            {shellCopy.yourWork}
-          </p>
-          {SHELL_WORK.map((item) => {
-            const Icon = navigationIcons[item.id]
-            return (
-              <Link
-                key={item.id}
-                to={item.to}
-                activeOptions={{ exact: true }}
-                onClick={onNavigate}
-                activeProps={{ className: linkClass(true) }}
-                inactiveProps={{ className: linkClass(false) }}
-              >
-                <Icon
-                  className="size-4 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
-        {favorites.pending ? (
-          <Skeleton className="mx-2 mt-3 h-7" />
-        ) : favoriteEmpty ? null : (
-          <div className="mt-3 flex flex-col gap-0.5 md:gap-px">
-            <p
-              data-slot="shell-nav-section"
-              className="px-2 pb-1 text-xs text-muted-foreground md:flex md:h-7 md:items-center md:gap-1 md:pb-0 md:font-medium"
-            >
-              <ChevronDown
-                aria-hidden="true"
-                className="hidden size-[9px] md:block"
-              />
-              {shellCopy.favorites}
-            </p>
-            {favorites.jobs.map((job) => (
-              <Link
-                data-slot="shell-favorite"
-                key={job.id || job.title}
-                to="/apply/$jobId"
-                params={{ jobId: job.id }}
-                aria-label={
-                  job.company ? `${job.title} ${job.company}` : job.title
-                }
-                onClick={onNavigate}
-                className={linkClass(false)}
-              >
-                <Briefcase className="size-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{job.title}</span>
-                {job.company ? (
-                  <span className="truncate text-muted-foreground">
-                    {job.company}
-                  </span>
-                ) : null}
-              </Link>
-            ))}
-            {favorites.docs.map((doc) => (
-              <Link
-                data-slot="shell-favorite"
-                key={doc.id || doc.name}
-                to="/paper/$docId"
-                params={{ docId: doc.id }}
-                onClick={onNavigate}
-                className={linkClass(false)}
-              >
-                <FileText className="size-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{doc.name}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-      <NavProfile onNavigate={onNavigate} />
-    </div>
-  )
 }
 
 type AppShellProps = {
@@ -416,7 +211,7 @@ export function AppShell({ onSearch }: AppShellProps) {
   )
 
   const nav = (
-    <ShellNav
+    <AppSidebar
       onNavigate={() => {
         if (!isDesktop) closeDrawer()
       }}
@@ -449,6 +244,7 @@ export function AppShell({ onSearch }: AppShellProps) {
             type="button"
             variant="ghost"
             size="icon-sm"
+            className="size-11"
             aria-label={shellCopy.menu}
             onClick={() => dispatch({ type: "drawer_opened" })}
           >
@@ -468,7 +264,7 @@ export function AppShell({ onSearch }: AppShellProps) {
           </aside>
         ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar md:pt-2 md:pr-2">
-          <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-lg md:border md:border-border">
+          <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border">
             <main
               id="app-main"
               tabIndex={-1}
@@ -506,11 +302,12 @@ export function AppShell({ onSearch }: AppShellProps) {
             className="top-0 left-0 h-svh w-[244px] max-w-[80vw] translate-x-0 translate-y-0 rounded-none p-0 duration-(--duration-panel) ease-(--ease-panel)"
           >
             <DialogTitle className="sr-only">{shellCopy.menu}</DialogTitle>
-            <div className="absolute top-2 right-2 z-10">
+            <div className="absolute top-2 -right-11 z-10">
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="icon-sm"
+                className="size-11"
                 aria-label={shellCopy.closeMenu}
                 onClick={closeDrawer}
               >
@@ -543,7 +340,7 @@ function ShellDock({
       ref={dockRef}
       data-slot="app-dock"
       data-pen-surface="app-shell"
-      className="flex h-10 shrink-0 items-center justify-end"
+      className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
       <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
         {titles.map((chat) => (
@@ -552,7 +349,7 @@ function ShellDock({
             type="button"
             variant="ghost"
             size="sm"
-            className="max-w-36 shrink-0"
+            className="h-11 max-w-36 shrink-0 md:h-7"
             data-chat-id={chat.id}
             title={chat.title}
             onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
@@ -565,6 +362,7 @@ function ShellDock({
         type="button"
         variant="ghost"
         size="sm"
+        className="h-11 md:h-7"
         data-dock-coach=""
         onClick={onCoach}
       >
@@ -575,6 +373,7 @@ function ShellDock({
         type="button"
         variant="ghost"
         size="icon-sm"
+        className="size-11 md:size-7"
         aria-label={shellCopy.history}
         onClick={onHistory}
       >

@@ -6,7 +6,15 @@ import { createAppRouter } from "@/router.tsx"
 import { stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
 import pending from "@/test/nav-pending.json"
 import { renderApp } from "@/test/render-app.tsx"
-import { resetShellApiMock, setMockInbox } from "@/test/shell-api-mock.ts"
+import {
+  getMockPaperDocs,
+  setMockPaperFavorite,
+} from "@/test/paper-api-mock.ts"
+import {
+  resetShellApiMock,
+  setMockInbox,
+  setMockJobs,
+} from "@/test/shell-api-mock.ts"
 
 const ITEMS = [...SHELL_PRIMARY, ...SHELL_WORK]
 const SAMPLE_ID = "11111111-1111-7111-8111-111111111111"
@@ -81,6 +89,59 @@ describe("sidebar nav contract", () => {
         )
     }
   )
+
+  it.each(routes)("marks exactly one nav item current on %s", async (route) => {
+    const path = route.replace(/\$\w+/g, SAMPLE_ID)
+    renderApp(path)
+    const sidebar = await screen.findByRole("complementary", {
+      name: "Sidebar",
+    })
+    await waitFor(() =>
+      expect(
+        within(sidebar).getAllByRole("link", { current: "page" }),
+        `${route} must mark exactly one nav item current`
+      ).toHaveLength(1)
+    )
+  })
+
+  it("marks only the favorite current on a favorite document's route", async () => {
+    const doc = getMockPaperDocs().find((entry) => entry.kind === "cv")!
+    setMockPaperFavorite(doc.id, true)
+    renderApp(`/paper/${doc.id}`)
+    const sidebar = await screen.findByRole("complementary", {
+      name: "Sidebar",
+    })
+    const favorite = await within(sidebar).findByRole("link", {
+      name: doc.name,
+    })
+    await waitFor(() =>
+      expect(favorite).toHaveAttribute("aria-current", "page")
+    )
+    expect(
+      within(sidebar).getAllByRole("link", { current: "page" }),
+      "a favorite's route must mark only the favorite current, not its section"
+    ).toEqual([favorite])
+  })
+
+  it("marks only the favorite current on a favorite job's route", async () => {
+    setMockJobs([
+      { id: "job-1", title: "Designer", company: "Acme", starred: true },
+    ])
+    renderApp("/apply/job-1")
+    const sidebar = await screen.findByRole("complementary", {
+      name: "Sidebar",
+    })
+    const favorite = await within(sidebar).findByRole("link", {
+      name: "Designer Acme",
+    })
+    await waitFor(() =>
+      expect(favorite).toHaveAttribute("aria-current", "page")
+    )
+    expect(
+      within(sidebar).getAllByRole("link", { current: "page" }),
+      "a favorite's route must mark only the favorite current, not its section"
+    ).toEqual([favorite])
+  })
 
   it("puts the count of every nav item in its accessible name", async () => {
     setMockInbox({
