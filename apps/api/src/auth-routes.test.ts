@@ -178,6 +178,22 @@ describe("the auth routes the api serves", () => {
     }
   })
 
+  it("a Google callback with a bad state ends on the web sign-in page, not a 404", async () => {
+    const googleApp = createAuthedApp(db as never, testAuthUrl, {
+      googleEnabled: true,
+      googleClientId: "google-id",
+      googleClientSecret: "google-secret",
+    })
+    const res = await googleApp.request(
+      "/api/auth/callback/google?code=x&state=forged",
+      { method: "GET", redirect: "manual" }
+    )
+    expect(res.status).toBe(302)
+    expect(res.headers.get("location")).toBe(
+      `${testWebOrigin}/sign-in?error=state_mismatch`
+    )
+  })
+
   it("only the web-called paths and the sign-in redirect are served", () => {
     expect([...SERVED_AUTH_PATHS].sort()).toEqual(
       [...WEB_CALLED_AUTH_PATHS, ...BROWSER_REDIRECT_AUTH_PATHS].sort()

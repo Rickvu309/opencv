@@ -43,7 +43,7 @@ export function initSignInState(
     step: search.email ? "code" : "email",
     code: "",
     notice: null,
-    googleNotice: search.error === "google",
+    googleNotice: Boolean(search.error),
     google: false,
     sending: false,
     seconds: search.email ? 60 : 0,

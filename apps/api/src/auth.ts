@@ -67,6 +67,7 @@ export function createAuth({
   googleClientSecret,
 }: AuthConfig) {
   const cookies = cookieAttributesForAuthUrl(authUrl)
+  const signInOrigin = webOrigins.find((origin) => !origin.includes("*"))
   const googleId = googleClientId?.trim()
   const googleSecret = googleClientSecret?.trim()
   const emailCode = emailOTP({
@@ -104,6 +105,9 @@ export function createAuth({
     secret: sessionSecret,
     baseURL: authUrl,
     basePath: "/api/auth",
+    onAPIError: signInOrigin
+      ? { errorURL: new URL("/sign-in", signInOrigin).toString() }
+      : undefined,
     plugins: google ? [emailCode, google] : [emailCode],
     database: drizzleAdapter(db, {
       provider: "pg",
