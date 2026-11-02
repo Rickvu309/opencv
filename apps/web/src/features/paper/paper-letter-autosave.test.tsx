@@ -2,6 +2,7 @@ import type { JobView, PaperView } from "@workspace/domain"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
+import letterDesign from "./design/letter-editor.snapshot.json"
 import { PaperLetterEditor } from "./paper-letter.tsx"
 
 const job: JobView = {
@@ -149,6 +150,68 @@ describe("Letter edits survive autosave and leaving", () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it("shows the source suggestion controls and keeps the saved letter editable", () => {
+    installEditorFetch()
+    renderLetter()
+    const texts = letterDesign.sections.find(
+      (section) => section.name === "Main wrap"
+    )!.texts
+    expect(screen.getByText(texts[17])).toBeVisible()
+    expect(screen.getByRole("button", { name: texts[19] })).toBeEnabled()
+    expect(screen.getByRole("button", { name: texts[20] })).toBeEnabled()
+    expect(
+      screen.getByRole("textbox", { name: "Letter text" })
+    ).toHaveAttribute("contenteditable", "plaintext-only")
+    fireEvent.click(screen.getByRole("button", { name: texts[20] }))
+    expect(screen.queryByLabelText("Letter suggestion")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("textbox", { name: "Letter text" })
+    ).toHaveTextContent("I write clearly.")
+  })
+
+  it("queues a keyword behind typing already being saved without losing either edit", async () => {
+    const calls: Recorded[] = []
+    let releaseTyping: (() => void) | undefined
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) : null
+      if (!url.includes("/api/commands/paper.replace")) {
+        return Promise.resolve(ok({}))
+      }
+      calls.push({ url, body })
+      const saved = {
+        ...letter,
+        contentVersion: contentVersionOf(body) + 1,
+      }
+      if (calls.length === 1) {
+        return new Promise<Response>((resolve) => {
+          releaseTyping = () => resolve(ok(saved))
+        })
+      }
+      return Promise.resolve(ok(saved))
+    })
+    renderLetter()
+    const box = screen.getByRole("textbox", { name: "Letter text" })
+    box.textContent = "I write clearly. My newest sentence."
+    fireEvent.input(box)
+    await advance(700)
+    expect(calls).toHaveLength(1)
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to letter" }))
+    expect(box.textContent).toBe("I write clearly. My newest sentence.\nMeta")
+    expect(calls).toHaveLength(1)
+    expect(screen.queryByRole("button", { name: "Add to letter" })).toBeNull()
+
+    await act(async () => releaseTyping?.())
+    await advance(0)
+    expect(calls).toHaveLength(2)
+    expect(contentVersionOf(calls[1]?.body)).toBe(2)
+    expect(savedMarkdown(calls.slice(1)).markdown).toBe(
+      "I write clearly. My newest sentence.\nMeta"
+    )
+    expect(screen.queryByRole("button", { name: "Reload" })).toBeNull()
   })
 
   it("restores the caret when a focused letter is filled", () => {

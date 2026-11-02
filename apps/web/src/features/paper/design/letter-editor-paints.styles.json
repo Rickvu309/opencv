@@ -1,0 +1,496 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "sgAtL",
+    "frameName": "W7.3 Letter + suggestion"
+  },
+  "paints": [
+    {
+      "id": "sgAtL",
+      "path": "",
+      "fill": "#EFEFF0"
+    },
+    {
+      "id": "aRzCw",
+      "path": "/children/0/children/0/children/0/children/0/children/0",
+      "fill": "#00000000",
+      "stroke": "#1B1B1F"
+    },
+    {
+      "id": "e3hlpQ",
+      "path": "/children/0/children/0/children/0/children/0/children/1",
+      "fill": "#00000000"
+    },
+    {
+      "id": "RnVtW",
+      "path": "/children/0/children/0/children/0/children/0/children/1/children/0",
+      "fill": "#1B1B1F"
+    },
+    {
+      "id": "qMQxS",
+      "path": "/children/0/children/0/children/0/children/1",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "WB7jW",
+      "path": "/children/0/children/0/children/1/children/0/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "iEPn8",
+      "path": "/children/0/children/0/children/1/children/1",
+      "fill": "#FFFFFF",
+      "stroke": "#E2E2E2",
+      "effect": {
+        "type": "shadow",
+        "shadowType": "outer",
+        "color": "#0000000A",
+        "offset": {
+          "x": 0,
+          "y": 1
+        },
+        "blur": 2
+      }
+    },
+    {
+      "id": "OGutD",
+      "path": "/children/0/children/0/children/1/children/1/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/2/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/2/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "FUWoS",
+      "path": "/children/0/children/2/children/2",
+      "fill": "#969799"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/3/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/3/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/4/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/4/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "HQOy0",
+      "path": "/children/0/children/6/children/0",
+      "fill": "#969799"
+    },
+    {
+      "id": "C6st5",
+      "path": "/children/0/children/6/children/1",
+      "fill": "#969799"
+    },
+    {
+      "id": "RWGNy",
+      "path": "/children/0/children/7",
+      "fill": "#E1E1E2"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/7/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/7/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/8/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/8/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/9/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/9/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "k42tGQ",
+      "path": "/children/0/children/11/children/0",
+      "fill": "#969799"
+    },
+    {
+      "id": "mZVEP",
+      "path": "/children/0/children/11/children/1",
+      "fill": "#969799"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/12/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/12/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/13/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/13/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "lCbJB",
+      "path": "/children/0/children/14/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "ygZNM",
+      "path": "/children/0/children/14/children/1",
+      "fill": "#59595B"
+    },
+    {
+      "id": "PtGzP",
+      "path": "/children/0/children/16/children/0",
+      "fill": "#E1E1E2"
+    },
+    {
+      "id": "BwITb",
+      "path": "/children/0/children/16/children/0/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "nl64q",
+      "path": "/children/0/children/16/children/1",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "q3Ymi",
+      "path": "/children/0/children/16/children/3",
+      "fill": "#59595B"
+    },
+    {
+      "id": "GIhbq",
+      "path": "/children/1/children/0",
+      "fill": "#FFFFFF",
+      "stroke": "#E2E2E2"
+    },
+    {
+      "id": "U2otLd",
+      "path": "/children/1/children/0/children/0",
+      "fill": "#FAFAFA",
+      "stroke": "#EDEDEF"
+    },
+    {
+      "id": "oiPhc",
+      "path": "/children/1/children/0/children/0/children/0/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "UIaIc",
+      "path": "/children/1/children/0/children/0/children/0/children/1",
+      "fill": "#8A8A8E"
+    },
+    {
+      "id": "vzT48",
+      "path": "/children/1/children/0/children/0/children/0/children/2",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "Igfn5",
+      "path": "/children/1/children/0/children/0/children/0/children/3",
+      "fill": "#8A8A8E"
+    },
+    {
+      "id": "lPf0J",
+      "path": "/children/1/children/0/children/0/children/0/children/4/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "ejUUf",
+      "path": "/children/1/children/0/children/0/children/0/children/4/children/1",
+      "fill": "#111111"
+    },
+    {
+      "id": "YGhwU",
+      "path": "/children/1/children/0/children/0/children/0/children/5/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "SIOmM",
+      "path": "/children/1/children/0/children/0/children/0/children/6/children/0",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "GTgHk",
+      "path": "/children/1/children/0/children/0/children/1/children/0/children/0",
+      "fill": "#6B6B70"
+    },
+    {
+      "id": "OnHvE",
+      "path": "/children/1/children/0/children/0/children/1/children/0/children/1",
+      "fill": "#6B6B70"
+    },
+    {
+      "id": "NO5fT",
+      "path": "/children/1/children/0/children/0/children/1/children/1/children/0",
+      "fill": "#6B6B70"
+    },
+    {
+      "id": "rllxL",
+      "path": "/children/1/children/0/children/0/children/1/children/2/children/0",
+      "fill": "#6B6B70"
+    },
+    {
+      "id": "GfWDs",
+      "path": "/children/1/children/0/children/1",
+      "fill": "#F7F7F8"
+    },
+    {
+      "id": "pFz5s",
+      "path": "/children/1/children/0/children/1/children/0",
+      "fill": "#FFFFFF",
+      "effect": [
+        {
+          "type": "shadow",
+          "shadowType": "outer",
+          "color": "#0000000F",
+          "offset": {
+            "x": 0,
+            "y": 1
+          },
+          "blur": 2
+        },
+        {
+          "type": "shadow",
+          "shadowType": "outer",
+          "color": "#0000000F",
+          "offset": {
+            "x": 0,
+            "y": 12
+          },
+          "blur": 32
+        }
+      ]
+    },
+    {
+      "id": "IKQhn",
+      "path": "/children/1/children/0/children/1/children/0/children/0",
+      "fill": "#111111"
+    },
+    {
+      "id": "Ak2x1",
+      "path": "/children/1/children/0/children/1/children/0/children/2",
+      "fill": "#8A8A8E"
+    },
+    {
+      "id": "i8Xmqr",
+      "path": "/children/1/children/0/children/1/children/0/children/4",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "uXKQp",
+      "path": "/children/1/children/0/children/1/children/0/children/6",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "Q9jHM",
+      "path": "/children/1/children/0/children/1/children/0/children/7",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "D11nt",
+      "path": "/children/1/children/0/children/1/children/0/children/8",
+      "fill": "#3C3C40"
+    },
+    {
+      "id": "KIw4N",
+      "path": "/children/1/children/0/children/1/children/0/children/10",
+      "fill": "#111111"
+    },
+    {
+      "id": "U4RDbo",
+      "path": "/children/1/children/0/children/1/children/0/children/12",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "V2xNyj",
+      "path": "/children/1/children/0/children/1/children/0/children/14",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "c1uqru",
+      "path": "/children/1/children/0/children/1/children/0/children/16",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "a9Q8oP",
+      "path": "/children/1/children/0/children/1/children/0/children/18",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "P69DE4",
+      "path": "/children/1/children/0/children/1/children/0/children/21",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "KuFF8",
+      "path": "/children/1/children/0/children/1/children/0/children/23",
+      "fill": "#2F2F31"
+    },
+    {
+      "id": "BjePD",
+      "path": "/children/1/children/0/children/1/children/1",
+      "fill": "#FFFFFF",
+      "stroke": "#E2E2E2",
+      "effect": {
+        "type": "shadow",
+        "shadowType": "outer",
+        "color": "#0000000A",
+        "offset": {
+          "x": 0,
+          "y": 4
+        },
+        "blur": 16
+      }
+    },
+    {
+      "id": "BNHlG",
+      "path": "/children/1/children/0/children/1/children/1/children/0/children/0",
+      "fill": "#969799"
+    },
+    {
+      "id": "p2PSY",
+      "path": "/children/1/children/0/children/1/children/1/children/0/children/1",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "PzepQ",
+      "path": "/children/1/children/0/children/1/children/1/children/0/children/3/children/0",
+      "fill": "#969799"
+    },
+    {
+      "id": "kJxN8",
+      "path": "/children/1/children/0/children/1/children/1/children/1/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "Bo4JK",
+      "path": "/children/1/children/0/children/1/children/1/children/2/children/0",
+      "fill": {
+        "type": "mesh_gradient",
+        "enabled": true,
+        "columns": 3,
+        "rows": 3,
+        "colors": [
+          "#EAEFFA",
+          "#D6DFF6",
+          "#E7E3F9",
+          "#D0DAF5",
+          "#BCCAF1",
+          "#DCD6F6",
+          "#E6EBF9",
+          "#CED9F4",
+          "#E9E5F9"
+        ],
+        "points": [
+          [0, 0],
+          [0.5, 0],
+          [1, 0],
+          [0, 0.5],
+          [0.55, 0.6],
+          [1, 0.5],
+          [0, 1],
+          [0.5, 1],
+          [1, 1]
+        ]
+      },
+      "stroke": "#FFFFFFB3",
+      "effect": {
+        "type": "shadow",
+        "shadowType": "outer",
+        "color": "#8EA4E04D",
+        "offset": {
+          "x": 0,
+          "y": 2
+        },
+        "blur": 10
+      }
+    },
+    {
+      "id": "jjwNT",
+      "path": "/children/1/children/0/children/1/children/1/children/2/children/0/children/0",
+      "fill": "#1B1B1F"
+    },
+    {
+      "id": "G7Da1w",
+      "path": "/children/1/children/0/children/1/children/1/children/2/children/1/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "bzsQr",
+      "path": "/children/1/children/0/children/1/children/2",
+      "fill": "#CFCFD2"
+    },
+    {
+      "id": "F1gIN",
+      "path": "/children/1/children/0/children/1/children/3",
+      "fill": "#E8542A",
+      "stroke": "#FFFFFF"
+    },
+    {
+      "id": "rdEtZ",
+      "path": "/children/1/children/1/children/0/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "TSWjA",
+      "path": "/children/1/children/1/children/1/children/0",
+      "fill": "#59595B"
+    },
+    {
+      "id": "oG2eY",
+      "path": "/children/1/children/1/children/2/children/0",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "M5qkE",
+      "path": "/children/1/children/1/children/2/children/1",
+      "fill": "#1A1A1A"
+    },
+    {
+      "id": "oGdyW",
+      "path": "/children/1/children/1/children/3/children/0",
+      "fill": "#59595B"
+    }
+  ]
+}

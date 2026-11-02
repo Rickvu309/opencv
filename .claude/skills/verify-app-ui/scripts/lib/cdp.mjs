@@ -100,6 +100,7 @@ export async function launchBrowser() {
 
   // intercept(request) returns null (let it through), "hold" (keep it paused until release()),
   // "fail" (refuse the connection, as if the api were down) or { status, body } (answer it without reaching the api). Only /api/ calls are offered to it.
+  // Pass intercept: false for real-network tours that never install an interceptor.
   // timezone (an IANA name) and now (an ISO instant the page clock starts at) let a check
   // reproduce a design frame's dates; the page clock then runs forward from now.
   async function openPage({
@@ -175,9 +176,10 @@ export async function launchBrowser() {
     await call("Page.enable")
     await call("Log.enable")
     await call("Runtime.enable")
-    await call("Fetch.enable", {
-      patterns: [{ urlPattern: "*/api/*", requestStage: "Request" }],
-    })
+    if (intercept !== false)
+      await call("Fetch.enable", {
+        patterns: [{ urlPattern: "*/api/*", requestStage: "Request" }],
+      })
     await call("Emulation.setDeviceMetricsOverride", {
       width,
       height,

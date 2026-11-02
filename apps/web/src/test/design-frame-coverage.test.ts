@@ -38,7 +38,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   gWPIB: { issue: 498, expires: "2026-12-31" }, // W6.10 Can't read file
   k8HycK: { issue: 498, expires: "2026-12-31" }, // W6.11 Over one page
   tsfNR: { issue: 498, expires: "2026-12-31" }, // W7.2 Drafting
-  sgAtL: { issue: 498, expires: "2026-12-31" }, // W7.3 Letter + suggestion
   D1s74Z: { issue: 498, expires: "2026-12-31" }, // W7.4 Can't read job link
   qCgR7: { issue: 498, expires: "2026-12-31" }, // W12.1 Preferences
   LiQPl: { issue: 498, expires: "2026-12-31" }, // W12.2 Coach

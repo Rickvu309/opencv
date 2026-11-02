@@ -1,0 +1,552 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "sgAtL",
+    "frameName": "W7.3 Letter + suggestion"
+  },
+  "sections": [
+    {
+      "id": "jsloS",
+      "name": "Sidebar",
+      "texts": [
+        {
+          "content": "opencv",
+          "fill": "#1A1A1A",
+          "fontSize": 14,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Inbox",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "4",
+          "fill": "#969799",
+          "fontSize": 11,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Coach",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Jobs",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Your work",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Paper",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Apply",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Pitch",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Favorites",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Junior Marketing CV",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Lumi\u00e8re application",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Checkout UX study",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "LN",
+          "fill": "#59595B",
+          "fontSize": 7.5,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Linh Nguyen",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        {
+          "id": "QcP7t",
+          "name": "Logo",
+          "width": 20,
+          "height": 20
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "C6st5",
+          "name": "Icon",
+          "width": 9,
+          "height": 9
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "mZVEP",
+          "name": "Icon",
+          "width": 9,
+          "height": 9
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "lCbJB",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "id": "PtGzP",
+          "name": "Avatar",
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "q3Ymi",
+          "name": "Icon",
+          "width": 16,
+          "height": 16
+        }
+      ]
+    },
+    {
+      "id": "PVaFN",
+      "name": "Main wrap",
+      "texts": [
+        {
+          "content": "Paper",
+          "fill": "#3C3C40",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Cover letters",
+          "fill": "#3C3C40",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Cover letter, Lumi\u00e8re",
+          "fill": "#111111",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Edited just now",
+          "fill": "#6B6B70",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Linh Nguyen",
+          "fill": "#111111",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "700",
+          "letterSpacing": null
+        },
+        {
+          "content": "linh.nguyen@gmail.com  |  090 123 4567  |  Ho Chi Minh City",
+          "fill": "#8A8A8E",
+          "fontSize": 10,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "October 26, 2026",
+          "fill": "#3C3C40",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Hiring Team",
+          "fill": "#3C3C40",
+          "fontSize": 10.5,
+          "lineHeight": 1.5,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Lumi\u00e8re Cosmetics",
+          "fill": "#3C3C40",
+          "fontSize": 10.5,
+          "lineHeight": 1.5,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Ho Chi Minh City",
+          "fill": "#3C3C40",
+          "fontSize": 10.5,
+          "lineHeight": 1.5,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Dear Lumi\u00e8re hiring team,",
+          "fill": "#111111",
+          "fontSize": 11,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "I'm applying for the Junior Marketing role because Lumi\u00e8re writes about skin the way students actually talk about it, and I want to help do more of that.",
+          "fill": "#2F2F31",
+          "fontSize": 11,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "At my campus beauty club I interviewed 40 skincare buyers and turned what they said into three TikTok scripts that reached 28,000 views. Last summer at a local startup I wrote 24 product posts; the best one brought 180 sign-ups in a week.",
+          "fill": "#2F2F31",
+          "fontSize": 11,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "I'd bring the same habit to Lumi\u00e8re: listen first, write short, measure what works. I can start in March, three days a week.",
+          "fill": "#2F2F31",
+          "fontSize": 11,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Thank you for reading. My CV and a short write-up of my checkout study are attached.",
+          "fill": "#2F2F31",
+          "fontSize": 11,
+          "lineHeight": 1.6,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Warm regards,",
+          "fill": "#2F2F31",
+          "fontSize": 11,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Linh Nguyen",
+          "fill": "#2F2F31",
+          "fontSize": 11,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Missing keyword",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null
+        },
+        {
+          "content": "The job asks for Meta Ads. Add it if you've used it.",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": 1.45,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Add to letter",
+          "fill": "#1B1B1F",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Skip",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Tailor your CV for Lumi\u00e8re",
+          "fill": "#59595B",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Prep for Local startup interview",
+          "fill": "#59595B",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Coach",
+          "fill": "#1A1A1A",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        {
+          "id": "UIaIc",
+          "name": "Icon",
+          "width": 14,
+          "height": 14
+        },
+        {
+          "id": "Igfn5",
+          "name": "Icon",
+          "width": 14,
+          "height": 14
+        },
+        {
+          "id": "lPf0J",
+          "name": "Icon",
+          "width": 15,
+          "height": 15
+        },
+        {
+          "id": "DRrMA",
+          "name": "Star",
+          "width": 26,
+          "height": 26
+        },
+        {
+          "id": "kBxtz",
+          "name": "More",
+          "width": 26,
+          "height": 26
+        },
+        {
+          "id": "GTgHk",
+          "name": "Icon",
+          "width": 15,
+          "height": 15
+        },
+        {
+          "id": "BNHlG",
+          "name": "Icon",
+          "width": 14,
+          "height": 14
+        },
+        {
+          "id": "wy2Lv",
+          "name": "Dismiss",
+          "width": 24,
+          "height": 24
+        },
+        {
+          "id": "oG2eY",
+          "name": "Icon",
+          "width": 14,
+          "height": 14
+        }
+      ]
+    }
+  ],
+  "borders": [
+    {
+      "id": "aRzCw",
+      "stroke": "#1B1B1F",
+      "strokeWidth": 2
+    },
+    {
+      "id": "iEPn8",
+      "stroke": "$ds-border",
+      "strokeWidth": 1
+    },
+    {
+      "id": "GIhbq",
+      "stroke": "$ds-border",
+      "strokeWidth": 0.5
+    },
+    {
+      "id": "U2otLd",
+      "stroke": "#EDEDEF",
+      "strokeWidth": {
+        "bottom": 1
+      }
+    },
+    {
+      "id": "BjePD",
+      "stroke": "$ds-border",
+      "strokeWidth": 1
+    },
+    {
+      "id": "Bo4JK",
+      "stroke": "#FFFFFFB3",
+      "strokeWidth": 1
+    },
+    {
+      "id": "F1gIN",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 1.5
+    }
+  ]
+}

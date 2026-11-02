@@ -4,7 +4,9 @@ import { keywordGap, type JobView, type PaperView } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/sonner"
 
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { ChevronRight, MessageCircle, X } from "lucide-react"
+
+import "./design/letter-editor.pen.css"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { getPaper, paperGetKey } from "./paper-api.ts"
@@ -59,7 +61,6 @@ export function PaperLetterEditor({
 
   onBack: () => void
 }) {
-  const run = useRunCommand()
   const queryClient = useQueryClient()
   const editorRef = useRef<HTMLDivElement>(null)
   const dirtyRef = useRef(false)
@@ -72,7 +73,7 @@ export function PaperLetterEditor({
       conflict: false,
       printJob: null,
     })
-  const { schedule, adopt, versionRef } = usePaperAutosave<string>({
+  const { schedule, commitNow, adopt, versionRef } = usePaperAutosave<string>({
     docId: doc.id,
     initialVersion: doc.contentVersion,
     toDocument: (next) => ({ markdown: next }),
@@ -164,52 +165,67 @@ export function PaperLetterEditor({
     }
   }
 
-  async function addKeyword() {
-    if (!gap) return
-    const next = markdown.includes(gap.keyword)
-      ? markdown
-      : `${markdown}\n${gap.keyword}`
+  function addKeyword() {
+    if (!gap || conflict) return
+    const current = editorRef.current?.textContent ?? markdown
+    const next = current.includes(gap.keyword)
+      ? current
+      : `${current}\n${gap.keyword}`
+    inputCountRef.current += 1
+    dirtyRef.current = true
     dispatch({ type: "keyword_added", markdown: next })
     const node = editorRef.current
     if (node) node.textContent = next
-    try {
-      const saved = await run("paper.replace", {
-        docId: doc.id,
-        contentVersion: versionRef.current,
-        document: { markdown: next },
-      })
-      versionRef.current = saved.contentVersion
-      dispatch({ type: "keyword_saved", at: new Date().toISOString() })
-    } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not add that word. Try again."
-      )
-    }
+    // Share the autosave queue so an in-flight edit advances the version first.
+    commitNow(next)
   }
 
   return (
     <section
       aria-label={`Editing ${doc.name}`}
-      className="flex min-w-0 flex-col gap-4 p-4"
+      data-pen-surface="paper"
+      data-slot="letter-editor-page"
+      className="flex min-w-0 flex-1 flex-col"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="link" onClick={onBack}>
-          Paper
-        </Button>
-        <span className="text-sm text-muted-foreground">Cover letters</span>
-        <p className="text-sm text-muted-foreground">
+      <header
+        data-slot="letter-editor-header"
+        className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] md:h-12 md:flex-nowrap md:py-0"
+      >
+        <nav
+          aria-label="Breadcrumb"
+          className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto md:flex-1"
+        >
+          <Button
+            type="button"
+            data-slot="letter-editor-back"
+            variant="link"
+            className="h-auto p-0 text-[13.5px] font-normal"
+            onClick={onBack}
+          >
+            Paper
+          </Button>
+          <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
+          <span className="shrink-0">Cover letters</span>
+          <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
+          <span aria-current="page" className="truncate">
+            {doc.name}
+          </span>
+        </nav>
+        <p
+          data-slot="letter-editor-edited"
+          className="flex-1 text-[13.5px] leading-4 md:flex-none"
+        >
           {editorEditedLabel(updatedAt)}
         </p>
         <Button
           type="button"
           variant="outline"
+          className="h-8 text-[12px]"
           onClick={() => dispatch({ type: "print_requested", title: doc.name })}
         >
           Download PDF
         </Button>
-      </div>
+      </header>
       {printJob ? (
         <PaperPrintSheet
           name={doc.name}
@@ -221,29 +237,53 @@ export function PaperLetterEditor({
       {conflict ? (
         <PaperEditorConflictBanner onReload={() => void reloadLetter()} />
       ) : null}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="min-w-0 flex-1">
-          <PaperLetterArticle
-            doc={doc}
-            editorRef={editorRef}
-            onInput={onLetterInput}
-          />
-        </div>
+      <div
+        data-slot="letter-editor-desk"
+        className="@container relative flex min-w-0 flex-1 flex-col items-center gap-4 overflow-auto px-4 pt-6 pb-6"
+      >
         {gap ? (
-          <aside className="flex w-full flex-col gap-2 rounded-lg border border-border p-4 lg:w-72">
-            <p className="text-sm font-medium">Missing keyword</p>
-            <p className="text-sm">{gap.sentence}</p>
-            <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+          <aside
+            data-slot="letter-editor-suggestion"
+            aria-label="Letter suggestion"
+            className="flex w-full max-w-[260px] flex-col gap-1.5 rounded-xl border pt-2.5 pr-2.5 pb-3 pl-3.5 @min-[1140px]:absolute @min-[1140px]:[inset-inline-end:30px] @min-[1140px]:[inset-block-start:368px]"
+          >
+            <div className="flex items-center gap-2">
+              <MessageCircle className="size-3.5 shrink-0" aria-hidden="true" />
+              <p className="flex-1 text-[13px] leading-[15.5px] font-semibold">
+                Missing keyword
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-6 shrink-0"
+                aria-label="Dismiss suggestion"
+                onClick={() => dispatch({ type: "gap_dismissed" })}
+              >
+                <X className="size-3.5" />
+              </Button>
+            </div>
+            <p
+              data-slot="letter-editor-suggestion-copy"
+              className="pr-2.5 pl-[22px] text-[12px] leading-[17.5px]"
+            >
+              {gap.sentence}
+            </p>
+            <div className="flex gap-1 pt-1.5 pl-[22px]">
               <Button
                 type="button"
                 variant="glow"
-                onClick={() => void addKeyword()}
+                className="h-7 rounded-lg px-2.5 text-[12px] font-semibold"
+                disabled={conflict}
+                onClick={addKeyword}
               >
                 Add to letter
               </Button>
               <Button
                 type="button"
+                data-slot="letter-editor-skip"
                 variant="ghost"
+                className="h-7 rounded-lg px-2.5 text-[12px] font-medium"
                 onClick={() => dispatch({ type: "gap_dismissed" })}
               >
                 Skip
@@ -251,6 +291,11 @@ export function PaperLetterEditor({
             </div>
           </aside>
         ) : null}
+        <PaperLetterArticle
+          doc={doc}
+          editorRef={editorRef}
+          onInput={onLetterInput}
+        />
       </div>
     </section>
   )
