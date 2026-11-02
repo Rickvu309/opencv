@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { detect } from "./lib/skill-refs.mjs"
 import { RULE_GUIDES, rulesDocMatches } from "./ocv-tools/rules/doc.mjs"
 import path from "node:path"
 import { test } from "node:test"
@@ -33,7 +34,6 @@ const verifySkills = readdirSync(skills).filter((name) =>
 const REPO_PREFIX =
   /^(?:apps|packages|scripts|docs|\.claude|\.githooks|\.github)\//
 const PLACEHOLDER = /[<>*{$]|\.\.\./
-// Screenshots and downloads are outputs a run writes, so only code and docs are looked up by file name.
 const CODE_EXT = /\.(?:tsx?|mjs|css|md|sh)$/
 const GENERATED = /^apps\/api\/\.data\/|\/dist(?:\/|$)/
 const ROOT_DOCS = ["AGENTS.md", "CODING_STANDARDS.md", "CONTEXT.md"]
@@ -69,13 +69,6 @@ const clean = (word) =>
     .replace(/[),.;:]+$/, "")
     .replace(/^\(+/, "")
 
-/**
- * A path under a repo folder must exist, from the repo root or from the skill's
- * own folder (skill docs write `scripts/lib/probe.mjs` for the skill's
- * scripts). A shorter path such as
- * `features/home/x.tsx` or a bare `x.tsx` is a file name a table gives under
- * a folder it names, so some tracked file must end with it.
- */
 function missingPath(word, file) {
   if (!word || PLACEHOLDER.test(word) || GENERATED.test(word)) return false
   if (REPO_PREFIX.test(word)) {
@@ -182,4 +175,51 @@ test("verify-landing SKILL.md and the checker list the same ids", () => {
 test("rule-enforcement.md matches the ocv-tools rule table", () => {
   for (const { path, table } of RULE_GUIDES)
     assert.equal(rulesDocMatches(readFileSync(path, "utf8"), table), true)
+})
+
+const skillDocs = tracked.filter((file) =>
+  /^\.claude\/skills\/(?:[^/]+\/)*SKILL\.md$/.test(file)
+)
+
+const fakeRepo = {
+  exists: (rel) =>
+    [
+      "scripts/tlc.mjs",
+      ".claude/skills/verify-app-ui/scripts/launch.sh",
+      ".claude/skills/verify-opencv/scripts/cleanup.sh",
+    ].includes(rel),
+  packageDir: (name) => (name === "web" ? "apps/web" : null),
+  scripts: (dir) =>
+    new Map([
+      ["", new Set(["check"])],
+      ["apps/web", new Set(["verify:app-ui"])],
+    ]).get(dir) ?? new Set(),
+}
+
+const SKILL = ".claude/skills/verify-app-ui/SKILL.md"
+
+test("a skill that names a missing script, a bare script with no folder, or a missing pnpm script fails", () => {
+  const mistake = [
+    "Run `scripts/gone.mjs` first.",
+    "Then `pnpm --filter web verify:gone`.",
+    "Clean up with cleanup.sh.",
+    "Run `pnpm nope`.",
+  ].join("\n")
+  assert.equal(detect(mistake, SKILL, fakeRepo).length, 4)
+})
+
+test("a skill that names real scripts, full paths and real pnpm scripts passes", () => {
+  const clean = [
+    "Run `pnpm check`, `pnpm install` and `pnpm --filter web verify:app-ui`.",
+    "Call `.claude/skills/verify-opencv/scripts/cleanup.sh`, `scripts/tlc.mjs` and `scripts/launch.sh`.",
+  ].join("\n")
+  assert.deepEqual(detect(clean, SKILL, fakeRepo), [])
+})
+
+test("every script a skill names and every pnpm script it runs exists", () => {
+  const problems = skillDocs.flatMap((file) =>
+    detect(readFileSync(path.join(root, file), "utf8"), file)
+  )
+  assert.ok(skillDocs.length > 0, "the skill scan found no SKILL.md")
+  assert.deepEqual(problems, [], problems.join("\n"))
 })

@@ -300,11 +300,11 @@ starter workspace for new accounts.
 
 ### Production holds only `opencv_app`
 
-On 2026-10-27 the OpenPath-era leftovers were dropped from production Postgres:
-the `openpath`, `openpath_app`, `drizzle` and `test_*` schemas and the stray
-Better Auth tables in `public`. `opencv_app` is the only schema with tables, and
-`public` is empty. Migration 0000 still uses `CREATE SCHEMA IF NOT EXISTS`; keep
-it idempotent.
+On 2026-10-27 the leftovers from before the project rename were dropped from
+production Postgres: the two old project schemas, the `drizzle` and `test_*`
+schemas and the stray Better Auth tables in `public`. `opencv_app` is the only
+schema with tables, and `public` is empty. Migration 0000 still uses
+`CREATE SCHEMA IF NOT EXISTS`; keep it idempotent.
 
 ## Seed and local commands
 

@@ -1,0 +1,132 @@
+const TEXT_FILE = /\.(?:[cm]?[jt]sx?|css|json|md|ya?ml)$/
+const SOURCE = /^(?:apps|packages)\/[^/]+\/src\//
+const GUARD_FILES = /^scripts\/(?:retired-words\.test|lib\/retired-words)\.mjs$/
+
+export const RETIRED = [
+  {
+    id: "thread",
+    word: /[\w-]*thread[\w-]*/gi,
+    scope: (file) => SOURCE.test(file),
+    content: (file) => TEXT_FILE.test(file),
+    hint: "CONTEXT.md retired this word, so say Chat or Job. If it is a legitimate use, such as an Inbox mail thread, add the path and the exact word to the allowed list in scripts/retired-words.test.mjs with a reason.",
+    allowed: [
+      {
+        path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox|inbox-contract\.test|invalidation\.formal\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$)/,
+        why: "the inbox modules own the mail thread noun (MailThread, InboxThread, threadId, listThreads, getThread)",
+      },
+      {
+        path: /^apps\/api\/src\/db\/(?:schema|migrate\.test)\.ts$/,
+        match:
+          /^(?:inbox_threads|inboxThreads|provider_thread_id|providerThreadId|thread_id|threadId|inbox_threads_connection_provider_uidx|inbox_messages_thread_provider_uidx)$/,
+        why: "inbox_threads is the mail thread table and its columns",
+      },
+      {
+        path: /^apps\/api\/src\/registry\/ownership\.test\.ts$/,
+        match: /^inboxThreads$/,
+        why: "maps the inbox_threads table to the inbox module",
+      },
+      {
+        path: /^apps\/api\/src\/registry\/contract\.type-test\.ts$/,
+        match: /^threadId$/,
+        why: "the inbox snooze input is keyed by an inbox threadId",
+      },
+      {
+        path: /^apps\/api\/src\/registry\/names\.test\.ts$/,
+        match: /^threads$/,
+        line: /\|threads\|/,
+        why: "the retired threads.* tool prefix stays in the name scan so old tool names fail",
+      },
+      {
+        path: /^apps\/web\/src\/lib\/requests\.ts$/,
+        match: /^(?:[a-z]*InboxThreads?|inboxThreads?|threadId)$/,
+        why: "the inbox thread route is keyed by an inbox threadId",
+      },
+      {
+        path: /^apps\/web\/src\/(?:features\/app-shell\/shell-api|test\/shell-api-mock)\.ts$|^apps\/web\/src\/features\/app-shell\/app-shell\.test\.tsx$|^apps\/web\/src\/features\/app-shell\/app-sidebar(?:-parity)?\.test\.tsx$|^apps\/web\/src\/test\/nav-contract\.test\.tsx$/,
+        match: /^threads$/,
+        why: "the inbox list response field is named threads",
+      },
+      {
+        path: /^packages\/domain\/src\/chat-contract\.ts$/,
+        match: /^thread$/,
+        line: /inbox thread/,
+        why: "a chat can point at an inbox thread",
+      },
+      {
+        path: /^packages\/domain\/src\/chat-messages\.ts$/,
+        match: /^Thread$/,
+        line: /"New Thread"/,
+        why: 'LEGACY_CHAT_TITLE = "New Thread" allows legacy rows to display and rename as New chat (#548)',
+      },
+      {
+        path: /^packages\/ui\/src\/(?:components\/comment-thread\.tsx|kit-contracts\.test\.tsx)$/,
+        why: "the ui comment-thread component and its kit test are a stack of review comments, not a conversation with the Coach",
+      },
+      {
+        path: /^apps\/web\/src\/features\/app-shell\/shell-chrome\.test\.ts$/,
+        match: /^HomeThread$/,
+        line: /HomeThread/,
+        why: "tombstone: asserts the retired HomeThread hook stays out of shell chrome",
+      },
+      {
+        path: /^apps\/web\/src\/features\/coach\/use-coach-turn\.test\.ts$/,
+        match: /^(?:coach-thread-panel|Thread)$/,
+        line: /coach-thread-panel|paperCoach\(Thread\|Chat\)StorageKey/,
+        why: "tombstone: asserts the retired paper coach thread panel and storage key stay deleted",
+      },
+    ],
+  },
+  {
+    id: "opportunity",
+    word: /[\w-]*opportunit[\w-]*/gi,
+    scope: (file) => SOURCE.test(file),
+    content: (file) => TEXT_FILE.test(file),
+    hint: "CONTEXT.md retired this word, so say Chat or Job.",
+    allowed: [],
+  },
+  {
+    id: "openpath",
+    word: /openpath/gi,
+    scope: (file) => !file.startsWith("docs/adr/"),
+    content: () => true,
+    hint: "The project was renamed to OpenCV, so say OpenCV. docs/adr keeps the old name as history. Otherwise add the path and the exact word to the allowed list in scripts/retired-words.test.mjs with a reason.",
+    allowed: [
+      {
+        path: GUARD_FILES,
+        why: "the guard names the word it bars",
+      },
+    ],
+  },
+]
+
+export function matches(text, file) {
+  return RETIRED.flatMap((entry) => {
+    if (!entry.scope(file)) return []
+    const lines = text === null || !entry.content(file) ? [] : text.split("\n")
+    const subjects = [
+      { where: file, line: file },
+      ...lines.map((line, index) => ({ where: `${file}:${index + 1}`, line })),
+    ]
+    return subjects.flatMap(({ where, line }) =>
+      [...line.matchAll(entry.word)].map(([match]) => ({
+        where,
+        match,
+        id: entry.id,
+        hint: entry.hint,
+        rule:
+          entry.allowed.find(
+            (rule) =>
+              rule.path.test(file) &&
+              (!rule.match || rule.match.test(match)) &&
+              (!rule.line || rule.line.test(line))
+          ) ?? null,
+      }))
+    )
+  })
+}
+
+export function detect(text, file) {
+  return matches(text, file)
+    .filter((hit) => !hit.rule)
+    .map((hit) => `${hit.where} uses "${hit.match}". ${hit.hint}`)
+}

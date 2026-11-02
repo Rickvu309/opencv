@@ -200,7 +200,6 @@
   "packages/domain/src/receipt-copy.ts": 6,
   "packages/domain/src/starter.ts": 2,
   "scripts/check.mjs": 1,
-  "scripts/doc-paths.test.mjs": 8,
   "scripts/ocv-tools/approve.mjs": 3,
   "scripts/ocv-tools/board.mjs": 6,
   "scripts/ocv-tools/board.test.mjs": 1,
@@ -254,6 +253,5 @@
   "scripts/ocv-tools/work.mjs": 26,
   "scripts/ocv-tools/worktree.mjs": 16,
   "scripts/pen-html.mjs": 4,
-  "scripts/pen-layout.mjs": 6,
-  "scripts/retired-words.test.mjs": 10
+  "scripts/pen-layout.mjs": 6
 }

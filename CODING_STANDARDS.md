@@ -27,11 +27,11 @@ Explain with a better name or a test; write no comment. Reason: a comment goes s
 
 ## Naming
 
-Say Chat or Job. Thread and Opportunity are retired words (Inbox mail threads are the allowed exception). Check: `scripts/retired-words.test.mjs` over source and file names under `apps/*/src` and `packages/*/src`.
+Say Chat or Job. Thread and Opportunity are retired words (Inbox mail threads are the allowed exception). Check: `scripts/retired-words.test.mjs` over source and file names under `apps/*/src` and `packages/*/src`. The old project name, in any case, is refused everywhere except `docs/adr/`.
 
 ## Docs
 
-Cite only repo paths and ADRs that exist. Check: `scripts/doc-paths.test.mjs` (backticked paths in `AGENTS.md`, `CONTEXT.md`, `CODING_STANDARDS.md`, `docs/`, `.claude/skills/`) and `scripts/adr-citations.test.mjs`.
+Cite only repo paths and ADRs that exist. Check: `scripts/doc-paths.test.mjs` (backticked paths in `AGENTS.md`, `CONTEXT.md`, `CODING_STANDARDS.md`, `docs/`, `.claude/skills/`; and in each `.claude/skills/**/SKILL.md`, the script paths and `pnpm` scripts it names) and `scripts/adr-citations.test.mjs`.
 
 ## Design
 

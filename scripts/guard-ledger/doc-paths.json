@@ -1,0 +1,13 @@
+{
+  "id": "doc-paths",
+  "file": "scripts/doc-paths.test.mjs",
+  "detector": {
+    "module": "scripts/lib/skill-refs.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "f7949c18",
+    "path": ".claude/skills/verify-app-ui/SKILL.md"
+  }
+}
