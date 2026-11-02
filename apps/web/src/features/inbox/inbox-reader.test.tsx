@@ -54,6 +54,49 @@ function renderReader(
   )
 }
 
+describe("inbox reader header", () => {
+  it("is the kit header with the counter, the actions and an overflow menu", () => {
+    renderReader(LOCAL_DETAIL)
+    const header = document.querySelector('[data-slot="page-header"]')
+    expect(header).not.toBeNull()
+    expect(header?.tagName).toBe("HEADER")
+    expect(header).toHaveTextContent("1 of 6")
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull()
+    for (const name of ["Done", "Snooze", "Previous", "Next"]) {
+      expect(screen.getByRole("button", { name })).toBeInTheDocument()
+    }
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled()
+    expect(
+      screen.getByRole("button", { name: "More actions" })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Back to inbox" })).toBeNull()
+  })
+
+  it("makes the subject the page heading and shows a back link when narrow", async () => {
+    const onBack = vi.fn()
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <InboxReader
+          detail={LOCAL_DETAIL}
+          index={2}
+          count={6}
+          narrow
+          now={INBOX_NOW}
+          onBack={onBack}
+          onReturnedToInbox={vi.fn()}
+          onPrevious={vi.fn()}
+          onNext={vi.fn()}
+        />
+      </QueryClientProvider>
+    )
+    expect(
+      screen.getByRole("heading", { level: 1, name: LOCAL_DETAIL.subject })
+    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: "Back to inbox" }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe("inbox reader", () => {
   it("shows a newly received saved reply when the detail refreshes", () => {
     const posts = postsOf()

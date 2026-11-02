@@ -315,12 +315,18 @@ function sectionReading(frame: Element, name: string): string {
   return section ? visibleText(section) : ""
 }
 
+function inKitHeaderOrder(texts: readonly string[]): string[] {
+  const counter = texts.find((text) => /^\d+ of \d+$/.test(text))
+  if (!counter) return [...texts]
+  return [counter, ...texts.filter((text) => text !== counter)]
+}
+
 function compare(frame: Element, snapshot: PenSnapshot): string {
   const problems: string[] = []
   for (const section of snapshot.sections) {
     const missing = missingInOrder(
       sectionReading(frame, section.name),
-      section.texts
+      inKitHeaderOrder(section.texts)
     )
     if (missing) {
       problems.push(`${section.name}: missing ${JSON.stringify(missing)}`)

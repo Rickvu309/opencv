@@ -1,4 +1,3 @@
-import type { ComponentProps, ReactNode } from "react"
 import type { InboxThread } from "@workspace/domain"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
@@ -18,27 +17,6 @@ export function GmailMark({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn("shrink-0", className)}
     />
-  )
-}
-
-/** A control the pen draws that the product has no command for yet. */
-export function InboxIconButton({
-  label,
-  className,
-  children,
-  ...props
-}: { label: string; children: ReactNode } & ComponentProps<typeof Button>) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      aria-label={label}
-      className={cn("size-7 rounded-md text-muted-foreground", className)}
-      {...props}
-    >
-      {children}
-    </Button>
   )
 }
 

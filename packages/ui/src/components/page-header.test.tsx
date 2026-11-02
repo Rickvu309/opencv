@@ -129,6 +129,34 @@ describe("PageHeader overflow", () => {
     )
   })
 
+  it("shows the label of a text action and keeps it in the More actions menu", async () => {
+    const user = userEvent.setup()
+    const onDone = vi.fn()
+    render(
+      <PageHeader>
+        <PageHeaderTitle>Inbox</PageHeaderTitle>
+        <PageHeaderActions overflowLabel="More actions">
+          <PageHeaderAction
+            label="Done"
+            icon={<Star />}
+            showLabel
+            collapse
+            onSelect={onDone}
+          />
+        </PageHeaderActions>
+      </PageHeader>
+    )
+    const inline = screen.getByRole("button", { name: "Done" })
+    expect(inline).toHaveTextContent("Done")
+    expect(inline).toHaveClass("h-7", "max-md:hidden")
+    expect(inline).not.toHaveClass("size-7")
+    await user.click(inline)
+    expect(onDone).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole("button", { name: "More actions" }))
+    await user.click(await screen.findByRole("menuitem", { name: "Done" }))
+    expect(onDone).toHaveBeenCalledTimes(2)
+  })
+
   it("keeps the DOM order equal to the visual order", () => {
     render(<DetailHeader />)
     const order = screen

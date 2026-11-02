@@ -73,24 +73,6 @@ export const PENDING_HEADERS: Pending[] = [
     note: "Apply job header",
   },
   {
-    file: "features/inbox/inbox-list.tsx",
-    marker: "flex h-13 shrink-0 items-center gap-1.5 border-b",
-    row: 3,
-    note: "Inbox list header",
-  },
-  {
-    file: "features/inbox/inbox-reader.tsx",
-    marker: "flex h-13 shrink-0 items-center gap-1 border-b",
-    row: 3,
-    note: "Inbox reader toolbar",
-  },
-  {
-    file: "features/inbox/inbox-connect.tsx",
-    marker: 'data-pen-section="Header"',
-    row: 3,
-    note: "Inbox connect header",
-  },
-  {
     file: "features/coach/coach-workspace.tsx",
     marker: '"coach-header"',
     row: 4,

@@ -1,12 +1,6 @@
 import type { ReactNode } from "react"
 import type { InboxThread } from "@workspace/domain"
-import {
-  Clock3,
-  Ellipsis,
-  Funnel,
-  Inbox as InboxIcon,
-  SlidersHorizontal,
-} from "lucide-react"
+import { Clock3, Ellipsis, Inbox as InboxIcon } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -20,8 +14,15 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@workspace/ui/components/empty"
+import {
+  PageHeader,
+  PageHeaderAction,
+  PageHeaderActions,
+  PageHeaderTitle,
+  PageHeaderTitleActions,
+} from "@workspace/ui/components/page-header"
 
-import { InboxIconButton, InboxRow } from "./inbox-parts.tsx"
+import { InboxRow } from "./inbox-parts.tsx"
 import { inboxWhen, unreadCount } from "./inbox-time.ts"
 
 export function InboxListPane({
@@ -57,38 +58,44 @@ export function InboxListHeader({
   onViewChange: (view: "inbox" | "snoozed") => void
 }) {
   return (
-    <div className="flex h-13 shrink-0 items-center gap-1.5 border-b border-border ps-5 pe-3">
-      <h1 className="text-[13px] font-medium text-foreground">
+    <PageHeader>
+      <PageHeaderTitle className="max-md:min-w-0">
         {view === "snoozed" ? "Snoozed" : "Inbox"}
-      </h1>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <InboxIconButton label="More">
-              <Ellipsis />
-            </InboxIconButton>
+      </PageHeaderTitle>
+      <PageHeaderTitleActions>
+        <DropdownMenu>
+          <PageHeaderAction
+            label="More"
+            icon={<Ellipsis />}
+            render={
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    data-slot="page-header-action"
+                  />
+                }
+              />
+            }
+          />
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem disabled={scanning} onClick={onScan}>
+              Scan
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeaderTitleActions>
+      <PageHeaderActions>
+        <PageHeaderAction
+          label={view === "snoozed" ? "Back to inbox" : "Snoozed"}
+          icon={<Clock3 />}
+          onSelect={() =>
+            onViewChange(view === "snoozed" ? "inbox" : "snoozed")
           }
         />
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem disabled={scanning} onClick={onScan}>
-            Scan
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <span className="flex-1" />
-      <InboxIconButton
-        label={view === "snoozed" ? "Back to inbox" : "Snoozed"}
-        onClick={() => onViewChange(view === "snoozed" ? "inbox" : "snoozed")}
-      >
-        <Clock3 />
-      </InboxIconButton>
-      <InboxIconButton label="Filter" disabled>
-        <Funnel />
-      </InboxIconButton>
-      <InboxIconButton label="Display" disabled>
-        <SlidersHorizontal />
-      </InboxIconButton>
-    </div>
+      </PageHeaderActions>
+    </PageHeader>
   )
 }
 
