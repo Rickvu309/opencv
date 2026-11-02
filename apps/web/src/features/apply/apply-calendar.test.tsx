@@ -6,16 +6,28 @@ import {
   within,
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { calendarEvents, eventsInDays } from "./apply-calendar-model.ts"
 
+// The calendar opens on the week of "today" in the profile zone, so every
+// test pins the clock. Only Date is faked: timers stay real for waitFor.
+const NOW = new Date("2026-10-29T05:00:00.000Z")
+const TODAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Ho_Chi_Minh",
+}).format(NOW)
+
 describe("apply calendar", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(NOW)
+  })
   afterEach(() => {
     cleanup()
+    vi.useRealTimers()
   })
   it("renders the week schedule rows and places interviews in their hour", async () => {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -23,7 +35,7 @@ describe("apply calendar", () => {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).formatToParts(new Date())
+    }).formatToParts(NOW)
     const year = parts.find((part) => part.type === "year")?.value
     const month = parts.find((part) => part.type === "month")?.value
     const day = parts.find((part) => part.type === "day")?.value
@@ -63,10 +75,10 @@ describe("apply calendar", () => {
         id: "01900000-0000-7000-8000-000000000032",
         title: "Evening interview",
         stage: "interview",
-        interviewAt: "2026-10-30T13:00:00.000Z",
+        interviewAt: `${TODAY}T13:00:00.000Z`,
       }),
     ])
-    renderApp("/apply?view=calendar&span=week&date=2026-10-30")
+    renderApp("/apply?view=calendar&span=week")
     const block = await screen.findByRole("button", {
       name: "Interview 20:00 to 21:00: Evening interview, Lumière Cosmetics",
     })
@@ -77,10 +89,7 @@ describe("apply calendar", () => {
   })
 
   it("lists a deadline in the all day row", async () => {
-    const day = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Ho_Chi_Minh",
-    }).format(new Date())
-    setMockJobs([mockJob({ title: "Due job", deadline: day })])
+    setMockJobs([mockJob({ title: "Due job", deadline: TODAY })])
     renderApp("/apply?view=calendar&span=week")
     const chip = await screen.findByText("Due job due")
     expect(chip.closest('[role="group"][aria-label$="all day"]')).not.toBeNull()
@@ -91,21 +100,33 @@ describe("apply calendar", () => {
     renderApp("/apply?view=calendar&span=week")
     const title = await screen.findByRole("heading", { name: /\d{4}/ })
     const before = title.textContent
+    // The title names only the month when a week sits inside one month, so
+    // read the day columns too: they must move by exactly seven days.
+    const days = () =>
+      screen
+        .getAllByRole("group")
+        .map((group) => group.getAttribute("aria-label"))
+        .filter((label) =>
+          /^[A-Z][a-z]{2}, [A-Z][a-z]{2} \d+$/.test(label ?? "")
+        )
+    const thisWeek = days()
+    expect(thisWeek).toHaveLength(7)
     fireEvent.click(screen.getByRole("button", { name: "Next week" }))
-    await waitFor(() => expect(title.textContent).not.toBe(before))
+    await waitFor(() => expect(days()).not.toEqual(thisWeek))
+    const nextWeek = days()
+    expect(nextWeek).toHaveLength(7)
+    expect(nextWeek.some((label) => thisWeek.includes(label))).toBe(false)
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }))
-    await waitFor(() => expect(title.textContent).toBe(before))
+    await waitFor(() => expect(days()).toEqual(thisWeek))
+    expect(title.textContent).toBe(before)
   })
 
   it("shows month chips with the interview time and moves by month", async () => {
-    const day = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Ho_Chi_Minh",
-    }).format(new Date())
     setMockJobs([
       mockJob({
         title: "Month interview",
         stage: "interview",
-        interviewAt: `${day}T03:00:00.000Z`,
+        interviewAt: `${TODAY}T03:00:00.000Z`,
       }),
     ])
     renderApp("/apply?view=calendar&span=month")
@@ -167,7 +188,7 @@ describe("apply calendar", () => {
     const job = mockJob({
       id: "01900000-0000-7000-8000-000000000044",
       title: "A very long product role title that cannot fit in the month cell",
-      deadline: "2026-10-30",
+      deadline: TODAY,
     })
     setMockJobs([job])
     const { router } = renderApp("/apply?view=calendar&span=month")
@@ -193,27 +214,27 @@ describe("apply calendar", () => {
       mockJob({
         id: "01900000-0000-7000-8000-000000000051",
         title: "Early",
-        interviewAt: "2026-10-29T00:00:00.000Z",
+        interviewAt: `${TODAY}T00:00:00.000Z`,
       }),
       mockJob({
         id: "01900000-0000-7000-8000-000000000052",
         title: "Day",
-        interviewAt: "2026-10-29T03:00:00.000Z",
+        interviewAt: `${TODAY}T03:00:00.000Z`,
       }),
       mockJob({
         id: "01900000-0000-7000-8000-000000000053",
         title: "Evening",
-        interviewAt: "2026-10-29T11:00:00.000Z",
+        interviewAt: `${TODAY}T11:00:00.000Z`,
       }),
       mockJob({
         id: "01900000-0000-7000-8000-000000000054",
         title: "Boundary",
-        interviewAt: "2026-10-29T11:30:00.000Z",
+        interviewAt: `${TODAY}T11:30:00.000Z`,
       }),
       mockJob({
         id: "01900000-0000-7000-8000-000000000055",
         title: "Night",
-        interviewAt: "2026-10-29T13:00:00.000Z",
+        interviewAt: `${TODAY}T13:00:00.000Z`,
       }),
     ])
     renderApp("/apply?view=calendar&span=week")
