@@ -7,7 +7,6 @@ import {
   clampSidebarWidth,
   DEFAULT_SIDEBAR_WIDTH,
   isCollapseDrag,
-  isTypingTarget,
   MAX_SIDEBAR_WIDTH,
   MIN_SIDEBAR_WIDTH,
   readSidebarCollapsed,
@@ -61,17 +60,5 @@ describe("sidebar width", () => {
     expect(readSidebarCollapsed()).toBe(true)
     writeSidebarCollapsed(false)
     expect(readSidebarCollapsed()).toBe(false)
-  })
-
-  it("treats inputs and editors as typing", () => {
-    const input = document.createElement("input")
-    const editor = document.createElement("div")
-    editor.setAttribute("contenteditable", "true")
-    const inner = document.createElement("span")
-    editor.append(inner)
-    expect(isTypingTarget(input)).toBe(true)
-    expect(isTypingTarget(inner)).toBe(true)
-    expect(isTypingTarget(document.createElement("button"))).toBe(false)
-    expect(isTypingTarget(null)).toBe(false)
   })
 })

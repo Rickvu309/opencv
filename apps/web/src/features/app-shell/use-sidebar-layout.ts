@@ -2,6 +2,7 @@ import type { PointerEvent as ReactPointerEvent } from "react"
 import { useCallback, useEffect, useReducer, useRef } from "react"
 
 import { useHoverIntent } from "@/lib/use-hover-intent.ts"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import {
   focusNeedsHandoff,
   focusSidebarToggle,
@@ -9,7 +10,6 @@ import {
 import {
   clampSidebarWidth,
   DEFAULT_SIDEBAR_WIDTH,
-  isTypingTarget,
   PEEK_CLOSE_GRACE_MS,
   PEEK_OPEN_DELAY_MS,
   readSidebarCollapsed,
@@ -106,19 +106,11 @@ export function useSidebarLayout(enabled: boolean) {
     focusSidebarToggle(collapsed ? "expand" : "collapse")
   }, [collapsed])
 
-  useEffect(() => {
-    if (!enabled) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "[" || event.defaultPrevented) return
-      if (event.metaKey || event.ctrlKey || event.altKey) return
-      if (event.repeat || event.isComposing) return
-      if (isTypingTarget(event.target)) return
-      event.preventDefault()
-      setCollapsed(!collapsed)
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [enabled, collapsed, setCollapsed])
+  useShortcut({
+    key: "[",
+    enabled,
+    onPress: () => setCollapsed(!collapsed),
+  })
 
   const { contentProps: hoverContent } = intent
   useEffect(() => {

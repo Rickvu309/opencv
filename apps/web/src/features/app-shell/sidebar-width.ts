@@ -42,12 +42,3 @@ export function readSidebarCollapsed() {
 export function writeSidebarCollapsed(collapsed: boolean) {
   writeStored(COLLAPSED_KEY, collapsed ? "1" : "0")
 }
-
-export function isTypingTarget(target: EventTarget | null) {
-  return (
-    target instanceof Element &&
-    target.closest(
-      "input, textarea, select, [contenteditable=''], [contenteditable='true'], [contenteditable='plaintext-only'], [role='textbox']"
-    ) !== null
-  )
-}
