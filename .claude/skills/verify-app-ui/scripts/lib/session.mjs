@@ -16,6 +16,8 @@ function readSignInCode(logPath, email) {
   return null
 }
 
+const VERIFY_LIMIT_WINDOW_MS = 70000
+
 const postJson = (page, url, body) =>
   page.evaluate(`fetch(${JSON.stringify(url)}, {
     method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
@@ -47,11 +49,16 @@ export async function signInThrowaway({
     if (!otp) await page.sleep(100)
   }
   if (!otp) throw new Error("sign-in code was not logged")
-  const status = await postJson(page, `${apiUrl}/api/auth/sign-in/email-otp`, {
-    email,
-    otp,
-    name,
-  })
+  const deadline = Date.now() + VERIFY_LIMIT_WINDOW_MS
+  let status = 429
+  while (status === 429 && Date.now() < deadline) {
+    status = await postJson(page, `${apiUrl}/api/auth/sign-in/email-otp`, {
+      email,
+      otp,
+      name,
+    })
+    if (status === 429) await page.sleep(2000)
+  }
   if (status !== 200) throw new Error(`sign-in returned ${status}`)
   return email
 }
