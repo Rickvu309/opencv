@@ -34,6 +34,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
         }
         sessionStorage.removeItem(LANGUAGE_STORAGE_KEY)
       }
+      if (cancelled) return
       if (!prefersReducedMotion()) {
         const remain = HOLD_MS - (performance.now() - started)
         if (remain > 0) {
