@@ -26,7 +26,14 @@ export function discoverTests(list = gitList) {
 export const FILE_TIMEOUT_MS = 180_000
 export const SLOW_FILE_TIMEOUT_MS = 600_000
 
-export function runFile(file, { timeoutMs, cwd = root } = {}) {
+export function runFile(
+  file,
+  {
+    timeoutMs,
+    cwd = root,
+    timers = { start: setTimeout, stop: clearTimeout },
+  } = {}
+) {
   return new Promise((resolve) => {
     const started = Date.now()
     const { NODE_TEST_CONTEXT: _outerNodeTestContext, ...env } = process.env
@@ -49,16 +56,16 @@ export function runFile(file, { timeoutMs, cwd = root } = {}) {
         child.kill("SIGKILL")
       }
     }
-    const timer = setTimeout(() => {
+    const timer = timers.start(() => {
       timedOut = true
       killLeftoverProcesses()
     }, timeoutMs)
     child.on("error", (error) => {
-      clearTimeout(timer)
+      timers.stop(timer)
       resolve({ file, ok: false, timedOut, output: String(error), ms: 0 })
     })
     child.on("close", (code) => {
-      clearTimeout(timer)
+      timers.stop(timer)
       killLeftoverProcesses()
       resolve({
         file,
@@ -75,6 +82,7 @@ export async function runFiles(
   files,
   {
     timeoutMs,
+    timers,
     concurrency = Math.max(1, availableParallelism() - 1),
     cwd,
     log = console.log,
@@ -84,7 +92,7 @@ export async function runFiles(
   const results = []
   const worker = async () => {
     for (let file = queue.shift(); file; file = queue.shift()) {
-      const result = await runFile(file, { timeoutMs, cwd })
+      const result = await runFile(file, { timeoutMs, cwd, timers })
       results.push(result)
       if (!result.ok) {
         log(result.output.trimEnd().split("\n").slice(-60).join("\n"))
