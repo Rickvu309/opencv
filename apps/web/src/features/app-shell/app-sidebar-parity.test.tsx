@@ -73,7 +73,9 @@ describe("app sidebar pen parity (YC0lV / jsloS)", () => {
 
   it("shows every pen text the account has data for", async () => {
     const sidebar = await renderSidebar()
-    const inbox = within(sidebar).getByRole("link", { name: "Inbox" })
+    const inbox = within(sidebar).getByRole("link", {
+      name: "Inbox, 4 unread",
+    })
     await waitFor(() => expect(inbox).toHaveTextContent("4"))
     for (const text of penTexts) {
       if (NO_DATA.includes(text)) continue

@@ -435,11 +435,10 @@ describe("app shell layout", () => {
     })
     renderApp(SURFACE_PATHS.pitch)
     await waitFor(() => {
-      expect(screen.getByRole("link", { name: "Inbox" })).toHaveTextContent("2")
+      expect(
+        screen.getByRole("link", { name: "Inbox, 2 unread" })
+      ).toHaveTextContent("2")
     })
-    expect(screen.getByRole("link", { name: "Inbox" })).toHaveAccessibleName(
-      "Inbox"
-    )
   })
 
   it("posts chat.create from New chat and closes the panel with Escape", async () => {
