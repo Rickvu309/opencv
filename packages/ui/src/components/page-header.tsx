@@ -97,7 +97,7 @@ function PageHeaderBack({
     defaultTagName: "a",
     props: {
       className: cn(
-        "inline-flex h-11 shrink-0 items-center gap-1 rounded-[6px] px-2 text-[13px] font-normal text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:text-foreground",
+        "inline-flex h-11 shrink-0 items-center gap-1 rounded-[6px] px-2 text-[13px] font-normal whitespace-nowrap text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:text-foreground",
         TOUCH,
         className
       ),
