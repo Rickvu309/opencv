@@ -92,7 +92,10 @@ test("no script keeps a list that a directory or a glob already supplies", () =>
   assert.deepEqual(problems, [])
 })
 
-test(".gitignore merges as a union so two pull requests that append never conflict", () => {
+test(".gitattributes sets no union merge, which hides a deleted line and flips a negation", () => {
   const attributes = readFileSync(path.join(root, ".gitattributes"), "utf8")
-  assert.match(attributes, /^\.gitignore\s+merge=union\s*$/m)
+  const unionLines = attributes
+    .split("\n")
+    .filter((line) => /(^|\s)merge=union(\s|$)/.test(line))
+  assert.deepEqual(unionLines, [])
 })
