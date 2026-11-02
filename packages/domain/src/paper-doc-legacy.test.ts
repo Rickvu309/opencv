@@ -16,6 +16,8 @@ import {
   blankLetter,
   legacyPaperOf,
   paperPlainText,
+  plainTextOfRuns,
+  richTextOf,
   upgradeStoredPaper,
   type PaperDocument,
 } from "./paper-doc/index.ts"
@@ -313,6 +315,30 @@ describe("legacy projection of a version 3 paper", () => {
     } as PaperDocument
     assert.deepEqual(legacyPaperOf(edited), {
       markdown: "Title\n\nsee site\n\nnested\n\nEnd",
+    })
+  })
+
+  it("keeps the letter parts when only the body is edited", () => {
+    const stored = {
+      markdown: "Body one.\n\nBody two.",
+      sender: "Linh",
+      date: "2 Nov 2026",
+      salutation: "Dear team,",
+      closing: "Best,",
+      signature: "Linh",
+    }
+    const paper = upgraded("letter", stored)
+    const edited = {
+      ...paper,
+      blocks: paper.blocks.map((block) =>
+        "content" in block && plainTextOfRuns(block.content) === "Body two."
+          ? { ...block, content: richTextOf("Body two, edited.") }
+          : block
+      ),
+    } as PaperDocument
+    assert.deepEqual(legacyPaperOf(edited, stored), {
+      ...stored,
+      markdown: "Body one.\n\nBody two, edited.",
     })
   })
 

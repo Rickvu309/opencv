@@ -7,7 +7,7 @@ import { letterDocumentV1Schema, type LetterDocument } from "../paper-codecs.js"
 import type { CvPaper, LetterPaper, PaperDocument } from "./document.js"
 import type { CvPaperBlock, ListItem } from "./nodes.js"
 import { plainTextOfRuns } from "./rich-text.js"
-import { upgradeStoredPaper } from "./upgrade.js"
+import { paragraphsOfText, upgradeStoredPaper } from "./upgrade.js"
 
 type LegacyItem = { id: string; text: string }
 type LegacySection = CvBlockDocument["sections"][number]
@@ -158,20 +158,63 @@ function cvLegacy(paper: CvPaper): CvBlockDocument {
   return { version: 2, header, sections: cvSections(paper) }
 }
 
-function letterLegacy(paper: LetterPaper): LetterDocument {
-  const texts = paper.blocks.flatMap((block) => {
-    switch (block.type) {
-      case "paragraph":
-      case "heading":
-        return [plainTextOfRuns(block.content)]
-      case "bullet":
-      case "numbered":
-        return itemsInOrder([block]).map((item) => item.text)
-      case "divider":
-        return []
+const LEADING_PARTS = [
+  "sender",
+  "contact",
+  "date",
+  "recipient",
+  "salutation",
+] as const
+const TRAILING_PARTS = ["signature", "closing"] as const
+
+function startsWith(texts: readonly string[], at: number, pieces: string[]) {
+  return pieces.every((piece, offset) => texts[at + offset] === piece)
+}
+
+function letterLegacy(paper: LetterPaper, witness?: unknown): LetterDocument {
+  const texts = paper.blocks
+    .flatMap((block) => {
+      switch (block.type) {
+        case "paragraph":
+        case "heading":
+          return [plainTextOfRuns(block.content)]
+        case "bullet":
+        case "numbered":
+          return itemsInOrder([block]).map((item) => item.text)
+        case "divider":
+          return []
+      }
+    })
+    .filter((text) => text.trim() !== "")
+  const parts = letterDocumentV1Schema.safeParse(witness)
+  const letter: LetterDocument = { markdown: "" }
+  let from = 0
+  let to = texts.length
+  if (parts.success) {
+    for (const part of LEADING_PARTS) {
+      const raw = parts.data[part]
+      const pieces = paragraphsOfText(raw ?? "")
+      if (raw === undefined || pieces.length === 0) continue
+      if (from + pieces.length <= to && startsWith(texts, from, pieces)) {
+        letter[part] = raw
+        from += pieces.length
+      }
     }
-  })
-  return { markdown: texts.filter((text) => text.trim() !== "").join("\n\n") }
+    for (const part of TRAILING_PARTS) {
+      const raw = parts.data[part]
+      const pieces = paragraphsOfText(raw ?? "")
+      if (raw === undefined || pieces.length === 0) continue
+      if (
+        to - pieces.length >= from &&
+        startsWith(texts, to - pieces.length, pieces)
+      ) {
+        letter[part] = raw
+        to -= pieces.length
+      }
+    }
+  }
+  letter.markdown = texts.slice(from, to).join("\n\n")
+  return letter
 }
 
 function witnessFor(paper: PaperDocument, witness: unknown) {
@@ -181,8 +224,14 @@ function witnessFor(paper: PaperDocument, witness: unknown) {
       : letterDocumentV1Schema.safeParse(witness)
   if (!shape.success) return null
   const upgraded = upgradeStoredPaper(paper.kind, shape.data)
-  if (!upgraded.ok) return null
-  return sortedJson(upgraded.document) === sortedJson(paper) ? shape.data : null
+  const lossy = upgradeStoredPaper(
+    paper.kind,
+    paper.kind === "cv" ? cvLegacy(paper) : letterLegacy(paper)
+  )
+  if (!upgraded.ok || !lossy.ok) return null
+  return sortedJson(upgraded.document) === sortedJson(lossy.document)
+    ? shape.data
+    : null
 }
 
 export function legacyPaperOf(
@@ -191,5 +240,5 @@ export function legacyPaperOf(
 ): CvBlockDocument | LetterDocument {
   const same = witness === undefined ? null : witnessFor(paper, witness)
   if (same) return same
-  return paper.kind === "cv" ? cvLegacy(paper) : letterLegacy(paper)
+  return paper.kind === "cv" ? cvLegacy(paper) : letterLegacy(paper, witness)
 }

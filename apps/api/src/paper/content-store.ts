@@ -65,48 +65,24 @@ export type SyncReply = {
 const FIRST_EPOCH = 1
 const NO_LOCAL_COPY = 0
 
+const CACHE_LIMIT = 200
 const live = new Map<string, Live>()
-const queues = new Map<string, Promise<void>>()
+
+function remember(docId: string, entry: Live) {
+  live.delete(docId)
+  live.set(docId, entry)
+  for (const oldest of live.keys()) {
+    if (live.size <= CACHE_LIMIT) break
+    live.delete(oldest)
+  }
+}
 
 function refuse(message: string) {
   return new CommandError(ERROR_CODES.VALIDATION_ERROR, message)
 }
 
-async function exclusive<T>(docId: string, run: () => Promise<T>): Promise<T> {
-  const previous = queues.get(docId) ?? Promise.resolve()
-  let release: () => void = () => {}
-  const turn = new Promise<void>((resolve) => {
-    release = resolve
-  })
-  const tail = previous.then(() => turn)
-  queues.set(docId, tail)
-  await previous
-  try {
-    return await run()
-  } finally {
-    release()
-    if (queues.get(docId) === tail) queues.delete(docId)
-  }
-}
-
 function sameBytes(a: Uint8Array, b: Uint8Array) {
   return Buffer.from(a).equals(Buffer.from(b))
-}
-
-function sameJson(a: unknown, b: unknown) {
-  return JSON.stringify(sorted(a)) === JSON.stringify(sorted(b))
-}
-
-function sorted(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sorted)
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .sort(([left], [right]) => (left < right ? -1 : 1))
-        .map(([key, item]) => [key, sorted(item)])
-    )
-  }
-  return value
 }
 
 function validated(candidate: unknown, kind: PaperStoredKind): PaperDocument {
@@ -248,11 +224,14 @@ async function hydrate(row: PaperRow): Promise<Live> {
   const cached = live.get(row.id)
   if (cached) {
     const current = await caughtUp(cached, row, base).catch(() => null)
-    if (current) return current
+    if (current) {
+      remember(row.id, current)
+      return current
+    }
     live.delete(row.id)
   }
   const entry = await freshLive(row, base)
-  live.set(row.id, entry)
+  remember(row.id, entry)
   return entry
 }
 
@@ -315,11 +294,7 @@ async function editLocked(
     if (effective) {
       return await commit(row, entry, effective, { ...change, witness })
     }
-    const document = legacyDocument(target, witness)
-    if (sameJson(document, row.document)) return row
-    const patch = { document, updatedAt: new Date() }
-    await getDb().update(paperDocs).set(patch).where(eq(paperDocs.id, row.id))
-    return { ...row, ...patch }
+    return row
   } catch (error) {
     live.delete(row.id)
     throw error
@@ -331,38 +306,20 @@ export async function withContent<T>(
   docId: PaperId,
   run: (content: LockedContent) => Promise<T>
 ): Promise<T> {
-  return transaction(() =>
-    exclusive(docId, async () => {
-      const row = await seeded(await lockedRow(userId, docId))
-      const entry = await hydrate(row)
-      let latest = row
-      const content: LockedContent = {
-        row,
-        document: validated(row.crdtDocument, row.kind),
-        edit: async (change) => {
-          latest = await editLocked(latest, entry, change)
-          return latest
-        },
-      }
-      return run(content)
-    })
-  )
-}
-
-export async function editContent(
-  userId: UserId,
-  docId: PaperId,
-  change: ContentEdit
-): Promise<PaperRow> {
-  return withContent(userId, docId, (content) => content.edit(change))
-}
-
-export async function readContent(userId: UserId, docId: PaperId) {
-  return withContent(userId, docId, async ({ row, document }) => ({
-    document,
-    revision: row.contentVersion,
-    epoch: row.crdtEpoch ?? FIRST_EPOCH,
-  }))
+  return transaction(async () => {
+    const row = await seeded(await lockedRow(userId, docId))
+    const entry = await hydrate(row)
+    let latest = row
+    const content: LockedContent = {
+      row,
+      document: validated(row.crdtDocument, row.kind),
+      edit: async (change) => {
+        latest = await editLocked(latest, entry, change)
+        return latest
+      },
+    }
+    return run(content)
+  })
 }
 
 export async function syncContent(
@@ -370,41 +327,39 @@ export async function syncContent(
   docId: PaperId,
   request: SyncRequest
 ): Promise<SyncReply> {
-  return transaction(() =>
-    exclusive(docId, async () => {
-      let row = await seeded(await lockedRow(userId, docId))
-      const entry = await hydrate(row)
-      const reply = (reset: boolean, since: Uint8Array): SyncReply => {
-        const update = updateSince(entry.yDoc, since)
-        if (!update) throw refuse("The state vector could not be read")
-        return {
-          epoch: entry.epoch,
-          revision: entry.revision,
-          reset,
-          update,
-          stateVector: stateVectorOf(entry.yDoc),
-        }
+  return transaction(async () => {
+    let row = await seeded(await lockedRow(userId, docId))
+    const entry = await hydrate(row)
+    const reply = (reset: boolean, since: Uint8Array): SyncReply => {
+      const update = updateSince(entry.yDoc, since)
+      if (!update) throw refuse("The state vector could not be read")
+      return {
+        epoch: entry.epoch,
+        revision: entry.revision,
+        reset,
+        update,
+        stateVector: stateVectorOf(entry.yDoc),
       }
-      if (request.epoch !== NO_LOCAL_COPY && request.epoch !== entry.epoch) {
-        return reply(true, new Uint8Array())
+    }
+    if (request.epoch !== NO_LOCAL_COPY && request.epoch !== entry.epoch) {
+      return reply(true, new Uint8Array())
+    }
+    try {
+      const absorbed =
+        request.update.length === 0
+          ? ({ ok: true, effective: null } as const)
+          : absorbUpdate(entry.yDoc, request.update, "person")
+      if (!absorbed.ok) throw refuse(absorbed.reason)
+      if (absorbed.effective) {
+        row = await commit(row, entry, absorbed.effective, {
+          origin: "person",
+          witness: row.document,
+        })
       }
-      try {
-        const absorbed =
-          request.update.length === 0
-            ? ({ ok: true, effective: null } as const)
-            : absorbUpdate(entry.yDoc, request.update, "person")
-        if (!absorbed.ok) throw refuse(absorbed.reason)
-        if (absorbed.effective) {
-          row = await commit(row, entry, absorbed.effective, {
-            origin: "person",
-            witness: row.document,
-          })
-        }
-        return reply(false, request.stateVector)
-      } catch (error) {
-        live.delete(docId)
-        throw error
-      }
-    })
-  )
+      return reply(false, request.stateVector)
+    } catch (error) {
+      live.delete(docId)
+      throw error
+    }
+  })
 }

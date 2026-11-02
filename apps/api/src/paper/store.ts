@@ -16,6 +16,8 @@ import {
   parseFileId,
   parsePaperId,
   parseUserId,
+  legacyPaperOf,
+  mergeLegacyEdit,
   upgradeStoredPaper,
   type PaperDocument,
   type PaperView,
@@ -43,7 +45,7 @@ import {
   parseImportFile,
 } from "./import-parse.js"
 
-import { seedColumns, editContent, withContent } from "./content-store.js"
+import { seedColumns, withContent } from "./content-store.js"
 import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
 
 const importAbort = new AsyncLocalStorage<AbortSignal>()
@@ -150,12 +152,17 @@ export async function createPaper(
     name?: string
     templateId?: string
     document?: unknown
+    paper?: PaperDocument
   }
 ) {
   const now = new Date()
   const id = createId(now.getTime())
-  const document =
-    input.document !== undefined
+  const document = input.paper
+    ? (legacyPaperOf(input.paper, input.document) as unknown as Record<
+        string,
+        unknown
+      >)
+    : input.document !== undefined
       ? requireDocument(input.kind, input.document)
       : blankDocument(input.kind)
   await getDb()
@@ -167,7 +174,7 @@ export async function createPaper(
       kind: input.kind,
       templateId: input.templateId ?? "simple",
       document,
-      ...seedColumns(input.kind, document),
+      ...seedColumns(input.kind, input.paper ?? document),
       crdtBaseSeq: 1,
       contentVersion: 1,
       createdAt: now,
@@ -200,7 +207,6 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
         { document: view }
       )
     }
-    // A stored version 2 CV stays on blocks. A version 1 row may still adopt version 2.
     if (
       current.kind === "cv" &&
       isCvBlockDocument(current.document) &&
@@ -211,9 +217,13 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
         "This CV uses blocks. Send a version 2 document."
       )
     }
+    const merged = mergeLegacyEdit(content.document, upgraded.document)
+    if (canonicalJson(merged) === canonicalJson(content.document)) {
+      return { ...view, previousDocument: view.document }
+    }
     const written = await content.edit({
       origin: "person",
-      target: upgraded.document,
+      target: merged,
       witness: document,
     })
     return { ...toPaper(written), previousDocument: view.document }
@@ -255,6 +265,9 @@ export async function duplicatePaper(actor: Actor, docId: PaperId) {
     name: `Copy of ${current.name}`.slice(0, 200),
     templateId: current.templateId ?? undefined,
     document: current.document,
+    ...(current.crdtDocument
+      ? { paper: current.crdtDocument as unknown as PaperDocument }
+      : {}),
   })
 }
 
@@ -403,13 +416,16 @@ export async function attachPhoto(
   docId: PaperId,
   fileId: FileId
 ) {
-  const before = toPaper(await ownedPaper(actor.userId, docId))
+  await ownedPaper(actor.userId, docId)
   await requireAvatarFile(actor.userId, fileId)
-  const written = await editContent(actor.userId, docId, {
-    origin: "server",
-    target: (current) => withPhotoRef(current, paperPhotoRef(fileId)),
+  return withContent(actor.userId, docId, async (content) => {
+    const before = toPaper(content.row)
+    const written = await content.edit({
+      origin: "server",
+      target: (current) => withPhotoRef(current, paperPhotoRef(fileId)),
+    })
+    return { ...toPaper(written), previousDocument: before.document }
   })
-  return { ...toPaper(written), previousDocument: before.document }
 }
 
 export async function readShared(token: string) {
