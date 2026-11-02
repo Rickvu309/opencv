@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from "node:child_process"
-import { existsSync, mkdirSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, posix, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { makeTempDir, removeTempDir } from "./lib/temp-dir.mjs"
-import { mutantOf, ownConfigs, specName } from "./lib/tla-specs.mjs"
+import {
+  expectedMutantExit,
+  mutantOf,
+  ownConfigs,
+  specName,
+} from "./lib/tla-specs.mjs"
 
 const root = resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 
@@ -89,6 +94,7 @@ function listSpecFiles() {
       "--others",
       "--exclude-standard",
       "*.tla",
+      "*.tla.json",
       "*.cfg",
     ],
     { cwd: root, encoding: "utf8" }
@@ -97,13 +103,23 @@ function listSpecFiles() {
     .filter(Boolean)
 }
 
-export function allRuns(files = listSpecFiles()) {
+export function allRuns(
+  files = listSpecFiles(),
+  read = (path) => readFileSync(join(root, path), "utf8")
+) {
   const runs = []
-  for (const tla of files.filter((file) => file.endsWith(".tla")).sort())
+  for (const tla of files.filter((file) => file.endsWith(".tla")).sort()) {
+    const mapPath = tla.replace(/\.tla$/, ".tla.json")
+    const mapText = files.includes(mapPath) ? read(mapPath) : undefined
     for (const cfg of ownConfigs(tla, files)) {
       runs.push({ tla, cfg, expect: 0 })
-      runs.push({ tla, cfg: mutantOf(cfg), expect: 12 })
+      runs.push({
+        tla,
+        cfg: mutantOf(cfg),
+        expect: expectedMutantExit(mapText, tla, cfg),
+      })
     }
+  }
   return runs
 }
 

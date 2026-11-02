@@ -1,5 +1,8 @@
 {
   "module": "turn-steps.ts",
+  "mutants": {
+    "release": 13
+  },
   "actions": {
     "startTurn": "openCoachUsage",
     "stopTurn": "trackChatTurn",
