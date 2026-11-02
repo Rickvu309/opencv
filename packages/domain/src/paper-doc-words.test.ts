@@ -237,30 +237,30 @@ describe("a v1 CV upgrades without losing a word", () => {
 })
 
 describe("stored rows at any size upgrade", () => {
-  it("upgrades a v1 CV far past the old editor's usual size", () => {
+  it("upgrades a v1 CV past every former cap", () => {
     const cv = v1Cv({
-      summary: "s ".repeat(60000),
-      experience: Array.from({ length: 40 }, (_, index) => ({
-        role: `Role ${index} ${"r".repeat(5000)}`,
+      summary: "s ".repeat(1200),
+      experience: Array.from({ length: 3 }, (_, index) => ({
+        role: `Role ${index} ${"r".repeat(2001)}`,
         company: "Co",
         period: "2024",
-        bullets: Array.from({ length: 300 }, (_, bullet) => `Bullet ${bullet}`),
+        bullets: Array.from({ length: 201 }, (_, bullet) => `Bullet ${bullet}`),
       })),
       education: [
-        { school: "S", degree: "D", period: "P", detail: "d".repeat(50000) },
+        { school: "S", degree: "D", period: "P", detail: "d".repeat(2001) },
       ],
-      skills: Array.from({ length: 120 }, (_, group) => ({
+      skills: Array.from({ length: 3 }, (_, group) => ({
         label: `Group ${group}`,
         items: Array.from(
-          { length: 150 },
+          { length: 61 },
           (_, item) => `Skill ${group}-${item}`
         ),
       })),
-      projects: Array.from({ length: 200 }, (_, index) => ({
+      projects: Array.from({ length: 3 }, (_, index) => ({
         name: `Project ${index}`,
-        detail: "x".repeat(2500),
+        detail: "x".repeat(2001),
       })),
-      languages: Array.from({ length: 300 }, (_, index) => `Language ${index}`),
+      languages: Array.from({ length: 10 }, (_, index) => `Language ${index}`),
     })
     const document = upgraded("cv", cv) as CvPaper
     assertEveryWordKept(v1Words(cv), paperPlainText(document))

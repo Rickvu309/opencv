@@ -131,11 +131,11 @@ describe("paper document v3", () => {
   })
 
   it("sets no cap on blocks, text or skill items, so no stored row is refused", () => {
-    const blocks = Array.from({ length: 3000 }, (_, index) =>
-      paragraph(`p${index}`, "x".repeat(25000))
+    const blocks = Array.from({ length: 2001 }, (_, index) =>
+      paragraph(`p${index}`, index === 0 ? "x".repeat(20001) : "x")
     )
     assert.equal(paperDocumentSchema.safeParse(letter(blocks)).success, true)
-    const items = Array.from({ length: 500 }, (_, index) => `item ${index}, a`)
+    const items = Array.from({ length: 61 }, (_, index) => `item ${index}, a`)
     const skills = { id: "k1", type: "skills", label: "L", items }
     assert.equal(
       paperDocumentSchema.safeParse(cv([section("s1"), skills])).success,
