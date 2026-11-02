@@ -57,6 +57,7 @@ Tests that hold this shape:
 - `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock. `apps/web/src/test/setup.ts` calls `pinTestClock` before every test, so fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts` and never to the real date.
 - `scripts/browser-launcher.test.mjs` rejects a browser started outside a `cdp.mjs` launcher, and a launcher that leaves Chrome or one of its children running after a failed launch (a fake Chrome stands in for the real one).
 - `scripts/layout-comparison-gates.test.mjs` rejects a verify driver that calls `comparePenLayout` and never reads its `mismatches`, so a wrong layout cannot report PASS. A `PENDING` entry with an issue and an expiry date lists a known exception.
+- `scripts/paper-save-keeps-parts.test.mjs` rejects an autosave `toDocument` that returns the markdown alone, which would erase the sender, date and closing parts of a letter on the next keystroke. Its `PENDING` list works like the one above.
 
 ### Git
 
