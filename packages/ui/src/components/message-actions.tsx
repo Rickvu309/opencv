@@ -1,5 +1,6 @@
 "use client"
 
+import { copyText } from "./copy-button"
 import { css } from "./message-actions-styles"
 
 import {
@@ -254,7 +255,7 @@ export function MessageActions({
     return () => window.clearTimeout(t)
   }, [copied])
   const copy = () => {
-    if (text !== undefined) navigator.clipboard?.writeText(text).catch(() => {})
+    if (text !== undefined) void copyText(text)
     onCopy?.(text)
     setCopied(Date.now())
     announce("Copied")

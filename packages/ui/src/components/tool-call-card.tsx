@@ -1,5 +1,6 @@
 "use client"
 
+import { copyText } from "./copy-button"
 import { css } from "./tool-call-card-styles"
 
 import {
@@ -549,21 +550,4 @@ function highlight(text: string): ReactNode[] {
   }
   if (last < text.length) out.push(text.slice(last))
   return out
-}
-
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    // Older browsers and non-secure contexts
-    const area = document.createElement("textarea")
-    area.value = text
-    area.style.cssText = "position:fixed;opacity:0"
-    document.body.appendChild(area)
-    area.select()
-    const ok = document.execCommand("copy")
-    area.remove()
-    return ok
-  }
 }
