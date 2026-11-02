@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
+import { CopyButton } from "@workspace/ui/components/copy-button"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { createChat } from "@/features/coach/chat-api.ts"
@@ -25,7 +26,6 @@ import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { publishCoachDraft } from "@/lib/coach-draft.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
-import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
 import { CvPhoto, CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { usePaperAutosave } from "./paper-autosave.ts"
@@ -51,6 +51,7 @@ import {
   readPreviewPageCount,
 } from "./paper-print.ts"
 import { editorEditedLabel, previewTemplate } from "./paper-templates.ts"
+import { useShareLink } from "./paper-share-link.ts"
 
 function toastError(error: unknown, fallback: string) {
   toast(error instanceof Error ? error.message : fallback)
@@ -76,6 +77,7 @@ export function PaperCvEditor({
   onBack: () => void
 }) {
   const run = useRunCommand()
+  const shareLink = useShareLink(initial.id)
   const { openChat } = useChatStore()
   const queryClient = useQueryClient()
   const dirtyRef = useRef(false)
@@ -248,17 +250,6 @@ export function PaperCvEditor({
     }
   }
 
-  async function copyLink() {
-    try {
-      const { token } = await run("paper.share", { docId: initial.id })
-      const url = publicShareUrl(token)
-      await navigator.clipboard.writeText(url)
-      toast("Link copied")
-    } catch (error) {
-      toastError(error, "Could not copy the link. Try again.")
-    }
-  }
-
   async function keepPages() {
     try {
       await run("paper.keepTwoPages", { docId: initial.id })
@@ -405,15 +396,18 @@ export function PaperCvEditor({
           >
             <Ellipsis className="size-4" />
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
+          <CopyButton
+            value={shareLink}
+            copiedMessage="Link copied"
+            errorMessage={(error) =>
+              error instanceof Error
+                ? error.message
+                : "Could not copy the link. Try again."
+            }
             aria-label="Copy link"
-            onClick={() => void copyLink()}
           >
             <Link2 className="size-4" />
-          </Button>
+          </CopyButton>
           <Button
             type="button"
             variant="outline"

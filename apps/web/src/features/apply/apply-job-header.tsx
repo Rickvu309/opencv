@@ -12,13 +12,13 @@ import {
 
 import type { JobDetail } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
+import { CopyButton } from "@workspace/ui/components/copy-button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { toast } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { FAINT_TEXT } from "./apply-tone.ts"
@@ -48,13 +48,6 @@ export function JobHeader({
   onToggleStar: () => void
   onDelete: () => void
 }) {
-  function copyLink() {
-    navigator.clipboard
-      .writeText(window.location.href)
-      .then(() => toast("Link copied"))
-      .catch(() => toast("Could not copy the link. Try again."))
-  }
-
   return (
     <nav
       aria-label="Breadcrumb"
@@ -132,15 +125,15 @@ export function JobHeader({
       >
         <ChevronDown aria-hidden className="size-7 p-[6.5px]" />
       </Button>
-      <Button
-        type="button"
-        variant="ghost"
+      <CopyButton
+        value={() => window.location.href}
+        copiedMessage="Link copied"
+        errorMessage="Could not copy the link. Try again."
         aria-label="Copy link"
         className={cn("size-7", ICON_BUTTON)}
-        onClick={copyLink}
       >
         <LinkIcon aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
+      </CopyButton>
       <Button
         type="button"
         variant="ghost"

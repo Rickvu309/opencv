@@ -266,7 +266,7 @@
   "packages/ui/src/components/thinking-loader-styles.ts": 1,
   "packages/ui/src/components/thinking-loader.tsx": 21,
   "packages/ui/src/components/tool-call-card-styles.ts": 1,
-  "packages/ui/src/components/tool-call-card.tsx": 41,
+  "packages/ui/src/components/tool-call-card.tsx": 40,
   "packages/ui/src/kit.test.tsx": 1,
   "packages/ui/src/lib/brand.ts": 1,
   "packages/ui/src/lib/focus-ring.ts": 1,

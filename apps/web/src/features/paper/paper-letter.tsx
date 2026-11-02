@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import { CopyButton } from "@workspace/ui/components/copy-button"
 import { toast } from "@workspace/ui/components/sonner"
 
 import {
@@ -28,9 +29,6 @@ import {
 import "./design/letter-editor.pen.css"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { useRunCommand } from "@/lib/contract-client.ts"
-import { publicShareUrl } from "@/lib/web-origins-env.ts"
-
 import { readStoredLetter } from "./letter-sheet-model.ts"
 import { getPaper, paperGetKey } from "./paper-api.ts"
 import { usePaperAutosave } from "./paper-autosave.ts"
@@ -40,6 +38,7 @@ import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { letterReducer } from "./paper-letter.reducer.ts"
 import { PaperLetterArticle } from "./paper-letter-article.tsx"
 import { editorEditedLabel } from "./paper-templates.ts"
+import { useShareLink } from "./paper-share-link.ts"
 
 export { PaperLetterStart } from "./paper-letter-start.tsx"
 
@@ -62,7 +61,7 @@ export function PaperLetterEditor({
   onBack: () => void
 }) {
   const queryClient = useQueryClient()
-  const run = useRunCommand()
+  const shareLink = useShareLink(doc.id)
   const dirtyRef = useRef(false)
   const inputCountRef = useRef(0)
   const [{ letter, updatedAt, hiddenGap, conflict, printJob }, dispatch] =
@@ -141,20 +140,6 @@ export function PaperLetterEditor({
         error instanceof Error
           ? error.message
           : "Could not reload. Refresh the page."
-      )
-    }
-  }
-
-  async function copyLink() {
-    try {
-      const { token } = await run("paper.share", { docId: doc.id })
-      await navigator.clipboard.writeText(publicShareUrl(token))
-      toast("Link copied")
-    } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not copy the link. Try again."
       )
     }
   }
@@ -241,16 +226,20 @@ export function PaperLetterEditor({
           >
             {editorEditedLabel(updatedAt)}
           </p>
-          <Button
-            type="button"
+          <CopyButton
             data-slot="letter-editor-link"
-            variant="ghost"
+            value={shareLink}
+            copiedMessage="Link copied"
+            errorMessage={(error) =>
+              error instanceof Error
+                ? error.message
+                : "Could not copy the link. Try again."
+            }
             className="h-7 w-[30px] shrink-0 rounded-[7px] p-0"
             aria-label="Copy share link"
-            onClick={() => void copyLink()}
           >
             <LinkIcon className="size-4" aria-hidden="true" />
-          </Button>
+          </CopyButton>
         </div>
       </header>
       {printJob ? (
