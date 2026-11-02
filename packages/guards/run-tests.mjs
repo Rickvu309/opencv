@@ -3,7 +3,6 @@ import { availableParallelism } from "node:os"
 import { fileURLToPath } from "node:url"
 
 const root = fileURLToPath(new URL("../..", import.meta.url))
-// The finish suite is the slow one, so it runs in its own task (test:open-pr).
 export const SLOW = "scripts/ocv-tools/jobs/finish.test.mjs"
 
 const gitList = () =>
@@ -13,8 +12,6 @@ const gitList = () =>
     { cwd: root, encoding: "utf8" }
   )
 
-// Every node:test file in the repo except the slow finish suite, which has its own script.
-// An empty or failed listing throws: running no guards must never read as a pass.
 export function discoverTests(list = gitList) {
   const files = list()
     .split("\n")
@@ -26,21 +23,13 @@ export function discoverTests(list = gitList) {
   return files
 }
 
-// The slowest file takes about 15 seconds on a laptop (a headless Chrome launch and the shell suites), so
-// 180 seconds leaves a hosted runner an order of magnitude of slack. The finish suite runs many git
-// repositories and gets more. GUARDS_FILE_TIMEOUT_MS overrides both.
 export const FILE_TIMEOUT_MS = 180_000
 export const SLOW_FILE_TIMEOUT_MS = 600_000
 
-// node --test --test-timeout only fails a test that is still running. A file whose tests all finished but
-// whose process never exits (a child or a timer keeps the event loop alive) would hang the job with no
-// output, so each file gets its own process and its own deadline, and the deadline names the file. A test that
-// is still running at 80% of the deadline fails first, by its own name.
 export function runFile(file, { timeoutMs, cwd = root } = {}) {
   return new Promise((resolve) => {
     const started = Date.now()
-    // Under an outer node --test the child would read this and run as a bare worker, not a runner.
-    const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
+    const { NODE_TEST_CONTEXT: _outerNodeTestContext, ...env } = process.env
     const child = spawn(
       process.execPath,
       ["--test", `--test-timeout=${Math.floor(timeoutMs * 0.8)}`, file],
@@ -53,7 +42,7 @@ export function runFile(file, { timeoutMs, cwd = root } = {}) {
     }
     child.stdout.on("data", collect)
     child.stderr.on("data", collect)
-    const killGroup = () => {
+    const killLeftoverProcesses = () => {
       try {
         process.kill(-child.pid, "SIGKILL")
       } catch {
@@ -62,7 +51,7 @@ export function runFile(file, { timeoutMs, cwd = root } = {}) {
     }
     const timer = setTimeout(() => {
       timedOut = true
-      killGroup()
+      killLeftoverProcesses()
     }, timeoutMs)
     child.on("error", (error) => {
       clearTimeout(timer)
@@ -70,8 +59,7 @@ export function runFile(file, { timeoutMs, cwd = root } = {}) {
     })
     child.on("close", (code) => {
       clearTimeout(timer)
-      // A passing file can leave grandchildren behind (a browser); never leave them for the runner to inherit.
-      killGroup()
+      killLeftoverProcesses()
       resolve({
         file,
         ok: code === 0 && !timedOut,
@@ -83,7 +71,6 @@ export function runFile(file, { timeoutMs, cwd = root } = {}) {
   })
 }
 
-// Runs every file, at most `concurrency` at a time, and prints one line per file that failed or hung.
 export async function runFiles(
   files,
   {

@@ -15,7 +15,6 @@ function fixtures(files) {
 test("a file that passes its tests but never exits fails with its name instead of hanging", async () => {
   const dir = fixtures({
     "fine.test.mjs": `import { test } from "node:test"\ntest("fine", () => {})\n`,
-    // The tests finish and a live timer keeps the process open, as an orphaned browser does.
     "stuck.test.mjs": `import { test } from "node:test"\ntest("done", () => {})\nsetInterval(() => {}, 1000)\n`,
   })
   const lines = []

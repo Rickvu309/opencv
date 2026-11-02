@@ -74,8 +74,6 @@ export function PaperLetterStartPage({
       aria-label={draftingState ? "Drafting cover letter" : "New cover letter"}
       className="relative flex h-full min-h-0 flex-col"
     >
-      {/* Form — always mounted; hidden during drafting so PaperLetterStart's
-          async draft/refs survive the transition */}
       <div
         hidden={isDrafting}
         className={draftingState ? "hidden" : "flex min-h-0 flex-1 flex-col"}

@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// Uses a running local stack. Only the Coach turn response is a held SSE fixture.
-// PORT=<api port> WEB_ORIGIN=<web origin> VERIFY_API_LOG=<local api log>
-// node .claude/skills/verify-app-ui/scripts/verify-letter-drafting.mjs <evidence directory>
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
