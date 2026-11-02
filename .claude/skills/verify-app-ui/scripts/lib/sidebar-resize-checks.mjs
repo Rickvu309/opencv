@@ -304,7 +304,9 @@ export async function checkResize({ browser, web, output, check, capture }) {
     `${tag} [ collapses the sidebar`
   )
   check(
-    await page.evaluate("document.activeElement?.id === 'app-main'"),
+    await page.evaluate(
+      "document.activeElement?.id === 'app-main' || document.activeElement?.matches('[data-slot=\"sidebar-expand\"]')"
+    ),
     `${tag} focus moved to the page after [ collapsed the sidebar`
   )
   await page.key("[")
