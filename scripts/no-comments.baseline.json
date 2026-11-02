@@ -76,7 +76,7 @@
   "apps/api/src/paper/import-fixtures.test.ts": 2,
   "apps/api/src/paper/import-parse.ts": 9,
   "apps/api/src/paper/photo-sweep.ts": 6,
-  "apps/api/src/paper/store.ts": 4,
+  "apps/api/src/paper/store.ts": 3,
   "apps/api/src/registry/bind.ts": 1,
   "apps/api/src/registry/contract.type-test.ts": 1,
   "apps/api/src/registry/ownership.test.ts": 3,
