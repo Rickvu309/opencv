@@ -1,3 +1,5 @@
+import type { LetterDocument } from "@workspace/domain"
+
 import {
   printJobReducer,
   type PrintJob,
@@ -5,7 +7,7 @@ import {
 } from "./paper-print-job.reducer.ts"
 
 export type LetterState = {
-  markdown: string
+  letter: LetterDocument
   updatedAt: string
   hiddenGap: boolean
   conflict: boolean
@@ -13,10 +15,10 @@ export type LetterState = {
 }
 
 export type LetterAction =
-  | { type: "letter_typed"; markdown: string }
-  | { type: "letter_synced"; markdown: string }
-  | { type: "letter_reloaded"; markdown: string; updatedAt: string }
-  | { type: "keyword_added"; markdown: string }
+  | { type: "letter_typed"; letter: LetterDocument }
+  | { type: "letter_synced"; letter: LetterDocument }
+  | { type: "letter_reloaded"; letter: LetterDocument; updatedAt: string }
+  | { type: "keyword_added"; letter: LetterDocument }
   | { type: "gap_dismissed" }
   | { type: "saved"; at: string }
   | { type: "conflict_detected" }
@@ -29,13 +31,13 @@ export function letterReducer(
   switch (action.type) {
     case "letter_typed":
     case "letter_synced":
-      return { ...state, markdown: action.markdown }
+      return { ...state, letter: action.letter }
     case "keyword_added":
-      return { ...state, markdown: action.markdown, hiddenGap: true }
+      return { ...state, letter: action.letter, hiddenGap: true }
     case "letter_reloaded":
       return {
         ...state,
-        markdown: action.markdown,
+        letter: action.letter,
         updatedAt: action.updatedAt,
         conflict: false,
       }

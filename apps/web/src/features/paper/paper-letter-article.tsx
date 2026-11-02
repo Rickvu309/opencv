@@ -1,17 +1,19 @@
-import { memo, type RefObject } from "react"
+import { memo } from "react"
 
-import type { PaperView } from "@workspace/domain"
+import type { LetterDocument, PaperView } from "@workspace/domain"
+
+import { LetterSheet } from "./letter-sheet.tsx"
 
 type Props = {
   doc: Pick<PaperView, "name" | "status">
-  editorRef: RefObject<HTMLDivElement | null>
-  onInput: () => void
+  letter: LetterDocument
+  onChange: (letter: LetterDocument) => void
 }
 
 export const PaperLetterArticle = memo(function PaperLetterArticle({
   doc,
-  editorRef,
-  onInput,
+  letter,
+  onChange,
 }: Props) {
   return (
     <article
@@ -20,16 +22,11 @@ export const PaperLetterArticle = memo(function PaperLetterArticle({
       className="w-full max-w-[560px] shrink-0 rounded-[2px]"
     >
       <div
-        ref={editorRef}
-        contentEditable="plaintext-only"
-        role="textbox"
-        suppressContentEditableWarning
-        onInput={onInput}
         data-paper-section="letter"
-        className="paper-editor-canvas min-h-[792px] px-6 py-14 text-[11px] leading-[1.5] outline-none sm:px-[60px]"
-        aria-label="Letter text"
-        spellCheck
-      />
+        className="paper-editor-canvas flex justify-center overflow-x-auto"
+      >
+        <LetterSheet letter={letter} mode="edit" onChange={onChange} />
+      </div>
     </article>
   )
 })

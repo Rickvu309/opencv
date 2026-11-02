@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useReducer, useRef } from "react"
-import { keywordGap, type JobView, type PaperView } from "@workspace/domain"
+import {
+  compactLetterDocument,
+  keywordGap,
+  type JobView,
+  type LetterDocument,
+  type PaperView,
+} from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/sonner"
@@ -9,6 +15,7 @@ import { ChevronRight, MessageCircle, X } from "lucide-react"
 import "./design/letter-editor.pen.css"
 import { useQueryClient } from "@tanstack/react-query"
 
+import { letterOf } from "./letter-sheet-model.ts"
 import { getPaper, paperGetKey } from "./paper-api.ts"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
@@ -20,34 +27,11 @@ import { editorEditedLabel } from "./paper-templates.ts"
 
 export { PaperLetterStart } from "./paper-letter-start.tsx"
 
-function caretOffset(node: HTMLElement) {
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0) return null
-  if (!node.contains(selection.anchorNode)) return null
-  const range = selection.getRangeAt(0)
-  const before = range.cloneRange()
-  before.selectNodeContents(node)
-  before.setEnd(range.endContainer, range.endOffset)
-  return before.toString().length
-}
-
-function placeCaret(node: HTMLElement, offset: number) {
-  const text = node.firstChild
-  if (!text) return
-  const range = document.createRange()
-  const clamped = Math.max(0, Math.min(offset, text.textContent?.length ?? 0))
-  range.setStart(text, clamped)
-  range.collapse(true)
-  const selection = window.getSelection()
-  selection?.removeAllRanges()
-  selection?.addRange(range)
-}
-
-function markdownOf(document: unknown) {
-  if (!document || typeof document !== "object" || !("markdown" in document))
-    return ""
-  const markdown = (document as { markdown: unknown }).markdown
-  return typeof markdown === "string" ? markdown : ""
+function sameLetter(a: LetterDocument, b: LetterDocument) {
+  return (
+    JSON.stringify(compactLetterDocument(a)) ===
+    JSON.stringify(compactLetterDocument(b))
+  )
 }
 
 export function PaperLetterEditor({
@@ -62,64 +46,60 @@ export function PaperLetterEditor({
   onBack: () => void
 }) {
   const queryClient = useQueryClient()
-  const editorRef = useRef<HTMLDivElement>(null)
   const dirtyRef = useRef(false)
   const inputCountRef = useRef(0)
-  const [{ markdown, updatedAt, hiddenGap, conflict, printJob }, dispatch] =
+  const [{ letter, updatedAt, hiddenGap, conflict, printJob }, dispatch] =
     useReducer(letterReducer, {
-      markdown: markdownOf(doc.document),
+      letter: letterOf(doc.document),
       updatedAt: doc.updatedAt,
       hiddenGap: false,
       conflict: false,
       printJob: null,
     })
-  const { schedule, commitNow, adopt, versionRef } = usePaperAutosave<string>({
-    docId: doc.id,
-    initialVersion: doc.contentVersion,
-    toDocument: (next) => ({ markdown: next }),
-    readInputEpoch: () => inputCountRef.current,
-    onSaved: (saved, inputEpoch) => {
-      if (inputEpoch === inputCountRef.current) dirtyRef.current = false
-      dispatch({ type: "saved", at: new Date().toISOString() })
-      queryClient.setQueryData(paperGetKey(doc.id), saved)
-    },
-    onConflict: () => dispatch({ type: "conflict_detected" }),
-    onError: (error) => {
-      toast(
-        error instanceof Error ? error.message : "Could not save. Try again."
-      )
-    },
-  })
+  const { schedule, commitNow, adopt, versionRef } =
+    usePaperAutosave<LetterDocument>({
+      docId: doc.id,
+      initialVersion: doc.contentVersion,
+      toDocument: compactLetterDocument,
+      readInputEpoch: () => inputCountRef.current,
+      onSaved: (saved, inputEpoch) => {
+        if (inputEpoch === inputCountRef.current) dirtyRef.current = false
+        dispatch({ type: "saved", at: new Date().toISOString() })
+        queryClient.setQueryData(paperGetKey(doc.id), saved)
+      },
+      onConflict: () => dispatch({ type: "conflict_detected" }),
+      onError: (error) => {
+        toast(
+          error instanceof Error ? error.message : "Could not save. Try again."
+        )
+      },
+    })
   const scheduleRef = useRef(schedule)
   const adoptRef = useRef(adopt)
   useEffect(() => {
     scheduleRef.current = schedule
     adoptRef.current = adopt
   }, [schedule, adopt])
-  const caretRef = useRef<number | null>(null)
-  const onLetterInput = useCallback(() => {
-    const node = editorRef.current
-    const next = node?.textContent ?? ""
+  const onLetterChange = useCallback((next: LetterDocument) => {
     inputCountRef.current += 1
     dirtyRef.current = true
-    caretRef.current = node ? caretOffset(node) : null
-    dispatch({ type: "letter_typed", markdown: next })
+    dispatch({ type: "letter_typed", letter: next })
     scheduleRef.current(next)
   }, [])
   const gap = hiddenGap
     ? null
-    : keywordGap(markdown, job?.posting?.requirements ?? "")
+    : keywordGap(letter.markdown, job?.posting?.requirements ?? "")
 
   useEffect(() => {
     if (dirtyRef.current) return
-    const next = markdownOf(doc.document)
+    const next = letterOf(doc.document)
     // A reload can be newer than the query prop. Leave that text on screen.
     if (doc.contentVersion < versionRef.current) return
-    if (doc.contentVersion === versionRef.current && next === markdown) return
-    caretRef.current = null
+    if (doc.contentVersion === versionRef.current && sameLetter(next, letter))
+      return
     adoptRef.current(doc.contentVersion)
-    dispatch({ type: "letter_synced", markdown: next })
-  }, [doc, markdown, versionRef])
+    dispatch({ type: "letter_synced", letter: next })
+  }, [doc, letter, versionRef])
 
   useEffect(() => {
     if (!printJob) return
@@ -128,32 +108,15 @@ export function PaperLetterEditor({
     )
   }, [printJob])
 
-  useEffect(() => {
-    const node = editorRef.current
-    if (!node || node.textContent === markdown) return
-    const focused = document.activeElement === node
-    if (focused && dirtyRef.current && node.textContent !== "") return
-    const offset = focused ? (caretRef.current ?? markdown.length) : null
-    node.textContent = markdown
-    if (offset != null) placeCaret(node, offset)
-  }, [markdown])
-
   async function reloadLetter() {
     try {
       const next = await getPaper(doc.id)
-      const text = markdownOf(next.document)
       dirtyRef.current = false
-      caretRef.current = null
       adopt(next.contentVersion)
       queryClient.setQueryData(paperGetKey(doc.id), next)
-      const node = editorRef.current
-      if (node) {
-        node.textContent = text
-        if (document.activeElement === node) placeCaret(node, text.length)
-      }
       dispatch({
         type: "letter_reloaded",
-        markdown: text,
+        letter: letterOf(next.document),
         updatedAt: next.updatedAt,
       })
     } catch (error) {
@@ -167,15 +130,15 @@ export function PaperLetterEditor({
 
   function addKeyword() {
     if (!gap || conflict) return
-    const current = editorRef.current?.textContent ?? markdown
-    const next = current.includes(gap.keyword)
-      ? current
-      : `${current}\n${gap.keyword}`
+    const next: LetterDocument = {
+      ...letter,
+      markdown: letter.markdown.includes(gap.keyword)
+        ? letter.markdown
+        : `${letter.markdown}\n${gap.keyword}`,
+    }
     inputCountRef.current += 1
     dirtyRef.current = true
-    dispatch({ type: "keyword_added", markdown: next })
-    const node = editorRef.current
-    if (node) node.textContent = next
+    dispatch({ type: "keyword_added", letter: next })
     // Share the autosave queue so an in-flight edit advances the version first.
     commitNow(next)
   }
@@ -230,7 +193,7 @@ export function PaperLetterEditor({
         <PaperPrintSheet
           name={doc.name}
           kind="letter"
-          source={{ markdown }}
+          source={compactLetterDocument(letter)}
           templateId={null}
         />
       ) : null}
@@ -293,8 +256,8 @@ export function PaperLetterEditor({
         ) : null}
         <PaperLetterArticle
           doc={doc}
-          editorRef={editorRef}
-          onInput={onLetterInput}
+          letter={letter}
+          onChange={onLetterChange}
         />
       </div>
     </section>

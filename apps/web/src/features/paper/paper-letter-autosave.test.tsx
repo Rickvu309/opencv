@@ -104,26 +104,14 @@ function savedMarkdown(calls: Recorded[]) {
   return { save, markdown: input?.document?.markdown }
 }
 
-function caretOffset(node: HTMLElement) {
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0) return -1
-  if (!node.contains(selection.anchorNode)) return -1
-  const range = selection.getRangeAt(0)
-  const before = range.cloneRange()
-  before.selectNodeContents(node)
-  before.setEnd(range.endContainer, range.endOffset)
-  return before.toString().length
+function paragraph() {
+  return screen.getByRole("textbox", {
+    name: "Paragraph 1",
+  }) as HTMLTextAreaElement
 }
 
-function placeCaret(node: HTMLElement, offset: number) {
-  const text = node.firstChild
-  if (!text) throw new Error("letter has no text")
-  const range = document.createRange()
-  range.setStart(text, offset)
-  range.collapse(true)
-  const selection = window.getSelection()
-  selection?.removeAllRanges()
-  selection?.addRange(range)
+function type(box: HTMLElement, value: string) {
+  fireEvent.change(box, { target: { value } })
 }
 
 function renderLetter() {
@@ -161,14 +149,10 @@ describe("Letter edits survive autosave and leaving", () => {
     expect(screen.getByText(texts[17])).toBeVisible()
     expect(screen.getByRole("button", { name: texts[19] })).toBeEnabled()
     expect(screen.getByRole("button", { name: texts[20] })).toBeEnabled()
-    expect(
-      screen.getByRole("textbox", { name: "Letter text" })
-    ).toHaveAttribute("contenteditable", "plaintext-only")
+    expect(paragraph().tagName).toBe("TEXTAREA")
     fireEvent.click(screen.getByRole("button", { name: texts[20] }))
     expect(screen.queryByLabelText("Letter suggestion")).not.toBeInTheDocument()
-    expect(
-      screen.getByRole("textbox", { name: "Letter text" })
-    ).toHaveTextContent("I write clearly.")
+    expect(paragraph().value).toBe("I write clearly.")
   })
 
   it("queues a keyword behind typing already being saved without losing either edit", async () => {
@@ -193,14 +177,13 @@ describe("Letter edits survive autosave and leaving", () => {
       return Promise.resolve(ok(saved))
     })
     renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
-    box.textContent = "I write clearly. My newest sentence."
-    fireEvent.input(box)
+    const box = paragraph()
+    type(box, "I write clearly. My newest sentence.")
     await advance(700)
     expect(calls).toHaveLength(1)
 
     fireEvent.click(screen.getByRole("button", { name: "Add to letter" }))
-    expect(box.textContent).toBe("I write clearly. My newest sentence.\nMeta")
+    expect(box.value).toBe("I write clearly. My newest sentence.\nMeta")
     expect(calls).toHaveLength(1)
     expect(screen.queryByRole("button", { name: "Add to letter" })).toBeNull()
 
@@ -214,11 +197,9 @@ describe("Letter edits survive autosave and leaving", () => {
     expect(screen.queryByRole("button", { name: "Reload" })).toBeNull()
   })
 
-  it("restores the caret when a focused letter is filled", () => {
+  it("fills an untouched letter with a later copy", () => {
     installEditorFetch()
     const view = renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
-    box.focus()
     const written = "I write clearly. Ready."
     view.rerender(
       <PaperLetterEditor
@@ -228,12 +209,10 @@ describe("Letter edits survive autosave and leaving", () => {
           document: { markdown: written },
         }}
         job={job}
-
         onBack={() => undefined}
       />
     )
-    expect(box.textContent).toBe(written)
-    expect(caretOffset(box)).toBe(written.length)
+    expect(paragraph().value).toBe(written)
   })
 
   it("reloads the server letter after a conflict", async () => {
@@ -244,18 +223,16 @@ describe("Letter edits survive autosave and leaving", () => {
     }
     const calls = installConflictFetch(server)
     renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
+    const box = paragraph()
     box.focus()
-    box.textContent = "I write clearly. Z"
-    fireEvent.input(box)
+    type(box, "I write clearly. Z")
     await advance(700)
 
     fireEvent.click(screen.getByRole("button", { name: "Reload" }))
     await advance(0)
 
-    expect(box.textContent).toBe("Server copy from the api.")
-    box.textContent = "Server copy from the api. Q"
-    fireEvent.input(box)
+    expect(box.value).toBe("Server copy from the api.")
+    type(box, "Server copy from the api. Q")
     await advance(700)
 
     const saves = calls.filter((call) => call.url.includes("paper.replace"))
@@ -270,13 +247,12 @@ describe("Letter edits survive autosave and leaving", () => {
   it("adopts a later copy after the typed save settles", async () => {
     const calls = installEditorFetch()
     const view = renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
+    const box = paragraph()
     box.focus()
-    box.textContent = "I write clearly. typed"
-    fireEvent.input(box)
+    type(box, "I write clearly. typed")
     await advance(700)
 
-    expect(box.textContent).toBe("I write clearly. typed")
+    expect(box.value).toBe("I write clearly. typed")
     const coach = "Coach rewrote the letter."
     view.rerender(
       <PaperLetterEditor
@@ -290,49 +266,20 @@ describe("Letter edits survive autosave and leaving", () => {
         onBack={() => undefined}
       />
     )
-    expect(box.textContent).toBe(coach)
+    expect(box.value).toBe(coach)
 
-    box.textContent = "Coach rewrote the letter. Q"
-    fireEvent.input(box)
+    type(box, "Coach rewrote the letter. Q")
     await advance(700)
     const saves = calls.filter((call) => call.url.includes("paper.replace"))
     expect(contentVersionOf(saves[saves.length - 1]?.body)).toBe(4)
   })
 
-  it("puts the caret at the end of a server copy", async () => {
-    installEditorFetch()
-    const view = renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
-    box.focus()
-    placeCaret(box, 1)
-    fireEvent.input(box)
-    await advance(700)
-
-    const written = "Server copy from the api."
-    box.focus()
-    view.rerender(
-      <PaperLetterEditor
-        doc={{
-          ...letter,
-          contentVersion: 4,
-          document: { markdown: written },
-        }}
-        job={job}
-
-        onBack={() => undefined}
-      />
-    )
-    expect(box.textContent).toBe(written)
-    expect(caretOffset(box)).toBe(written.length)
-  })
-
   it("saves a word with keepalive when the page hides", async () => {
     const calls = installEditorFetch()
     renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
+    const box = paragraph()
     box.focus()
-    box.textContent = "harbor"
-    fireEvent.input(box)
+    type(box, "harbor")
 
     await advance(200)
     await act(async () => {
@@ -348,7 +295,7 @@ describe("Letter edits survive autosave and leaving", () => {
   it("shows a later copy of the letter when the person has not typed", () => {
     installEditorFetch()
     const view = renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
+    const box = paragraph()
     const next: PaperView = {
       ...letter,
       contentVersion: 4,
@@ -362,16 +309,15 @@ describe("Letter edits survive autosave and leaving", () => {
         onBack={() => undefined}
       />
     )
-    expect(box.textContent).toBe("I write clearly. harbor")
+    expect(box.value).toBe("I write clearly. harbor")
   })
 
   it("keeps typed text when a stale copy of the letter arrives", () => {
     installEditorFetch()
     const view = renderLetter()
-    const box = screen.getByRole("textbox", { name: "Letter text" })
+    const box = paragraph()
     box.focus()
-    box.textContent = "harbor"
-    fireEvent.input(box)
+    type(box, "harbor")
     const next: PaperView = {
       ...letter,
       contentVersion: 4,
@@ -385,6 +331,70 @@ describe("Letter edits survive autosave and leaving", () => {
         onBack={() => undefined}
       />
     )
-    expect(box.textContent).toBe("harbor")
+    expect(box.value).toBe("harbor")
+  })
+
+  it("keeps the parts the Coach wrote when the person types and the letter saves", async () => {
+    const calls = installEditorFetch()
+    const withParts = {
+      markdown: "I write clearly.",
+      sender: "Linh Nguyen",
+      date: "October 26, 2026",
+      closing: "Warm regards,",
+      signature: "Linh",
+    }
+    render(
+      <PaperLetterEditor
+        doc={{ ...letter, document: withParts }}
+        job={job}
+        onBack={() => undefined}
+      />
+    )
+    expect(
+      (
+        screen.getByRole("textbox", {
+          name: "Sender name",
+        }) as HTMLTextAreaElement
+      ).value
+    ).toBe("Linh Nguyen")
+    type(paragraph(), "I write clearly and fast.")
+    await advance(700)
+    const save = calls.find((call) => call.url.includes("paper.replace"))
+    expect(
+      (save?.body as { input?: { document?: unknown } }).input?.document
+    ).toEqual({ ...withParts, markdown: "I write clearly and fast." })
+  })
+
+  it("saves an edited part and leaves a blank part out", async () => {
+    const calls = installEditorFetch()
+    renderLetter()
+    type(screen.getByRole("textbox", { name: "Date" }), "May 5")
+    type(screen.getByRole("textbox", { name: "Sender name" }), "   ")
+    await advance(700)
+    const saves = calls.filter((call) => call.url.includes("paper.replace"))
+    expect(
+      (saves[saves.length - 1]?.body as { input?: { document?: unknown } })
+        .input?.document
+    ).toEqual({ markdown: "I write clearly.", date: "May 5" })
+  })
+
+  it("adds a missing keyword without dropping the parts", async () => {
+    const calls = installEditorFetch()
+    render(
+      <PaperLetterEditor
+        doc={{
+          ...letter,
+          document: { markdown: "I write clearly.", signature: "Linh" },
+        }}
+        job={job}
+        onBack={() => undefined}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Add to letter" }))
+    await advance(0)
+    const save = calls.find((call) => call.url.includes("paper.replace"))
+    expect(
+      (save?.body as { input?: { document?: unknown } }).input?.document
+    ).toEqual({ markdown: "I write clearly.\nMeta", signature: "Linh" })
   })
 })
