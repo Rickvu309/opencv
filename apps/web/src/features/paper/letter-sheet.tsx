@@ -1,7 +1,7 @@
 import {
   useLayoutEffect,
+  useReducer,
   useRef,
-  useState,
   type ComponentProps,
   type KeyboardEvent,
 } from "react"
@@ -146,6 +146,17 @@ function ReadSheet({ letter }: { letter: LetterDocument }) {
   )
 }
 
+type SheetView = { paragraphs: string[]; known: string }
+
+const viewOf = (markdown: string): SheetView => ({
+  paragraphs: paragraphsOf(markdown),
+  known: markdown,
+})
+
+/** The view replaces itself: an edit gives the paragraphs and their string,
+ * and a body changed from outside gives them read from the string. */
+const viewReducer = (_view: SheetView, next: SheetView) => next
+
 function EditSheet({
   letter,
   onChange,
@@ -164,16 +175,10 @@ function EditSheet({
   // string is derived from them, so a line break at a paragraph's end stays
   // where the writer typed it. They are read again from the string only when
   // it changed from outside (a reload, the keyword card).
-  const [view, setView] = useState(() => ({
-    paragraphs: paragraphsOf(letter.markdown),
-    known: letter.markdown,
-  }))
+  const [view, setView] = useReducer(viewReducer, letter.markdown, viewOf)
   let current = view
   if (letter.markdown !== view.known) {
-    current = {
-      paragraphs: paragraphsOf(letter.markdown),
-      known: letter.markdown,
-    }
+    current = viewOf(letter.markdown)
     setView(current)
   }
   const paragraphs = current.paragraphs

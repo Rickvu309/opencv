@@ -121,12 +121,6 @@
   margin-top: 18px;
 }
 
-@media (pointer: coarse), (max-width: 480px) {
-  [data-pen-surface="paper"][data-slot="letter-sheet"] > textarea {
-    min-height: 44px;
-  }
-}
-
 @media (max-width: 480px) {
   [data-pen-surface="paper"][data-slot="letter-sheet"] {
     min-height: 0;

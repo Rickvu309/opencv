@@ -266,6 +266,7 @@ export function PaperLetterEditor({
       ) : null}
       <div
         data-slot="letter-editor-desk"
+        tabIndex={-1}
         className="@container relative flex min-h-0 min-w-0 flex-1 flex-col items-center gap-4 overflow-auto px-4 pt-6 pb-6"
       >
         {gap ? (
@@ -323,12 +324,12 @@ export function PaperLetterEditor({
             <span
               aria-hidden="true"
               data-slot="letter-editor-connector"
-              className="absolute [inset-inline-start:calc(50%+140px)] hidden h-px w-[22px] [inset-block-start:390px] @min-[876px]:block @min-[1128px]:[inset-inline-start:calc(50%+282px)]"
+              className="absolute [inset-inline-start:calc(50%+140px)] z-[1] hidden h-px w-[22px] [inset-block-start:390px] @min-[876px]:block @min-[1128px]:[inset-inline-start:calc(50%+282px)]"
             />
             <span
               aria-hidden="true"
               data-slot="letter-editor-anchor"
-              className="absolute [inset-inline-start:calc(50%+135px)] hidden size-[7px] rounded-full border-[1.5px] [inset-block-start:387px] @min-[876px]:block @min-[1128px]:[inset-inline-start:calc(50%+277px)]"
+              className="absolute [inset-inline-start:calc(50%+135px)] z-[1] hidden size-[7px] rounded-full border-[1.5px] [inset-block-start:387px] @min-[876px]:block @min-[1128px]:[inset-inline-start:calc(50%+277px)]"
             />
           </>
         ) : null}

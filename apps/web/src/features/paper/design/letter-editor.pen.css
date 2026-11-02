@@ -72,3 +72,16 @@
 [data-pen-surface="paper"] [data-slot="letter-editor-link"] {
   color: #6b6b70;
 }
+
+@media (max-width: 767px), (pointer: coarse) {
+  [data-pen-surface="paper"] [data-slot="letter-editor-more"],
+  [data-pen-surface="paper"] [data-slot="letter-editor-link"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+[data-pen-surface="paper"] [data-slot="letter-editor-desk"]:focus-visible {
+  outline: 1px solid #8a8a8e;
+  outline-offset: -2px;
+}

@@ -125,6 +125,35 @@ const click = async (page, text) =>
 })()`),
     `click ${text}`
   )
+// A click on the desk background leaves the desk focused, so PageDown scrolls it.
+const deskKeys = async (page, width) => {
+  const spot = await page.evaluate(`(() => {
+    const desk=document.querySelector('[data-slot="letter-editor-desk"]');
+    desk.scrollTop=0;
+    const r=desk.getBoundingClientRect();
+    return {x:r.left+3,y:r.top+r.height/2,scrollable:desk.scrollHeight>desk.clientHeight+1};
+  })()`)
+  await page.mouse("mousePressed", spot.x, spot.y)
+  await page.mouse("mouseReleased", spot.x, spot.y)
+  const focus = await page.evaluate(`(() => {
+    const d=document.activeElement;
+    return {desk:d?.getAttribute('data-slot')==='letter-editor-desk',ring:getComputedStyle(d).outlineStyle};
+  })()`)
+  check(
+    focus.desk && focus.ring === "none",
+    `${width}: a click on the desk focuses the desk, with no ring for the mouse`
+  )
+  if (!spot.scrollable) return
+  await page.key("PageDown")
+  const moved = await page.waitFor(
+    `document.querySelector('[data-slot="letter-editor-desk"]').scrollTop>0`,
+    3000
+  )
+  check(moved, `${width}: PageDown scrolls the desk after a click on it`)
+  await page.evaluate(
+    `document.querySelector('[data-slot="letter-editor-desk"]').scrollTop=0`
+  )
+}
 const capture = async (page, width, label) => {
   await page.evaluate("document.fonts.ready")
   await page.evaluate(
@@ -170,10 +199,13 @@ const capture = async (page, width, label) => {
       cardGap:beside?c.left-s.right:null,
       connectorGap:beside&&k?k.left-s.right:null,connectorWidth:k?.width??null,
       anchorMid:beside&&a?a.left+a.width/2-s.right:null,
-      minField:Math.min(...fields.map(n=>rect(n).height)),
+      anchorTop:beside&&a?document.elementFromPoint(a.left+a.width*0.3,a.top+a.height/2)===anchor:null,
+      targets:['letter-editor-more','letter-editor-link'].map(slot=>{const r=rect(root.querySelector('[data-slot="'+slot+'"]'));return{slot,width:r.width,height:r.height}}),
+      closingGap:(()=>{const c=rect(root.querySelector('[data-slot="letter-closing"]')),g=rect(root.querySelector('[data-slot="letter-signature"]'));return g.top-c.bottom})(),
+      paragraphHeights:fields.filter(n=>n.dataset.slot==='letter-paragraph').map(n=>Math.round(rect(n).height*10)/10),
       header:{more:!!root.querySelector('[aria-label="More"]'),link:!!root.querySelector('[aria-label="Copy share link"]'),
         pdfButton:!![...root.querySelectorAll('header button')].find(n=>n.textContent.trim()==='Download PDF'),mail:!!root.querySelector('header .lucide-mail')},
-      coarse:matchMedia('(pointer: coarse), (max-width: 480px)').matches};
+      touch:matchMedia('(max-width: 767px), (pointer: coarse)').matches};
   })()`)
   check(
     screen.scrolled.scrollable === false || screen.scrolled.lastInside,
@@ -199,12 +231,31 @@ const capture = async (page, width, label) => {
       `${width} ${label}: card sits 24px right of the sheet with its connector and dot`
     )
   }
-  if (screen.coarse) {
+  if (screen.beside) {
     check(
-      screen.minField >= 43.5,
-      `${width} ${label}: sheet fields are 44px tall on touch`
+      screen.anchorTop === true,
+      `${width} ${label}: the anchor dot is above the sheet`
     )
   }
+  for (const target of screen.targets) {
+    const min = screen.touch ? 44 : 0
+    check(
+      target.width >= min - 0.5 && target.height >= min - 0.5,
+      `${width} ${label}: ${target.slot} is ${target.width}x${target.height}` +
+        (screen.touch ? ", at least 44px on touch" : "")
+    )
+    if (!screen.touch)
+      check(
+        target.width <= 32 && target.height <= 32,
+        `${width} ${label}: ${target.slot} keeps its pen size on desktop`
+      )
+  }
+  // The pen sets the signature 4px under the closing, at every width: the
+  // sheet fields never grow to a touch size.
+  check(
+    Math.abs(screen.closingGap - 4) <= 1,
+    `${width} ${label}: the signature sits 4px under the closing (${screen.closingGap})`
+  )
   if (width < 600) {
     check(
       metrics.edited.y >= metrics.nav.y + metrics.nav.height,
@@ -346,6 +397,7 @@ try {
       `${width}: linked job suggestion shown`
     )
     await capture(page, width, "suggestion")
+    await deskKeys(page, width)
     await click(page, "Skip")
     await state(
       page,
