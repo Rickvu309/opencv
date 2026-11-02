@@ -81,6 +81,8 @@ function mergeCv(current: CvPaper, sent: CvPaper): CvPaper {
   const byId = new Map(
     current.blocks.map((block) => [block.id as string, block])
   )
+  const hasLeadingBlocks =
+    current.blocks[0]?.type !== "section" && current.blocks.length > 0
   const groups = listGroups(current.blocks)
   const owner = groupIndexById(current.blocks, groups)
   const known = new Map(
@@ -96,11 +98,13 @@ function mergeCv(current: CvPaper, sent: CvPaper): CvPaper {
   while (index < sent.blocks.length) {
     const block = sent.blocks[index]!
     if (!isListBlock(block)) {
-      index += 1
       const dropped =
+        index === 0 &&
+        hasLeadingBlocks &&
         block.type === "section" &&
         !byId.has(block.id) &&
         LEADING_SECTION.test(block.id)
+      index += 1
       if (!dropped) blocks.push(mergeBlock(byId.get(block.id), block))
       continue
     }

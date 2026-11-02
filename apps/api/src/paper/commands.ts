@@ -4,6 +4,7 @@ import {
   isCvDocument,
   keywordGap,
   paperContract,
+  type PaperId,
 } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
@@ -26,6 +27,7 @@ import {
   readShared,
   renamePaper,
   replacePaper,
+  restorePaper,
   setPaperStatus,
   setPaperFavorite,
   setPaperTemplate,
@@ -39,6 +41,35 @@ const noActivity = () => null
 
 function storedAsBlocks<T>(document: T) {
   return isCvDocument(document) ? cvCodecToBlocks(document) : document
+}
+
+function restoring(
+  input: { docId: PaperId },
+  output: {
+    contentVersion: number
+    previousDocument: unknown
+    previousPaper?: unknown
+  }
+) {
+  if (output.previousPaper === undefined) {
+    return {
+      command: "paper.replace" as const,
+      input: {
+        docId: input.docId,
+        contentVersion: output.contentVersion,
+        document: storedAsBlocks(output.previousDocument),
+      },
+    }
+  }
+  return {
+    command: "paper.restore" as const,
+    input: {
+      docId: input.docId,
+      contentVersion: output.contentVersion,
+      document: storedAsBlocks(output.previousDocument),
+      paper: output.previousPaper,
+    },
+  }
 }
 
 function bytesOf(encoded: string) {
@@ -85,14 +116,7 @@ export function registerPaper(registry: Registry) {
         }
         return replacePaper(actor, { ...input, document })
       },
-      reversal: (input, output) => ({
-        command: "paper.replace",
-        input: {
-          docId: input.docId,
-          contentVersion: output.contentVersion,
-          document: storedAsBlocks(output.previousDocument),
-        },
-      }),
+      reversal: restoring,
       activity: (input, output, actor) =>
         actor.type === "coach"
           ? {
@@ -119,6 +143,11 @@ export function registerPaper(registry: Registry) {
         }
       },
       reversal: noReversal,
+      activity: noActivity,
+    },
+    "paper.restore": {
+      handler: (input, actor) => restorePaper(actor, input),
+      reversal: restoring,
       activity: noActivity,
     },
     "paper.rename": {
@@ -208,14 +237,7 @@ export function registerPaper(registry: Registry) {
     },
     "paper.attachPhoto": {
       handler: (input, actor) => attachPhoto(actor, input.docId, input.fileId),
-      reversal: (input, output) => ({
-        command: "paper.replace",
-        input: {
-          docId: input.docId,
-          contentVersion: output.contentVersion,
-          document: storedAsBlocks(output.previousDocument),
-        },
-      }),
+      reversal: restoring,
       activity: (_input, output) => ({
         subjectKind: "paper",
         subjectId: output.id,

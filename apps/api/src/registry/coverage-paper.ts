@@ -1,4 +1,10 @@
-import { blankBlockDocument, parseUserId, personActor } from "@workspace/domain"
+import {
+  blankBlockDocument,
+  legacyPaperOf,
+  parseUserId,
+  personActor,
+  type PaperDocument,
+} from "@workspace/domain"
 import { loadYDoc, materialize, writeDocument } from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
@@ -153,6 +159,44 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         expect(record(document, "header")).toMatchObject({
           name: "Synced name",
         })
+      },
+    },
+    {
+      name: "paper.restore",
+      arrange: async () => {
+        const paper = await run("paper.create", {
+          kind: "cv",
+          name: "Restore CV",
+        })
+        ctx.docId = idOf(paper.output)
+      },
+      act: async () => {
+        const row = (
+          await db.select().from(paperDocs).where(eq(paperDocs.id, ctx.docId))
+        )[0]!
+        const stored = row.crdtDocument as unknown as PaperDocument
+        if (stored.kind !== "cv") throw new Error("expected a CV")
+        const restored = {
+          ...stored,
+          header: { ...stored.header, name: "Restored name" },
+        }
+        return run("paper.restore", {
+          docId: ctx.docId,
+          contentVersion: row.contentVersion,
+          document: legacyPaperOf(restored, row.document),
+          paper: restored,
+        })
+      },
+      assert: async () => {
+        const document = record(await paperOf(ctx.docId), "document")
+        expect(record(document, "header")).toMatchObject({
+          name: "Restored name",
+        })
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        const document = record(await paperOf(ctx.docId), "document")
+        expect(record(document, "header")).toMatchObject({ name: "" })
       },
     },
     {

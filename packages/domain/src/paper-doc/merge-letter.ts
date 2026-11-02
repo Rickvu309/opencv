@@ -151,7 +151,13 @@ export function mergeLetter(
   )
   const { source } = withPairedEdits(matches, units.length, sentTexts.length)
 
-  const taken = new Set<string>(units.map((unit) => unit.id))
+  const taken = new Set<string>()
+  for (const block of current.blocks) {
+    taken.add(block.id)
+    if ("children" in block) {
+      for (const entry of flatItems(block.children)) taken.add(entry.item.id)
+    }
+  }
   const idFor = (index: number): string => {
     const from = source[index]!
     if (from >= 0) return units[from]!.id

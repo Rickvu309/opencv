@@ -328,4 +328,83 @@ describe("merging an old-editor save onto the version 3 paper", () => {
     assert.ok(!text.includes("Why me"))
     assert.ok(text.includes("Thanks"))
   })
+
+  it("never reuses an id a blank paragraph still holds in a letter", () => {
+    const current = parsed({
+      version: 3,
+      kind: "letter",
+      clashes: [],
+      blocks: [
+        { id: "l-1", type: "paragraph", content: [] },
+        { id: "l-2", type: "paragraph", content: [{ text: "Body" }] },
+      ],
+    })
+    const sent = fromStored("letter", { markdown: "New first\n\nBody" })
+    const merged = mergeLegacyEdit(current, sent)
+    assert.equal(paperDocumentSchema.safeParse(merged).success, true)
+    assert.deepEqual(
+      merged.blocks.map((block) => block.id).sort(),
+      [...new Set(merged.blocks.map((block) => block.id))].sort()
+    )
+  })
+
+  it("keeps ids unique when a paragraph moves past a blank one", () => {
+    const current = parsed({
+      version: 3,
+      kind: "letter",
+      clashes: [],
+      blocks: [
+        { id: "l-1", type: "paragraph", content: [] },
+        { id: "l-2", type: "paragraph", content: [{ text: "alpha" }] },
+        {
+          id: "l-3",
+          type: "heading",
+          level: 2,
+          content: [{ text: "alpha" }],
+        },
+        { id: "l-4", type: "paragraph", content: [{ text: "beta" }] },
+      ],
+    })
+    const sent = fromStored("letter", { markdown: "beta\n\nalpha\n\nalpha" })
+    const merged = mergeLegacyEdit(current, sent)
+    assert.equal(paperDocumentSchema.safeParse(merged).success, true)
+    assert.ok(paperPlainText(merged).startsWith("beta"))
+  })
+
+  it("keeps a leading section as a real section when it is not first", () => {
+    const current = parsed({
+      ...richCv,
+      blocks: [
+        { id: "p0", type: "paragraph", content: [{ text: "About me" }] },
+        { id: "s1", type: "section", kind: "experience", title: "Work" },
+      ],
+    }) as CvPaper
+    const sent = fromStored("cv", {
+      version: 2,
+      header: {
+        name: "Ada",
+        email: "ada@example.com",
+        phone: "1",
+        city: "Hanoi",
+        linkedin: "",
+      },
+      sections: [
+        { id: "s1", kind: "experience", blocks: [] },
+        {
+          id: "section-leading",
+          kind: "summary",
+          blocks: [{ id: "p0", type: "text", text: "About me" }],
+        },
+      ],
+    })
+    const merged = mergeLegacyEdit(current, sent) as CvPaper
+    assert.deepEqual(
+      merged.blocks.map((block) => [block.id, block.type]),
+      [
+        ["s1", "section"],
+        ["section-leading", "section"],
+        ["p0", "paragraph"],
+      ]
+    )
+  })
 })

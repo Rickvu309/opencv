@@ -194,18 +194,18 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
   return withContent(actor.userId, input.docId, async (content) => {
     const current = content.row
     const view = toPaper(current)
+    const previousPaper = content.document
+    const merged = mergeLegacyEdit(previousPaper, upgraded.document)
+    const unchanged = canonicalJson(merged) === canonicalJson(previousPaper)
+    const asIs = { ...view, previousDocument: view.document, previousPaper }
     if (
       current.contentVersion === input.contentVersion + 1 &&
-      canonicalJson(current.document) === canonicalJson(document)
+      (unchanged || canonicalJson(current.document) === canonicalJson(document))
     ) {
-      return { ...view, previousDocument: view.document }
+      return asIs
     }
     if (current.contentVersion !== input.contentVersion) {
-      throw new CommandError(
-        ERROR_CODES.CONFLICT,
-        "This document changed. Reload it and try again.",
-        { document: view }
-      )
+      throw conflict(view)
     }
     if (
       current.kind === "cv" &&
@@ -217,16 +217,52 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
         "This CV uses blocks. Send a version 2 document."
       )
     }
-    const merged = mergeLegacyEdit(content.document, upgraded.document)
-    if (canonicalJson(merged) === canonicalJson(content.document)) {
-      return { ...view, previousDocument: view.document }
-    }
+    if (unchanged) return asIs
     const written = await content.edit({
       origin: "person",
       target: merged,
       witness: document,
     })
-    return { ...toPaper(written), previousDocument: view.document }
+    return {
+      ...toPaper(written),
+      previousDocument: view.document,
+      previousPaper,
+    }
+  })
+}
+
+function conflict(view: PaperView) {
+  return new CommandError(
+    ERROR_CODES.CONFLICT,
+    "This document changed. Reload it and try again.",
+    { document: view }
+  )
+}
+
+export async function restorePaper(
+  actor: Actor,
+  input: {
+    docId: PaperId
+    contentVersion: number
+    document: unknown
+    paper: unknown
+  }
+) {
+  return withContent(actor.userId, input.docId, async (content) => {
+    const view = toPaper(content.row)
+    if (content.row.contentVersion !== input.contentVersion) {
+      throw conflict(view)
+    }
+    const written = await content.edit({
+      origin: "person",
+      target: input.paper as PaperDocument,
+      witness: input.document,
+    })
+    return {
+      ...toPaper(written),
+      previousDocument: view.document,
+      previousPaper: content.document,
+    }
   })
 }
 
@@ -424,7 +460,11 @@ export async function attachPhoto(
       origin: "server",
       target: (current) => withPhotoRef(current, paperPhotoRef(fileId)),
     })
-    return { ...toPaper(written), previousDocument: before.document }
+    return {
+      ...toPaper(written),
+      previousDocument: before.document,
+      previousPaper: content.document,
+    }
   })
 }
 

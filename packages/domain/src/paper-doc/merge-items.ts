@@ -53,7 +53,8 @@ export function mergeItems(
       : known
         ? (depthAfterDeletes.get(entry.id) ?? 0)
         : Math.max(previous, 0)
-    const depth = Math.max(0, Math.min(wanted, previous + 1, MAX_DEPTH))
+    const capped = Math.max(0, Math.min(wanted, previous + 1, MAX_DEPTH))
+    const depth = stack[0] && stack[0].type !== entry.type ? 0 : capped
     const parent = stack[depth - 1]
     if (depth === 0 || !parent) roots.push(node)
     else parent.children.push(node)
