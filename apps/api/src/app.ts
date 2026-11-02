@@ -13,6 +13,7 @@ import {
   createUsageRoutes,
 } from "./account/index.js"
 import { bindAuth, createAuth, type AuthDatabase } from "./auth.js"
+import { isBlockedAuthPath } from "./auth-routes.js"
 import { createChatRoutes } from "./chat/index.js"
 import { createCoachRoutes, interpretPosting } from "./coach/index.js"
 import {
@@ -153,6 +154,10 @@ export function createApp({
 
   bindAuth(auth)
 
+  app.use("/api/auth/*", async (c, next) => {
+    if (isBlockedAuthPath(c.req.path)) return notFoundEnvelopeResponse(c)
+    await next()
+  })
   app.all("/api/auth/*", (c) =>
     auth ? auth.handler(c.req.raw) : c.json(authUnavailableEnvelope(), 503)
   )
