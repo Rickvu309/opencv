@@ -41,19 +41,19 @@ function zone() {
 }
 
 function enterEdge() {
-  fireEvent.pointerEnter(frame(), mouse())
   fireEvent.pointerEnter(zone(), mouse())
 }
 
 function leaveFrame() {
   fireEvent.pointerLeave(zone(), mouse())
-  fireEvent.pointerLeave(frame(), mouse())
+  fireEvent.pointerLeave(aside(), mouse())
 }
 
 function openPeek() {
   enterEdge()
   advance(150)
   expect(aside()).toHaveAttribute("data-peek", "true")
+  fireEvent.pointerEnter(aside(), mouse())
 }
 
 describe("peek hover intent", () => {
@@ -65,6 +65,9 @@ describe("peek hover intent", () => {
     advance(1)
     expect(aside()).toHaveAttribute("data-peek", "true")
     expect(aside()).not.toHaveAttribute("inert")
+    fireEvent.pointerEnter(aside(), mouse())
+    advance(2000)
+    expect(aside()).toHaveAttribute("data-peek", "true")
   })
 
   it("does not open when the pointer sweeps past the edge", async () => {
@@ -79,7 +82,6 @@ describe("peek hover intent", () => {
 
   it("ignores touch and pen pointers", async () => {
     await collapsedShell()
-    fireEvent.pointerEnter(frame(), { pointerType: "touch" })
     fireEvent.pointerEnter(zone(), { pointerType: "touch" })
     advance(1000)
     expect(aside()).toHaveAttribute("data-peek", "false")
@@ -87,7 +89,10 @@ describe("peek hover intent", () => {
 
   it("does not open while the pointer is on the expand button beside the edge", async () => {
     await collapsedShell()
-    fireEvent.pointerEnter(frame(), mouse())
+    fireEvent.pointerEnter(
+      screen.getByRole("button", { name: "Expand sidebar" }),
+      mouse()
+    )
     advance(1000)
     expect(aside()).toHaveAttribute("data-peek", "false")
   })

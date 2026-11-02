@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from "react"
 
 import { cn } from "@workspace/ui/lib/utils"
 import { SidebarResizeHandle } from "@/features/app-shell/sidebar-resize-handle.tsx"
+import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
+import { expandToggleElement } from "@/features/app-shell/sidebar-focus.ts"
 import { SidebarToggle } from "@/features/app-shell/sidebar-toggle.tsx"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { COLLAPSED_GUTTER } from "@/features/app-shell/sidebar-width.ts"
@@ -25,12 +27,6 @@ export function SidebarFrame({ layout, children }: Props) {
       data-slot="sidebar-frame"
       data-state={collapsed ? "collapsed" : "open"}
       style={style}
-      onPointerEnter={(event) => {
-        if (event.pointerType === "mouse") layout.peekHold()
-      }}
-      onPointerLeave={(event) => {
-        if (event.pointerType === "mouse") layout.peekLeave()
-      }}
       className={cn(
         "group/frame relative z-30 shrink-0 transition-[width] duration-(--duration-panel) ease-(--ease-panel) data-[resizing=true]:not-data-[collapse-preview=true]:transition-none motion-reduce:transition-none",
         !collapsed && "w-(--sidebar-width)"
@@ -49,10 +45,13 @@ export function SidebarFrame({ layout, children }: Props) {
           />
         </div>
       ) : null}
-      <aside
+      <FocusSafeRegion
+        as="aside"
+        concealed={hidden}
+        focusFallback={expandToggleElement}
         aria-label="Sidebar"
-        inert={hidden}
         data-peek={peek}
+        {...layout.contentProps}
         className={cn(
           "absolute inset-y-0 left-0 flex w-(--sidebar-width) bg-sidebar transition-[translate,box-shadow] duration-(--duration-panel) ease-(--ease-panel) group-data-[collapse-preview=true]/frame:-translate-x-[calc(100%+0.5rem)] motion-reduce:transition-none",
           collapsed && "-translate-x-[calc(100%+0.5rem)]",
@@ -70,16 +69,13 @@ export function SidebarFrame({ layout, children }: Props) {
             onReset={layout.resetWidth}
           />
         )}
-      </aside>
+      </FocusSafeRegion>
       {collapsed ? (
         <div
           aria-hidden="true"
           data-slot="sidebar-peek-zone"
           className="absolute inset-y-0 left-0 w-2"
-          onPointerEnter={(event) => {
-            if (event.pointerType === "mouse") layout.peekEnter()
-          }}
-          onPointerLeave={layout.peekCancel}
+          {...layout.triggerProps}
         />
       ) : null}
     </div>

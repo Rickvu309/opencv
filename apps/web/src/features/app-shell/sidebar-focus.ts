@@ -25,6 +25,6 @@ export function focusSidebarToggle(direction: "expand" | "collapse") {
   document.querySelector<HTMLElement>(selector)?.focus()
 }
 
-export function focusMain() {
-  document.getElementById("app-main")?.focus()
+export function expandToggleElement() {
+  return document.querySelector<HTMLElement>(EXPAND_TOGGLE)
 }
