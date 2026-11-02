@@ -1,7 +1,13 @@
 import { useReducer, type ReactNode } from "react"
-import { Calendar, ChevronDown, ChevronRight } from "lucide-react"
+import { Calendar } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleIndicator,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -44,31 +50,37 @@ export function ListGroup({
   const name = stageLabel(stage)
   const [flipped, toggleFlipped] = useReducer((value: boolean) => !value, false)
   const open = (count > 0 && stage !== "closed") !== flipped
-  const Caret = open ? ChevronDown : ChevronRight
   return (
-    <section
+    <Collapsible
+      open={open}
+      onOpenChange={toggleFlipped}
+      render={<section />}
       data-slot="list-group"
       aria-label={name}
       className="flex flex-col gap-0.5"
     >
       <h2 className="flex">
-        <Button
-          type="button"
-          variant="ghost"
-          aria-expanded={open}
-          className="h-[34px] w-full justify-start gap-2 rounded-[6px] bg-secondary px-2.5 text-[13px] font-normal hover:bg-accent aria-expanded:bg-secondary aria-expanded:hover:bg-accent"
-          onClick={toggleFlipped}
+        <CollapsibleTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-[34px] w-full justify-start gap-2 rounded-[6px] bg-secondary px-2.5 text-[13px] font-normal hover:bg-accent aria-expanded:bg-secondary aria-expanded:hover:bg-accent"
+            />
+          }
         >
-          <Caret className="size-3 text-muted-foreground" aria-hidden />
+          <CollapsibleIndicator className="size-3 text-muted-foreground" />
           <span aria-hidden className="flex">
             <StageIcon stage={stage} />
           </span>
           <span>{name}</span>
           <span className={FAINT_TEXT.secondary}>{count}</span>
-        </Button>
+        </CollapsibleTrigger>
       </h2>
-      {open ? children : null}
-    </section>
+      <CollapsibleContent className="flex flex-col gap-0.5">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 
