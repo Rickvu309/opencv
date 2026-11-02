@@ -11,6 +11,8 @@ import {
 import { Button } from "@workspace/ui/components/button"
 
 import { CvDocument } from "./cv-print-document.tsx"
+import { letterOf } from "./letter-sheet-model.ts"
+import { LetterSheet } from "./letter-sheet.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
@@ -77,12 +79,6 @@ export function PaperSharePage() {
   }
   const doc = query.data
   const cv = doc.kind === "cv" ? sharedCv(doc.document, doc.templateId) : null
-  const markdown =
-    doc.document &&
-    typeof doc.document === "object" &&
-    "markdown" in doc.document
-      ? String((doc.document as { markdown: unknown }).markdown ?? "")
-      : ""
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 sm:p-8">
@@ -113,11 +109,9 @@ export function PaperSharePage() {
           <CvPhotoFrame value={{ shareToken: token }}>
             <CvDocument data={cv} onChange={() => undefined} />
           </CvPhotoFrame>
-        ) : (
-          <article className="rounded-lg border border-border bg-card p-6 whitespace-pre-wrap">
-            {markdown}
-          </article>
-        )}
+        ) : doc.kind === "letter" ? (
+          <LetterSheet letter={letterOf(doc.document)} mode="read" />
+        ) : null}
       </div>
     </main>
   )

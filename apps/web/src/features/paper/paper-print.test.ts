@@ -141,6 +141,40 @@ describe("print paper", () => {
     expect(dot).toHaveAttribute("hidden")
   })
 
+  it("prints a letter through the shared sheet, parts and paragraphs only", () => {
+    render(
+      createElement(PaperPrintSheet, {
+        name: "Letter for Ada",
+        kind: "letter",
+        source: {
+          markdown: "One.\n\nTwo.",
+          sender: "Ada",
+          closing: "Regards,",
+        },
+        templateId: null,
+      })
+    )
+    const sheet = document.querySelector(
+      "[data-paper-print][data-paper-letter] [data-slot='letter-sheet']"
+    )
+    expect(sheet).not.toBeNull()
+    expect(
+      [...(sheet?.children ?? [])].map((node) => node.textContent)
+    ).toEqual(["Ada", "One.", "Two.", "Regards,"])
+    expect(sheet?.querySelector("textarea, [placeholder]")).toBeNull()
+    expect(document.querySelector("[data-paper-letter] h1")).toBeNull()
+  })
+
+  it("scales the letter sheet by one ratio from 560px to A4 width", () => {
+    const css = readFileSync(
+      join(process.cwd(), "src/features/paper/paper-print.css"),
+      "utf8"
+    )
+    const zoom = /\[data-slot="letter-sheet"\] \{\s*zoom: ([\d.]+);/.exec(css)
+    expect(zoom).not.toBeNull()
+    expect(560 * Number(zoom?.[1])).toBeCloseTo((210 / 25.4) * 96, 0)
+  })
+
   it("keeps an entry head with its first bullets", () => {
     const css = readFileSync(
       join(process.cwd(), "src/features/paper/paper-print.css"),

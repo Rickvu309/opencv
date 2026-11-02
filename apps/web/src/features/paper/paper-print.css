@@ -219,10 +219,17 @@
     display: none;
   }
 
+  /* The letter sheet is 560px wide in its design. Zoom scales the whole sheet
+     by one ratio, 210mm over 560px, so type and gaps stay proportional. */
   body[data-print="paper"] [data-paper-letter] {
     box-sizing: border-box;
     width: 210mm;
-    min-height: var(--cv-page-height);
-    padding: var(--cv-padding-y) var(--cv-padding-x);
+  }
+
+  body[data-print="paper"]
+    [data-paper-letter]
+    [data-pen-surface="paper"][data-slot="letter-sheet"] {
+    zoom: 1.4173;
+    min-height: 0;
   }
 }
