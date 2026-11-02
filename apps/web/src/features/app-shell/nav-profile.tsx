@@ -61,10 +61,10 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
             </AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-1 flex-col text-left">
-            <span data-slot="account-name" className="truncate">
+            <span data-slot="account-name" title={name} className="truncate">
               {name}
             </span>
-            <span data-slot="account-email" className="truncate">
+            <span data-slot="account-email" title={email} className="truncate">
               {email}
             </span>
           </span>
@@ -73,27 +73,39 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
             className="size-4 shrink-0 text-muted-foreground"
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" sideOffset={6}>
+        <DropdownMenuContent
+          side="top"
+          align="start"
+          sideOffset={6}
+          alignOffset={-4}
+        >
           <DropdownMenuGroup>
-            <DropdownMenuLabel className="flex min-w-0 flex-col gap-0.5 px-2 py-1.5">
-              <span className="truncate text-sm font-medium text-foreground">
-                {name}
-              </span>
-              <span className="truncate text-xs font-normal">{email}</span>
+            <DropdownMenuLabel
+              data-slot="account-menu-email"
+              title={email}
+              className="truncate px-2 pt-1.5 pb-1 text-[11px] font-normal"
+            >
+              {email}
             </DropdownMenuLabel>
+            <DropdownMenuItem
+              className="h-8 gap-2 ps-2 text-[13px]"
+              render={<Link to={SURFACE_PATHS.settings} onClick={onNavigate} />}
+            >
+              <Settings aria-hidden="true" />
+              {shellCopy.settings}
+            </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            render={<Link to={SURFACE_PATHS.settings} onClick={onNavigate} />}
-          >
-            <Settings aria-hidden="true" />
-            {shellCopy.settings}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={signOut}>
-            <LogOut aria-hidden="true" />
-            {shellCopy.signOut}
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              variant="destructive"
+              className="h-8 gap-2 ps-2 text-[13px] data-[variant=destructive]:text-foreground data-[variant=destructive]:*:[svg]:text-muted-foreground data-[variant=destructive]:focus:*:[svg]:text-destructive"
+              onClick={signOut}
+            >
+              <LogOut aria-hidden="true" />
+              {shellCopy.signOut}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

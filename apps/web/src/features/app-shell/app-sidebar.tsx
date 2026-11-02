@@ -152,7 +152,7 @@ export function AppSidebar({
             label={toggle.label}
             direction={toggle.direction}
             onClick={toggle.onClick}
-            className="ms-2 shrink-0"
+            className="ms-2 shrink-0 opacity-0 transition-opacity duration-(--duration-micro) ease-(--ease-micro) group-focus-within/frame:opacity-100 group-hover/frame:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
           />
         ) : null}
         <div className="ml-auto flex gap-1 md:gap-0.5">

@@ -1,28 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
-import { renderApp } from "@/test/render-app.tsx"
 import { stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
+import { renderApp } from "@/test/render-app.tsx"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { resetShellApiMock } from "@/test/shell-api-mock.ts"
-
-const frames: FrameRequestCallback[] = []
-
-function flushFrames() {
-  frames.splice(0).forEach((run) => run(0))
-}
+import {
+  aside,
+  drag,
+  flushFrames,
+  frame,
+  frameCount,
+  renderShell as renderSidebarShell,
+  stubPointerApis,
+} from "@/test/sidebar-fixtures.ts"
 
 beforeEach(() => {
-  frames.length = 0
-  vi.stubGlobal("requestAnimationFrame", (run: FrameRequestCallback) => {
-    frames.push(run)
-    return frames.length
-  })
-  vi.stubGlobal("cancelAnimationFrame", () => {})
-  Element.prototype.setPointerCapture = vi.fn()
-  Element.prototype.releasePointerCapture = vi.fn()
-  Element.prototype.hasPointerCapture = vi.fn(() => true)
+  stubPointerApis()
 })
 
 afterEach(() => {
@@ -33,24 +28,16 @@ afterEach(() => {
 })
 
 async function renderShell() {
-  stubDesktopViewport(true)
-  renderApp(SURFACE_PATHS.pitch)
-  return screen.findByRole("separator", { name: "Resize sidebar" })
-}
-
-function frame() {
-  return document.querySelector<HTMLElement>('[data-slot="sidebar-frame"]')!
+  const { handle } = await renderSidebarShell()
+  return handle
 }
 
 function sidebarWidth() {
   return frame().style.getPropertyValue("--sidebar-width")
 }
 
-function drag(handle: HTMLElement, from: number, to: number) {
-  fireEvent.pointerDown(handle, { clientX: from, button: 0, pointerId: 1 })
-  fireEvent.pointerMove(handle, { clientX: to, pointerId: 1 })
-  flushFrames()
-  fireEvent.pointerUp(handle, { clientX: to, pointerId: 1 })
+function liveWidth() {
+  return aside().style.width
 }
 
 describe("resize handle", () => {
@@ -89,17 +76,21 @@ describe("resize handle", () => {
     fireEvent.pointerDown(handle, { clientX: 244, button: 0, pointerId: 1 })
     expect(frame()).toHaveAttribute("data-resizing", "true")
     expect(document.body.style.userSelect).toBe("none")
-    const queued = frames.length
+    const queued = frameCount()
     fireEvent.pointerMove(handle, { clientX: 260, pointerId: 1 })
     fireEvent.pointerMove(handle, { clientX: 270, pointerId: 1 })
     fireEvent.pointerMove(handle, { clientX: 280, pointerId: 1 })
-    expect(frames).toHaveLength(queued + 1)
-    expect(sidebarWidth()).toBe("244px")
+    expect(frameCount()).toBe(queued + 1)
+    expect(liveWidth()).toBe("")
     flushFrames()
-    expect(sidebarWidth()).toBe("280px")
+    expect(liveWidth()).toBe("280px")
+    expect(frame().style.width).toBe("280px")
+    expect(sidebarWidth()).toBe("244px")
     expect(localStorage.getItem("opencv.sidebar.width")).toBeNull()
     fireEvent.pointerUp(handle, { clientX: 280, pointerId: 1 })
     expect(localStorage.getItem("opencv.sidebar.width")).toBe("280")
+    expect(liveWidth()).toBe("")
+    expect(sidebarWidth()).toBe("280px")
     expect(frame()).not.toHaveAttribute("data-resizing")
     expect(document.body.style.userSelect).toBe("")
   })
@@ -168,28 +159,6 @@ describe("collapse and peek", () => {
     expect(frame()).toHaveAttribute("data-state", "collapsed")
   })
 
-  it("peeks from the left edge, hides on leave and pins from the toggle", async () => {
-    const handle = await renderShell()
-    drag(handle, 244, 100)
-    const zone = document.querySelector('[data-slot="sidebar-peek-zone"]')!
-    const side = screen.getByRole("complementary", { hidden: true })
-    expect(side).toHaveAttribute("inert")
-    fireEvent.pointerEnter(zone, { pointerType: "mouse" })
-    expect(side).not.toHaveAttribute("inert")
-    expect(side).toHaveAttribute("data-peek", "true")
-    expect(frame()).toHaveAttribute("data-state", "collapsed")
-    fireEvent.pointerLeave(frame(), { pointerType: "mouse" })
-    expect(side).toHaveAttribute("inert")
-    expect(side).toHaveAttribute("data-peek", "false")
-    fireEvent.pointerEnter(
-      document.querySelector('[data-slot="sidebar-peek-zone"]')!,
-      { pointerType: "mouse" }
-    )
-    await userEvent.click(screen.getByRole("button", { name: "Pin sidebar" }))
-    expect(frame()).toHaveAttribute("data-state", "open")
-    expect(localStorage.getItem("opencv.sidebar.collapsed")).toBe("0")
-  })
-
   it("offers a visible collapse button and an expand button when hidden", async () => {
     await renderShell()
     await userEvent.click(
@@ -200,5 +169,154 @@ describe("collapse and peek", () => {
       screen.getByRole("button", { name: "Expand sidebar" })
     )
     expect(frame()).toHaveAttribute("data-state", "open")
+  })
+
+  it("puts the expand button in the page header and no longer in the dock", async () => {
+    const handle = await renderShell()
+    drag(handle, 244, 100)
+    const expand = screen.getByRole("button", { name: "Expand sidebar" })
+    expect(expand.closest('[data-slot="sidebar-expand"]')).not.toBeNull()
+    expect(expand.closest('[data-slot="app-dock"]')).toBeNull()
+  })
+})
+
+describe("over-drag preview", () => {
+  it("shows the sidebar sliding away below the threshold and collapses only on release", async () => {
+    const handle = await renderShell()
+    fireEvent.pointerDown(handle, { clientX: 244, button: 0, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 100, pointerId: 1 })
+    flushFrames()
+    expect(frame()).toHaveAttribute("data-collapse-preview", "true")
+    expect(frame()).toHaveAttribute("data-state", "open")
+    expect(frame().style.width).toBe("36px")
+    expect(localStorage.getItem("opencv.sidebar.collapsed")).toBeNull()
+    fireEvent.pointerUp(handle, { clientX: 100, pointerId: 1 })
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(frame()).not.toHaveAttribute("data-collapse-preview")
+    expect(localStorage.getItem("opencv.sidebar.collapsed")).toBe("1")
+  })
+
+  it("brings the sidebar back when the drag returns above the threshold", async () => {
+    const handle = await renderShell()
+    fireEvent.pointerDown(handle, { clientX: 244, button: 0, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 100, pointerId: 1 })
+    flushFrames()
+    fireEvent.pointerMove(handle, { clientX: 290, pointerId: 1 })
+    flushFrames()
+    expect(frame()).not.toHaveAttribute("data-collapse-preview")
+    expect(frame().style.width).toBe("290px")
+    fireEvent.pointerUp(handle, { clientX: 290, pointerId: 1 })
+    expect(frame()).toHaveAttribute("data-state", "open")
+    expect(sidebarWidth()).toBe("290px")
+  })
+})
+
+describe("a drag that does not end with a pointer up", () => {
+  async function startDrag() {
+    const handle = await renderShell()
+    fireEvent.pointerDown(handle, { clientX: 244, button: 0, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 100, pointerId: 1 })
+    flushFrames()
+    return handle
+  }
+
+  function expectUntouched(handle: HTMLElement) {
+    expect(frame()).not.toHaveAttribute("data-resizing")
+    expect(frame()).not.toHaveAttribute("data-collapse-preview")
+    expect(frame()).toHaveAttribute("data-state", "open")
+    expect(frame().style.width).toBe("")
+    expect(aside().style.width).toBe("")
+    expect(sidebarWidth()).toBe("244px")
+    expect(handle).toHaveAttribute("aria-valuenow", "244")
+    expect(document.body.style.userSelect).toBe("")
+    expect(document.body.style.cursor).toBe("")
+    expect(localStorage.getItem("opencv.sidebar.width")).toBeNull()
+    expect(localStorage.getItem("opencv.sidebar.collapsed")).toBeNull()
+  }
+
+  it("ends on pointercancel and keeps the start width", async () => {
+    const handle = await startDrag()
+    fireEvent.pointerCancel(handle, { pointerId: 1 })
+    expectUntouched(handle)
+  })
+
+  it("ends when the browser takes the pointer capture away", async () => {
+    const handle = await startDrag()
+    fireEvent.lostPointerCapture(handle, { pointerId: 1 })
+    expectUntouched(handle)
+  })
+
+  it("ends when the window loses focus", async () => {
+    const handle = await startDrag()
+    act(() => {
+      window.dispatchEvent(new Event("blur"))
+    })
+    expectUntouched(handle)
+  })
+
+  it("does not move the sidebar from a stray pointer move afterwards", async () => {
+    const handle = await startDrag()
+    fireEvent.pointerCancel(handle, { pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 300, pointerId: 1 })
+    flushFrames()
+    expectUntouched(handle)
+  })
+})
+
+describe("focus after collapse and expand", () => {
+  it("moves to the expand button after the collapse button is pressed", async () => {
+    await renderShell()
+    await userEvent.click(
+      screen.getByRole("button", { name: "Collapse sidebar" })
+    )
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+  })
+
+  it("moves to the collapse button after the expand button is pressed", async () => {
+    await renderShell()
+    await userEvent.click(
+      screen.getByRole("button", { name: "Collapse sidebar" })
+    )
+    await userEvent.click(
+      screen.getByRole("button", { name: "Expand sidebar" })
+    )
+    expect(
+      screen.getByRole("button", { name: "Collapse sidebar" })
+    ).toHaveFocus()
+  })
+
+  it("moves to the expand button when Enter on the handle collapses", async () => {
+    const handle = await renderShell()
+    handle.focus()
+    await userEvent.keyboard("{Enter}")
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+  })
+
+  it("moves to the expand button when [ collapses from a sidebar link", async () => {
+    await renderShell()
+    screen.getByRole("link", { name: /^Coach/ }).focus()
+    await userEvent.keyboard("[[")
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+    await userEvent.keyboard("[[")
+    expect(
+      screen.getByRole("button", { name: "Collapse sidebar" })
+    ).toHaveFocus()
+  })
+
+  it("moves to the expand button when a drag collapses the sidebar", async () => {
+    const handle = await renderShell()
+    drag(handle, 244, 100)
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+  })
+
+  it("leaves focus alone when it is in the page", async () => {
+    await renderShell()
+    const main = document.getElementById("app-main")!
+    const button = document.createElement("button")
+    main.append(button)
+    button.focus()
+    await userEvent.keyboard("[[")
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(button).toHaveFocus()
   })
 })

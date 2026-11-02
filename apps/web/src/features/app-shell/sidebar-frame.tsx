@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from "react"
 
 import { cn } from "@workspace/ui/lib/utils"
 import { SidebarResizeHandle } from "@/features/app-shell/sidebar-resize-handle.tsx"
+import { SidebarToggle } from "@/features/app-shell/sidebar-toggle.tsx"
+import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { COLLAPSED_GUTTER } from "@/features/app-shell/sidebar-width.ts"
 import type { SidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
 
@@ -23,22 +25,39 @@ export function SidebarFrame({ layout, children }: Props) {
       data-slot="sidebar-frame"
       data-state={collapsed ? "collapsed" : "open"}
       style={style}
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") layout.peekHold()
+      }}
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse") layout.peekLeave()
       }}
       className={cn(
-        "group/frame relative z-30 shrink-0 transition-[width] duration-(--duration-panel) ease-(--ease-panel) data-[resizing=true]:transition-none motion-reduce:transition-none",
+        "group/frame relative z-30 shrink-0 transition-[width] duration-(--duration-panel) ease-(--ease-panel) data-[resizing=true]:not-data-[collapse-preview=true]:transition-none motion-reduce:transition-none",
         !collapsed && "w-(--sidebar-width)"
       )}
     >
+      {collapsed ? (
+        <div
+          data-slot="sidebar-expand"
+          data-pen-surface="app-shell"
+          className="absolute top-3.5 left-1"
+        >
+          <SidebarToggle
+            label={shellCopy.expandSidebar}
+            direction="open"
+            onClick={layout.pin}
+          />
+        </div>
+      ) : null}
       <aside
         aria-label="Sidebar"
         inert={hidden}
         data-peek={peek}
         className={cn(
-          "absolute inset-y-0 left-0 flex w-(--sidebar-width) bg-sidebar transition-transform duration-(--duration-panel) ease-(--ease-panel) group-data-[resizing=true]/frame:transition-none motion-reduce:transition-none",
-          collapsed && "-translate-x-full",
-          peek && "translate-x-0 border-e border-sidebar-border shadow-lg"
+          "absolute inset-y-0 left-0 flex w-(--sidebar-width) bg-sidebar transition-[translate,box-shadow] duration-(--duration-panel) ease-(--ease-panel) group-data-[collapse-preview=true]/frame:-translate-x-[calc(100%+0.5rem)] motion-reduce:transition-none",
+          collapsed && "-translate-x-[calc(100%+0.5rem)]",
+          peek &&
+            "inset-y-2 left-2 translate-x-0 overflow-hidden rounded-lg shadow-xl ring-1 ring-foreground/10"
         )}
       >
         {children}
@@ -52,7 +71,7 @@ export function SidebarFrame({ layout, children }: Props) {
           />
         )}
       </aside>
-      {hidden ? (
+      {collapsed ? (
         <div
           aria-hidden="true"
           data-slot="sidebar-peek-zone"
@@ -60,6 +79,7 @@ export function SidebarFrame({ layout, children }: Props) {
           onPointerEnter={(event) => {
             if (event.pointerType === "mouse") layout.peekEnter()
           }}
+          onPointerLeave={layout.peekCancel}
         />
       ) : null}
     </div>

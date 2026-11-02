@@ -20,7 +20,7 @@ export function SidebarToggle({ label, direction, onClick, className }: Props) {
   const Icon = direction === "close" ? PanelLeftClose : PanelLeftOpen
 
   return (
-    <Tooltip>
+    <Tooltip disableHoverablePopup>
       <TooltipTrigger
         render={
           <Button
@@ -28,6 +28,7 @@ export function SidebarToggle({ label, direction, onClick, className }: Props) {
             variant="ghost"
             size="icon-sm"
             data-slot="sidebar-toggle"
+            data-direction={direction}
             aria-label={label}
             aria-keyshortcuts="["
             className={cn(

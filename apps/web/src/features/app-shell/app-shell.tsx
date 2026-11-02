@@ -8,7 +8,6 @@ import { History, Menu, MessageCircle } from "lucide-react"
 
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
 import { SidebarFrame } from "@/features/app-shell/sidebar-frame.tsx"
-import { SidebarToggle } from "@/features/app-shell/sidebar-toggle.tsx"
 import { useSidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
@@ -230,14 +229,17 @@ export function AppShell({ onSearch }: AppShellProps) {
       toggle={isDesktop ? desktopToggle : undefined}
       onMenuOpenChange={isDesktop ? layout.menuOpenChange : undefined}
       onNavigate={() => {
-        if (!isDesktop) closeDrawer()
+        if (isDesktop) layout.peekClose()
+        else closeDrawer()
       }}
       onSearch={() => {
-        if (!isDesktop) closeDrawer()
+        if (isDesktop) layout.peekClose()
+        else closeDrawer()
         onSearch()
       }}
       onNewChat={() => {
-        if (!isDesktop) closeDrawer()
+        if (isDesktop) layout.peekClose()
+        else closeDrawer()
         void onNewChat()
       }}
     />
@@ -287,7 +289,6 @@ export function AppShell({ onSearch }: AppShellProps) {
           </div>
           <ShellDock
             dockRef={dockRef}
-            expand={layout.collapsed && isDesktop ? () => layout.pin() : null}
             titles={(chats.data ?? []).map((chat) => ({
               id: chat.id,
               title: chatDisplayTitle(chat.title),
@@ -335,14 +336,12 @@ export function AppShell({ onSearch }: AppShellProps) {
 
 function ShellDock({
   dockRef,
-  expand,
   titles,
   onOpenChat,
   onCoach,
   onHistory,
 }: {
   dockRef: { current: HTMLDivElement | null }
-  expand: (() => void) | null
   titles: { id: string; title: string }[]
   onOpenChat: (chat: { title: string; chatId: string }) => void
   onCoach: () => void
@@ -355,14 +354,6 @@ function ShellDock({
       data-pen-surface="app-shell"
       className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
-      {expand ? (
-        <SidebarToggle
-          label={shellCopy.expandSidebar}
-          direction="open"
-          onClick={expand}
-          className="ms-1 me-auto"
-        />
-      ) : null}
       <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
         {titles.map((chat) => (
           <Button

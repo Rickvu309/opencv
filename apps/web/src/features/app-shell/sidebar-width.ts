@@ -5,7 +5,10 @@ export const MIN_SIDEBAR_WIDTH = 200
 export const MAX_SIDEBAR_WIDTH = 360
 export const COLLAPSE_BELOW_WIDTH = 140
 export const SIDEBAR_KEY_STEP = 16
-export const COLLAPSED_GUTTER = 8
+export const COLLAPSED_GUTTER = 36
+export const PEEK_EDGE_ZONE = 8
+export const PEEK_OPEN_DELAY_MS = 150
+export const PEEK_CLOSE_GRACE_MS = 300
 
 const WIDTH_KEY = "opencv.sidebar.width"
 const COLLAPSED_KEY = "opencv.sidebar.collapsed"
@@ -44,7 +47,7 @@ export function isTypingTarget(target: EventTarget | null) {
   return (
     target instanceof Element &&
     target.closest(
-      "input, textarea, select, [contenteditable=''], [contenteditable='true'], [role='textbox']"
+      "input, textarea, select, [contenteditable=''], [contenteditable='true'], [contenteditable='plaintext-only'], [role='textbox']"
     ) !== null
   )
 }

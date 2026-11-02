@@ -1,50 +1,25 @@
 import { join } from "node:path"
 
-const FRAME = '[data-slot="sidebar-frame"]'
-const SIDEBAR = 'aside[aria-label="Sidebar"]'
-const HANDLE = '[data-slot="sidebar-resize-handle"]'
-const WIDTH_KEY = "opencv.sidebar.width"
-const COLLAPSED_KEY = "opencv.sidebar.collapsed"
-const Y = 450
-
-const rectOf = (page, selector) =>
-  page.evaluate(
-    `(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right, b: r.bottom }; })()`
-  )
-
-const stored = (page, key) =>
-  page.evaluate(`localStorage.getItem(${JSON.stringify(key)})`)
-
-const mainLeft = (page) =>
-  page.evaluate(
-    `document.querySelector('#app-main').parentElement.getBoundingClientRect().left`
-  )
-
-async function dragTo(page, from, to) {
-  await page.hover(from, Y)
-  await page.mouse("mousePressed", from, Y)
-  const steps = 6
-  for (let i = 1; i <= steps; i += 1) {
-    await page.mouse("mouseMoved", from + ((to - from) * i) / steps, Y)
-  }
-  await page.sleep(80)
-}
-
-async function release(page, x) {
-  await page.mouse("mouseReleased", x, Y)
-  await page.sleep(120)
-}
-
-async function waitShell(page, web) {
-  await page.goto(`${web}/paper`)
-  await page.waitFor(
-    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)})`,
-    20000
-  )
-  await page.evaluate(
-    "new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))"
-  )
-}
+import {
+  clickCenter,
+  focusedLabel,
+  FRAME,
+  GUTTER,
+  HANDLE,
+  mainLeft,
+  peekClosed,
+  rectOf,
+  release,
+  SIDEBAR,
+  stored,
+  waitShell,
+  dragTo,
+  COLLAPSED_KEY,
+  WIDTH_KEY,
+  Y,
+} from "./sidebar-resize-shared.mjs"
+import { cancelledDrag, overDragPreview } from "./sidebar-drag-checks.mjs"
+import { accountMenu } from "./sidebar-account-checks.mjs"
 
 export async function checkResize({ browser, web, output, check, capture }) {
   const tag = "1440 resize"
@@ -89,23 +64,27 @@ export async function checkResize({ browser, web, output, check, capture }) {
   await page.hover(box.r, 300)
   await page.sleep(300)
   const hot = await page.evaluate(
-    `(() => { const a = getComputedStyle(document.querySelector(${JSON.stringify(HANDLE)}), '::after'); return { bg: a.backgroundColor, w: a.width }; })()`
+    `(() => { const a = getComputedStyle(document.querySelector(${JSON.stringify(HANDLE)}), '::after'); const ring = getComputedStyle(document.querySelector(${JSON.stringify(SIDEBAR)})).getPropertyValue('--sidebar-ring'); return { bg: a.backgroundColor, w: a.width, delay: a.transitionDelay, ring }; })()`
   )
   check(
-    !/rgba\(0, 0, 0, 0\)|transparent/.test(hot.bg) && hot.w === "2px",
-    `${tag} hovering the handle draws a 2px line (${hot.bg}, ${hot.w})`
+    !/rgba\(0, 0, 0, 0\)|transparent/.test(hot.bg) &&
+      hot.w === "2px" &&
+      hot.delay !== "0s",
+    `${tag} hovering the handle draws a 2px line in the ring colour after a short delay (${hot.bg}, ${hot.w}, delay ${hot.delay})`
   )
 
   await dragTo(page, box.r, 300)
   const live = await page.evaluate(
-    `({ var: getComputedStyle(document.querySelector(${JSON.stringify(FRAME)})).getPropertyValue('--sidebar-width').trim(), select: document.body.style.userSelect, resizing: document.querySelector(${JSON.stringify(FRAME)}).dataset.resizing, stored: localStorage.getItem(${JSON.stringify(WIDTH_KEY)}) })`
+    `({ aside: document.querySelector(${JSON.stringify(SIDEBAR)}).getBoundingClientRect().width, frame: document.querySelector(${JSON.stringify(FRAME)}).getBoundingClientRect().width, select: document.body.style.userSelect, resizing: document.querySelector(${JSON.stringify(FRAME)}).dataset.resizing, stored: localStorage.getItem(${JSON.stringify(WIDTH_KEY)}), rootVar: document.documentElement.style.getPropertyValue('--sidebar-width') })`
   )
   check(
-    live.var === "300px" &&
+    live.aside === 300 &&
+      live.frame === 300 &&
       live.select === "none" &&
       live.resizing === "true" &&
-      live.stored === null,
-    `${tag} dragging sets the width live and blocks text selection (${live.var}, ${live.select}, saved ${live.stored})`
+      live.stored === null &&
+      live.rootVar === "",
+    `${tag} dragging sets the width live on the sidebar and its frame, not on the root, and blocks text selection (${live.aside}/${live.frame}, ${live.select}, saved ${live.stored})`
   )
   await release(page, 300)
   check(
@@ -187,27 +166,85 @@ export async function checkResize({ browser, web, output, check, capture }) {
     `${tag} Enter on the handle collapses the sidebar out of the tab order`
   )
   const panel = await mainLeft(page)
-  check(panel <= 9, `${tag} the panel takes the space (left ${panel})`)
+  check(panel <= GUTTER + 1, `${tag} the panel takes the space (left ${panel})`)
+  const toggle = await page.evaluate(`(() => {
+    const t = document.querySelector('[data-slot="sidebar-expand"] button');
+    if (!t) return null;
+    const r = t.getBoundingClientRect();
+    const card = document.querySelector('#app-main').parentElement.getBoundingClientRect();
+    const title = document.querySelector('#app-main h1, #app-main h2')?.getBoundingClientRect();
+    const overlap = title ? !(r.right <= title.left || r.left >= title.right || r.bottom <= title.top || r.top >= title.bottom) : false;
+    return { x: r.left, y: r.top, right: r.right, card: card.left, overlap, label: t.getAttribute('aria-label'), dock: !!document.querySelector('[data-slot="app-dock"] [data-slot="sidebar-toggle"]'), focused: document.activeElement === t };
+  })()`)
+  check(
+    toggle &&
+      toggle.label === "Expand sidebar" &&
+      toggle.x >= 0 &&
+      toggle.right <= toggle.card &&
+      toggle.y >= 8 &&
+      toggle.y <= 20 &&
+      !toggle.overlap &&
+      !toggle.dock,
+    `${tag} the expand button sits at the top-left beside the page, clear of its title, not in the dock (${toggle && `${toggle.x},${toggle.y}, page at ${toggle.card}`})`
+  )
+  check(
+    toggle?.focused === true,
+    `${tag} focus moved to the expand button after the collapse`
+  )
+  await page.hover(40, 30)
+  await page.sleep(900)
+  const tip = await page.evaluate(
+    `document.querySelector('[data-slot="tooltip-content"]')?.textContent ?? ''`
+  )
+  check(
+    tip.includes("Expand sidebar") && tip.includes("["),
+    `${tag} the expand button tooltip names the [ shortcut (${tip})`
+  )
   await page.hover(720, 450)
   await capture(page, "sidebar-collapsed.png")
   await waitShell(page, web)
   check(
-    (await rectOf(page, FRAME)).w <= 9 &&
+    (await rectOf(page, FRAME)).w <= GUTTER + 1 &&
       (await stored(page, COLLAPSED_KEY)) === "1",
     `${tag} the sidebar stays collapsed after a reload`
   )
 
   await page.hover(3, Y)
+  await page.hover(700, Y)
+  await page.sleep(500)
+  check(
+    await peekClosed(page),
+    `${tag} a quick pass over the edge does not open the peek`
+  )
+
+  await page.hover(3, Y)
+  await page.sleep(60)
+  check(
+    await peekClosed(page),
+    `${tag} the peek waits for hover intent before it opens`
+  )
   await page.sleep(500)
   const peek = await page.evaluate(
-    `(() => { const a = document.querySelector(${JSON.stringify(SIDEBAR)}); const r = a.getBoundingClientRect(); return { left: r.left, w: r.width, inert: a.inert, shadow: getComputedStyle(a).boxShadow, panel: document.querySelector('#app-main').parentElement.getBoundingClientRect().left }; })()`
+    `(() => { const a = document.querySelector(${JSON.stringify(SIDEBAR)}); const r = a.getBoundingClientRect(); const s = getComputedStyle(a); return { left: r.left, top: r.top, bottom: window.innerHeight - r.bottom, w: r.width, inert: a.inert, shadow: s.boxShadow, radius: s.borderTopLeftRadius, ring: s.boxShadow.length, panel: document.querySelector('#app-main').parentElement.getBoundingClientRect().left }; })()`
   )
   check(
-    peek.left === 0 && peek.w === 228 && !peek.inert && peek.panel <= 9,
-    `${tag} hovering the left edge peeks the sidebar over the content (${peek.left}, ${peek.w}, panel ${peek.panel})`
+    peek.left === 8 &&
+      peek.top === 8 &&
+      peek.bottom === 8 &&
+      peek.w === 228 &&
+      !peek.inert &&
+      peek.panel <= GUTTER + 1 &&
+      parseFloat(peek.radius) >= 8 &&
+      peek.shadow !== "none",
+    `${tag} hovering the left edge peeks an inset rounded elevated card over the content (${peek.left}, ${peek.top}, ${peek.w}, radius ${peek.radius}, panel ${peek.panel})`
   )
   await capture(page, "sidebar-peek.png")
   await page.hover(900, Y)
+  await page.sleep(150)
+  check(
+    !(await peekClosed(page)),
+    `${tag} the peek stays open for a close grace after the pointer leaves`
+  )
   await page.sleep(500)
   const gone = await page.evaluate(
     `(() => { const a = document.querySelector(${JSON.stringify(SIDEBAR)}); return { right: a.getBoundingClientRect().right, inert: a.inert }; })()`
@@ -220,25 +257,82 @@ export async function checkResize({ browser, web, output, check, capture }) {
   await page.hover(3, Y)
   await page.sleep(500)
   await page.evaluate(
-    `document.querySelector('button[aria-label="Pin sidebar"]').click()`
+    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)}).focus()`
   )
+  await page.key("Escape")
+  await page.sleep(500)
+  const escaped = await page.evaluate(
+    `({ closed: document.querySelector(${JSON.stringify(SIDEBAR)}).inert, focus: document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.tagName })`
+  )
+  check(
+    escaped.closed && escaped.focus === "Expand sidebar",
+    `${tag} Escape closes the peek and returns focus to the expand button (${escaped.focus})`
+  )
+  await page.hover(900, Y)
+  await page.sleep(500)
+
+  await page.hover(3, Y)
+  await page.sleep(500)
+  const inbox = await page.evaluate(
+    `(() => { const l = [...document.querySelectorAll(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)})].find((e) => e.getAttribute('href') === '/inbox'); const r = l.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`
+  )
+  await page.mouse("mouseMoved", inbox.x, inbox.y)
+  await page.mouse("mousePressed", inbox.x, inbox.y)
+  await page.mouse("mouseReleased", inbox.x, inbox.y)
+  await page.sleep(500)
+  const navigated = await page.evaluate(
+    `({ path: location.pathname, inert: document.querySelector(${JSON.stringify(SIDEBAR)}).inert, body: document.activeElement === document.body })`
+  )
+  check(
+    navigated.path === "/inbox" && navigated.inert && !navigated.body,
+    `${tag} a link click in the peek navigates, closes it and keeps focus off the body (${navigated.path})`
+  )
+  await page.hover(900, Y)
+  await page.sleep(500)
+
+  await page.hover(3, Y)
+  await page.sleep(500)
+  await page.hover(700, Y)
+  await page.hover(750, Y)
+  await page.sleep(700)
+  check(
+    await peekClosed(page),
+    `${tag} a fast jump away from the open peek cannot leave it stuck open`
+  )
+
+  await page.hover(3, Y)
+  await page.sleep(500)
+  await clickCenter(page, 'button[aria-label="Pin sidebar"]')
   await page.sleep(400)
   check(
     (await rectOf(page, SIDEBAR)).w === 228 &&
       (await stored(page, COLLAPSED_KEY)) === "0",
     `${tag} the pin button in the peek restores the sidebar`
   )
+  check(
+    await focusedLabel(page, "Collapse sidebar"),
+    `${tag} focus moved to the collapse button after the expand`
+  )
   await page.evaluate("document.activeElement?.blur()")
   await page.key("[")
   await page.sleep(400)
-  check((await rectOf(page, FRAME)).w <= 9, `${tag} [ collapses the sidebar`)
-  await page.evaluate(
-    `document.querySelector('button[aria-label="Expand sidebar"]').click()`
+  check(
+    (await rectOf(page, FRAME)).w <= GUTTER + 1,
+    `${tag} [ collapses the sidebar`
   )
+  check(
+    await focusedLabel(page, "Expand sidebar"),
+    `${tag} focus moved to the expand button after [`
+  )
+  await clickCenter(page, 'button[aria-label="Expand sidebar"]')
   await page.sleep(400)
   check(
     (await rectOf(page, SIDEBAR)).w === 228,
     `${tag} the Expand sidebar button brings it back`
+  )
+  check(
+    await focusedLabel(page, "Collapse sidebar"),
+    `${tag} focus is on the collapse button after the header button expanded it`
   )
   await page.evaluate(
     `(() => { const i = document.createElement('input'); i.id = 'probe'; document.body.append(i); i.focus(); })()`
@@ -251,49 +345,15 @@ export async function checkResize({ browser, web, output, check, capture }) {
   )
   await page.evaluate("document.getElementById('probe').remove()")
 
+  await cancelledDrag({ page, check, tag })
+  await overDragPreview({ page, check, capture, tag })
+  await clickCenter(page, 'button[aria-label="Expand sidebar"]')
+  await page.hover(720, 450)
+  await page.sleep(400)
+
   await accountMenu({ page, check, capture, tag })
   await page.close()
   void output
-}
-
-async function accountMenu({ page, check, capture, tag }) {
-  await page.evaluate(
-    `document.querySelector('[data-slot="account-trigger"]').click()`
-  )
-  await page.waitFor(`document.querySelector('[role="menu"]')`, 5000)
-  await page.sleep(400)
-  const menu = await page.evaluate(`(() => {
-    const t = document.querySelector('[data-slot="account-trigger"]').getBoundingClientRect();
-    const m = document.querySelector('[role="menu"]');
-    const r = m.getBoundingClientRect();
-    return { trigger: { x: t.left, y: t.top, w: t.width }, menu: { x: r.left, b: r.bottom, w: r.width }, items: [...m.querySelectorAll('[role="menuitem"]')].map((e) => e.textContent.trim()), text: m.textContent };
-  })()`)
-  check(
-    menu.menu.b <= menu.trigger.y + 1 &&
-      Math.abs(menu.menu.x - menu.trigger.x) <= 1 &&
-      Math.abs(menu.menu.w - menu.trigger.w) <= 2,
-    `${tag} the account menu opens upward at the row width (menu ${menu.menu.x}/${menu.menu.w}, row ${menu.trigger.x}/${menu.trigger.w})`
-  )
-  check(
-    menu.items.join("|") === "Settings|Sign out" &&
-      menu.text.includes("Linh Nguyen"),
-    `${tag} the account menu lists the person, Settings and Sign out (${menu.items.join("|")})`
-  )
-  await page.hover(900, 200)
-  await capture(page, "sidebar-account-menu.png", {
-    x: 0,
-    y: 500,
-    width: 520,
-    height: 400,
-  })
-  await page.key("Escape")
-  await page.sleep(300)
-  check(
-    await page.evaluate(
-      `!document.querySelector('[role="menu"]') && document.activeElement === document.querySelector('[data-slot="account-trigger"]')`
-    ),
-    `${tag} Escape closes the account menu and returns focus to the row`
-  )
 }
 
 export const evidencePath = (output, name) => join(output, name)

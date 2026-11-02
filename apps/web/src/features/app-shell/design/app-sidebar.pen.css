@@ -26,9 +26,9 @@
 }
 
 [data-pen-surface="app-shell"] [data-slot="account-email"] {
-  color: #59595b;
-  font-size: 12px;
-  line-height: 16px;
+  color: #969799;
+  font-size: 11px;
+  line-height: 14px;
   font-weight: 400;
 }
 
@@ -65,11 +65,12 @@
   translate: 0 -1px;
 }
 
-[data-pen-surface="app-shell"] [data-slot="account-trigger"] svg,
-[data-pen-surface="app-shell"] [data-slot="avatar-fallback"] {
+[data-pen-surface="app-shell"] [data-slot="account-trigger"] svg {
   color: #59595b;
 }
 
 [data-pen-surface="app-shell"] [data-slot="avatar-fallback"] {
   background: #e1e1e2;
+  color: #1a1a1a;
+  font-weight: 600;
 }
