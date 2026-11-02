@@ -277,7 +277,7 @@ function classStrings(source: string): Hit[] {
   return hits
 }
 
-describe("marketing buttons", () => {
+describe("every marketing call to action is built with landingButton", () => {
   it("builds every landing call to action with landingButton", () => {
     const violations: string[] = []
     for (const file of sourceFiles(landingDir)) {

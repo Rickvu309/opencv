@@ -15,6 +15,7 @@ export const FAST_GUARDS = Object.freeze([
   "scripts/adr-citations.test.mjs",
   "scripts/blocknote-dependencies.test.mjs",
   "scripts/check.test.mjs",
+  "scripts/checks-doc.test.mjs",
   "scripts/ci-screens.test.mjs",
   "scripts/ci-workflow.test.mjs",
   "scripts/doc-paths.test.mjs",

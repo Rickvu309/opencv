@@ -13,7 +13,7 @@ import { saveFile } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 
-describe("account contract", () => {
+describe("an account binding that drifts from the account contract is rejected", () => {
   it("parses every account command output and every account read", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

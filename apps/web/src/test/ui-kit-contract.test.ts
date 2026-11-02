@@ -15,7 +15,7 @@ function readJson(rel: string) {
   return JSON.parse(read(rel))
 }
 
-describe("shadcn monorepo CLI contract", () => {
+describe("the shadcn CLI workspaces agree on style, base color and exports", () => {
   const appConfig = readJson("apps/web/components.json")
   const uiConfig = readJson("packages/ui/components.json")
 

@@ -208,7 +208,7 @@ const VARIABLE_READ_RE = /(?:var\(|[\w-]\()(--[a-zA-Z0-9-]+)/g
  * classes. Each path MUST have a `//` reason on the previous line — adding
  * a path without that comment fails this file's own contract.
  *
- * The one documented exception (AGENTS.md, design system) is the CV print paper.
+ * The one documented exception (docs/agents/design-parity.md) is the CV print paper.
  */
 const VOCABULARY_ALLOWLIST = [
   // CV print paper — documented exception (print layout; paper is white).
@@ -284,7 +284,7 @@ function requireCommentedAllowlist(entries: readonly string[], label: string) {
   }
 }
 
-describe("design-system vocabulary", () => {
+describe("app code uses shadcn variables and stock Tailwind, with no raw hex or named palette class", () => {
   it("justifies every vocabulary allowlist entry with a comment", () => {
     requireCommentedAllowlist(VOCABULARY_ALLOWLIST, "vocabulary")
   })

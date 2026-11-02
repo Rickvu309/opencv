@@ -29,7 +29,7 @@ async function refusal(promise: Promise<unknown>) {
   return error as CommandError
 }
 
-describe("Coach gates in execute", () => {
+describe("execute refuses a gated command the Coach was not offered", () => {
   it("refuses a gated command the Coach was never offered", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

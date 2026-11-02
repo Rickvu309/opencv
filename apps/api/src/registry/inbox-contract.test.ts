@@ -11,7 +11,7 @@ import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 
-describe("inbox contract", () => {
+describe("an inbox binding that drifts from the inbox contract is rejected", () => {
   it("parses every inbox command output and inbox read", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

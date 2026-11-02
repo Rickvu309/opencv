@@ -20,7 +20,7 @@ function filesUnder(dir: string): string[] {
   return found
 }
 
-describe("module boundaries", () => {
+describe("an import into another api module that skips its index.ts is rejected", () => {
   it("imports another product module only through index.ts", () => {
     const violations: string[] = []
     for (const file of filesUnder(srcRoot)) {

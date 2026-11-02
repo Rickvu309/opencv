@@ -34,7 +34,7 @@ function mainClean(facts) {
   if (main.branch !== "main")
     return `the main checkout (${path}) is on '${main.branch || "a detached HEAD"}'; it stays on main and nobody works in it`
   if (main.dirty)
-    return `the main checkout (${path}) has edited files, and nobody edits there (AGENTS.md section 2): ${main.dirty}`
+    return `the main checkout (${path}) has edited files, and nobody edits there (AGENTS.md): ${main.dirty}`
   return null
 }
 

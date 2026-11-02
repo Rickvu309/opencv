@@ -47,7 +47,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("sidebar nav contract", () => {
+describe("each router route is current under exactly one nav item, with its count in the link name", () => {
   it("finds a route under every nav item", () => {
     expect(routes.length).toBeGreaterThanOrEqual(ITEMS.length)
     for (const item of ITEMS) expect(routes).toContain(item.to)

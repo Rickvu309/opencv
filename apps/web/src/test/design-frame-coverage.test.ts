@@ -93,7 +93,7 @@ for (const file of snapshots) {
   if (id && imported.has(file)) covered.set(id, path.relative(srcDir, file))
 }
 
-describe("design frame coverage", () => {
+describe("every release frame has a parity snapshot a test reads, or an unexpired pending entry", () => {
   it("every release frame has a parity snapshot a test reads, or a pending entry", () => {
     const problems = manifest.frames
       .filter((frame) => !covered.has(frame.id) && !PENDING_FRAMES[frame.id])

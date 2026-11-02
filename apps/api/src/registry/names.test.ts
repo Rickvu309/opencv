@@ -57,7 +57,7 @@ function listUnknown(found: References, allowed: (name: string) => boolean) {
     .map(([name, files]) => `${name}  <- ${[...files].sort().join(", ")}`)
 }
 
-describe("registry names", () => {
+describe("a command, read or Coach tool name the registry lacks is rejected", () => {
   const listed = installRegistry().list()
   const registered = new Set(
     [...listed.commands, ...listed.queries].map((entry) => entry.name)

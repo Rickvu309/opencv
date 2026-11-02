@@ -139,7 +139,7 @@ describe.each(SKILLS)("%s assumptions", (_name, assumes) => {
   })
 })
 
-describe("verify-app-ui", () => {
+describe("verify-app-ui reads only files, routes and api paths the app has", () => {
   it("marks one primary action on each toured surface, and nowhere else", () => {
     expect(appUi.markers.map((m) => m.surface).sort()).toEqual(
       [...TOURED].sort()

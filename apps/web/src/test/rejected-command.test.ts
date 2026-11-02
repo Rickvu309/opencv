@@ -32,7 +32,7 @@ function scan(text: string) {
   )
 }
 
-describe("rejected command check", () => {
+describe("every rejected command shows an error", () => {
   it("shows an error for every rejected command", () => {
     const hits = findDroppedRejections(sourceFiles(srcDir)).map(
       (finding) => `${finding.file}:${finding.line} ${finding.call}`

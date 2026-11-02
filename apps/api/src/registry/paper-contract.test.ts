@@ -28,7 +28,7 @@ async function seed(
     .values({ id: userId, name: "Ada", email: `${userId}@example.com` })
 }
 
-describe("paper contract", () => {
+describe("a paper binding that drifts from the paper contract is rejected", () => {
   it("parses every paper command output and every paper read", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

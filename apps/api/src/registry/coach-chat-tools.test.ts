@@ -13,7 +13,7 @@ const CHAT_COMMANDS_THE_COACH_MAY_RUN = [
   "chat.setFocus",
 ]
 
-describe("Coach tools on the chat surface", () => {
+describe("the Coach chat tools exclude chat.create", () => {
   it("offer only the chat commands that act on the open chat, never one that starts another", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()

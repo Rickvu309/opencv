@@ -35,7 +35,7 @@ function sourceFiles(dir: string): string[] {
   })
 }
 
-describe("request boundary", () => {
+describe("an API path, fetch or query invalidation outside apps/web/src/lib is rejected", () => {
   it("keeps API paths, fetch and query invalidation inside lib/", () => {
     const hits: string[] = []
     for (const file of sourceFiles(srcDir)) {
