@@ -43,7 +43,6 @@ export const RULES = [
     allowed: ["packages/ui/src/components/breadcrumb.tsx"],
     use: "Breadcrumb from @workspace/ui/components/breadcrumb instead of a hand-built nav with aria-label Breadcrumb or a crumb trail with aria-current page.",
     pending: [
-      "apps/web/src/features/apply/apply-job-header.tsx",
       "apps/web/src/features/paper/paper-editor.tsx",
       "apps/web/src/features/paper/paper-letter.tsx",
       "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
