@@ -19,6 +19,7 @@ import { ConfirmDelete } from "./components/confirm-delete"
 import { Field } from "./components/field"
 import { Input } from "./components/input"
 import { Meter } from "./components/meter"
+import { Spinner } from "./components/spinner"
 import { PageHeader } from "./components/page-header"
 import { StageIcon } from "./components/stage-icon"
 import { Toolbar } from "./components/toolbar"
@@ -237,5 +238,22 @@ describe("kit parts", () => {
         expect(button).toHaveAttribute("data-state", "copied")
       )
     })
+  })
+
+  it("names the spinner as a loading status", () => {
+    render(<Spinner />)
+    expect(screen.getByRole("status", { name: "Loading" })).toHaveAttribute(
+      "data-slot",
+      "spinner"
+    )
+  })
+
+  it("hides a decorative spinner from assistive tech", () => {
+    const { container } = render(<Spinner aria-hidden="true" />)
+    expect(screen.queryByRole("status")).toBeNull()
+    expect(container.querySelector('[data-slot="spinner"]')).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    )
   })
 })

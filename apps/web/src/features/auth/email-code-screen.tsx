@@ -1,4 +1,5 @@
-import { CircleAlert, LoaderCircle, Mail } from "lucide-react"
+import { CircleAlert, Mail } from "lucide-react"
+import { Spinner } from "@workspace/ui/components/spinner"
 import { Button } from "@workspace/ui/components/button"
 
 import { AUTH_COPY, resendLabel } from "./auth-copy.ts"
@@ -84,10 +85,7 @@ export function EmailCodeScreen({
           data-slot="email-code-verifying"
           className="flex h-[42px] items-center justify-center gap-2 text-[13.5px] leading-4 font-medium"
         >
-          <LoaderCircle
-            aria-hidden
-            className="size-4 animate-spin motion-reduce:animate-none"
-          />
+          <Spinner aria-hidden />
           {AUTH_COPY.verifying}
         </p>
       ) : (

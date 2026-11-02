@@ -78,8 +78,10 @@ describe("W1.5 Welcome parity", () => {
     ])
     expect(document.querySelector("[data-welcome-mark]")).not.toBeNull()
     expect(
-      document.querySelector('[data-welcome-step="pending"] svg')?.classList
-    ).toContain("animate-spin")
+      document.querySelector(
+        '[data-welcome-step="pending"] [data-slot=spinner]'
+      )?.classList
+    ).toContain("motion-safe:animate-spin")
   })
 
   it("completes the coach step after the 400ms hold, before it marks welcomed", async () => {
@@ -94,9 +96,9 @@ describe("W1.5 Welcome parity", () => {
     await act(() => vi.advanceTimersByTimeAsync(2))
     expect(steps().map((step) => step.state)).toEqual(["done", "done", "done"])
     expect(markWelcomedCalls()).toBe(1)
-    expect(document.querySelector("[data-welcome-step] svg.animate-spin")).toBe(
-      null
-    )
+    expect(
+      document.querySelector("[data-welcome-step] [data-slot=spinner]")
+    ).toBe(null)
   })
 
   it("skips the 400ms hold under reduced motion", async () => {

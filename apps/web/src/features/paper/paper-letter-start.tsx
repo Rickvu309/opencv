@@ -9,6 +9,12 @@ import {
 import type { JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyMedia,
+  EmptyTitle,
+} from "@workspace/ui/components/empty"
 import { Input } from "@workspace/ui/components/input"
 
 import { listJobs } from "@/features/apply/apply-api.ts"
@@ -347,22 +353,29 @@ export function PaperLetterStart({
         </Button>
       </div>
       {unread && !attached ? (
-        <div
+        <Empty
           data-slot="letter-unreadable-link"
           role="status"
           id={guidanceId}
-          className="-mt-3 flex h-[228px] flex-col items-center justify-center gap-[6px] text-center text-[13px] leading-[15.5px]"
+          className="-mt-3 h-[228px] flex-none gap-[6px] p-0 text-[13px] leading-[15.5px] text-wrap"
         >
-          <Link2Off
-            aria-hidden="true"
-            data-slot="letter-unreadable-icon"
-            className="size-[18px] shrink-0"
-          />
-          <p className="font-semibold">Can't read this link</p>
-          <p data-slot="letter-unreadable-help">
+          <EmptyMedia className="mb-0">
+            <Link2Off
+              aria-hidden="true"
+              data-slot="letter-unreadable-icon"
+              className="size-[18px] shrink-0"
+            />
+          </EmptyMedia>
+          <EmptyTitle className="text-[13px] leading-[15.5px] font-semibold tracking-normal">
+            Can't read this link
+          </EmptyTitle>
+          <EmptyDescription
+            data-slot="letter-unreadable-help"
+            className="text-[13px] leading-[15.5px]"
+          >
             Paste the job text or attach a file.
-          </p>
-        </div>
+          </EmptyDescription>
+        </Empty>
       ) : (
         <div data-slot="letter-start-jobs-wrap" className="relative -mt-3">
           <div
