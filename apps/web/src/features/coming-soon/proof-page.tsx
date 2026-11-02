@@ -1,9 +1,22 @@
 import { Link } from "@tanstack/react-router"
-import { ArrowRight, ChevronRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@workspace/ui/components/breadcrumb"
+import {
+  PageHeaderBack,
+  PageHeaderLeading,
+} from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
+import "@/features/coming-soon/design/page-header.pen.css"
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { useNotify } from "@/features/coming-soon/notify.ts"
 import { ProofHeroArt } from "@/features/coming-soon/proof-hero-art.tsx"
@@ -12,23 +25,26 @@ export function ProofsPage() {
   const { pending, error, notify } = useNotify("proof")
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto bg-card leading-[1.21]">
-      <WorkspaceHeader
-        title={
-          <>
-            <Link
-              to="/paper"
-              className="text-[13.5px] font-normal text-foreground/85 hover:text-foreground"
-            >
-              Paper
-            </Link>
-            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/70" />
-            <span className="text-[13.5px]">{soonCopy.proofsPage}</span>
-          </>
-        }
-        className="h-12 border-border/60 bg-background"
-      />
-      <div className="flex flex-col px-6 pt-8 pb-8 lg:px-16 lg:pt-11 lg:pb-0">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-card leading-[1.21]">
+      <WorkspaceHeader data-pen-surface="coming-soon">
+        <PageHeaderLeading>
+          <PageHeaderBack render={<Link to="/paper" />}>Paper</PageHeaderBack>
+        </PageHeaderLeading>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link to="/paper" />}>
+                Paper
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage as="h1">{soonCopy.proofsPage}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </WorkspaceHeader>
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-6 pt-8 pb-8 lg:px-16 lg:pt-11 lg:pb-0">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-3.5">
             <p className="inline-flex h-[26px] w-fit items-center gap-1.5 rounded-full border border-border px-2.5 text-[12.5px] font-medium text-muted-foreground">

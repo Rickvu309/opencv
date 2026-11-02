@@ -7,8 +7,10 @@ import { toast } from "sonner"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { PageHeaderTitle } from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
+import "@/features/coming-soon/design/page-header.pen.css"
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { requestNotify } from "@/features/coming-soon/notify.ts"
 import {
@@ -57,11 +59,9 @@ export function ComingSoonPage({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden bg-background">
-      <WorkspaceHeader
-        title={
-          <span className="text-[13px] text-foreground/90">{pageTitle}</span>
-        }
-      />
+      <WorkspaceHeader data-pen-surface="coming-soon">
+        <PageHeaderTitle>{pageTitle}</PageHeaderTitle>
+      </WorkspaceHeader>
       <div className="flex min-h-0 flex-1 flex-col items-center gap-10 overflow-y-auto pt-18">
         <div className="flex w-[min(560px,calc(100%-3rem))] flex-col items-center gap-4 text-center">
           <Badge

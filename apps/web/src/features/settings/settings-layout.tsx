@@ -11,6 +11,11 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { NavItem } from "@workspace/ui/components/nav-item"
+import {
+  PageHeader,
+  PageHeaderBack,
+  PageHeaderLeading,
+} from "@workspace/ui/components/page-header"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -70,10 +75,12 @@ export function SettingsLayout({
           ) : null}
         </aside>
       ) : (
-        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-          <BackLink href={startPagePath(startPage)} />
+        <PageHeader>
+          <PageHeaderLeading>
+            <PhoneBack href={startPagePath(startPage)} />
+          </PageHeaderLeading>
           <SectionSelect current={current} />
-        </div>
+        </PageHeader>
       )}
       <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-8 md:px-10 md:py-14">
         <main className="mx-auto flex w-full max-w-[640px] flex-col">
@@ -98,6 +105,21 @@ function BackLink({ href }: { href: string }) {
       <ArrowLeft aria-hidden />
       Back to app
     </NavItem>
+  )
+}
+
+function PhoneBack({ href }: { href: string }) {
+  const navigate = useNavigate()
+  return (
+    <PageHeaderBack
+      href={href}
+      onClick={(event) => {
+        event.preventDefault()
+        void navigate({ href })
+      }}
+    >
+      Back to app
+    </PageHeaderBack>
   )
 }
 
@@ -140,7 +162,10 @@ function SectionSelect({ current }: { current: SettingsSectionId }) {
         if (match) void navigate({ href: settingsSectionHref(match.id) })
       }}
     >
-      <SelectTrigger aria-label="Section" className="w-full">
+      <SelectTrigger
+        aria-label="Section"
+        className="w-full min-w-0 touch-manipulation data-[size=default]:max-md:h-11"
+      >
         <SelectValue>{label}</SelectValue>
       </SelectTrigger>
       <SelectContent>

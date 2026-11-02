@@ -1,0 +1,12 @@
+[data-pen-surface="coming-soon"][data-slot="page-header"] {
+  border-bottom-color: #ededef;
+}
+[data-pen-surface="coming-soon"] [data-slot="page-header-title"],
+[data-pen-surface="coming-soon"] [data-slot="breadcrumb-page"] {
+  color: #2f2f31;
+}
+[data-pen-surface="coming-soon"] [data-slot="breadcrumb-link"],
+[data-pen-surface="coming-soon"] [data-slot="breadcrumb-separator"],
+[data-pen-surface="coming-soon"] [data-slot="page-header-back"] {
+  color: #59595b;
+}

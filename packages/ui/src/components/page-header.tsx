@@ -24,6 +24,9 @@ type ActionsMode = "inline" | "menu"
 const ActionsModeContext = createContext<ActionsMode>("inline")
 const TitleActionsContext = createContext(false)
 
+const TOUCH =
+  "touch-manipulation select-none [-webkit-tap-highlight-color:transparent]"
+
 const PHONE_BREADCRUMB =
   "max-md:[&_[data-slot=breadcrumb-item]:not(:last-child)]:hidden max-md:[&_[data-slot=breadcrumb-separator]]:hidden"
 
@@ -94,7 +97,8 @@ function PageHeaderBack({
     defaultTagName: "a",
     props: {
       className: cn(
-        "inline-flex h-11 shrink-0 items-center gap-1 rounded-[6px] px-2 text-[13px] font-normal text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50",
+        "inline-flex h-11 shrink-0 items-center gap-1 rounded-[6px] px-2 text-[13px] font-normal whitespace-nowrap text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:text-foreground",
+        TOUCH,
         className
       ),
       children: (
@@ -176,7 +180,10 @@ function PageHeaderActions({
                       variant="ghost"
                       data-slot="page-header-overflow"
                       aria-label={overflowLabel}
-                      className="size-7 rounded-[6px] max-md:size-11 md:hidden [&_svg:not([class*='size-'])]:size-[15px]"
+                      className={cn(
+                        "size-7 rounded-[6px] max-md:size-11 md:hidden [&_svg:not([class*='size-'])]:size-[15px]",
+                        TOUCH
+                      )}
                     />
                   }
                 />
@@ -239,6 +246,7 @@ function PageHeaderAction({
 
   const classes = cn(
     "rounded-[6px] [&_svg:not([class*='size-'])]:size-[15px]",
+    TOUCH,
     showLabel
       ? "h-7 gap-1.5 px-2 text-[13px] font-normal max-md:h-11"
       : cn("max-md:size-11", inTitle ? "size-[26px]" : "size-7"),
@@ -314,6 +322,7 @@ function PageHeaderPrimary({
       data-primary-action
       className={cn(
         "h-7 gap-1.5 rounded-[6px] px-2 text-[13px] font-normal max-md:h-11",
+        TOUCH,
         className
       )}
       {...props}
