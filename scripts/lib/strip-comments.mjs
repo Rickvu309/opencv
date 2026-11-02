@@ -3,8 +3,9 @@ import {
   CSS_FILE,
   SOURCE_FILE,
   bannedComments,
-  cssTemplatePieces,
+  cssTemplates,
   findCssComments,
+  findCssCommentsAcross,
 } from "../no-comments.mjs"
 
 const isBlank = (line) => line.trim() === ""
@@ -63,10 +64,11 @@ function dropEmptiedLine(text, at) {
   )
 }
 
-function sliceOut(text, from, to) {
+function sliceOut(text, from, to, comments = findCssComments(text, from, to)) {
   let result = ""
   let cursor = from
-  for (const comment of findCssComments(text, from, to)) {
+  for (const comment of comments) {
+    if (comment.pos < from || comment.pos >= to) continue
     result += text.slice(cursor, comment.pos)
     cursor = comment.end
   }
@@ -91,9 +93,12 @@ function codeSignature(file, text) {
     true,
     kind
   )
-  const cssStarts = new Map(
-    cssTemplatePieces(file, text).map((piece) => [piece.start - 1, piece])
-  )
+  const cssStarts = new Map()
+  for (const pieces of cssTemplates(file, text)) {
+    const comments = findCssCommentsAcross(text, pieces)
+    for (const piece of pieces)
+      cssStarts.set(piece.start - 1, { piece, comments })
+  }
   const parts = []
   const visit = (node) => {
     if (node.kind === ts.SyntaxKind.JsxExpression && !node.expression) return
@@ -110,10 +115,11 @@ function codeSignature(file, text) {
       parts.push(withoutSpace(node.getText(sourceFile)))
       return
     }
-    const piece = cssStarts.get(node.getStart(sourceFile))
-    if (piece) {
+    const css = cssStarts.get(node.getStart(sourceFile))
+    if (css) {
+      const { piece, comments } = css
       parts.push(
-        `css:${withoutSpace(sliceOut(text, piece.start, piece.end))}\0`
+        `css:${withoutSpace(sliceOut(text, piece.start, piece.end, comments))}\0`
       )
       return
     }

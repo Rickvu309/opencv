@@ -67,8 +67,7 @@ function scriptKind(file) {
   return ts.ScriptKind.JSX
 }
 
-const CSS_DECLARATION_BLOCK = /\{[^{}]*[-\w]+\s*:\s*[^;{}]+;[^{}]*\}/
-const TEMPLATE_HOLE = "0"
+const CSS_MARKED_NAME = /^(?:css|styles)$|(?:Css|Styles)$/
 
 function templatePieces(template, sourceFile) {
   const tokens =
@@ -86,31 +85,57 @@ function templatePieces(template, sourceFile) {
   })
 }
 
-function isCssTemplate(template, pieces, text) {
-  const tag = template.parent
+function bindingName(node) {
   if (
-    tag.kind === ts.SyntaxKind.TaggedTemplateExpression &&
-    tag.tag.getText() === "css"
+    ts.isVariableDeclaration(node) ||
+    ts.isPropertyAssignment(node) ||
+    ts.isPropertyDeclaration(node)
   )
-    return true
-  const joined = pieces
-    .map((piece) => text.slice(piece.start, piece.end))
-    .join(TEMPLATE_HOLE)
-  const withoutComments = joined.replace(/\/\*[\s\S]*?\*\//g, "")
-  return CSS_DECLARATION_BLOCK.test(withoutComments)
+    return ts.isIdentifier(node.name) ? node.name.text : null
+  return null
 }
 
-export function cssTemplatePieces(file, text) {
+function isStyleElementChild(node) {
+  const slot = node.parent
+  const element = slot?.parent
+  return (
+    slot?.kind === ts.SyntaxKind.JsxExpression &&
+    element?.kind === ts.SyntaxKind.JsxElement &&
+    element.openingElement.tagName.getText() === "style"
+  )
+}
+
+function isMarkedCssTemplate(template) {
+  let node = template
+  while (
+    node.parent &&
+    (ts.isParenthesizedExpression(node.parent) ||
+      ts.isAsExpression(node.parent) ||
+      ts.isSatisfiesExpression(node.parent))
+  )
+    node = node.parent
+  const parent = node.parent
+  if (
+    parent?.kind === ts.SyntaxKind.TaggedTemplateExpression &&
+    parent.tag.getText() === "css"
+  )
+    return true
+  const name = parent ? bindingName(parent) : null
+  if (name !== null && parent.initializer === node)
+    return CSS_MARKED_NAME.test(name)
+  return isStyleElementChild(node)
+}
+
+export function cssTemplates(file, text) {
   const sourceFile = parseSource(file, text)
   const found = []
   const visit = (node) => {
     if (
-      node.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral ||
-      node.kind === ts.SyntaxKind.TemplateExpression
-    ) {
-      const pieces = templatePieces(node, sourceFile)
-      if (isCssTemplate(node, pieces, text)) found.push(...pieces)
-    }
+      (node.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral ||
+        node.kind === ts.SyntaxKind.TemplateExpression) &&
+      isMarkedCssTemplate(node)
+    )
+      found.push(templatePieces(node, sourceFile))
     ts.forEachChild(node, visit)
   }
   visit(sourceFile)
@@ -149,27 +174,41 @@ export function findSourceComments(file, text) {
   const comments = [...seen.values()]
     .filter((range) => !insideJsxText(range))
     .map((range) => makeComment(text, range.pos, range.end))
-  for (const piece of cssTemplatePieces(file, text)) {
-    comments.push(...findCssComments(text, piece.start, piece.end))
+  for (const pieces of cssTemplates(file, text)) {
+    comments.push(...findCssCommentsAcross(text, pieces))
   }
   return comments.sort((a, b) => a.pos - b.pos)
 }
 
 export function findCssComments(text, from = 0, to = text.length) {
+  return findCssCommentsAcross(text, [{ start: from, end: to }])
+}
+
+export function findCssCommentsAcross(text, pieces) {
   const found = []
   let quote = null
-  for (let i = from; i < to; i++) {
-    const char = text[i]
-    if (quote) {
-      if (char === "\\") i++
-      else if (char === quote || char === "\n") quote = null
-    } else if (char === '"' || char === "'") {
-      quote = char
-    } else if (char === "/" && text[i + 1] === "*") {
-      const close = text.indexOf("*/", i + 2)
-      const end = close === -1 || close + 2 > to ? to : close + 2
-      found.push(makeComment(text, i, end))
-      i = end - 1
+  let inUrl = false
+  for (const { start, end: to } of pieces) {
+    for (let i = start; i < to; i++) {
+      const char = text[i]
+      if (quote) {
+        if (char === "\\") i++
+        else if (char === quote || char === "\n") quote = null
+      } else if (inUrl) {
+        if (char === ")") inUrl = false
+      } else if (char === '"' || char === "'") {
+        quote = char
+      } else if (
+        /^url\(\s*[^\s"')]/i.test(text.slice(i, Math.min(i + 12, to)))
+      ) {
+        inUrl = true
+        i = text.indexOf("(", i)
+      } else if (char === "/" && text[i + 1] === "*") {
+        const close = text.indexOf("*/", i + 2)
+        const end = close === -1 || close + 2 > to ? to : close + 2
+        found.push(makeComment(text, i, end))
+        i = end - 1
+      }
     }
   }
   return found

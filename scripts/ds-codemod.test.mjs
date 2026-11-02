@@ -60,7 +60,7 @@ test("directives and comment-like text inside strings survive", () => {
   const source = [
     "// eslint-disable-next-line react-hooks/exhaustive-deps -- runs once",
     "// stray",
-    "export const css = `/* keep */ a { b: c }`",
+    "export const note = `/* keep */ a { b: c }`",
     "",
   ].join("\n")
   const out = rewriteSource("packages/ui/src/components/x.tsx", source)
@@ -68,10 +68,21 @@ test("directives and comment-like text inside strings survive", () => {
     out,
     [
       "// eslint-disable-next-line react-hooks/exhaustive-deps -- runs once",
-      "export const css = `/* keep */ a { b: c }`",
+      "export const note = `/* keep */ a { b: c }`",
       "",
     ].join("\n")
   )
+})
+
+test("MISTAKE: a CSS string after a hole and an unmarked template keep their marks", () => {
+  const source = [
+    "export const css = `.a { content: '${x} /* keep */'; /* drop */ color: red; }`",
+    "export const sample = `function f() { return a ? b : c; } /* note */`",
+    "export const md = `Use { color: red; } then /* not css */ text`",
+    "",
+  ].join("\n")
+  const out = rewriteSource("packages/ui/src/components/x.tsx", source)
+  assert.equal(out, source.replace(" /* drop */", ""))
 })
 
 test("an empty catch keeps its braces when its comment goes", () => {
