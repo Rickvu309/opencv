@@ -8,9 +8,10 @@ const MAX_TEXT = 4000
 const MAX_NEW_BLOCKS = 30
 const MAX_ITEMS = 20
 
-export const EDIT_START = "start"
+export const EDIT_START = "@start"
 
 const blockRefSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
+const anchorSchema = z.union([blockRefSchema, z.literal(EDIT_START)])
 const markdownSchema = z.string().max(MAX_TEXT)
 
 const leafItemSchema = z.object({ text: markdownSchema }).strict()
@@ -110,7 +111,7 @@ export const paperEditSchema = z.discriminatedUnion("op", [
   z
     .object({
       op: z.literal("insert"),
-      after: blockRefSchema,
+      after: anchorSchema,
       blocks: blocksSchema,
     })
     .strict(),
@@ -140,7 +141,7 @@ export const paperEditSchema = z.discriminatedUnion("op", [
     .object({
       op: z.literal("move"),
       blockId: blockRefSchema,
-      after: blockRefSchema,
+      after: anchorSchema,
     })
     .strict(),
   z.object({ op: z.literal("remove"), blockId: blockRefSchema }).strict(),

@@ -57,6 +57,12 @@ export type Appended = {
   readonly basedOn?: number
   readonly update: Uint8Array
   readonly keepIfIneffective?: boolean
+  readonly check?: (merged: PaperDocument) => string[]
+}
+
+export type AppendResult = {
+  readonly row: PaperRow | null
+  readonly problems: string[]
 }
 
 export type LockedContent = {
@@ -66,7 +72,7 @@ export type LockedContent = {
   edit(change: ContentEdit): Promise<PaperRow>
   fork(basedOn: number): Promise<PaperYDoc>
   history(): Promise<{ base: Uint8Array; rows: LogRow[] }>
-  append(change: Appended): Promise<PaperRow | null>
+  append(change: Appended): Promise<AppendResult>
 }
 
 export type SyncRequest = {
@@ -348,19 +354,29 @@ async function appendLocked(
   row: PaperRow,
   entry: Live,
   change: Appended
-): Promise<PaperRow | null> {
+): Promise<AppendResult> {
   try {
     const absorbed = absorbUpdate(entry.yDoc, change.update, change.origin)
     if (!absorbed.ok) throw refuse(absorbed.reason)
+    if (change.check) {
+      const materialized = materialize(entry.yDoc)
+      if (!materialized.ok) throw refuse(materialized.reason)
+      const problems = change.check(validated(materialized.document, row.kind))
+      if (problems.length > 0) {
+        live.delete(row.id)
+        return { row: null, problems }
+      }
+    }
     const effective =
       absorbed.effective ?? (change.keepIfIneffective ? change.update : null)
-    if (!effective) return null
-    return await commit(row, entry, effective, {
+    if (!effective) return { row: null, problems: [] }
+    const written = await commit(row, entry, effective, {
       origin: change.origin,
       editId: change.editId,
       basedOn: change.basedOn,
       witness: row.document,
     })
+    return { row: written, problems: [] }
   } catch (error) {
     live.delete(row.id)
     throw error
@@ -400,7 +416,7 @@ export async function withContent<T>(
       }),
       append: (change) =>
         appendLocked(latest, entry, change).then((next) => {
-          if (next) latest = next
+          if (next.row) latest = next.row
           return next
         }),
     }

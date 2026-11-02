@@ -18,11 +18,13 @@ import {
   type NodeId,
   type PaperNode,
 } from "./nodes.js"
+import { insertedRuns } from "./text-align.js"
 import { richTextFromInlineMarkdown } from "./rich-text.js"
 import {
   canonical,
   childrenOf,
   cloned,
+  fieldsOf,
   indexOf,
   type Entry,
   type Index,
@@ -37,6 +39,8 @@ export type AppliedEdits = {
   readonly target: PaperDocument
   readonly outcomes: PaperEditOutcome[]
   readonly applied: number
+  readonly moved: ReadonlySet<string>
+  readonly effects: EditEffect[]
 }
 
 const LETTER_TYPES: readonly string[] = [
@@ -154,6 +158,8 @@ type Context = {
   readonly base: Index
   readonly live: Index
   readonly freshId: () => NodeId
+  readonly newerCoachBlocks: ReadonlySet<string>
+  movedNow: string[]
 }
 
 type Found = {
@@ -171,6 +177,29 @@ const stale = (reason: string): PaperEditOutcome => ({
   reason,
 })
 
+function stalenessOf(context: Context, id: string): PaperEditOutcome | null {
+  let current = id
+  for (;;) {
+    const inBase = context.base.get(current)
+    const inLive = context.live.get(current)
+    if (!inBase) return null
+    const label =
+      current === id ? `Block ${id}` : `Block ${id} sits in ${current}, which`
+    if (!inLive) {
+      return stale(`${label} was deleted since you read the document`)
+    }
+    if (inBase.node.type !== inLive.node.type) {
+      return stale(`${label} changed its type since you read the document`)
+    }
+    if (placeOf(inBase, context.live) !== placeOf(inLive, context.base)) {
+      return stale(`${label} was moved since you read the document`)
+    }
+    const next = inBase.owner
+    if (next === current || next === "body") return null
+    current = next
+  }
+}
+
 function find(
   work: PaperDocument,
   context: Context,
@@ -184,11 +213,12 @@ function find(
   const inLive = context.live.get(id)
   if (!inLive)
     return stale(`Block ${id} was deleted since you read the document`)
-  if (inBase.node.type !== inLive.node.type) {
-    return stale(`Block ${id} changed its type since you read the document`)
-  }
-  if (placeOf(inBase, context.live) !== placeOf(inLive, context.base)) {
-    return stale(`Block ${id} was moved since you read the document`)
+  const staleness = stalenessOf(context, id)
+  if (staleness) return staleness
+  if (context.newerCoachBlocks.has(id)) {
+    return stale(
+      `Block ${id} was changed by a newer edit of yours. Read paper.outline again and use its revision as basedOn`
+    )
   }
   return { entry: inWork, base: inBase, live: inLive }
 }
@@ -211,6 +241,8 @@ function anchor(
   if (!context.live.has(id)) {
     return stale(`Block ${id} was deleted since you read the document`)
   }
+  const staleness = stalenessOf(context, id)
+  if (staleness) return staleness
   if (!inWork.list) return { list: work.blocks as PaperNode[], at: 0 }
   return { list: inWork.list, at: inWork.list.indexOf(inWork.node) + 1 }
 }
@@ -284,7 +316,7 @@ function setTextEdit(
     : { status: "applied" }
 }
 
-function fieldsOf(fields: NodeFieldSet) {
+function setEntries(fields: NodeFieldSet) {
   return Object.entries(fields).filter(([, value]) => value !== undefined)
 }
 
@@ -293,7 +325,7 @@ function assignFields(
   fields: NodeFieldSet,
   label: string
 ): PaperEditOutcome {
-  const entries = fieldsOf(fields)
+  const entries = setEntries(fields)
   if (entries.length === 0) return invalid("There is nothing to set")
   const misfit = fieldSetMisfit(found.entry.node.type, fields)
   if (misfit) return invalid(misfit)
@@ -369,6 +401,7 @@ function moveEdit(
   const after = anchor(work, context, edit.after)
   if (!isAnchor(after)) return after
   after.list.splice(after.at, 0, found.entry.node)
+  context.movedNow.push(edit.blockId)
   return { status: "applied" }
 }
 
@@ -412,35 +445,103 @@ function idSupplier(
   }
 }
 
+export type EditEffect =
+  | { op: number; kind: "created"; id: string; owner: string }
+  | { op: number; kind: "text"; id: string; inserted: string }
+  | { op: number; kind: "fields"; id: string; fields: Record<string, string> }
+  | { op: number; kind: "removed"; id: string }
+  | { op: number; kind: "moved"; id: string; owner: string }
+
+function effectsOf(
+  op: number,
+  edit: PaperEdit,
+  outcome: PaperEditOutcome,
+  attempt: PaperDocument,
+  context: Context
+): EditEffect[] {
+  const after = indexOf(attempt)
+  switch (edit.op) {
+    case "insert":
+    case "insertInto":
+      return (
+        outcome.status === "applied" ? (outcome.createdIds ?? []) : []
+      ).map((id) => ({ op, kind: "created", id, owner: after.get(id)!.owner }))
+    case "setText": {
+      const was = fieldsOf(context.base.get(edit.blockId)!.node, false).text
+      const now = fieldsOf(after.get(edit.blockId)!.node, false).text
+      const key = "title" in now ? "title" : "content"
+      const runs = insertedRuns(was[key] ?? "", now[key] ?? "")
+      return [
+        { op, kind: "text", id: edit.blockId, inserted: (runs ?? []).join("") },
+      ]
+    }
+    case "setFields":
+    case "setHeader": {
+      const id = edit.op === "setHeader" ? HEADER_NODE_ID : edit.blockId
+      const props = fieldsOf(after.get(id)!.node, false).props
+      const keys = Object.keys(edit.fields)
+      return [
+        {
+          op,
+          kind: "fields",
+          id,
+          fields: Object.fromEntries(
+            keys.map((key) => [key, props[key] ?? ""])
+          ),
+        },
+      ]
+    }
+    case "remove":
+      return [{ op, kind: "removed", id: edit.blockId }]
+    case "move":
+      return [
+        {
+          op,
+          kind: "moved",
+          id: edit.blockId,
+          owner: after.get(edit.blockId)!.owner,
+        },
+      ]
+  }
+}
+
 export function applyPaperEdits(
   base: PaperDocument,
   live: PaperDocument,
   edits: readonly PaperEdit[],
-  newId: () => string
+  newId: () => string,
+  newerCoachBlocks: ReadonlySet<string> = new Set()
 ): AppliedEdits {
   const context: Context = {
     base: indexOf(base),
     live: indexOf(live),
     freshId: idSupplier(base, live, newId),
+    newerCoachBlocks,
+    movedNow: [],
   }
   let work = cloned(base)
   const outcomes: PaperEditOutcome[] = []
+  const effects: EditEffect[] = []
+  const moved = new Set<string>()
   let applied = 0
-  for (const edit of edits) {
+  edits.forEach((edit, op) => {
     const attempt = cloned(work)
+    context.movedNow = []
     const outcome = step(attempt, context, edit)
     if (outcome.status !== "applied") {
       outcomes.push(outcome)
-      continue
+      return
     }
     const problem = problemWith(attempt)
     if (problem) {
       outcomes.push(invalid(problem))
-      continue
+      return
     }
+    effects.push(...effectsOf(op, edit, outcome, attempt, context))
+    for (const id of context.movedNow) moved.add(id)
     work = attempt
     applied += 1
     outcomes.push(outcome)
-  }
-  return { target: work, outcomes, applied }
+  })
+  return { target: work, outcomes, applied, moved, effects }
 }

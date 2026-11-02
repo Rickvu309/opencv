@@ -28,13 +28,18 @@ function kindOf(yDoc: Y.Doc): PaperDocument["kind"] | null {
   return kind === "cv" || kind === "letter" ? kind : null
 }
 
-function diffInto(yDoc: Y.Doc, target: PaperDocument, origin: string): void {
+function diffInto(
+  yDoc: Y.Doc,
+  target: PaperDocument,
+  origin: string,
+  moved: ReadonlySet<string>
+): void {
   const blocks = toEditorBlocks(target)
   const fragment = yDoc.getXmlFragment(FRAGMENT)
   const root = fragment.length === 1 ? groupOf(fragment) : null
   if (root) alignSkillItems(root, blocks)
   const node = _blocksToProsemirrorNode(editor(), blocks)
-  yDoc.transact(() => writeFragment(yDoc, fragment, node), origin)
+  yDoc.transact(() => writeFragment(yDoc, fragment, node, moved), origin)
 }
 
 export function seedYDoc(document: PaperDocument): Uint8Array {
@@ -43,7 +48,7 @@ export function seedYDoc(document: PaperDocument): Uint8Array {
   }
   const yDoc = new Y.Doc()
   yDoc.getMap<string>(META).set("kind", document.kind)
-  diffInto(yDoc, document, "seed")
+  diffInto(yDoc, document, "seed", new Set())
   return Y.encodeStateAsUpdate(yDoc)
 }
 
@@ -69,7 +74,8 @@ export function materialize(source: Uint8Array | Y.Doc): PaperResult {
 export function writeDocument(
   yDoc: Y.Doc,
   target: PaperDocument,
-  origin: string
+  origin: string,
+  moved: ReadonlySet<string> = new Set()
 ): Uint8Array | null {
   if (kindOf(yDoc) !== target.kind) {
     throw new Error("The target is not the kind of paper this document holds")
@@ -78,7 +84,7 @@ export function writeDocument(
   const collect = (update: Uint8Array) => updates.push(update)
   yDoc.on("update", collect)
   try {
-    diffInto(yDoc, target, origin)
+    diffInto(yDoc, target, origin, moved)
   } finally {
     yDoc.off("update", collect)
   }

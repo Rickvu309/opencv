@@ -105,25 +105,47 @@ describe("undo of a Coach edit", () => {
     })
   })
 
-  it("refuses to undo an edit a newer edit was made on, until that one is undone", async () => {
+  it("refuses to undo an edit a newer edit changed the same block on, until that one is undone", async () => {
     await inDatabase(async () => {
       const { docId } = await h.created()
       const older = await h.coach(docId, 1, [
         { op: "setText", blockId: "t1", text: "First paragraph. A" },
       ])
-      const newer = await h.coach(docId, 2, [
-        { op: "setText", blockId: "t2", text: "Second paragraph. B" },
+      const overlapping = await h.coach(docId, 2, [
+        { op: "setText", blockId: "t1", text: "First paragraph. A B" },
       ])
-      const independent = await h.coach(docId, 1, [
+      const apart = await h.coach(docId, 3, [
         { op: "setText", blockId: "t2", text: "Second paragraph. C" },
       ])
+      const blocked = await h.store.registry.undoBlockedReason(
+        userId,
+        "paper.revertEdit",
+        { docId, editId: older.output.editId }
+      )
+      expect(blocked).toContain("newer Coach edit")
       await expect(
         h.store.registry.undo(userId, older.activityId!)
       ).rejects.toMatchObject({ code: "CONFLICT" })
-      await h.store.registry.undo(userId, newer.activityId!)
+      await h.store.registry.undo(userId, apart.activityId!)
+      await h.store.registry.undo(userId, overlapping.activityId!)
       await h.store.registry.undo(userId, older.activityId!)
       expect(await h.textOf(docId, "t1")).toBe("First paragraph.")
-      expect(independent.output.editId).not.toBeNull()
+      expect(await h.textOf(docId, "t2")).toBe("Second paragraph.")
+    })
+  })
+
+  it("lets an edit be undone when a newer one touched other blocks", async () => {
+    await inDatabase(async () => {
+      const { docId } = await h.created()
+      const older = await h.coach(docId, 1, [
+        { op: "setText", blockId: "t1", text: "First paragraph. A" },
+      ])
+      await h.coach(docId, 2, [
+        { op: "setText", blockId: "t2", text: "Second paragraph. B" },
+      ])
+      await h.store.registry.undo(userId, older.activityId!)
+      expect(await h.textOf(docId, "t1")).toBe("First paragraph.")
+      expect(await h.textOf(docId, "t2")).toBe("Second paragraph. B")
     })
   })
 })

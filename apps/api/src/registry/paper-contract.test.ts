@@ -265,7 +265,7 @@ describe("paper contract", () => {
             edits: [
               {
                 op: "insert",
-                after: "start",
+                after: "@start",
                 blocks: [{ type: "paragraph", text: "Hello" }],
               },
             ],

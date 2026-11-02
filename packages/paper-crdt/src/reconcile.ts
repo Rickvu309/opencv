@@ -105,7 +105,8 @@ function reconcileContainer(
   yDoc: Y.Doc,
   container: Y.XmlElement,
   node: PmNode,
-  meta: Meta
+  meta: Meta,
+  moved: ReadonlySet<string>
 ): void {
   syncAttributes(container, node.attrs)
   const content = node.child(0)
@@ -123,7 +124,7 @@ function reconcileContainer(
   const group = groupOf(container)
   const wanted = node.childCount > 1 ? node.child(1) : null
   if (wanted && group) {
-    reconcileGroup(yDoc, group, wanted, meta)
+    reconcileGroup(yDoc, group, wanted, meta, moved)
   } else if (wanted) {
     build(yDoc, container, container.length, GROUP, wanted, meta)
   } else if (group) {
@@ -136,7 +137,8 @@ function reconcileGroup(
   yDoc: Y.Doc,
   group: Y.XmlElement,
   node: PmNode,
-  meta: Meta
+  meta: Meta,
+  moved: ReadonlySet<string>
 ): void {
   const targets: PmNode[] = []
   node.forEach((child) => targets.push(child))
@@ -149,6 +151,7 @@ function reconcileGroup(
     const id = idOf(child)
     const at = id === undefined ? undefined : where.get(id)
     if (id === undefined || at === undefined || claimed.has(id)) return
+    if (moved.has(id)) return
     claimed.add(id)
     survivors.push({ index, at })
   })
@@ -168,7 +171,7 @@ function reconcileGroup(
       existing instanceof Y.XmlElement &&
       idOf(existing) === targetIds[index]
     ) {
-      reconcileContainer(yDoc, existing, target, meta)
+      reconcileContainer(yDoc, existing, target, meta, moved)
     } else {
       build(yDoc, group, index, CONTAINER, target, meta)
     }
@@ -178,7 +181,8 @@ function reconcileGroup(
 export function writeFragment(
   yDoc: Y.Doc,
   fragment: Y.XmlFragment,
-  root: PmNode
+  root: PmNode,
+  moved: ReadonlySet<string> = new Set()
 ): void {
   const meta = newMeta()
   if (fragment.length === 0) {
@@ -187,5 +191,5 @@ export function writeFragment(
   }
   const group = fragment.length === 1 ? groupOf(fragment) : null
   if (!group) throw new Error("The document does not hold exactly one root")
-  reconcileGroup(yDoc, group, root.child(0), meta)
+  reconcileGroup(yDoc, group, root.child(0), meta, moved)
 }

@@ -134,6 +134,28 @@ function brandedActor(actor: Actor): Actor {
 export class Registry {
   private readonly commands = new Map<string, StoredCommand>()
   private readonly queries = new Map<string, StoredQuery>()
+  private readonly undoGuards = new Map<
+    string,
+    (userId: string, input: unknown) => Promise<string | null>
+  >()
+
+  addUndoGuard(
+    reversalCommand: string,
+    guard: (userId: string, input: unknown) => Promise<string | null>
+  ) {
+    this.undoGuards.set(reversalCommand, guard)
+  }
+
+  async undoBlockedReason(
+    userId: string,
+    reversalCommand: string | null,
+    input: unknown
+  ): Promise<string | null> {
+    const guard = reversalCommand
+      ? this.undoGuards.get(reversalCommand)
+      : undefined
+    return guard ? guard(userId, input) : null
+  }
 
   addCommand<I, O>(
     spec: CommandSpec<I, O>,
@@ -497,6 +519,12 @@ export class Registry {
           "This action cannot be undone."
         )
       }
+      const blocked = await this.undoBlockedReason(
+        userId,
+        row.reversalCommand,
+        row.reversalInput
+      )
+      if (blocked) throw new CommandError(ERROR_CODES.CONFLICT, blocked)
       await this.execute({
         name: row.reversalCommand,
         input: row.reversalInput,

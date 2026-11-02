@@ -29,7 +29,7 @@ describe("the Coach's view of the open paper", () => {
       })
       expect(grounding.focusDoc).toMatchObject({ id: docId, revision: 2 })
       expect(grounding.focusDoc?.outline).toContain("[t1] First paragraph.")
-      expect(grounding.focusDoc?.outline).toContain("Experience: Analyst")
+      expect(grounding.focusDoc?.outline).toContain("Experience: role: Analyst")
       expect(grounding.focusDoc).not.toHaveProperty("content")
       expect(grounding.note).toContain(">> [t2] Second paragraph.")
     })

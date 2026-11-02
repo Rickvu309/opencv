@@ -32,8 +32,12 @@ fork at `basedOn` and merges into the live document, so text the person typed
 meanwhile stays. A move, remove or field change on something the person
 changed since `basedOn` comes back `stale` and is not applied; the Coach
 re-reads and tries again. An edit with no applied op writes nothing and has no
-Undo. Undo of a Coach edit takes back only its own changes. It is refused while
-a newer Coach edit made on top of it is not undone.
+Undo. Undo of a Coach edit takes back only its own changes and keeps later typing.
+It is refused, and the activity read marks it not reversible, while a newer
+Coach edit made on top of it that changed the same blocks is not undone. It is
+also refused, with nothing written, when taking the edit back would remove
+something the person changed since. Two Coach edits from the same read cannot
+both change one block: the second comes back `stale`.
 
 ## What the implementation needs
 

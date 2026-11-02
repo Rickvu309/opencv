@@ -129,7 +129,7 @@ export function registerAccountQueries(registry: Registry) {
       description: "Read the newest activity, optionally for one subject.",
       coach: false,
       step: () => "Read activity",
-      read: (input, actor) => readActivity(actor.userId, input),
+      read: (input, actor) => readActivity(actor.userId, input, registry),
     })
   )
   registry.addQuery(
@@ -144,7 +144,8 @@ export function registerAccountQueries(registry: Registry) {
 
 export async function readActivity(
   userId: string,
-  filter: { subjectKind?: string; subjectId?: string }
+  filter: { subjectKind?: string; subjectId?: string },
+  registry: Registry
 ) {
   const filters = [eq(activity.userId, userId)]
   if (filter.subjectKind)
@@ -156,17 +157,26 @@ export async function readActivity(
     .where(and(...filters))
     .orderBy(desc(activity.createdAt))
     .limit(100)
-  return rows.map((row) => ({
-    id: row.id,
-    createdAt: row.createdAt.toISOString(),
-    actor: row.actor,
-    command: row.command,
-    subjectKind: row.subjectKind,
-    subjectId: row.subjectId,
-    summary: row.summary,
-    undoneAt: row.undoneAt?.toISOString() ?? null,
-    reversible: Boolean(row.reversalCommand) && row.undoneAt == null,
-  }))
+  return Promise.all(
+    rows.map(async (row) => ({
+      id: row.id,
+      createdAt: row.createdAt.toISOString(),
+      actor: row.actor,
+      command: row.command,
+      subjectKind: row.subjectKind,
+      subjectId: row.subjectId,
+      summary: row.summary,
+      undoneAt: row.undoneAt?.toISOString() ?? null,
+      reversible:
+        Boolean(row.reversalCommand) &&
+        row.undoneAt == null &&
+        !(await registry.undoBlockedReason(
+          userId,
+          row.reversalCommand,
+          row.reversalInput
+        )),
+    }))
+  )
 }
 
 export async function readProfile(actor: Actor) {

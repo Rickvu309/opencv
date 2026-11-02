@@ -22,10 +22,6 @@ function capped(line: string): string {
   return line.length <= LINE_CAP ? line : `${line.slice(0, LINE_CAP - 1)}…`
 }
 
-function joined(parts: readonly string[], separator: string): string {
-  return parts.filter((part) => part.length > 0).join(separator)
-}
-
 function headerLine(header: CvHeader): string {
   const fields = [
     ["name", header.name],
@@ -71,9 +67,9 @@ export function nodeSummary(node: PaperNode, position: number): string {
     case "divider":
       return "---"
     case "experience":
-      return `Experience: ${joined([node.role, node.company, node.period, node.location], " · ")}`
+      return `Experience: role: ${node.role} · company: ${node.company} · period: ${node.period} · location: ${node.location}`
     case "education":
-      return `Education: ${joined([node.school, node.degree, node.period, node.detail], " · ")}`
+      return `Education: school: ${node.school} · degree: ${node.degree} · period: ${node.period} · detail: ${node.detail}`
     case "skills":
       return `Skills ${node.label}: ${node.items.join(", ")}`
   }

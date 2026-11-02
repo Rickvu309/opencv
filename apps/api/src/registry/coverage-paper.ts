@@ -257,6 +257,14 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         await undo(result)
         expect(await blockText("t1")).toBe("First paragraph.QUICK ")
         expect(await blockText("t2")).toBe("Second paragraph.")
+        const stored = (
+          await db.select().from(paperDocs).where(eq(paperDocs.id, ctx.docId))
+        )[0]!.crdtDocument as unknown as PaperDocument
+        expect(stored.blocks.map((block) => block.id)).toEqual([
+          "s1",
+          "t1",
+          "t2",
+        ])
       },
     },
     {

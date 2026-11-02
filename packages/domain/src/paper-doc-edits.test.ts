@@ -134,7 +134,7 @@ describe("applyPaperEdits on an untouched document", () => {
       },
       {
         op: "insert",
-        after: "start",
+        after: "@start",
         blocks: [{ type: "section", kind: "skills" }],
       },
     ])
@@ -370,7 +370,7 @@ describe("paperOutline", () => {
     assert.equal(truncated, false)
     assert.match(text, /\[header\] name: Ada/)
     assert.match(text, /\[s1\] # Profile \(section summary\)/)
-    assert.match(text, /\[e1\] Experience: Analyst · Babbage/)
+    assert.match(text, /\[e1\] Experience: role: Analyst · company: Babbage/)
     assert.match(text, /^>> {3}\[b1\] - \*\*Wrote \*\*code$/m)
     assert.match(text, /\[h1\] ### \[Site\]\(https:\/\/example.com\)/)
   })
