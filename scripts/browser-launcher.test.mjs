@@ -129,6 +129,59 @@ for (const launcher of launchers) {
   })
 }
 
+for (const launcher of launchers) {
+  test(`${launcher} starts Chrome once more when the first start is silent`, (t) => {
+    const pending = PENDING.find((entry) => entry.file === launcher)
+    if (pending) {
+      t.skip(`${pending.issue} until ${pending.expires}`)
+      return
+    }
+    const scratch = path.join(homedir(), "tmp")
+    mkdirSync(scratch, { recursive: true })
+    const dir = mkdtempSync(path.join(scratch, "launcher-retry-"))
+    const counter = path.join(dir, "count")
+    const fake = path.join(dir, "fake-chrome.sh")
+    writeFileSync(
+      fake,
+      [
+        "#!/bin/sh",
+        `echo x >> ${counter}`,
+        `if [ "$(wc -l < ${counter})" -eq 1 ]; then exec sleep 30; fi`,
+        'echo "DevTools listening on ws://127.0.0.1:1/devtools/browser/fake" >&2',
+        "sleep 30",
+      ].join("\n")
+    )
+    chmodSync(fake, 0o755)
+    try {
+      const run = spawnSync(
+        process.execPath,
+        [
+          "--input-type=module",
+          "-e",
+          `const { launchBrowser } = await import(${JSON.stringify(path.join(root, launcher))});
+           try { await launchBrowser({ startDeadlineMs: 300 }) } catch (error) { console.log("rejected: " + error.message) }`,
+        ],
+        {
+          env: { ...process.env, CHROME_BIN: fake },
+          encoding: "utf8",
+          timeout: 15000,
+        }
+      )
+      const launches = existsSync(counter)
+        ? readFileSync(counter, "utf8").split("\n").filter(Boolean).length
+        : 0
+      assert.equal(
+        launches,
+        2,
+        `${launcher}: Chrome was started ${launches} time(s) after a silent first start. On CI the first start takes 9 to 22 s, so launchBrowser({ startDeadlineMs }) must start Chrome once more, as the verify-app-ui cdp.mjs does.`
+      )
+      assert.match(run.stdout, /devtools socket failed/)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+}
+
 test("pending launcher fixes have not expired", () => {
   assert.equal(expiredMessage(expiredPending(PENDING)), "")
 })
