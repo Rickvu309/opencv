@@ -23,8 +23,8 @@ export function SidebarFrame({ layout, children }: Props) {
       data-mode={layout.mode}
       style={style}
       className={cn(
-        "group/frame relative z-30 shrink-0 transition-[width] duration-(--duration-panel) ease-(--ease-panel) data-[resizing=true]:not-data-[collapse-preview=true]:transition-none motion-reduce:transition-none",
-        collapsed ? "w-9" : "w-(--sidebar-width)"
+        "group/frame peer/frame relative z-30 shrink-0 transition-[width] duration-(--duration-panel) ease-(--ease-panel) data-[resizing=true]:not-data-[collapse-preview=true]:transition-none motion-reduce:transition-none",
+        collapsed ? "w-0" : "w-(--sidebar-width)"
       )}
     >
       <FocusSafeRegion

@@ -80,12 +80,12 @@ describe("the sidebar mode while a drag is active", () => {
   it("keeps the collapsed gutter in a class so an abandoned drag cannot erase it", async () => {
     const { handle } = await renderShell()
     drag(handle, 244, 100)
-    expect(frame()).toHaveClass("w-9")
+    expect(frame()).toHaveClass("w-0")
     expect(frame().style.width).toBe("")
     act(() => {
       window.dispatchEvent(new Event("blur"))
     })
-    expect(frame()).toHaveClass("w-9")
+    expect(frame()).toHaveClass("w-0")
     expect(frame()).toHaveAttribute("data-mode", "collapsed")
   })
 })
@@ -95,7 +95,9 @@ describe("focus after a keyboard collapse", () => {
     await renderShell()
     screen.getByRole("link", { name: /^Coach/ }).focus()
     await userEvent.keyboard("[[")
-    expect(document.getElementById("app-main")).toHaveFocus()
+    expect(
+      document.querySelector('#app-main [data-slot="sidebar-expand"]')
+    ).toHaveFocus()
     expect(document.body).not.toHaveFocus()
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })
   }

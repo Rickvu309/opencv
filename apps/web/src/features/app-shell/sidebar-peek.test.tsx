@@ -143,7 +143,9 @@ describe("peek never gets stuck", () => {
     screen.getByRole("link", { name: /^Coach/ }).focus()
     fireEvent.keyDown(window, { key: "Escape" })
     expect(aside()).toHaveAttribute("data-peek", "false")
-    expect(document.getElementById("app-main")).toHaveFocus()
+    expect(
+      document.querySelector('#app-main [data-slot="sidebar-expand"]')
+    ).toHaveFocus()
   })
 
   it("closes on Escape without taking focus from the page", async () => {

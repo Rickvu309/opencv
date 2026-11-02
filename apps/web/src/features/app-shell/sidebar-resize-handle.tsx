@@ -5,7 +5,7 @@ import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import {
   clampSidebarWidth,
-  COLLAPSED_GUTTER,
+  COLLAPSED_FRAME_WIDTH,
   isCollapseDrag,
   MAX_SIDEBAR_WIDTH,
   MIN_SIDEBAR_WIDTH,
@@ -34,7 +34,7 @@ type Drag = {
 
 function showWidth(drag: Drag, width: number) {
   const collapsing = isCollapseDrag(drag.raw)
-  const frameWidth = collapsing ? COLLAPSED_GUTTER : width
+  const frameWidth = collapsing ? COLLAPSED_FRAME_WIDTH : width
   drag.frame?.style.setProperty("width", `${frameWidth}px`)
   drag.aside?.style.setProperty("width", `${width}px`)
   if (collapsing) drag.frame?.setAttribute("data-collapse-preview", "true")

@@ -5,5 +5,23 @@ export function focusIsInSidebar() {
 }
 
 export function pageFocusTarget() {
-  return document.getElementById("app-main")
+  return (
+    document.querySelector<HTMLElement>(
+      '#app-main [data-slot="sidebar-expand"]'
+    ) ?? document.getElementById("app-main")
+  )
+}
+
+export function sidebarFocusTarget() {
+  return document.querySelector<HTMLElement>(
+    '[data-slot="sidebar-frame"] aside a, [data-slot="sidebar-frame"] aside button'
+  )
+}
+
+export function focusIsInExpandButton() {
+  const active = document.activeElement
+  return (
+    active instanceof HTMLElement &&
+    active.matches('[data-slot="sidebar-expand"]')
+  )
 }

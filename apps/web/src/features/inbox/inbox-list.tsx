@@ -15,13 +15,13 @@ import {
   EmptyTitle,
 } from "@workspace/ui/components/empty"
 import {
-  PageHeader,
   PageHeaderAction,
   PageHeaderActions,
   PageHeaderTitle,
   PageHeaderTitleActions,
 } from "@workspace/ui/components/page-header"
 
+import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { InboxRow } from "./inbox-parts.tsx"
 import { inboxWhen, unreadCount } from "./inbox-time.ts"
 
@@ -58,7 +58,7 @@ export function InboxListHeader({
   onViewChange: (view: "inbox" | "snoozed") => void
 }) {
   return (
-    <PageHeader>
+    <WorkspaceHeader>
       <PageHeaderTitle className="max-md:min-w-0">
         {view === "snoozed" ? "Snoozed" : "Inbox"}
       </PageHeaderTitle>
@@ -95,7 +95,7 @@ export function InboxListHeader({
           }
         />
       </PageHeaderActions>
-    </PageHeader>
+    </WorkspaceHeader>
   )
 }
 

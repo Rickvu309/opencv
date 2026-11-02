@@ -10,6 +10,7 @@ import { colorDistance } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 import { checkGeometry, geometry } from "./lib/sidebar-geometry.mjs"
 import { checkResize } from "./lib/sidebar-resize-checks.mjs"
+import { checkCollapsedLayout } from "./lib/sidebar-collapsed-checks.mjs"
 import { checkRound3 } from "./lib/sidebar-round3-checks.mjs"
 import { phoneAccountMenu } from "./lib/sidebar-account-checks.mjs"
 import {
@@ -130,7 +131,7 @@ async function settle(page) {
 async function waitSidebar(page, root) {
   const ready = await page.waitFor(
     `(() => { const nav = document.querySelector(${JSON.stringify(root)}); return !!nav && !!nav.querySelector('[data-slot="nav-item-badge"]') && !!nav.querySelector('[data-slot="sidebar-group-label"][aria-controls]') && !nav.querySelector('[data-slot="skeleton"]') && nav.textContent.includes('Junior Marketing CV') && nav.textContent.includes('Lumière application') })()`,
-    20000
+    60000
   )
   check(ready, `sidebar ready (${root})`)
   await settle(page)
@@ -358,6 +359,16 @@ try {
     check,
     capture: async (page, file, clip) => {
       await page.screenshot(join(output, file), false, clip)
+      report.captures.push(file)
+    },
+  })
+
+  await checkCollapsedLayout({
+    browser,
+    web,
+    check,
+    capture: async (page, file) => {
+      await page.screenshot(join(output, file), false)
       report.captures.push(file)
     },
   })

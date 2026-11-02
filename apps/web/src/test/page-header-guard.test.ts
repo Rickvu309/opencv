@@ -43,7 +43,9 @@ export const RULES: Rule[] = [
   {
     name: "a PageHeader given a title or class override",
     hit: (source) =>
-      /<PageHeader\s+(?:[^>]*\s)?(?:title|className)=/.test(source),
+      /<(?:PageHeader|WorkspaceHeader)\s+(?:[^>]*\s)?(?:title|className)=/.test(
+        source
+      ),
   },
 ]
 
@@ -56,7 +58,7 @@ type Pending = {
   note: string
 }
 
-const LEGACY_TITLE = /<PageHeader\s+title=/
+const LEGACY_TITLE = /<WorkspaceHeader\s+title=/
 const PAPER = "Paper paused"
 
 export const PENDING_HEADERS: Pending[] = [

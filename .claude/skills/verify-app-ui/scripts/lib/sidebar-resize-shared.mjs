@@ -4,7 +4,8 @@ export const HANDLE = '[data-slot="sidebar-resize-handle"]'
 export const WIDTH_KEY = "opencv.sidebar.width"
 export const COLLAPSED_KEY = "opencv.sidebar.collapsed"
 export const Y = 450
-export const GUTTER = 36
+export const GUTTER = 0
+export const INSET = 8
 
 export const rectOf = (page, selector) =>
   page.evaluate(

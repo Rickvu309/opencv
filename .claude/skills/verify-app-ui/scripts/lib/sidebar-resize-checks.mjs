@@ -3,6 +3,7 @@ import { join } from "node:path"
 import {
   FRAME,
   GUTTER,
+  INSET,
   HANDLE,
   mainLeft,
   peekClosed,
@@ -164,7 +165,7 @@ export async function checkResize({ browser, web, output, check, capture }) {
     `${tag} Enter on the handle collapses the sidebar out of the tab order`
   )
   const panel = await mainLeft(page)
-  check(panel <= GUTTER + 1, `${tag} the panel takes the space (left ${panel})`)
+  check(panel <= INSET + 1, `${tag} the panel takes the space (left ${panel})`)
   const focus = await page.evaluate(
     `({ main: document.activeElement?.id === "app-main", body: document.activeElement === document.body })`
   )
@@ -205,7 +206,7 @@ export async function checkResize({ browser, web, output, check, capture }) {
       peek.bottom === 8 &&
       peek.w === 228 &&
       !peek.inert &&
-      peek.panel <= GUTTER + 1 &&
+      peek.panel <= INSET + 1 &&
       parseFloat(peek.radius) >= 8 &&
       peek.shadow !== "none",
     `${tag} hovering the left edge peeks an inset rounded elevated card over the content (${peek.left}, ${peek.top}, ${peek.w}, radius ${peek.radius}, panel ${peek.panel})`
@@ -303,7 +304,9 @@ export async function checkResize({ browser, web, output, check, capture }) {
     `${tag} [ collapses the sidebar`
   )
   check(
-    await page.evaluate("document.activeElement?.id === 'app-main'"),
+    await page.evaluate(
+      "document.activeElement?.id === 'app-main' || document.activeElement?.matches('[data-slot=\"sidebar-expand\"]')"
+    ),
     `${tag} focus moved to the page after [ collapsed the sidebar`
   )
   await page.key("[")
