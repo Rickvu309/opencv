@@ -18,6 +18,7 @@ A guard marked proven has a row in `scripts/guard-ledger.mjs` showing it fires o
 - `ci-workflow.test.mjs` (push, CI): ci.yml runs for the merge queue
 - `doc-paths.test.mjs` (push, CI): every repo path a doc cites in backticks exists
 - `driver-sign-in.test.mjs` (push, CI): a driver that calls the code endpoints or fills the sign-in form itself is flagged
+- `ds-codemod.test.mjs` (push, CI): a fresh shadcn file with comments has none after the codemod
 - `focus-indication.test.mjs` (push, CI): a pen.css rule that sets the box-shadow of a button without a focus rule is a focus loss
 - `guard-ledger.test.mjs` (push, CI): every guard, and every test that imports detect, has a ledger row or a baseline entry, and a row with a proof keeps it
 - `kit-duplicates.test.mjs` (push, CI): clipboard: the hand-rolled copy-link code that #844 deleted is caught
