@@ -124,13 +124,13 @@ export function save(ctx, { message }) {
   const again = againRead.holder
   if (lostNow(t, { claim: again, me, issue: againRead.issue }))
     return lost(ctx, t, again)
-  // Refresh immediately before git push. The pre-push check can take long
+  // Refresh immediately before git push. The pre-push checks can take a while
   // enough to expire a claim that was fresh at the previous heartbeat.
   heartbeat(ctx, t.n, again, me)
   const pushed = git.push(ctx.cwd)
   if (!pushed.ok)
     throw new Error(
-      `push failed (the pre-push check may have found a problem; your commit is safe locally): ${pushed.err || pushed.out}`.slice(
+      `push failed (the pre-push checks may have found a problem; your commit is safe locally): ${pushed.err || pushed.out}`.slice(
         -800
       )
     )

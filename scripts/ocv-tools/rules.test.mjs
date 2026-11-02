@@ -315,6 +315,12 @@ test("every checked rule has a failing and a passing fact", () => {
     `branch 'bad-name' does not match type/<issue#>-short-description (types: ${TYPE_LIST})`
   )
   check(
+    "QUICK_CHECKS",
+    { quick: { failed: ["no-comments", "fast guards"] } },
+    { quick: { failed: [] } },
+    "the quick checks failed: no-comments, fast guards"
+  )
+  check(
     "FILE_SIZE",
     { commits: { oversize: "big.mjs (20001 bytes) " } },
     { commits: {} },

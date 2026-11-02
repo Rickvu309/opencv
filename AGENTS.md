@@ -109,7 +109,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 4. Checks, commits, and PRs
 
-- The git hooks run the one rule table (`scripts/ocv-tools/rules`). At commit: format, file size and attribution. At push: no push to main, branch name, then `pnpm check` (affected tasks, guards and formatting). CI runs affected lint, types, build, tests, guards and the `policy` job.
+- The git hooks run the one rule table (`scripts/ocv-tools/rules`). At commit: format, file size and attribution. At push: no push to main, branch name, then the quick checks on changed files (prettier, eslint, no comments, fast guards; about a minute). CI and the merge queue are the gate for tests, types and build; `pnpm check` is the manual full run.
 - Run `scripts/ocv-tools.mjs finish --body-file <file>` (add `--draft` to open a draft). Use the `pr` skill (Summary, Evidence, Merge Danger). Finish runs the PR rules early, pushes through the hooks, and opens `type: description (#<issue>)` with `Closes #<issue>`.
 - A draft is optional. Mark a draft ready with `gh pr ready` once the evidence is attached. Run verify skills by hand (`.claude/skills/verify-opencv`). No preview deploys.
 - CI is hosted. Run local checks serially. `scripts/check.mjs` sets `CHECK_CONCURRENCY` and `VITEST_MAX_WORKERS` to 2.

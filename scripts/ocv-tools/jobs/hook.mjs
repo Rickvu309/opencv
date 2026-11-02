@@ -7,6 +7,7 @@ import { EXIT } from "../result.mjs"
 import { badInput } from "../input.mjs"
 import { decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
+import { runQuickChecks } from "./push-checks.mjs"
 
 const LIMIT_BYTES = 20000
 const BATCH = 200
@@ -237,33 +238,25 @@ function pushedRefs(text) {
 function prePush(ctx) {
   const refs = pushedRefs(ctx.readStdin())
   const pushing = refs.some((ref) => !ref.deleting)
-  const verdict = decide("push", {
-    push: { refs },
-    env: pushing ? ctx.env : {},
-  })
-  if (!verdict.ok) return report(verdict)
+  const facts = { push: { refs }, env: pushing ? ctx.env : {} }
+  const early = decide("push", { ...facts, quick: { failed: [] } })
+  if (!early.ok) return report(early)
   if (!pushing) return { lines: [] }
   if (ctx.env.SKIP_CHECKS === "1")
     return {
       lines: [
-        "pre-push: WARNING: SKIP_CHECKS=1, the quick check is skipped. Emergencies only; say so in the PR.",
+        "pre-push: WARNING: SKIP_CHECKS=1, the quick checks are skipped. Emergencies only; say so in the PR.",
       ],
     }
   const top = run(ctx, "git", ["rev-parse", "--show-toplevel"]).out || ctx.cwd
-  const checked = run(ctx, "pnpm", ["check"], {
-    cwd: top,
-    env: { CHECK_DRY_RUN: "" },
-    inherit: true,
-  })
-  if (checked.ok) return { lines: [] }
-  return {
-    exit: EXIT.refused,
-    lines: [
-      "pre-push: pnpm check did not pass.",
-      ...(checked.err ? [checked.err] : []),
-    ],
-    fix: "Fix what pnpm check reported, save, and push again. Install pnpm with corepack enable if it is missing.",
-  }
+  const started = ctx.now()
+  const quick = runQuickChecks(ctx, top)
+  const seconds = Math.round((ctx.now() - started) / 1000)
+  const verdict = decide("push", { ...facts, quick })
+  return report(verdict, [
+    ...quick.lines,
+    ...(verdict.ok ? [`pre-push: quick checks passed in ${seconds}s.`] : []),
+  ])
 }
 
 export function hook(ctx, name, args = []) {

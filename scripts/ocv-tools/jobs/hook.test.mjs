@@ -19,6 +19,10 @@ function world(over = {}) {
     generated: [],
     dirty: [],
     pnpmOk: true,
+    changed: [],
+    toolTests: [],
+    failing: [],
+    noBase: false,
     calls: [],
     ...over,
   }
@@ -36,6 +40,19 @@ function world(over = {}) {
       s.calls.push({ cmd, args, options })
       if (cmd === "pnpm")
         return s.pnpmOk ? ok() : { ok: false, out: "", err: "" }
+      if (
+        cmd === "node" ||
+        cmd === "env" ||
+        cmd.endsWith("/eslint") ||
+        args.includes("--check")
+      ) {
+        const label =
+          cmd === "node" || cmd === "env"
+            ? args[args.length - 1]
+            : cmd.split("/").pop()
+        const hit = s.failing.some((name) => label.includes(name))
+        return hit ? { ok: false, out: "", err: "" } : ok()
+      }
       if (cmd === PRETTIER) {
         if (args.includes("--write")) return ok()
         const path = args[args.indexOf("--stdin-filepath") + 1]
@@ -43,6 +60,11 @@ function world(over = {}) {
       }
       if (cmd !== "git") throw new Error(`unscripted ${cmd}`)
       const line = args.join(" ")
+      if (line.startsWith("merge-base"))
+        return s.noBase ? { ok: false, out: "", err: "" } : ok("base1")
+      if (line.includes("--diff-filter=ACMR -z base1 HEAD"))
+        return ok(s.changed.join("\0"))
+      if (args[0] === "ls-files") return ok(s.toolTests.join("\0"))
       if (line.startsWith("rev-parse --show-toplevel")) return ok("/repo")
       if (line.startsWith("rev-parse --absolute-git-dir"))
         return ok("/repo/.git")
@@ -221,23 +243,105 @@ test("pre-push refuses main and bad branch names, allows bot and delete pushes",
     assert.equal(w.call(["pre-push"], { stdin }).code, 0, stdin)
 })
 
-test("pre-push runs pnpm check for a task branch and blocks when it fails", () => {
-  const w = world()
-  const r = w.call(["pre-push"], { stdin: push(["refs/heads/feat/1-x"]) })
-  assert.equal(r.code, 0, r.text)
-  const check = w.s.calls.find((c) => c.cmd === "pnpm")
-  assert.deepEqual(check.args, ["check"])
-  assert.equal(check.options.env.CHECK_DRY_RUN, "")
-  assert.equal(check.options.inherit, true)
-  const failing = world({ pnpmOk: false })
-  const blocked = failing.call(["pre-push"], {
-    stdin: push(["refs/heads/feat/1-x"]),
+const nodeCalls = (w) =>
+  w.s.calls.filter((c) => c.cmd === "node" || c.cmd === "env")
+const pushOk = push(["refs/heads/feat/1-x"])
+
+test("pre-push runs only the quick checks and never the full suite", () => {
+  const w = world({
+    changed: ["apps/web/src/a.tsx", "packages/ui/src/b.ts", "README.md"],
   })
-  assert.equal(blocked.code, 2)
-  assert.match(blocked.text, /pnpm check did not pass/)
+  const r = w.call(["pre-push"], { stdin: pushOk })
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /quick checks passed in \d+s/)
+  const commands = w.s.calls
+    .filter((c) => c.cmd !== "git")
+    .map((c) => [c.cmd.split("/").pop(), ...c.args].join(" "))
+  assert.deepEqual(
+    commands.map((line) => line.split(" ")[0]),
+    ["prettier", "eslint", "eslint", "node", "env"]
+  )
+  assert.equal(w.s.calls.filter((c) => c.cmd === "pnpm").length, 0)
+  assert.equal(
+    commands.filter((line) => /turbo|vitest|vite/.test(line)).length,
+    0,
+    commands.join("\n")
+  )
+  const prettier = w.s.calls.find((c) => c.cmd === PRETTIER)
+  assert.deepEqual(prettier.args.slice(-3), [
+    "apps/web/src/a.tsx",
+    "packages/ui/src/b.ts",
+    "README.md",
+  ])
+  const web = w.s.calls.find(
+    (c) => c.cmd === "/repo/apps/web/node_modules/.bin/eslint"
+  )
+  assert.deepEqual(web.args.slice(-1), ["src/a.tsx"])
+  assert.equal(web.options.cwd, "/repo/apps/web")
+  const [comments, guards] = nodeCalls(w)
+  assert.deepEqual(comments.args, ["scripts/no-comments.mjs"])
+  assert.equal(guards.cmd, "env")
+  for (const name of ["GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"])
+    assert.ok(guards.args.join(" ").includes(`-u ${name} `), name)
+  assert.ok(guards.args.includes("--test"))
+  assert.ok(guards.args.includes("scripts/doc-paths.test.mjs"))
+  assert.ok(!guards.args.includes("packages/guards/shell-suites.test.mjs"))
+  assert.ok(guards.args.every((arg) => !arg.startsWith("packages/")))
+})
+
+test("pre-push still refuses a comment, bad formatting, a lint error and a failing guard", () => {
+  const refused = (failing) => {
+    const w = world({ changed: ["apps/web/src/a.tsx"], failing })
+    return w.call(["pre-push"], { stdin: pushOk })
+  }
+  const comment = refused(["no-comments"])
+  assert.equal(comment.code, 2)
+  assert.match(
+    comment.text,
+    /REFUSED QUICK_CHECKS: the quick checks failed: no-comments/
+  )
+  assert.match(refused(["prettier"]).text, /failed: prettier/)
+  assert.match(refused(["eslint"]).text, /failed: eslint apps\/web/)
+  assert.match(refused(["rules-doc"]).text, /failed: fast guards/)
+  const everything = refused(["no-comments", "eslint"])
+  assert.match(everything.text, /eslint apps\/web, no-comments/)
+})
+
+test("pre-push refuses a bad branch name before it runs any check", () => {
+  const w = world({ changed: ["apps/web/src/a.tsx"] })
+  const r = w.call(["pre-push"], { stdin: push(["refs/heads/bad-name"]) })
+  assert.equal(r.code, 2)
+  assert.match(r.text, /REFUSED BRANCH_NAME/)
+  assert.equal(w.s.calls.filter((c) => c.cmd !== "git").length, 0)
+})
+
+test("pre-push adds the ocv-tools suites only when scripts/ocv-tools changed", () => {
+  const other = world({ changed: ["apps/web/src/a.tsx"] })
+  other.call(["pre-push"], { stdin: pushOk })
+  assert.equal(other.git("ls-files").length, 0)
+  const tools = world({
+    changed: ["scripts/ocv-tools/jobs/hook.mjs"],
+    toolTests: ["scripts/ocv-tools/jobs/hook.test.mjs"],
+  })
+  tools.call(["pre-push"], { stdin: pushOk })
+  assert.ok(
+    nodeCalls(tools)[1].args.includes("scripts/ocv-tools/jobs/hook.test.mjs")
+  )
+})
+
+test("pre-push without origin/main skips prettier and eslint but still checks comments", () => {
+  const w = world({ noBase: true })
+  const r = w.call(["pre-push"], { stdin: pushOk })
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /origin\/main is missing/)
+  assert.equal(nodeCalls(w).length, 2)
+  assert.equal(w.s.calls.filter((c) => c.cmd.endsWith("prettier")).length, 0)
+})
+
+test("pre-push on a delete runs no check", () => {
   const deleting = world()
   deleting.call(["pre-push"], { stdin: push(["refs/heads/feat/1-x", ZERO]) })
-  assert.equal(deleting.s.calls.filter((c) => c.cmd === "pnpm").length, 0)
+  assert.equal(deleting.s.calls.filter((c) => c.cmd !== "git").length, 0)
 })
 
 test("pre-push with SKIP_CHECKS=1 warns, skips the check, and needs a named human", () => {
@@ -249,7 +353,7 @@ test("pre-push with SKIP_CHECKS=1 warns, skips the check, and needs a named huma
   })
   assert.equal(r.code, 0)
   assert.match(r.text, /WARNING: SKIP_CHECKS=1/)
-  assert.equal(declared.s.calls.filter((c) => c.cmd === "pnpm").length, 0)
+  assert.equal(declared.s.calls.filter((c) => c.cmd !== "git").length, 0)
   const nobody = world({ env: { SKIP_CHECKS: "1" } })
   const refused = nobody.call(["pre-push"], {
     stdin: push(["refs/heads/feat/1-x"]),

@@ -46,7 +46,7 @@ Used by `/wayfinder`. The **map** is a single GitHub issue with **child** issues
 `scripts/ocv-tools.mjs help` lists every job. The ones for working an issue:
 
 - `take <n>` makes the worktree (branch, port, `.env`, hooks, install; it replaces the old new-task script) and records your claim in an issue comment. Refused: NOT_AN_ISSUE, CLOSED, HELD, NEEDS_APPROVAL (risk:high only), WORKTREE_EXISTS, ASSIGNED (`--take` overrides), READY_FOR_HUMAN, DISK. Given a title instead of a number it files the issue first.
-- `save -m <message>` commits, pushes through the pre-push check and refreshes the claim. A claim idle for 180 minutes can be taken over; the old holder's next save exits 3 (LOST) and writes a patch under `~/tmp/ocv-tools/lost/`.
+- `save -m <message>` commits, pushes through the pre-push checks and refreshes the claim. A claim idle for 180 minutes can be taken over; the old holder's next save exits 3 (LOST) and writes a patch under `~/tmp/ocv-tools/lost/`.
 - `release --reason <why>` gives the issue back. Only the holder can.
 - `cleanup [<n>]` removes the worktree and branch after the merge (it replaces the old cleanup script). Refused: DIRTY, NOT_MERGED. `--all`, `--dry-run` and `--force` as before.
 - `status <n>` also shows who holds the claim and how long it has been idle.
