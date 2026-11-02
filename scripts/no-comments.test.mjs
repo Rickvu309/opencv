@@ -159,3 +159,46 @@ test("the baseline file round-trips through disk in sorted order", () => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test("JSX text that starts with two slashes is text, not a comment", () => {
+  assert.deepEqual(banned("a.tsx", "const a = <p>// x</p>\n"), [])
+  assert.deepEqual(
+    banned(
+      "a.tsx",
+      ["const a = (", "  <p>", "    // looks like one", "  </p>", ")", ""].join(
+        "\n"
+      )
+    ),
+    []
+  )
+  assert.deepEqual(banned("a.tsx", "const a = <p>{/* real */}</p>\n"), [1])
+})
+
+test("a comment inside CSS in a template literal fails, mapped to its own line", () => {
+  const tagged = [
+    "const a = css`",
+    "  a { color: red; }",
+    "  /* why */",
+    "`",
+    "",
+  ]
+  assert.deepEqual(banned("a.ts", tagged.join("\n")), [3])
+  const untagged = [
+    "export const styles = `",
+    ".a {",
+    "  color: red; /* why */",
+    "}",
+    "`",
+    "",
+  ]
+  assert.deepEqual(banned("a.ts", untagged.join("\n")), [3])
+  const withHole = ["const b = `.a { width: ${w}px; /* why */ }`", ""]
+  assert.deepEqual(banned("a.ts", withHole.join("\n")), [1])
+})
+
+test("a template that is not CSS keeps its comment marks, and CSS strings keep theirs", () => {
+  assert.deepEqual(banned("a.ts", "const a = `see /* x */ and { a: b }`\n"), [])
+  assert.deepEqual(banned("a.ts", "const a = `a /* x */ b`\n"), [])
+  const quoted = ['const a = `.a { content: "/* q */"; color: red; }`', ""]
+  assert.deepEqual(banned("a.ts", quoted.join("\n")), [])
+})

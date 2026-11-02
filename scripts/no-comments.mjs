@@ -58,7 +58,7 @@ function lineOf(text, offset) {
 function makeComment(text, pos, end) {
   const raw = text.slice(pos, end)
   const line = lineOf(text, pos)
-  return { line, lines: raw.split("\n").length, raw }
+  return { line, lines: raw.split("\n").length, raw, pos, end }
 }
 
 function scriptKind(file) {
@@ -67,34 +67,98 @@ function scriptKind(file) {
   return ts.ScriptKind.JSX
 }
 
-export function findSourceComments(file, text) {
-  const sourceFile = ts.createSourceFile(
+const CSS_DECLARATION_BLOCK = /\{[^{}]*[-\w]+\s*:\s*[^;{}]+;[^{}]*\}/
+const TEMPLATE_HOLE = "0"
+
+function templatePieces(template, sourceFile) {
+  const tokens =
+    template.kind === ts.SyntaxKind.TemplateExpression
+      ? [template.head, ...template.templateSpans.map((span) => span.literal)]
+      : [template]
+  return tokens.map((token) => {
+    const closesWithHole =
+      token.kind === ts.SyntaxKind.TemplateHead ||
+      token.kind === ts.SyntaxKind.TemplateMiddle
+    return {
+      start: token.getStart(sourceFile) + 1,
+      end: token.end - (closesWithHole ? 2 : 1),
+    }
+  })
+}
+
+function isCssTemplate(template, pieces, text) {
+  const tag = template.parent
+  if (
+    tag.kind === ts.SyntaxKind.TaggedTemplateExpression &&
+    tag.tag.getText() === "css"
+  )
+    return true
+  const joined = pieces
+    .map((piece) => text.slice(piece.start, piece.end))
+    .join(TEMPLATE_HOLE)
+  const withoutComments = joined.replace(/\/\*[\s\S]*?\*\//g, "")
+  return CSS_DECLARATION_BLOCK.test(withoutComments)
+}
+
+export function cssTemplatePieces(file, text) {
+  const sourceFile = parseSource(file, text)
+  const found = []
+  const visit = (node) => {
+    if (
+      node.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral ||
+      node.kind === ts.SyntaxKind.TemplateExpression
+    ) {
+      const pieces = templatePieces(node, sourceFile)
+      if (isCssTemplate(node, pieces, text)) found.push(...pieces)
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(sourceFile)
+  return found
+}
+
+function parseSource(file, text) {
+  return ts.createSourceFile(
     file,
     text,
     ts.ScriptTarget.Latest,
     true,
     scriptKind(file)
   )
+}
+
+export function findSourceComments(file, text) {
+  const sourceFile = parseSource(file, text)
   const seen = new Map()
+  const jsxTexts = []
   const collect = (ranges) => {
     for (const range of ranges ?? []) seen.set(range.pos, range)
   }
   const walk = (node) => {
-    if (node.kind === ts.SyntaxKind.JsxText) return
+    if (node.kind === ts.SyntaxKind.JsxText) {
+      jsxTexts.push([node.pos, node.end])
+      return
+    }
     collect(ts.getLeadingCommentRanges(text, node.pos))
     collect(ts.getTrailingCommentRanges(text, node.end))
     for (const child of node.getChildren(sourceFile)) walk(child)
   }
   walk(sourceFile)
-  return [...seen.values()]
-    .sort((a, b) => a.pos - b.pos)
+  const insideJsxText = (range) =>
+    jsxTexts.some(([start, end]) => start <= range.pos && range.pos < end)
+  const comments = [...seen.values()]
+    .filter((range) => !insideJsxText(range))
     .map((range) => makeComment(text, range.pos, range.end))
+  for (const piece of cssTemplatePieces(file, text)) {
+    comments.push(...findCssComments(text, piece.start, piece.end))
+  }
+  return comments.sort((a, b) => a.pos - b.pos)
 }
 
-export function findCssComments(text) {
+export function findCssComments(text, from = 0, to = text.length) {
   const found = []
   let quote = null
-  for (let i = 0; i < text.length; i++) {
+  for (let i = from; i < to; i++) {
     const char = text[i]
     if (quote) {
       if (char === "\\") i++
@@ -103,7 +167,7 @@ export function findCssComments(text) {
       quote = char
     } else if (char === "/" && text[i + 1] === "*") {
       const close = text.indexOf("*/", i + 2)
-      const end = close === -1 ? text.length : close + 2
+      const end = close === -1 || close + 2 > to ? to : close + 2
       found.push(makeComment(text, i, end))
       i = end - 1
     }

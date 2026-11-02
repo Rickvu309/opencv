@@ -1,5 +1,4 @@
 export const css = `
-/* Colors and motion as variables – override them on .ui-tcc / .ui-tcc-group */
 .ui-tcc,
 .ui-tcc-group {
   --ui-tcc-card: var(--card);
@@ -12,7 +11,6 @@ export const css = `
   --ui-tcc-line: var(--border);
   --ui-tcc-wash: color-mix(in oklab, var(--muted) 50%, transparent);
   --ui-tcc-wash-big: color-mix(in oklab, var(--muted) 30%, transparent);
-  /* The code panel: a 2% black frame, kept opaque so the fade of capped blocks can end on it */
   --ui-tcc-code: var(--muted);
   --ui-tcc-accent: var(--foreground);
   --ui-tcc-red: var(--destructive);
@@ -23,7 +21,6 @@ export const css = `
   --ui-tcc-num: var(--muted-foreground);
   --ui-tcc-lit: var(--muted-foreground);
   --ui-tcc-shine: color-mix(in oklab, var(--card) 82%, transparent);
-  /* Strokes are shadows: a 0.5px hairline plus a soft lift */
   --ui-tcc-shadow: 0 0 0 1px var(--border);
   --ui-tcc-focus: color-mix(in oklab, var(--ring) 50%, transparent);
   --ui-tcc-ease: var(--ease-micro);
@@ -56,7 +53,6 @@ export const css = `
   white-space: nowrap;
 }
 
-/* Header row: icon, name + summary, status, chevron – everything truncates before it overflows */
 .ui-tcc__head {
   all: unset;
   box-sizing: border-box;
@@ -91,7 +87,6 @@ export const css = `
   .ui-tcc__retry:hover { background: var(--ui-tcc-wash-big); }
 }
 
-/* The tool's icon: a plain 16px glyph, no tile */
 .ui-tcc__icon {
   display: grid;
   place-items: center;
@@ -147,7 +142,6 @@ export const css = `
 .ui-tcc__spinner circle { stroke: var(--ui-tcc-line); stroke-width: 1.6; }
 .ui-tcc__spinner path { stroke: var(--ui-tcc-accent); stroke-width: 1.6; }
 .ui-tcc__spinner { animation: ui-tcc-spin 800ms linear infinite; }
-/* Done: a solid blue dot whose white check draws itself */
 .ui-tcc__ok { animation: ui-tcc-pop var(--duration-panel) var(--ease-micro) both; }
 .ui-tcc__ok circle { fill: var(--ui-tcc-accent); }
 .ui-tcc__ok path { stroke: var(--primary-foreground); stroke-width: 1.5; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ui-tcc-draw var(--duration-panel) var(--ui-tcc-ease) var(--duration-micro) forwards; }
@@ -168,7 +162,6 @@ export const css = `
 .ui-tcc[data-open] > .ui-tcc__head .ui-tcc__chevron,
 .ui-tcc-group[data-open] > .ui-tcc-group__head .ui-tcc__chevron { transform: rotate(180deg); }
 
-/* Body: grows from 0fr to 1fr, so the height animates without measuring */
 .ui-tcc__body {
   display: grid;
   grid-template-rows: 0fr;
@@ -196,7 +189,6 @@ export const css = `
   gap: 8px;
   min-height: 28px;
 }
-/* Tiny uppercase labels: "ARGUMENTS", "RESULT" */
 .ui-tcc__label {
   color: var(--ui-tcc-muted);
   font-size: 10px;
@@ -207,7 +199,6 @@ export const css = `
 }
 .ui-tcc__pending { margin: 0; color: var(--ui-tcc-muted); font-size: 12px; line-height: 16px; }
 
-/* Copy: a small white icon button with the card's hairline */
 .ui-tcc__copy {
   all: unset;
   position: relative;
@@ -239,7 +230,6 @@ export const css = `
 .ui-tcc__copy[data-copied] .ui-tcc__copy-icon { opacity: 0; transform: scale(0.6); filter: blur(2px); }
 .ui-tcc__copy[data-copied] .ui-tcc__copy-done { opacity: 1; transform: none; filter: none; }
 
-/* Code: a faint panel with a 0.5px frame; wraps instead of scrolling sideways, capped blocks fade out */
 .ui-tcc__code {
   position: relative;
   margin: 0;
@@ -291,7 +281,6 @@ export const css = `
   transition: color var(--duration-micro) ease;
 }
 
-/* Error: the message on a faint red panel and an optional white Retry button */
 .ui-tcc__error {
   display: flex;
   align-items: center;
@@ -334,7 +323,6 @@ export const css = `
 .ui-tcc__retry svg { width: 16px; height: 16px; fill: none; stroke: var(--ui-tcc-icon); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .ui-tcc__retry:active svg { transform: rotate(-60deg); transition: transform var(--duration-micro) var(--ui-tcc-ease); }
 
-/* Group: one quiet line with the tool icons stacked on small white tiles, the cards below */
 .ui-tcc-group { display: grid; }
 .ui-tcc-group__head {
   all: unset;
@@ -384,7 +372,6 @@ export const css = `
 .ui-tcc-group__time { flex: none; color: var(--ui-tcc-faint); font-variant-numeric: tabular-nums; }
 .ui-tcc-group__list { display: grid; gap: 8px; padding: 6px 0 2px; }
 
-/* A soft light sweeping over "Using tools…" */
 .ui-tcc__shine::after {
   content: attr(data-text);
   content: attr(data-text) / "";
@@ -414,12 +401,10 @@ export const css = `
   to { background-position: 0% 0; }
 }
 
-/* Narrow (phones): a little less padding, the summary gives way first */
 @container (max-width: 360px) {
   .ui-tcc__head { gap: 8px; padding: 0 12px; }
   .ui-tcc__sections { padding: 12px 12px 12px; }
 }
-/* Touch screens: bigger tap targets */
 @media (pointer: coarse) {
   .ui-tcc__head { min-height: 52px; }
 }

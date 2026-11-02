@@ -1,7 +1,13 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { rewriteSource } from "./ds-codemod.mjs"
-import { bannedComments } from "./no-comments.mjs"
+import { existsSync, readFileSync } from "node:fs"
+import {
+  StripRefused,
+  assertCodeUnchanged,
+  stripComments,
+} from "./lib/strip-comments.mjs"
+import { bannedComments, readBaseline } from "./no-comments.mjs"
 
 const FRESH_SHADCN_FILE = `import * as React from "react"
 
@@ -93,4 +99,89 @@ test("the design-name rules still rewrite and report their hits", () => {
   )
   assert.equal(out, 'const c = "duration-(--duration-micro) text-sm"\n')
   assert.equal(hits.length, 2)
+})
+
+test("MISTAKE: a string that holds the comment's own text is left whole", () => {
+  const file = "packages/ui/src/components/x.ts"
+  assert.equal(
+    rewriteSource(file, 'const u = "// note" // note\n'),
+    'const u = "// note"\n'
+  )
+  assert.equal(
+    rewriteSource(file, "const u = '/* x */'; /* x */\n"),
+    "const u = '/* x */';\n"
+  )
+})
+
+test("MISTAKE: JSX text that starts with two slashes is kept as text", () => {
+  const file = "packages/ui/src/components/x.tsx"
+  const text = "const a = <p>// x</p>\n"
+  assert.equal(rewriteSource(file, text), text)
+  const lines = [
+    "const a = (",
+    "  <p>",
+    "    // looks like one",
+    "  </p>",
+    ")",
+    "",
+  ].join("\n")
+  assert.equal(rewriteSource(file, lines), lines)
+})
+
+test("comments inside CSS in a template literal go and the rules stay", () => {
+  const source = [
+    "export const styles = `",
+    ".a {",
+    "  color: red; /* why */",
+    "  /* alone */",
+    "  margin: 0;",
+    "}",
+    "`",
+    "",
+  ].join("\n")
+  const out = rewriteSource("packages/ui/src/components/x.ts", source)
+  assert.equal(
+    out,
+    [
+      "export const styles = `",
+      ".a {",
+      "  color: red;",
+      "  margin: 0;",
+      "}",
+      "`",
+      "",
+    ].join("\n")
+  )
+})
+
+test("the strip refuses output that does not parse or whose code changed", () => {
+  assert.throws(
+    () =>
+      assertCodeUnchanged(
+        "a.tsx",
+        "const a = <p>// x</p>\n",
+        "const a = <p>\n"
+      ),
+    StripRefused
+  )
+  assert.throws(
+    () => assertCodeUnchanged("a.ts", "const a = 1 // x\n", "const a = 2\n"),
+    StripRefused
+  )
+  assert.throws(
+    () => assertCodeUnchanged("a.ts", "f(1) // x\n", "f(1\n"),
+    StripRefused
+  )
+  assert.doesNotThrow(() =>
+    assertCodeUnchanged("a.ts", "const a = 1 // x\n", "const a = 1\n")
+  )
+})
+
+test("the strip changes only comments in every file the baseline still lists", () => {
+  const files = Object.keys(readBaseline()).filter((file) => existsSync(file))
+  assert.ok(files.length > 100)
+  for (const file of files) {
+    const out = stripComments(file, readFileSync(file, "utf8"))
+    assert.equal(comments(file, out), 0, file)
+  }
 })

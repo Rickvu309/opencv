@@ -13,7 +13,7 @@ export type SkeletonProps = {
 
 export type ShimmerTextProps = {
   children: ReactNode
-  duration?: number
+  durationSeconds?: number
   className?: string
 }
 
@@ -55,7 +55,7 @@ export function Skeleton({
 
 export function ShimmerText({
   children,
-  duration = 2,
+  durationSeconds = 2,
   className,
 }: ShimmerTextProps) {
   return (
@@ -64,7 +64,7 @@ export function ShimmerText({
       <span
         data-slot="shimmer-text"
         className={["ui-shm-text", className].filter(Boolean).join(" ")}
-        style={{ animationDuration: `${duration}s` }}
+        style={{ animationDuration: `${durationSeconds}s` }}
       >
         {children}
       </span>
@@ -73,7 +73,6 @@ export function ShimmerText({
 }
 
 const css = `
-/* Skeleton: one fixed gradient for the whole viewport, so all blocks sweep together */
 .ui-shm {
   display: block;
   flex: none;
@@ -100,7 +99,6 @@ const css = `
   to { background-position: 100vw 0; }
 }
 
-/* Text: a highlight band runs through the letters */
 .ui-shm-text {
   display: inline-block;
   color: var(--muted-foreground);

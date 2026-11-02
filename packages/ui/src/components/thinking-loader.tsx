@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
 export type ThinkingLoaderProps = {
   phases?: string[]
-  interval?: number
+  intervalMs?: number
   phase?: number
   loop?: boolean
   done?: boolean
@@ -23,11 +23,18 @@ const DEFAULT_PHASES = [
   "Writing response",
 ]
 const LAYOUT_PIXEL_ROUNDING_PX = 1
+
+const widthInLayoutPixelsIgnoringZoomAndTransform = (element: HTMLElement) =>
+  element.offsetWidth + LAYOUT_PIXEL_ROUNDING_PX
+
+const flushPendingStyles = (element: HTMLElement) =>
+  element.getBoundingClientRect()
+
 const RAYS = Array.from({ length: 8 }, (_, i) => i)
 
 export function ThinkingLoader({
   phases = DEFAULT_PHASES,
-  interval = 2200,
+  intervalMs = 2200,
   phase,
   loop = false,
   done = false,
@@ -55,9 +62,9 @@ export function ThinkingLoader({
     if (done || phase !== undefined || phases.length < 2) return
     const id = window.setInterval(() => {
       setStep((s) => (s + 1 < phases.length ? s + 1 : loop ? 0 : s))
-    }, interval)
+    }, intervalMs)
     return () => window.clearInterval(id)
-  }, [done, phase, phases.length, interval, loop])
+  }, [done, phase, phases.length, intervalMs, loop])
 
   const index = Math.min(
     Math.max(phase ?? step, 0),
@@ -86,9 +93,9 @@ export function ThinkingLoader({
     const c = current.current
     if (!b || !c) return
     if (!measured.current) b.style.transition = "none"
-    b.style.width = `${c.offsetWidth + LAYOUT_PIXEL_ROUNDING_PX}px`
+    b.style.width = `${widthInLayoutPixelsIgnoringZoomAndTransform(c)}px`
     if (!measured.current) {
-      b.getBoundingClientRect()
+      flushPendingStyles(b)
       b.style.transition = ""
       measured.current = true
     }

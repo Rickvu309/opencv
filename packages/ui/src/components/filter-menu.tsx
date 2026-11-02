@@ -342,8 +342,6 @@ const css = `
   box-shadow: var(--ui-fm-shadow);
 }
 
-/* ---------- Header ---------- */
-
 .ui-fm__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 2px; }
 .ui-fm__title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
 .ui-fm__clear {
@@ -358,8 +356,6 @@ const css = `
 }
 .ui-fm__clear:hover:not(:disabled) { color: var(--ui-fm-ink) !important; background: var(--ui-fm-row-hover); }
 .ui-fm__clear:disabled { opacity: 0.45; cursor: default; }
-
-/* ---------- Chips ---------- */
 
 .ui-fm__chips-outer { overflow: hidden; }
 .ui-fm__chips-outer[data-smooth] { transition: height var(--duration-panel) var(--ease-panel); }
@@ -392,8 +388,6 @@ const css = `
 }
 .ui-fm__chip button:hover { background: var(--ui-fm-chip-hover); color: var(--ui-fm-ink); }
 .ui-fm__chip svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-
-/* ---------- Groups ---------- */
 
 .ui-fm__groups { display: grid; padding-top: 6px; }
 .ui-fm__group-head {
@@ -488,8 +482,6 @@ const css = `
 }
 .ui-fm__option[aria-checked="true"] .ui-fm__box { background: var(--ui-fm-ink); box-shadow: inset 0 0 0 1px var(--ui-fm-ink); }
 .ui-fm__option[aria-checked="true"] .ui-fm__box svg { stroke-dashoffset: 0; }
-
-/* ---------- Keyboard hints on the tray ---------- */
 
 .ui-fm__hints { display: flex; justify-content: space-between; gap: 12px; padding: 10px 8px 4px; }
 .ui-fm__hint { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ui-fm-text); }

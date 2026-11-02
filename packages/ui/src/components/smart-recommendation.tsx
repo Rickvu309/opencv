@@ -249,9 +249,7 @@ const css = `
   width: 100%;
   max-width: 440px;
   container-type: inline-size;
-  /* Like the Chat Composer: the white card on a gray tray, the actions live in the tray below */
   background: var(--ui-sr-tray);
-  /* The gray tray frames the white card on every side */
   padding: 6px;
   border-radius: 22px;
   font-family: inherit;
@@ -317,7 +315,6 @@ const css = `
 .ui-sr__foot {
   display: flex;
   align-items: center;
-  /* Narrow containers: the actions move below the signal instead of running out of the tray */
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px 10px;
@@ -394,7 +391,6 @@ const css = `
   box-shadow: 0 0 0 1px var(--ui-sr-border), 0 12px 30px -8px rgba(0, 0, 0, 0.2);
   animation: ui-sr-drop var(--duration-micro) var(--ease-micro);
 }
-/* Narrow: the actions sit on their own row – the menu lines up with its right edge so it stays inside */
 @container (max-width: 420px) {
   .ui-sr__actions { position: relative; }
   .ui-sr__alt { position: static; }

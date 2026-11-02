@@ -1,5 +1,4 @@
 export const css = `
-/* Animatable custom properties: the equal segment width and the soft edges glide too */
 @property --ui-segc-min { syntax: "<length>"; inherits: true; initial-value: 0px; }
 @property --ui-segc-fade-l { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @property --ui-segc-fade-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
@@ -18,7 +17,6 @@ export const css = `
   --ui-segc-accent-soft: var(--muted);
   --ui-segc-focus: color-mix(in oklab, var(--ring) 50%, transparent);
   --ui-segc-ease: var(--ease-micro);
-  /* Size: md – 28px chips, 4px 10px */
   --ui-segc-h: 28px;
   --ui-segc-px: 10px;
   --ui-segc-fs: 13px;
@@ -48,7 +46,6 @@ export const css = `
 :where(.ui-segc) button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
 :where(.ui-segc) svg { display: block; flex: none; }
 
-/* Scrolls sideways only when it doesn't fit; the padding keeps focus rings from being cut off */
 .ui-segc__scroller {
   position: relative;
   flex: 1;
@@ -70,19 +67,15 @@ export const css = `
   display: flex;
   width: max-content;
   min-width: 100%;
-  /* Horizontal drags move the indicator; vertical ones still scroll the page */
   touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-/* When it scrolls, swipes scroll it instead of dragging the indicator */
 .ui-segc[data-overflow] .ui-segc__track { touch-action: pan-x pan-y; }
-/* Equal segments, each as wide as the widest one needs */
 .ui-segc[data-full] .ui-segc__track { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(var(--ui-segc-min), 1fr); }
 .ui-segc[data-ready] .ui-segc__track { transition: --ui-segc-min var(--duration-micro) var(--ui-segc-ease); }
 
-/* An option */
 .ui-segc__opt {
   position: relative;
   z-index: 1;
@@ -95,7 +88,6 @@ export const css = `
   overflow: clip;
   border-radius: 6px;
   white-space: nowrap;
-  /* Hover washes are short and crisp, in and out */
   transition: color var(--duration-micro) ease, background-color var(--duration-micro) ease;
 }
 .ui-segc[data-ready]:not([data-full]) .ui-segc__opt { transition: color var(--duration-micro) ease, background-color var(--duration-micro) ease, width var(--duration-micro) var(--ui-segc-ease); }
@@ -144,7 +136,6 @@ export const css = `
 }
 .ui-segc[data-size="sm"] .ui-segc__badge { height: 16px; padding: 0 5px; font-size: 10px; }
 
-/* The indicator: left and right edges slide separately – the one facing the target leads a touch. Short and crisp */
 .ui-segc__pill {
   position: absolute;
   top: 0;
@@ -160,22 +151,17 @@ export const css = `
 }
 .ui-segc__pill[data-dir="right"] { transition-duration: var(--duration-panel), var(--duration-micro), var(--duration-micro), var(--duration-micro); }
 .ui-segc__pill[data-dir="left"] { transition-duration: var(--duration-micro), var(--duration-panel), var(--duration-micro), var(--duration-micro); }
-/* Press feedback: the indicator gives a little while held or dragged */
 .ui-segc[data-pressed]:not([data-variant="underline"]) .ui-segc__pill { scale: 0.97; }
 
-/* Buttons (default): separate chips with a hairline; the light-gray fill slides to the active one.
-   The control reaches a few px past its box so focus rings are never clipped, and still lines up with its neighbours */
 .ui-segc[data-variant="buttons"] { --ui-segc-pad: var(--ui-segc-ring); margin: calc(var(--ui-segc-ring) * -1); max-width: calc(100% + var(--ui-segc-ring) * 2); }
 .ui-segc[data-variant="buttons"][data-full] { width: calc(100% + var(--ui-segc-ring) * 2); }
 .ui-segc[data-variant="buttons"] .ui-segc__track { gap: var(--ui-segc-gap); }
 .ui-segc[data-variant="buttons"] .ui-segc__opt { box-shadow: inset 0 0 0 0.5px var(--ui-segc-line); }
 
-/* Tray: a compact light-gray track with a white raised pill */
 .ui-segc[data-variant="tray"] { background: var(--ui-segc-track); }
 .ui-segc[data-variant="tray"] .ui-segc__opt { height: calc(var(--ui-segc-h) - var(--ui-segc-pad) * 2); }
 .ui-segc[data-variant="tray"] .ui-segc__pill { background: var(--ui-segc-card); box-shadow: var(--ui-segc-card-shadow); }
 
-/* Underline: text tabs on a hairline */
 .ui-segc[data-variant="underline"] { --ui-segc-px: 2px; --ui-segc-gap: 20px; border-radius: 0; box-shadow: inset 0 -0.5px 0 var(--ui-segc-line); }
 .ui-segc[data-variant="underline"] .ui-segc__scroller { padding: 0; }
 .ui-segc[data-variant="underline"]:not([data-full]) .ui-segc__track { gap: var(--ui-segc-gap); }
@@ -189,7 +175,6 @@ export const css = `
 
 @keyframes ui-segc-in { from { opacity: 0; transform: translateY(2px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
 
-/* Touch screens: every option at least 40px tall */
 @media (hover: none) and (pointer: coarse) {
   .ui-segc[data-size] { --ui-segc-h: 40px; }
   .ui-segc[data-size="lg"] { --ui-segc-h: 44px; }

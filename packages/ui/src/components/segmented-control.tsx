@@ -41,9 +41,8 @@ export type SegmentedControlProps<T extends string = string> = {
 function capturePointerIfAllowed(element: HTMLElement, pointerId: number) {
   try {
     element.setPointerCapture(pointerId)
-    return true
   } catch {
-    return false
+    return
   }
 }
 
@@ -70,9 +69,9 @@ export function SegmentedControl<T extends string = string>({
   const scroller = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
   const pill = useRef<HTMLSpanElement>(null)
-  const latest = useRef(current)
+  const valueAfterPicksThisFrame = useRef(current)
   // eslint-disable-next-line react-hooks/refs -- vendored: a drag picks several options before the next render
-  latest.current = current
+  valueAfterPicksThisFrame.current = current
   const gliding = useRef(false)
   const glideTimer = useRef(0)
   const placed = useRef<T | undefined>(undefined)
@@ -95,8 +94,14 @@ export function SegmentedControl<T extends string = string>({
 
   const select = (v: T) => {
     const opt = options.find((o) => o.value === v)
-    if (!opt || opt.disabled || disabled || v === latest.current) return
-    latest.current = v
+    if (
+      !opt ||
+      opt.disabled ||
+      disabled ||
+      v === valueAfterPicksThisFrame.current
+    )
+      return
+    valueAfterPicksThisFrame.current = v
     if (value === undefined) setInner(v)
     onChange?.(v)
   }
@@ -191,10 +196,13 @@ export function SegmentedControl<T extends string = string>({
       root.current?.setAttribute("data-ready", "")
     )
     let frame = 0
-    const ro = new ResizeObserver(() => {
+    const syncOneFrameLaterSoWidthsSetInsideTheObserverNeverLoopIt = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(sync)
-    })
+    }
+    const ro = new ResizeObserver(
+      syncOneFrameLaterSoWidthsSetInsideTheObserverNeverLoopIt
+    )
     ro.observe(s)
     ro.observe(t)
     t.querySelectorAll(".ui-segc__opt, .ui-segc__content").forEach((el) =>
@@ -236,7 +244,9 @@ export function SegmentedControl<T extends string = string>({
     const prevKeys = kind === "radio" ? ["ArrowLeft", "ArrowUp"] : ["ArrowLeft"]
     const nextKeys =
       kind === "radio" ? ["ArrowRight", "ArrowDown"] : ["ArrowRight"]
-    const at = enabled.findIndex((o) => o.value === latest.current)
+    const at = enabled.findIndex(
+      (o) => o.value === valueAfterPicksThisFrame.current
+    )
     let target: SegmentOption<T> | undefined
     if (prevKeys.includes(e.key))
       target = enabled[(at - 1 + enabled.length) % enabled.length]
@@ -269,6 +279,8 @@ export function SegmentedControl<T extends string = string>({
     return options[best]
   }
 
+  const selectFromKeyboardOrScreenReaderClick = select
+
   const endPress = () => {
     press.current = null
     root.current?.removeAttribute("data-pressed")
@@ -279,7 +291,7 @@ export function SegmentedControl<T extends string = string>({
     const opt = optionAt(e.clientX)
     if (!opt || opt.disabled) return
     const touch = e.pointerType === "touch"
-    const drag = !touch || opt.value === latest.current
+    const drag = !touch || opt.value === valueAfterPicksThisFrame.current
     press.current = { id: e.pointerId, touch, drag, x: e.clientX, moved: false }
     if (drag) root.current?.setAttribute("data-pressed", "")
     if (!touch) {
@@ -356,7 +368,7 @@ export function SegmentedControl<T extends string = string>({
                 data-active={active || undefined}
                 disabled={o.disabled || disabled}
                 tabIndex={i === tabbable ? 0 : -1}
-                onClick={() => select(o.value)}
+                onClick={() => selectFromKeyboardOrScreenReaderClick(o.value)}
               >
                 <span className="ui-segc__content">
                   {o.icon && <span className="ui-segc__icon">{o.icon}</span>}

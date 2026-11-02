@@ -289,7 +289,6 @@ const css = `
     opacity var(--duration-panel) var(--ease-panel),
     box-shadow var(--duration-panel) var(--ease-panel);
 }
-/* Cards behind show only their edge */
 .ui-ns__card > * { transition: opacity var(--duration-panel) var(--ease-panel); }
 .ui-ns__card:not([data-depth="0"]) > * { opacity: 0; }
 .ui-ns__card[data-leaving] {
@@ -307,7 +306,6 @@ const css = `
   stroke: var(--ui-ns-art);
   stroke-width: 1;
   pointer-events: none;
-  /* Only the top-right corner, fading out towards the text */
   -webkit-mask-image: radial-gradient(120% 110% at 100% 0%, #000 20%, transparent 70%);
   mask-image: radial-gradient(120% 110% at 100% 0%, #000 20%, transparent 70%);
 }

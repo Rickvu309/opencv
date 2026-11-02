@@ -8,14 +8,14 @@ export type NumberTickerProps = {
   value: number
   format?: Intl.NumberFormatOptions
   locale?: string
-  duration?: number
-  delay?: number
+  durationMs?: number
+  delayMs?: number
   className?: string
 }
 
 type Part = { key: string; digit: number } | { key: string; char: string }
 
-function split(text: string): Part[] {
+function splitIntoPartsKeyedFromTheRight(text: string): Part[] {
   const chars = Array.from(text)
   const parts: Part[] = []
   let d = 0
@@ -42,8 +42,8 @@ export function NumberTicker({
   value,
   format,
   locale,
-  duration = 900,
-  delay = 0,
+  durationMs = 900,
+  delayMs = 0,
   className,
 }: NumberTickerProps) {
   const fmtKey = JSON.stringify(format ?? {})
@@ -52,7 +52,7 @@ export function NumberTicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fmtKey stands in for the format object
     [value, locale, fmtKey]
   )
-  const parts = useMemo(() => split(text), [text])
+  const parts = useMemo(() => splitIntoPartsKeyedFromTheRight(text), [text])
 
   const root = useRef<HTMLSpanElement>(null)
   const rolls = useRef(new Map<string, Roll>())
@@ -83,7 +83,7 @@ export function NumberTicker({
       ([e]) => {
         if (!e.isIntersecting) return
         io.disconnect()
-        timer = window.setTimeout(() => setStarted(true), delay)
+        timer = window.setTimeout(() => setStarted(true), delayMs)
       },
       { threshold: 0.3 }
     )
@@ -128,7 +128,7 @@ export function NumberTicker({
     let raf = 0
     const t0 = performance.now()
     const tick = (now: number) => {
-      const t = Math.min(1, (now - t0) / duration)
+      const t = Math.min(1, (now - t0) / durationMs)
       const e = ease(t)
       for (const r of rolls.current.values())
         r.pos = r.from + (r.to - r.from) * e
@@ -137,7 +137,7 @@ export function NumberTicker({
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [parts, started, value, duration])
+  }, [parts, started, value, durationMs])
 
   return (
     <>
@@ -220,7 +220,6 @@ const css = `
   display: inline-block;
   height: var(--ui-nt-lh);
   overflow: hidden;
-  /* Soft top and bottom edges while digits pass through */
   -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent);
   mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent);
 }

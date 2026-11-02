@@ -269,10 +269,8 @@ const icons: Record<LayerIcon, ReactNode> = {
 
 const css = /* css */ `
 .ui-lyr {
-  /* 1 unit of the 600 × 400 layout grid */
   --u: calc(100cqw / 600);
   --ui-lyr-row: calc(52 * var(--u));
-  /* The accent blue used across the library */
   --ui-lyr-accent: var(--foreground);
   --ui-lyr-accent-deep: var(--muted-foreground);
   --ui-lyr-tint: var(--accent);
@@ -297,7 +295,6 @@ const css = /* css */ `
 }
 .ui-lyr *, .ui-lyr *::before, .ui-lyr *::after { box-sizing: border-box; }
 
-/* ---------- Stack ---------- */
 
 .ui-lyr-stack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .ui-lyr-layer { transition: transform var(--duration-panel) var(--ease-panel); }
@@ -343,14 +340,12 @@ const css = /* css */ `
   opacity: 0;
   transition: opacity var(--duration-panel) var(--ease-panel);
 }
-/* Layers above the chosen one turn more glassy, so its color shows through */
 .ui-lyr-layer[data-above] .ui-lyr-face { fill: var(--ui-lyr-face-above); }
 .ui-lyr-layer[data-above] .ui-lyr-side { fill: var(--ui-lyr-side-above); }
 .ui-lyr-layer[data-active] .ui-lyr-side-on { opacity: 1; }
 .ui-lyr-layer[data-active] .ui-lyr-face-on { opacity: 1; }
 .ui-lyr-layer[data-active] .ui-lyr-icon { opacity: 1; transition-delay: 120ms; }
 
-/* ---------- Menu ---------- */
 
 .ui-lyr-menu {
   position: absolute;
@@ -362,7 +357,6 @@ const css = /* css */ `
   border-radius: calc(18 * var(--u));
   background: var(--ui-lyr-panel);
 }
-/* White card that glides behind the chosen row */
 .ui-lyr-pill {
   position: absolute;
   left: calc(8 * var(--u));

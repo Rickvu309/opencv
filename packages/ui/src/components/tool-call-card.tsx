@@ -25,8 +25,8 @@ export type ToolCallCardProps = {
   args?: unknown
   result?: unknown
   error?: string
-  startedAt?: number
-  duration?: number
+  startedAtMs?: number
+  durationMs?: number
   defaultOpen?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -40,7 +40,7 @@ export type ToolCallGroupProps = {
   children: ReactNode
   label?: string
   runningLabel?: string
-  duration?: number
+  durationMs?: number
   defaultOpen?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -55,8 +55,8 @@ export function ToolCallCard({
   args,
   result,
   error,
-  startedAt,
-  duration,
+  startedAtMs,
+  durationMs,
   defaultOpen = false,
   open: openProp,
   onOpenChange,
@@ -88,8 +88,8 @@ export function ToolCallCard({
     }
   }
 
-  const measured = useStopwatch(status === "running", startedAt, false)
-  const ms = status === "running" ? (measured ?? 0) : (duration ?? measured)
+  const measured = useStopwatch(status === "running", startedAtMs, false)
+  const ms = status === "running" ? (measured ?? 0) : (durationMs ?? measured)
 
   const announce =
     status === "running"
@@ -209,7 +209,7 @@ export function ToolCallGroup({
   children,
   label,
   runningLabel = "Using tools…",
-  duration,
+  durationMs,
   defaultOpen = false,
   open: openProp,
   onOpenChange,
@@ -227,10 +227,10 @@ export function ToolCallGroup({
 
   const measured = useStopwatch(running, undefined, true)
   const sum =
-    calls.length && calls.every((c) => c.duration != null)
-      ? calls.reduce((t, c) => t + (c.duration ?? 0), 0)
+    calls.length && calls.every((c) => c.durationMs != null)
+      ? calls.reduce((t, c) => t + (c.durationMs ?? 0), 0)
       : null
-  const ms = running ? measured : (duration ?? sum ?? measured)
+  const ms = running ? measured : (durationMs ?? sum ?? measured)
 
   const count = `Used ${calls.length} ${calls.length === 1 ? "tool" : "tools"}`
   const title = running ? runningLabel : (label ?? count)
@@ -422,7 +422,7 @@ function WrenchIcon() {
 
 function useStopwatch(
   running: boolean,
-  startedAt: number | undefined,
+  startedAtMs: number | undefined,
   accumulate: boolean
 ) {
   const start = useRef<number | null>(null)
@@ -438,13 +438,13 @@ function useStopwatch(
       return
     }
     if (!accumulate) base.current = 0
-    start.current = startedAt ?? Date.now()
+    start.current = startedAtMs ?? Date.now()
     const tick = () =>
       setMs(base.current + Date.now() - (start.current ?? Date.now()))
     tick()
     const t = window.setInterval(tick, 100)
     return () => window.clearInterval(t)
-  }, [running, startedAt, accumulate])
+  }, [running, startedAtMs, accumulate])
   return ms
 }
 

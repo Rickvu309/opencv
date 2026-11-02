@@ -1,5 +1,11 @@
 import ts from "typescript"
-import { SOURCE_FILE, bannedComments } from "../no-comments.mjs"
+import {
+  CSS_FILE,
+  SOURCE_FILE,
+  bannedComments,
+  cssTemplatePieces,
+  findCssComments,
+} from "../no-comments.mjs"
 
 const isBlank = (line) => line.trim() === ""
 
@@ -22,29 +28,6 @@ function emptyJsxExpressions(file, text) {
   }
   visit(sourceFile)
   return found
-}
-
-function lineStartOf(text, line) {
-  let offset = 0
-  for (let current = 1; current < line; current++) {
-    offset = text.indexOf("\n", offset) + 1
-  }
-  return offset
-}
-
-function locateComments(file, text) {
-  const located = []
-  let cursor = 0
-  for (const comment of bannedComments(file, text)) {
-    const from = text.indexOf(
-      comment.raw,
-      Math.max(lineStartOf(text, comment.line), cursor)
-    )
-    if (from === -1) continue
-    located.push([from, from + comment.raw.length])
-    cursor = from + comment.raw.length
-  }
-  return located
 }
 
 function widen(range, containers, text) {
@@ -80,13 +63,115 @@ function dropEmptiedLine(text, at) {
   )
 }
 
+function sliceOut(text, from, to) {
+  let result = ""
+  let cursor = from
+  for (const comment of findCssComments(text, from, to)) {
+    result += text.slice(cursor, comment.pos)
+    cursor = comment.end
+  }
+  return result + text.slice(cursor, to)
+}
+
+function withoutSpace(text) {
+  return text.replace(/\s+/g, "")
+}
+
+function codeSignature(file, text) {
+  if (CSS_FILE.test(file)) return withoutSpace(sliceOut(text, 0, text.length))
+  const kind = /\.tsx$/.test(file)
+    ? ts.ScriptKind.TSX
+    : /\.[cm]?ts$/.test(file)
+      ? ts.ScriptKind.TS
+      : ts.ScriptKind.JSX
+  const sourceFile = ts.createSourceFile(
+    file,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    kind
+  )
+  const cssStarts = new Map(
+    cssTemplatePieces(file, text).map((piece) => [piece.start - 1, piece])
+  )
+  const parts = []
+  const visit = (node) => {
+    if (node.kind === ts.SyntaxKind.JsxExpression && !node.expression) return
+    if (
+      node.kind >= ts.SyntaxKind.FirstJSDocNode &&
+      node.kind <= ts.SyntaxKind.LastJSDocNode
+    )
+      return
+    if (node.getChildCount(sourceFile) > 0) {
+      for (const child of node.getChildren(sourceFile)) visit(child)
+      return
+    }
+    if (node.kind === ts.SyntaxKind.JsxText) {
+      parts.push(withoutSpace(node.getText(sourceFile)))
+      return
+    }
+    const piece = cssStarts.get(node.getStart(sourceFile))
+    if (piece) {
+      parts.push(
+        `css:${withoutSpace(sliceOut(text, piece.start, piece.end))}\0`
+      )
+      return
+    }
+    parts.push(`${node.kind}:${node.getText(sourceFile)}\0`)
+  }
+  visit(sourceFile)
+  return parts.join("")
+}
+
+function syntaxErrorCount(file, text) {
+  const { diagnostics } = ts.transpileModule(text, {
+    fileName: file,
+    reportDiagnostics: true,
+    compilerOptions: {
+      jsx: ts.JsxEmit.Preserve,
+      target: ts.ScriptTarget.Latest,
+    },
+  })
+  return diagnostics.length
+}
+
+export class StripRefused extends Error {}
+
+export function assertCodeUnchanged(file, before, after) {
+  if (
+    !CSS_FILE.test(file) &&
+    syntaxErrorCount(file, after) > syntaxErrorCount(file, before)
+  )
+    throw new StripRefused(
+      `${file}: stripping its comments left code that does not parse`
+    )
+  if (codeSignature(file, before) !== codeSignature(file, after))
+    throw new StripRefused(
+      `${file}: stripping its comments changed code, not only comments`
+    )
+}
+
+function glue(text, from, to) {
+  const touchesWord =
+    /\w/.test(text[from - 1] ?? "") && /\w/.test(text[to] ?? "")
+  return touchesWord ? " " : ""
+}
+
 export function stripComments(file, text) {
-  if (!SOURCE_FILE.test(file) && !/\.css$/.test(file)) return text
+  if (!SOURCE_FILE.test(file) && !CSS_FILE.test(file)) return text
   const containers = emptyJsxExpressions(file, text)
   let result = text
-  for (const range of locateComments(file, text).reverse()) {
+  const ranges = bannedComments(file, text).map((comment) => [
+    comment.pos,
+    comment.end,
+  ])
+  for (const range of ranges.reverse()) {
     const [from, to] = widen(range, containers, text)
-    result = dropEmptiedLine(result.slice(0, from) + result.slice(to), from)
+    result = dropEmptiedLine(
+      result.slice(0, from) + glue(result, from, to) + result.slice(to),
+      from
+    )
   }
+  assertCodeUnchanged(file, text, result)
   return result
 }

@@ -362,9 +362,7 @@ const css = `
   box-sizing: border-box;
   width: 100%;
   max-width: 420px;
-  /* Like the Chat Composer: a gray tray with heading and reply field, the white card sits on top of it */
   background: var(--ui-ct-tray);
-  /* The gray tray frames the white card on every side */
   padding: 6px;
   border-radius: 22px;
   font-family: inherit;
@@ -414,7 +412,6 @@ const css = `
   overflow-y: auto;
   scrollbar-width: thin;
 }
-/* Each message builds up piece by piece: name row, text, status – the assistant's first reply a beat later */
 .ui-ct__msg { --ui-ct-d: 0ms; }
 .ui-ct__msg[data-delayed] { --ui-ct-d: 700ms; }
 .ui-ct__msg > * { animation: ui-ct-in var(--duration-panel) var(--ease-panel) both; animation-delay: var(--ui-ct-d); }
@@ -452,7 +449,6 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   font-size: 14px !important;
   transition: background-color var(--duration-micro) var(--ease-micro);
 }
-/* The global button reset sets margin: 0 – shift the row so the check icon sits centered under the avatars */
 .ui-ct .ui-ct__status-btn { margin-left: -4px; }
 .ui-ct__status-btn:hover:not(:disabled) { background: var(--ui-ct-row-hover); }
 .ui-ct__status-btn:disabled { cursor: default; }
@@ -486,19 +482,16 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   font-size: 13px;
   line-height: 19px;
   color: var(--ui-ct-muted);
-  /* Closing: lines fade out quickly while the box folds */
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity var(--duration-micro) var(--ease-micro), transform var(--duration-micro) var(--ease-micro);
 }
-/* Opening: lines come in one after another */
 .ui-ct__details[data-open] li {
   opacity: 1;
   transform: none;
   transition-duration: var(--duration-panel), var(--duration-panel);
   transition-delay: calc(60ms + var(--i, 0) * 60ms);
 }
-/* Tree lines instead of dots: each line gets its own corner – down on the axis of the check icon, then a rounded turn right */
 .ui-ct__details li:first-child { margin-top: 5px; }
 .ui-ct__details li::before {
   content: "";
@@ -511,7 +504,6 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   border-bottom: 1.25px solid var(--ui-ct-dot);
   border-bottom-left-radius: 5px;
 }
-/* The first branch starts with a small gap under the check icon */
 .ui-ct__details li:first-child::before {
   top: -5px;
   height: 15px;
@@ -571,13 +563,11 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   .ui-ct__details, .ui-ct__details li, .ui-ct__chevron { transition: none; }
 }
 
-/* Height changes glide instead of jumping */
 .ui-ct__morph { overflow: hidden; }
 .ui-ct__morph[data-smooth] { transition: height var(--duration-panel) cubic-bezier(0.22, 1, 0.36, 1); }
 @media (prefers-reduced-motion: reduce) { .ui-ct__morph[data-smooth] { transition: none; } }
 
 
-/* Text fields: no focus box while typing – also against global :focus-visible rules of the host page */
 .ui-ct input:not([type="checkbox"]):not([type="radio"]):focus-visible,
 .ui-ct textarea:focus-visible,
 .ui-ct [contenteditable]:focus-visible { outline: none; }
