@@ -1,0 +1,1 @@
+ALTER TABLE "opencv_app"."paper_doc_updates" ADD COLUMN "based_on" integer;

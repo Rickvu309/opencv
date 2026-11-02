@@ -189,6 +189,7 @@ export const paperDocUpdates = opencvApp.table(
     seq: integer("seq").notNull(),
     origin: text("origin").notNull(),
     editId: text("edit_id"),
+    basedOn: integer("based_on"),
     update: bytea("update").notNull(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },

@@ -56,3 +56,13 @@ export function updateSince(
     return null
   }
 }
+
+export function forkOf(yDoc: PaperYDoc): PaperYDoc {
+  const fork = new Y.Doc()
+  Y.applyUpdate(fork, Y.encodeStateAsUpdate(yDoc))
+  return fork
+}
+
+export function emptyUpdate(): Uint8Array {
+  return Y.encodeStateAsUpdate(new Y.Doc())
+}

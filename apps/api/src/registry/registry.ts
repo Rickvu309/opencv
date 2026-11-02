@@ -50,8 +50,8 @@ export function coachRefusal(
   gates: AgentGates
 ): CoachRefusal | null {
   if (entry.coach === "never" || entry.coach === false) return "never"
-  // agent_cvs hides paper.replace for letters too.
-  if (entry.name === "paper.replace" && !gates.agentCvs) return "cvs"
+  // agent_cvs hides paper.edit for letters too.
+  if (entry.name === "paper.edit" && !gates.agentCvs) return "cvs"
   if (CHECKLIST_COMMANDS.has(entry.name) && !gates.agentInterview) {
     return "interview"
   }

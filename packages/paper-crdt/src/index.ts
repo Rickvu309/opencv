@@ -4,5 +4,12 @@ export { paperBlockConfigs } from "./schema.js"
 export { revertOrigin } from "./revert.js"
 export type { HistoryRow } from "./revert.js"
 export { materialize, seedYDoc, writeDocument } from "./ydoc.js"
-export { absorbUpdate, loadYDoc, stateVectorOf, updateSince } from "./sync.js"
+export {
+  absorbUpdate,
+  emptyUpdate,
+  forkOf,
+  loadYDoc,
+  stateVectorOf,
+  updateSince,
+} from "./sync.js"
 export type { Absorbed, PaperYDoc } from "./sync.js"

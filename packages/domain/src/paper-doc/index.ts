@@ -65,3 +65,12 @@ export { legacyPaperOf } from "./legacy.js"
 export { mergeLegacyEdit } from "./merge.js"
 
 export { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
+
+export type { PaperEdit, PaperEditOutcome } from "./edits-schema.js"
+export { paperEditOutcomeSchema, paperEditSchema } from "./edits-schema.js"
+export type { AppliedEdits } from "./edits.js"
+export { applyPaperEdits } from "./edits.js"
+export type { PaperOutline } from "./outline.js"
+export { paperOutline } from "./outline.js"
+export type { PaperChange } from "./changes.js"
+export { paperChanges } from "./changes.js"

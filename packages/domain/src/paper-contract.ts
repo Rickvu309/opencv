@@ -11,6 +11,10 @@ import { cvDocumentV1Schema, letterDocumentV1Schema } from "./paper-codecs.js"
 import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
 import { paperDocumentSchema } from "./paper-doc/document.js"
 import {
+  paperEditOutcomeSchema,
+  paperEditsSchema,
+} from "./paper-doc/edits-schema.js"
+import {
   paperSyncInputSchema,
   paperSyncOutputSchema,
 } from "./paper-doc/sync.js"
@@ -99,6 +103,35 @@ export type PaperPages = z.output<typeof paperPagesSchema>
 
 const empty = z.object({}).strict()
 
+const blockIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
+const editIdSchema = z.string().min(1).max(64)
+const MAX_RECEIPT_CHANGES = 30
+
+const paperChangeSchema = z
+  .object({
+    blockId: z.string(),
+    change: z.enum(["added", "changed", "moved", "removed"]),
+    kind: z.string(),
+    before: z.string().optional(),
+    after: z.string().optional(),
+  })
+  .strict()
+
+const paperEditOutputSchema = z
+  .object({
+    docId: paperIdSchema,
+    name: z.string(),
+    kind: paperStoredKindSchema,
+    revision: z.number().int(),
+    editId: editIdSchema.nullable(),
+    outcomes: z.array(paperEditOutcomeSchema),
+    changes: z.array(paperChangeSchema).max(MAX_RECEIPT_CHANGES),
+    moreChanges: z.number().int(),
+  })
+  .strict()
+
+export const PAPER_RECEIPT_CHANGE_LIMIT = MAX_RECEIPT_CHANGES
+
 export const paperQueries = queryContract({
   "paper.list": queryEntry({
     input: z
@@ -128,6 +161,21 @@ export const paperQueries = queryContract({
   "paper.files": queryEntry({
     input: empty,
     output: z.array(paperFileSchema),
+  }),
+  "paper.outline": queryEntry({
+    input: z
+      .object({
+        docId: paperIdSchema,
+        blockIds: z.array(blockIdSchema).max(50).optional(),
+      })
+      .strict(),
+    output: z
+      .object({
+        revision: z.number().int(),
+        outline: z.string(),
+        truncated: z.boolean(),
+      })
+      .strict(),
   }),
   "paper.keywordGap": queryEntry({
     input: paperKeywordGapInputSchema,
@@ -182,7 +230,7 @@ export const paperContract = commandContract({
       .extend({ previousDocument, previousPaper })
       .strict(),
     idempotency: "none",
-    coach: "auto",
+    coach: "never",
     destructive: false,
     step: () => "Update the document",
     invalidates: docChanged,
@@ -200,6 +248,38 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Restore the document",
+    invalidates: docChanged,
+  }),
+  "paper.edit": commandEntry({
+    description:
+      "Edit a CV or letter by block id. Read paper.outline first and pass its revision as basedOn. Ops: setText (a block's text as inline markdown), setFields (role, company, period, location, school, degree, detail, label, items, level, kind), setHeader (name, email, phone, city, linkedin), insert (new blocks after a block id or after start), insertInto (list items inside an experience, education or list item), move (after a block id or start) and remove. The person may be typing: setText merges with their typing, while move, remove, setFields and setHeader on something they changed are refused as stale. Read the outcomes and re-read paper.outline after a stale one.",
+    input: z
+      .object({
+        docId: paperIdSchema,
+        basedOn: z.number().int().min(0),
+        edits: paperEditsSchema,
+      })
+      .strict(),
+    output: paperEditOutputSchema,
+    coach: "auto",
+    destructive: false,
+    step: () => "Edit the document",
+    invalidates: docChanged,
+  }),
+  "paper.revertEdit": commandEntry({
+    description: "Take back one Coach edit and keep later typing.",
+    input: z.object({ docId: paperIdSchema, editId: editIdSchema }).strict(),
+    output: z
+      .object({
+        docId: paperIdSchema,
+        revision: z.number().int(),
+        editId: editIdSchema,
+        reverted: z.boolean(),
+      })
+      .strict(),
+    coach: "never",
+    destructive: false,
+    step: () => "Undo a Coach edit",
     invalidates: docChanged,
   }),
   "paper.sync": commandEntry({

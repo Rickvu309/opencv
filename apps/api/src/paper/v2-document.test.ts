@@ -1,16 +1,12 @@
 import { eq } from "drizzle-orm"
 import {
   blankBlockDocument,
-  coachActor,
   emptyCvDocument,
-  personActor,
   type CvBlockDocument,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
-import { withDatabase } from "../db/context.js"
-import { paperDocs, user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { paperDocs } from "../db/schema.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -406,40 +402,6 @@ describe("version 2 CV documents", () => {
     expect(replaced.data?.contentVersion).toBe(
       (created.data?.contentVersion ?? 0) + 1
     )
-    await client.close()
-  })
-
-  it("stores a Coach version 1 replace as version 2", async () => {
-    const { db, client } = await createMigratedTestDb()
-    const registry = installRegistry()
-    const userId = "user-coach-v2"
-    await db.insert(user).values({
-      id: userId,
-      name: "Ada",
-      email: "ada-coach-v2@example.com",
-    })
-    await withDatabase(db, async () => {
-      const person = personActor(userId)
-      const created = await registry.execute({
-        name: "paper.create",
-        input: { kind: "cv", name: "CV" },
-        actor: person,
-      })
-      const doc = created.output as { id: string; contentVersion: number }
-      const replaced = await registry.execute({
-        name: "paper.replace",
-        input: {
-          docId: doc.id,
-          contentVersion: doc.contentVersion,
-          document: { ...emptyCvDocument(), name: "Ada" },
-        },
-        actor: coachActor(userId, "00000000-0000-4000-8000-000000000379"),
-      })
-      expect(replaced.output).toMatchObject({
-        contentVersion: doc.contentVersion + 1,
-        document: { version: 2, header: { name: "Ada" } },
-      })
-    })
     await client.close()
   })
 })

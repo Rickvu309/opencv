@@ -10,6 +10,7 @@ import {
 } from "@workspace/domain"
 import {
   absorbUpdate,
+  forkOf,
   loadYDoc,
   materialize,
   seedYDoc,
@@ -42,10 +43,30 @@ export type ContentEdit = {
   readonly witness?: unknown
 }
 
+export type LogRow = {
+  readonly seq: number
+  readonly origin: string
+  readonly editId: string | null
+  readonly basedOn: number | null
+  readonly update: Uint8Array
+}
+
+export type Appended = {
+  readonly origin: "coach" | "revert"
+  readonly editId: string
+  readonly basedOn?: number
+  readonly update: Uint8Array
+  readonly keepIfIneffective?: boolean
+}
+
 export type LockedContent = {
   readonly row: PaperRow
   readonly document: PaperDocument
+  readonly baseSeq: number
   edit(change: ContentEdit): Promise<PaperRow>
+  fork(basedOn: number): Promise<PaperYDoc>
+  history(): Promise<{ base: Uint8Array; rows: LogRow[] }>
+  append(change: Appended): Promise<PaperRow | null>
 }
 
 export type SyncRequest = {
@@ -136,6 +157,22 @@ async function seeded(row: PaperRow): Promise<PaperRow> {
   const patch = { ...columns, crdtBaseSeq: row.contentVersion }
   await getDb().update(paperDocs).set(patch).where(eq(paperDocs.id, row.id))
   return { ...row, ...patch }
+}
+
+async function loggedRows(docId: string, afterSeq: number): Promise<LogRow[]> {
+  return getDb()
+    .select({
+      seq: paperDocUpdates.seq,
+      origin: paperDocUpdates.origin,
+      editId: paperDocUpdates.editId,
+      basedOn: paperDocUpdates.basedOn,
+      update: paperDocUpdates.update,
+    })
+    .from(paperDocUpdates)
+    .where(
+      and(eq(paperDocUpdates.paperId, docId), gt(paperDocUpdates.seq, afterSeq))
+    )
+    .orderBy(asc(paperDocUpdates.seq))
 }
 
 async function rowsFrom(docId: string, seq: number, inclusive: boolean) {
@@ -243,7 +280,12 @@ async function commit(
   row: PaperRow,
   entry: Live,
   effective: Uint8Array,
-  change: { origin: string; editId?: string; witness: unknown }
+  change: {
+    origin: string
+    editId?: string
+    basedOn?: number
+    witness: unknown
+  }
 ): Promise<PaperRow> {
   const materialized = materialize(entry.yDoc)
   if (!materialized.ok) throw refuse(materialized.reason)
@@ -257,6 +299,7 @@ async function commit(
       seq,
       origin: change.origin,
       editId: change.editId ?? null,
+      basedOn: change.basedOn ?? null,
       update,
     })
   const patch = {
@@ -301,6 +344,29 @@ async function editLocked(
   }
 }
 
+async function appendLocked(
+  row: PaperRow,
+  entry: Live,
+  change: Appended
+): Promise<PaperRow | null> {
+  try {
+    const absorbed = absorbUpdate(entry.yDoc, change.update, change.origin)
+    if (!absorbed.ok) throw refuse(absorbed.reason)
+    const effective =
+      absorbed.effective ?? (change.keepIfIneffective ? change.update : null)
+    if (!effective) return null
+    return await commit(row, entry, effective, {
+      origin: change.origin,
+      editId: change.editId,
+      basedOn: change.basedOn,
+      witness: row.document,
+    })
+  } catch (error) {
+    live.delete(row.id)
+    throw error
+  }
+}
+
 export async function withContent<T>(
   userId: UserId,
   docId: PaperId,
@@ -313,10 +379,30 @@ export async function withContent<T>(
     const content: LockedContent = {
       row,
       document: validated(row.crdtDocument, row.kind),
+      baseSeq: entry.baseSeq,
       edit: async (change) => {
         latest = await editLocked(latest, entry, change)
         return latest
       },
+      fork: async (basedOn) => {
+        if (basedOn === entry.revision) return forkOf(entry.yDoc)
+        const logged = await loggedRows(row.id, entry.baseSeq)
+        return loadYDoc(
+          entry.base,
+          logged
+            .filter((logRow) => logRow.seq <= basedOn)
+            .map((logRow) => logRow.update)
+        )
+      },
+      history: async () => ({
+        base: entry.base,
+        rows: await loggedRows(row.id, entry.baseSeq),
+      }),
+      append: (change) =>
+        appendLocked(latest, entry, change).then((next) => {
+          if (next) latest = next
+          return next
+        }),
     }
     return run(content)
   })

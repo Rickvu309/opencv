@@ -449,14 +449,14 @@ describe("live model failures and grounding", () => {
         name: "CV",
         kind: "cv",
         status: "draft",
-        content: emptyCvDocument(),
-        contentVersion: 7,
+        outline: "[header] name: Ada",
+        revision: 7,
       },
       selection: { text: "UNIQUE_SELECTED_PASSAGE", sectionId: "summary" },
     }))
       parts.push(part)
     expect(JSON.stringify(observed)).toContain("UNIQUE_SELECTED_PASSAGE")
-    expect(JSON.stringify(observed)).toContain("contentVersion")
+    expect(JSON.stringify(observed)).toContain("revision")
     expect(parts.some((part) => part.type === "error")).toBe(true)
     expect(parts.some((part) => part.type === "finish")).toBe(false)
     expect(JSON.stringify(parts)).not.toContain("synthetic-provider-failure")
