@@ -1,8 +1,8 @@
+const TIMER_CALL =
+  "CallExpression:matches([callee.name=/^(setTimeout|setInterval)$/], [callee.property.name=/^(setTimeout|setInterval)$/][callee.object.name=/^(window|globalThis|self)$/])"
+
 export const UNOWNED_TIMERS = [
-  "ExpressionStatement > CallExpression[callee.name=/^(setTimeout|setInterval)$/]",
-  "ExpressionStatement > CallExpression[callee.property.name=/^(setTimeout|setInterval)$/][callee.object.name=/^(window|globalThis)$/]",
-  "ArrowFunctionExpression[body.callee.name=/^(setTimeout|setInterval)$/]",
-  "ArrowFunctionExpression[body.callee.property.name=/^(setTimeout|setInterval)$/][body.callee.object.name=/^(window|globalThis)$/]",
+  `${TIMER_CALL}:not(VariableDeclarator > CallExpression, AssignmentExpression > CallExpression, ReturnStatement > CallExpression)`,
 ].map((selector) => ({
   selector,
   message:
@@ -10,7 +10,7 @@ export const UNOWNED_TIMERS = [
 }))
 
 const ACTION_ATTRIBUTES =
-  "JSXAttribute[name.name=/^(onClick|onSelect|href|render|asChild|form|disabled)$/], JSXAttribute[name.name='type'][value.value='submit'], JSXSpreadAttribute"
+  "JSXAttribute[name.name=/^(onClick|onSelect|href|render|asChild|form)$/], JSXAttribute[name.name='disabled'][value=null], JSXAttribute[name.name='disabled'][value.expression.value=true], JSXAttribute[name.name='type'][value.value='submit'], JSXSpreadAttribute"
 
 export const DEAD_CONTROLS = [
   `JSXOpeningElement[name.name=/^(Button|DropdownMenuItem|MenuItem)$/]:not(:has(${ACTION_ATTRIBUTES})):not(JSXAttribute[name.name='render'] *):not(JSXElement[openingElement.name.name=/Trigger$/] > JSXElement > JSXOpeningElement)`,

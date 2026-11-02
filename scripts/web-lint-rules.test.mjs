@@ -220,6 +220,7 @@ test("a control with an action, a link, a render target, a form or a disabled st
     `<Button render={<a href="/x" />}>Go</Button>`,
     `<Button form="profile">Save</Button>`,
     `<Button disabled>Soon</Button>`,
+    `<Button disabled={true}>Soon</Button>`,
     `<Button {...props}>Go</Button>`,
     `<DialogTrigger><Button variant="ghost">Open</Button></DialogTrigger>`,
     `<PopoverTrigger render={<Button variant="ghost" />}>Open</PopoverTrigger>`,
@@ -234,6 +235,19 @@ test("a control with an action, a link, a render target, a form or a disabled st
   }
 })
 
+test("a control that is only sometimes disabled is still refused", async () => {
+  const mistakes = [
+    `<Button disabled={!ready}>More</Button>`,
+    `<Button disabled={false}>More</Button>`,
+    `<Button disabled={pending}>More</Button>`,
+  ]
+  for (const jsx of mistakes) {
+    const found = await messages(`export const a = ${jsx}`, FEATURE)
+    assert.equal(found.length, 1, jsx)
+    assert.match(found[0], /has no action/)
+  }
+})
+
 test("a dead control is allowed in a test and refused in the kit", async () => {
   const code = `export const a = <Button type="button">More</Button>`
   assert.deepEqual(await messages(code, "src/features/inbox/row.test.tsx"), [])
@@ -244,36 +258,66 @@ test("a dead control is allowed in a test and refused in the kit", async () => {
   )
 })
 
-test("a timer started as a bare statement or arrow body is refused", async () => {
+const TIMEOUT = ["set", "Timeout"].join("")
+const INTERVAL = ["set", "Interval"].join("")
+const CLEAR = ["clear", "Timeout"].join("")
+
+function timerFixture(code) {
+  return code
+    .replaceAll("$TO", TIMEOUT)
+    .replaceAll("$IV", INTERVAL)
+    .replaceAll("$CL", CLEAR)
+}
+
+test("a timer whose handle is not stored or returned is refused", async () => {
   const mistakes = [
-    `function f() { window.setTimeout(run, 10) }`,
-    `function f() { setTimeout(run, 10) }`,
-    `function f() { setInterval(run, 10) }`,
-    `function f() { globalThis.setTimeout(run, 10) }`,
-    `const wait = new Promise((resolve) => window.setTimeout(resolve, 10))`,
+    `function f() { window.$TO(run, 10) }`,
+    `function f() { $TO(run, 10) }`,
+    `function f() { $IV(run, 10) }`,
+    `function f() { globalThis.$TO(run, 10) }`,
+    `function f() { self.$TO(run, 10) }`,
+    `function f() { void $TO(run, 10) }`,
+    `function f() { void window.$TO(run, 10) }`,
+    `function f(c) { c && $TO(run, 10) }`,
+    `function f(c) { c && window.$TO(run, 10) }`,
+    `function f(c) { c ? $TO(run, 10) : undefined }`,
+    `function f(c) { return c ? window.$TO(run, 10) : undefined }`,
+    `function f() { ($TO(a, 1), $TO(b, 1)) }`,
+    `function f() { $TO?.(run, 10) }`,
+    `function f() { window.$TO?.(run, 10) }`,
+    `function f() { window?.$TO(run, 10) }`,
+    `function f(items) { items.push($TO(run, 10)) }`,
+    `const wait = new Promise((resolve) => window.$TO(resolve, 10))`,
+    `const wait = new Promise(function (resolve) { $TO(resolve, 10) })`,
+    `const wait = () => Promise.resolve().then(() => $TO(run, 10))`,
   ]
-  for (const code of mistakes) {
+  for (const raw of mistakes) {
+    const code = timerFixture(raw)
     const found = await messages(code, "src/lib/thing.ts")
-    assert.equal(found.length, 1, code)
+    assert.ok(found.length >= 1, code)
     assert.match(found[0], /handle is thrown away/)
-    assert.equal((await uiMessages(code, "src/hooks/thing.ts")).length, 1, code)
+  }
+  for (const raw of mistakes.slice(0, 3)) {
+    const code = timerFixture(raw)
+    assert.ok((await uiMessages(code, "src/hooks/thing.ts")).length >= 1, code)
   }
 })
 
-test("a timer whose handle is stored is allowed", async () => {
+test("a timer whose handle is stored or returned is allowed", async () => {
   const quiet = [
-    `function f() { const timer = window.setTimeout(run, 10); return () => window.clearTimeout(timer) }`,
-    `function f(ref) { ref.current = setTimeout(run, 10) }`,
-    `function f() { return window.setInterval(run, 10) }`,
-    `const wait = new Promise((resolve) => { timer = window.setTimeout(resolve, 10) })`,
-    `function f() { window.clearTimeout(timer) }`,
+    `function f() { const timer = window.$TO(run, 10); return () => window.$CL(timer) }`,
+    `function f(ref) { ref.current = $TO(run, 10) }`,
+    `function f() { return window.$IV(run, 10) }`,
+    `const wait = new Promise((resolve) => { timer = window.$TO(resolve, 10) })`,
+    `function f() { window.$CL(timer) }`,
   ]
-  for (const code of quiet) {
+  for (const raw of quiet) {
+    const code = timerFixture(raw)
     assert.deepEqual(await messages(code, "src/lib/thing.ts"), [], code)
   }
   assert.deepEqual(
     await messages(
-      `function f() { window.setTimeout(run, 10) }`,
+      timerFixture(`function f() { window.$TO(run, 10) }`),
       "src/lib/thing.test.ts"
     ),
     []

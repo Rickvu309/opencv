@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef } from "react"
 import type { ComponentProps } from "react"
 
 type Props = ComponentProps<"div"> & {
@@ -25,10 +25,7 @@ function closeOpenPopups(region: HTMLElement) {
   }
 }
 
-let handoffWatch: { stop: () => void } | undefined
-
 function keepClosedAfterHandoff(target: HTMLElement) {
-  handoffWatch?.stop()
   const watcher = new MutationObserver(() => {
     if (target.hasAttribute("data-popup-open")) dismiss(target)
   })
@@ -37,11 +34,9 @@ function keepClosedAfterHandoff(target: HTMLElement) {
     attributeFilter: ["data-popup-open"],
   })
   const timer = setTimeout(() => watcher.disconnect(), HANDOFF_WATCH_MS)
-  handoffWatch = {
-    stop: () => {
-      clearTimeout(timer)
-      watcher.disconnect()
-    },
+  return () => {
+    clearTimeout(timer)
+    watcher.disconnect()
   }
 }
 
@@ -52,6 +47,14 @@ export function FocusSafeRegion({
   ...props
 }: Props) {
   const region = useRef<HTMLDivElement>(null)
+  const stopWatch = useRef<(() => void) | undefined>(undefined)
+
+  useEffect(
+    () => () => {
+      stopWatch.current?.()
+    },
+    []
+  )
 
   useLayoutEffect(() => {
     const element = region.current
@@ -60,7 +63,8 @@ export function FocusSafeRegion({
     if (concealed && element.contains(document.activeElement)) {
       const fallback = focusFallback()
       if (fallback) {
-        keepClosedAfterHandoff(fallback)
+        stopWatch.current?.()
+        stopWatch.current = keepClosedAfterHandoff(fallback)
         fallback.focus()
       }
     }
