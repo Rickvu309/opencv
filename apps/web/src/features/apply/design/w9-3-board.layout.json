@@ -586,5 +586,38 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "layers-plus", "x": 266, "y": 68, "size": 14 },
+    { "icon": "calendar", "x": 589, "y": 218.5, "size": 12 },
+    { "icon": "check", "x": 789.5, "y": 124.5, "size": 9 },
+    { "icon": "chevron-down", "x": 1033, "y": 121, "size": 12 },
+    { "icon": "x", "x": 1042.5, "y": 157.5, "size": 9 }
+  ],
+  "boxes": [
+    { "box": "Add", "x": 1082.5, "y": 12.5, "width": 88.5, "height": 28 },
+    { "box": "Board", "x": 13, "y": 61, "width": 75, "height": 28 },
+    { "box": "List", "x": 94, "y": 61, "width": 61, "height": 28 },
+    { "box": "Calendar", "x": 161, "y": 61, "width": 92, "height": 28 },
+    { "box": "Filter", "x": 1113, "y": 61, "width": 28, "height": 28 },
+    { "box": "Display", "x": 1147, "y": 61, "width": 28, "height": 28 },
+    { "box": "Mark", "x": 34, "y": 169.5, "width": 28, "height": 28 },
+    { "box": "Priority", "x": 72, "y": 211.5, "width": 22, "height": 22 },
+    { "box": "Location", "x": 98, "y": 211.5, "width": 67, "height": 22 },
+    { "box": "Mark", "x": 34, "y": 271, "width": 28, "height": 28 },
+    { "box": "Priority", "x": 72, "y": 313, "width": 22, "height": 22 },
+    { "box": "Location", "x": 98, "y": 313, "width": 62.5, "height": 22 },
+    { "box": "Mark", "x": 288, "y": 169.5, "width": 28, "height": 28 },
+    { "box": "Priority", "x": 326, "y": 211.5, "width": 22, "height": 22 },
+    { "box": "Location", "x": 352, "y": 211.5, "width": 67, "height": 22 },
+    { "box": "Mark", "x": 288, "y": 271, "width": 28, "height": 28 },
+    { "box": "Priority", "x": 326, "y": 313, "width": 22, "height": 22 },
+    { "box": "Location", "x": 352, "y": 313, "width": 72.5, "height": 22 },
+    { "box": "Mark", "x": 542, "y": 169.5, "width": 28, "height": 28 },
+    { "box": "Priority", "x": 580, "y": 247.5, "width": 22, "height": 22 },
+    { "box": "Location", "x": 606, "y": 247.5, "width": 62.5, "height": 22 },
+    { "box": "Mark", "x": 542, "y": 307, "width": 28, "height": 28 },
+    { "box": "Priority", "x": 580, "y": 349, "width": 22, "height": 22 },
+    { "box": "Location", "x": 606, "y": 349, "width": 72.5, "height": 22 }
   ]
 }

@@ -20,6 +20,7 @@ if (!process.argv[2] || !Number.isInteger(port) || port < 1024 || port > 65534)
   )
 mkdirSync(output, { recursive: true })
 const design = join(repo, "apps/web/src/features/auth/design")
+const inForm = (text) => text.x < 720 && text.y >= 250 && text.y < 600
 const sha = (file) =>
   createHash("sha256").update(readFileSync(file)).digest("hex")
 const sourceFiles = [
@@ -161,7 +162,7 @@ try {
         let comparison = null
         if (width === layout.viewport.width) {
           const texts = layout.texts
-            .filter((text) => text.x < 720 && text.y >= 250 && text.y < 600)
+            .filter(inForm)
             .map((text) =>
               text.text.startsWith("Resend in ")
                 ? { ...text, text: runtime.countdown }
@@ -177,7 +178,17 @@ try {
           )
           if (measured.error) throw new Error(measured.error)
           comparison = {
-            ...comparePenLayout({ layout: { ...layout, texts }, ...measured }),
+            ...comparePenLayout({
+              layout: {
+                ...layout,
+                texts,
+                boxes: [
+                  ...(layout.boxes ?? []),
+                  ...layout.texts.filter((text) => !inForm(text)),
+                ],
+              },
+              ...measured,
+            }),
             measured: measured.measured,
           }
           if (comparison.mismatches.length) failures += 1

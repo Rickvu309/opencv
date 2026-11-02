@@ -1,0 +1,6 @@
+{
+  "id": "pen-html-marks",
+  "file": "scripts/pen-html.test.mjs",
+  "historic": null,
+  "reason": "it holds the icon and box tags that the pen layout record reads, added in #946; no earlier mistake to prove"
+}

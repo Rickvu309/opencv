@@ -82,5 +82,7 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
-  ]
+  ],
+  "icons": [{ "icon": "clock-3", "x": 200, "y": 40, "size": 20 }],
+  "boxes": []
 }

@@ -180,5 +180,19 @@
       "background": "rgba(34, 34, 34, 0.06)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "kanban", "x": 21, "y": 20.5, "size": 13 },
+    { "icon": "chevron-right", "x": 79.5, "y": 21, "size": 12 },
+    { "icon": "x", "x": 583, "y": 19, "size": 16 },
+    { "icon": "link", "x": 33, "y": 68, "size": 14 },
+    { "icon": "x", "x": 581.5, "y": 68.5, "size": 13 },
+    { "icon": "circle-alert", "x": 21, "y": 168, "size": 13 },
+    { "icon": "paperclip", "x": 27.5, "y": 390.5, "size": 15 }
+  ],
+  "boxes": [
+    { "box": "Stage", "x": 21, "y": 328, "width": 75, "height": 28 },
+    { "box": "Deadline", "x": 100, "y": 328, "width": 77, "height": 28 },
+    { "box": "Add job", "x": 509.5, "y": 383, "width": 95.5, "height": 30 }
   ]
 }

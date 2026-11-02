@@ -824,5 +824,21 @@
       "background": "rgba(252, 252, 252, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "layers-plus", "x": 266.5, "y": 68, "size": 14 },
+    { "icon": "x", "x": 692.5, "y": 349, "size": 9 },
+    { "icon": "reply", "x": 1015.5, "y": 608.5, "size": 11 }
+  ],
+  "boxes": [
+    { "box": "Add", "x": 1082.5, "y": 12.5, "width": 88.5, "height": 28 },
+    { "box": "Board", "x": 13, "y": 61, "width": 74.5, "height": 28 },
+    { "box": "List", "x": 93.5, "y": 61, "width": 61, "height": 28 },
+    { "box": "Calendar", "x": 160.5, "y": 61, "width": 93, "height": 28 },
+    { "box": "Filter", "x": 1113, "y": 61, "width": 28, "height": 28 },
+    { "box": "Display", "x": 1147, "y": 61, "width": 28, "height": 28 },
+    { "box": "caret-left", "x": 156, "y": 110, "width": 28, "height": 28 },
+    { "box": "caret-right", "x": 188, "y": 110, "width": 28, "height": 28 },
+    { "box": "Today", "x": 220, "y": 110, "width": 58.5, "height": 28 }
   ]
 }

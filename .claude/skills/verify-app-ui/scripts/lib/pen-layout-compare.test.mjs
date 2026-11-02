@@ -281,13 +281,12 @@ test("a frame with no extras passes", () => {
   assert.deepEqual(runExtras([]).mismatches, [])
 })
 
-test("an extra exception hides the extra while live, fails when expired and is not stale when the state differs", () => {
+test("an extra exception hides the extra while live and fails when expired", () => {
   const hide = exception({
     text: "Collapse sidebar",
     property: "extra",
   })
   assert.deepEqual(runExtras([extra()], [hide]).mismatches, [])
-  assert.deepEqual(runExtras([], [hide]).mismatches, [])
   const prefixed = exception({
     text: undefined,
     textStartsWith: "Collapse",
@@ -298,6 +297,104 @@ test("an extra exception hides the extra while live, fails when expired and is n
     properties(runExtras([extra()], [{ ...hide, until: "2026-01-01" }])),
     ["exception", "extra"]
   )
+})
+
+test("an extra exception for a control that no longer renders fails as stale", () => {
+  const hide = exception({ text: "Collapse sidebar", property: "extra" })
+  const result = runExtras([], [hide])
+  assert.deepEqual(properties(result), ["exception"])
+  assert.equal(result.mismatches[0].app, "stale, the app no longer shows it")
+  assert.deepEqual(
+    comparePenLayout({
+      layout: layout([text()]),
+      measured: [text()],
+      exceptions: [hide],
+      reportStale: false,
+      today: "2026-10-28",
+    }).mismatches,
+    []
+  )
+})
+
+test("an expired extra exception fails even when its control is gone", () => {
+  const gone = exception({
+    text: "Collapse sidebar",
+    property: "extra",
+    until: "2026-10-01",
+  })
+  for (const reportStale of [true, false]) {
+    const result = comparePenLayout({
+      layout: layout([text()]),
+      measured: [text()],
+      exceptions: [gone],
+      reportStale,
+      today: "2026-10-28",
+    })
+    assert.deepEqual(properties(result), ["exception"])
+    assert.equal(result.mismatches[0].app, "expired")
+  }
+})
+
+test("a pending list passed in replaces the shipped one", () => {
+  const pendingOnly = exception({ text: "Collapse sidebar", property: "extra" })
+  const result = comparePenLayout({
+    layout: layout([text()]),
+    measured: [text()],
+    extras: [extra()],
+    exceptions: [],
+    pendingExtras: [pendingOnly],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(result.mismatches, [])
+})
+
+const iconAt = (x, y) => ({ icon: "x", x, y, size: 16 })
+const runDrawn = (marks, controlOver = {}) =>
+  comparePenLayout({
+    layout: { ...layout([text()]), ...marks },
+    measured: [text()],
+    extras: [extra(controlOver)],
+    today: "2026-10-28",
+  })
+
+test("an icon-only control sitting on a frame icon is accounted for", () => {
+  assert.deepEqual(runDrawn({ icons: [iconAt(204, 16)] }).mismatches, [])
+  assert.deepEqual(
+    runDrawn({ icons: [iconAt(212, 20)] }, { x: 205 }).mismatches,
+    []
+  )
+})
+
+test("an icon-only control far from every frame icon still fails", () => {
+  assert.deepEqual(properties(runDrawn({ icons: [iconAt(600, 400)] })), [
+    "extra",
+  ])
+  assert.deepEqual(properties(runDrawn({})), ["extra"])
+})
+
+test("a control on a small drawn box is accounted for", () => {
+  const box = { box: "Digit 4", x: 200, y: 12, width: 48, height: 56 }
+  assert.deepEqual(runDrawn({ boxes: [box] }).mismatches, [])
+})
+
+test("a control on a frame text the app did not show is accounted for", () => {
+  const result = comparePenLayout({
+    layout: layout([text({ x: 200, y: 12, width: 60, height: 20 })]),
+    measured: [null],
+    extras: [extra()],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(properties(result), ["text"])
+})
+
+test("a frame icon does not account for a heading", () => {
+  const result = comparePenLayout({
+    layout: { ...layout([text()]), icons: [iconAt(204, 16)] },
+    measured: [text()],
+    extras: [extra({ kind: "heading", text: "Not in the frame" })],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(properties(result), ["extra"])
 })
 
 test("only the chosen kinds of extra count", () => {
@@ -313,12 +410,23 @@ test("only the chosen kinds of extra count", () => {
   )
 })
 
-test("every pending extra names an issue, a date and a frame", () => {
+const PENDING_KINDS = ["drift", "fenced", "data", "unexplained"]
+
+test("every pending extra names an issue, a date, a frame, a kind and a reason", () => {
   assert.ok(PENDING_EXTRAS.length > 0)
   for (const entry of PENDING_EXTRAS) {
     assert.match(entry.issue, /^#\d+$/)
     assert.match(entry.until, /^\d{4}-\d{2}-\d{2}$/)
     assert.ok(entry.frameId)
     assert.ok(entry.text || entry.textStartsWith)
+    assert.ok(PENDING_KINDS.includes(entry.kind), entry.kind)
+    assert.ok(entry.reason.length > 20, entry.reason)
   }
+})
+
+test("a pending extra is listed once", () => {
+  const keys = PENDING_EXTRAS.map(
+    (entry) => `${entry.frameId}|${entry.text ?? entry.textStartsWith}`
+  )
+  assert.equal(new Set(keys).size, keys.length)
 })

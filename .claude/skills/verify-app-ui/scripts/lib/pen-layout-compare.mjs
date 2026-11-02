@@ -39,7 +39,6 @@ const pending = JSON.parse(
 export const PENDING_EXTRAS = pending.entries.map((entry) => ({
   ...entry,
   property: "extra",
-  reason: `${pending.reason} (${entry.issue})`,
   approvedBy: `pending ${entry.issue}`,
 }))
 
@@ -148,6 +147,28 @@ function textMismatches(want, got, tokens) {
   return out
 }
 
+const drawnMarks = (layout, measured) => [
+  ...(layout.icons ?? []).map((icon) => ({
+    ...icon,
+    width: icon.size,
+    height: icon.size,
+  })),
+  ...(layout.boxes ?? []),
+  ...layout.texts.filter((_, index) => !measured[index]),
+]
+
+const accountedByDrawing = (extra, layout, measured) =>
+  extra.kind === "control" &&
+  drawnMarks(layout, measured).some((mark) => {
+    const centre = { x: mark.x + mark.width / 2, y: mark.y + mark.height / 2 }
+    return (
+      centre.x >= extra.x - TOLERANCE.position &&
+      centre.x <= extra.x + extra.width + TOLERANCE.position &&
+      centre.y >= extra.y - TOLERANCE.position &&
+      centre.y <= extra.y + extra.height + TOLERANCE.position
+    )
+  })
+
 const sameLetters = (left, right) => left.toLowerCase() === right.toLowerCase()
 
 function extraMismatch(extra, layout) {
@@ -170,9 +191,10 @@ export function comparePenLayout({
   extraKinds = EXTRA_KINDS,
   reportStale = true,
   exceptions = PEN_LAYOUT_EXCEPTIONS,
+  pendingExtras = PENDING_EXTRAS,
   today = new Date().toISOString().slice(0, 10),
 }) {
-  const mine = [...exceptions, ...PENDING_EXTRAS].filter(
+  const mine = [...exceptions, ...pendingExtras].filter(
     (entry) => entry.frameId === layout.frameId
   )
   const used = new Set()
@@ -202,17 +224,32 @@ export function comparePenLayout({
       report(want.text, found)
   })
   for (const extra of extras) {
-    if (extraKinds.includes(extra.kind))
+    if (
+      extraKinds.includes(extra.kind) &&
+      !accountedByDrawing(extra, layout, measured)
+    )
       report(extra.text, extraMismatch(extra, layout))
   }
-  for (const entry of reportStale ? mine : []) {
-    if (used.has(entry) || entry.property === "extra") continue
-    mismatches.push({
-      text: entry.text,
-      property: "exception",
-      pen: `${entry.property} excepted`,
-      app: "stale, the property now matches",
-    })
+  for (const entry of mine) {
+    if (used.has(entry)) continue
+    const text = entry.text ?? entry.textStartsWith
+    if (entry.until < today)
+      mismatches.push({
+        text,
+        property: "exception",
+        pen: `${entry.property} excepted until ${entry.until}`,
+        app: "expired",
+      })
+    else if (reportStale)
+      mismatches.push({
+        text,
+        property: "exception",
+        pen: `${entry.property} excepted`,
+        app:
+          entry.property === "extra"
+            ? "stale, the app no longer shows it"
+            : "stale, the property now matches",
+      })
   }
   return { texts: layout.texts.length, mismatches }
 }

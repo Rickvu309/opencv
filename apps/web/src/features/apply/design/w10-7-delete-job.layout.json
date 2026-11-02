@@ -68,5 +68,9 @@
       "background": "rgba(47, 47, 49, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [],
+  "boxes": [
+    { "box": "Cancel", "x": 195.5, "y": 87, "width": 68.5, "height": 30 }
   ]
 }

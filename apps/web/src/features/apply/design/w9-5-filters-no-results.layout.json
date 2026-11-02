@@ -194,5 +194,20 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "layers-plus", "x": 266, "y": 68, "size": 14 },
+    { "icon": "x", "x": 170.5, "y": 111, "size": 12 },
+    { "icon": "x", "x": 300.5, "y": 111, "size": 12 },
+    { "icon": "x", "x": 549, "y": 483.5, "size": 13 }
+  ],
+  "boxes": [
+    { "box": "Add", "x": 1082.5, "y": 12.5, "width": 88.5, "height": 28 },
+    { "box": "Board", "x": 13, "y": 61, "width": 75, "height": 28 },
+    { "box": "List", "x": 94, "y": 61, "width": 61, "height": 28 },
+    { "box": "Calendar", "x": 161, "y": 61, "width": 92, "height": 28 },
+    { "box": "Filter", "x": 1092.5, "y": 61, "width": 48.5, "height": 28 },
+    { "box": "Display", "x": 1147, "y": 61, "width": 28, "height": 28 },
+    { "box": "Tile", "x": 572, "y": 363, "width": 44, "height": 44 }
   ]
 }

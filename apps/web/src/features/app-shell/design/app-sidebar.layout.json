@@ -222,5 +222,24 @@
       "background": "rgba(239, 239, 240, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "search", "x": 180, "y": 20, "size": 16 },
+    { "icon": "inbox", "x": 18, "y": 60, "size": 16 },
+    { "icon": "message-circle", "x": 18, "y": 89, "size": 16 },
+    { "icon": "briefcase", "x": 18, "y": 118, "size": 16 },
+    { "icon": "chevron-down", "x": 80, "y": 161.5, "size": 9 },
+    { "icon": "file-text", "x": 18, "y": 187, "size": 16 },
+    { "icon": "square-kanban", "x": 18, "y": 216, "size": 16 },
+    { "icon": "presentation", "x": 18, "y": 245, "size": 16 },
+    { "icon": "chevron-down", "x": 74.5, "y": 288.5, "size": 9 },
+    { "icon": "file-text", "x": 18, "y": 314, "size": 16 },
+    { "icon": "briefcase", "x": 18, "y": 343, "size": 16 },
+    { "icon": "medal", "x": 18, "y": 372, "size": 16 },
+    { "icon": "settings", "x": 210, "y": 864, "size": 16 }
+  ],
+  "boxes": [
+    { "box": "Frame", "x": 17.5, "y": 19.5, "width": 16.5, "height": 16.5 },
+    { "box": "New chat", "x": 204, "y": 14, "width": 28, "height": 28 }
   ]
 }

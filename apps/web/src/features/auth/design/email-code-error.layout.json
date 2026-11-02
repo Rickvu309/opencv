@@ -278,5 +278,18 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "circle-alert", "x": 247.5, "y": 467, "size": 15 },
+    { "icon": "mail", "x": 311.5, "y": 519.5, "size": 16 }
+  ],
+  "boxes": [
+    { "box": "Frame", "x": 33.5, "y": 33.5, "width": 16.5, "height": 16.5 },
+    { "box": "Digit 1", "x": 190, "y": 383, "width": 47, "height": 60 },
+    { "box": "Digit 2", "x": 245, "y": 383, "width": 47, "height": 60 },
+    { "box": "Digit 3", "x": 300, "y": 383, "width": 47, "height": 60 },
+    { "box": "Digit 4", "x": 373, "y": 383, "width": 47, "height": 60 },
+    { "box": "Digit 5", "x": 428, "y": 383, "width": 47, "height": 60 },
+    { "box": "Digit 6", "x": 483, "y": 383, "width": 47, "height": 60 }
   ]
 }

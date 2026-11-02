@@ -123,7 +123,34 @@ function probe(args) {
       const entry = describe(element, box)
       if (entry.text) texts.push(entry)
     }
-    return { pane: pageSize, texts }
+    const drawn = (selector, label, fits) =>
+      [...pane.querySelectorAll(selector)].flatMap((element) => {
+        const rect = element.getBoundingClientRect()
+        if (rect.width <= 0 || rect.height <= 0 || !fits(rect)) return []
+        for (let up = element; up; up = up.parentElement) {
+          if (getComputedStyle(up).opacity === "0") return []
+        }
+        return [
+          {
+            ...label(element),
+            x: rect.left - paneRect.left,
+            y: rect.top - paneRect.top,
+            width: rect.width,
+            height: rect.height,
+          },
+        ]
+      })
+    const icons = drawn(
+      "[data-pen-icon]",
+      (element) => ({ icon: element.getAttribute("data-pen-icon") }),
+      () => true
+    )
+    const boxes = drawn(
+      "[data-pen-box]",
+      (element) => ({ box: element.getAttribute("data-pen-box") }),
+      (rect) => rect.width <= 96 && rect.height <= 96
+    )
+    return { pane: pageSize, texts, icons, boxes }
   }
   // include names extra roots outside the pane (a portal such as a drag
   // overlay); their texts are measured relative to the pane too.

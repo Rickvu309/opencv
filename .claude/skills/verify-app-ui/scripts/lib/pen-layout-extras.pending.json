@@ -1,341 +1,36 @@
 {
-  "reason": "Icon or field controls that the layout json cannot tell from a real extra. Each needs a look at the design file.",
   "entries": [
     {
-      "frameId": "D8PoQ6",
-      "text": "Filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "aLOFO",
-      "text": "Filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "a3PFL",
-      "text": "Filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "f0rS0",
-      "text": "Filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "U4613",
-      "text": "Filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "U4613",
-      "text": "Previous month",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "U4613",
-      "text": "Next month",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "U4613",
-      "text": "Interview 10:00: Associate PM intern, Local startup",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "ZA60d",
-      "text": "Filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "ZA60d",
-      "text": "Previous week",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "ZA60d",
-      "text": "Next week",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "ZA60d",
-      "text": "Deadline: UX research intern",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "NsAiG",
-      "text": "Remove company filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "NsAiG",
-      "text": "Remove location filter",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "c4KwjR",
-      "text": "Close",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
       "frameId": "c4KwjR",
       "text": "Location",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Z3OFW",
-      "text": "Close",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Z3OFW",
-      "text": "Clear link",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "tNZ73",
-      "text": "Close",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "tNZ73",
-      "text": "Clear link",
-      "issue": "#948",
-      "until": "2026-12-07"
+      "kind": "drift",
+      "issue": "#951",
+      "until": "2026-12-01",
+      "reason": "The New job dialog always shows a Location button; this frame has none until a place is set"
     },
     {
       "frameId": "tNZ73",
       "text": "Location",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "pD2lq",
-      "text": "Close",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "qSuLB",
-      "text": "Favorite",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "qSuLB",
-      "text": "More",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "qSuLB",
-      "text": "Previous job",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "qSuLB",
-      "text": "Next job",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "qSuLB",
-      "text": "Copy link",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "qSuLB",
-      "text": "Properties panel",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "qSuLB",
-      "text": "Add a step",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Wlp2X",
-      "text": "Favorite",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Wlp2X",
-      "text": "More",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Wlp2X",
-      "text": "Previous job",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Wlp2X",
-      "text": "Next job",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Wlp2X",
-      "text": "Copy link",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Wlp2X",
-      "text": "Properties panel",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "Wlp2X",
-      "text": "Add interview",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "YRYO8",
-      "text": "Search",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "YRYO8",
-      "text": "New chat",
-      "issue": "#948",
-      "until": "2026-12-07"
+      "kind": "drift",
+      "issue": "#951",
+      "until": "2026-12-01",
+      "reason": "The New job dialog always shows a Location button; this frame has none until a place is set"
     },
     {
       "frameId": "NgYML",
       "text": "Attach a file",
+      "kind": "fenced",
       "issue": "#916",
-      "until": "2026-11-30"
+      "until": "2026-12-01",
+      "reason": "The frame draws a paperclip, but the Paper layouts are fenced and have no icon record yet; regenerate them after the editor work merges"
     },
     {
       "frameId": "D1s74Z",
       "text": "Attach a file",
+      "kind": "fenced",
       "issue": "#916",
-      "until": "2026-11-30"
-    },
-    {
-      "frameId": "yGwdJ",
-      "text": "Digit 4",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "yGwdJ",
-      "text": "Digit 5",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "yGwdJ",
-      "text": "Digit 6",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "yGwdJ",
-      "text": "EN",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "yGwdJ",
-      "text": "VI",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "iAwJ7",
-      "text": "EN",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "iAwJ7",
-      "text": "VI",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "Digit 1",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "Digit 2",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "Digit 3",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "Digit 4",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "Digit 5",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "Digit 6",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "EN",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "b1m7SA",
-      "text": "VI",
-      "issue": "#948",
-      "until": "2026-12-07"
-    },
-    {
-      "frameId": "DhG87",
-      "textStartsWith": "Continue as ",
-      "issue": "#948",
-      "until": "2026-12-07"
+      "until": "2026-12-01",
+      "reason": "The frame draws a paperclip, but the Paper layouts are fenced and have no icon record yet; regenerate them after the editor work merges"
     }
   ]
 }
