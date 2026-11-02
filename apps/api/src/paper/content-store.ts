@@ -12,9 +12,9 @@ import {
 import {
   absorbUpdate,
   aliveCharacters,
-  clientViews,
   forkOf,
   landedInDeadContent,
+  readDeadBlocks,
   lostCharacters,
   mergedUpdate,
   loadYDoc,
@@ -471,40 +471,39 @@ async function rehomed(
   row: PaperRow,
   entry: Live,
   request: SyncRequest,
-  effective: Uint8Array
-): Promise<Uint8Array> {
+  effective: Uint8Array | null
+): Promise<Uint8Array | null> {
   if (!landedInDeadContent(entry.yDoc, request.update)) return effective
   const logged = await loggedRows(row.id, entry.baseSeq)
-  const views = clientViews(
+  const reading = readDeadBlocks(
     entry.base,
-    logged.map((item) => item.update),
-    request.stateVector,
+    logged.map((item) => ({
+      update: item.update,
+      person: item.origin === "person",
+    })),
     request.update,
     entry.yDoc
   )
   const current = materialize(entry.yDoc)
-  if (!views.before.ok || !views.after.ok || !current.ok) {
-    throw refuse("Your typing could not be placed in the document")
+  if (!reading || !reading.before.ok || !reading.after.ok || !current.ok) {
+    console.warn(`[paper] could not place late typing for ${row.id}`)
+    return effective
   }
-  let target: PaperDocument | null
-  try {
-    target = carryPersonChange(
-      validated(views.before.document, row.kind),
-      validated(views.after.document, row.kind),
-      validated(current.document, row.kind),
-      views.owners
-    )
-  } catch (error) {
-    throw refuse(error instanceof Error ? error.message : "Cannot place typing")
-  }
+  const target = carryPersonChange(
+    validated(reading.before.document, row.kind),
+    validated(reading.after.document, row.kind),
+    validated(current.document, row.kind),
+    reading.owners
+  )
   if (!target) return effective
   const carried = writeDocument(forkOf(entry.yDoc), target, "person")
   if (!carried) return effective
   const absorbed = absorbUpdate(entry.yDoc, carried, "person")
   if (!absorbed.ok) throw refuse(absorbed.reason)
-  return absorbed.effective
+  if (!absorbed.effective) return effective
+  return effective
     ? mergedUpdate([effective, absorbed.effective])
-    : effective
+    : absorbed.effective
 }
 
 export async function syncContent(
@@ -535,8 +534,11 @@ export async function syncContent(
           ? ({ ok: true, effective: null } as const)
           : absorbUpdate(entry.yDoc, request.update, "person")
       if (!absorbed.ok) throw refuse(absorbed.reason)
-      if (absorbed.effective) {
-        const effective = await rehomed(row, entry, request, absorbed.effective)
+      const effective =
+        request.update.length === 0
+          ? absorbed.effective
+          : await rehomed(row, entry, request, absorbed.effective)
+      if (effective) {
         row = await commit(row, entry, effective, {
           origin: "person",
           witness: row.document,

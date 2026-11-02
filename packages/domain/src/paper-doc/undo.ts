@@ -70,7 +70,10 @@ function restoreFields(
   for (const key of Object.keys(postFields.text)) {
     if ((preFields.text[key] ?? "") === postFields.text[key]) continue
     const field = textKey(key)
-    if (liveFields.text[key] === postFields.text[key]) {
+    const sameRuns =
+      canonical(target[field]) ===
+      canonical((post.node as unknown as Record<string, unknown>)[field])
+    if (liveFields.text[key] === postFields.text[key] && sameRuns) {
       target[field] = cloned(
         (pre.node as unknown as Record<string, unknown>)[field]
       )

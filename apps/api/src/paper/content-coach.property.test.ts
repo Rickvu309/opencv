@@ -1,11 +1,11 @@
 import fc from "fast-check"
-import { materialize, stateVectorOf } from "@workspace/paper-crdt"
+import { materialize, stateVectorOf, updateSince } from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
-import { encoded, typed } from "../test/paper-content.js"
+import { bytesOf, encoded, typed } from "../test/paper-content.js"
 
 const userId = "user-coach-property"
 
@@ -31,6 +31,8 @@ const stepArbitrary = fc.record({
     "retype",
     "addBlock",
     "staleType",
+    "staleDiff",
+    "applyFirst",
     "bold",
     "editCoach",
     "setText",
@@ -177,6 +179,8 @@ describe("random person and Coach edits over blocks, lists and an experience", (
               revision: number
             }[] = []
             let counter = 0
+            const typedEver = new Set<string>()
+            const erased = new Set<string>()
 
             const personEdit = (change: (doc: Doc) => Doc) =>
               h.person(docId, client, ((paper: Doc) => ({
@@ -191,6 +195,7 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                 const target = pick(textBlocks(live), step.a)
                 if (target) {
                   const token = step.c % 3 === 0 ? "e" : `⟦p${++counter}⟧`
+                  typedEver.add(token)
                   await personEdit((doc) => ({
                     blocks: mapNode(doc.blocks, target.id, (node) =>
                       withContent(node, inserted(textOf(node), step.b, token))
@@ -203,6 +208,8 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                 )
                 const target = pick(holders, step.a)
                 if (target) {
+                  const gone = textOf(target).match(/⟦p\d+⟧/)?.[0]
+                  if (gone) erased.add(gone)
                   await personEdit((doc) => ({
                     blocks: mapNode(doc.blocks, target.id, (node) =>
                       withContent(node, textOf(node).replace(/⟦p\d+⟧/, ""))
@@ -233,6 +240,7 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                 }
               } else if (step.kind === "addBlock") {
                 const token = `⟦p${++counter}⟧`
+                typedEver.add(token)
                 await personEdit((doc) => {
                   const next = [...doc.blocks]
                   next.splice(step.a % (next.length + 1), 0, {
@@ -279,6 +287,7 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                 const target = view ? pick(textBlocks(view), step.a) : undefined
                 if (view && target) {
                   const token = `⟦p${++counter}⟧`
+                  typedEver.add(token)
                   await h.run("paper.sync", {
                     docId,
                     epoch: 1,
@@ -288,11 +297,64 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                         withContent(node, inserted(textOf(node), step.b, token))
                       ),
                     })) as never),
-                    stateVector: encoded(stateVectorOf(client)),
+                    stateVector:
+                      step.c % 2 === 0 ? encoded(stateVectorOf(client)) : "",
                   })
                   expect(
                     tokens((await snapshot(docId)).doc, PERSON).has(token)
                   ).toBe(true)
+                }
+              } else if (
+                step.kind === "staleDiff" ||
+                step.kind === "applyFirst"
+              ) {
+                const local = materialize(client)
+                const view = local.ok
+                  ? (local.document as unknown as Doc)
+                  : null
+                const target = view ? pick(textBlocks(view), step.a) : undefined
+                if (view && target) {
+                  const since = stateVectorOf(client)
+                  const first = `⟦p${++counter}⟧`
+                  const second = `⟦p${++counter}⟧`
+                  const edit = (token: string) => (paper: Doc) => ({
+                    ...paper,
+                    blocks: mapNode(paper.blocks, target.id, (node) =>
+                      withContent(node, inserted(textOf(node), step.b, token))
+                    ),
+                  })
+                  let update: Uint8Array
+                  if (step.kind === "staleDiff") {
+                    typed(client, edit(first) as never)
+                    typed(client, ((paper: Doc) => ({
+                      ...paper,
+                      blocks: mapNode(paper.blocks, target.id, (node) =>
+                        withContent(node, textOf(node).replace(first, ""))
+                      ),
+                    })) as never)
+                    typed(client, edit(second) as never)
+                    typedEver.add(first)
+                    erased.add(first)
+                    typedEver.add(second)
+                    update = updateSince(client, since)!
+                  } else {
+                    update = bytesOf(typed(client, edit(second) as never))
+                    typedEver.add(second)
+                    await h.pull(docId, client)
+                  }
+                  await h.run("paper.sync", {
+                    docId,
+                    epoch: 1,
+                    update: encoded(update),
+                    stateVector:
+                      step.c % 2 === 0 ? encoded(stateVectorOf(client)) : "",
+                  })
+                  if (step.kind === "applyFirst") {
+                    const present = JSON.stringify((await snapshot(docId)).doc)
+                    expect(
+                      present.split(second).length - 1
+                    ).toBeLessThanOrEqual(1)
+                  }
                 }
               } else if (step.kind === "undo") {
                 const entry = pick(undoable, step.a)
@@ -401,6 +463,12 @@ describe("random person and Coach edits over blocks, lists and an experience", (
               }
               const now = await snapshot(docId)
               seen.set(now.revision, now.doc)
+              const found = JSON.stringify(now.doc).match(PERSON) ?? []
+              expect(new Set(found).size).toBe(found.length)
+              for (const token of found) {
+                expect(typedEver.has(token) || /⟦p\d+⟧/.test(token)).toBe(true)
+                expect(erased.has(token)).toBe(false)
+              }
             }
           })
         }

@@ -196,6 +196,8 @@ const docChanged = (input: DocInput): QueryRef[] => [
   ...listChanged(),
 ]
 
+const chatsChanged = (): QueryRef[] => [{ query: "chat.get" }]
+
 const jobsLinked = (): QueryRef[] => [
   { query: "job.list" },
   { query: "job.get" },
@@ -264,7 +266,7 @@ export const paperContract = commandContract({
     coach: "auto",
     destructive: false,
     step: () => "Edit the document",
-    invalidates: docChanged,
+    invalidates: (input) => [...docChanged(input), ...chatsChanged()],
   }),
   "paper.revertEdit": commandEntry({
     description: "Take back one Coach edit and keep later typing.",
@@ -280,7 +282,7 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Undo a Coach edit",
-    invalidates: docChanged,
+    invalidates: (input) => [...docChanged(input), ...chatsChanged()],
   }),
   "paper.sync": commandEntry({
     description:

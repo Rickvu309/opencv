@@ -56,11 +56,12 @@ function withoutPresent(node: PaperNode, present: Index): PaperNode {
   return node
 }
 
-function insertPersonBlock(
+function placeIn(
   work: PaperDocument,
   intended: Index,
-  id: string
-): void {
+  id: string,
+  node: PaperNode
+) {
   const entry = intended.get(id)!
   const present = indexOf(work)
   const holder = entry.owner === "body" ? undefined : present.get(entry.owner)
@@ -75,7 +76,48 @@ function insertPersonBlock(
       break
     }
   }
-  list.splice(at, 0, withoutPresent(cloned(entry.node), present))
+  list.splice(at, 0, node)
+}
+
+function ensureChain(work: PaperDocument, intended: Index, id: string): void {
+  const entry = intended.get(id)
+  if (!entry || entry.owner === "body" || indexOf(work).has(entry.owner)) return
+  if (!intended.has(entry.owner)) return
+  ensureChain(work, intended, entry.owner)
+  const shell = cloned(intended.get(entry.owner)!.node)
+  ;(shell as unknown as { children?: PaperNode[] }).children = []
+  placeIn(work, intended, entry.owner, shell)
+}
+
+function insertPersonBlock(
+  work: PaperDocument,
+  intended: Index,
+  id: string
+): void {
+  ensureChain(work, intended, id)
+  const entry = intended.get(id)!
+  placeIn(work, intended, id, withoutPresent(cloned(entry.node), indexOf(work)))
+}
+
+function freshId(work: PaperDocument, id: string): string {
+  const present = indexOf(work)
+  for (let n = 1; ; n += 1) {
+    const candidate = `${id}-mine${n === 1 ? "" : n}`
+    if (!present.has(candidate)) return candidate
+  }
+}
+
+function keepBesideLive(
+  work: PaperDocument,
+  target: PaperNode,
+  copy: PaperNode
+) {
+  const entry = indexOf(work).get(target.id)!
+  const mine = cloned(copy)
+  ;(mine as unknown as { id: string }).id = freshId(work, target.id)
+  if ("children" in mine)
+    (mine as unknown as { children: PaperNode[] }).children = []
+  entry.list!.splice(entry.list!.indexOf(entry.node) + 1, 0, mine)
 }
 
 export function carryPersonChange(
@@ -103,7 +145,7 @@ export function carryPersonChange(
       continue
     }
     if (!carryFields(target.node, b.node, i.node)) {
-      throw new Error("A block is too long to carry your typing safely")
+      keepBesideLive(work, target.node, i.node)
     }
   }
   for (const id of missing) {

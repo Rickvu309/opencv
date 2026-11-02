@@ -4,14 +4,13 @@ export { paperBlockConfigs } from "./schema.js"
 export { revertOrigin } from "./revert.js"
 export {
   aliveCharacters,
-  clientViews,
   landedInDeadContent,
   lostCharacters,
   mergedUpdate,
   readEdit,
-  seenRowCount,
+  readDeadBlocks,
 } from "./inspect.js"
-export type { EditReading } from "./inspect.js"
+export type { DeadReading, EditReading, RowInfo } from "./inspect.js"
 export type { HistoryRow } from "./revert.js"
 export { materialize, seedYDoc, writeDocument } from "./ydoc.js"
 export {

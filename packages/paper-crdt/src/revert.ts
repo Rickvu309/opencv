@@ -66,7 +66,7 @@ function adoptOrphans(manager: Y.UndoManager, fresh: readonly Fresh[]): void {
   }
 }
 
-function without(
+export function without(
   deletions: StackItem["deletions"],
   removed: StackItem["deletions"]
 ): StackItem["deletions"] {
