@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from "react"
-import { Check, LoaderCircle } from "lucide-react"
+import { Check } from "lucide-react"
+import { Spinner } from "@workspace/ui/components/spinner"
 
 import { Mark } from "@workspace/ui/components/brand"
 
@@ -87,10 +88,7 @@ function WelcomeLine({ done, label }: { done: boolean; label: string }) {
       {done ? (
         <Check aria-hidden strokeWidth={2.5} className="size-[15px] shrink-0" />
       ) : (
-        <LoaderCircle
-          aria-hidden
-          className="size-[15px] shrink-0 animate-spin motion-reduce:animate-none"
-        />
+        <Spinner aria-hidden className="size-[15px] shrink-0" />
       )}
       <span>{label}</span>
     </li>

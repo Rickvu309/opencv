@@ -1,5 +1,5 @@
 import type { DragEvent } from "react"
-import { LoaderCircle } from "lucide-react"
+import { Spinner } from "@workspace/ui/components/spinner"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -81,10 +81,7 @@ export function ImportProgressDialog({
           <DialogTitle>Importing…</DialogTitle>
         </DialogHeader>
         <div role="status" className="flex items-center gap-3">
-          <LoaderCircle
-            aria-hidden
-            className="size-4 animate-spin motion-reduce:animate-none"
-          />
+          <Spinner aria-hidden />
           <p className="truncate text-sm text-muted-foreground">{filename}</p>
         </div>
         <div className="flex justify-end">

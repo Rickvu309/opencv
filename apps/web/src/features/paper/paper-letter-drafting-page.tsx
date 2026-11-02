@@ -1,13 +1,6 @@
 import { Fragment, useEffect, useRef } from "react"
-import {
-  Bell,
-  ChevronRight,
-  Ellipsis,
-  Link,
-  LoaderCircle,
-  Mail,
-  Star,
-} from "lucide-react"
+import { Bell, ChevronRight, Ellipsis, Link, Mail, Star } from "lucide-react"
+import { Spinner } from "@workspace/ui/components/spinner"
 import { Button } from "@workspace/ui/components/button"
 import "./design/letter-drafting.pen.css"
 
@@ -65,10 +58,7 @@ export function PaperLetterDraftingPage({
           aria-live="polite"
           className="ms-auto flex shrink-0 items-center gap-[7px] px-2 text-[13.5px]"
         >
-          <LoaderCircle
-            aria-hidden="true"
-            className="size-[15px] shrink-0 motion-safe:animate-spin"
-          />
+          <Spinner aria-hidden="true" className="size-[15px] shrink-0" />
           <span className="sr-only md:not-sr-only">Coach is writing…</span>
         </span>
         <span
@@ -124,10 +114,7 @@ export function PaperLetterDraftingPage({
         data-slot="letter-drafting-bar"
         className="absolute bottom-8 left-1/2 flex h-11 max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-2 rounded-full border pr-[5px] pl-3 md:left-[calc(50%-21px)] md:h-9"
       >
-        <LoaderCircle
-          aria-hidden="true"
-          className="size-[15px] shrink-0 motion-safe:animate-spin"
-        />
+        <Spinner aria-hidden="true" className="size-[15px] shrink-0" />
         <span
           data-slot="letter-drafting-label"
           className="shrink-0 text-[13px] leading-[15.5px] font-medium"
