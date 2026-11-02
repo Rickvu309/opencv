@@ -31,6 +31,12 @@ describe("shell copy", () => {
       "shell.menu": shellCopy.menu,
       "shell.closeMenu": shellCopy.closeMenu,
       "shell.history": shellCopy.history,
+      "shell.resizeSidebar": shellCopy.resizeSidebar,
+      "shell.collapseSidebar": shellCopy.collapseSidebar,
+      "shell.expandSidebar": shellCopy.expandSidebar,
+      "shell.pinSidebar": shellCopy.pinSidebar,
+      "shell.account": shellCopy.account,
+      "shell.signOut": shellCopy.signOut,
     })
   })
 })
