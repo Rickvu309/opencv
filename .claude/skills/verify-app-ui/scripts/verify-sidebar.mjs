@@ -363,7 +363,7 @@ try {
   const drawer = await phone.evaluate(`(() => {
     const nav = document.querySelector(${JSON.stringify(DRAWER)});
     const r = nav.getBoundingClientRect();
-    const names = [...nav.querySelectorAll('[data-slot="sidebar-link"], button[aria-label]')].map((e) => e.getAttribute('aria-label') ?? e.textContent.trim());
+    const names = [...nav.querySelectorAll('[data-slot="sidebar-link"], button[aria-label]')].map((e) => (e.getAttribute('aria-label') ?? e.textContent.trim()).replace(/, \\d+ unread$/, ''));
     return { w: r.width, h: r.height, right: r.right, scroll: document.documentElement.scrollWidth, names, name: nav.querySelector('[data-slot="shell-profile"]').textContent.trim() };
   })()`)
   check(
