@@ -9,6 +9,7 @@ import {
   formatMismatch,
   PEN_LAYOUT_EXCEPTIONS,
   PENDING_EXTRAS,
+  pendingExtraProblems,
 } from "./pen-layout-compare.mjs"
 
 const here = new URL(".", import.meta.url)
@@ -413,7 +414,6 @@ test("only the chosen kinds of extra count", () => {
 const PENDING_KINDS = ["drift", "fenced", "data", "unexplained"]
 
 test("every pending extra names an issue, a date, a frame, a kind and a reason", () => {
-  assert.ok(PENDING_EXTRAS.length > 0)
   for (const entry of PENDING_EXTRAS) {
     assert.match(entry.issue, /^#\d+$/)
     assert.match(entry.until, /^\d{4}-\d{2}-\d{2}$/)
@@ -429,4 +429,66 @@ test("a pending extra is listed once", () => {
     (entry) => `${entry.frameId}|${entry.text ?? entry.textStartsWith}`
   )
   assert.equal(new Set(keys).size, keys.length)
+})
+
+const designFrameIds = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../../../../apps/web/src/test/design-frames.json",
+      import.meta.url
+    ),
+    "utf8"
+  )
+).frames.map((frame) => frame.id)
+
+const pendingEntry = (over = {}) => ({
+  frameId: designFrameIds[0],
+  text: "Location",
+  issue: "#951",
+  until: "2026-12-01",
+  ...over,
+})
+
+test("every pending extra names a frame in design-frames.json, whichever screen runs", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: PENDING_EXTRAS,
+      frameIds: designFrameIds,
+      today: "2000-01-01",
+    }),
+    []
+  )
+})
+
+test("a pending extra fails on a frame id that design-frames.json lacks", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: [pendingEntry({ frameId: "NoSuchFrame" })],
+      frameIds: designFrameIds,
+      today: "2026-11-03",
+    }),
+    ['NoSuchFrame "Location": frame is not in design-frames.json']
+  )
+})
+
+test("a pending extra fails after its date even when no driver compares its frame", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: [pendingEntry({ until: "2026-11-02" })],
+      frameIds: designFrameIds,
+      today: "2026-11-03",
+    }),
+    [`${designFrameIds[0]} "Location": pending until 2026-11-02 (#951)`]
+  )
+})
+
+test("a pending extra on its last day still passes", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: [pendingEntry({ until: "2026-11-03" })],
+      frameIds: designFrameIds,
+      today: "2026-11-03",
+    }),
+    []
+  )
 })

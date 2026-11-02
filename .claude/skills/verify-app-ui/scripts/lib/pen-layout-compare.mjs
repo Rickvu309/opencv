@@ -42,6 +42,19 @@ export const PENDING_EXTRAS = pending.entries.map((entry) => ({
   approvedBy: `pending ${entry.issue}`,
 }))
 
+export function pendingExtraProblems({ entries, frameIds, today }) {
+  const known = new Set(frameIds)
+  return entries.flatMap((entry) => {
+    const name = `${entry.frameId} "${entry.text ?? entry.textStartsWith}"`
+    const problems = []
+    if (!known.has(entry.frameId))
+      problems.push(`${name}: frame is not in design-frames.json`)
+    if (entry.until < today)
+      problems.push(`${name}: pending until ${entry.until} (${entry.issue})`)
+    return problems
+  })
+}
+
 export const normalizeText = (text) => text.replace(/\s+/g, " ").trim()
 
 export function parseRgba(css) {

@@ -16,6 +16,10 @@ import {
   startStack,
   stopStack,
 } from "../.claude/skills/verify-app-ui/scripts/lib/stack.mjs"
+import {
+  PENDING_EXTRAS,
+  pendingExtraProblems,
+} from "../.claude/skills/verify-app-ui/scripts/lib/pen-layout-compare.mjs"
 import { judge, parsePenLayout } from "./lib/ci-screens.mjs"
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
@@ -183,13 +187,19 @@ try {
   }
 }
 
-const verdict = judge({
-  results,
-  skips,
-  today: new Date().toISOString().slice(0, 10),
+const today = new Date().toISOString().slice(0, 10)
+const verdict = judge({ results, skips, today })
+const pendingProblems = pendingExtraProblems({
+  entries: PENDING_EXTRAS,
+  frameIds: JSON.parse(
+    readFileSync(join(root, "apps/web/src/test/design-frames.json"), "utf8")
+  ).frames.map((frame) => frame.id),
+  today,
 })
 console.log("\n==== screen layout checks ====")
 for (const line of verdict.lines) console.log(line)
+for (const problem of pendingProblems)
+  console.log(`FAIL pending extra ${problem}`)
 const skipped = verdict.lines.filter((line) => line.startsWith("SKIPPED"))
 if (skipped.length)
   console.log(
@@ -197,6 +207,6 @@ if (skipped.length)
   )
 const seconds = Math.round((Date.now() - startedAt) / 1000)
 console.log(
-  `${verdict.failed || crashed ? "FAILED" : "OK"} in ${seconds}s, ${results.length} results, ${skipped.length} skipped`
+  `${verdict.failed || crashed || pendingProblems.length ? "FAILED" : "OK"} in ${seconds}s, ${results.length} results, ${skipped.length} skipped`
 )
-process.exit(verdict.failed || crashed ? 1 : 0)
+process.exit(verdict.failed || crashed || pendingProblems.length ? 1 : 0)
