@@ -27,7 +27,7 @@ test("each wall-clock wait is caught", () => {
     ["set", "Interval(() => {}, 5)"],
     ["Date", ".now()"],
     ["performance", ".now()"],
-    ['from "node:', 'timers/promises"'],
+    ['from "node:timers', '/promises"'],
     ["run({ time", "outMs: 2000 })"],
   ]) {
     assert.equal(wallClockUses(use.join("")).length, 1, use.join(""))
