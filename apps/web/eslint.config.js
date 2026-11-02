@@ -52,4 +52,21 @@ export default defineConfig([
       ],
     },
   },
+  {
+    files: ["src/features/app-shell/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...[
+          "Literal[value=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
+          "TemplateElement[value.raw=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
+        ].map((selector) => ({
+          selector,
+          message:
+            "A nav control must keep its hover and focus-visible style. Remove hover:bg-transparent and focus-visible:ring-0 here, or use FOCUS_RING from @workspace/ui/lib/focus-ring and hover:bg-sidebar-accent.",
+        })),
+      ],
+    },
+  },
 ])

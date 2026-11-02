@@ -54,14 +54,15 @@ Tests that hold this shape:
 - `scripts/retired-words.test.mjs` rejects Thread or Opportunity in source or file names under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few exceptions); say Chat or Job. Old Apply stage ids are unguarded until #437.
 - `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no other non-test file imports; drop `export` or delete it. `KEPT_ON_PURPOSE` lists the exceptions.
 - `apps/api/src/registry/coach-chat-tools.test.ts` bars chat.create.
-- `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included. Explain with a better name or a test. `scripts/no-comments.baseline.json` lists the old ones and only shrinks; lower it with `node scripts/no-comments.mjs --write-baseline`.
-- `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock. `apps/web/src/test/setup.ts` calls `pinTestClock` before every test, so fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts` and never to the real date.
-- `scripts/browser-launcher.test.mjs` rejects a browser started outside a `cdp.mjs` launcher, a launcher that leaves Chrome or one of its children running after a failed launch, and a launcher that does not start Chrome once more when the first start is silent (a fake Chrome stands in for the real one).
+- `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included; use a better name or a test. `scripts/no-comments.baseline.json` only shrinks (`node scripts/no-comments.mjs --write-baseline`).
+- `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock; fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts`, never the real date.
+- `scripts/browser-launcher.test.mjs` rejects a browser started outside a `cdp.mjs` launcher, a launcher that leaves Chrome running after a failed launch, and one that does not retry a silent first start.
 - `packages/guards/wall-clock.test.mjs` rejects a node test that waits on or reads the real clock; inject `timers` instead.
 - `scripts/layout-comparison-gates.test.mjs` rejects a verify driver that calls `comparePenLayout` and never reads its `mismatches`, so a wrong layout cannot report PASS. A `PENDING` entry with an issue and an expiry date lists a known exception.
 - `scripts/kit-duplicates.test.mjs` rejects `clipboard.writeText` or `execCommand("copy")` in `apps/*` or `packages/*` outside `packages/ui/src/components/copy-button.tsx`; use `CopyButton` or `copyText`.
 - The same guard rejects `animate-spin` in `apps/*`; use the kit `Spinner`. A `pending` entry with a PR and an expiry date lists a caller another PR is migrating.
 - The same guard rejects a hand-built breadcrumb in `apps/*` or `packages/*` outside the kit breadcrumb file (a nav labelled Breadcrumb, or a chevron trail with `aria-current="page"`); use the kit `Breadcrumb`.
+- `scripts/focus-indication.test.mjs` rejects a `*.pen.css` rule that sets `box-shadow` or `outline` on a button, link or field with no `:focus-visible` rule; web lint rejects `hover:bg-transparent` and `focus-visible:ring-0` under `features/app-shell`.
 - `scripts/paper-save-keeps-parts.test.mjs` rejects an autosave `toDocument` that returns the markdown alone, which would erase the sender, date and closing parts of a letter on the next keystroke. Its `PENDING` list works like the one above.
 
 ### Git
