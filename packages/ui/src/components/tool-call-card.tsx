@@ -15,67 +15,37 @@ import {
   type ReactNode,
 } from "react"
 
-/*
- * Tool Call Card (Clean) – one tool call of an AI agent, in a single self-contained file.
- * Clean style: one white card with hairline shadows, no tile and no tray. The header row holds the
- * tool's icon, its name in mono, a short summary and the status: a blue spinner with a live timer,
- * a blue check with the duration, or a red "Failed". Click it open to see the arguments and the
- * result as highlighted JSON on a faint panel, each with a small white copy button; long blocks are
- * capped with a fade and "Show all". Errors show the message and a white Retry button.
- * ToolCallGroup folds several cards into one quiet line: "Used 3 tools · 2.4s".
- * The styles are injected below, so no extra files are needed.
- */
-
 export type ToolCallStatus = "running" | "success" | "error"
 
 export type ToolCallCardProps = {
-  /** Tool name as the agent calls it, shown in mono – e.g. "search_web" */
   name: string
-  /** Short human summary – e.g. "Searched the web for 'CRM pricing 2026'" */
   summary?: ReactNode
-  /** Icon in the tile on the left – defaults to a wrench */
   icon?: ReactNode
   status: ToolCallStatus
-  /** Arguments the tool was called with – objects are pretty-printed, JSON strings parsed */
   args?: unknown
-  /** What the tool returned – objects are pretty-printed, JSON strings parsed, other text shown as is */
   result?: unknown
-  /** Error message, shown when status is "error" */
   error?: string
-  /** When the call started (ms since epoch, e.g. Date.now()) – the live timer counts from here */
   startedAt?: number
-  /** Final duration in ms – otherwise measured while the card shows "running" */
   duration?: number
-  /** Start expanded (uncontrolled) */
   defaultOpen?: boolean
-  /** Expanded state (controlled) */
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  /** Opens the card when the call fails and closes it again on the next run, unless someone toggled it */
   openOnError?: boolean
-  /** Shows a Retry button next to the error */
   onRetry?: () => void
-  /** Height in px after which arguments and result are capped with a fade and "Show all" */
   maxCodeHeight?: number
   className?: string
 }
 
 export type ToolCallGroupProps = {
-  /** ToolCallCard elements – the group reads their name, icon, status and duration */
   children: ReactNode
-  /** Label once all calls are done – defaults to "Used 3 tools" */
   label?: string
-  /** Label while any call is running */
   runningLabel?: string
-  /** Total duration in ms – otherwise the sum of the cards' durations, or the time measured while running */
   duration?: number
   defaultOpen?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
   className?: string
 }
-
-/* ---------- Card ---------- */
 
 export function ToolCallCard({
   name,
@@ -103,7 +73,6 @@ export function ToolCallCard({
     onOpenChange?.(next)
   }
 
-  // Open on failure, close again on the next run – only while nobody has toggled it by hand
   const [prevStatus, setPrevStatus] = useState(status)
   const [autoOpened, setAutoOpened] = useState(false)
   if (status !== prevStatus) {
@@ -136,7 +105,6 @@ export function ToolCallCard({
       data-status={status}
       data-open={open || undefined}
     >
-      {/* React 19 hoists this into <head> once, no matter how many cards render */}
       <style href="ui-tool-call-clean" precedence="default">
         {css}
       </style>
@@ -237,8 +205,6 @@ export function ToolCallCard({
   )
 }
 
-/* ---------- Group ---------- */
-
 export function ToolCallGroup({
   children,
   label,
@@ -253,14 +219,12 @@ export function ToolCallGroup({
   const [openState, setOpenState] = useState(defaultOpen)
   const open = openProp ?? openState
 
-  // Read the cards' props to summarise them in the header
   const calls = Children.toArray(children)
     .filter(isValidElement)
     .map((c) => (c as ReactElement<Partial<ToolCallCardProps>>).props)
   const running = calls.some((c) => c.status === "running")
   const failed = calls.filter((c) => c.status === "error").length
 
-  // Time spent with tools running, added up across stretches (e.g. a pause before a retry)
   const measured = useStopwatch(running, undefined, true)
   const sum =
     calls.length && calls.every((c) => c.duration != null)
@@ -339,8 +303,6 @@ export function ToolCallGroup({
   )
 }
 
-/* ---------- Pieces ---------- */
-
 function CodeSection({
   label,
   value,
@@ -355,7 +317,6 @@ function CodeSection({
   const [full, setFull] = useState(false)
   const [height, setHeight] = useState(0)
 
-  // Natural height of the block – decides whether it needs the cap and how far "Show all" opens
   useLayoutEffect(() => {
     const el = pre.current
     const inner = el?.firstElementChild
@@ -459,9 +420,6 @@ function WrenchIcon() {
   )
 }
 
-/* ---------- Helpers ---------- */
-
-/** Live ms while running, the final value after. accumulate = add up several running stretches. */
 function useStopwatch(
   running: boolean,
   startedAt: number | undefined,
@@ -490,7 +448,6 @@ function useStopwatch(
   return ms
 }
 
-/** 0.4s, 12.3s, 2m 05s – the live timer always shows tenths below a minute */
 function formatMs(ms: number, live: boolean) {
   if (!live && ms < 1000) return `${Math.max(1, Math.round(ms))}ms`
   if (ms < 60_000) return `${(Math.floor(ms / 100) / 10).toFixed(1)}s`
@@ -498,15 +455,20 @@ function formatMs(ms: number, live: boolean) {
   return `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`
 }
 
+function prettyJsonOrUndefined(text: string): string | undefined {
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2)
+  } catch {
+    return undefined
+  }
+}
+
 function toText(value: unknown): { text: string; json: boolean } {
   if (typeof value === "string") {
     const t = value.trim()
     if (t.startsWith("{") || t.startsWith("[")) {
-      try {
-        return { text: JSON.stringify(JSON.parse(t), null, 2), json: true }
-      } catch {
-        /* not JSON – shown as plain text */
-      }
+      const pretty = prettyJsonOrUndefined(t)
+      if (pretty !== undefined) return { text: pretty, json: true }
     }
     return { text: value, json: false }
   }
@@ -520,7 +482,6 @@ function toText(value: unknown): { text: string; json: boolean } {
   }
 }
 
-// Strings (keys when followed by a colon), literals and numbers – everything else stays punctuation
 const TOKEN =
   /("(?:[^"\\]|\\.)*")(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g
 

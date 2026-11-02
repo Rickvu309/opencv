@@ -56,7 +56,6 @@
   --default-transition-timing-function: var(--ease-micro);
 }
 
-/* Values are the design kit's. Names stay the stock shadcn set (release-one ADR-0006). */
 :root {
   --background: oklch(0.982 0.001 286.376);
   --foreground: oklch(0.218 0 0);

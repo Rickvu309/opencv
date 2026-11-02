@@ -1,4 +1,4 @@
-export const css = /* css */ `
+export const css = `
 /* Animatable custom properties: the equal segment width and the soft edges glide too */
 @property --ui-segc-min { syntax: "<length>"; inherits: true; initial-value: 0px; }
 @property --ui-segc-fade-l { syntax: "<length>"; inherits: false; initial-value: 0px; }

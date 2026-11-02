@@ -10,12 +10,6 @@ import {
   type RefObject,
 } from "react"
 
-/*
- * Comment Thread – one comment with its replies, including an assistant that reports what it did, in a single
- * self-contained file. Assistant replies can fold open to show the details; replying shows a thinking state
- * while an async answer comes back. The styles are injected below, so no extra files are needed.
- */
-
 export type ThreadAuthor = {
   name: string
   avatar?: ReactNode | string
@@ -27,7 +21,6 @@ export type ThreadMessage = {
   author: ThreadAuthor
   createdAt: Date | number
   text: string
-  /** Assistant replies: a short status line that folds open to show these details */
   status?: string
   details?: string[]
 }
@@ -36,13 +29,7 @@ export type CommentThreadProps = {
   title?: string
   messages: ThreadMessage[]
   currentUser: ThreadAuthor
-  /** The assistant that answers – used for the thinking state */
   assistant?: ThreadAuthor
-  /**
-   * Called with every new reply. Return a message (or a promise of one) to let the assistant answer;
-   * return nothing to just post the reply.
-   */
-  /** Leave out for a read-only thread: the reply box is not shown */
   onReply?: (
     text: string
   ) => ThreadMessage | Promise<ThreadMessage | void> | void
@@ -71,7 +58,6 @@ export function CommentThread({
   className,
 }: CommentThreadProps) {
   const [messages, setMessages] = useState(initial)
-  // Assistant replies that are there from the start come in a beat after the comment above them
   const [firstIds] = useState(
     () => new Set(initial.filter((m) => m.author.assistant).map((m) => m.id))
   )
@@ -87,7 +73,6 @@ export function CommentThread({
     return () => window.clearInterval(t)
   }, [])
 
-  // Follow the conversation as it grows
   useEffect(() => {
     listRef.current?.scrollTo({
       top: listRef.current.scrollHeight,
@@ -123,7 +108,6 @@ export function CommentThread({
     }
   }
 
-  // New messages keep the card at its height and the conversation scrolls up; folding details lets it grow again
   const lockHeight = (on: boolean) => {
     const list = listRef.current
     if (list) list.style.maxHeight = on ? `${list.offsetHeight}px` : ""
@@ -311,7 +295,6 @@ function Avatar({ author }: { author: ThreadAuthor }) {
   )
 }
 
-/** A simple assistant mark: a filled circle – pass your own logo as `avatar` instead */
 export function AssistantMark() {
   return (
     <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
@@ -336,10 +319,6 @@ const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
   </svg>
 )
 
-/**
- * Lets a box glide to the height of its content instead of jumping: the outer box follows the inner one
- * with a height transition whenever the content grows or shrinks.
- */
 function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
   const outer = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -352,7 +331,6 @@ function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
     sync()
     const ro = new ResizeObserver(sync)
     ro.observe(i)
-    // Transitions switch on after the first measurement, so the first render doesn't animate
     const frame = requestAnimationFrame(() => o.setAttribute("data-smooth", ""))
     return () => {
       ro.disconnect()
@@ -362,9 +340,7 @@ function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
   return outer
 }
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
+const css = `
 .ui-ct {
   --ui-ct-tray: var(--muted);
   --ui-ct-card: var(--card);

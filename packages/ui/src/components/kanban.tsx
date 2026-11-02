@@ -43,6 +43,13 @@ import { Card } from "@workspace/ui/components/card"
 import { cn } from "@workspace/ui/lib/utils"
 
 const t = tunnel()
+const POINTER_DRAG_STARTS_AFTER_PX = 6
+const TOUCH_DRAG_STARTS_AFTER_HOLD_MS = 200
+const SPACE_PICKS_UP_AND_DROPS_SO_ENTER_OPENS_THE_CARD = {
+  start: ["Space"],
+  cancel: ["Escape"],
+  end: ["Space"],
+}
 
 export { arrayMove } from "@dnd-kit/sortable"
 export type {
@@ -273,12 +280,12 @@ export const KanbanProvider = <
   ...props
 }: KanbanProviderProps<T, C>) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null)
-  // Set only while a keyboard arrow is stepping columns. Pointer drags leave it empty.
   const keyboardColumnId = useRef<UniqueIdentifier | null>(null)
 
-  // Arrow keys step one column in board order. A corner-distance step skips an
-  // empty column when a later card has nearer corners.
-  const coordinateGetter: KeyboardCoordinateGetter = (event, { context }) => {
+  const stepOneColumnInBoardOrder: KeyboardCoordinateGetter = (
+    event,
+    { context }
+  ) => {
     if (event.code === KeyboardCode.Up || event.code === KeyboardCode.Down) {
       keyboardColumnId.current = null
       return sortableKeyboardCoordinates(event, {
@@ -331,16 +338,19 @@ export const KanbanProvider = <
     return [{ id: columnId }, ...hits.filter((hit) => hit.id !== columnId)]
   }
 
-  // A click is not a drag: the pointer must move 6px, a touch must hold 200ms.
-  // Space picks up and drops, so Enter stays free for opening the card.
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: POINTER_DRAG_STARTS_AFTER_PX },
+    }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 8 },
+      activationConstraint: {
+        delay: TOUCH_DRAG_STARTS_AFTER_HOLD_MS,
+        tolerance: 8,
+      },
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter,
-      keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
+      coordinateGetter: stepOneColumnInBoardOrder,
+      keyboardCodes: SPACE_PICKS_UP_AND_DROPS_SO_ENTER_OPENS_THE_CARD,
     })
   )
 

@@ -14,6 +14,9 @@ vi.mock("sonner", () => ({
 
 import { Brand } from "./components/brand"
 import { Button } from "./components/button"
+import { MessageActions } from "./components/message-actions"
+import { CodeBlockLine } from "./components/code-block"
+import { Skeleton as ShimmerSkeleton } from "./components/shimmer-loader"
 import { CopyButton } from "./components/copy-button"
 import { ConfirmDelete } from "./components/confirm-delete"
 import { Field } from "./components/field"
@@ -104,16 +107,46 @@ describe("kit parts", () => {
     expect(screen.getByRole("img", { name: "Interview" })).toBeInTheDocument()
   })
 
-  it("keeps the glow on the glow variant and the default on the kit secondary", () => {
+  it("gives only the glow variant the glow utility, the visual contract for variant glow, and keeps the default as the kit secondary", () => {
     const { rerender } = render(<Button variant="glow">Add job</Button>)
     const glow = screen.getByRole("button", { name: "Add job" })
     expect(glow).toHaveAttribute("data-variant", "glow")
-    // The glow utility is the visual contract for variant="glow".
     expect(glow.className).toMatch(/\bglow\b/)
     rerender(<Button>Add job</Button>)
     const secondary = screen.getByRole("button", { name: "Add job" })
     expect(secondary).toHaveAttribute("data-variant", "default")
     expect(secondary.className).not.toMatch(/\bglow\b/)
+  })
+
+  it("holds a newline in an empty code line so copying keeps blank lines", () => {
+    const { container } = render(
+      <>
+        <CodeBlockLine />
+        <CodeBlockLine>x</CodeBlockLine>
+      </>
+    )
+    const [blank, filled] = container.querySelectorAll(
+      "[data-slot=code-block-line-content]"
+    )
+    expect(blank.textContent).toBe("\n")
+    expect(filled.textContent).toBe("x")
+  })
+
+  it("pins every shimmer skeleton to the viewport so they share one sweep", () => {
+    render(<ShimmerSkeleton />)
+    expect(document.head.textContent).toContain("background-attachment: fixed")
+  })
+
+  it("fades the message action bar until a data-ui-message wrapper is hovered or focused", () => {
+    render(
+      <div data-ui-message>
+        <MessageActions text="Hello" />
+      </div>
+    )
+    expect(document.querySelector("[data-quiet]")).not.toBeNull()
+    expect(document.head.textContent).toContain(
+      ":where([data-ui-message]:hover, [data-ui-message]:focus-within) .ui-mac[data-quiet] .ui-mac__bar"
+    )
   })
 
   it("renders a page header and a toolbar of links", () => {

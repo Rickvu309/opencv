@@ -8,38 +8,24 @@ import {
   type RefObject,
 } from "react"
 
-/*
- * Filter Menu – grouped filters with chips, in a single self-contained file.
- * Active filters sit on top as removable chips; below, collapsible groups list their options as checkboxes
- * with a count of what's picked. Arrow keys move through groups and options, Enter or Space picks,
- * ← and → fold a group. Heights glide when groups open or chips come and go.
- * The styles are injected below, so no extra files are needed.
- */
-
 export type FilterOption = { id: string; label: string }
 
 export type FilterGroup = {
   id: string
   label: string
   options: FilterOption[]
-  /** Put in front of the option on its chip, e.g. "Score: " → "Score: 80–90" */
   chipPrefix?: string
 }
 
-/** Picked option ids per group id */
 export type FilterValue = Record<string, string[]>
 
 export type FilterMenuProps = {
   groups: FilterGroup[]
-  /** Controlled value */
   value?: FilterValue
-  /** Starting value when uncontrolled */
   defaultValue?: FilterValue
   onChange?: (value: FilterValue) => void
-  /** Groups that start open – by default the first one */
   defaultOpen?: string[]
   title?: string
-  /** Show the keyboard hints at the bottom */
   hints?: boolean
   className?: string
 }
@@ -88,7 +74,6 @@ export function FilterMenu({
       return next
     })
 
-  // Chips in the order of the groups and their options
   const chips = groups.flatMap((g) =>
     g.options
       .filter((o) => isOn(g.id, o.id))
@@ -99,7 +84,6 @@ export function FilterMenu({
       }))
   )
 
-  // Everything the arrow keys can reach, top to bottom
   const rows: Row[] = groups.flatMap((g) => [
     { kind: "group", group: g } as Row,
     ...(open.has(g.id)
@@ -169,7 +153,6 @@ export function FilterMenu({
           </button>
         </div>
 
-        {/* Active filters – the box glides to its new height as chips come and go */}
         <div className="ui-fm__chips-outer" ref={chipsOuter}>
           <div className="ui-fm__chips" ref={chipsInner} aria-live="polite">
             {chips.map((c) => (
@@ -232,7 +215,6 @@ export function FilterMenu({
                       : ""}
                   </span>
                 </button>
-                {/* Opens and closes by animating its grid row from 0 to the content height */}
                 <div
                   className="ui-fm__panel"
                   id={`${g.id}-options`}
@@ -301,7 +283,6 @@ export function FilterMenu({
   )
 }
 
-/** The outer box follows the inner box's height, with a transition after the first frame */
 function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
   const outer = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -323,9 +304,7 @@ function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
   return outer
 }
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
+const css = `
 .ui-fm {
   --ui-fm-tray: var(--muted);
   --ui-fm-card: var(--card);

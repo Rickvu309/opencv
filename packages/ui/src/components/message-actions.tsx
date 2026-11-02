@@ -14,64 +14,33 @@ import {
   type Ref,
 } from "react"
 
-/*
- * Message Actions (Clean) – the small bar under an AI chat message, in one self-contained file.
- * Clean style: ghost icon buttons with thin or solid 16px glyphs, a pressed action takes the selected-tab look,
- * the feedback reasons are tab buttons and Send is the dark chip. Made to sit as the last row of a white card.
- *   · Copy: the icon turns into a green check and the tooltip says "Copied"
- *   · Regenerate: the arrow spins once; with more than one version a "‹ 2 / 3 ›" switcher unfolds next to it
- *   · Thumbs up / down fill with a little pop; thumbs down unfolds a short feedback row with reasons and a send button
- * The bar stays quiet (faded) until the message is hovered or something inside it is focused.
- * MessageText (also exported) crossfades the message itself when the version changes.
- * The styles are injected below, so no extra files are needed.
- */
-
 export type MessageActionKey = "copy" | "regenerate" | "feedback"
 export type FeedbackKind = "up" | "down"
 
 export type MessageActionsProps = {
-  /** The message text – copied to the clipboard by Copy and used to time Read aloud */
   text?: string
-  /** Which actions to show, in this order */
   actions?: MessageActionKey[]
-  /** All versions of the message, or just how many there are. From 2 on the version switcher shows */
   versions?: number | string[]
-  /** Controlled version (0-based index) */
   version?: number
-  /** Starting version when uncontrolled – defaults to the newest */
   defaultVersion?: number
-  /** Called with the version index picked in the switcher */
   onVersionChange?: (index: number) => void
-  /** Called after Copy, with `text` */
   onCopy?: (text?: string) => void
-  /** Called when Regenerate is pressed – add a version and the switcher jumps to it */
   onRegenerate?: () => void
-  /** Keeps the regenerate arrow spinning while a new version is written */
   regenerating?: boolean
-  /** Greys out Regenerate, e.g. while a turn runs or for an older reply */
   regenerateDisabled?: boolean
-  /** The saved vote. Syncs the pressed thumb when it changes */
   feedback?: FeedbackKind | null
-  /** Greys out the thumbs when the reply cannot be rated */
   feedbackDisabled?: boolean
-  /** "up" or "down" when a thumb is pressed, null when it is taken back, and "down" with a reason when the feedback row is sent */
   onFeedback?: (kind: FeedbackKind | null, reason?: string) => void
-  /** Quick reasons in the feedback row. "Other" opens a small text field */
   reasons?: string[]
-  /** Faded until the message is hovered (default true). Put data-ui-message on the message wrapper */
   quiet?: boolean
-  /** Accessible name of the bar */
   label?: string
   className?: string
 }
-
-/* ---------- Helpers ---------- */
 
 const reduced = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
 
-/** Text that changes without a jump: the old one fades out underneath while the new one fades in */
 function Swap({
   id,
   children,
@@ -116,10 +85,6 @@ function Swap({
   )
 }
 
-/**
- * The message itself, crossfading when `version` changes: the old text fades out underneath while the new one fades in,
- * and the block eases to its new height.
- */
 export function MessageText({
   version,
   children,
@@ -154,8 +119,6 @@ export function MessageText({
     </div>
   )
 }
-
-/* ---------- Icons ---------- */
 
 const Glyph = ({ d, solid }: { d: string; solid?: boolean }) => (
   <svg
@@ -209,7 +172,6 @@ export function MessageActions({
       : (versions?.length ?? 1)
   )
 
-  /* ----- Versions ----- */
   const [inner, setInner] = useState(() =>
     Math.min(count - 1, Math.max(0, defaultVersion ?? count - 1))
   )
@@ -225,7 +187,6 @@ export function MessageActions({
   const [other, setOther] = useState("")
   const [sent, setSent] = useState(false)
   if (seenCount !== count) {
-    // A new version arrived: show it, and its vote starts fresh
     if (count > seenCount) {
       setInner(count - 1)
       setVote(null)
@@ -242,12 +203,10 @@ export function MessageActions({
     announce(`Version ${next + 1} of ${count}`)
   }
 
-  /* ----- Status line for screen readers ----- */
   const [status, setStatus] = useState("")
   const announce = (s: string) =>
     setStatus((old) => (old === s ? `${s}\u00a0` : s))
 
-  /* ----- Copy ----- */
   const [copied, setCopied] = useState(0)
   useEffect(() => {
     if (!copied) return
@@ -261,7 +220,6 @@ export function MessageActions({
     announce("Copied")
   }
 
-  /* ----- Regenerate ----- */
   const [spin, setSpin] = useState(0)
   const regenerate = () => {
     setSpin((s) => s + 1)
@@ -269,7 +227,6 @@ export function MessageActions({
     announce("Regenerating")
   }
 
-  /* ----- Feedback ----- */
   const thumbsUp = () => {
     if (vote === "up") {
       setVote(null)
@@ -319,7 +276,6 @@ export function MessageActions({
 
   const active = Boolean(copied) || panel || regenerating
 
-  /* ----- One button with its tooltip ----- */
   const button = (o: {
     key: string
     tip: string

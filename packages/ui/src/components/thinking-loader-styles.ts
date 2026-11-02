@@ -1,4 +1,4 @@
-export const css = /* css */ `
+export const css = `
 .ui-tlc {
   --ui-tlc-ink: var(--foreground);
   --ui-tlc-text: var(--muted-foreground);

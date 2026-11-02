@@ -5,7 +5,6 @@ import { cn } from "cn"
 const glowButton =
   "glow text-foreground hover:brightness-[0.97] active:brightness-[0.94] motion-reduce:transition-none motion-reduce:hover:brightness-100 motion-reduce:active:brightness-100"
 
-// Kit secondary: white surface, inset border, subtle hover. Only `glow` is the primary.
 const secondaryButton =
   "bg-card text-foreground ring-1 ring-inset ring-border hover:bg-secondary active:bg-muted"
 

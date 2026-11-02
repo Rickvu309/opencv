@@ -12,50 +12,39 @@ import {
   type ReactNode,
 } from "react"
 
-/*
- * Segmented Control (Clean) – switch between two to six options, in a single self-contained file.
- * Clean style: "buttons" (the default): separate quiet chips with a hairline, the active one filled light gray;
- * "tray": a compact light-gray track with a white raised pill; "underline": text tabs with a sliding line.
- * The indicator slides to the picked option, short and crisp – its leading edge runs a touch ahead.
- * Labels keep one weight, so nothing shifts; when a label or count changes the control morphs to its new size.
- * Arrow keys, Home and End move and select; press the pill and drag it across the options to pick as you go.
- * If it doesn't fit (phones), it scrolls sideways with soft edges and keeps the active option in view.
- * The styles are injected below, so no extra files are needed.
- */
-
 export type SegmentOption<T extends string = string> = {
   value: T
   label?: ReactNode
   icon?: ReactNode
-  /** A small gray number after the label, e.g. unread items */
   count?: number | string
-  /** A small tinted tag after the label, e.g. "Save 20%" */
   badge?: ReactNode
   disabled?: boolean
-  /** Accessible name – needed when the option only shows an icon */
   ariaLabel?: string
-  /** With kind="tabs": the id of the panel this tab shows */
   controls?: string
 }
 
 export type SegmentedControlProps<T extends string = string> = {
   options: SegmentOption<T>[]
-  /** Controlled value */
   value?: T
-  /** Starting value when uncontrolled – defaults to the first enabled option */
   defaultValue?: T
   onChange?: (value: T) => void
   size?: "sm" | "md" | "lg"
-  /** "buttons" = separate chips, the active one filled; "tray" = light track with a raised pill; "underline" = text tabs with a sliding line */
   variant?: "buttons" | "tray" | "underline"
-  /** Fill the container with equal segments */
   fullWidth?: boolean
-  /** "radio" (a radiogroup, the default) or "tabs" (a tablist that switches panels) */
   kind?: "radio" | "tabs"
   disabled?: boolean
   "aria-label"?: string
   "aria-labelledby"?: string
   className?: string
+}
+
+function capturePointerIfAllowed(element: HTMLElement, pointerId: number) {
+  try {
+    element.setPointerCapture(pointerId)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function SegmentedControl<T extends string = string>({
@@ -81,7 +70,6 @@ export function SegmentedControl<T extends string = string>({
   const scroller = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
   const pill = useRef<HTMLSpanElement>(null)
-  // Latest value without waiting for a render – dragging picks several options in one frame
   const latest = useRef(current)
   // eslint-disable-next-line react-hooks/refs -- vendored: a drag picks several options before the next render
   latest.current = current
@@ -113,7 +101,6 @@ export function SegmentedControl<T extends string = string>({
     onChange?.(v)
   }
 
-  /** Buttons get the width of their content, so a changed label or count makes them – and the control – glide to the new size */
   const measure = () => {
     const els = buttons()
     if (!els.length || !track.current) return
@@ -131,7 +118,6 @@ export function SegmentedControl<T extends string = string>({
     } else els.forEach((b, i) => (b.style.width = `${widths[i]}px`))
   }
 
-  /** Moves the pill (or line) under the active option. Without `animate` it follows at once – unless a glide is still running */
   const place = (animate: boolean) => {
     const t = track.current
     const p = pill.current
@@ -145,7 +131,6 @@ export function SegmentedControl<T extends string = string>({
     }
     let x = btn.offsetLeft
     let w = btn.offsetWidth
-    // The line sits under the text only, not under the whole button
     if (variant === "underline") {
       const content = btn.firstElementChild as HTMLElement
       x += content.offsetLeft
@@ -153,7 +138,6 @@ export function SegmentedControl<T extends string = string>({
     }
     const instant = !p.dataset.ready || (!animate && !gliding.current)
     const prev = parseFloat(p.style.left) || 0
-    // The edge facing the target leads, the other one trails – the stretch
     if (!instant && x !== prev) p.dataset.dir = x > prev ? "right" : "left"
     if (instant) p.style.transition = "none"
     p.style.opacity = "1"
@@ -166,7 +150,6 @@ export function SegmentedControl<T extends string = string>({
     }
   }
 
-  /** Soft edges only on the sides that can scroll */
   const fades = () => {
     const s = scroller.current
     if (!s) return
@@ -179,7 +162,6 @@ export function SegmentedControl<T extends string = string>({
     )
   }
 
-  /** Keeps the active option in view when the control scrolls */
   const reveal = (smooth: boolean) => {
     const s = scroller.current
     const t = track.current
@@ -195,7 +177,6 @@ export function SegmentedControl<T extends string = string>({
     })
   }
 
-  // Sizes: measured on mount and whenever a label, the container or the font changes
   useLayoutEffect(() => {
     const t = track.current
     const s = scroller.current
@@ -206,11 +187,9 @@ export function SegmentedControl<T extends string = string>({
       fades()
     }
     sync()
-    // Width transitions only after the first measure, so nothing grows in on load
     const ready = requestAnimationFrame(() =>
       root.current?.setAttribute("data-ready", "")
     )
-    // One frame later, so setting widths inside the observer never loops
     let frame = 0
     const ro = new ResizeObserver(() => {
       cancelAnimationFrame(frame)
@@ -226,10 +205,9 @@ export function SegmentedControl<T extends string = string>({
       cancelAnimationFrame(frame)
       cancelAnimationFrame(ready)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- measuring reruns when the options or look change, not when place or measure get new identities
   }, [options.length, fullWidth, variant, size])
 
-  // A new value: the pill glides there, focus follows if it was inside, and a scrolling control brings it into view
   useLayoutEffect(() => {
     if (placed.current === current) return
     const first = placed.current === undefined
@@ -247,12 +225,10 @@ export function SegmentedControl<T extends string = string>({
     const t = track.current
     if (!first && t && t.contains(document.activeElement))
       buttons()[activeIndex]?.focus({ preventScroll: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the glide runs when the value changes, not when activeIndex or place get new identities
   }, [current])
 
   useEffect(() => () => clearTimeout(glideTimer.current), [])
-
-  /* ---------- Keyboard ---------- */
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const enabled = options.filter((o) => !o.disabled)
@@ -274,9 +250,6 @@ export function SegmentedControl<T extends string = string>({
     buttons()[options.indexOf(target)]?.focus()
   }
 
-  /* ---------- Pointer: press feedback and dragging across options ---------- */
-
-  /** The option under (or nearest to) a horizontal pointer position */
   const optionAt = (clientX: number) => {
     let best = -1
     let dist = Infinity
@@ -306,17 +279,12 @@ export function SegmentedControl<T extends string = string>({
     const opt = optionAt(e.clientX)
     if (!opt || opt.disabled) return
     const touch = e.pointerType === "touch"
-    // Touch: picks on lift (so swiping to scroll doesn't pick), but the pill itself can be dragged right away
     const drag = !touch || opt.value === latest.current
     press.current = { id: e.pointerId, touch, drag, x: e.clientX, moved: false }
     if (drag) root.current?.setAttribute("data-pressed", "")
     if (!touch) {
       select(opt.value)
-      try {
-        e.currentTarget.setPointerCapture(e.pointerId)
-      } catch {
-        /* capture is a nicety */
-      }
+      capturePointerIfAllowed(e.currentTarget, e.pointerId)
     }
   }
 
@@ -352,7 +320,6 @@ export function SegmentedControl<T extends string = string>({
       data-full={fullWidth || undefined}
       data-disabled={disabled || undefined}
     >
-      {/* React 19 hoists this into <head> once, no matter how many controls render */}
       <style href="ui-segmented-control-clean" precedence="default">
         {css}
       </style>
@@ -389,12 +356,10 @@ export function SegmentedControl<T extends string = string>({
                 data-active={active || undefined}
                 disabled={o.disabled || disabled}
                 tabIndex={i === tabbable ? 0 : -1}
-                // Keyboard (Enter / Space) and screen readers – pointers are handled on the track
                 onClick={() => select(o.value)}
               >
                 <span className="ui-segc__content">
                   {o.icon && <span className="ui-segc__icon">{o.icon}</span>}
-                  {/* One weight for both states – only the color changes, so nothing shifts */}
                   {o.label != null && (
                     <span className="ui-segc__label">{o.label}</span>
                   )}

@@ -4,30 +4,14 @@ import { css } from "./thinking-loader-styles"
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
-/*
- * Thinking Loader (clean style) – a small "the model is working" chip, in a single self-contained file.
- * One white chip with hairline shadows, a thin eight-ray spinner in the accent blue and a quiet gray
- * label with a darker band sweeping over it. The label walks through phases (Thinking → Searching
- * the web → …): the old one rolls up and blurs out, the new one rolls in, and the chip glides to its
- * new width. When done, the spinner turns into a check and the label settles on "Thought for 6s".
- * The styles are injected below, so no extra files are needed.
- */
-
 export type ThinkingLoaderProps = {
-  /** Labels to walk through, one after another */
   phases?: string[]
-  /** Time per phase, in ms */
   interval?: number
-  /** Show a specific phase instead of advancing on a timer – e.g. from your stream events */
   phase?: number
-  /** Start over after the last phase instead of holding it */
   loop?: boolean
-  /** Finished: the spinner turns into a check and the label into doneLabel */
   done?: boolean
-  /** Label once done – a string, or a function that gets the seconds since the loader started */
   doneLabel?: string | ((seconds: number) => string)
   size?: "sm" | "md"
-  /** "pill" = bordered capsule, "plain" = just the spinner and the label, e.g. inside a chat bubble */
   variant?: "pill" | "plain"
   className?: string
 }
@@ -38,6 +22,7 @@ const DEFAULT_PHASES = [
   "Reading sources",
   "Writing response",
 ]
+const LAYOUT_PIXEL_ROUNDING_PX = 1
 const RAYS = Array.from({ length: 8 }, (_, i) => i)
 
 export function ThinkingLoader({
@@ -55,7 +40,6 @@ export function ThinkingLoader({
   const [started, setStarted] = useState(() => Date.now())
   const [seconds, setSeconds] = useState<number | null>(null)
 
-  // Read the clock in the same render that turns done on – and restart it when work starts again
   const elapsed =
     // eslint-disable-next-line react-hooks/purity -- vendored: the clock is read in the render that turns done on
     seconds ?? Math.max(1, Math.round((Date.now() - started) / 1000))
@@ -67,7 +51,6 @@ export function ThinkingLoader({
     setStep(0)
   }
 
-  // Advance through the phases on a timer – unless the phase is controlled
   useEffect(() => {
     if (done || phase !== undefined || phases.length < 2) return
     const id = window.setInterval(() => {
@@ -86,7 +69,6 @@ export function ThinkingLoader({
       : doneLabel
     : (phases[index] ?? "")
 
-  // The label on screen and the one rolling out – swapped during render so both animate in the same frame
   const [shown, setShown] = useState({ key: 0, text: label })
   const [leaving, setLeaving] = useState<{ key: number; text: string } | null>(
     null
@@ -96,7 +78,6 @@ export function ThinkingLoader({
     setShown({ key: shown.key + 1, text: label })
   }
 
-  // The text box takes the width of the incoming label, so the pill glides to its new size
   const box = useRef<HTMLSpanElement>(null)
   const current = useRef<HTMLSpanElement>(null)
   const measured = useRef(false)
@@ -105,8 +86,7 @@ export function ThinkingLoader({
     const c = current.current
     if (!b || !c) return
     if (!measured.current) b.style.transition = "none"
-    // offsetWidth is in layout pixels, so it stays right inside a CSS zoom or transform (+1 covers rounding)
-    b.style.width = `${c.offsetWidth + 1}px`
+    b.style.width = `${c.offsetWidth + LAYOUT_PIXEL_ROUNDING_PX}px`
     if (!measured.current) {
       b.getBoundingClientRect()
       b.style.transition = ""
@@ -124,7 +104,6 @@ export function ThinkingLoader({
       role="status"
       aria-live="polite"
     >
-      {/* React 19 hoists this into <head> once, no matter how many loaders render */}
       <style href="ui-thinking-loader-clean" precedence="default">
         {css}
       </style>

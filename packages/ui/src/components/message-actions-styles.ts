@@ -1,4 +1,4 @@
-export const css = /* css */ `
+export const css = `
 /* Colors and motion as variables – override them on .ui-mac */
 .ui-mac {
   --ui-mac-card: var(--card);

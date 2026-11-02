@@ -1,4 +1,4 @@
-export const css = /* css */ `
+export const css = `
 /* Colors and motion as variables – override them on .ui-tcc / .ui-tcc-group */
 .ui-tcc,
 .ui-tcc-group {
