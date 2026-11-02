@@ -1,5 +1,11 @@
 import { Check, FilePlus, Paperclip, Search } from "lucide-react"
-import { useEffect, useId, useReducer, useRef } from "react"
+import {
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  type MutableRefObject,
+} from "react"
 import type { JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -26,6 +32,13 @@ import {
 
 import { letterDraftText } from "./paper-letter-context.ts"
 
+type DraftOperation = {
+  controller: AbortController
+  chatId: string | null
+  text: string
+  stopped: boolean
+}
+
 function unreadableLink(value: string) {
   return /docs\.google\.com|linkedin\.com/i.test(value)
 }
@@ -43,9 +56,17 @@ function resetClock(iso: string | null) {
 export function PaperLetterStart({
   jobs: jobsProp,
   onCreated,
+  onDraftingStart,
+  onDraftText,
+  onDraftingEnd,
+  stopRef,
 }: {
   jobs?: JobView[]
   onCreated: (id: string) => void
+  onDraftingStart?: (draftName: string, attribution: string | null) => void
+  onDraftText?: (text: string) => void
+  onDraftingEnd?: () => void
+  stopRef?: MutableRefObject<(() => void) | null>
 }) {
   const run = useRunCommand()
   const guidanceId = useId()
@@ -60,9 +81,7 @@ export function PaperLetterStart({
   const attaching = attachment.status === "loading"
   const needsContext = !selected && !query.trim() && !attached
 
-  const abortRef = useRef<AbortController | null>(null)
-  const chatRef = useRef<string | null>(null)
-  const textRef = useRef("")
+  const activeDraft = useRef<DraftOperation | null>(null)
   const unread = unreadableLink(query)
   const shown = unread
     ? jobs
@@ -90,7 +109,16 @@ export function PaperLetterStart({
       })
   }, [jobsProp])
 
-  useEffect(() => () => attachmentAbort.current?.abort(), [])
+  useEffect(
+    () => () => {
+      attachmentAbort.current?.abort()
+      const draft = activeDraft.current
+      activeDraft.current = null
+      draft?.controller.abort()
+      if (draft?.chatId) void stopPaperChat(draft.chatId)
+    },
+    []
+  )
 
   async function attach(file: File) {
     attachmentAbort.current?.abort()
@@ -114,11 +142,22 @@ export function PaperLetterStart({
   }
 
   async function draft() {
-    if (attaching || needsContext) return
+    if (attaching || needsContext || activeDraft.current) return
+    const operation: DraftOperation = {
+      controller: new AbortController(),
+      chatId: null,
+      text: "",
+      stopped: false,
+    }
+    activeDraft.current = operation
     dispatch({ type: "draft_started" })
-    textRef.current = ""
-    const controller = new AbortController()
-    abortRef.current = controller
+    const draftName = selected
+      ? `Cover letter, ${selected.company}`
+      : "Cover letter"
+    const attribution = attached ? `From ${attached.name}` : null
+    onDraftingStart?.(draftName, attribution)
+    if (stopRef) stopRef.current = stop
+    const { controller } = operation
     try {
       const turnText = letterDraftText(
         unread || !selected
@@ -132,43 +171,62 @@ export function PaperLetterStart({
           ? { jobId: selected.id, name: `Cover letter, ${selected.company}` }
           : { name: "Cover letter" }),
       })
+      if (activeDraft.current !== operation) return
       const chat = await run("chat.create", {
         title: selected ? `Cover letter, ${selected.company}` : "Cover letter",
       })
-      chatRef.current = chat.id
+      operation.chatId = chat.id
+      if (activeDraft.current !== operation) {
+        void stopPaperChat(chat.id)
+        return
+      }
       let replaced = false
-      await streamPaperTurn({
-        queryClient,
-        chatId: chat.id,
-        text: turnText,
-        focusDocId: created.id,
-        context: selected ? [{ kind: "job", id: selected.id }] : undefined,
-        signal: controller.signal,
-        onText: (delta) => {
-          textRef.current += delta
-          dispatch({ type: "draft_text_streamed", text: textRef.current })
-        },
-        onToolResult: (tool) => {
-          if (tool === "paper.replace") {
-            replaced = true
-            void queryClient.fetchQuery({
-              queryKey: paperGetKey(created.id),
-              queryFn: () => getPaper(created.id),
-              staleTime: 0,
-            })
-          }
-        },
-      })
-      if (!replaced && textRef.current) {
+      try {
+        if (controller.signal.aborted)
+          throw new DOMException("Stopped", "AbortError")
+        await streamPaperTurn({
+          queryClient,
+          chatId: chat.id,
+          text: turnText,
+          focusDocId: created.id,
+          context: selected ? [{ kind: "job", id: selected.id }] : undefined,
+          signal: controller.signal,
+          onText: (delta) => {
+            if (activeDraft.current !== operation || controller.signal.aborted)
+              return
+            operation.text += delta
+            dispatch({ type: "draft_text_streamed", text: operation.text })
+            onDraftText?.(operation.text)
+          },
+          onToolResult: (tool) => {
+            if (
+              activeDraft.current === operation &&
+              !controller.signal.aborted &&
+              tool === "paper.replace"
+            ) {
+              replaced = true
+              void queryClient.fetchQuery({
+                queryKey: paperGetKey(created.id),
+                queryFn: () => getPaper(created.id),
+                staleTime: 0,
+              })
+            }
+          },
+        })
+      } catch (err) {
+        if (!operation.stopped || !controller.signal.aborted) throw err
+      }
+      if (activeDraft.current !== operation) return
+      if (!replaced && operation.text) {
         await run("paper.replace", {
           docId: created.id,
           contentVersion: created.contentVersion,
-          document: { markdown: textRef.current },
+          document: { markdown: operation.text },
         })
       }
-      onCreated(created.id)
+      if (activeDraft.current === operation) onCreated(created.id)
     } catch (err) {
-      if (isAbortError(err)) return
+      if (activeDraft.current !== operation || isAbortError(err)) return
       if (err instanceof PaperLimitError) {
         dispatch({ type: "draft_limited", limit: err })
         return
@@ -183,14 +241,21 @@ export function PaperLetterStart({
               : "Could not draft the letter. Try again.",
       })
     } finally {
-      dispatch({ type: "draft_ended" })
+      if (activeDraft.current === operation) {
+        activeDraft.current = null
+        if (stopRef) stopRef.current = null
+        dispatch({ type: "draft_ended" })
+        onDraftingEnd?.()
+      }
     }
   }
 
   function stop() {
-    abortRef.current?.abort()
-    if (chatRef.current) void stopPaperChat(chatRef.current)
-    dispatch({ type: "draft_ended" })
+    const operation = activeDraft.current
+    if (!operation || operation.stopped) return
+    operation.stopped = true
+    operation.controller.abort()
+    if (operation.chatId) void stopPaperChat(operation.chatId)
   }
 
   async function startBlank() {
@@ -342,9 +407,11 @@ export function PaperLetterStart({
           Start blank
         </Button>
         {drafting ? (
-          <Button type="button" variant="glow" onClick={stop}>
-            Stop
-          </Button>
+          onDraftingStart ? null : (
+            <Button type="button" variant="glow" onClick={stop}>
+              Stop
+            </Button>
+          )
         ) : (
           <Button
             type="button"
@@ -377,7 +444,7 @@ export function PaperLetterStart({
           letter.
         </p>
       ) : null}
-      {drafting ? (
+      {drafting && !onDraftingStart ? (
         <div>
           <p>Coach is writing…</p>
           <p>
@@ -396,7 +463,7 @@ export function PaperLetterStart({
           <a href="/settings">Upgrade</a>
         </div>
       ) : null}
-      {error ? <p>{error}</p> : null}
+      {error ? <p role="alert">{error}</p> : null}
     </div>
   )
 }

@@ -1,0 +1,41 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "frameId": "tsfNR",
+    "frameName": "W7.2 Drafting"
+  },
+  "sections": [
+    {
+      "name": "Header",
+      "texts": [
+        {
+          "content": "Coach is writing…",
+          "fill": "#6B6B70",
+          "fontSize": 13.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ]
+    },
+    {
+      "name": "Letter body",
+      "texts": [
+        {
+          "content": "I’m applying for the Junior Marketing role…",
+          "fill": "#2F2F31",
+          "fontSize": 11,
+          "lineHeight": 17.5,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ]
+    }
+  ],
+  "paints": {
+    "paperShadow": "#0000000F",
+    "placeholder": "#EFEFF1"
+  }
+}
