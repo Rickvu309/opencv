@@ -66,3 +66,7 @@ export function forkOf(yDoc: PaperYDoc): PaperYDoc {
 export function emptyUpdate(): Uint8Array {
   return Y.encodeStateAsUpdate(new Y.Doc())
 }
+
+export function mergedUpdate(updates: readonly Uint8Array[]): Uint8Array {
+  return Y.mergeUpdates([...updates])
+}

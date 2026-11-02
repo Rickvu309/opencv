@@ -11,7 +11,6 @@ import {
   undoProblems,
   type PaperDocument,
 } from "./paper-doc/index.ts"
-import { inverseText } from "./paper-doc/text-align.ts"
 
 function paper(blocks: unknown[]): PaperDocument {
   return paperDocumentSchema.parse({
@@ -43,31 +42,6 @@ function counter() {
   let n = 0
   return () => `n${++n}`
 }
-
-describe("inverseText", () => {
-  it("takes the Coach's characters out and keeps the person's inside them", () => {
-    assert.equal(
-      inverseText(
-        "First.",
-        "First. Coach adds a sentence.",
-        "First. Coach adds QUICK a sentence."
-      ),
-      "First.QUICK "
-    )
-  })
-
-  it("puts back what the Coach deleted next to what the person typed", () => {
-    assert.equal(
-      inverseText("Hello brave world", "Hello world", "Hello world today"),
-      "Hello brave world today"
-    )
-  })
-
-  it("matches a long text without trouble", () => {
-    const text = "word ".repeat(600)
-    assert.equal(inverseText("", "x", `${text}x`), text)
-  })
-})
 
 describe("personWorkLost", () => {
   const base = paper([section, para("p1", "Hello"), para("p2", "World")])

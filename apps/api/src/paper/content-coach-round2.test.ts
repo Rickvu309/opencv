@@ -1,9 +1,8 @@
 import type { PaperDocument } from "@workspace/domain"
-import { stateVectorOf } from "@workspace/paper-crdt"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
-import { encoded, typed, withText } from "../test/paper-content.js"
+import { withText } from "../test/paper-content.js"
 
 const userId = "user-coach-round2"
 let h: CoachStore
@@ -25,63 +24,6 @@ const contentOf = async (docId: string, blockId: string) =>
   (await h.paperOf(docId)).blocks.find((block) => block.id === blockId) as {
     content: unknown
   }
-
-function syncFrom(
-  docId: string,
-  client: Parameters<typeof typed>[0],
-  change: (paper: PaperDocument) => PaperDocument
-) {
-  return h.run("paper.sync", {
-    docId,
-    epoch: 1,
-    update: typed(client, change),
-    stateVector: encoded(stateVectorOf(client)),
-  })
-}
-
-describe("typing that is still in flight when the Coach or Undo rebuilds a block", () => {
-  it("keeps it when the Coach moved the block", async () => {
-    await inDatabase(async () => {
-      const { docId, client } = await h.created()
-      await h.pull(docId, client)
-      await h.coach(docId, 1, [{ op: "move", blockId: "t1", after: "t2" }])
-      await syncFrom(docId, client, (paper) =>
-        withText(paper, "t1", "First paragraph. INFLIGHT")
-      )
-      expect(await order(docId)).toBe("s1,t2,t1")
-      expect(await h.textOf(docId, "t1")).toBe("First paragraph. INFLIGHT")
-    })
-  })
-
-  it("keeps it when Undo moves the block back", async () => {
-    await inDatabase(async () => {
-      const { docId, client } = await h.created()
-      const moved = await h.coach(docId, 1, [
-        { op: "move", blockId: "t1", after: "t2" },
-      ])
-      await h.pull(docId, client)
-      await h.store.registry.undo(userId, moved.activityId!)
-      await syncFrom(docId, client, (paper) =>
-        withText(paper, "t1", "First paragraph. INFLIGHT2")
-      )
-      expect(await order(docId)).toBe("s1,t1,t2")
-      expect(await h.textOf(docId, "t1")).toBe("First paragraph. INFLIGHT2")
-    })
-  })
-
-  it("puts the block back when the Coach removed it", async () => {
-    await inDatabase(async () => {
-      const { docId, client } = await h.created()
-      await h.pull(docId, client)
-      await h.coach(docId, 1, [{ op: "remove", blockId: "t1" }])
-      await syncFrom(docId, client, (paper) =>
-        withText(paper, "t1", "First paragraph. INFLIGHT3")
-      )
-      expect(await order(docId)).toBe("s1,t1,t2")
-      expect(await h.textOf(docId, "t1")).toBe("First paragraph. INFLIGHT3")
-    })
-  })
-})
 
 describe("Undo and the Coach's words", () => {
   it("leaves no markup behind when the person bolded the Coach's words", async () => {

@@ -1,5 +1,4 @@
 import {
-  carryPersonChange,
   ERROR_CODES,
   legacyPaperOf,
   paperDocumentSchema,
@@ -13,10 +12,7 @@ import {
   absorbUpdate,
   aliveCharacters,
   forkOf,
-  landedInDeadContent,
-  readDeadBlocks,
   lostCharacters,
-  mergedUpdate,
   loadYDoc,
   materialize,
   seedYDoc,
@@ -467,45 +463,6 @@ export async function withContent<T>(
   })
 }
 
-async function rehomed(
-  row: PaperRow,
-  entry: Live,
-  request: SyncRequest,
-  effective: Uint8Array | null
-): Promise<Uint8Array | null> {
-  if (!landedInDeadContent(entry.yDoc, request.update)) return effective
-  const logged = await loggedRows(row.id, entry.baseSeq)
-  const reading = readDeadBlocks(
-    entry.base,
-    logged.map((item) => ({
-      update: item.update,
-      person: item.origin === "person",
-    })),
-    request.update,
-    entry.yDoc
-  )
-  const current = materialize(entry.yDoc)
-  if (!reading || !reading.before.ok || !reading.after.ok || !current.ok) {
-    console.warn(`[paper] could not place late typing for ${row.id}`)
-    return effective
-  }
-  const target = carryPersonChange(
-    validated(reading.before.document, row.kind),
-    validated(reading.after.document, row.kind),
-    validated(current.document, row.kind),
-    reading.owners
-  )
-  if (!target) return effective
-  const carried = writeDocument(forkOf(entry.yDoc), target, "person")
-  if (!carried) return effective
-  const absorbed = absorbUpdate(entry.yDoc, carried, "person")
-  if (!absorbed.ok) throw refuse(absorbed.reason)
-  if (!absorbed.effective) return effective
-  return effective
-    ? mergedUpdate([effective, absorbed.effective])
-    : absorbed.effective
-}
-
 export async function syncContent(
   userId: UserId,
   docId: PaperId,
@@ -534,12 +491,8 @@ export async function syncContent(
           ? ({ ok: true, effective: null } as const)
           : absorbUpdate(entry.yDoc, request.update, "person")
       if (!absorbed.ok) throw refuse(absorbed.reason)
-      const effective =
-        request.update.length === 0
-          ? absorbed.effective
-          : await rehomed(row, entry, request, absorbed.effective)
-      if (effective) {
-        row = await commit(row, entry, effective, {
+      if (absorbed.effective) {
+        row = await commit(row, entry, absorbed.effective, {
           origin: "person",
           witness: row.document,
         })

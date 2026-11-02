@@ -2,21 +2,15 @@ export { fromEditorBlocks, toEditorBlocks } from "./mapping.js"
 export type { PaperRefusal, PaperResult } from "./mapping.js"
 export { paperBlockConfigs } from "./schema.js"
 export { revertOrigin } from "./revert.js"
-export {
-  aliveCharacters,
-  landedInDeadContent,
-  lostCharacters,
-  mergedUpdate,
-  readEdit,
-  readDeadBlocks,
-} from "./inspect.js"
-export type { DeadReading, EditReading, RowInfo } from "./inspect.js"
+export { aliveCharacters, lostCharacters, readEdit } from "./inspect.js"
+export type { EditReading } from "./inspect.js"
 export type { HistoryRow } from "./revert.js"
 export { materialize, seedYDoc, writeDocument } from "./ydoc.js"
 export {
   absorbUpdate,
   emptyUpdate,
   forkOf,
+  mergedUpdate,
   loadYDoc,
   stateVectorOf,
   updateSince,
