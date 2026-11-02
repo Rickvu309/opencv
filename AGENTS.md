@@ -56,7 +56,7 @@ Tests that hold this shape:
 - `apps/api/src/registry/coach-chat-tools.test.ts` bars chat.create.
 - `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included; use a better name or a test. `scripts/no-comments.baseline.json` only shrinks (`node scripts/no-comments.mjs --write-baseline`).
 - `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock; fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts`, never the real date.
-- `scripts/browser-launcher.test.mjs` rejects a browser started outside a `cdp.mjs` launcher, a launcher that leaves Chrome running after a failed launch, and one that does not retry a silent first start.
+- `scripts/browser-launcher.test.mjs` rejects a browser started outside `scripts/lib/chrome-process.mjs`, and a launcher that leaves Chrome running after a failed launch, a signal, an exit, SIGKILL or 30 minutes, or does not retry a silent start.
 - `packages/guards/wall-clock.test.mjs` rejects a node test that waits on or reads the real clock; inject `timers` instead.
 - `scripts/layout-comparison-gates.test.mjs` rejects a verify driver that calls `comparePenLayout` and never reads its `mismatches`. A `PENDING` entry (issue, expiry) lists an exception.
 - `scripts/kit-duplicates.test.mjs` rejects `clipboard.writeText` or `execCommand("copy")` outside `packages/ui/src/components/copy-button.tsx`; use `CopyButton`.

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict"
-import { execFileSync, spawnSync } from "node:child_process"
+import { execFileSync, spawn, spawnSync } from "node:child_process"
 import {
   chmodSync,
+  createReadStream,
+  readdirSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -29,6 +31,7 @@ const tracked = (...patterns) =>
     .filter(Boolean)
 
 const launchers = tracked(".claude/skills/**/cdp.mjs")
+const chromeModule = "scripts/lib/chrome-process.mjs"
 
 const PENDING = []
 
@@ -51,7 +54,10 @@ const alive = (pid) => {
 
 test("a browser is started only by a cdp.mjs launcher", () => {
   const strays = tracked("*.mjs", "*.js", "*.ts", "*.sh")
-    .filter((file) => file !== self && !launchers.includes(file))
+    .filter(
+      (file) =>
+        file !== self && file !== chromeModule && !launchers.includes(file)
+    )
     .filter((file) =>
       readFileSync(path.join(root, file), "utf8").includes("--remote-debugging")
     )
@@ -180,6 +186,156 @@ for (const launcher of launchers) {
       rmSync(dir, { recursive: true, force: true })
     }
   })
+}
+
+const DRIVER = `
+import { createServer } from "node:http"
+import { createHash } from "node:crypto"
+const server = createServer()
+server.on("upgrade", (request, socket) => {
+  const accept = createHash("sha1")
+    .update(request.headers["sec-websocket-key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
+    .digest("base64")
+  socket.write("HTTP/1.1 101 Switching Protocols\\r\\nUpgrade: websocket\\r\\nConnection: Upgrade\\r\\nSec-WebSocket-Accept: " + accept + "\\r\\n\\r\\n")
+})
+await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
+process.env.FAKE_PORT = String(server.address().port)
+const { launchBrowser } = await import(process.env.LAUNCHER)
+await launchBrowser()
+console.log("ready")
+if (process.env.MODE === "exit") process.exit(0)
+if (process.env.MODE === "throw") throw new Error("driver crashed")
+await new Promise(() => {})
+`
+
+const SCENARIOS = [
+  { name: "SIGTERM", signal: "SIGTERM", code: 143 },
+  { name: "SIGINT", signal: "SIGINT", code: 130 },
+  { name: "SIGHUP", signal: "SIGHUP", code: 129 },
+  { name: "SIGKILL", signal: "SIGKILL" },
+  { name: "exit", mode: "exit" },
+  { name: "throw", mode: "throw" },
+  { name: "lifetime", lifetimeMs: "1" },
+]
+
+for (const launcher of launchers) {
+  for (const scenario of SCENARIOS) {
+    test(
+      `${launcher} leaves no browser running after the driver gets ${scenario.name}`,
+      { timeout: 90000 },
+      async (t) => {
+        const pending = PENDING.find((entry) => entry.file === launcher)
+        if (pending) {
+          t.skip(`${pending.issue} until ${pending.expires}`)
+          return
+        }
+        const scratch = path.join(homedir(), "tmp")
+        mkdirSync(scratch, { recursive: true })
+        const dir = mkdtempSync(path.join(scratch, "launcher-orphan-"))
+        const mainPid = path.join(dir, "main.pid")
+        const childPid = path.join(dir, "child.pid")
+        const fifo = path.join(dir, "held")
+        const fake = path.join(dir, "fake-chrome.sh")
+        const report = path.join(dir, "watchdog")
+        const launcherName = launcher.includes("verify-landing")
+          ? "verify-landing"
+          : "verify-app-ui"
+        execFileSync("mkfifo", [fifo, report])
+        writeFileSync(
+          fake,
+          [
+            "#!/bin/sh",
+            `exec 3> ${fifo}`,
+            "tail -f /dev/null &",
+            `echo $! > ${childPid}`,
+            `echo $$ > ${mainPid}`,
+            'echo "DevTools listening on ws://127.0.0.1:$FAKE_PORT/devtools/browser/fake" >&2',
+            "wait",
+          ].join("\n")
+        )
+        chmodSync(fake, 0o755)
+        const watchdogReader = createReadStream(report)
+        let watchdogLog = ""
+        watchdogReader.on("data", (chunk) => (watchdogLog += chunk))
+        const watchdogExited = new Promise((resolve, reject) => {
+          watchdogReader.on("end", resolve)
+          watchdogReader.on("error", reject)
+        })
+        const stalled = new Promise((_, reject) =>
+          t.signal.addEventListener("abort", () =>
+            reject(
+              new Error(
+                `stalled. watchdog log: ${JSON.stringify(watchdogLog)}; driver output: ${JSON.stringify(output)}; driver errors: ${JSON.stringify(errors)}`
+              )
+            )
+          )
+        )
+        stalled.catch(() => {})
+        const reader = createReadStream(fifo)
+        const allClosed = new Promise((resolve, reject) => {
+          reader.on("end", resolve)
+          reader.on("error", reject)
+          reader.resume()
+        })
+        const driver = spawn(
+          process.execPath,
+          ["--input-type=module", "-e", DRIVER],
+          {
+            env: {
+              ...process.env,
+              HOME: dir,
+              CHROME_BIN: fake,
+              LAUNCHER: path.join(root, launcher),
+              MODE: scenario.mode ?? "wait",
+              CHROME_MAX_LIFETIME_MS: scenario.lifetimeMs ?? "",
+              CHROME_WATCHDOG_REPORT: report,
+            },
+            stdio: ["ignore", "pipe", "pipe"],
+          }
+        )
+        let output = ""
+        const ready = new Promise((resolve) => {
+          driver.stdout.on("data", (chunk) => {
+            output += chunk
+            if (output.includes("ready")) resolve()
+          })
+          driver.on("close", resolve)
+        })
+        let errors = ""
+        driver.stderr.on("data", (chunk) => (errors += chunk))
+        const closed = new Promise((resolve) =>
+          driver.on("close", (code, signal) => resolve({ code, signal }))
+        )
+        try {
+          await ready
+          if (scenario.signal) driver.kill(scenario.signal)
+          if (!scenario.lifetimeMs) await closed
+          await Promise.race([
+            Promise.all([allClosed, watchdogExited]),
+            stalled,
+          ])
+          assert.deepEqual(
+            readdirSync(path.join(dir, "tmp", launcherName)),
+            [],
+            "the profile directory must be removed"
+          )
+          if (scenario.code !== undefined)
+            assert.equal((await closed).code, scenario.code, errors)
+        } finally {
+          driver.kill("SIGKILL")
+          reader.destroy()
+          watchdogReader.destroy()
+          for (const file of [mainPid, childPid]) {
+            if (!existsSync(file)) continue
+            try {
+              process.kill(Number(readFileSync(file, "utf8")), "SIGKILL")
+            } catch {}
+          }
+          rmSync(dir, { recursive: true, force: true })
+        }
+      }
+    )
+  }
 }
 
 test("pending launcher fixes have not expired", () => {
