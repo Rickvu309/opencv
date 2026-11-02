@@ -65,3 +65,21 @@ export { legacyPaperOf } from "./legacy.js"
 export { mergeLegacyEdit } from "./merge.js"
 
 export { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
+
+export type { PaperEdit, PaperEditOutcome } from "./edits-schema.js"
+export { paperEditOutcomeSchema, paperEditSchema } from "./edits-schema.js"
+export type { AppliedEdits, EditEffect } from "./edits.js"
+export { applyPaperEdits } from "./edits.js"
+export type { PaperOutline } from "./outline.js"
+export { paperOutline } from "./outline.js"
+export type { PaperChange } from "./changes.js"
+export { paperChanges } from "./changes.js"
+
+export { effectsMissing, personWorkLost, undoProblems } from "./safety.js"
+export type { UndoPlan } from "./undo.js"
+export { undoCoachEdit } from "./undo.js"
+
+export { rebuiltBy } from "./tree.js"
+
+export type { PaperRepair, RepairHints } from "./repair.js"
+export { nodeFingerprint, repairPaper } from "./repair.js"

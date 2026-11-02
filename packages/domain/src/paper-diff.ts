@@ -11,6 +11,7 @@ import {
   type LetterPart,
   type ProofDocument,
 } from "./paper-codecs.js"
+import type { PaperChange } from "./paper-doc/changes.js"
 import type { PaperContentKind } from "./paper.js"
 
 type DiffLineKind = "eq" | "del" | "add"
@@ -332,4 +333,31 @@ export function collapsedHunks(
       out.push({ section: hunk.section, sectionId: hunk.sectionId, lines })
   }
   return out
+}
+
+const CHANGE_LABEL: Record<PaperChange["change"], string> = {
+  added: "Added",
+  changed: "Changed",
+  moved: "Moved",
+  removed: "Removed",
+}
+
+export function changeHunks(changes: readonly PaperChange[]): DiffHunk[] {
+  return changes.map((change) => {
+    const lines: DiffLine[] = []
+    if (change.before) {
+      lines.push({ kind: "del", text: truncateDiffLine(change.before) })
+    }
+    if (change.after) {
+      lines.push({
+        kind: change.change === "moved" ? "eq" : "add",
+        text: truncateDiffLine(change.after),
+      })
+    }
+    return {
+      section: `${CHANGE_LABEL[change.change]} ${change.kind}`,
+      sectionId: change.blockId,
+      lines,
+    }
+  })
 }

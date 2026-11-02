@@ -50,8 +50,8 @@ export function coachRefusal(
   gates: AgentGates
 ): CoachRefusal | null {
   if (entry.coach === "never" || entry.coach === false) return "never"
-  // agent_cvs hides paper.replace for letters too.
-  if (entry.name === "paper.replace" && !gates.agentCvs) return "cvs"
+  // agent_cvs hides paper.edit for letters too.
+  if (entry.name === "paper.edit" && !gates.agentCvs) return "cvs"
   if (CHECKLIST_COMMANDS.has(entry.name) && !gates.agentInterview) {
     return "interview"
   }
@@ -134,6 +134,55 @@ function brandedActor(actor: Actor): Actor {
 export class Registry {
   private readonly commands = new Map<string, StoredCommand>()
   private readonly queries = new Map<string, StoredQuery>()
+  private readonly undoGuards = new Map<
+    string,
+    (userId: string, inputs: unknown[]) => Promise<(string | null)[]>
+  >()
+
+  addUndoGuard(
+    reversalCommand: string,
+    guard: (userId: string, inputs: unknown[]) => Promise<(string | null)[]>
+  ) {
+    this.undoGuards.set(reversalCommand, guard)
+  }
+
+  async undoBlockedReasons(
+    userId: string,
+    items: readonly { command: string | null; input: unknown }[]
+  ): Promise<(string | null)[]> {
+    const reasons: (string | null)[] = items.map(() => null)
+    const byCommand = new Map<string, number[]>()
+    items.forEach((item, index) => {
+      if (item.command && this.undoGuards.has(item.command)) {
+        byCommand.set(item.command, [
+          ...(byCommand.get(item.command) ?? []),
+          index,
+        ])
+      }
+    })
+    for (const [command, indexes] of byCommand) {
+      try {
+        const answers = await this.undoGuards.get(command)!(
+          userId,
+          indexes.map((index) => items[index]!.input)
+        )
+        indexes.forEach((index, at) => {
+          reasons[index] = answers[at] ?? null
+        })
+      } catch {
+        for (const index of indexes) reasons[index] = "Undo is not available"
+      }
+    }
+    return reasons
+  }
+
+  async undoBlockedReason(
+    userId: string,
+    command: string | null,
+    input: unknown
+  ): Promise<string | null> {
+    return (await this.undoBlockedReasons(userId, [{ command, input }]))[0]!
+  }
 
   addCommand<I, O>(
     spec: CommandSpec<I, O>,
@@ -497,6 +546,12 @@ export class Registry {
           "This action cannot be undone."
         )
       }
+      const blocked = await this.undoBlockedReason(
+        userId,
+        row.reversalCommand,
+        row.reversalInput
+      )
+      if (blocked) throw new CommandError(ERROR_CODES.CONFLICT, blocked)
       await this.execute({
         name: row.reversalCommand,
         input: row.reversalInput,

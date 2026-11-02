@@ -167,3 +167,24 @@ describe("receipt reversal helpers", () => {
     ).toBe("Reversible — Undo by moving the card back.")
   })
 })
+
+describe("a receipt whose edit the server says cannot be undone now", () => {
+  const blocked = {
+    type: "tool" as const,
+    name: "paper.edit" as const,
+    summary: "Edited CV",
+    ok: true,
+    activityId: "11111111-1111-4111-8111-111111111111",
+    reversal: {
+      possible: false,
+      description: "Undo the newer Coach edit first.",
+    },
+  }
+
+  it("offers no Undo and states why", () => {
+    expect(receiptShowsUndo(blocked)).toBe(false)
+    expect(receiptReversalNote(blocked)).toBe(
+      "Undo the newer Coach edit first."
+    )
+  })
+})

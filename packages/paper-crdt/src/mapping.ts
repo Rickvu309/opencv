@@ -300,22 +300,27 @@ function headerOf(block: EditorBlockLike | undefined): Record<string, unknown> {
   }
 }
 
+export function candidateOf(
+  kind: PaperDocument["kind"],
+  blocks: readonly EditorBlockLike[]
+): unknown {
+  return kind === "cv"
+    ? {
+        version: 3,
+        kind,
+        header: headerOf(blocks[0]),
+        blocks: blocks.slice(1).map(blockOf),
+        clashes: [],
+      }
+    : { version: 3, kind, blocks: blocks.map(blockOf), clashes: [] }
+}
+
 export function fromEditorBlocks(
   kind: PaperDocument["kind"],
   blocks: readonly EditorBlockLike[]
 ): PaperResult {
   try {
-    const candidate =
-      kind === "cv"
-        ? {
-            version: 3,
-            kind,
-            header: headerOf(blocks[0]),
-            blocks: blocks.slice(1).map(blockOf),
-            clashes: [],
-          }
-        : { version: 3, kind, blocks: blocks.map(blockOf), clashes: [] }
-    const parsed = paperDocumentSchema.safeParse(candidate)
+    const parsed = paperDocumentSchema.safeParse(candidateOf(kind, blocks))
     if (parsed.success) return { ok: true, document: parsed.data }
     const issue = parsed.error.issues[0]
     const where = issue?.path.length ? ` at ${issue.path.join(".")}` : ""

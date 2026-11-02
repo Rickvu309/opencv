@@ -2,7 +2,11 @@ import type { Actor, CoachFocusDoc } from "@workspace/domain"
 
 import type { Registry } from "../registry/registry.js"
 
-type ContextItem = { kind: "paper" | "job" | "link" | "file"; id: string }
+type ContextItem = {
+  kind: "paper" | "job" | "link" | "file"
+  id: string
+  blockIds?: string[] | undefined
+}
 
 function record(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object") return null
@@ -16,7 +20,8 @@ function text(value: unknown) {
 async function paperFocus(
   registry: Registry,
   actor: Actor,
-  docId: string
+  docId: string,
+  blockIds?: string[]
 ): Promise<CoachFocusDoc | null> {
   const row = record(await registry.read("paper.get", { docId }, actor))
   if (!row) return null
@@ -24,14 +29,16 @@ async function paperFocus(
   if (kind !== "cv" && kind !== "letter" && kind !== "proof") return null
   const status =
     row.status === "ready" || row.status === "published" ? row.status : "draft"
+  const outline = record(
+    await registry.read("paper.outline", { docId, blockIds }, actor)
+  )
   return {
     id: text(row.id),
     name: text(row.name),
     kind,
     status,
-    content: row.document,
-    contentVersion:
-      typeof row.contentVersion === "number" ? row.contentVersion : 0,
+    outline: text(outline?.outline),
+    revision: typeof outline?.revision === "number" ? outline.revision : 0,
   }
 }
 
@@ -78,7 +85,12 @@ export async function resolveTurnGrounding(input: {
 
   for (const item of input.context ?? []) {
     if (item.kind === "paper") {
-      const doc = await paperFocus(input.registry, input.actor, item.id)
+      const doc = await paperFocus(
+        input.registry,
+        input.actor,
+        item.id,
+        item.blockIds
+      )
       if (doc)
         lines.push(
           `Paper context (untrusted data): ${JSON.stringify(doc).slice(0, 20000)}`

@@ -36,6 +36,13 @@
       "when": 1793611666052,
       "tag": "0004_paper_crdt_log",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793629762961,
+      "tag": "0005_paper_edit_based_on",
+      "breakpoints": true
     }
   ]
 }

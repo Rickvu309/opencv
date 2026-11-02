@@ -83,6 +83,15 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         )[0]!.crdtDocument,
       })
       await run("paper.rename", { docId: cv, name: "Ada CV" })
+      const outline = (await read("paper.outline", { docId: cv })) as {
+        revision: number
+      }
+      const edited = (await run("paper.edit", {
+        docId: cv,
+        basedOn: outline.revision,
+        edits: [{ op: "setHeader", fields: { city: "Hanoi" } }],
+      })) as { editId: string }
+      await run("paper.revertEdit", { docId: cv, editId: edited.editId })
       await run("paper.sync", {
         docId: cv,
         epoch: 0,
@@ -220,25 +229,50 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
           })
         ).output
       )
-      const replace = (docId: string, document: unknown, contentVersion = 1) =>
+      const edit = (docId: string, text: string) =>
+        registry.execute({
+          name: "paper.edit",
+          input: {
+            docId,
+            basedOn: 1,
+            edits: [{ op: "setHeader", fields: { name: text } }],
+          },
+          actor: coach,
+        })
+      const replace = (docId: string, document: unknown) =>
         registry.execute({
           name: "paper.replace",
-          input: { docId, contentVersion, document },
+          input: { docId, contentVersion: 1, document },
           actor: coach,
         })
 
-      const allowed = await replace(cv, { ...emptyCvDocument(), name: "Ada" })
-      expect(allowed.output).toMatchObject({ contentVersion: 2 })
+      const allowed = await edit(cv, "Ada")
+      expect(allowed.output).toMatchObject({ revision: 2 })
+      await expect(replace(cv, emptyCvDocument())).rejects.toMatchObject({
+        code: "COACH_NOT_ALLOWED",
+      })
 
       await db.update(user).set({ agentCvs: false }).where(eq(user.id, userId))
-      for (const [docId, document] of [
-        [cv, emptyCvDocument()],
-        [letter, { ...emptyLetterDocument(), markdown: "Hello" }],
-      ] as const) {
-        await expect(replace(docId, document, 2)).rejects.toMatchObject({
-          code: "COACH_NOT_ALLOWED",
+      await expect(edit(cv, "Grace")).rejects.toMatchObject({
+        code: "COACH_NOT_ALLOWED",
+      })
+      await expect(
+        registry.execute({
+          name: "paper.edit",
+          input: {
+            docId: letter,
+            basedOn: 1,
+            edits: [
+              {
+                op: "insert",
+                after: "@start",
+                blocks: [{ type: "paragraph", text: "Hello" }],
+              },
+            ],
+          },
+          actor: coach,
         })
-      }
+      ).rejects.toMatchObject({ code: "COACH_NOT_ALLOWED" })
       const byPerson = await registry.execute({
         name: "paper.replace",
         input: {

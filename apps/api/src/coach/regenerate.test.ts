@@ -1,8 +1,4 @@
-import {
-  chatDetailSchema,
-  emptyCvDocument,
-  personActor,
-} from "@workspace/domain"
+import { chatDetailSchema, personActor } from "@workspace/domain"
 import { simulateReadableStream } from "ai"
 import { MockLanguageModelV3 } from "ai/test"
 import type { SSEStreamingApi } from "hono/streaming"
@@ -94,8 +90,8 @@ describe("Coach regeneration", () => {
               name: "CV",
               kind: "cv",
               status: "draft",
-              content: emptyCvDocument(),
-              contentVersion: 1,
+              outline: "[header] name: Ada",
+              revision: 1,
             },
             heartbeatMs: 60000,
           })

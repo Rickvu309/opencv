@@ -8,6 +8,7 @@ import type {
   ReversalDescriptor,
 } from "./chat-messages.js"
 import type { ChatEntry, ChatEntryPart } from "./chat-messages.js"
+import type { ReversalPlan } from "./registry.js"
 
 export const coachModeSchema = z.enum(["free", "light", "max"])
 export type CoachMode = z.infer<typeof coachModeSchema>
@@ -195,9 +196,18 @@ export type CoachFocusDoc = {
   name: string
   kind: "cv" | "letter" | "proof"
   status: "draft" | "ready" | "published"
-  /** Current body so an edit ask can call paper_replace without a prior get. */
-  content: unknown
-  contentVersion: number
+  outline: string
+  revision: number
+}
+
+type CoachExecuted = {
+  pending: boolean
+  pendingActionId?: string | undefined
+  summary?: string | undefined
+  command?: string | undefined
+  output?: unknown
+  activityId: string | null
+  reversal: ReversalPlan
 }
 
 export type CoachTurnInput = {
@@ -214,6 +224,7 @@ export type CoachTurnInput = {
   selection?: CoachSelection
   /** Names and titles for this turn. Bytes never appear here. */
   note?: string
+  execute?: (call: { name: string; input: unknown }) => Promise<CoachExecuted>
 }
 
 export type CoachTitleInput = {

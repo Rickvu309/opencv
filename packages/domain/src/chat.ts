@@ -113,16 +113,16 @@ export const activityUndoInputSchema = z
   })
   .strict()
 
-export function focusedEditNeedsReplace(input: {
+export function focusedEditNeedsPaperEdit(input: {
   mode: string
   focusKind: string | null
   askedForEdit: boolean
-  calledReplace: boolean
+  calledEdit: boolean
 }) {
   return (
     input.mode === "free" &&
     input.focusKind === "paper" &&
     input.askedForEdit &&
-    !input.calledReplace
+    !input.calledEdit
   )
 }

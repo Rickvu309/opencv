@@ -5,12 +5,27 @@ import {
   personActor,
   type PaperDocument,
 } from "@workspace/domain"
-import { loadYDoc, materialize, writeDocument } from "@workspace/paper-crdt"
+import {
+  absorbUpdate,
+  loadYDoc,
+  materialize,
+  stateVectorOf,
+  writeDocument,
+  type PaperYDoc,
+} from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
+import {
+  bytesOf,
+  clientFrom,
+  encoded,
+  twoParagraphCv,
+  typed,
+  withText,
+} from "../test/paper-content.js"
 import {
   idOf,
   list,
@@ -37,6 +52,45 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     signature: "Linh",
   }
   let syncPush = ""
+  const coachSentence = "First paragraph. Coach adds a sentence."
+  async function startCoachEdit() {
+    const paper = await run("paper.create", {
+      kind: "cv",
+      name: "Edit CV",
+      document: twoParagraphCv,
+    })
+    ctx.docId = idOf(paper.output)
+    return clientFrom(
+      text(
+        await run("paper.sync", {
+          docId: ctx.docId,
+          epoch: 0,
+          update: "",
+          stateVector: "",
+        }).then((pulled) => pulled.output),
+        "update"
+      ) ?? ""
+    )
+  }
+  let editClient: PaperYDoc | null = null
+  const coachEdits = [
+    { op: "setText", blockId: "t1", text: coachSentence },
+    {
+      op: "insert",
+      after: "t2",
+      blocks: [{ type: "paragraph", text: "A third paragraph." }],
+    },
+  ]
+  async function blockText(blockId: string) {
+    const row = (
+      await db.select().from(paperDocs).where(eq(paperDocs.id, ctx.docId))
+    )[0]!
+    const stored = row.crdtDocument as unknown as PaperDocument
+    const block = stored.blocks.find((candidate) => candidate.id === blockId)
+    return block && "content" in block
+      ? block.content.map((run) => run.text).join("")
+      : null
+  }
   const lettersAfter = { markdown: "Only one paragraph.", sender: "Linh" }
   return [
     {
@@ -159,6 +213,79 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         expect(record(document, "header")).toMatchObject({
           name: "Synced name",
         })
+      },
+    },
+    {
+      name: "paper.edit",
+      arrange: async () => {
+        editClient = await startCoachEdit()
+      },
+      act: () =>
+        run("paper.edit", { docId: ctx.docId, basedOn: 1, edits: coachEdits }),
+      assert: async (result) => {
+        expect(result.output).toMatchObject({
+          revision: 2,
+          outcomes: [{ status: "applied" }, { status: "applied" }],
+        })
+        expect(await blockText("t1")).toBe(coachSentence)
+        expect(result.reversal).toMatchObject({
+          command: "paper.revertEdit",
+          input: { docId: ctx.docId },
+        })
+      },
+      undoAssert: async (result) => {
+        if (!editClient) throw new Error("missing client")
+        const pulled = await run("paper.sync", {
+          docId: ctx.docId,
+          epoch: 1,
+          update: "",
+          stateVector: encoded(stateVectorOf(editClient)),
+        })
+        absorbUpdate(
+          editClient,
+          bytesOf(text(pulled.output, "update") ?? ""),
+          "log"
+        )
+        await run("paper.sync", {
+          docId: ctx.docId,
+          epoch: 1,
+          update: typed(editClient, (paper) =>
+            withText(paper, "t1", coachSentence.replace("adds ", "adds QUICK "))
+          ),
+          stateVector: "",
+        })
+        await undo(result)
+        expect(await blockText("t1")).toBe("First paragraph.QUICK ")
+        expect(await blockText("t2")).toBe("Second paragraph.")
+        const stored = (
+          await db.select().from(paperDocs).where(eq(paperDocs.id, ctx.docId))
+        )[0]!.crdtDocument as unknown as PaperDocument
+        expect(stored.blocks.map((block) => block.id)).toEqual([
+          "s1",
+          "t1",
+          "t2",
+        ])
+      },
+    },
+    {
+      name: "paper.revertEdit",
+      arrange: async () => {
+        await startCoachEdit()
+      },
+      act: async () => {
+        const edited = await run("paper.edit", {
+          docId: ctx.docId,
+          basedOn: 1,
+          edits: coachEdits,
+        })
+        return run("paper.revertEdit", {
+          docId: ctx.docId,
+          editId: text(edited.output, "editId") ?? "",
+        })
+      },
+      assert: async (result) => {
+        expect(result.output).toMatchObject({ reverted: true, revision: 3 })
+        expect(await blockText("t1")).toBe("First paragraph.")
       },
     },
     {

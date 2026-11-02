@@ -48,6 +48,10 @@ const coachContextItemSchema = z
   .object({
     kind: z.enum(["paper", "job", "link", "file"]),
     id: z.string().trim().min(1).max(2000),
+    blockIds: z
+      .array(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/))
+      .max(50)
+      .optional(),
   })
   .strict()
 export type CoachContextItem = z.infer<typeof coachContextItemSchema>

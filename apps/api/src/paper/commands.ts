@@ -1,8 +1,10 @@
+import { randomBytes } from "node:crypto"
+
 import {
   cvCodecToBlocks,
-  isCvBlockDocument,
   isCvDocument,
   keywordGap,
+  PAPER_RECEIPT_CHANGE_LIMIT,
   paperContract,
   type PaperDocument,
   type PaperId,
@@ -10,7 +12,11 @@ import {
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
+import { createId } from "../id.js"
+import { editAsCoach, revertCoachEdit } from "./content-coach.js"
+import { undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
+import { readOutline } from "./outline.js"
 import {
   attachPhoto,
   createPaper,
@@ -36,6 +42,8 @@ import {
   toPaper,
   unsharePaper,
 } from "./store.js"
+
+const newBlockId = () => `c${randomBytes(6).toString("base64url")}`
 
 const noReversal = () => null
 const noActivity = () => null
@@ -82,6 +90,14 @@ function encoded(bytes: Uint8Array) {
 }
 
 export function registerPaper(registry: Registry) {
+  registry.addUndoGuard("paper.revertEdit", (userId, inputs) =>
+    undoBlockedReasons(
+      userId,
+      inputs.map((input) =>
+        paperContract["paper.revertEdit"].input.parse(input)
+      )
+    )
+  )
   bindCommands(registry, paperContract, {
     "paper.create": {
       handler: async (input, actor) => {
@@ -106,17 +122,7 @@ export function registerPaper(registry: Registry) {
       }),
     },
     "paper.replace": {
-      handler: async (input, actor) => {
-        let document = input.document
-        // The Coach still writes the version 1 shape. A block row stays version 2.
-        if (actor.type === "coach" && isCvDocument(document)) {
-          const current = await ownedPaper(actor.userId, input.docId)
-          if (current.kind === "cv" && isCvBlockDocument(current.document)) {
-            document = cvCodecToBlocks(document)
-          }
-        }
-        return replacePaper(actor, { ...input, document })
-      },
+      handler: (input, actor) => replacePaper(actor, input),
       reversal: restoring,
       activity: (input, output, actor) =>
         actor.type === "coach"
@@ -127,6 +133,50 @@ export function registerPaper(registry: Registry) {
               detail: { docId: input.docId, name: output.name },
             }
           : null,
+    },
+    "paper.edit": {
+      handler: async (input, actor) => {
+        const result = await editAsCoach(actor.userId, input.docId, {
+          basedOn: input.basedOn,
+          edits: input.edits,
+          editId: createId(),
+          newId: newBlockId,
+        })
+        const changes = result.changes.slice(0, PAPER_RECEIPT_CHANGE_LIMIT)
+        return {
+          ...result,
+          changes,
+          moreChanges: result.changes.length - changes.length,
+        }
+      },
+      reversal: (input, output) =>
+        output.editId
+          ? {
+              command: "paper.revertEdit",
+              input: { docId: input.docId, editId: output.editId },
+            }
+          : null,
+      activity: (input, output) =>
+        output.editId
+          ? {
+              subjectKind: "paper",
+              subjectId: input.docId,
+              summary: `Edited ${output.name}`,
+              detail: { docId: input.docId, name: output.name },
+            }
+          : null,
+    },
+    "paper.revertEdit": {
+      handler: async (input, actor) => {
+        const result = await revertCoachEdit(
+          actor.userId,
+          input.docId,
+          input.editId
+        )
+        return { docId: input.docId, editId: input.editId, ...result }
+      },
+      reversal: noReversal,
+      activity: noActivity,
     },
     "paper.sync": {
       handler: async (input, actor) => {
@@ -267,6 +317,16 @@ export function registerPaper(registry: Registry) {
       step: (input) => `Read document ${input.docId}`,
       read: async (input, actor) =>
         toPaper(await ownedPaper(actor.userId, input.docId)),
+    })
+  )
+  registry.addQuery(
+    tableQuery("paper.outline", {
+      description:
+        "Read a bounded outline of a document with block ids, kinds, section titles, heading levels, marks and links, and the revision to pass as basedOn. Pass blockIds to mark selected blocks.",
+      coach: true,
+      step: () => "Read the document outline",
+      read: (input, actor) =>
+        readOutline(actor.userId, input.docId, input.blockIds),
     })
   )
   registry.addQuery(

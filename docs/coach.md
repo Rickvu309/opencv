@@ -16,12 +16,30 @@ Free accounts get Free mode. Light and Max require Pro. Remaining daily turns
 and reset time come from the account usage read. At the cap the composer is
 disabled and links to Upgrade. Existing billing is reused.
 
-Paper create/replace receipts link to the document and show changed lines.
+Paper create and edit receipts link to the document and show changed blocks.
 Commands that need confirmation stay pending until Approve or Decline. An
 approved reversible command exposes its completed activity and Undo, including
 after reload. Undo can fail when later edits invalidate a reversal; the person
 can retry or edit manually. A saved partial reply stays one bubble after Stop.
 Regenerate adds a text alternative without repeating workspace changes.
+
+The Coach edits a CV or letter with `paper.edit`, never with `paper.replace`.
+Its context holds a bounded outline of the open document (block ids, section
+titles, heading levels, marks, links, nesting) and the revision to pass as
+`basedOn`. A Paper context item may carry `blockIds`; the outline marks them
+with `>>`. `paper.outline` reads the same outline again. The edit lands on a
+fork at `basedOn` and merges into the live document, so text the person typed
+meanwhile stays. A move, remove or field change on something the person
+changed since `basedOn` comes back `stale` and is not applied; the Coach
+re-reads and tries again. An edit with no applied op writes nothing and has no
+Undo. Undo of a Coach edit takes back only its own changes and keeps later typing.
+It is refused, and the activity read marks it not reversible, while a newer
+Coach edit made on top of it that changed the same blocks is not undone. It is
+also refused, with nothing written, when the person changed the Coach's words
+since. Typing that reaches the server inside a block the Coach moved or
+removed is not carried by the server; the editor will rebase it by block id
+(step 5). Two Coach edits from the same read cannot
+both change one block: the second comes back `stale`.
 
 ## What the implementation needs
 

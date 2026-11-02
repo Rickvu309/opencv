@@ -1,4 +1,5 @@
 import {
+  changeHunks,
   diffPaperContent,
   type CoachReceiptDetail,
   type JobStage,
@@ -38,6 +39,18 @@ export function receiptDetail(
       docKind: kind,
       docName: text(row.name) || "Document",
       hunks: diffPaperContent(kind, row.previousDocument, row.document),
+    }
+  }
+  if (command === "paper.edit") {
+    const kind = row.kind
+    if (kind !== "cv" && kind !== "letter") return undefined
+    if (!Array.isArray(row.changes) || !text(row.editId)) return undefined
+    return {
+      type: "paper.replace",
+      ...(text(row.docId) ? { docId: text(row.docId) } : {}),
+      docKind: kind,
+      docName: text(row.name) || "Document",
+      hunks: changeHunks(row.changes as Parameters<typeof changeHunks>[0]),
     }
   }
   if (command === "job.move") {
