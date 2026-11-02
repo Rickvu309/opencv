@@ -40,8 +40,14 @@ function sourceFiles(dir: string): string[] {
   })
 }
 
-const rawSources = ["apps/web/src", "packages/ui/src"]
-  .flatMap((dir) => sourceFiles(abs(dir)))
+const KIT_PRIMARY_ACTION =
+  /packages\/ui\/src\/components\/page-header(?:\.test)?\.tsx$/
+const sourcePaths = ["apps/web/src", "packages/ui/src"].flatMap((dir) =>
+  sourceFiles(abs(dir))
+)
+const rawSources = sourcePaths.map((file) => readFileSync(file, "utf8"))
+const surfaceSources = sourcePaths
+  .filter((file) => !KIT_PRIMARY_ACTION.test(file))
   .map((file) => readFileSync(file, "utf8"))
 // Markup is what a selector must find: .ts and .tsx source with its comments removed, never a stylesheet.
 const stripComments = (text: string) =>
@@ -140,7 +146,7 @@ describe("verify-app-ui", () => {
     )
     const attrs = new Set(appUi.markers.map((m) => m.attr))
     for (const attr of attrs) {
-      const everywhere = rawSources.reduce(
+      const everywhere = surfaceSources.reduce(
         (sum, text) => sum + text.split(attr).length - 1,
         0
       )
