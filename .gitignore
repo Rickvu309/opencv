@@ -42,15 +42,6 @@ apps/web/.generated/
 # local agent tooling
 .claude/*
 !.claude/skills/
-.claude/skills/*
-!.claude/skills/verify-opencv/
-!.claude/skills/verify-apply-scan-guard/
-!.claude/skills/verify-command-registry/
-!.claude/skills/verify-landing/
-!.claude/skills/verify-app-ui/
-!.claude/skills/verify-marketing-links/
-!.claude/skills/verify-coach-turn/
-!.claude/skills/verify-read-invalidation/
 
 # local PGlite data for DB_DRIVER=pglite
 apps/api/.data/

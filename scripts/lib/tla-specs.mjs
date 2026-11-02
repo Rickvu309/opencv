@@ -79,6 +79,39 @@ export function exportedNames(sourceText, fileName) {
 const definesAction = (tlaText, action) =>
   new RegExp(`^${action.replace(/\W/g, "\\$&")}\\b[^\\n]*==`, "m").test(tlaText)
 
+function withoutParentheses(text) {
+  let depth = 0
+  let kept = ""
+  for (const char of text) {
+    if (char === "(") depth += 1
+    else if (char === ")") depth = Math.max(0, depth - 1)
+    else if (depth === 0) kept += char
+  }
+  return kept
+}
+
+function nextBody(tlaText) {
+  const lines = tlaText.split("\n")
+  const start = lines.findIndex((line) => /^Next\b[^\n]*==/.test(line))
+  if (start === -1) return ""
+  const body = [lines[start].replace(/^[^=]*==/, "")]
+  for (const line of lines.slice(start + 1)) {
+    if (line.trim() !== "" && !/^\s/.test(line)) break
+    body.push(line)
+  }
+  return withoutParentheses(body.join("\n"))
+}
+
+export function nextActions(tlaText) {
+  const names = []
+  for (const part of nextBody(tlaText).split("\\/")) {
+    const name = /^\s*(?:\\E[^:]*:\s*)?([A-Za-z_]\w*)/.exec(part)?.[1]
+    if (name && definesAction(tlaText, name) && !names.includes(name))
+      names.push(name)
+  }
+  return names
+}
+
 function mapProblems(mapPath, mapText, tlaText, files, read) {
   let map
   try {
@@ -90,11 +123,18 @@ function mapProblems(mapPath, mapText, tlaText, files, read) {
     return [`${mapPath}: needs a "module" path next to it`]
   if (!map.actions || typeof map.actions !== "object")
     return [`${mapPath}: needs an "actions" object of Action to function`]
+  if (Object.keys(map.actions).length === 0)
+    return [`${mapPath}: "actions" is empty; map every action of Next`]
   const problems = []
   for (const [key, code] of Object.entries(map.mutants ?? {}))
     if (!MUTANT_EXITS.has(code))
       problems.push(
         `${mapPath}: mutant ${key} expects ${code}, which must be 12 (invariant) or 13 (liveness)`
+      )
+  for (const action of nextActions(tlaText))
+    if (!(action in map.actions))
+      problems.push(
+        `${mapPath}: ${action} is an action of Next but has no entry in "actions"`
       )
   const modulePath = posix.join(dirname(mapPath), map.module)
   const exports = files.includes(modulePath)
@@ -104,7 +144,7 @@ function mapProblems(mapPath, mapText, tlaText, files, read) {
   for (const [action, fn] of Object.entries(map.actions)) {
     if (exports && !exports.has(fn))
       problems.push(
-        `${mapPath}: ${action} names ${fn}, which ${modulePath} does not export`
+        `${mapPath}: ${action} names ${fn}, which ${modulePath} does not export; point at the file that defines it, since "export *" is not followed`
       )
     if (!definesAction(tlaText, action))
       problems.push(`${mapPath}: ${action} is not defined in the .tla`)

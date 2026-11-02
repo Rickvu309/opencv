@@ -79,6 +79,7 @@ function riskHigh(facts) {
 function massDelete(facts) {
   const d = facts.diff?.deleted
   if (!d) return null
+  if (asLines(facts.diff?.labels).includes("needs-human-review")) return null
   const { files, lines, percent } = MASS_DELETE_LIMITS
   const over = []
   if (d.files > files) over.push(`${d.files} files (limit ${files})`)
@@ -86,7 +87,7 @@ function massDelete(facts) {
   if (d.total > 0 && d.files * 100 > percent * d.total)
     over.push(`${d.files} of ${d.total} authored files (limit ${percent}%)`)
   if (!over.length) return null
-  return `the change deletes a lot of authored source: ${over.join(", ")}; a human must review it first`
+  return `the change deletes a lot of authored source: ${over.join(", ")}; a human must review it first, so ask the owner to label the issue needs-human-review`
 }
 
 function changeTooBig(facts) {
@@ -130,11 +131,11 @@ export const diffRows = [
   rule({
     id: "MASS_DELETE",
     section: "5",
-    says: "More than 25 authored files, 2000 lines or 10% of authored files deleted needs a human.",
+    says: "More than 25 authored files, 2000 lines or 10% of authored files deleted needs needs-human-review on the issue.",
     at: ["finish", "pr"],
     needs: ["diff"],
     check: massDelete,
-    fix: () => "gh pr edit <pr> --add-label needs-human-review",
+    fix: () => "Ask the owner to label the issue needs-human-review",
   }),
   rule({
     id: "CHANGE_TOO_BIG",

@@ -62,6 +62,27 @@ export const LEDGER = Object.freeze([
     },
   },
   {
+    id: "raw-tlc",
+    file: "scripts/raw-tlc.test.mjs",
+    historic: null,
+    reason:
+      "its one earlier mistake, commit 29d5d586, lives on a branch that will be deleted, so the test holds those lines inline and fires on them",
+  },
+  {
+    id: "skills-tracked",
+    file: "scripts/skills-tracked.test.mjs",
+    detector: {
+      module: "scripts/lib/ignored-skills.mjs",
+      export: "skillIsIgnored",
+    },
+    historic: {
+      mode: "detect",
+      sha: "2c0c9582",
+      path: ".gitignore",
+      fixed: { rev: "HEAD", path: ".gitignore" },
+    },
+  },
+  {
     id: "temp-dirs",
     file: "scripts/temp-dirs.test.mjs",
     historic: {
@@ -81,6 +102,20 @@ export const LEDGER = Object.freeze([
       mode: "detect",
       sha: "6c0514b9^",
       path: "apps/web/src/features/app-shell/app-shell.tsx",
+    },
+  },
+  {
+    id: "unbounded-spawn",
+    file: "scripts/unbounded-spawn.test.mjs",
+    detector: {
+      module: "scripts/lib/unbounded-spawn.mjs",
+      export: "detectUnboundedSpawn",
+    },
+    historic: {
+      mode: "detect",
+      sha: "42da036c",
+      path: "scripts/tlc.mjs",
+      fixed: { rev: "HEAD", path: "scripts/tlc.mjs" },
     },
   },
 ])
@@ -254,6 +289,7 @@ export function runCommand(cwd, command) {
     env,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
+    timeout: 10 * 60 * 1000,
   })
   return {
     passed: result.status === 0,

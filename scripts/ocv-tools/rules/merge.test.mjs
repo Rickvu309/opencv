@@ -21,7 +21,45 @@ test("MASS_DELETE trips on files, lines or percent, each at its own limit", () =
   assert.equal(rule.check(del(10, 0, 100)), null)
   assert.equal(rule.check({ diff: {} }), null)
   assert.deepEqual(rule.at, ["finish", "pr"])
-  assert.match(rule.fix({}), /needs-human-review/)
+  assert.match(rule.fix({}), /label the issue needs-human-review/)
+})
+
+test("MASS_DELETE passes when the issue carries needs-human-review, and refuses without it", () => {
+  const rule = row("MASS_DELETE")
+  const big = (labels) => ({
+    ...del(26, 0, 1000),
+    diff: { ...del(26, 0, 1000).diff, labels },
+  })
+  assert.match(rule.check(big([])), /26 files \(limit 25\)/)
+  assert.match(rule.check(big(["risk:high"])), /26 files \(limit 25\)/)
+  assert.equal(rule.check(big(["needs-human-review"])), null)
+  assert.match(
+    rule.check(big([])),
+    /a human must review it first, so ask the owner to label the issue needs-human-review/
+  )
+})
+
+test("an agent merge stays refused on a deletion the issue label let through", () => {
+  const facts = {
+    pull: {
+      n: 9,
+      isDraft: false,
+      labels: [],
+      branch: "chore/9-delete",
+      state: "OPEN",
+      head: "h",
+      author: "Owner",
+    },
+    issue: { n: 9, labels: ["needs-human-review"] },
+    diff: { ...del(26, 0, 1000).diff, labels: ["needs-human-review"] },
+    me: "Owner",
+    ci: { status: "completed", conclusion: "success", head: "h" },
+  }
+  assert.equal(row("MASS_DELETE").check(facts), null)
+  assert.equal(
+    row("NEEDS_HUMAN_REVIEW").check(facts),
+    "PR #9 needs human review; an agent never merges it."
+  )
 })
 
 test("PR_METADATA wants the title number, the closing line and an open issue", () => {

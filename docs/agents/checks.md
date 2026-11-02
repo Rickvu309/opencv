@@ -27,11 +27,14 @@ A guard marked proven has a row in `scripts/guard-ledger.mjs` showing it fires o
 - `paper-save-keeps-parts.test.mjs` (push, CI): an editor save keeps the parts of the document it loaded
 - `pen-snapshot.test.mjs` (CI): snapshot preserves instance identity and resolves nested visible overrides
 - `pointer-capture.test.mjs` (push, CI, proven): a drag that captures the pointer and never handles lost capture is a stuck drag
+- `raw-tlc.test.mjs` (push, CI): a raw tlc2.TLC or tla2tools.jar call outside scripts/tlc.mjs is refused
 - `retired-words.test.mjs` (push, CI): no source file or file name uses a word CONTEXT.md retired
 - `skill-routes.test.mjs` (push, CI): verify skills name product routes without the retired /app prefix
+- `skills-tracked.test.mjs` (push, CI, proven): a new skill folder is not hidden by .gitignore
 - `temp-dirs.test.mjs` (push, CI, proven): only the shared helper makes temporary folders under scripts and packages/guards
 - `tla-specs.test.mjs` (push, CI): a complete spec has no problems
 - `touch-targets.test.mjs` (push, CI, proven): a nav row or icon button that is 28px tall on a phone is a small target
+- `unbounded-spawn.test.mjs` (push, CI, proven): a long tool call with no timeout in scripts is refused
 - `unused-domain-exports.test.mjs` (push, CI): every export of packages/domain/src is imported by non-test code
 - `verify-auth-production.test.mjs` (CI): rejects the incident's successful old image before sending mail
 - `verify-feature-map.test.mjs` (push, CI): every feature file is in the verify-opencv index

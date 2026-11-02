@@ -362,7 +362,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "MASS_DELETE",
     { diff: { deleted: { files: 26, lines: 5, total: 900 } } },
     { diff: { deleted: { files: 25, lines: 5, total: 900 } } },
-    "the change deletes a lot of authored source: 26 files (limit 25); a human must review it first"
+    "the change deletes a lot of authored source: 26 files (limit 25); a human must review it first, so ask the owner to label the issue needs-human-review"
   )
   check(
     "CHANGE_TOO_BIG",

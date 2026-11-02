@@ -22,6 +22,7 @@ export const STATUS = Object.freeze({
   13: "liveness violated",
 })
 export const NO_TOOLCHAIN = 2
+export const TLC_TIMEOUT_MS = 10 * 60 * 1000
 
 export const statusOf = (code) => STATUS[code] ?? "error"
 
@@ -60,7 +61,23 @@ export function tlcArgs({ jar, cfg, spec, metadir }) {
   ]
 }
 
-export function runTlc({ spec, cfg, out, toolchain = {} }) {
+export function outputOf(result) {
+  const text = `${result.stdout ?? ""}${result.stderr ?? ""}`
+  return result.error ? `${text}tlc: ${result.error.message}\n` : text
+}
+
+export function outFileName(tla, cfg) {
+  const folder = posix.dirname(tla).replaceAll("/", "__")
+  return `${folder}__${posix.basename(cfg, ".cfg")}.out`
+}
+
+export function runTlc({
+  spec,
+  cfg,
+  out,
+  toolchain = {},
+  timeout = TLC_TIMEOUT_MS,
+}) {
   const java = resolveJava(toolchain)
   const jar = resolveJar(toolchain)
   if (!java || !jar)
@@ -71,9 +88,14 @@ export function runTlc({ spec, cfg, out, toolchain = {} }) {
     const result = spawnSync(
       java,
       tlcArgs({ jar, cfg: resolve(cfg), spec: specPath, metadir }),
-      { cwd: dirname(specPath), encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }
+      {
+        cwd: dirname(specPath),
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        timeout,
+      }
     )
-    const output = `${result.stdout ?? ""}${result.stderr ?? ""}`
+    const output = outputOf(result)
     if (out) {
       mkdirSync(dirname(resolve(out)), { recursive: true })
       writeFileSync(out, output)
@@ -152,9 +174,9 @@ function runAll(options) {
   for (const { tla, cfg, expect } of allRuns()) {
     const label = `${posix.basename(cfg)}`
     const out = options.outDir
-      ? join(options.outDir, `${posix.basename(cfg, ".cfg")}.out`)
+      ? join(options.outDir, outFileName(tla, cfg))
       : undefined
-    const { code, status } = runTlc({
+    const { code, status, output } = runTlc({
       spec: join(root, tla),
       cfg: join(root, cfg),
       out,
@@ -164,6 +186,8 @@ function runAll(options) {
     process.stdout.write(
       `${pass ? "PASS" : "FAIL"} ${tla} ${label}: exit ${code} (${status}), expected ${expect}\n`
     )
+    if (!pass && status === "error")
+      process.stdout.write(`${tail(output, 10)}\n`)
   }
   return failed === 0 ? 0 : 1
 }
