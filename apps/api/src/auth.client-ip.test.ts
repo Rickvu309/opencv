@@ -1,94 +1,108 @@
+import { getIP } from "better-auth/api"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { createMigratedTestDb, testAuthUrl } from "./test/harness.js"
+import { createAuth } from "./auth.js"
+import { createAuthedApp, postJson } from "./auth.fixtures.js"
+import {
+  createMigratedTestDb,
+  testAuthUrl,
+  testSessionSecret,
+  testWebOrigin,
+} from "./test/harness.js"
 
 const SEND_PATH = "/api/auth/email-otp/send-verification-otp"
+const EDGE_HOP = "172.68.0.1"
 
-function railwayEdge(client: string, edgeHop: string) {
-  return { "x-real-ip": client, "x-forwarded-for": edgeHop }
+function railwayRequest(headers: Record<string, string>) {
+  return new Request("https://api.opencv.me/api/auth/email-otp/x", { headers })
 }
 
-async function productionApp() {
-  vi.stubEnv("NODE_ENV", "production")
-  vi.resetModules()
-  const fixtures = await import("./auth.fixtures.js")
+async function resolver() {
   const { client, db } = await createMigratedTestDb()
-  const app = fixtures.createAuthedApp(db, testAuthUrl, {
-    rateLimitEnabled: true,
-    logAuthMail: true,
+  const auth = createAuth({
+    db,
+    sessionSecret: testSessionSecret,
+    authUrl: testAuthUrl,
+    webOrigins: [testWebOrigin],
   })
-  const send = (email: string, headers: Record<string, string> = {}) =>
-    fixtures.postJson(app, SEND_PATH, { email, type: "sign-in" }, headers)
-  return { client, send }
-}
-
-async function statuses(
-  send: (
-    email: string,
-    headers?: Record<string, string>
-  ) => Response | Promise<Response>,
-  email: string,
-  headers: Record<string, string> | Array<Record<string, string>>,
-  count: number
-) {
-  const result: number[] = []
-  for (let i = 0; i < count; i += 1) {
-    const sent = Array.isArray(headers) ? headers[i % headers.length] : headers
-    result.push((await send(email, sent)).status)
+  return {
+    close: () => client.close(),
+    resolve: (headers: Record<string, string>) =>
+      getIP(railwayRequest(headers), auth.options),
   }
-  return result
 }
 
-describe("sign-in code limit in production", () => {
+describe("address the sign-in limit keys on", () => {
+  it("is the client Railway puts in x-real-ip, not the forwarded edge hop", async () => {
+    const { close, resolve } = await resolver()
+    try {
+      expect(
+        resolve({ "x-real-ip": "203.0.113.5", "x-forwarded-for": EDGE_HOP })
+      ).toBe("203.0.113.5")
+    } finally {
+      await close()
+    }
+  })
+
+  it("ignores every forwarded entry when x-real-ip is present", async () => {
+    const { close, resolve } = await resolver()
+    try {
+      const resolved = ["1.1.1.1", "2.2.2.2", "3.3.3.3"].map((entry) =>
+        resolve({
+          "x-real-ip": "203.0.113.9",
+          "x-forwarded-for": `${entry}, ${EDGE_HOP}`,
+        })
+      )
+      expect(resolved).toEqual(["203.0.113.9", "203.0.113.9", "203.0.113.9"])
+    } finally {
+      await close()
+    }
+  })
+
+  it("gives a forwarded address no weight when x-real-ip is missing", async () => {
+    const { close, resolve } = await resolver()
+    try {
+      const nothing = resolve({})
+      expect(resolve({ "x-forwarded-for": "198.51.100.200" })).toBe(nothing)
+      expect(resolve({ "x-forwarded-for": `1.1.1.1, ${EDGE_HOP}` })).toBe(
+        nothing
+      )
+    } finally {
+      await close()
+    }
+  })
+})
+
+describe("sign-in code limit per client", () => {
   beforeEach(() => {
     vi.spyOn(console, "log").mockImplementation(() => {})
   })
 
   afterEach(() => {
-    vi.unstubAllEnvs()
     vi.restoreAllMocks()
-    vi.resetModules()
   })
 
-  it("gives each client its own bucket from the header Railway sets", async () => {
-    const { client, send } = await productionApp()
+  it("keeps one client's three sends from limiting another", async () => {
+    const { client, db } = await createMigratedTestDb()
     try {
-      const first = railwayEdge("203.0.113.5", "172.68.0.1")
-      const second = railwayEdge("198.51.100.7", "172.68.0.1")
-      expect(await statuses(send, "a1@verify.local", first, 4)).toEqual([
-        200, 200, 200, 429,
-      ])
-      expect(await statuses(send, "b1@verify.local", second, 3)).toEqual([
-        200, 200, 200,
-      ])
-    } finally {
-      await client.close()
-    }
-  })
-
-  it("does not let forwarded entries change a client's bucket", async () => {
-    const { client, send } = await productionApp()
-    try {
-      const rotating = ["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"].map(
-        (entry) => railwayEdge("203.0.113.9", `${entry}, 172.68.0.1`)
-      )
-      expect(await statuses(send, "a2@verify.local", rotating, 4)).toEqual([
-        200, 200, 200, 429,
-      ])
-    } finally {
-      await client.close()
-    }
-  })
-
-  it("shares one bucket when no real address arrives", async () => {
-    const { client, send } = await productionApp()
-    try {
-      const forged = ["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"].map(
-        (entry) => ({ "x-forwarded-for": `${entry}, 172.68.0.1` })
-      )
-      expect(await statuses(send, "a3@verify.local", forged, 4)).toEqual([
-        200, 200, 200, 429,
-      ])
-      expect(await statuses(send, "b3@verify.local", {}, 1)).toEqual([429])
+      const app = createAuthedApp(db, testAuthUrl, {
+        rateLimitEnabled: true,
+        logAuthMail: true,
+      })
+      const send = async (email: string, realIp: string) =>
+        (
+          await postJson(
+            app,
+            SEND_PATH,
+            { email, type: "sign-in" },
+            { "x-real-ip": realIp, "x-forwarded-for": EDGE_HOP }
+          )
+        ).status
+      const first: number[] = []
+      for (let i = 0; i < 4; i += 1) {
+        first.push(await send("first@verify.local", "203.0.113.41"))
+      }
+      expect(first).toEqual([200, 200, 200, 429])
+      expect(await send("second@verify.local", "198.51.100.42")).toBe(200)
     } finally {
       await client.close()
     }
