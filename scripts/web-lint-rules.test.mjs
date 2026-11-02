@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { test } from "node:test"
@@ -174,4 +175,168 @@ test("the shortcut hook itself and tests may attach a key listener", async () =>
     await messages(RAW_BRACKET, "src/lib/use-shortcut.test.ts"),
     []
   )
+})
+
+const FEATURE = "src/features/inbox/row.tsx"
+const KIT = "src/components/thing.tsx"
+
+async function uiMessages(code, file = KIT) {
+  return JSON.parse(
+    execFileSync(
+      "node",
+      [path.join(root, "scripts/lib/lint-ui-text.mjs"), file],
+      { input: code, encoding: "utf8" }
+    )
+  )
+}
+
+function atCommit(sha, file) {
+  return execFileSync("git", ["show", `${sha}:${file}`], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  })
+}
+
+test("a Button, DropdownMenuItem or MenuItem with no action is refused", async () => {
+  for (const tag of ["Button", "DropdownMenuItem", "MenuItem"]) {
+    const found = await messages(
+      `export const a = <${tag} type="button" aria-label="More">More</${tag}>`,
+      FEATURE
+    )
+    assert.equal(found.length, 1, tag)
+    assert.match(found[0], /has no action/)
+  }
+})
+
+test("a control with an action, a link, a render target, a form or a disabled state is allowed", async () => {
+  const quiet = [
+    `<Button onClick={save}>Save</Button>`,
+    `<DropdownMenuItem onSelect={remove}>Delete</DropdownMenuItem>`,
+    `<MenuItem onClick={remove}>Delete</MenuItem>`,
+    `<Button type="submit">Send</Button>`,
+    `<Button href="/x">Go</Button>`,
+    `<Button asChild><a href="/x">Go</a></Button>`,
+    `<Button render={<a href="/x" />}>Go</Button>`,
+    `<Button form="profile">Save</Button>`,
+    `<Button disabled>Soon</Button>`,
+    `<Button {...props}>Go</Button>`,
+    `<DialogTrigger><Button variant="ghost">Open</Button></DialogTrigger>`,
+    `<PopoverTrigger render={<Button variant="ghost" />}>Open</PopoverTrigger>`,
+    `<Tooltip render={<Button variant="ghost" />} />`,
+  ]
+  for (const jsx of quiet) {
+    assert.deepEqual(
+      await messages(`export const a = ${jsx}`, FEATURE),
+      [],
+      jsx
+    )
+  }
+})
+
+test("a dead control is allowed in a test and refused in the kit", async () => {
+  const code = `export const a = <Button type="button">More</Button>`
+  assert.deepEqual(await messages(code, "src/features/inbox/row.test.tsx"), [])
+  assert.equal((await uiMessages(code)).length, 1)
+  assert.deepEqual(
+    await uiMessages(`export const a = <Button onClick={run}>More</Button>`),
+    []
+  )
+})
+
+test("a timer started as a bare statement or arrow body is refused", async () => {
+  const mistakes = [
+    `function f() { window.setTimeout(run, 10) }`,
+    `function f() { setTimeout(run, 10) }`,
+    `function f() { setInterval(run, 10) }`,
+    `function f() { globalThis.setTimeout(run, 10) }`,
+    `const wait = new Promise((resolve) => window.setTimeout(resolve, 10))`,
+  ]
+  for (const code of mistakes) {
+    const found = await messages(code, "src/lib/thing.ts")
+    assert.equal(found.length, 1, code)
+    assert.match(found[0], /handle is thrown away/)
+    assert.equal((await uiMessages(code, "src/hooks/thing.ts")).length, 1, code)
+  }
+})
+
+test("a timer whose handle is stored is allowed", async () => {
+  const quiet = [
+    `function f() { const timer = window.setTimeout(run, 10); return () => window.clearTimeout(timer) }`,
+    `function f(ref) { ref.current = setTimeout(run, 10) }`,
+    `function f() { return window.setInterval(run, 10) }`,
+    `const wait = new Promise((resolve) => { timer = window.setTimeout(resolve, 10) })`,
+    `function f() { window.clearTimeout(timer) }`,
+  ]
+  for (const code of quiet) {
+    assert.deepEqual(await messages(code, "src/lib/thing.ts"), [], code)
+  }
+  assert.deepEqual(
+    await messages(
+      `function f() { window.setTimeout(run, 10) }`,
+      "src/lib/thing.test.ts"
+    ),
+    []
+  )
+})
+
+test("a form length limit typed as a number is refused in a feature", async () => {
+  const mistakes = [
+    `export const a = <Input maxLength={80} />`,
+    `export const a = <Input maxLength="80" />`,
+    `export const ok = (title) => title.length > 200`,
+    `export const ok = (title) => title.length >= 10`,
+  ]
+  for (const code of mistakes) {
+    const found = await messages(code, FEATURE)
+    assert.equal(found.length, 1, code)
+    assert.match(found[0], /@workspace\/domain/)
+  }
+})
+
+test("a limit that comes from the contract, a short check and other folders are allowed", async () => {
+  const quiet = [
+    `export const a = <Input maxLength={TITLE_MAX} />`,
+    `export const ok = (title) => title.length > TITLE_MAX`,
+    `export const ok = (title) => title.length > 5`,
+    `export const ok = (title) => title.length === 0`,
+    `export const ok = (title) => title.length < 200`,
+  ]
+  for (const code of quiet) {
+    assert.deepEqual(await messages(code, FEATURE), [], code)
+  }
+  const literal = `export const a = <Input maxLength={80} />`
+  assert.deepEqual(await messages(literal, "src/lib/thing.tsx"), [])
+  assert.deepEqual(
+    await messages(literal, "src/features/inbox/row.test.tsx"),
+    []
+  )
+})
+
+test("each rule fires on the code that shipped the mistake", async () => {
+  const deadMore = await messages(
+    atCommit(
+      "3d7183c0^",
+      "apps/web/src/features/paper/paper-letter-article.tsx"
+    ),
+    "src/features/paper/paper-letter-article.tsx"
+  )
+  assert.ok(deadMore.some((message) => /has no action/.test(message)))
+
+  const loosePalette = await messages(
+    atCommit(
+      "a98498ba^",
+      "apps/web/src/features/command-palette/command-palette.tsx"
+    ),
+    "src/features/command-palette/command-palette.tsx"
+  )
+  assert.ok(
+    loosePalette.some((message) => /handle is thrown away/.test(message))
+  )
+
+  const typedLimit = await messages(
+    atCommit("70a4c349", "apps/web/src/features/landing/figures/generate.mjs"),
+    "src/features/landing/figures/generate.ts"
+  )
+  assert.ok(typedLimit.some((message) => /@workspace\/domain/.test(message)))
 })

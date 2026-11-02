@@ -1,4 +1,4 @@
-import { useReducer } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "@workspace/ui/components/sonner"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
@@ -90,6 +90,8 @@ export function InboxPage() {
     inboxReducer,
     INBOX_START
   )
+  const holdTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(holdTimer.current), [])
   const snoozed = useQuery({
     queryKey: snoozedInboxKey(),
     queryFn: fetchSnoozedInbox,
@@ -142,7 +144,7 @@ export function InboxPage() {
           names: result.threads.map((thread) => thread.company),
         },
       })
-      await panelHold()
+      await panelHold(holdTimer)
     } catch (error) {
       toast(messageOf(error))
     } finally {
@@ -329,7 +331,7 @@ function messageOf(error: unknown) {
     : "Could not load inbox. Refresh the page."
 }
 
-function panelHold() {
+function panelHold(timer: { current: number | undefined }) {
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue("--duration-panel")
     .trim()
@@ -340,6 +342,6 @@ function panelHold() {
       : parsed
     : 280
   return new Promise((resolve) => {
-    window.setTimeout(resolve, ms)
+    timer.current = window.setTimeout(resolve, ms)
   })
 }

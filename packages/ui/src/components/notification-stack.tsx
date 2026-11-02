@@ -1,6 +1,6 @@
 "use client"
 
-import { useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
 /*
  * Notification Stack – notices stacked behind each other, in a single self-contained file.
@@ -45,6 +45,15 @@ export function NotificationStack({
   const [leaving, setLeaving] = useState<Set<string>>(new Set())
   const [heights, setHeights] = useState<Record<string, number>>({})
   const refs = useRef(new Map<string, HTMLElement>())
+  const exits = useRef(new Set<number>())
+
+  useEffect(() => {
+    const pending = exits.current
+    return () => {
+      for (const timer of pending) window.clearTimeout(timer)
+      pending.clear()
+    }
+  }, [])
 
   const visible = items.filter((n) => !leaving.has(n.id))
   const behind = Math.min(visible.length - 1, 2)
@@ -65,7 +74,8 @@ export function NotificationStack({
   const dismiss = (notice: Notice) => {
     setLeaving((s) => new Set(s).add(notice.id))
     onDismiss?.(notice)
-    window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
+      exits.current.delete(timer)
       setItems((list) => list.filter((n) => n.id !== notice.id))
       setLeaving((s) => {
         const next = new Set(s)
@@ -73,6 +83,7 @@ export function NotificationStack({
         return next
       })
     }, 320)
+    exits.current.add(timer)
   }
 
   const front = visible[0] ? (heights[visible[0].id] ?? 0) : 0

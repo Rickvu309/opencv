@@ -5,6 +5,8 @@ import reactRefresh from "eslint-plugin-react-refresh"
 import tseslint from "typescript-eslint"
 import { defineConfig, globalIgnores } from "eslint/config"
 
+import { DEAD_AND_UNOWNED } from "../../packages/ui/lint-rules.js"
+
 const HOVER_OVERLAY = [
   "JSXAttribute[name.name=/^(onMouseEnter|onMouseOver|onPointerEnter|onPointerOver)$/]",
 ].map((selector) => ({
@@ -38,6 +40,16 @@ const SCOPED_WRITES = [
   selector,
   message:
     "Writing a CSS custom property from code makes the browser restyle every element that inherits it, and on document.documentElement that is the whole page. Set a plain property such as style.width or style.transform on the element that moves.",
+}))
+
+const TYPED_LIMITS = [
+  "JSXAttribute[name.name='maxLength'][value.type='JSXExpressionContainer'][value.expression.type='Literal']",
+  "JSXAttribute[name.name='maxLength'][value.type='Literal']",
+  "BinaryExpression[operator=/^>=?$/][left.property.name='length'][right.type='Literal'][right.value>=10]",
+].map((selector) => ({
+  selector,
+  message:
+    "A form length limit typed as a number drifts from the contract. Import the limit from @workspace/domain and use it here and on the server.",
 }))
 
 export default defineConfig([
@@ -97,6 +109,22 @@ export default defineConfig([
         ...DYNAMIC_INERT,
         ...SCOPED_WRITES,
         ...GLOBAL_SHORTCUT,
+        ...DEAD_AND_UNOWNED,
+      ],
+    },
+  },
+  {
+    files: ["src/features/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...HOVER_OVERLAY,
+        ...DYNAMIC_INERT,
+        ...SCOPED_WRITES,
+        ...GLOBAL_SHORTCUT,
+        ...DEAD_AND_UNOWNED,
+        ...TYPED_LIMITS,
       ],
     },
   },
@@ -112,6 +140,8 @@ export default defineConfig([
         ...DYNAMIC_INERT,
         ...SCOPED_WRITES,
         ...GLOBAL_SHORTCUT,
+        ...DEAD_AND_UNOWNED,
+        ...TYPED_LIMITS,
       ],
     },
   },
@@ -125,6 +155,8 @@ export default defineConfig([
         ...DYNAMIC_INERT,
         ...SCOPED_WRITES,
         ...GLOBAL_SHORTCUT,
+        ...DEAD_AND_UNOWNED,
+        ...TYPED_LIMITS,
         ...[
           "Literal[value=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
           "TemplateElement[value.raw=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",

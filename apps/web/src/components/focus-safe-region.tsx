@@ -25,7 +25,10 @@ function closeOpenPopups(region: HTMLElement) {
   }
 }
 
+let handoffWatch: { stop: () => void } | undefined
+
 function keepClosedAfterHandoff(target: HTMLElement) {
+  handoffWatch?.stop()
   const watcher = new MutationObserver(() => {
     if (target.hasAttribute("data-popup-open")) dismiss(target)
   })
@@ -33,7 +36,13 @@ function keepClosedAfterHandoff(target: HTMLElement) {
     attributes: true,
     attributeFilter: ["data-popup-open"],
   })
-  setTimeout(() => watcher.disconnect(), HANDOFF_WATCH_MS)
+  const timer = setTimeout(() => watcher.disconnect(), HANDOFF_WATCH_MS)
+  handoffWatch = {
+    stop: () => {
+      clearTimeout(timer)
+      watcher.disconnect()
+    },
+  }
 }
 
 export function FocusSafeRegion({
