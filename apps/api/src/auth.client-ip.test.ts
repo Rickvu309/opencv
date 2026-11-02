@@ -3,11 +3,8 @@ import { createMigratedTestDb, testAuthUrl } from "./test/harness.js"
 
 const SEND_PATH = "/api/auth/email-otp/send-verification-otp"
 
-function behindCloudflareThenRailway(client: string, cloudflareEdge: string) {
-  return {
-    "cf-connecting-ip": client,
-    "x-forwarded-for": `${client}, ${cloudflareEdge}, 100.64.0.2`,
-  }
+function railwayEdge(client: string, edgeHop: string) {
+  return { "x-real-ip": client, "x-forwarded-for": edgeHop }
 }
 
 async function productionApp() {
@@ -52,11 +49,11 @@ describe("sign-in code limit in production", () => {
     vi.resetModules()
   })
 
-  it("gives each client behind Cloudflare and Railway its own bucket", async () => {
+  it("gives each client its own bucket from the header Railway sets", async () => {
     const { client, send } = await productionApp()
     try {
-      const first = behindCloudflareThenRailway("203.0.113.5", "172.68.0.1")
-      const second = behindCloudflareThenRailway("198.51.100.7", "172.68.0.9")
+      const first = railwayEdge("203.0.113.5", "172.68.0.1")
+      const second = railwayEdge("198.51.100.7", "172.68.0.1")
       expect(await statuses(send, "a1@verify.local", first, 4)).toEqual([
         200, 200, 200, 429,
       ])
@@ -68,45 +65,30 @@ describe("sign-in code limit in production", () => {
     }
   })
 
-  it("does not let a forged forwarding entry buy a fresh bucket", async () => {
+  it("does not let forwarded entries change a client's bucket", async () => {
+    const { client, send } = await productionApp()
+    try {
+      const rotating = ["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"].map(
+        (entry) => railwayEdge("203.0.113.9", `${entry}, 172.68.0.1`)
+      )
+      expect(await statuses(send, "a2@verify.local", rotating, 4)).toEqual([
+        200, 200, 200, 429,
+      ])
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("shares one bucket when no real address arrives", async () => {
     const { client, send } = await productionApp()
     try {
       const forged = ["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"].map(
-        (entry) => ({
-          "x-forwarded-for": `${entry}, 192.0.2.44, 172.68.0.1, 100.64.0.2`,
-        })
+        (entry) => ({ "x-forwarded-for": `${entry}, 172.68.0.1` })
       )
-      expect(await statuses(send, "a2@verify.local", forged, 4)).toEqual([
+      expect(await statuses(send, "a3@verify.local", forged, 4)).toEqual([
         200, 200, 200, 429,
       ])
-    } finally {
-      await client.close()
-    }
-  })
-
-  it("keys a request with no usable address by its email", async () => {
-    const { client, send } = await productionApp()
-    try {
-      expect(await statuses(send, "a3@verify.local", {}, 4)).toEqual([
-        200, 200, 200, 429,
-      ])
-      expect(await statuses(send, "b3@verify.local", {}, 3)).toEqual([
-        200, 200, 200,
-      ])
-    } finally {
-      await client.close()
-    }
-  })
-
-  it("ignores a client key the caller sends", async () => {
-    const { client, send } = await productionApp()
-    try {
-      const chosen = ["1", "2", "3", "4"].map((n) => ({
-        "x-opencv-client-key": `fd00:${n}::`,
-      }))
-      expect(await statuses(send, "a4@verify.local", chosen, 4)).toEqual([
-        200, 200, 200, 429,
-      ])
+      expect(await statuses(send, "b3@verify.local", {}, 1)).toEqual([429])
     } finally {
       await client.close()
     }

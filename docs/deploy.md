@@ -227,16 +227,14 @@ Cloudflare with SSL mode **Full** (Railway says Full (Strict) does not work).
 | ----------- | ----- | --------------------------------- | ----------- | ----------------- |
 | `@`         | CNAME | web production target (flattened) | proxied     | `web` production  |
 | `www`       | CNAME | web production target             | proxied     | `web` production  |
-| `api`       | CNAME | api production target             | DNS-only    | `api` production  |
+| `api`       | CNAME | api production target             | proxied     | `api` production  |
 | Railway TXT | TXT   | name and value shown per domain   | not proxied | each of the three |
 
 Use single-label names: behind the proxy a deeper name needs Cloudflare's
 Advanced Certificate Manager.
 
-`api` stays DNS-only because the Coach streams SSE and a Cloudflare proxy adds
-a buffering and timeout layer the smoke has not been run through. To turn the
-proxy on, run the production smoke once with it on and keep it only if every
-check passes.
+`api` is proxied. Railway sets `X-Real-IP` to the caller on this path and on the
+`*.up.railway.app` host, and the sign-in limits read it (`docs/deploy/client-address.md`).
 
 ## Cutover
 

@@ -16,7 +16,6 @@ import {
   authMailId,
   createAuthCodeSender,
 } from "./mail/auth-code.js"
-import { CLIENT_IP_CONFIG, withClientKey } from "./auth-client-ip.js"
 import { isAllowedOrigin } from "./origin.js"
 
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0]
@@ -100,7 +99,7 @@ export function createAuth({
         })
       : null
 
-  const auth = betterAuth({
+  return betterAuth({
     appName: "opencv",
     secret: sessionSecret,
     baseURL: authUrl,
@@ -124,7 +123,7 @@ export function createAuth({
       // Better Auth skips origin checks when `isTest()`; keep one CORS/CSRF
       // policy in vitest and on Railway.
       disableOriginCheck: false,
-      ipAddress: CLIENT_IP_CONFIG,
+      ipAddress: { ipAddressHeaders: ["x-real-ip"] },
     },
     rateLimit: {
       enabled: rateLimitEnabled,
@@ -171,9 +170,6 @@ export function createAuth({
       },
     },
   })
-  const handle = auth.handler
-  auth.handler = async (request) => handle(await withClientKey(request))
-  return auth
 }
 
 export type Auth = ReturnType<typeof createAuth>
