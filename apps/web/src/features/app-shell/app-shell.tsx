@@ -30,16 +30,20 @@ import {
 } from "@workspace/ui/components/dialog"
 import { cn } from "@workspace/ui/lib/utils"
 
+const COACH_PANEL_ID = "coach-panel"
+
 type PanelState = {
+  mounted: boolean
   open: boolean
-  mode: CoachPanelMode
+  mode: Exclude<CoachPanelMode, "dock">
   title: string
   chatId: string | null
 }
 
-const CLOSED_PANEL: PanelState = {
+const NO_PANEL: PanelState = {
+  mounted: false,
   open: false,
-  mode: "dock",
+  mode: "side",
   title: "",
   chatId: null,
 }
@@ -49,12 +53,12 @@ type ShellState = { panel: PanelState; drawerOpen: boolean }
 type ShellAction =
   | { type: "panel_opened"; title: string; chatId: string | null }
   | { type: "panel_closed" }
-  | { type: "panel_minimized" }
+  | { type: "panel_restored" }
   | { type: "panel_expanded" }
   | { type: "drawer_opened" }
   | { type: "drawer_closed" }
 
-const SHELL_START: ShellState = { panel: CLOSED_PANEL, drawerOpen: false }
+const SHELL_START: ShellState = { panel: NO_PANEL, drawerOpen: false }
 
 function shellReducer(state: ShellState, action: ShellAction): ShellState {
   switch (action.type) {
@@ -62,6 +66,7 @@ function shellReducer(state: ShellState, action: ShellAction): ShellState {
       return {
         ...state,
         panel: {
+          mounted: true,
           open: true,
           mode: "side",
           title: action.title,
@@ -69,9 +74,9 @@ function shellReducer(state: ShellState, action: ShellAction): ShellState {
         },
       }
     case "panel_closed":
-      return { ...state, panel: CLOSED_PANEL }
-    case "panel_minimized":
-      return { ...state, panel: { ...state.panel, mode: "dock" } }
+      return { ...state, panel: { ...state.panel, open: false } }
+    case "panel_restored":
+      return { ...state, panel: { ...state.panel, open: true } }
     case "panel_expanded":
       return {
         ...state,
@@ -101,7 +106,6 @@ export function AppShell({ onSearch }: AppShellProps) {
     shellReducer,
     SHELL_START
   )
-  const openerRef = useRef<HTMLElement | null>(null)
   const openPanelRef = useRef<
     (next: { title: string; chatId: string | null }) => void
   >(() => {})
@@ -114,41 +118,24 @@ export function AppShell({ onSearch }: AppShellProps) {
   }, [])
   const menuRef = useRef<HTMLButtonElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
-  const panelVisible = panel.open && panel.mode !== "dock"
 
   useShortcut({
     key: "Escape",
-    enabled: panel.open && panel.mode !== "dock",
+    enabled: panel.open,
     inFields: true,
-    onPress: () => {
-      dispatch({ type: "panel_closed" })
-      openerRef.current?.focus()
-    },
+    onPress: closePanel,
   })
 
-  useEffect(() => {
-    if (!panel.open || panel.mode !== "dock") return
-    const root = dockRef.current
-    if (!root) {
-      openerRef.current?.focus()
-      return
-    }
-    const chip = panel.chatId
-      ? root.querySelector<HTMLElement>(`[data-chat-id="${panel.chatId}"]`)
-      : null
-    const coach = root.querySelector<HTMLElement>("[data-dock-coach]")
-    ;(chip ?? coach)?.focus()
-  }, [panel.chatId, panel.mode, panel.open])
+  function focusCoachButton() {
+    dockRef.current?.querySelector<HTMLElement>("[data-dock-coach]")?.focus()
+  }
 
-  function rememberOpener() {
-    openerRef.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null
+  function closePanel() {
+    dispatch({ type: "panel_closed" })
+    focusCoachButton()
   }
 
   function openPanel(next: { title: string; chatId: string | null }) {
-    rememberOpener()
     dispatch({ type: "panel_opened", title: next.title, chatId: next.chatId })
   }
 
@@ -156,13 +143,19 @@ export function AppShell({ onSearch }: AppShellProps) {
     openPanelRef.current = openPanel
   })
 
-  function closePanel() {
-    dispatch({ type: "panel_closed" })
-    openerRef.current?.focus()
+  function toggleCoach() {
+    if (panel.open) {
+      closePanel()
+      return
+    }
+    if (panel.mounted) {
+      dispatch({ type: "panel_restored" })
+      return
+    }
+    openPanel({ title: shellCopy.coach, chatId: null })
   }
 
   async function onNewChat() {
-    rememberOpener()
     try {
       const chat = await runContractCommand(queryClient, "chat.create", {})
       dispatch({
@@ -182,21 +175,22 @@ export function AppShell({ onSearch }: AppShellProps) {
 
   const panelFrame = (
     <div
-      hidden={!panelVisible}
+      id={COACH_PANEL_ID}
+      hidden={!panel.open}
       className={cn(
         "z-10 min-h-0 bg-background",
-        panelVisible && "flex flex-col",
+        panel.open && "flex flex-col",
         panel.mode === "full" && "absolute inset-0",
         panel.mode === "side" &&
           "inset-e-2 inset-be-2 absolute h-[min(600px,calc(100%_-_16px))] w-[400px] max-w-[calc(100%_-_16px)]"
       )}
     >
-      {panel.open ? (
+      {panel.mounted ? (
         <CoachPanel
           title={panel.title}
           open
-          mode={panel.mode === "dock" ? "side" : panel.mode}
-          onMinimize={() => dispatch({ type: "panel_minimized" })}
+          mode={panel.mode}
+          onMinimize={closePanel}
           onExpand={() => dispatch({ type: "panel_expanded" })}
           onClose={closePanel}
         >
@@ -294,7 +288,8 @@ export function AppShell({ onSearch }: AppShellProps) {
               title: chatDisplayTitle(chat.title),
             }))}
             onOpenChat={(chat) => openPanel(chat)}
-            onCoach={() => openPanel({ title: shellCopy.coach, chatId: null })}
+            coachOpen={panel.open}
+            onCoach={toggleCoach}
             onHistory={() => {
               closePanel()
               void navigate({ to: "/coach" })
@@ -338,12 +333,14 @@ function ShellDock({
   dockRef,
   titles,
   onOpenChat,
+  coachOpen,
   onCoach,
   onHistory,
 }: {
   dockRef: { current: HTMLDivElement | null }
   titles: { id: string; title: string }[]
   onOpenChat: (chat: { title: string; chatId: string }) => void
+  coachOpen: boolean
   onCoach: () => void
   onHistory: () => void
 }) {
@@ -374,8 +371,10 @@ function ShellDock({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-11 md:h-7"
+        className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
         data-dock-coach=""
+        aria-expanded={coachOpen}
+        aria-controls={COACH_PANEL_ID}
         onClick={onCoach}
       >
         <MessageCircle aria-hidden="true" />

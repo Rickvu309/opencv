@@ -447,9 +447,7 @@ describe("app shell layout", () => {
     renderApp(SURFACE_PATHS.pitch)
     await expectPitch()
 
-    const opener = screen.getByRole("button", { name: "New chat" })
-    opener.focus()
-    fireEvent.click(opener)
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
 
     expect(
       await screen.findByRole("button", { name: "Close" })
@@ -465,7 +463,7 @@ describe("app shell layout", () => {
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
     })
-    expect(opener).toHaveFocus()
+    expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
   })
 
   it("opens a dock chip without creating a chat", async () => {
@@ -546,9 +544,7 @@ describe("app shell layout", () => {
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Minimize" }))
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "CV vs internship first" })
-      ).toHaveFocus()
+      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
     })
   })
 
