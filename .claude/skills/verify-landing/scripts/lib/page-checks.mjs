@@ -3,8 +3,6 @@ import { textStyleVerdict } from "./text-style-check.mjs"
 import { isSignUpLink } from "./text-rules.mjs"
 import { staleIf, verdict } from "./verdict.mjs"
 
-// Layout, craft, motion, accessibility and performance properties. They read the snapshots that
-// probe.mjs takes at 1440x900 (desktop), 390x844 (mobile) and 1440x900 with reduced motion.
 const px = (n) => Math.round(n)
 
 const luminance = ([r, g, b]) => {
@@ -56,7 +54,6 @@ export function pageChecks({
   const mVisible = mImg
     ? Math.min(mImg.top + mImg.h, mobile.vh) - Math.max(mImg.top, 0)
     : 0
-  // NN/g 3.1
   if (want("14"))
     out.push(
       staleIf(
@@ -90,7 +87,6 @@ export function pageChecks({
       : []
     const seenClosed = names.filter((n) => inView(mobile, n))
     const seen = seenOpen.length > seenClosed.length ? seenOpen : seenClosed
-    // NN/g 4.3
     out.push(
       verdict(
         "15",
@@ -109,7 +105,6 @@ export function pageChecks({
     const signIn = desktop.links.find(
       (l) => l.region === "hero" && /sign in/i.test(l.text)
     )
-    // Baymard, primary button more prominent and separated
     out.push(
       verdict(
         "16",
@@ -144,7 +139,6 @@ export function pageChecks({
     size: clusters.length,
     values: () => clusters.map((c) => c[0].hex),
   }
-  // Refactoring UI, color palette
   if (want("17"))
     out.push(
       verdict(
@@ -162,7 +156,6 @@ export function pageChecks({
     h1.textTransform === "uppercase" ||
     (letters.length > 3 && h1.text === h1.text.toUpperCase())
   const gradient = /gradient/.test(h1.bgImage) || h1.fill === "rgba(0, 0, 0, 0)"
-  // Linear homepage H1
   out.push(
     verdict(
       "18",
@@ -174,8 +167,6 @@ export function pageChecks({
   )
 
   if (want("19")) {
-    // App logos and customer portraits are named by app or person, not by a product surface.
-    // A [role=img] figure has no file; its aria-label is the alt.
     const named = (i) =>
       /^\/landing\/(logo|story)-/.test(i.src ?? "")
         ? Boolean(i.alt)
@@ -207,15 +198,12 @@ export function pageChecks({
           .join("; ")}`
       : "none"
   const lead = first.animatedText.filter((a) => a.lead)
-  // 2026-10-28, #491: the operator asked for the scroll text reveal. Text whose top is below the
-  // first view of its run may start hidden and reveal on scroll; reduced motion settles it (21).
   const inFirstView = (snap) => snap.animatedText.filter((a) => a.y < snap.vh)
   const rest = [
     ...inFirstView(first).filter((a) => !a.lead),
     ...inFirstView(mobileFirst),
   ]
   const belowFold = first.animatedText.length - inFirstView(first).length
-  // NN/g 5.3, the tagline is immediately visible
   out.push(
     verdict(
       "20",
@@ -225,7 +213,6 @@ export function pageChecks({
       describe(lead)
     )
   )
-  // NN/g 5.3, scroll-triggered text animations delay users (research gap 15, the closing line)
   out.push(
     verdict(
       "20b",
@@ -243,7 +230,6 @@ export function pageChecks({
     ...reduced.animatedText.map((a) => `first paint: ${a.text}`),
   ]
   const smooth = reducedDeep.scrollBehavior === "smooth"
-  // WCAG 2.2 SC 2.3.3
   out.push(
     verdict(
       "21",
@@ -257,8 +243,6 @@ export function pageChecks({
   )
 
   const m = desktop.markup
-  // 2026-10-28, #491: the operator asked for the logo marquee. #logos may hold one marquee whose
-  // repeated copies are aria-hidden and which stops under reduced motion. Nothing else is exempt.
   const marquee = deep.marquee
   const marqueeOk =
     marquee.tracks === 1 &&
@@ -266,7 +250,6 @@ export function pageChecks({
     reducedDeep.marquee.tracks === 0
   const carousels = m.carousel.filter((c) => !(c.marquee && marqueeOk))
   const marqueeBad = marquee.tracks > 0 && !marqueeOk
-  // NN/g 5.2
   out.push(
     verdict(
       "22",
@@ -283,7 +266,6 @@ export function pageChecks({
   })
   const fails = tests.filter((t) => t.got < t.need)
   const worst = [...tests].sort((a, b) => a.got - a.need - (b.got - b.need))[0]
-  // WCAG 2.2 SC 1.4.3
   out.push(
     verdict(
       "23",
@@ -311,7 +293,6 @@ export function pageChecks({
   })
   const smallPrimary = small.filter((t) => isSignUpLink(t))
   const minSide = Math.min(...deep.targets.map((t) => Math.min(t.w, t.h)))
-  // WCAG 2.2 SC 2.5.8
   out.push(
     verdict(
       "24",
@@ -324,8 +305,6 @@ export function pageChecks({
 
   const hi = desktop.imgs.find((i) => i.region === "hero")
   const miss = []
-  // width, height, fetchpriority and loading belong to <img>. A figure is DOM, so it needs a box
-  // at first paint instead (its aspect ratio holds the space) and must not start at opacity 0.
   if (first.heroImg?.figure) {
     if (!(first.heroImg.w > 0 && first.heroImg.h > 0)) miss.push("box")
   } else {
@@ -336,7 +315,6 @@ export function pageChecks({
   }
   const invisible =
     first.heroImg?.startsInvisible || (first.heroImg?.opacity ?? 1) < 0.95
-  // web.dev CLS and LCP
   out.push(
     staleIf(
       first.hero ? null : "no hero section (the section holding the h1)",

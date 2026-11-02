@@ -1,5 +1,3 @@
-// The only reader of files under a design/ or reference/ folder. The invariant tier never calls it, and
-// the unit test reads designReads to prove that.
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -53,7 +51,6 @@ const lacking = (where, shape) =>
     .filter(([key, type]) => typeof where?.[key] !== type)
     .map(([key]) => key)
 
-// The first section or field a spec lacks, so a half-edited spec is named instead of reading as a page regression.
 export const specProblem = (spec) => {
   for (const [id, shape] of Object.entries(FIELDS)) {
     if (typeof spec?.[id] !== "object" || !spec[id]) return `no section ${id}`
@@ -69,7 +66,6 @@ export const specProblem = (spec) => {
   return null
 }
 
-// A spec that is missing or malformed gives { error }, which the checker reports as an error (exit 2): a setup problem, not a verdict.
 export function loadSpecOrError() {
   try {
     const spec = loadSpec()

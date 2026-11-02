@@ -1,7 +1,8 @@
-// A tiny Chrome DevTools Protocol client. No dependency: Node 24 has a global WebSocket.
 import { writeFileSync } from "node:fs"
 
 import { launchChrome } from "../../../../../scripts/lib/chrome-process.mjs"
+
+const SIGNED_OUT_SESSION = "null"
 
 export async function launchBrowser({ startDeadlineMs } = {}) {
   const started = await launchChrome({
@@ -52,8 +53,6 @@ export async function launchBrowser({ startDeadlineMs } = {}) {
     })
     const call = (method, params) => send(method, params, sessionId)
     await call("Page.enable")
-    // The landing asks the api for a session before it renders. With no api running, answer
-    // cross-origin fetch calls as a signed-out visitor so the real page renders.
     const origin = new URL(url).origin
     listeners.push((message) => {
       if (
@@ -78,7 +77,7 @@ export async function launchBrowser({ startDeadlineMs } = {}) {
           { name: "access-control-allow-headers", value: "*" },
           { name: "access-control-allow-methods", value: "*" },
         ],
-        body: Buffer.from("null").toString("base64"),
+        body: Buffer.from(SIGNED_OUT_SESSION).toString("base64"),
       })
     })
     await call("Fetch.enable", {

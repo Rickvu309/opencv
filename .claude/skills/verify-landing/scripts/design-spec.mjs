@@ -1,24 +1,15 @@
 #!/usr/bin/env node
-// design-spec record: measures the landing at 1440x900 with the checker's own probes and compares the values
-// the design checks (27 to 30) read with the committed spec.
-//   node scripts/design-spec.mjs record --from-app <origin> [--accept [--out <path>]]
-// Without --accept it writes nothing. It prints one line per spec value, "unchanged" or
-// "<id>.<path>: <committed> -> <measured>", and exits 1 when anything differs, 0 when nothing does.
-// Whatever it writes becomes the truth, so a recorder cannot tell a redesign from a regression. A human decides:
-// read the diff against the screenshots (VERIFY_LANDING_SHOTS), then run it again with --accept and commit the
-// spec. The reviewer of that commit reads the spec diff the same way.
-// --accept keeps the committed tolerances and locators (the nav gap band, the CTA tolerance, the art channel
-// delta and pixel ratio, the button labels and scopes, the Coach card title, the mark inset and the raster size)
-// and exits 2 without writing when a measurement is outside a committed tolerance. To move a tolerance, edit the
-// spec by hand first. The reference picture (reference/coach-art.png) is never written from the page it judges:
-// it comes from the design tool or a human-approved screenshot.
 import { writeFileSync } from "node:fs"
 import { basename, join } from "node:path"
 import { parseArgs } from "node:util"
 
 import { launchBrowser } from "./lib/cdp.mjs"
 import { FILES } from "./lib/assumes.mjs"
-import { decodeDataUrl, decodePng, pngMismatch } from "./lib/art-diff.mjs"
+import {
+  decodeDataUrl,
+  decodePng,
+  fractionOfPixelsOverDelta,
+} from "./lib/art-diff.mjs"
 import { designProbeSource } from "./lib/design-probe.mjs"
 import { probeSource } from "./lib/probe.mjs"
 import { loadSpec, readDesignFile, repo } from "./lib/spec.mjs"
@@ -28,8 +19,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const outside = (what, value, low, high, unit = "") =>
   `${what} ${value}${unit} is outside the committed ${low} to ${high}${unit}`
 
-// The committed tolerances are the band --accept holds a measurement to. Outside it, move the band by hand first.
-export function bandProblems(prior, measured) {
+export function outsideToleranceProblems(prior, measured) {
   const { navLockup: lockup, ctas } = measured
   const problems = []
   const s28 = prior["28"]
@@ -69,7 +59,7 @@ export function artProblem(prior, measured, readReference = readDesignFile) {
     (item) => item.title === s30.title
   )
   if (!coach?.png) return `30 no raster for the "${s30.title}" card`
-  const diff = pngMismatch(
+  const diff = fractionOfPixelsOverDelta(
     decodeDataUrl(coach.png),
     decodePng(readReference(s30.reference)),
     s30.channelDelta
@@ -145,7 +135,6 @@ const leaves = (value, path = []) =>
       )
     : [[path.join("."), value]]
 
-// One line per spec value, in the committed spec's order, then any value only the measurement has.
 export function diffLines(committed, recorded) {
   const before = new Map(leaves(committed))
   const after = new Map(leaves(recorded))
@@ -157,12 +146,14 @@ export function diffLines(committed, recorded) {
   )
 }
 
-// The recorder's decision: lines to print, an exit code, and the spec to write (null when nothing is written).
-// A value outside a committed tolerance counts as a difference in the dry run and as a refusal under --accept.
-export function plan(prior, measured, { accept = false, readReference } = {}) {
+export function recorderDecision(
+  prior,
+  measured,
+  { accept = false, readReference } = {}
+) {
   const spec = recordSpec(prior, measured)
   const problems = [
-    ...bandProblems(prior, measured),
+    ...outsideToleranceProblems(prior, measured),
     artProblem(prior, measured, readReference),
   ].filter(Boolean)
   const lines = diffLines(prior, spec)
@@ -227,7 +218,7 @@ async function main() {
       await sleep(1500)
       const measured = await page.evaluate(designProbeSource(prior))
       process.exitCode = finish(
-        plan(prior, measured, { accept: values.accept }),
+        recorderDecision(prior, measured, { accept: values.accept }),
         values.out ?? join(repo, FILES.spec)
       )
     } finally {

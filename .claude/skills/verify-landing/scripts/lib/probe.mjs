@@ -1,5 +1,3 @@
-// Runs inside the page. Self-contained: it is serialised with toString(), so it cannot close over anything.
-// It only measures. Every decision lives in checks-*.mjs, which read the JSON this returns.
 import { SEL } from "./assumes.mjs"
 
 function probe(kind, SEL) {
@@ -71,10 +69,8 @@ function probe(kind, SEL) {
     return r.width > 0 && r.height > 0 && cs(el).visibility !== "hidden"
   }
   const root = [header, main, footer].filter(Boolean)
-  // A [role=img] box is one image: a product figure drawn in DOM, so its inner text is part of the picture.
-  // An svg with that role is a glyph, not a figure.
-  const FIGURE = "[role='img']:not(svg)"
-  const inFigure = (el) => Boolean(el.closest(FIGURE))
+  const FIGURE_NOT_GLYPH = "[role='img']:not(svg)"
+  const inFigure = (el) => Boolean(el.closest(FIGURE_NOT_GLYPH))
   const ownTextEls = () =>
     [...document.querySelectorAll("header *, main *, footer *")].filter(
       (el) =>
@@ -109,7 +105,7 @@ function probe(kind, SEL) {
           : null
       })
       .filter(Boolean)
-    const img = hero ? hero.querySelector(`img, ${FIGURE}`) : null
+    const img = hero ? hero.querySelector(`img, ${FIGURE_NOT_GLYPH}`) : null
     const frames = img
       ? img.getAnimations().flatMap((a) => a.effect.getKeyframes())
       : []
@@ -159,23 +155,23 @@ function probe(kind, SEL) {
         buttonLike: bg[3] > 0.05 || parseFloat(s.borderTopWidth) > 0,
       }
     })
-    const imgs = [...document.querySelectorAll(`main img, main ${FIGURE}`)].map(
-      (el) => ({
-        region: regionOf(el),
-        figure: el.tagName !== "IMG",
-        src: el.getAttribute("src"),
-        alt:
-          el.tagName === "IMG"
-            ? el.getAttribute("alt")
-            : el.getAttribute("aria-label"),
-        width: el.getAttribute("width"),
-        height: el.getAttribute("height"),
-        fetchpriority: el.getAttribute("fetchpriority"),
-        loading: el.getAttribute("loading"),
-        rect: rectOf(el),
-      })
-    )
-    const heroImg = hero ? hero.querySelector(`img, ${FIGURE}`) : null
+    const imgs = [
+      ...document.querySelectorAll(`main img, main ${FIGURE_NOT_GLYPH}`),
+    ].map((el) => ({
+      region: regionOf(el),
+      figure: el.tagName !== "IMG",
+      src: el.getAttribute("src"),
+      alt:
+        el.tagName === "IMG"
+          ? el.getAttribute("alt")
+          : el.getAttribute("aria-label"),
+      width: el.getAttribute("width"),
+      height: el.getAttribute("height"),
+      fetchpriority: el.getAttribute("fetchpriority"),
+      loading: el.getAttribute("loading"),
+      rect: rectOf(el),
+    }))
+    const heroImg = hero ? hero.querySelector(`img, ${FIGURE_NOT_GLYPH}`) : null
     const h1el = h1
     const snapshot = {
       vw,

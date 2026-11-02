@@ -1,5 +1,3 @@
-// Runs inside the page, like probe.mjs, and measures only what the design checks (27 to 30) read. The invariant
-// tier never serialises it. The labels, the mark inset and the raster size come from landing.spec.json.
 import { SEL } from "./assumes.mjs"
 
 async function designProbe(SEL, spec) {

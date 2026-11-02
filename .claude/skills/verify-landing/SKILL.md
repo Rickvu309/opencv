@@ -7,7 +7,7 @@ description: Check the OpenCV landing page for quality and taste, writing, logic
 
 Two layers. The checker (`scripts/verify-landing.mjs`) decides what a program can: counts, words, boxes, colors, computed styles, first-paint state. The rubric in [taste-review.md](taste-review.md) decides the rest, and three reviewers from different model families score it. Neither layer replaces the other. A green checker says the page follows the written rules. It does not say the page is good.
 
-All paths are relative to the repo (or worktree) root. The rules come from the landing research (kept outside the repo) plus the pen parity checks. A property names its source when the checker comment still cites one.
+All paths are relative to the repo (or worktree) root. The rules come from the landing research (kept outside the repo) plus the pen parity checks. Each check names its source in the `Source:` text of its line below.
 
 ## Run the checker
 
@@ -18,7 +18,7 @@ PORT=4399 pnpm --filter web verify:landing
 - Starts the Vite dev server on `127.0.0.1:$PORT` if nothing answers there, and stops it at the end. If something already answers on the port, it refuses and exits 2, because that server may serve another tree. Stop it or pick another port; set `VERIFY_LANDING_REUSE=1` only when you started that server from this worktree. Use the `PORT` in this worktree's `.env`, or a free port you own.
 - Needs `pnpm install` done and a Chromium. It looks for `$CHROME_BIN`, then `~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome` (installed by the agent-browser tooling), then `chromium` on the path. No new dependency: it speaks the DevTools protocol over Node's built-in WebSocket.
 - The page asks the api for a session before it renders. The checker answers every cross-origin fetch as a signed-out visitor (`null`), so no api, database or network is needed.
-- The deep pass scrolls 400 ms a step: faster, headless Chromium never fires the scroll reveals.
+- The deep pass scrolls 400 ms a step (`REVEAL_SCROLL_STEP_MS` in `verify-landing.mjs`): headless Chromium delivers IntersectionObserver callbacks about 300 ms after a scroll, and at 120 ms a step the scroll reveals never fired, so the text stayed hidden for checks 21 and 23.
 - About 20 s warm. One browser process, so do not run it beside install, vitest or another browser run on the shared machine.
 - `VERIFY_LANDING_SHOTS=<dir>` also writes `desktop-first-view.png`, `desktop-full.png`, `mobile-first-view.png`, `mobile-full.png` (1440x900 and 390x844) for the taste review.
 
@@ -40,6 +40,12 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 - `VERIFY_TIER=design` reports only the design checks. `VERIFY_TIER=all` (default) runs both.
 - The design numbers of 27 to 30 live in `apps/web/src/features/landing/design/landing.spec.json`, not in the checker. 31 reads `landing.styles.json` and `landing.omitted.json` beside it. Checks 06, 07, 08, 11, 12, 13, 14, 15, 16, 17 and 19 are design-tier rules that keep their copy and counts in `text-rules.mjs` and `page-checks.mjs`.
 - `verify:pen-layout` and `verify:apply-pen` are separate commands and design by nature. The tier does not touch them.
+- Unit tests: `node --test .claude/skills/verify-landing/scripts/lib`. The checker needs Node 24 (it uses the global `WebSocket`) and adds no dependency.
+- The checker never edits the app.
+- The probes (`probe.mjs`, `design-probe.mjs`, `pen-probe.mjs`) are serialised into the page, so they cannot close over module values. They only measure. `page-checks.mjs`, `design-checks.mjs`, `text-rules.mjs` and `text-style-check.mjs` decide.
+- With no api running, the checker answers the landing's cross-origin session calls as a signed-out visitor (`null`), so the real page renders.
+- `art-diff.mjs` decodes 8-bit RGB or RGBA PNGs only, non-interlaced, and throws on anything else. The reference crop and `canvas.toDataURL` both write that format. The compare reads the RGB channels and ignores alpha, because the page fills the card background and the pen crop is opaque.
+- A spec missing a section or field is a setup error: the checker exits 2 before any check runs, and the spec is never read as a verdict.
 
 After a redesign:
 

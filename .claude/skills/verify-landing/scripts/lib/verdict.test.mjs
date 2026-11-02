@@ -1,9 +1,9 @@
-// A locator that matches nothing must report STALE. Run: node --test .claude/skills/verify-landing/scripts/lib
 import assert from "node:assert/strict"
 import test from "node:test"
 
 import { designChecks } from "./design-checks.mjs"
 import { loadSpec } from "./spec.mjs"
+import { rankFailuresForPrint, unexcusedFailures } from "./text-style-check.mjs"
 import { judged, stale, summarize, verdict } from "./verdict.mjs"
 
 const spec = loadSpec()
@@ -95,4 +95,45 @@ test("summary and exit code: STALE is 3, FAIL is 1, all PASS is 0", () => {
   assert.equal(summarize([pass, fail]).exit, 1)
   assert.equal(summarize([pass]).exit, 0)
   assert.equal(summarize([pass]).lines.at(-1), "1 PASS, 0 FAIL, 0 STALE")
+})
+
+const statementException = {
+  section: "Statement",
+  text: "opencv helps",
+  property: "color",
+  reason: "Contrast floor.",
+  until: "2027-01-31",
+  approvedBy: "pending operator",
+}
+
+test("31: a dated exception that matches no live mismatch is a stale FAIL line", () => {
+  assert.deepEqual(unexcusedFailures([], [statementException], "2026-11-03"), [
+    '[Statement] "opencv helps" color exception is stale',
+  ])
+})
+
+test("31: a live exception covers its mismatch, so nothing fails", () => {
+  const mismatch = {
+    section: "Statement",
+    text: "opencv helps",
+    property: "color",
+    line: '[Statement] "opencv helps" color measured #777777 pen #A0A0A9',
+  }
+  assert.deepEqual(
+    unexcusedFailures([mismatch], [statementException], "2026-11-03"),
+    []
+  )
+})
+
+test("31: with three failures the Statement mark and the #59595B lead print first", () => {
+  const ranked = rankFailuresForPrint([
+    '[Logos] "PEOPLE" fontSize measured 12px pen 14px',
+    '[Hero] "Land" color measured #59595B pen #111111',
+    "[Statement] mark size measured none pen 10x10",
+  ])
+  assert.deepEqual(ranked.slice(0, 2), [
+    "[Statement] mark size measured none pen 10x10",
+    '[Hero] "Land" color measured #59595B pen #111111',
+  ])
+  assert.equal(ranked[2], '[Logos] "PEOPLE" fontSize measured 12px pen 14px')
 })

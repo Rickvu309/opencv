@@ -1,10 +1,8 @@
-// Checks 27 to 30: the benefit art, the nav lockup and the call-to-action buttons against the pen. Every number
-// they hold lives in landing.spec.json (scripts/design-spec.mjs records it from the app). The spec holds design
-// values only; the rules (no inline hex, the pill test) are here, and a flag missing from the spec fails the
-// check rather than skipping it. 27 and 30 go STALE only
-// when #benefits is missing (a benefit card without its art is a FAIL). 28 is STALE when the lockup is not found.
-// 29 judges every CTA it found and names the others as not judged.
-import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
+import {
+  decodeDataUrl,
+  decodePng,
+  fractionOfPixelsOverDelta,
+} from "./art-diff.mjs"
 import { readDesignFile } from "./spec.mjs"
 import { judged, staleIf, verdict } from "./verdict.mjs"
 
@@ -65,7 +63,6 @@ export function designChecks(desktop, spec) {
   const s29 = spec["29"]
   const near = (value, target) =>
     typeof value === "number" && Math.abs(value - target) <= s29.tolerance
-  // A pill's computed radius is at least half the button height.
   const pill = (button) =>
     Number.isFinite(button.radius) &&
     button.radius + s29.tolerance >= button.h / 2
@@ -116,7 +113,7 @@ export function designChecks(desktop, spec) {
     artMeasured = `rasterised ${rasters.filter((item) => item.png).length} of ${rasters.length} benefit svgs`
   } else {
     try {
-      const diff = pngMismatch(
+      const diff = fractionOfPixelsOverDelta(
         decodeDataUrl(coach.png),
         decodePng(readDesignFile(s30.reference)),
         s30.channelDelta

@@ -3,7 +3,6 @@ import { FILES } from "./assumes.mjs"
 import { readDesignFile } from "./spec.mjs"
 import { verdict } from "./verdict.mjs"
 
-// Contrast floors. Each entry must still describe a live mismatch; a match fails the check.
 const TEXT_STYLE_EXCEPTIONS = [
   {
     section: "Statement",
@@ -103,6 +102,46 @@ function weightValue(value) {
 
 function clip(text) {
   return text.length > 48 ? `${text.slice(0, 48)}…` : text
+}
+
+const PRINTED_FAILURE_LIMIT = 2
+
+const PRINT_FIRST_MARKERS = ["[Statement] mark", "#59595B"]
+
+export function rankFailuresForPrint(failures) {
+  const rank = (line) => {
+    const index = PRINT_FIRST_MARKERS.findIndex((marker) =>
+      line.includes(marker)
+    )
+    return index === -1 ? PRINT_FIRST_MARKERS.length : index
+  }
+  return [...failures].sort((a, b) => rank(a) - rank(b))
+}
+
+export function unexcusedFailures(mismatches, exceptions, today) {
+  const covered = new Set()
+  const failures = []
+  for (const mismatch of mismatches) {
+    const exception = exceptions.find(
+      (entry) =>
+        entry.section === mismatch.section &&
+        entry.text === mismatch.text &&
+        entry.property === mismatch.property &&
+        entry.until >= today
+    )
+    if (exception) {
+      covered.add(exception)
+      continue
+    }
+    failures.push(mismatch.line)
+  }
+  for (const entry of exceptions) {
+    if (covered.has(entry)) continue
+    failures.push(
+      `[${entry.section}] "${clip(entry.text)}" ${entry.property} exception is stale`
+    )
+  }
+  return failures
 }
 
 function textStartsLine(found, want) {
@@ -279,35 +318,13 @@ export function textStyleVerdict(penSections) {
       })
     }
   }
-  const covered = new Set()
-  const failures = []
-  for (const mismatch of mismatches) {
-    const exception = TEXT_STYLE_EXCEPTIONS.find(
-      (entry) =>
-        entry.section === mismatch.section &&
-        entry.text === mismatch.text &&
-        entry.property === mismatch.property &&
-        entry.until >= today
-    )
-    if (exception) {
-      covered.add(exception)
-      continue
-    }
-    failures.push(mismatch.line)
-  }
-  for (const entry of TEXT_STYLE_EXCEPTIONS) {
-    if (covered.has(entry)) continue
-    failures.push(
-      `[${entry.section}] "${clip(entry.text)}" ${entry.property} exception is stale`
-    )
-  }
-  // The printed line keeps 230 characters. Lead with the statement mark and the
-  // #59595B mid gray so a main-checkout failure names both.
-  const rank = (line) =>
-    line.includes("[Statement] mark") ? 0 : line.includes("#59595B") ? 1 : 2
-  failures.sort((a, b) => rank(a) - rank(b))
-  const lead = failures.slice(0, 2).join("; ")
-  const more = failures.length > 2 ? `; +${failures.length - 2} more` : ""
+  const failures = unexcusedFailures(mismatches, TEXT_STYLE_EXCEPTIONS, today)
+  const printed = rankFailuresForPrint(failures)
+  const lead = printed.slice(0, PRINTED_FAILURE_LIMIT).join("; ")
+  const more =
+    failures.length > PRINTED_FAILURE_LIMIT
+      ? `; +${failures.length - PRINTED_FAILURE_LIMIT} more`
+      : ""
   const measured = failures.length
     ? `${lead}${more}; match opencv.pen or add a dated exception`
     : `${compared} texts, ${markCount} marks, ${TEXT_STYLE_EXCEPTIONS.length} dated exceptions`

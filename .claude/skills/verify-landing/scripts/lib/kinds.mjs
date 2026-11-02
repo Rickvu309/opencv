@@ -1,5 +1,3 @@
-// One kind per check id. "invariant" holds for any good design. "design" holds only for the current one: a pen
-// frame, a pinned count, size, copy or picture. The unit test holds this table to the ids the checker emits.
 export const KINDS = {
   "01": "invariant",
   "02": "design",
