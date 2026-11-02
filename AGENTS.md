@@ -51,7 +51,7 @@ Tests that hold this shape:
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
 - `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when a number now names another decision.
 - `scripts/doc-paths.test.mjs` rejects a backticked repo path in AGENTS.md, CONTEXT.md, `docs/` or `.claude/skills/` that does not exist, with file and line.
-- `scripts/retired-words.test.mjs` rejects Thread or Opportunity in source or file names under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few exceptions); say Chat or Job. Old Apply stage ids are unguarded until #437.
+- `scripts/retired-words.test.mjs` rejects Thread or Opportunity in source or file names under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads); say Chat or Job.
 - `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no other non-test file imports; drop `export` or delete it. `KEPT_ON_PURPOSE` lists the exceptions.
 - `apps/api/src/registry/coach-chat-tools.test.ts` bars chat.create.
 - `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included; use a better name or a test. `scripts/no-comments.baseline.json` only shrinks (`node scripts/no-comments.mjs --write-baseline`).
@@ -63,7 +63,8 @@ Tests that hold this shape:
 - The same guard rejects `animate-spin` in `apps/*`; use the kit `Spinner`. A `pending` entry with a PR and expiry lists a caller another PR is migrating.
 - The same guard rejects a hand-built breadcrumb in `apps/*` or `packages/*` outside the kit breadcrumb file (a nav labelled Breadcrumb, or a chevron trail with `aria-current="page"`); use the kit `Breadcrumb`.
 - `scripts/focus-indication.test.mjs` rejects a `*.pen.css` rule that sets `box-shadow` or `outline` on a button, link or field with no `:focus-visible` rule; web lint rejects `hover:bg-transparent` and `focus-visible:ring-0` under `features/app-shell`.
-- `scripts/touch-targets.test.mjs` rejects a Button or a hover-styled class string under `features/app-shell` with no phone height of 44px (`h-11 md:h-7`). `apps/web/src/test/nav-pending.json` lists known offenders with a PR and expiry; `scripts/nav-pending.test.mjs` fails an expired or stale entry.
+- `scripts/touch-targets.test.mjs` rejects a Button or hover-styled class under `features/app-shell` with no 44px phone height (`h-11 md:h-7`).
+- `apps/web/src/test/nav-contract.test.tsx` renders each router route under a nav item and rejects an item not current on it, or a count missing from its link name. `nav-pending.json` lists known offenders (PR, expiry); `scripts/nav-pending.test.mjs` fails an expired or stale entry.
 - `scripts/paper-save-keeps-parts.test.mjs` rejects an autosave `toDocument` that returns the markdown alone, which would erase the sender, date and closing parts of a letter on the next keystroke. Its `PENDING` list works like the one above.
 
 ### Git
