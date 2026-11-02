@@ -42,11 +42,14 @@ function world(over = {}) {
         return s.pnpmOk ? ok() : { ok: false, out: "", err: "" }
       if (
         cmd === "node" ||
+        cmd === "env" ||
         cmd.endsWith("/eslint") ||
         args.includes("--check")
       ) {
         const label =
-          cmd === "node" ? args[args.length - 1] : cmd.split("/").pop()
+          cmd === "node" || cmd === "env"
+            ? args[args.length - 1]
+            : cmd.split("/").pop()
         const hit = s.failing.some((name) => label.includes(name))
         return hit ? { ok: false, out: "", err: "" } : ok()
       }
@@ -240,7 +243,8 @@ test("pre-push refuses main and bad branch names, allows bot and delete pushes",
     assert.equal(w.call(["pre-push"], { stdin }).code, 0, stdin)
 })
 
-const nodeCalls = (w) => w.s.calls.filter((c) => c.cmd === "node")
+const nodeCalls = (w) =>
+  w.s.calls.filter((c) => c.cmd === "node" || c.cmd === "env")
 const pushOk = push(["refs/heads/feat/1-x"])
 
 test("pre-push runs only the quick checks and never the full suite", () => {
@@ -255,7 +259,7 @@ test("pre-push runs only the quick checks and never the full suite", () => {
     .map((c) => [c.cmd.split("/").pop(), ...c.args].join(" "))
   assert.deepEqual(
     commands.map((line) => line.split(" ")[0]),
-    ["prettier", "eslint", "eslint", "node", "node"]
+    ["prettier", "eslint", "eslint", "node", "env"]
   )
   assert.equal(w.s.calls.filter((c) => c.cmd === "pnpm").length, 0)
   assert.equal(
@@ -276,7 +280,10 @@ test("pre-push runs only the quick checks and never the full suite", () => {
   assert.equal(web.options.cwd, "/repo/apps/web")
   const [comments, guards] = nodeCalls(w)
   assert.deepEqual(comments.args, ["scripts/no-comments.mjs"])
-  assert.equal(guards.args[0], "--test")
+  assert.equal(guards.cmd, "env")
+  for (const name of ["GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"])
+    assert.ok(guards.args.join(" ").includes(`-u ${name} `), name)
+  assert.ok(guards.args.includes("--test"))
   assert.ok(guards.args.includes("scripts/doc-paths.test.mjs"))
   assert.ok(!guards.args.includes("packages/guards/shell-suites.test.mjs"))
   assert.ok(guards.args.every((arg) => !arg.startsWith("packages/")))
