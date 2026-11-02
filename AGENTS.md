@@ -55,6 +55,7 @@ Tests that hold this shape:
 - `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no other non-test file imports; drop `export` or delete it. `KEPT_ON_PURPOSE` lists the exceptions.
 - `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included. Explain with a better name or a test. `scripts/no-comments.baseline.json` lists the old ones and only shrinks; lower it with `node scripts/no-comments.mjs --write-baseline`.
 - `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock. `apps/web/src/test/setup.ts` calls `pinTestClock` before every test, so fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts` and never to the real date.
+- `scripts/browser-launcher.test.mjs` rejects a browser started outside a `cdp.mjs` launcher, and a launcher that leaves Chrome or one of its children running after a failed launch (a fake Chrome stands in for the real one).
 
 ### Git
 

@@ -43,29 +43,51 @@ export async function launchBrowser() {
       "--force-color-profile=srgb",
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe"] }
+    { stdio: ["ignore", "ignore", "pipe"], detached: true }
   )
-  const wsUrl = await new Promise((resolve, reject) => {
-    let log = ""
-    const timer = setTimeout(
-      () => reject(new Error(`chrome did not start: ${log.slice(-300)}`)),
-      20000
-    )
-    chrome.on("error", (error) => reject(error))
-    chrome.stderr.on("data", (chunk) => {
-      log += chunk
-      const hit = /DevTools listening on (ws:\/\/\S+)/.exec(log)
-      if (hit) {
+  const stop = () => {
+    try {
+      process.kill(-chrome.pid, "SIGKILL")
+    } catch {
+      chrome.kill("SIGKILL")
+    }
+    chrome.stderr.destroy()
+    rmSync(profile, { recursive: true, force: true })
+  }
+  let socket
+  try {
+    const wsUrl = await new Promise((resolve, reject) => {
+      let log = ""
+      const timer = setTimeout(
+        () => reject(new Error(`chrome did not start: ${log.slice(-300)}`)),
+        20000
+      )
+      chrome.on("error", (error) => {
         clearTimeout(timer)
-        resolve(hit[1])
-      }
+        reject(error)
+      })
+      chrome.on("exit", () => {
+        clearTimeout(timer)
+        reject(new Error(`chrome exited at start: ${log.slice(-300)}`))
+      })
+      chrome.stderr.on("data", (chunk) => {
+        log += chunk
+        const hit = /DevTools listening on (ws:\/\/\S+)/.exec(log)
+        if (hit) {
+          clearTimeout(timer)
+          resolve(hit[1])
+        }
+      })
     })
-  })
-  const socket = new WebSocket(wsUrl)
-  await new Promise((resolve, reject) => {
-    socket.onopen = resolve
-    socket.onerror = () => reject(new Error("devtools socket failed"))
-  })
+    socket = new WebSocket(wsUrl)
+    await new Promise((resolve, reject) => {
+      socket.onopen = resolve
+      socket.onerror = () => reject(new Error("devtools socket failed"))
+    })
+  } catch (error) {
+    stop()
+    throw error
+  }
   let nextId = 0
   const pending = new Map()
   const listeners = []
@@ -157,7 +179,12 @@ export async function launchBrowser() {
       listeners.push(listener)
     })
     await call("Page.navigate", { url })
-    await Promise.race([loaded, new Promise((r) => setTimeout(r, 30000))])
+    let giveUpTimer
+    const gaveUp = new Promise((resolve) => {
+      giveUpTimer = setTimeout(resolve, 30000)
+    })
+    await Promise.race([loaded, gaveUp])
+    clearTimeout(giveUpTimer)
     const evaluate = async (expression) => {
       const { result, exceptionDetails } = await call("Runtime.evaluate", {
         expression,
@@ -184,9 +211,7 @@ export async function launchBrowser() {
 
   async function quit() {
     socket.close()
-    chrome.kill("SIGKILL")
-    await new Promise((resolve) => chrome.once("exit", resolve))
-    rmSync(profile, { recursive: true, force: true })
+    stop()
   }
 
   return { openPage, quit }
