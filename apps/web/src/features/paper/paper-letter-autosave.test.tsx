@@ -183,7 +183,7 @@ describe("Letter edits survive autosave and leaving", () => {
     expect(calls).toHaveLength(1)
 
     fireEvent.click(screen.getByRole("button", { name: "Add to letter" }))
-    expect(box.value).toBe("I write clearly. My newest sentence.\nMeta")
+    expect(box.value).toBe("I write clearly. My newest sentence.\nMeta Ads")
     expect(calls).toHaveLength(1)
     expect(screen.queryByRole("button", { name: "Add to letter" })).toBeNull()
 
@@ -192,7 +192,7 @@ describe("Letter edits survive autosave and leaving", () => {
     expect(calls).toHaveLength(2)
     expect(contentVersionOf(calls[1]?.body)).toBe(2)
     expect(savedMarkdown(calls.slice(1)).markdown).toBe(
-      "I write clearly. My newest sentence.\nMeta"
+      "I write clearly. My newest sentence.\nMeta Ads"
     )
     expect(screen.queryByRole("button", { name: "Reload" })).toBeNull()
   })
@@ -395,6 +395,6 @@ describe("Letter edits survive autosave and leaving", () => {
     const save = calls.find((call) => call.url.includes("paper.replace"))
     expect(
       (save?.body as { input?: { document?: unknown } }).input?.document
-    ).toEqual({ markdown: "I write clearly.\nMeta", signature: "Linh" })
+    ).toEqual({ markdown: "I write clearly.\nMeta Ads", signature: "Linh" })
   })
 })

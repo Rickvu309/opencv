@@ -207,20 +207,31 @@ export type PaperReplaceInput = z.infer<typeof paperReplaceInputSchema>
 
 const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])
 
-/** First requirement token the letter does not already contain. */
+/**
+ * First requirement phrase the letter does not already contain. A phrase is a
+ * run of capitalised words, so "Meta Ads" is one keyword, not "Meta".
+ */
 export function keywordGap(
   letterText: string,
   requirements: string
 ): { keyword: string; sentence: string } | null {
   const letter = letterText.toLowerCase()
-  const tokens = requirements.match(/[A-Za-z]{3,}/g) ?? []
-  for (const token of tokens) {
-    if (!/[A-Z]/.test(token)) continue
-    if (KEYWORD_STOP.has(token.toLowerCase())) continue
-    if (letter.includes(token.toLowerCase())) continue
+  const runs = requirements.match(/[A-Z][\w+#]*(?: [A-Z][\w+#]*)*/g) ?? []
+  for (const run of runs) {
+    const words = run.split(" ")
+    while (words.length > 0 && KEYWORD_STOP.has(words[0]!.toLowerCase()))
+      words.shift()
+    while (
+      words.length > 0 &&
+      KEYWORD_STOP.has(words[words.length - 1]!.toLowerCase())
+    )
+      words.pop()
+    const phrase = words.join(" ")
+    if (phrase.replace(/[^A-Za-z]/g, "").length < 3) continue
+    if (letter.includes(phrase.toLowerCase())) continue
     return {
-      keyword: token,
-      sentence: `The job asks for ${token}. Add it if you've used it.`,
+      keyword: phrase,
+      sentence: `The job asks for ${phrase}. Add it if you've used it.`,
     }
   }
   return null

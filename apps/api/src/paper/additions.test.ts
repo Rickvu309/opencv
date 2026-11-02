@@ -86,8 +86,8 @@ describe("paper additions", () => {
         actor
       )
       expect(gap).toEqual({
-        keyword: "Meta",
-        sentence: "The job asks for Meta. Add it if you've used it.",
+        keyword: "Meta Ads",
+        sentence: "The job asks for Meta Ads. Add it if you've used it.",
       })
 
       await registry.execute({
