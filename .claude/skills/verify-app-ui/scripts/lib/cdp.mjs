@@ -327,10 +327,11 @@ export async function launchBrowser({
         buttons: mouseEventType === "mouseReleased" ? 0 : 1,
         clickCount: 1,
       })
-    const screenshot = async (file, fullPage) => {
+    const screenshot = async (file, fullPage, clip) => {
       const { data } = await call("Page.captureScreenshot", {
         format: "png",
         captureBeyondViewport: fullPage,
+        ...(clip ? { clip: { ...clip, scale: 1 } } : {}),
       })
       writeFileSync(file, Buffer.from(data, "base64"))
     }

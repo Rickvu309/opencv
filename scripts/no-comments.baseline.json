@@ -95,7 +95,6 @@
   "apps/web/src/components/layer-stack.tsx": 32,
   "apps/web/src/components/theme-provider.tsx": 4,
   "apps/web/src/components/workspace-header.tsx": 4,
-  "apps/web/src/features/app-shell/app-shell-sidebar-parity.test.tsx": 3,
   "apps/web/src/features/app-shell/app-shell.tsx": 1,
   "apps/web/src/features/apply/apply-api.ts": 1,
   "apps/web/src/features/apply/apply-board-drop.test.tsx": 3,

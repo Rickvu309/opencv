@@ -1,32 +1,3 @@
-[data-pen-surface="app-shell"] nav a,
-[data-pen-surface="app-shell"] [data-slot="shell-nav-top"] button,
-[data-pen-surface="app-shell"] [data-slot="shell-favorite"] {
-  color: #59595b;
-}
-
-[data-pen-surface="app-shell"] [data-slot="shell-nav-section"],
-[data-pen-surface="app-shell"] nav a > span[aria-hidden="true"] {
-  color: #969799;
-}
-
-[data-pen-surface="app-shell"] nav a > svg,
-[data-pen-surface="app-shell"] [data-slot="shell-profile"] svg,
-[data-pen-surface="app-shell"] [data-slot="avatar-fallback"] {
-  color: #59595b;
-}
-
-[data-pen-surface="app-shell"]
-  [data-slot="shell-profile"]
-  > span:not([data-slot]) {
-  color: #1a1a1a;
-}
-
-[data-pen-surface="app-shell"]
-  [data-slot="shell-nav-top"]
-  button[aria-label="New chat"] {
-  color: #1a1a1a;
-}
-
 [data-pen-surface="app-shell"][data-slot="app-dock"] {
   gap: 6px;
   padding: 0 0 0 8px;

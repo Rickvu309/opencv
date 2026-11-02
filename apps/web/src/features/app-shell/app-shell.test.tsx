@@ -338,7 +338,7 @@ describe("app shell layout", () => {
     expect(router.state.location.pathname).toBe(SURFACE_PATHS.coach)
   })
 
-  it("renders a favorite as title then company, and omits the section when empty", async () => {
+  it("renders a favorite as its title with the company in its name, and omits the section when empty", async () => {
     setMockJobs([
       {
         id: "job-star",
@@ -357,9 +357,8 @@ describe("app shell layout", () => {
     const favorite = await screen.findByRole("link", {
       name: "Associate PM Northwind",
     })
-    const text = favorite.textContent ?? ""
-    expect(text.indexOf("Associate PM")).toBeGreaterThanOrEqual(0)
-    expect(text.indexOf("Associate PM")).toBeLessThan(text.indexOf("Northwind"))
+    expect(favorite.textContent).toBe("Associate PM")
+    expect(favorite).toHaveAttribute("title", "Associate PM, Northwind")
     expect(screen.queryByRole("link", { name: /Hidden role/ })).toBeNull()
 
     cleanup()
