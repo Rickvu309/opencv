@@ -83,3 +83,30 @@ test("a static inert attribute and FocusSafeRegion are allowed", async () => {
     []
   )
 })
+
+test("writing a custom property from a drag handler restyles every inheriting element", async () => {
+  const found = await messages(
+    `function showWidth(drag, width) { drag.frame?.style.setProperty("--sidebar-width", width + "px") }`,
+    "src/features/app-shell/sidebar-resize-handle.tsx"
+  )
+  assert.equal(found.length, 1)
+  assert.match(found[0], /style\.width or style\.transform/)
+})
+
+test("writing a custom property on the root element is refused in any feature", async () => {
+  const found = await messages(
+    "document.documentElement.style.setProperty(`--x`, 1)",
+    "src/features/paper/anything.ts"
+  )
+  assert.ok(found.length >= 1)
+})
+
+test("writing a plain style property is allowed", async () => {
+  assert.deepEqual(
+    await messages(
+      `function f(el) { el.style.setProperty("user-select", "none"); el.style.width = "10px" }`,
+      "src/features/app-shell/sidebar-resize-handle.tsx"
+    ),
+    []
+  )
+})

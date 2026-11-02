@@ -21,6 +21,16 @@ const DYNAMIC_INERT = ["JSXAttribute[name.name='inert'][value]"].map(
   })
 )
 
+const SCOPED_WRITES = [
+  "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][callee.object.object.property.name='documentElement']",
+  "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][arguments.0.type='Literal'][arguments.0.value=/^--/]",
+  "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][arguments.0.type='TemplateLiteral'][arguments.0.quasis.0.value.raw=/^--/]",
+].map((selector) => ({
+  selector,
+  message:
+    "Writing a CSS custom property from code makes the browser restyle every element that inherits it, and on document.documentElement that is the whole page. Set a plain property such as style.width or style.transform on the element that moves.",
+}))
+
 export default defineConfig([
   globalIgnores(["dist"]),
   {
@@ -72,7 +82,12 @@ export default defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": ["error", ...HOVER_OVERLAY, ...DYNAMIC_INERT],
+      "no-restricted-syntax": [
+        "error",
+        ...HOVER_OVERLAY,
+        ...DYNAMIC_INERT,
+        ...SCOPED_WRITES,
+      ],
     },
   },
   {
@@ -82,7 +97,7 @@ export default defineConfig([
       "src/components/layer-stack.tsx",
     ],
     rules: {
-      "no-restricted-syntax": ["error", ...DYNAMIC_INERT],
+      "no-restricted-syntax": ["error", ...DYNAMIC_INERT, ...SCOPED_WRITES],
     },
   },
   {
@@ -93,6 +108,7 @@ export default defineConfig([
         "error",
         ...HOVER_OVERLAY,
         ...DYNAMIC_INERT,
+        ...SCOPED_WRITES,
         ...[
           "Literal[value=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
           "TemplateElement[value.raw=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",

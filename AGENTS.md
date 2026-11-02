@@ -68,7 +68,7 @@ Tests that hold this shape:
 - `scripts/paper-save-keeps-parts.test.mjs` rejects an autosave `toDocument` that returns the markdown alone, which would erase a letter's sender, date and closing. Its `PENDING` list works like the one above.
 - `scripts/pointer-capture.test.mjs` rejects `setPointerCapture` in a module with no `pointercancel` and `lostpointercapture` handler.
 - Web lint rejects `onMouseEnter`/`onPointerEnter` (use kit `Popover openOnHover` or `useHoverIntent`).
-- Web lint rejects `inert={...}` (use `FocusSafeRegion`).
+- Web lint rejects `inert={...}` (use `FocusSafeRegion`) and `style.setProperty("--x")` (set `width` or `transform`).
 - `scripts/web-lint-rules.test.mjs` runs those lint rules on the mistake and on correct code.
 
 ### Git
