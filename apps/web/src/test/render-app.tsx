@@ -48,33 +48,27 @@ export function renderApp(
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   })
 
-  // Unmounting RouterProvider only unsubscribes from history. A loader can
-  // still finish a lazy import or start a fetch after that unmount.
-  const startTransition = router.startTransition
-  const loads: Promise<void>[] = []
+  const startTransitionBeforeRouterProvider = router.startTransition
+  const loadsThatMayOutliveUnmount: Promise<void>[] = []
   const load = router.load.bind(router)
   router.load = (...args) => {
     const pending = load(...args)
-    loads.push(pending)
+    loadsThatMayOutliveUnmount.push(pending)
     return pending
   }
   registerTestCleanup(async () => {
     const errors: unknown[] = []
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
-      // RouterProvider installs a React transition that cannot commit after unmount.
-      router.startTransition = startTransition
-      // Transitioner leaves this typed acknowledgement behind on unmount. Settle
-      // it as unrendered, just as Transitioner does when superseding an offer.
-      const owner = router._rendered
-      const settle = owner?.[1]
-      if (owner) owner.length = 0
-      settle?.(false)
+      router.startTransition = startTransitionBeforeRouterProvider
+      const transitionerAcknowledgement = router._rendered
+      const settleAsUnrendered = transitionerAcknowledgement?.[1]
+      if (transitionerAcknowledgement) transitionerAcknowledgement.length = 0
+      settleAsUnrendered?.(false)
 
       const results = await Promise.race([
-        Promise.allSettled(loads),
+        Promise.allSettled(loadsThatMayOutliveUnmount),
         new Promise<never>((_, reject) => {
-          // A real deadline also works when a test left Vitest timers mocked.
           timer = setTimeout(() => {
             reject(new Error("Router cleanup timed out after 2000ms"))
           }, 2000)
@@ -87,13 +81,13 @@ export function renderApp(
       errors.push(error)
     } finally {
       clearTimeout(timer)
-      // Every disposal runs, including when loading failed or never settled.
-      for (const dispose of [
+      const disposalsThatRunEvenIfLoadingFailedOrNeverSettled = [
         () => router.clearCache(),
         () => router.history.destroy(),
         () => queryClient.cancelQueries(),
         () => queryClient.clear(),
-      ]) {
+      ]
+      for (const dispose of disposalsThatRunEvenIfLoadingFailedOrNeverSettled) {
         try {
           await dispose()
         } catch (error) {

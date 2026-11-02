@@ -10,9 +10,7 @@ import {
 } from "@/test/auth-client-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 
-// The jobs, papers and activity opencv.pen's W9 and W10 frames draw, at the
-// frames' clock: Sunday 25 October 2026, 09:00 in Ho Chi Minh City.
-export const NOW = new Date("2026-10-25T09:00:00+07:00")
+export const PEN_FRAME_CLOCK = new Date("2026-10-25T09:00:00+07:00")
 export const at = (iso: string) => new Date(iso).toISOString()
 export const day = (ymd: string) => at(`${ymd}T09:00:00+07:00`)
 

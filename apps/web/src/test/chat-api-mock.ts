@@ -187,6 +187,16 @@ async function waitDelay(ms: number, signal?: AbortSignal) {
   })
 }
 
+function closeUnlessAlreadyClosed(
+  controller: ReadableStreamDefaultController<Uint8Array>
+) {
+  try {
+    controller.close()
+  } catch {
+    return
+  }
+}
+
 function coachStreamResponse(
   chat: ChatRecord,
   signal?: AbortSignal,
@@ -232,11 +242,7 @@ function coachStreamResponse(
       const onAbort = () => {
         aborted = true
         persistOnce("aborted")
-        try {
-          controller.close()
-        } catch {
-          // already closed
-        }
+        closeUnlessAlreadyClosed(controller)
       }
       signal?.addEventListener("abort", onAbort, { once: true })
       if (signal?.aborted) onAbort()
@@ -324,11 +330,7 @@ function coachStreamResponse(
         if (started) persistOnce("aborted")
       } finally {
         signal?.removeEventListener("abort", onAbort)
-        try {
-          controller.close()
-        } catch {
-          // already closed
-        }
+        closeUnlessAlreadyClosed(controller)
       }
     },
   })

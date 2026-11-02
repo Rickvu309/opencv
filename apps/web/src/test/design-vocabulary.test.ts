@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest"
 
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const srcDir = path.join(webRoot, "src")
-const thisFile = fileURLToPath(import.meta.url)
 const uiDir = path.resolve(webRoot, "../../packages/ui/src")
 
 const PALETTE_HUES = [
@@ -40,11 +39,7 @@ const PALETTE_UTILITIES =
 const HEX_RE =
   /(?:-\[#[0-9A-Fa-f]{3,8}\]|["'`]#[0-9A-Fa-f]{3,8}["'`]|#[0-9A-Fa-f]{6,8}\b|#(?=[0-9a-f]*[a-f])[0-9a-f]{3}\b)/gi
 
-/**
- * Functional colours that name a hue. Pure black with an alpha (shadows) and
- * relative colours built from a variable are allowed.
- */
-const FUNCTIONAL_COLOR_RE =
+const HUE_FUNCTION_EXCEPT_BLACK_AND_RELATIVE_RE =
   /\b(?:oklch|oklab|lab|lch|hsla?|hwb|rgba?)\((?!from[\s_])(?!\s*0[\s,_]+0[\s,_]+0\b)[^)]*\)/g
 
 const PALETTE_RE = new RegExp(
@@ -52,8 +47,7 @@ const PALETTE_RE = new RegExp(
   "g"
 )
 
-/** Exact pen colors stay local and must occur in the adjacent source snapshots. */
-function penColorViolations(
+function penColorsMissingFromAdjacentSnapshots(
   file: string,
   source: string,
   referenceSource?: string
@@ -92,7 +86,7 @@ function penColorViolations(
     violations.push("custom property declaration")
   violations.push(
     ...hits(source, PALETTE_RE),
-    ...hits(source, FUNCTIONAL_COLOR_RE)
+    ...hits(source, HUE_FUNCTION_EXCEPT_BLACK_AND_RELATIVE_RE)
   )
   return violations
 }
@@ -137,15 +131,7 @@ const MOTION_TOKENS = [
   "ease-panel",
 ]
 
-/**
- * Variables read in app or kit code that are not design tokens: positioning
- * values Base UI sets at runtime, the radius scale derived from `--radius`,
- * and the three feature-local variables below. Each group needs a reason.
- */
-const READABLE_VARIABLES = new Set<string>([
-  ...STOCK_COLORS,
-  ...MOTION_TOKENS,
-  // Theme radius scale derived from --radius in globals.css.
+const THEME_RADIUS_VARIABLES = [
   "radius-sm",
   "radius-md",
   "radius-lg",
@@ -153,39 +139,42 @@ const READABLE_VARIABLES = new Set<string>([
   "radius-2xl",
   "radius-3xl",
   "radius-4xl",
-  // Set at runtime by Base UI popups and used by the stock kit files.
+]
+
+const BASE_UI_POPUP_RUNTIME_VARIABLES = [
   "transform-origin",
   "available-height",
   "available-width",
   "anchor-width",
   "anchor-height",
-  // Declared by the stock Card as an arbitrary property on itself.
-  "card-spacing",
-  // Theme font stacks the affectUI widgets inherit.
-  "font-sans",
-  "font-mono",
-  // Landing hero fluid size, declared in features/landing/landing.css.
+]
+
+const STOCK_CARD_ARBITRARY_PROPERTY_VARIABLES = ["card-spacing"]
+
+const AFFECT_INHERITED_FONT_STACK_VARIABLES = ["font-sans", "font-mono"]
+
+const LANDING_FEATURE_VARIABLES = [
   "landing-h1-mobile",
   "landing-h1-desktop",
-  // Per-element entrance stagger the landing figures and copy reveals set
-  // inline as a style custom property; the animation delay reads it.
   "landing-delay",
+]
+
+const READABLE_VARIABLES = new Set<string>([
+  ...STOCK_COLORS,
+  ...MOTION_TOKENS,
+  ...THEME_RADIUS_VARIABLES,
+  ...BASE_UI_POPUP_RUNTIME_VARIABLES,
+  ...STOCK_CARD_ARBITRARY_PROPERTY_VARIABLES,
+  ...AFFECT_INHERITED_FONT_STACK_VARIABLES,
+  ...LANDING_FEATURE_VARIABLES,
   "sidebar-width",
 ])
 
-/** CV print variables declared in paper.css, the documented exception. */
-const CV_VARIABLE_RE = /^cv-/
+const PAPER_CSS_CV_PRINT_VARIABLE_RE = /^cv-/
 
-/**
- * Variables an affectUI kit file declares inside its own injected stylesheet
- * and maps to stock variables there: a `ui-<widget>-` prefix, plus the `--u`
- * and `--i` per-element index values. Only the kit files under
- * packages/ui/src/components and the one affectUI file kept in the app may
- * read them.
- */
-const AFFECT_VARIABLE_RE = /^(?:ui-[a-z]+-|[ui]$)/
+const AFFECT_INJECTED_STYLESHEET_VARIABLE_RE = /^(?:ui-[a-z]+-|[ui]$)/
 
-const AFFECT_APP_FILES = new Set(["components/layer-stack.tsx"])
+const AFFECT_FILES_KEPT_IN_THE_APP = new Set(["components/layer-stack.tsx"])
 
 const RETIRED_CLASS_RE = new RegExp(
   [
@@ -203,29 +192,29 @@ const LEGACY_TOKEN_RE =
 
 const VARIABLE_READ_RE = /(?:var\(|[\w-]\()(--[a-zA-Z0-9-]+)/g
 
-/**
- * App-source files allowed to contain raw hex or named Tailwind palette
- * classes. Each path MUST have a `//` reason on the previous line — adding
- * a path without that comment fails this file's own contract.
- *
- * The one documented exception (docs/agents/design-parity.md) is the CV print paper.
- */
-const VOCABULARY_ALLOWLIST = [
-  // CV print paper — documented exception (print layout; paper is white).
-  "features/paper/cv-templates/product.tsx",
-] as const
+type AllowlistEntry = { file: string; reason: string }
 
-/**
- * Feature files allowed to host a raw interactive element. Each path MUST
- * have a `//` reason on the previous line. The element itself must sit
- * under a `Documented exception` comment in the feature file.
- */
-const RAW_INTERACTIVE_ALLOWLIST = [
-  // Hidden file pickers — kit Input cannot host type="file".
-  "features/paper/cv-templates/cv-parts.tsx",
-  // Hidden file pickers — kit Input cannot host type="file".
-  "features/settings/account-section.tsx",
-] as const
+const RAW_COLOR_ALLOWLIST: readonly AllowlistEntry[] = [
+  {
+    file: "features/paper/cv-templates/product.tsx",
+    reason:
+      "CV print paper, the documented exception in docs/agents/design-parity.md: a print layout on white paper",
+  },
+]
+
+const RAW_INTERACTIVE_ALLOWLIST: readonly AllowlistEntry[] = [
+  {
+    file: "features/paper/cv-templates/cv-parts.tsx",
+    reason: "Hidden file picker: kit Input cannot host type=file",
+  },
+  {
+    file: "features/settings/account-section.tsx",
+    reason: "Hidden file picker: kit Input cannot host type=file",
+  },
+]
+
+const allowedFiles = (entries: readonly AllowlistEntry[]) =>
+  new Set(entries.map((entry) => entry.file))
 
 function appSourceFiles() {
   return readdirSync(srcDir, { recursive: true, encoding: "utf8" }).filter(
@@ -253,8 +242,7 @@ function readKit(file: string) {
   return readFileSync(path.join(uiDir, file), "utf8")
 }
 
-/** Body of the first top-level `selector { ... }` block in a stylesheet. */
-function cssBlock(css: string, selector: string) {
+function firstTopLevelCssBlockBody(css: string, selector: string) {
   const match = new RegExp(`^${selector} \\{\\n([\\s\\S]*?)^\\}`, "m").exec(css)
   expect(match, `${selector} block`).not.toBeNull()
   return match![1]
@@ -272,25 +260,25 @@ function hits(source: string, pattern: RegExp) {
   return source.match(pattern) ?? []
 }
 
-function requireCommentedAllowlist(entries: readonly string[], label: string) {
-  const source = readFileSync(thisFile, "utf8")
+function requireReasonedAllowlist(
+  entries: readonly AllowlistEntry[],
+  label: string
+) {
   for (const entry of entries) {
-    const escaped = entry.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    const justified = new RegExp(`//[^\\n]+\\n\\s*["']${escaped}["']`)
     expect(
-      justified.test(source),
-      `${label} allowlist entry "${entry}" needs a // reason on the previous line`
-    ).toBe(true)
+      entry.reason.trim().length,
+      `${label} allowlist entry "${entry.file}" needs a reason`
+    ).toBeGreaterThan(0)
   }
 }
 
 describe("app code uses shadcn variables and stock Tailwind, with no raw hex or named palette class", () => {
-  it("justifies every vocabulary allowlist entry with a comment", () => {
-    requireCommentedAllowlist(VOCABULARY_ALLOWLIST, "vocabulary")
+  it("gives every vocabulary allowlist entry a reason", () => {
+    requireReasonedAllowlist(RAW_COLOR_ALLOWLIST, "vocabulary")
   })
 
   it("forbids raw hex, functional colours and named Tailwind palette classes outside the allowlist", () => {
-    const allowed = new Set<string>(VOCABULARY_ALLOWLIST)
+    const allowed = allowedFiles(RAW_COLOR_ALLOWLIST)
     const violations: string[] = []
     const files = [
       ...appSourceFiles().map((file) => [file, readApp(file)] as const),
@@ -300,9 +288,9 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     for (const [file, source] of files) {
       if (allowed.has(rel(file))) continue
       const found =
-        penColorViolations(rel(file), source) ??
-        [HEX_RE, PALETTE_RE, FUNCTIONAL_COLOR_RE].flatMap((pattern) =>
-          hits(source, pattern)
+        penColorsMissingFromAdjacentSnapshots(rel(file), source) ??
+        [HEX_RE, PALETTE_RE, HUE_FUNCTION_EXCEPT_BLACK_AND_RELATIVE_RE].flatMap(
+          (pattern) => hits(source, pattern)
         )
       if (found.length === 0) continue
       violations.push(`${rel(file)}: ${found.join(", ")}`)
@@ -315,7 +303,7 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     const file = "features/example/design/example.pen.css"
     const reference = '{"fill":"#1A1A1A"}'
     const check = (source: string) =>
-      penColorViolations(file, source, reference)
+      penColorsMissingFromAdjacentSnapshots(file, source, reference)
     expect(
       check('[data-pen-surface="example"] h2 { color: #1A1A1A; }')
     ).toEqual([])
@@ -329,7 +317,10 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
       "custom property declaration",
     ])
     expect(
-      penColorViolations("features/example/example.tsx", "#1A1A1A")
+      penColorsMissingFromAdjacentSnapshots(
+        "features/example/example.tsx",
+        "#1A1A1A"
+      )
     ).toBeNull()
   })
 
@@ -351,7 +342,11 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     const files = [
       ...appSourceFiles().map(
         (file) =>
-          [file, readApp(file), AFFECT_APP_FILES.has(rel(file))] as const
+          [
+            file,
+            readApp(file),
+            AFFECT_FILES_KEPT_IN_THE_APP.has(rel(file)),
+          ] as const
       ),
       ...kitSourceFiles().map((file) => [file, readKit(file), true] as const),
     ]
@@ -361,8 +356,8 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
         .filter(
           (name) =>
             !READABLE_VARIABLES.has(name) &&
-            !CV_VARIABLE_RE.test(name) &&
-            !(isAffect && AFFECT_VARIABLE_RE.test(name)) &&
+            !PAPER_CSS_CV_PRINT_VARIABLE_RE.test(name) &&
+            !(isAffect && AFFECT_INJECTED_STYLESHEET_VARIABLE_RE.test(name)) &&
             !name.startsWith("tw-")
         )
       if (unknown.length > 0) {
@@ -374,14 +369,14 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
 
   it("keeps globals.css to the stock variable set plus the motion tokens", () => {
     const css = readKit("styles/globals.css")
-    expect(declared(cssBlock(css, ":root")).sort()).toEqual(
+    expect(declared(firstTopLevelCssBlockBody(css, ":root")).sort()).toEqual(
       [...STOCK_ROOT].sort()
     )
-    expect(declared(cssBlock(css, "\\.dark")).sort()).toEqual(
+    expect(declared(firstTopLevelCssBlockBody(css, "\\.dark")).sort()).toEqual(
       [...STOCK_COLORS].sort()
     )
 
-    const theme = cssBlock(css, "@theme inline")
+    const theme = firstTopLevelCssBlockBody(css, "@theme inline")
     const themeColors = declared(theme)
       .filter((name) => name.startsWith("color-"))
       .map((name) => name.slice("color-".length))
@@ -422,12 +417,12 @@ describe("chat library", () => {
 })
 
 describe("design-system adoption", () => {
-  it("justifies every raw-interactive allowlist entry with a comment", () => {
-    requireCommentedAllowlist(RAW_INTERACTIVE_ALLOWLIST, "raw-interactive")
+  it("gives every raw-interactive allowlist entry a reason", () => {
+    requireReasonedAllowlist(RAW_INTERACTIVE_ALLOWLIST, "raw-interactive")
   })
 
   it("keeps raw button/input/textarea/select out of feature files", () => {
-    const allowed = new Set<string>(RAW_INTERACTIVE_ALLOWLIST)
+    const allowed = allowedFiles(RAW_INTERACTIVE_ALLOWLIST)
     const violations: string[] = []
     const featureFiles = appSourceFiles().filter(
       (file) => rel(file).startsWith("features/") && file.endsWith(".tsx")

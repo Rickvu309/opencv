@@ -37,7 +37,6 @@ async function readBody(init?: RequestInit): Promise<unknown> {
   return body && typeof body === "object" && "input" in body ? body.input : body
 }
 
-/** The stored fixtures keep their old shape. What goes on the wire is the contract's view. */
 function toWire(doc: PaperDoc) {
   const extra = doc as PaperDoc & { pageChoice?: string; templateId?: string }
   return {

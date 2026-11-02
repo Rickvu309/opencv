@@ -1,7 +1,3 @@
-// Every route from createAppRouter, keyed by the TanStack route id.
-// A route missing from this table fails the marketing check.
-// A marketing route whose path contains `$` must set enumerate.
-
 import { BLOG_POSTS } from "@/features/landing/blog/blog-copy.ts"
 
 export type RouteKind =
@@ -11,10 +7,6 @@ export type RouteClass = {
   id: string
   fullPath: string
   kind: RouteKind
-  /**
-   * Concrete paths for a marketing route with a param.
-   * The `/blog/$slug` row returns one `/blog/<slug>` per post.
-   */
   enumerate?: () => readonly string[]
 }
 

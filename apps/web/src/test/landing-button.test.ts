@@ -148,9 +148,7 @@ function startsJsx(source: string, index: number): boolean {
   return word === "return" || word === "throw" || word === "yield"
 }
 
-// landing-gradient on a non-control className is the panel fill. landing-pill
-// is never a panel class. Any other string is a call to action.
-function classStrings(source: string): Hit[] {
+function classStringsNamingLandingPillOrGradient(source: string): Hit[] {
   const hits: Hit[] = []
   const stack: Frame[] = []
   const modes: Mode[] = [{ kind: "code", expr: null, exempt: false }]
@@ -301,7 +299,7 @@ describe("every marketing call to action is built with landingButton", () => {
           )
         }
       }
-      for (const hit of classStrings(text)) {
+      for (const hit of classStringsNamingLandingPillOrGradient(text)) {
         const pill = hit.value.includes("landing-pill")
         const gradient = hit.value.includes("landing-gradient")
         if (!pill && !(gradient && !hit.exemptGradient)) continue

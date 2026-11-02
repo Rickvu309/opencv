@@ -7,14 +7,6 @@ import {
   type HelpTopic,
 } from "@/features/landing/help/help-copy.ts"
 
-// Rule of filterHelpTopics:
-// needle = query.trim().toLowerCase().
-// An empty needle returns every topic and every question, in order.
-// Otherwise a topic is kept when its title + " " + blurb, lowercased,
-// contains the needle (keep every question), or when at least one question's
-// question + " " + answer, lowercased, contains the needle (keep only those
-// questions, in order). Other topics are dropped. Order follows the input.
-
 const SEED = 449
 const NUM_RUNS = 200
 
@@ -187,7 +179,7 @@ const assertOptions = {
 } as const
 
 describe("filterHelpTopics", () => {
-  it("holds for generated topics and queries", () => {
+  it("returns every topic for a blank query, else topics matching in title and blurb whole or matching questions only, in input order, for generated topics and queries", () => {
     fc.assert(
       fc.property(topicListArb, queryArb, (topics, query) => {
         assertFilterRule(topics, query)
@@ -212,7 +204,7 @@ describe("filterHelpTopics", () => {
     )
   })
 
-  it("holds for generated queries against HELP_TOPICS", () => {
+  it("applies the same rule to HELP_TOPICS for generated queries", () => {
     fc.assert(
       fc.property(queryArb, (query) => {
         assertFilterRule(HELP_TOPICS, query)

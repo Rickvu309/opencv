@@ -2,7 +2,6 @@ import { vi } from "vitest"
 
 import { chatApiFetchOrThrow } from "./chat-api-mock.ts"
 
-/** A turn stream the test feeds one wire event at a time. */
 export function liveTurn() {
   const encoder = new TextEncoder()
   let controller!: ReadableStreamDefaultController<Uint8Array>

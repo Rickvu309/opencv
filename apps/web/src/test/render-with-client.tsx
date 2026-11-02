@@ -4,7 +4,6 @@ import type { ReactElement } from "react"
 
 import { registerTestCleanup } from "./test-resources.ts"
 
-/** Renders a component that runs contract commands, which need a QueryClient. */
 export function render(ui: ReactElement) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },

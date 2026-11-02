@@ -18,13 +18,9 @@ function iso(daysAgo: number) {
   return new Date(Date.UTC(2026, 7, 25 - daysAgo, 12, 0, 0)).toISOString()
 }
 
-/**
- * Neutral sample cards for the Apply API mock — never the demo persona.
- * Associate PM intern keeps a leftover jobs.example.com URL so UI tests
- * prove Open job posting is hidden (QVE-217). New production seeds are null.
- * Starter-shaped cards are `demo: true` so the board/drawer stay honest (QVE-240).
- * Product intern is a User-owned extra so we can prove Add-job cards stay unlabeled.
- */
+const LEFTOVER_JOB_POSTING_URL_THAT_MUST_STAY_HIDDEN =
+  "https://jobs.example.com/associate-pm-intern"
+
 export function sampleApplyCards(): ApplyCard[] {
   return [
     {
@@ -35,7 +31,7 @@ export function sampleApplyCards(): ApplyCard[] {
       stage: "inbox",
       position: "a0",
       starred: true,
-      jobUrl: "https://jobs.example.com/associate-pm-intern",
+      jobUrl: LEFTOVER_JOB_POSTING_URL_THAT_MUST_STAY_HIDDEN,
       demo: true,
       trackDate: "2026-08-26",
       trackKind: "followup",

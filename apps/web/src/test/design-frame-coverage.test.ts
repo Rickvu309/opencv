@@ -7,43 +7,39 @@ import { describe, expect, it } from "vitest"
 
 import manifest from "./design-frames.json"
 
-// Every first-release frame in design/opencv.pen needs a committed snapshot
-// (scripts/pen-snapshot.mjs) that a test reads, so a screen that drifts from
-// its frame fails a test. A frame not built from the pen yet waits here with
-// its issue and an expiry date. Remove the entry when its parity test lands.
 const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
-  Cs3hj: { issue: 498, expires: "2026-12-31" }, // Blog (Linear layout)
-  EKv2D: { issue: 498, expires: "2026-12-31" }, // Blog post (Linear layout)
-  FUipv: { issue: 498, expires: "2026-12-31" }, // W3.1 New chat
-  ISnTZ: { issue: 498, expires: "2026-12-31" }, // W3.2 Chat history
-  lOO77: { issue: 498, expires: "2026-12-31" }, // W3.3 More ideas
-  kfJuz: { issue: 498, expires: "2026-12-31" }, // W3.4 mode menu still awaits parity coverage
-  Vm0eJ: { issue: 498, expires: "2026-12-31" }, // W3.5 Coach working
-  wiQ9M: { issue: 498, expires: "2026-12-31" }, // W3.6 Free cap reached
-  kmUTI: { issue: 498, expires: "2026-12-31" }, // W3.7 Coach panel
-  YC0lV: { issue: 498, expires: "2026-12-31" }, // W5.1 Paper first run
-  mkEKx: { issue: 498, expires: "2026-12-31" }, // W5.2 Paper library
-  VH2fp: { issue: 498, expires: "2026-12-31" }, // W5.3 Paper menus
-  O7zOJK: { issue: 498, expires: "2026-12-31" }, // W5.4 No results
-  YCAbn: { issue: 498, expires: "2026-12-31" }, // W5.5 Delete confirm
-  aZiLz: { issue: 498, expires: "2026-12-31" }, // W6.1 Start: blank or template
-  L3V6y: { issue: 498, expires: "2026-12-31" }, // W6.2 Blank doc
-  pCOLZ: { issue: 498, expires: "2026-12-31" }, // W6.3 Slash menu
-  TtBmY: { issue: 498, expires: "2026-12-31" }, // W6.4 Editing
-  F0BP4A: { issue: 498, expires: "2026-12-31" }, // W6.5 Block menu
-  mOKD3: { issue: 498, expires: "2026-12-31" }, // W6.6 Drag a block
-  jcbPS: { issue: 498, expires: "2026-12-31" }, // W6.7 CV done
-  DPAVo: { issue: 498, expires: "2026-12-31" }, // W6.8 Importing a file
-  Uh2Ku: { issue: 498, expires: "2026-12-31" }, // W6.9 Check import
-  gWPIB: { issue: 498, expires: "2026-12-31" }, // W6.10 Can't read file
-  k8HycK: { issue: 498, expires: "2026-12-31" }, // W6.11 Over one page
-  qCgR7: { issue: 498, expires: "2026-12-31" }, // W12.1 Preferences
-  LiQPl: { issue: 498, expires: "2026-12-31" }, // W12.2 Coach
-  K5FuN: { issue: 498, expires: "2026-12-31" }, // W12.3 Integrations
-  U6XwWT: { issue: 498, expires: "2026-12-31" }, // W12.4 Usage & limits
-  vOOtp: { issue: 498, expires: "2026-12-31" }, // W12.5 Billing
-  dgd0V: { issue: 498, expires: "2026-12-31" }, // W12.6 Account
-  LG57z: { issue: 498, expires: "2026-12-31" }, // W12.7 Delete account
+  Cs3hj: { issue: 498, expires: "2026-12-31" },
+  EKv2D: { issue: 498, expires: "2026-12-31" },
+  FUipv: { issue: 498, expires: "2026-12-31" },
+  ISnTZ: { issue: 498, expires: "2026-12-31" },
+  lOO77: { issue: 498, expires: "2026-12-31" },
+  kfJuz: { issue: 498, expires: "2026-12-31" },
+  Vm0eJ: { issue: 498, expires: "2026-12-31" },
+  wiQ9M: { issue: 498, expires: "2026-12-31" },
+  kmUTI: { issue: 498, expires: "2026-12-31" },
+  YC0lV: { issue: 498, expires: "2026-12-31" },
+  mkEKx: { issue: 498, expires: "2026-12-31" },
+  VH2fp: { issue: 498, expires: "2026-12-31" },
+  O7zOJK: { issue: 498, expires: "2026-12-31" },
+  YCAbn: { issue: 498, expires: "2026-12-31" },
+  aZiLz: { issue: 498, expires: "2026-12-31" },
+  L3V6y: { issue: 498, expires: "2026-12-31" },
+  pCOLZ: { issue: 498, expires: "2026-12-31" },
+  TtBmY: { issue: 498, expires: "2026-12-31" },
+  F0BP4A: { issue: 498, expires: "2026-12-31" },
+  mOKD3: { issue: 498, expires: "2026-12-31" },
+  jcbPS: { issue: 498, expires: "2026-12-31" },
+  DPAVo: { issue: 498, expires: "2026-12-31" },
+  Uh2Ku: { issue: 498, expires: "2026-12-31" },
+  gWPIB: { issue: 498, expires: "2026-12-31" },
+  k8HycK: { issue: 498, expires: "2026-12-31" },
+  qCgR7: { issue: 498, expires: "2026-12-31" },
+  LiQPl: { issue: 498, expires: "2026-12-31" },
+  K5FuN: { issue: 498, expires: "2026-12-31" },
+  U6XwWT: { issue: 498, expires: "2026-12-31" },
+  vOOtp: { issue: 498, expires: "2026-12-31" },
+  dgd0V: { issue: 498, expires: "2026-12-31" },
+  LG57z: { issue: 498, expires: "2026-12-31" },
 }
 
 const TODAY = new Date().toISOString().slice(0, 10)
