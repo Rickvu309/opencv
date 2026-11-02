@@ -25,15 +25,14 @@ export const CI_ONLY_GUARDS = Object.freeze([
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url))
 const NESTED_FAST_GUARDS = ["scripts/ocv-tools/rules-doc.test.mjs"]
 
-export const FAST_GUARDS = Object.freeze(
-  [
-    ...readdirSync(join(ROOT, "scripts"))
-      .filter((name) => name.endsWith(".test.mjs"))
-      .map((name) => `scripts/${name}`)
-      .filter((file) => !CI_ONLY_GUARDS.includes(file)),
-    ...NESTED_FAST_GUARDS,
-  ].sort()
-)
+export const FAST_GUARDS = Object.freeze([
+  ...readdirSync(join(ROOT, "scripts"))
+    .filter((name) => name.endsWith(".test.mjs"))
+    .map((name) => `scripts/${name}`)
+    .filter((file) => !CI_ONLY_GUARDS.includes(file))
+    .sort(),
+  ...NESTED_FAST_GUARDS,
+])
 
 export const GIT_ENV = Object.freeze([
   "GIT_DIR",
