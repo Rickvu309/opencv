@@ -82,7 +82,13 @@ describe("letter sheet matches the pen sheet", () => {
       const block = rule(role)
       expect(block).toContain(`font-size: ${size}px`)
       expect(block).toContain(`font-weight: ${weight}`)
-      expect(block.toLowerCase()).toContain(`color: ${fill.toLowerCase()}`)
+      // The pen's contact grey is 3.4:1 on white, under AA for 10px text, so the
+      // sheet darkens it toward the sender's black until it passes.
+      const want =
+        role === "contact"
+          ? "color-mix(in srgb, #8a8a8e 80%, #111111)"
+          : fill.toLowerCase()
+      expect(block.toLowerCase()).toContain(`color: ${want}`)
       if (pen.lineHeight)
         expect(block).toContain(`line-height: ${pen.lineHeight}`)
     }
