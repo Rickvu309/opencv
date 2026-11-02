@@ -9,6 +9,7 @@ import { repo } from "./lib/check-util.mjs"
 import { colorDistance } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 import { checkGeometry, geometry } from "./lib/sidebar-geometry.mjs"
+import { checkResize } from "./lib/sidebar-resize-checks.mjs"
 import {
   checkInteractions,
   itemsOf,
@@ -21,6 +22,7 @@ const POSITION = 0.75
 const FONT_SIZE = 0.25
 const COLOR = 0.02
 const NO_DATA = new Set(["Checkout UX study"])
+const ACCOUNT_ROW = new Set(["LN", "Linh Nguyen"])
 
 const args = process.argv.slice(2)
 const options = {}
@@ -136,6 +138,12 @@ function compare(tag, height, active, measured) {
   const shift = height - 900
   layout.texts.forEach((want, index) => {
     const got = measured[index]
+    if (ACCOUNT_ROW.has(want.text)) {
+      gap(
+        `${tag} "${want.text}" is the pen footer: the account row is now one menu button with a 24px avatar, a name and an email`
+      )
+      return
+    }
     if (!got) {
       if (NO_DATA.has(want.text)) {
         gap(
@@ -340,6 +348,17 @@ try {
     }
     await page.close()
   }
+
+  await checkResize({
+    browser,
+    web,
+    output,
+    check,
+    capture: async (page, file, clip) => {
+      await page.screenshot(join(output, file), false, clip)
+      report.captures.push(file)
+    },
+  })
 
   const phone = await browser.openPage({
     width: 390,
