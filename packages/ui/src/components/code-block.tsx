@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 import { Button } from "@workspace/ui/components/button"
+import { copyText } from "@workspace/ui/components/copy-button"
 import { CheckIcon, CopyIcon } from "lucide-react"
 
 const codeBlockVariants = cva(
@@ -112,10 +113,9 @@ function CodeBlockCopyButton({
         className={cn(className)}
         onClick={(event) => {
           onClick?.(event)
-          navigator.clipboard
-            .writeText(value)
-            .then(() => setCopied(true))
-            .catch(() => {})
+          void copyText(value).then((ok) => {
+            if (ok) setCopied(true)
+          })
         }}
         {...props}
       >
