@@ -277,6 +277,7 @@ function PageHeaderAction({
       disabled,
     })
   ) : (
+    // eslint-disable-next-line no-restricted-syntax -- the TooltipTrigger that renders it owns onClick
     <Button
       type="button"
       variant="ghost"

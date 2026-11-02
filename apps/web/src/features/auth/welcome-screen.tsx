@@ -21,6 +21,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     let cancelled = false
+    let holdTimer: number | undefined
     const started = performance.now()
 
     async function finish() {
@@ -33,10 +34,13 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
         }
         sessionStorage.removeItem(LANGUAGE_STORAGE_KEY)
       }
+      if (cancelled) return
       if (!prefersReducedMotion()) {
         const remain = HOLD_MS - (performance.now() - started)
         if (remain > 0) {
-          await new Promise((resolve) => window.setTimeout(resolve, remain))
+          await new Promise((resolve) => {
+            holdTimer = window.setTimeout(resolve, remain)
+          })
         }
       }
       if (cancelled) return
@@ -52,6 +56,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
     void finish()
     return () => {
       cancelled = true
+      window.clearTimeout(holdTimer)
     }
   }, [onDone, runCommand])
 

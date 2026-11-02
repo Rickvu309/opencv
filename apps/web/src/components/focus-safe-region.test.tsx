@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 import {
@@ -96,6 +96,38 @@ describe("FocusSafeRegion", () => {
     await act(async () => undefined)
     expect(screen.queryByText("Expand sidebar")).not.toBeNull()
   })
+
+  it("keeps each region's hand-off watch when another region hands off", async () => {
+    const view = render(<TwoRegions hidden={[false, false]} />)
+    const first = screen.getByRole("button", { name: "Fallback one" })
+    const second = screen.getByRole("button", { name: "Fallback two" })
+    const dismissedFirst = vi.fn()
+    const dismissedSecond = vi.fn()
+    first.addEventListener("keydown", dismissedFirst)
+    second.addEventListener("keydown", dismissedSecond)
+    screen.getByText("Inside one").focus()
+    view.rerender(<TwoRegions hidden={[true, false]} />)
+    screen.getByText("Inside two").focus()
+    view.rerender(<TwoRegions hidden={[true, true]} />)
+    first.setAttribute("data-popup-open", "")
+    second.setAttribute("data-popup-open", "")
+    await act(async () => undefined)
+    expect(dismissedFirst).toHaveBeenCalled()
+    expect(dismissedSecond).toHaveBeenCalled()
+  })
+
+  it("stops watching a hand-off target when the region unmounts", async () => {
+    const view = render(<TwoRegions hidden={[false, false]} />)
+    const first = screen.getByRole("button", { name: "Fallback one" })
+    const dismissed = vi.fn()
+    first.addEventListener("keydown", dismissed)
+    screen.getByText("Inside one").focus()
+    view.rerender(<TwoRegions hidden={[true, false]} />)
+    view.unmount()
+    first.setAttribute("data-popup-open", "")
+    await act(async () => undefined)
+    expect(dismissed).not.toHaveBeenCalled()
+  })
 })
 
 function FallbackShell({ concealed }: { concealed: boolean }) {
@@ -149,5 +181,32 @@ function PopoverShell({ concealed }: { concealed: boolean }) {
         <PopoverContent>Sign out</PopoverContent>
       </Popover>
     </FocusSafeRegion>
+  )
+}
+
+function TwoRegions({ hidden }: { hidden: [boolean, boolean] }) {
+  return (
+    <div>
+      <FocusSafeRegion
+        as="aside"
+        concealed={hidden[0]}
+        focusFallback={() =>
+          screen.queryByRole("button", { name: "Fallback one" })
+        }
+      >
+        <button>Inside one</button>
+      </FocusSafeRegion>
+      <FocusSafeRegion
+        as="nav"
+        concealed={hidden[1]}
+        focusFallback={() =>
+          screen.queryByRole("button", { name: "Fallback two" })
+        }
+      >
+        <button>Inside two</button>
+      </FocusSafeRegion>
+      <button>Fallback one</button>
+      <button>Fallback two</button>
+    </div>
   )
 }
