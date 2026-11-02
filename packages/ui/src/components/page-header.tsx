@@ -321,7 +321,7 @@ function PageHeaderPrimary({
       {icon ? (
         <span
           aria-hidden="true"
-          className="inline-flex text-muted-foreground [&_svg]:size-3.5 [&_svg]:[stroke-width:2.25]"
+          className="inline-flex text-muted-foreground [&_svg]:size-3.5! [&_svg]:[stroke-width:2.25]"
         >
           {icon}
         </span>

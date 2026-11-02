@@ -16,6 +16,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import {
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderPrimary,
+  PageHeaderTitle,
+} from "@workspace/ui/components/page-header"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -24,27 +30,22 @@ import {
   type ApplyView,
 } from "./apply-search.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
+import "./design/page-header.pen.css"
 
 export function ApplyHeader({ onNewJob }: { onNewJob: () => void }) {
   return (
-    <header
-      data-slot="page-header"
-      className="flex h-[52px] shrink-0 items-center gap-2 border-b border-foreground/8 pr-4 pl-5"
-    >
-      <h1 className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground/91">
-        Apply
-      </h1>
-      <Button
-        type="button"
-        variant="ghost"
-        data-primary-action
-        className="h-7 gap-1.5 rounded-[6px] px-2 text-[13px] font-normal"
-        onClick={onNewJob}
-      >
-        <Plus className="size-3.5 text-muted-foreground" strokeWidth={2.25} />
-        New job
-      </Button>
-    </header>
+    <PageHeader>
+      <PageHeaderTitle>Apply</PageHeaderTitle>
+      <PageHeaderActions>
+        <PageHeaderPrimary
+          icon={<Plus />}
+          data-primary-action
+          onClick={onNewJob}
+        >
+          New job
+        </PageHeaderPrimary>
+      </PageHeaderActions>
+    </PageHeader>
   )
 }
 

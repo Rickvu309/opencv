@@ -63,18 +63,6 @@ const PAPER = "Paper paused"
 
 export const PENDING_HEADERS: Pending[] = [
   {
-    file: "features/apply/apply-toolbar.tsx",
-    marker: 'data-slot="page-header"',
-    row: 2,
-    note: "Apply board header, a copy of the kit header",
-  },
-  {
-    file: "features/apply/apply-job-header.tsx",
-    marker: 'aria-label="Breadcrumb"',
-    row: 2,
-    note: "Apply job header",
-  },
-  {
     file: "features/coming-soon/coming-soon-page.tsx",
     marker: LEGACY_TITLE,
     row: 5,

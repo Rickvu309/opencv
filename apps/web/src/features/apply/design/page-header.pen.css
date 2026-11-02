@@ -1,0 +1,16 @@
+[data-pen-surface="apply"] [data-slot="page-header"] {
+  border-bottom-color: #ededef;
+}
+[data-pen-surface="apply"] [data-slot="page-header-title"],
+[data-pen-surface="apply"] [data-slot="breadcrumb-page"] {
+  color: #2f2f31;
+}
+[data-pen-surface="apply"] [data-slot="breadcrumb-link"],
+[data-pen-surface="apply"] [data-slot="breadcrumb-separator"],
+[data-pen-surface="apply"] [data-slot="page-header-back"],
+[data-pen-surface="apply"] [data-slot="page-header-action"] {
+  color: #59595b;
+}
+[data-pen-surface="apply"] [data-slot="page-header-primary"] {
+  color: #1a1a1a;
+}

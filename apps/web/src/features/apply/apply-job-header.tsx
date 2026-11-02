@@ -2,30 +2,50 @@ import { Link } from "@tanstack/react-router"
 import {
   Briefcase,
   ChevronDown,
-  ChevronRight,
   ChevronUp,
   Ellipsis,
   Link as LinkIcon,
   PanelRight,
   Star,
+  Trash2,
 } from "lucide-react"
 
 import type { JobDetail } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
-import { CopyButton } from "@workspace/ui/components/copy-button"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@workspace/ui/components/breadcrumb"
+import { copyText } from "@workspace/ui/components/copy-button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import {
+  PageHeader,
+  PageHeaderAction,
+  PageHeaderActions,
+  PageHeaderBack,
+  PageHeaderLeading,
+  PageHeaderMeta,
+  PageHeaderTitleActions,
+} from "@workspace/ui/components/page-header"
+import { toast } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { FAINT_TEXT } from "./apply-tone.ts"
-import { TITLE_TEXT } from "./apply-detail-parts.tsx"
+import "./design/page-header.pen.css"
 
-const ICON_BUTTON =
-  "shrink-0 rounded-[6px] p-0 text-muted-foreground hover:bg-secondary aria-expanded:bg-secondary"
+async function copyLink() {
+  const copied = await copyText(window.location.href).catch(() => false)
+  toast(copied ? "Link copied" : "Could not copy the link. Try again.")
+}
 
 export function JobHeader({
   job,
@@ -49,101 +69,95 @@ export function JobHeader({
   onDelete: () => void
 }) {
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="flex h-[52px] shrink-0 items-center gap-2 border-b border-foreground/6 pr-4 pl-5"
-    >
-      <Link to="/apply" className="text-[13px] text-muted-foreground">
-        Apply
-      </Link>
-      <ChevronRight aria-hidden className="size-[13px] text-muted-foreground" />
-      <span className="flex min-w-0 items-center gap-1.5">
-        <Briefcase aria-hidden className="size-3.5 shrink-0 text-foreground" />
-        <span className={cn("truncate text-[13px] font-medium", TITLE_TEXT)}>
-          {job.title}
-        </span>
-      </span>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Favorite"
-        aria-pressed={job.starred}
-        className={cn("size-[26px]", ICON_BUTTON)}
-        onClick={onToggleStar}
-      >
-        <Star
-          aria-hidden
-          className={cn(
-            "size-[26px] p-[5.5px]",
-            job.starred && "fill-current text-foreground"
-          )}
-        />
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              aria-label="More"
-              className={cn("size-[26px]", ICON_BUTTON)}
+    <PageHeader>
+      <PageHeaderLeading>
+        <PageHeaderBack render={<Link to="/apply" />}>Apply</PageHeaderBack>
+      </PageHeaderLeading>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link to="/apply" />}>Apply</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage icon={<Briefcase />}>{job.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <PageHeaderTitleActions>
+        <PageHeaderAction
+          label="Favorite"
+          icon={
+            <Star
+              className={cn(job.starred && "fill-current text-foreground")}
             />
           }
-        >
-          <Ellipsis aria-hidden className="size-[26px] p-[5.5px]" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={onDelete}>Delete job</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <span className="flex-1" />
-      <span
-        className={cn(
-          "mr-1.5 text-[12.5px] leading-[15px] whitespace-nowrap",
-          FAINT_TEXT.card
-        )}
-      >
-        {position > 0 ? `${position} / ${total}` : ""}
-      </span>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Previous job"
-        disabled={!onPrevious}
-        className={cn("size-7", ICON_BUTTON)}
-        onClick={() => onPrevious?.()}
-      >
-        <ChevronUp aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Next job"
-        disabled={!onNext}
-        className={cn("size-7", ICON_BUTTON)}
-        onClick={() => onNext?.()}
-      >
-        <ChevronDown aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
-      <CopyButton
-        value={() => window.location.href}
-        copiedMessage="Link copied"
-        errorMessage="Could not copy the link. Try again."
-        aria-label="Copy link"
-        className={cn("size-7", ICON_BUTTON)}
-      >
-        <LinkIcon aria-hidden className="size-7 p-[6.5px]" />
-      </CopyButton>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Properties panel"
-        aria-pressed={railOpen}
-        className={cn("size-7", ICON_BUTTON)}
-        onClick={onToggleRail}
-      >
-        <PanelRight aria-hidden className="size-7 p-[6.5px]" />
-      </Button>
-    </nav>
+          pressed={job.starred}
+          onSelect={onToggleStar}
+        />
+        <DropdownMenu>
+          <PageHeaderAction
+            label="More"
+            icon={<Ellipsis />}
+            className="max-md:hidden"
+            render={
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    data-slot="page-header-action"
+                  />
+                }
+              />
+            }
+          />
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={onDelete}>Delete job</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeaderTitleActions>
+      {position > 0 ? (
+        <PageHeaderMeta showOnPhone className={FAINT_TEXT.card}>
+          {`${position} / ${total}`}
+        </PageHeaderMeta>
+      ) : null}
+      <PageHeaderActions overflowLabel="More actions">
+        <PageHeaderAction
+          label="Previous job"
+          icon={<ChevronUp />}
+          disabled={!onPrevious}
+          onSelect={() => onPrevious?.()}
+          collapse
+        />
+        <PageHeaderAction
+          label="Next job"
+          icon={<ChevronDown />}
+          disabled={!onNext}
+          onSelect={() => onNext?.()}
+          collapse
+        />
+        <PageHeaderAction
+          label="Copy link"
+          icon={<LinkIcon />}
+          onSelect={() => void copyLink()}
+          collapse
+        />
+        <PageHeaderAction
+          label="Properties panel"
+          icon={<PanelRight />}
+          pressed={railOpen}
+          onSelect={onToggleRail}
+          collapse
+        />
+        <PageHeaderAction
+          label="Delete job"
+          icon={<Trash2 />}
+          className="md:hidden"
+          onSelect={onDelete}
+          collapse
+        />
+      </PageHeaderActions>
+    </PageHeader>
   )
 }
