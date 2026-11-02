@@ -27,6 +27,20 @@ describe("Pitch coming soon", () => {
     expect(screen.getByText("Your CV and Proofs on one page.")).toBeVisible()
   })
 
+  it("keeps the header fixed above the scrolling body", async () => {
+    renderApp("/pitch")
+
+    const title = await screen.findByRole("heading", {
+      level: 1,
+      name: "Pitch",
+    })
+    const header = title.closest('[data-slot="page-header"]')!
+    expect(header).toHaveAttribute("data-pen-surface", "coming-soon")
+    expect(header.className).not.toMatch(/\bh-12\b|bg-background/)
+    expect(header.nextElementSibling).toHaveClass("overflow-y-auto")
+    expect(header.closest(".overflow-y-auto")).toBeNull()
+  })
+
   it("asks to be notified about Pitch", async () => {
     renderApp("/pitch")
     const before = notifyCalls().length

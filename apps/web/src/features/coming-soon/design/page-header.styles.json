@@ -1,0 +1,83 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "qSuLB",
+    "frameName": "W10.4 Job detail",
+    "root": "TOTUy"
+  },
+  "sections": [
+    {
+      "id": "Vf29b",
+      "name": "Apply",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    { "id": "i9Bx4", "name": "Icon", "texts": [], "marks": [] },
+    {
+      "id": "Y3wuVj",
+      "name": "Job",
+      "texts": [
+        {
+          "content": "Associate PM intern",
+          "fill": "#2F2F31",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "F6djKV", "name": "Icon", "width": 14, "height": 14 }]
+    },
+    { "id": "MOJ76", "name": "star", "texts": [], "marks": [] },
+    { "id": "N246Z6", "name": "ellipsis", "texts": [], "marks": [] },
+    { "id": "eM2oG", "name": "Spacer", "texts": [], "marks": [] },
+    {
+      "id": "cdpGm",
+      "name": "Nav",
+      "texts": [
+        {
+          "content": "1 / 7",
+          "fill": "#969799",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": []
+    },
+    { "id": "MiLsU", "name": "chevron-up", "texts": [], "marks": [] },
+    { "id": "hYi4Q", "name": "chevron-down", "texts": [], "marks": [] },
+    { "id": "mAQ7N", "name": "link", "texts": [], "marks": [] },
+    { "id": "vVZTT", "name": "panel-right", "texts": [], "marks": [] }
+  ],
+  "borders": [
+    { "id": "TOTUy", "stroke": "#EDEDEF", "strokeWidth": { "bottom": 1 } }
+  ],
+  "paints": [
+    { "id": "TOTUy", "path": "", "fill": "#FFFFFF", "stroke": "#EDEDEF" },
+    { "id": "Vf29b", "path": "/children/0", "fill": "#59595B" },
+    { "id": "i9Bx4", "path": "/children/1", "fill": "#969799" },
+    { "id": "F6djKV", "path": "/children/2/children/0", "fill": "#1A1A1A" },
+    { "id": "cO908", "path": "/children/2/children/1", "fill": "#2F2F31" },
+    { "id": "uxOxN", "path": "/children/3/children/0", "fill": "#59595B" },
+    { "id": "BKON1", "path": "/children/4/children/0", "fill": "#59595B" },
+    { "id": "Ikg22", "path": "/children/6/children/0", "fill": "#969799" },
+    { "id": "R4TJEc", "path": "/children/7/children/0", "fill": "#59595B" },
+    { "id": "fhlDE", "path": "/children/8/children/0", "fill": "#59595B" },
+    { "id": "lGB8u", "path": "/children/9/children/0", "fill": "#59595B" },
+    { "id": "GIULM", "path": "/children/10/children/0", "fill": "#59595B" }
+  ]
+}

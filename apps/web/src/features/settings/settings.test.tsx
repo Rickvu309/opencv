@@ -394,9 +394,21 @@ describe("settings", () => {
     expect(
       screen.queryByRole("link", { name: "Preferences" })
     ).not.toBeInTheDocument()
+    const back = screen.getByRole("link", { name: "Back to app" })
+    expect(back).toHaveAttribute("data-slot", "page-header-back")
+    expect(back).toHaveClass("h-11", "shrink-0", "touch-manipulation")
+    const header = back.closest('[data-slot="page-header"]')!
+    expect(header).toContainElement(
+      screen.getByRole("combobox", { name: /Section/ })
+    )
+  })
+
+  it("has no header bar on desktop", async () => {
+    renderApp("/settings")
+    await screen.findByRole("link", { name: "Back to app" })
     expect(
-      screen.getByRole("link", { name: "Back to app" })
-    ).toBeInTheDocument()
+      document.querySelector('[data-slot="page-header"]')
+    ).not.toBeInTheDocument()
   })
 })
 

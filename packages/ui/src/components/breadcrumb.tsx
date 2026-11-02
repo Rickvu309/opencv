@@ -51,7 +51,7 @@ function BreadcrumbLink({
     props: mergeProps<"a">(
       {
         className: cn(
-          "font-normal whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground",
+          "touch-manipulation font-normal whitespace-nowrap text-muted-foreground transition-colors [-webkit-tap-highlight-color:transparent] hover:text-foreground active:text-foreground",
           className
         ),
       },
@@ -65,20 +65,23 @@ function BreadcrumbLink({
 }
 
 function BreadcrumbPage({
+  as: Tag = "span",
   className,
   icon,
   children,
   title,
   ...props
-}: Omit<React.ComponentProps<"span">, "title"> & {
+}: Omit<React.ComponentProps<"h1">, "title"> & {
+  as?: "span" | "h1"
   icon?: React.ReactNode
   title?: string
 }) {
   return (
-    <span
+    <Tag
       data-slot="breadcrumb-page"
-      role="link"
-      aria-disabled="true"
+      {...(Tag === "span"
+        ? { role: "link", "aria-disabled": "true" as const }
+        : {})}
       aria-current="page"
       title={title ?? (typeof children === "string" ? children : undefined)}
       className={cn(
@@ -96,7 +99,7 @@ function BreadcrumbPage({
         </span>
       ) : null}
       <span className="min-w-0 truncate">{children}</span>
-    </span>
+    </Tag>
   )
 }
 

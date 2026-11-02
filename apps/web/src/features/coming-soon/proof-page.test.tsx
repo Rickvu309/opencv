@@ -21,16 +21,37 @@ afterEach(() => {
 })
 
 describe("Proofs coming soon", () => {
-  it("shows the Paper to Proofs breadcrumb as the page title", async () => {
+  it("names the page Proofs with one h1 and a Paper breadcrumb above it", async () => {
     renderApp("/proofs")
 
     const title = await screen.findByRole("heading", { level: 1 })
-    expect(title).toHaveTextContent("Paper")
-    expect(title).toHaveTextContent("Proofs")
-    expect(within(title).getByRole("link", { name: "Paper" })).toHaveAttribute(
+    expect(title).toHaveTextContent(/^Proofs$/)
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1)
+    expect(title).toHaveAttribute("aria-current", "page")
+    const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" })
+    expect(within(crumbs).getByRole("link", { name: "Paper" })).toHaveAttribute(
       "href",
       "/paper"
     )
+  })
+
+  it("keeps the header outside the scrolling body", async () => {
+    renderApp("/proofs")
+
+    const title = await screen.findByRole("heading", { level: 1 })
+    const header = title.closest('[data-slot="page-header"]')!
+    expect(header).toHaveAttribute("data-pen-surface", "coming-soon")
+    expect(header.nextElementSibling).toHaveClass("overflow-y-auto")
+    expect(header.closest(".overflow-y-auto")).toBeNull()
+  })
+
+  it("gives phones a back link to Paper", async () => {
+    renderApp("/proofs")
+
+    await screen.findByRole("heading", { level: 1 })
+    const back = document.querySelector('[data-slot="page-header-back"]')!
+    expect(back).toHaveAttribute("href", "/paper")
+    expect(back).toHaveClass("h-11", "touch-manipulation")
   })
 
   it("leads with the headline and the sub line", async () => {

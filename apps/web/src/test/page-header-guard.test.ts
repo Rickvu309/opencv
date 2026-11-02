@@ -58,34 +58,9 @@ type Pending = {
   note: string
 }
 
-const LEGACY_TITLE = /<WorkspaceHeader\s+title=/
 const PAPER = "Paper paused"
 
 export const PENDING_HEADERS: Pending[] = [
-  {
-    file: "features/coming-soon/coming-soon-page.tsx",
-    marker: LEGACY_TITLE,
-    row: 5,
-    note: "Jobs header",
-  },
-  {
-    file: "features/coming-soon/pitch-page.tsx",
-    marker: LEGACY_TITLE,
-    row: 5,
-    note: "Pitch header",
-  },
-  {
-    file: "features/coming-soon/proof-page.tsx",
-    marker: LEGACY_TITLE,
-    row: 5,
-    note: "Proofs header",
-  },
-  {
-    file: "features/settings/settings-layout.tsx",
-    marker: "<SectionSelect current={current} />",
-    row: 5,
-    note: "Settings phone row",
-  },
   {
     file: "features/paper/paper-library.tsx",
     marker: '<h1 className="text-lg font-medium">Paper</h1>',
@@ -185,7 +160,6 @@ describe("tool headers are built on the kit PageHeader", () => {
   it("keeps a pending file's own markup that the rules can see", () => {
     const unseen = PENDING_HEADERS.filter(
       (entry) =>
-        !entry.file.startsWith("features/settings/") &&
         !entry.file.startsWith("features/paper/paper-library") &&
         problems(read(entry.file)).length === 0
     ).map((entry) => entry.file)

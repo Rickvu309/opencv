@@ -45,6 +45,16 @@ describe("coming soon and the calm 404", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("titles Jobs in the shared header, outside the scrolling body", async () => {
+    renderApp("/jobs")
+
+    const title = await screen.findByRole("heading", { level: 1, name: "Jobs" })
+    expect(title).toHaveAttribute("data-slot", "page-header-title")
+    const header = title.closest('[data-slot="page-header"]')!
+    expect(header).toHaveAttribute("data-pen-surface", "coming-soon")
+    expect(header.nextElementSibling).toHaveClass("overflow-y-auto")
+  })
+
   it("posts jobs once and toasts the repeat", async () => {
     renderApp("/jobs")
     const notify = await screen.findByRole("button", { name: "Notify me" })

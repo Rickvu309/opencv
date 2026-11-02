@@ -284,6 +284,34 @@ describe("PageHeaderTitle", () => {
   })
 })
 
+describe("BreadcrumbPage as the page heading", () => {
+  it("is the one h1 and still marks the current page", () => {
+    render(
+      <PageHeader>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/paper">Paper</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage as="h1">Proofs</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </PageHeader>
+    )
+    const heading = screen.getByRole("heading", { level: 1, name: "Proofs" })
+    expect(screen.getAllByRole("heading")).toHaveLength(1)
+    expect(heading).toHaveAttribute("aria-current", "page")
+    expect(heading).not.toHaveAttribute("role")
+    expect(screen.getByRole("link", { name: "Paper" })).toHaveAttribute(
+      "href",
+      "/paper"
+    )
+  })
+})
+
 describe("PageHeader frame", () => {
   it("is a 52px bar with the pen padding and no fill", () => {
     render(<PageHeader />)
