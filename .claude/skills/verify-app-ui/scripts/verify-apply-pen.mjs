@@ -160,6 +160,7 @@ async function main() {
           layout,
           measured: box.measured,
           tokens: box.tokens,
+          extras: box.extras,
           exceptions: LAYOUT_EXCEPTIONS,
         })
         // A colour mismatch stands unless every copy of that text that misses

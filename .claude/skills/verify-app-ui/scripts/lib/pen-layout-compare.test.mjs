@@ -8,6 +8,7 @@ import {
   comparePenLayout,
   formatMismatch,
   PEN_LAYOUT_EXCEPTIONS,
+  PENDING_EXTRAS,
 } from "./pen-layout-compare.mjs"
 
 const here = new URL(".", import.meta.url)
@@ -219,4 +220,105 @@ test("a pen colour that passes AA still fails when the app text is unreadable", 
   }
   const app = { ...pen, background: "rgba(255, 255, 255, 1)" }
   assert.equal(colorMatches(pen, app, tokens), false)
+})
+
+const extra = (over = {}) => ({
+  kind: "control",
+  text: "Collapse sidebar",
+  x: 200,
+  y: 12,
+  width: 24,
+  height: 24,
+  ...over,
+})
+const runExtras = (extras, exceptions = [], extraKinds = undefined) =>
+  comparePenLayout({
+    layout: layout([text()]),
+    measured: [text()],
+    extras,
+    extraKinds,
+    exceptions,
+    today: "2026-10-28",
+  })
+
+test("a control the frame lacks fails as an extra", () => {
+  const result = runExtras([extra()])
+  assert.deepEqual(properties(result), ["extra"])
+  assert.equal(result.mismatches[0].text, "Collapse sidebar")
+  assert.equal(result.mismatches[0].pen, "absent")
+  assert.match(
+    formatMismatch(layout([text()]), result.mismatches[0]),
+    /^FAIL TEST1 \/test "Collapse sidebar" extra: pen absent app control at 200,12$/
+  )
+})
+
+test("a text the frame lacks fails as an extra", () => {
+  const result = runExtras(
+    [extra({ kind: "text", text: "Helper line the frame hides" })],
+    [],
+    ["text", "heading", "control"]
+  )
+  assert.deepEqual(properties(result), ["extra"])
+  assert.deepEqual(
+    runExtras([extra({ kind: "text", text: "Helper line the frame hides" })])
+      .mismatches,
+    []
+  )
+})
+
+test("a heading in another case is missing and names the frame text", () => {
+  const result = comparePenLayout({
+    layout: layout([text({ text: "Your Letters" })]),
+    measured: [null],
+    extras: [extra({ kind: "heading", text: "Your letters" })],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(properties(result), ["text", "extra"])
+  assert.equal(result.mismatches[1].pen, '"Your Letters"')
+})
+
+test("a frame with no extras passes", () => {
+  assert.deepEqual(runExtras([]).mismatches, [])
+})
+
+test("an extra exception hides the extra while live, fails when expired and is not stale when the state differs", () => {
+  const hide = exception({
+    text: "Collapse sidebar",
+    property: "extra",
+  })
+  assert.deepEqual(runExtras([extra()], [hide]).mismatches, [])
+  assert.deepEqual(runExtras([], [hide]).mismatches, [])
+  const prefixed = exception({
+    text: undefined,
+    textStartsWith: "Collapse",
+    property: "extra",
+  })
+  assert.deepEqual(runExtras([extra()], [prefixed]).mismatches, [])
+  assert.deepEqual(
+    properties(runExtras([extra()], [{ ...hide, until: "2026-01-01" }])),
+    ["exception", "extra"]
+  )
+})
+
+test("only the chosen kinds of extra count", () => {
+  const result = comparePenLayout({
+    layout: layout([text()]),
+    measured: [text()],
+    extras: [extra({ kind: "text", text: "Plain" }), extra()],
+    extraKinds: ["control", "heading"],
+  })
+  assert.deepEqual(
+    result.mismatches.map((m) => m.text),
+    ["Collapse sidebar"]
+  )
+})
+
+test("every pending extra names an issue, a date and a frame", () => {
+  assert.ok(PENDING_EXTRAS.length > 0)
+  for (const entry of PENDING_EXTRAS) {
+    assert.match(entry.issue, /^#\d+$/)
+    assert.match(entry.until, /^\d{4}-\d{2}-\d{2}$/)
+    assert.ok(entry.frameId)
+    assert.ok(entry.text || entry.textStartsWith)
+  }
 })

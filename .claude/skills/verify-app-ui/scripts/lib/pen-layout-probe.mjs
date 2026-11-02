@@ -213,7 +213,7 @@ function probe(args) {
           if (!byText.has(one)) byText.set(one, [])
           byText.get(one).push({
             element: field,
-            root: { nodeType: 1, children: [], line, text: raw },
+            root: { nodeType: 1, children: [], line, text: raw, owner: field },
             field: "value",
           })
         })
@@ -242,6 +242,108 @@ function probe(args) {
     const pseudo = best.field === "placeholder" ? "::placeholder" : null
     return { ...describe(best.element, best.box, pseudo), text: want.text }
   })
+  const IGNORED_TAGS = ["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "TEXTAREA"]
+  const CONTROLS =
+    'button, a[href], input:not([type="hidden"]), textarea, select, summary, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="checkbox"], [role="switch"], [role="combobox"], [role="option"]'
+  const seenOnScreen = (element, rect, hoverRevealed = false) => {
+    const style = getComputedStyle(element)
+    if (style.visibility === "hidden" || style.display === "none") return false
+    if (rect.width <= 0 || rect.height <= 0) return false
+    for (let up = element; up && up !== document.body; up = up.parentElement) {
+      const upStyle = getComputedStyle(up)
+      if (
+        upStyle.opacity === "0" &&
+        !(hoverRevealed && upStyle.pointerEvents !== "none")
+      )
+        return false
+      const upRect = up.getBoundingClientRect()
+      if (
+        upRect.width <= 1 &&
+        upRect.height <= 1 &&
+        getComputedStyle(up).overflow !== "visible"
+      )
+        return false
+    }
+    return !clipped(element, rect)
+  }
+  const accounted = new Set()
+  for (const root of used) {
+    if (root.owner) accounted.add(root.owner)
+    if (!(root instanceof Node)) continue
+    if (root.nodeType === Node.TEXT_NODE) accounted.add(root)
+    else for (const node of textNodes(root)) accounted.add(node)
+  }
+  const matchedCentres = measured.filter(Boolean).map((entry) => ({
+    x: paneRect.left + entry.x + entry.width / 2,
+    y: paneRect.top + entry.y + entry.height / 2,
+  }))
+  const relative = (rect) => ({
+    x: rect.left - paneRect.left,
+    y: rect.top - paneRect.top,
+    width: rect.width,
+    height: rect.height,
+  })
+  const extras = []
+  const extraControls = []
+  const inScope = (element) => scopes.some((scope) => scope.contains(element))
+  for (const element of document.querySelectorAll(CONTROLS)) {
+    if (!inScope(element)) continue
+    const rect = element.getBoundingClientRect()
+    if (!seenOnScreen(element, rect, true)) continue
+    const holdsMatched =
+      accounted.has(element) ||
+      matchedCentres.some(
+        (centre) =>
+          centre.x >= rect.left &&
+          centre.x <= rect.right &&
+          centre.y >= rect.top &&
+          centre.y <= rect.bottom
+      ) ||
+      textNodes(element).some((node) => accounted.has(node))
+    if (holdsMatched) continue
+    extraControls.push(element)
+    const name = normalize(
+      element.getAttribute("aria-label") ||
+        ownText(element) ||
+        element.getAttribute("title") ||
+        element.placeholder ||
+        element.value ||
+        ""
+    )
+    extras.push({
+      kind: "control",
+      text: name || `<${element.tagName.toLowerCase()}>`,
+      ...relative(rect),
+    })
+  }
+  const loose = new Map()
+  for (const scope of scopes) {
+    for (const node of textNodes(scope)) {
+      const parent = node.parentElement
+      if (!parent || accounted.has(node)) continue
+      if (parent.closest(IGNORED_TAGS.join(","))) continue
+      if (extraControls.some((control) => control.contains(node))) continue
+      const range = document.createRange()
+      range.selectNodeContents(node)
+      const rects = [...range.getClientRects()].filter(
+        (rect) => rect.width > 0 && rect.height > 0
+      )
+      if (!rects.length || !seenOnScreen(parent, rects[0])) continue
+      if (!loose.has(parent)) loose.set(parent, [])
+      loose.get(parent).push({ node, rect: rects[0] })
+    }
+  }
+  for (const [parent, pieces] of loose) {
+    const text = normalize(pieces.map(({ node }) => node.data).join(" "))
+    if (!text) continue
+    extras.push({
+      kind: parent.closest('h1, h2, h3, h4, h5, h6, [role="heading"]')
+        ? "heading"
+        : "text",
+      text,
+      ...relative(pieces[0].rect),
+    })
+  }
   const rootStyle = getComputedStyle(document.documentElement)
   const tokens = Object.fromEntries(
     args.tokens.map((name) => [
@@ -249,7 +351,7 @@ function probe(args) {
       toRgba(rootStyle.getPropertyValue(name).trim()),
     ])
   )
-  return { pane: pageSize, measured, tokens }
+  return { pane: pageSize, measured, tokens, extras }
 }
 
 export const probeSource = (args) =>

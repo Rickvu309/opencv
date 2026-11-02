@@ -66,3 +66,49 @@ test("input text measurement follows alignment within the padded content box", a
     await browser.quit()
   }
 })
+
+test("the probe lists controls and headings that no frame text accounts for", async () => {
+  const browser = await launchBrowser()
+  try {
+    const page = await browser.openPage({
+      width: 800,
+      height: 600,
+      mobile: false,
+      reducedMotion: true,
+    })
+    try {
+      const markup = [
+        "<main id=pane>",
+        "<h1>Letters</h1>",
+        "<h2>Your letters</h2>",
+        "<button>Save</button>",
+        '<button aria-label="Collapse sidebar" style="opacity:0"><svg width=16 height=16></svg></button>',
+        '<button aria-label="Closed menu" style="opacity:0;pointer-events:none">x</button>',
+        '<span style="position:absolute;width:1px;height:1px;overflow:hidden">Hidden helper</span>',
+        '<p style="display:none">Gone</p>',
+        "</main>",
+      ].join("")
+      await page.goto(`data:text/html,${encodeURIComponent(markup)}`)
+      const want = (value) => ({ text: value, x: 0, y: 0 })
+      const result = await page.evaluate(
+        probeSource({
+          mode: "app",
+          pane: "#pane",
+          texts: [want("Letters"), want("Save")],
+          tokens: [],
+        })
+      )
+      assert.deepEqual(
+        result.extras.map(({ kind, text }) => ({ kind, text })),
+        [
+          { kind: "control", text: "Collapse sidebar" },
+          { kind: "heading", text: "Your letters" },
+        ]
+      )
+    } finally {
+      await page.close()
+    }
+  } finally {
+    await browser.quit()
+  }
+})
