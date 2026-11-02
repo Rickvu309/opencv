@@ -154,9 +154,22 @@ function EditSheet({
 }) {
   const fields = useRef<(HTMLTextAreaElement | null)[]>([])
   const pending = useRef<BodyPosition | null>(null)
+  const parts = useRef<Partial<Record<LetterPart, HTMLTextAreaElement | null>>>(
+    {}
+  )
+  const partCaret = useRef<{ part: LetterPart; offset: number } | null>(null)
   const paragraphs = paragraphsOf(letter.markdown)
 
   useLayoutEffect(() => {
+    // A pasted line break in a one-line part becomes a space; keep the caret
+    // where the text went in instead of letting the controlled value reset it.
+    const kept = partCaret.current
+    if (kept) {
+      partCaret.current = null
+      const field = parts.current[kept.part]
+      if (field && document.activeElement === field)
+        field.setSelectionRange(kept.offset, kept.offset)
+    }
     const target = pending.current
     if (!target) return
     pending.current = null
@@ -185,7 +198,16 @@ function EditSheet({
     const element = event.currentTarget
     const start = element.selectionStart
     const end = element.selectionEnd
-    if (event.key === "Enter" && !event.shiftKey) {
+    // A line break typed at the end of a paragraph that has one after it cannot
+    // stay in this paragraph: the body would then hold three newlines in a row,
+    // and the first two read as the paragraph break. Open a new paragraph, as
+    // Enter does, so the caret and the break agree.
+    const breaksAtEnd =
+      event.shiftKey &&
+      start === end &&
+      start === element.value.length &&
+      index < paragraphs.length - 1
+    if (event.key === "Enter" && (!event.shiftKey || breaksAtEnd)) {
       event.preventDefault()
       const base = offsetOf(paragraphs, index, 0)
       const from = base + start
@@ -221,18 +243,23 @@ function EditSheet({
     return (
       <SheetField
         key={name}
+        ref={(element) => {
+          parts.current[name] = element
+        }}
         data-slot={`letter-${name}`}
         aria-label={field.label}
         placeholder={field.placeholder}
         value={letter[name] ?? ""}
-        onChange={(event) =>
-          onChange?.({
-            ...letter,
-            [name]: field.multiline
-              ? event.target.value
-              : oneLine(event.target.value),
-          })
-        }
+        onChange={(event) => {
+          const raw = event.target.value
+          const value = field.multiline ? raw : oneLine(raw)
+          if (value !== raw)
+            partCaret.current = {
+              part: name,
+              offset: event.target.selectionStart,
+            }
+          onChange?.({ ...letter, [name]: value })
+        }}
         onKeyDown={(event) => {
           if (field.multiline || composing(event)) return
           if (event.key === "Enter") event.preventDefault()

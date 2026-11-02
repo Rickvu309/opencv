@@ -106,7 +106,8 @@
 
 [data-pen-surface="paper"][data-slot="letter-sheet"] > textarea::placeholder {
   color: #8a8a8e;
-  opacity: 1;
+  opacity: 0.55;
+  font-style: italic;
 }
 
 [data-pen-surface="paper"][data-slot="letter-sheet"] > textarea:focus-visible {
@@ -118,4 +119,18 @@
   > :not([data-slot="letter-closing"])
   + [data-slot="letter-signature"] {
   margin-top: 18px;
+}
+
+@media (pointer: coarse) {
+  [data-pen-surface="paper"][data-slot="letter-sheet"] > textarea {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  [data-pen-surface="paper"][data-slot="letter-sheet"] {
+    min-height: 0;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }

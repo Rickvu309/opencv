@@ -284,6 +284,41 @@ describe("LetterSheet edit mode", () => {
     expect(second.selectionStart).toBe(1)
   })
 
+  it("opens a new paragraph on Shift+Enter at the end of a paragraph that has one after it", () => {
+    const seen: LetterDocument[] = []
+    render(<Harness initial={{ markdown: "ab\n\ncd" }} seen={seen} />)
+    const first = field("Paragraph 1")
+    first.focus()
+    first.setSelectionRange(2, 2)
+    fireEvent.keyDown(first, { key: "Enter", shiftKey: true })
+    expect(lastBody(seen)).toBe("ab\n\n\n\ncd")
+    expect(field("Paragraph 2").value).toBe("")
+    expect(document.activeElement).toBe(field("Paragraph 2"))
+  })
+
+  it("keeps Shift+Enter a line break at the end of the last paragraph", async () => {
+    const seen: LetterDocument[] = []
+    render(<Harness initial={{ markdown: "ab" }} seen={seen} />)
+    const only = field("Paragraph 1")
+    only.focus()
+    only.setSelectionRange(2, 2)
+    const allowed = fireEvent.keyDown(only, { key: "Enter", shiftKey: true })
+    expect(allowed).toBe(true)
+    expect(seen).toHaveLength(0)
+  })
+
+  it("keeps the caret where a pasted line break went into a one-line part", () => {
+    const seen: LetterDocument[] = []
+    render(<Harness initial={{ markdown: "", sender: "Linh" }} seen={seen} />)
+    const sender = field("Sender name")
+    sender.focus()
+    fireEvent.change(sender, {
+      target: { value: "LiA\nBnh", selectionStart: 5, selectionEnd: 5 },
+    })
+    expect(seen.at(-1)?.sender).toBe("LiA Bnh")
+    expect(field("Sender name").selectionStart).toBe(5)
+  })
+
   it("follows Shift+Enter at a paragraph's end into the line it opens", () => {
     const seen: LetterDocument[] = []
     render(<Harness initial={{ markdown: "ab\n\ncd" }} seen={seen} />)
