@@ -185,7 +185,7 @@ async function uiMessages(code, file = KIT) {
     execFileSync(
       "node",
       [path.join(root, "scripts/lib/lint-ui-text.mjs"), file],
-      { input: code, encoding: "utf8" }
+      { input: code, encoding: "utf8", timeout: 60_000 }
     )
   )
 }
