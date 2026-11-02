@@ -123,6 +123,7 @@ export function createAuth({
       // Better Auth skips origin checks when `isTest()`; keep one CORS/CSRF
       // policy in vitest and on Railway.
       disableOriginCheck: false,
+      ipAddress: { ipAddressHeaders: ["x-real-ip"] },
     },
     rateLimit: {
       enabled: rateLimitEnabled,
