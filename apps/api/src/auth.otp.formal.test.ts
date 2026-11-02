@@ -9,7 +9,13 @@ import {
   vi,
 } from "vitest"
 
-import { createAuthedApp, postJson, sendSignInCode } from "./auth.fixtures.js"
+import {
+  codeLine,
+  cookieHeader,
+  createAuthedApp,
+  postJson,
+  signInWithCode,
+} from "./auth.fixtures.js"
 import { session, user, verification } from "./db/schema.js"
 import { testAuthUrl } from "./test/harness.js"
 import {
@@ -29,15 +35,39 @@ const SEEDS = [SEED, SEED + 1, SEED + 2]
 const ROUTES = {
   check: {
     path: "/api/auth/email-otp/check-verification-otp",
+    codeType: "sign-in",
     body: (email: string, otp: string) => ({ email, type: "sign-in", otp }),
   },
   signIn: {
     path: "/api/auth/sign-in/email-otp",
+    codeType: "sign-in",
     body: (email: string, otp: string) => ({ email, otp }),
+  },
+  verifyEmail: {
+    path: "/api/auth/email-otp/verify-email",
+    codeType: "email-verification",
+    body: (email: string, otp: string) => ({ email, otp }),
+  },
+  resetPassword: {
+    path: "/api/auth/email-otp/reset-password",
+    codeType: "forget-password",
+    body: (email: string, otp: string) => ({
+      email,
+      otp,
+      password: "correct-horse-battery",
+    }),
+  },
+  changeEmail: {
+    path: "/api/auth/email-otp/change-email",
+    codeType: "change-email",
+    body: (newEmail: string, otp: string) => ({ newEmail, otp }),
   },
 } as const
 
 type RouteName = keyof typeof ROUTES
+type SignInRoute = "check" | "signIn"
+const ROUTE_NAMES = Object.keys(ROUTES) as RouteName[]
+const SESSION_ROUTES: readonly RouteName[] = ["check", "signIn"]
 
 let backend: Backend
 let app: ReturnType<typeof createAuthedApp>
@@ -88,15 +118,81 @@ function wrongGuesses(code: string, howMany: number, offset = 0) {
   return guesses.slice(offset)
 }
 
-async function issueCode() {
+async function capturedCode(
+  run: () => Response | Promise<Response>,
+  email: string,
+  codeType: string
+) {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {})
+  try {
+    await run()
+    const match = log.mock.calls
+      .map((call) => String(call[0]).match(codeLine))
+      .find((row) => row?.[1] === email.toLowerCase() && row[2] === codeType)
+    if (!match?.[3]) throw new Error(`no ${codeType} code was issued`)
+    return match[3]
+  } finally {
+    log.mockRestore()
+  }
+}
+
+function mailCode(email: string, codeType: string) {
+  return capturedCode(
+    () =>
+      postJson(app, "/api/auth/email-otp/send-verification-otp", {
+        email,
+        type: codeType,
+      }),
+    email,
+    codeType
+  )
+}
+
+async function changeEmailCode(email: string) {
+  const signInCode = await mailCode(email, "sign-in")
+  const cookie = cookieHeader(await signInWithCode(app, email, signInCode))
+  const newEmail = `new-${email}`
+  const code = await capturedCode(
+    () =>
+      postJson(
+        app,
+        "/api/commands/account.requestEmailChange",
+        { input: { email: newEmail } },
+        { Cookie: cookie }
+      ),
+    newEmail,
+    "change-email"
+  )
+  return {
+    email,
+    code,
+    attempt: async (otp: string) =>
+      postJson(
+        app,
+        ROUTES.changeEmail.path,
+        ROUTES.changeEmail.body(newEmail, otp),
+        {
+          Cookie: cookie,
+        }
+      ),
+  }
+}
+
+async function issueCode(route: RouteName = "signIn") {
   mailbox += 1
   const email = `formal-${SEED}-${mailbox}-${backend.kind}@example.com`
   await backend.db
     .insert(user)
     .values({ id: `formal-user-${mailbox}-${SEED}`, name: "Ada", email })
-  const sent = await sendSignInCode(app, email)
-  if (!sent.code) throw new Error("no sign-in code was issued")
-  return { email, code: sent.code }
+  if (route === "changeEmail") return changeEmailCode(email)
+  const spec = ROUTES[route]
+  const code = await mailCode(email, spec.codeType)
+  return {
+    email,
+    code,
+    attempt: async (otp: string) =>
+      postJson(app, spec.path, spec.body(email, otp)),
+  }
 }
 
 function countGuessEvaluations(guesses: string[]) {
@@ -113,7 +209,7 @@ function countGuessEvaluations(guesses: string[]) {
   return { evaluated, stop: () => spy.mockRestore() }
 }
 
-async function send(route: RouteName, email: string, otp: string) {
+async function send(route: SignInRoute, email: string, otp: string) {
   return postJson(app, ROUTES[route].path, ROUTES[route].body(email, otp))
 }
 
@@ -131,23 +227,23 @@ async function sessionsOf(email: string) {
 }
 
 describe("A1: at most 3 wrong guesses are evaluated per code", () => {
-  for (const route of ["check", "signIn"] as const) {
+  for (const route of ROUTE_NAMES) {
     it(`${route}: N racing wrong guesses, then sequential probes, evaluate at most 3 and lock the code`, async () => {
       const overBudget: string[] = []
       const takeovers: string[] = []
       for (const callers of CALLERS) {
         for (const seed of SEEDS) {
-          const { email, code } = await issueCode()
+          const { email, code, attempt } = await issueCode(route)
           const racing = wrongGuesses(code, callers)
           const probes = wrongGuesses(code, 4, callers)
           const counter = countGuessEvaluations([...racing, ...probes])
           const label = `${route} N=${callers} seed=${seed} backend=${backend.kind}`
           try {
             const outcomes = await race(
-              racing.map((guess) => () => send(route, email, guess)),
+              racing.map((guess) => () => attempt(guess)),
               delaysFor(seed, callers)
             )
-            for (const probe of probes) await send(route, email, probe)
+            for (const probe of probes) await attempt(probe)
             const accepted = outcomes.filter(
               (outcome) => statusOf(outcome) === 200
             )
@@ -159,8 +255,10 @@ describe("A1: at most 3 wrong guesses are evaluated per code", () => {
           } finally {
             counter.stop()
           }
-          const takeover = await send(route, email, code)
-          if (takeover.status < 400 || (await sessionsOf(email)) > 0) {
+          const takeover = await attempt(code)
+          const sessionCreated =
+            SESSION_ROUTES.includes(route) && (await sessionsOf(email)) > 0
+          if (takeover.status < 400 || sessionCreated) {
             takeovers.push(`${label} the real code still signs in`)
           }
         }

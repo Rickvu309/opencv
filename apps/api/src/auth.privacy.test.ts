@@ -67,8 +67,10 @@ describe("auth email privacy", () => {
             path: "/api/auth/email-otp/send-verification-otp",
             type: "email-verification",
           },
-          { path: "/api/auth/email-otp/request-password-reset" },
-          { path: "/api/auth/forget-password/email-otp" },
+        ]
+        const unserved = [
+          "/api/auth/email-otp/request-password-reset",
+          "/api/auth/forget-password/email-otp",
         ]
         for (const route of routes) {
           for (const email of [registered, unknown]) {
@@ -85,17 +87,21 @@ describe("auth email privacy", () => {
             await expect(res.json()).resolves.toEqual({ success: true })
           }
         }
+        for (const path of [
+          ...unserved,
+          "/api/auth/email-otp/request-email-change",
+        ]) {
+          for (const email of [registered, unknown]) {
+            const res = await postJson(
+              app,
+              path,
+              { email, newEmail: email },
+              { Cookie: ownerCookie }
+            )
+            expect(res.status, `${path} ${email}`).toBe(404)
+          }
+        }
         for (const email of [registered, unknown]) {
-          const direct = await postJson(
-            app,
-            "/api/auth/email-otp/request-email-change",
-            {
-              newEmail: email,
-            },
-            { Cookie: ownerCookie }
-          )
-          expect(direct.status).toBe(200)
-          await expect(direct.json()).resolves.toEqual({ success: true })
           const command = await postJson(
             app,
             "/api/commands/account.requestEmailChange",
