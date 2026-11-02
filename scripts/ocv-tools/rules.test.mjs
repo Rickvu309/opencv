@@ -365,6 +365,20 @@ test("every checked rule has a failing and a passing fact", () => {
     "the change deletes a lot of authored source: 26 files (limit 25); a human must review it first"
   )
   check(
+    "CHANGE_TOO_BIG",
+    {
+      diff: {
+        changes: Array.from({ length: 26 }, (_, i) => ({
+          path: `a${i}.ts`,
+          added: 1,
+          deleted: 0,
+        })),
+      },
+    },
+    { diff: { changes: [{ path: "a.ts", added: 1, deleted: 0 }] } },
+    "the change adds or edits 26 authored source files (limit 25); large changes cause most of our bugs, so split it into sub-issues (AGENTS.md section 1) and ship one part at a time; if it truly cannot split, ask the owner to label the issue needs-human-review"
+  )
+  check(
     "PR_METADATA",
     {
       pull: { issue: 9, title: "feat: x (#9)", body: "x", issueState: "OPEN" },

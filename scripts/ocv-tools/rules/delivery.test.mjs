@@ -135,6 +135,21 @@ test("merge holds the owner, and the draft passes the pr moment", () => {
   assert.equal(decide("merge", merged).ok, true)
 })
 
+test("merge refuses a PR whose issue carries needs-human-review", () => {
+  const withIssue = (labels) => ({
+    pull,
+    issue: { n: 7, labels },
+    me: "Owner",
+    ci,
+  })
+  assert.equal(decide("merge", withIssue([])).ok, true)
+  const held = decide("merge", withIssue(["needs-human-review"]))
+  assert.deepEqual(
+    held.refusals.map((r) => r.id),
+    ["NEEDS_HUMAN_REVIEW"]
+  )
+})
+
 test("finish refuses a body with no Evidence before it pushes", () => {
   const verdict = decide("finish", {
     here: { ok: true },

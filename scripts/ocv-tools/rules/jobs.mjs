@@ -50,7 +50,8 @@ const draft = (facts) =>
   facts.pull.isDraft ? `PR #${prNo(facts)} is a draft.` : null
 
 const needsHumanReview = (facts) =>
-  facts.pull.labels.includes("needs-human-review")
+  facts.pull.labels.includes("needs-human-review") ||
+  facts.issue?.labels?.includes("needs-human-review")
     ? `PR #${prNo(facts)} needs human review; an agent never merges it.`
     : null
 

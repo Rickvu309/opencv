@@ -20,6 +20,18 @@ export const MASS_DELETE_LIMITS = Object.freeze({
   percent: 10,
 })
 
+export const CHANGE_SIZE_LIMIT = 25
+
+const NOT_COUNTED =
+  /(?:[.-](?:test|spec)\.[cm]?[jt]sx?|\.type-test\.ts|\.snapshot\.json|\.layout\.json)$|(?:^|\/)(?:test|tests|__tests__|__snapshots__|drizzle)\/|^pnpm-lock\.yaml$/
+
+export function countedSourceFiles(changes) {
+  return changes.filter(
+    (change) =>
+      !change.generated && change.added > 0 && !NOT_COUNTED.test(change.path)
+  )
+}
+
 function asLines(value) {
   if (Array.isArray(value)) return value
   if (value == null || value === "") return []
@@ -77,6 +89,15 @@ function massDelete(facts) {
   return `the change deletes a lot of authored source: ${over.join(", ")}; a human must review it first`
 }
 
+function changeTooBig(facts) {
+  const changes = facts.diff?.changes
+  if (!changes) return null
+  if (asLines(facts.diff?.labels).includes("needs-human-review")) return null
+  const counted = countedSourceFiles(changes)
+  if (counted.length <= CHANGE_SIZE_LIMIT) return null
+  return `the change adds or edits ${counted.length} authored source files (limit ${CHANGE_SIZE_LIMIT}); large changes cause most of our bugs, so split it into sub-issues (AGENTS.md section 1) and ship one part at a time; if it truly cannot split, ask the owner to label the issue needs-human-review`
+}
+
 export const diffRows = [
   rule({
     id: "NO_WORKFLOWS",
@@ -114,5 +135,15 @@ export const diffRows = [
     needs: ["diff"],
     check: massDelete,
     fix: () => "gh pr edit <pr> --add-label needs-human-review",
+  }),
+  rule({
+    id: "CHANGE_TOO_BIG",
+    section: "1",
+    says: `More than ${CHANGE_SIZE_LIMIT} authored source files with added lines need sub-issues, or needs-human-review on the issue; tests do not count.`,
+    at: ["finish", "pr"],
+    needs: ["diff"],
+    check: changeTooBig,
+    fix: () =>
+      "Split into sub-issues; if it truly cannot split, ask the owner to label the issue needs-human-review",
   }),
 ]
