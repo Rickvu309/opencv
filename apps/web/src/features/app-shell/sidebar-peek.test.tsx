@@ -98,16 +98,6 @@ describe("peek hover intent", () => {
     expect(aside()).toHaveAttribute("data-peek", "false")
   })
 
-  it("does not open while the pointer is on the expand button beside the edge", async () => {
-    await collapsedShell()
-    fireEvent.pointerEnter(
-      screen.getByRole("button", { name: "Expand sidebar" }),
-      mouse()
-    )
-    advance(1000)
-    expect(aside()).toHaveAttribute("data-peek", "false")
-  })
-
   it("stays collapsed behind the peek", async () => {
     await collapsedShell()
     openPeek()
@@ -147,13 +137,13 @@ describe("peek close grace", () => {
 })
 
 describe("peek never gets stuck", () => {
-  it("closes on Escape and moves focus from the panel to the expand button", async () => {
+  it("closes on Escape and moves focus from the panel to the page", async () => {
     await collapsedShell()
     openPeek()
     screen.getByRole("link", { name: /^Coach/ }).focus()
     fireEvent.keyDown(window, { key: "Escape" })
     expect(aside()).toHaveAttribute("data-peek", "false")
-    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveFocus()
+    expect(document.getElementById("app-main")).toHaveFocus()
   })
 
   it("closes on Escape without taking focus from the page", async () => {
@@ -225,15 +215,13 @@ describe("peek navigation", () => {
     expect(document.activeElement).not.toBe(document.body)
   })
 
-  it("pins from the panel and focuses the collapse button", async () => {
+  it("expands with [ from the panel and keeps focus in the panel", async () => {
     await collapsedShell()
     openPeek()
-    const pin = screen.getByRole("button", { name: "Pin sidebar" })
-    pin.focus()
-    fireEvent.click(pin)
+    const link = screen.getByRole("link", { name: /^Coach/ })
+    link.focus()
+    fireEvent.keyDown(window, { key: "[" })
     expect(frame()).toHaveAttribute("data-state", "open")
-    expect(
-      screen.getByRole("button", { name: "Collapse sidebar" })
-    ).toHaveFocus()
+    expect(link).toHaveFocus()
   })
 })

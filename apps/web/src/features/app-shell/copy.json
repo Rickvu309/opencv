@@ -16,9 +16,6 @@
   "shell.closeMenu": "Close menu",
   "shell.history": "History",
   "shell.resizeSidebar": "Resize sidebar",
-  "shell.collapseSidebar": "Collapse sidebar",
-  "shell.expandSidebar": "Expand sidebar",
-  "shell.pinSidebar": "Pin sidebar",
   "shell.account": "Account",
   "shell.signOut": "Sign out"
 }

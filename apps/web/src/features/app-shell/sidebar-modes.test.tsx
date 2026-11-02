@@ -37,14 +37,6 @@ function advance(ms: number) {
   })
 }
 
-function tooltip() {
-  return document.querySelector('[data-slot="tooltip-content"]')
-}
-
-function expandButton() {
-  return screen.getByRole("button", { name: "Expand sidebar" })
-}
-
 describe("the sidebar mode while a drag is active", () => {
   it("reports dragging, then expanded after the release", async () => {
     const { handle } = await renderShell()
@@ -67,11 +59,10 @@ describe("the sidebar mode while a drag is active", () => {
     expect(frame().style.getPropertyValue("--sidebar-width")).toBe("304px")
   })
 
-  it("ignores Enter on the handle and the collapse button during a drag", async () => {
+  it("ignores Enter on the handle during a drag", async () => {
     const { handle } = await renderShell()
     startDrag(handle)
     fireEvent.keyDown(handle, { key: "Enter" })
-    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
     expect(frame()).toHaveAttribute("data-state", "open")
     fireEvent.pointerCancel(handle, { pointerId: 1 })
     expect(frame()).toHaveAttribute("data-mode", "expanded")
@@ -99,67 +90,21 @@ describe("the sidebar mode while a drag is active", () => {
   })
 })
 
-describe("the expand tooltip after a keyboard collapse", () => {
+describe("focus after a keyboard collapse", () => {
   async function keyboardCollapse() {
     await renderShell()
     screen.getByRole("link", { name: /^Coach/ }).focus()
     await userEvent.keyboard("[[")
-    expect(expandButton()).toHaveFocus()
+    expect(document.getElementById("app-main")).toHaveFocus()
+    expect(document.body).not.toHaveFocus()
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })
   }
-
-  it("does not open from the handed-off focus", async () => {
-    await keyboardCollapse()
-    advance(3000)
-    expect(tooltip()).not.toBeInTheDocument()
-  })
 
   it("does not take focus from the page when [ is pressed on the body", async () => {
     await renderShell()
     await userEvent.keyboard("[[")
     expect(frame()).toHaveAttribute("data-state", "collapsed")
     expect(document.body).toHaveFocus()
-    expect(tooltip()).not.toBeInTheDocument()
-  })
-
-  it("still opens when the keyboard user tabs onto the button later", async () => {
-    await renderShell()
-    await userEvent.keyboard("[[")
-    await userEvent.keyboard("{Tab}")
-    act(() => {
-      expandButton().focus()
-    })
-    await vi.waitFor(() => {
-      expect(tooltip()).toHaveTextContent("Expand sidebar")
-    })
-  })
-
-  it("still opens on hover while the handed-off button has focus", async () => {
-    await renderShell()
-    screen.getByRole("link", { name: /^Coach/ }).focus()
-    await userEvent.keyboard("[[")
-    expect(expandButton()).toHaveFocus()
-    await userEvent.hover(expandButton())
-    await vi.waitFor(() => {
-      expect(tooltip()).toHaveTextContent("Expand sidebar")
-    })
-  })
-
-  it("closes a hover tooltip when the peek opens and keeps it closed", async () => {
-    await renderShell()
-    await userEvent.keyboard("[[")
-    await userEvent.hover(expandButton())
-    await vi.waitFor(() => {
-      expect(tooltip()).toBeInTheDocument()
-    })
-    const zone = document.querySelector('[data-slot="sidebar-peek-zone"]')!
-    fireEvent.pointerEnter(zone, mouse())
-    await vi.waitFor(() => {
-      expect(aside()).toHaveAttribute("data-peek", "true")
-    })
-    expect(tooltip()).not.toBeInTheDocument()
-    await new Promise((resolve) => setTimeout(resolve, 700))
-    expect(tooltip()).not.toBeInTheDocument()
   })
 
   it("lets the first Escape close the peek", async () => {

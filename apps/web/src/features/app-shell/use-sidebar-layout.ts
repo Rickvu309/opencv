@@ -4,8 +4,8 @@ import { useCallback, useEffect, useReducer, useRef } from "react"
 import { useHoverIntent } from "@/lib/use-hover-intent.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import {
-  focusNeedsHandoff,
-  focusSidebarToggle,
+  focusIsInSidebar,
+  pageFocusTarget,
 } from "@/features/app-shell/sidebar-focus.ts"
 import {
   clampSidebarWidth,
@@ -82,7 +82,7 @@ export function useSidebarLayout(enabled: boolean) {
   const setCollapsed = useCallback(
     (next: boolean) => {
       if (dragging) return
-      handoff.current = focusNeedsHandoff()
+      handoff.current = focusIsInSidebar()
       closeIntent()
       writeSidebarCollapsed(next)
       dispatch({ type: "collapse_requested", collapsed: next })
@@ -91,7 +91,7 @@ export function useSidebarLayout(enabled: boolean) {
   )
 
   const dragCollapse = useCallback(() => {
-    handoff.current = focusNeedsHandoff()
+    handoff.current = focusIsInSidebar()
     closeIntent()
     writeSidebarCollapsed(true)
     dispatch({ type: "drag_collapsed" })
@@ -103,7 +103,9 @@ export function useSidebarLayout(enabled: boolean) {
   useEffect(() => {
     if (!handoff.current) return
     handoff.current = false
-    focusSidebarToggle(collapsed ? "expand" : "collapse")
+    if (collapsed && document.activeElement === document.body) {
+      pageFocusTarget()?.focus()
+    }
   }, [collapsed])
 
   useShortcut({
@@ -180,7 +182,6 @@ export function useSidebarLayout(enabled: boolean) {
     dragStart,
     dragCancel,
     dragCollapse,
-    pin: () => setCollapsed(false),
     setWidth: (width: number) => {
       const next = clampSidebarWidth(width)
       writeSidebarWidth(next)

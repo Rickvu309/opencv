@@ -206,21 +206,8 @@ export function AppShell({ onSearch }: AppShellProps) {
     </div>
   )
 
-  const desktopToggle = layout.peek
-    ? {
-        label: shellCopy.pinSidebar,
-        direction: "open" as const,
-        onClick: layout.pin,
-      }
-    : {
-        label: shellCopy.collapseSidebar,
-        direction: "close" as const,
-        onClick: layout.toggle,
-      }
-
   const nav = (
     <AppSidebar
-      toggle={isDesktop ? desktopToggle : undefined}
       onMenuOpenChange={isDesktop ? layout.menuOpenChange : undefined}
       onNavigate={() => {
         if (isDesktop) layout.peekClose()
@@ -275,7 +262,7 @@ export function AppShell({ onSearch }: AppShellProps) {
               id="app-main"
               tabIndex={-1}
               hidden={panel.open && panel.mode === "full"}
-              className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]"
+              className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit] outline-none"
             >
               <Outlet />
             </main>

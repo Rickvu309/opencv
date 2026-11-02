@@ -1,7 +1,6 @@
 import {
   COLLAPSED_KEY,
   FRAME,
-  focusedLabel,
   GUTTER,
   HANDLE,
   mainLeft,
@@ -17,7 +16,6 @@ import {
 } from "./sidebar-resize-shared.mjs"
 
 const TOOLTIPS = `document.querySelectorAll('[data-slot="tooltip-content"]').length`
-const MIN_GAP = 12
 
 async function reset(page, web) {
   await page.goto(web)
@@ -34,12 +32,8 @@ async function keyboardCollapse({ page, check, tag }) {
   await page.key("[")
   await page.sleep(1500)
   check(
-    await focusedLabel(page, "Expand sidebar"),
-    `${tag} a keyboard collapse hands focus to the expand button`
-  )
-  check(
-    (await page.evaluate(TOOLTIPS)) === 0,
-    `${tag} the handed-off focus does not leave an Expand sidebar tooltip open`
+    await page.evaluate("document.activeElement?.id === 'app-main'"),
+    `${tag} a keyboard collapse moves focus to the page`
   )
   await page.hover(3, Y)
   await page.sleep(600)
@@ -138,15 +132,6 @@ async function narrowestHeader({ page, check, capture, tag }) {
   await page.sleep(400)
   await page.hover(60, 300)
   await page.sleep(400)
-  const gap = await page.evaluate(`(() => {
-    const t = document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-toggle"]`)}).getBoundingClientRect();
-    const s = document.querySelector(${JSON.stringify(`${SIDEBAR} button[aria-label="Search"]`)}).getBoundingClientRect();
-    return { gap: s.left - t.right, opacity: getComputedStyle(document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-toggle"]`)})).opacity };
-  })()`)
-  check(
-    gap.gap >= MIN_GAP && gap.opacity === "1",
-    `${tag} at the narrowest width the revealed toggle sits ${gap.gap}px from Search, not in a run of three icons`
-  )
   await capture(page, "sidebar-narrowest-header.png", {
     x: 0,
     y: 0,

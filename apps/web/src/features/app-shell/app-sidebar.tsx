@@ -14,7 +14,6 @@ import {
 } from "lucide-react"
 
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
-import { SidebarToggle } from "@/features/app-shell/sidebar-toggle.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import {
   currentNavPath,
@@ -45,11 +44,6 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 
 type AppSidebarProps = {
-  toggle?: {
-    label: string
-    direction: "close" | "open"
-    onClick: () => void
-  }
   onMenuOpenChange?: (open: boolean) => void
   onNavigate?: () => void
   onSearch: () => void
@@ -112,7 +106,6 @@ function NavGroup({
 }
 
 export function AppSidebar({
-  toggle,
   onMenuOpenChange,
   onNavigate,
   onSearch,
@@ -142,14 +135,6 @@ export function AppSidebar({
         className="flex h-12 shrink-0 items-center px-3 md:h-9 md:ps-1.5 md:pe-0.5"
       >
         <Brand size={14} markSize={20} gap={6} letterSpacing={0} />
-        {toggle ? (
-          <SidebarToggle
-            label={toggle.label}
-            direction={toggle.direction}
-            onClick={toggle.onClick}
-            className="ms-2 shrink-0 opacity-0 transition-opacity duration-(--duration-micro) ease-(--ease-micro) group-focus-within/frame:opacity-100 group-hover/frame:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
-          />
-        ) : null}
         <div className="ml-auto flex gap-1 md:gap-0.5">
           <Button
             type="button"
