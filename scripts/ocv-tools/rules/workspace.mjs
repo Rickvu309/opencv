@@ -86,6 +86,12 @@ function branchName(facts) {
   return `branch '${bad.branch}' does not match type/<issue#>-short-description (types: ${TYPES.join(", ")})`
 }
 
+function quickChecks(facts) {
+  const failed = facts.quick?.failed ?? []
+  if (!failed.length) return null
+  return `the quick checks failed: ${failed.join(", ")}`
+}
+
 function disk(facts) {
   if (!facts.disk?.text) return null
   return facts.disk.text
@@ -191,6 +197,16 @@ export const workspaceRows = [
     check: branchName,
     fix: () =>
       "Rename it: git branch -m type/<issue#>-short-description (see docs/git-workflow/branch-naming.md)",
+  }),
+  rule({
+    id: "QUICK_CHECKS",
+    section: "4",
+    says: "A push passes the quick checks: prettier and eslint on the changed files, no comments, and the fast guards. CI runs the rest.",
+    at: ["push"],
+    needs: ["quick"],
+    check: quickChecks,
+    fix: () =>
+      "Fix what the checks printed and push again; pnpm check runs the larger local suite",
   }),
   rule({
     id: "DISK",

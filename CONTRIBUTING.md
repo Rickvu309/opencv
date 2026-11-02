@@ -13,7 +13,7 @@ Every change starts as a GitHub issue, gets its own short-lived branch, comes ba
 flowchart LR
     A["Issue #42"] --> B["Branch feat/42-login-page<br/>(own worktree)"]
     B --> C["Draft PR<br/>feat: add login page (#42)<br/>Closes #42"]
-    C --> D["Green ci check<br/>pnpm check"]
+    C --> D["Green ci check"]
     D --> E["Squash-merge to main"]
     E --> F["Production deploy"]
     E --> G["Issue closes,<br/>branch deleted,<br/>worktree removed"]
@@ -67,7 +67,7 @@ flowchart LR
 - Open the PR early. A draft is fine but not required. Run `scripts/ocv-tools.mjs finish [--draft] --body-file <file>`: finish runs the pull request rules early, pushes through the hooks, and fills in the title and body.
 - Title: `type: description (#<issue>)`, for example `feat: add login page (#42)`. It becomes the commit message on `main`.
 - Body: the PR template with the `Closes #42` line.
-- Before merge, the PR needs a green `ci` check. CI runs parallel affected Turbo jobs and guards. Local `pnpm check` runs affected tasks, guards and formatting; `pnpm check:full` also builds every package.
+- Before merge, the PR needs a green `ci` check. CI runs parallel affected Turbo jobs and guards. `pnpm check` is the manual local run of affected tasks, guards and formatting; `pnpm check:full` also builds every package. The push hook runs only the quick checks.
 - Run the verify-opencv skill (`.claude/skills/verify-opencv`) by hand when you want it. Nothing requires its evidence.
 - Rebase when the PR does not merge cleanly with `main`: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
 - See `docs/git-workflow/commit-and-pr-conventions.md`.
@@ -109,7 +109,7 @@ If the fix is risky or will take time, first roll back to the previous productio
 | Ruleset on `main`              | GitHub      | Requires a PR and the `ci` check (no approval count: one account, see `docs/git-workflow/review-and-approval.md`), squash only, linear history; no bypass; blocks force-push and deletion |
 | Merge settings                 | GitHub      | Squash only, PR title as commit message, branches auto-deleted after merge                                                                                                                |
 | `CODEOWNERS`                   | GitHub      | Names the owner of every path, including env and secrets paths                                                                                                                            |
-| `pre-push` hook                | Local       | Shim over the rule table: blocks pushes to `main` and bad branch names; runs `pnpm check` (quick, scoped to what changed)                                                                 |
+| `pre-push` hook                | Local       | Shim over the rule table: blocks pushes to `main` and bad branch names; then runs the quick checks on the changed files (prettier, eslint, no comments, fast guards)                      |
 | `commit-msg` hook              | Local       | Blocks commits on `main`; rejects empty messages                                                                                                                                          |
 | `pre-commit` hook              | Local       | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped                                                           |
 | `scripts/ocv-tools.mjs finish` | Local       | The pull request rules (title, `Closes #`, workflows, size, attribution) before the push                                                                                                  |
@@ -118,7 +118,7 @@ If the fix is risky or will take time, first roll back to the previous productio
 | Labels                         | GitHub      | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`, `ready-for-human`                                                                                             |
 | `scripts/pr.mjs doctor`        | Local       | Diffs GitHub labels, the `main` ruleset and repo settings against git and prints the fixing `gh` command                                                                                  |
 
-Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/ocv-tools.mjs take` does it). Anyone can skip them with `--no-verify`. Don't. A skipped hook is not caught again at merge. `ci` still runs the quick check.
+Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/ocv-tools.mjs take` does it). Anyone can skip them with `--no-verify`. Don't. A skipped hook is not caught again at merge. `ci` still runs everything.
 
 ### Setup
 
@@ -145,7 +145,7 @@ scripts/ocv-tools.mjs take "Cart total rounds wrong" --what ... --done ... --ris
 # Work
 cd ../opencv.worktrees/42-login-page
 git add -p && git commit -m "add login form"
-pnpm check                                         # quick lint, typecheck, test of what changed (full run: pnpm check:full)
+pnpm check                                         # manual: lint, typecheck, test of what changed (full run: pnpm check:full)
 
 # Open the PR (add --draft for a draft)
 scripts/ocv-tools.mjs finish --body-file <file>
