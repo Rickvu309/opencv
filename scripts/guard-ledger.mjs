@@ -147,11 +147,20 @@ export function failureKind(output) {
   return ASSERTED.test(output) ? "assertion" : "unknown"
 }
 
-const tailLines = (output, count = 6) =>
+const outputLines = (output) =>
   output
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
+
+const firstFailure = (output) => {
+  const lines = outputLines(output)
+  const at = lines.findIndex((line) => ASSERTED.test(line))
+  return at === -1 ? [] : lines.slice(at, at + 3).map((line) => `    ${line}`)
+}
+
+const tailLines = (output, count = 4) =>
+  outputLines(output)
     .slice(-count)
     .map((line) => `    ${line}`)
 
@@ -196,6 +205,7 @@ export function proveRevert(row, io) {
       ok: kind === "assertion" && restored.passed,
       lines: [
         `with ${fix} reverted on ${files.length} file(s): ${kind === "assertion" ? "FAILS on an assertion" : kind === "passes" ? "PASSES" : `FAILS FOR THE WRONG REASON (${kind}, not an assertion)`} (must fail on an assertion)`,
+        ...firstFailure(reverted.output),
         ...tailLines(reverted.output),
         `at HEAD: ${restored.passed ? "PASSES" : "FAILS"} (must pass)`,
         ...(restored.passed ? [] : tailLines(restored.output)),
