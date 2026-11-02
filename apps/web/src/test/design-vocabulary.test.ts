@@ -170,7 +170,6 @@ const READABLE_VARIABLES = new Set<string>([
   // Per-element entrance stagger the landing figures and copy reveals set
   // inline as a style custom property; the animation delay reads it.
   "landing-delay",
-  // The app sidebar's live width, set inline on its frame while a drag runs.
   "sidebar-width",
 ])
 
