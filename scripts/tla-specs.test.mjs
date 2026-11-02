@@ -6,7 +6,11 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { allRuns, resolveJar, resolveJava, statusOf, tlcArgs } from "./tlc.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
-import { exportedNames, specProblems } from "./lib/tla-specs.mjs"
+import {
+  exportedNames,
+  expectedMutantExit,
+  specProblems,
+} from "./lib/tla-specs.mjs"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 const FIXTURE = "scripts/tla/fixtures/Counter"
@@ -163,6 +167,56 @@ test("every cfg of every spec is run, with its mutant expected to fail", () => {
       [`${FIXTURE}.mutant.cfg`, 12],
     ]
   )
+})
+
+const withMutants = (mutants) => ({
+  ...complete(),
+  "a/Spec.release.cfg": "",
+  "a/Spec.release.mutant.cfg": "",
+  "a/Spec.tla.json": JSON.stringify({
+    module: "spec.mjs",
+    actions: { Step: "step" },
+    mutants,
+  }),
+})
+
+const runsOf = (files) =>
+  allRuns(
+    Object.keys(files).filter((file) => !file.endsWith(".mjs")),
+    (path) => files[path]
+  )
+
+test("a mutant expects 12 unless the action map declares another exit", () => {
+  const files = withMutants({ release: 13 })
+  assert.deepEqual(
+    runsOf(files).map(({ cfg, expect }) => [cfg, expect]),
+    [
+      ["a/Spec.cfg", 0],
+      ["a/Spec.mutant.cfg", 12],
+      ["a/Spec.release.cfg", 0],
+      ["a/Spec.release.mutant.cfg", 13],
+    ]
+  )
+  assert.deepEqual(
+    runsOf(withMutants({})).map(({ expect }) => expect),
+    [0, 12, 0, 12]
+  )
+})
+
+test("the declared exit is read by the mutant's name", () => {
+  const map = JSON.stringify({ mutants: { "": 13, big: 12 } })
+  assert.equal(expectedMutantExit(map, "a/Spec.tla", "a/Spec.cfg"), 13)
+  assert.equal(expectedMutantExit(map, "a/Spec.tla", "a/Spec.big.cfg"), 12)
+  assert.equal(expectedMutantExit(map, "a/Spec.tla", "a/Spec.other.cfg"), 12)
+  assert.equal(expectedMutantExit(undefined, "a/Spec.tla", "a/Spec.cfg"), 12)
+})
+
+test("a declared mutant exit other than 12 or 13 is a problem", () => {
+  assert.match(
+    problemsOf(withMutants({ release: 1 }))[0],
+    /mutant release expects 1, which must be 12 \(invariant\) or 13 \(liveness\)/
+  )
+  assert.deepEqual(problemsOf(withMutants({ release: 13 })), [])
 })
 
 test("exit codes map to what happened", () => {

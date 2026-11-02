@@ -22,6 +22,26 @@ export function mutantOf(cfgPath) {
   return cfgPath.replace(/\.cfg$/, MUTANT_SUFFIX)
 }
 
+export const DEFAULT_MUTANT_EXIT = 12
+const MUTANT_EXITS = new Set([12, 13])
+
+export function mutantKey(tlaPath, cfgPath) {
+  const name = specName(tlaPath)
+  const base = posix.basename(cfgPath, ".cfg")
+  return base === name ? "" : base.slice(name.length + 1)
+}
+
+export function expectedMutantExit(mapText, tlaPath, cfgPath) {
+  if (mapText === undefined) return DEFAULT_MUTANT_EXIT
+  let map
+  try {
+    map = JSON.parse(mapText)
+  } catch {
+    return DEFAULT_MUTANT_EXIT
+  }
+  return map?.mutants?.[mutantKey(tlaPath, cfgPath)] ?? DEFAULT_MUTANT_EXIT
+}
+
 export function exportedNames(sourceText, fileName) {
   const source = ts.createSourceFile(
     fileName,
@@ -71,6 +91,11 @@ function mapProblems(mapPath, mapText, tlaText, files, read) {
   if (!map.actions || typeof map.actions !== "object")
     return [`${mapPath}: needs an "actions" object of Action to function`]
   const problems = []
+  for (const [key, code] of Object.entries(map.mutants ?? {}))
+    if (!MUTANT_EXITS.has(code))
+      problems.push(
+        `${mapPath}: mutant ${key} expects ${code}, which must be 12 (invariant) or 13 (liveness)`
+      )
   const modulePath = posix.join(dirname(mapPath), map.module)
   const exports = files.includes(modulePath)
     ? exportedNames(read(modulePath), modulePath)

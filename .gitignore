@@ -49,6 +49,7 @@ apps/web/.generated/
 !.claude/skills/verify-landing/
 !.claude/skills/verify-app-ui/
 !.claude/skills/verify-marketing-links/
+!.claude/skills/verify-coach-turn/
 
 # local PGlite data for DB_DRIVER=pglite
 apps/api/.data/
