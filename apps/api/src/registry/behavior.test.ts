@@ -9,7 +9,6 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 
 const coachToolNames = [
-  "chat.create",
   "chat.delete",
   "chat.get",
   "chat.list",
