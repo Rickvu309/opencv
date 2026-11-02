@@ -5,6 +5,7 @@ import {
   paperChanges,
   paperDocumentSchema,
   personWorkLost,
+  rebuiltBy,
   undoCoachEdit,
   undoProblems,
   type PaperChange,
@@ -20,11 +21,15 @@ import {
   emptyUpdate,
   loadYDoc,
   materialize,
+  readEdit,
   writeDocument,
+  type HistoryRow,
+  type PaperResult,
   type PaperYDoc,
 } from "@workspace/paper-crdt"
 
 import { CommandError } from "../registry/errors.js"
+import { blockingEdit, NEWER_FIRST, revertedIds } from "./undo-rules.js"
 import {
   withContent,
   type LockedContent,
@@ -46,15 +51,6 @@ export type CoachEditResult = {
   readonly editId: string | null
   readonly outcomes: PaperEditOutcome[]
   readonly changes: PaperChange[]
-}
-
-type CoachRecord = {
-  readonly editId: string
-  readonly seq: number
-  readonly basedOn: number
-  readonly blocks: ReadonlySet<string>
-  readonly pre: PaperDocument
-  readonly post: PaperDocument
 }
 
 const coachOrigin = (editId: string) => `coach:${editId}`
@@ -87,53 +83,30 @@ function checkedBasis(content: LockedContent, basedOn: number) {
   }
 }
 
-async function coachRecords(
-  content: LockedContent
-): Promise<{ records: CoachRecord[]; rows: LogRow[] }> {
-  const { base, rows } = await content.history()
-  const replay = loadYDoc(base, [])
-  const records: CoachRecord[] = []
-  for (const row of rows) {
-    const isCoach = row.origin === "coach" && row.editId
-    const pre = isCoach ? documentOf(replay, content.row.kind) : null
-    absorbUpdate(replay, row.update, "log")
-    if (pre && row.editId) {
-      const post = documentOf(replay, content.row.kind)
-      records.push({
-        editId: row.editId,
-        seq: row.seq,
-        basedOn: row.basedOn ?? 0,
-        blocks: new Set(
-          paperChanges(pre, post).map((change) => change.blockId)
-        ),
-        pre,
-        post,
-      })
-    }
-  }
-  return { records, rows }
-}
-
-function blockedBy(
-  records: readonly CoachRecord[],
+function imagesOf(
+  content: LockedContent,
+  base: Uint8Array,
   rows: readonly LogRow[],
-  target: CoachRecord
-): CoachRecord | undefined {
-  const reverted = new Set(
-    rows.filter((row) => row.origin === "revert").map((row) => row.editId)
-  )
-  return records.find(
-    (record) =>
-      record.seq > target.seq &&
-      record.editId !== target.editId &&
-      !reverted.has(record.editId) &&
-      record.basedOn >= target.seq &&
-      [...record.blocks].some((id) => target.blocks.has(id))
-  )
+  seq: number
+) {
+  const replay = loadYDoc(base, [])
+  for (const row of rows) {
+    if (row.seq < seq) absorbUpdate(replay, row.update, "log")
+  }
+  const pre = documentOf(replay, content.row.kind)
+  const edit = rows.find((row) => row.seq === seq)!
+  absorbUpdate(replay, edit.update, "log")
+  return { pre, post: documentOf(replay, content.row.kind) }
 }
 
-const NEWER_FIRST =
-  "Undo the newer Coach edit first. It was made on top of this one and changed the same blocks."
+function documentFrom(
+  result: PaperResult,
+  kind: PaperStoredKind
+): PaperDocument | null {
+  if (!result.ok) return null
+  const parsed = paperDocumentSchema.safeParse(result.document)
+  return parsed.success && parsed.data.kind === kind ? parsed.data : null
+}
 
 function refusedOutcomes(
   outcomes: readonly PaperEditOutcome[],
@@ -163,14 +136,29 @@ export async function editAsCoach(
     const { row } = content
     const fork = await content.fork(input.basedOn)
     const base = documentOf(fork, row.kind)
-    const { records } = await coachRecords(content)
-    const newer = new Set(
-      records
-        .filter((record) => record.seq > input.basedOn)
-        .flatMap((record) => [...record.blocks])
-    )
+    const { rows } = await content.history()
+    const reverted = revertedIds(rows)
+    const after = rows.filter((item) => item.seq > input.basedOn)
+    const newer = new Set([
+      ...after
+        .filter((item) => item.origin === "coach" && !reverted.has(item.editId))
+        .flatMap((item) => item.touched ?? []),
+      ...after.flatMap((item) => item.rebuilt ?? []),
+    ])
+    const typedSince = rows
+      .filter((item) => item.origin !== "coach" && item.origin !== "revert")
+      .filter((item) => item.seq > input.basedOn)
+      .map((item) => item.update)
     const live = content.document
     const applied = applyPaperEdits(base, live, input.edits, input.newId, newer)
+    const rebuiltRoots = [
+      ...applied.moved,
+      ...applied.effects
+        .filter(
+          (effect) => effect.kind === "created" || effect.kind === "removed"
+        )
+        .map((effect) => effect.id),
+    ]
     const answer = (
       editId: string | null,
       revision: number,
@@ -202,6 +190,9 @@ export async function editAsCoach(
       editId: input.editId,
       basedOn: input.basedOn,
       update,
+      protect: typedSince,
+      touched: () => changes.map((change) => change.blockId),
+      rebuilt: (merged) => rebuiltBy(live, merged, rebuiltRoots),
       check: (merged) => {
         missing = effectsMissing(applied.effects, merged)
         changes = paperChanges(live, merged)
@@ -230,41 +221,39 @@ export async function editAsCoach(
   })
 }
 
-export async function undoBlockReason(
-  userId: UserId,
-  docId: PaperId,
-  editId: string
-): Promise<string | null> {
-  return withContent(userId, docId, async (content) => {
-    const { records, rows } = await coachRecords(content)
-    const target = records.find((record) => record.editId === editId)
-    return target && blockedBy(records, rows, target) ? NEWER_FIRST : null
-  })
-}
-
 export async function revertCoachEdit(
   userId: UserId,
   docId: PaperId,
   editId: string
 ): Promise<{ revision: number; reverted: boolean }> {
   return withContent(userId, docId, async (content) => {
-    const { records, rows } = await coachRecords(content)
-    const target = records.find((record) => record.editId === editId)
+    const { base, rows } = await content.history()
+    const target = rows.find(
+      (row) => row.origin === "coach" && row.editId === editId
+    )
     if (!target) {
       throw new CommandError(
         ERROR_CODES.NOT_FOUND,
         "That Coach edit is not in this document's history"
       )
     }
-    const alreadyReverted = rows.some(
-      (row) => row.origin === "revert" && row.editId === editId
-    )
-    if (alreadyReverted) {
+    if (revertedIds(rows).has(editId)) {
       return { revision: content.row.contentVersion, reverted: false }
     }
-    if (blockedBy(records, rows, target)) throw conflict(NEWER_FIRST)
+    if (blockingEdit(rows, target)) throw conflict(NEWER_FIRST)
+    const kind = content.row.kind
+    const { pre, post } = imagesOf(content, base, rows, target.seq)
+    const reading = readEdit(historyOf(base, rows), coachOrigin(editId))
+    if (!reading) throw conflict("This edit was already undone")
+    const expected = {
+      reverted: documentFrom(reading.reverted, kind),
+      stripped: documentFrom(reading.stripped, kind),
+    }
     const live = content.document
-    const plan = undoCoachEdit(target.pre, target.post, live)
+    const plan = undoCoachEdit(pre, post, live, {
+      ...expected,
+      broken: reading.broken,
+    })
     if (!plan.ok) throw conflict(plan.reason)
     const fork = await content.fork(content.row.contentVersion)
     const update = writeDocument(
@@ -278,7 +267,8 @@ export async function revertCoachEdit(
       editId,
       update: update ?? emptyUpdate(),
       keepIfIneffective: true,
-      check: (merged) => undoProblems(target.pre, target.post, live, merged),
+      rebuilt: target.rebuilt ?? [],
+      check: (merged) => undoProblems(pre, post, live, merged, expected),
     })
     if (written.problems.length > 0) throw conflict(written.problems[0]!)
     return {
@@ -286,4 +276,22 @@ export async function revertCoachEdit(
       reverted: update !== null,
     }
   })
+}
+
+function historyOf(base: Uint8Array, rows: readonly LogRow[]): HistoryRow[] {
+  return [
+    { update: base, origin: "seed" },
+    ...rows.map((row) => ({
+      update: row.update,
+      origin: originOf(row),
+    })),
+  ]
+}
+
+function originOf(row: LogRow): string {
+  if (row.origin === "coach" && row.editId) return coachOrigin(row.editId)
+  if (row.origin === "revert" && row.editId) {
+    return `revert:${coachOrigin(row.editId)}`
+  }
+  return row.origin
 }

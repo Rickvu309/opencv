@@ -11,7 +11,7 @@ import {
   undoProblems,
   type PaperDocument,
 } from "./paper-doc/index.ts"
-import { inverseText, matchIndexes } from "./paper-doc/text-align.ts"
+import { inverseText } from "./paper-doc/text-align.ts"
 
 function paper(blocks: unknown[]): PaperDocument {
   return paperDocumentSchema.parse({
@@ -65,7 +65,7 @@ describe("inverseText", () => {
 
   it("matches a long text without trouble", () => {
     const text = "word ".repeat(600)
-    assert.ok(matchIndexes(text, `${text}x`))
+    assert.equal(inverseText("", "x", `${text}x`), text)
   })
 })
 
@@ -86,13 +86,13 @@ describe("personWorkLost", () => {
     assert.deepEqual(personWorkLost(base, live, merged), [])
   })
 
-  it("names typing lost inside a block that was rebuilt from older text", () => {
+  it("names typing in a block that is gone from the result", () => {
     const live = paper([
       section,
       para("p1", "Hello"),
       para("p2", "World TYPED"),
     ])
-    const merged = paper([section, para("p2", "World"), para("p1", "Hello")])
+    const merged = paper([section, para("p1", "Hello")])
     assert.equal(personWorkLost(base, live, merged).length, 1)
   })
 
@@ -150,6 +150,8 @@ describe("effectsMissing", () => {
   })
 })
 
+const reading = { reverted: null, stripped: null, broken: new Set<string>() }
+
 describe("undoCoachEdit", () => {
   it("restores a removed block, moves one back and strips an added one", () => {
     const pre = paper([
@@ -179,14 +181,14 @@ describe("undoCoachEdit", () => {
       para("n1", "Added"),
       para("p1", "One typed"),
     ])
-    const plan = undoCoachEdit(pre, post, live)
+    const plan = undoCoachEdit(pre, post, live, reading)
     assert.ok(plan.ok, plan.ok ? "" : plan.reason)
     assert.deepEqual(
       plan.target.blocks.map((block) => block.id),
       ["s1", "p1", "p2", "p3"]
     )
     assert.deepEqual([...plan.moved], ["p1"])
-    assert.deepEqual(undoProblems(pre, post, live, plan.target), [])
+    assert.deepEqual(undoProblems(pre, post, live, plan.target, reading), [])
   })
 
   it("refuses when the person moved the block since", () => {
@@ -208,7 +210,7 @@ describe("undoCoachEdit", () => {
       para("p1", "One"),
       para("p3", "Three"),
     ])
-    assert.equal(undoCoachEdit(pre, post, live).ok, false)
+    assert.equal(undoCoachEdit(pre, post, live, reading).ok, false)
   })
 
   it("flags an undo result that drops the person's text", () => {
@@ -216,6 +218,14 @@ describe("undoCoachEdit", () => {
     const post = paper([section, para("p1", "One Coach")])
     const live = paper([section, para("p1", "One Coach typed")])
     const bad = paper([section, para("p1", "One")])
-    assert.ok(undoProblems(pre, post, live, bad).length > 0)
+    assert.ok(undoProblems(pre, post, live, bad, reading).length > 0)
+  })
+
+  it("flags an undo result that has characters the document did not have", () => {
+    const pre = paper([section, para("p1", "One")])
+    const post = paper([section, para("p1", "One big")])
+    const live = paper([section, para("p1", "One big")])
+    const junk = paper([section, para("p1", "One****")])
+    assert.ok(undoProblems(pre, post, live, junk, reading).length > 0)
   })
 })

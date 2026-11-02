@@ -40,6 +40,25 @@ export function canonical(value: unknown): string {
   )
 }
 
+export function rebuiltBy(
+  live: PaperDocument,
+  merged: PaperDocument,
+  ids: Iterable<string>
+): string[] {
+  const before = indexOf(live)
+  const after = indexOf(merged)
+  const out = new Set<string>()
+  const visit = (node: PaperNode) => {
+    out.add(node.id)
+    for (const kid of childrenOf(node) ?? []) visit(kid)
+  }
+  for (const id of ids) {
+    const found = after.get(id) ?? before.get(id)
+    if (found) visit(found.node)
+  }
+  return [...out]
+}
+
 export function cloned<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }

@@ -157,26 +157,25 @@ export async function readActivity(
     .where(and(...filters))
     .orderBy(desc(activity.createdAt))
     .limit(100)
-  return Promise.all(
-    rows.map(async (row) => ({
-      id: row.id,
-      createdAt: row.createdAt.toISOString(),
-      actor: row.actor,
-      command: row.command,
-      subjectKind: row.subjectKind,
-      subjectId: row.subjectId,
-      summary: row.summary,
-      undoneAt: row.undoneAt?.toISOString() ?? null,
-      reversible:
-        Boolean(row.reversalCommand) &&
-        row.undoneAt == null &&
-        !(await registry.undoBlockedReason(
-          userId,
-          row.reversalCommand,
-          row.reversalInput
-        )),
+  const blocked = await registry.undoBlockedReasons(
+    userId,
+    rows.map((row) => ({
+      command: row.undoneAt == null ? row.reversalCommand : null,
+      input: row.reversalInput,
     }))
   )
+  return rows.map((row, index) => ({
+    id: row.id,
+    createdAt: row.createdAt.toISOString(),
+    actor: row.actor,
+    command: row.command,
+    subjectKind: row.subjectKind,
+    subjectId: row.subjectId,
+    summary: row.summary,
+    undoneAt: row.undoneAt?.toISOString() ?? null,
+    reversible:
+      Boolean(row.reversalCommand) && row.undoneAt == null && !blocked[index],
+  }))
 }
 
 export async function readProfile(actor: Actor) {

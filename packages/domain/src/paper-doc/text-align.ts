@@ -1,6 +1,6 @@
 const MAX_CELLS = 4_000_000
 
-export function matchIndexes(a: string, b: string): number[] | null {
+function matchIndexes(a: string, b: string): number[] | null {
   const left = [...a]
   const right = [...b]
   let head = 0
@@ -80,15 +80,6 @@ export function isSubsequence(wanted: string, text: string): boolean {
     at += 1
   }
   return true
-}
-
-export function countOf(text: string, run: string): number {
-  if (!run) return 0
-  let count = 0
-  for (let at = text.indexOf(run); at !== -1; at = text.indexOf(run, at + 1)) {
-    count += 1
-  }
-  return count
 }
 
 export function inverseText(

@@ -1,8 +1,6 @@
 import { paperChanges } from "./changes.js"
 import { paperDocumentSchema, type PaperDocument } from "./document.js"
 import type { PaperNode } from "./nodes.js"
-import { richTextFromInlineMarkdown } from "./rich-text.js"
-import { inverseText } from "./text-align.js"
 import {
   canonical,
   childrenOf,
@@ -13,6 +11,12 @@ import {
   type Index,
 } from "./tree.js"
 
+type UndoReading = {
+  readonly reverted: PaperDocument | null
+  readonly stripped: PaperDocument | null
+  readonly broken: ReadonlySet<string>
+}
+
 export type UndoPlan =
   | {
       readonly ok: true
@@ -22,6 +26,8 @@ export type UndoPlan =
   | { readonly ok: false; readonly reason: string }
 
 const YOURS = "You changed this since the Coach's edit, so it cannot be undone"
+const WORDS =
+  "You changed the Coach's words since, so Undo would damage your text"
 
 class Refusal extends Error {}
 
@@ -45,27 +51,38 @@ function neighbourPlace(entry: Entry, other: Index): string {
   return `${entry.owner}/@start`
 }
 
-function restoreFields(node: PaperNode, pre: Entry, post: Entry): void {
+function textKey(key: string) {
+  return key === "title" ? "title" : "content"
+}
+
+function restoreFields(
+  node: PaperNode,
+  pre: Entry,
+  post: Entry,
+  reading: UndoReading,
+  rebuilt: ReadonlySet<string>
+): void {
   const target = node as unknown as Record<string, unknown>
-  const preFields = fieldsOf(pre.node, true)
-  const postFields = fieldsOf(post.node, true)
-  const liveFields = fieldsOf(node, true)
+  const preFields = fieldsOf(pre.node, false)
+  const postFields = fieldsOf(post.node, false)
+  const liveFields = fieldsOf(node, false)
+  const reverted = reading.reverted ? indexOf(reading.reverted) : null
   for (const key of Object.keys(postFields.text)) {
-    const before = preFields.text[key] ?? ""
-    const edited = postFields.text[key]!
-    if (before === edited) continue
-    const now = liveFields.text[key] ?? ""
-    const original = (pre.node as unknown as Record<string, unknown>)[
-      key === "title" ? "title" : "content"
-    ]
-    if (now === edited) {
-      target[key === "title" ? "title" : "content"] = cloned(original)
+    if ((preFields.text[key] ?? "") === postFields.text[key]) continue
+    const field = textKey(key)
+    if (liveFields.text[key] === postFields.text[key]) {
+      target[field] = cloned(
+        (pre.node as unknown as Record<string, unknown>)[field]
+      )
       continue
     }
-    const back = inverseText(before, edited, now)
-    if (back === null) refuse("This block is too long to undo safely")
-    target[key === "title" ? "title" : "content"] =
-      key === "title" ? back : richTextFromInlineMarkdown(back)
+    if (reading.broken.has(node.id)) refuse(WORDS)
+    if (rebuilt.has(node.id)) refuse(YOURS)
+    const source = reverted?.get(node.id)
+    if (!source) refuse(YOURS)
+    target[field] = cloned(
+      (source.node as unknown as Record<string, unknown>)[field]
+    )
   }
   const preRecord = pre.node as unknown as Record<string, unknown>
   for (const key of Object.keys(postFields.props)) {
@@ -76,30 +93,42 @@ function restoreFields(node: PaperNode, pre: Entry, post: Entry): void {
   }
 }
 
-function stripCreated(work: PaperDocument, post: Index, pre: Index): void {
+function stripCreated(
+  work: PaperDocument,
+  post: Index,
+  pre: Index,
+  reading: UndoReading
+): void {
   const created = [...post.keys()].filter((id) => !pre.has(id))
   const depth = (id: string): number => {
     const owner = post.get(id)!.owner
     return owner === "body" || !post.has(owner) ? 0 : 1 + depth(owner)
   }
   created.sort((a, b) => depth(b) - depth(a))
+  const stripped = reading.stripped ? indexOf(reading.stripped) : null
   for (const id of created) {
     const entry = indexOf(work).get(id)
     if (!entry) continue
     const original = post.get(id)!
-    const now = fieldsOf(entry.node, true)
-    const then = fieldsOf(original.node, true)
+    const now = fieldsOf(entry.node, false)
+    const then = fieldsOf(original.node, false)
     for (const [key, value] of Object.entries(now.props)) {
       if (then.props[key] !== value) refuse(YOURS)
     }
     let remaining = false
     const target = entry.node as unknown as Record<string, unknown>
-    for (const [key, value] of Object.entries(now.text)) {
-      const stripped = inverseText("", then.text[key] ?? "", value)
-      if (stripped === null) refuse("This block is too long to undo safely")
-      if (stripped) remaining = true
-      target[key === "title" ? "title" : "content"] =
-        key === "title" ? stripped : richTextFromInlineMarkdown(stripped)
+    for (const key of Object.keys(now.text)) {
+      const field = textKey(key)
+      if (now.text[key] === then.text[key]) {
+        target[field] = field === "title" ? "" : []
+        continue
+      }
+      const source = stripped?.get(id)
+      if (!source) refuse(YOURS)
+      target[field] = cloned(
+        (source.node as unknown as Record<string, unknown>)[field]
+      )
+      if (fieldsOf(source.node, false).text[key]) remaining = true
     }
     const kids = childrenOf(entry.node) ?? []
     const propsOnly = Object.keys(now.text).length === 0
@@ -108,6 +137,17 @@ function stripCreated(work: PaperDocument, post: Index, pre: Index): void {
       entry.list!.splice(entry.list!.indexOf(entry.node), 1)
     }
   }
+}
+
+function withoutPresent(node: PaperNode, present: Index): PaperNode {
+  const kids = childrenOf(node)
+  if (kids) {
+    const kept = kids
+      .filter((kid) => !present.has(kid.id))
+      .map((kid) => withoutPresent(kid, present))
+    ;(node as unknown as { children: PaperNode[] }).children = kept
+  }
+  return node
 }
 
 function putBack(work: PaperDocument, pre: Index, post: Index): void {
@@ -128,7 +168,7 @@ function putBack(work: PaperDocument, pre: Index, post: Index): void {
         break
       }
     }
-    list.splice(at, 0, cloned(original.node))
+    list.splice(at, 0, withoutPresent(cloned(original.node), indexOf(work)))
   }
 }
 
@@ -138,7 +178,8 @@ function moveBack(
   post: Index,
   live: Index,
   movedIds: readonly string[],
-  moved: Set<string>
+  moved: Set<string>,
+  deferred: string[] | null
 ): void {
   for (const id of movedIds) {
     const inLive = live.get(id)
@@ -149,6 +190,10 @@ function moveBack(
       refuse(YOURS)
     }
     const current = indexOf(work)
+    if (deferred && inPre.owner !== "body" && !current.has(inPre.owner)) {
+      deferred.push(id)
+      continue
+    }
     const entry = current.get(id)!
     entry.list!.splice(entry.list!.indexOf(entry.node), 1)
     const list = listOf(work, inPre.owner, indexOf(work))
@@ -169,27 +214,31 @@ function moveBack(
 export function undoCoachEdit(
   pre: PaperDocument,
   post: PaperDocument,
-  live: PaperDocument
+  live: PaperDocument,
+  reading: UndoReading
 ): UndoPlan {
   try {
     const before = indexOf(pre)
     const edited = indexOf(post)
     const now = indexOf(live)
     const work = cloned(live)
+    const movedIds = paperChanges(pre, post)
+      .filter((change) => change.change === "moved")
+      .map((change) => change.blockId)
+    const rebuilt = new Set(movedIds)
     for (const [id, p] of before) {
       const q = edited.get(id)
       const entry = indexOf(work).get(id)
       if (!q || !entry) continue
       if (canonical(p.node) === canonical(q.node)) continue
-      restoreFields(entry.node, p, q)
+      restoreFields(entry.node, p, q, reading, rebuilt)
     }
-    stripCreated(work, edited, before)
-    const movedIds = paperChanges(pre, post)
-      .filter((change) => change.change === "moved")
-      .map((change) => change.blockId)
+    stripCreated(work, edited, before, reading)
     const moved = new Set<string>()
-    moveBack(work, before, edited, now, movedIds, moved)
+    const deferred: string[] = []
+    moveBack(work, before, edited, now, movedIds, moved, deferred)
     putBack(work, before, edited)
+    moveBack(work, before, edited, now, deferred, moved, null)
     const parsed = paperDocumentSchema.safeParse(work)
     if (!parsed.success) {
       return {

@@ -81,13 +81,14 @@ export async function getChat(userId: UserId, chatId: ChatId) {
     .orderBy(asc(chatMessages.createdAt), asc(chatMessages.id))
   const visible = projectCurrentMessages(messages)
   const undone = await undoneActivityIds(userId, messages)
+  const blocked = await blockedReceipts(userId, visible)
   const confirmations = new Map(
     (await registry.confirmations(userId, chatId)).map((row) => [row.id, row])
   )
   return {
     ...toChat(row),
     messages: visible.map((message) => {
-      const result = withUndone(message, undone)
+      const result = withBlocked(withUndone(message, undone), blocked)
       return {
         ...result,
         parts: result.parts.map((part) =>
@@ -163,6 +164,53 @@ async function undoneActivityIds(
       )
     )
   return new Set(rows.map((row) => row.id))
+}
+
+type ReceiptPart = {
+  reversal?: { possible?: boolean; command?: string; input?: unknown }
+  activityId?: string
+  undone?: boolean
+}
+
+async function blockedReceipts(
+  userId: UserId,
+  messages: ReturnType<typeof toMessage>[]
+) {
+  const parts = messages
+    .flatMap((message) => message.parts as ReceiptPart[])
+    .filter((part) => part.reversal?.possible && part.reversal.command)
+  const reasons = await registry.undoBlockedReasons(
+    userId,
+    parts.map((part) => ({
+      command: part.reversal!.command ?? null,
+      input: part.reversal!.input,
+    }))
+  )
+  const blocked = new Map<ReceiptPart, string>()
+  parts.forEach((part, index) => {
+    const reason = reasons[index]
+    if (reason) blocked.set(part, reason)
+  })
+  return blocked
+}
+
+function withBlocked(
+  message: ReturnType<typeof toMessage>,
+  blocked: Map<ReceiptPart, string>
+) {
+  if (blocked.size === 0) return message
+  return {
+    ...message,
+    parts: message.parts.map((part) => {
+      const reason = blocked.get(part as ReceiptPart)
+      return reason
+        ? ({
+            ...part,
+            reversal: { possible: false, description: reason },
+          } as ChatMessagePart)
+        : part
+    }),
+  }
 }
 
 // The activity row owns whether a receipt was undone, so a reload cannot offer Undo twice.

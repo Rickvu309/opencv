@@ -77,9 +77,6 @@ async function* overlayTurnModel(
   }
 }
 
-const PLAIN_LINE =
-  /^\[([A-Za-z0-9_-]+)\] (?![#>-]|\d+\.|Experience:|Education:|Skills )(.+)$/m
-
 function paperEditScript(
   input: CoachTurnInput
 ): AsyncIterable<CoachStreamPart> {
@@ -87,15 +84,12 @@ function paperEditScript(
   const execute = input.execute
   if (!focus || !execute) return replay(DEMO_COACH_SCRIPT)
   const rest = focus.outline.split("\n").slice(1).join("\n")
-  const plain = PLAIN_LINE.exec(rest)
   const first = /^\[([A-Za-z0-9_-]+)\]/m.exec(rest)
-  const edit = plain
-    ? { op: "setText", blockId: plain[1]!, text: `${plain[2]!} (reviewed)` }
-    : {
-        op: "insert",
-        after: first?.[1] ?? "@start",
-        blocks: [{ type: "paragraph", text: "Reviewed by the Coach." }],
-      }
+  const edit = {
+    op: "insert",
+    after: first?.[1] ?? "@start",
+    blocks: [{ type: "paragraph", text: "Reviewed by the Coach." }],
+  }
   const call = {
     docId: focus.id,
     basedOn: focus.revision,

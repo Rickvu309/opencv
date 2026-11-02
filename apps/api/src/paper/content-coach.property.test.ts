@@ -1,9 +1,11 @@
 import fc from "fast-check"
+import { materialize, stateVectorOf } from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
+import { encoded, typed } from "../test/paper-content.js"
 
 const userId = "user-coach-property"
 
@@ -28,6 +30,9 @@ const stepArbitrary = fc.record({
     "swap",
     "retype",
     "addBlock",
+    "staleType",
+    "bold",
+    "editCoach",
     "setText",
     "setText",
     "insert",
@@ -42,6 +47,26 @@ const stepArbitrary = fc.record({
   b: fc.nat(1000),
   c: fc.nat(1000),
 })
+
+const personText = (doc: Doc) =>
+  textBlocks(doc)
+    .map((node) => textOf(node))
+    .join("\n")
+
+function charCounts(doc: Doc): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const char of personText(doc))
+    counts.set(char, (counts.get(char) ?? 0) + 1)
+  return counts
+}
+
+function within(small: Map<string, number>, big: Map<string, number>[]) {
+  for (const [char, count] of small) {
+    const room = big.reduce((total, map) => total + (map.get(char) ?? 0), 0)
+    if (count > room) return false
+  }
+  return true
+}
 
 type Step = typeof stepArbitrary extends fc.Arbitrary<infer T> ? T : never
 
@@ -145,7 +170,12 @@ describe("random person and Coach edits over blocks, lists and an experience", (
             const seen = new Map<number, Doc>()
             const first = await snapshot(docId)
             seen.set(first.revision, first.doc)
-            const undoable: { activityId: string; tokens: string[] }[] = []
+            const undoable: {
+              activityId: string
+              tokens: string[]
+              preCoach: Doc
+              revision: number
+            }[] = []
             let counter = 0
 
             const personEdit = (change: (doc: Doc) => Doc) =>
@@ -160,7 +190,7 @@ describe("random person and Coach edits over blocks, lists and an experience", (
               if (step.kind === "type") {
                 const target = pick(textBlocks(live), step.a)
                 if (target) {
-                  const token = `⟦p${++counter}⟧`
+                  const token = step.c % 3 === 0 ? "e" : `⟦p${++counter}⟧`
                   await personEdit((doc) => ({
                     blocks: mapNode(doc.blocks, target.id, (node) =>
                       withContent(node, inserted(textOf(node), step.b, token))
@@ -212,6 +242,58 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                   })
                   return { blocks: next }
                 })
+              } else if (step.kind === "bold") {
+                const target = pick(textBlocks(live), step.a)
+                if (target && textOf(target).length >= 2) {
+                  const text = textOf(target)
+                  const cut = Math.max(1, step.b % text.length)
+                  await personEdit((doc) => ({
+                    blocks: mapNode(doc.blocks, target.id, (node) => ({
+                      ...node,
+                      content: [
+                        { text: text.slice(0, cut) },
+                        { text: text.slice(cut), bold: true },
+                      ],
+                    })),
+                  }))
+                }
+              } else if (step.kind === "editCoach") {
+                const holder = pick(
+                  textBlocks(live).filter((node) =>
+                    /⟨c\d+⟩/.test(textOf(node))
+                  ),
+                  step.a
+                )
+                if (holder) {
+                  await personEdit((doc) => ({
+                    blocks: mapNode(doc.blocks, holder.id, (node) =>
+                      withContent(node, textOf(node).replace(/⟨c/, "⟨cx"))
+                    ),
+                  }))
+                }
+              } else if (step.kind === "staleType") {
+                const local = materialize(client)
+                const view = local.ok
+                  ? (local.document as unknown as Doc)
+                  : null
+                const target = view ? pick(textBlocks(view), step.a) : undefined
+                if (view && target) {
+                  const token = `⟦p${++counter}⟧`
+                  await h.run("paper.sync", {
+                    docId,
+                    epoch: 1,
+                    update: typed(client, ((paper: Doc) => ({
+                      ...paper,
+                      blocks: mapNode(paper.blocks, target.id, (node) =>
+                        withContent(node, inserted(textOf(node), step.b, token))
+                      ),
+                    })) as never),
+                    stateVector: encoded(stateVectorOf(client)),
+                  })
+                  expect(
+                    tokens((await snapshot(docId)).doc, PERSON).has(token)
+                  ).toBe(true)
+                }
               } else if (step.kind === "undo") {
                 const entry = pick(undoable, step.a)
                 if (!entry) continue
@@ -231,12 +313,24 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                 for (const token of entry.tokens) {
                   expect(tokens(after.doc, COACH).has(token)).toBe(false)
                 }
+                expect(
+                  within(charCounts(after.doc), [
+                    charCounts(live),
+                    charCounts(entry.preCoach),
+                  ])
+                ).toBe(true)
+                if (revision === entry.revision) {
+                  expect(JSON.stringify(after.doc.blocks)).toBe(
+                    JSON.stringify(entry.preCoach.blocks)
+                  )
+                }
                 undoable.splice(undoable.indexOf(entry), 1)
               } else {
                 const known = [...seen.keys()]
                 const basedOn = pick(known, step.a)!
                 const base = seen.get(basedOn)!
-                const token = `⟨c${++counter}⟩`
+                const coachToken = `⟨c${++counter}⟩`
+                const token = step.c % 3 === 0 ? "e" : coachToken
                 const baseNodes = flatten(base.blocks)
                 const topIds = base.blocks.map((node) => node.id)
                 let edit: Record<string, unknown> | null = null
@@ -285,6 +379,11 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                 const basePerson = tokens(base, PERSON)
                 const result = await h.coach(docId, basedOn, [edit])
                 const after = await snapshot(docId)
+                if (edit.op !== "remove") {
+                  expect(
+                    within(charCounts(live), [charCounts(after.doc)])
+                  ).toBe(true)
+                }
                 for (const kept of beforePerson) {
                   const mayGo = basePerson.has(kept) && edit.op === "remove"
                   if (!mayGo) {
@@ -294,7 +393,9 @@ describe("random person and Coach edits over blocks, lists and an experience", (
                 if (result.output.editId && result.activityId) {
                   undoable.push({
                     activityId: result.activityId,
-                    tokens: [token],
+                    tokens: token === coachToken ? [coachToken] : [],
+                    preCoach: live,
+                    revision: result.output.revision,
                   })
                 }
               }
@@ -304,7 +405,10 @@ describe("random person and Coach edits over blocks, lists and an experience", (
           })
         }
       ),
-      { numRuns: 4, seed: 20261103 }
+      {
+        numRuns: Number(process.env.PROPERTY_RUNS ?? 4),
+        seed: Number(process.env.PROPERTY_SEED ?? 20261103),
+      }
     )
   })
 })

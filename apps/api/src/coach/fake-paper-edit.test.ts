@@ -52,7 +52,10 @@ describe("the fake Coach", () => {
         reversal: { possible: true, command: "paper.revertEdit" },
         detail: { type: "paper.replace", docKind: "cv" },
       })
-      expect(await h.textOf(docId, "t1")).toBe("First paragraph. (reviewed)")
+      const blocks = (await h.paperOf(docId)).blocks
+      expect(blocks.map((block) => block.id)[0]).toBe("s1")
+      expect(JSON.stringify(blocks)).toContain("Reviewed by the Coach.")
+      expect(blocks).toHaveLength(4)
     })
   })
 })

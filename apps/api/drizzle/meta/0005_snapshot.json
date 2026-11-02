@@ -1,5 +1,5 @@
 {
-  "id": "e1db438e-de54-4b45-aa78-015eeb5791de",
+  "id": "2d062690-571f-4772-b2d3-844b0db1fa83",
   "prevId": "b30364ea-490a-461f-836e-f82d899e77a6",
   "version": "7",
   "dialect": "postgresql",
@@ -1705,6 +1705,18 @@
         "based_on": {
           "name": "based_on",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "touched": {
+          "name": "touched",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rebuilt": {
+          "name": "rebuilt",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },

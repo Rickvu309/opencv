@@ -7,18 +7,14 @@ import {
   PAPER_RECEIPT_CHANGE_LIMIT,
   paperContract,
   type PaperDocument,
-  parseUserId,
   type PaperId,
 } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { createId } from "../id.js"
-import {
-  editAsCoach,
-  revertCoachEdit,
-  undoBlockReason,
-} from "./content-coach.js"
+import { editAsCoach, revertCoachEdit } from "./content-coach.js"
+import { undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import {
@@ -94,11 +90,14 @@ function encoded(bytes: Uint8Array) {
 }
 
 export function registerPaper(registry: Registry) {
-  registry.addUndoGuard("paper.revertEdit", (userId, input) => {
-    const { docId, editId } =
-      paperContract["paper.revertEdit"].input.parse(input)
-    return undoBlockReason(parseUserId(userId), docId, editId)
-  })
+  registry.addUndoGuard("paper.revertEdit", (userId, inputs) =>
+    undoBlockedReasons(
+      userId,
+      inputs.map((input) =>
+        paperContract["paper.revertEdit"].input.parse(input)
+      )
+    )
+  )
   bindCommands(registry, paperContract, {
     "paper.create": {
       handler: async (input, actor) => {

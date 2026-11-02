@@ -1,4 +1,5 @@
 import {
+  carryPersonChange,
   ERROR_CODES,
   legacyPaperOf,
   paperDocumentSchema,
@@ -10,7 +11,12 @@ import {
 } from "@workspace/domain"
 import {
   absorbUpdate,
+  aliveCharacters,
+  clientViews,
   forkOf,
+  landedInDeadContent,
+  lostCharacters,
+  mergedUpdate,
   loadYDoc,
   materialize,
   seedYDoc,
@@ -48,6 +54,8 @@ export type LogRow = {
   readonly origin: string
   readonly editId: string | null
   readonly basedOn: number | null
+  readonly touched: string[] | null
+  readonly rebuilt: string[] | null
   readonly update: Uint8Array
 }
 
@@ -55,6 +63,9 @@ export type Appended = {
   readonly origin: "coach" | "revert"
   readonly editId: string
   readonly basedOn?: number
+  readonly touched?: string[] | ((merged: PaperDocument) => string[])
+  readonly rebuilt?: string[] | ((merged: PaperDocument) => string[])
+  readonly protect?: readonly Uint8Array[]
   readonly update: Uint8Array
   readonly keepIfIneffective?: boolean
   readonly check?: (merged: PaperDocument) => string[]
@@ -172,6 +183,8 @@ async function loggedRows(docId: string, afterSeq: number): Promise<LogRow[]> {
       origin: paperDocUpdates.origin,
       editId: paperDocUpdates.editId,
       basedOn: paperDocUpdates.basedOn,
+      touched: paperDocUpdates.touched,
+      rebuilt: paperDocUpdates.rebuilt,
       update: paperDocUpdates.update,
     })
     .from(paperDocUpdates)
@@ -290,6 +303,8 @@ async function commit(
     origin: string
     editId?: string
     basedOn?: number
+    touched?: string[]
+    rebuilt?: string[]
     witness: unknown
   }
 ): Promise<PaperRow> {
@@ -306,6 +321,8 @@ async function commit(
       origin: change.origin,
       editId: change.editId ?? null,
       basedOn: change.basedOn ?? null,
+      touched: change.touched ?? null,
+      rebuilt: change.rebuilt ?? null,
       update,
     })
   const patch = {
@@ -356,17 +373,41 @@ async function appendLocked(
   change: Appended
 ): Promise<AppendResult> {
   try {
+    const protectedBefore = change.protect
+      ? aliveCharacters(entry.yDoc, change.protect)
+      : null
     const absorbed = absorbUpdate(entry.yDoc, change.update, change.origin)
     if (!absorbed.ok) throw refuse(absorbed.reason)
-    if (change.check) {
+    if (
+      protectedBefore &&
+      lostCharacters(entry.yDoc, protectedBefore).length > 0
+    ) {
+      live.delete(row.id)
+      return {
+        row: null,
+        problems: ["Text you typed in this document would be lost"],
+      }
+    }
+    let touched: string[] | undefined
+    let rebuilt: string[] | undefined
+    if (
+      change.check ||
+      typeof change.touched === "function" ||
+      typeof change.rebuilt === "function"
+    ) {
       const materialized = materialize(entry.yDoc)
       if (!materialized.ok) throw refuse(materialized.reason)
-      const problems = change.check(validated(materialized.document, row.kind))
+      const merged = validated(materialized.document, row.kind)
+      const problems = change.check ? change.check(merged) : []
       if (problems.length > 0) {
         live.delete(row.id)
         return { row: null, problems }
       }
+      if (typeof change.touched === "function") touched = change.touched(merged)
+      if (typeof change.rebuilt === "function") rebuilt = change.rebuilt(merged)
     }
+    if (Array.isArray(change.touched)) touched = change.touched
+    if (Array.isArray(change.rebuilt)) rebuilt = change.rebuilt
     const effective =
       absorbed.effective ?? (change.keepIfIneffective ? change.update : null)
     if (!effective) return { row: null, problems: [] }
@@ -374,6 +415,8 @@ async function appendLocked(
       origin: change.origin,
       editId: change.editId,
       basedOn: change.basedOn,
+      touched,
+      rebuilt,
       witness: row.document,
     })
     return { row: written, problems: [] }
@@ -424,6 +467,46 @@ export async function withContent<T>(
   })
 }
 
+async function rehomed(
+  row: PaperRow,
+  entry: Live,
+  request: SyncRequest,
+  effective: Uint8Array
+): Promise<Uint8Array> {
+  if (!landedInDeadContent(entry.yDoc, request.update)) return effective
+  const logged = await loggedRows(row.id, entry.baseSeq)
+  const views = clientViews(
+    entry.base,
+    logged.map((item) => item.update),
+    request.stateVector,
+    request.update,
+    entry.yDoc
+  )
+  const current = materialize(entry.yDoc)
+  if (!views.before.ok || !views.after.ok || !current.ok) {
+    throw refuse("Your typing could not be placed in the document")
+  }
+  let target: PaperDocument | null
+  try {
+    target = carryPersonChange(
+      validated(views.before.document, row.kind),
+      validated(views.after.document, row.kind),
+      validated(current.document, row.kind),
+      views.owners
+    )
+  } catch (error) {
+    throw refuse(error instanceof Error ? error.message : "Cannot place typing")
+  }
+  if (!target) return effective
+  const carried = writeDocument(forkOf(entry.yDoc), target, "person")
+  if (!carried) return effective
+  const absorbed = absorbUpdate(entry.yDoc, carried, "person")
+  if (!absorbed.ok) throw refuse(absorbed.reason)
+  return absorbed.effective
+    ? mergedUpdate([effective, absorbed.effective])
+    : effective
+}
+
 export async function syncContent(
   userId: UserId,
   docId: PaperId,
@@ -453,7 +536,8 @@ export async function syncContent(
           : absorbUpdate(entry.yDoc, request.update, "person")
       if (!absorbed.ok) throw refuse(absorbed.reason)
       if (absorbed.effective) {
-        row = await commit(row, entry, absorbed.effective, {
+        const effective = await rehomed(row, entry, request, absorbed.effective)
+        row = await commit(row, entry, effective, {
           origin: "person",
           witness: row.document,
         })

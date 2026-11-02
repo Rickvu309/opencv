@@ -1,19 +1,10 @@
 import type { PaperDocument } from "./document.js"
 import type { EditEffect } from "./edits.js"
-import {
-  countOf,
-  insertedRuns,
-  isSubsequence,
-  matchIndexes,
-} from "./text-align.js"
+import { isSubsequence } from "./text-align.js"
 import { fieldsOf, indexOf } from "./tree.js"
 
-const TOO_LONG = "A block is too long to check, so nothing was changed"
-
-function insertedText(before: string, after: string): string | null {
-  if (before === after) return ""
-  const runs = insertedRuns(before, after)
-  return runs ? runs.join("") : null
+function plainOf(fields: { text: Record<string, string> } | null, key: string) {
+  return fields?.text[key] ?? ""
 }
 
 export function personWorkLost(
@@ -35,17 +26,9 @@ export function personWorkLost(
     const liveFields = fieldsOf(l.node, false)
     const baseFields = b ? fieldsOf(b.node, false) : null
     const mergedFields = m ? fieldsOf(m.node, false) : null
-    for (const [key, value] of Object.entries(liveFields.text)) {
-      const typed = insertedText(baseFields?.text[key] ?? "", value)
-      if (typed === null) {
-        problems.push(TOO_LONG)
-      } else if (typed && !mergedFields) {
-        problems.push(`Text typed in block ${id} would be lost`)
-      } else if (
-        typed &&
-        mergedFields &&
-        !isSubsequence(typed, mergedFields.text[key] ?? "")
-      ) {
+    for (const key of Object.keys(liveFields.text)) {
+      const typed = plainOf(liveFields, key) !== plainOf(baseFields, key)
+      if (typed && !mergedFields) {
         problems.push(`Text typed in block ${id} would be lost`)
       }
     }
@@ -62,30 +45,38 @@ export function personWorkLost(
   return [...new Set(problems)]
 }
 
-function charBudget(runs: readonly string[]): Map<string, number> {
-  const budget = new Map<string, number>()
-  for (const char of runs.join("")) {
-    budget.set(char, (budget.get(char) ?? 0) + 1)
-  }
-  return budget
+function characterCounts(text: string): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const char of text) counts.set(char, (counts.get(char) ?? 0) + 1)
+  return counts
 }
 
-function deletedChars(before: string, after: string): string[] | null {
-  const matches = matchIndexes(before, after)
-  if (!matches) return null
-  return [...before].filter((_char, index) => matches[index] === -1)
+function addsCharacters(allowed: string, result: string): boolean {
+  const room = characterCounts(allowed)
+  for (const char of result) {
+    const left = room.get(char) ?? 0
+    if (left === 0) return true
+    room.set(char, left - 1)
+  }
+  return false
 }
 
 export function undoProblems(
   pre: PaperDocument,
   post: PaperDocument,
   live: PaperDocument,
-  merged: PaperDocument
+  merged: PaperDocument,
+  expected: {
+    reverted: PaperDocument | null
+    stripped: PaperDocument | null
+  }
 ): string[] {
   const before = indexOf(pre)
   const edited = indexOf(post)
   const now = indexOf(live)
   const after = indexOf(merged)
+  const reverted = expected.reverted ? indexOf(expected.reverted) : null
+  const stripped = expected.stripped ? indexOf(expected.stripped) : null
   const problems: string[] = []
   for (const [id, l] of now) {
     const p = before.get(id)
@@ -100,35 +91,36 @@ export function undoProblems(
     const mergedFields = fieldsOf(m.node, false)
     const preFields = p ? fieldsOf(p.node, false) : null
     const postFields = q ? fieldsOf(q.node, false) : null
-    for (const [key, value] of Object.entries(liveFields.text)) {
-      const kept = mergedFields.text[key] ?? ""
-      const coachRuns =
-        postFields && postFields.text[key] !== undefined
-          ? insertedRuns(preFields?.text[key] ?? "", postFields.text[key]!)
-          : []
-      const lost = deletedChars(value, kept)
-      if (!coachRuns || !lost) {
-        problems.push(TOO_LONG)
-        continue
+    for (const key of Object.keys(liveFields.text)) {
+      const result = plainOf(mergedFields, key)
+      const wasLive = plainOf(liveFields, key)
+      if (addsCharacters(`${wasLive}${plainOf(preFields, key)}`, result)) {
+        problems.push(`The undo would add text to block ${id}`)
       }
-      const budget = charBudget(coachRuns)
-      for (const char of lost) {
-        const left = budget.get(char) ?? 0
-        if (left === 0) {
-          problems.push(
-            `You changed block ${id} since the Coach's edit, so Undo would remove your text`
-          )
-          break
-        }
-        budget.set(char, left - 1)
+      const touchedByEdit =
+        postFields !== null &&
+        plainOf(preFields, key) !== plainOf(postFields, key)
+      let wanted = wasLive
+      if (created) {
+        wanted = plainOf(
+          stripped?.get(id) ? fieldsOf(stripped.get(id)!.node, false) : null,
+          key
+        )
+      } else if (touchedByEdit) {
+        wanted =
+          wasLive === plainOf(postFields, key)
+            ? plainOf(preFields, key)
+            : plainOf(
+                reverted?.get(id)
+                  ? fieldsOf(reverted.get(id)!.node, false)
+                  : null,
+                key
+              )
       }
-      for (const run of coachRuns) {
-        const stillThere = countOf(value, run)
-        if (stillThere > 0 && countOf(kept, run) >= stillThere) {
-          problems.push(
-            `You changed block ${id} since the Coach's edit, so Undo cannot take its words out`
-          )
-        }
+      if (result !== wanted) {
+        problems.push(
+          `You changed block ${id} since the Coach's edit, so Undo would damage your text`
+        )
       }
     }
     for (const [key, value] of Object.entries(mergedFields.props)) {

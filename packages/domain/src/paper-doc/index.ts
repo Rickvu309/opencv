@@ -78,3 +78,6 @@ export { paperChanges } from "./changes.js"
 export { effectsMissing, personWorkLost, undoProblems } from "./safety.js"
 export type { UndoPlan } from "./undo.js"
 export { undoCoachEdit } from "./undo.js"
+
+export { carryPersonChange } from "./carry.js"
+export { rebuiltBy } from "./tree.js"

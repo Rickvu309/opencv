@@ -104,24 +104,46 @@ function letOthersKeepTheirDeletes(
   }
 }
 
-export function revertOrigin(
+export type Range = { client: number; clock: number; len: number }
+
+export function replayHistory(
   history: readonly HistoryRow[],
   editOrigin: string
-): Uint8Array | null {
-  if (history.some((row) => row.origin === `revert:${editOrigin}`)) return null
+) {
   const replay = new Y.Doc({ gc: false })
   const manager = new Y.UndoManager(replay.getXmlFragment(FRAGMENT), {
     trackedOrigins: new Set([editOrigin]),
     captureTimeout: 0,
   })
+  const inserted: Range[] = []
   for (const row of history) {
     const before = Y.decodeStateVector(Y.encodeStateVector(replay))
     Y.applyUpdate(replay, row.update, row.origin)
+    if (row.origin === editOrigin) {
+      for (const struct of Y.decodeUpdate(row.update).structs) {
+        if (struct instanceof Y.Item) {
+          inserted.push({
+            client: struct.id.client,
+            clock: struct.id.clock,
+            len: struct.length,
+          })
+        }
+      }
+    }
     if (row.origin !== editOrigin && manager.undoStack.length > 0) {
       adoptOrphans(manager, insertedSince(replay, before))
       letOthersKeepTheirDeletes(manager, row)
     }
   }
+  return { replay, manager, inserted }
+}
+
+export function revertOrigin(
+  history: readonly HistoryRow[],
+  editOrigin: string
+): Uint8Array | null {
+  if (history.some((row) => row.origin === `revert:${editOrigin}`)) return null
+  const { replay, manager } = replayHistory(history, editOrigin)
   const updates: Uint8Array[] = []
   replay.on("update", (update: Uint8Array) => updates.push(update))
   while (manager.canUndo()) manager.undo()
