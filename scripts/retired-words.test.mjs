@@ -74,8 +74,8 @@ const RETIRED = [
         why: 'LEGACY_CHAT_TITLE = "New Thread" allows legacy rows to display and rename as New chat (#548)',
       },
       {
-        path: /^packages\/ui\/src\/components\/comment-thread\.tsx$/,
-        why: "the ui comment-thread component is a stack of review comments, not a conversation with the Coach",
+        path: /^packages\/ui\/src\/(?:components\/comment-thread\.tsx|kit-contracts\.test\.tsx)$/,
+        why: "the ui comment-thread component and its kit test are a stack of review comments, not a conversation with the Coach",
       },
       {
         path: /^apps\/web\/src\/features\/app-shell\/shell-chrome\.test\.ts$/,
