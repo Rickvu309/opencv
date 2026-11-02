@@ -111,6 +111,47 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/3
 
+  screens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Does this change touch the screens
+        id: gate
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == merge_group ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base=$(git merge-base origin/main HEAD)
+          if git diff --name-only "$base" HEAD | grep -qE '^(apps/web/|packages/ui/|packages/domain/|\.claude/skills/verify-(app-ui|opencv)/|scripts/ci-screens|scripts/lib/ci-screens|\.github/workflows/ci\.yml|\.github/actions/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No file the screens depend on changed, so the screen checks are not needed."
+          fi
+      - if: steps.gate.outputs.run == 'true'
+        uses: ./.github/actions/setup
+      - name: Screen layout checks
+        if: steps.gate.outputs.run == 'true'
+        env:
+          CI_SCREENS_OUT: ${{ runner.temp }}/ci-screens
+        run: |
+          CHROME_BIN=$(command -v google-chrome || command -v chromium-browser || command -v chromium)
+          export CHROME_BIN
+          "$CHROME_BIN" --version
+          node scripts/ci-screens.mjs
+      - name: Upload screenshots and logs
+        if: failure() && steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: screens
+          path: ${{ runner.temp }}/ci-screens
+          retention-days: 7
+          if-no-files-found: ignore
+
   policy:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -139,7 +180,7 @@ jobs:
           node scripts/ocv-tools.mjs policy "$n"
 
   ci:
-    needs: [guards, lint, typecheck, build, test-api, test-web, policy]
+    needs: [guards, lint, typecheck, build, test-api, test-web, screens, policy]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
