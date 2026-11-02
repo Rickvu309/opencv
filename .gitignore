@@ -52,3 +52,6 @@ apps/web/.generated/
 
 # local PGlite data for DB_DRIVER=pglite
 apps/api/.data/
+
+# tlc output
+tlc.out

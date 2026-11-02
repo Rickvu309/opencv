@@ -10,7 +10,8 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test test:open-pr",
     "check": "node scripts/check.mjs",
-    "check:full": "node scripts/check.mjs --full"
+    "check:full": "node scripts/check.mjs --full",
+    "test:formal": "node scripts/tlc.mjs --all"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
