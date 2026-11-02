@@ -16,7 +16,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
 import { coverageCases } from "./coverage-setup.js"
 import { installRegistry } from "./install.js"
-import type { Registry } from "./registry.js"
+import type { ExecuteResult, Registry } from "./registry.js"
 
 const surfaces = {
   account: accountContract,
@@ -24,6 +24,43 @@ const surfaces = {
   inbox: inboxContract,
   job: jobContract,
   paper: paperContract,
+}
+
+const REVERSAL_WITHOUT_ACTIVITY_PENDING = {
+  issue: 943,
+  expires: "2026-12-01",
+  commands: [
+    "chat.rename",
+    "chat.setFocus",
+    "job.addChecklistItem",
+    "job.linkPaper",
+    "job.setChecklistItem",
+    "job.star",
+    "paper.rename",
+    "paper.replace",
+    "paper.restore",
+    "paper.setTemplate",
+    "paper.share",
+  ],
+}
+
+function reversalWithoutActivity(ran: [string, ExecuteResult][]) {
+  return ran
+    .filter(([, result]) => result.reversal && !result.activityId)
+    .map(([name]) => name)
+    .sort()
+}
+
+function unlistedReversalWithoutActivity(
+  offenders: string[],
+  pending: string[]
+) {
+  return offenders
+    .filter((name) => !pending.includes(name))
+    .map(
+      (name) =>
+        `${name} returns a reversal but writes no activity row, so the receipt says Reversible and shows no Undo. Write an activity row, or return no reversal.`
+    )
 }
 
 function coverageProblems(covered: string[]) {
@@ -60,17 +97,58 @@ describe("every command has a coverage case that runs it as the person and undoe
       email: "ada-coverage@example.com",
     })
     const { cases } = coverageCases(db, userId)
+    const ran: [string, ExecuteResult][] = []
 
     await withDatabase(db, async () => {
       for (const row of cases) {
         await row.arrange()
         const result = await row.act()
+        ran.push([row.name, result])
         await row.assert(result)
         if (row.undoAssert) await row.undoAssert(result)
       }
       expect(coverageProblems(cases.map((row) => row.name))).toEqual([])
+      const offenders = reversalWithoutActivity(ran)
+      expect(
+        unlistedReversalWithoutActivity(
+          offenders,
+          REVERSAL_WITHOUT_ACTIVITY_PENDING.commands
+        )
+      ).toEqual([])
+      expect(
+        REVERSAL_WITHOUT_ACTIVITY_PENDING.commands.filter(
+          (name) => !offenders.includes(name)
+        ),
+        "pending commands that no longer offend: remove them from the list"
+      ).toEqual([])
+      expect(
+        Date.parse(REVERSAL_WITHOUT_ACTIVITY_PENDING.expires)
+      ).toBeGreaterThan(Date.now())
     })
     await client.close()
+  })
+
+  it("a reversal with no activity row is reported", () => {
+    const withReversal = {
+      reversal: { command: "x.undo", input: {} },
+      activityId: null,
+    } as unknown as ExecuteResult
+    const withBoth = {
+      reversal: { command: "x.undo", input: {} },
+      activityId: "a1",
+    } as unknown as ExecuteResult
+    const neither = {
+      reversal: null,
+      activityId: null,
+    } as unknown as ExecuteResult
+    const offenders = reversalWithoutActivity([
+      ["bad", withReversal],
+      ["good", withBoth],
+      ["plain", neither],
+    ])
+    expect(offenders).toEqual(["bad"])
+    expect(unlistedReversalWithoutActivity(offenders, [])).toHaveLength(1)
+    expect(unlistedReversalWithoutActivity(offenders, ["bad"])).toEqual([])
   })
 
   it("stores an idempotency key when a command writes no activity", async () => {

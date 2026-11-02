@@ -35,9 +35,24 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
         )
       },
       act: () =>
-        run("job.update", { jobId: ctx.jobId, patch: { location: "Hanoi" } }),
+        run("job.update", {
+          jobId: ctx.jobId,
+          patch: {
+            location: "Hanoi",
+            posting: {
+              about: "",
+              duties: "",
+              requirements: "Strong Figma skills",
+              details: "",
+            },
+          },
+        }),
       assert: async () => {
-        expect(text(await jobOf(ctx.jobId), "location")).toBe("Hanoi")
+        const job = await jobOf(ctx.jobId)
+        expect(text(job, "location")).toBe("Hanoi")
+        expect(job).toMatchObject({
+          posting: { requirements: "Strong Figma skills" },
+        })
       },
       undoAssert: async (result) => {
         await undo(result)

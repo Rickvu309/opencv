@@ -258,7 +258,8 @@ describe("every changed read is named by the command that changed it", () => {
   const reversals: Observation[] = []
   let controlDiffs: ReadSpec[] = []
   let readCount = 0
-  let errorCount = 0
+  const answered = new Set<QueryName>()
+  const asked = new Set<QueryName>()
   let closeDb: () => Promise<void> = async () => {}
 
   beforeAll(async () => {
@@ -286,9 +287,12 @@ describe("every changed read is named by the command that changed it", () => {
       const value = await perform()
       const after = await snapshot(registry, person, specs)
       readCount += specs.length
-      errorCount += [...after.values()].filter((entry) =>
-        entry.startsWith("ERROR")
-      ).length
+      for (const spec of specs) {
+        asked.add(spec.query)
+        const answers = [before.get(keyOf(spec)), after.get(keyOf(spec))]
+        if (answers.some((answer) => answer && !answer.startsWith("ERROR")))
+          answered.add(spec.query)
+      }
       return {
         value,
         observation: {
@@ -402,9 +406,17 @@ describe("every changed read is named by the command that changed it", () => {
     expect(controlDiffs.map(keyOf)).toEqual([])
   })
 
-  it("the snapshot reads real data, not only refusals", () => {
-    expect(readCount).toBeGreaterThan(500)
-    expect(errorCount / readCount).toBeLessThan(0.5)
+  it("every snapshotted read returns a real answer in at least one case", () => {
+    expect(readCount).toBeGreaterThan(0)
+    const snapshotted = (Object.keys(SNAPSHOT_QUERIES) as QueryName[]).filter(
+      (query) => SNAPSHOT_QUERIES[query]
+    )
+    const neverAsked = snapshotted.filter((query) => !asked.has(query))
+    const neverAnswered = snapshotted.filter((query) => !answered.has(query))
+    expect({ neverAsked, neverAnswered }).toEqual({
+      neverAsked: [],
+      neverAnswered: [],
+    })
   })
 
   it("most commands visibly change some read, so the check is not vacuous", () => {
