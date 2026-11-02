@@ -270,40 +270,134 @@ describe("LetterSheet edit mode", () => {
     expect(field("Paragraph 3").selectionStart).toBe(6)
   })
 
-  it("keeps the caret on the line after Enter just after a line break", () => {
+  it("opens a paragraph on Enter just after a line break, and cuts the dangling break", () => {
     const seen: LetterDocument[] = []
     render(<Harness initial={{ markdown: "a\nb" }} seen={seen} />)
     const first = field("Paragraph 1")
     first.focus()
     first.setSelectionRange(2, 2)
     fireEvent.keyDown(first, { key: "Enter" })
-    expect(lastBody(seen)).toBe("a\n\n\nb")
+    expect(lastBody(seen)).toBe("a\n\nb")
+    expect(field("Paragraph 1").value).toBe("a\n")
     const second = field("Paragraph 2")
-    expect(second.value).toBe("\nb")
+    expect(second.value).toBe("b")
     expect(document.activeElement).toBe(second)
-    expect(second.selectionStart).toBe(1)
+    expect(second.selectionStart).toBe(0)
   })
 
-  it("opens a new paragraph on Shift+Enter at the end of a paragraph that has one after it", () => {
+  const soft = "{Shift>}{Enter}{/Shift}"
+
+  it("keeps Shift+Enter at the end of a paragraph with one after it in that paragraph", async () => {
+    const seen: LetterDocument[] = []
+    render(
+      <Harness
+        initial={{ markdown: "Alpha\n\nBravo two.\n\nCharlie" }}
+        seen={seen}
+      />
+    )
+    const second = field("Paragraph 2")
+    second.focus()
+    second.setSelectionRange(10, 10)
+    await userEvent.keyboard(`${soft}X`)
+    expect(field("Paragraph 2").value).toBe("Bravo two.\nX")
+    expect(field("Paragraph 3").value).toBe("Charlie")
+    expect(document.activeElement).toBe(field("Paragraph 2"))
+    expect(lastBody(seen)).toBe("Alpha\n\nBravo two.\nX\n\nCharlie")
+  })
+
+  it("keeps Shift+Enter after a selection that runs to the paragraph's end", async () => {
+    const seen: LetterDocument[] = []
+    render(
+      <Harness
+        initial={{ markdown: "Alpha\n\nBravo two.\n\nCharlie" }}
+        seen={seen}
+      />
+    )
+    const second = field("Paragraph 2")
+    second.focus()
+    second.setSelectionRange(6, 10)
+    await userEvent.keyboard(`${soft}Y`)
+    expect(field("Paragraph 2").value).toBe("Bravo \nY")
+    expect(field("Paragraph 3").value).toBe("Charlie")
+    expect(lastBody(seen)).toBe("Alpha\n\nBravo \nY\n\nCharlie")
+  })
+
+  it("keeps the rest of a line deleted after Shift+Enter in its paragraph", async () => {
+    const seen: LetterDocument[] = []
+    render(
+      <Harness
+        initial={{ markdown: "Alpha\n\nBravo two.\n\nCharlie" }}
+        seen={seen}
+      />
+    )
+    const second = field("Paragraph 2")
+    second.focus()
+    second.setSelectionRange(5, 5)
+    await userEvent.keyboard(`${soft}{Delete}{Delete}{Delete}{Delete}{Delete}Q`)
+    expect(field("Paragraph 2").value).toBe("Bravo\nQ")
+    expect(field("Paragraph 3").value).toBe("Charlie")
+  })
+
+  it("keeps a pasted trailing line break in its paragraph", async () => {
+    const seen: LetterDocument[] = []
+    render(
+      <Harness
+        initial={{ markdown: "Alpha\n\nBravo two.\n\nCharlie" }}
+        seen={seen}
+      />
+    )
+    const second = field("Paragraph 2")
+    second.focus()
+    second.setSelectionRange(10, 10)
+    await userEvent.paste(" Line\n")
+    await userEvent.keyboard("P")
+    expect(field("Paragraph 2").value).toBe("Bravo two. Line\nP")
+    expect(field("Paragraph 3").value).toBe("Charlie")
+  })
+
+  it("keeps Shift+Enter at the start of a paragraph a leading line break", async () => {
+    const seen: LetterDocument[] = []
+    render(
+      <Harness initial={{ markdown: "Alpha\n\nBravo two." }} seen={seen} />
+    )
+    const second = field("Paragraph 2")
+    second.focus()
+    second.setSelectionRange(0, 0)
+    await userEvent.keyboard(`${soft}W`)
+    expect(field("Paragraph 2").value).toBe("\nWBravo two.")
+    expect(field("Paragraph 2").selectionStart).toBe(2)
+  })
+
+  it("saves a trailing line break away and a break with text after it as typed", async () => {
     const seen: LetterDocument[] = []
     render(<Harness initial={{ markdown: "ab\n\ncd" }} seen={seen} />)
     const first = field("Paragraph 1")
     first.focus()
     first.setSelectionRange(2, 2)
-    fireEvent.keyDown(first, { key: "Enter", shiftKey: true })
-    expect(lastBody(seen)).toBe("ab\n\n\n\ncd")
-    expect(field("Paragraph 2").value).toBe("")
-    expect(document.activeElement).toBe(field("Paragraph 2"))
+    await userEvent.keyboard(soft)
+    expect(field("Paragraph 1").value).toBe("ab\n")
+    expect(lastBody(seen)).toBe("ab\n\ncd")
+    await userEvent.keyboard("z")
+    expect(lastBody(seen)).toBe("ab\nz\n\ncd")
   })
 
-  it("keeps Shift+Enter a line break at the end of the last paragraph", async () => {
+  it("reads the body again when it changes from outside", () => {
     const seen: LetterDocument[] = []
-    render(<Harness initial={{ markdown: "ab" }} seen={seen} />)
-    const only = field("Paragraph 1")
-    only.focus()
-    only.setSelectionRange(2, 2)
-    const allowed = fireEvent.keyDown(only, { key: "Enter", shiftKey: true })
-    expect(allowed).toBe(true)
+    const { rerender } = render(
+      <LetterSheet
+        letter={{ markdown: "one\n\ntwo" }}
+        mode="edit"
+        onChange={(next) => seen.push(next)}
+      />
+    )
+    rerender(
+      <LetterSheet
+        letter={{ markdown: "one\n\ntwo\nMeta" }}
+        mode="edit"
+        onChange={(next) => seen.push(next)}
+      />
+    )
+    expect(field("Paragraph 2").value).toBe("two\nMeta")
     expect(seen).toHaveLength(0)
   })
 
@@ -319,7 +413,7 @@ describe("LetterSheet edit mode", () => {
     expect(field("Sender name").selectionStart).toBe(5)
   })
 
-  it("follows Shift+Enter at a paragraph's end into the line it opens", () => {
+  it("keeps a line break the browser reports as an insert in its paragraph", () => {
     const seen: LetterDocument[] = []
     render(<Harness initial={{ markdown: "ab\n\ncd" }} seen={seen} />)
     const first = field("Paragraph 1")
@@ -327,10 +421,10 @@ describe("LetterSheet edit mode", () => {
     fireEvent.change(first, {
       target: { value: "ab\n", selectionStart: 3, selectionEnd: 3 },
     })
-    expect(lastBody(seen)).toBe("ab\n\n\ncd")
-    expect(field("Paragraph 1").value).toBe("ab")
-    expect(document.activeElement).toBe(field("Paragraph 2"))
-    expect(field("Paragraph 2").selectionStart).toBe(0)
+    expect(lastBody(seen)).toBe("ab\n\ncd")
+    expect(field("Paragraph 1").value).toBe("ab\n")
+    expect(document.activeElement).toBe(field("Paragraph 1"))
+    expect(field("Paragraph 1").selectionStart).toBe(3)
   })
 
   it("keeps the caret in place for a plain keystroke", async () => {

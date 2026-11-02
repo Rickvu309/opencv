@@ -1,6 +1,7 @@
 import {
   useLayoutEffect,
   useRef,
+  useState,
   type ComponentProps,
   type KeyboardEvent,
 } from "react"
@@ -13,13 +14,13 @@ import { Textarea } from "@workspace/ui/components/textarea"
 
 import "./design/letter-sheet.pen.css"
 import {
-  bodyOf,
-  locate,
-  mergeBefore,
-  offsetOf,
+  editParagraph,
+  mergeParagraph,
   paragraphsOf,
-  splitAt,
+  saveBody,
+  splitParagraph,
   type BodyPosition,
+  type ParagraphEdit,
 } from "./letter-sheet-model.ts"
 
 type LetterSheetProps = {
@@ -158,7 +159,24 @@ function EditSheet({
     {}
   )
   const partCaret = useRef<{ part: LetterPart; offset: number } | null>(null)
-  const paragraphs = paragraphsOf(letter.markdown)
+  const softBreak = useRef(false)
+  // The paragraphs on screen are the source of truth while editing. The body
+  // string is derived from them, so a line break at a paragraph's end stays
+  // where the writer typed it. They are read again from the string only when
+  // it changed from outside (a reload, the keyword card).
+  const [view, setView] = useState(() => ({
+    paragraphs: paragraphsOf(letter.markdown),
+    known: letter.markdown,
+  }))
+  let current = view
+  if (letter.markdown !== view.known) {
+    current = {
+      paragraphs: paragraphsOf(letter.markdown),
+      known: letter.markdown,
+    }
+    setView(current)
+  }
+  const paragraphs = current.paragraphs
 
   useLayoutEffect(() => {
     // A pasted line break in a one-line part becomes a space; keep the caret
@@ -179,15 +197,11 @@ function EditSheet({
     element.setSelectionRange(target.offset, target.offset)
   })
 
-  const setBody = (body: string) => onChange?.({ ...letter, markdown: body })
-
-  const changeParagraph = (index: number, value: string, caret: number) => {
-    const next = paragraphs.slice()
-    next[index] = value
-    const body = bodyOf(next)
-    const where = locate(paragraphsOf(body), offsetOf(next, index, caret))
-    if (where.index !== index) pending.current = where
-    setBody(body)
+  const apply = (edit: ParagraphEdit) => {
+    const body = saveBody(edit.paragraphs)
+    if (edit.caret) pending.current = edit.caret
+    setView({ paragraphs: edit.paragraphs, known: body })
+    onChange?.({ ...letter, markdown: body })
   }
 
   const keyParagraph = (
@@ -198,26 +212,12 @@ function EditSheet({
     const element = event.currentTarget
     const start = element.selectionStart
     const end = element.selectionEnd
-    // A line break typed at the end of a paragraph that has one after it cannot
-    // stay in this paragraph: the body would then hold three newlines in a row,
-    // and the first two read as the paragraph break. Open a new paragraph, as
-    // Enter does, so the caret and the break agree.
-    const breaksAtEnd =
-      event.shiftKey &&
-      start === end &&
-      start === element.value.length &&
-      index < paragraphs.length - 1
-    if (event.key === "Enter" && (!event.shiftKey || breaksAtEnd)) {
+    // Shift+Enter is the browser's own line break, in every position. The
+    // change it causes is flagged so that it never reads as a paragraph break.
+    softBreak.current = event.key === "Enter" && event.shiftKey
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
-      const base = offsetOf(paragraphs, index, 0)
-      const from = base + start
-      const cleaned =
-        letter.markdown.slice(0, from) + letter.markdown.slice(base + end)
-      const split = splitAt(cleaned, from)
-      // The caret sits just after the new break, which is not always at the
-      // start of the next paragraph: a line break before it moves into it.
-      pending.current = locate(paragraphsOf(split), from + 2)
-      setBody(split)
+      apply(splitParagraph(paragraphs, index, start, end))
       return
     }
     const collapsed = start === end
@@ -233,9 +233,7 @@ function EditSheet({
       merge = index + 1
     if (merge === null) return
     event.preventDefault()
-    const merged = mergeBefore(letter.markdown, merge)
-    pending.current = locate(paragraphsOf(merged.body), merged.joint)
-    setBody(merged.body)
+    apply(mergeParagraph(paragraphs, merge))
   }
 
   const part = (name: LetterPart) => {
@@ -281,13 +279,21 @@ function EditSheet({
           aria-label={`Paragraph ${index + 1}`}
           placeholder={index === 0 ? "Write the first paragraph" : undefined}
           value={text}
-          onChange={(event) =>
-            changeParagraph(
-              index,
-              event.target.value,
-              event.target.selectionStart
+          onChange={(event) => {
+            const soft =
+              softBreak.current ||
+              (event.nativeEvent as InputEvent).inputType === "insertLineBreak"
+            softBreak.current = false
+            apply(
+              editParagraph(
+                paragraphs,
+                index,
+                event.target.value,
+                event.target.selectionStart,
+                soft
+              )
             )
-          }
+          }}
           onKeyDown={(event) => keyParagraph(index, event)}
         />
       ))}
