@@ -27,6 +27,8 @@ function findChrome() {
 }
 
 const GROUP_EXIT_DEADLINE_MS = 3000
+const START_DEADLINE_MS = 20000
+const START_ATTEMPTS = 2
 
 function processGroupGone(pgid) {
   try {
@@ -37,7 +39,7 @@ function processGroupGone(pgid) {
   }
 }
 
-export async function launchBrowser() {
+function startChrome(startDeadlineMs) {
   const root = join(homedir(), "tmp", "verify-landing")
   mkdirSync(root, { recursive: true })
   const profile = mkdtempSync(join(root, "profile-"))
@@ -56,7 +58,7 @@ export async function launchBrowser() {
     ],
     { stdio: ["ignore", "ignore", "pipe"], detached: true }
   )
-  const killChromeGroupAndCleanUp = async () => {
+  const kill = async () => {
     try {
       process.kill(-chrome.pid, "SIGKILL")
     } catch {
@@ -68,31 +70,55 @@ export async function launchBrowser() {
       await new Promise((resolve) => setTimeout(resolve, 10))
     rmSync(profile, { recursive: true, force: true })
   }
+  const wsUrl = new Promise((resolve, reject) => {
+    let log = ""
+    const started = Date.now()
+    const timer = setTimeout(() => {
+      const error = new Error(
+        `chrome did not start after ${Date.now() - started} ms: ${log.slice(-300)}`
+      )
+      error.startTimeout = true
+      reject(error)
+    }, startDeadlineMs)
+    chrome.on("error", (error) => {
+      clearTimeout(timer)
+      reject(error)
+    })
+    chrome.on("exit", () => {
+      clearTimeout(timer)
+      reject(new Error(`chrome exited at start: ${log.slice(-300)}`))
+    })
+    chrome.stderr.on("data", (chunk) => {
+      log += chunk
+      const hit = /DevTools listening on (ws:\/\/\S+)/.exec(log)
+      if (hit) {
+        clearTimeout(timer)
+        resolve(hit[1])
+      }
+    })
+  })
+  return { wsUrl, kill }
+}
+
+export async function launchBrowser({
+  startDeadlineMs = START_DEADLINE_MS,
+} = {}) {
+  let attempt = 0
+  let started
+  let wsUrl
+  while (!wsUrl) {
+    attempt += 1
+    started = startChrome(startDeadlineMs)
+    try {
+      wsUrl = await started.wsUrl
+    } catch (error) {
+      await started.kill()
+      if (!error.startTimeout || attempt >= START_ATTEMPTS) throw error
+    }
+  }
+  const killChromeGroupAndCleanUp = started.kill
   let socket
   try {
-    const wsUrl = await new Promise((resolve, reject) => {
-      let log = ""
-      const timer = setTimeout(
-        () => reject(new Error(`chrome did not start: ${log.slice(-300)}`)),
-        20000
-      )
-      chrome.on("error", (error) => {
-        clearTimeout(timer)
-        reject(error)
-      })
-      chrome.on("exit", () => {
-        clearTimeout(timer)
-        reject(new Error(`chrome exited at start: ${log.slice(-300)}`))
-      })
-      chrome.stderr.on("data", (chunk) => {
-        log += chunk
-        const hit = /DevTools listening on (ws:\/\/\S+)/.exec(log)
-        if (hit) {
-          clearTimeout(timer)
-          resolve(hit[1])
-        }
-      })
-    })
     socket = new WebSocket(wsUrl)
     await new Promise((resolve, reject) => {
       socket.onopen = resolve
