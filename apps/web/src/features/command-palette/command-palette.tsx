@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef } from "react"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useNavigate } from "@tanstack/react-router"
 
 import { focusSearchButton } from "./focus-search-button.ts"
@@ -115,17 +116,14 @@ export function CommandPalette({
     }
   }, [open, query])
 
-  useEffect(() => {
-    if (!open) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape") return
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      onOpenChange(false)
-    }
-    document.addEventListener("keydown", onKey, true)
-    return () => document.removeEventListener("keydown", onKey, true)
-  }, [open, onOpenChange])
+  useShortcut({
+    key: "Escape",
+    enabled: open,
+    inFields: true,
+    capture: true,
+    stop: true,
+    onPress: () => onOpenChange(false),
+  })
 
   const trimmed = query.trim()
   const rows = paletteRows({ query, scope, hits, recent, failed })

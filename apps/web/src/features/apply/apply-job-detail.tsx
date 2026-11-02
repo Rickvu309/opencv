@@ -1,4 +1,5 @@
-import { useEffect, useReducer } from "react"
+import { useReducer } from "react"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   commands,
@@ -35,12 +36,6 @@ import { DeleteJobDialog } from "./apply-job-delete-dialog.tsx"
 import { JobHeader } from "./apply-job-header.tsx"
 import { JobRail } from "./apply-job-rail.tsx"
 import { compareJobs } from "./apply-stages.ts"
-
-function fieldTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false
-  const tag = target.tagName
-  return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable
-}
 
 type DetailState = { deleteOpen: boolean; railOpen: boolean }
 
@@ -82,16 +77,10 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
     queryFn: () => listActivity(id),
   })
 
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Delete" && event.key !== "Backspace") return
-      if (fieldTarget(event.target)) return
-      event.preventDefault()
-      dispatch({ type: "delete_requested" })
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [])
+  useShortcut({
+    key: ["Delete", "Backspace"],
+    onPress: () => dispatch({ type: "delete_requested" }),
+  })
 
   const ordered = [...(jobs.data ?? [])].sort(compareJobs)
   const index = ordered.findIndex((job) => job.id === id)

@@ -1,6 +1,7 @@
 import "./design/dock.pen.css"
 
 import { useEffect, useReducer, useRef } from "react"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import { Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import { History, Menu, MessageCircle } from "lucide-react"
@@ -112,17 +113,15 @@ export function AppShell({ onSearch }: AppShellProps) {
   const dockRef = useRef<HTMLDivElement>(null)
   const panelVisible = panel.open && panel.mode !== "dock"
 
-  useEffect(() => {
-    if (!panel.open || panel.mode === "dock") return
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape") return
-      event.preventDefault()
+  useShortcut({
+    key: "Escape",
+    enabled: panel.open && panel.mode !== "dock",
+    inFields: true,
+    onPress: () => {
       dispatch({ type: "panel_closed" })
       openerRef.current?.focus()
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [panel.mode, panel.open])
+    },
+  })
 
   useEffect(() => {
     if (!panel.open || panel.mode !== "dock") return

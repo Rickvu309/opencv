@@ -1,4 +1,5 @@
-import { useEffect, useReducer } from "react"
+import { useReducer } from "react"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import type { JobView } from "@workspace/domain"
@@ -69,14 +70,6 @@ function matches(job: JobView, { company, location }: ApplyFilters) {
   return true
 }
 
-function typingIn(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
-  )
-}
-
 function applySearch(
   filters: ApplyFilters,
   view: ApplyView,
@@ -121,18 +114,11 @@ export function ApplyPage() {
     !jobs.isLoading && !jobs.isError && filtering && filtered.length === 0
   const ready = !jobs.isLoading && !jobs.isError && !empty && !noMatch
 
-  useEffect(() => {
-    if (dialogOpen) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "n" || event.defaultPrevented) return
-      if (event.metaKey || event.ctrlKey || event.altKey) return
-      if (typingIn(event.target)) return
-      event.preventDefault()
-      dispatch({ type: "dialog_opened" })
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [dialogOpen])
+  useShortcut({
+    key: "n",
+    enabled: !dialogOpen,
+    onPress: () => dispatch({ type: "dialog_opened" }),
+  })
 
   function setFilters(next: ApplyFilters) {
     void navigate({

@@ -1,4 +1,5 @@
-import { useEffect, useReducer } from "react"
+import { useReducer } from "react"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
 import { AppShell } from "@/features/app-shell/app-shell.tsx"
@@ -43,16 +44,12 @@ function AppShellChrome() {
   const navigate = useNavigate()
   const [searchOpen, dispatchSearch] = useReducer(searchReducer, false)
 
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault()
-        dispatchSearch({ type: "shortcut_pressed" })
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [])
+  useShortcut({
+    key: "k",
+    mod: true,
+    inFields: true,
+    onPress: () => dispatchSearch({ type: "shortcut_pressed" }),
+  })
 
   function goSurface(id: SurfaceId) {
     void navigate({ to: SURFACE_PATHS[id] })
