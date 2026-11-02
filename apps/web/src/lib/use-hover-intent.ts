@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef } from "react"
 import type { PointerEvent } from "react"
 
+import { useShortcut } from "@/lib/use-shortcut.ts"
+
 type Options = { openDelay?: number; closeDelay?: number }
 
 export function useHoverIntent({
@@ -34,14 +36,13 @@ export function useHoverIntent({
 
   useEffect(() => clear, [clear])
 
-  useEffect(() => {
-    if (!open) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !event.defaultPrevented) close()
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [open, close])
+  useShortcut({
+    key: "Escape",
+    enabled: open,
+    inFields: true,
+    prevent: false,
+    onPress: close,
+  })
 
   function enterTrigger(event: PointerEvent) {
     if (event.pointerType !== "mouse") return

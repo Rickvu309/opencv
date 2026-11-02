@@ -38,7 +38,7 @@ To add a product action, follow `docs/adr/0010-one-typed-contract-for-commands-a
 1. Add a command entry to `packages/domain/src/<surface>-contract.ts`, with `invalidates` naming the reads it makes stale.
 2. Bind it in `apps/api/src/<surface>/commands.ts` with its handler, reversal and activity line. A missing binding is a type error.
 3. Add a case to `apps/api/src/registry/coverage-<surface>.ts` (`arrange`, `act`, `assert`, optional `undoAssert`). `coverage.test.ts` fails on a command with no case.
-4. Call it from the web with `runContractCommand` from `apps/web/src/lib/contract-client.ts`. The Coach tool, step label, Undo and screen refresh follow from the entry.
+4. Call it from the web with `runContractCommand` from `apps/web/src/lib/contract-client.ts`.
 
 Tests that hold this shape:
 
@@ -49,10 +49,10 @@ Tests that hold this shape:
 - `apps/web/src/test/request-boundary.test.ts` rejects an API path, `fetch` or query invalidation outside `apps/web/src/lib`.
 - `apps/web/src/test/feature-imports.test.ts` rejects an import between `apps/web/src/features` folders that its `FEATURE_IMPORTS` table does not list, a folder with no row, a row for a gone folder, and an edge no import uses.
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
-- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when a number now names another decision.
-- `scripts/doc-paths.test.mjs` rejects a backticked repo path in AGENTS.md, CONTEXT.md, `docs/` or `.claude/skills/` that does not exist, with file and line.
+- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`.
+- `scripts/doc-paths.test.mjs` rejects a backticked repo path in AGENTS.md, CONTEXT.md, `docs/` or `.claude/skills/` that does not exist.
 - `scripts/retired-words.test.mjs` rejects Thread or Opportunity in source or file names under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads); say Chat or Job.
-- `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no other non-test file imports; drop `export` or delete it. `KEPT_ON_PURPOSE` lists the exceptions.
+- `scripts/unused-domain-exports.test.mjs` rejects an export of `packages/domain/src` that no other non-test file imports.
 - `apps/api/src/registry/coach-chat-tools.test.ts` bars chat.create.
 - `scripts/no-comments.test.mjs` rejects any new comment in source, CSS included; use a better name or a test. `scripts/no-comments.baseline.json` only shrinks (`node scripts/no-comments.mjs --write-baseline`).
 - `scripts/web-test-clock.test.mjs` rejects a web test setup that does not pin the clock; fixtures anchor to `TEST_NOW` in `apps/web/src/test/test-clock.ts`, never the real date.
@@ -69,6 +69,7 @@ Tests that hold this shape:
 - `scripts/pointer-capture.test.mjs` rejects `setPointerCapture` in a module with no `pointercancel` and `lostpointercapture` handler.
 - Web lint rejects `onMouseEnter`/`onPointerEnter` (use kit `Popover openOnHover` or `useHoverIntent`).
 - Web lint rejects `inert={...}` (use `FocusSafeRegion`) and `style.setProperty("--x")` (set `width` or `transform`).
+- Web lint rejects a `window`/`document` key listener; use `useShortcut` (`apps/web/src/lib/use-shortcut.ts`), which ignores typing, held keys and a pointer drag.
 - `scripts/web-lint-rules.test.mjs` runs those lint rules on the mistake and on correct code.
 
 ### Git
@@ -128,7 +129,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 
 #### 6. Merge and clean up
 
-- From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, a mass deletion (over 25 authored files, 2000 lines or 10%; add `needs-human-review`), a wrong title, missing `Closes #n` or a closed issue, ci without success on the head, and gate changes without `risk:high` (`ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs`, `.github/rulesets/main.json`). It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
+- From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>` after green `ci`. It refuses drafts, another author, `needs-human-review`, a mass deletion (over 25 authored files, 2000 lines or 10%; add `needs-human-review`), a wrong title, missing `Closes #n` or a closed issue, ci without success on the head, and gate changes without `risk:high`. It enqueues with `--match-head-commit`; the queue runs full `ci` before squash-merging.
 - No `--admin`, no bypass. GitHub requires `ci` and no approval.
 - After the queue accepts the PR, run `scripts/ocv-tools.mjs merge <pr#> --wait` as a background command (`run_in_background`) and end the turn. It exits when the PR merges (closing the linked issues), leaves the queue, or after 45 minutes. A PR watcher does not wake you for a queue merge. Run `scripts/ocv-tools.mjs cleanup <issue#>` from the main checkout only if it says cleanup needs a hand.
 
@@ -153,7 +154,7 @@ Stock shadcn/ui on `base-nova` (Base UI) in `packages/ui`, consumed as source by
 
 Install with the shadcn CLI from the sources above (commands in `docs/agents/design-parity.md`). After every install run `node scripts/ds-codemod.mjs`. Never add a token; map a registry token to a shadcn variable.
 
-Design parity. The landing's design source is the pen frame named in `apps/web/src/features/landing/design/landing.snapshot.json`, the sign-in screen's the frame in `apps/web/src/features/auth/design/auth.snapshot.json`. Regenerate a snapshot when the design changes; commands in `docs/agents/design-parity.md`. Never build from `design/exports` PNGs. Every first-release frame (listed in `apps/web/src/test/design-frames.json`) needs a committed snapshot that a test reads, or an entry in `PENDING_FRAMES` with its issue and expiry. Apply's frames (W9.1 to W10.7) live in `apps/web/src/features/apply/design`; after an Apply change run `PORT=4454 pnpm --filter web verify:apply-pen` (`.claude/skills/verify-app-ui/apply-pen.md`). For pricing or blog cover changes, run `node scripts/verify-marketing-design.mjs <local web origin> <evidence directory>` against your worktree port, then inspect the screenshots.
+Design parity. The landing's design source is the pen frame named in `apps/web/src/features/landing/design/landing.snapshot.json`, the sign-in screen's the frame in `apps/web/src/features/auth/design/auth.snapshot.json`. Regenerate it with `docs/agents/design-parity.md`. Never build from `design/exports` PNGs. Every first-release frame (listed in `apps/web/src/test/design-frames.json`) needs a committed snapshot that a test reads, or an entry in `PENDING_FRAMES` with its issue and expiry. Apply's frames (W9.1 to W10.7) live in `apps/web/src/features/apply/design`; after an Apply change run `PORT=4454 pnpm --filter web verify:apply-pen` (`.claude/skills/verify-app-ui/apply-pen.md`). For pricing or blog cover changes, run `node scripts/verify-marketing-design.mjs <local web origin> <evidence directory>` against your worktree port, then inspect the screenshots.
 
 Signed-in screens match their pen frame in layout, not only in copy. A screen built from a frame gets an expected layout (`<screen>.layout.json`, recorded as in `docs/agents/design-parity.md`). Run `PORT=4450 pnpm --filter web verify:pen-layout` before marking a design PR ready and attach its output; it fails on any text more than 8px off or styled differently. Build each designed screen in its own component from its frame. Never pour a new frame into a shared page template that predates it.
 

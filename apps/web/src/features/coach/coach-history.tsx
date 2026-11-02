@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import type { ChatSummary } from "@workspace/domain"
 
 import { ChevronDown } from "lucide-react"
@@ -72,18 +73,16 @@ export function CoachHistory({
     return () => clearTimeout(id)
   }, [open])
 
-  useEffect(() => {
-    if (!open) return
-    function handleKey(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key === "n") {
-        event.preventDefault()
-        onNewChat()
-        onOpenChange(false)
-      }
-    }
-    document.addEventListener("keydown", handleKey)
-    return () => document.removeEventListener("keydown", handleKey)
-  }, [open, onNewChat, onOpenChange])
+  useShortcut({
+    key: "n",
+    mod: true,
+    enabled: open,
+    inFields: true,
+    onPress: () => {
+      onNewChat()
+      onOpenChange(false)
+    },
+  })
 
   const filtered = chats.filter((chat) =>
     chat.title.toLowerCase().includes(search.toLowerCase())

@@ -110,3 +110,68 @@ test("writing a plain style property is allowed", async () => {
     []
   )
 })
+
+const RAW_BRACKET = `import { useEffect } from "react"
+export function useBracket(toggle) {
+  useEffect(() => {
+    function onKey(event) {
+      if (event.key !== "[" || event.defaultPrevented) return
+      toggle()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [toggle])
+}`
+
+test("a raw window keydown listener that ignores drags is refused and names useShortcut", async () => {
+  const found = await messages(
+    RAW_BRACKET,
+    "src/features/app-shell/use-sidebar-layout.ts"
+  )
+  assert.equal(found.length, 1)
+  assert.match(found[0], /useShortcut from @\/lib\/use-shortcut\.ts/)
+})
+
+test("document and globalThis key listeners are refused in any feature", async () => {
+  for (const target of ["document", "globalThis"]) {
+    for (const type of ["keydown", "keyup", "keypress"]) {
+      const found = await messages(
+        `${target}.addEventListener("${type}", run, true)`,
+        "src/features/inbox/row.ts"
+      )
+      assert.equal(found.length, 1, `${target} ${type}`)
+    }
+  }
+})
+
+test("useShortcut, other window events and element key handlers are not refused", async () => {
+  assert.deepEqual(
+    await messages(
+      `useShortcut({ key: "[", onPress: toggle })`,
+      "src/features/app-shell/use-sidebar-layout.ts"
+    ),
+    []
+  )
+  assert.deepEqual(
+    await messages(
+      `window.addEventListener("resize", run)`,
+      "src/features/inbox/row.ts"
+    ),
+    []
+  )
+  assert.deepEqual(
+    await messages(
+      `export const a = <input onKeyDown={run} />`,
+      "src/features/inbox/row.tsx"
+    ),
+    []
+  )
+})
+
+test("the shortcut hook itself and tests may attach a key listener", async () => {
+  assert.deepEqual(await messages(RAW_BRACKET, "src/lib/use-shortcut.ts"), [])
+  assert.deepEqual(
+    await messages(RAW_BRACKET, "src/lib/use-shortcut.test.ts"),
+    []
+  )
+})

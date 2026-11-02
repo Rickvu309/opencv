@@ -21,6 +21,15 @@ const DYNAMIC_INERT = ["JSXAttribute[name.name='inert'][value]"].map(
   })
 )
 
+const GLOBAL_SHORTCUT = [
+  "CallExpression[callee.property.name='addEventListener'][callee.object.name=/^(window|document|globalThis)$/][arguments.0.value=/^key(down|up|press)$/]",
+  "CallExpression[callee.property.name='addEventListener'][callee.object.name=/^(window|document|globalThis)$/][arguments.0.type='TemplateLiteral'][arguments.0.quasis.0.value.raw=/^key(down|up|press)$/]",
+].map((selector) => ({
+  selector,
+  message:
+    "A key listener on window or document fires while the user types, composes text or drags. Use useShortcut from @/lib/use-shortcut.ts, which ignores fields, input method composition, held keys and an active pointer gesture.",
+}))
+
 const SCOPED_WRITES = [
   "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][callee.object.object.property.name='documentElement']",
   "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][arguments.0.type='Literal'][arguments.0.value=/^--/]",
@@ -80,13 +89,14 @@ export default defineConfig([
   },
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}", "src/lib/use-shortcut.ts"],
     rules: {
       "no-restricted-syntax": [
         "error",
         ...HOVER_OVERLAY,
         ...DYNAMIC_INERT,
         ...SCOPED_WRITES,
+        ...GLOBAL_SHORTCUT,
       ],
     },
   },
@@ -97,7 +107,12 @@ export default defineConfig([
       "src/components/layer-stack.tsx",
     ],
     rules: {
-      "no-restricted-syntax": ["error", ...DYNAMIC_INERT, ...SCOPED_WRITES],
+      "no-restricted-syntax": [
+        "error",
+        ...DYNAMIC_INERT,
+        ...SCOPED_WRITES,
+        ...GLOBAL_SHORTCUT,
+      ],
     },
   },
   {
@@ -109,6 +124,7 @@ export default defineConfig([
         ...HOVER_OVERLAY,
         ...DYNAMIC_INERT,
         ...SCOPED_WRITES,
+        ...GLOBAL_SHORTCUT,
         ...[
           "Literal[value=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
           "TemplateElement[value.raw=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
