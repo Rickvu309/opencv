@@ -66,6 +66,7 @@ export function PitchHeroArt() {
   return (
     <div
       aria-hidden="true"
+      data-illustration
       className="relative flex flex-col gap-6 xl:absolute xl:top-[180px] xl:left-[430px] xl:block xl:h-[420px] xl:w-[1000px]"
     >
       <div className="flex w-full flex-col overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.06),0_30px_70px_rgb(0_0_0/0.1)] xl:absolute xl:top-0 xl:left-[170px] xl:w-[780px]">
@@ -118,7 +119,7 @@ export function PitchHeroArt() {
           </p>
           <div className="mt-2.5 flex gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div className="flex h-24 items-center justify-center rounded-[10px] border border-border/50 bg-muted/60">
+              <div className="flex h-[90px] items-center justify-center rounded-[10px] border border-border/50 bg-muted/60">
                 <svg
                   viewBox="0 0 230 52"
                   fill="none"
@@ -139,7 +140,7 @@ export function PitchHeroArt() {
               </span>
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div className="flex h-24 items-center justify-center rounded-[10px] border border-border/50 bg-muted/60">
+              <div className="flex h-[90px] items-center justify-center rounded-[10px] border border-border/50 bg-muted/60">
                 <Bars
                   heights={NEWSLETTER_BARS}
                   className="h-[52px] w-[200px] max-w-full gap-1.5"
@@ -177,7 +178,7 @@ export function PitchHeroArt() {
             3 CV downloads
           </span>
         </div>
-        <div className="flex w-[200px] flex-col gap-2.5 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(0_0_0/0.05),0_12px_32px_rgb(0_0_0/0.08)] xl:absolute xl:top-[372px] xl:left-[520px]">
+        <div className="flex w-[200px] flex-col gap-2.5 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(0_0_0/0.05),0_12px_32px_rgb(0_0_0/0.08)] xl:absolute xl:top-[378px] xl:left-[520px]">
           <div className="flex items-end gap-2">
             <span className="text-[28px] font-semibold tracking-[-1px] text-foreground">
               24

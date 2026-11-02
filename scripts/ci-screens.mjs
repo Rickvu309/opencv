@@ -128,6 +128,11 @@ const EXTERNAL = [
     style: "port",
   },
   { id: "letter-editor", script: "verify-letter-editor.mjs", style: "port" },
+  {
+    id: "decoration-cover",
+    script: "verify-decoration-cover.mjs",
+    style: "url",
+  },
   { id: "auth-code", script: "verify-auth-code.mjs", style: "port" },
   { id: "auth-welcome", script: "verify-auth-welcome.mjs", style: "url" },
   { id: "session-expired", script: "verify-session-expired.mjs", style: "url" },
