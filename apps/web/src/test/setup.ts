@@ -7,6 +7,7 @@ import "@testing-library/jest-dom/vitest"
 import { resetUnauthorizedHandler } from "@/lib/api.ts"
 
 import { resetMockSession } from "./auth-client-mock.ts"
+import { pinTestClock } from "./test-clock.ts"
 import { resetApplyApiMock } from "./apply-api-mock.ts"
 import { resetPaperApiMock } from "./paper-api-mock.ts"
 import { resetProfileApiMock } from "./profile-api-mock.ts"
@@ -87,6 +88,7 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
 installSonnerTimerTracker()
 
 beforeEach(() => {
+  pinTestClock()
   toast.dismiss()
   resetMockSession()
   resetUnauthorizedHandler()
