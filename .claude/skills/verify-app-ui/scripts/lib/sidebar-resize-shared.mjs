@@ -37,7 +37,7 @@ export async function release(page, x) {
 export async function waitShell(page, web) {
   await page.goto(`${web}/paper`)
   await page.waitFor(
-    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)})`,
+    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="nav-item"]`)})`,
     20000
   )
   await page.evaluate(

@@ -140,8 +140,9 @@ describe("app sidebar pen parity (YC0lV / jsloS)", () => {
       "data-size",
       "sm"
     )
-    const icon = sidebar.querySelector("[data-slot='sidebar-link'] svg")!
-    expect(icon.getAttribute("class")).toContain("size-4")
+    const item = sidebar.querySelector("[data-slot='nav-item']")!
+    expect(item.querySelector("svg")).not.toBeNull()
+    expect(item.getAttribute("class")).toContain("[&_svg]:size-4")
   })
 
   it("shows the person's initials and name in the footer", async () => {

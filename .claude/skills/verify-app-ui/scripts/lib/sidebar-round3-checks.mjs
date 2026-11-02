@@ -29,7 +29,7 @@ async function reset(page, web) {
 
 async function keyboardCollapse({ page, check, tag }) {
   await page.evaluate(
-    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)}).focus()`
+    `document.querySelector(${JSON.stringify(`${SIDEBAR} [data-slot="nav-item"]`)}).focus()`
   )
   await page.key("[")
   await page.sleep(1500)
@@ -44,7 +44,7 @@ async function keyboardCollapse({ page, check, tag }) {
   await page.hover(3, Y)
   await page.sleep(600)
   const peek = await page.evaluate(`(() => {
-    const link = [...document.querySelectorAll(${JSON.stringify(`${SIDEBAR} [data-slot="sidebar-link"]`)})].find((e) => e.getAttribute('href') === '/inbox');
+    const link = [...document.querySelectorAll(${JSON.stringify(`${SIDEBAR} [data-slot="nav-item"]`)})].find((e) => e.getAttribute('href') === '/inbox');
     const r = link.getBoundingClientRect();
     const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     return { open: !document.querySelector(${JSON.stringify(SIDEBAR)}).inert, tooltips: ${TOOLTIPS}, covered: !top || !top.closest(${JSON.stringify(SIDEBAR)}) };

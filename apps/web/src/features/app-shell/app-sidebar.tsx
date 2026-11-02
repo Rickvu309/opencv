@@ -31,7 +31,6 @@ import {
   useShellFavorites,
 } from "@/features/app-shell/use-shell-chats.ts"
 import { useSidebarGroup } from "@/features/app-shell/use-sidebar-groups.ts"
-import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { Brand } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -41,6 +40,7 @@ import {
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible"
 import { Kbd } from "@workspace/ui/components/kbd"
+import { NavItem, NavItemBadge } from "@workspace/ui/components/nav-item"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -56,13 +56,8 @@ type AppSidebarProps = {
   onNewChat: () => void
 }
 
-function linkClass(active: boolean) {
-  return cn(
-    FOCUS_RING,
-    "flex h-11 items-center gap-2 px-2 text-sm text-foreground hover:bg-sidebar-accent md:h-7 md:text-[13px] md:leading-[15.6px] md:font-medium",
-    active && "bg-sidebar-accent text-sidebar-accent-foreground"
-  )
-}
+const NAV_ITEM_CLASS =
+  "h-11 font-normal md:h-7 md:text-[13px] md:leading-[15.6px] md:font-medium"
 
 const navigationIcons = {
   inbox: Inbox,
@@ -188,28 +183,26 @@ export function AppSidebar({
           {SHELL_PRIMARY.map((item) => {
             const Icon = navigationIcons[item.id]
             return (
-              <Link
+              <NavItem
                 key={item.id}
-                to={item.to}
+                render={
+                  <Link
+                    to={item.to}
+                    activeOptions={navActiveOptions(item.to, current)}
+                  />
+                }
                 aria-label={shellNavLabel(item, count)}
-                data-slot="sidebar-link"
-                activeOptions={navActiveOptions(item.to, current)}
                 onClick={onNavigate}
-                activeProps={{ className: linkClass(true) }}
-                inactiveProps={{ className: linkClass(false) }}
+                className={NAV_ITEM_CLASS}
               >
-                <Icon className="size-4" aria-hidden="true" />
+                <Icon aria-hidden="true" />
                 <span>{item.label}</span>
                 {item.id === "inbox" && count != null ? (
-                  <span
-                    aria-hidden="true"
-                    data-slot="sidebar-count"
-                    className="ml-auto text-xs md:text-[11px] md:font-medium"
-                  >
+                  <NavItemBadge className="md:text-[11px] md:font-medium">
                     {count}
-                  </span>
+                  </NavItemBadge>
                 ) : null}
-              </Link>
+              </NavItem>
             )
           })}
           <NavGroup
@@ -220,18 +213,20 @@ export function AppSidebar({
             {SHELL_WORK.map((item) => {
               const Icon = navigationIcons[item.id]
               return (
-                <Link
+                <NavItem
                   key={item.id}
-                  to={item.to}
-                  data-slot="sidebar-link"
-                  activeOptions={navActiveOptions(item.to, current)}
+                  render={
+                    <Link
+                      to={item.to}
+                      activeOptions={navActiveOptions(item.to, current)}
+                    />
+                  }
                   onClick={onNavigate}
-                  activeProps={{ className: linkClass(true) }}
-                  inactiveProps={{ className: linkClass(false) }}
+                  className={NAV_ITEM_CLASS}
                 >
-                  <Icon className="size-4" aria-hidden="true" />
+                  <Icon aria-hidden="true" />
                   {item.label}
-                </Link>
+                </NavItem>
               )
             })}
           </NavGroup>
@@ -241,44 +236,48 @@ export function AppSidebar({
         ) : favoriteEmpty ? null : (
           <NavGroup id="favorites" label={shellCopy.favorites} className="mt-3">
             {favorites.docs.map((doc) => (
-              <Link
-                data-slot="sidebar-link"
+              <NavItem
                 key={doc.id || doc.name}
-                to="/paper/$docId"
-                params={{ docId: doc.id }}
-                activeOptions={navActiveOptions(
-                  favoriteDocPath(doc.id),
-                  current
-                )}
+                render={
+                  <Link
+                    to="/paper/$docId"
+                    params={{ docId: doc.id }}
+                    activeOptions={navActiveOptions(
+                      favoriteDocPath(doc.id),
+                      current
+                    )}
+                  />
+                }
                 onClick={onNavigate}
-                activeProps={{ className: linkClass(true) }}
-                inactiveProps={{ className: linkClass(false) }}
+                className={NAV_ITEM_CLASS}
               >
-                <FileText className="size-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{doc.name}</span>
-              </Link>
+                <FileText aria-hidden="true" />
+                <span>{doc.name}</span>
+              </NavItem>
             ))}
             {favorites.jobs.map((job) => (
-              <Link
-                data-slot="sidebar-link"
+              <NavItem
                 key={job.id || job.title}
-                to="/apply/$jobId"
-                params={{ jobId: job.id }}
-                activeOptions={navActiveOptions(
-                  favoriteJobPath(job.id),
-                  current
-                )}
+                render={
+                  <Link
+                    to="/apply/$jobId"
+                    params={{ jobId: job.id }}
+                    activeOptions={navActiveOptions(
+                      favoriteJobPath(job.id),
+                      current
+                    )}
+                  />
+                }
                 aria-label={
                   job.company ? `${job.title} ${job.company}` : job.title
                 }
                 title={job.company ? `${job.title}, ${job.company}` : job.title}
                 onClick={onNavigate}
-                activeProps={{ className: linkClass(true) }}
-                inactiveProps={{ className: linkClass(false) }}
+                className={NAV_ITEM_CLASS}
               >
-                <Briefcase className="size-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{job.title}</span>
-              </Link>
+                <Briefcase aria-hidden="true" />
+                <span>{job.title}</span>
+              </NavItem>
             ))}
           </NavGroup>
         )}

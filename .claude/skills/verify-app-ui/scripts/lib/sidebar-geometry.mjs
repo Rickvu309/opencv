@@ -30,7 +30,7 @@ export const geometry = (page, sidebar) =>
     const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right }; };
     const one = (selector) => root.querySelector(selector);
     const radius = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius);
-    const links = [...root.querySelectorAll('[data-slot="sidebar-link"]')].filter((a) => a.offsetParent);
+    const links = [...root.querySelectorAll('[data-slot="nav-item"]')].filter((a) => a.offsetParent);
     const labels = [...root.querySelectorAll('[data-slot="sidebar-group-label"]')].map((button) => {
       const range = document.createRange();
       range.selectNodeContents([...button.childNodes].find((n) => n.nodeType === 3));
