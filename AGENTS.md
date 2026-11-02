@@ -71,6 +71,7 @@ Tests that hold this shape:
 - Web lint rejects `inert={...}` (use `FocusSafeRegion`) and `style.setProperty("--x")` (set `width` or `transform`).
 - Web lint rejects a `window`/`document` key listener; use `useShortcut` (`apps/web/src/lib/use-shortcut.ts`), which ignores typing, held keys and a pointer drag.
 - `focus-safe-region.test.tsx` rejects a `FocusSafeRegion` that leaves a tooltip or popover open when it hides, or on the focus fallback.
+- `apps/web/src/test/disclosure-buttons.test.ts` rejects `aria-controls` without `aria-expanded`, and an app-shell dock button without both.
 - `scripts/web-lint-rules.test.mjs` runs those lint rules on the mistake and on correct code.
 
 ### Git
@@ -139,11 +140,7 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`. Rules and their checks
 - Open an issue, run `scripts/ocv-tools.mjs take <issue#> -d "..."` (type hotfix), fix, run `scripts/ocv-tools.mjs finish --body-file <file>`, and merge with `scripts/ocv-tools.mjs merge` once `ci` is green.
 - If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
 
-#### Review agent checklist
-
-Open the PR, wait for green `ci`, then `scripts/ocv-tools.mjs merge <pr#>`. One account, so no approval. A PR with `needs-human-review` is never merged by an agent.
-
-Full notes: `docs/git-workflow/review-and-approval.md`.
+Review notes (one account, so no approval): `docs/git-workflow/review-and-approval.md`.
 
 ### Production recovery
 

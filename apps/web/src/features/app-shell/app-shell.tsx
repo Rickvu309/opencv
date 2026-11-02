@@ -30,6 +30,8 @@ import {
 } from "@workspace/ui/components/dialog"
 import { cn } from "@workspace/ui/lib/utils"
 
+const COACH_PANEL_ID = "coach-panel"
+
 type PanelState = {
   open: boolean
   mode: CoachPanelMode
@@ -50,6 +52,7 @@ type ShellAction =
   | { type: "panel_opened"; title: string; chatId: string | null }
   | { type: "panel_closed" }
   | { type: "panel_minimized" }
+  | { type: "panel_restored" }
   | { type: "panel_expanded" }
   | { type: "drawer_opened" }
   | { type: "drawer_closed" }
@@ -72,6 +75,8 @@ function shellReducer(state: ShellState, action: ShellAction): ShellState {
       return { ...state, panel: CLOSED_PANEL }
     case "panel_minimized":
       return { ...state, panel: { ...state.panel, mode: "dock" } }
+    case "panel_restored":
+      return { ...state, panel: { ...state.panel, mode: "side" } }
     case "panel_expanded":
       return {
         ...state,
@@ -114,6 +119,7 @@ export function AppShell({ onSearch }: AppShellProps) {
   }, [])
   const menuRef = useRef<HTMLButtonElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
+  const coachToggledRef = useRef(false)
   const panelVisible = panel.open && panel.mode !== "dock"
 
   useShortcut({
@@ -122,7 +128,7 @@ export function AppShell({ onSearch }: AppShellProps) {
     inFields: true,
     onPress: () => {
       dispatch({ type: "panel_closed" })
-      openerRef.current?.focus()
+      focusOpener()
     },
   })
 
@@ -137,8 +143,19 @@ export function AppShell({ onSearch }: AppShellProps) {
       ? root.querySelector<HTMLElement>(`[data-chat-id="${panel.chatId}"]`)
       : null
     const coach = root.querySelector<HTMLElement>("[data-dock-coach]")
-    ;(chip ?? coach)?.focus()
+    const toggled = coachToggledRef.current
+    coachToggledRef.current = false
+    ;(toggled ? coach : (chip ?? coach))?.focus()
   }, [panel.chatId, panel.mode, panel.open])
+
+  function focusOpener() {
+    const opener = openerRef.current
+    if (opener?.isConnected && opener !== document.body) {
+      opener.focus()
+      return
+    }
+    dockRef.current?.querySelector<HTMLElement>("[data-dock-coach]")?.focus()
+  }
 
   function rememberOpener() {
     openerRef.current =
@@ -158,7 +175,20 @@ export function AppShell({ onSearch }: AppShellProps) {
 
   function closePanel() {
     dispatch({ type: "panel_closed" })
-    openerRef.current?.focus()
+    focusOpener()
+  }
+
+  function toggleCoach() {
+    if (panelVisible) {
+      coachToggledRef.current = true
+      dispatch({ type: "panel_minimized" })
+      return
+    }
+    if (panel.open) {
+      dispatch({ type: "panel_restored" })
+      return
+    }
+    openPanel({ title: shellCopy.coach, chatId: null })
   }
 
   async function onNewChat() {
@@ -182,6 +212,7 @@ export function AppShell({ onSearch }: AppShellProps) {
 
   const panelFrame = (
     <div
+      id={COACH_PANEL_ID}
       hidden={!panelVisible}
       className={cn(
         "z-10 min-h-0 bg-background",
@@ -294,7 +325,8 @@ export function AppShell({ onSearch }: AppShellProps) {
               title: chatDisplayTitle(chat.title),
             }))}
             onOpenChat={(chat) => openPanel(chat)}
-            onCoach={() => openPanel({ title: shellCopy.coach, chatId: null })}
+            coachOpen={panelVisible}
+            onCoach={toggleCoach}
             onHistory={() => {
               closePanel()
               void navigate({ to: "/coach" })
@@ -338,12 +370,14 @@ function ShellDock({
   dockRef,
   titles,
   onOpenChat,
+  coachOpen,
   onCoach,
   onHistory,
 }: {
   dockRef: { current: HTMLDivElement | null }
   titles: { id: string; title: string }[]
   onOpenChat: (chat: { title: string; chatId: string }) => void
+  coachOpen: boolean
   onCoach: () => void
   onHistory: () => void
 }) {
@@ -374,8 +408,10 @@ function ShellDock({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-11 md:h-7"
+        className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
         data-dock-coach=""
+        aria-expanded={coachOpen}
+        aria-controls={COACH_PANEL_ID}
         onClick={onCoach}
       >
         <MessageCircle aria-hidden="true" />
