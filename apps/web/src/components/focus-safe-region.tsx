@@ -7,6 +7,35 @@ type Props = ComponentProps<"div"> & {
   focusFallback: () => HTMLElement | null
 }
 
+const HANDOFF_WATCH_MS = 300
+
+function dismiss(trigger: Element) {
+  trigger.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    })
+  )
+}
+
+function closeOpenPopups(region: HTMLElement) {
+  for (const trigger of region.querySelectorAll("[data-popup-open]")) {
+    dismiss(trigger)
+  }
+}
+
+function keepClosedAfterHandoff(target: HTMLElement) {
+  const watcher = new MutationObserver(() => {
+    if (target.hasAttribute("data-popup-open")) dismiss(target)
+  })
+  watcher.observe(target, {
+    attributes: true,
+    attributeFilter: ["data-popup-open"],
+  })
+  setTimeout(() => watcher.disconnect(), HANDOFF_WATCH_MS)
+}
+
 export function FocusSafeRegion({
   as: Tag = "div",
   concealed,
@@ -18,8 +47,13 @@ export function FocusSafeRegion({
   useLayoutEffect(() => {
     const element = region.current
     if (!element) return
+    if (concealed) closeOpenPopups(element)
     if (concealed && element.contains(document.activeElement)) {
-      focusFallback()?.focus()
+      const fallback = focusFallback()
+      if (fallback) {
+        keepClosedAfterHandoff(fallback)
+        fallback.focus()
+      }
     }
     element.toggleAttribute("inert", concealed)
   }, [concealed, focusFallback])

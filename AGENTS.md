@@ -70,6 +70,7 @@ Tests that hold this shape:
 - Web lint rejects `onMouseEnter`/`onPointerEnter` (use kit `Popover openOnHover` or `useHoverIntent`).
 - Web lint rejects `inert={...}` (use `FocusSafeRegion`) and `style.setProperty("--x")` (set `width` or `transform`).
 - Web lint rejects a `window`/`document` key listener; use `useShortcut` (`apps/web/src/lib/use-shortcut.ts`), which ignores typing, held keys and a pointer drag.
+- `focus-safe-region.test.tsx` rejects a `FocusSafeRegion` that leaves a tooltip or popover open when it hides, or on the focus fallback.
 - `scripts/web-lint-rules.test.mjs` runs those lint rules on the mistake and on correct code.
 
 ### Git
