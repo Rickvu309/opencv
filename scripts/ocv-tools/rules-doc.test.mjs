@@ -15,12 +15,12 @@ test("the rules guide is generated from the table", () => {
   const md = renderRulesDoc()
   assert.match(
     md,
-    /\| rule \| what makes it fail \| fix \| at \| holds against main \|/
+    /\| rule +\| what makes it fail +\| fix +\| at +\| holds against main \|/
   )
   for (const row of RULES) assert.ok(md.includes(row.id), row.id)
   assert.match(md, /OTHER_WORKTREE \(2\).*Nothing/)
-  assert.match(md, /\| ON_MAIN \(2\).*\| commit \| no \|/)
-  assert.match(md, /\| PR_METADATA \(4\).*\| finish, pr \| yes \|/)
+  assert.match(md, /\| ON_MAIN \(2\).*\| commit +\| no +\|/)
+  assert.match(md, /\| PR_METADATA \(4\).*\| finish, pr +\| yes +\|/)
   for (const { path, table } of RULE_GUIDES)
     assert.equal(rulesDocMatches(readFileSync(path, "utf8"), table), true)
 })
@@ -57,4 +57,25 @@ test("doctor lists every rule from the table", () => {
   const { text } = runCli(["doctor"], ctxFor(fakePorts()))
   assert.match(text, /Rules:/)
   for (const row of RULES) assert.match(text, new RegExp(`  ${row.id}:`))
+})
+
+test("rules --write leaves each guide exactly as prettier prints it", async () => {
+  const prettier = await import("prettier")
+  const ports = fakePorts()
+  const ctx = ctxFor(ports)
+  assert.equal(runCli(["rules", "--write"], ctx).code, 0)
+  for (const { path } of RULE_GUIDES) {
+    const written = ports.fs.read(path)
+    const config = await prettier.resolveConfig(path)
+    assert.equal(
+      await prettier.format(written, { ...config, filepath: path }),
+      written,
+      `${path} needs prettier after rules --write`
+    )
+  }
+})
+
+test("a table with a wide row is padded to the widest cell in every column", () => {
+  const table = renderRulesDoc(RULES.slice(0, 3)).split("\n")
+  assert.equal(new Set(table.map((line) => line.length)).size, 1)
 })

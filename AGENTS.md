@@ -21,7 +21,7 @@ A job-search web app: a React SPA (`apps/web`) and a Hono api (`apps/api`) over 
 
 ## Pointers
 
-- Code (writing or reviewing source, tests, UI, a guard): `CODING_STANDARDS.md`, with every guard in `docs/agents/checks.md`.
+- Code (writing or reviewing source, tests, UI, a guard): `CODING_STANDARDS.md`, with every guard listed by `node scripts/list-checks.mjs`.
 - Layout (where a file or module lives): `docs/agents/code-map.md`.
 - Contract (add or change a command, read or Coach tool): `docs/adr/0010-one-typed-contract-for-commands-and-reads.md`.
 - Design (kit styling, registry install, pen frame or snapshot, signed-in screen layout, pricing or blog cover): `docs/agents/design-parity.md`.

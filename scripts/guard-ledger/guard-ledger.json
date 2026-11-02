@@ -1,0 +1,6 @@
+{
+  "id": "guard-ledger",
+  "file": "scripts/guard-ledger.test.mjs",
+  "historic": null,
+  "reason": "it guards the ledger itself; its fixtures fire on each mistake it catches"
+}

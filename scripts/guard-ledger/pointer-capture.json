@@ -1,0 +1,17 @@
+{
+  "id": "pointer-capture",
+  "file": "scripts/pointer-capture.test.mjs",
+  "detector": {
+    "module": "scripts/lib/pointer-capture.mjs",
+    "export": "missingDragEnds"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "70a4c349",
+    "path": "apps/web/src/features/landing/figures/motion.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/app-shell/sidebar-resize-handle.tsx"
+    }
+  }
+}

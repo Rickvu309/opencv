@@ -6,7 +6,7 @@ import { CI_ONLY_GUARDS, FAST_GUARDS, quickPlan } from "./push-checks.mjs"
 
 const root = new URL("../../../", import.meta.url).pathname
 
-test("every root guard is either a push check or left to CI", () => {
+test("a root guard is a push check unless CI_ONLY_GUARDS names it", () => {
   const listed = execFileSync(
     "git",
     [
@@ -20,10 +20,14 @@ test("every root guard is either a push check or left to CI", () => {
   )
     .split("\n")
     .filter((file) => file && file.split("/").length === 2)
-  const known = new Set([...FAST_GUARDS, ...CI_ONLY_GUARDS])
-  const unsorted = listed.filter((file) => !known.has(file))
-  assert.deepEqual(unsorted, [], "add each to FAST_GUARDS or CI_ONLY_GUARDS")
-  for (const file of known) assert.ok(existsSync(root + file), file)
+  for (const file of listed)
+    assert.equal(
+      FAST_GUARDS.includes(file),
+      !CI_ONLY_GUARDS.includes(file),
+      file
+    )
+  for (const file of CI_ONLY_GUARDS) assert.ok(existsSync(root + file), file)
+  for (const file of FAST_GUARDS) assert.ok(existsSync(root + file), file)
   const both = FAST_GUARDS.filter((file) => CI_ONLY_GUARDS.includes(file))
   assert.deepEqual(both, [])
 })
