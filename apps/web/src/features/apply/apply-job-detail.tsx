@@ -141,7 +141,10 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-card">
+    <div
+      data-pen-surface="apply"
+      className="flex h-full min-h-0 flex-col bg-card"
+    >
       <JobHeader
         job={job}
         position={index + 1}

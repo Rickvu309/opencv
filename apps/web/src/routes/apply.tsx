@@ -137,7 +137,10 @@ export function ApplyPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-card">
+    <div
+      data-pen-surface="apply"
+      className="flex h-full min-h-0 flex-col bg-card"
+    >
       <ApplyHeader onNewJob={() => dispatch({ type: "dialog_opened" })} />
       <ApplyToolbar
         view={view}

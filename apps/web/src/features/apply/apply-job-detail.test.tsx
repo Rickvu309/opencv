@@ -25,6 +25,11 @@ function submitPrepStep(input: HTMLElement) {
   fireEvent.submit(form)
 }
 
+async function headerBar() {
+  const crumb = await screen.findByRole("navigation", { name: "Breadcrumb" })
+  return crumb.closest("header") as HTMLElement
+}
+
 describe("job detail", () => {
   afterEach(() => {
     cleanup()
@@ -162,9 +167,12 @@ describe("job detail", () => {
       }),
     ])
     renderApp(`/apply/${id}`)
-    const crumb = await screen.findByRole("navigation", { name: "Breadcrumb" })
+    const crumb = await headerBar()
     expect(
-      within(crumb).getByRole("link", { name: "Apply" })
+      within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole(
+        "link",
+        { name: "Apply" }
+      )
     ).toBeInTheDocument()
     expect(
       within(crumb).getByRole("button", { name: "Previous job" })
@@ -372,7 +380,7 @@ describe("job detail", () => {
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
     setMockJobs([mockJob({ id, title: "First role", company: "Acme" })])
     renderApp(`/apply/${id}`)
-    const crumb = await screen.findByRole("navigation", { name: "Breadcrumb" })
+    const crumb = await headerBar()
     fireEvent.click(within(crumb).getByRole("button", { name: "Copy link" }))
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(window.location.href)

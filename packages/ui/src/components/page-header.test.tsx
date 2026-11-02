@@ -171,6 +171,17 @@ describe("PageHeader overflow", () => {
     ])
   })
 
+  it("disables the button of a disabled action", () => {
+    render(
+      <PageHeader>
+        <PageHeaderActions>
+          <PageHeaderAction label="Previous job" icon={<Star />} disabled />
+        </PageHeaderActions>
+      </PageHeader>
+    )
+    expect(screen.getByRole("button", { name: "Previous job" })).toBeDisabled()
+  })
+
   it("sets aria-pressed on a pressed action", () => {
     render(<DetailHeader />)
     expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute(
