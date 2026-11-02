@@ -21,7 +21,7 @@ const TONE = {
 } as const
 
 const SIZE = {
-  nav: "h-8 rounded-full px-3 py-0 text-[13px] font-medium",
+  nav: "h-8 pointer-coarse:h-11 rounded-full px-3 py-0 text-[13px] font-medium",
   close: "h-11 rounded-full px-5 py-0 text-base font-medium",
 } as const
 

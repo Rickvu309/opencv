@@ -50,7 +50,7 @@ After a redesign:
 
 ## The properties
 
-Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 26, including 20b, are in `scripts/lib/page-checks.mjs`, and 27 to 30 are in `scripts/lib/design-checks.mjs`. Check 31 is in `scripts/lib/text-style-check.mjs`. Id 09 is judged only.
+Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 26, including 20b, and 32 to 33 are in `scripts/lib/page-checks.mjs`, and 27 to 30 are in `scripts/lib/design-checks.mjs`. Check 31 is in `scripts/lib/text-style-check.mjs`. Id 09 is judged only.
 
 - 01 `h1-length-and-aim`: 12 words or fewer; an outcome or audience word. Source: Shapiro litmus test; NN/g 2.2.
 - 02 `statement-names-cv`: a block outside the nav names opencv and CV.
@@ -81,8 +81,10 @@ Ids are the check numbers. The current page is the first-release marketing site.
 - 27 `benefit-art-from-design`: the three benefit cards each contain one svg with viewBox "0 0 300 300", the path and ellipse count across them is 94 (the design art), and no element inside uses an inline hex colour. Source: opencv.pen Benefits frame.
 - 28 `nav-lockup-spacing`: at 1440 the visible gap between the nav mark's right edge and the wordmark's left edge is 9 to 13 px (the mark box has 2 px of inner padding) and the wordmark computed font-size is 16px at weight 600. Source: opencv.pen nav Logo.
 - 29 `cta-buttons-match-design`: nav and close button size, type, padding, shadow and border at 1440. Source: opencv.pen. Full rule in `properties.md`.
-- 30 `benefit-art-matches-pen`: Coach benefit art matches `reference/coach-art.png`. Source: opencv.pen node oWS4Z. Crop and tolerance in `properties.md`.
+- 30 `benefit-art-matches-pen`: Coach benefit art matches `reference/coach-art.png`. Source: opencv.pen node oWS4Z. Crop and tolerance in `coach-art-crop.md`.
 - 31 `text-style-matches-pen`: at 1440, each text in `landing.styles.json` that is on the page matches the fields opencv.pen sets (OKLCH colour, size, line height, weight, tracking), and each inline mark has an svg or img within 2px. A text the pen marks `startsLine` must start a line. That check runs at 1440 only. Dated exceptions cover the contrast-floor colours. A pen text missing from its section fails unless `design/landing.omitted.json` omits it. A heading split across inline elements is matched on the element's text, and each text run inside that element is checked. Text inside a `[role="img"]` figure is not looked up, and the per-word `.rv-w` spans of a revealed text are not texts of their own. Source: opencv.pen frame w7zeGR.
+- 32 `touch-target-44-390`: the 390x844 run emulates a touch screen, so `(pointer: coarse)` matches. There, every link and button outside a `[role="img"]` figure is at least 44x44. STALE when the emulation leaves the pointer fine. Source: WCAG 2.5.5; Apple HIG.
+- 33 `theme-color-matches-header`: in the same run, the `theme-color` meta matches the header fill within 2 per channel, so the phone browser bar joins the page. Source: the mobile-native skill.
 
 Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](taste-review.md). It is not a measured line. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
 

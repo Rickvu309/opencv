@@ -35,7 +35,10 @@ export function LandingFooter() {
         <div className="landing-inset">
           <div className="landing-footer-columns">
             <div className="landing-footer-brand">
-              <Link to="/" className={cn("rounded-md", FOCUS_RING)}>
+              <Link
+                to="/"
+                className={cn("landing-brand rounded-md", FOCUS_RING)}
+              >
                 <OpenCvLogo withWordmark />
               </Link>
               <p>

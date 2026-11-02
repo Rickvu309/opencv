@@ -91,6 +91,11 @@ export async function launchBrowser({ startDeadlineMs } = {}) {
       deviceScaleFactor: 1,
       mobile,
     })
+    if (mobile)
+      await call("Emulation.setTouchEmulationEnabled", {
+        enabled: true,
+        maxTouchPoints: 5,
+      })
     await call("Emulation.setEmulatedMedia", {
       features: [
         {

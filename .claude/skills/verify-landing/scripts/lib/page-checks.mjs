@@ -36,6 +36,7 @@ export function pageChecks({
   desktop,
   mobile,
   mobileOpen,
+  touch,
   first,
   mobileFirst,
   reduced,
@@ -366,5 +367,49 @@ export function pageChecks({
 
   if (want("27")) out.push(...designChecks(desktop, design))
   if (want("31")) out.push(textStyleVerdict(penSections))
+  const touchStale = !touch
+    ? "no 390 touch snapshot"
+    : touch.coarse
+      ? null
+      : "touch emulation left the pointer fine"
+  const cramped = (touch?.targets ?? []).filter((t) => t.w < 44 || t.h < 44)
+  out.push(
+    staleIf(
+      touchStale,
+      verdict(
+        "32",
+        "touch-target-44-390",
+        "On a 390 touch screen every link and button is at least 44x44 CSS px (WCAG 2.5.5, Apple HIG)",
+        cramped.length === 0,
+        `${touch?.targets?.length ?? 0} targets, ${cramped.length} under 44x44${
+          cramped.length
+            ? `: ${cramped
+                .slice(0, 6)
+                .map((t) => `"${t.text}" ${px(t.w)}x${px(t.h)} (${t.region})`)
+                .join(", ")}`
+            : ""
+        }`
+      )
+    )
+  )
+
+  const theme = touch?.themeColor ?? null
+  const fill = touch?.headerFill ?? null
+  const themeMatches =
+    Boolean(theme && fill) &&
+    theme.slice(0, 3).every((v, i) => Math.abs(v - fill[i]) <= 2)
+  out.push(
+    staleIf(
+      touchStale,
+      verdict(
+        "33",
+        "theme-color-matches-header",
+        "On a 390 touch screen theme-color matches the header fill, so the browser bar joins the page",
+        themeMatches,
+        `theme-color ${theme ? hex(theme.slice(0, 3)) : "missing"}, header ${fill ? hex(fill.slice(0, 3)) : "missing"}`
+      )
+    )
+  )
+
   return out
 }
