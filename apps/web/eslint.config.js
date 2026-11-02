@@ -5,6 +5,32 @@ import reactRefresh from "eslint-plugin-react-refresh"
 import tseslint from "typescript-eslint"
 import { defineConfig, globalIgnores } from "eslint/config"
 
+const HOVER_OVERLAY = [
+  "JSXAttribute[name.name=/^(onMouseEnter|onMouseOver|onPointerEnter|onPointerOver)$/]",
+].map((selector) => ({
+  selector,
+  message:
+    "Hover must not open or close anything straight from onMouseEnter/onPointerEnter. Use the kit Popover or Tooltip (openOnHover, delay, closeDelay) or useHoverIntent from @/lib/use-hover-intent.ts, which add hover intent, a close grace and Escape.",
+}))
+
+const DYNAMIC_INERT = ["JSXAttribute[name.name='inert'][value]"].map(
+  (selector) => ({
+    selector,
+    message:
+      "A region that hides while it holds focus drops focus to the page body. Render it with FocusSafeRegion from @/components/focus-safe-region.tsx and pass focusFallback instead of inert={...}.",
+  })
+)
+
+const SCOPED_WRITES = [
+  "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][callee.object.object.property.name='documentElement']",
+  "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][arguments.0.type='Literal'][arguments.0.value=/^--/]",
+  "CallExpression[callee.property.name='setProperty'][callee.object.property.name='style'][arguments.0.type='TemplateLiteral'][arguments.0.quasis.0.value.raw=/^--/]",
+].map((selector) => ({
+  selector,
+  message:
+    "Writing a CSS custom property from code makes the browser restyle every element that inherits it, and on document.documentElement that is the whole page. Set a plain property such as style.width or style.transform on the element that moves.",
+}))
+
 export default defineConfig([
   globalIgnores(["dist"]),
   {
@@ -53,11 +79,36 @@ export default defineConfig([
     },
   },
   {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...HOVER_OVERLAY,
+        ...DYNAMIC_INERT,
+        ...SCOPED_WRITES,
+      ],
+    },
+  },
+  {
+    files: [
+      "src/features/paper/paper-slash-menu.tsx",
+      "src/features/command-palette/command-palette.tsx",
+      "src/components/layer-stack.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": ["error", ...DYNAMIC_INERT, ...SCOPED_WRITES],
+    },
+  },
+  {
     files: ["src/features/app-shell/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": [
         "error",
+        ...HOVER_OVERLAY,
+        ...DYNAMIC_INERT,
+        ...SCOPED_WRITES,
         ...[
           "Literal[value=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
           "TemplateElement[value.raw=/(?:^|[\\s:])(?:hover:bg-transparent|focus-visible:ring-0|focus-visible:outline-none|focus-visible:shadow-none|focus:ring-0)(?:\\s|$)/]",
