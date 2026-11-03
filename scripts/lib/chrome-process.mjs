@@ -6,14 +6,31 @@ import { fileURLToPath } from "node:url"
 import { makeTempDir } from "./temp-dir.mjs"
 
 const GROUP_EXIT_DEADLINE_MS = 3000
-const START_DEADLINE_MS = 20000
+const LOCAL_START_DEADLINE_MS = 20000
+const CI_START_DEADLINE_MS = 60000
 const START_ATTEMPTS = 2
 const MAX_LIFETIME_MS = 30 * 60 * 1000
 const WATCHDOG = fileURLToPath(new URL("chrome-watchdog.mjs", import.meta.url))
 const SIGNALS = { SIGINT: 2, SIGTERM: 15, SIGHUP: 1 }
 
-export function findChrome() {
-  if (process.env.CHROME_BIN) return process.env.CHROME_BIN
+const DBUS_NOISE = /:ERROR:dbus\/bus\.cc:\d+\] Failed to connect to the bus: /
+
+const onCi = (env) => Boolean(env.CI) && !["false", "0"].includes(env.CI)
+
+export const startDeadlineFor = (env) =>
+  onCi(env) ? CI_START_DEADLINE_MS : LOCAL_START_DEADLINE_MS
+
+export function startLogTail(log) {
+  const lines = log.split("\n")
+  const kept = lines.filter((line) => !DBUS_NOISE.test(line))
+  const dropped = lines.length - kept.length
+  const tail = kept.join("\n").trim().slice(-300)
+  const note = dropped ? `(${dropped} dbus connection lines dropped)` : ""
+  return [tail, note].filter(Boolean).join(" ")
+}
+
+export function findChrome(env = process.env) {
+  if (env.CHROME_BIN) return env.CHROME_BIN
   const cache = join(homedir(), ".cache", "ms-playwright")
   if (existsSync(cache)) {
     for (const dir of readdirSync(cache).sort().reverse()) {
@@ -44,12 +61,19 @@ const killGroup = (chrome) => {
   }
 }
 
-function startChrome({ name, startDeadlineMs, extraArgs, maxLifetimeMs }) {
+function startChrome({
+  name,
+  startDeadlineMs,
+  extraArgs,
+  maxLifetimeMs,
+  env,
+  timers,
+}) {
   const root = join(homedir(), "tmp", name)
   mkdirSync(root, { recursive: true })
   const profile = makeTempDir("profile-", root)
   const chrome = spawn(
-    findChrome(),
+    findChrome(env),
     [
       "--headless=new",
       "--remote-debugging-port=0",
@@ -62,7 +86,7 @@ function startChrome({ name, startDeadlineMs, extraArgs, maxLifetimeMs }) {
       ...extraArgs,
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe"], detached: true }
+    { stdio: ["ignore", "ignore", "pipe"], detached: true, env }
   )
   const watchdog = spawn(
     process.execPath,
@@ -108,27 +132,26 @@ function startChrome({ name, startDeadlineMs, extraArgs, maxLifetimeMs }) {
   }
   const wsUrl = new Promise((resolve, reject) => {
     let log = ""
-    const started = Date.now()
-    const timer = setTimeout(() => {
+    const timer = timers.start(() => {
       const error = new Error(
-        `chrome did not start after ${Date.now() - started} ms: ${log.slice(-300)}`
+        `chrome did not start after ${startDeadlineMs} ms: ${startLogTail(log)}`
       )
       error.startTimeout = true
       reject(error)
     }, startDeadlineMs)
     chrome.on("error", (error) => {
-      clearTimeout(timer)
+      timers.stop(timer)
       reject(error)
     })
     chrome.on("exit", () => {
-      clearTimeout(timer)
-      reject(new Error(`chrome exited at start: ${log.slice(-300)}`))
+      timers.stop(timer)
+      reject(new Error(`chrome exited at start: ${startLogTail(log)}`))
     })
     chrome.stderr.on("data", (chunk) => {
       log += chunk
       const hit = /DevTools listening on (ws:\/\/\S+)/.exec(log)
       if (hit) {
-        clearTimeout(timer)
+        timers.stop(timer)
         watchdog.stdin.write("ready\n")
         resolve(hit[1])
       }
@@ -139,9 +162,11 @@ function startChrome({ name, startDeadlineMs, extraArgs, maxLifetimeMs }) {
 
 export async function launchChrome({
   name,
-  startDeadlineMs = START_DEADLINE_MS,
+  env = process.env,
+  timers = { start: setTimeout, stop: clearTimeout },
+  startDeadlineMs = startDeadlineFor(env),
   extraArgs = [],
-  maxLifetimeMs = Number(process.env.CHROME_MAX_LIFETIME_MS) || MAX_LIFETIME_MS,
+  maxLifetimeMs = Number(env.CHROME_MAX_LIFETIME_MS) || MAX_LIFETIME_MS,
 }) {
   let attempt = 0
   while (true) {
@@ -151,6 +176,8 @@ export async function launchChrome({
       startDeadlineMs,
       extraArgs,
       maxLifetimeMs,
+      env,
+      timers,
     })
     try {
       return { wsUrl: await started.wsUrl, kill: started.kill }
