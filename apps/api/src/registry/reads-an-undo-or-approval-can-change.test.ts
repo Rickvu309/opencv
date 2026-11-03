@@ -4,7 +4,12 @@ import { fileURLToPath } from "node:url"
 import ts from "typescript"
 import { describe, expect, it } from "vitest"
 
-import { commands, type ContractCommandName } from "@workspace/domain"
+import {
+  commands,
+  queries as queryCatalog,
+  type ContractCommandName,
+  type QueryName,
+} from "@workspace/domain"
 
 const repo = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -137,11 +142,15 @@ function commandEntries(sf: ts.SourceFile) {
   return found
 }
 
+function isQueryName(value: string): value is QueryName {
+  return Object.hasOwn(queryCatalog, value)
+}
+
 function queriesNamedIn(
   node: ts.Node,
   sf: ts.SourceFile,
   seen: Set<string>,
-  names: Set<string>
+  names: Set<QueryName>
 ) {
   const visit = (current: ts.Node) => {
     if (ts.isIdentifier(current) && !seen.has(current.text)) {
@@ -155,8 +164,11 @@ function queriesNamedIn(
       ts.isPropertyAssignment(current) &&
       propName(current.name) === "query" &&
       ts.isStringLiteral(current.initializer)
-    )
-      names.add(current.initializer.text)
+    ) {
+      const name = current.initializer.text
+      if (!isQueryName(name)) throw new Error(`${name} is not a query name`)
+      names.add(name)
+    }
     ts.forEachChild(current, visit)
   }
   visit(node)
@@ -199,7 +211,7 @@ function classified() {
   }
 
   const writers = new Set<ContractCommandName>()
-  const queries = new Map<ContractCommandName, string[]>()
+  const queries = new Map<ContractCommandName, QueryName[]>()
   for (const name of Object.keys(commands) as ContractCommandName[]) {
     const pending = commands[name].coach === "confirm"
     if (writes.get(name) || pending) writers.add(name)
@@ -207,7 +219,7 @@ function classified() {
     if (!found) continue
     const invalidates = invalidatesOf(found.entry)
     if (!invalidates) continue
-    const named = new Set<string>()
+    const named = new Set<QueryName>()
     queriesNamedIn(invalidates, found.sf, new Set(), named)
     queries.set(name, [...named].sort())
   }
