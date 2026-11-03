@@ -39,20 +39,21 @@ export function plan({ files, full = false }) {
       ...(full ? (force ? ["--force"] : []) : ["--affected"]),
     ],
   ]
-  const untrackedSafeFilterDirs = [
+  // Explicit filters cover untracked files too; Turbo's affected selection uses git.
+  const dirs = [
     ...new Set(
       files
         .filter((f) => /^(apps|packages)\/[^/]+\//.test(f))
         .map((f) => f.split("/").slice(0, 2).join("/"))
     ),
   ]
-  if (!full && untrackedSafeFilterDirs.length)
+  if (!full && dirs.length)
     commands.push([
       "exec",
       "turbo",
       "run",
       ...tasks,
-      ...untrackedSafeFilterDirs.map((d) => `--filter=...{./${d}}`),
+      ...dirs.map((d) => `--filter=...{./${d}}`),
     ])
   if (!full) {
     commands.push([
