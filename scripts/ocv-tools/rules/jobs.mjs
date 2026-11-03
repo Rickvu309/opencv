@@ -1,4 +1,5 @@
-const BRANCH_ISSUE = /^(?:feat|fix|hotfix|refactor|chore|docs)\/(\d+)-/
+import { issueOfBranch } from "./pull-ref.mjs"
+
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const SECTIONS = ["Summary", "Evidence", "Merge Danger"]
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
@@ -145,9 +146,9 @@ const needsHumanReview = (facts) =>
     : null
 
 const badBranch = (facts) =>
-  BRANCH_ISSUE.test(facts.pull.branch ?? "")
-    ? null
-    : `PR #${prNo(facts)} has no linked issue in its branch name.`
+  issueOfBranch(facts.pull.branch) == null
+    ? `PR #${prNo(facts)} has no linked issue in its branch name.`
+    : null
 
 const closedPr = (facts) =>
   ["OPEN", "MERGED"].includes(facts.pull.state)
@@ -282,7 +283,7 @@ export const jobRows = [
   row({
     id: "BAD_BODY",
     says: "The PR body needs a Summary, Evidence and Merge Danger section with content, and no template placeholders. Evidence holds a command with its result on its line or in the output block under it, an image, or a link to a CI run. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
-    at: ["finish"],
+    at: ["finish", "body"],
     needs: ["body", "pull"],
     check: badBody,
   }),

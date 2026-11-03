@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import { RULES } from "../rules/index.mjs"
 import { policyReport } from "./policy.mjs"
 
 test("policy.mjs imports only node builtins and rules/", () => {
@@ -48,7 +49,9 @@ test("one line per refusal, exit 2, each with its fix", () => {
   const workflows = r.lines.find((line) => line.startsWith("NO_WORKFLOWS:"))
   assert.ok(metadata, r.lines.join("\n"))
   assert.ok(workflows, r.lines.join("\n"))
-  assert.match(metadata, /fix: gh pr edit/)
+  assert.match(metadata, /fix: Run gh pr edit/)
+  assert.match(metadata, /scripts\/ocv-tools\.mjs body/)
+  assert.doesNotMatch(metadata, /gh pr edit\b[^,.\n]*--body/)
   assert.match(workflows, /extra\.yml/)
 })
 
@@ -71,8 +74,24 @@ test("in Actions each refusal is one error annotation with the rule id", () => {
   assert.equal(r.exit, 2)
   const line = r.lines.find((l) => l.startsWith("::error title=PR_METADATA::"))
   assert.ok(line, r.lines.join("\n"))
-  assert.match(line, /fix: gh pr edit/)
+  assert.match(line, /fix: Run gh pr edit/)
+  assert.match(line, /scripts\/ocv-tools\.mjs body/)
+  assert.doesNotMatch(line, /gh pr edit\b[^,.\n]*--body/)
   assert.ok(r.lines.every((l) => l.startsWith("::error title=")))
+})
+
+test("no rule fix teaches gh pr edit --body", () => {
+  const taught = []
+  for (const row of RULES) {
+    let text = ""
+    try {
+      text = String(row.fix?.({}) ?? "")
+    } catch {
+      text = ""
+    }
+    if (/gh pr edit\b[^,.\n]*--body/.test(text)) taught.push(row.id)
+  }
+  assert.deepEqual(taught, [])
 })
 
 test("a clean pull request prints no annotation", () => {

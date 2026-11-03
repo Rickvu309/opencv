@@ -11,7 +11,7 @@ import {
   json,
 } from "./common.mjs"
 
-function bodyOf(ctx, flag) {
+export function bodyOf(ctx, flag) {
   if (!flag || flag === true) return { file: null, text: "" }
   const file = resolve(ctx.cwd, flag)
   try {

@@ -13,6 +13,11 @@ export const COMMANDS = [
     when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft).",
   },
   {
+    name: "body",
+    usage: "body <pr> --body-file <file>",
+    when: "Replace a pull request body and keep its Closes #<issue> line. The issue comes from the branch name, type/<issue>-words, the same way the policy rule reads it. The same body rules as finish run first, including Caught by and Introduced by on a fix. Use this instead of gh pr edit --body-file.",
+  },
+  {
     name: "merge",
     usage: "merge <pr#> [--wait]",
     when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. Run it in the background after queuing. Run again later to confirm closure.",

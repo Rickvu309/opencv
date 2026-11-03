@@ -26,6 +26,7 @@ A moment is a point in a verb where every fact its rule rows need is known. The 
 | shot-target   | Attaching pictures, once the issue or pull request they go to is read.                                    | scripts/ocv-tools/shot.mjs                                          |
 | finish        | Opening the pull request, before the push.                                                                | scripts/ocv-tools/jobs/finish.mjs                                   |
 | finish-pushed | Opening the pull request, after the push.                                                                 | scripts/ocv-tools/jobs/finish.mjs                                   |
+| body          | Replacing a pull request body, once the new text is read.                                                 | scripts/ocv-tools/jobs/body.mjs                                     |
 | pr            | The live pull request, read by the policy check in ci and by the merge verb.                              | scripts/ocv-tools/jobs/policy.mjs, scripts/ocv-tools/jobs/merge.mjs |
 | merge         | The merge verb, before it enqueues the pull request.                                                      | scripts/ocv-tools/jobs/merge.mjs                                    |
 | merge-result  | The merge verb, once it knows whether the branch merges with main and the merged tree passes.             | scripts/ocv-tools/jobs/merge.mjs                                    |
