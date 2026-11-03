@@ -24,6 +24,8 @@ import {
 import { GripVertical, Link as LinkIcon, Plus } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { CvBlockMenu } from "./cv-block-menu.tsx"
+import { cvSlashItems, filterCvSlash } from "./cv-slash.ts"
 import { normalizeHref } from "./link-href.ts"
 import { LinkRequestContext, useEditorPopupRef } from "./paper-editor-popup.ts"
 import {
@@ -283,30 +285,57 @@ function SlashList({
   selectedIndex,
   onItemClick,
 }: SuggestionMenuProps<DefaultReactSuggestionItem>) {
+  const editor = useBlockNoteEditor<
+    BlockSchema,
+    InlineContentSchema,
+    StyleSchema
+  >()
+  const cv = "paperHeader" in editor.schema.blockSchema
   return (
     <div
       role="listbox"
       aria-label="Blocks"
       data-slot="paper-slash-menu"
-      className="flex w-56 flex-col gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
+      className={cn(
+        "flex flex-col gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md",
+        cv ? "w-[300px]" : "w-56"
+      )}
     >
-      {items.map((item, index) => (
-        <Button
-          key={item.title}
-          type="button"
-          role="option"
-          aria-selected={index === selectedIndex}
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-11 justify-start text-xs md:h-8",
-            index === selectedIndex && "bg-accent text-accent-foreground"
-          )}
-          onClick={() => onItemClick?.(item)}
-        >
-          {item.title}
-        </Button>
-      ))}
+      {items.map((item, index) => {
+        const group = item.group ?? ""
+        const before = items[index - 1]?.group ?? ""
+        const showGroup = cv && group !== before
+        const divider = showGroup && before !== "" && group === "Blocks"
+        return (
+          <div key={item.title}>
+            {divider ? (
+              <div role="separator" className="my-1 h-px bg-border" />
+            ) : null}
+            {showGroup ? (
+              <p className="px-2 py-1 text-xs text-muted-foreground">{group}</p>
+            ) : null}
+            <Button
+              type="button"
+              role="option"
+              aria-selected={index === selectedIndex}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-11 w-full justify-start text-xs md:h-8",
+                index === selectedIndex && "bg-accent text-accent-foreground"
+              )}
+              onClick={() => onItemClick?.(item)}
+            >
+              {item.title}
+              {cv && item.subtext ? (
+                <span className="ms-2 text-muted-foreground">
+                  {item.subtext}
+                </span>
+              ) : null}
+            </Button>
+          </div>
+        )
+      })}
       {items.length === 0 ? (
         <p className="px-2 py-1.5 text-xs text-muted-foreground">No blocks</p>
       ) : null}
@@ -324,12 +353,14 @@ export function PaperSlashMenu() {
     <SuggestionMenuController
       triggerCharacter="/"
       getItems={async (query) =>
-        filterSuggestionItems(
-          getDefaultReactSlashMenuItems(editor).filter((item) =>
-            SLASH_TITLES.has(item.title)
-          ),
-          query
-        )
+        "paperHeader" in editor.schema.blockSchema
+          ? filterCvSlash(cvSlashItems(editor), query)
+          : filterSuggestionItems(
+              getDefaultReactSlashMenuItems(editor).filter((item) =>
+                SLASH_TITLES.has(item.title)
+              ),
+              query
+            )
       }
       suggestionMenuComponent={SlashList}
     />
@@ -346,7 +377,8 @@ function Handle() {
   const block = useExtensionState(SideMenuExtension, {
     selector: (state) => state?.block,
   })
-  if (!block) return null
+  if (!block || block.type === "paperHeader") return null
+  const cv = "paperExperience" in editor.schema.blockSchema
   return (
     <div
       data-slot="paper-side-menu"
@@ -381,6 +413,7 @@ function Handle() {
       >
         <GripVertical className="size-3.5" aria-hidden="true" />
       </div>
+      {cv ? <CvBlockMenu block={block} /> : null}
     </div>
   )
 }

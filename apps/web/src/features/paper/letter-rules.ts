@@ -3,7 +3,7 @@ import { Fragment, Slice, type Node, type ResolvedPos } from "prosemirror-model"
 import { Plugin } from "prosemirror-state"
 import { ySyncPluginKey } from "y-prosemirror"
 
-const LIST_ITEMS = new Set(["bulletListItem", "numberedListItem"])
+export const LIST_ITEMS = new Set(["bulletListItem", "numberedListItem"])
 const BODY_TYPES = new Set([
   "paragraph",
   "heading",
@@ -11,8 +11,8 @@ const BODY_TYPES = new Set([
   "numberedListItem",
   "divider",
 ])
-const MAX_DEPTH = 3
-const HEADING_LEVELS = new Set([2, 3])
+export const MAX_DEPTH = 3
+export const HEADING_LEVELS = new Set([2, 3])
 
 function countGroup(group: Node, depth: number): number {
   let found = 0
@@ -40,7 +40,7 @@ export function letterViolations(doc: Node): number {
 
 const LOOK_ATTRS = ["textAlignment", "textColor", "backgroundColor"]
 
-function resetLook(node: Node): Node {
+export function resetLook(node: Node): Node {
   const attrs = { ...node.attrs }
   let changed = false
   for (const name of LOOK_ATTRS) {
@@ -53,14 +53,14 @@ function resetLook(node: Node): Node {
   return changed ? node.type.create(attrs, node.content, node.marks) : node
 }
 
-function asParagraph(container: Node, content: Node): Node {
+export function asParagraph(container: Node, content: Node): Node {
   const paragraph = container.type.schema.nodes.paragraph
   return container.type.create(container.attrs, [
     paragraph ? paragraph.create(null, content.content) : content,
   ])
 }
 
-function asListItem(content: Node): Node {
+export function asListItem(content: Node): Node {
   const bullet = content.type.schema.nodes.bulletListItem
   return bullet ? bullet.create(null, content.content, content.marks) : content
 }
@@ -131,7 +131,7 @@ export function coercePaste(slice: Slice, depth = 1): Slice {
   return new Slice(Fragment.from(out), slice.openStart, slice.openEnd)
 }
 
-function insertionDepth(selectionFrom: ResolvedPos): number {
+export function insertionDepth(selectionFrom: ResolvedPos): number {
   let found = 0
   for (let level = selectionFrom.depth; level > 0; level -= 1) {
     if (selectionFrom.node(level).type.name === "blockContainer") found += 1

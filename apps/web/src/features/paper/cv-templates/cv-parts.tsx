@@ -352,6 +352,7 @@ export type CvPhotoFrameValue = {
   docId?: string
   shareToken?: string
   beforePhoto?: () => Promise<void>
+  afterPhoto?: () => void | Promise<void>
   notePhoto?: (ref: string | undefined, version: number) => void
 }
 
@@ -470,6 +471,7 @@ function CvPhotoUploader({
   docId,
   shareToken,
   beforePhoto,
+  afterPhoto,
   notePhoto,
 }: {
   url?: string
@@ -478,6 +480,7 @@ function CvPhotoUploader({
   docId: string
   shareToken?: string
   beforePhoto?: CvPhotoFrameValue["beforePhoto"]
+  afterPhoto?: CvPhotoFrameValue["afterPhoto"]
   notePhoto?: CvPhotoFrameValue["notePhoto"]
 }) {
   const run = useRunCommand()
@@ -492,6 +495,10 @@ function CvPhotoUploader({
   async function undo(activityId: string, fileId?: FileId) {
     try {
       await undoActivity(queryClient, activityId)
+      if (afterPhoto) {
+        await afterPhoto()
+        return
+      }
       const next = await getPaper(docId)
       const restoredPhoto =
         next.paper?.kind === "cv"
@@ -524,7 +531,7 @@ function CvPhotoUploader({
     dispatchError({ type: "error_cleared" })
     let uploadedId: FileId | undefined
     try {
-      await beforePhoto?.()
+      if (!afterPhoto) await beforePhoto?.()
       const fileId = await uploadPaperPhoto(file)
       uploadedId = fileId
       const saved = await run("paper.attachPhoto", {
@@ -532,7 +539,8 @@ function CvPhotoUploader({
         fileId,
       })
       uploadedId = undefined
-      publish(`file:${fileId}`, saved.contentVersion)
+      if (afterPhoto) await afterPhoto()
+      else publish(`file:${fileId}`, saved.contentVersion)
       const activityId = saved.activityId
       if (activityId) {
         toastWithUndo("Photo added", () => {
@@ -586,6 +594,7 @@ export function CvPhoto({
         docId={frame.docId}
         shareToken={frame.shareToken}
         beforePhoto={frame.beforePhoto}
+        afterPhoto={frame.afterPhoto}
         notePhoto={frame.notePhoto}
       />
     )

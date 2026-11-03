@@ -3,5 +3,10 @@
     "file": "apps/web/src/features/paper/paper-data.ts",
     "issue": "#916",
     "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/features/paper/paper-editor.tsx",
+    "issue": "#1043",
+    "expires": "2026-12-01"
   }
 ]

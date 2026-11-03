@@ -1,0 +1,31 @@
+[data-cv-editor]
+  .bn-block-content[data-content-type="paperSkills"]
+  + .bn-block-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+}
+
+[data-cv-editor]
+  .bn-block-content[data-content-type="paperSkills"]
+  + .bn-block-group
+  > .bn-block {
+  display: inline-flex;
+  margin: 0;
+}
+
+[data-cv-editor]
+  .bn-block-content[data-content-type="paperSkills"]
+  + .bn-block-group
+  > .bn-block:not(:last-child)
+  .bn-block-content::after {
+  content: ", ";
+}
+
+[data-cv-editor] .bn-block-content[data-content-type="bulletListItem"],
+[data-cv-editor] .bn-block-content[data-content-type="numberedListItem"],
+[data-cv-editor] .bn-block-content[data-content-type="paperSkillItem"] {
+  font-size: 10.5px;
+}

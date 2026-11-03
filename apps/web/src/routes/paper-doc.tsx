@@ -6,7 +6,6 @@ import { ERROR_CODES, paperIdSchema, parsePaperId } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
-import { PaperCvEditor } from "@/features/paper/paper-editor.tsx"
 import {
   getPaper,
   getPaperPages,
@@ -21,6 +20,12 @@ import { ApiError } from "@/lib/api-error.ts"
 const PaperLetterEditor = lazy(() =>
   import("@/features/paper/paper-letter.tsx").then((module) => ({
     default: module.PaperLetterEditor,
+  }))
+)
+
+const PaperCvEditor = lazy(() =>
+  import("@/features/paper/paper-cv-editor.tsx").then((module) => ({
+    default: module.PaperCvEditor,
   }))
 )
 
@@ -114,17 +119,19 @@ export function PaperDocPage() {
     )
   }
   return (
-    <PaperCvEditor
-      key={doc.id}
-      initial={doc}
-      pages={
-        pagesQuery.data ?? {
-          docId: doc.id,
-          pages: 1,
-          pageChoice: doc.pageChoice,
+    <Suspense fallback={<LetterEditorFallback />}>
+      <PaperCvEditor
+        key={doc.id}
+        initial={doc}
+        pages={
+          pagesQuery.data ?? {
+            docId: doc.id,
+            pages: 1,
+            pageChoice: doc.pageChoice,
+          }
         }
-      }
-      onBack={back}
-    />
+        onBack={back}
+      />
+    </Suspense>
   )
 }

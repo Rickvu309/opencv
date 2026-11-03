@@ -43,4 +43,8 @@ export type {
 } from "./client.js"
 export { FRAGMENT, META } from "./names.js"
 export { letterSchema, paperSchema } from "./schema.js"
-export type { PaperEditor } from "./schema.js"
+export type {
+  PaperEditor,
+  PaperEditorBlock,
+  PaperPartialBlock,
+} from "./schema.js"
