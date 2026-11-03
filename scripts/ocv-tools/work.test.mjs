@@ -1,9 +1,9 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { runCli } from "./cli.mjs"
-import { claimMarker } from "./claim-marker.mjs"
+import { claimMarker, holderOf } from "./claim-marker.mjs"
 import { finishedWorktrees } from "./work.mjs"
-import { ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
+import { NOW, ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
 
 const cwd = "/tmp/opencv.worktrees/90-keep-my-search"
 const main = "/tmp/opencv"
@@ -325,13 +325,47 @@ test("save refreshes the claim right before git push, so slow pre-push checks ca
   assert.equal(ops[ops.indexOf("push") - 1], "editComment")
 })
 
-test("the residual race: a claim posted after save's post-push read wins, and the next save is LOST", () => {
-  const { ports, ctx } = task({ dirty: { [cwd]: " M b.txt\n" } })
-  assert.equal(runCli(["save", "-m", "feat: add b"], ctx).code, 0)
-  ports.state.issues.get(90).comments.push(claim("other", 0, 9))
+function racedTask(postOtherClaimOnEdit) {
+  let ports
+  ports = fakePorts({
+    cwd,
+    env: { OCV_TOOLS_AGENT: "me" },
+    issues: [issue(90, { comments: [claim("me", 10)] })],
+    dirty: { [cwd]: " M b.txt\n" },
+    onEditComment(_id, editCount) {
+      if (editCount === postOtherClaimOnEdit)
+        ports.state.issues.get(90).comments.push(claim("other", 0, 9))
+    },
+  })
+  return { ports, ctx: ctxFor(ports) }
+}
+
+test("a claim posted after save's last read but before its push is caught by the post-push check", () => {
+  const { ports, ctx } = racedTask(1)
+  const r = runCli(["save", "-m", "feat: add b"], ctx)
+  assert.equal(r.code, 3, r.text)
+  assert.match(
+    r.text,
+    /your push already reached origin\/feat\/90-keep-my-search; other now holds #90/
+  )
+  const ops = ports.effects.map((e) => e.op)
+  assert.ok(ops.indexOf("editComment") < ops.indexOf("push"))
+  assert.equal(ops.filter((op) => op === "editComment").length, 1)
+})
+
+test("the residual race: a claim posted after save's post-push read wins, save still succeeds, and the next save is LOST", () => {
+  const { ports, ctx } = racedTask(2)
+  const first = runCli(["save", "-m", "feat: add b"], ctx)
+  assert.equal(first.code, 0, first.text)
+  const ops = ports.effects.map((e) => e.op)
+  assert.equal(ops.at(-1), "editComment")
+  assert.ok(ops.indexOf("push") < ops.lastIndexOf("editComment"))
+  const comments = ports.state.issues.get(90).comments
+  assert.equal(holderOf(comments, NOW).agent, "other")
   ports.state.dirty[cwd] = " M c.txt\n"
   const next = runCli(["save", "-m", "feat: add c"], ctx)
   assert.equal(next.code, 3, next.text)
+  assert.match(next.text, /LOST #90: other holds the claim now/)
 })
 
 test("finished worktrees are best effort: a GitHub failure lists none instead of refusing", () => {

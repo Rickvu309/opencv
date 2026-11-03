@@ -105,6 +105,7 @@ export function fakePorts(world = {}) {
     onComment: world.onComment ?? null,
     onCommit: world.onCommit ?? null,
     onPush: world.onPush ?? null,
+    onEditComment: world.onEditComment ?? null,
     gitDirs: {},
   }
   const effect = (op, extra = {}) => {
@@ -273,6 +274,10 @@ export function fakePorts(world = {}) {
       }
       if (!found)
         throw new Error(`gh api --include failed: comment ${id} was not found`)
+      state.onEditComment?.(
+        id,
+        effects.filter((e) => e.op === "editComment").length
+      )
       return stamp
     },
     assignMe(n) {
