@@ -26,7 +26,7 @@ import {
 } from "./inbox-list.tsx"
 import { CompanyChip, GmailMark, InboxSkeletonRows } from "./inbox-parts.tsx"
 import { InboxReader } from "./inbox-reader.tsx"
-import { inboxConnectKey } from "@/lib/requests.ts"
+import { inboxConnectReadKeyOutsideContract } from "@/lib/requests.ts"
 
 const NARROW = "(max-width: 767px)"
 
@@ -101,7 +101,7 @@ export function InboxPage() {
     list.data && !list.data.connected && !list.data.skipped
   )
   const connect = useQuery({
-    queryKey: inboxConnectKey,
+    queryKey: inboxConnectReadKeyOutsideContract,
     queryFn: fetchGmailConnectTargetNotAContractRead,
     enabled: showConnect,
   })

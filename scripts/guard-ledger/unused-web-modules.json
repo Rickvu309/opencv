@@ -1,0 +1,6 @@
+{
+  "id": "unused-web-modules",
+  "file": "scripts/unused-web-modules.test.mjs",
+  "historic": null,
+  "reason": "whole-tree check, not a per-file detect; proven by the orphan fixture test and by firing on the nine unused web modules at HEAD until each is listed in its pending file"
+}

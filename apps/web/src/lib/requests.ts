@@ -37,7 +37,7 @@ export const endpoints = {
   search: (query: string) => `/api/search?q=${encodeURIComponent(query)}`,
 } as const
 
-export const inboxConnectKey = ["inbox-connect"] as const
+export const inboxConnectReadKeyOutsideContract = ["inbox-connect"] as const
 
 export function fetchBinary(path: string, init?: RequestInit) {
   return fetch(new URL(path, apiBaseUrl), init)

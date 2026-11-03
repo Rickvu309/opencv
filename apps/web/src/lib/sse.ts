@@ -67,6 +67,13 @@ export async function* readSseStream(
     }
   }
 
+  const cancelPendingReadOnStop = () => {
+    void reader.cancel().catch(() => undefined)
+  }
+  options?.signal?.addEventListener("abort", cancelPendingReadOnStop, {
+    once: true,
+  })
+
   try {
     while (true) {
       throwIfAborted()
@@ -88,6 +95,7 @@ export async function* readSseStream(
       for (const event of consumed.events) yield event
     }
   } finally {
+    options?.signal?.removeEventListener("abort", cancelPendingReadOnStop)
     reader.releaseLock()
   }
 }

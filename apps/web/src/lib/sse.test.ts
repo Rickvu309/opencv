@@ -81,4 +81,30 @@ describe("readSseStream", () => {
       await iterator.next()
     }).rejects.toMatchObject({ name: "AbortError" })
   })
+
+  it("stops a read that is waiting for the next chunk as soon as Stop aborts", async () => {
+    const encoder = new TextEncoder()
+    const controller = new AbortController()
+    const stream = new ReadableStream<Uint8Array>({
+      start(source) {
+        source.enqueue(
+          encoder.encode('event: text-delta\ndata: {"text":"Hi"}\n\n')
+        )
+      },
+    })
+    const iterator = readSseStream(stream, { signal: controller.signal })
+
+    await expect(iterator.next()).resolves.toMatchObject({
+      value: { event: "text-delta", data: { text: "Hi" } },
+    })
+    const waitingForNextChunk = iterator.next()
+    controller.abort()
+    const neverArrives = new Promise((resolve) =>
+      setTimeout(() => resolve("still waiting for a chunk"), 200)
+    )
+
+    await expect(
+      Promise.race([waitingForNextChunk, neverArrives])
+    ).rejects.toMatchObject({ name: "AbortError" })
+  })
 })
