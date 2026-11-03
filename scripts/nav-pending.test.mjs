@@ -20,6 +20,15 @@ test("every nav-pending entry names a rule, an existing file, a PR or issue and 
     )
     assert.match(entry.issue, /^(?:PR )?#\d+$/)
     assert.match(entry.expires, /^\d{4}-\d{2}-\d{2}$/)
+    if (entry.rule === "touch-targets") {
+      assert.equal(
+        Number.isInteger(entry.count) && entry.count > 0,
+        true,
+        entry.file
+      )
+      if (!entry.file.startsWith("apps/web/src/features/paper/"))
+        assert.notEqual(entry.issue, "#1034", entry.file)
+    }
   }
 })
 

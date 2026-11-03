@@ -31,21 +31,24 @@ export async function signInThrowaway({
   logPath,
   name = "Verify",
   prefix = "verify",
+  email,
 }) {
   if (webUrl) {
     await page.goto(`${webUrl}/sign-in`)
     await page.sleep(500)
   }
-  const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@verify.local`
+  const address =
+    email ??
+    `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@verify.local`
   const sent = await postJson(
     page,
     `${apiUrl}/api/auth/email-otp/send-verification-otp`,
-    { email, type: "sign-in" }
+    { email: address, type: "sign-in" }
   )
   if (sent !== 200) throw new Error(`send-verification-otp returned ${sent}`)
   let otp = null
   for (let attempt = 0; attempt < 50 && !otp; attempt += 1) {
-    otp = readSignInCode(logPath, email)
+    otp = readSignInCode(logPath, address)
     if (!otp) await page.sleep(100)
   }
   if (!otp) throw new Error("sign-in code was not logged")
@@ -53,12 +56,12 @@ export async function signInThrowaway({
   let status = 429
   while (status === 429 && Date.now() < deadline) {
     status = await postJson(page, `${apiUrl}/api/auth/sign-in/email-otp`, {
-      email,
+      email: address,
       otp,
       name,
     })
     if (status === 429) await page.sleep(2000)
   }
   if (status !== 200) throw new Error(`sign-in returned ${status}`)
-  return email
+  return address
 }

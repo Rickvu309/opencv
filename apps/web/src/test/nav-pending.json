@@ -1,1 +1,429 @@
-[]
+[
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-board-empty.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-board.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-calendar-month.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-calendar-week.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-calendar.tsx",
+    "count": 4,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-detail-document.tsx",
+    "count": 5,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-detail-parts.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-job-delete-dialog.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-job-detail.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-job-header.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-job-rail.tsx",
+    "count": 11,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-list-parts.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-new-job-dialog.tsx",
+    "count": 6,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-new-job-parts.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-new-job-properties.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-posting-source.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/apply/apply-toolbar.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/auth/email-code-screen.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/auth/session-expired-dialog.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coach/coach-dock.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coach/coach-history.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coach/coach-home.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coach/coach-tool-line.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coach/coach-turns.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coach/coach-workspace.tsx",
+    "count": 6,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coach/rich-receipts.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coming-soon/coming-soon-page.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coming-soon/pitch-page.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/coming-soon/proof-page.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/command-palette/command-palette.tsx",
+    "count": 3,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/inbox/inbox-connect.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/inbox/inbox-list.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/inbox/inbox-reader-header.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/inbox/inbox-reader.tsx",
+    "count": 8,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/landing/landing-stories-page.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/cv-templates/cv-entries.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/cv-templates/cv-parts.tsx",
+    "count": 3,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-block-entries.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-block-menu.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-check-bar.tsx",
+    "count": 3,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-editor-conflict-banner.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-editor.tsx",
+    "count": 10,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-import.tsx",
+    "count": 4,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-letter-start-page.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-letter-start.tsx",
+    "count": 6,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-letter.tsx",
+    "count": 5,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-library.tsx",
+    "count": 8,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-new-dialog.tsx",
+    "count": 3,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-parts.tsx",
+    "count": 3,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-share-page.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-slash-menu.tsx",
+    "count": 1,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/paper/paper-template-gallery.tsx",
+    "count": 5,
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/account-section.tsx",
+    "count": 7,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/billing-section.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/coach-section.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/delete-account-dialog.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/integrations-section.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/settings-layout.tsx",
+    "count": 2,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/upgrade-screen.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  },
+  {
+    "rule": "touch-targets",
+    "file": "apps/web/src/features/settings/usage-section.tsx",
+    "count": 1,
+    "issue": "#1037",
+    "expires": "2026-12-01"
+  }
+]
