@@ -14,7 +14,7 @@ import {
 } from "../test/paper-content.js"
 
 type Store = Awaited<ReturnType<typeof openStore>>
-type View = { id: string; contentVersion: number; document: unknown }
+type View = { id: string; contentVersion: number; paper: unknown }
 
 let store: Store
 
@@ -109,9 +109,9 @@ describe("lazy seeding", () => {
           stateVector: "",
         })
         expect(reply.output).toMatchObject({ revision: 5 })
-        const document = (await reloaded(id)).document
-        expect(JSON.stringify(document)).toContain("Edited start")
-        expect(JSON.stringify(document)).toContain(word)
+        const paper = (await reloaded(id)).paper
+        expect(JSON.stringify(paper)).toContain("Edited start")
+        expect(JSON.stringify(paper)).toContain(word)
       })
     })
   }

@@ -62,6 +62,12 @@ function attachPhotoReversal(
       docId: input.docId,
       fileId: fileId ? parseFileId(fileId) : null,
     },
+    expect: {
+      query: "paper.get" as const,
+      input: { docId: input.docId },
+      matches: { kind: "cv" as const },
+      skipped: "This photo changed again, so Undo was skipped",
+    },
   }
 }
 

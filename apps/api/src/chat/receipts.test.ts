@@ -138,7 +138,7 @@ describe("chat receipts", () => {
         detail: { type: string }
       }[]
       expect(parts.map((p) => [p.name, p.detail.type])).toEqual([
-        ["paper.replace", "paper.replace"],
+        ["paper_replace", "paper.replace"],
         ["job.move", "job.move"],
         ["paper.create", "paper.create"],
       ])

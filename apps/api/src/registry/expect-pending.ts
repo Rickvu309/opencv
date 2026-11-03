@@ -12,7 +12,6 @@ export const REVERSAL_EXPECT_PENDING = {
     "job.setChecklistItem",
     "job.star",
     "job.update",
-    "paper.attachPhoto",
     "paper.create",
     "paper.duplicate",
     "paper.edit",

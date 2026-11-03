@@ -126,7 +126,7 @@ describe("streamChatTurn", () => {
             result: ok,
           },
         ],
-        ["tool-result", { name: "paper_replace" }],
+        ["tool-result", { name: "paper_edit" }],
         ["from-the-future", { anything: 1 }]
       )
     )

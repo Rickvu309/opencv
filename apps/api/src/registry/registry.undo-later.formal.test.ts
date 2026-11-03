@@ -170,7 +170,7 @@ const LATER: Record<string, Later> = {
         { docId: idOf(a.output) },
         { type: "person", userId: parseUserId(userId) }
       )
-      const header = record(record(paper, "document"), "header")
+      const header = record(record(paper, "paper"), "header")
       return (
         typeof header.photo === "string" && header.photo.startsWith("file:")
       )

@@ -14,16 +14,6 @@ import { PaperLibrary } from "./paper-library.tsx"
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 import { PAPER_TEMPLATE_LABELS } from "./paper-templates.ts"
 
-vi.mock("@/lib/paper-sync.ts", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/paper-sync.ts")>()),
-  usePaperSync: () => ({
-    sync: null,
-    status: "saved" as const,
-    generation: 1,
-    client: null,
-  }),
-}))
-
 const stored = upgradeStoredPaper("cv", emptyCvDocument())
 if (!stored.ok) throw new Error(stored.message)
 

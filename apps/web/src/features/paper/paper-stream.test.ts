@@ -39,7 +39,7 @@ describe("streamPaperTurn", () => {
     stubTurn(
       [
         'event: text-delta\ndata: {"delta":"x"}\n\n',
-        'event: tool-result\ndata: {"tool":"paper_replace"}\n\n',
+        'event: tool-result\ndata: {"tool":"paper_edit"}\n\n',
       ].join("")
     )
     const onText = vi.fn()

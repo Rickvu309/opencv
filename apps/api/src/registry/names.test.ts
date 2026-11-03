@@ -2,9 +2,22 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { chatToolNameSchema } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { installRegistry } from "./install.js"
+
+const retiredCommandNames = ["paper.replace", "paper.restore"]
+
+const historicReceiptFiles = new Set([
+  "apps/web/src/features/coach/coach-chat.test.tsx",
+  "apps/web/src/features/coach/coach-parts.test.tsx",
+  "apps/web/src/features/coach/coach-parts.ts",
+  "apps/web/src/features/coach/coach-receipt.test.ts",
+  "apps/web/src/features/coach/coach-receipt.ts",
+  "apps/web/src/features/coach/rich-receipts.tsx",
+  "packages/domain/src/chat-messages.ts",
+])
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const scanRoots = [
@@ -50,9 +63,19 @@ function referencedNames(): { dotted: References; tools: References } {
   return { dotted: dottedNames, tools: toolNames }
 }
 
-function listUnknown(found: References, allowed: (name: string) => boolean) {
+function retiredReceiptName(name: string, files: Set<string>) {
+  return (
+    retiredCommandNames.includes(name) &&
+    [...files].every((file) => historicReceiptFiles.has(file))
+  )
+}
+
+function listUnknown(
+  found: References,
+  allowed: (name: string, files: Set<string>) => boolean
+) {
   return [...found]
-    .filter(([name]) => !allowed(name))
+    .filter(([name, files]) => !allowed(name, files))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, files]) => `${name}  <- ${[...files].sort().join(", ")}`)
 }
@@ -65,8 +88,9 @@ describe("a command, read or Coach tool name the registry lacks is rejected", ()
   const referenced = referencedNames()
 
   it("registers every command name the web, fake coach and domain refer to", () => {
-    const unknown = listUnknown(referenced.dotted, (name) =>
-      registered.has(name)
+    const unknown = listUnknown(
+      referenced.dotted,
+      (name, files) => registered.has(name) || retiredReceiptName(name, files)
     )
     expect(
       unknown,
@@ -75,12 +99,28 @@ describe("a command, read or Coach tool name the registry lacks is rejected", ()
   })
 
   it("registers every Coach tool name they refer to", () => {
-    const unknown = listUnknown(referenced.tools, (name) =>
-      registered.has(name)
+    const unknown = listUnknown(
+      referenced.tools,
+      (name, files) => registered.has(name) || retiredReceiptName(name, files)
     )
     expect(
       unknown,
       `A Coach tool name used in the web, fake coach or domain is not registered. Declare the command in the packages/domain contract and bind it in its module's commands.ts (installed by apps/api/src/registry/install.ts), or fix the spelling at the call site. Unknown tool names:\n${unknown.join("\n")}`
     ).toEqual([])
+  })
+
+  it("keeps paper.replace and paper.restore off commands and Coach tools", () => {
+    for (const name of retiredCommandNames) {
+      expect(registered.has(name), name).toBe(false)
+      expect(chatToolNameSchema.safeParse(name).success, name).toBe(false)
+      const files = new Set([
+        ...(referenced.dotted.get(name) ?? []),
+        ...(referenced.tools.get(name) ?? []),
+      ])
+      expect(
+        [...files].filter((file) => !historicReceiptFiles.has(file)).sort(),
+        name
+      ).toEqual([])
+    }
   })
 })
