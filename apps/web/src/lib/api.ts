@@ -75,12 +75,6 @@ async function readErrorEnvelope(res: Response) {
   return null
 }
 
-/**
- * Authed request against the API. Always sends cookies
- * (`credentials: include`) and maps the `{ ok: false, error }` envelope to
- * `ApiError`. A 401 invalidates the Better Auth session and sends the User
- * to sign-in.
- */
 export async function apiRequest(
   path: string,
   init?: RequestInit
@@ -116,10 +110,6 @@ export async function apiRequest(
   return res
 }
 
-/**
- * Authed fetch against the API. Shared URL, credentials, and error handling
- * with `apiStream`.
- */
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit
@@ -133,10 +123,6 @@ export async function apiFetch<T>(
   return (await res.json()) as T
 }
 
-/**
- * Authed streaming request. Same URL, credentials, and error envelope as
- * `apiFetch`; the caller reads `response.body` (SSE).
- */
 export async function apiStream(
   path: string,
   init?: RequestInit

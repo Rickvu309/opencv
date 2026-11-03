@@ -142,4 +142,41 @@ describe("streamChatTurn", () => {
     expect(seen).toEqual(["tool-call", "tool-result"])
     expect(isStale(queryClient, list)).toBeFalsy()
   })
+
+  it("refreshes nothing for a failed tool or a result with no tool-call before it", async () => {
+    const queryClient = new QueryClient()
+    const list = queryKey({ query: "job.list" })
+    queryClient.setQueryData(list, [])
+    const moved = {
+      toolCallId: "t1",
+      name: "job.move",
+      summary: "Moved",
+      result: ok,
+    }
+    stubTurn(
+      sse(
+        [
+          "tool-call",
+          {
+            toolCallId: "t1",
+            name: "job.move",
+            input: { jobId: JOB, stage: "applied" },
+          },
+        ],
+        ["tool-result", { ...moved, ok: false }],
+        ["tool-result", { ...moved, toolCallId: "t2", ok: true }]
+      )
+    )
+
+    const seen: string[] = []
+    await streamChatTurn({
+      queryClient,
+      chatId: "c",
+      body: {},
+      onEvent: (event) => seen.push(event.type),
+    })
+
+    expect(seen).toEqual(["tool-call", "tool-result", "tool-result"])
+    expect(isStale(queryClient, list)).toBeFalsy()
+  })
 })

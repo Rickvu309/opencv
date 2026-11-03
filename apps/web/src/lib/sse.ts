@@ -3,10 +3,6 @@ export type SseEvent = {
   data: unknown
 }
 
-/**
- * Parse one SSE block (the text between blank-line delimiters). Heartbeats
- * and comment-only blocks are skipped. `data:` lines are JSON when possible.
- */
 export function parseSseBlock(block: string): SseEvent | null {
   const lines = block.split(/\r?\n/)
   if (lines.every((line) => line.length === 0 || line.startsWith(":"))) {
@@ -33,7 +29,6 @@ export function parseSseBlock(block: string): SseEvent | null {
   }
 }
 
-/** Pull complete SSE events off the front of a buffer; leave a partial block. */
 export function consumeSseBuffer(buffer: string): {
   events: SseEvent[]
   rest: string
@@ -58,10 +53,6 @@ export function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError"
 }
 
-/**
- * Incrementally parse a byte stream as SSE. Honors `signal` so Stop can
- * tear the reader down without waiting for the next chunk.
- */
 export async function* readSseStream(
   body: ReadableStream<Uint8Array>,
   options?: { signal?: AbortSignal }

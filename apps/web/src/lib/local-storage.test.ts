@@ -57,7 +57,7 @@ describe("writeStored", () => {
     expect(localStorage.getItem(KEY)).toBe("a")
   })
 
-  it("does not throw when setItem throws", () => {
+  it("keeps the preference for this session only when private mode blocks storage", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new DOMException("quota", "QuotaExceededError")
     })

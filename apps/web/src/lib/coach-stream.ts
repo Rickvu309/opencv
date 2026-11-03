@@ -15,11 +15,6 @@ function isCommandName(name: string): name is keyof typeof commands {
   return name in commands
 }
 
-/**
- * Refreshes what a command the Coach ran says it invalidates, the same
- * reads a click on that command would refresh. A tool-result carries no
- * input, so it is remembered from the tool-call with the same id.
- */
 export function createToolRefresher(queryClient: QueryClient) {
   const inputs = new Map<string, unknown>()
   return (event: ChatTurnEvent) => {
@@ -38,11 +33,6 @@ export function createToolRefresher(queryClient: QueryClient) {
   }
 }
 
-/**
- * The one Coach turn client. It posts the turn, decodes every SSE event
- * through the shared schema, refreshes what Coach commands changed, and
- * hands each event to `onEvent`. An event the contract does not describe is skipped.
- */
 export async function streamChatTurn(input: {
   queryClient: QueryClient
   chatId: string

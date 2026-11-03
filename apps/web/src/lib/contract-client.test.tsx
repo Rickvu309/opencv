@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   activityKey,
   queryKey,
+  refreshReads,
   runContractCommand,
   undoActivity,
 } from "./contract-client.ts"
@@ -142,5 +143,17 @@ describe("runContractCommand", () => {
     for (const key of refreshed) {
       expect(isStale(queryClient, key), JSON.stringify(key)).toBe(true)
     }
+  })
+})
+
+describe("refreshReads", () => {
+  it("refreshes only the reads it names, never the activity root", async () => {
+    const queryClient = new QueryClient()
+    const keys = seed(queryClient)
+
+    await refreshReads(queryClient, [{ query: "job.list" }])
+
+    expect(isStale(queryClient, keys.list)).toBe(true)
+    expect(isStale(queryClient, keys.activity)).toBe(false)
   })
 })

@@ -2,7 +2,6 @@ import { fileIdSchema } from "@workspace/domain"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
-/** Every API path the web app reads or posts outside the command route. */
 export const endpoints = {
   publicConfig: "/api/public-config",
   profile: "/api/profile",
@@ -38,10 +37,8 @@ export const endpoints = {
   search: (query: string) => `/api/search?q=${encodeURIComponent(query)}`,
 } as const
 
-/** The one read that is not a contract query. */
 export const inboxConnectKey = ["inbox-connect"] as const
 
-/** For requests `apiFetch` cannot carry: uploads, file downloads and bare JSON reads outside the envelope. */
 export function fetchBinary(path: string, init?: RequestInit) {
   return fetch(new URL(path, apiBaseUrl), init)
 }
@@ -64,7 +61,6 @@ export function resolvePhotoSrc(
   return undefined
 }
 
-/** Profile images store uploaded file IDs, while Better Auth may supply URLs. */
 export function resolveProfileImageSrc(stored: string | null | undefined) {
   if (!stored || stored.startsWith("blob:")) return undefined
   if (stored.startsWith("https://") || stored.startsWith("http://"))

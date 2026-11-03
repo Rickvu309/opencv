@@ -11,7 +11,6 @@ type PromptInputProps = Omit<ComponentProps<"div">, "onSubmit" | "children"> & {
   value: string
   onValueChange: (value: string) => void
   onSubmit: () => void
-  /** Enter does nothing while a turn runs. */
   submitBlocked?: boolean
   disabled?: boolean
   placeholder: string
