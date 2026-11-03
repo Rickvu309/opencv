@@ -1,0 +1,13 @@
+{
+  "id": "ci-first-errors",
+  "file": "scripts/ci-workflow.test.mjs",
+  "detector": {
+    "module": "scripts/ci-first-errors.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b135e8e6",
+    "path": ".github/workflows/ci.yml"
+  }
+}

@@ -1,0 +1,40 @@
+api:test
+##[error]command (/home/runner/work/opencv/opencv/apps/api) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test --shard=1/2 exited (1)
+cache miss, executing eeb0ab09d9c496d3
+api#test:  ERROR  command (/home/runner/work/opencv/opencv/apps/api) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test --shard=1/2 exited (1)
+ ERROR  run failed: command  exited (1)
+
+> api@0.0.1 test /home/runner/work/opencv/opencv/apps/api
+> vitest run --shard=1/2
+
+
+ RUN  v5.0.5 /home/runner/work/opencv/opencv/apps/api
+
+stderr | src/coach/turn.test.ts > live model failures and grounding > sends the selected passage and document version to the model and surfaces provider failure
+Error: synthetic-provider-failure
+    at doStream (/home/runner/work/opencv/opencv/apps/api/src/coach/turn.test.ts:427:39)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > GET /health/deep > reports mail:false and 503 when sign-in mail is not configured (incident I4)
+AssertionError: expected { ok: false, sha: 'abc1234', …(3) } to deeply equal { ok: false, sha: 'abc1234', …(3) }
+
+- Expected
++ Received
+
+  {
+    "db": true,
+    "mail": false,
+    "ok": false,
+-   "schemaVersion": "0006_coach_turn_receipts",
++   "schemaVersion": "0007_activity_reversal_expect",
+    "sha": "abc1234",
+  }
+
+ ❯ src/health.test.ts:21:30
+     19|     const deep = await app.request("/health/deep")
+     20|     expect(deep.status).toBe(503)
+     21|     await expect(deep.json()).resolves.toEqual({
+       |                              ^
+     22|       ok: false,
+     23|       sha: "abc1234",
+

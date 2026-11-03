@@ -50,7 +50,6 @@
   "scripts/check.test.mjs",
   "scripts/checks-doc.test.mjs",
   "scripts/ci-screens.test.mjs",
-  "scripts/ci-workflow.test.mjs",
   "scripts/driver-sign-in.test.mjs",
   "scripts/focus-indication.test.mjs",
   "scripts/kit-duplicates.test.mjs",

@@ -1,0 +1,6 @@
+{
+  "id": "ci-first-error-lines",
+  "file": "scripts/ci-first-errors.test.mjs",
+  "historic": null,
+  "reason": "it parses saved check logs; the miss it prevents is proved by ci-first-errors on the old workflow"
+}
