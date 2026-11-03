@@ -1,0 +1,18 @@
+{
+  "id": "undo-later-stored-time",
+  "file": "apps/api/src/registry/expectation.formal.test.ts",
+  "historic": {
+    "mode": "restore",
+    "sha": "dccf1c2c",
+    "paths": ["apps/api/src/registry/expectation.ts"],
+    "command": [
+      "pnpm",
+      "--filter",
+      "api",
+      "exec",
+      "vitest",
+      "run",
+      "src/registry/expectation.formal.test.ts"
+    ]
+  }
+}
