@@ -22,6 +22,7 @@ const ISOLATED_FILES = [
   "src/features/paper/paper-letter-drafting-parity.test.tsx",
   "src/features/app-shell/app-shell.test.tsx",
   "src/features/apply/apply-board-drop.test.tsx",
+  "src/features/apply/apply-board-queue.test.tsx",
 ]
 
 export default defineConfig({

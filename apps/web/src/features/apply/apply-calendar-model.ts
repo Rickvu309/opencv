@@ -14,6 +14,7 @@ export const WEEKDAYS = [
 ] as const
 export const FIRST_HOUR = 8
 export const LAST_HOUR = 18
+const LAST_CLOCK_HOUR = 23
 export const HOURS = Array.from(
   { length: LAST_HOUR - FIRST_HOUR + 1 },
   (_, index) => FIRST_HOUR + index
@@ -181,6 +182,31 @@ export function eventsOn(events: CalendarEvent[], day: string) {
   return events
     .filter((event) => event.day === day)
     .sort((a, b) => a.startMinutes - b.startMinutes)
+}
+
+export function hoursFor(events: CalendarEvent[]) {
+  const timed = events.filter((event) => event.kind === "interview")
+  const first = Math.min(
+    FIRST_HOUR,
+    ...timed.map((event) => Math.floor(event.startMinutes / 60))
+  )
+  const last = Math.min(
+    LAST_CLOCK_HOUR,
+    Math.max(
+      HOURS[HOURS.length - 1] ?? FIRST_HOUR,
+      ...timed.map((event) => Math.ceil(event.endMinutes / 60))
+    )
+  )
+  return Array.from({ length: last - first + 1 }, (_, index) => first + index)
+}
+
+export function blockSpan(event: CalendarEvent, hours: number[]) {
+  const gridStart = (hours[0] ?? FIRST_HOUR) * 60
+  const gridEnd = ((hours.at(-1) ?? LAST_HOUR) + 1) * 60
+  return {
+    top: event.startMinutes - gridStart,
+    length: Math.min(event.endMinutes, gridEnd) - event.startMinutes,
+  }
 }
 
 export type Placed = { event: CalendarEvent; lane: number; lanes: number }

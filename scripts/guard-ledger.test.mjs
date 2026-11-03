@@ -41,6 +41,12 @@ const REVERT_PAST = {
   fix: "fff0001",
   command: ["node", "check.mjs"],
 }
+const RESTORE_PAST = {
+  mode: "restore",
+  sha: "abc1234",
+  paths: ["src/a.ts", "src/a.test.ts"],
+  command: ["node", "check.mjs"],
+}
 const DETECTOR = { module: "scripts/lib/x.mjs", export: "x" }
 const row = (extra = {}) => ({
   id: "x",
@@ -252,6 +258,10 @@ const revertIo = (outcomes, applies = true) => {
           calls.push(["revert", fix, files])
           if (!applies) throw new Error("patch does not apply\nsecond line")
         },
+        restore: (sha, files) => {
+          calls.push(["restore", sha, files])
+          if (!applies) throw new Error("pathspec did not match\nsecond line")
+        },
         reset: () => calls.push(["reset"]),
         run: () => {
           calls.push(["run"])
@@ -291,6 +301,27 @@ test("a reverse patch that does not apply fails with a line, not a stack trace",
   const result = prove(REVERT, revertIo([], false))
   assert.equal(result.ok, false)
   assert.match(result.lines[0], /does not apply: patch does not apply$/)
+})
+
+test("restore proof brings back only the non-test files from the past, expects an assertion failure, resets and expects a pass", () => {
+  const RESTORE = row({ historic: RESTORE_PAST })
+  const io = revertIo([asserted, passed])
+  const result = prove(RESTORE, io)
+  assert.equal(result.ok, true)
+  assert.deepEqual(io.calls, [
+    ["restore", "abc1234", ["src/a.ts"]],
+    ["run"],
+    ["reset"],
+    ["run"],
+  ])
+  assert.equal(prove(RESTORE, revertIo([passed, passed])).ok, false)
+  assert.equal(prove(RESTORE, revertIo([crashed, passed])).ok, false)
+  const missing = prove(RESTORE, revertIo([], false))
+  assert.equal(missing.ok, false)
+  assert.match(
+    missing.lines[0],
+    /cannot restore src\/a\.ts: pathspec did not match$/
+  )
 })
 
 test("failureKind tells a crash and an unknown failure from an assertion", () => {

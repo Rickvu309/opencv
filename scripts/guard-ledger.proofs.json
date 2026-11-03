@@ -1,4 +1,8 @@
 {
+  "job-board-queue": {
+    "passed": true,
+    "fingerprint": "e9c6a3962a23"
+  },
   "pointer-capture": {
     "passed": true,
     "fingerprint": "fbc7d121fecd"

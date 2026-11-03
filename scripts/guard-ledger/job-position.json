@@ -1,0 +1,6 @@
+{
+  "id": "job-position",
+  "file": "packages/domain/src/job-position.property.test.ts",
+  "historic": null,
+  "reason": "it holds the order keys to strictly increasing and refuses equal keys; no earlier mistake to prove"
+}

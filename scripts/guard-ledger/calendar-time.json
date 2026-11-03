@@ -1,0 +1,6 @@
+{
+  "id": "calendar-time",
+  "file": "apps/web/src/features/apply/apply-calendar-model.property.test.ts",
+  "historic": null,
+  "reason": "its mutants run by hand (days read in UTC, a week range cut at UTC midnight, hour rows past 23); the earlier calendar fixes, cd78d048 and debae018, have example tests"
+}

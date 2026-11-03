@@ -1,0 +1,10 @@
+{
+  "module": "apply-board-drops.ts",
+  "actions": {
+    "Drop": "dropOn",
+    "Commit": "afterMove",
+    "Refetch": "refetchBoard",
+    "Shown": "shownJobs",
+    "Land": "clearSettled"
+  }
+}
