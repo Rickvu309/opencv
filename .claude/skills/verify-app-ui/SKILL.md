@@ -65,7 +65,7 @@ At `b031ebf3` plus the assumptions change (#531) the checker prints 36 PASS, 7 F
 
 Seen in the #526 run and not judged in the design pass:
 
-- 27: the Paper conflict banner is `role="region"` (`paper-editor-conflict-banner.tsx`, from `7ea61e9c`, #396), not `role="alert"`. The Coach error is in a live region. The banner part is judged even when the Coach stub never fires.
+- 27: the old Paper conflict banner was removed with the old editor (#1043). The Coach error is in a live region. That part is judged even when the Coach stub never fires.
 - 32: passes. Coach's primary is the Add control of the composer (`data-primary-action` in `coach-dock.tsx`); Tab reaches it in 15 presses, Paper 13, Apply 12, Pitch 12.
 - 36: passes. The Paper library has been a card grid since #396, so the probe's table-row locator found nothing. The probe now reads the Paper cards (`PaperCard`'s open button) and the line counts them.
 - 01 stays unjudged.

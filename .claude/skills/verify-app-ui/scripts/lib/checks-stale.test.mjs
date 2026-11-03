@@ -85,6 +85,7 @@ test("27: a silent Coach stub makes only the Coach part unjudged", () => {
     clean["27"].measured,
     /Coach error \(the scenario stub never fired\)/
   )
+  assert.match(clean["27"].measured, /role=alert: true/)
   const red = motionChecks(
     { reduced: {}, ...quiet },
     {
@@ -94,11 +95,6 @@ test("27: a silent Coach stub makes only the Coach part unjudged", () => {
     { banner: ALERTING }
   ).find((r) => r.id === "27")
   assert.equal(red.status, "FAIL")
-  const paperAlert = motion(quiet, snap, {
-    banner: "apps/web/src/features/paper/paper-editor-conflict-banner.tsx",
-  })
-  assert.equal(paperAlert["27"].status, "STALE")
-  assert.match(paperAlert["27"].measured, /role=alert: true/)
 })
 
 test("27: a missing banner file alone is STALE, and a found Coach FAIL still FAILs", () => {

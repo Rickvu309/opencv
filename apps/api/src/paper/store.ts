@@ -17,7 +17,6 @@ import {
   parsePaperId,
   parseUserId,
   legacyPaperOf,
-  upgradeStoredPaper,
   type PaperDocument,
   type PaperView,
   type Actor,
