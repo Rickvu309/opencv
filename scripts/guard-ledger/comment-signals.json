@@ -1,0 +1,17 @@
+{
+  "id": "comment-signals",
+  "file": "scripts/comment-signals.test.mjs",
+  "detector": {
+    "module": "scripts/lib/comment-signals.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a8bf0fd6",
+    "path": "apps/web/src/features/settings/account-section.tsx",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/settings/account-section.tsx"
+    }
+  }
+}

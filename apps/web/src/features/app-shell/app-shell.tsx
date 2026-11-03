@@ -2,6 +2,7 @@ import "./design/dock.pen.css"
 
 import { useEffect, useReducer, useRef } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
+import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import { History, Menu, MessageCircle } from "lucide-react"
@@ -157,16 +158,16 @@ export function AppShell({ onSearch }: AppShellProps) {
   }
 
   async function onNewChat() {
-    try {
-      const chat = await runContractCommand(queryClient, "chat.create", {})
-      dispatch({
-        type: "panel_opened",
-        title: chatDisplayTitle(chat.title),
-        chatId: chat.id,
-      })
-    } catch {
-      // rejected-ok: a failed create leaves the panel closed. The page stays usable.
-    }
+    const chat = await ignoreRejection(
+      runContractCommand(queryClient, "chat.create", {}),
+      "failedCreateLeavesPanelClosed"
+    )
+    if (!chat) return
+    dispatch({
+      type: "panel_opened",
+      title: chatDisplayTitle(chat.title),
+      chatId: chat.id,
+    })
   }
 
   function closeDrawer() {

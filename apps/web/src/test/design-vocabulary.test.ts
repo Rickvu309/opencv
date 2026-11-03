@@ -236,11 +236,9 @@ const RAW_INTERACTIVE_ALLOWLIST: readonly AllowlistEntry[] = [
     file: "features/paper/cv-templates/cv-parts.tsx",
     reason: "Hidden file picker: kit Input cannot host type=file",
   },
-  {
-    file: "features/settings/account-section.tsx",
-    reason: "Hidden file picker: kit Input cannot host type=file",
-  },
 ]
+
+const HIDDEN_FILE_PICKER = "components/hidden-file-picker.tsx"
 
 const allowedFiles = (entries: readonly AllowlistEntry[]) =>
   new Set(entries.map((entry) => entry.file))
@@ -459,6 +457,18 @@ describe("design-system adoption", () => {
     requireReasonedAllowlist(RAW_INTERACTIVE_ALLOWLIST, "raw-interactive")
   })
 
+  it("hosts the only raw file input outside the kit in the hidden file picker", () => {
+    const hosts = appSourceFiles()
+      .filter(
+        (file) => !rel(file).startsWith("features/") && file.endsWith(".tsx")
+      )
+      .filter((file) =>
+        /<input\b/.test(readFileSync(path.join(srcDir, file), "utf8"))
+      )
+      .map(rel)
+    expect(hosts).toEqual([HIDDEN_FILE_PICKER])
+  })
+
   it("keeps raw button/input/textarea/select out of feature files", () => {
     const allowed = allowedFiles(RAW_INTERACTIVE_ALLOWLIST)
     const violations: string[] = []
@@ -473,20 +483,7 @@ describe("design-system adoption", () => {
 
       if (!allowed.has(rel(file))) {
         violations.push(`${rel(file)}: ${tags.join(", ")}`)
-        continue
       }
-
-      const lines = source.split("\n")
-      lines.forEach((line, index) => {
-        if (!RAW_INTERACTIVE_RE.test(line)) return
-        RAW_INTERACTIVE_RE.lastIndex = 0
-        const window = lines.slice(Math.max(0, index - 4), index + 1).join("\n")
-        if (!/Documented exception/i.test(window)) {
-          violations.push(
-            `${rel(file)}:${index + 1} raw <${line.match(RAW_INTERACTIVE_RE)?.[1]}> without a nearby Documented exception comment`
-          )
-        }
-      })
     }
 
     expect(violations, violations.join("\n")).toEqual([])
