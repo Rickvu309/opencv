@@ -34,6 +34,7 @@ export const MOMENTS = Object.freeze({
     "Attaching pictures, once the issue or pull request they go to is read.",
   finish: "Opening the pull request, before the push.",
   "finish-pushed": "Opening the pull request, after the push.",
+  body: "Replacing a pull request body, once the new text is read.",
   pr: "The live pull request, read by the policy check in ci and by the merge verb.",
   merge: "The merge verb, before it enqueues the pull request.",
   "merge-result":
@@ -62,6 +63,7 @@ export const RUNNERS = Object.freeze({
   "shot-target": ["scripts/ocv-tools/shot.mjs"],
   finish: ["scripts/ocv-tools/jobs/finish.mjs"],
   "finish-pushed": ["scripts/ocv-tools/jobs/finish.mjs"],
+  body: ["scripts/ocv-tools/jobs/body.mjs"],
   pr: ["scripts/ocv-tools/jobs/policy.mjs", "scripts/ocv-tools/jobs/merge.mjs"],
   merge: ["scripts/ocv-tools/jobs/merge.mjs"],
   "merge-result": ["scripts/ocv-tools/jobs/merge.mjs"],

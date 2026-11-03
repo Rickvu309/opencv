@@ -80,7 +80,7 @@ export const pullRows = [
     needs: ["pull"],
     check: prMetadata,
     fix: () =>
-      "gh pr edit <pr> --title 'type: text (#<n>)' --body 'Closes #<n>'",
+      "gh pr edit <pr> --title 'type: text (#<n>)'. scripts/ocv-tools.mjs body <pr> --body-file <file>",
   }),
   rule({
     id: "PIN_ISSUE_OPEN",

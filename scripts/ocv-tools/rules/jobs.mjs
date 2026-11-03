@@ -282,7 +282,7 @@ export const jobRows = [
   row({
     id: "BAD_BODY",
     says: "The PR body needs a Summary, Evidence and Merge Danger section with content, and no template placeholders. Evidence holds a command with its result on its line or in the output block under it, an image, or a link to a CI run. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
-    at: ["finish"],
+    at: ["finish", "body"],
     needs: ["body", "pull"],
     check: badBody,
   }),

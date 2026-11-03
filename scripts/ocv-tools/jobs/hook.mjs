@@ -1,7 +1,7 @@
 import { join, resolve } from "node:path"
 import { EXIT } from "../result.mjs"
 import { badInput } from "../input.mjs"
-import { decide } from "../rules/index.mjs"
+import { RULES, decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
 import { runQuickChecks } from "./push-checks.mjs"
 
@@ -191,7 +191,38 @@ function oversizeStaged(ctx) {
   return list
 }
 
+const RAW_BODY_EDIT = /gh pr edit\b[^.\n]{0,200}--body\b/
+
+export function rawBodyEditIn(texts) {
+  return texts.filter((text) => RAW_BODY_EDIT.test(String(text)))
+}
+
+export function ruleFixTexts(rules = RULES) {
+  return rules.map((row) => {
+    try {
+      return String(row.fix?.({}) ?? "")
+    } catch {
+      return ""
+    }
+  })
+}
+
+export function bodyEditRefusal(texts) {
+  const hits = rawBodyEditIn(texts)
+  if (!hits.length) return null
+  return {
+    exit: EXIT.refused,
+    lines: [
+      "REFUSED: the tool tells agents to run gh pr edit --body.",
+      ...hits.map((hit) => `  ${hit}`),
+    ],
+    fix: "Point that fix at scripts/ocv-tools.mjs body <pr> --body-file <file>.",
+  }
+}
+
 function preCommit(ctx) {
+  const blocked = bodyEditRefusal(ruleFixTexts())
+  if (blocked) return blocked
   const top = run(ctx, "git", ["rev-parse", "--show-toplevel"]).out || ctx.cwd
   const prettier = join(top, "node_modules/.bin/prettier")
   let lines = []

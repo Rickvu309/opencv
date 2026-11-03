@@ -49,6 +49,8 @@ test("one line per refusal, exit 2, each with its fix", () => {
   assert.ok(metadata, r.lines.join("\n"))
   assert.ok(workflows, r.lines.join("\n"))
   assert.match(metadata, /fix: gh pr edit/)
+  assert.match(metadata, /scripts\/ocv-tools\.mjs body/)
+  assert.doesNotMatch(metadata, /gh pr edit\b[^.\n]*--body/)
   assert.match(workflows, /extra\.yml/)
 })
 
@@ -72,6 +74,8 @@ test("in Actions each refusal is one error annotation with the rule id", () => {
   const line = r.lines.find((l) => l.startsWith("::error title=PR_METADATA::"))
   assert.ok(line, r.lines.join("\n"))
   assert.match(line, /fix: gh pr edit/)
+  assert.match(line, /scripts\/ocv-tools\.mjs body/)
+  assert.doesNotMatch(line, /gh pr edit\b[^.\n]*--body/)
   assert.ok(r.lines.every((l) => l.startsWith("::error title=")))
 })
 

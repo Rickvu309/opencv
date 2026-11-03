@@ -16,6 +16,7 @@ import { board } from "./board.mjs"
 import { approve } from "./approve.mjs"
 import { brief } from "./brief.mjs"
 import { block, done } from "./done.mjs"
+import { replaceBody } from "./jobs/body.mjs"
 import { finish } from "./jobs/finish.mjs"
 import { hook } from "./jobs/hook.mjs"
 import { merge } from "./jobs/merge.mjs"
@@ -169,6 +170,20 @@ function command(ctx, cmd, rest) {
       const parsed = parseTakeArgs(rest)
       guardTake(parsed.flags, parsed.pos)
       return take(ctx, parsed.pos[0], parsed.flags)
+    }
+    case "body": {
+      for (const flag of Object.keys(flags)) {
+        if (flag !== "--body-file") unknownOption(flag)
+        if (flags[flag] == null || String(flags[flag]).startsWith("--"))
+          needsValue(flag)
+      }
+      if (pos.length !== 1)
+        throw new Error("usage: ocv-tools body <pr> --body-file <file>")
+      return replaceBody(
+        ctx,
+        issueNumber(pos[0], "body <pr> --body-file <file>"),
+        { flags }
+      )
     }
     case "finish":
     case "merge": {
