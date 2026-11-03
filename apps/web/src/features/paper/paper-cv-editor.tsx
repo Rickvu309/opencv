@@ -125,7 +125,9 @@ function reducer(state: State, action: Action): State {
     case "favorite":
       return { ...state, favoritePending: action.pending }
     case "defer":
-      return { ...state, deferring: action.on }
+      return state.deferring === action.on
+        ? state
+        : { ...state, deferring: action.on }
   }
 }
 
