@@ -44,10 +44,12 @@ const collect = (mark) => `(() => {
     if (rect.right < 0 || rect.left > innerWidth) continue
     const parent = el.parentElement
     if (!parent) continue
+    const parentOverflow = getComputedStyle(parent).overflowX
     const box = parent.getBoundingClientRect()
     if (rect.right <= box.right + 1 && rect.left >= box.left - 1) continue
     nodes.push({
       overflow: "visible",
+      parentOverflow,
       left: rect.left,
       right: rect.right,
       parentLeft: box.left,
@@ -117,7 +119,11 @@ try {
       sample: hits.slice(0, 4).map((hit) => hit.text ?? hit.kind),
     }
     results.push(result)
-    const problems = judgeRoutes([result], pending, today)
+    const problems = judgeRoutes(
+      [result],
+      pending.filter((entry) => entry.id === route.id),
+      today
+    )
     const ok = problems.length === 0
     if (!ok) failed = true
     console.log(

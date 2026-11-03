@@ -4,6 +4,7 @@ export function spills({ scrollWidth, innerWidth, nodes }) {
     hits.push({ kind: "document", scrollWidth, innerWidth })
   for (const node of nodes ?? []) {
     if (node.overflow !== "visible") continue
+    if (node.parentOverflow && node.parentOverflow !== "visible") continue
     const pastRight = node.right > node.parentRight + 1
     const pastLeft = node.left < node.parentLeft - 1
     if (pastRight || pastLeft) hits.push({ kind: "box", ...node })

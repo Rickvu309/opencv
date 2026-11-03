@@ -63,6 +63,14 @@ test("a text box that scrolls or stays inside its parent does not spill", () => 
           parentLeft: 0,
           parentRight: 120,
         },
+        {
+          overflow: "visible",
+          parentOverflow: "auto",
+          left: 0,
+          right: 900,
+          parentLeft: 0,
+          parentRight: 100,
+        },
       ],
     }),
     []
