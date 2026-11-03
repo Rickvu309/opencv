@@ -194,6 +194,7 @@ const fakeRepo = {
       ["", new Set(["check"])],
       ["apps/web", new Set(["verify:app-ui"])],
     ]).get(dir) ?? new Set(),
+  lineCount: (rel) => (rel === "apps/api/src/db/context.ts" ? 40 : null),
 }
 
 const SKILL = ".claude/skills/verify-app-ui/SKILL.md"
@@ -249,6 +250,24 @@ test("a skill that names real scripts, full paths and real pnpm scripts passes",
   const clean = [
     "Run `pnpm check`, `pnpm install` and `pnpm --filter web verify:app-ui`.",
     "Call `.claude/skills/verify-opencv/scripts/cleanup.sh`, `scripts/tlc.mjs` and `scripts/launch.sh`.",
+  ].join("\n")
+  assert.deepEqual(detect(clean, SKILL, fakeRepo), [])
+})
+
+test("a skill that cites a line past the end of its file fails", () => {
+  const mistake = [
+    "| `transaction` | `apps/api/src/db/context.ts` line 41 |",
+    "Open `apps/api/src/db/context.ts` lines 30-52.",
+    "See apps/api/src/db/context.ts:99 for the cast.",
+  ].join("\n")
+  assert.equal(detect(mistake, SKILL, fakeRepo).length, 3)
+})
+
+test("a skill that cites a line inside its file, or a name, passes", () => {
+  const clean = [
+    "| `transaction` | `apps/api/src/db/context.ts` line 32 |",
+    "Open `apps/api/src/db/context.ts` lines 30-40, or `transaction` in `apps/api/src/db/context.ts`.",
+    "See apps/api/src/db/context.ts:12 and `apps/api/src/unknown.ts` line 900.",
   ].join("\n")
   assert.deepEqual(detect(clean, SKILL, fakeRepo), [])
 })
