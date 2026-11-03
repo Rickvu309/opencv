@@ -16,13 +16,6 @@ function* files(dir) {
   }
 }
 
-/**
- * #485 removed the /app prefix: Coach is /coach, Apply is /apply. The old
- * paths still redirect, so an agent that follows a stale skill sees the right
- * screen through a legacy redirect and never learns the route moved. A line
- * may name an /app path only right after the word "legacy", to describe
- * that redirect.
- */
 const RETIRED_APP_PATH = /(?<![\w/.$-])\/app(?![\w-])/g
 const URL_APP_PATH =
   /(?:\$\{?\w+\}?|\*\*|https?:\/\/[^\s/`"']+)(\/app)(?![\w-])/g
@@ -53,6 +46,6 @@ test("verify skills name product routes without the retired /app prefix", () => 
   assert.deepEqual(
     hits,
     [],
-    `Use the route from SURFACE_PATHS in apps/web/src/lib/product-paths.ts (for example /coach, not /app/coach). Name a legacy /app path only right after the word "legacy".\n${hits.join("\n")}`
+    `#485 removed the /app prefix and the old paths redirect, so a stale skill sees the right screen and never learns the route moved. Use the route from SURFACE_PATHS in apps/web/src/lib/product-paths.ts (for example /coach, not /app/coach). Name a legacy /app path only right after the word "legacy".\n${hits.join("\n")}`
   )
 })

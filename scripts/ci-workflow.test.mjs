@@ -1,5 +1,3 @@
-// Guards .github/workflows/ci.yml: the merge queue needs the merge_group trigger, and the one required
-// check (ci) must fail when any job it waits on is skipped, cancelled or failed.
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
 import { readFileSync } from "node:fs"
@@ -37,9 +35,8 @@ test("ci waits on every other job and always runs", () => {
   assert.match(ci, /^ {4}if:\s*\$\{\{\s*always\(\)\s*\}\}/m)
 })
 
-// Run the real aggregate step from ci.yml against a needs object.
 const script = /node -e '([^\n]*)'\s*$/m.exec(section("ci"))?.[1]
-function aggregate(results) {
+function runAggregateStepFromCiYml(results) {
   const needs = Object.fromEntries(
     Object.entries(results).map(([name, result]) => [name, { result }])
   )
@@ -51,9 +48,12 @@ function aggregate(results) {
 
 test("the ci aggregate passes only when every job succeeded", () => {
   assert.ok(script, "the aggregate step is a one-line node -e")
-  assert.equal(aggregate({ lint: "success", build: "success" }).status, 0)
+  assert.equal(
+    runAggregateStepFromCiYml({ lint: "success", build: "success" }).status,
+    0
+  )
   for (const bad of ["failure", "cancelled", "skipped"]) {
-    const run = aggregate({ lint: "success", build: bad })
+    const run = runAggregateStepFromCiYml({ lint: "success", build: bad })
     assert.equal(run.status, 1, bad)
     assert.match(run.stderr, new RegExp(`build: ${bad}`))
   }

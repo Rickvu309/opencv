@@ -200,3 +200,46 @@ test("paint provenance distinguishes repeated instances and preserves visible so
     rmSync(scratch, { recursive: true, force: true })
   }
 })
+
+test("a section keeps text with newlines as one line, drops blank text and records only non-solid fills", () => {
+  mkdirSync(join(homedir(), "tmp"), { recursive: true })
+  const scratch = makeTempDir("pen-snapshot-test-", join(homedir(), "tmp"))
+  try {
+    const pen = join(scratch, "source.pen")
+    const out = join(scratch, "snapshot.json")
+    writeFileSync(
+      pen,
+      JSON.stringify({
+        children: [
+          {
+            id: "frame",
+            type: "frame",
+            children: [
+              {
+                id: "section",
+                type: "frame",
+                fill: [{ type: "mesh_gradient", x: 1 }, "#ffffff"],
+                children: [
+                  { id: "one", type: "text", content: "  Hello\nworld  " },
+                  { id: "blank", type: "text", content: "   " },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    execFileSync(
+      process.execPath,
+      ["scripts/pen-snapshot.mjs", pen, "frame", out],
+      {
+        stdio: "pipe",
+      }
+    )
+    const [section] = JSON.parse(readFileSync(out, "utf8")).sections
+    assert.deepEqual(section.texts, ["Hello world"])
+    assert.deepEqual(section.fills, [{ type: "mesh_gradient", x: 1 }])
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
+  }
+})

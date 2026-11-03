@@ -6,6 +6,8 @@ import { resolve } from "node:path"
 import { launchBrowser } from "../.claude/skills/verify-app-ui/scripts/lib/cdp.mjs"
 import { signInThrowaway } from "../.claude/skills/verify-app-ui/scripts/lib/session.mjs"
 
+const FOCUS_FIRST_IDEA_BUTTON = `document.querySelector('[data-slot="coach-ideas"] button').focus()`
+
 const [webUrl, apiUrl, logPath, output] = process.argv.slice(2)
 assert(
   output,
@@ -147,10 +149,7 @@ try {
           resolve(output, `${moreIdeas ? "ideas" : "new-chat"}-${width}.png`),
           false
         )
-        // Start at More ideas and reach every offscreen starter using real Tab events.
-        await page.evaluate(
-          `document.querySelector('[data-slot="coach-ideas"] button').focus()`
-        )
+        await page.evaluate(FOCUS_FIRST_IDEA_BUTTON)
         for (let index = 1; index < metrics.buttons.length; index++)
           await page.key("Tab")
         const keyboard = await page.evaluate(
@@ -174,10 +173,7 @@ try {
           false
         )
         records.push({ moreIdeas, metrics, keyboard })
-        // Restore the first button before switching sets.
-        await page.evaluate(
-          `document.querySelector('[data-slot="coach-ideas"] button').focus()`
-        )
+        await page.evaluate(FOCUS_FIRST_IDEA_BUTTON)
       }
     } finally {
       await page.close()

@@ -1,6 +1,3 @@
-// Compares what GitHub holds against what git declares: labels (.github/labels.yml), the
-// `main` ruleset (.github/rulesets/main.json) and a few repo settings. Prints each drift
-// with the gh command that fixes it. Nothing here writes to GitHub.
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import { parseArgs } from "node:util"
@@ -15,7 +12,6 @@ export const settings = {
 
 const quote = (text) => `"${text.replace(/(["\\$`])/g, "\\$1")}"`
 
-// labels.yml is a flat list of `- name:` entries with color and description.
 export function parseLabels(text) {
   const labels = []
   for (const line of text.split("\n")) {
@@ -65,8 +61,6 @@ export function labelDrift(declared, live) {
   return drift
 }
 
-// Every field the declared ruleset names must match; fields GitHub adds on its own
-// (ids, timestamps, defaults) are ignored. Lists of objects match by `type` or `actor_id`.
 export function subsetDrift(declared, live, path = "") {
   if (Array.isArray(declared)) {
     if (!Array.isArray(live)) return [`${path}: expected a list`]
@@ -197,7 +191,6 @@ export const liveIo = {
     return found ? api(`/rulesets/${found.id}`) : null
   },
   repo: () => api(""),
-  // 204 when enabled, 404 when not.
   alertsEnabled() {
     try {
       gh(["api", "repos/{owner}/{repo}/vulnerability-alerts"])

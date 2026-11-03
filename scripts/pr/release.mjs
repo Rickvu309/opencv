@@ -1,18 +1,14 @@
-// Says whether a merge commit is live in production, from the commit statuses
-// Railway posts (`opencv - api`, `opencv - web`) and the sha each service serves.
 import { execFileSync } from "node:child_process"
 import { parseArgs } from "node:util"
 import { writeResult } from "../ocv-tools/result.mjs"
 import { affectedServices, services } from "./services.mjs"
 
-// Worst first: the overall outcome is the first one any service has.
-const severity = ["BROKEN", "RELEASE_BLOCKED", "PENDING", "LIVE"]
+const severityWorstFirst = ["BROKEN", "RELEASE_BLOCKED", "PENDING", "LIVE"]
 const exitCodes = { LIVE: 0, PENDING: 3, BROKEN: 1, RELEASE_BLOCKED: 1 }
 const fullSha = /^[0-9a-f]{40}$/
+const statusesPerPageCoveringBothServices = 100
 const short = (sha) => sha.slice(0, 7)
 
-// Railway's descriptions: "Railway is deploying the service", "Success - api.opencv.me",
-// "No deployment needed - watched paths not modified", "Deployment failed".
 export function readStatus({ state, description }) {
   if (state === "failure" || state === "error") return "failed"
   if (state === "pending") return "pending"
@@ -21,8 +17,7 @@ export function readStatus({ state, description }) {
     : "deployed"
 }
 
-// Railway said success; the public sha says whether that build is the one users get.
-async function serving(service, commit, final, io) {
+async function confirmPublicShaAfterRailwaySuccess(service, commit, final, io) {
   const unconfirmed = (detail) => ({
     outcome: final ? "RELEASE_BLOCKED" : "PENDING",
     detail,
@@ -78,12 +73,12 @@ async function classify(service, commit, affected, status, final, io) {
           }
         : notAffected
     default:
-      return affected ? serving(service, commit, final, io) : notAffected
+      return affected
+        ? confirmPublicShaAfterRailwaySuccess(service, commit, final, io)
+        : notAffected
   }
 }
 
-// io: { changedFiles(sha), statuses(sha) newest first, fetch(url) -> {status, body},
-//       isAncestor(a, b) -> true|false|null (null: b is not in this clone), now(), sleep(ms) }
 export async function release({ commit, wait = 0 }, io) {
   const affected = new Set(
     affectedServices(io.changedFiles(commit)).map((s) => s.name)
@@ -119,7 +114,9 @@ export async function release({ commit, wait = 0 }, io) {
           ))),
       })
     }
-    const outcome = severity.find((o) => reports.some((r) => r.outcome === o))
+    const outcome = severityWorstFirst.find((o) =>
+      reports.some((r) => r.outcome === o)
+    )
     if (outcome !== "PENDING" || final)
       return { commit, outcome, services: reports }
     await io.sleep(Math.min(delay, deadline - io.now()))
@@ -141,7 +138,6 @@ const git = (args) =>
     stdio: ["ignore", "pipe", "ignore"],
   })
 
-// null when production serves a commit this clone lacks even after a fetch.
 export const isAncestorWith = (run) => (ancestor, descendant) => {
   const ask = () => {
     try {
@@ -169,12 +165,14 @@ const liveIo = {
     git(["diff", "--name-only", `${commit}^1`, commit])
       .split("\n")
       .filter(Boolean),
-  // GitHub lists a commit's statuses newest first; one page of 100 covers both services.
   statuses: (commit) =>
     JSON.parse(
       execFileSync(
         "gh",
-        ["api", `repos/{owner}/{repo}/commits/${commit}/statuses?per_page=100`],
+        [
+          "api",
+          `repos/{owner}/{repo}/commits/${commit}/statuses?per_page=${statusesPerPageCoveringBothServices}`,
+        ],
         { encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "pipe"] }
       )
     ),
@@ -244,7 +242,6 @@ export async function runCli(args, io = liveIo) {
     console.log(`RESULT_JSON: ${file}`)
     return exitCodes[result.outcome]
   } catch (error) {
-    // Replaces any earlier result for this commit so nobody reads it as current.
     console.error(`ERROR pr release: ${error.message}`)
     const file = writeResult({
       script: "release",

@@ -1,4 +1,3 @@
-// Pricing frame snapshot. The landing text snapshot stays in pen-snapshot.mjs.
 function sourceOf(sourceFrame) {
   return {
     file: "design/opencv.pen",

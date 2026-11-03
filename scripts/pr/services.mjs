@@ -1,6 +1,3 @@
-// The one list of production services: how Railway names them, where each
-// publishes the commit it serves, and which changed files make it rebuild.
-// `watchPatterns` must equal the ones in .railway/railway.ts; services.test.mjs asserts it.
 export const services = [
   {
     name: "api",

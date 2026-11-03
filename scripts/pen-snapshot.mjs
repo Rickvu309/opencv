@@ -1,26 +1,4 @@
 #!/usr/bin/env node
-// Write a stable JSON snapshot of one frame in a .pen file.
-//   node scripts/pen-snapshot.mjs [--pricing] <pen file> <frame id> <out.json|out.ts> [--assets <dir>] [--root <node id>] [--styles]
-// Sections are the frame's direct children, in order. With --root, they are
-// the direct children of the resolved descendant with that id instead, and
-// source.root records it. Each section's texts
-// are every text node's content in document order: newlines become one space,
-// the result is trimmed, and empty strings are dropped.
-// Nodes with enabled === false are skipped, with their subtree.
-// A ref node expands the referenced component. descendants overrides merge
-// onto the descendant with that id; a children override replaces its children.
-// Each section's fills are the non-solid fill objects in document order
-// (shader, image, mesh_gradient, and anything else that is not a plain color).
-// With --assets, each recorded shader is copied from <pen dir>/<url> into
-// <dir>/<file name>, so the app's shader file is generated from the pen.
-// --styles writes <name>.styles.json beside <name>.snapshot.json for any
-// frame; its marks also count icon nodes, since app screens draw stage and
-// view icons.
-// When out.json is named landing.snapshot.json, the same run also writes
-// landing.styles.json beside it: each text's content and the fields the pen
-// sets, plus inline marks (a non-text child at most 64px on both sides, with
-// children of its own, in a frame that also has a text child). A text that
-// starts a line in the pen gets startsLine: true.
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { pricingSnapshot } from "./pen-pricing-snapshot.mjs"
@@ -202,8 +180,7 @@ function isVerticalFrame(node) {
   return node?.type === "frame" && node.layout === "vertical"
 }
 
-// Horizontal frames omit layout. Line 1 of the statement is one of those rows.
-function isRowFrame(node) {
+function isHorizontalFrameWithOmittedLayout(node) {
   return (
     node?.type === "frame" &&
     (node.layout == null || node.layout === "horizontal")
@@ -216,7 +193,7 @@ function textStartsLine(node, ancestors) {
     return true
   }
   for (let index = ancestors.length - 1; index >= 0; index -= 1) {
-    if (!isRowFrame(ancestors[index])) continue
+    if (!isHorizontalFrameWithOmittedLayout(ancestors[index])) continue
     const rowParent = ancestors[index - 1]
     const firstOfVertical =
       isVerticalFrame(rowParent) &&
@@ -248,8 +225,6 @@ function collectStyleTexts(node, texts, ancestors) {
   for (const child of children) collectStyleTexts(child, texts, next)
 }
 
-// A mark is the small symbol that sits in a line of text: Nav, Statement, Footer.
-// Spacer frames and empty icon boxes have no children, so they are not marks.
 function collectMarks(node, marks, icons) {
   const children = node?.children
   if (!Array.isArray(children)) return

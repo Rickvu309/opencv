@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-// Write the list of first-release frames in a .pen file.
-//   node scripts/pen-release-frames.mjs <pen file> <out.json>
-// A release frame is a top-level node between the "Part 2 First release"
-// and "Part 3 Backlog" markers (by y) whose name is a workflow state
-// ("W2.3 Inbox") or a marketing page ("Landing (Linear layout)").
-// apps/web/src/test/design-frame-coverage.test.ts reads the output.
 import { readFileSync, writeFileSync } from "node:fs"
 
 const [penFile, outFile] = process.argv.slice(2)
@@ -27,17 +21,17 @@ function markerY(prefix) {
   return marker.y
 }
 
-const from = markerY("Part 2 First release")
-const to = markerY("Part 3 Backlog")
-const RELEASE_NAME = /^W\d+\.\d+ |\(Linear layout\)$/
+const firstReleaseStartY = markerY("Part 2 First release")
+const backlogStartY = markerY("Part 3 Backlog")
+const WORKFLOW_STATE_OR_MARKETING_PAGE_NAME = /^W\d+\.\d+ |\(Linear layout\)$/
 
 const frames = top
   .filter(
     (node) =>
       node.enabled !== false &&
-      node.y >= from &&
-      node.y < to &&
-      RELEASE_NAME.test(String(node.name ?? ""))
+      node.y >= firstReleaseStartY &&
+      node.y < backlogStartY &&
+      WORKFLOW_STATE_OR_MARKETING_PAGE_NAME.test(String(node.name ?? ""))
   )
   .map((node) => ({ id: node.id, name: node.name }))
   .sort((left, right) =>

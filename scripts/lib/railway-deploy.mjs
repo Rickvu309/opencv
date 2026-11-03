@@ -29,8 +29,7 @@ export function cli(command, args) {
 
 const deploymentLimit = 20
 
-// Newest first, as the Railway CLI returns them.
-export function listDeployments(service, io) {
+export function listDeploymentsNewestFirst(service, io) {
   return io.cli("railway", [
     "deployment",
     "list",
