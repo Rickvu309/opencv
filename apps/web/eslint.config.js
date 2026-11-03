@@ -131,7 +131,10 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/features/command-palette/command-palette.tsx"],
+    files: [
+      "src/features/paper/paper-slash-menu.tsx",
+      "src/features/command-palette/command-palette.tsx",
+    ],
     rules: {
       "no-restricted-syntax": [
         "error",
