@@ -71,6 +71,7 @@ test("the ocv-tools tests pass while an unrelated merge worktree sits in the tem
       cwd: foreign,
       env,
       encoding: "utf8",
+      timeout: 180_000,
     }
   )
   assert.equal(run.status, 0, run.stdout.slice(-2000) + run.stderr.slice(-1000))
