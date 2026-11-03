@@ -94,6 +94,12 @@ const cv = {
       items: ["TypeScript", "React"],
     },
     { id: "note-1", type: "paragraph", content: [{ text: "Hello" }] },
+    {
+      id: "sec-edu",
+      type: "section",
+      kind: "education",
+      title: "Education",
+    },
   ],
   clashes: [],
 }
@@ -138,6 +144,7 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", asy
   await act(async () => {
     await Promise.resolve()
   })
+  expect(document.body.textContent).toContain("School, degree")
 
   const skills = () =>
     ready.document.find((block) => block.type === "paperSkills")
