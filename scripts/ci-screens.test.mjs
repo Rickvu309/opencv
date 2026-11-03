@@ -1,10 +1,17 @@
 import assert from "node:assert/strict"
+import { spawnSync } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 
-import { judge, parsePenLayout, runProblems } from "./lib/ci-screens.mjs"
+import {
+  judge,
+  outputTail,
+  parsePenLayout,
+  runProblems,
+  VERDICT_TAIL_LINES,
+} from "./lib/ci-screens.mjs"
 
 const skip = (id, expires = "2026-11-16") => ({
   id,
@@ -69,6 +76,45 @@ test("a driver without a verdict fails the job and is never skippable by silence
     today,
   })
   assert.equal(verdict.failed, true)
+})
+
+test("a fake driver that exits without a verdict prints the last lines it wrote", () => {
+  const child = spawnSync(
+    process.execPath,
+    [
+      "-e",
+      `for (let i = 0; i < 40; i++) console.log("stdout " + i)
+console.error("stderr cause: the page reloaded")
+process.exit(2)`,
+    ],
+    { encoding: "utf8", timeout: 10_000 }
+  )
+  assert.equal(child.status, 2)
+  const output = `${child.stdout ?? ""}${child.stderr ?? ""}`
+  const tail = outputTail(output)
+  assert.equal(tail.length, VERDICT_TAIL_LINES)
+  assert.equal(tail.includes("stdout 0"), false)
+  assert.equal(tail.at(-1), "stderr cause: the page reloaded")
+  const verdict = judge({
+    results: [
+      {
+        id: "pen-layout",
+        status: "error",
+        detail: "exit 2",
+        output,
+      },
+    ],
+    skips: [],
+    today,
+  })
+  assert.equal(verdict.failed, true)
+  const text = verdict.lines.join("\n")
+  assert.match(
+    text,
+    /^FAIL pen-layout exit 2: the driver did not produce a verdict/
+  )
+  assert.match(text, /stderr cause: the page reloaded/)
+  assert.equal(text.includes("stdout 0"), false)
 })
 
 test("pen layout output becomes one result per frame", () => {

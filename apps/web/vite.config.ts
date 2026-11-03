@@ -38,6 +38,10 @@ export default defineConfig(({ mode }) => {
           __dirname,
           "../../packages/domain/src/index.ts"
         ),
+        "@workspace/paper-crdt": path.resolve(
+          __dirname,
+          "../../packages/paper-crdt/src/index.ts"
+        ),
       },
     },
     envDir: path.resolve(__dirname, "../.."),

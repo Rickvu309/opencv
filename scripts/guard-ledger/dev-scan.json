@@ -1,0 +1,17 @@
+{
+  "id": "dev-scan",
+  "file": "scripts/dev-scan.test.mjs",
+  "detector": {
+    "module": "scripts/lib/dev-scan.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a1831b78",
+    "path": "apps/web/vite.config.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/vite.config.ts"
+    }
+  }
+}
