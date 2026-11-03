@@ -8,6 +8,11 @@ import { describe, expect, it } from "vitest"
 
 import type { AppDatabase } from "./context.js"
 import { migrationConfig, runMigrations } from "./migrate.js"
+import {
+  journalEntries,
+  journalTags,
+  newestTagByWhen,
+} from "../test/migration-journal.js"
 import { migrationsFolder } from "./paths.js"
 
 const productTables = [
@@ -56,36 +61,39 @@ describe("opencv_app migrations", () => {
       expect(tables).toContain(name)
     }
     expect(tables).toContain("migrations")
-    const journal = JSON.parse(
-      readFileSync(path.join(migrationsFolder, "meta/_journal.json"), "utf8")
-    ) as { entries: { tag: string }[] }
-    expect(journal.entries.map((entry) => entry.tag)).toEqual([
-      "0000_opencv_app",
-      "0001_account_issuer_optional",
-      "0002_chat_reply_supersession",
-      "0003_paper_favorites",
-      "0004_paper_crdt_log",
-      "0005_paper_edit_based_on",
-      "0006_coach_turn_receipts",
-    ])
+    const tags = journalTags()
+    expect(tags.length).toBeGreaterThan(0)
+    expect(tags.map((tag) => tag.slice(0, 4))).toEqual(
+      tags.map((_, index) => String(index).padStart(4, "0"))
+    )
+    const entries = journalEntries()
+    expect(entries.map((entry) => entry.idx)).toEqual(
+      entries.map((_, index) => index)
+    )
+    for (const [index, entry] of entries.entries()) {
+      if (index > 0)
+        expect(entry.when).toBeGreaterThan(entries[index - 1]!.when)
+    }
     const sqlFiles = readdirSync(migrationsFolder).filter((name) =>
       name.endsWith(".sql")
     )
-    expect(sqlFiles).toEqual([
-      "0000_opencv_app.sql",
-      "0001_account_issuer_optional.sql",
-      "0002_chat_reply_supersession.sql",
-      "0003_paper_favorites.sql",
-      "0004_paper_crdt_log.sql",
-      "0005_paper_edit_based_on.sql",
-      "0006_coach_turn_receipts.sql",
-    ])
+    expect(sqlFiles).toEqual(tags.map((tag) => `${tag}.sql`))
     const source = readFileSync(
-      path.join(migrationsFolder, "0000_opencv_app.sql"),
+      path.join(migrationsFolder, `${tags[0]}.sql`),
       "utf8"
     )
     expect(source.includes(legacySchema)).toBe(false)
     await client.close()
+  })
+
+  it("names the newest migration by when, not by journal position", () => {
+    expect(
+      newestTagByWhen([
+        { idx: 0, when: 300, tag: "a_renumbered_late" },
+        { idx: 1, when: 100, tag: "b_first" },
+        { idx: 2, when: 200, tag: "c_second" },
+      ])
+    ).toBe("a_renumbered_late")
   })
 
   it("upgrades existing papers to unfavorited without changing their content", async () => {

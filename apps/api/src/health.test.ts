@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { createApp } from "./app.js"
 import type { AppDatabase } from "./db/context.js"
 import { createMigratedTestDb } from "./test/harness.js"
+import { newestMigrationTag } from "./test/migration-journal.js"
 
 const mail = { resendApiKey: "re_secret_key", authEmailFrom: "hi@opencv.me" }
 
@@ -23,7 +24,7 @@ describe("GET /health/deep", () => {
       sha: "abc1234",
       db: true,
       mail: false,
-      schemaVersion: "0006_coach_turn_receipts",
+      schemaVersion: newestMigrationTag(),
     })
 
     const shallow = await app.request("/health")
@@ -47,7 +48,7 @@ describe("GET /health/deep", () => {
       sha: "abc1234",
       db: true,
       mail: true,
-      schemaVersion: "0006_coach_turn_receipts",
+      schemaVersion: newestMigrationTag(),
     })
     expect(text).not.toContain(mail.resendApiKey)
     expect(text).not.toContain(mail.authEmailFrom)

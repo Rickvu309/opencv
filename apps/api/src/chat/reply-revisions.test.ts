@@ -11,6 +11,7 @@ import * as schema from "../db/schema.js"
 import { createId } from "../id.js"
 import { installRegistry } from "../registry/install.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { journalTag } from "../test/migration-journal.js"
 import { createChat, getChat, insertCoachMessage } from "./store.js"
 
 function deferred() {
@@ -27,12 +28,12 @@ it.each(["Usable answer", ""])(
     const client = new PGlite()
     installRegistry()
     try {
-      for (const name of [
-        "0000_opencv_app.sql",
-        "0001_account_issuer_optional.sql",
+      for (const tag of [
+        journalTag("opencv_app"),
+        journalTag("account_issuer_optional"),
       ]) {
         await client.exec(
-          await readFile(path.join(migrationsFolder, name), "utf8")
+          await readFile(path.join(migrationsFolder, `${tag}.sql`), "utf8")
         )
       }
       const userId = parseUserId("legacy-revisions")
@@ -79,13 +80,19 @@ it.each(["Usable answer", ""])(
       }
       await client.exec(
         await readFile(
-          path.join(migrationsFolder, "0002_chat_reply_supersession.sql"),
+          path.join(
+            migrationsFolder,
+            `${journalTag("chat_reply_supersession")}.sql`
+          ),
           "utf8"
         )
       )
       await client.exec(
         await readFile(
-          path.join(migrationsFolder, "0006_coach_turn_receipts.sql"),
+          path.join(
+            migrationsFolder,
+            `${journalTag("coach_turn_receipts")}.sql`
+          ),
           "utf8"
         )
       )
