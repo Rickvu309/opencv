@@ -174,7 +174,7 @@ describe("paper canvas field CSS (QVE-206)", () => {
     expect(paperCss).toMatch(/currentColor/)
 
     const start = paperCss.indexOf(".paper-canvas-field {")
-    const end = paperCss.indexOf("QVE-208")
+    const end = paperCss.indexOf(".cv-a4-fit {")
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain(".paper-canvas-field:focus")
     expect(chrome).toContain("var(--muted)")
@@ -314,7 +314,7 @@ describe("paper canvas affordance CSS (QVE-207)", () => {
     expect(paperCss).toMatch(/display:\s*none/)
 
     const start = paperCss.indexOf(".paper-canvas-block {")
-    const end = paperCss.indexOf("QVE-208")
+    const end = paperCss.indexOf(".cv-a4-fit {")
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain(".paper-canvas-affordance")
     expect(chrome).toContain("var(--duration-micro)")
@@ -331,7 +331,7 @@ describe("paper café density CSS (QVE-208)", () => {
     expect(paperCss).toMatch(/\[data-paper-toolbar\]/)
     expect(paperCss).toMatch(/\[data-paper-editor\] > header/)
 
-    const start = paperCss.indexOf("QVE-208")
+    const start = paperCss.indexOf(".cv-a4-fit {")
     const end = paperCss.indexOf("@keyframes paper-coach-highlight")
     const cafe = paperCss.slice(start, end)
     expect(cafe).toContain("max-width: 100%")
@@ -448,7 +448,7 @@ describe("empty section next-step CSS (QVE-209)", () => {
   it("stays visible and quiet — not hover-hidden or Coach pills", () => {
     expect(paperCss).toMatch(/\.paper-canvas-next-step/)
     const start = paperCss.indexOf(".paper-canvas-next-step {")
-    const end = paperCss.indexOf("QVE-208")
+    const end = paperCss.indexOf(".cv-a4-fit {")
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain("opacity: 1")
     expect(chrome).not.toMatch(/opacity:\s*0/)
