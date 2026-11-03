@@ -35,7 +35,7 @@ pnpm --filter api test:formal
 ```
 
 - One command, about 15 seconds, runs this check and the Apply scan check (`verify-apply-scan-guard`). Exit 0 means every test passed. `pnpm --filter api test` also runs the file.
-- Expected output: `14 passed | 1 skipped` across the four registry files. The skipped test is the natural race that needs a real server.
+- Expected output: `16 passed | 1 skipped` across the four registry files. The skipped test is the natural race that needs a real server.
 - `FORMAL_SEED=<n>` changes the start-order seed (default 241). Run a few after a change.
 
 Run the same file on a real server before merging any change to a lock, a transaction or a key path:
@@ -50,7 +50,7 @@ FORMAL_DATABASE_URL=postgres://postgres@127.0.0.1:54329/postgres pnpm --filter a
 $B/pg_ctl -D ~/tmp/epg/pgdata stop
 ```
 
-Nothing is added to the repo. The test makes its own database per run and drops it. Expected output there: `15 passed`, and a printed line `transaction order for 4 racing callers: +2 +3 +4 +1 -3 ...` showing the transactions overlapped. If `max open transactions` prints 1 against a real server, the run proved nothing: stop and find out why.
+Nothing is added to the repo. The test makes its own database per run and drops it. Expected output there for P1 to P3: `13 passed`, and a printed line `transaction order for 4 racing callers: +2 +3 +4 +1 -3 ...` showing the transactions overlapped. If `max open transactions` prints 1 against a real server, the run proved nothing: stop and find out why.
 
 ## Tests
 
@@ -123,7 +123,7 @@ P4: after act A and a later act B on the same subject, undoing A is refused with
 
 Check files: `apps/api/src/registry/UndoLater.tla` with `.cfg`, mutant configs and `.tla.json` (P4 model), `apps/api/src/registry/registry.undo-later.formal.test.ts` (P4), `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 
-Sync commit: `a8bf0fd63246`. Confirm the full hash with `git rev-parse origin/main` when moving it. The first three checks (P1 to P3) were last confirmed at `b618ed9f358b23a280d7c00308aca64474ec36ed`; P4 at the commit above.
+Sync commit: `9ecbcc7cd9bb`. Confirm the full hash with `git rev-parse origin/main` when moving it. P1 to P4 were confirmed on PGlite at this commit, and P1 to P3 on a real server. P4's four tests fail on a real server at this commit with `This card moved again, so Undo was skipped`, a finding on trunk.
 
 ## What is not covered
 
