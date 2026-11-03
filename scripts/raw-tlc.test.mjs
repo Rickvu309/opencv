@@ -19,6 +19,7 @@ const ALLOWED = new Set([
   "scripts/tlc.mjs",
   "scripts/tla-specs.test.mjs",
   "scripts/raw-tlc.test.mjs",
+  ".github/workflows/ci.yml",
 ])
 
 const MISTAKE =
@@ -53,6 +54,19 @@ test("the raw java commands the sign-in skill once held are caught", () => {
   assert.deepEqual(
     detectRawTlc(SIGN_IN_SKILL_AT_29D5D586).map((hit) => hit.line),
     [2, 3]
+  )
+})
+
+test("the checks workflow pins the jar and launches models only through scripts/tlc.mjs", () => {
+  const workflow = readFileSync(
+    path.join(root, ".github/workflows/ci.yml"),
+    "utf8"
+  )
+  assert.match(workflow, /tla2tools\.jar/)
+  assert.match(workflow, /node scripts\/tlc\.mjs --all/)
+  assert.equal(
+    detectRawTlc(workflow).some((hit) => /tlc2\.TLC/.test(hit.text)),
+    false
   )
 })
 

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
-import { mkdtempSync, readFileSync, rmSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { detect } from "./ci-first-errors.mjs"
+import { tempDir } from "./lib/temp-dir.mjs"
 import {
   detect as formalDetect,
   modelChanges,
@@ -155,6 +155,7 @@ test("the formal model job pins Temurin 21 and tla2tools 1.7.4", () => {
   assert.match(job, /JAVA_HOME: \$\{\{ steps\.java\.outputs\.path \}\}/)
   assert.match(job, /TLA2TOOLS: \$\{\{ github\.workspace \}\}.*tla2tools\.jar/)
   assert.match(job, /node scripts\/tlc\.mjs --all/)
+  assert.doesNotMatch(job, /tlc2\.TLC/)
   assert.match(job, /node scripts\/lib\/ci-workflow\.mjs gate/)
   assert.match(job, /steps\.gate\.outputs\.run == 'true'/)
   assert.deepEqual(formalDetect(text, ".github/workflows/ci.yml"), [])
@@ -211,19 +212,14 @@ test("a model file or a file named in a spec map runs the models", () => {
   )
 })
 
-test("the merge queue always runs the model check", () => {
-  const dir = mkdtempSync(join(tmpdir(), "formal-gate-"))
-  const out = join(dir, "output")
-  try {
-    const run = bash(runBody(section("formal-tla")), {
-      GITHUB_EVENT_NAME: "merge_group",
-      GITHUB_OUTPUT: out,
-    })
-    assert.equal(run.status, 0, run.stderr)
-    assert.equal(readFileSync(out, "utf8").trim(), "run=true")
-  } finally {
-    rmSync(dir, { recursive: true })
-  }
+test("the merge queue always runs the model check", (t) => {
+  const out = join(tempDir(t, "formal-gate-"), "output")
+  const run = bash(runBody(section("formal-tla")), {
+    GITHUB_EVENT_NAME: "merge_group",
+    GITHUB_OUTPUT: out,
+  })
+  assert.equal(run.status, 0, run.stderr)
+  assert.equal(readFileSync(out, "utf8").trim(), "run=true")
 })
 
 test("policy skips an event with no pull request and fails a pull request event with no number", () => {
