@@ -4,9 +4,12 @@ import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
 import { recorded, json, gh } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { cleanup } from "../work.mjs"
+import { conflictsOf, mergeResultFacts } from "./merged-tree.mjs"
+import { billingOfPullRun, rerunFailed, steplessRun } from "./infra-rerun.mjs"
 
 const WAIT_STEP_SECONDS = 15
 const WAIT_LIMIT_SECONDS = 45 * 60
+const RERUN_HOLD_SECONDS = 60
 
 function closeIssues(ctx, pull, n) {
   const issues = new Set([
@@ -164,7 +167,7 @@ function failedCheck(ctx, repo, head) {
 
 // The wait ended without a merge: the queue rows name why. The failed check's
 // annotations are read only for a ci failure, so the agent sees what ci saw.
-function failWait(ctx, repo, n, verdict, snapshot) {
+function failWait(ctx, repo, n, verdict, snapshot, extra = {}) {
   const failed =
     verdict.kind === "CI_FAILED" ? failedCheck(ctx, repo, snapshot.head) : null
   const notes = (failed?.notes ?? [])
@@ -176,6 +179,7 @@ function failWait(ctx, repo, n, verdict, snapshot) {
       n,
       notes,
       run: failed?.run,
+      ...extra,
       limitMinutes: WAIT_LIMIT_SECONDS / 60,
     },
     snapshot,
@@ -198,13 +202,65 @@ function newestCi(ctx, repo, head) {
     : null
 }
 
-function waitForMerge(ctx, n, startHead, repo) {
+function leftQueueExtras(ctx, repo, n, verdict, snapshot) {
+  if (verdict.kind !== "LEFT_QUEUE") return {}
+  if (/^merge_conflict$/i.test(String(verdict.reason)))
+    return { conflicts: conflictsOf(ctx, n, snapshot.head) }
+  return {}
+}
+
+function settleInfra(ctx, repo, n, verdict, snapshot, state) {
+  const failedChecks =
+    verdict.kind === "LEFT_QUEUE" && /^failed_checks$/i.test(verdict.reason)
+  if (verdict.kind !== "CI_FAILED" && !failedChecks) return { verdict }
+  const run = steplessRun(ctx, repo, verdict, n, snapshot.head)
+  if (!run) return { verdict }
+  if (run.billing)
+    return {
+      verdict: { kind: "BILLING_BLOCKED", runId: run.id, message: run.billing },
+    }
+  if (verdict.kind === "CI_FAILED" && !state.reran) {
+    state.reran = run.id
+    state.lines.push(rerunFailed(ctx, run))
+    return { verdict: null, hold: true }
+  }
+  return { verdict, extra: { infra: run.id } }
+}
+
+function enqueue(ctx, n, head) {
+  gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
+}
+
+function requeueAfterRerun(ctx, n, startHead, snapshot, state) {
+  if (!state.reran || state.requeued || snapshot.inQueue) return
+  if (snapshot.ci?.status !== "completed") return
+  if (snapshot.ci.conclusion !== "success") return
+  state.requeued = true
+  enqueue(ctx, n, startHead)
+  state.lines.push(
+    `The rerun of run ${state.reran} passed, so PR #${n} was queued again at ${startHead}.`
+  )
+}
+
+function waitForMerge(ctx, n, startHead, repo, state) {
+  let holdUntil = 0
   for (let waited = 0; ; waited += WAIT_STEP_SECONDS) {
     const snapshot = queueSnapshot(ctx, repo, n, waited)
-    const verdict = classify(snapshot, true, startHead)
+    let verdict = classify(snapshot, true, startHead)
     if (verdict?.kind === "MERGED")
       return json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
-    if (verdict) failWait(ctx, repo, n, verdict, snapshot)
+    if (verdict?.kind === "CI_FAILED" && waited < holdUntil) verdict = null
+    if (!verdict && waited >= holdUntil)
+      requeueAfterRerun(ctx, n, startHead, snapshot, state)
+    if (verdict) {
+      const settled = settleInfra(ctx, repo, n, verdict, snapshot, state)
+      if (settled.hold) holdUntil = waited + RERUN_HOLD_SECONDS
+      if (settled.verdict)
+        failWait(ctx, repo, n, settled.verdict, snapshot, {
+          ...leftQueueExtras(ctx, repo, n, settled.verdict, snapshot),
+          ...settled.extra,
+        })
+    }
     ctx.pause(WAIT_STEP_SECONDS)
   }
 }
@@ -238,11 +294,23 @@ export function merge(ctx, n, { wait = false } = {}) {
         ".nameWithOwner"
       )
       facts.ci = newestCi(ctx, repo, head)
+      const failedCi =
+        facts.ci?.status === "completed" &&
+        facts.ci.conclusion &&
+        facts.ci.conclusion !== "success"
+      facts.billing = failedCi ? billingOfPullRun(ctx, repo, head) : null
     }
     const ready = decide("merge", facts)
     if (!ready.ok) throw refusalError(ready.refusals[0])
+    const state = { lines: [], reran: null, requeued: false }
+    if (open) {
+      const mergeResult = mergeResultFacts(ctx, n, head)
+      state.lines.push(...mergeResult.lines)
+      const joined = decide("merge-result", { mergeResult })
+      if (!joined.ok) throw refusalError(joined.refusals[0])
+    }
     if (pull.state !== "MERGED") {
-      gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
+      enqueue(ctx, n, head)
       pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
       if (pull.state !== "MERGED" || !pull.mergeCommit?.oid) {
         if (!wait)
@@ -250,15 +318,17 @@ export function merge(ctx, n, { wait = false } = {}) {
             id: n,
             status: "pending",
             lines: [
+              ...state.lines,
               `Queued PR #${n} at ${head}. Issue closure waits for the merge.`,
             ],
             next: `Run in the background and end the turn until it exits: scripts/ocv-tools.mjs merge ${n} --wait`,
           }
-        pull = waitForMerge(ctx, n, head, repo)
+        pull = waitForMerge(ctx, n, head, repo, state)
       }
     }
     closeIssues(ctx, pull, Number(issue))
     const lines = [
+      ...state.lines,
       `Merged PR #${n} as ${pull.mergeCommit?.oid}. Linked issues are closed.`,
     ]
     if (wait) {

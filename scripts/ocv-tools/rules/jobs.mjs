@@ -28,6 +28,8 @@ const CAUGHT_BY =
 const INTRODUCED_BY =
   /^\**Introduced by:\**\s*(?:[0-9a-f]{7,40}|#\d+|unknown)\s*$/m
 const FINISH_FIX = "Fix the cause, then run scripts/ocv-tools.mjs finish again."
+const REBASE =
+  "git fetch origin && git rebase origin/main && git push --force-with-lease"
 const MERGE_FIX =
   "Wait for a green ci on the PR head, then run scripts/ocv-tools.mjs merge <pr#>."
 
@@ -135,7 +137,7 @@ const staleCheck = ({ snapshot }) =>
     ? null
     : "The saved work changed during push. Finish again."
 
-const prNo = (facts) => facts.pull?.n ?? "<pr#>"
+const prNo = (facts) => facts.pull?.n ?? facts.queue?.n ?? "<pr#>"
 
 const draft = (facts) =>
   facts.pull.isDraft ? `PR #${prNo(facts)} is a draft.` : null
@@ -169,6 +171,19 @@ function ciRequired(facts) {
   return `The ci check on head ${pull.head} is ${ci?.conclusion ?? "pending or missing"}, not success.`
 }
 
+const billingOf = (facts) =>
+  facts.billing ??
+  (facts.queue?.kind === "BILLING_BLOCKED" ? facts.queue : null)
+
+const billingBlocked = (facts) => {
+  const found = billingOf(facts)
+  if (!found) return null
+  return `CI cannot run on PR #${prNo(facts)}: GitHub did not start run ${found.runId} because the account's payments failed or its Actions spending limit is used up. A rerun or a new merge will not help.`
+}
+
+const billingFix = (facts) =>
+  `Stop and tell the owner: open Billing & plans in the Rickvu309 organization settings, fix the failed payment or raise the Actions spending limit. After that, run scripts/ocv-tools.mjs merge ${prNo(facts)} --wait once`
+
 const queueKind = (kind, message) => (facts) =>
   facts.queue.kind === kind ? message(facts.queue, facts) : null
 
@@ -177,6 +192,44 @@ const failedRun = (queue) =>
 
 const failedNotes = (queue) =>
   queue.notes?.length ? `\n${queue.notes.join("\n")}` : ""
+
+const FILES_SHOWN = 8
+
+const fileList = (files) =>
+  files.length > FILES_SHOWN
+    ? `${files.slice(0, FILES_SHOWN).join(", ")} and ${files.length - FILES_SHOWN} more`
+    : files.join(", ")
+
+const mergeConflict = ({ mergeResult }) =>
+  mergeResult.conflicts?.length
+    ? `PR #${mergeResult.n} conflicts with origin/main in ${fileList(mergeResult.conflicts)}.`
+    : null
+
+const mergedTreeFails = ({ mergeResult }) =>
+  mergeResult.failed?.length
+    ? `PR #${mergeResult.n} merged with origin/main fails the quick guards: ${fileList(mergeResult.failed)}.`
+    : null
+
+const rebaseThenMerge = ({ mergeResult }) =>
+  `From the PR worktree run: ${REBASE}; then fix what is named and run scripts/ocv-tools.mjs merge ${mergeResult?.n ?? "<pr#>"}`
+
+const leftQueueMessage = (queue) => {
+  const where = `PR #${queue.n} left the merge queue${queue.at ? ` at ${queue.at}` : ""}, reason ${queue.reason}.`
+  if (queue.conflicts?.length)
+    return `${where} It conflicts with origin/main in ${fileList(queue.conflicts)}.`
+  if (queue.infra)
+    return `${where} Infra: run ${queue.infra} ran no step in any job.`
+  return where
+}
+
+const leftQueueFix = (facts) => {
+  const n = facts.queue?.n ?? "<pr#>"
+  if (facts.queue?.conflicts?.length)
+    return `From the PR worktree run: ${REBASE}; resolve ${fileList(facts.queue.conflicts)}, then run scripts/ocv-tools.mjs merge ${n} --wait`
+  if (facts.queue?.infra)
+    return `Run scripts/ocv-tools.mjs merge ${n} --wait once to enqueue it again; the failure was the runner, not the change. If it fails the same way again, stop and tell the owner`
+  return `Run: gh run list --branch 'gh-readonly-queue/main/pr-${n}-*' --limit 1`
+}
 
 const waitAgain = (facts) =>
   `Run: scripts/ocv-tools.mjs merge ${facts.queue?.n ?? "<pr#>"} --wait`
@@ -258,6 +311,15 @@ export const jobRows = [
     fix: () => "Open a new PR with scripts/ocv-tools.mjs finish.",
   }),
   row({
+    id: "BILLING_BLOCKED",
+    section: "6",
+    says: "CI must have been able to start; a billing block needs the owner.",
+    at: ["merge", "queue"],
+    check: billingBlocked,
+    fix: billingFix,
+    exit: "HUMAN",
+  }),
+  row({
     id: "CI_REQUIRED",
     section: "6",
     says: "The newest ci check must succeed on the PR head.",
@@ -270,18 +332,31 @@ export const jobRows = [
         : MERGE_FIX,
   }),
   row({
+    id: "MERGE_CONFLICT",
+    section: "6",
+    says: "The PR head must merge into origin/main without a conflict.",
+    at: ["merge-result"],
+    needs: ["mergeResult"],
+    check: mergeConflict,
+    fix: rebaseThenMerge,
+  }),
+  row({
+    id: "MERGED_TREE_FAILS",
+    section: "6",
+    says: "The PR merged with origin/main must pass the quick guards.",
+    at: ["merge-result"],
+    needs: ["mergeResult"],
+    check: mergedTreeFails,
+    fix: rebaseThenMerge,
+  }),
+  row({
     id: "LEFT_QUEUE",
     section: "6",
     says: "The PR must stay in the queue until it merges.",
     at: ["queue"],
     needs: ["queue"],
-    check: queueKind(
-      "LEFT_QUEUE",
-      (queue) =>
-        `PR #${queue.n} left the merge queue${queue.at ? ` at ${queue.at}` : ""}, reason ${queue.reason}.`
-    ),
-    fix: (facts) =>
-      `Run: gh run list --branch 'gh-readonly-queue/main/pr-${facts.queue?.n ?? "<pr#>"}-*' --limit 1`,
+    check: queueKind("LEFT_QUEUE", leftQueueMessage),
+    fix: leftQueueFix,
   }),
   row({
     id: "QUEUE_TIMEOUT",

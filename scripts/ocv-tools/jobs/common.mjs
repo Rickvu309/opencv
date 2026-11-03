@@ -1,4 +1,4 @@
-import { Refused, writeResult } from "../result.mjs"
+import { EXIT, Refused, writeResult } from "../result.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 
 export function run(ctx, cmd, args, options = {}) {
@@ -67,7 +67,12 @@ export function recorded(ctx, script, action) {
     writeResult(ctx.env, {
       script,
       id: ctx.ports.git.here(ctx.cwd).branch,
-      status: error instanceof Refused ? "fail" : "error",
+      status:
+        error.exit === EXIT.human
+          ? "human"
+          : error instanceof Refused
+            ? "fail"
+            : "error",
       cause: error.cause ?? "hygiene",
       detail: error.message,
       next: error.fix,

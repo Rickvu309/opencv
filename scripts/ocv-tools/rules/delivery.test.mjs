@@ -74,6 +74,16 @@ const CASES = {
     { pull, ci },
     "The ci check on head h1 is failure, not success.",
   ],
+  MERGE_CONFLICT: [
+    { mergeResult: { n: 7, conflicts: ["a.ts", "b.ts"] } },
+    { mergeResult: { n: 7, conflicts: [] } },
+    "PR #7 conflicts with origin/main in a.ts, b.ts.",
+  ],
+  MERGED_TREE_FAILS: [
+    { mergeResult: { n: 7, failed: ["checks doc is stale"] } },
+    { mergeResult: { n: 7, failed: [] } },
+    "PR #7 merged with origin/main fails the quick guards: checks doc is stale.",
+  ],
   LEFT_QUEUE: [
     queue({ kind: "LEFT_QUEUE", reason: "CI_FAILURE", at: "noon" }),
     queue({ kind: "QUEUE_TIMEOUT" }),
@@ -88,6 +98,11 @@ const CASES = {
     queue({ kind: "HEAD_MOVED", from: "h1", to: "h2" }),
     queue({ kind: "LEFT_QUEUE" }),
     "PR #7 head moved from h1 to h2.",
+  ],
+  BILLING_BLOCKED: [
+    queue({ kind: "BILLING_BLOCKED", runId: 5 }),
+    queue({ kind: "LEFT_QUEUE" }),
+    "CI cannot run on PR #7: GitHub did not start run 5 because the account's payments failed or its Actions spending limit is used up. A rerun or a new merge will not help.",
   ],
   CI_FAILED: [
     queue({

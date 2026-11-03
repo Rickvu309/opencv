@@ -52,6 +52,13 @@ export const LEDGER = Object.freeze([
       "added in #942 with the comment strip; the codemod kept install comments before, and its fresh-file fixture fires on that",
   },
   {
+    id: "merged-tree",
+    file: "scripts/ocv-tools/jobs/merged-tree.test.mjs",
+    historic: null,
+    reason:
+      "the earlier mistakes were queue builds of #912 and #901 that failed after a green PR run; their merge-group commits are not reachable from main, so the test rebuilds the same shape (main gains a guard the head breaks) in a throwaway git repo",
+  },
+  {
     id: "pointer-capture",
     file: "scripts/pointer-capture.test.mjs",
     detector: {

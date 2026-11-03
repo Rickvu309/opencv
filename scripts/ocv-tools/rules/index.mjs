@@ -2,7 +2,7 @@
 // workspace, claim, table, jobs) and only this module imports them. Every row
 // has `at`, the moments it runs at (judgments run nowhere); decide(moment,
 // facts) is the only way a job raises a refusal.
-import { Refused } from "../result.mjs"
+import { EXIT, Refused } from "../result.mjs"
 import { jobRows } from "./jobs.mjs"
 import { issueRows, claimRows } from "./claim.mjs"
 import { pullRows } from "./pull.mjs"
@@ -42,6 +42,7 @@ export const MOMENTS = Object.freeze([
   "finish-pushed",
   "pr",
   "merge",
+  "merge-result",
   "queue",
 ])
 
@@ -71,6 +72,7 @@ export const RUNNERS = Object.freeze({
   "finish-pushed": ["scripts/ocv-tools/jobs/finish.mjs"],
   pr: ["scripts/ocv-tools/jobs/policy.mjs", "scripts/ocv-tools/jobs/merge.mjs"],
   merge: ["scripts/ocv-tools/jobs/merge.mjs"],
+  "merge-result": ["scripts/ocv-tools/jobs/merge.mjs"],
   queue: ["scripts/ocv-tools/jobs/merge.mjs"],
 })
 
@@ -149,6 +151,7 @@ export function evaluate(id, facts) {
 
 export function refusalError(refusal) {
   const error = new Refused(refusal.id, refusal.message, refusal.fix)
+  if (refusal.exit === "HUMAN") error.exit = EXIT.human
   if (refusal.cause) error.cause = refusal.cause
   return error
 }
