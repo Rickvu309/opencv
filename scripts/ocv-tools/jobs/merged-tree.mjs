@@ -1,6 +1,6 @@
 import { homedir } from "node:os"
 import { join } from "node:path"
-import { FAST_GUARDS, GIT_ENV } from "./push-checks.mjs"
+import { COLOR_ENV, FAST_GUARDS, GIT_ENV } from "./push-checks.mjs"
 import { run } from "./common.mjs"
 
 const OID = /^[0-9a-f]{40,64}$/
@@ -190,7 +190,10 @@ export function guardsOnMergedTree(ctx, n, head, tree) {
       [
         GUARD_TIMEOUT_SECONDS,
         "env",
-        ...[...GIT_ENV, "NODE_TEST_CONTEXT"].flatMap((name) => ["-u", name]),
+        ...[...GIT_ENV, "NODE_TEST_CONTEXT", ...COLOR_ENV].flatMap((name) => [
+          "-u",
+          name,
+        ]),
         "node",
         "--test",
         "--test-concurrency=3",

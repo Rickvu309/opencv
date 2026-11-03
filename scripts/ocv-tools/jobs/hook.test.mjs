@@ -279,7 +279,12 @@ test("pre-push runs only the quick checks and never the full suite", () => {
   const [comments, guards] = nodeCalls(w)
   assert.deepEqual(comments.args, ["scripts/no-comments.mjs"])
   assert.equal(guards.cmd, "env")
-  for (const name of ["GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"])
+  for (const name of [
+    "GIT_DIR",
+    "GIT_INDEX_FILE",
+    "GIT_WORK_TREE",
+    "FORCE_COLOR",
+  ])
     assert.ok(guards.args.join(" ").includes(`-u ${name} `), name)
   assert.ok(guards.args.includes("--test"))
   assert.ok(guards.args.includes("scripts/doc-paths.test.mjs"))

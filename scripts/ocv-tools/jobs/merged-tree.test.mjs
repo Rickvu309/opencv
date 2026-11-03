@@ -100,6 +100,14 @@ test("a merged tree that fails the guards is refused and its worktree is removed
   assert.ok(verbs.includes("add"))
 })
 
+test("the guard run drops a forced color from the shell", () => {
+  const f = fixture({ behind: 1 })
+  f.call("merge", "91")
+  const args = f.effects("timeout")[0].args
+  assert.ok(args.includes("FORCE_COLOR"))
+  assert.equal(args[args.indexOf("FORCE_COLOR") - 1], "-u")
+})
+
 test("a merged tree that passes the guards enqueues and says so", () => {
   const f = fixture({ behind: 1 })
   const r = f.call("merge", "91")
