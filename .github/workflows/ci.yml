@@ -97,6 +97,30 @@ jobs:
       - if: matrix.shard == 1
         run: pnpm exec turbo run test $TURBO_SCOPE --filter=@workspace/domain
 
+  formal-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      FORMAL_DATABASE_URL: postgres://postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run test:formal $TURBO_SCOPE --filter=api
+
   test-web:
     strategy:
       fail-fast: false
@@ -180,7 +204,18 @@ jobs:
           node scripts/ocv-tools.mjs policy "$n"
 
   ci:
-    needs: [guards, lint, typecheck, build, test-api, test-web, screens, policy]
+    needs:
+      [
+        guards,
+        lint,
+        typecheck,
+        build,
+        test-api,
+        formal-postgres,
+        test-web,
+        screens,
+        policy,
+      ]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
