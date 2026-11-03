@@ -8,7 +8,8 @@ const LOWEST_USER_PORT = 1024
 const HIGHEST_PORT = 65535
 const NEARBY_LINES = 2
 
-const NAMES_A_PORT = /(?<![A-Za-z])[Pp]orts?(?![a-z])|PORT|[a-z]Ports?\b/
+const NAMES_A_PORT =
+  /(?<![A-Za-z])[Pp]orts?(?![a-z])|(?<![A-Za-z])PORTS?(?![A-Za-z])|[a-z]Ports?\b/
 const COMPARED_LITERALS = [
   /(?:(?<![=<>-])[<>]=?|-(?:ge|gt|le|lt)\s)\s*\(?\s*(\d{4,5})\b/g,
   /\b(\d{4,5})\s*(?:[<>](?![>=])|[<>]=)/g,
@@ -59,4 +60,41 @@ export function detect(text, path = "") {
   if (path === PORT_SOURCE) return []
   const lines = String(text).split("\n")
   return path.endsWith(".md") ? docHits(lines) : codeHits(lines)
+}
+
+export const PENDING_FILE = "scripts/local-port-range.pending.json"
+
+export function pinDrift(entries, countHits) {
+  return entries.flatMap((entry) => {
+    const now = countHits(entry.file)
+    if (now > entry.hits)
+      return [
+        `${entry.file} has ${now} port range hits, its pending entry allows ${entry.hits}. Fix the new ones: ${FIX}`,
+      ]
+    if (now < entry.hits)
+      return [
+        `${entry.file} has ${now} port range hits, down from ${entry.hits}. Lower its pin to ${now}, or delete the entry at 0.`,
+      ]
+    return []
+  })
+}
+
+export function pendingGrowth(current, previous) {
+  const before = new Map(previous.map((entry) => [entry.file, entry]))
+  return current.flatMap((entry) => {
+    const old = before.get(entry.file)
+    if (!old)
+      return [
+        `${entry.file} is a new pending entry. The pending list only shrinks.`,
+      ]
+    if (entry.hits > old.hits)
+      return [
+        `${entry.file} pins ${entry.hits} hits, up from ${old.hits}. The pending list only shrinks.`,
+      ]
+    if (entry.expires > old.expires || entry.issue !== old.issue)
+      return [
+        `${entry.file} moved its pending entry from ${old.issue} ${old.expires} to ${entry.issue} ${entry.expires}. The pending list only shrinks.`,
+      ]
+    return []
+  })
 }

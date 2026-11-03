@@ -4,7 +4,14 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
-import { FIX, PORT_SOURCE, detect } from "./lib/local-port-range.mjs"
+import {
+  FIX,
+  PENDING_FILE,
+  PORT_SOURCE,
+  detect,
+  pendingGrowth,
+  pinDrift,
+} from "./lib/local-port-range.mjs"
 import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -23,16 +30,9 @@ const SCANNED_ROOTS = [
 const SCANNED_FILE = /\.(?:[cm]?[jt]sx?|sh|md)$/
 const HOLDS_MISTAKE_FIXTURES = ["scripts/local-port-range.test.mjs"]
 
-const PENDING = [
-  ".claude/skills/verify-app-ui/SKILL.md",
-  ".claude/skills/verify-app-ui/apply-pen.md",
-  ".claude/skills/verify-app-ui/scripts/lib/stack.mjs",
-  ".claude/skills/verify-app-ui/scripts/verify-app-ui.mjs",
-  ".claude/skills/verify-app-ui/scripts/verify-auth-code.mjs",
-  ".claude/skills/verify-app-ui/scripts/verify-pen-layout.mjs",
-  "docs/agents/design-parity.md",
-  "scripts/ocv-tools/worktree.mjs",
-].map((file) => ({ file, issue: "#1002", expires: "2026-11-24" }))
+const PENDING_ISSUE = "#1002"
+const PENDING_LAST_DAY = "2026-11-24"
+const PENDING = JSON.parse(readFileSync(path.join(root, PENDING_FILE), "utf8"))
 
 const MISTAKES = [
   [
@@ -44,6 +44,8 @@ const MISTAKES = [
   ["launch.sh", '[ "$PORT" -ge 4450 ] || exit 2'],
   ["verify.mjs", 'throw new Error("PORT must be 4450 to 4458")'],
   ["SKILL.md", "Run `PORT=4450 pnpm --filter web verify:pen-layout`."],
+  ["verify.mjs", "const API_PORT = env()\nif (API_PORT >= 4450) exit()"],
+  ["verify.mjs", "const WEB_PORTS = []\nif (count > 2000) x"],
 ]
 const CLEAN = [
   [
@@ -59,6 +61,12 @@ const CLEAN = [
     "Run `PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:pen-layout`.",
   ],
   [PORT_SOURCE, "const valid = parsed > 0 && parsed <= 65535 && port"],
+  ["verify.mjs", 'const REPORT_DIR = "x"\nif (count > 2000) x'],
+  ["verify.mjs", "const EXPORT_LIMIT = 5\nif (rows.length > 2000) x"],
+  ["verify.mjs", "const IMPORT_BATCH = 1\nif (count > 2000) x"],
+  ["verify.mjs", "const SUPPORT = true\nif (count > 2000) x"],
+  ["verify.mjs", "export function f() {}\nif (count > 2000) x"],
+  ["verify.mjs", "const report = load()\nif (count > 2000) x"],
 ]
 
 const git = (args) =>
@@ -81,8 +89,8 @@ const scannedFiles = () =>
     .filter((file) => SCANNED_FILE.test(file))
     .filter((file) => !HOLDS_MISTAKE_FIXTURES.includes(file))
 
-const offends = (file) =>
-  detect(readFileSync(path.join(root, file), "utf8"), file).length > 0
+const hitCount = (file) =>
+  detect(readFileSync(path.join(root, file), "utf8"), file).length
 
 test("a literal port range or fixed verifier port is refused", () => {
   for (const [file, text] of MISTAKES)
@@ -103,14 +111,46 @@ test("every port check reads the shared range and no tool keeps its own", () => 
   assert.deepEqual(offenders, [], `${FIX}\n${offenders.join("\n")}`)
 })
 
-test("every pending entry is unexpired and still needs its entry", () => {
+test("every pending entry is unexpired and pins its exact hit count", () => {
   assert.equal(expiredMessage(expiredPending(PENDING)), "")
-  const stale = PENDING.filter((entry) => !offends(entry.file))
+  for (const entry of PENDING) {
+    assert.equal(entry.issue, PENDING_ISSUE, entry.file)
+    assert.ok(entry.expires <= PENDING_LAST_DAY, entry.file)
+    assert.ok(Number.isInteger(entry.hits) && entry.hits > 0, entry.file)
+  }
+  assert.deepEqual(pinDrift(PENDING, hitCount), [])
+})
+
+test("a pending file that gains or loses a hit fails its pin", () => {
+  const pinned = [{ file: "a.mjs", hits: 2 }]
+  assert.match(pinDrift(pinned, () => 3).join(), /allows 2/)
+  assert.match(pinDrift(pinned, () => 1).join(), /Lower its pin to 1/)
   assert.deepEqual(
-    stale.map((entry) => entry.file),
-    [],
-    "these files no longer carry their own port range; delete their PENDING entries"
+    pinDrift(pinned, () => 2),
+    []
   )
+})
+
+test("the pending list only shrinks", (t) => {
+  const old = { file: "a.mjs", hits: 2, issue: "#1002", expires: "2026-11-24" }
+  assert.deepEqual(pendingGrowth([{ ...old, hits: 1 }], [old]), [])
+  assert.deepEqual(pendingGrowth([], [old]), [])
+  assert.match(
+    pendingGrowth([old, { ...old, file: "b.mjs" }], [old]).join(),
+    /b.mjs is a new pending entry/
+  )
+  assert.match(pendingGrowth([{ ...old, hits: 3 }], [old]).join(), /up from 2/)
+  assert.match(
+    pendingGrowth([{ ...old, expires: "2026-12-01" }], [old]).join(),
+    /only shrinks/
+  )
+  let onMain
+  try {
+    onMain = JSON.parse(git(["show", `origin/main:${PENDING_FILE}`]))
+  } catch {
+    return t.skip(`${PENDING_FILE} is not on origin/main yet`)
+  }
+  assert.deepEqual(pendingGrowth(PENDING, onMain), [])
 })
 
 test("the allocator on main before the shared range is caught", (t) => {
