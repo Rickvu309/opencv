@@ -6,7 +6,9 @@ import { EditorState } from "prosemirror-state"
 import { ySyncPluginKey } from "y-prosemirror"
 import { expect, it } from "vitest"
 
+import { addedBlockType, cvFormatHidden } from "./cv-keys.ts"
 import { coerceCvPaste, cvRulesPlugin } from "./cv-rules.ts"
+import { filterCvSlash } from "./cv-slash.ts"
 
 const editor = BlockNoteEditor.create({ schema: paperSchema })
 
@@ -145,4 +147,112 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
     .insert(before.pos, dragging.node)
   moved = moved.apply(tr)
   expect(ids(moved.doc)).toEqual(["header", "s1", "s2", "e2", "e1"])
+  let selected = ""
+  moved.doc.nodesBetween(moved.selection.from, moved.selection.to, (node) => {
+    if (node.type.name === "paperSection") selected = "paperSection"
+  })
+  expect(selected).toBe("paperSection")
+
+  const down = relocate(
+    EditorState.create({
+      schema: editor.pmSchema,
+      doc: docOf([header, section, experience, later, school]),
+      plugins: [cvRulesPlugin],
+    }),
+    "e1",
+    "e2"
+  )
+  expect(ids(down.doc)).toEqual(["header", "s1", "s2", "e1", "e2"])
+  const up = relocate(
+    EditorState.create({
+      schema: editor.pmSchema,
+      doc: docOf([header, section, experience, later, school]),
+      plugins: [cvRulesPlugin],
+    }),
+    "e2",
+    "s2"
+  )
+  expect(ids(up.doc)).toEqual(["header", "s1", "e1", "e2", "s2"])
+
+  const nested = (depth: number): unknown =>
+    depth <= 1 ? item("leaf") : item("nest", [nested(depth - 1)])
+  const entry = (depth: number) => [
+    header,
+    section,
+    { ...experience, children: [nested(depth)] },
+  ]
+  expect(filter(entry(2), entry(3))).toBe(true)
+  expect(filter(entry(3), entry(4))).toBe(false)
+
+  const job = docOf([
+    {
+      id: "job",
+      type: "paperExperience",
+      props: { role: "Engineer", company: "Acme", period: "", location: "" },
+    },
+  ])
+  const held = coerceCvPaste(new Slice(job.content, 0, 0), 1, "list")
+  const heldText = textIn(held, "bulletListItem").text
+  expect(heldText).toContain("Engineer")
+  expect(heldText).toContain("Acme")
+
+  let skills = EditorState.create({
+    schema: editor.pmSchema,
+    doc: docOf([
+      header,
+      {
+        id: "skills",
+        type: "paperSkills",
+        props: { label: "Tools" },
+        children: [{ id: "a", type: "paperSkillItem", content: "SQLExcel" }],
+      },
+    ]),
+    plugins: [cvRulesPlugin],
+  })
+  let textPos = -1
+  skills.doc.descendants((node, pos) => {
+    if (node.isText && node.text?.includes("SQLExcel")) textPos = pos
+  })
+  expect(textPos).toBeGreaterThan(0)
+  skills = skills.apply(skills.tr.insertText(",", textPos + 3))
+  const labels: string[] = []
+  skills.doc.descendants((node) => {
+    if (node.type.name === "paperSkillItem") labels.push(node.textContent)
+  })
+  expect(labels).toEqual(["SQL", "Excel"])
+
+  expect(
+    filterCvSlash(
+      [{ title: "Experience" }, { title: "Skills" }, { title: "Summary" }],
+      "exp"
+    ).map((item) => item.title)
+  ).toEqual(["Experience"])
+  expect(
+    filterCvSlash(
+      [{ title: "Experience" }, { title: "Skills" }, { title: "Summary" }],
+      "s"
+    ).map((item) => item.title)
+  ).not.toContain("Experience")
+  expect(addedBlockType("bulletListItem", "paperExperience")).toBe(
+    "bulletListItem"
+  )
+  expect(addedBlockType("paragraph", undefined)).toBe("paragraph")
+  expect(cvFormatHidden(true, null)).toBe(true)
+  expect(cvFormatHidden(false, "paperExperience")).toBe(true)
+  expect(cvFormatHidden(false, "paragraph")).toBe(false)
 })
+
+function relocate(state: EditorState, id: string, beforeId: string) {
+  const nodes: { node: Node; pos: number }[] = []
+  state.doc.child(0).forEach((node, offset) => {
+    nodes.push({ node, pos: offset + 1 })
+  })
+  const dragging = nodes.find((item) => item.node.attrs.id === id)
+  const target = nodes.find((item) => item.node.attrs.id === beforeId)
+  if (!dragging || !target) throw new Error("missing block")
+  const tr = state.tr.delete(
+    dragging.pos,
+    dragging.pos + dragging.node.nodeSize
+  )
+  return state.apply(tr.insert(tr.mapping.map(target.pos), dragging.node))
+}

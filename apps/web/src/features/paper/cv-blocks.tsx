@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, type ReactNode } from "react"
+import { useBlockNoteEditor } from "@blocknote/react"
 import {
   BlockNoteSchema,
   createHeadingBlockSpec,
@@ -12,7 +13,10 @@ import { CvPhoto } from "./cv-templates/cv-parts.tsx"
 import { CvField } from "./cv-field.tsx"
 import "./cv-editor.css"
 
-export const CvChromeContext = createContext({ showPhoto: false })
+export const CvChromeContext = createContext({
+  showPhoto: false,
+  askCoach: (_text: string) => undefined as void,
+})
 
 type FieldBlock = {
   id: string
@@ -54,41 +58,31 @@ function HeaderView({ block }: ViewProps) {
         size="name"
       />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <CvField
-          blockId={block.id}
-          name="email"
-          label="Email"
-          value={prop(block, "email")}
-          placeholder="Email"
-          size="contact"
-        />
-        <span aria-hidden="true">|</span>
-        <CvField
-          blockId={block.id}
-          name="phone"
-          label="Phone"
-          value={prop(block, "phone")}
-          placeholder="Phone"
-          size="contact"
-        />
-        <span aria-hidden="true">|</span>
-        <CvField
-          blockId={block.id}
-          name="city"
-          label="City"
-          value={prop(block, "city")}
-          placeholder="City"
-          size="contact"
-        />
-        <span aria-hidden="true">|</span>
-        <CvField
-          blockId={block.id}
-          name="linkedin"
-          label="LinkedIn"
-          value={prop(block, "linkedin")}
-          placeholder="LinkedIn"
-          size="contact"
-        />
+        {(
+          [
+            ["email", "Email"],
+            ["phone", "Phone"],
+            ["city", "City"],
+            ["linkedin", "LinkedIn"],
+          ] as const
+        ).map(([name, label], index, fields) => (
+          <span
+            key={name}
+            className="inline-flex items-center gap-x-2 whitespace-nowrap"
+          >
+            <CvField
+              blockId={block.id}
+              name={name}
+              label={label}
+              value={prop(block, name)}
+              placeholder={label}
+              size="contact"
+            />
+            {index < fields.length - 1 ? (
+              <span aria-hidden="true">|</span>
+            ) : null}
+          </span>
+        ))}
       </div>
       {chrome.showPhoto ? (
         <CvPhoto
@@ -101,14 +95,74 @@ function HeaderView({ block }: ViewProps) {
   )
 }
 
-function SectionView({ contentRef }: ViewProps) {
+type SectionEditor = {
+  document: { id: string; type: string }[]
+  insertBlocks: (
+    blocks: unknown[],
+    ref: string,
+    placement: "after"
+  ) => { id: string }[]
+  setTextCursorPosition: (id: string, pos: "start" | "end") => void
+  focus: () => void
+}
+
+function SectionView({ block, contentRef }: ViewProps) {
+  const editor = useBlockNoteEditor() as unknown as SectionEditor
+  const index = editor.document.findIndex((item) => item.id === block.id)
+  const next = editor.document[index + 1]
+  const empty =
+    !next || next.type === "paperSection" || next.type === "paperHeader"
+  const kind = block.props.kind ?? ""
+  const placeholder =
+    kind === "experience"
+      ? "Role, company"
+      : kind === "education"
+        ? "School, degree"
+        : kind === "skills"
+          ? "Tools, software and languages"
+          : "Add a line"
+  const add = () => {
+    const follow =
+      kind === "experience"
+        ? { type: "paperExperience" }
+        : kind === "education"
+          ? { type: "paperEducation" }
+          : kind === "skills"
+            ? {
+                type: "paperSkills",
+                children: [{ type: "paperSkillItem" }],
+              }
+            : { type: "paragraph" }
+    const created = editor.insertBlocks([follow], block.id, "after")
+    const id = created[0]?.id
+    if (!id) return
+    const field = document.querySelector<HTMLElement>(
+      `[data-cv-block-fields="${CSS.escape(id)}"] [data-cv-field]`
+    )
+    if (field) {
+      field.focus()
+      return
+    }
+    editor.setTextCursorPosition(id, "start")
+    editor.focus()
+  }
   return (
     <div className="flex flex-col gap-1">
       <div
         ref={contentRef}
-        className="text-[9.5px] font-medium tracking-wide uppercase"
+        data-cv-size="section"
+        className="font-medium tracking-wide uppercase"
       />
       <div className="h-px bg-foreground/80" />
+      {empty ? (
+        <button
+          type="button"
+          className="h-11 text-start text-muted-foreground md:h-7"
+          onClick={add}
+        >
+          {placeholder}
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -152,32 +206,35 @@ function EntryRow({
       data-cv-block-fields={block.id}
       className="flex flex-wrap items-baseline gap-x-2"
     >
-      <CvField
-        blockId={block.id}
-        name={left}
-        label={leftLabel}
-        value={leftValue}
-        placeholder={joined ? joint : leftLabel}
-      />
-      {joined ? null : <span aria-hidden="true">, </span>}
-      <CvField
-        blockId={block.id}
-        name={right}
-        label={rightLabel}
-        value={rightValue}
-        placeholder={joined ? "" : rightLabel}
-        compact={joined}
-        onFocusChange={(on) => dispatch({ type: "right", on })}
-      />
-      <CvField
-        blockId={block.id}
-        name="period"
-        label="Dates"
-        value={prop(block, "period")}
-        placeholder="Dates"
-        size="dates"
-        className="ms-auto"
-      />
+      <span className="inline-flex items-baseline gap-x-2 whitespace-nowrap">
+        <CvField
+          blockId={block.id}
+          name={left}
+          label={leftLabel}
+          value={leftValue}
+          placeholder={joined ? joint : leftLabel}
+        />
+        {joined ? null : <span aria-hidden="true">, </span>}
+        <CvField
+          blockId={block.id}
+          name={right}
+          label={rightLabel}
+          value={rightValue}
+          placeholder={joined ? "" : rightLabel}
+          compact={joined}
+          onFocusChange={(on) => dispatch({ type: "right", on })}
+        />
+      </span>
+      <span className="ms-auto inline-flex whitespace-nowrap">
+        <CvField
+          blockId={block.id}
+          name="period"
+          label="Dates"
+          value={prop(block, "period")}
+          placeholder="Dates"
+          size="dates"
+        />
+      </span>
       <CvField
         blockId={block.id}
         name={extraName}

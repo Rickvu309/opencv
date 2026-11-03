@@ -21,7 +21,8 @@ import "@blocknote/core/style.css"
 import "@blocknote/react/style.css"
 
 import { cvSchema } from "./cv-blocks.tsx"
-import { cvRulesExtension, handleCvKey } from "./cv-rules.ts"
+import { handleCvKey } from "./cv-keys.ts"
+import { cvRulesExtension } from "./cv-rules.ts"
 import { keywordPlacement } from "./keyword-placement.ts"
 import { letterRulesExtension } from "./letter-rules.ts"
 import {
@@ -44,6 +45,7 @@ export type PaperEditorHandle = {
   insertText(text: string): void
   focusField(name: string, blockId?: string): void
   focusBlock(id: string): void
+  undo(): void
 }
 
 type Props = {
@@ -179,6 +181,9 @@ function LetterPaperEngine({
       },
       focusField() {},
       focusBlock() {},
+      undo() {
+        editor.undo()
+      },
     }),
     [editor, placed]
   )
@@ -277,16 +282,18 @@ type CvProps = {
 function useCvEditor(
   ydoc: PaperClient["ydoc"],
   collaboration: ReturnType<typeof CollaborationExtension>,
-  generation: number
+  generation: number,
+  label: string
 ) {
   return useCreateBlockNote(
     {
       schema: cvSchema,
-      trailingBlock: false,
+      trailingBlock: true,
       placeholders: CV_PLACEHOLDERS,
       extensions: [collaboration, cvRulesExtension],
+      domAttributes: { editor: { "aria-label": label } },
     },
-    [ydoc, generation]
+    [ydoc, generation, label]
   )
 }
 
@@ -308,7 +315,7 @@ function CvPaperEngine({
       }),
     [ydoc]
   )
-  const editor = useCvEditor(ydoc, collaboration, generation)
+  const editor = useCvEditor(ydoc, collaboration, generation, label)
   const [linkCount, requestLink] = useReducer((count: number) => count + 1, 0)
   const linkPending = useRef(false)
   const takeLink = useCallback(() => {
@@ -346,6 +353,11 @@ function CvPaperEngine({
   useEffect(() => {
     onReady?.(editor)
   }, [editor, onReady])
+  useEffect(() => {
+    document
+      .querySelector("[data-cv-editor] .bn-editor")
+      ?.setAttribute("aria-label", label)
+  }, [editor, label])
   useImperativeHandle(
     handleRef,
     () => ({
@@ -382,6 +394,9 @@ function CvPaperEngine({
         editor.setTextCursorPosition(id, "start")
         editor.focus()
       },
+      undo() {
+        editor.undo()
+      },
     }),
     [editor]
   )
@@ -400,13 +415,17 @@ function CvPaperEngine({
       tableHandles={false}
       emojiPicker={false}
       onKeyDownCapture={(event) => {
+        const target = event.target
+        const typing =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement
         if (
           (event.metaKey || event.ctrlKey) &&
           !event.altKey &&
           !event.shiftKey &&
           event.key.toLowerCase() === "k"
         ) {
-          if (editor.prosemirrorState.selection.empty) return
+          if (typing || editor.prosemirrorState.selection.empty) return
           event.preventDefault()
           event.stopPropagation()
           linkPending.current = true
@@ -414,13 +433,7 @@ function CvPaperEngine({
           return
         }
         if (handleCvKey(editor, event)) return
-        const target = event.target
-        if (
-          target instanceof HTMLInputElement ||
-          target instanceof HTMLTextAreaElement
-        ) {
-          return
-        }
+        if (typing) return
         if (event.metaKey || event.ctrlKey || event.altKey) return
         if (event.nativeEvent.isComposing) return
         if (event.key === "Backspace" && !event.shiftKey) {

@@ -1,15 +1,18 @@
 import { createExtension } from "@blocknote/core"
 import { Fragment, Slice, type Node, type ResolvedPos } from "prosemirror-model"
-import { Plugin } from "prosemirror-state"
+import {
+  Plugin,
+  PluginKey,
+  TextSelection,
+  type Selection,
+} from "prosemirror-state"
 import { ySyncPluginKey } from "y-prosemirror"
 
-import { LIST_TYPES } from "./list-block-ops.ts"
 import {
   HEADING_LEVELS,
   LIST_ITEMS,
   MAX_DEPTH,
   asListItem,
-  insertionDepth,
   resetLook,
 } from "./letter-rules.ts"
 
@@ -48,46 +51,6 @@ type Hold = "list" | "skill" | "none"
 type Counts = { header: number; entry: number; shape: number }
 type Top = { id: string; type: string }
 
-type Run = {
-  type: string
-  text?: string
-  styles?: Record<string, boolean>
-  href?: string
-  content?: Run[]
-}
-
-type LooseBlock = {
-  id: string
-  type: string
-  props: Record<string, unknown>
-  content: unknown
-  children: LooseBlock[]
-}
-
-type LooseEditor = {
-  document: LooseBlock[]
-  getBlock: (id: string) => LooseBlock | undefined
-  getParentBlock: (block: LooseBlock) => LooseBlock | undefined
-  getTextCursorPosition: () => { block: LooseBlock }
-  prosemirrorState: {
-    selection: { empty: boolean; $from: { parentOffset: number } }
-  }
-  updateBlock: (id: string, update: unknown) => void
-  insertBlocks: (
-    blocks: unknown[],
-    ref: unknown,
-    placement: "before" | "after" | "first-child" | "last-child"
-  ) => LooseBlock[]
-  removeBlocks: (blocks: unknown[]) => void
-  setTextCursorPosition: (ref: unknown, pos: "start" | "end") => void
-  unnestBlock: () => void
-  transact: (fn: () => void) => void
-}
-
-function loose(source: object) {
-  return source as unknown as LooseEditor
-}
-
 function holdOf(kind: string): Hold {
   if (kind === "paperSkills") return "skill"
   if (HOLDS_LIST.has(kind)) return "list"
@@ -116,6 +79,15 @@ function fieldText(node: Node) {
     .filter((part) => part.trim() !== "")
     .join(" ")
   return node.textContent.trim() !== "" ? node.textContent : props
+}
+
+function bulletFromText(content: Node) {
+  const bullet = content.type.schema.nodes.bulletListItem
+  if (!bullet) return content
+  const text = fieldText(content)
+  return text
+    ? bullet.create(null, content.type.schema.text(text))
+    : bullet.create()
 }
 
 function paragraphWith(container: Node, text: string) {
@@ -177,7 +149,8 @@ function coerceCvContainers(
       return
     }
     if (hold === "list" && kind === "divider") return
-    if (hold === "list" && !LIST_ITEMS.has(kind)) content = asListItem(content)
+    if (hold === "list" && !LIST_ITEMS.has(kind))
+      content = bulletFromText(content)
     if (kind === "heading" && !HEADING_LEVELS.has(content.attrs.level)) {
       const level = Number(content.attrs.level) <= 2 ? 2 : 3
       content = content.type.create(
@@ -223,6 +196,25 @@ export function coerceCvPaste(slice: Slice, depth = 1, hold: Hold = "none") {
   const out: Node[] = []
   coerceCvContainers(slice.content, depth, hold, out)
   return new Slice(Fragment.from(out), slice.openStart, slice.openEnd)
+}
+
+const PASTE_SKIP = new Set([
+  "paperExperience",
+  "paperEducation",
+  "paperHeader",
+  "paperSection",
+  "paperSkills",
+])
+
+function cvPasteDepth(selectionFrom: ResolvedPos) {
+  let found = 0
+  for (let level = selectionFrom.depth; level > 0; level -= 1) {
+    const node = selectionFrom.node(level)
+    if (node.type.name !== "blockContainer" || node.childCount === 0) continue
+    if (PASTE_SKIP.has(node.child(0).type.name)) continue
+    found += 1
+  }
+  return Math.max(found, 1)
 }
 
 function holdAt(selectionFrom: ResolvedPos): Hold {
@@ -307,32 +299,49 @@ export function cvCounts(doc: Node): Counts {
     ) {
       counts.shape += 1
     }
-    walkShape(container, kind, 1, counts)
+    const start =
+      kind === "paperExperience" || kind === "paperEducation" ? 0 : 1
+    walkShape(container, kind, start, counts)
   })
   return counts
 }
 
-export function soleMovedSection(oldDoc: Node, newDoc: Node) {
-  const oldTop = topOf(oldDoc)
-  const newTop = topOf(newDoc)
-  if (oldTop.length === 0 || oldTop.length !== newTop.length) return null
-  if (oldTop.every((item, index) => item.id === newTop[index]?.id)) return null
-  const oldIds = oldTop.map((item) => item.id)
-  const newIds = newTop.map((item) => item.id)
-  const typeOf = new Map(oldTop.map((item) => [item.id, item.type]))
-  const candidates: string[] = []
-  for (const id of oldIds) {
-    const withoutOld = oldIds.filter((item) => item !== id)
-    const withoutNew = newIds.filter((item) => item !== id)
-    if (withoutOld.every((item, index) => item === withoutNew[index])) {
-      candidates.push(id)
-    }
-  }
-  const sections = candidates.filter((id) => typeOf.get(id) === "paperSection")
-  return sections.length === 1 ? sections[0]! : null
+type Stepped = {
+  docChanged: boolean
+  steps?: readonly object[]
+  getMeta: (key: string | PluginKey) => unknown
 }
 
-function regroup(oldDoc: Node, newDoc: Node, sectionId: string) {
+function ownChange(transaction: {
+  getMeta: (key: string | PluginKey) => unknown
+}) {
+  return (
+    !transaction.getMeta(ySyncPluginKey) &&
+    !transaction.getMeta("cv-regroup") &&
+    !transaction.getMeta("cv-skill-split")
+  )
+}
+
+function insertedSections(transaction: Stepped) {
+  if (!transaction.docChanged || !ownChange(transaction)) return []
+  const ids: string[] = []
+  for (const step of transaction.steps ?? []) {
+    const slice = (step as { slice?: Slice }).slice
+    if (!slice) continue
+    slice.content.forEach((node) => {
+      if (
+        node.type.name === "blockContainer" &&
+        node.childCount > 0 &&
+        node.child(0).type.name === "paperSection"
+      ) {
+        ids.push(String(node.attrs.id ?? ""))
+      }
+    })
+  }
+  return ids
+}
+
+function regroup(oldDoc: Node, newDoc: Node, sectionId: string): Node[] | null {
   const oldTop = topOf(oldDoc)
   const start = oldTop.findIndex((item) => item.id === sectionId)
   if (start < 0) return null
@@ -363,14 +372,85 @@ function regroup(oldDoc: Node, newDoc: Node, sectionId: string) {
     if (!node) return null
     ordered.push(node)
   }
-  return blockGroup.type.create(blockGroup.attrs, ordered)
+  return ordered
+}
+
+function differingRange(doc: Node, ordered: Node[]) {
+  const current: Node[] = []
+  doc.child(0).forEach((node) => current.push(node))
+  if (current.length !== ordered.length) return null
+  let start = 0
+  while (start < current.length && current[start] === ordered[start]) start += 1
+  if (start === current.length) return null
+  let end = current.length - 1
+  while (end > start && current[end] === ordered[end]) end -= 1
+  let pos = 1
+  const positions: number[] = []
+  doc.child(0).forEach((node) => {
+    positions.push(pos)
+    pos += node.nodeSize
+  })
+  const from = positions[start]
+  if (from === undefined) return null
+  const after = positions[end + 1]
+  return {
+    from,
+    to: after ?? pos,
+    nodes: ordered.slice(start, end + 1),
+  }
+}
+
+function placeSectionSelection(
+  tr: { doc: Node; setSelection: (selection: Selection) => void },
+  sectionId: string
+) {
+  let at = -1
+  tr.doc.descendants((node, pos) => {
+    if (at >= 0) return false
+    if (
+      node.type.name === "blockContainer" &&
+      String(node.attrs.id ?? "") === sectionId
+    ) {
+      at = pos + 1
+      return false
+    }
+  })
+  if (at < 0 || at > tr.doc.content.size) return
+  tr.setSelection(TextSelection.near(tr.doc.resolve(at)))
+}
+
+function skillCommaSplit(doc: Node) {
+  const found: { from: number; to: number; nodes: Node[] }[] = []
+  doc.descendants((node, pos) => {
+    if (found.length > 0) return false
+    if (node.type.name !== "blockContainer" || node.childCount === 0) return
+    const content = node.child(0)
+    if (
+      content.type.name !== "paperSkillItem" ||
+      !content.textContent.includes(",")
+    ) {
+      return
+    }
+    const parts = content.textContent.split(",").map((part) => part.trim())
+    if (parts.length < 2) return
+    const skill = node.type.schema.nodes.paperSkillItem
+    if (!skill) return
+    const nodes = parts.map((part, index) => {
+      const id = index === 0 ? node.attrs.id : crypto.randomUUID()
+      const text = part ? node.type.schema.text(part) : undefined
+      return node.type.create({ ...node.attrs, id }, skill.create(null, text))
+    })
+    found.push({ from: pos, to: pos + node.nodeSize, nodes })
+    return false
+  })
+  return found[0] ?? null
 }
 
 export const cvRulesPlugin = new Plugin({
   props: {
     transformPasted: (slice, view) => {
       const from = view.state.selection.$from
-      return coerceCvPaste(slice, insertionDepth(from), holdAt(from))
+      return coerceCvPaste(slice, cvPasteDepth(from), holdAt(from))
     },
   },
   filterTransaction(transaction, state) {
@@ -379,10 +459,7 @@ export const cvRulesPlugin = new Plugin({
     const next = cvCounts(transaction.doc)
     const prev = cvCounts(state.doc)
     if (next.header > prev.header || next.shape > prev.shape) return false
-    if (
-      next.entry > prev.entry &&
-      !soleMovedSection(state.doc, transaction.doc)
-    ) {
+    if (next.entry > prev.entry && insertedSections(transaction).length !== 1) {
       return false
     }
     return true
@@ -393,11 +470,35 @@ export const cvRulesPlugin = new Plugin({
     ) {
       return null
     }
-    const sectionId = soleMovedSection(oldState.doc, newState.doc)
+    if (
+      !transactions.some((transaction) => transaction.getMeta("cv-skill-split"))
+    ) {
+      const split = skillCommaSplit(newState.doc)
+      if (split) {
+        const tr = newState.tr.replaceWith(split.from, split.to, split.nodes)
+        tr.setMeta("cv-skill-split", true)
+        return tr
+      }
+    }
+    if (transactions.some((transaction) => transaction.getMeta("cv-regroup"))) {
+      return null
+    }
+    const ids = [
+      ...new Set(
+        transactions.flatMap((transaction) => insertedSections(transaction))
+      ),
+    ]
+    if (ids.length !== 1) return null
+    const sectionId = ids[0]
     if (!sectionId) return null
-    const next = regroup(oldState.doc, newState.doc, sectionId)
-    if (!next) return null
-    return newState.tr.replaceWith(0, newState.doc.content.size, next)
+    const ordered = regroup(oldState.doc, newState.doc, sectionId)
+    if (!ordered) return null
+    const range = differingRange(newState.doc, ordered)
+    if (!range) return null
+    const tr = newState.tr.replaceWith(range.from, range.to, range.nodes)
+    tr.setMeta("cv-regroup", true)
+    placeSectionSelection(tr, sectionId)
+    return tr
   },
 })
 
@@ -405,231 +506,3 @@ export const cvRulesExtension = createExtension({
   key: "cvRules",
   prosemirrorPlugins: [cvRulesPlugin],
 })
-
-function runsOf(content: unknown): Run[] {
-  if (typeof content === "string") {
-    return content ? [{ type: "text", text: content, styles: {} }] : []
-  }
-  if (!Array.isArray(content)) return []
-  return content as Run[]
-}
-
-function runLength(run: Run): number {
-  if (run.type === "link" && Array.isArray(run.content)) {
-    return run.content.reduce((sum, item) => sum + runLength(item), 0)
-  }
-  return run.text?.length ?? 0
-}
-
-export function splitRuns(content: unknown, offset: number): [Run[], Run[]] {
-  const left: Run[] = []
-  const right: Run[] = []
-  let rest = offset
-  for (const run of runsOf(content)) {
-    const size = runLength(run)
-    if (rest >= size) {
-      left.push(run)
-      rest -= size
-      continue
-    }
-    if (run.type === "link" && Array.isArray(run.content)) {
-      const [nestedLeft, nestedRight] = splitRuns(run.content, rest)
-      if (nestedLeft.length > 0) left.push({ ...run, content: nestedLeft })
-      if (nestedRight.length > 0) right.push({ ...run, content: nestedRight })
-      rest = 0
-      continue
-    }
-    const text = run.text ?? ""
-    if (rest > 0) left.push({ ...run, text: text.slice(0, rest) })
-    right.push({ ...run, text: text.slice(rest) })
-    rest = 0
-  }
-  return [left, right]
-}
-
-function filled(content: unknown) {
-  return runsOf(content).some((run) => runLength(run) > 0)
-}
-
-function parentEntry(editor: LooseEditor, block: LooseBlock) {
-  const parent = editor.getParentBlock(block)
-  if (!parent) return null
-  if (parent.type !== "paperExperience" && parent.type !== "paperEducation") {
-    return null
-  }
-  return parent
-}
-
-function joinEntryBullet(editor: LooseEditor) {
-  const { selection } = editor.prosemirrorState
-  if (!selection.empty || selection.$from.parentOffset !== 0) return false
-  const block = editor.getTextCursorPosition().block
-  if (!LIST_TYPES.has(block.type)) return false
-  const parent = parentEntry(editor, block)
-  if (!parent) return false
-  const siblings = parent.children.filter((item) => LIST_TYPES.has(item.type))
-  const index = siblings.findIndex((item) => item.id === block.id)
-  if (index < 0) return false
-  if (index === 0) {
-    if (filled(block.content)) return true
-    editor.removeBlocks([block])
-    return true
-  }
-  const prev = siblings[index - 1]!
-  const content = [...runsOf(prev.content), ...runsOf(block.content)]
-  editor.transact(() => {
-    editor.updateBlock(prev.id, { content })
-    if (block.children.length > 0) {
-      editor.insertBlocks(block.children, prev.id, "last-child")
-    }
-    editor.removeBlocks([block])
-  })
-  editor.setTextCursorPosition(prev.id, "end")
-  return true
-}
-
-function joinSkill(editor: LooseEditor) {
-  const { selection } = editor.prosemirrorState
-  if (!selection.empty || selection.$from.parentOffset !== 0) return false
-  const block = editor.getTextCursorPosition().block
-  if (block.type !== "paperSkillItem") return false
-  const parent = editor.getParentBlock(block)
-  if (!parent || parent.type !== "paperSkills") return false
-  const index = parent.children.findIndex((item) => item.id === block.id)
-  if (index < 0) return false
-  if (index === 0) {
-    if (!filled(block.content)) editor.removeBlocks([block])
-    return true
-  }
-  const prev = parent.children[index - 1]!
-  if (prev.type !== "paperSkillItem") return false
-  const content = [...runsOf(prev.content), ...runsOf(block.content)]
-  editor.transact(() => {
-    editor.updateBlock(prev.id, { content })
-    editor.removeBlocks([block])
-  })
-  editor.setTextCursorPosition(prev.id, "end")
-  return true
-}
-
-function splitSkill(editor: LooseEditor) {
-  const { selection } = editor.prosemirrorState
-  if (!selection.empty) return false
-  const block = editor.getTextCursorPosition().block
-  if (block.type !== "paperSkillItem") return false
-  const [left, right] = splitRuns(block.content, selection.$from.parentOffset)
-  let created: LooseBlock[] = []
-  editor.transact(() => {
-    editor.updateBlock(block.id, { content: left })
-    created = editor.insertBlocks(
-      [{ type: "paperSkillItem", content: right }],
-      block.id,
-      "after"
-    )
-  })
-  const next = created[0]
-  if (next) editor.setTextCursorPosition(next.id, "start")
-  return true
-}
-
-function emptyEntryEnter(editor: LooseEditor) {
-  const block = editor.getTextCursorPosition().block
-  if (block.type === "paperSection") {
-    const created = editor.insertBlocks(
-      [{ type: "paragraph" }],
-      block.id,
-      "after"
-    )
-    const next = created[0]
-    if (next) editor.setTextCursorPosition(next.id, "start")
-    return true
-  }
-  if (!LIST_TYPES.has(block.type) || filled(block.content)) return false
-  if (!parentEntry(editor, block)) return false
-  if (block.children.length > 0) editor.unnestBlock()
-  else editor.removeBlocks([block])
-  return true
-}
-
-function copyBlock(block: LooseBlock): Record<string, unknown> {
-  const copy: Record<string, unknown> = {
-    type: block.type,
-    props: block.props,
-  }
-  if (block.content !== undefined) copy.content = block.content
-  if (block.children.length > 0) {
-    copy.children = block.children.map((child) => copyBlock(child))
-  }
-  return copy
-}
-
-export function duplicateCvBlock(source: object) {
-  const editor = loose(source)
-  let block: LooseBlock
-  try {
-    block = editor.getTextCursorPosition().block
-  } catch {
-    return
-  }
-  if (block.type === "paperHeader") return
-  editor.insertBlocks([copyBlock(block)], block.id, "after")
-}
-
-type KeyLike = {
-  key: string
-  metaKey: boolean
-  ctrlKey: boolean
-  altKey: boolean
-  shiftKey: boolean
-  target: EventTarget | null
-  preventDefault: () => void
-  stopPropagation: () => void
-  nativeEvent: { isComposing: boolean }
-}
-
-export function handleCvKey(source: object, event: KeyLike) {
-  const target = event.target
-  const typing =
-    target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
-  const command =
-    (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey
-  if (command && event.key.toLowerCase() === "d") {
-    event.preventDefault()
-    event.stopPropagation()
-    duplicateCvBlock(source)
-    return true
-  }
-  if (typing) return false
-  if (event.metaKey || event.ctrlKey || event.altKey) return false
-  if (event.nativeEvent.isComposing) return false
-  const editor = loose(source)
-  let block: LooseBlock
-  try {
-    block = editor.getTextCursorPosition().block
-  } catch {
-    return false
-  }
-  if (event.key === "," && block.type === "paperSkillItem") {
-    event.preventDefault()
-    event.stopPropagation()
-    return splitSkill(editor)
-  }
-  if (event.key === "Backspace" && !event.shiftKey) {
-    if (joinSkill(editor) || joinEntryBullet(editor)) {
-      event.preventDefault()
-      event.stopPropagation()
-      return true
-    }
-    return false
-  }
-  if (event.key !== "Enter" || event.shiftKey) return false
-  if (block.type === "paperSkillItem") {
-    event.preventDefault()
-    event.stopPropagation()
-    return splitSkill(editor)
-  }
-  if (!emptyEntryEnter(editor)) return false
-  event.preventDefault()
-  event.stopPropagation()
-  return true
-}

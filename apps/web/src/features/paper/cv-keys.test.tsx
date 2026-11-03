@@ -5,6 +5,7 @@ import { afterEach, beforeAll, expect, it } from "vitest"
 import { installEditorPolyfills } from "@/test/paper-engine-kit.tsx"
 import { seededCvClient } from "@/test/paper-fixture.ts"
 
+import { duplicateCvBlock, moveCvBlock, turnCvBlock } from "./cv-keys.ts"
 import { PaperEditorEngine } from "./paper-editor-engine.tsx"
 
 beforeAll(() => installEditorPolyfills())
@@ -15,6 +16,9 @@ type Item = { id: string; type: string; children?: Item[] }
 type Ready = {
   document: Item[]
   setTextCursorPosition: (id: string, pos: "start" | "end") => void
+  prosemirrorState: {
+    selection: { $from: { parentOffset: number } }
+  }
   transact: (
     fn: (tr: {
       selection: { from: number }
@@ -54,10 +58,30 @@ const cv = {
       location: "",
       children: [
         {
+          id: "b0",
+          type: "bullet",
+          content: [],
+          children: [
+            {
+              id: "kept",
+              type: "bullet",
+              content: [{ text: "Kept" }],
+              children: [],
+            },
+          ],
+        },
+        {
           id: "b1",
           type: "bullet",
           content: [{ text: "Alpha" }],
-          children: [],
+          children: [
+            {
+              id: "mid",
+              type: "bullet",
+              content: [{ text: "Mid" }],
+              children: [],
+            },
+          ],
         },
         { id: "b2", type: "bullet", content: [{ text: "Beta" }], children: [] },
       ],
@@ -69,6 +93,7 @@ const cv = {
       label: "Tools",
       items: ["TypeScript", "React"],
     },
+    { id: "note-1", type: "paragraph", content: [{ text: "Hello" }] },
   ],
   clashes: [],
 }
@@ -90,7 +115,7 @@ function press(key: string) {
   fireEvent.keyDown(view, { key })
 }
 
-it("joins and splits bullets inside an entry, and splits skills on a comma", () => {
+it("joins and splits bullets inside an entry, and splits skills on a comma", async () => {
   const client = seededCvClient(cv)
   let editor: Ready | null = null
   act(() => {
@@ -110,10 +135,24 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", () 
   })
   if (!editor) throw new Error("missing editor")
   const ready = editor as Ready
+  await act(async () => {
+    await Promise.resolve()
+  })
+
   const skills = () =>
     ready.document.find((block) => block.type === "paperSkills")
   const firstSkill = skills()?.children?.[0]?.id
   if (!firstSkill) throw new Error("missing skill")
+  place(ready, "b0", 0)
+  press("Backspace")
+  let job = client.document()?.blocks.find((block) => block.id === "job-1")
+  let children = job && "children" in job ? job.children : []
+  expect(JSON.stringify(children)).toContain("Kept")
+  expect(children.some((child) => child.id === "b0")).toBe(false)
+  place(ready, "kept", 0)
+  press("Backspace")
+  expect(JSON.stringify(client.document())).toContain("Kept")
+  expect(document.activeElement?.getAttribute("data-cv-field")).toBeTruthy()
   place(ready, firstSkill, 4)
   press(",")
   let text = JSON.stringify(client.document())
@@ -128,14 +167,35 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", () 
   expect(text).toContain("TypeScript")
   place(ready, "b2", 0)
   press("Backspace")
-  const job = client.document()?.blocks.find((block) => block.id === "job-1")
-  const children = job && "children" in job ? job.children : []
-  expect(children).toHaveLength(1)
-  expect(JSON.stringify(children[0])).toContain("Alpha")
-  expect(JSON.stringify(children[0])).toContain("Beta")
+  job = client.document()?.blocks.find((block) => block.id === "job-1")
+  children = job && "children" in job ? job.children : []
+  const flat = JSON.stringify(children)
+  expect(flat).toContain("MidBeta")
+  expect(flat).not.toContain("AlphaBeta")
+  expect(ready.prosemirrorState.selection.$from.parentOffset).toBe("Mid".length)
   place(ready, "b1", 5)
   press("Enter")
   const split = client.document()?.blocks.find((block) => block.id === "job-1")
   const bullets = split && "children" in split ? split.children : []
   expect(bullets.length).toBeGreaterThan(1)
+  place(ready, firstSkill, 0)
+  duplicateCvBlock(ready, "job-1")
+  const experiences =
+    client.document()?.blocks.filter((block) => block.type === "experience") ??
+    []
+  expect(experiences).toHaveLength(2)
+  expect(
+    client.document()?.blocks.filter((block) => block.type === "skills")
+  ).toHaveLength(1)
+  moveCvBlock(ready, "sec-skills", "up")
+  const moved = ready.document[1] as {
+    type?: string
+    props?: { kind?: string }
+  }
+  expect(moved?.type).toBe("paperSection")
+  expect(moved?.props?.kind).toBe("skills")
+  expect(turnCvBlock(ready, "job-1", { type: "paragraph" })).toBe(false)
+  expect(turnCvBlock(ready, "note-1", { type: "paperExperience" })).toBe(true)
+  const note = client.document()?.blocks.find((block) => block.id === "note-1")
+  expect(note && "role" in note ? note.role : "").toBe("Hello")
 })

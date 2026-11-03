@@ -50,8 +50,33 @@ it("keeps the caret field, undoes through the editor, and ignores a composition"
   const role = screen.getByRole("textbox", { name: "Role" })
   fireEvent.input(role, { target: { value: "Engineer" } })
   expect(JSON.stringify(client.document())).toContain("Engineer")
-  fireEvent.keyDown(role, { key: "z", metaKey: true })
+  const undo = new InputEvent("beforeinput", {
+    inputType: "historyUndo",
+    bubbles: true,
+    cancelable: true,
+  })
+  role.dispatchEvent(undo)
+  expect(undo.defaultPrevented).toBe(true)
   expect(JSON.stringify(client.document())).not.toContain("Engineer")
+  fireEvent.input(role, { target: { value: "Engineer" } })
+  expect(JSON.stringify(client.document())).not.toContain("Engineer")
+  await act(async () => {
+    await Promise.resolve()
+  })
+  const redo = new InputEvent("beforeinput", {
+    inputType: "historyRedo",
+    bubbles: true,
+    cancelable: true,
+  })
+  role.dispatchEvent(redo)
+  expect(redo.defaultPrevented).toBe(true)
+  expect(JSON.stringify(client.document())).toContain("Engineer")
+  expect(role).toHaveAttribute("data-cv-size", "entry")
+  expect(role).toHaveAttribute("size", "1")
+  expect(screen.getByRole("textbox", { name: "Phone" })).toHaveAttribute(
+    "data-cv-size",
+    "contact"
+  )
 
   fireEvent.compositionStart(role)
   role.value = "日"
@@ -84,4 +109,10 @@ it("keeps the caret field, undoes through the editor, and ignores a composition"
   fireEvent.keyDown(location, { key: "Enter" })
   const job = client.document()?.blocks.find((block) => block.id === "job-1")
   expect(job && "children" in job ? job.children : []).toHaveLength(1)
+  const linkedin = screen.getByRole("textbox", { name: "LinkedIn" })
+  linkedin.focus()
+  fireEvent.keyDown(linkedin, { key: "Tab" })
+  expect(document.activeElement).not.toBe(linkedin)
+  fireEvent.keyDown(linkedin, { key: "Enter" })
+  expect(document.activeElement).not.toBe(linkedin)
 })

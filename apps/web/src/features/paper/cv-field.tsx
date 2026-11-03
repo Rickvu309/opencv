@@ -28,14 +28,7 @@ type FieldEditor = {
 
 type FieldNode = { id: string; type: string; children?: FieldNode[] }
 
-const STOP = [
-  "keyup",
-  "beforeinput",
-  "mousedown",
-  "cut",
-  "copy",
-  "drop",
-] as const
+const STOP = ["keyup", "mousedown", "cut", "copy", "drop"] as const
 
 const NEXT_FIELD: Record<string, string> = {
   role: "company",
@@ -76,21 +69,37 @@ export function CvField({
 }) {
   const editor = useBlockNoteEditor() as unknown as FieldEditor
   const ref = useRef<HTMLInputElement>(null)
+  const seen = useRef(value)
   const focusChangeRef = useRef(onFocusChange)
   useEffect(() => {
     focusChangeRef.current = onFocusChange
   })
   useEffect(() => {
     const input = ref.current
-    if (!input || document.activeElement === input) return
+    if (!input) return
+    if (document.activeElement === input) {
+      if (input.value !== seen.current) return
+      input.value = value
+      seen.current = value
+      return
+    }
     input.value = value
+    seen.current = value
   }, [value])
   useEffect(() => {
     const input = ref.current
     if (!input) return
     let composing = false
     const claiming = { current: false }
+    const historyGuard = { current: false }
+    const armHistory = () => {
+      historyGuard.current = true
+      queueMicrotask(() => {
+        historyGuard.current = false
+      })
+    }
     const write = (next: string) => {
+      seen.current = next
       const live = editor.getBlock(blockId)
       if (!live) return
       const current = String(live.props[name] ?? "")
@@ -102,6 +111,7 @@ export function CvField({
     const readBack = () => {
       const live = editor.getBlock(blockId)
       input.value = live ? String(live.props[name] ?? "") : input.value
+      seen.current = input.value
     }
     const rowFields = () => {
       const row = input.closest("[data-cv-block-fields]")
@@ -136,12 +146,12 @@ export function CvField({
     }
     const openChild = () => {
       const live = editor.getBlock(blockId)
-      if (!live) return
+      if (!live) return false
       const child = live.children[0]
       if (child) {
         editor.setTextCursorPosition(child.id, "start")
         editor.focus()
-        return
+        return true
       }
       const type =
         live.type === "paperSkills" ? "paperSkillItem" : "bulletListItem"
@@ -150,13 +160,14 @@ export function CvField({
         live.type !== "paperExperience" &&
         live.type !== "paperEducation"
       ) {
-        return
+        return false
       }
       const created = editor.insertBlocks([{ type }], blockId, "first-child")
       const next = created[0]
-      if (!next) return
+      if (!next) return false
       editor.setTextCursorPosition(next.id, "start")
       editor.focus()
+      return true
     }
     const claim = () => {
       focusChangeRef.current?.(true)
@@ -176,6 +187,7 @@ export function CvField({
       const meta = event.metaKey || event.ctrlKey
       if (meta && !event.altKey && event.key.toLowerCase() === "z") {
         event.preventDefault()
+        armHistory()
         if (event.shiftKey) editor.redo()
         else editor.undo()
         readBack()
@@ -187,7 +199,7 @@ export function CvField({
         const index = fields.indexOf(input)
         const next = fields[index + 1]
         if (next) next.focus()
-        else openChild()
+        else if (!openChild()) leave("down")
         return
       }
       if (
@@ -206,7 +218,11 @@ export function CvField({
       }
       if (event.key === "Tab") {
         event.preventDefault()
-        focusSibling(event.shiftKey ? -1 : 1)
+        const fields = rowFields()
+        const index = fields.indexOf(input)
+        const next = fields[index + (event.shiftKey ? -1 : 1)]
+        if (next) next.focus()
+        else leave(event.shiftKey ? "up" : "down")
         return
       }
       const pair = NEXT_FIELD[name]
@@ -221,8 +237,19 @@ export function CvField({
       }
     }
     const onInput = () => {
-      if (composing) return
+      if (composing || historyGuard.current) return
       write(input.value)
+    }
+    const onBeforeInput = (event: Event) => {
+      event.stopPropagation()
+      const kind = (event as InputEvent).inputType
+      if (kind !== "historyUndo" && kind !== "historyRedo") return
+      event.preventDefault()
+      if (historyGuard.current) return
+      armHistory()
+      if (kind === "historyRedo") editor.redo()
+      else editor.undo()
+      readBack()
     }
     const onPaste = (event: ClipboardEvent) => {
       event.preventDefault()
@@ -245,8 +272,12 @@ export function CvField({
       write(input.value)
     }
     const stop = (event: Event) => event.stopPropagation()
-    const onBlur = () => focusChangeRef.current?.(false)
+    const onBlur = () => {
+      readBack()
+      focusChangeRef.current?.(false)
+    }
     input.addEventListener("keydown", onKeyDown)
+    input.addEventListener("beforeinput", onBeforeInput)
     input.addEventListener("input", onInput)
     input.addEventListener("paste", onPaste)
     input.addEventListener("compositionstart", onCompositionStart)
@@ -256,6 +287,7 @@ export function CvField({
     for (const eventName of STOP) input.addEventListener(eventName, stop)
     return () => {
       input.removeEventListener("keydown", onKeyDown)
+      input.removeEventListener("beforeinput", onBeforeInput)
       input.removeEventListener("input", onInput)
       input.removeEventListener("paste", onPaste)
       input.removeEventListener("compositionstart", onCompositionStart)
@@ -265,22 +297,17 @@ export function CvField({
       for (const eventName of STOP) input.removeEventListener(eventName, stop)
     }
   }, [editor, blockId, name])
-  const text =
-    size === "name"
-      ? "text-[22px]"
-      : size === "contact" || size === "dates"
-        ? "text-[10.5px]"
-        : "text-[11.5px]"
   const input = (
     <Input
       ref={ref}
+      size={1}
       defaultValue={value}
       aria-label={label}
       placeholder={placeholder}
       data-cv-field={name}
+      data-cv-size={size}
       className={cn(
         "h-11 min-w-0 rounded-none border-0 bg-transparent px-0.5 py-0 shadow-none outline-none placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0 md:h-7",
-        text,
         compact ? "w-2" : "col-start-1 row-start-1 w-full",
         className
       )}
@@ -289,7 +316,7 @@ export function CvField({
   return (
     <span
       className={cn(
-        "inline-grid max-w-full items-center",
+        "inline-grid w-max max-w-full items-center",
         compact && "w-2",
         className
       )}
@@ -298,9 +325,9 @@ export function CvField({
         aria-hidden="true"
         className={cn(
           "invisible col-start-1 row-start-1 px-0.5 whitespace-pre",
-          text,
           compact && "hidden"
         )}
+        data-cv-size={size}
       >
         {value || placeholder || label}
       </span>

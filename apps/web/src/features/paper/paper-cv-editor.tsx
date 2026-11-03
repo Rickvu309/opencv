@@ -4,9 +4,9 @@ import {
   useLayoutEffect,
   useReducer,
   useRef,
+  useState,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { Bell, Ellipsis, LayoutTemplate, Link2, Star } from "lucide-react"
 import {
   cvPrintModel,
   paperDocNameSchema,
@@ -20,29 +20,12 @@ import type { ClientChange } from "@workspace/paper-crdt"
 
 import { Button } from "@workspace/ui/components/button"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@workspace/ui/components/breadcrumb"
-import { CopyButton } from "@workspace/ui/components/copy-button"
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { Input } from "@workspace/ui/components/input"
-import {
-  PageHeader,
-  PageHeaderAction,
-  PageHeaderActions,
-  PageHeaderBack,
-  PageHeaderLeading,
-  PageHeaderMeta,
-} from "@workspace/ui/components/page-header"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { createChat } from "@/features/coach/chat-api.ts"
@@ -54,6 +37,7 @@ import { setPaperSelection } from "@/lib/paper-selection.ts"
 import { SYNC_LABEL, usePaperSync } from "@/lib/paper-sync.ts"
 
 import { CvChromeContext } from "./cv-blocks.tsx"
+import { CvEditorBar, cvEditorStatus } from "./paper-cv-bar.tsx"
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { streamPaperTurn } from "./paper-api.ts"
@@ -78,11 +62,7 @@ import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
-import {
-  editorEditedLabel,
-  previewTemplate,
-  printLayout,
-} from "./paper-templates.ts"
+import { previewTemplate, printLayout } from "./paper-templates.ts"
 
 type State = {
   name: string
@@ -191,6 +171,8 @@ export function PaperCvEditor({
   const measureRef = useRef<HTMLDivElement>(null)
   const syncRef = useRef(sync)
   const dismissed = useRef(new Set<string>())
+  const deferTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [deferring, setDeferring] = useState(false)
   const [state, dispatch] = useReducer(reducer, {
     name: initial.name,
     nameError: "",
@@ -208,6 +190,17 @@ export function PaperCvEditor({
   useEffect(() => {
     syncRef.current = sync
   }, [sync])
+  useEffect(
+    () => () => {
+      if (deferTimer.current) clearTimeout(deferTimer.current)
+    },
+    []
+  )
+  const noteTyping = () => {
+    setDeferring(true)
+    if (deferTimer.current) clearTimeout(deferTimer.current)
+    deferTimer.current = setTimeout(() => setDeferring(false), 1000)
+  }
   const onDocument = useCallback(
     (next: PaperDocument | null, change: ClientChange) => {
       if (next?.kind !== "cv") return
@@ -369,112 +362,31 @@ export function PaperCvEditor({
   const source = state.cv ? printable(state.cv, state.templateId) : null
   const sections =
     state.cv?.blocks.filter((block) => block.type === "section") ?? []
-  const statusLabel =
-    status === "saved" || status === "loading"
-      ? editorEditedLabel(state.editedAt)
-      : SYNC_LABEL[status]
+  const statusLabel = cvEditorStatus(status, state.editedAt, deferring)
 
   return (
     <section
       aria-label={`Editing ${initial.name}`}
       data-slot="cv-editor-page"
       className="flex min-h-0 min-w-0 flex-1 flex-col"
+      onKeyDownCapture={noteTyping}
     >
-      <PageHeader>
-        <PageHeaderLeading>
-          <PageHeaderBack
-            href="/paper"
-            onClick={(event) => {
-              event.preventDefault()
-              onBack()
-            }}
-          >
-            Paper
-          </PageHeaderBack>
-        </PageHeaderLeading>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                href="/paper"
-                onClick={(event) => {
-                  event.preventDefault()
-                  onBack()
-                }}
-              >
-                Paper
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>CVs</BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <Input
-                aria-label="Document name"
-                value={state.name}
-                onChange={(event) =>
-                  dispatch({ type: "name", name: event.target.value })
-                }
-                onBlur={() => void commitName()}
-                className="h-11 border-transparent bg-transparent shadow-none md:h-7"
-              />
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <PageHeaderMeta>{statusLabel}</PageHeaderMeta>
-        <PageHeaderActions>
-          <PageHeaderAction
-            label="Favorite"
-            pressed={initial.isFavorite}
-            disabled={state.favoritePending}
-            onSelect={() => void toggleFavorite()}
-            icon={
-              <Star
-                className={initial.isFavorite ? "fill-current" : undefined}
-              />
-            }
-          />
-          <CopyButton
-            value={shareLink}
-            copiedMessage="Link copied"
-            errorMessage={(error) =>
-              error instanceof Error
-                ? error.message
-                : "Could not copy the link. Try again."
-            }
-            aria-label="Copy link"
-            className="size-11 md:size-7"
-          >
-            <Link2 className="size-4" />
-          </CopyButton>
-          <PageHeaderAction
-            label="Change template"
-            icon={<LayoutTemplate />}
-            onSelect={() => dispatch({ type: "gallery", open: true })}
-          />
-          <PageHeaderAction
-            label="More"
-            icon={<Ellipsis />}
-            onSelect={() => dispatch({ type: "print", on: true })}
-          />
-          <PageHeaderAction
-            label="Notifications"
-            icon={<Bell />}
-            onSelect={() => toast("Notifications are not on yet.")}
-          />
-        </PageHeaderActions>
-      </PageHeader>
+      <CvEditorBar
+        name={state.name}
+        favorite={initial.isFavorite}
+        favoritePending={state.favoritePending}
+        shareLink={shareLink}
+        statusLabel={statusLabel}
+        onBack={onBack}
+        onName={(name) => dispatch({ type: "name", name })}
+        onCommitName={() => void commitName()}
+        onFavorite={() => void toggleFavorite()}
+        onGallery={() => dispatch({ type: "gallery", open: true })}
+        onPrint={() => dispatch({ type: "print", on: true })}
+        onCoach={() => askCoach("")}
+        onUndo={() => editorRef.current?.undo()}
+      />
       <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-11 md:h-7"
-            onClick={() => askCoach("")}
-          >
-            Coach
-          </Button>
-        </div>
         {showBanner ? (
           <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -552,6 +464,7 @@ export function PaperCvEditor({
               <CvChromeContext.Provider
                 value={{
                   showPhoto: previewTemplate(state.templateId) === "with-photo",
+                  askCoach,
                 }}
               >
                 <CvA4Canvas>

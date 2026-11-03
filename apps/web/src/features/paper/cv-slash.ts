@@ -98,7 +98,7 @@ function insertSection(source: object, kind: string) {
       : kind === "education"
         ? { type: "paperEducation" }
         : kind === "skills"
-          ? { type: "paperSkills" }
+          ? { type: "paperSkills", children: [{ type: "paperSkillItem" }] }
           : { type: "paragraph" }
   const created = editor.insertBlocks([follow], marker.id, "after")
   focusBlock(editor, created[0]?.id ?? marker.id)
@@ -165,6 +165,13 @@ export function cvSlashItems(source: object): DefaultReactSuggestionItem[] {
   ]
 }
 
+function tokens(value: string) {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+}
+
 export function filterCvSlash<T extends { title: string; subtext?: string }>(
   items: T[],
   query: string
@@ -172,6 +179,8 @@ export function filterCvSlash<T extends { title: string; subtext?: string }>(
   const needle = query.trim().toLowerCase()
   if (!needle) return items
   return items.filter((entry) =>
-    `${entry.title} ${entry.subtext ?? ""}`.toLowerCase().includes(needle)
+    tokens(`${entry.title} ${entry.subtext ?? ""}`).some((word) =>
+      word.startsWith(needle)
+    )
   )
 }
