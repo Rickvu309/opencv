@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { signInThrowaway } from "./session.mjs"
 
 export const UNBROKEN = "W".repeat(200)
 export const EMAIL = `${"a".repeat(28)}@example.com`
@@ -6,58 +6,33 @@ export const EVENING = "2026-11-03T12:00:00.000Z"
 export const DEADLINE = "2026-11-03"
 export const MARK = UNBROKEN.slice(0, 40)
 
-const SIGN_IN_CODE = /\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})/
-
-function readSignInCode(logPath, email) {
-  let text = ""
-  try {
-    text = readFileSync(logPath, "utf8")
-  } catch {
-    return null
-  }
-  for (const line of text.split("\n").reverse()) {
-    const match = line.match(SIGN_IN_CODE)
-    if (match && match[1] === email && match[2] === "sign-in") return match[3]
-  }
-  return null
-}
-
-const postJson = (page, url, body) =>
-  page.evaluate(`fetch(${JSON.stringify(url)}, {
-    method: "POST", credentials: "include", headers: { "content-type": "application/json" },
-    body: JSON.stringify(${JSON.stringify(body)}),
-  }).then((r) => r.status)`)
-
-export async function signInWorstCase({ page, webUrl, apiUrl, logPath }) {
-  if (webUrl) {
-    await page.goto(`${webUrl}/sign-in`)
-    await page.sleep(400)
-  }
-  const sent = await postJson(
+export function signInWorstCase({ page, webUrl, apiUrl, logPath }) {
+  return signInThrowaway({
     page,
-    `${apiUrl}/api/auth/email-otp/send-verification-otp`,
-    { email: EMAIL, type: "sign-in" }
-  )
-  if (sent !== 200) throw new Error(`send-verification-otp returned ${sent}`)
-  let otp = null
-  for (let attempt = 0; attempt < 50 && !otp; attempt += 1) {
-    otp = readSignInCode(logPath, EMAIL)
-    if (!otp) await page.sleep(100)
-  }
-  if (!otp) throw new Error("sign-in code was not logged")
-  const deadline = Date.now() + 70000
-  let status = 429
-  while (status === 429 && Date.now() < deadline) {
-    status = await postJson(page, `${apiUrl}/api/auth/sign-in/email-otp`, {
-      email: EMAIL,
-      otp,
-      name: "Worst Case",
-    })
-    if (status === 429) await page.sleep(2000)
-  }
-  if (status !== 200) throw new Error(`sign-in returned ${status}`)
-  return EMAIL
+    webUrl,
+    apiUrl,
+    logPath,
+    email: EMAIL,
+    name: "Worst Case",
+  })
 }
+
+export function seedIsWorstCase({ unbroken, email }) {
+  return (
+    unbroken.length === 200 &&
+    !unbroken.includes(" ") &&
+    email.length === 40 &&
+    email.includes("@")
+  )
+}
+
+export const badFixture = [
+  {
+    name: "a short email is not the worst case",
+    fails: () =>
+      seedIsWorstCase({ unbroken: UNBROKEN, email: "a@b.co" }) === false,
+  },
+]
 
 async function command(page, apiUrl, name, input) {
   const result =

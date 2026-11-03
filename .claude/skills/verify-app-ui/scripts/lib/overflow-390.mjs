@@ -12,6 +12,14 @@ export function spills({ scrollWidth, innerWidth, nodes }) {
   return hits
 }
 
+export const badFixture = [
+  {
+    name: "a page wider than the phone",
+    fails: () =>
+      spills({ scrollWidth: 500, innerWidth: 390, nodes: [] }).length > 0,
+  },
+]
+
 export function judgeRoutes(results, pending, today) {
   const problems = []
   const byId = new Map()
