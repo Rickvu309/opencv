@@ -1,6 +1,4 @@
-// Runs inside the page, like probe.mjs: colors against the token palette, decorative fills and the spacing
-// scale. Self-contained (serialised with toString()); its result is merged into the probe's.
-function probeColors() {
+function selfContainedProbeColors() {
   const canvas = document.createElement("canvas")
   canvas.width = canvas.height = 1
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
@@ -38,13 +36,9 @@ function probeColors() {
       el.getBoundingClientRect().height > 0
   )
   const out = {}
-  // Colors: every text, fill and border color against the token palette (raw hex shows as a non-token rgb).
   const tokenRgb = []
   const names = new Set()
-  // Design tokens are the semantic variables (--background, --primary, --chart-1 ...) from the
-  // :root block, plus .dark only when the page is dark. Tailwind emits every palette variable a class
-  // uses into :root too (--color-red-600, --color-black); those are not design tokens.
-  const PALETTE =
+  const TAILWIND_PALETTE_VARIABLE_NOT_A_DESIGN_TOKEN =
     /^--color-(black|white|(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone|taupe|mauve|mist|olive)(-\d+)?)$/
   const dark = document.documentElement.classList.contains("dark")
   const scan = (rules) => {
@@ -57,7 +51,11 @@ function probeColors() {
           (dark && /(^|,)\s*\.dark\b/.test(sel))
         if (!hit) continue
         for (const n of rule.style)
-          if (n.startsWith("--") && !PALETTE.test(n)) names.add(n)
+          if (
+            n.startsWith("--") &&
+            !TAILWIND_PALETTE_VARIABLE_NOT_A_DESIGN_TOKEN.test(n)
+          )
+            names.add(n)
       }
     }
   }
@@ -101,8 +99,10 @@ function probeColors() {
           /(rgba?\([^)]*\)|color\([^)]*\)|okl(?:ch|ab)\([^)]*\))/g
         ) ?? []
       ).map(rgba)
-      // A stop that fades to transparent is a scrim over a photo, not a decorative fill.
-      if (stops.length && stops.every((c) => c[3] > 0.5)) {
+      const noStopFadesToTransparentLikeAPhotoScrim = stops.every(
+        (c) => c[3] > 0.5
+      )
+      if (stops.length && noStopFadesToTransparentLikeAPhotoScrim) {
         const mean = [0, 1, 2].map(
           (i) => stops.reduce((n, c) => n + c[i], 0) / stops.length
         )
@@ -141,18 +141,18 @@ function probeColors() {
   out.fills = fills.slice(0, 80)
   out.bodyBgLum = Math.round(lum(bodyBg) * 100) / 100
 
-  // Spacing: padding and gap values on the 4px scale (margins skipped: auto margins resolve to odd pixels).
+  const SPACING_SIDES_WITHOUT_MARGINS_AS_AUTO_MARGINS_RESOLVE_TO_ODD_PIXELS = [
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "rowGap",
+    "columnGap",
+  ]
   const spacing = { total: 0, off: {} }
   for (const el of visible) {
     const s = cs(el)
-    for (const p of [
-      "paddingTop",
-      "paddingRight",
-      "paddingBottom",
-      "paddingLeft",
-      "rowGap",
-      "columnGap",
-    ]) {
+    for (const p of SPACING_SIDES_WITHOUT_MARGINS_AS_AUTO_MARGINS_RESOLVE_TO_ODD_PIXELS) {
       const v = parseFloat(s[p])
       if (!v || Number.isNaN(v)) continue
       spacing.total++
@@ -166,4 +166,4 @@ function probeColors() {
   return out
 }
 
-export const colorsSource = `(${probeColors.toString()})()`
+export const colorsSource = `(${selfContainedProbeColors.toString()})()`

@@ -1,8 +1,6 @@
-// Runs inside the page. Self-contained: it is serialised with toString(), so it cannot close over anything.
-// It only measures and returns JSON. Every decision lives in checks.mjs.
 import { SEL } from "./assumes.mjs"
 
-function probe(SEL) {
+function selfContainedProbeThatOnlyMeasures(SEL) {
   const canvas = document.createElement("canvas")
   canvas.width = canvas.height = 1
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
@@ -42,7 +40,6 @@ function probe(SEL) {
   const root = cs(document.documentElement)
   const bodyBg = rgba(cs(document.body).backgroundColor)
 
-  // Headings and title.
   const h1s = [...document.querySelectorAll("h1")].filter(shown)
   out.h1 = h1s.map((e) => clean(e.textContent))
   out.docTitle = document.title
@@ -60,7 +57,6 @@ function probe(SEL) {
   walkExposed(document.body)
   out.exposedText = clean(exposed.join(" ")).slice(0, 12000)
 
-  // Chrome strings: every control name, placeholder, empty-state line and alert, but not user data.
   const chrome = new Set()
   for (const el of visible) {
     const tag = el.tagName
@@ -93,14 +89,12 @@ function probe(SEL) {
   }
   out.chrome = [...chrome].filter((s) => s.length < 160)
 
-  // Composer.
   const composer = visible.find(
     (e) => e.tagName === "TEXTAREA" && !e.closest("[data-slot=dialog-content]")
   )
   out.composerPlaceholder = composer ? composer.placeholder : null
   out.composerRect = composer ? rect(composer) : null
 
-  // Controls (labels, boxes) for the primary-button, target-size and keyboard checks.
   const primary = rgba(root.getPropertyValue("--primary").trim() || "#000")
   const near = (a, b, t = 3) =>
     Math.abs(a[0] - b[0]) <= t &&
@@ -127,7 +121,6 @@ function probe(SEL) {
     })
   out.primaryMarks = visible.filter((e) => e.matches(SEL.primary)).length
 
-  // Motion: durations in effect on every visible element, and loops that run without a trigger.
   const dur = {}
   const slow = []
   for (const el of visible) {
@@ -171,8 +164,7 @@ function probe(SEL) {
         a.effect?.getComputedTiming().iterations !== Infinity
     ).length
 
-  // Contrast of text (skips text over images and gradients, disabled controls).
-  const bgOf = (el) => {
+  const solidBackgroundOrNullOverImage = (el) => {
     const layers = []
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const s = cs(n)
@@ -214,7 +206,7 @@ function probe(SEL) {
       continue
     if (el.closest("img, canvas, svg, [data-no-contrast]")) continue
     const s = cs(el)
-    const bg = bgOf(el)
+    const bg = solidBackgroundOrNullOverImage(el)
     if (!bg) continue
     const fg0 = rgba(s.color)
     const a = fg0[3] * opacityOf(el)
@@ -240,7 +232,6 @@ function probe(SEL) {
     fails: contrast.fails.slice(0, 5),
   }
 
-  // Target size (WCAG 2.5.8): 24x24, or a 24px circle that touches no other target.
   const targetEls = visible.filter(
     (e) =>
       e.matches(
@@ -255,7 +246,11 @@ function probe(SEL) {
         !e.closest("[class*=sr-only]") &&
         !(e.tagName === "A" && cs(e).display === "inline" && e.closest("p, li"))
     )
-  const small = boxes.filter(({ r }) => r.width < 24 || r.height < 24)
+  const WCAG_258_MIN_TARGET_PX = 24
+  const small = boxes.filter(
+    ({ r }) =>
+      r.width < WCAG_258_MIN_TARGET_PX || r.height < WCAG_258_MIN_TARGET_PX
+  )
   const circle = ({ r }) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 })
   const touches = (a, b) => {
     const c = circle(a)
@@ -279,7 +274,6 @@ function probe(SEL) {
       ),
   }
 
-  // Screen facts used by single checks.
   const sidebar = document.querySelector("aside")
   const navLinks = [...document.querySelectorAll("aside a")]
   const searchItem = [...document.querySelectorAll("button")].find((b) =>
@@ -312,18 +306,16 @@ function probe(SEL) {
         }))
     : null
   out.sidebarRect = sidebar ? rect(sidebar) : null
-  // The card title is the deepest element inside the card whose text is the title taken from the card's
-  // aria-label ("<title>, <company>" or the older "<title> at <company>"). None found means titleLines is null.
   out.cards = [...document.querySelectorAll(SEL.card)].map((c) => {
     const aria = c.getAttribute("aria-label") ?? ""
-    const wants = []
+    const titlesFromAriaLabel = []
     const comma = aria.indexOf(", ")
-    if (comma > 0) wants.push(aria.slice(0, comma))
+    if (comma > 0) titlesFromAriaLabel.push(aria.slice(0, comma))
     for (let i = aria.indexOf(" at "); i > 0; i = aria.indexOf(" at ", i + 1)) {
-      wants.push(aria.slice(0, i))
+      titlesFromAriaLabel.push(aria.slice(0, i))
     }
     let title = null
-    for (const want of wants) {
+    for (const want of titlesFromAriaLabel) {
       const hit = [...c.querySelectorAll("*")].filter(
         (e) =>
           clean(e.textContent) === want &&
@@ -347,7 +339,6 @@ function probe(SEL) {
     e.matches('[data-slot="skeleton"], [class*="animate-pulse"]')
   ).length
   out.emptyStates = visible.filter((e) => e.matches(SEL.emptyState)).length
-  // A Paper library card is a button named "<name>, <edited>" holding those two texts as its spans.
   out.paperCards = [...document.querySelectorAll(SEL.paperCard)]
     .filter(shown)
     .flatMap((c) => {
@@ -469,17 +460,20 @@ function probe(SEL) {
       )
         panel = n
     }
-    if (!panel && out.h1Rect) {
-      // An in-flow side pane: the widest ancestor of the composer that does not hold the h1.
+    const inFlowSidePaneIsWidestComposerAncestorWithoutTheHeading = () => {
       const main = document.querySelector("main")
+      let widest = null
       for (
         let n = composer.parentElement;
         n && n !== main && n !== document.body && !n.contains(h1s[0]);
         n = n.parentElement
       ) {
-        if (n.getBoundingClientRect().width < innerWidth * 0.6) panel = n
+        if (n.getBoundingClientRect().width < innerWidth * 0.6) widest = n
       }
+      return widest
     }
+    if (!panel && out.h1Rect)
+      panel = inFlowSidePaneIsWidestComposerAncestorWithoutTheHeading()
     if (panel) {
       const pr = panel.getBoundingClientRect()
       out.panelRect = rect(panel)
@@ -524,4 +518,4 @@ function probe(SEL) {
   return out
 }
 
-export const probeSource = `(${probe.toString()})(${JSON.stringify(SEL)})`
+export const probeSource = `(${selfContainedProbeThatOnlyMeasures.toString()})(${JSON.stringify(SEL)})`

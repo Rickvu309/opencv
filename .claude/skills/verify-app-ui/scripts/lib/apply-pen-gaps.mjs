@@ -1,9 +1,5 @@
-// What the live Apply stack cannot draw from its frames, each with its reason.
 import { contrast, TOLERANCE } from "./pen-layout-compare.mjs"
 
-// Texts the live stack cannot draw, with the reason. Dates a frame draws from a job's created or
-// updated time come from the server clock, which the check cannot move; the unit test
-// apply-design-parity.test.tsx checks those with fixed data.
 const SERVER_DATES = "server time, checked by apply-design-parity.test.tsx"
 export const NOT_SHOWN = {
   "w9-6-drag-to-stage": dates([
@@ -55,20 +51,20 @@ export const NOT_SHOWN = {
     "Round 2 on Oct 6": "JobView has no interview round",
   },
 }
-// Icons a frame draws for data or controls the product does not have.
+const COMPANY_LOGOS_SHOWN_AS_INITIALS_TILES = 6
+const FOLLOW_UP_REPLY_ICON_AND_NOT_SHOWN_DATE_CHIP = 2
+const HEADER_LINK_PANEL_AND_PAPERCLIP_BUTTONS_WITHOUT_BEHAVIOR = 1
 export const MARKS_NOT_DRAWN = {
-  "w9-4-list": 6, // company logos; rows show the initials tile
-  "w9-7-calendar-month": 2, // the follow-up reply icon and a chip of a date in NOT_SHOWN
-  "w10-4-job-detail": 1, // header link, panel and note paperclip buttons have no behavior
+  "w9-4-list": COMPANY_LOGOS_SHOWN_AS_INITIALS_TILES,
+  "w9-7-calendar-month": FOLLOW_UP_REPLY_ICON_AND_NOT_SHOWN_DATE_CHIP,
+  "w10-4-job-detail": HEADER_LINK_PANEL_AND_PAPERCLIP_BUTTONS_WITHOUT_BEHAVIOR,
   "w10-6-closed-job": 1,
 }
 
-// verify-pen-layout passes a pen grey that fails AA when the app ships about the
-// lightest AA colour within 0.12 of it. No AA colour lies within 0.12 of a pen
-// grey under 3:1 (#A0A0A2 lane counts, #C9C9CC out-of-month days), so for
-// those the app colour only has to be the lightest AA colour.
 const FAINT_PEN = {
   under: 3,
+  reason:
+    "no AA colour lies within 0.12 of a pen grey under 3:1 (#A0A0A2 lane counts, #C9C9CC out-of-month days), so the app colour only has to be the lightest AA colour",
   until: "2027-01-31",
   approvedBy: "pending operator (quanvu309)",
 }
@@ -98,8 +94,6 @@ function detailGaps() {
   }
 }
 
-// Positions the product cannot match, for comparePenLayout. Each entry fails
-// once it expires or once the property matches.
 const PENDING_OPERATOR = {
   until: "2027-01-31",
   approvedBy: "pending operator (quanvu309)",

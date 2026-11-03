@@ -19,8 +19,6 @@ export const WIDE_PAGES = [
   "settingsReduced",
 ]
 
-// Every toured page at 1440 and at 390 fits its width. A snapshot the tour did not take, or one with no scroll
-// size, is not judged; any page that does scroll sideways fails.
 export function sidewaysScroll(d) {
   const pages = [
     ...WIDE_PAGES.map((key) => [`${key} 1440`, d[key]]),

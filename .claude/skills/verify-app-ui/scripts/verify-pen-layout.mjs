@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-// verify-pen-layout: holds each built screen to the text layout recorded from its pen frame.
-//   pnpm --filter web verify:pen-layout        (api on PORT, web on PORT+1; 4450 and 4451 by default)
-//   VERIFY_PEN_LAYOUT_SHOTS=<dir> saves a 1440x900 screenshot per route.
-//   VERIFY_PEN_LAYOUT_DATA=<file> writes the raw app measurements as JSON.
-// Every apps/web/src/features/**/design/*.layout.json is one screen. Make one with scripts/pen-layout.mjs.
-// Exit 0 all match, 1 any mismatch, 2 the stack, the browser or a route did not work.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { createConnection } from "node:net"
 import { dirname, join, resolve } from "node:path"

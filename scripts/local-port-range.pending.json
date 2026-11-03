@@ -12,12 +12,6 @@
     "expires": "2026-11-24"
   },
   {
-    "file": ".claude/skills/verify-app-ui/scripts/lib/stack.mjs",
-    "hits": 1,
-    "issue": "#1002",
-    "expires": "2026-11-24"
-  },
-  {
     "file": ".claude/skills/verify-app-ui/scripts/verify-app-ui.mjs",
     "hits": 2,
     "issue": "#1002",

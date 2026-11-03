@@ -1,4 +1,3 @@
-// A check judges every part it can find: a found FAIL wins, a part it cannot locate is STALE. Run: node --test .claude/skills/verify-app-ui/scripts/lib
 import assert from "node:assert/strict"
 import test from "node:test"
 

@@ -1,6 +1,3 @@
-// Decisions. Each check reads the tour data and returns { id, name, pass, measured, rule }.
-// Ids 01 to 30 are the research section 5 check numbers; 31 and up are the app-wide checks the
-// signed-in tour adds. A rule says when it is a heuristic. Source reads are named as such.
 import { contentChecks } from "./checks-content.mjs"
 import { motionChecks } from "./checks-source.mjs"
 import { contrastCheck } from "./checks-contrast.mjs"
@@ -40,7 +37,6 @@ export function runChecks(d, want = () => true) {
   const { screens, allSnaps, labels } = context(d)
   r.push(...motionChecks(d, { allSnaps, screens }))
 
-  // Structure.
   const editor = d.cv.editorRect
   const side = d.cv.sidebarRect
   const widest = Boolean(editor) && (!side || editor.w >= side.w)
@@ -93,7 +89,6 @@ export function runChecks(d, want = () => true) {
     )
   )
 
-  // Visual craft.
   const decor = []
   for (const k of ["coach", "paper", "apply", "pitch", "pitchEdit"]) {
     for (const f of d[k].fills) {
@@ -215,7 +210,6 @@ export function runChecks(d, want = () => true) {
       )
     )
 
-  // App-wide checks the tour adds.
   const h1s = SURFACES.map((k) => `${k}:${screens[k].h1.length}`)
   r.push(
     result(

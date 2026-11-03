@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// Run against an owned verify-opencv stack. API_LOG is its OTP log; no paid services.
 import { createHash } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"

@@ -1,6 +1,3 @@
-// One kind per check id. "invariant" holds for any good design. "design" holds only for the current one: a pinned
-// copy line, size or surface list. 14 was retired with the Home page. The unit test holds this table to the ids
-// the checker emits.
 export const KINDS = {
   "01": "invariant",
   "02": "invariant",

@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 
-// This audits evidence completeness; it does not generate or certify visual measurements.
 export function frameEvidenceSha256(frame, base) {
   const artifact = (ref) => [resolve(base, ref?.path ?? ""), ref?.sha256]
   return createHash("sha256")

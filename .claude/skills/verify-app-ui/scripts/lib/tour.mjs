@@ -1,6 +1,3 @@
-// Drives one signed-in tour and returns raw measurements. It decides nothing.
-// Sign-up no longer seeds a workspace, so the tour creates one CV and one Apply card.
-// A step that does not happen throws (exit 2); it is never counted as a pass.
 import {
   API,
   JOBS_PATH,
@@ -396,22 +393,21 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   d.logs.push(...m.logs.splice(0))
   await m.close()
 
-  // Last, because it deletes the card this tour created to reach the zero-card state.
-  const e = await browser.openPage({
+  const lastPageDeletesTheTourCard = await browser.openPage({
     width: 1440,
     height: 900,
     mobile: false,
     reducedMotion: false,
   })
-  await e.goto(`${webUrl}${PATHS.apply}`)
+  await lastPageDeletesTheTourCard.goto(`${webUrl}${PATHS.apply}`)
   must(
-    await e.waitFor(
+    await lastPageDeletesTheTourCard.waitFor(
       `document.querySelector(${JSON.stringify(SEL.card)})`,
       15000
     ),
     "the created board did not render"
   )
-  const deleted = await e.evaluate(`(async () => {
+  const deleted = await lastPageDeletesTheTourCard.evaluate(`(async () => {
     const o = { credentials: 'include' }
     const list = await (await fetch(${JSON.stringify(`${apiUrl}${JOBS_PATH}`)}, o)).json()
     let n = 0
@@ -425,12 +421,12 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     deleted.total > 0 && deleted.deleted === deleted.total,
     `deleting the created cards (${JSON.stringify(deleted)})`
   )
-  await e.goto(`${webUrl}${PATHS.apply}`)
-  await e.waitFor(EMPTY_BOARD, 15000)
-  await e.sleep(1000)
-  d.applyEmpty = await snap(e)
+  await lastPageDeletesTheTourCard.goto(`${webUrl}${PATHS.apply}`)
+  await lastPageDeletesTheTourCard.waitFor(EMPTY_BOARD, 15000)
+  await lastPageDeletesTheTourCard.sleep(1000)
+  d.applyEmpty = await snap(lastPageDeletesTheTourCard)
   d.applyEmpty.deleted = deleted
-  await shot(e, "desktop-apply-empty")
-  await e.close()
+  await shot(lastPageDeletesTheTourCard, "desktop-apply-empty")
+  await lastPageDeletesTheTourCard.close()
   return d
 }

@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// Uses a running local verification stack; creates one isolated account and six real jobs.
-// PORT=4823 WEB_ORIGIN=http://localhost:5823 VERIFY_API_LOG=~/tmp/opencv-verify/p823/api.log \
-//   node .claude/skills/verify-app-ui/scripts/verify-letter-start.mjs <evidence directory>
-// Explicit equivalents: --base-url <web origin> --api-url <api origin> --api-log <path> --evidence <dir>.
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
@@ -52,7 +48,7 @@ const destination =
   options.evidence ?? positional ?? process.env.VERIFY_APP_UI_SHOTS
 must(
   web && api && log && destination,
-  "provide web/API origins, API log and evidence directory (see script header)"
+  "provide web/API origins, API log and evidence directory. Usage: PORT=4823 WEB_ORIGIN=http://localhost:5823 VERIFY_API_LOG=<api log> node .claude/skills/verify-app-ui/scripts/verify-letter-start.mjs <evidence directory>, or --base-url <web origin> --api-url <api origin> --api-log <path> --evidence <dir>"
 )
 must(existsSync(log), "existing local verification API log")
 for (const origin of [web, api])

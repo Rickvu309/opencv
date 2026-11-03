@@ -12,8 +12,6 @@ export const TOLERANCE = {
   contrastHeadroom: 1.12,
 }
 
-// Stock shadcn text colours. App code may not use raw hex, so a pen colour
-// that no token reaches matches when the app uses the token nearest to it.
 export const TEXT_TOKENS = [
   "--foreground",
   "--muted-foreground",
@@ -23,8 +21,6 @@ export const TEXT_TOKENS = [
   "--background",
 ]
 
-// Each entry: { frameId, text, property, reason, until: "YYYY-MM-DD", approvedBy }.
-// An expired entry fails, and so does one whose property now matches.
 export const PEN_LAYOUT_EXCEPTIONS = []
 
 export const EXTRA_KINDS = ["heading", "control"]
@@ -97,24 +93,32 @@ const luminance = (rgb) => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
-// Contrast of a text colour on the nearest solid background behind it.
 export function contrast(color, background = WHITE) {
   const base = `rgba(${over(background).join(", ")}, 1)`
   const pair = [luminance(over(color, base)), luminance(over(base))]
   return (Math.max(...pair) + 0.05) / (Math.min(...pair) + 0.05)
 }
 
-// WCAG AA: 3:1 for large text (24px, or 18.66px at weight 700), 4.5:1 below.
+const WCAG_AA = Object.freeze({
+  largeTextPx: 24,
+  largeBoldTextPx: 18.66,
+  boldWeight: 700,
+  largeTextRatio: 3,
+  bodyTextRatio: 4.5,
+})
 const contrastNeed = ({ fontSize, fontWeight }) =>
-  fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700) ? 3 : 4.5
+  fontSize >= WCAG_AA.largeTextPx ||
+  (fontSize >= WCAG_AA.largeBoldTextPx && fontWeight >= WCAG_AA.boldWeight)
+    ? WCAG_AA.largeTextRatio
+    : WCAG_AA.bodyTextRatio
 
 export function colorMatches(want, got, tokens = {}) {
   const need = contrastNeed(want)
   const shipped = contrast(got.color, got.background)
   if (shipped < need) return false
-  // A pen colour too faint for AA must not ship as drawn. The app colour
-  // passes when it is about the lightest colour that meets AA.
-  if (contrast(want.color, want.background) < need)
+  const penColourTooFaintToShipAsDrawn =
+    contrast(want.color, want.background) < need
+  if (penColourTooFaintToShipAsDrawn)
     return (
       shipped <= need * TOLERANCE.contrastHeadroom &&
       colorDistance(want.color, got.color) <= TOLERANCE.contrastFloor

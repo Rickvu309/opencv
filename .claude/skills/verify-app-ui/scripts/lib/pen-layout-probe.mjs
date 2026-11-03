@@ -1,6 +1,4 @@
-// In-page probe shared by scripts/pen-layout.mjs (records the pen render) and verify-pen-layout.mjs
-// (measures the app), so both sides normalize text and measure boxes the same way.
-function probe(args) {
+function selfContainedProbeSharedByPenAndApp(args) {
   const normalize = (text) => text.replace(/\s+/g, " ").trim()
   const ownText = (element) => {
     const walker = document.createTreeWalker(
@@ -46,9 +44,7 @@ function probe(args) {
     }
     return nodes
   }
-  // Boxes come from the text runs only, so an icon or dot beside the text
-  // inside the same element does not move the measured edge.
-  const visibleBox = (element, root = element) => {
+  const textRunsBoxIgnoringIcons = (element, root = element) => {
     const style = getComputedStyle(element)
     if (style.visibility === "hidden" || style.display === "none") return null
     for (let up = element; up && up !== document.body; up = up.parentElement) {
@@ -118,7 +114,7 @@ function probe(args) {
   if (args.mode === "record") {
     const texts = []
     for (const element of pane.querySelectorAll("[data-pen-text]")) {
-      const box = visibleBox(element)
+      const box = textRunsBoxIgnoringIcons(element)
       if (!box) continue
       const entry = describe(element, box)
       if (entry.text) texts.push(entry)
@@ -152,9 +148,7 @@ function probe(args) {
     )
     return { pane: pageSize, texts, icons, boxes }
   }
-  // include names extra roots outside the pane (a portal such as a drag
-  // overlay); their texts are measured relative to the pane too.
-  const scopes = [
+  const paneAndPortalRoots = [
     pane,
     ...(args.include ?? []).flatMap((selector) => [
       ...document.querySelectorAll(selector),
@@ -166,18 +160,20 @@ function probe(args) {
     if (!byText.has(text)) byText.set(text, [])
     byText.get(text).push({ element, root })
   }
-  for (const element of scopes.flatMap((scope) => [
+  for (const element of paneAndPortalRoots.flatMap((scope) => [
     ...scope.querySelectorAll("*"),
   ])) {
     if (element.children.length === 0 && !element.textContent.trim()) continue
     add(ownText(element), element, element)
   }
-  for (const node of scopes.flatMap((scope) => textNodes(scope))) {
+  for (const node of paneAndPortalRoots.flatMap((scope) => textNodes(scope))) {
     if (node.parentElement) add(normalize(node.data), node.parentElement, node)
   }
-  // Measure the rendered text within the field's content box, including its
-  // alignment. The input border box is not the text's position.
-  const fieldBox = (field, lineIndex = 0, lineText = null) => {
+  const renderedTextBoxInFieldContent = (
+    field,
+    lineIndex = 0,
+    lineText = null
+  ) => {
     const rect = field.getBoundingClientRect()
     const style = getComputedStyle(field)
     const line =
@@ -221,7 +217,7 @@ function probe(args) {
     return { left, top, right: left + width, bottom: top + line }
   }
   if (args.mode === "app")
-    for (const field of scopes.flatMap((scope) => [
+    for (const field of paneAndPortalRoots.flatMap((scope) => [
       ...scope.querySelectorAll("input, textarea"),
     ])) {
       const text = normalize(field.value || field.placeholder || "")
@@ -256,8 +252,12 @@ function probe(args) {
     for (const { element, root, field } of candidates) {
       if (used.has(root)) continue
       const box = field
-        ? fieldBox(element, root.line ?? 0, root.text ?? null)
-        : visibleBox(element, root)
+        ? renderedTextBoxInFieldContent(
+            element,
+            root.line ?? 0,
+            root.text ?? null
+          )
+        : textRunsBoxIgnoringIcons(element, root)
       if (!box) continue
       const away =
         Math.abs(box.left - paneRect.left - want.x) +
@@ -312,7 +312,8 @@ function probe(args) {
   })
   const extras = []
   const extraControls = []
-  const inScope = (element) => scopes.some((scope) => scope.contains(element))
+  const inScope = (element) =>
+    paneAndPortalRoots.some((scope) => scope.contains(element))
   for (const element of document.querySelectorAll(CONTROLS)) {
     if (!inScope(element)) continue
     const rect = element.getBoundingClientRect()
@@ -344,7 +345,7 @@ function probe(args) {
     })
   }
   const loose = new Map()
-  for (const scope of scopes) {
+  for (const scope of paneAndPortalRoots) {
     for (const node of textNodes(scope)) {
       const parent = node.parentElement
       if (!parent || accounted.has(node)) continue
@@ -382,4 +383,4 @@ function probe(args) {
 }
 
 export const probeSource = (args) =>
-  `(${probe.toString()})(${JSON.stringify(args)})`
+  `(${selfContainedProbeSharedByPenAndApp.toString()})(${JSON.stringify(args)})`
