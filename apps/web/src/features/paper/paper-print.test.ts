@@ -6,10 +6,12 @@ import { createElement } from "react"
 import { act, cleanup } from "@testing-library/react"
 
 import { endpoints } from "@/lib/requests.ts"
+import { pinTestClock, TEST_NOW } from "@/test/test-clock.ts"
 import { render } from "@/test/render-with-client.tsx"
 
-import { PaperPrintSheet } from "./paper-print-sheet.tsx"
+import { PaperPrintMeasure, PaperPrintSheet } from "./paper-print-sheet.tsx"
 import {
+  bindPrintPageCount,
   pagesFromPreviewHeight,
   printPaper,
   readPreviewPageCount,
@@ -28,6 +30,40 @@ describe("preview page count", () => {
     Object.defineProperty(node, "scrollHeight", { value: 2246 })
     expect(readPreviewPageCount(node)).toBe(2)
     expect(readPreviewPageCount(null)).toBe(1)
+  })
+
+  it("reapplies the count after layout settles and after web fonts load", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] })
+    vi.setSystemTime(TEST_NOW)
+    const fontsDescriptor = Object.getOwnPropertyDescriptor(document, "fonts")
+    let releaseFonts = () => undefined
+    const fontsReady = new Promise<void>((resolve) => {
+      releaseFonts = resolve
+    })
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: fontsReady },
+    })
+    const apply = vi.fn()
+    const stop = bindPrintPageCount(apply)
+    try {
+      expect(apply).toHaveBeenCalledTimes(1)
+      await vi.advanceTimersByTimeAsync(49)
+      expect(apply).toHaveBeenCalledTimes(1)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(apply).toHaveBeenCalledTimes(2)
+      releaseFonts()
+      await fontsReady
+      expect(apply).toHaveBeenCalledTimes(3)
+    } finally {
+      stop()
+      if (fontsDescriptor) {
+        Object.defineProperty(document, "fonts", fontsDescriptor)
+      } else {
+        Reflect.deleteProperty(document, "fonts")
+      }
+      pinTestClock()
+    }
   })
 })
 
@@ -111,6 +147,28 @@ describe("print paper", () => {
       await new Promise((resolve) => setTimeout(resolve, 30))
     })
     expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("hides placeholders in the measuring clone", () => {
+    const measureRef = { current: null as HTMLDivElement | null }
+    render(
+      createElement(PaperPrintMeasure, {
+        source: emptyPrint,
+        templateId: "simple",
+        measureRef,
+      })
+    )
+    const clone = document
+      .querySelector(".paper-print-measure")
+      ?.shadowRoot?.querySelector("[data-paper-measure]")
+    expect(clone).not.toBeNull()
+    expect(clone?.querySelector("[data-placeholder]")).toBeNull()
+    expect(clone?.querySelector("[aria-label='Company']")).toHaveAttribute(
+      "hidden"
+    )
+    expect(clone?.querySelector("[aria-label='Summary']")).toHaveAttribute(
+      "hidden"
+    )
   })
 
   it("prints no placeholder and no empty company line", () => {

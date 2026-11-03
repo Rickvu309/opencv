@@ -31,6 +31,13 @@ function person(userId: string) {
   return personActor(userId)
 }
 
+async function dropImportFileTheCommandRolledBack(
+  userId: string,
+  savedId: string
+) {
+  await deleteFile(person(userId), parseFileId(savedId)).catch(() => undefined)
+}
+
 const PHOTO_EXTENSION: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
@@ -73,7 +80,6 @@ function concatBytes(chunks: Uint8Array[]) {
   return bytes
 }
 
-/** Declared length is checked before any byte is kept. A stream stops at the cap. */
 async function readImportUpload(
   c: Parameters<typeof jsonWithStatus>[0]
 ): Promise<{ over: true } | { over: false; file: File | null; link: string }> {
@@ -282,13 +288,10 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       )
       return c.json(successEnvelope(imported.output))
     } catch (error) {
-      // The command transaction rolls back its own delete. Drop the row here.
       bytes = undefined
       void bytes
       if (savedId) {
-        await deleteFile(person(c.var.userId), parseFileId(savedId)).catch(
-          () => undefined
-        )
+        await dropImportFileTheCommandRolledBack(c.var.userId, savedId)
       }
       throw error
     }

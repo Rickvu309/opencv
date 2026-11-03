@@ -4,7 +4,6 @@ export type SourceFile = { name: string; text: string }
 export type Finding = { file: string; line: number; call: string }
 
 const COMMAND_RUNNERS = new Set(["runContractCommand", "undoActivity"])
-export const LEGACY_MARKER = "rejected-ok:"
 const QUIET_WRAPPER = "ignoreRejection"
 
 type Fn =
@@ -60,18 +59,6 @@ function isExported(fn: Fn): boolean {
   return false
 }
 
-function hasMarker(
-  sf: ts.SourceFile,
-  node: ts.Node,
-  legacyFiles: ReadonlySet<string>
-) {
-  if (!legacyFiles.has(sf.fileName)) return false
-  const lines = sf.text.split("\n")
-  const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line
-  const near = [lines[line - 1] ?? "", lines[line] ?? ""].join("\n")
-  return near.includes(LEGACY_MARKER)
-}
-
 const QUIET_WRAPPER_MODULE = /(?:^@\/lib\/|\/)quiet-rejection(?:\.ts)?$/
 
 function importsQuietWrapper(sf: ts.SourceFile, local: string) {
@@ -109,35 +96,20 @@ function argumentOf(node: ts.Node): ts.CallExpression | undefined {
     : undefined
 }
 
-function isNoOpHandler(
-  handler: ts.Expression | undefined,
-  sf: ts.SourceFile,
-  legacyFiles: ReadonlySet<string>
-) {
+function isNoOpHandler(handler: ts.Expression | undefined, sf: ts.SourceFile) {
   if (!handler) return true
   if (!ts.isArrowFunction(handler) && !ts.isFunctionExpression(handler)) {
     return false
   }
   const body = handler.body
-  if (ts.isBlock(body)) {
-    return (
-      body.statements.length === 0 &&
-      !(
-        legacyFiles.has(sf.fileName) && body.getText(sf).includes(LEGACY_MARKER)
-      )
-    )
-  }
+  if (ts.isBlock(body)) return body.statements.length === 0
   const text = body.getText(sf)
   return text === "undefined" || text === "void 0"
 }
 
 type Fate = "handled" | "dropped" | "propagates" | "other"
 
-function fateOf(
-  call: ts.CallExpression,
-  sf: ts.SourceFile,
-  legacyFiles: ReadonlySet<string>
-): Fate {
+function fateOf(call: ts.CallExpression, sf: ts.SourceFile): Fate {
   let node: ts.Node = call
   for (;;) {
     for (;;) {
@@ -151,16 +123,10 @@ function fateOf(
         const outer = access.parent
         const name = access.name.text
         if (name === "catch") {
-          return isNoOpHandler(outer.arguments[0], sf, legacyFiles) &&
-            !hasMarker(sf, call, legacyFiles)
-            ? "dropped"
-            : "handled"
+          return isNoOpHandler(outer.arguments[0], sf) ? "dropped" : "handled"
         }
         if (name === "then" && outer.arguments.length >= 2) {
-          return isNoOpHandler(outer.arguments[1], sf, legacyFiles) &&
-            !hasMarker(sf, call, legacyFiles)
-            ? "dropped"
-            : "handled"
+          return isNoOpHandler(outer.arguments[1], sf) ? "dropped" : "handled"
         }
         node = outer
         continue
@@ -181,9 +147,7 @@ function fateOf(
         ts.isTryStatement(up) &&
         up.tryBlock === n &&
         up.catchClause &&
-        (up.catchClause.block.statements.length > 0 ||
-          (legacyFiles.has(sf.fileName) &&
-            up.catchClause.block.getText(sf).includes(LEGACY_MARKER)))
+        up.catchClause.block.statements.length > 0
       ) {
         return "handled"
       }
@@ -224,10 +188,7 @@ function namesBoundToUseRunCommand(sf: ts.SourceFile) {
   return names
 }
 
-export function findDroppedRejections(
-  files: SourceFile[],
-  legacyFiles: ReadonlySet<string> = new Set()
-): Finding[] {
+export function findDroppedRejections(files: SourceFile[]): Finding[] {
   const parsed = files.map((file) => ({
     file,
     sf: ts.createSourceFile(
@@ -272,7 +233,7 @@ export function findDroppedRejections(
     changed = false
     for (const { sf } of parsed) {
       for (const call of calls(sf)) {
-        if (fateOf(call, sf, legacyFiles) !== "propagates") continue
+        if (fateOf(call, sf) !== "propagates") continue
         const fn = enclosingFn(call)
         const name = fn && reachableNameOf(fn)
         if (!fn || !name) continue
@@ -292,14 +253,14 @@ export function findDroppedRejections(
   const findings: Finding[] = []
   for (const { file, sf } of parsed) {
     for (const call of calls(sf)) {
-      const fate = fateOf(call, sf, legacyFiles)
+      const fate = fateOf(call, sf)
       const fn = enclosingFn(call)
       const dropped =
         fate === "dropped" ||
         (fate === "propagates" &&
           fn &&
           isInlineBlockBodyJsxHandlerWithNobodyToCatch(fn))
-      if (!dropped || hasMarker(sf, call, legacyFiles)) continue
+      if (!dropped) continue
       findings.push({
         file: file.name,
         line: sf.getLineAndCharacterOfPosition(call.getStart(sf)).line + 1,

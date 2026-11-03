@@ -18,6 +18,14 @@ import { blockMakerKeys, blockMakers } from "./paper-block-ops.ts"
 import { PaperCvEditor } from "./paper-editor.tsx"
 import { SLASH_ITEMS } from "./paper-slash-menu.tsx"
 
+function recordJsonBody<T>(bodies: T[], body: BodyInit) {
+  try {
+    bodies.push(JSON.parse(String(body)))
+  } catch {
+    return
+  }
+}
+
 function render(ui: ReactElement) {
   const wrap = (content: ReactElement) => (
     <ChatStoreProvider>{content}</ChatStoreProvider>
@@ -173,11 +181,7 @@ describe("block editor", () => {
       const url = String(input)
       urls.push(url)
       if (init?.body) {
-        try {
-          bodies.push(JSON.parse(String(init.body)))
-        } catch {
-          // ignore
-        }
+        recordJsonBody(bodies, init.body)
       }
       if (url.includes("/api/commands/chat.open")) {
         return Promise.resolve(
@@ -250,11 +254,7 @@ describe("block editor", () => {
       const url = String(input)
       urls.push(url)
       if (init?.body) {
-        try {
-          bodies.push(JSON.parse(String(init.body)))
-        } catch {
-          // ignore
-        }
+        recordJsonBody(bodies, init.body)
       }
       if (url.includes("/api/commands/chat.open")) {
         return Promise.resolve(

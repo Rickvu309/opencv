@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api-error.ts"
 import type { useRunCommand } from "@/lib/contract-client.ts"
+import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 
 import type { PaperView } from "@workspace/domain"
 
@@ -12,17 +13,18 @@ export function messageOf(error: unknown, fallback: string) {
   return fallback
 }
 
-/** Removes a half-made import. The import error is already shown, so a failed cleanup stays quiet. */
 export async function discardImport(
   run: ReturnType<typeof useRunCommand>,
   created: PaperView
 ) {
   if (created.sourceFileId) {
-    // rejected-ok: best effort cleanup after a failed import.
-    await run("paper.deleteFile", { fileId: created.sourceFileId }).catch(
-      () => undefined
+    await ignoreRejection(
+      run("paper.deleteFile", { fileId: created.sourceFileId }),
+      "failedImportCleanupStaysQuiet"
     )
   }
-  // rejected-ok: best effort cleanup after a failed import.
-  await run("paper.delete", { docId: created.id }).catch(() => undefined)
+  await ignoreRejection(
+    run("paper.delete", { docId: created.id }),
+    "failedImportCleanupStaysQuiet"
+  )
 }

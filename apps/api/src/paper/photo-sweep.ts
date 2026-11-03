@@ -5,14 +5,8 @@ import { getDb } from "../db/context.js"
 import { files } from "../db/schema.js"
 import { referencedPhotoFileIds } from "./photo-references.js"
 
-/** An avatar row nothing references lives at most a day before the sweep removes it. */
 const UNATTACHED_AVATAR_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
-/**
- * An avatar upload that never reached a document is abandoned. The web
- * deletes the row when it sees the flow fail; this sweep is the backstop
- * for the uploads a closed tab or a crash leaves behind.
- */
 export async function sweepUnattachedPhotos(now: Date = new Date()) {
   const cutoff = new Date(now.getTime() - UNATTACHED_AVATAR_MAX_AGE_MS)
   const stale = await getDb()

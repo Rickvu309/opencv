@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// Local PGlite stack only. Creates a throwaway account, linked job and saved letters.
-// PORT=4829 WEB_ORIGIN=http://localhost:5829 VERIFY_API_LOG=~/tmp/opencv-verify/p829/api.log
-// node .claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs <evidence directory>
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"

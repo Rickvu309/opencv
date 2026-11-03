@@ -44,7 +44,6 @@ function textBlocks(raw: string): ImportParseResult {
   return { ok: true, document, checks: findImportChecks(document) }
 }
 
-/** A JSON CV is stored as parsed. Anything else in the file becomes text blocks. */
 function jsonDocument(raw: string): ImportParseResult {
   try {
     const parsed = JSON.parse(raw) as unknown
@@ -89,7 +88,6 @@ async function readPdfPages(pdf: PdfDocument) {
 
 async function defaultPdfText(bytes: Buffer) {
   const pdf = await importParsers.openPdf(bytes)
-  // The deadline must own this function so destroy runs before the 400.
   bytes = Buffer.alloc(0)
   void bytes
   const pending = readPdfPages(pdf)
@@ -108,8 +106,18 @@ type MammothApi = {
 const DOCX_TEXT_CAP = 200_000
 const ZIP_ENTRY_CAP = 128
 const ZIP_DECLARED_CAP = 32_000_000
+const ZIP_DATA_DESCRIPTOR_FLAG = 0x08
 
-/** Local headers must fit before mammoth. A data-descriptor entry counts as one. */
+function entryHidesSizeUntilDataDescriptor(flags: number, compressed: number) {
+  return (flags & ZIP_DATA_DESCRIPTOR_FLAG) !== 0 && compressed === 0
+}
+
+function mammothFromExportEquals(
+  loaded: MammothApi & { default?: MammothApi }
+) {
+  return loaded.default ?? loaded
+}
+
 function zipAllowsMammoth(bytes: Buffer) {
   let offset = 0
   let count = 0
@@ -130,7 +138,7 @@ function zipAllowsMammoth(bytes: Buffer) {
     if (declared > ZIP_DECLARED_CAP) return false
     count += 1
     if (count > ZIP_ENTRY_CAP) return false
-    if ((flags & 0x08) !== 0 && compressed === 0) return true
+    if (entryHidesSizeUntilDataDescriptor(flags, compressed)) return true
     const next = offset + 30 + nameLength + extraLength + compressed
     if (next <= offset || next > bytes.length) return false
     offset = next
@@ -138,7 +146,6 @@ function zipAllowsMammoth(bytes: Buffer) {
   return false
 }
 
-/** mammoth is `export =`, so a dynamic import may nest the API under default. */
 async function defaultDocxText(bytes: Buffer) {
   if (!zipAllowsMammoth(bytes)) {
     throw new Error("import-zip-entries")
@@ -146,7 +153,7 @@ async function defaultDocxText(bytes: Buffer) {
   const loaded = (await import("mammoth")) as MammothApi & {
     default?: MammothApi
   }
-  const mammoth = loaded.default ?? loaded
+  const mammoth = mammothFromExportEquals(loaded)
   const extracted = await mammoth.extractRawText({ buffer: bytes })
   return extracted.value.slice(0, DOCX_TEXT_CAP)
 }
@@ -252,16 +259,11 @@ export function mediaTypeForImport(kind: ImportKind) {
   return "application/octet-stream"
 }
 
-/**
- * Tests replace a reader or the deadline. Production leaves the defaults.
- * The deadline is read when the parse starts.
- */
 export const importParsers = {
   timeoutMs: 10_000,
   openPdf: openPdfDocument,
   pdfText: defaultPdfText,
   docxText: defaultDocxText,
-  /** Tests abort while the CV row is inserted. Production stays null. */
   onInsert: null as (() => void) | null,
 }
 

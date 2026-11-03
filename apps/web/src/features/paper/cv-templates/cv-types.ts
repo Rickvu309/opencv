@@ -21,7 +21,6 @@ export type CvTemplateMeta = {
   description: string
 }
 
-/** Type roles, print-scaled on CV paper (the CV print-paper exception in AGENTS.md). */
 export const CV_TYPE_ROLES = [
   "page-title",
   "section-title",

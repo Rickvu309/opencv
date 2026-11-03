@@ -99,7 +99,6 @@ export function isStarterCvPersonName(name: string) {
   )
 }
 
-/** Drive title after the User claims the sample CV. */
 export function ownedCvName(
   userName?: string | null,
   personName?: string | null
@@ -143,7 +142,6 @@ export const PAPER_ZERO_STATES = {
   proof: { title: "Add a Proof", hint: "Show one thing you made." },
 } as const
 
-/** One prompt per kind the person has none of, plus the Apply link when one is possible. */
 export function paperZeroStates(
   docs: readonly PaperDoc[],
   canLink: boolean

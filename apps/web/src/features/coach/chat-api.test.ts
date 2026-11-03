@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { undoActivity } from "@/lib/contract-client.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
+  chatDetailKey,
   createChat,
   deleteChat,
   getChatByFocusDoc,
@@ -24,6 +25,13 @@ import {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+it("builds a detail key from a plain string before the query is enabled", () => {
+  expect(chatDetailKey("not-a-parsed-id")).toEqual([
+    "chat.get",
+    { chatId: "not-a-parsed-id" },
+  ])
 })
 
 function envelope<T>(data: T) {

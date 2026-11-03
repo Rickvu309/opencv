@@ -78,7 +78,6 @@ export const DEFAULT_CHECKOUT_PROOF: ProofData = {
   ],
 }
 
-/** @deprecated Use DEFAULT_CHECKOUT_PROOF */
 export const DEFAULT_CAFE_PROOF = DEFAULT_CHECKOUT_PROOF
 
 export const DEFAULT_ONBOARDING_PROOF: ProofData = {
@@ -122,7 +121,6 @@ export const DEFAULT_ONBOARDING_PROOF: ProofData = {
   ],
 }
 
-/** @deprecated Use DEFAULT_ONBOARDING_PROOF */
 export const DEFAULT_CAMPUS_PROOF = DEFAULT_ONBOARDING_PROOF
 
 export function newProofStep(type: ProofStepType = "note"): ProofStep {

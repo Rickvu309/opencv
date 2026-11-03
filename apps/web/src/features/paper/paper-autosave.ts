@@ -12,21 +12,9 @@ type Options<T> = {
   onSaved: (saved: PaperView, inputEpoch: number) => void
   onConflict: () => void
   onError: (error: unknown) => void
-  /** Read when a save starts, so a later keystroke can keep the dirty flag. */
   readInputEpoch?: () => number
 }
 
-/**
- * Saves run with `refresh: false` so a keystroke never refetches the document
- * over what the person is typing. The list and page count refresh once, when
- * the queue drains. One save at a time. A completion older than the latest scheduled edit
- * updates the version and does not count as the current document. A conflict
- * drops the pending edit and refuses further schedules until adopt().
- * pagehide sends the pending edit with keepalive, because a reload cancels
- * a normal fetch before it lands. A save already in flight was not keepalive.
- * When that request settles, one pending edit is sent again with keepalive.
- * pageshow clears that mode so a restored page uses a normal save.
- */
 export function usePaperAutosave<T>({
   docId,
   initialVersion,
@@ -104,8 +92,6 @@ export function usePaperAutosave<T>({
           if (pendingRef.current == null && sentEpoch === epochRef.current) {
             pendingRef.current = next
           }
-          // The in-flight save had no keepalive, so a reload aborts it.
-          // Send the pending edit once more before the page is gone.
           if (
             unloadRef.current &&
             pendingRef.current != null &&

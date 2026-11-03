@@ -25,6 +25,10 @@ describe("readA4HeightPx", () => {
 })
 
 describe("readA4FitWidth (QVE-208)", () => {
+  it("uses 794px, 210mm at 96dpi, before the page is laid out", () => {
+    expect(A4_WIDTH_PX).toBe(794)
+  })
+
   it("keeps the natural A4 width when the frame is unknown", () => {
     expect(readA4FitWidth(0, A4_WIDTH_PX)).toBe(A4_WIDTH_PX)
     expect(readA4FitScale(0, A4_WIDTH_PX)).toBe(1)

@@ -8,7 +8,6 @@ import { Input } from "@workspace/ui/components/input"
 import { MiniCv } from "./paper-parts.tsx"
 import { PAPER_TEMPLATE_LABELS, previewTemplate } from "./paper-templates.ts"
 
-/** Wide on `sm` and up, and always scrolls inside the viewport. */
 export const PAPER_GALLERY_DIALOG_CLASS =
   "max-h-[90vh] overflow-y-auto sm:max-w-3xl"
 

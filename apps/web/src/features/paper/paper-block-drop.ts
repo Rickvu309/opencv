@@ -131,7 +131,6 @@ export function dropBlock(
     )
     if (!original) return document
     const nextBlocks = blocksOnHeading(original, block)
-    // Already last. Returning the same document skips the commit, so undo stays empty.
     if (original.id === from.id && sameBlocks(nextBlocks, original.blocks)) {
       return document
     }
