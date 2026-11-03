@@ -55,7 +55,7 @@ const CLEAN = [
   ["verify.mjs", "const port = Number(process.env.PORT)"],
   ["verify.mjs", "if (viewport.width >= 1440) wide()"],
   ["verify.mjs", "const valid = (port) => port > 0"],
-  ["verify.mjs", "const timeoutMs = 30000\nawait listen(port)"],
+  ["verify.mjs", "const retryLimit = 30000\nawait listen(port)"],
   [
     "SKILL.md",
     "Run `PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:pen-layout`.",
