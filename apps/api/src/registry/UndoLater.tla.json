@@ -1,0 +1,7 @@
+{
+  "module": "registry.ts",
+  "actions": {
+    "Do": "Registry",
+    "Undo": "Registry"
+  }
+}
