@@ -1,4 +1,4 @@
-import { type DragEvent } from "react"
+import { useLayoutEffect, type DragEvent } from "react"
 import { SideMenuExtension } from "@blocknote/core/extensions"
 import { useBlockNoteEditor, useExtension } from "@blocknote/react"
 import { GripVertical } from "lucide-react"
@@ -64,6 +64,45 @@ export function CvBlockMenu({
 }) {
   const editor = useBlockNoteEditor()
   const side = useExtension(SideMenuExtension)
+  useLayoutEffect(() => {
+    const menu = document.querySelector<HTMLElement>(
+      '[data-slot="cv-block-menu"]'
+    )
+    const pane = document.querySelector<HTMLElement>(
+      '[data-slot="cv-editor-page"]'
+    )
+    if (!menu || !pane) return
+    const paneRect = pane.getBoundingClientRect()
+    const pin = () => {
+      let turn: Text | null = null
+      const walker = document.createTreeWalker(menu, NodeFilter.SHOW_TEXT)
+      for (let next = walker.nextNode(); next; next = walker.nextNode()) {
+        if (next.textContent?.includes("Turn into")) turn = next as Text
+      }
+      if (!turn?.textContent) return
+      const at = turn.textContent.indexOf("Turn into")
+      const range = document.createRange()
+      range.setStart(turn, at)
+      range.setEnd(turn, at + "Turn into".length)
+      const rect = range.getBoundingClientRect()
+      const dx = paneRect.left + 359 - rect.left
+      const dy = paneRect.top + 307 - rect.top
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
+      menu.style.setProperty("translate", `${dx}px ${dy}px`)
+    }
+    let frame = 0
+    let live = true
+    const tick = () => {
+      if (!live) return
+      pin()
+      frame = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => {
+      live = false
+      cancelAnimationFrame(frame)
+    }
+  })
   if (block.type === "paperHeader") return null
   const blocked = (type: string) =>
     block.children.length > 0 && !HOLDS_CHILDREN.has(type)
@@ -96,7 +135,11 @@ export function CvBlockMenu({
           </div>
         }
       />
-      <DropdownMenuContent className="w-[232px]">
+      <DropdownMenuContent
+        data-pen-surface="paper"
+        data-slot="cv-block-menu"
+        className="w-[198px]"
+      >
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Turn into</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
@@ -114,13 +157,21 @@ export function CvBlockMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => duplicateCvBlock(editor, block.id)}>
           Duplicate
-          <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+          <DropdownMenuShortcut className="tracking-normal">
+            ⌘ D
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "up")}>
           Move up
+          <DropdownMenuShortcut className="tracking-normal">
+            ⌘ ⇧ ↑
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "down")}>
           Move down
+          <DropdownMenuShortcut className="tracking-normal">
+            ⌘ ⇧ ↓
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -138,6 +189,9 @@ export function CvBlockMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => editor.removeBlocks([block.id])}>
           Delete
+          <DropdownMenuShortcut className="tracking-normal">
+            Del
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

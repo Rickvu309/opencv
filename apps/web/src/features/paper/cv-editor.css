@@ -57,14 +57,6 @@
   margin: 0;
 }
 
-[data-cv-editor]
-  .bn-block:has(> .react-renderer > [data-content-type="paperSkills"])
-  > .bn-block-group
-  > .bn-block:not(:last-child)
-  .bn-block-content::after {
-  content: ", ";
-}
-
 [data-cv-editor] .bn-block-group .bn-block-group {
   border: 0;
   box-shadow: none;

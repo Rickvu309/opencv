@@ -105,24 +105,6 @@ function insertSection(source: object, kind: string) {
   focusBlock(editor, created[0]?.id ?? marker.id)
 }
 
-function insertEntry(source: object, type: string, kind: string) {
-  const editor = editorOf(source)
-  const current = editor.getTextCursorPosition().block
-  ensureCvSection(source, kind, current.id)
-  const spec =
-    type === "paperSkills"
-      ? { type, children: [{ type: "paperSkillItem" }] }
-      : { type }
-  const placed = place(source, spec)
-  const item = placed.children?.[0]?.id
-  if (item) {
-    editor.setTextCursorPosition(item, "start")
-    editor.focus()
-    return
-  }
-  focusBlock(editor, placed.id)
-}
-
 function insertPlain(source: object, block: Record<string, unknown>) {
   const editor = editorOf(source)
   const placed = place(source, block)
@@ -143,19 +125,13 @@ export function cvSlashItems(source: object): DefaultReactSuggestionItem[] {
     item(title, "CV sections", () => insertSection(source, kind), subtext)
   return [
     section("summary", "Summary", "2 to 3 lines"),
-    section("experience", "Experience"),
-    section("education", "Education"),
-    section("skills", "Skills"),
-    section("projects", "Projects"),
-    section("activities", "Activities"),
-    section("awards", "Awards"),
-    section("languages", "Languages"),
+    section("projects", "Projects", "Things you built"),
+    section("activities", "Activities", "Clubs, volunteering"),
+    section("awards", "Awards", "Prizes, scholarships"),
+    section("languages", "Languages", "With level"),
     item("Text", "Blocks", () => insertPlain(source, { type: "paragraph" })),
-    item("Heading 2", "Blocks", () =>
+    item("Heading", "Blocks", () =>
       insertPlain(source, { type: "heading", props: { level: 2 } })
-    ),
-    item("Heading 3", "Blocks", () =>
-      insertPlain(source, { type: "heading", props: { level: 3 } })
     ),
     item("Bulleted list", "Blocks", () =>
       insertPlain(source, { type: "bulletListItem" })
@@ -164,15 +140,6 @@ export function cvSlashItems(source: object): DefaultReactSuggestionItem[] {
       insertPlain(source, { type: "numberedListItem" })
     ),
     item("Divider", "Blocks", () => insertPlain(source, { type: "divider" })),
-    item("Job", "Blocks", () =>
-      insertEntry(source, "paperExperience", "experience")
-    ),
-    item("School", "Blocks", () =>
-      insertEntry(source, "paperEducation", "education")
-    ),
-    item("Skill group", "Blocks", () =>
-      insertEntry(source, "paperSkills", "skills")
-    ),
   ]
 }
 
