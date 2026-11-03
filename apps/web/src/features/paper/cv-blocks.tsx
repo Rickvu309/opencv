@@ -169,11 +169,6 @@ function HeaderView({ block }: ViewProps) {
             key={field}
             className="inline-flex items-center gap-1.5 whitespace-nowrap"
           >
-            {index > 0 ? (
-              <span aria-hidden="true" data-cv-size="contact" data-cv-pipe="">
-                |
-              </span>
-            ) : null}
             <CvField
               blockId={block.id}
               name={field}
@@ -182,6 +177,11 @@ function HeaderView({ block }: ViewProps) {
               placeholder={label}
               size="contact"
             />
+            {index < visible.length - 1 ? (
+              <span aria-hidden="true" data-cv-size="contact" data-cv-pipe="">
+                |
+              </span>
+            ) : null}
           </span>
         ))}
       </div>
@@ -228,6 +228,7 @@ function ExperienceGhost({
         {
           type: "paperExperience",
           props: { role, company: "", period, location: "" },
+          children: [{ type: "bulletListItem" }],
         },
       ],
       blockId,
@@ -280,31 +281,79 @@ function ExperienceGhost({
   )
 }
 
+function skillChildren(value: string) {
+  const parts = value.split(",").map((part) => part.trim())
+  if (!value.endsWith(",")) {
+    while (parts.length > 1 && parts[parts.length - 1] === "") parts.pop()
+  }
+  return parts
+    .filter((text, index) => text.length > 0 || index === parts.length - 1)
+    .map((text) => ({ type: "paperSkillItem", content: text }))
+}
+
 function PlainGhost({
   blockId,
   editor,
   label,
   placeholder,
   follow,
+  bare = false,
 }: {
   blockId: string
   editor: SectionEditor
   label: string
   placeholder: string
   follow: Record<string, unknown>
+  bare?: boolean
 }) {
   const made = useRef(false)
+  const field = useRef<HTMLInputElement>(null)
+  const commitSkills = (force = false) => {
+    if (made.current) return
+    const value = field.current?.value ?? ""
+    if (!value.trim()) return
+    if (!force && !value.includes(",") && value.trim().length < 2) return
+    made.current = true
+    const created = editor.insertBlocks(
+      [{ type: "paperSkills", children: skillChildren(value) }],
+      blockId,
+      "after"
+    )
+    const holder = created[0]
+    const item =
+      editor.document.find((entry) => entry.id === holder?.id)?.children?.at(-1)
+        ?.id ?? holder?.children?.at(-1)?.id
+    if (item) {
+      editor.setTextCursorPosition(item, "end")
+      editor.focus()
+      return
+    }
+    focusCreated(holder?.id)
+  }
   return (
     <Input
+      ref={field}
       aria-label={label}
       placeholder={placeholder}
       data-cv-section={blockId}
       data-cv-size="note"
-      className="mt-[9px] h-auto min-h-0 w-full rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 max-md:min-h-11"
+      className={
+        bare
+          ? "h-auto min-h-0 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 max-md:min-h-11"
+          : "mt-[9px] h-auto min-h-0 w-full rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 max-md:min-h-11"
+      }
+      onBlur={() => {
+        if (follow.type === "paperSkills") commitSkills(true)
+      }}
       onInput={(event) => {
         if (made.current) return
         const value = event.currentTarget.value
         if (!value) return
+        if (follow.type === "paperSkills") {
+          if (!value.includes(",") && value.length < 2) return
+          requestAnimationFrame(() => commitSkills())
+          return
+        }
         made.current = true
         const block =
           follow.type === "paperEducation"
@@ -312,16 +361,7 @@ function PlainGhost({
                 ...follow,
                 props: { school: value, degree: "", period: "", detail: "" },
               }
-            : follow.type === "paperSkills"
-              ? {
-                  type: "paperSkills",
-                  children: value
-                    .split(",")
-                    .map((part) => part.trim())
-                    .filter(Boolean)
-                    .map((text) => ({ type: "paperSkillItem", content: text })),
-                }
-              : { type: "paragraph", content: value }
+            : { type: "paragraph", content: value }
         const created = editor.insertBlocks([block], blockId, "after")
         focusCreated(created[0]?.id)
       }}
@@ -356,13 +396,24 @@ function SectionView({ block, contentRef }: ViewProps) {
         <ExperienceGhost blockId={block.id} editor={editor} />
       ) : null}
       {empty && kind === "education" ? (
-        <PlainGhost
-          blockId={block.id}
-          editor={editor}
-          label="School"
-          placeholder="School, degree"
-          follow={{ type: "paperEducation" }}
-        />
+        <div className="mt-[9px] flex w-full items-baseline">
+          <PlainGhost
+            blockId={block.id}
+            editor={editor}
+            label="School"
+            placeholder="School, degree"
+            follow={{ type: "paperEducation" }}
+            bare
+          />
+          <Input
+            aria-label="Years"
+            placeholder="Years"
+            readOnly
+            tabIndex={-1}
+            data-cv-size="dates"
+            className="ms-auto h-auto min-h-0 w-auto shrink-0 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0"
+          />
+        </div>
       ) : null}
       {empty && kind === "skills" ? (
         <PlainGhost

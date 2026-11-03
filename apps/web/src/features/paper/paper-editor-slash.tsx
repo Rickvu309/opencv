@@ -58,9 +58,52 @@ function SlashList({
       while (host && host !== document.body) {
         const style = getComputedStyle(host)
         if (style.position !== "static" || style.transform !== "none") {
+          const width = menu.offsetWidth || 300
+          const height = menu.offsetHeight || 0
+          const edge = 8
+          let left = paneRect.left + 366
+          let top = paneRect.top + 269
+          if (left + width > window.innerWidth - edge) {
+            left = Math.max(edge, window.innerWidth - edge - width)
+          }
+          if (left < edge) left = edge
+          const slash = document.querySelector<HTMLElement>(
+            "[data-cv-slash-block]"
+          )
+          const slashRect = slash?.getBoundingClientRect()
+          const caretLow =
+            !!slashRect && slashRect.bottom + height > window.innerHeight - edge
+          if (
+            height > 0 &&
+            slashRect &&
+            (caretLow || window.innerWidth < 768)
+          ) {
+            const below = slashRect.bottom + 4
+            const above = slashRect.top - height - 4
+            top =
+              below + height <= window.innerHeight - edge
+                ? below
+                : above >= edge
+                  ? above
+                  : Math.max(edge, window.innerHeight - edge - height)
+            left = Math.min(
+              Math.max(edge, slashRect.left),
+              window.innerWidth - edge - width
+            )
+          } else if (
+            height > 0 &&
+            slashRect &&
+            top + height > window.innerHeight - edge
+          ) {
+            const up = slashRect.top - height - edge
+            top =
+              up >= edge
+                ? up
+                : Math.max(edge, window.innerHeight - edge - height)
+          }
           host.style.position = "fixed"
-          host.style.left = `${paneRect.left + 366}px`
-          host.style.top = `${paneRect.top + 269}px`
+          host.style.left = `${left}px`
+          host.style.top = `${top}px`
           host.style.right = "auto"
           host.style.bottom = "auto"
           host.style.transform = "none"
@@ -70,40 +113,55 @@ function SlashList({
         host = host.parentElement
       }
     }
-    const place = () => {
-      pin()
-      const slash = [
+    const slashLine = () => {
+      const anchor = document.getSelection()?.anchorNode
+      const current = anchor instanceof Element ? anchor : anchor?.parentElement
+      const currentLine = current?.closest<HTMLElement>(".bn-inline-content")
+      const nodes = [
         ...document.querySelectorAll<HTMLElement>(
           "[data-cv-editor] .bn-inline-content"
         ),
-      ].find((node) => node.textContent?.trim() === "/")
-      const outer = slash?.closest<HTMLElement>(".bn-block-outer")
-      if (!slash || !outer) return
-      const block = slash.parentElement
-      outer.dataset.cvSlashBlock = ""
-      outer.style.setProperty("transition", "none", "important")
-      outer.style.setProperty("margin-top", "13px", "important")
-      if (block) {
-        block.style.setProperty("transition", "none", "important")
-        block.style.setProperty("font-size", "12px", "important")
+      ]
+      const ordered = currentLine
+        ? [currentLine, ...nodes.filter((node) => node !== currentLine)]
+        : nodes
+      for (const node of ordered) {
+        const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
+        for (let next = walker.nextNode(); next; next = walker.nextNode()) {
+          if (next.textContent?.trim() === "/") return node
+        }
       }
-      slash.style.setProperty("transition", "none", "important")
-      slash.style.setProperty("font-size", "12px", "important")
-      slash.style.setProperty("font-weight", "400", "important")
-      slash.style.setProperty("line-height", "16px", "important")
-      let hint = pane.querySelector<HTMLElement>("[data-cv-slash-hint]")
+      return null
+    }
+    const place = () => {
+      pin()
+      const slash = slashLine()
+      const outer = slash?.closest<HTMLElement>(".bn-block-outer")
+      const surface = document.querySelector<HTMLElement>(
+        "[data-pen-surface='paper']"
+      )
+      if (!slash || !outer || !surface) return
+      outer.dataset.cvSlashBlock = ""
+      let text: Text | null = null
+      const walker = document.createTreeWalker(slash, NodeFilter.SHOW_TEXT)
+      for (let next = walker.nextNode(); next; next = walker.nextNode()) {
+        if (next.textContent?.trim() === "/") text = next as Text
+      }
+      if (!text) return
+      const range = document.createRange()
+      range.selectNodeContents(text)
+      const rect = range.getBoundingClientRect()
+      let hint = document.querySelector<HTMLElement>("[data-cv-slash-hint]")
       if (!hint) {
         hint = document.createElement("span")
         hint.dataset.cvSlashHint = ""
         hint.textContent = "Type to filter"
-        pane.appendChild(hint)
+        surface.appendChild(hint)
       }
-      const rect = slash.getBoundingClientRect()
       hint.style.position = "fixed"
-      hint.style.left = `${rect.right}px`
-      hint.style.top = `${rect.top}px`
       hint.style.margin = "0"
-      hint.style.pointerEvents = "none"
+      hint.style.left = `${rect.right + 6}px`
+      hint.style.top = `${rect.top}px`
     }
     let frame = 0
     let live = true
@@ -116,7 +174,7 @@ function SlashList({
     return () => {
       live = false
       cancelAnimationFrame(frame)
-      pane.querySelector("[data-cv-slash-hint]")?.remove()
+      document.querySelector("[data-cv-slash-hint]")?.remove()
       const outer = document.querySelector<HTMLElement>("[data-cv-slash-block]")
       if (outer) {
         outer.style.removeProperty("margin-top")

@@ -448,6 +448,7 @@ function SideMenuRelease() {
       if (!(target instanceof Element)) return
       if (!target.closest("[aria-label='Drag block']")) return
       dragging.current = true
+      document.documentElement.setAttribute("data-cv-dragging", "")
     }
     const finishDrag = () => {
       if (!dragging.current) return
@@ -455,11 +456,19 @@ function SideMenuRelease() {
       side.blockDragEnd()
       if (side.menuFrozen) side.unfreezeMenu()
     }
+    const onDragOver = (event: DragEvent) => {
+      if (!dragging.current) return
+      event.preventDefault()
+    }
     const onDragEnd = () => {
+      document.documentElement.removeAttribute("data-cv-dragging")
       finishDrag()
     }
     const onPointerUp = () => {
-      queueMicrotask(finishDrag)
+      queueMicrotask(() => {
+        if (dragging.current) return
+        if (side.menuFrozen) side.unfreezeMenu()
+      })
     }
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
@@ -476,12 +485,14 @@ function SideMenuRelease() {
       side.unfreezeMenu()
     }
     root.addEventListener("dragstart", onDragStart, true)
+    root.addEventListener("dragover", onDragOver)
     root.addEventListener("dragend", onDragEnd, true)
     root.addEventListener("pointerup", onPointerUp, true)
     root.addEventListener("keydown", onKey, true)
     root.addEventListener("pointerdown", onPointerDown, true)
     return () => {
       root.removeEventListener("dragstart", onDragStart, true)
+      root.removeEventListener("dragover", onDragOver)
       root.removeEventListener("dragend", onDragEnd, true)
       root.removeEventListener("pointerup", onPointerUp, true)
       root.removeEventListener("keydown", onKey, true)

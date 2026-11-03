@@ -78,6 +78,15 @@
   border-radius: 999px;
 }
 
+html[data-cv-dragging] [data-slot="cv-block-menu"],
+html[data-cv-dragging] :has(> [data-slot="cv-block-menu"]) {
+  display: none;
+}
+
+html:has([data-slot="paper-slash-menu"]) [data-slot="paper-side-menu"] {
+  display: none;
+}
+
 .prosemirror-dropcursor-block::before {
   content: "";
   position: absolute;

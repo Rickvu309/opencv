@@ -136,7 +136,13 @@ export function CvEditorBar({
             }
           />
           <DropdownMenuContent align="start">
+            <DropdownMenuItem className="md:hidden" onClick={onUndo}>
+              Undo
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onPrint}>Download PDF</DropdownMenuItem>
+            <DropdownMenuItem className="md:hidden" onClick={onCoach}>
+              Coach
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </nav>
@@ -148,7 +154,7 @@ export function CvEditorBar({
         <Button
           type="button"
           variant="ghost"
-          className="h-11 px-2 md:h-7"
+          className="hidden h-11 px-2 md:inline-flex md:h-7"
           onClick={onUndo}
         >
           Undo
@@ -156,7 +162,7 @@ export function CvEditorBar({
         <Button
           type="button"
           variant="ghost"
-          className="h-11 px-2 md:h-7"
+          className="hidden h-11 px-2 md:inline-flex md:h-7"
           onClick={onPrint}
         >
           Download PDF
@@ -164,7 +170,7 @@ export function CvEditorBar({
         <Button
           type="button"
           variant="ghost"
-          className="h-11 px-2 md:h-7"
+          className="hidden h-11 px-2 md:inline-flex md:h-7"
           onClick={onCoach}
         >
           Coach
