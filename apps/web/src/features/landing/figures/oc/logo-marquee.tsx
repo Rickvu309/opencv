@@ -1,6 +1,6 @@
 import { LANDING_LOGOS } from "../../landing-copy.ts"
 import { useOnScreen } from "../use-on-screen.ts"
-import { LOGO_MARKS } from "./logo-marks.ts"
+import { VENDORED_SIMPLE_ICONS_CC0_PATHS } from "./logo-marks.ts"
 import "./logo-marquee.css"
 
 const CROPPED_WORDMARK = "Coinbase"
@@ -16,7 +16,7 @@ function Mark({ name }: { name: (typeof LANDING_LOGOS)[number] }) {
         role="img"
         aria-label={name}
       >
-        <path d={LOGO_MARKS[name]} />
+        <path d={VENDORED_SIMPLE_ICONS_CC0_PATHS[name]} />
       </svg>
     )
   }
@@ -28,7 +28,7 @@ function Mark({ name }: { name: (typeof LANDING_LOGOS)[number] }) {
       fill="currentColor"
       aria-hidden="true"
     >
-      <path d={LOGO_MARKS[name]} />
+      <path d={VENDORED_SIMPLE_ICONS_CC0_PATHS[name]} />
     </svg>
   )
 }

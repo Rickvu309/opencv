@@ -305,12 +305,12 @@ html:has(.landing-root) {
   vertical-align: -0.05em;
 }
 
-.landing-statement-break {
+.landing-statement-break-when-lead-fits-one-line {
   display: none;
 }
 
 @media (min-width: 90rem) {
-  .landing-statement-break {
+  .landing-statement-break-when-lead-fits-one-line {
     display: initial;
   }
 }

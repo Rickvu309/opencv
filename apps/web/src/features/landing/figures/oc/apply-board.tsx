@@ -3,6 +3,11 @@ import * as React from "react"
 import { AppShell } from "./app-shell.tsx"
 import { OC, delay } from "./palette.ts"
 import {
+  ABOVE_OFFER_SO_DRAGGED_CARD_PAINTS_OVER,
+  COLUMN_GAP,
+  COLUMN_WIDTH,
+} from "./apply-board-columns.ts"
+import {
   ChevronDown,
   Plus,
   Kanban,
@@ -429,10 +434,10 @@ const productAnalyst: Job = {
   date: "Oct 2",
 }
 
-const columnStyle = (z: number): React.CSSProperties => ({
+const columnStyle = (stackOrder: number): React.CSSProperties => ({
   position: "relative",
-  zIndex: z,
-  width: 271,
+  zIndex: stackOrder,
+  width: COLUMN_WIDTH,
   flexShrink: 0,
   padding: "0 9px 9px",
   borderRadius: 10,
@@ -514,7 +519,12 @@ export function ApplyBoardAnimated({
       </div>
 
       <div
-        style={{ flex: 1, padding: "10px 12px 13px", display: "flex", gap: 12 }}
+        style={{
+          flex: 1,
+          padding: "10px 12px 13px",
+          display: "flex",
+          gap: COLUMN_GAP,
+        }}
       >
         <div className="oc-in-up" style={{ ...columnStyle(1), ...delay(300) }}>
           <ColumnHeader
@@ -550,7 +560,13 @@ export function ApplyBoardAnimated({
           ))}
         </div>
 
-        <div className="oc-in-up" style={{ ...columnStyle(3), ...delay(420) }}>
+        <div
+          className="oc-in-up"
+          style={{
+            ...columnStyle(ABOVE_OFFER_SO_DRAGGED_CARD_PAINTS_OVER),
+            ...delay(420),
+          }}
+        >
           <ColumnHeader
             status="interview"
             label="Interview"
