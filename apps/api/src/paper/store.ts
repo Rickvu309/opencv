@@ -45,7 +45,11 @@ import {
   parseImportFile,
 } from "./import-parse.js"
 
-import { seedColumns, withContent } from "./content-store.js"
+import {
+  sameContentVersion,
+  seedColumns,
+  withContent,
+} from "./content-store.js"
 import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
 import { toPaper, tryReadStoredPaper } from "./read-paper.js"
 
@@ -191,7 +195,7 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
     ) {
       return asIs
     }
-    if (current.contentVersion !== input.contentVersion) {
+    if (!sameContentVersion(current.contentVersion, input.contentVersion)) {
       throw conflict(view)
     }
     if (

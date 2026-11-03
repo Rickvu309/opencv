@@ -31,6 +31,7 @@ import {
 import { CommandError } from "../registry/errors.js"
 import { blockingEdit, NEWER_FIRST, revertedIds } from "./undo-rules.js"
 import {
+  coachBasisOk,
   withContent,
   type LockedContent,
   type LogRow,
@@ -71,16 +72,15 @@ function documentOf(yDoc: PaperYDoc, kind: PaperStoredKind): PaperDocument {
 
 function checkedBasis(content: LockedContent, basedOn: number) {
   const revision = content.row.contentVersion
+  if (coachBasisOk(basedOn, revision, content.baseSeq)) return
   if (basedOn > revision) {
     throw conflict(
       `basedOn ${basedOn} is ahead of revision ${revision}. Read paper.outline again`
     )
   }
-  if (basedOn < content.baseSeq) {
-    throw conflict(
-      `basedOn ${basedOn} is older than this document's history. Read paper.outline again`
-    )
-  }
+  throw conflict(
+    `basedOn ${basedOn} is older than this document's history. Read paper.outline again`
+  )
 }
 
 function imagesOf(
