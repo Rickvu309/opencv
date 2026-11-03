@@ -10,14 +10,13 @@ import {
   blankBlockDocument,
   withoutBlankParts,
   emptyLetterDocument,
-  isCvBlockDocument,
   paperPhotoFileId,
   paperPhotoRef,
+  storedPaperDocumentSchema,
   parseFileId,
   parsePaperId,
   parseUserId,
   legacyPaperOf,
-  mergeLegacyEdit,
   upgradeStoredPaper,
   type PaperDocument,
   type PaperView,
@@ -25,7 +24,6 @@ import {
   type FileId,
   type LetterDocument,
   type PaperId,
-  type PaperReplaceInput,
   type PaperStoredKind,
   type PaperTemplateId,
   type UserId,
@@ -45,11 +43,7 @@ import {
   parseImportFile,
 } from "./import-parse.js"
 
-import {
-  sameContentVersion,
-  seedColumns,
-  withContent,
-} from "./content-store.js"
+import { seedColumns, withContent } from "./content-store.js"
 import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
 import { toPaper, tryReadStoredPaper } from "./read-paper.js"
 
@@ -81,19 +75,6 @@ export async function ownedPaper(userId: UserId, docId: PaperId) {
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   return row
-}
-
-function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`
-  if (value && typeof value === "object") {
-    const record = value as Record<string, unknown>
-    const body = Object.keys(record)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
-      .join(",")
-    return `{${body}}`
-  }
-  return JSON.stringify(value) ?? "null"
 }
 
 function requireDocument(kind: PaperStoredKind, document: unknown) {
@@ -173,88 +154,6 @@ export async function createPaper(
     })
   importParsers.onInsert?.()
   return toPaper(await ownedPaper(actor.userId, parsePaperId(id)))
-}
-
-export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
-  const kind = (await ownedPaper(actor.userId, input.docId)).kind
-  const document = requireDocument(kind, input.document)
-  const upgraded = upgradeStoredPaper(kind, document)
-  if (!upgraded.ok) {
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, upgraded.message)
-  }
-  return withContent(actor.userId, input.docId, async (content) => {
-    const current = content.row
-    const view = toPaper(current)
-    const previousPaper = content.document
-    const merged = mergeLegacyEdit(previousPaper, upgraded.document)
-    const unchanged = canonicalJson(merged) === canonicalJson(previousPaper)
-    const asIs = { ...view, previousDocument: view.document, previousPaper }
-    if (
-      current.contentVersion === input.contentVersion + 1 &&
-      (unchanged || canonicalJson(current.document) === canonicalJson(document))
-    ) {
-      return asIs
-    }
-    if (!sameContentVersion(current.contentVersion, input.contentVersion)) {
-      throw conflict(view)
-    }
-    if (
-      current.kind === "cv" &&
-      isCvBlockDocument(current.document) &&
-      !isCvBlockDocument(document)
-    ) {
-      throw new CommandError(
-        ERROR_CODES.VALIDATION_ERROR,
-        "This CV uses blocks. Send a version 2 document."
-      )
-    }
-    if (unchanged) return asIs
-    const written = await content.edit({
-      origin: "person",
-      target: merged,
-      witness: document,
-    })
-    return {
-      ...toPaper(written),
-      previousDocument: view.document,
-      previousPaper,
-    }
-  })
-}
-
-function conflict(view: PaperView) {
-  return new CommandError(
-    ERROR_CODES.CONFLICT,
-    "This document changed. Reload it and try again.",
-    { document: view }
-  )
-}
-
-export async function restorePaper(
-  actor: Actor,
-  input: {
-    docId: PaperId
-    contentVersion: number
-    document: unknown
-    paper: PaperDocument
-  }
-) {
-  return withContent(actor.userId, input.docId, async (content) => {
-    const view = toPaper(content.row)
-    if (content.row.contentVersion !== input.contentVersion) {
-      throw conflict(view)
-    }
-    const written = await content.edit({
-      origin: "person",
-      target: input.paper,
-      witness: input.document,
-    })
-    return {
-      ...toPaper(written),
-      previousDocument: view.document,
-      previousPaper: content.document,
-    }
-  })
 }
 
 export async function renamePaper(actor: Actor, docId: PaperId, name: string) {
@@ -391,17 +290,25 @@ export async function pageCount(actor: Actor, docId: PaperId) {
   }
 }
 
-function withPhotoRef(document: PaperDocument, ref: string): PaperDocument {
+function withPhotoRef(
+  document: PaperDocument,
+  ref: string | null
+): PaperDocument {
   if (document.kind !== "cv") {
     throw new CommandError(
       ERROR_CODES.VALIDATION_ERROR,
       "A photo belongs on a CV."
     )
   }
+  if (!ref) {
+    const { photo: _removed, ...header } = document.header
+    void _removed
+    return { ...document, header }
+  }
   return {
     ...document,
     header: { ...document.header, photo: ref },
-  } as PaperDocument
+  }
 }
 
 async function requireAvatarFile(userId: UserId, fileId: FileId) {
@@ -441,9 +348,7 @@ export async function readSharedPhoto(token: string) {
     .limit(1)
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-  const fileId = paperPhotoFileId(
-    photoRefOf(row.doc.document as PaperView["document"])
-  )
+  const fileId = paperPhotoFileId(photoRefOf(row.doc.document))
   if (!fileId) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
   return readOwnedPhoto(parseUserId(row.doc.userId), parseFileId(fileId))
 }
@@ -451,19 +356,19 @@ export async function readSharedPhoto(token: string) {
 export async function attachPhoto(
   actor: Actor,
   docId: PaperId,
-  fileId: FileId
+  fileId: FileId | null
 ) {
   await ownedPaper(actor.userId, docId)
-  await requireAvatarFile(actor.userId, fileId)
+  if (fileId) await requireAvatarFile(actor.userId, fileId)
   return withContent(actor.userId, docId, async (content) => {
-    const before = toPaper(content.row)
     const written = await content.edit({
       origin: "server",
-      target: (current) => withPhotoRef(current, paperPhotoRef(fileId)),
+      target: (current) =>
+        withPhotoRef(current, fileId ? paperPhotoRef(fileId) : null),
     })
     return {
       ...toPaper(written),
-      previousDocument: before.document,
+      previousDocument: storedPaperDocumentSchema.parse(content.row.document),
       previousPaper: content.document,
     }
   })

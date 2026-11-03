@@ -401,7 +401,6 @@ describe("CV photo", () => {
       kind: "cv",
       templateId: "with-photo",
       status: "draft",
-      document: blocks,
       paper: paperOf("cv", blocks),
       contentVersion: 2,
       checks: [],

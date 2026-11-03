@@ -20,7 +20,7 @@ import {
   defaultCvData,
   type CvData,
   type CvTemplateId,
-} from "./paper-cv-types.ts"
+} from "./cv-templates/cv-types.ts"
 
 function applyCvTemplate(data: CvData, templateId: CvTemplateId): CvData {
   return { ...data, templateId }

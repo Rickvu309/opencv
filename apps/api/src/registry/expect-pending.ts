@@ -18,8 +18,6 @@ export const REVERSAL_EXPECT_PENDING = {
     "paper.edit",
     "paper.import",
     "paper.rename",
-    "paper.replace",
-    "paper.restore",
     "paper.setTemplate",
     "paper.share",
   ],

@@ -22,7 +22,7 @@ describe("coach page estimate from stored JSON", () => {
     )
     const editor = readFileSync(
       new URL(
-        "../../../web/src/features/paper/paper-editor.tsx",
+        "../../../web/src/features/paper/paper-cv-editor.tsx",
         import.meta.url
       ),
       "utf8"

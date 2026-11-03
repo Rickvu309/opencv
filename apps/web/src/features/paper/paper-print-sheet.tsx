@@ -7,9 +7,7 @@ import {
 } from "react"
 import { createPortal } from "react-dom"
 import {
-  blocksToPreviewModel,
   cvPrintModel,
-  isCvBlockDocument,
   isCvDocument,
   type CvDocument as CvDocumentData,
   type CvPaper,
@@ -45,7 +43,6 @@ export function previewOf(
   const layout = printLayout(templateId)
   const paper = asCvPaper(source)
   if (paper) return cvPrintModel(paper, layout)
-  if (isCvBlockDocument(source)) return blocksToPreviewModel(source, layout)
   if (!source || typeof source !== "object") return null
   const record = { ...(source as Record<string, unknown>) }
   const activities = record.activities

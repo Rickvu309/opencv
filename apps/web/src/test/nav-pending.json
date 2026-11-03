@@ -260,36 +260,8 @@
   },
   {
     "rule": "touch-targets",
-    "file": "apps/web/src/features/paper/paper-block-entries.tsx",
-    "count": 1,
-    "issue": "#916",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
-    "file": "apps/web/src/features/paper/paper-block-menu.tsx",
-    "count": 1,
-    "issue": "#916",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
     "file": "apps/web/src/features/paper/paper-check-bar.tsx",
     "count": 3,
-    "issue": "#916",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
-    "file": "apps/web/src/features/paper/paper-editor-conflict-banner.tsx",
-    "count": 1,
-    "issue": "#916",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
-    "file": "apps/web/src/features/paper/paper-editor.tsx",
-    "count": 10,
     "issue": "#916",
     "expires": "2026-12-01"
   },
@@ -352,13 +324,6 @@
   {
     "rule": "touch-targets",
     "file": "apps/web/src/features/paper/paper-share-page.tsx",
-    "count": 1,
-    "issue": "#916",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
-    "file": "apps/web/src/features/paper/paper-slash-menu.tsx",
     "count": 1,
     "issue": "#916",
     "expires": "2026-12-01"

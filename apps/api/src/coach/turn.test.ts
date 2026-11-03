@@ -331,11 +331,12 @@ describe("toolResultFromExecute", () => {
   it("puts reversal and detail on the yielded part", () => {
     const part = toolResultFromExecute({
       toolCallId: "call_1",
-      name: "paper.replace",
+      name: "paper.edit",
       summary: "Update the document",
       result: {
         pending: false,
         activityId: null,
+        command: "paper.replace",
         reversal: { command: "paper.replace", input: { docId: "doc" } },
         output: {
           kind: "cv",

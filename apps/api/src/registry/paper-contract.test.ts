@@ -1,8 +1,5 @@
 import {
   commands,
-  blankBlockDocument,
-  emptyCvDocument,
-  emptyLetterDocument,
   paperContract,
   paperQueries,
   parseUserId,
@@ -12,7 +9,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { paperDocs, user } from "../db/schema.js"
+import { user } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
@@ -61,27 +58,6 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
 
       const cv = idOf(await run("paper.create", { kind: "cv", name: "My CV" }))
       const letter = idOf(await run("paper.create", { kind: "letter" }))
-      const named = blankBlockDocument()
-      await run("paper.replace", {
-        docId: cv,
-        contentVersion: 1,
-        document: {
-          ...named,
-          header: { ...named.header, name: "Ada Lane" },
-        },
-      })
-      const current = (await read("paper.get", { docId: cv })) as {
-        contentVersion: number
-        document: unknown
-      }
-      await run("paper.restore", {
-        docId: cv,
-        contentVersion: current.contentVersion,
-        document: current.document,
-        paper: (
-          await db.select().from(paperDocs).where(eq(paperDocs.id, cv))
-        )[0]!.crdtDocument,
-      })
       await run("paper.rename", { docId: cv, name: "Ada CV" })
       const outline = (await read("paper.outline", { docId: cv })) as {
         revision: number
@@ -239,18 +215,9 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
           },
           actor: coach,
         })
-      const replace = (docId: string, document: unknown) =>
-        registry.execute({
-          name: "paper.replace",
-          input: { docId, contentVersion: 1, document },
-          actor: coach,
-        })
 
       const allowed = await edit(cv, "Ada")
       expect(allowed.output).toMatchObject({ revision: 2 })
-      await expect(replace(cv, emptyCvDocument())).rejects.toMatchObject({
-        code: "COACH_NOT_ALLOWED",
-      })
 
       await db.update(user).set({ agentCvs: false }).where(eq(user.id, userId))
       await expect(edit(cv, "Grace")).rejects.toMatchObject({
@@ -274,15 +241,15 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         })
       ).rejects.toMatchObject({ code: "COACH_NOT_ALLOWED" })
       const byPerson = await registry.execute({
-        name: "paper.replace",
+        name: "paper.edit",
         input: {
           docId: letter,
-          contentVersion: 1,
-          document: { ...emptyLetterDocument(), markdown: "Hello" },
+          basedOn: 1,
+          edits: [{ op: "setText", blockId: "letter-1", text: "Hello" }],
         },
         actor: person,
       })
-      expect(byPerson.output).toMatchObject({ contentVersion: 2 })
+      expect(byPerson.output).toMatchObject({ revision: 2 })
     })
     await client.close()
   })

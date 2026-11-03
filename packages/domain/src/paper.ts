@@ -112,14 +112,6 @@ export const paperCreateInputSchema = z
   })
   .strict()
 
-export const paperReplaceInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    contentVersion: z.number().int().positive(),
-    document: z.unknown(),
-  })
-  .strict()
-
 export const paperRenameInputSchema = paperRenameDocInputSchema
 
 export const paperDuplicateInputSchema = z
@@ -177,7 +169,8 @@ export const paperDeleteFileInputSchema = z
 export const paperAttachPhotoInputSchema = z
   .object({
     docId: paperDocIdSchema,
-    fileId: fileIdSchema,
+    fileId: fileIdSchema.nullable(),
+    quiet: z.boolean().optional(),
   })
   .strict()
 
@@ -202,8 +195,6 @@ export function paperPhotoFileId(value: string | null | undefined) {
   const id = value.slice(PAPER_PHOTO_FILE_PREFIX.length)
   return PHOTO_FILE_ID.test(id) ? id : null
 }
-
-export type PaperReplaceInput = z.infer<typeof paperReplaceInputSchema>
 
 const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])
 

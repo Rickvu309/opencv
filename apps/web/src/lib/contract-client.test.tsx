@@ -83,10 +83,11 @@ describe("runContractCommand", () => {
     await runContractCommand(queryClient, "account.delete", {
       confirm: "DELETE",
     })
-    await runContractCommand(queryClient, "paper.replace", {
+    await runContractCommand(queryClient, "paper.sync", {
       docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
-      contentVersion: 1,
-      document: {},
+      epoch: 0,
+      update: "",
+      stateVector: "",
     })
     await runContractCommand(queryClient, "job.move", {
       jobId: JOB,

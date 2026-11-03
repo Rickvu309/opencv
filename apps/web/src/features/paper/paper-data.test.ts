@@ -11,7 +11,7 @@ import {
 } from "@workspace/domain"
 
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
-import { defaultCvData } from "./paper-cv-types.ts"
+import { defaultCvData } from "./cv-templates/cv-types.ts"
 import {
   PAPER_ATTACH_CV_CTA,
   PAPER_ATTACH_SAMPLE_CTA,
@@ -175,9 +175,7 @@ describe("prefixed-string retirement", () => {
   it("keeps production Paper modules free of cv:v1 / proof:v1 content", () => {
     const sources = [
       "paper-data.ts",
-      "paper-cv-types.ts",
       "paper-proof-types.ts",
-      "paper-editor.tsx",
       "paper-library.tsx",
       "paper-letter.tsx",
       "paper-new-dialog.tsx",

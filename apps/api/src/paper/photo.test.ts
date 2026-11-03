@@ -1,8 +1,4 @@
-import {
-  blankBlockDocument,
-  paperPhotoRef,
-  personActor,
-} from "@workspace/domain"
+import { paperPhotoRef, personActor } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
@@ -143,7 +139,7 @@ describe("CV photo bytes", () => {
     await client.close()
   })
 
-  it("writes a version 2 header photo and refuses a blob url", async () => {
+  it("writes a header photo and clears it when that attach is undone", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
     const userId = "user-photo-v2"
@@ -162,28 +158,13 @@ describe("CV photo bytes", () => {
         actor,
       })
       const docId = (created.output as { id: string }).id
-      await registry.execute({
-        name: "paper.replace",
-        input: {
-          docId,
-          contentVersion: 1,
-          document: blankBlockDocument(),
-        },
-        actor,
-      })
-      const blobDocument = blankBlockDocument()
-      blobDocument.header.photo = "blob:http://localhost/photo"
       await expect(
         registry.execute({
-          name: "paper.replace",
-          input: {
-            docId,
-            contentVersion: 2,
-            document: blobDocument,
-          },
+          name: "paper.attachPhoto",
+          input: { docId, fileId: "blob:http://localhost/photo" },
           actor,
         })
-      ).rejects.toThrow("Invalid content")
+      ).rejects.toThrow()
 
       const saved = await saveFile({
         userId: parseUserId(userId),
@@ -198,20 +179,24 @@ describe("CV photo bytes", () => {
         actor,
       })
       const view = attached.output as {
-        document: { header: { photo?: string } }
+        paper: { header: { photo?: string } }
       }
-      expect(view.document.header.photo).toBe(paperPhotoRef(saved.id))
+      expect(view.paper.header.photo).toBe(paperPhotoRef(saved.id))
       const reversal = attached.reversal
       if (!reversal) throw new Error("missing reversal")
+      expect(reversal).toMatchObject({
+        command: "paper.attachPhoto",
+        input: { docId, fileId: null, quiet: true },
+      })
       await registry.execute({
         name: reversal.command,
         input: reversal.input,
         actor,
       })
       const cleared = (await registry.read("paper.get", { docId }, actor)) as {
-        document: { header: { photo?: string } }
+        paper: { header: { photo?: string } }
       }
-      expect(cleared.document.header.photo).toBeUndefined()
+      expect(cleared.paper.header.photo).toBeUndefined()
     })
     await client.close()
   })

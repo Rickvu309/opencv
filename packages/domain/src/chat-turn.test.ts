@@ -12,7 +12,7 @@ describe("chat turn events", () => {
     const event: ChatTurnEvent = {
       type: "tool-call",
       toolCallId: "t1",
-      name: "paper.replace",
+      name: "paper.edit",
       input: { docId: "d" },
     }
     const wire = encodeChatTurnEvent(event)

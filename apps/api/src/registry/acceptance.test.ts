@@ -9,7 +9,6 @@ import { withDatabase } from "../db/context.js"
 import { coachUsage, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
-import { CommandError } from "./errors.js"
 
 describe("release-one commands honor company, duplicates, paper versions, plan, delete and the day cap", () => {
   it("checks company, duplicates, paper versions, plan, delete, and the day cap", async () => {
@@ -65,61 +64,37 @@ describe("release-one commands honor company, duplicates, paper versions, plan, 
         input: { kind: "cv", name: "CV" },
         actor: person,
       })
-      const doc = created.output as {
-        id: string
-        document: Record<string, unknown>
-        contentVersion: number
-      }
+      const doc = created.output as { id: string; contentVersion: number }
       expect(doc.contentVersion).toBe(1)
-      const header = doc.document.header as { name: string }
-      const next = {
-        ...doc.document,
-        header: { ...header, name: "Shipped a small experiment." },
-      }
-      const replaced = await registry.execute({
-        name: "paper.replace",
-        input: { docId: doc.id, contentVersion: 1, document: next },
-        actor: person,
-      })
-      expect(
-        (replaced.output as { contentVersion: number }).contentVersion
-      ).toBe(2)
-      const replay = await registry.execute({
-        name: "paper.replace",
-        input: { docId: doc.id, contentVersion: 1, document: next },
-        actor: person,
-      })
-      expect((replay.output as { contentVersion: number }).contentVersion).toBe(
-        2
-      )
-
-      try {
-        await registry.execute({
-          name: "paper.replace",
-          input: {
-            docId: doc.id,
-            contentVersion: 1,
-            document: {
-              ...next,
-              header: { ...header, name: "A different edit." },
+      const edited = await registry.execute({
+        name: "paper.edit",
+        input: {
+          docId: doc.id,
+          basedOn: 1,
+          edits: [
+            {
+              op: "setHeader",
+              fields: { name: "Shipped a small experiment." },
             },
-          },
-          actor: person,
-        })
-        expect.fail("expected a conflict")
-      } catch (error) {
-        expect(error).toBeInstanceOf(CommandError)
-        const commandError = error as CommandError
-        expect(commandError.code).toBe(ERROR_CODES.CONFLICT)
-        expect(commandError.status).toBe(409)
-        expect(commandError.detail.document).toMatchObject({
-          contentVersion: 2,
-          document: {
-            version: 2,
-            header: { name: "Shipped a small experiment." },
-          },
-        })
-      }
+          ],
+        },
+        actor: person,
+      })
+      expect((edited.output as { revision: number }).revision).toBe(2)
+      const stale = await registry.execute({
+        name: "paper.edit",
+        input: {
+          docId: doc.id,
+          basedOn: 1,
+          edits: [{ op: "setHeader", fields: { name: "A different edit." } }],
+        },
+        actor: person,
+      })
+      expect(stale.output).toMatchObject({
+        revision: 2,
+        editId: null,
+        outcomes: [{ status: "stale" }],
+      })
 
       await expect(
         registry.execute({

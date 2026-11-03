@@ -68,12 +68,6 @@ export const PENDING_HEADERS: Pending[] = [
     note: PAPER,
   },
   {
-    file: "features/paper/paper-editor.tsx",
-    marker: 'aria-label="Breadcrumb"',
-    row: 6,
-    note: PAPER,
-  },
-  {
     file: "features/paper/paper-letter.tsx",
     marker: 'data-slot="letter-editor-header"',
     row: 6,

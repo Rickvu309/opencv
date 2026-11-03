@@ -336,7 +336,7 @@ export function PaperLibrary({
         <PaperPrintSheet
           name={printTarget.name}
           kind={printTarget.kind}
-          source={printTarget.paper ?? printTarget.document}
+          source={printTarget.paper}
           templateId={printTarget.templateId}
           docId={printTarget.id}
         />

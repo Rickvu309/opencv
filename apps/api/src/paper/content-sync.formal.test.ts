@@ -49,7 +49,6 @@ type Client = ReturnType<typeof clientFrom>
 type Page = {
   docId: string
   client: Client
-  legacy: unknown
   revision: number
 }
 type EditReply = {
@@ -104,10 +103,7 @@ async function created(actor: Actor): Promise<Page> {
     stateVector: "",
   })
   const client = clientFrom((pulled.output as { update: string }).update)
-  const legacy = (
-    await getDb().select().from(paperDocs).where(eq(paperDocs.id, docId))
-  )[0]!.document
-  return { docId, client, legacy, revision: 1 }
+  return { docId, client, revision: 1 }
 }
 
 async function sync(
@@ -274,46 +270,20 @@ describe("paper sync store", () => {
       const output = edited.output as EditReply
       expect(output.editId).toBeTruthy()
       expect(output.outcomes[0]?.status).toBe("applied")
-      await expect(
-        run(person, "paper.replace", {
-          docId: page.docId,
-          contentVersion: 1,
-          document: page.legacy,
-        })
-      ).rejects.toMatchObject({ code: "CONFLICT" })
       const stored = await expectProtocol(page.docId)
       expect(stored).toContain(MARK)
       expect(stored).toContain("Noted")
     })
   }, 30_000)
 
-  it("a replace at the live version with the old page wipes the typed character", async () => {
-    await withDatabase(backend.db, async () => {
-      const { person } = await newPerson()
-      const page = await created(person)
-      await typeMark(person, page, MARK)
-      await run(person, "paper.replace", {
-        docId: page.docId,
-        contentVersion: page.revision,
-        document: page.legacy,
-      })
-      expect(await expectProtocol(page.docId)).not.toContain(MARK)
-    })
-  }, 30_000)
-
-  it("keeps every typed character across coach edits and stale replaces", async () => {
+  it("keeps every typed character across coach edits", async () => {
     await withDatabase(backend.db, async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.array(
-            fc.constantFrom(
-              "coachOther",
-              "coachSame",
-              "staleReplace",
-              "typeMore"
-            ),
-            { minLength: 1, maxLength: 3 }
-          ),
+          fc.array(fc.constantFrom("coachOther", "coachSame", "typeMore"), {
+            minLength: 1,
+            maxLength: 3,
+          }),
           async (steps) => {
             const { person } = await newPerson()
             const page = await created(person)
@@ -357,14 +327,6 @@ describe("paper sync store", () => {
                     },
                   ],
                 })
-              } else {
-                await expect(
-                  run(person, "paper.replace", {
-                    docId: page.docId,
-                    contentVersion: 1,
-                    document: page.legacy,
-                  })
-                ).rejects.toMatchObject({ code: "CONFLICT" })
               }
               const stored = await expectProtocol(page.docId)
               for (const mark of marks) expect(stored).toContain(mark)

@@ -47,7 +47,7 @@ test("an editor save keeps the parts of the document it loaded", () => {
   assert.deepEqual(
     dropping,
     [],
-    `${dropping.join(", ")} saves a document built from the markdown alone. paper.replace swaps the whole document, so the sender, date and closing parts are erased on the next keystroke. Build the saved document from the loaded one, as compactLetterDocument does.`
+    `${dropping.join(", ")} saves a document built from the markdown alone. A save that sends only the markdown drops the sender, date and closing parts. Build the saved document from the loaded one, as compactLetterDocument does.`
   )
 })
 

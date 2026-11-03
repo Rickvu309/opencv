@@ -6,7 +6,7 @@ import {
   useRef,
   type MutableRefObject,
 } from "react"
-import type { JobView } from "@workspace/domain"
+import type { JobView, PaperEdit } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -37,6 +37,40 @@ import {
 } from "./paper-letter-start.reducer.ts"
 
 import { letterDraftText } from "./paper-letter-context.ts"
+
+const LETTER_CHUNK = 4000
+const LETTER_INSERT_CAP = 29
+
+function letterChunks(markdown: string): string[] {
+  const pieces: string[] = []
+  for (const paragraph of markdown.split(/\n\n+/)) {
+    const text = paragraph.trim()
+    if (!text) continue
+    for (let index = 0; index < text.length; index += LETTER_CHUNK) {
+      pieces.push(text.slice(index, index + LETTER_CHUNK))
+    }
+  }
+  if (pieces.length === 0) return [markdown.slice(0, LETTER_CHUNK)]
+  if (pieces.length <= LETTER_INSERT_CAP + 1) return pieces
+  const kept = pieces.slice(0, LETTER_INSERT_CAP)
+  kept.push(pieces.slice(LETTER_INSERT_CAP).join("\n\n").slice(0, LETTER_CHUNK))
+  return kept
+}
+
+function letterEdits(markdown: string): PaperEdit[] {
+  const [first, ...rest] = letterChunks(markdown)
+  const edits: PaperEdit[] = [
+    { op: "setText", blockId: "letter-1", text: first ?? "" },
+  ]
+  if (rest.length > 0) {
+    edits.push({
+      op: "insert",
+      after: "letter-1",
+      blocks: rest.map((text) => ({ type: "paragraph", text })),
+    })
+  }
+  return edits
+}
 
 type DraftOperation = {
   controller: AbortController
@@ -199,7 +233,7 @@ export function PaperLetterStart({
         void stopPaperChat(chat.id)
         return
       }
-      let replaced = false
+      let savedByCoach = false
       try {
         if (controller.signal.aborted)
           throw new DOMException("Stopped", "AbortError")
@@ -221,9 +255,9 @@ export function PaperLetterStart({
             if (
               activeDraft.current === operation &&
               !controller.signal.aborted &&
-              tool === "paper.replace"
+              tool === "paper.edit"
             ) {
-              replaced = true
+              savedByCoach = true
               void queryClient.fetchQuery({
                 queryKey: paperGetKey(created.id),
                 queryFn: () => getPaper(created.id),
@@ -236,11 +270,11 @@ export function PaperLetterStart({
         if (!operation.stopped || !controller.signal.aborted) throw err
       }
       if (activeDraft.current !== operation) return
-      if (!replaced && operation.text) {
-        await run("paper.replace", {
+      if (!savedByCoach && operation.text) {
+        await run("paper.edit", {
           docId: created.id,
-          contentVersion: created.contentVersion,
-          document: { markdown: operation.text },
+          basedOn: created.contentVersion,
+          edits: letterEdits(operation.text),
         })
       }
       if (activeDraft.current === operation) onCreated(created.id)

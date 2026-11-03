@@ -8,7 +8,7 @@ Paper (`/paper`) is a library. A new account sees Start a document. Creating a C
 - `paper-create` chooses CV, then Simple, then Use template, and lands on `/paper/{id}`.
 - `paper-edit` sets Role, company to `Edited for verify.`
 - `paper-save` shows Edited just now with no extra click.
-- `paper-persist` keeps that sentence after a reload and in `GET /api/paper/{id}` as version 2.
+- `paper-persist` keeps that sentence after a reload and in `GET /api/paper/{id}` as the v3 paper.
 - `paper-blocks` covers slash insert, the block menu, drag, a drop on a section heading, Ask Coach, undo, share, a 390px window, reduced motion, and the keyboard path.
 - `paper-letter` starts a blank letter for a job and keeps a typed line after a reload.
 
@@ -23,16 +23,16 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 
 - **Library.** `agent-browser open "$WEB_URL/paper"`. The heading `Start a document` is visible. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-library-empty.png"`.
 - **Create.** `agent-browser find role button click --name "CV"`. `agent-browser find role button click --name "Simple"`. `agent-browser find role button click --name "Use template"`. Wait until the URL matches `/paper/` plus an id. The region name starts with `Editing`.
-- **Blank.** The editor shows textboxes named Email, Phone, City, LinkedIn, Role (placeholder `Role, company`), Company, Dates, What you did, and what changed because of it, Location, School (placeholder `School, degree`), Degree, and Tools, software and languages. Each has an empty stored value. `GET /api/paper/{id}` has `"version":2`.
+- **Blank.** The editor shows textboxes named Email, Phone, City, LinkedIn, Role (placeholder `Role, company`), Company, Dates, What you did, and what changed because of it, Location, School (placeholder `School, degree`), Degree, and Tools, software and languages. Each has an empty stored value. `GET /api/paper/{id}` has `"version":3`.
 - **Edit.** `agent-browser find role textbox click --name "Role"` and then `agent-browser keyboard type "Edited for verify."`. Typing on a CV field persists where fill does not. The Role placeholder stays `Role, company`.
 - **Wait for the save.** Wait until the text `Edited just now` is visible. That is the save. There is no Save button.
 - **Reload.** `agent-browser reload`. The role field still reads `Edited for verify.`
-- **Read back.** `agent-browser eval "fetch('$API_URL/api/paper/' + location.pathname.split('/').pop(),{credentials:'include'}).then(r=>r.text())"` contains `Edited for verify.` and `"version":2`.
+- **Read back.** `agent-browser eval "fetch('$API_URL/api/paper/' + location.pathname.split('/').pop(),{credentials:'include'}).then(r=>r.text())"` contains `Edited for verify.` and `"version":3`.
 - **Slash.** Click the textbox What you did, and what changed because of it. Press `/`. A listbox named Insert opens, with Type to filter, CV sections, and Blocks. Press Escape. It closes.
 - **Menu.** Focus a block and open the button Block menu. The menu has Turn into, Duplicate, Move up, Move down, Ask Coach, and Delete.
 - **Drag.** Drag a block by its Block menu handle within a section, then onto another section heading. Reload. The order matches the drop.
 - **Drop on a heading.** With two experience entries, one education entry, and one skills group, drag the second experience entry onto the Education heading. Reload. That education entry is still there and the dragged entry is after it. Drag that entry onto the Skills heading. Reload. The skills group is still there and the dragged entry is after it. `GET /api/paper/{id}` matches both reloads. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-drop-education.png"` and `paper-drop-skills.png`.
-- **Heading hit area.** Make ten consecutive heading drops across Education, Skills, Projects, and Activities. Record the pointer-up coordinates and heading rect for each drop. Include the heading's top, middle, and bottom edges. Every drop appends after the section's existing blocks and sends one `paper.replace`. Reload and compare `GET /api/paper/{id}`. A drop just below the heading onto the first block still inserts before that block. Save the action log and screenshots under the run evidence directory.
+- **Heading hit area.** Make ten consecutive heading drops across Education, Skills, Projects, and Activities. Record the pointer-up coordinates and heading rect for each drop. Include the heading's top, middle, and bottom edges. Every drop appends after the section's existing blocks and sends one `paper.sync`. Reload and compare `GET /api/paper/{id}`. A drop just below the heading onto the first block still inserts before that block. Save the action log and screenshots under the run evidence directory.
 - **Ask Coach.** Choose Ask Coach on a block. The dock Coach panel opens and the composer contains that block's text.
 - **Undo.** Delete a block, then choose Undo. The block comes back.
 - **Share.** Open the share URL. The CV text renders.
@@ -52,5 +52,5 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 - The name field on the page is `Name`. Do not look for `Your name`.
 - A blank CV has no Summary field. Role and Company are separate fields. The Role placeholder is `Role, company`. School and Degree are separate fields. The School placeholder is `School, degree`. Location sits after the bullets. Bold, Italic, and Underline are not in the toolbar.
 - The document title in the breadcrumb is also named `Name`. The CV header name sits in the level 1 heading.
-- Fit to one page is not part of this recipe. The scripted Coach may not return a `paper.replace` tool result. Report that step as not driven when a later pass tries it.
+- Fit to one page is not part of this recipe. The scripted Coach may not return a `paper.edit` tool result. Report that step as not driven when a later pass tries it.
 - The card menu, search with no match, Copy link, and the suggestion card are not part of this recipe.
