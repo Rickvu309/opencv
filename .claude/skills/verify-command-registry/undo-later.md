@@ -20,6 +20,10 @@ The model `UndoLater.tla` has one subject with two fields (stage and position) a
 
 `ChainUndo` says the latest live act can always be undone. That is the reason `job.move` compares stage and position, not `updatedAt`: an undo writes `updatedAt` too, so a second Undo in a row would be refused.
 
+## Run the model
+
+`UndoLater.cfg` describes the undo code here; `UndoLater.mutant.cfg` is the old `allow` policy and fails `NoLostEffect`. Run `node scripts/tlc.mjs --all` (about 90 seconds for every spec). Only this one: `node scripts/tlc.mjs apps/api/src/registry/UndoLater.tla --config apps/api/src/registry/UndoLater.cfg`. Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
+
 ## Known findings
 
 - Eleven commands still erase a later change. The bug is `job.create`, `job.update`, `job.addChecklistItem`, `job.linkPaper`, `inbox.markDone`, `inbox.snooze`, `chat.rename`, `chat.setFocus`, `paper.create`, `paper.duplicate` and `paper.import`: their reversal restores unconditionally. They are in `REVERSAL_EXPECT_PENDING` (issue 958, expiry in the file). When one gets an `expect`, remove it from that list and from `KNOWN_VIOLATIONS` in the same change.

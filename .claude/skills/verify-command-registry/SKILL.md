@@ -42,7 +42,7 @@ pnpm --filter api test:formal
 - One command, about 15 seconds, runs this check and the Apply scan check (`verify-apply-scan-guard`). Exit 0 means every test passed. `pnpm --filter api test` also runs the file.
 - Expected output: `12 passed | 2 expected fail | 1 skipped` across the four registry files. The two expected failures are the known finding below. The skipped test is the natural race that needs a real server.
 - P4 runs in the same command. Expected output now: `registry.undo-later.formal.test.ts` shows 2 passed.
-- The model of undo after a later change (P4, issue 956). The real config `UndoLater.cfg` describes the undo code here; `UndoLater.mutant.cfg` is the old `allow` policy and fails `NoLostEffect`. Run `node scripts/tlc.mjs --all` (about 90 seconds for every spec). Only this one: `node scripts/tlc.mjs apps/api/src/registry/UndoLater.tla --config apps/api/src/registry/UndoLater.cfg`. Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
+- The P4 model `UndoLater.tla` runs with `node scripts/tlc.mjs --all`; how to run and read it is in `undo-later.md`.
 - `FORMAL_SEED=<n>` changes the start-order seed (default 241). Run a few after a change.
 
 Run the same file on a real server before merging any change to a lock, a transaction or a key path:
