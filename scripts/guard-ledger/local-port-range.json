@@ -1,0 +1,17 @@
+{
+  "id": "local-port-range",
+  "file": "scripts/local-port-range.test.mjs",
+  "detector": {
+    "module": "scripts/lib/local-port-range.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b01120dd",
+    "path": "packages/domain/src/local-ports.test.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "packages/domain/src/local-ports.test.ts"
+    }
+  }
+}

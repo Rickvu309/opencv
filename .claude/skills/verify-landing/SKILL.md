@@ -12,7 +12,7 @@ All paths are relative to the repo (or worktree) root. The rules come from the l
 ## Run the checker
 
 ```bash
-PORT=4399 pnpm --filter web verify:landing
+PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:landing
 ```
 
 - Starts the Vite dev server on `127.0.0.1:$PORT` if nothing answers there, and stops it at the end. If something already answers on the port, it refuses and exits 2, because that server may serve another tree. Stop it or pick another port; set `VERIFY_LANDING_REUSE=1` only when you started that server from this worktree. Use the `PORT` in this worktree's `.env`, or a free port you own.
@@ -100,7 +100,7 @@ At `ceb07502` (main, checked in #510) the checker prints 30 PASS, 1 FAIL and 0 S
 
 ## Run it by hand
 
-Nothing runs this checker before a merge. Run it when you want it (`PORT=4399 pnpm --filter web verify:landing`). `known-findings.json` next to this file lists invariant FAILs you may treat as known, each `{ "id", "issue", "since", "note" }`.
+Nothing runs this checker before a merge. Run it when you want it (`PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:landing`). `known-findings.json` next to this file lists invariant FAILs you may treat as known, each `{ "id", "issue", "since", "note" }`.
 
 ## Taste review (judged layer)
 
