@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { localDevUrls } from "./local-ports.js"
+import { WORKTREE_PORTS, localDevUrls } from "./local-ports.js"
 
 describe("localDevUrls", () => {
   it("puts the web dev server one above the api port", () => {
@@ -23,11 +23,13 @@ describe("localDevUrls", () => {
 })
 
 describe("worktree port ranges", () => {
-  it("keeps every web port in 5000-5999 clear of the 4000-4999 api ports", () => {
-    for (let port = 4000; port <= 4999; port++) {
+  it("keeps every worktree web port clear of every worktree api port", () => {
+    const isApiPort = (port: number) =>
+      port >= WORKTREE_PORTS.first && port <= WORKTREE_PORTS.last
+    for (let port = WORKTREE_PORTS.first; port <= WORKTREE_PORTS.last; port++) {
       const { apiPort, webPort } = localDevUrls(String(port))
-      assert.ok(webPort >= 5000 && webPort <= 5999)
-      assert.notEqual(webPort, apiPort)
+      assert.equal(apiPort, port)
+      assert.equal(isApiPort(webPort), false)
     }
   })
 })
