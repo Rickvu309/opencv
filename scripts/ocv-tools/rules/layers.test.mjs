@@ -49,7 +49,10 @@ test("every checked row runs at known moments; the layer derives from them", () 
     }
     assert.ok(row.at?.length, `${row.id} has no moment`)
     for (const moment of row.at)
-      assert.ok(MOMENTS.includes(moment), `${row.id}: unknown moment ${moment}`)
+      assert.ok(
+        Object.hasOwn(MOMENTS, moment),
+        `${row.id}: unknown moment ${moment}`
+      )
     assert.equal(
       layerOf(row),
       row.at.includes("pr") ? "server" : "local",
@@ -61,8 +64,8 @@ test("every checked row runs at known moments; the layer derives from them", () 
 })
 
 test("every moment has a runner that fires its rows with decide", () => {
-  assert.deepEqual(Object.keys(RUNNERS).sort(), [...MOMENTS].sort())
-  for (const moment of MOMENTS) {
+  assert.deepEqual(Object.keys(RUNNERS).sort(), Object.keys(MOMENTS).sort())
+  for (const moment of Object.keys(MOMENTS)) {
     const files = RUNNERS[moment]
     assert.ok(files?.length, `no runner for moment ${moment}`)
     const text = files
@@ -78,7 +81,7 @@ test("every moment has a runner that fires its rows with decide", () => {
 
 test("a moment with no row is a moment nothing decides", () => {
   const used = new Set(RULES.flatMap((row) => row.at))
-  for (const moment of MOMENTS)
+  for (const moment of Object.keys(MOMENTS))
     assert.ok(used.has(moment), `no row runs at ${moment}`)
 })
 

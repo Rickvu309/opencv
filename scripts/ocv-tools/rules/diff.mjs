@@ -126,8 +126,7 @@ export const diffRows = [
   rule({
     id: "MASS_DELETE",
     section: "5",
-    why: "Issue #618: a mass deletion needs a human. The limits are the owner's defaults.",
-    says: "More than 25 authored files, 2000 lines or 10% of authored files deleted needs needs-human-review on the issue.",
+    says: "More than 25 authored files, 2000 lines or 10% of authored files deleted needs a human: needs-human-review on the issue.",
     at: ["finish", "pr"],
     needs: ["diff"],
     check: massDelete,

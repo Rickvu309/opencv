@@ -9,32 +9,37 @@ import { commitRows } from "./commits.mjs"
 
 export { issueKind, jobRows }
 
-export const MOMENTS = Object.freeze([
-  "commit",
-  "push",
-  "cli",
-  "file",
-  "locate",
-  "issue-load",
-  "history",
-  "take-title",
-  "take",
-  "take-branch",
-  "take-raced",
-  "save",
-  "release",
-  "cleanup",
-  "status",
-  "approve",
-  "shot",
-  "shot-target",
-  "finish",
-  "finish-pushed",
-  "pr",
-  "merge",
-  "merge-result",
-  "queue",
-])
+export const MOMENTS = Object.freeze({
+  commit: "The pre-commit hook, before git records the commit.",
+  push: "The pre-push hook, before git sends the branch.",
+  cli: "Any verb, once its words and flags are parsed.",
+  file: "Filing an issue, once its body is read.",
+  locate: "Any verb, once it has found the repository it runs in.",
+  "issue-load": "Any verb that names an issue, once the issue is read.",
+  history: "Reading a branch's past pull requests from GitHub.",
+  "take-title":
+    "Taking a new title, before the issue exists; only the disk is known, so a full disk makes no GitHub call.",
+  take: "Taking an issue, once the issue, its claim and the disk are read, before anything changes.",
+  "take-branch":
+    "Taking an issue, once the local and remote branch are compared.",
+  "take-raced":
+    "Taking an issue, after the claim is written and read back, to catch a second taker.",
+  save: "Saving work in a task worktree.",
+  release: "Giving back a claim on an issue.",
+  cleanup: "Removing a task worktree and its branch after the merge.",
+  status: "Reporting a task's state.",
+  approve: "Recording the owner's approval for a high-risk issue.",
+  shot: "Attaching pictures as evidence, once the files are read.",
+  "shot-target":
+    "Attaching pictures, once the issue or pull request they go to is read.",
+  finish: "Opening the pull request, before the push.",
+  "finish-pushed": "Opening the pull request, after the push.",
+  pr: "The live pull request, read by the policy check in ci and by the merge verb.",
+  merge: "The merge verb, before it enqueues the pull request.",
+  "merge-result":
+    "The merge verb, once it knows whether the branch merges with main and the merged tree passes.",
+  queue: "The merge verb, while it waits on the merge queue.",
+})
 
 export const RUNNERS = Object.freeze({
   commit: ["scripts/ocv-tools/jobs/hook.mjs"],

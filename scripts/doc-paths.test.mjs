@@ -173,8 +173,11 @@ test("verify-landing SKILL.md and the checker list the same ids", () => {
 })
 
 test("rule-enforcement.md matches the ocv-tools rule table", () => {
-  for (const { path, table } of RULE_GUIDES)
-    assert.equal(rulesDocMatches(readFileSync(path, "utf8"), table), true)
+  for (const { path, table, render } of RULE_GUIDES)
+    assert.equal(
+      rulesDocMatches(readFileSync(path, "utf8"), table, render),
+      true
+    )
 })
 
 const skillDocs = tracked.filter((file) =>

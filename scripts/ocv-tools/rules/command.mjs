@@ -11,8 +11,8 @@ function listResult() {
 
 export function rulesJob(ctx, { flags = {} } = {}) {
   if (flags["--write"]) {
-    for (const { path, table } of RULE_GUIDES) {
-      const next = applyRulesDoc(ctx.ports.fs.read(path), table).text
+    for (const { path, table, render } of RULE_GUIDES) {
+      const next = applyRulesDoc(ctx.ports.fs.read(path), table, render).text
       ctx.ports.fs.write(path, next)
     }
     return {
@@ -22,7 +22,8 @@ export function rulesJob(ctx, { flags = {} } = {}) {
   }
   if (flags["--check"]) {
     const stale = RULE_GUIDES.find(
-      ({ path, table }) => !applyRulesDoc(ctx.ports.fs.read(path), table).ok
+      ({ path, table, render }) =>
+        !applyRulesDoc(ctx.ports.fs.read(path), table, render).ok
     )
     if (stale)
       return {

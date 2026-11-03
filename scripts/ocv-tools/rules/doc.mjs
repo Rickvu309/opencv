@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url"
-import { RULES, jobRows, layerOf } from "./index.mjs"
+import { MOMENTS, RUNNERS, RULES, jobRows, layerOf } from "./index.mjs"
 
 const BEGIN = "<!-- rules:begin -->"
 const END = "<!-- rules:end -->"
@@ -23,6 +23,11 @@ export const RULE_GUIDES = [
   {
     path: guide("hook-rules.md"),
     table: RULES.filter(isHook),
+  },
+  {
+    path: guide("rule-moments.md"),
+    table: RULES,
+    render: renderMomentsDoc,
   },
 ]
 
@@ -98,8 +103,7 @@ export function renderRulesDoc(table = RULES) {
   ]
   for (const row of table) {
     const rule = row.section ? `${row.id} (${row.section})` : row.id
-    const fail =
-      row.kind === "judgment" ? `${row.says} ${row.why ?? ""}`.trim() : row.says
+    const fail = [row.says, row.why].filter(Boolean).join(" ")
     const fix = row.kind === "judgment" ? "Nothing" : row.fix({})
     const at =
       row.kind === "judgment" || row.at.length === 0
@@ -111,8 +115,17 @@ export function renderRulesDoc(table = RULES) {
   return alignTable(rows)
 }
 
-export function applyRulesDoc(text, table = RULES) {
-  const block = `${BEGIN}\n\n${renderRulesDoc(table)}\n\n${END}`
+export function renderMomentsDoc(table = RULES) {
+  const used = new Set(table.flatMap((row) => row.at))
+  const rows = [["moment", "means", "runner"]]
+  for (const [moment, means] of Object.entries(MOMENTS))
+    if (used.has(moment))
+      rows.push([moment, cell(means), RUNNERS[moment].join(", ")])
+  return alignTable(rows)
+}
+
+export function applyRulesDoc(text, table = RULES, render = renderRulesDoc) {
+  const block = `${BEGIN}\n\n${render(table)}\n\n${END}`
   const begin = text.indexOf(BEGIN)
   const end = text.indexOf(END)
   if (begin === -1 || end === -1 || end < begin) {
@@ -124,11 +137,15 @@ export function applyRulesDoc(text, table = RULES) {
     return { text: next, ok: false, missing: true }
   }
   const next = text.slice(0, begin) + block + text.slice(end + END.length)
-  return { text: next, ok: rulesDocMatches(text, table), missing: false }
+  return {
+    text: next,
+    ok: rulesDocMatches(text, table, render),
+    missing: false,
+  }
 }
 
-export function rulesDocMatches(text, table = RULES) {
+export function rulesDocMatches(text, table = RULES, render = renderRulesDoc) {
   const block = markedBlock(text)
   if (block == null) return false
-  return normalizeTable(block) === normalizeTable(renderRulesDoc(table))
+  return normalizeTable(block) === normalizeTable(render(table))
 }
