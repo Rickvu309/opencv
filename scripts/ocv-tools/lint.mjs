@@ -44,6 +44,7 @@ const JARGON = [
   "ssr",
   "regex",
 ]
+export const TITLE_EVERYDAY = ["ci", "pr", "api", "url", "pdf", "cv"]
 const VAGUE = [
   "clear",
   "clearer",
@@ -70,7 +71,7 @@ const PATHY = [
   /(?:^|\s)\.[a-z]+\//i,
 ]
 
-export const PLAIN_RULE = `Write it like one person talking to another. Short sentences (under ${SENTENCE_LIMIT} words), everyday words, one idea per sentence. Say what changes for the owner and how they will see it, not how the code works. Never present your own choices as the owner's; ask under "Questions for you" instead. Every "Done when" line names something the owner can see or try, at most ${DONE_LIMIT} lines. No backticks, no file names, no jargon. Keep technical notes under "Details for the agent". Reading grade ${GRADE_LIMIT} or lower.`
+export const PLAIN_RULE = `Write it like one person talking to another. Short sentences (under ${SENTENCE_LIMIT} words), everyday words, one idea per sentence. Say what changes for the owner and how they will see it, not how the code works. Never present your own choices as the owner's; ask under "Questions for you" instead. Every "Done when" line names something the owner can see or try, at most ${DONE_LIMIT} lines. No backticks, no file names, no jargon. A title may use CI, PR, API, URL, PDF and CV. Keep technical notes under "Details for the agent". Reading grade ${GRADE_LIMIT} or lower.`
 
 function plainSections(body) {
   return String(body ?? "")
@@ -170,8 +171,10 @@ const CHECKS = [
     id: "jargon",
     run: (i) =>
       inChecked(i, (h, t) =>
-        JARGON.filter((w) =>
-          new RegExp(`\\b${w}(?:s|es|ed|ing|ment|ments)?\\b`, "i").test(t)
+        JARGON.filter(
+          (w) =>
+            !(h === "title" && TITLE_EVERYDAY.includes(w)) &&
+            new RegExp(`\\b${w}(?:s|es|ed|ing|ment|ments)?\\b`, "i").test(t)
         ).map(
           (w) => `"${h}" uses the jargon word "${w}"; say it in plain words`
         )

@@ -424,6 +424,67 @@ test("merge --wait fails when the PR closes without merging", () => {
   assert.match(r.text, /LEFT_QUEUE/)
   assert.equal(f.s.issueState, "OPEN")
 })
+test("merge --wait skips the merged-tree check when the PR is already queued", () => {
+  const f = fixture({ queue: true })
+  assert.match(f.call("merge", "91").text, /Queued PR #91/)
+  f.s.behind = 1
+  f.s.guardOutput = "✖ docs/agents/checks.md is stale (3ms)\n"
+  f.s.onPause = (_total, s) => {
+    s.pull.state = "MERGED"
+    s.pull.mergeCommit = { oid: "queued-merge" }
+  }
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /already in the merge queue/)
+  assert.match(r.text, /Merged PR #91 as queued-merge/)
+  assert.doesNotMatch(r.text, /MERGED_TREE_FAILS/)
+  assert.equal(f.effects("git", "merge-tree").length, 0)
+  assert.equal(f.effects("git", "worktree").length, 0)
+  assert.equal(f.effects("gh", "pr merge").length, 1)
+  assert.equal(f.s.issueState, "CLOSED")
+})
+test("merge --wait reports a queue drop instead of a merged-tree refusal", () => {
+  const f = fixture({ queue: true })
+  assert.match(f.call("merge", "91").text, /Queued/)
+  f.s.behind = 1
+  f.s.guardOutput = "✖ docs/agents/checks.md is stale (3ms)\n"
+  f.s.onPause = (_total, s) => {
+    s.inQueue = false
+    s.removedEvents = [{ reason: "MERGE_CONFLICT", at: "t" }]
+    s.conflicts = ["apps/a.ts"]
+  }
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /LEFT_QUEUE/)
+  assert.match(r.text, /apps\/a\.ts/)
+  assert.doesNotMatch(r.text, /MERGED_TREE_FAILS/)
+  assert.equal(f.effects("git", "worktree").length, 0)
+  assert.equal(f.effects("gh", "pr merge").length, 1)
+  assert.equal(f.s.issueState, "OPEN")
+})
+test("merge --wait on an already merged PR skips the merged-tree check", () => {
+  const f = fixture()
+  assert.equal(f.call("merge", "91").code, 0)
+  f.s.behind = 1
+  f.s.guardOutput = "✖ docs/agents/checks.md is stale (3ms)\n"
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /already merged/)
+  assert.match(r.text, /Merged PR #91 as merged-1/)
+  assert.doesNotMatch(r.text, /MERGED_TREE_FAILS/)
+  assert.equal(f.effects("git", "merge-tree").length, 0)
+  assert.equal(f.effects("git", "worktree").length, 0)
+})
+test("merge --wait still refuses a failing merged tree before the PR is queued", () => {
+  const f = fixture({
+    behind: 1,
+    guardOutput: "✖ docs/agents/checks.md is stale (3ms)\n",
+  })
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /MERGED_TREE_FAILS/)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
+})
 test("merge --wait gives up after 45 minutes", () => {
   let paused = 0
   const f = fixture({

@@ -2,7 +2,13 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { EXAMPLES, exampleIssues } from "./issue.mjs"
-import { buildIssueBody, lintIssue, parseRisk, readingGrade } from "./lint.mjs"
+import {
+  TITLE_EVERYDAY,
+  buildIssueBody,
+  lintIssue,
+  parseRisk,
+  readingGrade,
+} from "./lint.mjs"
 
 const base = {
   type: "feat",
@@ -31,6 +37,22 @@ test("jargon is refused", () => {
   assert.match(
     lint({ what: "Add an API endpoint for search." }).reasons.join(),
     /jargon word "api"/
+  )
+})
+
+test("a title may use the everyday words and the body may not", () => {
+  assert.deepEqual(TITLE_EVERYDAY, ["ci", "pr", "api", "url", "pdf", "cv"])
+  assert.deepEqual(lint({}, "fix: CI PR API URL PDF and CV stay").reasons, [])
+  assert.deepEqual(lint({}, "fix: PRs and APIs stay").reasons, [])
+  for (const word of ["CI", "PR", "API"]) {
+    assert.match(
+      lint({ what: `The ${word} broke the page.` }).reasons.join("\n"),
+      new RegExp(`jargon word "${word.toLowerCase()}"`)
+    )
+  }
+  assert.match(
+    lint({}, "feat: Add an endpoint").reasons.join("\n"),
+    /jargon word "endpoint"/
   )
 })
 

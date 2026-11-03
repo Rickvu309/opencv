@@ -15,7 +15,7 @@ export const COMMANDS = [
   {
     name: "merge",
     usage: "merge <pr#> [--wait]",
-    when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. Run it in the background after queuing. Run again later to confirm closure.",
+    when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. If the PR is already queued or already merged, --wait skips the merged-tree check and reports what the queue did. Run it in the background after queuing. Run again later to confirm closure.",
   },
   {
     name: "policy",
@@ -35,7 +35,7 @@ export const COMMANDS = [
   {
     name: "file",
     usage: "file --title <t> --what <t> --done <t> --risk <low|normal|high>",
-    when: 'Write a new issue from answers and label it risk:*. The only place plain words are checked. Optional: --type, --could-go-wrong (required when risk is high), --questions, --out-of-scope, --details. --dry-run shows the writing guide and model issues and creates nothing. --body-file <f> replaces the field flags. Refused if the plain sections use jargon, backticks, file names, sentences over 20 words, more than 6 "Done when" lines, vague "Done when" lines, or read above grade 8.',
+    when: 'Write a new issue from answers and label it risk:*. The only place plain words are checked. Optional: --type, --could-go-wrong (required when risk is high), --questions, --out-of-scope, --details. --dry-run shows the writing guide and model issues and creates nothing. --body-file <f> replaces the field flags. Refused if the plain sections use jargon, backticks, file names, sentences over 20 words, more than 6 "Done when" lines, vague "Done when" lines, or read above grade 8. A title may use CI, PR, API, URL, PDF and CV. Those words are still refused in the other plain sections.',
   },
   {
     name: "status",
