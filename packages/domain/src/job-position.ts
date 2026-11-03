@@ -1,4 +1,3 @@
-/** Lexicographic alphabet for fractional-index `position` keys. */
 const POSITION_DIGITS =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
@@ -53,10 +52,6 @@ function midpoint(left: string, right: string): string {
   }
 }
 
-/**
- * Next fractional-index key strictly between `left` and `right`.
- * A null side means open-ended (start or end of a Stage column).
- */
 export function generateKeyBetween(
   left: string | null | undefined,
   right: string | null | undefined

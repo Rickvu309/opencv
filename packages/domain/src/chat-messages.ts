@@ -18,14 +18,11 @@ export const reversalDescriptorSchema = z.object({
   possible: z.boolean(),
   description: z.string(),
   command: z.string().optional(),
-  /** Input for `command` when this descriptor is attached to a receipt. */
   input: z.unknown().optional(),
 })
 
 export type ReversalDescriptor = z.infer<typeof reversalDescriptorSchema>
 
-// Stored on untitled chat rows and matched to detect them. Render titles
-// through chatDisplayTitle.
 export const DEFAULT_CHAT_TITLE = "New chat"
 export const LEGACY_CHAT_TITLE = "New Thread"
 
@@ -63,12 +60,7 @@ export const coachTurnRequestSchema = z
     text: chatMessageTextSchema.optional(),
     mode: coachModeSchema.optional(),
     regenerate: z.literal(true).optional(),
-    /**
-     * Open Paper doc when the turn is sent from the editor AI panel.
-     * `null` clears soft-scope for this turn (do not ground from the Chat).
-     */
     focusDocId: paperDocIdSchema.nullish(),
-    /** Highlighted Paper text when the User sends from the editor. */
     selection: coachSelectionSchema.optional(),
     context: z.array(coachContextItemSchema).max(8).optional(),
   })
@@ -151,13 +143,10 @@ export const chatToolPartSchema = z
     ok: z.boolean(),
     reversal: reversalDescriptorSchema.optional(),
     toolCallId: z.string().optional(),
-    /** The activity row the command wrote; `activity.undo` takes this id. */
     activityId: z.string().optional(),
     pendingActionId: z.string().optional(),
     approval: z.enum(["pending", "approved", "denied", "expired"]).optional(),
-    /** Set after a successful one-click undo of this receipt. */
     undone: z.boolean().optional(),
-    /** Per-command scan payload for the three rich receipts. */
     detail: coachReceiptDetailSchema.optional(),
   })
   .strict()
@@ -167,7 +156,6 @@ type ChatTextPart = z.infer<typeof chatTextPartSchema>
 export type ChatToolPart = z.infer<typeof chatToolPartSchema>
 export type ChatEntryPart = ChatTextPart | ChatToolPart
 
-/** Concatenate text parts in order. `text` on the row stays this value. */
 export function textFromParts(parts: readonly ChatEntryPart[]): string {
   return parts
     .filter((part): part is ChatTextPart => part.type === "text")
@@ -180,7 +168,6 @@ export type ChatSummary = {
   title: string
   createdAt: string
   updatedAt: string
-  /** Persisted Paper grounding; null for Home-only Chats. */
   focusDocId: string | null
 }
 

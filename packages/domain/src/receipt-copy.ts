@@ -1,7 +1,5 @@
-/** User-facing fail copy when a Command dies on bad input. */
 const INVALID_COMMAND_INPUT_COPY = "The input wasn't valid"
 
-/** User-facing fail copy when the dumped error is about a card id / UUID. */
 const INVALID_CARD_ID_COPY = "That card id isn't valid"
 
 const MACHINE_FAIL = [
@@ -19,10 +17,6 @@ const MACHINE_FAIL = [
 
 const CARD_ID_HINT = /uuid|cardid|card id/i
 
-/**
- * Keep Command fail receipts as one human sentence.
- * Zod dumps, regex patterns, and JSON blobs never reach the User.
- */
 export function humanizeCommandFailCopy(message: string): string {
   const text = message.replace(/\s+/g, " ").trim()
   if (!text || isMachineFailCopy(text)) {

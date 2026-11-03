@@ -18,10 +18,6 @@ export type CvImportCheck = {
   resolved: boolean
 }
 
-/**
- * A year range such as 2019-2024 is eight digits with a hyphen, which a
- * plain digit scan would call a phone. Strip ranges before the scan.
- */
 const YEAR_RANGE = /\b(?:19|20)\d{2}\s*(?:-|–|—|to)\s*(?:19|20)\d{2}\b/gi
 
 const PHONE_RUN = /(?:\+?\d[\s().+-]*){6}\d/g

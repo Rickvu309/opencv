@@ -144,7 +144,6 @@ const schemaByKind = {
   proof: proofDocumentV1Schema,
 } as const
 
-/** Prototype transport leftovers. Importer-only — never a write path. */
 export function emptyCvDocument(): CvDocument {
   return {
     templateId: "internship",

@@ -40,7 +40,6 @@ import {
 } from "./paper.js"
 import type { QueryRef } from "./queries.js"
 
-/** A stored document is a CV or a letter. Proofs live in their own table. */
 export const storedPaperDocumentSchema = z.union([
   cvBlockDocumentSchema,
   cvDocumentV1Schema,

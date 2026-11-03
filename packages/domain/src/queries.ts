@@ -8,7 +8,6 @@ import { inboxQueries } from "./inbox-contract.js"
 import { jobQueries } from "./job-contract.js"
 import { paperQueries } from "./paper-contract.js"
 
-// Outputs below stay unknown until the unit that contracts that feature types them.
 const untyped = z.unknown()
 
 export const queries = queryContract({

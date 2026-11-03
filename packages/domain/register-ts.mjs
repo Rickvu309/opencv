@@ -1,5 +1,3 @@
-// Node strips types but does not map a .js specifier onto the .ts source.
-// Domain tests load src directly, so those specifiers resolve here.
 import { registerHooks } from "node:module"
 
 registerHooks({

@@ -111,7 +111,6 @@ function appendDetail(detail: string, items: readonly string[]): string {
   return detail.length === 0 ? extra : `${detail}\n${extra}`
 }
 
-/** First line is the name. Slash insert stores a project as one text block. */
 function projectFromText(text: string): CvProject {
   const split = text.indexOf("\n")
   if (split === -1) return { name: text, detail: "" }
@@ -234,7 +233,6 @@ function lineList(document: CvBlockDocument, kind: CvSectionKind): string[] {
   return lines
 }
 
-/** Each block is drawn with its registry print(), then folded into the form fields. */
 export function blocksToPreviewModel(
   document: CvBlockDocument,
   templateId: CvTemplateId = "internship"
@@ -264,7 +262,6 @@ export function blocksToPreviewModel(
   return preview
 }
 
-/** The fields the current templates read. Activities and awards stay on the preview. */
 export function previewToCvDocument(preview: CvPreviewModel): CvDocument {
   const document: CvDocument = {
     templateId: preview.templateId,

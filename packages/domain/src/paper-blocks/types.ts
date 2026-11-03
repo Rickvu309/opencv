@@ -39,7 +39,6 @@ export type SkillsGroupBlock = {
   items: string[]
 }
 
-/** Fields every registry entry can read without the document schema. */
 export type BlockShape = { id: string; type: string }
 
 export type PreviewFragment =

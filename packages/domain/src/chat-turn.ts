@@ -15,7 +15,6 @@ const toolNames = [...Object.keys(commands), ...Object.keys(queries)] as [
   ...ChatToolName[],
 ]
 
-/** The registry name a tool call carries on the wire. The model's `_` spelling stays inside the api. */
 export const chatToolNameSchema = z.enum(toolNames)
 
 export const commandNameSchema = z.enum(
@@ -31,10 +30,6 @@ const commandEnvelopeSchema = z.custom<CommandEnvelope>(
     typeof (value as { ok?: unknown }).ok === "boolean"
 )
 
-/**
- * The SSE contract of one Coach turn (ADR-0010, item 4). The `type` is the
- * SSE `event:` name and the rest of the object is the JSON `data:` payload.
- */
 const chatTurnEventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("message-start"), chatId: z.string() }).strict(),
   z.object({ type: z.literal("text-delta"), text: z.string() }).strict(),
@@ -88,7 +83,6 @@ export type ChatTurnEventOf<T extends ChatTurnEventType> = Extract<
   { type: T }
 >
 
-/** The `event:` name and the JSON `data:` string for one event. Throws on a shape the contract does not allow. */
 export function encodeChatTurnEvent(event: ChatTurnEvent): {
   event: string
   data: string
@@ -97,7 +91,6 @@ export function encodeChatTurnEvent(event: ChatTurnEvent): {
   return { event: type, data: JSON.stringify(data) }
 }
 
-/** Decode one received SSE event. An event the contract does not describe is `null`. */
 export function parseChatTurnEvent(wire: {
   event: string
   data: unknown
