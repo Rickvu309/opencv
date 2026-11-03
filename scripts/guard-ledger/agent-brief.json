@@ -1,0 +1,6 @@
+{
+  "id": "agent-brief",
+  "file": "scripts/ocv-tools/brief.test.mjs",
+  "historic": null,
+  "reason": "process rule; proven by fake-port test: the brief output holds every rule in the rules file"
+}

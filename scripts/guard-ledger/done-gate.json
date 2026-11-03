@@ -1,0 +1,6 @@
+{
+  "id": "done-gate",
+  "file": "scripts/ocv-tools/done.test.mjs",
+  "historic": null,
+  "reason": "process rule; proven by fake-port test: an open pull request gives exit 1 and a recorded blocker gives exit 0"
+}

@@ -1,0 +1,21 @@
+{
+  "fences": [
+    {
+      "issue": 916,
+      "expires": "2026-12-01",
+      "paths": [
+        "apps/web/src/features/paper/**",
+        "apps/api/src/paper/**",
+        ".claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs",
+        "apps/web/src/features/coach/chat-api.ts",
+        "apps/web/src/lib/paper-selection.ts",
+        "apps/web/src/lib/paper-sync*",
+        "apps/web/src/test/paper-fixture.ts",
+        "apps/api/src/test/paper-client.ts",
+        "packages/domain/src/paper-doc/**",
+        "packages/paper-crdt/**",
+        "apps/web/package.json"
+      ]
+    }
+  ]
+}

@@ -8,8 +8,12 @@ export const CLAIM_SKEW_MS = 2 * 60 * 1000
 const MARKER =
   /<!-- ocv-tools (claim|release) agent=(\S+) at=(\S+)(?: branch=(\S+))?(?: reason=(.*?))? -->/
 
-const oneLine = (text) =>
-  String(text).replace(/\s+/g, " ").replaceAll("-->", "--").trim()
+export const oneLine = (text) =>
+  String(text)
+    .replace(/\s+/g, " ")
+    .replaceAll("<!--", "<!-")
+    .replaceAll("-->", "--")
+    .trim()
 
 export const claimMarker = ({ agent, at, branch }) =>
   `<!-- ocv-tools claim agent=${agent} at=${at} branch=${branch} -->`

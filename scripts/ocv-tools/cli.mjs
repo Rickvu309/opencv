@@ -15,6 +15,8 @@ import { cleanup, save } from "./work.mjs"
 import { shot } from "./shot.mjs"
 import { board } from "./board.mjs"
 import { approve } from "./approve.mjs"
+import { brief } from "./brief.mjs"
+import { block, done } from "./done.mjs"
 import { finish } from "./jobs/finish.mjs"
 import { hook } from "./jobs/hook.mjs"
 import { merge } from "./jobs/merge.mjs"
@@ -54,6 +56,7 @@ export function parseArgs(argv) {
     "--pr",
     "--issue",
     "--name",
+    "--role",
     ...TEMPLATE_FIELDS.map((f) => f.flag),
   ])
   const flags = {}
@@ -233,6 +236,14 @@ function command(ctx, cmd, rest) {
       if (pos.length) throw new Error("usage: ocv-tools board [--json]")
       return board(ctx, { json: Boolean(flags["--json"]) })
     }
+    case "brief":
+      return brief(ctx, issueNumber(pos[0], "brief <issue> --role <role>"), {
+        role: flags["--role"],
+      })
+    case "done":
+      return done(ctx)
+    case "block":
+      return block(ctx, issueNumber(pos[0], "block <n> <reason>"), pos[1])
     case "shot":
       return shot(ctx, { files: pos, flags })
     case "doctor":

@@ -326,6 +326,7 @@ export function fakePorts(world = {}) {
           createdAt: item.createdAt,
           lastEditedAt: item.lastEditedAt,
           labels: [...(item.labels ?? [])],
+          assignees: [...(item.assignees ?? [])],
           comments: (item.comments ?? []).map((c) => ({
             lastEditedAt: null,
             ...c,
