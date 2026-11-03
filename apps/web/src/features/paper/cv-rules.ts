@@ -340,6 +340,25 @@ function insertedSections(transaction: Stepped) {
   return ids
 }
 
+function groupBoundary(items: Top[], index: number) {
+  const slots: number[] = []
+  for (let i = 0; i < items.length; i += 1) {
+    if (items[i]?.type === "paperSection") slots.push(i)
+  }
+  slots.push(items.length)
+  if (slots.includes(index)) return index
+  let best = slots[0] ?? items.length
+  let bestDist = Math.abs(best - index)
+  for (const slot of slots) {
+    const dist = Math.abs(slot - index)
+    if (dist < bestDist) {
+      best = slot
+      bestDist = dist
+    }
+  }
+  return best
+}
+
 function regroup(oldDoc: Node, newDoc: Node, sectionId: string): Node[] | null {
   const oldTop = topOf(oldDoc)
   const start = oldTop.findIndex((item) => item.id === sectionId)
@@ -351,12 +370,26 @@ function regroup(oldDoc: Node, newDoc: Node, sectionId: string): Node[] | null {
   }
   const next = topOf(newDoc)
   const at = next.findIndex((item) => item.id === sectionId)
-  if (at < 0) return null
+  if (at < 0 || !next[at]) return null
   const members = new Set(group)
-  const desired = [
-    ...next.slice(0, at + 1).filter((item) => !members.has(item.id)),
+  const without = next.filter(
+    (item) => item.id !== sectionId && !members.has(item.id)
+  )
+  let land = 0
+  for (let i = 0; i < at; i += 1) {
+    const item = next[i]
+    if (!item || item.id === sectionId || members.has(item.id)) continue
+    land += 1
+  }
+  const boundary = groupBoundary(without, land)
+  const glued = [
+    next[at],
     ...group.flatMap((id) => next.filter((item) => item.id === id)),
-    ...next.slice(at + 1).filter((item) => !members.has(item.id)),
+  ]
+  const desired = [
+    ...without.slice(0, boundary),
+    ...glued,
+    ...without.slice(boundary),
   ]
   if (desired.length !== next.length) return null
   if (desired.every((item, index) => item.id === next[index]?.id)) return null

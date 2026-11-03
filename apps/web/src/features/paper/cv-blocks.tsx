@@ -70,14 +70,16 @@ function HeaderView({ block }: ViewProps) {
   const chrome = useContext(CvChromeContext)
   return (
     <div data-cv-block-fields={block.id} className="flex flex-col gap-1">
-      <CvField
-        blockId={block.id}
-        name="name"
-        label="Full name"
-        value={prop(block, "name")}
-        placeholder="Full name"
-        size="name"
-      />
+      <h1>
+        <CvField
+          blockId={block.id}
+          name="name"
+          label="Full name"
+          value={prop(block, "name")}
+          placeholder="Name"
+          size="name"
+        />
+      </h1>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {(
           [

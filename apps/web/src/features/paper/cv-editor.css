@@ -72,6 +72,12 @@
   content: none;
 }
 
+[data-paper-editor] .bn-block-outer,
+[data-paper-editor] .bn-block-content {
+  transition-duration: 150ms;
+  animation-duration: 150ms;
+}
+
 .prosemirror-dropcursor-block {
   height: 6px !important;
   background: var(--ring) !important;

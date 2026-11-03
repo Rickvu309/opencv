@@ -146,7 +146,7 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
     .delete(dragging.pos, dragging.pos + dragging.node.nodeSize)
     .insert(before.pos, dragging.node)
   moved = moved.apply(tr)
-  expect(ids(moved.doc)).toEqual(["header", "s1", "s2", "e2", "e1"])
+  expect(ids(moved.doc)).toEqual(["header", "s2", "e2", "s1", "e1"])
   let selected = ""
   moved.doc.nodesBetween(moved.selection.from, moved.selection.to, (node) => {
     if (node.type.name === "paperSection") selected = "paperSection"
@@ -501,6 +501,95 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
   expect(cvFormatHidden(true, null)).toBe(true)
   expect(cvFormatHidden(false, "paperExperience")).toBe(true)
   expect(cvFormatHidden(false, "paragraph")).toBe(false)
+})
+
+it("lands a section drop on a group boundary", () => {
+  const skills = {
+    id: "s3",
+    type: "paperSection",
+    props: { kind: "skills" },
+    content: "Skills",
+  }
+  const tool = {
+    id: "sk",
+    type: "paperSkills",
+    props: { label: "Tools" },
+    children: [{ id: "sql", type: "paperSkillItem", content: "SQL" }],
+  }
+  const beta = {
+    ...experience,
+    id: "e2b",
+    props: { ...experience.props, role: "Beta" },
+  }
+  const base = [header, section, experience, beta, later, school, skills, tool]
+  const ontoHeading = relocate(
+    EditorState.create({
+      schema: editor.pmSchema,
+      doc: docOf(base),
+      plugins: [cvRulesPlugin],
+    }),
+    "s3",
+    "e1"
+  )
+  expect(ids(ontoHeading.doc)).toEqual([
+    "header",
+    "s3",
+    "sk",
+    "s1",
+    "e1",
+    "e2b",
+    "s2",
+    "e2",
+  ])
+  const beforeMarker = relocate(
+    EditorState.create({
+      schema: editor.pmSchema,
+      doc: docOf(base),
+      plugins: [cvRulesPlugin],
+    }),
+    "s3",
+    "s1"
+  )
+  expect(ids(beforeMarker.doc)).toEqual([
+    "header",
+    "s3",
+    "sk",
+    "s1",
+    "e1",
+    "e2b",
+    "s2",
+    "e2",
+  ])
+  const gamma = {
+    ...experience,
+    id: "e3",
+    props: { ...experience.props, role: "Gamma" },
+  }
+  const delta = {
+    ...experience,
+    id: "e4",
+    props: { ...experience.props, role: "Delta" },
+  }
+  const long = [header, section, experience, beta, gamma, delta, skills, tool]
+  const nearEnd = relocate(
+    EditorState.create({
+      schema: editor.pmSchema,
+      doc: docOf(long),
+      plugins: [cvRulesPlugin],
+    }),
+    "s3",
+    "e4"
+  )
+  expect(ids(nearEnd.doc)).toEqual([
+    "header",
+    "s1",
+    "e1",
+    "e2b",
+    "e3",
+    "e4",
+    "s3",
+    "sk",
+  ])
 })
 
 function relocate(state: EditorState, id: string, beforeId: string) {
