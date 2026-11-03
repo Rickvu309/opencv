@@ -1,4 +1,6 @@
+import { readdirSync } from "node:fs"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { run } from "./common.mjs"
 
 const BATCH = 200
@@ -11,39 +13,6 @@ const LINT_DIRS = [
   "packages/ui",
 ]
 
-export const FAST_GUARDS = Object.freeze([
-  "scripts/adr-citations.test.mjs",
-  "scripts/blocknote-dependencies.test.mjs",
-  "scripts/check.test.mjs",
-  "scripts/checks-doc.test.mjs",
-  "scripts/ci-screens.test.mjs",
-  "scripts/ci-workflow.test.mjs",
-  "scripts/doc-paths.test.mjs",
-  "scripts/ds-codemod.test.mjs",
-  "scripts/driver-sign-in.test.mjs",
-  "scripts/focus-indication.test.mjs",
-  "scripts/guard-ledger.test.mjs",
-  "scripts/kit-duplicates.test.mjs",
-  "scripts/layout-comparison-gates.test.mjs",
-  "scripts/main-checkout-hook.test.mjs",
-  "scripts/nav-pending.test.mjs",
-  "scripts/paper-save-keeps-parts.test.mjs",
-  "scripts/pointer-capture.test.mjs",
-  "scripts/raw-tlc.test.mjs",
-  "scripts/retired-words.test.mjs",
-  "scripts/skill-routes.test.mjs",
-  "scripts/skills-tracked.test.mjs",
-  "scripts/tla-specs.test.mjs",
-  "scripts/temp-dirs.test.mjs",
-  "scripts/touch-targets.test.mjs",
-  "scripts/unbounded-spawn.test.mjs",
-  "scripts/unused-domain-exports.test.mjs",
-  "scripts/verify-bad-fixtures.test.mjs",
-  "scripts/verify-feature-map.test.mjs",
-  "scripts/web-test-clock.test.mjs",
-  "scripts/ocv-tools/rules-doc.test.mjs",
-])
-
 export const CI_ONLY_GUARDS = Object.freeze([
   "scripts/approve-railway-deploys.test.mjs",
   "scripts/browser-launcher.test.mjs",
@@ -51,6 +20,18 @@ export const CI_ONLY_GUARDS = Object.freeze([
   "scripts/pen-snapshot.test.mjs",
   "scripts/verify-auth-production.test.mjs",
   "scripts/web-lint-rules.test.mjs",
+])
+
+const ROOT = fileURLToPath(new URL("../../../", import.meta.url))
+const NESTED_FAST_GUARDS = ["scripts/ocv-tools/rules-doc.test.mjs"]
+
+export const FAST_GUARDS = Object.freeze([
+  ...readdirSync(join(ROOT, "scripts"))
+    .filter((name) => name.endsWith(".test.mjs"))
+    .map((name) => `scripts/${name}`)
+    .filter((file) => !CI_ONLY_GUARDS.includes(file))
+    .sort(),
+  ...NESTED_FAST_GUARDS,
 ])
 
 export const GIT_ENV = Object.freeze([

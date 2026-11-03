@@ -1,0 +1,17 @@
+{
+  "id": "hand-lists",
+  "file": "scripts/hand-lists.test.mjs",
+  "detector": {
+    "module": "scripts/lib/hand-lists.mjs",
+    "export": "detectHandLists"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "6200873e",
+    "path": "scripts/ocv-tools/jobs/push-checks.mjs",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/ocv-tools/jobs/push-checks.mjs"
+    }
+  }
+}

@@ -23,4 +23,4 @@
 
 ## Tests that hold this shape
 
-`CODING_STANDARDS.md` (Contract) pairs each rule with its check, and `docs/agents/checks.md` lists every guard.
+`CODING_STANDARDS.md` (Contract) pairs each rule with its check, and `node scripts/list-checks.mjs` lists every guard.

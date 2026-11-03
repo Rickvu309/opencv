@@ -1,0 +1,9 @@
+{
+  "id": "temp-dirs",
+  "file": "scripts/temp-dirs.test.mjs",
+  "historic": {
+    "mode": "revert",
+    "fix": "b680aafb",
+    "command": ["node", "--test", "scripts/temp-dirs.test.mjs"]
+  }
+}

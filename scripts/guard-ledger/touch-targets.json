@@ -1,0 +1,13 @@
+{
+  "id": "touch-targets",
+  "file": "scripts/touch-targets.test.mjs",
+  "detector": {
+    "module": "scripts/lib/touch-targets.mjs",
+    "export": "smallTargets"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "6c0514b9^",
+    "path": "apps/web/src/features/app-shell/app-shell.tsx"
+  }
+}

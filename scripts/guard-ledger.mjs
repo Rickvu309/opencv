@@ -22,131 +22,23 @@ const DETECT_IMPORT = /import\s*\{[^}]*\bdetect\b[^}]*\}/
 
 export const BASELINE_FILE = "scripts/guard-ledger.baseline.json"
 
-export const LEDGER = Object.freeze([
-  {
-    id: "guard-ledger",
-    file: "scripts/guard-ledger.test.mjs",
-    historic: null,
-    reason:
-      "it guards the ledger itself; its fixtures fire on each mistake it catches",
-  },
-  {
-    id: "tla-specs",
-    file: "scripts/tla-specs.test.mjs",
-    historic: null,
-    reason:
-      "it checks the formal specs and their runner, added in #917; no earlier mistake to prove yet",
-  },
-  {
-    id: "read-invalidation",
-    file: "apps/api/src/registry/invalidation.formal.test.ts",
-    historic: null,
-    reason:
-      "its mutants run inside the file (a command without a read it changes, an undo without a read it refreshes); the four earlier stale-screen fixes were web-side and predate the command table",
-  },
-  {
-    id: "ds-codemod",
-    file: "scripts/ds-codemod.test.mjs",
-    historic: null,
-    reason:
-      "added in #942 with the comment strip; the codemod kept install comments before, and its fresh-file fixture fires on that",
-  },
-  {
-    id: "merged-tree",
-    file: "scripts/ocv-tools/jobs/merged-tree.test.mjs",
-    historic: null,
-    reason:
-      "the earlier mistakes were queue builds of #912 and #901 that failed after a green PR run; their merge-group commits are not reachable from main, so the test rebuilds the same shape (main gains a guard the head breaks) in a throwaway git repo",
-  },
-  {
-    id: "pointer-capture",
-    file: "scripts/pointer-capture.test.mjs",
-    detector: {
-      module: "scripts/lib/pointer-capture.mjs",
-      export: "missingDragEnds",
-    },
-    historic: {
-      mode: "detect",
-      sha: "70a4c349",
-      path: "apps/web/src/features/landing/figures/motion.ts",
-      fixed: {
-        rev: "HEAD",
-        path: "apps/web/src/features/app-shell/sidebar-resize-handle.tsx",
-      },
-    },
-  },
-  {
-    id: "main-checkout-hook",
-    file: "scripts/main-checkout-hook.test.mjs",
-    historic: null,
-    reason:
-      "the earlier mistake was a builder editing the main checkout before it took its issue (the R10 unit of the agent-friendly program); that edit was never committed, so no sha holds it, and the test runs the hook on real main, worktree and outside paths instead",
-  },
-  {
-    id: "raw-tlc",
-    file: "scripts/raw-tlc.test.mjs",
-    historic: null,
-    reason:
-      "its one earlier mistake, commit 29d5d586, lives on a branch that will be deleted, so the test holds those lines inline and fires on them",
-  },
-  {
-    id: "skills-tracked",
-    file: "scripts/skills-tracked.test.mjs",
-    detector: {
-      module: "scripts/lib/ignored-skills.mjs",
-      export: "skillIsIgnored",
-    },
-    historic: {
-      mode: "detect",
-      sha: "2c0c9582",
-      path: ".gitignore",
-      fixed: { rev: "HEAD", path: ".gitignore" },
-    },
-  },
-  {
-    id: "temp-dirs",
-    file: "scripts/temp-dirs.test.mjs",
-    historic: {
-      mode: "revert",
-      fix: "b680aafb",
-      command: ["node", "--test", "scripts/temp-dirs.test.mjs"],
-    },
-  },
-  {
-    id: "touch-targets",
-    file: "scripts/touch-targets.test.mjs",
-    detector: {
-      module: "scripts/lib/touch-targets.mjs",
-      export: "smallTargets",
-    },
-    historic: {
-      mode: "detect",
-      sha: "6c0514b9^",
-      path: "apps/web/src/features/app-shell/app-shell.tsx",
-    },
-  },
-  {
-    id: "verify-bad-fixtures",
-    file: "scripts/verify-bad-fixtures.test.mjs",
-    historic: null,
-    reason:
-      "the earlier false greens (white text on white accepted, an unmatched pen text passed silently, a page-wide substring match) were fixed inside open pull requests and left no commit to replay; each mistake is a mutant of the check, and its bad fixture is shown to stop failing on that mutant",
-  },
-  {
-    id: "unbounded-spawn",
-    file: "scripts/unbounded-spawn.test.mjs",
-    detector: {
-      module: "scripts/lib/unbounded-spawn.mjs",
-      export: "detectUnboundedSpawn",
-    },
-    historic: {
-      mode: "detect",
-      sha: "42da036c",
-      path: "scripts/tlc.mjs",
-      fixed: { rev: "HEAD", path: "scripts/tlc.mjs" },
-    },
-  },
-])
+export const LEDGER_DIR = "scripts/guard-ledger"
+
+export function readLedger(dir = path.join(root, LEDGER_DIR)) {
+  return Object.freeze(
+    readdirSync(dir)
+      .filter((name) => name.endsWith(".json"))
+      .sort()
+      .map((name) => {
+        const row = JSON.parse(readFileSync(path.join(dir, name), "utf8"))
+        if (`${row.id}.json` !== name)
+          throw new Error(`${LEDGER_DIR}/${name}: id is "${row.id}"`)
+        return row
+      })
+  )
+}
+
+export const LEDGER = readLedger()
 
 export function guardFiles(trackedFiles, listGroupFiles, read) {
   const grouped = listGroupFiles(trackedFiles)
@@ -201,7 +93,7 @@ export function ledgerProblems({
   for (const file of files)
     if (!listed.has(file) && !baselined.has(file))
       problems.push(
-        `${file}: guard has no row. Add one to LEDGER in scripts/guard-ledger.mjs`
+        `${file}: guard has no row. Add scripts/guard-ledger/<id>.json`
       )
   return problems
 }

@@ -1,0 +1,6 @@
+{
+  "id": "merged-tree",
+  "file": "scripts/ocv-tools/jobs/merged-tree.test.mjs",
+  "historic": null,
+  "reason": "the earlier mistakes were queue builds of #912 and #901 that failed after a green PR run; their merge-group commits are not reachable from main, so the test rebuilds the same shape (main gains a guard the head breaks) in a throwaway git repo"
+}

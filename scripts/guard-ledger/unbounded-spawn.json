@@ -1,0 +1,17 @@
+{
+  "id": "unbounded-spawn",
+  "file": "scripts/unbounded-spawn.test.mjs",
+  "detector": {
+    "module": "scripts/lib/unbounded-spawn.mjs",
+    "export": "detectUnboundedSpawn"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "42da036c",
+    "path": "scripts/tlc.mjs",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/tlc.mjs"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Coding standards
 
-Each rule sits with its reason and the check that enforces it. Every guard, with what it holds, is in `docs/agents/checks.md` (generated: `node scripts/list-checks.mjs`). A `pending` or `PENDING` entry (issue or PR, expiry) lists a known offender; a stale entry fails its test.
+Each rule sits with its reason and the check that enforces it. Every guard, with what it holds, is listed by `node scripts/list-checks.mjs` (generated, never committed). A `pending` or `PENDING` entry (issue or PR, expiry) lists a known offender; a stale entry fails its test.
 
 ## Boundaries
 

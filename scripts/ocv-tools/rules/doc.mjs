@@ -79,10 +79,25 @@ function markedBlock(text) {
   return text.slice(begin + BEGIN.length, end)
 }
 
+const widthOf = (text) => [...text].length
+
+function alignTable(rows) {
+  const widths = rows[0].map((_, column) =>
+    Math.max(3, ...rows.map((row) => widthOf(row[column])))
+  )
+  const line = (cells) =>
+    `| ${cells.map((text, column) => text + " ".repeat(widths[column] - widthOf(text))).join(" | ")} |`
+  const [head, ...body] = rows
+  return [
+    line(head),
+    `| ${widths.map((width) => "-".repeat(width)).join(" | ")} |`,
+    ...body.map(line),
+  ].join("\n")
+}
+
 export function renderRulesDoc(table = RULES) {
-  const lines = [
-    "| rule | what makes it fail | fix | at | holds against main |",
-    "| --- | --- | --- | --- | --- |",
+  const rows = [
+    ["rule", "what makes it fail", "fix", "at", "holds against main"],
   ]
   for (const row of table) {
     const rule = row.section ? `${row.id} (${row.section})` : row.id
@@ -94,15 +109,13 @@ export function renderRulesDoc(table = RULES) {
         ? "Nothing"
         : row.at.join(", ")
     const held = layerOf(row) === "server" ? "yes" : "no"
-    lines.push(
-      `| ${cell(rule)} | ${cell(fail)} | ${cell(fix)} | ${cell(at)} | ${held} |`
-    )
+    rows.push([cell(rule), cell(fail), cell(fix), cell(at), held])
   }
-  return lines.join("\n")
+  return alignTable(rows)
 }
 
 export function applyRulesDoc(text, table = RULES) {
-  const block = `${BEGIN}\n${renderRulesDoc(table)}\n${END}`
+  const block = `${BEGIN}\n\n${renderRulesDoc(table)}\n\n${END}`
   const begin = text.indexOf(BEGIN)
   const end = text.indexOf(END)
   if (begin === -1 || end === -1 || end < begin) {

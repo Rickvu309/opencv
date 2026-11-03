@@ -1,9 +1,8 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import {
-  CHECKS_DOC,
   FIX,
   describeCheck,
   listGuardFiles,
@@ -12,9 +11,13 @@ import {
 } from "./list-checks.mjs"
 import { CI_ONLY_GUARDS, FAST_GUARDS } from "./ocv-tools/jobs/push-checks.mjs"
 
-test("docs/agents/checks.md lists every guard with its own top-level test name", () => {
-  const written = readFileSync(path.join(root, CHECKS_DOC), "utf8")
-  assert.equal(written, renderChecks(), `${CHECKS_DOC} is stale. Run: ${FIX}`)
+test("the guard list renders every guard with its own top-level test name and is not committed", () => {
+  assert.doesNotThrow(() => renderChecks())
+  assert.equal(
+    existsSync(path.join(root, "docs/agents/checks.md")),
+    false,
+    `docs/agents/checks.md is generated on demand, so two pull requests that add a guard never conflict. Delete it and run: ${FIX}`
+  )
 })
 
 test("a describe name beats the first test name, and a multi-line name reads whole", () => {

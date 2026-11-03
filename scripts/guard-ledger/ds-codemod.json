@@ -1,0 +1,6 @@
+{
+  "id": "ds-codemod",
+  "file": "scripts/ds-codemod.test.mjs",
+  "historic": null,
+  "reason": "added in #942 with the comment strip; the codemod kept install comments before, and its fresh-file fixture fires on that"
+}
