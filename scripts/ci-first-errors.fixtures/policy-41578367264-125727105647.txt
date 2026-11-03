@@ -1,0 +1,40 @@
+[command]/usr/bin/git log -1 --format=%H
+5039c92ecddb59f40f822f2f06582541fad0ad75
+##[group]Run n="$PR_NUMBER"
+n="$PR_NUMBER"
+if [[ -z "$n" && "$QUEUE_REF" =~ /pr-([0-9]+)- ]]; then
+  n="${BASH_REMATCH[1]}"
+fi
+if [[ -z "$n" ]]; then
+  echo "::error title=POLICY::no pull request number in the ${GITHUB_EVENT_NAME} event"
+  exit 1
+fi
+node scripts/ocv-tools.mjs policy "$n"
+shell: /usr/bin/bash -e {0}
+env:
+  TURBO_SCM_BASE: origin/main
+  TURBO_SCOPE: --affected
+  VITEST_MAX_WORKERS: 2
+  GH_TOKEN: ***
+  PR_NUMBER: 1009
+  QUEUE_REF:
+##[endgroup]
+##[error]an expected failure (it.fails) must cite an issue that stays open after this merge: apps/api/src/registry/registry.formal.test.ts:257 names no issue; apps/api/src/registry/registry.formal.test.ts:351 cites #758, which is closed fix: Fix the bug and turn the it.fails back into it, or cite the open issue that still tracks it and drop that issue from Closes
+Next: gh pr view 1009
+##[error]Process completed with exit code 2.
+Post job cleanup.
+[command]/usr/bin/git version
+git version 2.56.0
+Temporarily overriding HOME='/home/runner/work/_temp/a34c2f4f-4fcb-42e7-aeea-e0fe173e8074' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/opencv/opencv
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+[command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Cleaning up orphan processes
+##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

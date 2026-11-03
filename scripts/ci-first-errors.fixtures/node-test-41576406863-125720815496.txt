@@ -1,0 +1,40 @@
+##[error]command (/home/runner/work/opencv/opencv/packages/guards) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test exited (1)
+@workspace/guards#test:  ERROR  command (/home/runner/work/opencv/opencv/packages/guards) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test exited (1)
+cache bypass, force executing eef2b4bc66160a04
+
+ ERROR  run failed: command  exited (1)
+> @workspace/guards@0.0.0 test /home/runner/work/opencv/opencv/packages/guards
+> node run-tests.mjs
+
+✔ a literal port range or fixed verifier port is refused (8.018695ms)
+✔ every port check reads the shared range and no tool keeps its own (274.798461ms)
+✖ every pending entry is unexpired and pins its exact hit count (3.476151ms)
+✔ a pending file that gains or loses a hit fails its pin (0.360685ms)
+﹣ the pending list only shrinks (4.567582ms) # scripts/local-port-range.pending.json is not on origin/main yet
+✔ the allocator on main before the shared range is caught (4.832258ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 434.678227
+
+✖ failing tests:
+
+test at scripts/local-port-range.test.mjs:114:1
+✖ every pending entry is unexpired and pins its exact hit count (3.476151ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+
+  + [
+  +   '.claude/skills/verify-app-ui/scripts/lib/stack.mjs has 0 port range hits, down from 1. Lower its pin to 0, or delete the entry at 0.'
+  + ]
+  - []
+
+      at TestContext.<anonymous> (file:///home/runner/work/opencv/opencv/scripts/local-port-range.test.mjs:121:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)

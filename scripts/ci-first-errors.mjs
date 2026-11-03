@@ -4,13 +4,17 @@ import { fileURLToPath } from "node:url"
 
 const STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z ?/
 const ANSI = /\u001b\[[0-9;]*[A-Za-z]/g
-const ERROR = /✖|FAIL |AssertionError|\bError:|not ok|##\[error\]/
-const GENERIC = /##\[error\]Process completed with exit code \d+/
-const TEST_FILE = /((?:[\w.@+-]+\/)*[\w.@+-]+\.(?:test|spec)\.[cm]?[jt]sx?)/
+const GENERIC =
+  /##\[error\]Process completed with exit code \d+|command \(.*\) exited \(\d+\)|ERROR\s+run failed/
+const PRIMARY = /^(?:FAIL |not ok(?:\s|$)|✖(?! failing tests:))/
+const ASSERTION = /AssertionError|\bError:/
 const MARK = /^##\[[^\]]+\]\s*/
+const TEST_FILE = /((?:[\w.@+-]+\/)*[\w.@+-]+\.(?:test|spec)\.[cm]?[jt]sx?)/
 const CALL = /node scripts\/ci-first-errors\.mjs/
 const WHEN_FAILED = /contains\(needs\.\*\.result, 'failure'\)/
+const ANNOTATION = '.[] | select(.annotation_level=="failure") | .message'
 const CLIP = 500
+const NEAR = 6
 
 export function visibleLine(raw) {
   return String(raw)
@@ -18,6 +22,14 @@ export function visibleLine(raw) {
     .replace(ANSI, "")
     .replace(STAMP, "")
     .trim()
+}
+
+function body(line) {
+  return line.replace(MARK, "").trim()
+}
+
+function generic(line) {
+  return GENERIC.test(line) || GENERIC.test(body(line))
 }
 
 function repoFile(match) {
@@ -29,16 +41,46 @@ function clip(line) {
   return line.length > CLIP ? `${line.slice(0, CLIP)}…` : line
 }
 
+function followingAssertion(lines, index) {
+  const end = Math.min(lines.length, index + 1 + NEAR)
+  for (let i = index + 1; i < end; i++) {
+    if (generic(lines[i])) continue
+    if (ASSERTION.test(body(lines[i]))) return i
+  }
+  return -1
+}
+
+function primaryIndex(lines) {
+  const found = []
+  for (let i = 0; i < lines.length; i++) {
+    if (generic(lines[i])) continue
+    if (PRIMARY.test(body(lines[i]))) found.push(i)
+  }
+  return (
+    found.find((index) => followingAssertion(lines, index) !== -1) ?? found[0]
+  )
+}
+
 export function firstError(log) {
   const lines = String(log)
     .split(/\r?\n/)
     .map(visibleLine)
     .filter((line) => line.length > 0)
-  const index = lines.findIndex(
-    (line) => ERROR.test(line) && !GENERIC.test(line)
-  )
-  if (index === -1) return null
-  const line = clip(lines[index].replace(MARK, "").trim())
+  let index = primaryIndex(lines)
+  let paired = -1
+  if (index === undefined) {
+    index = lines.findIndex(
+      (line) => line.startsWith("##[error]") && !generic(line)
+    )
+    if (index === -1)
+      index = lines.findIndex(
+        (line) => ASSERTION.test(body(line)) && !generic(line)
+      )
+  } else paired = followingAssertion(lines, index)
+  if (index === undefined || index === -1) return null
+  const main = body(lines[index])
+  const extra = paired === -1 ? "" : body(lines[paired])
+  const line = clip(extra ? `${main} — ${extra}` : main)
   const from = Math.max(0, index - 8)
   const to = Math.min(lines.length, index + 40)
   let file = null
@@ -101,9 +143,45 @@ function failedJobs(listed) {
     .map((line) => line.trim())
     .filter((line) => line.includes("\t"))
     .map((line) => {
-      const tab = line.indexOf("\t")
-      return { name: line.slice(0, tab), id: line.slice(tab + 1) }
+      const [name, id, steps] = line.split("\t")
+      return {
+        name,
+        id,
+        steps: steps === undefined || steps === "" ? null : Number(steps),
+      }
     })
+}
+
+function isNotFound(error) {
+  const stderr = error?.stderr
+  const text = Buffer.isBuffer(stderr)
+    ? stderr.toString("utf8")
+    : String(stderr ?? "")
+  return /\b404\b/.test(
+    `${error?.status ?? ""} ${text} ${error?.message ?? ""}`
+  )
+}
+
+function annotationLine(job, repo, env, exec) {
+  try {
+    const raw = exec(
+      [
+        "api",
+        `repos/${repo}/check-runs/${job.id}/annotations`,
+        "--jq",
+        ANNOTATION,
+      ],
+      env
+    )
+    const message = String(raw)
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line.length > 0)
+    if (message) return `${job.name}: ${clip(message)}`
+  } catch {
+    return `${job.name}: could not read the log`
+  }
+  return `${job.name}: could not read the log`
 }
 
 export function collect(env, exec = gh) {
@@ -120,7 +198,7 @@ export function collect(env, exec = gh) {
         "api",
         `repos/${repo}/actions/runs/${runId}/jobs`,
         "--jq",
-        '.jobs[] | select(.conclusion=="failure") | [.name, (.id|tostring)] | @tsv',
+        '.jobs[] | select(.conclusion=="failure") | [.name, (.id|tostring), ((.steps // [])|length|tostring)] | @tsv',
       ],
       env
     )
@@ -129,6 +207,10 @@ export function collect(env, exec = gh) {
   }
   const lines = []
   for (const job of failedJobs(listed)) {
+    if (job.steps === 0) {
+      lines.push(annotationLine(job, repo, env, exec))
+      continue
+    }
     try {
       const log = exec(
         [
@@ -139,8 +221,12 @@ export function collect(env, exec = gh) {
         env
       )
       lines.push(reportLine(job.name, log))
-    } catch {
-      lines.push(`${job.name}: could not read the log`)
+    } catch (error) {
+      lines.push(
+        isNotFound(error)
+          ? annotationLine(job, repo, env, exec)
+          : `${job.name}: could not read the log`
+      )
     }
   }
   return lines
