@@ -62,6 +62,13 @@ export const LEDGER = Object.freeze([
     },
   },
   {
+    id: "main-checkout-hook",
+    file: "scripts/main-checkout-hook.test.mjs",
+    historic: null,
+    reason:
+      "the earlier mistake was a builder editing the main checkout before it took its issue (the R10 unit of the agent-friendly program); that edit was never committed, so no sha holds it, and the test runs the hook on real main, worktree and outside paths instead",
+  },
+  {
     id: "raw-tlc",
     file: "scripts/raw-tlc.test.mjs",
     historic: null,
