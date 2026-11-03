@@ -2,10 +2,15 @@ import { join, resolve } from "node:path"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
-import { recorded, task, snapshot, git, gh, json } from "./common.mjs"
+import {
+  recorded,
+  task,
+  stateHeldDuringPush,
+  git,
+  gh,
+  json,
+} from "./common.mjs"
 
-// The body file as the BAD_BODY row reads it: the path and its text, or no
-// path when the flag is missing, or a path that cannot be read.
 function bodyOf(ctx, flag) {
   if (!flag || flag === true) return { file: null, text: "" }
   const file = resolve(ctx.cwd, flag)
@@ -87,9 +92,7 @@ export function finish(ctx, { flags }) {
       }
     }
     git(ctx, "fetch", "--quiet", "origin", "main")
-    const current = snapshot(ctx, t)
-    // One fact set, one decision: the rows at finish, which include the pr
-    // rows, run on the issue, the body file, the branch and the local commits.
+    const current = stateHeldDuringPush(ctx, t)
     const body = `Closes #${t.n}\n\n${written.text}`
     const facts = {
       ...planPull(ctx, {
@@ -116,7 +119,7 @@ export function finish(ctx, { flags }) {
     const bodyFile = ctx.writeScratch(`finish/${t.n}-body.md`, body)
     git(ctx, "push", "-u", "origin", t.branch)
     const pushed = decide("finish-pushed", {
-      snapshot: { before: current, after: snapshot(ctx, t) },
+      snapshot: { before: current, after: stateHeldDuringPush(ctx, t) },
     })
     if (!pushed.ok) throw refusalError(pushed.refusals[0])
     const url = gh(

@@ -1,6 +1,3 @@
-// The command-line and judgment rows: argument and picture checks plus the
-// rules no script can evaluate. The workflow rows live in the subject files
-// (pull, diff, commits, workspace, claim), assembled by index.mjs.
 import { TYPES } from "../fields.mjs"
 import { FIXES } from "../result.mjs"
 

@@ -1,7 +1,3 @@
-// Facts the pr-moment rules read. pullFacts(pr) is the one reader of GitHub
-// PR and issue JSON; planPull builds the same shape locally at finish from
-// the branch, the body text and the local commits. Rows read these domain
-// facts only.
 import { run, git, gh, json, diffFacts } from "./common.mjs"
 
 export const PR_FIELDS =
@@ -13,8 +9,7 @@ const generated = (out) =>
     .filter((line) => /: linguist-generated: (set|true)$/.test(line))
     .map((line) => line.replace(/: linguist-generated: .*$/, ""))
 
-// Generated files are read from the base tree's attributes, so a PR cannot exempt itself.
-function authored(ctx, base, paths) {
+function authoredPerBaseAttributes(ctx, base, paths) {
   const skip = new Set()
   for (let i = 0; i < paths.length; i += 400) {
     const r = run(ctx, "git", [
@@ -29,16 +24,25 @@ function authored(ctx, base, paths) {
   return paths.filter((p) => !skip.has(p))
 }
 
+const FILE_SIZE_LIMIT_BYTES = 20000
+
 const split = (out) => out.split("\0").filter(Boolean)
 
-// Every name the PR touches, renames split into old and new: gh pr diff alone hides the old name.
 export function changedFiles(ctx, listed, base, head) {
-  const raw = git(ctx, "diff", "--no-renames", "--name-only", "-z", base, head)
-  return [...new Set([...listed, ...split(raw)])]
+  const bothSidesOfEachRename = git(
+    ctx,
+    "diff",
+    "--no-renames",
+    "--name-only",
+    "-z",
+    base,
+    head
+  )
+  return [...new Set([...listed, ...split(bothSidesOfEachRename)])]
 }
 
 export function deletedFacts(ctx, base, head) {
-  const gone = authored(
+  const gone = authoredPerBaseAttributes(
     ctx,
     base,
     split(
@@ -70,7 +74,11 @@ export function deletedFacts(ctx, base, head) {
     if (gone.includes(path) && /^\d+$/.test(del)) lines += Number(del)
   }
   const all = split(git(ctx, "ls-tree", "-r", "--name-only", "-z", base))
-  return { files: gone.length, lines, total: authored(ctx, base, all).length }
+  return {
+    files: gone.length,
+    lines,
+    total: authoredPerBaseAttributes(ctx, base, all).length,
+  }
 }
 
 export function changeFacts(ctx, base, head) {
@@ -90,12 +98,12 @@ export function changeFacts(ctx, base, head) {
     })
   }
   const generatedPaths = new Set(changes.map((c) => c.path).filter(Boolean))
-  const kept = new Set(authored(ctx, base, [...generatedPaths]))
+  const kept = new Set(
+    authoredPerBaseAttributes(ctx, base, [...generatedPaths])
+  )
   return changes.map((c) => ({ ...c, generated: !kept.has(c.path) }))
 }
 
-// The commit facts FILE_SIZE and NO_AI_ATTRIBUTION read: attribution trailers
-// in the branch messages and authored files over the 20000-byte limit.
 export function commitFacts(ctx, base, head) {
   const messages = git(ctx, "log", "--format=%B", `${base}..${head}`)
   let oversize = ""
@@ -111,7 +119,7 @@ export function commitFacts(ctx, base, head) {
     const meta = git(ctx, "ls-tree", head, "--", file)
     if (meta.startsWith("160000")) continue
     const size = Number(git(ctx, "cat-file", "-s", `${head}:${file}`))
-    if (size <= 20000) continue
+    if (size <= FILE_SIZE_LIMIT_BYTES) continue
     const blob = git(ctx, "cat-file", "blob", `${head}:${file}`)
     if (blob.slice(0, 8000).includes("\0")) continue
     const attr = git(
@@ -132,8 +140,6 @@ export function commitFacts(ctx, base, head) {
   }
 }
 
-// The pull fact of a pull request as GitHub reports it: state, author, labels,
-// head and branch. The merge rows read these without the diff.
 export function pullOf(pull, extra = {}) {
   return {
     n: pull.number,
@@ -151,8 +157,6 @@ export function pullOf(pull, extra = {}) {
   }
 }
 
-// The domain facts of a live pull request: its metadata and linked issue, the
-// diff against origin/main, and the branch commits.
 export function pullFacts(ctx, n) {
   const pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
   const head = pull.headRefOid
@@ -185,9 +189,6 @@ export function pullFacts(ctx, n) {
   }
 }
 
-// The same shape, built locally at finish from the branch, the body text and
-// the local commits, so the pr rows can run before the PR exists. commits.count
-// is how many commits the branch has beyond origin/main.
 export function planPull(ctx, { n, title, body, issue }) {
   const files = git(ctx, "diff", "--name-only", "origin/main...HEAD").split(
     "\n"

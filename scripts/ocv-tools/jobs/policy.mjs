@@ -1,8 +1,3 @@
-// ocv-tools policy <pr>: the pr-moment rows against a live pull request. CI
-// runs the same evaluation as its policy job, so keep imports to node:
-// builtins and rules/; the cli gathers the facts. With annotate on, each
-// refusal is a GitHub Actions error annotation so the PR page shows the rule
-// id and the fix.
 import { decide } from "../rules/index.mjs"
 
 export function policyReport(n, facts, { annotate = false } = {}) {

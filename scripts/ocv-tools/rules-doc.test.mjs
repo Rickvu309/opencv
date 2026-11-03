@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
-import { RULES } from "./rules/index.mjs"
+import { MOMENTS, RULES, RUNNERS } from "./rules/index.mjs"
 import {
   RULES_DOC,
   RULE_GUIDES,
+  renderMomentsDoc,
   renderRulesDoc,
   rulesDocMatches,
 } from "./rules/doc.mjs"
@@ -21,8 +22,11 @@ test("the rules guide is generated from the table", () => {
   assert.match(md, /OTHER_WORKTREE \(2\).*Nothing/)
   assert.match(md, /\| ON_MAIN \(2\).*\| commit +\| no +\|/)
   assert.match(md, /\| PR_METADATA \(4\).*\| finish, pr +\| yes +\|/)
-  for (const { path, table } of RULE_GUIDES)
-    assert.equal(rulesDocMatches(readFileSync(path, "utf8"), table), true)
+  for (const { path, table, render } of RULE_GUIDES)
+    assert.equal(
+      rulesDocMatches(readFileSync(path, "utf8"), table, render),
+      true
+    )
 })
 
 test("rules --check fails on a stale block and --write repairs the fake", () => {
@@ -78,4 +82,25 @@ test("rules --write leaves each guide exactly as prettier prints it", async () =
 test("a table with a wide row is padded to the widest cell in every column", () => {
   const table = renderRulesDoc(RULES.slice(0, 3)).split("\n")
   assert.equal(new Set(table.map((line) => line.length)).size, 1)
+})
+
+test("the moments guide says what every moment means and which file runs it", () => {
+  const md = renderMomentsDoc()
+  for (const [moment, means] of Object.entries(MOMENTS)) {
+    assert.ok(means.length > 20, `${moment} has no meaning`)
+    assert.ok(md.includes(means), `${moment} is not explained`)
+    for (const runner of RUNNERS[moment]) assert.ok(md.includes(runner))
+  }
+  assert.ok(RULE_GUIDES.some(({ render }) => render === renderMomentsDoc))
+})
+
+test("every why a row carries is printed in its guide", () => {
+  const withWhy = RULES.filter((row) => row.why)
+  assert.ok(withWhy.length > 0)
+  for (const row of withWhy) {
+    const guide = RULE_GUIDES.find(
+      ({ table, render }) => !render && table.includes(row)
+    )
+    assert.ok(renderRulesDoc(guide.table).includes(row.why), row.id)
+  }
 })

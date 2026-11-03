@@ -1,7 +1,3 @@
-// The one rule table. Rows live in the subject files (pull, diff, commits,
-// workspace, claim, table, jobs) and only this module imports them. Every row
-// has `at`, the moments it runs at (judgments run nowhere); decide(moment,
-// facts) is the only way a job raises a refusal.
 import { EXIT, Refused } from "../result.mjs"
 import { jobRows } from "./jobs.mjs"
 import { issueRows, claimRows } from "./claim.mjs"
@@ -13,42 +9,38 @@ import { commitRows } from "./commits.mjs"
 
 export { issueKind, jobRows }
 
-// The moments a rule can run at. A moment is a point in a verb where every
-// fact its rows need is known; a runner gathers them and calls
-// decide(moment, facts). commit and push are the git hooks, finish the PR
-// opening, pr the live pull request (policy and merge), merge and queue the
-// merge verb before and during the queue wait. take, take-title, take-branch
-// and take-raced are the claim verb's reads and effect boundaries.
-export const MOMENTS = Object.freeze([
-  "commit",
-  "push",
-  "cli",
-  "file",
-  "locate",
-  "issue-load",
-  "history",
-  "take-title",
-  "take",
-  "take-branch",
-  "take-raced",
-  "save",
-  "release",
-  "cleanup",
-  "status",
-  "approve",
-  "shot",
-  "shot-target",
-  "finish",
-  "finish-pushed",
-  "pr",
-  "merge",
-  "merge-result",
-  "queue",
-])
+export const MOMENTS = Object.freeze({
+  commit: "The pre-commit hook, before git records the commit.",
+  push: "The pre-push hook, before git sends the branch.",
+  cli: "Any verb, once its words and flags are parsed.",
+  file: "Filing an issue, once its body is read.",
+  locate: "Any verb, once it has found the repository it runs in.",
+  "issue-load": "Any verb that names an issue, once the issue is read.",
+  history: "Reading a branch's past pull requests from GitHub.",
+  "take-title":
+    "Taking a new title, before the issue exists; only the disk is known, so a full disk makes no GitHub call.",
+  take: "Taking an issue, once the issue, its claim and the disk are read, before anything changes.",
+  "take-branch":
+    "Taking an issue, once the local and remote branch are compared.",
+  "take-raced":
+    "Taking an issue, after the claim is written and read back, to catch a second taker.",
+  save: "Saving work in a task worktree.",
+  release: "Giving back a claim on an issue.",
+  cleanup: "Removing a task worktree and its branch after the merge.",
+  status: "Reporting a task's state.",
+  approve: "Recording the owner's approval for a high-risk issue.",
+  shot: "Attaching pictures as evidence, once the files are read.",
+  "shot-target":
+    "Attaching pictures, once the issue or pull request they go to is read.",
+  finish: "Opening the pull request, before the push.",
+  "finish-pushed": "Opening the pull request, after the push.",
+  pr: "The live pull request, read by the policy check in ci and by the merge verb.",
+  merge: "The merge verb, before it enqueues the pull request.",
+  "merge-result":
+    "The merge verb, once it knows whether the branch merges with main and the merged tree passes.",
+  queue: "The merge verb, while it waits on the merge queue.",
+})
 
-// One runner per moment: the file that gathers the moment's facts and fires
-// its rows. The git hooks are shims over the hook job. layers.test.mjs holds
-// this list against the tree.
 export const RUNNERS = Object.freeze({
   commit: ["scripts/ocv-tools/jobs/hook.mjs"],
   push: ["scripts/ocv-tools/jobs/hook.mjs"],
@@ -92,9 +84,10 @@ const rows = [
 
 export const RULES = Object.freeze(rows.map((row) => Object.freeze(row)))
 
-// A rule is server-held when one of its moments is the live pull request.
+const LIVE_PULL_REQUEST = "pr"
+
 export function layerOf(row) {
-  return row.at.includes("pr") ? "server" : "local"
+  return row.at.includes(LIVE_PULL_REQUEST) ? "server" : "local"
 }
 
 function causeOf(row, facts) {
@@ -118,8 +111,6 @@ function runRow(row, facts, moment) {
   }
 }
 
-// decide(moment, facts) runs that moment's rows in table order. A missing
-// fact kind throws: a runner must not pass a rule by forgetting to gather it.
 export function decide(moment, facts) {
   const refusals = []
   for (const row of RULES) {
@@ -141,8 +132,6 @@ export function needsOf(moment) {
   return kinds
 }
 
-// Tests only: one row's verdict, to pin its message and fix. A job never calls
-// this; every refusal a job raises is a row fired by decide(moment, facts).
 export function evaluate(id, facts) {
   const row = RULES.find((item) => item.id === id)
   if (!row) throw new Error(`no rule ${id}`)

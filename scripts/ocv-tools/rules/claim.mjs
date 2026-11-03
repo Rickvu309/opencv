@@ -1,6 +1,3 @@
-// Rules about taking and holding an issue: the claim, the assignee, the
-// branch. Each check takes the facts a job gathered and returns a refusal,
-// or null when the rule holds.
 import { CLAIM_IDLE_MINUTES } from "../claim-marker.mjs"
 import { FIXES } from "../result.mjs"
 
@@ -178,7 +175,6 @@ function branchFix(facts) {
   const n = facts.issue?.n ?? "<n>"
   if (branch.resume && !branch.local && !branch.remote)
     return `scripts/ocv-tools.mjs take ${n}`
-  // Same order as branchExists: a local tip wins, even when origin has it too.
   if (!branch.resume && branch.local) return FIXES.BRANCH_EXISTS
   if (!branch.resume && branch.remote)
     return `scripts/ocv-tools.mjs take ${n} --resume`
@@ -197,8 +193,6 @@ function divergedFix(facts) {
   return `Keep both tips. In the main checkout: git fetch origin ${name} && git log --oneline --left-right ${name}...origin/${name}; reconcile, then: scripts/ocv-tools.mjs take ${n} --resume`
 }
 
-// The issue gates run before the pull rows: a closed or missing issue stops
-// the take before READY_FOR_HUMAN can speak for it.
 export const issueRows = [
   rule({
     id: "NOT_AN_ISSUE",

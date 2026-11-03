@@ -1,6 +1,3 @@
-// Preconditions the finish and merge jobs raise: finish (the PR opening, before and
-// after the push), merge (the live pull request) and the queue wait. Each
-// check reads domain facts the job gathered, never a verdict it made itself.
 const BRANCH_ISSUE = /^(?:feat|fix|hotfix|refactor|chore|docs)\/(\d+)-/
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const SECTIONS = ["Summary", "Evidence", "Merge Danger"]
@@ -33,7 +30,6 @@ const REBASE =
 const MERGE_FIX =
   "Wait for a green ci on the PR head, then run scripts/ocv-tools.mjs merge <pr#>."
 
-// The text under a `## Heading` line up to the next `## ` line.
 function sectionBody(text, heading) {
   const start = new RegExp(`^## ${heading}\\r?$`, "m").exec(text)
   if (!start) return null

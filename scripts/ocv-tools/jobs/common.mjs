@@ -36,9 +36,7 @@ export function task(ctx) {
   }
   return { ...here, ...repo, type: m[1], n: Number(m[2]), slug: m[3] }
 }
-// What finish holds still while it pushes: the tree, the base and whether
-// anything is unsaved. finish-pushed compares the one before with the one after.
-export function snapshot(ctx, t) {
+export function stateHeldDuringPush(ctx, t) {
   return {
     dirty: git(ctx, "status", "--porcelain"),
     tree: git(ctx, "rev-parse", "HEAD^{tree}"),

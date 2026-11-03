@@ -1,6 +1,3 @@
-// Rules about the workstation: the task worktree, the clean main checkout,
-// the assigned port, free disk and the checkout cleanup. Each check takes
-// the facts a job gathered and returns a refusal, or null when the rule holds.
 import { BRANCH_RE, TYPES } from "../fields.mjs"
 import { FIXES } from "../result.mjs"
 
@@ -136,8 +133,6 @@ function notARepo(facts) {
   return null
 }
 
-// NOT_A_TASK must stay first in the assembled table: decide stops there
-// before rows whose facts a folder outside any task worktree cannot gather.
 export const workspaceRows = [
   rule({
     id: "NOT_A_TASK",

@@ -1,5 +1,3 @@
-// Delivery refusals are rows fired at a moment: finish reads the body file,
-// merge reads the live pull request, the queue wait reads the check run.
 import assert from "node:assert/strict"
 import test from "node:test"
 import { fixture } from "./fixture.mjs"
