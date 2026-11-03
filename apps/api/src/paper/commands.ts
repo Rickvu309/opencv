@@ -184,11 +184,13 @@ export function registerPaper(registry: Registry) {
           epoch: input.epoch,
           update: bytesOf(input.update),
           stateVector: bytesOf(input.stateVector),
+          basedOn: input.basedOn,
         })
         return {
           epoch: reply.epoch,
           revision: reply.revision,
           reset: reply.reset,
+          stale: reply.stale,
           update: encoded(reply.update),
           stateVector: encoded(reply.stateVector),
         }

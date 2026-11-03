@@ -140,3 +140,17 @@ export type PaperPartialBlock = PartialBlock<
   PaperInlineSchema,
   PaperStyleSchema
 >
+
+export const letterSchema = BlockNoteSchema.create({
+  blockSpecs: {
+    paragraph: defaultBlockSpecs.paragraph,
+    heading: createHeadingBlockSpec({ levels: [2, 3], defaultLevel: 2 }),
+    bulletListItem: defaultBlockSpecs.bulletListItem,
+    numberedListItem: defaultBlockSpecs.numberedListItem,
+    divider: defaultBlockSpecs.divider,
+  },
+  styleSpecs: {
+    bold: defaultStyleSpecs.bold,
+    italic: defaultStyleSpecs.italic,
+  },
+})

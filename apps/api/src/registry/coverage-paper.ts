@@ -202,12 +202,14 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
           epoch: 1,
           update: syncPush,
           stateVector: "",
+          basedOn: 1,
         }),
       assert: async (result) => {
         expect(result.output).toMatchObject({
           epoch: 1,
           revision: 2,
           reset: false,
+          stale: false,
         })
         const document = record(await paperOf(ctx.docId), "document")
         expect(record(document, "header")).toMatchObject({
@@ -253,6 +255,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
             withText(paper, "t1", coachSentence.replace("adds ", "adds QUICK "))
           ),
           stateVector: "",
+          basedOn: (pulled.output as { revision: number }).revision,
         })
         await undo(result)
         expect(await blockText("t1")).toBe("First paragraph.QUICK ")

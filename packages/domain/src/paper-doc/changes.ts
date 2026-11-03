@@ -19,18 +19,31 @@ function summaryOf(node: PaperNode): string {
   return nodeSummary(ownFields(node) as PaperNode, 1)
 }
 
-function longestIncreasing(values: readonly number[]): Set<number> {
+function longestIncreasing(
+  values: readonly number[],
+  costs: readonly number[]
+): Set<number> {
   const best: number[] = values.map(() => 1)
+  const cost: number[] = values.map((_value, at) => costs[at] ?? 0)
   const previous: number[] = values.map(() => -1)
+  const better = (length: number, price: number, than: number) =>
+    length > best[than]! || (length === best[than] && price < cost[than]!)
   let end = -1
   values.forEach((value, index) => {
     for (let before = 0; before < index; before += 1) {
-      if (values[before]! < value && best[before]! + 1 > best[index]!) {
-        best[index] = best[before]! + 1
+      if (values[before]! >= value) continue
+      const length = best[before]! + 1
+      const price = cost[before]! + (costs[index] ?? 0)
+      if (
+        length > best[index]! ||
+        (length === best[index] && price < cost[index]!)
+      ) {
+        best[index] = length
+        cost[index] = price
         previous[index] = before
       }
     }
-    if (end === -1 || best[index]! > best[end]!) end = index
+    if (end === -1 || better(best[index]!, cost[index]!, end)) end = index
   })
   const keep = new Set<number>()
   for (let at = end; at !== -1; at = previous[at]!) keep.add(at)
@@ -48,7 +61,11 @@ function idsByOwner(index: Index, common: ReadonlySet<string>) {
   return owners
 }
 
-function movedIds(base: Index, target: Index): Set<string> {
+export function movedIds(
+  base: Index,
+  target: Index,
+  stays: ReadonlySet<string> = new Set()
+): Set<string> {
   const moved = new Set<string>()
   const common = new Set([...target.keys()].filter((id) => base.has(id)))
   for (const id of common) {
@@ -61,7 +78,10 @@ function movedIds(base: Index, target: Index): Set<string> {
     )
     const sameOwner = targetIds.filter((id) => baseIds.includes(id))
     const positions = sameOwner.map((id) => baseIds.indexOf(id))
-    const stay = longestIncreasing(positions)
+    const stay = longestIncreasing(
+      positions,
+      sameOwner.map((id) => (stays.has(id) ? 0 : 1))
+    )
     sameOwner.forEach((id, at) => {
       if (!stay.has(at)) moved.add(id)
     })
