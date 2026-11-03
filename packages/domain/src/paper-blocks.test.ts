@@ -225,6 +225,23 @@ describe("cv block codec", () => {
     assert.equal(preview.experience[0]?.role, "Discovery lead")
   })
 
+  it("leaves numbered lists and dividers out of the v1 codec fields", () => {
+    const withAsides = cvCodecToBlocks(sampleCv())
+    const languages = withAsides.sections.find(
+      (section) => section.kind === "languages"
+    )
+    assert.ok(languages)
+    languages.blocks.unshift(
+      { id: "rule", type: "divider" },
+      {
+        id: "steps",
+        type: "numbered-list",
+        items: [{ id: "step-1", text: "First step" }],
+      }
+    )
+    assert.deepEqual(blocksToCvCodec(withAsides), sampleCv())
+  })
+
   it("reads a slash-inserted project from its text block", () => {
     const projects = (
       blocks: CvBlockDocument["sections"][number]["blocks"]
