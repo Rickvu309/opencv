@@ -1,0 +1,13 @@
+{
+  "module": "claim.mjs",
+  "actions": {
+    "TakeRead": "readClaim",
+    "TakeRaced": "readClaim",
+    "PostClaim": "claimBody",
+    "ConfirmRead": "readClaim",
+    "Save": "heartbeat",
+    "Tick": "nowOf",
+    "ForeignClaim": "claimBody",
+    "ForeignRelease": "release"
+  }
+}
