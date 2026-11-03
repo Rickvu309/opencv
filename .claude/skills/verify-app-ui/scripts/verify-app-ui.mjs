@@ -2,21 +2,25 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { createConnection } from "node:net"
 
+import {
+  portError,
+  requireVerifierPorts,
+} from "../../../../scripts/lib/worktree-port.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { runChecks } from "./lib/checks.mjs"
-import { EXIT_CODE, summarize } from "./lib/check-util.mjs"
+import { EXIT_CODE, repo, summarize } from "./lib/check-util.mjs"
 import { KINDS } from "./lib/kinds.mjs"
 import { startStack, stopStack } from "./lib/stack.mjs"
 import { gate, selectTier, tierFromEnv } from "./lib/tier.mjs"
 import { runTour } from "./lib/tour.mjs"
 
-const base = Number(process.env.PORT ?? 4450)
-if (!(base >= 4450 && base <= 4458)) {
-  console.error(
-    "verify-app-ui error: PORT must be 4450 to 4458 (api uses PORT, web PORT+1)"
-  )
+const ports = requireVerifierPorts(repo)
+if (!ports) {
+  console.error(portError("verify-app-ui"))
   process.exit(EXIT_CODE.stackBrowserOrScreenBroken)
 }
+const base = ports.apiPort
+const webPort = ports.webPort
 const tier = tierFromEnv()
 const shots = process.env.VERIFY_APP_UI_SHOTS
 if (shots) mkdirSync(shots, { recursive: true })
@@ -41,13 +45,13 @@ process.on("SIGINT", bail(130))
 process.on("SIGTERM", bail(143))
 let exit = 0
 try {
-  for (const port of [base, base + 1]) {
+  for (const port of [base, webPort]) {
     if (await taken(port))
       throw new Error(
         `port ${port} is in use; stop whatever holds it or pick another PORT`
       )
   }
-  const stack = startStack({ apiPort: base, webPort: base + 1, run })
+  const stack = startStack({ apiPort: base, webPort, run })
   browser = await launchBrowser()
   const data = await runTour({ browser, ...stack, shots })
   if (process.env.VERIFY_APP_UI_DATA)

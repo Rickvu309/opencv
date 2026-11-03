@@ -4,6 +4,10 @@ import { createConnection } from "node:net"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import {
+  portError,
+  requireVerifierPorts,
+} from "../../../../scripts/lib/worktree-port.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import {
   comparePenLayout,
@@ -18,13 +22,13 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const features = join(repo, "apps/web/src/features")
 const PANE = '[data-slot="app-shell"] #app-main'
 
-const base = Number(process.env.PORT ?? 4450)
-if (!(base >= 4450 && base <= 4458)) {
-  console.error(
-    "verify-pen-layout error: PORT must be 4450 to 4458 (api uses PORT, web PORT+1)"
-  )
+const ports = requireVerifierPorts(repo)
+if (!ports) {
+  console.error(portError("verify-pen-layout"))
   process.exit(2)
 }
+const base = ports.apiPort
+const webPort = ports.webPort
 const shots = process.env.VERIFY_PEN_LAYOUT_SHOTS
 if (shots) mkdirSync(shots, { recursive: true })
 
@@ -81,13 +85,13 @@ try {
   const files = layoutFiles()
   if (!files.length)
     throw new Error("no *.layout.json under apps/web/src/features")
-  for (const port of [base, base + 1]) {
+  for (const port of [base, webPort]) {
     if (await taken(port))
       throw new Error(
         `port ${port} is in use; stop whatever holds it or pick another PORT`
       )
   }
-  const stack = startStack({ apiPort: base, webPort: base + 1, run })
+  const stack = startStack({ apiPort: base, webPort, run })
   browser = await launchBrowser()
   const tab = await browser.openPage({
     width: 1440,

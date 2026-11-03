@@ -12,10 +12,10 @@ All paths are relative to the repo (or worktree) root. The rules come from the A
 ## Run the checker
 
 ```bash
-PORT=4450 pnpm --filter web verify:app-ui
+PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:app-ui
 ```
 
-- `PORT` is the api port and `PORT+1` the web port. Use 4450 to 4458 (the ports this program reserves for UI verification); default 4450. If either port answers, it refuses and exits 2 so it never drives a stack it did not start.
+- `PORT` from `.env` is the api port. The web listens on PORT+1000. A busy port exits 2. Stop `pnpm dev` first.
 - It starts the real api (PGlite, `COACH_RUNTIME=fake`, no network, no tokens) and the Vite dev server by calling `.claude/skills/verify-opencv/scripts/launch.sh` and `.claude/skills/verify-opencv/scripts/cleanup.sh`, and tears both down at the end, also on failure. It builds `packages/domain` first when `dist` is missing (a fresh worktree has none).
 - It signs up a throwaway account through the api in the browser, so every run starts with the starter workspace: a sample CV, four Apply cards, a sample Pitch and a welcome Thread.
 - Needs `pnpm install` done and a Chromium. It looks for `$CHROME_BIN`, then `~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome` (installed by the agent-browser tooling), then `chromium` on the path. No new dependency: it speaks the DevTools protocol over Node's built-in WebSocket.
@@ -45,11 +45,11 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 
 ## Run it by hand
 
-Nothing runs this checker before a merge. Run it when you want it (`PORT=4450 pnpm --filter web verify:app-ui`). `known-findings.json` next to this file lists invariant FAILs you may treat as known, each `{ "id", "issue", "since", "note" }`.
+Nothing runs this checker before a merge. Run it when you want it (`PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:app-ui`). `known-findings.json` next to this file lists invariant FAILs you may treat as known, each `{ "id", "issue", "since", "note" }`.
 
 ## Apply against opencv.pen
 
-`PORT=4454 pnpm --filter web verify:apply-pen` holds every Apply state to its pen frame. See [apply-pen.md](apply-pen.md).
+`PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:apply-pen` holds every Apply state to its pen frame. See [apply-pen.md](apply-pen.md).
 
 ## The properties
 
@@ -72,7 +72,7 @@ Seen in the #526 run and not judged in the design pass:
 
 ## Pen layout check
 
-`pnpm --filter web verify:pen-layout` holds each built screen to the text layout of its pen frame. The text parity tests only compare words. This check compares where the words sit. It starts the same stack as the checker (PORT 4450 to 4458, api on PORT, web on PORT+1), signs up a throwaway account and visits every route at 1440x900, dpr 1, reduced motion.
+`pnpm --filter web verify:pen-layout` holds each built screen to the text layout of its pen frame. The text parity tests only compare words. This check compares where the words sit. It starts the same stack (api on PORT from `.env`, web on PORT+1000), signs up a throwaway account and visits every route at 1440x900, dpr 1, reduced motion.
 
 - **Input.** Every `apps/web/src/features/**/design/*.layout.json`. Each file records, for one pen frame, every visible text with its box, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight`, `color` and `textAlign`, relative to the pen's main panel `GIhbq`.
 - **What it measures.** The app's `#app-main` panel stands for `GIhbq`. For each pen text it finds the smallest visible element whose own text (whitespace collapsed, `<br />` read as a space) equals the pen text, and measures the text itself, not its box.
@@ -108,7 +108,7 @@ Never edit the app to make a check pass unless that was the task. A FAIL on toda
 
 ## Helpers
 
-- `verify-app-ui error: port 4450 is in use`: another run holds it. Pick `PORT=4452`, or stop the holder. Never kill a stack you did not start.
+- `verify-app-ui error: port <port> is in use`: stop the holder. Never kill a stack you did not start.
 - `stack launch failed`: the message ends with the api and web log tails. A first boot under load can need more time; rerun.
 - `coach did not render at /coach` (or another route): the stack came up but the screen never showed its content. Open the URL by hand from `~/tmp/verify-app-ui/stack/<run>/run.env`, or rerun with `VERIFY_APP_UI_SHOTS`.
 - `chrome did not start`: set `CHROME_BIN` to a Chromium or Chrome binary.

@@ -5,6 +5,10 @@ import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import {
+  portError,
+  requireVerifierPorts,
+} from "../../../../scripts/lib/worktree-port.mjs"
+import {
   gate,
   selectTier,
   tierFromEnv,
@@ -22,7 +26,12 @@ import { summarize } from "./lib/verdict.mjs"
 const REVEAL_SCROLL_STEP_MS = 400
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
-const port = process.env.PORT ?? "4399"
+const ports = requireVerifierPorts(repo)
+if (!ports) {
+  console.error(portError("verify-landing"))
+  process.exit(2)
+}
+const port = String(ports.webPort)
 const url = `http://127.0.0.1:${port}/`
 const portOwner = resolve(
   repo,

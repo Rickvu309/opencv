@@ -15,7 +15,7 @@ All paths are relative to the repo (or worktree) root. The rules come from the l
 PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:landing
 ```
 
-- Starts the Vite dev server on `127.0.0.1:$PORT` if nothing answers there, and stops it at the end. If something already answers on the port, it refuses and exits 2, because that server may serve another tree. Stop it or pick another port; set `VERIFY_LANDING_REUSE=1` only when you started that server from this worktree. Use the `PORT` in this worktree's `.env`, or a free port you own.
+- `PORT` is the api port in this worktree's `.env`. The checker starts the Vite dev server on `127.0.0.1` at PORT+1000 if nothing answers there, and stops it at the end. That web port sits just above the shared api range, so it is not another task's api port. If something already answers on it, the checker refuses and exits 2, because that server may serve another tree. Stop `pnpm dev` first, or set `VERIFY_LANDING_REUSE=1` only when you started that server from this worktree.
 - Needs `pnpm install` done and a Chromium. It looks for `$CHROME_BIN`, then `~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome` (installed by the agent-browser tooling), then `chromium` on the path. No new dependency: it speaks the DevTools protocol over Node's built-in WebSocket.
 - The page asks the api for a session before it renders. The checker answers every cross-origin fetch as a signed-out visitor (`null`), so no api, database or network is needed.
 - The deep pass scrolls 400 ms a step (`REVEAL_SCROLL_STEP_MS` in `verify-landing.mjs`): headless Chromium delivers IntersectionObserver callbacks about 300 ms after a scroll, and at 120 ms a step the scroll reveals never fired, so the text stayed hidden for checks 21 and 23.

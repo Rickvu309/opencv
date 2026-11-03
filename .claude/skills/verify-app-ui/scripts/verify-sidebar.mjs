@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 
+import { requireVerifierPorts } from "../../../../scripts/lib/worktree-port.mjs"
 import { must } from "./lib/apply-pen-seed.mjs"
 import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
@@ -49,15 +50,11 @@ for (let i = 0; i < args.length; i += 1) {
     positional = args[i]
   }
 }
-const port = Number(process.env.PORT)
+const ports = requireVerifierPorts(repo)
 const web =
-  options["base-url"] ??
-  process.env.WEB_ORIGIN ??
-  (Number.isInteger(port) ? `http://localhost:${port + 1000}` : null)
+  options["base-url"] ?? process.env.WEB_ORIGIN ?? ports?.webOrigin ?? null
 const api =
-  options["api-url"] ??
-  process.env.API_ORIGIN ??
-  (Number.isInteger(port) ? `http://localhost:${port}` : null)
+  options["api-url"] ?? process.env.API_ORIGIN ?? ports?.apiOrigin ?? null
 const log = options["api-log"] ?? process.env.VERIFY_API_LOG
 const destination = options.evidence ?? positional
 must(web && api && log && destination, USAGE)

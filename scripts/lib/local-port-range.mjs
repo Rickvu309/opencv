@@ -16,7 +16,7 @@ const COMPARED_LITERALS = [
 ]
 const ALLOCATED_LITERAL = /\b(\d{4,5})\s*\+\s*\(?\s*[\w.]+\s*%/g
 const SPOKEN_RANGE = /\b(\d{4,5})\s*(?:to|through|-|–)\s*(\d{4,5})\b/g
-const FIXED_PORT_COMMAND = /\bPORT=(\d{4,5})\s+pnpm\b/g
+const FIXED_PORT_COMMAND = /\bPORT=(\d{4,5})\s+(?:pnpm|node)\b/g
 
 const isPortNumber = (digits) => {
   const value = Number(digits)
@@ -60,6 +60,20 @@ export function detect(text, path = "") {
   if (path === PORT_SOURCE) return []
   const lines = String(text).split("\n")
   return path.endsWith(".md") ? docHits(lines) : codeHits(lines)
+}
+
+const PLUS_ONE_TREE = /^(?:\.claude\/skills|scripts)\//
+const WEB_ON_NEXT_PORT = /\b(?:port|base)\s*\+\s*1\b/i
+
+export function detectWebPlusOne(text, path = "") {
+  if (!PLUS_ONE_TREE.test(path)) return []
+  return String(text)
+    .split("\n")
+    .flatMap((line, index) =>
+      WEB_ON_NEXT_PORT.test(line)
+        ? [{ line: index + 1, text: line.trim() }]
+        : []
+    )
 }
 
 export const PENDING_FILE = "scripts/local-port-range.pending.json"
