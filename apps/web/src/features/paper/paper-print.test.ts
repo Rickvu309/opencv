@@ -170,9 +170,7 @@ describe("print paper", () => {
     expect(clone?.querySelector("[aria-label='Company']")).toHaveAttribute(
       "hidden"
     )
-    expect(clone?.querySelector("[aria-label='Summary']")).toHaveAttribute(
-      "hidden"
-    )
+    expect(clone?.querySelector("[aria-label='Summary']")).toBeNull()
   })
 
   it("prints no placeholder and no empty company line", () => {
@@ -189,9 +187,7 @@ describe("print paper", () => {
     )?.parentElement
     expect(sheet).not.toBeNull()
     expect(sheet?.innerHTML ?? "").not.toContain("Add text")
-    expect(sheet?.querySelector("[aria-label='Summary']")).toHaveAttribute(
-      "hidden"
-    )
+    expect(sheet?.querySelector("[aria-label='Summary']")).toBeNull()
     expect(sheet?.querySelector("[aria-label='Company']")).toHaveAttribute(
       "hidden"
     )

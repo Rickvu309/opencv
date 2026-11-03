@@ -1,5 +1,6 @@
 [data-cv-editor] [data-cv-size="name"] {
   font-size: 22px;
+  font-weight: 700;
 }
 
 [data-cv-editor] [data-cv-size="contact"],
@@ -9,6 +10,7 @@
 
 [data-cv-editor] [data-cv-size="entry"] {
   font-size: 11.5px;
+  font-weight: 600;
 }
 
 [data-cv-editor] [data-cv-size="section"] {

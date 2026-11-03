@@ -1,7 +1,8 @@
 {
   "frameId": "L3V6y",
   "frameName": "W6.2 Blank doc",
-  "route": "/paper",
+  "route": "/paper/$docId",
+  "driver": ".claude/skills/verify-app-ui/scripts/verify-cv-editor.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

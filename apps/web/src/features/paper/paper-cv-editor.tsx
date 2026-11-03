@@ -4,7 +4,6 @@ import {
   useLayoutEffect,
   useReducer,
   useRef,
-  useState,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -76,6 +75,7 @@ type State = {
   checks: PaperView["checks"]
   checksHidden: boolean
   favoritePending: boolean
+  deferring: boolean
   cv: CvPaper | null
 }
 
@@ -92,6 +92,7 @@ type Action =
   | { type: "checks"; checks: PaperView["checks"] }
   | { type: "hide_checks" }
   | { type: "favorite"; pending: boolean }
+  | { type: "defer"; on: boolean }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -123,6 +124,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, checksHidden: true }
     case "favorite":
       return { ...state, favoritePending: action.pending }
+    case "defer":
+      return { ...state, deferring: action.on }
   }
 }
 
@@ -174,7 +177,6 @@ export function PaperCvEditor({
   const syncRef = useRef(sync)
   const dismissed = useRef(new Set<string>())
   const deferTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [deferring, setDeferring] = useState(false)
   const [state, dispatch] = useReducer(reducer, {
     name: initial.name,
     nameError: "",
@@ -187,6 +189,7 @@ export function PaperCvEditor({
     checks: initial.checks,
     checksHidden: false,
     favoritePending: false,
+    deferring: false,
     cv: null,
   })
   useEffect(() => {
@@ -199,9 +202,12 @@ export function PaperCvEditor({
     []
   )
   const noteTyping = () => {
-    setDeferring(true)
+    dispatch({ type: "defer", on: true })
     if (deferTimer.current) clearTimeout(deferTimer.current)
-    deferTimer.current = setTimeout(() => setDeferring(false), 1000)
+    deferTimer.current = setTimeout(
+      () => dispatch({ type: "defer", on: false }),
+      1000
+    )
   }
   const onDocument = useCallback(
     (next: PaperDocument | null, change: ClientChange) => {
@@ -369,7 +375,7 @@ export function PaperCvEditor({
   const source = state.cv ? printable(state.cv, state.templateId) : null
   const sections =
     state.cv?.blocks.filter((block) => block.type === "section") ?? []
-  const statusLabel = cvEditorStatus(status, state.editedAt, deferring)
+  const statusLabel = cvEditorStatus(status, state.editedAt, state.deferring)
 
   return (
     <section

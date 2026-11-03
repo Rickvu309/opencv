@@ -15,6 +15,8 @@ import {
 import { createReactBlockSpec } from "@blocknote/react"
 import { paperBlockConfigs } from "@workspace/paper-crdt"
 
+import { Button } from "@workspace/ui/components/button"
+
 import { CvPhoto } from "./cv-templates/cv-parts.tsx"
 import { CvField } from "./cv-field.tsx"
 import "./cv-editor.css"
@@ -93,7 +95,11 @@ function HeaderView({ block }: ViewProps) {
             key={name}
             className="inline-flex items-center gap-x-2 whitespace-nowrap"
           >
-            {index > 0 ? <span aria-hidden="true">|</span> : null}
+            {index > 0 ? (
+              <span aria-hidden="true" data-cv-size="contact">
+                |
+              </span>
+            ) : null}
             <CvField
               blockId={block.id}
               name={name}
@@ -189,14 +195,15 @@ function SectionView({ block, contentRef }: ViewProps) {
       />
       <div className="h-px bg-foreground/80" />
       {empty ? (
-        <button
+        <Button
           type="button"
+          variant="ghost"
           data-cv-section={block.id}
-          className="h-11 text-start text-muted-foreground md:h-7"
+          className="h-11 w-full justify-start rounded-none px-0 text-start font-normal whitespace-normal text-muted-foreground shadow-none md:h-7"
           onClick={add}
         >
           {placeholder}
-        </button>
+        </Button>
       ) : null}
     </div>
   )
@@ -241,21 +248,30 @@ function EntryRow({
       data-cv-block-fields={block.id}
       className="flex w-full flex-wrap items-baseline gap-x-2"
     >
-      <span className="inline-flex items-baseline whitespace-nowrap">
+      <span
+        className="inline-flex items-baseline whitespace-nowrap"
+        data-cv-size="entry"
+      >
         <CvField
           blockId={block.id}
           name={left}
           label={leftLabel}
           value={leftValue}
           placeholder={joined ? joint : leftLabel}
+          size="entry"
         />
-        {joined ? null : <span aria-hidden="true">, </span>}
+        {joined ? null : (
+          <span aria-hidden="true" data-cv-size="entry">
+            ,{" "}
+          </span>
+        )}
         <CvField
           blockId={block.id}
           name={right}
           label={rightLabel}
           value={rightValue}
           placeholder={joined ? "" : rightLabel}
+          size="entry"
           compact={joined}
           onFocusChange={(on) => dispatch({ type: "right", on })}
         />

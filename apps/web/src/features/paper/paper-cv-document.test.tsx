@@ -538,7 +538,7 @@ describe("empty-field hints", () => {
       ...defaultCvData(),
       contact: { email: "", phone: "", location: "", linkedin: "" },
     }
-    renderCv("internship", quiet)
+    renderCv("internship", quiet, false)
     expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull()
     cleanup()
     render(

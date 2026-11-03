@@ -1,7 +1,8 @@
 {
   "frameId": "TtBmY",
   "frameName": "W6.4 Editing",
-  "route": "/paper",
+  "route": "/paper/$docId",
+  "driver": ".claude/skills/verify-app-ui/scripts/verify-cv-editor.mjs",
   "viewport": {
     "width": 1440,
     "height": 900
