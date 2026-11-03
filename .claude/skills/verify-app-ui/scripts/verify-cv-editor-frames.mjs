@@ -335,9 +335,22 @@ export async function measureFilledCv({
   check(lead, "1440: the second job row is on the page")
   await page.hover(lead.x, lead.y)
   await page.sleep(250)
-  await page.evaluate(
-    `document.querySelector('[aria-label="Drag block"]')?.click()`
-  )
+  const grip = await page.evaluate(`(() => {
+    const row = [...document.querySelectorAll("[data-cv-block-fields]")].find((item) => item.textContent.includes("Content Lead"))
+    const handle = document.querySelector('[aria-label="Drag block"]')
+    if (!row || !handle) return null
+    const rowBox = row.getBoundingClientRect()
+    const box = handle.getBoundingClientRect()
+    return {
+      x: box.left + box.width / 2,
+      y: box.top + box.height / 2,
+      onRow: box.bottom > rowBox.top - 8 && box.top < rowBox.bottom + 8,
+    }
+  })()`)
+  check(grip && grip.onRow, "1440: the Content Lead grip is beside that row")
+  await page.hover(grip.x, grip.y)
+  await page.mouse("mousePressed", grip.x, grip.y)
+  await page.mouse("mouseReleased", grip.x, grip.y)
   await state(
     page,
     `!!document.querySelector('[data-slot="cv-block-menu"]')`,

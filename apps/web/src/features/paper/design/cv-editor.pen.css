@@ -389,6 +389,12 @@
   background: #ededef;
 }
 
+[data-pen-surface="paper"][data-slot="cv-block-menu"],
+:has(> [data-pen-surface="paper"][data-slot="cv-block-menu"]) {
+  animation: none;
+  transition: none;
+}
+
 [data-pen-surface="paper"][data-slot="cv-block-menu"] {
   width: 198px;
   border-color: #e6e6e8;

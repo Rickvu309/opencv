@@ -438,6 +438,21 @@ function Handle() {
   )
 }
 
+function pointerOnOpenMenu(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false
+  if (
+    target.closest("[data-slot='cv-block-menu']") ||
+    target.closest("[data-slot='dropdown-menu-sub-content']") ||
+    target.closest("[role='menu']")
+  ) {
+    return true
+  }
+  return (
+    Boolean(target.closest("[aria-label='Drag block']")) &&
+    Boolean(document.querySelector("[data-slot='cv-block-menu']"))
+  )
+}
+
 function SideMenuRelease() {
   const side = useExtension(SideMenuExtension)
   const dragging = useRef(false)
@@ -464,11 +479,15 @@ function SideMenuRelease() {
       document.documentElement.removeAttribute("data-cv-dragging")
       finishDrag()
     }
-    const onPointerUp = () => {
+    const releaseMenu = () => {
       queueMicrotask(() => {
         if (dragging.current) return
         if (side.menuFrozen) side.unfreezeMenu()
       })
+    }
+    const onPointerUp = (event: PointerEvent) => {
+      if (pointerOnOpenMenu(event.target)) return
+      releaseMenu()
     }
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
@@ -478,10 +497,13 @@ function SideMenuRelease() {
     const onPointerDown = (event: PointerEvent) => {
       if (!side.menuFrozen) return
       const target = event.target
-      if (!(target instanceof Node)) return
-      const menu = document.querySelector("[role='menu']")
-      const handle = document.querySelector("[data-slot='paper-side-menu']")
-      if (menu?.contains(target) || handle?.contains(target)) return
+      if (pointerOnOpenMenu(target)) return
+      if (
+        target instanceof Element &&
+        target.closest("[data-slot='paper-side-menu']")
+      ) {
+        return
+      }
       side.unfreezeMenu()
     }
     root.addEventListener("dragstart", onDragStart, true)

@@ -35,9 +35,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   vOOtp: { issue: 498, expires: "2026-12-31" },
   dgd0V: { issue: 498, expires: "2026-12-31" },
   LG57z: { issue: 498, expires: "2026-12-31" },
-  L3V6y: { issue: 1063, expires: "2026-12-03" },
-  pCOLZ: { issue: 1063, expires: "2026-12-03" },
-  TtBmY: { issue: 1063, expires: "2026-12-03" },
 }
 
 const TODAY = new Date().toISOString().slice(0, 10)

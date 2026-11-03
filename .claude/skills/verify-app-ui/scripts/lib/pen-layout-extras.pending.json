@@ -55,6 +55,38 @@
       "issue": "#916",
       "until": "2026-12-03",
       "reason": "The letter page had this control on main before the block editor; frame W7.3 does not draw it. Decide in the Paper layout regeneration after the editor work"
+    },
+    {
+      "frameId": "L3V6y",
+      "text": "Years",
+      "kind": "drift",
+      "issue": "#1063",
+      "until": "2026-12-03",
+      "reason": "the pen's blank frames omit the read-only Years field the editing frame draws"
+    },
+    {
+      "frameId": "pCOLZ",
+      "text": "Years",
+      "kind": "drift",
+      "issue": "#1063",
+      "until": "2026-12-03",
+      "reason": "the pen's blank frames omit the read-only Years field the editing frame draws"
+    },
+    {
+      "frameId": "TtBmY",
+      "text": "Add block below",
+      "kind": "drift",
+      "issue": "#1063",
+      "until": "2026-12-03",
+      "reason": "the editing frame was drawn without the hover handles"
+    },
+    {
+      "frameId": "TtBmY",
+      "text": "Drag block",
+      "kind": "drift",
+      "issue": "#1063",
+      "until": "2026-12-03",
+      "reason": "the editing frame was drawn without the hover handles"
     }
   ]
 }

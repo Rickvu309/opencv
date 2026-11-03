@@ -447,6 +447,26 @@ export function cvFormatHidden(inField: boolean, nodeName: string | null) {
   return inField || (nodeName !== null && FIELD_NODES.has(nodeName))
 }
 
+function liftAnchor(
+  editor: LooseEditor,
+  block: LooseBlock,
+  targetType: string
+) {
+  let current = block
+  let anchor: LooseBlock | undefined
+  let parent = editor.getParentBlock(current)
+  while (
+    parent &&
+    ((HOLDS_CHILDREN.has(parent.type) && !LIST_TYPES.has(targetType)) ||
+      (parent.type === "paperSkills" && targetType !== "paperSkillItem"))
+  ) {
+    anchor = parent
+    current = parent
+    parent = editor.getParentBlock(current)
+  }
+  return anchor
+}
+
 export function turnCvBlock(
   source: object,
   blockId: string,
@@ -465,10 +485,16 @@ export function turnCvBlock(
   if (field) props[field] = text
   const update: Record<string, unknown> = { type: target.type, props }
   if (INLINE_TURN.has(target.type)) update.content = text
+  const lifted = liftAnchor(editor, block, target.type)
   const section = SECTION_OF[target.type]
   const kids = block.children.map((child) => copyBlock(child, true))
   try {
     editor.transact(() => {
+      if (lifted) {
+        editor.insertBlocks([update], lifted.id, "after")
+        editor.removeBlocks([block.id])
+        return
+      }
       editor.updateBlock(block.id, update)
       const live = editor.getBlock(block.id)
       if (
