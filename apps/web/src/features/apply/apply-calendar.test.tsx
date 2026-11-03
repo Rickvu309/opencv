@@ -13,17 +13,19 @@ import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { calendarEvents, eventsInDays } from "./apply-calendar-model.ts"
 
-// The calendar opens on the week of "today" in the profile zone, so every
-// test pins the clock. Only Date is faked: timers stay real for waitFor.
-const NOW = new Date("2026-10-29T05:00:00.000Z")
+const PINNED_NOW = new Date("2026-10-29T05:00:00.000Z")
 const TODAY = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Ho_Chi_Minh",
-}).format(NOW)
+}).format(PINNED_NOW)
+
+const FIRST_ROW_HOUR = 8
+const HOUR_ROW_PX = 58
+const EVENT_INSET_PX = 1
 
 describe("apply calendar", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] })
-    vi.setSystemTime(NOW)
+    vi.setSystemTime(PINNED_NOW)
   })
   afterEach(() => {
     cleanup()
@@ -35,7 +37,7 @@ describe("apply calendar", () => {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).formatToParts(NOW)
+    }).formatToParts(PINNED_NOW)
     const year = parts.find((part) => part.type === "year")?.value
     const month = parts.find((part) => part.type === "month")?.value
     const day = parts.find((part) => part.type === "day")?.value
@@ -83,8 +85,9 @@ describe("apply calendar", () => {
       name: "Interview 20:00 to 21:00: Evening interview, Lumière Cosmetics",
     })
     expect(within(block).getByText("20:00 to 21:00")).toBeInTheDocument()
-    // 08:00 is the first row, so 20:00 sits 12 hours of 58px down (+1px inset).
-    expect(block.style.top).toBe(`${12 * 58 + 1}px`)
+    expect(block.style.top).toBe(
+      `${(20 - FIRST_ROW_HOUR) * HOUR_ROW_PX + EVENT_INSET_PX}px`
+    )
     expect(screen.getByText("21:00")).toBeInTheDocument()
   })
 
@@ -95,29 +98,27 @@ describe("apply calendar", () => {
     expect(chip.closest('[role="group"][aria-label$="all day"]')).not.toBeNull()
   })
 
-  it("moves the week with the next and previous buttons", async () => {
+  it("moves the week and its day columns with the next and previous buttons", async () => {
     setMockJobs([mockJob({ title: "Saved job" })])
     renderApp("/apply?view=calendar&span=week")
     const title = await screen.findByRole("heading", { name: /\d{4}/ })
     const before = title.textContent
-    // The title names only the month when a week sits inside one month, so
-    // read the day columns too: they must move by exactly seven days.
-    const days = () =>
+    const dayColumnLabels = () =>
       screen
         .getAllByRole("group")
         .map((group) => group.getAttribute("aria-label"))
         .filter((label) =>
           /^[A-Z][a-z]{2}, [A-Z][a-z]{2} \d+$/.test(label ?? "")
         )
-    const thisWeek = days()
+    const thisWeek = dayColumnLabels()
     expect(thisWeek).toHaveLength(7)
     fireEvent.click(screen.getByRole("button", { name: "Next week" }))
-    await waitFor(() => expect(days()).not.toEqual(thisWeek))
-    const nextWeek = days()
+    await waitFor(() => expect(dayColumnLabels()).not.toEqual(thisWeek))
+    const nextWeek = dayColumnLabels()
     expect(nextWeek).toHaveLength(7)
     expect(nextWeek.some((label) => thisWeek.includes(label))).toBe(false)
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }))
-    await waitFor(() => expect(days()).toEqual(thisWeek))
+    await waitFor(() => expect(dayColumnLabels()).toEqual(thisWeek))
     expect(title.textContent).toBe(before)
   })
 

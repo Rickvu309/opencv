@@ -19,12 +19,7 @@ import inboxFile from "./design/w2-3-inbox.snapshot.json"
 import replyFile from "./design/w2-4-reply.snapshot.json"
 import { InboxPage } from "./inbox-page.tsx"
 
-// Texts the screen renders differently from the pen frame, with the reason.
-// Each key is the pen text, each value what the screen shows.
-const SHOWN_INSTEAD: Readonly<Record<string, string>> = {
-  // The Apply board still names these stages Applied and Interview until
-  // #437 renames the stage ids, so the move prompt reads from Applied to
-  // Interview and its button reads Move to Interview.
+const STAGE_TEXT_UNTIL_437_RENAME: Readonly<Record<string, string>> = {
   "Move this job from Sent to Live?":
     "Move this job from Applied to Interview?",
   "Move to Live": "Move to Interview",
@@ -32,9 +27,15 @@ const SHOWN_INSTEAD: Readonly<Record<string, string>> = {
     "Invites move jobs to Interview. Rejections close them.",
   Sent: "Applied",
   Live: "Interview",
-  // The pen types the Lumière chip as LC. Every avatar takes its initials
-  // from the company name through companyInitials, which gives LU.
+}
+
+const AVATAR_INITIALS_FROM_COMPANY_NAME: Readonly<Record<string, string>> = {
   LC: "LU",
+}
+
+const PEN_TEXT_SHOWN_INSTEAD: Readonly<Record<string, string>> = {
+  ...STAGE_TEXT_UNTIL_437_RENAME,
+  ...AVATAR_INITIALS_FROM_COMPANY_NAME,
 }
 
 type PenSnapshot = {
@@ -47,9 +48,7 @@ const scanning = scanningFile as PenSnapshot
 const inbox = inboxFile as PenSnapshot
 const reply = replyFile as PenSnapshot
 
-// Monday 2026-10-26 11:41 in the profile zone, so the open message reads
-// "Mon, Oct 26, 9:41 (2 hours ago)".
-const NOW = new Date("2026-10-26T04:41:00.000Z")
+const MONDAY_1141_PROFILE_ZONE = new Date("2026-10-26T04:41:00.000Z")
 const ZONE = "Asia/Ho_Chi_Minh"
 const OWNER_EMAIL = "linh.nguyen@gmail.com"
 const RECRUITER_EMAIL = "hanh.tran@regionalbank.vn"
@@ -164,7 +163,7 @@ function thread(
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] })
-  vi.setSystemTime(NOW)
+  vi.setSystemTime(MONDAY_1141_PROFILE_ZONE)
 })
 
 afterEach(() => {
@@ -174,7 +173,7 @@ afterEach(() => {
 })
 
 function shown(text: string): string {
-  return SHOWN_INSTEAD[text] ?? text
+  return PEN_TEXT_SHOWN_INSTEAD[text] ?? text
 }
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TITLE", "META"])

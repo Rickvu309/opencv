@@ -9,7 +9,7 @@ import { CoachMarkdown } from "@/features/coach/coach-markdown.tsx"
 import { DiffBlock } from "@/features/coach/rich-receipts.tsx"
 
 import {
-  groupCoachParts,
+  groupAdjacentToolSteps,
   type CoachPart,
   type CoachToolPart,
 } from "./coach-parts.ts"
@@ -64,7 +64,7 @@ export function CoachParts({
   parts: readonly CoachPart[]
   ctx: PartContext
 }) {
-  return groupCoachParts(parts).map((block) => {
+  return groupAdjacentToolSteps(parts).map((block) => {
     if (block.type === "part") {
       return <div key={block.part.key}>{renderPart(block.part, ctx)}</div>
     }

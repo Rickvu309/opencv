@@ -1,7 +1,3 @@
-/**
- * Test / Paper-fixture author only. Not identity — Settings → Account and
- * Pitch display read the session User. Pitch persistence lives on the server.
- */
 export type SampleAuthor = {
   name: string
   email: string

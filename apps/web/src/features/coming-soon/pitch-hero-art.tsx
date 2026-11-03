@@ -110,7 +110,9 @@ export function PitchHeroArt() {
               label="Email"
             />
             <ProfileButton
-              icon={<LinkedinIcon className="size-[13px] text-foreground/80" />}
+              icon={
+                <HandDrawnLinkedinIcon className="size-[13px] text-foreground/80" />
+              }
               label="LinkedIn"
             />
           </div>
@@ -198,8 +200,7 @@ export function PitchHeroArt() {
   )
 }
 
-// lucide-react 1.x dropped its brand icons. This is lucide's linkedin, which the pen names.
-function LinkedinIcon({ className }: { className?: string }) {
+function HandDrawnLinkedinIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"

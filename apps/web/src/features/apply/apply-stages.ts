@@ -81,10 +81,20 @@ function sameDay(a: Zoned, b: Zoned) {
   return a.year === b.year && a.month === b.month && a.day === b.day
 }
 
-/** Deadline dates are calendar dates. Noon UTC keeps Nov 8 on Nov 8. */
+const CALENDAR_DATE_ANCHOR_UTC_HOUR = 12
+
 export function deadlineInstant(ymd: string): Date {
   const [year, month, day] = ymd.split("-").map(Number)
-  return new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, day ?? 1, 12, 0, 0))
+  return new Date(
+    Date.UTC(
+      year ?? 1970,
+      (month ?? 1) - 1,
+      day ?? 1,
+      CALENDAR_DATE_ANCHOR_UTC_HOUR,
+      0,
+      0
+    )
+  )
 }
 
 export function monthDay(date: Date, zone = PROFILE_ZONE): string {
@@ -126,7 +136,6 @@ function clockHour(hour: string) {
   return hour === "24" ? "00" : hour
 }
 
-/** Wall time in the profile zone for the interview control. */
 export function interviewInputValue(
   iso: string | null,
   zone = PROFILE_ZONE
@@ -138,7 +147,6 @@ export function interviewInputValue(
   return `${parts.year}-${parts.month}-${parts.day}T${clockHour(parts.hour)}:${parts.minute}`
 }
 
-/** Parse a datetime-local value as profile-zone wall time. */
 export function interviewInstant(
   local: string,
   zone = PROFILE_ZONE

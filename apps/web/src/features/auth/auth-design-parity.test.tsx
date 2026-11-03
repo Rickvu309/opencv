@@ -8,15 +8,10 @@ import { renderApp } from "@/test/render-app.tsx"
 import { authShaderFill } from "./auth-shader-fill.ts"
 import snapshotFile from "./design/auth.snapshot.json"
 
-// The pen heading spells the product "OpenCV". The screen renders
-// "Log in to " plus the brand lockup, and the heading's accessible name
-// stays "Log in to opencv".
-const PEN_BRAND_HEADING = "Log in to OpenCV"
-const PRODUCT_BRAND_HEADING = "Log in to opencv"
+const PEN_HEADING_WITH_CAPS_BRAND = "Log in to OpenCV"
+const ACCESSIBLE_HEADING_NAME = "Log in to opencv"
 
-// Copy the email step can show that the W1.1 frame does not draw.
-// A line the pen marks enabled:false, such as "No password needed.", is not here.
-const ALLOW_EXTRA = [
+const SCREEN_ONLY_COPY = [
   AUTH_COPY.googleUnavailable,
   AUTH_COPY.emailInvalid,
   AUTH_COPY.codeBad,
@@ -49,7 +44,7 @@ function normalize(value: string): string {
 }
 
 function shown(text: string): string {
-  return text === PEN_BRAND_HEADING ? PRODUCT_BRAND_HEADING : text
+  return text === PEN_HEADING_WITH_CAPS_BRAND ? ACCESSIBLE_HEADING_NAME : text
 }
 
 function isWordChar(char: string): boolean {
@@ -191,10 +186,7 @@ function radioText(frame: Element, name: string): string {
   return radio ? normalize(radio.textContent ?? "") : ""
 }
 
-// The language control sits after the form in the DOM so tab order stays
-// Email, Continue, then EN (see auth.test). The pen's reading order is
-// brand, EN, VI, then the form, then the terms line.
-function sectionReading(frame: Element, name: string): string {
+function penReadingOrder(frame: Element, name: string): string {
   if (name === "Left") {
     const brand = frame.querySelector("[data-pen-region='brand']")
     const form = frame.querySelector("[data-pen-region='form']")
@@ -231,7 +223,7 @@ describe("auth design parity", () => {
     }
 
     for (const section of snapshot.sections) {
-      const reading = sectionReading(frame, section.name)
+      const reading = penReadingOrder(frame, section.name)
       const missing = missingInOrder(reading, section.texts)
       if (missing) {
         problems.push(`${section.name}: missing ${JSON.stringify(missing)}`)
@@ -264,7 +256,7 @@ describe("auth design parity", () => {
 
     const needles = [
       ...snapshot.sections.flatMap((section) => section.texts.map(shown)),
-      ...ALLOW_EXTRA,
+      ...SCREEN_ONLY_COPY,
     ]
     const extra = stripNeedles(visibleText(frame), needles)
     if (extra) problems.push(`extra text ${JSON.stringify(extra)}`)

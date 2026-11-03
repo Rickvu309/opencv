@@ -35,6 +35,12 @@ async function sendCode(address = "ada@verify.local") {
   ).toBeInTheDocument()
 }
 
+async function waitForCodeFocusAfterRejection() {
+  await waitFor(() => {
+    expect(screen.getByRole("textbox", { name: "Digit 1" })).toHaveFocus()
+  })
+}
+
 function pasteCode(otp: string) {
   fireEvent.paste(screen.getByRole("textbox", { name: "Digit 1" }), {
     clipboardData: { getData: () => otp },
@@ -251,11 +257,7 @@ describe("email code", () => {
     expect(
       await screen.findByRole("button", { name: AUTH_COPY.sendNew })
     ).toBeInTheDocument()
-    // The resend button can appear before CodeInput's passive focus effect.
-    // Start tabbing only after the rejected submission has restored focus.
-    await waitFor(() => {
-      expect(screen.getByRole("textbox", { name: "Digit 1" })).toHaveFocus()
-    })
+    await waitForCodeFocusAfterRejection()
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }

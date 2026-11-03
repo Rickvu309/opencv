@@ -47,8 +47,7 @@ export function fetchThread(threadId: string) {
   ).then(unwrapData)
 }
 
-/** Not a contract query: the route returns a redirect target for Gmail. */
-export function fetchConnect() {
+export function fetchGmailConnectTarget() {
   return apiFetch<SuccessBody<unknown>>(endpoints.inboxConnect).then((body) =>
     parseConnect(unwrapData(body))
   )

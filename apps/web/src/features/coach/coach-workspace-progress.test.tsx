@@ -30,13 +30,12 @@ async function flush() {
 }
 
 async function openTurn() {
-  // Profile reads still go to their mock; the chat mock is wrapped by liveTurn.
   const turn = liveTurn()
-  const liveFetch = globalThis.fetch
+  const chatFetch = globalThis.fetch
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) =>
-      (await profileApiFetch(input, init)) ?? liveFetch(input, init)
+      (await profileApiFetch(input, init)) ?? chatFetch(input, init)
   )
   const view = render(
     <ChatStoreProvider>
@@ -63,7 +62,7 @@ async function openTurn() {
 }
 
 describe("Coach workspace shows streamed progress", () => {
-  it("renders real streamed calls as Working rows, once, with no composer step text", async () => {
+  it("renders streamed calls as Working rows once, with no composer step text and a live status of Working alone", async () => {
     const { view, feed, rowStatuses, working } = await openTurn()
     const a = step("List documents")
     const b = step("List jobs")
@@ -76,10 +75,8 @@ describe("Coach workspace shows streamed progress", () => {
     await flush()
 
     expect(rowStatuses()).toEqual(["running", "completed"])
-    // Each label is on screen once: the old composer-side step text is gone.
     expect(screen.getAllByText("List documents")).toHaveLength(1)
     expect(screen.getAllByText("List jobs")).toHaveLength(1)
-    // The tool-only result keeps Working visible; its live status omits seconds.
     expect(working()).not.toBeNull()
     expect(
       within(working() as HTMLElement)
@@ -92,7 +89,7 @@ describe("Coach workspace shows streamed progress", () => {
     ).toHaveLength(1)
   })
 
-  it("keeps a running call visible when the Coach wrote text first, then follows its result", async () => {
+  it("keeps a running call visible when the Coach wrote text first, with no Working header or timer, then follows its result", async () => {
     const { feed, rowStatuses, working } = await openTurn()
     await feed("text-delta", { text: "Let me check your jobs." })
     const s = step("List jobs")
@@ -101,7 +98,6 @@ describe("Coach workspace shows streamed progress", () => {
     await flush()
 
     expect(screen.getByText("Let me check your jobs.")).toBeInTheDocument()
-    // Text arrived first, so there is no Working header or timer, only the row.
     expect(rowStatuses()).toEqual(["running"])
     expect(screen.getAllByText("List jobs")).toHaveLength(1)
     expect(screen.queryByText(/Working, \d+s/)).toBeNull()
@@ -110,7 +106,6 @@ describe("Coach workspace shows streamed progress", () => {
     const done = result("b", "job.list")
     await feed(done.event, done.data)
     await flush()
-    // Once nothing is running, the receipt carries the result and the rows go.
     expect(rowStatuses()).toEqual([])
     expect(working()).toBeNull()
   })
@@ -129,7 +124,6 @@ describe("Coach workspace shows streamed progress", () => {
     expect(
       screen.getAllByText("Review this action before it runs.")
     ).toHaveLength(1)
-    // The card already says the action waits, so no row, no Working header.
     expect(rowStatuses()).toEqual([])
     expect(screen.queryByText(/Working, \d+s/)).toBeNull()
     expect(working()).toBeNull()

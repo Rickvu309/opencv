@@ -52,13 +52,12 @@ export function CompanyTile({ company }: { company: string }) {
   )
 }
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+const WEEKDAY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
-/** A weekday alone is only unambiguous within the next seven days. */
 function interviewTag(job: JobView, now: Date): string | null {
   if (job.stage !== "interview" || !job.interviewAt) return null
   const wait = new Date(job.interviewAt).getTime() - now.getTime()
-  if (wait < 0 || wait >= WEEK_MS) return null
+  if (wait < 0 || wait >= WEEKDAY_WINDOW_MS) return null
   return listPhrase(job)
 }
 

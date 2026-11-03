@@ -19,7 +19,7 @@ describe("Apply URL search", () => {
     })
   })
 
-  it("drops empty filters and unsupported search fields", () => {
+  it("drops empty filters and unsupported search fields such as open=guide", () => {
     expect(
       validateApplySearch({
         view: "board",
@@ -28,6 +28,10 @@ describe("Apply URL search", () => {
         open: "guide",
       })
     ).toEqual({})
+  })
+
+  it("falls back to the board for an unknown view and span", () => {
+    expect(validateApplySearch({ view: "kanban", span: "year" })).toEqual({})
   })
 
   it.each([null, 123, true, ["Hanoi"], { name: "Hanoi" }])(

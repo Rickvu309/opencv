@@ -121,7 +121,6 @@ export function CoachHistory({
           data-slot="history-panel"
           className="flex w-full flex-col gap-px rounded-[10px] p-1.5"
         >
-          {/* Search row - 34px height */}
           <div className="flex h-[34px] items-center gap-2 px-2.5">
             <svg
               data-slot="history-search-icon"
@@ -150,7 +149,6 @@ export function CoachHistory({
             />
           </div>
 
-          {/* New chat row - 32px height */}
           <Button
             type="button"
             variant="ghost"
@@ -185,7 +183,6 @@ export function CoachHistory({
             </span>
           </Button>
 
-          {/* Chat groups */}
           {GROUPS.map((group) => {
             const items = filtered.filter(
               (chat) => historyGroup(chat.updatedAt) === group

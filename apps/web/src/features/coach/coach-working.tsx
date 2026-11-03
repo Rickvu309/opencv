@@ -67,7 +67,6 @@ export function CoachWorking({
     <div data-pen-surface="coach" data-slot="coach-working">
       {showHeader ? (
         <>
-          {/* The ticking seconds stay visual; the live region says Working once. */}
           <span role="status" className="sr-only">
             Working
           </span>

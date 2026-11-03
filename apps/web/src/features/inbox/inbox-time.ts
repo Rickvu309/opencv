@@ -50,7 +50,6 @@ function clock(part: Parts) {
 
 const RECENT_DAYS = 3
 
-/** Clock today, weekday for the last few days, month and day after that. */
 export function inboxWhen(iso: string, now = new Date(), zone = PROFILE_ZONE) {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ""
@@ -80,7 +79,6 @@ function ago(then: Date, now: Date) {
   return plural(Math.floor(days / 30), "month")
 }
 
-/** "Mon, Oct 26, 9:41 (2 hours ago)". */
 export function inboxStamp(iso: string, now = new Date(), zone = PROFILE_ZONE) {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ""
@@ -107,18 +105,24 @@ export function chipClock(iso: string, zone = PROFILE_ZONE) {
   return clock(parts(date, zone))
 }
 
-/** Next 07:00 in the profile zone. The toast copy stays "Snoozed until 7:00". */
+const SNOOZE_WAKE_HOUR = 7
+
 export function nextMorningIso(now = new Date(), zone = PROFILE_ZONE) {
   const today = parts(now, zone)
   let ymd = `${today.year}-${today.month}-${today.day}`
-  if (Number(today.hour) >= 7) {
+  if (Number(today.hour) >= SNOOZE_WAKE_HOUR) {
     const noon = interviewInstant(`${ymd}T12:00`, zone)
     const next = new Date(
       new Date(noon ?? now.toISOString()).getTime() + 24 * 60 * 60 * 1000
     )
     ymd = zonedYmd(next, zone)
   }
-  return interviewInstant(`${ymd}T07:00`, zone) ?? now.toISOString()
+  return (
+    interviewInstant(
+      `${ymd}T${String(SNOOZE_WAKE_HOUR).padStart(2, "0")}:00`,
+      zone
+    ) ?? now.toISOString()
+  )
 }
 
 export function unreadCount(threads: { unread: boolean; status: string }[]) {

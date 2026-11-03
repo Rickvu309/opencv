@@ -10,7 +10,7 @@ import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 import "./design/page-header.pen.css"
 import { InboxConnect, InboxTitleBar } from "./inbox-connect.tsx"
 import {
-  fetchConnect,
+  fetchGmailConnectTarget,
   fetchInbox,
   fetchSnoozedInbox,
   fetchThread,
@@ -102,7 +102,7 @@ export function InboxPage() {
   )
   const connect = useQuery({
     queryKey: inboxConnectKey,
-    queryFn: fetchConnect,
+    queryFn: fetchGmailConnectTarget,
     enabled: showConnect,
   })
   const threads =

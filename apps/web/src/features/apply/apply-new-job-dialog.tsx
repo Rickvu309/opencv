@@ -29,7 +29,7 @@ import { toast } from "@workspace/ui/components/sonner"
 import { ApiError } from "@/lib/api-error.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
-import { previewJob, useApplyCards } from "./apply-api.ts"
+import { previewJob, useApplyPickerCards } from "./apply-api.ts"
 import { ALL_STAGES } from "./apply-stages.ts"
 import {
   AlreadyTracked,
@@ -74,7 +74,7 @@ export function NewJobDialog({
 }) {
   const navigate = useNavigate()
   const run = useRunCommand()
-  const { cards } = useApplyCards()
+  const { cards } = useApplyPickerCards()
   const titleRef = useRef<HTMLInputElement>(null)
   const companyRef = useRef<HTMLInputElement>(null)
   const linkRef = useRef<HTMLInputElement>(null)
