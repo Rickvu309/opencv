@@ -5,6 +5,7 @@ import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { SLOW } from "../packages/guards/run-tests.mjs"
+import { detect } from "./lib/home-tmp.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -61,6 +62,18 @@ test("the scan flags a direct call and passes the helper and a helper user", () 
     strayCreators(Object.keys(sources), (file) => sources[file]),
     ["scripts/a.test.mjs:1", "scripts/b.test.mjs:2"]
   )
+})
+
+test("a test file that builds a folder under the home temp directory is caught", () => {
+  const mistake = [
+    'mkdirSync(join(process.env.HOME, "tmp"), { recursive: true })',
+    'const dir = makeTempDir("ocv-pending-", join(process.env.HOME, "tmp"))',
+    'mkdirSync(join(homedir(), "tmp"), { recursive: true })',
+  ].join("\n")
+  assert.deepEqual(detect(mistake), [1, 2, 3])
+  assert.deepEqual(detect('const dir = tempDir(t, "ocv-pending-")\n'), [])
+  assert.deepEqual(detect("const home = process.env.HOME\n"), [])
+  assert.deepEqual(detect('const dir = join(root, "tmp")\n'), [])
 })
 
 test("the ocv-tools tests leave no temporary folder behind", (t) => {
