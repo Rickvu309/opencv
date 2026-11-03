@@ -123,7 +123,7 @@ test("writing an exceptions list is refused", () => {
     execFileSync(
       process.execPath,
       [path.join(root, "scripts/no-comments.mjs"), "--write-baseline"],
-      { cwd: root, encoding: "utf8" }
+      { cwd: root, encoding: "utf8", timeout: 10_000 }
     )
     assert.fail("the old flag wrote a list")
   } catch (error) {
