@@ -77,7 +77,6 @@
   "apps/web/src/features/apply/apply-board-drop.test.tsx": 3,
   "apps/web/src/features/apply/apply-board.tsx": 4,
   "apps/web/src/features/apply/apply-calendar-model.ts": 3,
-  "apps/web/src/features/apply/apply-calendar-week.tsx": 1,
   "apps/web/src/features/apply/apply-calendar.test.tsx": 5,
   "apps/web/src/features/apply/apply-design-parity.board.test.tsx": 11,
   "apps/web/src/features/apply/apply-design-parity.job.test.tsx": 7,

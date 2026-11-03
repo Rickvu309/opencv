@@ -150,36 +150,56 @@ export async function proveDetect(row, io) {
   }
 }
 
+function proveInScratch(io, { change, label, refusal, command }) {
+  return io.inScratch((tree) => {
+    try {
+      change(tree)
+    } catch (error) {
+      return {
+        ok: false,
+        lines: [`${refusal}: ${String(error.message).split("\n")[0]}`],
+      }
+    }
+    const broken = tree.run(command)
+    tree.reset()
+    const restored = tree.run(command)
+    const kind = broken.passed ? "passes" : failureKind(broken.output)
+    return {
+      ok: kind === "assertion" && restored.passed,
+      lines: [
+        `${label}: ${kind === "assertion" ? "FAILS on an assertion" : kind === "passes" ? "PASSES" : `FAILS FOR THE WRONG REASON (${kind}, not an assertion)`} (must fail on an assertion)`,
+        ...firstFailure(broken.output),
+        ...tailLines(broken.output),
+        `at HEAD: ${restored.passed ? "PASSES" : "FAILS"} (must pass)`,
+        ...(restored.passed ? [] : tailLines(restored.output)),
+      ],
+    }
+  })
+}
+
 export function proveRevert(row, io) {
   const { fix, command } = row.historic
   const files = io.changedFiles(fix).filter((file) => !TEST_FILE.test(file))
   if (files.length === 0)
     return { ok: false, lines: [`${fix} changes no non-test file`] }
-  return io.inScratch((tree) => {
-    try {
-      tree.revert(fix, files)
-    } catch (error) {
-      return {
-        ok: false,
-        lines: [
-          `reverse patch of ${fix} does not apply: ${String(error.message).split("\n")[0]}`,
-        ],
-      }
-    }
-    const reverted = tree.run(command)
-    tree.reset()
-    const restored = tree.run(command)
-    const kind = reverted.passed ? "passes" : failureKind(reverted.output)
-    return {
-      ok: kind === "assertion" && restored.passed,
-      lines: [
-        `with ${fix} reverted on ${files.length} file(s): ${kind === "assertion" ? "FAILS on an assertion" : kind === "passes" ? "PASSES" : `FAILS FOR THE WRONG REASON (${kind}, not an assertion)`} (must fail on an assertion)`,
-        ...firstFailure(reverted.output),
-        ...tailLines(reverted.output),
-        `at HEAD: ${restored.passed ? "PASSES" : "FAILS"} (must pass)`,
-        ...(restored.passed ? [] : tailLines(restored.output)),
-      ],
-    }
+  return proveInScratch(io, {
+    change: (tree) => tree.revert(fix, files),
+    label: `with ${fix} reverted on ${files.length} file(s)`,
+    refusal: `reverse patch of ${fix} does not apply`,
+    command,
+  })
+}
+
+export function proveRestore(row, io) {
+  const { sha, paths, command } = row.historic
+  const files = paths.filter((file) => !TEST_FILE.test(file))
+  if (files.length === 0)
+    return { ok: false, lines: [`${row.id} restores no non-test file`] }
+  return proveInScratch(io, {
+    change: (tree) => tree.restore(sha, files),
+    label: `with ${files.length} file(s) restored from ${sha}`,
+    refusal: `${sha} cannot restore ${files.join(", ")}`,
+    command,
   })
 }
 
@@ -192,6 +212,7 @@ export function prove(row, io) {
   const { mode } = row.historic
   if (mode === "detect") return proveDetect(row, io)
   if (mode === "revert") return proveRevert(row, io)
+  if (mode === "restore") return proveRestore(row, io)
   return { ok: false, lines: [`${row.id}: unknown mode ${mode}`] }
 }
 
@@ -275,6 +296,9 @@ export const realIo = {
                 cwd: tree,
                 input: patch,
               })
+            },
+            restore(sha, files) {
+              inTree("checkout", sha, "--", ...files)
             },
             reset() {
               inTree("reset", "--hard")

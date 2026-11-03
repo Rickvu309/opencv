@@ -1,0 +1,6 @@
+{
+  "id": "job-board-drops",
+  "file": "apps/web/src/features/apply/apply-board-drops.property.test.ts",
+  "historic": null,
+  "reason": "its mutants run by hand (a refresh while a move is queued, a screen that ignores the pending drop); the earlier board fix, 76159253, was a keyboard drop that left the card behind and has its own test"
+}

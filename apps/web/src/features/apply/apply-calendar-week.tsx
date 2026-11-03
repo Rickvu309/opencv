@@ -4,13 +4,13 @@ import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
-  FIRST_HOUR,
-  HOURS,
   TONE,
   WEEKDAYS,
+  blockSpan,
   clock,
   dayName,
   eventsOn,
+  hoursFor,
   placeInterviews,
   weekdayIndex,
   type CalendarEvent,
@@ -18,34 +18,20 @@ import {
 
 const HOUR_PX = 58
 
-/** The visible hours, widened so no interview is drawn outside its own time. */
-function hoursFor(events: CalendarEvent[]) {
-  const timed = events.filter((event) => event.kind === "interview")
-  const first = Math.min(
-    FIRST_HOUR,
-    ...timed.map((event) => Math.floor(event.startMinutes / 60))
-  )
-  const last = Math.max(
-    HOURS[HOURS.length - 1] ?? FIRST_HOUR,
-    ...timed.map((event) => Math.ceil(event.endMinutes / 60))
-  )
-  return Array.from({ length: last - first + 1 }, (_, index) => first + index)
-}
-
 function EventBlock({
   event,
   lane,
   lanes,
-  firstHour,
+  hours,
   onOpenJob,
 }: {
   event: CalendarEvent
   lane: number
   lanes: number
-  firstHour: number
+  hours: number[]
   onOpenJob: (jobId: string) => void
 }) {
-  const start = event.startMinutes - firstHour * 60
+  const span = blockSpan(event, hours)
   const { job } = event
   return (
     <Button
@@ -55,8 +41,8 @@ function EventBlock({
       onClick={() => onOpenJob(job.id)}
       className="absolute flex h-auto min-w-0 flex-col items-start justify-start gap-px overflow-hidden rounded-md bg-chart-2/[0.09] py-1.5 pr-2 pl-2.5 text-start whitespace-normal hover:bg-chart-2/[0.15] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring"
       style={{
-        top: (start / 60) * HOUR_PX + 1,
-        height: ((event.endMinutes - event.startMinutes) / 60) * HOUR_PX - 2,
+        top: (span.top / 60) * HOUR_PX + 1,
+        height: (span.length / 60) * HOUR_PX - 2,
         left: `calc(${(lane / lanes) * 100}% + 4px)`,
         width: `calc(${100 / lanes}% - 8px)`,
       }}
@@ -177,7 +163,7 @@ export function WeekGrid({
                 event={event}
                 lane={lane}
                 lanes={lanes}
-                firstHour={hours[0] ?? FIRST_HOUR}
+                hours={hours}
                 onOpenJob={onOpenJob}
               />
             ))}

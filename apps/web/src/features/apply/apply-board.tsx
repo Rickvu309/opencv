@@ -1,4 +1,4 @@
-import { useReducer, useRef } from "react"
+import { useReducer, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
@@ -30,6 +30,15 @@ import {
 import { reportRejected } from "@/lib/command-failure.ts"
 
 import { jobListKey } from "./apply-api.ts"
+import {
+  afterMove,
+  allSettled,
+  clearSettled,
+  dropOn,
+  noDrops,
+  shownJobs,
+  type Drops,
+} from "./apply-board-drops.ts"
 import { BoardLane, JobCard } from "./apply-parts.tsx"
 import {
   ALL_STAGES,
@@ -88,7 +97,12 @@ export function ApplyBoard({
   const queryClient = useQueryClient()
   const run = useRunCommand()
   const tails = useRef(new Map<string, Promise<unknown>>())
-  const pendingMoves = useRef(0)
+  const dropsRef = useRef<Drops>(noDrops)
+  const [drops, setDrops] = useState<Drops>(noDrops)
+  function updateDrops(change: (current: Drops) => Drops) {
+    dropsRef.current = change(dropsRef.current)
+    setDrops(dropsRef.current)
+  }
   // A keyboard drop can report no column under the card; the last column the
   // drag hovered is where the announcement said it would land.
   const lastOver = useRef<JobStage | null>(null)
@@ -98,7 +112,8 @@ export function ApplyBoard({
     id: stage,
     name: stageLabel(stage),
   }))
-  const data = toCards(jobs, stages)
+  const shown = shownJobs(jobs, drops)
+  const data = toCards(shown, stages)
 
   function openJob(jobId: string) {
     void navigate({
@@ -107,9 +122,23 @@ export function ApplyBoard({
     })
   }
 
+  function refreshBoard() {
+    void refreshQueries(queryClient, [
+      { query: "job.list" },
+      { query: "job.get" },
+      { query: "job.calendar" },
+    ]).finally(() => {
+      if (!allSettled(dropsRef.current)) return
+      if (queryClient.isFetching({ queryKey: jobListKey() }) > 0) {
+        refreshBoard()
+        return
+      }
+      updateDrops(clearSettled)
+    })
+  }
+
   function persist(jobId: string, stage: JobStage) {
     const input = { jobId: parseJobId(jobId), stage }
-    pendingMoves.current += 1
     const move = async () => {
       const result = await run("job.move", input, { refresh: false })
       if (stage === "closed" && result.activityId) {
@@ -128,14 +157,9 @@ export function ApplyBoard({
       .then(move)
       .catch(() => undefined)
       .finally(() => {
-        pendingMoves.current -= 1
-        if (pendingMoves.current === 0) {
-          void refreshQueries(queryClient, [
-            { query: "job.list" },
-            { query: "job.get" },
-            { query: "job.calendar" },
-          ])
-        }
+        const after = afterMove(dropsRef.current, jobId)
+        updateDrops(() => after.drops)
+        if (after.refresh) refreshBoard()
       })
     tails.current.set(jobId, next)
   }
@@ -160,19 +184,15 @@ export function ApplyBoard({
     const stage = event.over ? stageOf(String(event.over.id)) : hovered
     const before = data.find((card) => card.id === jobId)
     if (!before || !stage || before.column === stage) return
-    void (async () => {
-      await queryClient.cancelQueries({ queryKey: jobListKey() })
-      queryClient.setQueryData<JobView[]>(jobListKey(), (current) => {
-        if (!current) return current
-        return current.map((job) =>
-          job.id === jobId ? { ...job, stage } : job
-        )
-      })
-      persist(jobId, stage)
-    })()
+    updateDrops((current) => dropOn(current, jobId, stage))
+    queryClient.setQueryData<JobView[]>(jobListKey(), (current) => {
+      if (!current) return current
+      return current.map((job) => (job.id === jobId ? { ...job, stage } : job))
+    })
+    persist(jobId, stage)
   }
 
-  const closedCount = jobs.filter((job) => job.stage === "closed").length
+  const closedCount = shown.filter((job) => job.stage === "closed").length
   const activeStage = drag ? stageOf(drag.id) : null
 
   return (
