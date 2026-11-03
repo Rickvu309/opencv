@@ -62,9 +62,7 @@ test("merge --wait ignores a removal from before the time this run queued it", (
     now: Date.parse("2026-11-03T12:32:18Z"),
   })
   assert.match(f.call("merge", "91").text, /Queued/)
-  f.s.removedEvents = [
-    { reason: "failed_checks", at: "2026-11-03T12:31:24Z" },
-  ]
+  f.s.removedEvents = [{ reason: "failed_checks", at: "2026-11-03T12:31:24Z" }]
   mergeOnSecondDrop(f.s)
   const r = f.call("merge", "91", "--wait")
   assert.equal(r.code, 0, r.text)
