@@ -1,4 +1,7 @@
-import { setTimeout, clearTimeout } from "node:timers"
+import {
+  setTimeout as setRealTimerUnaffectedByFakeTimers,
+  clearTimeout as clearRealTimerUnaffectedByFakeTimers,
+} from "node:timers"
 import { createElement } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
@@ -58,7 +61,7 @@ export function renderApp(
   }
   registerTestCleanup(async () => {
     const errors: unknown[] = []
-    let timer: ReturnType<typeof setTimeout> | undefined
+    let timer: ReturnType<typeof setRealTimerUnaffectedByFakeTimers> | undefined
     try {
       router.startTransition = startTransitionBeforeRouterProvider
       const transitionerAcknowledgement = router._rendered
@@ -69,7 +72,7 @@ export function renderApp(
       const results = await Promise.race([
         Promise.allSettled(loadsThatMayOutliveUnmount),
         new Promise<never>((_, reject) => {
-          timer = setTimeout(() => {
+          timer = setRealTimerUnaffectedByFakeTimers(() => {
             reject(new Error("Router cleanup timed out after 2000ms"))
           }, 2000)
         }),
@@ -80,7 +83,7 @@ export function renderApp(
     } catch (error) {
       errors.push(error)
     } finally {
-      clearTimeout(timer)
+      clearRealTimerUnaffectedByFakeTimers(timer)
       const disposalsThatRunEvenIfLoadingFailedOrNeverSettled = [
         () => router.clearCache(),
         () => router.history.destroy(),

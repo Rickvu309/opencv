@@ -131,44 +131,73 @@ const MOTION_TOKENS = [
   "ease-panel",
 ]
 
-const THEME_RADIUS_VARIABLES = [
-  "radius-sm",
-  "radius-md",
-  "radius-lg",
-  "radius-xl",
-  "radius-2xl",
-  "radius-3xl",
-  "radius-4xl",
+type ReadableVariableGroup = { reason: string; names: readonly string[] }
+
+const READABLE_VARIABLE_GROUPS: readonly ReadableVariableGroup[] = [
+  {
+    reason:
+      "shadcn colour tokens declared in globals.css and read as Tailwind colour utilities",
+    names: STOCK_COLORS,
+  },
+  {
+    reason:
+      "motion tokens defined once in globals.css and read as duration and easing utilities",
+    names: MOTION_TOKENS,
+  },
+  {
+    reason:
+      "radius scale derived from --radius in globals.css and read as rounded-* utilities",
+    names: [
+      "radius-sm",
+      "radius-md",
+      "radius-lg",
+      "radius-xl",
+      "radius-2xl",
+      "radius-3xl",
+      "radius-4xl",
+    ],
+  },
+  {
+    reason:
+      "Base UI sets these at runtime on popups, and select.tsx reads them as max-height, width and transform-origin",
+    names: [
+      "transform-origin",
+      "available-height",
+      "available-width",
+      "anchor-width",
+      "anchor-height",
+    ],
+  },
+  {
+    reason:
+      "the stock Card sets this as an arbitrary property on itself and reads it for its gap and padding",
+    names: ["card-spacing"],
+  },
+  {
+    reason:
+      "theme font stacks from globals.css that the affectUI widgets inherit",
+    names: ["font-sans", "font-mono"],
+  },
+  {
+    reason:
+      "per-element entrance stagger that reveal.tsx and palette.ts set inline, read as the animation delay in app-shell.css",
+    names: ["landing-delay"],
+  },
+  {
+    reason:
+      "landing hero fluid sizes; no declaration remains under apps/web/src, so these names are unused and can be deleted",
+    names: ["landing-h1-mobile", "landing-h1-desktop"],
+  },
+  {
+    reason:
+      "sidebar-frame.tsx sets it inline from the resized width, and the frame's w-(--sidebar-width) class reads it",
+    names: ["sidebar-width"],
+  },
 ]
 
-const BASE_UI_POPUP_RUNTIME_VARIABLES = [
-  "transform-origin",
-  "available-height",
-  "available-width",
-  "anchor-width",
-  "anchor-height",
-]
-
-const STOCK_CARD_ARBITRARY_PROPERTY_VARIABLES = ["card-spacing"]
-
-const AFFECT_INHERITED_FONT_STACK_VARIABLES = ["font-sans", "font-mono"]
-
-const LANDING_FEATURE_VARIABLES = [
-  "landing-h1-mobile",
-  "landing-h1-desktop",
-  "landing-delay",
-]
-
-const READABLE_VARIABLES = new Set<string>([
-  ...STOCK_COLORS,
-  ...MOTION_TOKENS,
-  ...THEME_RADIUS_VARIABLES,
-  ...BASE_UI_POPUP_RUNTIME_VARIABLES,
-  ...STOCK_CARD_ARBITRARY_PROPERTY_VARIABLES,
-  ...AFFECT_INHERITED_FONT_STACK_VARIABLES,
-  ...LANDING_FEATURE_VARIABLES,
-  "sidebar-width",
-])
+const READABLE_VARIABLES = new Set<string>(
+  READABLE_VARIABLE_GROUPS.flatMap((group) => group.names)
+)
 
 const PAPER_CSS_CV_PRINT_VARIABLE_RE = /^cv-/
 
@@ -275,6 +304,15 @@ function requireReasonedAllowlist(
 describe("app code uses shadcn variables and stock Tailwind, with no raw hex or named palette class", () => {
   it("gives every vocabulary allowlist entry a reason", () => {
     requireReasonedAllowlist(RAW_COLOR_ALLOWLIST, "vocabulary")
+  })
+
+  it("gives every readable-variable group a reason", () => {
+    for (const group of READABLE_VARIABLE_GROUPS) {
+      expect(
+        group.reason.trim().length,
+        `readable-variable group ${group.names.join(", ")} needs a reason`
+      ).toBeGreaterThan(0)
+    }
   })
 
   it("forbids raw hex, functional colours and named Tailwind palette classes outside the allowlist", () => {
