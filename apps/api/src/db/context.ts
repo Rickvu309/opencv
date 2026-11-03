@@ -1,7 +1,9 @@
 import { AsyncLocalStorage } from "node:async_hooks"
 
+import { ERROR_CODES } from "@workspace/domain"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 
+import { CommandError, isMissingPhoto } from "../registry/errors.js"
 import * as schema from "./schema.js"
 
 export type AppDatabase = NodePgDatabase<typeof schema>
@@ -32,9 +34,14 @@ export function getDb() {
 export async function transaction<T>(fn: () => Promise<T>): Promise<T> {
   if (transactionDb.getStore()) return fn()
   const db = getDb()
-  return db.transaction((tx) =>
-    transactionDb.run(tx as unknown as AppDatabase, fn)
-  )
+  try {
+    return await db.transaction((tx) =>
+      transactionDb.run(tx as unknown as AppDatabase, fn)
+    )
+  } catch (error) {
+    if (!isMissingPhoto(error)) throw error
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
+  }
 }
 
 export async function savepoint<T>(fn: () => Promise<T>): Promise<T> {
