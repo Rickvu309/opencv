@@ -38,6 +38,17 @@ const TURNS: {
   { label: "Skills", type: "paperSkills" },
 ]
 
+function armBlockMove(view: {
+  dragging: { slice: unknown; move: boolean } | null
+  state: { selection: { content: () => unknown } }
+}) {
+  if (view.dragging) return
+  view.dragging = {
+    slice: view.state.selection.content(),
+    move: true,
+  }
+}
+
 const HOLDS_CHILDREN = new Set([
   "paperExperience",
   "paperEducation",
@@ -138,13 +149,7 @@ export function CvBlockMenu({
               const portal = popup?.closest("[data-base-ui-portal]")
               if (portal instanceof HTMLElement) portal.style.display = "none"
               onDragStart(event)
-              const view = editor.prosemirrorView
-              if (!view.dragging) {
-                view.dragging = {
-                  slice: view.state.selection.content(),
-                  move: true,
-                }
-              }
+              armBlockMove(editor.prosemirrorView)
             }}
             onDragEnd={onDragEnd}
           >

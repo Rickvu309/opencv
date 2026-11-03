@@ -411,7 +411,7 @@ function SectionView({ block, contentRef }: ViewProps) {
             readOnly
             tabIndex={-1}
             data-cv-size="dates"
-            className="ms-auto h-auto min-h-0 w-auto shrink-0 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0"
+            className="ms-auto h-auto w-auto shrink-0 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 md:min-h-0"
           />
         </div>
       ) : null}
