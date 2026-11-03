@@ -2,8 +2,9 @@
   "id": "overflow-chips",
   "file": "scripts/overflow-390.test.mjs",
   "historic": {
-    "mode": "revert",
-    "fix": "2f1002d0",
+    "mode": "restore",
+    "sha": "2f1002d0^",
+    "paths": ["apps/web/src/features/apply/apply-toolbar.tsx"],
     "command": ["node", "--test", "scripts/overflow-390.test.mjs"]
   }
 }
