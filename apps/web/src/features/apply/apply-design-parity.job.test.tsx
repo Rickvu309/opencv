@@ -32,14 +32,10 @@ import closedStyles from "./design/w10-6-closed-job.styles.json"
 import deleteJob from "./design/w10-7-delete-job.snapshot.json"
 import deleteJobStyles from "./design/w10-7-delete-job.styles.json"
 
-// Each Apply state renders the data its opencv.pen frame draws, at the frame's
-// clock, and must show every text of the frame and at least as many drawn
-// icons. Sizes, weights and colours are measured in Chromium by
-// .claude/skills/verify-app-ui (pnpm --filter web verify:apply-pen).
-
-// Texts a frame draws that the product cannot show, each with its reason.
-// Remove an entry when the data exists; a stale entry fails.
-const NOT_SHOWN: Record<string, Record<string, string>> = {
+const FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW: Record<
+  string,
+  Record<string, string>
+> = {
   w104: {
     Subscribe: "the product has no activity subscription",
     "1 / 7":
@@ -56,8 +52,10 @@ const NOT_SHOWN: Record<string, Record<string, string>> = {
   },
 }
 
-// Icons a frame draws for data the product does not have.
-const ICONS_NOT_DRAWN: Record<string, { count: number; reason: string }> = {
+const ICONS_FOR_DATA_THE_PRODUCT_DOES_NOT_HAVE: Record<
+  string,
+  { count: number; reason: string }
+> = {
   detail: {
     count: 1,
     reason: "the note composer paperclip has no behavior",
@@ -79,7 +77,7 @@ async function pasteLink(dialog: HTMLElement, url: string) {
   return dialog
 }
 
-describe("New job and job detail match W9.2 and W10 of opencv.pen", () => {
+describe("New job and job detail match W9.2 and W10 of opencv.pen at the frame clock, with every frame text and at least as many icons; sizes, weights and colours stay with verify-app-ui", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] })
     vi.setSystemTime(PEN_FRAME_CLOCK)
@@ -146,8 +144,8 @@ describe("New job and job detail match W9.2 and W10 of opencv.pen", () => {
       main(),
       detail,
       detailStyles,
-      NOT_SHOWN.w104,
-      ICONS_NOT_DRAWN.detail.count
+      FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW.w104,
+      ICONS_FOR_DATA_THE_PRODUCT_DOES_NOT_HAVE.detail.count
     )
   })
   it("W10.5 Link from Paper", async () => {
@@ -158,7 +156,12 @@ describe("New job and job detail match W9.2 and W10 of opencv.pen", () => {
       await screen.findByRole("button", { name: "Add cover letter" })
     )
     await screen.findByText("Cover letter, Lumière")
-    expectFrame(document.body, linkPaper, null, NOT_SHOWN.w105)
+    expectFrame(
+      document.body,
+      linkPaper,
+      null,
+      FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW.w105
+    )
   })
   it("W10.6 Closed job", async () => {
     setMockJobs(detailJobs())
@@ -168,8 +171,8 @@ describe("New job and job detail match W9.2 and W10 of opencv.pen", () => {
       main(),
       closed,
       closedStyles,
-      NOT_SHOWN.w106,
-      ICONS_NOT_DRAWN.detail.count
+      FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW.w106,
+      ICONS_FOR_DATA_THE_PRODUCT_DOES_NOT_HAVE.detail.count
     )
   })
   it("W10.7 Delete job", async () => {

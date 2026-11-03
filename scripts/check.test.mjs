@@ -16,7 +16,7 @@ test("docs still run affected tasks and unconditional guards", () => {
   assert.ok(commands.some((c) => c.includes("--filter=@workspace/guards")))
   assert.ok(!commands.some((c) => c.includes("test:open-pr")))
 })
-test("untracked package files include dependents", () => {
+test("explicit filters cover untracked package files, because turbo affected selection uses git", () => {
   assert.ok(
     plan({ files: ["apps/web/new.ts"] }).some((c) =>
       c.includes("--filter=...{./apps/web}")

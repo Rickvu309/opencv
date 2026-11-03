@@ -281,13 +281,12 @@ const applyJobRoute = createRoute({
   ),
 })
 
-// One import so Jobs, Proofs and Pitch share a chunk.
-const comingSoonRoute = () => import("@/routes/coming-soon.tsx")
+const jobsProofsAndPitchShareOneChunk = () => import("@/routes/coming-soon.tsx")
 
 const pitchRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/pitch",
-  component: lazyRouteComponent(comingSoonRoute, "PitchPage"),
+  component: lazyRouteComponent(jobsProofsAndPitchShareOneChunk, "PitchPage"),
 })
 
 const coachRoute = createRoute({
@@ -302,13 +301,13 @@ const coachRoute = createRoute({
 const jobsRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/jobs",
-  component: lazyRouteComponent(comingSoonRoute, "JobsPage"),
+  component: lazyRouteComponent(jobsProofsAndPitchShareOneChunk, "JobsPage"),
 })
 
 const proofsRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/proofs",
-  component: lazyRouteComponent(comingSoonRoute, "ProofsPage"),
+  component: lazyRouteComponent(jobsProofsAndPitchShareOneChunk, "ProofsPage"),
 })
 
 const proofAliasRoute = createRoute({

@@ -21,14 +21,10 @@ import monthStyles from "./design/w9-7-calendar-month.styles.json"
 import week from "./design/w9-8-calendar-week.snapshot.json"
 import weekStyles from "./design/w9-8-calendar-week.styles.json"
 
-// Each Apply state renders the data its opencv.pen frame draws, at the frame's
-// clock, and must show every text of the frame and at least as many drawn
-// icons. Sizes, weights and colours are measured in Chromium by
-// .claude/skills/verify-app-ui (pnpm --filter web verify:apply-pen).
-
-// Texts a frame draws that the product cannot show, each with its reason.
-// Remove an entry when the data exists; a stale entry fails.
-const NOT_SHOWN: Record<string, Record<string, string>> = {
+const FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW: Record<
+  string,
+  Record<string, string>
+> = {
   w94: {
     "Round 2 on Nov 3":
       "JobView has no interview round; the row says Interview on Nov 3",
@@ -47,13 +43,37 @@ const NOT_SHOWN: Record<string, Record<string, string>> = {
   },
 }
 
-// Icons a frame draws for data the product does not have.
-const ICONS_NOT_DRAWN: Record<string, { count: number; reason: string }> = {
+const ICONS_FOR_DATA_THE_PRODUCT_DOES_NOT_HAVE: Record<
+  string,
+  { count: number; reason: string }
+> = {
   w94: { count: 6, reason: "company logos; rows show the initials tile" },
-  w97: { count: 4, reason: "the chips of the dates in NOT_SHOWN" },
+  w97: {
+    count: 4,
+    reason: "the chips of the dates in FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW",
+  },
 }
 
-describe("Apply board, list and calendar match W9 of opencv.pen", () => {
+const DROP_LINE_NEEDS_A_REAL_POINTER = null
+
+function laneRects320pxApartBecauseJsdomHasNoLayout(order: string[]) {
+  return function (this: HTMLElement) {
+    const lane = this.closest("[data-slot='kanban-board']")
+    const stage =
+      lane?.getAttribute("data-stage") ?? this.getAttribute("data-stage")
+    const index = stage ? order.indexOf(stage) : -1
+    const card = this.closest("[data-slot='kanban-card']")
+    if (index < 0) return new DOMRect(24, 96, 200, 80)
+    return new DOMRect(
+      index * 320 + (card ? 24 : 0),
+      card ? 96 : 0,
+      card ? 200 : 244,
+      card ? 80 : 480
+    )
+  }
+}
+
+describe("Apply board, list and calendar match W9 of opencv.pen at the frame clock, with every frame text and at least as many icons; sizes, weights and colours stay with verify-app-ui", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] })
     vi.setSystemTime(PEN_FRAME_CLOCK)
@@ -83,8 +103,8 @@ describe("Apply board, list and calendar match W9 of opencv.pen", () => {
       main(),
       list,
       listStyles,
-      NOT_SHOWN.w94,
-      ICONS_NOT_DRAWN.w94.count
+      FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW.w94,
+      ICONS_FOR_DATA_THE_PRODUCT_DOES_NOT_HAVE.w94.count
     )
   })
   it("W9.5 Filters no results", async () => {
@@ -101,25 +121,10 @@ describe("Apply board, list and calendar match W9 of opencv.pen", () => {
     expectFrame(main(), noResults, noResultsStyles)
   })
   it("W9.6 Drag to stage", async () => {
-    // jsdom has no layout; place each lane 320px apart so the keyboard sensor
-    // can move a card to the next stage, as apply-board.test.tsx does.
     const order = ["saved", "applied", "interview", "offer", "closed"]
     const rect = vi
       .spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function (this: HTMLElement) {
-        const lane = this.closest("[data-slot='kanban-board']")
-        const stage =
-          lane?.getAttribute("data-stage") ?? this.getAttribute("data-stage")
-        const index = stage ? order.indexOf(stage) : -1
-        const card = this.closest("[data-slot='kanban-card']")
-        if (index < 0) return new DOMRect(24, 96, 200, 80)
-        return new DOMRect(
-          index * 320 + (card ? 24 : 0),
-          card ? 96 : 0,
-          card ? 200 : 244,
-          card ? 80 : 480
-        )
-      })
+      .mockImplementation(laneRects320pxApartBecauseJsdomHasNoLayout(order))
     const press = async (target: EventTarget, code: string) => {
       await act(async () => {
         fireEvent.keyDown(target, { code, key: code === "Space" ? " " : code })
@@ -137,9 +142,7 @@ describe("Apply board, list and calendar match W9 of opencv.pen", () => {
       await press(document, "ArrowRight")
       const lifted = document.querySelector("[data-slot=kanban-overlay]")
       expect(lifted).toHaveTextContent("Business analyst intern")
-      // The drop line needs a pointer over a lane, which jsdom cannot hold;
-      // verify-apply-pen drags with a real pointer and requires it.
-      expectFrame(main(), drag, null)
+      expectFrame(main(), drag, DROP_LINE_NEEDS_A_REAL_POINTER)
       const marks = dragStyles.sections.reduce(
         (sum, section) => sum + section.marks.length,
         0
@@ -162,8 +165,8 @@ describe("Apply board, list and calendar match W9 of opencv.pen", () => {
       main(),
       month,
       monthStyles,
-      NOT_SHOWN.w97,
-      ICONS_NOT_DRAWN.w97.count
+      FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW.w97,
+      ICONS_FOR_DATA_THE_PRODUCT_DOES_NOT_HAVE.w97.count
     )
   })
   it("W9.8 Calendar week", async () => {
@@ -172,6 +175,11 @@ describe("Apply board, list and calendar match W9 of opencv.pen", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Next week" }))
     fireEvent.click(screen.getByRole("button", { name: "Next week" }))
     await screen.findByRole("heading", { name: "November 2026" })
-    expectFrame(main(), week, weekStyles, NOT_SHOWN.w98)
+    expectFrame(
+      main(),
+      week,
+      weekStyles,
+      FRAME_TEXTS_THE_PRODUCT_CANNOT_SHOW.w98
+    )
   })
 })

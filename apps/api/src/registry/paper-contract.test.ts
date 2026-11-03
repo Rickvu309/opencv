@@ -197,7 +197,7 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
     }
   })
 
-  it("refuses a Coach write to any document while Tailored CVs is off, and allows it when on", async () => {
+  it("refuses a Coach write to any document, including a letter, while Tailored CVs is off, and allows it when on", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
     const userId = "user-paper-cvs-gate"

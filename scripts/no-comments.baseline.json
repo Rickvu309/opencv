@@ -5,14 +5,6 @@
   "apps/api/src/paper/import-parse.ts": 9,
   "apps/api/src/paper/photo-sweep.ts": 6,
   "apps/api/src/paper/store.ts": 3,
-  "apps/api/src/registry/bind.ts": 1,
-  "apps/api/src/registry/contract.type-test.ts": 1,
-  "apps/api/src/registry/registry.ts": 4,
-  "apps/web/local-env.ts": 5,
-  "apps/web/src/features/apply/apply-board.tsx": 4,
-  "apps/web/src/features/apply/apply-calendar-model.ts": 3,
-  "apps/web/src/features/apply/apply-design-parity.board.test.tsx": 11,
-  "apps/web/src/features/apply/apply-design-parity.job.test.tsx": 7,
   "apps/web/src/features/coach/chat-api.ts": 4,
   "apps/web/src/features/paper/cv-print-document.tsx": 8,
   "apps/web/src/features/paper/cv-templates/cv-edits.ts": 2,
@@ -40,11 +32,5 @@
   "apps/web/src/features/paper/paper-proof-types.ts": 2,
   "apps/web/src/features/paper/paper-sortable-block.tsx": 2,
   "apps/web/src/features/paper/paper-template-gallery.tsx": 1,
-  "apps/web/src/features/paper/paper-templates.ts": 2,
-  "apps/web/src/router.tsx": 1,
-  "apps/web/vitest.config.ts": 7,
-  "packages/domain/src/chat-contract.ts": 5,
-  "scripts/check.mjs": 1,
-  "scripts/pen-html.mjs": 4,
-  "scripts/pen-layout.mjs": 6
+  "apps/web/src/features/paper/paper-templates.ts": 2
 }

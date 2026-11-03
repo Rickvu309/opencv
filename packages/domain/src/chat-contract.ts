@@ -72,8 +72,7 @@ export type ChatDetail = z.output<typeof chatDetailSchema>
 
 export const chatListSchema = z.array(chatListItemSchema)
 
-/** The activity table row, as the api returns it. */
-const activityRowSchema = z
+const activityRowAsTheApiReturnsIt = z
   .object({
     id: z.string(),
     userId: z.string(),
@@ -94,7 +93,7 @@ const activityRowSchema = z
   })
   .strict()
 
-export type ActivityRow = z.output<typeof activityRowSchema>
+export type ActivityRow = z.output<typeof activityRowAsTheApiReturnsIt>
 
 const pendingActionRowSchema = z
   .object({
@@ -118,11 +117,7 @@ const chatChanged = (input: { chatId: ChatId }): QueryRef[] => [
   { query: "chat.get", input: { chatId: input.chatId } },
 ]
 
-/**
- * A Coach action or an undo can write any feature, and the contract cannot
- * say which. These are the reads a person looks at, so they all refresh.
- */
-const anyWriteChanged = (): QueryRef[] => [
+const refreshEveryReadBecauseTheWriteTargetIsUnknown = (): QueryRef[] => [
   { query: "job.list" },
   { query: "job.get" },
   { query: "job.calendar" },
@@ -209,11 +204,11 @@ export const chatContract = commandContract({
   "actions.approve": commandEntry({
     description: "Run a pending Coach action.",
     input: actionsApproveInputSchema,
-    output: activityRowSchema.nullable(),
+    output: activityRowAsTheApiReturnsIt.nullable(),
     coach: "never",
     destructive: false,
     step: () => "Approve",
-    invalidates: anyWriteChanged,
+    invalidates: refreshEveryReadBecauseTheWriteTargetIsUnknown,
   }),
   "actions.deny": commandEntry({
     description: "Decline a pending Coach action.",
@@ -227,11 +222,11 @@ export const chatContract = commandContract({
   "activity.undo": commandEntry({
     description: "Undo one activity row.",
     input: activityUndoInputSchema,
-    output: activityRowSchema,
+    output: activityRowAsTheApiReturnsIt,
     coach: "never",
     destructive: false,
     step: () => "Undo",
-    invalidates: anyWriteChanged,
+    invalidates: refreshEveryReadBecauseTheWriteTargetIsUnknown,
   }),
 })
 

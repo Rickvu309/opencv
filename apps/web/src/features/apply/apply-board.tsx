@@ -99,8 +99,6 @@ export function ApplyBoard({
     dropsRef.current = dropsReducer(dropsRef.current, action)
     dispatchDrops(action)
   }
-  // A keyboard drop can report no column under the card; the last column the
-  // drag hovered is where the announcement said it would land.
   const lastOver = useRef<JobStage | null>(null)
   const [drag, dispatchDrag] = useReducer(dragReducer, null)
   const stages = showClosed ? ALL_STAGES : BOARD_STAGES
@@ -144,8 +142,6 @@ export function ApplyBoard({
       }
     }
     const prev = tails.current.get(jobId) ?? Promise.resolve()
-    // A refetch landing between two quick drags would snap a card back, so the
-    // board refreshes once, after its last pending move settles.
     const next = prev
       .then(move)
       .catch(() => undefined)

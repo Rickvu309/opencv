@@ -8,8 +8,6 @@ import { applyLocalApiUrl } from "./local-env"
 
 applyLocalApiUrl("test")
 
-// First-load assertions and module mocks need fresh import graphs. Mocks can
-// leave cached lazy-route consumers bound to a mocked router or another context.
 const ISOLATED_FILES = [
   "src/router-lazy.test.tsx",
   "src/features/coach/coach-workspace.test.tsx",
@@ -23,7 +21,13 @@ const ISOLATED_FILES = [
   "src/features/app-shell/app-shell.test.tsx",
   "src/features/apply/apply-board-drop.test.tsx",
   "src/features/apply/apply-board-queue.test.tsx",
+  "src/local-env.test.ts",
 ]
+
+const DROP_FETCH_STUBS_BETWEEN_FILES_THAT_SHARE_A_MODULE_GRAPH = true
+const DRAIN_SETUP_OWNED_ROUTERS_BEFORE_FILE_HOOKS = "list" as const
+const FULL_APP_MOUNT_TIMEOUT_PAST_THE_FIVE_SECOND_DEFAULT_MS = 15_000
+const VITEST_5_POOL_SIZE = Number(process.env.VITEST_MAX_WORKERS ?? 2)
 
 export default defineConfig({
   plugins: [react()],
@@ -39,15 +43,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    // Files share one module graph (isolate: false below); drop fetch stubs between files.
-    unstubGlobals: true,
-    // Drain setup-owned routers/queries before file hooks restore fetch stubs.
-    sequence: { hooks: "list" },
-    // Home/Paper RTL suites mount the full app. On contended CI the first
-    // tests in a file can exceed Vitest's 5s default before the stream settles.
-    testTimeout: 15_000,
-    // Vitest 5: maxWorkers is the pool size. poolOptions was removed.
-    maxWorkers: Number(process.env.VITEST_MAX_WORKERS ?? 2),
+    unstubGlobals: DROP_FETCH_STUBS_BETWEEN_FILES_THAT_SHARE_A_MODULE_GRAPH,
+    sequence: { hooks: DRAIN_SETUP_OWNED_ROUTERS_BEFORE_FILE_HOOKS },
+    testTimeout: FULL_APP_MOUNT_TIMEOUT_PAST_THE_FIVE_SECOND_DEFAULT_MS,
+    maxWorkers: VITEST_5_POOL_SIZE,
     projects: [
       {
         extends: true,

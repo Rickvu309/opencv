@@ -313,8 +313,6 @@ const containerCss = (node, ctx) => {
 
 export function penNodeToHtml(node, parent, ctx) {
   if (node.enabled === false) return ""
-  // A child marked layoutPosition "absolute" leaves its parent's flex flow
-  // and sits at its own x and y, as a free layer does.
   const mode = node.layoutPosition === "absolute" ? "abs" : parentModeOf(parent)
   const style = [
     "box-sizing:border-box;",
@@ -353,8 +351,6 @@ export function penNodeToHtml(node, parent, ctx) {
   return ""
 }
 
-// Sizes, gaps, paddings and radii may name a number variable ($ds-fs-small).
-// Swap each for its number so the CSS gets 12px, not an invalid value.
 function withNumbers(variables, value) {
   if (typeof value === "string" && value.startsWith("$")) {
     const variable = variables[value.slice(1)]

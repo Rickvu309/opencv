@@ -4,7 +4,7 @@ import { relative } from "node:path"
 import { fileURLToPath } from "node:url"
 import { expect, it } from "vitest"
 
-it("isolates every file with module mocks from lazy route consumers", () => {
+it("isolates files whose first load or module mocks need a fresh import graph, so a shared graph cannot bind lazy route consumers to a mocked router", () => {
   const src = new URL("../", import.meta.url)
   const config = readFileSync(
     new URL("../../vitest.config.ts", import.meta.url),
@@ -21,4 +21,14 @@ it("isolates every file with module mocks from lazy route consumers", () => {
     missing,
     "Add module-mocking suites to ISOLATED_FILES in vitest.config.ts"
   ).toEqual([])
+})
+
+it("uses Vitest 5 maxWorkers as the pool size, because poolOptions was removed", () => {
+  const config = readFileSync(
+    new URL("../../vitest.config.ts", import.meta.url),
+    "utf8"
+  )
+  expect(config).toContain("const VITEST_5_POOL_SIZE")
+  expect(config).toContain("maxWorkers: VITEST_5_POOL_SIZE")
+  expect(config).not.toContain("poolOptions")
 })

@@ -35,7 +35,7 @@ describe("apply board keyboard drop, driving the board drag handlers directly si
     cleanup()
   })
 
-  it("moves the card to the last column it hovered when the drop reports none", async () => {
+  it("moves the card to the last column it hovered when the drop reports none, where the announcement said it would land", async () => {
     setMockJobs([junior])
     renderApp("/apply")
     await screen.findByRole("button", {
