@@ -106,5 +106,5 @@ P4 is `~blocked`. On the real config `Coach` writes the untouched block (`coachA
 ## Coverage and sync
 
 - Covered: `apps/api/src/paper/content-store.ts` (`caughtUp`, `commit`, `syncContent`, `withContent`, `cacheRevisionUsable`, `nextContentSeq`), `apps/api/src/paper/store.ts` (`replacePaper` via `sameContentVersion`), `apps/api/src/paper/content-coach.ts` (`checkedBasis` via `coachBasisOk`, `editAsCoach`).
-- Last confirmed against: the fix on #1060 that models the sent version, the `basedOn` refusal, and the strict Coach refusal. The report for that fix records the sha. The squash sha replaces it after merge.
+- Last confirmed against: `43c94764bd7485e4fd527e1379900a6f259bab6b`. The squash sha replaces it after merge.
 - When a covered file changes, rerun the commands above. Move the sync commit forward only after you confirm the model still describes the code at the new commit. Update `ContentStore.tla.json` when an action's function is renamed.
