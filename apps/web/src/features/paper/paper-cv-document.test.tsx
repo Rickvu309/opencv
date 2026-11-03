@@ -12,6 +12,7 @@ import {
   PAPER_CANVAS_FIELD_CLASS,
   PAPER_CANVAS_NEXT_STEP_CLASS,
 } from "./cv-print-document.tsx"
+import { previewOf } from "./paper-print-sheet.tsx"
 import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./cv-templates/cv-edits.ts"
 import {
   CV_TEMPLATES,
@@ -474,6 +475,46 @@ describe("empty section next-step CTAs (QVE-209)", () => {
     ).toBeNull()
     expect(screen.queryByRole("button", { name: "Add a line" })).toBeNull()
     expect(screen.queryByRole("button", { name: "Add skill" })).toBeNull()
+  })
+
+  it("prints filled projects and languages and skips empty sections", () => {
+    const seed = {
+      ...emptySections(),
+      summary: "Shipped a small tool",
+      projects: [{ name: "Wallet audit", detail: "Mapped friction" }],
+      languages: ["Vietnamese"],
+      activities: ["Debate club"],
+      awards: ["Dean list"],
+    } as CvData
+    renderCv("internship", seed, false)
+    const text = document.body.textContent ?? ""
+    expect(text).toContain("Wallet audit")
+    expect(text).toContain("Mapped friction")
+    expect(text).toContain("Vietnamese")
+    expect(text).toContain("Shipped a small tool")
+    expect(text).toContain("Debate club")
+    expect(text).toContain("Dean list")
+    expect(text).not.toContain("Experience")
+    expect(text).not.toContain("Education")
+    expect(text).not.toContain("Add a line")
+    const preview = previewOf(seed, "internship")
+    expect(preview?.summary).toBe("Shipped a small tool")
+    expect((preview as { activities?: string[] } | null)?.activities).toEqual([
+      "Debate club",
+    ])
+    expect((preview as { awards?: string[] } | null)?.awards).toEqual([
+      "Dean list",
+    ])
+    for (const template of CV_TEMPLATES) {
+      cleanup()
+      renderCv(template.id, seed, false)
+      expect(document.body.textContent ?? "", template.id).toContain(
+        "Vietnamese"
+      )
+      expect(document.body.textContent ?? "", template.id).not.toContain(
+        "Add skill"
+      )
+    }
   })
 })
 

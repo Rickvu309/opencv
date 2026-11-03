@@ -86,11 +86,12 @@ function HeaderView({ block }: ViewProps) {
             ["city", "City"],
             ["linkedin", "LinkedIn"],
           ] as const
-        ).map(([name, label], index, fields) => (
+        ).map(([name, label], index) => (
           <span
             key={name}
             className="inline-flex items-center gap-x-2 whitespace-nowrap"
           >
+            {index > 0 ? <span aria-hidden="true">|</span> : null}
             <CvField
               blockId={block.id}
               name={name}
@@ -99,9 +100,6 @@ function HeaderView({ block }: ViewProps) {
               placeholder={label}
               size="contact"
             />
-            {index < fields.length - 1 ? (
-              <span aria-hidden="true">|</span>
-            ) : null}
           </span>
         ))}
       </div>

@@ -202,8 +202,33 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", asy
   ).toHaveLength(1)
   place(ready, "sec-exp", 0)
   press("/")
-  expect(JSON.stringify(client.document())).not.toContain("/")
   expect(document.querySelector("[role='option']")).toBeNull()
+  const side = (
+    ready as unknown as {
+      getExtension: (name: string) => {
+        menuFrozen: boolean
+        freezeMenu: () => void
+      }
+    }
+  ).getExtension("sideMenu")
+  side.freezeMenu()
+  expect(side.menuFrozen).toBe(true)
+  fireEvent.keyDown(document, { key: "Escape" })
+  expect(side.menuFrozen).toBe(false)
+  side.freezeMenu()
+  fireEvent.pointerDown(document.body)
+  expect(side.menuFrozen).toBe(false)
+  const grip = document.createElement("div")
+  grip.setAttribute("aria-label", "Drag block")
+  document.body.append(grip)
+  side.freezeMenu()
+  fireEvent.dragStart(grip)
+  fireEvent.pointerUp(document.body)
+  await act(async () => {
+    await Promise.resolve()
+  })
+  expect(side.menuFrozen).toBe(false)
+  grip.remove()
   moveCvBlock(ready, "sec-skills", "up")
   const moved = ready.document[1] as {
     type?: string

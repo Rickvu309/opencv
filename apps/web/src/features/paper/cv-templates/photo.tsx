@@ -3,6 +3,8 @@ import {
   EditableField,
   type TemplateProps,
   ContactLine,
+  CvSection,
+  cvSectionFilled,
   SectionTitle,
   CvPhoto,
 } from "./cv-parts.tsx"
@@ -57,7 +59,7 @@ export function PhotoCv({
         </div>
       </header>
 
-      <section className="mb-5">
+      <CvSection className="mb-5" filled={cvSectionFilled(data, "summary")}>
         <SectionTitle kind="summary">Summary</SectionTitle>
         <CvType role="body" as="div" className="text-foreground/90">
           <EditableField
@@ -67,30 +69,30 @@ export function PhotoCv({
             onChange={(summary) => patch("summary", summary)}
           />
         </CvType>
-      </section>
+      </CvSection>
 
-      <section className="mb-5">
+      <CvSection className="mb-5" filled={cvSectionFilled(data, "experience")}>
         <SectionTitle kind="experience">Experience</SectionTitle>
         <ExperienceList
           experience={data.experience}
           setExperience={setExperience}
           patchExperience={patchExperience}
         />
-      </section>
+      </CvSection>
 
-      <section className="mb-5">
+      <CvSection className="mb-5" filled={cvSectionFilled(data, "education")}>
         <SectionTitle kind="education">Education</SectionTitle>
         <EducationList
           education={data.education}
           setEducation={setEducation}
           patchEducation={patchEducation}
         />
-      </section>
+      </CvSection>
 
-      <section>
+      <CvSection filled={cvSectionFilled(data, "skills")}>
         <SectionTitle kind="skills">Skills</SectionTitle>
         <SkillChips groups={data.skills} onChange={setSkills} />
-      </section>
+      </CvSection>
       <ProjectsBlock data={data} />
       <LanguagesBlock data={data} />
       <ActivitiesAndAwards data={data} />

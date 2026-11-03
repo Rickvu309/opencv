@@ -7,6 +7,8 @@ import {
   PAPER_CANVAS_BLOCK_CLASS,
   type TemplateProps,
   CanvasAffordance,
+  CvSection,
+  cvSectionFilled,
   EducationEmptyCta,
   SectionTitle,
   useCvPlaceholders,
@@ -85,7 +87,11 @@ export function ProductCv({
           </CvType>
         </div>
 
-        <div className="mt-6">
+        <CvSection
+          as="div"
+          className="mt-6"
+          filled={cvSectionFilled(data, "skills")}
+        >
           <SectionTitle kind="skills" dark>
             Skills
           </SectionTitle>
@@ -96,9 +102,13 @@ export function ProductCv({
             grouped
             dark
           />
-        </div>
+        </CvSection>
 
-        <div className="mt-6">
+        <CvSection
+          as="div"
+          className="mt-6"
+          filled={cvSectionFilled(data, "education")}
+        >
           <SectionTitle kind="education" dark>
             Education
           </SectionTitle>
@@ -147,11 +157,11 @@ export function ProductCv({
             setEducation={setEducation}
             dark
           />
-        </div>
+        </CvSection>
       </aside>
 
       <main className="cv-template-product-main">
-        <section>
+        <CvSection filled={cvSectionFilled(data, "summary")}>
           <SectionTitle kind="summary">Profile</SectionTitle>
           <CvType role="body" as="div" className="text-foreground/90">
             <EditableField
@@ -161,16 +171,19 @@ export function ProductCv({
               onChange={(summary) => patch("summary", summary)}
             />
           </CvType>
-        </section>
+        </CvSection>
 
-        <section className="mt-6">
+        <CvSection
+          className="mt-6"
+          filled={cvSectionFilled(data, "experience")}
+        >
           <SectionTitle kind="experience">Experience</SectionTitle>
           <ExperienceList
             experience={data.experience}
             setExperience={setExperience}
             patchExperience={patchExperience}
           />
-        </section>
+        </CvSection>
 
         {data.projects?.length ? (
           <section className="mt-6">

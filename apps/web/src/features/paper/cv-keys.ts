@@ -543,9 +543,8 @@ export function handleCvKey(source: object, event: KeyLike) {
     return false
   }
   if (event.key === "/" && block.type === "paperSection") {
-    event.preventDefault()
     event.stopPropagation()
-    return true
+    return false
   }
   if (event.key === "," && block.type === "paperSkillItem") {
     event.preventDefault()

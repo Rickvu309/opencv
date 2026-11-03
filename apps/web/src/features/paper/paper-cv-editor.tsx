@@ -143,6 +143,8 @@ function printable(cv: CvPaper, templateId: string | null) {
     skills: model.skills,
     projects: model.projects,
     languages: model.languages,
+    activities: model.activities,
+    awards: model.awards,
     ...(model.photoUrl ? { photoUrl: model.photoUrl } : {}),
   }
 }

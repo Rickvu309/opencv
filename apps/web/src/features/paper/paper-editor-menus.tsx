@@ -468,6 +468,64 @@ function Handle() {
   )
 }
 
+function SideMenuRelease() {
+  const side = useExtension(SideMenuExtension)
+  const dragging = useRef(false)
+  useEffect(() => {
+    const root = document
+    const onDragStart = (event: DragEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (!target.closest("[aria-label='Drag block']")) return
+      dragging.current = true
+    }
+    const finishDrag = () => {
+      if (!dragging.current) return
+      dragging.current = false
+      side.blockDragEnd()
+      if (side.menuFrozen) side.unfreezeMenu()
+    }
+    const onDragEnd = () => {
+      finishDrag()
+    }
+    const onPointerUp = () => {
+      queueMicrotask(finishDrag)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      finishDrag()
+      if (side.menuFrozen) side.unfreezeMenu()
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!side.menuFrozen) return
+      const target = event.target
+      if (!(target instanceof Node)) return
+      const menu = document.querySelector("[role='menu']")
+      const handle = document.querySelector("[data-slot='paper-side-menu']")
+      if (menu?.contains(target) || handle?.contains(target)) return
+      side.unfreezeMenu()
+    }
+    root.addEventListener("dragstart", onDragStart, true)
+    root.addEventListener("dragend", onDragEnd, true)
+    root.addEventListener("pointerup", onPointerUp, true)
+    root.addEventListener("keydown", onKey, true)
+    root.addEventListener("pointerdown", onPointerDown, true)
+    return () => {
+      root.removeEventListener("dragstart", onDragStart, true)
+      root.removeEventListener("dragend", onDragEnd, true)
+      root.removeEventListener("pointerup", onPointerUp, true)
+      root.removeEventListener("keydown", onKey, true)
+      root.removeEventListener("pointerdown", onPointerDown, true)
+    }
+  }, [side])
+  return null
+}
+
 export function PaperSideMenu() {
-  return <SideMenuController sideMenu={Handle} />
+  return (
+    <>
+      <SideMenuRelease />
+      <SideMenuController sideMenu={Handle} />
+    </>
+  )
 }

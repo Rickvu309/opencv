@@ -88,6 +88,36 @@ export function useCvPlaceholders() {
   return useContext(CvPlaceholderContext)
 }
 
+export function cvSectionFilled(
+  data: CvData,
+  kind: "summary" | "experience" | "education" | "skills"
+) {
+  if (kind === "summary") return data.summary.trim().length > 0
+  if (kind === "experience") return data.experience.length > 0
+  if (kind === "education") return data.education.length > 0
+  return data.skills.some(
+    (group) =>
+      group.label.trim().length > 0 ||
+      group.items.some((item) => item.trim().length > 0)
+  )
+}
+
+export function CvSection({
+  className,
+  filled,
+  as: Tag = "section",
+  children,
+}: {
+  className?: string
+  filled: boolean
+  as?: "section" | "div"
+  children: ReactNode
+}) {
+  const placeholders = useCvPlaceholders()
+  if (!placeholders && !filled) return null
+  return <Tag className={className}>{children}</Tag>
+}
+
 type FieldProps = {
   value: string
   onChange: (value: string) => void

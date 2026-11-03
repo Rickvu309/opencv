@@ -1,7 +1,7 @@
 import { BlockNoteEditor } from "@blocknote/core"
 import { _blocksToProsemirrorNode } from "@blocknote/core/yjs"
 import { paperSchema } from "@workspace/paper-crdt"
-import { Slice, type Node } from "prosemirror-model"
+import { Fragment, Slice, type Node } from "prosemirror-model"
 import { EditorState, TextSelection } from "prosemirror-state"
 import { ySyncPluginKey } from "y-prosemirror"
 import { expect, it } from "vitest"
@@ -214,13 +214,70 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
     if (node.isText && node.text?.includes("SQLExcel")) textPos = pos
   })
   expect(textPos).toBeGreaterThan(0)
-  skills = skills.apply(skills.tr.insertText(",", textPos + 3))
+  const skillView = {
+    state: skills,
+    dispatch(tr: typeof skills.tr) {
+      skills = skills.apply(tr)
+    },
+  }
+  expect(
+    cvRulesPlugin.props.handleTextInput!(
+      skillView as never,
+      textPos + 3,
+      textPos + 3,
+      ",",
+      () => false
+    )
+  ).toBe(true)
   const labels: string[] = []
   skills.doc.descendants((node) => {
     if (node.type.name === "paperSkillItem") labels.push(node.textContent)
   })
   expect(labels).toEqual(["SQL", "Excel"])
   expect(skills.selection.$from.parent.textContent).toBe("Excel")
+
+  const typed = EditorState.create({
+    schema: editor.pmSchema,
+    doc: docOf([
+      header,
+      {
+        id: "skills",
+        type: "paperSkills",
+        props: { label: "Tools" },
+        children: [{ id: "empty", type: "paperSkillItem", content: "" }],
+      },
+    ]),
+    plugins: [cvRulesPlugin],
+  })
+  let emptyPos = -1
+  typed.doc.descendants((node, pos) => {
+    if (node.type.name === "paperSkillItem" && node.textContent === "") {
+      emptyPos = pos + 1
+    }
+  })
+  let typedState = typed
+  const typedView = {
+    state: typedState,
+    dispatch(tr: typeof typedState.tr) {
+      typedState = typedState.apply(tr)
+      typedView.state = typedState
+    },
+  }
+  expect(
+    cvRulesPlugin.props.handleTextInput!(
+      typedView as never,
+      emptyPos,
+      emptyPos,
+      "SQL,Excel",
+      () => false
+    )
+  ).toBe(true)
+  const typedLabels: string[] = []
+  typedState.doc.descendants((node) => {
+    if (node.type.name === "paperSkillItem") typedLabels.push(node.textContent)
+  })
+  expect(typedLabels).toEqual(["SQL", "Excel"])
+  expect(typedState.selection.$from.parent.textContent).toBe("Excel")
 
   let kept = EditorState.create({
     schema: editor.pmSchema,
@@ -252,6 +309,126 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
   })
   expect(edited).toEqual(["xC, C++"])
 
+  const whole = (content: string) =>
+    EditorState.create({
+      schema: editor.pmSchema,
+      doc: docOf([
+        header,
+        {
+          id: "skills",
+          type: "paperSkills",
+          props: { label: "Tools" },
+          children: [{ id: "one", type: "paperSkillItem", content }],
+        },
+      ]),
+      plugins: [cvRulesPlugin],
+    })
+  const skillLabels = (state: EditorState) => {
+    const found: string[] = []
+    state.doc.descendants((node) => {
+      if (node.type.name === "paperSkillItem") found.push(node.textContent)
+    })
+    return found
+  }
+  const commit = (state: EditorState, tr: ReturnType<EditorState["tr"]>) => {
+    const next = state.apply(tr)
+    const extra = cvRulesPlugin.spec.appendTransaction?.([tr], state, next)
+    return extra ? next.apply(extra) : next
+  }
+  const backspaceBeforeComma = (content: string) => {
+    const state = whole(content)
+    let at = -1
+    state.doc.descendants((node, pos) => {
+      if (at < 0 && node.isText && node.text === content) {
+        at = pos + node.text.indexOf(",")
+      }
+    })
+    return skillLabels(commit(state, state.tr.delete(at - 1, at)))
+  }
+  expect(backspaceBeforeComma("Node.js, TypeScript")).toEqual([
+    "Node.j, TypeScript",
+  ])
+  expect(backspaceBeforeComma("1,000 users")).toEqual([",000 users"])
+
+  let copied = whole("C, C++")
+  let sourceNode: Node | null = null
+  let sourcePos = -1
+  copied.doc.descendants((node, pos) => {
+    if (
+      sourceNode === null &&
+      node.type.name === "blockContainer" &&
+      node.childCount > 0 &&
+      node.child(0).type.name === "paperSkillItem"
+    ) {
+      sourceNode = node
+      sourcePos = pos
+    }
+  })
+  if (!sourceNode) throw new Error("missing skill")
+  const skillNode = sourceNode as Node
+  const copy = skillNode.type.create(
+    { ...skillNode.attrs, id: "copy" },
+    skillNode.content
+  )
+  copied = commit(
+    copied,
+    copied.tr.insert(sourcePos + skillNode.nodeSize, copy)
+  )
+  expect(skillLabels(copied)).toEqual(["C, C++", "C, C++"])
+
+  let pastedSkill = whole("")
+  let pasteAt = -1
+  pastedSkill.doc.descendants((node, pos) => {
+    if (pasteAt < 0 && node.type.name === "paperSkillItem") pasteAt = pos + 1
+  })
+  pastedSkill = pastedSkill.apply(
+    pastedSkill.tr.setSelection(TextSelection.create(pastedSkill.doc, pasteAt))
+  )
+  const pasteView = {
+    state: pastedSkill,
+    dispatch(tr: typeof pastedSkill.tr) {
+      pastedSkill = pastedSkill.apply(tr)
+      pasteView.state = pastedSkill
+    },
+  }
+  expect(
+    cvRulesPlugin.props.handlePaste!(
+      pasteView as never,
+      { clipboardData: { getData: () => "a, b" } } as never,
+      new Slice(Fragment.from(editor.pmSchema.text("a, b")), 0, 0)
+    )
+  ).toBe(true)
+  expect(skillLabels(pastedSkill)).toEqual(["a", "b"])
+
+  let fromSlice = whole("")
+  let sliceAt = -1
+  fromSlice.doc.descendants((node, pos) => {
+    if (sliceAt < 0 && node.type.name === "paperSkillItem") sliceAt = pos + 1
+  })
+  fromSlice = fromSlice.apply(
+    fromSlice.tr.setSelection(TextSelection.create(fromSlice.doc, sliceAt))
+  )
+  const sliceView = {
+    state: fromSlice,
+    dispatch(tr: typeof fromSlice.tr) {
+      fromSlice = fromSlice.apply(tr)
+      sliceView.state = fromSlice
+    },
+  }
+  const pastedSlice = new Slice(
+    Fragment.from(editor.pmSchema.text("a, b")),
+    0,
+    0
+  )
+  expect(
+    cvRulesPlugin.props.handlePaste!(
+      sliceView as never,
+      { clipboardData: { getData: () => "" } } as never,
+      pastedSlice
+    )
+  ).toBe(true)
+  expect(skillLabels(fromSlice)).toEqual(["a", "b"])
+
   const slashTitles = cvSlashItems({}).map((item) => item.title)
   expect(slashTitles.filter((title) => title === "Skills")).toEqual(["Skills"])
   expect(slashTitles).toContain("Skill group")
@@ -267,15 +444,26 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
     }
   })
   expect(titleEnd).toBeGreaterThan(0)
-  const swallow = cvRulesPlugin.props.handleTextInput!(
-    { state: titled } as never,
-    titleEnd,
-    titleEnd,
-    "/",
-    () => false
-  )
-  expect(swallow).toBe(true)
-  expect(titled.doc.textContent).not.toContain("/")
+  expect(
+    cvRulesPlugin.props.handleTextInput!(
+      { state: titled } as never,
+      titleEnd,
+      titleEnd,
+      "/",
+      () => false
+    )
+  ).toBe(false)
+  expect(
+    cvRulesPlugin.props.handleTextInput!(
+      { state: titled } as never,
+      titleEnd,
+      titleEnd,
+      "/exp",
+      () => false
+    )
+  ).toBe(false)
+  const withSlash = titled.apply(titled.tr.insertText("/", titleEnd))
+  expect(withSlash.doc.textContent).toContain("Education/")
   const body = EditorState.create({
     schema: editor.pmSchema,
     doc: docOf([{ id: "p", type: "paragraph", content: "Note" }]),

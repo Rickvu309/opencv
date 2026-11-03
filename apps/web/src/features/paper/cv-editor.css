@@ -72,13 +72,6 @@
   content: none;
 }
 
-[data-paper-print]
-  section:not(:has([data-paper-section]:not(:empty))):not(
-    :has([role="textbox"]:not(:empty))
-  ) {
-  display: none;
-}
-
 .prosemirror-dropcursor-block {
   height: 6px !important;
   background: var(--ring) !important;

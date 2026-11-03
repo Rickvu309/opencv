@@ -82,7 +82,14 @@ export function CvBlockMenu({
             aria-label="Drag block"
             draggable
             className="flex size-11 cursor-grab items-center justify-center rounded-md hover:bg-accent md:size-6"
-            onDragStart={onDragStart}
+            onDragStart={(event) => {
+              const popup = document.querySelector(
+                "[data-slot='dropdown-menu-content']"
+              )
+              const portal = popup?.closest("[data-base-ui-portal]")
+              if (portal instanceof HTMLElement) portal.style.display = "none"
+              onDragStart(event)
+            }}
             onDragEnd={onDragEnd}
           >
             <GripVertical className="size-3.5" aria-hidden="true" />

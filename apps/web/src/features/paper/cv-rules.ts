@@ -4,6 +4,7 @@ import {
   Plugin,
   PluginKey,
   TextSelection,
+  type EditorState,
   type Selection,
 } from "prosemirror-state"
 import { ySyncPluginKey, yUndoPluginKey } from "y-prosemirror"
@@ -316,9 +317,7 @@ function ownChange(transaction: {
   getMeta: (key: string | PluginKey) => unknown
 }) {
   return (
-    !transaction.getMeta(ySyncPluginKey) &&
-    !transaction.getMeta("cv-regroup") &&
-    !transaction.getMeta("cv-skill-split")
+    !transaction.getMeta(ySyncPluginKey) && !transaction.getMeta("cv-regroup")
   )
 }
 
@@ -441,73 +440,66 @@ export function bindYUndo(editor: object) {
   manager.doc.on("afterTransaction", manager.afterTransactionHandler)
 }
 
-function commaAt(oldText: string, nextText: string) {
-  if (oldText === nextText) return -1
-  if (oldText === "") return nextText.indexOf(",")
-  let i = 0
-  let j = 0
-  while (j < nextText.length) {
-    if (oldText[i] === nextText[j]) {
-      i += 1
-      j += 1
-      continue
-    }
-    if (nextText[j] === ",") return j
-    if (oldText[i] === ",") {
-      i += 1
-      continue
-    }
-    return -1
+function splitSkillInput(
+  view: { state: EditorState; dispatch: (tr: EditorState["tr"]) => void },
+  from: number,
+  to: number,
+  text: string
+) {
+  if (!text.includes(",")) return false
+  const $from = view.state.doc.resolve(from)
+  const $to = view.state.doc.resolve(to)
+  if ($from.parent.type.name !== "paperSkillItem") return false
+  if ($from.parent !== $to.parent) return false
+  const parent = $from.parent
+  const origin = $from.start()
+  const before = parent.textContent.slice(0, from - origin)
+  const after = parent.textContent.slice(to - origin)
+  const bits = text.split(",")
+  const parts = bits.map((bit, index) => {
+    const left = index === 0 ? before : ""
+    const right = index === bits.length - 1 ? after : ""
+    return `${left}${bit}${right}`.trim()
+  })
+  const depth = $from.depth - 1
+  const container = $from.node(depth)
+  if (container.type.name !== "blockContainer") return false
+  const schema = view.state.schema
+  const skill = schema.nodes.paperSkillItem
+  const box = schema.nodes.blockContainer
+  if (!skill || !box) return false
+  const nodes = parts.map((part, index) => {
+    const id = index === 0 ? container.attrs.id : crypto.randomUUID()
+    const inline = part ? schema.text(part) : undefined
+    return box.create({ ...container.attrs, id }, skill.create(null, inline))
+  })
+  const at = $from.before(depth)
+  const tr = view.state.tr.replaceWith(at, at + container.nodeSize, nodes)
+  let caret = at
+  for (let index = 0; index < nodes.length - 1; index += 1) {
+    caret += nodes[index]?.nodeSize ?? 0
   }
-  return -1
-}
-
-function skillTexts(doc: Node) {
-  const texts = new Map<string, string>()
-  doc.descendants((node) => {
-    if (node.type.name !== "blockContainer" || node.childCount === 0) return
-    const content = node.child(0)
-    if (content.type.name !== "paperSkillItem") return
-    texts.set(String(node.attrs.id ?? ""), content.textContent)
-  })
-  return texts
-}
-
-function skillCommaSplit(oldDoc: Node, doc: Node) {
-  const previous = skillTexts(oldDoc)
-  const found: { from: number; to: number; nodes: Node[] }[] = []
-  doc.descendants((node, pos) => {
-    if (found.length > 0) return false
-    if (node.type.name !== "blockContainer" || node.childCount === 0) return
-    const content = node.child(0)
-    if (content.type.name !== "paperSkillItem") return
-    const nextText = content.textContent
-    const at = commaAt(
-      previous.get(String(node.attrs.id ?? "")) ?? "",
-      nextText
-    )
-    if (at < 0) return
-    const skill = node.type.schema.nodes.paperSkillItem
-    if (!skill) return
-    const parts = [nextText.slice(0, at).trim(), nextText.slice(at + 1).trim()]
-    const nodes = parts.map((part, index) => {
-      const id = index === 0 ? node.attrs.id : crypto.randomUUID()
-      const text = part ? node.type.schema.text(part) : undefined
-      return node.type.create({ ...node.attrs, id }, skill.create(null, text))
-    })
-    found.push({ from: pos, to: pos + node.nodeSize, nodes })
-    return false
-  })
-  return found[0] ?? null
+  const pos = Math.min(caret + 2, tr.doc.content.size)
+  if (pos > 0) tr.setSelection(TextSelection.near(tr.doc.resolve(pos)))
+  view.dispatch(tr)
+  return true
 }
 
 export const cvRulesPlugin = new Plugin({
   props: {
-    handleTextInput(view, from, _to, text) {
-      if (text !== "/" && !text.startsWith("/")) return false
-      const parent = view.state.doc.resolve(from).parent
-      if (parent.type.name !== "paperSection") return false
-      return true
+    handleTextInput(view, from, to, text) {
+      return splitSkillInput(view, from, to, text)
+    },
+    handlePaste(view, event, slice) {
+      const data = event.clipboardData
+      const pasted =
+        data?.getData("text/plain") ||
+        data?.getData("Text") ||
+        slice?.content.textBetween(0, slice.content.size, "\n") ||
+        ""
+      if (!pasted.includes(",")) return false
+      const { from, to } = view.state.selection
+      return splitSkillInput(view, from, to, pasted)
     },
     transformPasted: (slice, view) => {
       const from = view.state.selection.$from
@@ -530,21 +522,6 @@ export const cvRulesPlugin = new Plugin({
       transactions.some((transaction) => transaction.getMeta(ySyncPluginKey))
     ) {
       return null
-    }
-    if (
-      !transactions.some((transaction) => transaction.getMeta("cv-skill-split"))
-    ) {
-      const split = skillCommaSplit(oldState.doc, newState.doc)
-      if (split) {
-        const tr = newState.tr.replaceWith(split.from, split.to, split.nodes)
-        tr.setMeta("cv-skill-split", true)
-        const start = split.from + (split.nodes[0]?.nodeSize ?? 0)
-        const pos = Math.min(start + 2, tr.doc.content.size)
-        if (pos > 0) {
-          tr.setSelection(TextSelection.near(tr.doc.resolve(pos)))
-        }
-        return tr
-      }
     }
     if (transactions.some((transaction) => transaction.getMeta("cv-regroup"))) {
       return null
