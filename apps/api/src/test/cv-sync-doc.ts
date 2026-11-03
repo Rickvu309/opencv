@@ -96,7 +96,7 @@ export function seed(): PaperDocument {
       },
     ],
     clashes: [],
-  } as PaperDocument
+  } as unknown as PaperDocument
 }
 
 export function nodes(doc: PaperDocument): Node[] {
