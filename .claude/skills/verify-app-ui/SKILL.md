@@ -16,7 +16,7 @@ PORT=4450 pnpm --filter web verify:app-ui
 ```
 
 - `PORT` is the api port and `PORT+1` the web port. Use 4450 to 4458 (the ports this program reserves for UI verification); default 4450. If either port answers, it refuses and exits 2 so it never drives a stack it did not start.
-- It starts the real api (PGlite, `COACH_RUNTIME=fake`, no network, no tokens) and the Vite dev server by calling `.claude/skills/verify-opencv/scripts/launch.sh` and `cleanup.sh`, and tears both down at the end, also on failure. It builds `packages/domain` first when `dist` is missing (a fresh worktree has none).
+- It starts the real api (PGlite, `COACH_RUNTIME=fake`, no network, no tokens) and the Vite dev server by calling `.claude/skills/verify-opencv/scripts/launch.sh` and `.claude/skills/verify-opencv/scripts/cleanup.sh`, and tears both down at the end, also on failure. It builds `packages/domain` first when `dist` is missing (a fresh worktree has none).
 - It signs up a throwaway account through the api in the browser, so every run starts with the starter workspace: a sample CV, four Apply cards, a sample Pitch and a welcome Thread.
 - Needs `pnpm install` done and a Chromium. It looks for `$CHROME_BIN`, then `~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome` (installed by the agent-browser tooling), then `chromium` on the path. No new dependency: it speaks the DevTools protocol over Node's built-in WebSocket.
 - About 2 to 4 minutes on a loaded machine (stack start, 4 routes, 8 steps, 4 scenarios, 2 more passes). One browser plus the two servers, so do not run it beside install, vitest or another browser run on the shared machine.

@@ -1,0 +1,13 @@
+{
+  "id": "retired-words",
+  "file": "scripts/retired-words.test.mjs",
+  "detector": {
+    "module": "scripts/lib/retired-words.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "06e6e946^",
+    "path": "docs/deploy.md"
+  }
+}
