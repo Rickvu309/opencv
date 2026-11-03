@@ -16,7 +16,6 @@ function registrySchemas<const T extends readonly SchemaEntry[]>(entries: T) {
 
 const blockSchemas = registrySchemas(blockRegistry)
 
-/** A discriminated union of whatever entries you pass. A filtered copy drops that type. */
 export function cvBlockSchemaFrom<const T extends readonly SchemaEntry[]>(
   entries: T
 ) {
@@ -73,7 +72,6 @@ export function isCvBlockDocument(value: unknown): value is CvBlockDocument {
   return cvBlockDocumentSchema.safeParse(value).success
 }
 
-/** Empty header strings and the three starter sections. Placeholders stay in the editor. */
 export function blankBlockDocument(): CvBlockDocument {
   return {
     version: 2,

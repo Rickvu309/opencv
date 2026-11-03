@@ -357,6 +357,33 @@ test("a limit that comes from the contract, a short check and other folders are 
   )
 })
 
+test("window.open with noopener in its features and a new-tab link without rel are refused", async () => {
+  const mistakes = [
+    `export const open = (url) => window.open(url, "_blank", "noopener,noreferrer")`,
+    `export const open = (url) => globalThis.open(url, "_blank", "noopener")`,
+    `export const a = <a href={url} target="_blank">Open</a>`,
+    `export const a = <a href={url} target="_blank" rel="external">Open</a>`,
+  ]
+  for (const code of mistakes) {
+    const found = await messages(code, FEATURE)
+    assert.equal(found.length, 1, code)
+  }
+})
+
+test("a new-tab link with a safe rel, a plain window.open and other targets are allowed", async () => {
+  const quiet = [
+    `export const a = <a href={url} target="_blank" rel="noopener noreferrer">Open</a>`,
+    `export const a = <a href={url} target="_blank" rel="noreferrer">Open</a>`,
+    `export const a = <a href={url} target="_blank" {...rest}>Open</a>`,
+    `export const a = <a href={url}>Open</a>`,
+    `export const a = <a href={url} target="_self">Open</a>`,
+    `export const open = (url) => window.open(url, "_blank")`,
+  ]
+  for (const code of quiet) {
+    assert.deepEqual(await messages(code, FEATURE), [], code)
+  }
+})
+
 test("each rule fires on the code that shipped the mistake", async () => {
   const deadMore = await messages(
     atCommit(
@@ -383,4 +410,10 @@ test("each rule fires on the code that shipped the mistake", async () => {
     "src/features/landing/figures/generate.ts"
   )
   assert.ok(typedLimit.some((message) => /@workspace\/domain/.test(message)))
+
+  const blockedTab = await messages(
+    atCommit("38026026^", "apps/web/src/features/apply/apply-job-detail.tsx"),
+    "src/features/apply/apply-job-detail.tsx"
+  )
+  assert.ok(blockedTab.some((message) => /returns null/.test(message)))
 })

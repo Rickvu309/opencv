@@ -59,7 +59,6 @@ function positiveIntEnv(value: string | undefined) {
   return parsed
 }
 
-/** Resolve the OpenRouter model id for a Coach mode. */
 export function resolveCoachModel(
   mode: CoachMode,
   env: CoachModelEnv = {}
@@ -73,7 +72,6 @@ export function resolveCoachModel(
   return trimmedEnv(override) ?? DEFAULT_COACH_MODELS[mode]
 }
 
-/** Per-mode daily turn cap. Mode-specific env wins, then the mode default (50 / 30 / 10). */
 export function resolveCoachDailyTurnLimit(
   mode: CoachMode,
   env: CoachDailyTurnLimitEnv = {}
@@ -183,7 +181,6 @@ type CoachErrorPart = {
   message: string
 }
 
-/** Incremental parts a runtime yields; the route translates these to SSE. */
 export type CoachStreamPart =
   | CoachTextDeltaPart
   | CoachToolCallPart
@@ -216,13 +213,9 @@ export type CoachTurnInput = {
   history: ChatEntry[]
   model?: string
   mode?: CoachMode
-  /** Fresh turn answering the latest User message; prior coach row stays in history. */
   regenerate?: boolean
-  /** Open Paper document when the User is sending from the editor AI panel. */
   focusDoc?: CoachFocusDoc
-  /** Highlighted Paper text when the User sends from the editor. */
   selection?: CoachSelection
-  /** Names and titles for this turn. Bytes never appear here. */
   note?: string
   execute?: (call: { name: string; input: unknown }) => Promise<CoachExecuted>
 }
@@ -236,26 +229,12 @@ export type ApplyScanExtractInput = {
   postingText: string
 }
 
-/** Injected via `AppConfig.coach` like `db`. */
 export type CoachRuntime = {
   streamTurn(input: CoachTurnInput): AsyncIterable<CoachStreamPart>
-  /**
-   * Optional Light-tier title for the first turn. Missing or throwing
-   * implementations fall back to the deterministic summarizer.
-   */
   generateTitle?(input: CoachTitleInput): Promise<string>
-  /**
-   * Optional Free-tier JSON extract of title/company/note from posting
-   * text (QVE-218). Missing implementations fail scan honestly unless
-   * the posting already carries structured JobPosting markup.
-   */
   scanJobPosting?(input: ApplyScanExtractInput): Promise<string>
 }
 
-/**
- * Fold a runtime part into the persisted message parts. Consecutive text
- * deltas merge; tool-calls are stream-only until their result arrives.
- */
 export function appendCoachPart(
   parts: readonly ChatEntryPart[],
   part: CoachStreamPart

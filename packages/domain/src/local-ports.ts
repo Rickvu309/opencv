@@ -9,12 +9,6 @@ interface LocalDevUrls {
   webOrigin: string
 }
 
-/**
- * The one place that turns `PORT` into every local dev address. The api listens
- * on `PORT` and the web dev server on `PORT + 1000`. Worktree api ports sit in
- * 4000-4999, so web ports land in 5000-5999 and never meet another worktree's
- * api port. Unset or invalid `PORT` keeps the classic 3001/5173.
- */
 export function localDevUrls(port: string | undefined): LocalDevUrls {
   const parsed = Number(port?.trim())
   const valid = Number.isInteger(parsed) && parsed > 0 && parsed <= 65535

@@ -165,7 +165,6 @@ export const accountQueries = queryContract({
   }),
 })
 
-// A plan or Coach mode change moves what the usage and billing views show.
 const profileChanged = (): QueryRef[] => [
   { query: "profile.get" },
   { query: "billing.get" },

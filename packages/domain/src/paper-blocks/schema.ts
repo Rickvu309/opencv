@@ -9,5 +9,4 @@ export const listItemSchema = z
   })
   .strict()
 
-/** Id on registry.empty(). Stored documents use their own ids. */
 export const EMPTY_BLOCK_ID = "block"

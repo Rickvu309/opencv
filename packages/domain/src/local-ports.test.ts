@@ -21,3 +21,13 @@ describe("localDevUrls", () => {
     }
   })
 })
+
+describe("worktree port ranges", () => {
+  it("keeps every web port in 5000-5999 clear of the 4000-4999 api ports", () => {
+    for (let port = 4000; port <= 4999; port++) {
+      const { apiPort, webPort } = localDevUrls(String(port))
+      assert.ok(webPort >= 5000 && webPort <= 5999)
+      assert.notEqual(webPort, apiPort)
+    }
+  })
+})

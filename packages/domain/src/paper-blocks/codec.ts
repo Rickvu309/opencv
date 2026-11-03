@@ -18,10 +18,6 @@ import {
 import { plainTextOf, printBlock } from "./registry.js"
 import type { PreviewFragment } from "./types.js"
 
-/**
- * An empty headline is not stored. A heading block is the headline, so a
- * summary-only section round-trips as summary rather than as a headline.
- */
 export function cvCodecToBlocks(document: CvDocument): CvBlockDocument {
   const id = makeIds()
   const sections: CvBlockDocument["sections"] = []
@@ -125,10 +121,6 @@ function linesOf(fragment: PreviewFragment): string[] {
   return []
 }
 
-/**
- * A text block typed under an entry becomes a bullet on that entry.
- * With no entry yet, the text is a role and the company stays empty.
- */
 function readExperience(blocks: CvBlock[]): CvExperience[] {
   const experience: CvExperience[] = []
   let current: CvExperience | null = null
@@ -243,13 +235,6 @@ function readSummary(blocks: CvBlock[]): { headline: string; summary: string } {
   return { headline, summary: parts.join("\n") }
 }
 
-/**
- * Activities and awards have no fields on the v1 codec, so this read cannot
- * return them. They stay on the version 2 document and on the preview model.
- * Numbered lists and dividers are also left out of the codec fields. The v1
- * form has no block of those types, and folding their lines in would copy
- * them into a paragraph.
- */
 export function blocksToCvCodec(
   document: CvBlockDocument,
   templateId: CvTemplateId = "internship"
@@ -321,7 +306,6 @@ function isBlankCodec(document: CvDocument) {
   )
 }
 
-/** Version 2 is stored as written. A filled v1 codec maps on read. A blank v1 opens blank. */
 export function readCvBlocks(document: unknown): CvBlockDocument | null {
   if (isCvBlockDocument(document)) return document
   if (!isCvDocument(document)) return null

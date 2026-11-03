@@ -8,12 +8,10 @@ type CoachPolicy =
 
 type Schema = z.ZodType
 
-/**
- * "keyed" stores a client key so a replay returns the first result. "none" is for a
- * write that is already replay-safe (a version compare, a set to a value, a terminal
- * delete) or whose side effect precedes the key (a sent code); no key is sent or stored.
- */
-export type IdempotencyPolicy = "keyed" | "none"
+type KeyedReplayReturnsFirstResult = "keyed"
+type NoKeyBecauseWriteIsReplaySafe = "none"
+export type IdempotencyPolicy =
+  KeyedReplayReturnsFirstResult | NoKeyBecauseWriteIsReplaySafe
 
 type QueryEntry<I extends Schema = Schema, O extends Schema = Schema> = {
   input: I
@@ -50,7 +48,7 @@ export function commandEntry<I extends Schema, O extends Schema>(
   return entry
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the entry type erases each command's own input and output schemas
 export type AnyCommandEntry = CommandEntry<any, any>
 
 export function commandContract<

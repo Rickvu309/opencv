@@ -1,10 +1,8 @@
 import { CHAT_TITLE_MAX } from "./chat.js"
 import { DEFAULT_CHAT_TITLE } from "./chat-messages.js"
 
-/** First-line History title taken from the User's opening message. */
 const FIRST_LINE_TITLE_MAX = 36
 
-/** Generated titles stay short enough to scan in History. */
 const AUTO_CHAT_TITLE_MAX = 48
 
 const CLAIMED_ACTION_START =
@@ -27,10 +25,6 @@ type ChatTitleCandidate = {
   status?: string | null
 }
 
-/**
- * First-line title used when a Chat is created from the composer.
- * Distinct from the generated title that replaces it after the first turn.
- */
 export function titleFrom(text: string) {
   const clean = text.replace(/\s+/g, " ").trim()
   if (clean.length <= FIRST_LINE_TITLE_MAX) return clean
@@ -45,16 +39,10 @@ function isFirstLineChatTitle(title: string, firstUserText: string) {
   return title.trim() === titleFrom(firstUserText)
 }
 
-/** Default or first-line titles may be replaced. User-renamed titles may not. */
 function isAutoTitleEligible(title: string, firstUserText: string) {
   return isDefaultChatTitle(title) || isFirstLineChatTitle(title, firstUserText)
 }
 
-/**
- * A completed Coach turn is a `final` row, or a seed/legacy coach row with no
- * status. Aborted and error turns do not count, so a later successful turn
- * can still title the Chat.
- */
 function hasCompletedCoachTurn(messages: readonly ChatTitleCandidate[]) {
   return messages.some(
     (message) =>
