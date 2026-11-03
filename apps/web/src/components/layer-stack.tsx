@@ -2,33 +2,18 @@
 
 import { useEffect, useId, useReducer, useRef, type ReactNode } from "react"
 
-/*
- * Layer Stack – an interactive card illustration, in a single self-contained file.
- * An isometric stack of five layers next to a list of five entries. The chosen entry lifts its layer
- * out of the stack in blue, with a soft glow underneath; the others settle back to glassy gray.
- * It steps through the entries on its own and pauses while you hover; click or focus an entry to pick it.
- * The artwork is laid out on a 600 × 400 grid inside a 3 : 2 frame and scales with its container.
- */
-
 export type LayerStackItem = {
-  /** Main line of the entry */
   title: string
-  /** Short muted hint on the right */
   hint?: string
-  /** Icon drawn onto the layer: one of the built-in names */
   icon?: LayerIcon
 }
 
 export type LayerIcon = "bolt" | "database" | "plug" | "spark" | "pulse"
 
 export type LayerStackProps = {
-  /** Up to five entries, top layer first */
   items?: LayerStackItem[]
-  /** Entry to start on */
   defaultIndex?: number
-  /** Time per entry while it plays on its own, in ms */
   interval?: number
-  /** Called when an entry is picked by the user */
   onChange?: (index: number) => void
   className?: string
 }
@@ -41,14 +26,13 @@ const defaultItems: LayerStackItem[] = [
   { title: "Traced at every step", hint: "Logs", icon: "pulse" },
 ]
 
-/* Layer geometry on the 600 × 400 grid */
-const SIZE = 104 // side of a layer before the isometric projection (rhombus 208 × 104)
-const STEP = 26 // vertical distance between resting layers
-const GAP = 34 // the chosen layer lifts off the ones below it
-const ABOVE = 24 // and the layers above it lift a little further, so it shows
-const THICK = 9 // layer thickness
-const CX = 168 // stack centre
-const TOP = 109 // y of the top layer's back corner when nothing is lifted
+const LAYER_SIDE_BEFORE_PROJECTION = 104
+const RESTING_LAYER_SPACING = 26
+const CHOSEN_LAYER_LIFT = 34
+const EXTRA_LIFT_ABOVE_CHOSEN = 24
+const LAYER_THICKNESS = 9
+const STACK_CENTER_X = 168
+const TOP_LAYER_BACK_CORNER_Y = 109
 
 type StackState = { active: number; paused: boolean }
 
@@ -90,7 +74,6 @@ export function LayerStack({
   )
   const touched = useRef(false)
 
-  // Step through the entries on its own until someone interacts; never with reduced motion
   useEffect(() => {
     if (paused || touched.current || list.length < 2) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
@@ -107,13 +90,15 @@ export function LayerStack({
     onChange?.(i)
   }
 
-  // Resting y of each layer: gaps open below and above the chosen one. The bottom layer has nothing
-  // below it, so when it's chosen it stays put and only the layers above it rise
-  const last = list.length - 1
-  const yOf = (i: number) =>
-    TOP +
-    i * STEP -
-    (i < active ? GAP + ABOVE : i === active && active < last ? GAP : 0)
+  const bottomLayer = list.length - 1
+  const restingY = (i: number) =>
+    TOP_LAYER_BACK_CORNER_Y +
+    i * RESTING_LAYER_SPACING -
+    (i < active
+      ? CHOSEN_LAYER_LIFT + EXTRA_LIFT_ABOVE_CHOSEN
+      : i === active && active < bottomLayer
+        ? CHOSEN_LAYER_LIFT
+        : 0)
 
   return (
     <div
@@ -123,7 +108,6 @@ export function LayerStack({
       onFocus={() => dispatch({ type: "paused" })}
       onBlur={() => dispatch({ type: "resumed" })}
     >
-      {/* React 19 hoists this into <head> once, no matter how many instances render */}
       <style href="ui-layer-stack" precedence="default">
         {css}
       </style>
@@ -141,7 +125,6 @@ export function LayerStack({
           </filter>
         </defs>
 
-        {/* Bottom layer first, so the upper ones overlap it */}
         {list
           .map((item, i) => (
             <g
@@ -149,48 +132,50 @@ export function LayerStack({
               className="ui-lyr-layer"
               data-active={i === active ? "" : undefined}
               data-above={i < active ? "" : undefined}
-              style={{ transform: `translate(${CX}px, ${yOf(i)}px)` }}
+              style={{
+                transform: `translate(${STACK_CENTER_X}px, ${restingY(i)}px)`,
+              }}
             >
-              {/* Glow just beneath this layer – fades in while it's the chosen one, same strength on every layer */}
               <ellipse
                 className="ui-lyr-glow"
                 cx={0}
-                cy={SIZE / 2 + THICK + 18}
+                cy={LAYER_SIDE_BEFORE_PROJECTION / 2 + LAYER_THICKNESS + 18}
                 rx={70}
                 ry={24}
                 filter={`url(#${id}-glow)`}
               />
-              {/* Thickness: the same rhombus, shifted down, peeks out below the top face */}
-              <g transform={`translate(0 ${THICK}) matrix(1 0.5 -1 0.5 0 0)`}>
+              <g
+                transform={`translate(0 ${LAYER_THICKNESS}) matrix(1 0.5 -1 0.5 0 0)`}
+              >
                 <rect
                   className="ui-lyr-side"
-                  width={SIZE}
-                  height={SIZE}
+                  width={LAYER_SIDE_BEFORE_PROJECTION}
+                  height={LAYER_SIDE_BEFORE_PROJECTION}
                   rx={9}
                 />
                 <rect
                   className="ui-lyr-side-on"
-                  width={SIZE}
-                  height={SIZE}
+                  width={LAYER_SIDE_BEFORE_PROJECTION}
+                  height={LAYER_SIDE_BEFORE_PROJECTION}
                   rx={9}
                 />
               </g>
               <g transform="matrix(1 0.5 -1 0.5 0 0)">
                 <rect
                   className="ui-lyr-face"
-                  width={SIZE}
-                  height={SIZE}
+                  width={LAYER_SIDE_BEFORE_PROJECTION}
+                  height={LAYER_SIDE_BEFORE_PROJECTION}
                   rx={9}
                 />
                 <rect
                   className="ui-lyr-face-on"
-                  width={SIZE}
-                  height={SIZE}
+                  width={LAYER_SIDE_BEFORE_PROJECTION}
+                  height={LAYER_SIDE_BEFORE_PROJECTION}
                   rx={9}
                 />
                 <g
                   className="ui-lyr-icon"
-                  transform={`translate(${SIZE / 2 - 18} ${SIZE / 2 - 18}) scale(1.5)`}
+                  transform={`translate(${LAYER_SIDE_BEFORE_PROJECTION / 2 - 18} ${LAYER_SIDE_BEFORE_PROJECTION / 2 - 18}) scale(1.5)`}
                 >
                   {icons[item.icon ?? "bolt"]}
                 </g>
@@ -248,8 +233,6 @@ export function LayerStack({
   )
 }
 
-/* ---------- Icons, drawn on a 24 grid and laid onto the layer ---------- */
-
 const icons: Record<LayerIcon, ReactNode> = {
   bolt: <path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3Z" />,
   database: (
@@ -265,9 +248,7 @@ const icons: Record<LayerIcon, ReactNode> = {
   pulse: <path d="M3 12h4l2.5-6 5 12 2.5-6h4" />,
 }
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
+const css = `
 .ui-lyr {
   --u: calc(100cqw / 600);
   --ui-lyr-row: calc(52 * var(--u));
@@ -294,7 +275,6 @@ const css = /* css */ `
   -webkit-font-smoothing: antialiased;
 }
 .ui-lyr *, .ui-lyr *::before, .ui-lyr *::after { box-sizing: border-box; }
-
 
 .ui-lyr-stack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .ui-lyr-layer { transition: transform var(--duration-panel) var(--ease-panel); }
@@ -345,7 +325,6 @@ const css = /* css */ `
 .ui-lyr-layer[data-active] .ui-lyr-side-on { opacity: 1; }
 .ui-lyr-layer[data-active] .ui-lyr-face-on { opacity: 1; }
 .ui-lyr-layer[data-active] .ui-lyr-icon { opacity: 1; transition-delay: 120ms; }
-
 
 .ui-lyr-menu {
   position: absolute;

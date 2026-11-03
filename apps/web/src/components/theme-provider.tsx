@@ -4,10 +4,6 @@ type ThemeProviderProps = {
   children: React.ReactNode
 }
 
-/**
- * Light-only shell. The kit `.dark` token block stays dormant;
- * the undocumented `d` hotkey is gone.
- */
 export function ThemeProvider({ children }: ThemeProviderProps) {
   React.useEffect(() => {
     const root = document.documentElement

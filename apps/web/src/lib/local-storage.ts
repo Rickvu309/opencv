@@ -14,6 +14,6 @@ export function writeStored(key: string, value: string): void {
   try {
     window.localStorage.setItem(key, value)
   } catch {
-    // Private mode or blocked storage: the preference stays session-only.
+    return
   }
 }

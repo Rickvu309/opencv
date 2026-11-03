@@ -4,10 +4,6 @@ const AUTH_PATHS = new Set(["/sign-in", "/sign-up"])
 
 export const SIGNED_OUT_EMAIL_KEY = "opencv.signedOutEmail"
 
-/**
- * Only in-app paths. Rejects protocol-relative and auth-screen loops so a
- * crafted `?redirect=` cannot send the User off-origin.
- */
 export function safeRedirectPath(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined
 

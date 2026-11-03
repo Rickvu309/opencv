@@ -13,7 +13,6 @@ type ConfirmationProps = Omit<ComponentProps<"div">, "title"> & {
   pending?: boolean
 }
 
-/** Approve or deny a Coach step before it writes. Not wired: the api has no approval state (issue #305). */
 export function Confirmation({
   title,
   detail,

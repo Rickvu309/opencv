@@ -1,35 +1,32 @@
-/**
- * A block editor asks the dock to open with this text. The shell reads it
- * once. A second read in the same turn still sees it, because Strict Mode
- * renders twice before the draft is applied.
- */
-let pending: string | null = null
-let burst: string | null = null
+const UNREAD_DRAFT_LIFETIME_MS = 500
+
+let unreadDraft: string | null = null
+let draftForStrictModeReread: string | null = null
 let expiry: ReturnType<typeof setTimeout> | undefined
 const listeners = new Set<(text: string) => void>()
 
 export function publishCoachDraft(text: string) {
-  pending = text
-  burst = null
+  unreadDraft = text
+  draftForStrictModeReread = null
   for (const listener of listeners) listener(text)
   const published = text
   window.clearTimeout(expiry)
   expiry = window.setTimeout(() => {
-    if (pending === published) pending = null
-    if (burst === published) burst = null
-  }, 500)
+    if (unreadDraft === published) unreadDraft = null
+    if (draftForStrictModeReread === published) draftForStrictModeReread = null
+  }, UNREAD_DRAFT_LIFETIME_MS)
 }
 
 export function takeCoachDraft() {
-  if (pending != null) {
-    burst = pending
-    pending = null
+  if (unreadDraft != null) {
+    draftForStrictModeReread = unreadDraft
+    unreadDraft = null
     queueMicrotask(() => {
-      burst = null
+      draftForStrictModeReread = null
     })
-    return burst
+    return draftForStrictModeReread
   }
-  return burst
+  return draftForStrictModeReread
 }
 
 export function subscribeCoachDraft(listener: (text: string) => void) {

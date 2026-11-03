@@ -37,7 +37,6 @@ export function legacyPathname(pathname: string): string | undefined {
   return undefined
 }
 
-/** Keeps `?` query and `#` hash. Returns undefined when the path is not legacy. */
 export function legacyAppPath(path: string): string | undefined {
   const hashAt = path.indexOf("#")
   const hash = hashAt === -1 ? "" : path.slice(hashAt)

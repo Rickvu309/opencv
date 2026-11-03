@@ -5,7 +5,6 @@ import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { queryKey } from "@/lib/contract-client.ts"
 import { endpoints } from "@/lib/requests.ts"
 
-/** One key per account read, shared by every reader of it. */
 export const profileKey = () => queryKey({ query: "profile.get" })
 export const usageKey = () => queryKey({ query: "coach.usage" })
 export const integrationsKey = () => queryKey({ query: "integrations.list" })

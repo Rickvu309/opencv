@@ -17,12 +17,10 @@ export function queryKey(ref: QueryRef): readonly unknown[] {
   return ref.input ? [ref.query, ref.input] : [ref.query]
 }
 
-/** Activity rows for one subject, as `activity.list` returns them. */
 export function activityKey(subjectKind: string, subjectId: string) {
   return queryKey({ query: "activity.list", input: { subjectKind, subjectId } })
 }
 
-/** Any command may write an activity row, so every command refreshes this root. */
 export const ACTIVITY_ROOT = ["activity.list"] as const
 
 export function refreshQueries(queryClient: QueryClient, refs: QueryRef[]) {
@@ -34,7 +32,6 @@ export function refreshQueries(queryClient: QueryClient, refs: QueryRef[]) {
   ])
 }
 
-/** Refreshes exactly these reads, without the activity root `refreshQueries` adds. */
 export function refreshReads(queryClient: QueryClient, refs: QueryRef[]) {
   return Promise.all(
     refs.map((ref) =>
@@ -50,10 +47,6 @@ export type RunOptions = {
 
 export type CommandResult<T> = T & { activityId?: string }
 
-/**
- * Runs a contract command, then refreshes the reads its contract entry
- * says it invalidates.
- */
 export async function runContractCommand<N extends ContractCommandName>(
   queryClient: QueryClient,
   name: N,
@@ -81,7 +74,6 @@ export async function runContractCommand<N extends ContractCommandName>(
   return unwrapData(body)
 }
 
-/** Undo refreshes everything the reversal may have touched, as the contract says. */
 export async function undoActivity(
   queryClient: QueryClient,
   activityId: string
@@ -91,7 +83,6 @@ export async function undoActivity(
   })
 }
 
-/** `runContractCommand` bound to the app's QueryClient. */
 export function useRunCommand() {
   const queryClient = useQueryClient()
   return useCallback(

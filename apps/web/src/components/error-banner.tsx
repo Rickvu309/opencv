@@ -8,10 +8,6 @@ type ErrorBannerProps = {
   className?: string
 }
 
-/**
- * Shared error affordance. `banner` is the workspace strip; `inline` is the
- * compact alert used in chats and auth forms.
- */
 export function ErrorBanner({
   children,
   variant = "banner",

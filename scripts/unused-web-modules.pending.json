@@ -1,0 +1,47 @@
+[
+  {
+    "file": "apps/web/src/components/ai-elements/confirmation.tsx",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/components/coming-soon-label.ts",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/components/coming-soon.tsx",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/components/layer-stack.tsx",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/features/coach/coach-chat.tsx",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/features/coach/coach-mode-selector.tsx",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/features/commands/destructive-command-dialog.tsx",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/features/paper/paper-data.ts",
+    "issue": "#916",
+    "expires": "2026-12-01"
+  },
+  {
+    "file": "apps/web/src/lib/use-flash.ts",
+    "issue": "#1012",
+    "expires": "2026-12-01"
+  }
+]
