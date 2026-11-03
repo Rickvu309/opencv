@@ -30,7 +30,7 @@ Regenerate the release frame list with `node scripts/pen-release-frames.mjs <pen
 
 Signed-in screens match their pen frame in layout, not only in copy. A screen built from a frame gets an expected layout (`<screen>.layout.json`, recorded as below). Run `PORT=4450 pnpm --filter web verify:pen-layout` before marking a design PR ready and attach its output. Build each designed screen in its own component from its frame, not in a shared page template that predates it.
 
-`node scripts/pen-layout.mjs <pen> <frame id> apps/web/src/features/<feature>/design/<screen>.layout.json --route <path>` records every pen text's box, size, weight, tracking and colour. `verify:pen-layout` loads each layout's route at 1440x900.
+`node scripts/pen-layout.mjs <pen> <frame id> apps/web/src/features/<feature>/design/<screen>.layout.json --route <path>` records every pen text's box, size, weight, tracking and colour, and the box of every pen icon and small drawn box (`icons`, `boxes`), so a button that holds only an icon counts as drawn by the frame. `verify:pen-layout` loads each layout's route at 1440x900.
 
 `scripts/layout-comparison-gates.test.mjs` rejects a verify driver that calls `comparePenLayout` and never reads its `mismatches`. A `PENDING` entry (issue, expiry) lists an exception.
 

@@ -740,5 +740,30 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
-  ]
+  ],
+  "icons": [
+    { "icon": "chevron-right", "x": 64.5, "y": 20, "size": 13 },
+    { "icon": "pen-tool", "x": 85.5, "y": 19.5, "size": 14 },
+    { "icon": "star", "x": 208, "y": 19, "size": 15 },
+    { "icon": "ellipsis", "x": 242, "y": 19, "size": 15 },
+    { "icon": "chevron-up", "x": 1041.5, "y": 19, "size": 15 },
+    { "icon": "chevron-down", "x": 1077.5, "y": 19, "size": 15 },
+    { "icon": "link", "x": 1113.5, "y": 19, "size": 15 },
+    { "icon": "panel-right", "x": 1149.5, "y": 19, "size": 15 },
+    { "icon": "plus", "x": 117.5, "y": 690, "size": 13 },
+    { "icon": "calendar", "x": 117.5, "y": 718, "size": 13 },
+    { "icon": "circle-x", "x": 117.5, "y": 746, "size": 13 },
+    { "icon": "paperclip", "x": 730, "y": 875.5, "size": 15 },
+    { "icon": "arrow-up", "x": 760, "y": 876, "size": 14 },
+    { "icon": "chevron-down", "x": 987.5, "y": 77, "size": 12 },
+    { "icon": "x", "x": 924.5, "y": 110.5, "size": 9 },
+    { "icon": "map-pin", "x": 922, "y": 176, "size": 14 },
+    { "icon": "calendar", "x": 922, "y": 210, "size": 14 },
+    { "icon": "flag", "x": 922, "y": 244, "size": 14 },
+    { "icon": "link", "x": 922, "y": 312, "size": 14 },
+    { "icon": "chevron-down", "x": 961.5, "y": 361, "size": 12 },
+    { "icon": "file-text", "x": 922, "y": 392, "size": 14 },
+    { "icon": "plus", "x": 922, "y": 426, "size": 14 }
+  ],
+  "boxes": [{ "box": "Logo", "x": 110, "y": 128, "width": 22, "height": 22 }]
 }

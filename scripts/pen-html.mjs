@@ -40,6 +40,7 @@ const escapeHtml = (text) =>
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
 
 const findDescendant = (node, id) => {
   for (const child of node.children ?? []) {
@@ -325,9 +326,14 @@ export function penNodeToHtml(node, parent, ctx) {
     node.opacity != null ? `opacity:${node.opacity};` : "",
   ].join("")
   if (node.type === "text") return textNodeHtml(node, style, ctx)
-  const wrap = (css, inner) =>
-    `<div data-id="${node.id}" style="${style}${css}">${inner}</div>`
-  if (node.type === "icon") return wrap("", iconHtml(node, ctx))
+  const wrap = (css, inner, tag = "") =>
+    `<div data-id="${node.id}"${tag} style="${style}${css}">${inner}</div>`
+  if (node.type === "icon")
+    return wrap(
+      "",
+      iconHtml(node, ctx),
+      ` data-pen-icon="${escapeHtml(node.icon ?? "")}"`
+    )
   if (node.type === "path")
     return node.geometry ? wrap("", pathHtml(node, ctx)) : ""
   if (["frame", "rectangle", "ellipse"].includes(node.type)) {
@@ -337,7 +343,12 @@ export function penNodeToHtml(node, parent, ctx) {
         : (node.children ?? [])
             .map((child) => penNodeToHtml(child, node, ctx))
             .join("")
-    return wrap(containerCss(node, ctx), inner)
+    const drawn = node.type !== "ellipse" && strokeCss(node, ctx) !== ""
+    return wrap(
+      containerCss(node, ctx),
+      inner,
+      drawn ? ` data-pen-box="${escapeHtml(node.name ?? "")}"` : ""
+    )
   }
   return ""
 }

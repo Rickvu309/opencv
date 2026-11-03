@@ -124,5 +124,18 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
-  ]
+  ],
+  "icons": [
+    { "icon": "chevron-down", "x": 85.5, "y": 17, "size": 11 },
+    { "icon": "leaf", "x": 811.5, "y": 416, "size": 14 },
+    { "icon": "chevron-down", "x": 863, "y": 417, "size": 12 },
+    { "icon": "arrow-up", "x": 897.5, "y": 415.5, "size": 15 },
+    { "icon": "refresh-cw", "x": 269, "y": 482, "size": 16 },
+    { "icon": "send", "x": 407.5, "y": 482, "size": 16 },
+    { "icon": "scale", "x": 653.5, "y": 482, "size": 16 },
+    { "icon": "circle-user", "x": 850.5, "y": 482, "size": 16 },
+    { "icon": "building-2", "x": 1052.5, "y": 482, "size": 16 },
+    { "icon": "target", "x": 1266, "y": 482, "size": 16 }
+  ],
+  "boxes": [{ "box": "Attach", "x": 273, "y": 408, "width": 30, "height": 30 }]
 }

@@ -124,5 +124,16 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "kanban", "x": 21, "y": 20.5, "size": 13 },
+    { "icon": "chevron-right", "x": 79.5, "y": 21, "size": 12 },
+    { "icon": "x", "x": 583, "y": 19, "size": 16 },
+    { "icon": "link", "x": 33, "y": 68, "size": 14 },
+    { "icon": "paperclip", "x": 27.5, "y": 200.5, "size": 15 }
+  ],
+  "boxes": [
+    { "box": "Logo", "x": 33, "y": 126.5, "width": 28, "height": 28 },
+    { "box": "Open", "x": 524, "y": 126.5, "width": 71, "height": 28 }
   ]
 }

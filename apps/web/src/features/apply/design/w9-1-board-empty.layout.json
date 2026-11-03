@@ -138,5 +138,17 @@
       "background": "rgba(34, 34, 34, 0.06)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "layers-plus", "x": 266, "y": 68, "size": 14 },
+    { "icon": "check", "x": 560.5, "y": 389, "size": 12 }
+  ],
+  "boxes": [
+    { "box": "Add", "x": 1082.5, "y": 12.5, "width": 88.5, "height": 28 },
+    { "box": "Board", "x": 13, "y": 61, "width": 75, "height": 28 },
+    { "box": "List", "x": 94, "y": 61, "width": 61, "height": 28 },
+    { "box": "Calendar", "x": 161, "y": 61, "width": 92, "height": 28 },
+    { "box": "Filter", "x": 1113, "y": 61, "width": 28, "height": 28 },
+    { "box": "Display", "x": 1147, "y": 61, "width": 28, "height": 28 }
   ]
 }

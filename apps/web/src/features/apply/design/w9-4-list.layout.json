@@ -558,5 +558,28 @@
       "background": "rgba(244, 244, 245, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "layers-plus", "x": 266, "y": 68, "size": 14 },
+    { "icon": "chevron-down", "x": 23, "y": 118, "size": 12 },
+    { "icon": "chevron-down", "x": 23, "y": 248, "size": 12 },
+    { "icon": "chevron-down", "x": 23, "y": 378, "size": 12 },
+    { "icon": "calendar", "x": 967.5, "y": 417, "size": 12 },
+    { "icon": "chevron-right", "x": 23, "y": 508, "size": 12 },
+    { "icon": "chevron-right", "x": 23, "y": 554, "size": 12 }
+  ],
+  "boxes": [
+    { "box": "Add", "x": 1082.5, "y": 12.5, "width": 88.5, "height": 28 },
+    { "box": "Board", "x": 13, "y": 61, "width": 74.5, "height": 28 },
+    { "box": "List", "x": 93.5, "y": 61, "width": 61.5, "height": 28 },
+    { "box": "Calendar", "x": 161, "y": 61, "width": 92, "height": 28 },
+    { "box": "Filter", "x": 1113, "y": 61, "width": 28, "height": 28 },
+    { "box": "Display", "x": 1147, "y": 61, "width": 28, "height": 28 },
+    { "box": "Logo", "x": 25, "y": 153, "width": 20, "height": 20 },
+    { "box": "Logo", "x": 25, "y": 195, "width": 20, "height": 20 },
+    { "box": "Logo", "x": 25, "y": 283, "width": 20, "height": 20 },
+    { "box": "Logo", "x": 25, "y": 325, "width": 20, "height": 20 },
+    { "box": "Logo", "x": 25, "y": 413, "width": 20, "height": 20 },
+    { "box": "Logo", "x": 25, "y": 455, "width": 20, "height": 20 }
   ]
 }

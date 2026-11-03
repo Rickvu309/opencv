@@ -35,6 +35,7 @@ const hash = (file) =>
 const sourceHashes = () =>
   Object.fromEntries(files.map((file) => [file, hash(join(repo, file))]))
 const before = sourceHashes()
+const PEN_EMAIL = "linh.nguyen@gmail.com"
 const layout = JSON.parse(
   readFileSync(join(repo, design, "session-expired.layout.json"), "utf8")
 )
@@ -58,7 +59,7 @@ try {
     height: 900,
     mobile: false,
   })
-  await signInThrowaway({
+  const email = await signInThrowaway({
     page: signIn,
     webUrl,
     apiUrl,
@@ -154,17 +155,24 @@ try {
     )
       failed = true
     let comparison = null
+    const signedInTexts = layout.texts.map((entry) => ({
+      ...entry,
+      text: entry.text.replace(PEN_EMAIL, email),
+    }))
     if (width === layout.viewport.width) {
       const measured = await page.evaluate(
         probeSource({
           mode: "app",
           pane: "[role=dialog]",
-          texts: layout.texts,
+          texts: signedInTexts,
           tokens: TEXT_TOKENS,
         })
       )
       if (measured.error) throw new Error(measured.error)
-      comparison = comparePenLayout({ layout, ...measured })
+      comparison = comparePenLayout({
+        layout: { ...layout, texts: signedInTexts },
+        ...measured,
+      })
       if (comparison.mismatches.length) failed = true
     }
     const screenshot = `session-expired-${width}.png`

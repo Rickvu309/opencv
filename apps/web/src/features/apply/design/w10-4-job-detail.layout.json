@@ -698,5 +698,36 @@
       "background": "rgba(255, 255, 255, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "chevron-right", "x": 64.5, "y": 20, "size": 13 },
+    { "icon": "rocket", "x": 85.5, "y": 19.5, "size": 14 },
+    { "icon": "star", "x": 243, "y": 19, "size": 15 },
+    { "icon": "ellipsis", "x": 277, "y": 19, "size": 15 },
+    { "icon": "chevron-up", "x": 1041.5, "y": 19, "size": 15 },
+    { "icon": "chevron-down", "x": 1077.5, "y": 19, "size": 15 },
+    { "icon": "link", "x": 1113.5, "y": 19, "size": 15 },
+    { "icon": "panel-right", "x": 1149.5, "y": 19, "size": 15 },
+    { "icon": "chevron-down", "x": 110, "y": 642, "size": 13 },
+    { "icon": "plus", "x": 776, "y": 641.5, "size": 14 },
+    { "icon": "check", "x": 120.5, "y": 673.5, "size": 10 },
+    { "icon": "plus", "x": 117.5, "y": 830.5, "size": 13 },
+    { "icon": "file-text", "x": 117.5, "y": 858.5, "size": 13 },
+    { "icon": "arrow-right", "x": 117.5, "y": 886.5, "size": 13 },
+    { "icon": "paperclip", "x": 730, "y": 1016.5, "size": 15 },
+    { "icon": "arrow-up", "x": 760, "y": 1017, "size": 14 },
+    { "icon": "chevron-down", "x": 987.5, "y": 77, "size": 12 },
+    { "icon": "map-pin", "x": 922, "y": 176, "size": 14 },
+    { "icon": "calendar", "x": 922, "y": 210, "size": 14 },
+    { "icon": "flag", "x": 922, "y": 244, "size": 14 },
+    { "icon": "link", "x": 922, "y": 312, "size": 14 },
+    { "icon": "chevron-down", "x": 961.5, "y": 361, "size": 12 },
+    { "icon": "file-text", "x": 922, "y": 392, "size": 14 },
+    { "icon": "plus", "x": 922, "y": 426, "size": 14 }
+  ],
+  "boxes": [
+    { "box": "Logo", "x": 110, "y": 128, "width": 22, "height": 22 },
+    { "box": "Check", "x": 118, "y": 705, "width": 15, "height": 15 },
+    { "box": "Check", "x": 118, "y": 739, "width": 15, "height": 15 }
   ]
 }

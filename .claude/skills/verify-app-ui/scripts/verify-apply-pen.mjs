@@ -143,6 +143,10 @@ async function main() {
         const layout = {
           ...full,
           texts: full.texts.filter((text) => !(text.text in notShown)),
+          boxes: [
+            ...(full.boxes ?? []),
+            ...full.texts.filter((text) => text.text in notShown),
+          ],
         }
         const [first, ...include] = root.split(",")
         const pane = first === MAIN ? `[data-slot="app-shell"] ${MAIN}` : first
@@ -160,6 +164,7 @@ async function main() {
           layout,
           measured: box.measured,
           tokens: box.tokens,
+          extras: box.extras,
           exceptions: LAYOUT_EXCEPTIONS,
         })
         // A colour mismatch stands unless every copy of that text that misses

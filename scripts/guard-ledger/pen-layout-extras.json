@@ -1,0 +1,6 @@
+{
+  "id": "pen-layout-extras",
+  "file": ".claude/skills/verify-app-ui/scripts/lib/pen-layout-compare.test.mjs",
+  "historic": null,
+  "reason": "the mistake shows only in a rendered screen, and the fix 5cc9508e no longer reverts cleanly; proved once by running the sidebar check on the tree before that fix"
+}

@@ -7,7 +7,11 @@ import { must } from "./lib/apply-pen-seed.mjs"
 import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { repo } from "./lib/check-util.mjs"
-import { colorDistance } from "./lib/pen-layout-compare.mjs"
+import {
+  colorDistance,
+  comparePenLayout,
+  formatMismatch,
+} from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 import { checkGeometry, geometry } from "./lib/sidebar-geometry.mjs"
 import { checkResize } from "./lib/sidebar-resize-checks.mjs"
@@ -191,6 +195,16 @@ const measureText = async (page, tag, height, active) => {
   report.measured = report.measured ?? {}
   report.measured[tag] = result.measured
   compare(tag, height, active, result.measured)
+  const mismatches = comparePenLayout({
+    layout,
+    measured: result.measured,
+    extras: result.extras,
+    reportStale: false,
+  }).mismatches.filter((m) => m.property === "extra")
+  if (!mismatches.length)
+    check(true, `${tag} shows nothing the pen frame lacks`)
+  for (const m of mismatches)
+    check(false, `${tag} ${formatMismatch(layout, m).replace(/^FAIL /, "")}`)
 }
 
 async function sheet(page, name, penFile, appFile, height) {

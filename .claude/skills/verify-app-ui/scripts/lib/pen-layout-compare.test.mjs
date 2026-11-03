@@ -8,6 +8,8 @@ import {
   comparePenLayout,
   formatMismatch,
   PEN_LAYOUT_EXCEPTIONS,
+  PENDING_EXTRAS,
+  pendingExtraProblems,
 } from "./pen-layout-compare.mjs"
 
 const here = new URL(".", import.meta.url)
@@ -219,4 +221,274 @@ test("a pen colour that passes AA still fails when the app text is unreadable", 
   }
   const app = { ...pen, background: "rgba(255, 255, 255, 1)" }
   assert.equal(colorMatches(pen, app, tokens), false)
+})
+
+const extra = (over = {}) => ({
+  kind: "control",
+  text: "Collapse sidebar",
+  x: 200,
+  y: 12,
+  width: 24,
+  height: 24,
+  ...over,
+})
+const runExtras = (extras, exceptions = [], extraKinds = undefined) =>
+  comparePenLayout({
+    layout: layout([text()]),
+    measured: [text()],
+    extras,
+    extraKinds,
+    exceptions,
+    today: "2026-10-28",
+  })
+
+test("a control the frame lacks fails as an extra", () => {
+  const result = runExtras([extra()])
+  assert.deepEqual(properties(result), ["extra"])
+  assert.equal(result.mismatches[0].text, "Collapse sidebar")
+  assert.equal(result.mismatches[0].pen, "absent")
+  assert.match(
+    formatMismatch(layout([text()]), result.mismatches[0]),
+    /^FAIL TEST1 \/test "Collapse sidebar" extra: pen absent app control at 200,12$/
+  )
+})
+
+test("a text the frame lacks fails as an extra", () => {
+  const result = runExtras(
+    [extra({ kind: "text", text: "Helper line the frame hides" })],
+    [],
+    ["text", "heading", "control"]
+  )
+  assert.deepEqual(properties(result), ["extra"])
+  assert.deepEqual(
+    runExtras([extra({ kind: "text", text: "Helper line the frame hides" })])
+      .mismatches,
+    []
+  )
+})
+
+test("a heading in another case is missing and names the frame text", () => {
+  const result = comparePenLayout({
+    layout: layout([text({ text: "Your Letters" })]),
+    measured: [null],
+    extras: [extra({ kind: "heading", text: "Your letters" })],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(properties(result), ["text", "extra"])
+  assert.equal(result.mismatches[1].pen, '"Your Letters"')
+})
+
+test("a frame with no extras passes", () => {
+  assert.deepEqual(runExtras([]).mismatches, [])
+})
+
+test("an extra exception hides the extra while live and fails when expired", () => {
+  const hide = exception({
+    text: "Collapse sidebar",
+    property: "extra",
+  })
+  assert.deepEqual(runExtras([extra()], [hide]).mismatches, [])
+  const prefixed = exception({
+    text: undefined,
+    textStartsWith: "Collapse",
+    property: "extra",
+  })
+  assert.deepEqual(runExtras([extra()], [prefixed]).mismatches, [])
+  assert.deepEqual(
+    properties(runExtras([extra()], [{ ...hide, until: "2026-01-01" }])),
+    ["exception", "extra"]
+  )
+})
+
+test("an extra exception for a control that no longer renders fails as stale", () => {
+  const hide = exception({ text: "Collapse sidebar", property: "extra" })
+  const result = runExtras([], [hide])
+  assert.deepEqual(properties(result), ["exception"])
+  assert.equal(result.mismatches[0].app, "stale, the app no longer shows it")
+  assert.deepEqual(
+    comparePenLayout({
+      layout: layout([text()]),
+      measured: [text()],
+      exceptions: [hide],
+      reportStale: false,
+      today: "2026-10-28",
+    }).mismatches,
+    []
+  )
+})
+
+test("an expired extra exception fails even when its control is gone", () => {
+  const gone = exception({
+    text: "Collapse sidebar",
+    property: "extra",
+    until: "2026-10-01",
+  })
+  for (const reportStale of [true, false]) {
+    const result = comparePenLayout({
+      layout: layout([text()]),
+      measured: [text()],
+      exceptions: [gone],
+      reportStale,
+      today: "2026-10-28",
+    })
+    assert.deepEqual(properties(result), ["exception"])
+    assert.equal(result.mismatches[0].app, "expired")
+  }
+})
+
+test("a pending list passed in replaces the shipped one", () => {
+  const pendingOnly = exception({ text: "Collapse sidebar", property: "extra" })
+  const result = comparePenLayout({
+    layout: layout([text()]),
+    measured: [text()],
+    extras: [extra()],
+    exceptions: [],
+    pendingExtras: [pendingOnly],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(result.mismatches, [])
+})
+
+const iconAt = (x, y) => ({ icon: "x", x, y, size: 16 })
+const runDrawn = (marks, controlOver = {}) =>
+  comparePenLayout({
+    layout: { ...layout([text()]), ...marks },
+    measured: [text()],
+    extras: [extra(controlOver)],
+    today: "2026-10-28",
+  })
+
+test("an icon-only control sitting on a frame icon is accounted for", () => {
+  assert.deepEqual(runDrawn({ icons: [iconAt(204, 16)] }).mismatches, [])
+  assert.deepEqual(
+    runDrawn({ icons: [iconAt(212, 20)] }, { x: 205 }).mismatches,
+    []
+  )
+})
+
+test("an icon-only control far from every frame icon still fails", () => {
+  assert.deepEqual(properties(runDrawn({ icons: [iconAt(600, 400)] })), [
+    "extra",
+  ])
+  assert.deepEqual(properties(runDrawn({})), ["extra"])
+})
+
+test("a control on a small drawn box is accounted for", () => {
+  const box = { box: "Digit 4", x: 200, y: 12, width: 48, height: 56 }
+  assert.deepEqual(runDrawn({ boxes: [box] }).mismatches, [])
+})
+
+test("a control on a frame text the app did not show is accounted for", () => {
+  const result = comparePenLayout({
+    layout: layout([text({ x: 200, y: 12, width: 60, height: 20 })]),
+    measured: [null],
+    extras: [extra()],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(properties(result), ["text"])
+})
+
+test("a frame icon does not account for a heading", () => {
+  const result = comparePenLayout({
+    layout: { ...layout([text()]), icons: [iconAt(204, 16)] },
+    measured: [text()],
+    extras: [extra({ kind: "heading", text: "Not in the frame" })],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(properties(result), ["extra"])
+})
+
+test("only the chosen kinds of extra count", () => {
+  const result = comparePenLayout({
+    layout: layout([text()]),
+    measured: [text()],
+    extras: [extra({ kind: "text", text: "Plain" }), extra()],
+    extraKinds: ["control", "heading"],
+  })
+  assert.deepEqual(
+    result.mismatches.map((m) => m.text),
+    ["Collapse sidebar"]
+  )
+})
+
+const PENDING_KINDS = ["drift", "fenced", "data", "unexplained"]
+
+test("every pending extra names an issue, a date, a frame, a kind and a reason", () => {
+  for (const entry of PENDING_EXTRAS) {
+    assert.match(entry.issue, /^#\d+$/)
+    assert.match(entry.until, /^\d{4}-\d{2}-\d{2}$/)
+    assert.ok(entry.frameId)
+    assert.ok(entry.text || entry.textStartsWith)
+    assert.ok(PENDING_KINDS.includes(entry.kind), entry.kind)
+    assert.ok(entry.reason.length > 20, entry.reason)
+  }
+})
+
+test("a pending extra is listed once", () => {
+  const keys = PENDING_EXTRAS.map(
+    (entry) => `${entry.frameId}|${entry.text ?? entry.textStartsWith}`
+  )
+  assert.equal(new Set(keys).size, keys.length)
+})
+
+const designFrameIds = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../../../../apps/web/src/test/design-frames.json",
+      import.meta.url
+    ),
+    "utf8"
+  )
+).frames.map((frame) => frame.id)
+
+const pendingEntry = (over = {}) => ({
+  frameId: designFrameIds[0],
+  text: "Location",
+  issue: "#951",
+  until: "2026-12-01",
+  ...over,
+})
+
+test("every pending extra names a frame in design-frames.json, whichever screen runs", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: PENDING_EXTRAS,
+      frameIds: designFrameIds,
+      today: "2000-01-01",
+    }),
+    []
+  )
+})
+
+test("a pending extra fails on a frame id that design-frames.json lacks", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: [pendingEntry({ frameId: "NoSuchFrame" })],
+      frameIds: designFrameIds,
+      today: "2026-11-03",
+    }),
+    ['NoSuchFrame "Location": frame is not in design-frames.json']
+  )
+})
+
+test("a pending extra fails after its date even when no driver compares its frame", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: [pendingEntry({ until: "2026-11-02" })],
+      frameIds: designFrameIds,
+      today: "2026-11-03",
+    }),
+    [`${designFrameIds[0]} "Location": pending until 2026-11-02 (#951)`]
+  )
+})
+
+test("a pending extra on its last day still passes", () => {
+  assert.deepEqual(
+    pendingExtraProblems({
+      entries: [pendingEntry({ until: "2026-11-03" })],
+      frameIds: designFrameIds,
+      today: "2026-11-03",
+    }),
+    []
+  )
 })

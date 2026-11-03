@@ -127,7 +127,7 @@ try {
       20000
     )
     await tab.sleep(400)
-    const { measured, tokens } = await measureStable(tab, layout)
+    const { measured, tokens, extras } = await measureStable(tab, layout)
     raw[layout.frameId] = measured
     if (shots) {
       const slug = layout.route
@@ -135,7 +135,12 @@ try {
         .replace(/^-|-$/g, "")
       await tab.screenshot(join(shots, `${layout.frameId}-${slug}.png`), false)
     }
-    const { texts, mismatches } = comparePenLayout({ layout, measured, tokens })
+    const { texts, mismatches } = comparePenLayout({
+      layout,
+      measured,
+      tokens,
+      extras,
+    })
     for (const m of mismatches) console.log(formatMismatch(layout, m))
     console.log(
       `${mismatches.length ? "FAIL" : "PASS"} ${layout.frameId} ${layout.route}: ${texts} texts, ${mismatches.length} mismatches`

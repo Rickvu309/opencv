@@ -389,5 +389,16 @@
       "background": "rgba(241, 241, 242, 1)",
       "textAlign": "left"
     }
+  ],
+  "icons": [
+    { "icon": "bell", "x": 468.5, "y": 314.5, "size": 15 },
+    { "icon": "arrow-right", "x": 725.5, "y": 315.5, "size": 13 },
+    { "icon": "search", "x": 245, "y": 414.5, "size": 15 }
+  ],
+  "boxes": [
+    { "box": "Junior", "x": 231, "y": 454, "width": 57.5, "height": 26 },
+    { "box": "Full-time", "x": 294.5, "y": 454, "width": 71.5, "height": 26 },
+    { "box": "Hybrid", "x": 372, "y": 454, "width": 60, "height": 26 },
+    { "box": "Salary", "x": 438, "y": 454, "width": 57.5, "height": 26 }
   ]
 }
