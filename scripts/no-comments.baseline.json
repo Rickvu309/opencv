@@ -223,6 +223,7 @@
   "packages/domain/src/queries.ts": 1,
   "packages/domain/src/receipt-copy.ts": 6,
   "packages/domain/src/starter.ts": 2,
+  "scripts/check.mjs": 1,
   "scripts/doc-paths.test.mjs": 8,
   "scripts/ocv-tools/approve.mjs": 3,
   "scripts/ocv-tools/board.mjs": 6,
