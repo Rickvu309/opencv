@@ -1,0 +1,18 @@
+{
+  "id": "job-board-queue",
+  "file": "apps/web/src/features/apply/apply-board-queue.test.tsx",
+  "historic": {
+    "mode": "restore",
+    "sha": "a8bf0fd6",
+    "paths": ["apps/web/src/features/apply/apply-board.tsx"],
+    "command": [
+      "pnpm",
+      "--filter",
+      "web",
+      "exec",
+      "vitest",
+      "run",
+      "src/features/apply/apply-board-queue.test.tsx"
+    ]
+  }
+}
