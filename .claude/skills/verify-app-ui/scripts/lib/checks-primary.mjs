@@ -54,3 +54,35 @@ export function keyboardPrimaryCheck(d) {
     lost.map(noMarker)
   )
 }
+
+const snap = (buttons, primaryMarks = 1) => ({ buttons, primaryMarks })
+const smallPrimary = snap([{ primary: true, label: "New", h: 20 }])
+const wellSized = snap([{ primary: true, label: "New", h: 32 }])
+export const badFixture = [
+  {
+    name: "a primary button under 32px",
+    fails: () =>
+      primaryButtonCheck({
+        apply: smallPrimary,
+        paper: wellSized,
+        pitchEdit: wellSized,
+      }).status === "FAIL",
+  },
+  {
+    name: "two primary actions on one screen",
+    fails: () =>
+      primaryButtonCheck({
+        apply: snap(wellSized.buttons, 2),
+        paper: wellSized,
+        pitchEdit: wellSized,
+      }).status === "FAIL",
+  },
+  {
+    name: "a primary action the keyboard reaches after 45 Tabs",
+    fails: () =>
+      keyboardPrimaryCheck({
+        tabs: { apply: { reached: 45 } },
+        apply: wellSized,
+      }).status === "FAIL",
+  },
+]

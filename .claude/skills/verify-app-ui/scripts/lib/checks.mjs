@@ -3,6 +3,7 @@
 // signed-in tour adds. A rule says when it is a heuristic. Source reads are named as such.
 import { contentChecks } from "./checks-content.mjs"
 import { motionChecks } from "./checks-source.mjs"
+import { contrastCheck } from "./checks-contrast.mjs"
 import {
   brandViolations,
   capturedGlowViews,
@@ -115,24 +116,7 @@ export function runChecks(d, want = () => true) {
     )
 
   const sum = (key, f) => allSnaps.reduce((n, s) => n + f(s[key]), 0)
-  const cfails = allSnaps.flatMap((s) => s.contrast.fails)
-  const ccount = sum("contrast", (x) => x.failCount)
-  r.push(
-    result(
-      "20",
-      "text-contrast",
-      ccount === 0,
-      `${ccount} of ${sum("contrast", (x) => x.checked)} text nodes fail${
-        cfails.length
-          ? `: ${list(
-              cfails.map((f) => `"${f.text}" ${f.ratio}:1 needs ${f.need}`),
-              3
-            )}`
-          : ""
-      }`,
-      "text is 4.5:1, or 3:1 at 24px (18.66px bold); text over images and gradients, disabled controls, aria-hidden text and svg are skipped"
-    )
-  )
+  r.push(contrastCheck(allSnaps))
 
   const tfail = sum("targets", (x) => x.fail)
   r.push(
@@ -457,3 +441,14 @@ export function runChecks(d, want = () => true) {
   )
   return r.sort((a, b) => a.id.localeCompare(b.id))
 }
+
+export const badFixture = [
+  {
+    name: "a CV toolbar with no undo",
+    fails: () => !cvToolbarCheck([{ label: "Bold" }], []).pass,
+  },
+  {
+    name: "a Coach change with a reject control",
+    fails: () => cvToolbarCheck([], [{ label: "Reject" }]).reject,
+  },
+]

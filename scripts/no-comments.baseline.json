@@ -19,7 +19,7 @@
   ".claude/skills/verify-app-ui/scripts/lib/probe-colors.mjs": 8,
   ".claude/skills/verify-app-ui/scripts/lib/probe.mjs": 14,
   ".claude/skills/verify-app-ui/scripts/lib/stack.mjs": 2,
-  ".claude/skills/verify-app-ui/scripts/lib/text-rules.mjs": 27,
+  ".claude/skills/verify-app-ui/scripts/lib/text-rules.mjs": 26,
   ".claude/skills/verify-app-ui/scripts/lib/tier.mjs": 4,
   ".claude/skills/verify-app-ui/scripts/lib/tour.mjs": 4,
   ".claude/skills/verify-app-ui/scripts/verify-app-ui.mjs": 12,

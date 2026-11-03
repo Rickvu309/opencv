@@ -98,3 +98,35 @@ export function plantCover(probe) {
   return result
 })()`
 }
+
+export const badFixture = [
+  {
+    name: "a picture text covered by another element",
+    fails: () =>
+      judgeCoveredText({
+        tag: "pitch",
+        result: {
+          surfaces: 1,
+          texts: 9,
+          clipped: 0,
+          covered: [{ text: "Revenue", by: 'div "card"', x: 10, y: 20 }],
+        },
+      }).length > 0,
+  },
+  {
+    name: "no picture surface on the page",
+    fails: () =>
+      judgeCoveredText({
+        tag: "pitch",
+        result: { surfaces: 0, texts: 0, clipped: 0, covered: [] },
+      }).length > 0,
+  },
+  {
+    name: "too few readable texts to prove anything",
+    fails: () =>
+      judgeCoveredText({
+        tag: "pitch",
+        result: { surfaces: 1, texts: 3, clipped: 1, covered: [] },
+      }).length > 0,
+  },
+]

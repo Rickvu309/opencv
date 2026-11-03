@@ -232,3 +232,34 @@ export function comparePen(
 
 export const stylesPath = (repo, feature, slug) =>
   join(repo, "apps/web/src/features", feature, "design", `${slug}.styles.json`)
+
+const BAD_STYLES = new URL("./fixtures/bad-pen-styles.json", import.meta.url)
+const saveText = (text, color) => ({
+  text,
+  color,
+  fontSize: 14,
+  fontWeight: "400",
+  lineHeight: 20,
+  letterSpacing: 0,
+})
+const saveIcon = { w: 16, h: 16 }
+const failures = (texts, marks = [saveIcon]) =>
+  comparePen(BAD_STYLES, { texts, marks }).failures
+export const badFixture = [
+  {
+    name: "white text where the pen draws grey",
+    fails: () => failures([saveText("Save", [255, 255, 255])]).length > 0,
+  },
+  {
+    name: "a pen text the screen does not show",
+    fails: () => failures([]).length > 0,
+  },
+  {
+    name: "a longer text that only contains the pen text",
+    fails: () => failures([saveText("Save draft", [160, 160, 162])]).length > 0,
+  },
+  {
+    name: "a pen icon the screen does not draw",
+    fails: () => failures([saveText("Save", [160, 160, 162])], []).length > 0,
+  },
+]

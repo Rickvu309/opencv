@@ -75,3 +75,14 @@ export function loadSpecOrError() {
     return { error: `cannot read ${FILES.spec}: ${error.message}` }
   }
 }
+
+export const badFixture = [
+  {
+    name: "a spec with no sections",
+    fails: () => specProblem({}) !== null,
+  },
+  {
+    name: "a spec whose section lacks its fields",
+    fails: () => specProblem({ 27: {}, 28: {}, 29: {}, 30: {} }) !== null,
+  },
+]

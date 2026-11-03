@@ -336,3 +336,26 @@ export function textStyleVerdict(penSections) {
     measured
   )
 }
+
+const drift = {
+  section: "Statement",
+  text: "One link",
+  property: "color",
+  line: '[Statement] "One link" color #FFFFFF pen #111111',
+}
+const exception = { ...drift, until: "2026-12-01" }
+export const badFixture = [
+  {
+    name: "a mismatch with no exception",
+    fails: () => unexcusedFailures([drift], [], "2026-11-03").length > 0,
+  },
+  {
+    name: "an exception past its date",
+    fails: () =>
+      unexcusedFailures([drift], [exception], "2027-01-01").length > 0,
+  },
+  {
+    name: "an exception for a property that now matches",
+    fails: () => unexcusedFailures([], [exception], "2026-11-03").length > 0,
+  },
+]

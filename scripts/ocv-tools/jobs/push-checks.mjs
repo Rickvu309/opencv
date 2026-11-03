@@ -38,6 +38,7 @@ export const FAST_GUARDS = Object.freeze([
   "scripts/touch-targets.test.mjs",
   "scripts/unbounded-spawn.test.mjs",
   "scripts/unused-domain-exports.test.mjs",
+  "scripts/verify-bad-fixtures.test.mjs",
   "scripts/verify-feature-map.test.mjs",
   "scripts/web-test-clock.test.mjs",
   "scripts/ocv-tools/rules-doc.test.mjs",

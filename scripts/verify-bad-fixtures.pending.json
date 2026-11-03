@@ -1,0 +1,166 @@
+{
+  "notChecks": [
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/apply-pen-page.mjs",
+      "why": "in-page helpers for the Apply pen run, and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/apply-pen-seed.mjs",
+      "why": "seeds Apply data and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/assumes.mjs",
+      "why": "lists what the checker assumes about the app, and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs",
+      "why": "speaks the browser protocol and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/kinds.mjs",
+      "why": "names the check kinds and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/oklch.mjs",
+      "why": "converts colours and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/session.mjs",
+      "why": "opens the browser session and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/stack.mjs",
+      "why": "starts and stops the local stack and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/tier.mjs",
+      "why": "sorts checks into tiers and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/tour.mjs",
+      "why": "walks the pages to collect data and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/assumes.mjs",
+      "why": "lists what the checker assumes about the app, and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/cdp.mjs",
+      "why": "speaks the browser protocol and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/kinds.mjs",
+      "why": "names the check kinds and makes no verdict"
+    }
+  ],
+  "pending": [
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/apply-pen-gaps.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "its faint-grey rule needs a measured Apply text"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/checks-source.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it reads the app source folders, so its bad sample needs a stand-in source tree"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/pen-layout-probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/probe-colors.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page; its contrast, target-size and overflow rules need a saved page"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-account-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-collapsed-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-drag-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-geometry.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it measures a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-interactions.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-resize-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-resize-shared.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/sidebar-round3-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it drives a live sidebar"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/design-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it judges a measured desktop page and the design spec"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/design-probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/page-checks.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "its contrast and target rules need a saved page measurement"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/pen-probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/probe.mjs",
+      "issue": "#963",
+      "expires": "2026-12-15",
+      "reason": "it runs inside a live page"
+    }
+  ]
+}

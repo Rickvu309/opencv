@@ -110,3 +110,24 @@ export function fractionOfPixelsOverDelta(live, reference, channel) {
   }
   return { ratio: bad / n, bad, compared: n, reason: "" }
 }
+
+const solid = (value) => ({
+  width: 2,
+  height: 2,
+  rgba: new Uint8Array(16).fill(value),
+})
+export const badFixture = [
+  {
+    name: "a render with another size than the reference",
+    fails: () =>
+      fractionOfPixelsOverDelta(
+        { width: 3, height: 2, rgba: new Uint8Array(24) },
+        solid(0),
+        4
+      ).ratio === 1,
+  },
+  {
+    name: "a render whose pixels all differ from the reference",
+    fails: () => fractionOfPixelsOverDelta(solid(255), solid(0), 4).ratio > 0.5,
+  },
+]

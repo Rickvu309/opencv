@@ -269,3 +269,23 @@ export function contentChecks(d, want = () => true) {
   )
   return r
 }
+
+const alertSnap = (alerts) => ({ alerts, stubHits: 1 })
+export const badFixture = [
+  {
+    name: "the raw api message after a 404",
+    fails: () =>
+      coachErrorCheck({
+        coachError: alertSnap(["User not found."]),
+        coachNet: alertSnap(["Could not send. Try again."]),
+      }).status === "FAIL",
+  },
+  {
+    name: "no error shown after a refused connection",
+    fails: () =>
+      coachErrorCheck({
+        coachError: alertSnap(["Could not send. Try again."]),
+        coachNet: alertSnap([]),
+      }).status === "FAIL",
+  },
+]

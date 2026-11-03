@@ -135,23 +135,6 @@ export function offTokenDurations(value) {
   return parseDurations(value).filter((ms) => !ALLOWED_MS.has(ms))
 }
 
-// 20. WCAG relative luminance and contrast ratio over [r, g, b] in 0..255.
-export function luminance([r, g, b]) {
-  const f = (c) => {
-    const s = c / 255
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-  }
-  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
-}
-export function contrastRatio(a, b) {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
-  return (hi + 0.05) / (lo + 0.05)
-}
-export function contrastNeeded(fontPx, weight) {
-  const large = fontPx >= 24 || (fontPx >= 18.66 && weight >= 700)
-  return large ? 3 : 4.5
-}
-
 // 19. Chroma of an sRGB colour (max minus min, 0..1) and its hue in degrees.
 export function chroma([r, g, b]) {
   return (Math.max(r, g, b) - Math.min(r, g, b)) / 255
@@ -224,3 +207,62 @@ export function exclamationViolations(labels) {
   const oops = new RegExp(copy.oops, "i")
   return labels.filter((label) => label.includes("!") || oops.test(label))
 }
+
+export const badFixture = [
+  {
+    name: "a retired noun in chrome",
+    fails: () => nounViolations(["Open my threads"]).length > 0,
+  },
+  {
+    name: "a label that gives no action",
+    fails: () => emptyActionLabels(["Click here"]).length > 0,
+  },
+  {
+    name: "another product's name",
+    fails: () => otherProductNames("Share on Instagram").length > 0,
+  },
+  {
+    name: "a metric claim with no basis",
+    fails: () =>
+      metricClaims("Boosts offers by 40%").length > 0 &&
+      !hasBasisSentence("Boosts offers by 40%"),
+  },
+  {
+    name: "the raw api message on the page",
+    fails: () => showsRawMessage("Error: User not found.", "User not found."),
+  },
+  {
+    name: "a duration off the motion tokens",
+    fails: () => offTokenDurations("300ms").length > 0,
+  },
+  { name: "an off-scale spacing", fails: () => !onSpacingScale(5) },
+  {
+    name: "the brand spelled with capitals",
+    fails: () => brandViolations(["OpenCV home"]).length > 0,
+  },
+  {
+    name: "two glow primaries inside a nested mobile view",
+    fails: () =>
+      extraGlowPrimaries(
+        capturedGlowViews({ mobile: { apply: { glowCount: 2 } } }).map(
+          (view) => view.count
+        )
+      ).length > 0,
+  },
+  {
+    name: "an em dash in copy",
+    fails: () => dashViolations(["Saved — done"]).length > 0,
+  },
+  {
+    name: "a toggle that reads On",
+    fails: () => toggleViolations(["On"]).length > 0,
+  },
+  {
+    name: "a job line that leads with the company",
+    fails: () => titleBeforeCompany(["at Acme"]).length > 0,
+  },
+  {
+    name: "an exclamation mark",
+    fails: () => exclamationViolations(["Saved!"]).length > 0,
+  },
+]
