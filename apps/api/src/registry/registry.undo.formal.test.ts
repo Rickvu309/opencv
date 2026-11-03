@@ -25,7 +25,6 @@ import {
 } from "../test/registry-formal-support.js"
 
 registerBackendHooks()
-// ---------------------------------------------------------------- P3 ----
 
 describe("P3: an activity row is undone at most once", () => {
   it("N racing undos run the reversal once; the rest are refused as already undone", async () => {
@@ -58,12 +57,14 @@ describe("P3: an activity row is undone at most once", () => {
             expect(error?.code, label).toBe("CONFLICT")
             expect(error?.message, label).toMatch(/already undone/)
           }
-          // The reversal's own key is recorded once, in whichever table it writes.
           const reversalKey = `undo:${activityId}`
           const recorded =
             (await activityKeyed(userId, reversalKey)).length +
             (await storedKeyed(userId, reversalKey)).length
-          expect(recorded, `${label}: reversal recorded`).toBe(1)
+          expect(
+            recorded,
+            `${label}: the reversal key is recorded once, in whichever table it writes`
+          ).toBe(1)
           const [row] = await backend.db
             .select()
             .from(activity)

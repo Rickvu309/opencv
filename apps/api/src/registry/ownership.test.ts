@@ -5,9 +5,7 @@ import { describe, expect, it } from "vitest"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
-// Each table is written only by the files under its owner. auth.ts is Better
-// Auth's own wiring and owns the auth tables with the account module.
-const owners: Record<string, string[]> = {
+const writersOfTable: Record<string, string[]> = {
   user: ["account", "auth.ts"],
   session: ["account", "auth.ts"],
   account: ["account", "auth.ts"],
@@ -30,8 +28,7 @@ const owners: Record<string, string[]> = {
   idempotency: ["registry"],
 }
 
-// Tests and the coverage fixtures that only tests import may seed any table.
-function isSupport(relative: string) {
+function maySeedAnyTable(relative: string) {
   return (
     relative.endsWith(".test.ts") ||
     relative.endsWith(".type-test.ts") ||
@@ -66,12 +63,12 @@ describe("a table write from outside the owning module's directory is rejected",
     ].map((match) => match[1] ?? "")
     expect(tables.length).toBeGreaterThan(0)
     expect(
-      tables.filter((table) => !owners[table]),
-      "A table in apps/api/src/db/schema.ts has no row in `owners` in ownership.test.ts. Add the table with the module directory that writes it."
+      tables.filter((table) => !writersOfTable[table]),
+      "A table in apps/api/src/db/schema.ts has no row in `writersOfTable` in ownership.test.ts. Add the table with the module directory that writes it."
     ).toEqual([])
     expect(
-      Object.keys(owners).filter((name) => !tables.includes(name)),
-      "`owners` in ownership.test.ts names a table that apps/api/src/db/schema.ts no longer defines. Delete the row."
+      Object.keys(writersOfTable).filter((name) => !tables.includes(name)),
+      "`writersOfTable` in ownership.test.ts names a table that apps/api/src/db/schema.ts no longer defines. Delete the row."
     ).toEqual([])
   })
 
@@ -79,9 +76,9 @@ describe("a table write from outside the owning module's directory is rejected",
     const violations: string[] = []
     for (const file of filesUnder(srcRoot)) {
       const relative = path.relative(srcRoot, file)
-      if (isSupport(relative)) continue
+      if (maySeedAnyTable(relative)) continue
       for (const table of writesIn(readFileSync(file, "utf8"))) {
-        const allowed = owners[table]
+        const allowed = writersOfTable[table]
         if (!allowed) continue
         if (allowed.some((owner) => ownedBy(relative, owner))) continue
         violations.push(`${relative} writes ${table}`)
@@ -89,7 +86,7 @@ describe("a table write from outside the owning module's directory is rejected",
     }
     expect(
       violations,
-      `A table is written outside its owner. Move the write into the owning module and call it through that module's index.ts, or change the owner in \`owners\` in ownership.test.ts if ownership truly moved. Offending writes:\n${violations.join("\n")}`
+      `A table is written outside its owner. Move the write into the owning module and call it through that module's index.ts, or change the owner in \`writersOfTable\` in ownership.test.ts if ownership truly moved. Offending writes:\n${violations.join("\n")}`
     ).toEqual([])
   })
 })

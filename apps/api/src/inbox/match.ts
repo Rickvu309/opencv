@@ -44,11 +44,6 @@ function updatedMs(job: InboxMatchJob) {
   return Number.isNaN(ms) ? Number.NEGATIVE_INFINITY : ms
 }
 
-/**
- * Company match, then the title that shares the most long words.
- * A tie on that count uses the newest update. A remaining tie links nothing.
- * With no shared word, the only job at that company still matches.
- */
 export function matchInboxJob(
   thread: InboxMatchThread,
   jobs: readonly InboxMatchJob[]

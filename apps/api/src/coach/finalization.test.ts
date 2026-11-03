@@ -33,7 +33,7 @@ const prompt = "Help me prepare for a product intern interview"
 const answer = "Tell me about a project you led."
 
 async function completeTurn(
-  options: { renameFails?: boolean; title?: string } = {}
+  options: { renameFails?: boolean; title?: string; clientLeft?: boolean } = {}
 ) {
   const { client, db } = await createMigratedTestDb()
   const previousEnv = coachModelEnv()
@@ -58,17 +58,23 @@ async function completeTurn(
       })
       rename.fails = options.renameFails === true
       const events: string[] = []
+      const heartbeats: string[] = []
       const stream = {
         aborted: false,
         onAbort: () => {},
         writeSSE: async (event: { event?: string; data: string }) => {
           events.push(event.event ?? "")
+          if (options.clientLeft) throw new Error("closed")
         },
-        write: async () => {},
+        write: async (chunk: string) => {
+          heartbeats.push(chunk)
+          if (options.clientLeft) throw new Error("closed")
+        },
       } as unknown as SSEStreamingApi
       const model = new MockLanguageModelV3({
         doStream: async () => ({
           stream: simulateReadableStream({
+            chunkDelayInMs: options.clientLeft ? 20 : 0,
             chunks: [
               { type: "text-start", id: "t" },
               { type: "text-delta", id: "t", delta: answer },
@@ -109,13 +115,13 @@ async function completeTurn(
             createdAt: new Date().toISOString(),
           },
         ],
-        heartbeatMs: 60000,
+        heartbeatMs: options.clientLeft ? 5 : 60000,
       })
       const saved = chatDetailSchema.parse(
         await registry.read("chat.get", { chatId }, actor)
       )
       const usage = await db.select().from(coachUsage)
-      return { events, saved, usage }
+      return { events, heartbeats, saved, usage }
     })
   } finally {
     setCoachModelEnv(previousEnv)
@@ -149,6 +155,18 @@ describe("Coach turn completion", () => {
       saved.messages.filter((message) => message.role === "coach")
     ).toMatchObject([{ text: answer, status: "final" }])
     expect(saved.title).toBe(titleFrom(prompt))
+    expect(usage).toMatchObject([{ finishReason: "stop" }])
+  })
+
+  it("saves the reply and its usage when every stream write rejects because the client left", async () => {
+    const { events, heartbeats, saved, usage } = await completeTurn({
+      clientLeft: true,
+    })
+    expect(events).toContain("message-end")
+    expect(heartbeats.length).toBeGreaterThan(0)
+    expect(
+      saved.messages.filter((message) => message.role === "coach")
+    ).toMatchObject([{ text: answer, status: "final" }])
     expect(usage).toMatchObject([{ finishReason: "stop" }])
   })
 

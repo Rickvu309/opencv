@@ -44,6 +44,15 @@ const PNPM_RUN =
   /\bpnpm((?:[ \t]+(?:-F|--filter|-C|--dir)(?:[ \t]+|=)\S+)*)[ \t]+(?:run[ \t]+)?([A-Za-z][\w:.-]*)/g
 const PNPM_SELECTOR = /(-F|--filter|-C|--dir)(?:[ \t]+|=)(\S+)/g
 const PACKAGE_TOKEN = /^[@\w./-]+(?:\.\.\.)?$/
+const REPO_FILE = String.raw`(?:apps|packages|scripts|docs|\.claude)\/[\w./-]+\.\w+`
+const LINE_WORD_REF = new RegExp(
+  String.raw`\`(${REPO_FILE})\`\s+lines?\s+(\d+)(?:\s*(?:-|,|and)\s*(\d+))?`,
+  "g"
+)
+const COLON_REF = new RegExp(
+  String.raw`(?<![\w./-])(${REPO_FILE}):(\d+)(?:-(\d+))?`,
+  "g"
+)
 
 const trimmedScope = (filter) => filter.replace(/\.\.\.$/, "")
 
@@ -94,6 +103,11 @@ export function repoDeps() {
     packageDir: (name) =>
       dirs.find((dir) => packages.get(dir).name === name) ?? null,
     scripts: (dir) => new Set(Object.keys(packages.get(dir)?.scripts ?? {})),
+    lineCount: (rel) => {
+      const full = path.join(root, rel)
+      if (!existsSync(full)) return null
+      return readFileSync(full, "utf8").replace(/\n$/, "").split("\n").length
+    },
   }
 }
 
@@ -127,6 +141,16 @@ export function detect(text, file, deps = repoDeps()) {
           `${where} names ${match} with no folder, and no file of that name is in this skill, its scripts, the repo or the package it filters. Give the full path.`
         )
     }
+
+    for (const pattern of [LINE_WORD_REF, COLON_REF])
+      for (const [match, ref, first, last] of line.matchAll(pattern)) {
+        const length = deps.lineCount(ref)
+        const cited = Math.max(Number(first), Number(last ?? first))
+        if (length !== null && cited > length)
+          problems.push(
+            `${where} cites ${match}, but ${ref} has only ${length} lines. Point at a function or test name instead of a line number.`
+          )
+      }
 
     for (const [, options, name] of line.matchAll(PNPM_RUN)) {
       if (BUILTIN.has(name)) continue

@@ -26,7 +26,6 @@ import {
 import { seedCoachActor } from "../test/coach-turn.js"
 
 registerBackendHooks()
-// ---------------------------------------------------------------- P2 ----
 
 async function pendingJobMove() {
   const { id: userId, person } = await newPerson()

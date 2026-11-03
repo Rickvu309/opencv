@@ -67,11 +67,11 @@ Nothing is added to the repo. The test makes its own database per run and drops 
 
 ## The known finding
 
-Issue #758. Two callers with the same key both pass the key lookup and both run the command. The first commits its activity row. The second hits the unique index on `(user_id, idempotency_key)`, and Postgres aborts its transaction (`25P02`). The catch blocks at `registry.ts` lines 321-330 and 340-347 then run a select to read the winner's row, and that select fails on the aborted transaction, so the caller gets a database error instead of the replay. The effect is not duplicated, because the loser rolls back. The replay code can only work for a command that runs without a transaction.
+Issue #758. Two callers with the same key both pass the key lookup and both run the command. The first commits its activity row. The second hits the unique index on `(user_id, idempotency_key)`, and Postgres aborts its transaction (`25P02`). The two `isUniqueViolation` catch blocks in `execute` (one after the activity insert, one after the idempotency insert) then run a select to read the winner's row, and that select fails on the aborted transaction, so the caller gets a database error instead of the replay. The effect is not duplicated, because the loser rolls back. The replay code can only work for a command that runs without a transaction.
 
 The tests handle it so a green run stays honest:
 
-- The two forced `it.fails` tests and the server-only barrier test pin it. They go red when the registry is fixed. Then remove `it.fails` in the same change.
+- The two forced `it.fails` tests and the server-only barrier test pin it. They go red when the registry is fixed. Then, in the same change, delete the `pinnedFinding` and `pinnedFindingOnRealServer` aliases in `registry.formal.test.ts` and call `it` directly.
 - On a real server, the natural P1 tests tolerate a caller whose error code is `25P02` and nothing else (`isKnownFinding` in the test), and print how many callers hit it (`knownFindingHits`). After the fix, delete `isKnownFinding` and `KNOWN_FINDING` so any error fails.
 - On PGlite, `25P02` is never tolerated.
 
@@ -79,12 +79,12 @@ The tests handle it so a green run stays honest:
 
 The failing label names the scenario: `P1 job.create N=3 seed=242`, `P2 approve x2 deny x1 seed=241`, `P3 undo x4 seed=243`. Rerun with `FORMAL_SEED=<seed>` to repeat the start order.
 
-- `raw errors` listing `25P02` or `23505` (P1): a caller lost a key race and was not given the replay. Open `execute` at line 239. On PGlite this means the key lookup at line 268 stopped working. On a server it may be the known finding, which is tolerated, so an untolerated code is new. Check the catch blocks at lines 321 and 340.
+- `raw database errors other than the pinned finding` listing `25P02` or `23505` (P1): a caller lost a key race and was not given the replay. Open `Registry.execute`. On PGlite this means the key lookup before the run (`activityByKey`, then `idempotencyByKey`) stopped working. On a server it may be the known finding, which is tolerated, so an untolerated code is new. Check the two `isUniqueViolation` catch blocks in `execute`.
 - `expected 2 to be 1` on a row count (P1): the effect ran twice and committed. Check that the key lookup and the insert are in one transaction.
 - `activity rows` or `idempotency rows` not 1 (P1): a command wrote its key twice or not at all.
-- P2 `approve and deny racing never both win` with `status: denied` and `moves: 1`: both won. Open `lockPending` at line 551 (`FOR UPDATE`) and the status checks in `approve` at line 425 and `deny` at line 460. This only shows on a real server for a missing lock.
-- P3 `callers that undid` not 1: the reversal ran twice or never. Open `lockActivity` at line 567 and the `undoneAt` check in `undo` at line 485.
-- P3 `cannot be undone` expected but a different message: the `reversalCommand` guard at line 494 is gone or moved after the lookup.
+- P2 `approve and deny racing never both win` with `status: denied` and `moves: 1`: both won. Open `lockPending` (`FOR UPDATE`) and the status checks in `Registry.approve` and `Registry.deny`. This only shows on a real server for a missing lock.
+- P3 `callers that undid` not 1: the reversal ran twice or never. Open `lockActivity` and the `undoneAt` check in `Registry.undo`.
+- P3 `cannot be undone` expected but a different message: the `reversalCommand` guard in `Registry.undo` is gone or moved after the lookup.
 - A failure with a table row mismatch and unchanged registry code means the test rule is wrong. Check it against the state table in the registry before editing code.
 
 ## Bounds and assumptions
@@ -98,19 +98,19 @@ The failing label names the scenario: `P1 job.create N=3 seed=242`, `P2 approve 
 
 ## Coverage record
 
-| Item                          | Where                                              |
-| ----------------------------- | -------------------------------------------------- |
-| `Registry.execute`            | `apps/api/src/registry/registry.ts` line 239       |
-| key lookup before the run     | `apps/api/src/registry/registry.ts` line 268       |
-| replay on unique violation    | `apps/api/src/registry/registry.ts` lines 321, 340 |
-| `Registry.approve`            | `apps/api/src/registry/registry.ts` line 425       |
-| `Registry.deny`               | `apps/api/src/registry/registry.ts` line 460       |
-| `Registry.undo`               | `apps/api/src/registry/registry.ts` line 485       |
-| `lockPending` (`FOR UPDATE`)  | `apps/api/src/registry/registry.ts` line 551       |
-| `lockActivity` (`FOR UPDATE`) | `apps/api/src/registry/registry.ts` line 567       |
-| `replay`, `replayStored`      | `apps/api/src/registry/registry.ts` lines 611, 624 |
-| `isUniqueViolation`           | `apps/api/src/registry/errors.ts` line 21          |
-| `transaction`                 | `apps/api/src/db/context.ts` line 33               |
+| Item                          | Where                                                                      |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| `Registry.execute`            | `execute` in `apps/api/src/registry/registry.ts`                           |
+| key lookup before the run     | `activityByKey`, `idempotencyByKey` in `apps/api/src/registry/registry.ts` |
+| replay on unique violation    | the `isUniqueViolation` catches in `execute`                               |
+| `Registry.approve`            | `approve` in `apps/api/src/registry/registry.ts`                           |
+| `Registry.deny`               | `deny` in `apps/api/src/registry/registry.ts`                              |
+| `Registry.undo`               | `undo` in `apps/api/src/registry/registry.ts`                              |
+| `lockPending` (`FOR UPDATE`)  | `lockPending` in `apps/api/src/registry/registry.ts`                       |
+| `lockActivity` (`FOR UPDATE`) | `lockActivity` in `apps/api/src/registry/registry.ts`                      |
+| `replay`, `replayStored`      | `replay`, `replayStored` in `apps/api/src/registry/turn-receipts.ts`       |
+| `isUniqueViolation`           | `isUniqueViolation` in `apps/api/src/registry/errors.ts`                   |
+| `transaction`                 | `transaction` in `apps/api/src/db/context.ts`                              |
 
 Check files: `apps/api/src/registry/UndoLater.tla` with `.cfg`, mutant configs and `.tla.json` (P4 model), `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 
@@ -132,12 +132,12 @@ If a later run probes one of these and it fails, it is a new finding. Do not shr
 2. Fix the registry, never the property or the expected counts, unless a rule disagrees with the registry's documented states.
 3. A new keyed command that creates rows needs a row in `KEYED_CASES`. A new terminal state for a pending action or an activity row needs an assertion in the matching P2 or P3 test.
 4. Prove the check still bites. Make a scratch change, confirm a named failure, then `git checkout` the file and confirm the run is back to where it started. Useful breaks, each confirmed at the sync commit:
-   - Remove the key lookup at line 268 (and the stored-result lookup below it): P1 `one effect per key` fails for all three commands on PGlite.
-   - Change both `isUniqueViolation` guards at lines 321 and 340 to `throw error`: the two `replays the winner when the command is not inside a transaction` tests fail on PGlite.
-   - Change `if (row.undoneAt) {` at line 488 to `if (false) {`: `N racing undos` fails on PGlite.
-   - Change `if (!row.reversalCommand) {` at line 494 to `if (false) {`: `an activity row with no reversal` fails on PGlite.
+   - Remove the `activityByKey` lookup before the run in `execute` (and the `idempotencyByKey` lookup below it): P1 `one effect per key` fails for all three commands on PGlite.
+   - Change both `isUniqueViolation` guards in `execute` to `throw error`: the two `replays the winner when the command is not inside a transaction` tests fail on PGlite.
+   - Change `if (row.undoneAt) {` in `undo` to `if (false) {`: `N racing undos` fails on PGlite.
+   - Change `if (!row.reversalCommand) {` in `undo` to `if (false) {`: `an activity row with no reversal` fails on PGlite.
    - Change the `denied` or the `status !== "pending"` check in `approve` or `deny` to `if (false) {`: `approve and deny racing never both win` fails on PGlite.
-   - Remove `.for("update")` in `lockPending` (line 556): green on PGlite, and `N racing approves` and `approve and deny racing never both win` fail on a real server.
-   - Remove `.for("update")` in `lockActivity` (line 572): green on PGlite, and `N racing undos` fails on a real server.
+   - Remove `.for("update")` in `lockPending`: green on PGlite, and `N racing approves` and `approve and deny racing never both win` fail on a real server.
+   - Remove `.for("update")` in `lockActivity`: green on PGlite, and `N racing undos` fails on a real server.
    - Removing the `row.status === "approved"` early return in `approve` changes nothing, because the key lookup in `execute` replays the same row. It is a second guard, not a missing check.
 5. Move the sync commit only after you reread every covered function at the new commit, rerun the check on both engines, and confirm every row of the coverage record still describes the code. Then set it to `git rev-parse origin/main` and fix any line numbers.

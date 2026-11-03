@@ -24,18 +24,8 @@ import { CommandError } from "../registry/errors.js"
 import { installRegistry } from "../registry/install.js"
 import {} from "../registry/registry.js"
 
-// Formal check of the command registry promise under concurrent calls:
-//   P1  a keyed command runs its effect once and every caller gets the replay
-//   P2  a pending action runs at most once, and approve and deny never both win
-//   P3  an activity row is undone at most once, and a row with no reversal is refused
-// The expected outcome of every scenario is a literal rule below, never read back
-// from the registry. See .claude/skills/verify-command-registry/SKILL.md.
-
 export const SEED = Number(process.env.FORMAL_SEED ?? 241)
 export const REAL = Boolean(process.env.FORMAL_DATABASE_URL)
-// Findings the registry has today. A caller that fails with one of these
-// postgres codes is counted and printed, not accepted silently: the pinned
-// `it.fails` tests below go red when the code is fixed.
 export const KNOWN_FINDING = {
   issue: "#758",
   pgCode: "25P02",
@@ -73,8 +63,6 @@ export async function openBackend(): Promise<Backend> {
   }
 }
 
-// Interleaving measurement. A race only exists when two transactions are open
-// at once, so every transaction the registry opens is counted and ordered.
 export type Trace = {
   requested: number
   active: number
@@ -143,8 +131,6 @@ export const tick = () => new Promise<void>((resolve) => setImmediate(resolve))
 
 export type Outcome<T> = { ok: true; value: T } | { ok: false; error: unknown }
 
-// Starts every call in the same tick, each after its own number of event-loop
-// turns, so the order in which the calls reach the database differs by seed.
 export async function race<T>(
   calls: Array<() => Promise<T>>,
   delays: number[]
@@ -179,8 +165,6 @@ export function describeError(error: unknown) {
   return `${code ?? "error"}: ${message}`.slice(0, 200)
 }
 
-// Only a real server can produce the finding by itself. On PGlite the calls
-// never overlap, so the same code there is a bug in the check, not a finding.
 export function isKnownFinding(error: unknown) {
   return REAL && pgCodeOf(error) === KNOWN_FINDING.pgCode
 }

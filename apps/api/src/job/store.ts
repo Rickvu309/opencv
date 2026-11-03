@@ -468,15 +468,28 @@ export function parsePostingText(text: string) {
   }
 }
 
+type PostingInterpreter = (
+  text: string
+) => Promise<{ title: string; company: string; location: string } | null>
+
+async function interpretOrKeepDeterministicParse(
+  interpret: PostingInterpreter,
+  text: string
+) {
+  try {
+    return await interpret(text)
+  } catch {
+    return null
+  }
+}
+
 export async function previewJob(
   actor: Actor,
   input: { url?: string; text?: string },
   fetchPosting: (
     url: string
   ) => Promise<{ ok: true; text: string } | { ok: false; message: string }>,
-  interpret?: (
-    text: string
-  ) => Promise<{ title: string; company: string; location: string } | null>
+  interpret?: PostingInterpreter
 ): Promise<JobPreview> {
   let text = input.text?.trim() ?? ""
   if (!text && input.url) {
@@ -502,15 +515,11 @@ export async function previewJob(
   let title = parsed?.title ?? ""
   let location = parsed?.location ?? ""
   if (interpret) {
-    try {
-      const modelFields = await interpret(text)
-      if (modelFields) {
-        company = modelFields.company || company
-        title = modelFields.title || title
-        location = modelFields.location || location
-      }
-    } catch {
-      // A missing key keeps the deterministic parse. This read does not open a usage row.
+    const modelFields = await interpretOrKeepDeterministicParse(interpret, text)
+    if (modelFields) {
+      company = modelFields.company || company
+      title = modelFields.title || title
+      location = modelFields.location || location
     }
   }
   if (input.url) {

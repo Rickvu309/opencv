@@ -25,7 +25,6 @@ export type AuthConfig = {
   sessionSecret: string
   authUrl: string
   webOrigins: string[]
-  /** Default on. Tests turn this off so sign-in loops do not trip the limiter. */
   rateLimitEnabled?: boolean
   sendCodeLimitEnabled?: boolean
   resendApiKey?: string
@@ -40,10 +39,6 @@ const AUTH_EMAIL_FAILED = {
   message: "We could not send the code. Try again.",
 }
 
-/**
- * Cookie attributes: `SameSite=None; Secure` when AUTH_URL is
- * https (cross-origin web ↔ api), browser defaults locally.
- */
 export function cookieAttributesForAuthUrl(authUrl: string) {
   const secure = authUrl.startsWith("https:")
   return {
@@ -124,8 +119,6 @@ export function createAuth({
     advanced: {
       useSecureCookies: cookies.secure,
       defaultCookieAttributes: cookies,
-      // Better Auth skips origin checks when `isTest()`; keep one CORS/CSRF
-      // policy in vitest and on Railway.
       disableOriginCheck: false,
       ipAddress: { ipAddressHeaders: ["x-real-ip"] },
     },
@@ -137,7 +130,6 @@ export function createAuth({
     },
     telemetry: { enabled: false },
     hooks: {
-      // Same per-request context the sender stamps. The send stays awaited.
       after: createAuthMiddleware(
         async (ctx): Promise<Response | undefined> => {
           if (
@@ -180,7 +172,6 @@ export type Auth = ReturnType<typeof createAuth>
 
 let boundAuth: Auth | undefined
 
-/** Last app to boot. A request store overrides this when two apps share a process. */
 export function bindAuth(auth: Auth | undefined) {
   boundAuth = auth
 }

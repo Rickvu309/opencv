@@ -68,19 +68,19 @@ export async function writeChatEvent(
     console.error("Coach event broke the chat turn contract", event.type, error)
     wire = encodeChatTurnEvent({ type: "error", message: "The Coach stopped." })
   }
-  try {
-    await stream.writeSSE(wire)
-  } catch {
-    // Client gone — persistence still runs in finally.
-  }
+  await writeUnlessClientLeft(() => stream.writeSSE(wire))
 }
 
 export async function writeHeartbeat(stream: SSEStreamingApi) {
   if (stream.aborted) return
+  await writeUnlessClientLeft(() => stream.write(": heartbeat\n\n"))
+}
+
+async function writeUnlessClientLeft(write: () => Promise<unknown>) {
   try {
-    await stream.write(": heartbeat\n\n")
+    await write()
   } catch {
-    // ignore
+    return
   }
 }
 

@@ -209,10 +209,9 @@ describe("coach turn stream contract", () => {
     ).toMatchObject({
       name: "job.move",
     })
-    // The pending id travels with the result, so a client never sees a pending
-    // command as done before the separate confirm event arrives.
     expect(
-      events.find((e) => e.parsed?.type === "tool-result")?.parsed
+      events.find((e) => e.parsed?.type === "tool-result")?.parsed,
+      "the pending id travels with the result, so a pending command never reads as done before its confirm event"
     ).toMatchObject({ toolCallId: "call_move", pendingActionId: "pending-2" })
     await client.close()
   })

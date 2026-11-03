@@ -69,15 +69,18 @@ const db =
 
 if (db) bindDatabase(db as AppDatabase)
 
+const UNATTACHED_PHOTO_SWEEP_INTERVAL_MS = 60 * 60 * 1000
+
 if (db && !process.env.VITEST) {
-  // Startup and then hourly: an avatar uploaded but never attached (a closed
-  // tab, a crash) leaves a row nothing references. The web deletes what it can.
   const sweepUnattached = () =>
     sweepUnattachedPhotos().catch((error) =>
       console.error("[paper] unattached photo sweep failed", error)
     )
   void sweepUnattached()
-  const sweepTimer = setInterval(sweepUnattached, 60 * 60 * 1000)
+  const sweepTimer = setInterval(
+    sweepUnattached,
+    UNATTACHED_PHOTO_SWEEP_INTERVAL_MS
+  )
   sweepTimer.unref()
 }
 

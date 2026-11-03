@@ -24,18 +24,17 @@ type HealthConfig = {
 
 type JournalEntry = { when: number; tag: string }
 
-/** Drizzle stores each applied migration's journal `when`, not its tag. */
-function migrationTag(createdAt: number): string {
+function migrationTagForJournalWhen(journalWhen: number): string {
   try {
     const journal = JSON.parse(
       readFileSync(path.join(migrationsFolder, "meta/_journal.json"), "utf8")
     ) as { entries: JournalEntry[] }
     return (
-      journal.entries.find((entry) => entry.when === createdAt)?.tag ??
-      String(createdAt)
+      journal.entries.find((entry) => entry.when === journalWhen)?.tag ??
+      String(journalWhen)
     )
   } catch {
-    return String(createdAt)
+    return String(journalWhen)
   }
 }
 
@@ -54,7 +53,9 @@ async function probeDatabase(
     const createdAt = result.rows[0]?.created_at
     return {
       db: true,
-      schemaVersion: createdAt ? migrationTag(Number(createdAt)) : null,
+      schemaVersion: createdAt
+        ? migrationTagForJournalWhen(Number(createdAt))
+        : null,
     }
   } catch {
     return { db: true, schemaVersion: null }
@@ -75,11 +76,6 @@ async function boundedProbe(db: AppDatabase | undefined, timeoutMs: number) {
   }
 }
 
-/**
- * `/health` is Railway's liveness probe: always 200, no dependency checks, so
- * a database blip never fails a deploy. `/health/deep` reports what sign-in
- * needs and answers 503 when something is missing. Booleans only, no values.
- */
 export function createHealthRoutes({
   db,
   sha,
