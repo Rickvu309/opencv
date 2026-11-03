@@ -66,6 +66,25 @@ export function afterMove(
   return { drops: settled, refresh: allSettled(settled) }
 }
 
+export type DropsAction =
+  | { type: "dropped"; jobId: string; stage: JobStage }
+  | { type: "move_settled"; jobId: string }
+  | { type: "undone"; jobId: string }
+  | { type: "landed" }
+
+export function dropsReducer(drops: Drops, action: DropsAction): Drops {
+  switch (action.type) {
+    case "dropped":
+      return dropOn(drops, action.jobId, action.stage)
+    case "move_settled":
+      return afterMove(drops, action.jobId).drops
+    case "undone":
+      return forgetSettled(drops, action.jobId)
+    case "landed":
+      return clearSettled(drops)
+  }
+}
+
 export function refetchBoard(queryClient: QueryClient) {
   return refreshQueries(queryClient, [
     { query: "job.list" },

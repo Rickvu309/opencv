@@ -1,4 +1,4 @@
-import { useReducer, useRef, useState } from "react"
+import { useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
@@ -27,15 +27,13 @@ import { reportRejected } from "@/lib/command-failure.ts"
 
 import { jobListKey } from "./apply-api.ts"
 import {
-  afterMove,
   allSettled,
-  clearSettled,
-  dropOn,
-  forgetSettled,
+  dropsReducer,
   noDrops,
   refetchBoard,
   shownJobs,
   type Drops,
+  type DropsAction,
 } from "./apply-board-drops.ts"
 import { BoardLane, JobCard } from "./apply-parts.tsx"
 import {
@@ -96,10 +94,10 @@ export function ApplyBoard({
   const run = useRunCommand()
   const tails = useRef(new Map<string, Promise<unknown>>())
   const dropsRef = useRef<Drops>(noDrops)
-  const [drops, setDrops] = useState<Drops>(noDrops)
-  function updateDrops(change: (current: Drops) => Drops) {
-    dropsRef.current = change(dropsRef.current)
-    setDrops(dropsRef.current)
+  const [drops, dispatchDrops] = useReducer(dropsReducer, noDrops)
+  function sendDrops(action: DropsAction) {
+    dropsRef.current = dropsReducer(dropsRef.current, action)
+    dispatchDrops(action)
   }
   // A keyboard drop can report no column under the card; the last column the
   // drag hovered is where the announcement said it would land.
@@ -127,7 +125,7 @@ export function ApplyBoard({
         refreshBoard()
         return
       }
-      updateDrops(clearSettled)
+      sendDrops({ type: "landed" })
     })
   }
 
@@ -138,7 +136,7 @@ export function ApplyBoard({
       if (stage === "closed" && result.activityId) {
         const activityId = result.activityId
         toastWithUndo("Moved to Closed", () => {
-          updateDrops((current) => forgetSettled(current, jobId))
+          sendDrops({ type: "undone", jobId })
           void undoActivity(queryClient, activityId).catch(
             reportRejected("undo the move")
           )
@@ -152,9 +150,8 @@ export function ApplyBoard({
       .then(move)
       .catch(() => undefined)
       .finally(() => {
-        const after = afterMove(dropsRef.current, jobId)
-        updateDrops(() => after.drops)
-        if (after.refresh) refreshBoard()
+        sendDrops({ type: "move_settled", jobId })
+        if (allSettled(dropsRef.current)) refreshBoard()
       })
     tails.current.set(jobId, next)
   }
@@ -179,7 +176,7 @@ export function ApplyBoard({
     const stage = event.over ? stageOf(String(event.over.id)) : hovered
     const before = data.find((card) => card.id === jobId)
     if (!before || !stage || before.column === stage) return
-    updateDrops((current) => dropOn(current, jobId, stage))
+    sendDrops({ type: "dropped", jobId, stage })
     queryClient.setQueryData<JobView[]>(jobListKey(), (current) => {
       if (!current) return current
       return current.map((job) => (job.id === jobId ? { ...job, stage } : job))
