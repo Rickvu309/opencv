@@ -58,7 +58,7 @@ function lineOf(text, offset) {
 function makeComment(text, pos, end) {
   const raw = text.slice(pos, end)
   const line = lineOf(text, pos)
-  return { line, lines: raw.split("\n").length, raw }
+  return { line, lines: raw.split("\n").length, raw, pos, end }
 }
 
 function scriptKind(file) {
@@ -67,45 +67,148 @@ function scriptKind(file) {
   return ts.ScriptKind.JSX
 }
 
-export function findSourceComments(file, text) {
-  const sourceFile = ts.createSourceFile(
+const CSS_MARKED_NAME = /^(?:css|styles)$|(?:Css|Styles)$/
+
+function templatePieces(template, sourceFile) {
+  const tokens =
+    template.kind === ts.SyntaxKind.TemplateExpression
+      ? [template.head, ...template.templateSpans.map((span) => span.literal)]
+      : [template]
+  return tokens.map((token) => {
+    const closesWithHole =
+      token.kind === ts.SyntaxKind.TemplateHead ||
+      token.kind === ts.SyntaxKind.TemplateMiddle
+    return {
+      start: token.getStart(sourceFile) + 1,
+      end: token.end - (closesWithHole ? 2 : 1),
+    }
+  })
+}
+
+function bindingName(node) {
+  if (
+    ts.isVariableDeclaration(node) ||
+    ts.isPropertyAssignment(node) ||
+    ts.isPropertyDeclaration(node)
+  )
+    return ts.isIdentifier(node.name) ? node.name.text : null
+  return null
+}
+
+function isStyleElementChild(node) {
+  const slot = node.parent
+  const element = slot?.parent
+  return (
+    slot?.kind === ts.SyntaxKind.JsxExpression &&
+    element?.kind === ts.SyntaxKind.JsxElement &&
+    element.openingElement.tagName.getText() === "style"
+  )
+}
+
+function isMarkedCssTemplate(template) {
+  let node = template
+  while (
+    node.parent &&
+    (ts.isParenthesizedExpression(node.parent) ||
+      ts.isAsExpression(node.parent) ||
+      ts.isSatisfiesExpression(node.parent))
+  )
+    node = node.parent
+  const parent = node.parent
+  if (
+    parent?.kind === ts.SyntaxKind.TaggedTemplateExpression &&
+    parent.tag.getText() === "css"
+  )
+    return true
+  const name = parent ? bindingName(parent) : null
+  if (name !== null && parent.initializer === node)
+    return CSS_MARKED_NAME.test(name)
+  return isStyleElementChild(node)
+}
+
+export function cssTemplates(file, text) {
+  const sourceFile = parseSource(file, text)
+  const found = []
+  const visit = (node) => {
+    if (
+      (node.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral ||
+        node.kind === ts.SyntaxKind.TemplateExpression) &&
+      isMarkedCssTemplate(node)
+    )
+      found.push(templatePieces(node, sourceFile))
+    ts.forEachChild(node, visit)
+  }
+  visit(sourceFile)
+  return found
+}
+
+function parseSource(file, text) {
+  return ts.createSourceFile(
     file,
     text,
     ts.ScriptTarget.Latest,
     true,
     scriptKind(file)
   )
+}
+
+export function findSourceComments(file, text) {
+  const sourceFile = parseSource(file, text)
   const seen = new Map()
+  const jsxTexts = []
   const collect = (ranges) => {
     for (const range of ranges ?? []) seen.set(range.pos, range)
   }
   const walk = (node) => {
-    if (node.kind === ts.SyntaxKind.JsxText) return
+    if (node.kind === ts.SyntaxKind.JsxText) {
+      jsxTexts.push([node.pos, node.end])
+      return
+    }
     collect(ts.getLeadingCommentRanges(text, node.pos))
     collect(ts.getTrailingCommentRanges(text, node.end))
     for (const child of node.getChildren(sourceFile)) walk(child)
   }
   walk(sourceFile)
-  return [...seen.values()]
-    .sort((a, b) => a.pos - b.pos)
+  const insideJsxText = (range) =>
+    jsxTexts.some(([start, end]) => start <= range.pos && range.pos < end)
+  const comments = [...seen.values()]
+    .filter((range) => !insideJsxText(range))
     .map((range) => makeComment(text, range.pos, range.end))
+  for (const pieces of cssTemplates(file, text)) {
+    comments.push(...findCssCommentsAcross(text, pieces))
+  }
+  return comments.sort((a, b) => a.pos - b.pos)
 }
 
-export function findCssComments(text) {
+export function findCssComments(text, from = 0, to = text.length) {
+  return findCssCommentsAcross(text, [{ start: from, end: to }])
+}
+
+export function findCssCommentsAcross(text, pieces) {
   const found = []
   let quote = null
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i]
-    if (quote) {
-      if (char === "\\") i++
-      else if (char === quote || char === "\n") quote = null
-    } else if (char === '"' || char === "'") {
-      quote = char
-    } else if (char === "/" && text[i + 1] === "*") {
-      const close = text.indexOf("*/", i + 2)
-      const end = close === -1 ? text.length : close + 2
-      found.push(makeComment(text, i, end))
-      i = end - 1
+  let inUrl = false
+  for (const { start, end: to } of pieces) {
+    for (let i = start; i < to; i++) {
+      const char = text[i]
+      if (quote) {
+        if (char === "\\") i++
+        else if (char === quote || char === "\n") quote = null
+      } else if (inUrl) {
+        if (char === ")") inUrl = false
+      } else if (char === '"' || char === "'") {
+        quote = char
+      } else if (
+        /^url\(\s*[^\s"')]/i.test(text.slice(i, Math.min(i + 12, to)))
+      ) {
+        inUrl = true
+        i = text.indexOf("(", i)
+      } else if (char === "/" && text[i + 1] === "*") {
+        const close = text.indexOf("*/", i + 2)
+        const end = close === -1 || close + 2 > to ? to : close + 2
+        found.push(makeComment(text, i, end))
+        i = end - 1
+      }
     }
   }
   return found

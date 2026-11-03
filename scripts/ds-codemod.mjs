@@ -1,24 +1,21 @@
 #!/usr/bin/env node
-// Tailwind has no `duration-micro` utility (its theme key is --transition-duration),
-// so durations use the variable shorthand `duration-(--duration-micro)`.
-// Rewrites OpenPath-era design-system names to stock Tailwind and shadcn names.
-// Re-runnable: run it with --dry-run after every `shadcn add`; each rule prints
-// its hit count and the rewrite is a no-op once every count is 0.
-//
-//   node scripts/ds-codemod.mjs --dry-run   count hits, write nothing
-//   node scripts/ds-codemod.mjs             rewrite files in place
+import { execFileSync } from "node:child_process"
 import { readdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
+import { stripComments } from "./lib/strip-comments.mjs"
 
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../..")
-const roots = ["apps/web/src", "packages/ui/src/components"]
+const roots = [
+  "apps/web/src",
+  "packages/ui/src/components",
+  "packages/ui/src/hooks",
+  "packages/ui/src/lib",
+]
 const skip = new Set([
   "apps/web/src/test/design-vocabulary.test.ts",
   "apps/web/src/test/ui-kit-contract.test.ts",
 ])
-const dryRun = process.argv.includes("--dry-run")
-
 const cls = (name) => `(?<![\\w-])${name}(?![\\w-])`
 const tok = (name) => new RegExp(cls(name), "g")
 
@@ -81,6 +78,17 @@ const rules = [
   ["z-sticky -> z-40", tok("z-sticky"), "z-40"],
 ]
 
+export function rewriteSource(file, source, onHit = () => {}, strip = true) {
+  let next = strip ? stripComments(file, source) : source
+  for (const [name, pattern, replacement] of rules) {
+    next = next.replace(pattern, () => {
+      onHit(name)
+      return replacement
+    })
+  }
+  return next
+}
+
 function walk(dir, out = []) {
   for (const entry of readdirSync(path.join(repoRoot, dir), {
     withFileTypes: true,
@@ -92,24 +100,40 @@ function walk(dir, out = []) {
   return out
 }
 
-const counts = new Map(rules.map(([name]) => [name, 0]))
-const changed = new Set()
-
-for (const file of roots.flatMap((root) => walk(root))) {
-  const full = path.join(repoRoot, file)
-  let source = readFileSync(full, "utf8")
-  const original = source
-  for (const [name, pattern, replacement] of rules) {
-    source = source.replace(pattern, () => {
-      counts.set(name, counts.get(name) + 1)
-      changed.add(file)
-      return replacement
-    })
-  }
-  if (!dryRun && source !== original) writeFileSync(full, source)
+function installedFiles() {
+  const listed = execFileSync(
+    "git",
+    ["ls-files", "--modified", "--others", "--exclude-standard"],
+    { cwd: repoRoot, encoding: "utf8" }
+  )
+  return new Set(listed.split("\n").filter(Boolean))
 }
 
-for (const [name, count] of counts)
-  console.log(`${String(count).padStart(4)}  ${name}`)
-console.log(`${dryRun ? "would change" : "changed"} ${changed.size} files`)
-if (dryRun) for (const file of [...changed].sort()) console.log(`  ${file}`)
+function main() {
+  const installed = installedFiles()
+  const dryRun = process.argv.includes("--dry-run")
+  const counts = new Map(rules.map(([name]) => [name, 0]))
+  const changed = new Set()
+
+  for (const file of roots.flatMap((root) => walk(root))) {
+    const full = path.join(repoRoot, file)
+    const original = readFileSync(full, "utf8")
+    const source = rewriteSource(
+      file,
+      original,
+      (name) => counts.set(name, counts.get(name) + 1),
+      installed.has(file)
+    )
+    if (source === original) continue
+    changed.add(file)
+    if (!dryRun) writeFileSync(full, source)
+  }
+
+  for (const [name, count] of counts)
+    console.log(`${String(count).padStart(4)}  ${name}`)
+  console.log(`${dryRun ? "would change" : "changed"} ${changed.size} files`)
+  if (dryRun) for (const file of [...changed].sort()) console.log(`  ${file}`)
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main()

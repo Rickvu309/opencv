@@ -195,8 +195,7 @@ function CodeBlockLine({
   children,
   ...props
 }: React.ComponentProps<"span"> & VariantProps<typeof codeBlockLineVariants>) {
-  // An empty line holds a newline so copying a selection keeps blank lines.
-  const empty =
+  const isBlankLine =
     children === undefined ||
     children === null ||
     children === "" ||
@@ -210,7 +209,7 @@ function CodeBlockLine({
       {...props}
     >
       <span data-slot="code-block-line-content" className="min-w-0">
-        {empty ? "\n" : children}
+        {isBlankLine ? "\n" : children}
       </span>
     </span>
   )

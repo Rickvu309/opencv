@@ -2,25 +2,15 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
-/*
- * Smart Recommendation – a suggestion card with a confidence signal, alternatives and one-click accept, in a single
- * self-contained file. Fold it away, pick an alternative instead, accept and undo.
- * The styles are injected below, so no extra files are needed.
- */
-
 export type Recommendation = {
   id: string
-  /** Short name, used in the accept button, e.g. "Incremental sync" */
   label: string
-  /** One sentence why – shown in the card */
   reason: ReactNode
-  /** 0 = no signal, 1 = weak, 2 = good, 3 = strong */
   signal: 0 | 1 | 2 | 3
 }
 
 export type SmartRecommendationProps = {
   title?: string
-  /** First entry is the recommendation, the rest are offered as alternatives */
   options: Recommendation[]
   onAccept?: (option: Recommendation) => void
   onUndo?: (option: Recommendation) => void
@@ -233,9 +223,7 @@ const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
   </svg>
 )
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
+const css = `
 .ui-sr {
   --ui-sr-tray: var(--muted);
   --ui-sr-card: var(--card);
@@ -261,9 +249,7 @@ const css = /* css */ `
   width: 100%;
   max-width: 440px;
   container-type: inline-size;
-  /* Like the Chat Composer: the white card on a gray tray, the actions live in the tray below */
   background: var(--ui-sr-tray);
-  /* The gray tray frames the white card on every side */
   padding: 6px;
   border-radius: 22px;
   font-family: inherit;
@@ -329,7 +315,6 @@ const css = /* css */ `
 .ui-sr__foot {
   display: flex;
   align-items: center;
-  /* Narrow containers: the actions move below the signal instead of running out of the tray */
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px 10px;
@@ -406,7 +391,6 @@ const css = /* css */ `
   box-shadow: 0 0 0 1px var(--ui-sr-border), 0 12px 30px -8px rgba(0, 0, 0, 0.2);
   animation: ui-sr-drop var(--duration-micro) var(--ease-micro);
 }
-/* Narrow: the actions sit on their own row – the menu lines up with its right edge so it stays inside */
 @container (max-width: 420px) {
   .ui-sr__actions { position: relative; }
   .ui-sr__alt { position: static; }

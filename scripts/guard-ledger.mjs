@@ -45,6 +45,13 @@ export const LEDGER = Object.freeze([
       "its mutants run inside the file (a command without a read it changes, an undo without a read it refreshes); the four earlier stale-screen fixes were web-side and predate the command table",
   },
   {
+    id: "ds-codemod",
+    file: "scripts/ds-codemod.test.mjs",
+    historic: null,
+    reason:
+      "added in #942 with the comment strip; the codemod kept install comments before, and its fresh-file fixture fires on that",
+  },
+  {
     id: "pointer-capture",
     file: "scripts/pointer-capture.test.mjs",
     detector: {

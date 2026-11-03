@@ -2,18 +2,10 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
-/*
- * Notification Stack – notices stacked behind each other, in a single self-contained file.
- * Only the front card can be read; the others peek out below it. Dismissing the front card slides it away and
- * the next one moves up – one notice at a time.
- * The styles are injected below, so no extra files are needed.
- */
-
 export type NoticePattern = "orbit" | "grid" | "rays"
 
 export type Notice = {
   id: string
-  /** Small label in the pill, e.g. "Notice" */
   badge?: string
   title: string
   text: string
@@ -23,18 +15,16 @@ export type Notice = {
     onClick?: () => void
     external?: boolean
   }
-  /** Line art in the top-right corner */
   pattern?: NoticePattern
 }
 
 export type NotificationStackProps = {
   notices: Notice[]
-  /** Called after a notice was dismissed */
   onDismiss?: (notice: Notice) => void
   className?: string
 }
 
-const PEEK = 12 // how far each card behind peeks out below the one in front, in px
+const PEEK = 12
 
 export function NotificationStack({
   notices,
@@ -58,7 +48,6 @@ export function NotificationStack({
   const visible = items.filter((n) => !leaving.has(n.id))
   const behind = Math.min(visible.length - 1, 2)
 
-  // The front card's height sets the height of the stack
   useLayoutEffect(() => {
     const measure = () => {
       const next: Record<string, number> = {}
@@ -104,7 +93,6 @@ export function NotificationStack({
           const gone = i === -1
           const depth = Math.max(0, i)
           const isBehind = !gone && depth > 0
-          // Cards behind are lined up on the front card's bottom edge, a little lower and smaller each
           const y =
             gone || depth === 0
               ? 0
@@ -188,7 +176,6 @@ export function NotificationStack({
   )
 }
 
-/** Quiet line art for the top-right corner – fades out towards the text */
 function Pattern({ kind }: { kind: NoticePattern }) {
   return (
     <svg
@@ -265,9 +252,7 @@ const ArrowIcon = () => (
   </svg>
 )
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
+const css = `
 .ui-ns {
   --ui-ns-card: var(--card);
   --ui-ns-line: var(--border);
@@ -304,7 +289,6 @@ const css = /* css */ `
     opacity var(--duration-panel) var(--ease-panel),
     box-shadow var(--duration-panel) var(--ease-panel);
 }
-/* Cards behind show only their edge */
 .ui-ns__card > * { transition: opacity var(--duration-panel) var(--ease-panel); }
 .ui-ns__card:not([data-depth="0"]) > * { opacity: 0; }
 .ui-ns__card[data-leaving] {
@@ -322,7 +306,6 @@ const css = /* css */ `
   stroke: var(--ui-ns-art);
   stroke-width: 1;
   pointer-events: none;
-  /* Only the top-right corner, fading out towards the text */
   -webkit-mask-image: radial-gradient(120% 110% at 100% 0%, #000 20%, transparent 70%);
   mask-image: radial-gradient(120% 110% at 100% 0%, #000 20%, transparent 70%);
 }

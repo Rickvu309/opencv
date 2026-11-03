@@ -1,5 +1,4 @@
-export const css = /* css */ `
-/* Colors and motion as variables – override them on .ui-mac */
+export const css = `
 .ui-mac {
   --ui-mac-card: var(--card);
   --ui-mac-strong: var(--foreground);
@@ -17,7 +16,6 @@ export const css = /* css */ `
   --ui-mac-accent: var(--foreground);
   --ui-mac-ok: var(--foreground);
   --ui-mac-ok-bg: var(--muted);
-  /* Strokes are shadows: a 0.5px hairline plus a soft lift */
   --ui-mac-shadow: 0 0 0 1px var(--border);
   --ui-mac-shadow-pop: 0 0 0 1px var(--border), 0 12px 28px -10px color-mix(in oklab, var(--foreground) 16%, transparent);
   --ui-mac-focus: color-mix(in oklab, var(--ring) 50%, transparent);
@@ -41,7 +39,6 @@ export const css = /* css */ `
 .ui-mac svg { display: block; flex: none; }
 .ui-mac__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* ----- The bar: quiet until the message is hovered, something inside is focused or busy ----- */
 .ui-mac__bar { display: flex; align-items: center; gap: 2px; min-height: 28px; transition: opacity var(--duration-panel) ease; }
 .ui-mac[data-quiet] .ui-mac__bar { opacity: 0.6; }
 .ui-mac[data-quiet]:hover .ui-mac__bar,
@@ -49,7 +46,6 @@ export const css = /* css */ `
 .ui-mac[data-quiet][data-active] .ui-mac__bar,
 :where([data-ui-message]:hover, [data-ui-message]:focus-within) .ui-mac[data-quiet] .ui-mac__bar { opacity: 1; }
 
-/* Ghost icon buttons; pressed takes the selected-tab look */
 .ui-mac__item { position: relative; display: inline-flex; flex: none; }
 .ui-mac__btn { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: var(--ui-mac-icon); transition: background-color var(--duration-micro) ease, color var(--duration-micro) ease, box-shadow var(--duration-micro) ease; }
 .ui-mac__btn:hover { background: var(--ui-mac-wash); color: var(--ui-mac-ink); }
@@ -63,30 +59,24 @@ export const css = /* css */ `
 .ui-mac__glyph[data-solid] { fill: currentColor; stroke: none; }
 .ui-mac__fill { fill: currentColor; stroke: none; }
 
-/* Two icons on top of each other – one blurs away while the other comes in */
 .ui-mac__morph { display: grid; }
 .ui-mac__layer { grid-area: 1 / 1; display: grid; place-items: center; opacity: 0; transform: scale(0.6); filter: blur(2px); transition: opacity var(--duration-micro) ease, transform var(--duration-panel) var(--ui-mac-ease), filter var(--duration-micro) ease; }
 .ui-mac__layer[data-on] { opacity: 1; transform: none; filter: none; }
 
-/* Regenerate spins once per press, and keeps going while busy */
 .ui-mac__spin { display: grid; place-items: center; }
 .ui-mac__spin[data-spin] { animation: ui-mac-spin var(--duration-panel) var(--ui-mac-ease); }
 .ui-mac__btn[data-busy] { color: var(--ui-mac-ink); }
 .ui-mac__btn[data-busy] .ui-mac__spin { animation: ui-mac-spin 900ms linear infinite; }
 
-/* Thumbs: down is the same glyph turned upside down; a vote gives it a little pop */
 .ui-mac__btn--down .ui-mac__glyph { transform: scaleY(-1); }
 .ui-mac__btn[aria-pressed="true"] .ui-mac__thumb { animation: ui-mac-pop var(--duration-panel) var(--ui-mac-ease); }
 
-/* Read aloud: four bars in the accent blue that bounce while it plays */
 
 
 
 
 
 
-
-/* ----- Tooltips: a small white popover above the button – on hover after a beat, on keyboard focus, and briefly after Copy ----- */
 .ui-mac__tip { position: absolute; bottom: calc(100% + 6px); left: 50%; z-index: 3; display: block; width: max-content; padding: 2px 8px; border-radius: 6px; background: var(--ui-mac-card); box-shadow: var(--ui-mac-shadow-pop); font-size: 12px; font-weight: 500; line-height: 20px; color: var(--ui-mac-ink); white-space: nowrap; pointer-events: none; opacity: 0; transform: translate(-50%, 3px); transition: opacity var(--duration-micro) ease, transform var(--duration-micro) var(--ui-mac-ease); }
 .ui-mac__btn:focus-visible + .ui-mac__tip,
 .ui-mac__item[data-flash] .ui-mac__tip { opacity: 1; transform: translate(-50%, 0); transition-delay: 0ms; }
@@ -94,7 +84,6 @@ export const css = /* css */ `
   .ui-mac__item:hover .ui-mac__tip { opacity: 1; transform: translate(-50%, 0); transition-delay: var(--duration-panel); }
 }
 
-/* ----- Version switcher: unfolds next to Regenerate once there are two versions ----- */
 .ui-mac__regen { display: inline-flex; align-items: center; flex: none; }
 .ui-mac__versions { display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns var(--duration-panel) var(--ui-mac-ease), opacity var(--duration-panel) ease; }
 .ui-mac__versions[data-open] { grid-template-columns: 1fr; opacity: 1; transition: grid-template-columns var(--duration-panel) var(--ui-mac-ease), opacity var(--duration-panel) ease var(--duration-micro); }
@@ -107,28 +96,24 @@ export const css = /* css */ `
 .ui-mac__count-now { color: var(--ui-mac-ink); font-weight: 500; }
 .ui-mac__count > .ui-mac__swap:last-child { color: var(--ui-mac-muted); }
 
-/* ----- Swapping text ----- */
 .ui-mac__swap { display: inline-grid; min-width: 0; }
 .ui-mac__swap-item { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; animation: ui-mac-in var(--duration-panel) ease both; }
 .ui-mac__swap-item[data-out] { animation: ui-mac-out var(--duration-panel) ease both; }
 
-/* ----- Feedback row: unfolds below the bar, no card of its own – it sits in the card the bar sits in ----- */
 .ui-mac__fold { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--duration-panel) var(--ui-mac-ease), opacity var(--duration-panel) ease; }
 .ui-mac__fold[data-open] { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows var(--duration-panel) var(--ui-mac-ease), opacity var(--duration-panel) ease var(--duration-micro); }
-.ui-mac__clip { min-height: 0; overflow: hidden; margin: -3px; padding: 3px; }  /* the 3px keep hairlines and focus rings from being clipped */
+.ui-mac__clip { min-height: 0; overflow: hidden; margin: -3px; padding: 3px; }
 .ui-mac__panel { padding: 10px 8px 8px; }
 .ui-mac__panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; }
 .ui-mac__ask { font-size: 13px; font-weight: 500; line-height: 20px; color: var(--ui-mac-strong); }
 .ui-mac__close { display: grid; flex: none; place-items: center; width: 24px; height: 24px; margin-right: -4px; border-radius: 6px; color: var(--ui-mac-icon); transition: background-color var(--duration-micro) ease, color var(--duration-micro) ease; }
 .ui-mac__close:hover { background: var(--ui-mac-wash); color: var(--ui-mac-ink); }
 .ui-mac__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
-/* Reasons: the tab-button look – a hairline, gray text; the picked one gets the gray fill */
 .ui-mac__chip { height: 28px; padding: 4px 10px; border-radius: 6px; box-shadow: inset 0 0 0 0.5px var(--ui-mac-line); font-size: 13px; font-weight: 500; line-height: 20px; color: var(--ui-mac-text); white-space: nowrap; transition: background-color var(--duration-micro) ease, color var(--duration-micro) ease, opacity var(--duration-micro) ease; }
 .ui-mac__chip:hover:not(:disabled) { background: var(--ui-mac-wash); color: var(--ui-mac-ink); }
 .ui-mac__chip[aria-pressed="true"], .ui-mac__chip[aria-pressed="true"]:hover:not(:disabled) { background: var(--ui-mac-fill); color: var(--ui-mac-ink); }
 .ui-mac__chip:disabled { cursor: default; }
 .ui-mac__chip:disabled:not([aria-pressed="true"]) { opacity: 0.45; }
-/* Send: the dark chip; once sent a soft green fill */
 .ui-mac__send { display: inline-flex; align-items: center; justify-content: center; min-width: 60px; height: 28px; margin-left: auto; padding: 0 10px; border-radius: 6px; background: var(--ui-mac-solid); font-size: 13px; font-weight: 500; line-height: 20px; color: var(--ui-mac-on-solid); white-space: nowrap; transition: background-color var(--duration-panel) ease, color var(--duration-panel) ease, opacity var(--duration-micro) ease; }
 .ui-mac__send:hover:not(:disabled):not([data-sent]) { background: var(--ui-mac-solid-hover); }
 .ui-mac__send:disabled { cursor: default; opacity: 0.3; }
@@ -137,7 +122,6 @@ export const css = /* css */ `
 .ui-mac__input { display: block; width: 100%; height: 32px; margin-top: 8px; padding: 0 10px; border: 0; border-radius: 6px; background: var(--ui-mac-card); box-shadow: var(--ui-mac-shadow); font: inherit; font-size: 13px; line-height: 20px; color: var(--ui-mac-ink); outline: none; }
 .ui-mac__input::placeholder { color: var(--ui-mac-faint); }
 
-/* ----- Message text that crossfades between versions (MessageText) ----- */
 .ui-mac-text { overflow: hidden; transition: height var(--duration-panel) var(--ui-mac-ease, var(--ease-micro)); }
 .ui-mac-text__swap { display: grid; }
 .ui-mac-text__swap > .ui-mac__swap-item { display: block; animation: ui-mac-text-in var(--duration-panel) ease both; }
@@ -149,7 +133,6 @@ export const css = /* css */ `
 @keyframes ui-mac-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes ui-mac-pop { 0% { transform: scale(1); } 40% { transform: scale(1.22) rotate(-8deg); } 100% { transform: scale(1); } }
 
-/* Narrow: the feedback row stacks its send button under the reasons */
 @container (max-width: 320px) {
   .ui-mac__send { flex-basis: 100%; }
 }

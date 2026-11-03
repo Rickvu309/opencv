@@ -1,4 +1,4 @@
-export const css = /* css */ `
+export const css = `
 .ui-tlc {
   --ui-tlc-ink: var(--foreground);
   --ui-tlc-text: var(--muted-foreground);
@@ -45,7 +45,6 @@ export const css = /* css */ `
   box-shadow: none;
 }
 
-/* Spinner and check share one square and swap with a little scale */
 .ui-tlc__icon {
   position: relative;
   flex: none;
@@ -60,7 +59,6 @@ export const css = /* css */ `
   overflow: visible;
   transition: opacity var(--duration-panel) ease, transform var(--duration-panel) var(--ui-tlc-ease);
 }
-/* Thin rays in the accent blue – they fade one after another, so the spinner turns without rotating */
 .ui-tlc__spinner line {
   stroke: var(--ui-tlc-accent);
   stroke-width: 1.1;
@@ -93,7 +91,6 @@ export const css = /* css */ `
   animation: ui-tlc-draw var(--duration-panel) var(--ui-tlc-ease) var(--duration-micro) forwards;
 }
 
-/* The text box glides to the width of the incoming label; labels roll through it */
 .ui-tlc__text {
   position: relative;
   display: block;
@@ -118,7 +115,6 @@ export const css = /* css */ `
   animation: ui-tlc-out var(--duration-panel) var(--ui-tlc-ease) both;
 }
 
-/* A darker band sweeping through the gray label while it works */
 .ui-tlc__shine::after {
   content: attr(data-text);
   content: attr(data-text) / "";

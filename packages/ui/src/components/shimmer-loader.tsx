@@ -2,21 +2,10 @@
 
 import type { CSSProperties, ReactNode } from "react"
 
-/*
- * Shimmer Loader – loading states with a soft light sweep, in a single self-contained file.
- * Skeleton draws placeholder blocks; the highlight is pinned to the viewport (background-attachment: fixed),
- * so every skeleton on the page shares one sweep that travels across them together. ShimmerText runs a
- * highlight band through the letters of a label, like an AI "Thinking…" state. The styles are injected below.
- */
-
 export type SkeletonProps = {
-  /** Width – a number is px, a string any CSS length; defaults to 100% */
   width?: number | string
-  /** Height – a number is px, a string any CSS length; defaults to 12px */
   height?: number | string
-  /** Corner radius; defaults to 6px */
   radius?: number | string
-  /** Round shape, e.g. for avatars – uses width for both sides */
   circle?: boolean
   className?: string
   style?: CSSProperties
@@ -24,8 +13,7 @@ export type SkeletonProps = {
 
 export type ShimmerTextProps = {
   children: ReactNode
-  /** Seconds for one pass of the highlight */
-  duration?: number
+  durationSeconds?: number
   className?: string
 }
 
@@ -67,7 +55,7 @@ export function Skeleton({
 
 export function ShimmerText({
   children,
-  duration = 2,
+  durationSeconds = 2,
   className,
 }: ShimmerTextProps) {
   return (
@@ -76,7 +64,7 @@ export function ShimmerText({
       <span
         data-slot="shimmer-text"
         className={["ui-shm-text", className].filter(Boolean).join(" ")}
-        style={{ animationDuration: `${duration}s` }}
+        style={{ animationDuration: `${durationSeconds}s` }}
       >
         {children}
       </span>
@@ -84,10 +72,7 @@ export function ShimmerText({
   )
 }
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
-/* Skeleton: one fixed gradient for the whole viewport, so all blocks sweep together */
+const css = `
 .ui-shm {
   display: block;
   flex: none;
@@ -114,7 +99,6 @@ const css = /* css */ `
   to { background-position: 100vw 0; }
 }
 
-/* Text: a highlight band runs through the letters */
 .ui-shm-text {
   display: inline-block;
   color: var(--muted-foreground);

@@ -4,31 +4,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 
-/*
- * Number Ticker – animated numbers like an odometer, in a single self-contained file.
- * Every digit is a small vertical column that rolls to its new value: up when the number grows, down when it
- * shrinks. On first view it counts in from zero. Formatting comes from Intl.NumberFormat, so currency signs,
- * separators and percent signs stay put while only the digits move. The styles are injected below.
- */
-
 export type NumberTickerProps = {
-  /** The number to show */
   value: number
-  /** Intl.NumberFormat options, e.g. { style: "currency", currency: "USD" } */
   format?: Intl.NumberFormatOptions
-  /** Locale for formatting, e.g. "en-US" – defaults to the browser's */
   locale?: string
-  /** Length of a roll in ms */
-  duration?: number
-  /** Wait before the first count-in, in ms */
-  delay?: number
+  durationMs?: number
+  delayMs?: number
   className?: string
 }
 
 type Part = { key: string; digit: number } | { key: string; char: string }
 
-/** "$48,240" → parts keyed from the right, so the ones column keeps its identity when the number grows */
-function split(text: string): Part[] {
+function splitIntoPartsKeyedFromTheRight(text: string): Part[] {
   const chars = Array.from(text)
   const parts: Part[] = []
   let d = 0
@@ -42,11 +29,11 @@ function split(text: string): Part[] {
   return parts
 }
 
+const DIGIT_STACK_WITH_WRAP_ZERO = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
 const mod10 = (n: number) => ((n % 10) + 10) % 10
 const ease = (t: number) => 1 - Math.pow(1 - t, 4)
-/** Position → transform; the stack holds 0–9 plus a trailing 0, so 9 → 0 rolls seamlessly */
 const place = (el: HTMLElement, pos: number) => {
-  el.style.transform = `translateY(${(-mod10(pos) / 11) * 100}%)`
+  el.style.transform = `translateY(${(-mod10(pos) / DIGIT_STACK_WITH_WRAP_ZERO.length) * 100}%)`
 }
 
 type Roll = { pos: number; from: number; to: number }
@@ -55,17 +42,17 @@ export function NumberTicker({
   value,
   format,
   locale,
-  duration = 900,
-  delay = 0,
+  durationMs = 900,
+  delayMs = 0,
   className,
 }: NumberTickerProps) {
   const fmtKey = JSON.stringify(format ?? {})
   const text = useMemo(
     () => new Intl.NumberFormat(locale, format).format(value),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fmtKey stands in for the format object
     [value, locale, fmtKey]
   )
-  const parts = useMemo(() => split(text), [text])
+  const parts = useMemo(() => splitIntoPartsKeyedFromTheRight(text), [text])
 
   const root = useRef<HTMLSpanElement>(null)
   const rolls = useRef(new Map<string, Roll>())
@@ -77,7 +64,6 @@ export function NumberTicker({
   const seen = useRef(new Set<string>())
   const [started, setStarted] = useState(false)
 
-  // Columns that show up after the first render slide in (e.g. 9,999 → 10,000)
   const keysNow = new Set(parts.filter((p) => "digit" in p).map((p) => p.key))
   for (const k of keysNow)
     if (mounted.current && !seen.current.has(k)) entering.current.add(k)
@@ -85,7 +71,6 @@ export function NumberTicker({
     if (!keysNow.has(k)) entering.current.delete(k)
   seen.current = keysNow
 
-  // Start once the number scrolls into view
   useEffect(() => {
     mounted.current = true
     const el = root.current
@@ -98,7 +83,7 @@ export function NumberTicker({
       ([e]) => {
         if (!e.isIntersecting) return
         io.disconnect()
-        timer = window.setTimeout(() => setStarted(true), delay)
+        timer = window.setTimeout(() => setStarted(true), delayMs)
       },
       { threshold: 0.3 }
     )
@@ -107,13 +92,11 @@ export function NumberTicker({
       io.disconnect()
       clearTimeout(timer)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the count-in starts once, when the number first scrolls into view
   }, [])
 
-  // Roll every digit column to its new value
   useEffect(() => {
     if (!started) return
-    // Same value again (e.g. a format change) keeps the last direction
     if (value !== prev.current) up.current = value > prev.current
     prev.current = value
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -145,7 +128,7 @@ export function NumberTicker({
     let raf = 0
     const t0 = performance.now()
     const tick = (now: number) => {
-      const t = Math.min(1, (now - t0) / duration)
+      const t = Math.min(1, (now - t0) / durationMs)
       const e = ease(t)
       for (const r of rolls.current.values())
         r.pos = r.from + (r.to - r.from) * e
@@ -154,7 +137,7 @@ export function NumberTicker({
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [parts, started, value, duration])
+  }, [parts, started, value, durationMs])
 
   return (
     <>
@@ -188,7 +171,7 @@ export function NumberTicker({
                     }
                   }}
                 >
-                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n, i) => (
+                  {DIGIT_STACK_WITH_WRAP_ZERO.map((n, i) => (
                     <span key={i} className="ui-nt__cell">
                       {n}
                     </span>
@@ -207,9 +190,7 @@ export function NumberTicker({
   )
 }
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
+const css = `
 .ui-nt {
   --ui-nt-lh: 1.15em;
   position: relative;
@@ -239,7 +220,6 @@ const css = /* css */ `
   display: inline-block;
   height: var(--ui-nt-lh);
   overflow: hidden;
-  /* Soft top and bottom edges while digits pass through */
   -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent);
   mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent);
 }

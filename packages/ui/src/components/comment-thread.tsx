@@ -10,12 +10,6 @@ import {
   type RefObject,
 } from "react"
 
-/*
- * Comment Thread – one comment with its replies, including an assistant that reports what it did, in a single
- * self-contained file. Assistant replies can fold open to show the details; replying shows a thinking state
- * while an async answer comes back. The styles are injected below, so no extra files are needed.
- */
-
 export type ThreadAuthor = {
   name: string
   avatar?: ReactNode | string
@@ -27,7 +21,6 @@ export type ThreadMessage = {
   author: ThreadAuthor
   createdAt: Date | number
   text: string
-  /** Assistant replies: a short status line that folds open to show these details */
   status?: string
   details?: string[]
 }
@@ -36,13 +29,7 @@ export type CommentThreadProps = {
   title?: string
   messages: ThreadMessage[]
   currentUser: ThreadAuthor
-  /** The assistant that answers – used for the thinking state */
   assistant?: ThreadAuthor
-  /**
-   * Called with every new reply. Return a message (or a promise of one) to let the assistant answer;
-   * return nothing to just post the reply.
-   */
-  /** Leave out for a read-only thread: the reply box is not shown */
   onReply?: (
     text: string
   ) => ThreadMessage | Promise<ThreadMessage | void> | void
@@ -71,7 +58,6 @@ export function CommentThread({
   className,
 }: CommentThreadProps) {
   const [messages, setMessages] = useState(initial)
-  // Assistant replies that are there from the start come in a beat after the comment above them
   const [firstIds] = useState(
     () => new Set(initial.filter((m) => m.author.assistant).map((m) => m.id))
   )
@@ -87,7 +73,6 @@ export function CommentThread({
     return () => window.clearInterval(t)
   }, [])
 
-  // Follow the conversation as it grows
   useEffect(() => {
     listRef.current?.scrollTo({
       top: listRef.current.scrollHeight,
@@ -123,7 +108,6 @@ export function CommentThread({
     }
   }
 
-  // New messages keep the card at its height and the conversation scrolls up; folding details lets it grow again
   const lockHeight = (on: boolean) => {
     const list = listRef.current
     if (list) list.style.maxHeight = on ? `${list.offsetHeight}px` : ""
@@ -311,7 +295,6 @@ function Avatar({ author }: { author: ThreadAuthor }) {
   )
 }
 
-/** A simple assistant mark: a filled circle – pass your own logo as `avatar` instead */
 export function AssistantMark() {
   return (
     <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
@@ -336,10 +319,6 @@ const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
   </svg>
 )
 
-/**
- * Lets a box glide to the height of its content instead of jumping: the outer box follows the inner one
- * with a height transition whenever the content grows or shrinks.
- */
 function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
   const outer = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -352,7 +331,6 @@ function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
     sync()
     const ro = new ResizeObserver(sync)
     ro.observe(i)
-    // Transitions switch on after the first measurement, so the first render doesn't animate
     const frame = requestAnimationFrame(() => o.setAttribute("data-smooth", ""))
     return () => {
       ro.disconnect()
@@ -362,9 +340,7 @@ function useSmoothHeight(inner: RefObject<HTMLElement | null>) {
   return outer
 }
 
-/* ---------- Styles ---------- */
-
-const css = /* css */ `
+const css = `
 .ui-ct {
   --ui-ct-tray: var(--muted);
   --ui-ct-card: var(--card);
@@ -386,9 +362,7 @@ const css = /* css */ `
   box-sizing: border-box;
   width: 100%;
   max-width: 420px;
-  /* Like the Chat Composer: a gray tray with heading and reply field, the white card sits on top of it */
   background: var(--ui-ct-tray);
-  /* The gray tray frames the white card on every side */
   padding: 6px;
   border-radius: 22px;
   font-family: inherit;
@@ -438,7 +412,6 @@ const css = /* css */ `
   overflow-y: auto;
   scrollbar-width: thin;
 }
-/* Each message builds up piece by piece: name row, text, status – the assistant's first reply a beat later */
 .ui-ct__msg { --ui-ct-d: 0ms; }
 .ui-ct__msg[data-delayed] { --ui-ct-d: 700ms; }
 .ui-ct__msg > * { animation: ui-ct-in var(--duration-panel) var(--ease-panel) both; animation-delay: var(--ui-ct-d); }
@@ -476,7 +449,6 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   font-size: 14px !important;
   transition: background-color var(--duration-micro) var(--ease-micro);
 }
-/* The global button reset sets margin: 0 – shift the row so the check icon sits centered under the avatars */
 .ui-ct .ui-ct__status-btn { margin-left: -4px; }
 .ui-ct__status-btn:hover:not(:disabled) { background: var(--ui-ct-row-hover); }
 .ui-ct__status-btn:disabled { cursor: default; }
@@ -510,19 +482,16 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   font-size: 13px;
   line-height: 19px;
   color: var(--ui-ct-muted);
-  /* Closing: lines fade out quickly while the box folds */
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity var(--duration-micro) var(--ease-micro), transform var(--duration-micro) var(--ease-micro);
 }
-/* Opening: lines come in one after another */
 .ui-ct__details[data-open] li {
   opacity: 1;
   transform: none;
   transition-duration: var(--duration-panel), var(--duration-panel);
   transition-delay: calc(60ms + var(--i, 0) * 60ms);
 }
-/* Tree lines instead of dots: each line gets its own corner – down on the axis of the check icon, then a rounded turn right */
 .ui-ct__details li:first-child { margin-top: 5px; }
 .ui-ct__details li::before {
   content: "";
@@ -535,7 +504,6 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   border-bottom: 1.25px solid var(--ui-ct-dot);
   border-bottom-left-radius: 5px;
 }
-/* The first branch starts with a small gap under the check icon */
 .ui-ct__details li:first-child::before {
   top: -5px;
   height: 15px;
@@ -595,13 +563,11 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
   .ui-ct__details, .ui-ct__details li, .ui-ct__chevron { transition: none; }
 }
 
-/* Height changes glide instead of jumping */
 .ui-ct__morph { overflow: hidden; }
 .ui-ct__morph[data-smooth] { transition: height var(--duration-panel) cubic-bezier(0.22, 1, 0.36, 1); }
 @media (prefers-reduced-motion: reduce) { .ui-ct__morph[data-smooth] { transition: none; } }
 
 
-/* Text fields: no focus box while typing – also against global :focus-visible rules of the host page */
 .ui-ct input:not([type="checkbox"]):not([type="radio"]):focus-visible,
 .ui-ct textarea:focus-visible,
 .ui-ct [contenteditable]:focus-visible { outline: none; }
