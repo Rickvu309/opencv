@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react"
+import { useLayoutEffect } from "react"
 import type {
   BlockSchema,
   InlineContentSchema,
@@ -33,6 +33,8 @@ const SLASH_KEYS: Record<string, string[]> = {
   "Numbered list": ["⌘", "⇧", "9"],
 }
 
+const HINT_AFTER_SLASH = 3
+
 function SlashList({
   items,
   selectedIndex,
@@ -43,77 +45,11 @@ function SlashList({
     InlineContentSchema,
     StyleSchema
   >()
-  const menuRef = useRef<HTMLDivElement>(null)
   const cv = "paperHeader" in editor.schema.blockSchema
   useLayoutEffect(() => {
     if (!cv) return
-    const menu = menuRef.current
-    const pane = document.querySelector<HTMLElement>(
-      '[data-slot="cv-editor-page"]'
-    )
-    if (!menu || !pane) return
-    const paneRect = pane.getBoundingClientRect()
-    const pin = () => {
-      let host = menu.parentElement
-      while (host && host !== document.body) {
-        const style = getComputedStyle(host)
-        if (style.position !== "static" || style.transform !== "none") {
-          const width = menu.offsetWidth || 300
-          const height = menu.offsetHeight || 0
-          const edge = 8
-          let left = paneRect.left + 366
-          let top = paneRect.top + 269
-          if (left + width > window.innerWidth - edge) {
-            left = Math.max(edge, window.innerWidth - edge - width)
-          }
-          if (left < edge) left = edge
-          const slash = document.querySelector<HTMLElement>(
-            "[data-cv-slash-block]"
-          )
-          const slashRect = slash?.getBoundingClientRect()
-          const caretLow =
-            !!slashRect && slashRect.bottom + height > window.innerHeight - edge
-          if (
-            height > 0 &&
-            slashRect &&
-            (caretLow || window.innerWidth < 768)
-          ) {
-            const below = slashRect.bottom + 4
-            const above = slashRect.top - height - 4
-            top =
-              below + height <= window.innerHeight - edge
-                ? below
-                : above >= edge
-                  ? above
-                  : Math.max(edge, window.innerHeight - edge - height)
-            left = Math.min(
-              Math.max(edge, slashRect.left),
-              window.innerWidth - edge - width
-            )
-          } else if (
-            height > 0 &&
-            slashRect &&
-            top + height > window.innerHeight - edge
-          ) {
-            const up = slashRect.top - height - edge
-            top =
-              up >= edge
-                ? up
-                : Math.max(edge, window.innerHeight - edge - height)
-          }
-          host.style.position = "fixed"
-          host.style.left = `${left}px`
-          host.style.top = `${top}px`
-          host.style.right = "auto"
-          host.style.bottom = "auto"
-          host.style.transform = "none"
-          host.style.margin = "0"
-          return
-        }
-        host = host.parentElement
-      }
-    }
-    const slashLine = () => {
+    let live = true
+    const placeHint = () => {
       const anchor = document.getSelection()?.anchorNode
       const current = anchor instanceof Element ? anchor : anchor?.parentElement
       const currentLine = current?.closest<HTMLElement>(".bn-inline-content")
@@ -125,17 +61,17 @@ function SlashList({
       const ordered = currentLine
         ? [currentLine, ...nodes.filter((node) => node !== currentLine)]
         : nodes
+      let slash: HTMLElement | null = null
       for (const node of ordered) {
         const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
         for (let next = walker.nextNode(); next; next = walker.nextNode()) {
-          if (next.textContent?.trim() === "/") return node
+          if (next.textContent?.trim() === "/") {
+            slash = node
+            break
+          }
         }
+        if (slash) break
       }
-      return null
-    }
-    const place = () => {
-      pin()
-      const slash = slashLine()
       const outer = slash?.closest<HTMLElement>(".bn-block-outer")
       const surface = document.querySelector<HTMLElement>(
         "[data-pen-surface='paper']"
@@ -158,33 +94,27 @@ function SlashList({
         hint.textContent = "Type to filter"
         surface.appendChild(hint)
       }
-      hint.style.position = "fixed"
-      hint.style.margin = "0"
-      hint.style.left = `${rect.right + 6}px`
+      hint.style.left = `${rect.right + HINT_AFTER_SLASH}px`
       hint.style.top = `${rect.top}px`
     }
-    let frame = 0
-    let live = true
-    const tick = () => {
-      if (!live) return
-      place()
-      frame = requestAnimationFrame(tick)
-    }
-    tick()
+    placeHint()
+    const onResize = () => placeHint()
+    window.addEventListener("resize", onResize)
+    void document.fonts.ready.then(() => {
+      if (live) placeHint()
+    })
     return () => {
       live = false
-      cancelAnimationFrame(frame)
+      window.removeEventListener("resize", onResize)
       document.querySelector("[data-cv-slash-hint]")?.remove()
-      const outer = document.querySelector<HTMLElement>("[data-cv-slash-block]")
-      if (outer) {
-        outer.style.removeProperty("margin-top")
-        outer.removeAttribute("data-cv-slash-block")
-      }
+      const marked = document.querySelector<HTMLElement>(
+        "[data-cv-slash-block]"
+      )
+      if (marked) marked.removeAttribute("data-cv-slash-block")
     }
-  }, [cv])
+  }, [cv, items])
   return (
     <div
-      ref={menuRef}
       role="listbox"
       aria-label={cv ? "Insert" : "Blocks"}
       data-pen-surface={cv ? "paper" : undefined}

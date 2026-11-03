@@ -1,10 +1,4 @@
-import {
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useReducer,
-  useRef,
-} from "react"
+import { useContext, useEffect, useReducer, useRef } from "react"
 import type {
   BlockSchema,
   InlineContentSchema,
@@ -63,6 +57,55 @@ type BlockChoice = {
   label: string
   type: string
   props?: Record<string, unknown>
+}
+
+const TOOLBAR_ABOVE_SELECTION = 15
+const TOOLBAR_BEFORE_SELECTION = 67
+
+const cvToolbarFloating = {
+  useFloatingOptions: {
+    placement: "top-start" as const,
+    middleware: [
+      {
+        name: "cvToolbarOffset",
+        fn(state: {
+          x: number
+          y: number
+          placement: string
+          rects: { floating: { width: number; height: number } }
+        }) {
+          const side = state.placement.split("-")[0]
+          let x = state.x
+          let y = state.y
+          if (side === "top") {
+            x -= TOOLBAR_BEFORE_SELECTION
+            y -= TOOLBAR_ABOVE_SELECTION
+          } else if (side === "bottom") {
+            x -= TOOLBAR_BEFORE_SELECTION
+            y += TOOLBAR_ABOVE_SELECTION
+          } else if (side === "left") {
+            x -= TOOLBAR_ABOVE_SELECTION
+            y -= TOOLBAR_BEFORE_SELECTION
+          } else {
+            x += TOOLBAR_ABOVE_SELECTION
+            y -= TOOLBAR_BEFORE_SELECTION
+          }
+          const edge = 8
+          const width = state.rects.floating.width
+          const height = state.rects.floating.height
+          x = Math.min(
+            Math.max(edge, x),
+            Math.max(edge, window.innerWidth - edge - width)
+          )
+          y = Math.min(
+            Math.max(edge, y),
+            Math.max(edge, window.innerHeight - edge - height)
+          )
+          return { x, y }
+        },
+      },
+    ],
+  },
 }
 
 const BLOCK_CHOICES: BlockChoice[] = [
@@ -164,62 +207,6 @@ function SelectionFormat() {
     document.activeElement?.closest("[data-cv-field]") != null,
     nodeName
   )
-  useLayoutEffect(() => {
-    if (!cv || hidden) return
-    const toolbar = document.querySelector<HTMLElement>(
-      '[data-slot="paper-format-toolbar"]'
-    )
-    const pane = document.querySelector<HTMLElement>(
-      '[data-slot="cv-editor-page"]'
-    )
-    if (!toolbar || !pane) return
-    const paneRect = pane.getBoundingClientRect()
-    const pin = () => {
-      const label = toolbar.querySelector("[data-cv-format-coach]")
-      if (!label) return
-      const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT)
-      let node: Node | null = null
-      for (let next = walker.nextNode(); next; next = walker.nextNode()) {
-        if (next.textContent?.includes("Coach")) node = next
-      }
-      if (!node?.textContent) return
-      const at = node.textContent.indexOf("Coach")
-      const range = document.createRange()
-      range.setStart(node, at)
-      range.setEnd(node, at + "Coach".length)
-      const rect = range.getBoundingClientRect()
-      const dx = paneRect.left + 483 - rect.left
-      const dy = paneRect.top + 178.5 - rect.top
-      let host: HTMLElement | null = toolbar
-      while (host && host !== document.body) {
-        const style = getComputedStyle(host)
-        if (style.position !== "static" || style.transform !== "none") {
-          const hostRect = host.getBoundingClientRect()
-          host.style.position = "fixed"
-          host.style.left = `${hostRect.left + dx}px`
-          host.style.top = `${hostRect.top + dy}px`
-          host.style.right = "auto"
-          host.style.bottom = "auto"
-          host.style.transform = "none"
-          host.style.margin = "0"
-          return
-        }
-        host = host.parentElement
-      }
-    }
-    let frame = 0
-    let live = true
-    const tick = () => {
-      if (!live) return
-      pin()
-      frame = requestAnimationFrame(tick)
-    }
-    tick()
-    return () => {
-      live = false
-      cancelAnimationFrame(frame)
-    }
-  }, [cv, hidden])
   const toggle = (name: "bold" | "italic") => {
     editor.toggleStyles({ [name]: true } as never)
     editor.focus()
@@ -376,8 +363,15 @@ function SelectionFormat() {
 }
 
 export function PaperFormattingToolbar() {
+  const editor = useBlockNoteEditor()
   useExtension(FormattingToolbarExtension)
-  return <FormattingToolbarController formattingToolbar={SelectionFormat} />
+  const cv = "paperHeader" in editor.schema.blockSchema
+  return (
+    <FormattingToolbarController
+      formattingToolbar={SelectionFormat}
+      floatingUIOptions={cv ? cvToolbarFloating : undefined}
+    />
+  )
 }
 
 function Handle() {
