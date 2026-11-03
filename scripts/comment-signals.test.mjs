@@ -54,6 +54,10 @@ test("a test that reads comments through the typescript api fires, and no-commen
     detect(MISTAKE_COMMENT_API, "scripts/no-comments.mjs", []),
     []
   )
+  assert.deepEqual(
+    detect(MISTAKE_COMMENT_API, "scripts/lib/comment-spans.mjs", []),
+    []
+  )
 })
 
 test("code with no marker in a comment and no reader stays quiet", () => {

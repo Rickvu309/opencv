@@ -13,6 +13,7 @@ export const COMMENT_READERS = [
   "scripts/no-comments.mjs",
   "scripts/no-comments.test.mjs",
   "scripts/lib/strip-comments.mjs",
+  "scripts/lib/comment-spans.mjs",
   "scripts/ds-codemod.test.mjs",
 ]
 
