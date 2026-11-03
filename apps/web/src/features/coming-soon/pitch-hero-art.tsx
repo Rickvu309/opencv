@@ -111,7 +111,7 @@ export function PitchHeroArt() {
             />
             <ProfileButton
               icon={
-                <HandDrawnLinkedinIcon className="size-[13px] text-foreground/80" />
+                <LucideLinkedinIconCopy className="size-[13px] text-foreground/80" />
               }
               label="LinkedIn"
             />
@@ -200,7 +200,7 @@ export function PitchHeroArt() {
   )
 }
 
-function HandDrawnLinkedinIcon({ className }: { className?: string }) {
+function LucideLinkedinIconCopy({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"

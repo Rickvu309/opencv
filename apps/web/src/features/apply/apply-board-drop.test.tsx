@@ -27,7 +27,7 @@ vi.mock("@workspace/ui/components/kanban", async (importActual) => {
 
 const junior = mockJob()
 
-describe("apply board keyboard drop", () => {
+describe("apply board keyboard drop, driving the board drag handlers directly since jsdom cannot measure drop rects", () => {
   beforeEach(() => {
     setMockJobs([])
   })

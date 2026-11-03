@@ -11,7 +11,7 @@ import snapshotFile from "./design/auth.snapshot.json"
 const PEN_HEADING_WITH_CAPS_BRAND = "Log in to OpenCV"
 const ACCESSIBLE_HEADING_NAME = "Log in to opencv"
 
-const SCREEN_ONLY_COPY = [
+const SCREEN_ONLY_COPY_NEVER_A_HIDDEN_PEN_LINE = [
   AUTH_COPY.googleUnavailable,
   AUTH_COPY.emailInvalid,
   AUTH_COPY.codeBad,
@@ -256,7 +256,7 @@ describe("auth design parity", () => {
 
     const needles = [
       ...snapshot.sections.flatMap((section) => section.texts.map(shown)),
-      ...SCREEN_ONLY_COPY,
+      ...SCREEN_ONLY_COPY_NEVER_A_HIDDEN_PEN_LINE,
     ]
     const extra = stripNeedles(visibleText(frame), needles)
     if (extra) problems.push(`extra text ${JSON.stringify(extra)}`)

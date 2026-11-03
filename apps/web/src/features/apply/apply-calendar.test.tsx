@@ -22,9 +22,13 @@ const FIRST_ROW_HOUR = 8
 const HOUR_ROW_PX = 58
 const EVENT_INSET_PX = 1
 
+const FAKE_DATE_ONLY_SO_WAITFOR_KEEPS_REAL_TIMERS: Parameters<
+  typeof vi.useFakeTimers
+>[0] = { toFake: ["Date"] }
+
 describe("apply calendar", () => {
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.useFakeTimers(FAKE_DATE_ONLY_SO_WAITFOR_KEEPS_REAL_TIMERS)
     vi.setSystemTime(PINNED_NOW)
   })
   afterEach(() => {

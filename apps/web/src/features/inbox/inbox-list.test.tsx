@@ -10,6 +10,7 @@ import {
   inboxStamp,
   inboxWhen,
   nextMorningIso,
+  SNOOZED_UNTIL_WAKE_TOAST,
 } from "./inbox-time.ts"
 
 afterEach(() => {
@@ -85,6 +86,20 @@ describe("inbox list", () => {
       </ul>
     )
     expect(document.querySelector("[data-slot='company-tile']")).not.toBeNull()
+  })
+
+  it("names the snooze wake hour in the toast that nextMorningIso wakes at", () => {
+    const wake = new Date(nextMorningIso(INBOX_NOW, "Asia/Singapore"))
+    const wakeClock = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Singapore",
+      hour: "numeric",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).format(wake)
+    expect(SNOOZED_UNTIL_WAKE_TOAST).toBe("Snoozed until 7:00")
+    expect(SNOOZED_UNTIL_WAKE_TOAST).toBe(
+      `Snoozed until ${wakeClock.replace(/^0/, "")}`
+    )
   })
 
   it("formats list times and chips in the profile zone", () => {

@@ -35,7 +35,7 @@ async function sendCode(address = "ada@verify.local") {
   ).toBeInTheDocument()
 }
 
-async function waitForCodeFocusAfterRejection() {
+async function waitForPassiveFocusEffectAfterRejection() {
   await waitFor(() => {
     expect(screen.getByRole("textbox", { name: "Digit 1" })).toHaveFocus()
   })
@@ -257,7 +257,7 @@ describe("email code", () => {
     expect(
       await screen.findByRole("button", { name: AUTH_COPY.sendNew })
     ).toBeInTheDocument()
-    await waitForCodeFocusAfterRejection()
+    await waitForPassiveFocusEffectAfterRejection()
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }

@@ -107,6 +107,8 @@ export function chipClock(iso: string, zone = PROFILE_ZONE) {
 
 const SNOOZE_WAKE_HOUR = 7
 
+export const SNOOZED_UNTIL_WAKE_TOAST = `Snoozed until ${SNOOZE_WAKE_HOUR}:00`
+
 export function nextMorningIso(now = new Date(), zone = PROFILE_ZONE) {
   const today = parts(now, zone)
   let ymd = `${today.year}-${today.month}-${today.day}`

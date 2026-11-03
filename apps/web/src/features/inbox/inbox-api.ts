@@ -47,7 +47,7 @@ export function fetchThread(threadId: string) {
   ).then(unwrapData)
 }
 
-export function fetchGmailConnectTarget() {
+export function fetchGmailConnectTargetNotAContractRead() {
   return apiFetch<SuccessBody<unknown>>(endpoints.inboxConnect).then((body) =>
     parseConnect(unwrapData(body))
   )
