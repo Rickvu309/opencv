@@ -51,27 +51,54 @@ const collect = (needle) => `(() => {
     }
     return parts.join(" > ")
   }
+  const textBox = (el) => {
+    const range = document.createRange()
+    let left = Infinity
+    let right = -Infinity
+    let top = Infinity
+    let bottom = -Infinity
+    let any = false
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3 || !node.textContent.trim()) continue
+      range.selectNodeContents(node)
+      const box = range.getBoundingClientRect()
+      if (box.width < 1 || box.height < 1) continue
+      any = true
+      left = Math.min(left, box.left)
+      right = Math.max(right, box.right)
+      top = Math.min(top, box.top)
+      bottom = Math.max(bottom, box.bottom)
+    }
+    if (!any) return null
+    return { left, right, top, bottom, width: right - left, height: bottom - top }
+  }
   const nodes = []
   for (const el of document.body.querySelectorAll("*")) {
     const style = getComputedStyle(el)
     if (style.display === "none" || style.visibility === "hidden") continue
     if (style.overflowX !== "visible") continue
-    const hasText = [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim())
-    if (!hasText) continue
-    const rect = el.getBoundingClientRect()
-    if (offScreen(rect, innerWidth)) continue
-    const parent = el.parentElement
-    if (!parent) continue
-    const parentOverflow = getComputedStyle(parent).overflowX
-    const box = parent.getBoundingClientRect()
-    if (rect.right <= box.right + 1 && rect.left >= box.left - 1) continue
+    const rect = textBox(el)
+    if (!rect || offScreen(rect, innerWidth)) continue
+    let parent = el.parentElement
+    let hit = null
+    while (parent && parent !== document.body) {
+      const parentStyle = getComputedStyle(parent)
+      if (parentStyle.overflowX !== "visible") break
+      const box = parent.getBoundingClientRect()
+      if (rect.right > box.right + 1 || rect.left < box.left - 1) {
+        hit = box
+        break
+      }
+      parent = parent.parentElement
+    }
+    if (!hit) continue
     nodes.push({
       overflow: "visible",
-      parentOverflow,
+      parentOverflow: "visible",
       left: rect.left,
       right: rect.right,
-      parentLeft: box.left,
-      parentRight: box.right,
+      parentLeft: hit.left,
+      parentRight: hit.right,
       selector: signature(el),
       text: (el.textContent || "").trim().slice(0, 48),
     })
@@ -107,7 +134,9 @@ async function openCoachJob(page, needle) {
   )
 }
 
-async function openExpired(page, email) {
+async function openExpired(page, email, path) {
+  await page.goto(`${webUrl}${path}`)
+  await page.waitFor("document.querySelector('[data-slot=app-shell]')", 15000)
   await page.evaluate(
     `sessionStorage.setItem("opencv.signedOutEmail", ${JSON.stringify(email)})`
   )
@@ -126,14 +155,13 @@ async function openExpired(page, email) {
       : null
   )
   await page.evaluate(
-    "import('/src/lib/api.ts').then((module) => module.apiRequest('/api/profile')).catch((error) => ({ code: error && error.code, status: error && error.status }))"
+    `import("/src/lib/api.ts").then((module) => module.apiRequest("/api/profile")).catch(() => null)`
   )
-  const opened = await page.waitFor(
+  page.setIntercept(null)
+  return page.waitFor(
     `document.querySelector('[role=dialog]') && (document.body.textContent || "").includes(${JSON.stringify(email)})`,
     15000
   )
-  page.setIntercept(null)
-  return opened
 }
 
 const browser = await launchBrowser()
@@ -149,11 +177,17 @@ try {
   await signInWorstCase({ page, webUrl, apiUrl, logPath })
   const { jobId } = await seedWorstCase({ page, apiUrl })
   for (const route of routesFor(jobId)) {
-    await page.goto(`${webUrl}${route.path}`)
-    await page.waitFor("document.querySelector('[data-slot=app-shell]')", 15000)
-    await page.sleep(400)
-    if (route.openJob) await openCoachJob(page, route.needle)
-    if (route.openExpired) await openExpired(page, route.needle)
+    if (route.openExpired) {
+      await openExpired(page, route.needle, route.path)
+    } else {
+      await page.goto(`${webUrl}${route.path}`)
+      await page.waitFor(
+        "document.querySelector('[data-slot=app-shell]')",
+        15000
+      )
+      await page.sleep(400)
+      if (route.openJob) await openCoachJob(page, route.needle)
+    }
     await page.sleep(300)
     const shot = await page.evaluate(collect(route.needle ?? ""))
     const hits = spills(shot)

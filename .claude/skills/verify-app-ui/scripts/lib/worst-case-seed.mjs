@@ -114,7 +114,7 @@ export function routesFor(jobId) {
     { id: "coach", path: "/coach", needle: MARK, openJob: true },
     {
       id: "session-expired",
-      path: "/settings",
+      path: "/apply",
       needle: EMAIL,
       openExpired: true,
     },

@@ -193,6 +193,7 @@ test("the worst-case seed is an unbroken 200-character value, a 40-character ema
   assert.equal(month.path, "/apply?view=calendar&span=month")
   assert.equal(month.needle, MARK)
   assert.equal(expired.needle, EMAIL)
+  assert.equal(expired.path, "/apply")
   assert.equal(expired.openExpired, true)
 })
 
