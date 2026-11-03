@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
@@ -8,7 +8,6 @@ export const root = path.resolve(
   fileURLToPath(new URL(".", import.meta.url)),
   ".."
 )
-export const BASELINE_PATH = "scripts/no-comments.baseline.json"
 export const SOURCE_FILE = /\.(?:[cm]?[jt]s|[jt]sx)$/
 export const CSS_FILE = /\.css$/
 
@@ -254,52 +253,22 @@ export function scanFiles(files, read) {
 export const countLines = (comments) =>
   comments.reduce((sum, comment) => sum + comment.lines, 0)
 
-export function compare(found, baseline) {
+export function commentProblems(found) {
   const problems = []
-  const files = new Set([...Object.keys(found), ...Object.keys(baseline)])
-  for (const file of [...files].sort()) {
-    const comments = found[file] ?? []
+  for (const file of Object.keys(found).sort()) {
+    const comments = found[file]
     const now = countLines(comments)
-    const allowed = baseline[file] ?? 0
-    if (now > allowed) {
-      const where = comments
-        .slice(0, 10)
-        .map((comment) => `${file}:${comment.line}`)
-        .join(", ")
-      problems.push(
-        `${where}: ${now} comment lines, baseline allows ${allowed}. ${REFUSAL}`
-      )
-    } else if (now < allowed) {
-      problems.push(
-        `${file}:1: ${now} comment lines, baseline says ${allowed}. The baseline is stale. Run node scripts/no-comments.mjs --write-baseline. ${REFUSAL}`
-      )
-    }
+    const where = comments
+      .slice(0, 10)
+      .map((comment) => `${file}:${comment.line}`)
+      .join(", ")
+    problems.push(`${where}: ${now} comment lines. ${REFUSAL}`)
   }
   return problems
 }
 
-export function nextBaseline(found, previous) {
-  const next = {}
-  for (const file of Object.keys(found).sort()) {
-    const now = countLines(found[file])
-    if (previous && now > (previous[file] ?? 0)) {
-      throw new Error(
-        `${file} has ${now} comment lines, baseline allows ${previous[file] ?? 0}. The baseline only shrinks. ${REFUSAL}`
-      )
-    }
-    next[file] = now
-  }
-  return next
-}
-
-export function readBaseline(baselineFile = path.join(root, BASELINE_PATH)) {
-  if (!existsSync(baselineFile)) return null
-  return JSON.parse(readFileSync(baselineFile, "utf8"))
-}
-
-export function serializeBaseline(baseline) {
-  const sorted = Object.fromEntries(Object.entries(baseline).sort())
-  return `${JSON.stringify(sorted, null, 2)}\n`
+export function detect(text, file) {
+  return bannedComments(file, text)
 }
 
 export function readFromDisk(file) {
@@ -308,37 +277,15 @@ export function readFromDisk(file) {
 }
 
 export function check() {
-  const baseline = readBaseline()
-  if (!baseline) {
-    return [
-      `${BASELINE_PATH} is missing. Run node scripts/no-comments.mjs --write-baseline. ${REFUSAL}`,
-    ]
-  }
-  return compare(scanFiles(listFiles(), readFromDisk), baseline)
-}
-
-export function writeBaseline(baselineFile = path.join(root, BASELINE_PATH)) {
-  const found = scanFiles(listFiles(), readFromDisk)
-  const next = nextBaseline(found, readBaseline(baselineFile))
-  writeFileSync(baselineFile, serializeBaseline(next))
-  return next
+  return commentProblems(scanFiles(listFiles(), readFromDisk))
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (process.argv.includes("--write-baseline")) {
-    try {
-      const next = writeBaseline()
-      const total = Object.values(next).reduce((sum, n) => sum + n, 0)
-      console.log(
-        `${BASELINE_PATH}: ${Object.keys(next).length} files, ${total} comment lines`
-      )
-    } catch (error) {
-      console.error(error.message)
-      process.exit(1)
-    }
-  } else {
-    const problems = check()
-    for (const problem of problems) console.error(problem)
-    process.exit(problems.length === 0 ? 0 : 1)
+    console.error(`There is no exceptions list to write. ${REFUSAL}`)
+    process.exit(1)
   }
+  const problems = check()
+  for (const problem of problems) console.error(problem)
+  process.exit(problems.length === 0 ? 0 : 1)
 }

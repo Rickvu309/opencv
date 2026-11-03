@@ -55,7 +55,6 @@
   "scripts/kit-duplicates.test.mjs",
   "scripts/layout-comparison-gates.test.mjs",
   "scripts/nav-pending.test.mjs",
-  "scripts/no-comments.test.mjs",
   "scripts/paper-save-keeps-parts.test.mjs",
   "scripts/pen-snapshot.test.mjs",
   "scripts/skill-routes.test.mjs",
