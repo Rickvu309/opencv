@@ -183,7 +183,6 @@ const edgeOctet = fc.constantFrom(
   255
 )
 
-// Independent of isPrivateIPv4: the ranges the guard documents, as data.
 const PRIVATE_V4_RANGES: ReadonlyArray<
   readonly [number, number, number, number]
 > = [

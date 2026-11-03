@@ -55,10 +55,8 @@ export type AppConfig = {
   resendApiKey?: string
   authEmailFrom?: string
   logAuthMail?: boolean
-  /** When set, job.preview may call the free model. Fake runs leave this off. */
   interpretPostings?: boolean
   fetchJobPosting?: FetchJobPosting
-  /** Commit this process serves, from `RAILWAY_GIT_COMMIT_SHA`. */
   commitSha?: string
   healthDbTimeoutMs?: number
 }

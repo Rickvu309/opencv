@@ -71,7 +71,6 @@ type AuthMailConfig = {
   logOtp: boolean
 }
 
-/** How a sign-in code leaves this process. The sender and /health/deep both read it. */
 function authMailRoute({ resendApiKey, from, logOtp }: AuthMailConfig) {
   const key = resendApiKey?.trim()
   const sender = from?.trim()

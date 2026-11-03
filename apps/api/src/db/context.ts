@@ -20,7 +20,6 @@ export function withDatabase<T>(
   db: AppDatabase | TestDatabase,
   fn: () => T
 ): T {
-  // Both drivers share the query API. The store stays the production type.
   return requestDb.run(db as AppDatabase, fn)
 }
 

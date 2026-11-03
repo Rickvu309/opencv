@@ -31,7 +31,6 @@ import {
 } from "../test/registry-formal-support.js"
 
 registerBackendHooks()
-// ---------------------------------------------------------------- P1 ----
 
 type KeyedCase = {
   command: string
@@ -65,8 +64,6 @@ describe("P1: a keyed command runs once and every caller gets the replay", () =>
   for (const spec of KEYED_CASES) {
     it(`${spec.command}: one effect per key, same replay for 2 to 4 racing callers`, async () => {
       await withDatabase(backend.db, async () => {
-        // Control: each command creates `unit` rows per call, and distinct keys
-        // create distinct rows. Without this the counts below could be vacuous.
         const control = await newPerson()
         await registry.execute({
           name: spec.command,
@@ -75,7 +72,10 @@ describe("P1: a keyed command runs once and every caller gets the replay", () =>
           idempotencyKey: `control-${randomUUID()}`,
         })
         const unit = await rowsOf(spec.table, control.id)
-        expect(unit, `${spec.command} creates a row`).toBeGreaterThan(0)
+        expect(
+          unit,
+          `${spec.command} creates a row, so the counts below are not vacuous`
+        ).toBeGreaterThan(0)
 
         for (const n of NS) {
           for (const seed of SEEDS) {
@@ -99,27 +99,29 @@ describe("P1: a keyed command runs once and every caller gets the replay", () =>
             )
             outcomes.forEach((o) => noteCaller(label, o))
 
-            // The effect ran once.
-            expect(await rowsOf(spec.table, userId), label).toBe(unit)
-            // No caller got a raw database error, except the pinned finding.
+            expect(
+              await rowsOf(spec.table, userId),
+              `${label}: the effect ran once`
+            ).toBe(unit)
             const raw = outcomes.filter(
               (o) => !o.ok && !isKnownFinding(o.error)
             )
             expect(
               raw.map((o) => (o.ok ? "" : describeError(o.error))),
-              `${label}: raw errors`
+              `${label}: raw database errors other than the pinned finding`
             ).toEqual([])
-            // Every caller that got an answer got the same one.
             const answers = outcomes.flatMap((o) => (o.ok ? [o.value] : []))
             expect(
               answers.length,
               `${label}: some caller answered`
             ).toBeGreaterThan(0)
             for (const answer of answers) {
-              expect(answer.output, label).toEqual(answers[0]?.output)
+              expect(
+                answer.output,
+                `${label}: every answer is the first answer`
+              ).toEqual(answers[0]?.output)
               expect(answer.activityId, label).toEqual(answers[0]?.activityId)
             }
-            // One stored record of the key, in the table the command writes.
             if (spec.writesActivity) {
               const rows = await activityKeyed(userId, key)
               expect(rows.length, `${label}: activity rows`).toBe(1)
@@ -133,7 +135,6 @@ describe("P1: a keyed command runs once and every caller gets the replay", () =>
           }
         }
 
-        // Control: distinct keys are distinct effects.
         const { id: otherId, person: other } = await newPerson()
         const distinct = await race(
           [0, 1, 2].map(
@@ -147,14 +148,18 @@ describe("P1: a keyed command runs once and every caller gets the replay", () =>
           ),
           [0, 0, 0]
         )
-        expect(distinct.every((o) => o.ok)).toBe(true)
-        expect(await rowsOf(spec.table, otherId)).toBe(unit * 3)
+        expect(
+          distinct.every((o) => o.ok),
+          "distinct keys all succeed"
+        ).toBe(true)
+        expect(
+          await rowsOf(spec.table, otherId),
+          "distinct keys are distinct effects"
+        ).toBe(unit * 3)
       })
     }, 120_000)
   }
 
-  // Seeing the interleaving, not assuming it. PGlite is one connection, so it
-  // runs one transaction at a time; a real server runs them side by side.
   it("measures whether the racing transactions really overlap", async () => {
     await withDatabase(backend.db, async () => {
       const { person } = await newPerson()
@@ -177,19 +182,21 @@ describe("P1: a keyed command runs once and every caller gets the replay", () =>
         `[formal] backend=${backend.kind} transaction order for 4 racing callers: ${trace.order.join(" ")}`
       )
       if (backend.kind === "pglite") {
-        // PGlite serializes. The lock and replay checks below still run, but a
-        // missing FOR UPDATE cannot show here. Fails if PGlite ever overlaps,
-        // so the skill gets updated instead of staying wrong.
-        expect(trace.maxActive).toBe(1)
+        expect(
+          trace.maxActive,
+          "PGlite runs one transaction at a time, so a missing FOR UPDATE cannot show here; update the verify-command-registry skill if this changes"
+        ).toBe(1)
       } else {
-        expect(trace.maxActive).toBeGreaterThan(1)
+        expect(
+          trace.maxActive,
+          "a real server runs the racing transactions side by side"
+        ).toBeGreaterThan(1)
       }
     })
   })
 })
 
-// A keyed command whose effect is a chats row and whose run can be steered.
-function steerable(
+function steerableChatsRowCommand(
   options: {
     transaction?: "none"
     draft: boolean
@@ -224,8 +231,7 @@ function steerable(
   return local
 }
 
-// Rival insert of the key, as the caller that won the race would have made it.
-async function rivalActivity(userId: string, key: string) {
+async function insertRivalWinnerActivity(userId: string, key: string) {
   await getDb()
     .insert(activity)
     .values({
@@ -241,19 +247,25 @@ async function rivalActivity(userId: string, key: string) {
     })
 }
 
-async function rivalStored(userId: string, key: string) {
+async function insertRivalWinnerStored(userId: string, key: string) {
   await getDb()
     .insert(idempotency)
     .values({ userId, key, command: "formal.rival", result: { rival: true } })
 }
 
 describe("P1: the key conflict path", () => {
+  const pinnedFinding = it.fails
+
   it("replays the winner when the command is not inside a transaction (activity row)", async () => {
     await withDatabase(backend.db, async () => {
       const { id: userId, person } = await newPerson()
       const key = `key-${randomUUID()}`
-      const local = steerable(
-        { transaction: "none", draft: true, beforeEffect: rivalActivity },
+      const local = steerableChatsRowCommand(
+        {
+          transaction: "none",
+          draft: true,
+          beforeEffect: insertRivalWinnerActivity,
+        },
         "formal.autocommit"
       )
       const result = await local.execute({
@@ -273,8 +285,12 @@ describe("P1: the key conflict path", () => {
     await withDatabase(backend.db, async () => {
       const { id: userId, person } = await newPerson()
       const key = `key-${randomUUID()}`
-      const local = steerable(
-        { transaction: "none", draft: false, beforeEffect: rivalStored },
+      const local = steerableChatsRowCommand(
+        {
+          transaction: "none",
+          draft: false,
+          beforeEffect: insertRivalWinnerStored,
+        },
         "formal.autocommit.stored"
       )
       const result = await local.execute({
@@ -288,19 +304,14 @@ describe("P1: the key conflict path", () => {
     })
   })
 
-  // KNOWN FINDING (see KNOWN_FINDING.issue). Inside the command transaction a
-  // unique violation aborts the transaction (25P02), so the replay lookup in the
-  // catch block fails and the caller gets a database error. These tests pin the
-  // finding with it.fails: they go red when the registry is fixed, and the
-  // marker is then removed in the same change.
-  it.fails(
+  pinnedFinding(
     `${KNOWN_FINDING.issue}: a lost key race inside a transaction replays the winner (activity row)`,
     async () => {
       await withDatabase(backend.db, async () => {
         const { id: userId, person } = await newPerson()
         const key = `key-${randomUUID()}`
-        const local = steerable(
-          { draft: true, beforeEffect: rivalActivity },
+        const local = steerableChatsRowCommand(
+          { draft: true, beforeEffect: insertRivalWinnerActivity },
           "formal.transactional"
         )
         const result = await local.execute({
@@ -316,14 +327,14 @@ describe("P1: the key conflict path", () => {
     }
   )
 
-  it.fails(
+  pinnedFinding(
     `${KNOWN_FINDING.issue}: a lost key race inside a transaction replays the winner (stored result)`,
     async () => {
       await withDatabase(backend.db, async () => {
         const { person } = await newPerson()
         const key = `key-${randomUUID()}`
-        const local = steerable(
-          { draft: false, beforeEffect: rivalStored },
+        const local = steerableChatsRowCommand(
+          { draft: false, beforeEffect: insertRivalWinnerStored },
           "formal.transactional.stored"
         )
         const result = await local.execute({
@@ -337,11 +348,8 @@ describe("P1: the key conflict path", () => {
     }
   )
 
-  // Natural form of the finding. Needs two real connections, so it only runs
-  // against a real server (FORMAL_DATABASE_URL). A barrier holds every caller
-  // inside the command until all of them passed the key lookup.
-  const onServer = REAL ? it.fails : it.skip
-  onServer(
+  const pinnedFindingOnRealServer = REAL ? it.fails : it.skip
+  pinnedFindingOnRealServer(
     `${KNOWN_FINDING.issue}: callers that pass the key lookup together all get the replay`,
     async () => {
       await withDatabase(backend.db, async () => {
@@ -357,7 +365,7 @@ describe("P1: the key conflict path", () => {
             }
           }, 5)
         })
-        const local = steerable(
+        const local = steerableChatsRowCommand(
           {
             draft: true,
             beforeEffect: async () => {

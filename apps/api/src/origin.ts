@@ -1,11 +1,3 @@
-/**
- * Origin patterns allow a single `*`, which matches one DNS label — enough for
- * Vercel preview subdomains (`opencv-<build>-<scope>.vercel.app`) without
- * widening the match to every host under `vercel.app`.
- *
- * Shared by CORS and Better Auth `trustedOrigins` so CSRF and CORS use one
- * origin policy.
- */
 export function matchesOrigin(pattern: string, origin: string) {
   const [prefix, suffix, ...rest] = pattern.split("*")
   if (rest.length > 0) return false

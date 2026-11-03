@@ -54,7 +54,6 @@ export type FreeComplete = (
   prompt: string
 ) => Promise<string>
 
-/** Last resort when a test does not inject `complete`. Verification uses the fake runtime, so this stays uncalled. */
 export async function completeFree(
   model: LanguageModel,
   prompt: string

@@ -131,7 +131,7 @@ export async function skipInbox(actor: Actor) {
 
 export async function scanInbox(actor: Actor) {
   const provider = mailProvider()
-  const connectionId = await fixtureConnection(actor.userId)
+  const connectionId = await expiredGmailFixtureConnection(actor.userId)
   const source = await provider.listThreads()
   const jobRows = await getDb()
     .select({
@@ -352,8 +352,7 @@ async function latestInbound(threadId: string) {
   return rows[0] ?? null
 }
 
-/** Expired so Settings does not show Gmail as enabled. The unique row is what scan upserts on. */
-async function fixtureConnection(userId: string) {
+async function expiredGmailFixtureConnection(userId: string) {
   const rows = await getDb()
     .select({ id: connections.id })
     .from(connections)

@@ -3,7 +3,6 @@ import { randomBytes } from "node:crypto"
 let lastMs = -1
 let seq = 0
 
-/** RFC 9562 UUIDv7 — time-ordered, app-generated. */
 export function createId(now = Date.now()): string {
   const bytes = new Uint8Array(16)
   const ms = BigInt(now)
@@ -23,7 +22,6 @@ export function createId(now = Date.now()): string {
   }
 
   bytes.set(randomBytes(10), 6)
-  // 12-bit monotonic seq in rand_a so same-ms ids stay ordered.
   bytes[6] = 0x70 | ((seq >> 8) & 0x0f)
   bytes[7] = seq & 0xff
   bytes[8] = (bytes[8]! & 0x3f) | 0x80

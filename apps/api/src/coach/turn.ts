@@ -351,11 +351,10 @@ export async function* liveParts(input: {
     return
   }
   const tools: ToolSet = {}
-  // Model providers reject dots in tool names, so the model sees `paper_replace`; everything past this function sees `paper.replace`.
-  const registryName = new Map<string, ChatToolName>()
+  const offeredToolByModelName = new Map<string, ChatToolName>()
   for (const entry of input.toolEntries) {
-    const name = entry.name.replaceAll(".", "_")
-    registryName.set(name, chatToolNameSchema.parse(entry.name))
+    const name = modelToolName(entry.name)
+    offeredToolByModelName.set(name, chatToolNameSchema.parse(entry.name))
     tools[name] = tool({
       description: entry.description,
       inputSchema: entry.input,
@@ -420,7 +419,10 @@ export async function* liveParts(input: {
     }
     if (part.type === "finish-step") modelId = part.response.modelId || modelId
     if (part.type === "finish") finishReason = part.finishReason
-    if (part.type === "tool-error" && registryName.has(part.toolName)) {
+    if (
+      part.type === "tool-error" &&
+      offeredToolByModelName.has(part.toolName)
+    ) {
       yield {
         type: "error",
         message:
@@ -433,20 +435,19 @@ export async function* liveParts(input: {
       if (delta) yield { type: "text-delta", text: delta }
       continue
     }
-    // The model can name a tool it was not given (hallucinated, or gated off). The SDK answers it with a tool error and the turn goes on, so the stream skips it.
     if (part.type === "tool-call") {
-      const name = registryName.get(part.toolName)
-      if (!name) continue
+      const offeredTool = offeredToolByModelName.get(part.toolName)
+      if (!offeredTool) continue
       yield {
         type: "tool-call",
         toolCallId: part.toolCallId,
-        name,
+        name: offeredTool,
         input: part.input,
       }
       continue
     }
     if (part.type === "tool-result") {
-      const name = registryName.get(part.toolName)
+      const name = offeredToolByModelName.get(part.toolName)
       if (!name) continue
       const output = record(part.output)
       yield toolResultFromExecute({
@@ -485,4 +486,8 @@ function reversalPlan(value: unknown) {
   const row = record(value)
   if (!row || typeof row.command !== "string") return null
   return { command: row.command, input: row.input }
+}
+
+function modelToolName(registryName: string) {
+  return registryName.replaceAll(".", "_")
 }

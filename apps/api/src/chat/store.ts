@@ -213,7 +213,6 @@ function withBlocked(
   }
 }
 
-// The activity row owns whether a receipt was undone, so a reload cannot offer Undo twice.
 function withUndone(
   message: ReturnType<typeof toMessage>,
   undone: Set<string>
