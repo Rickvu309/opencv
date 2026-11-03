@@ -20,7 +20,12 @@ import {
   PENDING_EXTRAS,
   pendingExtraProblems,
 } from "../.claude/skills/verify-app-ui/scripts/lib/pen-layout-compare.mjs"
-import { judge, parsePenLayout } from "./lib/ci-screens.mjs"
+import {
+  RUNS_FILE,
+  judge,
+  parsePenLayout,
+  runProblems,
+} from "./lib/ci-screens.mjs"
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
 const scripts = join(root, ".claude/skills/verify-app-ui/scripts")
@@ -30,6 +35,14 @@ const out = resolve(
 const skips = JSON.parse(
   readFileSync(join(root, "scripts/ci-screens.skips.json"), "utf8")
 )
+const RUNS = JSON.parse(readFileSync(join(root, RUNS_FILE), "utf8"))
+const tableProblems = runProblems(RUNS, (script) =>
+  existsSync(join(scripts, script))
+)
+if (tableProblems.length) {
+  for (const problem of tableProblems) console.error(problem)
+  process.exit(1)
+}
 const budgetMs = Number(process.env.CI_SCREENS_BUDGET_MS ?? 11 * 60 * 1000)
 const startedAt = Date.now()
 const SHARED_RUN = "ci-screens"
@@ -81,66 +94,36 @@ const record = (result) => {
   )
 }
 
-async function runSelfLaunching() {
-  const penLayout = await run(
-    "pen-layout",
-    [join(scripts, "verify-pen-layout.mjs")],
-    {
-      env: { PORT: "4450", VERIFY_PEN_LAYOUT_SHOTS: join(out, "pen-layout") },
-      stackRun: "pen-layout",
-      timeoutMs: remaining(4 * 60 * 1000),
-    }
-  )
-  const frames = parsePenLayout(penLayout.output)
-  if (!frames.length) {
+async function runOwnStack(driver) {
+  const args = [join(scripts, driver.script), ...(driver.extra ?? [])]
+  const result = await run(driver.id, args, {
+    env: {
+      PORT: String(driver.port),
+      [driver.shotsEnv]: join(out, driver.id),
+    },
+    stackRun: driver.id,
+    timeoutMs: remaining(driver.timeoutMinutes * 60 * 1000),
+  })
+  if (driver.verdict === "exit") {
     record({
-      id: "pen-layout",
-      status: "error",
-      detail: `exit ${penLayout.code}`,
+      id: driver.id,
+      status: result.code === 0 ? "pass" : result.code === 1 ? "fail" : "error",
+      detail: `exit ${result.code}`,
     })
+    return
+  }
+  const frames = parsePenLayout(result.output)
+  if (!frames.length) {
+    record({ id: driver.id, status: "error", detail: `exit ${result.code}` })
   } else {
     frames.forEach(record)
   }
-  const apply = await run(
-    "apply-pen",
-    [join(scripts, "verify-apply-pen.mjs")],
-    {
-      env: { PORT: "4454", VERIFY_APP_UI_SHOTS: join(out, "apply-pen") },
-      stackRun: "apply-pen",
-      timeoutMs: remaining(5 * 60 * 1000),
-    }
-  )
-  record({
-    id: "apply-pen",
-    status: apply.code === 0 ? "pass" : apply.code === 1 ? "fail" : "error",
-    detail: `exit ${apply.code}`,
-  })
 }
 
-const EXTERNAL = [
-  { id: "sidebar", script: "verify-sidebar.mjs", style: "port" },
-  { id: "letter-start", script: "verify-letter-start.mjs", style: "port" },
-  {
-    id: "letter-start-unreadable",
-    script: "verify-letter-start.mjs",
-    style: "port",
-    extra: ["--state", "unreadable"],
-  },
-  {
-    id: "letter-drafting",
-    script: "verify-letter-drafting.mjs",
-    style: "port",
-  },
-  { id: "letter-editor", script: "verify-letter-editor.mjs", style: "port" },
-  {
-    id: "decoration-cover",
-    script: "verify-decoration-cover.mjs",
-    style: "url",
-  },
-  { id: "auth-code", script: "verify-auth-code.mjs", style: "port" },
-  { id: "auth-welcome", script: "verify-auth-welcome.mjs", style: "url" },
-  { id: "session-expired", script: "verify-session-expired.mjs", style: "url" },
-]
+async function runSelfLaunching() {
+  for (const driver of RUNS.filter((entry) => entry.stack === "own"))
+    await runOwnStack(driver)
+}
 
 async function runExternal() {
   const stack = startStack({ ...SHARED, run: SHARED_RUN })
@@ -152,7 +135,7 @@ async function runExternal() {
     API_URL: stack.apiUrl,
     API_LOG: stack.logPath,
   }
-  for (const driver of EXTERNAL) {
+  for (const driver of RUNS.filter((entry) => entry.stack === "shared")) {
     const evidence = join(out, driver.id)
     mkdirSync(evidence, { recursive: true })
     const result = await run(

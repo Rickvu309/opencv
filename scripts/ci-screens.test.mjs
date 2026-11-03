@@ -1,9 +1,10 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
+import { join } from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 
-import { judge, parsePenLayout } from "./lib/ci-screens.mjs"
+import { judge, parsePenLayout, runProblems } from "./lib/ci-screens.mjs"
 
 const skip = (id, expires = "2026-11-16") => ({
   id,
@@ -110,4 +111,46 @@ test("ci.yml runs the screens job and the aggregate waits on it", () => {
   assert.match(text, /node scripts\/ci-screens\.mjs/)
   const minutes = /^ {2}screens:[\s\S]*?timeout-minutes: (\d+)/m.exec(text)
   assert.ok(Number(minutes[1]) <= 15)
+})
+
+const scriptsDir = fileURLToPath(
+  new URL("../.claude/skills/verify-app-ui/scripts/", import.meta.url)
+)
+
+test("the run table names real drivers, unique ids and a full own-stack setup", () => {
+  const runs = JSON.parse(
+    readFileSync(new URL("./ci-screens.runs.json", import.meta.url), "utf8")
+  )
+  assert.deepEqual(
+    runProblems(runs, (script) => existsSync(join(scriptsDir, script))),
+    []
+  )
+  assert.ok(runs.some((run) => run.verdict === "frames"))
+})
+
+test("a run table with a duplicate id, a missing driver or a half own-stack run fires", () => {
+  const problems = runProblems(
+    [
+      { id: "a", script: "real.mjs", stack: "shared" },
+      { id: "a", script: "real.mjs", stack: "shared" },
+      { id: "b", script: "gone.mjs", stack: "shared" },
+      { id: "c", script: "real.mjs", stack: "own", port: 1 },
+      { id: "d", script: "real.mjs", stack: "elsewhere" },
+    ],
+    (script) => script === "real.mjs"
+  )
+  assert.equal(problems.length, 7)
+  assert.match(problems.join("\n"), /a is listed twice/)
+  assert.match(problems.join("\n"), /b names no driver script/)
+  assert.match(problems.join("\n"), /c runs its own stack but has no shotsEnv/)
+  assert.match(problems.join("\n"), /d has stack elsewhere/)
+})
+
+test("ci-screens runs only the drivers its run table lists", () => {
+  const text = readFileSync(
+    new URL("./ci-screens.mjs", import.meta.url),
+    "utf8"
+  )
+  assert.match(text, /RUNS_FILE/)
+  assert.deepEqual(text.match(/verify-[\w-]+\.mjs/g), null)
 })

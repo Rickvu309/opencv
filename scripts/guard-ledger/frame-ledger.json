@@ -1,0 +1,13 @@
+{
+  "id": "frame-ledger",
+  "file": "scripts/frame-ledger.test.mjs",
+  "detector": {
+    "module": "scripts/lib/frame-ledger.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "e43f3626",
+    "path": "apps/web/src/test/design-frame-coverage.test.ts"
+  }
+}

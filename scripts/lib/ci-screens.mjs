@@ -1,5 +1,38 @@
 import { expiredPending } from "./pending-fixes.mjs"
 
+export const RUNS_FILE = "scripts/ci-screens.runs.json"
+
+const OWN_STACK_FIELDS = ["port", "shotsEnv", "timeoutMinutes", "verdict"]
+
+export function runProblems(runs, scriptExists) {
+  if (!Array.isArray(runs)) return [`${RUNS_FILE} is not a list of runs.`]
+  const problems = []
+  const seen = new Set()
+  for (const run of runs) {
+    const where = `${RUNS_FILE}: ${run.id ?? "a run with no id"}`
+    if (typeof run.id !== "string" || !run.id)
+      problems.push(`${where} has no id.`)
+    if (seen.has(run.id)) problems.push(`${where} is listed twice.`)
+    seen.add(run.id)
+    if (!scriptExists(run.script ?? ""))
+      problems.push(`${where} names no driver script that exists.`)
+    if (run.extra !== undefined && !Array.isArray(run.extra))
+      problems.push(`${where} has extra arguments that are not a list.`)
+    if (run.stack === "own") {
+      for (const field of OWN_STACK_FIELDS)
+        if (run[field] === undefined)
+          problems.push(`${where} runs its own stack but has no ${field}.`)
+      if (!["frames", "exit"].includes(run.verdict))
+        problems.push(
+          `${where} has verdict ${run.verdict}, not frames or exit.`
+        )
+    } else if (run.stack !== "shared") {
+      problems.push(`${where} has stack ${run.stack}, not own or shared.`)
+    }
+  }
+  return problems
+}
+
 export const PEN_LAYOUT_LINE =
   /^(PASS|FAIL) (\S+) (\S+): \d+ texts, \d+ mismatches$/
 

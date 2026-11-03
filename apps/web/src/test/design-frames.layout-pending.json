@@ -1,0 +1,100 @@
+[
+  {
+    "id": "x1ht5a",
+    "name": "W1.1 Continue",
+    "issue": 990,
+    "expires": "2026-12-07",
+    "reason": "no layout recorded"
+  },
+  {
+    "id": "yGwdJ",
+    "name": "W1.2 Enter code",
+    "issue": 894,
+    "expires": "2026-11-16",
+    "reason": "the auth-code screen check is skipped"
+  },
+  {
+    "id": "iAwJ7",
+    "name": "W1.3 Verifying",
+    "issue": 894,
+    "expires": "2026-11-16",
+    "reason": "the auth-code screen check is skipped"
+  },
+  {
+    "id": "b1m7SA",
+    "name": "W1.4 Code wrong or expired",
+    "issue": 894,
+    "expires": "2026-11-16",
+    "reason": "the auth-code screen check is skipped"
+  },
+  {
+    "id": "NAXQk",
+    "name": "W1.5 Welcome",
+    "issue": 894,
+    "expires": "2026-11-16",
+    "reason": "the auth-welcome screen check is skipped"
+  },
+  {
+    "id": "DhG87",
+    "name": "W1.6 Session expired",
+    "issue": 894,
+    "expires": "2026-11-16",
+    "reason": "the session-expired screen check is skipped"
+  },
+  {
+    "id": "F2Ofg0",
+    "name": "W2.1 Connect Gmail",
+    "issue": 990,
+    "expires": "2026-12-07",
+    "reason": "no layout recorded"
+  },
+  {
+    "id": "nKD1b",
+    "name": "W2.2 Scanning",
+    "issue": 990,
+    "expires": "2026-12-07",
+    "reason": "no layout recorded"
+  },
+  {
+    "id": "eXcUw",
+    "name": "W2.3 Inbox",
+    "issue": 990,
+    "expires": "2026-12-07",
+    "reason": "no layout recorded"
+  },
+  {
+    "id": "PSHPF",
+    "name": "W2.4 Recruiter reply",
+    "issue": 990,
+    "expires": "2026-12-07",
+    "reason": "no layout recorded"
+  },
+  {
+    "id": "NgYML",
+    "name": "W7.1 Start: pick the job",
+    "issue": 916,
+    "expires": "2026-11-30",
+    "reason": "the letter-start screen check is skipped while Paper is paused"
+  },
+  {
+    "id": "sgAtL",
+    "name": "W7.3 Letter + suggestion",
+    "issue": 916,
+    "expires": "2026-11-30",
+    "reason": "the letter-editor screen check is skipped while Paper is paused"
+  },
+  {
+    "id": "D1s74Z",
+    "name": "W7.4 Can't read job link",
+    "issue": 916,
+    "expires": "2026-11-30",
+    "reason": "the letter-start-unreadable screen check is skipped while Paper is paused"
+  },
+  {
+    "id": "MWsZM",
+    "name": "W10.5 Link from Paper",
+    "issue": 990,
+    "expires": "2026-12-07",
+    "reason": "no layout recorded"
+  }
+]
