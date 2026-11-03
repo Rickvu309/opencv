@@ -52,7 +52,7 @@ test("every allowed retired-word use still matches something", () => {
   assert.deepEqual(
     stale.map((rule) => rule.why),
     [],
-    "These allowed entries in scripts/retired-words.test.mjs match nothing now. Delete them."
+    "These allowed entries in scripts/lib/retired-words.mjs match nothing now. Delete them."
   )
 })
 

@@ -8,7 +8,7 @@ export const RETIRED = [
     word: /[\w-]*thread[\w-]*/gi,
     scope: (file) => SOURCE.test(file),
     content: (file) => TEXT_FILE.test(file),
-    hint: "CONTEXT.md retired this word, so say Chat or Job. If it is a legitimate use, such as an Inbox mail thread, add the path and the exact word to the allowed list in scripts/retired-words.test.mjs with a reason.",
+    hint: "CONTEXT.md retired this word, so say Chat or Job. If it is a legitimate use, such as an Inbox mail thread, add the path and the exact word to the allowed list in scripts/lib/retired-words.mjs with a reason.",
     allowed: [
       {
         path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox|inbox-contract\.test|invalidation\.formal\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$)/,
@@ -89,7 +89,7 @@ export const RETIRED = [
     word: /openpath/gi,
     scope: (file) => !file.startsWith("docs/adr/"),
     content: () => true,
-    hint: "The project was renamed to OpenCV, so say OpenCV. docs/adr keeps the old name as history. Otherwise add the path and the exact word to the allowed list in scripts/retired-words.test.mjs with a reason.",
+    hint: "The project was renamed to OpenCV, so say OpenCV. docs/adr keeps the old name as history. Otherwise add the path and the exact word to the allowed list in scripts/lib/retired-words.mjs with a reason.",
     allowed: [
       {
         path: GUARD_FILES,

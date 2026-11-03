@@ -41,10 +41,39 @@ const EXTERNAL = [
 const SCRIPT_PATH = /(?<![\w./-])(?:\.\/)?scripts\/[\w./-]*\w/g
 const BARE_SCRIPT = /(?<![\w./-])[\w-][\w.-]*\.sh(?![\w/-])/g
 const PNPM_RUN =
-  /\bpnpm[ \t]+(?:(?:-F|--filter)[ \t]+(\S+)[ \t]+)?([A-Za-z][\w:.-]*)/g
+  /\bpnpm((?:[ \t]+(?:-F|--filter|-C|--dir)(?:[ \t]+|=)\S+)*)[ \t]+(?:run[ \t]+)?([A-Za-z][\w:.-]*)/g
+const PNPM_SELECTOR = /(-F|--filter|-C|--dir)(?:[ \t]+|=)(\S+)/g
 const PACKAGE_TOKEN = /^[@\w./-]+(?:\.\.\.)?$/
 
 const trimmedScope = (filter) => filter.replace(/\.\.\.$/, "")
+
+function relativeDir(value) {
+  if (path.posix.isAbsolute(value)) return null
+  const dir = path.posix.normalize(value).replace(/\/$/, "")
+  return dir === "." ? "" : dir
+}
+
+function selectedPackages(options, deps) {
+  const dirs = []
+  const unknown = []
+  let checkable = true
+  for (const [, flag, raw] of options.matchAll(PNPM_SELECTOR)) {
+    const value = raw.replace(/^["']|["']$/g, "")
+    const byDirectory =
+      flag === "-C" || flag === "--dir" || /^\.{1,2}\//.test(value)
+    if (byDirectory) {
+      const dir = relativeDir(value)
+      if (dir === null) checkable = false
+      else dirs.push(dir)
+    } else if (!PACKAGE_TOKEN.test(value)) checkable = false
+    else {
+      const dir = deps.packageDir(trimmedScope(value))
+      if (dir === null) unknown.push(value)
+      else dirs.push(dir)
+    }
+  }
+  return { dirs, unknown, checkable }
+}
 
 const workspaceDirs = () =>
   ["apps", "packages"].flatMap((group) =>
@@ -76,11 +105,9 @@ export function detect(text, file, deps = repoDeps()) {
   const problems = []
   text.split("\n").forEach((line, index) => {
     const where = `${file}:${index + 1}`
-    const filterDirs = [...line.matchAll(PNPM_RUN)]
-      .map(([, filter]) => filter)
-      .filter((filter) => filter && PACKAGE_TOKEN.test(filter))
-      .map((filter) => deps.packageDir(trimmedScope(filter)))
-      .filter(Boolean)
+    const filterDirs = [...line.matchAll(PNPM_RUN)].flatMap(
+      ([, options]) => selectedPackages(options, deps).dirs
+    )
 
     for (const [match] of line.matchAll(SCRIPT_PATH)) {
       const ref = match.replace(/^\.\//, "")
@@ -101,24 +128,23 @@ export function detect(text, file, deps = repoDeps()) {
         )
     }
 
-    for (const [, filter, name] of line.matchAll(PNPM_RUN)) {
-      if (BUILTIN.has(name) || (filter && !PACKAGE_TOKEN.test(filter))) continue
-      if (!filter) {
-        if (!deps.scripts("").has(name))
-          problems.push(
-            `${where} runs pnpm ${name}, which is not a script in the root package.json`
-          )
-        continue
-      }
-      const dir = deps.packageDir(trimmedScope(filter))
-      if (!dir)
+    for (const [, options, name] of line.matchAll(PNPM_RUN)) {
+      if (BUILTIN.has(name)) continue
+      const { dirs, unknown, checkable } = selectedPackages(options, deps)
+      for (const filter of unknown)
         problems.push(
           `${where} filters to ${filter}, which is not a workspace package`
         )
-      else if (!deps.scripts(dir).has(name))
-        problems.push(
-          `${where} runs pnpm --filter ${filter} ${name}, which is not a script in ${dir}/package.json`
-        )
+      if (!checkable || unknown.length > 0) continue
+      const selected = options.trim()
+      if (!selected) dirs.push("")
+      if (dirs.some((dir) => deps.scripts(dir).has(name))) continue
+      const scriptFiles = dirs
+        .map((dir) => `${dir || "."}/package.json`)
+        .join(" or ")
+      problems.push(
+        `${where} runs pnpm ${selected ? `${selected} ` : ""}${name}, which is not a script in ${scriptFiles}`
+      )
     }
   })
   return problems

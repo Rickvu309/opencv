@@ -208,6 +208,43 @@ test("a skill that names a missing script, a bare script with no folder, or a mi
   assert.equal(detect(mistake, SKILL, fakeRepo).length, 4)
 })
 
+test("every explicit pnpm form that names a missing script fails", () => {
+  for (const line of [
+    "pnpm run nope",
+    "pnpm --filter web run nope",
+    "pnpm --filter=web verify:nope",
+    "pnpm -C apps/web verify:nope",
+    "pnpm --dir apps/web verify:nope",
+    "pnpm --dir=apps/web run verify:nope",
+    'pnpm --filter "web" verify:nope',
+    "pnpm --filter api --filter web nope",
+    "pnpm --filter ./apps/web nope",
+    "pnpm -F web nope",
+  ])
+    assert.equal(detect(`Run \`${line}\`.`, SKILL, fakeRepo).length, 1, line)
+  assert.equal(
+    detect("pnpm --filter=webx run check", SKILL, fakeRepo).length,
+    1
+  )
+  assert.equal(detect("pnpm -C apps/gone check", SKILL, fakeRepo).length, 1)
+})
+
+test("every explicit pnpm form that names a real script passes", () => {
+  for (const line of [
+    "pnpm run check",
+    "pnpm -C . check",
+    "pnpm --filter web run verify:app-ui",
+    "pnpm --filter=web verify:app-ui",
+    "pnpm -C apps/web verify:app-ui",
+    "pnpm --dir=apps/web run verify:app-ui",
+    'pnpm --filter "web" verify:app-ui',
+    "pnpm --filter ./apps/web verify:app-ui",
+    "pnpm --filter web exec tsc",
+    "pnpm -C /abs/elsewhere anything",
+  ])
+    assert.deepEqual(detect(`Run \`${line}\`.`, SKILL, fakeRepo), [], line)
+})
+
 test("a skill that names real scripts, full paths and real pnpm scripts passes", () => {
   const clean = [
     "Run `pnpm check`, `pnpm install` and `pnpm --filter web verify:app-ui`.",
