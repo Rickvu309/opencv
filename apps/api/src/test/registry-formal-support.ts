@@ -26,11 +26,6 @@ import {} from "../registry/registry.js"
 
 export const SEED = Number(process.env.FORMAL_SEED ?? 241)
 export const REAL = Boolean(process.env.FORMAL_DATABASE_URL)
-export const KNOWN_FINDING = {
-  issue: "#758",
-  pgCode: "25P02",
-}
-
 export type Backend = {
   kind: "pglite" | "postgres"
   db: TestDatabase
@@ -165,17 +160,12 @@ export function describeError(error: unknown) {
   return `${code ?? "error"}: ${message}`.slice(0, 200)
 }
 
-export function isKnownFinding(error: unknown) {
-  return REAL && pgCodeOf(error) === KNOWN_FINDING.pgCode
-}
-
 export function commandErrorOf(outcome: Outcome<unknown>) {
   if (outcome.ok) return null
   return outcome.error instanceof CommandError ? outcome.error : null
 }
 
 export let backend: Backend
-export const knownFindingHits: string[] = []
 
 export function registerBackendHooks() {
   beforeAll(async () => {
@@ -184,9 +174,8 @@ export function registerBackendHooks() {
   }, 120_000)
 
   afterAll(async () => {
-    const hits = knownFindingHits.length
     console.log(
-      `[formal] backend=${backend.kind} scenarios=${measured.length} maxConcurrentTransactions=${overallMaxActive} knownFindingHits=${hits}`
+      `[formal] backend=${backend.kind} scenarios=${measured.length} maxConcurrentTransactions=${overallMaxActive}`
     )
     const byLabel = new Map<string, number>()
     for (const row of measured) {
@@ -244,10 +233,4 @@ export async function storedKeyed(userId: string, key: string) {
     .select()
     .from(idempotency)
     .where(and(eq(idempotency.userId, userId), eq(idempotency.key, key)))
-}
-
-export function noteCaller(label: string, outcome: Outcome<unknown>) {
-  if (!outcome.ok && isKnownFinding(outcome.error)) {
-    knownFindingHits.push(label)
-  }
 }

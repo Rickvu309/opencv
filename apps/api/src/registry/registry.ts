@@ -17,7 +17,7 @@ import type { ZodType } from "zod"
 import { and, eq } from "drizzle-orm"
 
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
-import { getDb, transaction } from "../db/context.js"
+import { getDb, savepoint, transaction } from "../db/context.js"
 import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
@@ -319,12 +319,53 @@ export class Registry {
     const idempotencyKey =
       command.idempotency === "none" ? undefined : options.idempotencyKey
 
+    const effect = async (): Promise<ExecuteResult> => {
+      const ran = await command.run(parsed, actor)
+      let activityId: string | null = null
+      if (ran.draft) {
+        activityId = createId()
+        await getDb()
+          .insert(activity)
+          .values({
+            id: activityId,
+            userId: actor.userId,
+            actor: actor.type,
+            command: command.name,
+            subjectKind: ran.draft.subjectKind,
+            subjectId: ran.draft.subjectId,
+            summary: ran.draft.summary,
+            detail: ran.draft.detail ?? null,
+            result: ran.output ?? null,
+            reversalCommand: ran.reversal?.command ?? null,
+            reversalInput: ran.reversal?.input ?? null,
+            reversalExpect: ran.reversal?.expect ?? null,
+            idempotencyKey: idempotencyKey ?? null,
+            turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
+          })
+      } else if (idempotencyKey) {
+        await getDb()
+          .insert(idempotency)
+          .values({
+            userId: actor.userId,
+            key: idempotencyKey,
+            command: command.name,
+            result: ran.output ?? null,
+          })
+      }
+      return {
+        pending: false,
+        output: ran.output,
+        activityId,
+        summary: ran.step,
+        reversal: ran.reversal,
+        detail: ran.draft?.detail,
+      }
+    }
+
     const run = async () => {
       if (idempotencyKey) {
-        const existing = await this.activityByKey(actor.userId, idempotencyKey)
-        if (existing) return replay(existing)
-        const stored = await this.idempotencyByKey(actor.userId, idempotencyKey)
-        if (stored) return replayStored(stored.result)
+        const earlier = await this.replayByKey(actor.userId, idempotencyKey)
+        if (earlier) return earlier
       }
 
       if (
@@ -356,65 +397,14 @@ export class Registry {
         }
       }
 
-      const ran = await command.run(parsed, actor)
-      let activityId: string | null = null
-      if (ran.draft) {
-        activityId = createId()
-        try {
-          await getDb()
-            .insert(activity)
-            .values({
-              id: activityId,
-              userId: actor.userId,
-              actor: actor.type,
-              command: command.name,
-              subjectKind: ran.draft.subjectKind,
-              subjectId: ran.draft.subjectId,
-              summary: ran.draft.summary,
-              detail: ran.draft.detail ?? null,
-              result: ran.output ?? null,
-              reversalCommand: ran.reversal?.command ?? null,
-              reversalInput: ran.reversal?.input ?? null,
-              reversalExpect: ran.reversal?.expect ?? null,
-              idempotencyKey: idempotencyKey ?? null,
-              turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
-            })
-        } catch (error) {
-          if (!idempotencyKey || !isUniqueViolation(error)) throw error
-          const existing = await this.activityByKey(
-            actor.userId,
-            idempotencyKey
-          )
-          if (!existing) throw error
-          return replay(existing)
-        }
-      } else if (idempotencyKey) {
-        try {
-          await getDb()
-            .insert(idempotency)
-            .values({
-              userId: actor.userId,
-              key: idempotencyKey,
-              command: command.name,
-              result: ran.output ?? null,
-            })
-        } catch (error) {
-          if (!isUniqueViolation(error)) throw error
-          const stored = await this.idempotencyByKey(
-            actor.userId,
-            idempotencyKey
-          )
-          if (!stored) throw error
-          return replayStored(stored.result)
-        }
-      }
-      return {
-        pending: false,
-        output: ran.output,
-        activityId,
-        summary: ran.step,
-        reversal: ran.reversal,
-        detail: ran.draft?.detail,
+      if (!idempotencyKey) return effect()
+      try {
+        return await savepoint(effect)
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error
+        const winner = await this.replayByKey(actor.userId, idempotencyKey)
+        if (!winner) throw error
+        return winner
       }
     }
     if (command.transaction === "none") return run()
@@ -637,6 +627,14 @@ export class Registry {
       )
     }
     return row
+  }
+
+  private async replayByKey(userId: string, key: string) {
+    const existing = await this.activityByKey(userId, key)
+    if (existing) return replay(existing)
+    const stored = await this.idempotencyByKey(userId, key)
+    if (stored) return replayStored(stored.result)
+    return null
   }
 
   private async activityByKey(userId: string, key: string) {

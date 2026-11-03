@@ -1,0 +1,13 @@
+{
+  "id": "expected-failure-issues",
+  "file": "scripts/expected-failure-issues.test.mjs",
+  "detector": {
+    "module": "scripts/lib/expected-failure-issues.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a8bf0fd6",
+    "path": "apps/api/src/registry/registry.formal.test.ts"
+  }
+}
