@@ -77,6 +77,9 @@ it("reaches the letter editor from the Paper route only through a dynamic import
   expect(readFileSync(ROUTE, "utf8")).toMatch(
     /lazy\(\(\) =>\s*import\("@\/features\/paper\/paper-letter\.tsx"\)/
   )
+  expect(readFileSync(ROUTE, "utf8")).toMatch(
+    /lazy\(\(\) =>\s*import\("@\/features\/paper\/paper-cv-editor\.tsx"\)/
+  )
 })
 
 it("finds an eager import of the editor however deep it sits", () => {

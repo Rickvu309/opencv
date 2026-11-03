@@ -148,9 +148,7 @@ describe("Paper share page", () => {
     expect(preview?.querySelector("[aria-label='Company']")).toHaveAttribute(
       "hidden"
     )
-    expect(preview?.querySelector("[aria-label='Summary']")).toHaveAttribute(
-      "hidden"
-    )
+    expect(preview?.querySelector("[aria-label='Summary']")).toBeNull()
   })
 
   it("shows a shared letter's words as flat paragraphs", async () => {

@@ -8,6 +8,8 @@ import {
   type TemplateProps,
   ContactLine,
   CanvasAffordance,
+  CvSection,
+  cvSectionFilled,
   EducationEmptyCta,
   SectionTitle,
 } from "./cv-parts.tsx"
@@ -57,7 +59,7 @@ export function AcademicCv({
         />
       </header>
 
-      <section className="mb-5">
+      <CvSection className="mb-5" filled={cvSectionFilled(data, "education")}>
         <SectionTitle kind="education">Education</SectionTitle>
         {data.education.map((item, i) => (
           <div
@@ -113,7 +115,7 @@ export function AcademicCv({
           education={data.education}
           setEducation={setEducation}
         />
-      </section>
+      </CvSection>
 
       {data.projects?.length ? (
         <section className="mb-5">
@@ -157,23 +159,23 @@ export function AcademicCv({
       <LanguagesBlock data={data} />
       <ActivitiesAndAwards data={data} />
 
-      <section className="mb-5">
+      <CvSection className="mb-5" filled={cvSectionFilled(data, "experience")}>
         <SectionTitle kind="experience">Experience</SectionTitle>
         <ExperienceList
           experience={data.experience}
           setExperience={setExperience}
           patchExperience={patchExperience}
         />
-      </section>
+      </CvSection>
 
-      <section>
+      <CvSection filled={cvSectionFilled(data, "skills")}>
         <SectionTitle kind="skills">Skills & languages</SectionTitle>
         <SkillChips
           groups={data.skills}
           onChange={setSkills}
           variant="dashed"
         />
-      </section>
+      </CvSection>
     </div>
   )
 }

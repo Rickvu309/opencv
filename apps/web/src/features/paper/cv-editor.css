@@ -1,0 +1,98 @@
+[data-cv-editor] [data-cv-size="name"] {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+[data-cv-editor] [data-cv-size="contact"],
+[data-cv-editor] [data-cv-size="dates"] {
+  font-size: 10.5px;
+}
+
+[data-cv-editor] [data-cv-size="entry"] {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+[data-cv-editor] [data-cv-size="section"] {
+  font-size: 9.5px;
+}
+
+[data-cv-editor] .bn-block-content[data-content-type="bulletListItem"],
+[data-cv-editor] .bn-block-content[data-content-type="numberedListItem"],
+[data-cv-editor] .bn-block-content[data-content-type="paperSkillItem"] {
+  font-size: 10.5px;
+}
+
+@media (max-width: 767px) {
+  [data-cv-editor] [data-cv-size="contact"],
+  [data-cv-editor] [data-cv-size="dates"],
+  [data-cv-editor] [data-cv-size="entry"] {
+    font-size: 16px;
+  }
+
+  [data-cv-editor] .bn-editor {
+    padding-inline-start: 6.5rem;
+  }
+
+  [data-cv-editor] .bn-side-menu {
+    margin-inline-start: 0;
+  }
+}
+
+[data-cv-editor]
+  .bn-block:has(> .react-renderer > [data-content-type="paperSkills"])
+  > .bn-block-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+}
+
+[data-cv-editor]
+  .bn-block:has(> .react-renderer > [data-content-type="paperSkills"])
+  > .bn-block-group
+  > .bn-block {
+  display: inline-flex;
+  margin: 0;
+}
+
+[data-cv-editor]
+  .bn-block:has(> .react-renderer > [data-content-type="paperSkills"])
+  > .bn-block-group
+  > .bn-block:not(:last-child)
+  .bn-block-content::after {
+  content: ", ";
+}
+
+[data-cv-editor] .bn-block-group .bn-block-group {
+  border: 0;
+  box-shadow: none;
+}
+
+[data-cv-editor] .bn-block-group .bn-block-group .bn-block-outer::before {
+  content: none;
+}
+
+[data-paper-editor] .bn-block-outer,
+[data-paper-editor] .bn-block-content {
+  transition-duration: 150ms;
+  animation-duration: 150ms;
+}
+
+.prosemirror-dropcursor-block {
+  height: 6px !important;
+  background: var(--ring) !important;
+  border-radius: 999px;
+}
+
+.prosemirror-dropcursor-block::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ring);
+}

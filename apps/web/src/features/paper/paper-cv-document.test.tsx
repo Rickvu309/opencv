@@ -12,6 +12,7 @@ import {
   PAPER_CANVAS_FIELD_CLASS,
   PAPER_CANVAS_NEXT_STEP_CLASS,
 } from "./cv-print-document.tsx"
+import { previewOf } from "./paper-print-sheet.tsx"
 import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./cv-templates/cv-edits.ts"
 import {
   CV_TEMPLATES,
@@ -38,12 +39,20 @@ function replaceData(_: CvData, next: CvData) {
   return next
 }
 
-function renderCv(templateId: CvTemplateId, seed?: CvData) {
+function renderCv(
+  templateId: CvTemplateId,
+  seed?: CvData,
+  placeholders = true
+) {
   function Harness() {
     const [data, setData] = useReducer(replaceData, undefined, () =>
       applyCvTemplate(seed ?? defaultCvData(), templateId)
     )
-    return createElement(CvDocument, { data, onChange: setData })
+    return createElement(CvDocument, {
+      data,
+      onChange: setData,
+      placeholders,
+    })
   }
   return render(createElement(Harness))
 }
@@ -144,7 +153,7 @@ describe("EditableField canvas chrome (QVE-206)", () => {
 
 describe("EditableField café keyboard (QVE-208)", () => {
   it("Tabs between structured fields and Esc blurs without trapping", () => {
-    renderCv("internship")
+    renderCv("internship", undefined, false)
     const name = screen.getByRole("textbox", { name: "Name" })
     const headline = screen.getByRole("textbox", { name: "Headline" })
     const contacts = screen.getAllByRole("textbox", { name: "Contact detail" })
@@ -224,6 +233,7 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
       const [data, setData] = useReducer(replaceData, latest)
       return createElement(CvDocument, {
         data,
+        placeholders: true,
         onChange: (next: typeof data) => {
           latest = next
           setData(next)
@@ -442,6 +452,70 @@ describe("empty section next-step CTAs (QVE-209)", () => {
       ).toBeInTheDocument()
     }
   })
+
+  it("omits edit affordances from the print document", () => {
+    render(
+      createElement(CvDocument, {
+        data: applyCvTemplate(defaultCvData(), "simple"),
+        onChange: () => undefined,
+      })
+    )
+    expect(screen.queryByRole("button", { name: "Add a line" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Add skill" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Duplicate role" })).toBeNull()
+    cleanup()
+    render(
+      createElement(CvDocument, {
+        data: emptySections(),
+        onChange: () => undefined,
+      })
+    )
+    expect(
+      screen.queryByRole("button", { name: "Add first school" })
+    ).toBeNull()
+    expect(screen.queryByRole("button", { name: "Add a line" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Add skill" })).toBeNull()
+  })
+
+  it("prints filled projects and languages and skips empty sections", () => {
+    const seed = {
+      ...emptySections(),
+      summary: "Shipped a small tool",
+      projects: [{ name: "Wallet audit", detail: "Mapped friction" }],
+      languages: ["Vietnamese"],
+      activities: ["Debate club"],
+      awards: ["Dean list"],
+    } as CvData
+    renderCv("internship", seed, false)
+    const text = document.body.textContent ?? ""
+    expect(text).toContain("Wallet audit")
+    expect(text).toContain("Mapped friction")
+    expect(text).toContain("Vietnamese")
+    expect(text).toContain("Shipped a small tool")
+    expect(text).toContain("Debate club")
+    expect(text).toContain("Dean list")
+    expect(text).not.toContain("Experience")
+    expect(text).not.toContain("Education")
+    expect(text).not.toContain("Add a line")
+    const preview = previewOf(seed, "internship")
+    expect(preview?.summary).toBe("Shipped a small tool")
+    expect((preview as { activities?: string[] } | null)?.activities).toEqual([
+      "Debate club",
+    ])
+    expect((preview as { awards?: string[] } | null)?.awards).toEqual([
+      "Dean list",
+    ])
+    for (const template of CV_TEMPLATES) {
+      cleanup()
+      renderCv(template.id, seed, false)
+      expect(document.body.textContent ?? "", template.id).toContain(
+        "Vietnamese"
+      )
+      expect(document.body.textContent ?? "", template.id).not.toContain(
+        "Add skill"
+      )
+    }
+  })
 })
 
 describe("empty section next-step CSS (QVE-209)", () => {
@@ -464,7 +538,7 @@ describe("empty-field hints", () => {
       ...defaultCvData(),
       contact: { email: "", phone: "", location: "", linkedin: "" },
     }
-    renderCv("internship", quiet)
+    renderCv("internship", quiet, false)
     expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull()
     cleanup()
     render(

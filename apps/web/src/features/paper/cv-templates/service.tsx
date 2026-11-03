@@ -8,6 +8,8 @@ import {
   type TemplateProps,
   ContactLine,
   CanvasAffordance,
+  CvSection,
+  cvSectionFilled,
   EducationEmptyCta,
   SectionTitle,
 } from "./cv-parts.tsx"
@@ -55,16 +57,19 @@ export function ServiceCv({
         />
       </header>
 
-      <section className="rounded-lg border border-foreground/10 bg-muted/20 p-4">
+      <CvSection
+        className="rounded-lg border border-foreground/10 bg-muted/20 p-4"
+        filled={cvSectionFilled(data, "experience")}
+      >
         <SectionTitle kind="experience">Work experience</SectionTitle>
         <ExperienceList
           experience={data.experience}
           setExperience={setExperience}
           patchExperience={patchExperience}
         />
-      </section>
+      </CvSection>
 
-      <section className="mt-5">
+      <CvSection className="mt-5" filled={cvSectionFilled(data, "summary")}>
         <SectionTitle kind="summary">About</SectionTitle>
         <CvType role="body" as="div">
           <EditableField
@@ -74,10 +79,10 @@ export function ServiceCv({
             onChange={(summary) => patch("summary", summary)}
           />
         </CvType>
-      </section>
+      </CvSection>
 
       <div className="mt-5 grid grid-cols-2 gap-5">
-        <section>
+        <CvSection filled={cvSectionFilled(data, "education")}>
           <SectionTitle kind="education">Education</SectionTitle>
           {data.education.map((item, i) => (
             <div
@@ -119,15 +124,15 @@ export function ServiceCv({
             education={data.education}
             setEducation={setEducation}
           />
-        </section>
-        <section>
+        </CvSection>
+        <CvSection filled={cvSectionFilled(data, "skills")}>
           <SectionTitle kind="skills">Skills</SectionTitle>
           <SkillChips
             groups={data.skills}
             onChange={setSkills}
             variant="pill"
           />
-        </section>
+        </CvSection>
       </div>
       <ProjectsBlock data={data} />
       <LanguagesBlock data={data} />

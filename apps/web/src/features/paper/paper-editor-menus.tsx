@@ -21,9 +21,14 @@ import {
   type DefaultReactSuggestionItem,
   type SuggestionMenuProps,
 } from "@blocknote/react"
+import { NodeSelection } from "prosemirror-state"
 import { GripVertical, Link as LinkIcon, Plus } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { CvBlockMenu } from "./cv-block-menu.tsx"
+import { CvChromeContext } from "./cv-blocks.tsx"
+import { addedBlockType, cvFormatHidden } from "./cv-keys.ts"
+import { cvSlashItems, filterCvSlash } from "./cv-slash.ts"
 import { normalizeHref } from "./link-href.ts"
 import { LinkRequestContext, useEditorPopupRef } from "./paper-editor-popup.ts"
 import {
@@ -140,10 +145,26 @@ function SelectionFormat() {
       (choice) =>
         current === `${choice.type}:${String(choice.props?.level ?? "")}`
     )?.label ?? "Text"
+  const nodeName = useEditorState({
+    editor,
+    selector: ({ editor: live }) => {
+      const selection = live.prosemirrorState.selection
+      return selection instanceof NodeSelection
+        ? selection.node.type.name
+        : null
+    },
+  })
+  const cv = "paperHeader" in editor.schema.blockSchema
+  const chrome = useContext(CvChromeContext)
+  const hidden = cvFormatHidden(
+    document.activeElement?.closest("[data-cv-field]") != null,
+    nodeName
+  )
   const toggle = (name: "bold" | "italic") => {
     editor.toggleStyles({ [name]: true } as never)
     editor.focus()
   }
+  if (hidden) return null
   return (
     <div
       role="toolbar"
@@ -151,6 +172,17 @@ function SelectionFormat() {
       data-slot="paper-format-toolbar"
       className="flex items-center gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
     >
+      {cv ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-11 text-xs md:h-7"
+          onClick={() => chrome.askCoach("")}
+        >
+          Coach
+        </Button>
+      ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -283,30 +315,67 @@ function SlashList({
   selectedIndex,
   onItemClick,
 }: SuggestionMenuProps<DefaultReactSuggestionItem>) {
+  const editor = useBlockNoteEditor<
+    BlockSchema,
+    InlineContentSchema,
+    StyleSchema
+  >()
+  const cv = "paperHeader" in editor.schema.blockSchema
   return (
     <div
       role="listbox"
-      aria-label="Blocks"
+      aria-label={cv ? "Insert" : "Blocks"}
       data-slot="paper-slash-menu"
-      className="flex w-56 flex-col gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
+      className={cn(
+        "flex flex-col gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md",
+        cv ? "w-[300px]" : "w-56"
+      )}
     >
-      {items.map((item, index) => (
-        <Button
-          key={item.title}
-          type="button"
-          role="option"
-          aria-selected={index === selectedIndex}
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-11 justify-start text-xs md:h-8",
-            index === selectedIndex && "bg-accent text-accent-foreground"
-          )}
-          onClick={() => onItemClick?.(item)}
-        >
-          {item.title}
-        </Button>
-      ))}
+      {cv ? (
+        <p className="px-2 py-1 text-xs text-muted-foreground">
+          / Type to filter
+        </p>
+      ) : null}
+      {items.map((item, index) => {
+        const group = item.group ?? ""
+        const before = items[index - 1]?.group ?? ""
+        const showGroup = cv && group !== before
+        const divider = showGroup && before !== "" && group === "Blocks"
+        const name =
+          cv && group === "CV sections" && item.title === "Skills"
+            ? "Skills section"
+            : undefined
+        return (
+          <div key={`${group}:${item.title}`}>
+            {divider ? (
+              <div role="separator" className="my-1 h-px bg-border" />
+            ) : null}
+            {showGroup ? (
+              <p className="px-2 py-1 text-xs text-muted-foreground">{group}</p>
+            ) : null}
+            <Button
+              type="button"
+              role="option"
+              aria-label={name}
+              aria-selected={index === selectedIndex}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-11 w-full justify-start text-xs md:h-8",
+                index === selectedIndex && "bg-accent text-accent-foreground"
+              )}
+              onClick={() => onItemClick?.(item)}
+            >
+              {item.title}
+              {cv && item.subtext ? (
+                <span className="ms-2 text-muted-foreground">
+                  {item.subtext}
+                </span>
+              ) : null}
+            </Button>
+          </div>
+        )
+      })}
       {items.length === 0 ? (
         <p className="px-2 py-1.5 text-xs text-muted-foreground">No blocks</p>
       ) : null}
@@ -323,13 +392,18 @@ export function PaperSlashMenu() {
   return (
     <SuggestionMenuController
       triggerCharacter="/"
+      shouldOpen={(state) =>
+        state.selection.$from.parent.type.name !== "paperSection"
+      }
       getItems={async (query) =>
-        filterSuggestionItems(
-          getDefaultReactSlashMenuItems(editor).filter((item) =>
-            SLASH_TITLES.has(item.title)
-          ),
-          query
-        )
+        "paperHeader" in editor.schema.blockSchema
+          ? filterCvSlash(cvSlashItems(editor), query)
+          : filterSuggestionItems(
+              getDefaultReactSlashMenuItems(editor).filter((item) =>
+                SLASH_TITLES.has(item.title)
+              ),
+              query
+            )
       }
       suggestionMenuComponent={SlashList}
     />
@@ -346,7 +420,8 @@ function Handle() {
   const block = useExtensionState(SideMenuExtension, {
     selector: (state) => state?.block,
   })
-  if (!block) return null
+  if (!block || block.type === "paperHeader") return null
+  const cv = "paperExperience" in editor.schema.blockSchema
   return (
     <div
       data-slot="paper-side-menu"
@@ -359,32 +434,98 @@ function Handle() {
         aria-label="Add block below"
         className="size-11 md:size-6"
         onClick={() => {
-          const created = editor.insertBlocks(
-            [{ type: "paragraph" }],
-            block,
-            "after"
-          )
-          editor.setTextCursorPosition(created[0]!, "start")
+          const parent = editor.getParentBlock(block)
+          const type = addedBlockType(block.type, parent?.type)
+          const created = editor.insertBlocks([{ type }], block, "after")
+          const next = created[0]
+          if (!next || !editor.getBlock(next.id)) return
+          editor.setTextCursorPosition(next, "start")
           editor.focus()
         }}
       >
         <Plus className="size-3.5" aria-hidden="true" />
       </Button>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="Drag block"
-        draggable
-        className="flex size-11 cursor-grab items-center justify-center rounded-md hover:bg-accent md:size-6"
-        onDragStart={(event) => side.blockDragStart(event, block)}
-        onDragEnd={() => side.blockDragEnd()}
-      >
-        <GripVertical className="size-3.5" aria-hidden="true" />
-      </div>
+      {cv ? (
+        <CvBlockMenu
+          block={block}
+          onDragStart={(event) => side.blockDragStart(event, block)}
+          onDragEnd={() => side.blockDragEnd()}
+        />
+      ) : (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Drag block"
+          draggable
+          className="flex size-11 cursor-grab items-center justify-center rounded-md hover:bg-accent md:size-6"
+          onDragStart={(event) => side.blockDragStart(event, block)}
+          onDragEnd={() => side.blockDragEnd()}
+        >
+          <GripVertical className="size-3.5" aria-hidden="true" />
+        </div>
+      )}
     </div>
   )
 }
 
+function SideMenuRelease() {
+  const side = useExtension(SideMenuExtension)
+  const dragging = useRef(false)
+  useEffect(() => {
+    const root = document
+    const onDragStart = (event: DragEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (!target.closest("[aria-label='Drag block']")) return
+      dragging.current = true
+    }
+    const finishDrag = () => {
+      if (!dragging.current) return
+      dragging.current = false
+      side.blockDragEnd()
+      if (side.menuFrozen) side.unfreezeMenu()
+    }
+    const onDragEnd = () => {
+      finishDrag()
+    }
+    const onPointerUp = () => {
+      queueMicrotask(finishDrag)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      finishDrag()
+      if (side.menuFrozen) side.unfreezeMenu()
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!side.menuFrozen) return
+      const target = event.target
+      if (!(target instanceof Node)) return
+      const menu = document.querySelector("[role='menu']")
+      const handle = document.querySelector("[data-slot='paper-side-menu']")
+      if (menu?.contains(target) || handle?.contains(target)) return
+      side.unfreezeMenu()
+    }
+    root.addEventListener("dragstart", onDragStart, true)
+    root.addEventListener("dragend", onDragEnd, true)
+    root.addEventListener("pointerup", onPointerUp, true)
+    root.addEventListener("keydown", onKey, true)
+    root.addEventListener("pointerdown", onPointerDown, true)
+    return () => {
+      root.removeEventListener("dragstart", onDragStart, true)
+      root.removeEventListener("dragend", onDragEnd, true)
+      root.removeEventListener("pointerup", onPointerUp, true)
+      root.removeEventListener("keydown", onKey, true)
+      root.removeEventListener("pointerdown", onPointerDown, true)
+    }
+  }, [side])
+  return null
+}
+
 export function PaperSideMenu() {
-  return <SideMenuController sideMenu={Handle} />
+  return (
+    <>
+      <SideMenuRelease />
+      <SideMenuController sideMenu={Handle} />
+    </>
+  )
 }

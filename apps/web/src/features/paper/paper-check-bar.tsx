@@ -43,11 +43,29 @@ export function filledImportCheckIds(
   return ids
 }
 
+type BoundFocus = {
+  focusField(name: string, blockId?: string): void
+}
+
+let boundFocus: BoundFocus | null = null
+
+export function bindPaperFocus(handle: BoundFocus | null) {
+  boundFocus = handle
+}
+
 export function focusPhoneField() {
+  if (boundFocus) {
+    boundFocus.focusField("phone")
+    return
+  }
   document.querySelector<HTMLElement>('[aria-label="Phone"]')?.focus()
 }
 
 export function focusDatesField(blockId: string) {
+  if (boundFocus) {
+    boundFocus.focusField("period", blockId)
+    return
+  }
   const root = document.querySelector<HTMLElement>(
     `[data-sortable-block="${CSS.escape(blockId)}"]`
   )

@@ -69,6 +69,10 @@ export const chatAttachmentSchema = z
     kind: z.enum(["paper", "job", "file", "link"]),
     id: z.string().min(1).max(2000),
     label: z.string().max(200).optional(),
+    blockIds: z
+      .array(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/))
+      .max(50)
+      .optional(),
   })
   .strict()
 

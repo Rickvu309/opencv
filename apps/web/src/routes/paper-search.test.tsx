@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
@@ -58,9 +64,16 @@ describe("Paper search route state", () => {
       fireEvent.click(
         await screen.findByRole("button", { name: new RegExp(`${name},`) })
       )
-      await screen.findByRole("region", { name: new RegExp(`Editing ${name}`) })
+      const editor = await screen.findByRole("region", {
+        name: new RegExp(`Editing ${name}`),
+      })
+      const paperButton = within(editor).queryByRole("button", {
+        name: "Paper",
+        exact: true,
+      })
       fireEvent.click(
-        screen.getByRole("button", { name: "Paper", exact: true })
+        paperButton ??
+          within(editor).getAllByRole("link", { name: "Paper" })[0]!
       )
       await waitFor(() =>
         expect(

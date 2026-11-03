@@ -46,8 +46,14 @@ export function previewOf(
   const paper = asCvPaper(source)
   if (paper) return cvPrintModel(paper, layout)
   if (isCvBlockDocument(source)) return blocksToPreviewModel(source, layout)
-  if (!isCvDocument(source)) return null
-  return { ...source, templateId: layout }
+  if (!source || typeof source !== "object") return null
+  const record = { ...(source as Record<string, unknown>) }
+  const activities = record.activities
+  const awards = record.awards
+  delete record.activities
+  delete record.awards
+  if (!isCvDocument(record)) return null
+  return { ...record, templateId: layout, activities, awards } as CvDocumentData
 }
 
 function useQuietPaper<T extends HTMLElement>(rootRef: RefObject<T | null>) {

@@ -88,6 +88,36 @@ export function useCvPlaceholders() {
   return useContext(CvPlaceholderContext)
 }
 
+export function cvSectionFilled(
+  data: CvData,
+  kind: "summary" | "experience" | "education" | "skills"
+) {
+  if (kind === "summary") return data.summary.trim().length > 0
+  if (kind === "experience") return data.experience.length > 0
+  if (kind === "education") return data.education.length > 0
+  return data.skills.some(
+    (group) =>
+      group.label.trim().length > 0 ||
+      group.items.some((item) => item.trim().length > 0)
+  )
+}
+
+export function CvSection({
+  className,
+  filled,
+  as: Tag = "section",
+  children,
+}: {
+  className?: string
+  filled: boolean
+  as?: "section" | "div"
+  children: ReactNode
+}) {
+  const placeholders = useCvPlaceholders()
+  if (!placeholders && !filled) return null
+  return <Tag className={className}>{children}</Tag>
+}
+
 type FieldProps = {
   value: string
   onChange: (value: string) => void
@@ -250,6 +280,8 @@ export function CanvasAffordance({
   dark?: boolean
   children: ReactNode
 }) {
+  const placeholders = useCvPlaceholders()
+  if (!placeholders) return null
   return (
     <Button
       type="button"
@@ -280,6 +312,8 @@ export function SectionNextStep({
   onClick: () => void
   dark?: boolean
 }) {
+  const placeholders = useCvPlaceholders()
+  if (!placeholders) return null
   return (
     <Button
       type="button"
@@ -352,6 +386,7 @@ export type CvPhotoFrameValue = {
   docId?: string
   shareToken?: string
   beforePhoto?: () => Promise<void>
+  afterPhoto?: () => void | Promise<void>
   notePhoto?: (ref: string | undefined, version: number) => void
 }
 
@@ -470,6 +505,7 @@ function CvPhotoUploader({
   docId,
   shareToken,
   beforePhoto,
+  afterPhoto,
   notePhoto,
 }: {
   url?: string
@@ -478,6 +514,7 @@ function CvPhotoUploader({
   docId: string
   shareToken?: string
   beforePhoto?: CvPhotoFrameValue["beforePhoto"]
+  afterPhoto?: CvPhotoFrameValue["afterPhoto"]
   notePhoto?: CvPhotoFrameValue["notePhoto"]
 }) {
   const run = useRunCommand()
@@ -492,6 +529,10 @@ function CvPhotoUploader({
   async function undo(activityId: string, fileId?: FileId) {
     try {
       await undoActivity(queryClient, activityId)
+      if (afterPhoto) {
+        await afterPhoto()
+        return
+      }
       const next = await getPaper(docId)
       const restoredPhoto =
         next.paper?.kind === "cv"
@@ -524,7 +565,7 @@ function CvPhotoUploader({
     dispatchError({ type: "error_cleared" })
     let uploadedId: FileId | undefined
     try {
-      await beforePhoto?.()
+      if (!afterPhoto) await beforePhoto?.()
       const fileId = await uploadPaperPhoto(file)
       uploadedId = fileId
       const saved = await run("paper.attachPhoto", {
@@ -532,7 +573,8 @@ function CvPhotoUploader({
         fileId,
       })
       uploadedId = undefined
-      publish(`file:${fileId}`, saved.contentVersion)
+      if (afterPhoto) await afterPhoto()
+      else publish(`file:${fileId}`, saved.contentVersion)
       const activityId = saved.activityId
       if (activityId) {
         toastWithUndo("Photo added", () => {
@@ -586,6 +628,7 @@ export function CvPhoto({
         docId={frame.docId}
         shareToken={frame.shareToken}
         beforePhoto={frame.beforePhoto}
+        afterPhoto={frame.afterPhoto}
         notePhoto={frame.notePhoto}
       />
     )
