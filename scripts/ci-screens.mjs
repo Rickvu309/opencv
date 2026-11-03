@@ -116,16 +116,24 @@ async function runOwnStack(driver) {
     timeoutMs: remaining(driver.timeoutMinutes * 60 * 1000),
   })
   if (driver.verdict === "exit") {
+    const status =
+      result.code === 0 ? "pass" : result.code === 1 ? "fail" : "error"
     record({
       id: driver.id,
-      status: result.code === 0 ? "pass" : result.code === 1 ? "fail" : "error",
+      status,
       detail: `exit ${result.code}`,
+      ...(status === "error" ? { output: result.output } : {}),
     })
     return
   }
   const frames = parsePenLayout(result.output)
   if (!frames.length) {
-    record({ id: driver.id, status: "error", detail: `exit ${result.code}` })
+    record({
+      id: driver.id,
+      status: "error",
+      detail: `exit ${result.code}`,
+      output: result.output,
+    })
   } else {
     frames.forEach(record)
   }

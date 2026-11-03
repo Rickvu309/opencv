@@ -33,6 +33,14 @@ export function runProblems(runs, scriptExists) {
   return problems
 }
 
+export const VERDICT_TAIL_LINES = 30
+
+export function outputTail(output, limit = VERDICT_TAIL_LINES) {
+  const lines = String(output ?? "").split("\n")
+  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop()
+  return lines.slice(-limit)
+}
+
 export const PEN_LAYOUT_LINE =
   /^(PASS|FAIL) (\S+) (\S+): \d+ texts, \d+ mismatches$/
 
@@ -69,6 +77,7 @@ export function judge({ results, skips, today }) {
     const label = result.detail ? `${result.id} ${result.detail}` : result.id
     if (result.status === "error") {
       fail(`${label}: the driver did not produce a verdict`)
+      for (const line of outputTail(result.output)) lines.push(line)
     } else if (result.status === "pass") {
       if (skip)
         fail(
