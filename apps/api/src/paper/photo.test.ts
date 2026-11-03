@@ -216,7 +216,7 @@ describe("CV photo bytes", () => {
     await client.close()
   })
 
-  it("sniffs avatar bytes, rejects other types, and sets safe response headers", async () => {
+  it("stores the image type from the bytes and ignores the client Content-Type", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {

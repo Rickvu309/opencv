@@ -10,6 +10,8 @@ export const QUIET_REJECTIONS = {
     "the import error is already shown, so a failed cleanup stays quiet",
   orphanPhotoDeleteShowsTheAttachError:
     "the attach error is the one to show, and this delete removes the orphan row",
+  undoAlreadyLandedSoTheSweepRemovesTheRow:
+    "the undo already saved the photo, so a failed delete waits for the sweep",
 } as const
 
 export type QuietRejectionKey = keyof typeof QUIET_REJECTIONS

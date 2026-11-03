@@ -56,6 +56,18 @@ function useQuietPaper<T extends HTMLElement>(rootRef: RefObject<T | null>) {
   })
 }
 
+export function copySheetOrSkipCrossOriginAndJsdom(
+  sheet: CSSStyleSheet
+): CSSStyleSheet | null {
+  try {
+    const copy = new CSSStyleSheet()
+    copy.replaceSync([...sheet.cssRules].map((rule) => rule.cssText).join("\n"))
+    return copy
+  } catch {
+    return null
+  }
+}
+
 function useMeasureMount(measureRef: RefObject<HTMLDivElement | null>) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [mount, dispatchMount] = useReducer(
@@ -71,15 +83,8 @@ function useMeasureMount(measureRef: RefObject<HTMLDivElement | null>) {
     if (!node) {
       const copies: CSSStyleSheet[] = []
       for (const sheet of document.styleSheets) {
-        try {
-          const copy = new CSSStyleSheet()
-          copy.replaceSync(
-            [...sheet.cssRules].map((rule) => rule.cssText).join("\n")
-          )
-          copies.push(copy)
-        } catch {
-          // A cross-origin sheet, or jsdom without constructed stylesheets.
-        }
+        const copy = copySheetOrSkipCrossOriginAndJsdom(sheet)
+        if (copy) copies.push(copy)
       }
       if (copies.length > 0) shadow.adoptedStyleSheets = copies
       node = document.createElement("div")

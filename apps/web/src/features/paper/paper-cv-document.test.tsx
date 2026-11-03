@@ -458,6 +458,26 @@ describe("empty section next-step CSS (QVE-209)", () => {
   })
 })
 
+describe("empty-field hints", () => {
+  it("stay off for a share page or a thumbnail, and turn on only for the editor", () => {
+    const quiet = {
+      ...defaultCvData(),
+      contact: { email: "", phone: "", location: "", linkedin: "" },
+    }
+    renderCv("internship", quiet)
+    expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull()
+    cleanup()
+    render(
+      createElement(CvDocument, {
+        data: { ...quiet, templateId: "internship" },
+        onChange: () => undefined,
+        placeholders: true,
+      })
+    )
+    expect(screen.getByRole("textbox", { name: "Email" })).toBeInTheDocument()
+  })
+})
+
 describe("CV templates split across cv-templates", () => {
   it.each(["internship", "photo", "product", "service", "academic"] as const)(
     "renders the %s template with the candidate name and an experience heading",

@@ -1,8 +1,1 @@
-{
-  "apps/api/src/paper/store.ts": 2,
-  "apps/web/src/features/paper/cv-print-document.tsx": 8,
-  "apps/web/src/features/paper/cv-templates/cv-lines.tsx": 3,
-  "apps/web/src/features/paper/cv-templates/cv-parts.tsx": 5,
-  "apps/web/src/features/paper/paper-library.tsx": 2,
-  "apps/web/src/features/paper/paper-print-sheet.tsx": 1
-}
+{}
