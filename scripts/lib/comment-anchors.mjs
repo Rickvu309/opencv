@@ -14,7 +14,14 @@ import {
   mergeText,
   paramNames,
 } from "./anchor-syntax.mjs"
-import { judge, scriptKind } from "./comment-spans.mjs"
+import { judge } from "./comment-spans.mjs"
+
+function scriptKind(file) {
+  if (file.endsWith(".tsx")) return ts.ScriptKind.TSX
+  if (/\.(?:[cm]?ts)$/.test(file)) return ts.ScriptKind.TS
+  if (file.endsWith(".jsx")) return ts.ScriptKind.JSX
+  return ts.ScriptKind.JS
+}
 
 export const root = path.resolve(
   fileURLToPath(new URL(".", import.meta.url)),
@@ -323,12 +330,9 @@ export function detect(text, file, io = {}) {
     ) {
       const left = evalExpr(node.left)
       const right = evalExpr(node.right)
+      if (left.kind === "text" || right.kind === "text") return UNKNOWN
       if (left.kind === "str" && right.kind === "str")
         return { kind: "str", value: left.value + right.value }
-      if (left.kind === "text" && right.kind === "text")
-        return mergeText([left, right])
-      if (left.kind === "text") return left
-      if (right.kind === "text") return right
       if (left.kind === "path" && right.kind === "str")
         return pathOps.pathValue(path.posix.join(left.path, right.value))
       return UNKNOWN

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import ts from "typescript"
+import { findCssComments, findSourceComments } from "../no-comments.mjs"
 
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/i
 const CSS_FILE = /\.css$/i
@@ -7,34 +7,8 @@ const HTML_FILE = /\.(?:html?|md|svg)$/i
 
 const spanCache = new Map()
 
-export function scriptKind(file) {
-  if (file.endsWith(".tsx")) return ts.ScriptKind.TSX
-  if (/\.(?:[cm]?ts)$/.test(file)) return ts.ScriptKind.TS
-  if (file.endsWith(".jsx")) return ts.ScriptKind.JSX
-  return ts.ScriptKind.JS
-}
-
 function hashKey(file, text) {
   return createHash("sha1").update(file).update("\0").update(text).digest("hex")
-}
-
-function cssCommentSpans(text) {
-  const found = []
-  let quote = null
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i]
-    if (quote) {
-      if (char === "\\") i++
-      else if (char === quote || char === "\n") quote = null
-    } else if (char === '"' || char === "'") quote = char
-    else if (char === "/" && text[i + 1] === "*") {
-      const close = text.indexOf("*/", i + 2)
-      const end = close === -1 ? text.length : close + 2
-      found.push({ start: i, end })
-      i = end - 1
-    }
-  }
-  return found
 }
 
 function htmlCommentSpans(text) {
@@ -44,39 +18,20 @@ function htmlCommentSpans(text) {
   return found
 }
 
-function sourceCommentSpans(file, text) {
-  const sourceFile = ts.createSourceFile(
-    file,
-    text,
-    ts.ScriptTarget.Latest,
-    false,
-    scriptKind(file)
-  )
-  const seen = new Map()
-  const collect = (ranges) => {
-    for (const range of ranges ?? [])
-      seen.set(range.pos, { start: range.pos, end: range.end })
-  }
-  const walk = (node) => {
-    if (node.kind === ts.SyntaxKind.JsxText) return
-    collect(ts.getLeadingCommentRanges(text, node.pos))
-    collect(ts.getTrailingCommentRanges(text, node.end))
-    for (const child of node.getChildren(sourceFile)) walk(child)
-  }
-  walk(sourceFile)
-  return [...seen.values()]
+function spansOf(comments) {
+  return comments.map((comment) => ({ start: comment.pos, end: comment.end }))
 }
 
 function commentSpans(file, text) {
   const key = hashKey(file, text)
   const cached = spanCache.get(key)
   if (cached) return cached
-  const spans = CSS_FILE.test(file)
-    ? cssCommentSpans(text)
-    : HTML_FILE.test(file)
-      ? htmlCommentSpans(text)
+  const spans = HTML_FILE.test(file)
+    ? htmlCommentSpans(text)
+    : CSS_FILE.test(file)
+      ? spansOf(findCssComments(text))
       : SOURCE_FILE.test(file)
-        ? sourceCommentSpans(file, text)
+        ? spansOf(findSourceComments(file, text))
         : []
   spanCache.set(key, spans)
   return spans

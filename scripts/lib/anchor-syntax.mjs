@@ -2,15 +2,7 @@ import ts from "typescript"
 
 export const UNKNOWN = { kind: "unknown" }
 
-export const SEARCH = new Set([
-  "indexOf",
-  "includes",
-  "split",
-  "toContain",
-  "match",
-  "search",
-  "slice",
-])
+export const SEARCH = new Set(["indexOf", "includes", "toContain", "search"])
 
 export const KEEPS_TEXT = new Set([
   "slice",
@@ -19,11 +11,7 @@ export const KEEPS_TEXT = new Set([
   "trim",
   "trimStart",
   "trimEnd",
-  "replace",
-  "replaceAll",
   "toString",
-  "concat",
-  "split",
 ])
 
 export const PATH_OPS = new Set(["join", "resolve", "dirname", "normalize"])

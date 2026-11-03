@@ -13,7 +13,6 @@ export const COMMENT_READERS = [
   "scripts/no-comments.mjs",
   "scripts/no-comments.test.mjs",
   "scripts/lib/strip-comments.mjs",
-  "scripts/lib/comment-spans.mjs",
   "scripts/ds-codemod.test.mjs",
 ]
 
@@ -62,6 +61,37 @@ export const MARKERS = [
 
 const COMMENT_API =
   /\b(?:getLeadingCommentRanges|getTrailingCommentRanges|forEachLeadingCommentRange|forEachTrailingCommentRange|getCommentRange|findSourceComments|findCssComments|bannedComments)\b/
+
+const OFFICIAL_IMPORT =
+  /import\s*\{([^}]*)\}\s*from\s*["'][^"']*no-comments\.mjs["']/g
+
+function reusedReaderNames(code) {
+  const names = []
+  for (const match of code.matchAll(new RegExp(OFFICIAL_IMPORT.source, "g"))) {
+    for (const part of match[1].split(",")) {
+      const piece = part.trim().replace(/^type\s+/, "")
+      if (!piece) continue
+      const sides = piece.split(/\s+as\s+/)
+      const imported = sides[0].trim()
+      const local = sides[sides.length - 1].trim()
+      if (new RegExp(COMMENT_API.source).test(imported)) names.push(local)
+    }
+  }
+  return names
+}
+
+function withoutReusedReaders(code) {
+  const names = reusedReaderNames(code)
+  const hidden = code.replace(
+    new RegExp(OFFICIAL_IMPORT.source, "g"),
+    (block) => block.replace(/[^\n]/g, " ")
+  )
+  if (names.length === 0) return hidden
+  return hidden.replace(
+    new RegExp(`\\b(?:${names.join("|")})\\b`, "g"),
+    (hit) => " ".repeat(hit.length)
+  )
+}
 
 const SOURCE = /\.(?:[cm]?[jt]s|[jt]sx)$/
 const CSS = /\.css$/
@@ -127,11 +157,12 @@ export function markersIn(text, file) {
         })
       }
     }
-    if (!COMMENT_READERS.includes(file) && COMMENT_API.test(code)) {
+    const readers = withoutReusedReaders(code)
+    if (!COMMENT_READERS.includes(file) && COMMENT_API.test(readers)) {
       found.push({
         marker: "comment-reader",
         kind: "reader",
-        line: lineOfMatch(code, COMMENT_API),
+        line: lineOfMatch(readers, COMMENT_API),
       })
     }
   }

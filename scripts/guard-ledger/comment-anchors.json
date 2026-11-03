@@ -9,6 +9,7 @@
     "mode": "detect",
     "sha": "57b78291^",
     "path": "apps/web/src/features/paper/paper-cv-document.test.tsx",
+    "reads": ["apps/web/src/styles/paper.css"],
     "fixed": {
       "rev": "HEAD",
       "path": "apps/web/src/features/paper/paper-cv-document.test.tsx"

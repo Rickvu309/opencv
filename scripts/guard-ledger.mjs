@@ -133,13 +133,26 @@ const tailLines = (output, count = 4) =>
     .slice(-count)
     .map((line) => `    ${line}`)
 
+function withReads(io, rev, reads) {
+  if (!reads?.length) return undefined
+  const wanted = new Set(reads)
+  return {
+    read(rel) {
+      if (!wanted.has(rel)) return null
+      const shown = io.show(rev, rel)
+      return typeof shown === "string" ? shown : null
+    },
+  }
+}
+
 export async function proveDetect(row, io) {
   const { sha, path: file } = row.historic
   const quietAt = row.historic.fixed ?? { rev: "HEAD", path: file }
   const detect = await io.detector(row.detector)
   const past = io.show(sha, file)
   const now = io.show(quietAt.rev, quietAt.path)
-  const fires = past !== null && hit(detect(past, file))
+  const pastIo = withReads(io, sha, row.historic.reads)
+  const fires = past !== null && hit(detect(past, file, pastIo))
   const quiet = now !== null && !hit(detect(now, quietAt.path))
   return {
     ok: fires && quiet,
