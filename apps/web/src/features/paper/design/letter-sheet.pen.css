@@ -100,6 +100,42 @@
   line-height: 1.2;
 }
 
+[data-pen-surface="paper"][data-slot="letter-sheet"]
+  > h2[data-slot="letter-paragraph"],
+[data-pen-surface="paper"][data-slot="letter-sheet"]
+  > h3[data-slot="letter-paragraph"] {
+  color: #111111;
+  font-weight: 700;
+}
+
+[data-pen-surface="paper"][data-slot="letter-sheet"]
+  > h2[data-slot="letter-paragraph"] {
+  font-size: 15px;
+  line-height: 18px;
+}
+
+[data-pen-surface="paper"][data-slot="letter-sheet"]
+  > h3[data-slot="letter-paragraph"] {
+  font-size: 13px;
+  line-height: 16px;
+}
+
+[data-pen-surface="paper"][data-slot="letter-sheet"] ul {
+  list-style: disc;
+  padding-inline-start: 1.25em;
+}
+
+[data-pen-surface="paper"][data-slot="letter-sheet"] ol {
+  list-style: decimal;
+  padding-inline-start: 1.25em;
+}
+
+[data-pen-surface="paper"][data-slot="letter-sheet"] a {
+  color: #111111;
+  text-decoration: underline;
+  text-decoration-line: underline;
+}
+
 [data-pen-surface="paper"][data-slot="letter-sheet"] > :first-child {
   margin-top: 0;
 }

@@ -1,27 +1,9 @@
-import {
-  ERROR_CODES,
-  paperDocumentSchema,
-  paperOutline,
-  upgradeStoredPaper,
-  type PaperDocument,
-  type PaperId,
-  type UserId,
-} from "@workspace/domain"
+import { paperOutline, type PaperId, type UserId } from "@workspace/domain"
 
-import { CommandError } from "../registry/errors.js"
+import { readStoredPaper } from "./read-paper.js"
 import { ownedPaper } from "./store.js"
 
 export const OUTLINE_MAX_CHARS = 12_000
-
-function currentPaper(row: Awaited<ReturnType<typeof ownedPaper>>) {
-  const stored = paperDocumentSchema.safeParse(row.crdtDocument)
-  if (stored.success) return stored.data as PaperDocument
-  const upgraded = upgradeStoredPaper(row.kind, row.document)
-  if (!upgraded.ok) {
-    throw new CommandError(ERROR_CODES.CONFLICT, upgraded.message)
-  }
-  return upgraded.document
-}
 
 export async function readOutline(
   userId: UserId,
@@ -29,7 +11,7 @@ export async function readOutline(
   blockIds: readonly string[] | undefined
 ) {
   const row = await ownedPaper(userId, docId)
-  const outline = paperOutline(currentPaper(row), {
+  const outline = paperOutline(readStoredPaper(row), {
     selected: blockIds,
     maxChars: OUTLINE_MAX_CHARS,
   })

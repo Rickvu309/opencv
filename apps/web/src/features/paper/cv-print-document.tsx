@@ -7,6 +7,8 @@
  * Honest undo/redo of structured fields is QVE-210.
  */
 import { useEffect, useRef } from "react"
+import type { CvPrintModel } from "@workspace/domain"
+
 import {
   type CvData,
   type CvEducation,
@@ -16,6 +18,7 @@ import {
 import {
   CvHistoryRevisionContext,
   CvPlaceholderContext,
+  CvSectionTitleContext,
   type TemplateProps,
 } from "./cv-templates/cv-parts.tsx"
 import { AcademicCv } from "./cv-templates/academic.tsx"
@@ -31,9 +34,13 @@ export {
   PAPER_CANVAS_NEXT_STEP_CLASS,
 } from "./cv-templates/cv-parts.tsx"
 
+type PrintData = CvData & {
+  sectionTitles?: CvPrintModel["sectionTitles"]
+}
+
 type Props = {
-  data: CvData
-  onChange: (data: CvData) => void
+  data: PrintData
+  onChange: (data: PrintData) => void
   historyRevision?: number
   placeholders?: boolean
 }
@@ -113,11 +120,14 @@ export function CvDocument({
       tree = <InternshipCv {...templateProps} />
   }
 
+  const sectionTitles = data.sectionTitles
   return (
-    <CvPlaceholderContext.Provider value={placeholders}>
-      <CvHistoryRevisionContext.Provider value={historyRevision}>
-        {tree}
-      </CvHistoryRevisionContext.Provider>
-    </CvPlaceholderContext.Provider>
+    <CvSectionTitleContext.Provider value={sectionTitles}>
+      <CvPlaceholderContext.Provider value={placeholders}>
+        <CvHistoryRevisionContext.Provider value={historyRevision}>
+          {tree}
+        </CvHistoryRevisionContext.Provider>
+      </CvPlaceholderContext.Provider>
+    </CvSectionTitleContext.Provider>
   )
 }

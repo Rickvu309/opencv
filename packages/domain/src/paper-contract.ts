@@ -66,6 +66,7 @@ const paperViewSchema = z
     templateId: paperTemplateIdSchema.nullable(),
     status: paperDocStatusSchema,
     document: storedPaperDocumentSchema,
+    paper: paperDocumentSchema,
     contentVersion: z.number().int(),
     checks: z.array(paperCheckSchema),
     pageChoice: paperPageChoiceSchema,

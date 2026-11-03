@@ -6,7 +6,12 @@ import type {
   CvSkillGroup,
   CvTemplateId,
 } from "../paper-codecs.js"
-import { sectionsOf, type CvPaper, type LetterPaper } from "./document.js"
+import {
+  sectionMarker,
+  sectionsOf,
+  type CvPaper,
+  type LetterPaper,
+} from "./document.js"
 import {
   nodePlainText,
   type CvPaperBlock,
@@ -23,6 +28,7 @@ export type CvPrintModel = Omit<CvDocument, "projects" | "languages"> & {
   languages: string[]
   activities: string[]
   awards: string[]
+  sectionTitles?: Partial<Record<CvSectionKind, string>>
 }
 
 export type LetterPrintList = {
@@ -361,7 +367,23 @@ export function cvPrintModel(
   }
   if (header.linkedin) preview.contact.linkedin = header.linkedin
   if (header.photo) preview.photoUrl = header.photo
+  const sectionTitles = customSectionTitles(document)
+  if (sectionTitles) preview.sectionTitles = sectionTitles
   return preview
+}
+
+function customSectionTitles(
+  document: CvPaper
+): Partial<Record<CvSectionKind, string>> | undefined {
+  const titles: Partial<Record<CvSectionKind, string>> = {}
+  const seen = new Set<CvSectionKind>()
+  for (const block of document.blocks) {
+    if (block.type !== "section" || seen.has(block.kind)) continue
+    seen.add(block.kind)
+    if (block.title === sectionMarker(block.kind, block.id).title) continue
+    titles[block.kind] = block.title
+  }
+  return Object.keys(titles).length === 0 ? undefined : titles
 }
 
 function printItems(items: readonly ListItem[]): LetterPrintList[] {

@@ -58,7 +58,7 @@ export function PhotoCv({
       </header>
 
       <section className="mb-5">
-        <SectionTitle>Summary</SectionTitle>
+        <SectionTitle kind="summary">Summary</SectionTitle>
         <CvType role="body" as="div" className="text-foreground/90">
           <EditableField
             aria-label="Summary"
@@ -70,7 +70,7 @@ export function PhotoCv({
       </section>
 
       <section className="mb-5">
-        <SectionTitle>Experience</SectionTitle>
+        <SectionTitle kind="experience">Experience</SectionTitle>
         <ExperienceList
           experience={data.experience}
           setExperience={setExperience}
@@ -79,7 +79,7 @@ export function PhotoCv({
       </section>
 
       <section className="mb-5">
-        <SectionTitle>Education</SectionTitle>
+        <SectionTitle kind="education">Education</SectionTitle>
         <EducationList
           education={data.education}
           setEducation={setEducation}
@@ -88,7 +88,7 @@ export function PhotoCv({
       </section>
 
       <section>
-        <SectionTitle>Skills</SectionTitle>
+        <SectionTitle kind="skills">Skills</SectionTitle>
         <SkillChips groups={data.skills} onChange={setSkills} />
       </section>
       <ProjectsBlock data={data} />

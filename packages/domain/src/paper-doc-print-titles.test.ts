@@ -1,0 +1,48 @@
+import assert from "node:assert/strict"
+import { describe, it } from "node:test"
+
+import { blankBlockDocument } from "./paper-blocks/index.ts"
+import {
+  cvPrintModel,
+  upgradeStoredPaper,
+  type CvPaper,
+} from "./paper-doc/index.ts"
+
+function blankCv(): CvPaper {
+  const result = upgradeStoredPaper("cv", blankBlockDocument())
+  if (!result.ok || result.document.kind !== "cv") throw new Error("no cv")
+  return result.document
+}
+
+function withSecondExperience(document: CvPaper, firstTitle: string): CvPaper {
+  const blocks = document.blocks.map((block) =>
+    block.type === "section" && block.kind === "experience"
+      ? { ...block, title: firstTitle }
+      : block
+  )
+  const second = {
+    id: "volunteer-section",
+    type: "section" as const,
+    kind: "experience" as const,
+    title: "Volunteer work",
+  }
+  return { ...document, blocks: [...blocks, second] }
+}
+
+describe("section titles in the print model", () => {
+  it("keeps the template word when a later section of the same kind is renamed", () => {
+    const printed = cvPrintModel(
+      withSecondExperience(blankCv(), "Experience"),
+      "product"
+    )
+    assert.equal(printed.sectionTitles?.experience, undefined)
+  })
+
+  it("takes the title of the first section of a kind", () => {
+    const printed = cvPrintModel(
+      withSecondExperience(blankCv(), "Selected roles"),
+      "product"
+    )
+    assert.equal(printed.sectionTitles?.experience, "Selected roles")
+  })
+})

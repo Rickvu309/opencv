@@ -58,7 +58,7 @@ export function AcademicCv({
       </header>
 
       <section className="mb-5">
-        <SectionTitle>Education</SectionTitle>
+        <SectionTitle kind="education">Education</SectionTitle>
         {data.education.map((item, i) => (
           <div
             key={i}
@@ -117,7 +117,7 @@ export function AcademicCv({
 
       {data.projects?.length ? (
         <section className="mb-5">
-          <SectionTitle>Projects & campus</SectionTitle>
+          <SectionTitle kind="projects">Projects & campus</SectionTitle>
           <div className="grid grid-cols-2 gap-2.5">
             {data.projects.map((project, i) => (
               <div
@@ -158,7 +158,7 @@ export function AcademicCv({
       <ActivitiesAndAwards data={data} />
 
       <section className="mb-5">
-        <SectionTitle>Experience</SectionTitle>
+        <SectionTitle kind="experience">Experience</SectionTitle>
         <ExperienceList
           experience={data.experience}
           setExperience={setExperience}
@@ -167,7 +167,7 @@ export function AcademicCv({
       </section>
 
       <section>
-        <SectionTitle>Skills & languages</SectionTitle>
+        <SectionTitle kind="skills">Skills & languages</SectionTitle>
         <SkillChips
           groups={data.skills}
           onChange={setSkills}

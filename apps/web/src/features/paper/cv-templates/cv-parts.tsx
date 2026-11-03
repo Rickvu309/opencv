@@ -15,6 +15,8 @@ import {
   isCvDocument,
   paperPhotoFileId,
   parsePaperId,
+  type CvPrintModel,
+  type CvSectionKind,
   type FileId,
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
@@ -91,6 +93,10 @@ export const PAPER_CANVAS_AFFORDANCE_CLASS = "paper-canvas-affordance"
 export const PAPER_CANVAS_NEXT_STEP_CLASS = "paper-canvas-next-step"
 
 export const CvHistoryRevisionContext = createContext(0)
+
+export const CvSectionTitleContext = createContext<
+  CvPrintModel["sectionTitles"] | undefined
+>(undefined)
 
 /** Editor-only empty-field hints. Share pages and thumbnails leave this off. */
 export const CvPlaceholderContext = createContext(false)
@@ -335,10 +341,14 @@ export function EducationEmptyCta({
 export function SectionTitle({
   children,
   dark,
+  kind,
 }: {
   children: ReactNode
   dark?: boolean
+  kind: CvSectionKind
 }) {
+  const custom = useContext(CvSectionTitleContext)
+  const label = custom?.[kind] ?? children
   return (
     <CvType
       role="section-title"
@@ -350,7 +360,7 @@ export function SectionTitle({
           : "border-foreground/15 text-foreground/60"
       )}
     >
-      {children}
+      {label}
     </CvType>
   )
 }
@@ -511,7 +521,10 @@ function CvPhotoUploader({
     try {
       await undoActivity(queryClient, activityId)
       const next = await getPaper(docId)
-      const restoredPhoto = storedPhoto(next.document)
+      const restoredPhoto =
+        next.paper?.kind === "cv"
+          ? next.paper.header.photo
+          : storedPhoto(next.document)
       publish(restoredPhoto, next.contentVersion)
       if (fileId && paperPhotoFileId(restoredPhoto) !== fileId) {
         try {

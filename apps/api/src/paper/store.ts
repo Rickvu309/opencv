@@ -47,6 +47,7 @@ import {
 
 import { seedColumns, withContent } from "./content-store.js"
 import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
+import { toPaper, tryReadStoredPaper } from "./read-paper.js"
 
 const importAbort = new AsyncLocalStorage<AbortSignal>()
 
@@ -65,24 +66,7 @@ function iso(value: Date) {
   return value.toISOString()
 }
 
-// Documents are decoded against their kind on every write, so the jsonb column holds a CV or letter document.
-export function toPaper(row: typeof paperDocs.$inferSelect): PaperView {
-  return {
-    id: parsePaperId(row.id),
-    name: row.name,
-    kind: row.kind,
-    templateId: row.templateId as PaperView["templateId"],
-    status: row.status,
-    document: row.document as PaperView["document"],
-    contentVersion: row.contentVersion,
-    checks: row.checks ?? [],
-    pageChoice: row.pageChoice,
-    sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-    isFavorite: row.isFavorite,
-  }
-}
+export { toPaper, tryReadStoredPaper }
 
 export async function ownedPaper(userId: UserId, docId: PaperId) {
   const rows = await getDb()
@@ -142,7 +126,10 @@ export async function listPapers(
   return rows
     .filter((row) => (kind ? row.kind === kind : true))
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
-    .map(toPaper)
+    .flatMap((row) => {
+      const paper = tryReadStoredPaper(row)
+      return paper ? [toPaper(row, paper)] : []
+    })
 }
 
 export async function createPaper(
@@ -442,7 +429,9 @@ export async function readSharedPhoto(token: string) {
     .limit(1)
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-  const fileId = paperPhotoFileId(photoRefOf(toPaper(row.doc).document))
+  const fileId = paperPhotoFileId(
+    photoRefOf(row.doc.document as PaperView["document"])
+  )
   if (!fileId) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
   return readOwnedPhoto(parseUserId(row.doc.userId), parseFileId(fileId))
 }

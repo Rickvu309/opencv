@@ -4,7 +4,7 @@
   "apps/api/src/paper/import-fixtures.test.ts": 2,
   "apps/api/src/paper/import-parse.ts": 9,
   "apps/api/src/paper/photo-sweep.ts": 6,
-  "apps/api/src/paper/store.ts": 3,
+  "apps/api/src/paper/store.ts": 2,
   "apps/web/src/features/coach/chat-api.ts": 4,
   "apps/web/src/features/paper/cv-print-document.tsx": 8,
   "apps/web/src/features/paper/cv-templates/cv-edits.ts": 2,
