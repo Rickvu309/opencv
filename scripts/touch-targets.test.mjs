@@ -12,7 +12,7 @@ const pending = JSON.parse(
   readFileSync(path.join(root, "apps/web/src/test/nav-pending.json"), "utf8")
 ).filter((entry) => entry.rule === "touch-targets")
 
-const shellFiles = () =>
+const featureFiles = () =>
   execFileSync(
     "git",
     [
@@ -20,12 +20,12 @@ const shellFiles = () =>
       "--cached",
       "--others",
       "--exclude-standard",
-      "apps/web/src/features/app-shell/*.tsx",
+      "apps/web/src/features",
     ],
     { cwd: root, encoding: "utf8" }
   )
     .split("\n")
-    .filter((file) => file && !/\.test\.tsx$/.test(file))
+    .filter((file) => file.endsWith(".tsx") && !file.endsWith(".test.tsx"))
 
 const MISTAKE = `const row = "flex h-7 items-center rounded-md px-2 hover:bg-sidebar-accent"
 export const menu = <Button size="icon-sm" aria-label="Menu" />`
@@ -44,8 +44,8 @@ test("a non-interactive 28px block is not a target", () => {
   assert.deepEqual(smallTargets('const a = "mx-2 mt-3 h-7"'), [])
 })
 
-test("every interactive control in the app shell is 44px on a phone", () => {
-  const problems = shellFiles().flatMap((file) => {
+test("every interactive control in features is 44px on a phone", () => {
+  const problems = featureFiles().flatMap((file) => {
     const found = smallTargets(
       readFileSync(path.join(root, file), "utf8"),
       file

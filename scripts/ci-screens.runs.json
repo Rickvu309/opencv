@@ -54,5 +54,10 @@
     "id": "session-expired",
     "script": "verify-session-expired.mjs",
     "stack": "shared"
+  },
+  {
+    "id": "overflow-390",
+    "script": "verify-overflow-390.mjs",
+    "stack": "shared"
   }
 ]

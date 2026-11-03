@@ -1,0 +1,10 @@
+{
+  "id": "overflow-email",
+  "file": "scripts/overflow-390.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "b050a9e8^",
+    "paths": ["apps/web/src/features/auth/session-expired-dialog.tsx"],
+    "command": ["node", "--test", "scripts/overflow-390.test.mjs"]
+  }
+}
