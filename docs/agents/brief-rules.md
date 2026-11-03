@@ -20,19 +20,19 @@
 11. [all] Findings stay findings. A real bug outside your scope goes in your report under Findings with file:line, a repro and the lint idea. Never weaken a check to make it pass. (AGENTS.md: Agent briefs)
 12. [all] Machine. Run one heavy command at a time. Run targeted tests, never the whole suite or pnpm check; CI does that. Never run sleep for over 30 seconds, never loop or poll to wait; background the job and let it wake you. Keep output bounded with head, tail, sed -n or grep -m. Scratch files go under the tmp folder in your home directory, never /tmp. (AGENTS.md: Agent briefs)
 13. [build mechanical] Pull request. Write the body with the pr skill (Summary, Evidence, Merge Danger), with real commands and results and no machine-local paths. Run scripts/ocv-tools.mjs finish --body-file <file>. Merge only if your brief says so. (AGENTS.md: Per change)
-14. [all] Subagents. Set the model on every spawn: haiku for search, exploration, polling and mechanical edits, sonnet for writing code, opus for planning, architecture and review. (AGENTS.md: Agent briefs)
+14. [all] Subagents. Set the model on every spawn: haiku for search, exploration, polling and mechanical edits, opus for writing code, planning, architecture and review. (AGENTS.md: Agent briefs)
 15. [all] Report. Write the full report to the file your brief names. Reply with one STATUS line, the pull request URL and the report path, under 1000 characters. (AGENTS.md: Agent briefs)
 16. [build mechanical] After a merge, remove the worktree, the local branch and any throwaway folder you made, and list what you removed. (AGENTS.md: Agent briefs)
 ```
 
 ## Roles
 
-| Role       | Model  | Tool budget |
-| ---------- | ------ | ----------- |
-| build      | sonnet | 60          |
-| mechanical | haiku  | 40          |
-| review     | opus   | 40          |
-| plan       | opus   | 40          |
+| Role       | Model | Tool budget |
+| ---------- | ----- | ----------- |
+| build      | opus  | 60          |
+| mechanical | haiku | 40          |
+| review     | opus  | 40          |
+| plan       | opus  | 40          |
 
 ## Fences
 

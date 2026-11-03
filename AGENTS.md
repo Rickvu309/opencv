@@ -30,7 +30,7 @@ A job-search web app: a React SPA (`apps/web`) and a Hono api (`apps/api`) over 
 - A guard exports a pure detect, a mistake fixture that fires and a clean fixture that stays quiet, plus proof against a past commit.
 - A real bug outside your scope goes in the report under Findings with file:line, a repro and the lint idea. Never weaken a check to make it pass.
 - Run one heavy command at a time and only targeted tests; never loop, poll or sleep to wait. Keep output bounded. Scratch files go under the tmp folder in your home directory, never `/tmp`.
-- Set the model on every subagent spawn: haiku for search, exploration, polling and mechanical edits, sonnet for writing code, opus for planning, architecture and review.
+- Set the model on every subagent spawn: haiku for search, exploration, polling and mechanical edits, opus for writing code, planning, architecture and review.
 - Write the full report to the file the brief names and reply with one STATUS line, the pull request URL and the report path.
 - After a merge, remove the worktree, the local branch and any throwaway folder you made, and list what you removed.
 

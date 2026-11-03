@@ -86,7 +86,7 @@ test("the git and model words in the rules are also in AGENTS.md", () => {
     "scripts/ocv-tools.mjs save",
     "scripts/ocv-tools.mjs done",
     "scripts/ocv-tools.mjs block",
-    "haiku for search, exploration, polling and mechanical edits, sonnet for writing code, opus for planning, architecture and review",
+    "haiku for search, exploration, polling and mechanical edits, opus for writing code, planning, architecture and review",
   ]) {
     assert.ok(block.includes(word), `rules lack ${word}`)
     assert.ok(agents.includes(word), `AGENTS.md lacks ${word}`)
@@ -99,11 +99,13 @@ test("the model rule and the role table agree", () => {
     rule.text.startsWith("Subagents.")
   ).text
   assert.match(modelRule, /haiku for [^.]*mechanical edits/)
-  assert.match(modelRule, /sonnet for writing code/)
-  assert.match(modelRule, /opus for planning, architecture and review/)
-  assert.doesNotMatch(modelRule, /sonnet for [^,]*mechanical/)
+  assert.match(
+    modelRule,
+    /opus for writing code, planning, architecture and review/
+  )
+  assert.doesNotMatch(modelRule, /sonnet/i)
   assert.equal(table.mechanical.model, "haiku")
-  assert.equal(table.build.model, "sonnet")
+  assert.equal(table.build.model, "opus")
   assert.equal(table.review.model, "opus")
   assert.equal(table.plan.model, "opus")
 })
@@ -136,7 +138,7 @@ test("a review or plan brief never tells the agent to change anything", () => {
 
 test("each role gets its model and budget from the table", () => {
   const expected = {
-    build: "sonnet",
+    build: "opus",
     mechanical: "haiku",
     review: "opus",
     plan: "opus",
@@ -151,6 +153,7 @@ test("each role gets its model and budget from the table", () => {
       text,
       new RegExp(`^Tool budget: ${table[role].budget} calls$`, "m")
     )
+    assert.doesNotMatch(text, /sonnet/i)
   }
 })
 
