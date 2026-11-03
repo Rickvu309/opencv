@@ -26,6 +26,8 @@ export function discoverTests(list = gitList) {
 export const FILE_TIMEOUT_MS = 180_000
 export const SLOW_FILE_TIMEOUT_MS = 600_000
 
+export const testTimeoutFor = (fileTimeoutMs) => Math.floor(fileTimeoutMs * 0.8)
+
 export function runFile(
   file,
   {
@@ -39,7 +41,7 @@ export function runFile(
     const { NODE_TEST_CONTEXT: _outerNodeTestContext, ...env } = process.env
     const child = spawn(
       process.execPath,
-      ["--test", `--test-timeout=${Math.floor(timeoutMs * 0.8)}`, file],
+      ["--test", `--test-timeout=${testTimeoutFor(timeoutMs)}`, file],
       { cwd, env, detached: true, stdio: ["ignore", "pipe", "pipe"] }
     )
     let output = ""
