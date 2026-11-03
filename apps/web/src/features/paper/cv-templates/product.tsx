@@ -86,7 +86,9 @@ export function ProductCv({
         </div>
 
         <div className="mt-6">
-          <SectionTitle dark>Skills</SectionTitle>
+          <SectionTitle kind="skills" dark>
+            Skills
+          </SectionTitle>
           <SkillChips
             groups={data.skills}
             onChange={setSkills}
@@ -97,7 +99,9 @@ export function ProductCv({
         </div>
 
         <div className="mt-6">
-          <SectionTitle dark>Education</SectionTitle>
+          <SectionTitle kind="education" dark>
+            Education
+          </SectionTitle>
           {data.education.map((item, i) => (
             <div
               key={i}
@@ -148,7 +152,7 @@ export function ProductCv({
 
       <main className="cv-template-product-main">
         <section>
-          <SectionTitle>Profile</SectionTitle>
+          <SectionTitle kind="summary">Profile</SectionTitle>
           <CvType role="body" as="div" className="text-foreground/90">
             <EditableField
               aria-label="Summary"
@@ -160,7 +164,7 @@ export function ProductCv({
         </section>
 
         <section className="mt-6">
-          <SectionTitle>Experience</SectionTitle>
+          <SectionTitle kind="experience">Experience</SectionTitle>
           <ExperienceList
             experience={data.experience}
             setExperience={setExperience}
@@ -170,7 +174,7 @@ export function ProductCv({
 
         {data.projects?.length ? (
           <section className="mt-6">
-            <SectionTitle>Selected work</SectionTitle>
+            <SectionTitle kind="projects">Selected work</SectionTitle>
             {data.projects.map((project, i) => (
               <div key={i} data-paper-section={`project-${i}`} className="mb-3">
                 <CvType role="label">

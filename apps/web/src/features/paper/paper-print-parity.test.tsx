@@ -1,8 +1,8 @@
 import { cleanup, render } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 import {
+  PAPER_TEMPLATE_IDS,
   blocksToPreviewModel,
-  cvCodecToBlocks,
   cvPrintModel,
   emptyCvDocument,
   paragraphsToBlockDocument,
@@ -10,6 +10,7 @@ import {
   type CvBlockDocument,
   type CvDocument,
   type CvPaper,
+  type CvSectionKind,
   type CvTemplateId,
   type LetterPaper,
 } from "@workspace/domain"
@@ -19,29 +20,45 @@ import { LetterSheet } from "./letter-sheet.tsx"
 import { LetterPrintView } from "./paper-letter-print.tsx"
 import { printLayout } from "./paper-templates.ts"
 
-const layouts = [
-  "internship",
-  "academic",
-  "product",
-  "service",
-  "photo",
-] as const satisfies readonly CvTemplateId[]
-
 const v1: CvDocument = {
   ...emptyCvDocument(),
   name: "Lan Nguyen",
   headline: "Product intern",
+  contact: {
+    email: "lan@example.com",
+    phone: "090",
+    location: "Hanoi",
+    linkedin: "linkedin.com/in/lan",
+  },
   summary: "Ships small experiments.",
   experience: [
     {
       role: "Intern",
       company: "Northwind",
       period: "2024",
-      bullets: ["Shipped the board"],
+      location: "Hanoi",
+      bullets: ["Shipped the board", ""],
+    },
+    {
+      role: "",
+      company: "Campus lab",
+      period: "2023",
+      bullets: ["Noted the result"],
     },
   ],
-  education: [{ school: "NTU", degree: "CS", period: "2023" }],
-  skills: [{ label: "Tools", items: ["Figma", "SQL"] }],
+  education: [
+    { school: "NTU", degree: "CS", period: "2023", detail: "Thesis on type" },
+  ],
+  skills: [
+    { label: "Tools", items: ["Figma", "SQL, Postgres"] },
+    { label: "", items: ["", "Typing"] },
+  ],
+  projects: [
+    { name: "Campus board", detail: "Line one\nLine two" },
+    { name: "Empty detail", detail: "" },
+  ],
+  languages: ["Vietnamese, native"],
+  photoUrl: "https://images.example/lan.png",
 }
 
 const v2: CvBlockDocument = {
@@ -51,30 +68,100 @@ const v2: CvBlockDocument = {
     email: "ada@example.com",
     phone: "",
     city: "Hanoi",
-    linkedin: "",
+    linkedin: "linkedin.com/in/ada",
+    photo: "https://images.example/ada.png",
   },
   sections: [
     {
       id: "summary",
       kind: "summary",
-      blocks: [{ id: "t1", type: "text", text: "Builds careful pages." }],
+      blocks: [
+        { id: "h1", type: "heading", text: "Careful pages" },
+        { id: "t1", type: "text", text: "Builds careful pages." },
+        {
+          id: "l1",
+          type: "bulleted-list",
+          items: [{ id: "li1", text: "Shipped the board" }],
+        },
+      ],
     },
     {
       id: "experience",
       kind: "experience",
       blocks: [
+        { id: "loose", type: "text", text: "A loose line before the role" },
         {
           id: "x1",
           type: "experience-entry",
           role: "Intern",
           company: "Northwind",
           period: "2024",
+          location: "Hanoi",
           bullets: [{ id: "b1", text: "Shipped the board" }],
         },
       ],
     },
+    {
+      id: "education",
+      kind: "education",
+      blocks: [
+        {
+          id: "ed1",
+          type: "education-entry",
+          school: "NTU",
+          degree: "CS",
+          period: "2023",
+          detail: "Thesis on type",
+        },
+      ],
+    },
+    {
+      id: "skills",
+      kind: "skills",
+      blocks: [
+        {
+          id: "sk1",
+          type: "skills-group",
+          label: "Tools",
+          items: ["Figma", "SQL, Postgres"],
+        },
+        { id: "sk2", type: "text", text: "Go, Rust" },
+      ],
+    },
+    {
+      id: "projects",
+      kind: "projects",
+      blocks: [
+        { id: "ph", type: "heading", text: "Campus board" },
+        { id: "pt", type: "text", text: "Line one" },
+        {
+          id: "pl",
+          type: "bulleted-list",
+          items: [{ id: "pi", text: "Line two" }],
+        },
+      ],
+    },
+    {
+      id: "languages",
+      kind: "languages",
+      blocks: [{ id: "lang", type: "text", text: "Vietnamese, native" }],
+    },
+    {
+      id: "awards",
+      kind: "awards",
+      blocks: [{ id: "aw", type: "text", text: "Dean's list" }],
+    },
+    {
+      id: "activities",
+      kind: "activities",
+      blocks: [{ id: "ac", type: "text", text: "Reading group" }],
+    },
   ],
 }
+
+const imported = paragraphsToBlockDocument(
+  "Lan Nguyen\n\nShips small experiments."
+)
 
 function visibleText(node: HTMLElement) {
   return (node.textContent ?? "").replace(/\s+/g, " ").trim()
@@ -88,10 +175,105 @@ function upgradedCv(stored: unknown): CvPaper {
   return result.document
 }
 
-function renderTemplate(data: CvDocument) {
-  return visibleText(
-    render(<CvTemplate data={data} onChange={() => undefined} />).container
-  )
+function shown(data: CvDocument) {
+  const view = render(<CvTemplate data={data} onChange={() => undefined} />)
+  const img = view.container.querySelector("img")
+  const titles = [
+    ...view.container.querySelectorAll("[data-cv-type='section-title']"),
+  ].map((node) => node.textContent ?? "")
+  const picture = {
+    text: visibleText(view.container),
+    alt: img?.getAttribute("alt") ?? null,
+    src: img?.getAttribute("src") ?? null,
+    titles,
+  }
+  cleanup()
+  return picture
+}
+
+const richV1 = upgradedCv(v1)
+
+const fixtures: {
+  name: string
+  paper: CvPaper
+  anchor: string
+  entry: string
+  photo: boolean
+  previous: (layout: CvTemplateId) => CvDocument
+}[] = [
+  {
+    name: "v1",
+    paper: richV1,
+    anchor: "Lan Nguyen",
+    entry: "Northwind",
+    photo: true,
+    previous: (layout) => ({ ...v1, templateId: layout }),
+  },
+  {
+    name: "v2",
+    paper: upgradedCv(v2),
+    anchor: "Ada Lane",
+    entry: "Northwind",
+    photo: true,
+    previous: (layout) => blocksToPreviewModel(v2, layout),
+  },
+  {
+    name: "imported",
+    paper: upgradedCv(imported),
+    anchor: "Lan Nguyen",
+    entry: "Ships small experiments.",
+    photo: false,
+    previous: (layout) => blocksToPreviewModel(imported, layout),
+  },
+]
+
+const renamed: {
+  layout: CvTemplateId
+  kind: CvSectionKind
+  from: string
+  to: string
+}[] = [
+  {
+    layout: "internship",
+    kind: "experience",
+    from: "Experience",
+    to: "Selected roles",
+  },
+  {
+    layout: "photo",
+    kind: "experience",
+    from: "Experience",
+    to: "Selected roles",
+  },
+  {
+    layout: "service",
+    kind: "experience",
+    from: "Work experience",
+    to: "Selected roles",
+  },
+  {
+    layout: "product",
+    kind: "projects",
+    from: "Selected work",
+    to: "Campus pieces",
+  },
+  {
+    layout: "academic",
+    kind: "projects",
+    from: "Projects & campus",
+    to: "Studio work",
+  },
+]
+
+function withTitle(paper: CvPaper, kind: CvSectionKind, title: string) {
+  return {
+    ...paper,
+    blocks: paper.blocks.map((block) =>
+      block.type === "section" && block.kind === kind
+        ? { ...block, title }
+        : block
+    ),
+  }
 }
 
 afterEach(() => {
@@ -99,51 +281,58 @@ afterEach(() => {
 })
 
 describe("print parity", () => {
-  it("uses the photo layout for the with-photo gallery id", () => {
+  it("prints every gallery id with the same words as the old reader", () => {
     expect(printLayout("with-photo")).toBe("photo")
-    expect(layouts).toContain(printLayout("with-photo"))
+    const seen = new Set<string>()
+    for (const id of PAPER_TEMPLATE_IDS) {
+      const layout = printLayout(id)
+      for (const fixture of fixtures) {
+        const key = `${layout}:${fixture.name}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        const next = shown(cvPrintModel(fixture.paper, layout))
+        const previous = shown(fixture.previous(layout))
+        expect(next.text, key).toBe(previous.text)
+        expect(next.text, key).toContain(fixture.anchor)
+        expect(next.text, key).toContain(fixture.entry)
+        if (layout === "photo" && fixture.photo) {
+          expect(next.alt, key).toBe(previous.alt)
+          expect(next.src, key).toBe(previous.src)
+          expect(next.alt, key).toContain(fixture.anchor)
+          expect(next.src, key).toContain("https://")
+        }
+      }
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(5)
   })
 
-  const fixtures: [string, unknown, CvBlockDocument][] = [
-    ["v1", v1, cvCodecToBlocks(v1)],
-    ["v2", v2, v2],
-    [
-      "imported",
-      paragraphsToBlockDocument("Lan Nguyen\n\nShips small experiments."),
-      paragraphsToBlockDocument("Lan Nguyen\n\nShips small experiments."),
-    ],
-  ]
-
-  for (const layout of layouts) {
-    for (const [name, stored, previewSource] of fixtures) {
-      it(`${layout} ${name} text matches the version 2 preview`, () => {
-        const paper = upgradedCv(stored)
-        expect(renderTemplate(cvPrintModel(paper, layout))).toBe(
-          renderTemplate(blocksToPreviewModel(previewSource, layout))
-        )
-      })
+  it.each(renamed)(
+    "$layout prints a custom $kind title",
+    ({ layout, kind, from, to }) => {
+      const printed = shown(cvPrintModel(withTitle(richV1, kind, to), layout))
+      expect(printed.titles).toContain(to)
+      expect(printed.titles).not.toContain(from)
+      expect(printed.text).toContain("Northwind")
     }
-  }
+  )
 
-  it("prints a custom section title by name", () => {
-    const paper = upgradedCv(v2)
-    const custom: CvPaper = {
-      ...paper,
-      blocks: paper.blocks.map((block) =>
-        block.type === "section" && block.kind === "experience"
-          ? { ...block, title: "Selected roles" }
-          : block
-      ),
-    }
-    const previous = renderTemplate(blocksToPreviewModel(v2, "internship"))
-    const printed = renderTemplate(cvPrintModel(custom, "internship"))
-    expect(previous).toContain("Experience")
-    expect(previous).toContain("Northwind")
-    expect(printed).toContain("Selected roles")
-    expect(printed).toContain("Northwind")
+  it("replaces a combined skills heading with the skills title", () => {
+    const printed = shown(
+      cvPrintModel(withTitle(richV1, "skills", "Tools"), "academic")
+    )
+    expect(printed.titles).toContain("Tools")
+    expect(printed.titles).not.toContain("Skills & languages")
   })
 
-  it("matches the stored letter text on the share page letter view", () => {
+  it("prints an empty custom title instead of the template word", () => {
+    const printed = shown(
+      cvPrintModel(withTitle(richV1, "skills", ""), "internship")
+    )
+    expect(printed.titles).toContain("")
+    expect(printed.titles).not.toContain("Skills")
+  })
+
+  it("matches the stored letter words on the share letter view", () => {
     const stored = {
       markdown: "First.\n\nSecond.",
       sender: "Ada",

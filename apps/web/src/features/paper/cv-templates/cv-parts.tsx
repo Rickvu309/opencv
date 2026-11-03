@@ -15,6 +15,8 @@ import {
   isCvDocument,
   paperPhotoFileId,
   parsePaperId,
+  type CvPrintModel,
+  type CvSectionKind,
   type FileId,
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
@@ -92,19 +94,8 @@ export const PAPER_CANVAS_NEXT_STEP_CLASS = "paper-canvas-next-step"
 
 export const CvHistoryRevisionContext = createContext(0)
 
-const DEFAULT_SECTION_LABEL: Record<string, string> = {
-  Summary: "summary",
-  Experience: "experience",
-  Education: "education",
-  Skills: "skills",
-  Projects: "projects",
-  Activities: "activities",
-  Awards: "awards",
-  Languages: "languages",
-}
-
 export const CvSectionTitleContext = createContext<
-  Partial<Record<string, string>> | undefined
+  CvPrintModel["sectionTitles"] | undefined
 >(undefined)
 
 /** Editor-only empty-field hints. Share pages and thumbnails leave this off. */
@@ -350,14 +341,14 @@ export function EducationEmptyCta({
 export function SectionTitle({
   children,
   dark,
+  kind,
 }: {
   children: ReactNode
   dark?: boolean
+  kind: CvSectionKind
 }) {
   const custom = useContext(CvSectionTitleContext)
-  const kind =
-    typeof children === "string" ? DEFAULT_SECTION_LABEL[children] : undefined
-  const label = (kind && custom?.[kind]) || children
+  const label = custom?.[kind] ?? children
   return (
     <CvType
       role="section-title"

@@ -56,7 +56,7 @@ export function ServiceCv({
       </header>
 
       <section className="rounded-lg border border-foreground/10 bg-muted/20 p-4">
-        <SectionTitle>Work experience</SectionTitle>
+        <SectionTitle kind="experience">Work experience</SectionTitle>
         <ExperienceList
           experience={data.experience}
           setExperience={setExperience}
@@ -65,7 +65,7 @@ export function ServiceCv({
       </section>
 
       <section className="mt-5">
-        <SectionTitle>About</SectionTitle>
+        <SectionTitle kind="summary">About</SectionTitle>
         <CvType role="body" as="div">
           <EditableField
             aria-label="Summary"
@@ -78,7 +78,7 @@ export function ServiceCv({
 
       <div className="mt-5 grid grid-cols-2 gap-5">
         <section>
-          <SectionTitle>Education</SectionTitle>
+          <SectionTitle kind="education">Education</SectionTitle>
           {data.education.map((item, i) => (
             <div
               key={i}
@@ -121,7 +121,7 @@ export function ServiceCv({
           />
         </section>
         <section>
-          <SectionTitle>Skills</SectionTitle>
+          <SectionTitle kind="skills">Skills</SectionTitle>
           <SkillChips
             groups={data.skills}
             onChange={setSkills}

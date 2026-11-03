@@ -1,3 +1,5 @@
+import type { CvSectionKind } from "@workspace/domain"
+
 import type { CvData } from "./cv-types.ts"
 import { CvType, SectionTitle } from "./cv-parts.tsx"
 
@@ -12,11 +14,19 @@ function linesOf(data: CvData, key: "activities" | "awards"): string[] {
   return value.filter((line) => line.trim().length > 0)
 }
 
-function LineSection({ title, items }: { title: string; items: string[] }) {
+function LineSection({
+  title,
+  kind,
+  items,
+}: {
+  title: string
+  kind: CvSectionKind
+  items: string[]
+}) {
   if (items.length === 0) return null
   return (
     <section className="mt-5">
-      <SectionTitle>{title}</SectionTitle>
+      <SectionTitle kind={kind}>{title}</SectionTitle>
       <ul className="space-y-1">
         {items.map((line, index) => (
           <li key={`${title}-${index}`}>
@@ -31,8 +41,16 @@ function LineSection({ title, items }: { title: string; items: string[] }) {
 export function ActivitiesAndAwards({ data }: { data: CvData }) {
   return (
     <>
-      <LineSection title="Activities" items={linesOf(data, "activities")} />
-      <LineSection title="Awards" items={linesOf(data, "awards")} />
+      <LineSection
+        title="Activities"
+        kind="activities"
+        items={linesOf(data, "activities")}
+      />
+      <LineSection
+        title="Awards"
+        kind="awards"
+        items={linesOf(data, "awards")}
+      />
     </>
   )
 }
@@ -42,7 +60,7 @@ export function SummaryBlock({ data }: { data: CvData }) {
   if (!data.summary.trim()) return null
   return (
     <section className="mt-5">
-      <SectionTitle>Summary</SectionTitle>
+      <SectionTitle kind="summary">Summary</SectionTitle>
       <CvType role="body">{data.summary}</CvType>
     </section>
   )
@@ -57,7 +75,7 @@ export function ProjectsBlock({ data }: { data: CvData }) {
   if (projects.length === 0) return null
   return (
     <section className="mt-5">
-      <SectionTitle>Projects</SectionTitle>
+      <SectionTitle kind="projects">Projects</SectionTitle>
       {projects.map((project) => (
         <div key={`${project.name}-${project.detail}`}>
           <CvType role="label">{project.name}</CvType>
@@ -76,7 +94,7 @@ export function LanguagesBlock({ data }: { data: CvData }) {
   if (languages.length === 0) return null
   return (
     <section className="mt-5">
-      <SectionTitle>Languages</SectionTitle>
+      <SectionTitle kind="languages">Languages</SectionTitle>
       <CvType role="body">{languages.join(", ")}</CvType>
     </section>
   )

@@ -38,7 +38,7 @@ function asLetterPaper(source: unknown): LetterPaper | null {
   return source as LetterPaper
 }
 
-function previewOf(
+export function previewOf(
   source: unknown,
   templateId: string | null
 ): CvDocumentData | null {

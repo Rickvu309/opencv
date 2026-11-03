@@ -1,6 +1,10 @@
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import {
   emptyCvDocument,
   upgradeStoredPaper,
+  type LetterPaper,
   type PaperDocument,
   type PaperView,
 } from "@workspace/domain"
@@ -43,8 +47,23 @@ const shared: Omit<PaperView, "isFavorite"> = {
   updatedAt: "2020-01-01T00:00:00.000Z",
 }
 
+function mountLetterStyles() {
+  const css = readFileSync(
+    path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "design/letter-sheet.pen.css"
+    ),
+    "utf8"
+  )
+  const style = document.createElement("style")
+  style.setAttribute("data-test-letter", "")
+  style.textContent = `ul,ol{list-style:none;padding:0}a{text-decoration-line:none}h2,h3{font-size:11px;font-weight:400}${css}`
+  document.head.append(style)
+}
+
 afterEach(() => {
   document.body.removeAttribute("data-print")
+  document.querySelector("[data-test-letter]")?.remove()
   cleanup()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -134,7 +153,7 @@ describe("Paper share page", () => {
     )
   })
 
-  it("shows a shared letter on the letter sheet with its parts", async () => {
+  it("shows a shared letter's words as flat paragraphs", async () => {
     const letterDocument = {
       markdown: "First.\n\nSecond.",
       sender: "Ada",
@@ -167,7 +186,114 @@ describe("Paper share page", () => {
     expect(
       [...(sheet?.children ?? [])].map((node) => node.textContent)
     ).toEqual(["Ada", "May 5", "First.", "Second.", "Ada"])
+    expect(sheet?.querySelector("[data-slot='letter-sender']")).toBeNull()
+    expect(
+      sheet?.querySelector("[data-slot='letter-paragraph']")
+    ).not.toBeNull()
     expect(sheet?.querySelector("textarea, [placeholder]")).toBeNull()
+  })
+
+  it("shows heading levels, list markers and the link on a shared letter", async () => {
+    mountLetterStyles()
+    const paper: LetterPaper = {
+      version: 3,
+      kind: "letter",
+      clashes: [],
+      blocks: [
+        {
+          id: "h2",
+          type: "heading",
+          level: 2,
+          content: [{ text: "Why Northwind" }],
+        },
+        {
+          id: "h3",
+          type: "heading",
+          level: 3,
+          content: [{ text: "The work" }],
+        },
+        {
+          id: "b1",
+          type: "bullet",
+          content: [{ text: "Brought the board" }],
+          children: [],
+        },
+        {
+          id: "n1",
+          type: "numbered",
+          content: [{ text: "First step" }],
+          children: [],
+        },
+        {
+          id: "p1",
+          type: "paragraph",
+          content: [
+            { text: "See " },
+            { text: "Acme", href: "https://acme.example" },
+          ],
+        },
+      ],
+    }
+    const letter: Omit<PaperView, "isFavorite"> = {
+      ...shared,
+      name: "Letter for Ada",
+      kind: "letter",
+      templateId: null,
+      document: { markdown: "" },
+      paper,
+    }
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/paper/shared/tok")) {
+        return Promise.resolve(Response.json({ ok: true, data: letter }))
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    render(<PaperSharePage />)
+    const heading = await screen.findByRole("heading", {
+      level: 2,
+      name: "Why Northwind",
+    })
+    const subheading = screen.getByRole("heading", {
+      level: 3,
+      name: "The work",
+    })
+    const lists = screen.getAllByRole("list")
+    const bullet = lists.find((node) => node.tagName === "UL")
+    const numbered = lists.find((node) => node.tagName === "OL")
+    const link = screen.getByRole("link", { name: "Acme" })
+    expect(bullet).toBeDefined()
+    expect(numbered).toBeDefined()
+    expect(link).toHaveAttribute("href", "https://acme.example")
+    expect(getComputedStyle(heading).fontWeight).toBe("700")
+    expect(getComputedStyle(heading).fontSize).toBe("15px")
+    expect(getComputedStyle(subheading).fontWeight).toBe("700")
+    expect(getComputedStyle(subheading).fontSize).toBe("13px")
+    expect(getComputedStyle(bullet!).listStyleType).toBe("disc")
+    expect(getComputedStyle(numbered!).listStyleType).toBe("decimal")
+    expect(getComputedStyle(link).textDecorationLine).toContain("underline")
+  })
+
+  it("prints a CV from the stored document when paper is missing", async () => {
+    const document = {
+      ...emptyCvDocument(),
+      name: "Lan Nguyen",
+      summary: "Ships small experiments.",
+    }
+    const { paper: _paper, ...rest } = shared
+    void _paper
+    const skewed = { ...rest, document }
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/paper/shared/tok")) {
+        return Promise.resolve(Response.json({ ok: true, data: skewed }))
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    render(<PaperSharePage />)
+    expect(
+      await screen.findByText("Ships small experiments.", {}, { timeout: 1000 })
+    ).toBeInTheDocument()
   })
 
   it("prints once in strict mode and unmounts the share sheet", async () => {

@@ -17,17 +17,29 @@ function iso(value: Date) {
   return value.toISOString()
 }
 
-export function readStoredPaper(row: PaperRow): PaperDocument {
+export function tryReadStoredPaper(row: PaperRow): PaperDocument | null {
   const seeded = paperDocumentSchema.safeParse(row.crdtDocument)
-  if (seeded.success) return seeded.data
+  if (seeded.success && seeded.data.kind === row.kind) return seeded.data
   const upgraded = upgradeStoredPaper(row.kind, row.document)
-  if (!upgraded.ok) {
-    throw new CommandError(ERROR_CODES.CONFLICT, upgraded.message)
-  }
+  if (!upgraded.ok || upgraded.document.kind !== row.kind) return null
   return upgraded.document
 }
 
-export function toPaper(row: PaperRow): PaperView {
+export function readStoredPaper(row: PaperRow): PaperDocument {
+  const paper = tryReadStoredPaper(row)
+  if (!paper) {
+    throw new CommandError(
+      ERROR_CODES.INTERNAL_ERROR,
+      "This paper cannot be read"
+    )
+  }
+  return paper
+}
+
+export function toPaper(
+  row: PaperRow,
+  paper: PaperDocument = readStoredPaper(row)
+): PaperView {
   return {
     id: parsePaperId(row.id),
     name: row.name,
@@ -35,7 +47,7 @@ export function toPaper(row: PaperRow): PaperView {
     templateId: row.templateId as PaperView["templateId"],
     status: row.status,
     document: row.document as PaperView["document"],
-    paper: readStoredPaper(row),
+    paper,
     contentVersion: row.contentVersion,
     checks: row.checks ?? [],
     pageChoice: row.pageChoice,

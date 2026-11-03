@@ -50,7 +50,7 @@ export function InternshipCv({
       </header>
 
       <section className="mt-5">
-        <SectionTitle>Summary</SectionTitle>
+        <SectionTitle kind="summary">Summary</SectionTitle>
         <CvType role="body" as="div" className="text-foreground/90">
           <EditableField
             aria-label="Summary"
@@ -62,7 +62,7 @@ export function InternshipCv({
       </section>
 
       <section className="mt-5">
-        <SectionTitle>Experience</SectionTitle>
+        <SectionTitle kind="experience">Experience</SectionTitle>
         <ExperienceList
           experience={data.experience}
           setExperience={setExperience}
@@ -71,7 +71,7 @@ export function InternshipCv({
       </section>
 
       <section className="mt-5">
-        <SectionTitle>Education</SectionTitle>
+        <SectionTitle kind="education">Education</SectionTitle>
         <EducationList
           education={data.education}
           setEducation={setEducation}
@@ -80,7 +80,7 @@ export function InternshipCv({
       </section>
 
       <section className="mt-5">
-        <SectionTitle>Skills</SectionTitle>
+        <SectionTitle kind="skills">Skills</SectionTitle>
         <SkillChips groups={data.skills} onChange={setSkills} />
       </section>
       <ProjectsBlock data={data} />

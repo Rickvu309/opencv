@@ -1,4 +1,4 @@
-import { parseUserId, type Actor } from "@workspace/domain"
+import { parsePaperId, parseUserId, type Actor } from "@workspace/domain"
 import { and, desc, eq, ilike, or } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
@@ -17,7 +17,7 @@ import { tableQuery } from "../registry/bind.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
 import { readUsage } from "./usage.js"
-import { toPaper } from "../paper/index.js"
+import { toPaper, tryReadStoredPaper } from "../paper/index.js"
 import { getProfileRow, toProfile } from "./store.js"
 
 const INTEGRATION_GROUPS = [
@@ -328,7 +328,24 @@ export async function exportAccount(userId: string) {
 }
 
 function publicDoc(row: typeof paperDocs.$inferSelect) {
-  const view = toPaper(row)
+  const paper = tryReadStoredPaper(row)
+  if (!paper) {
+    return {
+      id: parsePaperId(row.id),
+      name: row.name,
+      kind: row.kind,
+      templateId: row.templateId,
+      document: row.document,
+      paper: null,
+      contentVersion: row.contentVersion,
+      status: row.status,
+      checks: row.checks ?? [],
+      pageChoice: row.pageChoice,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    }
+  }
+  const view = toPaper(row, paper)
   return {
     id: view.id,
     name: view.name,

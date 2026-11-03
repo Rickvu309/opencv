@@ -1,45 +1,23 @@
 import { useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useReducer, useRef } from "react"
-import {
-  cvPrintModel,
-  type CvDocument as CvDocumentData,
-  type CvPaper,
-  type LetterPaper,
-} from "@workspace/domain"
+import type { LetterPaper, PaperDocument } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
 import { CvDocument } from "./cv-print-document.tsx"
 import { LetterPrintView } from "./paper-letter-print.tsx"
+import { readStoredLetter } from "./letter-sheet-model.ts"
+import { LetterSheet } from "./letter-sheet.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
-import { PaperPrintSheet } from "./paper-print-sheet.tsx"
+import { PaperPrintSheet, previewOf } from "./paper-print-sheet.tsx"
 import { printPaper, quietPaperChrome } from "./paper-print.ts"
 import { printJobReducer } from "./paper-print-job.reducer.ts"
-import { printLayout } from "./paper-templates.ts"
 
-function asCvPaper(source: unknown): CvPaper | null {
-  if (!source || typeof source !== "object") return null
-  const record = source as { version?: unknown; kind?: unknown }
-  if (record.version !== 3 || record.kind !== "cv") return null
-  return source as CvPaper
-}
-
-function asLetterPaper(source: unknown): LetterPaper | null {
-  if (!source || typeof source !== "object") return null
-  const record = source as { version?: unknown; kind?: unknown }
-  if (record.version !== 3 || record.kind !== "letter") return null
-  return source as LetterPaper
-}
-
-function sharedCv(
-  paper: unknown,
-  templateId: string | null
-): CvDocumentData | null {
-  const cv = asCvPaper(paper)
-  if (!cv) return null
-  return cvPrintModel(cv, printLayout(templateId))
+function letterOf(paper: PaperDocument | undefined): LetterPaper | null {
+  if (!paper || paper.kind !== "letter") return null
+  return paper
 }
 
 function shareToken(pathname: string) {
@@ -88,8 +66,9 @@ export function PaperSharePage() {
     )
   }
   const doc = query.data
-  const cv = doc.kind === "cv" ? sharedCv(doc.paper, doc.templateId) : null
-  const letter = doc.kind === "letter" ? asLetterPaper(doc.paper) : null
+  const stored = doc.paper?.kind === doc.kind ? doc.paper : doc.document
+  const cv = doc.kind === "cv" ? previewOf(stored, doc.templateId) : null
+  const letter = doc.kind === "letter" ? letterOf(doc.paper) : null
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 sm:p-8">
@@ -109,7 +88,7 @@ export function PaperSharePage() {
         <PaperPrintSheet
           name={doc.name}
           kind={doc.kind}
-          source={doc.paper}
+          source={stored}
           templateId={doc.templateId}
           docId={doc.id}
           shareToken={token}
@@ -122,6 +101,8 @@ export function PaperSharePage() {
           </CvPhotoFrame>
         ) : letter ? (
           <LetterPrintView document={letter} />
+        ) : doc.kind === "letter" ? (
+          <LetterSheet letter={readStoredLetter(doc.document)} />
         ) : null}
       </div>
     </main>
