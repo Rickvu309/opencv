@@ -1,4 +1,3 @@
-// Every check id has one kind, and the invariant tier computes no design check. Run: node --test .claude/skills/verify-app-ui/scripts/lib
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync } from "node:fs"
 import { dirname, join } from "node:path"

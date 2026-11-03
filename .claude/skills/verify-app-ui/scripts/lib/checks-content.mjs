@@ -1,7 +1,3 @@
-// Checks 01 to 13: writing and logic. Sources: Apple writing, feedback; WCAG 3.2.4; NN/g empty states
-// and hallucinations; shadcn AI Elements. A heuristic says so in its rule text. A scenario that did not
-// reach its state is a FAIL, never a pass. A stubbed call that never fired, or a source folder that is
-// missing, leaves only that part unjudged: a found FAIL still FAILs, otherwise the check is STALE.
 import {
   context,
   judged,
@@ -22,7 +18,6 @@ import {
 const NOT_ERRORS = /^Worked for|Listed your|^Free$/
 const errorTexts = (snap) => snap.alerts.filter((t) => t && !NOT_ERRORS.test(t))
 
-// 04. Two failures are driven: the api answers 404 with a raw message, and the connection is refused.
 export function coachErrorCheck(d) {
   const raw = "User not found."
   const api = errorTexts(d.coachError)
@@ -154,10 +149,10 @@ export function contentChecks(d, want = () => true) {
     )
   )
 
-  // Source reads. A control counts only as a JSX label or a quoted string, not a comment or a type name.
-  const label = (word) => new RegExp(`>\\s*${word}\\s*<|["'\`]${word}["'\`]`)
-  const approve = has(label("Approve"))
-  const deny = has(label("Deny"))
+  const jsxLabelOrQuotedStringNotCommentOrType = (word) =>
+    new RegExp(`>\\s*${word}\\s*<|["'\`]${word}["'\`]`)
+  const approve = has(jsxLabelOrQuotedStringNotCommentOrType("Approve"))
+  const deny = has(jsxLabelOrQuotedStringNotCommentOrType("Deny"))
   const rule08 =
     "a Coach write shows Deny and Approve before it runs (source read of JSX labels; the scripted Coach never writes, so no write turn is driven)"
   const src08 = scanProblem(scan)
@@ -193,7 +188,6 @@ export function contentChecks(d, want = () => true) {
   )
 
   {
-    // 10. Jobs are deleted through the api. The empty board is one empty state.
     const ae = d.applyEmpty
     const wells = (ae.text.match(/Drop a (job|opportunity) here/g) ?? []).length
     const confirmed = ae.cards.length === 0 && wells === 0
@@ -246,23 +240,23 @@ export function contentChecks(d, want = () => true) {
     )
   }
 
-  // 13. A percentage passes only with a basis phrase in the same card; one outside a card has no card to hold it.
   const cardPct = d.apply.cards.map((c) => ({
     c,
     n: c.text.match(/\d+\s?%/g) ?? [],
   }))
   const bare = cardPct.filter((x) => x.n.length && !hasBasisSentence(x.c.text))
   const inCards = cardPct.reduce((n, x) => n + x.n.length, 0)
-  const outside = (d.apply.text.match(/\d+\s?%/g) ?? []).length - inCards
+  const percentsOutsideAnyCard =
+    (d.apply.text.match(/\d+\s?%/g) ?? []).length - inCards
   r.push(
     result(
       "13",
       "fit-not-bare-number",
-      bare.length === 0 && outside <= 0,
+      bare.length === 0 && percentsOutsideAnyCard <= 0,
       bare.length
         ? `${bare.length} cards show a percent with no basis in the card: "${bare[0].c.text.slice(0, 60)}"`
-        : outside > 0
-          ? `${outside} percent figures on the board outside any card`
+        : percentsOutsideAnyCard > 0
+          ? `${percentsOutsideAnyCard} percent figures on the board outside any card`
           : "no percentage on the board",
       "Apply shows no Fit percentage, or one with a basis phrase (because, based on, from your, matches your) inside the same card"
     )

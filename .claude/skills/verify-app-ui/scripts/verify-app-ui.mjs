@@ -1,22 +1,10 @@
 #!/usr/bin/env node
-// verify-app-ui: measures the signed-in app (Coach, Paper, Apply, Pitch) against the mechanical
-// checks in SKILL.md.
-//   pnpm --filter web verify:app-ui        (api on PORT, web on PORT+1; 4450 and 4451 by default)
-//   VERIFY_APP_UI_SHOTS=<dir> also writes the review screenshots.
-//   VERIFY_APP_UI_DATA=<file> writes the raw measurements as JSON for inspection.
-//   VERIFY_TIER=invariant|design|all (default all). invariant skips the design checks: they are not computed.
-//   verify-pen-layout and verify-apply-pen are separate commands, design by nature, and ignore the tier.
-// Starts the api (PGlite, scripted Coach) and the web dev server through the verify-opencv skill's
-// launch.sh, signs up a throwaway account, drives headless Chromium over the DevTools protocol, prints
-// one PASS, FAIL or STALE line per property, tears everything down, and exits 3 when any check is STALE
-// (its own precondition did not hold), else 1 when any property fails.
-// It never edits the app. Exit 2 means the stack, the browser or a screen did not work (an error, not a verdict).
 import { mkdirSync, writeFileSync } from "node:fs"
 import { createConnection } from "node:net"
 
 import { launchBrowser } from "./lib/cdp.mjs"
 import { runChecks } from "./lib/checks.mjs"
-import { summarize } from "./lib/check-util.mjs"
+import { EXIT_CODE, summarize } from "./lib/check-util.mjs"
 import { KINDS } from "./lib/kinds.mjs"
 import { startStack, stopStack } from "./lib/stack.mjs"
 import { gate, selectTier, tierFromEnv } from "./lib/tier.mjs"
@@ -27,7 +15,7 @@ if (!(base >= 4450 && base <= 4458)) {
   console.error(
     "verify-app-ui error: PORT must be 4450 to 4458 (api uses PORT, web PORT+1)"
   )
-  process.exit(2)
+  process.exit(EXIT_CODE.stackBrowserOrScreenBroken)
 }
 const tier = tierFromEnv()
 const shots = process.env.VERIFY_APP_UI_SHOTS

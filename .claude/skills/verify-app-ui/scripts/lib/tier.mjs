@@ -1,5 +1,3 @@
-// Shared by both checkers. Each check has one kind: "invariant" holds for any good design, "design" holds only for
-// the current one. A tier picks which kinds run; the kinds a tier leaves out are not computed.
 export const TIERS = ["invariant", "design", "all"]
 
 export function tierFromEnv(env = process.env) {
@@ -15,8 +13,6 @@ const kindOf = (kinds, id) => {
   return kinds[id]
 }
 
-// want("27") is false for a design check in the invariant tier, so its code does not run. The design tier runs the
-// whole checker and keeps only the design results, so a design check never depends on what an invariant check set up.
 export const gate = (kinds, tier) => (id) =>
   tier !== "invariant" || kindOf(kinds, id) === "invariant"
 

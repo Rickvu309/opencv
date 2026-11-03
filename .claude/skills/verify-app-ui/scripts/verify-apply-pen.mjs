@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-// verify-apply-pen: measures every Apply state against its opencv.pen frame (W9.1 to W10.7) in
-// headless Chromium at 1440x900, with the frame's clock (Sunday 25 October 2026, 09:00) and zone
-// (Asia/Ho_Chi_Minh).
-//   pnpm --filter web verify:apply-pen          (api on PORT, web on PORT+1; 4454 and 4455 by default)
-//   VERIFY_APP_UI_SHOTS=<dir> also writes one screenshot per state.
-// Signs up Linh Nguyen on a fresh PGlite stack, saves the frames' jobs through the api, opens each
-// state, and compares each pen text's colour, size, weight, line height and tracking, plus the
-// size of each drawn icon, with apps/web/src/features/apply/design/<slug>.styles.json.
-// Exit 1 when a state fails, 2 when the stack, browser or a state did not work.
 import { existsSync, mkdirSync, readFileSync } from "node:fs"
 import { createConnection } from "node:net"
 
@@ -167,9 +158,7 @@ async function main() {
           extras: box.extras,
           exceptions: LAYOUT_EXCEPTIONS,
         })
-        // A colour mismatch stands unless every copy of that text that misses
-        // the colour rule is a faint pen grey shipped as the lightest AA grey.
-        const faintOnly = (text) =>
+        const everyColourMissIsFaintPenGrey = (text) =>
           layout.texts.every((want, index) => {
             const got = box.measured[index]
             if (want.text !== text || !got) return true
@@ -178,7 +167,8 @@ async function main() {
             )
           })
         const kept = mismatches.filter(
-          (m) => m.property !== "color" || !faintOnly(m.text)
+          (m) =>
+            m.property !== "color" || !everyColourMissIsFaintPenGrey(m.text)
         )
         result.failures.push(...kept.map((m) => formatMismatch(layout, m)))
         result.layout = layout.texts.length
@@ -207,16 +197,19 @@ async function main() {
       `${MAIN},[data-slot=kanban-overlay]`,
       async () => {
         await open("/apply", lanes)
-        // Lift Business analyst intern by its centre and hold it where the
-        // frame draws it: x 536, y 322 inside the board, which starts below
-        // the 52px header and 44px toolbar, so y 418 in the main panel.
         const spot = await page.evaluate(`(() => {
           const card = [...document.querySelectorAll("[data-slot=kanban-card]")].find((n) => n.textContent.includes("Business analyst intern"))
           const pane = document.querySelector("#app-main").getBoundingClientRect()
           const r = card.getBoundingClientRect()
           return { x: r.left + r.width / 2, y: r.top + r.height / 2, dx: r.width / 2, dy: r.height / 2, left: pane.left, top: pane.top }
         })()`)
-        const to = { x: spot.left + 536 + spot.dx, y: spot.top + 418 + spot.dy }
+        const frameDropInBoard = { x: 536, y: 322 }
+        const headerPx = 52
+        const toolbarPx = 44
+        const to = {
+          x: spot.left + frameDropInBoard.x + spot.dx,
+          y: spot.top + frameDropInBoard.y + headerPx + toolbarPx + spot.dy,
+        }
         await page.mouse("mousePressed", spot.x, spot.y)
         for (let step = 1; step <= 12; step += 1)
           await page.mouse(

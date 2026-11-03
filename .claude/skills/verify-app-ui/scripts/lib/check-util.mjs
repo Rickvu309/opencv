@@ -1,4 +1,3 @@
-// Shared by the check files: the repo root, the source scan helpers and the result shape.
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -12,7 +11,6 @@ export const repo = resolve(
 )
 export const SURFACES = ["coach", "paper", "cv", "apply", "pitch"]
 
-// Returns the files and the folders that do not exist, so a check can go STALE instead of passing on nothing.
 export function sourceFiles(dirs) {
   const files = []
   const missing = []
@@ -50,7 +48,6 @@ export const result = (id, name, pass, measured, rule) => ({
   measured: String(measured),
   rule,
 })
-// The check's own precondition did not hold, so it says nothing about the app.
 export const stale = (id, name, why, rule) => ({
   id,
   name,
@@ -58,8 +55,6 @@ export const stale = (id, name, why, rule) => ({
   measured: String(why),
   rule,
 })
-// One check, parts it could judge and parts it could not locate. A judged part that breaks the rule is a FAIL even
-// when another part was missing; with none broken, a missing part makes it STALE; otherwise PASS.
 export const judged = (id, name, rule, pass, measured, unjudged = []) => {
   const missing = unjudged.filter(Boolean)
   if (!pass)
@@ -81,17 +76,30 @@ export const judged = (id, name, rule, pass, measured, unjudged = []) => {
     )
   return result(id, name, true, measured, rule)
 }
-// A scenario stub that answered nothing means the app made a call the tour no longer expects.
 export const stubSilent = (...snaps) => {
   const quiet = snaps.filter((snap) => !(snap?.stubHits > 0))
   return quiet.length ? "the scenario stub never fired" : null
 }
 
+export const EXIT_CODE = Object.freeze({
+  allPass: 0,
+  anyFailNoStale: 1,
+  stackBrowserOrScreenBroken: 2,
+  anyStale: 3,
+})
+
 export function summarize(results, tier) {
   const lines = results.map(checkLine)
   lines.push(summaryLine(results, tier))
   const by = (status) => results.some((r) => r.status === status)
-  return { lines, exit: by("STALE") ? 3 : by("FAIL") ? 1 : 0 }
+  return {
+    lines,
+    exit: by("STALE")
+      ? EXIT_CODE.anyStale
+      : by("FAIL")
+        ? EXIT_CODE.anyFailNoStale
+        : EXIT_CODE.allPass,
+  }
 }
 
 export function context(d) {

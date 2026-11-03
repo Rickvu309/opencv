@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// PORT=4817 node .claude/skills/verify-app-ui/scripts/verify-auth-code.mjs <evidence directory>
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
@@ -16,7 +15,7 @@ const port = Number(process.env.PORT)
 const webOrigin = process.env.WEB_ORIGIN ?? `http://localhost:${port + 1}`
 if (!process.argv[2] || !Number.isInteger(port) || port < 1024 || port > 65534)
   throw new Error(
-    "Set PORT to the running API port and provide an evidence directory"
+    "Set PORT to the running API port and provide an evidence directory. Usage: PORT=4817 node .claude/skills/verify-app-ui/scripts/verify-auth-code.mjs <evidence directory>"
   )
 mkdirSync(output, { recursive: true })
 const design = join(repo, "apps/web/src/features/auth/design")

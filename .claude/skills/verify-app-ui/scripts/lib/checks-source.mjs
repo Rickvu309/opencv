@@ -1,5 +1,3 @@
-// Checks 24 to 27: motion and live regions. Each judges every part it could find; a missing source folder, banner
-// file or silent Coach stub makes only that part unjudged, so a found FAIL still FAILs and otherwise the check is STALE.
 import { join } from "node:path"
 import { existsSync } from "node:fs"
 

@@ -1,4 +1,3 @@
-// In-page helpers, by accessible name like the unit tests.
 export const HELPERS = `
   window.__pen = {
     named(name, roles) {

@@ -1,5 +1,3 @@
-// Starts and stops the real api (PGlite, scripted Coach) and web dev server on ports 4450 to 4459 by
-// calling the verify-opencv skill's launch.sh and cleanup.sh. That skill is not modified.
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import { homedir } from "node:os"

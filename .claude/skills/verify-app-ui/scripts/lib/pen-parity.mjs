@@ -1,15 +1,15 @@
-// Compares measured screens with <feature>/design/<slug>.styles.json, written by
-// scripts/pen-snapshot.mjs --styles. A pen text must be on the screen with the
-// pen's colour (OKLCH within 0.02 lightness and chroma), size (0.5px), weight,
-// line height (0.03) and tracking (0.15px). Each pen icon or drawn mark needs an
-// svg, img or icon-only button of the same size within 2px.
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-// Pen greys under 4.5:1 on white. The app ships a neutral grey between the
-// lightest AA grey (verify-pen-layout's rule) and muted-foreground, so
-// text-contrast (check 20) still holds.
-const CONTRAST_FLOOR = new Set([
+const PEN_TOLERANCE = Object.freeze({
+  oklchLightness: 0.02,
+  oklchChroma: 0.02,
+  fontSizePx: 0.5,
+  lineHeight: 0.03,
+  letterSpacingPx: 0.15,
+  markSizePx: 2,
+})
+const PEN_GREYS_UNDER_AA_ON_WHITE = new Set([
   "#969799",
   "#A0A0A2",
   "#9C9D9F",
@@ -25,11 +25,10 @@ const luminance = (rgb) => {
 }
 const onWhite = (rgb) => 1.05 / (luminance(rgb) + 0.05)
 const neutral = (rgb) => Math.max(...rgb) - Math.min(...rgb) <= 4
-const floorGrey = (rgb) =>
+const neutralGreyBetweenAaAndMutedForeground = (rgb) =>
   neutral(rgb) && onWhite(rgb) >= 4.3 && onWhite(rgb) <= 7.1
 
-// Runs inside the page; serialised with toString().
-function penProbe(selector) {
+function selfContainedPenProbe(selector) {
   const roots = [...document.querySelectorAll(selector)].filter(
     (el) => el.getBoundingClientRect().width > 0
   )
@@ -43,8 +42,7 @@ function penProbe(selector) {
     const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data
     return [r, g, b, a / 255]
   }
-  // A colour with alpha shows over the nearest opaque surface behind it.
-  const surface = (el) => {
+  const nearestOpaqueSurface = (el) => {
     for (let up = el; up; up = up.parentElement) {
       const bg = rgba(getComputedStyle(up).backgroundColor)
       if (bg[3] > 0.99) return bg
@@ -54,7 +52,7 @@ function penProbe(selector) {
   const shown = (el, css) => {
     const [r, g, b, a] = rgba(css)
     if (a > 0.99) return [r, g, b]
-    const under = surface(el)
+    const under = nearestOpaqueSurface(el)
     return [r, g, b].map((c, i) => Math.round(c * a + under[i] * (1 - a)))
   }
   const norm = (s) => s.replace(/[‘']/g, "’").replace(/\s+/g, " ").trim()
@@ -110,7 +108,7 @@ function penProbe(selector) {
 }
 
 export const penProbeSource = (selector) =>
-  `(${penProbe.toString()})(${JSON.stringify(selector)})`
+  `(${selfContainedPenProbe.toString()})(${JSON.stringify(selector)})`
 
 function oklch([r, g, b]) {
   const lin = (c) => {
@@ -142,9 +140,6 @@ const weight = (w) => {
 }
 const norm = (s) => s.replace(/[‘']/g, "’").replace(/\s+/g, " ").trim()
 
-// notShown: { text: reason } for pen texts the product cannot show.
-// marksNotDrawn: how many pen marks belong to data the product does not have.
-// colour: false leaves colour to pen-layout's AA rule when a layout file exists.
 export function comparePen(
   stylesFile,
   measured,
@@ -176,14 +171,18 @@ export function comparePen(
     if (colour && /^#[0-9A-F]{6}$/.test(spec.fill ?? "")) {
       const a = oklch(found.color)
       const b = oklch(fromHex(spec.fill))
-      const close = Math.abs(a.L - b.L) <= 0.02 && Math.abs(a.C - b.C) <= 0.02
-      const floor = CONTRAST_FLOOR.has(spec.fill) && floorGrey(found.color)
+      const close =
+        Math.abs(a.L - b.L) <= PEN_TOLERANCE.oklchLightness &&
+        Math.abs(a.C - b.C) <= PEN_TOLERANCE.oklchChroma
+      const floor =
+        PEN_GREYS_UNDER_AA_ON_WHITE.has(spec.fill) &&
+        neutralGreyBetweenAaAndMutedForeground(found.color)
       if (!close && !floor)
         problems.push(`colour ${hex(found.color)} pen ${spec.fill}`)
     }
     if (
       typeof spec.fontSize === "number" &&
-      Math.abs(found.fontSize - spec.fontSize) > 0.5
+      Math.abs(found.fontSize - spec.fontSize) > PEN_TOLERANCE.fontSizePx
     )
       problems.push(`size ${found.fontSize} pen ${spec.fontSize}`)
     if (
@@ -194,12 +193,13 @@ export function comparePen(
     if (
       typeof spec.lineHeight === "number" &&
       (found.lineHeight === "normal" ||
-        Math.abs(found.lineHeight - spec.lineHeight) > 0.03)
+        Math.abs(found.lineHeight - spec.lineHeight) > PEN_TOLERANCE.lineHeight)
     )
       problems.push(`line height ${found.lineHeight} pen ${spec.lineHeight}`)
     if (
       typeof spec.letterSpacing === "number" &&
-      Math.abs(found.letterSpacing - spec.letterSpacing) > 0.15
+      Math.abs(found.letterSpacing - spec.letterSpacing) >
+        PEN_TOLERANCE.letterSpacingPx
     )
       problems.push(`tracking ${found.letterSpacing} pen ${spec.letterSpacing}`)
     if (problems.length)
@@ -212,7 +212,9 @@ export function comparePen(
   const missingMarks = []
   for (const mark of penMarks) {
     const index = boxes.findIndex(
-      (b) => Math.abs(b.w - mark.width) <= 2 && Math.abs(b.h - mark.height) <= 2
+      (b) =>
+        Math.abs(b.w - mark.width) <= PEN_TOLERANCE.markSizePx &&
+        Math.abs(b.h - mark.height) <= PEN_TOLERANCE.markSizePx
     )
     if (index >= 0) boxes.splice(index, 1)
     else missingMarks.push(`${mark.name} ${mark.width}x${mark.height}`)

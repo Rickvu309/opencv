@@ -1,4 +1,3 @@
-// The Apply board lanes as the app renders them, held to the stage list in the domain (JOB_STAGES minus the hidden one).
 import { HIDDEN_STAGE, SOURCE_FILES, boardStages } from "./assumes.mjs"
 
 export function boardLanes(snap, stages = boardStages()) {
@@ -6,7 +5,6 @@ export function boardLanes(snap, stages = boardStages()) {
   return {
     stages,
     lanes,
-    // The heading names its stage: the lane with data-stage="applied" is headed "Applied".
     misnamed: lanes.filter(
       (l) =>
         l.heading &&
