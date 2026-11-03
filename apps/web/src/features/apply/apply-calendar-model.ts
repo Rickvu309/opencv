@@ -19,7 +19,6 @@ export const HOURS = Array.from(
   { length: LAST_HOUR - FIRST_HOUR + 1 },
   (_, index) => FIRST_HOUR + index
 )
-/** A job stores one interview start, so every interview block lasts this long. */
 export const INTERVIEW_MINUTES = 60
 
 export function addDays(ymd: string, days: number) {
@@ -58,7 +57,6 @@ export function weekDays(anchor: string) {
   return Array.from({ length: 7 }, (_, index) => addDays(start, index))
 }
 
-/** The instant a calendar day starts in the profile zone. */
 function dayStart(ymd: string) {
   const [year, month, day] = ymd.split("-").map(Number)
   const utc = Date.UTC(year!, month! - 1, day!)
@@ -211,7 +209,6 @@ export function blockSpan(event: CalendarEvent, hours: number[]) {
 
 export type Placed = { event: CalendarEvent; lane: number; lanes: number }
 
-/** Interviews that overlap share the column side by side. */
 export function placeInterviews(events: CalendarEvent[]): Placed[] {
   const placed: Placed[] = []
   let cluster: { event: CalendarEvent; lane: number }[] = []

@@ -1,0 +1,6 @@
+{
+  "id": "coach-one-decision",
+  "file": "apps/api/src/registry/coach-one-decision.test.ts",
+  "historic": null,
+  "reason": "it reads the registry source so coachRefusal stays the one decision for tools, execute and read, and approve reaches that decision through execute; no earlier mistake to prove"
+}

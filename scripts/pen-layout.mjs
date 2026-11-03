@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-// Records where every visible text of a pen frame sits when the frame is rendered at 1440x900 with the
-// app's Inter, so a browser check can hold the built page to the same layout.
-//   node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>] [--driver <script>]
-// --pane defaults to GIhbq, the app shell's main panel. Positions are relative to that panel's top-left.
-// --driver names the check that sets the state up (seeded data, an open dialog); verify-pen-layout
-// skips such a layout and that script measures it.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
@@ -15,8 +9,16 @@ import { probeSource } from "../.claude/skills/verify-app-ui/scripts/lib/pen-lay
 import { expandPenRefs, findPenNode, penFrameToDocument } from "./pen-html.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const USAGE =
-  "usage: node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>] [--driver <script>]"
+const APP_SHELL_MAIN_PANEL = "GIhbq"
+const POSITIONS_ARE_RELATIVE_TO_THE_PANES_TOP_LEFT =
+  "Positions are relative to the pane's top-left."
+const A_DRIVER_LAYOUT_IS_SKIPPED_BY_VERIFY_PEN_LAYOUT =
+  "A layout recorded with --driver is skipped by verify-pen-layout and measured by that driver."
+const USAGE = [
+  "usage: node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>] [--driver <script>]",
+  POSITIONS_ARE_RELATIVE_TO_THE_PANES_TOP_LEFT,
+  A_DRIVER_LAYOUT_IS_SKIPPED_BY_VERIFY_PEN_LAYOUT,
+].join("\n")
 
 function parseArgs(argv) {
   const positional = []
@@ -32,7 +34,7 @@ function parseArgs(argv) {
     frameId,
     out: resolve(out),
     route: flags.route,
-    pane: flags.pane ?? "GIhbq",
+    pane: flags.pane ?? APP_SHELL_MAIN_PANEL,
     png: flags.png ? resolve(flags.png) : null,
     driver: flags.driver ?? null,
   }

@@ -39,7 +39,6 @@ export function plan({ files, full = false }) {
       ...(full ? (force ? ["--force"] : []) : ["--affected"]),
     ],
   ]
-  // Explicit filters cover untracked files too; Turbo's affected selection uses git.
   const dirs = [
     ...new Set(
       files

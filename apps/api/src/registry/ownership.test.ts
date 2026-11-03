@@ -1,7 +1,9 @@
-import { readdirSync, readFileSync, statSync } from "node:fs"
+import { readFileSync, readdirSync, statSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
+
+import config from "../../vitest.config.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -88,5 +90,20 @@ describe("a table write from outside the owning module's directory is rejected",
       violations,
       `A table is written outside its owner. Move the write into the owning module and call it through that module's index.ts, or change the owner in \`writersOfTable\` in ownership.test.ts if ownership truly moved. Offending writes:\n${violations.join("\n")}`
     ).toEqual([])
+  })
+
+  it("contract.type-test.ts runs under the api typecheck script and vitest does not collect it", () => {
+    expect(config.test?.exclude).toContain("src/**/*.type-test.ts")
+    const pkg = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8")
+    ) as { scripts: { typecheck: string } }
+    expect(pkg.scripts.typecheck).toContain("tsc --noEmit")
+    const tsconfig = JSON.parse(
+      readFileSync(new URL("../../tsconfig.json", import.meta.url), "utf8")
+    ) as { include: string[] }
+    expect(tsconfig.include).toContain("src")
+    expect(
+      filesUnder(srcRoot).some((file) => file.endsWith("contract.type-test.ts"))
+    ).toBe(true)
   })
 })

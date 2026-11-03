@@ -107,7 +107,7 @@ function sampleInput(schema: Schema, depth = 0): unknown {
 }
 
 describe("every command runs in a transaction unless it declares none", () => {
-  it("keeps every command in a transaction unless it declares none", async () => {
+  it("keeps every command in a transaction unless it declares none, because that handler opens its own connection and cannot join the registry transaction", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
     const userId = "user-transaction"

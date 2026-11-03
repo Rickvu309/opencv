@@ -129,7 +129,7 @@ describe("apply board move queue", () => {
     cleanup()
   })
 
-  it("keeps the card where it was dropped when a refetch lands before its move finishes", async () => {
+  it("keeps the card where it was dropped when a refetch lands before its move finishes, then refreshes once that last pending move settles", async () => {
     const { releaseAll } = holdMoves()
     const queryClient = createQueryClient()
     const { container } = render(

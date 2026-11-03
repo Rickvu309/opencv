@@ -56,13 +56,24 @@ const REFUSAL_MESSAGES: Record<CoachRefusal, string> = {
   email: "Turn on Email updates for the Coach in Settings",
 }
 
-/** The one decision on whether a Coach actor may use an entry, for tools, execute, approve and read. */
+const GATES_CLOSED_WITHOUT_CONSENT_TO_READ: AgentGates = {
+  agentCvs: false,
+  agentInterview: false,
+  agentEmail: false,
+}
+
+function omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe(
+  command: { idempotency: "keyed" | "none" },
+  key: string | undefined
+) {
+  return command.idempotency === "none" ? undefined : key
+}
+
 export function coachRefusal(
   entry: { name: string; coach: CoachAccess | boolean },
   gates: AgentGates
 ): CoachRefusal | null {
   if (entry.coach === "never" || entry.coach === false) return "never"
-  // agent_cvs hides paper.edit for letters too.
   if (entry.name === "paper.edit" && !gates.agentCvs) return "cvs"
   if (CHECKLIST_COMMANDS.has(entry.name) && !gates.agentInterview) {
     return "interview"
@@ -315,9 +326,10 @@ export class Registry {
       }
     }
     const parsed = parseInput(command.input, options.input)
-    // A command that declares no key never stores one: its own write must stay replay-safe.
-    const idempotencyKey =
-      command.idempotency === "none" ? undefined : options.idempotencyKey
+    const idempotencyKey = omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe(
+      command,
+      options.idempotencyKey
+    )
 
     const effect = async (): Promise<ExecuteResult> => {
       const ran = await command.run(parsed, actor)
@@ -588,10 +600,7 @@ export class Registry {
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
-    // No user row means no consent to read, so every gated entry stays closed.
-    return (
-      rows[0] ?? { agentCvs: false, agentInterview: false, agentEmail: false }
-    )
+    return rows[0] ?? GATES_CLOSED_WITHOUT_CONSENT_TO_READ
   }
 
   private async expireIfStale(userId: string, id: string) {

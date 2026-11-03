@@ -1,13 +1,13 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { rewriteSource } from "./ds-codemod.mjs"
-import { existsSync, readFileSync } from "node:fs"
 import {
   StripRefused,
   assertCodeUnchanged,
   stripComments,
 } from "./lib/strip-comments.mjs"
-import { bannedComments, readBaseline } from "./no-comments.mjs"
+import { bannedComments } from "./no-comments.mjs"
+import { STRIP_CORPUS } from "./ds-codemod.fixtures.mjs"
 
 const FRESH_SHADCN_FILE = `import * as React from "react"
 
@@ -188,11 +188,17 @@ test("the strip refuses output that does not parse or whose code changed", () =>
   )
 })
 
-test("the strip changes only comments in every file the baseline still lists", () => {
-  const files = Object.keys(readBaseline()).filter((file) => existsSync(file))
-  assert.ok(files.length > 0)
-  for (const file of files) {
-    const out = stripComments(file, readFileSync(file, "utf8"))
+test("the strip changes only comments in the fixed sample files", () => {
+  assert.ok(STRIP_CORPUS.length >= 4)
+  for (const { file, source } of STRIP_CORPUS) {
+    assert.ok(comments(file, source) > 0, file)
+    const out = stripComments(file, source)
     assert.equal(comments(file, out), 0, file)
+    if (source.includes("eslint-disable-next-line")) {
+      assert.match(
+        out,
+        /eslint-disable-next-line no-console -- the script prints its result/
+      )
+    }
   }
 })

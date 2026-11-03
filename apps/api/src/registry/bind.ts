@@ -56,7 +56,6 @@ type Binding<C extends CommandContract, N extends keyof C & string> = {
     output: CommandOutput<C, N>,
     actor: Actor
   ) => ActivityDraft | null
-  /** "none" for a handler that opens its own connection and cannot join the registry transaction. */
   transaction?: "none"
 }
 

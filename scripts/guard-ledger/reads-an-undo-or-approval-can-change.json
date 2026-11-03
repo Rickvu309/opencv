@@ -1,0 +1,6 @@
+{
+  "id": "reads-an-undo-or-approval-can-change",
+  "file": "apps/api/src/registry/reads-an-undo-or-approval-can-change.test.ts",
+  "historic": null,
+  "reason": "it checks that an undo or an approval refreshes every read a command that writes an activity row or a pending action names; no earlier mistake to prove"
+}

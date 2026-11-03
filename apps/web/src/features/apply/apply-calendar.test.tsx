@@ -11,7 +11,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
-import { calendarEvents, eventsInDays } from "./apply-calendar-model.ts"
+import {
+  calendarEvents,
+  eventsInDays,
+  placeInterviews,
+  rangeFor,
+} from "./apply-calendar-model.ts"
 
 const PINNED_NOW = new Date("2026-10-29T05:00:00.000Z")
 const TODAY = new Intl.DateTimeFormat("en-CA", {
@@ -187,6 +192,36 @@ describe("apply calendar", () => {
       "2026-10-26",
       "2026-11-01",
     ])
+  })
+
+  it("a calendar day starts at midnight in the profile zone", () => {
+    expect(rangeFor(["2026-10-26"])).toEqual({
+      from: "2026-10-25T17:00:00.000Z",
+      to: "2026-10-26T17:00:00.000Z",
+    })
+  })
+
+  it("every interview block lasts 60 minutes because a job stores one start", () => {
+    const [event] = calendarEvents([
+      mockJob({ interviewAt: "2026-10-26T03:00:00.000Z" }),
+    ]).filter((item) => item.kind === "interview")
+    expect(event?.endMinutes - (event?.startMinutes ?? 0)).toBe(60)
+  })
+
+  it("interviews that overlap share the column side by side", () => {
+    const events = calendarEvents([
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000051",
+        interviewAt: "2026-10-26T03:00:00.000Z",
+      }),
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000052",
+        interviewAt: "2026-10-26T03:30:00.000Z",
+      }),
+    ]).filter((item) => item.kind === "interview")
+    const placed = placeInterviews(events)
+    expect(placed.map((item) => item.lane)).toEqual([0, 1])
+    expect(placed.every((item) => item.lanes === 2)).toBe(true)
   })
 
   it("opens a month event's full job detail with its keyboard button", async () => {

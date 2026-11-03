@@ -1,0 +1,6 @@
+{
+  "id": "pen-layout-usage",
+  "file": "scripts/pen-layout.test.mjs",
+  "historic": null,
+  "reason": "it keeps pane-relative positions and the driver skip in the pen-layout usage text; no earlier mistake to prove"
+}
