@@ -55,7 +55,6 @@ export function ActivitiesAndAwards({ data }: { data: CvData }) {
   )
 }
 
-/** Summary sentence for layouts that do not already print data.summary. */
 export function SummaryBlock({ data }: { data: CvData }) {
   if (!data.summary.trim()) return null
   return (
@@ -66,7 +65,6 @@ export function SummaryBlock({ data }: { data: CvData }) {
   )
 }
 
-/** Projects for layouts that do not already print data.projects. */
 export function ProjectsBlock({ data }: { data: CvData }) {
   const projects = (data.projects ?? []).filter(
     (project) =>
@@ -86,7 +84,6 @@ export function ProjectsBlock({ data }: { data: CvData }) {
   )
 }
 
-/** Languages for every layout. None of the five templates printed this field. */
 export function LanguagesBlock({ data }: { data: CvData }) {
   const languages = (data.languages ?? []).filter(
     (language) => language.trim().length > 0

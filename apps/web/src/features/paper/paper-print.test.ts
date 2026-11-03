@@ -9,7 +9,11 @@ import { endpoints } from "@/lib/requests.ts"
 import { pinTestClock, TEST_NOW } from "@/test/test-clock.ts"
 import { render } from "@/test/render-with-client.tsx"
 
-import { PaperPrintMeasure, PaperPrintSheet } from "./paper-print-sheet.tsx"
+import {
+  PaperPrintMeasure,
+  PaperPrintSheet,
+  copySheetOrSkipCrossOriginAndJsdom,
+} from "./paper-print-sheet.tsx"
 import {
   bindPrintPageCount,
   pagesFromPreviewHeight,
@@ -271,5 +275,38 @@ describe("print paper", () => {
     ].join("\n")
     expect(registry).not.toMatch(/paper\.pdf/)
     expect(registry).not.toMatch(/\/api\/paper\/[^`"'\s]*\/pdf/)
+  })
+})
+
+describe("constructed stylesheet copies", () => {
+  it("skips a cross-origin sheet and a jsdom sheet that cannot be copied", () => {
+    const sheet = {
+      get cssRules() {
+        throw new Error("Cannot access rules")
+      },
+    } as CSSStyleSheet
+    expect(copySheetOrSkipCrossOriginAndJsdom(sheet)).toBeNull()
+  })
+
+  it("copies a readable sheet when constructed stylesheets exist", () => {
+    const written: string[] = []
+    class FakeSheet {
+      cssRules: { cssText: string }[] = []
+      replaceSync(text: string) {
+        written.push(text)
+        this.cssRules = text.split("\n").map((cssText) => ({ cssText }))
+      }
+    }
+    vi.stubGlobal("CSSStyleSheet", FakeSheet)
+    try {
+      const sheet = {
+        cssRules: [{ cssText: "p { color: black }" }],
+      } as CSSStyleSheet
+      const copy = copySheetOrSkipCrossOriginAndJsdom(sheet)
+      expect(written).toEqual(["p { color: black }"])
+      expect(copy).toBeInstanceOf(FakeSheet)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

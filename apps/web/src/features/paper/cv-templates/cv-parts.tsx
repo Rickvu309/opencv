@@ -71,12 +71,9 @@ export function CvType({
   )
 }
 
-/** QVE-206: structured canvas field hook — chrome lives in `paper.css`. */
 export const PAPER_CANVAS_FIELD_CLASS = "paper-canvas-field"
-/** QVE-207: hover/focus-within block for quiet add/remove chrome. */
 export const PAPER_CANVAS_BLOCK_CLASS = "paper-canvas-block"
 export const PAPER_CANVAS_AFFORDANCE_CLASS = "paper-canvas-affordance"
-/** QVE-209: always-visible next step on an empty section (not hover-hidden). */
 export const PAPER_CANVAS_NEXT_STEP_CLASS = "paper-canvas-next-step"
 
 export const CvHistoryRevisionContext = createContext(0)
@@ -85,7 +82,6 @@ export const CvSectionTitleContext = createContext<
   CvPrintModel["sectionTitles"] | undefined
 >(undefined)
 
-/** Editor-only empty-field hints. Share pages and thumbnails leave this off. */
 export const CvPlaceholderContext = createContext(false)
 
 export function useCvPlaceholders() {
@@ -503,11 +499,10 @@ function CvPhotoUploader({
           : storedPhoto(next.document)
       publish(restoredPhoto, next.contentVersion)
       if (fileId && paperPhotoFileId(restoredPhoto) !== fileId) {
-        try {
-          await run("paper.deleteFile", { fileId })
-        } catch {
-          // The undo already succeeded. The api sweep removes the row later.
-        }
+        await ignoreRejection(
+          run("paper.deleteFile", { fileId }),
+          "undoAlreadyLandedSoTheSweepRemovesTheRow"
+        )
       }
     } catch (caught) {
       dispatchError({

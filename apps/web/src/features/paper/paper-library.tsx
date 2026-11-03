@@ -148,8 +148,6 @@ export function PaperLibrary({
     importRequest.current = request
     dispatch({ type: "import_started", name: file.name })
     try {
-      // Do not pass this signal to the upload. A keep-alive cancel does not
-      // abort the server request, and aborting the fetch drops the id.
       const created = await importPaperFile(file)
       if (request.signal.aborted) {
         await discardImport(run, created)

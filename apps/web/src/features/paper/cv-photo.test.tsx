@@ -300,6 +300,97 @@ describe("CV photo", () => {
     expect(view.container.querySelector("img")).toBeNull()
   })
 
+  it("stays quiet when delete fails after undo, because the sweep removes the row", async () => {
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      calls.push(url)
+      if (url.includes("/api/commands/paper.attachPhoto")) {
+        return Promise.resolve(
+          Response.json({
+            ok: true,
+            data: {
+              id: DOC_ID,
+              contentVersion: 2,
+              activityId: "33333333-3333-4333-8333-333333333333",
+            },
+          })
+        )
+      }
+      if (url.includes("/api/commands/activity.undo")) {
+        return Promise.resolve(Response.json({ ok: true, data: {} }))
+      }
+      if (url.includes(`/api/paper/${DOC_ID}`)) {
+        return Promise.resolve(
+          Response.json({
+            ok: true,
+            data: {
+              id: DOC_ID,
+              contentVersion: 3,
+              document: blankBlockDocument(),
+            },
+          })
+        )
+      }
+      if (url.includes("/api/commands/paper.deleteFile")) {
+        return Promise.resolve(
+          Response.json(
+            {
+              ok: false,
+              error: {
+                code: "REQUEST_FAILED",
+                message: "delete missed the sweep",
+              },
+            },
+            { status: 500 }
+          )
+        )
+      }
+      if (url.includes("/api/paper/files")) {
+        return Promise.resolve(
+          Response.json({ ok: true, data: { id: FILE_ID } })
+        )
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+
+    function Harness() {
+      const [url, setUrl] = useReducer(replaceUrl, undefined)
+      return (
+        <>
+          <CvPhotoFrame value={{ docId: DOC_ID }}>
+            <CvPhoto url={url} onChange={setUrl} />
+          </CvPhotoFrame>
+          <Toaster />
+        </>
+      )
+    }
+    const view = render(<Harness />)
+    const input = view.container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    fireEvent.change(input, {
+      target: {
+        files: [
+          new File([new Uint8Array(8)], "face.png", { type: "image/png" }),
+        ],
+      },
+    })
+    await waitFor(() => {
+      expect(
+        view.container.querySelector("img")?.getAttribute("src")
+      ).toContain(`/api/paper/files/${FILE_ID}/bytes`)
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    await waitFor(() => {
+      expect(calls.some((url) => url.includes("paper.deleteFile"))).toBe(true)
+    })
+    await expect(
+      screen.findByText("delete missed the sweep", {}, { timeout: 400 })
+    ).rejects.toThrow()
+    expect(view.container.querySelector("img")).toBeNull()
+  })
+
   it("renders the file id as the public photo on the share page", async () => {
     const blocks = blankBlockDocument()
     blocks.header.name = "Ada Lovelace"

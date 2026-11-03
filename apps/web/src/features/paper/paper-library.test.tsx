@@ -129,7 +129,7 @@ describe("Paper library", () => {
     ).toHaveFocus()
   })
 
-  it("shows import progress and cancels without opening a document", async () => {
+  it("does not pass the cancel signal to the upload, so a keep-alive cancel leaves the server request running", async () => {
     vi.mocked(importPaperFile).mockImplementation(
       () => new Promise(() => undefined)
     )
@@ -145,7 +145,7 @@ describe("Paper library", () => {
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
-  it("deletes the uploaded file when a cancelled import still returns", async () => {
+  it("discards a finished upload after cancel, because aborting the fetch would drop the id", async () => {
     const created = {
       ...cv("sample"),
       sourceFileId:

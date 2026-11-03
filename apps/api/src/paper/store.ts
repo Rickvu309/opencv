@@ -372,11 +372,19 @@ export async function keepTwoPages(actor: Actor, docId: PaperId) {
   return toPaper(await ownedPaper(actor.userId, docId))
 }
 
+export const COACH_TWO_PAGES_PAST_STORED_JSON_CHARS = 3500
+
+export function coachPagesFromStoredJson(storedJsonChars: number): 1 | 2 {
+  return storedJsonChars > COACH_TWO_PAGES_PAST_STORED_JSON_CHARS ? 2 : 1
+}
+
 export async function pageCount(actor: Actor, docId: PaperId) {
   const doc = await ownedPaper(actor.userId, docId)
-  // Coach estimate from the stored JSON. The editor counts pages from the preview.
-  const weight = JSON.stringify(doc.document).length
-  return { docId, pages: weight > 3500 ? 2 : 1, pageChoice: doc.pageChoice }
+  return {
+    docId,
+    pages: coachPagesFromStoredJson(JSON.stringify(doc.document).length),
+    pageChoice: doc.pageChoice,
+  }
 }
 
 function withPhotoRef(document: PaperDocument, ref: string): PaperDocument {
@@ -472,8 +480,7 @@ export async function readShared(token: string) {
   return shared
 }
 
-/** Type comes from the bytes. The client Content-Type is not trusted. */
-function avatarMediaType(bytes: Buffer) {
+export function mediaTypeFromImageBytes(bytes: Buffer) {
   if (
     bytes.length >= 4 &&
     bytes[0] === 0x89 &&
@@ -537,7 +544,9 @@ export async function saveFile(input: {
     mediaType = mediaTypeForImport(kind)
   }
   const storedType =
-    input.purpose === "avatar" ? avatarMediaType(input.bytes) : mediaType
+    input.purpose === "avatar"
+      ? mediaTypeFromImageBytes(input.bytes)
+      : mediaType
   const id = createId()
   await getDb()
     .insert(files)
