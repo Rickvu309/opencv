@@ -20,6 +20,9 @@ const onCi = (env) => Boolean(env.CI) && !["false", "0"].includes(env.CI)
 export const startDeadlineFor = (env) =>
   onCi(env) ? CI_START_DEADLINE_MS : LOCAL_START_DEADLINE_MS
 
+export const worstCaseStartMs = (env) =>
+  START_ATTEMPTS * (startDeadlineFor(env) + GROUP_EXIT_DEADLINE_MS)
+
 export function startLogTail(log) {
   const lines = log.split("\n")
   const kept = lines.filter((line) => !DBUS_NOISE.test(line))

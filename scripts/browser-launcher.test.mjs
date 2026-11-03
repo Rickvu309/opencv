@@ -15,6 +15,12 @@ import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
+import {
+  FILE_TIMEOUT_MS,
+  testTimeoutFor,
+} from "../packages/guards/run-tests.mjs"
+import { startBudgetProblem } from "./lib/browser-start-budget.mjs"
+import { worstCaseStartMs } from "./lib/chrome-process.mjs"
 import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 import { makeTempDir } from "./lib/temp-dir.mjs"
 
@@ -337,6 +343,58 @@ for (const launcher of launchers) {
     )
   }
 }
+
+const startBudget = {
+  worstCaseStartMs: worstCaseStartMs({ CI: "true" }),
+  testTimeoutMs: testTimeoutFor(FILE_TIMEOUT_MS),
+}
+
+test("a browser test file that starts Chrome per test overruns its timeout on CI", () => {
+  const perTest = [
+    'import { launchBrowser } from "./cdp.mjs"',
+    'test("one", async () => { const browser = await launchBrowser() })',
+    'test("two", async () => { const browser = await launchBrowser() })',
+  ].join("\n")
+  const perTestHook = [
+    "beforeEach(async () => { browser = await launchBrowser() })",
+    'test("one", () => {})',
+    'test("two", () => {})',
+  ].join("\n")
+  const shared = [
+    'import { launchBrowser } from "./cdp.mjs"',
+    "before(async () => { browser = await launchBrowser() })",
+    'test("one", () => {})',
+    'test("two", () => {})',
+  ].join("\n")
+  assert.match(
+    startBudgetProblem("per-test.mjs", perTest, startBudget) ?? "",
+    /starts Chrome 2 times/
+  )
+  assert.match(
+    startBudgetProblem("per-test-hook.mjs", perTestHook, startBudget) ?? "",
+    /starts Chrome 2 times/
+  )
+  assert.equal(startBudgetProblem("shared.mjs", shared, startBudget), null)
+})
+
+test("every browser test file's worst-case Chrome start fits its test timeout on CI", () => {
+  assert.ok(
+    startBudget.worstCaseStartMs <= startBudget.testTimeoutMs,
+    `one Chrome start can take ${startBudget.worstCaseStartMs} ms on CI, over the ${startBudget.testTimeoutMs} ms test timeout`
+  )
+  const files = tracked("*.browser.test.mjs")
+  assert.ok(files.length > 0, "git ls-files found no *.browser.test.mjs file")
+  const problems = files
+    .map((file) =>
+      startBudgetProblem(
+        file,
+        readFileSync(path.join(root, file), "utf8"),
+        startBudget
+      )
+    )
+    .filter(Boolean)
+  assert.deepEqual(problems, [])
+})
 
 test("pending launcher fixes have not expired", () => {
   assert.equal(expiredMessage(expiredPending(PENDING)), "")
