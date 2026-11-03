@@ -60,7 +60,6 @@ function BoxShape({ box }: { box: Box }) {
   )
 }
 
-// Boxes are listed back to front.
 const SCENES: Record<HelpTopicId, Scene> = {
   "getting-started": {
     boxes: [

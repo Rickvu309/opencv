@@ -136,9 +136,6 @@
   aspect-ratio: 760 / 460;
   border: 1px solid var(--border);
   border-radius: 1.5rem;
-  /* Pen cover mesh: nine radials over the centre colour. Stops map the
-     design hexes onto stock tokens. oklch(from ...) stays on one line so
-     the vocabulary check can see the relative colour. */
   /* prettier-ignore */
   background:
     radial-gradient(circle farthest-corner at 0% 0%, color-mix(in oklch, var(--chart-2) 12%, var(--background)) 0%, oklch(from color-mix(in oklch, var(--chart-2) 12%, var(--background)) l c h / 0) 55%),

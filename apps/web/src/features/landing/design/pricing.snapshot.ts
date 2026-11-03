@@ -1,4 +1,3 @@
-// Generated from design/opencv.pen by scripts/pen-snapshot.mjs --pricing. Do not edit.
 export const pricingSnapshot = {
   source: {
     file: "design/opencv.pen",

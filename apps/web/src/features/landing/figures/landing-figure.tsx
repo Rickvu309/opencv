@@ -21,7 +21,6 @@ const FIGURES = {
   pitch: PitchPageAnimated,
 } satisfies Record<LandingFigureId, ComponentType>
 
-/** A product screen drawn at 1600 px and scaled to its box, paused until it is in view. */
 export function LandingFigure({ id }: { id: LandingFigureId }) {
   const Figure = FIGURES[id]
   const [ref, onScreen] = useOnScreen<HTMLDivElement>()

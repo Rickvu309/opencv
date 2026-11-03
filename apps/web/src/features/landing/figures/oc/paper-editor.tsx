@@ -121,7 +121,6 @@ function Bullet({
   )
 }
 
-/** A bullet Coach retypes: the old line backspaces away, then the new one types in. */
 function RetypedBullet({
   i,
   d,
@@ -163,7 +162,6 @@ export function PaperEditorAnimated({
   className,
   style,
 }: {
-  /** Set false to show the settled screen with no motion. */
   animate?: boolean
   className?: string
   style?: React.CSSProperties
@@ -177,7 +175,6 @@ export function PaperEditorAnimated({
       panelStyle={{ background: "var(--background)" }}
       overlay={
         <>
-          {/* The Coach button's open state. */}
           <span
             className="oc-loop pe-coachpill"
             style={{

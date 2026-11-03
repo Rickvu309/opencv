@@ -33,7 +33,6 @@ html:has(.landing-root) {
   touch-action: manipulation;
 }
 
-/* The home frame's l-muted gray. Other marketing pages follow their own frames. */
 .landing-home {
   --muted-foreground: color-mix(
     in oklch,
@@ -184,7 +183,6 @@ html:has(.landing-root) {
   max-inline-size: 45rem;
   font-size: clamp(2.5rem, 1.4rem + 3.6vw, 4rem);
   font-weight: 500;
-  /* −1.4px at the 64px cap, the pen tracking for this heading. */
   letter-spacing: -0.021875em;
   line-height: 1;
   text-wrap: balance;
@@ -311,7 +309,6 @@ html:has(.landing-root) {
   display: none;
 }
 
-/* Only where the lead, mark and "opencv helps" fit on one line. */
 @media (min-width: 90rem) {
   .landing-statement-break {
     display: initial;
@@ -606,7 +603,6 @@ html:has(.landing-root) {
   color: var(--muted-foreground);
 }
 
-/* 14px on the soft gradient. Shared muted is 4.16:1 there; 59.7% clears 4.5:1. */
 .landing-quote-lead .landing-quote-role {
   color: color-mix(in oklch, var(--foreground) 59.7%, var(--background));
 }

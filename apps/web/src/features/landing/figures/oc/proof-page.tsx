@@ -10,19 +10,6 @@ import { AppShell } from "./app-shell.tsx"
 import { OC, delay } from "./palette.ts"
 import "./proof-page.css"
 
-/*
- * Loop (8s, after the entrance): the proof builds itself.
- *   2–46%  the line draws left to right; the area fills in behind it
- *          points and their labels pop as the line reaches them (2, 20, 28, 37%)
- *          "+38%" steps +0% → +12% → +27% → +38%
- *   46%    the end dot lands with a halo pulse
- *   50–60% the connector grows, "Manager confirmed" drops in, its check pops
- *   63%    the callout's 38% chip pulses
- *   88–94% the chart fades out and the loop restarts
- * Base styles (static / reduced motion) show the finished chart.
- */
-
-// Chart geometry in card coordinates (card is 1166 × 616).
 const LINE: [number, number][] = [
   [132, 516],
   [192, 509],
@@ -102,7 +89,6 @@ export function ProofPageAnimated({
   className,
   style,
 }: {
-  /** Set false to show the settled screen with no motion. */
   animate?: boolean
   className?: string
   style?: React.CSSProperties

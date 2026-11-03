@@ -1,4 +1,3 @@
-// Brand marks from Simple Icons (CC0), 24 x 24 viewBox, vendored so the page makes no request for them.
 import type { LANDING_LOGOS } from "../../landing-copy.ts"
 
 export const LOGO_MARKS: Record<(typeof LANDING_LOGOS)[number], string> = {

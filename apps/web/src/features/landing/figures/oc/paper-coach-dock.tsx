@@ -108,7 +108,6 @@ function Step({
   )
 }
 
-/** Stacked crossfade values; only the one marked `settled` shows in the static frame. */
 function Ticker({
   items,
 }: {
@@ -267,7 +266,6 @@ export function CoachDock() {
         </div>
 
         <div style={{ marginTop: 10, display: "grid" }}>
-          {/* The run: same step language as the Coach screen. Hidden once it collapses, and in the static frame. */}
           <div
             className="oc-loop pe-steps"
             style={{
@@ -551,7 +549,6 @@ export function CoachDock() {
             >
               <ArrowUp size={15} strokeWidth={1.8} color="var(--chart-5)" />
             </span>
-            {/* Ready to send once there's text. */}
             <span
               className="oc-loop pe-send"
               style={{

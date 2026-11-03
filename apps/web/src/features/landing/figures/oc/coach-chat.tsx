@@ -13,16 +13,6 @@ import { AppShell } from "./app-shell.tsx"
 import { OC, delay } from "./palette.ts"
 import "./coach-chat.css"
 
-/*
- * Loop (8s, after the entrance): the agent run plays out.
- *   0%   step 1 appears spinning, resolves at 15%
- *   17%  step 2 appears spinning, resolves at 32%
- *   34%  step 3 appears spinning, counts 1 → 3 → 6 of 6, resolves at 70%
- *   40%  step 4 appears pending, turns active at 72%
- *   38%  skeleton lines fade in and shimmer
- *   96%  everything fades out and the run restarts
- * Base styles (static / reduced motion) show the reference moment: 2 done, 1 drafting, 1 pending.
- */
 const stack: React.CSSProperties = {
   gridArea: "1 / 1",
   display: "flex",
@@ -146,7 +136,6 @@ export function CoachChatAnimated({
   className,
   style,
 }: {
-  /** Set false to show the settled screen with no motion. */
   animate?: boolean
   className?: string
   style?: React.CSSProperties

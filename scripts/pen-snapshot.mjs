@@ -360,7 +360,7 @@ const prettier = await import("prettier")
 const options = (await prettier.resolveConfig(outFile)) ?? {}
 const json = JSON.stringify(snapshot)
 const body = outFile.endsWith(".ts")
-  ? `// Generated from design/opencv.pen by scripts/pen-snapshot.mjs --pricing. Do not edit.\nexport const pricingSnapshot = ${json} as const\n`
+  ? `export const pricingSnapshot = ${json} as const\n`
   : json
 writeFileSync(
   outFile,

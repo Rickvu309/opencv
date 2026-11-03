@@ -550,7 +550,6 @@ export function ApplyBoardAnimated({
           ))}
         </div>
 
-        {/* Interview: sits above Offer so the dragged card paints over it */}
         <div className="oc-in-up" style={{ ...columnStyle(3), ...delay(420) }}>
           <ColumnHeader
             status="interview"

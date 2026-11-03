@@ -7,9 +7,6 @@ import { renderApp } from "@/test/render-app.tsx"
 import snapshotFile from "./design/landing.snapshot.json"
 import omittedFile from "./design/landing.omitted.json"
 
-// Links to pages that do not exist yet, plus the subhead kept off the design
-// line so verify-landing rule 03 passes. An entry whose text is on the page,
-// whose replacedBy text is missing, or whose until date has passed fails.
 const OMITTED = omittedFile satisfies readonly {
   text: string
   reason: string
@@ -33,8 +30,7 @@ type LandingSnapshot = {
 
 const snapshot = snapshotFile as LandingSnapshot
 
-// Each pen section is checked only inside the subtree that renders it.
-const SECTION_SELECTOR: Record<string, string> = {
+const SECTION_SUBTREE_SELECTOR: Record<string, string> = {
   Nav: "header.landing-nav",
   Hero: "#hero",
   Logos: "#logos",
@@ -61,11 +57,12 @@ function calendarDay(now: Date): string {
   return now.toISOString().slice(0, 10)
 }
 
-// The pen uses ’ (U+2019). Collapse whitespace, then use that apostrophe.
+const PEN_APOSTROPHE = "\u2019"
+
 function normalize(value: string): string {
   return value
     .replaceAll("\u2018", "\u2019")
-    .replaceAll("'", "\u2019")
+    .replaceAll("'", PEN_APOSTROPHE)
     .replaceAll(/\s+/g, " ")
     .trim()
 }
@@ -74,9 +71,10 @@ function isWordChar(char: string): boolean {
   return char !== "" && /[\p{L}\p{N}]/u.test(char)
 }
 
-// A snapshot string must show up as its own text. The X in "UX" is not the
-// footer link "X".
-function hitRanges(haystack: string, needle: string): Array<[number, number]> {
+function wholeWordHitRanges(
+  haystack: string,
+  needle: string
+): Array<[number, number]> {
   if (needle === "") return []
   const ranges: Array<[number, number]> = []
   let from = 0
@@ -95,15 +93,14 @@ function hitRanges(haystack: string, needle: string): Array<[number, number]> {
   return ranges
 }
 
-// Hits inside a longer snapshot string of the same section do not count.
-function countBounded(
+function countOutsideLonger(
   haystack: string,
   needle: string,
   longer: readonly string[]
 ): number {
-  const hits = hitRanges(haystack, needle)
+  const hits = wholeWordHitRanges(haystack, needle)
   if (hits.length === 0) return 0
-  const covers = longer.flatMap((item) => hitRanges(haystack, item))
+  const covers = longer.flatMap((item) => wholeWordHitRanges(haystack, item))
   let count = 0
   for (const [start, end] of hits) {
     const inside = covers.some(
@@ -152,7 +149,11 @@ function occurrences(
   texts: readonly string[]
 ): number {
   if (needle === "") return 0
-  return countBounded(visibleText(root), needle, longerNeedles(texts, needle))
+  return countOutsideLonger(
+    visibleText(root),
+    needle,
+    longerNeedles(texts, needle)
+  )
 }
 
 describe("landing design parity", () => {
@@ -169,7 +170,7 @@ describe("landing design parity", () => {
     const problems: string[] = []
     const roots = new Map<string, Element | null>()
     for (const section of snapshot.sections) {
-      const selector = SECTION_SELECTOR[section.name]
+      const selector = SECTION_SUBTREE_SELECTOR[section.name]
       roots.set(section.name, selector ? root.querySelector(selector) : null)
     }
 
