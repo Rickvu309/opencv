@@ -1,4 +1,3 @@
-// The generated rules block in docs/git-workflow/rule-enforcement.md.
 import { fileURLToPath } from "node:url"
 import { RULES, jobRows, layerOf } from "./index.mjs"
 
@@ -8,7 +7,6 @@ export const RULES_DOC = fileURLToPath(
   new URL("../../../docs/git-workflow/rule-enforcement.md", import.meta.url)
 )
 
-// Keep the workflow, finish-and-merge and hook tables in separate guides under the file limit.
 const isHook = (row) => row.at.includes("commit") || row.at.includes("push")
 const guide = (name) =>
   fileURLToPath(new URL(`../../../docs/git-workflow/${name}`, import.meta.url))
@@ -33,8 +31,7 @@ const cell = (value) =>
     .replace(/\|/g, "\\|")
     .replace(/\n/g, " ")
 
-// Prettier pads the committed table. Compare cells, not column width.
-function rowCells(line) {
+function cellsIgnoringPadding(line) {
   const trimmed = line.trim()
   if (!trimmed.startsWith("|")) return null
   const cells = []
@@ -63,7 +60,7 @@ function normalizeTable(text) {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const cells = rowCells(line)
+      const cells = cellsIgnoringPadding(line)
       if (!cells) return line.replace(/ +/g, " ")
       if (cells.every((item) => /^:?-+:?$/.test(item)))
         return `|${cells.map(() => "---").join("|")}|`

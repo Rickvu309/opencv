@@ -8,8 +8,6 @@ const TRAILER = `${["Co", "Authored", "By"].join("-")}: Someone <a@b.c>`
 const PRETTIER = "/repo/node_modules/.bin/prettier"
 const ZERO = "0".repeat(40)
 
-// A scripted git and prettier: staged and unstaged names, blob sizes and
-// contents, linguist-generated paths, and which files prettier would change.
 function world(over = {}) {
   const s = {
     branch: "feat/1-x",

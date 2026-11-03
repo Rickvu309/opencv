@@ -1,7 +1,3 @@
-// Rules about the commits on the branch: not on main, a message, no AI
-// attribution trailers and no file over the size limit. The commit-msg and
-// pre-commit hooks hold these at commit; finish and the policy job re-read
-// the last two from the gathered commit facts.
 import { FIXES } from "../result.mjs"
 
 function rule(spec) {
@@ -18,9 +14,13 @@ function onMain(facts) {
   return "committing on main is not allowed; work on a task branch in your own worktree"
 }
 
-// first is null when the hook did not read the message (pre-commit).
+function hookReadTheMessage(commit) {
+  return commit?.first != null
+}
+
 function emptyMessage(facts) {
-  if (facts.commit?.first == null || facts.commit.first !== "") return null
+  if (!hookReadTheMessage(facts.commit) || facts.commit.first !== "")
+    return null
   return "the commit message has no first line"
 }
 

@@ -1,6 +1,3 @@
-// Rules about the pull request itself: its linked issue, labels, title and
-// body. Each check takes the facts a job gathered and returns a refusal, or
-// null when the rule holds.
 import { FIXES } from "../result.mjs"
 
 function rule(spec) {

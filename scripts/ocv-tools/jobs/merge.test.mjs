@@ -48,7 +48,6 @@ test("classify settles one snapshot into the five outcomes", () => {
     ),
     { kind: "LEFT_QUEUE", reason: "FAILED_CHECKS", at: "2026-10-30T18:42:00Z" }
   )
-  // The queue's failed build removes the PR; the head's own ci stays green.
   assert.equal(
     classify(
       {
@@ -60,7 +59,8 @@ test("classify settles one snapshot into the five outcomes", () => {
       true,
       "h1"
     ).kind,
-    "LEFT_QUEUE"
+    "LEFT_QUEUE",
+    "the queue's failed build removes the PR while the head's own ci stays green"
   )
   assert.equal(
     classify({ ...base, state: "CLOSED" }, true, "h1").kind,

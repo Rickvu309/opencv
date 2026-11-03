@@ -1,6 +1,3 @@
-// Rules about the change itself: workflow files, gate paths and deletions.
-// Each check takes the facts a job gathered and returns a refusal, or null
-// when the rule holds.
 import { FIXES } from "../result.mjs"
 
 function rule(spec) {
@@ -12,9 +9,7 @@ function rule(spec) {
   }
 }
 
-// Merge-time limits of issue #618: a mass deletion needs a human. The limits
-// below are the owner's defaults.
-export const MASS_DELETE_LIMITS = Object.freeze({
+export const OWNER_DEFAULT_MASS_DELETE_LIMITS = Object.freeze({
   files: 25,
   lines: 2000,
   percent: 10,
@@ -80,7 +75,7 @@ function massDelete(facts) {
   const d = facts.diff?.deleted
   if (!d) return null
   if (asLines(facts.diff?.labels).includes("needs-human-review")) return null
-  const { files, lines, percent } = MASS_DELETE_LIMITS
+  const { files, lines, percent } = OWNER_DEFAULT_MASS_DELETE_LIMITS
   const over = []
   if (d.files > files) over.push(`${d.files} files (limit ${files})`)
   if (d.lines > lines) over.push(`${d.lines} lines (limit ${lines})`)
@@ -131,6 +126,7 @@ export const diffRows = [
   rule({
     id: "MASS_DELETE",
     section: "5",
+    why: "Issue #618: a mass deletion needs a human. The limits are the owner's defaults.",
     says: "More than 25 authored files, 2000 lines or 10% of authored files deleted needs needs-human-review on the issue.",
     at: ["finish", "pr"],
     needs: ["diff"],

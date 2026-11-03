@@ -1,7 +1,3 @@
-// ocv-tools hook <commit-msg|pre-commit|pre-push>: what the git hooks in
-// .githooks run. Each hook gathers its facts and fires the commit or push rows
-// of the rule table with decide(); a refusal blocks the git command. Keep
-// imports to node: builtins and scripts/ocv-tools/.
 import { join, resolve } from "node:path"
 import { EXIT } from "../result.mjs"
 import { badInput } from "../input.mjs"
@@ -10,6 +6,8 @@ import { run } from "./common.mjs"
 import { runQuickChecks } from "./push-checks.mjs"
 
 const LIMIT_BYTES = 20000
+const SUBMODULE_MODE = "160000"
+const BINARY_SNIFF_BYTES = 8000
 const BATCH = 200
 
 const split = (out) => out.split("\0").filter(Boolean)
@@ -63,8 +61,6 @@ function commitMsg(ctx, file) {
   return report(verdict, warnings)
 }
 
-// `git commit <path>` hands the hook a throwaway index; a rewrite there would
-// leave the real index stale, so the hook only checks.
 function temporaryIndex(ctx) {
   const file = ctx.env.GIT_INDEX_FILE
   if (!file) return false
@@ -73,8 +69,6 @@ function temporaryIndex(ctx) {
   return index !== join(gitDir, "index") && index !== join(gitDir, "index.lock")
 }
 
-// Format a fully staged file and stage the result. A partly staged file that
-// prettier would change is refused: the hook never touches unstaged hunks.
 function formatStaged(ctx, prettier) {
   const only = temporaryIndex(ctx)
   const unstaged = new Set(
@@ -112,7 +106,6 @@ function formatStaged(ctx, prettier) {
       "--",
       ...paths,
     ])
-    // A parse error is for lint to report; a commit is not blocked by it.
     if (!r.ok)
       lines.push(
         "pre-commit: prettier could not format every staged file; committing them as they are."
@@ -121,16 +114,15 @@ function formatStaged(ctx, prettier) {
     run(ctx, "git", ["add", "--", ...paths])
   }
 
-  // Judge the staged blob, not the working tree: only the staged content is committed.
   const unformatted = []
   for (const path of partial) {
-    const blob = run(ctx, "git", ["show", `:${path}`], { raw: true })
-    if (!blob.ok) continue
+    const stagedBlob = run(ctx, "git", ["show", `:${path}`], { raw: true })
+    if (!stagedBlob.ok) continue
     const formatted = run(ctx, prettier, ["--stdin-filepath", path], {
-      input: blob.out,
+      input: stagedBlob.out,
       raw: true,
     })
-    if (formatted.ok && formatted.out !== blob.out)
+    if (formatted.ok && formatted.out !== stagedBlob.out)
       unformatted.push(`  ${path}: pnpm exec prettier --write '${path}'`)
   }
   if (!unformatted.length) return { lines }
@@ -149,8 +141,6 @@ function formatStaged(ctx, prettier) {
   }
 }
 
-// Staged blobs over the limit: not a submodule, not binary (a NUL in the
-// first 8000 bytes), not marked linguist-generated. Size is the staged blob.
 function oversizeStaged(ctx) {
   const raw = split(
     run(
@@ -172,22 +162,21 @@ function oversizeStaged(ctx) {
   for (let i = 0; i + 1 < raw.length; i += 2) {
     const [, mode, , sha] = raw[i].slice(1).split(/\s+/)
     const path = raw[i + 1]
-    if (mode === "160000") continue
+    if (mode === SUBMODULE_MODE) continue
     const bytes = Number(run(ctx, "git", ["cat-file", "-s", sha]).out)
     if (bytes > LIMIT_BYTES) over.push({ path, sha, bytes })
   }
   if (!over.length) return ""
 
-  // --cached reads the staged .gitattributes, so adding a pattern and the file in one commit works.
-  const attrs = run(
+  const stagedAttributes = run(
     ctx,
     "git",
     ["check-attr", "--cached", "-z", "--stdin", "linguist-generated"],
     { input: over.map((item) => `${item.path}\0`).join(""), raw: true }
   )
   const generated = new Set()
-  if (attrs.ok) {
-    const parts = split(attrs.out)
+  if (stagedAttributes.ok) {
+    const parts = split(stagedAttributes.out)
     for (let i = 0; i + 2 < parts.length; i += 3)
       if (parts[i + 2] === "set" || parts[i + 2] === "true")
         generated.add(parts[i])
@@ -196,7 +185,7 @@ function oversizeStaged(ctx) {
   for (const item of over) {
     if (generated.has(item.path)) continue
     const blob = run(ctx, "git", ["cat-file", "blob", item.sha], { raw: true })
-    if (blob.out.slice(0, 8000).includes("\0")) continue
+    if (blob.out.slice(0, BINARY_SNIFF_BYTES).includes("\0")) continue
     list += `${item.path} (${item.bytes} bytes) `
   }
   return list
@@ -221,7 +210,6 @@ function preCommit(ctx) {
   return report(verdict, lines)
 }
 
-// Each stdin line: <local ref> <local sha> <remote ref> <remote sha>.
 function pushedRefs(text) {
   const refs = []
   for (const line of text.split("\n")) {

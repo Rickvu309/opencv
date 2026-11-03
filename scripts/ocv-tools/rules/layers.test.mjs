@@ -1,6 +1,3 @@
-// The layers hold by construction: only index.mjs imports a subject row
-// file, every moment a row names has a runner, and a native row names a
-// ruleset rule GitHub actually enforces.
 import assert from "node:assert/strict"
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { join, sep } from "node:path"

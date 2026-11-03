@@ -21,11 +21,11 @@ function sources(dir, out = []) {
   return out
 }
 
-// These are forwarding sites, not independently raised codes. Fail closed on
-// every other dynamic argument so a new construction cannot evade coverage.
-const FORWARDING = new Set([
-  "rules/index.mjs:Refused:refusal.id", // Converts a decide result.
+const FORWARDING_SITES_NOT_RAISING_A_CODE = new Map([
+  ["rules/index.mjs:Refused:refusal.id", "converts a decide result"],
 ])
+
+const TASK_HERE_REACHES_ONLY_NOT_A_TASK = "claim.mjs:decide:job"
 
 function raisedCodes(inputs, rows) {
   const codes = new Set()
@@ -48,12 +48,13 @@ function raisedCodes(inputs, rows) {
           target.add(arg.text)
         } else {
           const site = `${path}:${name}:${arg?.getText(ast)}`
-          if (site === "claim.mjs:decide:job") {
-            // taskHere defaults to save; its other callers pass release/cleanup.
-            // Only NOT_A_TASK is reachable with its sole fact { here }.
+          if (site === TASK_HERE_REACHES_ONLY_NOT_A_TASK) {
             codes.add("NOT_A_TASK")
           } else {
-            assert.ok(FORWARDING.has(site), `unlisted dynamic refusal: ${site}`)
+            assert.ok(
+              FORWARDING_SITES_NOT_RAISING_A_CODE.has(site),
+              `unlisted dynamic refusal: ${site}`
+            )
           }
         }
       }

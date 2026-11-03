@@ -1,5 +1,3 @@
-// merge <pr#> [--wait]: enqueue the squash merge, then with --wait watch the
-// queue through one GraphQL snapshot per step until classify() settles it.
 import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
 import { recorded, json, gh } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
@@ -67,8 +65,6 @@ const SNAPSHOT_QUERY = `query ($owner: String!, $name: String!, $n: Int!) {
   }
 }`
 
-// One read per wait step: queue state, head, the newest ci check and the last
-// removal event.
 function queueSnapshot(ctx, repo, n, waited) {
   const [owner, name] = repo.split("/")
   const data = json(
@@ -106,8 +102,6 @@ function queueSnapshot(ctx, repo, n, waited) {
   }
 }
 
-// Pure: one snapshot plus what this process did settles into one outcome, or
-// null to keep waiting.
 export function classify(s, enqueued, startHead) {
   if (s.state === "MERGED") return { kind: "MERGED" }
   if (s.head && startHead && s.head !== startHead)
@@ -133,9 +127,7 @@ export function classify(s, enqueued, startHead) {
   return null
 }
 
-// The failed check run's own annotations, so the agent reads what ci saw
-// instead of a recompute against today's facts.
-function failedCheck(ctx, repo, head) {
+function failedCiRunWithItsAnnotations(ctx, repo, head) {
   const runs =
     json(
       ctx,
@@ -165,11 +157,11 @@ function failedCheck(ctx, repo, head) {
   return { run: failed, notes }
 }
 
-// The wait ended without a merge: the queue rows name why. The failed check's
-// annotations are read only for a ci failure, so the agent sees what ci saw.
 function failWait(ctx, repo, n, verdict, snapshot, extra = {}) {
   const failed =
-    verdict.kind === "CI_FAILED" ? failedCheck(ctx, repo, snapshot.head) : null
+    verdict.kind === "CI_FAILED"
+      ? failedCiRunWithItsAnnotations(ctx, repo, snapshot.head)
+      : null
   const notes = (failed?.notes ?? [])
     .slice(0, 5)
     .map((a) => `${a.path}:${a.start_line ?? 1} ${a.message}`)
@@ -187,7 +179,6 @@ function failWait(ctx, repo, n, verdict, snapshot, extra = {}) {
   throw refusalError(found.refusals[0])
 }
 
-// The newest ci check run on the head, as the CI_REQUIRED row reads it.
 function newestCi(ctx, repo, head) {
   const checks = json(
     ctx,
@@ -274,9 +265,6 @@ export function merge(ctx, n, { wait = false } = {}) {
     )?.[1]
     const head = pull.headRefOid
     let repo = null
-    // An open PR is read in full: the pr rows (the same ones policy runs) first,
-    // then the merge rows with the newest ci check. A merged or closed PR needs
-    // only the merge rows, which read its state.
     const open = pull.state === "OPEN"
     const facts = open
       ? { ...pullFacts(ctx, n), me }

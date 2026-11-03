@@ -1,5 +1,3 @@
-// The delivery rows (finish, merge, queue) read domain facts, not a verdict
-// the job made itself. Each row has a failing and a passing fact here.
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
@@ -116,7 +114,7 @@ const CASES = {
   ],
 }
 
-test("every delivery row has a failing and a passing fact", () => {
+test("every delivery row reads domain facts, with a failing and a passing fact", () => {
   assert.deepEqual(Object.keys(CASES).sort(), jobRows.map((r) => r.id).sort())
   for (const row of jobRows) {
     const [bad, good, message] = CASES[row.id]
@@ -220,9 +218,12 @@ test("merge holds the owner, and the draft passes the pr moment", () => {
   assert.equal(other.refusals[0].id, "NOT_OWNER")
   assert.equal(other.refusals[0].message, "PR #7 is by Owner, not someone.")
   assert.equal(decide("merge", { ...facts, pull, me: "OWNER" }).ok, true)
-  // A merged PR has no ci to check.
-  const merged = { pull: { ...pull, state: "MERGED" }, me: "owner", ci: null }
-  assert.equal(decide("merge", merged).ok, true)
+  const mergedHasNoCiToCheck = {
+    pull: { ...pull, state: "MERGED" },
+    me: "owner",
+    ci: null,
+  }
+  assert.equal(decide("merge", mergedHasNoCiToCheck).ok, true)
 })
 
 test("merge refuses a PR whose issue carries needs-human-review", () => {
