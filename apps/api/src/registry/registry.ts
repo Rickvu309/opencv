@@ -138,18 +138,17 @@ function brandedActor(actor: Actor): Actor {
     : approvedProposalActor(actor.userId, actor.chatId)
 }
 
+type UndoGuard = (
+  userId: string,
+  items: readonly { input: unknown; source: string | null }[]
+) => Promise<(string | null)[]>
+
 export class Registry {
   private readonly commands = new Map<string, StoredCommand>()
   private readonly queries = new Map<string, StoredQuery>()
-  private readonly undoGuards = new Map<
-    string,
-    (userId: string, inputs: unknown[]) => Promise<(string | null)[]>
-  >()
+  private readonly undoGuards = new Map<string, UndoGuard>()
 
-  addUndoGuard(
-    reversalCommand: string,
-    guard: (userId: string, inputs: unknown[]) => Promise<(string | null)[]>
-  ) {
+  addUndoGuard(reversalCommand: string, guard: UndoGuard) {
     this.undoGuards.set(reversalCommand, guard)
   }
 
@@ -159,6 +158,7 @@ export class Registry {
       command: string | null
       input: unknown
       expect?: ReversalExpect | null
+      source?: string | null
     }[]
   ): Promise<(string | null)[]> {
     const reasons: (string | null)[] = items.map(() => null)
@@ -175,7 +175,10 @@ export class Registry {
       try {
         const answers = await this.undoGuards.get(command)!(
           userId,
-          indexes.map((index) => items[index]!.input)
+          indexes.map((index) => ({
+            input: items[index]!.input,
+            source: items[index]!.source ?? null,
+          }))
         )
         indexes.forEach((index, at) => {
           reasons[index] = answers[at] ?? null
@@ -570,6 +573,7 @@ export class Registry {
           command: row.reversalCommand,
           input: row.reversalInput,
           expect: row.reversalExpect,
+          source: row.command,
         },
       ])
       const blocked = undoOfUndo(row) ?? stale ?? (await laterLiveAction(row))

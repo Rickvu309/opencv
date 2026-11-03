@@ -8,10 +8,12 @@ export const OLD_EDITOR_UNDO_REASON =
   "This change was saved by the old editor and can't be undone."
 
 export async function oldEditorUndoReasons(
-  userId: string,
-  inputs: readonly unknown[]
+  _userId: string,
+  items: readonly { source: string | null }[]
 ): Promise<(string | null)[]> {
-  return inputs.map(() => (userId === "" ? null : OLD_EDITOR_UNDO_REASON))
+  return items.map((item) =>
+    item.source === "paper.replace" ? OLD_EDITOR_UNDO_REASON : null
+  )
 }
 
 export type UndoQuestion = { docId: string; editId: string }

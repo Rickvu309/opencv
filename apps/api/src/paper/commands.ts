@@ -90,11 +90,11 @@ function encoded(bytes: Uint8Array) {
 }
 
 export function registerPaper(registry: Registry) {
-  registry.addUndoGuard("paper.revertEdit", (userId, inputs) =>
+  registry.addUndoGuard("paper.revertEdit", (userId, items) =>
     undoBlockedReasons(
       userId,
-      inputs.map((input) =>
-        paperContract["paper.revertEdit"].input.parse(input)
+      items.map((item) =>
+        paperContract["paper.revertEdit"].input.parse(item.input)
       )
     )
   )
