@@ -376,8 +376,10 @@ function customSectionTitles(
   document: CvPaper
 ): Partial<Record<CvSectionKind, string>> | undefined {
   const titles: Partial<Record<CvSectionKind, string>> = {}
+  const seen = new Set<CvSectionKind>()
   for (const block of document.blocks) {
-    if (block.type !== "section") continue
+    if (block.type !== "section" || seen.has(block.kind)) continue
+    seen.add(block.kind)
     if (block.title === sectionMarker(block.kind, block.id).title) continue
     titles[block.kind] = block.title
   }
