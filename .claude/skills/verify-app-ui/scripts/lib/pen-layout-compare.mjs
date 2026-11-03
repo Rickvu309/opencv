@@ -216,13 +216,14 @@ export function comparePenLayout({
   )
   const used = new Set()
   const mismatches = []
-  const report = (text, found) => {
+  const report = (text, found, index) => {
     const entry = mine.find(
       (candidate) =>
         candidate.property === found.property &&
         (candidate.text === text ||
           (candidate.textStartsWith &&
-            text.startsWith(candidate.textStartsWith)))
+            text.startsWith(candidate.textStartsWith))) &&
+        (candidate.index === undefined || candidate.index === index)
     )
     if (entry) {
       used.add(entry)
@@ -238,7 +239,7 @@ export function comparePenLayout({
   }
   layout.texts.forEach((want, index) => {
     for (const found of textMismatches(want, measured[index] ?? null, tokens))
-      report(want.text, found)
+      report(want.text, found, index)
   })
   for (const extra of extras) {
     if (

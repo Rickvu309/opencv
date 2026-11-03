@@ -16,7 +16,17 @@ import {
   formatMismatch,
   TEXT_TOKENS,
 } from "./lib/pen-layout-compare.mjs"
+import {
+  bodyGapMismatches,
+  PEN_LAYOUT_EXCEPTIONS,
+} from "./lib/letter-layout-exceptions.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
+import {
+  countOf,
+  exerciseToolbar,
+  checkKeywordOnce,
+  serverDocument,
+} from "./lib/letter-toolbar-steps.mjs"
 
 const port = Number(process.env.PORT)
 const api = `http://localhost:${port}`
@@ -45,10 +55,15 @@ const sources = [
   ".claude/skills/verify-app-ui/scripts/lib/pen-layout-probe.mjs",
   ".claude/skills/verify-app-ui/scripts/lib/pen-layout-compare.mjs",
   "apps/web/src/features/paper/paper-letter.tsx",
-  "apps/web/src/features/paper/paper-letter-article.tsx",
-  "apps/web/src/features/paper/paper-letter.reducer.ts",
+  "apps/web/src/features/paper/paper-editor-engine.tsx",
+  "apps/web/src/features/paper/paper-editor-menus.tsx",
+  "apps/web/src/features/paper/paper-editor-link-bar.tsx",
+  "apps/web/src/features/paper/paper-editor-popup.ts",
+  "apps/web/src/features/paper/paper-editor-resume.ts",
+  ".claude/skills/verify-app-ui/scripts/lib/letter-layout-exceptions.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/letter-toolbar-steps.mjs",
+  "apps/web/src/features/paper/design/letter-block-editor.pen.css",
   "apps/web/src/features/paper/paper-autosave.ts",
-  "apps/web/src/features/paper/paper-letter-autosave.test.tsx",
   "apps/web/src/test/design-frame-coverage.test.ts",
   `${design}-paints.styles.json`,
   ...["snapshot.json", "styles.json", "layout.json", "pen.css"].map(
@@ -76,21 +91,12 @@ const report = {
   status: "RUNNING",
   limits: [
     "Native Pencil export is unavailable; source geometry comparison is not a 95% pixel certification.",
-    "The sheet is one labelled textarea per part and per paragraph; the pen comparison measures each field's text, not a pixel render.",
+    "The sheet is one block editor; the pen comparison measures each block's text, not a pixel render.",
     "DOM input/click dispatch proves UI handlers, not physical pointer or IME behavior.",
     "The star, bell and sliders glyph of the frame's header are not built (no feature behind them); see the issue's deviation list.",
   ],
 }
-const PEN_LAYOUT_EXCEPTIONS = [
-  {
-    frameId: "sgAtL",
-    text: "Edited just now",
-    property: "x",
-    reason: "no sliders glyph in the pill and no bell button (no feature)",
-    until: "2027-06-30",
-    approvedBy: "#830 header decision",
-  },
-]
+const TYPED_WIDTHS = [1440, 390]
 const check = (pass, message) => {
   report.checks.push({ pass: Boolean(pass), message })
   must(pass, message)
@@ -180,7 +186,7 @@ const capture = async (page, width, label) => {
     const desk=root.querySelector('[data-slot="letter-editor-desk"]');
     const card=root.querySelector('[data-slot="letter-editor-suggestion"]');
     const sheet=root.querySelector('[data-slot="letter-editor-sheet"]');
-    const fields=[...root.querySelectorAll('[data-slot="letter-sheet"] textarea')];
+    const fields=[...root.querySelectorAll('[data-slot="letter-block-editor"] .bn-block-content')];
     const rect=n=>n?.getBoundingClientRect();
     desk.scrollTop=desk.scrollHeight;
     const last=rect(fields[fields.length-1]);
@@ -198,8 +204,7 @@ const capture = async (page, width, label) => {
       anchorMid:beside&&a?a.left+a.width/2-s.right:null,
       anchorTop:beside&&a?document.elementFromPoint(a.left+a.width*0.3,a.top+a.height/2)===anchor:null,
       targets:['letter-editor-more','letter-editor-link'].map(slot=>{const r=rect(root.querySelector('[data-slot="'+slot+'"]'));return{slot,width:r.width,height:r.height}}),
-      closingGap:(()=>{const c=rect(root.querySelector('[data-slot="letter-closing"]')),g=rect(root.querySelector('[data-slot="letter-signature"]'));return g.top-c.bottom})(),
-      paragraphHeights:fields.filter(n=>n.dataset.slot==='letter-paragraph').map(n=>Math.round(rect(n).height*10)/10),
+      paragraphHeights:fields.filter(n=>n.dataset.contentType==='paragraph').map(n=>Math.round(rect(n).height*10)/10),
       header:{more:!!root.querySelector('[aria-label="More"]'),link:!!root.querySelector('[aria-label="Copy share link"]'),
         pdfButton:!![...root.querySelectorAll('header button')].find(n=>n.textContent.trim()==='Download PDF'),mail:!!root.querySelector('header .lucide-mail')},
       touch:matchMedia('(max-width: 767px), (pointer: coarse)').matches};
@@ -247,10 +252,6 @@ const capture = async (page, width, label) => {
         `${width} ${label}: ${target.slot} keeps its pen size on desktop`
       )
   }
-  check(
-    Math.abs(screen.closingGap - 4) <= 1,
-    `${width} ${label}: the signature sits 4px under the closing (${screen.closingGap})`
-  )
   if (width < 600) {
     check(
       metrics.edited.y >= metrics.nav.y + metrics.nav.height,
@@ -298,11 +299,17 @@ const capture = async (page, width, label) => {
       }),
       measured: measured.measured,
     }
+    const gaps = bodyGapMismatches(layout.texts, measured.measured)
+    check(
+      gaps.length === 0,
+      `${width}: body blocks keep the frame's spacing between them` +
+        gaps.map((g) => `\n  "${g.text}" pen ${g.pen} app ${g.app}`).join("")
+    )
     check(
       comparison.mismatches.length === 0,
       `${width}: pen layout, ${comparison.mismatches.length} mismatches` +
         comparison.mismatches
-          .slice(0, 8)
+          .slice(0, 60)
           .map((m) => `\n  ${formatMismatch(layout, m)}`)
           .join("")
     )
@@ -317,6 +324,7 @@ const capture = async (page, width, label) => {
     sourceHashes: report.sourceHashes,
   })
 }
+const ctx = { check, state, api }
 try {
   const setup = await browser.openPage({
     intercept: false,
@@ -399,6 +407,11 @@ try {
       `!!document.querySelector('[aria-label="Letter suggestion"]')`,
       `${width}: linked job suggestion shown`
     )
+    await state(
+      page,
+      `document.querySelectorAll('[data-slot="letter-block-editor"] .bn-block-content').length > 0`,
+      `${width}: the block editor is mounted`
+    )
     await capture(page, width, "suggestion")
     await pageDownAfterDeskClick(page, width)
     await click(page, "Skip")
@@ -413,41 +426,72 @@ try {
       `!!document.querySelector('[aria-label="Letter suggestion"]')`,
       `${width}: Skip did not modify document`
     )
-    const typed = markdown + "\nMy newest sentence."
-    await page.evaluate(
-      `(() => {const all=[...document.querySelectorAll('textarea[aria-label^="Paragraph "]')];const n=all[all.length-1];const set=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;set.call(n,${JSON.stringify(typed.slice(typed.lastIndexOf("\n\n") + 2))});n.dispatchEvent(new Event('input',{bubbles:true}));})()`
+    await state(
+      page,
+      `document.querySelectorAll('[data-slot="letter-block-editor"] .bn-block-content').length > 0`,
+      `${width}: the block editor is mounted after reload`
     )
     await click(page, "Add to letter")
     await state(
       page,
-      `!document.querySelector('[aria-label="Letter suggestion"]') && ([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).endsWith('\\nMeta Ads')`,
-      `${width}: keyword appends to newest text`
+      `!document.querySelector('[aria-label="Letter suggestion"]') && ([...document.querySelectorAll('[data-slot="letter-block-editor"] .bn-block-content')].map(n=>n.innerText.trim()).join('\\n\\n')).includes('Meta Ads')`,
+      `${width}: keyword lands in the letter`
     )
     await state(
       page,
       `!document.querySelector('[role="alert"]')`,
       `${width}: no conflict banner`
     )
-    // Wait on the real read API, not a toast or a fixed delay.
     await state(
       page,
-      `window.__letterSaved || (fetch(${JSON.stringify(`${api}/api/paper/` + doc.id)},{credentials:'include'}).then(r=>r.json()).then(r=>{window.__letterSaved=JSON.stringify(r).includes('My newest sentence.')&&JSON.stringify(r).includes('Meta Ads')}), false)`,
-      `${width}: saved API contains edit and keyword`
+      `window.__letterSaved || (fetch(${JSON.stringify(`${api}/api/paper/` + doc.id)},{credentials:'include'}).then(r=>r.json()).then(r=>{window.__letterSaved=JSON.stringify(r).includes('Meta Ads')}), false)`,
+      `${width}: saved API contains the keyword`
     )
+    await checkKeywordOnce(page, ctx, doc.id, width, "Meta Ads")
     await capture(page, width, "keyword-added")
     await page.goto(`${web}/paper/${doc.id}`)
     await state(
       page,
-      `([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).endsWith('\\nMeta Ads')`,
+      `([...document.querySelectorAll('[data-slot="letter-block-editor"] .bn-block-content')].map(n=>n.innerText.trim()).join('\\n\\n')).includes('Meta Ads')`,
       `${width}: reload retains keyword`
     )
-    check(
-      await page.evaluate(
-        `([...document.querySelectorAll('textarea[aria-label^="Paragraph "]')].map(n=>n.value).join('\\n\\n')).includes('My newest sentence.')`
-      ),
-      `${width}: reload retains newest edit`
-    )
     await capture(page, width, "reloaded")
+    if (TYPED_WIDTHS.includes(width)) {
+      const sentence = ` Typed at ${width}.`
+      await page.evaluate(`(() => {
+        const blocks=[...document.querySelectorAll('[data-slot="letter-block-editor"] .bn-block-content .bn-inline-content')];
+        const last=blocks[blocks.length-1];
+        last.focus();
+        const range=document.createRange();
+        range.selectNodeContents(last);
+        range.collapse(false);
+        const selection=getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      })()`)
+      await page.insertText(sentence)
+      const needle = sentence.trim()
+      await state(
+        page,
+        `window.__typedSaved || (fetch(${JSON.stringify(`${api}/api/paper/` + doc.id)},{credentials:'include'}).then(r=>r.json()).then(r=>{window.__typedSaved=JSON.stringify(r).split(${JSON.stringify(needle)}).length-1===1}), false)`,
+        `${width}: the save API holds the typed sentence exactly once`
+      )
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      check(
+        countOf(
+          JSON.stringify(await serverDocument(page, api, doc.id)),
+          needle
+        ) === 1,
+        `${width}: the typed sentence is still on the server exactly once after a pause`
+      )
+      await page.goto(`${web}/paper/${doc.id}`)
+      await state(
+        page,
+        `([...document.querySelectorAll('[data-slot="letter-block-editor"] .bn-block-content')].map(n=>n.innerText.trim()).join('\\n\\n')).split(${JSON.stringify(needle)}).length-1===1`,
+        `${width}: reload shows the typed sentence exactly once`
+      )
+      await exerciseToolbar(page, ctx, doc.id, width)
+    }
     await page.close()
   }
   check(

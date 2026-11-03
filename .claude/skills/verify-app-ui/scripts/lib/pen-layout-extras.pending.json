@@ -31,6 +31,30 @@
       "issue": "#916",
       "until": "2026-12-01",
       "reason": "The frame draws a paperclip, but the Paper layouts are fenced and have no icon record yet; regenerate them after the editor work merges"
+    },
+    {
+      "frameId": "sgAtL",
+      "text": "More",
+      "kind": "drift",
+      "issue": "#916",
+      "until": "2026-12-03",
+      "reason": "The letter page had this control on main before the block editor; frame W7.3 does not draw it. Decide in the Paper layout regeneration after the editor work"
+    },
+    {
+      "frameId": "sgAtL",
+      "text": "Copy share link",
+      "kind": "drift",
+      "issue": "#916",
+      "until": "2026-12-03",
+      "reason": "The letter page had this control on main before the block editor; frame W7.3 does not draw it. Decide in the Paper layout regeneration after the editor work"
+    },
+    {
+      "frameId": "sgAtL",
+      "text": "Dismiss suggestion",
+      "kind": "drift",
+      "issue": "#916",
+      "until": "2026-12-03",
+      "reason": "The letter page had this control on main before the block editor; frame W7.3 does not draw it. Decide in the Paper layout regeneration after the editor work"
     }
   ]
 }
