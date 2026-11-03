@@ -176,6 +176,57 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  formal-tla:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      TLA_SHA256: 936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Does this change touch a formal model
+        id: gate
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == merge_group ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base=$(git merge-base origin/main HEAD)
+          FORMAL_BASE="$base" node scripts/lib/ci-workflow.mjs gate
+      - if: steps.gate.outputs.run == 'true'
+        uses: ./.github/actions/setup
+      - id: java
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Cache tla2tools 1.7.4
+        id: tla-jar
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: tla-tools/tla2tools.jar
+          key: tla2tools-1.7.4-${{ env.TLA_SHA256 }}
+      - name: Pin tla2tools 1.7.4
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          mkdir -p tla-tools
+          if [[ ! -f tla-tools/tla2tools.jar ]]; then
+            curl -fsSL -o tla-tools/tla2tools.jar \
+              https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar
+          fi
+          echo "$TLA_SHA256  tla-tools/tla2tools.jar" | sha256sum -c -
+      - name: Run the formal models
+        if: steps.gate.outputs.run == 'true'
+        env:
+          JAVA_HOME: ${{ steps.java.outputs.path }}
+          TLA2TOOLS: ${{ github.workspace }}/tla-tools/tla2tools.jar
+        run: node scripts/tlc.mjs --all
+
   policy:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -193,15 +244,23 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           QUEUE_REF: ${{ github.event.merge_group.head_ref }}
         run: |
-          n="$PR_NUMBER"
-          if [[ -z "$n" && "$QUEUE_REF" =~ /pr-([0-9]+)- ]]; then
-            n="${BASH_REMATCH[1]}"
-          fi
-          if [[ -z "$n" ]]; then
-            echo "::error title=POLICY::no pull request number in the ${GITHUB_EVENT_NAME} event"
-            exit 1
-          fi
-          node scripts/ocv-tools.mjs policy "$n"
+          choice=$(node scripts/lib/ci-workflow.mjs policy)
+          case "$choice" in
+            run:*)
+              node scripts/ocv-tools.mjs policy "${choice#run:}"
+              ;;
+            fail)
+              echo "::error title=POLICY::no pull request number in the ${GITHUB_EVENT_NAME} event"
+              exit 1
+              ;;
+            skip)
+              echo "::notice title=POLICY::no pull request applies to the ${GITHUB_EVENT_NAME} event"
+              ;;
+            *)
+              echo "::error title=POLICY::unexpected policy choice"
+              exit 1
+              ;;
+          esac
 
   ci:
     needs:
@@ -214,6 +273,7 @@ jobs:
         formal-postgres,
         test-web,
         screens,
+        formal-tla,
         policy,
       ]
     if: ${{ always() }}

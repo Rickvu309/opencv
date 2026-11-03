@@ -1,0 +1,13 @@
+{
+  "id": "formal-tla",
+  "file": "scripts/ci-workflow.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ci-workflow.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "4dcd8aa16a9ddb3ecf6d1e7d2948fe3519b718cd",
+    "path": ".github/workflows/ci.yml"
+  }
+}
