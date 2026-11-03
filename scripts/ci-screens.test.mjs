@@ -107,7 +107,7 @@ test("ci.yml runs the screens job and the aggregate waits on it", () => {
     "utf8"
   )
   assert.match(text, /^ {2}screens:\s*$/m)
-  assert.match(text, /^ {4}needs: \[[^\]]*\bscreens\b[^\]]*\]/m)
+  assert.match(text, /^ {4}needs:\s*\[[^\]]*\bscreens\b[^\]]*\]/m)
   assert.match(text, /node scripts\/ci-screens\.mjs/)
   const minutes = /^ {2}screens:[\s\S]*?timeout-minutes: (\d+)/m.exec(text)
   assert.ok(Number(minutes[1]) <= 15)

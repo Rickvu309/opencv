@@ -44,6 +44,11 @@
     "@workspace/guards#test": { "cache": false },
     "test:open-pr": { "cache": false },
     "test:assumptions": { "dependsOn": ["^build"], "cache": false },
+    "test:formal": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "passThroughEnv": ["VITEST_MAX_WORKERS", "FORMAL_DATABASE_URL"]
+    },
     "test": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

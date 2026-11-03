@@ -29,10 +29,20 @@ test("ci waits on every other job and always runs", () => {
   const ci = section("ci")
   const needs = /^ {4}needs:\s*\[([^\]]*)\]/m.exec(ci)
   assert.ok(needs, "ci has a needs list")
-  const listed = needs[1].split(",").map((name) => name.trim())
+  const listed = needs[1]
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean)
   const others = jobNames.filter((name) => name !== "ci")
   assert.deepEqual([...listed].sort(), [...others].sort())
   assert.match(ci, /^ {4}if:\s*\$\{\{\s*always\(\)\s*\}\}/m)
+})
+
+test("the registry formal suite runs against a real Postgres server", () => {
+  const job = section("formal-postgres")
+  assert.match(job, /^ {8}image: postgres:18\s*$/m)
+  assert.match(job, /^ {6}FORMAL_DATABASE_URL: postgres:\/\/\S+$/m)
+  assert.match(job, /turbo run test:formal \$TURBO_SCOPE --filter=api/)
 })
 
 const script = /node -e '([^\n]*)'\s*$/m.exec(section("ci"))?.[1]
