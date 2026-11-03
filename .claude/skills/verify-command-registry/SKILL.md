@@ -34,6 +34,7 @@ pnpm --filter api test:formal
 
 - One command, about 15 seconds, runs this check and the Apply scan check (`verify-apply-scan-guard`). Exit 0 means every test passed. `pnpm --filter api test` also runs the file.
 - Expected output: `10 passed | 2 expected fail | 1 skipped` across the three registry files. The two expected failures are the known finding below. The skipped test is the natural race that needs a real server.
+- The model of undo after a later change (P4, issue 956): `node scripts/tlc.mjs --all` (about 90 seconds for every spec). Only this one: `node scripts/tlc.mjs apps/api/src/registry/UndoLater.tla --config apps/api/src/registry/UndoLater.cfg`. Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
 - `FORMAL_SEED=<n>` changes the start-order seed (default 241). Run a few after a change.
 
 Run the same file on a real server before merging any change to a lock, a transaction or a key path:
@@ -111,7 +112,7 @@ The failing label names the scenario: `P1 job.create N=3 seed=242`, `P2 approve 
 | `isUniqueViolation`           | `apps/api/src/registry/errors.ts` line 21          |
 | `transaction`                 | `apps/api/src/db/context.ts` line 33               |
 
-Check files: `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
+Check files: `apps/api/src/registry/UndoLater.tla` with `.cfg`, mutant configs and `.tla.json` (P4 model), `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 
 Sync commit: `b618ed9f358b23a280d7c00308aca64474ec36ed`. This is the trunk commit the check was last confirmed against.
 
