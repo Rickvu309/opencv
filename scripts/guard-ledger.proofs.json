@@ -14,5 +14,9 @@
   "touch-targets": {
     "passed": true,
     "fingerprint": "957935b73774"
+  },
+  "undo-later-stored-time": {
+    "passed": true,
+    "fingerprint": "ac368da6300c"
   }
 }
