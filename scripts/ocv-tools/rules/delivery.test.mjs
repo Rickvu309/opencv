@@ -97,6 +97,11 @@ const CASES = {
     queue({ kind: "LEFT_QUEUE" }),
     "PR #7 head moved from h1 to h2.",
   ],
+  UNRECORDED_HEAD: [
+    queue({ kind: "UNRECORDED_HEAD", head: "head-2", merged: true }),
+    queue({ kind: "LEFT_QUEUE" }),
+    "PR #7 merged at head-2. GitHub's queue entry has no head for this clone to compare. This clone did not record that head.",
+  ],
   BILLING_BLOCKED: [
     queue({ kind: "BILLING_BLOCKED", runId: 5 }),
     queue({ kind: "LEFT_QUEUE" }),

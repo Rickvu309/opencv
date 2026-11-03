@@ -300,6 +300,11 @@ test("merge --wait refuses a foreign head the first merge did not queue", () => 
   const waited = already.call("merge", "91", "--wait")
   assert.equal(waited.code, 2, waited.text)
   assert.match(waited.text, /HEAD_MOVED/)
+  assert.match(
+    waited.text,
+    /Fix: PR #91 already merged at head-2\. This clone recorded head-1\. Check that merge by hand\. Do not run merge --wait again\./
+  )
+  assert.doesNotMatch(waited.text, /merge 91 --wait/)
   assert.doesNotMatch(waited.text, /Merged PR #91/)
   assert.equal(already.s.issueState, "OPEN")
   assert.equal(already.effects("gh", "pr merge").length, 1)
@@ -313,9 +318,99 @@ test("merge --wait refuses a foreign head the first merge did not queue", () => 
   const again = pushed.call("merge", "91", "--wait")
   assert.equal(again.code, 2, again.text)
   assert.match(again.text, /HEAD_MOVED/)
+  assert.match(
+    again.text,
+    /Fix: Check the commits from head-1 to head-2\. If they are yours, run scripts\/ocv-tools\.mjs merge 91 to queue and record the new head, then scripts\/ocv-tools\.mjs merge 91 --wait\./
+  )
   assert.doesNotMatch(again.text, /Merged PR #91/)
   assert.equal(pushed.effects("gh", "pr merge").length, 1)
   assert.equal(pushed.s.issueState, "OPEN")
+})
+test("the HEAD_MOVED fix records the new head so a later wait does not refuse it", () => {
+  const f = fixture({
+    queue: true,
+    onPause(_total, s) {
+      if (s.pull.headRefOid !== "head-2") return
+      s.pull.state = "MERGED"
+      s.pull.mergeCommit = { oid: "ours" }
+    },
+  })
+  assert.match(f.call("merge", "91").text, /Queued/)
+  f.s.pull.headRefOid = "head-2"
+  f.s.checks[0].head_sha = "head-2"
+  f.s.inQueue = false
+  const refused = f.call("merge", "91", "--wait")
+  assert.equal(refused.code, 2, refused.text)
+  assert.match(
+    refused.text,
+    /Fix: Check the commits from head-1 to head-2\. If they are yours, run scripts\/ocv-tools\.mjs merge 91 to queue and record the new head, then scripts\/ocv-tools\.mjs merge 91 --wait\./
+  )
+  const queued = f.call("merge", "91")
+  assert.equal(queued.code, 0, queued.text)
+  assert.match(queued.text, /Queued PR #91 at head-2/)
+  assert.doesNotMatch(queued.text, /HEAD_MOVED/)
+  const waited = f.call("merge", "91", "--wait")
+  assert.equal(waited.code, 0, waited.text)
+  assert.match(waited.text, /Merged PR #91/)
+  assert.doesNotMatch(waited.text, /HEAD_MOVED/)
+  assert.equal(f.s.issueState, "CLOSED")
+})
+test("merge --wait does not report MERGED when this clone has no recorded head", () => {
+  const merged = fixture()
+  Object.assign(merged.s.pull, {
+    state: "MERGED",
+    headRefOid: "foreign",
+    mergeCommit: { oid: "foreign-merge" },
+  })
+  const refused = merged.call("merge", "91", "--wait")
+  assert.equal(refused.code, 2, refused.text)
+  assert.match(refused.text, /REFUSED UNRECORDED_HEAD/)
+  assert.match(refused.text, /PR #91 merged at foreign/)
+  assert.match(refused.text, /did not record that head/)
+  assert.match(refused.text, /no head for this clone to compare/)
+  assert.match(
+    refused.text,
+    /Fix: PR #91 merged at foreign\. This clone did not record that head\. Check the merge by hand\. Do not close the issue from this result\./
+  )
+  assert.doesNotMatch(refused.text, /Merged PR #91/)
+  assert.equal(merged.s.issueState, "OPEN")
+  assert.equal(merged.effects("gh", "issue close").length, 0)
+  assert.equal(merged.effects("gh", "pr merge").length, 0)
+
+  const queued = fixture({
+    queue: true,
+    inQueue: true,
+    queuedHead: "queued-sha",
+  })
+  queued.s.pull.headRefOid = "live-sha"
+  const waiting = queued.call("merge", "91", "--wait")
+  assert.equal(waiting.code, 2, waiting.text)
+  assert.match(waiting.text, /REFUSED UNRECORDED_HEAD/)
+  assert.match(waiting.text, /in the merge queue at live-sha/)
+  assert.match(waiting.text, /GitHub's queue entry is queued-sha/)
+  assert.match(waiting.text, /did not record that head/)
+  assert.doesNotMatch(waiting.text, /Merged PR #91/)
+  assert.equal(queued.s.issueState, "OPEN")
+  assert.equal(queued.effects("gh", "issue close").length, 0)
+  assert.equal(queued.effects("gh", "pr merge").length, 0)
+
+  const matched = fixture({
+    inQueue: true,
+    queuedHead: "same-sha",
+  })
+  Object.assign(matched.s.pull, {
+    state: "MERGED",
+    headRefOid: "same-sha",
+    mergeCommit: { oid: "merge-sha" },
+  })
+  const compared = matched.call("merge", "91", "--wait")
+  assert.equal(compared.code, 2, compared.text)
+  assert.match(compared.text, /PR #91 merged at same-sha/)
+  assert.match(compared.text, /GitHub's queue entry is same-sha/)
+  assert.match(compared.text, /did not record that head/)
+  assert.doesNotMatch(compared.text, /Merged PR #91/)
+  assert.equal(matched.s.issueState, "OPEN")
+  assert.equal(matched.effects("gh", "issue close").length, 0)
 })
 test("merge --wait fails when the PR closes without merging", () => {
   const f = fixture({

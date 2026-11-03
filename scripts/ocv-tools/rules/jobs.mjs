@@ -230,6 +230,37 @@ const leftQueueFix = (facts) => {
 const waitAgain = (facts) =>
   `Run: scripts/ocv-tools.mjs merge ${facts.queue?.n ?? "<pr#>"} --wait`
 
+const headMovedFix = (facts) => {
+  const n = facts.queue?.n ?? "<pr#>"
+  if (!facts.queue?.handoff) return waitAgain(facts)
+  const from = facts.queue.from ?? "<from>"
+  const to = facts.queue.to ?? "<to>"
+  if (facts.queue.merged)
+    return `PR #${n} already merged at ${to}. This clone recorded ${from}. Check that merge by hand. Do not run merge --wait again.`
+  return `Check the commits from ${from} to ${to}. If they are yours, run scripts/ocv-tools.mjs merge ${n} to queue and record the new head, then scripts/ocv-tools.mjs merge ${n} --wait.`
+}
+
+const githubHeadNote = (queue) =>
+  queue.queuedByGitHub
+    ? ` GitHub's queue entry is ${queue.queuedByGitHub}.`
+    : " GitHub's queue entry has no head for this clone to compare."
+
+const unrecordedHead = (facts) => {
+  const queue = facts.queue
+  if (queue?.kind !== "UNRECORDED_HEAD") return null
+  const note = githubHeadNote(queue)
+  if (queue.merged)
+    return `PR #${queue.n} merged at ${queue.head}.${note} This clone did not record that head.`
+  return `PR #${queue.n} is in the merge queue at ${queue.head}.${note} This clone did not record that head, so it is not reported merged.`
+}
+
+const unrecordedHeadFix = (facts) => {
+  const n = facts.queue?.n ?? "<pr#>"
+  if (facts.queue?.merged)
+    return `PR #${n} merged at ${facts.queue.head}. This clone did not record that head. Check the merge by hand. Do not close the issue from this result.`
+  return `Check the commits by hand. If they are yours, run scripts/ocv-tools.mjs merge ${n} to record the head, then scripts/ocv-tools.mjs merge ${n} --wait. This result does not close the issue.`
+}
+
 function row(spec) {
   return {
     kind: "precondition",
@@ -377,7 +408,16 @@ export const jobRows = [
       "HEAD_MOVED",
       (queue) => `PR #${queue.n} head moved from ${queue.from} to ${queue.to}.`
     ),
-    fix: waitAgain,
+    fix: headMovedFix,
+  }),
+  row({
+    id: "UNRECORDED_HEAD",
+    section: "6",
+    says: "A merge wait with no recorded head must not report a merged pull request it cannot vouch for.",
+    at: ["queue"],
+    needs: ["queue"],
+    check: unrecordedHead,
+    fix: unrecordedHeadFix,
   }),
   row({
     id: "CI_FAILED",

@@ -42,7 +42,7 @@ const SNAPSHOT_QUERY = `query ($owner: String!, $name: String!, $n: Int!) {
       headRefOid
       mergeCommit { oid }
       isInMergeQueue
-      mergeQueueEntry { state position }
+      mergeQueueEntry { state position headCommit { oid } }
       headRef {
         target {
           ... on Commit {
@@ -97,6 +97,7 @@ function queueSnapshot(ctx, repo, n, waited) {
     head: pr.headRefOid,
     inQueue: Boolean(pr.isInMergeQueue),
     queueState: pr.mergeQueueEntry?.state ?? null,
+    queuedHead: pr.mergeQueueEntry?.headCommit?.oid ?? null,
     ci: ci ? { status: ci.status, conclusion: ci.conclusion } : null,
     removed: removed ? { reason: removed.reason, at: removed.createdAt } : null,
     waited,
@@ -242,6 +243,33 @@ function writeQueuedHead(ctx, n, head) {
   ctx.ports.fs.write(path, `${head}\n`)
 }
 
+function pullSnapshot(pull, extra = {}) {
+  return {
+    state: pull.state,
+    head: pull.headRefOid,
+    inQueue: false,
+    queueState: null,
+    ci: null,
+    removed: null,
+    waited: 0,
+    ...extra,
+  }
+}
+
+function githubQueueHead(ctx, n) {
+  const repo = gh(
+    ctx,
+    "repo",
+    "view",
+    "--json",
+    "nameWithOwner",
+    "--jq",
+    ".nameWithOwner"
+  )
+  const snapshot = queueSnapshot(ctx, repo, n, 0)
+  return { inQueue: snapshot.inQueue, queuedByGitHub: snapshot.queuedHead }
+}
+
 function enqueue(ctx, n, head) {
   gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
   writeQueuedHead(ctx, n, head)
@@ -296,16 +324,26 @@ export function merge(ctx, n, { wait = false } = {}) {
         null,
         n,
         { kind: "HEAD_MOVED", from: queued, to: head },
-        {
-          state: pull.state,
-          head,
-          inQueue: false,
-          queueState: null,
-          ci: null,
-          removed: null,
-          waited: 0,
-        }
+        pullSnapshot(pull),
+        { handoff: true, merged: pull.state === "MERGED" }
       )
+    }
+    if (wait && !queued) {
+      const github = githubQueueHead(ctx, n)
+      if (pull.state === "MERGED" || github.inQueue) {
+        failWait(
+          ctx,
+          null,
+          n,
+          {
+            kind: "UNRECORDED_HEAD",
+            head,
+            merged: pull.state === "MERGED",
+            queuedByGitHub: github.queuedByGitHub,
+          },
+          pullSnapshot(pull, { inQueue: github.inQueue })
+        )
+      }
     }
     let repo = null
     const open = pull.state === "OPEN"

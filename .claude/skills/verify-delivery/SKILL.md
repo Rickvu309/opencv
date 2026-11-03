@@ -74,7 +74,7 @@ Constants are the code's switches: `Confirm` (the post-comment read), `TrustAt` 
 
 `scripts/ocv-tools/jobs/requeue.test.mjs` pins that same `state.requeued` guard: an infra rerun that passes queues the pull request once, and a second infra failure does not queue it again.
 
-`MergeWaitHandoff.cfg` is that same two-process check and now passes. `--all` runs it as `MergeWait.handoff.cfg`. The recorded head is `ocv-merge-wait/<pr>` in the git common dir. `merge --wait` reports `HEAD_MOVED`, not `MERGED`, when the live head differs, including when the pull request has already merged. `scripts/ocv-tools/jobs/merge.test.mjs` covers that two-step flow with a foreign push.
+`--all` runs that two-process check as `MergeWait.handoff.cfg`. The recorded head is `ocv-merge-wait/<pr>` in the git common dir. `merge --wait` reports `HEAD_MOVED`, not `MERGED`, when the live head differs, including when the pull request has already merged. The fix tells the agent to run `merge <n>` and then `merge <n> --wait` when the new commits are its own, and to check a foreign merge by hand when the pull request has already merged. `scripts/ocv-tools/jobs/merge.test.mjs` covers that two-step flow with a foreign push.
 
 ## Trace test
 
@@ -102,7 +102,7 @@ The trace names the code's step. In `TakeClaim.race.mutant.cfg`, `PostClaim` by 
 - Comments are trusted. Anyone who can comment can post a marker, so a forged release or claim frees or takes an issue (`ForeignRelease`, `ForeignClaim`). D1 still holds for the two takers.
 - Billing (`BILLING_BLOCKED`) and merge conflicts end the wait like any other refusal and are not separate states.
 - Bounds: two takers, at most 3 comments, 3 hours; one foreign push, 3 to 5 GitHub steps per run.
-- The recorded head lives in this clone's git common dir. A `merge --wait` on another machine has no record, so it trusts the live head.
+- The recorded head lives in this clone's git common dir. The model has no missing-record state: `RecordedHead = TRUE` means the file is always there, and the mutant sets it false so the second process trusts the live head. The code does not. When `merge --wait` has no record and the pull request is already merged or already in the queue, it refuses `UNRECORDED_HEAD`, names the live head, includes `mergeQueueEntry.headCommit` when GitHub still has that entry, and does not close the issue or print the MERGED line. `AddedToMergeQueueEvent` has no commit, so a merged pull request usually has nothing to compare.
 
 ## Coverage and sync
 
