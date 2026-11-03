@@ -1,11 +1,18 @@
 import assert from "node:assert/strict"
 import { execFileSync, spawnSync } from "node:child_process"
-import { readFileSync, readdirSync } from "node:fs"
+import {
+  cpSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  symlinkSync,
+} from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { SLOW } from "../packages/guards/run-tests.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
+import { GIT_ENV } from "./ocv-tools/jobs/push-checks.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const HELPER = "scripts/lib/temp-dir.mjs"
@@ -63,16 +70,26 @@ test("the scan flags a direct call and passes the helper and a helper user", () 
   )
 })
 
-test("the ocv-tools tests leave no temporary folder behind", (t) => {
-  const sandbox = tempDir(t, "temp-dirs-run-")
-  const before = readdirSync(sandbox).length
+function toolSuite() {
   const suite = tracked(
     "scripts/ocv-tools/*.test.mjs",
     "scripts/ocv-tools/**/*.test.mjs"
   ).filter((file) => file !== SLOW)
   assert.ok(suite.length > 10, "the ocv-tools test list is empty")
+  return suite
+}
+
+function gitQuiet(args) {
+  execFileSync("git", ["-c", "core.hooksPath=/dev/null", ...args], {
+    encoding: "utf8",
+  })
+}
+
+test("the ocv-tools tests leave no temporary folder behind", (t) => {
+  const sandbox = tempDir(t, "temp-dirs-run-")
+  const before = readdirSync(sandbox).length
   const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
-  const run = spawnSync(process.execPath, ["--test", ...suite], {
+  const run = spawnSync(process.execPath, ["--test", ...toolSuite()], {
     cwd: root,
     env: { ...env, TMPDIR: sandbox },
     encoding: "utf8",
@@ -85,4 +102,45 @@ test("the ocv-tools tests leave no temporary folder behind", (t) => {
     0,
     `the ocv-tools tests left ${left.length} entries in their temp directory (${before} before): ${left.slice(0, 5).join(", ")}`
   )
+})
+
+test("the ocv-tools tests pass while an unrelated merge worktree sits in the temp folder", (t) => {
+  const home = tempDir(t, "sweep-home-")
+  const mirror = path.join(home, "mirror")
+  const foreign = path.join(home, "tmp", "ocv-merge-999-deadbeef")
+  mkdirSync(path.join(home, "tmp"), { recursive: true })
+  gitQuiet(["clone", "--shared", "--no-checkout", root, mirror])
+  gitQuiet(["-C", mirror, "worktree", "add", "--detach", foreign, "HEAD"])
+  cpSync(path.join(root, "scripts"), path.join(foreign, "scripts"), {
+    recursive: true,
+  })
+  symlinkSync(
+    path.join(root, "node_modules"),
+    path.join(foreign, "node_modules")
+  )
+  const listed = execFileSync(
+    "git",
+    ["-C", mirror, "worktree", "list", "--porcelain"],
+    { encoding: "utf8" }
+  )
+  assert.ok(listed.includes(`worktree ${foreign}`))
+  const env = {
+    ...process.env,
+    HOME: home,
+    TMPDIR: path.join(home, "inner-tmp"),
+  }
+  delete env.NODE_TEST_CONTEXT
+  delete env.FORCE_COLOR
+  delete env.CLICOLOR_FORCE
+  for (const name of GIT_ENV) delete env[name]
+  const run = spawnSync(
+    process.execPath,
+    ["--test", "--test-concurrency=2", ...toolSuite()],
+    {
+      cwd: foreign,
+      env,
+      encoding: "utf8",
+    }
+  )
+  assert.equal(run.status, 0, run.stdout.slice(-2000) + run.stderr.slice(-1000))
 })

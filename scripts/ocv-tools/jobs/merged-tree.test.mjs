@@ -2,13 +2,12 @@ import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { EventEmitter } from "node:events"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
-import { homedir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
 import { tempDir } from "../../lib/temp-dir.mjs"
 import { realPorts } from "../ports/index.mjs"
 import { decide } from "../rules/index.mjs"
-import { fixture } from "./fixture.mjs"
+import { fixture as scriptedFixture } from "./fixture.mjs"
 import {
   failedGuards,
   mergeResultFacts,
@@ -16,6 +15,15 @@ import {
 } from "./merged-tree.mjs"
 import { GIT_ENV } from "./push-checks.mjs"
 import { stepless } from "./infra-rerun.mjs"
+
+const SWEEP_HOME = "/ocv-merged-tree-home"
+
+function fixture(over = {}) {
+  return scriptedFixture({
+    ...over,
+    env: { HOME: SWEEP_HOME, ...(over.env ?? {}) },
+  })
+}
 
 const OID = "a".repeat(40)
 const ci = (conclusion) => ({
@@ -385,6 +393,10 @@ const leftover = (home) => join(home, "tmp", "ocv-merge-1-deadbeef")
 const listing = (paths) =>
   paths.map((path) => `worktree ${path}\nHEAD abc\ndetached\n`).join("\n")
 
+function removedTrees(f) {
+  return f.effects("git", "worktree remove").map((e) => e.args.at(-1))
+}
+
 test("a leftover merged-tree worktree from another PR is swept by the next run", () => {
   const f = fixture({
     behind: 1,
@@ -392,15 +404,16 @@ test("a leftover merged-tree worktree from another PR is swept by the next run",
       if (cmd === "git" && a[0] === "worktree" && a[1] === "list")
         return {
           ok: true,
-          out: listing(["/repo", leftover(f.ctx.env.HOME ?? homedir())]),
+          out: listing(["/repo", leftover(f.ctx.env.HOME)]),
           err: "",
         }
     },
   })
   const r = f.call("merge", "91")
   assert.equal(r.code, 0, r.text)
-  const removed = f.effects("git", "worktree remove").map((e) => e.args.at(-1))
-  assert.ok(removed.includes(leftover(f.ctx.env.HOME ?? homedir())))
+  const removed = removedTrees(f)
+  assert.ok(removed.includes(leftover(f.ctx.env.HOME)))
+  assert.ok(removed.every((dir) => dir.startsWith(`${f.ctx.env.HOME}/`)))
   assert.match(r.text, /Removed 1 leftover merged-tree worktrees/)
 })
 
@@ -413,14 +426,15 @@ test("a merged-tree worktree younger than the guard limit is left alone", () => 
       if (cmd === "git" && a[0] === "worktree" && a[1] === "list")
         return {
           ok: true,
-          out: listing(["/repo", leftover(f.ctx.env.HOME ?? homedir())]),
+          out: listing(["/repo", leftover(f.ctx.env.HOME)]),
           err: "",
         }
     },
   })
   f.call("merge", "91")
-  const removed = f.effects("git", "worktree remove").map((e) => e.args.at(-1))
-  assert.ok(!removed.includes(leftover(f.ctx.env.HOME ?? homedir())))
+  const removed = removedTrees(f)
+  assert.ok(!removed.includes(leftover(f.ctx.env.HOME)))
+  assert.ok(removed.every((dir) => dir.startsWith(`${f.ctx.env.HOME}/`)))
 })
 
 test("a stop signal during the guard run removes the worktree and exits", () => {
@@ -509,7 +523,10 @@ function realCtx(clone, home, guard) {
   const ports = realPorts()
   const base = ports.proc.run
   ports.proc.run = (cmd, args, options = {}) => {
-    const env = Object.fromEntries(GIT_ENV.map((name) => [name, undefined]))
+    const env = {
+      ...Object.fromEntries(GIT_ENV.map((name) => [name, undefined])),
+      HOME: home,
+    }
     return base(cmd, args, { ...options, env: { ...options.env, ...env } })
   }
   return { cwd: clone, ports, env: { HOME: home }, guard }
