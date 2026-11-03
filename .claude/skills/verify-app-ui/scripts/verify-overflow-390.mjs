@@ -4,9 +4,8 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { launchBrowser } from "./lib/cdp.mjs"
-import { judgeRoutes, spills } from "./lib/overflow-390.mjs"
+import { judgeRoutes, offScreen, spills } from "./lib/overflow-390.mjs"
 import {
-  MARK,
   routesFor,
   seedWorstCase,
   signInWorstCase,
@@ -27,10 +26,31 @@ const pending = JSON.parse(
 )
 const today = new Date().toISOString().slice(0, 10)
 
-const collect = (mark) => `(() => {
-  const mark = ${JSON.stringify(mark)}
+const collect = (needle) => `(() => {
+  const needle = ${JSON.stringify(needle)}
+  const offScreen = ${offScreen.toString()}
   const innerWidth = window.innerWidth
   const scrollWidth = document.documentElement.scrollWidth
+  const signature = (el) => {
+    const parts = []
+    let node = el
+    while (node && node !== document.body && parts.length < 8) {
+      const slot = node.getAttribute("data-slot")
+      if (slot) {
+        parts.unshift('[data-slot="' + slot + '"]')
+        break
+      }
+      const tag = node.tagName.toLowerCase()
+      const parent = node.parentElement
+      const same = parent
+        ? [...parent.children].filter((child) => child.tagName === node.tagName)
+        : []
+      const nth = same.indexOf(node) + 1
+      parts.unshift(same.length > 1 ? tag + ":nth-of-type(" + nth + ")" : tag)
+      node = node.parentElement
+    }
+    return parts.join(" > ")
+  }
   const nodes = []
   for (const el of document.body.querySelectorAll("*")) {
     const style = getComputedStyle(el)
@@ -39,9 +59,7 @@ const collect = (mark) => `(() => {
     const hasText = [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim())
     if (!hasText) continue
     const rect = el.getBoundingClientRect()
-    if (rect.width < 1 || rect.height < 1) continue
-    if (rect.bottom < 0 || rect.top > window.innerHeight) continue
-    if (rect.right < 0 || rect.left > innerWidth) continue
+    if (offScreen(rect, innerWidth)) continue
     const parent = el.parentElement
     if (!parent) continue
     const parentOverflow = getComputedStyle(parent).overflowX
@@ -54,6 +72,7 @@ const collect = (mark) => `(() => {
       right: rect.right,
       parentLeft: box.left,
       parentRight: box.right,
+      selector: signature(el),
       text: (el.textContent || "").trim().slice(0, 48),
     })
   }
@@ -61,11 +80,11 @@ const collect = (mark) => `(() => {
     scrollWidth,
     innerWidth,
     nodes,
-    marked: (document.body.textContent || "").includes(mark),
+    marked: needle ? (document.body.textContent || "").includes(needle) : true,
   }
 })()`
 
-async function openCoachJob(page) {
+async function openCoachJob(page, needle) {
   const opened = await page.evaluate(`(() => {
     const add = document.querySelector('[aria-label="Add"]')
     if (!add) return "no-add"
@@ -83,9 +102,38 @@ async function openCoachJob(page) {
     row?.click()
   })()`)
   return page.waitFor(
-    `(document.body.textContent || "").includes(${JSON.stringify(MARK)})`,
+    `(document.body.textContent || "").includes(${JSON.stringify(needle)})`,
     8000
   )
+}
+
+async function openExpired(page, email) {
+  await page.evaluate(
+    `sessionStorage.setItem("opencv.signedOutEmail", ${JSON.stringify(email)})`
+  )
+  page.setIntercept((request) =>
+    request.method !== "OPTIONS" && request.url.includes("/api/profile")
+      ? {
+          status: 401,
+          body: {
+            ok: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "Authentication required",
+            },
+          },
+        }
+      : null
+  )
+  await page.evaluate(
+    "import('/src/lib/api.ts').then((module) => module.apiRequest('/api/profile')).catch((error) => ({ code: error && error.code, status: error && error.status }))"
+  )
+  const opened = await page.waitFor(
+    `document.querySelector('[role=dialog]') && (document.body.textContent || "").includes(${JSON.stringify(email)})`,
+    15000
+  )
+  page.setIntercept(null)
+  return opened
 }
 
 const browser = await launchBrowser()
@@ -104,30 +152,36 @@ try {
     await page.goto(`${webUrl}${route.path}`)
     await page.waitFor("document.querySelector('[data-slot=app-shell]')", 15000)
     await page.sleep(400)
-    if (route.openJob) await openCoachJob(page)
+    if (route.openJob) await openCoachJob(page, route.needle)
+    if (route.openExpired) await openExpired(page, route.needle)
     await page.sleep(300)
-    const shot = await page.evaluate(collect(MARK))
+    const shot = await page.evaluate(collect(route.needle ?? ""))
     const hits = spills(shot)
     const result = {
       id: route.id,
       path: route.path,
-      mark: route.mark,
+      needle: route.needle ?? null,
       marked: Boolean(shot.marked),
+      hits,
       spills: hits.length,
       scrollWidth: shot.scrollWidth,
       innerWidth: shot.innerWidth,
-      sample: hits.slice(0, 4).map((hit) => hit.text ?? hit.kind),
+      sample: hits
+        .slice(0, 4)
+        .map((hit) =>
+          hit.selector ? `${hit.selector} ${hit.text}` : hit.kind
+        ),
     }
     results.push(result)
     const problems = judgeRoutes(
       [result],
-      pending.filter((entry) => entry.id === route.id),
+      pending.filter((entry) => entry.route === route.id),
       today
     )
     const ok = problems.length === 0
     if (!ok) failed = true
     console.log(
-      `${ok ? "PASS" : "FAIL"} ${route.id} spills=${result.spills} marked=${result.marked} width=${shot.scrollWidth}/${shot.innerWidth}${problems.length ? ` ${problems.join("; ")}` : ""}`
+      `${ok ? "PASS" : "FAIL"} ${route.id} spills=${result.spills} marked=${result.marked} width=${shot.scrollWidth}/${shot.innerWidth}${problems.length ? ` ${problems.join("; ")}` : ""}${result.sample.length ? ` sample=${result.sample.join(" | ")}` : ""}`
     )
   }
   await page.close()

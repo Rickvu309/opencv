@@ -30,6 +30,18 @@ const featureFiles = () =>
 const MISTAKE = `const row = "flex h-7 items-center rounded-md px-2 hover:bg-sidebar-accent"
 export const menu = <Button size="icon-sm" aria-label="Menu" />`
 
+export function pinnedCountProblems(file, found, pinned) {
+  if (found === 0)
+    return `${file} no longer has a small target. Remove its touch-targets entry from apps/web/src/test/nav-pending.json.`
+  if (!Number.isInteger(pinned) || pinned < 1)
+    return `${file} is pending with no count. Pin ${found}.`
+  if (found > pinned)
+    return `${file} has ${found} small targets but the list allows ${pinned}. The list only shrinks.`
+  if (found < pinned)
+    return `${file} has ${found} small targets. Lower its pinned count from ${pinned} to ${found}.`
+  return ""
+}
+
 test("a nav row or icon button that is 28px tall on a phone is a small target", () => {
   assert.equal(smallTargets(MISTAKE).length, 2)
 })
@@ -44,6 +56,17 @@ test("a non-interactive 28px block is not a target", () => {
   assert.deepEqual(smallTargets('const a = "mx-2 mt-3 h-7"'), [])
 })
 
+test("a pending file can only shrink its pinned small-target count", () => {
+  const file = "apps/web/src/features/apply/apply-board.tsx"
+  assert.equal(pinnedCountProblems(file, 2, 2), "")
+  assert.match(pinnedCountProblems(file, 3, 2), /only shrinks/)
+  assert.match(
+    pinnedCountProblems(file, 1, 2),
+    /Lower its pinned count from 2 to 1/
+  )
+  assert.match(pinnedCountProblems(file, 0, 2), /no longer has a small target/)
+})
+
 test("every interactive control in features is 44px on a phone", () => {
   const problems = featureFiles().flatMap((file) => {
     const found = smallTargets(
@@ -52,11 +75,8 @@ test("every interactive control in features is 44px on a phone", () => {
     )
     const entry = pending.find((item) => item.file === file)
     if (entry) {
-      assert.ok(
-        found.length > 0,
-        `${file} no longer has a small target. Remove its touch-targets entry from apps/web/src/test/nav-pending.json.`
-      )
-      return []
+      const problem = pinnedCountProblems(file, found.length, entry.count)
+      return problem ? [problem] : []
     }
     return found.map(
       (item) =>

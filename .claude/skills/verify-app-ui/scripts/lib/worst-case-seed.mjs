@@ -88,24 +88,35 @@ export async function seedWorstCase({ page, apiUrl }) {
 export function routesFor(jobId) {
   const value = encodeURIComponent(UNBROKEN)
   return [
-    { id: "jobs", path: "/jobs", mark: false },
-    { id: "inbox", path: "/inbox", mark: false },
-    { id: "proofs", path: "/proofs", mark: false },
-    { id: "paper", path: "/paper", mark: true },
-    { id: "apply", path: "/apply", mark: true },
-    { id: "apply-detail", path: `/apply/${jobId}`, mark: true },
+    { id: "jobs", path: "/jobs" },
+    { id: "inbox", path: "/inbox" },
+    { id: "proofs", path: "/proofs" },
+    { id: "paper", path: "/paper", needle: MARK },
+    { id: "apply", path: "/apply", needle: MARK },
+    { id: "apply-detail", path: `/apply/${jobId}`, needle: MARK },
     {
       id: "apply-filters",
       path: `/apply?company=${value}&location=${value}`,
-      mark: true,
+      needle: MARK,
     },
     {
       id: "apply-calendar",
       path: "/apply?view=calendar&span=week",
-      mark: true,
+      needle: MARK,
     },
-    { id: "pitch", path: "/pitch", mark: false },
-    { id: "settings", path: "/settings", mark: false },
-    { id: "coach", path: "/coach", mark: true, openJob: true },
+    {
+      id: "apply-calendar-month",
+      path: "/apply?view=calendar&span=month",
+      needle: MARK,
+    },
+    { id: "pitch", path: "/pitch" },
+    { id: "settings", path: "/settings" },
+    { id: "coach", path: "/coach", needle: MARK, openJob: true },
+    {
+      id: "session-expired",
+      path: "/settings",
+      needle: EMAIL,
+      openExpired: true,
+    },
   ]
 }

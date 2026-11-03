@@ -1,3 +1,9 @@
+export function offScreen(rect, innerWidth) {
+  if (rect.width < 1 || rect.height < 1) return true
+  if (rect.right < 0 || rect.left > innerWidth) return true
+  return false
+}
+
 export function spills({ scrollWidth, innerWidth, nodes }) {
   const hits = []
   if (scrollWidth > innerWidth)
@@ -12,6 +18,14 @@ export function spills({ scrollWidth, innerWidth, nodes }) {
   return hits
 }
 
+export function sameSpill(hit, entry) {
+  return (
+    hit.kind !== "document" &&
+    hit.selector === entry.selector &&
+    String(hit.text ?? "").startsWith(entry.text)
+  )
+}
+
 export const badFixture = [
   {
     name: "a page wider than the phone",
@@ -22,28 +36,43 @@ export const badFixture = [
 
 export function judgeRoutes(results, pending, today) {
   const problems = []
-  const byId = new Map()
+  const seen = new Set()
   for (const entry of pending) {
-    if (byId.has(entry.id)) problems.push(`${entry.id} is listed twice`)
-    byId.set(entry.id, entry)
+    const key = `${entry.route}\0${entry.selector}\0${entry.text}`
+    if (!entry.selector || !entry.text)
+      problems.push(`${entry.route} pending entry names no element`)
+    if (seen.has(key))
+      problems.push(`${entry.route} ${entry.selector} is listed twice`)
+    seen.add(key)
   }
-  const seen = new Set(results.map((result) => result.id))
+  const measured = new Set(results.map((result) => result.id))
   for (const entry of pending)
-    if (!seen.has(entry.id))
-      problems.push(`${entry.id} is pending but was not measured`)
+    if (!measured.has(entry.route))
+      problems.push(`${entry.route} is pending but was not measured`)
   for (const result of results) {
-    const entry = byId.get(result.id)
-    const expired = entry ? entry.expires < today : false
-    if (result.mark && !result.marked)
+    if (result.needle && !result.marked)
       problems.push(`${result.id} did not show the long value`)
-    if (result.spills > 0 && !entry)
-      problems.push(`${result.id} spills and is not pending`)
-    if (result.spills > 0 && expired)
-      problems.push(
-        `${result.id} is still spilling and its pending entry expired on ${entry.expires}`
-      )
-    if (result.spills === 0 && entry)
-      problems.push(`${result.id} no longer spills. Remove its pending entry`)
+    const hits = result.hits ?? []
+    const entries = pending.filter((entry) => entry.route === result.id)
+    for (const hit of hits) {
+      if (hit.kind === "document") {
+        problems.push(`${result.id} is wider than the phone and is not pending`)
+        continue
+      }
+      if (!entries.some((entry) => sameSpill(hit, entry)))
+        problems.push(`${result.id} ${hit.selector} spills and is not pending`)
+    }
+    for (const entry of entries) {
+      const matched = hits.some((hit) => sameSpill(hit, entry))
+      if (matched && entry.expires < today)
+        problems.push(
+          `${result.id} ${entry.selector} is still spilling and its pending entry expired on ${entry.expires}`
+        )
+      if (!matched)
+        problems.push(
+          `${result.id} ${entry.selector} no longer spills. Remove its pending entry`
+        )
+    }
   }
   return problems
 }

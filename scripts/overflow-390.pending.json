@@ -1,7 +1,9 @@
 [
   {
-    "id": "apply-detail",
-    "issue": "#1034",
-    "expires": "2026-12-03"
+    "route": "apply-detail",
+    "selector": "div:nth-of-type(1) > main > div > div > div > div > div:nth-of-type(1) > span",
+    "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "issue": "#1037",
+    "expires": "2026-12-01"
   }
 ]
