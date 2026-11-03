@@ -34,6 +34,35 @@ function prMetadata(facts) {
   return `the pull request details are wrong: ${problems.join("; ")}`
 }
 
+const CLOSING_KEYWORD =
+  /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#(\d+)\b/gi
+
+function closedByPull(pull) {
+  const closes = new Set((pull.closing ?? []).map(Number))
+  if (pull.issue) closes.add(Number(pull.issue))
+  for (const m of (pull.body ?? "").matchAll(CLOSING_KEYWORD))
+    closes.add(Number(m[1]))
+  return closes
+}
+
+function pinnedFailures(facts) {
+  const closes = closedByPull(facts.pull)
+  const problems = []
+  for (const pin of facts.pins) {
+    if (pin.issue == null) problems.push(`${pin.at} names no issue`)
+    else if (closes.has(pin.issue))
+      problems.push(
+        `${pin.at} cites #${pin.issue}, which this pull request closes`
+      )
+    else if (pin.state !== "OPEN")
+      problems.push(
+        `${pin.at} cites #${pin.issue}, which is ${String(pin.state ?? "missing").toLowerCase()}`
+      )
+  }
+  if (!problems.length) return null
+  return `an expected failure (it.fails) must cite an issue that stays open after this merge: ${problems.join("; ")}`
+}
+
 export const pullRows = [
   rule({
     id: "READY_FOR_HUMAN",
@@ -52,5 +81,15 @@ export const pullRows = [
     check: prMetadata,
     fix: () =>
       "gh pr edit <pr> --title 'type: text (#<n>)' --body 'Closes #<n>'",
+  }),
+  rule({
+    id: "PIN_ISSUE_OPEN",
+    section: "4",
+    says: "Every expected failure (it.fails) in the head tree cites an open issue that the pull request does not close.",
+    at: ["pr"],
+    needs: ["pull", "pins"],
+    check: pinnedFailures,
+    fix: () =>
+      "Fix the bug and turn the it.fails back into it, or cite the open issue that still tracks it and drop that issue from Closes",
   }),
 ]

@@ -36,3 +36,11 @@ export async function transaction<T>(fn: () => Promise<T>): Promise<T> {
     transactionDb.run(tx as unknown as AppDatabase, fn)
   )
 }
+
+export async function savepoint<T>(fn: () => Promise<T>): Promise<T> {
+  const outer = transactionDb.getStore()
+  if (!outer) return fn()
+  return outer.transaction((inner) =>
+    transactionDb.run(inner as unknown as AppDatabase, fn)
+  )
+}

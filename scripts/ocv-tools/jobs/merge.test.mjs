@@ -118,6 +118,37 @@ test("a closed issue refuses; failed closure is reported", () => {
   assert.equal(bad.call("merge", "91").code, 1)
   assert.match(bad.call("merge", "91").text, /still open/)
 })
+test("an expected failure citing a closed or closing issue refuses the merge", () => {
+  const pinned = (issue) =>
+    `it.fails(\n  "#${issue}: a known bug stays pinned",\n  async () => {}\n)\n`
+  const closing = fixture({
+    headFiles: { "apps/api/src/a.test.ts": pinned(90) },
+  })
+  const r = closing.call("merge", "91")
+  assert.equal(r.code, 2)
+  assert.match(
+    r.text,
+    /PIN_ISSUE_OPEN.*a\.test\.ts:1 cites #90, which this pull request closes/s
+  )
+  assert.equal(closing.effects("gh", "pr merge").length, 0)
+  const closed = fixture({
+    headFiles: {
+      "apps/api/src/b.test.ts":
+        "onServer(\n  `${KNOWN.issue}: a race`,\n)\nit.fails(`${KNOWN.issue}: pinned`, () => {})\n",
+      "apps/api/src/test/known.ts": 'export const KNOWN = { issue: "#77" }\n',
+    },
+    issueStates: { 77: "CLOSED" },
+  })
+  assert.match(
+    closed.call("merge", "91").text,
+    /b\.test\.ts:4 cites #77, which is closed/
+  )
+  const open = fixture({
+    headFiles: { "apps/api/src/a.test.ts": pinned(77) },
+    issueStates: { 77: "OPEN" },
+  })
+  assert.doesNotMatch(open.call("merge", "91").text, /PIN_ISSUE_OPEN/)
+})
 test("draft, human review, author and CI failures cannot merge", () => {
   for (const over of [
     { isDraft: true },

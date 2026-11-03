@@ -28,6 +28,7 @@ const clean = {
     deleted: { files: 0, lines: 0, total: 100 },
   },
   commits: { trailers: "", oversize: "" },
+  pins: [],
 }
 
 test("a clean pull request passes with exit 0", () => {
@@ -78,4 +79,15 @@ test("a clean pull request prints no annotation", () => {
   const r = policyReport(91, clean, { annotate: true })
   assert.equal(r.exit ?? 0, 0)
   assert.ok(r.lines.every((l) => !l.startsWith("::")))
+})
+
+test("policy refuses an expected failure whose issue this pull request closes", () => {
+  const r = policyReport(91, {
+    ...clean,
+    pins: [{ at: "apps/api/src/a.test.ts:3", issue: 90, state: "OPEN" }],
+  })
+  assert.equal(r.exit, 2)
+  const line = r.lines.find((l) => l.startsWith("PIN_ISSUE_OPEN:"))
+  assert.ok(line, r.lines.join("\n"))
+  assert.match(line, /a\.test\.ts:3 cites #90, which this pull request closes/)
 })

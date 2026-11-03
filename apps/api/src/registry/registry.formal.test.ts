@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 
 import {} from "@workspace/domain"
 import {} from "drizzle-orm"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
 
 import { getDb, withDatabase } from "../db/context.js"
@@ -10,8 +10,6 @@ import { activity, chats, idempotency } from "../db/schema.js"
 import {} from "./errors.js"
 import { Registry } from "./registry.js"
 import {
-  KNOWN_FINDING,
-  isKnownFinding,
   NS,
   REAL,
   SEEDS,
@@ -21,7 +19,6 @@ import {
   describeError,
   measure,
   newPerson,
-  noteCaller,
   race,
   registry,
   registerBackendHooks,
@@ -97,18 +94,15 @@ describe("P1: a keyed command runs once and every caller gets the replay", () =>
                 delaysFor(seed, n)
               )
             )
-            outcomes.forEach((o) => noteCaller(label, o))
 
             expect(
               await rowsOf(spec.table, userId),
               `${label}: the effect ran once`
             ).toBe(unit)
-            const raw = outcomes.filter(
-              (o) => !o.ok && !isKnownFinding(o.error)
-            )
+            const raw = outcomes.filter((o) => !o.ok)
             expect(
               raw.map((o) => (o.ok ? "" : describeError(o.error))),
-              `${label}: raw database errors other than the pinned finding`
+              `${label}: raw database errors`
             ).toEqual([])
             const answers = outcomes.flatMap((o) => (o.ok ? [o.value] : []))
             expect(
@@ -247,6 +241,22 @@ async function insertRivalWinnerActivity(userId: string, key: string) {
     })
 }
 
+type KeyLookup = {
+  replayByKey: (userId: string, key: string) => Promise<unknown>
+}
+
+function rivalCommitsAfterLookup(
+  local: Registry,
+  rival: (userId: string, key: string) => Promise<void>
+) {
+  vi.spyOn(local as unknown as KeyLookup, "replayByKey").mockImplementationOnce(
+    async (userId, key) => {
+      await rival(userId, key)
+      return null
+    }
+  )
+}
+
 async function insertRivalWinnerStored(userId: string, key: string) {
   await getDb()
     .insert(idempotency)
@@ -254,8 +264,6 @@ async function insertRivalWinnerStored(userId: string, key: string) {
 }
 
 describe("P1: the key conflict path", () => {
-  const pinnedFinding = it.fails
-
   it("replays the winner when the command is not inside a transaction (activity row)", async () => {
     await withDatabase(backend.db, async () => {
       const { id: userId, person } = await newPerson()
@@ -304,56 +312,56 @@ describe("P1: the key conflict path", () => {
     })
   })
 
-  pinnedFinding(
-    `${KNOWN_FINDING.issue}: a lost key race inside a transaction replays the winner (activity row)`,
+  it("a lost key race inside a transaction replays the winner and drops the loser's effect (activity row)", async () => {
+    await withDatabase(backend.db, async () => {
+      const { id: userId, person } = await newPerson()
+      const key = `key-${randomUUID()}`
+      const local = steerableChatsRowCommand(
+        { draft: true },
+        "formal.transactional"
+      )
+      rivalCommitsAfterLookup(local, insertRivalWinnerActivity)
+      const result = await local.execute({
+        name: "formal.transactional",
+        input: { key },
+        actor: person,
+        idempotencyKey: key,
+      })
+      const rows = await activityKeyed(userId, key)
+      expect(rows.length).toBe(1)
+      expect(result.activityId).toBe(rows[0]?.id)
+      expect(result.output).toEqual({ rival: true })
+      expect(await rowsOf("chats", userId)).toBe(0)
+    })
+  })
+
+  it("a lost key race inside a transaction replays the winner and drops the loser's effect (stored result)", async () => {
+    await withDatabase(backend.db, async () => {
+      const { id: userId, person } = await newPerson()
+      const key = `key-${randomUUID()}`
+      const local = steerableChatsRowCommand(
+        { draft: false },
+        "formal.transactional.stored"
+      )
+      rivalCommitsAfterLookup(local, insertRivalWinnerStored)
+      const result = await local.execute({
+        name: "formal.transactional.stored",
+        input: { key },
+        actor: person,
+        idempotencyKey: key,
+      })
+      expect((await storedKeyed(userId, key)).length).toBe(1)
+      expect(result.output).toEqual({ rival: true })
+      expect(await rowsOf("chats", userId)).toBe(0)
+    })
+  })
+
+  const onRealServer = REAL ? it : it.skip
+  onRealServer(
+    "callers that pass the key lookup together all get the replay",
     async () => {
       await withDatabase(backend.db, async () => {
         const { id: userId, person } = await newPerson()
-        const key = `key-${randomUUID()}`
-        const local = steerableChatsRowCommand(
-          { draft: true, beforeEffect: insertRivalWinnerActivity },
-          "formal.transactional"
-        )
-        const result = await local.execute({
-          name: "formal.transactional",
-          input: { key },
-          actor: person,
-          idempotencyKey: key,
-        })
-        const rows = await activityKeyed(userId, key)
-        expect(rows.length).toBe(1)
-        expect(result.activityId).toBe(rows[0]?.id)
-      })
-    }
-  )
-
-  pinnedFinding(
-    `${KNOWN_FINDING.issue}: a lost key race inside a transaction replays the winner (stored result)`,
-    async () => {
-      await withDatabase(backend.db, async () => {
-        const { person } = await newPerson()
-        const key = `key-${randomUUID()}`
-        const local = steerableChatsRowCommand(
-          { draft: false, beforeEffect: insertRivalWinnerStored },
-          "formal.transactional.stored"
-        )
-        const result = await local.execute({
-          name: "formal.transactional.stored",
-          input: { key },
-          actor: person,
-          idempotencyKey: key,
-        })
-        expect(result.output).toEqual({ rival: true })
-      })
-    }
-  )
-
-  const pinnedFindingOnRealServer = REAL ? it.fails : it.skip
-  pinnedFindingOnRealServer(
-    `${KNOWN_FINDING.issue}: callers that pass the key lookup together all get the replay`,
-    async () => {
-      await withDatabase(backend.db, async () => {
-        const { person } = await newPerson()
         const key = `key-${randomUUID()}`
         const n = 3
         let arrived = 0
@@ -391,6 +399,10 @@ describe("P1: the key conflict path", () => {
         expect(
           outcomes.map((o) => (o.ok ? "replay" : describeError(o.error)))
         ).toEqual(Array(n).fill("replay"))
+        expect(await rowsOf("chats", userId)).toBe(1)
+        const answers = outcomes.flatMap((o) => (o.ok ? [o.value] : []))
+        for (const answer of answers)
+          expect(answer.activityId).toBe(answers[0]?.activityId)
       })
     }
   )
