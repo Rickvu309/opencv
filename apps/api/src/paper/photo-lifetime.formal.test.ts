@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm"
 import { Pool } from "pg"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import { deleteAccount } from "../account/store.js"
+import { deleteAccount } from "../account/index.js"
 import {
   activity,
   chats,
@@ -279,7 +279,9 @@ describe("photo lifetime", () => {
           if (waiting) break
           const settled = await Promise.race([
             pending.then(() => true),
-            new Promise<boolean>((resolve) => setTimeout(resolve, 25)),
+            new Promise<boolean>((resolve) => {
+              setTimeout(() => resolve(false), 25)
+            }),
           ])
           if (settled) break
         }
@@ -330,7 +332,9 @@ describe("photo lifetime", () => {
           if (waiting) break
           const settled = await Promise.race([
             pending.then(() => true),
-            new Promise<boolean>((resolve) => setTimeout(resolve, 25)),
+            new Promise<boolean>((resolve) => {
+              setTimeout(() => resolve(false), 25)
+            }),
           ])
           if (settled) break
         }

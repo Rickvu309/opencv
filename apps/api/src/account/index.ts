@@ -8,10 +8,11 @@ export {
 } from "./queries.js"
 export { readUsage, assertDayCap } from "./usage.js"
 export {
-  toProfile,
-  writeProfileDefaults,
+  deleteAccount,
   getProfileRow,
   markInboxSkipped,
+  toProfile,
+  writeProfileDefaults,
 } from "./store.js"
 export {
   createAccountRoutes,

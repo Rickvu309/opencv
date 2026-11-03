@@ -206,15 +206,15 @@ $fn$ LANGUAGE plpgsql;
 --> statement-breakpoint
 CREATE OR REPLACE FUNCTION "opencv_app"."sync_idempotency_photo_refs"() RETURNS trigger AS $fn$
 DECLARE
-	source text;
+	v_source text;
 BEGIN
 	IF TG_OP = 'DELETE' THEN
 		DELETE FROM "opencv_app"."photo_refs" WHERE "source" = 'idempotency.result:' || OLD."user_id" || ':' || OLD."key";
 		RETURN OLD;
 	END IF;
-	source := 'idempotency.result:' || NEW."user_id" || ':' || NEW."key";
+	v_source := 'idempotency.result:' || NEW."user_id" || ':' || NEW."key";
 	PERFORM "opencv_app"."replace_photo_refs"(
-		source,
+		v_source,
 		NEW."user_id",
 		"opencv_app"."photo_text"(NEW."result"),
 		true

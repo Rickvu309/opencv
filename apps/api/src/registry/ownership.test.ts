@@ -35,7 +35,8 @@ function maySeedAnyTable(relative: string) {
     relative.endsWith(".test.ts") ||
     relative.endsWith(".type-test.ts") ||
     relative.startsWith(`test${path.sep}`) ||
-    /^registry[\\/]coverage-/.test(relative)
+    /^registry[\\/]coverage-/.test(relative) ||
+    relative === path.join("paper", "photo-lifetime.support.ts")
   )
 }
 
