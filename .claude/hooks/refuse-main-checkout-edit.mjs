@@ -6,6 +6,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 
 const GIT_TIMEOUT_MS = 10_000
+const LOCAL_CONFIG_PATHS = new Set([".claude/settings.local.json"])
 const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"])
 const SEPARATORS = new Set([";", "&", "|", "\n"])
 const DIRECTORY_CHANGERS = new Set(["cd", "pushd"])
@@ -23,7 +24,7 @@ export function refusalMessage(target, mainRoot) {
 
 function stripHeredocBodies(command) {
   return command.replace(
-    /<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\s*\2(?=\n|$)/g,
+    /<<-?\s*(['"]?)([^\s'"<>|;&()]+)\1[^\n]*\n[\s\S]*?\n\s*\2(?=\n|$)/g,
     (match) => match.split("\n")[0]
   )
 }
@@ -220,6 +221,10 @@ export function mainCheckoutOf(cwd) {
   }
 }
 
+function isLocalConfig(mainRoot, resolved) {
+  return LOCAL_CONFIG_PATHS.has(path.relative(mainRoot, resolved))
+}
+
 export function refusal(input, findMain = mainCheckoutOf) {
   const cwd = input.cwd || process.cwd()
   const targets = targetsOf(input)
@@ -228,6 +233,7 @@ export function refusal(input, findMain = mainCheckoutOf) {
   if (!mainRoot) return null
   for (const target of targets) {
     const resolved = resolveReal(target, cwd)
+    if (isLocalConfig(mainRoot, resolved)) continue
     if (isInside(mainRoot, resolved)) return refusalMessage(resolved, mainRoot)
   }
   return null

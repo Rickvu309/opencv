@@ -141,8 +141,21 @@ test("a shell command that reads, or writes elsewhere, is allowed", () => {
     `echo $HOME > $FILE`,
     `git -C ${main} status`,
     `cat <<'EOF' > ${path.join(worktree, "note.txt")}\nbody > ${target}\nEOF`,
+    `cat > ${path.join(outside, "body.md")} <<'PR-BODY'\n- the hook > the old rule\nPR-BODY`,
+    `cat > ${path.join(outside, "body.md")} <<"EOF"\n- the hook > the old rule\nEOF`,
+    `cat > ${path.join(outside, "body.md")} <<-X\n- the hook > the old rule\nX`,
+    `cat > ${path.join(outside, "body.md")} <<'END.md'\n- the hook > the old rule\nEND.md`,
   ])
     assert.equal(runHook(bash(command, main)).code, 0, command)
+})
+
+test("the local settings file in the main checkout is allowed, the tracked settings are not", () => {
+  const local = path.join(main, ".claude", "settings.local.json")
+  const tracked = path.join(main, ".claude", "settings.json")
+  assert.equal(runHook(edit("Write", local, main)).code, 0)
+  assert.equal(runHook(bash(`echo {} > ${local}`, main)).code, 0)
+  assert.equal(runHook(edit("Write", tracked, main)).code, 2)
+  assert.equal(runHook(edit("Write", `${local}.bak`, main)).code, 2)
 })
 
 test("the shell reader finds the written files and nothing else", () => {
