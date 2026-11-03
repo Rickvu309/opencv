@@ -1,0 +1,11 @@
+{
+  "module": "photo-sweep.ts",
+  "actions": {
+    "Attach": "attachPhoto",
+    "Sweep": "sweepUnattachedPhotos",
+    "SweepDrop": "sweepUnattachedPhotos"
+  },
+  "mutants": {
+    "": 12
+  }
+}
