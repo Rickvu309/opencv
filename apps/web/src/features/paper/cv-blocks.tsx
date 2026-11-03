@@ -246,7 +246,7 @@ function ExperienceGhost({
           data-cv-section={blockId}
           data-cv-size="entry"
           data-cv-field="role"
-          className="h-auto min-h-0 w-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0"
+          className="h-auto min-h-0 w-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 max-md:min-h-11"
           onInput={create}
         />
         <span className="ms-auto inline-grid w-max shrink-0">
@@ -263,7 +263,7 @@ function ExperienceGhost({
             placeholder="Dates"
             data-cv-size="dates"
             data-cv-field="period"
-            className="col-start-1 row-start-1 h-auto min-h-0 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0"
+            className="col-start-1 row-start-1 h-auto min-h-0 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 max-md:min-h-11"
             onInput={create}
           />
         </span>
@@ -300,7 +300,7 @@ function PlainGhost({
       placeholder={placeholder}
       data-cv-section={blockId}
       data-cv-size="note"
-      className="mt-[9px] h-auto min-h-0 w-full rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0"
+      className="mt-[9px] h-auto min-h-0 w-full rounded-none border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 max-md:min-h-11"
       onInput={(event) => {
         if (made.current) return
         const value = event.currentTarget.value
@@ -470,7 +470,7 @@ function EntryRow({
           type="button"
           variant="ghost"
           data-cv-joined=""
-          className="h-auto min-h-0 justify-start rounded-none p-0 text-start shadow-none"
+          className="h-auto min-h-0 justify-start rounded-none p-0 text-start shadow-none max-md:min-h-11"
           onClick={(event) => {
             dispatch({ type: "right", on: true })
             const row = event.currentTarget.parentElement

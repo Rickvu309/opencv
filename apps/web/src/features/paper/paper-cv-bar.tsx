@@ -79,7 +79,7 @@ export function CvEditorBar({
         <Button
           type="button"
           variant="link"
-          className="h-auto p-0 text-[13.5px] leading-4 font-normal"
+          className="h-auto p-0 text-[13.5px] leading-4 font-normal max-md:min-h-11"
           onClick={onBack}
         >
           Paper
@@ -102,7 +102,7 @@ export function CvEditorBar({
               value={name}
               onChange={(event) => onName(event.target.value)}
               onBlur={() => onCommitName()}
-              className="col-start-1 row-start-1 h-4 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 text-[13.5px] leading-4 shadow-none focus-visible:border-transparent focus-visible:ring-0 md:text-[13.5px]"
+              className="col-start-1 row-start-1 h-4 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 text-[13.5px] leading-4 shadow-none focus-visible:border-transparent focus-visible:ring-0 max-md:h-11 md:text-[13.5px]"
             />
           </span>
         </span>
@@ -113,7 +113,7 @@ export function CvEditorBar({
           aria-label="Favorite"
           aria-pressed={favorite}
           disabled={favoritePending}
-          className="size-[26px] shrink-0 rounded-[6px] p-0"
+          className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
           onClick={onFavorite}
         >
           <Star
@@ -129,7 +129,7 @@ export function CvEditorBar({
                 variant="ghost"
                 size="icon"
                 aria-label="More"
-                className="size-[26px] shrink-0 rounded-[6px] p-0"
+                className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
               >
                 <Ellipsis className="size-4" aria-hidden="true" />
               </Button>
@@ -177,7 +177,7 @@ export function CvEditorBar({
             variant="ghost"
             size="icon"
             aria-label="Change template"
-            className="size-[15px] shrink-0 rounded-none p-0"
+            className="size-[15px] shrink-0 rounded-none p-0 max-md:size-11"
             onClick={onGallery}
           >
             <SlidersHorizontal className="size-[15px]" aria-hidden="true" />
@@ -195,7 +195,7 @@ export function CvEditorBar({
               : "Could not copy the link. Try again."
           }
           aria-label="Copy link"
-          className="size-[26px] shrink-0 rounded-[6px] p-0"
+          className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
         >
           <Link2 className="size-4" aria-hidden="true" />
         </CopyButton>
@@ -204,7 +204,7 @@ export function CvEditorBar({
           variant="ghost"
           size="icon"
           aria-label="Notifications"
-          className="size-[26px] shrink-0 rounded-[6px] p-0"
+          className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
           onClick={() => toast("Notifications are not on yet.")}
         >
           <Bell className="size-4" aria-hidden="true" />

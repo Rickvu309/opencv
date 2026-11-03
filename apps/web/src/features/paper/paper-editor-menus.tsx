@@ -56,7 +56,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import { cn } from "@workspace/ui/lib/utils"
 
 export { PaperSlashMenu } from "./paper-editor-slash.tsx"
 

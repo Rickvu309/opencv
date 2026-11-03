@@ -27,7 +27,6 @@ import {
 } from "@workspace/ui/components/dialog"
 import { toast } from "@workspace/ui/components/sonner"
 
-import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
 import { createChat } from "@/features/coach/chat-api.ts"
 import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { reportRejected } from "@/lib/command-failure.ts"
@@ -164,13 +163,14 @@ export function PaperCvEditor({
   initial,
   pages,
   onBack,
+  seedName = "",
 }: {
   initial: PaperView
   pages: PaperPages
   onBack: () => void
+  seedName?: string
 }) {
   const run = useRunCommand()
-  const profile = useShellProfile()
   const shareLink = useShareLink(initial.id)
   const { openChat } = useChatStore()
   const queryClient = useQueryClient()
@@ -472,7 +472,7 @@ export function PaperCvEditor({
               value={{
                 showPhoto: previewTemplate(state.templateId) === "with-photo",
                 askCoach,
-                seedName: profile.name,
+                seedName,
               }}
             >
               {client ? (
