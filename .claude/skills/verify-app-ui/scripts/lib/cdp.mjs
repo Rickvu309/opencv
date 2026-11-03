@@ -220,6 +220,7 @@ export async function launchBrowser({ startDeadlineMs, extraArgs = [] } = {}) {
       })
       await call("Input.dispatchKeyEvent", { type: "keyUp", ...base })
     }
+    const insertText = (text) => call("Input.insertText", { text })
     const mouse = (mouseEventType, x, y, clickCount = 1) =>
       call("Input.dispatchMouseEvent", {
         type: mouseEventType,
@@ -260,6 +261,7 @@ export async function launchBrowser({ startDeadlineMs, extraArgs = [] } = {}) {
       goto,
       waitFor,
       key,
+      insertText,
       mouse,
       hover,
       screenshot,

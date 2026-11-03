@@ -131,6 +131,27 @@ test("a stale exception fails because the property now matches", () => {
   assert.match(result.mismatches[0].app, /stale/)
 })
 
+test("an exception with an index hides only the text at that index", () => {
+  const twice = layout([
+    text({ text: "Same words", fontSize: 15 }),
+    text({ text: "Same words", fontSize: 11 }),
+  ])
+  const measured = [
+    text({ text: "Same words", fontSize: 11 }),
+    text({ text: "Same words", fontSize: 15 }),
+  ]
+  const result = comparePenLayout({
+    layout: twice,
+    measured,
+    exceptions: [exception({ text: "Same words", index: 0 })],
+    today: "2026-10-28",
+  })
+  assert.deepEqual(
+    result.mismatches.map((m) => [m.text, m.property, m.pen]),
+    [["Same words", "fontSize", 11]]
+  )
+})
+
 test("an exception for another frame does not apply", () => {
   const result = run(text(), text({ fontSize: 30 }), [
     exception({ frameId: "OTHER" }),

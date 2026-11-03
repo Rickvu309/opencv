@@ -1,5 +1,5 @@
 {
-  ".claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs": 4,
+  ".claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs": 3,
   "apps/api/src/paper/http.ts": 2,
   "apps/api/src/paper/import-fixtures.test.ts": 2,
   "apps/api/src/paper/import-parse.ts": 9,
