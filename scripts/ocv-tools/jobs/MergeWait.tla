@@ -107,12 +107,13 @@ Poll ==
         /\ waited' = Min(waited + 1, LimitSteps)
         /\ CASE v = "MERGED" ->
                     /\ Finish("MERGED")
-                    /\ UNCHANGED <<inQueue, ci, holdUntil, reran, requeued, requeues>>
+                    /\ UNCHANGED <<inQueue, ci, holdUntil, reran, requeued, requeues, removed>>
              [] requeue /\ head # start ->
                     /\ Finish("ENQUEUE_FAILED")
-                    /\ UNCHANGED <<inQueue, ci, holdUntil, reran, requeued, requeues>>
+                    /\ UNCHANGED <<inQueue, ci, holdUntil, reran, requeued, requeues, removed>>
              [] requeue ->
                     /\ inQueue' = TRUE
+                    /\ removed' = "none"
                     /\ requeued' = TRUE
                     /\ requeues' = requeues + 1
                     /\ UNCHANGED <<pc, reported, ci, holdUntil, reran>>
@@ -120,13 +121,13 @@ Poll ==
                     /\ reran' = TRUE
                     /\ ci' = "pending"
                     /\ holdUntil' = waited + HoldSteps
-                    /\ UNCHANGED <<pc, reported, inQueue, requeued, requeues>>
+                    /\ UNCHANGED <<pc, reported, inQueue, requeued, requeues, removed>>
              [] v # "none" ->
                     /\ Finish(v)
-                    /\ UNCHANGED <<inQueue, ci, holdUntil, reran, requeued, requeues>>
+                    /\ UNCHANGED <<inQueue, ci, holdUntil, reran, requeued, requeues, removed>>
              [] OTHER ->
-                    UNCHANGED <<pc, reported, inQueue, ci, holdUntil, reran, requeued, requeues>>
-    /\ UNCHANGED <<head, start, prState, mergedHead, removed, env>>
+                    UNCHANGED <<pc, reported, inQueue, ci, holdUntil, reran, requeued, requeues, removed>>
+    /\ UNCHANGED <<head, start, prState, mergedHead, env>>
 
 Waiter == Enqueue \/ WaitProcessStarts \/ ViewAfterEnqueue \/ Poll
 
@@ -169,8 +170,9 @@ ForeignEnqueue ==
     /\ EnvStep
     /\ prState = "OPEN" /\ ~inQueue /\ ci = "success"
     /\ inQueue' = TRUE
+    /\ removed' = "none"
     /\ Quiet
-    /\ UNCHANGED <<head, prState, mergedHead, removed, ci>>
+    /\ UNCHANGED <<head, prState, mergedHead, ci>>
 
 CiRestarts ==
     /\ EnvStep
