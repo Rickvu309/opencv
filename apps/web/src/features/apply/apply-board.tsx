@@ -22,11 +22,7 @@ import { toastWithUndo } from "@workspace/ui/components/sonner"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
-import {
-  refreshQueries,
-  undoActivity,
-  useRunCommand,
-} from "@/lib/contract-client.ts"
+import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 import { reportRejected } from "@/lib/command-failure.ts"
 
 import { jobListKey } from "./apply-api.ts"
@@ -35,7 +31,9 @@ import {
   allSettled,
   clearSettled,
   dropOn,
+  forgetSettled,
   noDrops,
+  refetchBoard,
   shownJobs,
   type Drops,
 } from "./apply-board-drops.ts"
@@ -123,11 +121,7 @@ export function ApplyBoard({
   }
 
   function refreshBoard() {
-    void refreshQueries(queryClient, [
-      { query: "job.list" },
-      { query: "job.get" },
-      { query: "job.calendar" },
-    ]).finally(() => {
+    void refetchBoard(queryClient).finally(() => {
       if (!allSettled(dropsRef.current)) return
       if (queryClient.isFetching({ queryKey: jobListKey() }) > 0) {
         refreshBoard()
@@ -144,6 +138,7 @@ export function ApplyBoard({
       if (stage === "closed" && result.activityId) {
         const activityId = result.activityId
         toastWithUndo("Moved to Closed", () => {
+          updateDrops((current) => forgetSettled(current, jobId))
           void undoActivity(queryClient, activityId).catch(
             reportRejected("undo the move")
           )

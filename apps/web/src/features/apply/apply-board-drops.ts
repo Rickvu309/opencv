@@ -1,4 +1,7 @@
+import type { QueryClient } from "@tanstack/react-query"
 import type { JobStage, JobView } from "@workspace/domain"
+
+import { refreshQueries } from "@/lib/contract-client.ts"
 
 type Drop = { stage: JobStage; queued: number }
 
@@ -32,6 +35,13 @@ export function clearSettled(drops: Drops): Drops {
   return next.size === drops.size ? drops : next
 }
 
+export function forgetSettled(drops: Drops, jobId: string): Drops {
+  if (drops.get(jobId)?.queued !== 0) return drops
+  const next = new Map(drops)
+  next.delete(jobId)
+  return next
+}
+
 export function stageShown(
   drops: Drops,
   jobId: string,
@@ -54,4 +64,12 @@ export function afterMove(
 ): { drops: Drops; refresh: boolean } {
   const settled = settleDrop(drops, jobId)
   return { drops: settled, refresh: allSettled(settled) }
+}
+
+export function refetchBoard(queryClient: QueryClient) {
+  return refreshQueries(queryClient, [
+    { query: "job.list" },
+    { query: "job.get" },
+    { query: "job.calendar" },
+  ])
 }

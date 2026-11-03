@@ -3,7 +3,8 @@
   "actions": {
     "Drop": "dropOn",
     "Commit": "afterMove",
-    "Refetch": "shownJobs",
+    "Refetch": "refetchBoard",
+    "Shown": "shownJobs",
     "Land": "clearSettled"
   }
 }

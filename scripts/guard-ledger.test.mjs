@@ -318,7 +318,10 @@ test("restore proof brings back only the non-test files from the past, expects a
   assert.equal(prove(RESTORE, revertIo([crashed, passed])).ok, false)
   const missing = prove(RESTORE, revertIo([], false))
   assert.equal(missing.ok, false)
-  assert.match(missing.lines[0], /cannot restore src\/a\.ts: pathspec did not match$/)
+  assert.match(
+    missing.lines[0],
+    /cannot restore src\/a\.ts: pathspec did not match$/
+  )
 })
 
 test("failureKind tells a crash and an unknown failure from an assertion", () => {
