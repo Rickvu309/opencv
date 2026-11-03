@@ -83,6 +83,21 @@ export const COMMANDS = [
     when: "Upload png, jpg, gif and webp pictures (checked by their bytes) to the screenshots release and post them. The release is created as a prerelease when it is missing. Pictures are never committed, and staging copies are removed after the upload. Defaults to this task's issue. --pr or --issue picks the target, --name names the files, --no-comment only uploads. At most 20 pictures, each at most 10 MB. A long comment is split under 60000 characters. Refused: MISSING_FILE, BAD_PICTURE, TOO_BIG, TOO_MANY.",
   },
   {
+    name: "brief",
+    usage: "brief <issue> --role <build|mechanical|review|plan>",
+    when: "Print the rules block from docs/agents/brief-rules.md, the model for the role, the worktree, port, tool budget and fenced paths. Paste it into an agent's brief instead of retyping the rules.",
+  },
+  {
+    name: "done",
+    usage: "done",
+    when: "List this agent's open pull requests, held issues and worktrees. Exit 1 while any has no recorded blocker. Run it before saying you are finished. A Stop hook can call it.",
+  },
+  {
+    name: "block",
+    usage: 'block <n> "<reason>"',
+    when: "Record on issue <n> why you cannot continue, so done stops listing it. A new take of the issue clears the blocker.",
+  },
+  {
     name: "doctor",
     usage: "doctor",
     when: "Check this machine is set up: node, gh sign-in, the hooks path and the risk labels. One Fix line per problem.",
