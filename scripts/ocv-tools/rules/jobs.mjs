@@ -1,4 +1,5 @@
-const BRANCH_ISSUE = /^(?:feat|fix|hotfix|refactor|chore|docs)\/(\d+)-/
+import { issueOfBranch } from "./pull-ref.mjs"
+
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const SECTIONS = ["Summary", "Evidence", "Merge Danger"]
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
@@ -145,9 +146,9 @@ const needsHumanReview = (facts) =>
     : null
 
 const badBranch = (facts) =>
-  BRANCH_ISSUE.test(facts.pull.branch ?? "")
-    ? null
-    : `PR #${prNo(facts)} has no linked issue in its branch name.`
+  issueOfBranch(facts.pull.branch) == null
+    ? `PR #${prNo(facts)} has no linked issue in its branch name.`
+    : null
 
 const closedPr = (facts) =>
   ["OPEN", "MERGED"].includes(facts.pull.state)

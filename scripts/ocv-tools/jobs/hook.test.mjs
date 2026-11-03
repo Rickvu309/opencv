@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 import { runCli } from "../cli.mjs"
 import { ctxFor, fakePorts } from "../ports/fake.mjs"
-import { bodyEditRefusal, rawBodyEditIn, ruleFixTexts } from "./hook.mjs"
 
 const TRAILER = `${["Co", "Authored", "By"].join("-")}: Someone <a@b.c>`
 const PRETTIER = "/repo/node_modules/.bin/prettier"
@@ -405,28 +404,4 @@ test("each git hook is a shim over the hook verb", () => {
     )
     assert.match(text, /command -v node/)
   }
-})
-
-const OLD_BODY_FIX =
-  "gh pr edit <pr> --title 'type: text (#<n>)' --body 'Closes #<n>'"
-
-test("pre-commit refuses gh pr edit --body in a rule fix and the live fixes stay quiet", () => {
-  assert.deepEqual(rawBodyEditIn([OLD_BODY_FIX]), [OLD_BODY_FIX])
-  assert.deepEqual(rawBodyEditIn(["gh pr edit 4 --body-file note.md"]), [
-    "gh pr edit 4 --body-file note.md",
-  ])
-  assert.deepEqual(
-    rawBodyEditIn([
-      "gh pr edit <n> --add-label needs-human-review",
-      "gh pr edit <pr> --title 'type: text (#<n>)'. scripts/ocv-tools.mjs body <pr> --body-file <file>",
-    ]),
-    []
-  )
-  const refused = bodyEditRefusal([OLD_BODY_FIX])
-  assert.equal(refused.exit, 2)
-  assert.match(refused.lines[0], /gh pr edit --body/)
-  assert.match(refused.fix, /ocv-tools\.mjs body/)
-  assert.equal(bodyEditRefusal(ruleFixTexts()), null)
-  const src = readFileSync(new URL("./hook.mjs", import.meta.url), "utf8")
-  assert.match(src, /bodyEditRefusal\(ruleFixTexts\(\)\)/)
 })

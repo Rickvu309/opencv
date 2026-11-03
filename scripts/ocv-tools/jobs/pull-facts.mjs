@@ -1,3 +1,4 @@
+import { issueOfBranch } from "../rules/pull-ref.mjs"
 import { run, git, gh, json, diffFacts } from "./common.mjs"
 import { pinFacts } from "./pin-facts.mjs"
 
@@ -170,11 +171,7 @@ export function pullFacts(ctx, n) {
     base,
     head
   )
-  const issue = Number(
-    /^(?:feat|fix|hotfix|refactor|chore|docs)\/(\d+)-/.exec(
-      pull.headRefName
-    )?.[1]
-  )
+  const issue = issueOfBranch(pull.headRefName)
   const linked = issue
     ? json(ctx, "issue", "view", String(issue), "--json", "state,labels")
     : null

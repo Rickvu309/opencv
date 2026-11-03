@@ -1,4 +1,5 @@
 import { FIXES } from "../result.mjs"
+import { closesIssue, issueInTitle } from "./pull-ref.mjs"
 
 function rule(spec) {
   return {
@@ -8,9 +9,6 @@ function rule(spec) {
     ...spec,
   }
 }
-
-const TITLE =
-  /^(feat|fix|hotfix|refactor|chore|docs)(\([a-z0-9-]+\))?!?: [^ ].* \(#(\d+)\)$/
 
 function readyForHuman(facts) {
   const issue = facts.issue
@@ -22,11 +20,9 @@ function prMetadata(facts) {
   const p = facts.pull
   if (!p || p.issue == null) return null
   const problems = []
-  const title = TITLE.exec(p.title ?? "")
-  if (!title || Number(title[3]) !== Number(p.issue))
+  if (issueInTitle(p.title) !== Number(p.issue))
     problems.push(`the title is not "type: description (#${p.issue})"`)
-  const closes = new RegExp(`(^|\\s)Closes #${p.issue}(\\D|$)`)
-  if (!closes.test(p.body ?? ""))
+  if (!closesIssue(p.body, p.issue))
     problems.push(`the body has no "Closes #${p.issue}" line`)
   if (p.issueState && p.issueState !== "OPEN")
     problems.push(`issue #${p.issue} is ${String(p.issueState).toLowerCase()}`)
@@ -80,7 +76,7 @@ export const pullRows = [
     needs: ["pull"],
     check: prMetadata,
     fix: () =>
-      "gh pr edit <pr> --title 'type: text (#<n>)'. scripts/ocv-tools.mjs body <pr> --body-file <file>",
+      "Run gh pr edit <pr> --title 'type: text (#<n>)', then scripts/ocv-tools.mjs body <pr> --body-file <file>",
   }),
   rule({
     id: "PIN_ISSUE_OPEN",

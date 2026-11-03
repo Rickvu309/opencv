@@ -15,7 +15,7 @@ export const COMMANDS = [
   {
     name: "body",
     usage: "body <pr> --body-file <file>",
-    when: "Replace a pull request body and keep its Closes #<issue> line. The issue comes from the title's (#n), or from the Closes line already in the body. The same body rules as finish run first, including Caught by and Introduced by on a fix. Use this instead of gh pr edit --body-file.",
+    when: "Replace a pull request body and keep its Closes #<issue> line. The issue comes from the branch name, type/<issue>-words, the same way the policy rule reads it. The same body rules as finish run first, including Caught by and Introduced by on a fix. Use this instead of gh pr edit --body-file.",
   },
   {
     name: "merge",
