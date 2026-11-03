@@ -116,6 +116,17 @@ export function fixture(over = {}) {
           return s.pushOk ? ok() : fail()
         }
         if (a[0] === "fetch") return ok()
+        if (a[0] === "grep") {
+          const pattern = new RegExp(a[3].replace("[[:space:]]", "\\s"))
+          const hits = Object.entries(s.headFiles ?? {})
+            .filter(([path, text]) => pattern.test(text) && path)
+            .map(([path]) => `${a[4]}:${path}`)
+          return hits.length
+            ? ok(hits.join("\n"))
+            : { ok: false, out: "", err: "" }
+        }
+        if (a[0] === "show")
+          return ok(s.headFiles[a[1].slice(a[1].indexOf(":") + 1)])
       }
       if (cmd === "ln" || cmd === "rm") return ok()
       if (cmd === "stat") return ok("0")
@@ -129,7 +140,7 @@ export function fixture(over = {}) {
         if (pair === "issue view")
           return ok({
             title: "feat: Keep my search",
-            state: s.issueState,
+            state: s.issueStates?.[a[2]] ?? s.issueState,
             labels: s.issueLabels.map((name) => ({ name })),
           })
         if (pair === "pr create")

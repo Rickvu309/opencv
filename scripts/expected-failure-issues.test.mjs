@@ -4,15 +4,15 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
-import { TEST_SOURCE, detect } from "./lib/expected-failure-issues.mjs"
+import {
+  TEST_SOURCE,
+  VITEST_TREES,
+  detect,
+} from "./lib/expected-failure-issues.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const SPAWN_TIMEOUT_MS = 30_000
 const REPO = "Rickvu309/opencv"
-const OWN_FILES = new Set([
-  "scripts/expected-failure-issues.test.mjs",
-  "scripts/lib/expected-failure-issues.mjs",
-])
 
 const CLOSED_ISSUE_MISTAKE = [
   "it.fails(",
@@ -69,38 +69,32 @@ test("an expected failure must cite an open issue in its title", () => {
   assert.ok(!TEST_SOURCE.test("apps/api/src/registry/registry.ts"))
 })
 
-function openIssueNumbers() {
-  try {
-    const out = execFileSync(
-      "gh",
-      [
-        "issue",
-        "list",
-        "--repo",
-        REPO,
-        "--state",
-        "open",
-        "--limit",
-        "1000",
-        "--json",
-        "number",
-      ],
-      { encoding: "utf8", timeout: SPAWN_TIMEOUT_MS, stdio: "pipe" }
-    )
-    return new Set(JSON.parse(out).map((row) => row.number))
-  } catch {
-    return null
+function openAmong(issues) {
+  const open = new Set()
+  for (const issue of issues) {
+    try {
+      const out = execFileSync(
+        "gh",
+        ["issue", "view", String(issue), "--repo", REPO, "--json", "state"],
+        { encoding: "utf8", timeout: SPAWN_TIMEOUT_MS, stdio: "pipe" }
+      )
+      if (JSON.parse(out).state === "OPEN") open.add(issue)
+    } catch (error) {
+      if (/not found|Could not resolve/i.test(String(error.stderr))) continue
+      return null
+    }
   }
+  return open
 }
 
 test("every expected failure in the repo cites an issue that is still open", (t) => {
-  const files = execFileSync("git", ["ls-files"], {
+  const files = execFileSync("git", ["ls-files", "--", ...VITEST_TREES], {
     cwd: root,
     encoding: "utf8",
     timeout: SPAWN_TIMEOUT_MS,
   })
     .split("\n")
-    .filter((file) => TEST_SOURCE.test(file) && !OWN_FILES.has(file))
+    .filter((file) => TEST_SOURCE.test(file))
   const texts = files.map((file) => ({
     file,
     text: readFileSync(path.join(root, file), "utf8"),
@@ -114,7 +108,9 @@ test("every expected failure in the repo cites an issue that is still open", (t)
     []
   )
   if (!cited.length) return
-  const open = openIssueNumbers()
+  const open = openAmong(
+    new Set(cited.map((hit) => hit.issue).filter((issue) => issue !== null))
+  )
   if (!open) {
     t.skip(
       `gh cannot list open issues here, so ${cited.length} cited expected failure(s) go unchecked; the push hook checks them`

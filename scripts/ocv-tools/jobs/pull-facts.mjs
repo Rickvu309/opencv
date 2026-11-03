@@ -1,4 +1,5 @@
 import { run, git, gh, json, diffFacts } from "./common.mjs"
+import { pinFacts } from "./pin-facts.mjs"
 
 export const PR_FIELDS =
   "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,mergeCommit,closingIssuesReferences"
@@ -186,6 +187,7 @@ export function pullFacts(ctx, n) {
     issue: { n: issue, labels },
     diff: facts.diff,
     commits: commitFacts(ctx, base, head),
+    pins: pinFacts(ctx, head),
   }
 }
 

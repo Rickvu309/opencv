@@ -385,6 +385,31 @@ test("every checked rule has a failing and a passing fact", () => {
     { pull: { issue: 9, title: "feat: x (#9)", body: "Closes #9" } },
     'the pull request details are wrong: the body has no "Closes #9" line'
   )
+  const pinned = (pin, body = "Closes #9") => ({
+    pull: { issue: 9, body, closing: [9] },
+    pins: [{ at: "apps/api/src/a.test.ts:4", ...pin }],
+  })
+  check(
+    "PIN_ISSUE_OPEN",
+    pinned({ issue: 9, state: "OPEN" }),
+    pinned({ issue: 12, state: "OPEN" }),
+    "an expected failure (it.fails) must cite an issue that stays open after this merge: apps/api/src/a.test.ts:4 cites #9, which this pull request closes"
+  )
+  const pinnedAt = (pin, body) =>
+    RULES.find((row) => row.id === "PIN_ISSUE_OPEN").check(pinned(pin, body))
+  assert.match(
+    pinnedAt({ issue: 12, state: "CLOSED" }),
+    /cites #12, which is closed$/
+  )
+  assert.match(
+    pinnedAt({ issue: 12, state: "OPEN" }, "Closes #9\nFixes #12"),
+    /cites #12, which this pull request closes$/
+  )
+  assert.match(
+    pinnedAt({ issue: null, state: null }),
+    /a\.test\.ts:4 names no issue$/
+  )
+  assert.match(pinnedAt({ issue: 12, state: "MISSING" }), /which is missing$/)
   for (const row of RULES) {
     if (!row.check) {
       assert.equal(row.kind, "judgment", row.id)

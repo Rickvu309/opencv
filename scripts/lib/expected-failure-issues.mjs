@@ -3,6 +3,8 @@ const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/
 const ISSUE_NUMBER = /#(\d+)\b/g
 const TITLE_WINDOW_LINES = 4
 
+export const VITEST_TREES = ["apps", "packages"]
+
 export const TEST_SOURCE =
   /\.(?:test|spec)\.[cm]?[jt]sx?$|\/test\/.*\.[cm]?[jt]sx?$/
 
@@ -24,20 +26,29 @@ function citedIssues(lines, index, definitions) {
   return [...new Set([...literal, ...named])]
 }
 
-export function detect(text, path, openIssues = new Set(), definitions = text) {
+export function citations(text, path, definitions = text) {
   const lines = text.split("\n")
-  const hits = []
+  const found = []
   lines.forEach((line, index) => {
     if (COMMENT_LINE.test(line) || !EXPECTED_FAILURE.test(line)) return
-    const issues = citedIssues(lines, index, definitions)
-    const at = `${path}:${index + 1}`
+    found.push({
+      at: `${path}:${index + 1}`,
+      issues: citedIssues(lines, index, definitions),
+    })
+  })
+  return found
+}
+
+export function detect(text, path, openIssues = new Set(), definitions = text) {
+  const hits = []
+  for (const { at, issues } of citations(text, path, definitions)) {
     if (!issues.length) {
       hits.push({
         at,
         issue: null,
         message: `${at}: an expected failure names no issue in its title. Write the open issue number into the title, like "#758: ...", or cite a constant defined with issue: "#758"`,
       })
-      return
+      continue
     }
     for (const issue of issues)
       if (!openIssues.has(issue))
@@ -46,6 +57,6 @@ export function detect(text, path, openIssues = new Set(), definitions = text) {
           issue,
           message: `${at}: an expected failure cites #${issue}, which is not open. Fix the bug and turn it back into a passing test, or reopen #${issue}`,
         })
-  })
+  }
   return hits
 }
