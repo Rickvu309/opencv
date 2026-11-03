@@ -117,19 +117,18 @@ const chatChanged = (input: { chatId: ChatId }): QueryRef[] => [
   { query: "chat.get", input: { chatId: input.chatId } },
 ]
 
-const refreshEveryReadBecauseTheWriteTargetIsUnknown = (): QueryRef[] => [
+const readsAnUndoOrApprovalCanChange = (): QueryRef[] => [
   { query: "job.list" },
   { query: "job.get" },
   { query: "job.calendar" },
   { query: "paper.list" },
   { query: "paper.get" },
-  { query: "paper.files" },
   { query: "paper.pageCount" },
   { query: "paper.outline" },
   { query: "paper.keywordGap" },
-  { query: "paper.shared" },
   { query: "inbox.list" },
   { query: "inbox.get" },
+  { query: "inbox.snoozed" },
   { query: "chat.list" },
   { query: "chat.get" },
 ]
@@ -208,7 +207,7 @@ export const chatContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Approve",
-    invalidates: refreshEveryReadBecauseTheWriteTargetIsUnknown,
+    invalidates: readsAnUndoOrApprovalCanChange,
   }),
   "actions.deny": commandEntry({
     description: "Decline a pending Coach action.",
@@ -226,7 +225,7 @@ export const chatContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Undo",
-    invalidates: refreshEveryReadBecauseTheWriteTargetIsUnknown,
+    invalidates: readsAnUndoOrApprovalCanChange,
   }),
 })
 

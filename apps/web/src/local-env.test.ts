@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import { afterEach, expect, it, vi } from "vitest"
 
@@ -15,7 +16,7 @@ afterEach(() => {
   else process.env.VITE_API_URL = savedApiUrl
 })
 
-it("reads the repo root env, and an explicit VITE_API_URL wins over the url derived from PORT so a Railway build stays unchanged", () => {
+it("reads the repo-root .env that ocv-tools take writes, and an explicit VITE_API_URL wins over the url derived from PORT so a Railway build stays unchanged", () => {
   loadEnv.mockReturnValue({
     PORT: "4000",
     VITE_API_URL: "https://api.example.test",
@@ -26,6 +27,12 @@ it("reads the repo root env, and an explicit VITE_API_URL wins over the url deri
     path.resolve(__dirname, "../../.."),
     ""
   )
+  expect(
+    readFileSync(
+      path.resolve(__dirname, "../../../scripts/ocv-tools/worktree.mjs"),
+      "utf8"
+    )
+  ).toContain('join(worktree, ".env")')
   expect(urls.apiUrl).toBe("http://localhost:4000")
   expect(process.env.VITE_API_URL).toBe("https://api.example.test")
 })

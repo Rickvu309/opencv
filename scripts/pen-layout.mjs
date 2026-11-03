@@ -10,8 +10,15 @@ import { expandPenRefs, findPenNode, penFrameToDocument } from "./pen-html.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const APP_SHELL_MAIN_PANEL = "GIhbq"
-const USAGE =
-  "usage: node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>] [--driver <script>]"
+const POSITIONS_ARE_RELATIVE_TO_THE_PANES_TOP_LEFT =
+  "Positions are relative to the pane's top-left."
+const A_DRIVER_LAYOUT_IS_SKIPPED_BY_VERIFY_PEN_LAYOUT =
+  "A layout recorded with --driver is skipped by verify-pen-layout and measured by that driver."
+const USAGE = [
+  "usage: node scripts/pen-layout.mjs <pen file> <frame id> <out.json> --route <path> [--pane <node id>] [--png <file>] [--driver <script>]",
+  POSITIONS_ARE_RELATIVE_TO_THE_PANES_TOP_LEFT,
+  A_DRIVER_LAYOUT_IS_SKIPPED_BY_VERIFY_PEN_LAYOUT,
+].join("\n")
 
 function parseArgs(argv) {
   const positional = []
