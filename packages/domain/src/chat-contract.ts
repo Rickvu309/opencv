@@ -87,6 +87,7 @@ const activityRowSchema = z
     result: z.unknown(),
     reversalCommand: z.string().nullable(),
     reversalInput: z.unknown(),
+    reversalExpect: z.unknown(),
     undoneAt: z.string().datetime().nullable(),
     idempotencyKey: z.string().nullable(),
     turnId: z.string().nullable(),

@@ -1,4 +1,4 @@
-import type { CoachMode } from "@workspace/domain"
+import type { CoachMode, ReversalExpect } from "@workspace/domain"
 import { sql } from "drizzle-orm"
 import {
   boolean,
@@ -459,6 +459,7 @@ export const activity = opencvApp.table(
     result: jsonb("result").$type<unknown>(),
     reversalCommand: text("reversal_command"),
     reversalInput: jsonb("reversal_input"),
+    reversalExpect: jsonb("reversal_expect").$type<ReversalExpect | null>(),
     undoneAt: timestamptz("undone_at"),
     idempotencyKey: text("idempotency_key"),
     turnId: uuid("turn_id").references(() => coachUsage.id, {

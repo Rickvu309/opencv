@@ -33,6 +33,7 @@ const previews: { url?: string; text?: string }[] = []
 let failNextChecklistItem = false
 let failNextNote = false
 let failNextJobUpdate = false
+let refuseNextUndo: string | null = null
 let nextJobUpdate: Promise<void> | null = null
 
 function blankExtra(): Extra {
@@ -100,7 +101,12 @@ export function resetMockJobs() {
   failNextChecklistItem = false
   failNextNote = false
   failNextJobUpdate = false
+  refuseNextUndo = null
   nextJobUpdate = null
+}
+
+export function refuseNextUndoWith(message: string) {
+  refuseNextUndo = message
 }
 
 export function rejectNextChecklistItem() {
@@ -322,6 +328,11 @@ export async function jobApiFetch(
   if (method === "POST" && path.startsWith("/api/commands/")) {
     const name = path.slice("/api/commands/".length)
     const payload = commandInput(readBody(init))
+    if (name === "activity.undo" && refuseNextUndo) {
+      const message = refuseNextUndo
+      refuseNextUndo = null
+      return jsonError(409, "CONFLICT", message)
+    }
     if (name === "activity.undo") {
       const activityId = String(payload.activityId ?? "")
       for (const [jobId, more] of extras) {

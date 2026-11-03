@@ -1,0 +1,6 @@
+{
+  "id": "undo-later-change",
+  "file": "apps/api/src/registry/registry.undo-later.formal.test.ts",
+  "historic": null,
+  "reason": "it ran on the unfixed registry first and found job.move erasing a later move; the mutant (undo skips the stored expectation) is in the skill, and the card-move bug was never fixed before this check"
+}

@@ -56,9 +56,17 @@ export type ActivityDraft = {
   detail?: unknown
 }
 
+export type ReversalExpect = {
+  query: string
+  input: unknown
+  matches: Record<string, unknown>
+  skipped: string
+}
+
 export type ReversalPlan = {
   command: string
   input: unknown
+  expect?: ReversalExpect
 } | null
 
 export type CommandSpec<TInput, TOutput> = {

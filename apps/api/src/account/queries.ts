@@ -14,6 +14,7 @@ import {
 } from "../db/schema.js"
 import { readStoredParts } from "../chat/index.js"
 import { tableQuery } from "../registry/bind.js"
+import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
 import { readUsage } from "./usage.js"
 import { getProfileRow, toProfile } from "./store.js"
@@ -162,6 +163,7 @@ export async function readActivity(
     rows.map((row) => ({
       command: row.undoneAt == null ? row.reversalCommand : null,
       input: row.reversalInput,
+      expect: row.undoneAt == null ? row.reversalExpect : null,
     }))
   )
   return rows.map((row, index) => ({
@@ -174,7 +176,10 @@ export async function readActivity(
     summary: row.summary,
     undoneAt: row.undoneAt?.toISOString() ?? null,
     reversible:
-      Boolean(row.reversalCommand) && row.undoneAt == null && !blocked[index],
+      Boolean(row.reversalCommand) &&
+      row.undoneAt == null &&
+      !isUndoRow(row) &&
+      !blocked[index],
   }))
 }
 

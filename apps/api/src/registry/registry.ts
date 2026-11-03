@@ -10,6 +10,7 @@ import {
   type CoachAccess,
   type CommandSpec,
   type QuerySpec,
+  type ReversalExpect,
   type ReversalPlan,
 } from "@workspace/domain"
 import type { ZodType } from "zod"
@@ -20,8 +21,17 @@ import { getDb, transaction } from "../db/context.js"
 import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
+import { lockActivity } from "./activity-lock.js"
+import { parseInput } from "./parse-input.js"
+import {
+  laterLiveAction,
+  staleExpectation,
+  undoKeyFor,
+  undoOfUndo,
+} from "./expectation.js"
+import { replay, replayStored } from "./replay.js"
 import { receiptDetail, reversalOf } from "./receipt.js"
-import { readTurnReceipts, replay, replayStored } from "./turn-receipts.js"
+import { readTurnReceipts } from "./turn-receipts.js"
 
 const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
@@ -110,21 +120,6 @@ export type ExecuteResult = {
   detail?: unknown
 }
 
-function zodMessage(error: { issues: { message: string }[] }) {
-  return error.issues[0]?.message ?? "Invalid input"
-}
-
-function parseInput<T>(schema: ZodType<T>, raw: unknown): T {
-  const parsed = schema.safeParse(raw)
-  if (!parsed.success) {
-    throw new CommandError(
-      ERROR_CODES.VALIDATION_ERROR,
-      zodMessage(parsed.error)
-    )
-  }
-  return parsed.data
-}
-
 function brandedActor(actor: Actor): Actor {
   if (actor.type === "person") return personActor(actor.userId)
   return actor.turnId
@@ -149,7 +144,11 @@ export class Registry {
 
   async undoBlockedReasons(
     userId: string,
-    items: readonly { command: string | null; input: unknown }[]
+    items: readonly {
+      command: string | null
+      input: unknown
+      expect?: ReversalExpect | null
+    }[]
   ): Promise<(string | null)[]> {
     const reasons: (string | null)[] = items.map(() => null)
     const byCommand = new Map<string, number[]>()
@@ -172,6 +171,14 @@ export class Registry {
         })
       } catch {
         for (const index of indexes) reasons[index] = "Undo is not available"
+      }
+    }
+    for (const [index, item] of items.entries()) {
+      if (item.command && !reasons[index] && item.expect) {
+        reasons[index] = await staleExpectation(
+          (query, input) => this.read(query, input, personActor(userId)),
+          item.expect
+        )
       }
     }
     return reasons
@@ -368,6 +375,7 @@ export class Registry {
               result: ran.output ?? null,
               reversalCommand: ran.reversal?.command ?? null,
               reversalInput: ran.reversal?.input ?? null,
+              reversalExpect: ran.reversal?.expect ?? null,
               idempotencyKey: idempotencyKey ?? null,
               turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
             })
@@ -542,7 +550,7 @@ export class Registry {
 
   async undo(userId: string, activityId: string) {
     return transaction(async () => {
-      const row = await this.lockActivity(userId, activityId)
+      const row = await lockActivity(userId, activityId)
       if (row.undoneAt) {
         throw new CommandError(
           ERROR_CODES.CONFLICT,
@@ -555,17 +563,20 @@ export class Registry {
           "This action cannot be undone."
         )
       }
-      const blocked = await this.undoBlockedReason(
-        userId,
-        row.reversalCommand,
-        row.reversalInput
-      )
+      const [stale] = await this.undoBlockedReasons(userId, [
+        {
+          command: row.reversalCommand,
+          input: row.reversalInput,
+          expect: row.reversalExpect,
+        },
+      ])
+      const blocked = undoOfUndo(row) ?? stale ?? (await laterLiveAction(row))
       if (blocked) throw new CommandError(ERROR_CODES.CONFLICT, blocked)
       await this.execute({
         name: row.reversalCommand,
         input: row.reversalInput,
         actor: personActor(userId),
-        idempotencyKey: `undo:${row.id}`,
+        idempotencyKey: undoKeyFor(row.id),
         skipConfirm: true,
       })
       const undoneAt = new Date()
@@ -623,22 +634,6 @@ export class Registry {
       throw new CommandError(
         ERROR_CODES.NOT_FOUND,
         "That confirmation was not found"
-      )
-    }
-    return row
-  }
-
-  private async lockActivity(userId: string, id: string) {
-    const rows = await getDb()
-      .select()
-      .from(activity)
-      .where(and(eq(activity.id, id), eq(activity.userId, userId)))
-      .for("update")
-    const row = rows[0]
-    if (!row) {
-      throw new CommandError(
-        ERROR_CODES.NOT_FOUND,
-        "That activity was not found"
       )
     }
     return row

@@ -1,0 +1,1 @@
+ALTER TABLE "opencv_app"."activity" ADD COLUMN "reversal_expect" jsonb;
