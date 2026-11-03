@@ -1,7 +1,7 @@
 ---- MODULE ContentStore ----
 EXTENDS Integers
 
-CONSTANTS RevisionGuard, SeqFromEntry, VersionCheck, Max
+CONSTANTS RevisionGuard, SeqFromEntry, VersionCheck, SyncCheck, CoachStrict, Max
 
 Blocks == {"b1", "b2"}
 Procs == {"a", "b"}
@@ -11,13 +11,13 @@ VARIABLES
   version, logMax, gap, person,
   cacheP, cacheR, cacheD, cacheAhead,
   lock, snap, saved, savedGap, drev, dperson, dirty, writes,
-  lost, blocked, coached
+  lost, blocked, coached, coachAt, coachRead, basis, sentVer
 
 vars == <<
   version, logMax, gap, person,
   cacheP, cacheR, cacheD, cacheAhead,
   lock, snap, saved, savedGap, drev, dperson, dirty, writes,
-  lost, blocked, coached
+  lost, blocked, coached, coachAt, coachRead, basis, sentVer
 >>
 
 blank == [b \in Blocks |-> FALSE]
@@ -42,6 +42,10 @@ Init ==
   /\ lost = FALSE
   /\ blocked = FALSE
   /\ coached = FALSE
+  /\ coachAt = None
+  /\ coachRead = 0
+  /\ basis = 1
+  /\ sentVer = 0
 
 usable(p) ==
   /\ cacheP[p]
@@ -54,6 +58,23 @@ ahead(p) ==
   /\ cacheP[p]
   /\ cacheAhead[p]
   /\ cacheR[p] > version
+
+remember(p, seq, page) ==
+  /\ cacheP' = [cacheP EXCEPT ![p] = TRUE]
+  /\ cacheR' = [cacheR EXCEPT ![p] = seq]
+  /\ cacheD' = [cacheD EXCEPT ![p] = page]
+  /\ cacheAhead' = [cacheAhead EXCEPT ![p] = FALSE]
+
+publish(seq, page) ==
+  /\ version' = seq
+  /\ logMax' = IF seq = logMax + 1 THEN seq ELSE logMax
+  /\ gap' = (gap \/ (seq # (logMax + 1)))
+  /\ drev' = seq
+  /\ dperson' = page
+
+coachOk(basedOn, revision) ==
+  IF CoachStrict THEN basedOn = revision
+  ELSE basedOn <= revision /\ basedOn >= 1
 
 Lock(p) ==
   /\ lock = None
@@ -73,7 +94,10 @@ Lock(p) ==
             /\ cacheR' = [cacheR EXCEPT ![p] = version]
             /\ cacheD' = [cacheD EXCEPT ![p] = person]
             /\ cacheAhead' = [cacheAhead EXCEPT ![p] = FALSE]
-  /\ UNCHANGED <<version, logMax, gap, person, lost, blocked, coached>>
+  /\ UNCHANGED <<
+       version, logMax, gap, person, lost, blocked, coached,
+       coachAt, coachRead, basis, sentVer
+     >>
 
 Person(p) ==
   /\ lock = p
@@ -81,34 +105,31 @@ Person(p) ==
   /\ version < Max
   /\ \E b \in Blocks :
        /\ ~dperson[b]
-       /\ dperson' = [dperson EXCEPT ![b] = TRUE]
-  /\ dirty' = TRUE
-  /\ UNCHANGED <<
-       version, logMax, gap, person,
-       cacheP, cacheR, cacheD, cacheAhead,
-       lock, snap, saved, savedGap, drev, writes,
-       lost, blocked, coached
-     >>
+       /\ \E basedOn \in 1..drev :
+            /\ basedOn = drev \/ ~SyncCheck
+            /\ dperson' = [dperson EXCEPT ![b] = TRUE]
+            /\ dirty' = TRUE
+            /\ basis' = basedOn
+            /\ UNCHANGED <<
+                 version, logMax, gap, person,
+                 cacheP, cacheR, cacheD, cacheAhead,
+                 lock, snap, saved, savedGap, drev, writes,
+                 lost, blocked, coached, coachAt, coachRead, sentVer
+               >>
 
 Commit(p) ==
   /\ lock = p
   /\ dirty
   /\ LET seq == IF SeqFromEntry THEN drev + 1 ELSE snap + 1
      IN /\ seq <= Max
-        /\ version' = seq
-        /\ logMax' = IF seq = logMax + 1 THEN seq ELSE logMax
-        /\ gap' = (gap \/ (seq # (logMax + 1)))
+        /\ publish(seq, dperson)
         /\ person' = dperson
-        /\ drev' = seq
         /\ dirty' = FALSE
         /\ writes' = writes + 1
-        /\ cacheP' = [cacheP EXCEPT ![p] = TRUE]
-        /\ cacheR' = [cacheR EXCEPT ![p] = seq]
-        /\ cacheD' = [cacheD EXCEPT ![p] = dperson]
-        /\ cacheAhead' = [cacheAhead EXCEPT ![p] = FALSE]
+        /\ remember(p, seq, dperson)
         /\ UNCHANGED <<
-             lock, snap, saved, savedGap, dperson,
-             lost, blocked, coached
+             lock, snap, saved, savedGap,
+             lost, blocked, coached, coachAt, coachRead, basis, sentVer
            >>
 
 Coach(p) ==
@@ -116,39 +137,61 @@ Coach(p) ==
   /\ ~dirty
   /\ writes = 0
   /\ ~coached
-  /\ \E b \in Blocks : person[b]
-  /\ \E c \in Blocks : ~person[c]
-  /\ coached' = TRUE
-  /\ blocked' = FALSE
-  /\ UNCHANGED <<
-       version, logMax, gap, person,
-       cacheP, cacheR, cacheD, cacheAhead,
-       lock, snap, saved, savedGap, drev, dperson, dirty, writes,
-       lost
-     >>
+  /\ \E touched \in Blocks :
+       /\ person[touched]
+       /\ \E free \in Blocks :
+            /\ free # touched
+            /\ ~person[free]
+            /\ \E basedOn \in 1..version :
+                 IF coachOk(basedOn, version) /\ version < Max
+                 THEN /\ publish(version + 1, person)
+                      /\ remember(p, version + 1, person)
+                      /\ coached' = TRUE
+                      /\ blocked' = FALSE
+                      /\ coachAt' = free
+                      /\ coachRead' = basedOn
+                      /\ UNCHANGED <<
+                           person, lock, snap, saved, savedGap, dirty, writes,
+                           lost, basis, sentVer
+                         >>
+                 ELSE /\ CoachStrict
+                      /\ basedOn < version
+                      /\ blocked' = TRUE
+                      /\ coached' = TRUE
+                      /\ coachRead' = basedOn
+                      /\ UNCHANGED <<
+                           version, logMax, gap, person,
+                           cacheP, cacheR, cacheD, cacheAhead,
+                           lock, snap, saved, savedGap, drev, dperson, dirty, writes,
+                           lost, coachAt, basis, sentVer
+                         >>
 
 Replace(p) ==
   /\ lock = p
   /\ ~dirty
   /\ writes = 0
   /\ version < Max
-  /\ \E b \in Blocks : person[b]
-  /\ IF VersionCheck
-       THEN UNCHANGED vars
-       ELSE /\ person' = blank
-            /\ lost' = TRUE
-            /\ version' = version + 1
-            /\ logMax' = logMax + 1
-            /\ drev' = version + 1
-            /\ dperson' = blank
-            /\ cacheP' = [cacheP EXCEPT ![p] = TRUE]
-            /\ cacheR' = [cacheR EXCEPT ![p] = version + 1]
-            /\ cacheD' = [cacheD EXCEPT ![p] = blank]
-            /\ cacheAhead' = [cacheAhead EXCEPT ![p] = FALSE]
-            /\ UNCHANGED <<
-                 gap, lock, snap, saved, savedGap, dirty, writes,
-                 blocked, coached
-               >>
+  /\ \E marked \in Blocks :
+       /\ person[marked]
+       /\ \E sent \in 1..version :
+            IF sent = version
+            THEN /\ publish(version + 1, person)
+                 /\ remember(p, version + 1, person)
+                 /\ sentVer' = sent
+                 /\ UNCHANGED <<
+                      person, lock, snap, saved, savedGap, dirty, writes,
+                      lost, blocked, coached, coachAt, coachRead, basis
+                    >>
+            ELSE /\ ~VersionCheck
+                 /\ publish(version + 1, blank)
+                 /\ person' = blank
+                 /\ lost' = TRUE
+                 /\ remember(p, version + 1, blank)
+                 /\ sentVer' = sent
+                 /\ UNCHANGED <<
+                      lock, snap, saved, savedGap, dirty, writes,
+                      blocked, coached, coachAt, coachRead, basis
+                    >>
 
 Rollback(p) ==
   /\ lock = p
@@ -164,7 +207,7 @@ Rollback(p) ==
   /\ UNCHANGED <<
        cacheP, cacheR, cacheD,
        snap, saved, savedGap, drev, dperson,
-       lost, blocked, coached
+       lost, blocked, coached, coachAt, coachRead, basis, sentVer
      >>
 
 End(p) ==
@@ -175,7 +218,7 @@ End(p) ==
        version, logMax, gap, person,
        cacheP, cacheR, cacheD, cacheAhead,
        snap, saved, savedGap, drev, dperson, writes,
-       lost, blocked, coached
+       lost, blocked, coached, coachAt, coachRead, basis, sentVer
      >>
 
 Evict(p) ==
@@ -186,7 +229,7 @@ Evict(p) ==
        version, logMax, gap, person,
        cacheR, cacheD, cacheAhead,
        lock, snap, saved, savedGap, drev, dperson, dirty, writes,
-       lost, blocked, coached
+       lost, blocked, coached, coachAt, coachRead, basis, sentVer
      >>
 
 Next ==
@@ -221,6 +264,10 @@ TypeOK ==
   /\ lost \in BOOLEAN
   /\ blocked \in BOOLEAN
   /\ coached \in BOOLEAN
+  /\ coachAt \in Blocks \cup {None}
+  /\ coachRead \in 0..Max
+  /\ basis \in 0..Max
+  /\ sentVer \in 0..Max
 
 P1 == (lock # None /\ ~dirty) => (dperson = person /\ drev = version)
 
@@ -229,5 +276,7 @@ P2 == version = logMax /\ ~gap
 P3 == ~lost
 
 P4 == ~blocked
+
+P5 == ~dirty \/ basis = drev
 
 ====

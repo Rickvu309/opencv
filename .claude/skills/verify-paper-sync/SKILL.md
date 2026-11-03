@@ -15,6 +15,7 @@ For one paper, the in-process cache, and two writers, in `apps/api/src/paper/con
 - **P2.** `contentVersion` equals the highest change number, and the change numbers have no gaps.
 - **P3.** A character a person synced survives a Coach edit on another block, and survives a full replace sent at an older version.
 - **P4.** A Coach edit of a block the person did not touch still lands when the read is behind only because the person typed on a different block.
+- **P5.** A person push is absorbed only when `basedOn` equals the revision held under the lock.
 
 ## The harm
 
@@ -33,10 +34,14 @@ node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config apps/api/src/p
 node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --mutant
 node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config apps/api/src/paper/ContentStore.seq.mutant.cfg
 node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config apps/api/src/paper/ContentStore.version.mutant.cfg
+node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config apps/api/src/paper/ContentStore.coach.cfg
+node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config apps/api/src/paper/ContentStore.coach.mutant.cfg
+node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config apps/api/src/paper/ContentStore.sync.cfg
+node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config apps/api/src/paper/ContentStore.sync.mutant.cfg
 pnpm --filter api exec vitest run src/paper/content-sync.formal.test.ts
 ```
 
-- Real configs exit 0. Each mutant exits 12. `node scripts/tlc.mjs --all` includes this spec (the `formal-tla` job). `ContentStore.cfg` is 2227 distinct states.
+- Real configs exit 0. Each mutant exits 12. `node scripts/tlc.mjs --all` includes this spec (the `formal-tla` job). `ContentStore.cfg` is 3939 distinct states.
 - `pnpm --filter api test:formal` runs this file with the other formal tests. With `FORMAL_DATABASE_URL` set, the same file runs on Postgres (the `formal-postgres` job). Without it, PGlite.
 - Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
 
@@ -50,19 +55,21 @@ pnpm --filter api exec vitest run src/paper/content-sync.formal.test.ts
 | `Person`          | `syncContent`: a push names `basedOn` and is absorbed only when that equals the saved revision                          |
 | `Commit`          | `nextContentSeq`: the next change number is the cached revision plus one                                                |
 | `Coach`           | `coachBasisOk` in `checkedBasis`: a Coach edit is allowed when `basedOn` is between the log base and the saved revision |
-| `Replace`         | `sameContentVersion` in `replacePaper`: a full replace whose version is not the saved one conflicts                     |
+| `Replace`         | `sameContentVersion` in `replacePaper`: the client sends a version; a match writes, and a mismatch conflicts            |
 | `Rollback`, `End` | `withContent`: a throw after a successful edit deletes the cache; ending the lock does not                              |
 | `Evict`           | `withContent`: the cache is an in-process map with a size limit                                                         |
 
-Constants are the code's switches. `RevisionGuard` is the refusal to trust a cache whose revision is past the saved version. `SeqFromEntry` numbers the next change from the running cached revision, not from the row version captured when the lock was taken. `VersionCheck` is the version compare before a full replace. Each mutant flips one of them.
+Constants are the code's switches. `RevisionGuard` is the refusal to trust a cache whose revision is past the saved version. `SeqFromEntry` numbers the next change from the running cached revision, not from the row version captured when the lock was taken. `VersionCheck` is the version compare before a full replace. `SyncCheck` is the `basedOn === revision` refusal in `syncContent`. `CoachStrict` is off in the code: `coachBasisOk` allows an older `basedOn` inside the log. The mutant turns that into equality, so any sync that advanced the version makes the Coach edit refuse. Each mutant flips one of them.
 
 ## Checks and mutants
 
-| Config pair                | Checks         | Mutant (must fail)                                                                                                                         |
-| -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ContentStore.cfg`         | P1, P2, P3, P4 | `RevisionGuard` off: after a rolled-back commit, the next lock trusts the ahead cache. P1 fails (exit 12)                                  |
-| `ContentStore.seq.cfg`     | P2             | `SeqFromEntry` off: the second commit in one lock reuses the row version from lock time, so two changes get one number. P2 fails (exit 12) |
-| `ContentStore.version.cfg` | P3, P4         | `VersionCheck` off: a full replace of an older page wipes the typed character. P3 fails (exit 12)                                          |
+| Config pair                | Checks             | Mutant (must fail)                                                                                                                         |
+| -------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ContentStore.cfg`         | P1, P2, P3, P4, P5 | `RevisionGuard` off: after a rolled-back commit, the next lock trusts the ahead cache. P1 fails (exit 12)                                  |
+| `ContentStore.seq.cfg`     | P2                 | `SeqFromEntry` off: the second commit in one lock reuses the row version from lock time, so two changes get one number. P2 fails (exit 12) |
+| `ContentStore.version.cfg` | P3, P4, P5         | `VersionCheck` off: a full replace sent at an older version wipes the typed character. P3 fails (exit 12)                                  |
+| `ContentStore.coach.cfg`   | P4                 | `CoachStrict` on: a Coach edit read at version 1 refuses after a person sync moved the paper to 2. P4 fails (exit 12)                      |
+| `ContentStore.sync.cfg`    | P5                 | `SyncCheck` off: a second push in the lock is absorbed with `basedOn` 1 after the revision is 2. P5 fails (exit 12)                        |
 
 Deleting only the early `cacheRevisionUsable` compare in `caughtUp` does not fail P1. The replay still ends with `revision !== contentVersion` and rebuilds. The mutant turns off the whole decision to trust an ahead cache. Leave the early compare; it is the same decision, written where the cache is first considered.
 
@@ -85,20 +92,19 @@ A pull sends no `basedOn`. A push sends the revision the client just read. A sec
 
 ## How to read a counterexample
 
-`Lock` of a cache with `cacheAhead` and `cacheR` above `version` is a rolled-back commit being trusted: P1. `Commit` with `gap` true is two changes given one number: P2. `Replace` with `lost` true is the old page written over the typed character: P3. Draw the trace with /statechart.
+`Lock` of a cache with `cacheAhead` and `cacheR` above `version` is a rolled-back commit being trusted: P1. `Commit` with `gap` true is two changes given one number: P2. `Replace` with `lost` true and `sentVer` behind the version it locked is the old page written over the typed character: P3. `Coach` with `blocked` true and `coachRead` behind `version` is the strict refusal: P4. `Person` with `dirty` and `basis` behind `drev` is a stale push absorbed: P5. Draw the trace with /statechart.
 
-P4 in the model is `~blocked`. `Coach` is enabled when some block has a person's mark and another does not, and it never sets `blocked`. That only shows the step stays enabled. The store test is what shows the edit lands. Do not add a temporal property for it.
+P4 is `~blocked`. On the real config `Coach` writes the untouched block (`coachAt`) and leaves `blocked` false, including when `coachRead` is older than `version` because the person typed on the other block. The strict mutant sets `blocked` and writes nothing. The store test is the same edit on the real Y.Doc. Do not add a temporal property for it.
 
 ## Known gaps
 
-- The Coach write people use is `paper.edit` (`editAsCoach`), which merges and allows an older `basedOn` inside the log. `paper.replace` still conflicts unless the version matches. A replace at the current version with the old page does wipe the character.
+- The Coach write people use is `paper.edit` (`editAsCoach`), which merges and allows an older `basedOn` inside the log. `paper.replace` still conflicts unless the version matches. A replace at the current version with the old page does wipe the character. The model keeps the typed mark on a matching version and sets `lost` only when a stale sent version writes. The store test covers the live-version wipe.
 - `replacePaper` compares the version in code while it holds the row lock, then writes. The lock makes that check race-safe inside the transaction. An older change moved the same check into the write's `WHERE`. This model does not require that shape.
-- `packages/domain/src/paper-doc/rebase.ts` is not on this path. `paper.edit` merges through Yjs and `personWorkLost`, not through `rebasePending`.
-- Bound is 2 writers, 2 blocks, and version at most 3. The cache is one process. A second process does not share it.
-- P4's model invariant does not prove the write. The store test does, for one Coach edit of the other block from the version before the person typed.
+- A pending person edit rebased across a Coach block move or remove is `rebasePending`, not a server action. `packages/domain/src/paper-doc-rebase.property.test.ts` runs that merge: `personEdits` is the pending side, `otherEdits` moves a block and removes a block, and the property keeps the person's words and added blocks. `paper-doc-rebase.test.ts` has the same remove as one example ("puts back a block the Coach removed after the person typed in it"). `apps/web/src/lib/paper-sync.test.ts` retries the stale push after a rebase.
+- Bound is 2 writers, 2 blocks, and version at most 3. The cache is one process. A second process does not share it. Blocks are marks, so the spec cannot move or delete a block.
 
 ## Coverage and sync
 
 - Covered: `apps/api/src/paper/content-store.ts` (`caughtUp`, `commit`, `syncContent`, `withContent`, `cacheRevisionUsable`, `nextContentSeq`), `apps/api/src/paper/store.ts` (`replacePaper` via `sameContentVersion`), `apps/api/src/paper/content-coach.ts` (`checkedBasis` via `coachBasisOk`, `editAsCoach`).
-- Last confirmed against: this change (#1060). The squash sha replaces it after merge.
+- Last confirmed against: the fix on #1060 that models the sent version, the `basedOn` refusal, and the strict Coach refusal. The report for that fix records the sha. The squash sha replaces it after merge.
 - When a covered file changes, rerun the commands above. Move the sync commit forward only after you confirm the model still describes the code at the new commit. Update `ContentStore.tla.json` when an action's function is renamed.
