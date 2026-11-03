@@ -20,7 +20,7 @@ import {
   type Facts,
   type Item,
   type Tree,
-} from "./test/cv-rebase-edit.ts"
+} from "../test/cv-rebase-edit.ts"
 
 function checkFields(
   fail: (what: string) => void,

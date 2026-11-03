@@ -1,7 +1,7 @@
 import {
   paperDocumentSchema,
   type PaperDocument,
-} from "../paper-doc/document.ts"
+} from "../src/paper-doc/document.ts"
 
 const KINDS = [
   "summary",
