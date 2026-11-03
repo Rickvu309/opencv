@@ -11,7 +11,10 @@ import * as schema from "../db/schema.js"
 import { createId } from "../id.js"
 import { installRegistry } from "../registry/install.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { journalTags } from "../test/migration-journal.js"
 import { createChat, getChat, insertCoachMessage } from "./store.js"
+
+const tags = journalTags()
 
 function deferred() {
   let resolve = () => {}
@@ -27,12 +30,9 @@ it.each(["Usable answer", ""])(
     const client = new PGlite()
     installRegistry()
     try {
-      for (const name of [
-        "0000_opencv_app.sql",
-        "0001_account_issuer_optional.sql",
-      ]) {
+      for (const tag of tags.slice(0, 2)) {
         await client.exec(
-          await readFile(path.join(migrationsFolder, name), "utf8")
+          await readFile(path.join(migrationsFolder, `${tag}.sql`), "utf8")
         )
       }
       const userId = parseUserId("legacy-revisions")
@@ -78,16 +78,10 @@ it.each(["Usable answer", ""])(
           )
       }
       await client.exec(
-        await readFile(
-          path.join(migrationsFolder, "0002_chat_reply_supersession.sql"),
-          "utf8"
-        )
+        await readFile(path.join(migrationsFolder, `${tags[2]}.sql`), "utf8")
       )
       await client.exec(
-        await readFile(
-          path.join(migrationsFolder, "0006_coach_turn_receipts.sql"),
-          "utf8"
-        )
+        await readFile(path.join(migrationsFolder, `${tags[6]}.sql`), "utf8")
       )
       const db = drizzle({ client, schema })
       await withDatabase(db, async () => {
