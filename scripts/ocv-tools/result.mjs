@@ -6,7 +6,7 @@ import { homedir } from "node:os"
 import { basename, dirname, join } from "node:path"
 
 // 0 ok, 1 error, 2 refused, 3 lost, 4 human. Help prints this table.
-// 4 is unused until a bash gate's HUMAN REQUIRED is mapped at the job boundary.
+// 4 is a refusal only the owner can clear, such as BILLING_BLOCKED.
 export const EXIT = Object.freeze({
   ok: 0,
   error: 1,
@@ -136,7 +136,7 @@ export function render({ lines, next, fix, tail }) {
 export function failure(error) {
   if (error instanceof Refused)
     return {
-      code: EXIT.refused,
+      code: error.exit ?? EXIT.refused,
       text: render({
         lines: [`REFUSED ${error.code}: ${error.message}`],
         fix: error.fix ?? FIXES[error.code] ?? FIXES.ERROR,

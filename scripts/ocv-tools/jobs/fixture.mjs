@@ -118,6 +118,7 @@ export function fixture(over = {}) {
         if (a[0] === "fetch") return ok()
       }
       if (cmd === "ln" || cmd === "rm") return ok()
+      if (cmd === "stat") return ok("0")
       if (cmd === "timeout")
         return s.guardOutput
           ? { ok: false, out: s.guardOutput, err: "" }
@@ -172,6 +173,8 @@ export function fixture(over = {}) {
             },
           })
         }
+        if (a[0] === "api" && /check-runs\/\d+\/annotations/.test(a[1]))
+          return ok(s.annotations ?? [])
         if (a[0] === "api" && /actions\/runs\/\d+\/jobs/.test(a[1]))
           return ok({ jobs: s.runJobs ?? [] })
         if (a[0] === "api" && /actions\/runs\?/.test(a[1]))

@@ -1,3 +1,4 @@
+import { homedir } from "node:os"
 import { join } from "node:path"
 import { FAST_GUARDS, GIT_ENV } from "./push-checks.mjs"
 import { run } from "./common.mjs"
@@ -5,6 +6,9 @@ import { run } from "./common.mjs"
 const OID = /^[0-9a-f]{40,64}$/
 const GUARD_TIMEOUT_SECONDS = "600"
 const SHOWN = 8
+const LEFTOVER_PREFIX = "ocv-merge-"
+const STALE_AFTER_MS = (Number(GUARD_TIMEOUT_SECONDS) + 60) * 1000
+const SIGNAL_NUMBERS = { SIGINT: 2, SIGTERM: 15 }
 
 export function parseMergeTree(result) {
   const lines = result.out.split("\n")
@@ -39,7 +43,7 @@ export function fetchPull(ctx, n) {
 
 export function isBehind(ctx, head) {
   const r = git(ctx, ["rev-list", "--count", `${head}..origin/main`])
-  return r.ok && Number(r.out) > 0
+  return r.ok ? Number(r.out) > 0 : null
 }
 
 export function mergeTreeOf(ctx, head) {
@@ -104,6 +108,51 @@ export function removeTemporaryTree(ctx, dir) {
   git(ctx, ["worktree", "prune"])
 }
 
+function registeredTrees(ctx) {
+  const listed = git(ctx, ["worktree", "list", "--porcelain"])
+  return listed.out
+    .split("\n")
+    .filter((line) => line.startsWith("worktree "))
+    .map((line) => line.slice("worktree ".length))
+}
+
+function ageMs(ctx, dir) {
+  const stamp = run(ctx, "stat", ["-c", "%Y", dir])
+  return stamp.ok ? ctx.now() - Number(stamp.out) * 1000 : Infinity
+}
+
+export function sweepLeftovers(ctx, parent) {
+  const prefix = join(parent, LEFTOVER_PREFIX)
+  const onDisk = ctx.ports.fs.list(parent).map((name) => join(parent, name))
+  const found = new Set(
+    [...registeredTrees(ctx), ...onDisk].filter((path) =>
+      path.startsWith(prefix)
+    )
+  )
+  const swept = []
+  for (const dir of found) {
+    if (ageMs(ctx, dir) < STALE_AFTER_MS) continue
+    removeTemporaryTree(ctx, dir)
+    swept.push(dir)
+  }
+  return swept
+}
+
+function removeOnSignal(ctx, dir) {
+  const host = ctx.host ?? process
+  const handlers = Object.entries(SIGNAL_NUMBERS).map(([signal, number]) => {
+    const handler = () => {
+      removeTemporaryTree(ctx, dir)
+      host.exit(128 + number)
+    }
+    host.on(signal, handler)
+    return [signal, handler]
+  })
+  return () => {
+    for (const [signal, handler] of handlers) host.off(signal, handler)
+  }
+}
+
 export function guardsOnMergedTree(ctx, n, head, tree) {
   const top = git(ctx, ["rev-parse", "--show-toplevel"]).out
   const commit = git(ctx, [
@@ -123,11 +172,12 @@ export function guardsOnMergedTree(ctx, n, head, tree) {
       skipped:
         "the merge changes the lockfile, so installed packages do not match",
     }
-  const home = ctx.env.HOME ?? "/tmp"
-  const parent = join(home, "tmp")
-  const dir = join(parent, `ocv-merge-${n}-${head.slice(0, 8)}`)
+  const parent = join(ctx.env.HOME ?? homedir(), "tmp")
+  const dir = join(parent, `${LEFTOVER_PREFIX}${n}-${head.slice(0, 8)}`)
   ctx.ports.fs.mkdir(parent)
+  const swept = sweepLeftovers(ctx, parent)
   removeTemporaryTree(ctx, dir)
+  const release = removeOnSignal(ctx, dir)
   try {
     const added = git(ctx, ["worktree", "add", "--detach", dir, commit.out])
     if (!added.ok)
@@ -151,9 +201,11 @@ export function guardsOnMergedTree(ctx, n, head, tree) {
     )
     return {
       ran: files.length,
+      swept: swept.length,
       failed: result.ok ? [] : failedGuards(result).slice(0, SHOWN),
     }
   } finally {
+    release()
     removeTemporaryTree(ctx, dir)
   }
 }
@@ -161,7 +213,14 @@ export function guardsOnMergedTree(ctx, n, head, tree) {
 export function mergeResultFacts(ctx, n, head) {
   if (!fetchPull(ctx, n))
     return { n, head, lines: ["Merged-tree check skipped: git fetch failed."] }
-  if (!isBehind(ctx, head)) return { n, head, lines: [], conflicts: [] }
+  const behind = isBehind(ctx, head)
+  if (behind === null)
+    return {
+      n,
+      head,
+      lines: ["Merged-tree check skipped: git rev-list failed."],
+    }
+  if (!behind) return { n, head, lines: [], conflicts: [] }
   const merged = mergeTreeOf(ctx, head)
   if (merged.error)
     return {
@@ -186,6 +245,11 @@ export function mergeResultFacts(ctx, n, head) {
     head,
     conflicts: [],
     failed: guards.failed,
-    lines: [`Merged tree passes ${guards.ran} quick guards.`],
+    lines: [
+      ...(guards.swept
+        ? [`Removed ${guards.swept} leftover merged-tree worktrees.`]
+        : []),
+      `Merged tree passes ${guards.ran} quick guards.`,
+    ],
   }
 }

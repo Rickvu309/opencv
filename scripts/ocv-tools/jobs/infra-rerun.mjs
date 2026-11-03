@@ -1,6 +1,9 @@
 import { json, gh } from "./common.mjs"
 
 const CI_PATH = ".github/workflows/ci.yml"
+const BILLING =
+  /recent account payments have failed|spending limit needs to be increased/i
+const BILLING_JOBS_READ = 3
 
 export function stepless(jobs) {
   return jobs.length > 0 && jobs.every((job) => (job.steps ?? []).length === 0)
@@ -16,6 +19,27 @@ function newestFailedRun(runs, matches) {
         matches(r)
     )
     .sort((a, b) => b.id - a.id)[0]
+}
+
+function billingNote(ctx, repo, jobs) {
+  const idle = jobs.filter((job) => (job.steps ?? []).length === 0)
+  for (const job of idle.slice(0, BILLING_JOBS_READ)) {
+    let notes = []
+    try {
+      notes = json(
+        ctx,
+        "api",
+        `repos/${repo}/check-runs/${job.id}/annotations?per_page=10`
+      )
+    } catch {
+      continue
+    }
+    const hit = (Array.isArray(notes) ? notes : []).find((note) =>
+      BILLING.test(note.message ?? "")
+    )
+    if (hit) return hit.message
+  }
+  return null
 }
 
 export function steplessRun(ctx, repo, verdict, n, head) {
@@ -34,7 +58,18 @@ export function steplessRun(ctx, repo, verdict, n, head) {
   const jobs =
     json(ctx, "api", `repos/${repo}/actions/runs/${run.id}/jobs?per_page=100`)
       .jobs ?? []
-  return stepless(jobs) ? { id: run.id, jobs: jobs.length, merge } : null
+  if (!stepless(jobs)) return null
+  return {
+    id: run.id,
+    jobs: jobs.length,
+    merge,
+    billing: billingNote(ctx, repo, jobs),
+  }
+}
+
+export function billingOfPullRun(ctx, repo, head) {
+  const run = steplessRun(ctx, repo, { kind: "CI_FAILED" }, 0, head)
+  return run?.billing ? { runId: run.id, message: run.billing } : null
 }
 
 export function rerunFailed(ctx, run) {

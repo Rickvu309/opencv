@@ -99,6 +99,11 @@ const CASES = {
     queue({ kind: "LEFT_QUEUE" }),
     "PR #7 head moved from h1 to h2.",
   ],
+  BILLING_BLOCKED: [
+    queue({ kind: "BILLING_BLOCKED", runId: 5 }),
+    queue({ kind: "LEFT_QUEUE" }),
+    "CI cannot run on PR #7: GitHub did not start run 5 because the account's payments failed or its Actions spending limit is used up. A rerun or a new merge will not help.",
+  ],
   CI_FAILED: [
     queue({
       kind: "CI_FAILED",

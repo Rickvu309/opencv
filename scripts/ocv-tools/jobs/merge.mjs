@@ -5,7 +5,7 @@ import { recorded, json, gh } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { cleanup } from "../work.mjs"
 import { conflictsOf, mergeResultFacts } from "./merged-tree.mjs"
-import { rerunFailed, steplessRun } from "./infra-rerun.mjs"
+import { billingOfPullRun, rerunFailed, steplessRun } from "./infra-rerun.mjs"
 
 const WAIT_STEP_SECONDS = 15
 const WAIT_LIMIT_SECONDS = 45 * 60
@@ -215,12 +215,31 @@ function settleInfra(ctx, repo, n, verdict, snapshot, state) {
   if (verdict.kind !== "CI_FAILED" && !failedChecks) return { verdict }
   const run = steplessRun(ctx, repo, verdict, n, snapshot.head)
   if (!run) return { verdict }
+  if (run.billing)
+    return {
+      verdict: { kind: "BILLING_BLOCKED", runId: run.id, message: run.billing },
+    }
   if (verdict.kind === "CI_FAILED" && !state.reran) {
-    state.reran = true
+    state.reran = run.id
     state.lines.push(rerunFailed(ctx, run))
     return { verdict: null, hold: true }
   }
   return { verdict, extra: { infra: run.id } }
+}
+
+function enqueue(ctx, n, head) {
+  gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
+}
+
+function requeueAfterRerun(ctx, n, startHead, snapshot, state) {
+  if (!state.reran || state.requeued || snapshot.inQueue) return
+  if (snapshot.ci?.status !== "completed") return
+  if (snapshot.ci.conclusion !== "success") return
+  state.requeued = true
+  enqueue(ctx, n, startHead)
+  state.lines.push(
+    `The rerun of run ${state.reran} passed, so PR #${n} was queued again at ${startHead}.`
+  )
 }
 
 function waitForMerge(ctx, n, startHead, repo, state) {
@@ -231,6 +250,8 @@ function waitForMerge(ctx, n, startHead, repo, state) {
     if (verdict?.kind === "MERGED")
       return json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
     if (verdict?.kind === "CI_FAILED" && waited < holdUntil) verdict = null
+    if (!verdict && waited >= holdUntil)
+      requeueAfterRerun(ctx, n, startHead, snapshot, state)
     if (verdict) {
       const settled = settleInfra(ctx, repo, n, verdict, snapshot, state)
       if (settled.hold) holdUntil = waited + RERUN_HOLD_SECONDS
@@ -273,10 +294,15 @@ export function merge(ctx, n, { wait = false } = {}) {
         ".nameWithOwner"
       )
       facts.ci = newestCi(ctx, repo, head)
+      const failedCi =
+        facts.ci?.status === "completed" &&
+        facts.ci.conclusion &&
+        facts.ci.conclusion !== "success"
+      facts.billing = failedCi ? billingOfPullRun(ctx, repo, head) : null
     }
     const ready = decide("merge", facts)
     if (!ready.ok) throw refusalError(ready.refusals[0])
-    const state = { lines: [], reran: false }
+    const state = { lines: [], reran: null, requeued: false }
     if (open) {
       const mergeResult = mergeResultFacts(ctx, n, head)
       state.lines.push(...mergeResult.lines)
@@ -284,7 +310,7 @@ export function merge(ctx, n, { wait = false } = {}) {
       if (!joined.ok) throw refusalError(joined.refusals[0])
     }
     if (pull.state !== "MERGED") {
-      gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
+      enqueue(ctx, n, head)
       pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
       if (pull.state !== "MERGED" || !pull.mergeCommit?.oid) {
         if (!wait)

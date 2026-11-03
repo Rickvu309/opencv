@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
+import { EventEmitter } from "node:events"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
+import { homedir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
 import { tempDir } from "../../lib/temp-dir.mjs"
@@ -161,20 +163,48 @@ test("merge --wait names the conflicted files when the queue drops a conflict", 
   assert.equal(f.effects("gh", "run rerun").length, 0)
 })
 
-test("merge --wait reruns a ci run with no steps once and reports infra", () => {
+const BILLING_RUN = 41549654357
+const BILLING_JOB = 125633833595
+const billingNote = {
+  path: ".github",
+  start_line: 1,
+  annotation_level: "failure",
+  message:
+    "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+}
+const runnerNotice = {
+  path: ".github",
+  start_line: 1,
+  annotation_level: "notice",
+  message:
+    "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026.",
+}
+const answer = (cmd, args, key, value) =>
+  cmd === "gh" && args.slice(0, 2).join(" ") === key ? value : null
+
+test("merge --wait reruns a ci run with no steps once, then queues the PR again and merges only after that", () => {
+  let enqueues = 0
   const f = fixture({
     queue: true,
     inQueue: false,
     rollup: [ci("failure")],
     runs: [failedRun()],
-    runJobs: [{ steps: [] }, { steps: [] }],
+    runJobs: [
+      { id: 11, steps: [] },
+      { id: 12, steps: [] },
+    ],
+    annotations: [runnerNotice],
+    intercept(cmd, a, options, s) {
+      if (!answer(cmd, a, "pr merge", true)) return null
+      enqueues += 1
+      if (enqueues === 2) {
+        s.pull.state = "MERGED"
+        s.pull.mergeCommit = { oid: "done" }
+      }
+      return { ok: true, out: "", err: "" }
+    },
     onPause(total, s) {
-      if (s.reran) return
-      s.reran = f.effects("gh", "run rerun").length > 0
-      if (!s.reran) return
-      s.rollup = [ci("success")]
-      s.pull.state = "MERGED"
-      s.pull.mergeCommit = { oid: "done" }
+      if (f.effects("gh", "run rerun").length > 0) s.rollup = [ci("success")]
     },
   })
   const r = f.call("merge", "91", "--wait")
@@ -186,7 +216,102 @@ test("merge --wait reruns a ci run with no steps once and reports infra", () => 
     "--failed",
   ])
   assert.match(r.text, /Infra: run 7 ran no step in any of its 2 jobs/)
-  assert.equal(f.effects("gh", "run rerun").length, 1)
+  assert.match(r.text, /rerun of run 7 passed, so PR #91 was queued again/)
+  const kinds = f.ports.effects
+    .filter((e) => e.op === "proc" && e.cmd === "gh")
+    .map((e) => e.args.slice(0, 2).join(" "))
+    .filter((pair) => pair === "run rerun" || pair === "pr merge")
+  assert.deepEqual(kinds, ["pr merge", "run rerun", "pr merge"])
+  assert.equal(enqueues, 2)
+})
+
+test("billing block seen in a recorded ci run refuses with exit 4 and never reruns", () => {
+  const f = fixture({
+    queue: true,
+    inQueue: false,
+    rollup: [ci("failure")],
+    runs: [failedRun({ id: BILLING_RUN })],
+    runJobs: [{ id: BILLING_JOB, steps: [] }],
+    annotations: [billingNote],
+  })
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 4, r.text)
+  assert.match(r.text, /BILLING_BLOCKED.*run 41549654357/s)
+  assert.match(r.text, /rerun or a new merge will not help/)
+  assert.match(r.text, /Billing & plans.*Rickvu309/s)
+  assert.equal(f.effects("gh", "run rerun").length, 0)
+  assert.equal(f.effects("gh", "pr merge").length, 1)
+})
+
+test("billing block on a queue run is refused with exit 4, not told to enqueue again", () => {
+  const f = fixture({
+    queue: true,
+    inQueue: false,
+    removedEvents: [{ reason: "FAILED_CHECKS", at: "t" }],
+    runs: [
+      failedRun({
+        id: BILLING_RUN,
+        event: "merge_group",
+        head_branch: "gh-readonly-queue/main/pr-91-abc",
+      }),
+    ],
+    runJobs: [{ id: BILLING_JOB, steps: [] }],
+    annotations: [billingNote],
+  })
+  const r = f.call("merge", "91", "--wait")
+  assert.equal(r.code, 4, r.text)
+  assert.match(r.text, /BILLING_BLOCKED/)
+  assert.doesNotMatch(r.text, /enqueue it again/)
+  assert.equal(f.effects("gh", "run rerun").length, 0)
+})
+
+test("merge refuses a billing-blocked ci before it enqueues", () => {
+  const f = fixture({
+    checks: [
+      {
+        id: 1,
+        name: "ci",
+        status: "completed",
+        conclusion: "failure",
+        head_sha: "head-1",
+      },
+    ],
+    runs: [failedRun({ id: BILLING_RUN })],
+    runJobs: [{ id: BILLING_JOB, steps: [] }],
+    annotations: [billingNote],
+  })
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 4, r.text)
+  assert.match(r.text, /BILLING_BLOCKED/)
+  assert.doesNotMatch(r.text, /CI_REQUIRED/)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
+  assert.equal(f.effects("gh", "run rerun").length, 0)
+})
+
+test("a failed ci with steps, or with no billing note, still refuses as CI_REQUIRED", () => {
+  const failed = [
+    {
+      id: 1,
+      name: "ci",
+      status: "completed",
+      conclusion: "failure",
+      head_sha: "head-1",
+    },
+  ]
+  const noNote = fixture({
+    checks: failed,
+    runs: [failedRun()],
+    runJobs: [{ id: 5, steps: [] }],
+    annotations: [runnerNotice],
+  })
+  assert.match(noNote.call("merge", "91").text, /CI_REQUIRED/)
+  const withSteps = fixture({
+    checks: failed,
+    runs: [failedRun()],
+    runJobs: [{ id: 5, steps: [{ name: "x" }] }],
+    annotations: [billingNote],
+  })
+  assert.match(withSteps.call("merge", "91").text, /CI_REQUIRED/)
 })
 
 test("a second ci run with no steps is refused as infra, not rerun again", () => {
@@ -230,13 +355,80 @@ test("a queue run with no steps is reported as infra with the enqueue command", 
         head_branch: "gh-readonly-queue/main/pr-91-abc",
       }),
     ],
-    runJobs: [{ steps: [] }],
+    runJobs: [{ id: 3, steps: [] }],
   })
   const r = f.call("merge", "91", "--wait")
   assert.equal(r.code, 2, r.text)
   assert.match(r.text, /Infra: run 9 ran no step in any job/)
-  assert.match(r.text, /merge 91 --wait to enqueue it again/)
+  assert.match(r.text, /merge 91 --wait once to enqueue it again/)
+  assert.match(r.text, /fails the same way again, stop and tell the owner/)
   assert.equal(f.effects("gh", "run rerun").length, 0)
+})
+
+const leftover = (home) => join(home, "tmp", "ocv-merge-1-deadbeef")
+const listing = (paths) =>
+  paths.map((path) => `worktree ${path}\nHEAD abc\ndetached\n`).join("\n")
+
+test("a leftover merged-tree worktree from another PR is swept by the next run", () => {
+  const f = fixture({
+    behind: 1,
+    intercept(cmd, a) {
+      if (cmd === "git" && a[0] === "worktree" && a[1] === "list")
+        return {
+          ok: true,
+          out: listing(["/repo", leftover(f.ctx.env.HOME ?? homedir())]),
+          err: "",
+        }
+    },
+  })
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 0, r.text)
+  const removed = f.effects("git", "worktree remove").map((e) => e.args.at(-1))
+  assert.ok(removed.includes(leftover(f.ctx.env.HOME ?? homedir())))
+  assert.match(r.text, /Removed 1 leftover merged-tree worktrees/)
+})
+
+test("a merged-tree worktree younger than the guard limit is left alone", () => {
+  const f = fixture({
+    behind: 1,
+    intercept(cmd, a) {
+      if (cmd === "stat")
+        return { ok: true, out: String(f.ctx.now() / 1000 - 5), err: "" }
+      if (cmd === "git" && a[0] === "worktree" && a[1] === "list")
+        return {
+          ok: true,
+          out: listing(["/repo", leftover(f.ctx.env.HOME ?? homedir())]),
+          err: "",
+        }
+    },
+  })
+  f.call("merge", "91")
+  const removed = f.effects("git", "worktree remove").map((e) => e.args.at(-1))
+  assert.ok(!removed.includes(leftover(f.ctx.env.HOME ?? homedir())))
+})
+
+test("a stop signal during the guard run removes the worktree and exits", () => {
+  const exits = []
+  const host = Object.assign(new EventEmitter(), {
+    exit: (code) => exits.push(code),
+  })
+  let removedAtSignal = null
+  const f = fixture({
+    behind: 1,
+    intercept(cmd) {
+      if (cmd !== "timeout") return null
+      const before = f.effects("git", "worktree remove").length
+      host.emit("SIGTERM")
+      removedAtSignal = f.effects("git", "worktree remove").length - before
+      return { ok: true, out: "1 passed", err: "" }
+    },
+  })
+  f.ctx.host = host
+  f.call("merge", "91")
+  assert.deepEqual(exits, [143])
+  assert.equal(removedAtSignal, 1)
+  assert.equal(host.listenerCount("SIGTERM"), 0)
+  assert.equal(host.listenerCount("SIGINT"), 0)
 })
 
 test("merge-result rows pass when nothing is wrong", () => {
