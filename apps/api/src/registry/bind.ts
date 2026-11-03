@@ -42,8 +42,6 @@ type ReversalOf<
   ? ReversalCall<C> | null
   : GuardedReversal<C> | null
 
-const TRANSACTION_NONE_OPENS_ITS_OWN_CONNECTION = "none" as const
-
 type Binding<C extends CommandContract, N extends keyof C & string> = {
   handler: (
     input: CommandInput<C, N>,
@@ -58,7 +56,7 @@ type Binding<C extends CommandContract, N extends keyof C & string> = {
     output: CommandOutput<C, N>,
     actor: Actor
   ) => ActivityDraft | null
-  transaction?: typeof TRANSACTION_NONE_OPENS_ITS_OWN_CONNECTION
+  transaction?: "none"
 }
 
 export type Bindings<C extends CommandContract> = {
@@ -69,7 +67,7 @@ type LooseBinding = {
   handler: (input: unknown, actor: Actor) => Promise<unknown>
   reversal: CommandSpec<unknown, unknown>["reversal"]
   activity: CommandSpec<unknown, unknown>["activity"]
-  transaction?: typeof TRANSACTION_NONE_OPENS_ITS_OWN_CONNECTION
+  transaction?: "none"
 }
 
 export function bindCommands<C extends CommandContract>(
