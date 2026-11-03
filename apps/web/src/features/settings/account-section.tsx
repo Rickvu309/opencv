@@ -19,6 +19,7 @@ import {
   AvatarImage,
 } from "@workspace/ui/components/avatar"
 
+import { HiddenFilePicker } from "@/components/hidden-file-picker.tsx"
 import { CodeInput } from "@/features/auth/code-input.tsx"
 import { profileKey } from "@/lib/account-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
@@ -108,18 +109,10 @@ export function AccountSection({
                 >
                   Change photo
                 </Button>
-                {/* Documented exception: native file input. Kit Input cannot host a hidden file picker. */}
-                <input
+                <HiddenFilePicker
                   ref={fileRef}
-                  type="file"
                   accept="image/*"
-                  className="sr-only"
-                  tabIndex={-1}
-                  aria-hidden
-                  onChange={(event) => {
-                    onPhoto(event.target.files?.[0])
-                    event.target.value = ""
-                  }}
+                  onFile={onPhoto}
                 />
               </>
             }

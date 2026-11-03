@@ -6,10 +6,27 @@ import { describe, expect, it } from "vitest"
 
 import {
   findDroppedRejections,
+  LEGACY_MARKER,
   type SourceFile,
 } from "./rejected-command-scan.ts"
 
 const srcDir = fileURLToPath(new URL("..", import.meta.url))
+const pendingHatches: { file: string; marker: string }[] = JSON.parse(
+  readFileSync(
+    fileURLToPath(
+      new URL(
+        "../../../../scripts/comment-hatches.pending.json",
+        import.meta.url
+      )
+    ),
+    "utf8"
+  )
+)
+const legacyMarkerFiles = new Set(
+  pendingHatches
+    .filter((entry) => entry.marker === LEGACY_MARKER)
+    .map((entry) => entry.file.replace("apps/web/src/", ""))
+)
 
 function sourceFiles(dir: string): SourceFile[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -34,9 +51,10 @@ function scan(text: string) {
 
 describe("every rejected command shows an error", () => {
   it("shows an error for every rejected command", () => {
-    const hits = findDroppedRejections(sourceFiles(srcDir)).map(
-      (finding) => `${finding.file}:${finding.line} ${finding.call}`
-    )
+    const hits = findDroppedRejections(
+      sourceFiles(srcDir),
+      legacyMarkerFiles
+    ).map((finding) => `${finding.file}:${finding.line} ${finding.call}`)
     expect(hits).toEqual([])
   })
 
@@ -101,16 +119,82 @@ function f() { return <b onClick={() => void d().catch(show)} /> }`)
     ).toEqual([])
   })
 
-  it("accepts a rejected-ok marker on the call's line, the line above it, or inside the empty catch", () => {
+  it("accepts a command wrapped in ignoreRejection with a reason", () => {
+    expect(
+      scan(`import { ignoreRejection } from "@/lib/quiet-rejection"
+const run = useRunCommand()
+async function A() {
+  void ignoreRejection(run("a", {}), "stopAfterAbortIsHarmless")
+  await ignoreRejection(run("b", {}), "welcomeRetriesOnNextLoad")
+  const made = await ignoreRejection(run("c", {}), "failedCreateLeavesPanelClosed")
+  void ignoreRejection(run("d", {}), "stopAfterAbortIsHarmless").finally(stop)
+}`)
+    ).toEqual([])
+  })
+
+  it("accepts the wrapper imported under another local name", () => {
+    expect(
+      scan(`import { ignoreRejection as quiet } from "./quiet-rejection"
+const run = useRunCommand()
+function A() { void quiet(run("a", {}), "stopAfterAbortIsHarmless") }`)
+    ).toEqual([])
+  })
+
+  it("flags a command handed to any other function that is then dropped", () => {
     expect(
       scan(`const run = useRunCommand()
-function A() {
-  // rejected-ok: best effort cleanup
-  void run("a", {}).catch(() => undefined)
-  run("b", {}).catch(() => {
-    // rejected-ok: the next load tries again
+function A() { void anything(run("a", {})) }`)
+    ).toEqual(["run"])
+    expect(
+      scan(`const run = useRunCommand()
+function A() { return <b onClick={async () => { await anything(run("a", {})) }} /> }`)
+    ).toEqual(["run"])
   })
-}`)
+
+  it("flags a local function that only shares the wrapper's name", () => {
+    expect(
+      scan(`const run = useRunCommand()
+const ignoreRejection = (p, why) => p
+function A() { void ignoreRejection(run("a", {}), "stopAfterAbortIsHarmless") }`)
+    ).toEqual(["run"])
+  })
+
+  it("flags the wrapper imported from some other module", () => {
+    expect(
+      scan(`import { ignoreRejection } from "./elsewhere"
+const run = useRunCommand()
+function A() { void ignoreRejection(run("a", {}), "stopAfterAbortIsHarmless") }`)
+    ).toEqual(["run"])
+  })
+
+  it("flags a command another function awaited whose caller drops it", () => {
+    expect(
+      scan(`const run = useRunCommand()
+async function save() { await anything(run("a", {})) }
+function A() { void save() }`)
+    ).toEqual(["save"])
+  })
+
+  it("ignores the old marker comment outside the pending files", () => {
+    const text = `const run = useRunCommand()
+function A() {
+  // ${LEGACY_MARKER} best effort cleanup
+  void run("a", {}).catch(() => undefined)
+}`
+    expect(scan(text)).toEqual(["run"])
+  })
+
+  it("honours the old marker comment only in a pending file", () => {
+    const text = `const run = useRunCommand()
+function A() {
+  // ${LEGACY_MARKER} best effort cleanup
+  void run("a", {}).catch(() => undefined)
+}`
+    expect(
+      findDroppedRejections(
+        [{ name: "pending.tsx", text }],
+        new Set(["pending.tsx"])
+      )
     ).toEqual([])
   })
 })

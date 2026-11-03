@@ -13,6 +13,7 @@ import {
 import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
 import { undoActivity, runContractCommand } from "@/lib/contract-client.ts"
+import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import {
   createChat,
   getChat,
@@ -181,12 +182,12 @@ export function useCoachTurn({
   const stop = useCallback(() => {
     const controller = abortRef.current
     if (chatId && controller) {
-      // rejected-ok: the stream aborts either way, a missed stop is harmless.
-      void runContractCommand(queryClient, "coach.stop", {
-        chatId: parseChatId(chatId),
-      })
-        .catch(() => undefined)
-        .finally(() => controller.abort())
+      void ignoreRejection(
+        runContractCommand(queryClient, "coach.stop", {
+          chatId: parseChatId(chatId),
+        }),
+        "stopAfterAbortIsHarmless"
+      ).finally(() => controller.abort())
     } else controller?.abort()
   }, [chatId, queryClient])
 
