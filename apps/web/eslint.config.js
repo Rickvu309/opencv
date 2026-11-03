@@ -134,7 +134,6 @@ export default defineConfig([
     files: [
       "src/features/paper/paper-slash-menu.tsx",
       "src/features/command-palette/command-palette.tsx",
-      "src/components/layer-stack.tsx",
     ],
     rules: {
       "no-restricted-syntax": [

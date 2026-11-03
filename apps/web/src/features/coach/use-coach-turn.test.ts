@@ -63,17 +63,6 @@ describe("shared Coach turn hook", () => {
       existsSync(path.join(webSrc, "features/paper/paper-cite-control.tsx"))
     ).toBe(false)
 
-    expect(read("features/coach/coach-chat.tsx")).not.toMatch(
-      /assistant-ui|AssistantRuntime/
-    )
-    expect(read("features/coach/coach-chat.tsx")).toMatch(/CoachDock/)
-    expect(read("features/coach/coach-chat.tsx")).toMatch(
-      /showModePicker=\{false\}/
-    )
-    expect(read("features/coach/coach-chat.tsx")).toMatch(/onAttachFromPaper/)
-    expect(read("features/coach/coach-chat.tsx")).toMatch(/messageCite/)
-    expect(read("features/coach/coach-chat.tsx")).not.toMatch(/provenance/)
-    expect(read("features/coach/coach-chat.tsx")).not.toMatch(/sources rail/)
     expect(read("features/coach/coach-dock.tsx")).toMatch(/onAttachFromPaper/)
   })
 })

@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, beforeEach, expect, vi } from "vitest"
+import { afterEach, beforeEach, expect, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
@@ -140,10 +140,6 @@ function releaseStage(stage: string): JobStage {
 }
 
 export function installPaperTestLifecycle() {
-  beforeAll(async () => {
-    await import("@/features/coach/coach-chat.tsx")
-  }, 60_000)
-
   beforeEach(() => {
     sessionStorage.clear()
     localStorage.clear()
