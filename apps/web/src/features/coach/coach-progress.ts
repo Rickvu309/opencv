@@ -1,6 +1,5 @@
 import type { ChatEntryPart, ChatToolName } from "@workspace/domain"
 
-/** One streamed fact: a bare step label, or a tool call joined to its label. */
 export type CoachProgressCall =
   | { kind: "step"; id: string; label: string }
   | { kind: "call"; id: string; label: string; name: ChatToolName }
@@ -15,7 +14,6 @@ export type CoachProgressRow = {
 }
 
 export type CoachTurnProgress = {
-  /** True while a turn is running, so settled turns never show old rows. */
   active: boolean
   rows: readonly CoachProgressRow[]
 }
@@ -41,23 +39,23 @@ export function coachProgressReducer(
       return [...calls, { kind: "step", id: action.id, label: action.label }]
     case "call": {
       if (calls.some((call) => call.id === action.id)) return calls
-      // The server emits a call's step label right before the call itself.
-      const previous = calls.at(-1)
+      const precedingStep = calls.at(-1)
       const call: CoachProgressCall = {
         kind: "call",
         id: action.id,
         name: action.name,
         label:
-          previous?.kind === "step" ? previous.label : nameLabel(action.name),
+          precedingStep?.kind === "step"
+            ? precedingStep.label
+            : nameLabel(action.name),
       }
-      return previous?.kind === "step"
+      return precedingStep?.kind === "step"
         ? [...calls.slice(0, -1), call]
         : [...calls, call]
     }
   }
 }
 
-/** Status comes only from the call's own result part, never from what arrived after it. */
 export function coachProgressRows(
   calls: readonly CoachProgressCall[],
   parts: readonly ChatEntryPart[]

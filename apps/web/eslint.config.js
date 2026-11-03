@@ -7,6 +7,15 @@ import { defineConfig, globalIgnores } from "eslint/config"
 
 import { DEAD_AND_UNOWNED } from "../../packages/ui/lint-rules.js"
 
+const paperPrototypePortResetDebounceAndDropdownMountExemptions = {
+  name: "paper prototype port: reset, debounce and dropdown mount flags set state in effects",
+  files: ["src/features/paper/**/*.{ts,tsx}"],
+  rules: {
+    "react-hooks/set-state-in-effect": "off",
+    "react-refresh/only-export-components": "off",
+  },
+}
+
 const HOVER_OVERLAY = [
   "JSXAttribute[name.name=/^(onMouseEnter|onMouseOver|onPointerEnter|onPointerOver)$/]",
 ].map((selector) => ({
@@ -66,14 +75,7 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
-  {
-    files: ["src/features/paper/**/*.{ts,tsx}"],
-    rules: {
-      // Prototype-port reset, debounce, and dropdown mount flags.
-      "react-hooks/set-state-in-effect": "off",
-      "react-refresh/only-export-components": "off",
-    },
-  },
+  paperPrototypePortResetDebounceAndDropdownMountExemptions,
   {
     files: [
       "src/features/paper/**/*.{ts,tsx}",

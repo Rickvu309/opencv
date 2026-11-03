@@ -13,7 +13,6 @@ export type WorkspaceState = {
   link: string
   linkError: string
   draftChatId: string | null
-  /** The Add menu has opened, so its Recent list may load Paper. */
   addMenuOpened: boolean
 }
 

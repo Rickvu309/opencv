@@ -108,7 +108,6 @@ describe("Coach Working progress from real stream events", () => {
       call("m", "job.move"),
       result("m", "job.move", { pendingActionId: "pending-1" })
     )
-    // No confirm event has been delivered yet.
     expect(statuses()).toEqual(["Move card:approval"])
     await feed({
       event: "confirm",

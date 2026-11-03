@@ -15,8 +15,6 @@ import boxes from "./design/session-expired.boxes.styles.json"
 import snapshot from "./design/session-expired.snapshot.json"
 import styles from "./design/session-expired.styles.json"
 
-// Pen frame DhG87 (W1.6), dialog mjDga. The pen's primary row carries a Google G,
-// but "Continue as <email>" sends an email code, so the mark is left out.
 const css = readFileSync(
   path.join(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -90,7 +88,7 @@ describe("session expired dialog pen parity (DhG87 / mjDga)", () => {
     ).not.toBeNull()
   })
 
-  it("does not draw a Google mark on the email-code action", async () => {
+  it("does not draw a Google mark on the email-code action, which sends a code", async () => {
     const dialog = await expire()
     const primary = within(dialog).getByRole("button", { name: /Continue as/ })
     expect(primary.querySelector("img, svg")).toBeNull()

@@ -16,7 +16,7 @@ import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { reportRejected } from "@/lib/command-failure.ts"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
-import { nextMorningIso } from "./inbox-time.ts"
+import { nextMorningIso, SNOOZED_UNTIL_WAKE_TOAST } from "./inbox-time.ts"
 
 export function InboxReaderHeader({
   detail,
@@ -110,7 +110,7 @@ export function InboxReaderHeader({
                   threadId: detail.id,
                   until: nextMorningIso(now, zone),
                 })
-                toast("Snoozed until 7:00")
+                toast(SNOOZED_UNTIL_WAKE_TOAST)
               }
             })
           }

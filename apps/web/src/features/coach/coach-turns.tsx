@@ -72,28 +72,24 @@ export function CoachTurns({
     message,
     parts: message.role === "coach" ? toCoachParts(message) : [],
   }))
-  // A turn that has only run tools keeps Working until the Coach writes text.
-  const streamingText = turns.some(
+  const coachWroteText = turns.some(
     ({ message, parts }) =>
       message.id === STREAMING_COACH_ID &&
       parts.some((part) => part.kind === "text" && part.markdown.trim())
   )
   const working =
     waiting ||
-    (progress?.active === true && !streamingText) ||
+    (progress?.active === true && !coachWroteText) ||
     turns.some(
       ({ message, parts }) =>
         message.id === STREAMING_COACH_ID && parts.length === 0
     )
-  // A pending action already shows its status and Approve/Deny on its own
-  // card, so its row and the Working timer would only say the same thing.
   const progressRows = progress?.active ? progress.rows : []
   const awaitingApproval = progressRows.some((row) => row.status === "approval")
   const rows = progressRows.filter((row) => row.status !== "approval")
-  // Calls that began after the Coach wrote text have no card yet; keep their rows.
   const showRows =
     rows.length > 0 &&
-    (!streamingText || rows.some((row) => row.status === "running"))
+    (!coachWroteText || rows.some((row) => row.status === "running"))
   const showHeader = working && !awaitingApproval
 
   return (

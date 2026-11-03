@@ -27,7 +27,6 @@ function spanOf(value: unknown): ApplySpan | undefined {
   return undefined
 }
 
-/** Unknown values fall back to the board. `open=guide` is dropped. */
 export function validateApplySearch(search: object): ApplySearch {
   const view = viewOf("view" in search ? search.view : undefined)
   const span = spanOf("span" in search ? search.span : undefined)

@@ -11,18 +11,15 @@ type Handlers = {
   onDragEnd: (event: unknown) => void
 }
 
-const captured = vi.hoisted(() => ({ current: null as unknown }))
+const standInKanbanProps = vi.hoisted(() => ({ current: null as unknown }))
 
-// The real sensor decides the drop target from measured rects, which jsdom
-// cannot fake into "no column under the card". The stand-in keeps the board's
-// own handlers and lets the test drive the event sequence directly.
 vi.mock("@workspace/ui/components/kanban", async (importActual) => {
   const actual =
     await importActual<typeof import("@workspace/ui/components/kanban")>()
   return {
     ...actual,
     KanbanProvider: (props: Record<string, unknown>) => {
-      captured.current = props
+      standInKanbanProps.current = props
       return (actual.KanbanProvider as (p: unknown) => unknown)(props)
     },
   }
@@ -30,7 +27,7 @@ vi.mock("@workspace/ui/components/kanban", async (importActual) => {
 
 const junior = mockJob()
 
-describe("apply board keyboard drop", () => {
+describe("apply board keyboard drop, driving the board drag handlers directly since jsdom cannot measure drop rects", () => {
   beforeEach(() => {
     setMockJobs([])
   })
@@ -44,7 +41,7 @@ describe("apply board keyboard drop", () => {
     await screen.findByRole("button", {
       name: "Junior Marketing, Lumière Cosmetics",
     })
-    const handlers = () => captured.current as Handlers
+    const handlers = () => standInKanbanProps.current as Handlers
     const active = { id: junior.id }
     await act(async () => {
       handlers().onDragStart({ active })
@@ -73,7 +70,7 @@ describe("apply board keyboard drop", () => {
     await screen.findByRole("button", {
       name: "Junior Marketing, Lumière Cosmetics",
     })
-    const handlers = () => captured.current as Handlers
+    const handlers = () => standInKanbanProps.current as Handlers
     const active = { id: junior.id }
     await act(async () => {
       handlers().onDragStart({ active })

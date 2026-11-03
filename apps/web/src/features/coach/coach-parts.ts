@@ -24,7 +24,6 @@ export type CoachPart =
 
 export type CoachToolPart = Extract<CoachPart, { kind: "tool" }>
 
-/** One Coach turn as renderable parts, in the order the Coach produced them. */
 export function toCoachParts(message: ChatViewMessage): CoachPart[] {
   const source = message.parts
   if (!source?.length) {
@@ -60,8 +59,9 @@ export function toCoachParts(message: ChatViewMessage): CoachPart[] {
 export type CoachBlock =
   { type: "part"; part: CoachPart } | { type: "tools"; parts: CoachToolPart[] }
 
-/** Adjacent tool steps fold into one group; every other part stands alone. */
-export function groupCoachParts(parts: readonly CoachPart[]): CoachBlock[] {
+export function groupAdjacentToolSteps(
+  parts: readonly CoachPart[]
+): CoachBlock[] {
   const blocks: CoachBlock[] = []
   for (const part of parts) {
     const last = blocks.at(-1)

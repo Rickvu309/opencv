@@ -47,8 +47,7 @@ const DOCK_MENU = [
 
 type MenuId = Exclude<(typeof DOCK_MENU)[number]["id"], "upload">
 
-/** Coach reads a file by name and size only, and no upload route accepts one for Coach. */
-export const UPLOAD_UNAVAILABLE = "Coach cannot read uploaded files yet."
+export const COACH_NO_UPLOAD_ROUTE = "Coach cannot read uploaded files yet."
 
 export type DockRecent = {
   id: string
@@ -82,14 +81,11 @@ type Props = {
   onAttachFromPaper: () => void
   onAttachJob?: () => void
   onAttachLink?: () => void
-  /** Recent Paper documents for the Add menu. Without it the menu has no Recent section. */
   recent?: DockRecentList
   onRecentSelect?: (id: string) => void
   onAddMenuOpenChange?: (open: boolean) => void
   disabled?: boolean
-  /** A limit or off notice shown as the top band of the one composer card. */
   notice?: ReactNode
-  /** Marks the Add control as the screen's one primary action. Only the Coach page sets it. */
   primaryAction?: boolean
 }
 
@@ -176,7 +172,7 @@ export function CoachDock({
                 <Icon />
                 <span data-add-label="">{item.label}</span>
                 {unavailable ? (
-                  <span className="sr-only">{UPLOAD_UNAVAILABLE}</span>
+                  <span className="sr-only">{COACH_NO_UPLOAD_ROUTE}</span>
                 ) : null}
                 {item.caret ? <ChevronRight data-add-caret="" /> : null}
               </DropdownMenuItem>

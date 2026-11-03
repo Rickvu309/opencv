@@ -80,8 +80,7 @@ export type ApplyPickerCard = {
   starred: boolean
 }
 
-/** Paper's picker reads jobs until #378 owns the attach flow. */
-export function useApplyCards() {
+export function useApplyPickerCards() {
   const listQuery = useQuery({
     queryKey: jobListKey(),
     queryFn: listJobs,

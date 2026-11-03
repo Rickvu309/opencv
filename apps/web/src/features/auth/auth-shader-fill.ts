@@ -17,7 +17,7 @@ const sections = snapshot.sections as readonly {
   fills?: readonly SnapshotFill[]
 }[]
 
-function readShaderFill(): AuthShaderFill {
+function readShaderFillFromPenSnapshot(): AuthShaderFill {
   for (const section of sections) {
     for (const fill of section.fills ?? []) {
       if (fill.type !== "shader" || typeof fill.url !== "string") continue
@@ -31,5 +31,4 @@ function readShaderFill(): AuthShaderFill {
   return { url: "", uniforms: {} }
 }
 
-// The pen snapshot is the only place these numbers live.
-export const authShaderFill = readShaderFill()
+export const authShaderFill = readShaderFillFromPenSnapshot()

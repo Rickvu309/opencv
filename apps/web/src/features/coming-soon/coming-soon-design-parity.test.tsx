@@ -7,8 +7,6 @@ import jobsLayout from "./design/jobs.layout.json"
 import pitchLayout from "./design/pitch.layout.json"
 import proofLayout from "./design/proof.layout.json"
 
-// Positions and styles are checked in a browser by verify:pen-layout. This
-// keeps every pen text on its route, so the browser check can find each one.
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())
 })
@@ -23,7 +21,7 @@ const normalize = (text: string) => text.replaceAll(/\s+/g, " ").trim()
 describe.each([jobsLayout, pitchLayout, proofLayout])(
   "$frameName ($frameId) on $route",
   (layout) => {
-    it("renders every pen text", async () => {
+    it("renders every pen text on its route, so verify:pen-layout can find each one", async () => {
       renderApp(layout.route)
       await screen.findByRole("heading", { level: 2 })
       const page = normalize(document.body.textContent ?? "")

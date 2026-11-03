@@ -55,6 +55,8 @@ function detailReducer(state: DetailState, action: DetailAction): DetailState {
   }
 }
 
+const SKIP_REFRESH_FOR_DELETED_JOB = { refresh: false } as const
+
 export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -184,9 +186,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
           dispatch({ type: open ? "delete_requested" : "delete_dismissed" })
         }
         onDelete={() => {
-          // Navigate before refreshing, so the deleted job's own read is
-          // not refetched into an error on screen.
-          void run("job.delete", { jobId: id }, { refresh: false })
+          void run("job.delete", { jobId: id }, SKIP_REFRESH_FOR_DELETED_JOB)
             .then(() => {
               const destination = next ?? previous
               if (destination) {

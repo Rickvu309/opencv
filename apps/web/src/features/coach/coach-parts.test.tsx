@@ -6,7 +6,7 @@ import {
   partRenderers,
 } from "@/features/coach/coach-part-renderers.tsx"
 import {
-  groupCoachParts,
+  groupAdjacentToolSteps,
   toCoachParts,
   type CoachPart,
 } from "@/features/coach/coach-parts.ts"
@@ -76,7 +76,7 @@ describe("toCoachParts", () => {
       ],
     })
 
-    expect(groupCoachParts(parts).map((block) => block.type)).toEqual([
+    expect(groupAdjacentToolSteps(parts).map((block) => block.type)).toEqual([
       "tools",
       "part",
     ])
