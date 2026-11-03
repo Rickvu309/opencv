@@ -27,15 +27,9 @@ const surfaces = {
 }
 
 const REVERSAL_WITHOUT_ACTIVITY_PENDING = {
-  issue: 943,
+  issue: 916,
   expires: "2026-12-01",
   commands: [
-    "chat.rename",
-    "chat.setFocus",
-    "job.addChecklistItem",
-    "job.linkPaper",
-    "job.setChecklistItem",
-    "job.star",
     "paper.rename",
     "paper.replace",
     "paper.restore",

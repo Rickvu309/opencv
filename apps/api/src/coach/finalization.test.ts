@@ -15,6 +15,20 @@ vi.mock("ai", async (importOriginal) => ({
   generateText: vi.fn(async () => ({ text: "Interview prep" })),
 }))
 
+const rename = vi.hoisted(() => ({ fails: false }))
+
+vi.mock("../chat/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../chat/index.js")>()
+  return {
+    ...actual,
+    renameChat: (...args: Parameters<typeof actual.renameChat>) => {
+      if (!rename.fails) return actual.renameChat(...args)
+      rename.fails = false
+      throw new Error("rename failed")
+    },
+  }
+})
+
 const prompt = "Help me prepare for a product intern interview"
 const answer = "Tell me about a project you led."
 
@@ -42,10 +56,7 @@ async function completeTurn(
         input: { chatId, text: prompt },
         actor,
       })
-      if (options.renameFails)
-        vi.spyOn(registry, "execute").mockRejectedValueOnce(
-          new Error("rename failed")
-        )
+      rename.fails = options.renameFails === true
       const events: string[] = []
       const stream = {
         aborted: false,

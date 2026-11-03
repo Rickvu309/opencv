@@ -159,12 +159,28 @@ describe("receipt reversal helpers", () => {
         name: "job.move",
         summary: "Moved it",
         ok: true,
+        activityId: "11111111-1111-4111-8111-111111111111",
         reversal: {
           possible: true,
           description: "Undo by moving the card back.",
         },
       })
     ).toBe("Reversible — Undo by moving the card back.")
+  })
+
+  it("never says Reversible when there is no history row to undo", () => {
+    const part = {
+      type: "tool" as const,
+      name: "job.star" as const,
+      summary: "Starred it",
+      ok: true,
+      reversal: {
+        possible: true,
+        description: "Unstar it.",
+      },
+    }
+    expect(receiptShowsUndo(part)).toBe(false)
+    expect(receiptReversalNote(part)).toBeNull()
   })
 })
 

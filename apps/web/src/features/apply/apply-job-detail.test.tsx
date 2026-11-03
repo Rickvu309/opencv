@@ -156,6 +156,21 @@ describe("job detail", () => {
             summary: "You added this job from the board",
             undoneAt: null,
           },
+          ...[
+            ["job.star", "You starred it"],
+            ["job.addChecklistItem", 'You added "Call them" to the checklist'],
+            ["job.setChecklistItem", "You ticked a checklist item"],
+            ["job.linkPaper", "You linked Junior Marketing CV"],
+          ].map(([command, summary], index) => ({
+            id: `01900000-0000-7000-8000-00000000005${index}`,
+            createdAt: "2026-10-27T03:00:00.000Z",
+            actor: "person" as const,
+            command,
+            subjectKind: "job",
+            subjectId: id,
+            summary,
+            undoneAt: null,
+          })),
         ],
       },
       mockJob({
@@ -185,6 +200,15 @@ describe("job detail", () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText("You added this job from the board")
+    ).toBeInTheDocument()
+    for (const hidden of [
+      "You starred it",
+      'You added "Call them" to the checklist',
+      "You ticked a checklist item",
+    ])
+      expect(screen.queryByText(hidden)).not.toBeInTheDocument()
+    expect(
+      screen.getByText("You linked Junior Marketing CV")
     ).toBeInTheDocument()
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Practise three PM questions" })

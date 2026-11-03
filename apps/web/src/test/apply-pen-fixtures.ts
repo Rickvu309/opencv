@@ -200,7 +200,10 @@ export function detailJobs() {
       linked: { cv: CV, letter: null },
       activity: [
         row("a1", APM_ID, "2026-10-10", "You added this job from ITviec"),
-        row("a2", APM_ID, "2026-10-12", "You linked Junior Marketing CV"),
+        {
+          ...row("a2", APM_ID, "2026-10-12", "You linked Junior Marketing CV"),
+          command: "job.linkPaper",
+        },
         row("a3", APM_ID, "2026-10-20", "You moved it to Interview"),
         {
           ...row(

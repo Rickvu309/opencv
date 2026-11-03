@@ -50,6 +50,7 @@ export type CoverageCtx = {
   chatId: string
   jobId: string
   docId: string
+  otherDocId: string
   itemId: string
   pendingId: string
   activityId: string

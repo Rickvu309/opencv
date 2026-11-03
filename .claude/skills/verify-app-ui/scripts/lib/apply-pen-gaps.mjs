@@ -94,7 +94,6 @@ function detailGaps() {
     "1 / 7": "the pager counts the board order, which puts this job 5th",
     "You added this job from ITviec":
       "the api writes You added this job from itviec.com",
-    "You linked Junior Marketing CV": "job.linkPaper writes no activity row",
     "You moved it to Interview": "the job is saved straight into Interview",
   }
 }
@@ -112,6 +111,30 @@ export const LAYOUT_EXCEPTIONS = [
     property: "y",
     reason:
       "the W9.7 frame stacks it under a follow-up chip the product does not store",
+    ...PENDING_OPERATOR,
+  },
+  {
+    frameId: "Wlp2X",
+    text: "LN",
+    property: "y",
+    reason:
+      "issue 954: W10.4 and W10.5 list the CV link line in Activity, W10.6 leaves it out",
+    ...PENDING_OPERATOR,
+  },
+  {
+    frameId: "Wlp2X",
+    text: "Linh Nguyen",
+    property: "y",
+    reason:
+      "issue 954: W10.4 and W10.5 list the CV link line in Activity, W10.6 leaves it out",
+    ...PENDING_OPERATOR,
+  },
+  {
+    frameId: "Wlp2X",
+    text: "What I learned: the writing test went well. Next time, bring a sharper story with numbers.",
+    property: "y",
+    reason:
+      "issue 954: W10.4 and W10.5 list the CV link line in Activity, W10.6 leaves it out",
     ...PENDING_OPERATOR,
   },
 ]

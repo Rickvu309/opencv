@@ -108,7 +108,11 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         command: "job.star",
         input: { jobId: input.jobId, starred: output.previousStarred },
       }),
-      activity: () => null,
+      activity: (input) => ({
+        subjectKind: "job",
+        subjectId: input.jobId,
+        summary: input.starred ? "You starred it" : "You unstarred it",
+      }),
     },
     "job.delete": {
       handler: (input, actor) => deleteJob(actor, input.jobId),
@@ -122,7 +126,11 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         command: "job.removeChecklistItem",
         input: { jobId: output.jobId, itemId: output.id },
       }),
-      activity: () => null,
+      activity: (_input, output) => ({
+        subjectKind: "job",
+        subjectId: output.jobId,
+        summary: `You added "${output.label}" to the checklist`,
+      }),
     },
     "job.setChecklistItem": {
       handler: (input, actor) =>
@@ -135,7 +143,13 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
           done: output.previousDone,
         },
       }),
-      activity: () => null,
+      activity: (_input, output) => ({
+        subjectKind: "job",
+        subjectId: output.jobId,
+        summary: output.done
+          ? "You ticked a checklist item"
+          : "You unticked a checklist item",
+      }),
     },
     "job.removeChecklistItem": {
       handler: (input, actor) =>
@@ -172,7 +186,11 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
               command: "job.unlinkPaper",
               input: { jobId: input.jobId, kind: input.kind },
             },
-      activity: () => null,
+      activity: (input, output) => ({
+        subjectKind: "job",
+        subjectId: input.jobId,
+        summary: `You linked ${output.docName}`,
+      }),
     },
     "job.unlinkPaper": {
       handler: (input, actor) => unlinkPaper(actor, input.jobId, input.kind),
