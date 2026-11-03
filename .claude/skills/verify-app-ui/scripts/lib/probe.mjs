@@ -460,16 +460,20 @@ function selfContainedProbeThatOnlyMeasures(SEL) {
       )
         panel = n
     }
-    if (!panel && out.h1Rect) {
+    const inFlowSidePaneIsWidestComposerAncestorWithoutTheHeading = () => {
       const main = document.querySelector("main")
+      let widest = null
       for (
         let n = composer.parentElement;
         n && n !== main && n !== document.body && !n.contains(h1s[0]);
         n = n.parentElement
       ) {
-        if (n.getBoundingClientRect().width < innerWidth * 0.6) panel = n
+        if (n.getBoundingClientRect().width < innerWidth * 0.6) widest = n
       }
+      return widest
     }
+    if (!panel && out.h1Rect)
+      panel = inFlowSidePaneIsWidestComposerAncestorWithoutTheHeading()
     if (panel) {
       const pr = panel.getBoundingClientRect()
       out.panelRect = rect(panel)

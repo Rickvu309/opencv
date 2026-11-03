@@ -127,7 +127,7 @@ async function main() {
       const result = comparePen(stylesPath(repo, "apply", slug), measured, {
         notShown,
         marksNotDrawn: MARKS_NOT_DRAWN[slug] ?? 0,
-        colour: !existsSync(layoutFile),
+        penLayoutAaRuleOwnsColour: existsSync(layoutFile),
       })
       if (existsSync(layoutFile)) {
         const full = JSON.parse(readFileSync(layoutFile, "utf8"))

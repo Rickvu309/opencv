@@ -143,7 +143,7 @@ const norm = (s) => s.replace(/[‘']/g, "’").replace(/\s+/g, " ").trim()
 export function comparePen(
   stylesFile,
   measured,
-  { notShown = {}, marksNotDrawn = 0, colour = true } = {}
+  { notShown = {}, marksNotDrawn = 0, penLayoutAaRuleOwnsColour = false } = {}
 ) {
   const styles = JSON.parse(readFileSync(stylesFile, "utf8"))
   const pen = styles.sections.flatMap((section) =>
@@ -168,7 +168,7 @@ export function comparePen(
     const found = pool[Math.min(seen, pool.length - 1)]
     compared += 1
     const problems = []
-    if (colour && /^#[0-9A-F]{6}$/.test(spec.fill ?? "")) {
+    if (!penLayoutAaRuleOwnsColour && /^#[0-9A-F]{6}$/.test(spec.fill ?? "")) {
       const a = oklch(found.color)
       const b = oklch(fromHex(spec.fill))
       const close =

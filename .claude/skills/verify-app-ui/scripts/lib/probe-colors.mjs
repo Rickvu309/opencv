@@ -141,17 +141,18 @@ function selfContainedProbeColors() {
   out.fills = fills.slice(0, 80)
   out.bodyBgLum = Math.round(lum(bodyBg) * 100) / 100
 
+  const SPACING_SIDES_WITHOUT_MARGINS_AS_AUTO_MARGINS_RESOLVE_TO_ODD_PIXELS = [
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "rowGap",
+    "columnGap",
+  ]
   const spacing = { total: 0, off: {} }
   for (const el of visible) {
     const s = cs(el)
-    for (const p of [
-      "paddingTop",
-      "paddingRight",
-      "paddingBottom",
-      "paddingLeft",
-      "rowGap",
-      "columnGap",
-    ]) {
+    for (const p of SPACING_SIDES_WITHOUT_MARGINS_AS_AUTO_MARGINS_RESOLVE_TO_ODD_PIXELS) {
       const v = parseFloat(s[p])
       if (!v || Number.isNaN(v)) continue
       spacing.total++
