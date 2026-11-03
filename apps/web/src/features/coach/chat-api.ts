@@ -22,6 +22,7 @@ import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
+import { withSelectedBlocks } from "@/lib/paper-selection.ts"
 import { endpoints } from "@/lib/requests.ts"
 import type {
   CoachChatEntry,
@@ -290,7 +291,9 @@ export async function streamCoachTurn(
       ...(mode ? { mode } : {}),
       ...(focusDocId !== undefined ? { focusDocId } : {}),
       ...(selection ? { selection } : {}),
-      ...(context?.length ? { context } : {}),
+      ...(withSelectedBlocks(context)?.length
+        ? { context: withSelectedBlocks(context) }
+        : {}),
     },
     handlers,
     signal
@@ -313,7 +316,9 @@ export async function streamCoachRegenerate(
     {
       regenerate: true,
       ...(selection ? { selection } : {}),
-      ...(context?.length ? { context } : {}),
+      ...(withSelectedBlocks(context)?.length
+        ? { context: withSelectedBlocks(context) }
+        : {}),
       ...(mode ? { mode } : {}),
       ...(focusDocId !== undefined ? { focusDocId } : {}),
     },

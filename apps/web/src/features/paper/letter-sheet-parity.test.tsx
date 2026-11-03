@@ -48,7 +48,7 @@ function rule(role: string) {
 
 describe("letter sheet matches the pen sheet", () => {
   it("shows the pen's text for every role, in the pen's order", () => {
-    const { container } = render(<LetterSheet letter={letter} mode="read" />)
+    const { container } = render(<LetterSheet letter={letter} />)
     const shown = [...container.querySelectorAll("[data-slot^='letter-']")]
       .filter((node) => node.getAttribute("data-slot") !== "letter-sheet")
       .map((node) => node.textContent)

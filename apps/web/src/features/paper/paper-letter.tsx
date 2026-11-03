@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useReducer, useRef } from "react"
 import {
-  withoutBlankParts,
   keywordGap,
+  paperPlainText,
   type JobView,
-  type LetterDocument,
+  type LetterPaper,
+  type PaperDocument,
   type PaperView,
 } from "@workspace/domain"
 
@@ -15,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { CopyButton } from "@workspace/ui/components/copy-button"
-import { toast } from "@workspace/ui/components/sonner"
 
 import {
   ChevronRight,
@@ -27,136 +27,82 @@ import {
 } from "lucide-react"
 
 import "./design/letter-editor.pen.css"
-import { useQueryClient } from "@tanstack/react-query"
+import "./design/letter-block-editor.pen.css"
 
-import { readStoredLetter } from "./letter-sheet-model.ts"
-import { getPaper, paperGetKey } from "./paper-api.ts"
-import { usePaperAutosave } from "./paper-autosave.ts"
-import { PaperPrintSheet } from "./paper-print-sheet.tsx"
+import type { ClientChange } from "@workspace/paper-crdt"
+
+import { SYNC_LABEL, usePaperSync } from "@/lib/paper-sync.ts"
+import { setPaperSelection } from "@/lib/paper-selection.ts"
+import {
+  PaperEditorEngine,
+  type PaperEditorHandle,
+} from "./paper-editor-engine.tsx"
+import { LetterPrint } from "./paper-letter-print.tsx"
 import { printPaper } from "./paper-print.ts"
-import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
-import { letterReducer } from "./paper-letter.reducer.ts"
-import { PaperLetterArticle } from "./paper-letter-article.tsx"
 import { editorEditedLabel } from "./paper-templates.ts"
 import { useShareLink } from "./paper-share-link.ts"
 
 export { PaperLetterStart } from "./paper-letter-start.tsx"
 
-function sameLetter(a: LetterDocument, b: LetterDocument) {
-  return (
-    JSON.stringify(withoutBlankParts(a)) ===
-    JSON.stringify(withoutBlankParts(b))
-  )
+type EditorState = {
+  letter: LetterPaper | null
+  editedAt: string
+  gapHidden: boolean
+  printing: boolean
+}
+
+function mergeEditorState(state: EditorState, change: Partial<EditorState>) {
+  return { ...state, ...change }
 }
 
 export function PaperLetterEditor({
   doc,
   job,
-
   onBack,
 }: {
   doc: PaperView
   job: JobView | null
-
   onBack: () => void
 }) {
-  const queryClient = useQueryClient()
   const shareLink = useShareLink(doc.id)
-  const dirtyRef = useRef(false)
-  const inputCountRef = useRef(0)
-  const [{ letter, updatedAt, hiddenGap, conflict, printJob }, dispatch] =
-    useReducer(letterReducer, {
-      letter: readStoredLetter(doc.document),
-      updatedAt: doc.updatedAt,
-      hiddenGap: false,
-      conflict: false,
-      printJob: null,
-    })
-  const { schedule, commitNow, adopt, versionRef } =
-    usePaperAutosave<LetterDocument>({
-      docId: doc.id,
-      initialVersion: doc.contentVersion,
-      toDocument: withoutBlankParts,
-      readInputEpoch: () => inputCountRef.current,
-      onSaved: (saved, inputEpoch) => {
-        if (inputEpoch === inputCountRef.current) dirtyRef.current = false
-        dispatch({ type: "saved", at: new Date().toISOString() })
-        queryClient.setQueryData(paperGetKey(doc.id), saved)
-      },
-      onConflict: () => dispatch({ type: "conflict_detected" }),
-      onError: (error) => {
-        toast(
-          error instanceof Error ? error.message : "Could not save. Try again."
-        )
-      },
-    })
-  const scheduleRef = useRef(schedule)
-  const adoptRef = useRef(adopt)
+  const { client, status, generation } = usePaperSync(doc.id)
+  const editorRef = useRef<PaperEditorHandle>(null)
+  const [{ letter, editedAt, gapHidden, printing }, patch] = useReducer(
+    mergeEditorState,
+    {
+      letter: null,
+      editedAt: doc.updatedAt,
+      gapHidden: false,
+      printing: false,
+    }
+  )
+
+  const onDocument = useCallback(
+    (next: PaperDocument | null, change: ClientChange) => {
+      if (next?.kind !== "letter") return
+      patch({ letter: next })
+      if (change === "local") patch({ editedAt: new Date().toISOString() })
+    },
+    []
+  )
+  const onSelectedBlocks = useCallback(
+    (ids: string[]) => setPaperSelection(doc.id, ids),
+    [doc.id]
+  )
+  useEffect(() => () => setPaperSelection(doc.id, []), [doc.id])
   useEffect(() => {
-    scheduleRef.current = schedule
-    adoptRef.current = adopt
-  }, [schedule, adopt])
-  const onLetterChange = useCallback((next: LetterDocument) => {
-    inputCountRef.current += 1
-    dirtyRef.current = true
-    dispatch({ type: "letter_typed", letter: next })
-    scheduleRef.current(next)
-  }, [])
-  const gap = hiddenGap
+    if (!printing) return
+    return printPaper(doc.name, () => patch({ printing: false }))
+  }, [printing, doc.name])
+
+  const gap = gapHidden
     ? null
-    : keywordGap(letter.markdown, job?.posting?.requirements ?? "")
-
-  useEffect(() => {
-    if (dirtyRef.current) return
-    const next = readStoredLetter(doc.document)
-    // A reload can be newer than the query prop. Leave that text on screen.
-    if (doc.contentVersion < versionRef.current) return
-    if (doc.contentVersion === versionRef.current && sameLetter(next, letter))
-      return
-    adoptRef.current(doc.contentVersion)
-    dispatch({ type: "letter_synced", letter: next })
-  }, [doc, letter, versionRef])
-
-  useEffect(() => {
-    if (!printJob) return
-    return printPaper(printJob.title, () =>
-      dispatch({ type: "print_finished" })
-    )
-  }, [printJob])
-
-  async function reloadLetter() {
-    try {
-      const next = await getPaper(doc.id)
-      dirtyRef.current = false
-      adopt(next.contentVersion)
-      queryClient.setQueryData(paperGetKey(doc.id), next)
-      dispatch({
-        type: "letter_reloaded",
-        letter: readStoredLetter(next.document),
-        updatedAt: next.updatedAt,
-      })
-    } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not reload. Refresh the page."
+    : keywordGap(
+        letter ? paperPlainText(letter) : "",
+        job?.posting?.requirements ?? ""
       )
-    }
-  }
-
   function addKeyword() {
-    if (!gap || conflict) return
-    const next: LetterDocument = {
-      ...letter,
-      markdown: letter.markdown.includes(gap.keyword)
-        ? letter.markdown
-        : `${letter.markdown}\n${gap.keyword}`,
-    }
-    inputCountRef.current += 1
-    dirtyRef.current = true
-    dispatch({ type: "keyword_added", letter: next })
-    // Share the autosave queue so an in-flight edit advances the version first.
-    commitNow(next)
+    if (gap) editorRef.current?.insertText(gap.keyword)
   }
 
   return (
@@ -209,11 +155,7 @@ export function PaperLetterEditor({
               }
             />
             <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                onClick={() =>
-                  dispatch({ type: "print_requested", title: doc.name })
-                }
-              >
+              <DropdownMenuItem onClick={() => patch({ printing: true })}>
                 Download PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -224,7 +166,9 @@ export function PaperLetterEditor({
             data-slot="letter-editor-edited"
             className="flex h-7 flex-1 items-center rounded-[7px] px-2 text-[13.5px] leading-4 md:flex-none"
           >
-            {editorEditedLabel(updatedAt)}
+            {status === "saved" || status === "loading"
+              ? editorEditedLabel(editedAt)
+              : SYNC_LABEL[status]}
           </p>
           <CopyButton
             data-slot="letter-editor-link"
@@ -242,17 +186,7 @@ export function PaperLetterEditor({
           </CopyButton>
         </div>
       </header>
-      {printJob ? (
-        <PaperPrintSheet
-          name={doc.name}
-          kind="letter"
-          source={withoutBlankParts(letter)}
-          templateId={null}
-        />
-      ) : null}
-      {conflict ? (
-        <PaperEditorConflictBanner onReload={() => void reloadLetter()} />
-      ) : null}
+      {printing && letter ? <LetterPrint document={letter} /> : null}
       <div
         data-slot="letter-editor-desk"
         tabIndex={-1}
@@ -275,7 +209,7 @@ export function PaperLetterEditor({
                 size="icon"
                 className="size-6 shrink-0 rounded-[6px]"
                 aria-label="Dismiss suggestion"
-                onClick={() => dispatch({ type: "gap_dismissed" })}
+                onClick={() => patch({ gapHidden: true })}
               >
                 <X className="size-3.5" />
               </Button>
@@ -291,7 +225,6 @@ export function PaperLetterEditor({
                 type="button"
                 variant="glow"
                 className="h-7 rounded-[7px] px-2.5 text-[12px] font-semibold"
-                disabled={conflict}
                 onClick={addKeyword}
               >
                 Add to letter
@@ -301,7 +234,7 @@ export function PaperLetterEditor({
                 data-slot="letter-editor-skip"
                 variant="ghost"
                 className="h-7 rounded-[7px] px-2.5 text-[12px] font-medium"
-                onClick={() => dispatch({ type: "gap_dismissed" })}
+                onClick={() => patch({ gapHidden: true })}
               >
                 Skip
               </Button>
@@ -322,11 +255,36 @@ export function PaperLetterEditor({
             />
           </>
         ) : null}
-        <PaperLetterArticle
-          doc={doc}
-          letter={letter}
-          onChange={onLetterChange}
-        />
+        <article
+          aria-label={doc.name}
+          data-slot="letter-editor-sheet"
+          className="w-full max-w-[560px] shrink-0 rounded-[2px] @min-[876px]:-translate-x-[142px] @min-[1128px]:translate-x-0"
+        >
+          <div data-paper-section="letter">
+            {client ? (
+              <PaperEditorEngine
+                kind="letter"
+                client={client}
+                generation={generation}
+                label={`Letter ${doc.name}`}
+                onDocument={onDocument}
+                onSelectedBlocks={onSelectedBlocks}
+                handleRef={editorRef}
+              />
+            ) : (
+              <p
+                role="status"
+                className="px-15 py-14 text-[11px] text-muted-foreground"
+              >
+                {status === "offline"
+                  ? "Offline. Retrying to open this letter."
+                  : status === "refused"
+                    ? SYNC_LABEL.refused
+                    : "Connecting"}
+              </p>
+            )}
+          </div>
+        </article>
       </div>
     </section>
   )

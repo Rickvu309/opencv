@@ -23,7 +23,6 @@
   "apps/web/src/features/paper/paper-blocks.test.tsx": 2,
   "apps/web/src/features/paper/paper-cv-a4.tsx": 7,
   "apps/web/src/features/paper/paper-data.ts": 2,
-  "apps/web/src/features/paper/paper-letter.tsx": 2,
   "apps/web/src/features/paper/paper-library-support.ts": 3,
   "apps/web/src/features/paper/paper-library.tsx": 2,
   "apps/web/src/features/paper/paper-print-sheet.tsx": 1,

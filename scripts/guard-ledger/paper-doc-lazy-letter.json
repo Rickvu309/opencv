@@ -1,0 +1,6 @@
+{
+  "id": "paper-doc-lazy-letter",
+  "file": "apps/web/src/test/paper-doc-lazy-letter.test.ts",
+  "historic": null,
+  "reason": "the letter editor shipped lazy from its first commit, so no past commit imports it eagerly; the test proves both sides itself: walking from paper-letter.tsx finds the editor's eager imports, and the Paper route reaches it only through lazy(() => import(...))"
+}

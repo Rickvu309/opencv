@@ -110,7 +110,7 @@ export function PaperSharePage() {
             <CvDocument data={cv} onChange={() => undefined} />
           </CvPhotoFrame>
         ) : doc.kind === "letter" ? (
-          <LetterSheet letter={readStoredLetter(doc.document)} mode="read" />
+          <LetterSheet letter={readStoredLetter(doc.document)} />
         ) : null}
       </div>
     </main>
