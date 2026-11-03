@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { RUNS_FILE } from "./ci-screens.mjs"
 import { expiredPending } from "./pending-fixes.mjs"
 
 export const root = path.resolve(
@@ -15,7 +16,6 @@ export const COVERAGE_TEST = `${WEB_SRC}/test/design-frame-coverage.test.ts`
 export const MANIFEST = `${WEB_SRC}/test/design-frames.json`
 export const LAYOUT_PENDING = `${WEB_SRC}/test/design-frames.layout-pending.json`
 export const COUNT_FILE = `${WEB_SRC}/test/design-frames.pending-count.json`
-const SCREENS = "scripts/ci-screens.mjs"
 const SKIPS = "scripts/ci-screens.skips.json"
 const DEFAULT_SCREEN_SCRIPT = "verify-pen-layout.mjs"
 const TEST_FILE = /\.test\.tsx?$/
@@ -93,19 +93,11 @@ export function entryProblems({ list, entries, frameIds, today }) {
 
 export function screenRuns(text) {
   if (!text) return []
-  const selfLaunching = [
-    ...text.matchAll(/run\(\s*"([^"]+)",\s*\[join\(scripts,\s*"([^"]+)"\)/g),
-  ].map(([, id, script]) => ({ id, script, extra: [] }))
-  const external = [...text.matchAll(/\{[^{}]*\}/g)].flatMap(([block]) => {
-    const id = /\bid:\s*"([^"]+)"/.exec(block)?.[1]
-    const script = /\bscript:\s*"([^"]+)"/.exec(block)?.[1]
-    if (!id || !script) return []
-    const extra = /\bextra:\s*\[([^\]]*)\]/.exec(block)?.[1] ?? ""
-    return [
-      { id, script, extra: [...extra.matchAll(/"([^"]*)"/g)].map((m) => m[1]) },
-    ]
-  })
-  return [...selfLaunching, ...external]
+  return JSON.parse(text).map((run) => ({
+    id: run.id,
+    script: run.script,
+    extra: run.extra ?? [],
+  }))
 }
 
 const scriptName = (script) => path.basename(script).replace(/\.mjs$/, "")
@@ -127,7 +119,11 @@ export function driverRun(driver, runs) {
 export function layoutCheck(layout, { imported, runs, skipped }) {
   if (imported.has(layout.file)) return `a test imports ${layout.file}`
   const run = driverRun(layout.driver, runs)
-  if (run && !skipped.has(run.id))
+  if (
+    run &&
+    !skipped.has(run.id) &&
+    !skipped.has(`${run.id}:${layout.frameId}`)
+  )
     return `the screens job runs ${run.id} on ${layout.file}`
   return null
 }
@@ -161,7 +157,7 @@ export function frameProblems({
     if (!SIGNED_IN_FRAME.test(frame.name)) continue
     if (checked.has(frame.id) || waiting.has(frame.id)) continue
     problems.push(
-      `${frame.name} (${frame.id}) counts as covered with no layout check. A snapshot alone covers only marketing frames. Record its layout json with scripts/pen-layout.mjs and import it from a test, or measure it in a screen check that scripts/ci-screens.mjs runs and does not skip.`
+      `${frame.name} (${frame.id}) counts as covered with no layout check. A snapshot alone covers only marketing frames. Record its layout json with scripts/pen-layout.mjs and import it from a test, or measure it in a screen check that ${RUNS_FILE} lists and scripts/ci-screens.skips.json does not skip.`
     )
   }
   return problems
@@ -277,7 +273,11 @@ export function readTree(rev = null) {
       .filter((file) => TEST_FILE.test(file))
       .flatMap((file) => layoutImports(file, read(file) ?? ""))
   )
-  const manifest = read(MANIFEST) ?? readRepoFile(MANIFEST)
+  const manifest = read(MANIFEST)
+  if (manifest === null)
+    throw new Error(
+      `no frame ledger at ${rev ?? "the working tree"}: ${MANIFEST} is missing, so there is nothing to check.`
+    )
   const layoutPendingText = read(LAYOUT_PENDING)
   const pinnedText = read(COUNT_FILE)
   return {
@@ -287,19 +287,23 @@ export function readTree(rev = null) {
     layouts,
     checks: {
       imported,
-      runs: screenRuns(read(SCREENS)),
+      runs: screenRuns(read(RUNS_FILE)),
       skipped: new Set(JSON.parse(read(SKIPS) ?? "[]").map((skip) => skip.id)),
     },
     pinned: pinnedText ? JSON.parse(pinnedText) : null,
   }
 }
 
-function main(argv) {
+export function main(argv) {
   const at = argv[0] === "--at" ? argv[1] : null
-  const problems = ledgerProblems(
-    readTree(at),
-    new Date().toISOString().slice(0, 10)
-  )
+  let tree
+  try {
+    tree = readTree(at)
+  } catch (error) {
+    console.log(error.message)
+    return 2
+  }
+  const problems = ledgerProblems(tree, new Date().toISOString().slice(0, 10))
   console.log(`frame ledger at ${at ?? "the working tree"}`)
   for (const problem of problems) console.log(`  ${problem}`)
   console.log(problems.length ? `FIRES (${problems.length})` : "QUIET")

@@ -8,6 +8,7 @@ import {
   frameProblems,
   layoutImports,
   ledgerProblems,
+  main,
   pendingFramesIn,
   readTree,
   screenRuns,
@@ -20,23 +21,19 @@ const MISTAKE = `const PENDING_FRAMES: Record<string, { issue: number; expires: 
 }
 `
 
-const SCREENS = `const penLayout = await run(
-    "pen-layout",
-    [join(scripts, "verify-pen-layout.mjs")],
-  )
-  const apply = await run(
-    "apply-pen",
-    [join(scripts, "verify-apply-pen.mjs")],
-  )
-const EXTERNAL = [
-  { id: "auth-code", script: "verify-auth-code.mjs", style: "port" },
+const SCREENS = JSON.stringify([
+  { id: "pen-layout", script: "verify-pen-layout.mjs", stack: "own" },
+  { id: "apply-pen", script: "verify-apply-pen.mjs", stack: "own" },
+  { id: "auth-code", script: "verify-auth-code.mjs", stack: "shared" },
   {
     id: "letter-start-unreadable",
     script: "verify-letter-start.mjs",
-    style: "port",
+    stack: "shared",
     extra: ["--state", "unreadable"],
   },
-]`
+])
+
+const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 const frames = [
   { id: "w7zeGR", name: "Landing (Linear layout)" },
@@ -129,6 +126,33 @@ test("a layout whose screen check is skipped, or that no check runs, is not a ch
     checks: checks({ skipped: new Set(["auth-code"]) }),
   })
   assert.equal(problems.length, 2)
+})
+
+test("a frame whose own pen-layout result is skipped is not checked, while its neighbours stay checked", () => {
+  const layouts = [
+    { file: "a/code.layout.json", frameId: "yGwdJ", driver: null },
+    { file: "a/w9-3.layout.json", frameId: "aLOFO", driver: null },
+  ]
+  const problems = frameProblems({
+    frames,
+    pending: [],
+    layoutPending: [],
+    layouts,
+    checks: checks({ skipped: new Set(["pen-layout:yGwdJ"]) }),
+  })
+  assert.equal(problems.length, 1)
+  assert.match(problems[0], /W1\.2 Enter code \(yGwdJ\) counts as covered/)
+})
+
+test("a tree with no frame manifest is refused, not checked against today's manifest", () => {
+  assert.throws(() => readTree(EMPTY_TREE), /no frame ledger at 4b825dc/)
+  const log = console.log
+  console.log = () => {}
+  try {
+    assert.equal(main(["--at", EMPTY_TREE]), 2)
+  } finally {
+    console.log = log
+  }
 })
 
 test("a driver matches its screen run by script and extra arguments", () => {
