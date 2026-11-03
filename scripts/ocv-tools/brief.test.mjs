@@ -182,10 +182,10 @@ const PAPER_FENCE = {
   ],
 }
 
-test("the shipped fence holds the #916 paths and an expiry date", () => {
+test("the shipped fence holds the #1041 paths and an expiry date", () => {
   const raw = readFileSync(FENCES_FILE, "utf8")
   const [fence] = JSON.parse(raw).fences
-  assert.equal(fence.issue, 916)
+  assert.equal(fence.issue, 1041)
   assert.match(fence.expires, /^\d{4}-\d{2}-\d{2}$/)
   const { active } = parseFences(raw, Date.parse("2026-11-03T00:00:00Z"))
   const paths = active.map((entry) => entry.path)
@@ -201,6 +201,8 @@ test("the shipped fence holds the #916 paths and an expiry date", () => {
     "packages/domain/src/paper-doc/**",
     "packages/paper-crdt/**",
     "apps/web/package.json",
+    "apps/web/src/routes/paper-doc.tsx",
+    ".claude/skills/verify-app-ui/scripts/verify-cv-editor.mjs",
   ])
     assert.ok(paths.includes(path), path)
 })
@@ -208,7 +210,7 @@ test("the shipped fence holds the #916 paths and an expiry date", () => {
 test("brief prints the shipped fence before its expiry", () => {
   const { text } = run(["brief", "90", "--role", "build"])
   assert.match(text, /^Fenced paths \(never edit\):$/m)
-  assert.match(text, /^ {2}apps\/api\/src\/paper\/\*\* \(issue #916\)$/m)
+  assert.match(text, /^ {2}apps\/api\/src\/paper\/\*\* \(issue #1041\)$/m)
 })
 
 test("fenced paths come from the file and an expired fence is dropped", () => {

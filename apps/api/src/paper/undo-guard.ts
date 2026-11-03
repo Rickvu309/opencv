@@ -4,6 +4,16 @@ import { getDb } from "../db/context.js"
 import { paperDocUpdates, paperDocs } from "../db/schema.js"
 import { blockedReason, type EditRow } from "./undo-rules.js"
 
+export const OLD_EDITOR_UNDO_REASON =
+  "This change was saved by the old editor and can't be undone."
+
+export async function oldEditorUndoReasons(
+  userId: string,
+  inputs: readonly unknown[]
+): Promise<(string | null)[]> {
+  return inputs.map(() => (userId === "" ? null : OLD_EDITOR_UNDO_REASON))
+}
+
 export type UndoQuestion = { docId: string; editId: string }
 
 export async function undoBlockedReasons(

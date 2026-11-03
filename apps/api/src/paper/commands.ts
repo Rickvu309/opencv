@@ -14,7 +14,7 @@ import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { createId } from "../id.js"
 import { editAsCoach, revertCoachEdit } from "./content-coach.js"
-import { undoBlockedReasons } from "./undo-guard.js"
+import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import {
@@ -98,6 +98,8 @@ export function registerPaper(registry: Registry) {
       )
     )
   )
+  registry.addUndoGuard("paper.replace", oldEditorUndoReasons)
+  registry.addUndoGuard("paper.restore", oldEditorUndoReasons)
   bindCommands(registry, paperContract, {
     "paper.create": {
       handler: async (input, actor) => {
