@@ -13,9 +13,14 @@ import { CvPhoto } from "./cv-templates/cv-parts.tsx"
 import { CvField } from "./cv-field.tsx"
 import "./cv-editor.css"
 
-export const CvChromeContext = createContext({
+type CvChrome = {
+  showPhoto: boolean
+  askCoach: (text: string) => void
+}
+
+export const CvChromeContext = createContext<CvChrome>({
   showPhoto: false,
-  askCoach: (_text: string) => undefined as void,
+  askCoach: () => undefined,
 })
 
 type FieldBlock = {
