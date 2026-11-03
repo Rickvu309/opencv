@@ -84,7 +84,7 @@ const LinkBar: FC<LinkToolbarProps> = ({
         <Button
           type="button"
           size="sm"
-          className="h-7 text-xs"
+          className="h-11 text-xs md:h-7"
           disabled={next === null}
           onClick={save}
         >
@@ -94,7 +94,7 @@ const LinkBar: FC<LinkToolbarProps> = ({
           type="button"
           variant="ghost"
           size="sm"
-          className="h-7 text-xs"
+          className="h-11 text-xs md:h-7"
           onClick={finish}
         >
           Cancel
@@ -116,7 +116,7 @@ const LinkBar: FC<LinkToolbarProps> = ({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 text-xs"
+        className="h-11 text-xs md:h-7"
         onClick={() => {
           setToolbarPositionFrozen?.(true)
           dispatch({ type: "edit", href: url })
@@ -128,7 +128,7 @@ const LinkBar: FC<LinkToolbarProps> = ({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 text-xs"
+        className="h-11 text-xs md:h-7"
         onClick={() => {
           link.deleteLink(range.from)
           setToolbarOpen?.(false)

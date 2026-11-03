@@ -158,7 +158,7 @@ function SelectionFormat() {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 text-xs"
+              className="h-11 text-xs md:h-7"
             >
               {label}
             </Button>
@@ -189,7 +189,7 @@ function SelectionFormat() {
         size="sm"
         aria-label="Bold"
         aria-pressed={Boolean(styles.bold)}
-        className="h-7 w-7 p-0 font-bold"
+        className="size-11 p-0 font-bold md:size-7"
         onClick={() => toggle("bold")}
       >
         B
@@ -200,7 +200,7 @@ function SelectionFormat() {
         size="sm"
         aria-label="Italic"
         aria-pressed={Boolean(styles.italic)}
-        className="h-7 w-7 p-0 italic"
+        className="size-11 p-0 italic md:size-7"
         onClick={() => toggle("italic")}
       >
         I
@@ -224,7 +224,7 @@ function SelectionFormat() {
               variant="ghost"
               size="sm"
               aria-label="Link"
-              className="h-7 w-7 p-0"
+              className="size-11 p-0 md:size-7"
             >
               <LinkIcon className="size-3.5" aria-hidden="true" />
             </Button>
@@ -256,6 +256,7 @@ function SelectionFormat() {
           <Button
             type="button"
             size="sm"
+            className="h-11 md:h-7"
             disabled={link === null}
             onClick={addLink}
           >
@@ -298,7 +299,7 @@ function SlashList({
           variant="ghost"
           size="sm"
           className={cn(
-            "h-8 justify-start text-xs",
+            "h-11 justify-start text-xs md:h-8",
             index === selectedIndex && "bg-accent text-accent-foreground"
           )}
           onClick={() => onItemClick?.(item)}
@@ -356,7 +357,7 @@ function Handle() {
         variant="ghost"
         size="icon"
         aria-label="Add block below"
-        className="size-6"
+        className="size-11 md:size-6"
         onClick={() => {
           const created = editor.insertBlocks(
             [{ type: "paragraph" }],
@@ -374,7 +375,7 @@ function Handle() {
         tabIndex={0}
         aria-label="Drag block"
         draggable
-        className="flex size-6 cursor-grab items-center justify-center rounded-md hover:bg-accent"
+        className="flex size-11 cursor-grab items-center justify-center rounded-md hover:bg-accent md:size-6"
         onDragStart={(event) => side.blockDragStart(event, block)}
         onDragEnd={() => side.blockDragEnd()}
       >
