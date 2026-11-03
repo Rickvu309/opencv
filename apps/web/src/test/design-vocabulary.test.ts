@@ -203,7 +203,7 @@ const PAPER_CSS_CV_PRINT_VARIABLE_RE = /^cv-/
 
 const AFFECT_INJECTED_STYLESHEET_VARIABLE_RE = /^(?:ui-[a-z]+-|[ui]$)/
 
-const AFFECT_FILES_KEPT_IN_THE_APP = new Set(["components/layer-stack.tsx"])
+const AFFECT_FILES_KEPT_IN_THE_APP = new Set<string>()
 
 const RETIRED_CLASS_RE = new RegExp(
   [

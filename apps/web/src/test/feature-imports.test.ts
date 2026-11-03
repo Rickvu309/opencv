@@ -22,7 +22,6 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
   coach: [],
   "coming-soon": [],
   "command-palette": [],
-  commands: [],
   inbox: ["apply"],
   landing: [],
   paper: ["apply", "coach", "seed"],
