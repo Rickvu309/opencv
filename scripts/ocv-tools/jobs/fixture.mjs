@@ -154,7 +154,8 @@ export function fixture(over = {}) {
         if (pair === "api user") return ok("owner")
         if (pair === "api graphql") {
           const p = s.pull
-          const inQueue = s.inQueue ?? (s.queue && p.state === "OPEN")
+          const inQueue =
+            s.inQueue ?? (Boolean(s.enqueued) && s.queue && p.state === "OPEN")
           return ok({
             data: {
               repository: {
@@ -164,7 +165,11 @@ export function fixture(over = {}) {
                   mergeCommit: p.mergeCommit,
                   isInMergeQueue: Boolean(inQueue),
                   mergeQueueEntry: inQueue
-                    ? { state: s.queueState ?? "QUEUED", position: 1 }
+                    ? {
+                        state: s.queueState ?? "QUEUED",
+                        position: 1,
+                        headCommit: { oid: s.queuedHead ?? p.headRefOid },
+                      }
                     : null,
                   headRef: {
                     target: {
@@ -194,6 +199,7 @@ export function fixture(over = {}) {
         if (pair === "run rerun") return ok()
         if (a[0] === "api") return ok({ check_runs: s.checks })
         if (pair === "pr merge") {
+          s.enqueued = true
           if (!s.queue) {
             s.pull.state = "MERGED"
             s.pull.mergeCommit = { oid: "merged-1" }

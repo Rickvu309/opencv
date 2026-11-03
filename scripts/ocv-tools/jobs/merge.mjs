@@ -1,5 +1,6 @@
+import { dirname, join } from "node:path"
 import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
-import { recorded, json, gh } from "./common.mjs"
+import { recorded, json, gh, git } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { cleanup } from "../work.mjs"
 import { conflictsOf, mergeResultFacts } from "./merged-tree.mjs"
@@ -41,7 +42,7 @@ const SNAPSHOT_QUERY = `query ($owner: String!, $name: String!, $n: Int!) {
       headRefOid
       mergeCommit { oid }
       isInMergeQueue
-      mergeQueueEntry { state position }
+      mergeQueueEntry { state position headCommit { oid } }
       headRef {
         target {
           ... on Commit {
@@ -96,6 +97,7 @@ function queueSnapshot(ctx, repo, n, waited) {
     head: pr.headRefOid,
     inQueue: Boolean(pr.isInMergeQueue),
     queueState: pr.mergeQueueEntry?.state ?? null,
+    queuedHead: pr.mergeQueueEntry?.headCommit?.oid ?? null,
     ci: ci ? { status: ci.status, conclusion: ci.conclusion } : null,
     removed: removed ? { reason: removed.reason, at: removed.createdAt } : null,
     waited,
@@ -218,8 +220,59 @@ function settleInfra(ctx, repo, n, verdict, snapshot, state) {
   return { verdict, extra: { infra: run.id } }
 }
 
+function queuedHeadFile(ctx, n) {
+  const common = git(
+    ctx,
+    "rev-parse",
+    "--path-format=absolute",
+    "--git-common-dir"
+  )
+  return join(common, "ocv-merge-wait", String(n))
+}
+
+function readQueuedHead(ctx, n) {
+  const path = queuedHeadFile(ctx, n)
+  if (!ctx.ports.fs.exists(path)) return null
+  const text = ctx.ports.fs.read(path).trim()
+  return text || null
+}
+
+function writeQueuedHead(ctx, n, head) {
+  const path = queuedHeadFile(ctx, n)
+  ctx.ports.fs.mkdir(dirname(path))
+  ctx.ports.fs.write(path, `${head}\n`)
+}
+
+function pullSnapshot(pull, extra = {}) {
+  return {
+    state: pull.state,
+    head: pull.headRefOid,
+    inQueue: false,
+    queueState: null,
+    ci: null,
+    removed: null,
+    waited: 0,
+    ...extra,
+  }
+}
+
+function githubQueueHead(ctx, n) {
+  const repo = gh(
+    ctx,
+    "repo",
+    "view",
+    "--json",
+    "nameWithOwner",
+    "--jq",
+    ".nameWithOwner"
+  )
+  const snapshot = queueSnapshot(ctx, repo, n, 0)
+  return { inQueue: snapshot.inQueue, queuedByGitHub: snapshot.queuedHead }
+}
+
 function enqueue(ctx, n, head) {
   gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
+  writeQueuedHead(ctx, n, head)
 }
 
 function requeueAfterRerun(ctx, n, startHead, snapshot, state) {
@@ -264,6 +317,34 @@ export function merge(ctx, n, { wait = false } = {}) {
       pull.headRefName
     )?.[1]
     const head = pull.headRefOid
+    const queued = readQueuedHead(ctx, n)
+    if (wait && queued && queued !== head) {
+      failWait(
+        ctx,
+        null,
+        n,
+        { kind: "HEAD_MOVED", from: queued, to: head },
+        pullSnapshot(pull),
+        { handoff: true, merged: pull.state === "MERGED" }
+      )
+    }
+    if (wait && !queued) {
+      const github = githubQueueHead(ctx, n)
+      if (pull.state === "MERGED" || github.inQueue) {
+        failWait(
+          ctx,
+          null,
+          n,
+          {
+            kind: "UNRECORDED_HEAD",
+            head,
+            merged: pull.state === "MERGED",
+            queuedByGitHub: github.queuedByGitHub,
+          },
+          pullSnapshot(pull, { inQueue: github.inQueue })
+        )
+      }
+    }
     let repo = null
     const open = pull.state === "OPEN"
     const facts = open

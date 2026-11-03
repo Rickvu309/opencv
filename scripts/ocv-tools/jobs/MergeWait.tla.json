@@ -1,7 +1,8 @@
 {
   "module": "merge.mjs",
   "mutants": {
-    "limit": 13
+    "limit": 13,
+    "handoff": 12
   },
   "actions": {
     "Enqueue": "merge",
