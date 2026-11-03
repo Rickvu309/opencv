@@ -5,7 +5,7 @@ import {
   APM_ID,
   CONTENT_ID,
   LUMIERE,
-  NOW,
+  PEN_FRAME_CLOCK,
   addLetters,
   detailJobs,
   fill,
@@ -82,7 +82,7 @@ async function pasteLink(dialog: HTMLElement, url: string) {
 describe("New job and job detail match W9.2 and W10 of opencv.pen", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] })
-    vi.setSystemTime(NOW)
+    vi.setSystemTime(PEN_FRAME_CLOCK)
   })
   afterEach(() => {
     cleanup()

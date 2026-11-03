@@ -11,7 +11,6 @@ export async function cleanupTestResources() {
       await cleanup()
       cleanups.delete(cleanup)
     } catch (error) {
-      // Retain failed callbacks so another pass can finish their disposal.
       errors.push(error)
     }
   }
@@ -23,8 +22,6 @@ export async function cleanupTestResources() {
   }
 }
 
-// Sonner does not retain its insertion/exit timeout handles. A single
-// scheduling wrapper avoids adding another frame after each fake-timer test.
 const sonnerTimers = new Set<ReturnType<typeof setTimeout>>()
 const sonnerPath = /(?:^|[/\\])sonner(?:@[^/\\]+)?[/\\]dist[/\\]/
 let trackerInstalled = false

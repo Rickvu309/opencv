@@ -278,8 +278,8 @@ export async function jobApiFetch(
   if (!jobPath) return null
 
   if (method === "GET" && path === "/api/jobs") {
-    // Shell favorites seed their own list. An empty apply store must not hide it.
-    if (jobs.length === 0) return null
+    const emptyStoreLeavesShellFavoritesVisible = jobs.length === 0
+    if (emptyStoreLeavesShellFavoritesVisible) return null
     return jsonOk(jobs)
   }
 

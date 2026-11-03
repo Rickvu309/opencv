@@ -101,7 +101,7 @@ function f() { return <b onClick={() => void d().catch(show)} /> }`)
     ).toEqual([])
   })
 
-  it("accepts a quiet failure that says why", () => {
+  it("accepts a rejected-ok marker on the call's line, the line above it, or inside the empty catch", () => {
     expect(
       scan(`const run = useRunCommand()
 function A() {

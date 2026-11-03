@@ -1,13 +1,5 @@
 import ts from "typescript"
 
-// Finds code that runs a contract command and drops the rejection, so the
-// server turning an edit down shows the user nothing. A call is dropped when
-// its promise ends in `void`, a bare statement or a JSX event handler with no
-// real `.catch`, and when an awaited call sits outside a try with a real catch
-// in a function nobody handles. Write `rejected-ok: <why>` on the call's line,
-// the line above it, or inside the empty catch, for a failure that is meant to
-// stay quiet.
-
 export type SourceFile = { name: string; text: string }
 export type Finding = { file: string; line: number; call: string }
 
@@ -34,8 +26,7 @@ function enclosingFn(node: ts.Node): Fn | undefined {
   return undefined
 }
 
-/** The name a function is reachable by: its declaration, a `const f = ...`, or `useCallback(...)`. */
-function fnName(fn: Fn): string | undefined {
+function reachableNameOf(fn: Fn): string | undefined {
   if ((ts.isFunctionDeclaration(fn) || ts.isMethodDeclaration(fn)) && fn.name) {
     return fn.name.getText()
   }
@@ -75,8 +66,7 @@ function hasMarker(sf: ts.SourceFile, node: ts.Node, extra?: ts.Node) {
   return near.includes(MARKER) || (extra?.getText(sf) ?? "").includes(MARKER)
 }
 
-/** A handler that does nothing: no argument, an empty body, or `undefined`. */
-function swallows(handler: ts.Expression | undefined, sf: ts.SourceFile) {
+function isNoOpHandler(handler: ts.Expression | undefined, sf: ts.SourceFile) {
   if (!handler) return true
   if (!ts.isArrowFunction(handler) && !ts.isFunctionExpression(handler)) {
     return false
@@ -93,7 +83,6 @@ type Fate = "handled" | "dropped" | "propagates" | "other"
 
 function fateOf(call: ts.CallExpression, sf: ts.SourceFile): Fate {
   let node: ts.Node = call
-  // Walk the `.then(...).catch(...).finally(...)` chain this call starts.
   for (;;) {
     const access = node.parent
     if (
@@ -105,12 +94,12 @@ function fateOf(call: ts.CallExpression, sf: ts.SourceFile): Fate {
       const outer = access.parent
       const name = access.name.text
       if (name === "catch") {
-        return swallows(outer.arguments[0], sf) && !hasMarker(sf, call)
+        return isNoOpHandler(outer.arguments[0], sf) && !hasMarker(sf, call)
           ? "dropped"
           : "handled"
       }
       if (name === "then" && outer.arguments.length >= 2) {
-        return swallows(outer.arguments[1], sf) && !hasMarker(sf, call)
+        return isNoOpHandler(outer.arguments[1], sf) && !hasMarker(sf, call)
           ? "dropped"
           : "handled"
       }
@@ -144,9 +133,7 @@ function fateOf(call: ts.CallExpression, sf: ts.SourceFile): Fate {
   return "other"
 }
 
-function jsxHandler(fn: Fn) {
-  // An inline `async () => { await ... }` handler has nobody to catch it. An
-  // expression body hands the promise to the component, which may.
+function isInlineBlockBodyJsxHandlerWithNobodyToCatch(fn: Fn) {
   return (
     ts.isArrowFunction(fn) &&
     ts.isJsxExpression(fn.parent) &&
@@ -154,8 +141,7 @@ function jsxHandler(fn: Fn) {
   )
 }
 
-/** Names bound to `useRunCommand()` in this file. */
-function runnerNames(sf: ts.SourceFile) {
+function namesBoundToUseRunCommand(sf: ts.SourceFile) {
   const names = new Set<string>()
   const visit = (node: ts.Node) => {
     if (
@@ -184,7 +170,9 @@ export function findDroppedRejections(files: SourceFile[]): Finding[] {
       file.name.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
     ),
   }))
-  const runners = new Map(parsed.map(({ sf }) => [sf, runnerNames(sf)]))
+  const runners = new Map(
+    parsed.map(({ sf }) => [sf, namesBoundToUseRunCommand(sf)])
+  )
   const exportedRejecting = new Set<string>()
   const localRejecting = new Map(
     parsed.map(({ sf }) => [sf, new Set<string>()])
@@ -212,14 +200,13 @@ export function findDroppedRejections(files: SourceFile[]): Finding[] {
     return out
   }
 
-  // Grow the set of functions that hand a command's rejection to their caller.
   for (let changed = true; changed;) {
     changed = false
     for (const { sf } of parsed) {
       for (const call of calls(sf)) {
         if (fateOf(call, sf) !== "propagates") continue
         const fn = enclosingFn(call)
-        const name = fn && fnName(fn)
+        const name = fn && reachableNameOf(fn)
         if (!fn || !name) continue
         const local = localRejecting.get(sf)!
         if (!local.has(name)) {
@@ -240,7 +227,10 @@ export function findDroppedRejections(files: SourceFile[]): Finding[] {
       const fate = fateOf(call, sf)
       const fn = enclosingFn(call)
       const dropped =
-        fate === "dropped" || (fate === "propagates" && fn && jsxHandler(fn))
+        fate === "dropped" ||
+        (fate === "propagates" &&
+          fn &&
+          isInlineBlockBodyJsxHandlerWithNobodyToCatch(fn))
       if (!dropped || hasMarker(sf, call)) continue
       findings.push({
         file: file.name,

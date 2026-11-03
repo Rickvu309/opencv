@@ -49,10 +49,11 @@ const rawSources = sourcePaths.map((file) => readFileSync(file, "utf8"))
 const surfaceSources = sourcePaths
   .filter((file) => !KIT_PRIMARY_ACTION.test(file))
   .map((file) => readFileSync(file, "utf8"))
-// Markup is what a selector must find: .ts and .tsx source with its comments removed, never a stylesheet.
-const stripComments = (text: string) =>
+const sourceWithoutComments = (text: string) =>
   text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(?<![:"'`\w])\/\/[^\n]*/g, "")
-const corpus = rawSources.map(stripComments).join("\n")
+const markupSourceWithoutStylesheets = rawSources
+  .map(sourceWithoutComments)
+  .join("\n")
 const router = readFileSync(abs("apps/web/src/router.tsx"), "utf8")
 const routerPaths = [...router.matchAll(/path: "([^"]+)"/g)].map((m) => m[1])
 const productPaths = Object.values(SURFACE_PATHS)
@@ -60,9 +61,9 @@ const productPaths = Object.values(SURFACE_PATHS)
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 const word = (name: string) => `(?<![\\w-])${escape(name)}(?![\\w-])`
 
-// Every id, class, attribute name and attribute value a selector names, as the markup pattern that must exist.
-// A value must sit on its attribute (data-slot="empty" or data-slot={"empty"}), not appear as a bare word.
-function selectorPatterns(selector: string): { label: string; re: RegExp }[] {
+function markupPatternsForSelector(
+  selector: string
+): { label: string; re: RegExp }[] {
   const out: { label: string; re: RegExp }[] = []
   const add = (label: string, source: string) =>
     out.push({ label, re: new RegExp(source) })
@@ -118,10 +119,13 @@ describe.each(SKILLS)("%s assumptions", (_name, assumes) => {
     }
   })
 
-  it("selects only markup the app source names", () => {
+  it("selects only markup the app source names, with each attribute value on its attribute and not a bare word", () => {
     for (const selector of assumes.selectors) {
-      for (const { label, re } of selectorPatterns(selector)) {
-        expect(re.test(corpus), `${label} from ${selector}`).toBe(true)
+      for (const { label, re } of markupPatternsForSelector(selector)) {
+        expect(
+          re.test(markupSourceWithoutStylesheets),
+          `${label} from ${selector}`
+        ).toBe(true)
       }
     }
   })

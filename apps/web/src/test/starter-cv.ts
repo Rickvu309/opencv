@@ -1,9 +1,5 @@
 import type { CvDocument } from "@workspace/domain"
 
-/**
- * Neutral sample CV — product voice, never a named persona.
- * Name/contact stay generic so a real account does not inherit a fake identity.
- */
 export function starterCvDocument(): CvDocument {
   return {
     templateId: "internship",

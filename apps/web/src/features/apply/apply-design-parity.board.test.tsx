@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { NOW, fill, penJobs } from "@/test/apply-pen-fixtures.ts"
+import { PEN_FRAME_CLOCK, fill, penJobs } from "@/test/apply-pen-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { expectFrame, main } from "@/test/pen-frame-text.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -56,7 +56,7 @@ const ICONS_NOT_DRAWN: Record<string, { count: number; reason: string }> = {
 describe("Apply board, list and calendar match W9 of opencv.pen", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] })
-    vi.setSystemTime(NOW)
+    vi.setSystemTime(PEN_FRAME_CLOCK)
   })
   afterEach(() => {
     cleanup()
