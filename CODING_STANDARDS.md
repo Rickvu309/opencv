@@ -23,7 +23,7 @@ Reason: one typed contract per surface gives the Coach tool, step label, activit
 
 ## Comments
 
-Explain with a better name or a test; write no comment. Reason: a comment goes stale where a name or test cannot. Check: `scripts/no-comments.test.mjs` rejects a new comment in source, CSS included; `scripts/no-comments.baseline.json` only shrinks.
+Explain with a better name or a test; write no comment. Reason: a comment goes stale where a name or test cannot. Check: `scripts/no-comments.test.mjs` rejects a comment in source, CSS included. No comments; use names or tests.
 
 ## Naming
 

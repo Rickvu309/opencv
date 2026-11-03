@@ -1,0 +1,17 @@
+{
+  "id": "no-comments",
+  "file": "scripts/no-comments.test.mjs",
+  "detector": {
+    "module": "scripts/no-comments.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "2b8d2a0d^",
+    "path": ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs",
+    "fixed": {
+      "rev": "HEAD",
+      "path": ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs"
+    }
+  }
+}
