@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
+import { detect } from "./ci-first-errors.mjs"
 
 const text = readFileSync(
   fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)),
@@ -57,4 +58,28 @@ test("the ci aggregate passes only when every job succeeded", () => {
     assert.equal(run.status, 1, bad)
     assert.match(run.stderr, new RegExp(`build: ${bad}`))
   }
+})
+
+const MISTAKE =
+  "jobs:\n  ci:\n    steps:\n      - run: node -e 'process.exit(1)'\n"
+const CLEAN =
+  "jobs:\n  ci:\n    steps:\n      - if: \"${{ contains(needs.*.result, 'failure') }}\"\n        run: node scripts/ci-first-errors.mjs\n"
+
+test("a ci job that does not print the first error fires", () => {
+  assert.equal(detect(MISTAKE, ".github/workflows/ci.yml").length, 1)
+  assert.deepEqual(detect(MISTAKE, "README.md"), [])
+})
+
+test("a ci job that prints the first error stays quiet", () => {
+  assert.deepEqual(detect(CLEAN, ".github/workflows/ci.yml"), [])
+})
+
+test("the ci job prints the first error of each failed job and still fails", () => {
+  const ci = section("ci")
+  assert.match(ci, /node scripts\/ci-first-errors\.mjs/)
+  assert.match(ci, /contains\(needs\.\*\.result, 'failure'\)/)
+  assert.match(ci, /GITHUB_TOKEN:/)
+  assert.match(ci, /^ {6}actions: read\s*$/m)
+  assert.equal(detect(text, ".github/workflows/ci.yml").length, 0)
+  assert.equal(runAggregateStepFromCiYml({ guards: "failure" }).status, 1)
 })

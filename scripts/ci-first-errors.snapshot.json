@@ -1,0 +1,9 @@
+{
+  "vitest": "2026-10-27T01:02:03.1234567Z \u001b[31mFAIL \u001b[39m scripts/ci-workflow.test.mjs > the aggregate passes\n2026-10-27T01:02:03.2234567Z AssertionError: expected 1 to equal 2\n2026-10-27T01:02:03.3234567Z FAIL  scripts/other.test.mjs > should not win\n",
+  "nodeTest": "2026-10-27T01:02:03.1234567Z # Subtest: waits\n2026-10-27T01:02:03.2234567Z not ok 2 - waits\n2026-10-27T01:02:03.3234567Z   location: '/home/runner/work/opencv/opencv/scripts/ci-workflow.test.mjs:30:3'\n2026-10-27T01:02:03.4234567Z   name: 'AssertionError'\n",
+  "build": "2026-10-27T01:02:03.1234567Z ##[error]Error: Cannot find module '@workspace/domain'\n",
+  "screen": "2026-10-27T01:02:03.1234567Z   1) [chromium] › apps/web/e2e/sign-in.spec.ts:12:5 › sign in\n2026-10-27T01:02:03.2234567Z     Error: expect(locator).toBeVisible()\n",
+  "mark": "✖ apps/web/src/features/inbox/inbox-page.test.tsx (5 ms)\n",
+  "word": "The job conclusion was FAILURE\nError: real boom\n",
+  "clean": "2026-10-27T01:02:03.1234567Z All tests passed\n"
+}

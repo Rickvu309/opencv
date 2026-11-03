@@ -184,8 +184,19 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
     steps:
+      - uses: actions/checkout@v4
+        if: "${{ contains(needs.*.result, 'failure') }}"
+      - name: Print the first error of each failed job
+        if: "${{ contains(needs.*.result, 'failure') }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-first-errors.mjs
       - name: Require every job to succeed
+        if: ${{ always() }}
         env:
           NEEDS: ${{ toJSON(needs) }}
         run: |
