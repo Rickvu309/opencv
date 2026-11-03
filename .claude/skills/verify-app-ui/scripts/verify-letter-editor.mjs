@@ -60,7 +60,6 @@ const sources = [
   ".claude/skills/verify-app-ui/scripts/lib/letter-layout-exceptions.mjs",
   ".claude/skills/verify-app-ui/scripts/lib/letter-toolbar-steps.mjs",
   "apps/web/src/features/paper/design/letter-block-editor.pen.css",
-  "apps/web/src/features/paper/paper-autosave.ts",
   "apps/web/src/test/design-frame-coverage.test.ts",
   `${design}-paints.styles.json`,
   ...["snapshot.json", "styles.json", "layout.json", "pen.css"].map(

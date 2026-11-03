@@ -1,7 +1,9 @@
 import { paperPhotoRef, personActor } from "@workspace/domain"
+import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
+import { activity } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import {
   authHeaders,
@@ -56,6 +58,17 @@ describe("CV photo bytes", () => {
       data: { activityId: string; contentVersion: number }
     }
     expect(attachment.data.activityId).toEqual(expect.any(String))
+
+    const refused = await app.request("/api/commands/paper.attachPhoto", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ input: { docId, fileId: null, quiet: true } }),
+    })
+    expect(refused.status).toBe(400)
+    const kept = await app.request(`/api/paper/${docId}`, {
+      headers: authHeaders(owner.cookie),
+    })
+    expect(await kept.text()).toContain(paperPhotoRef(fileId))
 
     const stored = await app.request(`/api/paper/${docId}`, {
       headers: authHeaders(owner.cookie),
@@ -186,17 +199,37 @@ describe("CV photo bytes", () => {
       if (!reversal) throw new Error("missing reversal")
       expect(reversal).toMatchObject({
         command: "paper.attachPhoto",
-        input: { docId, fileId: null, quiet: true },
+        input: { docId, fileId: null },
       })
-      await registry.execute({
-        name: reversal.command,
-        input: reversal.input,
-        actor,
-      })
+      expect(reversal.input).not.toHaveProperty("quiet")
+      expect(attached.activityId).toEqual(expect.any(String))
+      await registry.undo(userId, attached.activityId!)
       const cleared = (await registry.read("paper.get", { docId }, actor)) as {
         paper: { header: { photo?: string } }
       }
       expect(cleared.paper.header.photo).toBeUndefined()
+      const rows = await db
+        .select()
+        .from(activity)
+        .where(eq(activity.subjectId, docId))
+      expect(
+        rows.filter((row) => row.command === "paper.attachPhoto")
+      ).toHaveLength(1)
+      await expect(
+        registry.execute({
+          name: "paper.attachPhoto",
+          input: { docId, fileId: saved.id, quiet: true },
+          actor,
+          idempotencyKey: "undo:client-supplied",
+        })
+      ).rejects.toThrow(/quiet/i)
+      const visible = await registry.execute({
+        name: "paper.attachPhoto",
+        input: { docId, fileId: saved.id },
+        actor,
+        idempotencyKey: "undo:client-supplied",
+      })
+      expect(visible.activityId).toEqual(expect.any(String))
     })
     await client.close()
   })

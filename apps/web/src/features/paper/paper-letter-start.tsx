@@ -39,7 +39,8 @@ import {
 import { letterDraftText } from "./paper-letter-context.ts"
 
 const LETTER_CHUNK = 4000
-const LETTER_INSERT_CAP = 29
+const BLOCKS_PER_INSERT = 30
+const INSERTS_PER_SAVE = 39
 
 function letterChunks(markdown: string): string[] {
   const pieces: string[] = []
@@ -51,22 +52,49 @@ function letterChunks(markdown: string): string[] {
     }
   }
   if (pieces.length === 0) return [markdown.slice(0, LETTER_CHUNK)]
-  if (pieces.length <= LETTER_INSERT_CAP + 1) return pieces
-  const kept = pieces.slice(0, LETTER_INSERT_CAP)
-  kept.push(pieces.slice(LETTER_INSERT_CAP).join("\n\n").slice(0, LETTER_CHUNK))
-  return kept
+  return pieces
 }
 
-function letterEdits(markdown: string): PaperEdit[] {
-  const [first, ...rest] = letterChunks(markdown)
+function paragraphLines(paper: unknown): string[] | null {
+  if (!paper || typeof paper !== "object") return null
+  const blocks = (paper as { blocks?: unknown }).blocks
+  if (!Array.isArray(blocks)) return null
+  return blocks.flatMap((block) => {
+    if (!block || typeof block !== "object") return []
+    const row = block as { type?: string; content?: { text?: string }[] }
+    if (row.type !== "paragraph") return []
+    return [(row.content ?? []).map((part) => part.text ?? "").join("")]
+  })
+}
+
+function sameLines(left: readonly string[], right: readonly string[]) {
+  return (
+    left.length === right.length &&
+    left.every((line, index) => line === right[index])
+  )
+}
+
+export function letterEdits(markdown: string): PaperEdit[] {
+  const pieces = letterChunks(markdown)
+  const [first, ...rest] = pieces
   const edits: PaperEdit[] = [
     { op: "setText", blockId: "letter-1", text: first ?? "" },
   ]
-  if (rest.length > 0) {
+  const groups: string[][] = []
+  for (let index = 0; index < rest.length; index += BLOCKS_PER_INSERT) {
+    groups.push(rest.slice(index, index + BLOCKS_PER_INSERT))
+  }
+  if (groups.length > INSERTS_PER_SAVE) {
+    throw new Error(
+      "This letter is too long to save. Shorten it and try again."
+    )
+  }
+  for (let index = groups.length - 1; index >= 0; index -= 1) {
+    const group = groups[index] ?? []
     edits.push({
       op: "insert",
       after: "letter-1",
-      blocks: rest.map((text) => ({ type: "paragraph", text })),
+      blocks: group.map((text) => ({ type: "paragraph", text })),
     })
   }
   return edits
@@ -271,11 +299,25 @@ export function PaperLetterStart({
       }
       if (activeDraft.current !== operation) return
       if (!savedByCoach && operation.text) {
-        await run("paper.edit", {
-          docId: created.id,
-          basedOn: created.contentVersion,
-          edits: letterEdits(operation.text),
-        })
+        const wanted = letterChunks(operation.text)
+        let live: string[] | null = null
+        try {
+          live = paragraphLines((await getPaper(created.id)).paper)
+        } catch {
+          live = null
+        }
+        const alreadySaved = live !== null && sameLines(live, wanted)
+        const personEdited =
+          live !== null &&
+          !(live.length === 1 && live[0] === "") &&
+          !alreadySaved
+        if (!alreadySaved && !personEdited) {
+          await run("paper.edit", {
+            docId: created.id,
+            basedOn: created.contentVersion,
+            edits: letterEdits(operation.text),
+          })
+        }
       }
       if (activeDraft.current === operation) onCreated(created.id)
     } catch (err) {

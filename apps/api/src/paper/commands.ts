@@ -61,7 +61,6 @@ function attachPhotoReversal(
     input: {
       docId: input.docId,
       fileId: fileId ? parseFileId(fileId) : null,
-      quiet: true,
     },
   }
 }
@@ -260,14 +259,11 @@ export function registerPaper(registry: Registry) {
     "paper.attachPhoto": {
       handler: (input, actor) => attachPhoto(actor, input.docId, input.fileId),
       reversal: attachPhotoReversal,
-      activity: (input, output) =>
-        input.quiet
-          ? null
-          : {
-              subjectKind: "paper",
-              subjectId: output.id,
-              summary: input.fileId ? "Added a photo" : "Removed a photo",
-            },
+      activity: (input, output) => ({
+        subjectKind: "paper",
+        subjectId: output.id,
+        summary: input.fileId ? "Added a photo" : "Removed a photo",
+      }),
     },
     "paper.deleteFile": {
       handler: (input, actor) => deleteFile(actor, input.fileId),

@@ -170,7 +170,6 @@ export const paperAttachPhotoInputSchema = z
   .object({
     docId: paperDocIdSchema,
     fileId: fileIdSchema.nullable(),
-    quiet: z.boolean().optional(),
   })
   .strict()
 

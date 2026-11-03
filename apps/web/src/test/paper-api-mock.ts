@@ -203,30 +203,6 @@ export async function paperApiFetch(
     return jsonOk(toWire(created))
   }
 
-  if (method === "POST" && path === "/api/commands/paper.replace") {
-    const body = (await readBody(init)) as {
-      docId?: string
-      document?: unknown
-      contentVersion?: number
-    }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    if (
-      typeof body.contentVersion === "number" &&
-      body.contentVersion !== doc.contentVersion
-    ) {
-      return jsonError(
-        409,
-        "CONFLICT",
-        "This document changed. Reload it and try again."
-      )
-    }
-    doc.content = body.document
-    doc.contentVersion += 1
-    doc.updatedAt = isoNow()
-    return jsonOk(toWire(doc))
-  }
-
   if (method === "POST" && path === "/api/commands/paper.rename") {
     const body = (await readBody(init)) as { docId?: string; name?: string }
     const doc = store.docs.find((item) => item.id === body.docId)

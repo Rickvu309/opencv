@@ -215,11 +215,8 @@ function find(
     return stale(`Block ${id} was deleted since you read the document`)
   const staleness = stalenessOf(context, id)
   if (staleness) return staleness
-  if (context.newerCoachBlocks.has(id)) {
-    return stale(
-      `Block ${id} was changed by a newer edit of yours. Read paper.outline again and use its revision as basedOn`
-    )
-  }
+  const newer = changedByNewerEdit(context, id)
+  if (newer) return newer
   return { entry: inWork, base: inBase, live: inLive }
 }
 
@@ -243,8 +240,17 @@ function anchor(
   }
   const staleness = stalenessOf(context, id)
   if (staleness) return staleness
+  const newer = changedByNewerEdit(context, id)
+  if (newer) return newer
   if (!inWork.list) return { list: work.blocks as PaperNode[], at: 0 }
   return { list: inWork.list, at: inWork.list.indexOf(inWork.node) + 1 }
+}
+
+function changedByNewerEdit(context: Context, id: string) {
+  if (!context.newerCoachBlocks.has(id)) return null
+  return stale(
+    `Block ${id} was changed by a newer edit of yours. Read paper.outline again and use its revision as basedOn`
+  )
 }
 
 function isAnchor(
@@ -577,5 +583,41 @@ export function applyPaperEdits(
     applied += 1
     outcomes.push(outcome)
   })
+  if (draftWouldClobber(edits, outcomes, context)) {
+    return {
+      target: cloned(base),
+      outcomes: outcomes.map((outcome) =>
+        outcome.status === "applied"
+          ? stale(
+              "This edit would overwrite text that changed since you read the document"
+            )
+          : outcome
+      ),
+      applied: 0,
+      moved: new Set(),
+      effects: [],
+    }
+  }
   return { target: work, outcomes, applied, moved, effects }
+}
+
+function draftWouldClobber(
+  edits: readonly PaperEdit[],
+  outcomes: readonly PaperEditOutcome[],
+  context: Context
+) {
+  return edits.some((edit, index) => {
+    if (edit.op !== "setText" || outcomes[index]?.status !== "applied")
+      return false
+    const before = context.base.get(edit.blockId)
+    const live = context.live.get(edit.blockId)
+    if (!before || !live || canonical(before.node) === canonical(live.node))
+      return false
+    return edits.some(
+      (other, at) =>
+        other.op === "insert" &&
+        other.after === edit.blockId &&
+        outcomes[at]?.status === "applied"
+    )
+  })
 }

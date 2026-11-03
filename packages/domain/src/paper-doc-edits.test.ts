@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 
 import {
   applyPaperEdits,
+  blankLetter,
   paperChanges,
   paperDocumentSchema,
   paperEditSchema,
@@ -486,6 +487,71 @@ describe("paperChanges", () => {
         .find((hunk) => hunk.sectionId === "p1")
         ?.lines.map((line) => line.kind),
       ["del", "add"]
+    )
+  })
+})
+
+describe("a letter start edit sent again", () => {
+  const letter = blankLetter()
+  const draft = [
+    { op: "setText", blockId: "letter-1", text: "Dear hiring team," },
+    {
+      op: "insert",
+      after: "letter-1",
+      blocks: [{ type: "paragraph", text: "I led the launch." }],
+    },
+  ]
+
+  function texts(doc: PaperDocument) {
+    return doc.blocks.flatMap((block) =>
+      block.type === "paragraph" ? [plainTextOfRuns(block.content)] : []
+    )
+  }
+
+  it("applies nothing the second time, so each paragraph stays once", () => {
+    const first = applyPaperEdits(letter, letter, draft.map(edit), ids())
+    assert.deepEqual(texts(first.target), [
+      "Dear hiring team,",
+      "I led the launch.",
+    ])
+    const second = applyPaperEdits(
+      letter,
+      first.target,
+      draft.map(edit),
+      ids(),
+      new Set(["letter-1"])
+    )
+    assert.equal(second.applied, 0)
+    assert.deepEqual(
+      second.outcomes.map((outcome) => outcome.status),
+      ["stale", "stale"]
+    )
+  })
+
+  it("does not apply over words the person added on that anchor", () => {
+    const first = applyPaperEdits(letter, letter, draft.map(edit), ids())
+    const edited = parsed({
+      ...first.target,
+      blocks: first.target.blocks.map((block) =>
+        block.id === "letter-1" && block.type === "paragraph"
+          ? { ...block, content: [{ text: "Dear hiring team, kindly" }] }
+          : block
+      ),
+    })
+    const second = applyPaperEdits(
+      letter,
+      edited,
+      draft.map(edit),
+      ids(),
+      new Set(["letter-1"])
+    )
+    assert.equal(second.applied, 0)
+    const opening = edited.blocks.find((block) => block.id === "letter-1")
+    assert.ok(opening && opening.type === "paragraph")
+    assert.equal(plainTextOfRuns(opening.content), "Dear hiring team, kindly")
+    assert.equal(
+      texts(edited).filter((line) => line === "I led the launch.").length,
+      1
     )
   })
 })
