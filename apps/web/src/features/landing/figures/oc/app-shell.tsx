@@ -16,13 +16,6 @@ import {
 import { OC, delay, type IconType } from "./palette.ts"
 import "./app-shell.css"
 
-/*
- * Motion conventions shared by every opencv screen:
- * - .oc-in-left / .oc-in-up: one-shot entrance, staggered with delay(ms).
- * - .oc-loop: the screen's looping demo (8s unless the screen overrides it), starts after the entrance.
- * - .oc-ghost: exists only for the demo (cursor, drop slot). Hidden in static mode and reduced motion.
- */
-/** The Quadrant: a 20×20 frame (stroke 2.4) on a 24 grid, with a radius-14 quarter disc from its bottom-left corner. */
 function Logo({ size = 21 }: { size?: number }) {
   return (
     <svg
@@ -122,7 +115,6 @@ function Sidebar({ active }: { active: NavKey }) {
         }}
       >
         <Logo />
-        {/* Lockup: mark 1.25× type size, gap 0.38× (6.5px against the row's 8px gap). */}
         <span
           style={{
             flex: 1,
@@ -267,10 +259,6 @@ function BottomBar() {
   )
 }
 
-/**
- * The opencv app frame at 1600×1000: sidebar, white work panel, bottom suggestion bar.
- * Screens render their content as children of the panel and import their own keyframes.
- */
 export function AppShell({
   active,
   animate = true,
@@ -281,13 +269,8 @@ export function AppShell({
   children,
 }: {
   active: NavKey
-  /** Set false to show the settled screen with no motion. */
   animate?: boolean
   panelStyle?: React.CSSProperties
-  /**
-   * Absolutely positioned layers in 1600×1000 frame coordinates (floating docks, bottom-bar states).
-   * Rendered outside the panel: its entrance animation would otherwise become their containing block and clip them.
-   */
   overlay?: React.ReactNode
   className?: string
   style?: React.CSSProperties

@@ -4,16 +4,6 @@ import { AppShell } from "./app-shell.tsx"
 import { OC, delay } from "./palette.ts"
 import "./pitch-page.css"
 
-/*
- * Loop (8s, after the entrance): the public page feels live.
- *   4–30%  the mini follower chart draws in, end dot pops at 30%
- *   6–13%  "Hanh Tran opened your Pitch" slides in with a soft pop
- *  14–22%  the last views bar grows and the count steps 23 → 24
- *  30–37%  "CV downloads" pops and steps 2 → 3
- *  82–90%  the notification eases out; 94–100% counts reset for the next run
- * Floating cards drift gently on their own slower cycle.
- * Base styles (static / reduced motion) show the reference moment.
- */
 const floating: React.CSSProperties = {
   background: "var(--card)",
   boxShadow:
@@ -81,7 +71,6 @@ export function PitchPageAnimated({
   className,
   style,
 }: {
-  /** Set false to show the settled screen with no motion. */
   animate?: boolean
   className?: string
   style?: React.CSSProperties

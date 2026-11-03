@@ -6,7 +6,6 @@ import "./reveal.css"
 const delayStyle = (ms: number) =>
   ({ ["--landing-delay" as string]: `${ms}ms` }) as React.CSSProperties
 
-/** Words rise out of a soft blur, staggered, once the element scrolls into view. "\n" breaks the line. */
 export function RevealText({
   text,
   delay = 0,
@@ -14,9 +13,7 @@ export function RevealText({
   className,
 }: {
   text: string
-  /** ms before the first word starts. */
   delay?: number
-  /** ms between words. */
   stagger?: number
   className?: string
 }) {
@@ -57,7 +54,6 @@ export function RevealText({
   )
 }
 
-/** Block fade-up for anything that isn't a headline. */
 export function Reveal({
   delay = 0,
   className,

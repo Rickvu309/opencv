@@ -48,7 +48,7 @@ export function LandingStatement() {
         <span className="landing-statement-rest">
           {LANDING_STATEMENT_BRAND}
         </span>{" "}
-        <br className="landing-statement-break" />
+        <br className="landing-statement-break-when-lead-fits-one-line" />
         <span className="landing-statement-rest">{LANDING_STATEMENT_REST}</span>
       </p>
     </section>

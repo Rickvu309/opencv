@@ -1,4 +1,3 @@
-/* 283px is the column pitch (271 wide + 12 gap). 150px is the dragged card height plus gap. */
 .oc-drag {
   animation-name: oc-drag;
   will-change: transform;

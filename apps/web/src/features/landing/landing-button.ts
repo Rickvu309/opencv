@@ -1,12 +1,6 @@
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-/**
- * Marketing calls to action. Values are the pen Open app / Prefooter buttons:
- * one mesh fill, one quiet fill, two sizes. Plan pills stay in this file so
- * the landing feature has one buttonVariants call: a 4% neutral fill and a
- * white fill. Height comes from the pricing snapshot on the anchor.
- */
 const MESH =
   "[background-image:radial-gradient(ellipse_90%_85%_at_55%_60%,color-mix(in_oklch,var(--ring)_40%,var(--background)),transparent_72%),linear-gradient(160deg,color-mix(in_oklch,var(--ring)_10%,var(--background)),color-mix(in_oklch,var(--ring)_18%,var(--background))_48%,color-mix(in_oklch,var(--ring)_13%,var(--background)))]"
 

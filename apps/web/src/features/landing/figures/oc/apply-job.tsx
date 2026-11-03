@@ -254,7 +254,6 @@ export function ApplyJobAnimated({
   className,
   style,
 }: {
-  /** Set false to show the settled screen with no motion. */
   animate?: boolean
   className?: string
   style?: React.CSSProperties

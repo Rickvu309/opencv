@@ -1,9 +1,5 @@
 import { useEffect, useReducer, useRef } from "react"
 
-/**
- * True while the element is in view. With `once`, it stays true after the
- * first time. Without IntersectionObserver (tests) the element counts as seen.
- */
 export function useOnScreen<T extends Element>({
   once = false,
   threshold = 0,

@@ -1,6 +1,5 @@
 import type { ComponentType, CSSProperties } from "react"
 
-/** The app's own greys and accents, mapped onto the stock shadcn variables. */
 export const OC = {
   shell: "var(--sidebar)",
   panel: "var(--card)",
@@ -25,11 +24,9 @@ export type IconType = ComponentType<{
   fill?: string
 }>
 
-/** Entrance stagger delay, read by .oc-in-left / .oc-in-up in app-shell.css. */
 export const delay = (ms: number) =>
   ({ ["--landing-delay" as string]: `${ms}ms` }) as CSSProperties
 
-/** Clips text that types and backspaces inside its own box. */
 export const clip: CSSProperties = {
   display: "inline-block",
   overflow: "hidden",

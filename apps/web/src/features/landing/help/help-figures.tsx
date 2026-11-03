@@ -9,7 +9,7 @@ type Box = {
 }
 
 type Scene = {
-  boxes: readonly Box[]
+  boxesBackToFront: readonly Box[]
 }
 
 const OX = 64
@@ -60,10 +60,9 @@ function BoxShape({ box }: { box: Box }) {
   )
 }
 
-// Boxes are listed back to front.
 const SCENES: Record<HelpTopicId, Scene> = {
   "getting-started": {
-    boxes: [
+    boxesBackToFront: [
       { at: [0.35, 0.25, 0], size: [3.1, 2.15, 0.16] },
       { at: [0.7, 0.7, 0.16], size: [0.16, 0.16, 2.05] },
       { at: [2.55, 0.7, 0.16], size: [0.16, 0.16, 2.05] },
@@ -73,7 +72,7 @@ const SCENES: Record<HelpTopicId, Scene> = {
     ],
   },
   paper: {
-    boxes: [
+    boxesBackToFront: [
       { at: [0.45, 0.2, 0], size: [2.7, 1.95, 0.1] },
       { at: [0.62, 0.42, 0.1], size: [2.7, 1.95, 0.1] },
       { at: [0.8, 0.64, 0.2], size: [2.7, 1.95, 0.1] },
@@ -83,7 +82,7 @@ const SCENES: Record<HelpTopicId, Scene> = {
     ],
   },
   apply: {
-    boxes: [
+    boxesBackToFront: [
       { at: [0.05, 0.15, 0], size: [4.15, 2.15, 0.14] },
       { at: [0.28, 0.45, 0.14], size: [1.05, 1.5, 0.9] },
       { at: [2.85, 0.45, 0.14], size: [1.05, 1.5, 1.2] },
@@ -91,7 +90,7 @@ const SCENES: Record<HelpTopicId, Scene> = {
     ],
   },
   coach: {
-    boxes: [
+    boxesBackToFront: [
       { at: [0.7, 0.45, 0], size: [2.15, 1.55, 0.16] },
       { at: [1.55, 1.0, 0.16], size: [0.26, 0.26, 1.55] },
       { at: [0.75, 0.35, 1.71], size: [1.65, 1.15, 0.2], tone: "accent" },
@@ -99,7 +98,7 @@ const SCENES: Record<HelpTopicId, Scene> = {
     ],
   },
   inbox: {
-    boxes: [
+    boxesBackToFront: [
       { at: [0.25, 0.2, 0], size: [3.2, 2.15, 0.12] },
       { at: [0.25, 0.2, 0.12], size: [3.2, 0.14, 0.78] },
       { at: [0.25, 0.2, 0.12], size: [0.14, 2.15, 0.62] },
@@ -109,13 +108,13 @@ const SCENES: Record<HelpTopicId, Scene> = {
     ],
   },
   plans: {
-    boxes: [
+    boxesBackToFront: [
       { at: [0.25, 0.55, 0], size: [1.55, 1.45, 1.15] },
       { at: [2.0, 0.3, 0], size: [1.7, 1.6, 2.15], tone: "accent" },
     ],
   },
   account: {
-    boxes: [
+    boxesBackToFront: [
       { at: [0.3, 0.35, 0], size: [2.7, 1.7, 0.14] },
       { at: [0.55, 0.7, 0.14], size: [1.7, 0.14, 1.45] },
       { at: [2.15, 0.85, 0.14], size: [0.62, 0.62, 0.5], tone: "accent" },
@@ -133,7 +132,7 @@ export function HelpFigure({ id }: { id: HelpTopicId }) {
       focusable="false"
     >
       <ellipse className="help-shadow" cx="64" cy="96" rx="34" ry="6" />
-      {SCENES[id].boxes.map((box, index) => (
+      {SCENES[id].boxesBackToFront.map((box, index) => (
         <BoxShape key={index} box={box} />
       ))}
     </svg>

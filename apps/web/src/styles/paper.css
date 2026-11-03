@@ -1,8 +1,6 @@
-/* Paper / Proof / CV / A4 / print — app-level, not kit. */
 @reference "@workspace/ui/globals.css";
 
 :root {
-  /* One source for A4 page height; TS reads this variable. */
   --cv-page-height: 1123px;
   --cv-padding-x: 15mm;
   --cv-padding-y: 14mm;
@@ -48,8 +46,6 @@
     line-height: 1.45;
   }
 
-  /* One calm print-paper voice. Sizes are the CV print-paper exception
-     so A4 stays readable without product chrome scale. */
   .cv-type-page-title {
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     font-size: 22px;
@@ -164,10 +160,6 @@
     outline-offset: -1px;
   }
 
-  /*
-   * Kit buttons fade every property, box-shadow included, so the focus ring
-   * is not there on the first frame. Paper controls show it at once.
-   */
   [data-paper-editor] button,
   [data-coach-float-card] button,
   button[data-coach-float-pill] {
@@ -186,11 +178,6 @@
     animation: paper-coach-highlight var(--duration-panel) var(--ease-micro);
   }
 
-  /*
-   * QVE-206: quiet paper-edit chrome on structured canvas fields.
-   * Kit ring + soft muted wash — not a bordered form field, not Coach
-   * chip pills (rounded-full bg-muted/70), not cite-jump (--ring).
-   */
   .paper-canvas-field {
     outline: none;
     border-radius: var(--radius-sm);
@@ -209,10 +196,6 @@
     color: inherit;
   }
 
-  /*
-   * QVE-207: quiet on-canvas add/remove chrome. Revealed on hover or
-   * focus-within — kit ghost buttons, not Coach pills or cite-jump.
-   */
   .paper-canvas-block {
     position: relative;
   }
@@ -228,19 +211,10 @@
     opacity: 1;
   }
 
-  /*
-   * QVE-209: always-visible next-step on empty Experience/Education/Skills.
-   * Same ghost language as QVE-207, never hover-hidden (Principle 2).
-   */
   .paper-canvas-next-step {
     opacity: 1;
   }
 
-  /*
-   * QVE-208: café / phone density. Fit-width A4 (no transform — that
-   * would shrink tap targets), larger fields, slim sticky chrome that
-   * yields the page the way Spec 8 CoachFloat yields height.
-   */
   .cv-a4-fit {
     width: 100%;
     max-width: 100%;
