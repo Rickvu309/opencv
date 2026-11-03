@@ -116,7 +116,7 @@ On Postgres, set `FORMAL_DATABASE_URL` to a server you can create databases on. 
 | shared oracle and commands                               | `apps/api/src/paper/photo-lifetime.support.ts`                                             |
 | attach-versus-sweep model                                | `apps/api/src/paper/PhotoSweep.tla`, `.cfg`, `.mutant.cfg`, `.tla.json`                    |
 
-Sync commit: `d459aff8bfc285e9b4563b680b6c98400c940aa0`. Move it only after you reread the covered functions at the new commit, rerun the three commands above, and check that every row in the coverage record still describes the code.
+Sync commit: `81138656116d88d2813d0f73f7759ad8a71885db`. Move it only after you reread the covered functions at the new commit, rerun the three commands above, and check that every row in the coverage record still describes the code.
 
 ## When the photo code changes
 
