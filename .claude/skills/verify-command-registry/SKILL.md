@@ -1,6 +1,6 @@
 ---
 name: verify-command-registry
-description: Check the command registry's promise under concurrent calls, that a keyed command runs once and replays, a pending action runs at most once, and an activity row is undone at most once. Use after any change to apps/api/src/registry/registry.ts, to execute, approve, deny or undo on the registry, to the activity or idempotency or pending_actions tables in apps/api/src/db/schema.ts, to transaction in apps/api/src/db/context.ts, or when asked whether a double click or a retry can duplicate a job, CV or message.
+description: Check the command registry's promise under concurrent calls, that a keyed command runs once and replays, a pending action runs at most once, an activity row is undone at most once, and an Undo never erases a change made after it. Use after any change to apps/api/src/registry/registry.ts, to execute, approve, deny or undo on the registry, to the activity or idempotency or pending_actions tables in apps/api/src/db/schema.ts, to transaction in apps/api/src/db/context.ts, or to a reversal in apps/api/src/*/commands.ts, or when asked whether a double click or a retry can duplicate a job, CV or message, or whether Undo can wipe a later edit.
 ---
 
 # verify-command-registry
@@ -12,8 +12,13 @@ However concurrent calls interleave, in `apps/api/src/registry/registry.ts`:
 - **P1.** A command called with an idempotency key runs its effect once, and every caller gets the same replayed result with no raw database error.
 - **P2.** A pending action is executed at most once however many `approve` calls race, and `approve` and `deny` never both win.
 - **P3.** An activity row is undone at most once however many `undo` calls race, and `undo` of a row with no reversal is refused.
+- **P4.** Act A, then act B on the same subject, then undo A: the undo is refused with `CONFLICT`, or B's effect is still there. This is a sequence, not a race.
 
 ## The harm
+
+P4: a card moved to Applied and then to Interview jumps back to the first column when the first move is undone, and the second move is lost with no message.
+
+For P1 to P3:
 
 A double click or a retry duplicates a job, CV or message, or runs a reversal twice. A caller who loses a race sees a database error instead of the answer the winner got.
 
@@ -26,6 +31,8 @@ There are two engines, and the difference matters:
 - **PGlite (default).** The embedded test database has one connection, so it runs one transaction at a time. The test measures this and prints it (`max open transactions 1`). Calls still arrive in different orders and the replay, status and reversal checks still bite, but a missing `FOR UPDATE` cannot show here because nothing ever waits on a lock.
 - **A real Postgres server (`FORMAL_DATABASE_URL`).** Transactions run side by side (the run prints `max open transactions 4`). This is the only engine where the lock checks bite and where the natural race behind the known finding happens.
 
+P4 has two tools. The harness `registry.undo-later.formal.test.ts` runs the real registry over every coverage case that has a reversal and an activity row, so it reads the real SQL. The TLA+ model `UndoLater.tla` compares the policies for the answer (Q5), because the model can show a hole (a state that comes back) that no example test finds.
+
 ## How to run
 
 ```bash
@@ -33,8 +40,9 @@ pnpm --filter api test:formal
 ```
 
 - One command, about 15 seconds, runs this check and the Apply scan check (`verify-apply-scan-guard`). Exit 0 means every test passed. `pnpm --filter api test` also runs the file.
-- Expected output: `10 passed | 2 expected fail | 1 skipped` across the three registry files. The two expected failures are the known finding below. The skipped test is the natural race that needs a real server.
-- The model of undo after a later change (P4, issue 956). The real config `UndoLater.cfg` describes the target code in PR #961, not main today: until #961 merges, main's undo still runs the `allow` policy, which is `UndoLater.mutant.cfg` and fails `NoLostEffect`, so a pass on main does not prove main keeps P4. Run `node scripts/tlc.mjs --all` (about 90 seconds for every spec). Only this one: `node scripts/tlc.mjs apps/api/src/registry/UndoLater.tla --config apps/api/src/registry/UndoLater.cfg`. Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
+- Expected output: `12 passed | 2 expected fail | 1 skipped` across the four registry files. The two expected failures are the known finding below. The skipped test is the natural race that needs a real server.
+- P4 runs in the same command. Expected output now: `registry.undo-later.formal.test.ts` shows 2 passed.
+- The model of undo after a later change (P4, issue 956). The real config `UndoLater.cfg` describes the undo code here; `UndoLater.mutant.cfg` is the old `allow` policy and fails `NoLostEffect`. Run `node scripts/tlc.mjs --all` (about 90 seconds for every spec). Only this one: `node scripts/tlc.mjs apps/api/src/registry/UndoLater.tla --config apps/api/src/registry/UndoLater.cfg`. Read the result with /statechart (read `~/.claude/skills/statechart/SKILL.md` by path; it is user-invoked) to draw the bug path.
 - `FORMAL_SEED=<n>` changes the start-order seed (default 241). Run a few after a change.
 
 Run the same file on a real server before merging any change to a lock, a transaction or a key path:
@@ -49,7 +57,7 @@ FORMAL_DATABASE_URL=postgres://postgres@127.0.0.1:54329/postgres pnpm --filter a
 $B/pg_ctl -D ~/tmp/epg/pgdata stop
 ```
 
-Nothing is added to the repo. The test makes its own database per run and drops it. Expected output there: `10 passed | 3 expected fail`, and a printed line `transaction order for 4 racing callers: +2 +3 +4 +1 -3 ...` showing the transactions overlapped. If `max open transactions` prints 1 against a real server, the run proved nothing: stop and find out why.
+Nothing is added to the repo. The test makes its own database per run and drops it. Expected output there: `12 passed | 3 expected fail`, and a printed line `transaction order for 4 racing callers: +2 +3 +4 +1 -3 ...` showing the transactions overlapped. If `max open transactions` prints 1 against a real server, the run proved nothing: stop and find out why.
 
 ## Tests
 
@@ -64,6 +72,8 @@ Nothing is added to the repo. The test makes its own database per run and drops 
 | P2: approve and deny racing never both win                                                                            | 1 or 2 approves with 1 or 2 denies. Final status is `approved` with one effect, or `denied` with none. Every loser is refused with `CONFLICT`                                                                                                                                               |
 | P3: N racing undos                                                                                                    | 2 to 4 undos of a `job.create` row: one wins, the rest get `CONFLICT` already undone, the reversal's key is recorded once, the job is gone                                                                                                                                                  |
 | P3: an activity row with no reversal                                                                                  | 2 to 4 undos: every one is refused with `CONFLICT` cannot be undone, `undone_at` stays null, no reversal runs                                                                                                                                                                               |
+
+P4 tests, the model and its policy table (Q5) are in `.claude/skills/verify-command-registry/undo-later.md`. Read it before changing a reversal or `registry.undo`.
 
 ## The known finding
 
@@ -87,6 +97,8 @@ The failing label names the scenario: `P1 job.create N=3 seed=242`, `P2 approve 
 - P3 `cannot be undone` expected but a different message: the `reversalCommand` guard in `Registry.undo` is gone or moved after the lookup.
 - A failure with a table row mismatch and unchanged registry code means the test rule is wrong. Check it against the state table in the registry before editing code.
 
+P4 known findings are in the same file: eleven commands still erase a later change (issue 958).
+
 ## Bounds and assumptions
 
 - Commands: `job.create`, `paper.create`, `chat.create` for keys, `job.move` (Coach confirm) for approve and deny, `job.create` for undo, and three small test commands. Not every command.
@@ -94,32 +106,38 @@ The failing label names the scenario: `P1 job.create N=3 seed=242`, `P2 approve 
 - One user per scenario. Two users never share a key, because the key is scoped to the user.
 - `expireIfStale` (the 24 hour expiry) is not probed.
 - The forced tests put the rival row inside the loser's own transaction. A real rival commits on another connection first, and the loser's insert then waits for it. The resulting error is the same, and the barrier test shows the natural form on a real server.
+- P4 uses one later act per command, on one user, one at a time. Two later acts and the web are not driven. The model has 3 acts and 2 fields.
 - Only `execute`, `approve`, `deny` and `undo` of `Registry` are driven. The HTTP routes and the Coach tool wrapper in `http.ts` are not.
 
 ## Coverage record
 
-| Item                          | Where                                                                      |
-| ----------------------------- | -------------------------------------------------------------------------- |
-| `Registry.execute`            | `execute` in `apps/api/src/registry/registry.ts`                           |
-| key lookup before the run     | `activityByKey`, `idempotencyByKey` in `apps/api/src/registry/registry.ts` |
-| replay on unique violation    | the `isUniqueViolation` catches in `execute`                               |
-| `Registry.approve`            | `approve` in `apps/api/src/registry/registry.ts`                           |
-| `Registry.deny`               | `deny` in `apps/api/src/registry/registry.ts`                              |
-| `Registry.undo`               | `undo` in `apps/api/src/registry/registry.ts`                              |
-| `lockPending` (`FOR UPDATE`)  | `lockPending` in `apps/api/src/registry/registry.ts`                       |
-| `lockActivity` (`FOR UPDATE`) | `lockActivity` in `apps/api/src/registry/registry.ts`                      |
-| `replay`, `replayStored`      | `replay`, `replayStored` in `apps/api/src/registry/turn-receipts.ts`       |
-| `isUniqueViolation`           | `isUniqueViolation` in `apps/api/src/registry/errors.ts`                   |
-| `transaction`                 | `transaction` in `apps/api/src/db/context.ts`                              |
+| Item                            | Where                                                                             |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| `Registry.execute`              | `execute` in `apps/api/src/registry/registry.ts`                                  |
+| key lookup before the run       | `activityByKey`, `idempotencyByKey` in `apps/api/src/registry/registry.ts`        |
+| replay on unique violation      | the `isUniqueViolation` catches in `execute`                                      |
+| `Registry.approve`              | `approve` in `apps/api/src/registry/registry.ts`                                  |
+| `Registry.deny`                 | `deny` in `apps/api/src/registry/registry.ts`                                     |
+| `Registry.undo`                 | `undo` in `apps/api/src/registry/registry.ts`                                     |
+| `lockPending` (`FOR UPDATE`)    | `lockPending` in `apps/api/src/registry/registry.ts`                              |
+| `lockActivity` (`FOR UPDATE`)   | `lockActivity` in `apps/api/src/registry/activity-lock.ts`                        |
+| `replay`, `replayStored`        | `replay`, `replayStored` in `apps/api/src/registry/replay.ts`                     |
+| `isUniqueViolation`             | `isUniqueViolation` in `apps/api/src/registry/errors.ts`                          |
+| `transaction`                   | `transaction` in `apps/api/src/db/context.ts`                                     |
+| `Registry.staleExpectation`     | `staleExpectation` in `apps/api/src/registry/expectation.ts`                      |
+| `GuardedReversal`, `ReversalOf` | `apps/api/src/registry/bind.ts`                                                   |
+| `job.move` reversal `expect`    | `apps/api/src/job/commands.ts`                                                    |
+| `REVERSAL_EXPECT_PENDING`       | `apps/api/src/registry/expect-pending.ts`                                         |
+| `activity.reversal_expect`      | `apps/api/src/db/schema.ts`, `apps/api/drizzle/0007_activity_reversal_expect.sql` |
 
-Check files: `apps/api/src/registry/UndoLater.tla` with `.cfg`, mutant configs and `.tla.json` (P4 model), `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
+Check files: `apps/api/src/registry/UndoLater.tla` with `.cfg`, mutant configs and `.tla.json` (P4 model), `apps/api/src/registry/registry.undo-later.formal.test.ts` (P4), `apps/api/src/registry/registry.formal.test.ts` (P1), `apps/api/src/registry/registry.pending.formal.test.ts` (P2), `apps/api/src/registry/registry.undo.formal.test.ts` (P3), and the shared engine, trace and race helpers in `apps/api/src/test/registry-formal-support.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 
-Sync commit: `b618ed9f358b23a280d7c00308aca64474ec36ed`. This is the trunk commit the check was last confirmed against.
+Sync commit: `a8bf0fd63246`. Confirm the full hash with `git rev-parse origin/main` when moving it. The first three checks (P1 to P3) were last confirmed at `b618ed9f358b23a280d7c00308aca64474ec36ed`; P4 at the commit above. This is the trunk commit the check was last confirmed against.
 
 ## What is not covered
 
 - Interleavings finer than one SQL statement on PGlite. A server run covers them only by chance of timing.
-- The pending action edited by a person between proposal and approval, and the undo of a row whose subject has changed since.
+- The pending action edited by a person between proposal and approval.
 - The Coach toggles at approve time (`gates.test.ts` covers those) and the expiry path.
 - Commands that run without a transaction other than the steered test command (`account.requestEmailChange`).
 - Pooled-connection limits, deadlock detection and statement timeouts.
@@ -140,4 +158,6 @@ If a later run probes one of these and it fails, it is a new finding. Do not shr
    - Remove `.for("update")` in `lockPending`: green on PGlite, and `N racing approves` and `approve and deny racing never both win` fail on a real server.
    - Remove `.for("update")` in `lockActivity`: green on PGlite, and `N racing undos` fails on a real server.
    - Removing the `row.status === "approved"` early return in `approve` changes nothing, because the key lookup in `execute` replays the same row. It is a second guard, not a missing check.
-5. Move the sync commit only after you reread every covered function at the new commit, rerun the check on both engines, and confirm every row of the coverage record still describes the code. Then set it to `git rev-parse origin/main` and fix any line numbers.
+5. A new command with a reversal: give it an `expect` (see `job.move`), or the type check rejects it unless the name is in `REVERSAL_EXPECT_PENDING`. If it makes an activity row, add a rule for it in `LATER`.
+6. Prove P4 still bites. Make `Registry.undo` skip `staleExpectation` (`?? null`): `P4: refuses with CONFLICT` fails with `job.move` in the erased list, and the chain test fails. Remove the version check in `restorePaper` (`apps/api/src/paper/store.ts`) and add `paper.attachPhoto` to `KNOWN_VIOLATIONS`: the test then passes, which shows Paper erases without its check.
+7. Move the sync commit only after you reread every covered function at the new commit, rerun the check on both engines, and confirm every row of the coverage record still describes the code. Then set it to `git rev-parse origin/main` and check that each name in the coverage record still exists.

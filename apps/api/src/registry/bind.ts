@@ -15,7 +15,32 @@ import {
 } from "@workspace/domain"
 import type { ZodType } from "zod"
 
+import type { ReversalExpectPending } from "./expect-pending.js"
 import type { Registry } from "./registry.js"
+
+type AtLeastOne<T> = {
+  [K in keyof T]-?: Required<Pick<T, K>> & Partial<T>
+}[keyof T]
+
+export type ReversalGuard = {
+  [Q in QueryName]: {
+    query: Q
+    input: QueryInput<Q>
+    matches: AtLeastOne<QueryOutput<Q>>
+    skipped: string
+  }
+}[QueryName]
+
+export type GuardedReversal<C extends CommandContract> = ReversalCall<C> & {
+  expect: ReversalGuard
+}
+
+type ReversalOf<
+  C extends CommandContract,
+  N extends keyof C & string,
+> = N extends ReversalExpectPending
+  ? ReversalCall<C> | null
+  : GuardedReversal<C> | null
 
 type Binding<C extends CommandContract, N extends keyof C & string> = {
   handler: (
@@ -25,7 +50,7 @@ type Binding<C extends CommandContract, N extends keyof C & string> = {
   reversal: (
     input: CommandInput<C, N>,
     output: CommandOutput<C, N>
-  ) => ReversalCall<C> | null
+  ) => ReversalOf<C, N>
   activity: (
     input: CommandInput<C, N>,
     output: CommandOutput<C, N>,

@@ -3,35 +3,12 @@ import { and, eq, inArray } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 import { activity, pendingActions } from "../db/schema.js"
 import type { ExecuteResult } from "./registry.js"
+import { replay } from "./replay.js"
 
 export type TurnReceipt = {
   turnId: string
   name: string
   result: ExecuteResult
-}
-
-type ActivityRow = typeof activity.$inferSelect
-
-export function replay(row: ActivityRow): ExecuteResult {
-  return {
-    pending: false,
-    output: row.result,
-    activityId: row.id,
-    reversal: row.reversalCommand
-      ? { command: row.reversalCommand, input: row.reversalInput }
-      : null,
-    detail: row.detail,
-    summary: row.summary,
-  }
-}
-
-export function replayStored(result: unknown): ExecuteResult {
-  return {
-    pending: false,
-    output: result,
-    activityId: null,
-    reversal: null,
-  }
 }
 
 export async function readTurnReceipts(

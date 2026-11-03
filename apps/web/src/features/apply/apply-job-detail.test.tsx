@@ -11,6 +11,7 @@ import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import {
   getMockJobPosts,
+  refuseNextUndoWith,
   rejectNextChecklistItem,
   rejectNextNote,
   setMockJobs,
@@ -259,6 +260,19 @@ describe("job detail", () => {
         )
       ).toBe(true)
     })
+  })
+
+  it("tells the person Undo was skipped when the card moved again", async () => {
+    setMockJobs([mockJob({ id, stage: "saved", position: "a0" })])
+    refuseNextUndoWith("This card moved again, so Undo was skipped")
+    renderApp(`/apply/${id}`)
+    await headerBar()
+    fireEvent.click(screen.getByRole("button", { name: "Stage: Saved" }))
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Closed" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Undo" }))
+    expect(
+      await screen.findByText("This card moved again, so Undo was skipped")
+    ).toBeInTheDocument()
   })
 
   it("shows a message instead of crashing when the link has a bad job id", async () => {

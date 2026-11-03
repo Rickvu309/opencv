@@ -63,6 +63,23 @@ export function typeProbes(registry: Registry) {
   const foreignReversal: Move["reversal"] = () => ({ command: "paper.replace", input: {} })
 
   // prettier-ignore
+  // @ts-expect-error a reversal of job.move must say what the card looks like after the move
+  const unguardedMove: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" } })
+
+  // prettier-ignore
+  // @ts-expect-error an expectation can only match fields the read returns
+  const wrongExpectation: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" }, expect: { query: "job.get", input: { jobId: someJobId }, matches: { colour: "red" }, skipped: "x" } })
+
+  // prettier-ignore
+  // @ts-expect-error an expectation that matches no field would never refuse
+  const emptyExpectation: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" }, expect: { query: "job.get", input: { jobId: someJobId }, matches: {}, skipped: "x" } })
+
+  const pendingStar: Bindings<JobContract>["job.star"]["reversal"] = () => ({
+    command: "job.star",
+    input: { jobId: someJobId, starred: true },
+  })
+
+  // prettier-ignore
   // @ts-expect-error unknown inbox command name
   const unknownInbox = commands["inbox.nope"]
 
@@ -133,6 +150,10 @@ export function typeProbes(registry: Registry) {
     wrongInboxInput,
     notAContractName,
     wrongInboxReversal,
+    unguardedMove,
+    wrongExpectation,
+    emptyExpectation,
+    pendingStar,
     unknownName,
     oldStage,
     paperAsJob,

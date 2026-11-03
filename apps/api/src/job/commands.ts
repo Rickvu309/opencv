@@ -95,6 +95,15 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
           stage: output.fromStage,
           position: output.fromPosition,
         },
+        expect: {
+          query: "job.get",
+          input: { jobId: input.jobId },
+          matches: {
+            stage: output.stage,
+            position: output.position,
+          },
+          skipped: "This card moved again, so Undo was skipped",
+        },
       }),
       activity: (input) => ({
         subjectKind: "job",
