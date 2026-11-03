@@ -89,6 +89,7 @@ const activityRowSchema = z
     reversalInput: z.unknown(),
     undoneAt: z.string().datetime().nullable(),
     idempotencyKey: z.string().nullable(),
+    turnId: z.string().nullable(),
   })
   .strict()
 
@@ -103,6 +104,7 @@ const pendingActionRowSchema = z
     input: z.unknown(),
     summary: z.string(),
     status: z.enum(["pending", "approved", "denied", "expired"]),
+    turnId: z.string().nullable(),
     createdAt: z.string().datetime(),
   })
   .strict()

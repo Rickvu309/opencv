@@ -27,13 +27,7 @@ import {
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 const CLI_TIMEOUT_MS = 120_000
-const PENDING = [
-  {
-    file: "apps/api/src/coach/CoachTurn.tla.json",
-    issue: "#941",
-    expires: "2026-12-03",
-  },
-]
+const PENDING = []
 const FIXTURE = "scripts/tla/fixtures/Counter"
 
 const tracked = () =>

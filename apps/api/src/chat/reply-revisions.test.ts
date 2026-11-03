@@ -83,6 +83,12 @@ it.each(["Usable answer", ""])(
           "utf8"
         )
       )
+      await client.exec(
+        await readFile(
+          path.join(migrationsFolder, "0006_coach_turn_receipts.sql"),
+          "utf8"
+        )
+      )
       const db = drizzle({ client, schema })
       await withDatabase(db, async () => {
         const detail = await getChat(userId, chatId)

@@ -1,12 +1,13 @@
-import { coachActor, type CoachStreamPart } from "@workspace/domain"
+import { type CoachStreamPart } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
 import { resolveTurnGrounding } from "./context.js"
 import { createDemoCoachRuntime } from "./fake.js"
+import { idOf } from "../registry/coverage-helpers.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 
 const userId = "user-coach-fake-edit"
-const chatId = "00000000-0000-4000-8000-000000000381"
 let h: CoachStore
 
 beforeAll(async () => {
@@ -29,7 +30,13 @@ describe("the fake Coach", () => {
         storedId: null,
         memoryEnabled: false,
       })
-      const actor = coachActor(userId, chatId)
+      const chat = await h.store.registry.execute({
+        name: "chat.create",
+        input: {},
+        actor: h.store.actor,
+      })
+      const chatId = idOf(chat.output)
+      const actor = await seedCoachActor(userId, chatId)
       const parts: CoachStreamPart[] = []
       for await (const part of createDemoCoachRuntime().streamTurn({
         userId,

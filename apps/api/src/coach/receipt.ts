@@ -1,5 +1,13 @@
-import { type ChatToolName, type CoachToolResultPart } from "@workspace/domain"
+import {
+  appendCoachPart,
+  chatToolNameSchema,
+  type ChatEntryPart,
+  type ChatToolName,
+  type CoachStreamPart,
+  type CoachToolResultPart,
+} from "@workspace/domain"
 import type { ExecuteResult } from "../registry/registry.js"
+import type { TurnReceipt } from "../registry/turn-receipts.js"
 import { receiptDetail, reversalOf } from "../registry/receipt.js"
 
 export function toolResultFromExecute(input: {
@@ -40,4 +48,30 @@ export function toolResultFromExecute(input: {
         }
       : {}),
   }
+}
+
+export function withMissingReceipts(
+  parts: ChatEntryPart[],
+  receipts: readonly TurnReceipt[]
+): ChatEntryPart[] {
+  const recorded = new Set(
+    parts.flatMap((part) =>
+      part.type === "tool"
+        ? [part.activityId, part.pendingActionId].filter(Boolean)
+        : []
+    )
+  )
+  return receipts.reduce<ChatEntryPart[]>((all, { name, result }) => {
+    const key = result.activityId ?? result.pendingActionId
+    const tool = chatToolNameSchema.safeParse(name)
+    if (!key || !tool.success || recorded.has(key)) return all
+    recorded.add(key)
+    const receipt: CoachStreamPart = toolResultFromExecute({
+      toolCallId: `receipt-${key}`,
+      name: tool.data,
+      summary: result.summary || name,
+      result,
+    })
+    return appendCoachPart(all, receipt)
+  }, parts)
 }

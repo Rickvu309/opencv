@@ -1,7 +1,6 @@
 import {
   accountContract,
   chatContract,
-  coachActor,
   inboxContract,
   jobContract,
   paperContract,
@@ -17,6 +16,7 @@ import { idOf } from "./coverage-helpers.js"
 import { coverageCases } from "./coverage-setup.js"
 import { installRegistry } from "./install.js"
 import type { ExecuteResult, Registry } from "./registry.js"
+import { coachActivityWithoutTurn, seedCoachActor } from "../test/coach-turn.js"
 
 const surfaces = {
   account: accountContract,
@@ -108,6 +108,7 @@ describe("every command has a coverage case that runs it as the person and undoe
         if (row.undoAssert) await row.undoAssert(result)
       }
       expect(coverageProblems(cases.map((row) => row.name))).toEqual([])
+      expect(await coachActivityWithoutTurn()).toEqual([])
       const offenders = reversalWithoutActivity(ran)
       expect(
         unlistedReversalWithoutActivity(
@@ -201,7 +202,7 @@ describe("every command has a coverage case that runs it as the person and undoe
         input: {},
         actor: person,
       })
-      const coach = coachActor(userId, idOf(chat.output))
+      const coach = await seedCoachActor(userId, idOf(chat.output))
       await db
         .update(user)
         .set({ agentCvs: false, agentInterview: false, agentEmail: false })

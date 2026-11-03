@@ -92,8 +92,6 @@ export async function runCoachTurn(options: {
 }) {
   const startedAt = Date.now()
   const registry = options.registry ?? defaultRegistry
-  const effects = createTurnEffects(registry)
-  const actor = coachActor(options.userId, options.chatId)
   const usageId =
     options.usageId ??
     (await openCoachUsage({
@@ -104,6 +102,11 @@ export async function runCoachTurn(options: {
       provider: options.runtime ? "fake" : options.provider,
       model: options.runtime ? "fake" : options.modelId,
     }))
+  const effects = createTurnEffects(registry, {
+    userId: options.userId,
+    turnId: usageId,
+  })
+  const actor = coachActor(options.userId, options.chatId, usageId)
   const stop = new AbortController()
   const release = trackChatTurn(options.chatId, stop)
   options.stream.onAbort(() => stop.abort())
@@ -238,11 +241,12 @@ export async function runCoachTurn(options: {
       status = "aborted"
     }
     await effects.settleTools()
-    parts = effects.recordMissingReceipts(parts)
     const workedMs = Math.max(0, Date.now() - startedAt)
-    const text = textFromParts(parts)
+    let text: string
     let saved: { id: string } | null = null
     try {
+      parts = await effects.recordMissingReceipts(parts)
+      text = textFromParts(parts)
       saved =
         options.supersedesMessageId && !text.trim()
           ? null

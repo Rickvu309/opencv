@@ -1,4 +1,4 @@
-import { coachActor, personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -10,6 +10,7 @@ import { CommandError } from "./errors.js"
 import { idOf } from "./coverage-helpers.js"
 import { installRegistry } from "./install.js"
 import { Registry } from "./registry.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 
 async function seed(
   userId: string,
@@ -41,7 +42,7 @@ describe("execute refuses a gated command the Coach was not offered", () => {
         input: {},
         actor: person,
       })
-      const coach = coachActor("gate-checklist", idOf(chat.output))
+      const coach = await seedCoachActor("gate-checklist", idOf(chat.output))
       const job = await registry.execute({
         name: "job.create",
         input: { title: "Intern", company: "Northwind" },
@@ -115,7 +116,7 @@ describe("execute refuses a gated command the Coach was not offered", () => {
         input: {},
         actor: personActor("gate-approve"),
       })
-      const coach = coachActor("gate-approve", idOf(chat.output))
+      const coach = await seedCoachActor("gate-approve", idOf(chat.output))
       const pending = await registry.execute({
         name: "inbox.archiveAll",
         input: {},

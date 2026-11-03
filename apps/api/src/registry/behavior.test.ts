@@ -1,4 +1,4 @@
-import { coachActor, defineCommand, personActor } from "@workspace/domain"
+import { defineCommand, personActor } from "@workspace/domain"
 import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
@@ -7,6 +7,7 @@ import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 
 const coachToolNames = [
   "chat.delete",
@@ -93,7 +94,7 @@ describe("the registry refuses what the Coach may not run alone, and approves, d
         actor: person,
       })
       const jobId = (created.output as { id: string }).id
-      const coach = coachActor(userId, chatId)
+      const coach = await seedCoachActor(userId, chatId)
       const pending = await registry.execute({
         name: "job.move",
         input: { jobId, stage: "applied" },

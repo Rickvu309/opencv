@@ -1,7 +1,6 @@
 import {
   DEFAULT_CHAT_TITLE,
   chatContract,
-  coachActor,
   personActor,
   queries,
 } from "@workspace/domain"
@@ -13,6 +12,7 @@ import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../registry/install.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 
 describe("a chat binding that drifts from the chat contract is rejected", () => {
   it("parses every chat, actions and activity command output and both chat reads", async () => {
@@ -112,7 +112,7 @@ describe("a chat binding that drifts from the chat contract is rejected", () => 
         const pending = await registry.execute({
           name: "job.move",
           input: { jobId, stage },
-          actor: coachActor(userId, approveChat.id),
+          actor: await seedCoachActor(userId, approveChat.id),
         })
         if (!pending.pendingActionId) throw new Error("missing pending action")
         return pending.pendingActionId
@@ -210,7 +210,7 @@ describe("a chat binding that drifts from the chat contract is rejected", () => 
       const pending = await registry.execute({
         name: "job.delete",
         input: { jobId: job.id },
-        actor: coachActor(userId, chat.id),
+        actor: await seedCoachActor(userId, chat.id),
       })
       if (!pending.pendingActionId) throw new Error("missing pending action")
       const before = (await registry.read("job.list", {}, person)) as unknown[]

@@ -3,6 +3,7 @@ import { coachActor } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
+import { createId } from "../id.js"
 
 const userId = "user-coach-outline"
 let h: CoachStore
@@ -62,7 +63,7 @@ describe("paper.outline and the Coach tool list", () => {
     await inDatabase(async () => {
       const names = (
         await h.store.registry.tools(
-          coachActor(userId, "00000000-0000-4000-8000-000000000380")
+          coachActor(userId, "00000000-0000-4000-8000-000000000380", createId())
         )
       ).map((entry) => entry.name)
       expect(names).toContain("paper.edit")

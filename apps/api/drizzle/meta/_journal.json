@@ -43,6 +43,13 @@
       "when": 1793629762961,
       "tag": "0005_paper_edit_based_on",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793653330395,
+      "tag": "0006_coach_turn_receipts",
+      "breakpoints": true
     }
   ]
 }

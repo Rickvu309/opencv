@@ -1,5 +1,7 @@
 import {
   ERROR_CODES,
+  parseChatId,
+  parseUserId,
   planAllowsMode,
   type CoachMode,
   type Plan,
@@ -9,8 +11,58 @@ import { and, eq, gt, isNull } from "drizzle-orm"
 import { getDb, transaction } from "../db/context.js"
 import { coachUsage, user } from "../db/schema.js"
 import { assertDayCap } from "../account/index.js"
+import { insertCoachMessage } from "../chat/index.js"
 import { CommandError } from "../registry/errors.js"
+import { registry } from "../registry/registry.js"
 import { createId } from "../id.js"
+import { withMissingReceipts } from "./receipt.js"
+
+export async function saveRepliesForUnsavedTurns(input: {
+  userId: string
+  chatId: string
+}) {
+  const unsaved = await getDb()
+    .select({
+      id: coachUsage.id,
+      finishReason: coachUsage.finishReason,
+      latencyMs: coachUsage.latencyMs,
+    })
+    .from(coachUsage)
+    .where(
+      and(
+        eq(coachUsage.chatId, input.chatId),
+        eq(coachUsage.userId, input.userId),
+        isNull(coachUsage.messageId)
+      )
+    )
+  const receipts = await registry.turnReceipts(
+    input.userId,
+    unsaved.map((turn) => turn.id)
+  )
+  for (const turn of unsaved) {
+    const parts = withMissingReceipts(
+      [],
+      receipts.filter((receipt) => receipt.turnId === turn.id)
+    )
+    if (parts.length === 0) continue
+    const saved = await insertCoachMessage({
+      chatId: parseChatId(input.chatId),
+      userId: parseUserId(input.userId),
+      text: "",
+      parts,
+      status: "error",
+      workedMs: turn.latencyMs ?? 0,
+    })
+    if (!saved) continue
+    await getDb()
+      .update(coachUsage)
+      .set({
+        messageId: saved.id,
+        finishReason: turn.finishReason ?? "error",
+      })
+      .where(eq(coachUsage.id, turn.id))
+  }
+}
 
 export async function openCoachUsage(input: {
   userId: string
@@ -54,6 +106,7 @@ export async function openCoachUsage(input: {
         ERROR_CODES.CONFLICT,
         "Coach is already working in this chat. Stop it or wait for it to finish."
       )
+    await saveRepliesForUnsavedTurns(input)
     const id = createId()
     await getDb().insert(coachUsage).values({
       id,
