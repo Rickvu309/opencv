@@ -1,4 +1,3 @@
-// `approve`: relay an admin's "approved" from chat onto a risk:high issue.
 import { agentIdFor, envAgent } from "./claim.mjs"
 import { lazyFacts } from "./lazy.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
@@ -22,8 +21,6 @@ function relayAgent(ctx) {
 export function approve(ctx, n) {
   const { issue } = ctx.facts.load(n, ["issue"])
   const open = String(issue.state).toUpperCase() === "OPEN"
-  // The signed-in account is read only when the earlier rows pass and the
-  // issue is not already approved.
   const verdict = decide(
     "approve",
     lazyFacts(

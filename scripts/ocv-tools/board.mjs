@@ -1,6 +1,3 @@
-// `board`: every open issue, grouped, with risk, claim, idle minutes, pull request and checks.
-// The gh adapter reads the repo once, then pages issues and open pull requests.
-// Comment pages are fetched only when the first page says more exist.
 import { holderOf } from "./claim-marker.mjs"
 import { approvalValid, riskOf } from "./facts.mjs"
 import { TYPES } from "./fields.mjs"
@@ -39,8 +36,6 @@ export function checkState(rollup) {
   return "passing"
 }
 
-// risk:high without a valid /approve waits, even when someone holds it.
-// An open pull request is in review only after that approval exists.
 export function groupOf({ risk, approved, claim, prOpen }) {
   if (risk === "high" && !approved) return "waiting"
   if (prOpen) return "inReview"
@@ -75,7 +70,6 @@ function latestCi(runs) {
   return best
 }
 
-// One call per open pull request we show: the latest check run named ci.
 function checksFor(gh, pr) {
   if (!pr?.headRefOid) return pr ? "none" : null
   const best = latestCi(gh.checkRuns(pr.headRefOid))

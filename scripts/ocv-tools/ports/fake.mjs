@@ -1,4 +1,3 @@
-// In-memory GitHub, git, files and disk. Tests assert effects, not argv.
 import { existsSync, readFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"
@@ -106,6 +105,7 @@ export function fakePorts(world = {}) {
     onComment: world.onComment ?? null,
     onCommit: world.onCommit ?? null,
     onPush: world.onPush ?? null,
+    onEditComment: world.onEditComment ?? null,
     gitDirs: {},
   }
   const effect = (op, extra = {}) => {
@@ -274,6 +274,10 @@ export function fakePorts(world = {}) {
       }
       if (!found)
         throw new Error(`gh api --include failed: comment ${id} was not found`)
+      state.onEditComment?.(
+        id,
+        effects.filter((e) => e.op === "editComment").length
+      )
       return stamp
     },
     assignMe(n) {

@@ -1,6 +1,3 @@
-// Plain-words lint, modeled on Cam's lintIssue. It runs only in `ocv-tools file`: hand-written
-// issues are never linted. The owner reads issues, so everything outside the exempt sections
-// must be plain words.
 import { RISKS, TEMPLATE_FIELDS } from "./fields.mjs"
 
 const EXEMPT = new Set(
@@ -101,7 +98,6 @@ function syllables(word) {
   return Math.max(1, m ? m.length : 1)
 }
 
-// Flesch-Kincaid grade. 0 for text with no words.
 export function readingGrade(text) {
   const sents = sentences(text)
   const words = String(text ?? "")
@@ -281,8 +277,6 @@ export function lintIssue({ title, body }) {
   return { ok: reasons.length === 0, reasons, failed, grade, risk }
 }
 
-// Builds the body from answers, in form order. Throws a plain message when a required field is
-// missing or a dropdown value is not one of its options.
 export function buildIssueBody(values) {
   const blank = (f) => !String(values[f.id] ?? "").trim()
   const missing = TEMPLATE_FIELDS.filter((f) => f.required && blank(f)).map(

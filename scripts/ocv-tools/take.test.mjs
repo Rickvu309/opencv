@@ -70,8 +70,11 @@ test("take builds the branch, worktree, .env, port record, claim and result", ()
     )
   )
   assert.equal(ports.counts.issue, 3)
-  // One list to place the worktree, one to find finished worktrees left on disk.
-  assert.equal(ports.counts.worktrees, 2)
+  assert.equal(
+    ports.counts.worktrees,
+    2,
+    "one list places the worktree, one finds finished worktrees left on disk"
+  )
   const last = r.text.split("\n").at(-1)
   assert.match(
     last,

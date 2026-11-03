@@ -1,4 +1,3 @@
-// `ocv-tools file`: builds the issue from the form fields, lints the plain words and creates it.
 import { fileURLToPath } from "node:url"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
@@ -10,7 +9,6 @@ import {
   splitIssues,
 } from "./lint.mjs"
 
-// Model issues live in one file so the writing guide and the tests show the same ones.
 export const EXAMPLES = fileURLToPath(new URL("./examples.md", import.meta.url))
 
 export function exampleIssues(text) {
@@ -19,17 +17,12 @@ export function exampleIssues(text) {
 
 const TITLE_PREFIX = new RegExp(`^(${TYPES.join("|")}): `)
 
-// The title carries the type prefix. `--type` adds it when the title has none.
-// Returns null when neither the title nor --type names a type.
 export function titleWithType(title, type) {
   if (TITLE_PREFIX.test(title)) return title
   if (type && TYPES.includes(type)) return `${type}: ${title}`
   return null
 }
 
-// What is wrong with the draft, read off the flags, then the body the form
-// builds, then the plain-words lint. It stops at the first stage with a
-// problem, since each stage needs the one before it.
 function draftOf(ctx, flags) {
   if (!flags["--title"]) return { draft: { missingTitle: true } }
   const title = titleWithType(flags["--title"], flags["--type"])

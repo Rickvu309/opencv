@@ -1,4 +1,3 @@
-// take and release: the claim on an issue, and the shared helpers save and cleanup use.
 import { randomBytes } from "node:crypto"
 import { join, resolve, sep } from "node:path"
 import {
@@ -16,7 +15,6 @@ export const envOf = (ctx) => ctx.env ?? process.env
 export const envAgent = (ctx) => envOf(ctx).OCV_TOOLS_AGENT || null
 export const newAgent = () => `agent-${randomBytes(4).toString("hex")}`
 
-// The agent id of this worktree: OCV_TOOLS_AGENT, else the id file in the worktree's git dir.
 export function agentIdFor(ctx, gitDir) {
   const env = envAgent(ctx)
   if (env) return env
@@ -27,9 +25,6 @@ export function agentIdFor(ctx, gitDir) {
   }
 }
 
-// Where we are: a linked worktree under the clone's ../<repo>.worktrees root,
-// on a task branch. A normal clone, even on a task branch, is not a task.
-// locate() failing stays NOT_A_TASK, the same as the old catch.
 function hereFact(ctx) {
   const here = ctx.ports.git.here(ctx.cwd)
   const branch = here.branch
@@ -57,8 +52,6 @@ function hereFact(ctx) {
   }
 }
 
-// The same fact without the refusal, for a verb that decides it with its own
-// facts (shot names a target when the folder is not a task).
 export const taskNow = (ctx) => hereFact(ctx)
 
 export function taskHere(ctx, job = "save") {
@@ -70,8 +63,6 @@ export function taskHere(ctx, job = "save") {
   return here
 }
 
-// One read of the issue plus the holder, timed on GitHub's clock.
-// fresh re-reads. The loader otherwise returns the run's cached facts.
 export function readClaim(ctx, n, fresh = false) {
   const bag = ctx.facts.load(Number(n), ["issue", "claim"], { fresh })
   return {
@@ -88,8 +79,6 @@ export function readClaim(ctx, n, fresh = false) {
 export const claimBody = ({ agent, at, branch }) =>
   `${claimMarker({ agent, at, branch })}\nocv-tools: ${agent} holds this issue on branch ${branch}. Last saved ${at}. The claim can be taken over after ${CLAIM_IDLE_MINUTES} idle minutes.`
 
-// Move the single claim comment forward. The lease is the comment's updatedAt
-// in the PATCH response, not a time this process writes into the marker.
 export function heartbeat(ctx, n, h, agent) {
   const body = claimBody({
     agent,

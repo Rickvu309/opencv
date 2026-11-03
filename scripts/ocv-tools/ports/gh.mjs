@@ -1,9 +1,6 @@
-// GitHub adapter. Domain verbs over `gh`. Callers get plain records, not argv.
 import { readServerNow, parseUpdatedAt } from "../clock.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 
-// An approval is valid only for a comment that was never edited. GitHub returns null for that case,
-// so a comment without the field means the query lost it and must fail loudly.
 function editStamp(c) {
   if (c.lastEditedAt === undefined)
     throw new Error(
@@ -12,10 +9,8 @@ function editStamp(c) {
   return c.lastEditedAt
 }
 
-// Stop rather than treat a cut-off comment list as the whole claim history.
 export const COMMENT_PAGE_CAP = 100
 
-// Board reads open issues and open pull requests in pages, not one call each.
 const LIST_CAP = 40
 const ISSUE_LIST = `query($owner:String!,$name:String!,$cursor:String){repository(owner:$owner,name:$name){issues(states:OPEN,first:50,after:$cursor){pageInfo{hasNextPage endCursor} nodes{number title state body createdAt lastEditedAt labels(first:50){nodes{name}} assignees(first:20){nodes{login}} comments(first:100){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt lastEditedAt updatedAt}}}}}}`
 const COMMENT_AFTER = `query($owner:String!,$name:String!,$n:Int!,$cursor:String){repository(owner:$owner,name:$name){issue(number:$n){comments(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt lastEditedAt updatedAt}}}}}`
@@ -130,7 +125,6 @@ export function ghAdapter(run) {
     return items
   }
 
-  // First page is oldest-first. A later page can hold the live claim.
   function completeComments(view, issue) {
     const conn = issue.comments ?? {}
     if (!conn.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean")
@@ -179,8 +173,6 @@ export function ghAdapter(run) {
     }))
   }
 
-  // One repo view, one clock, one paged issue query and one paged pull query.
-  // Comment pages are fetched only when the first page says more exist.
   function openBoard() {
     const view = repo()
     const serverNow = readServerNow({ run })
@@ -237,8 +229,6 @@ export function ghAdapter(run) {
     return JSON.parse(out).check_runs ?? []
   }
 
-  // One issue plus every comment page. history is complete, stuck, or cap.
-  // record is null when the number is not an issue.
   function issue(n) {
     const view = JSON.parse(gh("repo", "view", "--json", "owner,name"))
     const serverNow = readServerNow({ run })
@@ -351,7 +341,6 @@ export function ghAdapter(run) {
       gh("issue", "comment", String(n), "--body", body)
       return { id: null }
     },
-    // The lease instant GitHub stored on the claim comment, or null.
     editComment(id, body) {
       const out = gh(
         "api",
@@ -450,7 +439,6 @@ export function ghAdapter(run) {
     commentPr(n, body) {
       gh("pr", "comment", String(n), "--body", body)
     },
-    // After a merge: close the issue the PR was for if the Closes keyword or the queue left it open.
     closeIssue(n, pr) {
       const state = run("gh", [
         "issue",

@@ -1,4 +1,3 @@
-// Dispatcher. runCli returns { code, text } so tests drive it with injected ports.
 import { readFileSync } from "node:fs"
 import { EXIT, failure, render } from "./result.mjs"
 import { badInput, needsValue, unknownOption } from "./input.mjs"
@@ -94,7 +93,6 @@ function takeValued() {
   ])
 }
 
-// An issue token (#90, 90), a bad number (0, #abc, 90.5), or a title.
 function targetKind(text) {
   const raw = String(text)
   if (/^#/.test(raw) || /^\d+$/.test(raw) || /^\d+\.\d+$/.test(raw)) {
@@ -105,6 +103,11 @@ function targetKind(text) {
   return "title"
 }
 
+const FLAG_TOKEN = /^--?[A-Za-z]/
+
+export const isMissingFlagValue = (value) =>
+  value == null || FLAG_TOKEN.test(value)
+
 function parseTakeArgs(argv) {
   const valued = takeValued()
   const flags = {}
@@ -113,9 +116,7 @@ function parseTakeArgs(argv) {
     const arg = argv[i]
     if (valued.has(arg)) {
       const value = argv[i + 1]
-      // A missing value, or another flag. A leading dash in prose ("- I ...")
-      // is a real value.
-      if (value == null || /^--?[A-Za-z]/.test(value)) needsValue(arg)
+      if (isMissingFlagValue(value)) needsValue(arg)
       flags[arg] = value
       i += 1
       continue

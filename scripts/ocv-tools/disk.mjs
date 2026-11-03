@@ -1,9 +1,8 @@
-// Disk preflight: enough free space and a working 64 KiB write in
-// the main checkout, the worktree root's parent, the root, ~/tmp and the temp dir.
-// Limits in MiB: PR_DISK_MIN_MB (default 2048), PR_TMP_MIN_MB (default 256).
-// The statfs and write probes go through ports.fs.
 import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"
+
+const DEFAULT_DISK_MIN_MB = 2048
+const DEFAULT_TMP_MIN_MB = 256
 
 function probe(fs, dir, minMb) {
   const free = fs.diskFree(dir)
@@ -26,14 +25,13 @@ function probe(fs, dir, minMb) {
   return null
 }
 
-// Returns null when fine, else { cause, text }.
 export function diskProblem(fs, env, { main, root }) {
   const num = (name, dflt) => {
     const v = env[name] ?? String(dflt)
     return /^\d+$/.test(v) ? Number(v) : null
   }
-  const min = num("PR_DISK_MIN_MB", 2048)
-  const tmpMin = num("PR_TMP_MIN_MB", 256)
+  const min = num("PR_DISK_MIN_MB", DEFAULT_DISK_MIN_MB)
+  const tmpMin = num("PR_TMP_MIN_MB", DEFAULT_TMP_MIN_MB)
   if (min === null || tmpMin === null)
     return {
       cause: "env",

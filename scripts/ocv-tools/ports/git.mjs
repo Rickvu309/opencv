@@ -1,11 +1,9 @@
-// Git adapter. Domain verbs over git. Porcelain parsing lives here, once.
 import { basename, dirname, join } from "node:path"
 
 export function gitAdapter(run) {
   const git = (cwd, args, options = {}) => run("git", args, { ...options, cwd })
 
   return {
-    // { main, root } for a normal clone, { bare } for a bare common dir, null if not a repo.
     repo(cwd) {
       const common = git(cwd, [
         "rev-parse",
@@ -36,7 +34,6 @@ export function gitAdapter(run) {
         common: common.out,
       }
     },
-    // Every worktree that has a branch: { path, branch } without refs/heads/.
     worktrees(cwd) {
       const out = git(cwd, ["worktree", "list", "--porcelain"]).out
       const found = []
@@ -71,7 +68,6 @@ export function gitAdapter(run) {
       return git(cwd, ["ls-remote", "--exit-code", "--heads", "origin", branch])
         .ok
     },
-    // After the remote ref is fetched: same, behind, ahead, diverged, or missing.
     branchFacts(cwd, branch) {
       const local = git(cwd, ["rev-parse", "--verify", `refs/heads/${branch}`])
       const remote = git(cwd, [
@@ -124,7 +120,6 @@ export function gitAdapter(run) {
       if (ref) args.push(ref)
       return git(cwd, args)
     },
-    // mode: "local" (existing branch), "track" (origin branch), "new" (from start).
     addWorktree(cwd, { path, branch, mode, start }) {
       const args =
         mode === "local"

@@ -1,6 +1,3 @@
-// The workspace engine behind `take`: slug and branch rules, the worktree from the latest
-// origin/main, .env with a free port, hooks, install. Ported from the old scripts/new-task.sh.
-// Git, files and process checks go through ports.
 import { join } from "node:path"
 import { BRANCH_RE, TYPES } from "./fields.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
@@ -18,12 +15,9 @@ export function slugify(text) {
     .join("-")
 }
 
-// Drop a leading "type:" or "type(scope):" from an issue title.
 export const descFromTitle = (title) =>
   String(title).replace(/^[a-zA-Z]+(\([^)]*\))?!?:\s*/, "")
 
-// The main checkout and the worktree root, from any worktree of the clone.
-// The locate moment: a missing or bare repository refuses here.
 export function locate(ctx) {
   const repo = ctx.ports.git.repo(ctx.cwd)
   const fact = !repo
@@ -36,7 +30,6 @@ export function locate(ctx) {
   return { main: repo.main, root: repo.root }
 }
 
-// The path the new worktree would take, when something is already there.
 export function takenPath(ctx, issue, desc) {
   const slug = slugify(desc ?? "")
   if (!slug) return null
@@ -44,7 +37,6 @@ export function takenPath(ctx, issue, desc) {
   return ctx.ports.fs.exists(path) ? path : null
 }
 
-// Ports other worktrees already hold in their .env (their servers may not run yet).
 function claimedPorts(fs, root) {
   const ports = new Set()
   if (!fs.exists(root)) return ports
@@ -53,7 +45,7 @@ function claimedPorts(fs, root) {
       const m = /^PORT=(\d+)$/m.exec(fs.read(join(root, dir, ".env")))
       if (m) ports.add(Number(m[1]))
     } catch {
-      // a worktree with no .env holds no port
+      continue
     }
   }
   return ports
@@ -77,15 +69,12 @@ function installCommand(fs, wt) {
   return ["npm", ["install"]]
 }
 
-// Local is a strict ancestor of origin: fast-forward so resume keeps the push.
 function fastForward(git, main, branch, remote) {
   const moved = git.fastForward(main, branch, remote)
   if (!moved.ok)
     throw new Error(`could not fast-forward ${branch}: ${moved.err}`)
 }
 
-// Makes the branch and worktree. Returns { main, worktree, branch, port, warnings }.
-// resume checks out a branch that already exists instead of creating one.
 export function createWorktree(
   ctx,
   { type, issue, desc, install = true, resume = false, held = null }
@@ -112,8 +101,6 @@ export function createWorktree(
     throw new Error(`git fetch origin main failed: ${fetched.err}`)
   const local = git.localHead(main, branch)
   const remote = git.remoteHead(main, branch)
-  // Resume reads origin's tip first, so the decision sees how the two tips
-  // relate. A stale local branch must not hide commits another clone pushed.
   if (resume && remote) {
     const got = git.fetch(main, branch)
     if (!got.ok)
@@ -184,8 +171,6 @@ export function createWorktree(
   return { main, worktree, branch, port, gitDir, warnings }
 }
 
-// Drop a worktree take just created when it has no commits and no tracked edits.
-// Untracked setup files (.env) do not count. Returns false when it stays.
 export function discardWorktree(ctx, { main, worktree, branch }) {
   const status = ctx.ports.git.status(worktree)
   if (!status.ok) return false

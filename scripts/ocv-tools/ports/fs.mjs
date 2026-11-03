@@ -1,4 +1,3 @@
-// Files and disk. Jobs ask for these verbs; the statfs probe stays here.
 import {
   existsSync,
   mkdirSync,
@@ -40,7 +39,6 @@ export function fsAdapter() {
       writeFileSync(path, text)
       return path
     },
-    // Free mebibytes, or { error } when statfs fails.
     diskFree(dir) {
       try {
         const s = statfsSync(dir)
@@ -49,7 +47,6 @@ export function fsAdapter() {
         return { error: error.message }
       }
     },
-    // null when a 64 KiB write works, else { full, message }.
     writeProbe(dir) {
       try {
         withTempDir(

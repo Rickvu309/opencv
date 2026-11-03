@@ -6,7 +6,9 @@ import { RISK_LABELS, TEMPLATE_FIELDS } from "./fields.mjs"
 const read = (path) =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8")
 
-// task.yml is a flat list of `- type:` blocks; this reads the few keys the fields share.
+const formRequiredIgnoringRisk = ({ required, requiredForRisk }) =>
+  requiredForRisk ? false : required
+
 function parseForm(text) {
   const items = []
   for (const line of text.split("\n")) {
@@ -42,8 +44,7 @@ test("the issue form and TEMPLATE_FIELDS list the same fields in the same order"
       id,
       label,
       kind,
-      // the form cannot say "required when risk is high", so it marks those optional
-      required: requiredForRisk ? false : required,
+      required: formRequiredIgnoringRisk({ required, requiredForRisk }),
     }))
   )
 })

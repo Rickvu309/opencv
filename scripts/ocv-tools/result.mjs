@@ -1,12 +1,8 @@
-// The one Result: text layout, exit table, and result.json schema 1.
-// It writes result.json for ocv-tools and scripts/pr.mjs.
 import { execFileSync } from "node:child_process"
 import { appendFileSync, mkdirSync, renameSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { basename, dirname, join } from "node:path"
 
-// 0 ok, 1 error, 2 refused, 3 lost, 4 human. Help prints this table.
-// 4 is a refusal only the owner can clear, such as BILLING_BLOCKED.
 export const EXIT = Object.freeze({
   ok: 0,
   error: 1,
@@ -112,7 +108,6 @@ export const FIXES = {
   ERROR: "Read the message, fix the cause, and run the command again.",
 }
 
-// Help prints the exit table from EXIT, and the refusal codes from FIXES.
 export function exitText() {
   const codes = Object.entries(EXIT)
     .map(([name, code]) => `${code} ${name}`)
@@ -124,7 +119,6 @@ export function exitText() {
   ].join("\n")
 }
 
-// A result is { lines, next } or { lines, fix }. The text always ends in Next: or Fix:.
 export function render({ lines, next, fix, tail }) {
   const out = [...lines]
   if (next) out.push(`Next: ${next}`)
@@ -178,9 +172,6 @@ function isoUtc(value) {
   return date.toISOString().replace(/\.\d+Z$/, "Z")
 }
 
-// writeResult(env, record) swallows a write error and returns null (ocv-tools).
-// writeResult(record) throws on a write error and reads process.env (scripts/pr).
-// The JSON line is the same schema either way.
 export function writeResult(envOrRecord, record) {
   const lenient = record != null
   const env = lenient ? envOrRecord : process.env

@@ -1,5 +1,3 @@
-// `shot`: upload pictures to the screenshots release and post them on an issue or pull request.
-// Pictures stay off main. The release is created as a prerelease when it is missing.
 import {
   closeSync,
   copyFileSync,
@@ -47,21 +45,19 @@ const GIF89 = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]
 const RIFF = [0x52, 0x49, 0x46, 0x46]
 const WEBP = [0x57, 0x45, 0x42, 0x50]
 
-// Exact bytes. ASCII decoding drops the high bit and would accept non-pictures.
-const at = (buf, start, sig) => {
+const exactBytesAt = (buf, start, sig) => {
   if (buf.length < start + sig.length) return false
   for (let i = 0; i < sig.length; i++)
     if (buf[start + i] !== sig[i]) return false
   return true
 }
 
-// png, jpg, gif and webp, by the leading bytes. The file name is not trusted.
 export function pictureType(bytes) {
   const b = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes)
-  if (at(b, 0, PNG)) return "png"
-  if (at(b, 0, JPG)) return "jpg"
-  if (at(b, 0, GIF87) || at(b, 0, GIF89)) return "gif"
-  if (at(b, 0, RIFF) && at(b, 8, WEBP)) return "webp"
+  if (exactBytesAt(b, 0, PNG)) return "png"
+  if (exactBytesAt(b, 0, JPG)) return "jpg"
+  if (exactBytesAt(b, 0, GIF87) || exactBytesAt(b, 0, GIF89)) return "gif"
+  if (exactBytesAt(b, 0, RIFF) && exactBytesAt(b, 8, WEBP)) return "webp"
   return null
 }
 
@@ -76,8 +72,6 @@ function readHead(path) {
   }
 }
 
-// What the shot rows read about one file: it exists, is a file, its size and
-// what its first bytes say it is.
 function inspect(path) {
   if (!existsSync(path)) return { path, exists: false }
   let st
@@ -103,7 +97,6 @@ const decided = (verdict) => {
   if (!verdict.ok) throw refusalError(verdict.refusals[0])
 }
 
-// Names carry the target, so two tasks do not overwrite each other.
 export function shotAssets(items, { kind, n, name }) {
   const seen = new Set()
   const many = Boolean(name) && items.length > 1
@@ -125,8 +118,6 @@ export const shotLink = (repo, item) =>
 export const shotBody = (repo, items) =>
   `Pictures from the agent:\n\n${items.map((item) => shotLink(repo, item)).join("\n\n")}`
 
-// GitHub rejects an issue comment at 65536 characters. Stay under 60000. A
-// chunk at the limit is one picture whose link alone is too long.
 export function shotComments(repo, items) {
   const chunks = []
   let batch = []
@@ -171,7 +162,6 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
   const here = named
     ? { ok: true, shot: true }
     : { ...taskNow(ctx), shot: true }
-  // Bytes first, so a bad picture never reaches git or GitHub.
   const checked = files.map(inspect)
   decided(
     decide("shot", {

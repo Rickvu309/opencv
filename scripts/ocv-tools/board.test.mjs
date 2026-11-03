@@ -220,7 +220,7 @@ function split(text) {
   return { body: text.slice(0, at), next: text.slice(at + 7) }
 }
 
-test("checkState, groupOf and prFor", () => {
+test("checkState, prFor, and groupOf: risk:high without a valid approval waits even when held or in review", () => {
   assert.equal(checkState(null), "none")
   assert.equal(checkState([]), "none")
   assert.equal(
@@ -492,8 +492,11 @@ test("an open pull request behind newer closed ones stays in review", () => {
   assert.match(checks[0], /sha14/)
   assert.match(checks[0], /check_name=ci/)
   assert.match(checks[0], /filter=latest/)
-  // gh api switches to POST when -f fields are given, and the check-runs listing is a GET.
-  assert.match(checks[0], /--method GET/)
+  assert.match(
+    checks[0],
+    /--method GET/,
+    "gh api posts once -f fields are given, so the check-runs listing must force GET"
+  )
 })
 
 test("board refuses a stuck issue page, a stuck comment page, an unknown flag and an extra argument", () => {

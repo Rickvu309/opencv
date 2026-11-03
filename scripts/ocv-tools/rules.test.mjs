@@ -356,7 +356,6 @@ test("every checked rule has a failing and a passing fact", () => {
     { shot: { count: 20 } },
     "shot takes at most 20 pictures per run (21 given)"
   )
-  // The delivery rows are pinned in rules/delivery.test.mjs.
   for (const row of jobRows) seen.add(row.id)
   check(
     "MASS_DELETE",
