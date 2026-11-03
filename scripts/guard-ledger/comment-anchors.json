@@ -1,0 +1,18 @@
+{
+  "id": "comment-anchors",
+  "file": "scripts/comment-anchors.test.mjs",
+  "detector": {
+    "module": "scripts/lib/comment-anchors.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "57b78291^",
+    "path": "apps/web/src/features/paper/paper-cv-document.test.tsx",
+    "reads": ["apps/web/src/styles/paper.css"],
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/paper/paper-cv-document.test.tsx"
+    }
+  }
+}

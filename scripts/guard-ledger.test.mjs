@@ -209,6 +209,30 @@ const detectIo = (shown) => ({
   show: (rev) => shown[rev] ?? null,
 })
 
+test("a detect proof reads named companion files at the historic sha", async () => {
+  const proven = row({
+    historic: { ...PAST, reads: ["src/styles/paper.css"] },
+    detector: DETECTOR,
+  })
+  const seen = []
+  const result = await prove(proven, {
+    detector: async () => (text, _file, world) => {
+      if (!world?.read) return false
+      const css = world.read("src/styles/paper.css")
+      seen.push(css)
+      return text.includes("QVE-208") && css.includes("only-in-note")
+    },
+    show: (rev, file) =>
+      ({
+        "abc1234:src/a.tsx": 'indexOf("QVE-208")',
+        "abc1234:src/styles/paper.css": "/* only-in-note */",
+        "HEAD:src/a.tsx": "clean",
+      })[`${rev}:${file}`] ?? null,
+  })
+  assert.equal(result.ok, true)
+  assert.deepEqual(seen, ["/* only-in-note */"])
+})
+
 test("detect proof passes when the past fires and HEAD stays quiet, and fails on either miss", async () => {
   const proven = row({ historic: PAST, detector: DETECTOR })
   const pass = await prove(

@@ -48,12 +48,21 @@ test("a guard or test that reads a hatch marker fires", () => {
   )
 })
 
-test("a test that reads comments through the typescript api fires, and no-comments.mjs does not", () => {
+test("a test that reads comments through the typescript api fires, and importing the shared finders does not", () => {
   assert.equal(detect(MISTAKE_COMMENT_API, "scripts/x.test.mjs", []).length, 1)
   assert.deepEqual(
     detect(MISTAKE_COMMENT_API, "scripts/no-comments.mjs", []),
     []
   )
+  assert.equal(
+    detect(MISTAKE_COMMENT_API, "scripts/lib/comment-spans.mjs", []).length,
+    1
+  )
+  const imported = `import { findSourceComments, findCssComments } from "../no-comments.mjs"
+export const spans = (file, text) => findSourceComments(file, text)
+export const cssSpans = (text) => findCssComments(text)
+`
+  assert.deepEqual(detect(imported, "scripts/lib/comment-spans.mjs", []), [])
 })
 
 test("code with no marker in a comment and no reader stays quiet", () => {
