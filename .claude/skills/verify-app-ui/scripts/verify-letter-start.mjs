@@ -4,6 +4,7 @@ import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 
+import { requireVerifierPorts } from "../../../../scripts/lib/worktree-port.mjs"
 import { must } from "./lib/apply-pen-seed.mjs"
 import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
@@ -34,15 +35,11 @@ must(
 )
 const unreadable = options.state === "unreadable"
 const screenName = unreadable ? "letter-unreadable" : "letter-start"
-const port = Number(process.env.PORT)
+const ports = requireVerifierPorts(repo)
 const web =
-  options["base-url"] ??
-  process.env.WEB_ORIGIN ??
-  (Number.isInteger(port) ? `http://localhost:${port + 1}` : null)
+  options["base-url"] ?? process.env.WEB_ORIGIN ?? ports?.webOrigin ?? null
 const api =
-  options["api-url"] ??
-  process.env.API_ORIGIN ??
-  (Number.isInteger(port) ? `http://localhost:${port}` : null)
+  options["api-url"] ?? process.env.API_ORIGIN ?? ports?.apiOrigin ?? null
 const log = options["api-log"] ?? process.env.VERIFY_API_LOG
 const destination =
   options.evidence ?? positional ?? process.env.VERIFY_APP_UI_SHOTS

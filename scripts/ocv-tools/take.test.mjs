@@ -2,10 +2,11 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
+import { WORKTREE_PORTS } from "../../packages/domain/src/local-ports.ts"
 import { runCli } from "./cli.mjs"
 import { claimMarker } from "./claim-marker.mjs"
 import { ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
-import { slugify } from "./worktree.mjs"
+import { pickPort, slugify } from "./worktree.mjs"
 
 const WT = "/tmp/opencv.worktrees/90-keep-my-search"
 const BRANCH = "feat/90-keep-my-search"
@@ -126,6 +127,37 @@ test("take picks the next free port when another worktree holds the first", () =
   runCli(["take", "90", "--no-install"], ctx)
   const r = runCli(["take", "1090", "--no-install"], ctxFor(ports))
   assert.match(r.text, /Port: 4091 /, r.text)
+})
+
+test("take allocates no port above the shared range", () => {
+  const { ctx } = run({
+    issues: [issue(999)],
+    listening: [WORKTREE_PORTS.last],
+  })
+  const r = runCli(
+    ["take", "999", "--no-install", "-d", "worktree ports no collision"],
+    ctx
+  )
+  assert.equal(r.code, 0, r.text)
+  const found = /Port: (\d+) \(api on (\d+), web on (\d+)\)/.exec(r.text)
+  assert.ok(found, r.text)
+  const api = Number(found[1])
+  const web = Number(found[3])
+  const band = WORKTREE_PORTS.last - WORKTREE_PORTS.first + 1
+  assert.equal(api, WORKTREE_PORTS.first)
+  assert.ok(api <= WORKTREE_PORTS.last)
+  assert.equal(web, api + band)
+  assert.ok(web > WORKTREE_PORTS.last)
+  const blocked = []
+  for (let port = WORKTREE_PORTS.first; port <= WORKTREE_PORTS.last; port += 1)
+    blocked.push(port)
+  const full = run({ issues: [issue(999)], listening: blocked })
+  assert.throws(
+    () => pickPort(full.ctx, 999, full.ports.state.root),
+    new RegExp(
+      `no free port in ${WORKTREE_PORTS.first} to ${WORKTREE_PORTS.last}`
+    )
+  )
 })
 
 test("a closed issue is refused before login or a worktree read", () => {

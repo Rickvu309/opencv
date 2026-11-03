@@ -3,6 +3,10 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs"
 import { createConnection } from "node:net"
 
 import {
+  portError,
+  requireVerifierPorts,
+} from "../../../../scripts/lib/worktree-port.mjs"
+import {
   faintPenColour,
   LAYOUT_EXCEPTIONS,
   MARKS_NOT_DRAWN,
@@ -23,7 +27,13 @@ import {
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 import { startStack, stopStack } from "./lib/stack.mjs"
 
-const base = Number(process.env.PORT ?? 4454)
+const ports = requireVerifierPorts(repo)
+if (!ports) {
+  console.error(portError("verify-apply-pen"))
+  process.exit(2)
+}
+const base = ports.apiPort
+const webPort = ports.webPort
 const shots = process.env.VERIFY_APP_UI_SHOTS
 if (shots) mkdirSync(shots, { recursive: true })
 
@@ -41,11 +51,11 @@ const MAIN = "#app-main"
 const DIALOG = "[role=dialog],[role=alertdialog]"
 
 async function main() {
-  for (const port of [base, base + 1])
+  for (const port of [base, webPort])
     if (await taken(port))
       throw new Error(`port ${port} is in use; pick another PORT`)
   const run = `apply-pen-${process.pid}`
-  const stack = startStack({ apiPort: base, webPort: base + 1, run })
+  const stack = startStack({ apiPort: base, webPort, run })
   const browser = await launchBrowser()
   const results = []
   try {

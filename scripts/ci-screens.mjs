@@ -26,6 +26,7 @@ import {
   parsePenLayout,
   runProblems,
 } from "./lib/ci-screens.mjs"
+import { verifierPorts } from "./lib/worktree-port.mjs"
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
 const scripts = join(root, ".claude/skills/verify-app-ui/scripts")
@@ -46,7 +47,17 @@ if (tableProblems.length) {
 const budgetMs = Number(process.env.CI_SCREENS_BUDGET_MS ?? 11 * 60 * 1000)
 const startedAt = Date.now()
 const SHARED_RUN = "ci-screens"
-const SHARED = { apiPort: 4460, webPort: 4461 }
+const sharedPorts = verifierPorts(4460)
+if (!sharedPorts) {
+  console.error(
+    "ci-screens error: the shared api port is outside the worktree range"
+  )
+  process.exit(1)
+}
+const SHARED = {
+  apiPort: sharedPorts.apiPort,
+  webPort: sharedPorts.webPort,
+}
 
 mkdirSync(out, { recursive: true })
 

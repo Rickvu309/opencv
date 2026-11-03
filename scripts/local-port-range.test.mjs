@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
+import { WORKTREE_PORTS } from "../packages/domain/src/local-ports.ts"
 import {
   FIX,
   PENDING_FILE,
@@ -12,6 +13,7 @@ import {
   pendingGrowth,
   pinDrift,
 } from "./lib/local-port-range.mjs"
+import { resolveApiPort, verifierPorts } from "./lib/worktree-port.mjs"
 import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -151,6 +153,31 @@ test("the pending list only shrinks", (t) => {
     return t.skip(`${PENDING_FILE} is not on origin/main yet`)
   }
   assert.deepEqual(pendingGrowth(PENDING, onMain), [])
+})
+
+test("a verifier web port is never an api port in the shared range", () => {
+  const apis = []
+  for (let port = WORKTREE_PORTS.first; port <= WORKTREE_PORTS.last; port += 1)
+    apis.push(port)
+  const apiSet = new Set(apis)
+  const band = WORKTREE_PORTS.last - WORKTREE_PORTS.first + 1
+  for (const apiPort of apis) {
+    const ports = verifierPorts(apiPort)
+    assert.ok(ports, String(apiPort))
+    assert.equal(apiSet.has(ports.webPort), false)
+    assert.equal(ports.webPort, apiPort + band)
+    assert.ok(ports.webPort > WORKTREE_PORTS.last)
+    assert.ok(ports.webPort <= WORKTREE_PORTS.last + band)
+  }
+  assert.equal(verifierPorts(WORKTREE_PORTS.first - 1), null)
+  assert.equal(verifierPorts(WORKTREE_PORTS.last + 1), null)
+  assert.equal(resolveApiPort({ envText: "PORT=4402\n" }), 4402)
+  assert.equal(
+    resolveApiPort({ envPort: "4500", envText: "PORT=4402\n" }),
+    4500
+  )
+  assert.equal(resolveApiPort({ envPort: "99", envText: "PORT=4402\n" }), null)
+  assert.equal(resolveApiPort({ envText: 'PORT="4408"\n' }), 4408)
 })
 
 test("the allocator on main before the shared range is caught", (t) => {

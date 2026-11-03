@@ -1,4 +1,5 @@
 import { join } from "node:path"
+import { WORKTREE_PORTS } from "../../packages/domain/src/local-ports.ts"
 import { BRANCH_RE, TYPES } from "./fields.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 
@@ -53,12 +54,14 @@ function claimedPorts(fs, root) {
 
 export function pickPort(ctx, issue, root) {
   const claimed = claimedPorts(ctx.ports.fs, root)
-  let port = 4000 + (issue % 1000)
-  while (claimed.has(port) || ctx.ports.proc.listening(port)) {
-    port += 1
-    if (port >= 65535) throw new Error("no free port found")
+  const size = WORKTREE_PORTS.last - WORKTREE_PORTS.first + 1
+  for (let step = 0; step < size; step += 1) {
+    const port = WORKTREE_PORTS.first + ((issue + step) % size)
+    if (!claimed.has(port) && !ctx.ports.proc.listening(port)) return port
   }
-  return port
+  throw new Error(
+    `no free port in ${WORKTREE_PORTS.first} to ${WORKTREE_PORTS.last}`
+  )
 }
 
 function installCommand(fs, wt) {

@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
+import { requireVerifierPorts } from "../../../../scripts/lib/worktree-port.mjs"
 import { must } from "./lib/apply-pen-seed.mjs"
 import { signInThrowaway } from "./lib/session.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
@@ -10,9 +11,9 @@ import { repo } from "./lib/check-util.mjs"
 import { comparePenLayout, TEXT_TOKENS } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 
-const port = Number(process.env.PORT)
-const web = process.env.WEB_ORIGIN
-const api = process.env.API_ORIGIN ?? `http://localhost:${port}`
+const ports = requireVerifierPorts(repo)
+const web = process.env.WEB_ORIGIN ?? ports?.webOrigin ?? null
+const api = process.env.API_ORIGIN ?? ports?.apiOrigin ?? null
 const log = process.env.VERIFY_API_LOG
 const output = process.argv[2] && resolve(process.argv[2])
 must(

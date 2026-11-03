@@ -5,17 +5,21 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import {
+  portError,
+  requireVerifierPorts,
+} from "../../../../scripts/lib/worktree-port.mjs"
 import { launchBrowser } from "./lib/cdp.mjs"
 import { comparePenLayout, TEXT_TOKENS } from "./lib/pen-layout-compare.mjs"
 import { probeSource } from "./lib/pen-layout-probe.mjs"
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const output = resolve(process.argv[2] ?? "")
-const port = Number(process.env.PORT)
-const webOrigin = process.env.WEB_ORIGIN ?? `http://localhost:${port + 1}`
-if (!process.argv[2] || !Number.isInteger(port) || port < 1024 || port > 65534)
+const ports = requireVerifierPorts(repo)
+const webOrigin = process.env.WEB_ORIGIN ?? ports?.webOrigin
+if (!process.argv[2] || !ports)
   throw new Error(
-    "Set PORT to the running API port and provide an evidence directory. Usage: PORT=4817 node .claude/skills/verify-app-ui/scripts/verify-auth-code.mjs <evidence directory>"
+    `${portError("verify-auth-code")}, and provide an evidence directory`
   )
 mkdirSync(output, { recursive: true })
 const design = join(repo, "apps/web/src/features/auth/design")
