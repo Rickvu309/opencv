@@ -2,6 +2,7 @@
   "module": "photo-sweep.ts",
   "actions": {
     "Attach": "attachPhoto",
+    "AttachWrite": "attachPhoto",
     "Sweep": "sweepUnattachedPhotos",
     "SweepDrop": "sweepUnattachedPhotos"
   },

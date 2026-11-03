@@ -1,6 +1,6 @@
 ---- MODULE PhotoSweep ----
 
-CONSTANTS Split
+CONSTANTS Split, Gap
 
 VARIABLES referenced, exists, seen, pc
 
@@ -14,16 +14,27 @@ Init ==
 
 Attach ==
     /\ exists
-    /\ referenced' = TRUE
-    /\ UNCHANGED <<exists, seen, pc>>
+    /\ IF Gap
+       THEN /\ pc = "idle"
+            /\ pc' = "checked"
+            /\ UNCHANGED <<referenced, exists, seen>>
+       ELSE /\ referenced' = TRUE
+            /\ UNCHANGED <<exists, seen, pc>>
+
+AttachWrite ==
+    /\ Gap
+    /\ pc = "checked"
+    /\ referenced' = exists
+    /\ pc' = "idle"
+    /\ UNCHANGED <<exists, seen>>
 
 Sweep ==
-    /\ pc = "idle"
+    /\ pc \in {"idle", "checked"}
     /\ IF Split
        THEN /\ pc' = "read"
             /\ seen' = referenced
             /\ UNCHANGED <<referenced, exists>>
-       ELSE /\ exists' = IF referenced THEN TRUE ELSE FALSE
+       ELSE /\ exists' = IF referenced THEN exists ELSE FALSE
             /\ UNCHANGED <<referenced, seen, pc>>
 
 SweepDrop ==
@@ -35,6 +46,7 @@ SweepDrop ==
 
 Next ==
     \/ Attach
+    \/ AttachWrite
     \/ Sweep
     \/ SweepDrop
 

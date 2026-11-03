@@ -33,28 +33,63 @@ END;
 $fn$ LANGUAGE plpgsql;
 --> statement-breakpoint
 CREATE OR REPLACE FUNCTION "opencv_app"."replace_photo_refs"(p_source text, p_user text, p_text text, p_live boolean) RETURNS void AS $fn$
+DECLARE
+	ids uuid[];
+	inserted int;
+	missing int;
 BEGIN
 	DELETE FROM "opencv_app"."photo_refs" WHERE "source" = p_source;
 	IF NOT p_live OR p_text IS NULL OR p_text = '' THEN
 		RETURN;
 	END IF;
 	IF p_text ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
+		ids := ARRAY[p_text::uuid];
+	ELSE
+		SELECT COALESCE(array_agg(DISTINCT file_id), ARRAY[]::uuid[]) INTO ids
+		FROM (
+			SELECT (hit.item)[1]::uuid AS file_id
+			FROM regexp_matches(p_text, 'file:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', 'gi') AS hit(item)
+			UNION
+			SELECT (hit.item)[1]::uuid
+			FROM regexp_matches(p_text, '"fileId"[[:space:]]*:[[:space:]]*"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"', 'gi') AS hit(item)
+		) AS found;
+	END IF;
+	IF current_setting('opencv.photo_refs_backfill', true) = '1' THEN
 		INSERT INTO "opencv_app"."photo_refs" ("user_id", "file_id", "source")
-		SELECT p_user, p_text::uuid, p_source
-		FROM "opencv_app"."files" AS f
-		WHERE f."id" = p_text::uuid AND f."user_id" = p_user;
+		SELECT DISTINCT p_user, f."id", p_source
+		FROM unnest(ids) AS found(file_id)
+		JOIN "opencv_app"."files" AS f
+			ON f."id" = found.file_id AND f."user_id" = p_user;
 		RETURN;
 	END IF;
-	INSERT INTO "opencv_app"."photo_refs" ("user_id", "file_id", "source")
-	SELECT DISTINCT p_user, found.file_id, p_source
-	FROM (
-		SELECT (hit.item)[1]::uuid AS file_id
-		FROM regexp_matches(p_text, 'file:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', 'gi') AS hit(item)
-		UNION
-		SELECT (hit.item)[1]::uuid
-		FROM regexp_matches(p_text, '"fileId"[[:space:]]*:[[:space:]]*"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"', 'gi') AS hit(item)
-	) AS found
-	JOIN "opencv_app"."files" AS f ON f."id" = found.file_id AND f."user_id" = p_user;
+	WITH found AS (
+		SELECT DISTINCT found_id AS file_id
+		FROM unnest(ids) AS found_id
+	),
+	present AS MATERIALIZED (
+		SELECT f."id", f."user_id"
+		FROM "opencv_app"."files" AS f
+		WHERE f."id" IN (SELECT found.file_id FROM found)
+		FOR KEY SHARE OF f
+	),
+	ins AS (
+		INSERT INTO "opencv_app"."photo_refs" ("user_id", "file_id", "source")
+		SELECT DISTINCT p_user, present."id", p_source
+		FROM present
+		WHERE present."user_id" = p_user
+		ON CONFLICT DO NOTHING
+		RETURNING "file_id"
+	)
+	SELECT
+		(SELECT count(*) FROM ins),
+		(SELECT count(*) FROM found
+			WHERE NOT EXISTS (
+				SELECT 1 FROM present WHERE present."id" = found.file_id
+			))
+	INTO inserted, missing;
+	IF missing > 0 THEN
+		RAISE EXCEPTION 'Photo file not found' USING ERRCODE = 'no_data_found';
+	END IF;
 END;
 $fn$ LANGUAGE plpgsql;
 --> statement-breakpoint
@@ -235,6 +270,8 @@ CREATE TRIGGER "photo_refs_before_user_delete"
 BEFORE DELETE ON "opencv_app"."user"
 FOR EACH ROW EXECUTE FUNCTION "opencv_app"."drop_user_photo_refs"();
 --> statement-breakpoint
+SELECT set_config('opencv.photo_refs_backfill', '1', true);
+--> statement-breakpoint
 UPDATE "opencv_app"."paper_docs" SET "document" = "document";
 --> statement-breakpoint
 UPDATE "opencv_app"."activity" SET "result" = "result";
@@ -244,3 +281,5 @@ UPDATE "opencv_app"."pending_actions" SET "input" = "input";
 UPDATE "opencv_app"."idempotency" SET "result" = "result";
 --> statement-breakpoint
 UPDATE "opencv_app"."user" SET "image" = "image";
+--> statement-breakpoint
+SELECT set_config('opencv.photo_refs_backfill', '', true);

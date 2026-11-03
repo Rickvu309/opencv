@@ -14,6 +14,7 @@ import {
   pendingActions,
   user,
 } from "../db/schema.js"
+import { CommandError, isMissingPhoto } from "../registry/errors.js"
 import { REAL } from "../test/registry-formal-support.js"
 import {
   age,
@@ -295,4 +296,107 @@ describe("photo lifetime", () => {
     },
     20_000
   )
+
+  it.skipIf(!REAL)(
+    "an attach that loses its file to a sweep does not leave a dangling id",
+    async () => {
+      const docId = await createDoc()
+      const fileId = await upload()
+      await age([fileId])
+      const pool = (photoDb() as unknown as { $client: Pool }).$client
+      const holder = await pool.connect()
+      try {
+        const pid = await holder.query<{ pid: number }>(
+          "select pg_backend_pid() as pid"
+        )
+        await holder.query("begin")
+        await holder.query(
+          "select id from opencv_app.paper_docs where id = $1::uuid for update",
+          [docId]
+        )
+        const pending = run("paper.attachPhoto", { docId, fileId }).then(
+          () => ({ ok: true as const }),
+          (error: unknown) => ({ ok: false as const, error })
+        )
+        let waiting = false
+        for (let attempt = 0; attempt < 40 && !waiting; attempt++) {
+          const probe = await pool.connect()
+          const locks = await probe.query(
+            "select 1 from pg_locks where pid <> $1 and granted = false limit 1",
+            [pid.rows[0]!.pid]
+          )
+          probe.release()
+          waiting = (locks.rowCount ?? 0) > 0
+          if (waiting) break
+          const settled = await Promise.race([
+            pending.then(() => true),
+            new Promise<boolean>((resolve) => setTimeout(resolve, 25)),
+          ])
+          if (settled) break
+        }
+        expect(waiting).toBe(true)
+        expect(listed(await sweep(), fileId)).toBe(true)
+        await holder.query("commit")
+        const result = await pending
+        expect(result.ok).toBe(false)
+        if (result.ok) return
+        expect(result.error).toBeInstanceOf(CommandError)
+        expect((result.error as CommandError).code).toBe("NOT_FOUND")
+        expect((await fileSet()).has(fileId)).toBe(false)
+        const papers = await photoDb()
+          .select({
+            document: paperDocs.document,
+            crdt: paperDocs.crdtDocument,
+          })
+          .from(paperDocs)
+          .where(eq(paperDocs.id, docId))
+        expect(textOf(papers[0]?.document)).not.toContain(fileId)
+        expect(textOf(papers[0]?.crdt)).not.toContain(fileId)
+        await assertLive(true)
+      } finally {
+        await holder.query("rollback").catch(() => {})
+        holder.release()
+      }
+    },
+    20_000
+  )
+
+  it("a backfill skips a missing photo and a live write refuses it", async () => {
+    const docId = await createDoc()
+    const missing = randomUUID()
+    const ref = `file:${missing}`
+    await photoDb().transaction(async (tx) => {
+      await tx.execute(
+        sql`select set_config('opencv.photo_refs_backfill', '1', true)`
+      )
+      await tx.execute(sql`
+        update opencv_app.paper_docs
+        set document = jsonb_set(document, '{header,photo}', to_jsonb(${ref}::text)),
+            crdt_document = jsonb_set(
+              coalesce(crdt_document, document),
+              '{header,photo}',
+              to_jsonb(${ref}::text)
+            )
+        where id = ${docId}::uuid
+      `)
+    })
+    const refs = await photoDb().execute<{ n: number }>(sql`
+      select count(*)::int as n
+      from opencv_app.photo_refs
+      where file_id = ${missing}::uuid
+    `)
+    expect(Number(refs.rows[0]?.n ?? 0)).toBe(0)
+    await expect(
+      photoDb().execute(sql`
+        update opencv_app.paper_docs
+        set document = jsonb_set(document, '{header,photo}', to_jsonb(${ref}::text))
+        where id = ${docId}::uuid
+      `)
+    ).rejects.toSatisfy(isMissingPhoto)
+    const papers = await photoDb()
+      .select({ document: paperDocs.document })
+      .from(paperDocs)
+      .where(eq(paperDocs.id, docId))
+    expect(textOf(papers[0]?.document)).toContain(ref)
+  })
 })
