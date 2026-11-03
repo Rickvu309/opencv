@@ -1,6 +1,7 @@
 import {
   isCvBlockDocument,
   isCvDocument,
+  storedPaperDocumentSchema,
   type PaperView,
   type UserId,
 } from "@workspace/domain"
@@ -9,8 +10,10 @@ import { sql } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 
 export function photoRefOf(document: PaperView["document"]) {
-  if (isCvBlockDocument(document)) return document.header.photo
-  if (isCvDocument(document)) return document.photoUrl
+  const parsed = storedPaperDocumentSchema.safeParse(document)
+  const value = parsed.success ? parsed.data : document
+  if (isCvBlockDocument(value)) return value.header.photo
+  if (isCvDocument(value)) return value.photoUrl
   return undefined
 }
 

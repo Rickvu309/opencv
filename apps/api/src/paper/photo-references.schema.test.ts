@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -12,8 +12,12 @@ import {
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const schemaText = readFileSync(path.join(here, "../db/schema.ts"), "utf8")
+const migrationName = readdirSync(path.join(here, "../../drizzle")).find(
+  (name) => name.endsWith("_photo_refs.sql")
+)
+if (!migrationName) throw new Error("photo reference migration is missing")
 const migrationText = readFileSync(
-  path.join(here, "../../drizzle/0008_photo_refs.sql"),
+  path.join(here, "../../drizzle", migrationName),
   "utf8"
 )
 const sweepText = readFileSync(path.join(here, "photo-sweep.ts"), "utf8")

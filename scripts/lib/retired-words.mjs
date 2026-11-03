@@ -21,6 +21,11 @@ export const RETIRED = [
         why: "inbox_threads is the mail thread table and its columns",
       },
       {
+        path: /^apps\/api\/src\/paper\/photo-references\.ts$/,
+        match: /^inbox_threads$/,
+        why: "the photo scan names the inbox_threads table so a new document column there cannot skip the check",
+      },
+      {
         path: /^apps\/api\/src\/registry\/ownership\.test\.ts$/,
         match: /^inboxThreads$/,
         why: "maps the inbox_threads table to the inbox module",
