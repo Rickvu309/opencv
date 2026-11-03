@@ -1,9 +1,17 @@
 {
   "id": "temp-dirs",
   "file": "scripts/temp-dirs.test.mjs",
+  "detector": {
+    "module": "scripts/lib/home-tmp.mjs",
+    "export": "detect"
+  },
   "historic": {
-    "mode": "revert",
-    "fix": "b680aafb",
-    "command": ["node", "--test", "scripts/temp-dirs.test.mjs"]
+    "mode": "detect",
+    "sha": "5808b3f7",
+    "path": "scripts/ocv-tools/result.test.mjs",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/ocv-tools/result.test.mjs"
+    }
   }
 }

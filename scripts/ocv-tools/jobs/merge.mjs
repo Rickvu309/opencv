@@ -372,15 +372,26 @@ export function merge(ctx, n, { wait = false } = {}) {
     const ready = decide("merge", facts)
     if (!ready.ok) throw refusalError(ready.refusals[0])
     const state = { lines: [], reran: null, requeued: false }
-    if (open) {
+    const alreadyQueued = open && wait && queueSnapshot(ctx, repo, n, 0).inQueue
+    if (alreadyQueued)
+      state.lines.push(
+        `PR #${n} is already in the merge queue, so the merged-tree check was not run again.`
+      )
+    if (wait && pull.state === "MERGED")
+      state.lines.push(
+        `PR #${n} is already merged, so the merged-tree check was not run again.`
+      )
+    if (open && !alreadyQueued) {
       const mergeResult = mergeResultFacts(ctx, n, head)
       state.lines.push(...mergeResult.lines)
       const joined = decide("merge-result", { mergeResult })
       if (!joined.ok) throw refusalError(joined.refusals[0])
     }
     if (pull.state !== "MERGED") {
-      enqueue(ctx, n, head)
-      pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
+      if (!alreadyQueued) {
+        enqueue(ctx, n, head)
+        pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
+      }
       const mergedAtHead =
         pull.state === "MERGED" &&
         Boolean(pull.mergeCommit?.oid) &&

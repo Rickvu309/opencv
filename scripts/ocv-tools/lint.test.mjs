@@ -34,6 +34,21 @@ test("jargon is refused", () => {
   )
 })
 
+test("a title may use the everyday words and the body may not", () => {
+  assert.deepEqual(lint({}, "fix: CI PR and API stay").reasons, [])
+  assert.deepEqual(lint({}, "fix: PRs and APIs stay").reasons, [])
+  for (const word of ["CI", "PR", "API"]) {
+    assert.match(
+      lint({ what: `The ${word} broke the page.` }).reasons.join("\n"),
+      new RegExp(`jargon word "${word.toLowerCase()}"`)
+    )
+  }
+  assert.match(
+    lint({}, "feat: Add an endpoint").reasons.join("\n"),
+    /jargon word "endpoint"/
+  )
+})
+
 test("backticks and file names are refused outside Details for the agent", () => {
   assert.ok(lint({ what: "Change `search` please." }).failed.includes("code"))
   assert.ok(

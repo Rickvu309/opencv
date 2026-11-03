@@ -1,10 +1,11 @@
 import assert from "node:assert/strict"
 import { execFileSync, spawnSync } from "node:child_process"
-import { readFileSync, readdirSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { SLOW } from "../packages/guards/run-tests.mjs"
+import { detect } from "./lib/home-tmp.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -63,8 +64,21 @@ test("the scan flags a direct call and passes the helper and a helper user", () 
   )
 })
 
+test("a test file that builds a folder under the home temp directory is caught", () => {
+  const mistake = [
+    'mkdirSync(join(process.env.HOME, "tmp"), { recursive: true })',
+    'const dir = makeTempDir("ocv-pending-", join(process.env.HOME, "tmp"))',
+    'mkdirSync(join(homedir(), "tmp"), { recursive: true })',
+  ].join("\n")
+  assert.deepEqual(detect(mistake), [1, 2, 3])
+  assert.deepEqual(detect('const dir = tempDir(t, "ocv-pending-")\n'), [])
+  assert.deepEqual(detect("const home = process.env.HOME\n"), [])
+  assert.deepEqual(detect('const dir = join(root, "tmp")\n'), [])
+})
+
 test("the ocv-tools tests leave no temporary folder behind", (t) => {
   const sandbox = tempDir(t, "temp-dirs-run-")
+  const home = tempDir(t, "temp-dirs-home-")
   const before = readdirSync(sandbox).length
   const suite = tracked(
     "scripts/ocv-tools/*.test.mjs",
@@ -74,7 +88,7 @@ test("the ocv-tools tests leave no temporary folder behind", (t) => {
   const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
   const run = spawnSync(process.execPath, ["--test", ...suite], {
     cwd: root,
-    env: { ...env, TMPDIR: sandbox },
+    env: { ...env, TMPDIR: sandbox, HOME: home },
     encoding: "utf8",
   })
   assert.equal(run.status, 0, run.stdout.slice(-2000) + run.stderr.slice(-1000))
@@ -84,5 +98,12 @@ test("the ocv-tools tests leave no temporary folder behind", (t) => {
     left.length,
     0,
     `the ocv-tools tests left ${left.length} entries in their temp directory (${before} before): ${left.slice(0, 5).join(", ")}`
+  )
+  const homeTmp = path.join(home, "tmp")
+  const appeared = existsSync(homeTmp)
+  assert.equal(
+    appeared,
+    false,
+    `the ocv-tools tests wrote under HOME/tmp: ${appeared ? readdirSync(homeTmp).slice(0, 5).join(", ") || "(empty directory)" : ""}`
   )
 })

@@ -106,6 +106,21 @@ test("file for a high-risk issue says it needs the owner", () => {
   assert.match(text, /Next: Ask a project admin to comment \/approve/)
 })
 
+test("file accepts everyday words in the title and still refuses them in the body", () => {
+  const { ctx } = run({ issues: [], nextIssue: 80 })
+  const titled = fileArgs.map((a) =>
+    a === "feat: Keep my search" ? "fix: Keep CI honest" : a
+  )
+  const ok = runCli(titled, ctx)
+  assert.equal(ok.code, 0, ok.text)
+  const body = runCli(
+    fileArgs.map((a) => (a.startsWith("The page") ? "The CI run lied." : a)),
+    run({ issues: [] }).ctx
+  )
+  assert.equal(body.code, 2)
+  assert.match(body.text, /jargon word "ci"/)
+})
+
 test("file refuses jargon with exit 2 UNREADABLE and creates nothing", () => {
   const { ports, ctx } = run({ issues: [] })
   const args = fileArgs.map((a) =>
