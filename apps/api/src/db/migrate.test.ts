@@ -8,7 +8,11 @@ import { describe, expect, it } from "vitest"
 
 import type { AppDatabase } from "./context.js"
 import { migrationConfig, runMigrations } from "./migrate.js"
-import { journalTags } from "../test/migration-journal.js"
+import {
+  journalEntries,
+  journalTags,
+  newestTagByWhen,
+} from "../test/migration-journal.js"
 import { migrationsFolder } from "./paths.js"
 
 const productTables = [
@@ -62,6 +66,14 @@ describe("opencv_app migrations", () => {
     expect(tags.map((tag) => tag.slice(0, 4))).toEqual(
       tags.map((_, index) => String(index).padStart(4, "0"))
     )
+    const entries = journalEntries()
+    expect(entries.map((entry) => entry.idx)).toEqual(
+      entries.map((_, index) => index)
+    )
+    for (const [index, entry] of entries.entries()) {
+      if (index > 0)
+        expect(entry.when).toBeGreaterThan(entries[index - 1]!.when)
+    }
     const sqlFiles = readdirSync(migrationsFolder).filter((name) =>
       name.endsWith(".sql")
     )
@@ -72,6 +84,16 @@ describe("opencv_app migrations", () => {
     )
     expect(source.includes(legacySchema)).toBe(false)
     await client.close()
+  })
+
+  it("names the newest migration by when, not by journal position", () => {
+    expect(
+      newestTagByWhen([
+        { idx: 0, when: 300, tag: "a_renumbered_late" },
+        { idx: 1, when: 100, tag: "b_first" },
+        { idx: 2, when: 200, tag: "c_second" },
+      ])
+    ).toBe("a_renumbered_late")
   })
 
   it("upgrades existing papers to unfavorited without changing their content", async () => {

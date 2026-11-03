@@ -39,6 +39,14 @@ test("a tag inside a file name is flagged, a long number is not", () => {
   assert.deepEqual(pinnedMigrationTags("const at = 1793370000001"), [])
 })
 
+test("a lookup by migration name is quiet, a full tag inside it is flagged", () => {
+  assert.deepEqual(
+    pinnedMigrationTags(`journalTag("activity_reversal_expect")`),
+    []
+  )
+  assert.deepEqual(pinnedMigrationTags(`journalTag("0006_x")`), ["0006_x"])
+})
+
 test("the health test that pinned the schema version is caught", (t) => {
   let past
   try {
