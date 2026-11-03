@@ -1,5 +1,6 @@
+import { dirname, join } from "node:path"
 import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
-import { recorded, json, gh } from "./common.mjs"
+import { recorded, json, gh, git } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { cleanup } from "../work.mjs"
 import { conflictsOf, mergeResultFacts } from "./merged-tree.mjs"
@@ -218,8 +219,32 @@ function settleInfra(ctx, repo, n, verdict, snapshot, state) {
   return { verdict, extra: { infra: run.id } }
 }
 
+function queuedHeadFile(ctx, n) {
+  const common = git(
+    ctx,
+    "rev-parse",
+    "--path-format=absolute",
+    "--git-common-dir"
+  )
+  return join(common, "ocv-merge-wait", String(n))
+}
+
+function readQueuedHead(ctx, n) {
+  const path = queuedHeadFile(ctx, n)
+  if (!ctx.ports.fs.exists(path)) return null
+  const text = ctx.ports.fs.read(path).trim()
+  return text || null
+}
+
+function writeQueuedHead(ctx, n, head) {
+  const path = queuedHeadFile(ctx, n)
+  ctx.ports.fs.mkdir(dirname(path))
+  ctx.ports.fs.write(path, `${head}\n`)
+}
+
 function enqueue(ctx, n, head) {
   gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
+  writeQueuedHead(ctx, n, head)
 }
 
 function requeueAfterRerun(ctx, n, startHead, snapshot, state) {
@@ -264,6 +289,24 @@ export function merge(ctx, n, { wait = false } = {}) {
       pull.headRefName
     )?.[1]
     const head = pull.headRefOid
+    const queued = readQueuedHead(ctx, n)
+    if (wait && queued && queued !== head) {
+      failWait(
+        ctx,
+        null,
+        n,
+        { kind: "HEAD_MOVED", from: queued, to: head },
+        {
+          state: pull.state,
+          head,
+          inQueue: false,
+          queueState: null,
+          ci: null,
+          removed: null,
+          waited: 0,
+        }
+      )
+    }
     let repo = null
     const open = pull.state === "OPEN"
     const facts = open

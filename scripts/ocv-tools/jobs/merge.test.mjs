@@ -290,6 +290,33 @@ test("queued merge names the wait command as the next step", () => {
   const f = fixture({ queue: true })
   assert.match(f.call("merge", "91").text, /merge 91 --wait/)
 })
+test("merge --wait refuses a foreign head the first merge did not queue", () => {
+  const already = fixture({ queue: true })
+  assert.match(already.call("merge", "91").text, /Queued/)
+  already.s.pull.headRefOid = "head-2"
+  already.s.pull.state = "MERGED"
+  already.s.pull.mergeCommit = { oid: "foreign" }
+  already.s.checks[0].head_sha = "head-2"
+  const waited = already.call("merge", "91", "--wait")
+  assert.equal(waited.code, 2, waited.text)
+  assert.match(waited.text, /HEAD_MOVED/)
+  assert.doesNotMatch(waited.text, /Merged PR #91/)
+  assert.equal(already.s.issueState, "OPEN")
+  assert.equal(already.effects("gh", "pr merge").length, 1)
+  assert.equal(already.effects("gh", "issue close").length, 0)
+
+  const pushed = fixture({ queue: true })
+  assert.match(pushed.call("merge", "91").text, /Queued/)
+  pushed.s.pull.headRefOid = "head-2"
+  pushed.s.checks[0].head_sha = "head-2"
+  pushed.s.queue = false
+  const again = pushed.call("merge", "91", "--wait")
+  assert.equal(again.code, 2, again.text)
+  assert.match(again.text, /HEAD_MOVED/)
+  assert.doesNotMatch(again.text, /Merged PR #91/)
+  assert.equal(pushed.effects("gh", "pr merge").length, 1)
+  assert.equal(pushed.s.issueState, "OPEN")
+})
 test("merge --wait fails when the PR closes without merging", () => {
   const f = fixture({
     queue: true,

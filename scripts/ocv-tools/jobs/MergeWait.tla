@@ -1,7 +1,7 @@
 ---- MODULE MergeWait ----
 EXTENDS Integers
 
-CONSTANTS HeadCheck, Limit, RequeueOnce, Handoff, LimitSteps, HoldSteps, MaxEnv
+CONSTANTS HeadCheck, Limit, RequeueOnce, Handoff, RecordedHead, LimitSteps, HoldSteps, MaxEnv
 
 VARIABLES head, start, prState, mergedHead, inQueue, removed, ci, pc,
           waited, holdUntil, reran, requeued, requeues, reported, snap, verdict, env
@@ -64,17 +64,19 @@ Enqueue ==
 
 WaitProcessStarts ==
     /\ pc = "handoff"
-    /\ CASE prState = "MERGED" ->
-                /\ Finish("MERGED")
-                /\ UNCHANGED <<start, inQueue>>
-         [] prState = "OPEN" /\ ci = "success" ->
-                /\ start' = head
-                /\ inQueue' = TRUE
-                /\ pc' = "view"
-                /\ UNCHANGED reported
-         [] OTHER ->
-                /\ Finish("REFUSED")
-                /\ UNCHANGED <<start, inQueue>>
+    /\ IF RecordedHead /\ head # Enqueued
+        THEN /\ Finish("HEAD_MOVED")
+             /\ UNCHANGED <<start, inQueue>>
+        ELSE IF prState = "MERGED"
+            THEN /\ Finish("MERGED")
+                 /\ UNCHANGED <<start, inQueue>>
+            ELSE IF prState = "OPEN" /\ ci = "success"
+                THEN /\ start' = head
+                     /\ inQueue' = TRUE
+                     /\ pc' = "view"
+                     /\ UNCHANGED reported
+                ELSE /\ Finish("REFUSED")
+                     /\ UNCHANGED <<start, inQueue>>
     /\ UNCHANGED <<head, prState, mergedHead, removed, ci, waited, holdUntil,
                    reran, requeued, requeues, snap, verdict, env>>
 

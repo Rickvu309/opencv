@@ -50,15 +50,15 @@ node --test scripts/ocv-tools/delivery-trace.test.mjs
 | `ConfirmRead`                             | the fresh `readClaim` after the comment; anything but live and mine is `lostTake`                            |
 | `Save`                                    | `save` in `work.mjs`: `readClaim`, LOST unless I hold it (live or idle), then `heartbeat` edits that comment |
 | `Tick`, `ForeignClaim`, `ForeignRelease`  | the server clock; any comment that carries a claim or release marker, with any `at=` and a stamp up to ahead |
-| `Enqueue`                                 | `enqueue` (`gh pr merge --squash --match-head-commit`) in `merge`                                            |
+| `Enqueue`                                 | `enqueue` (`gh pr merge --squash --match-head-commit`), which writes that head under the git common dir      |
 | `ViewAfterEnqueue`                        | the `pr view` right after it; MERGED counts only at the queued head (`mergedAtHead`)                         |
-| `WaitProcessStarts`                       | only in `MergeWaitHandoff.cfg`: a second `merge --wait` process that reads the head again                    |
+| `WaitProcessStarts`                       | a later `merge --wait` reads the recorded head and refuses `HEAD_MOVED` when the live head differs           |
 | `Poll`                                    | one turn of `waitForMerge`: `queueSnapshot`, `classify`, the hold, `requeueAfterRerun`, `settleInfra`        |
 | `QueueMerges`, `QueueRemoves`, `PrClosed` | the queue merges, drops (`failed_checks`, other, or with no removal event yet) or someone closes             |
 | `ForeignPush`, `ForeignEnqueue`           | someone pushes a new head (GitHub drops the queue entry), or queues the current head                         |
 | `CiRestarts`, `CiFinishes`                | CI on the head reruns and ends green, red, or red with no step run (`infra`)                                 |
 
-Constants are the code's switches: `Confirm` (the post-comment read), `TrustAt` (lease from `at=`), `HeadCheck` (the `HEAD_MOVED` branch), `Limit` (`WAIT_LIMIT_SECONDS`), `RequeueOnce` (`state.requeued`), `Handoff` (the two-process flow). `NoForeign` is a constraint on `TakeClaim.race.cfg` only, so `ForeignClaim` and `ForeignRelease` are not steps. One model hour is one tick: `Idle = 3` is `CLAIM_IDLE_MINUTES`, and `Skew = 0` because `CLAIM_SKEW_MS` is under an hour. `LimitSteps` stands for 45 minutes of polls.
+Constants are the code's switches: `Confirm` (the post-comment read), `TrustAt` (lease from `at=`), `HeadCheck` (the `HEAD_MOVED` branch in `classify`), `Limit` (`WAIT_LIMIT_SECONDS`), `RequeueOnce` (`state.requeued`), `Handoff` (the two-process flow), `RecordedHead` (the head file written at enqueue; off, the second process trusts the live head). `NoForeign` is a constraint on `TakeClaim.race.cfg` only, so `ForeignClaim` and `ForeignRelease` are not steps. One model hour is one tick: `Idle = 3` is `CLAIM_IDLE_MINUTES`, and `Skew = 0` because `CLAIM_SKEW_MS` is under an hour. `LimitSteps` stands for 45 minutes of polls.
 
 ## Checks and mutants
 
@@ -70,10 +70,11 @@ Constants are the code's switches: `Confirm` (the post-comment read), `TrustAt` 
 | `MergeWait.cfg`         | D2 (`MergedOnlyAtEnqueuedHead`), D5 (`LeftQueueNeverMerged`)           | `HeadCheck` off: remove the `HEAD_MOVED` branch. A foreign head merges and is reported MERGED (exit 12)     |
 | `MergeWait.limit.cfg`   | D3 (`WaitEnds`, liveness under fair polling)                           | `Limit` off: remove `WAIT_LIMIT_SECONDS`. The wait polls a queued pull request forever (exit 13)            |
 | `MergeWait.requeue.cfg` | D5 (`RequeueAtMostOnce`)                                               | `RequeueOnce` off: drop the `state.requeued` guard. A second silent drop queues again (exit 12)             |
+| `MergeWait.handoff.cfg` | D2 across `merge <n>` and a later `merge <n> --wait`                   | `RecordedHead` off: the second process queues the live head. A foreign push is reported MERGED (exit 12)    |
 
 `scripts/ocv-tools/jobs/requeue.test.mjs` pins that same `state.requeued` guard: an infra rerun that passes queues the pull request once, and a second infra failure does not queue it again.
 
-`MergeWaitHandoff.cfg` is not a pair. It models the documented flow, `merge <n>` and then a new `merge <n> --wait` process, and fails D2 (exit 12) until issue #1015 is fixed. Run it by name; `--all` skips it.
+`MergeWaitHandoff.cfg` is that same two-process check and now passes. `--all` runs it as `MergeWait.handoff.cfg`. The recorded head is `ocv-merge-wait/<pr>` in the git common dir. `merge --wait` reports `HEAD_MOVED`, not `MERGED`, when the live head differs, including when the pull request has already merged. `scripts/ocv-tools/jobs/merge.test.mjs` covers that two-step flow with a foreign push.
 
 ## Trace test
 
@@ -93,7 +94,7 @@ Model time maps to ISO stamps one hour per tick; `waited` maps to seconds by `Li
 
 ## How to read a counterexample
 
-The trace names the code's step. In `TakeClaim.race.mutant.cfg`, `PostClaim` by both takers, then `ConfirmRead` returning `won` for the first, is the race the post-comment read exists to catch. `TakeClaim.mutant.cfg` fails on a shorter path: one `PostClaim`, a `ForeignClaim`, then `ConfirmRead` returns `won`. `ForeignPush`, `CiFinishes`, `ForeignEnqueue`, `QueueMerges` then `Poll` with `reported = "MERGED"` is a foreign head reported as yours. Draw it with /statechart. A failing trace test names the action, the model's view and the code's view; that is drift between the model and the code, so fix whichever is wrong and say which in the PR.
+The trace names the code's step. In `TakeClaim.race.mutant.cfg`, `PostClaim` by both takers, then `ConfirmRead` returning `won` for the first, is the race the post-comment read exists to catch. `TakeClaim.mutant.cfg` fails on a shorter path: one `PostClaim`, a `ForeignClaim`, then `ConfirmRead` returns `won`. `ForeignPush`, `CiFinishes`, `ForeignEnqueue`, `QueueMerges` then `Poll` with `reported = "MERGED"` is a foreign head reported as yours. In `MergeWait.handoff.mutant.cfg`, `Enqueue`, `ForeignPush`, `CiFinishes`, then `WaitProcessStarts` sets `start` to the new head, `QueueMerges`, and `ViewAfterEnqueue` reports `MERGED`. Draw it with /statechart. A failing trace test names the action, the model's view and the code's view; that is drift between the model and the code, so fix whichever is wrong and say which in the PR.
 
 ## Known gaps
 
@@ -101,9 +102,10 @@ The trace names the code's step. In `TakeClaim.race.mutant.cfg`, `PostClaim` by 
 - Comments are trusted. Anyone who can comment can post a marker, so a forged release or claim frees or takes an issue (`ForeignRelease`, `ForeignClaim`). D1 still holds for the two takers.
 - Billing (`BILLING_BLOCKED`) and merge conflicts end the wait like any other refusal and are not separate states.
 - Bounds: two takers, at most 3 comments, 3 hours; one foreign push, 3 to 5 GitHub steps per run.
+- The recorded head lives in this clone's git common dir. A `merge --wait` on another machine has no record, so it trusts the live head.
 
 ## Coverage and sync
 
-- Covered: `scripts/ocv-tools/take.mjs` (`takeInner`, `lostTake`), `claim.mjs` (`readClaim`, `heartbeat`), `claim-marker.mjs` (`holderOf`, `leaseAt`), `work.mjs` (`save`), `jobs/merge.mjs` (`classify`, `waitForMerge`, `requeueAfterRerun`, `settleInfra`, `merge`), `jobs/infra-rerun.mjs` (`steplessRun`).
-- Last confirmed against: `9ecbcc7c` plus this change (#1008); the squash sha replaces it after merge.
+- Covered: `scripts/ocv-tools/take.mjs` (`takeInner`, `lostTake`), `claim.mjs` (`readClaim`, `heartbeat`), `claim-marker.mjs` (`holderOf`, `leaseAt`), `work.mjs` (`save`), `jobs/merge.mjs` (`classify`, `waitForMerge`, `requeueAfterRerun`, `settleInfra`, `merge`, the recorded head in `ocv-merge-wait`), `jobs/infra-rerun.mjs` (`steplessRun`).
+- Last confirmed against: `e8fb904b` plus this change (#1015); the squash sha replaces it after merge.
 - When a covered file changes, rerun both commands. Move the sync commit forward only after you confirm the model still describes the code at the new commit. Update the `.tla.json` maps when a function is renamed.
