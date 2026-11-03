@@ -1,0 +1,13 @@
+{
+  "module": "content-store.ts",
+  "actions": {
+    "Lock": "cacheRevisionUsable",
+    "Person": "syncContent",
+    "Commit": "nextContentSeq",
+    "Coach": "coachBasisOk",
+    "Replace": "sameContentVersion",
+    "Rollback": "withContent",
+    "End": "withContent",
+    "Evict": "withContent"
+  }
+}

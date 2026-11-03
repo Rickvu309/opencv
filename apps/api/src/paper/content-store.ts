@@ -129,6 +129,29 @@ function sameBytes(a: Uint8Array, b: Uint8Array) {
   return Buffer.from(a).equals(Buffer.from(b))
 }
 
+export function cacheRevisionUsable(
+  cachedRevision: number,
+  contentVersion: number
+) {
+  return cachedRevision <= contentVersion
+}
+
+export function nextContentSeq(entryRevision: number) {
+  return entryRevision + 1
+}
+
+export function sameContentVersion(current: number, sent: number) {
+  return current === sent
+}
+
+export function coachBasisOk(
+  basedOn: number,
+  revision: number,
+  baseSeq: number
+) {
+  return basedOn <= revision && basedOn >= baseSeq
+}
+
 function validated(candidate: unknown, kind: PaperStoredKind): PaperDocument {
   const parsed = paperDocumentSchema.safeParse(candidate)
   if (!parsed.success) {
@@ -254,7 +277,7 @@ async function caughtUp(cached: Live, row: PaperRow, base: Buffer) {
     cached.epoch !== shape.epoch ||
     cached.baseSeq !== shape.baseSeq ||
     !sameBytes(cached.base, base) ||
-    cached.revision > row.contentVersion
+    !cacheRevisionUsable(cached.revision, row.contentVersion)
   ) {
     return null
   }
@@ -317,7 +340,7 @@ async function commit(
   const materialized = materialize(entry.yDoc)
   if (!materialized.ok) throw refuse(materialized.reason)
   const paper = validated(materialized.document, row.kind)
-  const seq = entry.revision + 1
+  const seq = nextContentSeq(entry.revision)
   const update = Buffer.from(effective)
   await getDb()
     .insert(paperDocUpdates)
