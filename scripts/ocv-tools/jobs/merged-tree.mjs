@@ -21,7 +21,7 @@ export function parseMergeTree(result) {
 
 export function failedGuards(result) {
   if (result.ok) return []
-  const text = `${result.out}\n${result.err}`
+  const text = `${result.out}\n${result.err}`.replace(/\u001b\[[0-9;]*m/g, "")
   const names = [...text.matchAll(/^✖ (.+?) \(\d[\d.]*ms\)$/gm)].map(
     (m) => m[1]
   )
