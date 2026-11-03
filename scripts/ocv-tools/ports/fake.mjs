@@ -1,4 +1,3 @@
-// In-memory GitHub, git, files and disk. Tests assert effects, not argv.
 import { existsSync, readFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"

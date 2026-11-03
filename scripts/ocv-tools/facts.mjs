@@ -1,5 +1,3 @@
-// One loader per run. Each fact kind is read once and cached. A race check
-// passes fresh: true, which is the only way take and save read an issue again.
 import { holderOf } from "./claim-marker.mjs"
 import { RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
@@ -10,8 +8,6 @@ const loginOf = (author) =>
     typeof author === "string" ? author : (author?.login ?? "")
   ).toLowerCase()
 
-// The newest owner comment starting with /approve must follow the last body edit
-// (or the creation, if the body was never edited).
 export function approvalValid({
   comments,
   approvers,
@@ -27,7 +23,6 @@ export function approvalValid({
   for (const c of comments ?? []) {
     if (!allowed.has(loginOf(c.author))) continue
     if (!/^\/approve\b/.test(String(c.body ?? "").trimStart())) continue
-    // Anything but an explicit null counts as edited: a dropped or missing field must refuse, never accept.
     if (c.lastEditedAt !== null) continue
     const at = Date.parse(c.createdAt)
     if (Number.isNaN(at)) continue
@@ -36,8 +31,6 @@ export function approvalValid({
   return newest !== null && newest > since
 }
 
-// Approval must never fail open: a conflicting label set counts as high, and a
-// missing label falls back to the Risk answer in the issue body.
 export function riskOf(labels, body = "") {
   const found = RISKS.filter((r) => labels.includes(`risk:${r}`))
   if (found.length > 1) return "high"
@@ -114,14 +107,13 @@ export function createFacts(ports, cwdOf = () => undefined) {
         serverNow: cache.get(`server:${n}`),
       }
     const loaded = ports.gh.issue(n)
-    // The issue-load moment: a page cursor that stalled or ran past its cap
-    // leaves the claim history unknown; a missing record is not an issue.
-    const incomplete = loaded.history === "stuck" || loaded.history === "cap"
+    const claimHistoryUnknown =
+      loaded.history === "stuck" || loaded.history === "cap"
     const verdict = decide("issue-load", {
-      history: incomplete
+      history: claimHistoryUnknown
         ? { kind: loaded.history, n, pageCap: loaded.pageCap }
         : { kind: "complete" },
-      issue: { n, missing: !incomplete && !loaded.record },
+      issue: { n, missing: !claimHistoryUnknown && !loaded.record },
     })
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
     if (!approvers) approvers = Object.freeze(ports.gh.approvers())

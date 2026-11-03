@@ -1,6 +1,3 @@
-// take: do the whole start-of-work job in Node (it replaces scripts/new-task.sh). Checks the
-// issue, makes the branch and worktree, assigns the issue, records the claim comment and writes
-// the workflow result file (script "new-task").
 import { basename, join } from "node:path"
 import { EXIT, FIXES, writeResult } from "./result.mjs"
 import { CLAIM_IDLE_MINUTES } from "./claim-marker.mjs"
@@ -34,7 +31,6 @@ function repoName(ctx) {
   }
 }
 
-// A title instead of a number files the issue first (the plain-words lint applies).
 function fileFirst(ctx, title, flags) {
   const filed = file(ctx, { flags: { ...flags, "--title": title } })
   const first = filed.lines[0] ?? ""
@@ -80,15 +76,11 @@ function diskOf(ctx) {
   return diskProblem(ctx.ports.fs, envOf(ctx), { main, root }) ?? {}
 }
 
-// A title is filed before there is an issue to read, so only the disk can
-// refuse yet. A full disk makes zero GitHub calls.
 function checkDiskFirst(ctx) {
   const verdict = decide("take-title", { disk: diskOf(ctx) })
   if (!verdict.ok) throw refusalError(verdict.refusals[0])
 }
 
-// The take decision. Reads a closed issue never needs (the login, the
-// worktree list, the disk) happen only when a row asks for them.
 function decideTake(ctx, n, { issue, held, me, flags, kind }) {
   const desc = flags["-d"] ?? descFromTitle(issue.title)
   const facts = lazyFacts(
@@ -107,12 +99,6 @@ function decideTake(ctx, n, { issue, held, me, flags, kind }) {
   if (!verdict.ok) throw refusalError(verdict.refusals[0])
 }
 
-// GitHub has no atomic claim: issue comments are not a compare-and-swap.
-// take re-reads after install and after posting; the newest live marker wins.
-// save refreshes the claim immediately before push, then re-reads after the
-// push returns and does not report success if the holder changed. A comment
-// that arrives after that post-push read can still win. That gap is the
-// residual race.
 function lostTake(ctx, made, n, h) {
   const removed = discardWorktree(ctx, made)
   return {

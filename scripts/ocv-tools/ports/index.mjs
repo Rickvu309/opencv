@@ -1,4 +1,3 @@
-// realPorts wires the adapters a command uses outside tests.
 import { fsAdapter } from "./fs.mjs"
 import { ghAdapter } from "./gh.mjs"
 import { gitAdapter } from "./git.mjs"

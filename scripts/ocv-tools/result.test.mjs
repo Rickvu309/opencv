@@ -1,4 +1,3 @@
-// The node writer produces a schema-1 record that result-check accepts.
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { mkdirSync } from "node:fs"

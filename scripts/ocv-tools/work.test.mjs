@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { claimMarker } from "./claim-marker.mjs"
+import { finishedWorktrees } from "./work.mjs"
 import { ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
 
 const cwd = "/tmp/opencv.worktrees/90-keep-my-search"
@@ -314,4 +315,37 @@ test("cleanup closes an issue a merged pull request left open, with no Closes ke
   assert.match(ok.text, /Closed issue #90: PR #5 merged and left it open/)
   assert.equal(ports.state.issues.get(90).state, "CLOSED")
   assert.equal(ports.effects.filter((e) => e.op === "closeIssue").length, 1)
+})
+
+test("save refreshes the claim right before git push, so slow pre-push checks cannot expire it", () => {
+  const { ports, ctx } = task({ dirty: { [cwd]: " M b.txt\n" } })
+  const r = runCli(["save", "-m", "feat: add b"], ctx)
+  assert.equal(r.code, 0, r.text)
+  const ops = ports.effects.map((e) => e.op)
+  assert.equal(ops[ops.indexOf("push") - 1], "editComment")
+})
+
+test("the residual race: a claim posted after save's post-push read wins, and the next save is LOST", () => {
+  const { ports, ctx } = task({ dirty: { [cwd]: " M b.txt\n" } })
+  assert.equal(runCli(["save", "-m", "feat: add b"], ctx).code, 0)
+  ports.state.issues.get(90).comments.push(claim("other", 0, 9))
+  ports.state.dirty[cwd] = " M c.txt\n"
+  const next = runCli(["save", "-m", "feat: add c"], ctx)
+  assert.equal(next.code, 3, next.text)
+})
+
+test("finished worktrees are best effort: a GitHub failure lists none instead of refusing", () => {
+  const ctx = {
+    ports: {
+      git: {
+        worktrees: () => [{ path: "/r/80-old-fix", branch: "fix/80-old-fix" }],
+      },
+      gh: {
+        prs: () => {
+          throw new Error("gh is down")
+        },
+      },
+    },
+  }
+  assert.deepEqual(finishedWorktrees(ctx, { main: "/m", root: "/r" }), [])
 })

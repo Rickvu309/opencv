@@ -1,6 +1,3 @@
-// The one list of issue fields. The issue form (.github/ISSUE_TEMPLATE/task.yml), `file` and the
-// plain-words lint all read it, and fields.test.mjs fails when the form drifts from it.
-// `exempt` sections skip every plain-words check.
 export const TYPES = ["feat", "fix", "hotfix", "refactor", "chore", "docs"]
 export const BRANCH_RE =
   /^(feat|fix|hotfix|refactor|chore|docs)\/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$/

@@ -1,4 +1,3 @@
-// help, status and doctor: where things stand, with one next step or one fix per problem.
 import { holderLine } from "./claim-marker.mjs"
 import { approvalValid, riskOf } from "./facts.mjs"
 import { RISK_LABELS, TYPES } from "./fields.mjs"
@@ -7,8 +6,6 @@ import { decide, refusalError, RULES } from "./rules/index.mjs"
 
 export { approvalValid, riskOf }
 
-// The one list of commands. The dispatcher and `help` read it, so a command cannot exist
-// without a line saying when to use it.
 export const COMMANDS = [
   {
     name: "finish",
@@ -123,7 +120,6 @@ export function renderHelp() {
   ].join("\n")
 }
 
-// Pure: picks the one next step from what status found.
 export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   if (pr?.state === "MERGED") return `scripts/ocv-tools.mjs cleanup ${n}`
   if (pr?.state === "OPEN")
@@ -139,8 +135,6 @@ export function nextStep({ n, type, risk, approved, worktree, branch, pr }) {
   return `scripts/ocv-tools.mjs take ${n}`
 }
 
-// The local worktree of an issue's task branch, if any (`type/<n>-...`).
-// Remote-only branches stay in the facts loader so this list is parsed once.
 export function worktreeFor(ctx, n) {
   const prefix = new RegExp(`^(?:${TYPES.join("|")})/${n}-`)
   const hit = ctx.ports.git

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { runCli } from "./cli.mjs"
+import { isMissingFlagValue, runCli } from "./cli.mjs"
 import { approvalValid, nextStep } from "./report.mjs"
 import { ctxFor, fakePorts, issue, pr } from "./ports/fake.mjs"
 
@@ -488,4 +488,12 @@ test("riskOf never fails open", async () => {
   assert.equal(riskOf(["risk:high", "risk:normal"]), "high")
   assert.equal(riskOf([], "### Risk\n\nhigh\n"), "high")
   assert.equal(riskOf(["risk:low"]), "low")
+})
+
+test("a flag value that starts with a dash and a space is prose, while a missing value or another flag is not a value", () => {
+  assert.equal(isMissingFlagValue("- I fix the save"), false)
+  assert.equal(isMissingFlagValue("-5 degrees"), false)
+  assert.equal(isMissingFlagValue(undefined), true)
+  assert.equal(isMissingFlagValue("--risk"), true)
+  assert.equal(isMissingFlagValue("-d"), true)
 })

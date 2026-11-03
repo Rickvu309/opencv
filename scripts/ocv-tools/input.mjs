@@ -1,6 +1,3 @@
-// The cli moment: the dispatcher parses its arguments in plain code, and a
-// bad one is raised as a row. Every fact kind the cli rows read is set to
-// "fine" here, so the caller names only the one it found wrong.
 import { decide, refusalError } from "./rules/index.mjs"
 
 const FINE = {
