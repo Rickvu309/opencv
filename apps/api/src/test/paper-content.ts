@@ -10,7 +10,9 @@ import {
   type PaperYDoc,
 } from "@workspace/paper-crdt"
 
-import { user } from "../db/schema.js"
+import { eq } from "drizzle-orm"
+
+import { paperDocs, user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import { createMigratedTestDb } from "./harness.js"
 
@@ -19,8 +21,34 @@ export async function openStore(userId: string) {
   await db
     .insert(user)
     .values({ id: userId, name: "Ada", email: `${userId}@example.com` })
-  return { db, client, registry: installRegistry(), actor: personActor(userId) }
+  const registry = installRegistry()
+  const execute = registry.execute.bind(registry)
+  registry.execute = async (call) => {
+    const input = call.input as {
+      docId?: string
+      update?: string
+      basedOn?: number
+    }
+    const pushes =
+      call.name === "paper.sync" &&
+      input.basedOn === undefined &&
+      input.update !== undefined &&
+      input.update !== "" &&
+      input.update !== EMPTY_UPDATE
+    if (!pushes) return execute(call)
+    const rows = await db
+      .select({ revision: paperDocs.contentVersion })
+      .from(paperDocs)
+      .where(eq(paperDocs.id, input.docId!))
+    return execute({
+      ...call,
+      input: { ...input, basedOn: rows[0]?.revision ?? 0 },
+    })
+  }
+  return { db, client, registry, actor: personActor(userId) }
 }
+
+const EMPTY_UPDATE = "AAA="
 
 export const twoParagraphCv: CvBlockDocument = {
   version: 2,

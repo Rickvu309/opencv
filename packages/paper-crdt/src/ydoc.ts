@@ -25,6 +25,10 @@ function editor() {
   return headless
 }
 
+export function headlessEditor() {
+  return editor()
+}
+
 function kindOf(yDoc: Y.Doc): PaperDocument["kind"] | null {
   const kind = yDoc.getMap<string>(META).get("kind")
   return kind === "cv" || kind === "letter" ? kind : null

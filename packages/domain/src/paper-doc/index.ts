@@ -79,7 +79,8 @@ export { effectsMissing, personWorkLost, undoProblems } from "./safety.js"
 export type { UndoPlan } from "./undo.js"
 export { undoCoachEdit } from "./undo.js"
 
-export { rebuiltBy } from "./tree.js"
+export { canonical as canonicalPaper, rebuiltBy } from "./tree.js"
 
 export type { PaperRepair, RepairHints } from "./repair.js"
 export { nodeFingerprint, repairPaper } from "./repair.js"
+export { rebasePending } from "./rebase.js"

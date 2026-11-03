@@ -14,6 +14,8 @@ import {
   absorbUpdate,
   aliveCharacters,
   forkOf,
+  carriesChange,
+  knownAfter,
   materializeCandidate,
   twinFlags,
   writeRepair,
@@ -92,12 +94,14 @@ export type SyncRequest = {
   readonly epoch: number
   readonly update: Uint8Array
   readonly stateVector: Uint8Array
+  readonly basedOn?: number | undefined
 }
 
 export type SyncReply = {
   readonly epoch: number
   readonly revision: number
   readonly reset: boolean
+  readonly stale: boolean
   readonly update: Uint8Array
   readonly stateVector: Uint8Array
 }
@@ -564,19 +568,30 @@ export async function syncContent(
   return transaction(async () => {
     let row = await seeded(await lockedRow(userId, docId))
     const entry = await hydrate(row)
-    const reply = (reset: boolean, since: Uint8Array): SyncReply => {
+    const reply = (
+      reset: boolean,
+      since: Uint8Array,
+      stale = false
+    ): SyncReply => {
       const update = updateSince(entry.yDoc, since)
       if (!update) throw refuse("The state vector could not be read")
       return {
         epoch: entry.epoch,
         revision: entry.revision,
         reset,
+        stale,
         update,
         stateVector: stateVectorOf(entry.yDoc),
       }
     }
     if (request.epoch !== NO_LOCAL_COPY && request.epoch !== entry.epoch) {
       return reply(true, new Uint8Array())
+    }
+    if (request.basedOn === undefined && carriesChange(request.update)) {
+      throw refuse("A push must say which revision it is based on")
+    }
+    if (request.basedOn !== undefined && entry.revision !== request.basedOn) {
+      return reply(false, request.stateVector, true)
     }
     try {
       const absorbed =
@@ -592,7 +607,9 @@ export async function syncContent(
           witness: row.document,
         })
       }
-      return reply(false, request.stateVector)
+      const after = knownAfter(request.stateVector, request.update)
+      if (!after) throw refuse("The update could not be read")
+      return reply(false, after)
     } catch (error) {
       live.delete(docId)
       throw error

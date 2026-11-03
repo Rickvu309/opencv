@@ -70,3 +70,33 @@ export function emptyUpdate(): Uint8Array {
 export function mergedUpdate(updates: readonly Uint8Array[]): Uint8Array {
   return Y.mergeUpdates([...updates])
 }
+
+export function knownAfter(
+  stateVector: Uint8Array,
+  update: Uint8Array
+): Uint8Array | null {
+  if (update.length === 0) return stateVector
+  try {
+    const known =
+      stateVector.length === 0
+        ? new Map<number, number>()
+        : Y.decodeStateVector(stateVector)
+    const added = Y.decodeStateVector(Y.encodeStateVectorFromUpdate(update))
+    for (const [client, clock] of added) {
+      if (clock > (known.get(client) ?? 0)) known.set(client, clock)
+    }
+    return Y.encodeStateVector(known)
+  } catch {
+    return null
+  }
+}
+
+export function carriesChange(update: Uint8Array): boolean {
+  if (update.length === 0) return false
+  try {
+    const decoded = Y.decodeUpdate(update)
+    return decoded.structs.length > 0 || decoded.ds.clients.size > 0
+  } catch {
+    return true
+  }
+}

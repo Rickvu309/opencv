@@ -35,6 +35,7 @@ async function sync(docId: string, push: string, epoch = 1) {
     epoch: number
     revision: number
     reset: boolean
+    stale: boolean
     update: string
     stateVector: string
   }
@@ -81,7 +82,7 @@ describe("paper.sync", () => {
     })
   })
 
-  it("serialises two concurrent pushes and keeps both", async () => {
+  it("answers the second of two concurrent pushes stale, then keeps both after a resend", async () => {
     await withDatabase(store.db, async () => {
       const docId = await created("Concurrent")
       const pulled = (await sync(docId, "", 0)).update
@@ -91,7 +92,13 @@ describe("paper.sync", () => {
       const pushB = typed(clientFrom(pulled), (paper) =>
         withText(paper, "t2", "Typed by tab B.")
       )
-      await Promise.all([sync(docId, pushA), sync(docId, pushB)])
+      const replies = await Promise.all([
+        sync(docId, pushA),
+        sync(docId, pushB),
+      ])
+      expect(replies.filter((reply) => reply.stale)).toHaveLength(1)
+      await sync(docId, pushA)
+      await sync(docId, pushB)
       const after = await snapshot(docId)
       expect(after.seqs).toEqual([2, 3])
       expect(after.revision).toBe(3)

@@ -18,6 +18,7 @@ export const paperSyncInputSchema = z
     epoch: z.number().int().min(0),
     update: bytesText(PAPER_SYNC_UPDATE_CAP),
     stateVector: bytesText(PAPER_SYNC_STATE_VECTOR_CAP),
+    basedOn: z.number().int().min(0).optional(),
   })
   .strict()
 
@@ -26,6 +27,7 @@ export const paperSyncOutputSchema = z
     epoch: z.number().int().min(1),
     revision: z.number().int(),
     reset: z.boolean(),
+    stale: z.boolean(),
     update: z.string(),
     stateVector: z.string(),
   })

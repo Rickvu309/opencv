@@ -287,7 +287,7 @@ export const paperContract = commandContract({
   }),
   "paper.sync": commandEntry({
     description:
-      "Exchange document changes with the server. Sends what the server lacks and returns what the caller lacks.",
+      "Exchange document changes with the server. A push carries the revision it is based on and the caller's state vector. The server absorbs it only at that revision; otherwise it answers stale with everything the caller lacks and absorbs nothing. A pull sends no update.",
     input: paperSyncInputSchema,
     output: paperSyncOutputSchema,
     idempotency: "none",
