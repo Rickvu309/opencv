@@ -1,7 +1,7 @@
 {
   "fences": [
     {
-      "issue": 916,
+      "issue": 1041,
       "expires": "2026-12-01",
       "paths": [
         "apps/web/src/features/paper/**",
@@ -14,7 +14,9 @@
         "apps/api/src/test/paper-client.ts",
         "packages/domain/src/paper-doc/**",
         "packages/paper-crdt/**",
-        "apps/web/package.json"
+        "apps/web/package.json",
+        "apps/web/src/routes/paper-doc.tsx",
+        ".claude/skills/verify-app-ui/scripts/verify-cv-editor.mjs"
       ]
     }
   ]

@@ -165,6 +165,7 @@ export async function readActivity(
       command: row.undoneAt == null ? row.reversalCommand : null,
       input: row.reversalInput,
       expect: row.undoneAt == null ? row.reversalExpect : null,
+      source: row.command,
     }))
   )
   return rows.map((row, index) => ({

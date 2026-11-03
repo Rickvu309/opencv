@@ -167,6 +167,7 @@ async function undoneActivityIds(
 }
 
 type ReceiptPart = {
+  name?: string
   reversal?: { possible?: boolean; command?: string; input?: unknown }
   activityId?: string
   undone?: boolean
@@ -184,6 +185,7 @@ async function blockedReceipts(
     parts.map((part) => ({
       command: part.reversal!.command ?? null,
       input: part.reversal!.input,
+      source: part.name ?? null,
     }))
   )
   const blocked = new Map<ReceiptPart, string>()
