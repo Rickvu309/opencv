@@ -22,7 +22,7 @@ export async function sweepUnattachedPhotos(now: Date = new Date()) {
       return deleted.rows.map((row) => String(row.id))
     } catch (error) {
       last = error
-      if (!foreignKeyViolation(error)) throw error
+      if (!gainedPhotoReference(error)) throw error
     }
   }
   throw last
@@ -30,15 +30,24 @@ export async function sweepUnattachedPhotos(now: Date = new Date()) {
 
 export { attachPhoto } from "./store.js"
 
-function foreignKeyViolation(error: unknown) {
+const REFERENCE_APPEARED = new Set(["23001", "23503"])
+
+function gainedPhotoReference(error: unknown) {
   const seen = new Set<unknown>()
   let current: unknown = error
   while (current && typeof current === "object" && !seen.has(current)) {
     seen.add(current)
-    if ("code" in current && current.code === "23503") return true
+    if ("code" in current && REFERENCE_APPEARED.has(String(current.code))) {
+      return true
+    }
+    if (
+      current instanceof Error &&
+      /foreign key|violates foreign key/i.test(current.message)
+    ) {
+      return true
+    }
     current =
       "cause" in current ? (current as { cause?: unknown }).cause : undefined
   }
-  const message = error instanceof Error ? error.message : ""
-  return /foreign key|violates foreign key/i.test(message)
+  return false
 }
