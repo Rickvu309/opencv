@@ -1,0 +1,100 @@
+[data-pen-surface="paper"] [data-slot="letter-block-editor"] {
+  box-sizing: border-box;
+  width: 560px;
+  max-width: 100%;
+  min-height: 792px;
+  padding: 56px 60px;
+  background: #ffffff;
+  color: #2f2f31;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 17.5px;
+}
+
+[data-pen-surface="paper"] [data-slot="letter-block-editor"] .bn-editor {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+[data-pen-surface="paper"] [data-slot="letter-block-editor"] .bn-block-outer {
+  margin: 0;
+}
+
+[data-pen-surface="paper"] [data-slot="letter-block-editor"] .bn-block {
+  margin-top: 12px;
+}
+
+[data-pen-surface="paper"] [data-slot="letter-block-editor"] .bn-block-content {
+  padding: 0;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-block-outer:first-child
+  > .bn-block {
+  margin-top: 0;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-block-content[data-content-type="paragraph"] {
+  font-size: 11px;
+  line-height: 17.5px;
+  color: #2f2f31;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-block-content[data-content-type="heading"] {
+  color: #111111;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-block-content[data-content-type="heading"][data-level="3"] {
+  font-size: 13px;
+  line-height: 16px;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-block-content[data-content-type="bulletListItem"],
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-block-content[data-content-type="numberedListItem"] {
+  font-size: 11px;
+  line-height: 17.5px;
+  color: #2f2f31;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-block-content[data-content-type="divider"] {
+  border-top: 1px solid #ededef;
+}
+
+[data-pen-surface="paper"] [data-slot="letter-block-editor"] a {
+  color: #111111;
+  text-decoration: underline;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="letter-block-editor"]
+  .bn-inline-content:focus-visible {
+  outline: 1px solid #8a8a8e;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  [data-pen-surface="paper"] [data-slot="letter-block-editor"] {
+    min-height: 0;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}

@@ -1,11 +1,12 @@
+import { Suspense, lazy } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { ERROR_CODES, paperIdSchema, parsePaperId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import { PaperCvEditor } from "@/features/paper/paper-editor.tsx"
-import { PaperLetterEditor } from "@/features/paper/paper-letter.tsx"
 import {
   getPaper,
   getPaperPages,
@@ -17,6 +18,12 @@ import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { ApiError } from "@/lib/api-error.ts"
 
+const PaperLetterEditor = lazy(() =>
+  import("@/features/paper/paper-letter.tsx").then((module) => ({
+    default: module.PaperLetterEditor,
+  }))
+)
+
 const NO_DOC = parsePaperId("00000000-0000-4000-8000-000000000000")
 const PAPER_PREFIX = `${SURFACE_PATHS.paper}/`
 
@@ -24,6 +31,18 @@ function docIdFromPath(pathname: string) {
   if (!pathname.startsWith(PAPER_PREFIX)) return ""
   return decodeURIComponent(
     pathname.slice(PAPER_PREFIX.length).split("/")[0] ?? ""
+  )
+}
+
+function LetterEditorFallback() {
+  return (
+    <section
+      aria-label="Paper"
+      aria-busy="true"
+      className="flex flex-col items-center gap-4 p-6"
+    >
+      <Skeleton className="h-[792px] w-full max-w-[560px]" />
+    </section>
   )
 }
 
@@ -88,7 +107,11 @@ export function PaperDocPage() {
   if (doc.kind === "letter") {
     const job =
       jobsQuery.data?.find((item) => item.letterDocId === doc.id) ?? null
-    return <PaperLetterEditor key={doc.id} doc={doc} job={job} onBack={back} />
+    return (
+      <Suspense fallback={<LetterEditorFallback />}>
+        <PaperLetterEditor key={doc.id} doc={doc} job={job} onBack={back} />
+      </Suspense>
+    )
   }
   return (
     <PaperCvEditor

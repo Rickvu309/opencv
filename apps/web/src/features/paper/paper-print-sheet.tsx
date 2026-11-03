@@ -136,7 +136,7 @@ export function PaperPrintSheet({
         aria-hidden="true"
         inert
       >
-        <LetterSheet letter={readStoredLetter(source)} mode="read" />
+        <LetterSheet letter={readStoredLetter(source)} />
       </article>,
       host.body
     )
