@@ -56,9 +56,10 @@ const SNAPSHOT_QUERY = `query ($owner: String!, $name: String!, $n: Int!) {
           }
         }
       }
-      timelineItems(last: 5, itemTypes: [REMOVED_FROM_MERGE_QUEUE_EVENT]) {
+      timelineItems(last: 10, itemTypes: [ADDED_TO_MERGE_QUEUE_EVENT, REMOVED_FROM_MERGE_QUEUE_EVENT]) {
         nodes {
           __typename
+          ... on AddedToMergeQueueEvent { createdAt }
           ... on RemovedFromMergeQueueEvent { reason createdAt }
         }
       }
@@ -89,9 +90,10 @@ function queueSnapshot(ctx, repo, n, waited) {
     .sort((a, b) =>
       String(b.completedAt ?? "").localeCompare(String(a.completedAt ?? ""))
     )[0]
-  const removed = (pr.timelineItems?.nodes ?? [])
-    .filter((e) => e?.__typename === "RemovedFromMergeQueueEvent")
-    .at(-1)
+  const removed = removalAfterEnqueue(
+    pr.timelineItems?.nodes ?? [],
+    readQueuedRecord(ctx, n)?.at ?? null
+  )
   return {
     state: pr.state,
     head: pr.headRefOid,
@@ -99,7 +101,7 @@ function queueSnapshot(ctx, repo, n, waited) {
     queueState: pr.mergeQueueEntry?.state ?? null,
     queuedHead: pr.mergeQueueEntry?.headCommit?.oid ?? null,
     ci: ci ? { status: ci.status, conclusion: ci.conclusion } : null,
-    removed: removed ? { reason: removed.reason, at: removed.createdAt } : null,
+    removed,
     waited,
   }
 }
@@ -220,6 +222,44 @@ function settleInfra(ctx, repo, n, verdict, snapshot, state) {
   return { verdict, extra: { infra: run.id } }
 }
 
+function parsedTime(value) {
+  const t = Date.parse(value ?? "")
+  return Number.isNaN(t) ? null : t
+}
+
+function latestTime(times) {
+  let max = null
+  for (const time of times) {
+    if (time == null) continue
+    if (max == null || time > max) max = time
+  }
+  return max
+}
+
+function removalAfterEnqueue(nodes, recordedAt) {
+  const list = nodes ?? []
+  const floor = latestTime([
+    latestTime(
+      list
+        .filter((e) => e?.__typename === "AddedToMergeQueueEvent")
+        .map((e) => parsedTime(e.createdAt))
+    ),
+    parsedTime(recordedAt),
+  ])
+  const removed = list
+    .filter((e) => e?.__typename === "RemovedFromMergeQueueEvent")
+    .filter((e) => {
+      if (floor == null) return true
+      const at = parsedTime(e.createdAt)
+      return at == null || at > floor
+    })
+    .sort(
+      (a, b) => (parsedTime(a.createdAt) ?? 0) - (parsedTime(b.createdAt) ?? 0)
+    )
+    .at(-1)
+  return removed ? { reason: removed.reason, at: removed.createdAt } : null
+}
+
 function queuedHeadFile(ctx, n) {
   const common = git(
     ctx,
@@ -230,17 +270,23 @@ function queuedHeadFile(ctx, n) {
   return join(common, "ocv-merge-wait", String(n))
 }
 
-function readQueuedHead(ctx, n) {
+function readQueuedRecord(ctx, n) {
   const path = queuedHeadFile(ctx, n)
   if (!ctx.ports.fs.exists(path)) return null
-  const text = ctx.ports.fs.read(path).trim()
-  return text || null
+  const [head, at] = ctx.ports.fs.read(path).trim().split("\n")
+  if (!head) return null
+  return { head, at: at || null }
+}
+
+function readQueuedHead(ctx, n) {
+  return readQueuedRecord(ctx, n)?.head ?? null
 }
 
 function writeQueuedHead(ctx, n, head) {
   const path = queuedHeadFile(ctx, n)
   ctx.ports.fs.mkdir(dirname(path))
-  ctx.ports.fs.write(path, `${head}\n`)
+  const at = new Date(ctx.now()).toISOString()
+  ctx.ports.fs.write(path, `${head}\n${at}\n`)
 }
 
 function pullSnapshot(pull, extra = {}) {

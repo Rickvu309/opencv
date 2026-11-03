@@ -53,6 +53,7 @@ export function fixture(over = {}) {
   const ports = fakePorts({
     files: { "/tmp/opencv.worktrees/90-keep-my-search/body.md": BODY },
     env: over.env,
+    ...(over.now == null ? {} : { now: over.now }),
     onPause: (total) => s.onPause?.(total, s),
     run(cmd, a, options) {
       if (s.intercept) {
@@ -179,11 +180,24 @@ export function fixture(over = {}) {
                     },
                   },
                   timelineItems: {
-                    nodes: (s.removedEvents ?? []).map((e) => ({
-                      __typename: "RemovedFromMergeQueueEvent",
-                      reason: e.reason,
-                      createdAt: e.at,
-                    })),
+                    nodes: s.queueEvents
+                      ? s.queueEvents.map((e) =>
+                          e.kind === "added"
+                            ? {
+                                __typename: "AddedToMergeQueueEvent",
+                                createdAt: e.at,
+                              }
+                            : {
+                                __typename: "RemovedFromMergeQueueEvent",
+                                reason: e.reason,
+                                createdAt: e.at,
+                              }
+                        )
+                      : (s.removedEvents ?? []).map((e) => ({
+                          __typename: "RemovedFromMergeQueueEvent",
+                          reason: e.reason,
+                          createdAt: e.at,
+                        })),
                   },
                 },
               },
