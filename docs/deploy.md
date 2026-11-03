@@ -86,10 +86,11 @@ pnpm --filter web preview   # serves apps/web/dist
 ```
 
 `vite preview` does not exercise Caddy's routing. After building, run the real
-HTTP check from `apps/web`, with `PORT` set to your assigned web port:
+HTTP check from `apps/web`. `PORT` in the worktree `.env` is the api port.
+The check binds Caddy to the web port, that value plus 1000.
 
 ```bash
-PORT=5450 node ./scripts/verify-host-routing.mjs
+node ./scripts/verify-host-routing.mjs
 ```
 
 Set `CADDY` to the binary path if it is not on `PATH`. The check starts Caddy

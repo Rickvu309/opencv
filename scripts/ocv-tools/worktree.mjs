@@ -1,5 +1,8 @@
 import { join } from "node:path"
-import { WORKTREE_PORTS } from "../../packages/domain/src/local-ports.ts"
+import {
+  WORKTREE_PORTS,
+  localDevUrls,
+} from "../../packages/domain/src/local-ports.ts"
 import { BRANCH_RE, TYPES } from "./fields.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 
@@ -52,12 +55,20 @@ function claimedPorts(fs, root) {
   return ports
 }
 
+export const RESERVED_WEB_PORTS = new Set([5432])
+
 export function pickPort(ctx, issue, root) {
   const claimed = claimedPorts(ctx.ports.fs, root)
+  const listening = (port) => ctx.ports.proc.listening(port)
   const size = WORKTREE_PORTS.last - WORKTREE_PORTS.first + 1
   for (let step = 0; step < size; step += 1) {
     const port = WORKTREE_PORTS.first + ((issue + step) % size)
-    if (!claimed.has(port) && !ctx.ports.proc.listening(port)) return port
+    const webPort = localDevUrls(String(port)).webPort
+    const webTaken =
+      claimed.has(webPort) ||
+      listening(webPort) ||
+      RESERVED_WEB_PORTS.has(webPort)
+    if (!claimed.has(port) && !listening(port) && !webTaken) return port
   }
   throw new Error(
     `no free port in ${WORKTREE_PORTS.first} to ${WORKTREE_PORTS.last}`

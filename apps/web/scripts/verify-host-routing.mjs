@@ -5,9 +5,22 @@ import { request } from "node:http"
 import { homedir } from "node:os"
 import path from "node:path"
 import { once } from "node:events"
+import { fileURLToPath } from "node:url"
+import {
+  portError,
+  requireVerifierPorts,
+} from "../../../scripts/lib/worktree-port.mjs"
 
-const port = process.env.PORT
-assert(port, "Set PORT to this worktree's assigned web port")
+const repoRoot = path.resolve(
+  fileURLToPath(new URL(".", import.meta.url)),
+  "../../.."
+)
+const ports = requireVerifierPorts(repoRoot)
+if (!ports) {
+  console.error(portError("verify-host-routing"))
+  process.exit(1)
+}
+const port = ports.webPort
 const split = process.argv.includes("--split")
 const publicOrigin = process.env.VITE_PUBLIC_ORIGIN || "https://opencv.me"
 const appOrigin = process.env.VITE_APP_ORIGIN || "https://app.opencv.me"
@@ -31,7 +44,10 @@ const server = spawn(
     "--adapter",
     "caddyfile",
   ],
-  { env: process.env, stdio: ["ignore", "ignore", "pipe"] }
+  {
+    env: { ...process.env, PORT: String(port) },
+    stdio: ["ignore", "ignore", "pipe"],
+  }
 )
 const closed = once(server, "exit")
 
