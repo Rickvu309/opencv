@@ -39,10 +39,38 @@ function ListView({ list }: { list: LetterPrintList }) {
   )
 }
 
+export function LetterPrintView({ document }: { document: LetterPaper }) {
+  const model = letterPrintModel(document)
+  return (
+    <div data-pen-surface="paper" data-slot="letter-sheet">
+      {model.fragments.map((fragment, index) => {
+        if (fragment.kind === "divider") return <hr key={index} />
+        if (fragment.kind === "list") {
+          return (
+            <div key={index} data-slot="letter-paragraph">
+              <ListView list={fragment.list} />
+            </div>
+          )
+        }
+        const Tag =
+          fragment.kind === "heading"
+            ? fragment.level === 3
+              ? "h3"
+              : "h2"
+            : "p"
+        return (
+          <Tag key={index} data-slot="letter-paragraph">
+            <Runs text={fragment.text} />
+          </Tag>
+        )
+      })}
+    </div>
+  )
+}
+
 export function LetterPrint({ document }: { document: LetterPaper }) {
   const host = globalThis.document
   if (!host) return null
-  const model = letterPrintModel(document)
   return createPortal(
     <article
       data-paper-print=""
@@ -51,24 +79,7 @@ export function LetterPrint({ document }: { document: LetterPaper }) {
       aria-hidden="true"
       inert
     >
-      <div data-pen-surface="paper" data-slot="letter-sheet">
-        {model.fragments.map((fragment, index) => {
-          if (fragment.kind === "divider") return <hr key={index} />
-          if (fragment.kind === "list") {
-            return (
-              <div key={index} data-slot="letter-paragraph">
-                <ListView list={fragment.list} />
-              </div>
-            )
-          }
-          const Tag = fragment.kind === "heading" ? "h2" : "p"
-          return (
-            <Tag key={index} data-slot="letter-paragraph">
-              <Runs text={fragment.text} />
-            </Tag>
-          )
-        })}
-      </div>
+      <LetterPrintView document={document} />
     </article>,
     host.body
   )

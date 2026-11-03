@@ -8,23 +8,43 @@ import {
 import { createPortal } from "react-dom"
 import {
   blocksToPreviewModel,
+  cvPrintModel,
   isCvBlockDocument,
   isCvDocument,
   type CvDocument as CvDocumentData,
+  type CvPaper,
+  type LetterPaper,
 } from "@workspace/domain"
 
 import { readStoredLetter } from "./letter-sheet-model.ts"
 import { LetterSheet } from "./letter-sheet.tsx"
+import { LetterPrint } from "./paper-letter-print.tsx"
 import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { quietPaperChrome } from "./paper-print.ts"
 import { printLayout } from "./paper-templates.ts"
+
+function asCvPaper(source: unknown): CvPaper | null {
+  if (!source || typeof source !== "object") return null
+  const record = source as { version?: unknown; kind?: unknown }
+  if (record.version !== 3 || record.kind !== "cv") return null
+  return source as CvPaper
+}
+
+function asLetterPaper(source: unknown): LetterPaper | null {
+  if (!source || typeof source !== "object") return null
+  const record = source as { version?: unknown; kind?: unknown }
+  if (record.version !== 3 || record.kind !== "letter") return null
+  return source as LetterPaper
+}
 
 function previewOf(
   source: unknown,
   templateId: string | null
 ): CvDocumentData | null {
   const layout = printLayout(templateId)
+  const paper = asCvPaper(source)
+  if (paper) return cvPrintModel(paper, layout)
   if (isCvBlockDocument(source)) return blocksToPreviewModel(source, layout)
   if (!isCvDocument(source)) return null
   return { ...source, templateId: layout }
@@ -125,6 +145,8 @@ export function PaperPrintSheet({
   const host = globalThis.document
   if (!host) return null
   if (kind === "letter") {
+    const letter = asLetterPaper(source)
+    if (letter) return <LetterPrint document={letter} />
     return createPortal(
       <article
         ref={(node) => {

@@ -16,6 +16,7 @@ import {
 import {
   CvHistoryRevisionContext,
   CvPlaceholderContext,
+  CvSectionTitleContext,
   type TemplateProps,
 } from "./cv-templates/cv-parts.tsx"
 import { AcademicCv } from "./cv-templates/academic.tsx"
@@ -113,11 +114,16 @@ export function CvDocument({
       tree = <InternshipCv {...templateProps} />
   }
 
+  const sectionTitles = (
+    data as { sectionTitles?: Partial<Record<string, string>> }
+  ).sectionTitles
   return (
-    <CvPlaceholderContext.Provider value={placeholders}>
-      <CvHistoryRevisionContext.Provider value={historyRevision}>
-        {tree}
-      </CvHistoryRevisionContext.Provider>
-    </CvPlaceholderContext.Provider>
+    <CvSectionTitleContext.Provider value={sectionTitles}>
+      <CvPlaceholderContext.Provider value={placeholders}>
+        <CvHistoryRevisionContext.Provider value={historyRevision}>
+          {tree}
+        </CvHistoryRevisionContext.Provider>
+      </CvPlaceholderContext.Provider>
+    </CvSectionTitleContext.Provider>
   )
 }

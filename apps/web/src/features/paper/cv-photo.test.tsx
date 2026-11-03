@@ -4,6 +4,8 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 import {
   blankBlockDocument,
   emptyCvDocument,
+  upgradeStoredPaper,
+  type PaperDocument,
   type PaperView,
 } from "@workspace/domain"
 
@@ -20,6 +22,13 @@ import {
 
 const FILE_ID = "11111111-1111-4111-8111-111111111111"
 const DOC_ID = "22222222-2222-4222-8222-222222222222"
+
+function paperOf(kind: "cv" | "letter", document: unknown): PaperDocument {
+  const upgraded = upgradeStoredPaper(kind, document)
+  if (!upgraded.ok) throw new Error(upgraded.message)
+  return upgraded.document
+}
+
 const state = vi.hoisted(() => ({ pathname: "/share/tok" }))
 
 vi.mock("@tanstack/react-router", () => ({
@@ -302,6 +311,7 @@ describe("CV photo", () => {
       templateId: "with-photo",
       status: "draft",
       document: blocks,
+      paper: paperOf("cv", blocks),
       contentVersion: 2,
       checks: [],
       pageChoice: "unset",

@@ -92,6 +92,21 @@ export const PAPER_CANVAS_NEXT_STEP_CLASS = "paper-canvas-next-step"
 
 export const CvHistoryRevisionContext = createContext(0)
 
+const DEFAULT_SECTION_LABEL: Record<string, string> = {
+  Summary: "summary",
+  Experience: "experience",
+  Education: "education",
+  Skills: "skills",
+  Projects: "projects",
+  Activities: "activities",
+  Awards: "awards",
+  Languages: "languages",
+}
+
+export const CvSectionTitleContext = createContext<
+  Partial<Record<string, string>> | undefined
+>(undefined)
+
 /** Editor-only empty-field hints. Share pages and thumbnails leave this off. */
 export const CvPlaceholderContext = createContext(false)
 
@@ -339,6 +354,10 @@ export function SectionTitle({
   children: ReactNode
   dark?: boolean
 }) {
+  const custom = useContext(CvSectionTitleContext)
+  const kind =
+    typeof children === "string" ? DEFAULT_SECTION_LABEL[children] : undefined
+  const label = (kind && custom?.[kind]) || children
   return (
     <CvType
       role="section-title"
@@ -350,7 +369,7 @@ export function SectionTitle({
           : "border-foreground/15 text-foreground/60"
       )}
     >
-      {children}
+      {label}
     </CvType>
   )
 }
@@ -511,7 +530,10 @@ function CvPhotoUploader({
     try {
       await undoActivity(queryClient, activityId)
       const next = await getPaper(docId)
-      const restoredPhoto = storedPhoto(next.document)
+      const restoredPhoto =
+        next.paper?.kind === "cv"
+          ? next.paper.header.photo
+          : storedPhoto(next.document)
       publish(restoredPhoto, next.contentVersion)
       if (fileId && paperPhotoFileId(restoredPhoto) !== fileId) {
         try {

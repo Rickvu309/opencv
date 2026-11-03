@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
-import { emptyCvDocument, type PaperView } from "@workspace/domain"
+import {
+  emptyCvDocument,
+  upgradeStoredPaper,
+  type PaperView,
+} from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
 import { importPaperFile, importPaperLink } from "./paper-api.ts"
@@ -14,14 +18,25 @@ vi.mock("./paper-api.ts", async (importOriginal) => ({
   importPaperLink: vi.fn(),
 }))
 
+function paperFor(
+  kind: "cv" | "letter",
+  document: unknown
+): PaperView["paper"] {
+  const upgraded = upgradeStoredPaper(kind, document)
+  if (!upgraded.ok) throw new Error(upgraded.message)
+  return upgraded.document
+}
+
 function cv(name: string): PaperView {
+  const document = emptyCvDocument()
   return {
     id: "11111111-1111-4111-8111-111111111111",
     name,
     kind: "cv",
     templateId: "simple",
     status: "draft",
-    document: emptyCvDocument(),
+    document,
+    paper: paperFor("cv", document),
     contentVersion: 1,
     checks: [],
     pageChoice: "unset",
@@ -33,12 +48,14 @@ function cv(name: string): PaperView {
 }
 
 function letter(name: string): PaperView {
+  const document = { markdown: "A cover letter." }
   return {
     ...cv(name),
     id: "22222222-2222-4222-8222-222222222222",
     kind: "letter",
     templateId: null,
-    document: { markdown: "A cover letter." },
+    document,
+    paper: paperFor("letter", document),
   }
 }
 
@@ -313,12 +330,14 @@ describe("Paper library", () => {
       ).toContain("One line for the letter.")
       window.dispatchEvent(new Event("afterprint"))
     })
+    const letterDocument = { markdown: "One line for the letter." }
     const letter: PaperView = {
       ...cv("Northwind letter"),
       id: "22222222-2222-4222-8222-222222222222",
       kind: "letter",
       templateId: null,
-      document: { markdown: "One line for the letter." },
+      document: letterDocument,
+      paper: paperFor("letter", letterDocument),
     }
     renderLibrary([letter])
     fireEvent.click(

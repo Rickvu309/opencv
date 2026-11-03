@@ -1,4 +1,9 @@
-import { emptyCvDocument, type PaperView } from "@workspace/domain"
+import {
+  emptyCvDocument,
+  upgradeStoredPaper,
+  type PaperDocument,
+  type PaperView,
+} from "@workspace/domain"
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
@@ -14,13 +19,22 @@ vi.mock("@tanstack/react-router", () => ({
   }) => options.select({ location: { pathname: state.pathname } }),
 }))
 
+function paperOf(kind: "cv" | "letter", document: unknown): PaperDocument {
+  const upgraded = upgradeStoredPaper(kind, document)
+  if (!upgraded.ok) throw new Error(upgraded.message)
+  return upgraded.document
+}
+
+const sharedDocument = emptyCvDocument()
+
 const shared: Omit<PaperView, "isFavorite"> = {
   id: "doc-1",
   name: "PM track CV",
   kind: "cv",
   templateId: "modern",
   status: "draft",
-  document: emptyCvDocument(),
+  document: sharedDocument,
+  paper: paperOf("cv", sharedDocument),
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",
@@ -79,22 +93,24 @@ describe("Paper share page", () => {
   })
 
   it("shows no placeholder for an empty summary or an empty company", async () => {
+    const quietDocument = {
+      ...emptyCvDocument(),
+      name: "Ada",
+      summary: "",
+      experience: [
+        {
+          role: "Product intern",
+          company: "",
+          period: "2024",
+          bullets: ["Shipped the checklist"],
+        },
+      ],
+    }
     const quiet: Omit<PaperView, "isFavorite"> = {
       ...shared,
       templateId: "simple",
-      document: {
-        ...emptyCvDocument(),
-        name: "Ada",
-        summary: "",
-        experience: [
-          {
-            role: "Product intern",
-            company: "",
-            period: "2024",
-            bullets: ["Shipped the checklist"],
-          },
-        ],
-      },
+      document: quietDocument,
+      paper: paperOf("cv", quietDocument),
     }
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)
@@ -119,17 +135,19 @@ describe("Paper share page", () => {
   })
 
   it("shows a shared letter on the letter sheet with its parts", async () => {
+    const letterDocument = {
+      markdown: "First.\n\nSecond.",
+      sender: "Ada",
+      date: "May 5",
+      signature: "Ada",
+    }
     const letter: Omit<PaperView, "isFavorite"> = {
       ...shared,
       name: "Letter for Ada",
       kind: "letter",
       templateId: null,
-      document: {
-        markdown: "First.\n\nSecond.",
-        sender: "Ada",
-        date: "May 5",
-        signature: "Ada",
-      },
+      document: letterDocument,
+      paper: paperOf("letter", letterDocument),
     }
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)

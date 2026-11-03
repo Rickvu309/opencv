@@ -47,6 +47,7 @@ import {
 
 import { seedColumns, withContent } from "./content-store.js"
 import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
+import { toPaper } from "./read-paper.js"
 
 const importAbort = new AsyncLocalStorage<AbortSignal>()
 
@@ -65,24 +66,7 @@ function iso(value: Date) {
   return value.toISOString()
 }
 
-// Documents are decoded against their kind on every write, so the jsonb column holds a CV or letter document.
-export function toPaper(row: typeof paperDocs.$inferSelect): PaperView {
-  return {
-    id: parsePaperId(row.id),
-    name: row.name,
-    kind: row.kind,
-    templateId: row.templateId as PaperView["templateId"],
-    status: row.status,
-    document: row.document as PaperView["document"],
-    contentVersion: row.contentVersion,
-    checks: row.checks ?? [],
-    pageChoice: row.pageChoice,
-    sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-    isFavorite: row.isFavorite,
-  }
-}
+export { toPaper }
 
 export async function ownedPaper(userId: UserId, docId: PaperId) {
   const rows = await getDb()
