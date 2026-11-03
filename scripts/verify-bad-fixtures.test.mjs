@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
@@ -9,6 +9,7 @@ import {
   fixtureProblems,
   libModules,
   loadFixtures,
+  shrinkProblems,
 } from "./lib/bad-fixtures.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -35,6 +36,13 @@ test("every verifier check module has a bad fixture, or is listed with an issue 
       pending: config.pending,
       today,
     }),
+    []
+  )
+})
+
+test("the pending and notChecks lists only shrink", () => {
+  assert.deepEqual(
+    shrinkProblems({ pending: config.pending, notChecks: config.notChecks }),
     []
   )
 })
@@ -118,4 +126,100 @@ test("a check that passes its bad fixture is refused", () => {
     fixtureProblems("lib/a.mjs", [{ name: "", fails: () => true }])[0],
     /needs a name/
   )
+})
+
+const entry = (file, extra = {}) => ({
+  file,
+  issue: "#963",
+  reason: "live",
+  expires: "2026-12-15",
+  ...extra,
+})
+
+test("a pending entry that is not already frozen is refused", () => {
+  const problems = shrinkProblems({
+    pending: [entry("lib/new.mjs")],
+    notChecks: [],
+    frozen: ["lib/old.mjs"],
+    pendingCeiling: 5,
+  })
+  assert.match(problems[0], /new pending entry/)
+})
+
+test("a pending list past its ceiling is refused", () => {
+  const pending = [entry("lib/a.mjs"), entry("lib/b.mjs")]
+  const problems = shrinkProblems({
+    pending,
+    notChecks: [],
+    frozen: ["lib/a.mjs", "lib/b.mjs"],
+    pendingCeiling: 1,
+  })
+  assert.match(problems[0], /ceiling is 1/)
+})
+
+test("a notChecks list past its ceiling is refused", () => {
+  const notChecks = [
+    { file: "lib/a.mjs", why: "no verdict" },
+    { file: "lib/b.mjs", why: "no verdict" },
+  ]
+  const problems = shrinkProblems({
+    pending: [],
+    notChecks,
+    notChecksCeiling: 1,
+  })
+  assert.match(problems[0], /notChecks has 2 entries/)
+})
+
+test("a pending entry cannot be re-dated past the fixed date", () => {
+  const problems = shrinkProblems({
+    pending: [entry("lib/a.mjs", { expires: "2027-01-01" })],
+    notChecks: [],
+    frozen: ["lib/a.mjs"],
+  })
+  assert.match(problems[0], /later than the fixed date 2026-12-15/)
+})
+
+test("a notChecks entry with no why is refused", () => {
+  const base = {
+    files: ["lib/a.mjs"],
+    fixtures: {},
+    pending: [],
+    today: "2026-11-03",
+  }
+  assert.match(
+    coverageProblems({ ...base, notChecks: [{ file: "lib/a.mjs" }] })[0],
+    /needs a why/
+  )
+  assert.match(
+    coverageProblems({
+      ...base,
+      notChecks: [{ file: "lib/a.mjs", why: " " }],
+    })[0],
+    /needs a why/
+  )
+  assert.deepEqual(
+    coverageProblems({
+      ...base,
+      notChecks: [{ file: "lib/a.mjs", why: "no verdict" }],
+    }),
+    []
+  )
+})
+
+test("a module with a badFixture and a sidecar badFixture is refused", async () => {
+  const dir = path.join(root, "node_modules/.cache/bad-fixtures-test")
+  mkdirSync(dir, { recursive: true })
+  try {
+    writeFileSync(path.join(dir, "both.mjs"), "export const badFixture = []\n")
+    writeFileSync(
+      path.join(dir, "both.bad-fixture.mjs"),
+      "export const badFixture = []\n"
+    )
+    await assert.rejects(
+      loadFixtures(root, "node_modules/.cache/bad-fixtures-test/both.mjs"),
+      /both export a badFixture/
+    )
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

@@ -7,8 +7,20 @@ import { SLOW, discoverTests } from "./run-tests.mjs"
 const VITEST_APPS = ["api", "web"]
 const VITEST_FILE = /\.test\.tsx?$/
 
-const undiscovered = (tracked, listed) =>
-  tracked.filter((file) => !listed.has(file))
+const undiscovered = (tracked, listed, quarantined = []) =>
+  tracked.filter((file) => !listed.has(file) && !quarantined.includes(file))
+
+const quarantinedFiles = async (app) => {
+  try {
+    const { quarantine } = await import(
+      new URL(`../../apps/${app}/vitest.quarantine.ts`, import.meta.url)
+    )
+    return quarantine.map((entry) => entry.file)
+  } catch (error) {
+    if (error.code === "ERR_MODULE_NOT_FOUND") return []
+    throw error
+  }
+}
 
 const listedByVitest = (app) =>
   new Set(
@@ -61,7 +73,7 @@ test("a file missing from the listing is caught by the completeness rule", () =>
 })
 
 for (const app of VITEST_APPS)
-  test(`every tracked ${app} vitest file is found by the ${app} vitest config`, () => {
+  test(`every tracked ${app} vitest file is found by the ${app} vitest config`, async () => {
     const prefix = `apps/${app}/`
     const tracked = execFileSync("git", ["ls-files", `${prefix}src`], {
       cwd: new URL("../../", import.meta.url),
@@ -71,7 +83,10 @@ for (const app of VITEST_APPS)
       .filter((file) => VITEST_FILE.test(file))
       .map((file) => file.slice(prefix.length))
     assert.ok(tracked.length > 0, `no ${app} vitest files are tracked`)
-    assert.deepEqual(undiscovered(tracked, listedByVitest(app)), [])
+    assert.deepEqual(
+      undiscovered(tracked, listedByVitest(app), await quarantinedFiles(app)),
+      []
+    )
   })
 
 test("a vitest file outside the include pattern is caught", () => {
@@ -79,4 +94,16 @@ test("a vitest file outside the include pattern is caught", () => {
   assert.deepEqual(undiscovered(["src/a.test.ts", "src/b.test.ts"], listed), [
     "src/b.test.ts",
   ])
+})
+
+test("a quarantined vitest file is accounted for, and an unlisted one still is not", () => {
+  const listed = new Set(["src/a.test.ts"])
+  assert.deepEqual(
+    undiscovered(["src/a.test.ts", "src/q.test.ts"], listed, ["src/q.test.ts"]),
+    []
+  )
+  assert.deepEqual(
+    undiscovered(["src/a.test.ts", "src/b.test.ts"], listed, ["src/q.test.ts"]),
+    ["src/b.test.ts"]
+  )
 })

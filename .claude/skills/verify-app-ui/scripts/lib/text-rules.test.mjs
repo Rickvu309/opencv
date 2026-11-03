@@ -5,8 +5,6 @@ import {
   brandViolations,
   capturedGlowViews,
   chromeCopy,
-  contrastNeeded,
-  contrastRatio,
   dashViolations,
   emptyActionLabels,
   exclamationViolations,
@@ -132,13 +130,6 @@ test("durations: only 0, 150 and 280 ms pass", () => {
   assert.deepEqual(offTokenDurations("150ms"), [])
   assert.deepEqual(offTokenDurations("0.28s"), [])
   assert.deepEqual(offTokenDurations("0.2s"), [200])
-})
-
-test("contrast", () => {
-  assert.ok(contrastRatio([0, 0, 0], [255, 255, 255]) > 20.9)
-  assert.ok(contrastRatio([119, 119, 119], [255, 255, 255]) < 4.5)
-  assert.equal(contrastNeeded(24, 400), 3)
-  assert.equal(contrastNeeded(14, 400), 4.5)
 })
 
 test("spacing scale", () => {

@@ -7,6 +7,29 @@ export const LIB_DIRS = Object.freeze([
   ".claude/skills/verify-landing/scripts/lib",
 ])
 export const SIDECAR = ".bad-fixture.mjs"
+export const PENDING_CEILING = 18
+export const NOT_CHECKS_CEILING = 13
+export const PENDING_LATEST_EXPIRY = "2026-12-15"
+export const PENDING_FROZEN = Object.freeze([
+  ".claude/skills/verify-app-ui/scripts/lib/apply-pen-gaps.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/checks-source.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/pen-layout-probe.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/probe-colors.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/probe.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-account-checks.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-collapsed-checks.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-drag-checks.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-geometry.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-interactions.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-resize-checks.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-resize-shared.mjs",
+  ".claude/skills/verify-app-ui/scripts/lib/sidebar-round3-checks.mjs",
+  ".claude/skills/verify-landing/scripts/lib/design-checks.mjs",
+  ".claude/skills/verify-landing/scripts/lib/design-probe.mjs",
+  ".claude/skills/verify-landing/scripts/lib/page-checks.mjs",
+  ".claude/skills/verify-landing/scripts/lib/pen-probe.mjs",
+  ".claude/skills/verify-landing/scripts/lib/probe.mjs",
+])
 
 const isCheckModule = (name) =>
   name.endsWith(".mjs") &&
@@ -24,25 +47,31 @@ export function libModules(root, dirs = LIB_DIRS) {
 
 export async function loadFixtures(root, file) {
   const own = await import(pathToFileURL(path.join(root, file)))
-  if (own.badFixture) return own.badFixture
   const sidecar = file.replace(/\.mjs$/, SIDECAR)
+  let beside
   try {
-    return (await import(pathToFileURL(path.join(root, sidecar)))).badFixture
+    beside = (await import(pathToFileURL(path.join(root, sidecar)))).badFixture
   } catch (error) {
-    if (error.code === "ERR_MODULE_NOT_FOUND") return undefined
-    throw error
+    if (error.code !== "ERR_MODULE_NOT_FOUND") throw error
   }
+  if (own.badFixture && beside)
+    throw new Error(`${file} and ${sidecar} both export a badFixture. Keep one`)
+  return own.badFixture ?? beside
 }
 
 export function coverageProblems({
   files,
   fixtures,
-  notChecks,
+  notChecks: notCheckEntries,
   pending,
   today,
 }) {
   const problems = []
+  const notChecks = notCheckEntries.map((entry) => entry.file)
   const pendingFiles = pending.map((entry) => entry.file)
+  for (const entry of notCheckEntries)
+    if (!entry.why?.trim())
+      problems.push(`${entry.file}: a notChecks entry needs a why`)
   for (const file of files) {
     const has = Array.isArray(fixtures[file]) && fixtures[file].length > 0
     const listed = [
@@ -90,6 +119,36 @@ export function fixtureProblems(file, fixtures) {
     if (fixture.fails() !== true)
       problems.push(
         `${file}: the check did not fail on its bad fixture "${fixture.name}"`
+      )
+  }
+  return problems
+}
+
+export function shrinkProblems({
+  pending,
+  notChecks,
+  pendingCeiling = PENDING_CEILING,
+  notChecksCeiling = NOT_CHECKS_CEILING,
+  latestExpiry = PENDING_LATEST_EXPIRY,
+  frozen = PENDING_FROZEN,
+}) {
+  const problems = []
+  if (pending.length > pendingCeiling)
+    problems.push(
+      `pending has ${pending.length} entries but the ceiling is ${pendingCeiling}. The list may only shrink: add the bad fixture instead`
+    )
+  if (notChecks.length > notChecksCeiling)
+    problems.push(
+      `notChecks has ${notChecks.length} entries but the ceiling is ${notChecksCeiling}. Give the new module a bad fixture instead`
+    )
+  for (const entry of pending) {
+    if (!frozen.includes(entry.file))
+      problems.push(
+        `${entry.file} is a new pending entry. The list was frozen with its first set of modules`
+      )
+    if (entry.expires > latestExpiry)
+      problems.push(
+        `${entry.file}: expires ${entry.expires}, later than the fixed date ${latestExpiry}. An expiry may not move out`
       )
   }
   return problems

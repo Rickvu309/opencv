@@ -1,18 +1,57 @@
 {
   "notChecks": [
-    ".claude/skills/verify-app-ui/scripts/lib/apply-pen-page.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/apply-pen-seed.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/assumes.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/kinds.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/oklch.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/session.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/stack.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/tier.mjs",
-    ".claude/skills/verify-app-ui/scripts/lib/tour.mjs",
-    ".claude/skills/verify-landing/scripts/lib/assumes.mjs",
-    ".claude/skills/verify-landing/scripts/lib/cdp.mjs",
-    ".claude/skills/verify-landing/scripts/lib/kinds.mjs"
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/apply-pen-page.mjs",
+      "why": "in-page helpers for the Apply pen run, and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/apply-pen-seed.mjs",
+      "why": "seeds Apply data and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/assumes.mjs",
+      "why": "lists what the checker assumes about the app, and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs",
+      "why": "speaks the browser protocol and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/kinds.mjs",
+      "why": "names the check kinds and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/oklch.mjs",
+      "why": "converts colours and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/session.mjs",
+      "why": "opens the browser session and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/stack.mjs",
+      "why": "starts and stops the local stack and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/tier.mjs",
+      "why": "sorts checks into tiers and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-app-ui/scripts/lib/tour.mjs",
+      "why": "walks the pages to collect data and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/assumes.mjs",
+      "why": "lists what the checker assumes about the app, and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/cdp.mjs",
+      "why": "speaks the browser protocol and makes no verdict"
+    },
+    {
+      "file": ".claude/skills/verify-landing/scripts/lib/kinds.mjs",
+      "why": "names the check kinds and makes no verdict"
+    }
   ],
   "pending": [
     {
