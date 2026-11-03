@@ -1,6 +1,9 @@
 import { fileURLToPath } from "node:url"
 import { join } from "node:path"
+import { nowOf } from "./claim.mjs"
 import { worktreeFor } from "./report.mjs"
+
+export const READ_ONLY_ROLES = ["review", "plan"]
 
 export const RULES_FILE = fileURLToPath(
   new URL("../../docs/agents/brief-rules.md", import.meta.url)
@@ -18,13 +21,34 @@ const sectionOf = (markdown, heading) => {
   return (end < 0 ? rest : rest.slice(0, end)).join("\n")
 }
 
+const RULE = /^(\d+)\. \[([a-z ]+)\] (.+?) \(AGENTS\.md: ([^)]+)\)$/
+
+export function parseRuleLine(line) {
+  const m = RULE.exec(line)
+  if (!m) return null
+  const roles = m[2].trim().split(/\s+/)
+  return { number: Number(m[1]), roles, text: m[3], section: m[4], line }
+}
+
 export function parseRules(markdown) {
   const fenced = /```text\n([\s\S]*?)\n```/.exec(sectionOf(markdown, "Rules"))
   if (!fenced) throw new Error("brief-rules.md has no rules block")
-  const rules = fenced[1].split("\n").filter((line) => /^\d+\. /.test(line))
-  if (!rules.length) throw new Error("brief-rules.md has no numbered rule")
-  return rules
+  const lines = fenced[1].split("\n").filter((line) => /^\d+\. /.test(line))
+  if (!lines.length) throw new Error("brief-rules.md has no numbered rule")
+  return lines.map((line) => {
+    const rule = parseRuleLine(line)
+    if (!rule)
+      throw new Error(
+        `brief-rules.md rule needs "[roles]" first and "(AGENTS.md: Section)" last: ${line}`
+      )
+    return rule
+  })
 }
+
+export const rulesForRole = (rules, role) =>
+  rules.filter(
+    (rule) => rule.roles.includes("all") || rule.roles.includes(role)
+  )
 
 export function parseRoles(markdown) {
   const roles = {}
@@ -41,11 +65,25 @@ export function parseRoles(markdown) {
   return roles
 }
 
-export function parseFences(text) {
+const fenceEnd = (date) => Date.parse(`${date}T23:59:59Z`)
+
+export function parseFences(text, now) {
   const list = JSON.parse(text || "{}").fences ?? []
-  return list.flatMap((fence) =>
-    (fence.paths ?? []).map((path) => ({ path, issue: fence.issue ?? null }))
-  )
+  const active = []
+  const expired = []
+  for (const fence of list) {
+    const end = fenceEnd(fence.expires)
+    if (Number.isNaN(end))
+      throw new Error(
+        `brief-fences.json: the fence for #${fence.issue} needs "expires" as YYYY-MM-DD`
+      )
+    if (now > end) expired.push({ issue: fence.issue, expires: fence.expires })
+    else
+      active.push(
+        ...(fence.paths ?? []).map((path) => ({ path, issue: fence.issue }))
+      )
+  }
+  return { active, expired }
 }
 
 function portOf(ctx, worktree) {
@@ -64,8 +102,12 @@ export function brief(ctx, n, { role }) {
     throw new Error(
       `usage: ocv-tools brief <issue> --role ${Object.keys(roles).join("|")}`
     )
-  const rules = parseRules(ctx.ports.fs.read(RULES_FILE))
-  const fences = parseFences(ctx.ports.fs.read(FENCES_FILE))
+  const rules = rulesForRole(parseRules(ctx.ports.fs.read(RULES_FILE)), role)
+  const { active: fences, expired } = parseFences(
+    ctx.ports.fs.read(FENCES_FILE),
+    nowOf(ctx)
+  )
+  const readOnly = READ_ONLY_ROLES.includes(role)
   const { issue } = ctx.facts.load(n, ["issue"])
   const { worktree, branch } = worktreeFor(ctx, n)
   const port = portOf(ctx, worktree)
@@ -76,7 +118,9 @@ export function brief(ctx, n, { role }) {
     `Tool budget: ${roles[role].budget} calls`,
     worktree
       ? `Worktree: ${worktree} (branch ${branch})`
-      : `Worktree: none yet; run scripts/ocv-tools.mjs take ${n}`,
+      : readOnly
+        ? "Worktree: none (read only)"
+        : `Worktree: none yet; run scripts/ocv-tools.mjs take ${n}`,
     port
       ? `Port: ${port} (api on ${port}, web on ${port + 1000})`
       : "Port: none yet",
@@ -85,9 +129,13 @@ export function brief(ctx, n, { role }) {
       (fence) =>
         `  ${fence.path}${fence.issue ? ` (issue #${fence.issue})` : ""}`
     ),
+    ...expired.map(
+      (fence) =>
+        `Fence for #${fence.issue} expired on ${fence.expires} and is not listed`
+    ),
     "",
     "Rules:",
-    ...rules,
+    ...rules.map((rule, index) => `${index + 1}. ${rule.text}`),
   ]
   return {
     lines,

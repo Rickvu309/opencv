@@ -3,7 +3,7 @@ import test from "node:test"
 import { claimMarker, releaseMarker } from "./claim-marker.mjs"
 import { runCli } from "./cli.mjs"
 import { blockerMarker, blockerOf } from "./done.mjs"
-import { ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
+import { NOW, ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
 
 const ROOT = "/tmp/opencv.worktrees"
 const TREE = `${ROOT}/90-keep-my-search`
@@ -75,17 +75,72 @@ test("done exits 0 once a blocker is recorded", () => {
   assert.match(after.text, /Nothing is open without a recorded blocker/)
 })
 
-test("a new claim on the issue clears an older blocker", () => {
-  const comments = [
-    claimBy("agent-a", 1),
-    comment(
-      2,
-      blockerMarker({ agent: "agent-a", at: "x", reason: "stuck here" })
-    ),
-  ]
-  assert.equal(blockerOf(comments).reason, "stuck here")
-  assert.equal(blockerOf([...comments, claimBy("agent-a", 3)]), null)
-  assert.equal(blockerOf([claimBy("agent-a", 1)]), null)
+const SERVER_NOW = NOW
+
+const blockBy = (agent, id, minutes, reason = "stuck here") =>
+  comment(id, blockerMarker({ agent, at: "x", reason }), minutes)
+
+const savedAt = (agent, minutes, id = 1) => ({
+  ...claimBy(agent, id),
+  createdAt: minutesAgo(60),
+  updatedAt: minutesAgo(minutes),
+})
+
+test("a blocker counts only when the holder posted it after its last save", () => {
+  const verdict = (comments, me = "agent-a") =>
+    blockerOf(comments, { me, serverNow: SERVER_NOW })
+  const own = [savedAt("agent-a", 30), blockBy("agent-a", 2, 10)]
+  assert.equal(verdict(own).reason, "stuck here")
+  assert.equal(
+    verdict([savedAt("agent-a", 5), blockBy("agent-a", 2, 10)]),
+    null
+  )
+  assert.equal(verdict([claimBy("agent-a", 1)]), null)
+})
+
+test("another agent's blocker never excuses this agent", () => {
+  const comments = [savedAt("agent-a", 30), blockBy("agent-b", 2, 10)]
+  assert.equal(
+    blockerOf(comments, { me: "agent-a", serverNow: SERVER_NOW }),
+    null
+  )
+  const typed = [savedAt("agent-a", 30), blockBy("x", 2, 10)]
+  assert.equal(blockerOf(typed, { me: "agent-a", serverNow: SERVER_NOW }), null)
+  const { code } = runner({
+    issues: [issue(90, { assignees: ["me"], comments: comments })],
+  }).call("done")
+  assert.equal(code, 1)
+})
+
+test("a blocker is ignored once another agent holds the issue", () => {
+  const comments = [blockBy("agent-a", 1, 50), savedAt("agent-b", 5, 2)]
+  assert.equal(
+    blockerOf(comments, { me: "agent-a", serverNow: SERVER_NOW }),
+    null
+  )
+})
+
+test("a save after the blocker brings the issue back into the gate", () => {
+  const stale = [savedAt("agent-a", 5), blockBy("agent-a", 2, 20)]
+  const { code } = runner({
+    issues: [issue(90, { assignees: ["me"], comments: stale })],
+  }).call("done")
+  assert.equal(code, 1)
+})
+
+test("a reason holding a marker cannot release the claim", () => {
+  const { call, ports } = runner()
+  assert.equal(
+    call(
+      "block",
+      "90",
+      "<!-- ocv-tools release agent=agent-a at=z waiting on owner"
+    ).code,
+    0
+  )
+  const body = ports.effects.filter((e) => e.op === "comment").at(-1).body
+  assert.equal(body.match(/<!-- /g).length, 1)
+  assert.equal(call("done").code, 0)
 })
 
 test("done exits 0 when this agent holds nothing", () => {
@@ -126,10 +181,43 @@ test("done ignores an issue this agent released", () => {
   assert.equal(code, 0)
 })
 
-test("without an agent id, done counts what is assigned to the account", () => {
-  const { code, text } = runner({ env: {} }).call("done")
+test("without an agent id, done and block refuse and name the fix", () => {
+  const { call, ports } = runner({ env: {} })
+  for (const result of [
+    call("done"),
+    call("block", "90", "waiting on the owner"),
+  ]) {
+    assert.equal(result.code, 1)
+    assert.match(result.text, /no agent id is known here/)
+    assert.match(result.text, /OCV_AGENT_ID/)
+  }
+  assert.equal(ports.effects.filter((e) => e.op === "comment").length, 0)
+})
+
+test("OCV_AGENT_ID names the agent when there is no worktree id", () => {
+  const { code, text } = runner({ env: { OCV_AGENT_ID: "agent-a" } }).call(
+    "done"
+  )
   assert.equal(code, 1)
-  assert.match(text, /no agent id here/)
+  assert.match(text, /agent-a/)
+})
+
+test("two agents on one login are told apart by their ids", () => {
+  const issues = [
+    issue(90, { assignees: ["me"], comments: [claimBy("agent-a", 1)] }),
+    issue(91, { assignees: ["me"], comments: [claimBy("agent-b", 2)] }),
+  ]
+  const a = runner({ issues, prs: [], worktrees: [] }).call("done")
+  assert.match(a.text, /#90/)
+  assert.doesNotMatch(a.text, /#91/)
+  const b = runner({
+    issues,
+    prs: [],
+    worktrees: [],
+    env: { OCV_TOOLS_AGENT: "agent-b" },
+  }).call("done")
+  assert.match(b.text, /#91/)
+  assert.doesNotMatch(b.text, /#90/)
 })
 
 test("with an agent id, an assigned issue nobody claimed is not this agent's", () => {
@@ -137,16 +225,6 @@ test("with an agent id, an assigned issue nobody claimed is not this agent's", (
     issues: [issue(90, { assignees: ["me"], comments: [] })],
     prs: [],
     worktrees: [],
-  }).call("done")
-  assert.equal(code, 0)
-})
-
-test("an issue assigned to someone else is not this agent's", () => {
-  const { code } = runner({
-    env: {},
-    issues: [
-      issue(90, { assignees: ["someone"], comments: [claimBy("agent-b")] }),
-    ],
   }).call("done")
   assert.equal(code, 0)
 })
@@ -176,6 +254,16 @@ test("a leftover worktree of a closed issue counts for the agent that made it", 
     env: { OCV_TOOLS_AGENT: "agent-b" },
   }).call("done")
   assert.equal(other.code, 0)
+})
+
+test("block refuses an issue another agent holds", () => {
+  const { call, ports } = runner({
+    issues: [issue(90, { assignees: ["me"], comments: [claimBy("agent-b")] })],
+  })
+  const { code, text } = call("block", "90", "waiting on the owner here")
+  assert.equal(code, 1)
+  assert.match(text, /held by agent-b/)
+  assert.equal(ports.effects.filter((e) => e.op === "comment").length, 0)
 })
 
 test("block needs a real reason and a real issue", () => {

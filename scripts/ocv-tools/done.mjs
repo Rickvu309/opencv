@@ -1,6 +1,6 @@
 import { join } from "node:path"
-import { holderOf, parseMarker } from "./claim-marker.mjs"
-import { agentIdFor, nowOf } from "./claim.mjs"
+import { holderOf, oneLine } from "./claim-marker.mjs"
+import { agentIdFor, envOf, nowOf } from "./claim.mjs"
 import { prFor } from "./board.mjs"
 import { TYPES } from "./fields.mjs"
 import { EXIT } from "./result.mjs"
@@ -8,9 +8,6 @@ import { nextStep } from "./report.mjs"
 import { locate } from "./worktree.mjs"
 
 const BLOCKER = /<!-- ocv-tools blocker agent=(\S+) at=(\S+) reason=(.*?) -->/
-
-const oneLine = (text) =>
-  String(text).replace(/\s+/g, " ").replaceAll("-->", "--").trim()
 
 export const blockerMarker = ({ agent, at, reason }) =>
   `<!-- ocv-tools blocker agent=${agent} at=${at} reason=${oneLine(reason)} -->`
@@ -20,19 +17,25 @@ export function parseBlocker(body) {
   return m ? { agent: m[1], at: m[2], reason: m[3] } : null
 }
 
-export function blockerOf(comments) {
-  let claimAt = -1
+export function blockerOf(comments, { me, serverNow }) {
+  if (!me) return null
+  const holder = holderOf(comments, serverNow)
+  if (
+    (holder.state === "live" || holder.state === "idle") &&
+    holder.agent !== me
+  )
+    return null
+  const since = Date.parse(holder.updatedAt || holder.createdAt || "")
   let found = null
-  let foundAt = -1
-  ;(comments ?? []).forEach((c, index) => {
-    if (parseMarker(c.body)?.kind === "claim") claimAt = index
+  for (const c of comments ?? []) {
     const blocker = parseBlocker(c.body)
-    if (blocker) {
-      found = blocker
-      foundAt = index
-    }
-  })
-  return foundAt > claimAt ? found : null
+    if (!blocker || blocker.agent !== me) continue
+    const posted = Date.parse(c.createdAt || "")
+    if (Number.isNaN(posted)) continue
+    if (!Number.isNaN(since) && posted <= since) continue
+    found = blocker
+  }
+  return found
 }
 
 const TASK_BRANCH = new RegExp(`^(?:${TYPES.join("|")})/(\\d+)-`)
@@ -44,14 +47,19 @@ function whoAmI(ctx) {
   } catch {
     gitDir = null
   }
-  return agentIdFor(ctx, gitDir)
+  return agentIdFor(ctx, gitDir) ?? envOf(ctx).OCV_AGENT_ID ?? null
 }
 
-export function isMine(issue, { me, login, serverNow }) {
+const NO_AGENT_ID =
+  "done and block need to know which agent you are, and no agent id is known here. Run them from the worktree that scripts/ocv-tools.mjs take printed, or set OCV_AGENT_ID to the agent id in the claim on your issue."
+
+export function isMine(issue, { me, serverNow }) {
   const holder = holderOf(issue.comments, serverNow)
-  if (holder.state === "released") return false
-  if (me) return holder.agent === me && holder.state !== "none"
-  return (issue.assignees ?? []).includes(login)
+  return (
+    Boolean(me) &&
+    (holder.state === "live" || holder.state === "idle") &&
+    holder.agent === me
+  )
 }
 
 function taskWorktrees(ctx) {
@@ -102,11 +110,12 @@ function stepFor(row) {
 export function openWork(ctx) {
   const snap = ctx.ports.gh.openBoard()
   const me = whoAmI(ctx)
+  if (!me) throw new Error(NO_AGENT_ID)
   const login = ctx.ports.gh.login()
   const trees = taskWorktrees(ctx)
   const rows = new Map()
   for (const issue of snap.issues) {
-    if (!isMine(issue, { me, login, serverNow: snap.serverNow })) continue
+    if (!isMine(issue, { me, serverNow: snap.serverNow })) continue
     const pr = prFor(snap.pulls, issue.number)
     const tree = trees.find((w) => w.n === issue.number)
     const holder = holderOf(issue.comments, snap.serverNow)
@@ -116,13 +125,13 @@ export function openWork(ctx) {
       pr: pr && String(pr.state).toUpperCase() === "OPEN" ? pr : null,
       worktree: tree?.path ?? null,
       branch: tree?.branch ?? null,
-      held: holder.state === "none" ? `assigned to ${login}` : holder.agent,
-      blocker: blockerOf(issue.comments),
+      held: holder.agent,
+      blocker: blockerOf(issue.comments, { me, serverNow: snap.serverNow }),
       orphan: false,
     })
   }
   for (const tree of trees) {
-    if (rows.has(tree.n) || !me || idFileOf(ctx, tree.path) !== me) continue
+    if (rows.has(tree.n) || idFileOf(ctx, tree.path) !== me) continue
     let comments = []
     try {
       comments = ctx.ports.gh.comments(tree.n)
@@ -136,7 +145,7 @@ export function openWork(ctx) {
       worktree: tree.path,
       branch: tree.branch,
       held: null,
-      blocker: blockerOf(comments),
+      blocker: blockerOf(comments, { me, serverNow: snap.serverNow }),
       orphan: true,
     })
   }
@@ -147,9 +156,7 @@ export function done(ctx) {
   const { me, login, rows } = openWork(ctx)
   const open = rows.filter((row) => !row.blocker)
   const blocked = rows.filter((row) => row.blocker)
-  const who = me
-    ? `${me} (account ${login})`
-    : `account ${login} (no agent id here, so everything assigned to it counts)`
+  const who = `${me} (account ${login})`
   const lines = [`Open work for ${who}:`]
   if (!rows.length) lines.push("  none")
   for (const row of open) {
@@ -176,9 +183,18 @@ export function block(ctx, n, reason) {
     throw new Error(
       'usage: ocv-tools block <n> "<reason in at least three words>"'
     )
+  const me = whoAmI(ctx)
+  if (!me) throw new Error(NO_AGENT_ID)
   if (!ctx.ports.gh.viewIssue(n))
     throw new Error(`#${n} is not an issue. Give the issue number.`)
-  const me = whoAmI(ctx) ?? "unknown"
+  const holder = holderOf(ctx.ports.gh.comments(n), ctx.ports.gh.serverNow())
+  if (
+    (holder.state === "live" || holder.state === "idle") &&
+    holder.agent !== me
+  )
+    throw new Error(
+      `#${n} is held by ${holder.agent}, not by you (${me}). Only the agent that holds an issue can record a blocker on it.`
+    )
   const at = new Date(nowOf(ctx)).toISOString()
   ctx.ports.gh.comment(
     n,
