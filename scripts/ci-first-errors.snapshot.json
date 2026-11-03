@@ -5,5 +5,6 @@
   "screen": "2026-10-27T01:02:03.1234567Z   1) [chromium] › apps/web/e2e/sign-in.spec.ts:12:5 › sign in\n2026-10-27T01:02:03.2234567Z     Error: expect(locator).toBeVisible()\n",
   "mark": "✖ apps/web/src/features/inbox/inbox-page.test.tsx (5 ms)\n",
   "word": "The job conclusion was FAILURE\nError: real boom\n",
-  "clean": "2026-10-27T01:02:03.1234567Z All tests passed\n"
+  "clean": "2026-10-27T01:02:03.1234567Z All tests passed\n",
+  "annotation": "2026-11-03T04:36:06.9130827Z ##[error]an expected failure (it.fails) must cite an issue that stays open after this merge: apps/api/src/registry/registry.formal.test.ts:257 names no issue\n2026-11-03T04:36:07.9130827Z ##[error]Process completed with exit code 2.\n"
 }

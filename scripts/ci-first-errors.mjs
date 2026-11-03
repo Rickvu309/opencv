@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url"
 
 const STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z ?/
 const ANSI = /\u001b\[[0-9;]*[A-Za-z]/g
-const ERROR = /✖|FAIL |AssertionError|\bError:|not ok/
+const ERROR = /✖|FAIL |AssertionError|\bError:|not ok|##\[error\]/
+const GENERIC = /##\[error\]Process completed with exit code \d+/
 const TEST_FILE = /((?:[\w.@+-]+\/)*[\w.@+-]+\.(?:test|spec)\.[cm]?[jt]sx?)/
 const MARK = /^##\[[^\]]+\]\s*/
 const CALL = /node scripts\/ci-first-errors\.mjs/
@@ -12,7 +13,11 @@ const WHEN_FAILED = /contains\(needs\.\*\.result, 'failure'\)/
 const CLIP = 500
 
 export function visibleLine(raw) {
-  return String(raw).replace(ANSI, "").replace(STAMP, "").trim()
+  return String(raw)
+    .replace(/^\uFEFF/, "")
+    .replace(ANSI, "")
+    .replace(STAMP, "")
+    .trim()
 }
 
 function repoFile(match) {
@@ -29,7 +34,9 @@ export function firstError(log) {
     .split(/\r?\n/)
     .map(visibleLine)
     .filter((line) => line.length > 0)
-  const index = lines.findIndex((line) => ERROR.test(line))
+  const index = lines.findIndex(
+    (line) => ERROR.test(line) && !GENERIC.test(line)
+  )
   if (index === -1) return null
   const line = clip(lines[index].replace(MARK, "").trim())
   const from = Math.max(0, index - 8)
@@ -124,7 +131,11 @@ export function collect(env, exec = gh) {
   for (const job of failedJobs(listed)) {
     try {
       const log = exec(
-        ["api", `repos/${repo}/actions/jobs/${job.id}/logs`],
+        [
+          "api",
+          "--allow-escape-sequences",
+          `repos/${repo}/actions/jobs/${job.id}/logs`,
+        ],
         env
       )
       lines.push(reportLine(job.name, log))

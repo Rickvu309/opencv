@@ -61,6 +61,13 @@ test("FAILURE is not a failure line, and a clean log has none", () => {
   assert.equal(reportLine("lint", logs.clean), "lint: no error line")
 })
 
+test("a workflow annotation is the error, and the process-completed line is not", () => {
+  assert.equal(
+    reportLine("policy", logs.annotation),
+    "policy: an expected failure (it.fails) must cite an issue that stays open after this merge: apps/api/src/registry/registry.formal.test.ts:257 names no issue"
+  )
+})
+
 test("gh is called with GITHUB_TOKEN and one line is printed per failed job", () => {
   assert.equal(commandEnv({ GITHUB_TOKEN: "token" }).GH_TOKEN, "token")
   const calls = []
@@ -72,9 +79,13 @@ test("gh is called with GITHUB_TOKEN and one line is printed per failed job", ()
     },
     (args) => {
       calls.push(args)
-      if (String(args[1]).includes("/runs/")) return "guards\t10\nbuild\t11\n"
-      if (String(args[1]).endsWith("/10/logs")) return logs.vitest
-      if (String(args[1]).endsWith("/11/logs")) return logs.build
+      const target = args.find((arg) => String(arg).startsWith("repos/"))
+      if (String(target).includes("/runs/")) return "guards\t10\nbuild\t11\n"
+      if (String(target).endsWith("/10/logs")) {
+        assert.ok(args.includes("--allow-escape-sequences"))
+        return logs.vitest
+      }
+      if (String(target).endsWith("/11/logs")) return logs.build
       throw new Error(args.join(" "))
     }
   )
@@ -100,7 +111,8 @@ test("a missing run id is refused and a log that cannot be read still yields one
       GITHUB_TOKEN: "t",
     },
     (args) => {
-      if (String(args[1]).includes("/runs/")) return "guards\t10\n"
+      const target = args.find((arg) => String(arg).startsWith("repos/"))
+      if (String(target).includes("/runs/")) return "guards\t10\n"
       throw new Error("logs unavailable")
     }
   )
