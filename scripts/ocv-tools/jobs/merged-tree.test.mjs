@@ -66,6 +66,14 @@ test("a node test report names the failed guards", () => {
   )
 })
 
+test("a colored node test report names the failed guards", () => {
+  const out = "\u001b[31m✖ boom \u001b[90m(1.1ms)\u001b[39m\u001b[39m\n"
+  assert.deepEqual(failedGuards({ ok: false, out, err: "" }), ["boom"])
+  const passed =
+    "\u001b[32m.\u001b[0m\n\u001b[32m✔ quiet guard \u001b[90m(0.4ms)\u001b[39m\n"
+  assert.deepEqual(failedGuards({ ok: true, out: passed, err: "" }), [])
+})
+
 test("a head that is not behind main skips the merge read", () => {
   const f = fixture()
   assert.equal(f.call("merge", "91").code, 0)
@@ -98,6 +106,14 @@ test("a merged tree that fails the guards is refused and its worktree is removed
   const verbs = f.effects("git", "worktree").map((e) => e.args[1])
   assert.deepEqual(verbs.slice(-2), ["remove", "prune"])
   assert.ok(verbs.includes("add"))
+})
+
+test("the guard run drops a forced color from the shell", () => {
+  const f = fixture({ behind: 1 })
+  f.call("merge", "91")
+  const args = f.effects("timeout")[0].args
+  assert.ok(args.includes("FORCE_COLOR"))
+  assert.equal(args[args.indexOf("FORCE_COLOR") - 1], "-u")
 })
 
 test("a merged tree that passes the guards enqueues and says so", () => {

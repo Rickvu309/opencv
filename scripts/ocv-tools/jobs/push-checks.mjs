@@ -47,6 +47,8 @@ export const GIT_ENV = Object.freeze([
   "GIT_CEILING_DIRECTORIES",
 ])
 
+export const COLOR_ENV = Object.freeze(["FORCE_COLOR"])
+
 const batches = (list) => {
   const out = []
   for (let i = 0; i < list.length; i += BATCH)
@@ -95,7 +97,7 @@ export function quickPlan(files, top, toolTests = []) {
     label: "fast guards",
     cmd: "env",
     args: [
-      ...GIT_ENV.flatMap((name) => ["-u", name]),
+      ...[...GIT_ENV, ...COLOR_ENV].flatMap((name) => ["-u", name]),
       "node",
       "--test",
       "--test-concurrency=3",
