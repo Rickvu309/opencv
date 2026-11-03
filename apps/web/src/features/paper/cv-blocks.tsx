@@ -1,4 +1,10 @@
-import { createContext, useContext, useReducer, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  type ReactNode,
+} from "react"
 import { useBlockNoteEditor } from "@blocknote/react"
 import {
   BlockNoteSchema,
@@ -22,6 +28,16 @@ export const CvChromeContext = createContext<CvChrome>({
   showPhoto: false,
   askCoach: () => undefined,
 })
+
+let coachAsk: (text: string) => void = () => undefined
+
+export function bindCvCoach(next: (text: string) => void) {
+  coachAsk = next
+}
+
+export function askCvCoach(text: string) {
+  coachAsk(text)
+}
 
 type FieldBlock = {
   id: string
@@ -101,18 +117,21 @@ function HeaderView({ block }: ViewProps) {
 }
 
 type SectionEditor = {
-  document: { id: string; type: string }[]
+  document: { id: string; type: string; children?: { id: string }[] }[]
   insertBlocks: (
     blocks: unknown[],
     ref: string,
     placement: "after"
-  ) => { id: string }[]
+  ) => { id: string; children?: { id: string }[] }[]
   setTextCursorPosition: (id: string, pos: "start" | "end") => void
   focus: () => void
+  onChange: (callback: () => void) => () => void
 }
 
 function SectionView({ block, contentRef }: ViewProps) {
   const editor = useBlockNoteEditor() as unknown as SectionEditor
+  const [, bump] = useReducer((tick: number) => tick + 1, 0)
+  useEffect(() => editor.onChange(() => bump()), [editor])
   const index = editor.document.findIndex((item) => item.id === block.id)
   const next = editor.document[index + 1]
   const empty =
@@ -139,16 +158,26 @@ function SectionView({ block, contentRef }: ViewProps) {
               }
             : { type: "paragraph" }
     const created = editor.insertBlocks([follow], block.id, "after")
-    const id = created[0]?.id
-    if (!id) return
+    const holder = created[0]
+    if (!holder) return
+    const item =
+      kind === "skills"
+        ? (editor.document.find((entry) => entry.id === holder.id)
+            ?.children?.[0]?.id ?? holder.children?.[0]?.id)
+        : undefined
+    if (item) {
+      editor.setTextCursorPosition(item, "start")
+      editor.focus()
+      return
+    }
     const field = document.querySelector<HTMLElement>(
-      `[data-cv-block-fields="${CSS.escape(id)}"] [data-cv-field]`
+      `[data-cv-block-fields="${CSS.escape(holder.id)}"] [data-cv-field]`
     )
     if (field) {
       field.focus()
       return
     }
-    editor.setTextCursorPosition(id, "start")
+    editor.setTextCursorPosition(holder.id, "start")
     editor.focus()
   }
   return (
@@ -162,6 +191,7 @@ function SectionView({ block, contentRef }: ViewProps) {
       {empty ? (
         <button
           type="button"
+          data-cv-section={block.id}
           className="h-11 text-start text-muted-foreground md:h-7"
           onClick={add}
         >
@@ -209,9 +239,9 @@ function EntryRow({
   return (
     <div
       data-cv-block-fields={block.id}
-      className="flex flex-wrap items-baseline gap-x-2"
+      className="flex w-full flex-wrap items-baseline gap-x-2"
     >
-      <span className="inline-flex items-baseline gap-x-2 whitespace-nowrap">
+      <span className="inline-flex items-baseline whitespace-nowrap">
         <CvField
           blockId={block.id}
           name={left}

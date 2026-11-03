@@ -2,13 +2,13 @@ import { BlockNoteEditor } from "@blocknote/core"
 import { _blocksToProsemirrorNode } from "@blocknote/core/yjs"
 import { paperSchema } from "@workspace/paper-crdt"
 import { Slice, type Node } from "prosemirror-model"
-import { EditorState } from "prosemirror-state"
+import { EditorState, TextSelection } from "prosemirror-state"
 import { ySyncPluginKey } from "y-prosemirror"
 import { expect, it } from "vitest"
 
 import { addedBlockType, cvFormatHidden } from "./cv-keys.ts"
 import { coerceCvPaste, cvRulesPlugin } from "./cv-rules.ts"
-import { filterCvSlash } from "./cv-slash.ts"
+import { cvSlashItems, filterCvSlash } from "./cv-slash.ts"
 
 const editor = BlockNoteEditor.create({ schema: paperSchema })
 
@@ -220,6 +220,79 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
     if (node.type.name === "paperSkillItem") labels.push(node.textContent)
   })
   expect(labels).toEqual(["SQL", "Excel"])
+  expect(skills.selection.$from.parent.textContent).toBe("Excel")
+
+  let kept = EditorState.create({
+    schema: editor.pmSchema,
+    doc: docOf([
+      header,
+      {
+        id: "skills",
+        type: "paperSkills",
+        props: { label: "Tools" },
+        children: [{ id: "cpp", type: "paperSkillItem", content: "C, C++" }],
+      },
+    ]),
+    plugins: [cvRulesPlugin],
+  })
+  kept = kept.apply(kept.tr.setSelection(TextSelection.create(kept.doc, 1)))
+  const keptLabels: string[] = []
+  kept.doc.descendants((node) => {
+    if (node.type.name === "paperSkillItem") keptLabels.push(node.textContent)
+  })
+  expect(keptLabels).toEqual(["C, C++"])
+  let keptPos = -1
+  kept.doc.descendants((node, pos) => {
+    if (node.isText && node.text === "C, C++") keptPos = pos
+  })
+  kept = kept.apply(kept.tr.insertText("x", keptPos))
+  const edited: string[] = []
+  kept.doc.descendants((node) => {
+    if (node.type.name === "paperSkillItem") edited.push(node.textContent)
+  })
+  expect(edited).toEqual(["xC, C++"])
+
+  const slashTitles = cvSlashItems({}).map((item) => item.title)
+  expect(slashTitles.filter((title) => title === "Skills")).toEqual(["Skills"])
+  expect(slashTitles).toContain("Skill group")
+
+  const titled = EditorState.create({
+    schema: editor.pmSchema,
+    doc: docOf([header, later]),
+  })
+  let titleEnd = -1
+  titled.doc.descendants((node, pos) => {
+    if (node.isText && node.text === "Education") {
+      titleEnd = pos + node.text.length
+    }
+  })
+  expect(titleEnd).toBeGreaterThan(0)
+  const swallow = cvRulesPlugin.props.handleTextInput!(
+    { state: titled } as never,
+    titleEnd,
+    titleEnd,
+    "/",
+    () => false
+  )
+  expect(swallow).toBe(true)
+  expect(titled.doc.textContent).not.toContain("/")
+  const body = EditorState.create({
+    schema: editor.pmSchema,
+    doc: docOf([{ id: "p", type: "paragraph", content: "Note" }]),
+  })
+  let noteEnd = -1
+  body.doc.descendants((node, pos) => {
+    if (node.isText && node.text === "Note") noteEnd = pos + node.text.length
+  })
+  expect(
+    cvRulesPlugin.props.handleTextInput!(
+      { state: body } as never,
+      noteEnd,
+      noteEnd,
+      "/",
+      () => false
+    )
+  ).toBe(false)
 
   expect(
     filterCvSlash(

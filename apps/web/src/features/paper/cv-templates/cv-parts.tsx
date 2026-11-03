@@ -250,6 +250,8 @@ export function CanvasAffordance({
   dark?: boolean
   children: ReactNode
 }) {
+  const placeholders = useCvPlaceholders()
+  if (!placeholders) return null
   return (
     <Button
       type="button"
@@ -280,6 +282,8 @@ export function SectionNextStep({
   onClick: () => void
   dark?: boolean
 }) {
+  const placeholders = useCvPlaceholders()
+  if (!placeholders) return null
   return (
     <Button
       type="button"

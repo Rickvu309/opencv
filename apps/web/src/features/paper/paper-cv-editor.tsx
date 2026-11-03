@@ -36,7 +36,7 @@ import { useRunCommand } from "@/lib/contract-client.ts"
 import { setPaperSelection } from "@/lib/paper-selection.ts"
 import { SYNC_LABEL, usePaperSync } from "@/lib/paper-sync.ts"
 
-import { CvChromeContext } from "./cv-blocks.tsx"
+import { bindCvCoach, CvChromeContext } from "./cv-blocks.tsx"
 import { CvEditorBar, cvEditorStatus } from "./paper-cv-bar.tsx"
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
@@ -317,6 +317,11 @@ export function PaperCvEditor({
       toastError(error, "Could not ask Coach. Try again.")
     }
   }
+
+  useEffect(() => {
+    bindCvCoach(askCoach)
+    return () => bindCvCoach(() => undefined)
+  })
 
   function askCoach(text: string) {
     const paperName = (state.name || initial.name || "").trim()

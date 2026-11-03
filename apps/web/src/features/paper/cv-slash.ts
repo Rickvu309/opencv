@@ -80,6 +80,7 @@ function focusBlock(editor: SlashEditor, id: string | undefined) {
 function place(source: object, block: Record<string, unknown>) {
   return insertOrUpdateBlockForSlashMenu(source as never, block as never) as {
     id: string
+    children?: { id: string }[]
   }
 }
 
@@ -108,7 +109,17 @@ function insertEntry(source: object, type: string, kind: string) {
   const editor = editorOf(source)
   const current = editor.getTextCursorPosition().block
   ensureCvSection(source, kind, current.id)
-  const placed = place(source, { type })
+  const spec =
+    type === "paperSkills"
+      ? { type, children: [{ type: "paperSkillItem" }] }
+      : { type }
+  const placed = place(source, spec)
+  const item = placed.children?.[0]?.id
+  if (item) {
+    editor.setTextCursorPosition(item, "start")
+    editor.focus()
+    return
+  }
   focusBlock(editor, placed.id)
 }
 
@@ -159,7 +170,7 @@ export function cvSlashItems(source: object): DefaultReactSuggestionItem[] {
     item("School", "Blocks", () =>
       insertEntry(source, "paperEducation", "education")
     ),
-    item("Skills", "Blocks", () =>
+    item("Skill group", "Blocks", () =>
       insertEntry(source, "paperSkills", "skills")
     ),
   ]

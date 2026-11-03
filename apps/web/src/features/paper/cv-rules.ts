@@ -6,7 +6,7 @@ import {
   TextSelection,
   type Selection,
 } from "prosemirror-state"
-import { ySyncPluginKey } from "y-prosemirror"
+import { ySyncPluginKey, yUndoPluginKey } from "y-prosemirror"
 
 import {
   HEADING_LEVELS,
@@ -419,22 +419,77 @@ function placeSectionSelection(
   tr.setSelection(TextSelection.near(tr.doc.resolve(at)))
 }
 
-function skillCommaSplit(doc: Node) {
+type UndoBinding = {
+  undoManager?: {
+    trackedOrigins: { add: (origin: unknown) => void }
+    doc: {
+      on: (event: string, handler: (...args: never[]) => void) => void
+      off: (event: string, handler: (...args: never[]) => void) => void
+    }
+    afterTransactionHandler: (...args: never[]) => void
+  }
+}
+
+export function bindYUndo(editor: object) {
+  const state = (editor as { prosemirrorState?: unknown }).prosemirrorState
+  if (!state) return
+  const stored = yUndoPluginKey.getState(state as never) as UndoBinding | null
+  const manager = stored?.undoManager
+  if (!manager) return
+  manager.trackedOrigins.add(manager)
+  manager.doc.off("afterTransaction", manager.afterTransactionHandler)
+  manager.doc.on("afterTransaction", manager.afterTransactionHandler)
+}
+
+function commaAt(oldText: string, nextText: string) {
+  if (oldText === nextText) return -1
+  if (oldText === "") return nextText.indexOf(",")
+  let i = 0
+  let j = 0
+  while (j < nextText.length) {
+    if (oldText[i] === nextText[j]) {
+      i += 1
+      j += 1
+      continue
+    }
+    if (nextText[j] === ",") return j
+    if (oldText[i] === ",") {
+      i += 1
+      continue
+    }
+    return -1
+  }
+  return -1
+}
+
+function skillTexts(doc: Node) {
+  const texts = new Map<string, string>()
+  doc.descendants((node) => {
+    if (node.type.name !== "blockContainer" || node.childCount === 0) return
+    const content = node.child(0)
+    if (content.type.name !== "paperSkillItem") return
+    texts.set(String(node.attrs.id ?? ""), content.textContent)
+  })
+  return texts
+}
+
+function skillCommaSplit(oldDoc: Node, doc: Node) {
+  const previous = skillTexts(oldDoc)
   const found: { from: number; to: number; nodes: Node[] }[] = []
   doc.descendants((node, pos) => {
     if (found.length > 0) return false
     if (node.type.name !== "blockContainer" || node.childCount === 0) return
     const content = node.child(0)
-    if (
-      content.type.name !== "paperSkillItem" ||
-      !content.textContent.includes(",")
-    ) {
-      return
-    }
-    const parts = content.textContent.split(",").map((part) => part.trim())
-    if (parts.length < 2) return
+    if (content.type.name !== "paperSkillItem") return
+    const nextText = content.textContent
+    const at = commaAt(
+      previous.get(String(node.attrs.id ?? "")) ?? "",
+      nextText
+    )
+    if (at < 0) return
     const skill = node.type.schema.nodes.paperSkillItem
     if (!skill) return
+    const parts = [nextText.slice(0, at).trim(), nextText.slice(at + 1).trim()]
     const nodes = parts.map((part, index) => {
       const id = index === 0 ? node.attrs.id : crypto.randomUUID()
       const text = part ? node.type.schema.text(part) : undefined
@@ -448,6 +503,12 @@ function skillCommaSplit(doc: Node) {
 
 export const cvRulesPlugin = new Plugin({
   props: {
+    handleTextInput(view, from, _to, text) {
+      if (text !== "/" && !text.startsWith("/")) return false
+      const parent = view.state.doc.resolve(from).parent
+      if (parent.type.name !== "paperSection") return false
+      return true
+    },
     transformPasted: (slice, view) => {
       const from = view.state.selection.$from
       return coerceCvPaste(slice, cvPasteDepth(from), holdAt(from))
@@ -473,10 +534,15 @@ export const cvRulesPlugin = new Plugin({
     if (
       !transactions.some((transaction) => transaction.getMeta("cv-skill-split"))
     ) {
-      const split = skillCommaSplit(newState.doc)
+      const split = skillCommaSplit(oldState.doc, newState.doc)
       if (split) {
         const tr = newState.tr.replaceWith(split.from, split.to, split.nodes)
         tr.setMeta("cv-skill-split", true)
+        const start = split.from + (split.nodes[0]?.nodeSize ?? 0)
+        const pos = Math.min(start + 2, tr.doc.content.size)
+        if (pos > 0) {
+          tr.setSelection(TextSelection.near(tr.doc.resolve(pos)))
+        }
         return tr
       }
     }

@@ -38,12 +38,20 @@ function replaceData(_: CvData, next: CvData) {
   return next
 }
 
-function renderCv(templateId: CvTemplateId, seed?: CvData) {
+function renderCv(
+  templateId: CvTemplateId,
+  seed?: CvData,
+  placeholders = true
+) {
   function Harness() {
     const [data, setData] = useReducer(replaceData, undefined, () =>
       applyCvTemplate(seed ?? defaultCvData(), templateId)
     )
-    return createElement(CvDocument, { data, onChange: setData })
+    return createElement(CvDocument, {
+      data,
+      onChange: setData,
+      placeholders,
+    })
   }
   return render(createElement(Harness))
 }
@@ -144,7 +152,7 @@ describe("EditableField canvas chrome (QVE-206)", () => {
 
 describe("EditableField café keyboard (QVE-208)", () => {
   it("Tabs between structured fields and Esc blurs without trapping", () => {
-    renderCv("internship")
+    renderCv("internship", undefined, false)
     const name = screen.getByRole("textbox", { name: "Name" })
     const headline = screen.getByRole("textbox", { name: "Headline" })
     const contacts = screen.getAllByRole("textbox", { name: "Contact detail" })
@@ -224,6 +232,7 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
       const [data, setData] = useReducer(replaceData, latest)
       return createElement(CvDocument, {
         data,
+        placeholders: true,
         onChange: (next: typeof data) => {
           latest = next
           setData(next)
@@ -441,6 +450,30 @@ describe("empty section next-step CTAs (QVE-209)", () => {
         `${template.name} missing skills CTA`
       ).toBeInTheDocument()
     }
+  })
+
+  it("omits edit affordances from the print document", () => {
+    render(
+      createElement(CvDocument, {
+        data: applyCvTemplate(defaultCvData(), "simple"),
+        onChange: () => undefined,
+      })
+    )
+    expect(screen.queryByRole("button", { name: "Add a line" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Add skill" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Duplicate role" })).toBeNull()
+    cleanup()
+    render(
+      createElement(CvDocument, {
+        data: emptySections(),
+        onChange: () => undefined,
+      })
+    )
+    expect(
+      screen.queryByRole("button", { name: "Add first school" })
+    ).toBeNull()
+    expect(screen.queryByRole("button", { name: "Add a line" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Add skill" })).toBeNull()
   })
 })
 

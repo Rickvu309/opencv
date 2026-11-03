@@ -392,6 +392,9 @@ export function PaperSlashMenu() {
   return (
     <SuggestionMenuController
       triggerCharacter="/"
+      shouldOpen={(state) =>
+        state.selection.$from.parent.type.name !== "paperSection"
+      }
       getItems={async (query) =>
         "paperHeader" in editor.schema.blockSchema
           ? filterCvSlash(cvSlashItems(editor), query)

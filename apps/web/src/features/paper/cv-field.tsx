@@ -4,6 +4,8 @@ import { useBlockNoteEditor } from "@blocknote/react"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { bindYUndo } from "./cv-rules.ts"
+
 type FieldEditor = {
   getBlock: (id: string) =>
     | {
@@ -132,17 +134,33 @@ export function CvField({
       const flat: FieldNode[] = []
       flatten(editor.document, flat)
       const index = flat.findIndex((block) => block.id === blockId)
-      const target = flat[dir === "up" ? index - 1 : index + 1]
-      if (!target) return
-      const field = document.querySelector<HTMLElement>(
-        `[data-cv-block-fields="${CSS.escape(target.id)}"] [data-cv-field]`
-      )
-      if (field) {
-        field.focus()
+      const step = dir === "up" ? -1 : 1
+      let cursor = index + step
+      while (cursor >= 0 && cursor < flat.length) {
+        const target = flat[cursor]
+        if (!target) return
+        if (target.type === "paperSection") {
+          const ghost = document.querySelector<HTMLElement>(
+            `[data-cv-section="${CSS.escape(target.id)}"]`
+          )
+          if (ghost) {
+            ghost.focus()
+            return
+          }
+          cursor += step
+          continue
+        }
+        const field = document.querySelector<HTMLElement>(
+          `[data-cv-block-fields="${CSS.escape(target.id)}"] [data-cv-field]`
+        )
+        if (field) {
+          field.focus()
+          return
+        }
+        editor.setTextCursorPosition(target.id, dir === "up" ? "end" : "start")
+        editor.focus()
         return
       }
-      editor.setTextCursorPosition(target.id, dir === "up" ? "end" : "start")
-      editor.focus()
     }
     const openChild = () => {
       const live = editor.getBlock(blockId)
@@ -188,6 +206,7 @@ export function CvField({
       if (meta && !event.altKey && event.key.toLowerCase() === "z") {
         event.preventDefault()
         armHistory()
+        bindYUndo(editor)
         if (event.shiftKey) editor.redo()
         else editor.undo()
         readBack()
@@ -247,6 +266,7 @@ export function CvField({
       event.preventDefault()
       if (historyGuard.current) return
       armHistory()
+      bindYUndo(editor)
       if (kind === "historyRedo") editor.redo()
       else editor.undo()
       readBack()

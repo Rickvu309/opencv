@@ -16,6 +16,9 @@ type Item = { id: string; type: string; children?: Item[] }
 type Ready = {
   document: Item[]
   setTextCursorPosition: (id: string, pos: "start" | "end") => void
+  getTextCursorPosition: () => {
+    block: { id: string; type: string; content?: unknown }
+  }
   prosemirrorState: {
     selection: { $from: { parentOffset: number } }
   }
@@ -166,6 +169,9 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", asy
   expect(text).toContain("Type")
   expect(text).toContain("Script")
   expect(text).not.toContain("Type,")
+  const cursor = ready.getTextCursorPosition().block
+  expect(cursor.type).toBe("paperSkillItem")
+  expect(JSON.stringify(cursor.content)).toContain("Script")
   const secondSkill = skills()?.children?.[1]?.id
   if (!secondSkill) throw new Error("missing split")
   place(ready, secondSkill, 0)
@@ -194,6 +200,10 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", asy
   expect(
     client.document()?.blocks.filter((block) => block.type === "skills")
   ).toHaveLength(1)
+  place(ready, "sec-exp", 0)
+  press("/")
+  expect(JSON.stringify(client.document())).not.toContain("/")
+  expect(document.querySelector("[role='option']")).toBeNull()
   moveCvBlock(ready, "sec-skills", "up")
   const moved = ready.document[1] as {
     type?: string
@@ -201,6 +211,14 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", asy
   }
   expect(moved?.type).toBe("paperSection")
   expect(moved?.props?.kind).toBe("skills")
+  duplicateCvBlock(ready, "sec-skills")
+  const sectionKinds = ready.document
+    .filter((block) => block.type === "paperSection")
+    .map((block) => (block as { props?: { kind?: string } }).props?.kind)
+  expect(sectionKinds.filter((kind) => kind === "skills")).toHaveLength(2)
+  expect(
+    ready.document.filter((block) => block.type === "paperSkills")
+  ).toHaveLength(2)
   expect(turnCvBlock(ready, "job-1", { type: "paragraph" })).toBe(false)
   expect(turnCvBlock(ready, "note-1", { type: "paperExperience" })).toBe(true)
   const note = client.document()?.blocks.find((block) => block.id === "note-1")

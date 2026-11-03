@@ -1,5 +1,6 @@
-import { useContext, type DragEvent } from "react"
-import { useBlockNoteEditor } from "@blocknote/react"
+import { useRef, type DragEvent, type PointerEvent } from "react"
+import { SideMenuExtension } from "@blocknote/core/extensions"
+import { useBlockNoteEditor, useExtension } from "@blocknote/react"
 import { GripVertical } from "lucide-react"
 
 import {
@@ -14,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
-import { CvChromeContext } from "./cv-blocks.tsx"
+import { askCvCoach } from "./cv-blocks.tsx"
 import {
   blockPlainText,
   duplicateCvBlock,
@@ -62,12 +63,32 @@ export function CvBlockMenu({
   onDragEnd: () => void
 }) {
   const editor = useBlockNoteEditor()
-  const chrome = useContext(CvChromeContext)
+  const side = useExtension(SideMenuExtension)
+  const stamp = useRef(0)
+  const act = (action: () => void) => {
+    const now = Date.now()
+    if (now - stamp.current < 400) return
+    stamp.current = now
+    action()
+  }
+  const press = (action: () => void) => ({
+    onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      if (event.button !== 0) return
+      event.preventDefault()
+      act(action)
+    },
+    onClick: () => act(action),
+  })
   if (block.type === "paperHeader") return null
   const blocked = (type: string) =>
     block.children.length > 0 && !HOLDS_CHILDREN.has(type)
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) side.freezeMenu()
+        else side.unfreezeMenu()
+      }}
+    >
       <DropdownMenuTrigger
         render={
           <div
@@ -91,7 +112,7 @@ export function CvBlockMenu({
               <DropdownMenuItem
                 key={choice.label}
                 disabled={blocked(choice.type)}
-                onClick={() => turnCvBlock(editor, block.id, choice)}
+                {...press(() => turnCvBlock(editor, block.id, choice))}
               >
                 {choice.label}
               </DropdownMenuItem>
@@ -99,31 +120,33 @@ export function CvBlockMenu({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => duplicateCvBlock(editor, block.id)}>
+        <DropdownMenuItem {...press(() => duplicateCvBlock(editor, block.id))}>
           Duplicate
           <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "up")}>
+        <DropdownMenuItem {...press(() => moveCvBlock(editor, block.id, "up"))}>
           Move up
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "down")}>
+        <DropdownMenuItem
+          {...press(() => moveCvBlock(editor, block.id, "down"))}
+        >
           Move down
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() =>
-            chrome.askCoach(
+          {...press(() =>
+            askCvCoach(
               blockPlainText({
                 content: block.content,
                 props: block.props as Record<string, unknown>,
               })
             )
-          }
+          )}
         >
           Ask Coach
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => editor.removeBlocks([block.id])}>
+        <DropdownMenuItem {...press(() => editor.removeBlocks([block.id]))}>
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>

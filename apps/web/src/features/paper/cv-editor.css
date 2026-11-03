@@ -22,18 +22,18 @@
 }
 
 @media (max-width: 767px) {
-  [data-cv-editor] input[data-cv-size="contact"],
-  [data-cv-editor] input[data-cv-size="dates"],
-  [data-cv-editor] input[data-cv-size="entry"] {
+  [data-cv-editor] [data-cv-size="contact"],
+  [data-cv-editor] [data-cv-size="dates"],
+  [data-cv-editor] [data-cv-size="entry"] {
     font-size: 16px;
   }
 
   [data-cv-editor] .bn-editor {
-    padding-inline-start: 3.5rem;
+    padding-inline-start: 6.5rem;
   }
 
   [data-cv-editor] .bn-side-menu {
-    margin-inline-start: 3.5rem;
+    margin-inline-start: 0;
   }
 }
 
@@ -66,6 +66,17 @@
 [data-cv-editor] .bn-block-group .bn-block-group {
   border: 0;
   box-shadow: none;
+}
+
+[data-cv-editor] .bn-block-group .bn-block-group .bn-block-outer::before {
+  content: none;
+}
+
+[data-paper-print]
+  section:not(:has([data-paper-section]:not(:empty))):not(
+    :has([role="textbox"]:not(:empty))
+  ) {
+  display: none;
 }
 
 .prosemirror-dropcursor-block {

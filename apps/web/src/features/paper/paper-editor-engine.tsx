@@ -22,7 +22,7 @@ import "@blocknote/react/style.css"
 
 import { cvSchema } from "./cv-blocks.tsx"
 import { handleCvKey } from "./cv-keys.ts"
-import { cvRulesExtension } from "./cv-rules.ts"
+import { bindYUndo, cvRulesExtension } from "./cv-rules.ts"
 import { keywordPlacement } from "./keyword-placement.ts"
 import { letterRulesExtension } from "./letter-rules.ts"
 import {
@@ -144,6 +144,9 @@ function LetterPaperEngine({
   useEffect(() => {
     onReady?.(editor)
   }, [editor, onReady])
+  useEffect(() => {
+    bindYUndo(editor)
+  }, [editor])
   useImperativeHandle(
     handleRef,
     () => ({
@@ -182,6 +185,7 @@ function LetterPaperEngine({
       focusField() {},
       focusBlock() {},
       undo() {
+        bindYUndo(editor)
         editor.undo()
       },
     }),
@@ -354,6 +358,9 @@ function CvPaperEngine({
     onReady?.(editor)
   }, [editor, onReady])
   useEffect(() => {
+    bindYUndo(editor)
+  }, [editor])
+  useEffect(() => {
     document
       .querySelector("[data-cv-editor] .bn-editor")
       ?.setAttribute("aria-label", label)
@@ -395,6 +402,7 @@ function CvPaperEngine({
         editor.focus()
       },
       undo() {
+        bindYUndo(editor)
         editor.undo()
       },
     }),
@@ -433,6 +441,19 @@ function CvPaperEngine({
           return
         }
         if (handleCvKey(editor, event)) return
+        if (
+          !typing &&
+          (event.metaKey || event.ctrlKey) &&
+          !event.altKey &&
+          event.key.toLowerCase() === "z"
+        ) {
+          event.preventDefault()
+          event.stopPropagation()
+          bindYUndo(editor)
+          if (event.shiftKey) editor.redo()
+          else editor.undo()
+          return
+        }
         if (typing) return
         if (event.metaKey || event.ctrlKey || event.altKey) return
         if (event.nativeEvent.isComposing) return

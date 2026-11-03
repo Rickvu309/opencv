@@ -259,7 +259,9 @@ function splitSkill(editor: LooseEditor) {
     )
   })
   const next = created[0]
-  if (next) editor.setTextCursorPosition(next.id, "start")
+  if (!next) return false
+  editor.setTextCursorPosition(next.id, "start")
+  editor.focus()
   return true
 }
 
@@ -304,6 +306,17 @@ export function duplicateCvBlock(source: object, blockId?: string) {
     }
   }
   if (!block || block.type === "paperHeader") return
+  if (block.type === "paperSection") {
+    const doc = editor.document
+    const start = doc.findIndex((item) => item.id === block.id)
+    if (start < 0) return
+    const group = sectionGroup(doc, start)
+    const copies = group.map((item) => copyBlock(item))
+    const anchor = group[group.length - 1]
+    if (!anchor) return
+    editor.insertBlocks(copies, anchor.id, "after")
+    return
+  }
   editor.insertBlocks([copyBlock(block)], block.id, "after")
 }
 
@@ -528,6 +541,11 @@ export function handleCvKey(source: object, event: KeyLike) {
     block = editor.getTextCursorPosition().block
   } catch {
     return false
+  }
+  if (event.key === "/" && block.type === "paperSection") {
+    event.preventDefault()
+    event.stopPropagation()
+    return true
   }
   if (event.key === "," && block.type === "paperSkillItem") {
     event.preventDefault()
