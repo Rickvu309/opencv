@@ -49,6 +49,20 @@ test("an expected failure must cite an open issue in its title", () => {
   assert.equal(unnamed.length, 1)
   assert.equal(unnamed[0].issue, null)
   assert.match(unnamed[0].message, /b\.test\.ts:1: .*names no issue/)
+  const definitions = `${UNNAMED_ISSUE_MISTAKE}\nexport const KNOWN_FINDING = {\n  issue: "#758",\n  pgCode: "25P02",\n}`
+  const resolved = detect(
+    UNNAMED_ISSUE_MISTAKE,
+    "b.test.ts",
+    new Set(),
+    definitions
+  )
+  assert.equal(resolved.length, 1)
+  assert.equal(resolved[0].issue, 758)
+  assert.match(resolved[0].message, /cites #758, which is not open/)
+  assert.deepEqual(
+    detect(UNNAMED_ISSUE_MISTAKE, "b.test.ts", new Set([758]), definitions),
+    []
+  )
   assert.deepEqual(detect(CLEAN, "c.test.ts"), [])
   assert.ok(TEST_SOURCE.test("apps/api/src/test/registry-formal-support.ts"))
   assert.ok(TEST_SOURCE.test("apps/web/src/a.test.tsx"))
@@ -91,7 +105,10 @@ test("every expected failure in the repo cites an issue that is still open", (t)
     file,
     text: readFileSync(path.join(root, file), "utf8"),
   }))
-  const cited = texts.flatMap(({ file, text }) => detect(text, file))
+  const definitions = texts.map(({ text }) => text).join("\n")
+  const cited = texts.flatMap(({ file, text }) =>
+    detect(text, file, new Set(), definitions)
+  )
   assert.deepEqual(
     cited.filter((hit) => hit.issue === null).map((hit) => hit.message),
     []
@@ -106,7 +123,7 @@ test("every expected failure in the repo cites an issue that is still open", (t)
   }
   assert.deepEqual(
     texts.flatMap(({ file, text }) =>
-      detect(text, file, open).map((hit) => hit.message)
+      detect(text, file, open, definitions).map((hit) => hit.message)
     ),
     []
   )
