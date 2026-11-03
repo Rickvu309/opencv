@@ -130,4 +130,6 @@ FutureStampNeverHolds ==
             /\ c.stamp <= now + Skew
             /\ now - c.stamp < Idle
 
+NoForeign == last[2] \notin {"ForeignClaim", "ForeignRelease"}
+
 ====

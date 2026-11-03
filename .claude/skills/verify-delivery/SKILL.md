@@ -58,17 +58,20 @@ node --test scripts/ocv-tools/delivery-trace.test.mjs
 | `ForeignPush`, `ForeignEnqueue`           | someone pushes a new head (GitHub drops the queue entry), or queues the current head                         |
 | `CiRestarts`, `CiFinishes`                | CI on the head reruns and ends green, red, or red with no step run (`infra`)                                 |
 
-Constants are the code's switches: `Confirm` (the post-comment read), `TrustAt` (lease from `at=`), `HeadCheck` (the `HEAD_MOVED` branch), `Limit` (`WAIT_LIMIT_SECONDS`), `RequeueOnce` (`state.requeued`), `Handoff` (the two-process flow). One model hour is one tick: `Idle = 3` is `CLAIM_IDLE_MINUTES`, and `Skew = 0` because `CLAIM_SKEW_MS` is under an hour. `LimitSteps` stands for 45 minutes of polls.
+Constants are the code's switches: `Confirm` (the post-comment read), `TrustAt` (lease from `at=`), `HeadCheck` (the `HEAD_MOVED` branch), `Limit` (`WAIT_LIMIT_SECONDS`), `RequeueOnce` (`state.requeued`), `Handoff` (the two-process flow). `NoForeign` is a constraint on `TakeClaim.race.cfg` only, so `ForeignClaim` and `ForeignRelease` are not steps. One model hour is one tick: `Idle = 3` is `CLAIM_IDLE_MINUTES`, and `Skew = 0` because `CLAIM_SKEW_MS` is under an hour. `LimitSteps` stands for 45 minutes of polls.
 
 ## Checks and mutants
 
-| Config pair             | Checks                                                                 | Mutant (must fail)                                                                                      |
-| ----------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `TakeClaim.cfg`         | D1 (`TwoTakesNeverBothLive`, `WinnerHoldsAtReturn`) and D4, two takers | `Confirm` off: drop the post-comment `readClaim`. Two takers post, both return success (exit 12)        |
-| `TakeClaim.lease.cfg`   | D4 (`FutureStampNeverHolds`), one taker, claims age past 180 minutes   | `TrustAt` on: `leaseAt` reads `at=` with no skew check. A forged `at=` keeps the claim live (exit 12)   |
-| `MergeWait.cfg`         | D2 (`MergedOnlyAtEnqueuedHead`), D5 (`LeftQueueNeverMerged`)           | `HeadCheck` off: remove the `HEAD_MOVED` branch. A foreign head merges and is reported MERGED (exit 12) |
-| `MergeWait.limit.cfg`   | D3 (`WaitEnds`, liveness under fair polling)                           | `Limit` off: remove `WAIT_LIMIT_SECONDS`. The wait polls a queued pull request forever (exit 13)        |
-| `MergeWait.requeue.cfg` | D5 (`RequeueAtMostOnce`)                                               | `RequeueOnce` off: drop the `state.requeued` guard. A second silent drop queues again (exit 12)         |
+| Config pair             | Checks                                                                 | Mutant (must fail)                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `TakeClaim.cfg`         | D1 (`TwoTakesNeverBothLive`, `WinnerHoldsAtReturn`) and D4, two takers | `Confirm` off: drop the post-comment `readClaim`. One taker returns success after a foreign claim (exit 12) |
+| `TakeClaim.race.cfg`    | D1, two takers, no foreign comments                                    | `Confirm` off: drop the post-comment `readClaim`. Both post, then the first returns success (exit 12)       |
+| `TakeClaim.lease.cfg`   | D4 (`FutureStampNeverHolds`), one taker, claims age past 180 minutes   | `TrustAt` on: `leaseAt` reads `at=` with no skew check. A forged `at=` keeps the claim live (exit 12)       |
+| `MergeWait.cfg`         | D2 (`MergedOnlyAtEnqueuedHead`), D5 (`LeftQueueNeverMerged`)           | `HeadCheck` off: remove the `HEAD_MOVED` branch. A foreign head merges and is reported MERGED (exit 12)     |
+| `MergeWait.limit.cfg`   | D3 (`WaitEnds`, liveness under fair polling)                           | `Limit` off: remove `WAIT_LIMIT_SECONDS`. The wait polls a queued pull request forever (exit 13)            |
+| `MergeWait.requeue.cfg` | D5 (`RequeueAtMostOnce`)                                               | `RequeueOnce` off: drop the `state.requeued` guard. A second silent drop queues again (exit 12)             |
+
+`scripts/ocv-tools/jobs/requeue.test.mjs` pins that same `state.requeued` guard: an infra rerun that passes queues the pull request once, and a second infra failure does not queue it again.
 
 `MergeWaitHandoff.cfg` is not a pair. It models the documented flow, `merge <n>` and then a new `merge <n> --wait` process, and fails D2 (exit 12) until issue #1015 is fixed. Run it by name; `--all` skips it.
 
@@ -90,7 +93,7 @@ Model time maps to ISO stamps one hour per tick; `waited` maps to seconds by `Li
 
 ## How to read a counterexample
 
-The trace names the code's step. `PostClaim` by both takers, then `ConfirmRead` returning `won` for the first, is the race the post-comment read exists to catch. `ForeignPush`, `CiFinishes`, `ForeignEnqueue`, `QueueMerges` then `Poll` with `reported = "MERGED"` is a foreign head reported as yours. Draw it with /statechart. A failing trace test names the action, the model's view and the code's view; that is drift between the model and the code, so fix whichever is wrong and say which in the PR.
+The trace names the code's step. In `TakeClaim.race.mutant.cfg`, `PostClaim` by both takers, then `ConfirmRead` returning `won` for the first, is the race the post-comment read exists to catch. `TakeClaim.mutant.cfg` fails on a shorter path: one `PostClaim`, a `ForeignClaim`, then `ConfirmRead` returns `won`. `ForeignPush`, `CiFinishes`, `ForeignEnqueue`, `QueueMerges` then `Poll` with `reported = "MERGED"` is a foreign head reported as yours. Draw it with /statechart. A failing trace test names the action, the model's view and the code's view; that is drift between the model and the code, so fix whichever is wrong and say which in the PR.
 
 ## Known gaps
 

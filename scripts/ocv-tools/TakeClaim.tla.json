@@ -1,5 +1,9 @@
 {
   "module": "claim.mjs",
+  "mutants": {
+    "": 12,
+    "race": 12
+  },
   "actions": {
     "TakeRead": "readClaim",
     "TakeRaced": "readClaim",
