@@ -2,18 +2,12 @@ import { useLayoutEffect, useReducer, useRef, type ReactNode } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
 const A4_HEIGHT_FALLBACK_PX = 1123
-/** 210mm at 96dpi — JS fallback when the page has not been laid out. */
 const A4_WIDTH_FALLBACK_PX = 794
 
-/** Fallback when `--cv-page-height` is unavailable (SSR / tests). */
 export const A4_HEIGHT_PX = A4_HEIGHT_FALLBACK_PX
 export const A4_WIDTH_PX = A4_WIDTH_FALLBACK_PX
 export const A4_WIDTH_MM = 210
 
-/**
- * Fit-width A4 (QVE-208). Never upscales. Available ≤ 0 (jsdom / SSR)
- * keeps the natural page so desktop tests stay at 210mm.
- */
 export function readA4FitWidth(availablePx: number, naturalPx: number): number {
   if (!(naturalPx > 0)) return availablePx > 0 ? availablePx : 0
   if (!(availablePx > 0)) return naturalPx
@@ -26,7 +20,6 @@ export function readA4FitScale(availablePx: number, naturalPx: number): number {
   return Math.min(1, fit / naturalPx)
 }
 
-/** Reads the A4 page height from the CSS variable (single source). */
 export function readA4HeightPx(target?: Element | null): number {
   const node =
     target ??

@@ -24,7 +24,9 @@ import { toastWithUndo } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 import { ImagePlus, Plus, User } from "lucide-react"
 
+import { HiddenFilePicker } from "@/components/hidden-file-picker.tsx"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
+import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 
 import { cvPhotoRejection, getPaper, uploadPaperPhoto } from "../paper-api.ts"
@@ -48,22 +50,7 @@ export function PaperImportInput({
   accept: string
   onFile: (file: File) => void
 }) {
-  return (
-    <>
-      {/* Documented exception: native file input. Kit Input cannot host a hidden file picker. */}
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        className="sr-only"
-        onChange={(event) => {
-          const file = event.target.files?.[0]
-          if (file) onFile(file)
-          event.target.value = ""
-        }}
-      />
-    </>
-  )
+  return <HiddenFilePicker ref={inputRef} accept={accept} onFile={onFile} />
 }
 
 export function CvType({
@@ -415,18 +402,7 @@ function PhotoSlot({
   const inputRef = useRef<HTMLInputElement>(null)
   return (
     <>
-      {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(event) => {
-          const file = event.target.files?.[0]
-          if (file) onPick(file)
-          event.target.value = ""
-        }}
-      />
+      <HiddenFilePicker ref={inputRef} accept="image/*" onFile={onPick} />
       <Button
         type="button"
         variant="ghost"
@@ -570,11 +546,10 @@ function CvPhotoUploader({
       }
     } catch (caught) {
       if (uploadedId) {
-        try {
-          await run("paper.deleteFile", { fileId: uploadedId })
-        } catch {
-          // rejected-ok: the attach error is the one to show. This delete removes the orphan row.
-        }
+        await ignoreRejection(
+          run("paper.deleteFile", { fileId: uploadedId }),
+          "orphanPhotoDeleteShowsTheAttachError"
+        )
       }
       dispatchError({
         type: "error_shown",

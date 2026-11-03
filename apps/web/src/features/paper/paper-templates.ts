@@ -16,7 +16,6 @@ function templateLabel(id: string) {
   return id.charAt(0).toUpperCase() + id.slice(1)
 }
 
-/** Design id, or a codec id already stored on the document, to a print layout. */
 export function printLayout(templateId: string | null): CvTemplateId {
   switch (templateId) {
     case "modern":
@@ -35,7 +34,6 @@ export function printLayout(templateId: string | null): CvTemplateId {
   }
 }
 
-/** Gallery `data-template`. Unsupported ids reuse simple. */
 export function previewTemplate(templateId: string | null) {
   switch (templateId) {
     case "modern":

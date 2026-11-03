@@ -17,7 +17,6 @@ export function readPreviewPageCount(element: HTMLElement | null) {
   return pagesFromPreviewHeight(element.scrollHeight, readA4HeightPx(element))
 }
 
-/** Re-measure after layout settles and again when webfonts finish. */
 export function bindPrintPageCount(apply: () => void) {
   let cancelled = false
   const run = () => {
@@ -37,7 +36,6 @@ function isSeparator(text: string) {
   return trimmed === "·" || trimmed === "|"
 }
 
-/** Placeholders are editor chrome. Print, share and the measure clone drop them. */
 export function quietPaperChrome(root: ParentNode) {
   const fields = root.querySelectorAll<HTMLElement>("[data-paper-canvas-field]")
   for (const field of fields) {

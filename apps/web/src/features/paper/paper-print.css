@@ -13,7 +13,6 @@
   pointer-events: none;
 }
 
-/* Screen clone of the print tree. Visibility keeps scrollHeight. */
 .paper-print-measure {
   position: absolute;
   left: 0;
@@ -30,8 +29,6 @@
   content: none !important;
 }
 
-/* Phone density gives every field a 2.75rem tap height. A print layout
-   narrower than 767px was matching that query and growing each line. */
 [data-paper-print] .paper-canvas-field,
 [data-paper-measure] .paper-canvas-field {
   min-height: 0;
@@ -51,15 +48,12 @@
   display: none;
 }
 
-/* The affordance row sits between the role line and the bullets. Hiding it
-   lets break-after on the head keep the first bullets. */
 [data-paper-print] .cv-print-entry > .flex:not(.cv-print-entry-head),
 [data-paper-measure] .cv-print-entry > .flex:not(.cv-print-entry-head),
 [data-paper-quiet] .cv-print-entry > .flex:not(.cv-print-entry-head) {
   display: none !important;
 }
 
-/* The print float is inside @media print, so the on-screen measure needs it too. */
 [data-paper-measure] .cv-template-root--product {
   display: block !important;
 }
@@ -74,13 +68,10 @@
   overflow: visible;
 }
 
-/* Print turns each bullet into a block so a long line can split. The measure
-   has to use the same display or its height under-counts the printed pages. */
 [data-paper-measure] li {
   display: block;
 }
 
-/* A full-page min-height is 1px over the A4 page and orphans the last line. */
 [data-paper-measure] .cv-template-root,
 [data-paper-quiet] .cv-template-root {
   box-sizing: border-box;
@@ -123,9 +114,6 @@
     min-height: 0;
   }
 
-  /* Flex and grid columns do not fragment in Chromium, so a long main
-     column was clipped. A float keeps the sidebar on the first page and
-     lets the rest flow. */
   body[data-print="paper"] [data-paper-print] .cv-template-root--product {
     display: block !important;
   }
@@ -140,8 +128,6 @@
     overflow: visible;
   }
 
-  /* paper.css avoids breaks inside every section. A section taller than
-     one page is then clipped instead of continued. */
   body[data-print="paper"] [data-paper-print] .cv-template-root section,
   body[data-print="paper"] [data-paper-print] .cv-template-product-main section,
   body[data-print="paper"]
@@ -156,7 +142,6 @@
     page-break-inside: auto;
   }
 
-  /* A flex list item does not split, so one long bullet jumped to the next page. */
   body[data-print="paper"] [data-paper-print] li {
     display: block;
     break-inside: auto;
@@ -184,7 +169,6 @@
     page-break-inside: avoid;
   }
 
-  /* A lone last bullet must not start the next page when the line above fits with it. */
   body[data-print="paper"]
     [data-paper-print]
     .cv-print-entry

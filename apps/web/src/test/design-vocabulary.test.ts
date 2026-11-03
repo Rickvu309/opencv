@@ -231,12 +231,7 @@ const RAW_COLOR_ALLOWLIST: readonly AllowlistEntry[] = [
   },
 ]
 
-const RAW_INTERACTIVE_ALLOWLIST: readonly AllowlistEntry[] = [
-  {
-    file: "features/paper/cv-templates/cv-parts.tsx",
-    reason: "Hidden file picker: kit Input cannot host type=file",
-  },
-]
+const RAW_INTERACTIVE_ALLOWLIST: readonly AllowlistEntry[] = []
 
 const HIDDEN_FILE_PICKER = "components/hidden-file-picker.tsx"
 

@@ -19,7 +19,6 @@ function textLabel(kind: CvSectionKind, type: "text" | "heading") {
   return type === "heading" ? "Heading" : "Text"
 }
 
-/** Accessible name of a block that has no stored text yet. */
 export function blockPlaceholder(block: CvBlock, sectionKind: CvSectionKind) {
   if (block.type === "text" || block.type === "heading") {
     return textLabel(sectionKind, block.type)

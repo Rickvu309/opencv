@@ -111,9 +111,12 @@ describe("drop on a section heading", () => {
       "section-skills",
     ]) {
       const dropped = dropBlock(next, "exp-b", `section:${sectionId}`)
-      // exp-b is already last under Experience, so that drop does not commit.
-      if (sectionId === "section-experience") expect(dropped).toBe(next)
-      else expect(dropped).not.toBe(next)
+      if (sectionId === "section-experience") {
+        expect(
+          dropped,
+          "exp-b is already last under Experience, so that drop does not commit and undo stays empty"
+        ).toBe(next)
+      } else expect(dropped).not.toBe(next)
       commits.push(dropped)
       next = dropped
     }

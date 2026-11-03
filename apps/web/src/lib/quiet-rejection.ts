@@ -6,6 +6,10 @@ export const QUIET_REJECTIONS = {
     "the stream aborts either way, a missed stop is harmless",
   failedCreateLeavesPanelClosed:
     "a failed create leaves the panel closed and the page usable",
+  failedImportCleanupStaysQuiet:
+    "the import error is already shown, so a failed cleanup stays quiet",
+  orphanPhotoDeleteShowsTheAttachError:
+    "the attach error is the one to show, and this delete removes the orphan row",
 } as const
 
 export type QuietRejectionKey = keyof typeof QUIET_REJECTIONS

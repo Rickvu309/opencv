@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   focusAdjacentCanvasField,
+  focusCanvasField,
   handleCanvasFieldKeyDown,
   listCanvasFields,
 } from "./cv-templates/cv-keyboard.ts"
@@ -32,6 +33,23 @@ function mountFields(labels: string[]) {
 }
 
 describe("café keyboard (QVE-208)", () => {
+  it("focuses an empty field when selecting its contents throws", () => {
+    const { nodes } = mountFields(["Name"])
+    const name = nodes[0]!
+    name.textContent = ""
+    const createRange = vi
+      .spyOn(name.ownerDocument, "createRange")
+      .mockImplementation(() => {
+        throw new Error("empty")
+      })
+    try {
+      focusCanvasField(name)
+      expect(name).toHaveFocus()
+    } finally {
+      createRange.mockRestore()
+    }
+  })
+
   it("lists structured fields in DOM order", () => {
     const { nodes } = mountFields(["Your name", "Headline", "Summary"])
     expect(

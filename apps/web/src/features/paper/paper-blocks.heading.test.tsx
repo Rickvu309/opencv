@@ -44,7 +44,7 @@ function container(
 
 describe.each(kinds)("%s heading drop", (kind) => {
   it.each([100, 114, 128, 133])(
-    "resolves the live pointer at y=%s before placing the block",
+    "resolves the live pointer at y=%s before placing the block, even when cached rectangles lag the heading",
     (y) => {
       const document: CvBlockDocument = {
         version: 2,
@@ -76,7 +76,6 @@ describe.each(kinds)("%s heading drop", (kind) => {
       const block = heading.parentElement!.querySelector<HTMLElement>(
         "[data-sortable-block]"
       )!
-      // Cached rectangles can lag the visible heading after scrolling during a drag.
       const containers = [
         container("section:target", heading, rect(20, 28)),
         container("first", block, rect(132, 80)),

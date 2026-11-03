@@ -5,14 +5,12 @@ import type {
   CvSkillGroup,
 } from "./cv-types.ts"
 
-/** Quiet next-step copy for empty Experience / Education / Skills (QVE-209). */
 export const EMPTY_SECTION_CTA = {
   experience: "Add first role",
   education: "Add first school",
   skills: "Add first skill",
 } as const
 
-/** Blank row shared by toolbar Insert and on-canvas add (QVE-207 / QVE-209). */
 export const BLANK_EXPERIENCE: CvExperience = {
   role: "Role title",
   company: "Company",

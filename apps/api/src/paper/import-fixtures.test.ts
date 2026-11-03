@@ -1,5 +1,3 @@
-/** Test-only PDF and DOCX builders. Production modules do not import this file. */
-
 function pdfDocument(objects: string[]): Buffer {
   let body = "%PDF-1.4\n"
   const offsets = [0]
@@ -20,7 +18,6 @@ export function textPdf(text: string): Buffer {
   return pagedPdf([text])
 }
 
-/** One page per string. An empty string is a blank page. */
 export function pagedPdf(pages: string[]): Buffer {
   const count = Math.max(pages.length, 1)
   const fontId = 3 + count * 2

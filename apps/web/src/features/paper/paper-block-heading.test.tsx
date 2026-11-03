@@ -161,10 +161,7 @@ describe("drop on a section heading", () => {
     ).toEqual([["exp-a"], ["edu-1", "exp-b"], ["skill-1"]])
   })
 
-  it("appends when the pointer is inside the heading and the block center is over the first entry", async () => {
-    // Handle at the top of exp-b (top 200, height 120). Releasing at y=112
-    // sits inside the Education heading (100–124). The dragged rect's center
-    // lands on the State entry (center 172), which closestCenter would pick.
+  it("appends when the pointer is inside the heading even though the block center is over the first entry, which closestCenter would pick", async () => {
     HTMLElement.prototype.getBoundingClientRect = function () {
       const id = this.getAttribute("data-sortable-block")
       const kind = this.parentElement?.getAttribute("data-section")

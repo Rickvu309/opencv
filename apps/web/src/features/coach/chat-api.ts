@@ -30,9 +30,6 @@ import type {
   ChatMessageAttachment,
 } from "./chat-messages.ts"
 
-// The api speaks wire chats (ChatDetail, ChatMessage). The UI renders
-// ChatRecord, ChatSummary and ChatEntry. This is the one place that maps
-// between them.
 function asChat(chat: ChatListItem): ChatSummary {
   return {
     id: chat.id,
@@ -125,7 +122,6 @@ async function resolveAttachments(
 
 export const chatListKey = () => queryKey({ query: "chat.list" })
 
-// The id is a plain string here so a disabled query can still build its key.
 export const chatDetailKey = (id: string) =>
   queryKey({ query: "chat.get", input: { chatId: id as ChatId } })
 

@@ -1,5 +1,3 @@
-/** Café keyboard for structured Paper CV fields (QVE-208). */
-
 export const PAPER_CANVAS_FIELD_SELECTOR = "[data-paper-canvas-field]"
 
 export function listCanvasFields(root: ParentNode = document): HTMLElement[] {
@@ -14,19 +12,27 @@ export function canvasFieldRoot(current: HTMLElement): ParentNode {
   )
 }
 
+function placeCaretAtEnd(el: HTMLElement) {
+  const doc = el.ownerDocument
+  const range = doc.createRange()
+  range.selectNodeContents(el)
+  range.collapse(false)
+  const sel = doc.defaultView?.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(range)
+}
+
+function caretAtEndOrFocusIsEnough(el: HTMLElement) {
+  try {
+    placeCaretAtEnd(el)
+  } catch {
+    return
+  }
+}
+
 export function focusCanvasField(el: HTMLElement) {
   el.focus()
-  const doc = el.ownerDocument
-  try {
-    const range = doc.createRange()
-    range.selectNodeContents(el)
-    range.collapse(false)
-    const sel = doc.defaultView?.getSelection()
-    sel?.removeAllRanges()
-    sel?.addRange(range)
-  } catch {
-    // Empty node / jsdom — focus is enough.
-  }
+  caretAtEndOrFocusIsEnough(el)
   el.scrollIntoView?.({ block: "nearest" })
 }
 
@@ -53,7 +59,6 @@ type FieldKeyEvent = {
   isComposing?: boolean
 }
 
-/** Tab walks structured fields; Esc blurs without trapping or closing Coach. */
 export function handleCanvasFieldKeyDown(event: FieldKeyEvent): boolean {
   const composing = event.nativeEvent?.isComposing ?? event.isComposing
   if (composing) return false

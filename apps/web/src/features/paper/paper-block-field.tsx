@@ -13,7 +13,6 @@ export function reducedMotion() {
   )
 }
 
-/** Subscribes so a drag started after the preference changes does not animate. */
 export function useReducedMotion() {
   const [reduced, dispatchReduced] = useReducer(
     (_: boolean, matches: boolean) => matches,

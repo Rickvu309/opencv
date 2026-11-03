@@ -117,8 +117,6 @@ export function SortableBlock({
           dispatchEditing("editing_ended")
       }}
       onBlur={(event) => {
-        // Chrome reports document.activeElement as body during focusout, before
-        // the next field is focused. relatedTarget is already that field.
         const next = event.relatedTarget
         const root = rootRef.current
         if (root && next instanceof Node && root.contains(next)) return

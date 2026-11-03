@@ -25,7 +25,14 @@ function ok(data: unknown) {
   return Response.json({ ok: true, data })
 }
 
-function setup(onReplace?: (count: number) => Promise<Response> | Response) {
+function setup(
+  onReplace?: (count: number) => Promise<Response> | Response,
+  options?: {
+    readInputEpoch?: () => number
+    onSaved?: (saved: PaperView, inputEpoch: number) => void
+    onConflict?: () => void
+  }
+) {
   const requests: { url: string; body: unknown; keepalive?: boolean }[] = []
   let replaces = 0
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
@@ -61,9 +68,10 @@ function setup(onReplace?: (count: number) => Promise<Response> | Response) {
         docId,
         initialVersion: 1,
         toDocument: (markdown) => ({ markdown }),
-        onSaved: () => {},
-        onConflict: () => {},
+        onSaved: options?.onSaved ?? (() => {}),
+        onConflict: options?.onConflict ?? (() => {}),
         onError: () => {},
+        readInputEpoch: options?.readInputEpoch,
       })
     },
     { wrapper }
@@ -172,5 +180,118 @@ describe("paper autosave", () => {
     expect(saves[1]?.body).toMatchObject({
       input: { document: { markdown: "show" } },
     })
+  })
+
+  it("runs one save at a time and then sends the edit that arrived during it", async () => {
+    let release: (value: Response) => void = () => {}
+    const first = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    const { requests, view } = setup((count) => {
+      if (count === 1) return first
+      return Promise.resolve(ok({ ...saved, contentVersion: 3 }))
+    })
+    await vi.waitFor(() => expect(requests.length).toBe(3))
+    act(() => view.result.current.schedule("first"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    act(() => view.result.current.schedule("second"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    expect(
+      requests.filter((request) => request.url.includes("paper.replace"))
+    ).toHaveLength(1)
+    await act(async () => {
+      release(ok({ ...saved, contentVersion: 2 }))
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    const saves = requests.filter((request) =>
+      request.url.includes("paper.replace")
+    )
+    expect(saves).toHaveLength(2)
+    expect(saves[1]?.body).toMatchObject({
+      input: { document: { markdown: "second" }, contentVersion: 2 },
+    })
+  })
+
+  it("updates the version from an older completion and does not report that edit as current", async () => {
+    const reported: number[] = []
+    let release: (value: Response) => void = () => {}
+    const first = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    const { requests, view } = setup(
+      (count) => {
+        if (count === 1) return first
+        return Promise.resolve(ok({ ...saved, contentVersion: 5 }))
+      },
+      { onSaved: (next) => reported.push(next.contentVersion) }
+    )
+    await vi.waitFor(() => expect(requests.length).toBe(3))
+    act(() => view.result.current.schedule("old"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    act(() => view.result.current.schedule("new"))
+    await act(async () => {
+      release(ok({ ...saved, contentVersion: 2 }))
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(reported).toEqual([5])
+    expect(view.result.current.versionRef.current).toBe(5)
+  })
+
+  it("drops the pending edit on a conflict and ignores later schedules until adopt", async () => {
+    const conflicts: number[] = []
+    const { requests, view } = setup(
+      () =>
+        Promise.resolve(
+          Response.json(
+            { ok: false, error: { code: "CONFLICT", message: "changed" } },
+            { status: 409 }
+          )
+        ),
+      { onConflict: () => conflicts.push(1) }
+    )
+    await vi.waitFor(() => expect(requests.length).toBe(3))
+    act(() => view.result.current.schedule("stale"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    await vi.waitFor(() => expect(conflicts).toHaveLength(1))
+    const before = requests.filter((request) =>
+      request.url.includes("paper.replace")
+    ).length
+    act(() => view.result.current.schedule("later"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    expect(
+      requests.filter((request) => request.url.includes("paper.replace"))
+    ).toHaveLength(before)
+    act(() => view.result.current.adopt(4))
+    act(() => view.result.current.schedule("adopted"))
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    const saves = requests.filter((request) =>
+      request.url.includes("paper.replace")
+    )
+    expect(saves.at(-1)?.body).toMatchObject({
+      input: { contentVersion: 4, document: { markdown: "adopted" } },
+    })
+  })
+
+  it("reads the input epoch when a save starts so a later keystroke can stay dirty", async () => {
+    const seen: number[] = []
+    let epoch = 1
+    let release: (value: Response) => void = () => {}
+    const first = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    const { requests, view } = setup(() => first, {
+      readInputEpoch: () => epoch,
+      onSaved: (_next, inputEpoch) => seen.push(inputEpoch),
+    })
+    await vi.waitFor(() => expect(requests.length).toBe(3))
+    act(() => view.result.current.schedule("Hello"))
+    epoch = 4
+    await act(() => vi.advanceTimersByTimeAsync(800))
+    epoch = 9
+    await act(async () => {
+      release(ok(saved))
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(seen).toEqual([4])
   })
 })

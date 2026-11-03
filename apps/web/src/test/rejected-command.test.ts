@@ -6,27 +6,10 @@ import { describe, expect, it } from "vitest"
 
 import {
   findDroppedRejections,
-  LEGACY_MARKER,
   type SourceFile,
 } from "./rejected-command-scan.ts"
 
 const srcDir = fileURLToPath(new URL("..", import.meta.url))
-const pendingHatches: { file: string; marker: string }[] = JSON.parse(
-  readFileSync(
-    fileURLToPath(
-      new URL(
-        "../../../../scripts/comment-hatches.pending.json",
-        import.meta.url
-      )
-    ),
-    "utf8"
-  )
-)
-const legacyMarkerFiles = new Set(
-  pendingHatches
-    .filter((entry) => entry.marker === LEGACY_MARKER)
-    .map((entry) => entry.file.replace("apps/web/src/", ""))
-)
 
 function sourceFiles(dir: string): SourceFile[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -51,10 +34,9 @@ function scan(text: string) {
 
 describe("every rejected command shows an error", () => {
   it("shows an error for every rejected command", () => {
-    const hits = findDroppedRejections(
-      sourceFiles(srcDir),
-      legacyMarkerFiles
-    ).map((finding) => `${finding.file}:${finding.line} ${finding.call}`)
+    const hits = findDroppedRejections(sourceFiles(srcDir)).map(
+      (finding) => `${finding.file}:${finding.line} ${finding.call}`
+    )
     expect(hits).toEqual([])
   })
 
@@ -175,26 +157,13 @@ function A() { void save() }`)
     ).toEqual(["save"])
   })
 
-  it("ignores the old marker comment outside the pending files", () => {
-    const text = `const run = useRunCommand()
-function A() {
-  // ${LEGACY_MARKER} best effort cleanup
-  void run("a", {}).catch(() => undefined)
-}`
-    expect(scan(text)).toEqual(["run"])
-  })
-
-  it("honours the old marker comment only in a pending file", () => {
-    const text = `const run = useRunCommand()
-function A() {
-  // ${LEGACY_MARKER} best effort cleanup
-  void run("a", {}).catch(() => undefined)
-}`
+  it("flags a swallowed command even when a note sits above the call", () => {
     expect(
-      findDroppedRejections(
-        [{ name: "pending.tsx", text }],
-        new Set(["pending.tsx"])
-      )
-    ).toEqual([])
+      scan(`const run = useRunCommand()
+function A() {
+  // best effort cleanup
+  void run("a", {}).catch(() => undefined)
+}`)
+    ).toEqual(["run"])
   })
 })

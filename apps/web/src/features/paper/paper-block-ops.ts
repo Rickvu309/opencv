@@ -39,7 +39,6 @@ export function isStarterKind(kind: CvSectionKind) {
   return KEEPERS.has(kind)
 }
 
-/** The placeholder the editor shows while a starter section has no stored blocks. */
 export function starterBlock(kind: CvSectionKind, id: string): CvBlock | null {
   if (kind === "experience") {
     return {
