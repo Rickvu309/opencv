@@ -45,3 +45,13 @@ test("docs and scripts affect nothing", () => {
 test("a pattern does not match a sibling directory", () => {
   assert.deepEqual(names(["apps/api-docs/readme.md", "apps/webx/a.ts"]), [])
 })
+
+test("railway.ts owns only the application services and keeps the api variables the cutover flips by hand", () => {
+  const source = readFileSync(
+    new URL("../../.railway/railway.ts", import.meta.url),
+    "utf8"
+  )
+  assert.doesNotMatch(source, /postgres|volume/i)
+  assert.match(source, /AUTH_URL: preserve\(\)/)
+  assert.match(source, /WEB_ORIGINS: preserve\(\)/)
+})

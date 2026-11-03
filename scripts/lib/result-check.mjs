@@ -1,7 +1,3 @@
-// result-check.mjs: validate a workflow result.json (schema 1). Used by the scripts/test-*.sh tests.
-// Usage: node scripts/lib/result-check.mjs <file> [key=value ...]
-//   key=value asserts the field equals the value (strings, numbers, or the word null).
-// Prints the file's one-line summary and exits 0 when valid, prints the problems to stderr and exits 1 otherwise.
 import { readFileSync } from "node:fs"
 import { SCHEMA } from "../ocv-tools/result.mjs"
 

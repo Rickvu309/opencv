@@ -6,31 +6,29 @@ import { fileURLToPath } from "node:url"
 
 import ts from "typescript"
 
-// Limits. A use counts only as a named import or re-export (`import { x }`,
-// `export { x } from`) or an `import("...").x` type. A default import, a namespace
-// import and a destructured `await import("@workspace/domain")` are not seen, so
-// an export used only that way is reported as unused. None exist in domain today.
-// Like the other root scripts/*.test.mjs guards it runs in the full check
-// (root `pnpm test`), not in `scripts/check.mjs --changed`.
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const domainSrc = path.join(root, "packages/domain/src")
 const PACKAGE = "@workspace/domain"
 const SKIPPED_DIRS = new Set(["node_modules", "dist", ".turbo", ".git"])
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/
-// Exported with no outside importer on purpose. The contract types are read by
-// registry/contract.type-test.ts, paperCheckSchema by paper-blocks.test.ts. The two
-// id types must stay exported or the declaration build cannot name `brand` (TS4023).
-// DiffHunk is named in the signatures of the exported paper-diff functions.
-const KEPT_ON_PURPOSE = new Set([
+const NEEDED_BY_DECLARATION_BUILD_TO_NAME_BRAND_TS4023 = [
   "ActivityId",
   "PendingActionId",
-  "DiffHunk",
+]
+const NAMED_IN_EXPORTED_PAPER_DIFF_SIGNATURES = ["DiffHunk"]
+const READ_BY_REGISTRY_CONTRACT_TYPE_TEST = [
   "AccountContract",
   "ChatContract",
   "InboxContract",
   "JobContract",
   "PaperContract",
-  "paperCheckSchema",
+]
+const READ_BY_PAPER_BLOCKS_TEST = ["paperCheckSchema"]
+const KEPT_ON_PURPOSE = new Set([
+  ...NEEDED_BY_DECLARATION_BUILD_TO_NAME_BRAND_TS4023,
+  ...NAMED_IN_EXPORTED_PAPER_DIFF_SIGNATURES,
+  ...READ_BY_REGISTRY_CONTRACT_TYPE_TEST,
+  ...READ_BY_PAPER_BLOCKS_TEST,
 ])
 const TEST_FILE = /\.(?:type-)?test\.|[\\/]src[\\/]test[\\/]/
 
@@ -162,5 +160,9 @@ test("every export of packages/domain/src is imported by non-test code", () => {
       )
     }
   }
-  assert.deepEqual(unused, [], `unused domain exports:\n${unused.join("\n")}`)
+  assert.deepEqual(
+    unused,
+    [],
+    `unused domain exports (a use counts only as a named import, a named re-export or an import(\"...\").x type; a default, namespace or destructured dynamic import is not seen):\n${unused.join("\n")}`
+  )
 })

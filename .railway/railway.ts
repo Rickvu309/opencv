@@ -1,10 +1,7 @@
 import { defineRailway, github, preserve, project, service } from "railway/iac"
 
-// Own only application services; leave the existing Postgres and volume unmanaged.
 export const partial = "opencv-apps"
 
-// Keep existing api variables in Railway. The cutover flips AUTH_URL and
-// WEB_ORIGINS last, by hand (docs/deploy.md).
 export default defineRailway((ctx) => {
   const production = ctx.isEnvironment("production")
 

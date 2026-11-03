@@ -32,7 +32,6 @@ const api = "opencv - api"
 const web = "opencv - web"
 const deepOk = { status: 200, body: '{"ok":true}' }
 
-// `urls` maps a URL to a response, a thunk of the clock, or an Error to throw.
 function boundary({
   files = code,
   statuses = [],
@@ -316,7 +315,6 @@ test("a served commit missing from the clone says cannot tell", async () => {
   assert.doesNotMatch(r.services[0].detail, /not 5201a88/)
 })
 
-// A fake git: `script` maps a command's first word to a result or a thrown status.
 function fakeGit(script) {
   const calls = []
   const run = (args) => {

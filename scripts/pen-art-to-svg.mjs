@@ -1,11 +1,6 @@
-// Turns one pen.dev art frame into a React SVG component.
-// Usage: node scripts/pen-art-to-svg.mjs <pen file> <node id> <ComponentName>
 import fs from "node:fs"
 
-// Stock CSS variables, by colour family. An unknown colour throws.
-// #272f41 and #e0e4ec are in the coach art and sit in the darkest and light-grey families.
-// The blog cover adds a second set of the same families (ink, grey stroke, paper).
-const COLOUR = {
+const STOCK_VARIABLE_BY_PEN_COLOUR = {
   "#1d2434": "var(--foreground)",
   "#1d2633": "var(--foreground)",
   "#1f212b": "var(--foreground)",
@@ -60,6 +55,8 @@ if (!/^[A-Z][A-Za-z0-9]*$/.test(componentName)) {
   process.exit(1)
 }
 
+const clockwiseDegreesFromCounterClockwise = (degrees) => -degrees
+
 function find(node, want) {
   if (node.id === want) return node
   for (const child of node.children ?? []) {
@@ -77,7 +74,7 @@ function colour(value, where) {
   }
   const key = value.trim().toLowerCase()
   if (key === "#00000000") return "none"
-  const mapped = COLOUR[key]
+  const mapped = STOCK_VARIABLE_BY_PEN_COLOUR[key]
   if (!mapped) throw new Error(`unmapped colour ${value} on ${where}`)
   return mapped
 }
@@ -130,21 +127,17 @@ function renderChild(node, index) {
   if (node.type === "ellipse") {
     const rx = node.width / 2
     const ry = node.height / 2
-    // A rotated node is placed by its top-left and spun counter-clockwise
-    // around that corner. SVG rotate() is clockwise, so negate the angle and
-    // pivot on the corner. An unrotated ellipse stays centred in user space
-    // so files with no rotation stay byte-identical.
-    const rotated = Boolean(node.rotation)
+    const pivotsOnTopLeftCorner = Boolean(node.rotation)
     const attrs = [
-      `cx={${num(rotated ? rx : node.x + rx, where)}}`,
-      `cy={${num(rotated ? ry : node.y + ry, where)}}`,
+      `cx={${num(pivotsOnTopLeftCorner ? rx : node.x + rx, where)}}`,
+      `cy={${num(pivotsOnTopLeftCorner ? ry : node.y + ry, where)}}`,
       `rx={${num(rx, where)}}`,
       `ry={${num(ry, where)}}`,
       `fill="${colour(node.fill, where)}"`,
     ]
-    if (rotated) {
+    if (pivotsOnTopLeftCorner) {
       attrs.push(
-        `transform="translate(${num(node.x, where)} ${num(node.y, where)}) rotate(${num(-node.rotation, where)})"`
+        `transform="translate(${num(node.x, where)} ${num(node.y, where)}) rotate(${num(clockwiseDegreesFromCounterClockwise(node.rotation), where)})"`
       )
     }
     attrs.push(...strokeAttrs(node, where))
@@ -185,12 +178,14 @@ ${body}
 }
 `
 
-// Format with the repo's prettier so regenerated art passes the format check unchanged.
 const prettier = await import("prettier")
-const options =
+const repoPrettierOptions =
   (await prettier.resolveConfig(
     "apps/web/src/features/landing/figures/art.tsx"
   )) ?? {}
 process.stdout.write(
-  await prettier.format(source, { ...options, parser: "typescript" })
+  await prettier.format(source, {
+    ...repoPrettierOptions,
+    parser: "typescript",
+  })
 )

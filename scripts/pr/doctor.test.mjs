@@ -19,8 +19,7 @@ const live = declaredLabels.map(({ name, color, description }) => ({
   description,
 }))
 
-// The `main` ruleset as GitHub returns it: the declared fields plus ids, timestamps and defaults.
-const liveRuleset = () => {
+const liveRulesetWithIdsTimestampsAndDefaults = () => {
   const declared = JSON.parse(read(".github/rulesets/main.json"))
   const copy = structuredClone(declared)
   Object.assign(copy, {
@@ -57,7 +56,7 @@ function fakeIo(overrides = {}) {
   return {
     read,
     labels: async () => live,
-    ruleset: async () => liveRuleset(),
+    ruleset: async () => liveRulesetWithIdsTimestampsAndDefaults(),
     repo: async () => clean,
     alertsEnabled: async () => true,
     ...overrides,
@@ -89,9 +88,7 @@ test("a repo in sync with git has no drift and exits 0", async () => {
   assert.match(logged[0], /no drift/)
 })
 
-// The state found on 2026-10-29: bug, dependencies and javascript lived only on GitHub,
-// the five triage labels and projects were left on, and alerts were off.
-test("the drift found on 2026-10-29 is reported with its fix", async () => {
+test("the drift found on 2026-10-29 (bug, dependencies and javascript only on GitHub, five triage labels and projects left on, alerts off) is reported with its fix", async () => {
   const drift = await doctor(
     fakeIo({
       labels: async () => [
@@ -152,7 +149,7 @@ test("a label with another colour or description is edited, not recreated", () =
 })
 
 test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", async () => {
-  const changed = liveRuleset()
+  const changed = liveRulesetWithIdsTimestampsAndDefaults()
   changed.rules.find(
     (r) => r.type === "pull_request"
   ).parameters.require_code_owner_review = true
@@ -167,7 +164,7 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
     "gh api -X PUT repos/{owner}/{repo}/rulesets/25725442 --input .github/rulesets/main.json"
   )
 
-  const extra = liveRuleset()
+  const extra = liveRulesetWithIdsTimestampsAndDefaults()
   extra.rules.push({ type: "required_signatures" })
   drift = await doctor(fakeIo({ ruleset: async () => extra }))
   assert.match(
@@ -175,7 +172,7 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
     /\[required_signatures\]: on GitHub, not in git/
   )
 
-  const other = liveRuleset()
+  const other = liveRulesetWithIdsTimestampsAndDefaults()
   other.rules.push({ type: "required_signatures" })
   drift = await doctor(fakeIo({ ruleset: async () => other }))
   assert.match(
@@ -183,7 +180,7 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
     /\[required_signatures\]: on GitHub, not in git/
   )
 
-  const loose = liveRuleset()
+  const loose = liveRulesetWithIdsTimestampsAndDefaults()
   loose.bypass_actors = [
     { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
   ]
@@ -194,7 +191,7 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
     ["bypass_actors[5]", "conditions.ref_name.include"]
   )
 
-  const nogate = liveRuleset()
+  const nogate = liveRulesetWithIdsTimestampsAndDefaults()
   const checks = nogate.rules.find((r) => r.type === "required_status_checks")
   checks.parameters.required_status_checks.pop()
   drift = await doctor(fakeIo({ ruleset: async () => nogate }))
@@ -210,7 +207,7 @@ test("ruleset: a changed rule, an extra rule and a missing ruleset are drift", a
 test("ruleset: required checks are matched by context, not by position", async () => {
   const checks = (live) =>
     live.rules.find((r) => r.type === "required_status_checks").parameters
-  const missing = liveRuleset()
+  const missing = liveRulesetWithIdsTimestampsAndDefaults()
   checks(missing).required_status_checks = []
   let drift = await doctor(fakeIo({ ruleset: async () => missing }))
   assert.equal(drift.length, 1)
@@ -219,7 +216,7 @@ test("ruleset: required checks are matched by context, not by position", async (
     /required_status_checks\[ci\]: in git, missing on GitHub/
   )
 
-  const extra = liveRuleset()
+  const extra = liveRulesetWithIdsTimestampsAndDefaults()
   checks(extra).required_status_checks.push({
     context: "other",
     integration_id: 1,
@@ -231,7 +228,7 @@ test("ruleset: required checks are matched by context, not by position", async (
     /required_status_checks\[other\]: on GitHub, not in git/
   )
 
-  const reordered = liveRuleset()
+  const reordered = liveRulesetWithIdsTimestampsAndDefaults()
   checks(reordered).required_status_checks.unshift({
     context: "other",
     integration_id: 1,
@@ -285,7 +282,7 @@ test("doctor detects a missing queue rule and queue parameter drift", async () =
       ).parameters.max_entries_to_build = 2
     },
   ]) {
-    const ruleset = liveRuleset()
+    const ruleset = liveRulesetWithIdsTimestampsAndDefaults()
     change(ruleset)
     const drift = await doctor(fakeIo({ ruleset: async () => ruleset }))
     assert.equal(drift.length, 1)

@@ -2,7 +2,11 @@
 import { writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import { pathToFileURL } from "node:url"
-import { cli, listDeployments, railwayScope } from "./lib/railway-deploy.mjs"
+import {
+  cli,
+  listDeploymentsNewestFirst,
+  railwayScope,
+} from "./lib/railway-deploy.mjs"
 
 const api = "https://api.opencv.me"
 const origin = "https://app.opencv.me"
@@ -55,7 +59,7 @@ export async function verifyAuthProduction(
     "Use --email with an address you control. This sends and consumes a sign-in code."
   )
   email = email.toLowerCase()
-  const deployments = listDeployments("api", io)
+  const deployments = listDeploymentsNewestFirst("api", io)
   const deployed = deployments.find(
     (deployment) => deployment.status === "SUCCESS"
   )

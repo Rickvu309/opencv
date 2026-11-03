@@ -2,7 +2,6 @@ const API = "https://backboard.railway.com/graphql/v2"
 const QUEUE_BOT = "github-merge-queue[bot]"
 const IDLE = new Set(["SKIPPED", "REMOVED"])
 
-// Per service, only the newest deployment that is not skipped or replaced may be approved, so an older held release can never roll the site back.
 export function pickApprovals(deployments, { repo }) {
   const newestFirst = [...deployments].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt)
