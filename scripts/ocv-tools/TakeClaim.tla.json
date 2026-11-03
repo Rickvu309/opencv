@@ -1,0 +1,17 @@
+{
+  "module": "claim.mjs",
+  "mutants": {
+    "": 12,
+    "race": 12
+  },
+  "actions": {
+    "TakeRead": "readClaim",
+    "TakeRaced": "readClaim",
+    "PostClaim": "claimBody",
+    "ConfirmRead": "readClaim",
+    "Save": "heartbeat",
+    "Tick": "nowOf",
+    "ForeignClaim": "claimBody",
+    "ForeignRelease": "release"
+  }
+}

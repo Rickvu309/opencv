@@ -103,9 +103,9 @@ function queueSnapshot(ctx, repo, n, waited) {
 }
 
 export function classify(s, enqueued, startHead) {
-  if (s.state === "MERGED") return { kind: "MERGED" }
   if (s.head && startHead && s.head !== startHead)
     return { kind: "HEAD_MOVED", from: startHead, to: s.head }
+  if (s.state === "MERGED") return { kind: "MERGED" }
   if (s.state === "CLOSED")
     return {
       kind: "LEFT_QUEUE",
@@ -300,7 +300,11 @@ export function merge(ctx, n, { wait = false } = {}) {
     if (pull.state !== "MERGED") {
       enqueue(ctx, n, head)
       pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
-      if (pull.state !== "MERGED" || !pull.mergeCommit?.oid) {
+      const mergedAtHead =
+        pull.state === "MERGED" &&
+        Boolean(pull.mergeCommit?.oid) &&
+        pull.headRefOid === head
+      if (!mergedAtHead) {
         if (!wait)
           return {
             id: n,

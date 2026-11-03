@@ -1,0 +1,19 @@
+{
+  "module": "merge.mjs",
+  "mutants": {
+    "limit": 13
+  },
+  "actions": {
+    "Enqueue": "merge",
+    "WaitProcessStarts": "merge",
+    "ViewAfterEnqueue": "merge",
+    "Poll": "classify",
+    "QueueMerges": "classify",
+    "QueueRemoves": "classify",
+    "ForeignPush": "classify",
+    "ForeignEnqueue": "classify",
+    "CiRestarts": "classify",
+    "CiFinishes": "classify",
+    "PrClosed": "classify"
+  }
+}

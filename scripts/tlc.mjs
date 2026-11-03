@@ -45,7 +45,7 @@ export function resolveJar({
   return exists(jar) ? jar : null
 }
 
-export function tlcArgs({ jar, cfg, spec, metadir }) {
+export function tlcArgs({ jar, cfg, spec, metadir, dump }) {
   return [
     "-XX:+UseParallelGC",
     "-cp",
@@ -55,6 +55,7 @@ export function tlcArgs({ jar, cfg, spec, metadir }) {
     "1",
     "-metadir",
     metadir,
+    ...(dump ? ["-dump", dump] : []),
     "-config",
     cfg,
     spec,
@@ -75,6 +76,7 @@ export function runTlc({
   spec,
   cfg,
   out,
+  dump,
   toolchain = {},
   timeout = TLC_TIMEOUT_MS,
 }) {
@@ -87,7 +89,13 @@ export function runTlc({
   try {
     const result = spawnSync(
       java,
-      tlcArgs({ jar, cfg: resolve(cfg), spec: specPath, metadir }),
+      tlcArgs({
+        jar,
+        cfg: resolve(cfg),
+        spec: specPath,
+        metadir,
+        dump: dump && resolve(dump),
+      }),
       {
         cwd: dirname(specPath),
         encoding: "utf8",
@@ -154,6 +162,7 @@ function parse(argv) {
     else if (arg === "--config") options.config = argv[++i]
     else if (arg === "--out") options.out = argv[++i]
     else if (arg === "--out-dir") options.outDir = argv[++i]
+    else if (arg === "--dump") options.dump = argv[++i]
     else options.positional.push(arg)
   }
   return options
@@ -198,7 +207,7 @@ export function main(argv) {
   const [spec] = options.positional
   if (!spec) {
     process.stderr.write(
-      "usage: node scripts/tlc.mjs <Spec.tla> [--mutant | --config <file.cfg>] [--out tlc.out]\n       node scripts/tlc.mjs --all [--out-dir <dir>]\n"
+      "usage: node scripts/tlc.mjs <Spec.tla> [--mutant | --config <file.cfg>] [--out tlc.out] [--dump states.dump]\n       node scripts/tlc.mjs --all [--out-dir <dir>]\n"
     )
     return 64
   }
@@ -207,7 +216,12 @@ export function main(argv) {
   const cfg =
     options.config ?? (options.mutant ? `${base}.mutant.cfg` : `${base}.cfg`)
   const out = options.out ?? "tlc.out"
-  const { code, status, output } = runTlc({ spec, cfg, out })
+  const { code, status, output } = runTlc({
+    spec,
+    cfg,
+    out,
+    dump: options.dump,
+  })
   process.stdout.write(
     `tlc ${specName(spec)}: exit ${code} (${status}), full output in ${out}\n`
   )
