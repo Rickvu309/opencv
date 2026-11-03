@@ -1,4 +1,4 @@
-import { useRef, type DragEvent, type PointerEvent } from "react"
+import { type DragEvent } from "react"
 import { SideMenuExtension } from "@blocknote/core/extensions"
 import { useBlockNoteEditor, useExtension } from "@blocknote/react"
 import { GripVertical } from "lucide-react"
@@ -64,21 +64,6 @@ export function CvBlockMenu({
 }) {
   const editor = useBlockNoteEditor()
   const side = useExtension(SideMenuExtension)
-  const stamp = useRef(0)
-  const act = (action: () => void) => {
-    const now = Date.now()
-    if (now - stamp.current < 400) return
-    stamp.current = now
-    action()
-  }
-  const press = (action: () => void) => ({
-    onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      if (event.button !== 0) return
-      event.preventDefault()
-      act(action)
-    },
-    onClick: () => act(action),
-  })
   if (block.type === "paperHeader") return null
   const blocked = (type: string) =>
     block.children.length > 0 && !HOLDS_CHILDREN.has(type)
@@ -112,7 +97,7 @@ export function CvBlockMenu({
               <DropdownMenuItem
                 key={choice.label}
                 disabled={blocked(choice.type)}
-                {...press(() => turnCvBlock(editor, block.id, choice))}
+                onClick={() => turnCvBlock(editor, block.id, choice)}
               >
                 {choice.label}
               </DropdownMenuItem>
@@ -120,33 +105,31 @@ export function CvBlockMenu({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem {...press(() => duplicateCvBlock(editor, block.id))}>
+        <DropdownMenuItem onClick={() => duplicateCvBlock(editor, block.id)}>
           Duplicate
           <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
         </DropdownMenuItem>
-        <DropdownMenuItem {...press(() => moveCvBlock(editor, block.id, "up"))}>
+        <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "up")}>
           Move up
         </DropdownMenuItem>
-        <DropdownMenuItem
-          {...press(() => moveCvBlock(editor, block.id, "down"))}
-        >
+        <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "down")}>
           Move down
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          {...press(() =>
+          onClick={() =>
             askCvCoach(
               blockPlainText({
                 content: block.content,
                 props: block.props as Record<string, unknown>,
               })
             )
-          )}
+          }
         >
           Ask Coach
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem {...press(() => editor.removeBlocks([block.id]))}>
+        <DropdownMenuItem onClick={() => editor.removeBlocks([block.id])}>
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
