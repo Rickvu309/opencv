@@ -23,6 +23,7 @@ A guard marked proven has a row in `scripts/guard-ledger.mjs` showing it fires o
 - `guard-ledger.test.mjs` (push, CI): every guard, and every test that imports detect, has a ledger row or a baseline entry, and a row with a proof keeps it
 - `kit-duplicates.test.mjs` (push, CI): clipboard: the hand-rolled copy-link code that #844 deleted is caught
 - `layout-comparison-gates.test.mjs` (push, CI): a driver that compares the layout reads the mismatches it finds
+- `main-checkout-hook.test.mjs` (push, CI): an edit of a file inside the main checkout is refused with the rule and the fix
 - `nav-pending.test.mjs` (push, CI): every nav-pending entry names a rule, an existing file, a PR or issue and an expiry
 - `no-comments.test.mjs` (CI): the repo adds no comment beyond the shrink-only baseline
 - `paper-save-keeps-parts.test.mjs` (push, CI): an editor save keeps the parts of the document it loaded
