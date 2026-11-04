@@ -55,7 +55,7 @@ test("done exits 1 while this agent has an open pull request", () => {
   assert.match(text, /Fix: .*scripts\/ocv-tools.mjs block <n>/)
 })
 
-test("done exits 0 once a blocker is recorded", () => {
+test("recording a blocker leaves work paused rather than complete", () => {
   const { call, ports } = runner()
   assert.equal(call("done").code, 1)
   const blocked = call("block", "90", "waiting for the owner to pick a pricing")
@@ -69,10 +69,64 @@ test("done exits 0 once a blocker is recorded", () => {
     )
   )
   const after = call("done")
-  assert.equal(after.code, 0)
+  assert.equal(after.code, 4)
   assert.match(after.text, /blocked, #90/)
   assert.match(after.text, /waiting for the owner to pick a pricing/)
-  assert.match(after.text, /Nothing is open without a recorded blocker/)
+  assert.match(after.text, /1 item\(s\) remain blocked; work is not complete/)
+  assert.match(after.text, /Continue independent authorized work/)
+  assert.doesNotMatch(after.text, /Report what you finished/)
+})
+
+for (const [n, pull, reason] of [
+  [
+    673,
+    1084,
+    "Owner requires an explicit merge instruction; PR #1084 is open for review and must remain unmerged.",
+  ],
+  [
+    1082,
+    1083,
+    "Owner explicitly requires a separate instruction before merge. PR #1083 is tested and independently reviewed; left open for review.",
+  ],
+]) {
+  test(`the real #${n}/#${pull} merge boundary cannot make done succeed`, () => {
+    const branch = `fix/${n}-coach-recovery`
+    const { call } = runner({
+      issues: [
+        issue(n, {
+          comments: [
+            comment(1, claimMarker({ agent: "agent-a", at: "x", branch })),
+          ],
+        }),
+      ],
+      prs: [pr(pull, { head: branch })],
+      worktrees: [],
+    })
+    assert.equal(call("done").code, 1)
+    assert.equal(call("block", String(n), reason).code, 0)
+    const after = call("done")
+    assert.equal(after.code, 4)
+    assert.ok(after.text.includes(reason))
+    assert.match(after.text, new RegExp(`pull request #${pull} open`))
+    assert.match(after.text, /work is not complete/)
+    assert.doesNotMatch(after.text, /Report what you finished/)
+  })
+}
+
+test("unblocked work still requires continuation when another issue is blocked", () => {
+  const { call } = runner({
+    issues: [
+      ...world().issues,
+      issue(91, { comments: [claimBy("agent-a", 2)] }),
+    ],
+  })
+  assert.equal(call("block", "90", "waiting for owner input").code, 0)
+  const after = call("done")
+  assert.equal(after.code, 1)
+  assert.match(after.text, /#91/)
+  assert.match(after.text, /blocked, #90/)
+  assert.match(after.text, /1 item\(s\) are open with no blocker/)
+  assert.doesNotMatch(after.text, /Report what you finished/)
 })
 
 const SERVER_NOW = NOW
@@ -140,7 +194,7 @@ test("a reason holding a marker cannot release the claim", () => {
   )
   const body = ports.effects.filter((e) => e.op === "comment").at(-1).body
   assert.equal(body.match(/<!-- /g).length, 1)
-  assert.equal(call("done").code, 0)
+  assert.equal(call("done").code, 4)
 })
 
 test("done exits 0 when this agent holds nothing", () => {
@@ -151,6 +205,8 @@ test("done exits 0 when this agent holds nothing", () => {
   }).call("done")
   assert.equal(code, 0)
   assert.match(text, /none/)
+  assert.match(text, /This checks only this agent/)
+  assert.match(text, /Verify the full user request/)
 })
 
 test("done ignores an issue another agent holds", () => {

@@ -23,7 +23,7 @@ A job-search web app: a React SPA (`apps/web`) and a Hono api (`apps/api`) over 
 
 `scripts/ocv-tools.mjs brief <issue> --role <role>` prints the brief rules from `docs/agents/brief-rules.md`; each rule cites a section here, and `scripts/ocv-tools/brief.test.mjs` fails when one stops matching.
 
-- Finish the request in the turn. Never end on a status line or a question while work is open. Before you say you are done, run `scripts/ocv-tools.mjs done`; record a real blocker with `scripts/ocv-tools.mjs block <n> "<reason>"`.
+- Finish the request in the turn. Continue all independent authorized work before yielding for an external dependency. A restriction on merging applies only to merging. Before you say you are done, run `scripts/ocv-tools.mjs done`; record a real blocker with `scripts/ocv-tools.mjs block <n> "<reason>"`. For a remaining check or review, use the host's watch and wake mechanism.
 - Done means evidence: the command you ran and its real output, listed against each requested item.
 - Commit with `scripts/ocv-tools.mjs save -m "<message>"`. Add no AI attribution and no Co-Authored-By trailer, and never use `--author`.
 - Write no comments in any file, CSS and tests included. Explain with names or tests.
@@ -33,6 +33,13 @@ A job-search web app: a React SPA (`apps/web`) and a Hono api (`apps/api`) over 
 - Set the model on every subagent spawn: haiku for search, exploration, polling and mechanical edits, opus for writing code, planning, architecture and review.
 - Write the full report to the file the brief names and reply with one STATUS line, the pull request URL and the report path.
 - After a merge, remove the worktree, the local branch and any throwaway folder you made, and list what you removed.
+
+### Completion rules
+
+| Rule                                                                  | Enforcement                                                                                                                                             |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recording a blocker never completes open work.                        | `done` exits 4 for blocked work, 1 if any unblocked item remains; `scripts/ocv-tools/done.test.mjs` replays the #1083 and #1084 handbacks.              |
+| An empty ownership check does not prove the full request is complete. | `done` states its agent scope and requires checking the full request; the coordinator must match each requested item to evidence before final handback. |
 
 ## Pointers
 

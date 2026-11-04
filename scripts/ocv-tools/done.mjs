@@ -157,7 +157,10 @@ export function done(ctx) {
   const open = rows.filter((row) => !row.blocker)
   const blocked = rows.filter((row) => row.blocker)
   const who = `${me} (account ${login})`
-  const lines = [`Open work for ${who}:`]
+  const lines = [
+    `Open work for ${who}:`,
+    "This checks only this agent's claimed issues and worktrees, not the full user request.",
+  ]
   if (!rows.length) lines.push("  none")
   for (const row of open) {
     lines.push(`  ${describe(row)}`)
@@ -165,15 +168,24 @@ export function done(ctx) {
   }
   for (const row of blocked)
     lines.push(`  blocked, ${describe(row)}: ${row.blocker.reason}`)
+  if (!rows.length)
+    return {
+      lines: [...lines, "No open work was found for this agent."],
+      next: "Verify the full user request before reporting completion.",
+    }
   if (!open.length)
     return {
-      lines: [...lines, "Nothing is open without a recorded blocker."],
-      next: "Report what you finished.",
+      exit: EXIT.human,
+      lines: [
+        ...lines,
+        `${blocked.length} item(s) remain blocked; work is not complete.`,
+      ],
+      next: "Continue independent authorized work. If only an external dependency remains, arrange its wake mechanism or report the required input and resumption action. A merge restriction does not complete the request.",
     }
   return {
     exit: EXIT.error,
     lines: [...lines, `${open.length} item(s) are open with no blocker.`],
-    fix: `Finish each item, or run scripts/ocv-tools.mjs block <n> "<why you cannot continue>".`,
+    fix: `Continue each unblocked item. Record a real external blocker with scripts/ocv-tools.mjs block <n> "<why you cannot continue>"; blocked work remains incomplete.`,
   }
 }
 
