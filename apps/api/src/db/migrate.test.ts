@@ -101,11 +101,19 @@ describe("opencv_app migrations", () => {
     const db = drizzle({ client })
     try {
       const migrations = readMigrationFiles(migrationConfig())
-      const previous = migrations.slice(0, -1)
-      for (const migration of previous) {
+      const favoritesAt = migrations.findIndex((migration) =>
+        migration.sql.some((statement) => statement.includes('"is_favorite"'))
+      )
+      const reset = migrations.find((migration) =>
+        migration.sql.some((statement) =>
+          statement.includes('DELETE FROM "opencv_app"."paper_docs"')
+        )
+      )
+      expect(favoritesAt).toBeGreaterThan(0)
+      expect(reset).toBeDefined()
+      for (const migration of migrations.slice(0, favoritesAt)) {
         for (const statement of migration.sql) await client.exec(statement)
       }
-      const last = previous.at(-1)!
       await client.exec(`
         create table "opencv_app"."migrations" (
           id serial primary key, hash text not null, created_at bigint
@@ -117,26 +125,29 @@ describe("opencv_app migrations", () => {
           values ('00000000-0000-4000-8000-000000000659', 'favorite-upgrade',
             'Existing CV', 'cv', '{"version":2}', 7, '2026-01-01T00:00:00Z');
       `)
-      await db.execute(sql`
-        insert into "opencv_app"."migrations" (hash, created_at)
-        values (${last.hash}, ${last.folderMillis})
-      `)
       const before = await client.query<Record<string, unknown>>(
         'select document, content_version, updated_at from "opencv_app"."paper_docs"'
       )
-      await runMigrations(db as unknown as AppDatabase)
+      for (const statement of migrations[favoritesAt]!.sql) {
+        await client.exec(statement)
+      }
       const after = await client.query(
         'select document, content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
       )
       expect(after.rows).toEqual([{ ...before.rows[0], is_favorite: false }])
+      await db.execute(sql`
+        insert into "opencv_app"."migrations" (hash, created_at)
+        values (${reset!.hash}, ${reset!.folderMillis})
+      `)
+      await runMigrations(db as unknown as AppDatabase)
       await runMigrations(db as unknown as AppDatabase)
       expect(
         (
           await client.query(
-            'select is_favorite from "opencv_app"."paper_docs"'
+            'select document, content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
           )
         ).rows
-      ).toEqual([{ is_favorite: false }])
+      ).toEqual(after.rows)
     } finally {
       await client.close()
     }
