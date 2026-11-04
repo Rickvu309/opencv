@@ -2,7 +2,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useReducer, type ReactNode } from "react"
 import type { ChatSummary } from "@workspace/domain"
 
-import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
+import {
+  useCoachTurn,
+  type CoachSendOptions,
+} from "@/features/coach/use-coach-turn.ts"
 import {
   deleteChat as deleteChatRequest,
   listChats,
@@ -13,21 +16,43 @@ import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
 import { titleFrom } from "@/features/coach/chat-messages.ts"
 import { refreshReads } from "@/lib/contract-client.ts"
 
+type ActiveChatState = {
+  activeChatId: string | null
+  navigationRevision: number
+  creationOwner: string | null
+}
+
 type ActiveChatAction =
-  { type: "active_chat_opened"; id: string } | { type: "active_chat_cleared" }
+  | { type: "active_chat_opened"; id: string }
+  | { type: "active_chat_cleared" }
+  | { type: "chat_created"; id: string }
+  | { type: "creation_started"; owner: string | null }
 
 function activeChatReducer(
-  _id: string | null,
+  state: ActiveChatState,
   action: ActiveChatAction
-): string | null {
-  return action.type === "active_chat_opened" ? action.id : null
+): ActiveChatState {
+  if (action.type === "creation_started") {
+    return { ...state, creationOwner: action.owner }
+  }
+  return {
+    creationOwner: action.type === "chat_created" ? state.creationOwner : null,
+    activeChatId: action.type === "active_chat_cleared" ? null : action.id,
+    navigationRevision:
+      state.navigationRevision + (action.type === "chat_created" ? 0 : 1),
+  }
 }
 
 const EMPTY_CHATS: ChatSummary[] = []
 
 export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
-  const [activeChatId, dispatch] = useReducer(activeChatReducer, null)
+  const [{ activeChatId, navigationRevision, creationOwner }, dispatch] =
+    useReducer(activeChatReducer, {
+      activeChatId: null,
+      navigationRevision: 0,
+      creationOwner: null,
+    })
 
   const listQuery = useQuery({
     queryKey: chatListKey(),
@@ -40,7 +65,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     phase,
     progress,
     error,
-    send,
+    send: sendTurn,
     stop,
     retry,
     regenerate,
@@ -48,12 +73,23 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     cancelInFlight,
   } = useCoachTurn({
     chatId: activeChatId,
-    setChatId: (id) => dispatch({ type: "active_chat_opened", id }),
+    setChatId: (id) => dispatch({ type: "chat_created", id }),
     titleForCreate: titleFrom,
     onAfterUndo: () => {
       void refreshReads(queryClient, [{ query: "profile.get" }])
     },
   })
+
+  const send = useCallback(
+    (text: string, options?: CoachSendOptions, owner?: string) => {
+      const accepted = sendTurn(text, options)
+      if (accepted && activeChatId === null) {
+        dispatch({ type: "creation_started", owner: owner ?? null })
+      }
+      return accepted
+    },
+    [activeChatId, sendTurn]
+  )
 
   const newChat = useCallback(() => {
     cancelInFlight()
@@ -85,6 +121,8 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     () => ({
       chats,
       activeChatId,
+      navigationRevision,
+      creationOwner,
       messages,
       phase,
       progress,
@@ -101,6 +139,8 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     [
       chats,
       activeChatId,
+      navigationRevision,
+      creationOwner,
       messages,
       phase,
       progress,

@@ -305,6 +305,60 @@ describe("Coach draft ownership", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("keeps a failed sender's next draft separate when another composer creates a chat", async () => {
+    let failed = false
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (creationRequest(input) && !failed) {
+          failed = true
+          return Response.json(
+            {
+              ok: false,
+              error: { code: "INTERNAL_ERROR", message: "Create failed" },
+            },
+            { status: 503 }
+          )
+        }
+        return mockFetch(input, init)
+      }
+    )
+    mount(true)
+    typeMain("Main create fails")
+    await attachLink()
+    fireEvent.click(main().getByRole("button", { name: "Send", exact: true }))
+    await main().findByRole("button", { name: "Retry", exact: true })
+    typeMain("Keep my main follow-up private")
+    fireEvent.change(
+      compact().getByRole("textbox", { name: "Message Coach" }),
+      { target: { value: "Panel creates instead" } }
+    )
+    fireEvent.click(
+      compact().getByRole("button", { name: "Send", exact: true })
+    )
+    await waitFor(() =>
+      expect(getLastCoachRequest()?.text).toBe("Panel creates instead")
+    )
+    await settled()
+    expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
+      ""
+    )
+    expect(
+      main().queryByRole("button", { name: "Remove jobs.example.com" })
+    ).not.toBeInTheDocument()
+    expect(getLastCoachRequest()?.context).toBeUndefined()
+    fireEvent.click(screen.getByRole("button", { name: "Select new chat" }))
+    expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
+      "Keep my main follow-up private"
+    )
+    expect(
+      main().getByRole("button", { name: "Remove jobs.example.com" })
+    ).toBeVisible()
+    expect(
+      compact().getByRole("textbox", { name: "Message Coach" })
+    ).toHaveValue("")
+  })
+
   it("keeps text typed during creation with its initiating conversation", async () => {
     let release: () => void = () => undefined
     const pending = new Promise<void>((resolve) => {

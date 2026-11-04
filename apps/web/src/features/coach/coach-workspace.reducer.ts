@@ -3,6 +3,11 @@ import type { CoachContextItem } from "@workspace/domain"
 export type Attachment = CoachContextItem & { label: string }
 export type Picker = "paper" | "job" | "link" | null
 
+type ChatDraft = {
+  draft: string
+  attachments: Attachment[]
+}
+
 export type WorkspaceState = {
   draft: string
   moreIdeas: boolean
@@ -13,6 +18,8 @@ export type WorkspaceState = {
   link: string
   linkError: string
   draftChatId: string | null
+  draftNavigationRevision: number
+  drafts: ReadonlyMap<string | null, ChatDraft>
   addMenuOpened: boolean
 }
 
@@ -34,12 +41,15 @@ export type WorkspaceAction =
   | {
       type: "active_chat_changed"
       chatId: string | null
+      navigationRevision: number
+      createdHere: boolean
       seeded: string | null
     }
 
 export function initialWorkspaceState(
   draft: string,
-  draftChatId: string | null
+  draftChatId: string | null,
+  navigationRevision: number
 ): WorkspaceState {
   return {
     draft,
@@ -51,6 +61,8 @@ export function initialWorkspaceState(
     link: "",
     linkError: "",
     draftChatId,
+    draftNavigationRevision: navigationRevision,
+    drafts: new Map(),
     addMenuOpened: false,
   }
 }
@@ -105,10 +117,29 @@ export function workspaceReducer(
     case "link_typed":
       return { ...state, link: action.value }
     case "active_chat_changed": {
-      const next = { ...state, draftChatId: action.chatId }
-      if (state.draftChatId !== null)
-        return { ...next, draft: action.seeded ?? "", attachments: [] }
-      return action.seeded ? { ...next, draft: action.seeded } : next
+      const drafts = new Map(state.drafts)
+      const current = { draft: state.draft, attachments: state.attachments }
+      const createdHere =
+        state.draftChatId === null &&
+        action.chatId !== null &&
+        state.draftNavigationRevision === action.navigationRevision &&
+        action.createdHere
+      if (createdHere) drafts.delete(null)
+      else drafts.set(state.draftChatId, current)
+      const next = createdHere
+        ? current
+        : (drafts.get(action.chatId) ?? { draft: "", attachments: [] })
+      return {
+        ...state,
+        ...next,
+        draft: action.seeded ?? next.draft,
+        draftChatId: action.chatId,
+        draftNavigationRevision: action.navigationRevision,
+        drafts,
+        picker: null,
+        link: "",
+        linkError: "",
+      }
     }
   }
 }

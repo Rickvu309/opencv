@@ -10,11 +10,13 @@ export type TurnPhase = "idle" | "waiting" | "streaming"
 export type ChatStoreValue = {
   chats: ChatSummary[]
   activeChatId: string | null
+  navigationRevision: number
+  creationOwner: string | null
   messages: ChatViewMessage[]
   phase: TurnPhase
   progress: CoachTurnProgress
   error: string | null
-  send: (text: string, options?: CoachSendOptions) => boolean
+  send: (text: string, options?: CoachSendOptions, owner?: string) => boolean
   stop: () => void
   retry: () => boolean
   regenerate: () => boolean
