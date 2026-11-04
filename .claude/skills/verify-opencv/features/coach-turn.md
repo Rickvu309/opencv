@@ -23,7 +23,8 @@ Use the printed web port and an isolated agent-browser session. Sign in using
 4. Open History. Find `Prepare for a product intern interview` in its date
    group. Search for an absent title, then search for `product` and reopen it.
 5. On a Free account, inspect Free, Light · Pro and Max · Pro. Clicking a Pro
-   mode opens the upgrade flow. Check the remaining-turn count refreshes.
+   mode opens the upgrade flow. Check that no remaining-turn count appears
+   beneath the composer, including after sending and in the compact panel.
 6. Open the saved chat from the shell dock. Choose New chat and confirm the
    starter view stays selected. Open History in the panel and switch chats.
    Expand the panel and check that the selected conversation is unchanged.
