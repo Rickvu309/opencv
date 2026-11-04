@@ -254,7 +254,8 @@ export function CoachWorkspace({
       )}
       <div
         className={cn(
-          "min-h-0 flex-1 overflow-auto",
+          "min-h-0 flex-1",
+          showWelcome ? "overflow-auto" : "flex flex-col overflow-hidden",
           compact && "px-[18px] py-2"
         )}
       >
