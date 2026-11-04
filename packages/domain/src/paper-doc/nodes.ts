@@ -1,7 +1,17 @@
 import { z } from "zod"
 
-import { cvSectionKindSchema } from "../paper-blocks/document.js"
 import { paperPhotoValueSchema } from "../paper.js"
+
+export const cvSectionKindSchema = z.enum([
+  "summary",
+  "experience",
+  "education",
+  "skills",
+  "projects",
+  "activities",
+  "awards",
+  "languages",
+])
 import {
   plainTextOfRuns,
   richTextInputSchema,

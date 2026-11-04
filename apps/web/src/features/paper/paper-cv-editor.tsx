@@ -7,7 +7,6 @@ import {
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  cvPrintModel,
   paperDocNameSchema,
   type CvPaper,
   type PaperDocument,
@@ -60,7 +59,7 @@ import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
-import { previewTemplate, printLayout } from "./paper-templates.ts"
+import { previewTemplate } from "./paper-templates.ts"
 
 type State = {
   name: string
@@ -132,25 +131,6 @@ function reducer(state: State, action: Action): State {
 
 function toastError(error: unknown, fallback: string) {
   toast(error instanceof Error ? error.message : fallback)
-}
-
-function printable(cv: CvPaper, templateId: string | null) {
-  const model = cvPrintModel(cv, printLayout(templateId))
-  return {
-    templateId: model.templateId,
-    name: model.name,
-    headline: model.headline,
-    contact: model.contact,
-    summary: model.summary,
-    experience: model.experience,
-    education: model.education,
-    skills: model.skills,
-    projects: model.projects,
-    languages: model.languages,
-    activities: model.activities,
-    awards: model.awards,
-    ...(model.photoUrl ? { photoUrl: model.photoUrl } : {}),
-  }
 }
 
 function datesFilled(cv: CvPaper, blockId: string | undefined) {
@@ -375,7 +355,7 @@ export function PaperCvEditor({
   }
 
   const showBanner = state.previewPages > 1 && state.pageChoice === "unset"
-  const source = state.cv ? printable(state.cv, state.templateId) : null
+  const source = state.cv
   const statusLabel = cvEditorStatus(status, state.editedAt, state.deferring)
 
   return (

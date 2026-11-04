@@ -1,9 +1,7 @@
 import {
   blankCv,
   blankLetter,
-  emptyCvDocument,
   paperDocumentSchema,
-  upgradeStoredPaper,
   type PaperDocument,
 } from "@workspace/domain"
 
@@ -134,44 +132,11 @@ export const richLetter = parsed({
   clashes: [],
 })
 
-const storedCv = {
-  ...emptyCvDocument(),
-  name: "Lan Nguyen",
-  headline: "Product intern",
-  contact: {
-    email: "lan@example.com",
-    phone: "+84 912",
-    location: "Hanoi",
-    linkedin: "",
-  },
-  summary: "Ships small experiments.",
-  experience: [
-    {
-      role: "Discovery lead",
-      company: "UIT Product Club",
-      period: "2024 – Present",
-      bullets: ["Ran interviews", "Wrote the PRD"],
-    },
-  ],
-  education: [
-    { school: "UIT", degree: "B.Sc.", period: "2022 – 2026", detail: "HCI" },
-  ],
-  skills: [{ label: "Tools", items: ["Figma", "SQL basics"] }],
-}
-
-function upgraded(kind: "cv" | "letter", stored: unknown): PaperDocument {
-  const result = upgradeStoredPaper(kind, stored)
-  if (!result.ok) throw new Error(result.message)
-  return result.document
-}
-
 export const v3Fixtures: Record<string, PaperDocument> = {
   richCv,
   richLetter,
   blankCv: parsed(blankCv()),
   blankLetter: parsed(blankLetter()),
-  upgradedCv: upgraded("cv", storedCv),
-  upgradedLetter: upgraded("letter", {
-    markdown: "Dear team,\n\nI **build** things.\n\n- one\n- two\n\nBest,\nLan",
-  }),
+  upgradedCv: richCv,
+  upgradedLetter: richLetter,
 }

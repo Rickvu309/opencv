@@ -2,10 +2,7 @@ import {
   PAPER_KIND_LABEL,
   STARTER_CV_NAME,
   LEGACY_STARTER_CV_PERSON_NAME,
-  emptyCvDocument,
   emptyProofDocument,
-  isCvDocument,
-  isLetterDocument,
   isProofDocument,
   type PaperContentKind,
   type PaperDoc,
@@ -14,7 +11,6 @@ import {
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 
-import type { CvData } from "./cv-templates/cv-types.ts"
 import type { ProofData } from "./paper-proof-types.ts"
 
 export type DocType = PaperContentKind
@@ -27,23 +23,9 @@ export function profileFirstName(profile: { name: string } = SAMPLE_AUTHOR) {
   return profile.name.trim().split(/\s+/).filter(Boolean)[0] ?? profile.name
 }
 
-export function cvContentOf(doc: PaperDoc): CvData {
-  if (doc.kind !== "cv" || !isCvDocument(doc.content)) return emptyCvDocument()
-  return isStarterCvPersonName(doc.content.name)
-    ? { ...doc.content, name: "" }
-    : doc.content
-}
-
 export function proofContentOf(doc: PaperDoc): ProofData {
   if (doc.kind === "proof" && isProofDocument(doc.content)) return doc.content
   return emptyProofDocument()
-}
-
-export function letterMarkdownOf(doc: PaperDoc): string {
-  if (doc.kind === "letter" && isLetterDocument(doc.content)) {
-    return doc.content.markdown
-  }
-  return ""
 }
 
 export function formatPaperUpdated(iso: string, now = Date.now()): string {

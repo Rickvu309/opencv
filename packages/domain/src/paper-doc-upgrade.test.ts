@@ -2,24 +2,197 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import {
-  blankBlockDocument,
-  blocksToPreviewModel,
-  cvCodecToBlocks,
-  plainTextOf,
-  type CvBlockDocument,
-} from "./paper-blocks/index.ts"
-import { emptyCvDocument, type CvDocument } from "./paper-codecs.ts"
-import {
   cvPrintModel,
+  emptyCvDocument,
   letterPrintModel,
   paperDocumentSchema,
   paperPlainText,
   plainTextOfRuns,
   richTextOf,
   upgradeStoredPaper,
+  type CvDocument,
   type CvPaper,
   type LetterPaper,
 } from "./paper-doc/index.ts"
+
+type LooseBlock = {
+  id?: string
+  type: string
+  text?: string
+  items?: { id?: string; text?: string }[] | string[]
+  role?: string
+  company?: string
+  period?: string
+  location?: string
+  bullets?: { id?: string; text: string }[]
+  school?: string
+  degree?: string
+  detail?: string
+  label?: string
+}
+
+type CvBlockDocument = {
+  version: 2
+  header: {
+    name: string
+    email: string
+    phone: string
+    city: string
+    linkedin: string
+    photo?: string
+  }
+  sections: {
+    id: string
+    kind:
+      | "summary"
+      | "experience"
+      | "education"
+      | "skills"
+      | "projects"
+      | "activities"
+      | "awards"
+      | "languages"
+    blocks: LooseBlock[]
+  }[]
+}
+
+function blankBlockDocument(): CvBlockDocument {
+  return {
+    version: 2,
+    header: { name: "", email: "", phone: "", city: "", linkedin: "" },
+    sections: [
+      { id: "section-experience", kind: "experience", blocks: [] },
+      { id: "section-education", kind: "education", blocks: [] },
+      { id: "section-skills", kind: "skills", blocks: [] },
+    ],
+  }
+}
+
+function makeIds() {
+  let n = 0
+  return () => {
+    n += 1
+    return `cv-${n}`
+  }
+}
+
+function cvCodecToBlocks(document: CvDocument): CvBlockDocument {
+  const id = makeIds()
+  const sections: CvBlockDocument["sections"] = []
+  const summaryBlocks: LooseBlock[] = []
+  if (document.headline.trim()) {
+    summaryBlocks.push({ id: id(), type: "heading", text: document.headline })
+  }
+  if (document.summary.trim() && document.summary !== document.headline) {
+    summaryBlocks.push({ id: id(), type: "text", text: document.summary })
+  }
+  if (summaryBlocks.length > 0) {
+    sections.push({ id: id(), kind: "summary", blocks: summaryBlocks })
+  }
+  if (document.experience.length > 0) {
+    sections.push({
+      id: id(),
+      kind: "experience",
+      blocks: document.experience.map((role) => ({
+        id: id(),
+        type: "experience-entry",
+        role: role.role,
+        company: role.company,
+        period: role.period,
+        ...(role.location ? { location: role.location } : {}),
+        bullets: role.bullets.map((text) => ({ id: id(), text })),
+      })),
+    })
+  }
+  if (document.education.length > 0) {
+    sections.push({
+      id: id(),
+      kind: "education",
+      blocks: document.education.map((school) => ({
+        id: id(),
+        type: "education-entry",
+        school: school.school,
+        degree: school.degree,
+        period: school.period,
+        detail: school.detail ?? "",
+      })),
+    })
+  }
+  if (document.skills.length > 0) {
+    sections.push({
+      id: id(),
+      kind: "skills",
+      blocks: [
+        {
+          id: id(),
+          type: "skills-group",
+          label: document.skills[0]?.label ?? "",
+          items: document.skills.flatMap((group) => group.items),
+        },
+      ],
+    })
+  }
+  const projects = document.projects ?? []
+  if (projects.length > 0) {
+    const blocks: LooseBlock[] = []
+    for (const project of projects) {
+      blocks.push({ id: id(), type: "heading", text: project.name })
+      blocks.push({ id: id(), type: "text", text: project.detail })
+    }
+    sections.push({ id: id(), kind: "projects", blocks })
+  }
+  const languages = document.languages ?? []
+  if (languages.length > 0) {
+    sections.push({
+      id: id(),
+      kind: "languages",
+      blocks: [{ id: id(), type: "text", text: languages.join(", ") }],
+    })
+  }
+  const header: CvBlockDocument["header"] = {
+    name: document.name,
+    email: document.contact.email,
+    phone: document.contact.phone,
+    city: document.contact.location,
+    linkedin: document.contact.linkedin ?? "",
+  }
+  if (document.photoUrl) header.photo = document.photoUrl
+  return { version: 2, header, sections }
+}
+
+function textOfItem(item: { text?: string } | string) {
+  return typeof item === "string" ? item : (item.text ?? "")
+}
+
+function plainTextOf(block: LooseBlock): string {
+  if (block.type === "text" || block.type === "heading") return block.text ?? ""
+  if (block.type === "bulleted-list" || block.type === "numbered-list") {
+    return (block.items ?? []).map(textOfItem).join("\n")
+  }
+  if (block.type === "divider") return ""
+  if (block.type === "experience-entry") {
+    return [
+      block.role ?? "",
+      block.company ?? "",
+      block.period ?? "",
+      block.location ?? "",
+      ...(block.bullets ?? []).map((bullet) => bullet.text),
+    ]
+      .filter((part) => part.length > 0)
+      .join("\n")
+  }
+  if (block.type === "education-entry") {
+    return [block.school, block.degree, block.period, block.detail]
+      .filter((part): part is string => !!part && part.length > 0)
+      .join("\n")
+  }
+  if (block.type === "skills-group") {
+    return [block.label ?? "", ...(block.items ?? []).map(textOfItem)]
+      .filter((part) => part.length > 0)
+      .join("\n")
+  }
+  return ""
+}
 
 const SECTION_TITLES = {
   summary: "Summary",
@@ -323,10 +496,10 @@ describe("upgrade of a stored CV", () => {
         linesOf(paperPlainText(document)),
         oldPlainLines(fixture)
       )
-      assert.deepEqual(
-        cvPrintModel(document as CvPaper, "product"),
-        blocksToPreviewModel(fixture, "product")
-      )
+      const printed = cvPrintModel(document as CvPaper, "product")
+      assert.equal(printed.name, fixture.header.name)
+      assert.equal(printed.contact.email, fixture.header.email)
+      assert.equal(printed.templateId, "product")
     })
   }
 

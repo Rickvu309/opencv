@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { cvSectionKindSchema } from "../paper-blocks/document.js"
+import { cvSectionKindSchema } from "./nodes.js"
 import { nodeFieldSetSchema } from "./nodes.js"
 
 const MAX_PAPER_EDITS = 40

@@ -18,7 +18,7 @@ describe("coach page estimate from stored JSON", () => {
 
   it("pageCount uses the stored JSON, while the editor counts the preview", () => {
     expect(storeSource).toContain(
-      "coachPagesFromStoredJson(JSON.stringify(doc.document).length)"
+      "coachPagesFromStoredJson(JSON.stringify(doc.crdtDocument).length)"
     )
     const editor = readFileSync(
       new URL(

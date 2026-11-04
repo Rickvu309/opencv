@@ -142,7 +142,6 @@ export const paperDocs = opencvApp.table(
     name: text("name").notNull(),
     kind: text("kind").$type<"cv" | "letter">().notNull(),
     templateId: text("template_id"),
-    document: jsonb("document").$type<Record<string, unknown>>().notNull(),
     contentVersion: integer("content_version").notNull(),
     status: text("status")
       .$type<"draft" | "ready" | "published">()

@@ -1,4 +1,6 @@
-import { PAPER_CONTENT_VERSION, type PaperDoc } from "@workspace/domain"
+import { type PaperDoc } from "@workspace/domain"
+
+const PAPER_CONTENT_VERSION = 1
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 import { defaultCvData } from "@/features/paper/cv-templates/cv-types.ts"

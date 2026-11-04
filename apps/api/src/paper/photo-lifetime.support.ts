@@ -172,19 +172,17 @@ export async function fileSet() {
   return new Set(rows.map((row) => lower(row.id)))
 }
 
-export async function referenced(options: { legacy: boolean }) {
+export async function referenced() {
   const into = new Set<string>()
   const papers = await backend.db
     .select({
       id: paperDocs.id,
-      document: paperDocs.document,
       crdt: paperDocs.crdtDocument,
     })
     .from(paperDocs)
   const paperIds = new Set(papers.map((paper) => paper.id))
   for (const paper of papers) {
-    collect(textOf(paper.document), false, into)
-    if (!options.legacy && paper.crdt) collect(textOf(paper.crdt), false, into)
+    if (paper.crdt) collect(textOf(paper.crdt), false, into)
   }
   const acts = await backend.db
     .select({
@@ -201,38 +199,36 @@ export async function referenced(options: { legacy: boolean }) {
     if (!docId || paperIds.has(docId)) {
       collect(textOf(row.reversalInput), false, into)
     }
-    if (!options.legacy) collect(activityResultText(row.result), false, into)
+    collect(activityResultText(row.result), false, into)
   }
-  if (!options.legacy) {
-    const pending = await backend.db
-      .select({
-        input: pendingActions.input,
-        status: pendingActions.status,
-      })
-      .from(pendingActions)
-    for (const row of pending) {
-      if (row.status !== "pending") continue
-      collect(textOf(row.input), false, into)
-    }
-    const stored = await backend.db
-      .select({ result: idempotency.result })
-      .from(idempotency)
-    for (const row of stored) collect(withoutPrevious(row.result), false, into)
-    const updates = await backend.db.execute<{ text: string | null }>(sql`
-      select encode(u.update, 'escape') as text
-      from opencv_app.paper_doc_updates u
-      join opencv_app.paper_docs d on d.id = u.paper_id
-      where d.crdt_document is null
-    `)
-    for (const row of updates.rows) {
-      if (row.text) collect(row.text, false, into)
-    }
-    const released = await backend.db
-      .select({ ids: paperDocUpdates.releasedPhotoRefs })
-      .from(paperDocUpdates)
-    for (const row of released) {
-      for (const id of row.ids ?? []) into.add(lower(id))
-    }
+  const pending = await backend.db
+    .select({
+      input: pendingActions.input,
+      status: pendingActions.status,
+    })
+    .from(pendingActions)
+  for (const row of pending) {
+    if (row.status !== "pending") continue
+    collect(textOf(row.input), false, into)
+  }
+  const stored = await backend.db
+    .select({ result: idempotency.result })
+    .from(idempotency)
+  for (const row of stored) collect(withoutPrevious(row.result), false, into)
+  const updates = await backend.db.execute<{ text: string | null }>(sql`
+    select encode(u.update, 'escape') as text
+    from opencv_app.paper_doc_updates u
+    join opencv_app.paper_docs d on d.id = u.paper_id
+    where d.crdt_document is null
+  `)
+  for (const row of updates.rows) {
+    if (row.text) collect(row.text, false, into)
+  }
+  const released = await backend.db
+    .select({ ids: paperDocUpdates.releasedPhotoRefs })
+    .from(paperDocUpdates)
+  for (const row of released) {
+    for (const id of row.ids ?? []) into.add(lower(id))
   }
   const people = await backend.db
     .select({ image: user.image })
@@ -244,7 +240,7 @@ export async function referenced(options: { legacy: boolean }) {
 }
 
 export async function assertLive(swept: boolean) {
-  const wanted = await referenced({ legacy: false })
+  const wanted = await referenced()
   const present = await fileSet()
   for (const id of wanted) {
     expect(present.has(id), `F1 ${id}`).toBe(true)

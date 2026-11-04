@@ -1,6 +1,5 @@
 import {
   emptyCvDocument,
-  emptyLetterDocument,
   type PaperContentKind,
   type PaperDoc,
   type PaperDocStatus,
@@ -193,7 +192,7 @@ export async function paperApiFetch(
       name: body.name?.trim() || (kind === "letter" ? "Cover letter" : "CV"),
       kind,
       status: "draft",
-      content: kind === "letter" ? emptyLetterDocument() : emptyCvDocument(),
+      content: kind === "letter" ? { markdown: "" } : emptyCvDocument(),
       contentVersion: 1,
       applyCardId: null,
       createdAt: now,

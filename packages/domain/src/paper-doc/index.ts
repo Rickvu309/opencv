@@ -18,6 +18,7 @@ export type {
   Bullet,
   CvPaperBlock,
   CvHeader,
+  CvSectionKind,
   CvSectionMarker,
   Divider,
   EducationEntry,
@@ -50,18 +51,29 @@ export {
 } from "./rich-text.js"
 
 export type {
+  CvContact,
+  CvDocument,
+  CvEducation,
+  CvExperience,
   CvPrintModel,
+  CvProject,
+  CvSkillGroup,
+  CvTemplateId,
   LetterFragment,
   LetterPrintItem,
   LetterPrintList,
   LetterPrintModel,
 } from "./print.js"
-export { cvPrintModel, letterPrintModel, paperPlainText } from "./print.js"
+export {
+  cvPrintModel,
+  emptyCvDocument,
+  letterPrintModel,
+  paperPlainText,
+} from "./print.js"
 
 export type { StoredShape, Upgraded, UpgradeRefusalReason } from "./upgrade.js"
-export { upgradeStoredPaper } from "./upgrade.js"
+export { paragraphPaper, upgradeStoredPaper } from "./upgrade.js"
 
-export { legacyPaperOf } from "./legacy.js"
 export { mergeLegacyEdit } from "./merge.js"
 
 export { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"

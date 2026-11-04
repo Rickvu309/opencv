@@ -16,7 +16,6 @@ export type LetterAttachmentContext = z.infer<
   typeof letterAttachmentContextSchema
 >
 
-export const PAPER_CONTENT_VERSION = 1
 const PAPER_DOC_NAME_MAX = 200
 
 export const PAPER_KIND_LABEL = {
@@ -102,16 +101,6 @@ export type PaperTemplateId = z.infer<typeof paperTemplateIdSchema>
 export const paperStoredKindSchema = z.enum(["cv", "letter"])
 export type PaperStoredKind = z.infer<typeof paperStoredKindSchema>
 
-export const paperCreateInputSchema = z
-  .object({
-    kind: paperStoredKindSchema,
-    document: z.unknown().optional(),
-    templateId: paperTemplateIdSchema.optional(),
-    name: paperDocNameSchema.optional(),
-    jobId: jobIdSchema.optional(),
-  })
-  .strict()
-
 export const paperRenameInputSchema = paperRenameDocInputSchema
 
 export const paperDuplicateInputSchema = z
@@ -193,6 +182,65 @@ export function paperPhotoFileId(value: string | null | undefined) {
   if (!value?.startsWith(PAPER_PHOTO_FILE_PREFIX)) return null
   const id = value.slice(PAPER_PHOTO_FILE_PREFIX.length)
   return PHOTO_FILE_ID.test(id) ? id : null
+}
+
+export const IMPORT_PAGES_MESSAGE =
+  "Pages files aren't supported. Try a PDF or Word file."
+export const IMPORT_GOOGLE_MESSAGE =
+  "Google Docs aren't supported. Download a PDF or Word file."
+export const IMPORT_LINKEDIN_MESSAGE =
+  "LinkedIn links aren't supported. Download a PDF or Word file."
+export const IMPORT_PHONE_MESSAGE = "No phone number in your file."
+export const IMPORT_DATES_MESSAGE = "Add when you did this role."
+
+const proofViewModeSchema = z.enum(["chain", "timeline"])
+const proofStepTypeSchema = z.enum(["context", "action", "outcome", "note"])
+
+const proofPhotoSchema = z
+  .object({
+    id: z.string(),
+    url: z.string(),
+    caption: z.string().optional(),
+  })
+  .strict()
+
+const proofStepSchema = z
+  .object({
+    id: z.string(),
+    type: proofStepTypeSchema,
+    title: z.string(),
+    body: z.string(),
+    time: z.string().optional(),
+    date: z.string().optional(),
+    photos: z.array(proofPhotoSchema),
+  })
+  .strict()
+
+const proofDocumentSchema = z
+  .object({
+    viewMode: proofViewModeSchema,
+    title: z.string(),
+    subtitle: z.string().optional(),
+    steps: z.array(proofStepSchema),
+  })
+  .strict()
+
+export type ProofViewMode = z.infer<typeof proofViewModeSchema>
+export type ProofStepType = z.infer<typeof proofStepTypeSchema>
+export type ProofPhoto = z.infer<typeof proofPhotoSchema>
+export type ProofStep = z.infer<typeof proofStepSchema>
+export type ProofDocument = z.infer<typeof proofDocumentSchema>
+
+export function emptyProofDocument(): ProofDocument {
+  return {
+    viewMode: "chain",
+    title: "",
+    steps: [],
+  }
+}
+
+export function isProofDocument(value: unknown): value is ProofDocument {
+  return proofDocumentSchema.safeParse(value).success
 }
 
 const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])

@@ -78,6 +78,13 @@
       "when": 1793669415938,
       "tag": "0010_paper_released_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793669415939,
+      "tag": "0011_drop_paper_document",
+      "breakpoints": true
     }
   ]
 }

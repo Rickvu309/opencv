@@ -12,7 +12,6 @@ import {
   PAPER_CANVAS_FIELD_CLASS,
   PAPER_CANVAS_NEXT_STEP_CLASS,
 } from "./cv-print-document.tsx"
-import { previewOf } from "./paper-print-sheet.tsx"
 import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./cv-templates/cv-edits.ts"
 import {
   CV_TEMPLATES,
@@ -497,14 +496,6 @@ describe("empty section next-step CTAs (QVE-209)", () => {
     expect(text).not.toContain("Experience")
     expect(text).not.toContain("Education")
     expect(text).not.toContain("Add a line")
-    const preview = previewOf(seed, "internship")
-    expect(preview?.summary).toBe("Shipped a small tool")
-    expect((preview as { activities?: string[] } | null)?.activities).toEqual([
-      "Debate club",
-    ])
-    expect((preview as { awards?: string[] } | null)?.awards).toEqual([
-      "Dean list",
-    ])
     for (const template of CV_TEMPLATES) {
       cleanup()
       renderCv(template.id, seed, false)

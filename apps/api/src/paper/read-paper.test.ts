@@ -1,4 +1,3 @@
-import { upgradeStoredPaper, type CvPaper } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -11,7 +10,7 @@ import { readSharedPhoto } from "./store.js"
 
 type Store = Awaited<ReturnType<typeof openStore>>
 type PaperRow = typeof paperDocs.$inferSelect
-type ReadView = { id: string; paper: unknown; document: unknown }
+type ReadView = { id: string; paper: unknown }
 
 let store: Store
 
@@ -43,7 +42,6 @@ async function rowOf(id: string) {
 
 function unchanged(row: PaperRow) {
   return {
-    document: row.document,
     crdtDocument: row.crdtDocument ?? null,
     contentVersion: row.contentVersion,
     crdtEpoch: row.crdtEpoch ?? null,
@@ -65,18 +63,10 @@ function expectStoredV3(paper: unknown) {
   expect(text).toContain('"level":3')
 }
 
-function expectUpgradeOnly(paper: unknown) {
-  const text = textOf(paper)
-  expect(text).not.toContain("Selected roles")
-  expect(text).not.toContain('"bold":true')
-  expect(text).not.toContain('"level":3')
-}
-
 async function insertRow(values: {
   id: string
   name: string
   kind: "cv" | "letter"
-  document: unknown
   crdtDocument?: unknown
   token?: string
 }) {
@@ -85,7 +75,6 @@ async function insertRow(values: {
     userId: store.actor.userId,
     name: values.name,
     kind: values.kind,
-    document: values.document as Record<string, unknown>,
     ...(values.crdtDocument === undefined
       ? {}
       : { crdtDocument: values.crdtDocument as Record<string, unknown> }),
@@ -100,7 +89,7 @@ async function insertRow(values: {
 }
 
 describe("readers return v3 paper without writing", () => {
-  it("returns marks the legacy document cannot carry", async () => {
+  it("returns marks from the stored snapshot", async () => {
     await withDatabase(store.db, async () => {
       const created = await run("paper.create", {
         kind: "cv",
@@ -133,98 +122,68 @@ describe("readers return v3 paper without writing", () => {
       const seededToken = (shared.output as { token: string }).token
       const seededRow = await rowOf(seededId)
       const seededBefore = unchanged(seededRow)
-      const upgraded = upgradeStoredPaper("cv", seededRow.document)
-      expect(upgraded.ok).toBe(true)
-      if (!upgraded.ok) return
-
-      const rawId = createId()
-      const rawToken = "unseeded-share-token"
-      await insertRow({
-        id: rawId,
-        name: "Raw",
-        kind: "cv",
-        document: twoParagraphCv,
-        token: rawToken,
-      })
-      const rawBefore = unchanged(await rowOf(rawId))
-      const rawExpected = upgradeStoredPaper("cv", twoParagraphCv)
-      expect(rawExpected.ok).toBe(true)
-      if (!rawExpected.ok) return
-
       const seededGet = (await read("paper.get", {
         docId: seededId,
       })) as ReadView
-      const rawGet = (await read("paper.get", { docId: rawId })) as ReadView
       const list = (await read("paper.list", {})) as ReadView[]
       const seededShared = (await read("paper.shared", {
         token: seededToken,
       })) as ReadView
-      const rawShared = (await read("paper.shared", {
-        token: rawToken,
-      })) as ReadView
       const exported = await exportAccount(store.actor.userId)
-      const exportedRaw = exported.documents.find((doc) => doc.id === rawId)
       const exportedSeeded = exported.documents.find(
         (doc) => doc.id === seededId
       )
 
       expectStoredV3(seededRow.crdtDocument)
-      expectUpgradeOnly(upgraded.document)
       expect(seededGet.paper).toEqual(seededRow.crdtDocument)
-      expect(seededGet.paper).not.toEqual(upgraded.document)
       expect(list.find((item) => item.id === seededId)?.paper).toEqual(
         seededRow.crdtDocument
       )
       expect(seededShared.paper).toEqual(seededRow.crdtDocument)
       expect(exportedSeeded?.paper).toEqual(seededRow.crdtDocument)
-      expect(rawGet.paper).toEqual(rawExpected.document)
-      expect(list.find((item) => item.id === rawId)?.paper).toEqual(
-        rawExpected.document
-      )
-      expect(rawShared.paper).toEqual(rawExpected.document)
-      expect(exportedRaw?.paper).toEqual(rawExpected.document)
       expect(unchanged(await rowOf(seededId))).toEqual(seededBefore)
-      expect(unchanged(await rowOf(rawId))).toEqual(rawBefore)
-      expect(rawBefore.crdtDocument).toBeNull()
     })
   })
 
-  it("upgrades when the stored v3 is missing or the wrong kind", async () => {
+  it("refuses a snapshot that is missing or the wrong kind", async () => {
     await withDatabase(store.db, async () => {
       const brokenId = createId()
       await insertRow({
         id: brokenId,
         name: "Broken snapshot",
         kind: "cv",
-        document: twoParagraphCv,
         crdtDocument: { version: 3 },
       })
-      const letter = upgradeStoredPaper("letter", {
-        markdown: "Hello from the letter",
-      })
-      expect(letter.ok).toBe(true)
-      if (!letter.ok) return
       const mismatchedId = createId()
       await insertRow({
         id: mismatchedId,
         name: "Mismatched kind",
         kind: "cv",
-        document: twoParagraphCv,
-        crdtDocument: letter.document,
+        crdtDocument: {
+          version: 3,
+          kind: "letter",
+          blocks: [
+            {
+              id: "l-1",
+              type: "paragraph",
+              content: [{ text: "Hello from the letter" }],
+            },
+          ],
+          clashes: [],
+        },
       })
-      const expected = upgradeStoredPaper("cv", twoParagraphCv)
-      expect(expected.ok).toBe(true)
-      if (!expected.ok) return
-
-      const broken = (await read("paper.get", { docId: brokenId })) as ReadView
-      const mismatched = (await read("paper.get", {
-        docId: mismatchedId,
-      })) as ReadView
-      expect(broken.paper).toEqual(expected.document)
-      expect(broken.paper).not.toEqual({ version: 3 })
-      expect(mismatched.paper).toEqual(expected.document)
-      expect((mismatched.paper as CvPaper).kind).toBe("cv")
-      expect(textOf(mismatched.paper)).not.toContain("Hello from the letter")
+      const list = (await read("paper.list", {})) as ReadView[]
+      expect(list.find((item) => item.id === brokenId)).toBeUndefined()
+      expect(list.find((item) => item.id === mismatchedId)).toBeUndefined()
+      await expect(
+        store.registry.read("paper.get", { docId: brokenId }, store.actor)
+      ).rejects.toMatchObject({ code: "INTERNAL_ERROR" })
+      await expect(
+        store.registry.read("paper.get", { docId: mismatchedId }, store.actor)
+      ).rejects.toMatchObject({ code: "INTERNAL_ERROR" })
+      await expect(
+        store.registry.read("paper.outline", { docId: brokenId }, store.actor)
+      ).rejects.toMatchObject({ code: "INTERNAL_ERROR" })
     })
   })
 
@@ -242,7 +201,6 @@ describe("readers return v3 paper without writing", () => {
         id: badId,
         name: "Unreadable",
         kind: "letter",
-        document: twoParagraphCv,
         token: badToken,
       })
 

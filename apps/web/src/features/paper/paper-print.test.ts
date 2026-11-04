@@ -13,6 +13,7 @@ import {
   PaperPrintMeasure,
   PaperPrintSheet,
   copySheetOrSkipCrossOriginAndJsdom,
+  previewOf,
 } from "./paper-print-sheet.tsx"
 import {
   bindPrintPageCount,
@@ -71,22 +72,59 @@ describe("preview page count", () => {
   })
 })
 
-const emptyPrint = {
-  templateId: "internship" as const,
-  name: "Ada",
-  headline: "",
-  contact: { email: "ada@verify.local", phone: "", location: "" },
-  summary: "",
-  experience: [
+const printedCv = {
+  version: 3 as const,
+  kind: "cv" as const,
+  header: {
+    id: "header",
+    type: "header" as const,
+    name: "Ada",
+    email: "ada@verify.local",
+    phone: "",
+    city: "",
+    linkedin: "",
+  },
+  blocks: [
     {
+      id: "section-experience",
+      type: "section" as const,
+      kind: "experience" as const,
+      title: "Experience",
+    },
+    {
+      id: "role-1",
+      type: "experience" as const,
       role: "Product intern",
       company: "",
       period: "2024",
-      bullets: ["Shipped the checklist"],
+      location: "",
+      children: [
+        {
+          id: "did-1",
+          type: "bullet" as const,
+          content: [{ text: "Shipped the checklist" }],
+          children: [],
+        },
+      ],
     },
   ],
-  education: [],
-  skills: [],
+  clashes: [],
+}
+
+const printedLetter = {
+  version: 3 as const,
+  kind: "letter" as const,
+  blocks: [
+    { id: "p-ada", type: "paragraph" as const, content: [{ text: "Ada" }] },
+    { id: "p-one", type: "paragraph" as const, content: [{ text: "One." }] },
+    { id: "p-two", type: "paragraph" as const, content: [{ text: "Two." }] },
+    {
+      id: "p-regards",
+      type: "paragraph" as const,
+      content: [{ text: "Regards," }],
+    },
+  ],
+  clashes: [],
 }
 
 function sourceText(dir: string): string {
@@ -157,7 +195,7 @@ describe("print paper", () => {
     const measureRef = { current: null as HTMLDivElement | null }
     render(
       createElement(PaperPrintMeasure, {
-        source: emptyPrint,
+        source: printedCv,
         templateId: "simple",
         measureRef,
       })
@@ -178,7 +216,7 @@ describe("print paper", () => {
       createElement(PaperPrintSheet, {
         name: "Ada",
         kind: "cv",
-        source: emptyPrint,
+        source: printedCv,
         templateId: "simple",
       })
     )
@@ -204,11 +242,7 @@ describe("print paper", () => {
       createElement(PaperPrintSheet, {
         name: "Letter for Ada",
         kind: "letter",
-        source: {
-          markdown: "One.\n\nTwo.",
-          sender: "Ada",
-          closing: "Regards,",
-        },
+        source: printedLetter,
         templateId: null,
       })
     )
@@ -271,6 +305,54 @@ describe("print paper", () => {
     ].join("\n")
     expect(registry).not.toMatch(/paper\.pdf/)
     expect(registry).not.toMatch(/\/api\/paper\/[^`"'\s]*\/pdf/)
+  })
+})
+
+const sectionsCv = {
+  ...printedCv,
+  blocks: [
+    {
+      id: "s-summary",
+      type: "section" as const,
+      kind: "summary" as const,
+      title: "Summary",
+    },
+    {
+      id: "summary",
+      type: "paragraph" as const,
+      content: [{ text: "Shipped a small tool" }],
+    },
+    {
+      id: "s-activities",
+      type: "section" as const,
+      kind: "activities" as const,
+      title: "Activities",
+    },
+    {
+      id: "debate",
+      type: "paragraph" as const,
+      content: [{ text: "Debate club" }],
+    },
+    {
+      id: "s-awards",
+      type: "section" as const,
+      kind: "awards" as const,
+      title: "Awards",
+    },
+    {
+      id: "dean",
+      type: "paragraph" as const,
+      content: [{ text: "Dean list" }],
+    },
+  ],
+}
+
+describe("print model of a stored CV", () => {
+  it("keeps the summary, activities and awards", () => {
+    const preview = previewOf(sectionsCv, "internship")
+    expect(preview?.summary).toBe("Shipped a small tool")
+    expect(preview?.activities).toEqual(["Debate club"])
+    expect(preview?.awards).toEqual(["Dean list"])
   })
 })
 

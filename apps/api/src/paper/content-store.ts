@@ -2,9 +2,7 @@ import {
   ERROR_CODES,
   nodeFingerprint,
   repairPaper,
-  legacyPaperOf,
   paperDocumentSchema,
-  upgradeStoredPaper,
   type PaperDocument,
   type PaperId,
   type PaperStoredKind,
@@ -169,12 +167,11 @@ function validated(candidate: unknown, kind: PaperStoredKind): PaperDocument {
   return parsed.data
 }
 
-export function seedColumns(kind: PaperStoredKind, stored: unknown) {
-  const upgraded = upgradeStoredPaper(kind, stored)
-  if (!upgraded.ok) throw refuse(upgraded.message)
+export function seedColumns(kind: PaperStoredKind, paper: PaperDocument) {
+  const seeded = validated(paper, kind)
   let base: Uint8Array
   try {
-    base = seedYDoc(upgraded.document)
+    base = seedYDoc(seeded)
   } catch (error) {
     throw refuse(error instanceof Error ? error.message : "Cannot seed")
   }
@@ -200,14 +197,6 @@ async function lockedRow(userId: UserId, docId: PaperId): Promise<PaperRow> {
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   return row
-}
-
-async function seeded(row: PaperRow): Promise<PaperRow> {
-  if (row.crdtBase) return row
-  const columns = seedColumns(row.kind, row.document)
-  const patch = { ...columns, crdtBaseSeq: row.contentVersion }
-  await getDb().update(paperDocs).set(patch).where(eq(paperDocs.id, row.id))
-  return { ...row, ...patch }
 }
 
 async function loggedRows(docId: string, afterSeq: number): Promise<LogRow[]> {
@@ -325,10 +314,6 @@ async function hydrate(row: PaperRow): Promise<Live> {
   return entry
 }
 
-function legacyDocument(paper: PaperDocument, witness: unknown) {
-  return legacyPaperOf(paper, witness) as unknown as Record<string, unknown>
-}
-
 async function commit(
   row: PaperRow,
   entry: Live,
@@ -339,7 +324,6 @@ async function commit(
     basedOn?: number
     touched?: string[]
     rebuilt?: string[]
-    witness: unknown
   }
 ): Promise<PaperRow> {
   const materialized = materialize(entry.yDoc)
@@ -362,7 +346,6 @@ async function commit(
     })
   const patch = {
     crdtDocument: paper as unknown as Record<string, unknown>,
-    document: legacyDocument(paper, change.witness),
     contentVersion: seq,
     updatedAt: new Date(),
   }
@@ -392,7 +375,6 @@ async function editLocked(
         : change.target,
       row.kind
     )
-    const witness = change.witness ?? row.document
     let effective: Uint8Array | null
     try {
       effective = writeDocument(entry.yDoc, target, change.origin)
@@ -400,7 +382,7 @@ async function editLocked(
       throw refuse(error instanceof Error ? error.message : "Cannot write")
     }
     if (effective) {
-      return await commit(row, entry, effective, { ...change, witness })
+      return await commit(row, entry, effective, change)
     }
     return row
   } catch (error) {
@@ -467,7 +449,6 @@ async function appendLocked(
       basedOn: change.basedOn,
       touched,
       rebuilt,
-      witness: row.document,
     })
     return { row: written, problems: [] }
   } catch (error) {
@@ -482,7 +463,7 @@ export async function withContent<T>(
   run: (content: LockedContent) => Promise<T>
 ): Promise<T> {
   return transaction(async () => {
-    const row = await seeded(await lockedRow(userId, docId))
+    const row = await lockedRow(userId, docId)
     const entry = await hydrate(row)
     let latest = row
     const content: LockedContent = {
@@ -602,7 +583,7 @@ export async function syncContent(
   request: SyncRequest
 ): Promise<SyncReply> {
   return transaction(async () => {
-    let row = await seeded(await lockedRow(userId, docId))
+    let row = await lockedRow(userId, docId)
     const entry = await hydrate(row)
     const reply = (
       reset: boolean,
@@ -640,7 +621,6 @@ export async function syncContent(
         row = await commit(row, entry, fixed.effective, {
           origin: "person",
           rebuilt: fixed.rebuilt,
-          witness: row.document,
         })
       }
       const after = knownAfter(request.stateVector, request.update)

@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import {
-  emptyCvDocument,
-  upgradeStoredPaper,
+  blankCv,
+  paperDocumentSchema,
   type LetterPaper,
   type PaperDocument,
   type PaperView,
@@ -23,13 +23,18 @@ vi.mock("@tanstack/react-router", () => ({
   }) => options.select({ location: { pathname: state.pathname } }),
 }))
 
-function paperOf(kind: "cv" | "letter", document: unknown): PaperDocument {
-  const upgraded = upgradeStoredPaper(kind, document)
-  if (!upgraded.ok) throw new Error(upgraded.message)
-  return upgraded.document
+function letterPaper(lines: string[]): PaperDocument {
+  return paperDocumentSchema.parse({
+    version: 3,
+    kind: "letter",
+    clashes: [],
+    blocks: lines.map((text, index) => ({
+      id: `l-${index + 1}`,
+      type: "paragraph",
+      content: [{ text }],
+    })),
+  })
 }
-
-const sharedDocument = emptyCvDocument()
 
 const shared: Omit<PaperView, "isFavorite"> = {
   id: "doc-1",
@@ -37,7 +42,7 @@ const shared: Omit<PaperView, "isFavorite"> = {
   kind: "cv",
   templateId: "modern",
   status: "draft",
-  paper: paperOf("cv", sharedDocument),
+  paper: blankCv(),
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",
@@ -110,23 +115,48 @@ describe("Paper share page", () => {
   })
 
   it("shows no placeholder for an empty summary or an empty company", async () => {
-    const quietDocument = {
-      ...emptyCvDocument(),
-      name: "Ada",
-      summary: "",
-      experience: [
+    const quietPaper = paperDocumentSchema.parse({
+      version: 3,
+      kind: "cv",
+      header: {
+        id: "header",
+        type: "header",
+        name: "Ada",
+        email: "",
+        phone: "",
+        city: "",
+        linkedin: "",
+      },
+      clashes: [],
+      blocks: [
         {
+          id: "section-experience",
+          type: "section",
+          kind: "experience",
+          title: "Experience",
+        },
+        {
+          id: "role-1",
+          type: "experience",
           role: "Product intern",
           company: "",
           period: "2024",
-          bullets: ["Shipped the checklist"],
+          location: "",
+          children: [
+            {
+              id: "b1",
+              type: "bullet",
+              content: [{ text: "Shipped the checklist" }],
+              children: [],
+            },
+          ],
         },
       ],
-    }
+    })
     const quiet: Omit<PaperView, "isFavorite"> = {
       ...shared,
       templateId: "simple",
-      paper: paperOf("cv", quietDocument),
+      paper: quietPaper,
     }
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)
@@ -149,18 +179,12 @@ describe("Paper share page", () => {
   })
 
   it("shows a shared letter's words as flat paragraphs", async () => {
-    const letterDocument = {
-      markdown: "First.\n\nSecond.",
-      sender: "Ada",
-      date: "May 5",
-      signature: "Ada",
-    }
     const letter: Omit<PaperView, "isFavorite"> = {
       ...shared,
       name: "Letter for Ada",
       kind: "letter",
       templateId: null,
-      paper: paperOf("letter", letterDocument),
+      paper: letterPaper(["Ada", "May 5", "First.", "Second.", "Ada"]),
     }
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)

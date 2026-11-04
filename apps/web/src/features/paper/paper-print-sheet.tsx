@@ -8,14 +8,11 @@ import {
 import { createPortal } from "react-dom"
 import {
   cvPrintModel,
-  isCvDocument,
   type CvDocument as CvDocumentData,
   type CvPaper,
   type LetterPaper,
 } from "@workspace/domain"
 
-import { readStoredLetter } from "./letter-sheet-model.ts"
-import { LetterSheet } from "./letter-sheet.tsx"
 import { LetterPrint } from "./paper-letter-print.tsx"
 import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
@@ -42,15 +39,8 @@ export function previewOf(
 ): CvDocumentData | null {
   const layout = printLayout(templateId)
   const paper = asCvPaper(source)
-  if (paper) return cvPrintModel(paper, layout)
-  if (!source || typeof source !== "object") return null
-  const record = { ...(source as Record<string, unknown>) }
-  const activities = record.activities
-  const awards = record.awards
-  delete record.activities
-  delete record.awards
-  if (!isCvDocument(record)) return null
-  return { ...record, templateId: layout, activities, awards } as CvDocumentData
+  if (!paper) return null
+  return cvPrintModel(paper, layout)
 }
 
 function useQuietPaper<T extends HTMLElement>(rootRef: RefObject<T | null>) {
@@ -154,22 +144,8 @@ export function PaperPrintSheet({
   if (!host) return null
   if (kind === "letter") {
     const letter = asLetterPaper(source)
-    if (letter) return <LetterPrint document={letter} />
-    return createPortal(
-      <article
-        ref={(node) => {
-          rootRef.current = node
-        }}
-        data-paper-print=""
-        data-paper-letter=""
-        className="paper-print-sheet"
-        aria-hidden="true"
-        inert
-      >
-        <LetterSheet letter={readStoredLetter(source)} />
-      </article>,
-      host.body
-    )
+    if (!letter) return null
+    return <LetterPrint document={letter} />
   }
   const preview = previewOf(source, templateId)
   if (!preview) return null

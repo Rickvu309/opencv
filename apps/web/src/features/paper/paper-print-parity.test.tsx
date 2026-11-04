@@ -2,12 +2,9 @@ import { cleanup, render } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 import {
   PAPER_TEMPLATE_IDS,
-  blocksToPreviewModel,
   cvPrintModel,
   emptyCvDocument,
-  paragraphsToBlockDocument,
-  upgradeStoredPaper,
-  type CvBlockDocument,
+  paperDocumentSchema,
   type CvDocument,
   type CvPaper,
   type CvSectionKind,
@@ -16,7 +13,6 @@ import {
 } from "@workspace/domain"
 
 import { CvDocument as CvTemplate } from "./cv-print-document.tsx"
-import { LetterSheet } from "./letter-sheet.tsx"
 import { LetterPrintView } from "./paper-letter-print.tsx"
 import { printLayout } from "./paper-templates.ts"
 
@@ -61,119 +57,135 @@ const v1: CvDocument = {
   photoUrl: "https://images.example/lan.png",
 }
 
-const v2: CvBlockDocument = {
-  version: 2,
-  header: {
-    name: "Ada Lane",
-    email: "ada@example.com",
-    phone: "",
-    city: "Hanoi",
-    linkedin: "linkedin.com/in/ada",
-    photo: "https://images.example/ada.png",
-  },
-  sections: [
-    {
-      id: "summary",
-      kind: "summary",
-      blocks: [
-        { id: "h1", type: "heading", text: "Careful pages" },
-        { id: "t1", type: "text", text: "Builds careful pages." },
-        {
-          id: "l1",
-          type: "bulleted-list",
-          items: [{ id: "li1", text: "Shipped the board" }],
-        },
-      ],
-    },
-    {
-      id: "experience",
-      kind: "experience",
-      blocks: [
-        { id: "loose", type: "text", text: "A loose line before the role" },
-        {
-          id: "x1",
-          type: "experience-entry",
-          role: "Intern",
-          company: "Northwind",
-          period: "2024",
-          location: "Hanoi",
-          bullets: [{ id: "b1", text: "Shipped the board" }],
-        },
-      ],
-    },
-    {
-      id: "education",
-      kind: "education",
-      blocks: [
-        {
-          id: "ed1",
-          type: "education-entry",
-          school: "NTU",
-          degree: "CS",
-          period: "2023",
-          detail: "Thesis on type",
-        },
-      ],
-    },
-    {
-      id: "skills",
-      kind: "skills",
-      blocks: [
-        {
-          id: "sk1",
-          type: "skills-group",
-          label: "Tools",
-          items: ["Figma", "SQL, Postgres"],
-        },
-        { id: "sk2", type: "text", text: "Go, Rust" },
-      ],
-    },
-    {
-      id: "projects",
-      kind: "projects",
-      blocks: [
-        { id: "ph", type: "heading", text: "Campus board" },
-        { id: "pt", type: "text", text: "Line one" },
-        {
-          id: "pl",
-          type: "bulleted-list",
-          items: [{ id: "pi", text: "Line two" }],
-        },
-      ],
-    },
-    {
-      id: "languages",
-      kind: "languages",
-      blocks: [{ id: "lang", type: "text", text: "Vietnamese, native" }],
-    },
-    {
-      id: "awards",
-      kind: "awards",
-      blocks: [{ id: "aw", type: "text", text: "Dean's list" }],
-    },
-    {
-      id: "activities",
-      kind: "activities",
-      blocks: [{ id: "ac", type: "text", text: "Reading group" }],
-    },
-  ],
-}
-
-const imported = paragraphsToBlockDocument(
-  "Lan Nguyen\n\nShips small experiments."
-)
-
 function visibleText(node: HTMLElement) {
   return (node.textContent ?? "").replace(/\s+/g, " ").trim()
 }
 
-function upgradedCv(stored: unknown): CvPaper {
-  const result = upgradeStoredPaper("cv", stored)
-  if (!result.ok || result.document.kind !== "cv") {
-    throw new Error(result.ok ? "expected a cv" : result.message)
-  }
-  return result.document
-}
+const richV1 = paperDocumentSchema.parse({
+  version: 3,
+  kind: "cv",
+  header: {
+    id: "header",
+    type: "header",
+    name: v1.name,
+    email: v1.contact.email,
+    phone: v1.contact.phone,
+    city: v1.contact.location,
+    linkedin: v1.contact.linkedin ?? "",
+    photo: v1.photoUrl,
+  },
+  clashes: [],
+  blocks: [
+    {
+      id: "section-summary",
+      type: "section",
+      kind: "summary",
+      title: "Summary",
+    },
+    {
+      id: "headline",
+      type: "heading",
+      level: 2,
+      content: [{ text: v1.headline }],
+    },
+    { id: "summary", type: "paragraph", content: [{ text: v1.summary }] },
+    {
+      id: "section-experience",
+      type: "section",
+      kind: "experience",
+      title: "Experience",
+    },
+    {
+      id: "exp-1",
+      type: "experience",
+      role: "Intern",
+      company: "Northwind",
+      period: "2024",
+      location: "Hanoi",
+      children: [
+        {
+          id: "b1",
+          type: "bullet",
+          content: [{ text: "Shipped the board" }],
+          children: [],
+        },
+      ],
+    },
+    {
+      id: "exp-2",
+      type: "experience",
+      role: "",
+      company: "Campus lab",
+      period: "2023",
+      location: "",
+      children: [
+        {
+          id: "b3",
+          type: "bullet",
+          content: [{ text: "Noted the result" }],
+          children: [],
+        },
+      ],
+    },
+    {
+      id: "section-education",
+      type: "section",
+      kind: "education",
+      title: "Education",
+    },
+    {
+      id: "ed-1",
+      type: "education",
+      school: "NTU",
+      degree: "CS",
+      period: "2023",
+      detail: "Thesis on type",
+      children: [],
+    },
+    { id: "section-skills", type: "section", kind: "skills", title: "Skills" },
+    {
+      id: "sk-1",
+      type: "skills",
+      label: "Tools",
+      items: ["Figma", "SQL, Postgres"],
+    },
+    { id: "sk-2", type: "skills", label: "", items: ["Typing"] },
+    {
+      id: "section-projects",
+      type: "section",
+      kind: "projects",
+      title: "Projects",
+    },
+    {
+      id: "ph-1",
+      type: "heading",
+      level: 2,
+      content: [{ text: "Campus board" }],
+    },
+    {
+      id: "pt-1",
+      type: "paragraph",
+      content: [{ text: "Line one\nLine two" }],
+    },
+    {
+      id: "ph-2",
+      type: "heading",
+      level: 2,
+      content: [{ text: "Empty detail" }],
+    },
+    {
+      id: "section-languages",
+      type: "section",
+      kind: "languages",
+      title: "Languages",
+    },
+    {
+      id: "lang",
+      type: "paragraph",
+      content: [{ text: "Vietnamese, native" }],
+    },
+  ],
+}) as CvPaper
 
 function shown(data: CvDocument) {
   const view = render(<CvTemplate data={data} onChange={() => undefined} />)
@@ -191,8 +203,6 @@ function shown(data: CvDocument) {
   return picture
 }
 
-const richV1 = upgradedCv(v1)
-
 const fixtures: {
   name: string
   paper: CvPaper
@@ -208,22 +218,6 @@ const fixtures: {
     entry: "Northwind",
     photo: true,
     previous: (layout) => ({ ...v1, templateId: layout }),
-  },
-  {
-    name: "v2",
-    paper: upgradedCv(v2),
-    anchor: "Ada Lane",
-    entry: "Northwind",
-    photo: true,
-    previous: (layout) => blocksToPreviewModel(v2, layout),
-  },
-  {
-    name: "imported",
-    paper: upgradedCv(imported),
-    anchor: "Lan Nguyen",
-    entry: "Ships small experiments.",
-    photo: false,
-    previous: (layout) => blocksToPreviewModel(imported, layout),
   },
 ]
 
@@ -333,26 +327,24 @@ describe("print parity", () => {
   })
 
   it("matches the stored letter words on the share letter view", () => {
-    const stored = {
-      markdown: "First.\n\nSecond.",
-      sender: "Ada",
-      date: "May 5",
-      signature: "Ada",
-    }
-    const result = upgradeStoredPaper("letter", stored)
-    if (!result.ok || result.document.kind !== "letter") {
-      throw new Error(result.ok ? "expected a letter" : result.message)
-    }
-    const letter: LetterPaper = result.document
-    const previous = visibleText(
-      render(<LetterSheet letter={stored} />).container
-    )
+    const letter = paperDocumentSchema.parse({
+      version: 3,
+      kind: "letter",
+      clashes: [],
+      blocks: ["Ada", "May 5", "First.", "Second.", "Ada"].map(
+        (text, index) => ({
+          id: `l-${index + 1}`,
+          type: "paragraph",
+          content: [{ text }],
+        })
+      ),
+    }) as LetterPaper
     const printed = visibleText(
       render(<LetterPrintView document={letter} />).container
     )
-    expect(printed).toBe(previous)
     expect(printed).toContain("First.")
     expect(printed).toContain("Second.")
     expect(printed).toContain("Ada")
+    expect(printed).toContain("May 5")
   })
 })

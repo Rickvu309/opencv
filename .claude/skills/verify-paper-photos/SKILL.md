@@ -9,7 +9,7 @@ description: Check that a CV photo stays while a document, an undo, a pending ac
 
 A photo file stays for as long as something still names it, and no longer.
 
-- **F1.** Every file id reachable from current paper content (the legacy document and the CRDT document), from a not-undone reversal whose paper still exists, from a pending action input, from an idempotency result, from an activity result, or from the profile, still exists.
+- **F1.** Every file id reachable from current paper content (`paper_docs.crdt_document`), from a not-undone reversal whose paper still exists, from a pending action input, from an idempotency result, from an activity result, or from the profile, still exists.
 - **F2.** After Undo of a photo change, that photo still resolves.
 - **F3.** An upload nothing names, older than 24 hours, is gone after one sweep.
 - **F4.** A copy keeps its photo after the original document is deleted.
@@ -46,7 +46,7 @@ On Postgres, set `FORMAL_DATABASE_URL` to a server you can create databases on. 
 
 | Test                                                                                     | Covers                                                                                                                                                |
 | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| keeps a photo that only the CRDT document still names                                    | F1. The legacy document, the reversal, and the activity receipt are cleared. The old scan would delete the file. The sweep does not.                  |
+| keeps a photo that only the CRDT document still names                                    | F1. The reversal and the activity receipt are cleared. The photo remains in `paper_docs.crdt_document`. The sweep does not delete the file.           |
 | resolves the photo again after undo; the replacement stays while its release row remains | F2. The undo row records the dropped photo. The sweep deletes it once that row is folded.                                                             |
 | sweeps an unreferenced upload older than a day and keeps a fresh one                     | F3. A sweep that returns before the delete leaves the old file.                                                                                       |
 | keeps the copy's photo after the original document is deleted                            | F4                                                                                                                                                    |
@@ -63,7 +63,7 @@ On Postgres, set `FORMAL_DATABASE_URL` to a server you can create databases on. 
 
 ## What the scan treats as live
 
-- `paper_docs.document` and `paper_docs.crdt_document`, always.
+- `paper_docs.crdt_document`, always.
 - `paper_doc_updates.update` only while that paper's CRDT document is null. A committed CRDT document is the replay of the log. Scanning every old update would keep a photo the person already replaced.
 - `paper_doc_updates.released_photo_refs` while that update row is still inside the compaction horizon. A commit that drops a header photo records the id there, and the sweep keeps the file until the row is folded.
 - `activity.reversal_input` while the activity is not undone and its `docId` paper still exists. Deleting the paper drops those references. Undo of a deleted paper is not a command.
@@ -84,14 +84,14 @@ On Postgres, set `FORMAL_DATABASE_URL` to a server you can create databases on. 
 
 ## Mutants
 
-| Break                                                         | What fails                                                                             |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Clear only the legacy document, the reversal, and the profile | The CRDT-only test: the old id list would delete the file, and the real sweep must not |
-| `DELETE FROM photo_refs WHERE source LIKE 'activity.%'`       | The activity-result test: the sweep then returns that file                             |
-| Insert a `photo_refs` row for an undone photo                 | The undo test: the sweep keeps the replacement until that row is removed               |
-| Sweep returns `[]` before the delete                          | The orphan stays                                                                       |
-| Delete every `photo_refs` row for the copied file             | The copy mutant: the sweep returns the file                                            |
-| `PhotoSweep.mutant.cfg` sets `Split = TRUE`                   | `node scripts/tlc.mjs apps/api/src/paper/PhotoSweep.tla --mutant` exits 12             |
+| Break                                                   | What fails                                                                             |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Clear the reversal and the profile                      | The CRDT-only test: the old id list would delete the file, and the real sweep must not |
+| `DELETE FROM photo_refs WHERE source LIKE 'activity.%'` | The activity-result test: the sweep then returns that file                             |
+| Insert a `photo_refs` row for an undone photo           | The undo test: the sweep keeps the replacement until that row is removed               |
+| Sweep returns `[]` before the delete                    | The orphan stays                                                                       |
+| Delete every `photo_refs` row for the copied file       | The copy mutant: the sweep returns the file                                            |
+| `PhotoSweep.mutant.cfg` sets `Split = TRUE`             | `node scripts/tlc.mjs apps/api/src/paper/PhotoSweep.tla --mutant` exits 12             |
 
 ## Bounds and assumptions
 
@@ -104,18 +104,18 @@ On Postgres, set `FORMAL_DATABASE_URL` to a server you can create databases on. 
 
 ## Coverage record
 
-| Item                                                     | Where                                                                                      |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `sweepUnattachedPhotos`                                  | `apps/api/src/paper/photo-sweep.ts`                                                        |
-| `referencedPhotoFileIds`, `photoRefOf`, the column lists | `apps/api/src/paper/photo-references.ts`                                                   |
-| `attachPhoto` (the TLA `Attach` and `AttachWrite` steps) | `apps/api/src/paper/store.ts`, re-exported from `photo-sweep.ts` for the action map        |
-| `isMissingPhoto`                                         | `apps/api/src/registry/errors.ts`, mapped in `transaction` in `apps/api/src/db/context.ts` |
-| `photo_refs` and the triggers                            | `apps/api/drizzle/0008_photo_refs.sql`, `apps/api/drizzle/0010_paper_released_photos.sql`  |
-| jsonb column guard                                       | `apps/api/src/paper/photo-references.schema.test.ts`                                       |
-| F1 to F4 and the SQL mutants                             | `apps/api/src/paper/photo-lifetime.formal.test.ts`                                         |
-| fast-check model                                         | `apps/api/src/paper/photo-lifetime.model.formal.test.ts`                                   |
-| shared oracle and commands                               | `apps/api/src/paper/photo-lifetime.support.ts`                                             |
-| attach-versus-sweep model                                | `apps/api/src/paper/PhotoSweep.tla`, `.cfg`, `.mutant.cfg`, `.tla.json`                    |
+| Item                                                     | Where                                                                                                                                      |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sweepUnattachedPhotos`                                  | `apps/api/src/paper/photo-sweep.ts`                                                                                                        |
+| `referencedPhotoFileIds` and the column lists            | `apps/api/src/paper/photo-references.ts`                                                                                                   |
+| `attachPhoto` (the TLA `Attach` and `AttachWrite` steps) | `apps/api/src/paper/store.ts`, re-exported from `photo-sweep.ts` for the action map                                                        |
+| `isMissingPhoto`                                         | `apps/api/src/registry/errors.ts`, mapped in `transaction` in `apps/api/src/db/context.ts`                                                 |
+| `photo_refs` and the triggers                            | `apps/api/drizzle/0008_photo_refs.sql`, `apps/api/drizzle/0010_paper_released_photos.sql`, `apps/api/drizzle/0011_drop_paper_document.sql` |
+| jsonb column guard                                       | `apps/api/src/paper/photo-references.schema.test.ts`                                                                                       |
+| F1 to F4 and the SQL mutants                             | `apps/api/src/paper/photo-lifetime.formal.test.ts`                                                                                         |
+| fast-check model                                         | `apps/api/src/paper/photo-lifetime.model.formal.test.ts`                                                                                   |
+| shared oracle and commands                               | `apps/api/src/paper/photo-lifetime.support.ts`                                                                                             |
+| attach-versus-sweep model                                | `apps/api/src/paper/PhotoSweep.tla`, `.cfg`, `.mutant.cfg`, `.tla.json`                                                                    |
 
 Sync commit: `81138656116d88d2813d0f73f7759ad8a71885db`. Move it only after you reread the covered functions at the new commit, rerun the three commands above, and check that every row in the coverage record still describes the code.
 

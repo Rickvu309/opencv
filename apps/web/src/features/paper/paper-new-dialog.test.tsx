@@ -72,7 +72,6 @@ describe("Paper new dialog", () => {
     ).toMatchObject({
       kind: "cv",
       templateId: "simple",
-      document: { version: 2 },
     })
   })
 })
