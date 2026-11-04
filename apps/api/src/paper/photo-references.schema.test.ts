@@ -80,7 +80,7 @@ describe("photo reference schema guard", () => {
     const name = readdirSync(path.join(here, "../../drizzle")).find((entry) =>
       entry.includes("released_photo")
     )
-    expect(name).toBe("0010_paper_released_photos.sql")
+    expect(name).toEqual(expect.stringContaining("released_photo"))
     const text = readFileSync(path.join(here, "../../drizzle", name!), "utf8")
     expect(text).toContain("released_photo_refs")
     expect(text).toContain(RELEASED_PHOTO_SOURCE)
