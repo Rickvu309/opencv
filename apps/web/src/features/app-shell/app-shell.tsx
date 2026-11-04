@@ -362,7 +362,7 @@ function ShellDock({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-11 max-w-36 shrink-0 md:h-7"
+            className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
             data-chat-id={chat.id}
             title={chat.title}
             onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
