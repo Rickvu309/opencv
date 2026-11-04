@@ -25,7 +25,7 @@ type ActiveChatState = {
 type ActiveChatAction =
   | { type: "active_chat_opened"; id: string }
   | { type: "active_chat_cleared" }
-  | { type: "chat_created"; id: string }
+  | { type: "conversation_created"; id: string }
   | { type: "creation_started"; owner: string | null }
 
 function activeChatReducer(
@@ -36,10 +36,12 @@ function activeChatReducer(
     return { ...state, creationOwner: action.owner }
   }
   return {
-    creationOwner: action.type === "chat_created" ? state.creationOwner : null,
+    creationOwner:
+      action.type === "conversation_created" ? state.creationOwner : null,
     activeChatId: action.type === "active_chat_cleared" ? null : action.id,
     navigationRevision:
-      state.navigationRevision + (action.type === "chat_created" ? 0 : 1),
+      state.navigationRevision +
+      (action.type === "conversation_created" ? 0 : 1),
   }
 }
 
@@ -73,7 +75,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     cancelInFlight,
   } = useCoachTurn({
     chatId: activeChatId,
-    setChatId: (id) => dispatch({ type: "chat_created", id }),
+    setChatId: (id) => dispatch({ type: "conversation_created", id }),
     titleForCreate: titleFrom,
     onAfterUndo: () => {
       void refreshReads(queryClient, [{ query: "profile.get" }])
