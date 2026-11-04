@@ -193,6 +193,10 @@ export const paperDocUpdates = opencvApp.table(
     touched: jsonb("touched").$type<string[]>(),
     rebuilt: jsonb("rebuilt").$type<string[]>(),
     update: bytea("update").notNull(),
+    releasedPhotoRefs: uuid("released_photo_refs")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::uuid[]`),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.paperId, table.seq] })]

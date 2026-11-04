@@ -109,6 +109,7 @@ describe("opencv_app migrations", () => {
           statement.includes('DELETE FROM "opencv_app"."paper_docs"')
         )
       )
+      const newest = migrations.at(-1)
       expect(favoritesAt).toBeGreaterThan(0)
       expect(reset).toBeDefined()
       for (const migration of migrations.slice(0, favoritesAt)) {
@@ -137,7 +138,7 @@ describe("opencv_app migrations", () => {
       expect(after.rows).toEqual([{ ...before.rows[0], is_favorite: false }])
       await db.execute(sql`
         insert into "opencv_app"."migrations" (hash, created_at)
-        values (${reset!.hash}, ${reset!.folderMillis})
+        values (${newest!.hash}, ${newest!.folderMillis})
       `)
       await runMigrations(db as unknown as AppDatabase)
       await runMigrations(db as unknown as AppDatabase)

@@ -444,9 +444,9 @@ describe("CV photo bytes", () => {
     expect(restored.status).toBe(200)
     expect(new Uint8Array(await restored.arrayBuffer())).toEqual(png)
 
-    expect(await sweep()).toContain(secondId)
+    expect(await sweep()).not.toContain(secondId)
     expect((await bytes(firstId)).status).toBe(200)
-    expect((await bytes(secondId)).status).toBe(404)
+    expect((await bytes(secondId)).status).toBe(200)
 
     await client.close()
   })

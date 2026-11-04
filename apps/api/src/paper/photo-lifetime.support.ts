@@ -12,6 +12,7 @@ import {
   files,
   idempotency,
   paperDocs,
+  paperDocUpdates,
   pendingActions,
   user,
 } from "../db/schema.js"
@@ -225,6 +226,12 @@ export async function referenced(options: { legacy: boolean }) {
     `)
     for (const row of updates.rows) {
       if (row.text) collect(row.text, false, into)
+    }
+    const released = await backend.db
+      .select({ ids: paperDocUpdates.releasedPhotoRefs })
+      .from(paperDocUpdates)
+    for (const row of released) {
+      for (const id of row.ids ?? []) into.add(lower(id))
     }
   }
   const people = await backend.db

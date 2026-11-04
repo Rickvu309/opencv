@@ -34,14 +34,19 @@ import { and, asc, eq, gte, gt } from "drizzle-orm"
 import { getDb, transaction } from "../db/context.js"
 import { paperDocUpdates, paperDocs } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
+import {
+  COMPACT_EVERY_SEQ,
+  droppedPhotoIds,
+  foldSettledLog,
+} from "./content-compact.js"
 
 type PaperRow = typeof paperDocs.$inferSelect
 
 type Live = {
   readonly yDoc: PaperYDoc
   readonly epoch: number
-  readonly baseSeq: number
-  readonly base: Buffer
+  baseSeq: number
+  base: Buffer
   revision: number
   tip: Buffer | null
 }
@@ -353,6 +358,7 @@ async function commit(
       touched: change.touched ?? null,
       rebuilt: change.rebuilt ?? null,
       update,
+      releasedPhotoRefs: droppedPhotoIds(row.crdtDocument, paper),
     })
   const patch = {
     crdtDocument: paper as unknown as Record<string, unknown>,
@@ -361,6 +367,13 @@ async function commit(
     updatedAt: new Date(),
   }
   await getDb().update(paperDocs).set(patch).where(eq(paperDocs.id, row.id))
+  if (seq % COMPACT_EVERY_SEQ === 0) {
+    const folded = await foldSettledLog(row.id, entry)
+    if (folded) {
+      entry.base = folded.base
+      entry.baseSeq = folded.baseSeq
+    }
+  }
   entry.revision = seq
   entry.tip = update
   return { ...row, ...patch }
