@@ -48,6 +48,11 @@ export async function undoBlockedReasons(
       )
     )
     .orderBy(asc(paperDocUpdates.seq))
+  const owned = await getDb()
+    .select({ id: paperDocs.id })
+    .from(paperDocs)
+    .where(and(eq(paperDocs.userId, userId), inArray(paperDocs.id, docIds)))
+  const alive = new Set(owned.map((doc) => doc.id))
   const byDoc = new Map<string, EditRow[]>()
   for (const row of rows) {
     const list = byDoc.get(row.paperId) ?? []
@@ -55,8 +60,7 @@ export async function undoBlockedReasons(
     byDoc.set(row.paperId, list)
   }
   return questions.map((question) => {
-    const known = byDoc.get(question.docId)
-    if (!known) return "This document is gone"
-    return blockedReason(known, question.editId)
+    if (!alive.has(question.docId)) return "This document is gone"
+    return blockedReason(byDoc.get(question.docId) ?? [], question.editId)
   })
 }

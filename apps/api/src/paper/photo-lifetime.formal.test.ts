@@ -72,7 +72,7 @@ describe("photo lifetime", () => {
     expect((await fileSet()).has(fileId)).toBe(true)
   })
 
-  it("resolves the photo again after undo, and sweeps the replacement", async () => {
+  it("resolves the photo again after undo; the replacement stays while its release row remains", async () => {
     const docId = await createDoc()
     const first = await upload()
     const second = await upload()
@@ -86,11 +86,13 @@ describe("photo lifetime", () => {
     expect(listed(await sweep(), second)).toBe(false)
     await run("activity.undo", { activityId: replacement.activityId })
     const swept = await sweep()
-    expect(listed(swept, second)).toBe(true)
+    expect(listed(swept, second)).toBe(false)
     expect(listed(swept, first)).toBe(false)
     expect((await fileSet()).has(first)).toBe(true)
+    expect((await fileSet()).has(second)).toBe(true)
     const live = await referenced({ legacy: false })
     expect(live.has(first)).toBe(true)
+    expect(live.has(second)).toBe(true)
   })
 
   it("sweeps an unreferenced upload older than a day and keeps a fresh one", async () => {
@@ -209,7 +211,7 @@ describe("photo lifetime", () => {
     expect((await fileSet()).has(kept)).toBe(true)
   })
 
-  it("sweeps a replaced photo once its activity is undone", async () => {
+  it("keeps a replaced photo after Undo until its release row is removed", async () => {
     const docId = await createDoc()
     const first = await upload()
     const second = await upload()
@@ -227,6 +229,11 @@ describe("photo lifetime", () => {
     expect(listed(await sweep(), second)).toBe(false)
     await photoDb().execute(sql`
       delete from opencv_app.photo_refs where source = 'activity.result:undone'
+    `)
+    expect(listed(await sweep(), second)).toBe(false)
+    await photoDb().execute(sql`
+      delete from opencv_app.photo_refs
+      where source like 'paper_doc_updates.released:%'
     `)
     expect(listed(await sweep(), second)).toBe(true)
     expect((await fileSet()).has(first)).toBe(true)

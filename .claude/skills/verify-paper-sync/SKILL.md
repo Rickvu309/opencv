@@ -97,6 +97,7 @@ P4 is `~blocked`. On the real config `Coach` writes the untouched block (`coachA
 
 ## Known gaps
 
+- Compaction is outside the TLC bound; the 500-row test is its check.
 - The Coach write people use is `paper.edit` (`editAsCoach`), which merges and allows an older `basedOn` inside the log. The full-document command is gone. An old `paper.replace` activity is refused by the undo guard in `commands.ts`. The TLA model still has `Replace`. The store no longer writes one.
 - A pending person edit rebased across a Coach block move or remove is `rebasePending`, not a server action. `packages/domain/src/paper-doc-rebase.property.test.ts` runs that merge: `personEdits` is the pending side, `otherEdits` moves a block and removes a block, and the property keeps the person's words and added blocks. `paper-doc-rebase.test.ts` has the same remove as one example ("puts back a block the Coach removed after the person typed in it"). `apps/web/src/lib/paper-sync.test.ts` retries the stale push after a rebase.
 - Bound is 2 writers, 2 blocks, and version at most 3. The cache is one process. A second process does not share it. Blocks are marks, so the spec cannot move or delete a block.

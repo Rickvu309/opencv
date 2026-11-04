@@ -42,6 +42,8 @@ export const PHOTO_BYTE_SOURCES = [
   { table: "user", column: "image", source: "user.image" },
 ] as const
 
+export const RELEASED_PHOTO_SOURCE = "paper_doc_updates.released"
+
 export const NOT_PHOTO_JSON = [
   {
     table: "paper_docs",

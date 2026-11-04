@@ -44,27 +44,28 @@ On Postgres, set `FORMAL_DATABASE_URL` to a server you can create databases on. 
 
 ## Tests
 
-| Test                                                                            | Covers                                                                                                                                                |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| keeps a photo that only the CRDT document still names                           | F1. The legacy document, the reversal, and the activity receipt are cleared. The old scan would delete the file. The sweep does not.                  |
-| resolves the photo again after undo, and sweeps the replacement                 | F2                                                                                                                                                    |
-| sweeps an unreferenced upload older than a day and keeps a fresh one            | F3. A sweep that returns before the delete leaves the old file.                                                                                       |
-| keeps the copy's photo after the original document is deleted                   | F4                                                                                                                                                    |
-| drops the copy photo when its reference row is removed                          | F4 mutant: forgetting the copy's reference deletes the file                                                                                           |
-| keeps a photo named only by a pending action until that action is closed        | Pending input. Denied drops the reference and the sweep removes the file.                                                                             |
-| keeps a photo named only by an activity result                                  | Activity result, outside the paper snapshot keys. Deleting `activity.%` references then lets the sweep remove the file.                               |
-| does not keep a photo that an idempotency result only stored as previousPaper   | Idempotency keeps the current photo and drops `previousPaper`                                                                                         |
-| sweeps a replaced photo once its activity is undone                             | A reference left behind for an undone photo keeps the file. Removing it lets the sweep delete that photo and keep the restored one.                   |
-| deletes the account while a profile photo is still referenced                   | The profile reference cannot block deleting the account                                                                                               |
-| an attach that commits during the sweep keeps the photo                         | Postgres only. The sweep blocks on the key share lock, then the file remains.                                                                         |
-| an attach that loses its file to a sweep does not leave a dangling id           | Postgres only. The sweep deletes the aged file after the check and before the write. The attach returns not found and the paper does not keep the id. |
-| a backfill skips a missing photo and a live write refuses it                    | The backfill flag skips a missing file. The same write without the flag raises.                                                                       |
-| keeps every referenced photo across upload, edit, undo, copy, confirm and sweep | F1 to F4 under fast-check: upload, create, attach, clear, undo, duplicate, delete, confirm, sync, age, sweep                                          |
+| Test                                                                                     | Covers                                                                                                                                                |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| keeps a photo that only the CRDT document still names                                    | F1. The legacy document, the reversal, and the activity receipt are cleared. The old scan would delete the file. The sweep does not.                  |
+| resolves the photo again after undo; the replacement stays while its release row remains | F2. The undo row records the dropped photo. The sweep deletes it once that row is folded.                                                             |
+| sweeps an unreferenced upload older than a day and keeps a fresh one                     | F3. A sweep that returns before the delete leaves the old file.                                                                                       |
+| keeps the copy's photo after the original document is deleted                            | F4                                                                                                                                                    |
+| drops the copy photo when its reference row is removed                                   | F4 mutant: forgetting the copy's reference deletes the file                                                                                           |
+| keeps a photo named only by a pending action until that action is closed                 | Pending input. Denied drops the reference and the sweep removes the file.                                                                             |
+| keeps a photo named only by an activity result                                           | Activity result, outside the paper snapshot keys. Deleting `activity.%` references then lets the sweep remove the file.                               |
+| does not keep a photo that an idempotency result only stored as previousPaper            | Idempotency keeps the current photo and drops `previousPaper`                                                                                         |
+| keeps a replaced photo after Undo until its release row is removed                       | The activity ref is gone. `paper_doc_updates.released` still keeps the file. Removing that source lets the sweep delete it and keep the restored one. |
+| deletes the account while a profile photo is still referenced                            | The profile reference cannot block deleting the account                                                                                               |
+| an attach that commits during the sweep keeps the photo                                  | Postgres only. The sweep blocks on the key share lock, then the file remains.                                                                         |
+| an attach that loses its file to a sweep does not leave a dangling id                    | Postgres only. The sweep deletes the aged file after the check and before the write. The attach returns not found and the paper does not keep the id. |
+| a backfill skips a missing photo and a live write refuses it                             | The backfill flag skips a missing file. The same write without the flag raises.                                                                       |
+| keeps every referenced photo across upload, edit, undo, copy, confirm and sweep          | F1 to F4 under fast-check: upload, create, attach, clear, undo, duplicate, delete, confirm, sync, age, sweep                                          |
 
 ## What the scan treats as live
 
 - `paper_docs.document` and `paper_docs.crdt_document`, always.
 - `paper_doc_updates.update` only while that paper's CRDT document is null. A committed CRDT document is the replay of the log. Scanning every old update would keep a photo the person already replaced.
+- `paper_doc_updates.released_photo_refs` while that update row is still inside the compaction horizon. A commit that drops a header photo records the id there, and the sweep keeps the file until the row is folded.
 - `activity.reversal_input` while the activity is not undone and its `docId` paper still exists. Deleting the paper drops those references. Undo of a deleted paper is not a command.
 - `activity.result` while the activity is not undone, after removing `document`, `paper`, `previousDocument`, and `previousPaper`. Those keys are a receipt of the paper row. Keeping them made a photo survive after both CVs were deleted.
 - `pending_actions.input` while status is `pending`.

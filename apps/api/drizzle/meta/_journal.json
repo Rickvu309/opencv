@@ -71,6 +71,13 @@
       "when": 1793669415937,
       "tag": "0009_reset_paper_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793669415938,
+      "tag": "0010_paper_released_photos",
+      "breakpoints": true
     }
   ]
 }

@@ -88,11 +88,15 @@ function restoreFields(
     )
   }
   const preRecord = pre.node as unknown as Record<string, unknown>
-  for (const key of Object.keys(postFields.props)) {
+  const propKeys = new Set([
+    ...Object.keys(preFields.props),
+    ...Object.keys(postFields.props),
+  ])
+  for (const key of propKeys) {
     if (preFields.props[key] === postFields.props[key]) continue
-    if (liveFields.props[key] === postFields.props[key]) {
-      target[key] = cloned(preRecord[key])
-    }
+    if (liveFields.props[key] !== postFields.props[key]) continue
+    if (preRecord[key] === undefined) delete target[key]
+    else target[key] = cloned(preRecord[key])
   }
 }
 
