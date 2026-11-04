@@ -1,23 +1,9 @@
-import {
-  isCvBlockDocument,
-  isCvDocument,
-  storedPaperDocumentSchema,
-  type UserId,
-} from "@workspace/domain"
+import { type UserId } from "@workspace/domain"
 import { sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 
-export function photoRefOf(document: unknown) {
-  const parsed = storedPaperDocumentSchema.safeParse(document)
-  const value = parsed.success ? parsed.data : document
-  if (isCvBlockDocument(value)) return value.header.photo
-  if (isCvDocument(value)) return value.photoUrl
-  return undefined
-}
-
 export const PHOTO_DOCUMENT_COLUMNS = [
-  { table: "paper_docs", column: "document", source: "paper_docs.document" },
   {
     table: "paper_docs",
     column: "crdt_document",

@@ -1,4 +1,4 @@
-import { upgradeStoredPaper, type PaperView } from "@workspace/domain"
+import { paperDocumentSchema, type PaperView } from "@workspace/domain"
 import { SERVER_ORIGIN, writeDocument } from "@workspace/paper-crdt"
 import { act, cleanup, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
@@ -22,10 +22,14 @@ vi.mock("@/lib/paper-sync.ts", async (importOriginal) => ({
   }),
 }))
 
-const letterPaper = upgradeStoredPaper("letter", {
-  markdown: "I write clearly.",
+const letterPaper = paperDocumentSchema.parse({
+  version: 3,
+  kind: "letter",
+  clashes: [],
+  blocks: [
+    { id: "p1", type: "paragraph", content: [{ text: "I write clearly." }] },
+  ],
 })
-if (!letterPaper.ok) throw new Error(letterPaper.message)
 
 const letter: PaperView = {
   id: "letter-1",
@@ -33,7 +37,7 @@ const letter: PaperView = {
   kind: "letter",
   templateId: "simple",
   status: "draft",
-  paper: letterPaper.document,
+  paper: letterPaper,
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",

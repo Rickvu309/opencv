@@ -2,7 +2,6 @@ import { useEffect, useReducer, useRef, type DragEvent } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   paperDocNameSchema,
-  blankBlockDocument,
   type PaperFile,
   type PaperView,
 } from "@workspace/domain"
@@ -182,7 +181,6 @@ export function PaperLibrary({
     try {
       const created = await run("paper.create", {
         kind: "cv",
-        document: blankBlockDocument(),
       })
       dispatch({ type: "import_ended" })
       onOpen(created.id)

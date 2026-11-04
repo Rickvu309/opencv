@@ -60,7 +60,7 @@ async function snapshot(docId: string) {
   )[0]!
   return {
     seqs: rows.map((row) => row.seq).sort((a, b) => a - b),
-    document: doc.document,
+    document: doc.crdtDocument,
     crdtDocument: doc.crdtDocument,
     revision: doc.contentVersion,
   }

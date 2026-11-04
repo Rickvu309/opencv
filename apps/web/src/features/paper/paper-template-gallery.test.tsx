@@ -2,20 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
-import {
-  emptyCvDocument,
-  upgradeStoredPaper,
-  type PaperPages,
-  type PaperView,
-} from "@workspace/domain"
+import { blankCv, type PaperPages, type PaperView } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-cv-editor.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 import { PAPER_TEMPLATE_LABELS } from "./paper-templates.ts"
-
-const stored = upgradeStoredPaper("cv", emptyCvDocument())
-if (!stored.ok) throw new Error(stored.message)
 
 const record: PaperView = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -23,7 +15,7 @@ const record: PaperView = {
   kind: "cv",
   templateId: "simple",
   status: "draft",
-  paper: stored.document,
+  paper: blankCv(),
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",

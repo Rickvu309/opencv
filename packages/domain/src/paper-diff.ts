@@ -1,18 +1,6 @@
-import { blocksToCvCodec } from "./paper-blocks/codec.js"
-import { isCvBlockDocument } from "./paper-blocks/document.js"
-import { blocksToPreviewModel } from "./paper-blocks/preview.js"
-import {
-  isCvDocument,
-  isLetterDocument,
-  isProofDocument,
-  LETTER_PARTS,
-  type CvDocument,
-  type LetterDocument,
-  type LetterPart,
-  type ProofDocument,
-} from "./paper-codecs.js"
 import type { PaperChange } from "./paper-doc/changes.js"
 import type { PaperContentKind } from "./paper.js"
+import { isProofDocument, type ProofDocument } from "./paper.js"
 
 type DiffLineKind = "eq" | "del" | "add"
 
@@ -47,152 +35,6 @@ function fieldHunk(
   if (after) lines.push({ kind: "add", text: truncateDiffLine(after) })
   if (lines.length === 0) return null
   return { section, sectionId, lines }
-}
-
-function diffCv(before: CvDocument, after: CvDocument): DiffHunk[] {
-  const hunks: DiffHunk[] = []
-  const push = (hunk: DiffHunk | null) => {
-    if (hunk) hunks.push(hunk)
-  }
-
-  push(fieldHunk("Name", "name", before.name, after.name))
-  push(fieldHunk("Headline", "headline", before.headline, after.headline))
-  push(fieldHunk("Summary", "summary", before.summary, after.summary))
-
-  const expCount = Math.max(before.experience.length, after.experience.length)
-  for (let index = 0; index < expCount; index += 1) {
-    const prev = before.experience[index]
-    const next = after.experience[index]
-    const label = `Experience · ${next?.company || prev?.company || "role"}`
-    const sectionId = `experience-${index}`
-    if (!prev && next) {
-      push(
-        fieldHunk(
-          label,
-          sectionId,
-          "",
-          [next.role, next.company, ...next.bullets].filter(Boolean).join(" · ")
-        )
-      )
-      continue
-    }
-    if (prev && !next) {
-      push(
-        fieldHunk(
-          label,
-          sectionId,
-          [prev.role, prev.company, ...prev.bullets]
-            .filter(Boolean)
-            .join(" · "),
-          ""
-        )
-      )
-      continue
-    }
-    if (!prev || !next) continue
-    const bulletCount = Math.max(prev.bullets.length, next.bullets.length)
-    const lines: DiffLine[] = []
-    if (prev.role !== next.role || prev.company !== next.company) {
-      if (prev.role || prev.company) {
-        lines.push({
-          kind: "del",
-          text: truncateDiffLine(`${prev.role} · ${prev.company}`),
-        })
-      }
-      if (next.role || next.company) {
-        lines.push({
-          kind: "add",
-          text: truncateDiffLine(`${next.role} · ${next.company}`),
-        })
-      }
-    }
-    for (let bi = 0; bi < bulletCount; bi += 1) {
-      const left = prev.bullets[bi] ?? ""
-      const right = next.bullets[bi] ?? ""
-      if (left === right) {
-        if (left) lines.push({ kind: "eq", text: truncateDiffLine(left) })
-        continue
-      }
-      if (left) lines.push({ kind: "del", text: truncateDiffLine(left) })
-      if (right) lines.push({ kind: "add", text: truncateDiffLine(right) })
-    }
-    if (lines.some((line) => line.kind !== "eq")) {
-      hunks.push({ section: label, sectionId, lines })
-    }
-  }
-
-  const eduCount = Math.max(before.education.length, after.education.length)
-  for (let index = 0; index < eduCount; index += 1) {
-    const prev = before.education[index]
-    const next = after.education[index]
-    push(
-      fieldHunk(
-        `Education · ${next?.school || prev?.school || "school"}`,
-        `education-${index}`,
-        prev
-          ? [prev.school, prev.degree, prev.detail].filter(Boolean).join(" · ")
-          : "",
-        next
-          ? [next.school, next.degree, next.detail].filter(Boolean).join(" · ")
-          : ""
-      )
-    )
-  }
-
-  return hunks
-}
-
-const LETTER_PART_LABELS: Record<LetterPart, string> = {
-  sender: "Sender",
-  contact: "Contact",
-  date: "Date",
-  recipient: "Recipient",
-  salutation: "Salutation",
-  closing: "Closing",
-  signature: "Signature",
-}
-
-function diffLetterBody(before: string, after: string): DiffHunk[] {
-  if (before === after) return []
-  const prevParas = before
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-  const nextParas = after
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-  const count = Math.max(prevParas.length, nextParas.length, 1)
-  const hunks: DiffHunk[] = []
-  for (let index = 0; index < count; index += 1) {
-    const hunk = fieldHunk(
-      index === 0 ? "Opening" : `Paragraph ${index + 1}`,
-      "letter",
-      prevParas[index] ?? "",
-      nextParas[index] ?? ""
-    )
-    if (hunk) hunks.push(hunk)
-  }
-  return hunks
-}
-
-function diffLetter(before: LetterDocument, after: LetterDocument): DiffHunk[] {
-  const hunks: DiffHunk[] = []
-  const pushPart = (part: LetterPart) => {
-    const hunk = fieldHunk(
-      LETTER_PART_LABELS[part],
-      `letter-${part}`,
-      (before[part] ?? "").trim(),
-      (after[part] ?? "").trim()
-    )
-    if (hunk) hunks.push(hunk)
-  }
-  for (const part of LETTER_PARTS) {
-    if (part === "closing")
-      hunks.push(...diffLetterBody(before.markdown, after.markdown))
-    pushPart(part)
-  }
-  return hunks
 }
 
 function proofStepLabel(type: string) {
@@ -233,70 +75,11 @@ function diffProof(before: ProofDocument, after: ProofDocument): DiffHunk[] {
   return hunks
 }
 
-function cvSide(value: unknown): CvDocument | null {
-  if (isCvBlockDocument(value)) return blocksToCvCodec(value)
-  if (isCvDocument(value)) return value
-  return null
-}
-
-function carriedLines(value: unknown, kind: "activities" | "awards"): string[] {
-  if (!isCvBlockDocument(value)) return []
-  return blocksToPreviewModel(value)[kind]
-}
-
-function lineHunks(
-  section: string,
-  sectionId: string,
-  before: readonly string[],
-  after: readonly string[]
-): DiffHunk[] {
-  const hunks: DiffHunk[] = []
-  const count = Math.max(before.length, after.length)
-  for (let index = 0; index < count; index += 1) {
-    const hunk = fieldHunk(
-      section,
-      `${sectionId}-${index}`,
-      before[index] ?? "",
-      after[index] ?? ""
-    )
-    if (hunk) hunks.push(hunk)
-  }
-  return hunks
-}
-
 export function diffPaperContent(
   kind: PaperContentKind,
   before: unknown,
   after: unknown
 ): DiffHunk[] {
-  if (kind === "cv") {
-    const beforeCv = cvSide(before)
-    const afterCv = cvSide(after)
-    if (beforeCv && afterCv) {
-      return [
-        ...diffCv(beforeCv, afterCv),
-        ...lineHunks(
-          "Activities",
-          "activities",
-          carriedLines(before, "activities"),
-          carriedLines(after, "activities")
-        ),
-        ...lineHunks(
-          "Awards",
-          "awards",
-          carriedLines(before, "awards"),
-          carriedLines(after, "awards")
-        ),
-      ]
-    }
-  }
-  if (
-    kind === "letter" &&
-    isLetterDocument(before) &&
-    isLetterDocument(after)
-  ) {
-    return diffLetter(before, after)
-  }
   if (kind === "proof" && isProofDocument(before) && isProofDocument(after)) {
     return diffProof(before, after)
   }

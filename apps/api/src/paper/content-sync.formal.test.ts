@@ -210,7 +210,6 @@ describe("paper sync store", () => {
                 "t1",
                 "First paragraph. ROLLED"
               ),
-              witness: content.row.document,
             })
             throw new Error("rollback")
           }
@@ -239,13 +238,11 @@ describe("paper sync store", () => {
               "t1",
               "First paragraph. One"
             ),
-            witness: content.row.document,
           })
           await content.edit({
             origin: "person",
             target: (current: PaperDocument) =>
               withText(current, "t2", "Second paragraph. Two"),
-            witness: content.row.document,
           })
         }
       )

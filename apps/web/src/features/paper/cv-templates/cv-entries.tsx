@@ -276,7 +276,7 @@ export function EducationBlock({
       )}
       data-paper-section={`education-${index}`}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <div className="cv-print-entry-head flex flex-wrap items-baseline justify-between gap-2">
         <CvType role="label">
           <EditableField
             aria-label="School"

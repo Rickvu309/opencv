@@ -1,14 +1,15 @@
 import {
+  IMPORT_DATES_MESSAGE,
+  IMPORT_GOOGLE_MESSAGE,
+  IMPORT_LINKEDIN_MESSAGE,
   IMPORT_PAGES_MESSAGE,
+  IMPORT_PHONE_MESSAGE,
   LETTER_ATTACHMENT_TEXT_MAX,
+  paperDocumentSchema,
+  paperPlainText,
+  paragraphPaper,
   type LetterAttachmentContext,
-  findImportChecks,
-  isCvDocument,
-  isCvBlockDocument,
-  paragraphsToBlockDocument,
-  readCvBlocks,
-  unreadableImportLink,
-  type CvImportCheck,
+  type PaperDocument,
 } from "@workspace/domain"
 
 export const IMPORT_GENERIC_MESSAGE = "Upload a PDF, Word, or text file."
@@ -17,13 +18,97 @@ export const IMPORT_FAILED_MESSAGE = "Could not import that file. Try it again."
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
+type ImportCheck = {
+  id: string
+  kind: "phone" | "dates"
+  blockId: string
+  message: string
+  resolved: boolean
+}
+
 export type ImportParseResult =
-  | { ok: true; document: unknown; checks: CvImportCheck[] }
+  | { ok: true; document: unknown; checks: ImportCheck[] }
   | {
       ok: false
       code: "FILE_UNSUPPORTED" | "LINK_UNREADABLE"
       message: string
     }
+
+const YEAR_RANGE = /\b(?:19|20)\d{2}\s*(?:-|–|—|to)\s*(?:19|20)\d{2}\b/gi
+
+const PHONE_RUN = /(?:\+?\d[\s().+-]*){6}\d/g
+
+function hasPhoneRun(text: string): boolean {
+  const stripped = text.replace(new RegExp(YEAR_RANGE.source, "gi"), " ")
+  const runs = stripped.matchAll(new RegExp(PHONE_RUN.source, "g"))
+  for (const match of runs) {
+    const digits = match[0].replace(/\D/g, "")
+    if (digits.length >= 7) return true
+  }
+  return false
+}
+
+function hostIs(host: string, domain: string) {
+  return host === domain || host.endsWith(`.${domain}`)
+}
+
+function linkHost(value: string) {
+  const match = /^https?:\/\/([^/?#]+)/i.exec(value.trim())
+  const host = match?.[1]?.replace(/:\d+$/, "").toLowerCase()
+  return host || null
+}
+
+export function unreadableImportLink(value: string): string | null {
+  const host = linkHost(value)
+  if (!host) return null
+  if (hostIs(host, "docs.google.com")) return IMPORT_GOOGLE_MESSAGE
+  if (hostIs(host, "linkedin.com")) return IMPORT_LINKEDIN_MESSAGE
+  return null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function looksLikeStoredCv(value: unknown) {
+  if (!isRecord(value)) return false
+  if (value.version === 3 && value.kind === "cv") return true
+  if (
+    value.version === 2 &&
+    isRecord(value.header) &&
+    Array.isArray(value.sections)
+  ) {
+    return true
+  }
+  return typeof value.name === "string" && isRecord(value.contact)
+}
+
+export function checksForPaper(document: PaperDocument): ImportCheck[] {
+  const parsed = paperDocumentSchema.safeParse(document)
+  if (!parsed.success || parsed.data.kind !== "cv") return []
+  const paper = parsed.data
+  const checks: ImportCheck[] = []
+  if (!paper.header.phone.trim() && !hasPhoneRun(paperPlainText(paper))) {
+    checks.push({
+      id: "phone",
+      kind: "phone",
+      blockId: "header.phone",
+      message: IMPORT_PHONE_MESSAGE,
+      resolved: false,
+    })
+  }
+  const entry = paper.blocks.find((block) => block.type === "experience")
+  if (entry && entry.type === "experience" && !entry.period.includes("20")) {
+    checks.push({
+      id: "dates",
+      kind: "dates",
+      blockId: entry.id,
+      message: IMPORT_DATES_MESSAGE,
+      resolved: false,
+    })
+  }
+  return checks
+}
 
 function isPages(name: string, mediaType: string) {
   return (
@@ -40,20 +125,15 @@ function refused(
 }
 
 function textBlocks(raw: string): ImportParseResult {
-  const document = paragraphsToBlockDocument(raw)
-  return { ok: true, document, checks: findImportChecks(document) }
+  const document = paragraphPaper(raw)
+  return { ok: true, document, checks: checksForPaper(document) }
 }
 
 function jsonDocument(raw: string): ImportParseResult {
   try {
     const parsed = JSON.parse(raw) as unknown
-    if (isCvBlockDocument(parsed) || isCvDocument(parsed)) {
-      const blocks = readCvBlocks(parsed)
-      return {
-        ok: true,
-        document: parsed,
-        checks: blocks ? findImportChecks(blocks) : [],
-      }
+    if (looksLikeStoredCv(parsed)) {
+      return { ok: true, document: parsed, checks: [] }
     }
   } catch {
     return textBlocks(raw)

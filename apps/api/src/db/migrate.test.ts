@@ -154,6 +154,93 @@ describe("opencv_app migrations", () => {
     }
   })
 
+  it("drops the stored document and leaves the snapshot and favorite flag", async () => {
+    const client = new PGlite()
+    const db = drizzle({ client })
+    try {
+      const migrations = readMigrationFiles(migrationConfig())
+      const previous = migrations.slice(0, -1)
+      for (const migration of previous) {
+        for (const statement of migration.sql) await client.exec(statement)
+      }
+      const last = previous.at(-1)!
+      await client.exec(`
+        create table "opencv_app"."migrations" (
+          id serial primary key, hash text not null, created_at bigint
+        );
+        insert into "opencv_app"."user" (id, name, email)
+          values ('favorite-upgrade', 'Ada', 'favorite-upgrade@example.com');
+        insert into "opencv_app"."files"
+          (id, user_id, name, media_type, byte_size, purpose, bytes)
+          values ('6f1d3c1e-0a53-4b8e-9d57-2f5c4f0f7a11', 'favorite-upgrade',
+            'face.png', 'image/png', 1, 'avatar', '\\x89');
+        insert into "opencv_app"."paper_docs"
+          (id, user_id, name, kind, document, crdt_document, content_version, updated_at)
+          values ('00000000-0000-4000-8000-000000000659', 'favorite-upgrade',
+            'Existing CV', 'cv',
+            '{"version":2,"header":{"name":"Lan","photo":"file:6f1d3c1e-0a53-4b8e-9d57-2f5c4f0f7a11"}}',
+            '{"version":3,"kind":"cv"}',
+            7, '2026-01-01T00:00:00Z');
+      `)
+      expect(
+        (
+          await client.query<{ source: string }>(
+            `select source from "opencv_app"."photo_refs"
+             where file_id = '6f1d3c1e-0a53-4b8e-9d57-2f5c4f0f7a11'
+             order by source`
+          )
+        ).rows
+      ).toEqual([
+        {
+          source: "paper_docs.document:00000000-0000-4000-8000-000000000659",
+        },
+      ])
+      await db.execute(sql`
+        insert into "opencv_app"."migrations" (hash, created_at)
+        values (${last.hash}, ${last.folderMillis})
+      `)
+      const before = await client.query<Record<string, unknown>>(
+        'select crdt_document, content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
+      )
+      await runMigrations(db as unknown as AppDatabase)
+      const after = await client.query(
+        'select crdt_document, content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
+      )
+      expect(after.rows).toEqual(before.rows)
+      expect(
+        (
+          await client.query(
+            `select column_name from information_schema.columns
+             where table_schema = 'opencv_app'
+               and table_name = 'paper_docs'
+               and column_name = 'document'`
+          )
+        ).rows
+      ).toEqual([])
+      expect(
+        (
+          await client.query(
+            `select source from "opencv_app"."photo_refs"
+             where file_id = '6f1d3c1e-0a53-4b8e-9d57-2f5c4f0f7a11'`
+          )
+        ).rows
+      ).toEqual([])
+      await client.exec(
+        `delete from "opencv_app"."files" where id = '6f1d3c1e-0a53-4b8e-9d57-2f5c4f0f7a11'`
+      )
+      await runMigrations(db as unknown as AppDatabase)
+      expect(
+        (
+          await client.query(
+            'select is_favorite from "opencv_app"."paper_docs"'
+          )
+        ).rows
+      ).toEqual([{ is_favorite: false }])
+    } finally {
+      await client.close()
+    }
+  })
+
   it("leaves a legacy schema and its journal untouched", async () => {
     const client = new PGlite()
     const db = drizzle({ client })

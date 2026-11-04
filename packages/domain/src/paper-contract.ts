@@ -6,9 +6,7 @@ import {
   queryContract,
   queryEntry,
 } from "./contract.js"
-import { fileIdSchema, paperIdSchema } from "./ids.js"
-import { cvDocumentV1Schema, letterDocumentV1Schema } from "./paper-codecs.js"
-import { cvBlockDocumentSchema } from "./paper-blocks/document.js"
+import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
 import { paperDocumentSchema } from "./paper-doc/document.js"
 import {
   paperEditOutcomeSchema,
@@ -20,10 +18,10 @@ import {
 } from "./paper-doc/sync.js"
 import {
   paperAttachPhotoInputSchema,
-  paperCreateInputSchema,
   paperDeleteFileInputSchema,
   paperDeleteInputSchema,
   paperDismissCheckInputSchema,
+  paperDocNameSchema,
   paperDocStatusSchema,
   paperDuplicateInputSchema,
   paperImportInputSchema,
@@ -38,12 +36,6 @@ import {
   paperUnshareInputSchema,
 } from "./paper.js"
 import type { QueryRef } from "./queries.js"
-
-export const storedPaperDocumentSchema = z.union([
-  cvBlockDocumentSchema,
-  cvDocumentV1Schema,
-  letterDocumentV1Schema,
-])
 
 export const paperCheckSchema = z
   .object({
@@ -208,8 +200,26 @@ const docRemoved = (input: DocInput): QueryRef[] => [
   ...jobsLinked(),
 ]
 
-const previousDocument = storedPaperDocumentSchema
 const previousPaper = paperDocumentSchema.optional()
+
+const paperCreateInputSchema = z
+  .object({
+    kind: paperStoredKindSchema,
+    document: paperDocumentSchema.optional(),
+    templateId: paperTemplateIdSchema.optional(),
+    name: paperDocNameSchema.optional(),
+    jobId: jobIdSchema.optional(),
+  })
+  .strict()
+  .superRefine((input, context) => {
+    if (input.document && input.document.kind !== input.kind) {
+      context.addIssue({
+        code: "custom",
+        message: "The document kind does not match.",
+        path: ["document"],
+      })
+    }
+  })
 
 export const paperContract = commandContract({
   "paper.create": commandEntry({
@@ -376,9 +386,7 @@ export const paperContract = commandContract({
   "paper.attachPhoto": commandEntry({
     description: "Attach an uploaded photo to a CV.",
     input: paperAttachPhotoInputSchema,
-    output: paperViewSchema
-      .extend({ previousDocument, previousPaper })
-      .strict(),
+    output: paperViewSchema.extend({ previousPaper }).strict(),
     coach: "auto",
     destructive: false,
     step: () => "Add a photo",

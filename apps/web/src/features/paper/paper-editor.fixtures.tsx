@@ -1,8 +1,7 @@
 import type { ReactElement } from "react"
 import {
-  emptyCvDocument,
+  blankCv,
   parsePaperId,
-  upgradeStoredPaper,
   type PaperPages,
   type PaperView,
 } from "@workspace/domain"
@@ -24,17 +23,13 @@ export function render(ui: ReactElement) {
   }
 }
 
-const blankCvDocument = emptyCvDocument()
-const blankPaper = upgradeStoredPaper("cv", blankCvDocument)
-if (!blankPaper.ok) throw new Error(blankPaper.message)
-
 export const record: PaperView = {
   id: parsePaperId("11111111-1111-7111-8111-111111111111"),
   name: "PM track CV",
   kind: "cv",
   templateId: "simple",
   status: "draft",
-  paper: blankPaper.document,
+  paper: blankCv(),
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",

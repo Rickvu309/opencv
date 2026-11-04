@@ -54,18 +54,11 @@ describe("photo lifetime", () => {
     const fileId = await upload()
     await run("paper.attachPhoto", { docId, fileId })
     await photoDb().execute(sql`
-      update opencv_app.paper_docs
-      set document = document #- '{header,photo}'
-      where id = ${docId}::uuid
-    `)
-    await photoDb().execute(sql`
       update opencv_app.activity
       set result = '{}'::jsonb, reversal_input = '{}'::jsonb
     `)
     await age([fileId])
-    const legacy = await referenced({ legacy: true })
-    const live = await referenced({ legacy: false })
-    expect(legacy.has(fileId)).toBe(false)
+    const live = await referenced()
     expect(live.has(fileId)).toBe(true)
     const swept = await sweep()
     expect(listed(swept, fileId)).toBe(false)
@@ -90,7 +83,7 @@ describe("photo lifetime", () => {
     expect(listed(swept, first)).toBe(false)
     expect((await fileSet()).has(first)).toBe(true)
     expect((await fileSet()).has(second)).toBe(true)
-    const live = await referenced({ legacy: false })
+    const live = await referenced()
     expect(live.has(first)).toBe(true)
     expect(live.has(second)).toBe(true)
   })
@@ -120,10 +113,10 @@ describe("photo lifetime", () => {
     expect(listed(await sweep(), fileId)).toBe(false)
     expect((await fileSet()).has(fileId)).toBe(true)
     const papers = await photoDb()
-      .select({ document: paperDocs.document })
+      .select({ crdt: paperDocs.crdtDocument })
       .from(paperDocs)
       .where(eq(paperDocs.id, copyId))
-    expect(textOf(papers[0]?.document)).toContain(`file:${fileId}`)
+    expect(textOf(papers[0]?.crdt)).toContain(`file:${fileId}`)
   })
 
   it("drops the copy photo when its reference row is removed", async () => {
@@ -264,9 +257,8 @@ describe("photo lifetime", () => {
         await holder.query("begin")
         await holder.query(
           `update opencv_app.paper_docs
-           set document = jsonb_set(document, '{header,photo}', to_jsonb($2::text)),
-               crdt_document = jsonb_set(
-                 coalesce(crdt_document, document),
+           set crdt_document = jsonb_set(
+                 crdt_document,
                  '{header,photo}',
                  to_jsonb($2::text)
                )
@@ -356,12 +348,10 @@ describe("photo lifetime", () => {
         expect((await fileSet()).has(fileId)).toBe(false)
         const papers = await photoDb()
           .select({
-            document: paperDocs.document,
             crdt: paperDocs.crdtDocument,
           })
           .from(paperDocs)
           .where(eq(paperDocs.id, docId))
-        expect(textOf(papers[0]?.document)).not.toContain(fileId)
         expect(textOf(papers[0]?.crdt)).not.toContain(fileId)
         await assertLive(true)
       } finally {
@@ -382,9 +372,8 @@ describe("photo lifetime", () => {
       )
       await tx.execute(sql`
         update opencv_app.paper_docs
-        set document = jsonb_set(document, '{header,photo}', to_jsonb(${ref}::text)),
-            crdt_document = jsonb_set(
-              coalesce(crdt_document, document),
+        set crdt_document = jsonb_set(
+              crdt_document,
               '{header,photo}',
               to_jsonb(${ref}::text)
             )
@@ -400,14 +389,18 @@ describe("photo lifetime", () => {
     await expect(
       photoDb().execute(sql`
         update opencv_app.paper_docs
-        set document = jsonb_set(document, '{header,photo}', to_jsonb(${ref}::text))
+        set crdt_document = jsonb_set(
+          crdt_document,
+          '{header,photo}',
+          to_jsonb(${ref}::text)
+        )
         where id = ${docId}::uuid
       `)
     ).rejects.toSatisfy(isMissingPhoto)
     const papers = await photoDb()
-      .select({ document: paperDocs.document })
+      .select({ crdt: paperDocs.crdtDocument })
       .from(paperDocs)
       .where(eq(paperDocs.id, docId))
-    expect(textOf(papers[0]?.document)).toContain(ref)
+    expect(textOf(papers[0]?.crdt)).toContain(ref)
   })
 })

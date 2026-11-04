@@ -2,13 +2,11 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import {
-  legacyPaperOf,
   mergeLegacyEdit,
   paperDocumentSchema,
   paperPlainText,
   plainTextOfRuns,
   richTextOf,
-  upgradeStoredPaper,
   type CvPaper,
   type PaperDocument,
 } from "./paper-doc/index.ts"
@@ -109,44 +107,177 @@ const richLetter = parsed({
   ],
 })
 
-function fromStored(kind: "cv" | "letter", stored: unknown): PaperDocument {
-  const result = upgradeStoredPaper(kind, stored)
-  assert.equal(result.ok, true)
-  if (!result.ok) throw new Error(result.message)
-  return result.document
+function letterOf(lines: string[]): PaperDocument {
+  return parsed({
+    version: 3,
+    kind: "letter",
+    clashes: [],
+    blocks: lines.map((text, index) => ({
+      id: `l-${index + 1}`,
+      type: "paragraph",
+      content: [{ text }],
+    })),
+  })
+}
+
+const DEFAULT_SECTION_TITLE = {
+  summary: "Summary",
+  experience: "Experience",
+  education: "Education",
+  skills: "Skills",
+  projects: "Projects",
+  activities: "Activities",
+  awards: "Awards",
+  languages: "Languages",
+} as const
+
+function listText(
+  items: readonly {
+    content: Parameters<typeof plainTextOfRuns>[0]
+    children: readonly {
+      content: Parameters<typeof plainTextOfRuns>[0]
+      children: readonly never[]
+    }[]
+  }[]
+): string[] {
+  return items.flatMap((item) => [
+    plainTextOfRuns(item.content),
+    ...listText(item.children as never),
+  ])
 }
 
 function seenBy(current: PaperDocument): PaperDocument {
-  return fromStored(current.kind, legacyPaperOf(current))
+  if (current.kind === "letter") {
+    const lines = current.blocks.flatMap((block) => {
+      if (block.type === "paragraph" || block.type === "heading") {
+        const text = plainTextOfRuns(block.content)
+        return text.trim() === "" ? [] : [text]
+      }
+      if (block.type === "bullet" || block.type === "numbered") {
+        return listText([block]).filter((text) => text.trim() !== "")
+      }
+      return []
+    })
+    return letterOf(lines.length > 0 ? lines : [""])
+  }
+  const blocks = current.blocks.flatMap((block) => {
+    switch (block.type) {
+      case "section":
+        return [{ ...block, title: DEFAULT_SECTION_TITLE[block.kind] }]
+      case "paragraph":
+        return [
+          { ...block, content: [{ text: plainTextOfRuns(block.content) }] },
+        ]
+      case "heading":
+        return [
+          {
+            ...block,
+            level: 2 as const,
+            content: [{ text: plainTextOfRuns(block.content) }],
+          },
+        ]
+      case "bullet":
+      case "numbered":
+        return [
+          {
+            ...block,
+            content: [{ text: plainTextOfRuns(block.content) }],
+            children: [],
+          },
+          ...block.children.flatMap((child) => {
+            const sent = seenBy({
+              version: 3,
+              kind: "cv",
+              header: current.header,
+              blocks: [child],
+              clashes: [],
+            })
+            return sent.kind === "cv" ? sent.blocks : []
+          }),
+        ]
+      case "experience":
+        return [
+          {
+            ...block,
+            children: block.children.flatMap((child) => {
+              const sent = seenBy({
+                version: 3,
+                kind: "cv",
+                header: current.header,
+                blocks: [child],
+                clashes: [],
+              })
+              return sent.kind === "cv"
+                ? sent.blocks.filter(
+                    (entry) =>
+                      entry.type === "bullet" || entry.type === "numbered"
+                  )
+                : []
+            }),
+          },
+        ]
+      case "education": {
+        const extra = block.children.flatMap((child) => {
+          const sent = seenBy({
+            version: 3,
+            kind: "cv",
+            header: current.header,
+            blocks: [child],
+            clashes: [],
+          })
+          return sent.kind === "cv"
+            ? sent.blocks.flatMap((entry) =>
+                entry.type === "bullet" || entry.type === "numbered"
+                  ? [plainTextOfRuns(entry.content)]
+                  : []
+              )
+            : []
+        })
+        const detail = [block.detail, ...extra]
+          .filter((part) => part !== "")
+          .join("\n")
+        return [{ ...block, detail, children: [] }]
+      }
+      default:
+        return [block]
+    }
+  })
+  return parsed({ ...current, blocks })
 }
 
 const unchanged: [string, PaperDocument][] = [
   ["rich CV", richCv],
   ["rich letter", richLetter],
-  [
-    "letter from markdown",
-    fromStored("letter", { markdown: "One\n\nTwo\n\nThree" }),
-  ],
+  ["letter from markdown", letterOf(["One", "Two", "Three"])],
   [
     "CV from blocks",
-    fromStored("cv", {
-      version: 2,
-      header: { name: "A", email: "", phone: "", city: "", linkedin: "" },
-      sections: [
+    parsed({
+      version: 3,
+      kind: "cv",
+      header: {
+        id: "header",
+        type: "header",
+        name: "A",
+        email: "",
+        phone: "",
+        city: "",
+        linkedin: "",
+      },
+      clashes: [],
+      blocks: [
+        { id: "s", type: "section", kind: "experience", title: "Experience" },
+        { id: "t", type: "paragraph", content: [{ text: "Hello" }] },
         {
-          id: "s",
-          kind: "experience",
-          blocks: [
-            { id: "t", type: "text", text: "Hello" },
-            {
-              id: "l",
-              type: "bulleted-list",
-              items: [
-                { id: "i1", text: "x" },
-                { id: "i2", text: "y" },
-              ],
-            },
-          ],
+          id: "i1",
+          type: "bullet",
+          content: [{ text: "x" }],
+          children: [],
+        },
+        {
+          id: "i2",
+          type: "bullet",
+          content: [{ text: "y" }],
+          children: [],
         },
       ],
     }),
@@ -339,7 +470,7 @@ describe("merging an old-editor save onto the version 3 paper", () => {
         { id: "l-2", type: "paragraph", content: [{ text: "Body" }] },
       ],
     })
-    const sent = fromStored("letter", { markdown: "New first\n\nBody" })
+    const sent = letterOf(["New first", "Body"])
     const merged = mergeLegacyEdit(current, sent)
     assert.equal(paperDocumentSchema.safeParse(merged).success, true)
     assert.deepEqual(
@@ -365,7 +496,7 @@ describe("merging an old-editor save onto the version 3 paper", () => {
         { id: "l-4", type: "paragraph", content: [{ text: "beta" }] },
       ],
     })
-    const sent = fromStored("letter", { markdown: "beta\n\nalpha\n\nalpha" })
+    const sent = letterOf(["beta", "alpha", "alpha"])
     const merged = mergeLegacyEdit(current, sent)
     assert.equal(paperDocumentSchema.safeParse(merged).success, true)
     assert.ok(paperPlainText(merged).startsWith("beta"))
@@ -379,22 +510,28 @@ describe("merging an old-editor save onto the version 3 paper", () => {
         { id: "s1", type: "section", kind: "experience", title: "Work" },
       ],
     }) as CvPaper
-    const sent = fromStored("cv", {
-      version: 2,
+    const sent = parsed({
+      version: 3,
+      kind: "cv",
       header: {
+        id: "header",
+        type: "header",
         name: "Ada",
         email: "ada@example.com",
         phone: "1",
         city: "Hanoi",
         linkedin: "",
       },
-      sections: [
-        { id: "s1", kind: "experience", blocks: [] },
+      clashes: [],
+      blocks: [
+        { id: "s1", type: "section", kind: "experience", title: "Experience" },
         {
           id: "section-leading",
+          type: "section",
           kind: "summary",
-          blocks: [{ id: "p0", type: "text", text: "About me" }],
+          title: "Summary",
         },
+        { id: "p0", type: "paragraph", content: [{ text: "About me" }] },
       ],
     })
     const merged = mergeLegacyEdit(current, sent) as CvPaper

@@ -1,6 +1,6 @@
 import {
+  paperDocumentSchema,
   personActor,
-  type CvBlockDocument,
   type PaperDocument,
 } from "@workspace/domain"
 import {
@@ -50,20 +50,25 @@ export async function openStore(userId: string) {
 
 const EMPTY_UPDATE = "AAA="
 
-export const twoParagraphCv: CvBlockDocument = {
-  version: 2,
-  header: { name: "Ada", email: "", phone: "", city: "", linkedin: "" },
-  sections: [
-    {
-      id: "s1",
-      kind: "summary",
-      blocks: [
-        { id: "t1", type: "text", text: "First paragraph." },
-        { id: "t2", type: "text", text: "Second paragraph." },
-      ],
-    },
+export const twoParagraphCv: PaperDocument = paperDocumentSchema.parse({
+  version: 3,
+  kind: "cv",
+  header: {
+    id: "header",
+    type: "header",
+    name: "Ada",
+    email: "",
+    phone: "",
+    city: "",
+    linkedin: "",
+  },
+  blocks: [
+    { id: "s1", type: "section", kind: "summary", title: "Summary" },
+    { id: "t1", type: "paragraph", content: "First paragraph." },
+    { id: "t2", type: "paragraph", content: "Second paragraph." },
   ],
-}
+  clashes: [],
+})
 
 export function bytesOf(encoded: string) {
   return new Uint8Array(Buffer.from(encoded, "base64"))

@@ -2,11 +2,9 @@ import { afterEach, beforeEach, expect, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
-import {
-  isCvDocument,
-  PAPER_CONTENT_VERSION,
-  STARTER_CV_NAME,
-} from "@workspace/domain"
+import { STARTER_CV_NAME } from "@workspace/domain"
+
+const PAPER_CONTENT_VERSION = 1
 import type { JobStage } from "@workspace/domain"
 import { ownedCvName } from "@/features/paper/paper-data.ts"
 import { TEST_SESSION_USER } from "@/test/auth-client-mock.ts"
@@ -74,11 +72,12 @@ export function sampleInternshipCv() {
   const cv =
     getMockPaperDocs().find((doc) => doc.id === SEEDED_SAMPLE_CV_ID) ??
     getMockPaperDocs().find((doc) => doc.name === STARTER_CV_NAME)
-  expect(cv && isCvDocument(cv.content)).toBe(true)
-  if (!cv || !isCvDocument(cv.content)) {
+  const skills = (cv?.content as { skills?: unknown } | undefined)?.skills
+  expect(Array.isArray(skills)).toBe(true)
+  if (!cv || !Array.isArray(skills)) {
     throw new Error("Sample internship CV is missing")
   }
-  return cv
+  return cv as typeof cv & { content: { skills: { items: string[] }[] } }
 }
 
 export function sampleSkillItems() {

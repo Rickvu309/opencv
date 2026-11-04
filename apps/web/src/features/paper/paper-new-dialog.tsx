@@ -2,11 +2,7 @@ import { useReducer } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import {
-  blankBlockDocument,
-  type PaperTemplateId,
-  type PaperView,
-} from "@workspace/domain"
+import { type PaperTemplateId, type PaperView } from "@workspace/domain"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
 
@@ -55,7 +51,6 @@ export function PaperNewDialog({
       const created = await run("paper.create", {
         kind: "cv",
         templateId,
-        document: blankBlockDocument(),
       })
       onCreated(created)
     } catch (cause) {

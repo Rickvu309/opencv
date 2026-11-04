@@ -1,11 +1,3 @@
-import type {
-  CvDocument,
-  CvEducation,
-  CvExperience,
-  CvProject,
-  CvSkillGroup,
-  CvTemplateId,
-} from "../paper-codecs.js"
 import {
   sectionMarker,
   sectionsOf,
@@ -22,6 +14,75 @@ import {
   type PaperNode,
 } from "./nodes.js"
 import { plainTextOfRuns, type RichText } from "./rich-text.js"
+
+const CV_PRINT_TEMPLATE_IDS = [
+  "internship",
+  "product",
+  "service",
+  "academic",
+  "photo",
+] as const
+
+export type CvTemplateId = (typeof CV_PRINT_TEMPLATE_IDS)[number]
+
+export type CvContact = {
+  email: string
+  phone: string
+  location: string
+  linkedin?: string
+}
+
+export type CvEducation = {
+  school: string
+  degree: string
+  period: string
+  detail?: string
+}
+
+export type CvExperience = {
+  role: string
+  company: string
+  period: string
+  location?: string
+  bullets: string[]
+}
+
+export type CvSkillGroup = {
+  label: string
+  items: string[]
+}
+
+export type CvProject = {
+  name: string
+  detail: string
+}
+
+export type CvDocument = {
+  templateId: CvTemplateId
+  name: string
+  headline: string
+  contact: CvContact
+  summary: string
+  experience: CvExperience[]
+  education: CvEducation[]
+  skills: CvSkillGroup[]
+  projects?: CvProject[]
+  languages?: string[]
+  photoUrl?: string
+}
+
+export function emptyCvDocument(): CvDocument {
+  return {
+    templateId: CV_PRINT_TEMPLATE_IDS[0],
+    name: "",
+    headline: "",
+    contact: { email: "", phone: "", location: "" },
+    summary: "",
+    experience: [],
+    education: [],
+    skills: [],
+  }
+}
 
 export type CvPrintModel = Omit<CvDocument, "projects" | "languages"> & {
   projects: NonNullable<CvDocument["projects"]>

@@ -5,23 +5,19 @@ import {
   DEFAULT_PAPER_DOC_NAME,
   ERROR_CODES,
   IMPORT_PAGES_MESSAGE,
-  PAPER_CONTENT_VERSION,
-  decodePaperContent,
-  blankBlockDocument,
-  withoutBlankParts,
-  emptyLetterDocument,
+  blankCv,
+  blankLetter,
+  paperDocumentSchema,
   paperPhotoFileId,
   paperPhotoRef,
-  storedPaperDocumentSchema,
   parseFileId,
   parsePaperId,
   parseUserId,
-  legacyPaperOf,
+  upgradeStoredPaper,
   type PaperDocument,
   type PaperView,
   type Actor,
   type FileId,
-  type LetterDocument,
   type PaperId,
   type PaperStoredKind,
   type PaperTemplateId,
@@ -36,6 +32,7 @@ import { CommandError } from "../registry/errors.js"
 import {
   IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
+  checksForPaper,
   classifyImport,
   importParsers,
   mediaTypeForImport,
@@ -45,7 +42,6 @@ import {
 import { seedColumns, withContent } from "./content-store.js"
 import {
   dropServerReleasedPhoto,
-  photoRefOf,
   referencedPhotoFileIds,
 } from "./photo-references.js"
 import { toPaper, tryReadStoredPaper } from "./read-paper.js"
@@ -80,24 +76,30 @@ export async function ownedPaper(userId: UserId, docId: PaperId) {
   return row
 }
 
-function requireDocument(kind: PaperStoredKind, document: unknown) {
-  const decoded = decodePaperContent(kind, PAPER_CONTENT_VERSION, document)
-  if (!decoded.ok) {
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, decoded.message)
-  }
-  if (kind === "letter") {
-    return withoutBlankParts(decoded.data as LetterDocument) as Record<
-      string,
-      unknown
-    >
-  }
-  return decoded.data as Record<string, unknown>
+function v3Of(kind: PaperStoredKind, value: unknown): PaperDocument | null {
+  const parsed = paperDocumentSchema.safeParse(value)
+  if (!parsed.success || parsed.data.kind !== kind) return null
+  return parsed.data
 }
 
-function blankDocument(kind: PaperStoredKind) {
-  return (
-    kind === "cv" ? blankBlockDocument() : emptyLetterDocument()
-  ) as Record<string, unknown>
+function blankPaper(kind: PaperStoredKind): PaperDocument {
+  return kind === "cv" ? blankCv() : blankLetter()
+}
+
+function sharedPhotoRef(document: unknown): string | null {
+  const parsed = paperDocumentSchema.safeParse(document)
+  if (!parsed.success || parsed.data.kind !== "cv") return null
+  return parsed.data.header.photo ?? null
+}
+
+function importedCv(document: unknown): PaperDocument {
+  const direct = v3Of("cv", document)
+  if (direct) return direct
+  const upgraded = upgradeStoredPaper("cv", document)
+  if (!upgraded.ok || upgraded.document.kind !== "cv") {
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
+  }
+  return upgraded.document
 }
 
 export async function listPapers(
@@ -132,14 +134,10 @@ export async function createPaper(
 ) {
   const now = new Date()
   const id = createId(now.getTime())
-  const document = input.paper
-    ? (legacyPaperOf(input.paper, input.document) as unknown as Record<
-        string,
-        unknown
-      >)
-    : input.document !== undefined
-      ? requireDocument(input.kind, input.document)
-      : blankDocument(input.kind)
+  const paper =
+    v3Of(input.kind, input.paper) ??
+    v3Of(input.kind, input.document) ??
+    blankPaper(input.kind)
   await getDb()
     .insert(paperDocs)
     .values({
@@ -148,8 +146,7 @@ export async function createPaper(
       name: input.name?.trim() || DEFAULT_PAPER_DOC_NAME[input.kind],
       kind: input.kind,
       templateId: input.templateId ?? "simple",
-      document,
-      ...seedColumns(input.kind, input.paper ?? document),
+      ...seedColumns(input.kind, paper),
       crdtBaseSeq: 1,
       contentVersion: 1,
       createdAt: now,
@@ -193,10 +190,7 @@ export async function duplicatePaper(actor: Actor, docId: PaperId) {
     kind: current.kind,
     name: `Copy of ${current.name}`.slice(0, 200),
     templateId: current.templateId ?? undefined,
-    document: current.document,
-    ...(current.crdtDocument
-      ? { paper: current.crdtDocument as unknown as PaperDocument }
-      : {}),
+    paper: current.crdtDocument as unknown as PaperDocument,
   })
 }
 
@@ -288,7 +282,7 @@ export async function pageCount(actor: Actor, docId: PaperId) {
   const doc = await ownedPaper(actor.userId, docId)
   return {
     docId,
-    pages: coachPagesFromStoredJson(JSON.stringify(doc.document).length),
+    pages: coachPagesFromStoredJson(JSON.stringify(doc.crdtDocument).length),
     pageChoice: doc.pageChoice,
   }
 }
@@ -351,7 +345,7 @@ export async function readSharedPhoto(token: string) {
     .limit(1)
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-  const fileId = paperPhotoFileId(photoRefOf(row.doc.document))
+  const fileId = paperPhotoFileId(sharedPhotoRef(row.doc.crdtDocument))
   if (!fileId) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
   return readOwnedPhoto(parseUserId(row.doc.userId), parseFileId(fileId))
 }
@@ -371,7 +365,6 @@ export async function attachPhoto(
     })
     return {
       ...toPaper(written),
-      previousDocument: storedPaperDocumentSchema.parse(content.row.document),
       previousPaper: content.document,
     }
   })
@@ -571,11 +564,14 @@ export async function importPaper(actor: Actor, fileId: FileId) {
   }
   if (importAbort.getStore()?.aborted) await giveUp()
   let created: PaperView
+  let checks: ReturnType<typeof checksForPaper>
   try {
+    const paper = importedCv(parsed.document)
+    checks = checksForPaper(paper)
     created = await createPaper(actor, {
       kind: "cv",
       name: file.name.replace(/\.[^.]+$/, "") || DEFAULT_PAPER_DOC_NAME.cv,
-      document: parsed.document,
+      paper,
     })
   } catch (error) {
     await removeImportFile(actor.userId, file.id)
@@ -594,7 +590,7 @@ export async function importPaper(actor: Actor, fileId: FileId) {
           blockId: "",
           resolved: true,
         },
-        ...parsed.checks,
+        ...checks,
       ],
     })
     .where(eq(paperDocs.id, created.id))

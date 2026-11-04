@@ -4,11 +4,9 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
-import {
-  PAPER_CONTENT_VERSION,
-  STARTER_CV_NAME,
-  type PaperDoc,
-} from "@workspace/domain"
+import { STARTER_CV_NAME, type PaperDoc } from "@workspace/domain"
+
+const PAPER_CONTENT_VERSION = 1
 
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { defaultCvData } from "./cv-templates/cv-types.ts"
@@ -22,7 +20,6 @@ import {
   SAMPLE_CV_MAKE_MINE,
   formatPaperUpdated,
   isSampleCv,
-  cvContentOf,
   isStarterCvPersonName,
   ownedCvName,
   paperDocToLink,
@@ -139,21 +136,6 @@ describe("paper display helpers", () => {
       title: PAPER_ATTACH_CV_CTA,
       hint: PAPER_LINKED_EMPTY_HINT,
     })
-  })
-
-  it("shows the legacy Your name placeholder as an empty name", () => {
-    const sample = starterSampleCv()
-    const legacy: PaperDoc = {
-      ...sample,
-      content: { ...(sample.content as object), name: "Your name" },
-    }
-    expect(cvContentOf(legacy).name).toBe("")
-    expect(cvContentOf(sample).name).toBe("")
-    const own: PaperDoc = {
-      ...sample,
-      content: { ...(sample.content as object), name: "Linh Nguyen" },
-    }
-    expect(cvContentOf(own).name).toBe("Linh Nguyen")
   })
 })
 

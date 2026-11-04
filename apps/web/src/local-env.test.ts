@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { createElement } from "react"
-import { upgradeStoredPaper } from "@workspace/domain"
+import { paperDocumentSchema } from "@workspace/domain"
 import { cleanup, screen, within } from "@testing-library/react"
 import { afterEach, beforeAll, expect, it, vi } from "vitest"
 
@@ -75,9 +75,35 @@ it("derives VITE_API_URL from PORT when none is set", () => {
 })
 
 it("opens the CV on a width-fit sheet with Name and Summary and no Coach float", async () => {
-  const upgraded = upgradeStoredPaper("cv", defaultCvData())
-  if (!upgraded.ok) throw new Error(upgraded.message)
-  cvClient.client = seededCvClient(upgraded.document)
+  cvClient.client = seededCvClient(
+    paperDocumentSchema.parse({
+      version: 3,
+      kind: "cv",
+      header: {
+        id: "header",
+        type: "header",
+        name: SAMPLE_AUTHOR_NAME,
+        email: "",
+        phone: "",
+        city: "",
+        linkedin: "",
+      },
+      clashes: [],
+      blocks: [
+        {
+          id: "section-summary",
+          type: "section",
+          kind: "summary",
+          title: "Summary",
+        },
+        {
+          id: "p1",
+          type: "paragraph",
+          content: [{ text: defaultCvData().summary }],
+        },
+      ],
+    })
+  )
   render(
     createElement(PaperCvEditor, {
       initial: record,

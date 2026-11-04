@@ -1,4 +1,4 @@
-import { parseUserId } from "@workspace/domain"
+import { paperDocumentSchema, parseUserId } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -49,19 +49,32 @@ async function pushed(docId: string, change: Parameters<typeof typed>[1]) {
 async function documentOf(docId: string) {
   return (
     await store.db.select().from(paperDocs).where(eq(paperDocs.id, docId))
-  )[0]!.document
+  )[0]!.crdtDocument
 }
 
 describe("letter parts", () => {
   it("keeps the parts when the body is edited through a push", async () => {
     await withDatabase(store.db, async () => {
-      const stored = {
-        markdown: "Body paragraph.",
-        sender: "Linh",
-        date: "2 Nov 2026",
-        closing: "Warm regards,",
-        signature: "Linh",
-      }
+      const stored = paperDocumentSchema.parse({
+        version: 3,
+        kind: "letter",
+        clashes: [],
+        blocks: [
+          { id: "l-1", type: "paragraph", content: [{ text: "Linh" }] },
+          { id: "l-2", type: "paragraph", content: [{ text: "2 Nov 2026" }] },
+          {
+            id: "l-3",
+            type: "paragraph",
+            content: [{ text: "Body paragraph." }],
+          },
+          {
+            id: "l-4",
+            type: "paragraph",
+            content: [{ text: "Warm regards," }],
+          },
+          { id: "l-5", type: "paragraph", content: [{ text: "Linh" }] },
+        ],
+      })
       const created = await run("paper.create", {
         kind: "letter",
         name: "Letter",
@@ -71,10 +84,10 @@ describe("letter parts", () => {
       await pushed(docId, (paper) =>
         withText(paper, "l-3", "Body paragraph, edited.")
       )
-      expect(await documentOf(docId)).toEqual({
-        ...stored,
-        markdown: "Body paragraph, edited.",
-      })
+      const text = JSON.stringify(await documentOf(docId))
+      expect(text).toContain("Body paragraph, edited.")
+      expect(text).toContain("2 Nov 2026")
+      expect(text).toContain("Warm regards,")
     })
   })
 })

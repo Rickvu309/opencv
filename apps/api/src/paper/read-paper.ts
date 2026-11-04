@@ -3,7 +3,6 @@ import {
   paperDocumentSchema,
   parseFileId,
   parsePaperId,
-  upgradeStoredPaper,
   type PaperDocument,
   type PaperView,
 } from "@workspace/domain"
@@ -19,10 +18,8 @@ function iso(value: Date) {
 
 export function tryReadStoredPaper(row: PaperRow): PaperDocument | null {
   const seeded = paperDocumentSchema.safeParse(row.crdtDocument)
-  if (seeded.success && seeded.data.kind === row.kind) return seeded.data
-  const upgraded = upgradeStoredPaper(row.kind, row.document)
-  if (!upgraded.ok || upgraded.document.kind !== row.kind) return null
-  return upgraded.document
+  if (!seeded.success || seeded.data.kind !== row.kind) return null
+  return seeded.data
 }
 
 export function readStoredPaper(row: PaperRow): PaperDocument {

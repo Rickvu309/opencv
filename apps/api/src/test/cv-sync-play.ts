@@ -52,6 +52,15 @@ function note(
   log.set(key, row)
 }
 
+function laterReplaces(
+  write: FieldWrite,
+  next: FieldWrite,
+  opened: string | undefined
+) {
+  if (next.tab === write.tab) return true
+  return next.prior === write.value && write.value !== opened
+}
+
 function releaseDropped(
   log: FieldLog,
   tabs: Tab[],
@@ -516,11 +525,10 @@ export function verdict(out: Awaited<ReturnType<typeof play>>) {
   }
   for (const [key, row] of out.log) {
     const actual = fieldValue(out.final.doc, key)
+    const opened = row.person[0]?.prior
     const personKept = row.person.filter((write, index) => {
       const later = row.person.slice(index + 1)
-      return !later.some(
-        (next) => next.tab === write.tab || next.prior === write.value
-      )
+      return !later.some((next) => laterReplaces(write, next, opened))
     })
     if (personKept.length === 0 && row.coach.length === 0) continue
     if (actual === undefined) {

@@ -1,18 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { blankBlockDocument } from "./paper-blocks/index.ts"
-import {
-  cvPrintModel,
-  upgradeStoredPaper,
-  type CvPaper,
-} from "./paper-doc/index.ts"
-
-function blankCv(): CvPaper {
-  const result = upgradeStoredPaper("cv", blankBlockDocument())
-  if (!result.ok || result.document.kind !== "cv") throw new Error("no cv")
-  return result.document
-}
+import { blankCv, cvPrintModel, type CvPaper } from "./paper-doc/index.ts"
 
 function withSecondExperience(document: CvPaper, firstTitle: string): CvPaper {
   const blocks = document.blocks.map((block) =>

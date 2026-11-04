@@ -1,4 +1,4 @@
-import { cvSectionKindSchema } from "../paper-blocks/document.js"
+import { cvSectionKindSchema } from "./nodes.js"
 import {
   paperDocumentSchema,
   sectionMarker,

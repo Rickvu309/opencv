@@ -1,13 +1,7 @@
 import { useReducer } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
-import {
-  blankBlockDocument,
-  emptyCvDocument,
-  upgradeStoredPaper,
-  type PaperDocument,
-  type PaperView,
-} from "@workspace/domain"
+import { blankCv, emptyCvDocument, type PaperView } from "@workspace/domain"
 
 import { render } from "@/test/render-with-client.tsx"
 import { Toaster } from "@workspace/ui/components/sonner"
@@ -22,12 +16,6 @@ import {
 
 const FILE_ID = "11111111-1111-4111-8111-111111111111"
 const DOC_ID = "22222222-2222-4222-8222-222222222222"
-
-function paperOf(kind: "cv" | "letter", document: unknown): PaperDocument {
-  const upgraded = upgradeStoredPaper(kind, document)
-  if (!upgraded.ok) throw new Error(upgraded.message)
-  return upgraded.document
-}
 
 const state = vi.hoisted(() => ({ pathname: "/share/tok" }))
 
@@ -235,14 +223,13 @@ describe("CV photo", () => {
         return Promise.resolve(Response.json({ ok: true, data: {} }))
       }
       if (url.includes(`/api/paper/${DOC_ID}`)) {
-        const restored = blankBlockDocument()
         return Promise.resolve(
           Response.json({
             ok: true,
             data: {
               id: DOC_ID,
               contentVersion: 3,
-              document: restored,
+              paper: blankCv(),
             },
           })
         )
@@ -327,7 +314,7 @@ describe("CV photo", () => {
             data: {
               id: DOC_ID,
               contentVersion: 3,
-              document: blankBlockDocument(),
+              paper: blankCv(),
             },
           })
         )
@@ -392,16 +379,21 @@ describe("CV photo", () => {
   })
 
   it("renders the file id as the public photo on the share page", async () => {
-    const blocks = blankBlockDocument()
-    blocks.header.name = "Ada Lovelace"
-    blocks.header.photo = `file:${FILE_ID}`
+    const paper = blankCv()
     const shared: Omit<PaperView, "isFavorite"> = {
       id: DOC_ID,
       name: "Photo CV",
       kind: "cv",
       templateId: "with-photo",
       status: "draft",
-      paper: paperOf("cv", blocks),
+      paper: {
+        ...paper,
+        header: {
+          ...paper.header,
+          name: "Ada Lovelace",
+          photo: `file:${FILE_ID}`,
+        },
+      },
       contentVersion: 2,
       checks: [],
       pageChoice: "unset",

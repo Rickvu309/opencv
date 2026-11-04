@@ -1,20 +1,12 @@
-import {
-  cvBlockDocumentSchema,
-  type CvBlock as LegacyBlock,
-  type CvBlockDocument,
-} from "../paper-blocks/document.js"
-import {
-  isCvDocument,
-  letterDocumentV1Schema,
-  type CvDocument,
-  type LetterDocument,
-} from "../paper-codecs.js"
-import type { PaperStoredKind } from "../paper.js"
+import { z } from "zod"
+
+import { paperPhotoValueSchema, type PaperStoredKind } from "../paper.js"
 import {
   blankCv,
   blankLetter,
   paperDocumentSchema,
   sectionMarker,
+  type CvPaper,
   type LetterPaper,
   type PaperDocument,
 } from "./document.js"
@@ -25,6 +17,200 @@ import {
   type NodeId,
 } from "./nodes.js"
 import { richTextOf } from "./rich-text.js"
+
+const blockIdSchema = z.string().min(1)
+
+const listItemSchema = z
+  .object({
+    id: blockIdSchema,
+    text: z.string(),
+  })
+  .strict()
+
+const legacyBlockSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("text"),
+      text: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("heading"),
+      text: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("bulleted-list"),
+      items: z.array(listItemSchema),
+    })
+    .strict(),
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("numbered-list"),
+      items: z.array(listItemSchema),
+    })
+    .strict(),
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("divider"),
+    })
+    .strict(),
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("experience-entry"),
+      role: z.string(),
+      company: z.string(),
+      period: z.string(),
+      location: z.string().optional(),
+      bullets: z.array(listItemSchema),
+    })
+    .strict(),
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("education-entry"),
+      school: z.string(),
+      degree: z.string(),
+      period: z.string(),
+      detail: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      id: blockIdSchema,
+      type: z.literal("skills-group"),
+      label: z.string(),
+      items: z.array(z.string()),
+    })
+    .strict(),
+])
+
+type LegacyBlock = z.infer<typeof legacyBlockSchema>
+
+const cvBlockDocumentSchema = z
+  .object({
+    version: z.literal(2),
+    header: z
+      .object({
+        name: z.string(),
+        email: z.string(),
+        phone: z.string(),
+        city: z.string(),
+        linkedin: z.string(),
+        photo: paperPhotoValueSchema.optional(),
+      })
+      .strict(),
+    sections: z.array(
+      z
+        .object({
+          id: blockIdSchema,
+          kind: z.enum([
+            "summary",
+            "experience",
+            "education",
+            "skills",
+            "projects",
+            "activities",
+            "awards",
+            "languages",
+          ]),
+          blocks: z.array(legacyBlockSchema),
+        })
+        .strict()
+    ),
+  })
+  .strict()
+
+type CvBlockDocument = z.infer<typeof cvBlockDocumentSchema>
+
+const cvDocumentV1Schema = z
+  .object({
+    templateId: z.enum([
+      "internship",
+      "product",
+      "service",
+      "academic",
+      "photo",
+    ]),
+    name: z.string(),
+    headline: z.string(),
+    contact: z
+      .object({
+        email: z.string(),
+        phone: z.string(),
+        location: z.string(),
+        linkedin: z.string().optional(),
+      })
+      .strict(),
+    summary: z.string(),
+    experience: z.array(
+      z
+        .object({
+          role: z.string(),
+          company: z.string(),
+          period: z.string(),
+          location: z.string().optional(),
+          bullets: z.array(z.string()),
+        })
+        .strict()
+    ),
+    education: z.array(
+      z
+        .object({
+          school: z.string(),
+          degree: z.string(),
+          period: z.string(),
+          detail: z.string().optional(),
+        })
+        .strict()
+    ),
+    skills: z.array(
+      z
+        .object({
+          label: z.string(),
+          items: z.array(z.string()),
+        })
+        .strict()
+    ),
+    projects: z
+      .array(
+        z
+          .object({
+            name: z.string(),
+            detail: z.string(),
+          })
+          .strict()
+      )
+      .optional(),
+    languages: z.array(z.string()).optional(),
+    photoUrl: paperPhotoValueSchema.optional(),
+  })
+  .strict()
+
+type CvDocument = z.infer<typeof cvDocumentV1Schema>
+
+const letterDocumentV1Schema = z
+  .object({
+    markdown: z.string(),
+    sender: z.string().optional(),
+    contact: z.string().optional(),
+    date: z.string().optional(),
+    recipient: z.string().optional(),
+    salutation: z.string().optional(),
+    closing: z.string().optional(),
+    signature: z.string().optional(),
+  })
+  .strict()
+
+type LetterDocument = z.infer<typeof letterDocumentV1Schema>
 
 export type StoredShape =
   "cv-v1" | "cv-v2" | "cv-v3" | "letter-markdown" | "letter-v3"
@@ -167,7 +353,36 @@ function cvFromBlockDocument(legacy: CvBlockDocument): unknown {
   }
 }
 
-export function paragraphsOfText(text: string): string[] {
+export function paragraphPaper(text: string): CvPaper {
+  const paragraphs = text
+    .split(/\n\s*\n|\n/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const body = (paragraphs.length > 0 ? paragraphs : [""]).map(
+    (paragraph, index) => ({
+      id: `p-${index + 1}` as NodeId,
+      type: "paragraph" as const,
+      content: richTextOf(paragraph),
+    })
+  )
+  return {
+    version: 3,
+    kind: "cv",
+    header: {
+      id: HEADER_NODE_ID,
+      type: "header",
+      name: "",
+      email: "",
+      phone: "",
+      city: "",
+      linkedin: "",
+    },
+    blocks: [sectionMarker("summary", "section-summary" as NodeId), ...body],
+    clashes: [],
+  }
+}
+
+function paragraphsOfText(text: string): string[] {
   return text
     .replace(/\r\n?/g, "\n")
     .split(/\n(?:[ \t]*\n)+/)
@@ -343,6 +558,7 @@ export function upgradeStoredPaper(
   const legacy = cvBlockDocumentSchema.safeParse(stored)
   if (legacy.success)
     return validated(cvFromBlockDocument(legacy.data), "cv-v2")
-  if (isCvDocument(stored)) return validated(cvFromV1(stored), "cv-v1")
+  const cv = cvDocumentV1Schema.safeParse(stored)
+  if (cv.success) return validated(cvFromV1(cv.data), "cv-v1")
   return refuse("unrecognized", "Not a CV this version can read")
 }

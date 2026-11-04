@@ -1,5 +1,5 @@
 import {
-  upgradeStoredPaper,
+  paperDocumentSchema,
   type JobView,
   type PaperView,
 } from "@workspace/domain"
@@ -21,9 +21,12 @@ export const job: JobView = {
 }
 
 function letterPaper(markdown: string): PaperView["paper"] {
-  const upgraded = upgradeStoredPaper("letter", { markdown })
-  if (!upgraded.ok) throw new Error(upgraded.message)
-  return upgraded.document
+  return paperDocumentSchema.parse({
+    version: 3,
+    kind: "letter",
+    clashes: [],
+    blocks: [{ id: "p1", type: "paragraph", content: [{ text: markdown }] }],
+  })
 }
 
 export const letter: PaperView = {
