@@ -54,7 +54,7 @@ The failure prints witness lines, the first failing sweep tuples, and the `fast-
 - Host space: the fixed list above, random DNS names, random public IPv4 quads outside `0/8`, `10/8`, `127/8`, `169.254/16`, `172.16/12`, `192.168/16`, `100.64/10`, and a small set of bracketed IPv6 literals, including IPv4-mapped loopback, private and link-local addresses in dotted and hex form. Not every string.
 - `lookupImpl` is a stub. The check does not do real DNS.
 - Ports `1` to `65535`, userinfo from a fixed set of four, paths from a fixed set plus random labels.
-- `jobs.example.com` is the demo seed host that `openableApplyJobUrl` refuses on purpose (`DEMO_APPLY_JOB_HOST`), so it is not a public-host example.
+- `jobs.example.com` is the demo seed host that `openableApplyJobUrl` refuses on purpose (`UNRESOLVABLE_SEED_JOB_HOST`), so it is not a public-host example.
 - The 2000 character limit (`APPLY_JOB_URL_MAX`), whitespace rejection and trimming in `openableApplyJobUrl` are not probed.
 
 ## Coverage record
@@ -67,11 +67,11 @@ The failure prints witness lines, the first failing sweep tuples, and the `fast-
 | `hostFromHttpUrl`          | `apps/api/src/job/fetch-posting.ts` line 90  |
 | `assertPublicApplyScanUrl` | `apps/api/src/job/fetch-posting.ts` line 98  |
 | `createFetchJobPosting`    | `apps/api/src/job/fetch-posting.ts` line 154 |
-| `openableApplyJobUrl`      | `packages/domain/src/job-posting.ts` line 42 |
+| `openableApplyJobUrl`      | `packages/domain/src/job-posting.ts` line 30 |
 
 Check file: `apps/api/src/job/fetch-posting.formal.test.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 
-Sync commit: `2ea68545978b96c2490ebccc4039295158cb8228`. This is the trunk commit the check was last confirmed against. The guard files moved from the api apply folder to the api job folder, and the domain `openableApplyJobUrl` moved from apply.ts to `job-posting.ts`, since the earlier sync (`49debddf`); their content is unchanged, and every line number above still matches.
+Sync commit: `90aa45db` (reconfirmed 2026-11-04: `pnpm --filter api test:formal` passes, 73 tests, 3 skipped; earlier `2ea68545978b96c2490ebccc4039295158cb8228`). This is the trunk commit the check was last confirmed against. The guard files moved from the api apply folder to the api job folder, and the domain `openableApplyJobUrl` moved from apply.ts to `job-posting.ts`, since the earlier sync (`49debddf`); their content is unchanged, and every line number above still matches.
 
 ## What is not covered
 

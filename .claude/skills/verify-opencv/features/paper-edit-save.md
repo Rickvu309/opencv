@@ -23,7 +23,7 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 
 - **Library.** `agent-browser open "$WEB_URL/paper"`. The heading `Start a document` is visible. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-library-empty.png"`.
 - **Create.** `agent-browser find role button click --name "CV"`. `agent-browser find role button click --name "Simple"`. `agent-browser find role button click --name "Use template"`. Wait until the URL matches `/paper/` plus an id. The region name starts with `Editing`.
-- **Blank.** The editor shows textboxes named Email, Phone, City, LinkedIn, Role (placeholder `Role, company`), Company, Dates, What you did, and what changed because of it, Location, School (placeholder `School, degree`), Degree, and Tools, software and languages. Each has an empty stored value. `GET /api/paper/{id}` has `"version":3`.
+- **Blank.** The editor opens with the textbox `CV Untitled CV` and the level 1 heading `Full name`. A fresh Simple template lists textboxes named Full name, Email, Phone, City, LinkedIn, Role, Dates, School, Years and Skills. Company, Location and the bullet textbox appear inside an entry once Role has text. `GET /api/paper/{id}` has `"version":3`.
 - **Edit.** `agent-browser find role textbox click --name "Role"` and then `agent-browser keyboard type "Edited for verify."`. Typing on a CV field persists where fill does not. The Role placeholder stays `Role, company`.
 - **Wait for the save.** Wait until the text `Edited just now` is visible. That is the save. There is no Save button.
 - **Reload.** `agent-browser reload`. The role field still reads `Edited for verify.`
@@ -48,9 +48,8 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 
 ## Gotchas
 
-- The editor is URL-addressed. Reload the doc URL. Do not expect a documents table. `/paper` redirects to `/paper`.
-- The name field on the page is `Name`. Do not look for `Your name`.
+- The editor is URL-addressed. Reload the doc URL. Do not expect a documents table.
+- The name field on the page is `Full name`. The document title in the breadcrumb is the textbox `Document name`.
 - A blank CV has no Summary field. Role and Company are separate fields. The Role placeholder is `Role, company`. School and Degree are separate fields. The School placeholder is `School, degree`. Location sits after the bullets. Bold, Italic, and Underline are not in the toolbar.
-- The document title in the breadcrumb is also named `Name`. The CV header name sits in the level 1 heading.
 - Fit to one page is not part of this recipe. The scripted Coach may not return a `paper.edit` tool result. Report that step as not driven when a later pass tries it.
 - The card menu, search with no match, Copy link, and the suggestion card are not part of this recipe.

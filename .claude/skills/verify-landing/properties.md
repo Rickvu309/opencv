@@ -41,7 +41,7 @@ The checker measures its properties at 1440x900, 390x844 and reduced motion. Ids
 
 Pinned copy the rules read: `LANDING_HEADLINE_LINES`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
 
-Sync commit: e1ff7ab37b54dac73bb31c06c3b18512eb025de3. The checker printed 28 PASS at that commit.
+Sync commit: 90aa45db. The checker printed 32 PASS and 1 FAIL (31, explained in `SKILL.md`) at that commit.
 
 ## Kind decisions (#550 review)
 

@@ -4,7 +4,7 @@ Six sections outside the app shell. Back to app returns to the start page. Sign 
 
 ## Path
 
-1. From any page in the shell, open Settings from the profile footer (the link named with "profile and settings").
+1. From any page in the shell, open the sidebar footer menu (the button showing the account email) and choose the menuitem Settings.
 2. Preferences is the current section. Confirm Back to app, and the six sections: Preferences, Coach, Integrations, Usage & limits, Billing, Account.
 3. Open Coach. Weekly plan reads Disabled. Activate it. Reload. The row stays Enabled.
 4. Open Integrations. Gmail and Google Calendar read Disabled. Connect Gmail is the only glow. Activate it and confirm the page explains that this build cannot connect. Do not complete an OAuth redirect.

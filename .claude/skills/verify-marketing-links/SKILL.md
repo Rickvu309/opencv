@@ -61,7 +61,7 @@ why: no element with id "coach" on /
 
 `page` is the marketing page that rendered the anchor. `link` is its text. `href` is the `href` attribute. `why` is either `matched the not-found page <leaf id>`, `matched no route for <path>`, `matched only the root layout for <path>`, or `no element with id "<id>" on <path>`.
 
-The Help regression looks like this:
+A nav path turned into a hash looks like this (the shape of an old `pageHref` regression, kept as an example of the report):
 
 ```
 page: /
@@ -70,7 +70,7 @@ href: /#elp
 why: no element with id "elp" on /
 ```
 
-`pageHref` in `landing-nav.tsx` only returns `/pricing` and `/help`. Any other nav path falls through to `to="/"` and `hash={href.slice(2)}`. `/help` with Help removed from that `if` becomes hash `elp`. A future `/blog` nav path becomes `/#log` the same way. `FooterAnchor` in `landing-footer.tsx` already branches on `href.startsWith("/#")` and passes any other path to `Link`. A `/#elp` or `/#log` failure is a product bug in `pageHref`, not a bad table row.
+`pageHref` in `landing-nav.tsx` returns `null` for a `/#` href and passes every other nav path through as a page link, so a nav path with no route fails P1 instead of becoming a hash. `FooterAnchor` in `landing-footer.tsx` already branches on `href.startsWith("/#")` and passes any other path to `Link`. A hash failure like `/#elp` is a product bug in `pageHref` or the link data, not a bad table row.
 
 A route-table failure is a short block:
 
@@ -97,8 +97,8 @@ A fast-check failure prints `Counterexample:` and `Shrunk N time(s)`. Replay tha
 
 1. Add the route in `apps/web/src/router.tsx` and to the `routeTree` list. The check then fails with `unclassified route` and prints the id.
 2. Add a row to `apps/web/src/test/marketing/route-table.ts` with that `id` and `fullPath`.
-3. A static marketing page (`/pricing`, `/about`, `/help`, and `/` for `LandingPage`) uses `kind: "marketing"` and no `enumerate`. The check renders `route.to`.
-4. A marketing route whose path contains `$` must set `enumerate` to every concrete path. A later Blog PR adds `/blog` and `/blog/$slug`. `/blog` is a static marketing row. `/blog/$slug` needs `enumerate` returning one `/blog/<slug>` per post in the post table that PR adds. There is no post table in the tree today. Do not invent slugs. An empty list fails. A pattern such as `/blog/$slug` fails.
+3. A static marketing page (`/pricing`, `/about`, `/help`, `/stories`, `/blog`, and `/` for `LandingPage`) uses `kind: "marketing"` and no `enumerate`. The check renders `route.to`.
+4. A marketing route whose path contains `$` must set `enumerate` to every concrete path. `/blog` is a static marketing row. `/blog/$slug` has `enumerate` returning one `/blog/<slug>` per entry of `BLOG_POSTS` (`apps/web/src/features/landing/blog/blog-copy.ts`). Do not invent slugs. An empty list fails. A pattern such as `/blog/$slug` fails.
 5. Anything else still needs a row: `app` (the signed-in product routes from `SURFACE_PATHS`, including redirects such as `/proof`), `auth` (`/sign-in`, `/sign-up`), `share` (`/share/$token`), `not-found` (the splat shells and the `NotFoundPage` index routes), or `layout` (`__root__`). Those rows must not set `enumerate`. The check does not render them.
 6. Rerun `pnpm --filter web verify:marketing`.
 
@@ -106,27 +106,27 @@ A fast-check failure prints `Counterexample:` and `Shrunk N time(s)`. Replay tha
 
 ## Coverage record
 
-| What the check reads             | Where                                                                                                                                                                                                                                    |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Route tree and `createAppRouter` | `apps/web/src/router.tsx` `routeTree` line 335, `createAppRouter` line 364                                                                                                                                                               |
-| Classification table             | `apps/web/src/test/marketing/route-table.ts` `ROUTE_TABLE` line 19                                                                                                                                                                       |
-| Not-found leaf                   | `NotFoundPage` in `apps/web/src/components/not-found-page.tsx` line 54. P1 treats a match as the not-found page when the leaf route's `component` is this function. Today those leaves are `/$/`, the legacy `/app/$/`, and `/u/$slug/`. |
-| Render helper                    | `renderApp` in `apps/web/src/test/render-app.tsx` line 20                                                                                                                                                                                |
-| Home page                        | `LandingPage` in `apps/web/src/features/landing/landing-page.tsx` line 18. Section ids include `product`, `stories`, `paper`, `apply`, `coach` (`id={product.id}` in `landing-products.tsx` line 12).                                    |
-| Pricing                          | `PricingPage` in `apps/web/src/features/landing/landing-pricing.tsx` line 22, route `apps/web/src/routes/landing-pricing.tsx`                                                                                                            |
-| About                            | `AboutPage` in `apps/web/src/features/landing/about/about-page.tsx` line 24. Surface links use `hash` `paper`, `apply`, `coach` from `ABOUT_SURFACES` in `about-copy.ts`. Route `apps/web/src/routes/landing-about.tsx`.                 |
-| Help                             | `HelpPage` in `apps/web/src/features/landing/help/help-page.tsx` line 29. Topic links are `to="/help"` `hash={topic.id}`, and each topic section has `id={topic.id}`. Route `apps/web/src/routes/landing-help.tsx`.                      |
-| Nav hand list                    | `pageHref` in `apps/web/src/features/landing/landing-nav.tsx` line 17. `LANDING_NAV_LINKS` in `landing-copy.ts` line 43.                                                                                                                 |
-| Footer                           | `FooterAnchor` in `apps/web/src/features/landing/landing-footer.tsx` line 15. `LANDING_FOOTER` in `landing-copy.ts` line 268.                                                                                                            |
-| Help search                      | `filterHelpTopics` line 276 and `HELP_TOPICS` line 42 in `apps/web/src/features/landing/help/help-copy.ts`. The property is `assertFilterRule` in `help-filter.property.test.ts` line 101.                                               |
+| What the check reads             | Where                                                                                                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Route tree and `createAppRouter` | `apps/web/src/router.tsx` `routeTree` line 382, `createAppRouter` line 413                                                                                                                                               |
+| Classification table             | `apps/web/src/test/marketing/route-table.ts` `ROUTE_TABLE` line 13                                                                                                                                                       |
+| Not-found leaf                   | `NotFoundPage` in `apps/web/src/components/not-found-page.tsx` line 54. P1 treats a match as the not-found page when the leaf route's `component` is this function. Today those leaves are `/$/` and `/u/$slug/`.        |
+| Render helper                    | `renderApp` in `apps/web/src/test/render-app.tsx` line 25                                                                                                                                                                |
+| Home page                        | `LandingPage` in `apps/web/src/features/landing/landing-page.tsx` line 18. Section ids include `product`, `stories`, `paper`, `apply`, `coach` (`id={product.id}` in `landing-products.tsx` line 13).                    |
+| Pricing                          | `PricingPage` in `apps/web/src/features/landing/landing-pricing.tsx` line 106, route `apps/web/src/routes/landing-pricing.tsx`                                                                                           |
+| About                            | `AboutPage` in `apps/web/src/features/landing/about/about-page.tsx` line 24. Surface links use `hash` `paper`, `apply`, `coach` from `ABOUT_SURFACES` in `about-copy.ts`. Route `apps/web/src/routes/landing-about.tsx`. |
+| Help                             | `HelpPage` in `apps/web/src/features/landing/help/help-page.tsx` line 29. Topic links are `to="/help"` `hash={topic.id}`, and each topic section has `id={topic.id}`. Route `apps/web/src/routes/landing-help.tsx`.      |
+| Nav hand list                    | `pageHref` in `apps/web/src/features/landing/landing-nav.tsx` line 20. `LANDING_NAV_LINKS` in `landing-copy.ts` line 45.                                                                                                 |
+| Footer                           | `FooterAnchor` in `apps/web/src/features/landing/landing-footer.tsx` line 15. `LANDING_FOOTER` in `landing-copy.ts` line 257.                                                                                            |
+| Help search                      | `filterHelpTopics` line 276 and `HELP_TOPICS` line 42 in `apps/web/src/features/landing/help/help-copy.ts`. The property is `assertFilterRule` in `help-filter.property.test.ts` line 93.                                |
 
 P1 and P2 are `classificationProblems`, `marketingPaths`, and the link test in `marketing-links.verify.test.tsx`. They read rendered anchors. They do not read the copy arrays except by rendering the components that map over them.
 
-Sync commit: `f9dcc4f0e4aea57ed3ed2b07c69aa1c78d3ff580` (main when this check was written; the covered files were reread at that commit and the command passed). Move the sync commit forward only after you reread every row of this table at the new commit, confirm the check still describes that code, and the command passes. A commit that only edits this skill does not move the covered code. Do not advance the sync commit for a blocked run.
+Sync commit: `90aa45db` (main on 2026-11-04, every row above reread and `pnpm --filter web verify:marketing` passed; first written at `f9dcc4f0`; the covered files were reread at that commit and the command passed). Move the sync commit forward only after you reread every row of this table at the new commit, confirm the check still describes that code, and the command passes. A commit that only edits this skill does not move the covered code. Do not advance the sync commit for a blocked run.
 
 ## Bounds and assumptions
 
-- P1–P3 render every `kind: "marketing"` path. Today that is `/`, `/pricing`, `/about`, and `/help`. No sample and no other pages.
+- P1–P3 render every `kind: "marketing"` path. Today that is `/`, `/pricing`, `/about`, `/help`, `/stories`, `/blog`, and one `/blog/<slug>` per post in `BLOG_POSTS`. No sample and no other pages.
 - The session is signed out (`setMockSession(null)`). `indexRoute.beforeLoad` redirects a signed-in session from `/` to the start page, so a signed-in render is not the marketing page.
 - The check waits until `<main>` is on the page and `location.pathname` is that path. Marketing pages render their anchors in the route component, not in a later effect.
 - An href is internal when `new URL(href, page)` stays on origin `http://marketing.test`. Other origins, `mailto:`, `tel:`, and protocol-relative URLs are external and skipped.
@@ -146,14 +146,14 @@ Sync commit: `f9dcc4f0e4aea57ed3ed2b07c69aa1c78d3ff580` (main when this check wa
 - Search strings.
 - A marketing page filed as `app` or `auth` in the table.
 - Signed-in `/`.
-- Blog routes. They are not in the tree yet. When they land, P3 fails until you add rows.
+- A new blog post is covered through `BLOG_POSTS`. A new blog route shape still needs its own row, or P3 fails.
 
 ## When the covered code changes
 
 1. Run `pnpm --filter web verify:marketing` before you edit the table.
 2. If you added or renamed a route, update `ROUTE_TABLE` in the same change. If you changed what `filterHelpTopics` promises, update the rule in this skill and in `assertFilterRule` only with evidence from the change, and say so.
 3. Rerun the command. A failure that names a page and an href is a bug in the page. A failure that names a route id is the table.
-4. Prove the check still fails on a scratch break, then drop the scratch. Useful breaks: remove `/help` from the `if` in `pageHref` (Help renders `/#elp`); rename the Coach section id in `landing-products.tsx` (`/#coach` fails, including the About link); add a route to `routeTree` without a table row; delete `.toLowerCase()` in `filterHelpTopics` (fast-check shrinks to a query such as `"A"`). `git checkout` the product file after. `git diff` on product files must be empty, and the command must pass again.
+4. Prove the check still fails on a scratch break, then drop the scratch. Useful breaks: add an entry to `LANDING_NAV_LINKS` whose path has no route (P1 fails on it); rename the Coach section id in `landing-products.tsx` (`/#coach` fails, including the About link); add a route to `routeTree` without a table row; delete `.toLowerCase()` in `filterHelpTopics` (fast-check shrinks to a query such as `"A"`). `git checkout` the product file after. `git diff` on product files must be empty, and the command must pass again.
 5. Move the sync commit only after that rerun, and only to a commit whose covered files you reread.
 
 For drift that landed without this check, use `/maintain-formal-verification-skill`. Do not weaken a property so the current code passes.

@@ -5,7 +5,7 @@ description: Check the OpenCV landing page for quality and taste, writing, logic
 
 # verify-landing
 
-Two layers. The checker (`scripts/verify-landing.mjs`) decides what a program can: counts, words, boxes, colors, computed styles, first-paint state. The rubric in [taste-review.md](taste-review.md) decides the rest, and three reviewers from different model families score it. Neither layer replaces the other. A green checker says the page follows the written rules. It does not say the page is good.
+Two layers. The checker (`.claude/skills/verify-landing/scripts/verify-landing.mjs`) decides what a program can: counts, words, boxes, colors, computed styles, first-paint state. The rubric in [taste-review.md](taste-review.md) decides the rest, and three reviewers from different model families score it. Neither layer replaces the other. A green checker says the page follows the written rules. It does not say the page is good.
 
 All paths are relative to the repo (or worktree) root. The rules come from the landing research (kept outside the repo) plus the pen parity checks. Each check names its source in the `Source:` text of its line below.
 
@@ -38,7 +38,7 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 
 - `VERIFY_TIER=invariant` runs the invariant checks only. The design checks are not computed: the design probe does not run, nothing is rasterised, and no file under `design/` or `reference/` is read. Use it for any change that is not a redesign. A redesign does not break it.
 - `VERIFY_TIER=design` reports only the design checks. `VERIFY_TIER=all` (default) runs both.
-- The design numbers of 27 to 30 live in `apps/web/src/features/landing/design/landing.spec.json`, not in the checker. 31 reads `landing.styles.json` and `landing.omitted.json` beside it. Checks 06, 07, 08, 11, 12, 13, 14, 15, 16, 17 and 19 are design-tier rules that keep their copy and counts in `text-rules.mjs` and `page-checks.mjs`.
+- The design numbers of 27 to 30 live in `apps/web/src/features/landing/design/landing.spec.json`, not in the checker. 31 reads `landing.styles.json` and `landing.omitted.json` beside it. Checks 02, 06, 07, 08, 11, 12, 13, 14, 15, 16, 17 and 19 are design-tier rules that keep their copy and counts in `text-rules.mjs` and `page-checks.mjs`.
 - `verify:pen-layout` and `verify:apply-pen` are separate commands and design by nature. The tier does not touch them.
 - Unit tests: `node --test .claude/skills/verify-landing/scripts/lib`. The checker needs Node 24 (it uses the global `WebSocket`) and adds no dependency.
 - The checker never edits the app.
@@ -96,7 +96,7 @@ Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](
 
 ### Baseline at the sync commit
 
-At `ceb07502` (main, checked in #510) the checker prints 30 PASS, 1 FAIL and 0 STALE: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
+At `90aa45db` (main, 2026-11-04) the checker prints 32 PASS, 1 FAIL and 0 STALE: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
 
 ## Run it by hand
 
@@ -123,7 +123,7 @@ Links and hashes are `.claude/skills/verify-marketing-links`. Run `pnpm --filter
 Find whether the covered code moved since the sync commit:
 
 ```bash
-git diff --stat ceb07502..HEAD -- apps/web/src/features/landing apps/web/public/landing apps/web/index.html packages/ui/src/components packages/ui/src/styles/globals.css
+git diff --stat 90aa45db..HEAD -- apps/web/src/features/landing apps/web/public/landing apps/web/index.html packages/ui/src/components packages/ui/src/styles/globals.css
 ```
 
 An empty diff means the record holds. Otherwise read the diff against the table in [coverage.md](coverage.md) and run the checker; every changed line must match an intended change. If a rule no longer fits the code, fix `probe.mjs` or the rule and prove it: break the property in a scratch copy, see it FAIL, restore, see the baseline. Move the sync commit only after the checks describe the code at the new commit.

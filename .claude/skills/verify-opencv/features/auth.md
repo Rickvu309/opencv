@@ -17,7 +17,7 @@ Auth lets a visitor sign in with an email code, sign out, and sign in again. The
 - Fill Email `ada@verify.local`, choose `Continue`.
 - Read the code from `api.log` with `^\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})$` and `type sign-in`.
 - Fill the six boxes. The heading becomes `Welcome to opencv`, then the URL is `/apply`.
-- Sign out: choose the sidebar link named `profile and settings`, open the `Account` tab, choose `Sign out`.
+- Sign out: open the sidebar footer menu (the button showing the account email), choose the menuitem `Sign out`. Settings also has `Sign out` under its `Account` section.
 
 ## Driving it with agent-browser
 
@@ -25,21 +25,21 @@ Preconditions: a green `doctor.sh <run>`; `export AGENT_BROWSER_SESSION=verify-<
 
 - **Sign in.** `agent-browser open "$WEB_URL/sign-in"`. The heading is `Log in to opencv`. There is no Password field. `agent-browser find role textbox fill "ada@verify.local" --name "Email"`, `agent-browser find role button click --name "Continue"`. Read the last matching line from `$EVIDENCE_DIR/api.log`. Fill the six boxes by typing or by pasting the six digits into Digit 1. `agent-browser wait --text "Welcome to opencv"`. Save `agent-browser screenshot "$EVIDENCE_DIR/signup.png"`. Then `agent-browser wait --url "**/apply"`. The account name is empty. Do not wait for a person's name.
 - **Read the session.** `agent-browser eval "fetch('$API_URL/api/session',{credentials:'include'}).then(r=>r.text())"` returns `{"ok":true,"user":{...},"session":{...}}` with the email.
-- **Guard.** After Log out, `agent-browser open "$WEB_URL/apply"` ends on a URL starting `/sign-in?redirect=`.
-- **Sign out.** `agent-browser find role link click --name "profile and settings"`, `agent-browser wait --text "Connected apps"`, `agent-browser find role tab click --name "Account"`, `agent-browser find role button click --name "Sign out"`. The URL becomes `/sign-in`.
+- **Guard.** After Sign out, `agent-browser open "$WEB_URL/apply"` ends on a URL starting `/sign-in?redirect=`.
+- **Sign out.** Click the sidebar footer button (its name starts with `Account` and ends with the email). The menu has menuitems `Settings` and `Sign out`. Choose `Sign out`. The URL becomes `/sign-in`. Settings reaches the same action through `find role link click --name "Account"` and the button `Sign out`.
 - **Wrong code.** On `/sign-in` choose `Continue` for the same email, then enter `000000`. The alert is `That code is incorrect or expired.` and the URL stays on `/sign-in`.
 - **Sign in again.** Request a new code, fill it, and `agent-browser wait --url "**/apply"`. Welcome does not show. Save `agent-browser screenshot "$EVIDENCE_DIR/signin.png"`.
 - **Language.** On the code step, choose `VI`. The heading stays English. After sign-in, `GET /api/profile` has `"language":"vi"`.
 - **390.** Set the viewport to 390 wide. The hero line `Write your CV with a coach.` is not visible. The form is. Save `agent-browser screenshot "$EVIDENCE_DIR/signin-390.png"`.
 - **Proof.** `signup.png` shows Welcome. `signin.png` shows the start page after the second sign-in. The session read returns `"ok":true` after each sign-in. The wrong-code step left the URL on `/sign-in`.
-- **Session expired.** Not driven in the browser. The unit test covers Continue as, Email me a code, and Log out.
+- **Session expired.** Not driven in the browser. The unit test covers Continue as, Email me a code, and Log out (the session-expired dialog).
 
 ## Gotchas
 
 - The code is in `api.log`, one line per send. Parse `type sign-in` and the six digits. Do not reuse `PROBE_EMAIL` from `run.env`.
 - Welcome replaces the app until it finishes. Wait for the Welcome heading, then for `/apply`.
 - A second sign-in of the same address skips Welcome.
-- Wait for the Settings tabs to render before choosing `Account`. Without the wait the tab lookup fails with `No element found`.
+- The Settings sections are links, not tabs. Wait for the link `Account` before choosing it.
 - Locators match by accessible name as a case-insensitive substring. Keep the quoted names exact, and use `--exact` when two controls share a prefix.
 - Sessions are cookie-bound to the api origin. A relaunch with a new `SESSION_SECRET` invalidates old cookies, so sign in again after any relaunch, even with `KEEP_DATA=1`.
 - The fourth code send inside a minute returns 429. One wrong code is enough for the error step. Do not burn the rate limit.
