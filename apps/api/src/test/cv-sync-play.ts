@@ -36,7 +36,12 @@ export function useCoachStore(store: CoachStore) {
 
 export type Step = { kind: string; tab: number; a: number; b: number }
 
-type FieldWrite = { value: string; prior: string | undefined; tab?: number }
+type FieldWrite = {
+  value: string
+  prior: string | undefined
+  tab?: number
+  seen: ReadonlySet<FieldWrite>
+}
 type FieldLog = Map<string, { person: FieldWrite[]; coach: FieldWrite[] }>
 
 function note(
@@ -45,20 +50,19 @@ function note(
   key: string,
   value: string,
   prior: string | undefined,
-  tab?: number
+  tab?: number,
+  observed?: Set<FieldWrite>
 ) {
+  if (prior === value) return
   const row = log.get(key) ?? { person: [], coach: [] }
-  row[side].push({ value, prior, tab })
+  const write = { value, prior, tab, seen: new Set(observed) }
+  row[side].push(write)
+  observed?.add(write)
   log.set(key, row)
 }
 
-function laterReplaces(
-  write: FieldWrite,
-  next: FieldWrite,
-  opened: string | undefined
-) {
-  if (next.tab === write.tab) return true
-  return next.prior === write.value && write.value !== opened
+function laterReplaces(write: FieldWrite, next: FieldWrite) {
+  return next.tab === write.tab || next.seen.has(write)
 }
 
 function releaseDropped(
@@ -92,13 +96,32 @@ export async function play(steps: Step[], twoTabs: boolean) {
   serial += 1
   const made = await h.run("paper.create", { kind: "cv", name: "CV" })
   const docId = (made.output as { id: string }).id
-  const first = openTab(h, docId, { gc: false })
+  const observed: Set<FieldWrite>[] = []
+  const committed = new Set<FieldWrite>()
+  const newTab = () => {
+    const known = new Set<FieldWrite>()
+    let received = new Set<FieldWrite>()
+    observed.push(known)
+    return openTab(h, docId, {
+      gc: false,
+      onLaunch(sent, reply) {
+        if (!reply.stale && !reply.reset && sent.basedOn !== undefined) {
+          for (const write of known) committed.add(write)
+        }
+        received = new Set(committed)
+      },
+      onDeliver() {
+        for (const write of received) known.add(write)
+      },
+    })
+  }
+  const first = newTab()
   await first.round()
   first.edit(() => seed())
   await first.round()
   const tabs: Tab[] = [first]
   if (twoTabs) {
-    const second = openTab(h, docId, { gc: false })
+    const second = newTab()
     await second.round()
     tabs.push(second)
   }
@@ -176,7 +199,8 @@ export async function play(steps: Step[], twoTabs: boolean) {
         `header.${key}`,
         value,
         fieldValue(doc, `header.${key}`),
-        tabs.indexOf(tab)
+        tabs.indexOf(tab),
+        observed[tabs.indexOf(tab)]
       )
     } else if (s.kind === "field") {
       const entry = pick(entries, s.a)
@@ -198,7 +222,8 @@ export async function play(steps: Step[], twoTabs: boolean) {
         `${entry.id}.${key}`,
         value,
         fieldValue(doc, `${entry.id}.${key}`),
-        tabs.indexOf(tab)
+        tabs.indexOf(tab),
+        observed[tabs.indexOf(tab)]
       )
     } else if (s.kind === "title") {
       const section = pick(
@@ -218,7 +243,8 @@ export async function play(steps: Step[], twoTabs: boolean) {
         `${section.id}.title`,
         value,
         fieldValue(doc, `${section.id}.title`),
-        tabs.indexOf(tab)
+        tabs.indexOf(tab),
+        observed[tabs.indexOf(tab)]
       )
     } else if (
       s.kind === "skillAdd" ||
@@ -251,7 +277,8 @@ export async function play(steps: Step[], twoTabs: boolean) {
         `${group.id}.items`,
         JSON.stringify(node.items),
         fieldValue(doc, `${group.id}.items`),
-        tabs.indexOf(tab)
+        tabs.indexOf(tab),
+        observed[tabs.indexOf(tab)]
       )
     } else if (s.kind === "move" && entries.length > 0 && tops.length > 1) {
       const entry = pick(entries, s.a)!
@@ -342,7 +369,8 @@ export async function play(steps: Step[], twoTabs: boolean) {
         `${added.id}.title`,
         added.title,
         undefined,
-        tabs.indexOf(tab)
+        tabs.indexOf(tab),
+        observed[tabs.indexOf(tab)]
       )
     } else if (s.kind === "dropSection") {
       const section = pick(
@@ -525,10 +553,9 @@ export function verdict(out: Awaited<ReturnType<typeof play>>) {
   }
   for (const [key, row] of out.log) {
     const actual = fieldValue(out.final.doc, key)
-    const opened = row.person[0]?.prior
     const personKept = row.person.filter((write, index) => {
       const later = row.person.slice(index + 1)
-      return !later.some((next) => laterReplaces(write, next, opened))
+      return !later.some((next) => laterReplaces(write, next))
     })
     if (personKept.length === 0 && row.coach.length === 0) continue
     if (actual === undefined) {
