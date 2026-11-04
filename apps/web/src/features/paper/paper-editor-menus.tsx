@@ -72,7 +72,15 @@ const cvToolbarFloating = {
           x: number
           y: number
           placement: string
-          rects: { floating: { width: number; height: number } }
+          rects: {
+            floating: { width: number; height: number }
+            reference: { x: number; y: number }
+          }
+          elements: {
+            reference: {
+              getBoundingClientRect(): { left: number; top: number }
+            }
+          }
         }) {
           const side = state.placement.split("-")[0]
           let x = state.x
@@ -93,15 +101,18 @@ const cvToolbarFloating = {
           const edge = 8
           const width = state.rects.floating.width
           const height = state.rects.floating.height
-          x = Math.min(
-            Math.max(edge, x),
+          const onScreen = state.elements.reference.getBoundingClientRect()
+          const shiftX = onScreen.left - state.rects.reference.x
+          const shiftY = onScreen.top - state.rects.reference.y
+          const screenX = Math.min(
+            Math.max(edge, x + shiftX),
             Math.max(edge, window.innerWidth - edge - width)
           )
-          y = Math.min(
-            Math.max(edge, y),
+          const screenY = Math.min(
+            Math.max(edge, y + shiftY),
             Math.max(edge, window.innerHeight - edge - height)
           )
-          return { x, y }
+          return { x: screenX - shiftX, y: screenY - shiftY }
         },
       },
     ],
