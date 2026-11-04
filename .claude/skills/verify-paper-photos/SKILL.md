@@ -110,7 +110,7 @@ On Postgres, set `FORMAL_DATABASE_URL` to a server you can create databases on. 
 | `referencedPhotoFileIds`, `photoRefOf`, the column lists | `apps/api/src/paper/photo-references.ts`                                                   |
 | `attachPhoto` (the TLA `Attach` and `AttachWrite` steps) | `apps/api/src/paper/store.ts`, re-exported from `photo-sweep.ts` for the action map        |
 | `isMissingPhoto`                                         | `apps/api/src/registry/errors.ts`, mapped in `transaction` in `apps/api/src/db/context.ts` |
-| `photo_refs` and the triggers                            | `apps/api/drizzle/0008_photo_refs.sql`                                                     |
+| `photo_refs` and the triggers                            | `apps/api/drizzle/0008_photo_refs.sql`, `apps/api/drizzle/0010_paper_released_photos.sql`  |
 | jsonb column guard                                       | `apps/api/src/paper/photo-references.schema.test.ts`                                       |
 | F1 to F4 and the SQL mutants                             | `apps/api/src/paper/photo-lifetime.formal.test.ts`                                         |
 | fast-check model                                         | `apps/api/src/paper/photo-lifetime.model.formal.test.ts`                                   |
