@@ -83,11 +83,52 @@ export const NOT_PHOTO_JSON = [
   },
 ] as const
 
+export async function dropServerReleasedPhoto(userId: UserId, fileId: string) {
+  await getDb().execute(sql`
+    update opencv_app.paper_doc_updates as updates
+    set released_photo_refs = array_remove(updates.released_photo_refs, ${fileId}::uuid)
+    where ${fileId}::uuid = any(updates.released_photo_refs)
+      and updates.paper_id in (
+        select docs.id
+        from opencv_app.paper_docs as docs
+        where docs.user_id = ${userId}
+      )
+      and (
+        updates.origin = 'server'
+        or exists (
+          select 1
+          from opencv_app.paper_doc_updates as undone
+          where undone.paper_id = updates.paper_id
+            and undone.origin = 'revert'
+            and undone.edit_id = updates.edit_id
+        )
+      )
+  `)
+}
+
 export async function referencedPhotoFileIds(userId: UserId) {
   const result = await getDb().execute<{ file_id: string }>(sql`
-    select file_id::text as file_id
-    from opencv_app.photo_refs
-    where user_id = ${userId}
+    select distinct refs.file_id::text as file_id
+    from opencv_app.photo_refs as refs
+    where refs.user_id = ${userId}
+      and (
+        refs.source not like 'paper_doc_updates.released:%'
+        or exists (
+          select 1
+          from opencv_app.paper_doc_updates as dropped
+          where dropped.paper_id::text =
+              split_part(refs.source, 'paper_doc_updates.released:', 2)
+            and dropped.origin <> 'server'
+            and refs.file_id = any(dropped.released_photo_refs)
+            and not exists (
+              select 1
+              from opencv_app.paper_doc_updates as undone
+              where undone.paper_id = dropped.paper_id
+                and undone.origin = 'revert'
+                and undone.edit_id = dropped.edit_id
+            )
+        )
+      )
   `)
   return new Set(result.rows.map((row) => row.file_id))
 }

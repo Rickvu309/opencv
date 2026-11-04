@@ -43,7 +43,11 @@ import {
 } from "./import-parse.js"
 
 import { seedColumns, withContent } from "./content-store.js"
-import { photoRefOf, referencedPhotoFileIds } from "./photo-references.js"
+import {
+  dropServerReleasedPhoto,
+  photoRefOf,
+  referencedPhotoFileIds,
+} from "./photo-references.js"
 import { toPaper, tryReadStoredPaper } from "./read-paper.js"
 
 const importAbort = new AsyncLocalStorage<AbortSignal>()
@@ -515,6 +519,7 @@ export async function deleteFile(actor: Actor, fileId: FileId) {
       "This photo is still in use by a CV, your profile, or Undo."
     )
   }
+  await dropServerReleasedPhoto(actor.userId, fileId)
   await getDb()
     .delete(files)
     .where(and(eq(files.id, fileId), eq(files.userId, actor.userId)))

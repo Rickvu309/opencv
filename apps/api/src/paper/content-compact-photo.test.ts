@@ -1,5 +1,6 @@
 import {
   paperPhotoRef,
+  parseFileId,
   parsePaperId,
   parseUserId,
   type PaperDocument,
@@ -13,7 +14,7 @@ import { withText } from "../test/paper-content.js"
 import { withContent } from "./content-store.js"
 import { png } from "./photo.fixtures.js"
 import { sweepUnattachedPhotos } from "./photo-sweep.js"
-import { saveFile } from "./store.js"
+import { deleteFile, saveFile } from "./store.js"
 
 const userId = "user-compact-photo"
 const DAY = 24 * 60 * 60 * 1000
@@ -112,6 +113,9 @@ describe("a photo released by a Coach edit", () => {
         )
       ).toBe(true)
       expect(await sweepUnattachedPhotos()).not.toContain(saved.id)
+      await expect(
+        deleteFile(h.store.actor, parseFileId(saved.id))
+      ).rejects.toMatchObject({ status: 409 })
       await h.run("paper.revertEdit", { docId, editId: clearEditId })
       expect((await h.paperOf(docId)).header.photo).toBe(
         paperPhotoRef(saved.id)
@@ -175,6 +179,39 @@ describe("a photo released by a Coach edit", () => {
       expect((await h.paperOf(docId)).header.photo).toBeUndefined()
       expect(await sourcesOf(saved.id)).toEqual([])
       expect(await sweepUnattachedPhotos()).toContain(saved.id)
+    })
+  })
+
+  it("can be deleted once that Coach edit is reverted", async () => {
+    await h.inDatabase(async () => {
+      const saved = await saveFile({
+        userId: parseUserId(userId),
+        name: "added.png",
+        mediaType: "image/png",
+        bytes: Buffer.from(png),
+        purpose: "avatar",
+      })
+      const { docId } = await h.created()
+      await withContent(
+        parseUserId(userId),
+        parsePaperId(docId),
+        async (content) => {
+          await content.edit({
+            origin: "coach",
+            editId: "add-photo",
+            target: withPhoto(content.document, paperPhotoRef(saved.id)),
+          })
+        }
+      )
+      await h.run("paper.revertEdit", { docId, editId: "add-photo" })
+      expect((await h.paperOf(docId)).header.photo).toBeUndefined()
+      expect(
+        (await sourcesOf(saved.id)).some((source) =>
+          source.startsWith("paper_doc_updates.released:")
+        )
+      ).toBe(true)
+      await deleteFile(h.store.actor, parseFileId(saved.id))
+      expect(await sourcesOf(saved.id)).toEqual([])
     })
   })
 })
