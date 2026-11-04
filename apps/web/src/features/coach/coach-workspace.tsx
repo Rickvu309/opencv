@@ -1,4 +1,10 @@
-import { useEffect, useEffectEvent, useReducer, type ReactNode } from "react"
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useReducer,
+  type ReactNode,
+} from "react"
 import { useQuery } from "@tanstack/react-query"
 
 import { Button } from "@workspace/ui/components/button"
@@ -46,9 +52,19 @@ export function CoachWorkspace({
   presentation?: "page" | "compact"
   headerActions?: ReactNode
 }) {
+  const composerId = useId()
   const store = useChatStore()
-  const { activeChatId, messages, phase, error, progress, chats, openChat } =
-    store
+  const {
+    activeChatId,
+    navigationRevision,
+    creationOwner,
+    messages,
+    phase,
+    error,
+    progress,
+    chats,
+    openChat,
+  } = store
   const [
     {
       draft,
@@ -60,11 +76,16 @@ export function CoachWorkspace({
       link,
       linkError,
       draftChatId,
+      draftNavigationRevision,
       addMenuOpened,
     },
     dispatch,
   ] = useReducer(workspaceReducer, undefined, () =>
-    initialWorkspaceState(takeCoachDraft() ?? "", activeChatId)
+    initialWorkspaceState(
+      takeCoachDraft() ?? "",
+      activeChatId,
+      navigationRevision
+    )
   )
   const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
   const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
@@ -106,10 +127,15 @@ export function CoachWorkspace({
       subscribeCoachDraft((value) => dispatch({ type: "draft_typed", value })),
     []
   )
-  if (draftChatId !== activeChatId) {
+  if (
+    draftChatId !== activeChatId ||
+    draftNavigationRevision !== navigationRevision
+  ) {
     dispatch({
       type: "active_chat_changed",
       chatId: activeChatId,
+      navigationRevision,
+      createdHere: creationOwner === composerId,
       seeded: takeCoachDraft(),
     })
   }
@@ -117,14 +143,18 @@ export function CoachWorkspace({
   function send(text = draft) {
     if (!enabled || capped || active) return
     if (
-      store.send(text, {
-        context: attachments.map(({ kind, id }) => ({ kind, id })),
-        attachments: attachments.map(({ kind, id, label }) => ({
-          kind,
-          id,
-          label,
-        })),
-      })
+      store.send(
+        text,
+        {
+          context: attachments.map(({ kind, id }) => ({ kind, id })),
+          attachments: attachments.map(({ kind, id, label }) => ({
+            kind,
+            id,
+            label,
+          })),
+        },
+        composerId
+      )
     )
       dispatch({ type: "draft_sent" })
   }
