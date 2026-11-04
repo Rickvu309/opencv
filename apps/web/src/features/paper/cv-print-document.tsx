@@ -6,7 +6,7 @@ import {
   type CvEducation,
   type CvExperience,
   type CvSkillGroup,
-} from "./paper-cv-types.ts"
+} from "./cv-templates/cv-types.ts"
 import {
   CvHistoryRevisionContext,
   CvPlaceholderContext,

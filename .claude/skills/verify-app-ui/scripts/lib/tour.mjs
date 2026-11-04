@@ -119,43 +119,10 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     const createdBody = await createdRes.json()
     const paper = createdBody && createdBody.data
     const replaced = paper && paper.id
-      ? await post(${JSON.stringify(commandPath("paper.replace"))}, {
+      ? await post(${JSON.stringify(commandPath("paper.edit"))}, {
           docId: paper.id,
-          contentVersion: paper.contentVersion,
-          document: {
-            version: 2,
-            header: {
-              name: 'Live Check',
-              email: 'tour@verify.local',
-              phone: '',
-              city: '',
-              linkedin: '',
-            },
-            sections: [
-              {
-                id: 'summary',
-                kind: 'summary',
-                blocks: [
-                  { id: 'headline', type: 'heading', text: 'Product intern' },
-                  { id: 'summary', type: 'text', text: 'A CV created for this check.' },
-                ],
-              },
-              {
-                id: 'experience',
-                kind: 'experience',
-                blocks: [
-                  {
-                    id: 'role',
-                    type: 'experience-entry',
-                    role: 'Intern',
-                    company: 'Lab',
-                    period: '2025',
-                    bullets: [{ id: 'bullet', text: 'Shipped a small study.' }],
-                  },
-                ],
-              },
-            ],
-          },
+          basedOn: paper.contentVersion,
+          edits: [{ op: 'setHeader', fields: { name: 'Live Check', email: 'tour@verify.local' } }],
         })
       : { ok: false }
     const card = await post(${JSON.stringify(commandPath("job.create"))}, {

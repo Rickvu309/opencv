@@ -22,9 +22,9 @@ type StarInput = CommandInput<JobContract, "job.star">
 type Move = Bindings<JobContract>["job.move"]
 type Delete = Bindings<JobContract>["job.delete"]
 type Snooze = CommandInput<InboxContract, "inbox.snooze">
-type Replace = CommandInput<PaperContract, "paper.replace">
+type Edit = CommandInput<PaperContract, "paper.edit">
 type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
-type PaperReplaceBinding = Bindings<PaperContract>["paper.replace"]
+type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
 type Undo = CommandInput<ChatContract, "activity.undo">
 type ChatDelete = Bindings<ChatContract>["chat.delete"]
 type ChatRename = Bindings<ChatContract>["chat.rename"]
@@ -58,7 +58,7 @@ export function typeProbes(registry: Registry) {
   const wrongReversal: Move["reversal"] = () => ({ command: "job.move", input: { stage: "saved" } })
 
   // prettier-ignore
-  // @ts-expect-error a reversal must name a command of the same contract
+  // @ts-expect-error paper.replace is gone, and a reversal must name a command of this contract
   const foreignReversal: Move["reversal"] = () => ({ command: "paper.replace", input: {} })
 
   // prettier-ignore
@@ -99,8 +99,8 @@ export function typeProbes(registry: Registry) {
   const unknownPaper = commands["paper.nope"]
 
   // prettier-ignore
-  // @ts-expect-error replace needs a version, not a revision
-  const wrongPaperInput: Replace = { docId: parsePaperId(uuid), revision: 2, document: {} }
+  // @ts-expect-error an edit needs basedOn, not a revision
+  const wrongPaperInput: Edit = { docId: parsePaperId(uuid), revision: 2, edits: [] }
 
   // prettier-ignore
   // @ts-expect-error a template id outside the catalog is not a template
@@ -108,11 +108,11 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error a JobId is not a PaperId
-  const jobAsPaper: Replace = { docId: someJobId, contentVersion: 1, document: {} }
+  const jobAsPaper: Edit = { docId: someJobId, basedOn: 1, edits: [] }
 
   // prettier-ignore
-  // @ts-expect-error a paper handler must return the declared view
-  const wrongPaperOutput: PaperReplaceBinding["handler"] = async () => ({ id: uuid })
+  // @ts-expect-error a paper edit handler must return the declared output
+  const wrongPaperOutput: PaperEditBinding["handler"] = async () => ({ id: uuid })
 
   // prettier-ignore
   // @ts-expect-error undo takes an activity id, not a pending action id

@@ -12,7 +12,7 @@ describe("chat turn events", () => {
     const event: ChatTurnEvent = {
       type: "tool-call",
       toolCallId: "t1",
-      name: "paper.replace",
+      name: "paper.edit",
       input: { docId: "d" },
     }
     const wire = encodeChatTurnEvent(event)
@@ -27,7 +27,7 @@ describe("chat turn events", () => {
     assert.equal(
       parseChatTurnEvent({
         event: "tool-call",
-        data: { toolCallId: "t1", name: "paper_replace", input: {} },
+        data: { toolCallId: "t1", name: "paper_edit", input: {} },
       }),
       null
     )
@@ -39,7 +39,7 @@ describe("chat turn events", () => {
       encodeChatTurnEvent({
         type: "tool-call",
         toolCallId: "t1",
-        name: "paper_replace",
+        name: "paper_edit",
         input: {},
       } as never)
     )

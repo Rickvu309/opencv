@@ -8,7 +8,7 @@ import { createId } from "../id.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
 import { saveFile } from "./store.js"
-import { OLD_EDITOR_UNDO_REASON } from "./undo-guard.js"
+import { OLD_EDITOR_UNDO_REASON, OLD_PHOTO_UNDO_REASON } from "./undo-guard.js"
 
 const userId = "user-activity-guard"
 let h: CoachStore
@@ -142,6 +142,24 @@ describe("the activity feed and Coach edits", () => {
       ).rejects.toMatchObject({
         code: "CONFLICT",
         message: OLD_EDITOR_UNDO_REASON,
+      })
+      const photoId = createId()
+      await h.store.db.insert(activity).values({
+        id: photoId,
+        userId,
+        actor: "person",
+        command: "paper.attachPhoto",
+        subjectKind: "paper",
+        subjectId: docId,
+        summary: "Added a photo",
+        reversalCommand: "paper.restore",
+        reversalInput: { docId, contentVersion: 1, document: {}, paper: {} },
+      })
+      await expect(
+        h.store.registry.undo(userId, photoId)
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: OLD_PHOTO_UNDO_REASON,
       })
       expect(await h.textOf(docId, "t1")).toBe(during)
       const opened = await h.run("chat.create", {})

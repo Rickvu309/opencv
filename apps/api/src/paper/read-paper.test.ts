@@ -255,7 +255,6 @@ describe("readers return v3 paper without writing", () => {
       const exportedSibling = exported.documents.find(
         (doc) => doc.id === siblingId
       )
-      expect(exportedBad?.document).toEqual(twoParagraphCv)
       expect(exportedBad?.paper).toBeNull()
       expect(exportedSibling?.paper).toBeDefined()
 

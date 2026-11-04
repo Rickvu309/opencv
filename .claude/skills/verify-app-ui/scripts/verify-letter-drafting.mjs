@@ -286,7 +286,7 @@ try {
     await click(page, '[data-slot="letter-drafting-stop"]')
     await wait(
       page,
-      `window.__draftProbe.requests.some(r => r.url.includes('/api/commands/paper.replace')) && !document.querySelector('[data-slot="letter-drafting-page"]')`,
+      `window.__draftProbe.requests.some(r => r.url.includes('/api/commands/paper.edit')) && !document.querySelector('[data-slot="letter-drafting-page"]')`,
       `${width}: Stop saves partial letter and leaves drafting`
     )
     const requests = await page.evaluate("window.__draftProbe.requests")
@@ -295,18 +295,19 @@ try {
       `${width}: server stop requested`
     )
     const save = requests.find((r) =>
-      r.url.includes("/api/commands/paper.replace")
+      r.url.includes("/api/commands/paper.edit")
     )
     const input = JSON.parse(save.body).input
+    const edit = input.edits && input.edits[0]
     check(
-      input.document.markdown === partial,
+      edit && edit.op === "setText" && edit.text === partial,
       `${width}: saved text exactly equals visible partial text`
     )
     const persisted = await page.evaluate(
       `fetch(${JSON.stringify(api)} + '/api/paper/' + ${JSON.stringify(input.docId)}, {credentials:'include'}).then(r => r.json())`
     )
     check(
-      persisted.ok && persisted.data.document.markdown === partial,
+      persisted.ok && JSON.stringify(persisted.data.paper).includes(partial),
       `${width}: API readback preserves partial text`
     )
     const deleted = await page.evaluate(
@@ -342,7 +343,7 @@ try {
   )
   check(
     await current.evaluate(
-      `!window.__draftProbe.requests.some(r => r.url.includes('/api/commands/paper.replace')) && document.activeElement === document.querySelector('[data-primary-action]')`
+      `!window.__draftProbe.requests.some(r => r.url.includes('/api/commands/paper.edit')) && document.activeElement === document.querySelector('[data-primary-action]')`
     ),
     "Back does not fallback-save or reopen the letter; New regains focus"
   )

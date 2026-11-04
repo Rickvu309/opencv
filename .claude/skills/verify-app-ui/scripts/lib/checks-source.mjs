@@ -1,7 +1,6 @@
 import { join } from "node:path"
 import { existsSync } from "node:fs"
 
-import { SOURCE_FILES } from "./assumes.mjs"
 import {
   SURFACES,
   appSourceDirs,
@@ -16,12 +15,10 @@ import {
   stubSilent,
 } from "./check-util.mjs"
 
-const BANNER = SOURCE_FILES.conflictBanner
-
 export function motionChecks(
   d,
   { allSnaps, screens },
-  { dirs = appSourceDirs(), paletteDir, banner = BANNER } = {}
+  { dirs = appSourceDirs(), paletteDir, banner = null } = {}
 ) {
   const r = []
   const appScan = sourceFiles(dirs)
@@ -99,7 +96,7 @@ export function motionChecks(
     )
   )
 
-  const bannerFile = existsSync(join(repo, banner))
+  const bannerFile = Boolean(banner) && existsSync(join(repo, banner))
   const bannerRole = bannerFile && /role="alert"/.test(read(join(repo, banner)))
   const coachQuiet = stubSilent(d.coachError)
   const errText = d.coachError.alerts.some((t) =>
@@ -117,7 +114,9 @@ export function motionChecks(
       `Coach error inside a live region: ${coachQuiet ? "not judged" : errText}; red text outside one: ${red.length ? list(red, 2) : "none"}; conflict banner role=alert: ${bannerFile ? bannerRole : "not read"}`,
       [
         coachQuiet && `Coach error (${coachQuiet})`,
-        !bannerFile && `conflict banner (source file missing: ${banner})`,
+        banner &&
+          !bannerFile &&
+          `conflict banner (source file missing: ${banner})`,
       ]
     )
   )

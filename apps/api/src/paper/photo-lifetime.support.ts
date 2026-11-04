@@ -1,10 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import {
-  parseUserId,
-  personActor,
-  type CvBlockDocument,
-} from "@workspace/domain"
+import { parseUserId, personActor } from "@workspace/domain"
 import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm"
 import fc from "fast-check"
 import { expect } from "vitest"
@@ -330,18 +326,9 @@ export const commands = [
       "clear",
       (model) => model.docs.length > 0,
       async (model) => {
-        const row = (
-          await backend.db
-            .select()
-            .from(paperDocs)
-            .where(eq(paperDocs.id, model.docs[0]!.id))
-        )[0]!
-        const document = structuredClone(row.document) as CvBlockDocument
-        delete document.header.photo
-        await run("paper.replace", {
-          docId: row.id,
-          contentVersion: row.contentVersion,
-          document,
+        await run("paper.attachPhoto", {
+          docId: model.docs[0]!.id,
+          fileId: null,
         })
       }
     ),

@@ -92,8 +92,8 @@ describe("paper commands through the contract client", () => {
 
     await runContractCommand(
       queryClient,
-      "paper.replace",
-      { docId, contentVersion: 1, document: { markdown: "Hi" } },
+      "paper.sync",
+      { docId, epoch: 0, update: "", stateVector: "" },
       { refresh: false }
     )
 
@@ -111,10 +111,11 @@ describe("paper commands through the contract client", () => {
     const input = { docId, name: "New" }
 
     await runContractCommand(queryClient, "paper.rename", input)
-    await runContractCommand(queryClient, "paper.replace", {
+    await runContractCommand(queryClient, "paper.sync", {
       docId,
-      contentVersion: 1,
-      document: {},
+      epoch: 0,
+      update: "",
+      stateVector: "",
     })
 
     const bodies = fetchMock.mock.calls.map((c) =>

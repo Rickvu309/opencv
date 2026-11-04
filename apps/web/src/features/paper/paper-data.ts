@@ -14,7 +14,7 @@ import {
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 
-import type { CvData } from "./paper-cv-types.ts"
+import type { CvData } from "./cv-templates/cv-types.ts"
 import type { ProofData } from "./paper-proof-types.ts"
 
 export type DocType = PaperContentKind

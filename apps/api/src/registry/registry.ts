@@ -313,6 +313,7 @@ export class Registry {
     actor: Actor
     idempotencyKey?: string
     skipConfirm?: boolean
+    skipActivity?: boolean
   }): Promise<ExecuteResult> {
     const command = this.commands.get(options.name)
     if (!command) {
@@ -337,7 +338,7 @@ export class Registry {
     const effect = async (): Promise<ExecuteResult> => {
       const ran = await command.run(parsed, actor)
       let activityId: string | null = null
-      if (ran.draft) {
+      if (ran.draft && !options.skipActivity) {
         activityId = createId()
         await getDb()
           .insert(activity)
@@ -584,6 +585,7 @@ export class Registry {
         actor: personActor(userId),
         idempotencyKey: undoKeyFor(row.id),
         skipConfirm: true,
+        skipActivity: row.reversalCommand === "paper.attachPhoto",
       })
       const undoneAt = new Date()
       await getDb()

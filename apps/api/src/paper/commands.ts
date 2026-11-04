@@ -1,11 +1,12 @@
 import { randomBytes } from "node:crypto"
 
 import {
-  cvCodecToBlocks,
-  isCvDocument,
   keywordGap,
   PAPER_RECEIPT_CHANGE_LIMIT,
   paperContract,
+  paperPhotoFileId,
+  paperPlainText,
+  parseFileId,
   type PaperDocument,
   type PaperId,
 } from "@workspace/domain"
@@ -33,8 +34,6 @@ import {
   readFileMeta,
   readShared,
   renamePaper,
-  replacePaper,
-  restorePaper,
   setPaperStatus,
   setPaperFavorite,
   setPaperTemplate,
@@ -48,35 +47,26 @@ const newBlockId = () => `c${randomBytes(6).toString("base64url")}`
 const noReversal = () => null
 const noActivity = () => null
 
-function storedAsBlocks<T>(document: T) {
-  return isCvDocument(document) ? cvCodecToBlocks(document) : document
-}
-
-function restoring(
+function attachPhotoReversal(
   input: { docId: PaperId },
-  output: {
-    contentVersion: number
-    previousDocument: unknown
-    previousPaper?: PaperDocument
-  }
+  output: { previousPaper?: PaperDocument }
 ) {
-  if (output.previousPaper === undefined) {
-    return {
-      command: "paper.replace" as const,
-      input: {
-        docId: input.docId,
-        contentVersion: output.contentVersion,
-        document: storedAsBlocks(output.previousDocument),
-      },
-    }
-  }
+  const photo =
+    output.previousPaper?.kind === "cv"
+      ? output.previousPaper.header.photo
+      : undefined
+  const fileId = paperPhotoFileId(photo)
   return {
-    command: "paper.restore" as const,
+    command: "paper.attachPhoto" as const,
     input: {
       docId: input.docId,
-      contentVersion: output.contentVersion,
-      document: storedAsBlocks(output.previousDocument),
-      paper: output.previousPaper,
+      fileId: fileId ? parseFileId(fileId) : null,
+    },
+    expect: {
+      query: "paper.get" as const,
+      input: { docId: input.docId },
+      matches: { kind: "cv" as const },
+      skipped: "This photo changed again, so Undo was skipped",
     },
   }
 }
@@ -122,19 +112,6 @@ export function registerPaper(registry: Registry) {
         subjectId: output.id,
         summary: `Created ${output.name}`,
       }),
-    },
-    "paper.replace": {
-      handler: (input, actor) => replacePaper(actor, input),
-      reversal: restoring,
-      activity: (input, output, actor) =>
-        actor.type === "coach"
-          ? {
-              subjectKind: "paper",
-              subjectId: input.docId,
-              summary: `Updated ${output.name}`,
-              detail: { docId: input.docId, name: output.name },
-            }
-          : null,
     },
     "paper.edit": {
       handler: async (input, actor) => {
@@ -198,11 +175,6 @@ export function registerPaper(registry: Registry) {
         }
       },
       reversal: noReversal,
-      activity: noActivity,
-    },
-    "paper.restore": {
-      handler: (input, actor) => restorePaper(actor, input),
-      reversal: restoring,
       activity: noActivity,
     },
     "paper.rename": {
@@ -292,11 +264,11 @@ export function registerPaper(registry: Registry) {
     },
     "paper.attachPhoto": {
       handler: (input, actor) => attachPhoto(actor, input.docId, input.fileId),
-      reversal: restoring,
-      activity: (_input, output) => ({
+      reversal: attachPhotoReversal,
+      activity: (input, output) => ({
         subjectKind: "paper",
         subjectId: output.id,
-        summary: "Added a photo",
+        summary: input.fileId ? "Added a photo" : "Removed a photo",
       }),
     },
     "paper.deleteFile": {
@@ -377,14 +349,8 @@ export function registerPaper(registry: Registry) {
           { jobId: input.jobId },
           actor
         )) as { posting?: { requirements?: string } | null }
-        const document = doc.document
         const letterText =
-          document &&
-          typeof document === "object" &&
-          "markdown" in document &&
-          typeof document.markdown === "string"
-            ? document.markdown
-            : ""
+          doc.paper.kind === "letter" ? paperPlainText(doc.paper) : ""
         return keywordGap(letterText, job.posting?.requirements ?? "")
       },
     })

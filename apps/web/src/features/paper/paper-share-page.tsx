@@ -7,8 +7,6 @@ import { Button } from "@workspace/ui/components/button"
 
 import { CvDocument } from "./cv-print-document.tsx"
 import { LetterPrintView } from "./paper-letter-print.tsx"
-import { readStoredLetter } from "./letter-sheet-model.ts"
-import { LetterSheet } from "./letter-sheet.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
 import { PaperPrintSheet, previewOf } from "./paper-print-sheet.tsx"
@@ -66,7 +64,7 @@ export function PaperSharePage() {
     )
   }
   const doc = query.data
-  const stored = doc.paper?.kind === doc.kind ? doc.paper : doc.document
+  const stored = doc.paper.kind === doc.kind ? doc.paper : null
   const cv = doc.kind === "cv" ? previewOf(stored, doc.templateId) : null
   const letter = doc.kind === "letter" ? letterOf(doc.paper) : null
 
@@ -101,8 +99,6 @@ export function PaperSharePage() {
           </CvPhotoFrame>
         ) : letter ? (
           <LetterPrintView document={letter} />
-        ) : doc.kind === "letter" ? (
-          <LetterSheet letter={readStoredLetter(doc.document)} />
         ) : null}
       </div>
     </main>

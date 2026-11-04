@@ -37,7 +37,6 @@ const shared: Omit<PaperView, "isFavorite"> = {
   kind: "cv",
   templateId: "modern",
   status: "draft",
-  document: sharedDocument,
   paper: paperOf("cv", sharedDocument),
   contentVersion: 1,
   checks: [],
@@ -79,7 +78,6 @@ describe("Paper share page", () => {
       }
       return Promise.resolve(Response.json({ ok: true, data: {} }))
     })
-    expect(shared.document).toMatchObject({ templateId: "internship" })
     const view = render(<PaperSharePage />)
     expect(
       await screen.findByRole("heading", { name: "PM track CV" })
@@ -128,7 +126,6 @@ describe("Paper share page", () => {
     const quiet: Omit<PaperView, "isFavorite"> = {
       ...shared,
       templateId: "simple",
-      document: quietDocument,
       paper: paperOf("cv", quietDocument),
     }
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
@@ -163,7 +160,6 @@ describe("Paper share page", () => {
       name: "Letter for Ada",
       kind: "letter",
       templateId: null,
-      document: letterDocument,
       paper: paperOf("letter", letterDocument),
     }
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
@@ -237,7 +233,6 @@ describe("Paper share page", () => {
       name: "Letter for Ada",
       kind: "letter",
       templateId: null,
-      document: { markdown: "" },
       paper,
     }
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
@@ -270,28 +265,6 @@ describe("Paper share page", () => {
     expect(getComputedStyle(bullet!).listStyleType).toBe("disc")
     expect(getComputedStyle(numbered!).listStyleType).toBe("decimal")
     expect(getComputedStyle(link).textDecorationLine).toContain("underline")
-  })
-
-  it("prints a CV from the stored document when paper is missing", async () => {
-    const document = {
-      ...emptyCvDocument(),
-      name: "Lan Nguyen",
-      summary: "Ships small experiments.",
-    }
-    const { paper: _paper, ...rest } = shared
-    void _paper
-    const skewed = { ...rest, document }
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes("/api/paper/shared/tok")) {
-        return Promise.resolve(Response.json({ ok: true, data: skewed }))
-      }
-      return Promise.resolve(Response.json({ ok: true, data: {} }))
-    })
-    render(<PaperSharePage />)
-    expect(
-      await screen.findByText("Ships small experiments.", {}, { timeout: 1000 })
-    ).toBeInTheDocument()
   })
 
   it("prints once in strict mode and unmounts the share sheet", async () => {

@@ -46,7 +46,6 @@ export function toPaper(
     kind: row.kind,
     templateId: row.templateId as PaperView["templateId"],
     status: row.status,
-    document: row.document as PaperView["document"],
     paper,
     contentVersion: row.contentVersion,
     checks: row.checks ?? [],

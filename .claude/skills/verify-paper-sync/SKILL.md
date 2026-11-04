@@ -1,6 +1,6 @@
 ---
 name: verify-paper-sync
-description: Check the paper cache and version protocol in apps/api/src/paper, that the cached page matches the saved log after every committed step, the version equals the highest change number with no gaps, a typed character survives an interleaved Coach edit and a stale full replace, and a Coach edit on another block still lands when the read is behind only because the person typed elsewhere. Use after any change to content-store.ts, the replace path in store.ts, editAsCoach or checkedBasis in content-coach.ts, or when asked whether a Coach edit can drop a letter the person just typed.
+description: Check the paper cache and version protocol in apps/api/src/paper, that the cached page matches the saved log after every committed step, the version equals the highest change number with no gaps, a typed character survives an interleaved Coach edit, and a Coach edit on another block still lands when the read is behind only because the person typed elsewhere. Use after any change to content-store.ts, oldEditorUndoReasons in commands.ts, editAsCoach or checkedBasis in content-coach.ts, or when asked whether a Coach edit can drop a letter the person just typed.
 ---
 
 # verify-paper-sync
@@ -47,7 +47,7 @@ pnpm --filter api exec vitest run src/paper/content-sync.formal.test.ts
 
 ## Model to code
 
-`ContentStore.tla.json` maps every action of `Next` to an export of `content-store.ts`. `syncContent`, `coachBasisOk` and `sameContentVersion` are called from the sync command, `content-coach.ts` and `store.ts`.
+`ContentStore.tla.json` maps every action of `Next` to an export of `content-store.ts`. `syncContent` and `coachBasisOk` are called from the sync command and `content-coach.ts`. `sameContentVersion` stays a formula in `content-store.ts`. `paper.replace` is gone.
 
 | Action            | Code                                                                                                                    |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -55,7 +55,7 @@ pnpm --filter api exec vitest run src/paper/content-sync.formal.test.ts
 | `Person`          | `syncContent`: a push names `basedOn` and is absorbed only when that equals the saved revision                          |
 | `Commit`          | `nextContentSeq`: the next change number is the cached revision plus one                                                |
 | `Coach`           | `coachBasisOk` in `checkedBasis`: a Coach edit is allowed when `basedOn` is between the log base and the saved revision |
-| `Replace`         | `sameContentVersion` in `replacePaper`: the client sends a version; a match writes, and a mismatch conflicts            |
+| `Replace`         | `oldEditorUndoReasons` in `commands.ts`: `paper.replace` is gone, and an old activity is refused                        |
 | `Rollback`, `End` | `withContent`: a throw after a successful edit deletes the cache; ending the lock does not                              |
 | `Evict`           | `withContent`: the cache is an in-process map with a size limit                                                         |
 
@@ -77,16 +77,15 @@ Deleting only the early `cacheRevisionUsable` compare in `caughtUp` does not fai
 
 ## Tests
 
-`content-sync.formal.test.ts` drives `paper.sync`, `paper.edit` and `paper.replace` with real Yjs.
+`content-sync.formal.test.ts` drives `paper.sync` and `paper.edit` with real Yjs. `paper.replace` is gone.
 
-| Test                                                       | Covers                                                                                                            |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| formula checks                                             | `cacheRevisionUsable`, `nextContentSeq`, `sameContentVersion`, `coachBasisOk`, and the snapshot formula colliding |
-| a rolled-back edit                                         | the cache is dropped; the next sync still sees the page from before the edit (P1)                                 |
-| two edits in one lock                                      | the change numbers are consecutive (P2)                                                                           |
-| Coach edits the other block from an older read             | the edit lands, the typed character stays, and a replace at version 1 conflicts (P3, P4)                          |
-| replace at the live version with the old page              | the typed character is gone, so the version check is what saves it                                                |
-| fast-check of coach edits, more typing, and stale replaces | every typed character is still in the saved page (P3)                                                             |
+| Test                                           | Covers                                                                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| formula checks                                 | `cacheRevisionUsable`, `nextContentSeq`, `sameContentVersion`, `coachBasisOk`, and the snapshot formula colliding |
+| a rolled-back edit                             | the cache is dropped; the next sync still sees the page from before the edit (P1)                                 |
+| two edits in one lock                          | the change numbers are consecutive (P2)                                                                           |
+| Coach edits the other block from an older read | the edit lands and the typed character stays (P3, P4)                                                             |
+| fast-check of coach edits and more typing      | every typed character is still in the saved page (P3)                                                             |
 
 A pull sends no `basedOn`. A push sends the revision the client just read. A second `setText` of a block a newer Coach edit already touched, from the same older read, is refused. That refusal is not P4. P4 is the first edit of a block the person did not touch.
 
@@ -98,13 +97,12 @@ P4 is `~blocked`. On the real config `Coach` writes the untouched block (`coachA
 
 ## Known gaps
 
-- The Coach write people use is `paper.edit` (`editAsCoach`), which merges and allows an older `basedOn` inside the log. `paper.replace` still conflicts unless the version matches. A replace at the current version with the old page does wipe the character. The model keeps the typed mark on a matching version and sets `lost` only when a stale sent version writes. The store test covers the live-version wipe.
-- `replacePaper` compares the version in code while it holds the row lock, then writes. The lock makes that check race-safe inside the transaction. An older change moved the same check into the write's `WHERE`. This model does not require that shape.
+- The Coach write people use is `paper.edit` (`editAsCoach`), which merges and allows an older `basedOn` inside the log. The full-document command is gone. An old `paper.replace` activity is refused by the undo guard in `commands.ts`. The TLA model still has `Replace`. The store no longer writes one.
 - A pending person edit rebased across a Coach block move or remove is `rebasePending`, not a server action. `packages/domain/src/paper-doc-rebase.property.test.ts` runs that merge: `personEdits` is the pending side, `otherEdits` moves a block and removes a block, and the property keeps the person's words and added blocks. `paper-doc-rebase.test.ts` has the same remove as one example ("puts back a block the Coach removed after the person typed in it"). `apps/web/src/lib/paper-sync.test.ts` retries the stale push after a rebase.
 - Bound is 2 writers, 2 blocks, and version at most 3. The cache is one process. A second process does not share it. Blocks are marks, so the spec cannot move or delete a block.
 
 ## Coverage and sync
 
-- Covered: `apps/api/src/paper/content-store.ts` (`caughtUp`, `commit`, `syncContent`, `withContent`, `cacheRevisionUsable`, `nextContentSeq`), `apps/api/src/paper/store.ts` (`replacePaper` via `sameContentVersion`), `apps/api/src/paper/content-coach.ts` (`checkedBasis` via `coachBasisOk`, `editAsCoach`).
+- Covered: `apps/api/src/paper/content-store.ts` (`caughtUp`, `commit`, `syncContent`, `withContent`, `cacheRevisionUsable`, `nextContentSeq`), `apps/api/src/paper/commands.ts` (`oldEditorUndoReasons`), `apps/api/src/paper/content-coach.ts` (`checkedBasis` via `coachBasisOk`, `editAsCoach`).
 - Last confirmed against: `43c94764bd7485e4fd527e1379900a6f259bab6b`. The squash sha replaces it after merge.
 - When a covered file changes, rerun the commands above. Move the sync commit forward only after you confirm the model still describes the code at the new commit. Update `ContentStore.tla.json` when an action's function is renamed.

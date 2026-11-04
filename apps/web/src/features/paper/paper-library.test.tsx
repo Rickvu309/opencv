@@ -35,7 +35,6 @@ function cv(name: string): PaperView {
     kind: "cv",
     templateId: "simple",
     status: "draft",
-    document,
     paper: paperFor("cv", document),
     contentVersion: 1,
     checks: [],
@@ -54,7 +53,6 @@ function letter(name: string): PaperView {
     id: "22222222-2222-4222-8222-222222222222",
     kind: "letter",
     templateId: null,
-    document,
     paper: paperFor("letter", document),
   }
 }
@@ -336,7 +334,6 @@ describe("Paper library", () => {
       id: "22222222-2222-4222-8222-222222222222",
       kind: "letter",
       templateId: null,
-      document: letterDocument,
       paper: paperFor("letter", letterDocument),
     }
     renderLibrary([letter])

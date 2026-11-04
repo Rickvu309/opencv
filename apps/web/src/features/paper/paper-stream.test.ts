@@ -20,7 +20,7 @@ describe("streamPaperTurn", () => {
     stubTurn(
       [
         'event: text-delta\ndata: {"text":"Tight"}\n\n',
-        'event: tool-result\ndata: {"toolCallId":"t","name":"paper.replace","summary":"Saved","ok":true,"result":{"ok":true,"data":{}}}\n\n',
+        'event: tool-result\ndata: {"toolCallId":"t","name":"paper.edit","summary":"Saved","ok":true,"result":{"ok":true,"data":{}}}\n\n',
       ].join("")
     )
     const text: string[] = []
@@ -32,14 +32,14 @@ describe("streamPaperTurn", () => {
       onToolResult: (name) => tools.push(name),
     })
     expect(text).toEqual(["Tight"])
-    expect(tools).toEqual(["paper.replace"])
+    expect(tools).toEqual(["paper.edit"])
   })
 
   it("ignores the old field names the server never sent", async () => {
     stubTurn(
       [
         'event: text-delta\ndata: {"delta":"x"}\n\n',
-        'event: tool-result\ndata: {"tool":"paper_replace"}\n\n',
+        'event: tool-result\ndata: {"tool":"paper_edit"}\n\n',
       ].join("")
     )
     const onText = vi.fn()

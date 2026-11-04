@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { defaultCvData } from "./paper-cv-types.ts"
+import { defaultCvData } from "./cv-templates/cv-types.ts"
 import {
   addEducation,
   addExperienceBullet,

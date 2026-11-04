@@ -12,16 +12,10 @@ const tour = readFileSync(
 )
 
 describe("verify-app-ui tour body", () => {
-  it("replaces the tour CV with a version 2 document", () => {
-    expect(tour).toContain("version: 2")
+  it("edits the tour CV header through paper.edit", () => {
+    expect(tour).toContain('commandPath("paper.edit")')
     expect(tour).toContain("name: 'Live Check'")
-    expect(tour).toContain("type: 'heading'")
-    expect(tour).toContain("text: 'Product intern'")
-    expect(tour).toContain("text: 'A CV created for this check.'")
-    expect(tour).toContain("type: 'experience-entry'")
-    expect(tour).toContain("role: 'Intern'")
-    expect(tour).toContain("company: 'Lab'")
-    expect(tour).toContain("period: '2025'")
-    expect(tour).toContain("text: 'Shipped a small study.'")
+    expect(tour).toContain("op: 'setHeader'")
+    expect(tour).toContain("email: 'tour@verify.local'")
   })
 })

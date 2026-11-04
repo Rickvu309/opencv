@@ -1,10 +1,4 @@
-import {
-  blankBlockDocument,
-  legacyPaperOf,
-  parseUserId,
-  personActor,
-  type PaperDocument,
-} from "@workspace/domain"
+import { parseUserId, personActor, type PaperDocument } from "@workspace/domain"
 import {
   absorbUpdate,
   loadYDoc,
@@ -38,19 +32,6 @@ import {
 
 export function paperCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, registry, run, undo, paperOf, gone, shares, userId } = tools
-  let letterId = ""
-  let letterVersion = 1
-  let cvReplace: Awaited<ReturnType<typeof run>> | null = null
-  const letterWithParts = {
-    markdown: "First.\n\nSecond.",
-    sender: "Linh Nguyen",
-    contact: "linh@example.com",
-    date: "October 26, 2026",
-    recipient: "Hiring Team\nLumiere",
-    salutation: "Dear team,",
-    closing: "Warm regards,",
-    signature: "Linh",
-  }
   let syncPush = ""
   const coachSentence = "First paragraph. Coach adds a sentence."
   async function startCoachEdit() {
@@ -91,7 +72,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       ? block.content.map((run) => run.text).join("")
       : null
   }
-  const lettersAfter = { markdown: "Only one paragraph.", sender: "Linh" }
   return [
     {
       name: "paper.create",
@@ -106,64 +86,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         const docId = idOf(result.output)
         await undo(result)
         await gone(paperOf(docId))
-      },
-    },
-    {
-      name: "paper.replace",
-      arrange: async () => {
-        const paper = await run("paper.create", {
-          kind: "cv",
-          name: "Replace CV",
-        })
-        ctx.docId = idOf(paper.output)
-        const letter = await run("paper.create", {
-          kind: "letter",
-          name: "Replace letter",
-        })
-        letterId = idOf(letter.output)
-        const filled = await run("paper.replace", {
-          docId: letterId,
-          contentVersion: 1,
-          document: letterWithParts,
-        })
-        letterVersion = Number(
-          (filled.output as { contentVersion: number }).contentVersion
-        )
-      },
-      act: async () => {
-        const document = blankBlockDocument()
-        cvReplace = await run("paper.replace", {
-          docId: ctx.docId,
-          contentVersion: 1,
-          document: {
-            ...document,
-            header: { ...document.header, name: "Ada Lane" },
-          },
-        })
-        return run("paper.replace", {
-          docId: letterId,
-          contentVersion: letterVersion,
-          document: lettersAfter,
-        })
-      },
-      assert: async () => {
-        const doc = await paperOf(ctx.docId)
-        expect(text(record(record(doc, "document"), "header"), "name")).toBe(
-          "Ada Lane"
-        )
-        expect(record(await paperOf(letterId), "document")).toEqual(
-          lettersAfter
-        )
-      },
-      undoAssert: async (result) => {
-        await undo(result)
-        expect(record(await paperOf(letterId), "document")).toEqual(
-          letterWithParts
-        )
-        if (!cvReplace) throw new Error("missing cv replace")
-        await undo(cvReplace)
-        const doc = await paperOf(ctx.docId)
-        expect(text(record(record(doc, "document"), "header"), "name")).toBe("")
       },
     },
     {
@@ -211,8 +133,8 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
           reset: false,
           stale: false,
         })
-        const document = record(await paperOf(ctx.docId), "document")
-        expect(record(document, "header")).toMatchObject({
+        const paper = record(await paperOf(ctx.docId), "paper")
+        expect(record(paper, "header")).toMatchObject({
           name: "Synced name",
         })
       },
@@ -289,44 +211,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       assert: async (result) => {
         expect(result.output).toMatchObject({ reverted: true, revision: 3 })
         expect(await blockText("t1")).toBe("First paragraph.")
-      },
-    },
-    {
-      name: "paper.restore",
-      arrange: async () => {
-        const paper = await run("paper.create", {
-          kind: "cv",
-          name: "Restore CV",
-        })
-        ctx.docId = idOf(paper.output)
-      },
-      act: async () => {
-        const row = (
-          await db.select().from(paperDocs).where(eq(paperDocs.id, ctx.docId))
-        )[0]!
-        const stored = row.crdtDocument as unknown as PaperDocument
-        if (stored.kind !== "cv") throw new Error("expected a CV")
-        const restored = {
-          ...stored,
-          header: { ...stored.header, name: "Restored name" },
-        }
-        return run("paper.restore", {
-          docId: ctx.docId,
-          contentVersion: row.contentVersion,
-          document: legacyPaperOf(restored, row.document),
-          paper: restored,
-        })
-      },
-      assert: async () => {
-        const document = record(await paperOf(ctx.docId), "document")
-        expect(record(document, "header")).toMatchObject({
-          name: "Restored name",
-        })
-      },
-      undoAssert: async (result) => {
-        await undo(result)
-        const document = record(await paperOf(ctx.docId), "document")
-        expect(record(document, "header")).toMatchObject({ name: "" })
       },
     },
     {
@@ -569,15 +453,15 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       act: () =>
         run("paper.attachPhoto", { docId: ctx.docId, fileId: ctx.fileId }),
       assert: async () => {
-        const document = record(await paperOf(ctx.docId), "document")
-        expect(text(record(document, "header"), "photo")).toBe(
+        const paper = record(await paperOf(ctx.docId), "paper")
+        expect(text(record(paper, "header"), "photo")).toBe(
           `file:${ctx.fileId}`
         )
       },
       undoAssert: async (result) => {
         await undo(result)
-        const document = record(await paperOf(ctx.docId), "document")
-        expect("photo" in record(document, "header")).toBe(false)
+        const paper = record(await paperOf(ctx.docId), "paper")
+        expect(record(paper, "header")).not.toHaveProperty("photo")
       },
     },
     {

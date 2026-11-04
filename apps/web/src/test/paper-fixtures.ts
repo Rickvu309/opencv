@@ -1,7 +1,7 @@
 import { PAPER_CONTENT_VERSION, type PaperDoc } from "@workspace/domain"
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
-import { defaultCvData } from "@/features/paper/paper-cv-types.ts"
+import { defaultCvData } from "@/features/paper/cv-templates/cv-types.ts"
 import { profileFirstName } from "@/features/paper/paper-data.ts"
 import {
   DEFAULT_CHECKOUT_PROOF,

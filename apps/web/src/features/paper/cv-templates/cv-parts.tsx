@@ -11,8 +11,6 @@ import {
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  isCvBlockDocument,
-  isCvDocument,
   paperPhotoFileId,
   parsePaperId,
   type CvPrintModel,
@@ -411,12 +409,6 @@ export function CvPhotoFrame({
   )
 }
 
-function storedPhoto(document: unknown) {
-  if (isCvBlockDocument(document)) return document.header.photo
-  if (isCvDocument(document)) return document.photoUrl
-  return undefined
-}
-
 function PhotoSlot({
   src,
   url,
@@ -535,9 +527,7 @@ function CvPhotoUploader({
       }
       const next = await getPaper(docId)
       const restoredPhoto =
-        next.paper?.kind === "cv"
-          ? next.paper.header.photo
-          : storedPhoto(next.document)
+        next.paper?.kind === "cv" ? next.paper.header.photo : undefined
       publish(restoredPhoto, next.contentVersion)
       if (fileId && paperPhotoFileId(restoredPhoto) !== fileId) {
         await ignoreRejection(

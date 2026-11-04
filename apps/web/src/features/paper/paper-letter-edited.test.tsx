@@ -1,4 +1,4 @@
-import type { PaperView } from "@workspace/domain"
+import { upgradeStoredPaper, type PaperView } from "@workspace/domain"
 import { SERVER_ORIGIN, writeDocument } from "@workspace/paper-crdt"
 import { act, cleanup, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
@@ -22,13 +22,18 @@ vi.mock("@/lib/paper-sync.ts", async (importOriginal) => ({
   }),
 }))
 
+const letterPaper = upgradeStoredPaper("letter", {
+  markdown: "I write clearly.",
+})
+if (!letterPaper.ok) throw new Error(letterPaper.message)
+
 const letter: PaperView = {
   id: "letter-1",
   name: "Cover letter, Northwind",
   kind: "letter",
   templateId: "simple",
   status: "draft",
-  document: { markdown: "I write clearly." },
+  paper: letterPaper.document,
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",

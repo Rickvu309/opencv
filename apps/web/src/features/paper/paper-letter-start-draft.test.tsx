@@ -116,7 +116,7 @@ describe("Cover letter drafting", () => {
     expect(screen.queryByText(/Context:/)).not.toBeInTheDocument()
   })
 
-  it("drafts with the job title and refetches on a paper replace tool result", async () => {
+  it("drafts with the job title and refetches on a paper edit tool result", async () => {
     const calls = installFetch("tool")
     startDrafting()
     await vi.waitFor(() => {
@@ -131,7 +131,7 @@ describe("Cover letter drafting", () => {
       })
     )
     expect(
-      calls.some((call) => call.url.includes("/api/commands/paper.replace"))
+      calls.some((call) => call.url.includes("/api/commands/paper.edit"))
     ).toBe(false)
   })
 

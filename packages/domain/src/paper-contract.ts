@@ -30,7 +30,6 @@ import {
   paperKeepTwoPagesInputSchema,
   paperKeywordGapInputSchema,
   paperRenameInputSchema,
-  paperReplaceInputSchema,
   paperSetStatusCommandInputSchema,
   paperSetTemplateInputSchema,
   paperShareInputSchema,
@@ -65,7 +64,6 @@ const paperViewSchema = z
     kind: paperStoredKindSchema,
     templateId: paperTemplateIdSchema.nullable(),
     status: paperDocStatusSchema,
-    document: storedPaperDocumentSchema,
     paper: paperDocumentSchema,
     contentVersion: z.number().int(),
     checks: z.array(paperCheckSchema),
@@ -225,34 +223,6 @@ export const paperContract = commandContract({
       ...listChanged(),
       ...(input.jobId ? jobsLinked() : []),
     ],
-  }),
-  "paper.replace": commandEntry({
-    description:
-      "Replace a document when the version matches. A letter keeps only the parts you send, so send every part to keep.",
-    input: paperReplaceInputSchema,
-    output: paperViewSchema
-      .extend({ previousDocument, previousPaper })
-      .strict(),
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Update the document",
-    invalidates: docChanged,
-  }),
-  "paper.restore": commandEntry({
-    description:
-      "Put back an earlier version of a document when the version matches.",
-    input: paperReplaceInputSchema
-      .extend({ paper: paperDocumentSchema })
-      .strict(),
-    output: paperViewSchema
-      .extend({ previousDocument, previousPaper })
-      .strict(),
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Restore the document",
-    invalidates: docChanged,
   }),
   "paper.edit": commandEntry({
     description:

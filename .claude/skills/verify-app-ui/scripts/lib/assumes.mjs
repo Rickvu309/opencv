@@ -19,8 +19,6 @@ export const featureFolders = () =>
 export const ROUTES_DIR = "apps/web/src/routes"
 export const PALETTE_DIR = `${FEATURES}/command-palette`
 export const SOURCE_FILES = {
-  conflictBanner:
-    "apps/web/src/features/paper/paper-editor-conflict-banner.tsx",
   jobStages: "packages/domain/src/job.ts",
 }
 

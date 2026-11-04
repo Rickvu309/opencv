@@ -23,7 +23,7 @@ after reload. Undo can fail when later edits invalidate a reversal; the person
 can retry or edit manually. A saved partial reply stays one bubble after Stop.
 Regenerate adds a text alternative without repeating workspace changes.
 
-The Coach edits a CV or letter with `paper.edit`, never with `paper.replace`.
+The Coach edits a CV or letter with `paper.edit`.
 Its context holds a bounded outline of the open document (block ids, section
 titles, heading levels, marks, links, nesting) and the revision to pass as
 `basedOn`. A Paper context item may carry `blockIds`; the outline marks them

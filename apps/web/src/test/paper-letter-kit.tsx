@@ -1,4 +1,8 @@
-import type { JobView, PaperView } from "@workspace/domain"
+import {
+  upgradeStoredPaper,
+  type JobView,
+  type PaperView,
+} from "@workspace/domain"
 import { vi } from "vitest"
 import { fireEvent, screen } from "@testing-library/react"
 
@@ -16,13 +20,19 @@ export const job: JobView = {
   updatedAt: "2026-08-25T12:00:00.000Z",
 }
 
+function letterPaper(markdown: string): PaperView["paper"] {
+  const upgraded = upgradeStoredPaper("letter", { markdown })
+  if (!upgraded.ok) throw new Error(upgraded.message)
+  return upgraded.document
+}
+
 export const letter: PaperView = {
   id: "letter-1",
   name: "Cover letter, Northwind",
   kind: "letter",
   templateId: "simple",
   status: "draft",
-  document: { markdown: "I write clearly." },
+  paper: letterPaper("I write clearly."),
   contentVersion: 1,
   checks: [],
   pageChoice: "unset",
@@ -85,8 +95,8 @@ export function installFetch(mode: "tool" | "stop" | "limit") {
             new TextEncoder().encode(
               [
                 'event: text-delta\ndata: {"text":"Dear team"}\n\n',
-                'event: tool-call\ndata: {"toolCallId":"c1","name":"paper.replace","input":{"docId":"letter-1","contentVersion":1,"document":{"markdown":"Dear team"}}}\n\n',
-                'event: tool-result\ndata: {"toolCallId":"c1","name":"paper.replace","summary":"Updated","ok":true,"result":{"ok":true,"data":{}}}\n\n',
+                'event: tool-call\ndata: {"toolCallId":"c1","name":"paper.edit","input":{"docId":"letter-1","basedOn":1,"edits":[{"op":"setText","blockId":"letter-1","text":"Dear team"}]}}\n\n',
+                'event: tool-result\ndata: {"toolCallId":"c1","name":"paper.edit","summary":"Updated","ok":true,"result":{"ok":true,"data":{}}}\n\n',
               ].join("")
             )
           )

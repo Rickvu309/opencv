@@ -34,7 +34,6 @@ export const record: PaperView = {
   kind: "cv",
   templateId: "simple",
   status: "draft",
-  document: blankCvDocument,
   paper: blankPaper.document,
   contentVersion: 1,
   checks: [],

@@ -120,14 +120,15 @@ function fail(status: number, code: string, message: string) {
   return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
-function installFetch(mode: "stream" | "stop" | "partial" | "error") {
+function installFetch(
+  mode: "stream" | "stop" | "partial" | "error" | "edited" | "saved"
+) {
   const letter = {
     id: "letter-1",
     name: "Cover letter, Lumière",
     kind: "letter",
     templateId: "simple",
     status: "draft",
-    document: { markdown: "" },
     contentVersion: 1,
     checks: [],
     pageChoice: "unset",
@@ -140,20 +141,37 @@ function installFetch(mode: "stream" | "stop" | "partial" | "error") {
     const url = String(input)
     if (url.includes("/api/commands/paper.create"))
       return Promise.resolve(ok(letter))
-    if (url.includes("/api/commands/paper.replace")) {
-      const body = JSON.parse(String(init?.body))
-      return Promise.resolve(
-        ok({
-          ...letter,
-          document: body.input.document,
-          contentVersion: 2,
-          previousDocument: letter.document,
-        })
-      )
+    if (url.includes("/api/commands/paper.edit")) {
+      return Promise.resolve(ok({ ...letter, contentVersion: 2 }))
     }
     if (url.includes("/api/commands/chat.create"))
       return Promise.resolve(ok({ id: "chat-1" }))
-    if (url.includes("/api/paper/letter-1")) return Promise.resolve(ok(letter))
+    if (url.includes("/api/paper/letter-1")) {
+      const text =
+        mode === "edited"
+          ? "My own opening"
+          : mode === "saved"
+            ? "Dear hiring team,"
+            : null
+      if (text === null) return Promise.resolve(ok(letter))
+      return Promise.resolve(
+        ok({
+          ...letter,
+          paper: {
+            version: 3,
+            kind: "letter",
+            clashes: [],
+            blocks: [
+              {
+                id: "letter-1",
+                type: "paragraph",
+                content: [{ text }],
+              },
+            ],
+          },
+        })
+      )
+    }
     if (url.includes("/stop")) return Promise.resolve(ok({}))
     if (url.includes("/turns")) {
       if (mode === "error") {
@@ -168,7 +186,7 @@ function installFetch(mode: "stream" | "stop" | "partial" | "error") {
           })
         })
       }
-      if (mode === "partial") {
+      if (mode === "partial" || mode === "edited" || mode === "saved") {
         const stream = new ReadableStream({
           start(controller) {
             controller.enqueue(
@@ -193,8 +211,8 @@ function installFetch(mode: "stream" | "stop" | "partial" | "error") {
             new TextEncoder().encode(
               [
                 'event: text-delta\ndata: {"text":"Dear hiring team,"}\n\n',
-                'event: tool-call\ndata: {"toolCallId":"c1","name":"paper.replace","input":{"docId":"letter-1","contentVersion":1,"document":{"markdown":"Dear hiring team,"}}}\n\n',
-                'event: tool-result\ndata: {"toolCallId":"c1","name":"paper.replace","summary":"Updated","ok":true,"result":{"ok":true,"data":{}}}\n\n',
+                'event: tool-call\ndata: {"toolCallId":"c1","name":"paper.edit","input":{"docId":"letter-1","basedOn":1,"edits":[{"op":"setText","blockId":"letter-1","text":"Dear hiring team,"}]}}\n\n',
+                'event: tool-result\ndata: {"toolCallId":"c1","name":"paper.edit","summary":"Updated","ok":true,"result":{"ok":true,"data":{}}}\n\n',
               ].join("")
             )
           )
@@ -306,11 +324,17 @@ it("saves the visible partial letter when Stop aborts its stream", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Stop" }))
   await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
   const save = fetch.mock.calls.find(([url]) =>
-    String(url).includes("/commands/paper.replace")
+    String(url).includes("/commands/paper.edit")
   )
   expect(save).toBeDefined()
   expect(JSON.parse(String(save?.[1]?.body))).toMatchObject({
-    input: { document: { markdown: "Dear hiring team," } },
+    input: {
+      docId: "letter-1",
+      basedOn: 1,
+      edits: [
+        { op: "setText", blockId: "letter-1", text: "Dear hiring team," },
+      ],
+    },
   })
   expect(fetch.mock.calls.some(([url]) => String(url).endsWith("/stop"))).toBe(
     true
@@ -338,7 +362,31 @@ it("cancels on leaving without saving or reopening the letter", async () => {
   )
   expect(
     fetch.mock.calls.some(([url]) =>
-      String(url).includes("/commands/paper.replace")
+      String(url).includes("/commands/paper.edit")
     )
   ).toBe(false)
+})
+
+it("does not save again over a letter the person already changed", async () => {
+  for (const mode of ["edited", "saved"] as const) {
+    const fetch = installFetch(mode)
+    listJobs.mockResolvedValue([job])
+    const onCreated = vi.fn()
+    const view = render(
+      <PaperLetterStartPage onBack={() => undefined} onCreated={onCreated} />
+    )
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+    await screen.findByText("Dear hiring team,")
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }))
+    await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+    expect(
+      fetch.mock.calls.some(([url]) =>
+        String(url).includes("/commands/paper.edit")
+      )
+    ).toBe(false)
+    view.unmount()
+  }
 })
