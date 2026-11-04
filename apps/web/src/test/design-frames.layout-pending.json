@@ -77,13 +77,6 @@
     "reason": "the letter-start screen check is skipped while Paper is paused"
   },
   {
-    "id": "sgAtL",
-    "name": "W7.3 Letter + suggestion",
-    "issue": 916,
-    "expires": "2026-11-30",
-    "reason": "the letter-editor screen check is skipped while Paper is paused"
-  },
-  {
     "id": "D1s74Z",
     "name": "W7.4 Can't read job link",
     "issue": 916,
