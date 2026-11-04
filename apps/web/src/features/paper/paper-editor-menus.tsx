@@ -5,30 +5,32 @@ import type {
   StyleSchema,
 } from "@blocknote/core"
 import {
-  filterSuggestionItems,
   FormattingToolbarExtension,
   SideMenuExtension,
 } from "@blocknote/core/extensions"
 import {
   FormattingToolbarController,
-  getDefaultReactSlashMenuItems,
   SideMenuController,
-  SuggestionMenuController,
   useBlockNoteEditor,
   useEditorState,
   useExtension,
   useExtensionState,
-  type DefaultReactSuggestionItem,
-  type SuggestionMenuProps,
 } from "@blocknote/react"
 import { NodeSelection } from "prosemirror-state"
-import { GripVertical, Link as LinkIcon, Plus } from "lucide-react"
+import {
+  Bold,
+  ChevronDown,
+  GripVertical,
+  Italic,
+  Link as LinkIcon,
+  MessageCircle,
+  Plus,
+} from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { CvBlockMenu } from "./cv-block-menu.tsx"
 import { CvChromeContext } from "./cv-blocks.tsx"
 import { addedBlockType, cvFormatHidden } from "./cv-keys.ts"
-import { cvSlashItems, filterCvSlash } from "./cv-slash.ts"
 import { normalizeHref } from "./link-href.ts"
 import { LinkRequestContext, useEditorPopupRef } from "./paper-editor-popup.ts"
 import {
@@ -48,12 +50,73 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import { cn } from "@workspace/ui/lib/utils"
+
+export { PaperSlashMenu } from "./paper-editor-slash.tsx"
 
 type BlockChoice = {
   label: string
   type: string
   props?: Record<string, unknown>
+}
+
+const TOOLBAR_ABOVE_SELECTION = 15
+const TOOLBAR_BEFORE_SELECTION = 67
+
+const cvToolbarFloating = {
+  useFloatingOptions: {
+    placement: "top-start" as const,
+    middleware: [
+      {
+        name: "cvToolbarOffset",
+        fn(state: {
+          x: number
+          y: number
+          placement: string
+          rects: {
+            floating: { width: number; height: number }
+            reference: { x: number; y: number }
+          }
+          elements: {
+            reference: {
+              getBoundingClientRect(): { left: number; top: number }
+            }
+          }
+        }) {
+          const side = state.placement.split("-")[0]
+          let x = state.x
+          let y = state.y
+          if (side === "top") {
+            x -= TOOLBAR_BEFORE_SELECTION
+            y -= TOOLBAR_ABOVE_SELECTION
+          } else if (side === "bottom") {
+            x -= TOOLBAR_BEFORE_SELECTION
+            y += TOOLBAR_ABOVE_SELECTION
+          } else if (side === "left") {
+            x -= TOOLBAR_ABOVE_SELECTION
+            y -= TOOLBAR_BEFORE_SELECTION
+          } else {
+            x += TOOLBAR_ABOVE_SELECTION
+            y -= TOOLBAR_BEFORE_SELECTION
+          }
+          const edge = 8
+          const width = state.rects.floating.width
+          const height = state.rects.floating.height
+          const onScreen = state.elements.reference.getBoundingClientRect()
+          const shiftX = onScreen.left - state.rects.reference.x
+          const shiftY = onScreen.top - state.rects.reference.y
+          const screenX = Math.min(
+            Math.max(edge, x + shiftX),
+            Math.max(edge, window.innerWidth - edge - width)
+          )
+          const screenY = Math.min(
+            Math.max(edge, y + shiftY),
+            Math.max(edge, window.innerHeight - edge - height)
+          )
+          return { x: screenX - shiftX, y: screenY - shiftY }
+        },
+      },
+    ],
+  },
 }
 
 const BLOCK_CHOICES: BlockChoice[] = [
@@ -63,15 +126,6 @@ const BLOCK_CHOICES: BlockChoice[] = [
   { label: "Bulleted list", type: "bulletListItem" },
   { label: "Numbered list", type: "numberedListItem" },
 ]
-
-const SLASH_TITLES = new Set([
-  "Paragraph",
-  "Heading 2",
-  "Heading 3",
-  "Numbered List",
-  "Bullet List",
-  "Divider",
-])
 
 function useChoices() {
   const editor = useBlockNoteEditor<
@@ -140,11 +194,16 @@ function SelectionFormat() {
     editor,
     selector: ({ editor: live }) => isNestedListItem(live),
   })
-  const label =
+  const cv = "paperHeader" in editor.schema.blockSchema
+  const matched =
     choices.find(
       (choice) =>
         current === `${choice.type}:${String(choice.props?.level ?? "")}`
     )?.label ?? "Text"
+  const label =
+    cv && (current.startsWith("bulletListItem") || current === "paragraph:")
+      ? "Text"
+      : matched
   const nodeName = useEditorState({
     editor,
     selector: ({ editor: live }) => {
@@ -154,7 +213,6 @@ function SelectionFormat() {
         : null
     },
   })
-  const cv = "paperHeader" in editor.schema.blockSchema
   const chrome = useContext(CvChromeContext)
   const hidden = cvFormatHidden(
     document.activeElement?.closest("[data-cv-field]") != null,
@@ -169,6 +227,7 @@ function SelectionFormat() {
     <div
       role="toolbar"
       aria-label="Format"
+      data-pen-surface={cv ? "paper" : undefined}
       data-slot="paper-format-toolbar"
       className="flex items-center gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
     >
@@ -177,9 +236,11 @@ function SelectionFormat() {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 text-xs md:h-7"
+          data-cv-format-coach=""
+          className="h-11 px-1.5 text-xs md:h-6"
           onClick={() => chrome.askCoach("")}
         >
+          <MessageCircle className="size-3" aria-hidden="true" />
           Coach
         </Button>
       ) : null}
@@ -190,9 +251,13 @@ function SelectionFormat() {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-11 text-xs md:h-7"
+              data-cv-format-text=""
+              className="h-11 gap-1 px-1.5 text-xs md:h-6"
             >
               {label}
+              {cv ? (
+                <ChevronDown className="size-[9px]" aria-hidden="true" />
+              ) : null}
             </Button>
           }
         />
@@ -221,10 +286,10 @@ function SelectionFormat() {
         size="sm"
         aria-label="Bold"
         aria-pressed={Boolean(styles.bold)}
-        className="size-11 p-0 font-bold md:size-7"
+        className="size-11 p-0 md:size-6"
         onClick={() => toggle("bold")}
       >
-        B
+        <Bold className="size-3.5" aria-hidden="true" />
       </Button>
       <Button
         type="button"
@@ -232,11 +297,14 @@ function SelectionFormat() {
         size="sm"
         aria-label="Italic"
         aria-pressed={Boolean(styles.italic)}
-        className="size-11 p-0 italic md:size-7"
+        className="size-11 p-0 md:size-6"
         onClick={() => toggle("italic")}
       >
-        I
+        <Italic className="size-3.5" aria-hidden="true" />
       </Button>
+      {cv ? (
+        <span aria-hidden="true" className="inline-block w-[22px]" />
+      ) : null}
       <Popover
         open={linkOpen}
         onOpenChange={(open, details) => {
@@ -306,106 +374,13 @@ function SelectionFormat() {
 }
 
 export function PaperFormattingToolbar() {
+  const editor = useBlockNoteEditor()
   useExtension(FormattingToolbarExtension)
-  return <FormattingToolbarController formattingToolbar={SelectionFormat} />
-}
-
-function SlashList({
-  items,
-  selectedIndex,
-  onItemClick,
-}: SuggestionMenuProps<DefaultReactSuggestionItem>) {
-  const editor = useBlockNoteEditor<
-    BlockSchema,
-    InlineContentSchema,
-    StyleSchema
-  >()
   const cv = "paperHeader" in editor.schema.blockSchema
   return (
-    <div
-      role="listbox"
-      aria-label={cv ? "Insert" : "Blocks"}
-      data-slot="paper-slash-menu"
-      className={cn(
-        "flex flex-col gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md",
-        cv ? "w-[300px]" : "w-56"
-      )}
-    >
-      {cv ? (
-        <p className="px-2 py-1 text-xs text-muted-foreground">
-          / Type to filter
-        </p>
-      ) : null}
-      {items.map((item, index) => {
-        const group = item.group ?? ""
-        const before = items[index - 1]?.group ?? ""
-        const showGroup = cv && group !== before
-        const divider = showGroup && before !== "" && group === "Blocks"
-        const name =
-          cv && group === "CV sections" && item.title === "Skills"
-            ? "Skills section"
-            : undefined
-        return (
-          <div key={`${group}:${item.title}`}>
-            {divider ? (
-              <div role="separator" className="my-1 h-px bg-border" />
-            ) : null}
-            {showGroup ? (
-              <p className="px-2 py-1 text-xs text-muted-foreground">{group}</p>
-            ) : null}
-            <Button
-              type="button"
-              role="option"
-              aria-label={name}
-              aria-selected={index === selectedIndex}
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-11 w-full justify-start text-xs md:h-8",
-                index === selectedIndex && "bg-accent text-accent-foreground"
-              )}
-              onClick={() => onItemClick?.(item)}
-            >
-              {item.title}
-              {cv && item.subtext ? (
-                <span className="ms-2 text-muted-foreground">
-                  {item.subtext}
-                </span>
-              ) : null}
-            </Button>
-          </div>
-        )
-      })}
-      {items.length === 0 ? (
-        <p className="px-2 py-1.5 text-xs text-muted-foreground">No blocks</p>
-      ) : null}
-    </div>
-  )
-}
-
-export function PaperSlashMenu() {
-  const editor = useBlockNoteEditor<
-    BlockSchema,
-    InlineContentSchema,
-    StyleSchema
-  >()
-  return (
-    <SuggestionMenuController
-      triggerCharacter="/"
-      shouldOpen={(state) =>
-        state.selection.$from.parent.type.name !== "paperSection"
-      }
-      getItems={async (query) =>
-        "paperHeader" in editor.schema.blockSchema
-          ? filterCvSlash(cvSlashItems(editor), query)
-          : filterSuggestionItems(
-              getDefaultReactSlashMenuItems(editor).filter((item) =>
-                SLASH_TITLES.has(item.title)
-              ),
-              query
-            )
-      }
-      suggestionMenuComponent={SlashList}
+    <FormattingToolbarController
+      formattingToolbar={SelectionFormat}
+      floatingUIOptions={cv ? cvToolbarFloating : undefined}
     />
   )
 }
@@ -468,6 +443,21 @@ function Handle() {
   )
 }
 
+function pointerOnOpenMenu(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false
+  if (
+    target.closest("[data-slot='cv-block-menu']") ||
+    target.closest("[data-slot='dropdown-menu-sub-content']") ||
+    target.closest("[role='menu']")
+  ) {
+    return true
+  }
+  return (
+    Boolean(target.closest("[aria-label='Drag block']")) &&
+    Boolean(document.querySelector("[data-slot='cv-block-menu']"))
+  )
+}
+
 function SideMenuRelease() {
   const side = useExtension(SideMenuExtension)
   const dragging = useRef(false)
@@ -478,6 +468,7 @@ function SideMenuRelease() {
       if (!(target instanceof Element)) return
       if (!target.closest("[aria-label='Drag block']")) return
       dragging.current = true
+      document.documentElement.setAttribute("data-cv-dragging", "")
     }
     const finishDrag = () => {
       if (!dragging.current) return
@@ -485,11 +476,23 @@ function SideMenuRelease() {
       side.blockDragEnd()
       if (side.menuFrozen) side.unfreezeMenu()
     }
+    const onDragOver = (event: DragEvent) => {
+      if (!dragging.current) return
+      event.preventDefault()
+    }
     const onDragEnd = () => {
+      document.documentElement.removeAttribute("data-cv-dragging")
       finishDrag()
     }
-    const onPointerUp = () => {
-      queueMicrotask(finishDrag)
+    const releaseMenu = () => {
+      queueMicrotask(() => {
+        if (dragging.current) return
+        if (side.menuFrozen) side.unfreezeMenu()
+      })
+    }
+    const onPointerUp = (event: PointerEvent) => {
+      if (pointerOnOpenMenu(event.target)) return
+      releaseMenu()
     }
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
@@ -499,19 +502,24 @@ function SideMenuRelease() {
     const onPointerDown = (event: PointerEvent) => {
       if (!side.menuFrozen) return
       const target = event.target
-      if (!(target instanceof Node)) return
-      const menu = document.querySelector("[role='menu']")
-      const handle = document.querySelector("[data-slot='paper-side-menu']")
-      if (menu?.contains(target) || handle?.contains(target)) return
+      if (pointerOnOpenMenu(target)) return
+      if (
+        target instanceof Element &&
+        target.closest("[data-slot='paper-side-menu']")
+      ) {
+        return
+      }
       side.unfreezeMenu()
     }
     root.addEventListener("dragstart", onDragStart, true)
+    root.addEventListener("dragover", onDragOver)
     root.addEventListener("dragend", onDragEnd, true)
     root.addEventListener("pointerup", onPointerUp, true)
     root.addEventListener("keydown", onKey, true)
     root.addEventListener("pointerdown", onPointerDown, true)
     return () => {
       root.removeEventListener("dragstart", onDragStart, true)
+      root.removeEventListener("dragover", onDragOver)
       root.removeEventListener("dragend", onDragEnd, true)
       root.removeEventListener("pointerup", onPointerUp, true)
       root.removeEventListener("keydown", onKey, true)

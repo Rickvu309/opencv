@@ -147,7 +147,9 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", asy
   await act(async () => {
     await Promise.resolve()
   })
-  expect(document.body.textContent).toContain("School, degree")
+  expect(
+    document.querySelector('[aria-label="School"]')?.getAttribute("placeholder")
+  ).toBe("School, degree")
 
   const skills = () =>
     ready.document.find((block) => block.type === "paperSkills")
@@ -227,6 +229,8 @@ it("joins and splits bullets inside an entry, and splits skills on a comma", asy
   await act(async () => {
     await Promise.resolve()
   })
+  expect(side.menuFrozen).toBe(true)
+  fireEvent.dragEnd(grip)
   expect(side.menuFrozen).toBe(false)
   grip.remove()
   moveCvBlock(ready, "sec-skills", "up")

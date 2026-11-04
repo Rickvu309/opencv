@@ -37,7 +37,6 @@ import { SYNC_LABEL, usePaperSync } from "@/lib/paper-sync.ts"
 
 import { bindCvCoach, CvChromeContext } from "./cv-blocks.tsx"
 import { CvEditorBar, cvEditorStatus } from "./paper-cv-bar.tsx"
-import { CvA4Canvas } from "./paper-cv-a4.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { streamPaperTurn } from "./paper-api.ts"
 import {
@@ -164,10 +163,12 @@ export function PaperCvEditor({
   initial,
   pages,
   onBack,
+  seedName = "",
 }: {
   initial: PaperView
   pages: PaperPages
   onBack: () => void
+  seedName?: string
 }) {
   const run = useRunCommand()
   const shareLink = useShareLink(initial.id)
@@ -375,16 +376,15 @@ export function PaperCvEditor({
 
   const showBanner = state.previewPages > 1 && state.pageChoice === "unset"
   const source = state.cv ? printable(state.cv, state.templateId) : null
-  const sections =
-    state.cv?.blocks.filter((block) => block.type === "section") ?? []
   const statusLabel = cvEditorStatus(status, state.editedAt, state.deferring)
 
   return (
     <section
       aria-label={`Editing ${initial.name}`}
       data-paper-editor=""
+      data-pen-surface="paper"
       data-slot="cv-editor-page"
-      className="flex min-h-0 min-w-0 flex-1 flex-col"
+      className="flex h-full min-h-0 min-w-0 flex-1 flex-col"
       onKeyDownCapture={noteTyping}
     >
       <CvEditorBar
@@ -402,7 +402,22 @@ export function PaperCvEditor({
         onCoach={() => askCoach("")}
         onUndo={() => editorRef.current?.undo()}
       />
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+      <div
+        data-slot="cv-editor-desk"
+        className="relative flex min-h-0 flex-1 flex-col items-center overflow-auto"
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute start-7 top-[72px] flex flex-col gap-2.5"
+        >
+          <span data-cv-outline="rest" className="h-0.5 w-3.5 rounded-[1px]" />
+          <span
+            data-cv-outline="active"
+            className="h-0.5 w-[22px] rounded-[1px]"
+          />
+          <span data-cv-outline="rest" className="h-0.5 w-3.5 rounded-[1px]" />
+          <span data-cv-outline="rest" className="h-0.5 w-3.5 rounded-[1px]" />
+        </div>
         {showBanner ? (
           <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -442,74 +457,48 @@ export function PaperCvEditor({
         {state.nameError ? (
           <p className="text-sm text-destructive">{state.nameError}</p>
         ) : null}
-        <div className="flex min-w-0 gap-4">
-          <nav
-            aria-label="Outline"
-            className="hidden w-36 shrink-0 flex-col gap-1 md:flex"
+        <div
+          data-paper-a4-fit="width"
+          data-template={previewTemplate(state.templateId)}
+          data-slot="cv-editor-sheet"
+        >
+          <CvPhotoFrame
+            value={{
+              docId: initial.id,
+              afterPhoto: () => syncRef.current?.poke(),
+            }}
           >
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-11 justify-start md:h-7"
-              onClick={() => editorRef.current?.focusBlock("header")}
-            >
-              Header
-            </Button>
-            {sections.map((block) => (
-              <Button
-                key={block.id}
-                type="button"
-                variant="ghost"
-                className="h-11 justify-start md:h-7"
-                onClick={() => editorRef.current?.focusBlock(block.id)}
-              >
-                {block.title || "Section"}
-              </Button>
-            ))}
-          </nav>
-          <div
-            data-template={previewTemplate(state.templateId)}
-            className="min-w-0 flex-1"
-          >
-            <CvPhotoFrame
+            <CvChromeContext.Provider
               value={{
-                docId: initial.id,
-                afterPhoto: () => syncRef.current?.poke(),
+                showPhoto: previewTemplate(state.templateId) === "with-photo",
+                askCoach,
+                seedName,
               }}
             >
-              <CvChromeContext.Provider
-                value={{
-                  showPhoto: previewTemplate(state.templateId) === "with-photo",
-                  askCoach,
-                }}
-              >
-                <CvA4Canvas>
-                  {client ? (
-                    <PaperEditorEngine
-                      kind="cv"
-                      client={client}
-                      generation={generation}
-                      label={`CV ${initial.name}`}
-                      onDocument={onDocument}
-                      onSelectedBlocks={onSelectedBlocks}
-                      handleRef={editorRef}
-                    />
-                  ) : (
-                    <p
-                      role="status"
-                      className="px-8 py-14 text-sm text-muted-foreground"
-                    >
-                      {status === "offline"
-                        ? "Offline. Retrying to open this CV."
-                        : status === "refused"
-                          ? SYNC_LABEL.refused
-                          : "Connecting"}
-                    </p>
-                  )}
-                </CvA4Canvas>
-              </CvChromeContext.Provider>
-            </CvPhotoFrame>
-          </div>
+              {client ? (
+                <PaperEditorEngine
+                  kind="cv"
+                  client={client}
+                  generation={generation}
+                  label={`CV ${initial.name}`}
+                  onDocument={onDocument}
+                  onSelectedBlocks={onSelectedBlocks}
+                  handleRef={editorRef}
+                />
+              ) : (
+                <p
+                  role="status"
+                  className="px-8 py-14 text-sm text-muted-foreground"
+                >
+                  {status === "offline"
+                    ? "Offline. Retrying to open this CV."
+                    : status === "refused"
+                      ? SYNC_LABEL.refused
+                      : "Connecting"}
+                </p>
+              )}
+            </CvChromeContext.Provider>
+          </CvPhotoFrame>
         </div>
       </div>
       {source ? (

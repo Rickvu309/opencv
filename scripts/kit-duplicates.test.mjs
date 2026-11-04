@@ -46,6 +46,7 @@ export const RULES = [
       "apps/web/src/features/paper/paper-letter.tsx",
       "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
       "apps/web/src/features/paper/paper-letter-start-page.tsx",
+      "apps/web/src/features/paper/paper-cv-bar.tsx",
     ].map((file) => ({
       file,
       issue: "the kit Breadcrumb change (#845)",

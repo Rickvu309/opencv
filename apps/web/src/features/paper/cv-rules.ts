@@ -521,6 +521,15 @@ function splitSkillInput(
 export const cvRulesPlugin = new Plugin({
   props: {
     handleTextInput(view, from, to, text) {
+      if (text === " " && from === to) {
+        const parent = view.state.doc.resolve(from).parent
+        if (
+          parent.type.name === "paperSkillItem" &&
+          parent.textContent === ""
+        ) {
+          return true
+        }
+      }
       return splitSkillInput(view, from, to, text)
     },
     handlePaste(view, event, slice) {

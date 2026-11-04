@@ -430,8 +430,18 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
   expect(skillLabels(fromSlice)).toEqual(["a", "b"])
 
   const slashTitles = cvSlashItems({}).map((item) => item.title)
-  expect(slashTitles.filter((title) => title === "Skills")).toEqual(["Skills"])
-  expect(slashTitles).toContain("Skill group")
+  expect(slashTitles).toEqual([
+    "Summary",
+    "Projects",
+    "Activities",
+    "Awards",
+    "Languages",
+    "Text",
+    "Heading",
+    "Bulleted list",
+    "Numbered list",
+    "Divider",
+  ])
 
   const titled = EditorState.create({
     schema: editor.pmSchema,

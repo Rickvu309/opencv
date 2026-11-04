@@ -83,6 +83,7 @@ it("opens the CV on a width-fit sheet with Name and Summary and no Coach float",
       initial: record,
       pages: pages(1),
       onBack: () => undefined,
+      seedName: SAMPLE_AUTHOR_NAME,
     })
   )
   const editor = await screen.findByRole("region", {

@@ -38,6 +38,20 @@ const TURNS: {
   { label: "Skills", type: "paperSkills" },
 ]
 
+function armBlockMove(view: {
+  dragging: { slice: unknown; move: boolean } | null
+  state: { selection: { content: () => unknown } }
+}) {
+  if (view.dragging) return
+  view.dragging = {
+    slice: view.state.selection.content(),
+    move: true,
+  }
+}
+
+const MENU_SIDE_OFFSET = 22
+const MENU_ALIGN_OFFSET = 14
+
 const HOLDS_CHILDREN = new Set([
   "paperExperience",
   "paperEducation",
@@ -69,8 +83,8 @@ export function CvBlockMenu({
     block.children.length > 0 && !HOLDS_CHILDREN.has(type)
   return (
     <DropdownMenu
-      onOpenChange={(open) => {
-        if (open) side.freezeMenu()
+      onOpenChange={(next) => {
+        if (next) side.freezeMenu()
         else side.unfreezeMenu()
       }}
     >
@@ -84,11 +98,12 @@ export function CvBlockMenu({
             className="flex size-11 cursor-grab items-center justify-center rounded-md hover:bg-accent md:size-6"
             onDragStart={(event) => {
               const popup = document.querySelector(
-                "[data-slot='dropdown-menu-content']"
+                "[data-slot='cv-block-menu']"
               )
               const portal = popup?.closest("[data-base-ui-portal]")
               if (portal instanceof HTMLElement) portal.style.display = "none"
               onDragStart(event)
+              armBlockMove(editor.prosemirrorView)
             }}
             onDragEnd={onDragEnd}
           >
@@ -96,7 +111,15 @@ export function CvBlockMenu({
           </div>
         }
       />
-      <DropdownMenuContent className="w-[232px]">
+      <DropdownMenuContent
+        data-pen-surface="paper"
+        data-slot="cv-block-menu"
+        side="bottom"
+        align="start"
+        sideOffset={MENU_SIDE_OFFSET}
+        alignOffset={MENU_ALIGN_OFFSET}
+        className="w-[198px]"
+      >
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Turn into</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
@@ -114,13 +137,21 @@ export function CvBlockMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => duplicateCvBlock(editor, block.id)}>
           Duplicate
-          <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+          <DropdownMenuShortcut className="tracking-normal">
+            ⌘ D
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "up")}>
           Move up
+          <DropdownMenuShortcut className="tracking-normal">
+            ⌘ ⇧ ↑
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => moveCvBlock(editor, block.id, "down")}>
           Move down
+          <DropdownMenuShortcut className="tracking-normal">
+            ⌘ ⇧ ↓
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -138,6 +169,9 @@ export function CvBlockMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => editor.removeBlocks([block.id])}>
           Delete
+          <DropdownMenuShortcut className="tracking-normal">
+            Del
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -57,14 +57,6 @@
   margin: 0;
 }
 
-[data-cv-editor]
-  .bn-block:has(> .react-renderer > [data-content-type="paperSkills"])
-  > .bn-block-group
-  > .bn-block:not(:last-child)
-  .bn-block-content::after {
-  content: ", ";
-}
-
 [data-cv-editor] .bn-block-group .bn-block-group {
   border: 0;
   box-shadow: none;
@@ -84,6 +76,15 @@
   height: 6px !important;
   background: var(--ring) !important;
   border-radius: 999px;
+}
+
+html[data-cv-dragging] [data-slot="cv-block-menu"],
+html[data-cv-dragging] :has(> [data-slot="cv-block-menu"]) {
+  display: none;
+}
+
+html:has([data-slot="paper-slash-menu"]) [data-slot="paper-side-menu"] {
+  display: none;
 }
 
 .prosemirror-dropcursor-block::before {

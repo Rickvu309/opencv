@@ -14,6 +14,7 @@ import {
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
+import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { ApiError } from "@/lib/api-error.ts"
 
@@ -52,6 +53,7 @@ function LetterEditorFallback() {
 }
 
 export function PaperDocPage() {
+  const profile = useShellProfile()
   const navigate = useNavigate()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -123,6 +125,7 @@ export function PaperDocPage() {
       <PaperCvEditor
         key={doc.id}
         initial={doc}
+        seedName={profile.name}
         pages={
           pagesQuery.data ?? {
             docId: doc.id,
