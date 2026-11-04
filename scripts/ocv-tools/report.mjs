@@ -92,12 +92,12 @@ export const COMMANDS = [
   {
     name: "done",
     usage: "done",
-    when: "List this agent's open pull requests, held issues and worktrees. Exit 1 while any has no recorded blocker. Run it before saying you are finished. A Stop hook can call it.",
+    when: "List this agent's open pull requests, held issues and worktrees. Exit 1 if any is unblocked, 4 if all remaining work is blocked, and 0 only if none remains. This checks agent ownership, not completion of the full user request. Run it before saying you are finished.",
   },
   {
     name: "block",
     usage: 'block <n> "<reason>"',
-    when: "Record on issue <n> why you cannot continue, so done stops listing it. A new take of the issue clears the blocker.",
+    when: "Record on issue <n> why you cannot continue. Blocked work stays listed and incomplete; it never makes done succeed. Continue independent authorized work. A new take of the issue clears the blocker.",
   },
   {
     name: "doctor",

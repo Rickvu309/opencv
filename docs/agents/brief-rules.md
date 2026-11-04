@@ -2,16 +2,16 @@
 
 `scripts/ocv-tools.mjs brief <issue> --role build|mechanical|review|plan` prints the rules below that are tagged for the role (renumbered), the model for the role, the worktree, the port, the tool budget and the fenced paths. A lead pastes that output into an agent's brief instead of retyping the rules. Edit the rules here and every later brief carries the change. Each rule starts with its roles in brackets (`all`, or a list of roles) and ends with the AGENTS.md section it follows; `scripts/ocv-tools/brief.test.mjs` fails when a rule has no tag, cites a section AGENTS.md lacks, or drifts from the Git words AGENTS.md carries.
 
-`scripts/ocv-tools.mjs done` is the other half. It lists this agent's open pull requests, held issues and worktrees and exits 1 while any has no recorded blocker. `scripts/ocv-tools.mjs block <issue> "<reason>"` records one.
+`scripts/ocv-tools.mjs done` lists this agent's open pull requests, held issues and worktrees. It exits 1 if any is unblocked, 4 if all remaining work is blocked, and 0 only if none remains. `scripts/ocv-tools.mjs block <issue> "<reason>"` records a blocker without completing work. This ownership check cannot prove the full user request is complete.
 
 ## Rules
 
 ```text
 1. [build mechanical] Issue first. Work only on the issue named above. If Worktree above says none yet, run scripts/ocv-tools.mjs take <issue>. Work only in the worktree, use only the port in that worktree's .env, and never edit the main checkout or another agent's worktree. (AGENTS.md: Guardrails)
 2. [all] Fenced paths. Never edit a path listed under Fenced paths, and list any offender you find there in your report instead. (AGENTS.md: Agent briefs)
-3. [build mechanical] Finish in this turn. Never end on a status line, a question or "want me to continue" while work is open. If one decision truly blocks you, run scripts/ocv-tools.mjs block <issue> "<reason>", ask that one question, and say what you will do after the answer. (AGENTS.md: Agent briefs)
+3. [build mechanical] Finish in this turn. Continue all independent authorized work before yielding for an external dependency. A restriction on merging applies only to merging. If one decision truly blocks the remaining work, run scripts/ocv-tools.mjs block <issue> "<reason>", ask that one question, and say what you will do after the answer. (AGENTS.md: Agent briefs)
 4. [review plan] Finish in this turn. Never end on a status line, a question or "want me to continue" while work is open. If one decision truly blocks you, ask that one question and say what you will do after the answer. (AGENTS.md: Agent briefs)
-5. [build mechanical] Before you say you are done, run scripts/ocv-tools.mjs done. It exits 1 while you hold an open pull request, a held issue or a worktree with no recorded blocker. Close each one it lists, or record the blocker. (AGENTS.md: Agent briefs)
+5. [build mechanical] Before you say you are done, run scripts/ocv-tools.mjs done. Exit 1 requires continuing unblocked work; exit 4 means blocked work remains incomplete; exit 0 means only that this agent owns no open work. Check every requested item against evidence before final handback. For a remaining check or review, use the host's watch and wake mechanism. (AGENTS.md: Agent briefs)
 6. [all] Done means evidence: the command you ran and its real output, listed against each requested item. Check again means rerun the check and quote the new result. (AGENTS.md: Agent briefs)
 7. [build mechanical] Git. Commit with scripts/ocv-tools.mjs save -m "<message>". Never use --no-verify, SKIP_CHECKS, --author or -c user.name. Add no AI attribution and no Co-Authored-By. Never push or commit to main. (AGENTS.md: Guardrails)
 8. [review plan] Read only. Never edit a file, commit, push or open a pull request, and never claim or release an issue. Write your findings to the file your brief names. (AGENTS.md: Guardrails)
