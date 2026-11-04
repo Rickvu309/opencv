@@ -77,6 +77,24 @@ describe("CV client sync keeps fields and person words with two tabs", () => {
     Number(process.env.PAPER_SYNC_TIMEOUT ?? (nightly ? 120_000 : 15_000))
   )
 
+  it("keeps one whole skill list when one tab drops its add and the other adds", () =>
+    h.inDatabase(async () => {
+      verdict(
+        await play(
+          [
+            { kind: "skillAdd", tab: 1, a: 0, b: 0 },
+            { kind: "sync", tab: 1, a: 0, b: 0 },
+            { kind: "skillDrop", tab: 1, a: 895, b: 0 },
+            { kind: "type", tab: 0, a: 0, b: 0 },
+            { kind: "type", tab: 0, a: 0, b: 0 },
+            { kind: "skillAdd", tab: 0, a: 0, b: 0 },
+            { kind: "type", tab: 0, a: 0, b: 0 },
+          ],
+          true
+        )
+      )
+    }))
+
   it("keeps the person's skill label after the Coach removes that block", () =>
     h.inDatabase(async () => {
       verdict(
