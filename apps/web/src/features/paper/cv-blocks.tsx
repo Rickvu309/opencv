@@ -4,7 +4,6 @@ import {
   useEffect,
   useReducer,
   useRef,
-  useState,
   type ReactNode,
 } from "react"
 import { useBlockNoteEditor } from "@blocknote/react"
@@ -65,6 +64,10 @@ type FocusAction = { type: "right" | "extra"; on: boolean }
 
 function focusReducer(state: FocusState, action: FocusAction): FocusState {
   return { ...state, [action.type]: action.on }
+}
+
+function contactReducer(_open: boolean, action: "open" | "close") {
+  return action === "open"
 }
 
 function reactSpec(config: object, render: (props: ViewProps) => ReactNode) {
@@ -138,7 +141,7 @@ function HeaderView({ block }: ViewProps) {
     seeded.current = true
     editor.updateBlock(block.id, { props: { ...live.props, name: next } })
   }, [block.id, chrome.seedName, editor])
-  const [contactOpen, setContactOpen] = useState(false)
+  const [contactOpen, dispatchContact] = useReducer(contactReducer, false)
   const values = CONTACT.map(([field]) => prop(block, field))
   const showAll = contactOpen || values.every((value) => value.trim() === "")
   const visible = CONTACT.filter((_, index) => showAll || values[index]?.trim())
@@ -157,11 +160,11 @@ function HeaderView({ block }: ViewProps) {
       <div
         data-cv-contact=""
         className="flex flex-wrap items-center"
-        onFocus={() => setContactOpen(true)}
+        onFocus={() => dispatchContact("open")}
         onBlur={(event) => {
           const next = event.relatedTarget
           if (next instanceof Node && event.currentTarget.contains(next)) return
-          setContactOpen(false)
+          dispatchContact("close")
         }}
       >
         {visible.map(([field, label], index) => (
