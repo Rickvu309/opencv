@@ -347,4 +347,28 @@ describe("print parity", () => {
     expect(printed).toContain("Ada")
     expect(printed).toContain("May 5")
   })
+
+  it("prints the school name in the entry head", () => {
+    const schoolName = v1.education[0]?.school
+    if (!schoolName) throw new Error("print fixture has no school")
+    const layouts: CvTemplateId[] = ["internship", "photo"]
+    for (const layout of layouts) {
+      const view = render(
+        <CvTemplate
+          data={cvPrintModel(richV1, layout)}
+          onChange={() => undefined}
+        />
+      )
+      const school = view.getByRole("textbox", { name: "School" })
+      expect(school, layout).toHaveTextContent(schoolName)
+      const head = school.closest(".cv-print-entry-head")
+      expect(head, layout).not.toBeNull()
+      expect(head?.classList.contains("flex"), layout).toBe(true)
+      expect(
+        head?.parentElement?.classList.contains("cv-print-entry"),
+        layout
+      ).toBe(true)
+      cleanup()
+    }
+  })
 })
