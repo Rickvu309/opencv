@@ -1,8 +1,10 @@
+import { type PaperDocument } from "@workspace/domain"
 import fc from "fast-check"
-import { afterAll, beforeAll, describe, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
 import { play, useCoachStore, verdict } from "../test/cv-sync-play.js"
+import { edited, wordsOf } from "../test/paper-client.js"
 
 let h: CoachStore
 
@@ -76,6 +78,104 @@ describe("CV client sync keeps fields and person words with two tabs", () => {
       }),
     Number(process.env.PAPER_SYNC_TIMEOUT ?? (nightly ? 120_000 : 15_000))
   )
+
+  it("keeps concurrent identical skill splits distinct from a later add", () =>
+    h.inDatabase(async () => {
+      const out = await play(
+        [
+          { kind: "skillSplit", tab: 0, a: 0, b: 0 },
+          { kind: "skillSplit", tab: 1, a: 0, b: 0 },
+          { kind: "type", tab: 0, a: 0, b: 0 },
+          { kind: "skillAdd", tab: 0, a: 0, b: 0 },
+          { kind: "type", tab: 0, a: 0, b: 0 },
+        ],
+        true
+      )
+      verdict(out)
+      const current = out.final.doc
+      if (current.kind !== "cv") throw new Error("Expected a CV")
+      const skills = out.final.doc.blocks.find((block) => block.id === "k1")
+      expect(skills?.type === "skills" ? skills.items : undefined).toEqual([
+        "Figma",
+        "SQL",
+        "C",
+        "C++",
+      ])
+      for (const word of out.live)
+        expect(wordsOf(out.final.doc)).toContain(word)
+      const reject = (doc: PaperDocument) => {
+        const changed = {
+          ...out,
+          final: { ...out.final, doc },
+          tabs: out.tabs.map((tab) => ({ ...tab, doc: () => doc })),
+        }
+        expect(() => verdict(changed)).toThrow()
+      }
+      const replaceSkills = (items: string[]) => ({
+        ...current,
+        blocks: current.blocks.map((block) =>
+          block.type === "skills" ? { ...block, items } : block
+        ),
+      })
+      reject(replaceSkills(["FigmaSQL", "C", "C++"]))
+      reject(replaceSkills(["Figma", "SQL", "C", "C++", "fabricated"]))
+      reject(replaceSkills(["Figma", "C", "C++"]))
+      reject(edited(out.final.doc, "u1", () => "alpha beta"))
+    }))
+
+  it("supersedes identical skill splits after their replies are delivered", () =>
+    h.inDatabase(async () => {
+      const out = await play(
+        [
+          { kind: "skillSplit", tab: 0, a: 0, b: 0 },
+          { kind: "skillSplit", tab: 1, a: 0, b: 0 },
+          { kind: "sync", tab: 0, a: 0, b: 0 },
+          { kind: "sync", tab: 1, a: 0, b: 0 },
+          { kind: "skillAdd", tab: 1, a: 0, b: 0 },
+        ],
+        true
+      )
+      verdict(out)
+      const current = out.final.doc
+      if (current.kind !== "cv") throw new Error("Expected a CV")
+      const doc = {
+        ...current,
+        blocks: current.blocks.map((block) =>
+          block.type === "skills"
+            ? { ...block, items: ["Figma", "SQL", "C", "C++"] }
+            : block
+        ),
+      }
+      expect(() =>
+        verdict({
+          ...out,
+          final: { ...out.final, doc },
+          tabs: out.tabs.map((tab) => ({ ...tab, doc: () => doc })),
+        })
+      ).toThrow("k1.items")
+    }))
+
+  it("does not publish a skill edit rejected by a stale push", () =>
+    h.inDatabase(async () => {
+      const out = await play(
+        [
+          { kind: "skillSplit", tab: 0, a: 0, b: 0 },
+          { kind: "sync", tab: 0, a: 0, b: 0 },
+          { kind: "skillDrop", tab: 1, a: 0, b: 0 },
+          { kind: "launch", tab: 1, a: 0, b: 0 },
+          { kind: "launch", tab: 0, a: 0, b: 0 },
+          { kind: "deliver", tab: 0, a: 0, b: 0 },
+          { kind: "skillDrop", tab: 0, a: 0, b: 0 },
+        ],
+        true
+      )
+      verdict(out)
+      const skills = out.final.doc.blocks.find((block) => block.id === "k1")
+      expect(skills?.type === "skills" ? skills.items : undefined).toEqual([
+        "SQL",
+        "C, C++",
+      ])
+    }))
 
   it("keeps one whole skill list when one tab drops its add and the other adds", () =>
     h.inDatabase(async () => {

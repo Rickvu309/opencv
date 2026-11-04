@@ -113,7 +113,11 @@ export type Tab = ReturnType<typeof openTab>
 export function openTab(
   h: CoachStore,
   docId: string,
-  options: { gc?: boolean } = {}
+  options: {
+    gc?: boolean
+    onLaunch?: (sent: Prepared, reply: ClientSyncReply) => void
+    onDeliver?: () => void
+  } = {}
 ) {
   const client: PaperClient = openPaperClient(null, options)
   let inFlight: { sent: Prepared; reply: ClientSyncReply } | null = null
@@ -147,6 +151,7 @@ export function openTab(
         stateVector: bytesOf(o.stateVector),
       },
     }
+    options.onLaunch?.(sent, inFlight.reply)
   }
 
   function deliver() {
@@ -154,6 +159,7 @@ export function openTab(
     const receipt = client.receive(inFlight.sent, inFlight.reply)
     inFlight = null
     if (receipt.failed) failures += 1
+    options.onDeliver?.()
     return receipt
   }
 
