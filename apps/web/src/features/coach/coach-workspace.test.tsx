@@ -6,6 +6,7 @@ import {
   cleanup,
 } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
@@ -74,6 +75,63 @@ function stubUsage(
 }
 
 describe("Coach workspace", () => {
+  it.each([
+    { state: "welcome", compact: false, chatId: undefined },
+    {
+      state: "saved conversation",
+      compact: false,
+      chatId: "11111111-1111-4111-8111-111111111111",
+    },
+    { state: "compact", compact: true, chatId: undefined },
+  ])(
+    "keeps removable links with the $state draft",
+    async ({ compact, chatId }) => {
+      const user = userEvent.setup()
+      render(
+        <ChatStoreProvider>
+          <CoachWorkspace
+            chatId={chatId}
+            presentation={compact ? "compact" : "page"}
+          />
+        </ChatStoreProvider>
+      )
+      if (chatId) {
+        await screen.findByText(
+          "I don't know if I should chase internships or finish my CV first."
+        )
+      }
+      const textbox = await screen.findByRole("textbox", {
+        name: "Message Coach",
+      })
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Add" })).toBeEnabled()
+      )
+      await user.type(textbox, "Review this role")
+      await user.click(screen.getByRole("button", { name: "Add" }))
+      await user.click(
+        await screen.findByRole("menuitem", { name: "Paste a job link" })
+      )
+      await user.type(
+        screen.getByRole("textbox", { name: "Link URL" }),
+        "https://jobs.example.com/role"
+      )
+      await user.click(screen.getByRole("button", { name: "Attach link" }))
+      const chip = await screen.findByRole("button", {
+        name: "Remove jobs.example.com",
+      })
+      const group = textbox.closest('[data-slot="coach-workspace-composer"]')
+      expect(group).toContainElement(chip)
+      expect(
+        document.querySelectorAll('[data-slot="coach-workspace-composer"]')
+      ).toHaveLength(1)
+      await user.click(chip)
+      expect(
+        screen.queryByRole("button", { name: "Remove jobs.example.com" })
+      ).not.toBeInTheDocument()
+      expect(textbox).toHaveValue("Review this role")
+    }
+  )
+
   it("keeps the compact conversation empty with one header and a bottom reply composer", async () => {
     render(
       <ChatStoreProvider>

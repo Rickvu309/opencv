@@ -208,6 +208,59 @@ export function CoachWorkspace({
       }
     />
   )
+  const composer = (
+    <div
+      data-slot="coach-workspace-composer"
+      className={cn(
+        "space-y-2",
+        !showWelcome && "mx-auto w-full max-w-2xl shrink-0",
+        !showWelcome && (compact ? "px-2 pb-2" : "px-3 pt-2 pb-3")
+      )}
+    >
+      {attachments.length ? (
+        <div className="flex flex-wrap gap-1">
+          {attachments.map((item) => (
+            <Button
+              key={`${item.kind}:${item.id}`}
+              variant="secondary"
+              size="xs"
+              className="h-auto max-w-full min-w-0 text-left [overflow-wrap:anywhere] whitespace-normal"
+              onClick={() => dispatch({ type: "attachment_removed", item })}
+              aria-label={`Remove ${item.label}`}
+            >
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {item.label}
+              </span>
+              <span aria-hidden="true" className="shrink-0">
+                ×
+              </span>
+            </Button>
+          ))}
+        </div>
+      ) : null}
+      {!enabled ? (
+        <p role="status" className="text-sm">
+          Coach is turned off.{" "}
+          <a href="/settings/coach" className="underline underline-offset-2">
+            Open Settings
+          </a>
+        </p>
+      ) : (!showHome || compact) && !capped && day?.capped ? (
+        <p className="text-xs text-muted-foreground">
+          {day.remaining} {usage.data?.mode} turns remaining today
+        </p>
+      ) : null}
+      {usage.isError ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          Could not load usage.{" "}
+          <Button variant="link" size="sm" onClick={() => void usage.refetch()}>
+            Retry
+          </Button>
+        </p>
+      ) : null}
+      {coachDock}
+    </div>
+  )
   const headerTitle = showHome
     ? "New chat"
     : (chats.find((chat) => chat.id === activeChatId)?.title ?? "New chat")
@@ -268,7 +321,7 @@ export function CoachWorkspace({
             }
             disabled={!enabled || capped}
           >
-            {coachDock}
+            {composer}
           </CoachHome>
         ) : (
           <ChatView
@@ -284,60 +337,7 @@ export function CoachWorkspace({
           />
         )}
       </div>
-      <div
-        data-slot="coach-workspace-composer"
-        className={cn(
-          "mx-auto w-full max-w-2xl shrink-0 space-y-2",
-          compact ? "px-2 pb-2" : "px-3 pt-2 pb-3"
-        )}
-      >
-        {attachments.length ? (
-          <div className="flex flex-wrap gap-1">
-            {attachments.map((item) => (
-              <Button
-                key={`${item.kind}:${item.id}`}
-                variant="secondary"
-                size="xs"
-                className="h-auto max-w-full min-w-0 text-left [overflow-wrap:anywhere] whitespace-normal"
-                onClick={() => dispatch({ type: "attachment_removed", item })}
-                aria-label={`Remove ${item.label}`}
-              >
-                <span className="min-w-0 [overflow-wrap:anywhere]">
-                  {item.label}
-                </span>
-                <span aria-hidden="true" className="shrink-0">
-                  ×
-                </span>
-              </Button>
-            ))}
-          </div>
-        ) : null}
-        {!enabled ? (
-          <p role="status" className="text-sm">
-            Coach is turned off.{" "}
-            <a href="/settings/coach" className="underline underline-offset-2">
-              Open Settings
-            </a>
-          </p>
-        ) : (!showHome || compact) && !capped && day?.capped ? (
-          <p className="text-xs text-muted-foreground">
-            {day.remaining} {usage.data?.mode} turns remaining today
-          </p>
-        ) : null}
-        {usage.isError ? (
-          <p role="status" className="text-xs text-muted-foreground">
-            Could not load usage.{" "}
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => void usage.refetch()}
-            >
-              Retry
-            </Button>
-          </p>
-        ) : null}
-        {!showWelcome ? coachDock : null}
-      </div>
+      {!showWelcome ? composer : null}
       <Dialog
         open={picker !== null}
         onOpenChange={(open) => {
