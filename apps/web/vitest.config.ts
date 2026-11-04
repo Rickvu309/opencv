@@ -11,6 +11,7 @@ applyLocalApiUrl("test")
 const ISOLATED_FILES = [
   "src/router-lazy.test.tsx",
   "src/features/coach/coach-workspace.test.tsx",
+  "src/features/coach/coach-draft-ownership.test.tsx",
   "src/features/coach/coach-workspace-progress.test.tsx",
   "src/features/paper/paper-letter.test.tsx",
   "src/features/paper/paper-letter-print.test.tsx",
