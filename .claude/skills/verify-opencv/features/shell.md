@@ -4,7 +4,7 @@ The signed-in shell wraps every page except Settings. Signed in, `/` redirects t
 
 ## Sub-features
 
-- `sidebar` shows the mark and the opencv wordmark, Search, New chat, Inbox, Coach, Jobs, Your work (Paper, Apply, Pitch), Favorites when any exist, and a footer with the name and Settings.
+- `sidebar` shows the mark and the opencv wordmark, Search, New chat, Inbox, Coach, Jobs, Your work (Paper, Apply, Pitch), Favorites when any exist, and a footer account menu (the button showing the email) whose menuitems are Settings and Sign out.
 - `dock` shows up to two recent chat chips, then Coach, then History.
 - `panel` opens over the page with Minimize, Expand and Close. Escape closes it and returns focus.
 - `drawer` below 768 replaces the sidebar. Menu opens it. Choosing a link closes it. The dock stays.
@@ -16,7 +16,7 @@ The signed-in shell wraps every page except Settings. Signed in, `/` redirects t
 
 ## Driving it with agent-browser
 
-Preconditions: signed in; `run.env` loaded; session `verify-374`.
+Preconditions: signed in; `run.env` loaded; session `verify-<run>`.
 
 - **Start page.** `agent-browser open "$WEB_URL/"`. The URL is `/apply`. The page has a heading Apply.
 - **Sidebar at 1440.** `agent-browser set viewport 1440 900`. Snapshot shows links Inbox, Coach, Jobs, Paper, Apply, Pitch, in that order, plus Search and New chat. The wordmark reads opencv.

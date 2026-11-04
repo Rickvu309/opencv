@@ -14,8 +14,8 @@ Mail surface on the fake fixture. Sign in first (`auth.md`). A new account has n
 8. Open the Business Analyst row. Thu 14:30 is pressed in the reply card. Thu 15:00, Suggest another time, Send, and Add to calendar are present. Send is the dark button. The first paint does not send.
 9. Activate Send. The toast says Reply sent. The reply body is in the reader. Reload. The reply is still there.
 10. Activate Add to calendar. The toast says Added to calendar.
-11. Activate Done. The toast says Marked done and offers Undo.
-12. Activate Snooze. The toast says Snoozed until 7:00.
+11. Activate Done. The toast says Marked done and offers Undo. The thread leaves the list.
+12. Open another row and activate Snooze. The toast says Snoozed until 7:00.
 13. Open in Gmail is present and disabled. Its description says Gmail is not connected.
 14. At 390px the list is the screen. Opening a row shows the reader and Back to inbox.
 15. With reduced motion, the scanning tiles do not pulse.

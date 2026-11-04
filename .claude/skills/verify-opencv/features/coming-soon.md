@@ -18,7 +18,7 @@ Jobs, Proofs and Pitch are coming-soon pages. Notify me and Get early access sto
 
 ## Driving it with agent-browser
 
-Preconditions: signed in on a new account (see `auth.md`). `run.env` loaded. Session `verify-381`. Do not write the sign-in code into the report.
+Preconditions: signed in on a new account (see `auth.md`). `run.env` loaded. Session `verify-<run>`. Do not write the sign-in code into the report.
 
 - **Jobs.** `agent-browser open "$WEB_URL/jobs"`. The heading is Jobs, matched to you. Notify me is the only glow. Track a job in Apply is a link. The four preview rows are `aria-hidden`.
 - **Notify.** Click Notify me. The toast is You're on the list. Click again. The toast is You're already on the list. Reload, click again, and the same toast returns. A second `notify.request` for jobs returns the same id.
