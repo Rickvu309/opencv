@@ -275,10 +275,6 @@ export function CoachWorkspace({
             Open Settings
           </a>
         </p>
-      ) : (!showHome || compact) && !capped && day?.capped ? (
-        <p className="text-xs text-muted-foreground">
-          {day.remaining} {usage.data?.mode} turns remaining today
-        </p>
       ) : null}
       {usage.isError ? (
         <p role="status" className="text-xs text-muted-foreground">

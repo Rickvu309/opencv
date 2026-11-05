@@ -335,33 +335,46 @@ describe("Coach workspace", () => {
     ).toBeInTheDocument()
   })
 
-  it("hides the turns left line on home", async () => {
-    stubUsage({ used: 17, remaining: 3 })
-    render(
-      <ChatStoreProvider>
-        <CoachWorkspace />
-      </ChatStoreProvider>
-    )
-    await screen.findByText("How can I help?")
-    await waitFor(() =>
+  it.each([
+    { state: "welcome", compact: false, chatId: undefined },
+    {
+      state: "saved conversation",
+      compact: false,
+      chatId: "11111111-1111-4111-8111-111111111111",
+    },
+    { state: "compact", compact: true, chatId: undefined },
+  ])(
+    "keeps the daily count out of the $state composer",
+    async ({ compact, chatId }) => {
+      stubUsage({ used: 17, remaining: 3 })
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      })
+      client.setQueryData(usageKey(), await fetchUsage())
+      render(
+        <QueryClientProvider client={client}>
+          <ChatStoreProvider>
+            <CoachWorkspace
+              chatId={chatId}
+              presentation={compact ? "compact" : "page"}
+            />
+          </ChatStoreProvider>
+        </QueryClientProvider>
+      )
+      await waitFor(() =>
+        expect(
+          screen.getByRole("textbox", { name: "Message Coach" })
+        ).toBeEnabled()
+      )
+      if (chatId)
+        expect(
+          await screen.findByText(/Evidence over panic/)
+        ).toBeInTheDocument()
       expect(
-        screen.getByRole("textbox", { name: "Message Coach" })
-      ).toBeEnabled()
-    )
-    expect(screen.queryByText(/turns remaining today/)).not.toBeInTheDocument()
-  })
-
-  it("shows the turns left line in a saved chat", async () => {
-    stubUsage({ used: 17, remaining: 3 })
-    render(
-      <ChatStoreProvider>
-        <CoachWorkspace chatId="11111111-1111-4111-8111-111111111111" />
-      </ChatStoreProvider>
-    )
-    expect(
-      await screen.findByText("3 free turns remaining today")
-    ).toBeVisible()
-  })
+        screen.queryByText(/turns remaining today/)
+      ).not.toBeInTheDocument()
+    }
+  )
   it.each(["light", "max"] as const)(
     "does not upsell a capped Pro %s user",
     async (mode) => {
