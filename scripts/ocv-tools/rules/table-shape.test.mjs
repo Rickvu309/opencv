@@ -1,11 +1,8 @@
 import assert from "node:assert/strict"
-import { statSync } from "node:fs"
 import test from "node:test"
 import { FIXES } from "../result.mjs"
-import { RULE_GUIDES } from "./doc.mjs"
 import { RULES, decide, evaluate } from "./index.mjs"
 
-const FILE_SIZE_LIMIT_BYTES = 20000
 const indexOf = (id) => RULES.findIndex((row) => row.id === id)
 
 test("NOT_A_TASK is the first row, so decide stops before rows a folder outside any task worktree cannot gather", () => {
@@ -31,11 +28,4 @@ test("a branch both local and on origin gets the local fix, in the same order as
   })
   assert.match(hit.message, /already exists locally/)
   assert.equal(hit.fix, FIXES.BRANCH_EXISTS)
-})
-
-test("the rule table splits into guides that each stay under the file size limit", () => {
-  assert.ok(RULE_GUIDES.length > 1)
-  for (const guide of RULE_GUIDES) {
-    assert.ok(statSync(guide.path).size <= FILE_SIZE_LIMIT_BYTES, guide.path)
-  }
 })

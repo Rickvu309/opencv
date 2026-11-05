@@ -25,7 +25,9 @@ test("child processes cannot open a prompt", () => {
 })
 
 test("file --dry-run reads the model issues from the filesystem port", () => {
-  const custom = "# feat: Custom model title\n\n### Type\n\nfeat\n"
+  const custom = JSON.stringify([
+    { title: "feat: Custom model title", body: "### Type\n\nfeat\n" },
+  ])
   const ports = fakePorts({ files: { [EXAMPLES]: custom } })
   const { code, text } = runCli(
     [

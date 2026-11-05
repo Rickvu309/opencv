@@ -8,6 +8,10 @@
   "historic": {
     "mode": "detect",
     "sha": "06e6e946^",
-    "path": "docs/deploy.md"
+    "path": "docs/deploy.md",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "README.md"
+    }
   }
 }

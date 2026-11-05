@@ -561,7 +561,7 @@ test("forbidden.txt is never added", () => {
 
 test("real git: main gains a guard the head breaks, so the merged tree fails and nothing is left behind", (t) => {
   const { root, clone } = repoWithTheMistake(t, { "forbidden.txt": "x\n" })
-  mainMoves(clone, { "scripts/adr-citations.test.mjs": FORBIDDEN_GUARD })
+  mainMoves(clone, { "scripts/local-port-range.test.mjs": FORBIDDEN_GUARD })
   const ctx = realCtx(clone, root)
   const facts = mergeResultFacts(ctx, 5, headOf(clone))
   assert.deepEqual(facts.conflicts, [])
@@ -596,7 +596,7 @@ test("real git: a head that touches what main touched conflicts and names the fi
 
 test("real git: a clean merge passes the guards and leaves no worktree", (t) => {
   const { root, clone } = repoWithTheMistake(t, { "other.txt": "x\n" })
-  mainMoves(clone, { "scripts/adr-citations.test.mjs": FORBIDDEN_GUARD })
+  mainMoves(clone, { "scripts/local-port-range.test.mjs": FORBIDDEN_GUARD })
   const facts = mergeResultFacts(realCtx(clone, root), 5, headOf(clone))
   assert.deepEqual(facts.failed, [])
   assert.match(facts.lines[0], /passes 1 quick guards/)
@@ -605,7 +605,7 @@ test("real git: a clean merge passes the guards and leaves no worktree", (t) => 
 
 test("real git: the worktree is removed when the guard run throws", (t) => {
   const { root, clone } = repoWithTheMistake(t, { "other.txt": "x\n" })
-  mainMoves(clone, { "scripts/adr-citations.test.mjs": FORBIDDEN_GUARD })
+  mainMoves(clone, { "scripts/local-port-range.test.mjs": FORBIDDEN_GUARD })
   const ctx = realCtx(clone, root)
   const run = ctx.ports.proc.run
   ctx.ports.proc.run = (cmd, ...rest) => {

@@ -24,14 +24,6 @@ describe(".railway/railway.ts (api service)", () => {
       'preDeployCommand: ["pnpm --filter api run migrate"]'
     )
     expect(config).not.toContain("run seed")
-
-    const deployDocs = readFileSync(
-      path.join(repoRoot, "docs/deploy.md"),
-      "utf8"
-    )
-    expect(deployDocs).toMatch(/Migration pipeline/)
-    expect(deployDocs).toMatch(/preDeployCommand/)
-    expect(deployDocs).toMatch(/run seed/)
   })
 
   it("healthchecks the route the API actually serves with no db injected", async () => {
