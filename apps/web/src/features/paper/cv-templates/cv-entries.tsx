@@ -426,7 +426,7 @@ export function SkillChips({
           }
           className={cn(
             PAPER_CANVAS_AFFORDANCE_CLASS,
-            "size-4 text-current hover:bg-transparent",
+            "size-11 text-current hover:bg-transparent md:size-4",
             variant === "pill" && "text-background/80",
             variant === "sidebar" && "text-white/70 hover:text-white"
           )}

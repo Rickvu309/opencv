@@ -86,6 +86,7 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
       ))}
       {hidden > 0 || expanded ? (
         <Button
+          className="h-11 md:h-6"
           type="button"
           variant="ghost"
           size="xs"

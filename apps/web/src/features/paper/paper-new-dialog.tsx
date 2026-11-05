@@ -89,7 +89,7 @@ export function PaperNewDialog({
       <Button
         type="button"
         variant="outline"
-        className="h-auto justify-start whitespace-normal"
+        className="h-auto min-h-11 justify-start whitespace-normal md:min-h-0"
         onClick={() => onStepChange("gallery")}
         disabled={pending}
       >
@@ -98,7 +98,7 @@ export function PaperNewDialog({
       <Button
         type="button"
         variant="outline"
-        className="h-auto justify-start whitespace-normal"
+        className="h-auto min-h-11 justify-start whitespace-normal md:min-h-0"
         onClick={onChooseLetter}
       >
         Cover letter
@@ -106,7 +106,7 @@ export function PaperNewDialog({
       <Button
         type="button"
         variant="outline"
-        className="h-auto justify-start whitespace-normal"
+        className="h-auto min-h-11 justify-start whitespace-normal md:min-h-0"
         onClick={onImport}
       >
         Import a file

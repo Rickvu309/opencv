@@ -39,7 +39,7 @@ function EventBlock({
       variant="ghost"
       aria-label={`Interview ${clock(event.startMinutes)} to ${clock(event.endMinutes)}: ${job.title}, ${job.company}`}
       onClick={() => onOpenJob(job.id)}
-      className="absolute flex h-auto min-w-0 flex-col items-start justify-start gap-px overflow-hidden rounded-md bg-chart-2/[0.09] py-1.5 pr-2 pl-2.5 text-start whitespace-normal hover:bg-chart-2/[0.15] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring"
+      className="absolute flex h-auto min-h-11 min-w-0 flex-col items-start justify-start gap-px overflow-hidden rounded-md bg-chart-2/[0.09] py-1.5 pr-2 pl-2.5 text-start whitespace-normal hover:bg-chart-2/[0.15] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring md:min-h-0"
       style={{
         top: (span.top / 60) * HOUR_PX + 1,
         height: (span.length / 60) * HOUR_PX - 2,
@@ -111,7 +111,7 @@ export function WeekGrid({
                   key={key}
                   aria-label={`Deadline: ${job.title}`}
                   onClick={() => onOpenJob(job.id)}
-                  className="flex h-[22px] min-w-0 items-center gap-[5px] rounded-[5px] bg-secondary px-[7px]"
+                  className="flex h-11 min-w-0 items-center gap-[5px] rounded-[5px] bg-secondary px-[7px] md:h-[22px]"
                 >
                   <Flag className="size-[11px] text-muted-foreground" />
                   <span className="truncate text-[11.5px] font-medium text-foreground">

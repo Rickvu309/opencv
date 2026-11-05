@@ -54,6 +54,7 @@ export function InboxReaderHeader({
           <PageHeaderBack
             render={
               <Button
+                className="h-11 md:h-8"
                 type="button"
                 variant="ghost"
                 aria-label="Back to inbox"

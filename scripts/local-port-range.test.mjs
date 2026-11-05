@@ -1,28 +1,23 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { WORKTREE_PORTS } from "../packages/domain/src/local-ports.ts"
 import {
   FIX,
-  PENDING_FILE,
   PORT_SOURCE,
   detect,
   detectWebPlusOne,
-  pendingGrowth,
-  pinDrift,
 } from "./lib/local-port-range.mjs"
 import { resolveApiPort, verifierPorts } from "./lib/worktree-port.mjs"
-import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const GIT_TIMEOUT_MS = 30_000
 const MAIN_BEFORE_SHARED_RANGE = "b01120dd"
 const SCANNED_ROOTS = [
   "scripts",
-  ".claude/skills",
   "apps",
   "packages",
   "docs",
@@ -33,38 +28,20 @@ const SCANNED_ROOTS = [
 const SCANNED_FILE = /\.(?:[cm]?[jt]sx?|sh|md)$/
 const HOLDS_MISTAKE_FIXTURES = ["scripts/local-port-range.test.mjs"]
 
-const PENDING_ISSUE = "#1002"
-const PENDING_LAST_DAY = "2026-11-24"
-const PENDING = JSON.parse(readFileSync(path.join(root, PENDING_FILE), "utf8"))
-const PLUS_ONE_PENDING_FILE = "scripts/local-port-plus-one.pending.json"
-const PLUS_ONE_FILE =
-  ".claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs"
-const PLUS_ONE_BEFORE = "4ff50862"
-const PLUS_ONE_HISTORIC =
-  ".claude/skills/verify-app-ui/scripts/verify-app-ui.mjs"
-const PLUS_ONE_PENDING = JSON.parse(
-  readFileSync(path.join(root, PLUS_ONE_PENDING_FILE), "utf8")
-)
 const PLUS_ONE_MISTAKES = [
   [
-    ".claude/skills/verify-app-ui/scripts/verify.mjs",
+    "scripts/verify.mjs",
     "const web = process.env.WEB_ORIGIN ?? `http://localhost:${port + 1}`",
   ],
   [
     "scripts/verify.mjs",
     "startStack({ apiPort: base, webPort: base + 1, run })",
   ],
-  [
-    ".claude/skills/verify-app-ui/scripts/verify.mjs",
-    "for (const port of [base, base + 1]) taken(port)",
-  ],
-  [".claude/skills/verify-app-ui/SKILL.md", "The web listens on PORT+1."],
+  ["scripts/verify.mjs", "for (const port of [base, base + 1]) taken(port)"],
+  ["scripts/README.md", "The web listens on PORT+1."],
 ]
 const PLUS_ONE_CLEAN = [
-  [
-    ".claude/skills/verify-app-ui/scripts/verify.mjs",
-    "const web = `http://localhost:${port + 1000}`",
-  ],
+  ["scripts/verify.mjs", "const web = `http://localhost:${port + 1000}`"],
   ["scripts/ocv-tools/take.mjs", "web on ${port + 1000}"],
   ["scripts/verify.mjs", "const next = index + 1"],
   ["apps/web/scripts/verify.mjs", "const web = `http://localhost:${port + 1}`"],
@@ -126,9 +103,7 @@ const scannedFiles = () =>
     .split("\n")
     .filter((file) => SCANNED_FILE.test(file))
     .filter((file) => !HOLDS_MISTAKE_FIXTURES.includes(file))
-
-const hitCount = (file) =>
-  detect(readFileSync(path.join(root, file), "utf8"), file).length
+    .filter((file) => existsSync(path.join(root, file)))
 
 test("a literal port range or fixed verifier port is refused", () => {
   for (const [file, text] of MISTAKES)
@@ -138,57 +113,12 @@ test("a literal port range or fixed verifier port is refused", () => {
 })
 
 test("every port check reads the shared range and no tool keeps its own", () => {
-  const pending = new Set(PENDING.map((entry) => entry.file))
-  const offenders = scannedFiles()
-    .filter((file) => !pending.has(file))
-    .flatMap((file) =>
-      detect(readFileSync(path.join(root, file), "utf8"), file).map(
-        (hit) => `${file}:${hit.line} ${hit.text}`
-      )
+  const offenders = scannedFiles().flatMap((file) =>
+    detect(readFileSync(path.join(root, file), "utf8"), file).map(
+      (hit) => `${file}:${hit.line} ${hit.text}`
     )
+  )
   assert.deepEqual(offenders, [], `${FIX}\n${offenders.join("\n")}`)
-})
-
-test("every pending entry is unexpired and pins its exact hit count", () => {
-  assert.equal(expiredMessage(expiredPending(PENDING)), "")
-  for (const entry of PENDING) {
-    assert.equal(entry.issue, PENDING_ISSUE, entry.file)
-    assert.ok(entry.expires <= PENDING_LAST_DAY, entry.file)
-    assert.ok(Number.isInteger(entry.hits) && entry.hits > 0, entry.file)
-  }
-  assert.deepEqual(pinDrift(PENDING, hitCount), [])
-})
-
-test("a pending file that gains or loses a hit fails its pin", () => {
-  const pinned = [{ file: "a.mjs", hits: 2 }]
-  assert.match(pinDrift(pinned, () => 3).join(), /allows 2/)
-  assert.match(pinDrift(pinned, () => 1).join(), /Lower its pin to 1/)
-  assert.deepEqual(
-    pinDrift(pinned, () => 2),
-    []
-  )
-})
-
-test("the pending list only shrinks", (t) => {
-  const old = { file: "a.mjs", hits: 2, issue: "#1002", expires: "2026-11-24" }
-  assert.deepEqual(pendingGrowth([{ ...old, hits: 1 }], [old]), [])
-  assert.deepEqual(pendingGrowth([], [old]), [])
-  assert.match(
-    pendingGrowth([old, { ...old, file: "b.mjs" }], [old]).join(),
-    /b.mjs is a new pending entry/
-  )
-  assert.match(pendingGrowth([{ ...old, hits: 3 }], [old]).join(), /up from 2/)
-  assert.match(
-    pendingGrowth([{ ...old, expires: "2026-12-01" }], [old]).join(),
-    /only shrinks/
-  )
-  let onMain
-  try {
-    onMain = JSON.parse(git(["show", `origin/main:${PENDING_FILE}`]))
-  } catch {
-    return t.skip(`${PENDING_FILE} is not on origin/main yet`)
-  }
-  assert.deepEqual(pendingGrowth(PENDING, onMain), [])
 })
 
 test("a verifier web port is never an api port in the shared range", () => {
@@ -217,20 +147,11 @@ test("a verifier web port is never an api port in the shared range", () => {
 })
 
 const plusOneFiles = () =>
-  git([
-    "ls-files",
-    "--cached",
-    "--others",
-    "--exclude-standard",
-    ".claude/skills",
-    "scripts",
-  ])
+  git(["ls-files", "--cached", "--others", "--exclude-standard", "scripts"])
     .split("\n")
     .filter((file) => SCANNED_FILE.test(file))
     .filter((file) => !HOLDS_MISTAKE_FIXTURES.includes(file))
-
-const plusOneHits = (file) =>
-  detectWebPlusOne(readFileSync(path.join(root, file), "utf8"), file).length
+    .filter((file) => existsSync(path.join(root, file)))
 
 test("a web port derived as port plus one is refused", () => {
   for (const [file, text] of PLUS_ONE_MISTAKES)
@@ -240,53 +161,12 @@ test("a web port derived as port plus one is refused", () => {
 })
 
 test("no verifier derives its web port as port plus one", () => {
-  const pending = new Set(PLUS_ONE_PENDING.map((entry) => entry.file))
-  const offenders = plusOneFiles()
-    .filter((file) => !pending.has(file))
-    .flatMap((file) =>
-      detectWebPlusOne(readFileSync(path.join(root, file), "utf8"), file).map(
-        (hit) => `${file}:${hit.line} ${hit.text}`
-      )
+  const offenders = plusOneFiles().flatMap((file) =>
+    detectWebPlusOne(readFileSync(path.join(root, file), "utf8"), file).map(
+      (hit) => `${file}:${hit.line} ${hit.text}`
     )
-  assert.deepEqual(offenders, [])
-})
-
-test("the fenced letter editor is the only port plus one pending entry", () => {
-  assert.equal(expiredMessage(expiredPending(PLUS_ONE_PENDING)), "")
-  assert.equal(PLUS_ONE_PENDING.length, 1)
-  const entry = PLUS_ONE_PENDING[0]
-  assert.equal(entry.file, PLUS_ONE_FILE)
-  assert.equal(entry.issue, "#916")
-  assert.ok(entry.expires <= "2026-12-03", entry.file)
-  assert.equal(entry.hits, 1)
-  assert.deepEqual(pinDrift(PLUS_ONE_PENDING, plusOneHits), [])
-})
-
-test("the port plus one pending list only shrinks", (t) => {
-  let onMain
-  try {
-    onMain = JSON.parse(git(["show", `origin/main:${PLUS_ONE_PENDING_FILE}`]))
-  } catch {
-    return t.skip(`${PLUS_ONE_PENDING_FILE} is not on origin/main yet`)
-  }
-  assert.deepEqual(pendingGrowth(PLUS_ONE_PENDING, onMain), [])
-})
-
-test("web on port plus one fired before the shared range and is quiet now", (t) => {
-  let old
-  try {
-    old = git(["show", `${PLUS_ONE_BEFORE}:${PLUS_ONE_HISTORIC}`])
-  } catch {
-    return t.skip(`commit ${PLUS_ONE_BEFORE} is not in this clone`)
-  }
-  assert.ok(detectWebPlusOne(old, PLUS_ONE_HISTORIC).length > 0)
-  assert.deepEqual(
-    detectWebPlusOne(
-      readFileSync(path.join(root, PLUS_ONE_HISTORIC), "utf8"),
-      PLUS_ONE_HISTORIC
-    ),
-    []
   )
+  assert.deepEqual(offenders, [])
 })
 
 test("the allocator on main before the shared range is caught", (t) => {

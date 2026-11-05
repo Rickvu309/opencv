@@ -108,7 +108,7 @@ export function SessionExpiredDialog({
             type="button"
             variant="outline"
             data-slot="session-continue"
-            className="h-auto min-w-0 [overflow-wrap:anywhere] whitespace-normal"
+            className="h-auto min-h-11 min-w-0 [overflow-wrap:anywhere] whitespace-normal md:min-h-0"
             autoFocus
             disabled={pending}
             onClick={() => void continueAs()}
@@ -118,6 +118,7 @@ export function SessionExpiredDialog({
         ) : null}
         <div data-slot="session-footer">
           <Button
+            className="h-11 md:h-8"
             type="button"
             variant="ghost"
             autoFocus={!email}
@@ -127,7 +128,12 @@ export function SessionExpiredDialog({
           >
             {AUTH_COPY.emailMe}
           </Button>
-          <Button type="button" variant="ghost" onClick={() => void logOut()}>
+          <Button
+            className="h-11 md:h-8"
+            type="button"
+            variant="ghost"
+            onClick={() => void logOut()}
+          >
             {AUTH_COPY.logOut}
           </Button>
         </div>

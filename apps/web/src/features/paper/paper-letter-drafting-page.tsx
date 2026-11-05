@@ -1,6 +1,13 @@
 import { Fragment, useEffect, useRef } from "react"
-import { Bell, ChevronRight, Ellipsis, Link, Mail, Star } from "lucide-react"
+import { Bell, Ellipsis, Link, Mail, Star } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
 import "./design/letter-drafting.pen.css"
 
@@ -32,20 +39,30 @@ export function PaperLetterDraftingPage({
         data-slot="letter-drafting-header"
         className="flex h-12 min-w-0 shrink-0 items-center gap-2 border-b px-4 ps-5 text-[13.5px] leading-4"
       >
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="h-auto p-0 text-[13.5px] font-normal"
-        >
-          Paper
-        </Button>
-        <ChevronRight aria-hidden="true" className="size-3.5" />
-        <span className="hidden shrink-0 sm:inline">Cover letters</span>
-        <ChevronRight aria-hidden="true" className="size-3.5" />
-        <Mail aria-hidden="true" className="size-[15px] shrink-0" />
-        <span aria-current="page" className="min-w-0 truncate">
-          {draftName}
-        </span>
+        <Breadcrumb>
+          <BreadcrumbList className="text-[13.5px] leading-4 text-inherit">
+            <BreadcrumbItem>
+              <Button
+                variant="ghost"
+                onClick={onBack}
+                className="min-h-11 p-0 text-[13.5px] font-normal md:min-h-0"
+              >
+                Paper
+              </Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+            <BreadcrumbItem className="hidden sm:inline-flex">
+              Cover letters
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+            <BreadcrumbItem className="gap-2">
+              <Mail aria-hidden="true" className="size-[15px] shrink-0" />
+              <BreadcrumbPage className="font-normal max-md:min-w-0">
+                {draftName}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <span
           aria-hidden="true"
           className="hidden shrink-0 items-center gap-2 md:flex"

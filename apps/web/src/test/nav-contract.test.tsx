@@ -4,7 +4,6 @@ import { cleanup, screen, waitFor, within } from "@testing-library/react"
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 import { createAppRouter } from "@/router.tsx"
 import { stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
-import pending from "@/test/nav-pending.json"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   getMockPaperDocs,
@@ -73,16 +72,6 @@ describe("each router route is current under exactly one nav item, with its coun
         for (const other of others)
           expect(other?.getAttribute("aria-current") ?? null).toBeNull()
       })
-      const entry = pending.find(
-        (item) => item.rule === "active-state" && item.item === route
-      )
-      if (entry) {
-        expect(
-          problem,
-          `${route} marks ${item.label} current now. Remove its active-state entry from apps/web/src/test/nav-pending.json.`
-        ).not.toBeNull()
-        return
-      }
       if (problem)
         throw new Error(
           `${route}: ${problem.message}. Derive active from the route prefix in one place (activeOptions without exact: true), not per link.`
@@ -171,16 +160,6 @@ describe("each router route is current under exactly one nav item, with its coun
             `${label}: the count ${badge} is hidden from its accessible name "${name}". Drop the aria-label that overrides it or put the count in it, for example "Inbox, 2 unread".`
         )
     })
-    const entries = pending.filter((entry) => entry.rule === "count-in-name")
-    for (const entry of entries)
-      expect(
-        missing.some((line) => line.startsWith(`${entry.item}:`)),
-        `${entry.item} has its count in its name now. Remove its count-in-name entry from apps/web/src/test/nav-pending.json.`
-      ).toBe(true)
-    expect(
-      missing.filter(
-        (line) => !entries.some((entry) => line.startsWith(`${entry.item}:`))
-      )
-    ).toEqual([])
+    expect(missing).toEqual([])
   })
 })

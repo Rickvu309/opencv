@@ -64,7 +64,7 @@ export function ListGroup({
             <Button
               type="button"
               variant="ghost"
-              className="h-[34px] w-full justify-start gap-2 rounded-[6px] bg-secondary px-2.5 text-[13px] font-normal hover:bg-accent aria-expanded:bg-secondary aria-expanded:hover:bg-accent"
+              className="h-11 w-full justify-start gap-2 rounded-[6px] bg-secondary px-2.5 text-[13px] font-normal hover:bg-accent aria-expanded:bg-secondary aria-expanded:hover:bg-accent md:h-[34px]"
             />
           }
         >
@@ -90,7 +90,7 @@ export function JobRow({ job, onOpen }: { job: JobView; onOpen: () => void }) {
       type="button"
       variant="ghost"
       data-slot="job-row"
-      className="h-10 w-full justify-start gap-2.5 rounded-[6px] px-3 text-[13px] font-normal"
+      className="h-11 w-full justify-start gap-2.5 rounded-[6px] px-3 text-[13px] font-normal md:h-10"
       aria-label={`${job.title}, ${job.company}`}
       onClick={onOpen}
     >

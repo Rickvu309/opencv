@@ -51,7 +51,7 @@ export function PaperImportRow({
       <Button
         type="button"
         variant="outline"
-        className="mt-3"
+        className="mt-3 h-11 md:h-8"
         onClick={onChooseFile}
       >
         Choose file
@@ -111,7 +111,12 @@ export function ImportProgressDialog({
           <p className="truncate text-sm text-muted-foreground">{filename}</p>
         </div>
         <div className="flex justify-end">
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <Button
+            className="h-11 md:h-8"
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+          >
             Cancel
           </Button>
         </div>
@@ -149,6 +154,7 @@ export function CantReadDialog({
         </DialogHeader>
         <div className="flex flex-wrap justify-end gap-2">
           <Button
+            className="h-11 md:h-8"
             type="button"
             variant="ghost"
             onClick={onBlank}
@@ -156,7 +162,12 @@ export function CantReadDialog({
           >
             Start blank
           </Button>
-          <Button type="button" variant="glow" onClick={onChoose}>
+          <Button
+            className="h-11 md:h-8"
+            type="button"
+            variant="glow"
+            onClick={onChoose}
+          >
             Choose another file
           </Button>
         </div>

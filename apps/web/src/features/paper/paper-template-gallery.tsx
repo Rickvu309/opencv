@@ -77,6 +77,7 @@ export function PaperTemplateGallery({
           className="flex min-w-0 flex-col gap-2 @min-[391px]:flex-row @min-[391px]:flex-wrap"
         >
           <Button
+            className="h-11 md:h-7"
             type="button"
             size="sm"
             variant={query === "" ? "secondary" : "outline"}
@@ -86,6 +87,7 @@ export function PaperTemplateGallery({
           </Button>
           {filtered.map((item) => (
             <Button
+              className="h-11 md:h-7"
               key={item.id}
               type="button"
               size="sm"
@@ -107,6 +109,7 @@ export function PaperTemplateGallery({
       <div className="flex flex-wrap justify-end gap-2">
         {onBlank ? (
           <Button
+            className="h-11 md:h-8"
             type="button"
             variant="outline"
             onClick={onBlank}
@@ -116,11 +119,17 @@ export function PaperTemplateGallery({
           </Button>
         ) : null}
         {onImport ? (
-          <Button type="button" variant="ghost" onClick={onImport}>
+          <Button
+            className="h-11 md:h-8"
+            type="button"
+            variant="ghost"
+            onClick={onImport}
+          >
             Import a file
           </Button>
         ) : null}
         <Button
+          className="h-11 md:h-8"
           type="button"
           variant="glow"
           onClick={() => onUse(current.id)}

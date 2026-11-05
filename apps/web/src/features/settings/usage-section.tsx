@@ -73,6 +73,7 @@ export function UsageSection({
           Pro gives you unlimited Coach chats.
         </p>
         <Button
+          className="h-11 md:h-8"
           type="button"
           variant="outline"
           onClick={() => void navigate({ href: "/settings/billing/upgrade" })}

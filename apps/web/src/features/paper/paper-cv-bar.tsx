@@ -1,6 +1,5 @@
 import {
   Bell,
-  ChevronRight,
   Ellipsis,
   FileText,
   Link2,
@@ -8,6 +7,12 @@ import {
   Star,
 } from "lucide-react"
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
 import { CopyButton } from "@workspace/ui/components/copy-button"
 import {
@@ -72,40 +77,44 @@ export function CvEditorBar({
       data-slot="cv-editor-header"
       className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] leading-4 md:h-12 md:flex-nowrap md:py-0"
     >
-      <nav
-        aria-label="Breadcrumb"
-        className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto"
-      >
-        <Button
-          type="button"
-          variant="link"
-          className="h-auto p-0 text-[13.5px] leading-4 font-normal max-md:min-h-11"
-          onClick={onBack}
-        >
-          Paper
-        </Button>
-        <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
-        <span className="shrink-0">CVs</span>
-        <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
-        <span aria-current="page" className="flex min-w-0 items-center gap-1.5">
-          <FileText className="size-[15px] shrink-0" aria-hidden="true" />
-          <span className="inline-grid items-center">
-            <span
-              aria-hidden="true"
-              className="invisible col-start-1 row-start-1 px-0 whitespace-pre"
+      <Breadcrumb className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto">
+        <BreadcrumbList className="text-[13.5px] leading-4 text-inherit">
+          <BreadcrumbItem>
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-[13.5px] leading-4 font-normal max-md:min-h-11"
+              onClick={onBack}
             >
-              {name || "Name"}
+              Paper
+            </Button>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+          <BreadcrumbItem>CVs</BreadcrumbItem>
+          <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+          <BreadcrumbItem
+            aria-current="page"
+            className="flex min-w-0 items-center gap-1.5"
+          >
+            <FileText className="size-[15px] shrink-0" aria-hidden="true" />
+            <span className="inline-grid items-center">
+              <span
+                aria-hidden="true"
+                className="invisible col-start-1 row-start-1 px-0 whitespace-pre"
+              >
+                {name || "Name"}
+              </span>
+              <Input
+                size={1}
+                aria-label="Document name"
+                value={name}
+                onChange={(event) => onName(event.target.value)}
+                onBlur={() => onCommitName()}
+                className="col-start-1 row-start-1 h-4 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 text-[13.5px] leading-4 shadow-none focus-visible:border-transparent focus-visible:ring-0 max-md:h-11 md:text-[13.5px]"
+              />
             </span>
-            <Input
-              size={1}
-              aria-label="Document name"
-              value={name}
-              onChange={(event) => onName(event.target.value)}
-              onBlur={() => onCommitName()}
-              className="col-start-1 row-start-1 h-4 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 text-[13.5px] leading-4 shadow-none focus-visible:border-transparent focus-visible:ring-0 max-md:h-11 md:text-[13.5px]"
-            />
-          </span>
-        </span>
+          </BreadcrumbItem>
+        </BreadcrumbList>
         <Button
           type="button"
           variant="ghost"
@@ -145,7 +154,7 @@ export function CvEditorBar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </nav>
+      </Breadcrumb>
       <div
         role="toolbar"
         aria-label="Selection"

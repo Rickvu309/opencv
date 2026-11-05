@@ -1,12 +1,19 @@
-import {
-  emptyCvDocument,
-  type PaperContentKind,
-  type PaperDoc,
-  type PaperDocStatus,
-} from "@workspace/domain"
+import { emptyCvDocument, type PaperContentKind } from "@workspace/domain"
 
 import { samplePaperDocs } from "./paper-fixtures.ts"
 import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
+
+type PaperDoc = {
+  id: string
+  name: string
+  kind: PaperContentKind
+  status: string
+  content: unknown
+  contentVersion: number
+  applyCardId: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 type Store = {
   docs: PaperDoc[]
@@ -170,7 +177,7 @@ export async function paperApiFetch(
   if (method === "POST" && path === "/api/commands/paper.setStatus") {
     const body = (await readBody(init)) as {
       docId?: string
-      status?: PaperDocStatus
+      status?: string
     }
     const doc = store.docs.find((item) => item.id === body.docId)
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")

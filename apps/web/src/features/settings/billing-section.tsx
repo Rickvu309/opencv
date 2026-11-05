@@ -60,7 +60,12 @@ export function BillingSection() {
                 <li key={benefit}>{benefit}</li>
               ))}
             </ul>
-            <Button type="button" variant="glow" onClick={openUpgrade}>
+            <Button
+              className="h-11 md:h-8"
+              type="button"
+              variant="glow"
+              onClick={openUpgrade}
+            >
               Upgrade now
             </Button>
           </article>
@@ -72,7 +77,12 @@ export function BillingSection() {
             label="Payment method"
             desc="No card added"
             control={
-              <Button type="button" variant="outline" onClick={openUpgrade}>
+              <Button
+                className="h-11 md:h-8"
+                type="button"
+                variant="outline"
+                onClick={openUpgrade}
+              >
                 Add card
               </Button>
             }

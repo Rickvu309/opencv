@@ -1,6 +1,0 @@
-{
-  "id": "verify-bad-fixtures",
-  "file": "scripts/verify-bad-fixtures.test.mjs",
-  "historic": null,
-  "reason": "the earlier false greens (white text on white accepted, an unmatched pen text passed silently, a page-wide substring match) were fixed inside open pull requests and left no commit to replay; each mistake is a mutant of the check, and its bad fixture is shown to stop failing on that mutant"
-}

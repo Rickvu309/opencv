@@ -1,21 +1,11 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
-import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
-
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
-
-const PENDING = [
-  {
-    file: "apps/web/src/features/paper/paper-letter.tsx",
-    issue: "#830",
-    expires: "2026-11-16",
-  },
-]
 
 const WRITES_MARKDOWN_ONLY =
   /toDocument:\s*\(?\s*\w+\s*\)?\s*=>\s*\(\s*\{\s*markdown\s*:/
@@ -38,12 +28,12 @@ const sources = execFileSync(
 )
   .split("\n")
   .filter((file) => file && !/\.test\.tsx?$/.test(file))
+  .filter((file) => existsSync(path.join(root, file)))
 
 test("an editor save keeps the parts of the document it loaded", () => {
-  const pending = new Set(PENDING.map((entry) => entry.file))
   const dropping = savesThatDropParts(sources, (file) =>
     readFileSync(path.join(root, file), "utf8")
-  ).filter((file) => !pending.has(file))
+  )
   assert.deepEqual(
     dropping,
     [],
@@ -62,8 +52,4 @@ test("the detector flags a save that writes the markdown alone", () => {
     savesThatDropParts(Object.keys(files), (file) => files[file]),
     ["alone"]
   )
-})
-
-test("pending paper-save fixes have not expired", () => {
-  assert.equal(expiredMessage(expiredPending(PENDING)), "")
 })

@@ -150,7 +150,7 @@ export function InboxReader({
           <Button
             variant="ghost"
             className={cn(
-              "h-7 gap-1.5 rounded-[7px] px-2.5 text-[12.5px]",
+              "h-11 gap-1.5 rounded-[7px] px-2.5 text-[12.5px] md:h-7",
               SOFT_TEXT
             )}
             disabled
@@ -178,7 +178,7 @@ export function InboxReader({
               </span>
             </p>
             <Button
-              className="h-7 shrink-0 rounded-[7px] px-2.5 text-[12.5px]"
+              className="h-11 shrink-0 rounded-[7px] px-2.5 text-[12.5px] md:h-7"
               disabled={busy}
               onClick={() =>
                 run(async () => {
@@ -199,7 +199,7 @@ export function InboxReader({
             <Button
               variant="ghost"
               className={cn(
-                "h-7 rounded-[7px] px-2.5 text-[12.5px]",
+                "h-11 rounded-[7px] px-2.5 text-[12.5px] md:h-7",
                 SOFT_TEXT
               )}
               disabled={busy}
@@ -323,7 +323,11 @@ export function InboxReader({
                   <Button
                     key={time}
                     variant={chip === selected ? "default" : "outline"}
-                    className={cn(CHIP, chip === selected && CHIP_ON)}
+                    className={cn(
+                      "h-11 md:h-6.5",
+                      CHIP,
+                      chip === selected && CHIP_ON
+                    )}
                     aria-pressed={chip === selected}
                     onClick={() => {
                       if (chip === selected) return
@@ -340,7 +344,7 @@ export function InboxReader({
                 ))}
                 <Button
                   variant="outline"
-                  className={CHIP}
+                  className={cn("h-11 md:h-6.5", CHIP)}
                   disabled={busy || limit != null}
                   onClick={() =>
                     run(async () => {
@@ -376,7 +380,7 @@ export function InboxReader({
                 <Textarea
                   aria-label="Reply"
                   disabled={busy}
-                  className="min-h-0 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-relaxed shadow-none focus-visible:ring-0 dark:bg-transparent"
+                  className="min-h-11 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-relaxed shadow-none focus-visible:ring-0 md:min-h-0 dark:bg-transparent"
                   value={body}
                   onChange={(event) =>
                     dispatch({ type: "reply_typed", value: event.target.value })
@@ -400,7 +404,7 @@ export function InboxReader({
               </div>
               <div className="flex h-12 items-center gap-1.5 ps-4 pe-3">
                 <Button
-                  className="h-8 gap-1.5 rounded-lg border-transparent bg-foreground px-3 text-[12.5px] font-semibold text-background ring-0 hover:bg-foreground/90"
+                  className="h-11 gap-1.5 rounded-lg border-transparent bg-foreground px-3 text-[12.5px] font-semibold text-background ring-0 hover:bg-foreground/90 md:h-8"
                   disabled={busy || body.trim() === ""}
                   onClick={() =>
                     run(async () => {
@@ -420,7 +424,7 @@ export function InboxReader({
                 {times.length > 0 ? (
                   <Button
                     variant="ghost"
-                    className="h-7 gap-1.75 rounded-md px-2 text-[12.5px] font-normal text-muted-foreground"
+                    className="h-11 gap-1.75 rounded-md px-2 text-[12.5px] font-normal text-muted-foreground md:h-7"
                     disabled={busy}
                     onClick={() =>
                       run(async () => {
@@ -447,7 +451,7 @@ export function InboxReader({
   )
 }
 
-const CHIP = "h-6.5 rounded-full px-2.5 text-xs"
+const CHIP = "rounded-full px-2.5 text-xs"
 const CHIP_ON =
   "border-transparent bg-foreground text-background ring-0 hover:bg-foreground/90"
 

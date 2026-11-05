@@ -49,7 +49,13 @@ function RetryRow({
     >
       <ErrorBanner variant="inline">{message}</ErrorBanner>
       {onRetry ? (
-        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+        <Button
+          className="h-11 md:h-7"
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRetry}
+        >
           Retry
         </Button>
       ) : null}

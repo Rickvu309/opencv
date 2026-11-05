@@ -421,7 +421,7 @@ export function PaperLetterStart({
           variant="ghost"
           size="icon"
           aria-label="Attach a file"
-          className="size-7 shrink-0 rounded-[7px]"
+          className="size-11 shrink-0 rounded-[7px] md:size-7"
           disabled={drafting || attaching}
           onClick={() => attachmentInput.current?.click()}
         >
@@ -464,7 +464,7 @@ export function PaperLetterStart({
                 type="button"
                 variant={selected?.id === job.id ? "secondary" : "outline"}
                 data-slot="letter-start-job"
-                className="h-10 min-w-0 justify-start gap-[5px] rounded-[8px] border-transparent px-3.5 text-[13px] leading-[15.5px] font-medium"
+                className="h-11 min-w-0 justify-start gap-[5px] rounded-[8px] border-transparent px-3.5 text-[13px] leading-[15.5px] font-medium md:h-10"
                 aria-label={`${job.title}, ${job.company}`}
                 aria-pressed={selected?.id === job.id}
                 onClick={() => dispatch({ type: "picked_job", job })}
@@ -504,6 +504,7 @@ export function PaperLetterStart({
             {attached.truncated ? " Longer text was shortened." : ""}
           </p>
           <Button
+            className="h-11 md:h-8"
             type="button"
             variant="ghost"
             disabled={drafting}
@@ -518,7 +519,7 @@ export function PaperLetterStart({
           type="button"
           variant="outline"
           data-slot="letter-start-blank"
-          className="mr-auto h-[34px] rounded-[8px] px-3 text-xs font-medium"
+          className="mr-auto h-11 rounded-[8px] px-3 text-xs font-medium md:h-[34px]"
           onClick={() => void startBlank()}
         >
           <FilePlus aria-hidden="true" className="size-3.5" />
@@ -526,7 +527,12 @@ export function PaperLetterStart({
         </Button>
         {drafting ? (
           onDraftingStart ? null : (
-            <Button type="button" variant="glow" onClick={stop}>
+            <Button
+              className="h-11 md:h-8"
+              type="button"
+              variant="glow"
+              onClick={stop}
+            >
               Stop
             </Button>
           )
@@ -534,7 +540,7 @@ export function PaperLetterStart({
           <Button
             type="button"
             data-slot="letter-start-draft"
-            className="h-[34px] gap-2 rounded-[8px] px-3.5 text-[13px] font-semibold"
+            className="h-11 gap-2 rounded-[8px] px-3.5 text-[13px] font-semibold md:h-[34px]"
             variant={limit ? "outline" : "glow"}
             disabled={Boolean(limit) || attaching || needsContext}
             aria-label={draftName}

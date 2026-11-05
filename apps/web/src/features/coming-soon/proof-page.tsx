@@ -67,7 +67,7 @@ export function ProofsPage() {
               disabled={pending}
               aria-busy={pending}
               onClick={() => void notify()}
-              className="h-10 w-fit gap-2 rounded-[10px] bg-foreground pr-3.5 pl-4 text-[14px] font-semibold text-background ring-0 hover:bg-foreground/90 active:bg-foreground/80"
+              className="h-11 w-fit gap-2 rounded-[10px] bg-foreground pr-3.5 pl-4 text-[14px] font-semibold text-background ring-0 hover:bg-foreground/90 active:bg-foreground/80 md:h-10"
             >
               {soonCopy.earlyAccess}
               <ArrowRight className="size-[15px]" />

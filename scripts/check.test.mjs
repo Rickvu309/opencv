@@ -48,13 +48,6 @@ test("open-pr inputs schedule its separate guard task", () => {
   ])
     assert.ok(plan({ files: [file] }).some((c) => c.includes("test:open-pr")))
 })
-test("verification skills schedule web assumptions", () => {
-  assert.ok(
-    plan({ files: [".claude/skills/verify-app-ui/SKILL.md"] }).some(
-      (c) => c.join(" ") === "--filter web test"
-    )
-  )
-})
 
 import { execFileSync, spawnSync } from "node:child_process"
 import {
@@ -67,6 +60,8 @@ import {
 import { homedir } from "node:os"
 import { join, resolve } from "node:path"
 import { makeTempDir } from "./lib/temp-dir.mjs"
+
+const SPAWN_TIMEOUT_MS = 30_000
 
 test("dry-run executes nothing; first red stays red and writes the consumer result", () => {
   mkdirSync(join(homedir(), "tmp"), { recursive: true })
@@ -102,6 +97,7 @@ test("dry-run executes nothing; first red stays red and writes the consumer resu
       cwd: dir,
       env: { ...env, CHECK_DRY_RUN: "1" },
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     })
     assert.equal(r.status, 0, r.stderr)
     assert.match(
@@ -117,6 +113,7 @@ test("dry-run executes nothing; first red stays red and writes the consumer resu
       cwd: dir,
       env: { ...env, CHECK_DRY_RUN: "0" },
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     })
     assert.equal(r.status, 1, r.stderr)
     assert.equal(readFileSync(join(dir, "calls"), "utf8"), "call\n")

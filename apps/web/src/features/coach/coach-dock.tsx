@@ -244,7 +244,7 @@ export function CoachDock({
             variant="ghost"
             size="sm"
             data-slot="coach-mode"
-            className="h-7.5 gap-1.25 rounded-full px-2 text-muted-foreground disabled:font-semibold disabled:text-muted-foreground/70"
+            className="h-11 gap-1.25 rounded-full px-2 text-muted-foreground disabled:font-semibold disabled:text-muted-foreground/70 md:h-7.5"
           />
         }
         aria-label="Choose Coach mode"
@@ -313,7 +313,7 @@ export function CoachDock({
           size="icon"
           onClick={onStop}
           aria-label="Stop"
-          className="rounded-full"
+          className="size-11 rounded-full md:size-8"
         >
           <Square className="size-3 fill-current" />
         </Button>
@@ -325,7 +325,7 @@ export function CoachDock({
           onClick={onSend}
           disabled={!canSend}
           aria-label="Send"
-          className="rounded-full"
+          className="size-11 rounded-full md:size-8"
         >
           <ArrowUp className="size-4" />
         </Button>

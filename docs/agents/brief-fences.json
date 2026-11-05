@@ -6,7 +6,6 @@
       "paths": [
         "apps/web/src/features/paper/**",
         "apps/api/src/paper/**",
-        ".claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs",
         "apps/web/src/features/coach/chat-api.ts",
         "apps/web/src/lib/paper-selection.ts",
         "apps/web/src/lib/paper-sync*",
@@ -15,8 +14,7 @@
         "packages/domain/src/paper-doc/**",
         "packages/paper-crdt/**",
         "apps/web/package.json",
-        "apps/web/src/routes/paper-doc.tsx",
-        ".claude/skills/verify-app-ui/scripts/verify-cv-editor.mjs"
+        "apps/web/src/routes/paper-doc.tsx"
       ]
     }
   ]

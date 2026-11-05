@@ -19,15 +19,15 @@ export const REFUSED_EVIDENCE = [
 ]
 
 export const ACCEPTED_EVIDENCE = [
-  "`PORT=4450 pnpm --filter web verify:pen-layout`: 0 mismatches",
+  "`PORT=4450 pnpm --filter web test`: 0 failures",
   "- pnpm test: exit 0",
   "- `pnpm test`: exit 0",
   "* pnpm --filter web test: ok",
   "1. `pnpm check` - pass",
   "`cd apps/web && pnpm test`: 12 passed",
   "cd apps/web && pnpm test: 12 passed",
-  ".claude/skills/verify-landing/scripts/verify-landing.mjs: 31 PASS",
-  "`.claude/skills/verify-landing/scripts/verify-landing.mjs`: 31 PASS",
+  "scripts/verify-auth-production.mjs: 31 PASS",
+  "`scripts/verify-auth-production.mjs`: 31 PASS",
   "`python3 scripts/x.py`: 4 tests passed",
   "`tsc --noEmit`: no errors",
   "`node --check a.mjs`: no output",

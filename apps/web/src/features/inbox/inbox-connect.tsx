@@ -120,7 +120,7 @@ export function InboxConnect({
             </Button>
             <Button
               variant="ghost"
-              className={cn("px-2 text-[13.5px]", SOFT_TEXT)}
+              className={cn("h-11 px-2 text-[13.5px] md:h-8", SOFT_TEXT)}
               disabled={pending}
               onClick={onSkip}
             >

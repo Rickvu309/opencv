@@ -44,8 +44,8 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 ## Verification
 
 - Run one heavy command at a time and only targeted tests. Use `pstack-run` for noisy commands, keep output bounded, and keep scratch files under `~/tmp`. Never loop, poll, or sleep to wait.
-- Read `CODING_STANDARDS.md` before writing code. Write no comments in source, CSS, or tests. Explain with names or tests. A new guard needs a pure detect, a mistake fixture that fires, a clean fixture that stays quiet, and proof against a past commit.
-- Verify the affected behavior, not just compilation. For changes under `apps/web` or `apps/api`, use the relevant feature guide in `.claude/skills/verify-opencv/` or the matching verify skill in `.claude/skills/`. For UI changes, drive the affected screen and inspect it against its design frame.
+- Read `CODING_STANDARDS.md` before writing code. Write no comments in any file in the repo: source, CSS, tests, scripts, config, workflows, docs code blocks and markup. Explain with names or tests. A new guard needs a pure detect, a mistake fixture that fires, a clean fixture that stays quiet, and proof against a past commit.
+- Verify the affected behavior, not just compilation. For changes under `apps/web` or `apps/api`, run the affected flow locally and inspect the result. For UI changes, drive the affected screen and inspect it against its design frame.
 - For Coach work, use the scripted local runtime described in `docs/coach.md` where it covers the behavior. Distinguish fake-provider evidence from live-model evidence. Do not make paid model calls just to check unrelated changes.
 - For changes to this file, run `node --test scripts/ocv-tools/brief.test.mjs scripts/doc-paths.test.mjs scripts/adr-citations.test.mjs` and check formatting. Brief rules depend on the Guardrails, Per change, and Agent briefs headings and several policy phrases.
 - Report each requested outcome with the command and real result, or the relevant file, screenshot, or PR. Never weaken a check to make it pass. Report an unrelated bug under Findings with file and line, reproduction, and a possible guard.

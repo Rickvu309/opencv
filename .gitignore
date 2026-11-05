@@ -40,10 +40,7 @@ apps/web/.generated/
 .DS_Store
 
 # local agent tooling
-.claude/*
-!.claude/skills/
-!.claude/hooks/
-!.claude/settings.json
+.claude/
 
 # local PGlite data for DB_DRIVER=pglite
 apps/api/.data/

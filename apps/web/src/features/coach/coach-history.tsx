@@ -153,7 +153,7 @@ export function CoachHistory({
             type="button"
             variant="ghost"
             data-slot="history-new-chat"
-            className="flex h-8 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2]"
+            className="flex h-11 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2] md:h-8"
             onClick={() => {
               onNewChat()
               onOpenChange(false)
@@ -203,7 +203,7 @@ export function CoachHistory({
                     variant="ghost"
                     data-slot="history-item"
                     data-active={chat.id === activeChatId ? "true" : undefined}
-                    className="flex h-8 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2]"
+                    className="flex h-11 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2] md:h-8"
                     onClick={() => {
                       onSelect(chat.id)
                       onOpenChange(false)

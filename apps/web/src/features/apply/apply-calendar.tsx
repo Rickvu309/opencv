@@ -113,7 +113,7 @@ export function ApplyCalendar({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="rounded-md"
+            className="size-11 rounded-md md:size-7"
             aria-label={`Previous ${unit}`}
             onClick={() => step(-1)}
           >
@@ -123,7 +123,7 @@ export function ApplyCalendar({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="rounded-md"
+            className="size-11 rounded-md md:size-7"
             aria-label={`Next ${unit}`}
             onClick={() => step(1)}
           >
@@ -132,7 +132,7 @@ export function ApplyCalendar({
           <Button
             type="button"
             variant="outline"
-            className="h-7 rounded-md bg-card px-2.5 text-[12.5px]"
+            className="h-11 rounded-md bg-card px-2.5 text-[12.5px] md:h-7"
             onClick={() => dispatchAnchor({ type: "today_chosen", today })}
           >
             Today
@@ -158,7 +158,11 @@ export function ApplyCalendar({
       {query.isError ? (
         <div className="px-6">
           <p>Could not load jobs. Refresh the page.</p>
-          <Button type="button" onClick={() => void query.refetch()}>
+          <Button
+            className="h-11 md:h-8"
+            type="button"
+            onClick={() => void query.refetch()}
+          >
             Refresh
           </Button>
         </div>

@@ -29,11 +29,11 @@ const tracked = () =>
     { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }
   )
     .split("\n")
-    .filter(Boolean)
+    .filter((file) => file && existsSync(path.join(root, file)))
 
 const read = (file) => readFileSync(path.join(root, file), "utf8")
 
-const BASELINE_CEILING = 62
+const BASELINE_CEILING = 52
 
 const PAST = { mode: "detect", sha: "abc1234", path: "src/a.tsx" }
 const REVERT_PAST = {

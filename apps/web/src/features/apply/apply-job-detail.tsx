@@ -111,6 +111,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
       <div>
         <p>Job not found.</p>
         <Button
+          className="h-11 md:h-8"
           type="button"
           onClick={() => void navigate({ to: SURFACE_PATHS.apply })}
         >
@@ -123,7 +124,11 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
     return (
       <div>
         <p>Could not load jobs. Refresh the page.</p>
-        <Button type="button" onClick={() => void detail.refetch()}>
+        <Button
+          className="h-11 md:h-8"
+          type="button"
+          onClick={() => void detail.refetch()}
+        >
           Refresh
         </Button>
       </div>

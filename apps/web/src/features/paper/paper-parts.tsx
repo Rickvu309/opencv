@@ -138,7 +138,7 @@ export function PaperCard({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="absolute top-2 right-2"
+              className="absolute top-2 right-2 size-11 md:size-7"
               aria-label={`${name} menu`}
             >
               <MoreHorizontal />
@@ -183,7 +183,7 @@ export function PaperFileCard({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="absolute top-2 right-2"
+              className="absolute top-2 right-2 size-11 md:size-7"
               aria-label={`${name} menu`}
             >
               <MoreHorizontal />

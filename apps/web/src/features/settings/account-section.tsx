@@ -103,6 +103,7 @@ export function AccountSection({
                   <AvatarFallback>{initials(profile.name)}</AvatarFallback>
                 </Avatar>
                 <Button
+                  className="h-11 md:h-8"
                   type="button"
                   variant="outline"
                   onClick={() => fileRef.current?.click()}
@@ -145,6 +146,7 @@ export function AccountSection({
             desc="We send sign-in codes here"
             control={
               <Button
+                className="h-11 md:h-8"
                 type="button"
                 variant="outline"
                 onClick={() =>
@@ -164,6 +166,7 @@ export function AccountSection({
             desc="Paper, Apply and Pitch as files"
             control={
               <Button
+                className="h-11 md:h-8"
                 type="button"
                 variant="outline"
                 onClick={() => {
@@ -186,6 +189,7 @@ export function AccountSection({
           desc="Signed in on this device"
           control={
             <Button
+              className="h-11 md:h-8"
               type="button"
               variant="outline"
               onClick={() => {
@@ -203,6 +207,7 @@ export function AccountSection({
           desc="Removes your Paper, Apply jobs and Pitch"
           control={
             <Button
+              className="h-11 md:h-8"
               type="button"
               variant="destructive"
               onClick={() =>
@@ -336,11 +341,20 @@ function ChangeEmailDialog({
           </p>
         ) : null}
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => close(false)}>
+          <Button
+            className="h-11 md:h-8"
+            type="button"
+            variant="outline"
+            onClick={() => close(false)}
+          >
             Cancel
           </Button>
           {pendingEmail ? null : (
-            <Button type="button" onClick={() => void submit()}>
+            <Button
+              className="h-11 md:h-8"
+              type="button"
+              onClick={() => void submit()}
+            >
               Change email
             </Button>
           )}

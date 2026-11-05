@@ -1,11 +1,9 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-
-import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 
@@ -23,7 +21,6 @@ export const RULES = [
       ),
     allowed: ["packages/ui/src/components/copy-button.tsx"],
     use: "CopyButton, or copyText for a copy that has no button, from @workspace/ui/components/copy-button. It already falls back to execCommand and toasts the result.",
-    pending: [],
   },
   {
     name: "spinner",
@@ -31,7 +28,6 @@ export const RULES = [
     hit: (source) => /animate-spin/.test(source),
     allowed: [],
     use: "Spinner from @workspace/ui/components/spinner instead of a spinning LoaderCircle or Loader2 icon.",
-    pending: [],
   },
   {
     name: "breadcrumb",
@@ -42,16 +38,6 @@ export const RULES = [
         /\bChevronRight(?:Icon)?\b/.test(source)),
     allowed: ["packages/ui/src/components/breadcrumb.tsx"],
     use: "Breadcrumb from @workspace/ui/components/breadcrumb instead of a hand-built nav with aria-label Breadcrumb or a crumb trail with aria-current page.",
-    pending: [
-      "apps/web/src/features/paper/paper-letter.tsx",
-      "apps/web/src/features/paper/paper-letter-drafting-page.tsx",
-      "apps/web/src/features/paper/paper-letter-start-page.tsx",
-      "apps/web/src/features/paper/paper-cv-bar.tsx",
-    ].map((file) => ({
-      file,
-      issue: "the kit Breadcrumb change (#845)",
-      expires: "2026-11-09",
-    })),
   },
 ]
 
@@ -69,35 +55,18 @@ const productFiles = execFileSync(
 )
   .split("\n")
   .filter((file) => SOURCE.test(file) && !NOT_PRODUCT_CODE.test(file))
+  .filter((file) => existsSync(path.join(root, file)))
 
 const read = (file) => readFileSync(path.join(root, file), "utf8")
 
 for (const rule of RULES) {
-  const pending = new Set(rule.pending.map((entry) => entry.file))
-
   test(`${rule.name}: no file rebuilds what the kit already has`, () => {
-    const strays = offenders(rule, productFiles, read).filter(
-      (file) => !pending.has(file)
-    )
+    const strays = offenders(rule, productFiles, read)
     assert.deepEqual(
       strays,
       [],
       `${strays.join(", ")} rebuilds the kit ${rule.name} by hand. Use ${rule.use}`
     )
-  })
-
-  test(`${rule.name}: every pending file still has the problem`, () => {
-    const hits = new Set(offenders(rule, productFiles, read))
-    const fixed = [...pending].filter((file) => !hits.has(file))
-    assert.deepEqual(
-      fixed,
-      [],
-      `${fixed.join(", ")} no longer rebuilds the kit ${rule.name}. Delete its pending entry.`
-    )
-  })
-
-  test(`${rule.name}: pending entries have not expired`, () => {
-    assert.equal(expiredMessage(expiredPending(rule.pending)), "")
   })
 }
 
@@ -150,7 +119,7 @@ test("breadcrumb: a nav link that marks the current page is allowed", () => {
   assert.ok(!byName.breadcrumb.hit('<nav aria-label="Settings">'))
 })
 
-test("the scan sees the kit file that is allowed and the files that are pending", () => {
+test("the scan sees the kit file that is allowed", () => {
   assert.ok(productFiles.includes("packages/ui/src/components/copy-button.tsx"))
   assert.ok(productFiles.length > 200)
 })

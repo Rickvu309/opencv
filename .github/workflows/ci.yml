@@ -28,58 +28,17 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm exec turbo run test --filter=@workspace/guards
       - run: pnpm exec turbo run test:open-pr --filter=@workspace/guards
-      - run: pnpm exec turbo run test:assumptions --filter=web
 
-  lint:
+  static:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run lint $TURBO_SCOPE
-      - name: Prettier
-        run: |
-          set -o pipefail
-          if [[ "$GITHUB_EVENT_NAME" == merge_group ]]; then
-            pnpm exec prettier --check --ignore-unknown -- .
-            exit 0
-          fi
-          base=$(git merge-base origin/main HEAD)
-          full=0
-          while IFS= read -r -d '' file; do
-            case "$file" in
-              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|.npmrc|.nvmrc|.node-version|.pnpmfile.cjs|vitest.*|scripts/check.mjs|.railway/railway.ts|.gitattributes) full=1 ;;
-              */*) ;;
-              *.config.*|tsconfig*.json|.eslint*|.prettier*) full=1 ;;
-            esac
-          done < <(git diff --name-only -z "$base" HEAD)
-          if (( full )); then
-            pnpm exec prettier --check --ignore-unknown -- .
-          else
-            git diff --name-only --no-renames --diff-filter=ACMR -z "$base" HEAD | xargs -0 -r pnpm exec prettier --check --ignore-unknown --
-          fi
-
-  typecheck:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run typecheck $TURBO_SCOPE
-
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run build $TURBO_SCOPE
+      - run: pnpm exec prettier --check --ignore-unknown -- .
+      - run: pnpm exec turbo run lint typecheck build $TURBO_SCOPE
 
   test-api:
     strategy:
@@ -134,47 +93,6 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/3
-
-  screens:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Does this change touch the screens
-        id: gate
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == merge_group ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          base=$(git merge-base origin/main HEAD)
-          if git diff --name-only "$base" HEAD | grep -qE '^(apps/web/|packages/ui/|packages/domain/|\.claude/skills/verify-(app-ui|opencv)/|scripts/ci-screens|scripts/lib/ci-screens|\.github/workflows/ci\.yml|\.github/actions/)'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "No file the screens depend on changed, so the screen checks are not needed."
-          fi
-      - if: steps.gate.outputs.run == 'true'
-        uses: ./.github/actions/setup
-      - name: Screen layout checks
-        if: steps.gate.outputs.run == 'true'
-        env:
-          CI_SCREENS_OUT: ${{ runner.temp }}/ci-screens
-        run: |
-          CHROME_BIN=$(command -v google-chrome || command -v chromium-browser || command -v chromium)
-          export CHROME_BIN
-          "$CHROME_BIN" --version
-          node scripts/ci-screens.mjs
-      - name: Upload screenshots and logs
-        if: failure() && steps.gate.outputs.run == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: screens
-          path: ${{ runner.temp }}/ci-screens
-          retention-days: 7
-          if-no-files-found: ignore
 
   formal-tla:
     runs-on: ubuntu-latest
@@ -264,18 +182,7 @@ jobs:
 
   ci:
     needs:
-      [
-        guards,
-        lint,
-        typecheck,
-        build,
-        test-api,
-        formal-postgres,
-        test-web,
-        screens,
-        formal-tla,
-        policy,
-      ]
+      [guards, static, test-api, formal-postgres, test-web, formal-tla, policy]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

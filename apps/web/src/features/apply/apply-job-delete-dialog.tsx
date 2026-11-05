@@ -35,14 +35,14 @@ export function DeleteJobDialog({
           <Button
             type="button"
             variant="ghost"
-            className="h-[30px] rounded-md px-3 text-[13px] font-normal text-foreground"
+            className="h-11 rounded-md px-3 text-[13px] font-normal text-foreground md:h-[30px]"
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
           <Button
             type="button"
-            className="h-[30px] gap-1.5 rounded-md bg-foreground/91 px-3 text-[13px] font-semibold text-card ring-0 hover:bg-foreground"
+            className="h-11 gap-1.5 rounded-md bg-foreground/91 px-3 text-[13px] font-semibold text-card ring-0 hover:bg-foreground md:h-[30px]"
             onClick={onDelete}
           >
             Delete job

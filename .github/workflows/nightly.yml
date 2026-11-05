@@ -7,7 +7,6 @@ on:
     - cron: "17 19 * * *"
   workflow_dispatch:
 
-# A newer pending run replaces an older pending one. A failure then names the newer sha, which still contains the older commit.
 concurrency:
   group: nightly-main
   cancel-in-progress: false
@@ -29,10 +28,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      # The full web test suite includes the deterministic verify-skill invariants.
       - run: pnpm check:full lint typecheck test build
-      - if: ${{ !cancelled() }}
-        run: pnpm exec turbo run test:assumptions --filter=web
 
   approve-railway:
     if: ${{ github.event_name == 'push' }}

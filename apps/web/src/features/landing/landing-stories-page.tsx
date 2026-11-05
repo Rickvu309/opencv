@@ -158,7 +158,7 @@ export function StoriesPage() {
                   <Button
                     variant="ghost"
                     onClick={openFeatured}
-                    className="landing-link"
+                    className="landing-link h-11 md:h-8"
                     data-strong
                   >
                     {featured.readLabel}
@@ -198,7 +198,7 @@ export function StoriesPage() {
                     <p className="stories-card-quote">{story.quote}</p>
                     <Button
                       variant="ghost"
-                      className="stories-card-name h-auto justify-start p-0 font-normal whitespace-normal"
+                      className="stories-card-name h-auto min-h-11 justify-start p-0 font-normal whitespace-normal md:min-h-0"
                       aria-label={`Read story: ${story.name}`}
                       onClick={() => openStory(story)}
                     >

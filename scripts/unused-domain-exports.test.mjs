@@ -129,7 +129,6 @@ test("every export of packages/domain/src is imported by non-test code", () => {
   const consumers = [
     ...["apps", "packages"].flatMap((dir) => sourceFiles(path.join(root, dir))),
     ...sourceFiles(path.join(root, "scripts")),
-    ...sourceFiles(path.join(root, ".claude/skills")),
   ].filter((file) => !TEST_FILE.test(file))
   const used = new Set()
   for (const file of consumers) {

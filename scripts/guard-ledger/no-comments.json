@@ -10,7 +10,7 @@
     "sha": "2b8d2a0d^",
     "path": ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs",
     "fixed": {
-      "rev": "HEAD",
+      "rev": "2b8d2a0d",
       "path": ".claude/skills/verify-app-ui/scripts/lib/cdp.mjs"
     }
   }

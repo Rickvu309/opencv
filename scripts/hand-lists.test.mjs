@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
@@ -62,7 +62,12 @@ const trackedSources = () =>
     }
   )
     .split("\n")
-    .filter((file) => file.endsWith(".mjs") && !file.endsWith(".test.mjs"))
+    .filter(
+      (file) =>
+        file.endsWith(".mjs") &&
+        !file.endsWith(".test.mjs") &&
+        existsSync(path.join(root, file))
+    )
 
 test("a hand-kept registry list in a script is refused", () => {
   for (const [name, text] of Object.entries(MISTAKES))

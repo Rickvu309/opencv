@@ -29,8 +29,7 @@ export const root = path.resolve(
 )
 
 const TEST_FILE = /\.test\.(?:tsx?|mjs)$/
-const SCOPE =
-  /^(?:apps\/[^/]+\/src\/|packages\/[^/]+\/src\/|scripts\/|\.claude\/skills\/)/
+const SCOPE = /^(?:apps\/[^/]+\/src\/|packages\/[^/]+\/src\/|scripts\/)/
 
 export function isScopedTest(file) {
   return TEST_FILE.test(file) && SCOPE.test(file)

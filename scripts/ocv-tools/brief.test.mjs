@@ -103,7 +103,6 @@ test("the shipped fence holds the #1041 paths and an expiry date", () => {
   for (const path of [
     "apps/web/src/features/paper/**",
     "apps/api/src/paper/**",
-    ".claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs",
     "apps/web/src/features/coach/chat-api.ts",
     "apps/web/src/lib/paper-selection.ts",
     "apps/web/src/lib/paper-sync*",
@@ -113,7 +112,6 @@ test("the shipped fence holds the #1041 paths and an expiry date", () => {
     "packages/paper-crdt/**",
     "apps/web/package.json",
     "apps/web/src/routes/paper-doc.tsx",
-    ".claude/skills/verify-app-ui/scripts/verify-cv-editor.mjs",
   ])
     assert.ok(paths.includes(path), path)
 })

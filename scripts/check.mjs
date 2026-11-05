@@ -65,12 +65,6 @@ export function plan({ files, full = false }) {
         : []),
       "--filter=@workspace/guards",
     ])
-    if (
-      files.some((f) =>
-        /^\.claude\/skills\/(verify-app-ui|verify-landing)\//.test(f)
-      )
-    )
-      commands.push(["--filter", "web", "test"])
   }
   commands.push([
     "exec",

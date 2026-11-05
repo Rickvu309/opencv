@@ -21,7 +21,7 @@ const normalize = (text: string) => text.replaceAll(/\s+/g, " ").trim()
 describe.each([jobsLayout, pitchLayout, proofLayout])(
   "$frameName ($frameId) on $route",
   (layout) => {
-    it("renders every pen text on its route, so verify:pen-layout can find each one", async () => {
+    it("renders every design text on its route", async () => {
       renderApp(layout.route)
       await screen.findByRole("heading", { level: 2 })
       const page = normalize(document.body.textContent ?? "")

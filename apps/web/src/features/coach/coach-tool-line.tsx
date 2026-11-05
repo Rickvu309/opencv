@@ -113,6 +113,7 @@ export function CoachToolExtras({
       ) : null}
       {canUndo && receiptShowsUndo(part) ? (
         <Button
+          className="h-11 md:h-6"
           type="button"
           variant="outline"
           size="xs"
@@ -185,6 +186,7 @@ function CoachApproval({
           <p>Review this action before it runs.</p>
           <div className="flex gap-2">
             <Button
+              className="h-11 md:h-6"
               size="xs"
               disabled={working}
               onClick={() => void decide(true)}
@@ -192,6 +194,7 @@ function CoachApproval({
               Approve
             </Button>
             <Button
+              className="h-11 md:h-6"
               size="xs"
               variant="outline"
               disabled={working}

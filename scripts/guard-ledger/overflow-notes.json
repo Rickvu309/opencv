@@ -1,9 +1,0 @@
-{
-  "id": "overflow-notes",
-  "file": "scripts/overflow-390.test.mjs",
-  "historic": {
-    "mode": "revert",
-    "fix": "c30dfec4",
-    "command": ["node", "--test", "scripts/overflow-390.test.mjs"]
-  }
-}

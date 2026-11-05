@@ -15,7 +15,6 @@ import {
   statusOf,
   tlcArgs,
 } from "./tlc.mjs"
-import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 import {
   exportedNames,
@@ -27,7 +26,6 @@ import {
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 const CLI_TIMEOUT_MS = 120_000
-const PENDING = []
 const FIXTURE = "scripts/tla/fixtures/Counter"
 
 const tracked = () =>
@@ -278,8 +276,6 @@ test("exports are read from declarations, lists and typescript", () => {
   assert.deepEqual([...names].sort(), ["D", "a", "b", "c", "e", "f", "h"])
 })
 
-const UNMAPPED_ACTIONS = / is an action of Next but has no entry in /
-
 const repoProblems = () =>
   specProblems(
     tracked(),
@@ -289,34 +285,7 @@ const repoProblems = () =>
 
 test("every spec in the repo is complete", () => {
   assert.ok(tracked().some((file) => file.endsWith(".tla")))
-  const pending = new Set(PENDING.map((entry) => entry.file))
-  assert.deepEqual(
-    repoProblems().filter(
-      (problem) =>
-        !(
-          UNMAPPED_ACTIONS.test(problem) &&
-          pending.has(problem.slice(0, problem.indexOf(":")))
-        )
-    ),
-    []
-  )
-})
-
-test("every pending action map is unexpired and still skips an action", () => {
-  assert.equal(expiredMessage(expiredPending(PENDING)), "")
-  const problems = repoProblems()
-  const stale = PENDING.filter(
-    (entry) =>
-      !problems.some(
-        (problem) =>
-          problem.startsWith(`${entry.file}:`) && UNMAPPED_ACTIONS.test(problem)
-      )
-  )
-  assert.deepEqual(
-    stale.map((entry) => entry.file),
-    [],
-    "These maps now name every action. Delete their pending entries."
-  )
+  assert.deepEqual(repoProblems(), [])
 })
 
 test("every cfg of every spec is run, with its mutant expected to fail", () => {

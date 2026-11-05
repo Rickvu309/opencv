@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { detect, isScopedTest, root } from "./lib/comment-anchors.mjs"
@@ -238,6 +238,7 @@ test("scoped tests do not anchor on a note or on text that is not in the file", 
   const files = git(["ls-files", "--cached", "--others", "--exclude-standard"])
     .split("\n")
     .filter(isScopedTest)
+    .filter((file) => existsSync(path.join(root, file)))
   const hits = []
   for (const file of files) {
     const text = readFileSync(path.join(root, file), "utf8")
