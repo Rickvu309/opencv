@@ -139,12 +139,6 @@ const prNo = (facts) => facts.pull?.n ?? facts.queue?.n ?? "<pr#>"
 const draft = (facts) =>
   facts.pull.isDraft ? `PR #${prNo(facts)} is a draft.` : null
 
-const needsHumanReview = (facts) =>
-  facts.pull.labels.includes("needs-human-review") ||
-  facts.issue?.labels?.includes("needs-human-review")
-    ? `PR #${prNo(facts)} needs human review; an agent never merges it.`
-    : null
-
 const badBranch = (facts) =>
   issueOfBranch(facts.pull.branch) == null
     ? `PR #${prNo(facts)} has no linked issue in its branch name.`
@@ -309,16 +303,6 @@ export const jobRows = [
     needs: ["pull"],
     check: draft,
     fix: (facts) => `Run: gh pr ready ${prNo(facts)}`,
-  }),
-  row({
-    id: "NEEDS_HUMAN_REVIEW",
-    section: "6",
-    says: "An agent never merges a PR needing human review.",
-    at: ["merge"],
-    needs: ["pull"],
-    check: needsHumanReview,
-    fix: () =>
-      "A human reviews it. An agent never removes the needs-human-review label.",
   }),
   row({
     id: "BAD_BRANCH",

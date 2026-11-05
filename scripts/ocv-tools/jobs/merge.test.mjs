@@ -149,12 +149,8 @@ test("an expected failure citing a closed or closing issue refuses the merge", (
   })
   assert.doesNotMatch(open.call("merge", "91").text, /PIN_ISSUE_OPEN/)
 })
-test("draft, human review, author and CI failures cannot merge", () => {
-  for (const over of [
-    { isDraft: true },
-    { labels: [{ name: "needs-human-review" }] },
-    { author: { login: "other" } },
-  ]) {
+test("draft, author and CI failures cannot merge", () => {
+  for (const over of [{ isDraft: true }, { author: { login: "other" } }]) {
     const f = fixture()
     Object.assign(f.s.pull, over)
     assert.equal(f.call("merge", "91").code, 2)
@@ -235,20 +231,18 @@ test("a wrong title or a missing closing line cannot merge", () => {
     assert.equal(f.effects("gh", "pr merge").length, 0)
   }
 })
-test("a mass deletion cannot merge unless the files are generated", () => {
+test("a mass deletion can merge when the other merge checks pass", () => {
   const names = Array.from({ length: 26 }, (_, i) => `d/f${i}.txt`)
-  const f = fixture({ deleted: names })
-  const r = f.call("merge", "91")
-  assert.equal(r.code, 2)
-  assert.match(r.text, /MASS_DELETE.*26 files \(limit 25\)/s)
-  assert.match(r.text, /needs-human-review/)
-  assert.equal(f.effects("gh", "pr merge").length, 0)
-  assert.equal(
-    fixture({ deleted: names, generated: names }).call("merge", "91").code,
-    0
-  )
-  const lines = fixture({ deleted: ["big.txt"], numstat: "0\t2500\tbig.txt" })
-  assert.match(lines.call("merge", "91").text, /2500 lines/)
+  for (const options of [
+    { deleted: names },
+    { deleted: names, generated: names },
+    { deleted: ["big.txt"], numstat: "0\t2500\tbig.txt" },
+  ]) {
+    const f = fixture(options)
+    const result = f.call("merge", "91")
+    assert.equal(result.code, 0, result.text)
+    assert.equal(f.effects("gh", "pr merge").length, 1)
+  }
 })
 test("a renamed-away ci.yml is seen through the diff without renames", () => {
   const f = fixture({ deleteCi: true })

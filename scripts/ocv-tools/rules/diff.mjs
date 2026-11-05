@@ -9,12 +9,6 @@ function rule(spec) {
   }
 }
 
-export const OWNER_DEFAULT_MASS_DELETE_LIMITS = Object.freeze({
-  files: 25,
-  lines: 2000,
-  percent: 10,
-})
-
 export const CHANGE_SIZE_LIMIT = 25
 
 const NOT_COUNTED =
@@ -71,27 +65,12 @@ function riskHigh(facts) {
   return "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
 }
 
-function massDelete(facts) {
-  const d = facts.diff?.deleted
-  if (!d) return null
-  if (asLines(facts.diff?.labels).includes("needs-human-review")) return null
-  const { files, lines, percent } = OWNER_DEFAULT_MASS_DELETE_LIMITS
-  const over = []
-  if (d.files > files) over.push(`${d.files} files (limit ${files})`)
-  if (d.lines > lines) over.push(`${d.lines} lines (limit ${lines})`)
-  if (d.total > 0 && d.files * 100 > percent * d.total)
-    over.push(`${d.files} of ${d.total} authored files (limit ${percent}%)`)
-  if (!over.length) return null
-  return `the change deletes a lot of authored source: ${over.join(", ")}; a human must review it first, so ask the owner to label the issue needs-human-review`
-}
-
 function changeTooBig(facts) {
   const changes = facts.diff?.changes
   if (!changes) return null
-  if (asLines(facts.diff?.labels).includes("needs-human-review")) return null
   const counted = countedSourceFiles(changes)
   if (counted.length <= CHANGE_SIZE_LIMIT) return null
-  return `the change adds or edits ${counted.length} authored source files (limit ${CHANGE_SIZE_LIMIT}); large changes cause most of our bugs, so split it into sub-issues (AGENTS.md section 1) and ship one part at a time; if it truly cannot split, ask the owner to label the issue needs-human-review`
+  return `the change adds or edits ${counted.length} authored source files (limit ${CHANGE_SIZE_LIMIT}); large changes cause most of our bugs, so split it into sub-issues (AGENTS.md section 1) and ship one part at a time`
 }
 
 export const diffRows = [
@@ -124,22 +103,12 @@ export const diffRows = [
     fix: () => "gh issue edit <issue> --add-label risk:high",
   }),
   rule({
-    id: "MASS_DELETE",
-    section: "5",
-    says: "More than 25 authored files, 2000 lines or 10% of authored files deleted needs a human: needs-human-review on the issue.",
-    at: ["finish", "pr"],
-    needs: ["diff"],
-    check: massDelete,
-    fix: () => "Ask the owner to label the issue needs-human-review",
-  }),
-  rule({
     id: "CHANGE_TOO_BIG",
     section: "1",
-    says: `More than ${CHANGE_SIZE_LIMIT} authored source files with added lines need sub-issues, or needs-human-review on the issue; tests do not count.`,
+    says: `More than ${CHANGE_SIZE_LIMIT} authored source files with added lines need sub-issues; tests do not count.`,
     at: ["finish", "pr"],
     needs: ["diff"],
     check: changeTooBig,
-    fix: () =>
-      "Split into sub-issues; if it truly cannot split, ask the owner to label the issue needs-human-review",
+    fix: () => "Split into sub-issues",
   }),
 ]

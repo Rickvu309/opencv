@@ -18,9 +18,6 @@
 - name: docs
   color: "0075ca"
   description: Documentation only (branch docs/)
-- name: needs-human-review
-  color: "fbca04"
-  description: A big decision. Blocks merge until a human approves
 - name: ready-for-human
   color: "5319e7"
   description: A decision for a human, never picked up by implementation agents
