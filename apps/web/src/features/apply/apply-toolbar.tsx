@@ -81,7 +81,7 @@ export function ApplyToolbar({
             variant="ghost"
             aria-pressed={active}
             className={cn(
-              "h-7 gap-1.5 rounded-full border px-2.5 text-xs",
+              "h-11 gap-1.5 rounded-full border px-2.5 text-xs md:h-7",
               active
                 ? "border-transparent bg-accent font-medium text-foreground hover:bg-accent"
                 : "border-border font-normal text-muted-foreground"
@@ -106,7 +106,7 @@ export function ApplyToolbar({
               variant="ghost"
               aria-label="Filter"
               className={cn(
-                "mr-[34px] ml-auto h-7 rounded-full border border-border text-xs text-muted-foreground",
+                "mr-[34px] ml-auto h-11 rounded-full border border-border text-xs text-muted-foreground md:h-7",
                 count > 0
                   ? "gap-[5px] bg-accent px-2.5 hover:bg-accent"
                   : "w-7 bg-card"
@@ -168,7 +168,7 @@ function FilterChip({
         type="button"
         variant="ghost"
         aria-label={`Remove ${name.toLowerCase()} filter`}
-        className="size-[18px] shrink-0 rounded-[5px] p-0 text-muted-foreground hover:text-foreground"
+        className="size-11 shrink-0 rounded-[5px] p-0 text-muted-foreground hover:text-foreground md:size-[18px]"
         onClick={onRemove}
       >
         <X className="size-[18px] p-[3px]" />

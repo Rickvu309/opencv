@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { LEDGER } from "./guard-ledger.mjs"
@@ -48,6 +48,9 @@ export function listGuardFiles(
         encoding: "utf8",
       }
     )
+      .split("\n")
+      .filter((file) => file && existsSync(path.join(root, file)))
+      .join("\n")
 ) {
   return list()
     .split("\n")

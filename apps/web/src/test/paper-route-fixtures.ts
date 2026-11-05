@@ -2,12 +2,10 @@ import { afterEach, beforeEach, expect, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
-import { STARTER_CV_NAME } from "@workspace/domain"
+const STARTER_CV_NAME = "Sample internship CV"
 
 const PAPER_CONTENT_VERSION = 1
 import type { JobStage } from "@workspace/domain"
-import { ownedCvName } from "@/features/paper/paper-data.ts"
-import { TEST_SESSION_USER } from "@/test/auth-client-mock.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { resetMockJobs, setMockJobs } from "@/test/apply-jobs-mock.ts"
@@ -40,10 +38,6 @@ export async function openDoc(name: string) {
 }
 
 export const SEEDED_SAMPLE_CV_ID = "66666666-6666-7666-8666-666666666666"
-
-export function ownedSampleCvName() {
-  return ownedCvName(TEST_SESSION_USER.name)
-}
 
 export function starterSampleCvDoc() {
   return {

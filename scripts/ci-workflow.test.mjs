@@ -12,6 +12,8 @@ import {
   policyChoice,
 } from "./lib/ci-workflow.mjs"
 
+const SPAWN_TIMEOUT_MS = 30_000
+
 const text = readFileSync(
   fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)),
   "utf8"
@@ -61,6 +63,7 @@ function runAggregateStepFromCiYml(results) {
   return spawnSync(process.execPath, ["-e", script], {
     env: { ...process.env, NEEDS: JSON.stringify(needs) },
     encoding: "utf8",
+    timeout: SPAWN_TIMEOUT_MS,
   })
 }
 
@@ -136,6 +139,7 @@ function bash(script, env) {
     cwd: root,
     env: { ...process.env, ...env },
     encoding: "utf8",
+    timeout: SPAWN_TIMEOUT_MS,
   })
 }
 

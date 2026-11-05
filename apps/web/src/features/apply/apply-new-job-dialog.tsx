@@ -263,7 +263,7 @@ export function NewJobDialog({
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  className="ml-auto rounded-md text-muted-foreground"
+                  className="ml-auto size-11 rounded-md text-muted-foreground md:size-7"
                 />
               }
             >
@@ -296,7 +296,7 @@ export function NewJobDialog({
                 variant="ghost"
                 size="icon-xs"
                 aria-label="Clear link"
-                className="size-6 rounded-md text-muted-foreground"
+                className="size-11 rounded-md text-muted-foreground md:size-6"
                 onClick={() => {
                   dispatch({ type: "link_cleared" })
                   linkRef.current?.focus()
@@ -307,7 +307,7 @@ export function NewJobDialog({
             ) : (
               <Button
                 type="button"
-                className="h-[30px] gap-1.5 rounded-md px-2.5 text-xs shadow-[0_1px_2px_rgb(0_0_0/0.04)] ring-foreground/6"
+                className="h-11 gap-1.5 rounded-md px-2.5 text-xs shadow-[0_1px_2px_rgb(0_0_0/0.04)] ring-foreground/6 md:h-[30px]"
                 onClick={() => void onPaste()}
               >
                 <ClipboardPaste
@@ -417,7 +417,7 @@ export function NewJobDialog({
             <Button
               type="button"
               variant="ghost"
-              className="h-[30px] rounded-md px-3 text-[13px] font-normal text-muted-foreground"
+              className="h-11 rounded-md px-3 text-[13px] font-normal text-muted-foreground md:h-[30px]"
               onClick={() => {
                 reset()
                 onOpenChange(false)
@@ -429,7 +429,7 @@ export function NewJobDialog({
               <Button
                 type="submit"
                 disabled={busy}
-                className="h-[30px] rounded-md px-3 text-[13px] font-semibold"
+                className="h-11 rounded-md px-3 text-[13px] font-semibold md:h-[30px]"
               >
                 Add anyway
               </Button>
@@ -439,7 +439,7 @@ export function NewJobDialog({
                 variant="glow"
                 disabled={busy}
                 aria-label="Add job"
-                className="h-[30px] gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
+                className="h-11 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold md:h-[30px]"
               >
                 <span>Add job</span>
                 <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/63">

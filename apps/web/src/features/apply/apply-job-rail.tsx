@@ -68,7 +68,7 @@ const MENU_ITEM = "h-8 gap-[9px] px-2 text-[13px]"
 const PRIORITIES: readonly JobPriority[] = ["high", "normal", "low"]
 
 const PICKER_ROW =
-  "h-9 w-full justify-start gap-[9px] rounded-[6px] px-2 text-[12.5px] font-normal text-foreground hover:bg-secondary"
+  "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[12.5px] font-normal text-foreground hover:bg-secondary"
 
 function interviewLabel(iso: string) {
   const at = new Date(iso)
@@ -172,7 +172,7 @@ function EditRow({
             type="button"
             variant="ghost"
             aria-label={empty ? label : `${ariaLabel}: ${label}`}
-            className={RAIL_ROW}
+            className={cn("h-11 md:h-8", RAIL_ROW)}
           />
         }
       >
@@ -222,7 +222,7 @@ function StageRow({
             type="button"
             variant="ghost"
             aria-label={`Stage: ${railStageLabel(job.stage)}`}
-            className={RAIL_ROW}
+            className={cn("h-11 md:h-8", RAIL_ROW)}
           />
         }
       >
@@ -262,7 +262,7 @@ function PriorityRow({
             type="button"
             variant="ghost"
             aria-label={`Priority: ${priorityLabel(job.priority)}`}
-            className={RAIL_ROW}
+            className={cn("h-11 md:h-8", RAIL_ROW)}
           />
         }
       >
@@ -421,7 +421,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
                 ? `${kind === "cv" ? "CV" : "Cover letter"}: ${linked.name}`
                 : addLabel
             }
-            className={RAIL_ROW}
+            className={cn("h-11 md:h-8", RAIL_ROW)}
           />
         }
       >
@@ -439,7 +439,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
             aria-label="Find in Paper"
             value={search}
             placeholder="Find in Paper"
-            className="h-8 border-0 bg-transparent px-0 text-[12.5px] shadow-none focus-visible:ring-0 md:text-[12.5px] dark:bg-transparent"
+            className="h-11 border-0 bg-transparent px-0 text-[12.5px] shadow-none focus-visible:ring-0 md:h-8 md:text-[12.5px] dark:bg-transparent"
             onChange={(event) =>
               dispatch({ type: "search_typed", value: event.target.value })
             }
@@ -464,7 +464,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
               <Button
                 type="button"
                 variant="ghost"
-                className={PICKER_ROW}
+                className={cn("h-11 md:h-9", PICKER_ROW)}
                 onClick={() => dispatch({ type: "opened", kind })}
               >
                 Try again
@@ -484,7 +484,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
                 <Button
                   type="button"
                   variant="ghost"
-                  className={PICKER_ROW}
+                  className={cn("h-11 md:h-9", PICKER_ROW)}
                   onClick={() => dispatch({ type: "search_typed", value: "" })}
                 >
                   Clear search
@@ -505,7 +505,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
               key={doc.id}
               type="button"
               variant="ghost"
-              className={PICKER_ROW}
+              className={cn("h-11 md:h-9", PICKER_ROW)}
               onClick={() => {
                 void run("job.linkPaper", {
                   jobId: job.id,
@@ -534,7 +534,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
           <Button
             type="button"
             variant="ghost"
-            className={cn(PICKER_ROW, "h-8")}
+            className={cn(PICKER_ROW, "h-11 md:h-8")}
             onClick={() => {
               void run("job.unlinkPaper", { jobId: job.id, kind }).catch(
                 reportRejected("remove this paper")
@@ -549,7 +549,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
         {kind === "letter" ? (
           <Link
             to="/paper"
-            className="flex h-8 items-center gap-[9px] rounded-[6px] px-2 text-[12.5px] text-foreground hover:bg-secondary"
+            className="flex h-11 items-center gap-[9px] rounded-[6px] px-2 text-[12.5px] text-foreground hover:bg-secondary md:h-8"
           >
             <PenLine aria-hidden className="size-3.5 text-muted-foreground" />
             Write a new cover letter

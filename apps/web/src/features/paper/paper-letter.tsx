@@ -8,6 +8,13 @@ import {
   type PaperView,
 } from "@workspace/domain"
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -18,7 +25,6 @@ import {
 import { CopyButton } from "@workspace/ui/components/copy-button"
 
 import {
-  ChevronRight,
   Ellipsis,
   Link as LinkIcon,
   Mail,
@@ -116,29 +122,29 @@ export function PaperLetterEditor({
         data-slot="letter-editor-header"
         className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] md:h-12 md:flex-nowrap md:py-0"
       >
-        <nav
-          aria-label="Breadcrumb"
-          className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto md:flex-1"
-        >
-          <Button
-            type="button"
-            data-slot="letter-editor-back"
-            variant="link"
-            className="h-auto p-0 text-[13.5px] font-normal"
-            onClick={onBack}
-          >
-            Paper
-          </Button>
-          <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
-          <span className="shrink-0">Cover letters</span>
-          <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
-          <span
-            aria-current="page"
-            className="flex min-w-0 items-center gap-1.5"
-          >
-            <Mail className="size-[15px] shrink-0" aria-hidden="true" />
-            <span className="truncate">{doc.name}</span>
-          </span>
+        <Breadcrumb className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto md:flex-1">
+          <BreadcrumbList className="text-[13.5px] leading-[inherit] text-inherit">
+            <BreadcrumbItem>
+              <Button
+                type="button"
+                data-slot="letter-editor-back"
+                variant="link"
+                className="min-h-11 p-0 text-[13.5px] font-normal md:min-h-0"
+                onClick={onBack}
+              >
+                Paper
+              </Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+            <BreadcrumbItem>Cover letters</BreadcrumbItem>
+            <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+            <BreadcrumbItem>
+              <Mail className="size-[15px] shrink-0" aria-hidden="true" />
+              <BreadcrumbPage className="font-normal max-md:min-w-0">
+                {doc.name}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -147,7 +153,7 @@ export function PaperLetterEditor({
                   data-slot="letter-editor-more"
                   variant="ghost"
                   size="icon"
-                  className="size-[26px] shrink-0 rounded-[6px]"
+                  className="size-11 shrink-0 rounded-[6px] md:size-[26px]"
                   aria-label="More"
                 >
                   <Ellipsis className="size-4" aria-hidden="true" />
@@ -160,7 +166,7 @@ export function PaperLetterEditor({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </nav>
+        </Breadcrumb>
         <div className="flex flex-1 items-center gap-1 md:flex-none">
           <p
             data-slot="letter-editor-edited"
@@ -207,7 +213,7 @@ export function PaperLetterEditor({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-6 shrink-0 rounded-[6px]"
+                className="size-11 shrink-0 rounded-[6px] md:size-6"
                 aria-label="Dismiss suggestion"
                 onClick={() => patch({ gapHidden: true })}
               >
@@ -224,7 +230,7 @@ export function PaperLetterEditor({
               <Button
                 type="button"
                 variant="glow"
-                className="h-7 rounded-[7px] px-2.5 text-[12px] font-semibold"
+                className="h-11 rounded-[7px] px-2.5 text-[12px] font-semibold md:h-7"
                 onClick={addKeyword}
               >
                 Add to letter
@@ -233,7 +239,7 @@ export function PaperLetterEditor({
                 type="button"
                 data-slot="letter-editor-skip"
                 variant="ghost"
-                className="h-7 rounded-[7px] px-2.5 text-[12px] font-medium"
+                className="h-11 rounded-[7px] px-2.5 text-[12px] font-medium md:h-7"
                 onClick={() => patch({ gapHidden: true })}
               >
                 Skip

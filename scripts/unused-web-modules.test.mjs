@@ -4,18 +4,11 @@ import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
-import { expiredMessage, expiredPending } from "./lib/pending-fixes.mjs"
 import { unusedWebModules } from "./lib/unused-web-modules.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const SKIPPED_DIRS = new Set(["node_modules", "dist", ".turbo", "coverage"])
 const SOURCE_FILE = /\.[cm]?[jt]sx?$/
-const PENDING = JSON.parse(
-  readFileSync(
-    path.join(root, "scripts/unused-web-modules.pending.json"),
-    "utf8"
-  )
-)
 
 function webFiles(dir) {
   return readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(
@@ -81,27 +74,10 @@ test("static, lazy, re-exported, index and fixture modules stay quiet", () => {
 })
 
 test("every web module under components, features and lib has a product importer", () => {
-  const pending = new Set(PENDING.map((entry) => entry.file))
   const unused = unusedWebModules(webFiles("apps/web"))
-  const unlisted = unused.filter((file) => !pending.has(file))
   assert.deepEqual(
-    unlisted,
+    unused,
     [],
-    `no product file imports these modules (a test, a fixture or apps/web/src/test does not count). Delete each one with its test, or wire it into a screen:\n${unlisted.join("\n")}`
+    `no product file imports these modules (a test, a fixture or apps/web/src/test does not count). Delete each one with its test, or wire it into a screen:\n${unused.join("\n")}`
   )
-  const stale = [...pending].filter((file) => !unused.includes(file))
-  assert.deepEqual(
-    stale,
-    [],
-    `these pending entries are deleted or now imported. Remove them from scripts/unused-web-modules.pending.json:\n${stale.join("\n")}`
-  )
-})
-
-test("every pending unused web module names an existing file, an issue and an expiry", () => {
-  for (const entry of PENDING) {
-    assert.ok(existsSync(path.join(root, entry.file)), `${entry.file} is gone`)
-    assert.match(entry.issue, /^#\d+$/)
-    assert.match(entry.expires, /^\d{4}-\d{2}-\d{2}$/)
-  }
-  assert.equal(expiredMessage(expiredPending(PENDING)), "")
 })

@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process"
 
+const RUN_TIMEOUT_MS = 30 * 60 * 1000
+
 export function childEnv(cmd, options = {}, base = process.env) {
   const env = { ...base, ...(options.env ?? {}) }
   env.GH_PROMPT_DISABLED = "1"
@@ -17,6 +19,7 @@ export function realRunner() {
       input: options.input,
       stdio: options.inherit ? ["ignore", "inherit", "inherit"] : undefined,
       maxBuffer: 32 * 1024 * 1024,
+      timeout: options.timeout ?? RUN_TIMEOUT_MS,
     })
     const stdout = r.stdout ?? ""
     return {

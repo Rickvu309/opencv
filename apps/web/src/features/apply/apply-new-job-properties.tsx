@@ -33,7 +33,7 @@ function locationReducer(
 }
 
 const CHIP =
-  "h-7 gap-1.5 rounded-full border-border px-[9px] text-xs font-normal text-foreground [&_svg:not([class*='size-'])]:size-[13px]"
+  "gap-1.5 rounded-full border-border px-[9px] text-xs font-normal text-foreground [&_svg:not([class*='size-'])]:size-[13px]"
 
 export function NewJobProperties({
   stage,
@@ -67,7 +67,7 @@ export function NewJobProperties({
               type="button"
               variant="ghost"
               aria-label={`Stage: ${stageLabel(stage)}`}
-              className={CHIP}
+              className={`h-11 md:h-7 ${CHIP}`}
             />
           }
         >
@@ -94,7 +94,7 @@ export function NewJobProperties({
               type="button"
               variant="ghost"
               aria-invalid={dateError ? true : undefined}
-              className={`${CHIP} ${deadlineValid ? "" : "text-muted-foreground"}`}
+              className={`h-11 md:h-7 ${CHIP} ${deadlineValid ? "" : "text-muted-foreground"}`}
             />
           }
         >
@@ -118,7 +118,13 @@ export function NewJobProperties({
           }
         >
           <PopoverTrigger
-            render={<Button type="button" variant="ghost" className={CHIP} />}
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                className={`h-11 md:h-7 ${CHIP}`}
+              />
+            }
           >
             <MapPin className="text-chart-1" aria-hidden />
             {location || (

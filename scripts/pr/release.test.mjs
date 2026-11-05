@@ -12,6 +12,8 @@ import {
 } from "./release.mjs"
 import { makeTempDir } from "../lib/temp-dir.mjs"
 
+const SPAWN_TIMEOUT_MS = 30_000
+
 const commit = "5201a8823b0fc9df52cc319512177b254b446efd"
 const later = "86237ebf0000000000000000000000000000000a"
 const unrelated = "1111111111111111111111111111111111111111"
@@ -400,7 +402,9 @@ test("the CLI exits by outcome and writes a valid result file", async () => {
   assert.equal(lines.at(-1), `RESULT_JSON: ${file}`)
   assert.equal(JSON.parse(readFileSync(file, "utf8")).status, "fail")
   const checker = new URL("../lib/result-check.mjs", import.meta.url).pathname
-  execFileSync("node", [checker, file, "cause=deploy", "script=release"])
+  execFileSync("node", [checker, file, "cause=deploy", "script=release"], {
+    timeout: SPAWN_TIMEOUT_MS,
+  })
 })
 
 async function cli(args, io) {
@@ -437,7 +441,9 @@ test("a crash writes a status error result over a stale one", async () => {
   assert.equal(written.status, "error")
   assert.match(written.detail, /git diff failed/)
   const checker = new URL("../lib/result-check.mjs", import.meta.url).pathname
-  execFileSync("node", [checker, file, "script=release"])
+  execFileSync("node", [checker, file, "script=release"], {
+    timeout: SPAWN_TIMEOUT_MS,
+  })
 })
 
 test("a status read error with no --wait writes a fresh PENDING result", async () => {

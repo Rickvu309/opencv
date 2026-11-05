@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
@@ -35,7 +35,6 @@ const scanned = () =>
       "--others",
       "--exclude-standard",
       "scripts",
-      ".claude/skills",
       ".github",
       "package.json",
       "**/package.json",
@@ -44,6 +43,7 @@ const scanned = () =>
   )
     .split("\n")
     .filter((file) => file && !ALLOWED.has(file))
+    .filter((file) => existsSync(path.join(root, file)))
 
 test("a raw tlc2.TLC or tla2tools.jar call outside scripts/tlc.mjs is refused", () => {
   assert.equal(detectRawTlc(MISTAKE).length, 1)

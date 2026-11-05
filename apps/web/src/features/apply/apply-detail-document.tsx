@@ -180,7 +180,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
             <Button
               type="button"
               variant="ghost"
-              className="h-4 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground"
+              className="h-11 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground md:h-4"
             />
           }
         >
@@ -202,7 +202,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           variant="ghost"
           size="icon-xs"
           aria-label="Add a step"
-          className="-my-1 text-muted-foreground"
+          className="-my-1 size-11 text-muted-foreground md:size-6"
           onClick={() => {
             dispatch({ type: "add_started" })
           }}
@@ -269,7 +269,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
                 autoFocus
                 value={step}
                 placeholder="Add a step"
-                className="h-7 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:text-[13.5px] dark:bg-transparent"
+                className="h-11 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:h-7 md:text-[13.5px] dark:bg-transparent"
                 onChange={(event) =>
                   dispatch({ type: "step_typed", value: event.target.value })
                 }
@@ -422,7 +422,7 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
           rows={1}
           placeholder="Leave a note…"
           className={cn(
-            "min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent",
+            "min-h-11 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:min-h-0 md:text-[13px] dark:bg-transparent",
             NOTE_PLACEHOLDER
           )}
           onChange={(event) =>
@@ -439,7 +439,7 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
           type="submit"
           variant="ghost"
           aria-label="Leave a note"
-          className="size-7 shrink-0 rounded-full p-0 hover:bg-transparent"
+          className="size-11 shrink-0 rounded-full p-0 hover:bg-transparent md:size-7"
         >
           <ArrowUp
             aria-hidden

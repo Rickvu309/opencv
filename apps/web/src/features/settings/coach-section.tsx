@@ -94,6 +94,7 @@ export function CoachSection({
           error={errorKey === "memoryEnabled" ? error : undefined}
           control={
             <Button
+              className="h-11 md:h-8"
               type="button"
               variant="ghost"
               role="switch"

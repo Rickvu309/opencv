@@ -64,7 +64,7 @@ export function EmailCodeScreen({
             type="button"
             variant="ghost"
             data-slot="email-code-change"
-            className="h-auto shrink-0 rounded border-0 px-0 py-0 text-[13.5px] leading-4 font-medium"
+            className="h-auto min-h-11 shrink-0 rounded border-0 px-0 py-0 text-[13.5px] leading-4 font-medium md:min-h-0"
             onClick={onChangeEmail}
           >
             {AUTH_COPY.change}
@@ -107,7 +107,7 @@ export function EmailCodeScreen({
               render={<a href={inbox} target="_blank" rel="noreferrer" />}
               variant="outline"
               data-slot="email-code-open"
-              className="h-[42px] w-full gap-2 rounded-[10px] text-[13.5px] leading-4 font-medium"
+              className="h-11 w-full gap-2 rounded-[10px] text-[13.5px] leading-4 font-medium md:h-[42px]"
             >
               <Mail aria-hidden className="size-4" />
               {AUTH_COPY.openEmail}
@@ -123,7 +123,7 @@ export function EmailCodeScreen({
                 type="button"
                 variant="ghost"
                 data-slot="email-code-send"
-                className="h-auto rounded px-0 py-0 text-[13px] leading-[15.5px] font-semibold"
+                className="h-auto min-h-11 rounded px-0 py-0 text-[13px] leading-[15.5px] font-semibold md:min-h-0"
                 disabled={sending}
                 onClick={onResend}
               >

@@ -62,19 +62,6 @@ const paperDeleteDocInputSchema = z
   .strict()
 
 export type PaperContentKind = z.infer<typeof paperContentKindSchema>
-export type PaperDocStatus = z.infer<typeof paperDocStatusSchema>
-
-export type PaperDoc = {
-  id: string
-  name: string
-  kind: PaperContentKind
-  status: PaperDocStatus
-  content: unknown
-  contentVersion: number
-  applyCardId: string | null
-  createdAt: string
-  updatedAt: string
-}
 
 export const PAPER_TEMPLATE_IDS = [
   "simple",
@@ -225,19 +212,7 @@ const proofDocumentSchema = z
   })
   .strict()
 
-export type ProofViewMode = z.infer<typeof proofViewModeSchema>
-export type ProofStepType = z.infer<typeof proofStepTypeSchema>
-export type ProofPhoto = z.infer<typeof proofPhotoSchema>
-export type ProofStep = z.infer<typeof proofStepSchema>
 export type ProofDocument = z.infer<typeof proofDocumentSchema>
-
-export function emptyProofDocument(): ProofDocument {
-  return {
-    viewMode: "chain",
-    title: "",
-    steps: [],
-  }
-}
 
 export function isProofDocument(value: unknown): value is ProofDocument {
   return proofDocumentSchema.safeParse(value).success

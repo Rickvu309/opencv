@@ -73,6 +73,7 @@ export function PaperSharePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-medium">{doc.name}</h1>
         <Button
+          className="h-11 md:h-8"
           type="button"
           variant="outline"
           onClick={() =>

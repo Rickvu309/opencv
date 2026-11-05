@@ -7,12 +7,17 @@ import { fileURLToPath } from "node:url"
 import { writeResult } from "./result.mjs"
 import { tempDir } from "../lib/temp-dir.mjs"
 
+const SPAWN_TIMEOUT_MS = 30_000
+
 const checker = fileURLToPath(
   new URL("../lib/result-check.mjs", import.meta.url)
 )
 
 function check(file, ...expects) {
-  execFileSync("node", [checker, file, ...expects], { encoding: "utf8" })
+  execFileSync("node", [checker, file, ...expects], {
+    encoding: "utf8",
+    timeout: SPAWN_TIMEOUT_MS,
+  })
 }
 
 test("pending delivery is recorded without claiming success", (t) => {

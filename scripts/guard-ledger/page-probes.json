@@ -6,5 +6,5 @@
     "export": "detect"
   },
   "historic": null,
-  "reason": "The first pass of #995 renamed names a serialized probe read from module scope, and the browser test caught it before any commit. The MISTAKE fixture and a PEN_TOLERANCE mutant in the real pen-parity probe hold it."
+  "reason": "The first pass of #995 renamed names a serialized probe read from module scope, and the browser test caught it before any commit. The MISTAKE fixture holds it."
 }

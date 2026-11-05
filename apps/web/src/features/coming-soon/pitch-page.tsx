@@ -40,7 +40,7 @@ export function PitchPage() {
               aria-busy={pending}
               data-primary-action
               onClick={() => void notify()}
-              className="mt-8 h-10 w-fit gap-2 rounded-[10px] bg-foreground pr-3.5 pl-4 text-[14px] font-semibold text-background ring-0 hover:bg-foreground/90"
+              className="mt-8 h-11 w-fit gap-2 rounded-[10px] bg-foreground pr-3.5 pl-4 text-[14px] font-semibold text-background ring-0 hover:bg-foreground/90 md:h-10"
             >
               {soonCopy.earlyAccess}
               <ArrowRight className="size-[15px]" />

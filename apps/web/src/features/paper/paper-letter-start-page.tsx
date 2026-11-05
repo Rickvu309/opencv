@@ -1,5 +1,12 @@
 import { useEffect, useReducer, useRef } from "react"
-import { ChevronRight, Mail } from "lucide-react"
+import { Mail } from "lucide-react"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
 import { PaperLetterStart } from "./paper-letter-start.tsx"
 import { PaperLetterDraftingPage } from "./paper-letter-drafting-page.tsx"
@@ -83,20 +90,30 @@ export function PaperLetterStartPage({
           data-slot="letter-start-header"
           className="flex h-12 shrink-0 items-center gap-2 border-b px-4 pl-5 text-[13.5px]"
         >
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="h-auto p-0 text-[13.5px] font-normal"
-          >
-            Paper
-          </Button>
-          <ChevronRight aria-hidden="true" className="size-3.5" />
-          <span className="min-w-0 truncate">Cover letters</span>
-          <ChevronRight aria-hidden="true" className="size-3.5" />
-          <Mail aria-hidden="true" className="-me-0.5 size-[15px] shrink-0" />
-          <span aria-current="page" className="shrink-0">
-            New cover letter
-          </span>
+          <Breadcrumb>
+            <BreadcrumbList className="text-[13.5px] leading-[inherit] text-inherit">
+              <BreadcrumbItem>
+                <Button
+                  variant="ghost"
+                  onClick={onBack}
+                  className="min-h-11 p-0 text-[13.5px] font-normal md:min-h-0"
+                >
+                  Paper
+                </Button>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+              <BreadcrumbItem className="min-w-0 shrink truncate">
+                Cover letters
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="[&>svg]:size-3.5" />
+              <BreadcrumbItem className="shrink-0 gap-1.5">
+                <Mail aria-hidden="true" className="size-[15px] shrink-0" />
+                <BreadcrumbPage className="shrink-0 font-normal max-md:min-w-0">
+                  New cover letter
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </header>
         <div
           data-slot="letter-start-desk"

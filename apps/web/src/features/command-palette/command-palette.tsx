@@ -211,6 +211,7 @@ export function CommandPalette({
             className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
           />
           <Button
+            className="h-11 md:h-7"
             type="button"
             variant="ghost"
             size="sm"
@@ -223,6 +224,7 @@ export function CommandPalette({
         <div className="flex flex-wrap gap-2 border-b border-border px-4 py-2">
           {PALETTE_SCOPES.map((item) => (
             <Button
+              className="h-11 md:h-7"
               key={item.id}
               type="button"
               size="sm"
@@ -279,7 +281,7 @@ export function CommandPalette({
                       }
                       onClick={() => activate(row)}
                       className={cn(
-                        "h-auto w-full justify-start px-3 py-2 text-left whitespace-normal",
+                        "h-auto min-h-11 w-full justify-start px-3 py-2 text-left whitespace-normal md:min-h-0",
                         current && "bg-muted"
                       )}
                     >

@@ -72,7 +72,7 @@ export function CoachHome({
         >
           <Button
             variant="ghost"
-            className="h-10 shrink-0 gap-2 rounded-full ps-3.5 pe-4 text-muted-foreground"
+            className="h-11 shrink-0 gap-2 rounded-full ps-3.5 pe-4 text-muted-foreground md:h-10"
             aria-pressed={moreIdeas}
             onClick={onToggleIdeas}
           >
@@ -84,7 +84,7 @@ export function CoachHome({
               <Button
                 key={label}
                 variant="outline"
-                className="h-10 shrink-0 gap-2 rounded-full bg-card ps-3.5 pe-4 text-foreground"
+                className="h-11 shrink-0 gap-2 rounded-full bg-card ps-3.5 pe-4 text-foreground md:h-10"
                 disabled={disabled}
                 onClick={() => onChooseStarter(label)}
               >

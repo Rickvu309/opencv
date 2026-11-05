@@ -3,12 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "test": {
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env*",
-        "$TURBO_ROOT$/.claude/skills/verify-app-ui/**",
-        "$TURBO_ROOT$/.claude/skills/verify-landing/**"
-      ]
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
     }
   }
 }

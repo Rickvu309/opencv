@@ -1,8 +1,4 @@
-import { readFileSync } from "node:fs"
-import path from "node:path"
-import { root, findCssComments, findSourceComments } from "../no-comments.mjs"
-
-export const PENDING_FILE = "scripts/comment-hatches.pending.json"
+import { findCssComments, findSourceComments } from "../no-comments.mjs"
 
 export const OWN_FILES = [
   "scripts/lib/comment-signals.mjs",
@@ -21,41 +17,34 @@ export const MARKERS = [
     id: "rejected-ok:",
     inComment: /rejected-ok:/,
     inCode: /rejected-ok/,
-    readerFollowsWriters: true,
   },
   {
     id: "Documented exception",
     inComment: /Documented exception:/,
     inCode: /Documented exception/,
-    readerFollowsWriters: true,
   },
   {
     id: "commented-allowlist",
     inCode: /requireCommentedAllowlist|\/\/\[\^/,
-    readerFollowsWriters: false,
   },
   {
     id: "eslint-ok",
     inComment: /\beslint-ok\b/,
     inCode: /\beslint-ok\b/,
-    readerFollowsWriters: false,
   },
   {
     id: "lint-ok",
     inComment: /\blint-ok\b/,
     inCode: /\blint-ok\b/,
-    readerFollowsWriters: false,
   },
   {
     id: "guard-ok",
     inComment: /\bguard-ok\b/,
     inCode: /\bguard-ok\b/,
-    readerFollowsWriters: false,
   },
   {
     id: "allow:",
     inComment: /(?:^|\s)allow:\s/,
-    readerFollowsWriters: false,
   },
 ]
 
@@ -103,10 +92,6 @@ export const isGuardFile = (file) =>
   /\.(?:test|type-test)\.[cm]?[jt]sx?$/.test(file)
 
 export const isSource = (file) => SOURCE.test(file) || CSS.test(file)
-
-export function readPending(file = path.join(root, PENDING_FILE)) {
-  return JSON.parse(readFileSync(file, "utf8"))
-}
 
 function commentsOf(file, text) {
   return CSS.test(file) ? findCssComments(text) : findSourceComments(file, text)
@@ -169,37 +154,12 @@ export function markersIn(text, file) {
   return found
 }
 
-function allowed(hit, file, pending) {
-  if (hit.marker === "comment-reader") return false
-  const entries = pending.filter((entry) => entry.marker === hit.marker)
-  if (entries.some((entry) => entry.file === file)) return true
-  const marker = MARKERS.find((m) => m.id === hit.marker)
-  return (
-    hit.kind === "reader" && marker.readerFollowsWriters && entries.length > 0
-  )
-}
-
-export function detect(text, file, pending = readPending()) {
-  return markersIn(text, file)
-    .filter((hit) => !allowed(hit, file, pending))
-    .map((hit) =>
-      hit.marker === "comment-reader"
-        ? `${file}:${hit.line} reads comments. Only the files in COMMENT_READERS may read them.`
-        : hit.kind === "comment"
-          ? `${file}:${hit.line} a comment carries "${hit.marker}", which a guard would read as permission. Fix the code and delete the comment.`
-          : `${file}:${hit.line} reads "${hit.marker}" from a comment. A guard may only read code. Replace the hatch with a named function or a typed list.`
-    )
-}
-
-export function staleEntries(files, pending = readPending()) {
-  return pending.filter(
-    (entry) =>
-      !files.some(
-        (file) =>
-          file.name === entry.file &&
-          markersIn(file.text, file.name).some(
-            (hit) => hit.marker === entry.marker
-          )
-      )
+export function detect(text, file) {
+  return markersIn(text, file).map((hit) =>
+    hit.marker === "comment-reader"
+      ? `${file}:${hit.line} reads comments. Only the files in COMMENT_READERS may read them.`
+      : hit.kind === "comment"
+        ? `${file}:${hit.line} a comment carries "${hit.marker}", which a guard would read as permission. Fix the code and delete the comment.`
+        : `${file}:${hit.line} reads "${hit.marker}" from a comment. A guard may only read code. Replace the hatch with a named function or a typed list.`
   )
 }

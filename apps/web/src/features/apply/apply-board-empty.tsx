@@ -66,7 +66,7 @@ export function ApplyEmpty({
           variant={dialogOpen ? "ghost" : "glow"}
           aria-label="Add job"
           aria-keyshortcuts="N"
-          className="mt-5 h-8 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
+          className="mt-5 h-11 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold md:h-8"
           onClick={onAdd}
         >
           <span>Add job</span>
@@ -95,7 +95,7 @@ export function ApplyNoResults({ onClear }: { onClear: () => void }) {
       <Button
         type="button"
         variant="ghost"
-        className="mt-4 h-[30px] gap-1.5 rounded-md border border-border bg-card px-3 text-[13px] font-normal"
+        className="mt-4 h-11 gap-1.5 rounded-md border border-border bg-card px-3 text-[13px] font-normal md:h-[30px]"
         onClick={onClear}
       >
         <X className="size-[13px] text-muted-foreground" />

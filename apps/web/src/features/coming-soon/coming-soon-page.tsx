@@ -84,7 +84,7 @@ export function ComingSoonPage({
             <Button
               type="button"
               variant="glow"
-              className="h-[42px] gap-2 rounded-[10px] px-[18px] font-semibold"
+              className="h-11 gap-2 rounded-[10px] px-[18px] font-semibold md:h-[42px]"
               disabled={pending}
               aria-busy={pending}
               onClick={() => void onNotify()}

@@ -20,7 +20,7 @@ import { FAINT_TEXT } from "./apply-tone.ts"
 export const TITLE_TEXT = "text-foreground/91"
 
 export const RAIL_ROW =
-  "h-8 w-full justify-start gap-[9px] rounded-[6px] px-2 text-[13px] font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary dark:hover:bg-secondary"
+  "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[13px] font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary dark:hover:bg-secondary"
 
 export function PriorityMark({ level }: { level: JobPriority }) {
   const filled = level === "low" ? 1 : level === "high" ? 3 : 2
@@ -107,7 +107,7 @@ export function RailSection({
         aria-expanded={open}
         onClick={toggleOpen}
         className={cn(
-          "h-7 w-full justify-start gap-1.5 rounded-[6px] px-2 text-xs font-medium hover:bg-secondary aria-expanded:bg-transparent",
+          "h-11 w-full justify-start gap-1.5 rounded-[6px] px-2 text-xs font-medium hover:bg-secondary aria-expanded:bg-transparent md:h-7",
           FAINT_TEXT.card,
           "aria-expanded:text-muted-foreground/84"
         )}
@@ -141,7 +141,7 @@ export function ChecklistItemRow({
       role="checkbox"
       aria-checked={item.done}
       aria-label={item.label}
-      className="h-auto min-h-[34px] w-full items-start justify-start gap-2.5 rounded-[6px] border-0 border-b border-foreground/6 px-2 py-1.5 text-[13.5px] font-normal hover:bg-secondary"
+      className="h-auto min-h-[44px] w-full items-start justify-start gap-2.5 rounded-[6px] border-0 border-b border-foreground/6 px-2 py-1.5 text-[13.5px] font-normal hover:bg-secondary md:min-h-[34px]"
       onClick={onToggle}
     >
       {item.done ? (

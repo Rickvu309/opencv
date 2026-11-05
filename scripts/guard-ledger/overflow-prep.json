@@ -1,9 +1,0 @@
-{
-  "id": "overflow-prep",
-  "file": "scripts/overflow-390.test.mjs",
-  "historic": {
-    "mode": "revert",
-    "fix": "30071318",
-    "command": ["node", "--test", "scripts/overflow-390.test.mjs"]
-  }
-}

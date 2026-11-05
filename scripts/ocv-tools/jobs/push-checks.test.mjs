@@ -19,7 +19,9 @@ test("a root guard is a push check unless CI_ONLY_GUARDS names it", () => {
     { cwd: root, encoding: "utf8" }
   )
     .split("\n")
-    .filter((file) => file && file.split("/").length === 2)
+    .filter(
+      (file) => file && file.split("/").length === 2 && existsSync(root + file)
+    )
   for (const file of listed)
     assert.equal(
       FAST_GUARDS.includes(file),

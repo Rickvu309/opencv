@@ -8,6 +8,7 @@ import { SLOW } from "../packages/guards/run-tests.mjs"
 import { detect } from "./lib/home-tmp.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 
+const SUITE_TIMEOUT_MS = 10 * 60 * 1000
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const HELPER = "scripts/lib/temp-dir.mjs"
 const SELF = "scripts/temp-dirs.test.mjs"
@@ -24,7 +25,7 @@ const tracked = (...specs) =>
     }
   )
     .split("\n")
-    .filter(Boolean)
+    .filter((file) => file && existsSync(path.join(root, file)))
 
 export function strayCreators(files, read) {
   const found = []
@@ -90,6 +91,7 @@ test("the ocv-tools tests leave no temporary folder behind", (t) => {
     cwd: root,
     env: { ...env, TMPDIR: sandbox, HOME: home },
     encoding: "utf8",
+    timeout: SUITE_TIMEOUT_MS,
   })
   assert.equal(run.status, 0, run.stdout.slice(-2000) + run.stderr.slice(-1000))
   const left = readdirSync(sandbox)

@@ -274,7 +274,7 @@ export function SettingsRow({
           variant="ghost"
           disabled={disabled}
           onClick={onClick}
-          className="h-auto w-full flex-wrap justify-between gap-3 rounded-none px-4 py-3.5 text-left font-normal whitespace-normal hover:bg-muted"
+          className="h-auto min-h-11 w-full flex-wrap justify-between gap-3 rounded-none px-4 py-3.5 text-left font-normal whitespace-normal hover:bg-muted md:min-h-0"
         >
           {body}
         </Button>
@@ -313,7 +313,12 @@ export function SettingsLoadError({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex flex-col items-start gap-3">
       <p>{LOAD_ERROR}</p>
-      <Button type="button" variant="outline" onClick={onRetry}>
+      <Button
+        className="h-11 md:h-8"
+        type="button"
+        variant="outline"
+        onClick={onRetry}
+      >
         Try again
       </Button>
     </div>

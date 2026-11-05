@@ -5,10 +5,7 @@ import { describe, expect, it } from "vitest"
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 
-const PAPER_DEFAULTS_PENDING_916 = [
-  "features/paper/cv-templates/cv-types.ts",
-  "features/paper/paper-data.ts",
-]
+const PAPER_DEFAULTS_PENDING_916 = ["features/paper/cv-templates/cv-types.ts"]
 
 function productFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

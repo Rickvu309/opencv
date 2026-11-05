@@ -10,12 +10,10 @@ runs:
         cache: pnpm
     - run: pnpm install --frozen-lockfile
       shell: bash
-    # This identity lives only on the hosted VM; tests make throwaway commits.
     - run: |
         git config --global user.name ci
         git config --global user.email ci@users.noreply.github.com
       shell: bash
-    # PR and queue checkouts need a local main for tests that clone it.
     - run: |
         git show-ref --verify --quiet refs/remotes/origin/main || git fetch origin main:refs/remotes/origin/main
         git branch -f main origin/main

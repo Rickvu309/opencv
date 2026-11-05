@@ -351,6 +351,7 @@ export function PaperLibrary({
         </div>
         <div className="flex gap-2">
           <Button
+            className="h-11 md:h-8"
             type="button"
             variant="outline"
             onClick={() => dispatch({ type: "import_dialog_opened" })}
@@ -358,6 +359,7 @@ export function PaperLibrary({
             Import
           </Button>
           <Button
+            className="h-11 md:h-8"
             type="button"
             variant={dialogOpen ? "outline" : "glow"}
             data-primary-action
@@ -409,7 +411,12 @@ export function PaperLibrary({
       {error ? (
         <div className="flex flex-col items-start gap-3">
           <p>{error}</p>
-          <Button type="button" variant="outline" onClick={onRetry}>
+          <Button
+            className="h-11 md:h-8"
+            type="button"
+            variant="outline"
+            onClick={onRetry}
+          >
             Refresh
           </Button>
         </div>
@@ -531,13 +538,14 @@ export function PaperLibrary({
             ) : null}
             <div className="flex justify-end gap-2">
               <Button
+                className="h-11 md:h-8"
                 type="button"
                 variant="ghost"
                 onClick={() => dispatch({ type: "dialog_closed" })}
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="glow">
+              <Button className="h-11 md:h-8" type="submit" variant="glow">
                 Save
               </Button>
             </div>
@@ -564,6 +572,7 @@ export function PaperLibrary({
           </DialogHeader>
           <div className="flex justify-end gap-2">
             <Button
+              className="h-11 md:h-8"
               type="button"
               variant="ghost"
               onClick={() => dispatch({ type: "dialog_closed" })}
@@ -571,6 +580,7 @@ export function PaperLibrary({
               Cancel
             </Button>
             <Button
+              className="h-11 md:h-8"
               type="button"
               variant="glow"
               onClick={() =>
@@ -619,7 +629,7 @@ export function PaperLibrary({
                 key={job.id}
                 type="button"
                 variant="outline"
-                className="h-auto justify-start whitespace-normal"
+                className="h-auto min-h-11 justify-start whitespace-normal md:min-h-0"
                 onClick={() => {
                   if (!mode || mode.type !== "link") return
                   const kind = mode.doc.kind === "letter" ? "letter" : "cv"

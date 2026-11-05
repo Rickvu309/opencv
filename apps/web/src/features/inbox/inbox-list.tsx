@@ -71,6 +71,7 @@ export function InboxListHeader({
               <DropdownMenuTrigger
                 render={
                   <Button
+                    className="h-11 md:h-8"
                     type="button"
                     variant="ghost"
                     data-slot="page-header-action"
@@ -201,7 +202,12 @@ export function InboxEmpty({
             <EmptyTitle data-user-content>No job emails yet</EmptyTitle>
           </EmptyHeader>
           <EmptyContent>
-            <Button variant="ghost" disabled={scanning} onClick={onScan}>
+            <Button
+              className="h-11 md:h-8"
+              variant="ghost"
+              disabled={scanning}
+              onClick={onScan}
+            >
               Scan
             </Button>
           </EmptyContent>

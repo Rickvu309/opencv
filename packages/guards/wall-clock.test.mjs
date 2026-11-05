@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import test from "node:test"
 import { wallClockUses } from "./wall-clock.mjs"
 
@@ -10,7 +10,7 @@ const tracked = execFileSync("git", ["ls-files", "--cached", "*.test.mjs"], {
   encoding: "utf8",
 })
   .split("\n")
-  .filter(Boolean)
+  .filter((file) => file && existsSync(new URL(file, root)))
 
 test("no node test reads or waits on the wall clock", () => {
   const offenders = tracked.flatMap((file) =>

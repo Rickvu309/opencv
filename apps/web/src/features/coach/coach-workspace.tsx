@@ -254,7 +254,7 @@ export function CoachWorkspace({
               key={`${item.kind}:${item.id}`}
               variant="secondary"
               size="xs"
-              className="h-auto max-w-full min-w-0 text-left [overflow-wrap:anywhere] whitespace-normal"
+              className="h-auto min-h-11 max-w-full min-w-0 text-left [overflow-wrap:anywhere] whitespace-normal md:min-h-0"
               onClick={() => dispatch({ type: "attachment_removed", item })}
               aria-label={`Remove ${item.label}`}
             >
@@ -279,7 +279,12 @@ export function CoachWorkspace({
       {usage.isError ? (
         <p role="status" className="text-xs text-muted-foreground">
           Could not load usage.{" "}
-          <Button variant="link" size="sm" onClick={() => void usage.refetch()}>
+          <Button
+            className="h-11 md:h-7"
+            variant="link"
+            size="sm"
+            onClick={() => void usage.refetch()}
+          >
             Retry
           </Button>
         </p>
@@ -400,7 +405,9 @@ export function CoachWorkspace({
                   {linkError}
                 </p>
               ) : null}
-              <Button onClick={attachLink}>Attach link</Button>
+              <Button className="h-11 md:h-8" onClick={attachLink}>
+                Attach link
+              </Button>
             </>
           ) : (
             <div className="max-h-96 space-y-1 overflow-auto">
@@ -413,6 +420,7 @@ export function CoachWorkspace({
                 <p role="alert">
                   Could not load attachments.{" "}
                   <Button
+                    className="h-11 md:h-8"
                     variant="ghost"
                     onClick={() =>
                       void (picker === "paper"
@@ -429,7 +437,7 @@ export function CoachWorkspace({
                     <Button
                       key={doc.id}
                       variant="ghost"
-                      className="h-auto w-full justify-start text-left whitespace-normal"
+                      className="h-auto min-h-11 w-full justify-start text-left whitespace-normal md:min-h-0"
                       onClick={() =>
                         attach({ kind: "paper", id: doc.id, label: doc.name })
                       }
@@ -441,7 +449,7 @@ export function CoachWorkspace({
                     <Button
                       key={job.id}
                       variant="ghost"
-                      className="h-auto w-full justify-start text-left whitespace-normal"
+                      className="h-auto min-h-11 w-full justify-start text-left whitespace-normal md:min-h-0"
                       onClick={() =>
                         attach({
                           kind: "job",

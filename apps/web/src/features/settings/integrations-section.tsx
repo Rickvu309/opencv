@@ -144,7 +144,12 @@ function IntegrationCard({
         )}
       </div>
       {showConnect && onConnect ? (
-        <Button type="button" variant="glow" onClick={onConnect}>
+        <Button
+          className="h-11 md:h-8"
+          type="button"
+          variant="glow"
+          onClick={onConnect}
+        >
           Connect Gmail
         </Button>
       ) : null}

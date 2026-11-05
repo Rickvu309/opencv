@@ -12,6 +12,7 @@ export function UpgradeScreen() {
         {UPGRADE_PLACEHOLDER}
       </SettingsTitle>
       <Button
+        className="h-11 md:h-8"
         type="button"
         variant="glow"
         onClick={() => void navigate({ href: "/settings/billing" })}

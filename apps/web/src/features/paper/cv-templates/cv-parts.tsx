@@ -290,7 +290,7 @@ export function CanvasAffordance({
       onClick={onClick}
       className={cn(
         PAPER_CANVAS_AFFORDANCE_CLASS,
-        "h-6 gap-1 px-1.5 text-xs font-medium",
+        "h-11 gap-1 px-1.5 text-xs font-medium md:h-6",
         dark
           ? "text-white/65 hover:bg-white/10 hover:text-white"
           : "text-muted-foreground"
@@ -322,7 +322,7 @@ export function SectionNextStep({
       onClick={onClick}
       className={cn(
         PAPER_CANVAS_NEXT_STEP_CLASS,
-        "h-6 gap-1 px-1.5 text-xs font-medium",
+        "h-11 gap-1 px-1.5 text-xs font-medium md:h-6",
         dark
           ? "text-white/65 hover:bg-white/10 hover:text-white"
           : "text-muted-foreground"
@@ -431,7 +431,7 @@ function PhotoSlot({
         variant="ghost"
         onClick={() => inputRef.current?.click()}
         aria-label={url ? "Change profile photo" : "Add profile photo"}
-        className="group cv-template-photo-slot relative h-auto shrink-0 overflow-hidden rounded-md border border-foreground/15 bg-muted/30 p-0 hover:border-foreground/30 hover:bg-muted/50"
+        className="group cv-template-photo-slot relative h-auto min-h-11 shrink-0 overflow-hidden rounded-md border border-foreground/15 bg-muted/30 p-0 hover:border-foreground/30 hover:bg-muted/50 md:min-h-0"
       >
         {src ? (
           <img
