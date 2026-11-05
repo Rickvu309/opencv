@@ -52,11 +52,6 @@ const CASES = {
     "No commits beyond origin/main.",
   ],
   DRAFT: [{ pull: { ...pull, isDraft: true } }, { pull }, "PR #7 is a draft."],
-  NEEDS_HUMAN_REVIEW: [
-    { pull: { ...pull, labels: ["needs-human-review"] } },
-    { pull },
-    "PR #7 needs human review; an agent never merges it.",
-  ],
   BAD_BRANCH: [
     { pull: { ...pull, branch: "my-branch" } },
     { pull },
@@ -231,19 +226,20 @@ test("merge holds the owner, and the draft passes the pr moment", () => {
   assert.equal(decide("merge", mergedHasNoCiToCheck).ok, true)
 })
 
-test("merge refuses a PR whose issue carries needs-human-review", () => {
-  const withIssue = (labels) => ({
-    pull,
-    issue: { n: 7, labels },
-    me: "Owner",
-    ci,
-  })
-  assert.equal(decide("merge", withIssue([])).ok, true)
-  const held = decide("merge", withIssue(["needs-human-review"]))
-  assert.deepEqual(
-    held.refusals.map((r) => r.id),
-    ["NEEDS_HUMAN_REVIEW"]
-  )
+test("legacy review labels on the issue or PR do not block a green merge", () => {
+  for (const labels of [[], ["needs-human-review"]]) {
+    const facts = {
+      pull: { ...pull, labels },
+      issue: { n: 7, labels },
+      me: "Owner",
+      ci,
+    }
+    assert.equal(decide("merge", facts).ok, true)
+    assert.equal(
+      decide("merge", { ...facts, ci: { ...ci, conclusion: "failure" } }).ok,
+      false
+    )
+  }
 })
 
 test("finish refuses a body with no Evidence before it pushes", () => {

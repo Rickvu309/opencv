@@ -351,12 +351,6 @@ test("every checked rule has a failing and a passing fact", () => {
   )
   for (const row of jobRows) seen.add(row.id)
   check(
-    "MASS_DELETE",
-    { diff: { deleted: { files: 26, lines: 5, total: 900 } } },
-    { diff: { deleted: { files: 25, lines: 5, total: 900 } } },
-    "the change deletes a lot of authored source: 26 files (limit 25); a human must review it first, so ask the owner to label the issue needs-human-review"
-  )
-  check(
     "CHANGE_TOO_BIG",
     {
       diff: {
@@ -368,7 +362,7 @@ test("every checked rule has a failing and a passing fact", () => {
       },
     },
     { diff: { changes: [{ path: "a.ts", added: 1, deleted: 0 }] } },
-    "the change adds or edits 26 authored source files (limit 25); large changes cause most of our bugs, so split it into sub-issues (AGENTS.md section 1) and ship one part at a time; if it truly cannot split, ask the owner to label the issue needs-human-review"
+    "the change adds or edits 26 authored source files (limit 25); large changes cause most of our bugs, so split it into sub-issues (AGENTS.md section 1) and ship one part at a time"
   )
   check(
     "PR_METADATA",

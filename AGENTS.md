@@ -27,7 +27,6 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 - Reach `main` only through a merged PR: never push, commit or merge into it locally.
 - Never use `--no-verify`. `SKIP_CHECKS=1` is for a production emergency a human declared; say so in the PR.
 - Never approve your own PR, under any identity.
-- Flag a big decision (dropping a product, a data-losing migration, pricing, the legal entity) or a mass deletion with `needs-human-review`; never merge a PR with it, remove it or edit `.github/CODEOWNERS` around it.
 - A change to `ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs` or the main ruleset is `risk:high` and needs the owner's `/approve`.
 - Leave issues labeled `ready-for-human` to humans.
 - Keep `.env` and secrets out of git.

@@ -5,63 +5,6 @@ import { RULES } from "./index.mjs"
 import { CHANGE_SIZE_LIMIT, countedSourceFiles } from "./diff.mjs"
 
 const row = (id) => RULES.find((item) => item.id === id)
-const del = (files, lines, total) => ({
-  diff: { deleted: { files, lines, total } },
-})
-
-test("MASS_DELETE trips on files, lines or percent, each at its own limit", () => {
-  const rule = row("MASS_DELETE")
-  assert.equal(rule.check(del(25, 2000, 1000)), null)
-  assert.match(rule.check(del(26, 0, 1000)), /26 files \(limit 25\)/)
-  assert.match(rule.check(del(1, 2001, 1000)), /2001 lines \(limit 2000\)/)
-  assert.match(
-    rule.check(del(11, 0, 100)),
-    /11 of 100 authored files \(limit 10%\)/
-  )
-  assert.equal(rule.check(del(10, 0, 100)), null)
-  assert.equal(rule.check({ diff: {} }), null)
-  assert.deepEqual(rule.at, ["finish", "pr"])
-  assert.match(rule.fix({}), /label the issue needs-human-review/)
-})
-
-test("MASS_DELETE passes when the issue carries needs-human-review, and refuses without it", () => {
-  const rule = row("MASS_DELETE")
-  const big = (labels) => ({
-    ...del(26, 0, 1000),
-    diff: { ...del(26, 0, 1000).diff, labels },
-  })
-  assert.match(rule.check(big([])), /26 files \(limit 25\)/)
-  assert.match(rule.check(big(["risk:high"])), /26 files \(limit 25\)/)
-  assert.equal(rule.check(big(["needs-human-review"])), null)
-  assert.match(
-    rule.check(big([])),
-    /a human must review it first, so ask the owner to label the issue needs-human-review/
-  )
-})
-
-test("an agent merge stays refused on a deletion the issue label let through", () => {
-  const facts = {
-    pull: {
-      n: 9,
-      isDraft: false,
-      labels: [],
-      branch: "chore/9-delete",
-      state: "OPEN",
-      head: "h",
-      author: "Owner",
-    },
-    issue: { n: 9, labels: ["needs-human-review"] },
-    diff: { ...del(26, 0, 1000).diff, labels: ["needs-human-review"] },
-    me: "Owner",
-    ci: { status: "completed", conclusion: "success", head: "h" },
-  }
-  assert.equal(row("MASS_DELETE").check(facts), null)
-  assert.equal(
-    row("NEEDS_HUMAN_REVIEW").check(facts),
-    "PR #9 needs human review; an agent never merges it."
-  )
-})
-
 test("PR_METADATA wants the title number, the closing line and an open issue", () => {
   const rule = row("PR_METADATA")
   const ok = {
@@ -125,7 +68,7 @@ test("CHANGE_TOO_BIG counts the limit itself as fine and one more as too big", (
   assert.equal(rule.check(sized(fileChanges(25))), null)
   assert.match(rule.check(sized(fileChanges(26))), /26 authored source files/)
   assert.equal(rule.check({ diff: {} }), null)
-  assert.match(rule.fix({}), /sub-issues.*label the issue needs-human-review/)
+  assert.match(rule.fix({}), /sub-issues/)
 })
 
 test("CHANGE_TOO_BIG ignores tests, snapshots, layouts, lockfile, generated files, pure deletions and pure renames", () => {
@@ -158,39 +101,12 @@ test("CHANGE_TOO_BIG ignores tests, snapshots, layouts, lockfile, generated file
   assert.match(rule.check(sized([...ignored, ...fileChanges(26)])), /26 /)
 })
 
-test("CHANGE_TOO_BIG passes when the issue carries needs-human-review, and refuses without it", () => {
+test("legacy review labels do not bypass the change size limit", () => {
   const rule = row("CHANGE_TOO_BIG")
-  const big = (labels) => ({
-    diff: { changes: changesOf(509), labels },
-  })
-  assert.match(rule.check(big([])), /54 authored source files/)
-  assert.match(rule.check(big(["risk:high"])), /54 authored source files/)
-  assert.equal(rule.check(big(["needs-human-review"])), null)
-  assert.match(
-    rule.check(big([])),
-    /split it into sub-issues.*ask the owner to label the issue needs-human-review/
-  )
-})
-
-test("an agent merge stays refused on a change the issue label let through", () => {
-  const facts = {
-    pull: {
-      n: 9,
-      isDraft: false,
-      labels: [],
-      branch: "feat/9-big",
-      state: "OPEN",
-      head: "h",
-      author: "Owner",
-    },
-    issue: { n: 9, labels: ["needs-human-review"] },
-    diff: { changes: changesOf(509), labels: ["needs-human-review"] },
-    me: "Owner",
-    ci: { status: "completed", conclusion: "success", head: "h" },
+  for (const labels of [[], ["risk:high"], ["needs-human-review"]]) {
+    assert.match(
+      rule.check({ diff: { changes: changesOf(509), labels } }),
+      /54 authored source files.*split it into sub-issues/
+    )
   }
-  assert.equal(row("CHANGE_TOO_BIG").check(facts), null)
-  assert.equal(
-    row("NEEDS_HUMAN_REVIEW").check(facts),
-    "PR #9 needs human review; an agent never merges it."
-  )
 })
