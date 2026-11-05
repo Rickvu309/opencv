@@ -386,6 +386,7 @@ export function PaperLibrary({
                 type="button"
                 variant={filter === value ? "secondary" : "ghost"}
                 size="sm"
+                className="h-11 md:h-8"
                 aria-pressed={filter === value}
                 onClick={() =>
                   dispatch({ type: "filter_changed", filter: value })
