@@ -1,0 +1,10 @@
+[
+  {
+    "title": "feat: Show a saved search on the jobs page",
+    "body": "### Type\n\nfeat\n\n### What and why\n\nThe jobs page forgets what you typed. You have to type it again each visit. This keeps your last search so you can pick up where you left off.\n\n### Done when\n\n- I search for \"designer\", leave the page, and come back. The search box still says \"designer\".\n- A button next to the box clears the search.\n- Another person's search is never shown to me.\n\n### Risk\n\nlow\n\n### Questions for you\n\nShould the saved search last a day or until you clear it?\n\n### Details for the agent\n\nStore it per user in the jobs read. Keep the web side in the jobs feature folder.\n"
+  },
+  {
+    "title": "fix: Stop sending two sign-in emails",
+    "body": "### Type\n\nfix\n\n### What and why\n\nAsking for a sign-in code sometimes sends two emails. The first code stops working when the second arrives. People think sign-in is broken.\n\n### Done when\n\n- I ask for a code once and get one email.\n- The code in that email works.\n- Asking again after a minute gives one new email.\n\n### Risk\n\nhigh\n\n### What could go wrong\n\nPeople could be locked out of sign-in for a while if the fix is wrong. Existing codes might stop working at the moment of the change.\n\n### Out of scope\n\nChanging how long a code lasts.\n\n### Details for the agent\n\nLook at the double submit in the sign-in form and the mail module.\n"
+  }
+]

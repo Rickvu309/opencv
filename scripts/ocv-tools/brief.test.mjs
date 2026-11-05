@@ -1,19 +1,10 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { fileURLToPath } from "node:url"
-import {
-  FENCES_FILE,
-  RULES_FILE,
-  parseFences,
-  parseRoles,
-  parseRules,
-  rulesForRole,
-} from "./brief.mjs"
+import { FENCES_FILE, RULES_FILE, parseFences } from "./brief.mjs"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts, issue } from "./ports/fake.mjs"
 
-const AGENTS_FILE = fileURLToPath(new URL("../../AGENTS.md", import.meta.url))
 const WORKTREE = "/tmp/opencv.worktrees/90-keep-my-search"
 const ROLES = ["build", "mechanical", "review", "plan"]
 
@@ -27,133 +18,53 @@ function run(args, world = {}) {
   return runCli(args, ctxFor(ports))
 }
 
-const rulesInFile = () => parseRules(readFileSync(RULES_FILE, "utf8"))
-const ruleBlock = () =>
-  rulesInFile()
-    .map((rule) => rule.text)
-    .join("\n")
-const outputRules = (text) =>
-  text
-    .split("\nRules:\n")[1]
-    .split("\n")
-    .filter((line) => /^\d+\. /.test(line))
-
-test("brief prints every rule tagged for the role, renumbered", () => {
-  const rules = rulesInFile()
-  assert.ok(rules.length >= 15)
+test("brief prints AGENTS.md for every role", () => {
+  const rules = readFileSync(RULES_FILE, "utf8")
   for (const role of ROLES) {
     const { code, text } = run(["brief", "90", "--role", role])
     assert.equal(code, 0)
-    assert.deepEqual(
-      outputRules(text),
-      rulesForRole(rules, role).map((rule, i) => `${i + 1}. ${rule.text}`)
-    )
+    assert.ok(text.includes(`\nRules:\n${rules}`))
   }
 })
 
-test("every rule names its roles and the AGENTS.md section it follows", () => {
-  const headings = readFileSync(AGENTS_FILE, "utf8")
-    .split("\n")
-    .map((line) => /^#{1,6} (?:\d+\. )?(.+)$/.exec(line)?.[1])
-    .filter(Boolean)
-  for (const rule of rulesInFile()) {
-    assert.ok(headings.includes(rule.section), rule.line)
-    for (const role of rule.roles)
-      assert.ok(["all", ...ROLES].includes(role), rule.line)
-  }
+test("brief reads rules through the filesystem port", () => {
+  const rules = "# Project rules\n\nUse the assigned worktree.\n"
+  const { code, text } = run(["brief", "90", "--role", "build"], {
+    files: { [RULES_FILE]: rules },
+  })
+  assert.equal(code, 0)
+  assert.ok(text.includes(`\nRules:\n${rules}`))
 })
 
-test("a rule with no role tag or no section is refused", () => {
-  const block = (line) => `## Rules\n\n\`\`\`text\n${line}\n\`\`\`\n`
-  assert.throws(() => parseRules(block("1. No tag here. (AGENTS.md: Git)")))
-  assert.throws(() => parseRules(block("1. [all] No section here.")))
-  assert.equal(
-    parseRules(block("1. [build plan] Fine. (AGENTS.md: Git)"))[0].section,
-    "Git"
-  )
-})
-
-test("the git and model words in the rules are also in AGENTS.md", () => {
-  const agents = readFileSync(AGENTS_FILE, "utf8")
-  const block = ruleBlock()
-  for (const word of [
-    "--no-verify",
-    "SKIP_CHECKS",
-    "--author",
-    "Co-Authored-By",
-    "AI attribution",
-    "finish --body-file",
-    "scripts/ocv-tools.mjs save",
-    "scripts/ocv-tools.mjs done",
-    "scripts/ocv-tools.mjs block",
-    "haiku for search, exploration, polling and mechanical edits, opus for writing code, planning, architecture and review",
-  ]) {
-    assert.ok(block.includes(word), `rules lack ${word}`)
-    assert.ok(agents.includes(word), `AGENTS.md lacks ${word}`)
-  }
-})
-
-test("the model rule and the role table agree", () => {
-  const table = parseRoles(readFileSync(RULES_FILE, "utf8"))
-  const modelRule = rulesInFile().find((rule) =>
-    rule.text.startsWith("Subagents.")
-  ).text
-  assert.match(modelRule, /haiku for [^.]*mechanical edits/)
-  assert.match(
-    modelRule,
-    /opus for writing code, planning, architecture and review/
-  )
-  assert.doesNotMatch(modelRule, /sonnet/i)
-  assert.equal(table.mechanical.model, "haiku")
-  assert.equal(table.build.model, "opus")
-  assert.equal(table.review.model, "opus")
-  assert.equal(table.plan.model, "opus")
-})
-
-test("the rules name the commands an agent must run and hold no machine path", () => {
-  const block = ruleBlock()
-  for (const word of [
-    "scripts/ocv-tools.mjs take",
-    "scripts/ocv-tools.mjs finish",
-  ])
-    assert.ok(block.includes(word), word)
-  assert.doesNotMatch(block, /\/home\/|\/Users\//)
-})
-
-test("a review or plan brief never tells the agent to change anything", () => {
+test("review and plan briefs identify their read-only mode", () => {
   for (const role of ["review", "plan"]) {
     const { text } = run(["brief", "90", "--role", role], { worktrees: [] })
-    assert.doesNotMatch(
-      text,
-      /scripts\/ocv-tools\.mjs (take|save|finish|done|block)/
-    )
-    assert.match(text, /Read only/)
+    assert.match(text, /^Mode: read only$/m)
+    assert.match(text, /^Worktree: none \(read only\)$/m)
+    assert.doesNotMatch(text, /^Worktree: none yet;/m)
   }
   for (const role of ["build", "mechanical"]) {
     const { text } = run(["brief", "90", "--role", role], { worktrees: [] })
-    for (const verb of ["take", "save", "finish", "done", "block"])
-      assert.ok(text.includes(`scripts/ocv-tools.mjs ${verb}`), verb)
+    assert.doesNotMatch(text, /^Mode: read only$/m)
+    assert.match(
+      text,
+      /^Worktree: none yet; run scripts\/ocv-tools\.mjs take 90$/m
+    )
   }
 })
 
-test("each role gets its model and budget from the table", () => {
+test("each role gets its model and tool budget", () => {
   const expected = {
-    build: "opus",
-    mechanical: "haiku",
-    review: "opus",
-    plan: "opus",
+    build: { model: "opus", budget: 60 },
+    mechanical: { model: "haiku", budget: 40 },
+    review: { model: "opus", budget: 40 },
+    plan: { model: "opus", budget: 40 },
   }
-  const table = parseRoles(readFileSync(RULES_FILE, "utf8"))
-  for (const [role, model] of Object.entries(expected)) {
-    assert.equal(table[role].model, model)
+  for (const [role, { model, budget }] of Object.entries(expected)) {
     const { code, text } = run(["brief", "90", "--role", role])
     assert.equal(code, 0)
     assert.match(text, new RegExp(`^Model: ${model}$`, "m"))
-    assert.match(
-      text,
-      new RegExp(`^Tool budget: ${table[role].budget} calls$`, "m")
-    )
-    assert.doesNotMatch(text, /sonnet/i)
+    assert.match(text, new RegExp(`^Tool budget: ${budget} calls$`, "m"))
   }
 })
 

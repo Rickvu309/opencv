@@ -1,18 +1,14 @@
 import { fileURLToPath } from "node:url"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
-import {
-  PLAIN_RULE,
-  buildIssueBody,
-  lintIssue,
-  parseRisk,
-  splitIssues,
-} from "./lint.mjs"
+import { PLAIN_RULE, buildIssueBody, lintIssue, parseRisk } from "./lint.mjs"
 
-export const EXAMPLES = fileURLToPath(new URL("./examples.md", import.meta.url))
+export const EXAMPLES = fileURLToPath(
+  new URL("./issue-examples.json", import.meta.url)
+)
 
 export function exampleIssues(text) {
-  return splitIssues(text)
+  return JSON.parse(text)
 }
 
 const TITLE_PREFIX = new RegExp(`^(${TYPES.join("|")}): `)

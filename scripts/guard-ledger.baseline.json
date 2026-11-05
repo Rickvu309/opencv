@@ -43,7 +43,6 @@
   "packages/guards/test-completeness.test.mjs",
   "packages/guards/wall-clock.test.mjs",
   "packages/guards/workspace-scripts.test.mjs",
-  "scripts/adr-citations.test.mjs",
   "scripts/approve-railway-deploys.test.mjs",
   "scripts/blocknote-dependencies.test.mjs",
   "scripts/browser-launcher.test.mjs",
@@ -60,7 +59,6 @@
   "scripts/skill-routes.test.mjs",
   "scripts/unused-domain-exports.test.mjs",
   "scripts/verify-auth-production.test.mjs",
-  "scripts/verify-feature-map.test.mjs",
   "scripts/web-lint-rules.test.mjs",
   "scripts/web-test-clock.test.mjs"
 ]

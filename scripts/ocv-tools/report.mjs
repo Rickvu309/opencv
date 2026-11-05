@@ -87,7 +87,7 @@ export const COMMANDS = [
   {
     name: "brief",
     usage: "brief <issue> --role <build|mechanical|review|plan>",
-    when: "Print the rules block from docs/agents/brief-rules.md, the model for the role, the worktree, port, tool budget and fenced paths. Paste it into an agent's brief instead of retyping the rules.",
+    when: "Print the rules from AGENTS.md, the model for the role, the worktree, port, tool budget and fenced paths. Paste it into an agent's brief instead of retyping the rules.",
   },
   {
     name: "done",
