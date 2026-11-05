@@ -1,86 +1,38 @@
-# opencv
+# OpenCV
 
-opencv is an AI career coach for Vietnamese students and new graduates. The person writes a CV and a cover letter, tracks jobs on a board, and talks to the Coach. The Coach can change those surfaces. Inbox reads recruiter mail and drafts a reply the person can send.
+OpenCV is a job-search app for Vietnamese students and new graduates. It combines an AI career coach, a CV and cover-letter editor, a job application tracker, and a recruiter inbox.
 
-Live at https://opencv.me
+## Project structure
 
-## What ships in release one
+- `apps/web` contains the React SPA built with Vite and TanStack Router.
+- `apps/api` contains the Hono API, Better Auth, and Drizzle database code.
+- `packages/domain` defines the typed contract shared by the web app and API.
+- `packages/ui` contains shared UI components.
+- `packages/paper-crdt` contains shared document collaboration code.
 
-- **Coach.** A Chat page and a Chat panel. Modes are Free, Light, and Max. Light and Max need Pro.
-- **Paper.** CVs, cover letters, and a Proof placeholder.
-- **Apply.** A board, a list, and a calendar for Jobs. Stages are Saved, Applied, Interview, Offer, and Closed.
-- **Inbox.** Recruiter mail matched to Jobs. A fake source on a local run. Gmail when `GOOGLE_CLIENT_ID` is set.
-- **Settings.** Preferences, Coach, integrations, usage, billing, and account. The start page opens after sign-in. Apply is the default. There is no Home screen.
-- **Jobs, Proof, and Pitch.** Coming-soon pages. The old Pitch code is removed.
-- **Upgrade to Pro.** A placeholder. Pro is granted by hand.
+## Run locally
 
-## Stack
-
-| Part              | Technology                                                                         |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| `apps/web`        | Vite, React 19, TanStack Router single-page app, served by Caddy from a Dockerfile |
-| `apps/api`        | Hono, Drizzle and Better Auth on Node 22                                           |
-| `packages/ui`     | shadcn-style component kit, consumed as source by `apps/web`                       |
-| `packages/domain` | Domain code shared by web and api                                                  |
-| Tooling           | pnpm workspaces, turbo                                                             |
-| Hosting           | Railway (`api`, `web`, Postgres) behind Cloudflare                                 |
-
-## Local setup
-
-Local development needs no Postgres and no API keys. `DB_DRIVER=pglite` runs the database in-process and `COACH_RUNTIME=fake` replaces the model with a scripted Coach.
+Use Node.js 20 or later and pnpm 10.33.4. Local development can use PGlite and a fake Coach without PostgreSQL or model API keys.
 
 ```bash
 pnpm install
 mkdir -p apps/api/.data
-export DB_DRIVER=pglite COACH_RUNTIME=fake SESSION_SECRET="$(openssl rand -hex 24)"
+export DB_DRIVER=pglite COACH_RUNTIME=fake
+export SESSION_SECRET="$(openssl rand -hex 24)"
 pnpm dev --env-mode=loose
 ```
 
-PGlite writes its files to `apps/api/.data/default`. That directory is gitignored, and PGlite does not create the parent, so the `mkdir` is required on a fresh checkout. The web app is at http://localhost:5173 and the api health check is at http://localhost:3001/health. A worktree stores its api port as `PORT` in `.env`, and `pnpm dev` puts the api on `PORT` and the web on `PORT + 1000`. `--env-mode=loose` lets turbo pass the exported variables to the dev servers. Other variables are listed in `.env.example`.
+The default web address is http://localhost:5173. The API health endpoint is http://localhost:3001/health. Worktrees use the assigned `PORT` for the API and `PORT + 1000` for the web app. See `.env.example` for configuration options. Keep secrets out of Git.
 
-## Scripts
-
-| Script                              | Purpose                                                                |
-| ----------------------------------- | ---------------------------------------------------------------------- |
-| `pnpm dev`                          | Run web + api                                                          |
-| `pnpm build`                        | Production builds                                                      |
-| `pnpm test`                         | Workspace tests                                                        |
-| `pnpm lint`                         | Lint all packages                                                      |
-| `pnpm typecheck`                    | Typecheck all packages                                                 |
-| `pnpm --filter api run db:generate` | Generate SQL after editing `apps/api/src/db/schema.ts`                 |
-| `pnpm --filter api run db:seed`     | Seed a starter workspace for an existing empty user (needs a database) |
-
-## Design
-
-The release-one design is not on `main`. It lives on branch `chore/350-design-kit-cli-skills`.
+## Checks
 
 ```bash
-git fetch origin chore/350-design-kit-cli-skills
-git worktree add ../opencv.worktrees/350-design-kit-cli-skills origin/chore/350-design-kit-cli-skills
+pnpm check
+pnpm build
 ```
 
-The files are `design/opencv.pen`, `design/exports`, and `design/cli`. From that worktree, run the kit CLI with `node design/cli/bin/opencv.js`.
+`pnpm check` runs checks for changed files. `pnpm check:full` runs the full check suite.
 
-## How work happens
+## Contributing
 
-Every change starts with a GitHub issue, and every issue gets its own branch and worktree. One workflow, `ci.yml`, runs the full checks on GitHub-hosted runners, and the merge queue runs them again on the merged result. Local hooks run only quick checks. A pull request merges when that check is green.
-
-```bash
-scripts/ocv-tools.mjs take <issue#> -d "short description"   # branch + worktree
-scripts/ocv-tools.mjs finish --body-file <file>              # rules, push, PR
-```
-
-Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow.
-
-## Docs
-
-| Doc                  | What it holds                            |
-| -------------------- | ---------------------------------------- |
-| `PRODUCT.md`         | Release one, as the design draws it      |
-| `CONTEXT.md`         | The glossary                             |
-| `docs/adr/`          | Decisions `0001` to `0010`               |
-| `docs/deploy.md`     | Railway and Cloudflare runbook           |
-| `docs/agents/`       | How agents read issues and the glossary  |
-| `docs/git-workflow/` | Branches, worktrees, review, and deploys |
-| `AGENTS.md`          | Rules for agents                         |
-| `CONTRIBUTING.md`    | Rules for people and agents              |
+Follow the repository rules in [AGENTS.md](AGENTS.md). Start from a GitHub issue, work in an assigned worktree, and submit changes through a pull request.
