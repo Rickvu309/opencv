@@ -141,7 +141,7 @@ export function ChecklistItemRow({
       role="checkbox"
       aria-checked={item.done}
       aria-label={item.label}
-      className="h-auto min-h-11 w-full items-start justify-start gap-2.5 rounded-[6px] border-0 border-b border-foreground/6 px-2 py-1.5 text-[13.5px] font-normal hover:bg-secondary md:min-h-[34px]"
+      className="h-auto min-h-[44px] w-full items-start justify-start gap-2.5 rounded-[6px] border-0 border-b border-foreground/6 px-2 py-1.5 text-[13.5px] font-normal hover:bg-secondary md:min-h-[34px]"
       onClick={onToggle}
     >
       {item.done ? (
