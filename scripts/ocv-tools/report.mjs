@@ -106,8 +106,8 @@ export const COMMANDS = [
   },
   {
     name: "rules",
-    usage: "rules [--write|--check|--list]",
-    when: "Show the workflow rules. --check fails when the guide is stale, --write refreshes it, --list prints each rule.",
+    usage: "rules [--list]",
+    when: "Show each current workflow rule. The retired --check and --write flags fail with replacement commands; generated workflow guides are no longer maintained.",
   },
 ]
 

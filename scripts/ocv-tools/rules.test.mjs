@@ -1,16 +1,9 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
 import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { COMMANDS } from "./report.mjs"
 import { decide, evaluate, jobRows, needsOf, RULES } from "./rules/index.mjs"
-import {
-  RULES_DOC,
-  RULE_GUIDES,
-  renderRulesDoc,
-  rulesDocMatches,
-} from "./rules/doc.mjs"
 
 const TYPE_LIST = "feat, fix, hotfix, refactor, chore, docs"
 const seen = new Set()

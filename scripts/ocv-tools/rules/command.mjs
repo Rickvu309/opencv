@@ -1,40 +1,17 @@
 import { EXIT } from "../result.mjs"
-import { RULE_GUIDES, applyRulesDoc } from "./doc.mjs"
 import { RULES } from "./index.mjs"
 
-function listResult() {
+export function rulesJob(ctx, { flags = {} } = {}) {
+  if (flags["--write"] || flags["--check"])
+    return {
+      exit: EXIT.error,
+      lines: [
+        "rules --check and --write are retired because the generated workflow guides were removed.",
+      ],
+      fix: "Run: scripts/ocv-tools.mjs rules --list to inspect the current workflow rules. Run scripts/ocv-tools.mjs doctor to check machine setup.",
+    }
   return {
     lines: RULES.map((row) => `${row.id}: ${row.says}`),
-    next: "scripts/ocv-tools.mjs rules --check",
+    next: "scripts/ocv-tools.mjs doctor",
   }
-}
-
-export function rulesJob(ctx, { flags = {} } = {}) {
-  if (flags["--write"]) {
-    for (const { path, table, render } of RULE_GUIDES) {
-      const next = applyRulesDoc(ctx.ports.fs.read(path), table, render).text
-      ctx.ports.fs.write(path, next)
-    }
-    return {
-      lines: ["Wrote the rules block."],
-      next: "scripts/ocv-tools.mjs rules --check",
-    }
-  }
-  if (flags["--check"]) {
-    const stale = RULE_GUIDES.find(
-      ({ path, table, render }) =>
-        !applyRulesDoc(ctx.ports.fs.read(path), table, render).ok
-    )
-    if (stale)
-      return {
-        exit: EXIT.error,
-        lines: [`The rules block in ${stale.path} does not match the table.`],
-        fix: "Run: scripts/ocv-tools.mjs rules --write",
-      }
-    return {
-      lines: ["Rules doc matches the table."],
-      next: "scripts/ocv-tools.mjs rules --list",
-    }
-  }
-  return listResult()
 }

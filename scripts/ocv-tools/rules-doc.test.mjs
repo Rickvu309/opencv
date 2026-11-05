@@ -2,8 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
-import { MOMENTS, RULES, RUNNERS } from "./rules/index.mjs"
-import { RULE_GUIDES, renderMomentsDoc, renderRulesDoc } from "./rules/doc.mjs"
+import { RULES } from "./rules/index.mjs"
 
 test("doctor lists every rule from the table", () => {
   const { text } = runCli(["doctor"], ctxFor(fakePorts()))
@@ -11,28 +10,40 @@ test("doctor lists every rule from the table", () => {
   for (const row of RULES) assert.match(text, new RegExp(`  ${row.id}:`))
 })
 
-test("a table with a wide row is padded to the widest cell in every column", () => {
-  const table = renderRulesDoc(RULES.slice(0, 3)).split("\n")
-  assert.equal(new Set(table.map((line) => line.length)).size, 1)
-})
-
-test("the moments guide says what every moment means and which file runs it", () => {
-  const md = renderMomentsDoc()
-  for (const [moment, means] of Object.entries(MOMENTS)) {
-    assert.ok(means.length > 20, `${moment} has no meaning`)
-    assert.ok(md.includes(means), `${moment} is not explained`)
-    for (const runner of RUNNERS[moment]) assert.ok(md.includes(runner))
+test("rules lists the current rules without reading or writing guides", () => {
+  for (const args of [["rules"], ["rules", "--list"]]) {
+    const ports = fakePorts()
+    ports.fs.read = () => assert.fail("rules must not read a guide")
+    ports.fs.write = () => assert.fail("rules must not write a guide")
+    const { code, text } = runCli(args, ctxFor(ports))
+    assert.equal(code, 0)
+    for (const row of RULES) assert.ok(text.includes(`${row.id}: ${row.says}`))
+    assert.match(text, /Next: scripts\/ocv-tools\.mjs doctor/)
   }
-  assert.ok(RULE_GUIDES.some(({ render }) => render === renderMomentsDoc))
 })
 
-test("every why a row carries is printed in its guide", () => {
-  const withWhy = RULES.filter((row) => row.why)
-  assert.ok(withWhy.length > 0)
-  for (const row of withWhy) {
-    const guide = RULE_GUIDES.find(
-      ({ table, render }) => !render && table.includes(row)
+test("retired guide flags fail with current replacement commands", () => {
+  for (const flags of [["--check"], ["--write"], ["--check", "--write"]]) {
+    const ports = fakePorts()
+    ports.fs.read = () => assert.fail("retired flags must not read a guide")
+    ports.fs.write = () =>
+      assert.fail("retired flags must not recreate a guide")
+    const { code, text } = runCli(["rules", ...flags], ctxFor(ports))
+    assert.equal(code, 1)
+    assert.match(
+      text,
+      /are retired because the generated workflow guides were removed/
     )
-    assert.ok(renderRulesDoc(guide.table).includes(row.why), row.id)
+    assert.match(text, /rules --list/)
+    assert.match(text, /doctor/)
+    assert.doesNotMatch(text, /ENOENT|Rules doc matches/)
   }
+})
+
+test("help advertises current rule listing and explains retired guide flags", () => {
+  const { code, text } = runCli(["help"], ctxFor(fakePorts()))
+  assert.equal(code, 0)
+  assert.match(text, /rules \[--list\]/)
+  assert.match(text, /retired --check and --write flags fail/)
+  assert.doesNotMatch(text, /rules \[--write\|--check/)
 })
