@@ -16,7 +16,7 @@ Paper (`/paper`) imports a PDF or Word file into a version 2 CV, shows Importing
 ## How to get to it (user POV)
 
 - Choose `Paper` in the sidebar, or open `/paper`.
-- On an empty account the import row is the region named `Import a file`.
+- Choose `Import` in the library header, or the `Import` starter card on an empty account. The import dialog contains the region named `Import a file`.
 
 ## Fixtures
 
@@ -41,11 +41,11 @@ writeFileSync(process.env.EVIDENCE_DIR + '/big.pdf', Buffer.alloc(9_000_000))
 
 Preconditions: signed in on a new account (see `auth.md`). The library shows Start a document. Own `agent-browser` session. Do not copy a sign-in code into the report.
 
-- **PDF.** `agent-browser open "$WEB_URL/paper"`. Set the hidden file input to `$EVIDENCE_DIR/sample.pdf` (the row button is `Choose file`). Wait until the URL matches `/paper/` plus an id. The region name starts with `Editing`. A block contains `Campus newsletter`. The region `Import checks` shows `Imported from sample.pdf` and `1 to check`. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-pdf.png"`.
+- **PDF.** `agent-browser open "$WEB_URL/paper"`. Choose `Import`, then set the hidden file input to `$EVIDENCE_DIR/sample.pdf` (the row button is `Choose file`). Wait until the URL matches `/paper/` plus an id. The region name starts with `Editing`. A block contains `Campus newsletter`. The region `Import checks` shows `Imported from sample.pdf` and `1 to check`. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-pdf.png"`.
 - **Phone.** `agent-browser find role button click --name "Add phone"`. The textbox named `Phone` is focused. `agent-browser keyboard type "555 0100"`. Wait until `Edited just now` is visible and `Phone missing` is gone. `Done` is visible. Choose `Done`. Wait until `GET /api/paper/{id}` checks is `[]`. `agent-browser reload`. The region `Import checks` stays gone. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-done.png"`.
 - **DOCX.** Open `/paper`. Import `$EVIDENCE_DIR/notes.docx`. The editor contains `Weekly newsletter for students`. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-docx.png"`.
 - **Pages.** Open `/paper`. Import `$EVIDENCE_DIR/sample.pages`. The dialog heading is `Can't read this file`. The alert contains `Pages files aren't supported. Try a PDF or Word file.` `GET /api/paper` has no document named `sample`. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-pages.png"`.
-- **Links.** On the empty library, focus the textbox `Paste a link`, type `https://docs.google.com/document/d/abc`, and press Enter. The alert contains `Google Docs aren't supported. Download a PDF or Word file.` Close the dialog. Paste `https://www.linkedin.com/in/example` the same way. The alert contains `LinkedIn links aren't supported. Download a PDF or Word file.` `GET /api/paper` and `GET /api/paper/files` gain no row. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-link.png"`.
+- **Links.** Open `Import`, focus the textbox `Paste a link`, type `https://docs.google.com/document/d/abc`, and press Enter. The alert contains `Google Docs aren't supported. Download a PDF or Word file.` Close the error dialog, open `Import`, and paste `https://www.linkedin.com/in/example` the same way. The alert contains `LinkedIn links aren't supported. Download a PDF or Word file.` `GET /api/paper` and `GET /api/paper/files` gain no row. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-link.png"`.
 - **Cancel.** Open `/paper` on an account whose library is still Start a document, or after closing the error dialog. Start an import of a 7 MB PDF and choose `Cancel` once the heading `Importing…` is visible. Wait until that import request has finished, then until the follow-up deletes have finished. The library still shows `Start a document`, the URL stays `/paper`, and `GET /api/paper` and `GET /api/paper/files` are empty. Cancel leaves the upload running so the response can be discarded. An early click that never reaches the server is not this check.
 - **Empty type.** Build `empty-type.pdf` with the same bytes as `sample.pdf`. On the empty library, put that file on the hidden input as a `File` whose `type` is `""` and dispatch `change`. The editor opens and a block contains `Campus newsletter`. A `.pdf` name alone makes the browser send `application/pdf`, so the empty type has to be set on the `File`.
 - **Size.** Import `$EVIDENCE_DIR/big.pdf`. The alert contains `File must be 8 MB or smaller.` Save `agent-browser screenshot "$EVIDENCE_DIR/paper-import-size.png"`.

@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react"
+import { FileText, MoreHorizontal, Upload, type LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -7,15 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { cn } from "@workspace/ui/lib/utils"
 
 import { previewTemplate } from "./paper-templates.ts"
-
-export function SectionHead({ children }: { children: string }) {
-  return (
-    <h2 className="text-sm font-medium text-muted-foreground">{children}</h2>
-  )
-}
 
 export function MiniCv({ templateId }: { templateId: string }) {
   return (
@@ -36,44 +29,72 @@ export function MiniCv({ templateId }: { templateId: string }) {
 export function NewPaperCard({
   title,
   body,
+  icon: Icon = FileText,
   onClick,
-  href,
 }: {
   title: string
   body: string
-  onClick?: () => void
-  href?: string
+  icon?: LucideIcon
+  onClick: () => void
 }) {
-  const className = cn(
-    "flex h-full flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left",
-    "hover:bg-muted"
-  )
-  if (href) {
-    return (
-      <a href={href} aria-label={title} className={className}>
-        <span className="text-sm font-medium">{title}</span>
-        <span className="text-sm text-muted-foreground">{body}</span>
-      </a>
-    )
-  }
   return (
     <Button
       type="button"
       variant="outline"
       aria-label={title}
-      className={cn(className, "h-auto whitespace-normal")}
+      className="h-36 min-w-0 flex-col items-start justify-between rounded-lg bg-card p-4 text-left whitespace-normal"
       onClick={onClick}
     >
-      <span className="text-sm font-medium">{title}</span>
-      <span className="text-sm font-normal text-muted-foreground">{body}</span>
+      <Icon className="text-muted-foreground" aria-hidden="true" />
+      <span className="flex flex-col gap-1">
+        <span className="text-sm font-medium">{title}</span>
+        <span className="text-xs font-normal text-muted-foreground">
+          {body}
+        </span>
+      </span>
     </Button>
+  )
+}
+
+export function PaperLibraryStarters({
+  onCv,
+  onLetter,
+  onImport,
+}: {
+  onCv: () => void
+  onLetter: () => void
+  onImport: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-base font-medium">Start a document</h2>
+        <p className="text-sm text-muted-foreground">
+          Pick a page, or bring a file you already have.
+        </p>
+      </div>
+      <div className="grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
+        <NewPaperCard title="CV" body="A page you can send." onClick={onCv} />
+        <NewPaperCard
+          title="Cover letter"
+          body="A letter for one job."
+          onClick={onLetter}
+        />
+        <NewPaperCard
+          title="Import"
+          body="Bring an existing file."
+          icon={Upload}
+          onClick={onImport}
+        />
+      </div>
+    </div>
   )
 }
 
 export function PaperCard({
   name,
   edited,
-  templateId,
+  kind,
   onOpen,
   onRename,
   onDuplicate,
@@ -83,7 +104,7 @@ export function PaperCard({
 }: {
   name: string
   edited: string
-  templateId: string
+  kind: "CV" | "Cover letter"
   onOpen: () => void
   onRename: () => void
   onDuplicate: () => void
@@ -92,18 +113,22 @@ export function PaperCard({
   onDelete: () => void
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="relative min-w-0">
       <Button
         type="button"
         variant="outline"
         aria-label={`${name}, ${edited}`}
-        className="h-auto w-full flex-col items-stretch gap-2 p-3 text-left whitespace-normal"
+        className="h-36 w-full min-w-0 flex-col items-start justify-between rounded-lg bg-card p-4 text-left whitespace-normal"
         onClick={onOpen}
       >
-        <MiniCv templateId={templateId} />
-        <span className="truncate text-sm font-medium">{name}</span>
-        <span className="text-xs font-normal text-muted-foreground">
-          {edited}
+        <FileText className="text-muted-foreground" aria-hidden="true" />
+        <span className="flex w-full min-w-0 flex-col gap-1">
+          <span className="line-clamp-2 text-sm font-medium break-words">
+            {name}
+          </span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {kind} · {edited}
+          </span>
         </span>
       </Button>
       <DropdownMenu>
@@ -112,11 +137,11 @@ export function PaperCard({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon-sm"
+              className="absolute top-2 right-2"
               aria-label={`${name} menu`}
             >
               <MoreHorizontal />
-              Menu
             </Button>
           }
         />
@@ -128,6 +153,44 @@ export function PaperCard({
             Link to application
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onDownload}>Download PDF</DropdownMenuItem>
+          <DropdownMenuItem onClick={onDelete}>Delete</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+export function PaperFileCard({
+  name,
+  onDelete,
+}: {
+  name: string
+  onDelete: () => void
+}) {
+  return (
+    <div className="relative flex h-36 min-w-0 flex-col items-start justify-between rounded-lg border border-border bg-card p-4">
+      <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
+      <div className="flex w-full min-w-0 flex-col gap-1">
+        <span className="line-clamp-2 text-sm font-medium break-words">
+          {name}
+        </span>
+        <span className="text-xs text-muted-foreground">Imported file</span>
+      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="absolute top-2 right-2"
+              aria-label={`${name} menu`}
+            >
+              <MoreHorizontal />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={onDelete}>Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

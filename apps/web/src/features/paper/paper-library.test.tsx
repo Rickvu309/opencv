@@ -3,7 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
-import { blankCv, paperDocumentSchema, type PaperView } from "@workspace/domain"
+import {
+  blankCv,
+  paperDocumentSchema,
+  type PaperView,
+  type PaperFile,
+} from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
 import { importPaperFile, importPaperLink } from "./paper-api.ts"
@@ -77,7 +82,11 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function renderLibrary(docs: PaperView[]) {
+function missingImport(): never {
+  throw new Error("Missing Import button")
+}
+
+function renderLibrary(docs: PaperView[], files: PaperFile[] = []) {
   function Harness() {
     const [query, setQuery] = useReducer(
       (_query: string, nextQuery: string) => nextQuery,
@@ -86,7 +95,7 @@ function renderLibrary(docs: PaperView[]) {
     return (
       <PaperLibrary
         docs={docs}
-        files={[]}
+        files={files}
         loading={false}
         error={null}
         onRetry={() => undefined}
@@ -233,6 +242,10 @@ describe("Paper library", () => {
     )
     renderLibrary([])
     const file = new File(["CV"], "Dropped.pdf", { type: "application/pdf" })
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
+        missingImport()
+    )
     fireEvent.drop(screen.getByRole("region", { name: "Import a file" }), {
       dataTransfer: { files: [file] },
     })
@@ -248,6 +261,10 @@ describe("Paper library", () => {
       new Error("Google Docs aren't supported. Download a PDF or Word file.")
     )
     renderLibrary([])
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
+        missingImport()
+    )
     const field = screen.getByRole("textbox", { name: "Paste a link" })
     fireEvent.change(field, {
       target: { value: "https://docs.google.com/document/d/abc" },
@@ -264,19 +281,78 @@ describe("Paper library", () => {
     )
   })
 
-  it("shows the three start cards and the import row when there are no documents", () => {
+  it("offers three starter cards and opens import when there are no documents", () => {
     renderLibrary([])
     expect(screen.getByText("Start a document")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "CV" })).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Cover letter" })
     ).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Proof" })).toHaveAttribute(
-      "href",
-      "/proof"
+    expect(
+      screen.queryByRole("textbox", { name: "Search Paper" })
+    ).not.toBeInTheDocument()
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Import", exact: true }).at(1) ??
+        missingImport()
     )
     expect(
+      screen.getByRole("dialog", { name: "Import", exact: true })
+    ).toBeInTheDocument()
+    expect(
       screen.getByRole("button", { name: "Choose file" })
+    ).toBeInTheDocument()
+  })
+
+  it("filters document types and searches within the selected type", () => {
+    renderLibrary([cv("My CV"), letter("Design letter")])
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cover letters", exact: true })
+    )
+    expect(
+      screen.getByRole("button", { name: "Cover letters", exact: true })
+    ).toHaveAttribute("aria-pressed", "true")
+    expect(
+      screen.queryByRole("button", { name: /^My CV,/ })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /^Design letter,/ })
+    ).toBeInTheDocument()
+    fireEvent.change(screen.getByRole("textbox", { name: "Search Paper" }), {
+      target: { value: "My CV" },
+    })
+    expect(screen.getByText('No results for "My CV"')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "All", exact: true }))
+    expect(screen.getByRole("button", { name: /^My CV,/ })).toBeInTheDocument()
+  })
+
+  it("shows imported files without documents and keeps their delete action", async () => {
+    renderLibrary(
+      [],
+      [
+        {
+          id: "33333333-3333-4333-8333-333333333333",
+          name: "Original CV.pdf",
+          mediaType: "application/pdf",
+          byteSize: 42,
+          createdAt: "2026-08-25T12:00:00.000Z",
+        },
+      ]
+    )
+    expect(screen.queryByText("Start a document")).not.toBeInTheDocument()
+    expect(screen.getByText("Original CV.pdf")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "CVs", exact: true }))
+    expect(
+      screen.getByText("No documents of this type yet.")
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Files", exact: true }))
+    fireEvent.click(
+      screen.getByRole("button", { name: "Original CV.pdf menu" })
+    )
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Delete", exact: true })
+    )
+    expect(
+      screen.getByRole("dialog", { name: "Delete this file?" })
     ).toBeInTheDocument()
   })
 
