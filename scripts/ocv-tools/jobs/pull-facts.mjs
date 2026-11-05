@@ -167,7 +167,7 @@ export function pullFacts(ctx, n) {
   const base = git(ctx, "merge-base", "origin/main", head)
   const files = changedFiles(
     ctx,
-    gh(ctx, "pr", "diff", String(n), "--name-only").split("\n"),
+    git(ctx, "diff", "--name-only", base, head).split("\n"),
     base,
     head
   )
