@@ -2,7 +2,6 @@
   "frameId": "f0rS0",
   "frameName": "W9.4 List",
   "route": "/apply?view=list",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

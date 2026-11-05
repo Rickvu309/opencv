@@ -25,7 +25,3 @@ export function loadFixtureThreads(
   cache = { path, threads }
   return threads
 }
-
-export function resetInboxFixtureCache() {
-  cache = null
-}

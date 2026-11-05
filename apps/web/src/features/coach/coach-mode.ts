@@ -1,4 +1,4 @@
-import { DEFAULT_COACH_MODE, type CoachMode } from "@workspace/domain"
+import type { CoachMode } from "@workspace/domain"
 
 export const COACH_MODE_OPTIONS = [
   {
@@ -24,8 +24,6 @@ export const COACH_MODE_OPTIONS = [
   label: string
   helper: string
 }[]
-
-export const DEFAULT_HOME_COACH_MODE = DEFAULT_COACH_MODE
 
 export function coachModeLabel(mode: CoachMode) {
   return (

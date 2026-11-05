@@ -2,7 +2,6 @@
   "frameId": "U4613",
   "frameName": "W9.7 Calendar month",
   "route": "/apply?view=calendar&span=month",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

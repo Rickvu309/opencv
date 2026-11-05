@@ -13,45 +13,6 @@ import {
 } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
 
-export function PriorityBars({ level }: { level: JobPriority }) {
-  const filled = level === "low" ? 1 : level === "high" ? 3 : 2
-  const label = priorityLabel(level)
-  return (
-    <svg
-      data-slot="priority-bars"
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      role="img"
-      aria-label={label}
-    >
-      {[0, 1, 2].map((index) => (
-        <rect
-          key={index}
-          x={1 + index * 4}
-          y={8 - index * 3}
-          width="2.4"
-          height={3 + index * 3}
-          rx="0.8"
-          className={index < filled ? "fill-foreground" : "fill-border"}
-        />
-      ))}
-    </svg>
-  )
-}
-
-export function CompanyTile({ company }: { company: string }) {
-  return (
-    <span
-      data-slot="company-tile"
-      className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium text-foreground ring-1 ring-border"
-      aria-hidden
-    >
-      {companyInitials(company)}
-    </span>
-  )
-}
-
 const WEEKDAY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
 function interviewTag(job: JobView, now: Date): string | null {

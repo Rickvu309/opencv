@@ -2,7 +2,6 @@
   "frameId": "a3PFL",
   "frameName": "W9.6 Drag to stage",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

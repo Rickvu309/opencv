@@ -51,7 +51,6 @@
     }
   },
   "30": {
-    "reference": ".claude/skills/verify-landing/reference/coach-art.png",
     "title": "A coach that does the work",
     "raster": 300,
     "channelDelta": 48,

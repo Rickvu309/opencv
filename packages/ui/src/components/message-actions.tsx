@@ -85,41 +85,6 @@ function Swap({
   )
 }
 
-export function MessageText({
-  version,
-  children,
-  className,
-}: {
-  version: string | number
-  children: ReactNode
-  className?: string
-}) {
-  const inner = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState<number | undefined>(undefined)
-  useEffect(() => {
-    const el = inner.current
-    if (!el || typeof ResizeObserver === "undefined") return
-    const ro = new ResizeObserver(() => setHeight(el.offsetHeight))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  return (
-    <div
-      className={["ui-mac-text", className].filter(Boolean).join(" ")}
-      style={{ height }}
-    >
-      <style href="ui-message-actions-clean" precedence="default">
-        {css}
-      </style>
-      <div ref={inner} className="ui-mac-text__inner">
-        <Swap id={String(version)} className="ui-mac-text__swap">
-          {children}
-        </Swap>
-      </div>
-    </div>
-  )
-}
-
 const Glyph = ({ d, solid }: { d: string; solid?: boolean }) => (
   <svg
     viewBox="0 0 16 16"

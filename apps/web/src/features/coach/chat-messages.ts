@@ -8,8 +8,6 @@ import {
 
 export { titleFrom }
 
-export const HISTORY_PREVIEW_COUNT = 4
-
 export const STREAMING_COACH_ID = "local-coach"
 
 export type MessageRole = "coach" | "user"

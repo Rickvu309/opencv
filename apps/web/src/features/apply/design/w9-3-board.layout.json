@@ -2,7 +2,6 @@
   "frameId": "aLOFO",
   "frameName": "W9.3 Board",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

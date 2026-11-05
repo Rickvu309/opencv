@@ -21,7 +21,3 @@ export function installRegistry(preview?: JobPreviewOptions) {
   registerJob(registry, preview)
   return registry
 }
-
-export function registryInstalled() {
-  return installed
-}

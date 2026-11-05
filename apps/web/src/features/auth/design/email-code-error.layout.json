@@ -2,7 +2,6 @@
   "frameId": "b1m7SA",
   "frameName": "W1.4 Code wrong or expired",
   "route": "/sign-in",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-auth-code.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

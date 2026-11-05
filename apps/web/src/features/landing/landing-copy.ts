@@ -13,8 +13,6 @@ export const LANDING_STATEMENT_BRAND = "opencv helps"
 export const LANDING_STATEMENT_REST =
   "you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
 
-export const LANDING_CLOSE = "Be the obvious hire. Start today."
-
 export const LANDING_PRIMARY_LABEL = "Get started"
 
 export const LANDING_LOGIN_LABEL = "Log in"

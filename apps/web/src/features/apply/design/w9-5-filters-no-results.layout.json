@@ -2,7 +2,6 @@
   "frameId": "NsAiG",
   "frameName": "W9.5 Filters no results",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

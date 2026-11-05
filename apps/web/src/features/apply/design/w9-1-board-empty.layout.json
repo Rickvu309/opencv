@@ -2,7 +2,6 @@
   "frameId": "D8PoQ6",
   "frameName": "W9.1 Board empty",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

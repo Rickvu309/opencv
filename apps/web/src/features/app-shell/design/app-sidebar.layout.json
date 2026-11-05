@@ -2,7 +2,6 @@
   "frameId": "YRYO8",
   "frameName": "App",
   "route": "/paper",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-sidebar.mjs",
   "viewport": {
     "width": 1440,
     "height": 900
