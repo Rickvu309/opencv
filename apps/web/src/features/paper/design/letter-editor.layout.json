@@ -2,7 +2,6 @@
   "frameId": "sgAtL",
   "frameName": "W7.3 Letter + suggestion",
   "route": "/paper",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-letter-editor.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

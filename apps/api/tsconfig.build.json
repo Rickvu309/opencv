@@ -9,5 +9,13 @@
     "declaration": false,
     "sourceMap": true
   },
-  "exclude": ["src/**/*.test.ts", "src/coach/eval/**"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/auth.fixtures.ts",
+    "src/paper/client-sync-property.ts",
+    "src/paper/client-sync-races.ts",
+    "src/paper/client-sync-shapes.ts",
+    "src/paper/photo.fixtures.ts",
+    "src/paper/photo-lifetime.support.ts"
+  ]
 }

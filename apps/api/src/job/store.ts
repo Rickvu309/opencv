@@ -17,7 +17,7 @@ import {
   type PaperId,
   type UserId,
 } from "@workspace/domain"
-import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm"
+import { and, asc, desc, eq, isNull } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { activity, jobChecklist, jobs, paperDocs } from "../db/schema.js"
@@ -547,23 +547,4 @@ export async function previewJob(
     status: "filled" as const,
     fields: { title, company, location, description: text },
   }
-}
-
-export async function jobsBetween(userId: UserId, from: Date, to: Date) {
-  const rows = await getDb()
-    .select()
-    .from(jobs)
-    .where(
-      and(
-        eq(jobs.userId, userId),
-        or(
-          and(gte(jobs.interviewAt, from), lte(jobs.interviewAt, to)),
-          and(
-            gte(jobs.deadline, from.toISOString().slice(0, 10)),
-            lte(jobs.deadline, to.toISOString().slice(0, 10))
-          )
-        )
-      )
-    )
-  return rows
 }

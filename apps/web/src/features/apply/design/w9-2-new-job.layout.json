@@ -2,7 +2,6 @@
   "frameId": "c4KwjR",
   "frameName": "W9.2 New job",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

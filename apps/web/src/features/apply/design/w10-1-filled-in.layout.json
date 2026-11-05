@@ -2,7 +2,6 @@
   "frameId": "Z3OFW",
   "frameName": "W10.1 Filled in",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

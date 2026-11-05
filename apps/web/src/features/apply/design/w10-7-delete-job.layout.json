@@ -2,7 +2,6 @@
   "frameId": "jHl7W",
   "frameName": "W10.7 Delete job",
   "route": "/apply/:jobId",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

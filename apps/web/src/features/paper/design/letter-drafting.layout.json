@@ -2,7 +2,6 @@
   "frameId": "tsfNR",
   "frameName": "W7.2 Drafting",
   "route": "/paper",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-letter-drafting.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

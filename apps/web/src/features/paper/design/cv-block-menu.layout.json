@@ -2,7 +2,6 @@
   "frameId": "F0BP4A",
   "frameName": "W6.5 Block menu",
   "route": "/paper/$docId",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-cv-editor.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

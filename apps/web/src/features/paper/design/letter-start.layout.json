@@ -2,7 +2,6 @@
   "frameId": "NgYML",
   "frameName": "W7.1 Start: pick the job",
   "route": "/paper",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-letter-start.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

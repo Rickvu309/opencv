@@ -141,5 +141,3 @@ export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
     ],
   }
 }
-
-export const DEFAULT_CV_DATA: CvData = defaultCvData()

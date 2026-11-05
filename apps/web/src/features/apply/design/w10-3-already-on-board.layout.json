@@ -2,7 +2,6 @@
   "frameId": "pD2lq",
   "frameName": "W10.3 Already on your board",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

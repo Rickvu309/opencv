@@ -2,7 +2,6 @@
   "frameId": "iAwJ7",
   "frameName": "W1.3 Verifying",
   "route": "/sign-in",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-auth-code.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

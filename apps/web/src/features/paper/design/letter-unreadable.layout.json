@@ -2,7 +2,6 @@
   "frameId": "D1s74Z",
   "frameName": "W7.4 Can't read job link",
   "route": "/paper",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-letter-start.mjs --state unreadable",
   "viewport": {
     "width": 1440,
     "height": 900

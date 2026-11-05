@@ -1,9 +1,4 @@
-import type {
-  CvEducation,
-  CvExperience,
-  CvProject,
-  CvSkillGroup,
-} from "./cv-types.ts"
+import type { CvEducation, CvExperience, CvSkillGroup } from "./cv-types.ts"
 
 export const EMPTY_SECTION_CTA = {
   experience: "Add first role",
@@ -22,16 +17,6 @@ export const BLANK_EDUCATION: CvEducation = {
   school: "School name",
   degree: "Degree · major",
   period: "2022 – 2026",
-}
-
-export const BLANK_PROJECT: CvProject = {
-  name: "Project name",
-  detail: "What you shipped and what changed.",
-}
-
-export const BLANK_SKILL_GROUP: CvSkillGroup = {
-  label: "Skills",
-  items: ["Add skill"],
 }
 
 export function addExperienceRole(
@@ -99,13 +84,6 @@ export function removeEducation(
   index: number
 ): CvEducation[] {
   return education.filter((_, i) => i !== index)
-}
-
-export function addSkillGroup(
-  skills: CvSkillGroup[],
-  group: CvSkillGroup = BLANK_SKILL_GROUP
-): CvSkillGroup[] {
-  return [...skills, { ...group, items: [...group.items] }]
 }
 
 export function addSkillItem(

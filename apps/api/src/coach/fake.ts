@@ -3,7 +3,6 @@ import {
   type ApplyScanExtractInput,
   type CoachRuntime,
   type CoachStreamPart,
-  type CoachTitleInput,
   type CoachTurnInput,
 } from "@workspace/domain"
 
@@ -127,36 +126,11 @@ export function createDemoCoachRuntime(): CoachRuntime {
   return createScriptedCoachRuntime(paperEditScript)
 }
 
-export function withTitleGenerator(
-  runtime: CoachRuntime,
-  generateTitle: (input: CoachTitleInput) => Promise<string>
-): CoachRuntime {
-  return { ...runtime, generateTitle }
-}
-
 export function withScanJobPosting(
   runtime: CoachRuntime,
   scanJobPosting: (input: ApplyScanExtractInput) => Promise<string>
 ): CoachRuntime {
   return { ...runtime, scanJobPosting }
-}
-
-export function createThrowingCoachRuntime(
-  error: Error = new Error("runtime failed")
-): CoachRuntime {
-  return {
-    streamTurn() {
-      return {
-        [Symbol.asyncIterator]() {
-          return {
-            next() {
-              return Promise.reject(error)
-            },
-          }
-        },
-      }
-    },
-  }
 }
 
 async function* replay(

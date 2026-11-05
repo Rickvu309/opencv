@@ -2,7 +2,6 @@
   "frameId": "NAXQk",
   "frameName": "W1.5 Welcome",
   "route": "/apply",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-auth-welcome.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

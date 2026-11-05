@@ -2,7 +2,6 @@
   "frameId": "tNZ73",
   "frameName": "W10.2 Company missing",
   "route": "/apply",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

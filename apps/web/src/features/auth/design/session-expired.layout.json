@@ -2,7 +2,6 @@
   "frameId": "DhG87",
   "frameName": "W1.6 Session expired",
   "route": "/apply",
-  "driver": ".claude/skills/verify-app-ui/scripts/verify-session-expired.mjs",
   "viewport": {
     "width": 1440,
     "height": 900

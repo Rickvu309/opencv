@@ -2,7 +2,6 @@
   "frameId": "Wlp2X",
   "frameName": "W10.6 Closed job",
   "route": "/apply/:jobId",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900

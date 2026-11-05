@@ -2,7 +2,6 @@
   "frameId": "ZA60d",
   "frameName": "W9.8 Calendar week",
   "route": "/apply?view=calendar&span=week",
-  "driver": "verify-apply-pen",
   "viewport": {
     "width": 1440,
     "height": 900
