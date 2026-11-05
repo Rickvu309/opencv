@@ -21,7 +21,7 @@ export const EXCLUDED = [
 ]
 
 export const REFUSAL =
-  "Comments are banned. Explain with a better name or a test. See CODING_STANDARDS.md."
+  "Comments are banned. Explain with a better name or a test. See AGENTS.md."
 
 const ESLINT_DIRECTIVE = /^eslint-(?:disable|enable)(?:-next-line|-line)?\b/
 const TOOL_DIRECTIVES = [
