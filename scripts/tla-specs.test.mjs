@@ -388,14 +388,15 @@ test("java and the jar come from the environment, else the home folder", () => {
 
 test("tlc runs one worker on the parallel collector", () => {
   const args = tlcArgs({ jar: "j", cfg: "c", spec: "s", metadir: "m" })
-  assert.deepEqual(args.slice(0, 5), [
+  assert.deepEqual(args.slice(0, 6), [
     "-XX:+UseParallelGC",
+    "-Djava.io.tmpdir=m",
     "-cp",
     "j",
     "tlc2.TLC",
     "-workers",
   ])
-  assert.deepEqual(args.slice(5), ["1", "-metadir", "m", "-config", "c", "s"])
+  assert.deepEqual(args.slice(6), ["1", "-metadir", "m", "-config", "c", "s"])
 })
 
 test("a java that cannot start puts its error in the output", () => {

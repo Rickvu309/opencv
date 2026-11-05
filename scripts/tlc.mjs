@@ -48,6 +48,7 @@ export function resolveJar({
 export function tlcArgs({ jar, cfg, spec, metadir, dump }) {
   return [
     "-XX:+UseParallelGC",
+    `-Djava.io.tmpdir=${metadir}`,
     "-cp",
     jar,
     "tlc2.TLC",
