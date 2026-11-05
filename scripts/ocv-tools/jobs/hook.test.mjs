@@ -287,7 +287,7 @@ test("pre-push runs only the quick checks and never the full suite", () => {
   ])
     assert.ok(guards.args.join(" ").includes(`-u ${name} `), name)
   assert.ok(guards.args.includes("--test"))
-  assert.ok(guards.args.includes("scripts/doc-paths.test.mjs"))
+  assert.ok(guards.args.includes("scripts/local-port-range.test.mjs"))
   assert.ok(!guards.args.includes("packages/guards/shell-suites.test.mjs"))
   assert.ok(guards.args.every((arg) => !arg.startsWith("packages/")))
 })
