@@ -1,4 +1,4 @@
-import type { DragEvent } from "react"
+import type { ComponentProps, DragEvent } from "react"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { Button } from "@workspace/ui/components/button"
@@ -57,6 +57,32 @@ export function PaperImportRow({
         Choose file
       </Button>
     </div>
+  )
+}
+
+export function PaperImportDialog({
+  open,
+  onClose,
+  ...props
+}: ComponentProps<typeof PaperImportRow> & {
+  open: boolean
+  onClose: () => void
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Import</DialogTitle>
+          <DialogDescription>Bring a file you already have.</DialogDescription>
+        </DialogHeader>
+        <PaperImportRow {...props} />
+      </DialogContent>
+    </Dialog>
   )
 }
 

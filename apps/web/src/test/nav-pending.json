@@ -317,7 +317,7 @@
   {
     "rule": "touch-targets",
     "file": "apps/web/src/features/paper/paper-parts.tsx",
-    "count": 3,
+    "count": 2,
     "issue": "#916",
     "expires": "2026-12-01"
   },

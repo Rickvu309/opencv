@@ -33,13 +33,17 @@ import {
 import {
   CantReadDialog,
   ImportProgressDialog,
-  PaperImportRow,
+  PaperImportDialog,
 } from "./paper-import.tsx"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
-import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
+import {
+  PaperLibraryStarters,
+  PaperCard,
+  PaperFileCard,
+} from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
@@ -77,6 +81,7 @@ export function PaperLibrary({
   const importRequest = useRef<AbortController | null>(null)
   const [
     {
+      filter,
       importState,
       creatingBlank,
       mode,
@@ -101,17 +106,15 @@ export function PaperLibrary({
   const documents = docs.filter(
     (doc) => doc.kind === "cv" || doc.kind === "letter"
   )
-  const visible = documents.filter(
-    (doc) => needle === "" || doc.name.toLowerCase().includes(needle)
-  )
-  const cvs = visible.filter((doc) => doc.kind === "cv")
-  const letters = visible.filter((doc) => doc.kind === "letter")
-  const visibleFiles = files.filter(
-    (file) => needle === "" || file.name.toLowerCase().includes(needle)
-  )
-  const noResults =
-    needle !== "" && visible.length === 0 && visibleFiles.length === 0
-  const firstRun = !loading && !error && documents.length === 0 && needle === ""
+  const visible = documents
+    .filter((doc) => needle === "" || doc.name.toLowerCase().includes(needle))
+    .filter((doc) => filter === "all" || doc.kind === filter)
+  const visibleFiles = files
+    .filter((file) => needle === "" || file.name.toLowerCase().includes(needle))
+    .filter(() => filter === "all" || filter === "files")
+  const noResults = visible.length === 0 && visibleFiles.length === 0
+  const total = documents.length + files.length
+  const firstRun = !loading && !error && total === 0 && needle === ""
 
   useEffect(() => () => importRequest.current?.abort(), [])
 
@@ -292,7 +295,7 @@ export function PaperLibrary({
         key={doc.id}
         name={doc.name}
         edited={paperEditedLabel(doc.updatedAt)}
-        templateId={doc.templateId ?? "simple"}
+        kind={doc.kind === "letter" ? "Cover letter" : "CV"}
         onOpen={() => onOpen(doc.id)}
         onRename={() => {
           dispatch({ type: "rename_requested", doc })
@@ -340,23 +343,68 @@ export function PaperLibrary({
         />
       ) : null}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-medium">Paper</h1>
-        <Button
-          type="button"
-          variant={dialogOpen ? "outline" : "glow"}
-          data-primary-action
-          ref={newButtonRef}
-          onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}
-        >
-          New
-        </Button>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-lg font-medium">Paper</h1>
+          {total > 0 ? (
+            <span className="text-xs text-muted-foreground">{total}</span>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => dispatch({ type: "import_dialog_opened" })}
+          >
+            Import
+          </Button>
+          <Button
+            type="button"
+            variant={dialogOpen ? "outline" : "glow"}
+            data-primary-action
+            ref={newButtonRef}
+            onClick={() =>
+              dispatch({ type: "new_dialog_opened", step: "kind" })
+            }
+          >
+            New
+          </Button>
+        </div>
       </div>
-      <Input
-        aria-label="Search Paper"
-        placeholder="Search Paper"
-        value={query}
-        onChange={(event) => onQueryChange(event.target.value)}
-      />
+      {!firstRun && !loading && !error ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div role="group" aria-label="Document type" className="flex gap-1">
+            {(
+              [
+                { value: "all", label: "All" },
+                { value: "cv", label: "CVs" },
+                { value: "letter", label: "Cover letters" },
+                { value: "files", label: "Files" },
+              ] as const
+            ).map(({ value, label }) => (
+              <Button
+                key={value}
+                type="button"
+                variant={filter === value ? "secondary" : "ghost"}
+                size="sm"
+                className="h-11 md:h-8"
+                aria-pressed={filter === value}
+                onClick={() =>
+                  dispatch({ type: "filter_changed", filter: value })
+                }
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <Input
+            aria-label="Search Paper"
+            placeholder="Search documents"
+            className="w-full sm:w-56"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+          />
+        </div>
+      ) : null}
       {loading ? <p>Loading documents</p> : null}
       {error ? (
         <div className="flex flex-col items-start gap-3">
@@ -367,93 +415,50 @@ export function PaperLibrary({
         </div>
       ) : null}
       {firstRun ? (
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-base font-medium">Start a document</h2>
-            <p className="text-sm text-muted-foreground">
-              Pick a page, or bring a file you already have.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <NewPaperCard
-              title="CV"
-              body="A page you can send."
-              onClick={() =>
-                dispatch({ type: "new_dialog_opened", step: "gallery" })
-              }
-            />
-            <NewPaperCard
-              title="Cover letter"
-              body="A letter for one job."
-              onClick={() => dispatch({ type: "letter_dialog_opened" })}
-            />
-            <NewPaperCard
-              title="Proof"
-              body="Show the work behind a line."
-              href="/proof"
-            />
-          </div>
-          <PaperImportRow
-            link={link}
-            onLinkChange={(next) =>
-              dispatch({ type: "link_typed", link: next })
-            }
-            onSubmitLink={() => void onPasteLink()}
-            onChooseFile={chooseFile}
-            onDropFile={onDropFile}
-          />
-        </div>
+        <PaperLibraryStarters
+          onCv={() => dispatch({ type: "new_dialog_opened", step: "gallery" })}
+          onLetter={() => dispatch({ type: "letter_dialog_opened" })}
+          onImport={() => dispatch({ type: "import_dialog_opened" })}
+        />
       ) : null}
-      {!loading && !error && noResults ? (
+      {!loading && !error && !firstRun && noResults ? (
         <div>
-          <p>No results for &quot;{query.trim()}&quot;</p>
+          <p>
+            {needle ? (
+              <>No results for &quot;{query.trim()}&quot;</>
+            ) : (
+              "No documents of this type yet."
+            )}
+          </p>
           <p className="text-sm text-muted-foreground">
-            Try another word, or clear the search.
+            {needle
+              ? "Try another word, or clear the search."
+              : "Choose another type, or start a new document."}
           </p>
         </div>
       ) : null}
       {!loading && !error && !firstRun && !noResults ? (
-        <div className="flex flex-col gap-8">
-          <section className="flex flex-col gap-3">
-            <SectionHead>CVs</SectionHead>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {cvs.map(renderCard)}
-            </div>
-          </section>
-          <section className="flex flex-col gap-3">
-            <SectionHead>Cover letters</SectionHead>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {letters.map(renderCard)}
-            </div>
-          </section>
-          <section className="flex flex-col gap-3">
-            <SectionHead>Proofs</SectionHead>
-          </section>
-          <section className="flex flex-col gap-3">
-            <SectionHead>Files</SectionHead>
-            <ul className="flex flex-col gap-2">
-              {visibleFiles.map((file) => (
-                <li
-                  key={file.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-                >
-                  <span className="truncate text-sm">{file.name}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      dispatch({ type: "delete_file_requested", file })
-                    }
-                  >
-                    Delete
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </section>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {visible.map(renderCard)}
+          {visibleFiles.map((file) => (
+            <PaperFileCard
+              key={file.id}
+              name={file.name}
+              onDelete={() => dispatch({ type: "delete_file_requested", file })}
+            />
+          ))}
         </div>
       ) : null}
+
+      <PaperImportDialog
+        open={mode?.type === "import"}
+        onClose={() => dispatch({ type: "dialog_closed" })}
+        link={link}
+        onLinkChange={(next) => dispatch({ type: "link_typed", link: next })}
+        onSubmitLink={() => void onPasteLink()}
+        onChooseFile={chooseFile}
+        onDropFile={onDropFile}
+      />
 
       <Dialog
         open={mode?.type === "new"}

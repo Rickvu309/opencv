@@ -44,13 +44,9 @@ describe("empty api data shows empty states, never sample content", () => {
     expect(
       screen.getByRole("button", { name: "Cover letter" })
     ).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Proof" })).toHaveAttribute(
-      "href",
-      "/proof"
-    )
     expect(
-      screen.getByRole("button", { name: "Choose file" })
-    ).toBeInTheDocument()
+      screen.getAllByRole("button", { name: "Import", exact: true })
+    ).toHaveLength(2)
     expectNone(samplePaperDocs().map((doc) => doc.name))
   })
 
