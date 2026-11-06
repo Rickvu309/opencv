@@ -26,3 +26,11 @@ export * from "./paper-contract.js"
 export * from "./chat-contract.js"
 export * from "./contract-commands.js"
 export * from "./account-contract.js"
+
+export {
+  connectionsContract,
+  connectionsQueries,
+  connectionSchema,
+} from "./connections-contract.js"
+
+export * from "./connections.js"

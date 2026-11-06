@@ -24,6 +24,7 @@ async function resolver() {
     authUrl: testAuthUrl,
     webOrigins: [testWebOrigin],
   })
+  await auth.$context
   return {
     close: () => client.close(),
     resolve: (headers: Record<string, string>) =>

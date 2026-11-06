@@ -1,3 +1,4 @@
+import { createOAuthTables } from "./oauth-schema.js"
 import type { CoachMode, ReversalExpect } from "@workspace/domain"
 import { sql } from "drizzle-orm"
 import {
@@ -108,7 +109,25 @@ export const verification = opencvApp.table(
   (table) => [index("verification_identifier_idx").on(table.identifier)]
 )
 
+export const {
+  oauthClient,
+  oauthResource,
+  oauthClientResource,
+  oauthRefreshToken,
+  oauthAccessToken,
+  oauthConsent,
+  oauthClientAssertion,
+  agentConnections,
+} = createOAuthTables(opencvApp, user, session)
+
 export const authSchema = {
+  oauthClient,
+  oauthResource,
+  oauthClientResource,
+  oauthRefreshToken,
+  oauthAccessToken,
+  oauthConsent,
+  oauthClientAssertion,
   user,
   session,
   account,

@@ -13,6 +13,7 @@ export type PaperId = Brand<"PaperId">
 export type JobId = Brand<"JobId">
 export type ActivityId = Brand<"ActivityId">
 export type PendingActionId = Brand<"PendingActionId">
+export type ConnectionId = Brand<"ConnectionId">
 export type FileId = Brand<"FileId">
 
 export function parseUserId(value: string): UserId {
@@ -62,3 +63,9 @@ export const pendingActionIdSchema = z
   .uuid()
   .transform(parsePendingActionId)
 export const fileIdSchema = z.string().uuid().transform(parseFileId)
+
+function parseConnectionId(value: string): ConnectionId {
+  return parseUuid(value, "connection id")
+}
+
+export const connectionIdSchema = z.string().uuid().transform(parseConnectionId)

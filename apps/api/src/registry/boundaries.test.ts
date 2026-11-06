@@ -4,7 +4,15 @@ import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
-const modules = ["account", "chat", "paper", "job", "inbox", "coach"]
+const modules = [
+  "connections",
+  "account",
+  "chat",
+  "paper",
+  "job",
+  "inbox",
+  "coach",
+]
 
 function filesUnder(dir: string): string[] {
   const found: string[] = []

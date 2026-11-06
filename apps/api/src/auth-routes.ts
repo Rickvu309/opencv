@@ -11,7 +11,18 @@ export const WEB_CALLED_AUTH_PATHS = [
 
 export const BROWSER_REDIRECT_AUTH_PATHS = ["/callback/:id"] as const
 
+export const OAUTH_AUTH_PATHS = [
+  "/oauth2/authorize",
+  "/oauth2/token",
+  "/oauth2/consent",
+  "/oauth2/continue",
+  "/oauth2/register",
+  "/oauth2/revoke",
+  "/oauth2/public-client-prelogin",
+] as const
+
 export const SERVED_AUTH_PATHS: readonly string[] = [
+  ...OAUTH_AUTH_PATHS,
   ...WEB_CALLED_AUTH_PATHS,
   ...BROWSER_REDIRECT_AUTH_PATHS,
 ]

@@ -1,3 +1,5 @@
+import { handleAuthRequest } from "./auth-consent.js"
+import { connectionRoutes } from "./connections/index.js"
 import type { CoachRuntime } from "@workspace/domain"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
@@ -108,7 +110,13 @@ export function createApp({
     cors({
       origin: (origin) => (isAllowedOrigin(webOrigins, origin) ? origin : null),
       credentials: true,
-      allowHeaders: ["Content-Type", "Authorization"],
+      allowHeaders: [
+        "Content-Type",
+        "Authorization",
+        "MCP-Protocol-Version",
+        "Mcp-Session-Id",
+      ],
+      exposeHeaders: ["WWW-Authenticate", "MCP-Protocol-Version"],
     })
   )
 
@@ -151,13 +159,24 @@ export function createApp({
       : undefined
 
   bindAuth(auth)
+  app.use("*", async (_c, next) => {
+    if (auth) await auth.$context
+    await next()
+  })
+  if (auth && database && authUrl)
+    app.route(
+      "/",
+      connectionRoutes(auth, database, registry, authUrl, webOrigins)
+    )
 
   app.use("/api/auth/*", async (c, next) => {
     if (!isServedAuthPath(c.req.path)) return notFoundEnvelopeResponse(c)
     await next()
   })
   app.all("/api/auth/*", (c) =>
-    auth ? auth.handler(c.req.raw) : c.json(authUnavailableEnvelope(), 503)
+    auth
+      ? handleAuthRequest(auth, c.req.raw)
+      : c.json(authUnavailableEnvelope(), 503)
   )
   app.get("/api/public-config", (c) =>
     c.json({

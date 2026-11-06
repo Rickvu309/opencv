@@ -1,3 +1,4 @@
+import { connectionsQueries } from "./connections-contract.js"
 import { z } from "zod"
 
 import { queryContract, queryEntry } from "./contract.js"
@@ -11,6 +12,7 @@ import { paperQueries } from "./paper-contract.js"
 const untyped = z.unknown()
 
 export const queries = queryContract({
+  ...connectionsQueries,
   ...jobQueries,
   ...inboxQueries,
   ...paperQueries,

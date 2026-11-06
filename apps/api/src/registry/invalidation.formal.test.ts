@@ -49,6 +49,7 @@ const WIDE_CALENDAR = { from: "1970-01-01", to: "2100-01-01" }
 const SNAPSHOT_QUERIES: {
   [N in QueryName]: ((ids: Ids) => Record<string, unknown>[]) | null
 } = {
+  "connections.list": () => [{}],
   "job.list": () => [{}],
   "job.priorityCounts": () => [{}],
   "job.get": (ids) => ids.jobs.map((jobId) => ({ jobId })),
