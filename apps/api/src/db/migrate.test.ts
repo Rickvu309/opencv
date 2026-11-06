@@ -17,6 +17,7 @@ import { migrationsFolder } from "./paths.js"
 
 const productTables = [
   "account",
+  "agent_connections",
   "activity",
   "chat_messages",
   "chats",
@@ -29,6 +30,13 @@ const productTables = [
   "job_checklist",
   "jobs",
   "notify_requests",
+  "oauth_access_token",
+  "oauth_client",
+  "oauth_client_assertion",
+  "oauth_client_resource",
+  "oauth_consent",
+  "oauth_refresh_token",
+  "oauth_resource",
   "paper_doc_updates",
   "paper_docs",
   "paper_shares",
@@ -159,7 +167,13 @@ describe("opencv_app migrations", () => {
     const db = drizzle({ client })
     try {
       const migrations = readMigrationFiles(migrationConfig())
-      const previous = migrations.slice(0, -1)
+      const dropAt = migrations.findIndex((migration) =>
+        migration.sql.some((statement) =>
+          statement.includes('DROP COLUMN "document"')
+        )
+      )
+      expect(dropAt).toBeGreaterThan(0)
+      const previous = migrations.slice(0, dropAt)
       for (const migration of previous) {
         for (const statement of migration.sql) await client.exec(statement)
       }

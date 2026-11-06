@@ -85,6 +85,13 @@
       "when": 1793669415939,
       "tag": "0011_drop_paper_document",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793938990730,
+      "tag": "0012_oauth_connections",
+      "breakpoints": true
     }
   ]
 }

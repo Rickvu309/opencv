@@ -27,7 +27,7 @@ const scanRoots = [
 ]
 
 const prefixes =
-  "chat|paper|job|inbox|profile|account|notify|actions|activity|coach|threads|apply|pitch"
+  "connections|chat|paper|job|inbox|profile|account|notify|actions|activity|coach|threads|apply|pitch"
 const dotted = new RegExp(
   `["'\`/]((?:${prefixes})\\.[a-z][A-Za-z]+)["'\`]`,
   "g"

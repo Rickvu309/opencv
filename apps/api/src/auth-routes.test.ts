@@ -4,8 +4,10 @@ import { PGlite } from "@electric-sql/pglite"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createAuth } from "./auth.js"
+import { oauthResource } from "./db/schema.js"
 import {
   BROWSER_REDIRECT_AUTH_PATHS,
+  OAUTH_AUTH_PATHS,
   SERVED_AUTH_PATHS,
   WEB_CALLED_AUTH_PATHS,
   isServedAuthPath,
@@ -122,6 +124,25 @@ function spellings(path: string) {
 }
 
 describe("the auth routes the api serves", () => {
+  it("finishes provider initialization before an unserved auth request returns", async () => {
+    const database = await createMigratedTestDb()
+    try {
+      const isolatedApp = createAuthedApp(database.db as never, testAuthUrl)
+      expect(
+        (
+          await isolatedApp.request("/api/auth/sign-up/email", {
+            method: "POST",
+          })
+        ).status
+      ).toBe(404)
+      expect(await database.db.select().from(oauthResource)).toMatchObject([
+        { identifier: `${testAuthUrl}/mcp` },
+      ])
+    } finally {
+      await database.client.close()
+    }
+  })
+
   it("the paths the web calls are exactly the web-called list", () => {
     expect(webCalledPaths()).toEqual([...WEB_CALLED_AUTH_PATHS].sort())
   })
@@ -194,9 +215,13 @@ describe("the auth routes the api serves", () => {
     )
   })
 
-  it("only the web-called paths and the sign-in redirect are served", () => {
+  it("only the explicit browser and OAuth paths are served", () => {
     expect([...SERVED_AUTH_PATHS].sort()).toEqual(
-      [...WEB_CALLED_AUTH_PATHS, ...BROWSER_REDIRECT_AUTH_PATHS].sort()
+      [
+        ...WEB_CALLED_AUTH_PATHS,
+        ...BROWSER_REDIRECT_AUTH_PATHS,
+        ...OAUTH_AUTH_PATHS,
+      ].sort()
     )
   })
 })

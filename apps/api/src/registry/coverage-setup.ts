@@ -1,3 +1,4 @@
+import { connectionsCases } from "./coverage-connections.js"
 import { personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
@@ -82,6 +83,7 @@ export function coverageCases(
     ...paperCases(tools),
     ...jobCases(tools),
     ...inboxCases(tools),
+    ...connectionsCases(tools),
     ...accountCases(tools),
   ]
   return { cases, registry, person }

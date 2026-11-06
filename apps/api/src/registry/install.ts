@@ -1,3 +1,4 @@
+import { registerConnections } from "../connections/index.js"
 import { registerAccount, registerAccountQueries } from "../account/index.js"
 import { registerChat } from "../chat/index.js"
 import { registerInbox } from "../inbox/index.js"
@@ -9,6 +10,7 @@ let installed = false
 
 export function installRegistry(preview?: JobPreviewOptions) {
   if (!installed) {
+    registerConnections(registry)
     registerAccount(registry)
     registerAccountQueries(registry)
     registerChat(registry)

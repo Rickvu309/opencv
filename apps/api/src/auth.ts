@@ -1,11 +1,20 @@
 import { AsyncLocalStorage } from "node:async_hooks"
 
+import { oauthProvider } from "@better-auth/oauth-provider"
+import { cimd } from "@better-auth/cimd"
+import { fetchClientMetadataResource } from "@better-auth/cimd/node"
+import {
+  bindIssuedToken,
+  assertRefreshGrant,
+  hashAgentToken,
+} from "./connections/index.js"
+
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { createAuthMiddleware } from "better-auth/api"
+import { APIError, createAuthMiddleware } from "better-auth/api"
 import { emailOTP, genericOAuth } from "better-auth/plugins"
 
-import { PROFILE_DEFAULTS } from "@workspace/domain"
+import { CONNECTION_TOKEN_SECONDS, PROFILE_DEFAULTS } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 
 import type { AppDatabase } from "./db/context.js"
@@ -103,7 +112,34 @@ export function createAuth({
     onAPIError: signInOrigin
       ? { errorURL: new URL("/sign-in", signInOrigin).toString() }
       : undefined,
-    plugins: google ? [emailCode, google] : [emailCode],
+    plugins: [
+      emailCode,
+      ...(google ? [google] : []),
+      oauthProvider({
+        loginPage: new URL("/oauth/connect", signInOrigin ?? authUrl).href,
+        consentPage: new URL("/oauth/consent", signInOrigin ?? authUrl).href,
+        disableJwtPlugin: true,
+        dpop: { signingAlgorithms: [] },
+        accessTokenExpiresIn: CONNECTION_TOKEN_SECONDS.access,
+        refreshTokenExpiresIn: CONNECTION_TOKEN_SECONDS.refresh,
+        storeTokens: { hash: hashAgentToken },
+        scopes: ["connection.status", "offline_access"],
+        grantTypes: ["authorization_code", "refresh_token"],
+        allowPublicClientPrelogin: true,
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+        clientRegistrationDefaultResources: [new URL("/mcp", authUrl).href],
+        resources: [
+          {
+            identifier: new URL("/mcp", authUrl).href,
+            scopes: ["connection.status", "offline_access"],
+          },
+        ],
+        clientPrivileges: () => false,
+        resourcePrivileges: () => false,
+      }),
+      cimd({ fetchClientMetadataResource, metadataProfile: "mcp-2026-07-28" }),
+    ],
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: authSchema,
@@ -130,8 +166,25 @@ export function createAuth({
     },
     telemetry: { enabled: false },
     hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/oauth2/token" && ctx.headers?.has("dpop"))
+          throw new APIError("BAD_REQUEST", {
+            error: "invalid_request",
+            error_description: "Only Bearer tokens are supported",
+          })
+        if (
+          ctx.path === "/oauth2/token" &&
+          ctx.body?.grant_type === "refresh_token"
+        )
+          await assertRefreshGrant(ctx.body.refresh_token)
+      }),
       after: createAuthMiddleware(
         async (ctx): Promise<Response | undefined> => {
+          if (ctx.path === "/oauth2/token")
+            await bindIssuedToken(
+              ctx.context.returned,
+              new URL("/mcp", authUrl).href
+            )
           if (
             ctx.path !== "/email-otp/send-verification-otp" ||
             ctx.body?.type !== "sign-in"

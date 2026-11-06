@@ -1,17 +1,27 @@
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { isTable } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import config from "../../vitest.config.js"
+import * as schema from "../db/schema.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
 const writersOfTable: Record<string, string[]> = {
+  agentConnections: ["connections"],
+  oauthClient: ["connections", "auth.ts"],
+  oauthResource: ["connections", "auth.ts"],
+  oauthClientResource: ["connections", "auth.ts"],
+  oauthRefreshToken: ["connections", "auth.ts"],
+  oauthAccessToken: ["connections", "auth.ts"],
+  oauthConsent: ["connections", "auth.ts"],
+  oauthClientAssertion: ["connections", "auth.ts"],
   user: ["account", "auth.ts"],
   session: ["account", "auth.ts"],
   account: ["account", "auth.ts"],
-  verification: ["account", "auth.ts"],
+  verification: ["account", "auth.ts", "auth-consent.ts"],
   notifyRequests: ["account"],
   chats: ["chat"],
   chatMessages: ["chat"],
@@ -60,10 +70,9 @@ function ownedBy(relative: string, owner: string) {
 
 describe("a table write from outside the owning module's directory is rejected", () => {
   it("maps every schema table to an owner", () => {
-    const schema = readFileSync(path.join(srcRoot, "db/schema.ts"), "utf8")
-    const tables = [
-      ...schema.matchAll(/export const (\w+) = opencvApp\.table\(/g),
-    ].map((match) => match[1] ?? "")
+    const tables = Object.entries(schema)
+      .filter(([, value]) => isTable(value))
+      .map(([name]) => name)
     expect(tables.length).toBeGreaterThan(0)
     expect(
       tables.filter((table) => !writersOfTable[table]),
