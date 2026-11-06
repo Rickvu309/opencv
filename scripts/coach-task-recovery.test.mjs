@@ -115,3 +115,53 @@ for (const [name, path, mistake, clean] of [
     )
   })
 }
+
+const clientClean = `export function useCoachTask() {
+      } finally {
+        if (current === generation.current) {
+          starting.current = false
+        }
+      }
+    return true
+    stop: () => {
+      request.stopRequested = true
+    },
+    undo:
+    cancelInFlight: () => {
+      starting.current = false
+    }
+}`
+for (const [name, mistake] of [
+  [
+    "Stop is latched before Chat creation settles",
+    clientClean.replace("request.stopRequested = true", ""),
+  ],
+  [
+    "detach releases its lock",
+    clientClean.replace(
+      "    cancelInFlight: () => {\n      starting.current = false",
+      "    cancelInFlight: () => {"
+    ),
+  ],
+  [
+    "stale cleanup cannot release a newer start",
+    clientClean.replace("if (current === generation.current) {", "{"),
+  ],
+]) {
+  test(name, () => {
+    assert.equal(detect(mistake).length, 1)
+    assert.deepEqual(detect(clientClean), [])
+    assert.deepEqual(
+      detect(
+        readFileSync(
+          new URL(
+            "../apps/web/src/features/coach/use-coach-task.ts",
+            import.meta.url
+          ),
+          "utf8"
+        )
+      ),
+      []
+    )
+  })
+}

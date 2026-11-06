@@ -58,5 +58,29 @@ export function detect(source, path = "") {
       message:
         "Unknown tools must preserve legacy streaming without a durable boundary",
     })
+  if (source.includes("export function useCoachTask(")) {
+    const stop = source.slice(
+      source.indexOf("    stop: () => {"),
+      source.indexOf("    undo:")
+    )
+    if (!stop.includes("request.stopRequested = true"))
+      problems.push({
+        message: "Latch Stop on the pending start before a Chat exists",
+      })
+    const cleanup = source.slice(
+      source.indexOf("      } finally {"),
+      source.indexOf("    return true")
+    )
+    const detach = source.slice(source.indexOf("    cancelInFlight: () => {"))
+    if (
+      !detach.includes("starting.current = false") ||
+      !/if \(current === generation.current\) \{\s*starting.current = false/.test(
+        cleanup
+      )
+    )
+      problems.push({
+        message: "Release detached starts and guard lock cleanup by generation",
+      })
+  }
   return problems
 }

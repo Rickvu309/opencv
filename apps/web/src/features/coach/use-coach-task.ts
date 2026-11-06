@@ -39,6 +39,7 @@ type PendingStart = {
   sendOptions: CoachSendOptions
   regenerate: boolean
   startKey: string
+  stopRequested: boolean
   chatId?: string
   input?: Omit<CoachStartInput, "startKey">
 }
@@ -127,6 +128,7 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
       sendOptions,
       regenerate,
       startKey: crypto.randomUUID(),
+      stopRequested: false,
     }
     pendingStart.current = request
     const current = ++generation.current
@@ -150,6 +152,11 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         if (current !== generation.current) return
         request.chatId = id
         options.setChatId(id)
+        if (request.stopRequested && !request.input) {
+          pendingStart.current = null
+          update({ error: "The Coach stopped." })
+          return
+        }
         const input: Omit<CoachStartInput, "startKey"> = request.input ?? {
           chatId: parseChatId(id),
           text: regenerate ? undefined : text.trim(),
@@ -167,7 +174,14 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
           queryClient,
           input,
           request.startKey
-        )
+        ).catch((error: unknown) => {
+          if (!request.stopRequested) throw error
+          return startCoachTask(queryClient, input, request.startKey)
+        })
+        if (request.stopRequested)
+          await runContractCommand(queryClient, "coach.stop", {
+            chatId: input.chatId,
+          })
         if (current !== generation.current) return
         pendingStart.current = null
         update({ task: null, taskId: started.taskId, chatId: id })
@@ -175,8 +189,10 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         if (current === generation.current)
           update({ error: coachSendErrorMessage(error) })
       } finally {
-        starting.current = false
-        if (current === generation.current) update({ starting: false })
+        if (current === generation.current) {
+          starting.current = false
+          update({ starting: false })
+        }
       }
     })()
     return true
@@ -215,7 +231,9 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
       local.error ??
       (task?.snapshot.state === "failed"
         ? "The Coach stopped. Try again."
-        : null),
+        : task?.snapshot.state === "cancelled"
+          ? "The Coach stopped."
+          : null),
     send: (text: string, sendOptions: boolean | CoachSendOptions = {}) =>
       launch(text, typeof sendOptions === "boolean" ? {} : sendOptions),
     retry: () => {
@@ -226,6 +244,14 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
     },
     regenerate: () => Boolean(options.chatId) && launch("", {}, true),
     stop: () => {
+      const request = pendingStart.current
+      if (request) {
+        request.stopRequested = true
+        update({ error: "The Coach stopped." })
+        if (!starting.current && request.input)
+          launch(request.text, request.sendOptions, request.regenerate, request)
+        return
+      }
       if (options.chatId)
         void runContractCommand(queryClient, "coach.stop", {
           chatId: parseChatId(options.chatId),
@@ -239,6 +265,7 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
     },
     cancelInFlight: () => {
       ++generation.current
+      starting.current = false
       pendingStart.current = null
       update(empty)
     },

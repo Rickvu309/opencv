@@ -198,7 +198,7 @@ export function CoachWorkspace({
   }
 
   const compact = presentation === "compact"
-  const showHome = messages.length === 0 && !active
+  const showHome = messages.length === 0 && !active && !error
   const showWelcome = showHome && !compact
   const coachDock = (
     <CoachDock
