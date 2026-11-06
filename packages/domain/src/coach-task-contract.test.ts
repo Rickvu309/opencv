@@ -1,11 +1,11 @@
 import assert from "node:assert/strict"
 import { randomUUID } from "node:crypto"
 import { it } from "node:test"
-import {
-  coachStartInputSchema,
-  coachTaskCursorSchema,
-  coachTaskReplaySchema,
-} from "./coach-task-contract.ts"
+import { coachTaskContract, coachTaskQueries } from "./coach-task-contract.ts"
+
+const coachStartInputSchema = coachTaskContract["coach.start"].input
+const coachTaskCursorSchema = coachTaskQueries["coach.events"].input.shape.after
+const coachTaskReplaySchema = coachTaskQueries["coach.events"].output
 
 it("requires a stable start key and preserves the Send and Regenerate validation", () => {
   const base = { chatId: randomUUID(), startKey: randomUUID() }

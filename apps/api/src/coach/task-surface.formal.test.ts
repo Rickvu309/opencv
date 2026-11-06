@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import {
-  coachStartInputSchema,
+  coachTaskContract,
   coachStartOutputSchema,
   parseChatId,
   personActor,
@@ -20,6 +20,7 @@ import { openBackend, REAL } from "../test/registry-formal-support.js"
 import { append, claim } from "./task-store.js"
 import { readTaskEvents, taskSnapshot } from "./task-reader.js"
 
+const coachStartInputSchema = coachTaskContract["coach.start"].input
 const previous = process.env.COACH_TASK_WORKER
 const runtime = process.env.COACH_RUNTIME
 

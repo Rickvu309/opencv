@@ -9,13 +9,13 @@ import {
   queryEntry,
 } from "./contract.js"
 
-export const coachTaskCursorSchema = z
+const coachTaskCursorSchema = z
   .number()
   .int()
   .min(-1)
   .max(Number.MAX_SAFE_INTEGER)
-export const coachTaskIdSchema = z.string().uuid()
-export const coachTaskStateSchema = z.enum([
+const coachTaskIdSchema = z.string().uuid()
+const coachTaskStateSchema = z.enum([
   "queued",
   "running",
   "waitingApproval",
@@ -24,11 +24,11 @@ export const coachTaskStateSchema = z.enum([
   "succeeded",
   "failed",
 ])
-export const coachStartInputSchema = coachTurnRequestSchema.safeExtend({
+const coachStartInputSchema = coachTurnRequestSchema.safeExtend({
   chatId: chatIdSchema,
   startKey: z.string().uuid(),
 })
-export const coachStartReceiptSchema = z
+const coachStartReceiptSchema = z
   .object({
     taskId: coachTaskIdSchema,
     chatId: chatIdSchema,
@@ -66,7 +66,7 @@ export const coachTaskStatusInputSchema = z
 export const coachTaskEventsInputSchema = coachTaskStatusInputSchema
   .extend({ after: coachTaskCursorSchema.default(-1) })
   .strict()
-export const coachTaskActionSchema = z
+const coachTaskActionSchema = z
   .object({
     step: z.number().int().nonnegative(),
     slot: z.number().int().nonnegative(),
@@ -89,7 +89,7 @@ export const coachTaskActionSchema = z
     errorCode: z.string().nullable(),
   })
   .strict()
-export const coachTaskConfirmationSchema = z
+const coachTaskConfirmationSchema = z
   .object({
     id: z.string().uuid(),
     command: z.string(),
@@ -98,7 +98,7 @@ export const coachTaskConfirmationSchema = z
     status: z.enum(["pending", "approved", "denied", "expired"]),
   })
   .strict()
-export const coachTaskUsageSchema = z
+const coachTaskUsageSchema = z
   .object({
     id: z.string().uuid(),
     finishReason: z.string().nullable(),
@@ -125,14 +125,14 @@ export const coachTaskSnapshotSchema = z
     usage: coachTaskUsageSchema,
   })
   .strict()
-export const coachTaskResetSchema = z
+const coachTaskResetSchema = z
   .object({
     type: z.literal("reset"),
     reason: z.enum(["expired", "gap", "ahead"]),
     snapshot: coachTaskSnapshotSchema,
   })
   .strict()
-export const coachTaskReplaySchema = z.discriminatedUnion("type", [
+const coachTaskReplaySchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("events"),
@@ -144,8 +144,6 @@ export const coachTaskReplaySchema = z.discriminatedUnion("type", [
   coachTaskResetSchema,
 ])
 export type CoachStartInput = z.infer<typeof coachStartInputSchema>
-export type CoachTaskSnapshot = z.infer<typeof coachTaskSnapshotSchema>
-export type CoachTaskEvent = z.infer<typeof coachTaskEventSchema>
 export type CoachTaskReplay = z.infer<typeof coachTaskReplaySchema>
 
 export const coachTaskContract = commandContract({

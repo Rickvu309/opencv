@@ -4,8 +4,7 @@ import {
   chatDetailSchema,
   chatIdSchema,
   coachTaskEventSchema,
-  coachTaskReplaySchema,
-  coachTaskResetSchema,
+  coachTaskQueries,
   coachTaskSnapshotSchema,
   type CoachStartInput,
 } from "@workspace/domain"
@@ -34,6 +33,8 @@ import {
 import { COACH_TASK_RUNTIME_VERSION, taskCatalogDigest } from "./task-start.js"
 import { runCoachWorker } from "./worker.js"
 
+const coachTaskReplaySchema = coachTaskQueries["coach.events"].output
+const coachTaskResetSchema = coachTaskReplaySchema.options[1]
 const envelope = z.object({ ok: z.literal(true), data: z.unknown() })
 const originalSwitch = process.env.COACH_TASK_WORKER
 const originalRuntime = process.env.COACH_RUNTIME
