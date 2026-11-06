@@ -1,3 +1,4 @@
+import { registerCoachTasks } from "./commands.js"
 import { registerConnections } from "../connections/index.js"
 import { registerAccount, registerAccountQueries } from "../account/index.js"
 import { registerChat } from "../chat/index.js"
@@ -14,6 +15,7 @@ export function installRegistry(preview?: JobPreviewOptions) {
     registerAccount(registry)
     registerAccountQueries(registry)
     registerChat(registry)
+    registerCoachTasks(registry)
     registerPaper(registry)
     registerJob(registry, preview)
     registerInbox(registry)

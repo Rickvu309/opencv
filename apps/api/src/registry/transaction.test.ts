@@ -146,7 +146,10 @@ describe("every command runs in a transaction unless it declares none", () => {
         for (const name of others) {
           const schema = schemas.get(name) as Schema | undefined
           if (!schema) throw new Error(`missing schema for ${name}`)
-          const input = sampleInput(schema)
+          const input =
+            name === "coach.start"
+              ? { chatId: UUID, startKey: UUID, text: "Hello Coach" }
+              : sampleInput(schema)
           const parsed = schema.safeParse(input)
           if (!parsed.success) {
             throw new Error(`${name} rejected the sample input`)

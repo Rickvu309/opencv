@@ -16,7 +16,8 @@ import {
 import { and, asc, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
 
 import { getDb, transaction } from "../db/context.js"
-import { activity, chatMessages, chats } from "../db/schema.js"
+import { activity, chatMessages, chats, coachTasks } from "../db/schema.js"
+import { coachWorkerEnabledFromEnv } from "../config.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
@@ -86,8 +87,29 @@ export async function getChat(userId: UserId, chatId: ChatId) {
   const confirmations = new Map(
     (await registry.confirmations(userId, chatId)).map((row) => [row.id, row])
   )
+  const [activeTask] = coachWorkerEnabledFromEnv(process.env)
+    ? await getDb()
+        .select({ id: coachTasks.id })
+        .from(coachTasks)
+        .where(
+          and(
+            eq(coachTasks.ownerId, userId),
+            eq(coachTasks.chatId, chatId),
+            inArray(coachTasks.state, [
+              "queued",
+              "running",
+              "waitingApproval",
+              "cancelling",
+            ])
+          )
+        )
+        .limit(1)
+    : []
   return {
     ...toChat(row),
+    ...(coachWorkerEnabledFromEnv(process.env)
+      ? { activeTaskId: activeTask?.id ?? null }
+      : {}),
     messages: visible.map((message) => {
       const result = withBlocked(withUndone(message, undone), blocked)
       return {

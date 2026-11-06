@@ -1,0 +1,101 @@
+import {
+  coachTaskEventsInputSchema,
+  coachTaskStatusInputSchema,
+} from "@workspace/domain"
+import { Hono } from "hono"
+import { streamSSE } from "hono/streaming"
+import type { Auth } from "../auth.js"
+import type { AppDatabase } from "../db/context.js"
+import { requireSession, type SessionVariables } from "../middleware.js"
+import { CommandError } from "../registry/errors.js"
+import { readTaskEvents, taskSnapshot } from "./task-reader.js"
+import { waitForAbort } from "./sse.js"
+
+export function createCoachTaskRoutes(options: {
+  auth?: Auth
+  db?: AppDatabase
+}) {
+  const routes = new Hono<{ Variables: SessionVariables }>()
+  routes.use("*", requireSession(options.auth, options.db))
+  routes.get("/:id", async (c) => {
+    const input = coachTaskStatusInputSchema.safeParse({
+      taskId: c.req.param("id"),
+    })
+    if (!input.success)
+      throw new CommandError("VALIDATION_ERROR", "Invalid task id")
+    c.header("Cache-Control", "no-store")
+    return c.json({
+      ok: true,
+      data: await taskSnapshot(input.data.taskId, c.var.userId),
+    })
+  })
+  routes.get("/:id/events", async (c) => {
+    const raw = c.req.header("Last-Event-ID") ?? c.req.query("after")
+    if (raw !== undefined && !/^(?:-1|0|[1-9][0-9]*)$/.test(raw))
+      throw new CommandError("VALIDATION_ERROR", "Invalid task cursor")
+    const parsed = coachTaskEventsInputSchema.safeParse({
+      taskId: c.req.param("id"),
+      after: raw === undefined ? -1 : Number(raw),
+    })
+    if (!parsed.success)
+      throw new CommandError("VALIDATION_ERROR", "Invalid task cursor or id")
+    const { taskId, after } = parsed.data
+    const ownerId = c.var.userId
+    let batch = await readTaskEvents(taskId, ownerId, after)
+    if (batch.type === "reset") return c.json(batch, 409)
+    c.header("X-Accel-Buffering", "no")
+    c.header("Content-Encoding", "identity")
+    c.header("Cache-Control", "no-cache")
+    return streamSSE(c, async (stream) => {
+      const abort = waitForAbort(stream, c.req.raw.signal)
+      let timer: ReturnType<typeof setTimeout> | undefined
+      try {
+        while (!stream.aborted && !c.req.raw.signal.aborted) {
+          if (batch.type === "reset") {
+            await stream.writeSSE({
+              event: "reset",
+              data: JSON.stringify(batch),
+            })
+            return
+          }
+          for (const event of batch.events) {
+            if (stream.aborted || c.req.raw.signal.aborted) return
+            await stream.writeSSE({
+              id: String(event.seq),
+              event: "task",
+              data: JSON.stringify(event),
+            })
+          }
+          if (batch.terminal) return
+          const cursor = batch.cursor
+          if (batch.events.length < 100) {
+            await Promise.race([
+              abort.promise,
+              new Promise<void>((resolve) => {
+                timer = setTimeout(resolve, 250)
+              }),
+            ])
+            clearTimeout(timer)
+            if (stream.aborted || c.req.raw.signal.aborted) return
+            await stream.write(": heartbeat\n\n")
+          }
+          batch = await readTaskEvents(taskId, ownerId, cursor)
+        }
+      } catch (error) {
+        if (!stream.aborted && !c.req.raw.signal.aborted)
+          await stream.writeSSE({
+            event: "error",
+            data: JSON.stringify({
+              code:
+                error instanceof CommandError ? error.code : "INTERNAL_ERROR",
+              message: "Coach task stream closed",
+            }),
+          })
+      } finally {
+        clearTimeout(timer)
+        abort.dispose()
+      }
+    })
+  })
+  return routes
+}

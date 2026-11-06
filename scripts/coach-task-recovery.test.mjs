@@ -56,7 +56,7 @@ for (const [name, path, mistake, clean] of [
     "replay cannot claim the event writer as its reader",
     "apps/api/src/coach/CoachTask.tla.json",
     '{"Replay":"append"}',
-    '{"Replay":null}',
+    '{"Replay":"readTaskEvents"}',
   ],
 ]) {
   test(name, () => {

@@ -1,3 +1,4 @@
+import { coachTaskQueries } from "./coach-task-contract.js"
 import { connectionsQueries } from "./connections-contract.js"
 import { z } from "zod"
 
@@ -13,6 +14,7 @@ const untyped = z.unknown()
 
 export const queries = queryContract({
   ...connectionsQueries,
+  ...coachTaskQueries,
   ...jobQueries,
   ...inboxQueries,
   ...paperQueries,

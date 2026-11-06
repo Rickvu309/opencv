@@ -34,3 +34,5 @@ export {
 } from "./connections-contract.js"
 
 export * from "./connections.js"
+
+export * from "./coach-task-contract.js"

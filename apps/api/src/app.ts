@@ -17,7 +17,11 @@ import {
 import { bindAuth, createAuth, type AuthDatabase } from "./auth.js"
 import { isServedAuthPath } from "./auth-routes.js"
 import { createChatRoutes } from "./chat/index.js"
-import { createCoachRoutes, interpretPosting } from "./coach/index.js"
+import {
+  createCoachRoutes,
+  createCoachTaskRoutes,
+  interpretPosting,
+} from "./coach/index.js"
 import {
   logAuthMailFromEnv,
   setCoachModelEnv,
@@ -112,6 +116,7 @@ export function createApp({
       credentials: true,
       allowHeaders: [
         "Content-Type",
+        "Last-Event-ID",
         "Authorization",
         "MCP-Protocol-Version",
         "Mcp-Session-Id",
@@ -202,6 +207,7 @@ export function createApp({
     "/api/commands",
     createCommandRoutes({ auth, db: database, registry })
   )
+  app.route("/api/coach/tasks", createCoachTaskRoutes({ auth, db: database }))
   app.route("/api/chats", createChatRoutes(auth, database))
   app.route("/api/chats", coachRoutes)
   app.route("/api/coach", createUsageRoutes(auth, database))
