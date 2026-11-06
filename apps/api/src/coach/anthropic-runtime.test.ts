@@ -342,9 +342,49 @@ describe("Anthropic request-bound Coach runtime", () => {
     expect(await completeAnthropic(model, "Posting")).toBe("{}")
     expect(observed).toMatchObject({
       model: COACH_MODEL,
-      max_tokens: 256,
+      max_tokens: 8000,
       thinking: { type: "adaptive" },
-      output_config: { effort: "medium" },
+      output_config: { effort: "low" },
     })
+  })
+
+  it("rejects a completion that thinking used up before any answer", async () => {
+    const model = createAnthropicModel({
+      apiKey: "fixture",
+      fetch: async () =>
+        Response.json({
+          id: "msg",
+          type: "message",
+          role: "assistant",
+          model: COACH_MODEL,
+          content: [{ type: "thinking", thinking: "", signature: "sig" }],
+          stop_reason: "max_tokens",
+          stop_sequence: null,
+          usage: { input_tokens: 1, output_tokens: 8000 },
+        }),
+    })
+    await expect(completeAnthropic(model, "Posting")).rejects.toThrow("cut off")
+  })
+
+  it("does not save a cut-off reply as final", async () => {
+    const { model } = fixture([
+      () =>
+        anthropicFixtureResponse(
+          [{ type: "text-delta", delta: "Here is half of a dra" }],
+          "max_tokens"
+        ),
+    ])
+    const parts = await collect(
+      streamAnthropicSteps({
+        model,
+        history: [],
+        system: "",
+        entries: [entry],
+        actor,
+        registry: { read: vi.fn(), execute: vi.fn() },
+      })
+    )
+    expect(parts.at(-1)?.type).toBe("error")
+    expect(parts.some((part) => part.type === "finish")).toBe(false)
   })
 })

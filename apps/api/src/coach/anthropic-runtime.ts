@@ -34,15 +34,17 @@ export async function completeAnthropic(
   const message = await model.client.messages.create(
     {
       model: model.modelId,
-      max_tokens: 256,
+      max_tokens: 8000,
       thinking: { type: "adaptive" },
-      output_config: { effort: "medium" },
+      output_config: { effort: "low" },
       messages: [{ role: "user", content: prompt }],
     },
     { timeout: 10_000, maxRetries: 0 }
   )
   if (message.stop_reason === "refusal")
     throw new Error("The Coach declined this request")
+  if (message.stop_reason === "max_tokens")
+    throw new Error("The Coach reply was cut off before it finished")
   return message.content
     .flatMap((block) => (block.type === "text" ? [block.text] : []))
     .join("")
@@ -138,7 +140,7 @@ export async function* streamAnthropicSteps(input: {
   const runner = input.model.client.beta.messages.toolRunner(
     {
       model: input.model.modelId,
-      max_tokens: 4096,
+      max_tokens: 32000,
       thinking: { type: "adaptive" },
       output_config: { effort: "medium" },
       system: input.system,
@@ -204,8 +206,13 @@ export async function* streamAnthropicSteps(input: {
         }
         return
       }
-      if (message.stop_reason === "max_tokens" && intents.length)
-        throw new Error("Truncated tool input")
+      if (message.stop_reason === "max_tokens") {
+        yield {
+          type: "error",
+          message: "The Coach reply was cut off before it finished. Try again.",
+        }
+        return
+      }
       await boundary.persistStep({
         index: index++,
         intents,
