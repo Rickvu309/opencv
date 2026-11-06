@@ -54,7 +54,18 @@ function toActivityRow(row: ActivityDbRow): ActivityRow {
 function toPendingActionRow(
   row: { createdAt: Date } & Omit<PendingActionRow, "createdAt">
 ): PendingActionRow {
-  return { ...row, createdAt: row.createdAt.toISOString() }
+  return {
+    id: row.id,
+    userId: row.userId,
+    chatId: row.chatId,
+    command: row.command,
+    input: row.input,
+    summary: row.summary,
+    status: row.status,
+    turnId: row.turnId,
+    delegateConnectionId: row.delegateConnectionId,
+    createdAt: row.createdAt.toISOString(),
+  }
 }
 
 export function registerChat(registry: Registry) {

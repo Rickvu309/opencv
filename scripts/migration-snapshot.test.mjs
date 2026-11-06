@@ -40,10 +40,13 @@ test("the checked-in schema generates no SQL without changing tracked migrations
 test("a schema change without a migration emits SQL and the unchanged schema stays quiet", (t) => {
   const dir = tempDir(t, "migration-fixture-", path.join(homedir(), "tmp"))
   const schema = path.join(dir, "schema.ts")
-  cpSync(
-    path.join(root, "apps/api/src/db/oauth-schema.ts"),
-    path.join(dir, "oauth-schema.ts")
-  )
+  for (const name of [
+    "oauth-schema.ts",
+    "auth-schema.ts",
+    "coach-usage-schema.ts",
+  ]) {
+    cpSync(path.join(root, "apps/api/src/db", name), path.join(dir, name))
+  }
   symlinkSync(
     path.join(root, "apps/api/node_modules"),
     path.join(dir, "node_modules")
@@ -55,8 +58,8 @@ test("a schema change without a migration emits SQL and the unchanged schema sta
   writeFileSync(
     schema,
     source.replace(
-      'agentWeekly: boolean("agent_weekly")',
-      'unmigratedWeekly: boolean("unmigrated_weekly"), agentWeekly: boolean("agent_weekly")'
+      'isFavorite: boolean("is_favorite")',
+      'unmigratedWeekly: boolean("unmigrated_weekly"), isFavorite: boolean("is_favorite")'
     )
   )
   const sql = generateSql({ schema })

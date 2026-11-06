@@ -1,4 +1,14 @@
 import {
+  coachRefusal,
+  type AgentGates,
+  REFUSAL_MESSAGES,
+  GATES_CLOSED_WITHOUT_CONSENT_TO_READ,
+  omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe,
+} from "./coach-policy.js"
+export type { AgentGates } from "./coach-policy.js"
+export { coachRefusal } from "./coach-policy.js"
+import { withTaskFence, type TaskLease } from "./task-fence.js"
+import {
   ERROR_CODES,
   effectiveCoachPolicy,
   approvedProposalActor,
@@ -6,7 +16,6 @@ import {
   isCoachActor,
   personActor,
   type Actor,
-  type CoachAccess,
   type CommandSpec,
   type QuerySpec,
   type ReversalExpect,
@@ -45,53 +54,6 @@ import type {
 export type { ExecuteResult, ToolEntry } from "./registry-types.js"
 
 const approvedDelegate = Symbol("approvedDelegate")
-
-const CHECKLIST_COMMANDS = new Set([
-  "job.addChecklistItem",
-  "job.setChecklistItem",
-  "job.removeChecklistItem",
-])
-
-export type AgentGates = {
-  agentCvs: boolean
-  agentInterview: boolean
-  agentEmail: boolean
-}
-
-type CoachRefusal = "never" | "cvs" | "interview" | "email"
-
-const REFUSAL_MESSAGES: Record<CoachRefusal, string> = {
-  never: "The Coach cannot do this",
-  cvs: "Turn on Tailored CVs for the Coach in Settings",
-  interview: "Turn on Interview prep for the Coach in Settings",
-  email: "Turn on Email updates for the Coach in Settings",
-}
-
-const GATES_CLOSED_WITHOUT_CONSENT_TO_READ: AgentGates = {
-  agentCvs: false,
-  agentInterview: false,
-  agentEmail: false,
-}
-
-function omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe(
-  command: { idempotency: "keyed" | "none" },
-  key: string | undefined
-) {
-  return command.idempotency === "none" ? undefined : key
-}
-
-export function coachRefusal(
-  entry: { name: string; coach: CoachAccess | boolean },
-  gates: AgentGates
-): CoachRefusal | null {
-  if (entry.coach === "never" || entry.coach === false) return "never"
-  if (entry.name === "paper.edit" && !gates.agentCvs) return "cvs"
-  if (CHECKLIST_COMMANDS.has(entry.name) && !gates.agentInterview) {
-    return "interview"
-  }
-  if (entry.name.startsWith("inbox.") && !gates.agentEmail) return "email"
-  return null
-}
 
 export class Registry {
   private readonly commands = new Map<string, StoredCommand>()
@@ -260,6 +222,39 @@ export class Registry {
       })
     }
     return entries
+  }
+
+  executeTask(
+    lease: TaskLease,
+    options: {
+      name: string
+      input: unknown
+      actor: Actor
+      idempotencyKey: string
+    }
+  ) {
+    return withTaskFence(lease, async (task) => {
+      if (
+        options.actor.type !== "coach" ||
+        options.actor.userId !== task.ownerId ||
+        options.actor.chatId !== task.chatId
+      )
+        throw new Error("Task actor mismatch")
+      const command = this.commands.get(options.name)
+      if (
+        !command ||
+        command.transaction === "none" ||
+        command.idempotency !== "keyed"
+      )
+        throw new Error("Task command must be transactional and keyed")
+      const result = await this.execute(options)
+      if (result.pendingActionId)
+        await getDb()
+          .update(pendingActions)
+          .set({ coachTaskId: task.id, coachIntentKey: options.idempotencyKey })
+          .where(eq(pendingActions.id, result.pendingActionId))
+      return result
+    })
   }
 
   async execute(options: {
@@ -461,6 +456,12 @@ export class Registry {
     await this.expireIfStale(userId, pendingActionId)
     return transaction(async () => {
       const row = await this.lockPending(userId, pendingActionId)
+      if (row.coachTaskId) {
+        throw new CommandError(
+          ERROR_CODES.CONFLICT,
+          "This task confirmation requires the durable worker."
+        )
+      }
       if (row.status === "approved") {
         return this.activityByKey(userId, row.id)
       }

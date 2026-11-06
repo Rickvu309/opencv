@@ -32,6 +32,51 @@ export const RELEASED_PHOTO_SOURCE = "paper_doc_updates.released"
 
 export const NOT_PHOTO_JSON = [
   {
+    table: "coach_tasks",
+    column: "context_snapshot",
+    why: "Coach grounding snapshot, not an authoritative Paper document",
+  },
+  {
+    table: "task_events",
+    column: "payload",
+    why: "public Coach event, not an authoritative Paper document",
+  },
+  {
+    table: "task_checkpoints",
+    column: "model_messages",
+    why: "provider protocol replay, not an authoritative Paper document",
+  },
+  {
+    table: "task_checkpoints",
+    column: "observed_revisions",
+    why: "resource revision stamps, not a document",
+  },
+  {
+    table: "task_checkpoints",
+    column: "usage",
+    why: "token counters, not a document",
+  },
+  {
+    table: "task_checkpoints",
+    column: "request_manifest",
+    why: "model options and schemas, not a document",
+  },
+  {
+    table: "tool_intents",
+    column: "input",
+    why: "Coach invocation replay; Paper and registry own photo references",
+  },
+  {
+    table: "tool_intents",
+    column: "observed_revisions",
+    why: "resource revision stamps, not a document",
+  },
+  {
+    table: "tool_intents",
+    column: "public_result",
+    why: "Coach outcome replay; Paper and registry own photo references",
+  },
+  {
     table: "paper_docs",
     column: "checks",
     why: "check notes do not name a photo",

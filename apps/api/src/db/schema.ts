@@ -1,7 +1,11 @@
+import { createAuthTables } from "./auth-schema.js"
+import { createCoachUsageTable } from "./coach-usage-schema.js"
 import { createOAuthTables } from "./oauth-schema.js"
-import type { CoachMode, ReversalExpect } from "@workspace/domain"
+import type { ReversalExpect } from "@workspace/domain"
 import { sql } from "drizzle-orm"
 import {
+  bigint,
+  check,
   boolean,
   customType,
   date,
@@ -28,86 +32,8 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   fromDriver: (value) => (Buffer.isBuffer(value) ? value : Buffer.from(value)),
 })
 
-export const user = opencvApp.table("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  plan: text("plan").$type<"free" | "pro">().notNull().default("free"),
-  coachMode: text("coach_mode").$type<CoachMode>().notNull().default("free"),
-  language: text("language").$type<"en" | "vi">().notNull().default("en"),
-  timeZone: text("time_zone").notNull().default("Asia/Ho_Chi_Minh"),
-  startPage: text("start_page")
-    .$type<"apply" | "paper" | "inbox" | "coach">()
-    .notNull()
-    .default("apply"),
-  notifyEmail: boolean("notify_email").notNull().default(true),
-  notifyBrowser: boolean("notify_browser").notNull().default(false),
-  memoryEnabled: boolean("memory_enabled").notNull().default(true),
-  agentChat: boolean("agent_chat").notNull().default(true),
-  agentCvs: boolean("agent_cvs").notNull().default(true),
-  agentInterview: boolean("agent_interview").notNull().default(true),
-  agentEmail: boolean("agent_email").notNull().default(true),
-  agentWeekly: boolean("agent_weekly").notNull().default(false),
-  welcomedAt: timestamptz("welcomed_at"),
-  inboxSkippedAt: timestamptz("inbox_skipped_at"),
-  createdAt: timestamptz("created_at").notNull().defaultNow(),
-  updatedAt: timestamptz("updated_at").notNull().defaultNow(),
-})
-
-export const session = opencvApp.table(
-  "session",
-  {
-    id: text("id").primaryKey(),
-    expiresAt: timestamptz("expires_at").notNull(),
-    token: text("token").notNull().unique(),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
-    ipAddress: text("ip_address"),
-    userAgent: text("user_agent"),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-  },
-  (table) => [index("session_user_id_idx").on(table.userId)]
-)
-
-export const account = opencvApp.table(
-  "account",
-  {
-    id: text("id").primaryKey(),
-    issuer: text("issuer"),
-    accountId: text("account_id").notNull(),
-    providerId: text("provider_id").notNull(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    accessToken: text("access_token"),
-    refreshToken: text("refresh_token"),
-    idToken: text("id_token"),
-    accessTokenExpiresAt: timestamptz("access_token_expires_at"),
-    refreshTokenExpiresAt: timestamptz("refresh_token_expires_at"),
-    scope: text("scope"),
-    password: text("password"),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
-  },
-  (table) => [index("account_user_id_idx").on(table.userId)]
-)
-
-export const verification = opencvApp.table(
-  "verification",
-  {
-    id: text("id").primaryKey(),
-    identifier: text("identifier").notNull(),
-    value: text("value").notNull(),
-    expiresAt: timestamptz("expires_at").notNull(),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
-  },
-  (table) => [index("verification_identifier_idx").on(table.identifier)]
-)
+export const { user, session, account, verification, connections } =
+  createAuthTables(opencvApp)
 
 export const {
   oauthClient,
@@ -296,34 +222,6 @@ export const jobChecklist = opencvApp.table(
   (table) => [index("job_checklist_job_id_idx").on(table.jobId, table.position)]
 )
 
-export const connections = opencvApp.table(
-  "connections",
-  {
-    id: uuid("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    provider: text("provider").$type<"gmail" | "gcalendar">().notNull(),
-    email: text("email"),
-    accessToken: text("access_token"),
-    refreshToken: text("refresh_token"),
-    expiresAt: timestamptz("expires_at"),
-    scope: text("scope"),
-    status: text("status")
-      .$type<"active" | "expired">()
-      .notNull()
-      .default("active"),
-    syncCursor: text("sync_cursor"),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("connections_user_provider_uidx").on(
-      table.userId,
-      table.provider
-    ),
-  ]
-)
-
 export const inboxThreads = opencvApp.table(
   "inbox_threads",
   {
@@ -414,6 +312,9 @@ export const chatMessages = opencvApp.table(
       .references(() => chats.id, { onDelete: "cascade" }),
     role: text("role").$type<"person" | "coach">().notNull(),
     text: text("text").notNull(),
+    coachTaskId: uuid("coach_task_id")
+      .unique()
+      .references((): AnyPgColumn => coachTasks.id),
     parts: jsonb("parts").$type<unknown[]>(),
     status: text("status").$type<"final" | "error" | "aborted">(),
     workedMs: integer("worked_ms"),
@@ -444,6 +345,10 @@ export const pendingActions = opencvApp.table(
     chatId: uuid("chat_id")
       .notNull()
       .references(() => chats.id, { onDelete: "cascade" }),
+    coachTaskId: uuid("coach_task_id").references(
+      (): AnyPgColumn => coachTasks.id
+    ),
+    coachIntentKey: text("coach_intent_key").unique(),
     delegateConnectionId: uuid("delegate_connection_id").references(
       () => agentConnections.id
     ),
@@ -522,36 +427,6 @@ export const idempotency = opencvApp.table(
   (table) => [primaryKey({ columns: [table.userId, table.key] })]
 )
 
-export const coachUsage = opencvApp.table(
-  "coach_usage",
-  {
-    id: uuid("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    chatId: uuid("chat_id").references(() => chats.id, {
-      onDelete: "set null",
-    }),
-    messageId: uuid("message_id").references(() => chatMessages.id, {
-      onDelete: "set null",
-    }),
-    plan: text("plan").$type<"free" | "pro">().notNull(),
-    mode: text("mode").$type<CoachMode>().notNull(),
-    provider: text("provider").notNull(),
-    model: text("model").notNull(),
-    finishReason: text("finish_reason"),
-    latencyMs: integer("latency_ms"),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    index("coach_usage_user_id_created_at_idx").on(
-      table.userId,
-      table.createdAt
-    ),
-    uniqueIndex("coach_usage_message_id_uidx").on(table.messageId),
-  ]
-)
-
 export const notifyRequests = opencvApp.table(
   "notify_requests",
   {
@@ -569,3 +444,180 @@ export const notifyRequests = opencvApp.table(
     ),
   ]
 )
+
+export const coachTasks = opencvApp.table(
+  "coach_tasks",
+  {
+    id: uuid("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    chatId: uuid("chat_id")
+      .notNull()
+      .references(() => chats.id, { onDelete: "cascade" }),
+    sourceMessageId: uuid("source_message_id").references(
+      () => chatMessages.id
+    ),
+    assistantMessageId: uuid("assistant_message_id")
+      .unique()
+      .references(() => chatMessages.id),
+    supersedesMessageId: uuid("supersedes_message_id").references(
+      () => chatMessages.id
+    ),
+    startKey: text("start_key").notNull(),
+    startInputHash: text("start_input_hash").notNull(),
+    state: text("state")
+      .$type<
+        | "queued"
+        | "running"
+        | "waitingApproval"
+        | "cancelling"
+        | "cancelled"
+        | "succeeded"
+        | "failed"
+      >()
+      .notNull()
+      .default("queued"),
+    catalogDigest: text("catalog_digest").notNull(),
+    runtimeVersion: integer("runtime_version").notNull(),
+    modelId: text("model_id").notNull(),
+    mode: text("mode").notNull(),
+    planAtStart: text("plan_at_start").notNull(),
+    toolsAllowed: boolean("tools_allowed").notNull(),
+    contextSnapshot: jsonb("context_snapshot").notNull(),
+    leaseOwner: text("lease_owner"),
+    leaseEpoch: bigint("lease_epoch", { mode: "number" }).notNull().default(0),
+    leaseUntil: timestamptz("lease_until"),
+    cancelRequestedAt: timestamptz("cancel_requested_at"),
+    cancelProcessedAt: timestamptz("cancel_processed_at"),
+    attempt: integer("attempt").notNull().default(0),
+    nextSeq: bigint("next_seq", { mode: "number" }).notNull().default(0),
+    checkpointVersion: integer("checkpoint_version").notNull().default(0),
+    maxSteps: integer("max_steps").notNull(),
+    maxTokens: integer("max_tokens").notNull(),
+    deadlineAt: timestamptz("deadline_at").notNull(),
+    retryCount: integer("retry_count").notNull().default(0),
+    availableAt: timestamptz("available_at").notNull().defaultNow(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    finishedAt: timestamptz("finished_at"),
+    errorCode: text("error_code"),
+  },
+  (t) => [
+    uniqueIndex("coach_tasks_start_key_uidx").on(t.ownerId, t.startKey),
+    uniqueIndex("coach_tasks_active_chat_uidx")
+      .on(t.ownerId, t.chatId)
+      .where(sql`${t.state} not in ('cancelled', 'succeeded', 'failed')`),
+    index("coach_tasks_eligible_idx").on(t.state, t.availableAt, t.leaseUntil),
+    check(
+      "coach_tasks_state_check",
+      sql`${t.state} in ('queued','running','waitingApproval','cancelling','cancelled','succeeded','failed')`
+    ),
+    check(
+      "coach_tasks_bounds_check",
+      sql`${t.leaseEpoch} >= 0 and ${t.nextSeq} >= 0 and ${t.maxSteps} > 0 and ${t.maxTokens} > 0`
+    ),
+  ]
+)
+
+export const taskEvents = opencvApp.table(
+  "task_events",
+  {
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => coachTasks.id, { onDelete: "cascade" }),
+    seq: bigint("seq", { mode: "number" }).notNull(),
+    epoch: bigint("epoch", { mode: "number" }).notNull(),
+    attempt: integer("attempt").notNull(),
+    step: integer("step"),
+    kind: text("kind").notNull(),
+    payload: jsonb("payload").notNull(),
+    logicalKey: text("logical_key"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.taskId, t.seq] }),
+    uniqueIndex("task_events_logical_uidx").on(t.taskId, t.logicalKey),
+  ]
+)
+
+export const taskCheckpoints = opencvApp.table(
+  "task_checkpoints",
+  {
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => coachTasks.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    completedStep: integer("completed_step").notNull(),
+    phase: text("phase").$type<"decision" | "results">().notNull(),
+    attempt: integer("attempt").notNull(),
+    modelMessages: jsonb("model_messages").notNull(),
+    observedRevisions: jsonb("observed_revisions").notNull(),
+    usage: jsonb("usage")
+      .$type<{ inputTokens: number; outputTokens: number }>()
+      .notNull(),
+    requestManifest: jsonb("request_manifest").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.taskId, t.version] })]
+)
+
+export const toolIntents = opencvApp.table(
+  "tool_intents",
+  {
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => coachTasks.id, { onDelete: "cascade" }),
+    step: integer("step").notNull(),
+    slot: integer("slot").notNull(),
+    intentKey: text("intent_key").notNull().unique(),
+    providerToolUseId: text("provider_tool_use_id").notNull(),
+    operation: text("operation").notNull(),
+    operationVersion: integer("operation_version").notNull(),
+    input: jsonb("input").notNull(),
+    inputHash: text("input_hash").notNull(),
+    observedRevisions: jsonb("observed_revisions").notNull(),
+    kind: text("kind").$type<"command" | "query">().notNull(),
+    state: text("state")
+      .$type<
+        | "planned"
+        | "proposed"
+        | "committed"
+        | "read"
+        | "denied"
+        | "stale"
+        | "failed"
+        | "cancelled"
+      >()
+      .notNull()
+      .default("planned"),
+    proposalId: uuid("proposal_id")
+      .unique()
+      .references(() => pendingActions.id),
+    activityId: uuid("activity_id").references(() => activity.id),
+    publicResult: jsonb("public_result"),
+    errorCode: text("error_code"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    finishedAt: timestamptz("finished_at"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.taskId, t.step, t.slot] }),
+    uniqueIndex("tool_intents_provider_uidx").on(
+      t.taskId,
+      t.step,
+      t.providerToolUseId
+    ),
+    index("tool_intents_state_idx").on(t.taskId, t.state),
+    check(
+      "tool_intents_key_check",
+      sql`${t.intentKey} = 'coach:' || ${t.taskId}::text || ':' || ${t.step}::text || ':' || ${t.slot}::text`
+    ),
+    check("tool_intents_slot_check", sql`${t.step} >= 0 and ${t.slot} >= 0`),
+  ]
+)
+
+export const coachUsage = createCoachUsageTable(opencvApp, {
+  user,
+  chats,
+  chatMessages,
+  coachTasks,
+})
