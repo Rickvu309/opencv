@@ -9,7 +9,7 @@ import type { AppDatabase } from "../db/context.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { readTaskEvents, taskSnapshot } from "./task-reader.js"
-import { waitForAbort } from "./sse.js"
+import { idleUntilAbort, waitForAbort } from "./sse.js"
 
 export function createCoachTaskRoutes(options: {
   auth?: Auth
@@ -48,7 +48,7 @@ export function createCoachTaskRoutes(options: {
     c.header("Cache-Control", "no-cache")
     return streamSSE(c, async (stream) => {
       const abort = waitForAbort(stream, c.req.raw.signal)
-      let timer: ReturnType<typeof setTimeout> | undefined
+      const idle = idleUntilAbort(abort)
       try {
         while (!stream.aborted && !c.req.raw.signal.aborted) {
           if (batch.type === "reset") {
@@ -69,13 +69,7 @@ export function createCoachTaskRoutes(options: {
           if (batch.terminal) return
           const cursor = batch.cursor
           if (batch.events.length < 100) {
-            await Promise.race([
-              abort.promise,
-              new Promise<void>((resolve) => {
-                timer = setTimeout(resolve, 250)
-              }),
-            ])
-            clearTimeout(timer)
+            await idle(250)
             if (stream.aborted || c.req.raw.signal.aborted) return
             await stream.write(": heartbeat\n\n")
           }
@@ -92,7 +86,6 @@ export function createCoachTaskRoutes(options: {
             }),
           })
       } finally {
-        clearTimeout(timer)
         abort.dispose()
       }
     })

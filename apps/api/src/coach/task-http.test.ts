@@ -460,3 +460,16 @@ it("exposes the same owned reader through the domain query registry", () =>
     expect(replay.type).toBe("events")
     await work()
   }))
+
+it("shows only a public error code when a task fails with internal error text", () =>
+  fixture(async ({ start, runtime, work, status }) => {
+    runtime.mockImplementation(() => {
+      throw new Error("select secret_column from internal_table")
+    })
+    const { taskId } = await start()
+    await work()
+    const snapshot = await status(taskId)
+    expect(snapshot.state).toBe("failed")
+    expect(snapshot.errorCode).toBe("TASK_FAILED")
+    expect(JSON.stringify(snapshot)).not.toContain("secret_column")
+  }))

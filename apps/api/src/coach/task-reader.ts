@@ -3,6 +3,7 @@ import {
   chatDetailSchema,
   parseChatId,
   parseUserId,
+  coachTaskErrorCodeSchema,
   coachTaskSnapshotSchema,
   type CoachTaskReplay,
 } from "@workspace/domain"
@@ -108,7 +109,7 @@ async function snapshot(task: Task) {
     assistantMessageId: task.assistantMessageId,
     supersedesMessageId: task.supersedesMessageId,
     cancelRequestedAt: task.cancelRequestedAt?.toISOString() ?? null,
-    errorCode: task.errorCode,
+    errorCode: publicTaskErrorCode(task.errorCode),
     cursor: task.nextSeq - 1,
     events: events.map(publicEvent),
     messages: detail.messages,
@@ -186,4 +187,10 @@ export function readTaskEvents(
         (events.at(-1)?.seq ?? after) === high,
     }
   })
+}
+
+function publicTaskErrorCode(stored: string | null) {
+  if (stored === null) return null
+  const known = coachTaskErrorCodeSchema.safeParse(stored)
+  return known.success ? known.data : "TASK_FAILED"
 }

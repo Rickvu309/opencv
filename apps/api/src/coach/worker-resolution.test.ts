@@ -189,7 +189,7 @@ it("expires a waiting task with closed approval parts and preserved committed re
     const [task] = await getDb().select().from(coachTasks)
     expect(task).toMatchObject({
       state: "failed",
-      errorCode: "Task deadline exceeded",
+      errorCode: "DEADLINE_EXCEEDED",
     })
     const [proposal] = await getDb().select().from(pendingActions)
     expect(proposal?.status).toBe("denied")

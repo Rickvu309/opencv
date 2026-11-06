@@ -9,6 +9,12 @@ import {
   queryEntry,
 } from "./contract.js"
 
+export const coachTaskErrorCodeSchema = z.enum([
+  "DEADLINE_EXCEEDED",
+  "REPLY_SUPERSEDED",
+  "TASK_FAILED",
+])
+export type CoachTaskErrorCode = z.output<typeof coachTaskErrorCodeSchema>
 const coachTaskCursorSchema = z
   .number()
   .int()
@@ -116,7 +122,7 @@ export const coachTaskSnapshotSchema = z
     assistantMessageId: z.string().uuid().nullable(),
     supersedesMessageId: z.string().uuid().nullable(),
     cancelRequestedAt: z.string().datetime().nullable(),
-    errorCode: z.string().nullable(),
+    errorCode: coachTaskErrorCodeSchema.nullable(),
     cursor: coachTaskCursorSchema,
     events: coachTaskEventSchema.array(),
     messages: chatDetailSchema.shape.messages,

@@ -35,6 +35,26 @@ export function waitForAbort(stream: SSEStreamingApi, signal?: AbortSignal) {
   }
 }
 
+export function idleUntilAbort(abort: { promise: Promise<void> }) {
+  let wake: (() => void) | null = null
+  let aborted = false
+  void abort.promise.then(() => {
+    aborted = true
+    wake?.()
+  })
+  return (ms: number) =>
+    new Promise<void>((resolve) => {
+      if (aborted) return resolve()
+      const timer = setTimeout(done, ms)
+      wake = done
+      function done() {
+        clearTimeout(timer)
+        wake = null
+        resolve()
+      }
+    })
+}
+
 export async function* takeUntilAbort<T>(
   iterable: AsyncIterable<T>,
   abort: Promise<void>,

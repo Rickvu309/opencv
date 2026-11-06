@@ -8,6 +8,7 @@ import {
   parseUserId,
   textFromParts,
   type ChatEntryPart,
+  type CoachTaskErrorCode,
 } from "@workspace/domain"
 import { getDb, transaction } from "../db/context.js"
 import {
@@ -92,7 +93,7 @@ export function finishTask(
   lease: TaskLease,
   state: "succeeded" | "failed" | "cancelled",
   registry: Registry,
-  errorCode?: string
+  errorCode?: CoachTaskErrorCode
 ) {
   return transaction(async () => {
     const [existing] = await getDb()
@@ -186,7 +187,7 @@ export function finishTask(
     })
     if (!message) {
       state = "failed"
-      errorCode = "Task reply superseded"
+      errorCode = "REPLY_SUPERSEDED"
     }
     if (message) {
       await getDb()
