@@ -27,6 +27,22 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
+      name: "job.setPriority",
+      arrange: async () => {
+        ctx.jobId = idOf(
+          (await run("job.create", { title: "Intern", company: "Northwind" }))
+            .output
+        )
+      },
+      act: () => run("job.setPriority", { jobId: ctx.jobId, priority: "high" }),
+      assert: async () =>
+        expect(await jobOf(ctx.jobId)).toMatchObject({ priority: "high" }),
+      undoAssert: async (result) => {
+        await undo(result)
+        expect(await jobOf(ctx.jobId)).toMatchObject({ priority: "normal" })
+      },
+    },
+    {
       name: "job.update",
       arrange: async () => {
         ctx.jobId = idOf(

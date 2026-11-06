@@ -17,6 +17,7 @@ type Extra = {
   checklist: ChecklistItem[]
   linked: { cv: LinkedDoc; letter: LinkedDoc }
   activity: ActivityFeedRow[]
+  previousPriority?: JobView["priority"]
   previousStage: JobStage | null
 }
 
@@ -87,7 +88,10 @@ function record(name: string, input: Record<string, unknown>) {
             ? String(input.body ?? "")
             : name,
     undoneAt: null,
-    reversible: name === "job.create" || name === "job.move",
+    reversible:
+      name === "job.create" ||
+      name === "job.move" ||
+      name === "job.setPriority",
   }
   if (row.subjectId) extra(row.subjectId).activity.unshift(row)
   return activityId
@@ -289,6 +293,15 @@ export async function jobApiFetch(
     return jsonOk(jobs)
   }
 
+  if (method === "GET" && path === "/api/jobs/priority-counts") {
+    return jsonOk(
+      (["low", "normal", "high"] as const).map((priority) => ({
+        priority,
+        count: jobs.filter((job) => job.priority === priority).length,
+      }))
+    )
+  }
+
   if (method === "GET" && path === "/api/jobs/calendar") {
     const from = urlOf(input).searchParams.get("from") ?? ""
     const to = urlOf(input).searchParams.get("to") ?? ""
@@ -340,6 +353,7 @@ export async function jobApiFetch(
         if (!row) continue
         row.undoneAt = new Date().toISOString()
         const job = jobs.find((item) => item.id === jobId)
+        if (job && more.previousPriority) job.priority = more.previousPriority
         if (job && more.previousStage) job.stage = more.previousStage
       }
       record(name, payload)
@@ -425,6 +439,11 @@ export async function jobApiFetch(
     }
     const job = jobs.find((item) => item.id === jobId)
     if (!job) return jsonError(404, "NOT_FOUND", "Job not found")
+    if (name === "job.setPriority") {
+      extra(job.id).previousPriority = job.priority
+      job.priority = payload.priority as JobView["priority"]
+      return jsonOk({ ...job, activityId })
+    }
     if (name === "job.move") {
       extra(job.id).previousStage = job.stage
       job.stage = payload.stage as JobStage

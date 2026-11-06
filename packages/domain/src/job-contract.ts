@@ -26,6 +26,8 @@ import {
 } from "./job.js"
 import type { QueryRef } from "./queries.js"
 
+import { jobPriorityResource } from "./resources.js"
+
 const nullableText = z.string().nullable()
 
 const jobViewSchema = z
@@ -118,6 +120,17 @@ const jobPreviewSchema = z.discriminatedUnion("status", [
 export type JobPreview = z.output<typeof jobPreviewSchema>
 
 export const jobQueries = queryContract({
+  "job.priorityCounts": queryEntry({
+    input: z.object({}).strict(),
+    output: z.array(
+      z
+        .object({
+          priority: jobPrioritySchema,
+          count: z.number().int().nonnegative(),
+        })
+        .strict()
+    ),
+  }),
   "job.list": queryEntry({
     input: z
       .object({
@@ -150,6 +163,7 @@ type OnJob = { jobId: JobId }
 
 const jobFieldsChanged = (input: OnJob): QueryRef[] => [
   { query: "job.list" },
+  { query: "job.priorityCounts" },
   { query: "job.get", input: { jobId: input.jobId } },
   { query: "job.calendar" },
 ]
@@ -166,11 +180,17 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: (input) => `Save ${input.title}`,
-    invalidates: () => [{ query: "job.list" }, { query: "job.calendar" }],
+    invalidates: () => [
+      { query: "job.list" },
+      { query: "job.calendar" },
+      { query: "job.priorityCounts" },
+    ],
   }),
   "job.update": commandEntry({
-    description: "Update job fields. Stage changes go through job.move.",
+    description:
+      "Update job fields. Stage changes go through job.move. Priority changes need the person's approval.",
     input: jobUpdateInputSchema,
+    writes: (input) => ("priority" in input.patch ? [jobPriorityResource] : []),
     output: jobViewSchema
       .extend({ previousPatch: jobPatchSchema, watched: z.boolean() })
       .strict(),
@@ -191,6 +211,20 @@ export const jobContract = commandContract({
     coach: "confirm",
     destructive: false,
     step: (input) => `Move to ${input.stage}`,
+    invalidates: jobFieldsChanged,
+  }),
+  "job.setPriority": commandEntry({
+    description: "Set a job's priority.",
+    input: z
+      .object({ jobId: jobIdSchema, priority: jobPrioritySchema })
+      .strict(),
+    output: jobViewSchema
+      .extend({ previousPriority: jobPrioritySchema })
+      .strict(),
+    coach: "confirm",
+    destructive: false,
+    writes: () => [jobPriorityResource],
+    step: (input) => `Set priority to ${input.priority}`,
     invalidates: jobFieldsChanged,
   }),
   "job.star": commandEntry({

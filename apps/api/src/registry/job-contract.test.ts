@@ -62,6 +62,8 @@ describe("a job binding that drifts from the job contract is rejected", () => {
       })
       const docId = idOf(paper.output)
 
+      await read("job.priorityCounts", {})
+      await run("job.setPriority", { jobId, priority: "high" })
       await run("job.update", {
         jobId,
         patch: {

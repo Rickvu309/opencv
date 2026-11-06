@@ -31,6 +31,7 @@ export const endpoints = {
   activityOfSubject: (subjectId: string) =>
     `/api/activity?subjectId=${encodeURIComponent(subjectId)}`,
   jobs: "/api/jobs",
+  jobsPriorityCounts: "/api/jobs/priority-counts",
   job: (jobId: string) => `/api/jobs/${jobId}`,
   jobsCalendar: (query: URLSearchParams) => `/api/jobs/calendar?${query}`,
   jobsPreview: "/api/jobs/preview",

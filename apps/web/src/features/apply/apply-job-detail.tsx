@@ -6,6 +6,7 @@ import {
   ERROR_CODES,
   type JobId,
   type JobStage,
+  type JobPriority,
 } from "@workspace/domain"
 import { useNavigate } from "@tanstack/react-router"
 
@@ -147,6 +148,18 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
       : null
   }
 
+  async function changePriority(priority: JobPriority) {
+    const result = await run("job.setPriority", { jobId: id, priority })
+    if (result.activityId) {
+      const activityId = result.activityId
+      toastWithUndo(`Priority set to ${priority}`, () => {
+        void undoActivity(queryClient, activityId).catch(
+          reportRejected("undo the priority change")
+        )
+      })
+    }
+  }
+
   return (
     <div
       data-pen-surface="apply"
@@ -178,6 +191,11 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         {railOpen ? (
           <JobRail
             job={job}
+            onPriority={(priority) =>
+              void changePriority(priority).catch(
+                reportRejected("set priority")
+              )
+            }
             onStage={(stage) =>
               void changeStage(stage).catch(reportRejected("move this job"))
             }

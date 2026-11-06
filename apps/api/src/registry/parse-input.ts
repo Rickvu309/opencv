@@ -1,4 +1,10 @@
-import { ERROR_CODES } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  approvedProposalActor,
+  coachActor,
+  personActor,
+  type Actor,
+} from "@workspace/domain"
 import type { ZodType } from "zod"
 
 import { CommandError } from "./errors.js"
@@ -16,4 +22,11 @@ export function parseInput<T>(schema: ZodType<T>, raw: unknown): T {
     )
   }
   return parsed.data
+}
+
+export function brandedActor(actor: Actor): Actor {
+  if (actor.type === "person") return personActor(actor.userId)
+  return actor.turnId
+    ? coachActor(actor.userId, actor.chatId, actor.turnId)
+    : approvedProposalActor(actor.userId, actor.chatId)
 }

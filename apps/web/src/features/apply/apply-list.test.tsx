@@ -1,4 +1,10 @@
-import { cleanup, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
 
@@ -9,6 +15,58 @@ import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 describe("apply list", () => {
   afterEach(() => {
     cleanup()
+  })
+  it("shows all priority counts including zeros", async () => {
+    setMockJobs([
+      mockJob({ id: "01900000-0000-7000-8000-000000000021", priority: "high" }),
+    ])
+    renderApp("/apply")
+    const counts = await screen.findByLabelText("Jobs by priority")
+    await waitFor(() => expect(counts).toHaveTextContent("low 0normal 0high 1"))
+    expect(within(counts).getByText("high")).toBeVisible()
+  })
+  it("refreshes cached counts after setting priority and Undo", async () => {
+    setMockJobs([
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000021",
+        priority: "normal",
+      }),
+    ])
+    renderApp("/apply")
+    await waitFor(() =>
+      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
+        "normal 1"
+      )
+    )
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Junior Marketing, Lumière Cosmetics",
+      })
+    )
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Priority: Normal" })
+    )
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: "High priority" })
+    )
+    await screen.findByRole("button", { name: "Priority: High priority" })
+    await userEvent.click(
+      within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole(
+        "link",
+        { name: "Apply" }
+      )
+    )
+    await waitFor(() =>
+      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
+        "low 0normal 0high 1"
+      )
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    await waitFor(() =>
+      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
+        "low 0normal 1high 0"
+      )
+    )
   })
   it("phrases saved, deadline, and applied jobs", async () => {
     setMockJobs([

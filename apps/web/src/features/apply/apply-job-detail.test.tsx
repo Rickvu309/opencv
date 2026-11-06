@@ -35,6 +35,29 @@ describe("job detail", () => {
   afterEach(() => {
     cleanup()
   })
+  it("sets priority through the command and restores it with Undo", async () => {
+    setMockJobs([mockJob({ id, priority: "normal" })])
+    renderApp(`/apply/${id}`)
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Priority: Normal" })
+    )
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "High priority" })
+    )
+    expect(
+      await screen.findByRole("button", { name: "Priority: High priority" })
+    ).toBeVisible()
+    expect(getMockJobPosts()).toContainEqual(
+      expect.objectContaining({
+        name: "job.setPriority",
+        input: { jobId: id, priority: "high" },
+      })
+    )
+    fireEvent.click(await screen.findByRole("button", { name: "Undo" }))
+    expect(
+      await screen.findByRole("button", { name: "Priority: Normal" })
+    ).toBeVisible()
+  })
   it("opens the full saved posting URL through a keyboard-focusable source link", async () => {
     const jobUrl = "https://careers.example.org/jobs/123?team=design#apply"
     setMockJobs([mockJob({ id, jobUrl, sourceHost: "careers.example.org" })])

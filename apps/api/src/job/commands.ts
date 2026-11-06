@@ -11,6 +11,8 @@ import {
   getJob,
   linkPaper,
   listJobs,
+  priorityCounts,
+  setPriority,
   moveJob,
   ownedJob,
   previewJob,
@@ -111,6 +113,25 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         summary: `You moved it to ${input.stage}`,
       }),
     },
+    "job.setPriority": {
+      handler: (input, actor) =>
+        setPriority(actor, input.jobId, input.priority),
+      reversal: (input, output) => ({
+        command: "job.setPriority",
+        input: { jobId: input.jobId, priority: output.previousPriority },
+        expect: {
+          query: "job.get",
+          input: { jobId: input.jobId },
+          matches: { priority: output.priority },
+          skipped: "This priority changed again, so Undo was skipped",
+        },
+      }),
+      activity: (input) => ({
+        subjectKind: "job",
+        subjectId: input.jobId,
+        summary: `You set priority to ${input.priority}`,
+      }),
+    },
     "job.star": {
       handler: (input, actor) => starJob(actor, input.jobId, input.starred),
       reversal: (input, output) => ({
@@ -207,6 +228,15 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
       activity: () => null,
     },
   })
+
+  registry.addQuery(
+    tableQuery("job.priorityCounts", {
+      description: "Count jobs by priority.",
+      coach: true,
+      step: () => "Count jobs by priority",
+      read: (_input, actor) => priorityCounts(actor.userId),
+    })
+  )
 
   registry.addQuery(
     tableQuery("job.list", {

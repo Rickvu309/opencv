@@ -25,6 +25,15 @@ export const jobGetKey = (jobId: JobId) =>
 export const jobCalendarKey = (from: string, to: string) =>
   queryKey({ query: "job.calendar", input: { from, to } })
 
+export const jobPriorityCountsKey = () =>
+  queryKey({ query: "job.priorityCounts" })
+
+export function priorityCounts(): Promise<QueryOutput<"job.priorityCounts">> {
+  return apiFetch<SuccessBody<QueryOutput<"job.priorityCounts">>>(
+    endpoints.jobsPriorityCounts
+  ).then(unwrapData)
+}
+
 export function listJobs(): Promise<QueryOutput<"job.list">> {
   return apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs).then(
     unwrapData
