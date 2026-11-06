@@ -23,7 +23,11 @@ type CatalogServer = {
 export function runCatalog(mode: string, root?: string): string
 export function watchCatalog(
   root: string,
-  onResult: (error: CatalogFailure | null, result?: string) => void
+  onResult: (error: CatalogFailure | null, result?: string) => void,
+  timers?: {
+    start(callback: () => void, delay: number): ReturnType<typeof setTimeout>
+    stop(timer: ReturnType<typeof setTimeout> | undefined): void
+  }
 ): () => void
 export function catalogDev(command: string[], root?: string): Promise<void>
 export function catalogPlugin(root?: string): {

@@ -17,6 +17,7 @@ type CatalogSnapshot = {
   operations: {
     file: string
     name: string
+    owner: string
     namespace: string
     directory: string
     schemas?: unknown
@@ -25,6 +26,7 @@ type CatalogSnapshot = {
   servers: {
     file: string
     operation: string
+    owner: string
     namespace: string
     directory: string
   }[]

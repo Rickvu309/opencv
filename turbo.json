@@ -23,7 +23,7 @@
   "globalEnv": ["VITEST_MAX_WORKERS"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "//#catalog:check"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "env": ["VITE_API_URL", "VITE_PUBLIC_ORIGIN", "VITE_APP_ORIGIN"],
       "outputs": ["dist/**", ".generated/**"]
@@ -35,14 +35,18 @@
       "dependsOn": ["^format"]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "//#catalog:check"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "@workspace/guards#test": { "cache": false },
-    "test:open-pr": { "cache": false },
+    "@workspace/guards#test": {
+      "cache": false
+    },
+    "test:open-pr": {
+      "cache": false
+    },
     "test:formal": {
       "dependsOn": ["^build"],
       "cache": false,
@@ -52,6 +56,16 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "passThroughEnv": ["VITEST_MAX_WORKERS"],
+      "outputs": []
+    },
+    "//#catalog:check": {
+      "cache": false,
+      "inputs": [
+        "scripts/catalog.mjs",
+        "scripts/lib/**",
+        "packages/domain/src/**",
+        "apps/api/src/**"
+      ],
       "outputs": []
     }
   },

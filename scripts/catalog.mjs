@@ -40,7 +40,11 @@ export async function catalog(mode = "check", directory = root) {
     const current = existsSync(target)
       ? readFileSync(target, "utf8")
       : undefined
-    if (current === content) continue
+    if (
+      (mode === "check" ? current?.replace(/\r\n?/g, "\n") : current) ===
+      content
+    )
+      continue
     if (mode === "check")
       throw new CatalogError(
         "stale-output",

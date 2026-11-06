@@ -15,22 +15,39 @@ export function runCatalog(mode, root = defaultRoot) {
   })
 }
 
-export function watchCatalog(root, onResult) {
-  const watchers = ["packages/domain/src", "apps/api/src"].map((directory) =>
-    watch(path.join(root, directory), { recursive: true }, (_event, file) => {
-      const name = String(file).replaceAll(path.sep, "/")
-      if (name.includes("generated/") || !/\.ts$|operations(?:\/|$)/.test(name))
-        return
-      if (directory.startsWith("apps/") && !name.includes("operations")) return
+export function watchCatalog(
+  root,
+  onResult,
+  timers = { start: setTimeout, stop: clearTimeout }
+) {
+  let pending
+  const regenerate = () => {
+    timers.stop(pending)
+    pending = timers.start(() => {
       try {
-        const result = runCatalog("generate", root)
-        onResult(null, result)
+        onResult(null, runCatalog("generate", root))
       } catch (error) {
         onResult(error)
       }
+    }, 25)
+  }
+  const watchers = ["packages/domain/src", "apps/api/src"].map((directory) =>
+    watch(path.join(root, directory), { recursive: true }, (event, file) => {
+      const name = file == null ? "" : String(file).replaceAll(path.sep, "/")
+      if (name.includes("generated/")) return
+      if (event === "rename" || !name) return regenerate()
+      if (!/\.ts$|operations(?:\/|$)/.test(name)) return
+      if (directory.startsWith("apps/") && !name.includes("operations")) return
+      regenerate()
     })
   )
-  return () => watchers.forEach((watcher) => watcher.close())
+  let closed = false
+  return () => {
+    if (closed) return
+    closed = true
+    timers.stop(pending)
+    watchers.forEach((watcher) => watcher.close())
+  }
 }
 
 export async function catalogDev(command, root = defaultRoot) {

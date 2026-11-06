@@ -5,13 +5,15 @@ import { pathToFileURL } from "node:url"
 import ts from "typescript"
 
 import { CatalogError, digestOf } from "./operation-catalog.mjs"
+import { toRepoPath } from "./source-imports.mjs"
 import { defineOperation } from "../../packages/domain/src/operation.ts"
 
 const domain = "packages/domain/src/"
 const api = "apps/api/src/"
 const parse = (file, text) =>
   ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
-const read = (root, file) => readFileSync(path.join(root, file), "utf8")
+const read = (root, file) =>
+  readFileSync(path.join(root, file), "utf8").replace(/\r\n?/g, "\n")
 
 function files(root, directory) {
   const full = path.join(root, directory)
@@ -42,7 +44,7 @@ export function browserGraph(root, entries) {
       })
       return
     }
-    const base = path.resolve(root, path.dirname(file), specifier)
+    const base = path.resolve(root, toRepoPath(specifier, file))
     const target = [
       base.replace(/\.js$/, ".ts"),
       `${base}.ts`,
@@ -70,6 +72,17 @@ export function browserGraph(root, entries) {
         node.moduleSpecifier
       )
         resolve(file, node.moduleSpecifier.text)
+      if (
+        (ts.isPropertyAccessExpression(node) ||
+          ts.isElementAccessExpression(node)) &&
+        ts.isMetaProperty(node.expression) &&
+        node.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+      )
+        boundaryErrors.push({
+          file,
+          detail:
+            "import.meta macros including glob are not browser-discoverable",
+        })
       if (
         ts.isCallExpression(node) &&
         (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
@@ -177,6 +190,7 @@ export async function discoverCatalog(root) {
       operations.push({
         file,
         name: operation.name,
+        owner: operation.owner,
         namespace: match[1],
         directory: match[2],
         schemas,
@@ -223,13 +237,14 @@ export async function discoverCatalog(root) {
         )
     )
     const match = file.match(
-      /^apps\/api\/src\/([^/]+)\/operations\/([^/]+)\/server\.ts$/
+      /^apps\/api\/src\/([^/]+)\/operations\/([^/]+)\/([^/]+)\/server\.ts$/
     )
     return {
       file,
       operation: exported && imports.length === 1 ? imports[0] : "unbound",
-      namespace: match?.[1],
-      directory: match?.[2],
+      owner: match?.[1],
+      namespace: match?.[2],
+      directory: match?.[3],
     }
   })
   return {

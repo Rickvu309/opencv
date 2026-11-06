@@ -4,15 +4,17 @@
       "file": "packages/domain/src/operations/fixture/echo/operation.ts",
       "name": "fixture.echo",
       "namespace": "fixture",
-      "directory": "echo"
+      "directory": "echo",
+      "owner": "fixture"
     }
   ],
   "servers": [
     {
-      "file": "apps/api/src/fixture/operations/echo/server.ts",
+      "file": "apps/api/src/fixture/operations/fixture/echo/server.ts",
       "operation": "packages/domain/src/operations/fixture/echo/operation.ts",
       "namespace": "fixture",
-      "directory": "echo"
+      "directory": "echo",
+      "owner": "fixture"
     }
   ]
 }

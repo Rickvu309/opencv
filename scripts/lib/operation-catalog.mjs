@@ -23,7 +23,7 @@ export function detect(value, outputDigest) {
   const names = new Set()
   const paired = new Set()
   for (const operation of snapshot.operations) {
-    const { file, name, namespace, directory } = operation
+    const { file, name, owner, namespace, directory } = operation
     const key = normalized(name)
     if (names.has(key))
       errors.push(new CatalogError("duplicate-name", file, name))
@@ -38,8 +38,18 @@ export function detect(value, outputDigest) {
       errors.push(new CatalogError("missing-implementation", file, name))
     for (const server of servers) {
       paired.add(server.file)
-      if (server.namespace !== namespace || server.directory !== directory)
-        errors.push(new CatalogError("namespace-mismatch", server.file, name))
+      if (
+        server.owner !== owner ||
+        server.namespace !== namespace ||
+        server.directory !== directory
+      )
+        errors.push(
+          new CatalogError(
+            "namespace-mismatch",
+            server.file,
+            `${name} requires ${owner}/operations/${namespace}/${directory}/server.ts`
+          )
+        )
     }
     if (servers.length > 1)
       errors.push(

@@ -5,6 +5,7 @@ import type { CoachAccess } from "./registry.js"
 import type { ResourceRef } from "./resources.js"
 
 type BaseOperation<I extends z.ZodType, O extends z.ZodType> = {
+  owner: string
   name: `${string}.${string}`
   version: number
   description: string
@@ -39,6 +40,9 @@ export function defineOperation<
   z.string()
     .regex(/^[a-z][a-z0-9]*\.[a-z][a-zA-Z0-9]*$/)
     .parse(operation.name)
+  z.string()
+    .regex(/^[a-z][a-z0-9-]*$/)
+    .parse(operation.owner)
   z.number().int().positive().parse(operation.version)
   z.string().min(1).parse(operation.description)
   z.enum(["auto", "confirm", "never"]).parse(operation.coach)
