@@ -14,10 +14,11 @@ import {
   type JobPreview,
   type JobPatch,
   type JobStage,
+  type QueryOutput,
   type PaperId,
   type UserId,
 } from "@workspace/domain"
-import { and, asc, desc, eq, isNull } from "drizzle-orm"
+import { and, asc, count, desc, eq, isNull } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { activity, jobChecklist, jobs, paperDocs } from "../db/schema.js"
@@ -285,6 +286,36 @@ export async function updateJob(actor: Actor, jobId: JobId, patch: JobPatch) {
     ...toJob(await ownedJob(actor.userId, jobId)),
     previousPatch,
     watched,
+  }
+}
+
+export async function priorityCounts(
+  userId: UserId
+): Promise<QueryOutput<"job.priorityCounts">> {
+  const rows = await getDb()
+    .select({ priority: jobs.priority, count: count() })
+    .from(jobs)
+    .where(eq(jobs.userId, userId))
+    .groupBy(jobs.priority)
+  return (["low", "normal", "high"] as const).map((priority) => ({
+    priority,
+    count: rows.find((row) => row.priority === priority)?.count ?? 0,
+  }))
+}
+
+export async function setPriority(
+  actor: Actor,
+  jobId: JobId,
+  priority: QueryOutput<"job.get">["priority"]
+) {
+  const current = await ownedJob(actor.userId, jobId)
+  await getDb()
+    .update(jobs)
+    .set({ priority, updatedAt: new Date() })
+    .where(eq(jobs.id, current.id))
+  return {
+    ...toJob(await ownedJob(actor.userId, jobId)),
+    previousPriority: current.priority,
   }
 }
 

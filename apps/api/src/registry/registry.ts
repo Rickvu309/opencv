@@ -1,7 +1,7 @@
 import {
   ERROR_CODES,
+  effectiveCoachPolicy,
   approvedProposalActor,
-  coachActor,
   defineCommand,
   isCoachActor,
   personActor,
@@ -22,7 +22,7 @@ import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
 import { lockActivity } from "./activity-lock.js"
-import { parseInput } from "./parse-input.js"
+import { brandedActor, parseInput } from "./parse-input.js"
 import {
   laterLiveAction,
   staleExpectation,
@@ -93,6 +93,7 @@ type StoredCommand = {
   name: string
   description: string
   coach: CoachAccess
+  writes?: CommandSpec<unknown, unknown>["writes"]
   destructive: boolean
   input: ZodType
   step: (input: unknown) => string
@@ -129,13 +130,6 @@ export type ExecuteResult = {
   activityId: string | null
   reversal: ReversalPlan
   detail?: unknown
-}
-
-function brandedActor(actor: Actor): Actor {
-  if (actor.type === "person") return personActor(actor.userId)
-  return actor.turnId
-    ? coachActor(actor.userId, actor.chatId, actor.turnId)
-    : approvedProposalActor(actor.userId, actor.chatId)
 }
 
 type UndoGuard = (
@@ -218,6 +212,7 @@ export class Registry {
       name: checked.name,
       description: checked.description,
       coach: checked.coach,
+      writes: (raw) => checked.writes?.(parseInput(checked.input, raw)) ?? [],
       destructive: checked.destructive,
       input: checked.input,
       transaction: checked.transaction,
@@ -320,8 +315,13 @@ export class Registry {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
     }
     const actor = brandedActor(options.actor)
+    const parsed = parseInput(command.input, options.input)
+    const policy = effectiveCoachPolicy(command, parsed)
     if (isCoachActor(actor)) {
-      const refusal = coachRefusal(command, await this.agentGates(actor.userId))
+      const refusal = coachRefusal(
+        { ...command, coach: policy },
+        await this.agentGates(actor.userId)
+      )
       if (refusal) {
         throw new CommandError(
           ERROR_CODES.COACH_NOT_ALLOWED,
@@ -329,7 +329,6 @@ export class Registry {
         )
       }
     }
-    const parsed = parseInput(command.input, options.input)
     const idempotencyKey = omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe(
       command,
       options.idempotencyKey
@@ -384,11 +383,7 @@ export class Registry {
         if (earlier) return earlier
       }
 
-      if (
-        isCoachActor(actor) &&
-        command.coach === "confirm" &&
-        !options.skipConfirm
-      ) {
+      if (isCoachActor(actor) && policy === "confirm" && !options.skipConfirm) {
         const id = createId()
         const summary = command.step(parsed)
         await getDb()

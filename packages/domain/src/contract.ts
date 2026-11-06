@@ -1,6 +1,7 @@
 import type { z } from "zod"
 
 import type { QueryRef } from "./queries.js"
+import type { ResourceRef } from "./resources.js"
 
 type CoachPolicy =
   | { coach: "auto"; destructive: false }
@@ -40,6 +41,7 @@ type CommandEntry<
   idempotency?: IdempotencyPolicy
   step: (input: z.output<I>) => string
   invalidates: (input: z.output<I>) => QueryRef[]
+  writes?: (input: z.output<I>) => ResourceRef[]
 }
 
 export function commandEntry<I extends Schema, O extends Schema>(

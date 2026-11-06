@@ -107,6 +107,16 @@ const LATER: Record<string, Later> = {
     survives: async (a, userId) =>
       (await jobField(userId, a, "location")) === "Osaka",
   },
+  "job.setPriority": {
+    act: async (a, run) => {
+      await run("job.update", {
+        jobId: idOf(a.output),
+        patch: { priority: "low" },
+      })
+    },
+    survives: async (a, userId) =>
+      (await jobField(userId, a, "priority")) === "low",
+  },
   "job.move": {
     act: async (a, run) => {
       await run("job.move", { jobId: idOf(a.output), stage: "interview" })

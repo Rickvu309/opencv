@@ -9,6 +9,7 @@ import {
   getJob,
   listActivity,
   listJobs,
+  priorityCounts,
   listPaper,
   previewJob,
 } from "./apply-api.ts"
@@ -56,6 +57,9 @@ describe("apply api", () => {
     await listJobs()
     expect(last(calls).method).toBe("GET")
     expect(new URL(last(calls).url).pathname).toBe("/api/jobs")
+
+    await priorityCounts()
+    expect(new URL(last(calls).url).pathname).toBe("/api/jobs/priority-counts")
 
     await getJob(parseJobId(JOB))
     expect(new URL(last(calls).url).pathname).toBe(`/api/jobs/${JOB}`)

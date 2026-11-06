@@ -563,9 +563,11 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
 export function JobRail({
   job,
   onStage,
+  onPriority,
 }: {
   job: JobDetail
   onStage: (stage: JobStage) => void
+  onPriority: (priority: JobPriority) => void
 }) {
   const run = useRunCommand()
 
@@ -586,12 +588,7 @@ export function JobRail({
     >
       <RailSection title="Properties">
         <StageRow job={job} onStage={onStage} />
-        <PriorityRow
-          job={job}
-          onPriority={(priority) =>
-            void save({ priority }).catch(reportRejected("set the priority"))
-          }
-        />
+        <PriorityRow job={job} onPriority={onPriority} />
         <EditRow
           key={`location-${location}`}
           icon={<MapPin aria-hidden className="size-3.5 text-chart-1" />}

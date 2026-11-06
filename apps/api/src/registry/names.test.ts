@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { chatToolNameSchema } from "@workspace/domain"
+import { chatToolNameSchema, jobPriorityResource } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { installRegistry } from "./install.js"
@@ -70,6 +70,13 @@ function retiredReceiptName(name: string, files: Set<string>) {
   )
 }
 
+function declaredResourceName(name: string, files: Set<string>) {
+  return (
+    name === jobPriorityResource.name &&
+    [...files].every((file) => file === "packages/domain/src/resources.ts")
+  )
+}
+
 function listUnknown(
   found: References,
   allowed: (name: string, files: Set<string>) => boolean
@@ -90,12 +97,29 @@ describe("a command, read or Coach tool name the registry lacks is rejected", ()
   it("registers every command name the web, fake coach and domain refer to", () => {
     const unknown = listUnknown(
       referenced.dotted,
-      (name, files) => registered.has(name) || retiredReceiptName(name, files)
+      (name, files) =>
+        registered.has(name) ||
+        declaredResourceName(name, files) ||
+        retiredReceiptName(name, files)
     )
     expect(
       unknown,
       `A name used in the web, fake coach or domain is not registered. Declare it in the packages/domain contract and bind it in the module's commands.ts or queries.ts (installed by apps/api/src/registry/install.ts), or fix the spelling at the call site. Unknown names:\n${unknown.join("\n")}`
     ).toEqual([])
+  })
+
+  it("recognizes a resource declaration without allowing it as a command", () => {
+    const declaration = new Set(["packages/domain/src/resources.ts"])
+    expect(declaredResourceName(jobPriorityResource.name, declaration)).toBe(
+      true
+    )
+    expect(declaredResourceName("job.priorty", declaration)).toBe(false)
+    expect(
+      declaredResourceName(
+        jobPriorityResource.name,
+        new Set(["apps/web/src/example.ts"])
+      )
+    ).toBe(false)
   })
 
   it("registers every Coach tool name they refer to", () => {

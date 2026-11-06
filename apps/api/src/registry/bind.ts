@@ -84,6 +84,7 @@ export function bindCommands<C extends CommandContract>(
         description: entry.description,
         input: entry.input,
         coach: entry.coach,
+        writes: entry.writes,
         destructive: entry.destructive,
         ...(entry.idempotency ? { idempotency: entry.idempotency } : {}),
         step: entry.step,

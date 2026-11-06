@@ -13,7 +13,12 @@ import {
 } from "@/features/apply/apply-board-empty.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
-import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import {
+  jobPriorityCountsKey,
+  priorityCounts,
+  jobListKey,
+  listJobs,
+} from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import {
   activeFilterCount,
@@ -84,6 +89,10 @@ function applySearch(
 }
 
 export function ApplyPage() {
+  const counts = useQuery({
+    queryKey: jobPriorityCountsKey(),
+    queryFn: priorityCounts,
+  })
   const navigate = useNavigate()
   const routeSearch = useRouterState({
     select: (state) => state.location.search,
@@ -142,6 +151,17 @@ export function ApplyPage() {
       className="flex h-full min-h-0 flex-col bg-card"
     >
       <ApplyHeader onNewJob={() => dispatch({ type: "dialog_opened" })} />
+      <div
+        aria-label="Jobs by priority"
+        className="flex gap-4 px-6 py-2 text-sm text-muted-foreground"
+      >
+        {counts.data?.map(({ priority, count }) => (
+          <span key={priority} className="capitalize">
+            {priority} <span className="tabular-nums">{count}</span>
+          </span>
+        ))}
+        {counts.isError ? <span>Could not load priority counts.</span> : null}
+      </div>
       <ApplyToolbar
         view={view}
         onView={setView}

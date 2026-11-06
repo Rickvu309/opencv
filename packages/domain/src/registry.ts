@@ -2,6 +2,7 @@ import type { ZodType } from "zod"
 
 import { parseChatId, parseUserId, type ChatId, type UserId } from "./ids.js"
 import type { IdempotencyPolicy } from "./contract.js"
+import type { ResourceRef } from "./resources.js"
 
 export type CoachAccess = "auto" | "confirm" | "never"
 
@@ -70,6 +71,7 @@ export type ReversalPlan = {
 } | null
 
 export type CommandSpec<TInput, TOutput> = {
+  writes?: (input: TInput) => ResourceRef[]
   name: string
   description: string
   input: ZodType<TInput>

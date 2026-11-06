@@ -119,6 +119,7 @@ const chatChanged = (input: { chatId: ChatId }): QueryRef[] => [
 
 const readsAnUndoOrApprovalCanChange = (): QueryRef[] => [
   { query: "job.list" },
+  { query: "job.priorityCounts" },
   { query: "job.get" },
   { query: "job.calendar" },
   { query: "paper.list" },
