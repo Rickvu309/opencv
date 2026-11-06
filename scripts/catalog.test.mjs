@@ -138,21 +138,30 @@ test("owners remain independent from profile, billing, actions and coach namespa
   }
 })
 
-test("every import.meta use requires direct static env or url access after unwrapping", (t) => {
+test("operation declarations reject every import.meta with a file and line", (t) => {
   const directory = tempDir(t, "catalog-meta-", path.join(homedir(), "tmp"))
   const file = path.join(directory, declaration)
   mkdirSync(path.dirname(file), { recursive: true })
   for (const source of mistake.browserSources) {
-    writeFileSync(file, source)
-    assert.match(
-      browserGraph(directory, [declaration]).boundaryErrors[0]?.detail ?? "",
-      /import.meta/,
+    writeFileSync(file, `\n${source}`)
+    const [error] = browserGraph(directory, [declaration]).boundaryErrors
+    assert.deepEqual(
+      error,
+      {
+        file: declaration,
+        detail: "line 2: operation declarations must not use import.meta",
+      },
+      source
+    )
+    assert.equal(
+      detect({ ...clean, browserSources: [source] })[0]?.kind,
+      "browser-import",
       source
     )
   }
 })
 
-test("ordinary env and url metadata reads stay browser-discoverable", (t) => {
+test("pure declarations without import.meta stay browser-discoverable", (t) => {
   const directory = tempDir(t, "catalog-meta-", path.join(homedir(), "tmp"))
   const file = path.join(directory, declaration)
   mkdirSync(path.dirname(file), { recursive: true })
@@ -163,6 +172,30 @@ test("ordinary env and url metadata reads stay browser-discoverable", (t) => {
       [],
       source
     )
+  }
+})
+
+test("imported helpers reject import.meta in declarations and callbacks", (t) => {
+  const directory = tempDir(
+    t,
+    "catalog-meta-helper-",
+    path.join(homedir(), "tmp")
+  )
+  const helper = "packages/domain/src/helper.ts"
+  const file = path.join(directory, declaration)
+  mkdirSync(path.dirname(file), { recursive: true })
+  writeFileSync(file, 'export { metadata } from "../../../helper.js"')
+  for (const source of [
+    ...mistake.browserSources,
+    "export const metadata = () => (import.meta as { env: unknown }).env",
+  ]) {
+    writeFileSync(path.join(directory, helper), `\n${source}`)
+    assert.deepEqual(browserGraph(directory, [declaration]).boundaryErrors, [
+      {
+        file: helper,
+        detail: "line 2: operation declarations must not use import.meta",
+      },
+    ])
   }
 })
 

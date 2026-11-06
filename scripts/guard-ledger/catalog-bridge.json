@@ -14,5 +14,5 @@
       "path": "scripts/fixtures/catalog/clean.json"
     }
   },
-  "reason": "New catalog bridge integration guard shares the pure catalog pairing detector and its committed missing-pair and paired fixtures. The API smoke test also verifies the empty catalogs preserve the existing registry."
+  "reason": "New catalog bridge integration guard shares the pure catalog pairing detector and its committed missing-pair and paired fixtures. The fixtures now also prove the pure import.meta prohibition, without env or url exceptions. Independent real Vite no-write integration checks server modules and emitted assets. The API smoke test also verifies the empty catalogs preserve the existing registry."
 }

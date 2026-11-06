@@ -2,14 +2,15 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   writeFileSync,
 } from "node:fs"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import { format } from "prettier"
 
-import { discoverCatalog } from "./lib/catalog-discovery.mjs"
+import { browserSource, discoverCatalog } from "./lib/catalog-discovery.mjs"
 import {
   CatalogError,
   detect,
@@ -18,6 +19,65 @@ import {
 } from "./lib/operation-catalog.mjs"
 
 export const root = fileURLToPath(new URL("..", import.meta.url))
+
+export async function buildBrowserCatalog(directory = root) {
+  const { build } = await import(
+    pathToFileURL(
+      path.join(root, "apps/web/node_modules/vite/dist/node/index.js")
+    ).href
+  )
+  const webRoot = path.join(directory, "apps/web")
+  const modules = new Set()
+  const result = await build({
+    root: webRoot,
+    configFile: false,
+    logLevel: "silent",
+    plugins: [
+      {
+        name: "catalog-browser-boundary",
+        generateBundle() {
+          for (const file of this.getModuleIds()) modules.add(file)
+        },
+      },
+    ],
+    build: {
+      write: false,
+      minify: false,
+      rollupOptions: {
+        input: path.join(directory, "packages/domain/src/generated/catalog.ts"),
+        preserveEntrySignatures: "strict",
+      },
+    },
+  })
+  const check = (source, output) => {
+    if (source.startsWith("\0")) return
+    const absolute = path.resolve(webRoot, source.split("?")[0])
+    const file = path
+      .relative(
+        directory,
+        existsSync(absolute) ? realpathSync(absolute) : absolute
+      )
+      .replaceAll(path.sep, "/")
+    if (file.split("/").includes("node_modules") || browserSource(file)) return
+    throw new CatalogError(
+      "browser-import",
+      file,
+      `server or non-domain source in browser ${output}`
+    )
+  }
+  for (const module of modules)
+    if (path.isAbsolute(module)) check(module, "module")
+  for (const bundle of Array.isArray(result) ? result : [result])
+    for (const output of bundle.output)
+      if (output.type === "chunk") {
+        for (const module of Object.keys(output.modules))
+          if (path.isAbsolute(module)) check(module, "module")
+      } else {
+        for (const source of output.originalFileNames)
+          check(source, `asset ${output.fileName}`)
+      }
+  return result
+}
 
 export async function catalog(mode = "check", directory = root) {
   const snapshot = await discoverCatalog(directory)
@@ -56,6 +116,7 @@ export async function catalog(mode = "check", directory = root) {
     writeFileSync(temporary, content)
     renameSync(temporary, target)
   }
+  if (mode === "check") await buildBrowserCatalog(directory)
   return { count: snapshot.operations.length, digest: digestOf(snapshot) }
 }
 

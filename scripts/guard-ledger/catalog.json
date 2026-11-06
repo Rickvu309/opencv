@@ -14,5 +14,5 @@
       "path": "scripts/fixtures/catalog/clean.json"
     }
   },
-  "reason": "New architecture rule: committed internal missing-pair and paired fixtures, not a historical product regression. The suite also injects orphan, collision, namespace, schema, boundary and freshness mutants."
+  "reason": "New architecture rule: committed internal missing-pair and paired fixtures, not a historical product regression. The pure detector also rejects every import.meta source fixture; discovery applies it transitively with file and line diagnostics. Real Vite no-write integration proves server module and emitted-asset leaks fire independently, while pure catalogs stay quiet. The suite also injects orphan, collision, namespace, schema, boundary and freshness mutants."
 }

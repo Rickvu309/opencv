@@ -17,15 +17,5 @@
       "owner": "fixture"
     }
   ],
-  "browserSources": [
-    "export const dependsOn = () => []",
-    "export const metadata = () => import.meta.env.PROD",
-    "export const metadata = () => import.meta.url",
-    "export const metadata = () => (import.meta).env[\"PROD\"]",
-    "export const metadata = () => (import.meta as ImportMeta).env?.PROD",
-    "export const metadata = () => (import.meta satisfies ImportMeta).url",
-    "export const metadata = () => (<ImportMeta>import.meta).env.PROD",
-    "export const metadata = () => (import.meta!).url",
-    "export const metadata = () => (((import.meta as ImportMeta)!) satisfies ImportMeta).env.PROD"
-  ]
+  "browserSources": ["export const dependsOn = () => []"]
 }

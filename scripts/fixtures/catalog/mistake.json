@@ -10,6 +10,9 @@
   ],
   "servers": [],
   "browserSources": [
+    "export const metadata = () => import.meta.env.PROD",
+    "export const metadata = () => import.meta.url",
+    "export const dependsOn = () => [{ name: new URL(\"../../../../../../apps/api/src/private.ts\", import.meta.url).href, coachFloor: \"auto\" }]",
     "export const dependsOn = () => import.meta.glob(\"/apps/api/src/**/*.ts\", { eager: true })",
     "export const dependsOn = () => import.meta[\"glob\"](\"/apps/api/src/**/*.ts\")",
     "export const dependsOn = () => import.meta.globEager(\"/apps/api/src/**/*.ts\")",
@@ -27,6 +30,12 @@
     "export const dependsOn = () => ({ ...import.meta })",
     "export const dependsOn = () => import.meta[\"env\"].PROD",
     "export const dependsOn = () => (import.meta as ImportMeta)[\"url\"]",
-    "export const dependsOn = () => import.meta.resolve(\"node:fs\")"
+    "export const dependsOn = () => import.meta.resolve(\"node:fs\")",
+    "export const metadata = () => (import.meta).env[\"PROD\"]",
+    "export const metadata = () => (import.meta as ImportMeta).env?.PROD",
+    "export const metadata = () => (import.meta satisfies ImportMeta).url",
+    "export const metadata = () => (<ImportMeta>import.meta).env.PROD",
+    "export const metadata = () => (import.meta!).url",
+    "export const metadata = () => (((import.meta as ImportMeta)!) satisfies ImportMeta).env.PROD"
   ]
 }

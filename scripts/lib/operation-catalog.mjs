@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import ts from "typescript"
 
 export class CatalogError extends Error {
   constructor(kind, file, detail) {
@@ -15,6 +16,24 @@ const normalized = (name) => name.replace(/[^a-z0-9]/gi, "").toLowerCase()
 
 export function digestOf(snapshot) {
   return createHash("sha256").update(JSON.stringify(snapshot)).digest("hex")
+}
+
+export function detectBrowserMetadata(file, text) {
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
+  const errors = []
+  const walk = (node) => {
+    if (
+      ts.isMetaProperty(node) &&
+      node.keywordToken === ts.SyntaxKind.ImportKeyword
+    )
+      errors.push({
+        file,
+        detail: `line ${source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1}: operation declarations must not use import.meta`,
+      })
+    ts.forEachChild(node, walk)
+  }
+  walk(source)
+  return errors
 }
 
 export function detect(value, outputDigest) {
@@ -65,6 +84,9 @@ export function detect(value, outputDigest) {
       errors.push(
         new CatalogError("orphan-implementation", server.file, server.operation)
       )
+  for (const text of snapshot.browserSources ?? [])
+    for (const issue of detectBrowserMetadata("operation.ts", text))
+      errors.push(new CatalogError("browser-import", issue.file, issue.detail))
   for (const issue of snapshot.boundaryErrors ?? [])
     errors.push(new CatalogError("browser-import", issue.file, issue.detail))
   if (

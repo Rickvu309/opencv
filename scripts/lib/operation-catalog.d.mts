@@ -31,6 +31,7 @@ type CatalogSnapshot = {
     directory: string
   }[]
   sources?: [string, string][]
+  browserSources?: string[]
   boundaryErrors?: { file: string; detail: string }[]
 }
 
@@ -40,3 +41,8 @@ export function detect(
   digest?: string
 ): CatalogError[]
 export function renderCatalog(snapshot: CatalogSnapshot): Record<string, string>
+
+export function detectBrowserMetadata(
+  file: string,
+  text: string
+): { file: string; detail: string }[]

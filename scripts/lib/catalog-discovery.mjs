@@ -4,7 +4,11 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 import ts from "typescript"
 
-import { CatalogError, digestOf } from "./operation-catalog.mjs"
+import {
+  CatalogError,
+  detectBrowserMetadata,
+  digestOf,
+} from "./operation-catalog.mjs"
 import { toRepoPath } from "./source-imports.mjs"
 import { defineOperation } from "../../packages/domain/src/operation.ts"
 
@@ -32,27 +36,8 @@ function files(root, directory) {
     .sort()
 }
 
-function browserMetadataRead(node) {
-  let receiver = node
-  while (
-    receiver.parent &&
-    (ts.isParenthesizedExpression(receiver.parent) ||
-      ts.isAsExpression(receiver.parent) ||
-      ts.isSatisfiesExpression(receiver.parent) ||
-      ts.isTypeAssertionExpression(receiver.parent) ||
-      ts.isNonNullExpression(receiver.parent)) &&
-    receiver.parent.expression === receiver
-  )
-    receiver = receiver.parent
-  const access = receiver.parent
-  return (
-    access &&
-    ts.isPropertyAccessExpression(access) &&
-    access.expression === receiver &&
-    !access.questionDotToken &&
-    (access.name.text === "env" || access.name.text === "url")
-  )
-}
+export const browserSource = (file) =>
+  file.startsWith(domain) && !/\/server\.ts$/.test(file)
 
 export function browserGraph(root, entries) {
   const sources = new Map()
@@ -75,7 +60,7 @@ export function browserGraph(root, entries) {
     const rel =
       target &&
       path.relative(root, realpathSync(target)).replaceAll(path.sep, "/")
-    if (!rel?.startsWith(domain) || /\/server\.ts$/.test(rel)) {
+    if (!rel || !browserSource(rel)) {
       boundaryErrors.push({
         file,
         detail: `server or unresolved dependency ${specifier}`,
@@ -88,22 +73,13 @@ export function browserGraph(root, entries) {
     if (sources.has(file)) return
     const text = read(root, file)
     sources.set(file, text)
+    boundaryErrors.push(...detectBrowserMetadata(file, text))
     const walk = (node) => {
       if (
         (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
         node.moduleSpecifier
       )
         resolve(file, node.moduleSpecifier.text)
-      if (
-        ts.isMetaProperty(node) &&
-        node.keywordToken === ts.SyntaxKind.ImportKeyword &&
-        !browserMetadataRead(node)
-      )
-        boundaryErrors.push({
-          file,
-          detail:
-            "only direct static import.meta.env or import.meta.url reads are browser-discoverable",
-        })
       if (
         ts.isCallExpression(node) &&
         (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
