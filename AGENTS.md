@@ -43,7 +43,9 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 ## Verification
 
 - Run one heavy command at a time and only targeted tests. Use `pstack-run` for noisy commands, keep output bounded, and keep scratch files under `~/tmp`. Never loop, poll, or sleep to wait.
-- Read the owning module and its checks before writing code. Write no comments in any file in the repo: source, CSS, tests, scripts, config, workflows, docs code blocks and markup. Explain with names or tests. A new guard needs a pure detect, a mistake fixture that fires, a clean fixture that stays quiet, and proof against a past commit.
+- Read the owning module and its checks before writing code.
+- Comments are banned in every file in the repo: source, CSS, tests, scripts, config, workflows, docs code blocks and markup. Context lives in the file path, the names and the tests. Put code in the folder and file whose name says what it is for, and rename or move it instead of explaining it.
+- Every code bug you find gets two fixes. Trace it to the first place the system went wrong and fix it there. Then add a lint or guard that fails on that mistake, so the same bug cannot return. A new guard needs a pure detect, a mistake fixture that fires, a clean fixture that stays quiet, and proof against the commit that introduced the bug.
 - Verify the affected behavior, not just compilation. For changes under `apps/web` or `apps/api`, run the affected flow locally and inspect the result. For UI changes, drive the affected screen and inspect it against its design frame.
 - For Coach work, use the existing scripted local runtime and fake-provider tests where they cover the behavior. Distinguish fake-provider evidence from live-model evidence. Do not make paid model calls just to check unrelated changes.
 - For changes to this file, run `node --test scripts/ocv-tools/brief.test.mjs` and check formatting. Brief rules depend on the Guardrails, Per change, and Agent briefs headings and several policy phrases.
