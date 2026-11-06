@@ -7,6 +7,10 @@
     "passed": true,
     "fingerprint": "fbc7d121fecd"
   },
+  "private-output-keys": {
+    "passed": true,
+    "fingerprint": "0f5ff3a2ceb1"
+  },
   "touch-targets": {
     "passed": true,
     "fingerprint": "957935b73774"
