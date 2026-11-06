@@ -2,9 +2,14 @@ import { serve } from "@hono/node-server"
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 
+import { registry } from "./registry/registry.js"
 import { createApp } from "./app.js"
 import type { FetchJobPosting } from "./job/index.js"
-import { createDemoCoachRuntime, withScanJobPosting } from "./coach/index.js"
+import {
+  createDemoCoachRuntime,
+  startEmbeddedCoachWorker,
+  withScanJobPosting,
+} from "./coach/index.js"
 import { sweepUnattachedPhotos } from "./paper/index.js"
 import {
   apiPortFromEnv,
@@ -118,6 +123,14 @@ const app = createApp({
     coachRuntimeMode !== "fake" && Boolean(coachEnv.ANTHROPIC_API_KEY),
   fetchJobPosting:
     coachRuntimeMode === "fake" ? fakeFetchJobPosting : undefined,
+})
+
+const stopCoachWorker = db ? startEmbeddedCoachWorker(registry) : async () => {}
+process.once("SIGTERM", () => {
+  void stopCoachWorker().finally(() => process.exit(0))
+})
+process.once("SIGINT", () => {
+  void stopCoachWorker().finally(() => process.exit(0))
 })
 
 serve({ fetch: app.fetch, port }, (info) => {

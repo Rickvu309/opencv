@@ -374,7 +374,11 @@ export function finalize(
   )
 }
 
-export function cancelChatTask(chatId: string, ownerId: string) {
+export function cancelChatTask(
+  chatId: string,
+  ownerId: string,
+  taskId?: string
+) {
   return transaction(async () => {
     const [task] = await getDb()
       .select()
@@ -383,6 +387,7 @@ export function cancelChatTask(chatId: string, ownerId: string) {
         and(
           eq(coachTasks.chatId, chatId),
           eq(coachTasks.ownerId, ownerId),
+          taskId ? eq(coachTasks.id, taskId) : undefined,
           sql`${coachTasks.state} not in ('cancelled', 'succeeded', 'failed')`
         )
       )

@@ -136,6 +136,7 @@ export async function getChat(id: string): Promise<CoachChatRecord> {
   const attachments = await resolveAttachments(chat.messages)
   return {
     ...asChat(chat),
+    activeTaskId: chat.activeTaskId,
     messages: chat.messages.map((message, index) => ({
       ...asMessage(message),
       ...(attachments[index]?.length

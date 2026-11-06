@@ -4,6 +4,7 @@ import { afterEach, beforeEach, vi } from "vitest"
 
 import "@testing-library/jest-dom/vitest"
 
+import { resetCoachStopsForTests } from "@/lib/coach-stop-registry.ts"
 import { resetUnauthorizedHandler } from "@/lib/api.ts"
 
 import { resetMockSession } from "./auth-client-mock.ts"
@@ -102,6 +103,7 @@ beforeEach(() => {
 afterEach(async () => {
   try {
     cleanup()
+    resetCoachStopsForTests()
   } finally {
     try {
       registerTestCleanup(cleanupSonnerTimers)

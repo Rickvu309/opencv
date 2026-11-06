@@ -94,6 +94,7 @@ export const chatDeleteInputSchema = z
 export const chatStopInputSchema = z
   .object({
     chatId: chatIdSchema,
+    taskId: z.string().uuid().optional(),
   })
   .strict()
 

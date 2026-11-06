@@ -27,6 +27,7 @@ vi.mock("@tanstack/react-router", async (original) => ({
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
 })
 beforeEach(() => {
   vi.stubGlobal(
@@ -75,6 +76,47 @@ function stubUsage(
 }
 
 describe("Coach workspace", () => {
+  it("shows stopped after cancelling before a new Chat is created", async () => {
+    vi.stubEnv("VITE_COACH_TASK_WORKER", "internal")
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const starts: string[] = []
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = new URL(String(input)).pathname
+        if (path.endsWith("chat.create")) await gate
+        if (path.endsWith("coach.start")) starts.push(path)
+        return (
+          (await chatApiFetch(input, init)) ??
+          (await profileApiFetch(input, init)) ??
+          new Response("{}", { status: 404 })
+        )
+      }
+    )
+    const user = userEvent.setup()
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace />
+      </ChatStoreProvider>
+    )
+    await user.type(
+      await screen.findByRole("textbox", { name: "Message Coach" }),
+      "Stop this new Chat"
+    )
+    await user.click(screen.getByRole("button", { name: "Send" }))
+    await user.click(await screen.findByRole("button", { name: "Stop" }))
+    await act(async () => release())
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Stop" })).toBeNull()
+    )
+    expect(await screen.findByText("The Coach stopped.")).toBeVisible()
+    expect(screen.queryByText("How can I help?")).not.toBeInTheDocument()
+    expect(starts).toEqual([])
+  })
+
   it.each([
     { state: "welcome", compact: false, chatId: undefined },
     {

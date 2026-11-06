@@ -42,6 +42,7 @@ export function refreshReads(queryClient: QueryClient, refs: QueryRef[]) {
 
 export type RunOptions = {
   refresh?: boolean
+  signal?: AbortSignal
   keepalive?: boolean
 }
 
@@ -63,6 +64,7 @@ export async function runContractCommand<N extends ContractCommandName>(
         ? {}
         : { idempotencyKey: crypto.randomUUID() }),
     }),
+    ...(options.signal ? { signal: options.signal } : {}),
     ...(options.keepalive ? { keepalive: true } : {}),
   })
   if (options.refresh !== false) {

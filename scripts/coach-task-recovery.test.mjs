@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/coach-task-recovery.mjs"
@@ -112,6 +113,183 @@ for (const [name, path, mistake, clean] of [
         path
       ),
       []
+    )
+  })
+}
+
+const clientClean = `export function useCoachTask() {
+      } finally {
+        if (current === generation.current) {
+          starting.current = false
+        }
+      }
+    return true
+    stop: () => {
+      request.stopRequested = true
+    },
+    undo:
+    cancelInFlight: () => {
+      starting.current = false
+    }
+}`
+for (const [name, mistake] of [
+  [
+    "Stop is latched before Chat creation settles",
+    clientClean.replace("request.stopRequested = true", ""),
+  ],
+  [
+    "detach releases its lock",
+    clientClean.replace(
+      "    cancelInFlight: () => {\n      starting.current = false",
+      "    cancelInFlight: () => {"
+    ),
+  ],
+  [
+    "stale cleanup cannot release a newer start",
+    clientClean.replace("if (current === generation.current) {", "{"),
+  ],
+]) {
+  test(name, () => {
+    assert.equal(detect(mistake).length, 1)
+    assert.deepEqual(detect(clientClean), [])
+    assert.deepEqual(
+      detect(
+        readFileSync(
+          new URL(
+            "../apps/web/src/features/coach/use-coach-task.ts",
+            import.meta.url
+          ),
+          "utf8"
+        )
+      ),
+      []
+    )
+  })
+}
+
+const machineClean =
+  'export function useCoachTask() { coachTaskLifecycleReducer; if (!matches()) return; state.generation === generation; state.request.startKey === startKey; runContractCommand(client, "coach.stop", { chatId, taskId }); requestCoachStop(queryClient, target, onFailure); if (state.failedStop) return stop(true); [enabled, discoveredTaskId, options.chatId, local.kind] }'
+
+for (const [name, clean, mistake] of [
+  [
+    "durable Stop names the exact task",
+    machineClean,
+    machineClean.replace("{ chatId, taskId }", "{ chatId }"),
+  ],
+  [
+    "machine continuations match both generation and start key",
+    machineClean,
+    machineClean.replace("state.request.startKey === startKey", "true"),
+  ],
+]) {
+  test(name, () => {
+    assert.ok(detect(mistake).length > 0)
+    assert.deepEqual(detect(clean), [])
+    assert.deepEqual(
+      detect(
+        readFileSync(
+          new URL(
+            "../apps/web/src/features/coach/use-coach-task.ts",
+            import.meta.url
+          ),
+          "utf8"
+        )
+      ),
+      []
+    )
+  })
+}
+
+const stopRegistryGuards = [
+  [
+    "Stop survives detach outside the view",
+    "requestCoachStop(queryClient, target,",
+    "stopTask(",
+  ],
+  ["Retry retains the failed Stop", "state.failedStop", "state.error"],
+  [
+    "discovery is reconsidered after recovery",
+    "options.chatId, local.kind]",
+    "options.chatId]",
+  ],
+]
+for (const [name, required, mistake] of stopRegistryGuards) {
+  test(name, () => {
+    const clean = readFileSync(
+      new URL(
+        "../apps/web/src/features/coach/use-coach-task.ts",
+        import.meta.url
+      ),
+      "utf8"
+    )
+    assert.deepEqual(detect(clean), [])
+    assert.ok(detect(clean.replaceAll(required, mistake)).length > 0)
+    const historic = execFileSync(
+      "git",
+      ["show", "cf31f543:apps/web/src/features/coach/use-coach-task.ts"],
+      { encoding: "utf8" }
+    )
+    assert.ok(
+      detect(historic).some(
+        (problem) =>
+          problem.message ===
+          detect(clean.replaceAll(required, mistake))[0].message
+      )
+    )
+  })
+}
+
+for (const [name, path, historicPath, required] of [
+  [
+    "terminal Retry preserves Send admission",
+    "apps/web/src/features/coach/coach-task-lifecycle.ts",
+    "apps/web/src/features/coach/coach-task-lifecycle.ts",
+    'return state.kind === "running"',
+  ],
+  [
+    "deduplicated failures reach every view",
+    "apps/web/src/lib/coach-stop-registry.ts",
+    "apps/web/src/features/coach/coach-stop-obligations.ts",
+    "existing.listeners.add(onFailure)",
+  ],
+  [
+    "pending I/O has an abortable deadline",
+    "apps/web/src/lib/coach-stop-registry.ts",
+    "apps/web/src/features/coach/coach-stop-obligations.ts",
+    "OBLIGATION_TIMEOUT_MS",
+  ],
+  [
+    "session disposal owns Stop cleanup",
+    "apps/web/src/lib/auth-client.ts",
+    "apps/web/src/lib/auth-client.ts",
+    "disposeCoachStops()",
+  ],
+  [
+    "test teardown owns Stop cleanup",
+    "apps/web/src/test/setup.ts",
+    "apps/web/src/test/setup.ts",
+    "resetCoachStopsForTests()",
+  ],
+]) {
+  test(name, () => {
+    const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+    const mistake =
+      name === "terminal Retry preserves Send admission"
+        ? clean.replace(
+            required,
+            'return state.kind === "terminal" || state.kind === "running"'
+          )
+        : clean.replaceAll(required, "missing")
+    assert.deepEqual(detect(clean, path), [])
+    const failures = detect(mistake, path)
+    assert.ok(failures.length > 0)
+    const historic = execFileSync("git", ["show", `f62efbf1:${historicPath}`], {
+      encoding: "utf8",
+    })
+    assert.ok(
+      detect(historic, historicPath).some(
+        (problem) => problem.message === failures[0].message
+      )
     )
   })
 }

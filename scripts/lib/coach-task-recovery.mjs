@@ -4,6 +4,42 @@ export function detect(source, path = "") {
     source.indexOf("export async function openCoachUsage")
   )
   const problems = []
+  if (source.includes("export function coachTaskLifecycleReducer(")) {
+    const stop = source.slice(
+      source.indexOf('case "stopPressed":'),
+      source.indexOf('case "stopSucceeded":')
+    )
+    if (stop.includes('state.kind === "terminal"'))
+      problems.push({
+        message: "Terminal Stop Retry must preserve the terminal lifecycle",
+      })
+  }
+  if (source.includes("export function fulfillCoachStop(")) {
+    if (!source.includes("existing.listeners.add(onFailure)"))
+      problems.push({
+        message: "Deduplicated Stop callers must subscribe to failures",
+      })
+    if (
+      !source.includes("OBLIGATION_TIMEOUT_MS") ||
+      !source.includes("AbortController")
+    )
+      problems.push({
+        message: "Stop obligations require an abortable overall deadline",
+      })
+  }
+  if (
+    path.endsWith("/lib/auth-client.ts") &&
+    (!source.includes("disposeCoachStops()") ||
+      !source.includes("setCoachStopSession("))
+  )
+    problems.push({
+      message: "Session exit and account change must dispose Coach Stops",
+    })
+  if (
+    path.endsWith("/test/setup.ts") &&
+    !source.includes("resetCoachStopsForTests()")
+  )
+    problems.push({ message: "Shared test teardown must dispose Coach Stops" })
   if (source.includes("const complete = async")) {
     const completion = source.slice(
       source.indexOf("const complete = async"),
@@ -58,5 +94,70 @@ export function detect(source, path = "") {
       message:
         "Unknown tools must preserve legacy streaming without a durable boundary",
     })
+  if (source.includes("export function useCoachTask(")) {
+    if (
+      /"coach\.stop",\s*\{[^}]*\}/.test(source) &&
+      [...source.matchAll(/"coach\.stop",\s*\{([^}]*)\}/g)].some(
+        (match) => !/\btaskId\b/.test(match[1])
+      )
+    )
+      problems.push({
+        message:
+          "Durable Stop must target the recovered task id, never current Chat work",
+      })
+    if (source.includes("coachTaskLifecycleReducer")) {
+      if (!source.includes("requestCoachStop(queryClient, target,"))
+        problems.push({
+          message:
+            "Pending Stop obligations must outlive view detachment in the Stop registry",
+        })
+      if (!/state\.failedStop[\s\S]*?return stop\(true\)/.test(source))
+        problems.push({
+          message:
+            "Retry must preserve failed cancellation identity and use the Stop obligation",
+        })
+      if (
+        !/\[enabled, discoveredTaskId, options\.chatId, local\.kind\]/.test(
+          source
+        )
+      )
+        problems.push({
+          message:
+            "Reconcile the latest discovered task when the lifecycle can subscribe again",
+        })
+      if (
+        !source.includes("if (!matches()) return") ||
+        !source.includes("state.generation === generation") ||
+        !source.includes("state.request.startKey === startKey")
+      )
+        problems.push({
+          message:
+            "Start continuations must match generation and start key before Stop",
+        })
+      return problems
+    }
+    const stop = source.slice(
+      source.indexOf("    stop: () => {"),
+      source.indexOf("    undo:")
+    )
+    if (!stop.includes("request.stopRequested = true"))
+      problems.push({
+        message: "Latch Stop on the pending start before a Chat exists",
+      })
+    const cleanup = source.slice(
+      source.indexOf("      } finally {"),
+      source.indexOf("    return true")
+    )
+    const detach = source.slice(source.indexOf("    cancelInFlight: () => {"))
+    if (
+      !detach.includes("starting.current = false") ||
+      !/if \(current === generation.current\) \{\s*starting.current = false/.test(
+        cleanup
+      )
+    )
+      problems.push({
+        message: "Release detached starts and guard lock cleanup by generation",
+      })
+  }
   return problems
 }
