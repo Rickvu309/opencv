@@ -132,7 +132,12 @@ export function registerChat(registry: Registry) {
     "coach.stop": {
       handler: async (input, actor) => {
         await getChat(actor.userId, input.chatId)
-        return { stopped: stopChat(input.chatId) }
+        const { cancelChatTask } = await import("../coach/index.js")
+        return {
+          stopped:
+            (await cancelChatTask(input.chatId, actor.userId)) ||
+            stopChat(input.chatId),
+        }
       },
       reversal: () => null,
       activity: () => null,

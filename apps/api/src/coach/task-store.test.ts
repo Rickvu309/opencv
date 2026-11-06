@@ -169,9 +169,6 @@ it("one slot produces one proposal and only public results are stored", async ()
       expect(await runIntent(lease, proposal, registry)).toEqual(first)
       const proposals = await getDb().select().from(pendingActions)
       expect(proposals).toHaveLength(1)
-      await expect(registry.approve(ownerId, proposals[0]!.id)).rejects.toThrow(
-        "durable worker"
-      )
       expect(await getDb().select().from(jobs)).toHaveLength(1)
       await expect(finalize(lease, "succeeded")).rejects.toThrow("Unresolved")
       await expect(
@@ -180,10 +177,7 @@ it("one slot produces one proposal and only public results are stored", async ()
           .set({ state: "planned" })
           .where(eq(toolIntents.step, 1))
       ).rejects.toThrow()
-      await getDb()
-        .update(toolIntents)
-        .set({ state: "denied", publicResult: { denied: true } })
-        .where(eq(toolIntents.step, 1))
+      await registry.deny(ownerId, proposals[0]!.id)
       await expect(
         getDb()
           .update(toolIntents)
@@ -198,7 +192,7 @@ it("one slot produces one proposal and only public results are stored", async ()
       ).toHaveLength(1)
       await requestCancel(taskId, ownerId)
       await expect(registry.approve(ownerId, proposals[0]!.id)).rejects.toThrow(
-        "durable worker"
+        "active task"
       )
       expect(await getDb().select().from(jobs)).toHaveLength(1)
     })

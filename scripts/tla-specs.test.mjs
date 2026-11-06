@@ -71,6 +71,28 @@ test("a complete spec has no problems", () => {
   assert.deepEqual(problemsOf(complete()), [])
 })
 
+test("a null action explicitly represents a model-only transition", () => {
+  const files = {
+    ...complete(),
+    "a/Spec.tla.json": JSON.stringify({
+      module: "spec.mjs",
+      actions: { Step: null },
+    }),
+  }
+  assert.deepEqual(problemsOf(files), [])
+})
+
+test("a model-only action must still exist in the spec", () => {
+  const files = {
+    ...complete(),
+    "a/Spec.tla.json": JSON.stringify({
+      module: "spec.mjs",
+      actions: { Step: "step", Missing: null },
+    }),
+  }
+  assert.match(problemsOf(files)[0], /Missing is not defined in the \.tla/)
+})
+
 test("a spec with no cfg is a problem", () => {
   assert.match(
     problemsOf(without(complete(), "a/Spec.cfg"))[0],

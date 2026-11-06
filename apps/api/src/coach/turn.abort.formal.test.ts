@@ -13,7 +13,7 @@ import { withDatabase } from "../db/context.js"
 import { insertCoachMessage } from "../chat/index.js"
 import { activity, chatMessages, coachUsage, user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
-import { createMigratedTestDb } from "../test/harness.js"
+import { openBackend } from "../test/registry-formal-support.js"
 import { runCoachTurn, toolResultFromExecute } from "./turn.js"
 
 vi.mock("../chat/index.js", async (importOriginal) => {
@@ -47,7 +47,7 @@ async function turnWithToolEndingAs(
   options: { saveFails?: boolean } = {}
 ) {
   const tools = 1
-  const { client, db } = await createMigratedTestDb()
+  const { close, db } = await openBackend()
   try {
     await db
       .insert(user)
@@ -143,7 +143,7 @@ async function turnWithToolEndingAs(
       return { reply, rows, parts, usage, outcome }
     })
   } finally {
-    await client.close()
+    await close()
   }
 }
 

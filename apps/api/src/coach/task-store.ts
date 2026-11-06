@@ -275,8 +275,22 @@ export function requestCancel(taskId: string, ownerId: string) {
       .set({
         cancelRequestedAt: sql`coalesce(${coachTasks.cancelRequestedAt}, clock_timestamp())`,
         state: "cancelling",
+        nextSeq: task.cancelRequestedAt ? task.nextSeq : task.nextSeq + 1,
       })
       .where(eq(coachTasks.id, taskId))
+    if (!task.cancelRequestedAt)
+      await getDb()
+        .insert(taskEvents)
+        .values({
+          taskId,
+          seq: task.nextSeq,
+          epoch: task.leaseEpoch,
+          attempt: task.attempt,
+          kind: "state",
+          payload: { state: "cancelling" },
+          logicalKey: "cancelling",
+        })
+    await closeTaskApprovals(taskId)
   })
 }
 
@@ -359,3 +373,24 @@ export function finalize(
     })
   )
 }
+
+export function cancelChatTask(chatId: string, ownerId: string) {
+  return transaction(async () => {
+    const [task] = await getDb()
+      .select()
+      .from(coachTasks)
+      .where(
+        and(
+          eq(coachTasks.chatId, chatId),
+          eq(coachTasks.ownerId, ownerId),
+          sql`${coachTasks.state} not in ('cancelled', 'succeeded', 'failed')`
+        )
+      )
+      .for("update")
+    if (!task) return false
+    await requestCancel(task.id, ownerId)
+    return true
+  })
+}
+
+export { resolveTaskApproval } from "./task-approval.js"

@@ -13,6 +13,10 @@
     "Begin": "runIntent",
     "Check": "runIntent",
     "CallerStatement": "runIntent",
-    "Abort": "runIntent"
+    "Abort": "runIntent",
+    "Propose": "runIntent",
+    "Approve": "resolveTaskApproval",
+    "Deny": "resolveTaskApproval",
+    "Replay": null
   }
 }

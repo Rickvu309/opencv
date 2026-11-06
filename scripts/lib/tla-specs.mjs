@@ -198,7 +198,7 @@ function mapProblems(mapPath, mapText, tlaText, files, read, installed) {
   if (!exports && found.length === 0)
     problems.push(`${mapPath}: module ${label} not found`)
   for (const [action, fn] of Object.entries(map.actions)) {
-    if (exports && !exports.has(fn))
+    if (fn !== null && exports && !exports.has(fn))
       problems.push(
         `${mapPath}: ${action} names ${fn}, which ${label} does not export; point at the file that defines it, since "export *" is not followed`
       )

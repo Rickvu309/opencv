@@ -13,7 +13,11 @@ import {
 } from "@workspace/domain"
 
 import type { Registry, ToolEntry } from "../registry/registry.js"
-import { createRequestStepBoundary, type StepBoundary } from "./model-step.js"
+import {
+  createRequestStepBoundary,
+  modelMessageSchema,
+  type SerializedStepBoundary,
+} from "./model-step.js"
 import { toolResultFromExecute } from "./receipt.js"
 
 export type CoachModel = { client: Anthropic; modelId: typeof COACH_MODEL }
@@ -60,7 +64,9 @@ export async function* streamAnthropicSteps(input: {
   actor: CoachActor
   signal?: AbortSignal
   mode?: CoachMode
-  boundary?: StepBoundary
+  boundary?: SerializedStepBoundary
+  maxSteps?: number
+  maxTokens?: number
 }): AsyncGenerator<CoachStreamPart> {
   const boundary = input.boundary ?? createRequestStepBoundary(input.signal)
   const pending: CoachStreamPart[] = []
@@ -140,7 +146,7 @@ export async function* streamAnthropicSteps(input: {
   const runner = input.model.client.beta.messages.toolRunner(
     {
       model: input.model.modelId,
-      max_tokens: 32000,
+      max_tokens: input.maxTokens ?? 32000,
       thinking: { type: "adaptive" },
       output_config: { effort: "medium" },
       system: input.system,
@@ -155,7 +161,7 @@ export async function* streamAnthropicSteps(input: {
       stream: true,
       thread: false,
       runToolsEagerly: false,
-      max_iterations: 8,
+      max_iterations: input.maxSteps ?? 8,
     },
     { signal }
   )
@@ -189,6 +195,7 @@ export async function* streamAnthropicSteps(input: {
         const entry = input.entries.find(
           (item) => item.name.replaceAll(".", "_") === block.name
         )
+        if (!entry && input.boundary) throw new Error("Unknown model tool")
         return entry
           ? [
               {
@@ -217,6 +224,14 @@ export async function* streamAnthropicSteps(input: {
         index: index++,
         intents,
         stopReason: message.stop_reason,
+        message: modelMessageSchema.parse({
+          role: "assistant",
+          content: message.content,
+        }),
+        usage: {
+          inputTokens: message.usage.input_tokens,
+          outputTokens: message.usage.output_tokens,
+        },
       })
       for (const intent of intents)
         yield {
@@ -254,6 +269,7 @@ export async function* streamAnthropicSteps(input: {
     }
   } catch (error) {
     input.signal?.throwIfAborted()
+    if (input.boundary) throw error
     const message = coachProviderErrorMessage(error, input.mode)
     yield {
       type: "error",
@@ -264,4 +280,17 @@ export async function* streamAnthropicSteps(input: {
   } finally {
     clearTimeout(idleTimer)
   }
+}
+
+export function createAnthropicWorkerRuntime(
+  input: Omit<
+    Parameters<typeof streamAnthropicSteps>[0],
+    "messages" | "boundary" | "signal" | "maxSteps" | "maxTokens"
+  >
+) {
+  return (step: Parameters<import("./model-step.js").WorkerRuntime>[0]) =>
+    streamAnthropicSteps({
+      ...input,
+      ...step,
+    })
 }

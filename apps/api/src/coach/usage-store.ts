@@ -6,10 +6,10 @@ import {
   type CoachMode,
   type Plan,
 } from "@workspace/domain"
-import { and, eq, gt, isNull } from "drizzle-orm"
+import { and, eq, gt, isNull, sql } from "drizzle-orm"
 
 import { getDb, transaction } from "../db/context.js"
-import { coachUsage, user } from "../db/schema.js"
+import { coachTasks, coachUsage, user } from "../db/schema.js"
 import { assertDayCap } from "../account/index.js"
 import { insertCoachMessage } from "../chat/index.js"
 import { CommandError } from "../registry/errors.js"
@@ -32,7 +32,8 @@ export async function saveRepliesForUnsavedTurns(input: {
       and(
         eq(coachUsage.chatId, input.chatId),
         eq(coachUsage.userId, input.userId),
-        isNull(coachUsage.messageId)
+        isNull(coachUsage.messageId),
+        isNull(coachUsage.coachTaskId)
       )
     )
   const receipts = await registry.turnReceipts(
@@ -101,7 +102,18 @@ export async function openCoachUsage(input: {
         )
       )
       .limit(1)
-    if (active)
+    const [task] = await getDb()
+      .select({ id: coachTasks.id })
+      .from(coachTasks)
+      .where(
+        and(
+          eq(coachTasks.chatId, input.chatId),
+          eq(coachTasks.ownerId, input.userId),
+          sql`${coachTasks.state} not in ('succeeded','failed','cancelled')`
+        )
+      )
+      .limit(1)
+    if (active || task)
       throw new CommandError(
         ERROR_CODES.CONFLICT,
         "Coach is already working in this chat. Stop it or wait for it to finish."

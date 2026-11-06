@@ -7,7 +7,11 @@ import {
   type CoachTurnInput,
 } from "@workspace/domain"
 
-import { createRequestStepBoundary, scriptedSteps } from "./model-step.js"
+import {
+  createRequestStepBoundary,
+  scriptedSteps,
+  type WorkerRuntime,
+} from "./model-step.js"
 import { toolResultFromExecute } from "./receipt.js"
 
 export const DEMO_COACH_SCRIPT: CoachStreamPart[] = [
@@ -190,5 +194,50 @@ async function* replay(
 ): AsyncGenerator<CoachStreamPart> {
   for (const part of script) {
     yield part
+  }
+}
+
+export function createScriptedWorkerRuntime(
+  script: readonly {
+    text: string
+    intents: readonly { id: string; name: ChatToolName; input: unknown }[]
+    inputTokens: number
+    outputTokens: number
+  }[]
+): WorkerRuntime {
+  return async function* (input) {
+    const start = input.completedSteps
+    for (const [index, decision] of script
+      .slice(start, start + input.maxSteps)
+      .entries()) {
+      input.signal.throwIfAborted()
+      if (decision.text) yield { type: "text-delta", text: decision.text }
+      await input.boundary.persistStep({
+        index,
+        intents: decision.intents,
+        stopReason: decision.intents.length ? "tool_use" : "end_turn",
+        usage: {
+          inputTokens: decision.inputTokens,
+          outputTokens: decision.outputTokens,
+        },
+        message: {
+          role: "assistant",
+          content: [
+            { type: "text", text: decision.text },
+            ...decision.intents.map((intent) => ({
+              type: "tool_use" as const,
+              id: intent.id,
+              name: intent.name.replaceAll(".", "_"),
+              input: intent.input,
+            })),
+          ],
+        },
+      })
+      for (const intent of decision.intents)
+        await input.boundary.runIntent(intent, async () => {
+          throw new Error("Scripted worker attempted an unsaved effect")
+        })
+      if (!decision.intents.length) return
+    }
   }
 }
