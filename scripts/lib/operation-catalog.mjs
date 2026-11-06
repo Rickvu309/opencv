@@ -57,7 +57,11 @@ export function detect(value, outputDigest) {
       )
   for (const issue of snapshot.boundaryErrors ?? [])
     errors.push(new CatalogError("browser-import", issue.file, issue.detail))
-  if (outputDigest !== undefined && outputDigest !== digestOf(snapshot))
+  if (
+    typeof value !== "string" &&
+    outputDigest !== undefined &&
+    outputDigest !== digestOf(snapshot)
+  )
     errors.push(
       new CatalogError(
         "stale-output",

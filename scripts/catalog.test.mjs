@@ -90,6 +90,15 @@ function workspace(t) {
 test("G1 missing pairs, orphans, normalized collisions, namespaces, schemas and stale output fire; a paired catalog stays quiet", () => {
   assert.equal(detect(mistake)[0].kind, "missing-implementation")
   assert.deepEqual(detect(clean, digestOf(clean)), [])
+  assert.deepEqual(
+    detect(JSON.stringify(clean), "scripts/fixtures/catalog/clean.json"),
+    []
+  )
+  assert.equal(
+    detect(JSON.stringify(mistake), "scripts/fixtures/catalog/mistake.json")[0]
+      .kind,
+    "missing-implementation"
+  )
   const fixtures = [
     ["orphan-implementation", { ...clean, operations: [] }],
     [
