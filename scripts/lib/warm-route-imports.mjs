@@ -1,26 +1,38 @@
 import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
+import { dirname, join, normalize, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const root = fileURLToPath(new URL("../../", import.meta.url))
-const imports = (source) =>
-  [...source.matchAll(/import\(["'](@\/[^"']+)["']\)/g)].map(
-    (match) => match[1]
-  )
-const localPath = (specifier) => `apps/web/src/${specifier.slice(2)}`
+const webSource = "apps/web/src"
+const dynamicImport =
+  /(?<![\w.$])import\(\s*["']([^"']+)["']\s*\)(?!\s*\.\s*(?!then\b|catch\b|finally\b)[A-Za-z_$])/g
+
+function toRepoPath(specifier, importer) {
+  if (specifier.startsWith("@/"))
+    return normalize(join(webSource, specifier.slice(2)))
+  if (specifier.startsWith("."))
+    return normalize(join(dirname(importer), specifier))
+  return null
+}
+
+export function runtimeImports(source, importer) {
+  return [...source.matchAll(dynamicImport)]
+    .map((match) => toRepoPath(match[1], importer))
+    .filter((path) => path !== null)
+}
 
 export function detect(source, file, io) {
-  const warmed = new Set(imports(source))
+  const warmed = new Set(runtimeImports(source, file))
   const visited = new Set()
   const pending = [...warmed]
   const missing = new Set()
   while (pending.length) {
-    const specifier = pending.pop()
-    if (visited.has(specifier)) continue
-    visited.add(specifier)
-    const nested = io.read(localPath(specifier))
+    const path = pending.pop()
+    if (visited.has(path)) continue
+    visited.add(path)
+    const nested = io.read(path)
     if (nested === null) continue
-    for (const dependency of imports(nested)) {
+    for (const dependency of runtimeImports(nested, path)) {
       if (!warmed.has(dependency)) missing.add(dependency)
       pending.push(dependency)
     }

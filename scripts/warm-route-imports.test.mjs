@@ -16,7 +16,24 @@ const sources = new Map([
 const io = { read: (name) => sources.get(name) ?? null }
 
 test("finds missing nested warmup imports through multiple levels and cycles", () => {
-  assert.deepEqual(detect(warm(route), "warm.ts", io), [nested, leaf].sort())
+  assert.deepEqual(detect(warm(route), "warm.ts", io), [
+    "apps/web/src/features/editor.tsx",
+    "apps/web/src/features/toolbar.tsx",
+  ])
+})
+
+test("ignores type-only imports and finds multiline and relative lazy imports", () => {
+  const typed = new Map([
+    [
+      "apps/web/src/routes/editor.tsx",
+      'type Model = import("@/features/model.ts").Model\nconst Editor = lazy(() => import(\n  "@/features/editor.tsx"\n))\nconst Bar = lazy(() => import("../features/bar.tsx").then((m) => m))',
+    ],
+  ])
+  const typedIo = { read: (name) => typed.get(name) ?? null }
+  assert.deepEqual(detect(warm(route), "apps/web/src/test/warm.ts", typedIo), [
+    "apps/web/src/features/bar.tsx",
+    "apps/web/src/features/editor.tsx",
+  ])
 })
 
 test("accepts a warmup that awaits every nested import", () => {
