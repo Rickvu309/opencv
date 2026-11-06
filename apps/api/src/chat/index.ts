@@ -9,4 +9,7 @@ export {
 export { createChatRoutes } from "./http.js"
 export { readStoredParts } from "./stored-parts.js"
 
-export { createAgentProposalChat } from "./agent-proposal.js"
+export {
+  createAgentProposalChat,
+  appendAgentProposalApproval,
+} from "./agent-proposal.js"

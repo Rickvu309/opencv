@@ -1,7 +1,11 @@
+import { and, count, eq } from "drizzle-orm"
 import type { CoachActor, DelegateActor } from "@workspace/domain"
-import { createAgentProposalChat } from "../chat/index.js"
+import {
+  createAgentProposalChat,
+  appendAgentProposalApproval,
+} from "../chat/index.js"
 import { getDb } from "../db/context.js"
-import { pendingActions } from "../db/schema.js"
+import { pendingActions, user } from "../db/schema.js"
 import { createId } from "../id.js"
 
 export async function createProposal(options: {
@@ -14,13 +18,28 @@ export async function createProposal(options: {
   const id = createId()
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
+    await getDb()
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.id, actor.userId))
+      .for("update")
+    const [outstanding] = await getDb()
+      .select({ count: count() })
+      .from(pendingActions)
+      .where(
+        and(
+          eq(pendingActions.delegateConnectionId, actor.connectionId),
+          eq(pendingActions.status, "pending")
+        )
+      )
+    if ((outstanding?.count ?? 0) >= 20)
+      throw new Error(
+        "This connection has 20 pending proposals. Approve or deny existing proposals in OpenCV before proposing more."
+      )
     await createAgentProposalChat({
       chatId,
       userId: actor.userId,
       name: actor.name,
-      command,
-      summary,
-      pendingActionId: id,
     })
   }
   await getDb()
@@ -37,6 +56,8 @@ export async function createProposal(options: {
       summary,
       status: "pending",
     })
+  if (actor.type === "delegate")
+    await appendAgentProposalApproval(id, actor.userId)
   return {
     pending: true as const,
     pendingActionId: id,

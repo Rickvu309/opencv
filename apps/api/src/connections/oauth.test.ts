@@ -14,6 +14,7 @@ import {
 } from "@modelcontextprotocol/client"
 import { afterAll, beforeAll, expect, it } from "vitest"
 import { createApp } from "../app.js"
+import { expectDelegateLimits } from "./test/delegate-limits.js"
 import {
   createMigratedTestDb,
   testSessionSecret,
@@ -497,6 +498,7 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
       arguments: { jobId, patch: { priority: "high" } },
     })
   )
+  await expectDelegateLimits(sdk, database.db, jobId)
   const refreshed = await refreshAuthorization(issuer, {
     metadata,
     clientInformation: client,

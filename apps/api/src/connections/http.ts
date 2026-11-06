@@ -13,6 +13,45 @@ import type { Registry } from "../registry/registry.js"
 import { transaction } from "../db/context.js"
 import { authenticateAgent } from "./oauth.js"
 
+export function delegateCallLimitReached(
+  window: { startedAt: number; calls: number } | undefined,
+  now: number,
+  max: number
+) {
+  return (
+    window !== undefined &&
+    now - window.startedAt < 60_000 &&
+    window.calls >= max
+  )
+}
+
+export function createDelegateCallLimiter() {
+  const windows = new Map<string, { startedAt: number; calls: number }>()
+  return (ownerId: string, connectionId: string, now = Date.now()) => {
+    for (const [key, window] of windows) {
+      if (now - window.startedAt >= 60_000) windows.delete(key)
+    }
+    const keys = [
+      [`owner:${ownerId}`, 120],
+      [`connection:${connectionId}`, 60],
+    ] as const
+    if (
+      keys.some(([key, max]) =>
+        delegateCallLimitReached(windows.get(key), now, max)
+      )
+    ) {
+      throw new Error(
+        "Agent tool call rate limit reached. Try again in 60 seconds."
+      )
+    }
+    for (const [key] of keys) {
+      const window = windows.get(key) ?? { startedAt: now, calls: 0 }
+      window.calls += 1
+      windows.set(key, window)
+    }
+  }
+}
+
 export function connectionRoutes(
   auth: Auth,
   db: AppDatabase,
@@ -20,6 +59,7 @@ export function connectionRoutes(
   authUrl: string,
   webOrigins: string[]
 ) {
+  const consumeToolCall = createDelegateCallLimiter()
   const routes = new Hono<{ Variables: SessionVariables }>()
   const audience = new URL("/mcp", authUrl).href
   const metadata = new URL("/.well-known/oauth-protected-resource/mcp", authUrl)
@@ -89,6 +129,7 @@ export function connectionRoutes(
             },
             async (input) => {
               try {
+                consumeToolCall(actor.userId, actor.connectionId)
                 const result =
                   entry.kind === "query"
                     ? { data: await registry.read(entry.name, input, actor) }

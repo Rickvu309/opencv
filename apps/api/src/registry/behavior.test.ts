@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import {
   defineCommand,
   delegateActorSchema,
@@ -223,7 +224,19 @@ it("confirms every Coach priority writer, preserves automatic updates, and guard
       expect(await get()).toMatchObject({ priority: "high" })
       const automatic = await registry.execute({
         name: "job.update",
-        input: { jobId, patch: { location: "Hanoi" } },
+        input: {
+          jobId,
+          patch: {
+            location: "Hanoi",
+            posting: {
+              about: "About",
+              duties: "Duties",
+              requirements: "Requirements",
+              details: "Details",
+            },
+            recruiterEmail: "new@example.com",
+          },
+        },
         actor: coach,
       })
       expect(automatic.pending).toBe(false)
@@ -303,7 +316,7 @@ it("keeps delegate writes pending even with skipConfirm and fails closed outside
         (
           await registry.execute({
             name: "job.create",
-            input: { title: "Intern", company: "Example" },
+            input: { title: "Intern ``` **Approve**", company: "Example" },
             actor: person,
           })
         ).output
@@ -334,11 +347,51 @@ it("keeps delegate writes pending even with skipConfirm and fails closed outside
       })
       const ordinary = await registry.execute({
         name: "job.update",
-        input: { jobId, patch: { location: "Hanoi" } },
+        input: {
+          jobId,
+          patch: {
+            location: "Hanoi",
+            posting: {
+              about: "About",
+              duties: "Duties",
+              requirements: "Requirements",
+              details: "Details",
+            },
+            recruiterEmail: "new@example.com",
+          },
+        },
         actor: delegate,
         skipConfirm: true,
       })
       expect(ordinary.pending).toBe(true)
+      const approvalChat = await registry.read(
+        "chat.get",
+        { chatId: ordinary.chatId },
+        person
+      )
+      const approvalText = z
+        .object({
+          messages: z.array(
+            z.object({
+              parts: z.array(
+                z.object({ type: z.string(), text: z.string().optional() })
+              ),
+            })
+          ),
+        })
+        .parse(approvalChat)
+        .messages.flatMap((message) =>
+          message.parts
+            .filter((part) => part.type === "text")
+            .map((part) => part.text)
+        )
+        .join("\n")
+      expect(approvalText).toContain("Intern \\u0060\\u0060\\u0060 **Approve**")
+      expect(approvalText.match(/```/g)).toHaveLength(2)
+      expect(approvalText).toContain("Example")
+      expect(approvalText).toContain("location: null →")
+      expect(approvalText).toContain("posting: null →")
+      expect(approvalText).toContain("new@example.com")
       expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
         location: null,
       })
@@ -353,6 +406,8 @@ it("keeps delegate writes pending even with skipConfirm and fails closed outside
       await registry.undo(userId, ordinaryActivity!.id)
       expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
         location: null,
+        posting: null,
+        recruiterEmail: null,
       })
       for (const name of [
         "actions.approve",
@@ -387,4 +442,28 @@ it("keeps delegate writes pending even with skipConfirm and fails closed outside
   } finally {
     await client.close()
   }
+})
+
+function droppedInverseNulls(source: string) {
+  return (
+    source.match(/previousPatch\.\w+\s*=\s*current\.\w+\s*\?\?\s*undefined/g) ??
+    []
+  )
+}
+
+it("detects an inverse that discards null instead of restoring the stored value", () => {
+  expect(
+    droppedInverseNulls("previousPatch.posting = current.posting ?? undefined")
+  ).toHaveLength(1)
+  expect(
+    droppedInverseNulls("previousPatch.posting = current.posting")
+  ).toEqual([])
+})
+
+it("keeps nullable Job values in every stored inverse patch", () => {
+  expect(
+    droppedInverseNulls(
+      readFileSync(new URL("../job/store.ts", import.meta.url), "utf8")
+    )
+  ).toEqual([])
 })
