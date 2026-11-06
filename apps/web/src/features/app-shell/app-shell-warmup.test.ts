@@ -19,7 +19,7 @@ vi.mock("@/features/paper/paper-cv-editor.tsx", async () => {
 })
 
 it("waits for a deferred nested CV editor before the first app test starts", async () => {
-  const warming = import("./warm-routes.ts")
+  const warming = import("@/test/warm-routes.ts")
   try {
     const first = await Promise.race([
       editor.started.then(() => "editor requested"),
