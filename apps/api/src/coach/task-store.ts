@@ -392,7 +392,8 @@ export function cancelChatTask(
         )
       )
       .for("update")
-    if (!task) return false
+    if (!task || (!taskId && !task.startKey.startsWith("legacy-tab:")))
+      return false
     await requestCancel(task.id, ownerId)
     return true
   })

@@ -1,3 +1,4 @@
+import { coachConfigKey, getCoachConfig } from "@/lib/coach-task-client.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useReducer, useRef } from "react"
 import {
@@ -84,11 +85,24 @@ export function useCoachTurn({
   focusDocId,
   onAfterUndo,
 }: UseCoachTurnOptions) {
-  const durableEnabled = import.meta.env.VITE_COACH_TASK_WORKER === "internal"
+  const config = useQuery({
+    queryKey: coachConfigKey(),
+    queryFn: getCoachConfig,
+    staleTime: 0,
+    retry: false,
+  })
   const durable = useCoachTask(
     { chatId, setChatId, titleForCreate, focusDocId, onAfterUndo },
-    durableEnabled
+    true
   )
+  const durableEnabled =
+    config.data?.coachDurable !== false || durable.hasActiveTask
+  const configuration = config.isError
+    ? ("error" as const)
+    : !config.isSuccess ||
+        (config.data.coachDurable === false && durable.recovering)
+      ? ("loading" as const)
+      : ("ready" as const)
   const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(turnReducer, IDLE_TURN)
   const [progressCalls, progressDispatch] = useReducer(coachProgressReducer, [])
@@ -539,7 +553,7 @@ export function useCoachTurn({
     [hydrateChat, onAfterUndo, phase, queryClient, chatId]
   )
 
-  return durableEnabled
+  const turn = durableEnabled
     ? durable
     : {
         messages,
@@ -553,4 +567,19 @@ export function useCoachTurn({
         undo,
         cancelInFlight,
       }
+  return {
+    ...turn,
+    configuration,
+    send: configuration === "ready" ? turn.send : () => false,
+    regenerate: configuration === "ready" ? turn.regenerate : () => false,
+    error: config.isError
+      ? "Could not load Coach settings. Retry to reconnect."
+      : turn.error,
+    retry: config.isError
+      ? () => {
+          void config.refetch()
+          return true
+        }
+      : turn.retry,
+  }
 }

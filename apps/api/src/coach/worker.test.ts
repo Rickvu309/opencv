@@ -54,7 +54,7 @@ const scriptSchema = z.array(
 )
 const final = { text: "Saved.", intents: [], inputTokens: 2, outputTokens: 3 }
 const settings = {
-  env: { COACH_TASK_WORKER: "internal" },
+  env: {},
   workerId: "worker",
   catalogDigest: "test",
   runtimeVersion: 1,
@@ -88,15 +88,23 @@ const storedRuntime: Parameters<typeof runCoachWorker>[0]["runtime"] = (
   return createScriptedWorkerRuntime(context.script)
 }
 
-it("leaves Send and task claims off by default", () =>
+it("drains accepted task claims with new durable admissions switched off", () =>
   fixture(async (_, registry) => {
-    expect(coachWorkerEnabledFromEnv({})).toBe(false)
+    expect(coachWorkerEnabledFromEnv({})).toBe(true)
+    expect(coachWorkerEnabledFromEnv({ COACH_DURABLE: "off" })).toBe(false)
     const runtime = vi.fn(storedRuntime)
     expect(
-      await runCoachWorker({ ...settings, env: {}, registry, runtime })
-    ).toBe(false)
-    expect(runtime).not.toHaveBeenCalled()
-    expect((await getDb().select().from(coachTasks))[0]?.state).toBe("queued")
+      await runCoachWorker({
+        ...settings,
+        env: { COACH_DURABLE: "off" },
+        registry,
+        runtime,
+      })
+    ).toBe(true)
+    expect(runtime).toHaveBeenCalledTimes(1)
+    expect((await getDb().select().from(coachTasks))[0]?.state).toBe(
+      "succeeded"
+    )
   }))
 
 it("runs the scripted protocol, persists ordered receipts and finalizes one canonical reply", () =>
@@ -295,7 +303,7 @@ it("Stop cancels a paused task durably and blocks approval without using a local
       .where(eq(coachTasks.id, taskId))
     const result = await registry.execute({
       name: "coach.stop",
-      input: { chatId: task!.chatId },
+      input: { chatId: task!.chatId, taskId },
       actor: personActor(ownerId),
     })
     expect(result.output).toEqual({ stopped: true })

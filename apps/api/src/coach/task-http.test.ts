@@ -36,7 +36,7 @@ import { runCoachWorker } from "./worker.js"
 const coachTaskReplaySchema = coachTaskQueries["coach.events"].output
 const coachTaskResetSchema = coachTaskReplaySchema.options[1]
 const envelope = z.object({ ok: z.literal(true), data: z.unknown() })
-const originalSwitch = process.env.COACH_TASK_WORKER
+const originalSwitch = process.env.COACH_DURABLE
 const originalRuntime = process.env.COACH_RUNTIME
 const final = {
   text: "Prepared.",
@@ -46,8 +46,8 @@ const final = {
 }
 
 afterEach(() => {
-  if (originalSwitch === undefined) delete process.env.COACH_TASK_WORKER
-  else process.env.COACH_TASK_WORKER = originalSwitch
+  if (originalSwitch === undefined) delete process.env.COACH_DURABLE
+  else process.env.COACH_DURABLE = originalSwitch
   if (originalRuntime === undefined) delete process.env.COACH_RUNTIME
   else process.env.COACH_RUNTIME = originalRuntime
 })
@@ -55,7 +55,7 @@ afterEach(() => {
 async function fixture(
   run: (ctx: Awaited<ReturnType<typeof setup>>) => Promise<void>
 ) {
-  process.env.COACH_TASK_WORKER = "internal"
+  process.env.COACH_DURABLE = "on"
   process.env.COACH_RUNTIME = "fake"
   const ctx = await setup()
   try {
@@ -319,7 +319,7 @@ it("checks the owner on every status, replay and Stop connection", () =>
     ).toBe(404)
     expect((await events(taskId, -1, foreign.cookie)).status).toBe(404)
     expect(
-      (await command("coach.stop", { chatId }, foreign.cookie)).status
+      (await command("coach.stop", { chatId, taskId }, foreign.cookie)).status
     ).toBe(404)
     expect(
       (
@@ -337,7 +337,7 @@ it("checks the owner on every status, replay and Stop connection", () =>
 it("commits explicit Stop durably and does not call inference for the cancelled task", () =>
   fixture(async ({ start, status, command, chatId, work, runtime }) => {
     const { taskId } = await start()
-    expect((await command("coach.stop", { chatId })).status).toBe(200)
+    expect((await command("coach.stop", { chatId, taskId })).status).toBe(200)
     const stopping = await status(taskId)
     expect(stopping.state).toBe("cancelling")
     expect(stopping.cancelRequestedAt).not.toBeNull()
@@ -371,7 +371,7 @@ it("returns typed resets for expired, missing and future cursors", () =>
     expect(reset.snapshot.cursor).toBe(snapshot.cursor)
   }))
 
-it("rejects malformed cursors and keeps the public task surface off by default", () =>
+it("rejects malformed cursors and keeps accepted tasks readable after rollback", () =>
   fixture(async ({ app, owner, start, command, chatId, events }) => {
     const { taskId } = await start()
     for (const after of ["-2", "1.5", "NaN", "9007199254740992", "1e3", ""]) {
@@ -384,7 +384,7 @@ it("rejects malformed cursors and keeps the public task surface off by default",
         ).status
       ).toBe(400)
     }
-    delete process.env.COACH_TASK_WORKER
+    process.env.COACH_DURABLE = "off"
     expect(
       (
         await command("coach.start", {
@@ -400,8 +400,8 @@ it("rejects malformed cursors and keeps the public task surface off by default",
           headers: authHeaders(owner.cookie),
         })
       ).status
-    ).toBe(404)
-    expect((await events(taskId, -1)).status).toBe(404)
+    ).toBe(200)
+    expect((await events(taskId, -1)).status).toBe(200)
   }))
 
 it("regenerates the same source with selection and grounding and never offers tools", () =>

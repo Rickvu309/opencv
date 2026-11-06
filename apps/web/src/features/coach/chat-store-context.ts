@@ -13,6 +13,7 @@ export type ChatStoreValue = {
   navigationRevision: number
   creationOwner: string | null
   messages: ChatViewMessage[]
+  configuration?: "loading" | "error" | "ready"
   phase: TurnPhase
   progress: CoachTurnProgress
   error: string | null

@@ -64,6 +64,8 @@ export function createTestApp(
   db: ReturnType<typeof drizzle>,
   options?: {
     coach?: CoachRuntime
+    coachDurable?: boolean
+    coachCompatibilityMs?: number
     coachSseHeartbeatMs?: number
     fetchJobPosting?: FetchJobPosting
   }
@@ -75,6 +77,8 @@ export function createTestApp(
     db,
     rateLimitEnabled: false,
     coach: options?.coach,
+    coachDurable: options?.coachDurable ?? false,
+    coachCompatibilityMs: options?.coachCompatibilityMs,
     coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
     fetchJobPosting: options?.fetchJobPosting,
     googleEnabled: googleEnabledFromEnv(process.env),

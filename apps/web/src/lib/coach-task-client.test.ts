@@ -1,6 +1,10 @@
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, expect, it, vi } from "vitest"
-import { tailCoachTask, subscribeCoachTask } from "./coach-task-client.ts"
+import {
+  getCoachConfig,
+  tailCoachTask,
+  subscribeCoachTask,
+} from "./coach-task-client.ts"
 import { taskSnapshot, taskEvent, TASK } from "@/test/coach-task-fixture.ts"
 import type { CoachTaskState } from "./coach-task-state.ts"
 
@@ -151,4 +155,22 @@ it("refreshes command reads from a committed snapshot without a preceding live t
   expect(invalidate.mock.calls).toContainEqual([
     { queryKey: ["job.get", { jobId: TASK }] },
   ])
+})
+
+it("reads the current server mode without a cached response or a web rebuild", async () => {
+  const fetch = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({ coachDurable: true }))
+    .mockResolvedValueOnce(Response.json({ coachDurable: false }))
+  vi.stubGlobal("fetch", fetch)
+  expect(await getCoachConfig()).toEqual({ coachDurable: true })
+  expect(await getCoachConfig()).toEqual({ coachDurable: false })
+  expect(fetch.mock.calls.every((call) => call[1].cache === "no-store")).toBe(
+    true
+  )
+})
+
+it("rejects missing runtime configuration rather than falling back to request-bound Send", async () => {
+  vi.stubGlobal("fetch", async () => Response.json({ google: false }))
+  await expect(getCoachConfig()).rejects.toThrow()
 })

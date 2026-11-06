@@ -63,6 +63,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const chats = listQuery.data ?? EMPTY_CHATS
 
   const {
+    configuration,
     messages,
     phase,
     progress,
@@ -125,6 +126,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       activeChatId,
       navigationRevision,
       creationOwner,
+      configuration,
       messages,
       phase,
       progress,
@@ -143,6 +145,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       activeChatId,
       navigationRevision,
       creationOwner,
+      configuration,
       messages,
       phase,
       progress,

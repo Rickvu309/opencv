@@ -155,5 +155,5 @@ export function commitShaFromEnv(env: NodeJS.ProcessEnv) {
 }
 
 export function coachWorkerEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
-  return env.COACH_TASK_WORKER === "internal"
+  return env.COACH_DURABLE?.trim().toLowerCase() !== "off"
 }

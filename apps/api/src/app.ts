@@ -23,6 +23,7 @@ import {
   interpretPosting,
 } from "./coach/index.js"
 import {
+  coachWorkerEnabledFromEnv,
   logAuthMailFromEnv,
   setCoachModelEnv,
   type CoachModelEnv,
@@ -52,6 +53,8 @@ export type AppConfig = {
   rateLimitEnabled?: boolean
   sendCodeLimitEnabled?: boolean
   coach?: CoachRuntime
+  coachDurable?: boolean
+  coachCompatibilityMs?: number
   coachSseHeartbeatMs?: number
   coachEnv?: CoachModelEnv
   gmailEnabled?: boolean
@@ -75,6 +78,8 @@ export function createApp({
   rateLimitEnabled,
   sendCodeLimitEnabled,
   coach,
+  coachDurable = coachWorkerEnabledFromEnv(process.env),
+  coachCompatibilityMs,
   coachSseHeartbeatMs,
   coachEnv,
   gmailEnabled = false,
@@ -183,11 +188,10 @@ export function createApp({
       ? handleAuthRequest(auth, c.req.raw)
       : c.json(authUnavailableEnvelope(), 503)
   )
-  app.get("/api/public-config", (c) =>
-    c.json({
-      google: googleEnabled,
-    })
-  )
+  app.get("/api/public-config", (c) => {
+    c.header("Cache-Control", "no-store")
+    return c.json({ google: googleEnabled, coachDurable })
+  })
   app.get("/api/session", requireSession(auth, database), (c) =>
     c.json({
       ok: true,
@@ -200,6 +204,8 @@ export function createApp({
     auth,
     db: database,
     coach,
+    coachDurable,
+    coachCompatibilityMs,
     coachSseHeartbeatMs,
   })
 

@@ -6,6 +6,7 @@ import {
   sendCodeLimitEnabledFromEnv,
   coachDailyTurnLimitForModeFromEnv,
   coachRuntimeModeFromEnv,
+  coachWorkerEnabledFromEnv,
   databaseUrlFromEnv,
   logAuthMailFromEnv,
   dbDriverFromEnv,
@@ -13,6 +14,19 @@ import {
   sessionSecretFromEnv,
   webOriginsFromEnv,
 } from "./config.js"
+
+describe("coachWorkerEnabledFromEnv", () => {
+  it.each([
+    [{}, true],
+    [{ COACH_DURABLE: "" }, true],
+    [{ COACH_DURABLE: "on" }, true],
+    [{ COACH_DURABLE: "off" }, false],
+    [{ COACH_DURABLE: " OFF " }, false],
+    [{ COACH_TASK_WORKER: "off", COACH_EMBEDDED_WORKER: "off" }, true],
+  ])("uses one default-on server switch: %j", (env, enabled) => {
+    expect(coachWorkerEnabledFromEnv(env)).toBe(enabled)
+  })
+})
 
 describe("logAuthMailFromEnv", () => {
   it.each([

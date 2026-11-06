@@ -77,7 +77,6 @@ function stubUsage(
 
 describe("Coach workspace", () => {
   it("shows stopped after cancelling before a new Chat is created", async () => {
-    vi.stubEnv("VITE_COACH_TASK_WORKER", "internal")
     let release!: () => void
     const gate = new Promise<void>((resolve) => {
       release = resolve
@@ -87,6 +86,8 @@ describe("Coach workspace", () => {
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = new URL(String(input)).pathname
+        if (path === "/api/public-config")
+          return Response.json({ google: false, coachDurable: true })
         if (path.endsWith("chat.create")) await gate
         if (path.endsWith("coach.start")) starts.push(path)
         return (
@@ -100,7 +101,8 @@ describe("Coach workspace", () => {
     render(
       <ChatStoreProvider>
         <CoachWorkspace />
-      </ChatStoreProvider>
+      </ChatStoreProvider>,
+      { coachDurable: true }
     )
     await user.type(
       await screen.findByRole("textbox", { name: "Message Coach" }),

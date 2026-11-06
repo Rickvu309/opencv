@@ -189,3 +189,25 @@ describe(".env.example", () => {
       expect(repo?.toLowerCase()).toBe(hostedRepo().toLowerCase())
   })
 })
+
+describe("Coach deployment mode", () => {
+  it("uses one runtime API kill switch without a web build flag", () => {
+    const env = read(".env.example")
+    expect(env).toContain("COACH_DURABLE=on")
+    expect(env).not.toContain("VITE_COACH_TASK_WORKER")
+    expect(env).not.toContain("COACH_TASK_WORKER=")
+    expect(env).not.toContain("COACH_EMBEDDED_WORKER=")
+    expect(read("apps/api/src/config.ts")).toContain(
+      'return env.COACH_DURABLE?.trim().toLowerCase() !== "off"'
+    )
+    expect(read("apps/api/src/app.ts")).toContain(
+      'c.header("Cache-Control", "no-store")'
+    )
+    expect(read("apps/web/src/features/coach/use-coach-turn.ts")).toContain(
+      "queryFn: getCoachConfig"
+    )
+    expect(read("apps/web/src/features/coach/use-coach-turn.ts")).not.toContain(
+      "VITE_COACH"
+    )
+  })
+})

@@ -437,7 +437,10 @@ describe("auth providers", () => {
     try {
       const app = createTestApp(db)
       const config = await app.request("/api/public-config")
-      await expect(config.json()).resolves.toEqual({ google: false })
+      await expect(config.json()).resolves.toEqual({
+        google: false,
+        coachDurable: false,
+      })
       const social = await postJson(app, "/api/auth/sign-in/social", {
         provider: "google",
         callbackURL: "http://localhost:5173/app",

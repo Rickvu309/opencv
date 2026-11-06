@@ -1,6 +1,5 @@
 import { z } from "zod"
 import { coachActor } from "@workspace/domain"
-import { coachWorkerEnabledFromEnv } from "../config.js"
 import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import { eq } from "drizzle-orm"
@@ -47,7 +46,6 @@ export async function runCoachWorker(options: {
   leaseMs?: number
   scheduleRenewal?: (renew: () => Promise<void>) => () => void
 }) {
-  if (!coachWorkerEnabledFromEnv(options.env ?? process.env)) return false
   const leaseMs = options.leaseMs ?? 30_000
   await options.registry.expireTaskApprovals()
   await recoverWaitingTasks()
