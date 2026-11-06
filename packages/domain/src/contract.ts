@@ -35,6 +35,7 @@ type CommandEntry<
   I extends Schema = Schema,
   O extends Schema = Schema,
 > = CoachPolicy & {
+  delegate?: "reversibleJob"
   description: string
   input: I
   output: O

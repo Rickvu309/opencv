@@ -27,8 +27,8 @@ export function ConnectionList() {
         Your agents
       </h2>
       <p className="text-sm text-muted-foreground">
-        Add the OpenCV MCP address in your agent’s settings. Career tools are
-        not available yet.
+        Add the OpenCV MCP address in your agent’s settings to read Jobs and
+        propose changes for your approval.
       </p>
       <code className="rounded-md bg-muted px-3 py-2 text-sm break-all">
         {agentServerUrl}
@@ -71,7 +71,9 @@ export function ConnectionList() {
                   : "Active"}
             </p>
             <p className="text-sm text-muted-foreground">
-              Connection status only · No documents or Jobs shared
+              {connection.resources.kind === "jobs"
+                ? "All current and future Jobs · Reversible changes need approval"
+                : "Connection status only · No documents or Jobs shared"}
             </p>
             <p className="text-sm text-muted-foreground">
               Reads allowed · Writes need approval

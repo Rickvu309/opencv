@@ -1,0 +1,2 @@
+ALTER TABLE "opencv_app"."pending_actions" ADD COLUMN "delegate_connection_id" uuid,
+ADD CONSTRAINT "pending_actions_delegate_connection_id_agent_connections_id_fk" FOREIGN KEY ("delegate_connection_id") REFERENCES "opencv_app"."agent_connections"("id") ON DELETE no action ON UPDATE no action;

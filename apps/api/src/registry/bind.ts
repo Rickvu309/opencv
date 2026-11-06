@@ -84,6 +84,7 @@ export function bindCommands<C extends CommandContract>(
         description: entry.description,
         input: entry.input,
         coach: entry.coach,
+        delegate: entry.delegate,
         writes: entry.writes,
         destructive: entry.destructive,
         ...(entry.idempotency ? { idempotency: entry.idempotency } : {}),
@@ -100,6 +101,7 @@ export function bindCommands<C extends CommandContract>(
 type TableQuerySpec<N extends QueryName> = {
   description: string
   coach: boolean
+  delegate?: "jobRead"
   step: (input: QueryInput<N>) => string
   read: (input: QueryInput<N>, actor: Actor) => Promise<QueryOutput<N>>
 }

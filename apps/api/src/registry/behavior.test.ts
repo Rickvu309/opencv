@@ -1,10 +1,14 @@
-import { defineCommand, personActor } from "@workspace/domain"
+import {
+  defineCommand,
+  delegateActorSchema,
+  personActor,
+} from "@workspace/domain"
 import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
+import { agentConnections, oauthClient, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
@@ -252,6 +256,133 @@ it("confirms every Coach priority writer, preserves automatic updates, and guard
         { priority: "normal", count: 0 },
         { priority: "high", count: 0 },
       ])
+    })
+  } finally {
+    await client.close()
+  }
+})
+
+it("keeps delegate writes pending even with skipConfirm and fails closed outside Job tools", async () => {
+  const { db, client } = await createMigratedTestDb()
+  const registry = installRegistry()
+  const userId = "delegate-owner"
+  await db
+    .insert(user)
+    .values({ id: userId, name: "Ada", email: "delegate@example.com" })
+  const person = personActor(userId)
+  await db.insert(oauthClient).values({
+    id: "delegate-client",
+    clientId: "delegate-client",
+    redirectUris: ["http://localhost/callback"],
+  })
+  await db.insert(agentConnections).values({
+    id: "11111111-1111-4111-8111-111111111111",
+    userId,
+    clientId: "delegate-client",
+    authorizationCodeId: "delegate-authorization",
+    name: "My agent",
+    audience: "http://localhost/mcp",
+    scopes: ["connection.status", "job.read", "job.write"],
+    resources: { kind: "jobs" },
+    policy: { reads: "allow", writes: "approval" },
+    expiresAt: new Date(Date.now() + 60_000),
+  })
+  const delegate = delegateActorSchema.parse({
+    type: "delegate",
+    userId,
+    connectionId: "11111111-1111-4111-8111-111111111111",
+    name: "My agent",
+    scopes: ["job.read", "job.write"],
+    resources: "jobs",
+    reads: "allow",
+    writes: "approval",
+  })
+  try {
+    await withDatabase(db, async () => {
+      const jobId = idOf(
+        (
+          await registry.execute({
+            name: "job.create",
+            input: { title: "Intern", company: "Example" },
+            actor: person,
+          })
+        ).output
+      )
+      expect(
+        (await registry.tools(delegate)).map((tool) => tool.name).sort()
+      ).toEqual(
+        [
+          "job.calendar",
+          "job.get",
+          "job.list",
+          "job.move",
+          "job.priorityCounts",
+          "job.setPriority",
+          "job.update",
+        ].sort()
+      )
+      const result = await registry.execute({
+        name: "job.update",
+        input: { jobId, patch: { priority: "high" } },
+        actor: delegate,
+        skipConfirm: true,
+      })
+      expect(result).toMatchObject({ pending: true, activityId: null })
+      expect(result.pendingActionId).toBeTruthy()
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        priority: "normal",
+      })
+      const ordinary = await registry.execute({
+        name: "job.update",
+        input: { jobId, patch: { location: "Hanoi" } },
+        actor: delegate,
+        skipConfirm: true,
+      })
+      expect(ordinary.pending).toBe(true)
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        location: null,
+      })
+      const ordinaryActivity = await registry.approve(
+        userId,
+        ordinary.pendingActionId!
+      )
+      expect(ordinaryActivity?.actor).toBe("delegate")
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        location: "Hanoi",
+      })
+      await registry.undo(userId, ordinaryActivity!.id)
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        location: null,
+      })
+      for (const name of [
+        "actions.approve",
+        "actions.deny",
+        "activity.undo",
+        "inbox.send",
+        "job.create",
+        "job.delete",
+      ]) {
+        await expect(
+          registry.execute({
+            name,
+            input: {},
+            actor: delegate,
+            skipConfirm: true,
+          })
+        ).rejects.toThrow(/connection cannot/)
+      }
+      expect(await registry.tools({ ...delegate, resources: "none" })).toEqual(
+        []
+      )
+      expect(await registry.tools({ ...delegate, scopes: [] })).toEqual([])
+      expect(
+        (await registry.tools({ ...delegate, scopes: ["job.read"] })).every(
+          (tool) => tool.kind === "query"
+        )
+      ).toBe(true)
+      await expect(registry.read("profile.get", {}, delegate)).rejects.toThrow(
+        /connection cannot/
+      )
     })
   } finally {
     await client.close()

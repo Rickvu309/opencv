@@ -207,7 +207,7 @@ export function createOAuthTables(
     name: text("name").notNull(),
     audience: text("audience").notNull(),
     scopes: jsonb("scopes").$type<string[]>().notNull(),
-    resources: jsonb("resources").$type<{ kind: "none" }>().notNull(),
+    resources: jsonb("resources").$type<{ kind: "none" | "jobs" }>().notNull(),
     policy: jsonb("policy")
       .$type<{ reads: "allow"; writes: "approval" }>()
       .notNull(),

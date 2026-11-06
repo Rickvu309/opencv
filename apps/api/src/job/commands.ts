@@ -78,8 +78,8 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         command: "job.update",
         input: { jobId: input.jobId, patch: output.previousPatch },
       }),
-      activity: (input, output) =>
-        output.watched
+      activity: (input, output, actor) =>
+        output.watched || actor.type === "delegate"
           ? {
               subjectKind: "job",
               subjectId: input.jobId,
@@ -231,6 +231,7 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
 
   registry.addQuery(
     tableQuery("job.priorityCounts", {
+      delegate: "jobRead",
       description: "Count jobs by priority.",
       coach: true,
       step: () => "Count jobs by priority",
@@ -240,6 +241,7 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
 
   registry.addQuery(
     tableQuery("job.list", {
+      delegate: "jobRead",
       description: "List jobs.",
       coach: true,
       step: () => "List jobs",
@@ -249,6 +251,7 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
 
   registry.addQuery(
     tableQuery("job.get", {
+      delegate: "jobRead",
       description: "Read one job.",
       coach: true,
       step: () => "Read the job",
@@ -281,6 +284,7 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
 
   registry.addQuery(
     tableQuery("job.calendar", {
+      delegate: "jobRead",
       description: "List jobs with an interview or deadline in a range.",
       coach: true,
       step: () => "Read the calendar",

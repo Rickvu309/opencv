@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const connectionResourcesSchema = z
-  .object({ kind: z.literal("none") })
+  .object({ kind: z.enum(["none", "jobs"]) })
   .strict()
 export const connectionPolicySchema = z
   .object({ reads: z.literal("allow"), writes: z.literal("approval") })

@@ -52,7 +52,13 @@ export async function bindIssuedToken(value: unknown, audience: string) {
         name: client?.name ?? "Connected agent",
         audience,
         scopes: token.scopes,
-        resources: { kind: "none" },
+        resources: {
+          kind:
+            token.scopes.includes("job.read") ||
+            token.scopes.includes("job.write")
+              ? "jobs"
+              : "none",
+        },
         policy: { reads: "allow", writes: "approval" },
         expiresAt: refresh?.expiresAt ?? token.expiresAt,
       })
@@ -128,6 +134,7 @@ export async function authenticateAgent(
         eq(agentConnections.audience, audience)
       )
     )
+
   if (
     !row ||
     row.oauth_access_token.confirmation != null ||
@@ -137,9 +144,31 @@ export async function authenticateAgent(
     !row.oauth_access_token.scopes.includes("connection.status")
   )
     return null
+  if (
+    row.oauth_access_token.scopes.some(
+      (scope) => !row.agent_connections.scopes.includes(scope)
+    )
+  )
+    return null
+  const [live] = await db
+    .select()
+    .from(agentConnections)
+    .where(
+      and(
+        eq(agentConnections.id, row.agent_connections.id),
+        isNull(agentConnections.revokedAt),
+        gt(agentConnections.expiresAt, new Date())
+      )
+    )
+    .for("update")
+  if (
+    !live ||
+    row.oauth_access_token.scopes.some((scope) => !live.scopes.includes(scope))
+  )
+    return null
   await db
     .update(agentConnections)
     .set({ lastUsedAt: new Date() })
     .where(eq(agentConnections.id, row.agent_connections.id))
-  return row.agent_connections
+  return { ...live, scopes: row.oauth_access_token.scopes }
 }

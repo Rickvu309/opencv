@@ -2,6 +2,7 @@ import {
   ERROR_CODES,
   approvedProposalActor,
   coachActor,
+  delegateActorSchema,
   personActor,
   type Actor,
 } from "@workspace/domain"
@@ -25,6 +26,7 @@ export function parseInput<T>(schema: ZodType<T>, raw: unknown): T {
 }
 
 export function brandedActor(actor: Actor): Actor {
+  if (actor.type === "delegate") return delegateActorSchema.parse(actor)
   if (actor.type === "person") return personActor(actor.userId)
   return actor.turnId
     ? coachActor(actor.userId, actor.chatId, actor.turnId)

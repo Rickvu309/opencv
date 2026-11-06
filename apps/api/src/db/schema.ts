@@ -444,6 +444,9 @@ export const pendingActions = opencvApp.table(
     chatId: uuid("chat_id")
       .notNull()
       .references(() => chats.id, { onDelete: "cascade" }),
+    delegateConnectionId: uuid("delegate_connection_id").references(
+      () => agentConnections.id
+    ),
     command: text("command").notNull(),
     input: jsonb("input").notNull(),
     summary: text("summary").notNull(),
@@ -472,7 +475,7 @@ export const activity = opencvApp.table(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
-    actor: text("actor").$type<"person" | "coach">().notNull(),
+    actor: text("actor").$type<"person" | "coach" | "delegate">().notNull(),
     command: text("command").notNull(),
     subjectKind: text("subject_kind").notNull(),
     subjectId: text("subject_id").notNull(),

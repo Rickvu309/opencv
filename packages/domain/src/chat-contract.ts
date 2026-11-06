@@ -53,7 +53,7 @@ const chatMessageSchema = z
   .object({
     id: z.string(),
     chatId: z.string(),
-    role: z.enum(["person", "coach"]),
+    role: z.enum(["person", "coach", "delegate"]),
     text: z.string(),
     parts: z.array(chatMessagePartSchema),
     status: chatMessageStatusSchema.nullable(),
@@ -77,7 +77,7 @@ const activityRowAsTheApiReturnsIt = z
     id: z.string(),
     userId: z.string(),
     createdAt: z.string().datetime(),
-    actor: z.enum(["person", "coach"]),
+    actor: z.enum(["person", "coach", "delegate"]),
     command: z.string(),
     subjectKind: z.string(),
     subjectId: z.string(),
@@ -97,6 +97,7 @@ export type ActivityRow = z.output<typeof activityRowAsTheApiReturnsIt>
 
 const pendingActionRowSchema = z
   .object({
+    delegateConnectionId: z.string().uuid().nullable(),
     id: z.string(),
     userId: z.string(),
     chatId: z.string(),

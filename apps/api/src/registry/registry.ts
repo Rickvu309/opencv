@@ -5,19 +5,21 @@ import {
   defineCommand,
   isCoachActor,
   personActor,
-  type ActivityDraft,
   type Actor,
   type CoachAccess,
   type CommandSpec,
   type QuerySpec,
   type ReversalExpect,
-  type ReversalPlan,
 } from "@workspace/domain"
-import type { ZodType } from "zod"
 import { and, eq } from "drizzle-orm"
 
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { getDb, savepoint, transaction } from "../db/context.js"
+import { createProposal } from "./proposals.js"
+import {
+  delegateAllowed,
+  requireLiveProposalConnection,
+} from "./delegate-policy.js"
 import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
@@ -32,6 +34,17 @@ import {
 import { replay, replayStored } from "./replay.js"
 import { receiptDetail, reversalOf } from "./receipt.js"
 import { readTurnReceipts } from "./turn-receipts.js"
+
+import type {
+  ExecuteResult,
+  StoredCommand,
+  StoredQuery,
+  ToolEntry,
+  UndoGuard,
+} from "./registry-types.js"
+export type { ExecuteResult, ToolEntry } from "./registry-types.js"
+
+const approvedDelegate = Symbol("approvedDelegate")
 
 const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
@@ -81,61 +94,6 @@ export function coachRefusal(
   if (entry.name.startsWith("inbox.") && !gates.agentEmail) return "email"
   return null
 }
-
-type RanCommand = {
-  output: unknown
-  draft: ActivityDraft | null
-  reversal: ReversalPlan
-  step: string
-}
-
-type StoredCommand = {
-  name: string
-  description: string
-  coach: CoachAccess
-  writes?: CommandSpec<unknown, unknown>["writes"]
-  destructive: boolean
-  input: ZodType
-  step: (input: unknown) => string
-  transaction?: "none"
-  idempotency: "keyed" | "none"
-  run: (input: unknown, actor: Actor) => Promise<RanCommand>
-}
-
-type StoredQuery = {
-  name: string
-  description: string
-  coach: boolean
-  input: ZodType
-  step: (input: unknown) => string
-  read: (input: unknown, actor: Actor) => Promise<unknown>
-}
-
-export type ToolEntry = {
-  name: string
-  description: string
-  kind: "command" | "query"
-  coach: CoachAccess | boolean
-  destructive: boolean
-  step: (input: unknown) => string
-  input: ZodType
-}
-
-export type ExecuteResult = {
-  pending: boolean
-  pendingActionId?: string
-  summary?: string
-  command?: string
-  output?: unknown
-  activityId: string | null
-  reversal: ReversalPlan
-  detail?: unknown
-}
-
-type UndoGuard = (
-  userId: string,
-  items: readonly { input: unknown; source: string | null }[]
-) => Promise<(string | null)[]>
 
 export class Registry {
   private readonly commands = new Map<string, StoredCommand>()
@@ -212,6 +170,7 @@ export class Registry {
       name: checked.name,
       description: checked.description,
       coach: checked.coach,
+      delegate: checked.delegate,
       writes: (raw) => checked.writes?.(parseInput(checked.input, raw)) ?? [],
       destructive: checked.destructive,
       input: checked.input,
@@ -242,6 +201,7 @@ export class Registry {
       name: spec.name,
       description: spec.description,
       coach: spec.coach,
+      delegate: spec.delegate,
       input: spec.input,
       step: (raw) => {
         const parsed = spec.input.safeParse(raw)
@@ -276,6 +236,7 @@ export class Registry {
       : null
     const entries: ToolEntry[] = []
     for (const command of this.commands.values()) {
+      if (!delegateAllowed(command, branded)) continue
       if (gates && coachRefusal(command, gates)) continue
       entries.push({
         name: command.name,
@@ -288,6 +249,7 @@ export class Registry {
       })
     }
     for (const query of this.queries.values()) {
+      if (!delegateAllowed(query, branded)) continue
       if (gates && coachRefusal(query, gates)) continue
       entries.push({
         name: query.name,
@@ -309,14 +271,25 @@ export class Registry {
     idempotencyKey?: string
     skipConfirm?: boolean
     skipActivity?: boolean
+    [approvedDelegate]?: string
   }): Promise<ExecuteResult> {
     const command = this.commands.get(options.name)
     if (!command) {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
     }
     const actor = brandedActor(options.actor)
+    if (!delegateAllowed(command, actor))
+      throw new CommandError(
+        ERROR_CODES.FORBIDDEN,
+        "This connection cannot use this command"
+      )
     const parsed = parseInput(command.input, options.input)
     const policy = effectiveCoachPolicy(command, parsed)
+    if (actor.type === "delegate" && policy === "never")
+      throw new CommandError(
+        ERROR_CODES.FORBIDDEN,
+        "This resource cannot be changed by an agent"
+      )
     if (isCoachActor(actor)) {
       const refusal = coachRefusal(
         { ...command, coach: policy },
@@ -348,7 +321,10 @@ export class Registry {
             command: command.name,
             subjectKind: ran.draft.subjectKind,
             subjectId: ran.draft.subjectId,
-            summary: ran.draft.summary,
+            summary:
+              actor.type === "delegate"
+                ? `${ran.draft.summary} · an agent connection (${actor.name}, unverified)`
+                : ran.draft.summary,
             detail: ran.draft.detail ?? null,
             result: ran.output ?? null,
             reversalCommand: ran.reversal?.command ?? null,
@@ -383,29 +359,18 @@ export class Registry {
         if (earlier) return earlier
       }
 
-      if (isCoachActor(actor) && policy === "confirm" && !options.skipConfirm) {
-        const id = createId()
-        const summary = command.step(parsed)
-        await getDb()
-          .insert(pendingActions)
-          .values({
-            id,
-            userId: actor.userId,
-            chatId: actor.chatId,
-            turnId: actor.turnId ?? null,
-            command: command.name,
-            input: parsed,
-            summary,
-            status: "pending",
-          })
-        return {
-          pending: true,
-          pendingActionId: id,
-          summary,
+      if (
+        (actor.type === "delegate" &&
+          (!options[approvedDelegate] ||
+            options[approvedDelegate] !== options.idempotencyKey)) ||
+        (isCoachActor(actor) && policy === "confirm" && !options.skipConfirm)
+      ) {
+        return createProposal({
+          actor,
           command: command.name,
-          activityId: null,
-          reversal: null,
-        }
+          input: parsed,
+          summary: command.step(parsed),
+        })
       }
 
       if (!idempotencyKey) return effect()
@@ -428,6 +393,11 @@ export class Registry {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown query")
     }
     const branded = brandedActor(actor)
+    if (!delegateAllowed(query, branded))
+      throw new CommandError(
+        ERROR_CODES.FORBIDDEN,
+        "This connection cannot use this read"
+      )
     if (isCoachActor(branded)) {
       const refusal = coachRefusal(query, await this.agentGates(branded.userId))
       if (refusal) {
@@ -508,10 +478,14 @@ export class Registry {
           "This action was already declined."
         )
       }
+      const delegate = row.delegateConnectionId
+        ? await requireLiveProposalConnection(userId, row.delegateConnectionId)
+        : null
       const result = await this.execute({
         name: row.command,
         input: row.input,
-        actor: approvedProposalActor(userId, row.chatId),
+        actor: delegate ?? approvedProposalActor(userId, row.chatId),
+        [approvedDelegate]: row.id,
         idempotencyKey: row.id,
         skipConfirm: true,
       })

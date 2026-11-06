@@ -77,7 +77,7 @@ it("labels the app-supplied name as unverified and sends cancellation through th
     "30 days"
   )
   expect(
-    screen.getByText(/No documents or Jobs are shared/)
+    screen.getByText(/Your agent can read all your current and future Jobs/)
   ).toBeInTheDocument()
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
   await waitFor(() =>
@@ -113,56 +113,61 @@ it("renders empty connections and a retriable load failure", async () => {
   expect(await screen.findByText("No agents connected.")).toBeInTheDocument()
 })
 
-it("revokes through the registry and reflects the invalidated live connection", async () => {
-  const connection = {
-    id: connectionIdSchema.parse("11070000-0000-4000-8000-000000000001"),
-    clientId: "agent",
-    name: "Long agent name ".repeat(12),
-    audience: "http://localhost:4107/mcp",
-    scopes: ["connection.status"],
-    resources: { kind: "none" as const },
-    policy: { reads: "allow" as const, writes: "approval" as const },
-    version: 1,
-    consentVersion: 1,
-    createdAt: new Date().toISOString(),
-    lastUsedAt: null,
-    expiresAt: new Date(Date.now() + 60000).toISOString(),
-    revokedAt: null,
-  }
-  vi.mocked(fetchConnections).mockResolvedValue([connection])
-  runCommand.mockImplementation(async (client: QueryClient) => {
-    vi.mocked(fetchConnections).mockResolvedValue([
-      { ...connection, revokedAt: new Date().toISOString(), version: 2 },
-    ])
-    await client.invalidateQueries()
-    return { revoked: true }
-  })
-  const client = show(<ConnectionList />)
-  const revokeButton = await screen.findByRole("button", {
-    name: "Revoke access",
-  })
-  for (const label of [
-    "Active",
-    "Connected",
-    "Last used",
-    "Never",
-    "Expires",
-    "Connection status only · No documents or Jobs shared",
-  ]) {
-    expect(screen.getByText(label)).toBeInTheDocument()
-  }
-  expect(document.querySelectorAll("time")).toHaveLength(2)
-  fireEvent.click(revokeButton)
-  await waitFor(() =>
-    expect(runCommand).toHaveBeenCalledWith(client, "connections.revoke", {
-      connectionId: connection.id,
+it.each(["none", "jobs"] as const)(
+  "revokes a %s grant through the registry and reflects the live connection",
+  async (kind) => {
+    const connection = {
+      id: connectionIdSchema.parse("11070000-0000-4000-8000-000000000001"),
+      clientId: "agent",
+      name: "Long agent name ".repeat(12),
+      audience: "http://localhost:4107/mcp",
+      scopes: ["connection.status"],
+      resources: { kind },
+      policy: { reads: "allow" as const, writes: "approval" as const },
+      version: 1,
+      consentVersion: 1,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+      revokedAt: null,
+    }
+    vi.mocked(fetchConnections).mockResolvedValue([connection])
+    runCommand.mockImplementation(async (client: QueryClient) => {
+      vi.mocked(fetchConnections).mockResolvedValue([
+        { ...connection, revokedAt: new Date().toISOString(), version: 2 },
+      ])
+      await client.invalidateQueries()
+      return { revoked: true }
     })
-  )
-  expect(await screen.findByText("Revoked")).toBeInTheDocument()
-  expect(
-    screen.queryByRole("button", { name: "Revoke access" })
-  ).not.toBeInTheDocument()
-})
+    const client = show(<ConnectionList />)
+    const revokeButton = await screen.findByRole("button", {
+      name: "Revoke access",
+    })
+    for (const label of [
+      "Active",
+      "Connected",
+      "Last used",
+      "Never",
+      "Expires",
+      kind === "jobs"
+        ? "All current and future Jobs · Reversible changes need approval"
+        : "Connection status only · No documents or Jobs shared",
+    ]) {
+      expect(screen.getByText(label)).toBeInTheDocument()
+    }
+    expect(document.querySelectorAll("time")).toHaveLength(2)
+    fireEvent.click(revokeButton)
+    await waitFor(() =>
+      expect(runCommand).toHaveBeenCalledWith(client, "connections.revoke", {
+        connectionId: connection.id,
+      })
+    )
+    expect(await screen.findByText("Revoked")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Revoke access" })
+    ).not.toBeInTheDocument()
+  }
+)
 
 it("shows the CIMD origin before the unverified app name", async () => {
   vi.mocked(consentClient).mockResolvedValue({
