@@ -14,7 +14,7 @@ import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "./errors.js"
 import type { Registry } from "./registry.js"
 
-const PRIVATE_OUTPUT_KEYS = new Set([
+export const PRIVATE_OUTPUT_KEYS = new Set([
   "previousDocument",
   "previousPatch",
   "previousTitle",
@@ -29,6 +29,8 @@ const PRIVATE_OUTPUT_KEYS = new Set([
   "previousStatus",
   "previousSnoozeUntil",
   "previousStage",
+  "previousPriority",
+  "previousPaper",
 ])
 
 export function publicCommandOutput(output: unknown) {
