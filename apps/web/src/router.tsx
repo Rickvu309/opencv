@@ -1,3 +1,4 @@
+import { authorizationResumePath } from "@/lib/oauth-consent.ts"
 import {
   Outlet,
   createRootRoute,
@@ -353,6 +354,42 @@ const settingsRoute = createRoute({
   ),
 })
 
+const consentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/oauth/consent",
+  beforeLoad: async ({ location }) => {
+    const { data } = await authClient.getSession()
+    if (!data)
+      throw redirect({
+        href: signInHref(
+          authorizationResumePath(location.pathname, window.location.search)
+        ),
+      })
+  },
+  component: lazyRouteComponent(
+    () => import("@/features/connections/index.ts"),
+    "ConnectionConsent"
+  ),
+})
+
+const connectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/oauth/connect",
+  beforeLoad: async ({ location }) => {
+    const { data } = await authClient.getSession()
+    if (!data)
+      throw redirect({
+        href: signInHref(
+          authorizationResumePath(location.pathname, window.location.search)
+        ),
+      })
+  },
+  component: lazyRouteComponent(
+    () => import("@/features/connections/index.ts"),
+    "ContinueConnection"
+  ),
+})
+
 const userRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/u/$slug",
@@ -389,6 +426,8 @@ const routeTree = rootRoute.addChildren([
   blogPostRoute,
   signInRoute,
   signUpRoute,
+  consentRoute,
+  connectRoute,
   shareRoute,
   userRoute.addChildren([userMissRoute]),
   legacyAppRoute,

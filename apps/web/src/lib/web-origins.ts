@@ -3,6 +3,8 @@ import { SURFACE_PATHS, legacyAppPath } from "./product-paths.ts"
 const PRODUCT_ROOTS = [
   "/sign-in",
   "/sign-up",
+  "/oauth/consent",
+  "/oauth/connect",
   ...Object.values(SURFACE_PATHS),
   "/proof",
 ]

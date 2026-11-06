@@ -20,13 +20,14 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
   ],
   auth: [],
   coach: [],
+  connections: [],
   "coming-soon": [],
   "command-palette": [],
   inbox: ["apply"],
   landing: [],
   paper: ["apply", "coach", "seed"],
   seed: [],
-  settings: ["auth"],
+  settings: ["auth", "connections"],
 }
 
 const SPECIFIER = /["'`]((?:@\/features\/|\.{1,2}\/)[^"'`\s]*)["'`]/g
