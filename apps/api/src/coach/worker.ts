@@ -106,22 +106,25 @@ export async function runCoachWorker(options: {
     let tokens = checkpoint?.usage ?? { inputTokens: 0, outputTokens: 0 }
     const complete = async (saved: Checkpoint) => {
       let restored = await restoreTask(task.id)
-      let waiting = false
+      const deferred: Intent[] = []
       for (const intent of restored.intents) {
         controller.signal.throwIfAborted()
         if (
-          waiting &&
+          restored.intents.some((row) => row.state === "proposed") &&
           intent.state === "planned" &&
           !options.registry.taskRequiresApproval(intent.operation, intent.input)
-        )
+        ) {
+          deferred.push(intent)
           continue
+        }
         await runIntent(lease, intent, options.registry)
-        const refreshed = await restoreTask(task.id)
-        waiting ||= refreshed.intents.some(
-          (intent) => intent.state === "proposed"
-        )
+        restored = await restoreTask(task.id)
       }
       if (await pauseTask(lease)) throw paused
+      for (const intent of deferred) {
+        controller.signal.throwIfAborted()
+        await runIntent(lease, intent, options.registry)
+      }
       restored = await restoreTask(task.id)
       const results: ModelMessage = {
         role: "user",

@@ -17,7 +17,7 @@ import {
   toolIntents,
 } from "../db/schema.js"
 import { insertCoachMessage } from "../chat/index.js"
-import { lockTask } from "../registry/task-fence.js"
+import { closeTaskApprovals, lockTask } from "../registry/task-fence.js"
 import type { Registry } from "../registry/registry.js"
 import { withMissingReceipts } from "./receipt.js"
 import { append, finalize } from "./task-store.js"
@@ -107,6 +107,7 @@ export function finishTask(
     )
       return
     const task = await lockTask(lease, true, state !== "succeeded")
+    if (state !== "succeeded") await closeTaskApprovals(task.id)
     const checkpoints = await getDb()
       .select()
       .from(taskCheckpoints)
@@ -142,8 +143,10 @@ export function finishTask(
       .where(eq(toolIntents.taskId, task.id))
       .orderBy(asc(toolIntents.step), asc(toolIntents.slot))
     for (const intent of outcomes) {
-      if (intent.state !== "read" && intent.state !== "denied") continue
-      const denied = intent.state === "denied"
+      const denied =
+        intent.state === "denied" ||
+        (intent.state === "proposed" && state !== "succeeded")
+      if (intent.state !== "read" && !denied) continue
       const summary = denied ? "Action was not approved" : intent.operation
       const result = z
         .object({ output: z.unknown().optional() })
