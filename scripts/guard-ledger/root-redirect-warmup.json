@@ -1,0 +1,13 @@
+{
+  "id": "root-redirect-warmup",
+  "file": "scripts/root-redirect-warmup.test.mjs",
+  "detector": {
+    "module": "scripts/lib/root-redirect-warmup.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b509ed1bb107c819d97ed477d71742ee7ee2197d",
+    "path": "apps/web/src/features/landing/landing-page.test.tsx"
+  }
+}

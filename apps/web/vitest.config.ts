@@ -9,6 +9,7 @@ import { applyLocalApiUrl } from "./local-env"
 applyLocalApiUrl("test")
 
 const ISOLATED_FILES = [
+  "src/features/landing/landing-redirect-warmup.test.ts",
   "src/features/app-shell/app-shell-warmup.test.ts",
   "src/router-lazy.test.tsx",
   "src/features/connections/connections.test.tsx",

@@ -4,6 +4,8 @@ import { cleanup, screen, waitFor, within } from "@testing-library/react"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
+import "@/test/warm-routes.ts"
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
