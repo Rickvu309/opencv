@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"
+import { makeTempDir } from "../../lib/temp-dir.mjs"
 import { EXAMPLES } from "../issue.mjs"
 import { createFacts } from "../facts.mjs"
 
@@ -44,7 +45,7 @@ export function fakePorts(world = {}) {
   const counts = { issue: 0, worktrees: 0, prs: 0, remoteHeads: 0 }
   const env = {
     PR_RESULT_REPO: "opencv",
-    PR_RESULT_DIR: world.resultDir ?? "/tmp/opencv-fake-results",
+    PR_RESULT_DIR: world.resultDir ?? makeTempDir("ocv-tools-results-"),
     ...(world.env ?? {}),
   }
   const main = world.main ?? "/tmp/opencv"
