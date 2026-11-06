@@ -187,7 +187,8 @@ export const jobContract = commandContract({
     ],
   }),
   "job.update": commandEntry({
-    description: "Update job fields. Stage changes go through job.move.",
+    description:
+      "Update job fields. Stage changes go through job.move. Priority changes need the person's approval.",
     input: jobUpdateInputSchema,
     writes: (input) => ("priority" in input.patch ? [jobPriorityResource] : []),
     output: jobViewSchema
