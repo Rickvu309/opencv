@@ -70,6 +70,25 @@ export function detect(source, path = "") {
           "Durable Stop must target the recovered task id, never current Chat work",
       })
     if (source.includes("coachTaskLifecycleReducer")) {
+      if (!source.includes("requestCoachStop(queryClient, target,"))
+        problems.push({
+          message:
+            "Pending Stop obligations must outlive view detachment in the Stop registry",
+        })
+      if (!/state\.failedStop[\s\S]*?return stop\(true\)/.test(source))
+        problems.push({
+          message:
+            "Retry must preserve failed cancellation identity and use the Stop obligation",
+        })
+      if (
+        !/\[enabled, discoveredTaskId, options\.chatId, local\.kind\]/.test(
+          source
+        )
+      )
+        problems.push({
+          message:
+            "Reconcile the latest discovered task when the lifecycle can subscribe again",
+        })
       if (
         !source.includes("if (!matches()) return") ||
         !source.includes("state.generation === generation") ||

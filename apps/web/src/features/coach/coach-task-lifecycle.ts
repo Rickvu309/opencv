@@ -16,6 +16,7 @@ type Context = {
   chatId: string | null
   task: CoachTaskState | null
   error: string | null
+  failedStop: { taskId: string; chatId: string } | null
 }
 export type CoachTaskLifecycle = Context &
   (
@@ -47,6 +48,7 @@ export type CoachTaskLifecycleEvent =
       | { type: "startLost"; startKey: string; error: string }
       | { type: "recovered"; taskId: string; chatId: string }
       | { type: "stopPressed" }
+      | { type: "stopSucceeded"; taskId: string }
       | { type: "stopFailed"; taskId: string; error: string }
       | { type: "snapshot"; task: CoachTaskState }
     ))
@@ -56,6 +58,7 @@ export const idleCoachTask: CoachTaskLifecycle = {
   chatId: null,
   task: null,
   error: null,
+  failedStop: null,
 }
 export function coachTaskLifecycleReducer(
   state: CoachTaskLifecycle,
@@ -126,11 +129,32 @@ export function coachTaskLifecycleReducer(
                 error: "The Coach stopped.",
               }
             : { ...state, stopRequested: true, error: "The Coach stopped." }
-      return state.kind === "running" ? { ...state, kind: "stopping" } : state
-    case "stopFailed":
-      return state.kind === "stopping" && state.taskId === event.taskId
-        ? { ...state, kind: "running", startKey: null, error: event.error }
+      return state.kind === "running" ||
+        (state.kind === "terminal" && state.failedStop?.taskId === state.taskId)
+        ? { ...state, kind: "stopping" }
         : state
+    case "stopSucceeded":
+      return ("taskId" in state && state.taskId === event.taskId) ||
+        state.failedStop?.taskId === event.taskId
+        ? { ...state, failedStop: null, error: null }
+        : state
+    case "stopFailed": {
+      if (
+        (state.kind !== "stopping" &&
+          state.kind !== "running" &&
+          state.kind !== "terminal") ||
+        state.taskId !== event.taskId ||
+        !state.chatId
+      )
+        return state
+      const failure = {
+        failedStop: { taskId: event.taskId, chatId: state.chatId },
+        error: event.error,
+      }
+      return state.kind === "terminal"
+        ? { ...state, ...failure }
+        : { ...state, ...failure, kind: "running", startKey: null }
+    }
     case "recovered":
       if (state.kind !== "idle" && state.kind !== "terminal") return state
       if (state.kind === "terminal" && state.taskId === event.taskId)
@@ -138,6 +162,8 @@ export function coachTaskLifecycleReducer(
       return {
         ...idleCoachTask,
         generation: state.generation + 1,
+        failedStop: state.failedStop,
+        error: state.failedStop ? state.error : null,
         kind: "running",
         taskId: event.taskId,
         startKey: null,

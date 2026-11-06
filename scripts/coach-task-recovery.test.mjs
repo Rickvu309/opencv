@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/coach-task-recovery.mjs"
@@ -167,7 +168,7 @@ for (const [name, mistake] of [
 }
 
 const machineClean =
-  'export function useCoachTask() { coachTaskLifecycleReducer; if (!matches()) return; state.generation === generation; state.request.startKey === startKey; runContractCommand(client, "coach.stop", { chatId, taskId }) }'
+  'export function useCoachTask() { coachTaskLifecycleReducer; if (!matches()) return; state.generation === generation; state.request.startKey === startKey; runContractCommand(client, "coach.stop", { chatId, taskId }); requestCoachStop(queryClient, target, onFailure); if (state.failedStop) return stop(true); [enabled, discoveredTaskId, options.chatId, local.kind] }'
 
 for (const [name, clean, mistake] of [
   [
@@ -195,6 +196,45 @@ for (const [name, clean, mistake] of [
         )
       ),
       []
+    )
+  })
+}
+
+const stopRegistryGuards = [
+  [
+    "Stop survives detach outside the view",
+    "requestCoachStop(queryClient, target,",
+    "stopTask(",
+  ],
+  ["Retry retains the failed Stop", "state.failedStop", "state.error"],
+  [
+    "discovery is reconsidered after recovery",
+    "options.chatId, local.kind]",
+    "options.chatId]",
+  ],
+]
+for (const [name, required, mistake] of stopRegistryGuards) {
+  test(name, () => {
+    const clean = readFileSync(
+      new URL(
+        "../apps/web/src/features/coach/use-coach-task.ts",
+        import.meta.url
+      ),
+      "utf8"
+    )
+    assert.deepEqual(detect(clean), [])
+    assert.ok(detect(clean.replaceAll(required, mistake)).length > 0)
+    const historic = execFileSync(
+      "git",
+      ["show", "cf31f543:apps/web/src/features/coach/use-coach-task.ts"],
+      { encoding: "utf8" }
+    )
+    assert.ok(
+      detect(historic).some(
+        (problem) =>
+          problem.message ===
+          detect(clean.replaceAll(required, mistake))[0].message
+      )
     )
   })
 }

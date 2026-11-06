@@ -20,7 +20,11 @@ import type { UseCoachTurnOptions, CoachSendOptions } from "./use-coach-turn.ts"
 import { coachSendErrorMessage } from "./coach-error.ts"
 import { startCoachTask, subscribeCoachTask } from "@/lib/coach-task-client.ts"
 import { taskIsTerminal, taskParts } from "@/lib/coach-task-state.ts"
-import { runContractCommand, undoActivity } from "@/lib/contract-client.ts"
+import { undoActivity } from "@/lib/contract-client.ts"
+import {
+  requestCoachStop,
+  type CoachStopTarget,
+} from "./coach-stop-obligations.ts"
 import { useCoachMode } from "./use-coach-mode.ts"
 
 import {
@@ -34,6 +38,10 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
   const { mode } = useCoachMode()
   const [local, dispatch] = useReducer(coachTaskLifecycleReducer, idleCoachTask)
   const machine = useRef(idleCoachTask)
+  const inFlightStart = useRef<{
+    startKey: string
+    pending: Promise<{ taskId: string }>
+  } | null>(null)
   const transition = (event: CoachTaskLifecycleEvent) => {
     machine.current = coachTaskLifecycleReducer(machine.current, event)
     dispatch(event)
@@ -63,7 +71,7 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         taskId: discoveredTaskId,
         chatId: options.chatId,
       })
-  }, [enabled, discoveredTaskId, options.chatId])
+  }, [enabled, discoveredTaskId, options.chatId, local.kind])
   const taskId = "taskId" in local ? local.taskId : null
   const task = local.chatId === options.chatId ? local.task : null
   useEffect(() => {
@@ -109,34 +117,81 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
       text: textFromParts(parts),
       parts,
     })
-  const stopTask = async (taskId: string, generation: number) => {
-    const state = machine.current
+  const stop = (retryFailed = false) => {
+    const previous = machine.current
+    const failedStop = retryFailed ? previous.failedStop : null
+    if (previous.kind === "stopping" && !failedStop) return true
+    const target: CoachStopTarget | null = failedStop
+      ? { kind: "task", ...failedStop }
+      : (previous.kind === "running" || previous.kind === "stopping") &&
+          previous.chatId
+        ? { kind: "task", chatId: previous.chatId, taskId: previous.taskId }
+        : previous.kind === "starting" && previous.delivery.kind !== "unsent"
+          ? {
+              kind: "start",
+              startKey: previous.request.startKey,
+              input: previous.delivery.input,
+              pending:
+                inFlightStart.current?.startKey === previous.request.startKey
+                  ? inFlightStart.current.pending
+                  : null,
+            }
+          : null
+    const generation = previous.generation
     if (
-      state.kind !== "stopping" ||
-      state.taskId !== taskId ||
-      state.generation !== generation ||
-      !state.chatId
+      !failedStop ||
+      ("taskId" in previous && previous.taskId === failedStop.taskId)
     )
-      return
-    try {
-      await runContractCommand(queryClient, "coach.stop", {
-        chatId: parseChatId(state.chatId),
-        taskId,
-      })
-    } catch (error) {
+      transition({ type: "stopPressed", generation })
+    if (!target) return false
+    if (previous.kind === "starting" && previous.delivery.kind === "lost")
       transition({
-        type: "stopFailed",
-        taskId,
+        type: "startSent",
         generation,
-        error: coachSendErrorMessage(error),
+        startKey: previous.request.startKey,
+        input: previous.delivery.input,
       })
+    const accept = (taskId: string) => {
+      if (target.kind === "start") {
+        transition({
+          type: "startSent",
+          generation,
+          startKey: target.startKey,
+          input: target.input,
+        })
+        transition({
+          type: "startAccepted",
+          generation,
+          startKey: target.startKey,
+          taskId,
+        })
+      }
     }
+    void requestCoachStop(queryClient, target, (taskId, error) => {
+      if (taskId) {
+        accept(taskId)
+        transition({
+          type: "stopFailed",
+          generation,
+          taskId,
+          error: coachSendErrorMessage(error),
+        })
+      }
+    }).then((result) => {
+      if (result.taskId) accept(result.taskId)
+      if (result.ok)
+        transition({ type: "stopSucceeded", generation, taskId: result.taskId })
+      else if (!result.taskId && target.kind === "start")
+        transition({
+          type: "startLost",
+          generation,
+          startKey: target.startKey,
+          error: coachSendErrorMessage(result.error),
+        })
+    })
+    return true
   }
-  const executeStart = async (
-    generation: number,
-    startKey: string,
-    recovering = false
-  ) => {
+  const executeStart = async (generation: number, startKey: string) => {
     const matches = () => {
       const state = machine.current
       return state.kind === "starting" &&
@@ -183,16 +238,18 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
               context: sendOptions.context,
             }
       transition({ type: "startSent", generation, startKey, input })
-      const started = await startCoachTask(queryClient, input, startKey)
+      const pending = startCoachTask(queryClient, input, startKey)
+      inFlightStart.current = { startKey, pending }
+      const started = await pending
+      if (inFlightStart.current?.pending === pending)
+        inFlightStart.current = null
       if (!matches()) return
-      const accepted = transition({
+      transition({
         type: "startAccepted",
         generation,
         startKey,
         taskId: started.taskId,
       })
-      if (accepted.kind === "stopping")
-        await stopTask(accepted.taskId, generation)
     } catch (error) {
       const state = matches()
       if (!state) return
@@ -202,8 +259,6 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         startKey,
         error: coachSendErrorMessage(error),
       })
-      if (state.stopRequested && state.delivery.kind === "sent" && !recovering)
-        void executeStart(generation, startKey, true)
     }
   }
   const launch = (
@@ -267,6 +322,11 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
       launch(text, typeof sendOptions === "boolean" ? {} : sendOptions),
     retry: () => {
       const state = machine.current
+      if (
+        state.failedStop ||
+        (state.kind === "starting" && state.stopRequested)
+      )
+        return stop(true)
       if (state.kind === "starting" && state.delivery.kind === "lost") {
         transition({
           type: "startSent",
@@ -274,30 +334,13 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
           startKey: state.request.startKey,
           input: state.delivery.input,
         })
-        void executeStart(state.generation, state.request.startKey, true)
+        void executeStart(state.generation, state.request.startKey)
         return true
       }
       return Boolean(options.chatId) && launch("", {}, true)
     },
     regenerate: () => Boolean(options.chatId) && launch("", {}, true),
-    stop: () => {
-      const previous = machine.current
-      const state = transition({
-        type: "stopPressed",
-        generation: previous.generation,
-      })
-      if (state.kind === "stopping" && previous.kind === "running")
-        void stopTask(state.taskId, state.generation)
-      if (state.kind === "starting" && state.delivery.kind === "lost") {
-        transition({
-          type: "startSent",
-          generation: state.generation,
-          startKey: state.request.startKey,
-          input: state.delivery.input,
-        })
-        void executeStart(state.generation, state.request.startKey, true)
-      }
-    },
+    stop: () => stop(),
     undo: async (activityId: string) => {
       await undoActivity(queryClient, activityId)
       options.onAfterUndo?.()

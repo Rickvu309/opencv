@@ -345,7 +345,7 @@ it.each([false, true])(
   }
 )
 
-it("discards delayed recovery after detach and a newer turn", async () => {
+it("fulfills the original Stop after detach without stopping the newer turn", async () => {
   setMockChats([{ id: CHAT, title: "Reopened" }])
   const recovery = deferred<void>()
   const inputs: Array<Record<string, unknown>> = []
@@ -396,7 +396,7 @@ it("discards delayed recovery after detach and a newer turn", async () => {
   })
   await waitFor(() => expect(inputs).toHaveLength(3))
   await act(async () => recovery.resolve())
-  expect(stops).toEqual([])
+  expect(stops).toEqual([{ chatId: CHAT, taskId: TASK }])
   expect(hook.result.current.progress.active).toBe(true)
   hook.unmount()
   hook.client.clear()
