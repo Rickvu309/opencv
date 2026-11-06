@@ -1,3 +1,4 @@
+import { shouldAutoTitleChat, deterministicChatTitle } from "@workspace/domain"
 import {
   CHAT_OPEN_WINDOW_DAYS,
   DEFAULT_CHAT_TITLE,
@@ -347,6 +348,7 @@ export async function insertCoachMessage(input: {
   parts: unknown[]
   status: "final" | "error" | "aborted"
   workedMs: number
+  autoTitle?: boolean
   supersedesMessageId?: string | null
 }) {
   await ownedChat(input.userId, input.chatId)
@@ -403,6 +405,37 @@ export async function insertCoachMessage(input: {
       .update(chats)
       .set({ updatedAt: now })
       .where(eq(chats.id, input.chatId))
+    if (input.autoTitle && input.status === "final") {
+      const [chat] = await tx
+        .select()
+        .from(chats)
+        .where(eq(chats.id, input.chatId))
+        .for("update")
+      const messages = await tx
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.chatId, input.chatId))
+        .orderBy(asc(chatMessages.createdAt), asc(chatMessages.id))
+      const decision = shouldAutoTitleChat({
+        currentTitle: chat!.title,
+        status: input.status,
+        messages: messages
+          .filter((message) => message.id !== id)
+          .map((message) => ({
+            role: message.role === "person" ? "user" : "coach",
+            text: message.text,
+            status: message.status ?? undefined,
+          })),
+      })
+      const title =
+        decision &&
+        deterministicChatTitle({
+          userText: decision.userText,
+          coachText: input.text,
+        })
+      if (title)
+        await tx.update(chats).set({ title }).where(eq(chats.id, input.chatId))
+    }
     return id
   })
   return savedId ? { id: savedId } : null

@@ -5,6 +5,7 @@ import {
   type PendingActionRow,
 } from "@workspace/domain"
 
+import { cancelChatTask } from "../coach/index.js"
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import {
@@ -132,7 +133,11 @@ export function registerChat(registry: Registry) {
     "coach.stop": {
       handler: async (input, actor) => {
         await getChat(actor.userId, input.chatId)
-        return { stopped: stopChat(input.chatId) }
+        return {
+          stopped:
+            (await cancelChatTask(input.chatId, actor.userId)) ||
+            stopChat(input.chatId),
+        }
       },
       reversal: () => null,
       activity: () => null,

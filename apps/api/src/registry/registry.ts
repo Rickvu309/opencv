@@ -12,6 +12,7 @@ import {
   ERROR_CODES,
   effectiveCoachPolicy,
   approvedProposalActor,
+  coachActor,
   defineCommand,
   isCoachActor,
   personActor,
@@ -20,11 +21,19 @@ import {
   type QuerySpec,
   type ReversalExpect,
 } from "@workspace/domain"
+import { resolveTaskApproval } from "../coach/index.js"
 import { and, eq } from "drizzle-orm"
 
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { getDb, savepoint, transaction } from "../db/context.js"
-import { PENDING_TTL_MS, createProposal } from "./proposals.js"
+import {
+  PENDING_TTL_MS,
+  createProposal,
+  lockProposal,
+  expireIfStale,
+  expireTaskApprovals,
+  assertTaskReceipt,
+} from "./proposals.js"
 import {
   delegateAllowed,
   requireLiveProposalConnection,
@@ -184,6 +193,14 @@ export class Registry {
         coach: query.coach,
       })),
     }
+  }
+
+  taskRequiresApproval(name: string, input: unknown) {
+    const command = this.commands.get(name)
+    return command
+      ? effectiveCoachPolicy(command, parseInput(command.input, input)) ===
+          "confirm"
+      : false
   }
 
   commandNames() {
@@ -414,7 +431,7 @@ export class Registry {
       rows.map(async (row) => {
         const completed =
           row.status === "approved"
-            ? await this.activityByKey(userId, row.id)
+            ? await this.activityByKey(userId, row.coachIntentKey ?? row.id)
             : null
         return {
           id: row.id,
@@ -446,17 +463,12 @@ export class Registry {
   }
 
   async approve(userId: string, pendingActionId: string) {
-    await this.expireIfStale(userId, pendingActionId)
+    await expireIfStale(userId, pendingActionId)
     return transaction(async () => {
-      const row = await this.lockPending(userId, pendingActionId)
-      if (row.coachTaskId) {
-        throw new CommandError(
-          ERROR_CODES.CONFLICT,
-          "This task confirmation requires the durable worker."
-        )
-      }
+      const { row, task } = await lockProposal(userId, pendingActionId)
       if (row.status === "approved") {
-        return this.activityByKey(userId, row.id)
+        if (task) await assertTaskReceipt(userId, row)
+        return this.activityByKey(userId, row.coachIntentKey ?? row.id)
       }
       if (row.status === "expired") {
         throw new CommandError(
@@ -476,24 +488,33 @@ export class Registry {
       const result = await this.execute({
         name: row.command,
         input: row.input,
-        actor: delegate ?? approvedProposalActor(userId, row.chatId),
+        actor:
+          delegate ??
+          (task
+            ? coachActor(task.task.ownerId, task.task.chatId, task.turnId)
+            : approvedProposalActor(userId, row.chatId)),
         [approvedDelegate]: row.id,
-        idempotencyKey: row.id,
+        idempotencyKey: row.coachIntentKey ?? row.id,
+        [taskExecution]: Boolean(task),
         skipConfirm: true,
       })
       await getDb()
         .update(pendingActions)
         .set({ status: "approved" })
         .where(eq(pendingActions.id, row.id))
+      if (task) {
+        await assertTaskReceipt(userId, row)
+        await resolveTaskApproval(task, "committed", result, result.activityId)
+      }
       if (result.activityId) return this.activityById(userId, result.activityId)
-      return this.activityByKey(userId, row.id)
+      return this.activityByKey(userId, row.coachIntentKey ?? row.id)
     })
   }
 
   async deny(userId: string, pendingActionId: string) {
-    await this.expireIfStale(userId, pendingActionId)
+    await expireIfStale(userId, pendingActionId)
     return transaction(async () => {
-      const row = await this.lockPending(userId, pendingActionId)
+      const { row, task } = await lockProposal(userId, pendingActionId)
       if (row.status === "denied") return row
       if (row.status === "expired") {
         throw new CommandError(
@@ -511,6 +532,7 @@ export class Registry {
         .update(pendingActions)
         .set({ status: "denied" })
         .where(eq(pendingActions.id, row.id))
+      if (task) await resolveTaskApproval(task, "denied", { denied: true })
       return { ...row, status: "denied" as const }
     })
   }
@@ -570,39 +592,8 @@ export class Registry {
     return rows[0] ?? GATES_CLOSED_WITHOUT_CONSENT_TO_READ
   }
 
-  private async expireIfStale(userId: string, id: string) {
-    const rows = await getDb()
-      .select()
-      .from(pendingActions)
-      .where(and(eq(pendingActions.id, id), eq(pendingActions.userId, userId)))
-      .limit(1)
-    const row = rows[0]
-    if (!row || row.status !== "pending") return
-    if (Date.now() - row.createdAt.getTime() <= PENDING_TTL_MS) return
-    await getDb()
-      .update(pendingActions)
-      .set({ status: "expired" })
-      .where(eq(pendingActions.id, row.id))
-    throw new CommandError(
-      ERROR_CODES.PENDING_EXPIRED,
-      "This confirmation expired. Ask the Coach again."
-    )
-  }
-
-  private async lockPending(userId: string, id: string) {
-    const rows = await getDb()
-      .select()
-      .from(pendingActions)
-      .where(and(eq(pendingActions.id, id), eq(pendingActions.userId, userId)))
-      .for("update")
-    const row = rows[0]
-    if (!row) {
-      throw new CommandError(
-        ERROR_CODES.NOT_FOUND,
-        "That confirmation was not found"
-      )
-    }
-    return row
+  expireTaskApprovals() {
+    return expireTaskApprovals()
   }
 
   private async replayByKey(userId: string, key: string) {

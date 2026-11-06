@@ -1,4 +1,44 @@
+import { z } from "zod"
 import type { ChatToolName, CoachStreamPart } from "@workspace/domain"
+
+export const modelMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.union([
+    z.string(),
+    z.array(
+      z.union([
+        z.object({ type: z.literal("text"), text: z.string() }),
+        z.object({
+          type: z.literal("thinking"),
+          thinking: z.string(),
+          signature: z.string(),
+        }),
+        z.object({ type: z.literal("redacted_thinking"), data: z.string() }),
+        z.object({
+          type: z.literal("tool_use"),
+          id: z.string(),
+          name: z.string(),
+          input: z.unknown(),
+        }),
+        z.object({
+          type: z.literal("tool_result"),
+          tool_use_id: z.string(),
+          content: z.string(),
+          is_error: z.boolean().optional(),
+        }),
+      ])
+    ),
+  ]),
+})
+export type ModelMessage = z.infer<typeof modelMessageSchema>
+export type WorkerRuntime = (input: {
+  messages: ModelMessage[]
+  completedSteps: number
+  boundary: SerializedStepBoundary
+  signal: AbortSignal
+  maxSteps: number
+  maxTokens: number
+}) => AsyncIterable<CoachStreamPart>
 
 export type ModelIntent = {
   id: string
@@ -10,11 +50,18 @@ export type ModelStep = {
   index: number
   intents: readonly ModelIntent[]
   stopReason: string | null
+  message?: ModelMessage
+  usage?: { inputTokens: number; outputTokens: number }
 }
 
 export type StepBoundary = {
   persistStep(step: ModelStep): Promise<void>
   runIntent<T>(intent: ModelIntent, effect: () => Promise<T>): Promise<T>
+}
+
+export type SerializedStepBoundary = {
+  persistStep(step: ModelStep): Promise<void>
+  runIntent(intent: ModelIntent, effect: () => Promise<string>): Promise<string>
 }
 
 export function createRequestStepBoundary(signal?: AbortSignal): StepBoundary {

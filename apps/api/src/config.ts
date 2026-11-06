@@ -153,3 +153,7 @@ export function googleEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
 export function commitShaFromEnv(env: NodeJS.ProcessEnv) {
   return presentEnv(env.RAILWAY_GIT_COMMIT_SHA)
 }
+
+export function coachWorkerEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
+  return env.COACH_TASK_WORKER === "internal"
+}

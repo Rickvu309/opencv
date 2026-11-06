@@ -29,7 +29,8 @@ export async function readTurnReceipts(
       .where(
         and(
           eq(pendingActions.userId, userId),
-          inArray(pendingActions.turnId, turnIds)
+          inArray(pendingActions.turnId, turnIds),
+          eq(pendingActions.status, "pending")
         )
       ),
   ])

@@ -110,7 +110,7 @@ it.each(["cancelled", "failed"] as const)(
           ).map((row) => row.state)
         ).toEqual(["committed", "proposed", "planned"])
         expect((await getDb().select().from(pendingActions))[0]?.status).toBe(
-          "pending"
+          state === "cancelled" ? "denied" : "pending"
         )
         await finalize(lease, state)
         await finalize(lease, state)

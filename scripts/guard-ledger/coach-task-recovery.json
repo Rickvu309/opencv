@@ -1,0 +1,13 @@
+{
+  "id": "coach-task-recovery",
+  "file": "scripts/coach-task-recovery.test.mjs",
+  "detector": {
+    "module": "scripts/lib/coach-task-recovery.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "6891dd351e737b360ce4f5329274f7eff018edee",
+    "path": "apps/api/src/coach/usage-store.ts"
+  }
+}
