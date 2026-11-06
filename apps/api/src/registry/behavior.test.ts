@@ -9,7 +9,13 @@ import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { agentConnections, oauthClient, user } from "../db/schema.js"
+import {
+  agentConnections,
+  chats,
+  oauthClient,
+  pendingActions,
+  user,
+} from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
@@ -466,4 +472,108 @@ it("keeps nullable Job values in every stored inverse patch", () => {
       readFileSync(new URL("../job/store.ts", import.meta.url), "utf8")
     )
   ).toEqual([])
+})
+
+it("leaves nothing behind when an agent proposal fails and frees the queue when proposals expire", async () => {
+  const { db, client } = await createMigratedTestDb()
+  const registry = installRegistry()
+  const userId = "queue-owner"
+  const strangerId = "queue-stranger"
+  const connectionId = "22222222-2222-4222-8222-222222222222"
+  await db.insert(user).values([
+    { id: userId, name: "Ada", email: "queue@example.com" },
+    { id: strangerId, name: "Bo", email: "stranger@example.com" },
+  ])
+  await db.insert(oauthClient).values({
+    id: "queue-client",
+    clientId: "queue-client",
+    redirectUris: ["http://localhost/callback"],
+  })
+  await db.insert(agentConnections).values({
+    id: connectionId,
+    userId,
+    clientId: "queue-client",
+    authorizationCodeId: "queue-authorization",
+    name: "My agent",
+    audience: "http://localhost/mcp",
+    scopes: ["connection.status", "job.read", "job.write"],
+    resources: { kind: "jobs" },
+    policy: { reads: "allow", writes: "approval" },
+    expiresAt: new Date(Date.now() + 60_000),
+  })
+  const delegate = delegateActorSchema.parse({
+    type: "delegate",
+    userId,
+    connectionId,
+    name: "My agent",
+    scopes: ["job.read", "job.write"],
+    resources: "jobs",
+    reads: "allow",
+    writes: "approval",
+  })
+  try {
+    await withDatabase(db, async () => {
+      const foreignJobId = idOf(
+        (
+          await registry.execute({
+            name: "job.create",
+            input: { title: "Not yours", company: "Elsewhere" },
+            actor: personActor(strangerId),
+          })
+        ).output
+      )
+      await expect(
+        registry.execute({
+          name: "job.setPriority",
+          input: { jobId: foreignJobId, priority: "high" },
+          actor: delegate,
+        })
+      ).rejects.toThrow()
+      expect(
+        await db
+          .select()
+          .from(pendingActions)
+          .where(eq(pendingActions.delegateConnectionId, connectionId))
+      ).toHaveLength(0)
+      expect(
+        await db.select().from(chats).where(eq(chats.userId, userId))
+      ).toHaveLength(0)
+
+      const jobId = idOf(
+        (
+          await registry.execute({
+            name: "job.create",
+            input: { title: "Mine", company: "Example" },
+            actor: personActor(userId),
+          })
+        ).output
+      )
+      for (let index = 0; index < 20; index++)
+        await registry.execute({
+          name: "job.setPriority",
+          input: { jobId, priority: index % 2 ? "high" : "low" },
+          actor: delegate,
+        })
+      await expect(
+        registry.execute({
+          name: "job.setPriority",
+          input: { jobId, priority: "high" },
+          actor: delegate,
+        })
+      ).rejects.toThrow("20 pending proposals")
+      await db
+        .update(pendingActions)
+        .set({ createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000) })
+        .where(eq(pendingActions.delegateConnectionId, connectionId))
+      expect(
+        await registry.execute({
+          name: "job.setPriority",
+          input: { jobId, priority: "high" },
+          actor: delegate,
+        })
+      ).toMatchObject({ pending: true })
+    })
+  } finally {
+    await client.close()
+  }
 })

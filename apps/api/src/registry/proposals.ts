@@ -1,14 +1,25 @@
-import { and, count, eq } from "drizzle-orm"
+import { and, count, eq, gt } from "drizzle-orm"
 import type { CoachActor, DelegateActor } from "@workspace/domain"
 import {
   createAgentProposalChat,
   appendAgentProposalApproval,
 } from "../chat/index.js"
-import { getDb } from "../db/context.js"
+import { getDb, savepoint, transaction } from "../db/context.js"
 import { pendingActions, user } from "../db/schema.js"
 import { createId } from "../id.js"
 
-export async function createProposal(options: {
+export const PENDING_TTL_MS = 24 * 60 * 60 * 1000
+
+export function createProposal(options: {
+  actor: CoachActor | DelegateActor
+  command: string
+  input: unknown
+  summary: string
+}) {
+  return transaction(() => savepoint(() => insertProposal(options)))
+}
+
+async function insertProposal(options: {
   actor: CoachActor | DelegateActor
   command: string
   input: unknown
@@ -29,7 +40,8 @@ export async function createProposal(options: {
       .where(
         and(
           eq(pendingActions.delegateConnectionId, actor.connectionId),
-          eq(pendingActions.status, "pending")
+          eq(pendingActions.status, "pending"),
+          gt(pendingActions.createdAt, new Date(Date.now() - PENDING_TTL_MS))
         )
       )
     if ((outstanding?.count ?? 0) >= 20)

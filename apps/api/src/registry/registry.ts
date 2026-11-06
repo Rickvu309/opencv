@@ -15,7 +15,7 @@ import { and, eq } from "drizzle-orm"
 
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { getDb, savepoint, transaction } from "../db/context.js"
-import { createProposal } from "./proposals.js"
+import { PENDING_TTL_MS, createProposal } from "./proposals.js"
 import {
   delegateAllowed,
   requireLiveProposalConnection,
@@ -45,8 +45,6 @@ import type {
 export type { ExecuteResult, ToolEntry } from "./registry-types.js"
 
 const approvedDelegate = Symbol("approvedDelegate")
-
-const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
 const CHECKLIST_COMMANDS = new Set([
   "job.addChecklistItem",
