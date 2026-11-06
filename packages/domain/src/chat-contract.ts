@@ -65,7 +65,10 @@ const chatMessageSchema = z
 export type ChatMessage = z.output<typeof chatMessageSchema>
 
 export const chatDetailSchema = chatListItemSchema
-  .extend({ messages: z.array(chatMessageSchema) })
+  .extend({
+    messages: z.array(chatMessageSchema),
+    activeTaskId: z.string().uuid().nullable().optional(),
+  })
   .strict()
 
 export type ChatDetail = z.output<typeof chatDetailSchema>

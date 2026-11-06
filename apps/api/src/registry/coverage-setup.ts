@@ -6,6 +6,7 @@ import { expect } from "vitest"
 import type { TestDatabase } from "../db/context.js"
 import { jobChecklist, paperShares } from "../db/schema.js"
 import { accountCases } from "./coverage-account.js"
+import { coachCases } from "./coverage-coach.js"
 import { chatCases } from "./coverage-chat.js"
 import type { CoverageCase, CoverageTools } from "./coverage-helpers.js"
 import { inboxCases } from "./coverage-inbox.js"
@@ -80,6 +81,7 @@ export function coverageCases(
   }
   const cases: CoverageCase[] = [
     ...chatCases(tools),
+    ...coachCases(tools),
     ...paperCases(tools),
     ...jobCases(tools),
     ...inboxCases(tools),

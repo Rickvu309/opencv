@@ -394,3 +394,5 @@ export function cancelChatTask(chatId: string, ownerId: string) {
 }
 
 export { resolveTaskApproval } from "./task-approval.js"
+
+export { readTaskEvents } from "./task-reader.js"

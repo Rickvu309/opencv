@@ -17,6 +17,6 @@
     "Propose": "runIntent",
     "Approve": "resolveTaskApproval",
     "Deny": "resolveTaskApproval",
-    "Replay": null
+    "Replay": "readTaskEvents"
   }
 }

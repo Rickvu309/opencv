@@ -75,6 +75,8 @@ const SNAPSHOT_QUERIES: {
   "integrations.list": () => [{}],
   "billing.get": () => [{}],
   "coach.usage": () => [{}],
+  "coach.status": null,
+  "coach.events": null,
   "activity.list": null,
   "chat.list": () => [{}],
   "chat.get": (ids) => ids.chats.map((chatId) => ({ chatId })),
@@ -84,6 +86,9 @@ const SNAPSHOT_QUERIES: {
 
 const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
   "activity.list": "every command refreshes it",
+  "coach.status":
+    "task snapshots are read with a cursor, outside the query cache",
+  "coach.events": "SSE replay advances its own cursor, outside the query cache",
   "job.preview": "reads a posting from the network, not from stored data",
   "link.get": "reads a link from the network, not from stored data",
   "workspace.search": "the web never caches it",

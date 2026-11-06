@@ -31,6 +31,12 @@ import {
 const contextSchema = z.object({ messages: modelMessageSchema.array() })
 const paused = new Error("Task waiting for approval")
 
+class TaskDeadlineError extends Error {
+  constructor() {
+    super("Task deadline exceeded")
+  }
+}
+
 export async function runCoachWorker(options: {
   workerId: string
   registry: Registry
@@ -81,8 +87,7 @@ export async function runCoachWorker(options: {
       await finishTask(lease, "cancelled", options.registry)
       return true
     }
-    if (task.deadlineAt.getTime() <= Date.now())
-      throw new Error("Task deadline exceeded")
+    if (task.deadlineAt.getTime() <= Date.now()) throw new TaskDeadlineError()
     if (
       task.catalogDigest !== options.catalogDigest ||
       task.runtimeVersion !== options.runtimeVersion
@@ -286,11 +291,12 @@ export async function runCoachWorker(options: {
         ))
     if (!current.cancelRequestedAt && transient && (await retryTask(lease)))
       return true
+    console.error("Coach task failed", { taskId: lease.taskId, error })
     await finishTask(
       lease,
       current.cancelRequestedAt ? "cancelled" : "failed",
       options.registry,
-      error instanceof Error ? error.message : "Task failed"
+      error instanceof TaskDeadlineError ? "DEADLINE_EXCEEDED" : "TASK_FAILED"
     )
   } finally {
     stopped = true
