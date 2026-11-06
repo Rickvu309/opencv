@@ -1,5 +1,6 @@
 import {
   COACH_SSE_HEARTBEAT_MS,
+  COACH_MODEL,
   ERROR_CODES,
   coachTurnRequestSchema,
   errorEnvelope,
@@ -13,7 +14,7 @@ import {
   type CoachRuntime,
   type Plan,
 } from "@workspace/domain"
-import type { LanguageModel } from "ai"
+import type { CoachModel } from "./anthropic-runtime.js"
 import { Hono, type Context } from "hono"
 import { streamSSE } from "hono/streaming"
 
@@ -97,13 +98,13 @@ async function startTurn(
     await registry.read("chat.get", { chatId }, actor)
   )
 
-  let model: LanguageModel | undefined
+  let model: CoachModel | undefined
   let provider = "fake"
   let modelId = "fake"
   if (!coach) {
     model = routeCoachModel({ plan, mode, env: coachModelEnv() })
-    provider = plan === "free" ? "openrouter" : "anthropic"
-    modelId = "routed"
+    provider = "anthropic"
+    modelId = COACH_MODEL
   }
   const lastPersonMessage = [...existing.messages]
     .reverse()

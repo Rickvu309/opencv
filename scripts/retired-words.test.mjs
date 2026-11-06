@@ -79,6 +79,24 @@ test("the old project name stays in docs/adr as history, and OpenCV passes", () 
   assert.deepEqual(detect("The OpenCV web app", "docs/deploy.md"), [])
 })
 
+test("the native SDK history option is allowed while Coach conversation names remain guarded", () => {
+  const file = "apps/api/src/coach/anthropic-runtime.ts"
+  assert.deepEqual(detect("      thread: false,", file), [])
+  assert.equal(detect("const threadId = 1", file).length, 1)
+  assert.equal(detect("      thread: true,", file).length, 1)
+  assert.deepEqual(
+    detect(
+      "const threadId = threads[0].id",
+      "apps/api/src/coach/inbox-usage.test.ts"
+    ),
+    []
+  )
+  assert.equal(
+    detect("const threadId = 1", "apps/api/src/coach/turn.ts").length,
+    1
+  )
+})
+
 test("a source file that uses Thread outside the inbox fires, and the inbox may say thread", () => {
   assert.equal(
     detect("const threadId = 1", "apps/web/src/features/coach/x.ts").length,

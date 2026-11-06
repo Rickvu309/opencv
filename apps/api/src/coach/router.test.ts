@@ -1,80 +1,55 @@
-import type { LanguageModel } from "ai"
-import { describe, expect, it } from "vitest"
-
+import { COACH_MODEL, type CoachMode, type Plan } from "@workspace/domain"
+import { describe, expect, it, vi } from "vitest"
+import { FixtureCoachModel } from "./anthropic-fixture.js"
 import { CommandError } from "../registry/errors.js"
-import { interpretPosting, routeCoachModel } from "./router.js"
+import { routeCoachModel, interpretPosting } from "./router.js"
 
-const stub = (id: string) => ({ id }) as unknown as LanguageModel
+const model = new FixtureCoachModel({ doStream: async () => ({ stream: [] }) })
 
-describe("routeCoachModel", () => {
-  it("builds the free model through the injected factory", () => {
-    const seen: string[] = []
-    const model = routeCoachModel({
-      plan: "free",
-      mode: "free",
-      env: { COACH_MODEL_FREE: "openrouter/free" },
-      factories: {
-        openrouter(modelId) {
-          seen.push(modelId)
-          return stub(modelId)
-        },
-        anthropic() {
-          throw new Error("anthropic should not be called")
-        },
-      },
-    })
-    expect(seen).toEqual(["openrouter/free"])
-    expect(model).toEqual({ id: "openrouter/free" })
-  })
-
-  it("refuses a pro plan when the Anthropic key is missing", () => {
-    expect(() =>
+describe("Coach model routing", () => {
+  it.each<[Plan, CoachMode]>([
+    ["free", "free"],
+    ["pro", "free"],
+    ["pro", "light"],
+    ["pro", "max"],
+  ])("routes %s %s to the owner model", (plan, mode) => {
+    const anthropic = vi.fn(() => model)
+    expect(
       routeCoachModel({
-        plan: "pro",
-        mode: "max",
-        env: {},
-        factories: {
-          openrouter: () => stub("no"),
-          anthropic: () => stub("no"),
-        },
+        plan,
+        mode,
+        env: { ANTHROPIC_API_KEY: "test" },
+        factories: { anthropic },
       })
+    ).toBe(model)
+    expect(anthropic).toHaveBeenCalledWith(COACH_MODEL)
+  })
+  it("requires an Anthropic key", () => {
+    expect(() =>
+      routeCoachModel({ plan: "free", mode: "free", env: {} })
     ).toThrow(CommandError)
   })
-
-  it("refuses light mode on a free plan", () => {
+  it("preserves plan entitlement", () => {
     expect(() =>
       routeCoachModel({
         plan: "free",
         mode: "light",
-        env: {},
-        factories: {
-          openrouter: () => stub("no"),
-          anthropic: () => stub("no"),
-        },
+        env: { ANTHROPIC_API_KEY: "test" },
       })
     ).toThrow(CommandError)
   })
-})
-
-describe("free reads", () => {
-  const factories = {
-    openrouter: (modelId: string) => stub(modelId),
-    anthropic: (modelId: string) => stub(modelId),
-  }
-
-  it("reads a posting on the free route", async () => {
-    const fields = await interpretPosting({
-      plan: "free",
-      text: "Northwind Labs is hiring an Intern in Hanoi.",
-      env: { OPENROUTER_API_KEY: "test" },
-      factories,
-      complete: async () =>
-        '{"company":"Northwind Labs","title":"Intern","location":"Hanoi"}',
-    })
-    expect(fields).toEqual({
-      company: "Northwind Labs",
-      title: "Intern",
-      location: "Hanoi",
-    })
+  it("extracts posting fields through the same route", async () => {
+    const anthropic = vi.fn(() => model)
+    expect(
+      await interpretPosting({
+        plan: "free",
+        text: "Posting",
+        env: { ANTHROPIC_API_KEY: "test" },
+        factories: { anthropic },
+        complete: async () =>
+          '{"title":"Intern","company":"Northwind","location":"Hanoi"}',
+      })
+    ).toEqual({ title: "Intern", company: "Northwind", location: "Hanoi" })
+    expect(anthropic).toHaveBeenCalledWith(COACH_MODEL)
   })
 })

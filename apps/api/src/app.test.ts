@@ -35,11 +35,11 @@ describe("GET /health", () => {
     }
   })
 
-  it("never reads env — OPENROUTER_API_KEY set on the process does not affect the factory", async () => {
+  it("never reads env — ANTHROPIC_API_KEY set on the process does not affect the factory", async () => {
     const previous = {
-      OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     }
-    process.env.OPENROUTER_API_KEY = "sk-or-should-not-be-read"
+    process.env.ANTHROPIC_API_KEY = "fixture-should-not-be-read"
 
     try {
       const res = await createApp({ webOrigins: [] }).request("/health")

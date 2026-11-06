@@ -1,11 +1,13 @@
 import {
   DEFAULT_COACH_MODELS,
   type ApplyScanExtractInput,
+  type ChatToolName,
   type CoachRuntime,
   type CoachStreamPart,
   type CoachTurnInput,
 } from "@workspace/domain"
 
+import { createRequestStepBoundary, scriptedSteps } from "./model-step.js"
 import { toolResultFromExecute } from "./receipt.js"
 
 export const DEMO_COACH_SCRIPT: CoachStreamPart[] = [
@@ -48,10 +50,60 @@ export function createScriptedCoachRuntime(
 ): CoachRuntime {
   return {
     streamTurn(input) {
-      if (typeof script === "function") {
-        return overlayTurnModel(script(input), input)
+      const boundary = createRequestStepBoundary()
+      const execute = input.execute
+      const completed = new Set<string>()
+      const pending = new Map<
+        string,
+        { id: string; name: ChatToolName; input: unknown }
+      >()
+      const wrap = async function* (parts: AsyncIterable<CoachStreamPart>) {
+        for await (const part of scriptedSteps(parts, boundary)) {
+          if (part.type === "tool-call")
+            pending.set(part.name, {
+              id: part.toolCallId,
+              name: part.name,
+              input: part.input,
+            })
+          if (part.type === "tool-result" && !completed.has(part.toolCallId)) {
+            const saved = pending.get(part.name)
+            const intent =
+              saved?.id === part.toolCallId
+                ? saved
+                : { id: part.toolCallId, name: part.name, input: {} }
+            if (saved?.id !== part.toolCallId)
+              await boundary.persistStep({
+                index: 0,
+                intents: [intent],
+                stopReason: "tool_use",
+              })
+            await boundary.runIntent(intent, async () => part)
+            completed.add(part.toolCallId)
+          }
+          yield part
+        }
       }
-      return overlayTurnModel(replay(script), input)
+      input = {
+        ...input,
+        execute: execute
+          ? (call) => {
+              const intent = pending.get(call.name)
+              if (!intent) throw new Error("Missing scripted decision")
+              return boundary.runIntent(
+                { ...intent, input: call.input },
+                async () => {
+                  const result = await execute(call)
+                  completed.add(intent.id)
+                  return result
+                }
+              )
+            }
+          : undefined,
+      }
+      if (typeof script === "function") {
+        return overlayTurnModel(wrap(script(input)), input)
+      }
+      return overlayTurnModel(wrap(replay(script)), input)
     },
   }
 }

@@ -1,6 +1,10 @@
-import { chatDetailSchema, personActor, titleFrom } from "@workspace/domain"
-import { simulateReadableStream, generateText } from "ai"
-import { MockLanguageModelV3 } from "ai/test"
+import {
+  COACH_MODEL,
+  chatDetailSchema,
+  personActor,
+  titleFrom,
+} from "@workspace/domain"
+import { fixtureChunks, FixtureCoachModel } from "./anthropic-fixture.js"
 import type { SSEStreamingApi } from "hono/streaming"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { withDatabase } from "../db/context.js"
@@ -9,11 +13,6 @@ import { installRegistry } from "../registry/install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { runCoachTurn } from "./turn.js"
 import { coachModelEnv, setCoachModelEnv } from "../config.js"
-
-vi.mock("ai", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("ai")>()),
-  generateText: vi.fn(async () => ({ text: "Interview prep" })),
-}))
 
 const rename = vi.hoisted(() => ({ fails: false }))
 
@@ -37,7 +36,7 @@ async function completeTurn(
 ) {
   const { client, db } = await createMigratedTestDb()
   const previousEnv = coachModelEnv()
-  setCoachModelEnv({ OPENROUTER_API_KEY: "local-test" })
+  setCoachModelEnv({ ANTHROPIC_API_KEY: "local-test" })
   try {
     await db
       .insert(user)
@@ -71,9 +70,9 @@ async function completeTurn(
           if (options.clientLeft) throw new Error("closed")
         },
       } as unknown as SSEStreamingApi
-      const model = new MockLanguageModelV3({
+      const model = new FixtureCoachModel({
         doStream: async () => ({
-          stream: simulateReadableStream({
+          stream: fixtureChunks({
             chunkDelayInMs: options.clientLeft ? 20 : 0,
             chunks: [
               { type: "text-start", id: "t" },
@@ -104,8 +103,8 @@ async function completeTurn(
         chatId,
         mode: "free",
         plan: "free",
-        provider: "test",
-        modelId: "test",
+        provider: "anthropic",
+        modelId: COACH_MODEL,
         allowTools: false,
         history: [
           {
@@ -133,15 +132,17 @@ afterEach(() => vi.restoreAllMocks())
 
 describe("Coach turn completion", () => {
   it("saves the reply and ends without a second model request", async () => {
-    vi.mocked(generateText).mockClear()
+    const complete = vi.spyOn(await import("./router.js"), "completeFree")
     const { events, saved, usage } = await completeTurn()
     expect(events.at(-1)).toBe("message-end")
     expect(saved.title).toBe("Prepare for a product intern interview")
     expect(
       saved.messages.filter((message) => message.role === "coach")
     ).toMatchObject([{ text: answer, status: "final" }])
-    expect(usage).toMatchObject([{ finishReason: "stop" }])
-    expect(generateText).not.toHaveBeenCalled()
+    expect(usage).toMatchObject([
+      { finishReason: "stop", provider: "anthropic", model: COACH_MODEL },
+    ])
+    expect(complete).not.toHaveBeenCalled()
   })
 
   it("ends a saved turn when automatic rename fails", async () => {
@@ -155,7 +156,9 @@ describe("Coach turn completion", () => {
       saved.messages.filter((message) => message.role === "coach")
     ).toMatchObject([{ text: answer, status: "final" }])
     expect(saved.title).toBe(titleFrom(prompt))
-    expect(usage).toMatchObject([{ finishReason: "stop" }])
+    expect(usage).toMatchObject([
+      { finishReason: "stop", provider: "anthropic", model: COACH_MODEL },
+    ])
   })
 
   it("saves the reply and its usage when every stream write rejects because the client left", async () => {
@@ -167,7 +170,9 @@ describe("Coach turn completion", () => {
     expect(
       saved.messages.filter((message) => message.role === "coach")
     ).toMatchObject([{ text: answer, status: "final" }])
-    expect(usage).toMatchObject([{ finishReason: "stop" }])
+    expect(usage).toMatchObject([
+      { finishReason: "stop", provider: "anthropic", model: COACH_MODEL },
+    ])
   })
 
   it("preserves a title chosen by the person", async () => {

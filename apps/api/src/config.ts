@@ -3,7 +3,6 @@ import { fileURLToPath } from "node:url"
 import {
   resolveCoachDailyTurnLimit,
   localDevUrls,
-  resolveCoachModel,
   type CoachMode,
 } from "@workspace/domain"
 
@@ -48,31 +47,6 @@ export function authUrlFromEnv(env: NodeJS.ProcessEnv): string {
   return configured ? configured : localDevUrls(env.PORT).apiUrl
 }
 
-export function openRouterApiKeyFromEnv(
-  env: NodeJS.ProcessEnv
-): string | undefined {
-  const configured = env.OPENROUTER_API_KEY?.trim()
-  return configured ? configured : undefined
-}
-
-export function openRouterBaseUrlFromEnv(
-  env: NodeJS.ProcessEnv
-): string | undefined {
-  const configured = env.OPENROUTER_BASE_URL?.trim()
-  if (!configured) return undefined
-  if (!/^https?:\/\/\S+$/i.test(configured)) {
-    throw new Error("OPENROUTER_BASE_URL must be an http(s) URL")
-  }
-  return configured
-}
-
-export function coachModelForModeFromEnv(
-  mode: CoachMode,
-  env: NodeJS.ProcessEnv
-): string {
-  return resolveCoachModel(mode, env)
-}
-
 export function coachDailyTurnLimitForModeFromEnv(
   mode: CoachMode,
   env: NodeJS.ProcessEnv
@@ -89,11 +63,6 @@ export function coachRuntimeModeFromEnv(
 
 export type CoachModelEnv = {
   ANTHROPIC_API_KEY?: string
-  OPENROUTER_API_KEY?: string
-  COACH_MODEL_FREE?: string
-  COACH_MODEL_PRO_FREE?: string
-  COACH_MODEL_LIGHT?: string
-  COACH_MODEL_MAX?: string
   COACH_DAILY_TURN_LIMIT_FREE?: string
   COACH_DAILY_TURN_LIMIT_LIGHT?: string
   COACH_DAILY_TURN_LIMIT_MAX?: string
@@ -103,11 +72,6 @@ export type CoachModelEnv = {
 
 const coachEnvKeys = [
   "ANTHROPIC_API_KEY",
-  "OPENROUTER_API_KEY",
-  "COACH_MODEL_FREE",
-  "COACH_MODEL_PRO_FREE",
-  "COACH_MODEL_LIGHT",
-  "COACH_MODEL_MAX",
   "COACH_DAILY_TURN_LIMIT_FREE",
   "COACH_DAILY_TURN_LIMIT_LIGHT",
   "COACH_DAILY_TURN_LIMIT_MAX",

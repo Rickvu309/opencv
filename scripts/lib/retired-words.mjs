@@ -11,6 +11,17 @@ export const RETIRED = [
     hint: "AGENTS.md retired this word, so say Chat or Job. If it is a legitimate use, such as an Inbox mail thread, add the path and the exact word to the allowed list in scripts/lib/retired-words.mjs with a reason.",
     allowed: [
       {
+        path: /^apps\/api\/src\/coach\/inbox-usage\.test\.ts$/,
+        match: /^(threadId|threads)$/,
+        why: "the native Coach transport fixture verifies usage for Inbox mail threads",
+      },
+      {
+        path: /^apps\/api\/src\/coach\/anthropic-runtime\.ts$/,
+        match: /^thread$/,
+        line: /^\s*thread: false,$/,
+        why: "the Anthropic SDK option disables provider conversation storage for request-bound Chat history",
+      },
+      {
         path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox|inbox-contract\.test|invalidation\.formal\.test|registry\.undo-later\.formal\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$)/,
         why: "the inbox modules own the mail thread noun (MailThread, InboxThread, threadId, listThreads, getThread)",
       },

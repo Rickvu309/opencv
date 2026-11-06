@@ -14,7 +14,6 @@ export default defineRailway((ctx) => {
       DATABASE_URL: preserve(),
       GOOGLE_CLIENT_ID: preserve(),
       GOOGLE_CLIENT_SECRET: preserve(),
-      OPENROUTER_API_KEY: preserve(),
       RESEND_API_KEY: preserve(),
       SESSION_SECRET: preserve(),
       WEB_ORIGINS: preserve(),
