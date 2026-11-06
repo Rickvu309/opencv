@@ -45,16 +45,40 @@ type ActivityDbRow = {
 
 function toActivityRow(row: ActivityDbRow): ActivityRow {
   return {
-    ...row,
+    id: row.id,
+    userId: row.userId,
     createdAt: row.createdAt.toISOString(),
+    actor: row.actor,
+    command: row.command,
+    subjectKind: row.subjectKind,
+    subjectId: row.subjectId,
+    summary: row.summary,
+    detail: row.detail,
+    result: row.result,
+    reversalCommand: row.reversalCommand,
+    reversalInput: row.reversalInput,
+    reversalExpect: row.reversalExpect,
     undoneAt: row.undoneAt?.toISOString() ?? null,
+    idempotencyKey: row.idempotencyKey,
+    turnId: row.turnId,
   }
 }
 
 function toPendingActionRow(
   row: { createdAt: Date } & Omit<PendingActionRow, "createdAt">
 ): PendingActionRow {
-  return { ...row, createdAt: row.createdAt.toISOString() }
+  return {
+    id: row.id,
+    userId: row.userId,
+    chatId: row.chatId,
+    command: row.command,
+    input: row.input,
+    summary: row.summary,
+    status: row.status,
+    turnId: row.turnId,
+    delegateConnectionId: row.delegateConnectionId,
+    createdAt: row.createdAt.toISOString(),
+  }
 }
 
 export function registerChat(registry: Registry) {

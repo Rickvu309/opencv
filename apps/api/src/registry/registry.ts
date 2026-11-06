@@ -1,4 +1,14 @@
 import {
+  coachRefusal,
+  type AgentGates,
+  REFUSAL_MESSAGES,
+  GATES_CLOSED_WITHOUT_CONSENT_TO_READ,
+  omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe,
+} from "./coach-policy.js"
+export type { AgentGates } from "./coach-policy.js"
+export { coachRefusal } from "./coach-policy.js"
+import { executeTaskCommand, type TaskLease } from "./task-fence.js"
+import {
   ERROR_CODES,
   effectiveCoachPolicy,
   approvedProposalActor,
@@ -6,7 +16,6 @@ import {
   isCoachActor,
   personActor,
   type Actor,
-  type CoachAccess,
   type CommandSpec,
   type QuerySpec,
   type ReversalExpect,
@@ -32,7 +41,7 @@ import {
   undoOfUndo,
 } from "./expectation.js"
 import { replay, replayStored } from "./replay.js"
-import { receiptDetail, reversalOf } from "./receipt.js"
+import { inputHash, receiptDetail, reversalOf } from "./receipt.js"
 import { readTurnReceipts } from "./turn-receipts.js"
 
 import type {
@@ -44,54 +53,8 @@ import type {
 } from "./registry-types.js"
 export type { ExecuteResult, ToolEntry } from "./registry-types.js"
 
+const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
-
-const CHECKLIST_COMMANDS = new Set([
-  "job.addChecklistItem",
-  "job.setChecklistItem",
-  "job.removeChecklistItem",
-])
-
-export type AgentGates = {
-  agentCvs: boolean
-  agentInterview: boolean
-  agentEmail: boolean
-}
-
-type CoachRefusal = "never" | "cvs" | "interview" | "email"
-
-const REFUSAL_MESSAGES: Record<CoachRefusal, string> = {
-  never: "The Coach cannot do this",
-  cvs: "Turn on Tailored CVs for the Coach in Settings",
-  interview: "Turn on Interview prep for the Coach in Settings",
-  email: "Turn on Email updates for the Coach in Settings",
-}
-
-const GATES_CLOSED_WITHOUT_CONSENT_TO_READ: AgentGates = {
-  agentCvs: false,
-  agentInterview: false,
-  agentEmail: false,
-}
-
-function omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe(
-  command: { idempotency: "keyed" | "none" },
-  key: string | undefined
-) {
-  return command.idempotency === "none" ? undefined : key
-}
-
-export function coachRefusal(
-  entry: { name: string; coach: CoachAccess | boolean },
-  gates: AgentGates
-): CoachRefusal | null {
-  if (entry.coach === "never" || entry.coach === false) return "never"
-  if (entry.name === "paper.edit" && !gates.agentCvs) return "cvs"
-  if (CHECKLIST_COMMANDS.has(entry.name) && !gates.agentInterview) {
-    return "interview"
-  }
-  if (entry.name.startsWith("inbox.") && !gates.agentEmail) return "email"
-  return null
-}
 
 export class Registry {
   private readonly commands = new Map<string, StoredCommand>()
@@ -262,6 +225,23 @@ export class Registry {
     return entries
   }
 
+  executeTask(
+    lease: TaskLease,
+    options: {
+      name: string
+      input: unknown
+      actor: Actor
+      idempotencyKey: string
+    }
+  ) {
+    return executeTaskCommand(
+      lease,
+      options,
+      this.commands.get(options.name),
+      (input) => this.execute({ ...input, [taskExecution]: true })
+    )
+  }
+
   async execute(options: {
     name: string
     input: unknown
@@ -269,8 +249,14 @@ export class Registry {
     idempotencyKey?: string
     skipConfirm?: boolean
     skipActivity?: boolean
+    [taskExecution]?: boolean
     [approvedDelegate]?: string
   }): Promise<ExecuteResult> {
+    if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "The coach: key namespace is reserved for durable tasks"
+      )
     const command = this.commands.get(options.name)
     if (!command) {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
@@ -329,6 +315,7 @@ export class Registry {
             reversalInput: ran.reversal?.input ?? null,
             reversalExpect: ran.reversal?.expect ?? null,
             idempotencyKey: idempotencyKey ?? null,
+            inputHash: options[taskExecution] ? inputHash(options.input) : null,
             turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
           })
       } else if (idempotencyKey) {
@@ -337,6 +324,7 @@ export class Registry {
           .values({
             userId: actor.userId,
             key: idempotencyKey,
+            inputHash: options[taskExecution] ? inputHash(options.input) : null,
             command: command.name,
             result: ran.output ?? null,
           })
@@ -461,6 +449,12 @@ export class Registry {
     await this.expireIfStale(userId, pendingActionId)
     return transaction(async () => {
       const row = await this.lockPending(userId, pendingActionId)
+      if (row.coachTaskId) {
+        throw new CommandError(
+          ERROR_CODES.CONFLICT,
+          "This task confirmation requires the durable worker."
+        )
+      }
       if (row.status === "approved") {
         return this.activityByKey(userId, row.id)
       }

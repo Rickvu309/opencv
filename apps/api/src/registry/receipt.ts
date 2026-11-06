@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import {
   changeHunks,
   diffPaperContent,
@@ -101,4 +102,20 @@ export function reversalOf(
     command: plan.command,
     input: plan.input,
   }
+}
+
+function canonical(input: unknown): string {
+  if (Array.isArray(input)) return `[${input.map(canonical).join(",")}]`
+  if (input !== null && typeof input === "object")
+    return `{${Object.entries(input)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([key, value]) => `${JSON.stringify(key)}:${canonical(value)}`)
+      .join(",")}}`
+  const value = JSON.stringify(input)
+  if (value === undefined) throw new Error("Intent input must be JSON")
+  return value
+}
+
+export function inputHash(input: unknown) {
+  return createHash("sha256").update(canonical(input)).digest("hex")
 }

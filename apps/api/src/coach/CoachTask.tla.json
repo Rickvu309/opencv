@@ -1,0 +1,18 @@
+{
+  "module": "task-store.ts",
+  "actions": {
+    "Claim": "claim",
+    "Renew": "renew",
+    "Expire": "claim",
+    "Persist": "persistStep",
+    "Commit": "runIntent",
+    "Recover": "runIntent",
+    "Cancel": "requestCancel",
+    "Finalize": "finalize",
+    "Crash": "claim",
+    "Begin": "runIntent",
+    "Check": "runIntent",
+    "CallerStatement": "runIntent",
+    "Abort": "runIntent"
+  }
+}

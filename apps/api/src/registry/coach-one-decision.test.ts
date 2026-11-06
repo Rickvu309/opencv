@@ -16,6 +16,12 @@ describe("coachRefusal is the one decision on whether a Coach actor may use an e
     expect(method("read")).toContain("coachRefusal(")
     expect(method("approve")).toContain("this.execute(")
     expect(method("approve")).not.toContain("coachRefusal(")
-    expect(source.match(/coachRefusal\(/g)).toHaveLength(5)
+    const policy = readFileSync(
+      new URL("./coach-policy.ts", import.meta.url),
+      "utf8"
+    )
+    expect(source).toContain('from "./coach-policy.js"')
+    expect(policy.match(/export function coachRefusal\(/g)).toHaveLength(1)
+    expect((source + policy).match(/coachRefusal\(/g)).toHaveLength(5)
   })
 })
