@@ -7,6 +7,9 @@ export const endpoints = {
   profile: "/api/profile",
   billing: "/api/billing",
   integrations: "/api/integrations",
+  coachTask: (taskId: string) => `/api/coach/tasks/${taskId}`,
+  coachTaskEvents: (taskId: string, after: number) =>
+    `/api/coach/tasks/${taskId}/events?after=${after}`,
   coachUsage: "/api/coach/usage",
   accountPhoto: "/api/account/photo",
   accountExport: "/api/account/export",

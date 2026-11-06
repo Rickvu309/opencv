@@ -22,3 +22,5 @@ export { taskSnapshot, readTaskEvents } from "./task-reader.js"
 export { createCoachTaskRoutes } from "./task-http.js"
 
 export { runCoachWorker } from "./worker.js"
+
+export { startEmbeddedCoachWorker } from "./embedded-worker.js"

@@ -24,6 +24,7 @@ export type CoachChatEntry = ChatEntry & {
 
 export type CoachChatRecord = Omit<ChatRecord, "messages"> & {
   messages: CoachChatEntry[]
+  activeTaskId?: string | null
 }
 
 export type ChatViewMessage = {

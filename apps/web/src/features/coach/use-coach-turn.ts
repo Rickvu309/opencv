@@ -33,6 +33,8 @@ import {
 } from "@/features/coach/chat-messages.ts"
 import { isAbortError } from "@/lib/sse.ts"
 
+import { useCoachTask } from "./use-coach-task.ts"
+
 import { useChatCache } from "./chat-cache.ts"
 import { coachProgressReducer, coachProgressRows } from "./coach-progress.ts"
 import {
@@ -82,6 +84,11 @@ export function useCoachTurn({
   focusDocId,
   onAfterUndo,
 }: UseCoachTurnOptions) {
+  const durableEnabled = import.meta.env.VITE_COACH_TASK_WORKER === "internal"
+  const durable = useCoachTask(
+    { chatId, setChatId, titleForCreate, focusDocId, onAfterUndo },
+    durableEnabled
+  )
   const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(turnReducer, IDLE_TURN)
   const [progressCalls, progressDispatch] = useReducer(coachProgressReducer, [])
@@ -93,7 +100,7 @@ export function useCoachTurn({
   const detailQuery = useQuery({
     queryKey: chatDetailKey(chatId ?? ""),
     queryFn: () => getChat(chatId!),
-    enabled: Boolean(chatId) && phase === "idle",
+    enabled: !durableEnabled && Boolean(chatId) && phase === "idle",
     staleTime: Infinity,
   })
 
@@ -532,16 +539,18 @@ export function useCoachTurn({
     [hydrateChat, onAfterUndo, phase, queryClient, chatId]
   )
 
-  return {
-    messages,
-    phase,
-    progress,
-    error: actionError,
-    send,
-    stop,
-    retry,
-    regenerate,
-    undo,
-    cancelInFlight,
-  }
+  return durableEnabled
+    ? durable
+    : {
+        messages,
+        phase,
+        progress,
+        error: actionError,
+        send,
+        stop,
+        retry,
+        regenerate,
+        undo,
+        cancelInFlight,
+      }
 }
