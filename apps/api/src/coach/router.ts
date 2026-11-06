@@ -1,5 +1,3 @@
-import { createAnthropic } from "@ai-sdk/anthropic"
-import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import {
   ERROR_CODES,
   PLAN_REQUIRED_MESSAGE,
@@ -7,39 +5,29 @@ import {
   type CoachMode,
   type Plan,
 } from "@workspace/domain"
-import type { LanguageModel } from "ai"
+import {
+  createAnthropicModel,
+  completeAnthropic,
+  type CoachModel,
+} from "./anthropic-runtime.js"
 
 import { CommandError } from "../registry/errors.js"
 
-export type ModelEnv = {
-  ANTHROPIC_API_KEY?: string
-  OPENROUTER_API_KEY?: string
-  COACH_MODEL_FREE?: string
-  COACH_MODEL_PRO_FREE?: string
-  COACH_MODEL_LIGHT?: string
-  COACH_MODEL_MAX?: string
-}
-
-export type ModelFactories = {
-  openrouter: (modelId: string) => LanguageModel
-  anthropic: (modelId: string) => LanguageModel
-}
+export type ModelEnv = { ANTHROPIC_API_KEY?: string }
+export type ModelFactories = { anthropic: (modelId: string) => CoachModel }
 
 export function routeCoachModel(input: {
   plan: Plan
   mode: CoachMode
   env: ModelEnv
   factories?: ModelFactories
-}): LanguageModel {
+}): CoachModel {
   const env = input.env
-  const route = resolveModelRoute(input.plan, input.mode, env)
+  const route = resolveModelRoute(input.plan, input.mode)
   if (!route.ok) {
     throw new CommandError(ERROR_CODES.PLAN_REQUIRED, PLAN_REQUIRED_MESSAGE)
   }
   const factories = input.factories ?? defaultFactories(env)
-  if (route.provider === "openrouter") {
-    return factories.openrouter(route.modelId)
-  }
   if (!env.ANTHROPIC_API_KEY) {
     throw new CommandError(
       ERROR_CODES.COACH_UNAVAILABLE,
@@ -50,23 +38,15 @@ export function routeCoachModel(input: {
 }
 
 export type FreeComplete = (
-  model: LanguageModel,
+  model: CoachModel,
   prompt: string
 ) => Promise<string>
 
 export async function completeFree(
-  model: LanguageModel,
+  model: CoachModel,
   prompt: string
 ): Promise<string> {
-  const { generateText } = await import("ai")
-  const result = await generateText({
-    model,
-    prompt,
-    timeout: 10_000,
-    maxOutputTokens: 256,
-    maxRetries: 0,
-  })
-  return result.text
+  return completeAnthropic(model, prompt)
 }
 
 export async function interpretPosting(input: {
@@ -115,18 +95,6 @@ function parsePostingJson(
 
 function defaultFactories(env: ModelEnv): ModelFactories {
   return {
-    openrouter(modelId) {
-      const apiKey = env.OPENROUTER_API_KEY
-      if (!apiKey) {
-        throw new CommandError(
-          ERROR_CODES.COACH_UNAVAILABLE,
-          "The Coach is unavailable right now"
-        )
-      }
-      return createOpenRouter({ apiKey })(modelId)
-    },
-    anthropic(modelId) {
-      return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY ?? "" })(modelId)
-    },
+    anthropic: () => createAnthropicModel({ apiKey: env.ANTHROPIC_API_KEY }),
   }
 }

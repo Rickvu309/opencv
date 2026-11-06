@@ -3,8 +3,7 @@ import {
   parseChatTurnEvent,
   titleFrom,
 } from "@workspace/domain"
-import { simulateReadableStream } from "ai"
-import { MockLanguageModelV3 } from "ai/test"
+import { fixtureChunks, FixtureCoachModel } from "./anthropic-fixture.js"
 import type { SSEStreamingApi } from "hono/streaming"
 import { afterAll, describe, expect, it, vi } from "vitest"
 
@@ -365,7 +364,7 @@ describe("liveParts with a model that calls an unknown tool", () => {
       outputTokens: { total: 1, text: 1, reasoning: 0 },
     }
     let calls = 0
-    const model = new MockLanguageModelV3({
+    const model = new FixtureCoachModel({
       doStream: async () => {
         calls += 1
         const chunks =
@@ -393,7 +392,7 @@ describe("liveParts with a model that calls an unknown tool", () => {
                   usage,
                 },
               ]
-        return { stream: simulateReadableStream({ chunks: chunks as never[] }) }
+        return { stream: fixtureChunks({ chunks: chunks as never[] }) }
       },
     })
     const parts = []
@@ -418,11 +417,11 @@ describe("liveParts with a model that calls an unknown tool", () => {
 describe("live model failures and grounding", () => {
   it("sends the selected passage and document version to the model and surfaces provider failure", async () => {
     let observed: unknown
-    const model = new MockLanguageModelV3({
+    const model = new FixtureCoachModel({
       doStream: async (options) => {
         observed = options
         return {
-          stream: simulateReadableStream({
+          stream: fixtureChunks({
             chunks: [
               { type: "error", error: new Error("synthetic-provider-failure") },
             ],

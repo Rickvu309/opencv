@@ -71,14 +71,11 @@ describe("usage windows", () => {
       provider: "anthropic",
       modelId: "claude-opus-5-5",
     })
-    assert.deepEqual(
-      resolveModelRoute("free", "free", { COACH_MODEL_FREE: "custom/free" }),
-      {
-        ok: true,
-        provider: "openrouter",
-        modelId: "custom/free",
-      }
-    )
+    assert.deepEqual(resolveModelRoute("free", "free"), {
+      ok: true,
+      provider: "anthropic",
+      modelId: "claude-opus-5-5",
+    })
   })
 
   it("omits numbers when the window is uncapped", () => {

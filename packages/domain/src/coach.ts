@@ -14,14 +14,11 @@ export const coachModeSchema = z.enum(["free", "light", "max"])
 export type CoachMode = z.infer<typeof coachModeSchema>
 export const DEFAULT_COACH_MODE: CoachMode = "free"
 
-const DEFAULT_COACH_MODEL_FREE = "openrouter/free"
-const DEFAULT_COACH_MODEL_LIGHT = "deepseek/deepseek-chat-v3.1"
-const DEFAULT_COACH_MODEL_MAX = "anthropic/claude-opus-4"
-
+export const COACH_MODEL = "claude-opus-5-5"
 export const DEFAULT_COACH_MODELS = {
-  free: DEFAULT_COACH_MODEL_FREE,
-  light: DEFAULT_COACH_MODEL_LIGHT,
-  max: DEFAULT_COACH_MODEL_MAX,
+  free: COACH_MODEL,
+  light: COACH_MODEL,
+  max: COACH_MODEL,
 } as const satisfies Record<CoachMode, string>
 
 const DEFAULT_COACH_DAILY_TURN_LIMIT_FREE = 50
@@ -33,12 +30,6 @@ const DEFAULT_COACH_DAILY_TURN_LIMITS = {
   light: DEFAULT_COACH_DAILY_TURN_LIMIT_LIGHT,
   max: DEFAULT_COACH_DAILY_TURN_LIMIT_MAX,
 } as const satisfies Record<CoachMode, number>
-
-type CoachModelEnv = {
-  COACH_MODEL_FREE?: string
-  COACH_MODEL_LIGHT?: string
-  COACH_MODEL_MAX?: string
-}
 
 type CoachDailyTurnLimitEnv = {
   COACH_DAILY_TURN_LIMIT_FREE?: string
@@ -59,17 +50,8 @@ function positiveIntEnv(value: string | undefined) {
   return parsed
 }
 
-export function resolveCoachModel(
-  mode: CoachMode,
-  env: CoachModelEnv = {}
-): string {
-  const override = {
-    free: env.COACH_MODEL_FREE,
-    light: env.COACH_MODEL_LIGHT,
-    max: env.COACH_MODEL_MAX,
-  }[mode]
-
-  return trimmedEnv(override) ?? DEFAULT_COACH_MODELS[mode]
+export function resolveCoachModel(mode: CoachMode): string {
+  return DEFAULT_COACH_MODELS[mode]
 }
 
 export function resolveCoachDailyTurnLimit(

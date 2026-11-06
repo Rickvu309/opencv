@@ -115,8 +115,7 @@ const app = createApp({
   sendCodeLimitEnabled,
   commitSha: commitShaFromEnv(process.env),
   interpretPostings:
-    coachRuntimeMode !== "fake" &&
-    Boolean(coachEnv.OPENROUTER_API_KEY || coachEnv.ANTHROPIC_API_KEY),
+    coachRuntimeMode !== "fake" && Boolean(coachEnv.ANTHROPIC_API_KEY),
   fetchJobPosting:
     coachRuntimeMode === "fake" ? fakeFetchJobPosting : undefined,
 })

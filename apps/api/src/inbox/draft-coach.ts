@@ -1,4 +1,5 @@
 import {
+  COACH_MODEL,
   ERROR_CODES,
   personActor,
   type Actor,
@@ -118,8 +119,8 @@ function coachRuntime(plan: Plan) {
   }
   return {
     model: routeCoachModel({ plan, mode: "free", env: coachModelEnv() }),
-    provider: plan === "free" ? "openrouter" : "anthropic",
-    modelId: "routed",
+    provider: "anthropic",
+    modelId: COACH_MODEL,
   }
 }
 

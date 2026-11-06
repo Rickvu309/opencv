@@ -1,4 +1,4 @@
-import type { CoachMode } from "./coach.js"
+import { resolveCoachModel, type CoachMode } from "./coach.js"
 
 const DAY_START_HOUR = 7
 const DEFAULT_SESSION_HOURS = 4
@@ -6,11 +6,6 @@ const DEFAULT_DAILY_TURN_LIMIT_FREE = 20
 const DEFAULT_DAILY_TURN_LIMIT_LIGHT = 10
 const DEFAULT_DAILY_TURN_LIMIT_MAX = 5
 const DEFAULT_DAILY_TURN_LIMIT_PRO_FREE = 0
-
-const ROUTED_MODEL_FREE = "openrouter/free"
-const ROUTED_MODEL_PRO_FREE = "claude-haiku-5-5"
-const ROUTED_MODEL_LIGHT = "claude-sonnet-5-5"
-const ROUTED_MODEL_MAX = "claude-opus-5-5"
 
 export type Plan = "free" | "pro"
 
@@ -21,18 +16,11 @@ type DailyLimitEnv = {
   COACH_DAILY_TURN_LIMIT_PRO_FREE?: string
 }
 
-type ModelRouteEnv = {
-  COACH_MODEL_FREE?: string
-  COACH_MODEL_PRO_FREE?: string
-  COACH_MODEL_LIGHT?: string
-  COACH_MODEL_MAX?: string
-}
-
 type SessionHoursEnv = {
   COACH_SESSION_HOURS?: string
 }
 
-type CoachProviderName = "openrouter" | "anthropic"
+type CoachProviderName = "anthropic"
 
 type ModelRoute =
   | { ok: true; provider: CoachProviderName; modelId: string }
@@ -138,38 +126,9 @@ export function sessionHours(env: SessionHoursEnv = {}) {
   return parsed
 }
 
-export function resolveModelRoute(
-  plan: Plan,
-  mode: CoachMode,
-  env: ModelRouteEnv = {}
-): ModelRoute {
+export function resolveModelRoute(plan: Plan, mode: CoachMode): ModelRoute {
   if (!planAllowsMode(plan, mode)) return { ok: false, code: "PLAN_REQUIRED" }
-  if (plan === "free") {
-    return {
-      ok: true,
-      provider: "openrouter",
-      modelId: trimmed(env.COACH_MODEL_FREE) ?? ROUTED_MODEL_FREE,
-    }
-  }
-  if (mode === "light") {
-    return {
-      ok: true,
-      provider: "anthropic",
-      modelId: trimmed(env.COACH_MODEL_LIGHT) ?? ROUTED_MODEL_LIGHT,
-    }
-  }
-  if (mode === "max") {
-    return {
-      ok: true,
-      provider: "anthropic",
-      modelId: trimmed(env.COACH_MODEL_MAX) ?? ROUTED_MODEL_MAX,
-    }
-  }
-  return {
-    ok: true,
-    provider: "anthropic",
-    modelId: trimmed(env.COACH_MODEL_PRO_FREE) ?? ROUTED_MODEL_PRO_FREE,
-  }
+  return { ok: true, provider: "anthropic", modelId: resolveCoachModel(mode) }
 }
 
 export function coachLimitMessage(plan: Plan, mode: CoachMode) {

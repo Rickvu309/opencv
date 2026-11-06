@@ -3,9 +3,20 @@ import { describe, it } from "node:test"
 
 import {
   appendCoachPart,
+  COACH_MODEL,
+  resolveCoachModel,
   resolveCoachDailyTurnLimit,
   type CoachStreamPart,
 } from "./coach.ts"
+
+describe("resolveCoachModel", () => {
+  it("uses the owner model in every mode", () => {
+    for (const mode of ["free", "light", "max"] as const) {
+      assert.equal(resolveCoachModel(mode), "claude-opus-5-5")
+      assert.equal(resolveCoachModel(mode), COACH_MODEL)
+    }
+  })
+})
 
 const DEFAULT_LIMITS = { free: 50, light: 30, max: 10 }
 

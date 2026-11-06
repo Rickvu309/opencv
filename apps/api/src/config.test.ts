@@ -1,20 +1,15 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_COACH_MODELS } from "@workspace/domain"
-
 import {
   apiPortFromEnv,
   authUrlFromEnv,
   sendCodeLimitEnabledFromEnv,
   coachDailyTurnLimitForModeFromEnv,
-  coachModelForModeFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
   logAuthMailFromEnv,
   dbDriverFromEnv,
   pgliteDataDirFromEnv,
-  openRouterApiKeyFromEnv,
-  openRouterBaseUrlFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
 } from "./config.js"
@@ -144,53 +139,6 @@ describe("authUrlFromEnv", () => {
   it("falls back to the local api when AUTH_URL is unset or blank", () => {
     expect(authUrlFromEnv({})).toBe("http://localhost:3001")
     expect(authUrlFromEnv({ AUTH_URL: "   " })).toBe("http://localhost:3001")
-  })
-})
-
-describe("openRouterApiKeyFromEnv", () => {
-  it("reads OPENROUTER_API_KEY, ignoring padding", () => {
-    expect(
-      openRouterApiKeyFromEnv({ OPENROUTER_API_KEY: "  sk-or-test-key  " })
-    ).toBe("sk-or-test-key")
-  })
-
-  it("returns undefined when OPENROUTER_API_KEY is unset or blank", () => {
-    expect(openRouterApiKeyFromEnv({})).toBeUndefined()
-    expect(
-      openRouterApiKeyFromEnv({ OPENROUTER_API_KEY: "   " })
-    ).toBeUndefined()
-  })
-})
-
-describe("openRouterBaseUrlFromEnv", () => {
-  it("is unset by default, trims an http(s) URL and refuses anything else", () => {
-    expect(openRouterBaseUrlFromEnv({})).toBeUndefined()
-    expect(
-      openRouterBaseUrlFromEnv({ OPENROUTER_BASE_URL: "  " })
-    ).toBeUndefined()
-    expect(
-      openRouterBaseUrlFromEnv({
-        OPENROUTER_BASE_URL: " http://localhost:9999/v1 ",
-      })
-    ).toBe("http://localhost:9999/v1")
-    expect(() =>
-      openRouterBaseUrlFromEnv({ OPENROUTER_BASE_URL: "file:///etc/passwd" })
-    ).toThrow("OPENROUTER_BASE_URL must be an http(s) URL")
-  })
-})
-
-describe("coachModelForModeFromEnv", () => {
-  it("reads the per-mode vars and falls back to the mode defaults", () => {
-    expect(coachModelForModeFromEnv("free", {})).toBe(DEFAULT_COACH_MODELS.free)
-    expect(coachModelForModeFromEnv("light", {})).toBe(
-      DEFAULT_COACH_MODELS.light
-    )
-    expect(coachModelForModeFromEnv("max", {})).toBe(DEFAULT_COACH_MODELS.max)
-    expect(
-      coachModelForModeFromEnv("max", {
-        COACH_MODEL_MAX: "  anthropic/claude-fable-5  ",
-      })
-    ).toBe("anthropic/claude-fable-5")
   })
 })
 
