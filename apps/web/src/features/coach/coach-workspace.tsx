@@ -300,7 +300,12 @@ export function CoachWorkspace({
       {store.configuration === "error" ? (
         <p role="alert" className="text-sm">
           {error}{" "}
-          <Button variant="link" size="sm" onClick={() => store.retry()}>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-11 md:h-8"
+            onClick={() => store.retry()}
+          >
             Retry
           </Button>
         </p>
