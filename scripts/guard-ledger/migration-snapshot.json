@@ -1,0 +1,14 @@
+{
+  "id": "migration-snapshot",
+  "file": "scripts/migration-snapshot.test.mjs",
+  "detector": {
+    "module": "scripts/lib/migration-snapshot.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "926ecd3a8740b8c69d28d12753654275f0823a1f",
+    "path": "apps/api/drizzle/meta/_journal.json",
+    "reads": ["apps/api/drizzle/meta/0010_snapshot.json"]
+  }
+}
