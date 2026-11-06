@@ -1,0 +1,13 @@
+{
+  "id": "shared-fake-results",
+  "file": "scripts/ocv-tools/fake-results.test.mjs",
+  "detector": {
+    "module": "scripts/lib/shared-fake-results.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b680aafbb040d8ff16d79e3f3bef4ca1ba82f138",
+    "path": "scripts/ocv-tools/ports/fake.mjs"
+  }
+}
