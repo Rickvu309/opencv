@@ -9,6 +9,10 @@
     "Recover": "runIntent",
     "Cancel": "requestCancel",
     "Finalize": "finalize",
-    "Crash": "claim"
+    "Crash": "claim",
+    "Begin": "runIntent",
+    "Check": "runIntent",
+    "CallerStatement": "runIntent",
+    "Abort": "runIntent"
   }
 }

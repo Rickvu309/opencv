@@ -392,6 +392,7 @@ export const activity = opencvApp.table(
     reversalExpect: jsonb("reversal_expect").$type<ReversalExpect | null>(),
     undoneAt: timestamptz("undone_at"),
     idempotencyKey: text("idempotency_key"),
+    inputHash: text("input_hash"),
     turnId: uuid("turn_id").references(() => coachUsage.id, {
       onDelete: "set null",
     }),
@@ -420,6 +421,7 @@ export const idempotency = opencvApp.table(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
+    inputHash: text("input_hash"),
     command: text("command").notNull(),
     result: jsonb("result").$type<unknown>(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),

@@ -2,7 +2,7 @@ import { coachActor } from "@workspace/domain"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 import { coachUsage, toolIntents } from "../db/schema.js"
-import { withTaskFence } from "../registry/task-fence.js"
+import { withOwnedTaskFence } from "../registry/task-fence.js"
 import type { Registry } from "../registry/registry.js"
 import { append, inputHash, intentKey } from "./task-store.js"
 import type { Intent, TaskLease } from "./task-types.js"
@@ -12,7 +12,7 @@ export function runIntent(
   intent: Intent,
   registry: Registry
 ) {
-  return withTaskFence(lease, async (task) => {
+  return withOwnedTaskFence(lease, async (task) => {
     const [stored] = await getDb()
       .select()
       .from(toolIntents)

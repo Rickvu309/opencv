@@ -7,7 +7,7 @@ import {
 } from "./coach-policy.js"
 export type { AgentGates } from "./coach-policy.js"
 export { coachRefusal } from "./coach-policy.js"
-import { withTaskFence, type TaskLease } from "./task-fence.js"
+import { executeTaskCommand, type TaskLease } from "./task-fence.js"
 import {
   ERROR_CODES,
   effectiveCoachPolicy,
@@ -41,7 +41,7 @@ import {
   undoOfUndo,
 } from "./expectation.js"
 import { replay, replayStored } from "./replay.js"
-import { receiptDetail, reversalOf } from "./receipt.js"
+import { inputHash, receiptDetail, reversalOf } from "./receipt.js"
 import { readTurnReceipts } from "./turn-receipts.js"
 
 import type {
@@ -53,6 +53,7 @@ import type {
 } from "./registry-types.js"
 export type { ExecuteResult, ToolEntry } from "./registry-types.js"
 
+const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
 
 export class Registry {
@@ -233,28 +234,12 @@ export class Registry {
       idempotencyKey: string
     }
   ) {
-    return withTaskFence(lease, async (task) => {
-      if (
-        options.actor.type !== "coach" ||
-        options.actor.userId !== task.ownerId ||
-        options.actor.chatId !== task.chatId
-      )
-        throw new Error("Task actor mismatch")
-      const command = this.commands.get(options.name)
-      if (
-        !command ||
-        command.transaction === "none" ||
-        command.idempotency !== "keyed"
-      )
-        throw new Error("Task command must be transactional and keyed")
-      const result = await this.execute(options)
-      if (result.pendingActionId)
-        await getDb()
-          .update(pendingActions)
-          .set({ coachTaskId: task.id, coachIntentKey: options.idempotencyKey })
-          .where(eq(pendingActions.id, result.pendingActionId))
-      return result
-    })
+    return executeTaskCommand(
+      lease,
+      options,
+      this.commands.get(options.name),
+      (input) => this.execute({ ...input, [taskExecution]: true })
+    )
   }
 
   async execute(options: {
@@ -264,8 +249,14 @@ export class Registry {
     idempotencyKey?: string
     skipConfirm?: boolean
     skipActivity?: boolean
+    [taskExecution]?: boolean
     [approvedDelegate]?: string
   }): Promise<ExecuteResult> {
+    if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "The coach: key namespace is reserved for durable tasks"
+      )
     const command = this.commands.get(options.name)
     if (!command) {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
@@ -324,6 +315,7 @@ export class Registry {
             reversalInput: ran.reversal?.input ?? null,
             reversalExpect: ran.reversal?.expect ?? null,
             idempotencyKey: idempotencyKey ?? null,
+            inputHash: options[taskExecution] ? inputHash(options.input) : null,
             turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
           })
       } else if (idempotencyKey) {
@@ -332,6 +324,7 @@ export class Registry {
           .values({
             userId: actor.userId,
             key: idempotencyKey,
+            inputHash: options[taskExecution] ? inputHash(options.input) : null,
             command: command.name,
             result: ran.output ?? null,
           })

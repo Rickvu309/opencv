@@ -51,3 +51,18 @@ export async function savepoint<T>(fn: () => Promise<T>): Promise<T> {
     transactionDb.run(inner as unknown as AppDatabase, fn)
   )
 }
+
+export class AmbientTaskTransactionError extends Error {
+  readonly code = "AMBIENT_TASK_TRANSACTION"
+  constructor() {
+    super("Task execution must own its transaction")
+    this.name = "AmbientTaskTransactionError"
+  }
+}
+
+export async function ownedTaskTransaction<T>(
+  fn: () => Promise<T>
+): Promise<T> {
+  if (transactionDb.getStore()) throw new AmbientTaskTransactionError()
+  return transaction(fn)
+}

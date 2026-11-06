@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb, savepoint, transaction } from "../db/context.js"
 import {
@@ -7,26 +6,17 @@ import {
   taskCheckpoints,
   toolIntents,
 } from "../db/schema.js"
-import { lockTask, withTaskFence } from "../registry/task-fence.js"
+import {
+  closeTaskApprovals,
+  lockTask,
+  withTaskFence,
+} from "../registry/task-fence.js"
 import type { Checkpoint, Intent, TaskLease } from "./task-types.js"
 
 export { runIntent } from "./task-effects.js"
 
-function canonical(input: unknown): string {
-  if (Array.isArray(input)) return `[${input.map(canonical).join(",")}]`
-  if (input !== null && typeof input === "object")
-    return `{${Object.entries(input)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([key, value]) => `${JSON.stringify(key)}:${canonical(value)}`)
-      .join(",")}}`
-  const value = JSON.stringify(input)
-  if (value === undefined) throw new Error("Intent input must be JSON")
-  return value
-}
-
-export function inputHash(input: unknown) {
-  return createHash("sha256").update(canonical(input)).digest("hex")
-}
+export { inputHash } from "../registry/receipt.js"
+import { inputHash } from "../registry/receipt.js"
 
 export function intentKey(taskId: string, step: number, slot: number) {
   return `coach:${taskId}:${step}:${slot}`
@@ -321,6 +311,22 @@ export function finalize(
         )
       if (state === "succeeded" && unresolved.length)
         throw new Error("Unresolved intents")
+      if (state !== "succeeded") {
+        await getDb()
+          .update(toolIntents)
+          .set({
+            state: "cancelled",
+            publicResult: { cancelled: true },
+            finishedAt: sql`clock_timestamp()`,
+          })
+          .where(
+            and(
+              eq(toolIntents.taskId, task.id),
+              sql`${toolIntents.state} in ('planned', 'proposed')`
+            )
+          )
+        await closeTaskApprovals(task.id)
+      }
       await getDb().insert(taskEvents).values({
         taskId: task.id,
         seq: task.nextSeq,

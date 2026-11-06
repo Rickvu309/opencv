@@ -83,7 +83,7 @@ it("recovers a committed intent without repeating its Job, receipt or ordered ev
   }
 })
 
-it("ambient rollback removes the product effect, intent result and event together", async () => {
+it("ambient rollback cannot start a task effect", async () => {
   const { client, db } = await createMigratedTestDb()
   try {
     await withDatabase(db, async () => {
@@ -95,7 +95,7 @@ it("ambient rollback removes the product effect, intent result and event togethe
           await runIntent(lease, intent, installRegistry())
           throw new Error("rollback")
         })
-      ).rejects.toThrow("rollback")
+      ).rejects.toMatchObject({ code: "AMBIENT_TASK_TRANSACTION" })
       expect(await getDb().select().from(jobs)).toHaveLength(0)
       expect(await getDb().select().from(activity)).toHaveLength(0)
       expect(await getDb().select().from(taskEvents)).toHaveLength(0)
@@ -263,7 +263,7 @@ it("cancellation before the first claim remains recoverable", async () => {
   }
 })
 
-it("expiry inside an effect rolls back even when an ambient caller catches the failure", async () => {
+it("expiry inside an owned effect rolls back its receipt and result", async () => {
   const { client, db } = await createMigratedTestDb()
   try {
     await withDatabase(db, async () => {
@@ -283,12 +283,10 @@ it("expiry inside an effect rolls back even when an ambient caller catches the f
           return result
         })
       try {
-        await transaction(async () => {
-          await expect(runIntent(lease, intent, registry)).rejects.toThrow(
-            "lease lost"
-          )
-          expect(await getDb().select().from(jobs)).toHaveLength(0)
-        })
+        await expect(runIntent(lease, intent, registry)).rejects.toThrow(
+          "lease lost"
+        )
+        expect(await getDb().select().from(jobs)).toHaveLength(0)
       } finally {
         spy.mockRestore()
       }

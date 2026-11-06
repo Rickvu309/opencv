@@ -1,6 +1,20 @@
+import { ERROR_CODES, type Actor } from "@workspace/domain"
+import { CommandError } from "./errors.js"
+import { inputHash } from "./receipt.js"
+import type { ExecuteResult, StoredCommand } from "./registry-types.js"
 import { and, eq, sql } from "drizzle-orm"
-import { getDb, savepoint, transaction } from "../db/context.js"
-import { coachTasks } from "../db/schema.js"
+import {
+  getDb,
+  ownedTaskTransaction,
+  savepoint,
+  transaction,
+} from "../db/context.js"
+import {
+  activity,
+  idempotency,
+  coachTasks,
+  pendingActions,
+} from "../db/schema.js"
 
 export type TaskLease = Readonly<{
   taskId: string
@@ -55,4 +69,106 @@ export function withTaskFence<T>(
       return result
     })
   )
+}
+
+export function withOwnedTaskFence<T>(
+  lease: TaskLease,
+  effect: (task: Awaited<ReturnType<typeof lockTask>>) => Promise<T>
+) {
+  return ownedTaskTransaction(async () => {
+    const task = await lockTask(lease)
+    const result = await effect(task)
+    await lockTask(lease)
+    return result
+  })
+}
+
+export async function closeTaskApprovals(taskId: string) {
+  await getDb()
+    .update(pendingActions)
+    .set({ status: "denied" })
+    .where(
+      and(
+        eq(pendingActions.coachTaskId, taskId),
+        eq(pendingActions.status, "pending")
+      )
+    )
+}
+
+export function executeTaskCommand(
+  lease: TaskLease,
+  options: {
+    name: string
+    input: unknown
+    actor: Actor
+    idempotencyKey: string
+  },
+  command: StoredCommand | undefined,
+  execute: (options: {
+    name: string
+    input: unknown
+    actor: Actor
+    idempotencyKey: string
+  }) => Promise<ExecuteResult>
+) {
+  return withTaskFence(lease, async (task) => {
+    if (
+      options.actor.type !== "coach" ||
+      options.actor.userId !== task.ownerId ||
+      options.actor.chatId !== task.chatId
+    )
+      throw new Error("Task actor mismatch")
+    if (!options.idempotencyKey.startsWith(`coach:${task.id}:`))
+      throw new CommandError(ERROR_CODES.CONFLICT, "Task key mismatch")
+    if (
+      !command ||
+      command.transaction === "none" ||
+      command.idempotency !== "keyed"
+    )
+      throw new Error("Task command must be transactional and keyed")
+    const result = await execute(options)
+    if (result.pendingActionId)
+      await getDb()
+        .update(pendingActions)
+        .set({ coachTaskId: task.id, coachIntentKey: options.idempotencyKey })
+        .where(eq(pendingActions.id, result.pendingActionId))
+    if (!result.pending) {
+      const receipts = [
+        ...(await getDb()
+          .select({ command: activity.command, inputHash: activity.inputHash })
+          .from(activity)
+          .where(
+            and(
+              eq(activity.userId, task.ownerId),
+              eq(activity.idempotencyKey, options.idempotencyKey)
+            )
+          )),
+        ...(await getDb()
+          .select({
+            command: idempotency.command,
+            inputHash: idempotency.inputHash,
+          })
+          .from(idempotency)
+          .where(
+            and(
+              eq(idempotency.userId, task.ownerId),
+              eq(idempotency.key, options.idempotencyKey)
+            )
+          )),
+      ]
+      if (
+        receipts.length !== 1 ||
+        receipts.some(
+          (receipt) =>
+            receipt.command !== options.name ||
+            receipt.inputHash !== inputHash(options.input)
+        )
+      )
+        throw new CommandError(
+          ERROR_CODES.CONFLICT,
+          "Task receipt does not match its intent"
+        )
+    }
+    return result
+  })
 }
