@@ -543,6 +543,9 @@ it("Retry after exhausted Stop failures retries the original terminal task witho
       Array.from({ length: 4 }, () => ({ chatId: CHAT, taskId: TASK }))
     )
     expect(starts).toHaveLength(1)
+    await waitFor(() => expect(hook.result.current.progress.active).toBe(false))
+    act(() => expect(hook.result.current.send("Next reply")).toBe(true))
+    await waitFor(() => expect(starts).toHaveLength(2))
   } finally {
     hook.unmount()
     hook.client.clear()

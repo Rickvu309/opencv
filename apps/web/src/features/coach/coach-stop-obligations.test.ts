@@ -38,7 +38,9 @@ it("owns the exact pending start through view detachment and deduplicates Stop",
   start.resolve({ taskId: TASK })
   expect(await obligation).toEqual({ ok: true, taskId: TASK })
   expect(io.start).not.toHaveBeenCalled()
-  expect(io.stop.mock.calls).toEqual([[CHAT, TASK]])
+  expect(
+    io.stop.mock.calls.map(([chatId, taskId]) => [chatId, taskId])
+  ).toEqual([[CHAT, TASK]])
 })
 
 it("recovers a lost response with the identical start key and full input", async () => {
@@ -55,8 +57,12 @@ it("recovers a lost response with the identical start key and full input", async
       io
     )
   ).toEqual({ ok: true, taskId: TASK })
-  expect(io.start.mock.calls).toEqual([[input, TASK]])
-  expect(io.stop.mock.calls).toEqual([[CHAT, TASK]])
+  expect(
+    io.start.mock.calls.map(([input, startKey]) => [input, startKey])
+  ).toEqual([[input, TASK]])
+  expect(
+    io.stop.mock.calls.map(([chatId, taskId]) => [chatId, taskId])
+  ).toEqual([[CHAT, TASK]])
 })
 
 it("bounds recovery failures without ever targeting discovered work", async () => {
@@ -87,7 +93,9 @@ it("bounds failed Stops, retains their concrete identity and releases the entry 
     taskId: TASK,
     error,
   })
-  expect(io.stop.mock.calls).toEqual([
+  expect(
+    io.stop.mock.calls.map(([chatId, taskId]) => [chatId, taskId])
+  ).toEqual([
     [CHAT, TASK],
     [CHAT, TASK],
     [CHAT, TASK],
@@ -119,8 +127,114 @@ it("keeps concurrent tasks independent", async () => {
   ).toEqual({ ok: true, taskId: newer })
   first.resolve(undefined)
   await pending
-  expect(io.stop.mock.calls).toEqual([
+  expect(
+    io.stop.mock.calls.map(([chatId, taskId]) => [chatId, taskId])
+  ).toEqual([
     [CHAT, TASK],
     [CHAT, newer],
   ])
+})
+
+it("recovers an indefinitely pending start without retaining its request", async () => {
+  vi.useFakeTimers()
+  const io = transport()
+  const pending = deferred<{ taskId: string }>()
+  const controller = new AbortController()
+  const obligation = fulfillCoachStop(
+    {
+      kind: "start",
+      startKey: TASK,
+      input: { chatId: CHAT, text: "Original" },
+      pending: pending.promise,
+      controller,
+    },
+    io
+  )
+  try {
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(controller.signal.aborted).toBe(true)
+    expect(io.start).toHaveBeenCalledTimes(1)
+    expect(await obligation).toEqual({ ok: true, taskId: TASK })
+    expect(io.stop).toHaveBeenCalledTimes(1)
+    pending.resolve({ taskId: TASK })
+    await Promise.resolve()
+    expect(io.stop).toHaveBeenCalledTimes(1)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it("aborts hanging Stop requests and releases the obligation after bounded attempts", async () => {
+  vi.useFakeTimers()
+  const signals: AbortSignal[] = []
+  const io = {
+    start: async () => ({ taskId: TASK }),
+    stop: vi.fn((_chat: string, _task: string, signal: AbortSignal) => {
+      signals.push(signal)
+      return new Promise<void>(() => {})
+    }),
+    retryDelay: async () => {},
+  }
+  const obligation = fulfillCoachStop(target, io)
+  try {
+    await vi.advanceTimersByTimeAsync(15000)
+    expect(await obligation).toMatchObject({ ok: false, taskId: TASK })
+    expect(signals).toHaveLength(3)
+    expect(signals.every((signal) => signal.aborted)).toBe(true)
+    const nextIo = transport()
+    expect(await fulfillCoachStop(target, nextIo)).toEqual({
+      ok: true,
+      taskId: TASK,
+    })
+    expect(nextIo.stop).toHaveBeenCalledTimes(1)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it("bounds the entire recovery and Stop obligation even when both phases hang", async () => {
+  vi.useFakeTimers()
+  const controller = new AbortController()
+  const io = {
+    start: vi.fn(async (_input: unknown, _key: string, signal: AbortSignal) => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 4900)
+      })
+      signal.throwIfAborted()
+      if (io.start.mock.calls.length < 2) throw new Error("lost")
+      return { taskId: TASK }
+    }),
+    stop: vi.fn<
+      (chatId: string, taskId: string, signal: AbortSignal) => Promise<void>
+    >(() => new Promise<void>(() => {})),
+    retryDelay: async () => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 1000)
+      })
+    },
+  }
+  const failure = vi.fn()
+  const obligation = fulfillCoachStop(
+    {
+      kind: "start",
+      startKey: TASK,
+      input: { chatId: CHAT, text: "Original" },
+      pending: new Promise(() => {}),
+      controller,
+    },
+    io,
+    failure
+  )
+  try {
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(await obligation).toMatchObject({ ok: false, taskId: TASK })
+    expect(controller.signal.aborted).toBe(true)
+    expect(failure).toHaveBeenCalled()
+    expect(await fulfillCoachStop(target, transport())).toEqual({
+      ok: true,
+      taskId: TASK,
+    })
+  } finally {
+    vi.useRealTimers()
+  }
 })

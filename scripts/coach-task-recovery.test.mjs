@@ -238,3 +238,58 @@ for (const [name, required, mistake] of stopRegistryGuards) {
     )
   })
 }
+
+for (const [name, path, historicPath, required] of [
+  [
+    "terminal Retry preserves Send admission",
+    "apps/web/src/features/coach/coach-task-lifecycle.ts",
+    "apps/web/src/features/coach/coach-task-lifecycle.ts",
+    'return state.kind === "running"',
+  ],
+  [
+    "deduplicated failures reach every view",
+    "apps/web/src/lib/coach-stop-registry.ts",
+    "apps/web/src/features/coach/coach-stop-obligations.ts",
+    "existing.listeners.add(onFailure)",
+  ],
+  [
+    "pending I/O has an abortable deadline",
+    "apps/web/src/lib/coach-stop-registry.ts",
+    "apps/web/src/features/coach/coach-stop-obligations.ts",
+    "OBLIGATION_TIMEOUT_MS",
+  ],
+  [
+    "session disposal owns Stop cleanup",
+    "apps/web/src/lib/auth-client.ts",
+    "apps/web/src/lib/auth-client.ts",
+    "disposeCoachStops()",
+  ],
+  [
+    "test teardown owns Stop cleanup",
+    "apps/web/src/test/setup.ts",
+    "apps/web/src/test/setup.ts",
+    "resetCoachStopsForTests()",
+  ],
+]) {
+  test(name, () => {
+    const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+    const mistake =
+      name === "terminal Retry preserves Send admission"
+        ? clean.replace(
+            required,
+            'return state.kind === "terminal" || state.kind === "running"'
+          )
+        : clean.replaceAll(required, "missing")
+    assert.deepEqual(detect(clean, path), [])
+    const failures = detect(mistake, path)
+    assert.ok(failures.length > 0)
+    const historic = execFileSync("git", ["show", `f62efbf1:${historicPath}`], {
+      encoding: "utf8",
+    })
+    assert.ok(
+      detect(historic, historicPath).some(
+        (problem) => problem.message === failures[0].message
+      )
+    )
+  })
+}

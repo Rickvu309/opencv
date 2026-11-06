@@ -129,10 +129,7 @@ export function coachTaskLifecycleReducer(
                 error: "The Coach stopped.",
               }
             : { ...state, stopRequested: true, error: "The Coach stopped." }
-      return state.kind === "running" ||
-        (state.kind === "terminal" && state.failedStop?.taskId === state.taskId)
-        ? { ...state, kind: "stopping" }
-        : state
+      return state.kind === "running" ? { ...state, kind: "stopping" } : state
     case "stopSucceeded":
       return ("taskId" in state && state.taskId === event.taskId) ||
         state.failedStop?.taskId === event.taskId

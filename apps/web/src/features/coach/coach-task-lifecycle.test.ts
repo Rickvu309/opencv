@@ -288,3 +288,24 @@ it("retains exact recovery input and releases a detached start with a new genera
     })
   ).toMatchObject({ kind: "running", taskId: CHAT })
 })
+
+const failedTerminal = reduce(terminal, {
+  type: "stopFailed",
+  generation,
+  taskId: TASK,
+  error: "offline",
+})
+it.each(["stopPressed", "stopSucceeded", "stopFailed"] as const)(
+  "terminal cancellation Retry remains terminal after %s and admits Send",
+  (type) => {
+    const retried = reduce(failedTerminal, { type: "stopPressed", generation })
+    const next = reduce(retried, {
+      type,
+      generation,
+      taskId: TASK,
+      error: "offline",
+    })
+    expect(next.kind).toBe("terminal")
+    expect(reduce(next, { type: "send", request }).kind).toBe("starting")
+  }
+)

@@ -4,6 +4,42 @@ export function detect(source, path = "") {
     source.indexOf("export async function openCoachUsage")
   )
   const problems = []
+  if (source.includes("export function coachTaskLifecycleReducer(")) {
+    const stop = source.slice(
+      source.indexOf('case "stopPressed":'),
+      source.indexOf('case "stopSucceeded":')
+    )
+    if (stop.includes('state.kind === "terminal"'))
+      problems.push({
+        message: "Terminal Stop Retry must preserve the terminal lifecycle",
+      })
+  }
+  if (source.includes("export function fulfillCoachStop(")) {
+    if (!source.includes("existing.listeners.add(onFailure)"))
+      problems.push({
+        message: "Deduplicated Stop callers must subscribe to failures",
+      })
+    if (
+      !source.includes("OBLIGATION_TIMEOUT_MS") ||
+      !source.includes("AbortController")
+    )
+      problems.push({
+        message: "Stop obligations require an abortable overall deadline",
+      })
+  }
+  if (
+    path.endsWith("/lib/auth-client.ts") &&
+    (!source.includes("disposeCoachStops()") ||
+      !source.includes("setCoachStopSession("))
+  )
+    problems.push({
+      message: "Session exit and account change must dispose Coach Stops",
+    })
+  if (
+    path.endsWith("/test/setup.ts") &&
+    !source.includes("resetCoachStopsForTests()")
+  )
+    problems.push({ message: "Shared test teardown must dispose Coach Stops" })
   if (source.includes("const complete = async")) {
     const completion = source.slice(
       source.indexOf("const complete = async"),

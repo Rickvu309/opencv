@@ -7,6 +7,7 @@ import {
   type CoachStartInput,
 } from "@workspace/domain"
 
+import { completeCoachStop } from "@/lib/coach-stop-registry.ts"
 import { apiRequest, apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
@@ -24,12 +25,18 @@ import {
 export async function startCoachTask(
   queryClient: QueryClient,
   input: Omit<CoachStartInput, "startKey">,
-  startKey: string = crypto.randomUUID()
+  startKey: string = crypto.randomUUID(),
+  signal?: AbortSignal
 ) {
-  return runContractCommand(queryClient, "coach.start", {
-    ...input,
-    startKey,
-  })
+  return runContractCommand(
+    queryClient,
+    "coach.start",
+    {
+      ...input,
+      startKey,
+    },
+    { signal }
+  )
 }
 
 async function getSnapshot(taskId: string, signal: AbortSignal) {
@@ -86,6 +93,8 @@ export async function tailCoachTask(input: {
         result: { ok: true, data: action.result },
       })
     }
+    if (taskIsTerminal(state.snapshot.state))
+      completeCoachStop(state.snapshot.chatId, state.snapshot.taskId)
     input.onState(state)
   }
   while (!input.signal.aborted) {
@@ -110,7 +119,11 @@ export async function tailCoachTask(input: {
           })
           if (state.needsSnapshot)
             ingest(await getSnapshot(input.taskId, input.signal))
-          else input.onState(state)
+          else {
+            if (taskIsTerminal(state.snapshot.state))
+              completeCoachStop(state.snapshot.chatId, state.snapshot.taskId)
+            input.onState(state)
+          }
         } else if (wire.event === "error")
           throw new Error("Coach stream disconnected")
         if (taskIsTerminal(state.snapshot.state)) break
@@ -121,6 +134,8 @@ export async function tailCoachTask(input: {
     }
     if (state) {
       state = coachTaskReducer(state, { type: "disconnected" })
+      if (taskIsTerminal(state.snapshot.state))
+        completeCoachStop(state.snapshot.chatId, state.snapshot.taskId)
       input.onState(state)
     }
     await retryAfterDisconnect(input.signal)

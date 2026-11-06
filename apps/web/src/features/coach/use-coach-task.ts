@@ -18,6 +18,7 @@ import { STREAMING_COACH_ID, toChatViewMessages } from "./chat-messages.ts"
 import { coachProgressRows } from "./coach-progress.ts"
 import type { UseCoachTurnOptions, CoachSendOptions } from "./use-coach-turn.ts"
 import { coachSendErrorMessage } from "./coach-error.ts"
+import { observeCoachStop } from "@/lib/coach-stop-registry.ts"
 import { startCoachTask, subscribeCoachTask } from "@/lib/coach-task-client.ts"
 import { taskIsTerminal, taskParts } from "@/lib/coach-task-state.ts"
 import { undoActivity } from "@/lib/contract-client.ts"
@@ -40,6 +41,7 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
   const machine = useRef(idleCoachTask)
   const inFlightStart = useRef<{
     startKey: string
+    controller: AbortController
     pending: Promise<{ taskId: string }>
   } | null>(null)
   const transition = (event: CoachTaskLifecycleEvent) => {
@@ -81,6 +83,19 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
       transition({ type: "snapshot", generation, task })
     )
   }, [enabled, queryClient, taskId, local.generation])
+  useEffect(() => {
+    if (!enabled || !taskId || !local.chatId) return
+    const generation = local.generation
+    return observeCoachStop(local.chatId, taskId, (taskId, error) => {
+      if (taskId)
+        transition({
+          type: "stopFailed",
+          generation,
+          taskId,
+          error: coachSendErrorMessage(error),
+        })
+    })
+  }, [enabled, taskId, local.chatId, local.generation])
   const active =
     local.kind === "running" ||
     local.kind === "stopping" ||
@@ -135,6 +150,10 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
                 inFlightStart.current?.startKey === previous.request.startKey
                   ? inFlightStart.current.pending
                   : null,
+              controller:
+                inFlightStart.current?.startKey === previous.request.startKey
+                  ? inFlightStart.current.controller
+                  : undefined,
             }
           : null
     const generation = previous.generation
@@ -238,8 +257,14 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
               context: sendOptions.context,
             }
       transition({ type: "startSent", generation, startKey, input })
-      const pending = startCoachTask(queryClient, input, startKey)
-      inFlightStart.current = { startKey, pending }
+      const controller = new AbortController()
+      const pending = startCoachTask(
+        queryClient,
+        input,
+        startKey,
+        controller.signal
+      )
+      inFlightStart.current = { startKey, pending, controller }
       const started = await pending
       if (inFlightStart.current?.pending === pending)
         inFlightStart.current = null
