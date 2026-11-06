@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
+import { homedir } from "node:os"
 import test from "node:test"
 import fs from "node:fs"
 import childProcess from "node:child_process"
@@ -137,27 +138,36 @@ test("owners remain independent from profile, billing, actions and coach namespa
   }
 })
 
-test("Vite glob macros are rejected before declaration execution", (t) => {
-  const directory = tempDir(t, "catalog-glob-")
+test("every import.meta use requires direct static env or url access after unwrapping", (t) => {
+  const directory = tempDir(t, "catalog-meta-", path.join(homedir(), "tmp"))
   const file = path.join(directory, declaration)
   mkdirSync(path.dirname(file), { recursive: true })
-  for (const macro of [
-    'import.meta.glob("/apps/api/src/**/*.ts", { eager: true })',
-    'import.meta["glob"]("/apps/api/src/**/*.ts")',
-    'import.meta.globEager("/apps/api/src/**/*.ts")',
-  ]) {
-    writeFileSync(file, `export const dependsOn = () => ${macro}`)
+  for (const source of mistake.browserSources) {
+    writeFileSync(file, source)
     assert.match(
       browserGraph(directory, [declaration]).boundaryErrors[0]?.detail ?? "",
-      /glob/
+      /import.meta/,
+      source
     )
   }
-  writeFileSync(file, "export const dependsOn = () => []")
-  assert.deepEqual(browserGraph(directory, [declaration]).boundaryErrors, [])
+})
+
+test("ordinary env and url metadata reads stay browser-discoverable", (t) => {
+  const directory = tempDir(t, "catalog-meta-", path.join(homedir(), "tmp"))
+  const file = path.join(directory, declaration)
+  mkdirSync(path.dirname(file), { recursive: true })
+  for (const source of clean.browserSources) {
+    writeFileSync(file, source)
+    assert.deepEqual(
+      browserGraph(directory, [declaration]).boundaryErrors,
+      [],
+      source
+    )
+  }
 })
 
 test("browser source snapshots canonicalize CRLF before hashing", (t) => {
-  const directory = tempDir(t, "catalog-crlf-")
+  const directory = tempDir(t, "catalog-crlf-", path.join(homedir(), "tmp"))
   const file = path.join(directory, declaration)
   mkdirSync(path.dirname(file), { recursive: true })
   writeFileSync(file, "export const value = 1\n")

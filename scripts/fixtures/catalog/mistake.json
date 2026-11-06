@@ -8,5 +8,25 @@
       "owner": "fixture"
     }
   ],
-  "servers": []
+  "servers": [],
+  "browserSources": [
+    "export const dependsOn = () => import.meta.glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => import.meta[\"glob\"](\"/apps/api/src/**/*.ts\")",
+    "export const dependsOn = () => import.meta.globEager(\"/apps/api/src/**/*.ts\")",
+    "export const dependsOn = () => (import.meta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (import.meta as ImportMeta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (import.meta satisfies ImportMeta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (<ImportMeta>import.meta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (import.meta!).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (((import.meta as ImportMeta)!) satisfies ImportMeta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "const m = import.meta; export const dependsOn = () => m.glob(\"/apps/api/src/**/*.ts\")",
+    "const m = (import.meta as ImportMeta); export const dependsOn = () => m.glob(\"/apps/api/src/**/*.ts\")",
+    "const m = import.meta!; export const dependsOn = () => m.glob(\"/apps/api/src/**/*.ts\")",
+    "const { glob } = import.meta; export const dependsOn = () => glob(\"/apps/api/src/**/*.ts\")",
+    "export const dependsOn = () => consume(import.meta)",
+    "export const dependsOn = () => ({ ...import.meta })",
+    "export const dependsOn = () => import.meta[\"env\"].PROD",
+    "export const dependsOn = () => (import.meta as ImportMeta)[\"url\"]",
+    "export const dependsOn = () => import.meta.resolve(\"node:fs\")"
+  ]
 }

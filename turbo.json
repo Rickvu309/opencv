@@ -62,9 +62,15 @@
       "cache": false,
       "inputs": [
         "scripts/catalog.mjs",
-        "scripts/lib/**",
-        "packages/domain/src/**",
-        "apps/api/src/**"
+        "scripts/lib/catalog-*.mjs",
+        "scripts/lib/operation-catalog.mjs",
+        "scripts/lib/source-imports.mjs",
+        "packages/domain/src/operation.ts",
+        "packages/domain/src/operations/*/*/operation.ts",
+        "apps/api/src/*/operations/*/*/server.ts",
+        "packages/domain/src/generated/catalog.ts",
+        "packages/domain/src/generated/catalog.digest",
+        "apps/api/src/registry/generated/catalog.ts"
       ],
       "outputs": []
     }

@@ -14,6 +14,8 @@ import { homedir } from "node:os"
 import path from "node:path"
 import test from "node:test"
 
+import "./catalog-build.integration.mjs"
+
 import { catalog, root } from "./catalog.mjs"
 import { discoverCatalog } from "./lib/catalog-discovery.mjs"
 import { catalogPlugin, runCatalog, watchCatalog } from "./lib/catalog-dev.mjs"
@@ -77,29 +79,6 @@ function workspace(t) {
   write(directory, "package.json", '{"type":"module"}')
   return directory
 }
-
-test("descriptor names, wire inputs, resource callbacks and public results infer without casts", () => {
-  execFileSync(
-    process.execPath,
-    [
-      path.join(root, "node_modules/typescript/bin/tsc"),
-      "--ignoreConfig",
-      "--noEmit",
-      "--strict",
-      "--target",
-      "ES2022",
-      "--module",
-      "NodeNext",
-      "--skipLibCheck",
-      "--types",
-      "node",
-      "--typeRoots",
-      "./apps/api/node_modules/@types",
-      "packages/domain/src/operation.test.ts",
-    ],
-    { cwd: root, timeout: 30_000, encoding: "utf8", stdio: "pipe" }
-  )
-})
 
 test("add, rename and delete pairs regenerate deterministically without running implementations", async (t) => {
   const directory = workspace(t)
@@ -249,6 +228,90 @@ test("browser graph rejects server, generated, dynamic and computed imports befo
   }
   write(directory, declaration, descriptor())
   assert.equal((await catalog("generate", directory)).count, 1)
+})
+
+test("generated browser catalogs never bundle API modules through wrapped Vite macros", async (t) => {
+  const { build } = await import(
+    path.join(root, "apps/web/node_modules/vite/dist/node/index.js")
+  )
+  const directory = workspace(t)
+  const privateFile = "apps/api/src/private.ts"
+  const sentinel = "server-private-catalog-sentinel"
+  write(
+    directory,
+    privateFile,
+    `export const privateReceipt = ${JSON.stringify(sentinel)}`
+  )
+  write(directory, implementation, server)
+  const bundle = () =>
+    build({
+      root: directory,
+      configFile: false,
+      logLevel: "silent",
+      build: {
+        write: false,
+        minify: false,
+        rollupOptions: {
+          input: path.join(
+            directory,
+            "packages/domain/src/generated/catalog.ts"
+          ),
+          preserveEntrySignatures: "strict",
+        },
+      },
+    })
+  for (const receiver of [
+    "(import.meta)",
+    "(import.meta as ImportMeta)",
+    "(import.meta!)",
+  ]) {
+    write(
+      directory,
+      declaration,
+      descriptor().replace(
+        "dependsOn: () => []",
+        `dependsOn: () => Object.values(${receiver}.glob("/apps/api/src/private.ts", { eager: true })).map((value) => ({ name: value.privateReceipt, coachFloor: "auto" }))`
+      )
+    )
+    let rejection
+    let output = []
+    try {
+      await catalog("generate", directory)
+      output = (await bundle()).output
+    } catch (error) {
+      rejection = error
+    }
+    assert.deepEqual(
+      output.flatMap((chunk) =>
+        chunk.type === "chunk"
+          ? Object.keys(chunk.modules).filter((file) =>
+              file.includes("/apps/api/")
+            )
+          : []
+      ),
+      [],
+      receiver
+    )
+    assert.ok(
+      output.every(
+        (chunk) => chunk.type !== "chunk" || !chunk.code.includes(sentinel)
+      ),
+      receiver
+    )
+    assert.match(rejection?.message ?? "", /browser-import/, receiver)
+  }
+  write(
+    directory,
+    declaration,
+    `${descriptor()}\nexport const metadata = () => [import.meta.env.PROD, import.meta.url]`
+  )
+  await catalog("generate", directory)
+  const safe = await bundle()
+  assert.ok(
+    safe.output.every(
+      (chunk) => chunk.type !== "chunk" || !chunk.code.includes(sentinel)
+    )
+  )
 })
 
 test("build and dev entry paths reject stale output before launching consumers", async (t) => {

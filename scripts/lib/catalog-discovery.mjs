@@ -32,6 +32,28 @@ function files(root, directory) {
     .sort()
 }
 
+function browserMetadataRead(node) {
+  let receiver = node
+  while (
+    receiver.parent &&
+    (ts.isParenthesizedExpression(receiver.parent) ||
+      ts.isAsExpression(receiver.parent) ||
+      ts.isSatisfiesExpression(receiver.parent) ||
+      ts.isTypeAssertionExpression(receiver.parent) ||
+      ts.isNonNullExpression(receiver.parent)) &&
+    receiver.parent.expression === receiver
+  )
+    receiver = receiver.parent
+  const access = receiver.parent
+  return (
+    access &&
+    ts.isPropertyAccessExpression(access) &&
+    access.expression === receiver &&
+    !access.questionDotToken &&
+    (access.name.text === "env" || access.name.text === "url")
+  )
+}
+
 export function browserGraph(root, entries) {
   const sources = new Map()
   const boundaryErrors = []
@@ -73,15 +95,14 @@ export function browserGraph(root, entries) {
       )
         resolve(file, node.moduleSpecifier.text)
       if (
-        (ts.isPropertyAccessExpression(node) ||
-          ts.isElementAccessExpression(node)) &&
-        ts.isMetaProperty(node.expression) &&
-        node.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+        ts.isMetaProperty(node) &&
+        node.keywordToken === ts.SyntaxKind.ImportKeyword &&
+        !browserMetadataRead(node)
       )
         boundaryErrors.push({
           file,
           detail:
-            "import.meta macros including glob are not browser-discoverable",
+            "only direct static import.meta.env or import.meta.url reads are browser-discoverable",
         })
       if (
         ts.isCallExpression(node) &&
