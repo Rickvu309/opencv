@@ -1,0 +1,14 @@
+{
+  "id": "warm-route-imports",
+  "file": "scripts/warm-route-imports.test.mjs",
+  "detector": {
+    "module": "scripts/lib/warm-route-imports.mjs",
+    "export": "inspect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "fa76540ba66d14bec03471e5ca9596779e27b542",
+    "path": "apps/web/src/test/warm-routes.ts",
+    "reads": ["apps/web/src/routes/paper-doc.tsx"]
+  }
+}
