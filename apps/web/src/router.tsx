@@ -293,6 +293,9 @@ const pitchRoute = createRoute({
 const coachRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/coach",
+  validateSearch: (search: Record<string, unknown>) => ({
+    chat: typeof search.chat === "string" ? search.chat : undefined,
+  }),
   component: lazyRouteComponent(
     () => import("@/routes/coach.tsx"),
     "CoachPage"

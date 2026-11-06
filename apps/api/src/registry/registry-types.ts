@@ -1,0 +1,65 @@
+import type {
+  ActivityDraft,
+  Actor,
+  CoachAccess,
+  CommandSpec,
+  ReversalPlan,
+} from "@workspace/domain"
+import type { ZodType } from "zod"
+
+export type RanCommand = {
+  output: unknown
+  draft: ActivityDraft | null
+  reversal: ReversalPlan
+  step: string
+}
+
+export type StoredCommand = {
+  delegate?: "reversibleJob"
+  name: string
+  description: string
+  coach: CoachAccess
+  writes?: CommandSpec<unknown, unknown>["writes"]
+  destructive: boolean
+  input: ZodType
+  step: (input: unknown) => string
+  transaction?: "none"
+  idempotency: "keyed" | "none"
+  run: (input: unknown, actor: Actor) => Promise<RanCommand>
+}
+
+export type StoredQuery = {
+  delegate?: "jobRead"
+  name: string
+  description: string
+  coach: boolean
+  input: ZodType
+  step: (input: unknown) => string
+  read: (input: unknown, actor: Actor) => Promise<unknown>
+}
+
+export type ToolEntry = {
+  name: string
+  description: string
+  kind: "command" | "query"
+  coach: CoachAccess | boolean
+  destructive: boolean
+  step: (input: unknown) => string
+  input: ZodType
+}
+
+export type ExecuteResult = {
+  chatId?: string
+  pending: boolean
+  pendingActionId?: string
+  summary?: string
+  command?: string
+  output?: unknown
+  activityId: string | null
+  reversal: ReversalPlan
+  detail?: unknown
+}
+export type UndoGuard = (
+  userId: string,
+  items: readonly { input: unknown; source: string | null }[]
+) => Promise<(string | null)[]>

@@ -123,7 +123,12 @@ export function createAuth({
         accessTokenExpiresIn: CONNECTION_TOKEN_SECONDS.access,
         refreshTokenExpiresIn: CONNECTION_TOKEN_SECONDS.refresh,
         storeTokens: { hash: hashAgentToken },
-        scopes: ["connection.status", "offline_access"],
+        scopes: [
+          "connection.status",
+          "job.read",
+          "job.write",
+          "offline_access",
+        ],
         grantTypes: ["authorization_code", "refresh_token"],
         allowPublicClientPrelogin: true,
         allowDynamicClientRegistration: true,
@@ -132,7 +137,12 @@ export function createAuth({
         resources: [
           {
             identifier: new URL("/mcp", authUrl).href,
-            scopes: ["connection.status", "offline_access"],
+            scopes: [
+              "connection.status",
+              "job.read",
+              "job.write",
+              "offline_access",
+            ],
           },
         ],
         clientPrivileges: () => false,

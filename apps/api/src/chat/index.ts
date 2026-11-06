@@ -8,3 +8,8 @@ export {
 } from "./store.js"
 export { createChatRoutes } from "./http.js"
 export { readStoredParts } from "./stored-parts.js"
+
+export {
+  createAgentProposalChat,
+  appendAgentProposalApproval,
+} from "./agent-proposal.js"

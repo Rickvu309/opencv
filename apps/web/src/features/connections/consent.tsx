@@ -72,13 +72,13 @@ export function ConnectionConsent() {
         </p>
         <p className="text-sm break-all">Connecting as {session?.user.email}</p>
         <p>
-          Your agent can check this connection. Career data and actions are not
-          available yet.
+          Your agent can read all your current and future Jobs and propose
+          reversible Job changes when you grant Job access.
         </p>
         <p className="text-sm text-muted-foreground">
-          Reads are allowed. Changes wait for your approval in OpenCV. No
-          documents or Jobs are shared by this connection. You can revoke access
-          in Settings → Integrations at any time.
+          Reads are allowed. Changes wait for your approval in OpenCV. Only Jobs
+          are shared when the requested scopes include Job access. You can
+          revoke access in Settings → Integrations at any time.
         </p>
         <p className="text-sm text-muted-foreground">
           Access tokens last {CONNECTION_TOKEN_SECONDS.access / 3600} hour. With

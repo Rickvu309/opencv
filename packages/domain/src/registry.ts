@@ -1,3 +1,5 @@
+import { connectionIdSchema } from "./ids.js"
+import { z } from "zod"
 import type { ZodType } from "zod"
 
 import { parseChatId, parseUserId, type ChatId, type UserId } from "./ids.js"
@@ -46,7 +48,22 @@ export function approvedProposalActor(
   }
 }
 
-export type Actor = PersonActor | CoachActor
+export const delegateActorSchema = z
+  .object({
+    type: z.literal("delegate"),
+    userId: z.string().transform(parseUserId),
+    connectionId: connectionIdSchema,
+    name: z.string(),
+    scopes: z.array(z.string()),
+    resources: z.enum(["none", "jobs"]),
+    reads: z.literal("allow"),
+    writes: z.literal("approval"),
+  })
+  .strict()
+
+export type DelegateActor = z.infer<typeof delegateActorSchema>
+
+export type Actor = PersonActor | CoachActor | DelegateActor
 
 type SubjectKind = "chat" | "paper" | "job" | "inbox" | "account"
 
@@ -71,6 +88,7 @@ export type ReversalPlan = {
 } | null
 
 export type CommandSpec<TInput, TOutput> = {
+  delegate?: "reversibleJob"
   writes?: (input: TInput) => ResourceRef[]
   name: string
   description: string
@@ -104,6 +122,7 @@ export type QuerySpec<TInput, TOutput = unknown> = {
   description: string
   input: ZodType<TInput>
   coach: boolean
+  delegate?: "jobRead"
   step: (input: TInput) => string
   read: (input: TInput, actor: Actor) => Promise<TOutput>
 }

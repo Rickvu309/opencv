@@ -11,7 +11,7 @@ import * as schema from "../db/schema.js"
 import { createId } from "../id.js"
 import { installRegistry } from "../registry/install.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { journalTag } from "../test/migration-journal.js"
+import { journalTag, journalTags } from "../test/migration-journal.js"
 import { createChat, getChat, insertCoachMessage } from "./store.js"
 
 function deferred() {
@@ -96,6 +96,17 @@ it.each(["Usable answer", ""])(
           "utf8"
         )
       )
+      const applied = new Set([
+        journalTag("opencv_app"),
+        journalTag("account_issuer_optional"),
+        journalTag("chat_reply_supersession"),
+        journalTag("coach_turn_receipts"),
+      ])
+      for (const tag of journalTags().filter((tag) => !applied.has(tag))) {
+        await client.exec(
+          await readFile(path.join(migrationsFolder, `${tag}.sql`), "utf8")
+        )
+      }
       const db = drizzle({ client, schema })
       await withDatabase(db, async () => {
         const detail = await getChat(userId, chatId)

@@ -57,7 +57,7 @@ export const jobPatchSchema = z
     recruiterEmail: z.string().trim().email().nullable().optional(),
     description: z.string().max(20_000).nullable().optional(),
     jobUrl: z.string().trim().max(2000).nullable().optional(),
-    posting: jobPostingSchema.optional(),
+    posting: jobPostingSchema.nullable().optional(),
   })
   .strict()
 

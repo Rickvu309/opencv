@@ -187,6 +187,7 @@ export const jobContract = commandContract({
     ],
   }),
   "job.update": commandEntry({
+    delegate: "reversibleJob",
     description:
       "Update job fields. Stage changes go through job.move. Priority changes need the person's approval.",
     input: jobUpdateInputSchema,
@@ -203,6 +204,7 @@ export const jobContract = commandContract({
     ],
   }),
   "job.move": commandEntry({
+    delegate: "reversibleJob",
     description: "Move a job to a stage. This is the only stage writer.",
     input: jobMoveInputSchema,
     output: jobViewSchema
@@ -214,6 +216,7 @@ export const jobContract = commandContract({
     invalidates: jobFieldsChanged,
   }),
   "job.setPriority": commandEntry({
+    delegate: "reversibleJob",
     description: "Set a job's priority.",
     input: z
       .object({ jobId: jobIdSchema, priority: jobPrioritySchema })

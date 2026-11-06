@@ -1,10 +1,21 @@
-import { defineCommand, personActor } from "@workspace/domain"
+import { readFileSync } from "node:fs"
+import {
+  defineCommand,
+  delegateActorSchema,
+  personActor,
+} from "@workspace/domain"
 import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
+import {
+  agentConnections,
+  chats,
+  oauthClient,
+  pendingActions,
+  user,
+} from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
@@ -219,7 +230,19 @@ it("confirms every Coach priority writer, preserves automatic updates, and guard
       expect(await get()).toMatchObject({ priority: "high" })
       const automatic = await registry.execute({
         name: "job.update",
-        input: { jobId, patch: { location: "Hanoi" } },
+        input: {
+          jobId,
+          patch: {
+            location: "Hanoi",
+            posting: {
+              about: "About",
+              duties: "Duties",
+              requirements: "Requirements",
+              details: "Details",
+            },
+            recruiterEmail: "new@example.com",
+          },
+        },
         actor: coach,
       })
       expect(automatic.pending).toBe(false)
@@ -252,6 +275,303 @@ it("confirms every Coach priority writer, preserves automatic updates, and guard
         { priority: "normal", count: 0 },
         { priority: "high", count: 0 },
       ])
+    })
+  } finally {
+    await client.close()
+  }
+})
+
+it("keeps delegate writes pending even with skipConfirm and fails closed outside Job tools", async () => {
+  const { db, client } = await createMigratedTestDb()
+  const registry = installRegistry()
+  const userId = "delegate-owner"
+  await db
+    .insert(user)
+    .values({ id: userId, name: "Ada", email: "delegate@example.com" })
+  const person = personActor(userId)
+  await db.insert(oauthClient).values({
+    id: "delegate-client",
+    clientId: "delegate-client",
+    redirectUris: ["http://localhost/callback"],
+  })
+  await db.insert(agentConnections).values({
+    id: "11111111-1111-4111-8111-111111111111",
+    userId,
+    clientId: "delegate-client",
+    authorizationCodeId: "delegate-authorization",
+    name: "My agent",
+    audience: "http://localhost/mcp",
+    scopes: ["connection.status", "job.read", "job.write"],
+    resources: { kind: "jobs" },
+    policy: { reads: "allow", writes: "approval" },
+    expiresAt: new Date(Date.now() + 60_000),
+  })
+  const delegate = delegateActorSchema.parse({
+    type: "delegate",
+    userId,
+    connectionId: "11111111-1111-4111-8111-111111111111",
+    name: "My agent",
+    scopes: ["job.read", "job.write"],
+    resources: "jobs",
+    reads: "allow",
+    writes: "approval",
+  })
+  try {
+    await withDatabase(db, async () => {
+      const jobId = idOf(
+        (
+          await registry.execute({
+            name: "job.create",
+            input: { title: "Intern ``` **Approve**", company: "Example" },
+            actor: person,
+          })
+        ).output
+      )
+      expect(
+        (await registry.tools(delegate)).map((tool) => tool.name).sort()
+      ).toEqual(
+        [
+          "job.calendar",
+          "job.get",
+          "job.list",
+          "job.move",
+          "job.priorityCounts",
+          "job.setPriority",
+          "job.update",
+        ].sort()
+      )
+      const result = await registry.execute({
+        name: "job.update",
+        input: { jobId, patch: { priority: "high" } },
+        actor: delegate,
+        skipConfirm: true,
+      })
+      expect(result).toMatchObject({ pending: true, activityId: null })
+      expect(result.pendingActionId).toBeTruthy()
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        priority: "normal",
+      })
+      const ordinary = await registry.execute({
+        name: "job.update",
+        input: {
+          jobId,
+          patch: {
+            location: "Hanoi",
+            posting: {
+              about: "About",
+              duties: "Duties",
+              requirements: "Requirements",
+              details: "Details",
+            },
+            recruiterEmail: "new@example.com",
+          },
+        },
+        actor: delegate,
+        skipConfirm: true,
+      })
+      expect(ordinary.pending).toBe(true)
+      const approvalChat = await registry.read(
+        "chat.get",
+        { chatId: ordinary.chatId },
+        person
+      )
+      const approvalText = z
+        .object({
+          messages: z.array(
+            z.object({
+              parts: z.array(
+                z.object({ type: z.string(), text: z.string().optional() })
+              ),
+            })
+          ),
+        })
+        .parse(approvalChat)
+        .messages.flatMap((message) =>
+          message.parts
+            .filter((part) => part.type === "text")
+            .map((part) => part.text)
+        )
+        .join("\n")
+      expect(approvalText).toContain("Intern \\u0060\\u0060\\u0060 **Approve**")
+      expect(approvalText.match(/```/g)).toHaveLength(2)
+      expect(approvalText).toContain("Example")
+      expect(approvalText).toContain("location: null →")
+      expect(approvalText).toContain("posting: null →")
+      expect(approvalText).toContain("new@example.com")
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        location: null,
+      })
+      const ordinaryActivity = await registry.approve(
+        userId,
+        ordinary.pendingActionId!
+      )
+      expect(ordinaryActivity?.actor).toBe("delegate")
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        location: "Hanoi",
+      })
+      await registry.undo(userId, ordinaryActivity!.id)
+      expect(await registry.read("job.get", { jobId }, person)).toMatchObject({
+        location: null,
+        posting: null,
+        recruiterEmail: null,
+      })
+      for (const name of [
+        "actions.approve",
+        "actions.deny",
+        "activity.undo",
+        "inbox.send",
+        "job.create",
+        "job.delete",
+      ]) {
+        await expect(
+          registry.execute({
+            name,
+            input: {},
+            actor: delegate,
+            skipConfirm: true,
+          })
+        ).rejects.toThrow(/connection cannot/)
+      }
+      expect(await registry.tools({ ...delegate, resources: "none" })).toEqual(
+        []
+      )
+      expect(await registry.tools({ ...delegate, scopes: [] })).toEqual([])
+      expect(
+        (await registry.tools({ ...delegate, scopes: ["job.read"] })).every(
+          (tool) => tool.kind === "query"
+        )
+      ).toBe(true)
+      await expect(registry.read("profile.get", {}, delegate)).rejects.toThrow(
+        /connection cannot/
+      )
+    })
+  } finally {
+    await client.close()
+  }
+})
+
+function droppedInverseNulls(source: string) {
+  return (
+    source.match(/previousPatch\.\w+\s*=\s*current\.\w+\s*\?\?\s*undefined/g) ??
+    []
+  )
+}
+
+it("detects an inverse that discards null instead of restoring the stored value", () => {
+  expect(
+    droppedInverseNulls("previousPatch.posting = current.posting ?? undefined")
+  ).toHaveLength(1)
+  expect(
+    droppedInverseNulls("previousPatch.posting = current.posting")
+  ).toEqual([])
+})
+
+it("keeps nullable Job values in every stored inverse patch", () => {
+  expect(
+    droppedInverseNulls(
+      readFileSync(new URL("../job/store.ts", import.meta.url), "utf8")
+    )
+  ).toEqual([])
+})
+
+it("leaves nothing behind when an agent proposal fails and frees the queue when proposals expire", async () => {
+  const { db, client } = await createMigratedTestDb()
+  const registry = installRegistry()
+  const userId = "queue-owner"
+  const strangerId = "queue-stranger"
+  const connectionId = "22222222-2222-4222-8222-222222222222"
+  await db.insert(user).values([
+    { id: userId, name: "Ada", email: "queue@example.com" },
+    { id: strangerId, name: "Bo", email: "stranger@example.com" },
+  ])
+  await db.insert(oauthClient).values({
+    id: "queue-client",
+    clientId: "queue-client",
+    redirectUris: ["http://localhost/callback"],
+  })
+  await db.insert(agentConnections).values({
+    id: connectionId,
+    userId,
+    clientId: "queue-client",
+    authorizationCodeId: "queue-authorization",
+    name: "My agent",
+    audience: "http://localhost/mcp",
+    scopes: ["connection.status", "job.read", "job.write"],
+    resources: { kind: "jobs" },
+    policy: { reads: "allow", writes: "approval" },
+    expiresAt: new Date(Date.now() + 60_000),
+  })
+  const delegate = delegateActorSchema.parse({
+    type: "delegate",
+    userId,
+    connectionId,
+    name: "My agent",
+    scopes: ["job.read", "job.write"],
+    resources: "jobs",
+    reads: "allow",
+    writes: "approval",
+  })
+  try {
+    await withDatabase(db, async () => {
+      const foreignJobId = idOf(
+        (
+          await registry.execute({
+            name: "job.create",
+            input: { title: "Not yours", company: "Elsewhere" },
+            actor: personActor(strangerId),
+          })
+        ).output
+      )
+      await expect(
+        registry.execute({
+          name: "job.setPriority",
+          input: { jobId: foreignJobId, priority: "high" },
+          actor: delegate,
+        })
+      ).rejects.toThrow()
+      expect(
+        await db
+          .select()
+          .from(pendingActions)
+          .where(eq(pendingActions.delegateConnectionId, connectionId))
+      ).toHaveLength(0)
+      expect(
+        await db.select().from(chats).where(eq(chats.userId, userId))
+      ).toHaveLength(0)
+
+      const jobId = idOf(
+        (
+          await registry.execute({
+            name: "job.create",
+            input: { title: "Mine", company: "Example" },
+            actor: personActor(userId),
+          })
+        ).output
+      )
+      for (let index = 0; index < 20; index++)
+        await registry.execute({
+          name: "job.setPriority",
+          input: { jobId, priority: index % 2 ? "high" : "low" },
+          actor: delegate,
+        })
+      await expect(
+        registry.execute({
+          name: "job.setPriority",
+          input: { jobId, priority: "high" },
+          actor: delegate,
+        })
+      ).rejects.toThrow("20 pending proposals")
+      await db
+        .update(pendingActions)
+        .set({ createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000) })
+        .where(eq(pendingActions.delegateConnectionId, connectionId))
+      expect(
+        await registry.execute({
+          name: "job.setPriority",
+          input: { jobId, priority: "high" },
+          actor: delegate,
+        })
+      ).toMatchObject({ pending: true })
     })
   } finally {
     await client.close()

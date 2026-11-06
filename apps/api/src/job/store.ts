@@ -241,8 +241,7 @@ export async function updateJob(actor: Actor, jobId: JobId, patch: JobPatch) {
   if (patch.description !== undefined)
     previousPatch.description = current.description
   if (patch.jobUrl !== undefined) previousPatch.jobUrl = current.jobUrl
-  if (patch.posting !== undefined)
-    previousPatch.posting = current.posting ?? undefined
+  if (patch.posting !== undefined) previousPatch.posting = current.posting
   if (patch.jobUrl) {
     const existing = await findDuplicate(actor.userId, patch.jobUrl)
     if (existing && existing.id !== current.id) {

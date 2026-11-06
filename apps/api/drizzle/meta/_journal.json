@@ -92,6 +92,13 @@
       "when": 1793938990730,
       "tag": "0012_oauth_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793954781212,
+      "tag": "0013_agent_job_tools",
+      "breakpoints": true
     }
   ]
 }
