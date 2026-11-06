@@ -14,6 +14,8 @@ import {
 import { connectGmail, GMAIL_UNAVAILABLE } from "./settings-api.ts"
 import { fetchIntegrations, integrationsKey } from "@/lib/account-api.ts"
 
+import { ConnectionList } from "@/features/connections/index.ts"
+
 type IntegrationsState = { search: string; notice?: string }
 
 type IntegrationsAction =
@@ -86,6 +88,7 @@ export function IntegrationsSection() {
       <SettingsTitle title="Integrations">
         Connect the apps you already use.
       </SettingsTitle>
+      <ConnectionList />
       <SearchInput
         aria-label="Search integrations"
         placeholder="Search integrations"
