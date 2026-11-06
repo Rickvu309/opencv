@@ -68,3 +68,50 @@ for (const [name, path, mistake, clean] of [
     )
   })
 }
+
+const approvalImportMistake =
+  'import { resolveTaskApproval } from "../coach/index.js"'
+const approvalImportClean =
+  'const { resolveTaskApproval } = await import("../coach/index.js")'
+const unknownToolMistake = 'if (!entry) throw new Error("Unknown model tool")'
+const unknownToolClean =
+  'if (!entry && input.boundary) throw new Error("Unknown model tool")'
+
+for (const [name, path, mistake, clean] of [
+  [
+    "Chat stop avoids eagerly loading Coach during Chat initialization",
+    "apps/api/src/chat/commands.ts",
+    approvalImportMistake.replace("resolveTaskApproval", "cancelChatTask"),
+    approvalImportClean.replaceAll("resolveTaskApproval", "cancelChatTask"),
+  ],
+  [
+    "approval resolution avoids eagerly loading Coach during Chat initialization",
+    "apps/api/src/registry/registry.ts",
+    approvalImportMistake,
+    approvalImportClean,
+  ],
+  [
+    "proposal locking avoids eagerly loading Coach during Chat initialization",
+    "apps/api/src/registry/proposals.ts",
+    approvalImportMistake.replace("resolveTaskApproval", "lockTaskApproval"),
+    approvalImportClean.replaceAll("resolveTaskApproval", "lockTaskApproval"),
+  ],
+  [
+    "unknown tool rejection requires a durable boundary",
+    "apps/api/src/coach/anthropic-runtime.ts",
+    unknownToolMistake,
+    unknownToolClean,
+  ],
+]) {
+  test(name, () => {
+    assert.equal(detect(mistake, path).length, 1)
+    assert.deepEqual(detect(clean, path), [])
+    assert.deepEqual(
+      detect(
+        readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
+        path
+      ),
+      []
+    )
+  })
+}

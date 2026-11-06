@@ -1,4 +1,4 @@
-export function detect(source) {
+export function detect(source, path = "") {
   const recovery = source.slice(
     source.indexOf("export async function saveRepliesForUnsavedTurns"),
     source.indexOf("export async function openCoachUsage")
@@ -38,6 +38,25 @@ export function detect(source) {
   )
     problems.push({
       message: "Legacy reply recovery must exclude task-backed usage",
+    })
+  if (
+    (path.includes("/registry/") || path.endsWith("/chat/commands.ts")) &&
+    /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+["']\.\.\/coach\/index\.js["']/.test(
+      source
+    )
+  )
+    problems.push({
+      message:
+        "Load Coach handlers only when invoked to avoid the Chat import cycle",
+    })
+  if (
+    /if\s*\(\s*!entry\s*\)\s*throw new Error\("Unknown model tool"\)/.test(
+      source
+    )
+  )
+    problems.push({
+      message:
+        "Unknown tools must preserve legacy streaming without a durable boundary",
     })
   return problems
 }

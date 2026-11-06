@@ -157,6 +157,41 @@ describe("Anthropic request-bound Coach runtime", () => {
     expect(JSON.stringify(requests[1]?.messages)).toContain("Approve this edit")
   })
 
+  it("rejects an unknown tool before saving a durable decision or running an effect", async () => {
+    const { model } = fixture([
+      () =>
+        anthropicFixtureResponse([
+          {
+            type: "tool-call",
+            toolCallId: "unknown",
+            toolName: "paper_replace",
+            input: "{}",
+          },
+        ]),
+    ])
+    const read = vi.fn()
+    const execute = vi.fn()
+    const persistStep = vi.fn()
+    const runIntent = vi.fn()
+    await expect(
+      collect(
+        streamAnthropicSteps({
+          model,
+          history: [],
+          system: "",
+          entries: [],
+          actor,
+          registry: { read, execute },
+          boundary: { persistStep, runIntent },
+        })
+      )
+    ).rejects.toThrow("Unknown model tool")
+    expect(read).not.toHaveBeenCalled()
+    expect(execute).not.toHaveBeenCalled()
+    expect(persistStep).not.toHaveBeenCalled()
+    expect(runIntent).not.toHaveBeenCalled()
+  })
+
   it("validates eager tool input before any read or command", async () => {
     const { model } = fixture([() => calls('{"limit":"wrong"}')])
     const read = vi.fn()

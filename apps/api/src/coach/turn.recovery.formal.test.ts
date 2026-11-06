@@ -16,7 +16,7 @@ import { insertCoachMessage } from "../chat/index.js"
 import { activity, chatMessages, coachUsage, user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import { coachActivityWithoutTurn } from "../test/coach-turn.js"
-import { createMigratedTestDb } from "../test/harness.js"
+import { openBackend } from "../test/registry-formal-support.js"
 import { runCoachTurn, toolResultFromExecute } from "./turn.js"
 import { openCoachUsage } from "./usage-store.js"
 
@@ -62,12 +62,12 @@ const editingRuntime: CoachRuntime = {
 
 async function inChat<T>(
   body: (context: {
-    db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+    db: Awaited<ReturnType<typeof openBackend>>["db"]
     registry: ReturnType<typeof installRegistry>
     chatId: string
   }) => Promise<T>
 ) {
-  const { client, db } = await createMigratedTestDb()
+  const { close, db } = await openBackend()
   try {
     await db
       .insert(user)
@@ -89,7 +89,7 @@ async function inChat<T>(
       return body({ db, registry, chatId })
     })
   } finally {
-    await client.close()
+    await close()
   }
 }
 
@@ -104,9 +104,7 @@ function nextAdmission(chatId: string) {
   })
 }
 
-async function coachReplies(
-  db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
-) {
+async function coachReplies(db: Awaited<ReturnType<typeof openBackend>>["db"]) {
   return db
     .select()
     .from(chatMessages)

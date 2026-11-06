@@ -1,5 +1,5 @@
 import { personActor } from "@workspace/domain"
-import { eq, sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"
 import { getDb, transaction, withDatabase } from "../db/context.js"
@@ -7,6 +7,7 @@ import {
   activity,
   coachTasks,
   jobs,
+  idempotency,
   pendingActions,
   taskEvents,
 } from "../db/schema.js"
@@ -79,6 +80,33 @@ async function propose(
   return { proposal: proposal!, runtime }
 }
 
+async function expectDeletionCommitted(
+  proposal: typeof pendingActions.$inferSelect
+) {
+  const receipts = (await getDb().select().from(idempotency)).filter(
+    (row) => row.command === "job.delete"
+  )
+  expect(receipts).toHaveLength(1)
+  expect(receipts[0]).toMatchObject({
+    userId: proposal.userId,
+    key: proposal.coachIntentKey,
+    inputHash: inputHash(proposal.input),
+    result: { id: z.object({ jobId: z.string() }).parse(proposal.input).jobId },
+  })
+  const events = await getDb()
+    .select()
+    .from(taskEvents)
+    .where(
+      and(
+        eq(taskEvents.taskId, proposal.coachTaskId!),
+        eq(taskEvents.kind, "actionResolved")
+      )
+    )
+  expect(events).toHaveLength(1)
+  expect(events[0]?.logicalKey).toBe(`${proposal.coachIntentKey}:resolved`)
+  expect(await getDb().select().from(jobs)).toHaveLength(0)
+}
+
 it.skipIf(!REAL).each(["cancel", "approve"] as const)(
   "serializes %s first against the other transaction using the task row",
   (first) =>
@@ -117,10 +145,11 @@ it.skipIf(!REAL).each(["cancel", "approve"] as const)(
       expect(await getDb().select().from(jobs)).toHaveLength(
         first === "cancel" ? 1 : 0
       )
-      const receipts = await getDb().select().from(activity)
+      const receipts = await getDb().select().from(idempotency)
       expect(
         receipts.filter((row) => row.command === "job.delete")
       ).toHaveLength(first === "cancel" ? 0 : 1)
+      if (first === "approve") await expectDeletionCommitted(proposal)
     })
 )
 
@@ -133,7 +162,8 @@ it.skipIf(!REAL)(
         registry.approve(seed.ownerId, proposal.id),
         registry.approve(seed.ownerId, proposal.id),
       ])
-      expect(receipts[0]?.id).toBe(receipts[1]?.id)
+      expect(receipts).toEqual([null, null])
+      await expectDeletionCommitted(proposal)
       expect((await getDb().select().from(coachTasks))[0]?.state).toBe("queued")
       await runCoachWorker({
         ...settings,
@@ -143,11 +173,7 @@ it.skipIf(!REAL)(
       expect((await getDb().select().from(coachTasks))[0]?.state).toBe(
         "succeeded"
       )
-      expect(
-        (await getDb().select().from(activity)).filter(
-          (row) => row.command === "job.delete"
-        )
-      ).toHaveLength(1)
+      await expectDeletionCommitted(proposal)
     })
 )
 
@@ -169,11 +195,7 @@ it.skipIf(!REAL)(
       expect((await getDb().select().from(coachTasks))[0]?.state).toBe(
         "succeeded"
       )
-      expect(
-        (await getDb().select().from(activity)).filter(
-          (row) => row.command === "job.delete"
-        )
-      ).toHaveLength(1)
+      await expectDeletionCommitted(proposal)
     })
 )
 

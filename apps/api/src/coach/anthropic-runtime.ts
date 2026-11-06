@@ -195,7 +195,7 @@ export async function* streamAnthropicSteps(input: {
         const entry = input.entries.find(
           (item) => item.name.replaceAll(".", "_") === block.name
         )
-        if (!entry) throw new Error("Unknown model tool")
+        if (!entry && input.boundary) throw new Error("Unknown model tool")
         return entry
           ? [
               {

@@ -21,7 +21,6 @@ import {
   type QuerySpec,
   type ReversalExpect,
 } from "@workspace/domain"
-import { resolveTaskApproval } from "../coach/index.js"
 import { and, eq } from "drizzle-orm"
 
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
@@ -503,6 +502,7 @@ export class Registry {
         .set({ status: "approved" })
         .where(eq(pendingActions.id, row.id))
       if (task) {
+        const { resolveTaskApproval } = await import("../coach/index.js")
         await assertTaskReceipt(userId, row)
         await resolveTaskApproval(task, "committed", result, result.activityId)
       }
@@ -532,7 +532,10 @@ export class Registry {
         .update(pendingActions)
         .set({ status: "denied" })
         .where(eq(pendingActions.id, row.id))
-      if (task) await resolveTaskApproval(task, "denied", { denied: true })
+      if (task) {
+        const { resolveTaskApproval } = await import("../coach/index.js")
+        await resolveTaskApproval(task, "denied", { denied: true })
+      }
       return { ...row, status: "denied" as const }
     })
   }

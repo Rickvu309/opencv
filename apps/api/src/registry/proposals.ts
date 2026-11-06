@@ -12,7 +12,6 @@ import { getDb, savepoint, transaction } from "../db/context.js"
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { createId } from "../id.js"
 
-import { lockTaskApproval, resolveTaskApproval } from "../coach/index.js"
 import { CommandError } from "./errors.js"
 import { inputHash } from "./receipt.js"
 
@@ -113,7 +112,9 @@ export async function lockProposal(userId: string, id: string) {
     .select()
     .from(pendingActions)
     .where(and(eq(pendingActions.id, id), eq(pendingActions.userId, userId)))
-  const task = proposal ? await lockTaskApproval(proposal) : null
+  const task = proposal?.coachTaskId
+    ? await (await import("../coach/index.js")).lockTaskApproval(proposal)
+    : null
   const row = await lockPending(userId, id)
   const [expired] = await getDb()
     .select({ id: pendingActions.id })
@@ -141,6 +142,8 @@ export async function expireTaskApprovals() {
     )
   for (const proposal of rows)
     await transaction(async () => {
+      const { lockTaskApproval, resolveTaskApproval } =
+        await import("../coach/index.js")
       const task = await lockTaskApproval(proposal, true)
       if (!task) return
       const row = await lockPending(proposal.userId, proposal.id)
