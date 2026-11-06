@@ -1,0 +1,18 @@
+{
+  "operations": [
+    {
+      "file": "packages/domain/src/operations/fixture/echo/operation.ts",
+      "name": "fixture.echo",
+      "namespace": "fixture",
+      "directory": "echo"
+    }
+  ],
+  "servers": [
+    {
+      "file": "apps/api/src/fixture/operations/echo/server.ts",
+      "operation": "packages/domain/src/operations/fixture/echo/operation.ts",
+      "namespace": "fixture",
+      "directory": "echo"
+    }
+  ]
+}

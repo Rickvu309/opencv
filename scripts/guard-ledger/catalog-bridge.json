@@ -1,0 +1,18 @@
+{
+  "id": "catalog-bridge",
+  "file": "apps/api/src/registry/catalog.test.ts",
+  "detector": {
+    "module": "scripts/lib/operation-catalog.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "scripts/fixtures/catalog/mistake.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/fixtures/catalog/clean.json"
+    }
+  },
+  "reason": "New catalog bridge integration guard shares the pure catalog pairing detector and its committed missing-pair and paired fixtures. The API smoke test also verifies the empty catalogs preserve the existing registry."
+}

@@ -1,0 +1,18 @@
+{
+  "id": "catalog",
+  "file": "scripts/catalog.test.mjs",
+  "detector": {
+    "module": "scripts/lib/operation-catalog.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "scripts/fixtures/catalog/mistake.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/fixtures/catalog/clean.json"
+    }
+  },
+  "reason": "New architecture rule: committed internal missing-pair and paired fixtures, not a historical product regression. The suite also injects orphan, collision, namespace, schema, boundary and freshness mutants."
+}
