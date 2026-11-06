@@ -35,7 +35,11 @@ export async function startCompatibilityTurn(
   if (!parsed.success)
     throw new CommandError("VALIDATION_ERROR", "Invalid Coach turn")
   const started = await startTask(
-    { ...parsed.data, chatId: chatId.data, startKey: randomUUID() },
+    {
+      ...parsed.data,
+      chatId: chatId.data,
+      startKey: `legacy-tab:${randomUUID()}`,
+    },
     personActor(c.var.userId),
     registry
   )

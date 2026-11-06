@@ -319,7 +319,7 @@ it("checks the owner on every status, replay and Stop connection", () =>
     ).toBe(404)
     expect((await events(taskId, -1, foreign.cookie)).status).toBe(404)
     expect(
-      (await command("coach.stop", { chatId }, foreign.cookie)).status
+      (await command("coach.stop", { chatId, taskId }, foreign.cookie)).status
     ).toBe(404)
     expect(
       (
@@ -337,7 +337,7 @@ it("checks the owner on every status, replay and Stop connection", () =>
 it("commits explicit Stop durably and does not call inference for the cancelled task", () =>
   fixture(async ({ start, status, command, chatId, work, runtime }) => {
     const { taskId } = await start()
-    expect((await command("coach.stop", { chatId })).status).toBe(200)
+    expect((await command("coach.stop", { chatId, taskId })).status).toBe(200)
     const stopping = await status(taskId)
     expect(stopping.state).toBe("cancelling")
     expect(stopping.cancelRequestedAt).not.toBeNull()

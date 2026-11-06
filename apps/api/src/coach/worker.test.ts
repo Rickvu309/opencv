@@ -303,7 +303,7 @@ it("Stop cancels a paused task durably and blocks approval without using a local
       .where(eq(coachTasks.id, taskId))
     const result = await registry.execute({
       name: "coach.stop",
-      input: { chatId: task!.chatId },
+      input: { chatId: task!.chatId, taskId },
       actor: personActor(ownerId),
     })
     expect(result.output).toEqual({ stopped: true })

@@ -396,3 +396,20 @@ test("rollback preserves accepted start receipts before gating new admissions", 
     detect(clean.replace("if (prior)", "if (missing)"), path).length > 0
   )
 })
+
+test("chat-scoped Stop cannot cancel new-client work", () => {
+  const path = "apps/api/src/coach/task-store.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  const mistake = clean.replace(
+    ' || (!taskId && !task.startKey.startsWith("legacy-tab:"))',
+    ""
+  )
+  assert.equal(detect(mistake, path).length, 1)
+  assert.deepEqual(detect(clean, path), [])
+  for (const sha of ["7a4f073e", "9e440597"]) {
+    const historic = execFileSync("git", ["show", `${sha}:${path}`], {
+      encoding: "utf8",
+    })
+    assert.equal(detect(historic, path).length, 1)
+  }
+})

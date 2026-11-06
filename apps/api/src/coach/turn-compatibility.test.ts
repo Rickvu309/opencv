@@ -329,6 +329,9 @@ it.each([false, true])(
           headers: authHeaders(owner.cookie),
           body: JSON.stringify({ text: "Stop this durable reply" }),
         })
+        expect((await db.select().from(coachTasks))[0]?.startKey).toMatch(
+          /^legacy-tab:/
+        )
         const wire = response.text()
         if (afterTail) await wire
         const stop = await app.request(`/api/chats/${chatId}/stop`, {
@@ -391,12 +394,16 @@ it.each(["approve", "deny", "stop"] as const)(
       })
       const resolved = await legacy.request(
         resolution === "stop"
-          ? `/api/chats/${chatId}/stop`
+          ? `/api/commands/coach.stop`
           : `/api/commands/actions.${resolution}`,
         {
           method: "POST",
           headers: authHeaders(owner.cookie),
-          body: JSON.stringify({ pendingActionId: proposal!.id }),
+          body: JSON.stringify(
+            resolution === "stop"
+              ? { chatId, taskId: (await db.select().from(coachTasks))[0]!.id }
+              : { pendingActionId: proposal!.id }
+          ),
         }
       )
       expect(resolved.status).toBe(200)
@@ -416,3 +423,85 @@ it.each(["approve", "deny", "stop"] as const)(
       expect(await response.text()).toContain("event: message-end")
     })
 )
+
+it("keeps a newer client task running when a delayed old Stop arrives after rollback", () =>
+  fixture(
+    async ({ app, db, owner, chatId, work }) => {
+      const response = await app.request(`/api/chats/${chatId}/turns`, {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ text: "Reply A from an old tab" }),
+      })
+      const delayedStop = new Request(
+        `http://localhost/api/chats/${chatId}/stop`,
+        {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+        }
+      )
+      await response.text()
+      await work()
+      const [a] = await db.select().from(coachTasks)
+      expect(a?.state).toBe("succeeded")
+      const started = await app.request("/api/commands/coach.start", {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({
+          chatId,
+          startKey: randomUUID(),
+          text: "Reply B",
+        }),
+      })
+      expect(started.status).toBe(200)
+      const b = z
+        .object({ data: z.object({ taskId: z.string() }) })
+        .parse(await started.json()).data
+      process.env.COACH_DURABLE = "off"
+      const control = await app.request("/api/commands/coach.stop", {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ chatId, taskId: a!.id }),
+      })
+      expect(await control.json()).toMatchObject({ data: { stopped: false } })
+      const stopped = await app.request(delayedStop)
+      expect(stopped.status).toBe(200)
+      expect(await stopped.json()).toMatchObject({ data: { stopped: false } })
+      expect(
+        (await db.select().from(coachTasks).where(eq(coachTasks.id, a!.id)))[0]
+          ?.state
+      ).toBe("succeeded")
+      expect(
+        (
+          await db.select().from(coachTasks).where(eq(coachTasks.id, b.taskId))
+        )[0]?.state
+      ).toBe("queued")
+      await work()
+      expect(
+        (
+          await db.select().from(coachTasks).where(eq(coachTasks.id, b.taskId))
+        )[0]?.state
+      ).toBe("succeeded")
+    },
+    { coachDurable: true, coachCompatibilityMs: 0 }
+  ))
+
+it("makes old Stop a no-op with only new-client work and reserves legacy-tab start keys", () =>
+  fixture(async ({ app, owner, chatId, db }) => {
+    const start = (startKey: string) =>
+      app.request("/api/commands/coach.start", {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ chatId, startKey, text: "New client" }),
+      })
+    expect((await start(`legacy-tab:${randomUUID()}`)).status).toBe(400)
+    expect((await start(randomUUID())).status).toBe(200)
+    const stopped = await app.request(`/api/chats/${chatId}/stop`, {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+    })
+    expect(stopped.status).toBe(200)
+    expect(await stopped.json()).toMatchObject({ data: { stopped: false } })
+    const [task] = await db.select().from(coachTasks)
+    expect(task?.state).toBe("queued")
+    expect(task?.cancelRequestedAt).toBeNull()
+  }))

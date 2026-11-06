@@ -1,4 +1,19 @@
 export function detect(source, path = "") {
+  if (path === "apps/api/src/coach/task-store.ts") {
+    const cancellation = source.slice(
+      source.indexOf("export function cancelChatTask(")
+    )
+    return /if \(!task \|\| \(!taskId && !task\.startKey\.startsWith\("legacy-tab:"\)\)\)/.test(
+      cancellation
+    )
+      ? []
+      : [
+          {
+            message:
+              "Chat-scoped Stop must reject tasks without the reserved old-tab start key",
+          },
+        ]
+  }
   if (path === "apps/web/src/lib/coach-task-client.ts") {
     const problems = []
     if (/from ["']zod["']/.test(source))
