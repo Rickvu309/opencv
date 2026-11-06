@@ -1,25 +1,11 @@
 import { readFileSync } from "node:fs"
-import { dirname, join, normalize, resolve } from "node:path"
+import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { runtimeDynamicImports } from "./source-imports.mjs"
 
 const root = fileURLToPath(new URL("../../", import.meta.url))
-const webSource = "apps/web/src"
-const dynamicImport =
-  /(?<![\w.$])import\(\s*["']([^"']+)["']\s*\)(?!\s*\.\s*(?!then\b|catch\b|finally\b)[A-Za-z_$])/g
 
-function toRepoPath(specifier, importer) {
-  if (specifier.startsWith("@/"))
-    return normalize(join(webSource, specifier.slice(2)))
-  if (specifier.startsWith("."))
-    return normalize(join(dirname(importer), specifier))
-  return null
-}
-
-export function runtimeImports(source, importer) {
-  return [...source.matchAll(dynamicImport)]
-    .map((match) => toRepoPath(match[1], importer))
-    .filter((path) => path !== null)
-}
+export const runtimeImports = runtimeDynamicImports
 
 export function detect(source, file, io) {
   const warmed = new Set(runtimeImports(source, file))
