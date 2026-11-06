@@ -88,7 +88,7 @@ const storedRuntime: Parameters<typeof runCoachWorker>[0]["runtime"] = (
   return createScriptedWorkerRuntime(context.script)
 }
 
-it("leaves task claims off with the server kill switch", () =>
+it("drains accepted task claims with new durable admissions switched off", () =>
   fixture(async (_, registry) => {
     expect(coachWorkerEnabledFromEnv({})).toBe(true)
     expect(coachWorkerEnabledFromEnv({ COACH_DURABLE: "off" })).toBe(false)
@@ -100,9 +100,11 @@ it("leaves task claims off with the server kill switch", () =>
         registry,
         runtime,
       })
-    ).toBe(false)
-    expect(runtime).not.toHaveBeenCalled()
-    expect((await getDb().select().from(coachTasks))[0]?.state).toBe("queued")
+    ).toBe(true)
+    expect(runtime).toHaveBeenCalledTimes(1)
+    expect((await getDb().select().from(coachTasks))[0]?.state).toBe(
+      "succeeded"
+    )
   }))
 
 it("runs the scripted protocol, persists ordered receipts and finalizes one canonical reply", () =>

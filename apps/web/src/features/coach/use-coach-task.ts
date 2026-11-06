@@ -104,17 +104,20 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         local.stopRequested ||
         Boolean(discoveredTaskId)))
   const parts = task ? taskParts(task) : []
-  const canonical = task?.snapshot.messages.map((message) => ({
-    ...message,
-    role: message.role === "person" ? ("user" as const) : ("coach" as const),
-    workedMs: message.workedMs ?? undefined,
-    status: message.status ?? undefined,
-    parts: message.parts.filter(
-      (part) => part.type === "text" || part.type === "tool"
-    ),
-    attachments: detail.data?.messages.find((saved) => saved.id === message.id)
-      ?.attachments,
-  }))
+  const canonical = task?.snapshot.messages
+    .filter((message) => message.id !== task.snapshot.taskId)
+    .map((message) => ({
+      ...message,
+      role: message.role === "person" ? ("user" as const) : ("coach" as const),
+      workedMs: message.workedMs ?? undefined,
+      status: message.status ?? undefined,
+      parts: message.parts.filter(
+        (part) => part.type === "text" || part.type === "tool"
+      ),
+      attachments: detail.data?.messages.find(
+        (saved) => saved.id === message.id
+      )?.attachments,
+    }))
   const terminalSaved =
     task?.snapshot.assistantMessageId &&
     detail.data?.messages.some(
@@ -307,6 +310,15 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
     return true
   }
   return {
+    recovering: enabled && Boolean(options.chatId) && detail.isPending,
+    hasActiveTask:
+      active ||
+      Boolean(
+        discoveredTaskId &&
+        (!task ||
+          task.snapshot.taskId !== discoveredTaskId ||
+          !taskIsTerminal(task.snapshot.state))
+      ),
     messages,
     phase: active
       ? parts.length

@@ -207,7 +207,12 @@ export function CoachWorkspace({
       onSend={() => send()}
       onStop={store.stop}
       turnActive={active}
-      disabled={capped || !enabled}
+      disabled={
+        capped ||
+        !enabled ||
+        store.configuration === "loading" ||
+        store.configuration === "error"
+      }
       placeholder={
         capped
           ? `Coach is back at ${resetTime}`
@@ -289,6 +294,17 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
+      {store.configuration === "loading" ? (
+        <p role="status">Loading Coach settings…</p>
+      ) : null}
+      {store.configuration === "error" ? (
+        <p role="alert" className="text-sm">
+          {error}{" "}
+          <Button variant="link" size="sm" onClick={() => store.retry()}>
+            Retry
+          </Button>
+        </p>
+      ) : null}
       {coachDock}
     </div>
   )
@@ -359,7 +375,7 @@ export function CoachWorkspace({
             messages={messages}
             waiting={phase === "waiting"}
             progress={progress}
-            error={error}
+            error={store.configuration === "error" ? null : error}
             onRetry={!capped && enabled ? store.retry : undefined}
             onRegenerate={
               !active && !capped && enabled ? store.regenerate : undefined

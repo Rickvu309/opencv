@@ -46,10 +46,7 @@ export async function startCompatibilityTurn(
   return streamSSE(c, async (stream) => {
     const abort = waitForAbort(stream, c.req.raw.signal)
     const idle = idleUntilAbort(abort)
-    const timer = setTimeout(
-      () => stream.abort(),
-      Math.min(durationMs, COACH_COMPATIBILITY_MS)
-    )
+    const deadline = Date.now() + Math.min(durationMs, COACH_COMPATIBILITY_MS)
     const outcomes = new Set<string>()
     let cursor = -1
     try {
@@ -58,6 +55,17 @@ export async function startCompatibilityTurn(
         chatId: started.chatId,
       })
       while (!stream.aborted && !c.req.raw.signal.aborted) {
+        if (Date.now() >= deadline) {
+          await writeChatEvent(stream, {
+            type: "text-delta",
+            text: "Coach is still working. Reload this Chat to follow or stop it.",
+          })
+          await writeChatEvent(stream, {
+            type: "message-end",
+            chatId: started.chatId,
+          })
+          return
+        }
         const batch = await readTaskEvents(started.taskId, ownerId, cursor)
         if (batch.type === "reset") {
           await writeChatEvent(stream, {
@@ -177,10 +185,10 @@ export async function startCompatibilityTurn(
           }
         }
         cursor = batch.cursor
-        if (batch.events.length < 100) await idle(250)
+        if (batch.events.length < 100)
+          await idle(Math.min(250, Math.max(0, deadline - Date.now())))
       }
     } finally {
-      clearTimeout(timer)
       abort.dispose()
     }
   })

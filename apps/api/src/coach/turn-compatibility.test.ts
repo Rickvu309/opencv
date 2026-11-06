@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto"
 import { afterEach, expect, it, vi } from "vitest"
 import { z } from "zod"
+import { eq, sql } from "drizzle-orm"
 import { createApp } from "../app.js"
 import { withDatabase } from "../db/context.js"
-import { chatMessages, coachTasks } from "../db/schema.js"
+import { chatMessages, coachTasks, pendingActions } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import {
   authHeaders,
@@ -187,7 +188,27 @@ it("bounds an old tab tail without cancelling its queued task", () =>
         headers: authHeaders(owner.cookie),
         body: JSON.stringify({ text: "Outlive this connection" }),
       })
-      expect(await response.text()).toContain("event: message-start")
+      const wire = await response.text()
+      expect(wire).toContain("event: message-start")
+      expect(wire).toContain("event: text-delta")
+      expect(wire).toContain(
+        "Coach is still working. Reload this Chat to follow or stop it."
+      )
+      expect(wire).toContain("event: message-end")
+      expect(wire).not.toContain("event: error")
+      const detail = await app.request(`/api/chats/${chatId}`, {
+        headers: authHeaders(owner.cookie),
+      })
+      expect(await detail.json()).toMatchObject({
+        data: {
+          messages: expect.arrayContaining([
+            expect.objectContaining({
+              text: "Coach is still working. Reload this Chat to follow or stop it.",
+            }),
+          ]),
+        },
+      })
+      expect(wire).not.toMatch(/retry|try again/i)
       expect((await db.select().from(coachTasks))[0]?.state).toBe("queued")
       await work()
       expect((await db.select().from(coachTasks))[0]?.state).toBe("succeeded")
@@ -217,3 +238,181 @@ it("defaults the deployed API to durable and serves the kill switch without a we
     coachDurable: false,
   })
 })
+
+for (const state of [
+  "queued",
+  "running",
+  "waitingApproval",
+  "cancelling",
+] as const) {
+  it(`drains ${state} work after rollback and admits legacy only after it ends`, () =>
+    fixture(async ({ app, db, owner, chatId, work }) => {
+      const command = (name: string, input: unknown) =>
+        app.request(`/api/commands/${name}`, {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+          body: JSON.stringify(input),
+        })
+      const input = {
+        chatId,
+        text: "Accepted before rollback",
+        startKey: randomUUID(),
+      }
+      const started = await command("coach.start", input)
+      expect(started.status).toBe(200)
+      const [task] = await db.select().from(coachTasks)
+      await db
+        .update(coachTasks)
+        .set({
+          state,
+          leaseOwner: state === "running" ? "killed-api" : null,
+          leaseUntil:
+            state === "running"
+              ? sql`clock_timestamp() - interval '1 second'`
+              : null,
+          cancelRequestedAt: state === "cancelling" ? new Date() : null,
+        })
+        .where(eq(coachTasks.id, task!.id))
+      process.env.COACH_DURABLE = "off"
+      const replay = await command("coach.start", input)
+      expect(replay.status).toBe(200)
+      expect(await replay.json()).toMatchObject({
+        data: { taskId: task!.id },
+      })
+      const legacy = createTestApp(db, {
+        coach: createScriptedCoachRuntime([]),
+        coachDurable: false,
+      })
+      const turn = () =>
+        legacy.request(`/api/chats/${chatId}/turns`, {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+          body: JSON.stringify({ text: "Legacy after rollback" }),
+        })
+      expect((await turn()).status).toBe(409)
+      const read = await legacy.request(`/api/coach/tasks/${task!.id}`, {
+        headers: authHeaders(owner.cookie),
+      })
+      expect(read.status).toBe(200)
+      const detail = await legacy.request(`/api/chats/${chatId}`, {
+        headers: authHeaders(owner.cookie),
+      })
+      expect(await detail.json()).toMatchObject({
+        data: { activeTaskId: task!.id },
+      })
+      expect(
+        (
+          await command("coach.start", {
+            chatId,
+            text: "New durable",
+            startKey: randomUUID(),
+          })
+        ).status
+      ).toBe(404)
+      expect(await work()).toBe(true)
+      expect((await db.select().from(coachTasks))[0]?.state).toBe(
+        state === "cancelling" ? "cancelled" : "succeeded"
+      )
+      const response = await turn()
+      expect(response.status).toBe(200)
+      expect(await response.text()).toContain("event: message-end")
+    }))
+}
+
+it.each([false, true])(
+  "old Stop cancels durable work after tail closure %s",
+  (afterTail) =>
+    fixture(
+      async ({ app, db, owner, chatId, work }) => {
+        const response = await app.request(`/api/chats/${chatId}/turns`, {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+          body: JSON.stringify({ text: "Stop this durable reply" }),
+        })
+        const wire = response.text()
+        if (afterTail) await wire
+        const stop = await app.request(`/api/chats/${chatId}/stop`, {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+        })
+        expect(stop.status).toBe(200)
+        expect(await stop.json()).toMatchObject({ data: { stopped: true } })
+        expect((await db.select().from(coachTasks))[0]?.state).toBe(
+          "cancelling"
+        )
+        await work()
+        expect((await db.select().from(coachTasks))[0]?.state).toBe("cancelled")
+        await wire
+      },
+      { coachDurable: true, coachCompatibilityMs: 20 }
+    )
+)
+
+it.each(["approve", "deny", "stop"] as const)(
+  "resolves a real waiting proposal after rollback: %s",
+  (resolution) =>
+    fixture(async ({ app, db, owner, chatId, runtime, work }) => {
+      const command = (name: string, input: unknown) =>
+        app.request(`/api/commands/${name}`, {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+          body: JSON.stringify(input),
+        })
+      const created = await command("job.create", {
+        title: "Role",
+        company: "Acme",
+      })
+      const jobId = z
+        .object({ data: z.object({ id: z.string() }) })
+        .parse(await created.json()).data.id
+      runtime.mockImplementation(() =>
+        createScriptedWorkerRuntime([
+          {
+            ...final,
+            intents: [{ id: "delete", name: "job.delete", input: { jobId } }],
+          },
+          final,
+        ])
+      )
+      await command("coach.start", {
+        chatId,
+        text: "Delete the Job",
+        startKey: randomUUID(),
+      })
+      await work()
+      expect((await db.select().from(coachTasks))[0]?.state).toBe(
+        "waitingApproval"
+      )
+      const [proposal] = await db.select().from(pendingActions)
+      process.env.COACH_DURABLE = "off"
+      const legacy = createTestApp(db, {
+        coach: createScriptedCoachRuntime([]),
+        coachDurable: false,
+      })
+      const resolved = await legacy.request(
+        resolution === "stop"
+          ? `/api/chats/${chatId}/stop`
+          : `/api/commands/actions.${resolution}`,
+        {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+          body: JSON.stringify({ pendingActionId: proposal!.id }),
+        }
+      )
+      expect(resolved.status).toBe(200)
+      await work()
+      expect((await db.select().from(coachTasks))[0]?.state).toBe(
+        resolution === "stop" ? "cancelled" : "succeeded"
+      )
+      expect((await db.select().from(pendingActions))[0]?.status).toBe(
+        resolution === "approve" ? "approved" : "denied"
+      )
+      const response = await legacy.request(`/api/chats/${chatId}/turns`, {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ text: "Continue in legacy" }),
+      })
+      expect(response.status).toBe(200)
+      expect(await response.text()).toContain("event: message-end")
+    })
+)

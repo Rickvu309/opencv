@@ -371,7 +371,7 @@ it("returns typed resets for expired, missing and future cursors", () =>
     expect(reset.snapshot.cursor).toBe(snapshot.cursor)
   }))
 
-it("rejects malformed cursors and keeps the public task surface off by default", () =>
+it("rejects malformed cursors and keeps accepted tasks readable after rollback", () =>
   fixture(async ({ app, owner, start, command, chatId, events }) => {
     const { taskId } = await start()
     for (const after of ["-2", "1.5", "NaN", "9007199254740992", "1e3", ""]) {
@@ -400,8 +400,8 @@ it("rejects malformed cursors and keeps the public task surface off by default",
           headers: authHeaders(owner.cookie),
         })
       ).status
-    ).toBe(404)
-    expect((await events(taskId, -1)).status).toBe(404)
+    ).toBe(200)
+    expect((await events(taskId, -1)).status).toBe(200)
   }))
 
 it("regenerates the same source with selection and grounding and never offers tools", () =>

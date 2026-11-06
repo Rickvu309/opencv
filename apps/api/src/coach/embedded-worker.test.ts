@@ -9,9 +9,10 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-it("disables the embedded worker with the server kill switch", async () => {
+it("drains accepted work with new durable admissions switched off", async () => {
+  vi.mocked(runCoachWorker).mockResolvedValue(false)
   await startEmbeddedCoachWorker(installRegistry(), { COACH_DURABLE: "off" })()
-  expect(runCoachWorker).not.toHaveBeenCalled()
+  expect(runCoachWorker).toHaveBeenCalledTimes(1)
 })
 
 it("runs one claim at a time and drains it before stopping", async () => {

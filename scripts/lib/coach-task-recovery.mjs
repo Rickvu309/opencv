@@ -1,21 +1,97 @@
 export function detect(source, path = "") {
-  if (path === "apps/web/src/lib/coach-task-client.ts")
-    return /from ["']zod["']/.test(source)
-      ? [{ message: "Coach config validation uses the shared domain schema" }]
-      : []
-  if (path === "apps/api/src/coach/turn-compatibility.ts")
-    return /receipt\s*\?\s*toolResultFromExecute\(/.test(source)
+  if (path === "apps/web/src/lib/coach-task-client.ts") {
+    const problems = []
+    if (/from ["']zod["']/.test(source))
+      problems.push({
+        message: "Coach config validation uses the shared domain schema",
+      })
+    const config = source.slice(
+      source.indexOf("export async function getCoachConfig"),
+      source.indexOf("export async function startCoachTask")
+    )
+    if (
+      !config.includes("setTimeout(") ||
+      !config.includes("controller.abort(")
+    )
+      problems.push({
+        message: "Unknown Coach settings require an abortable fetch deadline",
+      })
+    return problems
+  }
+  if (
+    ["embedded-worker.ts", "worker.ts", "task-reader.ts"].some(
+      (file) => path === `apps/api/src/coach/${file}`
+    ) ||
+    path === "apps/api/src/chat/store.ts"
+  ) {
+    if (/coachWorkerEnabledFromEnv|requireTaskRollout/.test(source))
+      return [
+        {
+          message:
+            "Rollback gates admissions, never accepted task processing or reads",
+        },
+      ]
+  }
+  if (
+    path === "apps/api/src/chat/store.ts" &&
+    !source.includes("Reload this Chat to follow or stop it.")
+  )
+    return [
+      {
+        message:
+          "Old tabs retain the working notice after completion hydration",
+      },
+    ]
+  if (path === "apps/api/src/coach/task-start.ts")
+    return source.indexOf("if (prior)") >= 0 &&
+      source.indexOf("if (prior)") <
+        source.indexOf("!coachWorkerEnabledFromEnv")
       ? []
-      : [{ message: "Old tabs retain durable receipt reversal metadata" }]
+      : [
+          {
+            message:
+              "Rollback rejects new starts after preserving accepted start receipts",
+          },
+        ]
+  if (path === "apps/api/src/coach/turn-compatibility.ts")
+    return [
+      ...(/receipt\s*\?\s*toolResultFromExecute\(/.test(source)
+        ? []
+        : [{ message: "Old tabs retain durable receipt reversal metadata" }]),
+      ...(/if \(Date.now\(\) >= deadline\) \{[\s\S]*?type: "text-delta"[\s\S]*?Reload this Chat to follow or stop it.[\s\S]*?type: "message-end"/.test(
+        source
+      )
+        ? []
+        : [
+            {
+              message:
+                "Compatibility tails complete explicitly for old clients without retry errors",
+            },
+          ]),
+    ]
   if (path === "apps/api/src/config.ts")
     return source.includes(
       'return env.COACH_DURABLE?.trim().toLowerCase() !== "off"'
     )
       ? []
       : [{ message: "Coach defaults to durable with one server kill switch" }]
+  if (path === "apps/web/src/features/coach/coach-workspace.tsx")
+    return source.includes('store.configuration === "loading"') &&
+      source.includes('store.configuration === "error"') &&
+      source.includes('role="alert"') &&
+      source.includes("store.retry()")
+      ? []
+      : [
+          {
+            message:
+              "Unknown Coach settings stay visible with loading, error and Retry beside Send",
+          },
+        ]
   if (path === "apps/web/src/features/coach/use-coach-turn.ts")
     return source.includes("VITE_COACH_TASK_WORKER") ||
-      !source.includes("queryFn: getCoachConfig")
+      !source.includes("queryFn: getCoachConfig") ||
+      !source.includes("const configuration =") ||
+      !source.includes('configuration === "ready"')
       ? [{ message: "Coach mode comes from the server at runtime" }]
       : []
 

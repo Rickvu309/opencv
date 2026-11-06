@@ -319,7 +319,7 @@ for (const [path, mistake, clean] of [
   [
     "apps/web/src/features/coach/use-coach-turn.ts",
     'const durableEnabled = import.meta.env.VITE_COACH_TASK_WORKER === "internal"',
-    "queryFn: getCoachConfig",
+    'queryFn: getCoachConfig; const configuration = configuration === "ready"',
   ],
 ]) {
   test(`durable default deployment: ${path}`, () => {
@@ -338,3 +338,61 @@ for (const [path, mistake, clean] of [
     assert.equal(detect(historic, path).length, 1)
   })
 }
+
+for (const path of [
+  "apps/api/src/coach/embedded-worker.ts",
+  "apps/api/src/coach/worker.ts",
+  "apps/api/src/coach/task-reader.ts",
+  "apps/api/src/coach/task-start.ts",
+  "apps/api/src/chat/store.ts",
+  "apps/api/src/coach/turn-compatibility.ts",
+  "apps/web/src/lib/coach-task-client.ts",
+  "apps/web/src/features/coach/use-coach-turn.ts",
+  "apps/web/src/features/coach/coach-workspace.tsx",
+]) {
+  test(`rollback and compatibility guards reject 92b6581a: ${path}`, () => {
+    const historic = execFileSync("git", ["show", `92b6581a:${path}`], {
+      encoding: "utf8",
+    })
+    const current = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+    assert.ok(detect(historic, path).length > 0)
+    assert.deepEqual(detect(current, path), [])
+  })
+}
+
+for (const [path, required] of [
+  ["apps/api/src/chat/store.ts", "Reload this Chat to follow or stop it."],
+  [
+    "apps/api/src/coach/turn-compatibility.ts",
+    "Reload this Chat to follow or stop it.",
+  ],
+]) {
+  test(`old tabs retain a visible working notice: ${path}`, () => {
+    const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+    assert.deepEqual(detect(clean, path), [])
+    assert.ok(detect(clean.replaceAll(required, "missing"), path).length > 0)
+    const historic = execFileSync("git", ["show", `92b6581a:${path}`], {
+      encoding: "utf8",
+    })
+    assert.ok(detect(historic, path).length > 0)
+  })
+}
+
+test("unknown config cannot hide its Retry in Chat history", () => {
+  const path = "apps/web/src/features/coach/coach-workspace.tsx"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detect(clean, path), [])
+  assert.ok(
+    detect(clean.replaceAll('role="alert"', 'role="presentation"'), path)
+      .length > 0
+  )
+})
+
+test("rollback preserves accepted start receipts before gating new admissions", () => {
+  const path = "apps/api/src/coach/task-start.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detect(clean, path), [])
+  assert.ok(
+    detect(clean.replace("if (prior)", "if (missing)"), path).length > 0
+  )
+})

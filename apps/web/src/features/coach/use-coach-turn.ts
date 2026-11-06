@@ -89,12 +89,20 @@ export function useCoachTurn({
     queryKey: coachConfigKey(),
     queryFn: getCoachConfig,
     staleTime: 0,
+    retry: false,
   })
-  const durableEnabled = config.data?.coachDurable !== false
   const durable = useCoachTask(
     { chatId, setChatId, titleForCreate, focusDocId, onAfterUndo },
-    durableEnabled
+    true
   )
+  const durableEnabled =
+    config.data?.coachDurable !== false || durable.hasActiveTask
+  const configuration = config.isError
+    ? ("error" as const)
+    : !config.isSuccess ||
+        (config.data.coachDurable === false && durable.recovering)
+      ? ("loading" as const)
+      : ("ready" as const)
   const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(turnReducer, IDLE_TURN)
   const [progressCalls, progressDispatch] = useReducer(coachProgressReducer, [])
@@ -545,15 +553,8 @@ export function useCoachTurn({
     [hydrateChat, onAfterUndo, phase, queryClient, chatId]
   )
 
-  return durableEnabled
-    ? {
-        ...durable,
-        send: config.isSuccess ? durable.send : () => false,
-        regenerate: config.isSuccess ? durable.regenerate : () => false,
-        error: config.isError
-          ? "Could not load Coach settings. Reload to try again."
-          : durable.error,
-      }
+  const turn = durableEnabled
+    ? durable
     : {
         messages,
         phase,
@@ -566,4 +567,19 @@ export function useCoachTurn({
         undo,
         cancelInFlight,
       }
+  return {
+    ...turn,
+    configuration,
+    send: configuration === "ready" ? turn.send : () => false,
+    regenerate: configuration === "ready" ? turn.regenerate : () => false,
+    error: config.isError
+      ? "Could not load Coach settings. Retry to reconnect."
+      : turn.error,
+    retry: config.isError
+      ? () => {
+          void config.refetch()
+          return true
+        }
+      : turn.retry,
+  }
 }

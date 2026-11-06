@@ -17,7 +17,6 @@ import { and, asc, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
 
 import { getDb, transaction } from "../db/context.js"
 import { activity, chatMessages, chats, coachTasks } from "../db/schema.js"
-import { coachWorkerEnabledFromEnv } from "../config.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
@@ -87,46 +86,64 @@ export async function getChat(userId: UserId, chatId: ChatId) {
   const confirmations = new Map(
     (await registry.confirmations(userId, chatId)).map((row) => [row.id, row])
   )
-  const [activeTask] = coachWorkerEnabledFromEnv(process.env)
-    ? await getDb()
-        .select({ id: coachTasks.id })
-        .from(coachTasks)
-        .where(
-          and(
-            eq(coachTasks.ownerId, userId),
-            eq(coachTasks.chatId, chatId),
-            inArray(coachTasks.state, [
-              "queued",
-              "running",
-              "waitingApproval",
-              "cancelling",
-            ])
-          )
-        )
-        .limit(1)
-    : []
+  const [activeTask] = await getDb()
+    .select({ id: coachTasks.id, createdAt: coachTasks.createdAt })
+    .from(coachTasks)
+    .where(
+      and(
+        eq(coachTasks.ownerId, userId),
+        eq(coachTasks.chatId, chatId),
+        inArray(coachTasks.state, [
+          "queued",
+          "running",
+          "waitingApproval",
+          "cancelling",
+        ])
+      )
+    )
+    .limit(1)
+
   return {
     ...toChat(row),
-    ...(coachWorkerEnabledFromEnv(process.env)
-      ? { activeTaskId: activeTask?.id ?? null }
-      : {}),
-    messages: visible.map((message) => {
-      const result = withBlocked(withUndone(message, undone), blocked)
-      return {
-        ...result,
-        parts: result.parts.map((part) =>
-          part.type === "tool" && part.pendingActionId
-            ? {
-                ...part,
-                ...confirmations.get(part.pendingActionId)?.receipt,
-                approval:
-                  confirmations.get(part.pendingActionId)?.status ??
-                  ("expired" as const),
-              }
-            : part
-        ),
-      }
-    }),
+    activeTaskId: activeTask?.id ?? null,
+    messages: [
+      ...visible.map((message) => {
+        const result = withBlocked(withUndone(message, undone), blocked)
+        return {
+          ...result,
+          parts: result.parts.map((part) =>
+            part.type === "tool" && part.pendingActionId
+              ? {
+                  ...part,
+                  ...confirmations.get(part.pendingActionId)?.receipt,
+                  approval:
+                    confirmations.get(part.pendingActionId)?.status ??
+                    ("expired" as const),
+                }
+              : part
+          ),
+        }
+      }),
+      ...(activeTask
+        ? [
+            {
+              id: activeTask.id,
+              chatId,
+              role: "coach" as const,
+              text: "Coach is still working. Reload this Chat to follow or stop it.",
+              parts: [
+                {
+                  type: "text" as const,
+                  text: "Coach is still working. Reload this Chat to follow or stop it.",
+                },
+              ],
+              status: null,
+              workedMs: null,
+              createdAt: iso(activeTask.createdAt),
+            },
+          ]
+        : []),
+    ],
   }
 }
 

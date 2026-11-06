@@ -9,7 +9,10 @@ import {
 } from "@workspace/domain"
 import { and, eq, sql } from "drizzle-orm"
 import { getProfileRow } from "../account/index.js"
-import { coachRuntimeModeFromEnv } from "../config.js"
+import {
+  coachRuntimeModeFromEnv,
+  coachWorkerEnabledFromEnv,
+} from "../config.js"
 import { getDb, transaction } from "../db/context.js"
 import {
   chats,
@@ -22,7 +25,6 @@ import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { inputHash } from "./task-store.js"
-import { requireTaskRollout } from "./task-reader.js"
 import { resolveTurnGrounding } from "./context.js"
 import { openCoachUsage } from "./usage-store.js"
 import { modelMessageSchema } from "./model-step.js"
@@ -37,7 +39,6 @@ export function startTask(
   actor: Actor,
   registry: Registry
 ) {
-  requireTaskRollout()
   return transaction(async () => {
     await getDb()
       .select({ id: user.id })
@@ -78,6 +79,8 @@ export function startTask(
         },
       })
     }
+    if (!coachWorkerEnabledFromEnv(process.env))
+      throw new CommandError("NOT_FOUND", "New Coach tasks are unavailable")
     const [active] = await getDb()
       .select({ id: coachTasks.id })
       .from(coachTasks)

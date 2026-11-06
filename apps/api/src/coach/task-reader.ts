@@ -8,7 +8,6 @@ import {
   type CoachTaskReplay,
 } from "@workspace/domain"
 import { and, desc, eq, gt, lte } from "drizzle-orm"
-import { coachWorkerEnabledFromEnv } from "../config.js"
 import { getDb, transaction } from "../db/context.js"
 import {
   chats,
@@ -21,11 +20,6 @@ import {
 } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
 import type { Task } from "./task-types.js"
-
-export function requireTaskRollout() {
-  if (!coachWorkerEnabledFromEnv(process.env))
-    throw new CommandError("NOT_FOUND", "Coach tasks are unavailable")
-}
 
 async function ownedTask(taskId: string, ownerId: string) {
   const [task] = await getDb()
@@ -137,7 +131,6 @@ async function snapshot(task: Task) {
 }
 
 export function taskSnapshot(taskId: string, ownerId: string) {
-  requireTaskRollout()
   return transaction(async () => snapshot(await ownedTask(taskId, ownerId)))
 }
 
@@ -146,7 +139,6 @@ export function readTaskEvents(
   ownerId: string,
   after: number
 ): Promise<CoachTaskReplay> {
-  requireTaskRollout()
   return transaction(async () => {
     const task = await ownedTask(taskId, ownerId)
     const high = task.nextSeq - 1

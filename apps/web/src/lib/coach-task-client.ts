@@ -25,11 +25,27 @@ import {
 
 export const coachConfigKey = () => ["coach-config"] as const
 
-export async function getCoachConfig() {
-  const response = await apiRequest(endpoints.publicConfig, {
-    cache: "no-store",
-  })
-  return coachConfigSchema.parse(await response.json())
+export async function getCoachConfig({
+  signal,
+}: { signal?: AbortSignal } = {}) {
+  const controller = new AbortController()
+  const cancel = () => controller.abort(signal?.reason)
+  signal?.addEventListener("abort", cancel, { once: true })
+  if (signal?.aborted) cancel()
+  const timer = setTimeout(
+    () => controller.abort(new Error("Coach settings timed out")),
+    5000
+  )
+  try {
+    const response = await apiRequest(endpoints.publicConfig, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+    return coachConfigSchema.parse(await response.json())
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener("abort", cancel)
+  }
 }
 
 export async function startCoachTask(
