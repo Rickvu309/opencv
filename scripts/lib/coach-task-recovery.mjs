@@ -1,4 +1,24 @@
 export function detect(source, path = "") {
+  if (path === "apps/web/src/lib/coach-task-client.ts")
+    return /from ["']zod["']/.test(source)
+      ? [{ message: "Coach config validation uses the shared domain schema" }]
+      : []
+  if (path === "apps/api/src/coach/turn-compatibility.ts")
+    return /receipt\s*\?\s*toolResultFromExecute\(/.test(source)
+      ? []
+      : [{ message: "Old tabs retain durable receipt reversal metadata" }]
+  if (path === "apps/api/src/config.ts")
+    return source.includes(
+      'return env.COACH_DURABLE?.trim().toLowerCase() !== "off"'
+    )
+      ? []
+      : [{ message: "Coach defaults to durable with one server kill switch" }]
+  if (path === "apps/web/src/features/coach/use-coach-turn.ts")
+    return source.includes("VITE_COACH_TASK_WORKER") ||
+      !source.includes("queryFn: getCoachConfig")
+      ? [{ message: "Coach mode comes from the server at runtime" }]
+      : []
+
   const recovery = source.slice(
     source.indexOf("export async function saveRepliesForUnsavedTurns"),
     source.indexOf("export async function openCoachUsage")

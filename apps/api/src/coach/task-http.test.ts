@@ -36,7 +36,7 @@ import { runCoachWorker } from "./worker.js"
 const coachTaskReplaySchema = coachTaskQueries["coach.events"].output
 const coachTaskResetSchema = coachTaskReplaySchema.options[1]
 const envelope = z.object({ ok: z.literal(true), data: z.unknown() })
-const originalSwitch = process.env.COACH_TASK_WORKER
+const originalSwitch = process.env.COACH_DURABLE
 const originalRuntime = process.env.COACH_RUNTIME
 const final = {
   text: "Prepared.",
@@ -46,8 +46,8 @@ const final = {
 }
 
 afterEach(() => {
-  if (originalSwitch === undefined) delete process.env.COACH_TASK_WORKER
-  else process.env.COACH_TASK_WORKER = originalSwitch
+  if (originalSwitch === undefined) delete process.env.COACH_DURABLE
+  else process.env.COACH_DURABLE = originalSwitch
   if (originalRuntime === undefined) delete process.env.COACH_RUNTIME
   else process.env.COACH_RUNTIME = originalRuntime
 })
@@ -55,7 +55,7 @@ afterEach(() => {
 async function fixture(
   run: (ctx: Awaited<ReturnType<typeof setup>>) => Promise<void>
 ) {
-  process.env.COACH_TASK_WORKER = "internal"
+  process.env.COACH_DURABLE = "on"
   process.env.COACH_RUNTIME = "fake"
   const ctx = await setup()
   try {
@@ -384,7 +384,7 @@ it("rejects malformed cursors and keeps the public task surface off by default",
         ).status
       ).toBe(400)
     }
-    delete process.env.COACH_TASK_WORKER
+    process.env.COACH_DURABLE = "off"
     expect(
       (
         await command("coach.start", {

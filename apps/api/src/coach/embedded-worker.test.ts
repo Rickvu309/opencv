@@ -9,13 +9,8 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-it("leaves the embedded worker disabled outside rollout and supports an independent worker opt out", async () => {
-  const registry = installRegistry()
-  await startEmbeddedCoachWorker(registry, {})()
-  await startEmbeddedCoachWorker(registry, {
-    COACH_TASK_WORKER: "internal",
-    COACH_EMBEDDED_WORKER: "off",
-  })()
+it("disables the embedded worker with the server kill switch", async () => {
+  await startEmbeddedCoachWorker(installRegistry(), { COACH_DURABLE: "off" })()
   expect(runCoachWorker).not.toHaveBeenCalled()
 })
 
@@ -28,9 +23,7 @@ it("runs one claim at a time and drains it before stopping", async () => {
         release = resolve
       })
   )
-  const stop = startEmbeddedCoachWorker(installRegistry(), {
-    COACH_TASK_WORKER: "internal",
-  })
+  const stop = startEmbeddedCoachWorker(installRegistry(), {})
   await vi.advanceTimersByTimeAsync(10000)
   expect(runCoachWorker).toHaveBeenCalledTimes(1)
   expect(runCoachWorker).toHaveBeenCalledWith(
@@ -55,9 +48,7 @@ it("continues claiming after an idle result or a failed claim", async () => {
     .mockResolvedValueOnce(false)
     .mockRejectedValueOnce(new Error("connection lost"))
     .mockResolvedValue(false)
-  const stop = startEmbeddedCoachWorker(installRegistry(), {
-    COACH_TASK_WORKER: "internal",
-  })
+  const stop = startEmbeddedCoachWorker(installRegistry(), {})
   await vi.advanceTimersByTimeAsync(500)
   await stop()
   expect(runCoachWorker).toHaveBeenCalledTimes(3)

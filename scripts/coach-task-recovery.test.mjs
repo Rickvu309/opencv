@@ -4,6 +4,22 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/coach-task-recovery.mjs"
 
+test("Coach config validation uses the declared domain dependency", () => {
+  const path = "apps/web/src/lib/coach-task-client.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  const mistake = `import { z } from "zod"\n${clean}`
+  assert.equal(detect(mistake, path).length, 1)
+  assert.deepEqual(detect(clean, path), [])
+})
+
+test("old tabs retain durable receipt reversal metadata", () => {
+  const path = "apps/api/src/coach/turn-compatibility.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  const mistake = clean.replace("? toolResultFromExecute(", "? wireResult(")
+  assert.equal(detect(mistake, path).length, 1)
+  assert.deepEqual(detect(clean, path), [])
+})
+
 const mistake =
   "export async function saveRepliesForUnsavedTurns() { query.from(coachUsage).where(isNull(coachUsage.messageId)) } export async function openCoachUsage() {}"
 const clean = mistake.replace(
@@ -291,5 +307,34 @@ for (const [name, path, historicPath, required] of [
         (problem) => problem.message === failures[0].message
       )
     )
+  })
+}
+
+for (const [path, mistake, clean] of [
+  [
+    "apps/api/src/config.ts",
+    'return env.COACH_TASK_WORKER === "internal"',
+    'return env.COACH_DURABLE?.trim().toLowerCase() !== "off"',
+  ],
+  [
+    "apps/web/src/features/coach/use-coach-turn.ts",
+    'const durableEnabled = import.meta.env.VITE_COACH_TASK_WORKER === "internal"',
+    "queryFn: getCoachConfig",
+  ],
+]) {
+  test(`durable default deployment: ${path}`, () => {
+    assert.equal(detect(mistake, path).length, 1)
+    assert.deepEqual(detect(clean, path), [])
+    assert.deepEqual(
+      detect(
+        readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
+        path
+      ),
+      []
+    )
+    const historic = execFileSync("git", ["show", `67ef657:${path}`], {
+      encoding: "utf8",
+    })
+    assert.equal(detect(historic, path).length, 1)
   })
 }

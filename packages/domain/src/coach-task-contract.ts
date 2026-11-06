@@ -9,6 +9,8 @@ import {
   queryEntry,
 } from "./contract.js"
 
+export const coachConfigSchema = z.object({ coachDurable: z.boolean() })
+
 export const coachTaskErrorCodeSchema = z.enum([
   "DEADLINE_EXCEEDED",
   "REPLY_SUPERSEDED",

@@ -1,3 +1,4 @@
+import { coachConfigKey, getCoachConfig } from "@/lib/coach-task-client.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useReducer, useRef } from "react"
 import {
@@ -84,7 +85,12 @@ export function useCoachTurn({
   focusDocId,
   onAfterUndo,
 }: UseCoachTurnOptions) {
-  const durableEnabled = import.meta.env.VITE_COACH_TASK_WORKER === "internal"
+  const config = useQuery({
+    queryKey: coachConfigKey(),
+    queryFn: getCoachConfig,
+    staleTime: 0,
+  })
+  const durableEnabled = config.data?.coachDurable !== false
   const durable = useCoachTask(
     { chatId, setChatId, titleForCreate, focusDocId, onAfterUndo },
     durableEnabled
@@ -540,7 +546,14 @@ export function useCoachTurn({
   )
 
   return durableEnabled
-    ? durable
+    ? {
+        ...durable,
+        send: config.isSuccess ? durable.send : () => false,
+        regenerate: config.isSuccess ? durable.regenerate : () => false,
+        error: config.isError
+          ? "Could not load Coach settings. Reload to try again."
+          : durable.error,
+      }
     : {
         messages,
         phase,

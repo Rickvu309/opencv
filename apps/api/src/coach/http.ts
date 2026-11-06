@@ -28,6 +28,7 @@ import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { registry } from "../registry/registry.js"
 import { resolveTurnGrounding } from "./context.js"
+import { startCompatibilityTurn } from "./turn-compatibility.js"
 import { runCoachTurn } from "./turn.js"
 import { routeCoachModel } from "./router.js"
 
@@ -35,12 +36,16 @@ export function createCoachRoutes(options: {
   auth?: Auth
   db?: AppDatabase
   coach?: CoachRuntime
+  coachDurable: boolean
+  coachCompatibilityMs?: number
   coachSseHeartbeatMs?: number
 }) {
   const routes = new Hono<{ Variables: SessionVariables }>()
   routes.use("*", requireSession(options.auth, options.db))
   routes.post("/:id/turns", (c) =>
-    startTurn(c, options.coach, options.coachSseHeartbeatMs)
+    options.coachDurable
+      ? startCompatibilityTurn(c, options.coachCompatibilityMs)
+      : startTurn(c, options.coach, options.coachSseHeartbeatMs)
   )
   return routes
 }

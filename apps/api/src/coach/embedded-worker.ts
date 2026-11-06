@@ -12,7 +12,7 @@ export function startEmbeddedCoachWorker(
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | undefined
   let running = Promise.resolve()
-  if (coachWorkerEnabledFromEnv(env) && env.COACH_EMBEDDED_WORKER !== "off") {
+  if (coachWorkerEnabledFromEnv(env)) {
     const workerId = `api-${randomUUID()}`
     const next = () => {
       running = runCoachWorker({

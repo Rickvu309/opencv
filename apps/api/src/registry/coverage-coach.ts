@@ -21,17 +21,17 @@ export function coachCases({
         )
       },
       act: async () => {
-        const prior = process.env.COACH_TASK_WORKER
+        const prior = process.env.COACH_DURABLE
         try {
-          process.env.COACH_TASK_WORKER = "internal"
+          process.env.COACH_DURABLE = "on"
           return await run("coach.start", {
             chatId: ctx.chatId,
             startKey: randomUUID(),
             text: "Help me prepare",
           })
         } finally {
-          if (prior === undefined) delete process.env.COACH_TASK_WORKER
-          else process.env.COACH_TASK_WORKER = prior
+          if (prior === undefined) delete process.env.COACH_DURABLE
+          else process.env.COACH_DURABLE = prior
         }
       },
       assert: async (result) => {
@@ -46,7 +46,7 @@ export function coachCases({
         )
         expect(
           await runCoachWorker({
-            env: { COACH_TASK_WORKER: "internal" },
+            env: {},
             workerId: "coverage",
             registry,
             catalogDigest: taskCatalogDigest(registry),

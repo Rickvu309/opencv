@@ -54,7 +54,7 @@ const scriptSchema = z.array(
 )
 const final = { text: "Saved.", intents: [], inputTokens: 2, outputTokens: 3 }
 const settings = {
-  env: { COACH_TASK_WORKER: "internal" },
+  env: {},
   workerId: "worker",
   catalogDigest: "test",
   runtimeVersion: 1,
@@ -88,12 +88,18 @@ const storedRuntime: Parameters<typeof runCoachWorker>[0]["runtime"] = (
   return createScriptedWorkerRuntime(context.script)
 }
 
-it("leaves Send and task claims off by default", () =>
+it("leaves task claims off with the server kill switch", () =>
   fixture(async (_, registry) => {
-    expect(coachWorkerEnabledFromEnv({})).toBe(false)
+    expect(coachWorkerEnabledFromEnv({})).toBe(true)
+    expect(coachWorkerEnabledFromEnv({ COACH_DURABLE: "off" })).toBe(false)
     const runtime = vi.fn(storedRuntime)
     expect(
-      await runCoachWorker({ ...settings, env: {}, registry, runtime })
+      await runCoachWorker({
+        ...settings,
+        env: { COACH_DURABLE: "off" },
+        registry,
+        runtime,
+      })
     ).toBe(false)
     expect(runtime).not.toHaveBeenCalled()
     expect((await getDb().select().from(coachTasks))[0]?.state).toBe("queued")

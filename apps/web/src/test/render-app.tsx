@@ -31,7 +31,10 @@ export function renderApp(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       onRequest?.(input)
       if (pathOf(input) === "/api/public-config") {
-        return Response.json({ google: mockPublicConfig.google })
+        return Response.json({
+          google: mockPublicConfig.google,
+          coachDurable: false,
+        })
       }
       const chat = await chatApiFetch(input, init)
       if (chat) return chat

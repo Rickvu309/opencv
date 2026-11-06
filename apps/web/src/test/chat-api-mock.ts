@@ -459,6 +459,9 @@ export async function chatApiFetch(
   const path = pathOf(input)
   const method = (init?.method ?? "GET").toUpperCase()
 
+  if (method === "GET" && path === "/api/public-config")
+    return Response.json({ google: false, coachDurable: false })
+
   if (method === "GET" && path === "/api/chats") {
     return jsonOk(listItems().map((item) => chatRow(item as ChatRecord)))
   }

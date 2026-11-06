@@ -77,6 +77,7 @@ describe("useCoachTurn turn lifecycle", () => {
       const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false } },
       })
+      queryClient.setQueryData(["coach-config"], { coachDurable: false })
       const wrapper = ({ children }: { children: ReactNode }) =>
         createElement(QueryClientProvider, { client: queryClient }, children)
       const { result } = renderHook(
@@ -194,6 +195,7 @@ describe("useCoachTurn turn lifecycle", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
+    queryClient.setQueryData(["coach-config"], { coachDurable: false })
     const wrapper = ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client: queryClient }, children)
     const { result } = renderHook(

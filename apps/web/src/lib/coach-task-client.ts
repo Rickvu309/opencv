@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query"
 import {
+  coachConfigSchema,
   coachTaskEventSchema,
   coachTaskQueries,
   coachTaskSnapshotSchema,
@@ -21,6 +22,15 @@ import {
   type CoachTaskState,
   type TaskSnapshot,
 } from "@/lib/coach-task-state.ts"
+
+export const coachConfigKey = () => ["coach-config"] as const
+
+export async function getCoachConfig() {
+  const response = await apiRequest(endpoints.publicConfig, {
+    cache: "no-store",
+  })
+  return coachConfigSchema.parse(await response.json())
+}
 
 export async function startCoachTask(
   queryClient: QueryClient,

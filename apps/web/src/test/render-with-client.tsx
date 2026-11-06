@@ -4,10 +4,14 @@ import type { ReactElement } from "react"
 
 import { registerTestCleanup } from "./test-resources.ts"
 
-export function render(ui: ReactElement) {
+export function render(
+  ui: ReactElement,
+  { coachDurable = false }: { coachDurable?: boolean } = {}
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
+  client.setQueryData(["coach-config"], { coachDurable })
   registerTestCleanup(async () => {
     try {
       await client.cancelQueries()
