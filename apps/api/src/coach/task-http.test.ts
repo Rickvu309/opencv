@@ -473,3 +473,36 @@ it("shows only a public error code when a task fails with internal error text", 
     expect(snapshot.errorCode).toBe("TASK_FAILED")
     expect(JSON.stringify(snapshot)).not.toContain("secret_column")
   }))
+
+it("targets the exact task across terminal completion, replay and a newer turn", () =>
+  fixture(async ({ start, command, work, status, chatId, foreign }) => {
+    const input = { chatId, startKey: randomUUID(), text: "Original" }
+    const original = await start(input)
+    await work()
+    expect((await status(original.taskId)).state).toBe("succeeded")
+    const newer = await start({ text: "Newer" })
+    expect(await start(input)).toEqual(original)
+    expect(
+      (
+        await command(
+          "coach.stop",
+          { chatId, taskId: newer.taskId },
+          foreign.cookie
+        )
+      ).status
+    ).toBe(404)
+    const stale = await command("coach.stop", {
+      chatId,
+      taskId: original.taskId,
+    })
+    expect(stale.status).toBe(200)
+    expect(envelope.parse(await stale.json()).data).toEqual({ stopped: false })
+    expect((await status(newer.taskId)).state).toBe("queued")
+    expect(
+      (await command("coach.stop", { chatId, taskId: newer.taskId })).status
+    ).toBe(200)
+    expect((await status(newer.taskId)).state).toBe("cancelling")
+    expect(
+      (await command("coach.stop", { chatId, taskId: newer.taskId })).status
+    ).toBe(200)
+  }))

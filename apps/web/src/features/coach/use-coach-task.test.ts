@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, renderHook, waitFor } from "@testing-library/react"
-import { createElement, useReducer, type ReactNode } from "react"
+import { createElement, StrictMode, useReducer, type ReactNode } from "react"
 import { afterEach, expect, it, vi } from "vitest"
 import { parseChatId } from "@workspace/domain"
 
@@ -14,12 +14,16 @@ import { useCoachTask } from "./use-coach-task.ts"
 
 afterEach(() => vi.unstubAllGlobals())
 
-function mount(initialChatId: string | null = null) {
+function mount(initialChatId: string | null = null, strict = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   const wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client }, children)
+    createElement(
+      QueryClientProvider,
+      { client },
+      strict ? createElement(StrictMode, null, children) : children
+    )
   const hook = renderHook(
     () => {
       const [chatId, setChatId] = useReducer(
@@ -40,7 +44,7 @@ function mount(initialChatId: string | null = null) {
     },
     { wrapper }
   )
-  return hook
+  return { ...hook, client }
 }
 
 it("retries an interrupted start with the same chat, invocation key and attachments", async () => {
@@ -142,6 +146,7 @@ function deferred<T>() {
 
 it("keeps Stop during Chat creation and never sends the pending start", async () => {
   const creation = deferred<void>()
+  const creating = vi.fn()
   const starts = vi.fn(() =>
     Response.json({ ok: true, data: { taskId: TASK } })
   )
@@ -149,7 +154,10 @@ it("keeps Stop during Chat creation and never sends the pending start", async ()
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(String(input)).pathname
-      if (path.endsWith("chat.create")) await creation.promise
+      if (path.endsWith("chat.create")) {
+        creating()
+        await creation.promise
+      }
       if (path.endsWith("coach.start")) return starts()
       if (path.includes("/coach/tasks/"))
         return Response.json({
@@ -163,6 +171,7 @@ it("keeps Stop during Chat creation and never sends the pending start", async ()
   act(() => {
     expect(hook.result.current.send("Stop before creating")).toBe(true)
   })
+  await waitFor(() => expect(creating).toHaveBeenCalledOnce())
   act(() => hook.result.current.stop())
   await act(async () => creation.resolve())
   await waitFor(() => expect(hook.result.current.progress.active).toBe(false))
@@ -214,7 +223,7 @@ it.each([false, true])(
     act(() => hook.result.current.stop())
     expect(stops).toHaveLength(0)
     await act(async () => acceptance.resolve())
-    await waitFor(() => expect(stops).toEqual([{ chatId: CHAT }]))
+    await waitFor(() => expect(stops).toEqual([{ chatId: CHAT, taskId: TASK }]))
     await waitFor(() => expect(hook.result.current.progress.active).toBe(false))
     expect(inputs).toHaveLength(lostResponse ? 2 : 1)
     if (lostResponse) expect(inputs[1]).toEqual(inputs[0])
@@ -279,3 +288,198 @@ it("releases a detached start without letting stale completion clear the newer l
   expect(inputs.map((input) => input.chatId)).toEqual([CHAT, other])
   hook.unmount()
 })
+
+const NEW_TASK = "01900000-0000-7000-8000-000000000004"
+
+it.each([false, true])(
+  "recovers a lost start with its key before Stop despite a refreshed active Chat, StrictMode: %s",
+  async (strict) => {
+    setMockChats([{ id: CHAT, title: "Lost start" }])
+    const inputs: Array<Record<string, unknown>> = []
+    const stops: Array<Record<string, unknown>> = []
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = new URL(String(input)).pathname
+        const body = () =>
+          (JSON.parse(String(init?.body)) as { input: Record<string, unknown> })
+            .input
+        if (path.endsWith("coach.start")) {
+          inputs.push(body())
+          if (inputs.length === 1) throw new Error("accepted response lost")
+          return Response.json({ ok: true, data: { taskId: TASK } })
+        }
+        if (path.endsWith("coach.stop")) {
+          stops.push(body())
+          return Response.json({ ok: true, data: { stopped: true } })
+        }
+        if (path.includes("/coach/tasks/"))
+          return Response.json({
+            ok: true,
+            data: taskSnapshot({ state: "cancelled" }),
+          })
+        return chatApiFetchOrThrow(input, init)
+      }
+    )
+    const hook = mount(CHAT, strict)
+    act(() => {
+      expect(hook.result.current.send("Recover exact work")).toBe(true)
+    })
+    await waitFor(() => expect(hook.result.current.error).toBeTruthy())
+    act(() => {
+      hook.client.setQueryData(["chat.get", { chatId: CHAT }], {
+        id: CHAT,
+        messages: [],
+        activeTaskId: TASK,
+      })
+    })
+    act(() => {
+      hook.result.current.stop()
+      hook.result.current.stop()
+    })
+    await waitFor(() => expect(stops).toEqual([{ chatId: CHAT, taskId: TASK }]))
+    expect(inputs).toHaveLength(2)
+    expect(inputs[1]).toEqual(inputs[0])
+    hook.unmount()
+    hook.client.clear()
+  }
+)
+
+it("discards delayed recovery after detach and a newer turn", async () => {
+  setMockChats([{ id: CHAT, title: "Reopened" }])
+  const recovery = deferred<void>()
+  const inputs: Array<Record<string, unknown>> = []
+  const stops: Array<Record<string, unknown>> = []
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(String(input)).pathname
+      const body = () =>
+        (JSON.parse(String(init?.body)) as { input: Record<string, unknown> })
+          .input
+      if (path.endsWith("coach.start")) {
+        inputs.push(body())
+        const attempt = inputs.length
+        if (attempt === 1) throw new Error("accepted response lost")
+        if (attempt === 2) await recovery.promise
+        return Response.json({
+          ok: true,
+          data: { taskId: attempt === 2 ? TASK : NEW_TASK },
+        })
+      }
+      if (path.endsWith("coach.stop")) {
+        stops.push(body())
+        return Response.json({ ok: true, data: { stopped: true } })
+      }
+      if (path.includes("/coach/tasks/"))
+        return Response.json({
+          ok: true,
+          data: taskSnapshot({ taskId: NEW_TASK }),
+        })
+      return chatApiFetchOrThrow(input, init)
+    }
+  )
+  const hook = mount(CHAT)
+  act(() => {
+    hook.result.current.send("Original")
+  })
+  await waitFor(() => expect(hook.result.current.error).toBeTruthy())
+  act(() => {
+    hook.result.current.stop()
+  })
+  await waitFor(() => expect(inputs).toHaveLength(2))
+  act(() => {
+    hook.result.current.switchChat(CHAT)
+  })
+  act(() => {
+    expect(hook.result.current.send("Newer")).toBe(true)
+  })
+  await waitFor(() => expect(inputs).toHaveLength(3))
+  await act(async () => recovery.resolve())
+  expect(stops).toEqual([])
+  expect(hook.result.current.progress.active).toBe(true)
+  hook.unmount()
+  hook.client.clear()
+})
+
+it.each([false, true])(
+  "deduplicates Stop and ignores Stop after terminal, StrictMode: %s",
+  async (strict) => {
+    setMockChats([{ id: CHAT, title: "Running" }])
+    const stopped = deferred<void>()
+    const stops: Array<Record<string, unknown>> = []
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = new URL(String(input)).pathname
+        if (path.endsWith("coach.start"))
+          return Response.json({ ok: true, data: { taskId: TASK } })
+        if (path.endsWith("coach.stop")) {
+          stops.push(
+            (
+              JSON.parse(String(init?.body)) as {
+                input: Record<string, unknown>
+              }
+            ).input
+          )
+          stopped.resolve()
+          return Response.json({ ok: true, data: { stopped: true } })
+        }
+        if (path.includes("/coach/tasks/")) {
+          await stopped.promise
+          return Response.json({
+            ok: true,
+            data: taskSnapshot({ state: "cancelled" }),
+          })
+        }
+        return chatApiFetchOrThrow(input, init)
+      }
+    )
+    const hook = mount(CHAT, strict)
+    act(() => {
+      hook.result.current.send("Stop once")
+    })
+    await waitFor(() => expect(hook.result.current.phase).toBe("waiting"))
+    await act(async () => {})
+    act(() => {
+      hook.result.current.stop()
+      hook.result.current.stop()
+    })
+    await waitFor(() => expect(hook.result.current.progress.active).toBe(false))
+    act(() => {
+      hook.result.current.stop()
+    })
+    expect(stops).toEqual([{ chatId: CHAT, taskId: TASK }])
+    hook.unmount()
+    hook.client.clear()
+  }
+)
+
+it.each([false, true])(
+  "cancels before dispatch in an existing Chat without ever sending start, StrictMode: %s",
+  async (strict) => {
+    setMockChats([{ id: CHAT, title: "Immediate Stop" }])
+    const starts = vi.fn(() =>
+      Response.json({ ok: true, data: { taskId: TASK } })
+    )
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (new URL(String(input)).pathname.endsWith("coach.start"))
+          return starts()
+        return chatApiFetchOrThrow(input, init)
+      }
+    )
+    const hook = mount(CHAT, strict)
+    act(() => {
+      hook.result.current.send("Cancel before dispatch")
+      hook.result.current.stop()
+    })
+    await act(async () => {})
+    expect(starts).not.toHaveBeenCalled()
+    expect(hook.result.current.phase).toBe("idle")
+    expect(hook.result.current.error).toBe("The Coach stopped.")
+    hook.unmount()
+    hook.client.clear()
+  }
+)

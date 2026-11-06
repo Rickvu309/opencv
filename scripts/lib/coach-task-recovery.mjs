@@ -59,6 +59,28 @@ export function detect(source, path = "") {
         "Unknown tools must preserve legacy streaming without a durable boundary",
     })
   if (source.includes("export function useCoachTask(")) {
+    if (
+      /"coach\.stop",\s*\{[^}]*\}/.test(source) &&
+      [...source.matchAll(/"coach\.stop",\s*\{([^}]*)\}/g)].some(
+        (match) => !/\btaskId\b/.test(match[1])
+      )
+    )
+      problems.push({
+        message:
+          "Durable Stop must target the recovered task id, never current Chat work",
+      })
+    if (source.includes("coachTaskLifecycleReducer")) {
+      if (
+        !source.includes("if (!matches()) return") ||
+        !source.includes("state.generation === generation") ||
+        !source.includes("state.request.startKey === startKey")
+      )
+        problems.push({
+          message:
+            "Start continuations must match generation and start key before Stop",
+        })
+      return problems
+    }
     const stop = source.slice(
       source.indexOf("    stop: () => {"),
       source.indexOf("    undo:")

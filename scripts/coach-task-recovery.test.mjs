@@ -165,3 +165,36 @@ for (const [name, mistake] of [
     )
   })
 }
+
+const machineClean =
+  'export function useCoachTask() { coachTaskLifecycleReducer; if (!matches()) return; state.generation === generation; state.request.startKey === startKey; runContractCommand(client, "coach.stop", { chatId, taskId }) }'
+
+for (const [name, clean, mistake] of [
+  [
+    "durable Stop names the exact task",
+    machineClean,
+    machineClean.replace("{ chatId, taskId }", "{ chatId }"),
+  ],
+  [
+    "machine continuations match both generation and start key",
+    machineClean,
+    machineClean.replace("state.request.startKey === startKey", "true"),
+  ],
+]) {
+  test(name, () => {
+    assert.ok(detect(mistake).length > 0)
+    assert.deepEqual(detect(clean), [])
+    assert.deepEqual(
+      detect(
+        readFileSync(
+          new URL(
+            "../apps/web/src/features/coach/use-coach-task.ts",
+            import.meta.url
+          ),
+          "utf8"
+        )
+      ),
+      []
+    )
+  })
+}

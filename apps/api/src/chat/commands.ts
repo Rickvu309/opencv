@@ -133,6 +133,14 @@ export function registerChat(registry: Registry) {
       handler: async (input, actor) => {
         await getChat(actor.userId, input.chatId)
         const { cancelChatTask } = await import("../coach/index.js")
+        if (input.taskId)
+          return {
+            stopped: await cancelChatTask(
+              input.chatId,
+              actor.userId,
+              input.taskId
+            ),
+          }
         return {
           stopped:
             (await cancelChatTask(input.chatId, actor.userId)) ||
