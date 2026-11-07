@@ -134,15 +134,16 @@ export async function startCompatibilityTurn(
               name,
               input: action.input,
             })
-            if (receipt) {
-              const event = eventForPart(
-                toolResultFromExecute({
+            const part = receipt
+              ? toolResultFromExecute({
                   toolCallId: action.toolCallId,
                   name,
                   summary,
                   result: receipt.result,
                 })
-              )
+              : null
+            if (part) {
+              const event = eventForPart(part)
               if (event) await writeChatEvent(stream, event)
             } else {
               await writeChatEvent(stream, {
