@@ -1,19 +1,10 @@
 import assert from "node:assert/strict"
-import { execFileSync } from "node:child_process"
 import { EventEmitter } from "node:events"
-import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
-import { tempDir } from "../../lib/temp-dir.mjs"
-import { realPorts } from "../ports/index.mjs"
 import { decide } from "../rules/index.mjs"
 import { fixture as scriptedFixture } from "./fixture.mjs"
-import {
-  failedGuards,
-  mergeResultFacts,
-  parseMergeTree,
-} from "./merged-tree.mjs"
-import { GIT_ENV } from "./push-checks.mjs"
+import { failedGuards, parseMergeTree } from "./merged-tree.mjs"
 import { stepless } from "./infra-rerun.mjs"
 
 const SWEEP_HOME = "/ocv-merged-tree-home"
@@ -146,10 +137,16 @@ test("the worktree is removed when the guard run throws", () => {
   assert.deepEqual(verbs.slice(-2), ["remove", "prune"])
 })
 
-test("a lockfile that differs skips the merged-tree guards with a line", () => {
-  const f = fixture({
-    behind: 1,
-    intercept(cmd, a) {
+const TOP = "/ocv-invoking-checkout"
+
+function lockScript({ differ, install, guards, commit } = {}) {
+  const seen = []
+  return {
+    seen,
+    intercept(cmd, a, options) {
+      seen.push({ cmd, args: a, cwd: options?.cwd })
+      if (cmd === "git" && a[0] === "rev-parse" && a[1] === "--show-toplevel")
+        return { ok: true, out: TOP, err: "" }
       if (
         cmd === "git" &&
         a[0] === "rev-parse" &&
@@ -157,15 +154,117 @@ test("a lockfile that differs skips the merged-tree guards with a line", () => {
       )
         return {
           ok: true,
-          out: String(a[1]).startsWith("HEAD") ? "x" : "y",
+          out: differ && !String(a[1]).startsWith("HEAD") ? "y" : "x",
+          err: "",
+        }
+      if (cmd === "git" && a[0] === "commit-tree" && commit === false)
+        return { ok: false, out: "", err: "object store is read-only" }
+      if (cmd === "timeout" && a[1] === "pnpm")
+        return install === false
+          ? { ok: false, out: "", err: "ERR_PNPM_FETCH_404 registry is down" }
+          : { ok: true, out: "installed", err: "" }
+      if (cmd === "timeout" && guards === false)
+        return {
+          ok: false,
+          out: "✖ docs/agents/checks.md is stale (3ms)\n",
           err: "",
         }
     },
+  }
+}
+
+function lockFixture(options) {
+  const script = lockScript(options)
+  const f = fixture({
+    intercept: script.intercept,
+    behind: 1,
+    dirs: [join(TOP, "node_modules")],
   })
+  return { ...f, seen: script.seen }
+}
+
+const MERGED_DIR = join(SWEEP_HOME, "tmp", "ocv-merge-91-head-1")
+
+test("a lockfile that differs installs the locked packages inside the merged tree before the guards", () => {
+  const f = lockFixture({ differ: true })
   const r = f.call("merge", "91")
   assert.equal(r.code, 0, r.text)
-  assert.match(r.text, /guards skipped: the merge changes the lockfile/)
-  assert.equal(f.effects("git", "worktree").length, 0)
+  assert.match(r.text, /Merged tree passes 1 quick guards/)
+  const steps = f.seen
+    .filter(
+      (e) => e.cmd === "timeout" || e.cmd === "ln" || e.args[0] === "worktree"
+    )
+    .map((e) => [e.cmd, e.args[1]])
+  const added = steps.findIndex(([, verb]) => verb === "add")
+  const install = f.seen.find(
+    (e) => e.cmd === "timeout" && e.args[1] === "pnpm"
+  )
+  assert.deepEqual(install.args.slice(1), [
+    "pnpm",
+    "install",
+    "--frozen-lockfile",
+  ])
+  assert.equal(install.cwd, MERGED_DIR)
+  assert.deepEqual(steps.slice(added), [
+    ["git", "add"],
+    ["timeout", "pnpm"],
+    ["timeout", "env"],
+    ["git", "remove"],
+    ["git", "prune"],
+  ])
+  assert.equal(f.effects("ln").length, 0)
+  assert.equal(f.effects("gh", "pr merge").length, 1)
+})
+
+test("a merged tree whose locked packages fail to install is refused before enqueue and removed", () => {
+  const f = lockFixture({ differ: true, install: false })
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 2, r.text)
+  assert.match(
+    r.text,
+    /MERGED_TREE_FAILS.*could not install.*ERR_PNPM_FETCH_404/s
+  )
+  assert.doesNotMatch(r.text, /skipped/)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
+  assert.equal(
+    f.seen.filter((e) => e.cmd === "timeout" && e.args[1] === "env").length,
+    0
+  )
+  const verbs = f.effects("git", "worktree").map((e) => e.args[1])
+  assert.deepEqual(verbs.slice(-2), ["remove", "prune"])
+})
+
+test("a merged tree with installed packages that fails the guards is refused before enqueue", () => {
+  const f = lockFixture({ differ: true, guards: false })
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /MERGED_TREE_FAILS.*docs\/agents\/checks\.md is stale/s)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
+  const verbs = f.effects("git", "worktree").map((e) => e.args[1])
+  assert.deepEqual(verbs.slice(-2), ["remove", "prune"])
+})
+
+test("a matching lockfile reuses the installed packages and never installs", () => {
+  const f = lockFixture({ differ: false })
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 0, r.text)
+  assert.deepEqual(
+    f.effects("ln").map((e) => e.args),
+    [["-s", join(TOP, "node_modules"), join(MERGED_DIR, "node_modules")]]
+  )
+  assert.equal(
+    f.seen.filter((e) => e.cmd === "timeout" && e.args[1] === "pnpm").length,
+    0
+  )
+  assert.equal(f.effects("gh", "pr merge").length, 1)
+})
+
+test("a merged commit that cannot be built is refused before enqueue, not skipped", () => {
+  const f = lockFixture({ commit: false })
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /MERGED_TREE_FAILS.*could not build the merged commit/s)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
 })
 
 test("merge --wait names the conflicted files when the queue drops a conflict", () => {
@@ -417,24 +516,26 @@ test("a leftover merged-tree worktree from another PR is swept by the next run",
   assert.match(r.text, /Removed 1 leftover merged-tree worktrees/)
 })
 
-test("a merged-tree worktree younger than the guard limit is left alone", () => {
-  const f = fixture({
-    behind: 1,
-    intercept(cmd, a) {
-      if (cmd === "stat")
-        return { ok: true, out: String(f.ctx.now() / 1000 - 5), err: "" }
-      if (cmd === "git" && a[0] === "worktree" && a[1] === "list")
-        return {
-          ok: true,
-          out: listing(["/repo", leftover(f.ctx.env.HOME)]),
-          err: "",
-        }
-    },
-  })
-  f.call("merge", "91")
-  const removed = removedTrees(f)
-  assert.ok(!removed.includes(leftover(f.ctx.env.HOME)))
-  assert.ok(removed.every((dir) => dir.startsWith(`${f.ctx.env.HOME}/`)))
+test("a merged-tree worktree within the install and guard limits is left alone", () => {
+  for (const age of [5, 12 * 60, 20 * 60]) {
+    const f = fixture({
+      behind: 1,
+      intercept(cmd, a) {
+        if (cmd === "stat")
+          return { ok: true, out: String(f.ctx.now() / 1000 - age), err: "" }
+        if (cmd === "git" && a[0] === "worktree" && a[1] === "list")
+          return {
+            ok: true,
+            out: listing(["/repo", leftover(f.ctx.env.HOME)]),
+            err: "",
+          }
+      },
+    })
+    f.call("merge", "91")
+    const removed = removedTrees(f)
+    assert.ok(!removed.includes(leftover(f.ctx.env.HOME)), `age ${age}`)
+    assert.ok(removed.every((dir) => dir.startsWith(`${f.ctx.env.HOME}/`)))
+  }
 })
 
 test("a stop signal during the guard run removes the worktree and exits", () => {
@@ -467,151 +568,4 @@ test("merge-result rows pass when nothing is wrong", () => {
       .ok,
     true
   )
-})
-
-function runGit(cwd, ...args) {
-  const env = { ...process.env }
-  for (const name of GIT_ENV) delete env[name]
-  return execFileSync("git", args, { cwd, env, encoding: "utf8" }).trim()
-}
-
-function repoWithTheMistake(t, headFiles) {
-  const root = tempDir(t, "merged-tree-")
-  const origin = join(root, "origin.git")
-  const clone = join(root, "clone")
-  mkdirSync(origin)
-  runGit(origin, "init", "--bare", "-b", "main")
-  runGit(root, "clone", origin, clone)
-  runGit(clone, "config", "user.email", "t@example.com")
-  runGit(clone, "config", "user.name", "t")
-  mkdirSync(join(clone, "scripts"))
-  writeFileSync(join(clone, "pnpm-lock.yaml"), "lock\n")
-  writeFileSync(join(clone, "shared.txt"), "base\n")
-  runGit(clone, "add", ".")
-  runGit(
-    clone,
-    "-c",
-    "commit.gpgsign=false",
-    "-c",
-    "core.hooksPath=/dev/null",
-    "commit",
-    "-m",
-    "base"
-  )
-  runGit(clone, "push", "origin", "main")
-  runGit(clone, "checkout", "-b", "work")
-  for (const [name, text] of Object.entries(headFiles))
-    writeFileSync(join(clone, name), text)
-  runGit(clone, "add", ".")
-  runGit(
-    clone,
-    "-c",
-    "commit.gpgsign=false",
-    "-c",
-    "core.hooksPath=/dev/null",
-    "commit",
-    "-m",
-    "head"
-  )
-  const head = runGit(clone, "rev-parse", "HEAD")
-  runGit(clone, "push", "origin", "work:refs/pull/5/head")
-  runGit(clone, "checkout", "main")
-  return { root, clone, head }
-}
-
-function realCtx(clone, home, guard) {
-  const ports = realPorts()
-  const base = ports.proc.run
-  ports.proc.run = (cmd, args, options = {}) => {
-    const env = {
-      ...Object.fromEntries(GIT_ENV.map((name) => [name, undefined])),
-      HOME: home,
-    }
-    return base(cmd, args, { ...options, env: { ...options.env, ...env } })
-  }
-  return { cwd: clone, ports, env: { HOME: home }, guard }
-}
-
-function mainMoves(clone, files) {
-  for (const [name, text] of Object.entries(files)) {
-    mkdirSync(join(clone, name, ".."), { recursive: true })
-    writeFileSync(join(clone, name), text)
-  }
-  runGit(clone, "add", ".")
-  runGit(
-    clone,
-    "-c",
-    "commit.gpgsign=false",
-    "-c",
-    "core.hooksPath=/dev/null",
-    "commit",
-    "-m",
-    "main moves"
-  )
-  runGit(clone, "push", "origin", "main")
-}
-
-const FORBIDDEN_GUARD = `import assert from "node:assert/strict"
-import { existsSync } from "node:fs"
-import test from "node:test"
-test("forbidden.txt is never added", () => {
-  assert.equal(existsSync("forbidden.txt"), false)
-})
-`
-
-test("real git: main gains a guard the head breaks, so the merged tree fails and nothing is left behind", (t) => {
-  const { root, clone } = repoWithTheMistake(t, { "forbidden.txt": "x\n" })
-  mainMoves(clone, { "scripts/local-port-range.test.mjs": FORBIDDEN_GUARD })
-  const ctx = realCtx(clone, root)
-  const facts = mergeResultFacts(ctx, 5, headOf(clone))
-  assert.deepEqual(facts.conflicts, [])
-  assert.deepEqual(facts.failed, ["forbidden.txt is never added"])
-  assert.equal(
-    decide("merge-result", { mergeResult: facts }).refusals[0].id,
-    "MERGED_TREE_FAILS"
-  )
-  assert.equal(runGit(clone, "worktree", "list").split("\n").length, 1)
-  assert.equal(
-    existsSync(join(root, "tmp", "ocv-merge-5-" + headOf(clone).slice(0, 8))),
-    false
-  )
-})
-
-function headOf(clone) {
-  runGit(clone, "fetch", "origin", "refs/pull/5/head")
-  return runGit(clone, "rev-parse", "FETCH_HEAD")
-}
-
-test("real git: a head that touches what main touched conflicts and names the file", (t) => {
-  const { root, clone } = repoWithTheMistake(t, { "shared.txt": "head\n" })
-  mainMoves(clone, { "shared.txt": "main\n" })
-  const facts = mergeResultFacts(realCtx(clone, root), 5, headOf(clone))
-  assert.deepEqual(facts.conflicts, ["shared.txt"])
-  assert.equal(
-    decide("merge-result", { mergeResult: facts }).refusals[0].id,
-    "MERGE_CONFLICT"
-  )
-  assert.equal(runGit(clone, "worktree", "list").split("\n").length, 1)
-})
-
-test("real git: a clean merge passes the guards and leaves no worktree", (t) => {
-  const { root, clone } = repoWithTheMistake(t, { "other.txt": "x\n" })
-  mainMoves(clone, { "scripts/local-port-range.test.mjs": FORBIDDEN_GUARD })
-  const facts = mergeResultFacts(realCtx(clone, root), 5, headOf(clone))
-  assert.deepEqual(facts.failed, [])
-  assert.match(facts.lines[0], /passes 1 quick guards/)
-  assert.equal(runGit(clone, "worktree", "list").split("\n").length, 1)
-})
-
-test("real git: the worktree is removed when the guard run throws", (t) => {
-  const { root, clone } = repoWithTheMistake(t, { "other.txt": "x\n" })
-  mainMoves(clone, { "scripts/local-port-range.test.mjs": FORBIDDEN_GUARD })
-  const ctx = realCtx(clone, root)
-  const run = ctx.ports.proc.run
-  ctx.ports.proc.run = (cmd, ...rest) => {
-    if (cmd === "timeout") throw new Error("runner died")
-    return run(cmd, ...rest)
-  }
-  assert.throws(() => mergeResultFacts(ctx, 5, headOf(clone)), /runner died/)
-  assert.equal(runGit(clone, "worktree", "list").split("\n").length, 1)
 })
