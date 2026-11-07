@@ -1,0 +1,18 @@
+{
+  "id": "proposal-basis",
+  "file": "apps/api/src/registry/write-grant.test.ts",
+  "detector": {
+    "module": "scripts/lib/proposal-basis.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "apps/api/src/registry/write-grant.test.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/registry/registry.ts"
+    }
+  },
+  "reason": "Architectural fixture, not a historical product commit. A priority proposal that stores no version, and an approval that writes without comparing that version, never landed in a commit that survives onto main. detect fires on those fixtures in this test and stays quiet on the registry."
+}

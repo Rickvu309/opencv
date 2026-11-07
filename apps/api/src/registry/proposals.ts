@@ -17,11 +17,16 @@ import { inputHash } from "./receipt.js"
 
 export const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
+export function approvalExpired(createdAt: Date, now = Date.now()) {
+  return now - createdAt.getTime() > PENDING_TTL_MS
+}
+
 export function createProposal(options: {
   actor: CoachActor | DelegateActor
   command: string
   input: unknown
   summary: string
+  basisRevision: number | null
 }) {
   return transaction(() => savepoint(() => insertProposal(options)))
 }
@@ -31,8 +36,9 @@ async function insertProposal(options: {
   command: string
   input: unknown
   summary: string
+  basisRevision: number | null
 }) {
-  const { actor, command, input, summary } = options
+  const { actor, command, input, summary, basisRevision } = options
   const id = createId()
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
@@ -73,6 +79,7 @@ async function insertProposal(options: {
       command,
       input,
       summary,
+      basisRevision,
       status: "pending",
     })
   if (actor.type === "delegate")
@@ -116,6 +123,16 @@ export async function lockProposal(userId: string, id: string) {
     ? await (await import("../coach/index.js")).lockTaskApproval(proposal)
     : null
   const row = await lockPending(userId, id)
+  if (row.status === "pending" && approvalExpired(row.createdAt)) {
+    await getDb()
+      .update(pendingActions)
+      .set({ status: "expired" })
+      .where(eq(pendingActions.id, row.id))
+    throw new CommandError(
+      ERROR_CODES.PENDING_EXPIRED,
+      "This confirmation expired. Ask the Coach again."
+    )
+  }
   const [expired] = await getDb()
     .select({ id: pendingActions.id })
     .from(pendingActions)

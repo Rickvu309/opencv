@@ -1,0 +1,18 @@
+{
+  "id": "write-grant",
+  "file": "apps/api/src/registry/write-grant.test.ts",
+  "detector": {
+    "module": "scripts/lib/write-grant.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "apps/api/src/registry/write-grant.test.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/job/store.ts"
+    }
+  },
+  "reason": "Architectural fixture, not a historical product commit. An actor-only priority writer and a priority write that skips the version bump never landed in a commit that survives onto main. detect fires on those fixtures in this test and stays quiet on the job store."
+}

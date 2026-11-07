@@ -2,7 +2,6 @@ import {
   coachRefusal,
   type AgentGates,
   REFUSAL_MESSAGES,
-  GATES_CLOSED_WITHOUT_CONSENT_TO_READ,
   omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe,
 } from "./coach-policy.js"
 export { coachRefusal }
@@ -21,7 +20,7 @@ import {
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
-import { activity, idempotency, pendingActions, user } from "../db/schema.js"
+import { activity, idempotency, pendingActions } from "../db/schema.js"
 import { getDb, savepoint, transaction } from "../db/context.js"
 import {
   PENDING_TTL_MS,
@@ -39,6 +38,12 @@ import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
 import { lockActivity } from "./activity-lock.js"
+import {
+  activityById,
+  activityByKey,
+  agentGates,
+  idempotencyByKey,
+} from "./registry-reads.js"
 import { brandedActor, parseInput } from "./parse-input.js"
 import {
   laterLiveAction,
@@ -50,6 +55,8 @@ import { replay, replayStored } from "./replay.js"
 import { inputHash } from "./receipt.js"
 import { assertReversal } from "./bind.js"
 import { CatalogPublication } from "./catalog-publication.js"
+import { priorityRevisionFor } from "../job/index.js"
+import { withGrantScope } from "./write-grant.js"
 
 import type {
   ExecuteResult,
@@ -210,7 +217,7 @@ export class Registry extends CatalogPublication {
   async tools(actor: Actor): Promise<ToolEntry[]> {
     const branded = brandedActor(actor)
     const gates = isCoachActor(branded)
-      ? await this.agentGates(branded.userId)
+      ? await agentGates(branded.userId)
       : null
     const entries: ToolEntry[] = []
     for (const command of this.commands.values()) {
@@ -282,7 +289,7 @@ export class Registry extends CatalogPublication {
     if (isCoachActor(actor)) {
       const refusal = coachRefusal(
         { ...command, coach: policy },
-        await this.agentGates(actor.userId)
+        await agentGates(actor.userId)
       )
       if (refusal) {
         throw new CommandError(
@@ -298,7 +305,14 @@ export class Registry extends CatalogPublication {
 
     const hash = idempotencyKey ? inputHash(jsonInput(parsed)) : null
     const effect = async (): Promise<ExecuteResult> => {
-      const ran = await command.run(parsed, actor)
+      const ran = await withGrantScope(
+        {
+          ownerId: actor.userId,
+          writes: command.writes?.(parsed) ?? [],
+          expectedRevision: options.expectedRevision ?? null,
+        },
+        () => command.run(parsed, actor)
+      )
       assertReversal(command.name, this.isCatalogOperation(command.name), ran)
       let activityId: string | null = null
       if (ran.draft && !options.skipActivity) {
@@ -368,6 +382,10 @@ export class Registry extends CatalogPublication {
           command: command.name,
           input: parsed,
           summary: command.step(parsed),
+          basisRevision: await priorityRevisionFor(
+            actor.userId,
+            command.writes?.(parsed) ?? []
+          ),
         })
       }
 
@@ -409,7 +427,7 @@ export class Registry extends CatalogPublication {
         "This connection cannot use this read"
       )
     if (isCoachActor(branded)) {
-      const refusal = coachRefusal(query, await this.agentGates(branded.userId))
+      const refusal = coachRefusal(query, await agentGates(branded.userId))
       if (refusal) {
         throw new CommandError(
           ERROR_CODES.COACH_NOT_ALLOWED,
@@ -434,7 +452,7 @@ export class Registry extends CatalogPublication {
       rows.map(async (row) => {
         const completed =
           row.status === "approved"
-            ? await this.activityByKey(userId, row.coachIntentKey ?? row.id)
+            ? await activityByKey(userId, row.coachIntentKey ?? row.id)
             : null
         return {
           id: row.id,
@@ -455,7 +473,7 @@ export class Registry extends CatalogPublication {
       const { row, task } = await lockProposal(userId, pendingActionId)
       if (row.status === "approved") {
         if (task) await assertTaskReceipt(userId, row)
-        return this.activityByKey(userId, row.coachIntentKey ?? row.id).then(
+        return activityByKey(userId, row.coachIntentKey ?? row.id).then(
           (receipt) => (receipt ? this.publicActivity(receipt) : null)
         )
       }
@@ -474,6 +492,15 @@ export class Registry extends CatalogPublication {
       const delegate = row.delegateConnectionId
         ? await requireLiveProposalConnection(userId, row.delegateConnectionId)
         : null
+      const stored = this.commands.get(row.command)
+      const checksPriority = (stored?.writes?.(row.input) ?? []).some(
+        (write) => write.name === "job.priority"
+      )
+      if (checksPriority && row.basisRevision === null)
+        throw new CommandError(
+          ERROR_CODES.CONFLICT,
+          "This confirmation has no priority version, so nothing was changed"
+        )
       const result = await this.execute({
         name: row.command,
         input: row.input,
@@ -486,6 +513,7 @@ export class Registry extends CatalogPublication {
         idempotencyKey: row.coachIntentKey ?? row.id,
         [taskExecution]: Boolean(task),
         skipConfirm: true,
+        expectedRevision: checksPriority ? row.basisRevision : null,
       })
       await getDb()
         .update(pendingActions)
@@ -497,10 +525,10 @@ export class Registry extends CatalogPublication {
         await resolveTaskApproval(task, "committed", result, result.activityId)
       }
       if (result.activityId)
-        return this.activityById(userId, result.activityId).then((receipt) =>
+        return activityById(userId, result.activityId).then((receipt) =>
           receipt ? this.publicActivity(receipt) : null
         )
-      return this.activityByKey(userId, row.coachIntentKey ?? row.id).then(
+      return activityByKey(userId, row.coachIntentKey ?? row.id).then(
         (receipt) => (receipt ? this.publicActivity(receipt) : null)
       )
     })
@@ -577,19 +605,6 @@ export class Registry extends CatalogPublication {
     })
   }
 
-  private async agentGates(userId: string): Promise<AgentGates> {
-    const rows = await getDb()
-      .select({
-        agentCvs: user.agentCvs,
-        agentInterview: user.agentInterview,
-        agentEmail: user.agentEmail,
-      })
-      .from(user)
-      .where(eq(user.id, userId))
-      .limit(1)
-    return rows[0] ?? GATES_CLOSED_WITHOUT_CONSENT_TO_READ
-  }
-
   expireTaskApprovals() {
     return expireTaskApprovals()
   }
@@ -600,8 +615,8 @@ export class Registry extends CatalogPublication {
     command: string,
     hash: string
   ) {
-    const existing = await this.activityByKey(userId, key)
-    const stored = existing ?? (await this.idempotencyByKey(userId, key))
+    const existing = await activityByKey(userId, key)
+    const stored = existing ?? (await idempotencyByKey(userId, key))
     if (!stored) return null
     if (
       stored.command !== command ||
@@ -618,33 +633,6 @@ export class Registry extends CatalogPublication {
         ? { touches: [{ ownerId: userId, name: "workspace" }] }
         : {}),
     }
-  }
-
-  private async activityByKey(userId: string, key: string) {
-    const rows = await getDb()
-      .select()
-      .from(activity)
-      .where(and(eq(activity.userId, userId), eq(activity.idempotencyKey, key)))
-      .limit(1)
-    return rows[0] ?? null
-  }
-
-  private async activityById(userId: string, id: string) {
-    const rows = await getDb()
-      .select()
-      .from(activity)
-      .where(and(eq(activity.userId, userId), eq(activity.id, id)))
-      .limit(1)
-    return rows[0] ?? null
-  }
-
-  private async idempotencyByKey(userId: string, key: string) {
-    const rows = await getDb()
-      .select()
-      .from(idempotency)
-      .where(and(eq(idempotency.userId, userId), eq(idempotency.key, key)))
-      .limit(1)
-    return rows[0] ?? null
   }
 }
 
