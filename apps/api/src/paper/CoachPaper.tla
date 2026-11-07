@@ -13,7 +13,7 @@ Init ==
   /\ appliedRevision = 0
   /\ staleDecision = [stale |-> FALSE, approved |-> FALSE, before |-> {}, after |-> {}]
   /\ undoDecision = [tried |-> FALSE, before |-> {}, after |-> {}]
-  /\ agentDecision = [tried |-> FALSE, before |-> {}, after |-> {}]
+  /\ agentDecision = [tried |-> FALSE, allowed |-> FALSE, before |-> {}, after |-> {}]
 
 Propose ==
   /\ proposal = "none"
@@ -55,7 +55,7 @@ PersonUndo ==
 
 AgentTriesUndo ==
   /\ ~agentDecision.tried
-  /\ agentDecision' = [tried |-> TRUE, before |-> document, after |-> document]
+  /\ agentDecision' = [tried |-> TRUE, allowed |-> FALSE, before |-> document, after |-> document]
   /\ UNCHANGED <<document, revision, proposal, basis, approved, commits, appliedRevision, staleDecision, undoDecision>>
 
 Next == Propose \/ PersonTypes \/ Approve \/ RetryApproval \/ PersonUndo \/ AgentTriesUndo
@@ -64,5 +64,5 @@ DocumentUnchangedUntilApproval == (commits > 0 => approved) /\ (~approved => "co
 StaleBasisRefusesWithoutWriting == staleDecision.stale => ~staleDecision.approved /\ staleDecision.before = staleDecision.after
 UndoKeepsLaterTypingOrRefuses == undoDecision.tried => (undoDecision.before \ {"coach words"}) \subseteq undoDecision.after
 ProposalCommitsOnce == commits <= 1
-AgentHasNoUndoAction == agentDecision.tried => agentDecision.before = agentDecision.after
+AgentHasNoUndoAction == ~agentDecision.allowed /\ (agentDecision.tried => agentDecision.before = agentDecision.after)
 ====

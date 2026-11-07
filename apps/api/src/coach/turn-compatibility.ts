@@ -15,12 +15,7 @@ import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
 import { startTask } from "./task-start.js"
 import { readTaskEvents, taskSnapshot } from "./task-reader.js"
-import {
-  eventForPart,
-  idleUntilAbort,
-  waitForAbort,
-  writeChatEvent,
-} from "./sse.js"
+import { idleUntilAbort, waitForAbort, writeChatEvent } from "./sse.js"
 import { toolResultFromExecute } from "./receipt.js"
 
 export const COACH_COMPATIBILITY_MS = 30_000
@@ -134,43 +129,43 @@ export async function startCompatibilityTurn(
               name,
               input: action.input,
             })
-            const part = receipt
-              ? toolResultFromExecute({
-                  toolCallId: action.toolCallId,
-                  name,
-                  summary,
-                  result: receipt.result,
-                })
-              : null
-            if (part) {
-              const event = eventForPart(part)
-              if (event) await writeChatEvent(stream, event)
-            } else {
-              await writeChatEvent(stream, {
-                type: "tool-result",
-                toolCallId: action.toolCallId,
-                name,
-                summary,
-                ok,
-                result: ok
-                  ? {
-                      ok: true,
-                      data:
-                        resultSchema.parse(action.result ?? {}).output ?? null,
-                    }
-                  : {
-                      ok: false,
-                      error: {
-                        code: "CONFLICT",
-                        message: "Action was not completed",
-                      },
-                    },
-                ...(action.activityId ? { activityId: action.activityId } : {}),
-                ...(pending && action.proposalId
-                  ? { pendingActionId: action.proposalId }
-                  : {}),
-              })
-            }
+            await writeChatEvent(
+              stream,
+              receipt
+                ? toolResultFromExecute({
+                    toolCallId: action.toolCallId,
+                    name,
+                    summary,
+                    result: receipt.result,
+                  })
+                : {
+                    type: "tool-result",
+                    toolCallId: action.toolCallId,
+                    name,
+                    summary,
+                    ok,
+                    result: ok
+                      ? {
+                          ok: true,
+                          data:
+                            resultSchema.parse(action.result ?? {}).output ??
+                            null,
+                        }
+                      : {
+                          ok: false,
+                          error: {
+                            code: "CONFLICT",
+                            message: "Action was not completed",
+                          },
+                        },
+                    ...(action.activityId
+                      ? { activityId: action.activityId }
+                      : {}),
+                    ...(pending && action.proposalId
+                      ? { pendingActionId: action.proposalId }
+                      : {}),
+                  }
+            )
             if (pending && action.proposalId)
               await writeChatEvent(stream, {
                 type: "confirm",

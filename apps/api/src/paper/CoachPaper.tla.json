@@ -1,11 +1,11 @@
 {
   "module": "content-coach.ts",
   "actions": {
-    "Propose": "editAsCoach",
-    "PersonTypes": "stalePaperBasis",
-    "Approve": "stalePaperBasis",
-    "RetryApproval": "editAsCoach",
+    "Propose": null,
+    "PersonTypes": null,
+    "Approve": "editAsCoach",
+    "RetryApproval": null,
     "PersonUndo": "revertCoachEdit",
-    "AgentTriesUndo": "revertCoachEdit"
+    "AgentTriesUndo": null
   }
 }

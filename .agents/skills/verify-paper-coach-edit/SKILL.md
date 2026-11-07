@@ -16,13 +16,20 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 ## Where the code lives
 
 - `apps/api/src/paper/content-coach.ts` exports `editAsCoach`, `stalePaperBasis`, and `revertCoachEdit`. `stalePaperBasis` returns `refuse` when `basedOn` is not the current revision, and `apply` when it matches. `editAsCoach` calls it only for a coach actor, and throws before any write. Switching that return from `refuse` to `apply` is the one-line change to a clean merge. The replay and the guard `paper-coach-basis` both require `refuse`.
-- `apps/api/src/paper/content-store.ts` exports `coachBasisOk` and `withContent`. `coachBasisOk` still allows an older basis for a person edit. Do not use it as the coach approval rule.
-- `apps/api/src/registry/registry.ts` runs `execute`, `approve`, `undo`, and `tools`. A coach actor with `coach: "confirm"` creates a proposal and does not run the effect. `approve` locks the proposal and then runs the effect. A throw inside that effect rolls the bytes back and leaves the proposal pending.
-- `apps/api/src/registry/proposals.ts` exports `lockProposal`. The basis read and the write stay one lock inside that approval transaction.
-- `packages/domain/src/paper-contract.ts` sets `paper.edit` to `coach: "confirm"`. The guard `paper-coach-approval` requires that string.
-- `apps/api/src/coach/turn-compatibility.ts` writes a pending result through `eventForPart` before `writeChatEvent`. The raw result carries `command`, and the turn event rejects that field. The guard `paper-coach-turn` requires the event builder. A direct write is the bug.
+- `apps/api/src/paper/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a person edit. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.
+- `apps/api/src/registry/proposals.ts` exports `createProposal` and `lockProposal`. `createProposal` inserts a pending row and does not write the document. The basis read and the write stay one lock inside the approval transaction.
+- `apps/api/src/registry/registry.ts` holds `execute`, `approve`, `undo`, and `tools` as methods. They are not separate exports, so the coverage map cannot name them. A coach actor whose policy is `confirm` calls `createProposal` and does not run the effect. `approve` returns the saved activity when that proposal is already approved. That return is the retry. A throw inside the effect rolls the bytes back and leaves the proposal pending. `undo` runs the reversal as the person.
+- `apps/api/src/registry/coach-policy.ts` exports `coachRefusal`. `tools` and `execute` consult it. A refusal omits the command from the coach tools and rejects a coach execute with `COACH_NOT_ALLOWED`.
+- `packages/domain/src/paper-contract.ts` sets the `coach` field of `paper.edit` to `confirm`. The guard `paper-coach-approval` requires that string.
 
-`apps/api/src/paper/CoachPaper.tla.json` maps the model actions onto those exports. `Propose` and `RetryApproval` are `editAsCoach`. `PersonTypes` and `Approve` are `stalePaperBasis`. `PersonUndo` and `AgentTriesUndo` are `revertCoachEdit`.
+`apps/api/src/paper/CoachPaper.tla.json` maps each model action to one export of `content-coach.ts`. Null means the action is implemented outside that file.
+
+- `Propose` is null. The function is `createProposal` in `apps/api/src/registry/proposals.ts`.
+- `PersonTypes` is null. The function is `syncContent` in `apps/api/src/paper/content-store.ts`.
+- `Approve` is `editAsCoach`. It calls `stalePaperBasis` and then writes.
+- `RetryApproval` is null. The path is the early return in `Registry.approve` when the status is already approved.
+- `PersonUndo` is `revertCoachEdit`.
+- `AgentTriesUndo` is null. The function is `coachRefusal` in `apps/api/src/registry/coach-policy.ts`.
 
 ## What main did
 
