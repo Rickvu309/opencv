@@ -3,6 +3,10 @@
     "passed": true,
     "fingerprint": "72bc0a8d05b7"
   },
+  "mcp-connect-snippet": {
+    "passed": true,
+    "fingerprint": "fe9b4af66899"
+  },
   "pointer-capture": {
     "passed": true,
     "fingerprint": "fbc7d121fecd"
