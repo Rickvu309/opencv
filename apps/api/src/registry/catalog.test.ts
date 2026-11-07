@@ -1,10 +1,6 @@
 import {
-  catalog,
-  catalogDigest,
-  commands,
   defineOperation,
   delegateActorSchema,
-  type Operation,
   type Actor,
   type ActivityDraft,
   personActor,
@@ -38,7 +34,6 @@ import {
   testWebOrigin,
 } from "../test/harness.js"
 import { bindCatalog, bindOperation } from "./bind.js"
-import { implementations } from "./catalog.js"
 import { createCommandRoutes } from "./http.js"
 import { installRegistry } from "./install.js"
 import { createReadRoutes } from "./read.js"
@@ -197,23 +192,6 @@ function expectPublic(value: unknown) {
 }
 
 describe("catalog kernel", () => {
-  it("installs both entry types", () => {
-    const registry = installRegistry()
-    expect(Object.keys(catalog)).toEqual([])
-    expect(Object.keys(implementations)).toEqual([])
-    expect(catalogDigest).toMatch(/^[a-f0-9]{64}$/)
-    expect(installRegistry()).toBe(registry)
-    const entries: Record<string, Operation> = catalog
-    const expected = [
-      ...Object.keys(commands),
-      ...Object.values(entries)
-        .filter((operation) => operation.kind === "command")
-        .map((operation) => operation.name),
-    ].sort()
-    expect(registry.commandNames().sort()).toEqual(expected)
-    expect(new Set(expected).size).toBe(expected.length)
-  })
-
   it.each(["activity", "idempotency"] as const)(
     "checks %s replay identity on both lookups",
     async (store) =>

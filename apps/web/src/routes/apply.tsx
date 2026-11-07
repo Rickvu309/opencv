@@ -1,3 +1,4 @@
+import { catalogClient } from "@/lib/contract-client.ts"
 import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery } from "@tanstack/react-query"
@@ -13,12 +14,7 @@ import {
 } from "@/features/apply/apply-board-empty.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
-import {
-  jobPriorityCountsKey,
-  priorityCounts,
-  jobListKey,
-  listJobs,
-} from "@/features/apply/apply-api.ts"
+import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import {
   activeFilterCount,
@@ -88,11 +84,26 @@ function applySearch(
   }
 }
 
+export function ownerIdFromRouteMatches(
+  matches: readonly { context: unknown }[]
+) {
+  for (const match of matches) {
+    if (!match.context || typeof match.context !== "object") continue
+    const session = (match.context as { session?: unknown }).session
+    if (!session || typeof session !== "object") continue
+    const user = (session as { user?: unknown }).user
+    if (!user || typeof user !== "object") continue
+    const id = (user as { id?: unknown }).id
+    if (typeof id === "string" && id) return id
+  }
+  return ""
+}
+
 export function ApplyPage() {
-  const counts = useQuery({
-    queryKey: jobPriorityCountsKey(),
-    queryFn: priorityCounts,
+  const ownerId = useRouterState({
+    select: (state) => ownerIdFromRouteMatches(state.matches),
   })
+  const counts = catalogClient.useRead(ownerId, "job.priorityCounts", {})
   const navigate = useNavigate()
   const routeSearch = useRouterState({
     select: (state) => state.location.search,
@@ -160,7 +171,9 @@ export function ApplyPage() {
             {priority} <span className="tabular-nums">{count}</span>
           </span>
         ))}
-        {counts.isError ? <span>Could not load priority counts.</span> : null}
+        {ownerId && counts.isError ? (
+          <span>Could not load priority counts.</span>
+        ) : null}
       </div>
       <ApplyToolbar
         view={view}

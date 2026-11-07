@@ -27,15 +27,6 @@ export function createJobRoutes(auth?: Auth, db?: AppDatabase) {
     return c.json(successEnvelope(data))
   })
 
-  routes.get("/priority-counts", async (c) => {
-    const data = await registry.read(
-      "job.priorityCounts",
-      {},
-      person(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
-
   routes.get("/calendar", async (c) => {
     const from = c.req.query("from") ?? ""
     const to = c.req.query("to") ?? ""

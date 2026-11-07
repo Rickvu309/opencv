@@ -1,15 +1,19 @@
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { afterEach, describe, expect, it, vi } from "vitest"
+import ts from "typescript"
 
 import { parseJobId } from "@workspace/domain"
 import { QueryClient } from "@tanstack/react-query"
 import { undoActivity } from "@/lib/contract-client.ts"
 
+import { ownerIdFromRouteMatches } from "@/routes/apply.tsx"
 import {
   calendarJobs,
   getJob,
   listActivity,
   listJobs,
-  priorityCounts,
   listPaper,
   previewJob,
 } from "./apply-api.ts"
@@ -58,9 +62,6 @@ describe("apply api", () => {
     expect(last(calls).method).toBe("GET")
     expect(new URL(last(calls).url).pathname).toBe("/api/jobs")
 
-    await priorityCounts()
-    expect(new URL(last(calls).url).pathname).toBe("/api/jobs/priority-counts")
-
     await getJob(parseJobId(JOB))
     expect(new URL(last(calls).url).pathname).toBe(`/api/jobs/${JOB}`)
 
@@ -96,4 +97,67 @@ describe("apply api", () => {
     expect(paper.pathname).toBe("/api/paper")
     expect(paper.searchParams.get("kind")).toBe("cv")
   })
+
+  it("takes the priority count owner from the route session", () => {
+    expect(ownerIdFromRouteMatches([])).toBe("")
+    expect(
+      ownerIdFromRouteMatches([{ context: { session: null } }, { context: {} }])
+    ).toBe("")
+    expect(
+      ownerIdFromRouteMatches([
+        { context: { session: { user: { id: "owner-1" } } } },
+      ])
+    ).toBe("owner-1")
+    const page = readFileSync(
+      path.join(
+        path.dirname(fileURLToPath(import.meta.url)),
+        "../../routes/apply.tsx"
+      ),
+      "utf8"
+    )
+    expect(useReadNonNullArguments(page)).toEqual([])
+    expect(
+      useReadNonNullArguments(
+        `catalogClient.useRead(session!.user.id, "job.priorityCounts", {})`
+      )
+    ).toEqual([1])
+    expect(
+      useReadNonNullArguments(
+        `const ownerId = ownerIdFromRouteMatches(matches)\ncatalogClient.useRead(ownerId, "job.priorityCounts", {})`
+      )
+    ).toEqual([])
+  })
 })
+
+function useReadNonNullArguments(source: string) {
+  const file = ts.createSourceFile(
+    "apply.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  )
+  const lines: number[] = []
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "useRead" &&
+      node.arguments[0] &&
+      hasNonNull(node.arguments[0])
+    )
+      lines.push(file.getLineAndCharacterOfPosition(node.getStart()).line + 1)
+    ts.forEachChild(node, visit)
+  }
+  visit(file)
+  return lines
+}
+
+function hasNonNull(node: ts.Node): boolean {
+  if (ts.isNonNullExpression(node)) return true
+  let found = false
+  ts.forEachChild(node, (child) => {
+    if (!found && hasNonNull(child)) found = true
+  })
+  return found
+}

@@ -27,22 +27,6 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.setPriority",
-      arrange: async () => {
-        ctx.jobId = idOf(
-          (await run("job.create", { title: "Intern", company: "Northwind" }))
-            .output
-        )
-      },
-      act: () => run("job.setPriority", { jobId: ctx.jobId, priority: "high" }),
-      assert: async () =>
-        expect(await jobOf(ctx.jobId)).toMatchObject({ priority: "high" }),
-      undoAssert: async (result) => {
-        await undo(result)
-        expect(await jobOf(ctx.jobId)).toMatchObject({ priority: "normal" })
-      },
-    },
-    {
       name: "job.update",
       arrange: async () => {
         ctx.jobId = idOf(
@@ -55,6 +39,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
           jobId: ctx.jobId,
           patch: {
             location: "Hanoi",
+            priority: "high",
             posting: {
               about: "",
               duties: "",
@@ -67,12 +52,16 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
         const job = await jobOf(ctx.jobId)
         expect(text(job, "location")).toBe("Hanoi")
         expect(job).toMatchObject({
+          priority: "high",
           posting: { requirements: "Strong Figma skills" },
         })
       },
       undoAssert: async (result) => {
         await undo(result)
-        expect(text(await jobOf(ctx.jobId), "location")).toBeNull()
+        expect(await jobOf(ctx.jobId)).toMatchObject({
+          location: null,
+          priority: "normal",
+        })
       },
     },
     {

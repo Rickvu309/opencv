@@ -1,5 +1,5 @@
 import { connectionsCases } from "./coverage-connections.js"
-import { personActor } from "@workspace/domain"
+import { catalog, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
@@ -8,7 +8,11 @@ import { jobChecklist, paperShares } from "../db/schema.js"
 import { accountCases } from "./coverage-account.js"
 import { coachCases } from "./coverage-coach.js"
 import { chatCases } from "./coverage-chat.js"
-import type { CoverageCase, CoverageTools } from "./coverage-helpers.js"
+import {
+  idOf,
+  type CoverageCase,
+  type CoverageTools,
+} from "./coverage-helpers.js"
 import { inboxCases } from "./coverage-inbox.js"
 import { jobCases } from "./coverage-job.js"
 import { paperCases } from "./coverage-paper.js"
@@ -79,7 +83,38 @@ export function coverageCases(
     shares: (docId) =>
       db.select().from(paperShares).where(eq(paperShares.docId, docId)),
   }
+  const catalogCases: CoverageCase[] = Object.values(catalog)
+    .filter((operation) => operation.kind === "command")
+    .map((operation) => ({
+      name: operation.name,
+      arrange: async () => {
+        const result = await run("job.create", {
+          title: "Catalog proof",
+          company: "Northwind",
+        })
+        ctx.jobId = idOf(result.output)
+      },
+      act: () =>
+        run(
+          operation.name,
+          operation.input.parse({ jobId: ctx.jobId, priority: "high" })
+        ),
+      assert: async (result) => {
+        expect(operation.publicResult.safeParse(result.output).success).toBe(
+          true
+        )
+        expect(result.activityId).toBeTruthy()
+        expect(await tools.jobOf(ctx.jobId)).toMatchObject({ priority: "high" })
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        expect(await tools.jobOf(ctx.jobId)).toMatchObject({
+          priority: "normal",
+        })
+      },
+    }))
   const cases: CoverageCase[] = [
+    ...catalogCases,
     ...chatCases(tools),
     ...coachCases(tools),
     ...paperCases(tools),

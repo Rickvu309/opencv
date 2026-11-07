@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { coachActor, coachModeSchema, planSchema } from "@workspace/domain"
+import { operation as setJobPriority } from "@workspace/domain/operations/job/set-priority"
 import { coachModelEnv } from "../config.js"
 import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
@@ -86,7 +87,7 @@ function demoTaskRuntime(task: Task): WorkerRuntime {
         ? [
             {
               id: "call_priority",
-              name: "job.setPriority" as const,
+              name: setJobPriority.name,
               input: { jobId, priority: "high" },
             },
           ]

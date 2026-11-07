@@ -1,17 +1,27 @@
 import {
+  catalog,
+  catalogDigest,
   commands,
   jobContract,
   jobQueries,
   personActor,
   queries,
+  type Actor,
+  type Operation,
 } from "@workspace/domain"
+import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
+import { z } from "zod"
 
+import { createScriptedWorkerRuntime, runCoachWorker } from "../coach/index.js"
 import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
+import { activity, coachTasks, pendingActions, user } from "../db/schema.js"
+import { seedTask } from "../test/coach-task-support.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { implementations } from "./catalog.js"
 import { idOf } from "./coverage-helpers.js"
 import { installRegistry } from "./install.js"
+import { inputHash } from "./receipt.js"
 
 describe("a job binding that drifts from the job contract is rejected", () => {
   it("parses every job command output and every job query read", async () => {
@@ -62,8 +72,6 @@ describe("a job binding that drifts from the job contract is rejected", () => {
       })
       const docId = idOf(paper.output)
 
-      await read("job.priorityCounts", {})
-      await run("job.setPriority", { jobId, priority: "high" })
       await run("job.update", {
         jobId,
         patch: {
@@ -133,4 +141,144 @@ describe("a job binding that drifts from the job contract is rejected", () => {
       })
     }
   })
+})
+
+async function withFixture(
+  run: (
+    db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+  ) => Promise<void>
+) {
+  const { db, client } = await createMigratedTestDb()
+  try {
+    await withDatabase(db, () => run(db))
+  } finally {
+    await client.close()
+  }
+}
+
+function expectPublic(value: unknown) {
+  expect(JSON.stringify(value)).not.toContain("previousPriority")
+}
+
+describe("Job catalog", () => {
+  it("installs both entry types", () => {
+    const registry = installRegistry()
+    expect(Object.keys(catalog)).toEqual(Object.keys(implementations))
+    expect(catalogDigest).toMatch(/^[a-f0-9]{64}$/)
+    expect(installRegistry()).toBe(registry)
+    const entries: Record<string, Operation> = catalog
+    const expected = [
+      ...Object.keys(commands),
+      ...Object.values(entries)
+        .filter((operation) => operation.kind === "command")
+        .map((operation) => operation.name),
+    ].sort()
+    expect(registry.commandNames().sort()).toEqual(expected)
+    expect(new Set(expected).size).toBe(expected.length)
+  })
+
+  it("proves adopted Job counts, private receipts, replay, guarded Undo and fake Coach approval", async () =>
+    withFixture(async (db) => {
+      const seed = await seedTask(inputHash)
+      const registry = installRegistry()
+      const owner = personActor(seed.ownerId)
+      const otherId = crypto.randomUUID()
+      await db
+        .insert(user)
+        .values({ id: otherId, name: "Other", email: `${otherId}@test.local` })
+      const other = personActor(otherId)
+      const create = async (actor: Actor) => {
+        const result = await registry.execute({
+          name: "job.create",
+          input: { title: "Job proof", company: "Acme" },
+          actor,
+        })
+        expect(result.touches).toEqual([
+          { ownerId: actor.userId, name: "workspace" },
+        ])
+        return z.object({ id: z.string() }).parse(result.output).id
+      }
+      const jobId = await create(owner)
+      await create(other)
+      const counts = (actor: Actor = owner) =>
+        registry.read("job.priorityCounts", {}, actor)
+      const before = await counts()
+      const otherBefore = await counts(other)
+      expect(before).toContainEqual({ priority: "normal", count: 1 })
+      const request = {
+        name: "job.setPriority",
+        input: { jobId, priority: "high" },
+        actor: owner,
+        idempotencyKey: "job-proof-key",
+      }
+      const changed = await registry.execute(request)
+      expectPublic(changed)
+      expect(changed.output).toMatchObject({ id: jobId, priority: "high" })
+      expect(changed.touches).toContainEqual({
+        ownerId: seed.ownerId,
+        name: "job",
+        entityId: jobId,
+      })
+      expect(await counts()).toContainEqual({ priority: "high", count: 1 })
+      expect(await counts()).toContainEqual({ priority: "normal", count: 0 })
+      expect(await counts(other)).toEqual(otherBefore)
+      const replayed = await registry.execute(request)
+      expect(replayed.activityId).toBe(changed.activityId)
+      const receipts = (await db.select().from(activity)).filter(
+        (row) => row.command === "job.setPriority"
+      )
+      expect(receipts).toHaveLength(1)
+      expect(receipts[0]?.result).toMatchObject({ previousPriority: "normal" })
+      expectPublic(await registry.undo(seed.ownerId, changed.activityId!))
+      expect(await counts()).toEqual(before)
+      await db
+        .update(coachTasks)
+        .set({ contextSnapshot: { messages: [] } })
+        .where(eq(coachTasks.id, seed.taskId))
+      const runtime = createScriptedWorkerRuntime([
+        {
+          text: "Proposing priority.",
+          intents: [
+            {
+              id: "priority-proof",
+              name: "job.setPriority",
+              input: { jobId, priority: "high" },
+            },
+          ],
+          inputTokens: 1,
+          outputTokens: 1,
+        },
+      ])
+      expect(
+        await runCoachWorker({
+          workerId: "job-proof-worker",
+          registry,
+          runtime: () => runtime,
+          catalogDigest: "test",
+          runtimeVersion: 1,
+          env: {},
+        })
+      ).toBe(true)
+      expect((await db.select().from(coachTasks))[0]?.state).toBe(
+        "waitingApproval"
+      )
+      const [proposal] = await db.select().from(pendingActions)
+      expect(proposal?.command).toBe("job.setPriority")
+      expect(await counts()).toEqual(before)
+      const approved = await registry.approve(seed.ownerId, proposal!.id)
+      expectPublic(approved)
+      expect(approved?.result).toMatchObject({ priority: "high" })
+      expect(await counts()).toContainEqual({ priority: "high", count: 1 })
+      expect(await counts(other)).toEqual(otherBefore)
+      await registry.execute({
+        name: "job.setPriority",
+        input: { jobId, priority: "low" },
+        actor: owner,
+        idempotencyKey: "later-priority",
+      })
+      await expect(registry.undo(seed.ownerId, approved!.id)).rejects.toThrow(
+        "This priority changed again"
+      )
+      expect(await counts()).toContainEqual({ priority: "low", count: 1 })
+    }))
 })

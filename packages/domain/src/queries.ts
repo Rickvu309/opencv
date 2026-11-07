@@ -1,6 +1,7 @@
 import { coachTaskQueries } from "./coach-task-contract.js"
 import { connectionsQueries } from "./connections-contract.js"
 import { z } from "zod"
+import { catalog } from "./catalog.js"
 
 import { queryContract, queryEntry } from "./contract.js"
 import { accountQueries } from "./account-contract.js"
@@ -12,7 +13,28 @@ import { paperQueries } from "./paper-contract.js"
 
 const untyped = z.unknown()
 
+type CatalogReads = {
+  [
+    N in keyof typeof catalog as (typeof catalog)[N]["kind"] extends "read"
+      ? N
+      : never
+  ]: {
+    input: (typeof catalog)[N]["input"]
+    output: (typeof catalog)[N]["publicResult"]
+  }
+}
+
+const catalogReads = Object.fromEntries(
+  Object.values(catalog)
+    .filter((operation) => operation.kind === "read")
+    .map((operation) => [
+      operation.name,
+      { input: operation.input, output: operation.publicResult },
+    ])
+) as CatalogReads
+
 export const queries = queryContract({
+  ...catalogReads,
   ...connectionsQueries,
   ...coachTaskQueries,
   ...jobQueries,

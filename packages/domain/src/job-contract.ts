@@ -15,8 +15,7 @@ import {
   jobLinkPaperInputSchema,
   jobMoveInputSchema,
   jobPatchSchema,
-  jobPostingSchema,
-  jobPrioritySchema,
+  jobViewSchema,
   jobRemoveChecklistItemInputSchema,
   jobSetChecklistItemInputSchema,
   jobStageSchema,
@@ -27,35 +26,6 @@ import {
 import type { QueryRef } from "./queries.js"
 
 import { jobPriorityResource } from "./resources.js"
-
-const nullableText = z.string().nullable()
-
-const jobViewSchema = z
-  .object({
-    id: jobIdSchema,
-    title: z.string(),
-    company: z.string(),
-    stage: jobStageSchema,
-    position: z.string(),
-    location: nullableText,
-    priority: jobPrioritySchema,
-    jobUrl: nullableText,
-    sourceHost: nullableText,
-    description: nullableText,
-    posting: jobPostingSchema.nullable(),
-    interviewAt: z.string().datetime().nullable(),
-    deadline: nullableText,
-    recruiterName: nullableText,
-    recruiterEmail: nullableText,
-    cvDocId: paperIdSchema.nullable(),
-    letterDocId: paperIdSchema.nullable(),
-    starred: z.boolean(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
-  })
-  .strict()
-
-export type JobView = z.output<typeof jobViewSchema>
 
 const linkedPaperSchema = z
   .object({ id: paperIdSchema, name: z.string() })
@@ -120,17 +90,6 @@ const jobPreviewSchema = z.discriminatedUnion("status", [
 export type JobPreview = z.output<typeof jobPreviewSchema>
 
 export const jobQueries = queryContract({
-  "job.priorityCounts": queryEntry({
-    input: z.object({}).strict(),
-    output: z.array(
-      z
-        .object({
-          priority: jobPrioritySchema,
-          count: z.number().int().nonnegative(),
-        })
-        .strict()
-    ),
-  }),
   "job.list": queryEntry({
     input: z
       .object({
@@ -163,7 +122,6 @@ type OnJob = { jobId: JobId }
 
 const jobFieldsChanged = (input: OnJob): QueryRef[] => [
   { query: "job.list" },
-  { query: "job.priorityCounts" },
   { query: "job.get", input: { jobId: input.jobId } },
   { query: "job.calendar" },
 ]
@@ -180,11 +138,7 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: (input) => `Save ${input.title}`,
-    invalidates: () => [
-      { query: "job.list" },
-      { query: "job.calendar" },
-      { query: "job.priorityCounts" },
-    ],
+    invalidates: () => [{ query: "job.list" }, { query: "job.calendar" }],
   }),
   "job.update": commandEntry({
     delegate: "reversibleJob",
@@ -213,21 +167,6 @@ export const jobContract = commandContract({
     coach: "confirm",
     destructive: false,
     step: (input) => `Move to ${input.stage}`,
-    invalidates: jobFieldsChanged,
-  }),
-  "job.setPriority": commandEntry({
-    delegate: "reversibleJob",
-    description: "Set a job's priority.",
-    input: z
-      .object({ jobId: jobIdSchema, priority: jobPrioritySchema })
-      .strict(),
-    output: jobViewSchema
-      .extend({ previousPriority: jobPrioritySchema })
-      .strict(),
-    coach: "confirm",
-    destructive: false,
-    writes: () => [jobPriorityResource],
-    step: (input) => `Set priority to ${input.priority}`,
     invalidates: jobFieldsChanged,
   }),
   "job.star": commandEntry({

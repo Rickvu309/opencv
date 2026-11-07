@@ -459,6 +459,7 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
     idempotencyKey: randomUUID(),
   })
   expect(approved.status, await approved.clone().text()).toBe(200)
+  expect(await approved.clone().text()).not.toContain("previousPriority")
   const receipt = z
     .object({
       data: z.object({
@@ -494,8 +495,8 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
   ).toMatchObject({ data: { priority: "normal" } })
   const stranded = parseTool(
     await sdk.callTool({
-      name: "job_update",
-      arguments: { jobId, patch: { priority: "high" } },
+      name: "job_setPriority",
+      arguments: { jobId, priority: "high" },
     })
   )
   await expectDelegateLimits(sdk, database.db, jobId)
