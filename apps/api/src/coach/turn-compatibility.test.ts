@@ -124,6 +124,47 @@ it("adapts old tabs to durable work and returns the old wire events and final sa
     { coachDurable: true }
   ))
 
+it("sends a pending result the old tab can read", () =>
+  fixture(
+    async ({ app, owner, chatId, runtime, work }) => {
+      const command = (name: string, input: unknown) =>
+        app.request(`/api/commands/${name}`, {
+          method: "POST",
+          headers: authHeaders(owner.cookie),
+          body: JSON.stringify(input),
+        })
+      const created = await command("job.create", {
+        title: "Role",
+        company: "Acme",
+      })
+      const jobId = z
+        .object({ data: z.object({ id: z.string() }) })
+        .parse(await created.json()).data.id
+      runtime.mockImplementation(() =>
+        createScriptedWorkerRuntime([
+          {
+            ...final,
+            intents: [{ id: "delete", name: "job.delete", input: { jobId } }],
+          },
+          final,
+        ])
+      )
+      const response = await app.request(`/api/chats/${chatId}/turns`, {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ text: "Delete the Job" }),
+      })
+      const wire = response.text()
+      await work()
+      const text = await wire
+      expect(text).toContain("event: tool-result")
+      expect(text).toContain("pendingActionId")
+      expect(text).toContain("event: confirm")
+      expect(text).not.toContain("The Coach stopped")
+    },
+    { coachDurable: true, coachCompatibilityMs: 1000 }
+  ))
+
 it("keeps committed receipts and Undo in the old wire format", () =>
   fixture(
     async ({ app, owner, chatId, runtime, work }) => {
