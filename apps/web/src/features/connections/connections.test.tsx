@@ -111,7 +111,13 @@ it("copies a ready command for each agent", async () => {
     await screen.findByRole("heading", { name: "Connect an agent" })
   ).toBeInTheDocument()
   expect(screen.getByText("http://localhost:4107/mcp")).toBeInTheDocument()
-  const claude = screen.getByRole("button", { name: "Copy Claude Code" })
+  expect(
+    screen.getByText(/Add this table to ~\/\.codex\/config\.toml/)
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText(/Merge the opencv entry into ~\/\.cursor\/mcp\.json/)
+  ).toBeInTheDocument()
+  const claude = screen.getByRole("button", { name: "Copy Claude add command" })
   fireEvent.click(claude)
   await waitFor(() =>
     expect(writeText).toHaveBeenCalledWith(
@@ -119,17 +125,29 @@ it("copies a ready command for each agent", async () => {
     )
   )
   expect(claude).toHaveAttribute("data-state", "copied")
-  fireEvent.click(screen.getByRole("button", { name: "Copy Cursor" }))
+  fireEvent.click(
+    screen.getByRole("button", { name: "Copy Claude login command" })
+  )
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith("claude mcp login opencv")
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Copy Cursor entry" }))
   await waitFor(() =>
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining('"url": "http://localhost:4107/mcp"')
     )
   )
-  fireEvent.click(screen.getByRole("button", { name: "Copy Codex" }))
+  const codexTable = screen.getByRole("button", { name: "Copy Codex table" })
+  fireEvent.click(codexTable)
+  await waitFor(() => expect(writeText).toHaveBeenCalled())
+  const table = writeText.mock.calls.at(-1)?.[0] as string
+  expect(table).toContain('auth = "oauth"')
+  expect(table).not.toContain("codex mcp")
+  fireEvent.click(
+    screen.getByRole("button", { name: "Copy Codex login command" })
+  )
   await waitFor(() =>
-    expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining('auth = "oauth"')
-    )
+    expect(writeText).toHaveBeenCalledWith("codex mcp login opencv")
   )
   fireEvent.click(
     screen.getByRole("button", { name: "Copy ChatGPT on the web" })

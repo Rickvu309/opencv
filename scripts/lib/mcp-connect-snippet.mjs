@@ -14,6 +14,17 @@ function staticText(node) {
   )
 }
 
+function propertyName(name) {
+  if (!name) return null
+  if (
+    ts.isIdentifier(name) ||
+    ts.isStringLiteral(name) ||
+    ts.isNoSubstitutionTemplateLiteral(name)
+  )
+    return name.text
+  return null
+}
+
 function snippetLike(text) {
   return /claude mcp add|mcpServers|mcp_servers|existing remote server/.test(
     text
@@ -42,6 +53,27 @@ export function detect(text) {
   )
   const forcesMcp = /pathname\s*=\s*["']\/mcp["']/.test(text)
   const hits = []
+  const flagUrl = (node) => {
+    const line = lineOf(source, node)
+    const body = staticText(node)
+    if (body !== null) {
+      if (badUrls(body).length > 0) hits.push({ kind: "url", line })
+      else if (ts.isTemplateExpression(node) && !forcesMcp)
+        hits.push({ kind: "url", line })
+      return
+    }
+    if (!forcesMcp) hits.push({ kind: "url", line })
+  }
+  const collectConfigUrls = (node) => {
+    if (ts.isPropertyAssignment(node) && propertyName(node.name) === "url")
+      flagUrl(node.initializer)
+    if (
+      ts.isShorthandPropertyAssignment(node) &&
+      propertyName(node.name) === "url"
+    )
+      flagUrl(node.name)
+    ts.forEachChild(node, collectConfigUrls)
+  }
   const visit = (node) => {
     const body = staticText(node)
     if (body && snippetLike(body)) {
@@ -52,6 +84,11 @@ export function detect(text) {
       if (interpolated && !forcesMcp && badUrls(body).length === 0)
         hits.push({ kind: "url", line })
     }
+    if (
+      ts.isPropertyAssignment(node) &&
+      propertyName(node.name) === "mcpServers"
+    )
+      collectConfigUrls(node.initializer)
     ts.forEachChild(node, visit)
   }
   visit(source)

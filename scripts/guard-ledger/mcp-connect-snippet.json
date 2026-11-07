@@ -5,6 +5,10 @@
     "module": "scripts/lib/mcp-connect-snippet.mjs",
     "export": "detect"
   },
-  "historic": null,
-  "reason": "The connect page is new in #1147. No committed snippet used SSE or a URL other than /mcp. The MISTAKE fixture holds the SSE command."
+  "historic": {
+    "mode": "restore",
+    "sha": "d040baee3ff469a26dda3c0c1290579b205696f3",
+    "paths": ["scripts/lib/mcp-connect-snippet.mjs"],
+    "command": ["node", "--test", "scripts/mcp-connect-snippet.test.mjs"]
+  }
 }
