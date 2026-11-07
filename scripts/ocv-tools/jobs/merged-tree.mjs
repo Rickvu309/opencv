@@ -12,10 +12,12 @@ const SIGNAL_NUMBERS = { SIGINT: 2, SIGTERM: 15 }
 
 export function parseMergeTree(result) {
   const lines = result.out.split("\n")
-  if (!OID.test(lines[0] ?? "")) return { error: result.err || result.out }
+  if (!OID.test(lines[0] ?? ""))
+    return { error: result.err || result.out || "no output" }
   if (result.ok) return { tree: lines[0], conflicts: [] }
   const blank = lines.indexOf("", 1)
   const names = lines.slice(1, blank === -1 ? undefined : blank)
+  if (!names.some(Boolean)) return { error: result.err || result.out }
   return { tree: lines[0], conflicts: [...new Set(names)] }
 }
 
@@ -238,13 +240,14 @@ export function guardsOnMergedTree(ctx, n, head, tree) {
 
 export function mergeResultFacts(ctx, n, head) {
   if (!fetchPull(ctx, n))
-    return { n, head, lines: ["Merged-tree check skipped: git fetch failed."] }
+    return { n, head, lines: [], failed: ["git fetch failed"] }
   const behind = isBehind(ctx, head)
   if (behind === null)
     return {
       n,
       head,
-      lines: ["Merged-tree check skipped: git rev-list failed."],
+      lines: [],
+      failed: ["git rev-list failed"],
     }
   if (!behind) return { n, head, lines: [], conflicts: [] }
   const merged = mergeTreeOf(ctx, head)
@@ -252,9 +255,8 @@ export function mergeResultFacts(ctx, n, head) {
     return {
       n,
       head,
-      lines: [
-        `Merged-tree check skipped: ${String(merged.error).split("\n")[0]}`,
-      ],
+      lines: [],
+      failed: [`git merge-tree failed: ${String(merged.error).split("\n")[0]}`],
     }
   if (merged.conflicts.length)
     return { n, head, lines: [], conflicts: merged.conflicts }
