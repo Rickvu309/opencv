@@ -5,6 +5,26 @@ import { connectionsKey, fetchConnections } from "@/lib/connections-api.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { ConnectAgent } from "./connect-agent.tsx"
 
+function connectionGrantLines(connection: {
+  scopes: readonly string[]
+  resources: { kind: string }
+}) {
+  const writes = connection.scopes.some((scope) => scope.endsWith(".write"))
+  const reads = connection.scopes.some((scope) => scope.endsWith(".read"))
+  const share =
+    connection.resources.kind === "jobs"
+      ? writes
+        ? "All current and future Jobs · Reversible changes need approval"
+        : "All current and future Jobs · This agent cannot change things"
+      : "Connection status only · No documents or Jobs shared"
+  const access = writes
+    ? "Reads allowed · Writes need approval"
+    : reads
+      ? "Reads allowed · This agent cannot change things"
+      : "This agent cannot change things"
+  return [share, access]
+}
+
 export function ConnectionList() {
   const queryClient = useQueryClient()
   const connections = useQuery({
@@ -64,14 +84,11 @@ export function ConnectionList() {
                     ? "Expired"
                     : "Active"}
               </p>
-              <p className="text-sm text-muted-foreground">
-                {connection.resources.kind === "jobs"
-                  ? "All current and future Jobs · Reversible changes need approval"
-                  : "Connection status only · No documents or Jobs shared"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Reads allowed · Writes need approval
-              </p>
+              {connectionGrantLines(connection).map((line) => (
+                <p key={line} className="text-sm text-muted-foreground">
+                  {line}
+                </p>
+              ))}
               <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm text-muted-foreground">
                 <dt>Connected</dt>
                 <dd>

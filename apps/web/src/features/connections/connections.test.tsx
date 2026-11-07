@@ -207,11 +207,20 @@ it.each(["none", "jobs"] as const)(
       "Never",
       "Expires",
       kind === "jobs"
-        ? "All current and future Jobs · Reversible changes need approval"
+        ? "All current and future Jobs · This agent cannot change things"
         : "Connection status only · No documents or Jobs shared",
+      "This agent cannot change things",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
+    expect(
+      screen.queryByText("Reads allowed · Writes need approval")
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(
+        "All current and future Jobs · Reversible changes need approval"
+      )
+    ).not.toBeInTheDocument()
     expect(document.querySelectorAll("time")).toHaveLength(2)
     fireEvent.click(revokeButton)
     await waitFor(() =>
@@ -225,6 +234,72 @@ it.each(["none", "jobs"] as const)(
     ).not.toBeInTheDocument()
   }
 )
+
+it("says a read-only Jobs connection cannot change things", async () => {
+  vi.mocked(fetchConnections).mockResolvedValue([
+    {
+      id: connectionIdSchema.parse("11070000-0000-4000-8000-000000000002"),
+      clientId: "agent",
+      name: "Read only",
+      audience: "http://localhost:4107/mcp",
+      scopes: ["connection.status", "job.read", "offline_access"],
+      resources: { kind: "jobs" },
+      policy: { reads: "allow", writes: "approval" },
+      version: 1,
+      consentVersion: 1,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+      revokedAt: null,
+    },
+  ])
+  show(<ConnectionList />)
+  expect(
+    await screen.findByText(
+      "All current and future Jobs · This agent cannot change things"
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText("Reads allowed · This agent cannot change things")
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByText("Reads allowed · Writes need approval")
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByText(
+      "All current and future Jobs · Reversible changes need approval"
+    )
+  ).not.toBeInTheDocument()
+})
+
+it("keeps approval copy when the connection was granted a write scope", async () => {
+  vi.mocked(fetchConnections).mockResolvedValue([
+    {
+      id: connectionIdSchema.parse("11070000-0000-4000-8000-000000000003"),
+      clientId: "agent",
+      name: "Can propose",
+      audience: "http://localhost:4107/mcp",
+      scopes: ["connection.status", "job.read", "job.write", "offline_access"],
+      resources: { kind: "jobs" },
+      policy: { reads: "allow", writes: "approval" },
+      version: 1,
+      consentVersion: 1,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+      revokedAt: null,
+    },
+  ])
+  show(<ConnectionList />)
+  expect(
+    await screen.findByText(
+      "All current and future Jobs · Reversible changes need approval"
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText("Reads allowed · Writes need approval")
+  ).toBeInTheDocument()
+})
 
 it("shows the CIMD origin before the unverified app name", async () => {
   vi.mocked(consentClient).mockResolvedValue({

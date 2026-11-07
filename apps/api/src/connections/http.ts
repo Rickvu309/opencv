@@ -155,7 +155,10 @@ export function connectionRoutes(
       audience
     )
     if (!connection) {
-      c.header("WWW-Authenticate", `Bearer resource_metadata="${metadata}"`)
+      c.header(
+        "WWW-Authenticate",
+        `Bearer resource_metadata="${metadata}" scope="connection.status"`
+      )
       return c.json({ error: "invalid_token" }, 401)
     }
     const actor = delegateActorSchema.parse({
