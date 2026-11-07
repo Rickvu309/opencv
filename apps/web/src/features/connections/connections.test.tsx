@@ -102,6 +102,44 @@ it("keeps approval disabled for an unverified or loading request", async () => {
   expect(answerConsent).not.toHaveBeenCalled()
 })
 
+it("copies a ready command for each agent", async () => {
+  vi.mocked(fetchConnections).mockResolvedValue([])
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.assign(navigator, { clipboard: { writeText } })
+  show(<ConnectionList />)
+  expect(
+    await screen.findByRole("heading", { name: "Connect an agent" })
+  ).toBeInTheDocument()
+  expect(screen.getByText("http://localhost:4107/mcp")).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: "Copy Claude Code" }))
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith(
+      "claude mcp add --transport http opencv http://localhost:4107/mcp"
+    )
+  )
+  expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: "Copy Cursor" }))
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining('"url": "http://localhost:4107/mcp"')
+    )
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Copy Codex" }))
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining('auth = "oauth"')
+    )
+  )
+  fireEvent.click(
+    screen.getByRole("button", { name: "Copy ChatGPT on the web" })
+  )
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("plugin that points at an existing remote server")
+    )
+  )
+})
+
 it("renders empty connections and a retriable load failure", async () => {
   vi.mocked(fetchConnections)
     .mockRejectedValueOnce(new Error("Unavailable"))
