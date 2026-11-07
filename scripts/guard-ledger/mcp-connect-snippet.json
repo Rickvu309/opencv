@@ -1,0 +1,14 @@
+{
+  "id": "mcp-connect-snippet",
+  "file": "scripts/mcp-connect-snippet.test.mjs",
+  "detector": {
+    "module": "scripts/lib/mcp-connect-snippet.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "restore",
+    "sha": "d040baee3ff469a26dda3c0c1290579b205696f3",
+    "paths": ["scripts/lib/mcp-connect-snippet.mjs"],
+    "command": ["node", "--test", "scripts/mcp-connect-snippet.test.mjs"]
+  }
+}

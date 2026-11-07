@@ -102,6 +102,63 @@ it("keeps approval disabled for an unverified or loading request", async () => {
   expect(answerConsent).not.toHaveBeenCalled()
 })
 
+it("copies a ready command for each agent", async () => {
+  vi.mocked(fetchConnections).mockResolvedValue([])
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.assign(navigator, { clipboard: { writeText } })
+  show(<ConnectionList />)
+  expect(
+    await screen.findByRole("heading", { name: "Connect an agent" })
+  ).toBeInTheDocument()
+  expect(screen.getByText("http://localhost:4107/mcp")).toBeInTheDocument()
+  expect(
+    screen.getByText(/Add this table to ~\/\.codex\/config\.toml/)
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText(/Merge the opencv entry into ~\/\.cursor\/mcp\.json/)
+  ).toBeInTheDocument()
+  const claude = screen.getByRole("button", { name: "Copy Claude add command" })
+  fireEvent.click(claude)
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith(
+      "claude mcp add --transport http opencv http://localhost:4107/mcp"
+    )
+  )
+  expect(claude).toHaveAttribute("data-state", "copied")
+  fireEvent.click(
+    screen.getByRole("button", { name: "Copy Claude login command" })
+  )
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith("claude mcp login opencv")
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Copy Cursor entry" }))
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining('"url": "http://localhost:4107/mcp"')
+    )
+  )
+  const codexTable = screen.getByRole("button", { name: "Copy Codex table" })
+  fireEvent.click(codexTable)
+  await waitFor(() => expect(writeText).toHaveBeenCalled())
+  const table = writeText.mock.calls.at(-1)?.[0] as string
+  expect(table).toContain('auth = "oauth"')
+  expect(table).not.toContain("codex mcp")
+  fireEvent.click(
+    screen.getByRole("button", { name: "Copy Codex login command" })
+  )
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith("codex mcp login opencv")
+  )
+  fireEvent.click(
+    screen.getByRole("button", { name: "Copy ChatGPT on the web" })
+  )
+  await waitFor(() =>
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("plugin that points at an existing remote server")
+    )
+  )
+})
+
 it("renders empty connections and a retriable load failure", async () => {
   vi.mocked(fetchConnections)
     .mockRejectedValueOnce(new Error("Unavailable"))
@@ -150,11 +207,20 @@ it.each(["none", "jobs"] as const)(
       "Never",
       "Expires",
       kind === "jobs"
-        ? "All current and future Jobs · Reversible changes need approval"
+        ? "All current and future Jobs · This agent cannot change things"
         : "Connection status only · No documents or Jobs shared",
+      "This agent cannot change things",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
+    expect(
+      screen.queryByText("Reads allowed · Writes need approval")
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(
+        "All current and future Jobs · Reversible changes need approval"
+      )
+    ).not.toBeInTheDocument()
     expect(document.querySelectorAll("time")).toHaveLength(2)
     fireEvent.click(revokeButton)
     await waitFor(() =>
@@ -168,6 +234,134 @@ it.each(["none", "jobs"] as const)(
     ).not.toBeInTheDocument()
   }
 )
+
+it("says a read-only Jobs connection cannot change things", async () => {
+  vi.mocked(fetchConnections).mockResolvedValue([
+    {
+      id: connectionIdSchema.parse("11070000-0000-4000-8000-000000000002"),
+      clientId: "agent",
+      name: "Read only",
+      audience: "http://localhost:4107/mcp",
+      scopes: ["connection.status", "job.read", "offline_access"],
+      resources: { kind: "jobs" },
+      policy: { reads: "allow", writes: "approval" },
+      version: 1,
+      consentVersion: 1,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+      revokedAt: null,
+    },
+  ])
+  show(<ConnectionList />)
+  expect(
+    await screen.findByText(
+      "All current and future Jobs · This agent cannot change things"
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText("Reads allowed · This agent cannot change things")
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByText("Reads allowed · Writes need approval")
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByText(
+      "All current and future Jobs · Reversible changes need approval"
+    )
+  ).not.toBeInTheDocument()
+})
+
+it.each([
+  {
+    name: "none",
+    id: "11070000-0000-4000-8000-000000000010",
+    scopes: ["connection.status", "offline_access"],
+    share: "All current and future Jobs · This agent cannot change things",
+    access: "This agent cannot change things",
+    reads: false,
+  },
+  {
+    name: "read only",
+    id: "11070000-0000-4000-8000-000000000011",
+    scopes: ["connection.status", "job.read", "offline_access"],
+    share: "All current and future Jobs · This agent cannot change things",
+    access: "Reads allowed · This agent cannot change things",
+    reads: true,
+  },
+  {
+    name: "write only",
+    id: "11070000-0000-4000-8000-000000000012",
+    scopes: ["connection.status", "job.write", "offline_access"],
+    share: "All current and future Jobs · Reversible changes need approval",
+    access: "Writes need approval",
+    reads: false,
+  },
+  {
+    name: "read plus write",
+    id: "11070000-0000-4000-8000-000000000013",
+    scopes: ["connection.status", "job.read", "job.write", "offline_access"],
+    share: "All current and future Jobs · Reversible changes need approval",
+    access: "Reads allowed · Writes need approval",
+    reads: true,
+  },
+])(
+  "describes a $name Jobs grant from its scopes",
+  async ({ id, scopes, share, access, reads }) => {
+    vi.mocked(fetchConnections).mockResolvedValue([
+      {
+        id: connectionIdSchema.parse(id),
+        clientId: "agent",
+        name: "Scoped agent",
+        audience: "http://localhost:4107/mcp",
+        scopes,
+        resources: { kind: "jobs" },
+        policy: { reads: "allow", writes: "approval" },
+        version: 1,
+        consentVersion: 1,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+        revokedAt: null,
+      },
+    ])
+    show(<ConnectionList />)
+    expect(await screen.findByText(share)).toBeInTheDocument()
+    expect(screen.getByText(access)).toBeInTheDocument()
+    if (!reads) {
+      expect(screen.queryByText(/Reads allowed/)).not.toBeInTheDocument()
+    }
+  }
+)
+
+it("keeps approval copy when the connection was granted a write scope", async () => {
+  vi.mocked(fetchConnections).mockResolvedValue([
+    {
+      id: connectionIdSchema.parse("11070000-0000-4000-8000-000000000003"),
+      clientId: "agent",
+      name: "Can propose",
+      audience: "http://localhost:4107/mcp",
+      scopes: ["connection.status", "job.read", "job.write", "offline_access"],
+      resources: { kind: "jobs" },
+      policy: { reads: "allow", writes: "approval" },
+      version: 1,
+      consentVersion: 1,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+      revokedAt: null,
+    },
+  ])
+  show(<ConnectionList />)
+  expect(
+    await screen.findByText(
+      "All current and future Jobs · Reversible changes need approval"
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText("Reads allowed · Writes need approval")
+  ).toBeInTheDocument()
+})
 
 it("shows the CIMD origin before the unverified app name", async () => {
   vi.mocked(consentClient).mockResolvedValue({

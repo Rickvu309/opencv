@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 import { chatToolNameSchema, jobPriorityResource } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
+import { registeredAgentScopes } from "../connections/index.js"
 import { installRegistry } from "./install.js"
 
 const retiredCommandNames = ["paper.replace", "paper.restore"]
@@ -77,6 +78,12 @@ function declaredResourceName(name: string, files: Set<string>) {
   )
 }
 
+const registeredScopes = new Set<string>(registeredAgentScopes)
+
+function registeredScopeName(name: string) {
+  return registeredScopes.has(name)
+}
+
 function listUnknown(
   found: References,
   allowed: (name: string, files: Set<string>) => boolean
@@ -100,12 +107,30 @@ describe("a command, read or Coach tool name the registry lacks is rejected", ()
       (name, files) =>
         registered.has(name) ||
         declaredResourceName(name, files) ||
-        retiredReceiptName(name, files)
+        retiredReceiptName(name, files) ||
+        registeredScopeName(name)
     )
     expect(
       unknown,
       `A name used in the web, fake coach or domain is not registered. Declare it in the packages/domain contract and bind it in the module's commands.ts or queries.ts (installed by apps/api/src/registry/install.ts), or fix the spelling at the call site. Unknown names:\n${unknown.join("\n")}`
     ).toEqual([])
+  })
+
+  it("accepts a registered access scope and rejects a misspelled command", () => {
+    const files = new Set(["apps/web/src/example.ts"])
+    const allow = (name: string, found: Set<string>) =>
+      registered.has(name) ||
+      declaredResourceName(name, found) ||
+      retiredReceiptName(name, found) ||
+      registeredScopeName(name)
+    expect(registered.has("job.read")).toBe(false)
+    expect(registeredScopeName("job.read")).toBe(true)
+    expect(listUnknown(new Map([["job.read", files]]), allow)).toEqual([])
+    expect(registered.has("job.setPriorty")).toBe(false)
+    expect(registeredScopeName("job.setPriorty")).toBe(false)
+    expect(listUnknown(new Map([["job.setPriorty", files]]), allow)).toEqual([
+      "job.setPriorty  <- apps/web/src/example.ts",
+    ])
   })
 
   it("recognizes a resource declaration without allowing it as a command", () => {

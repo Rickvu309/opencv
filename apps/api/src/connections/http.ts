@@ -23,7 +23,7 @@ import type { Registry } from "../registry/registry.js"
 import { isAllowedOrigin } from "../origin.js"
 import { requireLiveDelegate } from "../registry/delegate-policy.js"
 import { CommandError } from "../registry/errors.js"
-import { authenticateAgent } from "./oauth.js"
+import { authenticateAgent, registeredAgentScopes } from "./oauth.js"
 
 const NATIVE_CLIENT_ORIGINS = [
   "vscode-webview://*",
@@ -139,7 +139,9 @@ export function connectionRoutes(
     c.json({
       resource: audience,
       authorization_servers: [new URL("/api/auth", authUrl).href],
-      scopes_supported: ["connection.status", "job.read", "job.write"],
+      scopes_supported: registeredAgentScopes.filter(
+        (scope) => scope !== "offline_access"
+      ),
       bearer_methods_supported: ["header"],
     })
   )
@@ -155,7 +157,10 @@ export function connectionRoutes(
       audience
     )
     if (!connection) {
-      c.header("WWW-Authenticate", `Bearer resource_metadata="${metadata}"`)
+      c.header(
+        "WWW-Authenticate",
+        `Bearer resource_metadata="${metadata}" scope="connection.status"`
+      )
       return c.json({ error: "invalid_token" }, 401)
     }
     const actor = delegateActorSchema.parse({

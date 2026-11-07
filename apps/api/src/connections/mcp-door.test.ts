@@ -63,7 +63,11 @@ function post(headers: Record<string, string>, body?: string) {
 }
 
 it("lets a computer with no site name through and turns away another site", async () => {
-  expect((await post({})).status).toBe(401)
+  const open = await post({})
+  expect(open.status).toBe(401)
+  expect(open.headers.get("www-authenticate")).toContain(
+    'scope="connection.status"'
+  )
   expect((await post({ Origin: "http://127.0.0.1:9" })).status).toBe(403)
   expect((await post({ Origin: testWebOrigin })).status).toBe(401)
   expect((await post({ Origin: "https://attacker.example" })).status).toBe(403)

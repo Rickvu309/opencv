@@ -7,6 +7,7 @@ import {
   bindIssuedToken,
   assertRefreshGrant,
   hashAgentToken,
+  registeredAgentScopes,
 } from "./connections/index.js"
 
 import { betterAuth } from "better-auth"
@@ -123,12 +124,7 @@ export function createAuth({
         accessTokenExpiresIn: CONNECTION_TOKEN_SECONDS.access,
         refreshTokenExpiresIn: CONNECTION_TOKEN_SECONDS.refresh,
         storeTokens: { hash: hashAgentToken },
-        scopes: [
-          "connection.status",
-          "job.read",
-          "job.write",
-          "offline_access",
-        ],
+        scopes: [...registeredAgentScopes],
         grantTypes: ["authorization_code", "refresh_token"],
         allowPublicClientPrelogin: true,
         allowDynamicClientRegistration: true,
@@ -137,12 +133,7 @@ export function createAuth({
         resources: [
           {
             identifier: new URL("/mcp", authUrl).href,
-            scopes: [
-              "connection.status",
-              "job.read",
-              "job.write",
-              "offline_access",
-            ],
+            scopes: [...registeredAgentScopes],
           },
         ],
         clientPrivileges: () => false,
