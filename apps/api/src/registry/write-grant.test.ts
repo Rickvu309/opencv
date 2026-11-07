@@ -27,17 +27,17 @@ import {
   withGrantScope,
   type WriteGrant,
 } from "./write-grant.js"
-// @ts-expect-error detectors are plain scripts with no declaration file
 import {
   detect,
   normalizeWrite,
   traceProblems,
+  // @ts-expect-error detectors are plain scripts with no declaration file
 } from "../../../../scripts/lib/write-grant.mjs"
-// @ts-expect-error detectors are plain scripts with no declaration file
 import {
   basisProblems,
   detect as detectBasis,
   normalizeApproval,
+  // @ts-expect-error detectors are plain scripts with no declaration file
 } from "../../../../scripts/lib/proposal-basis.mjs"
 
 declare const sampleJob: JobId
@@ -565,7 +565,7 @@ describe("priority writes require a one-time permission and a matching version",
               current,
               wrote: (await read()).priority === "low",
             }),
-          ]).map((problem) => problem.kind)
+          ]).map((problem: { kind: string }) => problem.kind)
         ).toContain("null-basis")
       })
     } finally {
