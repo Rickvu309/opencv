@@ -111,13 +111,14 @@ it("copies a ready command for each agent", async () => {
     await screen.findByRole("heading", { name: "Connect an agent" })
   ).toBeInTheDocument()
   expect(screen.getByText("http://localhost:4107/mcp")).toBeInTheDocument()
-  fireEvent.click(screen.getByRole("button", { name: "Copy Claude Code" }))
+  const claude = screen.getByRole("button", { name: "Copy Claude Code" })
+  fireEvent.click(claude)
   await waitFor(() =>
     expect(writeText).toHaveBeenCalledWith(
       "claude mcp add --transport http opencv http://localhost:4107/mcp"
     )
   )
-  expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument()
+  expect(claude).toHaveAttribute("data-state", "copied")
   fireEvent.click(screen.getByRole("button", { name: "Copy Cursor" }))
   await waitFor(() =>
     expect(writeText).toHaveBeenCalledWith(

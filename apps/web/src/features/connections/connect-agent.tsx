@@ -1,34 +1,9 @@
-import { useReducer } from "react"
-import { Button } from "@workspace/ui/components/button"
+import { CopyButton } from "@workspace/ui/components/copy-button"
 import { agentServerUrl } from "@/lib/connections-api.ts"
-import { agentSnippets, type AgentSnippet } from "./snippets.ts"
-
-type CopyState =
-  | { status: "idle" }
-  | { status: "copied"; id: AgentSnippet["id"] }
-  | { status: "failed"; id: AgentSnippet["id"] }
-
-type CopyAction =
-  | { type: "copied"; id: AgentSnippet["id"] }
-  | { type: "failed"; id: AgentSnippet["id"] }
-
-function copyReducer(_state: CopyState, action: CopyAction): CopyState {
-  if (action.type === "copied") return { status: "copied", id: action.id }
-  return { status: "failed", id: action.id }
-}
+import { agentSnippets } from "./snippets.ts"
 
 export function ConnectAgent() {
   const snippets = agentSnippets(agentServerUrl)
-  const [copy, dispatch] = useReducer(copyReducer, { status: "idle" })
-
-  async function onCopy(snippet: AgentSnippet) {
-    try {
-      await navigator.clipboard.writeText(snippet.text)
-      dispatch({ type: "copied", id: snippet.id })
-    } catch {
-      dispatch({ type: "failed", id: snippet.id })
-    }
-  }
 
   return (
     <section
@@ -47,41 +22,33 @@ export function ConnectAgent() {
         {agentServerUrl}
       </code>
       <ul className="flex flex-col gap-3">
-        {snippets.map((snippet) => {
-          const copied = copy.status === "copied" && copy.id === snippet.id
-          const failed = copy.status === "failed" && copy.id === snippet.id
-          const label = copied
-            ? "Copied"
-            : failed
-              ? "Could not copy"
-              : `Copy ${snippet.title}`
-          return (
-            <li
-              key={snippet.id}
-              className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
-            >
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{snippet.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {snippet.detail}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  className="h-11 shrink-0 md:h-9"
-                  variant="outline"
-                  onClick={() => void onCopy(snippet)}
-                >
-                  {label}
-                </Button>
+        {snippets.map((snippet) => (
+          <li
+            key={snippet.id}
+            className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
+          >
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{snippet.title}</p>
+                <p className="text-sm text-muted-foreground">
+                  {snippet.detail}
+                </p>
               </div>
-              <pre className="overflow-x-hidden rounded-md bg-muted px-3 py-2 text-sm break-words whitespace-pre-wrap">
-                {snippet.text}
-              </pre>
-            </li>
-          )
-        })}
+              <CopyButton
+                className="h-11 shrink-0 md:h-9"
+                variant="outline"
+                size="default"
+                aria-label={`Copy ${snippet.title}`}
+                value={snippet.text}
+              >
+                {`Copy ${snippet.title}`}
+              </CopyButton>
+            </div>
+            <pre className="overflow-x-hidden rounded-md bg-muted px-3 py-2 text-sm break-words whitespace-pre-wrap">
+              {snippet.text}
+            </pre>
+          </li>
+        ))}
       </ul>
     </section>
   )
