@@ -23,8 +23,12 @@
     "passed": true,
     "fingerprint": "ac368da6300c"
   },
+  "write-grant": {
+    "passed": true,
+    "fingerprint": "c14d28ac0745"
+  },
   "write-grant-formal": {
     "passed": true,
-    "fingerprint": "2efecf66b09a"
+    "fingerprint": "da3fc77ea7db"
   }
 }
