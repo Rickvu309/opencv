@@ -193,7 +193,7 @@ it("rejects a method header that does not match the body", async () => {
     "MCP transport must not run inside a database transaction"
   )
   const held = await withDatabase(database.db, () =>
-    transaction(() => app.request("/mcp", transport))
+    transaction(async () => app.request("/mcp", transport))
   )
   expect(held.status).toBe(500)
   expect(await held.json()).toMatchObject({
