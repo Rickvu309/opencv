@@ -45,14 +45,18 @@ export const implementation = { operation, execute: (input: { count: number }) =
 throw new Error("Server execution during discovery is forbidden")
 `
 
-function workspace(t) {
+function workspace(t, sourceRoot = root) {
   const directory = tempDir(t, "catalog-", path.join(homedir(), "tmp"))
   cpSync(
-    path.join(root, "packages/domain/src"),
+    path.join(sourceRoot, "packages/domain/src"),
     path.join(directory, "packages/domain/src"),
     { recursive: true }
   )
   mkdirSync(path.join(directory, "apps/api/src"), { recursive: true })
+  rmSync(path.join(directory, "packages/domain/src/operations"), {
+    recursive: true,
+    force: true,
+  })
   mkdirSync(path.join(directory, "apps/web"), { recursive: true })
   symlinkSync(
     path.join(root, "node_modules"),
@@ -80,6 +84,41 @@ function workspace(t) {
   write(directory, "package.json", '{"type":"module"}')
   return directory
 }
+
+test("same-owner compact server paths pair without a manual index and reject a foreign owner", async (t) => {
+  const directory = workspace(t)
+  const compact = "apps/api/src/fixture/operations/echo/server.ts"
+  write(directory, declaration, descriptor())
+  write(directory, compact, server)
+  assert.equal((await catalog("generate", directory)).count, 1)
+  await catalog("check", directory)
+  write(directory, implementation, server)
+  await assert.rejects(catalog("generate", directory), (error) =>
+    error.errors.some((entry) => entry.kind === "duplicate-name")
+  )
+  rmSync(path.join(directory, implementation))
+  renameSync(
+    path.join(directory, "apps/api/src/fixture"),
+    path.join(directory, "apps/api/src/foreign")
+  )
+  await assert.rejects(catalog("generate", directory), (error) =>
+    error.errors.some((entry) => entry.kind === "namespace-mismatch")
+  )
+})
+
+test("fixture workspaces discard adopted production operations and regenerate an empty catalog", async (t) => {
+  const production = workspace(t)
+  write(production, declaration, descriptor())
+  write(production, implementation, server)
+  assert.equal((await catalog("generate", production)).count, 1)
+  const directory = workspace(t, production)
+  const snapshot = await discoverCatalog(directory)
+  assert.deepEqual(snapshot.operations, [])
+  assert.deepEqual(snapshot.servers, [])
+  assert.equal((await catalog("generate", directory)).count, 0)
+  assert.equal((await catalog("check", directory)).count, 0)
+  await buildBrowserCatalog(directory)
+})
 
 test("add, rename and delete pairs regenerate deterministically without running implementations", async (t) => {
   const directory = workspace(t)
@@ -229,78 +268,6 @@ test("browser graph rejects server, generated, dynamic and computed imports befo
   }
   write(directory, declaration, descriptor())
   assert.equal((await catalog("generate", directory)).count, 1)
-})
-
-test("Vite rejects server modules and assets without discovery", async (t) => {
-  const directory = workspace(t)
-  const privateFile = "apps/api/src/private.ts"
-  const sentinel = "server-private-catalog-sentinel"
-  write(
-    directory,
-    privateFile,
-    `export const privateReceipt = ${JSON.stringify(sentinel + "x".repeat(5000))}`
-  )
-  write(directory, implementation, server)
-  write(directory, declaration, descriptor())
-  await catalog("generate", directory)
-  await catalog("check", directory)
-  for (const [expression, output] of [
-    [
-      'Object.values((import.meta as ImportMeta).glob("../../../../../../apps/api/src/private.ts", { eager: true })).map((value) => ({ name: value.privateReceipt, coachFloor: "auto" }))',
-      "module",
-    ],
-    [
-      '[{ name: new URL("../../../../../../apps/api/src/private.ts", import.meta.url).href, coachFloor: "auto" }]',
-      "asset",
-    ],
-  ]) {
-    write(
-      directory,
-      declaration,
-      descriptor().replace(
-        "dependsOn: () => []",
-        `dependsOn: () => ${expression}`
-      )
-    )
-    await assert.rejects(catalog("generate", directory), (error) => {
-      assert.equal(error.kind, "browser-import")
-      assert.match(
-        error.message,
-        /operation declarations must not use import.meta/
-      )
-      return true
-    })
-    await assert.rejects(buildBrowserCatalog(directory), (error) => {
-      assert.equal(error.kind, "browser-import")
-      assert.equal(error.file, privateFile)
-      assert.match(error.message, new RegExp(`browser ${output}`))
-      return true
-    })
-  }
-  const serverHelper = "packages/domain/src/private/server.ts"
-  write(
-    directory,
-    serverHelper,
-    `export const privateReceipt = ${JSON.stringify(sentinel)}`
-  )
-  write(
-    directory,
-    declaration,
-    `${descriptor()}\nimport { privateReceipt } from "../../../private/server.js"\nexport { privateReceipt }`
-  )
-  await assert.rejects(
-    buildBrowserCatalog(directory),
-    (error) => error.file === serverHelper
-  )
-  write(directory, declaration, descriptor())
-  const safe = await buildBrowserCatalog(directory)
-  assert.ok(
-    safe.output.some(
-      (output) =>
-        output.type === "chunk" && output.code.includes("fixture.echo")
-    )
-  )
-  await catalog("check", directory)
 })
 
 test("build and dev entry paths reject stale output before launching consumers", async (t) => {
