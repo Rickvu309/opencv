@@ -1,0 +1,10 @@
+{
+  "id": "paper-coach-pending-deadline",
+  "file": "scripts/paper-coach-turn.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-coach-turn.mjs",
+    "export": "detectPendingDeadline"
+  },
+  "historic": null,
+  "reason": "The pending-result regression test first appeared on the reviewed branch. No main ancestor contains that test. Fixtures detect the uncontrolled deadline without pinning a branch-only commit."
+}
