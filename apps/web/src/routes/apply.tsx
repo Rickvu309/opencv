@@ -14,7 +14,11 @@ import {
 } from "@/features/apply/apply-board-empty.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
-import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import {
+  jobListKey,
+  listJobs,
+  ownerIdFromRouteMatches,
+} from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import {
   activeFilterCount,
@@ -82,21 +86,6 @@ function applySearch(
     ...(filters.company ? { company: filters.company } : {}),
     ...(filters.location ? { location: filters.location } : {}),
   }
-}
-
-export function ownerIdFromRouteMatches(
-  matches: readonly { context: unknown }[]
-) {
-  for (const match of matches) {
-    if (!match.context || typeof match.context !== "object") continue
-    const session = (match.context as { session?: unknown }).session
-    if (!session || typeof session !== "object") continue
-    const user = (session as { user?: unknown }).user
-    if (!user || typeof user !== "object") continue
-    const id = (user as { id?: unknown }).id
-    if (typeof id === "string" && id) return id
-  }
-  return ""
 }
 
 export function ApplyPage() {

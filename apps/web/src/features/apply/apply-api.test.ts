@@ -8,7 +8,7 @@ import { parseJobId } from "@workspace/domain"
 import { QueryClient } from "@tanstack/react-query"
 import { undoActivity } from "@/lib/contract-client.ts"
 
-import { ownerIdFromRouteMatches } from "@/routes/apply.tsx"
+import { ownerIdFromRouteMatches } from "./apply-api.ts"
 import {
   calendarJobs,
   getJob,
