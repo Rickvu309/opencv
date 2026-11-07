@@ -14,5 +14,5 @@
       "path": "scripts/fixtures/catalog-adapters/clean.json"
     }
   },
-  "reason": "New catalog architecture rule. Prospective Job adoption debt and publication mutants are fixtures, not a claimed historical regression."
+  "reason": "New catalog architecture rule. Prospective Job adoption debt and publication mutants are fixtures, not a claimed historical regression. Round 1 extends proof to feature-owned fetchers and keys, activity/approval/Undo/Coach receipt mutants, and the catalog guarded-reversal kernel requirement."
 }

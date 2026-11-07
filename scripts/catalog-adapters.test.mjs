@@ -8,6 +8,7 @@ import { discoverCatalog } from "./lib/catalog-discovery.mjs"
 import {
   detectDefinitions,
   detectPublication,
+  detectReplayIdentity,
 } from "./lib/catalog-adapters.mjs"
 
 const fixture = (name) =>
@@ -47,7 +48,7 @@ function sources() {
 
 test("G2 detects duplicate declarations, bindings, fetchers and keys only for discovered identities", () => {
   assert.deepEqual(detectDefinitions(clean), [])
-  assert.equal(detectDefinitions(mistake).length, 4)
+  assert.equal(detectDefinitions(mistake).length, 8)
   assert.deepEqual(detectDefinitions({ ...mistake, operations: [] }), [])
   assert.ok(detectDefinitions(JSON.stringify(mistake)).length > 0)
 })
@@ -102,13 +103,17 @@ test("G3 rejects transitive server imports, raw nested output and private revers
     "raw-public-output",
     "private-reversal",
     "raw-public-read",
+    "raw-public-activity",
+    "raw-confirmation-receipt",
+    "raw-turn-receipt",
+    "unguarded-reversal",
   ])
     assert.ok(kinds.includes(kind), kind)
   assert.ok(detectPublication(JSON.stringify(mistake)).length > 0)
   const override = structuredClone(clean)
   override.sources[1][1] = override.sources[1][1].replace(
-    "output: this.publicOutput(name,result.output),",
-    "output: this.publicOutput(name,result.output), ...result,"
+    "output: this.publicOutput(name, result.output),",
+    "output: this.publicOutput(name, result.output), ...result,"
   )
   assert.ok(
     detectPublication(override).some(
@@ -122,4 +127,77 @@ test("the current discovered catalog has disjoint definitions and publication bo
   const snapshot = { operations: catalog.operations, sources: sources() }
   assert.deepEqual(detectDefinitions(snapshot), [])
   assert.deepEqual(detectPublication(snapshot), [])
+})
+
+test("keyed replay binds stored identity on initial and conflict lookups", () => {
+  const before = execFileSync(
+    "git",
+    [
+      "show",
+      "63944da863f0f83436305a5a93d9a23303ce8070:apps/api/src/registry/registry.ts",
+    ],
+    { cwd: root, encoding: "utf8" }
+  )
+  const now = readFileSync(
+    new URL("../apps/api/src/registry/registry.ts", import.meta.url),
+    "utf8"
+  )
+  assert.ok(detectReplayIdentity(before).length)
+  assert.deepEqual(detectReplayIdentity(now), [])
+  for (const [from, to] of [
+    ["stored.command !== command", "false"],
+    ["stored.inputHash !== hash", "false"],
+    ["inputHash: hash", "inputHash: null"],
+    ["hash!", "null"],
+  ]) {
+    const mutant = now.replace(from, to)
+    assert.notEqual(mutant, now)
+    assert.ok(detectReplayIdentity(mutant).length, from)
+  }
+})
+
+test("G3 rejects raw results and reversal inputs in activity, confirmation and turn adapters", () => {
+  const file = "apps/api/src/registry/catalog-publication.ts"
+  const now = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+  for (const [from, to] of [
+    ["this.publicOutput(row.command, row.result)", "row.result"],
+    ["reversalInput: {}", "reversalInput: row.reversalInput"],
+    [
+      "? {}\n                    : completed.reversalInput",
+      "? completed.reversalInput\n                    : completed.reversalInput",
+    ],
+    ["receiptDetail(completed.command, completed.result)", "completed.result"],
+    ["this.publishResult(receipt.name, receipt.result)", "receipt.result"],
+    [
+      "this.publishResult(receipt.name, receipt.result)",
+      "receipt.reversalInput",
+    ],
+  ]) {
+    const mutant = now.replace(from, to)
+    assert.notEqual(mutant, now, from)
+    assert.ok(
+      detectPublication({ operations: [], sources: [[file, mutant]] }).length,
+      from
+    )
+  }
+})
+
+test("G3 requires the kernel call and bounded reversal guard", () => {
+  for (const [file, from, to] of [
+    [
+      "apps/api/src/registry/registry.ts",
+      "assertReversal(command.name, this.isCatalogOperation(command.name), ran)",
+      "undefined",
+    ],
+    ["apps/api/src/registry/bind.ts", "catalog ||", "false ||"],
+  ]) {
+    const now = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+    const mutant = now.replace(from, to)
+    assert.notEqual(mutant, now)
+    assert.ok(
+      detectPublication({ operations: [], sources: [[file, mutant]] }).some(
+        ({ kind }) => kind === "unguarded-reversal"
+      )
+    )
+  }
 })

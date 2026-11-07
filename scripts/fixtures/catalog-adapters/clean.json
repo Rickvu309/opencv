@@ -13,15 +13,23 @@
     ],
     [
       "apps/api/src/registry/catalog-publication.ts",
-      "class Registry { publicOutput(name, output) { const operation = this.operations.get(name); return operation ? operation.publicResult.parse(output) : output; } publishResult(name,result) { if (!this.operations.has(name)) return result; return { ...result, output: this.publicOutput(name,result.output), reversal: result.reversal ? {command: result.reversal.command,input:{}} : null }; } }"
+      "import type { Operation } from \"@workspace/domain\"\nimport type { activity } from \"../db/schema.js\"\nimport { receiptDetail, reversalOf } from \"./receipt.js\"\nimport type { ExecuteResult } from \"./registry-types.js\"\nimport { readTurnReceipts } from \"./turn-receipts.js\"\n\nexport class CatalogPublication {\n  protected readonly operations = new Map<string, Operation>()\n\n  adopt(operation: Operation) {\n    this.operations.set(operation.name, operation)\n  }\n\n  publicOutput(name: string, output: unknown) {\n    const operation = this.operations.get(name)\n    return operation ? operation.publicResult.parse(output) : output\n  }\n\n  isCatalogOperation(name: string) {\n    return this.operations.has(name)\n  }\n\n  protected publicActivity<\n    T extends {\n      command: string\n      result: unknown\n      reversalInput: unknown\n      detail: unknown\n    },\n  >(row: T) {\n    return this.operations.has(row.command)\n      ? {\n          ...row,\n          result: this.publicOutput(row.command, row.result),\n          reversalInput: {},\n          reversalExpect: null,\n          detail: null,\n        }\n      : row\n  }\n\n  protected publishResult(name: string, result: ExecuteResult): ExecuteResult {\n    if (!this.operations.has(name) || result.pending) return result\n    return {\n      ...result,\n      output: this.publicOutput(name, result.output),\n      reversal: result.reversal\n        ? { command: result.reversal.command, input: {} }\n        : null,\n      detail: undefined,\n    }\n  }\n\n  protected confirmationReceipt(\n    completed: typeof activity.$inferSelect | null\n  ) {\n    return completed\n      ? {\n          summary: completed.summary,\n          activityId: completed.id,\n          reversal: reversalOf(\n            completed.reversalCommand\n              ? {\n                  command: completed.reversalCommand,\n                  input: this.operations.has(completed.command)\n                    ? {}\n                    : completed.reversalInput,\n                }\n              : null,\n            completed.summary\n          ),\n          detail: this.operations.has(completed.command)\n            ? undefined\n            : receiptDetail(completed.command, completed.result),\n          undone: completed.undoneAt !== null,\n        }\n      : undefined\n  }\n\n  catalogRead(name: string) {\n    return this.operations.get(name)?.kind === \"read\"\n  }\n\n  protected committedResult(\n    name: string,\n    input: never,\n    ownerId: string,\n    result: ExecuteResult\n  ): ExecuteResult {\n    const operation = this.operations.get(name)\n    const touches =\n      operation?.kind === \"command\"\n        ? operation.writes(input).map(({ name, entityId }) => ({\n            ownerId,\n            name,\n            ...(entityId ? { entityId } : {}),\n          }))\n        : [{ ownerId, name: \"workspace\" }]\n    return { ...this.publishResult(name, result), touches }\n  }\n\n  async turnReceipts(userId: string, turnIds: string[]) {\n    const receipts = await readTurnReceipts(userId, turnIds)\n    return receipts.map((receipt) => ({\n      ...receipt,\n      result: this.publishResult(receipt.name, receipt.result),\n    }))\n  }\n}\n"
     ],
     [
       "apps/api/src/registry/bind.ts",
-      "const bound = { read: async (input, actor) => operation.publicResult.parse(await binding.execute(input, actor)) };"
+      "const bound = { read: async (input, actor) => operation.publicResult.parse(await binding.execute(input, actor)) }; function assertReversal(command, catalog, result) { if (result.reversal && (!result.reversal.expect || !Object.keys(result.reversal.expect.matches).length) && (catalog || !REVERSAL_EXPECT_PENDING.commands.some((name) => name === command))) throw new Error(\"Reversals require a guarded expectation\"); }"
     ],
     [
       "packages/domain/src/operation.ts",
       "import type { ResourceRef } from \"./resources.js\""
+    ],
+    [
+      "apps/api/src/registry/registry.ts",
+      "class Registry { async execute() { const ran = await command.run(parsed, actor); assertReversal(command.name, this.isCatalogOperation(command.name), ran); return ran; } }"
+    ],
+    [
+      "apps/web/src/features/apply/apply-api.ts",
+      "export const run = (client, name, input) => client.command(name, input); export const key = (client, name, input) => client.key(name, input); export const adopted = (client) => client.command(\"job.setPriority\", { priority: \"high\" });"
     ]
   ]
 }

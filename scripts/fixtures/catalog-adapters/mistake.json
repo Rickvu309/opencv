@@ -34,6 +34,14 @@
     [
       "packages/domain/src/operation.ts",
       "import type { ResourceRef } from \"./contract.js\""
+    ],
+    [
+      "apps/web/src/features/apply/apply-api.ts",
+      "fetch(\"/api/commands/job.setPriority\"); fetch(\"/commands/job.setPriority\"); fetch(`${base}/commands/job.setPriority`); const key = [\"job.setPriority\"];"
+    ],
+    [
+      "apps/api/src/registry/registry.ts",
+      "class Registry { async execute() { const ran = await command.run(parsed, actor); return ran; } }"
     ]
   ]
 }

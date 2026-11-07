@@ -14,7 +14,7 @@ const snapshotOf = (value) =>
 const literal = (node) => (ts.isStringLiteralLike(node) ? node.text : null)
 const testFile = (file) => /(?:\.test\.|\.type-test\.|\/test\/)/.test(file)
 const generated = (file) => file.includes("/generated/")
-const spelling = (node, source) => node.getText(source).replace(/\s+/g, "")
+const spelling = (node, source) => node?.getText(source).replace(/\s+/g, "")
 
 function walk(node, visit) {
   visit(node)
@@ -31,8 +31,19 @@ export function detectDefinitions(value) {
     if (testFile(file) || generated(file)) continue
     const source = parse(file, text)
     walk(source, (node) => {
-      if (!ts.isStringLiteralLike(node)) return
-      const name = node.text.replace(/^\/api\/(?:commands|reads)\//, "")
+      const text = ts.isStringLiteralLike(node)
+        ? node.text
+        : ts.isTemplateExpression(node)
+          ? node.templateSpans.at(-1).literal.text
+          : null
+      if (text === null) return
+      const name = [...operations.keys()].find(
+        (name) =>
+          text === name ||
+          ["commands", "reads"].some((kind) =>
+            text.endsWith(`/${kind}/${name}`)
+          )
+      )
       const operation = operations.get(name)
       if (!operation || file === operation.file || file === operation.server)
         return
@@ -42,11 +53,13 @@ export function detectDefinitions(value) {
         (parent.name === node || spelling(parent.name, source) === "name")
       const adapter =
         ts.isCallExpression(parent) &&
+        (text !== name ||
+          !ts.isPropertyAccessExpression(parent.expression) ||
+          !["command", "read", "key"].includes(parent.expression.name.text)) &&
         (/\/(?:http|commands|queries)\.ts$/.test(file) ||
-          file.startsWith("apps/web/src/lib/"))
+          file.startsWith("apps/web/src/"))
       const key =
-        ts.isArrayLiteralExpression(parent) &&
-        file.startsWith("apps/web/src/lib/")
+        ts.isArrayLiteralExpression(parent) && file.startsWith("apps/web/src/")
       if (property || adapter || key)
         problems.push({
           kind: "duplicate-adapter",
@@ -104,6 +117,131 @@ function returned(node) {
         values.push(child.expression)
     })
   return values
+}
+
+function fields(node) {
+  return node && ts.isObjectLiteralExpression(node)
+    ? new Map(
+        node.properties
+          .filter(ts.isPropertyAssignment)
+          .map((field) => [field.name.getText(), field.initializer])
+      )
+    : new Map()
+}
+
+function projectedReceipts(source) {
+  const problems = []
+  const activity = returned(method(source, "publicActivity"))[0]
+  const safeActivity =
+    activity &&
+    ts.isConditionalExpression(activity) &&
+    spelling(activity.condition, source) ===
+      "this.operations.has(row.command)" &&
+    spelling(activity.whenFalse, source) === "row" &&
+    ts.isObjectLiteralExpression(activity.whenTrue) &&
+    activity.whenTrue.properties.length === 5 &&
+    spelling(activity.whenTrue.properties[0], source) === "...row" &&
+    [...fields(activity.whenTrue)]
+      .map(([name, value]) => `${name}:${spelling(value, source)}`)
+      .sort()
+      .join(";") ===
+      "detail:null;result:this.publicOutput(row.command,row.result);reversalExpect:null;reversalInput:{}"
+  if (!safeActivity) problems.push("raw-public-activity")
+  const confirmation = returned(method(source, "confirmationReceipt"))[0]
+  const safeConfirmation =
+    confirmation &&
+    ts.isConditionalExpression(confirmation) &&
+    spelling(confirmation.condition, source) === "completed" &&
+    spelling(confirmation.whenFalse, source) === "undefined" &&
+    ts.isObjectLiteralExpression(confirmation.whenTrue) &&
+    confirmation.whenTrue.properties.length === 5 &&
+    spelling(fields(confirmation.whenTrue).get("summary"), source) ===
+      "completed.summary" &&
+    spelling(fields(confirmation.whenTrue).get("activityId"), source) ===
+      "completed.id" &&
+    spelling(fields(confirmation.whenTrue).get("undone"), source) ===
+      "completed.undoneAt!==null" &&
+    spelling(fields(confirmation.whenTrue).get("reversal"), source) ===
+      "reversalOf(completed.reversalCommand?{command:completed.reversalCommand,input:this.operations.has(completed.command)?{}:completed.reversalInput,}:null,completed.summary)" &&
+    spelling(fields(confirmation.whenTrue).get("detail"), source) ===
+      "this.operations.has(completed.command)?undefined:receiptDetail(completed.command,completed.result)"
+  if (!safeConfirmation) problems.push("raw-confirmation-receipt")
+  const turn = returned(method(source, "turnReceipts"))[0]
+  if (
+    !turn ||
+    spelling(turn, source) !==
+      "receipts.map((receipt)=>({...receipt,result:this.publishResult(receipt.name,receipt.result),}))"
+  )
+    problems.push("raw-turn-receipt")
+  return problems
+}
+
+export function detectReplayIdentity(text) {
+  const source = parse("registry.ts", text)
+  const problems = []
+  const replay = method(source, "replayByKey")
+  const body = replay?.body
+  const mismatch =
+    body?.statements.findIndex(
+      (node) =>
+        ts.isIfStatement(node) &&
+        spelling(node.expression, source) ===
+          "stored.command!==command||stored.inputHash!==hash" &&
+        ts.isThrowStatement(node.thenStatement)
+    ) ?? -1
+  if (
+    mismatch < 0 ||
+    !body.statements.slice(mismatch + 1).some(ts.isReturnStatement)
+  )
+    problems.push("unbound-keyed-replay")
+  let hashes = 0
+  let lookups = 0
+  walk(source, (node) => {
+    if (
+      ts.isPropertyAssignment(node) &&
+      spelling(node.name, source) === "inputHash" &&
+      spelling(node.initializer, source) === "hash"
+    )
+      hashes++
+    if (
+      ts.isCallExpression(node) &&
+      spelling(node.expression, source) === "this.replayByKey" &&
+      node.arguments.length === 4 &&
+      spelling(node.arguments[2], source) === "command.name" &&
+      spelling(node.arguments[3], source) === "hash!"
+    )
+      lookups++
+  })
+  if (hashes !== 2 || lookups !== 2) problems.push("unbound-keyed-storage")
+  let boundHash = false
+  let provenance = false
+  walk(source, (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      spelling(node.name, source) === "hash" &&
+      spelling(node.initializer, source) ===
+        "idempotencyKey?inputHash(options.input):null"
+    )
+      boundHash = true
+    if (
+      ts.isCallExpression(node) &&
+      spelling(node.expression, source) === "this.committedResult" &&
+      spelling(node.arguments[0], source) === "result.command??command.name"
+    )
+      provenance = true
+  })
+  if (
+    !boundHash ||
+    !provenance ||
+    !replay ||
+    !returned(replay).some(
+      (value) =>
+        fields(value).has("command") &&
+        spelling(fields(value).get("command"), source) === "stored.command"
+    )
+  )
+    problems.push("unbound-replay-provenance")
+  return problems
 }
 
 export function detectPublication(value) {
@@ -167,8 +305,24 @@ export function detectPublication(value) {
   for (const file of sources.keys())
     if (file.startsWith("apps/web/src/") && !testFile(file)) visit(file)
   for (const [file, text] of sources) {
+    if (file.endsWith("/registry/registry.ts")) {
+      const source = parse(file, text)
+      let guarded = false
+      walk(source, (node) => {
+        if (
+          ts.isCallExpression(node) &&
+          spelling(node, source) ===
+            "assertReversal(command.name,this.isCatalogOperation(command.name),ran)"
+        )
+          guarded = true
+      })
+      if (!guarded) problems.push({ kind: "unguarded-reversal", file })
+    }
     if (file.endsWith("/registry/catalog-publication.ts")) {
       const source = parse(file, text)
+      problems.push(
+        ...projectedReceipts(source).map((kind) => ({ kind, file }))
+      )
       const projection = returned(method(source, "publicOutput"))
       const valid =
         projection.length === 1 &&
@@ -231,6 +385,19 @@ export function detectPublication(value) {
     }
     if (file.endsWith("/registry/bind.ts")) {
       const source = parse(file, text)
+      let guarded = false
+      const guard = method(source, "assertReversal")
+      if (guard)
+        walk(guard, (node) => {
+          if (
+            ts.isIfStatement(node) &&
+            spelling(node.expression, source) ===
+              "result.reversal&&(!result.reversal.expect||!Object.keys(result.reversal.expect.matches).length)&&(catalog||!REVERSAL_EXPECT_PENDING.commands.some((name)=>name===command))" &&
+            ts.isThrowStatement(node.thenStatement)
+          )
+            guarded = true
+        })
+      if (!guarded) problems.push({ kind: "unguarded-reversal", file })
       let projectedRead = false
       walk(source, (node) => {
         if (

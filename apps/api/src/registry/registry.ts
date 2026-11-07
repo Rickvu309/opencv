@@ -50,6 +50,7 @@ import {
 } from "./expectation.js"
 import { replay, replayStored } from "./replay.js"
 import { inputHash } from "./receipt.js"
+import { assertReversal } from "./bind.js"
 import { CatalogPublication } from "./catalog-publication.js"
 
 import type {
@@ -307,10 +308,10 @@ export class Registry extends CatalogPublication {
       options.idempotencyKey
     )
 
+    const hash = idempotencyKey ? inputHash(options.input) : null
     const effect = async (): Promise<ExecuteResult> => {
       const ran = await command.run(parsed, actor)
-      if (this.operations.has(command.name) && ran.reversal && !ran.draft)
-        throw new Error("Catalog reversals require an activity receipt")
+      assertReversal(command.name, this.isCatalogOperation(command.name), ran)
       let activityId: string | null = null
       if (ran.draft && !options.skipActivity) {
         activityId = createId()
@@ -333,7 +334,7 @@ export class Registry extends CatalogPublication {
             reversalInput: ran.reversal?.input ?? null,
             reversalExpect: ran.reversal?.expect ?? null,
             idempotencyKey: idempotencyKey ?? null,
-            inputHash: options[taskExecution] ? inputHash(options.input) : null,
+            inputHash: hash,
             turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
           })
       } else if (idempotencyKey) {
@@ -342,7 +343,7 @@ export class Registry extends CatalogPublication {
           .values({
             userId: actor.userId,
             key: idempotencyKey,
-            inputHash: options[taskExecution] ? inputHash(options.input) : null,
+            inputHash: hash,
             command: command.name,
             result: ran.output ?? null,
           })
@@ -359,7 +360,12 @@ export class Registry extends CatalogPublication {
 
     const run = async () => {
       if (idempotencyKey) {
-        const earlier = await this.replayByKey(actor.userId, idempotencyKey)
+        const earlier = await this.replayByKey(
+          actor.userId,
+          idempotencyKey,
+          command.name,
+          hash!
+        )
         if (earlier) return earlier
       }
 
@@ -382,7 +388,12 @@ export class Registry extends CatalogPublication {
         return await savepoint(effect)
       } catch (error) {
         if (!isUniqueViolation(error)) throw error
-        const winner = await this.replayByKey(actor.userId, idempotencyKey)
+        const winner = await this.replayByKey(
+          actor.userId,
+          idempotencyKey,
+          command.name,
+          hash!
+        )
         if (!winner) throw error
         return winner
       }
@@ -391,7 +402,7 @@ export class Registry extends CatalogPublication {
       command.transaction === "none" ? await run() : await transaction(run)
     if (result.pending) return result
     return this.committedResult(
-      command.name,
+      result.command ?? command.name,
       parsed as never,
       actor.userId,
       result
@@ -595,12 +606,24 @@ export class Registry extends CatalogPublication {
     return expireTaskApprovals()
   }
 
-  private async replayByKey(userId: string, key: string) {
+  private async replayByKey(
+    userId: string,
+    key: string,
+    command: string,
+    hash: string
+  ) {
     const existing = await this.activityByKey(userId, key)
-    if (existing) return replay(existing)
-    const stored = await this.idempotencyByKey(userId, key)
-    if (stored) return replayStored(stored.result)
-    return null
+    const stored = existing ?? (await this.idempotencyByKey(userId, key))
+    if (!stored) return null
+    if (stored.command !== command || stored.inputHash !== hash)
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "Idempotency key does not match its command and input"
+      )
+    return {
+      ...(existing ? replay(existing) : replayStored(stored.result)),
+      command: stored.command,
+    }
   }
 
   private async activityByKey(userId: string, key: string) {

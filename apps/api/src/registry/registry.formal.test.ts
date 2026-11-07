@@ -9,6 +9,7 @@ import { getDb, withDatabase } from "../db/context.js"
 import { activity, chats, idempotency } from "../db/schema.js"
 import {} from "./errors.js"
 import { Registry } from "./registry.js"
+import { inputHash } from "./receipt.js"
 import {
   NS,
   REAL,
@@ -225,14 +226,19 @@ function steerableChatsRowCommand(
   return local
 }
 
-async function insertRivalWinnerActivity(userId: string, key: string) {
+async function insertRivalWinnerActivity(
+  userId: string,
+  key: string,
+  command: string
+) {
   await getDb()
     .insert(activity)
     .values({
       id: randomUUID(),
       userId,
       actor: "person",
-      command: "formal.rival",
+      command,
+      inputHash: inputHash({ key }),
       subjectKind: "chat",
       subjectId: "rival",
       summary: "Rival",
@@ -257,10 +263,20 @@ function rivalCommitsAfterLookup(
   )
 }
 
-async function insertRivalWinnerStored(userId: string, key: string) {
+async function insertRivalWinnerStored(
+  userId: string,
+  key: string,
+  command: string
+) {
   await getDb()
     .insert(idempotency)
-    .values({ userId, key, command: "formal.rival", result: { rival: true } })
+    .values({
+      userId,
+      key,
+      command,
+      inputHash: inputHash({ key }),
+      result: { rival: true },
+    })
 }
 
 describe("P1: the key conflict path", () => {
@@ -272,7 +288,8 @@ describe("P1: the key conflict path", () => {
         {
           transaction: "none",
           draft: true,
-          beforeEffect: insertRivalWinnerActivity,
+          beforeEffect: (userId, key) =>
+            insertRivalWinnerActivity(userId, key, "formal.autocommit"),
         },
         "formal.autocommit"
       )
@@ -297,7 +314,8 @@ describe("P1: the key conflict path", () => {
         {
           transaction: "none",
           draft: false,
-          beforeEffect: insertRivalWinnerStored,
+          beforeEffect: (userId, key) =>
+            insertRivalWinnerStored(userId, key, "formal.autocommit.stored"),
         },
         "formal.autocommit.stored"
       )
@@ -320,7 +338,9 @@ describe("P1: the key conflict path", () => {
         { draft: true },
         "formal.transactional"
       )
-      rivalCommitsAfterLookup(local, insertRivalWinnerActivity)
+      rivalCommitsAfterLookup(local, (userId, key) =>
+        insertRivalWinnerActivity(userId, key, "formal.transactional")
+      )
       const result = await local.execute({
         name: "formal.transactional",
         input: { key },
@@ -343,7 +363,9 @@ describe("P1: the key conflict path", () => {
         { draft: false },
         "formal.transactional.stored"
       )
-      rivalCommitsAfterLookup(local, insertRivalWinnerStored)
+      rivalCommitsAfterLookup(local, (userId, key) =>
+        insertRivalWinnerStored(userId, key, "formal.transactional.stored")
+      )
       const result = await local.execute({
         name: "formal.transactional.stored",
         input: { key },

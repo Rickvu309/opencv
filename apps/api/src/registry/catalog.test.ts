@@ -10,10 +10,13 @@ import {
 import { eq } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
+import { createId } from "../id.js"
 import { createAuth } from "../auth.js"
+import * as databaseContext from "../db/context.js"
 import { type AppDatabase, getDb, withDatabase } from "../db/context.js"
 import {
   activity,
+  idempotency,
   agentConnections,
   coachTasks,
   oauthClient,
@@ -50,7 +53,7 @@ const write = defineOperation({
   name: "job.create",
   version: 1,
   kind: "command",
-  description: "Change a test fixture",
+  description: "Change fixture",
   input: z
     .object({ value: z.string().min(1), jobId: z.string().optional() })
     .strict(),
@@ -66,7 +69,7 @@ const read = defineOperation({
   name: "job.list",
   version: 1,
   kind: "read",
-  description: "Read a test fixture",
+  description: "Read fixture",
   input: z.object({}).strict(),
   publicResult,
   coach: "auto",
@@ -112,7 +115,16 @@ function fixture(confirm = false) {
     reversal: (
       _input: z.output<typeof write.input>,
       output: z.output<typeof privateResult>
-    ) => ({ command: write.name, input: { value: output.previousPriority } }),
+    ) => ({
+      command: write.name,
+      input: { value: output.previousPriority },
+      expect: {
+        query: read.name,
+        input: {},
+        matches: { value: output.value },
+        skipped: "The fixture has changed",
+      },
+    }),
     activity: (
       _input: z.output<typeof write.input>,
       _output: z.output<typeof privateResult>,
@@ -120,7 +132,7 @@ function fixture(confirm = false) {
     ) => ({
       subjectKind: "account" as const,
       subjectId: actor.userId,
-      summary: "Changed fixture",
+      summary: "Fixture",
       detail: { secret: "server-only" },
     }),
   }
@@ -142,14 +154,37 @@ function fixture(confirm = false) {
   return { registry, execute, binding }
 }
 
+function addLegacy(
+  registry: Registry,
+  execute: (
+    input: z.output<typeof write.input>,
+    actor: import("@workspace/domain").Actor
+  ) => Promise<unknown>,
+  activity: () => import("@workspace/domain").ActivityDraft | null = () => null
+) {
+  registry.addCommand(
+    {
+      name: "job.rename",
+      description: "Legacy fixture",
+      input: write.input,
+      coach: "auto",
+      destructive: false,
+      step: () => "Legacy fixture",
+      reversal: () => null,
+      activity,
+    },
+    execute
+  )
+}
+
 function expectPublic(value: unknown) {
   expect(JSON.stringify(value)).not.toMatch(
     /previousPriority|server-only|secret/
   )
 }
 
-describe("catalog adapters use the existing kernel", () => {
-  it("installs a disjoint empty production catalog alongside all legacy entries", () => {
+describe("catalog kernel", () => {
+  it("installs catalog and legacy entries", () => {
     const registry = installRegistry()
     expect(Object.keys(catalog)).toEqual([])
     expect(Object.keys(implementations)).toEqual([])
@@ -166,7 +201,172 @@ describe("catalog adapters use the existing kernel", () => {
     expect(new Set(expected).size).toBe(expected.length)
   })
 
-  it("projects HTTP reads, commands, keyed replay and Undo while retaining private receipts", async () => {
+  it.each(["activity", "idempotency"] as const)(
+    "rejects %s replay mismatches on both lookups",
+    async (store) => {
+      const { db, client } = await createMigratedTestDb()
+      try {
+        await db.insert(user).values({
+          id: "replay-owner",
+          name: "Before",
+          email: "replay@test.local",
+        })
+        await withDatabase(db, async () => {
+          for (const conflictWinner of [false, true]) {
+            for (const mismatch of ["input", "command", "hash"] as const) {
+              const setup = fixture()
+              const registry =
+                store === "activity" ? setup.registry : new Registry()
+              if (store === "idempotency")
+                bindOperation(registry, {
+                  ...setup.binding,
+                  activity: () => null,
+                  reversal: () => null,
+                })
+              const legacy = "job.rename"
+              addLegacy(registry, setup.execute, () =>
+                store === "activity"
+                  ? {
+                      subjectKind: "account",
+                      subjectId: "replay-owner",
+                      summary: "Legacy fixture",
+                    }
+                  : null
+              )
+              const key = `${store}-${conflictWinner}-${mismatch}`
+              const actor = personActor("replay-owner")
+              const original = { value: "First" }
+              const output = {
+                id: actor.userId,
+                value: "First",
+                nested: { label: "public", secret: "server-only" },
+              }
+              const seed = async () => {
+                const identity = {
+                  userId: actor.userId,
+                  command: write.name,
+                  inputHash: mismatch === "hash" ? null : inputHash(original),
+                  result: output,
+                }
+                if (store === "activity")
+                  await getDb()
+                    .insert(activity)
+                    .values({
+                      ...identity,
+                      id: createId(),
+                      actor: "person",
+                      subjectKind: "account",
+                      subjectId: actor.userId,
+                      summary: "Fixture",
+                      idempotencyKey: key,
+                    })
+                else
+                  await getDb()
+                    .insert(idempotency)
+                    .values({ ...identity, key })
+              }
+              if (conflictWinner) {
+                const savepoint = databaseContext.savepoint
+                vi.spyOn(databaseContext, "savepoint").mockImplementationOnce(
+                  async (effect) => {
+                    await seed()
+                    return savepoint(effect)
+                  }
+                )
+              } else await seed()
+              await expect(
+                registry.execute({
+                  name: mismatch === "command" ? legacy : write.name,
+                  input: mismatch === "input" ? { value: "Other" } : original,
+                  actor,
+                  idempotencyKey: key,
+                })
+              ).rejects.toMatchObject({ code: "CONFLICT" })
+              vi.restoreAllMocks()
+              const [owner] = await db
+                .select()
+                .from(user)
+                .where(eq(user.id, actor.userId))
+              expect(owner?.name).toBe("Before")
+            }
+          }
+          const { registry } = fixture()
+          addLegacy(registry, async () => ({
+            internalSecret: "legacy-private",
+          }))
+          const request = {
+            name: "job.rename",
+            input: { value: "First" },
+            actor: personActor("replay-owner"),
+            idempotencyKey: "legacy-original",
+          }
+          await registry.execute(request)
+          await expect(
+            registry.execute({ ...request, input: { value: "Other" } })
+          ).rejects.toMatchObject({ code: "CONFLICT" })
+          await expect(
+            registry.execute({ ...request, name: write.name })
+          ).rejects.toMatchObject({ code: "CONFLICT" })
+        })
+      } finally {
+        vi.restoreAllMocks()
+        await client.close()
+      }
+    }
+  )
+
+  it("guards Undo against later writes", async () => {
+    const { db, client } = await createMigratedTestDb()
+    try {
+      await db
+        .insert(user)
+        .values({ id: "undo-owner", name: "Before", email: "undo@test.local" })
+      await withDatabase(db, async () => {
+        const { registry, binding } = fixture()
+        const actor = personActor("undo-owner")
+        const first = await registry.execute({
+          name: write.name,
+          input: { value: "First" },
+          actor,
+        })
+        await registry.execute({
+          name: write.name,
+          input: { value: "Latest" },
+          actor,
+        })
+        await expect(
+          registry.undo(actor.userId, first.activityId!)
+        ).rejects.toThrow("The fixture has changed")
+        const unguarded = new Registry()
+        bindOperation(unguarded, {
+          ...binding,
+          reversal: () =>
+            JSON.parse(
+              JSON.stringify({
+                command: write.name,
+                input: { value: "Before" },
+              })
+            ),
+        })
+        await expect(
+          unguarded.execute({
+            name: write.name,
+            input: { value: "Overwritten" },
+            actor,
+          })
+        ).rejects.toThrow("Reversals require a guarded expectation")
+        const [owner] = await db
+          .select()
+          .from(user)
+          .where(eq(user.id, actor.userId))
+        expect(owner?.name).toBe("Latest")
+      })
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("projects HTTP receipts and rejects key mismatches", async () => {
     const { db, client } = await createMigratedTestDb()
     try {
       const app = createTestApp(db)
@@ -225,6 +425,22 @@ describe("catalog adapters use the existing kernel", () => {
           await app.request("/fixture/commands/job.create", request)
         ).json()
       )
+      expect(execute).toHaveBeenCalledTimes(1)
+      addLegacy(registry, execute)
+      for (const [name, input] of [
+        [write.name, { value: "Different" }],
+        ["job.rename", { value: "After" }],
+      ] as const) {
+        const mismatch = await app.request(`/fixture/commands/${name}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ input, idempotencyKey: "fixture-key" }),
+        })
+        expect(mismatch.status).toBe(409)
+        const body = await mismatch.json()
+        expect(body).toMatchObject({ ok: false, error: { code: "CONFLICT" } })
+        expectPublic(body)
+      }
       expect(execute).toHaveBeenCalledTimes(1)
       const readResponse = await app.request("/fixture/reads/job.list", {
         method: "POST",
