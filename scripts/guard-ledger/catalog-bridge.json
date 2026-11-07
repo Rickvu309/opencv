@@ -1,0 +1,18 @@
+{
+  "id": "catalog-bridge",
+  "file": "apps/api/src/registry/catalog.test.ts",
+  "detector": {
+    "module": "scripts/lib/operation-catalog.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "scripts/fixtures/catalog/mistake.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/fixtures/catalog/clean.json"
+    }
+  },
+  "reason": "New architecture guard with committed HEAD mistake and clean fixtures, not a branch-pinned historical product bug. Pure AST detection rejects import.meta and non-static or non-code import kinds. Discovery applies the explicit zod/domain code allow-list transitively with realpaths and file/line diagnostics; listed bare packages must resolve into node_modules outside apps, packages and pnpm-listed workspaces. Existing fixture JSON includes CSS imports, flattened CSS, inlined asset and server URLs, symlinks, query imports, require and Worker mistakes. Independent real Vite no-write tests bypass discovery for every reviewer probe and reject all assets/CSS, non-allow-listed modules and data URLs, with plain-code kinds and domain server exclusions checked for every module regardless of the package root. Workspace conditional browser CSS and overlapping domain server packages are included in the shared fixtures; custom pnpm workspaces and nested workspace node_modules are also rejected, while plain-code catalogs stay quiet. Workspace package backstop fixtures use a fresh workspace with a valid seed catalog so Node resolution caches cannot mask a changed symlink. Existing pairing, schema, freshness, inference, watch recovery and narrowed Turbo hash regressions remain covered."
+}

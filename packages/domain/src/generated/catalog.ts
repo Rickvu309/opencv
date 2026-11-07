@@ -1,0 +1,4 @@
+export const catalog = {} as const
+
+export const catalogDigest =
+  "58b0b6b99cfa3eff9d0930ff4e9bb071eaae671fe8b14dfdb8ebda9bb971bf37"

@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node run-tests.mjs",
-    "test:open-pr": "node run-tests.mjs --open-pr"
+    "test:open-pr": "node --test ../../scripts/catalog.integration.mjs && node run-tests.mjs --open-pr"
   }
 }

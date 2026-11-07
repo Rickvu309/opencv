@@ -36,3 +36,5 @@ export {
 export * from "./connections.js"
 
 export * from "./coach-task-contract.js"
+export * from "./operation.js"
+export * from "./catalog.js"

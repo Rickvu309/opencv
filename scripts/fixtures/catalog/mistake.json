@@ -1,0 +1,367 @@
+{
+  "operations": [
+    {
+      "file": "packages/domain/src/operations/fixture/echo/operation.ts",
+      "name": "fixture.echo",
+      "namespace": "fixture",
+      "directory": "echo",
+      "owner": "fixture"
+    }
+  ],
+  "servers": [],
+  "browserSources": [
+    "export const metadata = () => import.meta.env.PROD",
+    "export const metadata = () => import.meta.url",
+    "export const dependsOn = () => [{ name: new URL(\"../../../../../../apps/api/src/private.ts\", import.meta.url).href, coachFloor: \"auto\" }]",
+    "export const dependsOn = () => import.meta.glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => import.meta[\"glob\"](\"/apps/api/src/**/*.ts\")",
+    "export const dependsOn = () => import.meta.globEager(\"/apps/api/src/**/*.ts\")",
+    "export const dependsOn = () => (import.meta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (import.meta as ImportMeta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (import.meta satisfies ImportMeta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (<ImportMeta>import.meta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (import.meta!).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "export const dependsOn = () => (((import.meta as ImportMeta)!) satisfies ImportMeta).glob(\"/apps/api/src/**/*.ts\", { eager: true })",
+    "const m = import.meta; export const dependsOn = () => m.glob(\"/apps/api/src/**/*.ts\")",
+    "const m = (import.meta as ImportMeta); export const dependsOn = () => m.glob(\"/apps/api/src/**/*.ts\")",
+    "const m = import.meta!; export const dependsOn = () => m.glob(\"/apps/api/src/**/*.ts\")",
+    "const { glob } = import.meta; export const dependsOn = () => glob(\"/apps/api/src/**/*.ts\")",
+    "export const dependsOn = () => consume(import.meta)",
+    "export const dependsOn = () => ({ ...import.meta })",
+    "export const dependsOn = () => import.meta[\"env\"].PROD",
+    "export const dependsOn = () => (import.meta as ImportMeta)[\"url\"]",
+    "export const dependsOn = () => import.meta.resolve(\"node:fs\")",
+    "export const metadata = () => (import.meta).env[\"PROD\"]",
+    "export const metadata = () => (import.meta as ImportMeta).env?.PROD",
+    "export const metadata = () => (import.meta satisfies ImportMeta).url",
+    "export const metadata = () => (<ImportMeta>import.meta).env.PROD",
+    "export const metadata = () => (import.meta!).url",
+    "export const metadata = () => (((import.meta as ImportMeta)!) satisfies ImportMeta).env.PROD"
+  ],
+  "importCases": [
+    {
+      "name": "dynamic-css",
+      "source": "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+      "files": {
+        "packages/domain/src/operations/fixture/echo/style.css": ".local{color:red}"
+      }
+    },
+    {
+      "name": "css-import-url",
+      "source": "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+      "files": {
+        "packages/domain/src/operations/fixture/echo/style.css": "@import url(\"../../../../../../apps/api/src/private.css\");"
+      }
+    },
+    {
+      "name": "css-import",
+      "source": "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+      "files": {
+        "packages/domain/src/operations/fixture/echo/style.css": "@import \"../../../../../../apps/api/src/private.css\";"
+      }
+    },
+    {
+      "name": "css-url-inline",
+      "source": "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+      "files": {
+        "packages/domain/src/operations/fixture/echo/style.css": ".x{background:url(\"../../../../../../apps/api/src/private.svg\")}"
+      }
+    },
+    {
+      "name": "css-server-ts",
+      "source": "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+      "files": {
+        "packages/domain/src/operations/fixture/echo/style.css": ".x{background:url(\"../../../server.ts\")}"
+      }
+    },
+    {
+      "name": "css-symlink",
+      "source": "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+      "files": {
+        "packages/domain/src/operations/fixture/echo/style.css": ".x{background:url(\"../../../linked.svg\")}"
+      },
+      "links": {
+        "packages/domain/src/linked.svg": "apps/api/src/private.svg"
+      }
+    },
+    {
+      "name": "query-raw",
+      "source": "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/private.ts?raw\"); return [] }",
+      "files": {}
+    },
+    {
+      "name": "query-url",
+      "source": "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/private.svg?url\"); return [] }",
+      "files": {}
+    },
+    {
+      "name": "worker-query",
+      "source": "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/private.ts?worker\"); return [] }",
+      "files": {}
+    },
+    {
+      "name": "computed-import",
+      "source": "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/\" + \"private.ts\"); return [] }",
+      "files": {}
+    },
+    {
+      "name": "domain-reexport",
+      "source": "export const dependsOn = () => { void import(\"../../../bridge.js\"); return [] }",
+      "files": {
+        "packages/domain/src/bridge.ts": "export { secret } from \"../../../apps/api/src/private.js\""
+      }
+    },
+    {
+      "name": "domain-symlink",
+      "source": "export const dependsOn = () => { void import(\"../../../linked.js\"); return [] }",
+      "files": {},
+      "links": {
+        "packages/domain/src/linked.ts": "apps/api/src/private.ts"
+      }
+    },
+    {
+      "name": "css-url-large",
+      "source": "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+      "files": {
+        "packages/domain/src/operations/fixture/echo/style.css": ".x{background:url(\"../../../../../../apps/api/src/private-large.txt\")}"
+      }
+    },
+    {
+      "name": "require",
+      "source": "export const dependsOn = () => { require(\"../../../helper.js\"); return [] }",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "require-alias",
+      "source": "const load = require; export const dependsOn = () => load(\"../../../helper.js\")",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "worker",
+      "source": "export const dependsOn = () => new Worker(\"./worker.js\")",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "url",
+      "source": "export const dependsOn = () => new URL(\"./asset.svg\", \"https://example.test\")",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "static-css",
+      "source": "import \"./style.css\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "static-raw",
+      "source": "import value from \"../../../helper.ts?raw\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "static-url",
+      "source": "export { default } from \"../../../helper.ts?url\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "static-inline",
+      "source": "import value from \"./style.css?inline\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "static-worker",
+      "source": "import value from \"../../../helper.ts?worker\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "json",
+      "source": "import value from \"./value.json\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "package",
+      "source": "import value from \"vite\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "package-subpath",
+      "source": "import value from \"zod/v4\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "import-equals",
+      "source": "import value = require(\"../../../helper.js\")",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "type-import",
+      "source": "export type Value = import(\"../../../helper.js\").Value",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "unresolved",
+      "source": "export { value } from \"../../../missing.js\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "static-symlink",
+      "source": "export { secret } from \"../../../linked.js\"",
+      "files": {},
+      "discoveryOnly": true,
+      "links": {
+        "packages/domain/src/linked.ts": "apps/api/src/private.ts"
+      }
+    },
+    {
+      "name": "server-path",
+      "source": "export { value } from \"../../../server-only/helper.js\"",
+      "files": {
+        "packages/domain/src/server-only/helper.ts": "export const value = 1"
+      },
+      "discoveryOnly": true
+    },
+    {
+      "name": "server-file",
+      "source": "export { secret } from \"../../../server.js\"",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "wrapped-worker",
+      "source": "export const dependsOn = () => new (globalThis[\"Worker\"])(\"./worker.js\")",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "wrapped-url",
+      "source": "export const dependsOn = () => new (URL as typeof URL)(\"./asset.svg\", \"https://example.test\")",
+      "files": {},
+      "discoveryOnly": true
+    },
+    {
+      "name": "workspace-css-inline",
+      "packageRoot": "packages/probe",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "packages/probe/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":{\"browser\":\"./browser.js\",\"default\":\"./index.js\"},\"./package.json\":\"./package.json\"}}",
+        "packages/probe/index.js": "export * from \"./original.js\"; export const secret = \"node-safe\"",
+        "packages/probe/browser.js": "export * from \"./original.js\"; export { default as secret } from \"./style.css?inline\"",
+        "packages/probe/style.css": "@import \"../../apps/api/src/private.css\";"
+      }
+    },
+    {
+      "name": "workspace-domain-server",
+      "packageRoot": "packages/domain",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "packages/domain/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "packages/domain/index.js": "export * from \"./original.js\"; export { secret } from \"./src/server.ts\""
+      }
+    },
+    {
+      "name": "workspace-custom-node-modules",
+      "packageRoot": "tools/probe/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "tools/probe/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "tools/probe/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "tools/probe/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\"",
+        "pnpm-workspace.yaml": "packages: [\"apps/*\", \"packages/*\", \"tools/*\"]\n"
+      }
+    },
+    {
+      "name": "workspace-app-node-modules",
+      "packageRoot": "apps/probe/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "apps/probe/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "apps/probe/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "apps/probe/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\""
+      }
+    },
+    {
+      "name": "workspace-package-node-modules",
+      "packageRoot": "packages/probe/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "packages/probe/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "packages/probe/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "packages/probe/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\""
+      }
+    },
+    {
+      "name": "installed-package-css-inline",
+      "packageRoot": "dependencies/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "dependencies/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":{\"browser\":\"./browser.js\",\"default\":\"./index.js\"},\"./package.json\":\"./package.json\"}}",
+        "dependencies/node_modules/zod/index.js": "export * from \"./original.js\"; export const secret = \"node-safe\"",
+        "dependencies/node_modules/zod/browser.js": "export * from \"./original.js\"; export { default as secret } from \"./style.css?inline\"",
+        "dependencies/node_modules/zod/style.css": "@import \"../../../apps/api/src/private.css\";"
+      },
+      "backstopOnly": true
+    },
+    {
+      "name": "workspace-explicit-node-modules",
+      "packageRoot": "dependencies/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "dependencies/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "dependencies/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "dependencies/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\"",
+        "pnpm-workspace.yaml": "packages: [\"apps/*\", \"packages/*\", \"dependencies/node_modules/zod\"]\n"
+      }
+    }
+  ],
+  "importSources": [
+    "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+    "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+    "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+    "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+    "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+    "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+    "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/private.ts?raw\"); return [] }",
+    "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/private.svg?url\"); return [] }",
+    "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/private.ts?worker\"); return [] }",
+    "export const dependsOn = () => { void import(\"../../../../../../apps/api/src/\" + \"private.ts\"); return [] }",
+    "export const dependsOn = () => { void import(\"../../../bridge.js\"); return [] }",
+    "export const dependsOn = () => { void import(\"../../../linked.js\"); return [] }",
+    "export const dependsOn = () => { void import(\"./style.css\"); return [] }",
+    "export const dependsOn = () => { require(\"../../../helper.js\"); return [] }",
+    "const load = require; export const dependsOn = () => load(\"../../../helper.js\")",
+    "export const dependsOn = () => new Worker(\"./worker.js\")",
+    "export const dependsOn = () => new URL(\"./asset.svg\", \"https://example.test\")",
+    "import \"./style.css\"",
+    "import value from \"../../../helper.ts?raw\"",
+    "export { default } from \"../../../helper.ts?url\"",
+    "import value from \"./style.css?inline\"",
+    "import value from \"../../../helper.ts?worker\"",
+    "import value from \"./value.json\"",
+    "import value from \"vite\"",
+    "import value from \"zod/v4\"",
+    "import value = require(\"../../../helper.js\")",
+    "export type Value = import(\"../../../helper.js\").Value",
+    "export const dependsOn = () => new (globalThis[\"Worker\"])(\"./worker.js\")",
+    "export const dependsOn = () => new (URL as typeof URL)(\"./asset.svg\", \"https://example.test\")"
+  ]
+}

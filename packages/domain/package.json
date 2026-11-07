@@ -10,14 +10,19 @@
       "opencv-source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./operations/*": {
+      "opencv-source": "./src/operations/*/operation.ts",
+      "types": "./dist/operations/*/operation.d.ts",
+      "import": "./dist/operations/*/operation.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit",
+    "build": "node ../../scripts/catalog.mjs check && tsc -p tsconfig.build.json",
+    "typecheck": "node ../../scripts/catalog.mjs check && tsc --noEmit",
     "test": "node --experimental-strip-types --import ./register-ts.mjs --test src/*.test.ts",
     "lint": "eslint",
     "format": "prettier --write \"src/**/*.ts\""

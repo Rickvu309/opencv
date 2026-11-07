@@ -1,0 +1,26 @@
+{
+  "operations": [
+    {
+      "file": "packages/domain/src/operations/fixture/echo/operation.ts",
+      "name": "fixture.echo",
+      "namespace": "fixture",
+      "directory": "echo",
+      "owner": "fixture"
+    }
+  ],
+  "servers": [
+    {
+      "file": "apps/api/src/fixture/operations/fixture/echo/server.ts",
+      "operation": "packages/domain/src/operations/fixture/echo/operation.ts",
+      "namespace": "fixture",
+      "directory": "echo",
+      "owner": "fixture"
+    }
+  ],
+  "browserSources": ["export const dependsOn = () => []"],
+  "importSources": [
+    "import { z } from \"zod\"; export const dependsOn = () => []",
+    "export { value } from \"./helper.js\"",
+    "import type { Value } from \"./helper.ts\""
+  ]
+}
