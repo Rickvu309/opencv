@@ -62,6 +62,8 @@ function runBehavior(tree) {
         env,
         detached: true,
         stdio: ["ignore", "pipe", "pipe"],
+        timeout: 110_000,
+        killSignal: "SIGKILL",
       }
     )
     let output = ""
@@ -70,14 +72,13 @@ function runBehavior(tree) {
     }
     child.stdout.on("data", collect)
     child.stderr.on("data", collect)
-    const timer = setTimeout(() => killGroup(child), 110_000)
+    child.on("exit", () => killGroup(child))
     child.on("close", (status, signal) => {
-      clearTimeout(timer)
       killGroup(child)
       resolve({ status, signal, output })
     })
     child.on("error", (error) => {
-      clearTimeout(timer)
+      killGroup(child)
       resolve({ status: 1, signal: null, output: String(error) })
     })
   })
