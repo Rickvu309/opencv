@@ -71,6 +71,24 @@ test("a route wrapped in one database seat or a site list is caught", () => {
   assert.deepEqual(detect(CLEAN), [])
 })
 
+const QUIET_BARE = `
+routes.all("/mcp", async (c) => {
+  let response
+  response = await handler.fetch(c.req.raw)
+  return response
+})
+routes.all("/mcp", async (c) => {
+  return
+})
+`
+
+const QUIET_SHORT = `
+routes.all("/mcp", async (c) => {
+  await transaction(async () => authenticate())
+  return handler.fetch(c.req.raw)
+})
+`
+
 test("await, parentheses, return, assignment and then still hold the seat", () => {
   for (const source of WRAPPED) {
     assert.ok(
@@ -79,6 +97,20 @@ test("await, parentheses, return, assignment and then still hold the seat", () =
     )
   }
   assert.deepEqual(detect(CLEAN), [])
+})
+
+test("an uninitialized local and a bare return stay quiet", () => {
+  assert.deepEqual(detect(QUIET_BARE), [])
+})
+
+test("a short transaction that finishes before transport stays quiet", () => {
+  assert.deepEqual(detect(QUIET_SHORT), [])
+  for (const source of WRAPPED) {
+    assert.ok(
+      detect(source).some((hit) => hit.kind === "transaction"),
+      source
+    )
+  }
 })
 
 test("the live door stays quiet", () => {

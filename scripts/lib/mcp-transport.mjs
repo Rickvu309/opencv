@@ -11,12 +11,12 @@ function calleeName(node) {
 }
 
 function isTransactionCall(node) {
-  return (
-    ts.isCallExpression(node) && calleeName(node.expression) === "transaction"
-  )
+  if (!node || !ts.isCallExpression(node) || !node.expression) return false
+  return calleeName(node.expression) === "transaction"
 }
 
 function unwrapTransaction(node) {
+  if (!node) return null
   let current = node
   const seen = new Set()
   while (current && !seen.has(current)) {
@@ -27,33 +27,34 @@ function unwrapTransaction(node) {
       ts.isReturnStatement(current) ||
       ts.isExpressionStatement(current)
     ) {
-      current = current.expression
+      current = current.expression ?? null
       continue
     }
     if (ts.isVariableStatement(current)) {
-      return (
-        current.declarationList.declarations
-          .map((decl) => unwrapTransaction(decl.initializer))
-          .find(Boolean) ?? null
-      )
+      for (const decl of current.declarationList?.declarations ?? []) {
+        const call = unwrapTransaction(decl?.initializer)
+        if (call) return call
+      }
+      return null
     }
     if (ts.isVariableDeclaration(current)) {
-      current = current.initializer
+      current = current.initializer ?? null
       continue
     }
     if (
       ts.isBinaryExpression(current) &&
       current.operatorToken.kind === ts.SyntaxKind.EqualsToken
     ) {
-      current = current.right
+      current = current.right ?? null
       continue
     }
     if (
       ts.isCallExpression(current) &&
+      current.expression &&
       ts.isPropertyAccessExpression(current.expression) &&
-      current.expression.name.text === "then"
+      current.expression.name?.text === "then"
     ) {
-      current = current.expression.expression
+      current = current.expression.expression ?? null
       continue
     }
     break
@@ -61,14 +62,16 @@ function unwrapTransaction(node) {
   return isTransactionCall(current) ? current : null
 }
 
-function containsFetch(node) {
+function enclosesTransport(node) {
+  if (!node) return false
   let found = false
   const visit = (current) => {
     if (found || !current) return
     if (
       ts.isCallExpression(current) &&
+      current.expression &&
       ts.isPropertyAccessExpression(current.expression) &&
-      current.expression.name.text === "fetch"
+      current.expression.name?.text === "fetch"
     ) {
       found = true
       return
@@ -79,46 +82,21 @@ function containsFetch(node) {
   return found
 }
 
-function assignmentTransaction(statement) {
-  if (ts.isVariableStatement(statement)) {
-    for (const decl of statement.declarationList.declarations) {
-      const call = unwrapTransaction(decl.initializer)
-      if (call) return call
-    }
-    return null
-  }
-  if (!ts.isExpressionStatement(statement)) return null
-  let expr = statement.expression
-  while (
-    expr &&
-    (ts.isAwaitExpression(expr) || ts.isParenthesizedExpression(expr))
-  )
-    expr = expr.expression
-  if (
-    !expr ||
-    !ts.isBinaryExpression(expr) ||
-    expr.operatorToken.kind !== ts.SyntaxKind.EqualsToken
-  )
-    return null
-  return unwrapTransaction(expr.right)
-}
-
 function routeWrappedInTransaction(callback) {
-  const body = callback.body
+  const body = callback?.body
   if (!body) return false
   if (!ts.isBlock(body)) return Boolean(unwrapTransaction(body))
   return body.statements.some((statement) => {
-    const assigned = assignmentTransaction(statement)
-    if (assigned) return containsFetch(assigned)
-    return Boolean(unwrapTransaction(statement))
+    const call = unwrapTransaction(statement)
+    return Boolean(call && enclosesTransport(call))
   })
 }
 
 function isMcpRoute(node, source) {
-  if (!ts.isCallExpression(node)) return false
+  if (!ts.isCallExpression(node) || !node.expression) return false
   const name = calleeName(node.expression)
   if (name !== "all" && name !== "use" && name !== "post") return false
-  const [path] = node.arguments
+  const path = node.arguments?.[0]
   if (!path || !ts.isStringLiteralLike(path) || !path.text.includes("/mcp"))
     return false
   return !node.getText(source).includes("well-known")
@@ -157,9 +135,11 @@ function collectBindings(source) {
 }
 
 function callbackOf(call) {
+  const args = call?.arguments
+  if (!args) return null
   return (
-    call.arguments.find(
-      (arg) => ts.isFunctionExpression(arg) || ts.isArrowFunction(arg)
+    args.find(
+      (arg) => arg && (ts.isFunctionExpression(arg) || ts.isArrowFunction(arg))
     ) ?? null
   )
 }
@@ -169,6 +149,7 @@ function callsNamed(root, names) {
   const visit = (node) => {
     if (
       ts.isCallExpression(node) &&
+      node.expression &&
       ts.isIdentifier(node.expression) &&
       names.has(node.expression.text)
     )
@@ -184,7 +165,7 @@ function hasCallee(root, name) {
   let found = false
   const visit = (node) => {
     if (found) return
-    if (ts.isCallExpression(node)) {
+    if (ts.isCallExpression(node) && node.expression) {
       const callee = node.expression
       const called = ts.isPropertyAccessExpression(callee)
         ? callee.name.text
@@ -205,6 +186,7 @@ function webOriginsIncludes(root) {
     if (found) return
     if (
       ts.isCallExpression(node) &&
+      node.expression &&
       ts.isPropertyAccessExpression(node.expression) &&
       node.expression.name.text === "includes" &&
       ts.isIdentifier(node.expression.expression) &&
