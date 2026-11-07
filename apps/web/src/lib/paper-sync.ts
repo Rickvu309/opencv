@@ -18,6 +18,8 @@ import {
   type SyncStore,
 } from "@/lib/paper-sync-store.ts"
 
+export { indexedDbStore } from "@/lib/paper-sync-store.ts"
+
 export type SyncStatus =
   | "loading"
   | "saved"
@@ -41,7 +43,6 @@ export const SYNC_LABEL: Record<SyncStatus, string> = {
 
 const DEBOUNCE_MS = 400
 const MAX_WAIT_MS = 2000
-const PERSIST_MS = 50
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16_000, 30_000]
 const KEEPALIVE_LIMIT = 60_000
 const MAX_STALE_RETRIES = 6
@@ -169,7 +170,6 @@ export function openPaperSync(
   let debounce: unknown = null
   let maxWait: unknown = null
   let retry: unknown = null
-  let persist: unknown = null
   let unsubscribeClient: () => void = () => {}
 
   const emit = () => {
@@ -185,7 +185,6 @@ export function openPaperSync(
   }
 
   const save = () => {
-    persist = null
     if (forgotten || !client || !tabId) return Promise.resolve()
     return store.save(docId, tabId, client.stored()).then(
       () => {
@@ -201,11 +200,6 @@ export function openPaperSync(
         }
       }
     )
-  }
-  const persistSoon = () => {
-    if (persist === null) {
-      persist = timers.setTimeout(() => void save(), PERSIST_MS)
-    }
   }
 
   const body = (sent: ReturnType<PaperClient["prepare"]>) => ({
@@ -407,7 +401,7 @@ export function openPaperSync(
       if (destroyed) return
       keepaliveFlush()
       destroyed = true
-      for (const handle of [debounce, maxWait, retry, persist]) clear(handle)
+      for (const handle of [debounce, maxWait, retry]) clear(handle)
       unsubscribeClient()
       stopQueryWatch()
       releaseLock()
@@ -436,7 +430,7 @@ export function openPaperSync(
     ready = lead !== null
     waitingOrphans = rest
     unsubscribeClient = client.subscribe((change) => {
-      persistSoon()
+      void save()
       if (change === "local") schedule()
       if (change === "reset") generation += 1
       emit()

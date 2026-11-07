@@ -1,0 +1,17 @@
+{
+  "module": "paper-sync.ts",
+  "actions": {
+    "Type": "openPaperSync",
+    "LocalRequestSuccess": "indexedDbStore",
+    "LocalCommit": "indexedDbStore",
+    "LocalAbort": "indexedDbStore",
+    "SendOrRetry": "openPaperSync",
+    "AcceptDurably": null,
+    "DeliverReply": "openPaperSync",
+    "LoseReply": "openPaperSync",
+    "ServerFails": "openPaperSync",
+    "GoOffline": null,
+    "Reconnect": null,
+    "Reload": "openPaperSync"
+  }
+}

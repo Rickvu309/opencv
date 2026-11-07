@@ -1,0 +1,206 @@
+import ts from "typescript"
+
+function sourceOf(text) {
+  return ts.createSourceFile(
+    "paper-local.ts",
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  )
+}
+
+function isTimeoutCall(node) {
+  if (!ts.isCallExpression(node)) return false
+  if (ts.isIdentifier(node.expression))
+    return node.expression.text === "setTimeout"
+  return (
+    ts.isPropertyAccessExpression(node.expression) &&
+    node.expression.name.text === "setTimeout"
+  )
+}
+
+function callsNamed(node, name) {
+  let found = false
+  const walk = (child) => {
+    if (
+      ts.isCallExpression(child) &&
+      ts.isIdentifier(child.expression) &&
+      child.expression.text === name
+    ) {
+      found = true
+    }
+    ts.forEachChild(child, walk)
+  }
+  walk(node)
+  return found
+}
+
+function functionBodies(source) {
+  const bodies = new Map()
+  const visit = (node) => {
+    if (ts.isFunctionDeclaration(node) && node.name && node.body)
+      bodies.set(node.name.text, node.body)
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isFunctionLike(node.initializer) &&
+      node.initializer.body
+    )
+      bodies.set(node.name.text, node.initializer.body)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return bodies
+}
+
+function timeoutSaves(body) {
+  let found = false
+  const walk = (node) => {
+    if (isTimeoutCall(node)) {
+      const callback = node.arguments[0]
+      if (
+        callback &&
+        ts.isFunctionLike(callback) &&
+        callsNamed(callback, "save")
+      )
+        found = true
+    }
+    ts.forEachChild(node, walk)
+  }
+  walk(body)
+  return found
+}
+
+function calledNames(body) {
+  const names = new Set()
+  const walk = (node) => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression))
+      names.add(node.expression.text)
+    ts.forEachChild(node, walk)
+  }
+  walk(body)
+  return names
+}
+
+export function detectDelayedRecovery(text) {
+  const source = sourceOf(text)
+  const hits = []
+  const visit = (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === "PERSIST_MS" &&
+      node.initializer &&
+      ts.isNumericLiteral(node.initializer) &&
+      Number(node.initializer.text) > 0
+    )
+      hits.push("a timer sits in front of the first recovery save")
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  const bodies = functionBodies(source)
+  const walkSubscribe = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "subscribe" &&
+      node.arguments[0] &&
+      ts.isFunctionLike(node.arguments[0]) &&
+      node.arguments[0].body
+    ) {
+      for (const name of calledNames(node.arguments[0].body)) {
+        const body = bodies.get(name)
+        if (body && timeoutSaves(body))
+          hits.push("a timer sits in front of the first recovery save")
+      }
+    }
+    ts.forEachChild(node, walkSubscribe)
+  }
+  walkSubscribe(source)
+  return hits
+}
+
+function resolvesOnRequestSuccess(node) {
+  let found = false
+  const walk = (child) => {
+    if (
+      ts.isBinaryExpression(child) &&
+      child.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+      ts.isPropertyAccessExpression(child.left) &&
+      child.left.name.text === "onsuccess" &&
+      ts.isFunctionLike(child.right) &&
+      callsNamed(child.right, "resolve")
+    )
+      found = true
+    ts.forEachChild(child, walk)
+  }
+  walk(node)
+  return found
+}
+
+function successHelpers(source) {
+  const names = new Set()
+  const visit = (node) => {
+    if (
+      ts.isFunctionDeclaration(node) &&
+      node.name &&
+      node.body &&
+      resolvesOnRequestSuccess(node.body)
+    )
+      names.add(node.name.text)
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isFunctionLike(node.initializer) &&
+      node.initializer.body &&
+      resolvesOnRequestSuccess(node.initializer.body)
+    )
+      names.add(node.name.text)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return names
+}
+
+function saveMethods(source) {
+  const methods = []
+  const visit = (node) => {
+    if (
+      ts.isMethodDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === "save" &&
+      node.body
+    )
+      methods.push(node.body)
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === "save" &&
+      node.initializer &&
+      ts.isFunctionLike(node.initializer) &&
+      node.initializer.body
+    )
+      methods.push(node.initializer.body)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return methods
+}
+
+export function detectRequestDurability(text) {
+  const source = sourceOf(text)
+  const helpers = successHelpers(source)
+  const hits = []
+  for (const body of saveMethods(source)) {
+    if (resolvesOnRequestSuccess(body))
+      hits.push("durability is taken from IDBRequest success")
+    for (const name of calledNames(body)) {
+      if (helpers.has(name))
+        hits.push("durability is taken from IDBRequest success")
+    }
+  }
+  return hits
+}

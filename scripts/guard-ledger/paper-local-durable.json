@@ -1,0 +1,13 @@
+{
+  "id": "paper-local-durable",
+  "file": "scripts/paper-local-durable.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-local-durable.mjs",
+    "export": "detectDelayedRecovery"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a1831b78801edfac3063a7376dc46a72a08fa054",
+    "path": "apps/web/src/lib/paper-sync.ts"
+  }
+}

@@ -62,6 +62,14 @@ function request<T>(source: IDBRequest<T>): Promise<T> {
   })
 }
 
+function settled(transaction: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve()
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("IndexedDB transaction aborted"))
+  })
+}
+
 function openDatabase(onGone: () => void): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const opening = indexedDB.open(DATABASE, 1)
@@ -152,7 +160,9 @@ export function indexedDbStore(): SyncStore {
         docId,
         savedAt: Date.now(),
       }
-      await request((await table("readwrite")).put(record))
+      const owned = await table("readwrite")
+      owned.put(record)
+      await settled(owned.transaction)
     },
     async remove(docId, tabId) {
       await request((await table("readwrite")).delete(keyOf(docId, tabId)))
