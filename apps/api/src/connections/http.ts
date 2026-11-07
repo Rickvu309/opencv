@@ -11,15 +11,17 @@ import {
 import { oauthProviderAuthServerMetadata } from "@better-auth/oauth-provider"
 import {
   delegateActorSchema,
+  ERROR_CODES,
   personActor,
   successEnvelope,
 } from "@workspace/domain"
 import type { Auth } from "../auth.js"
 import type { AppDatabase } from "../db/context.js"
+import { insideTransaction, transaction } from "../db/context.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import type { Registry } from "../registry/registry.js"
-import { transaction } from "../db/context.js"
 import { isAllowedOrigin } from "../origin.js"
+import { CommandError } from "../registry/errors.js"
 import { authenticateAgent } from "./oauth.js"
 
 const NATIVE_CLIENT_ORIGINS = [
@@ -226,6 +228,11 @@ export function connectionRoutes(
       }
       return server
     })
+    if (insideTransaction())
+      throw new CommandError(
+        ERROR_CODES.INTERNAL_ERROR,
+        "MCP transport must not run inside a database transaction"
+      )
     const response = await handler.fetch(c.req.raw)
     const body = await response.arrayBuffer()
     return new Response(body, {

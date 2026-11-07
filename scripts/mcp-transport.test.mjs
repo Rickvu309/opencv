@@ -141,6 +141,20 @@ test("promise chains are rejected in the route handler", () => {
   assert.deepEqual(detect(CLEAN), [])
 })
 
+const COMPUTED = [
+  `routes.all("/mcp", async (c) => transaction(async () => handler.fetch(c.req.raw))["then"]((response) => response))`,
+  `routes.all("/mcp", async (c) => transaction(async () => handler.fetch(c.req.raw))["catch"]((error) => error))`,
+]
+
+test("computed then and catch are rejected", () => {
+  for (const source of COMPUTED) {
+    assert.ok(
+      detect(source).some((hit) => hit.message === CHAIN_MESSAGE),
+      source
+    )
+  }
+})
+
 test("the live door stays quiet", () => {
   const offenders = walk(path.join(root, "apps/api/src")).flatMap((file) =>
     detect(readFileSync(file, "utf8"), path.relative(root, file)).map(

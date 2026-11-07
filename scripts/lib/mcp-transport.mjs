@@ -75,18 +75,25 @@ function enclosesTransport(node) {
 
 const CHAIN_MESSAGE = "MCP route handlers use await, not promise chains"
 
+function isPromiseChain(node) {
+  if (!node || !ts.isCallExpression(node) || !node.expression) return false
+  const callee = node.expression
+  if (ts.isPropertyAccessExpression(callee))
+    return callee.name.text === "then" || callee.name.text === "catch"
+  if (!ts.isElementAccessExpression(callee)) return false
+  const key = callee.argumentExpression
+  return (
+    Boolean(key) &&
+    ts.isStringLiteralLike(key) &&
+    (key.text === "then" || key.text === "catch")
+  )
+}
+
 function promiseChains(root) {
   const found = []
   const visit = (node) => {
     if (!node) return
-    if (
-      ts.isCallExpression(node) &&
-      node.expression &&
-      ts.isPropertyAccessExpression(node.expression) &&
-      (node.expression.name.text === "then" ||
-        node.expression.name.text === "catch")
-    )
-      found.push(node)
+    if (isPromiseChain(node)) found.push(node)
     ts.forEachChild(node, visit)
   }
   visit(root)

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import { serve } from "@hono/node-server"
 import { afterAll, beforeAll, expect, it } from "vitest"
 import { createApp } from "../app.js"
+import { transaction, withDatabase } from "../db/context.js"
 import {
   agentConnections,
   oauthAccessToken,
@@ -177,4 +178,28 @@ it("rejects a method header that does not match the body", async () => {
       )
     ).status
   ).not.toBe(403)
+  const transport = {
+    method: "POST" as const,
+    headers: {
+      ...headers,
+      Host: new URL(origin).host,
+      "Mcp-Method": "tools/list",
+    },
+    body: body(4, "tools/list"),
+  }
+  const open = await app.request("/mcp", transport)
+  expect(open.status).not.toBe(500)
+  expect(await open.text()).not.toContain(
+    "MCP transport must not run inside a database transaction"
+  )
+  const held = await withDatabase(database.db, () =>
+    transaction(() => app.request("/mcp", transport))
+  )
+  expect(held.status).toBe(500)
+  expect(await held.json()).toMatchObject({
+    error: {
+      code: "INTERNAL_ERROR",
+      message: "MCP transport must not run inside a database transaction",
+    },
+  })
 })
