@@ -22,7 +22,16 @@ test("finish opens a ready PR without --draft", () => {
   assert.ok(!f.effects("gh", "pr create")[0].args.includes("--draft"))
 })
 test("finish reuses an existing PR and dry run has no push or create", () => {
-  const f = fixture({ existing: [{ number: 91, url: "existing" }] })
+  const f = fixture({
+    existing: [
+      {
+        number: 91,
+        url: "existing",
+        title: "feat: keep my search (#90)",
+        body: "Closes #90",
+      },
+    ],
+  })
   assert.equal(finish(f).code, 0)
   const d = fixture()
   assert.equal(finish(d, "--dry-run").code, 0)
@@ -31,7 +40,7 @@ test("finish reuses an existing PR and dry run has no push or create", () => {
 })
 test("finish preserves issue, checkout, workflow and commit gates", () => {
   for (const [over, code] of [
-    [{ issueState: "CLOSED" }, "CLOSED"],
+    [{ issueState: "CLOSED" }, "PR_METADATA"],
     [{ issueLabels: ["ready-for-human"] }, "READY_FOR_HUMAN"],
     [{ mainDirty: " M source" }, "MAIN_CLEAN"],
     [{ mainBranch: "feat/1-other" }, "MAIN_CLEAN"],
@@ -78,4 +87,20 @@ test("finish reports a failed create and refuses a branch with no new commits", 
   })
   assert.match(finish(unchecked).text, /NO_COMMITS/)
   assert.equal(unchecked.effects("git", "push").length, 0)
+})
+
+test("finish validates existing PR titles and closing links before reuse", () => {
+  for (const metadata of [
+    { title: "feat: keep my search (#89)", body: "Closes #90" },
+    { title: "feat: keep my search (#90)", body: "Closes #89" },
+  ]) {
+    const f = fixture({
+      existing: [{ number: 91, url: "existing", ...metadata }],
+    })
+    const result = finish(f)
+    assert.equal(result.code, 2, result.text)
+    assert.match(result.text, /PR_METADATA/)
+    assert.equal(f.effects("git", "push").length, 0)
+    assert.equal(f.effects("gh", "pr create").length, 0)
+  }
 })

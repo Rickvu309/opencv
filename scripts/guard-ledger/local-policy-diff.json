@@ -1,0 +1,13 @@
+{
+  "id": "local-policy-diff",
+  "file": "scripts/ocv-tools/jobs/local-policy-diff.test.mjs",
+  "detector": {
+    "module": "scripts/lib/local-policy-diff.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "244100ec",
+    "path": "scripts/ocv-tools/jobs/pull-facts.mjs"
+  }
+}

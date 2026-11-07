@@ -1,4 +1,5 @@
 import { join, resolve } from "node:path"
+import { validateAuthoring } from "../authoring.mjs"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
@@ -33,14 +34,8 @@ export function finish(ctx, { flags }) {
       "--state",
       "open",
       "--json",
-      "number,url"
+      "number,url,title,body"
     )
-    if (existing.length)
-      return {
-        id: existing[0].number,
-        lines: [`A PR is already open: ${existing[0].url}`],
-        next: `scripts/ocv-tools.mjs merge ${existing[0].number}`,
-      }
     const issue = json(
       ctx,
       "issue",
@@ -49,6 +44,13 @@ export function finish(ctx, { flags }) {
       "--json",
       "title,state,labels"
     )
+    validateAuthoring({ n: t.n, issue, pull: existing[0] })
+    if (existing.length)
+      return {
+        id: existing[0].number,
+        lines: [`A PR is already open: ${existing[0].url}`],
+        next: `scripts/ocv-tools.mjs merge ${existing[0].number}`,
+      }
     const written = bodyOf(ctx, flags["--body-file"])
     const desc = String(
       flags["-d"] ||

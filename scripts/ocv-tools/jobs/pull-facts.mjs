@@ -1,5 +1,5 @@
 import { issueOfBranch } from "../rules/pull-ref.mjs"
-import { run, git, gh, json, diffFacts } from "./common.mjs"
+import { run, git, json, diffFacts } from "./common.mjs"
 import { pinFacts } from "./pin-facts.mjs"
 
 export const PR_FIELDS =
@@ -165,12 +165,7 @@ export function pullFacts(ctx, n) {
   if (!run(ctx, "git", ["cat-file", "-e", `${head}^{commit}`]).ok)
     git(ctx, "fetch", "--quiet", "origin", `pull/${n}/head`)
   const base = git(ctx, "merge-base", "origin/main", head)
-  const files = changedFiles(
-    ctx,
-    git(ctx, "diff", "--name-only", base, head).split("\n"),
-    base,
-    head
-  )
+  const files = changedFiles(ctx, [], base, head)
   const issue = issueOfBranch(pull.headRefName)
   const linked = issue
     ? json(ctx, "issue", "view", String(issue), "--json", "state,labels")

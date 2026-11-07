@@ -27,7 +27,7 @@ test("PR_METADATA wants the title number, the closing line and an open issue", (
     rule.check({ pull: { ...ok, issueState: "CLOSED" } }),
     /issue #9 is closed/
   )
-  assert.deepEqual(rule.at, ["finish", "pr"])
+  assert.deepEqual(rule.at, ["authoring", "finish", "pr"])
 })
 
 const changesOf = (number) =>

@@ -1,6 +1,7 @@
 import { EXIT, FIXES } from "./result.mjs"
 import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
+import { validateAuthoring } from "./authoring.mjs"
 import { locate } from "./worktree.mjs"
 
 const withIssueSuffix = (message, n) =>
@@ -81,6 +82,12 @@ export function save(ctx, { message }) {
     if (verdict.refusals[0].id === "LOST") return lost(ctx, t, h)
     throw refusalError(verdict.refusals[0])
   }
+
+  validateAuthoring({
+    n: t.n,
+    issue: read.issue,
+    pull: ctx.ports.gh.prs({ state: "open", head: t.branch })[0],
+  })
 
   const dirty = git.status(ctx.cwd).out
   const upstream = git.verify(ctx.cwd, `origin/${t.branch}`)
