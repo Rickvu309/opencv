@@ -33,7 +33,7 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 
 ## What main did
 
-Commit `a5c61cac` still auto-executes `paper.edit` for a Coach actor, because the contract said `coach: "auto"`. It also accepts a safely mergeable stale revision, because approval called `coachBasisOk`, which treats `basedOn` at or below the current revision as safe. The strict behavior is synced only at the commit named below, and only after the replay refuses that stale basis.
+Commit `a5c61cac` still auto-executes `paper.edit` for a Coach actor, because the contract said `coach: "auto"`. It also accepts a safely mergeable stale revision, because approval called `coachBasisOk`, which treats `basedOn` at or below the current revision as safe. Confirm the strict behavior with the registry replay, which must refuse that stale basis.
 
 ## Run
 
@@ -61,6 +61,6 @@ One document. One immutable proposal. One person typing event. Revisions 0 throu
 
 ## When the code changes
 
-After a change to the files named above, run `/maintain-formal-verification-skill`. Move the sync commit only after the model still matches the code and the replay still refuses a stale basis. Never weaken a rule to clear a finding.
+After a change to the files named above, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay still refuses a stale basis. Never weaken a rule to clear a finding.
 
-Last confirmed sync commit. `3d0d2db1d352fdac82c6cf92cce615a8c2bb3a16`
+Use this skill’s Git history to locate the last verification change. Keep branch-only commits out of verification anchors.
