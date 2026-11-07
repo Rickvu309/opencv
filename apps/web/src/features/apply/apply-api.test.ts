@@ -167,6 +167,13 @@ function invalidateCatalogReads(query: { queryKey: unknown[] }) {
   return ownerId
 }
 `
+const retiredPriorityUrl = `
+export const endpoints = {
+  jobsPriorityCounts: "/api/jobs/priority-counts",
+}
+export const jobPriorityCountsKey = () => null
+routes.get("/priority-counts", () => {})
+`
 
 function signIn(ownerId: string) {
   authClient.$store.atoms.session = {
@@ -203,6 +210,29 @@ describe("coach catalog refresh", () => {
         (problem) => problem.kind
       )
     ).toEqual(["query-owner"])
+  })
+
+  it("rejects a retired priority endpoint that nothing calls", () => {
+    const retired = [
+      "../../lib/requests.ts",
+      "./apply-api.ts",
+      "../../../../api/src/job/http.ts",
+    ]
+    for (const file of retired) {
+      expect(
+        detect(read(file), file).filter(
+          (problem) => problem.kind === "retired-priority-endpoint"
+        )
+      ).toEqual([])
+    }
+    expect(
+      detect(retiredPriorityUrl, "requests.ts").map((problem) => problem.kind)
+    ).toEqual([
+      "retired-priority-endpoint",
+      "retired-priority-endpoint",
+      "retired-priority-endpoint",
+      "retired-priority-endpoint",
+    ])
   })
 
   it("refreshes the signed-in count after committed legacy job writes", async () => {

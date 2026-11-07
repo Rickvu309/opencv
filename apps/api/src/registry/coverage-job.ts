@@ -1,3 +1,4 @@
+import { catalog } from "@workspace/domain"
 import { expect } from "vitest"
 
 import {
@@ -10,7 +11,36 @@ import {
 
 export function jobCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, run, undo, jobOf, gone, checklist } = tools
+  const catalogCases: CoverageCase[] = Object.values(catalog)
+    .filter((operation) => operation.kind === "command")
+    .map((operation) => ({
+      name: operation.name,
+      arrange: async () => {
+        const result = await run("job.create", {
+          title: "Catalog proof",
+          company: "Northwind",
+        })
+        ctx.jobId = idOf(result.output)
+      },
+      act: () =>
+        run(
+          operation.name,
+          operation.input.parse({ jobId: ctx.jobId, priority: "high" })
+        ),
+      assert: async (result) => {
+        expect(operation.publicResult.safeParse(result.output).success).toBe(
+          true
+        )
+        expect(result.activityId).toBeTruthy()
+        expect(await jobOf(ctx.jobId)).toMatchObject({ priority: "high" })
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        expect(await jobOf(ctx.jobId)).toMatchObject({ priority: "normal" })
+      },
+    }))
   return [
+    ...catalogCases,
     {
       name: "job.create",
       arrange: async () => {},

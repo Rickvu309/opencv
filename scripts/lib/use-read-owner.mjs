@@ -56,6 +56,18 @@ function hasReturn(node) {
   return found
 }
 
+const RETIRED_NAMES = new Set(["jobsPriorityCounts", "jobPriorityCountsKey"])
+const RETIRED_PATHS = new Set(["/api/jobs/priority-counts", "/priority-counts"])
+
+function isRetiredPriorityEndpoint(node) {
+  if (
+    (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) &&
+    RETIRED_PATHS.has(node.text)
+  )
+    return true
+  return ts.isIdentifier(node) && RETIRED_NAMES.has(node.text)
+}
+
 export function detect(text, file = "source.tsx") {
   const source = parse(file, String(text))
   const problems = []
@@ -76,6 +88,11 @@ export function detect(text, file = "source.tsx") {
       node.initializer.getText(source).includes("queryKey")
     )
       problems.push({ kind: "query-owner", line: lineOf(source, node) })
+    if (isRetiredPriorityEndpoint(node))
+      problems.push({
+        kind: "retired-priority-endpoint",
+        line: lineOf(source, node),
+      })
     if (!ts.isIfStatement(node) || !node.thenStatement) return
     if (!mentions(node.expression, "isCommandName")) return
     const block = node.thenStatement

@@ -14,5 +14,5 @@
       "path": "apps/web/src/routes/apply.tsx"
     }
   },
-  "reason": "Architectural fixture, not a historical product commit. The non-null session read never landed in a commit that survives onto main. detect fires on routeOwnerMistake in this test and stays quiet on the Apply route. The same detector flags a Coach refresher that returns from a legacy command before refreshCatalogReads, or that copies query.queryKey[1] onto a write."
+  "reason": "Architectural fixture, not a historical product commit. The non-null session read never landed in a commit that survives onto main. detect fires on routeOwnerMistake in this test and stays quiet on the Apply route. The same detector flags a Coach refresher that returns from a legacy command before refreshCatalogReads, a copy of query.queryKey[1] onto a write, and the retired jobsPriorityCounts key or /api/jobs/priority-counts and /priority-counts paths."
 }
