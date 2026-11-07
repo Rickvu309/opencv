@@ -115,12 +115,17 @@ export function registerPaper(registry: Registry) {
     },
     "paper.edit": {
       handler: async (input, actor) => {
-        const result = await editAsCoach(actor.userId, input.docId, {
-          basedOn: input.basedOn,
-          edits: input.edits,
-          editId: createId(),
-          newId: newBlockId,
-        })
+        const result = await editAsCoach(
+          actor.userId,
+          input.docId,
+          {
+            basedOn: input.basedOn,
+            edits: input.edits,
+            editId: createId(),
+            newId: newBlockId,
+          },
+          actor
+        )
         const changes = result.changes.slice(0, PAPER_RECEIPT_CHANGE_LIMIT)
         return {
           ...result,

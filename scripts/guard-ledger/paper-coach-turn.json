@@ -1,0 +1,13 @@
+{
+  "id": "paper-coach-turn",
+  "file": "scripts/paper-coach-proposal.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-coach-proposal.mjs",
+    "export": "detectCoachTurnWire"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "ca910609676a1975b0e6f69fbb9ef8330a6eedfe",
+    "path": "apps/api/src/coach/turn-compatibility.ts"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "paper-coach-basis",
+  "file": "scripts/paper-coach-proposal.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-coach-proposal.mjs",
+    "export": "detectStalePaperBasis"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a7930bb6ff04def47d80859fc82b6b8ebe727a8e",
+    "path": "apps/api/src/paper/content-coach.ts"
+  }
+}

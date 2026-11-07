@@ -8,6 +8,7 @@ import {
   rebuiltBy,
   undoCoachEdit,
   undoProblems,
+  type Actor,
   type PaperChange,
   type PaperDocument,
   type PaperEdit,
@@ -70,8 +71,22 @@ function documentOf(yDoc: PaperYDoc, kind: PaperStoredKind): PaperDocument {
   return parsed.data
 }
 
-function checkedBasis(content: LockedContent, basedOn: number) {
+export function stalePaperBasis(basedOn: number, revision: number) {
+  if (basedOn === revision) return "apply" as const
+  return "refuse" as const
+}
+
+function checkedBasis(
+  content: LockedContent,
+  basedOn: number,
+  proposal: boolean
+) {
   const revision = content.row.contentVersion
+  if (proposal && stalePaperBasis(basedOn, revision) === "refuse") {
+    throw conflict(
+      `basedOn ${basedOn} is not revision ${revision}. Read paper.outline again`
+    )
+  }
   if (coachBasisOk(basedOn, revision, content.baseSeq)) return
   if (basedOn > revision) {
     throw conflict(
@@ -129,10 +144,11 @@ function refusedOutcomes(
 export async function editAsCoach(
   userId: UserId,
   docId: PaperId,
-  input: CoachEditInput
+  input: CoachEditInput,
+  actor: Actor
 ): Promise<CoachEditResult> {
   return withContent(userId, docId, async (content) => {
-    checkedBasis(content, input.basedOn)
+    checkedBasis(content, input.basedOn, actor.type === "coach")
     const { row } = content
     const fork = await content.fork(input.basedOn)
     const base = documentOf(fork, row.kind)

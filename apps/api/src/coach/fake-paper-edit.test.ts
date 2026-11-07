@@ -53,12 +53,20 @@ describe("the fake Coach", () => {
         parts.push(part)
       }
       const result = parts.find((part) => part.type === "tool-result")
+      if (!result || result.type !== "tool-result" || !result.pendingActionId)
+        throw new Error("missing proposal")
       expect(result).toMatchObject({
         name: "paper.edit",
         ok: true,
-        reversal: { possible: true, command: "paper.revertEdit" },
-        detail: { type: "paper.replace", docKind: "cv" },
+        reversal: { possible: false },
       })
+      expect(result).not.toHaveProperty("detail")
+      const held = await h.paperOf(docId)
+      expect(JSON.stringify(held.blocks)).not.toContain(
+        "Reviewed by the Coach."
+      )
+      expect(held.blocks).toHaveLength(3)
+      await h.store.registry.approve(userId, result.pendingActionId)
       const blocks = (await h.paperOf(docId)).blocks
       expect(blocks.map((block) => block.id)[0]).toBe("s1")
       expect(JSON.stringify(blocks)).toContain("Reviewed by the Coach.")
