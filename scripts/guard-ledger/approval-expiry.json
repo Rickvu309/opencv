@@ -1,0 +1,18 @@
+{
+  "id": "approval-expiry",
+  "file": "apps/api/src/registry/approval-expiry.formal.test.ts",
+  "detector": {
+    "module": "scripts/lib/approval-expiry.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "7a4f073ed9d8af54208494d1e4bc48eac0061c27",
+    "path": "apps/api/src/registry/proposals.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/registry/proposals.ts"
+    }
+  },
+  "reason": "Caught by review. Introduced by 7a4f073ed9d8af54208494d1e4bc48eac0061c27, where an approval locked the row and then trusted the application clock, and the database clock applied only when a task was present. detect fires on that lock and stays quiet once every confirmation uses the database clock after the lock."
+}
