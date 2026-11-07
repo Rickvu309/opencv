@@ -104,6 +104,7 @@ export function normalizeWrite(outcome) {
     entity: outcome.entityMatched === false ? "other" : "same",
     resource: outcome.resource ?? "job.priority",
     transaction: outcome.sameTransaction === false ? "other" : "same",
+    transactionOpen: outcome.transactionOpen ?? true,
     bumped: outcome.revisionDelta === 1,
   }
 }
@@ -117,6 +118,8 @@ export function traceProblems(trace) {
     if (event.entity !== "same") problems.push({ kind: "entity" })
     if (event.resource !== "job.priority") problems.push({ kind: "resource" })
     if (event.transaction !== "same") problems.push({ kind: "transaction" })
+    if (event.transactionOpen === false)
+      problems.push({ kind: "closed-transaction" })
     if (event.bumped !== true) problems.push({ kind: "missing-bump" })
   }
   return problems

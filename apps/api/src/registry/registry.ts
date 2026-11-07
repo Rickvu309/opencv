@@ -260,6 +260,7 @@ export class Registry extends CatalogPublication {
 
   async execute(
     options: ExecuteOptions & {
+      expectedRevision?: number | null
       [taskExecution]?: boolean
       [approvedDelegate]?: string
     }

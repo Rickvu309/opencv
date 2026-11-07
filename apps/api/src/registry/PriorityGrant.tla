@@ -1,60 +1,64 @@
 ---- MODULE PriorityGrant ----
 EXTENDS Naturals
 
-CONSTANTS Bump
+CONSTANTS EnforceOpen
 
-VARIABLES revision, phase, db, bound
+VARIABLES revision, phase, db, bound, opened
 
 Init ==
     /\ revision = 0
     /\ phase = "idle"
     /\ db = 0
     /\ bound = 0
+    /\ opened = FALSE
 
 Open ==
     /\ phase = "idle"
     /\ phase' = "open"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Begin ==
-    /\ db = 0
+    /\ ~opened
     /\ phase \in {"open", "held"}
     /\ db' = IF bound = 0 THEN 1 ELSE 2
+    /\ opened' = TRUE
     /\ UNCHANGED <<revision, phase, bound>>
 
 Take ==
     /\ phase = "open"
     /\ db \in {1, 2}
+    /\ opened
     /\ bound' = db
     /\ phase' = "held"
-    /\ UNCHANGED <<revision, db>>
+    /\ UNCHANGED <<revision, db, opened>>
 
 Autocommit ==
     /\ phase = "open"
     /\ db = 0
     /\ phase' = "refused"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Write ==
     /\ phase = "held"
     /\ db # 0
     /\ bound = db
-    /\ revision' = revision + Bump
+    /\ (~EnforceOpen \/ opened)
+    /\ revision' = revision + 1
     /\ phase' = "spent"
-    /\ UNCHANGED <<db, bound>>
+    /\ UNCHANGED <<db, bound, opened>>
 
 Commit ==
-    /\ db # 0
-    /\ db' = 0
+    /\ opened
+    /\ opened' = FALSE
     /\ phase' = IF phase = "spent" THEN "done" ELSE phase
-    /\ UNCHANGED <<revision, bound>>
+    /\ UNCHANGED <<revision, db, bound>>
 
 Late ==
     /\ phase = "held"
-    /\ db = 0
+    /\ ~opened
     /\ bound # 0
     /\ phase' = "refused"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Cross ==
     /\ phase = "held"
@@ -62,35 +66,35 @@ Cross ==
     /\ bound # 0
     /\ bound # db
     /\ phase' = "refused"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Stale ==
     /\ phase \in {"open", "held"}
     /\ phase' = "refused"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Forge ==
     /\ phase = "idle"
     /\ phase' = "refused"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Seal ==
     /\ phase \in {"open", "held", "spent", "refused", "done"}
     /\ phase' = "sealed"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Reuse ==
     /\ phase = "sealed"
     /\ phase' = "refused"
-    /\ UNCHANGED <<revision, db, bound>>
+    /\ UNCHANGED <<revision, db, bound, opened>>
 
 Rollback ==
     /\ phase = "spent"
     /\ revision > 0
     /\ revision' = revision - 1
     /\ phase' = "sealed"
-    /\ db' = 0
-    /\ UNCHANGED bound
+    /\ opened' = FALSE
+    /\ UNCHANGED <<db, bound>>
 
 Next ==
     \/ Open
@@ -107,7 +111,7 @@ Next ==
     \/ Reuse
     \/ Rollback
 
-Spec == Init /\ [][Next]_<<revision, phase, db, bound>>
+Spec == Init /\ [][Next]_<<revision, phase, db, bound, opened>>
 
 Inv ==
     /\ revision \in Nat
@@ -116,5 +120,6 @@ Inv ==
        }
     /\ db \in 0..2
     /\ bound \in 0..2
-    /\ (phase = "spent" => revision > 0 /\ db = bound /\ bound # 0)
+    /\ opened \in BOOLEAN
+    /\ (phase = "spent" => revision > 0 /\ db = bound /\ bound # 0 /\ opened)
 ====
