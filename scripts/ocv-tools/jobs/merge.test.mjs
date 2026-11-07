@@ -99,10 +99,10 @@ test("queued merge leaves issues open until a later rerun observes the merge", (
       )
     )
   const queuedReceipt = receipt()
-  assert.equal(
-    queuedReceipt.status,
-    "pending",
-    JSON.stringify({
+  try {
+    assert.equal(queuedReceipt.status, "pending")
+  } catch (error) {
+    const diagnostic = JSON.stringify({
       tempRoot: process.env.TMPDIR,
       receiptPath: join(f.ctx.env.PR_RESULT_DIR, "opencv-merge-pr-91.json"),
       receipt: queuedReceipt,
@@ -113,7 +113,10 @@ test("queued merge leaves issues open until a later rerun observes the merge", (
       mergeCalls: f.effects("gh", "pr merge").map((effect) => effect.args),
       closeCalls: f.effects("gh", "issue close").length,
     })
-  )
+    error.message += `\n${diagnostic}`
+    error.stack += `\n${diagnostic}`
+    throw error
+  }
   assert.equal(f.s.issueState, "OPEN")
   assert.equal(f.effects("gh", "issue close").length, 0)
   f.s.pull.state = "MERGED"
