@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs"
+import { readFileSync, mkdirSync, writeFileSync, symlinkSync } from "node:fs"
 import path from "node:path"
 import { homedir } from "node:os"
 import test from "node:test"
@@ -197,6 +197,99 @@ test("imported helpers reject import.meta in declarations and callbacks", (t) =>
       },
     ])
   }
+})
+
+test("plain-code import allow-list rejects every mistake in declarations and transitive helpers with file and line", (t) => {
+  for (const fixture of mistake.importCases) {
+    for (const helper of [false, true]) {
+      const directory = tempDir(
+        t,
+        "catalog-imports-",
+        path.join(homedir(), "tmp")
+      )
+      const target = helper
+        ? `${path.dirname(declaration)}/helper.ts`
+        : declaration
+      const write = (file, text) => {
+        mkdirSync(path.dirname(path.join(directory, file)), { recursive: true })
+        writeFileSync(path.join(directory, file), text)
+      }
+      write("packages/domain/src/helper.ts", "export const value = 1")
+      write("apps/api/src/private.ts", "export const secret = 'private'")
+      write("packages/domain/src/server.ts", "export const secret = 'private'")
+      for (const [file, text] of Object.entries(fixture.files))
+        write(file, text)
+      for (const [file, destination] of Object.entries(fixture.links ?? {}))
+        symlinkSync(
+          path.join(directory, destination),
+          path.join(directory, file)
+        )
+      if (helper) write(declaration, 'export * from "./helper.js"')
+      write(target, `\n${fixture.source}`)
+      const errors = browserGraph(directory, [declaration]).boundaryErrors
+      assert.ok(
+        errors.some(
+          (error) =>
+            error.file === target &&
+            error.detail ===
+              "line 2: operation declarations may only import plain code from packages/domain"
+        ),
+        `${fixture.name}, helper=${helper}: ${JSON.stringify(errors)}`
+      )
+    }
+  }
+  for (const source of mistake.importSources)
+    assert.equal(
+      detect({ ...clean, importSources: [source] })[0]?.kind,
+      "browser-import",
+      source
+    )
+})
+
+test("plain-code allow-list resolves all supported extensions and static import forms", (t) => {
+  const directory = tempDir(t, "catalog-code-", path.join(homedir(), "tmp"))
+  mkdirSync(path.join(directory, path.dirname(declaration)), {
+    recursive: true,
+  })
+  symlinkSync(
+    path.join(root, "node_modules"),
+    path.join(directory, "node_modules"),
+    "dir"
+  )
+  symlinkSync(
+    path.join(root, "packages/domain/node_modules"),
+    path.join(directory, "packages/domain/node_modules"),
+    "dir"
+  )
+  for (const extension of ["ts", "tsx", "js", "mjs"])
+    writeFileSync(
+      path.join(directory, `packages/domain/src/helper.${extension}`),
+      "export const value = 1"
+    )
+  for (const source of clean.importSources) {
+    writeFileSync(
+      path.join(directory, declaration),
+      source.replaceAll('"./helper', '"../../../helper')
+    )
+    assert.deepEqual(
+      browserGraph(directory, [declaration]).boundaryErrors,
+      [],
+      source
+    )
+    assert.deepEqual(detect({ ...clean, importSources: [source] }), [])
+  }
+  for (const extension of ["ts", "tsx", "js", "mjs"])
+    for (const source of [
+      `import "../../../helper.${extension}"`,
+      `export { value } from "../../../helper.${extension}"`,
+    ]) {
+      writeFileSync(path.join(directory, declaration), source)
+      assert.deepEqual(
+        browserGraph(directory, [declaration]).boundaryErrors,
+        [],
+        source
+      )
+    }
 })
 
 test("browser source snapshots canonicalize CRLF before hashing", (t) => {

@@ -32,6 +32,7 @@ type CatalogSnapshot = {
   }[]
   sources?: [string, string][]
   browserSources?: string[]
+  importSources?: string[]
   boundaryErrors?: { file: string; detail: string }[]
 }
 
@@ -46,3 +47,13 @@ export function detectBrowserMetadata(
   file: string,
   text: string
 ): { file: string; detail: string }[]
+
+export const browserPackages: string[]
+export function plainCode(file: string): boolean
+export function inspectBrowserImports(
+  file: string,
+  text: string
+): {
+  imports: { specifier: string; line: number }[]
+  boundaryErrors: { file: string; detail: string }[]
+}

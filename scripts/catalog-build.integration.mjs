@@ -7,12 +7,13 @@ import {
   readFileSync,
   rmSync,
   writeFileSync,
+  symlinkSync,
 } from "node:fs"
 import { homedir } from "node:os"
 import path from "node:path"
 import test from "node:test"
 
-import { root } from "./catalog.mjs"
+import { buildBrowserCatalog, catalog, root } from "./catalog.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 
 test("descriptor names, wire inputs, resource callbacks and public results infer without casts", () => {
@@ -127,4 +128,144 @@ test("Turbo catalog hashes ignore unrelated API tests and include each catalog i
     if (previous === undefined) rmSync(target)
     else write(directory, file, previous)
   }
+})
+
+const descriptor = () => `
+import { z } from "zod"
+import { defineOperation } from "../../../operation.js"
+export const operation = defineOperation({
+  name: "fixture.echo", owner: "fixture", kind: "read", version: 1, description: "Echo", coach: "auto",
+  input: z.object({}), publicResult: z.object({}), dependsOn: () => [],
+})
+`
+const server =
+  'import { operation } from "@workspace/domain/operations/fixture/echo"; export const implementation = { operation, execute: async () => ({}) }'
+
+function browserWorkspace(t) {
+  const directory = tempDir(t, "catalog-backstop-", path.join(homedir(), "tmp"))
+  cpSync(
+    path.join(root, "packages/domain/src"),
+    path.join(directory, "packages/domain/src"),
+    { recursive: true }
+  )
+  mkdirSync(path.join(directory, "apps/web"), { recursive: true })
+  symlinkSync(
+    path.join(root, "node_modules"),
+    path.join(directory, "node_modules"),
+    "dir"
+  )
+  symlinkSync(
+    path.join(root, "packages/domain/node_modules"),
+    path.join(directory, "packages/domain/node_modules"),
+    "dir"
+  )
+  write(directory, "package.json", '{"type":"module"}')
+  write(
+    directory,
+    "packages/domain/package.json",
+    readFileSync(path.join(root, "packages/domain/package.json"), "utf8")
+  )
+  return directory
+}
+
+test("kind-based Vite backstop rejects every review probe without discovery", async (t) => {
+  const fixtures = JSON.parse(
+    readFileSync(
+      path.join(root, "scripts/fixtures/catalog/mistake.json"),
+      "utf8"
+    )
+  )
+  for (const fixture of fixtures.importCases.filter(
+    (entry) => !entry.discoveryOnly
+  )) {
+    await t.test(fixture.name, async (t) => {
+      const directory = browserWorkspace(t)
+      write(directory, implementation, server)
+      write(directory, declaration, descriptor())
+      await catalog("generate", directory)
+      write(
+        directory,
+        "apps/api/src/private.ts",
+        'export const secret = "private-api-sentinel"'
+      )
+      write(
+        directory,
+        "apps/api/src/private.css",
+        ".private-api-sentinel{color:red}"
+      )
+      write(
+        directory,
+        "apps/api/src/private.svg",
+        '<svg xmlns="http://www.w3.org/2000/svg"><text>private-api-sentinel</text></svg>'
+      )
+      write(
+        directory,
+        "apps/api/src/private-large.txt",
+        "private-api-sentinel" + "x".repeat(5000)
+      )
+      write(
+        directory,
+        "packages/domain/src/server.ts",
+        'export const secret = "private-api-sentinel"'
+      )
+      for (const [file, text] of Object.entries(fixture.files))
+        write(directory, file, text)
+      for (const [file, destination] of Object.entries(fixture.links ?? {}))
+        symlinkSync(
+          path.join(directory, destination),
+          path.join(directory, file)
+        )
+      const callback = fixture.source.replace("export const dependsOn = ", "")
+      write(
+        directory,
+        declaration,
+        descriptor().replace("dependsOn: () => []", `dependsOn: ${callback}`)
+      )
+      await assert.rejects(
+        buildBrowserCatalog(directory),
+        { kind: "browser-import" },
+        fixture.name
+      )
+    })
+  }
+})
+
+test("Vite backstop rejects inlined data URLs and unapproved package modules", async (t) => {
+  const directory = browserWorkspace(t)
+  write(directory, implementation, server)
+  write(directory, declaration, descriptor())
+  await catalog("generate", directory)
+  write(
+    directory,
+    declaration,
+    descriptor().replace(
+      "dependsOn: () => []",
+      'dependsOn: () => [{ name: "data:text/plain,private", coachFloor: "auto" }]'
+    )
+  )
+  await assert.rejects(buildBrowserCatalog(directory), /without data: URLs/)
+  write(
+    directory,
+    "dependency/node_modules/unapproved/value.js",
+    'export const value = "private"'
+  )
+  write(
+    directory,
+    declaration,
+    `${descriptor()}\nexport { value } from "../../../../../../dependency/node_modules/unapproved/value.js"`
+  )
+  await assert.rejects(buildBrowserCatalog(directory), {
+    kind: "browser-import",
+  })
+  write(directory, declaration, descriptor())
+  const result = await buildBrowserCatalog(directory)
+  assert.ok(result.output.length > 0)
+  assert.ok(
+    result.output.every(
+      (output) =>
+        output.type === "chunk" &&
+        output.fileName.endsWith(".js") &&
+        !/\bdata:[^\s"\x27`]*,/i.test(output.code)
+    )
+  )
 })

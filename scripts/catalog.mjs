@@ -10,7 +10,11 @@ import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import { format } from "prettier"
 
-import { browserSource, discoverCatalog } from "./lib/catalog-discovery.mjs"
+import {
+  browserPackageRoots,
+  browserSource,
+  discoverCatalog,
+} from "./lib/catalog-discovery.mjs"
 import {
   CatalogError,
   detect,
@@ -28,6 +32,8 @@ export async function buildBrowserCatalog(directory = root) {
   )
   const webRoot = path.join(directory, "apps/web")
   const modules = new Set()
+  const allowedPackages = browserPackageRoots(directory)
+  const canonicalRoot = realpathSync(directory)
   const result = await build({
     root: webRoot,
     configFile: false,
@@ -50,31 +56,49 @@ export async function buildBrowserCatalog(directory = root) {
     },
   })
   const check = (source, output) => {
-    if (source.startsWith("\0")) return
+    if (source === "\0vite/preload-helper.js") return
     const absolute = path.resolve(webRoot, source.split("?")[0])
+    const canonical = existsSync(absolute) ? realpathSync(absolute) : absolute
     const file = path
-      .relative(
-        directory,
-        existsSync(absolute) ? realpathSync(absolute) : absolute
-      )
+      .relative(canonicalRoot, canonical)
       .replaceAll(path.sep, "/")
-    if (file.split("/").includes("node_modules") || browserSource(file)) return
+    if (
+      !file.startsWith("apps/api/") &&
+      (browserSource(file) ||
+        allowedPackages.some((allowed) =>
+          canonical.startsWith(`${allowed}${path.sep}`)
+        ))
+    )
+      return
     throw new CatalogError(
       "browser-import",
       file,
       `server or non-domain source in browser ${output}`
     )
   }
-  for (const module of modules)
-    if (path.isAbsolute(module)) check(module, "module")
+  for (const module of modules) check(module, "module")
   for (const bundle of Array.isArray(result) ? result : [result])
     for (const output of bundle.output)
       if (output.type === "chunk") {
+        if (
+          !output.fileName.endsWith(".js") ||
+          /\bdata:[^\s"\x27`]*,/i.test(output.code)
+        )
+          throw new CatalogError(
+            "browser-import",
+            output.fileName,
+            "browser chunks must be JavaScript without data: URLs"
+          )
         for (const module of Object.keys(output.modules))
-          if (path.isAbsolute(module)) check(module, "module")
+          check(module, "module")
       } else {
         for (const source of output.originalFileNames)
           check(source, `asset ${output.fileName}`)
+        throw new CatalogError(
+          "browser-import",
+          output.fileName,
+          "browser catalog may only emit JavaScript chunks; assets and CSS are forbidden"
+        )
       }
   return result
 }

@@ -36,6 +36,76 @@ export function detectBrowserMetadata(file, text) {
   return errors
 }
 
+export const browserPackages = ["zod"]
+export const plainCode = (file) => /\.(?:ts|tsx|js|mjs)$/.test(file)
+
+export function inspectBrowserImports(file, text) {
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
+  const imports = []
+  const boundaryErrors = []
+  const reject = (node) =>
+    boundaryErrors.push({
+      file,
+      detail: `line ${source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1}: operation declarations may only import plain code from packages/domain`,
+    })
+  const assetConstructor = (expression) => {
+    if (
+      ts.isParenthesizedExpression(expression) ||
+      ts.isAsExpression(expression) ||
+      ts.isTypeAssertionExpression(expression) ||
+      ts.isNonNullExpression(expression) ||
+      ts.isSatisfiesExpression(expression)
+    )
+      return assetConstructor(expression.expression)
+    if (ts.isPropertyAccessExpression(expression))
+      return assetConstructor(expression.name)
+    if (ts.isElementAccessExpression(expression))
+      return assetConstructor(expression.argumentExpression)
+    return (
+      (ts.isIdentifier(expression) || ts.isStringLiteral(expression)) &&
+      ["Worker", "URL"].includes(expression.text)
+    )
+  }
+  const walk = (node) => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier
+    ) {
+      const specifier = node.moduleSpecifier.text
+      if (
+        !ts.isStringLiteral(node.moduleSpecifier) ||
+        specifier.includes("?") ||
+        specifier.includes("#") ||
+        (!browserPackages.includes(specifier) &&
+          (!specifier.startsWith(".") ||
+            (pathExtension(specifier) && !plainCode(specifier))))
+      )
+        reject(node)
+      else
+        imports.push({
+          specifier,
+          line:
+            source.getLineAndCharacterOfPosition(node.getStart(source)).line +
+            1,
+        })
+    }
+    if (
+      ts.isImportEqualsDeclaration(node) ||
+      ts.isImportTypeNode(node) ||
+      (ts.isCallExpression(node) &&
+        node.expression.kind === ts.SyntaxKind.ImportKeyword) ||
+      (ts.isIdentifier(node) && node.text === "require") ||
+      (ts.isNewExpression(node) && assetConstructor(node.expression))
+    )
+      reject(node)
+    ts.forEachChild(node, walk)
+  }
+  walk(source)
+  return { imports, boundaryErrors }
+}
+
+const pathExtension = (specifier) => specifier.split("/").at(-1).includes(".")
+
 export function detect(value, outputDigest) {
   const snapshot = typeof value === "string" ? JSON.parse(value) : value
   const errors = []
@@ -86,6 +156,10 @@ export function detect(value, outputDigest) {
       )
   for (const text of snapshot.browserSources ?? [])
     for (const issue of detectBrowserMetadata("operation.ts", text))
+      errors.push(new CatalogError("browser-import", issue.file, issue.detail))
+  for (const text of snapshot.importSources ?? [])
+    for (const issue of inspectBrowserImports("operation.ts", text)
+      .boundaryErrors)
       errors.push(new CatalogError("browser-import", issue.file, issue.detail))
   for (const issue of snapshot.boundaryErrors ?? [])
     errors.push(new CatalogError("browser-import", issue.file, issue.detail))

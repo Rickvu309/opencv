@@ -17,5 +17,10 @@
       "owner": "fixture"
     }
   ],
-  "browserSources": ["export const dependsOn = () => []"]
+  "browserSources": ["export const dependsOn = () => []"],
+  "importSources": [
+    "import { z } from \"zod\"; export const dependsOn = () => []",
+    "export { value } from \"./helper.js\"",
+    "import type { Value } from \"./helper.ts\""
+  ]
 }

@@ -1,4 +1,10 @@
-import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs"
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  statSync,
+} from "node:fs"
 import { createRequire, registerHooks } from "node:module"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -8,6 +14,9 @@ import {
   CatalogError,
   detectBrowserMetadata,
   digestOf,
+  browserPackages,
+  plainCode,
+  inspectBrowserImports,
 } from "./operation-catalog.mjs"
 import { toRepoPath } from "./source-imports.mjs"
 import { defineOperation } from "../../packages/domain/src/operation.ts"
@@ -37,66 +46,84 @@ function files(root, directory) {
 }
 
 export const browserSource = (file) =>
-  file.startsWith(domain) && !/\/server\.ts$/.test(file)
+  file.startsWith(domain) &&
+  plainCode(file) &&
+  !file.split("/").some((part) => ["server", "server-only"].includes(part)) &&
+  !/(?:^|[/.])server\.(?:ts|tsx|js|mjs)$/.test(file)
+
+export function browserPackageRoots(root) {
+  const require = createRequire(path.join(root, domain, "index.ts"))
+  return browserPackages.map((name) =>
+    realpathSync(path.dirname(require.resolve(`${name}/package.json`)))
+  )
+}
 
 export function browserGraph(root, entries) {
   const sources = new Map()
   const boundaryErrors = []
-  const resolve = (file, specifier) => {
-    if (specifier === "zod" || specifier.startsWith("zod/")) return
-    if (!specifier.startsWith(".")) {
-      boundaryErrors.push({
-        file,
-        detail: `non-browser dependency ${specifier}`,
-      })
+  const canonicalRoot = realpathSync(root)
+  const reject = (file, line) =>
+    boundaryErrors.push({
+      file,
+      detail: `line ${line}: operation declarations may only import plain code from packages/domain`,
+    })
+  const resolve = (file, { specifier, line }) => {
+    if (browserPackages.includes(specifier)) {
+      try {
+        const require = createRequire(path.join(root, file))
+        const target = realpathSync(require.resolve(specifier))
+        if (
+          !browserPackageRoots(root).some((allowed) =>
+            target.startsWith(`${allowed}${path.sep}`)
+          )
+        )
+          reject(file, line)
+      } catch {
+        reject(file, line)
+      }
       return
     }
     const base = path.resolve(root, toRepoPath(specifier, file))
     const target = [
       base.replace(/\.js$/, ".ts"),
-      `${base}.ts`,
-      `${base}/index.ts`,
-    ].find((candidate) => existsSync(candidate))
+      base.replace(/\.js$/, ".tsx"),
+      base,
+      ...["ts", "tsx", "js", "mjs"].flatMap((extension) => [
+        `${base}.${extension}`,
+        `${base}/index.${extension}`,
+      ]),
+    ].find((candidate) => existsSync(candidate) && statSync(candidate).isFile())
     const rel =
       target &&
-      path.relative(root, realpathSync(target)).replaceAll(path.sep, "/")
-    if (!rel || !browserSource(rel)) {
-      boundaryErrors.push({
-        file,
-        detail: `server or unresolved dependency ${specifier}`,
-      })
+      path
+        .relative(canonicalRoot, realpathSync(target))
+        .replaceAll(path.sep, "/")
+    if (
+      !rel ||
+      !browserSource(rel) ||
+      !browserSource(path.relative(root, target).replaceAll(path.sep, "/"))
+    ) {
+      reject(file, line)
       return
     }
     visit(rel)
   }
   const visit = (file) => {
-    if (sources.has(file)) return
-    const text = read(root, file)
-    sources.set(file, text)
-    boundaryErrors.push(...detectBrowserMetadata(file, text))
-    const walk = (node) => {
-      if (
-        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-        node.moduleSpecifier
-      )
-        resolve(file, node.moduleSpecifier.text)
-      if (
-        ts.isCallExpression(node) &&
-        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-          node.expression.getText() === "require")
-      ) {
-        const [argument] = node.arguments
-        if (argument && ts.isStringLiteral(argument))
-          resolve(file, argument.text)
-        else
-          boundaryErrors.push({
-            file,
-            detail: "computed import is not browser-discoverable",
-          })
-      }
-      ts.forEachChild(node, walk)
+    const canonical = path
+      .relative(canonicalRoot, realpathSync(path.join(root, file)))
+      .replaceAll(path.sep, "/")
+    if (!browserSource(file) || !browserSource(canonical)) {
+      reject(file, 1)
+      return
     }
-    walk(parse(file, text))
+    if (sources.has(canonical)) return
+    const text = read(root, canonical)
+    sources.set(canonical, text)
+    const metadata = detectBrowserMetadata(canonical, text)
+    boundaryErrors.push(...metadata)
+    const inspected = inspectBrowserImports(canonical, text)
+    if (!metadata.length) boundaryErrors.push(...inspected.boundaryErrors)
+    inspected.imports.forEach((edge) => resolve(canonical, edge))
   }
   entries.forEach(visit)
   return {
@@ -137,7 +164,14 @@ export async function discoverCatalog(root) {
         specifier.startsWith(".")
       ) {
         const target = new URL(specifier, context.parentURL)
-        target.pathname = target.pathname.replace(/\.js$/, ".ts")
+        const candidates = [
+          target.pathname.replace(/\.js$/, ".ts"),
+          target.pathname.replace(/\.js$/, ".tsx"),
+          target.pathname,
+        ]
+        target.pathname =
+          candidates.find((candidate) => existsSync(candidate)) ??
+          target.pathname
         target.search = `?catalog=${generation}`
         return next(target.href, context)
       }

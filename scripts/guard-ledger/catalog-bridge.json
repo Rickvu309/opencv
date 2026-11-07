@@ -14,5 +14,5 @@
       "path": "scripts/fixtures/catalog/clean.json"
     }
   },
-  "reason": "New catalog bridge integration guard shares the pure catalog pairing detector and its committed missing-pair and paired fixtures. The fixtures now also prove the pure import.meta prohibition, without env or url exceptions. Independent real Vite no-write integration checks server modules and emitted assets. The API smoke test also verifies the empty catalogs preserve the existing registry."
+  "reason": "New architecture guard with committed HEAD mistake and clean fixtures, not a branch-pinned historical product bug. Pure AST detection rejects import.meta and non-static or non-code import kinds. Discovery applies the explicit zod/domain code allow-list transitively with realpaths and file/line diagnostics. Existing fixture JSON includes CSS imports, flattened CSS, inlined asset and server URLs, symlinks, query imports, require and Worker mistakes. Independent real Vite no-write tests bypass discovery for every reviewer probe and reject all assets/CSS, non-allow-listed modules and data URLs, while plain-code catalogs stay quiet. Existing pairing, schema, freshness, inference, watch recovery and narrowed Turbo hash regressions remain covered."
 }
