@@ -201,6 +201,7 @@ export function canShowSaved(
     (state.head === head &&
       state.packages.has(head) &&
       receipt?.hash === head &&
-      state.receipts.get(receipt.id) === receipt)
+      state.receipts.get(receipt.id)?.id === receipt.id &&
+      state.receipts.get(receipt.id)?.hash === receipt.hash)
   )
 }

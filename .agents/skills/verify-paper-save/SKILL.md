@@ -29,6 +29,7 @@ From the repository root, one heavy command at a time.
 node scripts/tlc.mjs packages/domain/src/PaperSave.tla
 node scripts/tlc.mjs packages/domain/src/PaperSave.tla --mutant
 pnpm --filter @workspace/domain exec node --experimental-strip-types --import ./register-ts.mjs --test src/paper-save.test.ts
+node --test scripts/paper-save.test.mjs
 ```
 
 The first command uses `PaperSave.cfg`. Fault is none. Exit 0.
@@ -37,7 +38,9 @@ The second command uses `PaperSave.mutant.cfg`. Fault is retry. Exit 12. The run
 
 Do not add `PaperSave.crash.cfg`, `PaperSave.journal.cfg`, `PaperSave.parent.cfg`, `PaperSave.receipt.cfg`, or `PaperSave.retry.cfg` as ordinary configs beside the model. Each of those copies sets Fault to none, and `node scripts/tlc.mjs --all` expects every ordinary config to pass. The replay covers receipt, retry, parent, and crash. Lease faults stay in `verify-paper-lease`.
 
-The domain test drives `paper-save.ts`. A lost reply retried once keeps one head. A crash leaves the old head. Each broken fault throws.
+The domain test drives `paper-save.ts`. A lost reply retried once keeps one head. A crash leaves the old head. A JSON-copied durable receipt establishes Saved. Missing receipts, unknown ids, changed hashes, and older heads do not.
+
+The source-mutation check runs the same replay on scratch copies of the implementation. It first passes without a mutation. Replacing `canShowSaved` with `return true` must fail an assertion. Removing the lease expiry check must also fail an assertion. The restored implementation must pass after each mutation. Export-name maps and independent model faults do not replace this check.
 
 Read every TLC result with `/statechart`. Copy none of its commands or install paths into this skill. The chart title is `Saving a Paper`.
 
@@ -49,6 +52,6 @@ Hashes from 0 to 2. At most two commits of one hash in the model, and one commit
 
 ## When the code changes
 
-After a change to `packages/domain/src/paper-save.ts`, run `/maintain-formal-verification-skill`. Move the sync commit only after the model still matches the code and the replay keeps one stored head. Never weaken a rule to clear a finding.
+After a change to `packages/domain/src/paper-save.ts`, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay keeps one stored head. Never weaken a rule to clear a finding.
 
-Last confirmed sync commit. `991b90866dcc5adc3c71870f28c80f28b1289276`
+Use this skill's Git history to locate the last verification change. Keep branch-only commits out of verification anchors.

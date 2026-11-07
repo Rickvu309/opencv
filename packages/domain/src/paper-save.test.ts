@@ -16,6 +16,61 @@ it("hashes the stored bytes with sha256", () => {
     assert.equal(hash(bytes), createHash("sha256").update(bytes).digest("hex"))
 })
 
+it("recognizes copied durable receipts and refuses missing or mismatched receipts", () => {
+  const state = create("old")
+  const lease = grant(state, "Tab A", 0)
+  const parent = state.head
+  const request = { id: "one", bytes: "new words", parent, lease, now: 1 }
+  assert.equal(canShowSaved(state, parent, null), false)
+  assert.equal(canShowSaved(state, hash(request.bytes), null), false)
+  const receipt = save(state, request)
+  const delivered = JSON.parse(JSON.stringify(receipt))
+  assert.equal(canShowSaved(state, receipt.hash, delivered), true)
+  assert.equal(canShowSaved(state, receipt.hash, null), false)
+  assert.equal(
+    canShowSaved(state, receipt.hash, { ...receipt, id: "unknown" }),
+    false
+  )
+  assert.equal(
+    canShowSaved(state, receipt.hash, { ...receipt, hash: parent }),
+    false
+  )
+  save(state, {
+    ...request,
+    id: "two",
+    bytes: "later words",
+    parent: state.head,
+    now: 2,
+  })
+  assert.equal(canShowSaved(state, receipt.hash, delivered), false)
+})
+
+it("refuses an expired lease before takeover without changing the stored head", () => {
+  for (const now of [10, 11]) {
+    const state = create("old")
+    const lease = grant(state, "Tab A", 0)
+    const head = state.head
+    const packages = new Map(state.packages)
+    assert.throws(
+      () =>
+        save(state, {
+          id: "expired",
+          bytes: "pending words",
+          parent: head,
+          lease,
+          now,
+        }),
+      /stale lease/
+    )
+    assert.equal(state.head, head)
+    assert.deepEqual(state.packages, packages)
+    assert.equal(state.commits, 0)
+    assert.equal(state.receipts.size, 0)
+    assert.equal(state.retained.get("expired"), "pending words")
+    assert.deepEqual(state.lease, lease)
+  }
+})
+
 it("keeps one head when a lost reply is retried, and a crash leaves the old head", () => {
   const state = create("old")
   const lease = grant(state, "Tab A", 0)

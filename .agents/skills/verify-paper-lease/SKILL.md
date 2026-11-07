@@ -29,6 +29,7 @@ From the repository root, one heavy command at a time.
 node scripts/tlc.mjs packages/domain/src/PaperLease.tla
 node scripts/tlc.mjs packages/domain/src/PaperLease.tla --mutant
 pnpm --filter @workspace/domain exec node --experimental-strip-types --import ./register-ts.mjs --test src/paper-save.test.ts
+node --test scripts/paper-save.test.mjs
 ```
 
 The first command uses `PaperLease.cfg`. Fault is none. Exit 0.
@@ -37,7 +38,9 @@ The second command uses `PaperLease.mutant.cfg`. Fault is fence. Exit 12. The ru
 
 Do not add `PaperLease.exclusive.cfg`, `PaperLease.fence.cfg`, or `PaperLease.parent.cfg` as ordinary configs beside the model. Each of those copies sets Fault to none, and `node scripts/tlc.mjs --all` expects every ordinary config to pass. The replay covers exclusive, fence, and parent.
 
-The domain test drives `paper-save.ts`. A second grant while a lease is held throws. A stale parent and a stale lease keep the head and the losing bytes. Each broken fault throws.
+The domain test drives `paper-save.ts`. A second grant while a lease is held throws. A stale parent and a stale lease keep the head and the losing bytes. An expired lease is refused at its expiry boundary and afterward, before another writer takes over. The head, packages, commit count, and receipts stay unchanged.
+
+The source-mutation check removes the actual expiry comparison from `save` in a scratch copy. The unchanged replay must fail on that copy and pass again after restoration. It also checks the always-true Saved mutation. Export-name maps and independent model faults do not replace this check.
 
 Read every TLC result with `/statechart`. Copy none of its commands or install paths into this skill. The chart title is `Who may edit`.
 
@@ -49,6 +52,6 @@ Writers are Tab A, Tab B, and Coach. Head and epoch stay at most 2. One document
 
 ## When the code changes
 
-After a change to `packages/domain/src/paper-save.ts`, run `/maintain-formal-verification-skill`. Move the sync commit only after the model still matches the code and the replay keeps one live lease. Never weaken a rule to clear a finding.
+After a change to `packages/domain/src/paper-save.ts`, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay keeps one live lease. Never weaken a rule to clear a finding.
 
-Last confirmed sync commit. `991b90866dcc5adc3c71870f28c80f28b1289276`
+Use this skill's Git history to locate the last verification change. Keep branch-only commits out of verification anchors.
