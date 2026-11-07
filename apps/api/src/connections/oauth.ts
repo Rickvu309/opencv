@@ -10,6 +10,17 @@ import {
   oauthRefreshToken,
 } from "../db/schema.js"
 
+export const registeredAgentScopes = [
+  "connection.status",
+  "job.read",
+  "job.write",
+  "offline_access",
+] as const
+
+const jobAccessScopes = new Set<string>(
+  registeredAgentScopes.filter((scope) => scope.startsWith("job."))
+)
+
 export function hashAgentToken(token: string) {
   return createHash("sha256").update(token).digest("base64url")
 }
@@ -53,11 +64,9 @@ export async function bindIssuedToken(value: unknown, audience: string) {
         audience,
         scopes: token.scopes,
         resources: {
-          kind:
-            token.scopes.includes("job.read") ||
-            token.scopes.includes("job.write")
-              ? "jobs"
-              : "none",
+          kind: token.scopes.some((scope) => jobAccessScopes.has(scope))
+            ? "jobs"
+            : "none",
         },
         policy: { reads: "allow", writes: "approval" },
         expiresAt: refresh?.expiresAt ?? token.expiresAt,
