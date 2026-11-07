@@ -89,13 +89,14 @@ export class CatalogPublication {
   ): ExecuteResult {
     const operation = this.operations.get(name)
     const touches =
-      operation?.kind === "command"
+      result.touches ??
+      (operation?.kind === "command"
         ? operation.writes(input).map(({ name, entityId }) => ({
             ownerId,
             name,
             ...(entityId ? { entityId } : {}),
           }))
-        : [{ ownerId, name: "workspace" }]
+        : [{ ownerId, name: "workspace" }])
     return { ...this.publishResult(name, result), touches }
   }
 

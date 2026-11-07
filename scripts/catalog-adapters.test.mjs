@@ -53,6 +53,55 @@ test("G2 detects duplicate declarations, bindings, fetchers and keys only for di
   assert.ok(detectDefinitions(JSON.stringify(mistake)).length > 0)
 })
 
+test("G2 exempts only the imported catalog client binding and its actual methods", () => {
+  const file = "apps/web/src/features/apply/consumer.ts"
+  for (const method of ["run", "options", "useRead", "key"]) {
+    const name = method === "run" ? "job.setPriority" : "job.priorityCounts"
+    const args = method === "run" ? `"${name}", {}` : `"owner", "${name}", {}`
+    for (const text of [
+      `import { catalogClient as client } from "@/lib/contract-client"; client.${method}(${args});`,
+      `import { catalogClient } from "../../lib/contract-client.js"; catalogClient.${method}(${args});`,
+      `import * as contract from "@/lib/contract-client"; contract.catalogClient.${method}(${args});`,
+    ])
+      assert.deepEqual(
+        detectDefinitions({
+          operations: clean.operations,
+          sources: [[file, text]],
+        }),
+        [],
+        text
+      )
+    for (const text of [
+      `const catalogClient = fake; catalogClient.${method}(${args});`,
+      `import { catalogClient } from "./other"; catalogClient.${method}(${args});`,
+      `import { other as catalogClient } from "@/lib/contract-client"; catalogClient.${method}(${args});`,
+      `import { catalogClient } from "@/lib/contract-client"; function shadow(catalogClient) { catalogClient.${method}(${args}); }`,
+      `import * as contract from "@/lib/contract-client"; function shadow(contract) { contract.catalogClient.${method}(${args}); }`,
+    ])
+      assert.equal(
+        detectDefinitions({
+          operations: clean.operations,
+          sources: [[file, text]],
+        }).length,
+        1,
+        text
+      )
+  }
+  for (const method of ["command", "read"])
+    assert.equal(
+      detectDefinitions({
+        operations: clean.operations,
+        sources: [
+          [
+            file,
+            `import { catalogClient } from "@/lib/contract-client"; catalogClient.${method}("job.setPriority", {});`,
+          ],
+        ],
+      }).length,
+      1
+    )
+})
+
 test("G2 replays the existing Job contract as prospective adoption debt and a declaration-free slice stays quiet", () => {
   const file = "packages/domain/src/job-contract.ts"
   const before = execFileSync("git", ["show", `HEAD:${file}`], {
@@ -147,6 +196,14 @@ test("keyed replay binds stored identity on initial and conflict lookups", () =>
   for (const [from, to] of [
     ["stored.command !== command", "false"],
     ["stored.inputHash !== hash", "false"],
+    ["stored.inputHash !== null &&", ""],
+    ["inputHash(jsonInput(parsed))", "inputHash(options.input)"],
+    ["JSON.parse(JSON.stringify(input))", "input"],
+    [
+      "input.input = jsonInput(parseInput(command.input, input.input))",
+      "input.input = input.input",
+    ],
+    ["parseInput(command.input, options.input)", "options.input"],
     ["inputHash: hash", "inputHash: null"],
     ["hash!", "null"],
   ]) {

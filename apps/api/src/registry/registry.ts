@@ -5,8 +5,7 @@ import {
   GATES_CLOSED_WITHOUT_CONSENT_TO_READ,
   omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe,
 } from "./coach-policy.js"
-export type { AgentGates } from "./coach-policy.js"
-export { coachRefusal } from "./coach-policy.js"
+export { coachRefusal }
 import { executeTaskCommand, type TaskLease } from "./task-fence.js"
 import {
   ERROR_CODES,
@@ -19,7 +18,6 @@ import {
   type Actor,
   type CommandSpec,
   type QuerySpec,
-  type ReversalExpect,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
@@ -55,12 +53,19 @@ import { CatalogPublication } from "./catalog-publication.js"
 
 import type {
   ExecuteResult,
+  ExecuteOptions,
+  TaskOptions,
+  UndoCandidate,
   StoredCommand,
   StoredQuery,
   ToolEntry,
   UndoGuard,
 } from "./registry-types.js"
-export type { ExecuteResult, ToolEntry } from "./registry-types.js"
+export type { AgentGates, ExecuteResult, ToolEntry }
+
+function jsonInput(input: unknown): unknown {
+  return JSON.parse(JSON.stringify(input))
+}
 
 const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
@@ -76,12 +81,7 @@ export class Registry extends CatalogPublication {
 
   async undoBlockedReasons(
     userId: string,
-    items: readonly {
-      command: string | null
-      input: unknown
-      expect?: ReversalExpect | null
-      source?: string | null
-    }[]
+    items: readonly UndoCandidate[]
   ): Promise<(string | null)[]> {
     const reasons: (string | null)[] = items.map(() => null)
     const byCommand = new Map<string, number[]>()
@@ -124,7 +124,7 @@ export class Registry extends CatalogPublication {
     userId: string,
     command: string | null,
     input: unknown
-  ): Promise<string | null> {
+  ) {
     return (await this.undoBlockedReasons(userId, [{ command, input }]))[0]!
   }
 
@@ -242,33 +242,21 @@ export class Registry extends CatalogPublication {
     return entries
   }
 
-  executeTask(
-    lease: TaskLease,
-    options: {
-      name: string
-      input: unknown
-      actor: Actor
-      idempotencyKey: string
-    }
-  ) {
-    return executeTaskCommand(
-      lease,
-      options,
-      this.commands.get(options.name),
-      (input) => this.execute({ ...input, [taskExecution]: true })
-    )
+  executeTask(lease: TaskLease, options: TaskOptions) {
+    const command = this.commands.get(options.name)
+    return executeTaskCommand(lease, { ...options }, command, (input) => {
+      if (command)
+        input.input = jsonInput(parseInput(command.input, input.input))
+      return this.execute({ ...options, [taskExecution]: true })
+    })
   }
 
-  async execute(options: {
-    name: string
-    input: unknown
-    actor: Actor
-    idempotencyKey?: string
-    skipConfirm?: boolean
-    skipActivity?: boolean
-    [taskExecution]?: boolean
-    [approvedDelegate]?: string
-  }): Promise<ExecuteResult> {
+  async execute(
+    options: ExecuteOptions & {
+      [taskExecution]?: boolean
+      [approvedDelegate]?: string
+    }
+  ): Promise<ExecuteResult> {
     if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
       throw new CommandError(
         ERROR_CODES.CONFLICT,
@@ -308,7 +296,7 @@ export class Registry extends CatalogPublication {
       options.idempotencyKey
     )
 
-    const hash = idempotencyKey ? inputHash(options.input) : null
+    const hash = idempotencyKey ? inputHash(jsonInput(parsed)) : null
     const effect = async (): Promise<ExecuteResult> => {
       const ran = await command.run(parsed, actor)
       assertReversal(command.name, this.isCatalogOperation(command.name), ran)
@@ -615,7 +603,10 @@ export class Registry extends CatalogPublication {
     const existing = await this.activityByKey(userId, key)
     const stored = existing ?? (await this.idempotencyByKey(userId, key))
     if (!stored) return null
-    if (stored.command !== command || stored.inputHash !== hash)
+    if (
+      stored.command !== command ||
+      (stored.inputHash !== null && stored.inputHash !== hash)
+    )
       throw new CommandError(
         ERROR_CODES.CONFLICT,
         "Idempotency key does not match its command and input"
@@ -623,6 +614,9 @@ export class Registry extends CatalogPublication {
     return {
       ...(existing ? replay(existing) : replayStored(stored.result)),
       command: stored.command,
+      ...(stored.inputHash === null
+        ? { touches: [{ ownerId: userId, name: "workspace" }] }
+        : {}),
     }
   }
 

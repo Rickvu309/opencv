@@ -21,6 +21,72 @@ function walk(node, visit) {
   ts.forEachChild(node, (child) => walk(child, visit))
 }
 
+function catalogConsumer(file, source) {
+  const program = ts.createProgram(
+    [file],
+    { noLib: true, noResolve: true },
+    {
+      getSourceFile: (name) => (name === file ? source : undefined),
+      getDefaultLibFileName: () => "",
+      writeFile: () => {},
+      getCurrentDirectory: () => "",
+      getDirectories: () => [],
+      fileExists: (name) => name === file,
+      readFile: (name) => (name === file ? source.text : undefined),
+      getCanonicalFileName: (name) => name,
+      useCaseSensitiveFileNames: () => true,
+      getNewLine: () => "\n",
+    }
+  )
+  const checker = program.getTypeChecker()
+  return (call) => {
+    if (
+      !ts.isPropertyAccessExpression(call.expression) ||
+      !["run", "options", "useRead", "key"].includes(call.expression.name.text)
+    )
+      return false
+    const receiver = call.expression.expression
+    const binding = ts.isIdentifier(receiver)
+      ? receiver
+      : ts.isPropertyAccessExpression(receiver) &&
+          receiver.name.text === "catalogClient" &&
+          ts.isIdentifier(receiver.expression)
+        ? receiver.expression
+        : null
+    if (!binding) return false
+    const declarations =
+      checker.getSymbolAtLocation(binding)?.declarations ?? []
+    return declarations.some((declaration) => {
+      let imported
+      if (
+        ts.isImportSpecifier(declaration) &&
+        receiver === binding &&
+        (declaration.propertyName ?? declaration.name).text ===
+          "catalogClient" &&
+        !declaration.isTypeOnly &&
+        !declaration.parent.parent.isTypeOnly
+      )
+        imported = declaration.parent.parent.parent
+      if (
+        ts.isNamespaceImport(declaration) &&
+        receiver !== binding &&
+        !declaration.parent.isTypeOnly
+      )
+        imported = declaration.parent.parent
+      return (
+        imported &&
+        ts.isImportDeclaration(imported) &&
+        ts.isStringLiteral(imported.moduleSpecifier) &&
+        [
+          "apps/web/src/lib/contract-client",
+          "apps/web/src/lib/contract-client.ts",
+          "apps/web/src/lib/contract-client.js",
+        ].includes(toRepoPath(imported.moduleSpecifier.text, file))
+      )
+    })
+  }
+}
+
 export function detectDefinitions(value) {
   const snapshot = snapshotOf(value)
   const operations = new Map(
@@ -30,6 +96,7 @@ export function detectDefinitions(value) {
   for (const [file, text] of snapshot.sources) {
     if (testFile(file) || generated(file)) continue
     const source = parse(file, text)
+    let sanctioned
     walk(source, (node) => {
       const text = ts.isStringLiteralLike(node)
         ? node.text
@@ -54,8 +121,7 @@ export function detectDefinitions(value) {
       const adapter =
         ts.isCallExpression(parent) &&
         (text !== name ||
-          !ts.isPropertyAccessExpression(parent.expression) ||
-          !["command", "read", "key"].includes(parent.expression.name.text)) &&
+          !(sanctioned ??= catalogConsumer(file, source))(parent)) &&
         (/\/(?:http|commands|queries)\.ts$/.test(file) ||
           file.startsWith("apps/web/src/"))
       const key =
@@ -186,7 +252,7 @@ export function detectReplayIdentity(text) {
       (node) =>
         ts.isIfStatement(node) &&
         spelling(node.expression, source) ===
-          "stored.command!==command||stored.inputHash!==hash" &&
+          "stored.command!==command||(stored.inputHash!==null&&stored.inputHash!==hash)" &&
         ts.isThrowStatement(node.thenStatement)
     ) ?? -1
   if (
@@ -220,7 +286,7 @@ export function detectReplayIdentity(text) {
       ts.isVariableDeclaration(node) &&
       spelling(node.name, source) === "hash" &&
       spelling(node.initializer, source) ===
-        "idempotencyKey?inputHash(options.input):null"
+        "idempotencyKey?inputHash(jsonInput(parsed)):null"
     )
       boundHash = true
     if (
@@ -230,6 +296,44 @@ export function detectReplayIdentity(text) {
     )
       provenance = true
   })
+  const normalized = returned(method(source, "jsonInput"))
+  const canonical =
+    normalized.length === 1 &&
+    spelling(normalized[0], source) === "JSON.parse(JSON.stringify(input))"
+  let validated = false
+  walk(source, (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      spelling(node.name, source) === "parsed" &&
+      spelling(node.initializer, source) ===
+        "parseInput(command.input,options.input)"
+    )
+      validated = true
+  })
+  if (!canonical || !validated) problems.push("uncanonical-keyed-input")
+  let taskInput = false
+  const taskCall = returned(method(source, "executeTask")).find(
+    (node) =>
+      ts.isCallExpression(node) &&
+      spelling(node.expression, source) === "executeTaskCommand"
+  )
+  const taskCallback = taskCall?.arguments[3]
+  if (
+    taskCallback &&
+    ts.isArrowFunction(taskCallback) &&
+    spelling(taskCall.arguments[1], source) === "{...options}"
+  )
+    walk(taskCallback.body, (node) => {
+      if (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        spelling(node.left, source) === "input.input" &&
+        spelling(node.right, source) ===
+          "jsonInput(parseInput(command.input,input.input))"
+      )
+        taskInput = true
+    })
+  if (!taskInput) problems.push("uncanonical-task-input")
   if (
     !boundHash ||
     !provenance ||

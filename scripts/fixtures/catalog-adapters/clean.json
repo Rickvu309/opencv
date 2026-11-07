@@ -4,6 +4,11 @@
       "name": "job.setPriority",
       "file": "packages/domain/src/operations/job/set-priority/operation.ts",
       "server": "apps/api/src/job/operations/set-priority/server.ts"
+    },
+    {
+      "name": "job.priorityCounts",
+      "file": "packages/domain/src/operations/job/priority-counts/operation.ts",
+      "server": "apps/api/src/job/operations/priority-counts/server.ts"
     }
   ],
   "sources": [
@@ -29,7 +34,11 @@
     ],
     [
       "apps/web/src/features/apply/apply-api.ts",
-      "export const run = (client, name, input) => client.command(name, input); export const key = (client, name, input) => client.key(name, input); export const adopted = (client) => client.command(\"job.setPriority\", { priority: \"high\" });"
+      "import { catalogClient as client } from \"@/lib/contract-client\"; export const adopted = () => client.run(\"job.setPriority\", { priority: \"high\" }); export const options = () => client.options(\"owner\", \"job.priorityCounts\", {}); export const read = () => client.useRead(\"owner\", \"job.priorityCounts\", {}); export const key = () => client.key(\"owner\", \"job.priorityCounts\", {});"
+    ],
+    [
+      "apps/web/src/features/apply/catalog-consumer.ts",
+      "import * as contract from \"../../lib/contract-client.js\"; export const adopted = () => contract.catalogClient.run(\"job.setPriority\", {});"
     ]
   ]
 }

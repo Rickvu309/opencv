@@ -5,6 +5,8 @@ import {
   defineOperation,
   delegateActorSchema,
   type Operation,
+  type Actor,
+  type ActivityDraft,
   personActor,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
@@ -84,10 +86,7 @@ const privateResult = publicResult.extend({
 function fixture(confirm = false) {
   const registry = new Registry()
   const execute = vi.fn(
-    async (
-      input: z.output<typeof write.input>,
-      actor: import("@workspace/domain").Actor
-    ) => {
+    async (input: z.output<typeof write.input>, actor: Actor) => {
       const [previous] = await getDb()
         .select()
         .from(user)
@@ -128,7 +127,7 @@ function fixture(confirm = false) {
     activity: (
       _input: z.output<typeof write.input>,
       _output: z.output<typeof privateResult>,
-      actor: import("@workspace/domain").Actor
+      actor: Actor
     ) => ({
       subjectKind: "account" as const,
       subjectId: actor.userId,
@@ -158,9 +157,9 @@ function addLegacy(
   registry: Registry,
   execute: (
     input: z.output<typeof write.input>,
-    actor: import("@workspace/domain").Actor
+    actor: Actor
   ) => Promise<unknown>,
-  activity: () => import("@workspace/domain").ActivityDraft | null = () => null
+  activity: () => ActivityDraft | null = () => null
 ) {
   registry.addCommand(
     {
@@ -177,6 +176,20 @@ function addLegacy(
   )
 }
 
+async function withFixture(
+  run: (
+    db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+  ) => Promise<void>
+) {
+  const { db, client } = await createMigratedTestDb()
+  try {
+    await withDatabase(db, () => run(db))
+  } finally {
+    vi.restoreAllMocks()
+    await client.close()
+  }
+}
+
 function expectPublic(value: unknown) {
   expect(JSON.stringify(value)).not.toMatch(
     /previousPriority|server-only|secret/
@@ -184,7 +197,7 @@ function expectPublic(value: unknown) {
 }
 
 describe("catalog kernel", () => {
-  it("installs catalog and legacy entries", () => {
+  it("installs both entry types", () => {
     const registry = installRegistry()
     expect(Object.keys(catalog)).toEqual([])
     expect(Object.keys(implementations)).toEqual([])
@@ -202,173 +215,193 @@ describe("catalog kernel", () => {
   })
 
   it.each(["activity", "idempotency"] as const)(
-    "rejects %s replay mismatches on both lookups",
-    async (store) => {
-      const { db, client } = await createMigratedTestDb()
-      try {
+    "checks %s replay identity on both lookups",
+    async (store) =>
+      withFixture(async (db) => {
         await db.insert(user).values({
           id: "replay-owner",
           name: "Before",
           email: "replay@test.local",
         })
-        await withDatabase(db, async () => {
-          for (const conflictWinner of [false, true]) {
-            for (const mismatch of ["input", "command", "hash"] as const) {
-              const setup = fixture()
-              const registry =
-                store === "activity" ? setup.registry : new Registry()
-              if (store === "idempotency")
-                bindOperation(registry, {
-                  ...setup.binding,
-                  activity: () => null,
-                  reversal: () => null,
-                })
-              const legacy = "job.rename"
-              addLegacy(registry, setup.execute, () =>
-                store === "activity"
-                  ? {
-                      subjectKind: "account",
-                      subjectId: "replay-owner",
-                      summary: "Legacy fixture",
-                    }
-                  : null
+
+        for (const conflictWinner of [false, true]) {
+          for (const mismatch of [
+            "input",
+            "command",
+            "hash",
+            "legacy-command",
+            "legacy-same",
+          ] as const) {
+            const setup = fixture()
+            const registry =
+              store === "activity" ? setup.registry : new Registry()
+            if (store === "idempotency")
+              bindOperation(registry, {
+                ...setup.binding,
+                activity: () => null,
+                reversal: () => null,
+              })
+            const legacy = "job.rename"
+            addLegacy(registry, setup.execute, () =>
+              store === "activity"
+                ? {
+                    subjectKind: "account",
+                    subjectId: "replay-owner",
+                    summary: "Legacy fixture",
+                  }
+                : null
+            )
+            const key = `${store}-${conflictWinner}-${mismatch}`
+            const actor = personActor("replay-owner")
+            const original = { value: "First" }
+            const output = {
+              id: actor.userId,
+              value: "First",
+              nested: { label: "public", secret: "server-only" },
+            }
+            const seed = async () => {
+              const identity = {
+                userId: actor.userId,
+                command: write.name,
+                inputHash: mismatch.startsWith("legacy-")
+                  ? null
+                  : inputHash(
+                      mismatch === "hash" ? { value: "Other" } : original
+                    ),
+                result: output,
+              }
+              if (store === "activity")
+                await getDb()
+                  .insert(activity)
+                  .values({
+                    ...identity,
+                    id: createId(),
+                    actor: "person",
+                    subjectKind: "account",
+                    subjectId: actor.userId,
+                    summary: "Fixture",
+                    idempotencyKey: key,
+                  })
+              else
+                await getDb()
+                  .insert(idempotency)
+                  .values({ ...identity, key })
+            }
+            if (conflictWinner) {
+              const savepoint = databaseContext.savepoint
+              vi.spyOn(databaseContext, "savepoint").mockImplementationOnce(
+                async (effect) => {
+                  await seed()
+                  return savepoint(effect)
+                }
               )
-              const key = `${store}-${conflictWinner}-${mismatch}`
-              const actor = personActor("replay-owner")
-              const original = { value: "First" }
-              const output = {
+            } else await seed()
+            const request = {
+              name:
+                mismatch === "command" || mismatch === "legacy-command"
+                  ? legacy
+                  : write.name,
+              input: mismatch === "input" ? { value: "Other" } : original,
+              actor,
+              idempotencyKey: key,
+            }
+            if (mismatch === "legacy-same") {
+              const replayed = await registry.execute(request)
+              expect(replayed.output).toEqual({
                 id: actor.userId,
                 value: "First",
-                nested: { label: "public", secret: "server-only" },
-              }
-              const seed = async () => {
-                const identity = {
-                  userId: actor.userId,
-                  command: write.name,
-                  inputHash: mismatch === "hash" ? null : inputHash(original),
-                  result: output,
-                }
-                if (store === "activity")
-                  await getDb()
-                    .insert(activity)
-                    .values({
-                      ...identity,
-                      id: createId(),
-                      actor: "person",
-                      subjectKind: "account",
-                      subjectId: actor.userId,
-                      summary: "Fixture",
-                      idempotencyKey: key,
-                    })
-                else
-                  await getDb()
-                    .insert(idempotency)
-                    .values({ ...identity, key })
-              }
-              if (conflictWinner) {
-                const savepoint = databaseContext.savepoint
-                vi.spyOn(databaseContext, "savepoint").mockImplementationOnce(
-                  async (effect) => {
-                    await seed()
-                    return savepoint(effect)
-                  }
-                )
-              } else await seed()
+                nested: { label: "public" },
+              })
+              expectPublic(replayed)
+              expect(replayed.touches).toEqual([
+                { ownerId: actor.userId, name: "workspace" },
+              ])
               await expect(
-                registry.execute({
-                  name: mismatch === "command" ? legacy : write.name,
-                  input: mismatch === "input" ? { value: "Other" } : original,
-                  actor,
-                  idempotencyKey: key,
-                })
-              ).rejects.toMatchObject({ code: "CONFLICT" })
-              vi.restoreAllMocks()
-              const [owner] = await db
-                .select()
-                .from(user)
-                .where(eq(user.id, actor.userId))
-              expect(owner?.name).toBe("Before")
-            }
+                registry.execute({ ...request, input: { value: "Other" } })
+              ).resolves.toEqual(replayed)
+              expect(setup.execute).toHaveBeenCalledTimes(
+                conflictWinner ? 1 : 0
+              )
+            } else
+              await expect(registry.execute(request)).rejects.toMatchObject({
+                code: "CONFLICT",
+              })
+            vi.restoreAllMocks()
+            const [owner] = await db
+              .select()
+              .from(user)
+              .where(eq(user.id, actor.userId))
+            expect(owner?.name).toBe("Before")
           }
-          const { registry } = fixture()
-          addLegacy(registry, async () => ({
-            internalSecret: "legacy-private",
-          }))
-          const request = {
-            name: "job.rename",
-            input: { value: "First" },
-            actor: personActor("replay-owner"),
-            idempotencyKey: "legacy-original",
-          }
-          await registry.execute(request)
-          await expect(
-            registry.execute({ ...request, input: { value: "Other" } })
-          ).rejects.toMatchObject({ code: "CONFLICT" })
-          await expect(
-            registry.execute({ ...request, name: write.name })
-          ).rejects.toMatchObject({ code: "CONFLICT" })
-        })
-      } finally {
-        vi.restoreAllMocks()
-        await client.close()
-      }
-    }
+        }
+        const { registry } = fixture()
+        addLegacy(registry, async () => ({
+          internalSecret: "legacy-private",
+        }))
+        const request = {
+          name: "job.rename",
+          input: { value: "First" },
+          actor: personActor("replay-owner"),
+          idempotencyKey: "legacy-original",
+        }
+        await registry.execute(request)
+        await expect(
+          registry.execute({ ...request, input: { value: "Other" } })
+        ).rejects.toMatchObject({ code: "CONFLICT" })
+        await expect(
+          registry.execute({ ...request, name: write.name })
+        ).rejects.toMatchObject({ code: "CONFLICT" })
+      })
   )
 
-  it("guards Undo against later writes", async () => {
-    const { db, client } = await createMigratedTestDb()
-    try {
+  it("guards Undo against later writes", async () =>
+    withFixture(async (db) => {
       await db
         .insert(user)
         .values({ id: "undo-owner", name: "Before", email: "undo@test.local" })
-      await withDatabase(db, async () => {
-        const { registry, binding } = fixture()
-        const actor = personActor("undo-owner")
-        const first = await registry.execute({
-          name: write.name,
-          input: { value: "First" },
-          actor,
-        })
-        await registry.execute({
-          name: write.name,
-          input: { value: "Latest" },
-          actor,
-        })
-        await expect(
-          registry.undo(actor.userId, first.activityId!)
-        ).rejects.toThrow("The fixture has changed")
-        const unguarded = new Registry()
-        bindOperation(unguarded, {
-          ...binding,
-          reversal: () =>
-            JSON.parse(
-              JSON.stringify({
-                command: write.name,
-                input: { value: "Before" },
-              })
-            ),
-        })
-        await expect(
-          unguarded.execute({
-            name: write.name,
-            input: { value: "Overwritten" },
-            actor,
-          })
-        ).rejects.toThrow("Reversals require a guarded expectation")
-        const [owner] = await db
-          .select()
-          .from(user)
-          .where(eq(user.id, actor.userId))
-        expect(owner?.name).toBe("Latest")
-      })
-    } finally {
-      await client.close()
-    }
-  })
 
-  it("projects HTTP receipts and rejects key mismatches", async () => {
-    const { db, client } = await createMigratedTestDb()
-    try {
+      const { registry, binding } = fixture()
+      const actor = personActor("undo-owner")
+      const first = await registry.execute({
+        name: write.name,
+        input: { value: "First" },
+        actor,
+      })
+      await registry.execute({
+        name: write.name,
+        input: { value: "Latest" },
+        actor,
+      })
+      await expect(
+        registry.undo(actor.userId, first.activityId!)
+      ).rejects.toThrow("The fixture has changed")
+      const unguarded = new Registry()
+      bindOperation(unguarded, {
+        ...binding,
+        reversal: () =>
+          JSON.parse(
+            JSON.stringify({
+              command: write.name,
+              input: { value: "Before" },
+            })
+          ),
+      })
+      await expect(
+        unguarded.execute({
+          name: write.name,
+          input: { value: "Overwritten" },
+          actor,
+        })
+      ).rejects.toThrow("Reversals require a guarded expectation")
+      const [owner] = await db
+        .select()
+        .from(user)
+        .where(eq(user.id, actor.userId))
+      expect(owner?.name).toBe("Latest")
+    }))
+
+  it("projects HTTP receipts and rejects key mismatches", async () =>
+    withFixture(async (db) => {
       const app = createTestApp(db)
       const auth = createAuth({
         db,
@@ -452,32 +485,17 @@ describe("catalog kernel", () => {
         ok: true,
         data: { id: ownerId, value: "After", nested: { label: "public" } },
       })
-      expect(
-        (
-          await app.request("/fixture/reads/job.list", {
-            method: "POST",
-            body: "{}",
-          })
-        ).status
-      ).toBe(401)
-      expect(
-        (
-          await app.request("/fixture/reads/job.list", {
-            method: "POST",
-            headers,
-            body: "broken",
-          })
-        ).status
-      ).toBe(400)
-      expect(
-        (
-          await app.request("/fixture/reads/profile.get", {
-            method: "POST",
-            headers,
-            body: "{}",
-          })
-        ).status
-      ).toBe(404)
+      for (const [name, options, status] of [
+        ["job.list", { body: "{}" }, 401],
+        ["job.list", { headers, body: "broken" }, 400],
+        ["profile.get", { headers, body: "{}" }, 404],
+      ] as const) {
+        const response = await app.request(`/fixture/reads/${name}`, {
+          method: "POST",
+          ...options,
+        })
+        expect(response.status).toBe(status)
+      }
       const [receipt] = await db
         .select()
         .from(activity)
@@ -487,12 +505,11 @@ describe("catalog kernel", () => {
         nested: { secret: "server-only" },
       })
       expect(receipt?.reversalInput).toEqual({ value: "Before" })
-      await withDatabase(db, async () => {
-        expectPublic(await registry.undo(ownerId, receipt!.id))
-        expect(
-          await registry.read(read.name, {}, personActor(ownerId))
-        ).toMatchObject({ value: "Before" })
-      })
+
+      expectPublic(await registry.undo(ownerId, receipt!.id))
+      expect(
+        await registry.read(read.name, {}, personActor(ownerId))
+      ).toMatchObject({ value: "Before" })
       const legacy = await app.request("/api/commands/chat.create", {
         method: "POST",
         headers,
@@ -509,116 +526,107 @@ describe("catalog kernel", () => {
       expect(() => bindOperation(registry, binding)).toThrow(
         "Duplicate registry entry"
       )
-    } finally {
-      await client.close()
-    }
-  })
+    }))
 
-  it("publishes only public output to a fake Coach task, its saved receipts and MCP eligibility", async () => {
-    const { db, client } = await createMigratedTestDb()
-    try {
-      await withDatabase(db, async () => {
-        const seed = await seedTask(inputHash)
-        await db
-          .update(coachTasks)
-          .set({ contextSnapshot: { messages: [] } })
-          .where(eq(coachTasks.id, seed.taskId))
-        const { registry, execute } = fixture()
-        const runtime = createScriptedWorkerRuntime([
-          {
-            text: "Changing.",
-            intents: [
-              { id: "fixture", name: "job.create", input: { value: "Coach" } },
-            ],
-            inputTokens: 1,
-            outputTokens: 1,
-          },
-          { text: "Saved.", intents: [], inputTokens: 1, outputTokens: 1 },
-        ])
-        expect(
-          await runCoachWorker({
-            workerId: "fixture-worker",
-            registry,
-            runtime: () => runtime,
-            catalogDigest: "test",
-            runtimeVersion: 1,
-            env: {},
-          })
-        ).toBe(true)
-        expect((await db.select().from(coachTasks))[0]?.state).toBe("succeeded")
-        const events = await db.select().from(taskEvents)
-        expect(events.some((event) => event.kind === "action")).toBe(true)
-        expectPublic(events)
-        expectPublic(await db.select().from(toolIntents))
-        const [receipt] = await db.select().from(activity)
-        expect(receipt?.result).toMatchObject({ previousPriority: "Ada" })
-        expectPublic(
-          await registry.turnReceipts(seed.ownerId, [receipt!.turnId!])
-        )
-        const connectionId = crypto.randomUUID()
-        await db.insert(oauthClient).values({
-          id: "catalog-client",
-          clientId: "catalog-client",
-          redirectUris: ["http://localhost/callback"],
+  it("projects fake Coach receipts and MCP tools", async () =>
+    withFixture(async (db) => {
+      const seed = await seedTask(inputHash)
+      await db
+        .update(coachTasks)
+        .set({ contextSnapshot: { messages: [] } })
+        .where(eq(coachTasks.id, seed.taskId))
+      const { registry, execute } = fixture()
+      const runtime = createScriptedWorkerRuntime([
+        {
+          text: "Changing.",
+          intents: [
+            { id: "fixture", name: "job.create", input: { value: "Coach" } },
+          ],
+          inputTokens: 1,
+          outputTokens: 1,
+        },
+        { text: "Saved.", intents: [], inputTokens: 1, outputTokens: 1 },
+      ])
+      expect(
+        await runCoachWorker({
+          workerId: "fixture-worker",
+          registry,
+          runtime: () => runtime,
+          catalogDigest: "test",
+          runtimeVersion: 1,
+          env: {},
         })
-        await db.insert(agentConnections).values({
-          id: connectionId,
-          userId: seed.ownerId,
-          clientId: "catalog-client",
-          authorizationCodeId: "catalog-authorization",
-          name: "MCP",
-          audience: "http://localhost/mcp",
-          scopes: ["job.read", "job.write"],
-          resources: { kind: "jobs" },
-          policy: { reads: "allow", writes: "approval" },
-          expiresAt: new Date(Date.now() + 60_000),
-        })
-        const actor = delegateActorSchema.parse({
-          type: "delegate",
-          userId: seed.ownerId,
-          connectionId,
-          name: "MCP",
-          scopes: ["job.read", "job.write"],
-          resources: "jobs",
-          reads: "allow",
-          writes: "approval",
-        })
-        expect((await registry.tools(actor)).map((tool) => tool.name)).toEqual(
-          expect.arrayContaining([write.name, read.name])
-        )
-        expectPublic(await registry.read(read.name, {}, actor))
-        const job = await installRegistry().execute({
-          name: "job.create",
-          input: { title: "Fixture", company: "Test", stage: "applied" },
-          actor: personActor(seed.ownerId),
-          idempotencyKey: "fixture-job",
-        })
-        const jobId = z.object({ id: z.string() }).parse(job.output).id
-        const proposal = await registry.execute({
-          name: write.name,
-          input: { value: "Proposal", jobId },
-          actor,
-          idempotencyKey: "mcp-key",
-        })
-        expect(proposal.pending).toBe(true)
-        expect(proposal.touches).toBeUndefined()
-        expect(execute).toHaveBeenCalledTimes(1)
-        const approved = await registry.approve(
-          seed.ownerId,
-          proposal.pendingActionId!
-        )
-        expect(approved?.result).toMatchObject({ value: "Proposal" })
-        expectPublic(approved)
-        expect(execute).toHaveBeenCalledTimes(2)
-        expectPublic(await registry.undo(seed.ownerId, approved!.id))
-        const denied = { ...actor, scopes: [] }
-        expect(await registry.tools(denied)).toEqual([])
-        await expect(registry.read(read.name, {}, denied)).rejects.toThrow(
-          "cannot use this read"
-        )
+      ).toBe(true)
+      expect((await db.select().from(coachTasks))[0]?.state).toBe("succeeded")
+      const events = await db.select().from(taskEvents)
+      expect(events.some((event) => event.kind === "action")).toBe(true)
+      expectPublic(events)
+      expectPublic(await db.select().from(toolIntents))
+      const [receipt] = await db.select().from(activity)
+      expect(receipt?.result).toMatchObject({ previousPriority: "Ada" })
+      expectPublic(
+        await registry.turnReceipts(seed.ownerId, [receipt!.turnId!])
+      )
+      const connectionId = crypto.randomUUID()
+      await db.insert(oauthClient).values({
+        id: "catalog-client",
+        clientId: "catalog-client",
+        redirectUris: ["http://localhost/callback"],
       })
-    } finally {
-      await client.close()
-    }
-  })
+      await db.insert(agentConnections).values({
+        id: connectionId,
+        userId: seed.ownerId,
+        clientId: "catalog-client",
+        authorizationCodeId: "catalog-authorization",
+        name: "MCP",
+        audience: "http://localhost/mcp",
+        scopes: ["job.read", "job.write"],
+        resources: { kind: "jobs" },
+        policy: { reads: "allow", writes: "approval" },
+        expiresAt: new Date(Date.now() + 60_000),
+      })
+      const actor = delegateActorSchema.parse({
+        type: "delegate",
+        userId: seed.ownerId,
+        connectionId,
+        name: "MCP",
+        scopes: ["job.read", "job.write"],
+        resources: "jobs",
+        reads: "allow",
+        writes: "approval",
+      })
+      expect((await registry.tools(actor)).map((tool) => tool.name)).toEqual(
+        expect.arrayContaining([write.name, read.name])
+      )
+      expectPublic(await registry.read(read.name, {}, actor))
+      const job = await installRegistry().execute({
+        name: "job.create",
+        input: { title: "Fixture", company: "Test", stage: "applied" },
+        actor: personActor(seed.ownerId),
+        idempotencyKey: "fixture-job",
+      })
+      const jobId = z.object({ id: z.string() }).parse(job.output).id
+      const proposal = await registry.execute({
+        name: write.name,
+        input: { value: "Proposal", jobId },
+        actor,
+        idempotencyKey: "mcp-key",
+      })
+      expect(proposal.pending).toBe(true)
+      expect(proposal.touches).toBeUndefined()
+      expect(execute).toHaveBeenCalledTimes(1)
+      const approved = await registry.approve(
+        seed.ownerId,
+        proposal.pendingActionId!
+      )
+      expect(approved?.result).toMatchObject({ value: "Proposal" })
+      expectPublic(approved)
+      expect(execute).toHaveBeenCalledTimes(2)
+      expectPublic(await registry.undo(seed.ownerId, approved!.id))
+      const denied = { ...actor, scopes: [] }
+      expect(await registry.tools(denied)).toEqual([])
+      await expect(registry.read(read.name, {}, denied)).rejects.toThrow(
+        "cannot use this read"
+      )
+    }))
 })
