@@ -63,9 +63,39 @@ function post(headers: Record<string, string>, body?: string) {
 
 it("lets a computer with no site name through and turns away another site", async () => {
   expect((await post({})).status).toBe(401)
-  expect((await post({ Origin: "http://127.0.0.1:9" })).status).toBe(401)
+  expect((await post({ Origin: "http://127.0.0.1:9" })).status).toBe(403)
   expect((await post({ Origin: testWebOrigin })).status).toBe(401)
   expect((await post({ Origin: "https://attacker.example" })).status).toBe(403)
+})
+
+it("rejects a website origin whose scheme, host or port is not configured", async () => {
+  const authUrl = "https://api.opencv.me"
+  const website = "https://opencv.me"
+  const configured = createApp({
+    db: database.db,
+    authUrl,
+    sessionSecret: testSessionSecret,
+    webOrigins: [website],
+    rateLimitEnabled: false,
+    sendCodeLimitEnabled: false,
+    logAuthMail: true,
+  })
+  const probe = (origin?: string) =>
+    configured.request(`${authUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Host: "api.opencv.me",
+        ...(origin ? { Origin: origin } : {}),
+      },
+    })
+  expect((await probe()).status).toBe(401)
+  expect((await probe(website)).status).toBe(401)
+  expect((await probe("cursor://session")).status).toBe(401)
+  expect((await probe("http://opencv.me")).status).toBe(403)
+  expect((await probe("https://opencv.me:4444")).status).toBe(403)
+  expect((await probe("http://localhost:9999")).status).toBe(403)
+  expect((await probe(authUrl)).status).toBe(403)
+  expect((await probe("https://attacker.example")).status).toBe(403)
 })
 
 it("rejects a method header that does not match the body", async () => {

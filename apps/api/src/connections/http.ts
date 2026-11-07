@@ -51,8 +51,21 @@ export function mcpHostNames(authUrl: string, webOrigins: string[]) {
   ]
 }
 
-export function mcpOriginNames(authUrl: string, webOrigins: string[]) {
-  return [...mcpHostNames(authUrl, webOrigins), ...NATIVE_CLIENT_ORIGINS]
+function serializedOrigin(value: string) {
+  try {
+    const origin = new URL(value).origin
+    return origin === "null" ? null : origin
+  } catch {
+    return null
+  }
+}
+
+function websiteOriginAllowed(webOrigins: string[], origin: string) {
+  const serialized = serializedOrigin(origin)
+  return webOrigins.some((pattern) => {
+    if (pattern.includes("*")) return isAllowedOrigin([pattern], origin)
+    return serialized !== null && serializedOrigin(pattern) === serialized
+  })
 }
 
 export function delegateCallLimitReached(
@@ -103,7 +116,7 @@ export function connectionRoutes(
 ) {
   const consumeToolCall = createDelegateCallLimiter()
   const routes = new Hono<{ Variables: SessionVariables }>()
-  const checkOrigin = originValidation(mcpOriginNames(authUrl, webOrigins))
+  const checkNativeOrigin = originValidation(NATIVE_CLIENT_ORIGINS)
   const audience = new URL("/mcp", authUrl).href
   const metadata = new URL("/.well-known/oauth-protected-resource/mcp", authUrl)
     .href
@@ -130,8 +143,8 @@ export function connectionRoutes(
   routes.use("/mcp", hostHeaderValidation(mcpHostNames(authUrl, webOrigins)))
   routes.use("/mcp", async (c, next) => {
     const origin = c.req.header("Origin")
-    if (origin && isAllowedOrigin(webOrigins, origin)) return next()
-    return checkOrigin(c, next)
+    if (origin && websiteOriginAllowed(webOrigins, origin)) return next()
+    return checkNativeOrigin(c, next)
   })
   routes.all("/mcp", async (c) => {
     const connection = await authenticateAgent(

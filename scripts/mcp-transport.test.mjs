@@ -49,10 +49,35 @@ function walk(dir) {
   return files
 }
 
+const WRAPPED = [
+  `routes.all("/mcp", async (c) => await transaction(async () => handler.fetch(c.req.raw)))`,
+  `routes.all("/mcp", async (c) => (transaction(async () => handler.fetch(c.req.raw))))`,
+  `routes.all("/mcp", async (c) => {
+    return await transaction(async () => handler.fetch(c.req.raw))
+  })`,
+  `routes.all("/mcp", async (c) => {
+    const response = await transaction(async () => handler.fetch(c.req.raw))
+    return response
+  })`,
+  `routes.all("/mcp", async (c) =>
+    transaction(async () => handler.fetch(c.req.raw)).then((response) => response)
+  )`,
+]
+
 test("a route wrapped in one database seat or a site list is caught", () => {
   const fired = detect(MISTAKE)
   assert.ok(fired.some((hit) => hit.kind === "transaction"))
   assert.ok(fired.some((hit) => hit.kind === "allowlist"))
+  assert.deepEqual(detect(CLEAN), [])
+})
+
+test("await, parentheses, return, assignment and then still hold the seat", () => {
+  for (const source of WRAPPED) {
+    assert.ok(
+      detect(source).some((hit) => hit.kind === "transaction"),
+      source
+    )
+  }
   assert.deepEqual(detect(CLEAN), [])
 })
 

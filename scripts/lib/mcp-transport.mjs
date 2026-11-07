@@ -16,22 +16,101 @@ function isTransactionCall(node) {
   )
 }
 
+function unwrapTransaction(node) {
+  let current = node
+  const seen = new Set()
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (
+      ts.isAwaitExpression(current) ||
+      ts.isParenthesizedExpression(current) ||
+      ts.isReturnStatement(current) ||
+      ts.isExpressionStatement(current)
+    ) {
+      current = current.expression
+      continue
+    }
+    if (ts.isVariableStatement(current)) {
+      return (
+        current.declarationList.declarations
+          .map((decl) => unwrapTransaction(decl.initializer))
+          .find(Boolean) ?? null
+      )
+    }
+    if (ts.isVariableDeclaration(current)) {
+      current = current.initializer
+      continue
+    }
+    if (
+      ts.isBinaryExpression(current) &&
+      current.operatorToken.kind === ts.SyntaxKind.EqualsToken
+    ) {
+      current = current.right
+      continue
+    }
+    if (
+      ts.isCallExpression(current) &&
+      ts.isPropertyAccessExpression(current.expression) &&
+      current.expression.name.text === "then"
+    ) {
+      current = current.expression.expression
+      continue
+    }
+    break
+  }
+  return isTransactionCall(current) ? current : null
+}
+
+function containsFetch(node) {
+  let found = false
+  const visit = (current) => {
+    if (found || !current) return
+    if (
+      ts.isCallExpression(current) &&
+      ts.isPropertyAccessExpression(current.expression) &&
+      current.expression.name.text === "fetch"
+    ) {
+      found = true
+      return
+    }
+    ts.forEachChild(current, visit)
+  }
+  visit(node)
+  return found
+}
+
+function assignmentTransaction(statement) {
+  if (ts.isVariableStatement(statement)) {
+    for (const decl of statement.declarationList.declarations) {
+      const call = unwrapTransaction(decl.initializer)
+      if (call) return call
+    }
+    return null
+  }
+  if (!ts.isExpressionStatement(statement)) return null
+  let expr = statement.expression
+  while (
+    expr &&
+    (ts.isAwaitExpression(expr) || ts.isParenthesizedExpression(expr))
+  )
+    expr = expr.expression
+  if (
+    !expr ||
+    !ts.isBinaryExpression(expr) ||
+    expr.operatorToken.kind !== ts.SyntaxKind.EqualsToken
+  )
+    return null
+  return unwrapTransaction(expr.right)
+}
+
 function routeWrappedInTransaction(callback) {
   const body = callback.body
   if (!body) return false
-  if (isTransactionCall(body)) return true
-  if (!ts.isBlock(body)) return false
+  if (!ts.isBlock(body)) return Boolean(unwrapTransaction(body))
   return body.statements.some((statement) => {
-    if (
-      ts.isReturnStatement(statement) &&
-      statement.expression &&
-      isTransactionCall(statement.expression)
-    )
-      return true
-    return (
-      ts.isExpressionStatement(statement) &&
-      isTransactionCall(statement.expression)
-    )
+    const assigned = assignmentTransaction(statement)
+    if (assigned) return containsFetch(assigned)
+    return Boolean(unwrapTransaction(statement))
   })
 }
 
