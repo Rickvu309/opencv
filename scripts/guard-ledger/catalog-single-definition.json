@@ -1,0 +1,18 @@
+{
+  "id": "catalog-single-definition",
+  "file": "scripts/catalog-adapters.test.mjs",
+  "detector": {
+    "module": "scripts/lib/catalog-adapters.mjs",
+    "export": "detectDefinitions"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "scripts/fixtures/catalog-adapters/mistake.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/fixtures/catalog-adapters/clean.json"
+    }
+  },
+  "reason": "New catalog architecture rule. Prospective Job adoption debt and publication mutants are fixtures, not a claimed historical regression. Round 1 extends proof to feature-owned fetchers and keys, activity/approval/Undo/Coach receipt mutants, and the catalog guarded-reversal kernel requirement. Round 2 resolves catalog consumer imports by AST binding, covers run/options/useRead/key and rejects shadowed or unrelated clients. Replay identity permits hashless same-command legacy receipts with conservative touches, rejects cross-command replay and hashes schema-parsed JSON with omitted undefined values, after durable task fence validation. Regression tests and detector mutants cover issue #1138 round 2 findings R1, R3 and R5 against the supplied pre-fix head without pinning a branch commit."
+}

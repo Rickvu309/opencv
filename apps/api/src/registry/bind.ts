@@ -1,5 +1,6 @@
 import {
   defineQuery,
+  type Operation,
   queries,
   type ActivityDraft,
   type Actor,
@@ -12,10 +13,15 @@ import {
   type QueryName,
   type QueryOutput,
   type ReversalCall,
+  type ReversalPlan,
+  type ReversalExpect,
 } from "@workspace/domain"
 import type { ZodType } from "zod"
 
-import type { ReversalExpectPending } from "./expect-pending.js"
+import {
+  REVERSAL_EXPECT_PENDING,
+  type ReversalExpectPending,
+} from "./expect-pending.js"
 import type { Registry } from "./registry.js"
 
 type AtLeastOne<T> = {
@@ -115,4 +121,116 @@ export function tableQuery<N extends QueryName>(
     ...spec,
     input: queries[name].input as unknown as ZodType<QueryInput<N>>,
   })
+}
+
+export type OperationBinding<T extends Operation, R = unknown> = {
+  operation: T
+  execute: (
+    input: import("zod").output<T["input"]>,
+    actor: Actor
+  ) => Promise<R> | R
+  privateResult?: ZodType<R>
+  reversal?: (
+    input: import("zod").output<T["input"]>,
+    result: R
+  ) => (NonNullable<ReversalPlan> & { expect: ReversalExpect }) | null
+  activity?: (
+    input: import("zod").output<T["input"]>,
+    result: R,
+    actor: Actor
+  ) => ActivityDraft | null
+}
+
+export function bindOperation<T extends Operation, R>(
+  registry: Registry,
+  binding: OperationBinding<T, R>
+) {
+  const operation = binding.operation
+  const inputSchema = operation.input as ZodType<
+    import("zod").output<T["input"]>
+  >
+  if (operation.kind === "read") {
+    registry.addQuery({
+      name: operation.name,
+      description: operation.description,
+      input: inputSchema,
+      coach: operation.coach !== "never",
+      ...(operation.delegate === "jobRead"
+        ? { delegate: operation.delegate }
+        : {}),
+      step: () => operation.description,
+      read: async (input, actor) =>
+        operation.publicResult.parse(await binding.execute(input, actor)),
+    })
+  } else {
+    registry.addCommand<import("zod").output<T["input"]>, R>(
+      {
+        name: operation.name,
+        description: operation.description,
+        input: inputSchema,
+        coach: operation.coach,
+        destructive: operation.destructive,
+        idempotency: operation.idempotency,
+        ...(operation.delegate === "reversibleJob"
+          ? { delegate: operation.delegate }
+          : {}),
+        writes: (input) => [...operation.writes(input as never)],
+        step: () => operation.description,
+        reversal: (input, result) => binding.reversal?.(input, result) ?? null,
+        activity: (input, result, actor) =>
+          binding.activity?.(input, result, actor) ?? null,
+      },
+      async (input, actor) => {
+        const result = await binding.execute(input, actor)
+        const checked = binding.privateResult
+          ? binding.privateResult.parse(result)
+          : result
+        operation.publicResult.parse(checked)
+        return checked
+      }
+    )
+  }
+  registry.adopt(operation)
+}
+
+export function bindCatalog<
+  B extends Record<
+    string,
+    { operation: Operation; execute: (...args: never[]) => unknown }
+  >,
+>(
+  registry: Registry,
+  bindings: B &
+    import("@workspace/domain").Implementations<{
+      [N in keyof B]: B[N]["operation"]
+    }> & {
+      [N in keyof B]: {
+        reversal?: (
+          ...args: never[]
+        ) => (NonNullable<ReversalPlan> & { expect: ReversalExpect }) | null
+      }
+    }
+) {
+  for (const [name, binding] of Object.entries(bindings)) {
+    if (name !== binding.operation.name)
+      throw new Error(`Catalog identity mismatch ${name}`)
+    bindOperation(registry, binding as unknown as OperationBinding<Operation>)
+  }
+}
+
+export function assertReversal(
+  command: string,
+  catalog: boolean,
+  result: { reversal: ReversalPlan; draft: ActivityDraft | null }
+) {
+  if (
+    result.reversal &&
+    (!result.reversal.expect ||
+      !Object.keys(result.reversal.expect.matches).length) &&
+    (catalog ||
+      !REVERSAL_EXPECT_PENDING.commands.some((name) => name === command))
+  )
+    throw new Error("Reversals require a guarded expectation")
+  if (catalog && result.reversal && !result.draft)
+    throw new Error("Catalog reversals require an activity receipt")
 }

@@ -1,3 +1,5 @@
+import { catalog } from "./catalog.js"
+import type { Operation } from "./operation.js"
 import { z } from "zod"
 
 import {
@@ -8,18 +10,32 @@ import { commands, type ContractCommandName } from "./contract-commands.js"
 import type { CommandEnvelope } from "./envelope.js"
 import { queries, type QueryName } from "./queries.js"
 
-export type ChatToolName = ContractCommandName | QueryName
+type CatalogName = keyof typeof catalog & string
+type CatalogCommandName = {
+  [N in CatalogName]: (typeof catalog)[N]["kind"] extends "command" ? N : never
+}[CatalogName]
 
-const toolNames = [...Object.keys(commands), ...Object.keys(queries)] as [
-  ChatToolName,
-  ...ChatToolName[],
-]
+export type ChatToolName = ContractCommandName | QueryName | CatalogName
+
+const toolNames = [
+  ...Object.keys(commands),
+  ...Object.keys(queries),
+  ...Object.keys(catalog),
+] as [ChatToolName, ...ChatToolName[]]
 
 export const chatToolNameSchema = z.enum(toolNames)
 
-export const commandNameSchema = z.enum(
-  Object.keys(commands) as [ContractCommandName, ...ContractCommandName[]]
-)
+const catalogOperations: Record<string, Operation> = catalog
+
+export const commandNameSchema = z.enum([
+  ...Object.keys(commands),
+  ...Object.values(catalogOperations)
+    .filter((operation) => operation.kind === "command")
+    .map((operation) => operation.name),
+] as [
+  ContractCommandName | CatalogCommandName,
+  ...(ContractCommandName | CatalogCommandName)[],
+])
 
 const anyValue = z.custom<unknown>(() => true)
 

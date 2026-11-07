@@ -4,9 +4,9 @@ import type { ZodType } from "zod"
 
 import { parseChatId, parseUserId, type ChatId, type UserId } from "./ids.js"
 import type { IdempotencyPolicy } from "./contract.js"
-import type { ResourceRef } from "./resources.js"
+import type { CoachAccess, ResourceRef } from "./resources.js"
 
-export type CoachAccess = "auto" | "confirm" | "never"
+export type { CoachAccess } from "./resources.js"
 
 type PersonActor = {
   type: "person"

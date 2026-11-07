@@ -1,0 +1,47 @@
+{
+  "operations": [
+    {
+      "name": "job.setPriority",
+      "file": "packages/domain/src/operations/job/set-priority/operation.ts",
+      "server": "apps/api/src/job/operations/set-priority/server.ts"
+    }
+  ],
+  "sources": [
+    [
+      "packages/domain/src/job-contract.ts",
+      "const old = { \"job.setPriority\": commandEntry({}) };"
+    ],
+    [
+      "apps/api/src/job/commands.ts",
+      "registry.addCommand({name:\"job.setPriority\"}, handler);"
+    ],
+    [
+      "apps/web/src/lib/job.ts",
+      "import { privateResult } from \"../../../api/src/job/operations/set-priority/server.js\"; export const key=[\"job.setPriority\"]; export const run=()=>apiFetch(\"/api/commands/job.setPriority\");"
+    ],
+    [
+      "apps/api/src/job/operations/set-priority/server.ts",
+      "export const privateResult = {previousPriority: \"high\", nested: {secret:\"private\"}};"
+    ],
+    [
+      "apps/api/src/registry/catalog-publication.ts",
+      "class Registry { publicOutput(name,output) { return output; } publishResult(name,result) { return {...result,output:result.output,reversal:result.reversal}; } }"
+    ],
+    [
+      "apps/api/src/registry/bind.ts",
+      "const bound = { read: async (input, actor) => binding.execute(input, actor) };"
+    ],
+    [
+      "packages/domain/src/operation.ts",
+      "import type { ResourceRef } from \"./contract.js\""
+    ],
+    [
+      "apps/web/src/features/apply/apply-api.ts",
+      "fetch(\"/api/commands/job.setPriority\"); fetch(\"/commands/job.setPriority\"); fetch(`${base}/commands/job.setPriority`); const key = [\"job.setPriority\"];"
+    ],
+    [
+      "apps/api/src/registry/registry.ts",
+      "class Registry { async execute() { const ran = await command.run(parsed, actor); return ran; } }"
+    ]
+  ]
+}

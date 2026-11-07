@@ -41,6 +41,7 @@ import {
 import { authMailConfigured } from "./mail/auth-code.js"
 import { isAllowedOrigin } from "./origin.js"
 import { createPaperRoutes } from "./paper/index.js"
+import { createReadRoutes } from "./registry/read.js"
 import { createCommandRoutes } from "./registry/http.js"
 import { installRegistry } from "./registry/install.js"
 
@@ -213,6 +214,7 @@ export function createApp({
     "/api/commands",
     createCommandRoutes({ auth, db: database, registry })
   )
+  app.route("/api/reads", createReadRoutes({ auth, db: database, registry }))
   app.route("/api/coach/tasks", createCoachTaskRoutes({ auth, db: database }))
   app.route("/api/chats", createChatRoutes(auth, database))
   app.route("/api/chats", coachRoutes)

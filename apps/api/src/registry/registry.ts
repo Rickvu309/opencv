@@ -5,8 +5,7 @@ import {
   GATES_CLOSED_WITHOUT_CONSENT_TO_READ,
   omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe,
 } from "./coach-policy.js"
-export type { AgentGates } from "./coach-policy.js"
-export { coachRefusal } from "./coach-policy.js"
+export { coachRefusal }
 import { executeTaskCommand, type TaskLease } from "./task-fence.js"
 import {
   ERROR_CODES,
@@ -19,7 +18,6 @@ import {
   type Actor,
   type CommandSpec,
   type QuerySpec,
-  type ReversalExpect,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
@@ -49,22 +47,30 @@ import {
   undoOfUndo,
 } from "./expectation.js"
 import { replay, replayStored } from "./replay.js"
-import { inputHash, receiptDetail, reversalOf } from "./receipt.js"
-import { readTurnReceipts } from "./turn-receipts.js"
+import { inputHash } from "./receipt.js"
+import { assertReversal } from "./bind.js"
+import { CatalogPublication } from "./catalog-publication.js"
 
 import type {
   ExecuteResult,
+  ExecuteOptions,
+  TaskOptions,
+  UndoCandidate,
   StoredCommand,
   StoredQuery,
   ToolEntry,
   UndoGuard,
 } from "./registry-types.js"
-export type { ExecuteResult, ToolEntry } from "./registry-types.js"
+export type { AgentGates, ExecuteResult, ToolEntry }
+
+function jsonInput(input: unknown): unknown {
+  return JSON.parse(JSON.stringify(input))
+}
 
 const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
 
-export class Registry {
+export class Registry extends CatalogPublication {
   private readonly commands = new Map<string, StoredCommand>()
   private readonly queries = new Map<string, StoredQuery>()
   private readonly undoGuards = new Map<string, UndoGuard>()
@@ -75,12 +81,7 @@ export class Registry {
 
   async undoBlockedReasons(
     userId: string,
-    items: readonly {
-      command: string | null
-      input: unknown
-      expect?: ReversalExpect | null
-      source?: string | null
-    }[]
+    items: readonly UndoCandidate[]
   ): Promise<(string | null)[]> {
     const reasons: (string | null)[] = items.map(() => null)
     const byCommand = new Map<string, number[]>()
@@ -123,7 +124,7 @@ export class Registry {
     userId: string,
     command: string | null,
     input: unknown
-  ): Promise<string | null> {
+  ) {
     return (await this.undoBlockedReasons(userId, [{ command, input }]))[0]!
   }
 
@@ -241,33 +242,21 @@ export class Registry {
     return entries
   }
 
-  executeTask(
-    lease: TaskLease,
-    options: {
-      name: string
-      input: unknown
-      actor: Actor
-      idempotencyKey: string
-    }
-  ) {
-    return executeTaskCommand(
-      lease,
-      options,
-      this.commands.get(options.name),
-      (input) => this.execute({ ...input, [taskExecution]: true })
-    )
+  executeTask(lease: TaskLease, options: TaskOptions) {
+    const command = this.commands.get(options.name)
+    return executeTaskCommand(lease, { ...options }, command, (input) => {
+      if (command)
+        input.input = jsonInput(parseInput(command.input, input.input))
+      return this.execute({ ...options, [taskExecution]: true })
+    })
   }
 
-  async execute(options: {
-    name: string
-    input: unknown
-    actor: Actor
-    idempotencyKey?: string
-    skipConfirm?: boolean
-    skipActivity?: boolean
-    [taskExecution]?: boolean
-    [approvedDelegate]?: string
-  }): Promise<ExecuteResult> {
+  async execute(
+    options: ExecuteOptions & {
+      [taskExecution]?: boolean
+      [approvedDelegate]?: string
+    }
+  ): Promise<ExecuteResult> {
     if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
       throw new CommandError(
         ERROR_CODES.CONFLICT,
@@ -307,8 +296,10 @@ export class Registry {
       options.idempotencyKey
     )
 
+    const hash = idempotencyKey ? inputHash(jsonInput(parsed)) : null
     const effect = async (): Promise<ExecuteResult> => {
       const ran = await command.run(parsed, actor)
+      assertReversal(command.name, this.isCatalogOperation(command.name), ran)
       let activityId: string | null = null
       if (ran.draft && !options.skipActivity) {
         activityId = createId()
@@ -331,7 +322,7 @@ export class Registry {
             reversalInput: ran.reversal?.input ?? null,
             reversalExpect: ran.reversal?.expect ?? null,
             idempotencyKey: idempotencyKey ?? null,
-            inputHash: options[taskExecution] ? inputHash(options.input) : null,
+            inputHash: hash,
             turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
           })
       } else if (idempotencyKey) {
@@ -340,7 +331,7 @@ export class Registry {
           .values({
             userId: actor.userId,
             key: idempotencyKey,
-            inputHash: options[taskExecution] ? inputHash(options.input) : null,
+            inputHash: hash,
             command: command.name,
             result: ran.output ?? null,
           })
@@ -357,7 +348,12 @@ export class Registry {
 
     const run = async () => {
       if (idempotencyKey) {
-        const earlier = await this.replayByKey(actor.userId, idempotencyKey)
+        const earlier = await this.replayByKey(
+          actor.userId,
+          idempotencyKey,
+          command.name,
+          hash!
+        )
         if (earlier) return earlier
       }
 
@@ -380,13 +376,25 @@ export class Registry {
         return await savepoint(effect)
       } catch (error) {
         if (!isUniqueViolation(error)) throw error
-        const winner = await this.replayByKey(actor.userId, idempotencyKey)
+        const winner = await this.replayByKey(
+          actor.userId,
+          idempotencyKey,
+          command.name,
+          hash!
+        )
         if (!winner) throw error
         return winner
       }
     }
-    if (command.transaction === "none") return run()
-    return transaction(run)
+    const result =
+      command.transaction === "none" ? await run() : await transaction(run)
+    if (result.pending) return result
+    return this.committedResult(
+      result.command ?? command.name,
+      parsed as never,
+      actor.userId,
+      result
+    )
   }
 
   async read(name: string, input: unknown, actor: Actor) {
@@ -412,10 +420,6 @@ export class Registry {
     return query.read(input, branded)
   }
 
-  turnReceipts(userId: string, turnIds: string[]) {
-    return readTurnReceipts(userId, turnIds)
-  }
-
   async confirmations(userId: string, chatId: string) {
     const rows = await getDb()
       .select()
@@ -439,23 +443,7 @@ export class Registry {
             Date.now() - row.createdAt.getTime() > PENDING_TTL_MS
               ? ("expired" as const)
               : row.status,
-          receipt: completed
-            ? {
-                summary: completed.summary,
-                activityId: completed.id,
-                reversal: reversalOf(
-                  completed.reversalCommand
-                    ? {
-                        command: completed.reversalCommand,
-                        input: completed.reversalInput,
-                      }
-                    : null,
-                  completed.summary
-                ),
-                detail: receiptDetail(completed.command, completed.result),
-                undone: completed.undoneAt !== null,
-              }
-            : undefined,
+          receipt: this.confirmationReceipt(completed),
         }
       })
     )
@@ -467,7 +455,9 @@ export class Registry {
       const { row, task } = await lockProposal(userId, pendingActionId)
       if (row.status === "approved") {
         if (task) await assertTaskReceipt(userId, row)
-        return this.activityByKey(userId, row.coachIntentKey ?? row.id)
+        return this.activityByKey(userId, row.coachIntentKey ?? row.id).then(
+          (receipt) => (receipt ? this.publicActivity(receipt) : null)
+        )
       }
       if (row.status === "expired") {
         throw new CommandError(
@@ -506,8 +496,13 @@ export class Registry {
         await assertTaskReceipt(userId, row)
         await resolveTaskApproval(task, "committed", result, result.activityId)
       }
-      if (result.activityId) return this.activityById(userId, result.activityId)
-      return this.activityByKey(userId, row.coachIntentKey ?? row.id)
+      if (result.activityId)
+        return this.activityById(userId, result.activityId).then((receipt) =>
+          receipt ? this.publicActivity(receipt) : null
+        )
+      return this.activityByKey(userId, row.coachIntentKey ?? row.id).then(
+        (receipt) => (receipt ? this.publicActivity(receipt) : null)
+      )
     })
   }
 
@@ -578,7 +573,7 @@ export class Registry {
         .update(activity)
         .set({ undoneAt })
         .where(eq(activity.id, row.id))
-      return { ...row, undoneAt }
+      return this.publicActivity({ ...row, undoneAt })
     })
   }
 
@@ -599,12 +594,30 @@ export class Registry {
     return expireTaskApprovals()
   }
 
-  private async replayByKey(userId: string, key: string) {
+  private async replayByKey(
+    userId: string,
+    key: string,
+    command: string,
+    hash: string
+  ) {
     const existing = await this.activityByKey(userId, key)
-    if (existing) return replay(existing)
-    const stored = await this.idempotencyByKey(userId, key)
-    if (stored) return replayStored(stored.result)
-    return null
+    const stored = existing ?? (await this.idempotencyByKey(userId, key))
+    if (!stored) return null
+    if (
+      stored.command !== command ||
+      (stored.inputHash !== null && stored.inputHash !== hash)
+    )
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "Idempotency key does not match its command and input"
+      )
+    return {
+      ...(existing ? replay(existing) : replayStored(stored.result)),
+      command: stored.command,
+      ...(stored.inputHash === null
+        ? { touches: [{ ownerId: userId, name: "workspace" }] }
+        : {}),
+    }
   }
 
   private async activityByKey(userId: string, key: string) {

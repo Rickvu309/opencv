@@ -4,6 +4,8 @@ import type {
   CoachAccess,
   CommandSpec,
   ReversalPlan,
+  ReversalExpect,
+  ResourceTouch,
 } from "@workspace/domain"
 import type { ZodType } from "zod"
 
@@ -49,6 +51,7 @@ export type ToolEntry = {
 }
 
 export type ExecuteResult = {
+  touches?: ResourceTouch[]
   chatId?: string
   pending: boolean
   pendingActionId?: string
@@ -63,3 +66,21 @@ export type UndoGuard = (
   userId: string,
   items: readonly { input: unknown; source: string | null }[]
 ) => Promise<(string | null)[]>
+
+export type ExecuteOptions = {
+  name: string
+  input: unknown
+  actor: Actor
+  idempotencyKey?: string
+  skipConfirm?: boolean
+  skipActivity?: boolean
+}
+export type TaskOptions = Pick<ExecuteOptions, "name" | "input" | "actor"> & {
+  idempotencyKey: string
+}
+export type UndoCandidate = {
+  command: string | null
+  input: unknown
+  expect?: ReversalExpect | null
+  source?: string | null
+}
