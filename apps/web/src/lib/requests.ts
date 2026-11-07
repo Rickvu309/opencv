@@ -3,6 +3,8 @@ import { fileIdSchema } from "@workspace/domain"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
 export const endpoints = {
+  catalogRead: (name: string) => `/api/reads/${name}`,
+  catalogCommand: (name: string) => `/api/commands/${name}`,
   publicConfig: "/api/public-config",
   profile: "/api/profile",
   billing: "/api/billing",

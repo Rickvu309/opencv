@@ -314,6 +314,7 @@ describe("auth cookie round-trip", () => {
       await expect(sent.json()).resolves.toEqual({
         ok: true,
         data: { email: "next@verify.local", sent: true },
+        meta: { touches: [{ ownerId: expect.any(String), name: "workspace" }] },
       })
       const match = log.mock.calls
         .map((call) => String(call[0]).match(codeLine))

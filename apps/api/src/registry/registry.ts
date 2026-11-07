@@ -49,8 +49,8 @@ import {
   undoOfUndo,
 } from "./expectation.js"
 import { replay, replayStored } from "./replay.js"
-import { inputHash, receiptDetail, reversalOf } from "./receipt.js"
-import { readTurnReceipts } from "./turn-receipts.js"
+import { inputHash } from "./receipt.js"
+import { CatalogPublication } from "./catalog-publication.js"
 
 import type {
   ExecuteResult,
@@ -64,7 +64,7 @@ export type { ExecuteResult, ToolEntry } from "./registry-types.js"
 const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
 
-export class Registry {
+export class Registry extends CatalogPublication {
   private readonly commands = new Map<string, StoredCommand>()
   private readonly queries = new Map<string, StoredQuery>()
   private readonly undoGuards = new Map<string, UndoGuard>()
@@ -309,6 +309,8 @@ export class Registry {
 
     const effect = async (): Promise<ExecuteResult> => {
       const ran = await command.run(parsed, actor)
+      if (this.operations.has(command.name) && ran.reversal && !ran.draft)
+        throw new Error("Catalog reversals require an activity receipt")
       let activityId: string | null = null
       if (ran.draft && !options.skipActivity) {
         activityId = createId()
@@ -385,8 +387,15 @@ export class Registry {
         return winner
       }
     }
-    if (command.transaction === "none") return run()
-    return transaction(run)
+    const result =
+      command.transaction === "none" ? await run() : await transaction(run)
+    if (result.pending) return result
+    return this.committedResult(
+      command.name,
+      parsed as never,
+      actor.userId,
+      result
+    )
   }
 
   async read(name: string, input: unknown, actor: Actor) {
@@ -412,10 +421,6 @@ export class Registry {
     return query.read(input, branded)
   }
 
-  turnReceipts(userId: string, turnIds: string[]) {
-    return readTurnReceipts(userId, turnIds)
-  }
-
   async confirmations(userId: string, chatId: string) {
     const rows = await getDb()
       .select()
@@ -439,23 +444,7 @@ export class Registry {
             Date.now() - row.createdAt.getTime() > PENDING_TTL_MS
               ? ("expired" as const)
               : row.status,
-          receipt: completed
-            ? {
-                summary: completed.summary,
-                activityId: completed.id,
-                reversal: reversalOf(
-                  completed.reversalCommand
-                    ? {
-                        command: completed.reversalCommand,
-                        input: completed.reversalInput,
-                      }
-                    : null,
-                  completed.summary
-                ),
-                detail: receiptDetail(completed.command, completed.result),
-                undone: completed.undoneAt !== null,
-              }
-            : undefined,
+          receipt: this.confirmationReceipt(completed),
         }
       })
     )
@@ -467,7 +456,9 @@ export class Registry {
       const { row, task } = await lockProposal(userId, pendingActionId)
       if (row.status === "approved") {
         if (task) await assertTaskReceipt(userId, row)
-        return this.activityByKey(userId, row.coachIntentKey ?? row.id)
+        return this.activityByKey(userId, row.coachIntentKey ?? row.id).then(
+          (receipt) => (receipt ? this.publicActivity(receipt) : null)
+        )
       }
       if (row.status === "expired") {
         throw new CommandError(
@@ -506,8 +497,13 @@ export class Registry {
         await assertTaskReceipt(userId, row)
         await resolveTaskApproval(task, "committed", result, result.activityId)
       }
-      if (result.activityId) return this.activityById(userId, result.activityId)
-      return this.activityByKey(userId, row.coachIntentKey ?? row.id)
+      if (result.activityId)
+        return this.activityById(userId, result.activityId).then((receipt) =>
+          receipt ? this.publicActivity(receipt) : null
+        )
+      return this.activityByKey(userId, row.coachIntentKey ?? row.id).then(
+        (receipt) => (receipt ? this.publicActivity(receipt) : null)
+      )
     })
   }
 
@@ -578,7 +574,7 @@ export class Registry {
         .update(activity)
         .set({ undoneAt })
         .where(eq(activity.id, row.id))
-      return { ...row, undoneAt }
+      return this.publicActivity({ ...row, undoneAt })
     })
   }
 

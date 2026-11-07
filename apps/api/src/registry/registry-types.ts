@@ -4,6 +4,7 @@ import type {
   CoachAccess,
   CommandSpec,
   ReversalPlan,
+  ResourceTouch,
 } from "@workspace/domain"
 import type { ZodType } from "zod"
 
@@ -49,6 +50,7 @@ export type ToolEntry = {
 }
 
 export type ExecuteResult = {
+  touches?: ResourceTouch[]
   chatId?: string
   pending: boolean
   pendingActionId?: string

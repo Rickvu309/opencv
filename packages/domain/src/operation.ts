@@ -1,8 +1,7 @@
 import { z } from "zod"
+export { z }
 
-import type { IdempotencyPolicy } from "./contract.js"
-import type { CoachAccess } from "./registry.js"
-import type { ResourceRef } from "./resources.js"
+import type { CoachAccess, ResourceRef } from "./resources.js"
 
 type BaseOperation<I extends z.ZodType, O extends z.ZodType> = {
   owner: string
@@ -12,6 +11,7 @@ type BaseOperation<I extends z.ZodType, O extends z.ZodType> = {
   input: I
   publicResult: O
   coach: CoachAccess
+  delegate?: "reversibleJob" | "jobRead"
 }
 
 type OperationShape<
@@ -27,7 +27,7 @@ type OperationShape<
     | {
         kind: "command"
         destructive: boolean
-        idempotency: IdempotencyPolicy
+        idempotency: "keyed" | "none"
         writes: (input: Parsed) => readonly ResourceRef[]
       }
   )
@@ -62,7 +62,7 @@ export function defineOperation<
   return operation
 }
 
-type Operation = OperationShape<z.ZodType, z.ZodType, never>
+export type Operation = OperationShape<z.ZodType, z.ZodType, never>
 
 export type Implementations<C extends Record<string, Operation>> = {
   [N in keyof C]: {
@@ -73,3 +73,6 @@ export type Implementations<C extends Record<string, Operation>> = {
     ) => z.input<C[N]["publicResult"]> | Promise<z.input<C[N]["publicResult"]>>
   }
 }
+
+export type OperationInput<T extends Operation> = z.input<T["input"]>
+export type OperationOutput<T extends Operation> = z.output<T["publicResult"]>

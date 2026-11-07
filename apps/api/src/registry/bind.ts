@@ -1,5 +1,6 @@
 import {
   defineQuery,
+  type Operation,
   queries,
   type ActivityDraft,
   type Actor,
@@ -115,4 +116,85 @@ export function tableQuery<N extends QueryName>(
     ...spec,
     input: queries[name].input as unknown as ZodType<QueryInput<N>>,
   })
+}
+
+export type OperationBinding<T extends Operation, R = unknown> = {
+  operation: T
+  execute: (
+    input: import("zod").output<T["input"]>,
+    actor: Actor
+  ) => Promise<R> | R
+  privateResult?: ZodType<R>
+  reversal?: (
+    input: import("zod").output<T["input"]>,
+    result: R
+  ) => import("@workspace/domain").ReversalPlan
+  activity?: (
+    input: import("zod").output<T["input"]>,
+    result: R,
+    actor: Actor
+  ) => ActivityDraft | null
+}
+
+export function bindOperation<T extends Operation, R>(
+  registry: Registry,
+  binding: OperationBinding<T, R>
+) {
+  const operation = binding.operation
+  const inputSchema = operation.input as ZodType<
+    import("zod").output<T["input"]>
+  >
+  if (operation.kind === "read") {
+    registry.addQuery({
+      name: operation.name,
+      description: operation.description,
+      input: inputSchema,
+      coach: operation.coach !== "never",
+      ...(operation.delegate === "jobRead"
+        ? { delegate: operation.delegate }
+        : {}),
+      step: () => operation.description,
+      read: async (input, actor) =>
+        operation.publicResult.parse(await binding.execute(input, actor)),
+    })
+  } else {
+    registry.addCommand<import("zod").output<T["input"]>, R>(
+      {
+        name: operation.name,
+        description: operation.description,
+        input: inputSchema,
+        coach: operation.coach,
+        destructive: operation.destructive,
+        idempotency: operation.idempotency,
+        ...(operation.delegate === "reversibleJob"
+          ? { delegate: operation.delegate }
+          : {}),
+        writes: (input) => [...operation.writes(input as never)],
+        step: () => operation.description,
+        reversal: (input, result) => binding.reversal?.(input, result) ?? null,
+        activity: (input, result, actor) =>
+          binding.activity?.(input, result, actor) ?? null,
+      },
+      async (input, actor) => {
+        const result = await binding.execute(input, actor)
+        const checked = binding.privateResult
+          ? binding.privateResult.parse(result)
+          : result
+        operation.publicResult.parse(checked)
+        return checked
+      }
+    )
+  }
+  registry.adopt(operation)
+}
+
+export function bindCatalog<C extends Record<string, Operation>>(
+  registry: Registry,
+  bindings: import("@workspace/domain").Implementations<C>
+) {
+  for (const [name, binding] of Object.entries(bindings)) {
+    if (name !== binding.operation.name)
+      throw new Error(`Catalog identity mismatch ${name}`)
+    bindOperation(registry, binding as unknown as OperationBinding<Operation>)
+  }
 }

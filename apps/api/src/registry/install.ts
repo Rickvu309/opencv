@@ -1,3 +1,5 @@
+import { implementations } from "./generated/catalog.js"
+import { bindCatalog } from "./bind.js"
 import { registerCoachTasks } from "./commands.js"
 import { registerConnections } from "../connections/index.js"
 import { registerAccount, registerAccountQueries } from "../account/index.js"
@@ -19,6 +21,7 @@ export function installRegistry(preview?: JobPreviewOptions) {
     registerPaper(registry)
     registerJob(registry, preview)
     registerInbox(registry)
+    bindCatalog(registry, implementations)
     installed = true
     return registry
   }

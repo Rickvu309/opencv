@@ -43,8 +43,12 @@ export function publicCommandOutput(output: unknown) {
   return copy
 }
 
-export function withActivityId(output: unknown, activityId: string | null) {
-  const published = publicCommandOutput(output)
+export function withActivityId(
+  output: unknown,
+  activityId: string | null,
+  adopted = false
+) {
+  const published = adopted ? output : publicCommandOutput(output)
   if (
     !activityId ||
     !published ||
@@ -106,9 +110,16 @@ export function createCommandRoutes({
         auth
       )
       if (result.pending) return c.json(successEnvelope(result))
-      return c.json(
-        successEnvelope(withActivityId(result.output, result.activityId))
-      )
+      return c.json({
+        ...successEnvelope(
+          withActivityId(
+            result.output,
+            result.activityId,
+            registry.isCatalogOperation(name)
+          )
+        ),
+        meta: { touches: result.touches ?? [] },
+      })
     } catch (error) {
       if (error instanceof CommandError) throw error
       throw error

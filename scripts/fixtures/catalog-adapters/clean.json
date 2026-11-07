@@ -1,0 +1,27 @@
+{
+  "operations": [
+    {
+      "name": "job.setPriority",
+      "file": "packages/domain/src/operations/job/set-priority/operation.ts",
+      "server": "apps/api/src/job/operations/set-priority/server.ts"
+    }
+  ],
+  "sources": [
+    [
+      "apps/web/src/lib/contract-client.ts",
+      "import { catalog } from \"@workspace/domain\"; export const key = (name, input) => [name, input];"
+    ],
+    [
+      "apps/api/src/registry/catalog-publication.ts",
+      "class Registry { publicOutput(name, output) { const operation = this.operations.get(name); return operation ? operation.publicResult.parse(output) : output; } publishResult(name,result) { if (!this.operations.has(name)) return result; return { ...result, output: this.publicOutput(name,result.output), reversal: result.reversal ? {command: result.reversal.command,input:{}} : null }; } }"
+    ],
+    [
+      "apps/api/src/registry/bind.ts",
+      "const bound = { read: async (input, actor) => operation.publicResult.parse(await binding.execute(input, actor)) };"
+    ],
+    [
+      "packages/domain/src/operation.ts",
+      "import type { ResourceRef } from \"./resources.js\""
+    ]
+  ]
+}

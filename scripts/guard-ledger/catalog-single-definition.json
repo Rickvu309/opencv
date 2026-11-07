@@ -1,0 +1,18 @@
+{
+  "id": "catalog-single-definition",
+  "file": "scripts/catalog-adapters.test.mjs",
+  "detector": {
+    "module": "scripts/lib/catalog-adapters.mjs",
+    "export": "detectDefinitions"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "scripts/fixtures/catalog-adapters/mistake.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/fixtures/catalog-adapters/clean.json"
+    }
+  },
+  "reason": "New catalog architecture rule. Prospective Job adoption debt and publication mutants are fixtures, not a claimed historical regression."
+}
