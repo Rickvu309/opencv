@@ -1,0 +1,13 @@
+{
+  "id": "merge-inspection-failure",
+  "file": "scripts/ocv-tools/jobs/merge-inspection-failure.test.mjs",
+  "detector": {
+    "module": "scripts/lib/merge-inspection-failure.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "7352761b",
+    "path": "scripts/ocv-tools/jobs/merged-tree.mjs"
+  }
+}
