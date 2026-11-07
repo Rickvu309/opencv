@@ -105,7 +105,14 @@ export function normalizeWrite(outcome) {
     resource: outcome.resource ?? "job.priority",
     transaction: outcome.sameTransaction === false ? "other" : "same",
     transactionOpen: outcome.transactionOpen ?? true,
-    bumped: outcome.revisionDelta === 1,
+    scopeOpen: outcome.scopeOpen ?? true,
+    sameScope: outcome.sameScope ?? true,
+    bindingMatched: outcome.bindingMatched ?? true,
+    changed: outcome.priorityChanged ?? true,
+    bumped:
+      outcome.priorityChanged === false
+        ? outcome.revisionDelta !== 0
+        : outcome.revisionDelta === 1,
   }
 }
 
@@ -120,7 +127,12 @@ export function traceProblems(trace) {
     if (event.transaction !== "same") problems.push({ kind: "transaction" })
     if (event.transactionOpen === false)
       problems.push({ kind: "closed-transaction" })
-    if (event.bumped !== true) problems.push({ kind: "missing-bump" })
+    if (event.scopeOpen === false) problems.push({ kind: "closed-scope" })
+    if (event.sameScope === false) problems.push({ kind: "scope" })
+    if (event.bindingMatched === false) problems.push({ kind: "binding" })
+    if (event.changed === false) {
+      if (event.bumped !== false) problems.push({ kind: "unexpected-bump" })
+    } else if (event.bumped !== true) problems.push({ kind: "missing-bump" })
   }
   return problems
 }

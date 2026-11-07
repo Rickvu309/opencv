@@ -16,6 +16,9 @@
     "Forge": "assertPriorityGrant",
     "Seal": "withGrantScope",
     "Reuse": "takePriorityGrant",
-    "Rollback": "assertPriorityGrant"
+    "Rollback": "assertPriorityGrant",
+    "Sibling": "withGrantScope",
+    "Retarget": "assertPriorityGrant",
+    "Stop": null
   }
 }

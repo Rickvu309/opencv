@@ -312,20 +312,21 @@ export async function writePriority(
   jobId: JobId,
   priority: QueryOutput<"job.get">["priority"]
 ) {
-  assertPriorityGrant(grant, grant.ownerId, jobId)
-  const ownerId = parseUserId(grant.ownerId)
+  const authority = assertPriorityGrant(grant, grant.ownerId, jobId)
+  const ownerId = parseUserId(authority.ownerId)
   const current = await ownedJob(ownerId, jobId)
-  const expected = grant.expectedRevision
+  const expected = authority.expectedRevision
   if (expected !== null && !priorityBasisOk(expected, current.priorityRevision))
     throw new CommandError(
       ERROR_CODES.CONFLICT,
       "This job's priority was already changed, so your change was not saved"
     )
+  authority.assertOpen()
   const updated = await getDb()
     .update(jobs)
     .set({
       priority,
-      priorityRevision: sql`${jobs.priorityRevision} + 1`,
+      priorityRevision: sql`case when ${jobs.priority} is distinct from ${priority} then ${jobs.priorityRevision} + 1 else ${jobs.priorityRevision} end`,
       updatedAt: new Date(),
     })
     .where(

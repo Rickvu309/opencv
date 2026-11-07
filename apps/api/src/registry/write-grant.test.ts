@@ -41,6 +41,42 @@ import {
 } from "../../../../scripts/lib/proposal-basis.mjs"
 
 declare const sampleJob: JobId
+
+it.each([
+  { scopeOpen: false, kind: "closed-scope" },
+  { sameScope: false, kind: "scope" },
+  { bindingMatched: false, kind: "binding" },
+  { priorityChanged: false, kind: "unexpected-bump" },
+  { priorityChanged: false, revisionDelta: 2, kind: "unexpected-bump" },
+])("detects a round 3 mistake fixture: $kind", (mistake) => {
+  expect(
+    traceProblems([
+      normalizeWrite({
+        asserted: true,
+        revisionDelta: 1,
+        ...mistake,
+      }),
+    ])
+  ).toEqual(expect.arrayContaining([{ kind: mistake.kind }]))
+})
+
+it.each([true, false])(
+  "accepts the round 3 clean transition: changed=%s",
+  (priorityChanged) => {
+    expect(
+      traceProblems([
+        normalizeWrite({
+          asserted: true,
+          scopeOpen: true,
+          sameScope: true,
+          bindingMatched: true,
+          priorityChanged,
+          revisionDelta: priorityChanged ? 1 : 0,
+        }),
+      ])
+    ).toEqual([])
+  }
+)
 declare function createProposal(options: {
   command: string
   input: unknown

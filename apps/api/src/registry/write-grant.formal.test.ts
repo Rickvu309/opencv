@@ -12,6 +12,7 @@ import {
 import { jobs, user } from "../db/schema.js"
 import { writePriority } from "../job/index.js"
 import { openBackend, REAL } from "../test/registry-formal-support.js"
+import { seedCoachActor } from "../test/coach-turn.js"
 import { idOf } from "./coverage-helpers.js"
 import { installRegistry } from "./install.js"
 import {
@@ -23,6 +24,183 @@ import {
 const admitted = (entityId: string) => [
   { name: "job.priority", entityId, coachFloor: "confirm" as const },
 ]
+
+it.each([
+  "scope",
+  "inflight-scope",
+  "entity",
+  "owner",
+  "transaction",
+  "revision",
+  "resource",
+])(
+  "review round 3 refuses a grant with changed authority: %s",
+  async (change) => {
+    const backend = await openBackend()
+    const registry = installRegistry()
+    const ownerId = "private-grant-owner"
+    try {
+      await withDatabase(backend.db, async () => {
+        await getDb().insert(user).values({
+          id: ownerId,
+          name: "Ada",
+          email: "private-grant@example.com",
+        })
+        const create = async (title: string) =>
+          idOf(
+            (
+              await registry.execute({
+                name: "job.create",
+                input: { title, company: "Northwind" },
+                actor: personActor(ownerId),
+              })
+            ).output
+          )
+        const permitted = await create("Permitted")
+        const other = await create("Other")
+        let failure: unknown
+        await transaction(async () => {
+          let retained: WriteGrant | undefined
+          let inflight: Promise<unknown> | undefined
+          await withGrantScope(
+            { ownerId, writes: admitted(permitted), expectedRevision: 0 },
+            async () => {
+              const grant = takePriorityGrant(permitted)
+              retained = grant
+              if (change === "scope") return
+              if (change === "inflight-scope") {
+                inflight = writePriority(
+                  grant,
+                  parseJobId(permitted),
+                  "high"
+                ).then(
+                  () => undefined,
+                  (error: unknown) => error
+                )
+                return
+              }
+              const mutations = {
+                entity: { entityId: other },
+                owner: { ownerId: "another-owner" },
+                transaction: { transaction: {} },
+                revision: { expectedRevision: null },
+                resource: { resource: "job.other" },
+              }
+              if (change === "entity") Object.assign(grant, mutations.entity)
+              if (change === "owner") Object.assign(grant, mutations.owner)
+              if (change === "transaction")
+                Object.assign(grant, mutations.transaction)
+              if (change === "revision")
+                Object.assign(grant, mutations.revision)
+              if (change === "resource")
+                Object.assign(grant, mutations.resource)
+              failure = await writePriority(
+                grant,
+                parseJobId(change === "entity" ? other : permitted),
+                "high"
+              ).then(
+                () => undefined,
+                (error: unknown) => error
+              )
+            }
+          )
+          if (inflight) failure = await inflight
+          if (change === "scope") {
+            const grant = retained
+            if (!grant) throw new Error("missing grant")
+            await withGrantScope({ ownerId, writes: [] }, async () => {
+              failure = await writePriority(
+                grant,
+                parseJobId(permitted),
+                "high"
+              ).then(
+                () => undefined,
+                (error: unknown) => error
+              )
+            })
+          }
+        })
+        expect(failure).toMatchObject({ code: "FORBIDDEN" })
+        const rows = await getDb()
+          .select({
+            priority: jobs.priority,
+            priorityRevision: jobs.priorityRevision,
+          })
+          .from(jobs)
+        expect(rows).toHaveLength(2)
+        for (const row of rows)
+          expect(row).toEqual({ priority: "normal", priorityRevision: 0 })
+      })
+    } finally {
+      await backend.close()
+    }
+  },
+  120_000
+)
+
+it("review round 3 keeps a Coach basis across no-op saves and reversals", async () => {
+  const backend = await openBackend()
+  const registry = installRegistry()
+  const ownerId = "noop-grant-owner"
+  try {
+    await withDatabase(backend.db, async () => {
+      await getDb().insert(user).values({
+        id: ownerId,
+        name: "Ada",
+        email: "noop-grant@example.com",
+      })
+      const actor = personActor(ownerId)
+      const jobId = idOf(
+        (
+          await registry.execute({
+            name: "job.create",
+            input: { title: "No-op", company: "Northwind" },
+            actor,
+          })
+        ).output
+      )
+      const chatId = idOf(
+        (
+          await registry.execute({
+            name: "chat.create",
+            input: {},
+            actor,
+          })
+        ).output
+      )
+      const coach = await seedCoachActor(ownerId, chatId)
+      const proposed = await registry.execute({
+        name: "job.setPriority",
+        input: { jobId, priority: "high" },
+        actor: coach,
+      })
+      const noop = await registry.execute({
+        name: "job.setPriority",
+        input: { jobId, priority: "normal" },
+        actor,
+      })
+      const read = async () => {
+        const [row] = await getDb()
+          .select({
+            priority: jobs.priority,
+            priorityRevision: jobs.priorityRevision,
+          })
+          .from(jobs)
+          .where(eq(jobs.id, jobId))
+        return row
+      }
+      expect(await read()).toEqual({ priority: "normal", priorityRevision: 0 })
+      if (!noop.activityId || !proposed.pendingActionId)
+        throw new Error("missing receipt or proposal")
+      await registry.undo(ownerId, noop.activityId)
+      expect(await read()).toEqual({ priority: "normal", priorityRevision: 0 })
+      await registry.approve(ownerId, proposed.pendingActionId)
+      expect(await read()).toEqual({ priority: "high", priorityRevision: 1 })
+    })
+  } finally {
+    await backend.close()
+  }
+}, 120_000)
 
 it("a priority permission works only inside the database transaction that took it", async () => {
   const backend = await openBackend()

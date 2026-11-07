@@ -29,8 +29,18 @@ type OpenScope = {
 }
 
 const scopes = new AsyncLocalStorage<OpenScope>()
-const live = new WeakSet<object>()
+const authorities = new WeakMap<
+  object,
+  Readonly<WriteGrant & { scope: OpenScope }>
+>()
 const spent = new WeakSet<object>()
+
+function assertScope(authority: Readonly<WriteGrant & { scope: OpenScope }>) {
+  if (scopes.getStore() !== authority.scope || authority.scope.sealed)
+    throw refused("This permission has ended")
+  if (!insideTransaction() || authority.transaction !== getDb())
+    throw refused("This permission is for a different save")
+}
 
 function refused(message: string) {
   return new CommandError(ERROR_CODES.FORBIDDEN, message)
@@ -83,7 +93,7 @@ export function takePriorityGrant(entityId: string): WriteGrant {
     transaction: getDb(),
     expectedRevision: open.expectedRevision,
   }
-  live.add(grant)
+  authorities.set(grant, Object.freeze({ ...grant, scope: open }))
   return grant
 }
 
@@ -95,16 +105,32 @@ export function assertPriorityGrant(
   const open = scopes.getStore()
   if (!grant || typeof grant !== "object")
     throw refused("This permission is not valid")
-  if (!open || open.sealed) throw refused("This permission has ended")
-  if (!live.has(grant)) throw refused("This permission is not valid")
+  const authority = authorities.get(grant)
+  if (!authority) throw refused("This permission is not valid")
+  assertScope(authority)
+  if (
+    grant.ownerId !== authority.ownerId ||
+    grant.entityId !== authority.entityId ||
+    grant.transaction !== authority.transaction ||
+    grant.resource !== authority.resource ||
+    grant.expectedRevision !== authority.expectedRevision
+  )
+    throw refused("This permission is not valid")
   if (spent.has(grant)) throw refused("This permission was already used")
-  if (!insideTransaction() || grant.transaction !== getDb())
-    throw refused("This permission is for a different save")
-  if (grant.resource !== "job.priority")
+  if (authority.resource !== "job.priority")
     throw refused("This permission is for a different change")
-  if (grant.ownerId !== open.ownerId || grant.ownerId !== ownerId)
+  if (
+    !open ||
+    authority.ownerId !== open.ownerId ||
+    authority.ownerId !== ownerId
+  )
     throw refused("This permission is for someone else")
-  if (grant.entityId !== entityId)
+  if (authority.entityId !== entityId)
     throw refused("This permission is for a different job")
   spent.add(grant)
+  return {
+    ownerId: authority.ownerId,
+    expectedRevision: authority.expectedRevision,
+    assertOpen: () => assertScope(authority),
+  }
 }
