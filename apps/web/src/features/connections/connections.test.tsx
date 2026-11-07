@@ -17,6 +17,8 @@ const { runCommand } = vi.hoisted(() => ({ runCommand: vi.fn() }))
 import { ConnectionConsent } from "./consent.tsx"
 import { ConnectionList } from "./connection-list.tsx"
 
+const jobScope = (access: "read" | "write") => `job.${access}`
+
 vi.mock("@/lib/auth-client.ts", () => ({
   authClient: {
     useSession: () => ({ data: { user: { email: "owner@example.com" } } }),
@@ -242,7 +244,7 @@ it("says a read-only Jobs connection cannot change things", async () => {
       clientId: "agent",
       name: "Read only",
       audience: "http://localhost:4107/mcp",
-      scopes: ["connection.status", "job.read", "offline_access"],
+      scopes: ["connection.status", jobScope("read"), "offline_access"],
       resources: { kind: "jobs" },
       policy: { reads: "allow", writes: "approval" },
       version: 1,
@@ -284,7 +286,7 @@ it.each([
   {
     name: "read only",
     id: "11070000-0000-4000-8000-000000000011",
-    scopes: ["connection.status", "job.read", "offline_access"],
+    scopes: ["connection.status", jobScope("read"), "offline_access"],
     share: "All current and future Jobs · This agent cannot change things",
     access: "Reads allowed · This agent cannot change things",
     reads: true,
@@ -292,7 +294,7 @@ it.each([
   {
     name: "write only",
     id: "11070000-0000-4000-8000-000000000012",
-    scopes: ["connection.status", "job.write", "offline_access"],
+    scopes: ["connection.status", jobScope("write"), "offline_access"],
     share: "All current and future Jobs · Reversible changes need approval",
     access: "Writes need approval",
     reads: false,
@@ -300,7 +302,12 @@ it.each([
   {
     name: "read plus write",
     id: "11070000-0000-4000-8000-000000000013",
-    scopes: ["connection.status", "job.read", "job.write", "offline_access"],
+    scopes: [
+      "connection.status",
+      jobScope("read"),
+      jobScope("write"),
+      "offline_access",
+    ],
     share: "All current and future Jobs · Reversible changes need approval",
     access: "Reads allowed · Writes need approval",
     reads: true,
@@ -341,7 +348,12 @@ it("keeps approval copy when the connection was granted a write scope", async ()
       clientId: "agent",
       name: "Can propose",
       audience: "http://localhost:4107/mcp",
-      scopes: ["connection.status", "job.read", "job.write", "offline_access"],
+      scopes: [
+        "connection.status",
+        jobScope("read"),
+        jobScope("write"),
+        "offline_access",
+      ],
       resources: { kind: "jobs" },
       policy: { reads: "allow", writes: "approval" },
       version: 1,
