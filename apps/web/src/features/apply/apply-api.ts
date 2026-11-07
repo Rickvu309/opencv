@@ -19,20 +19,26 @@ export type PaperListItem = {
   kind: string
 }
 
+export function ownerIdFromRouteMatches(
+  matches: readonly { context: unknown }[]
+) {
+  for (const match of matches) {
+    if (!match.context || typeof match.context !== "object") continue
+    const session = (match.context as { session?: unknown }).session
+    if (!session || typeof session !== "object") continue
+    const user = (session as { user?: unknown }).user
+    if (!user || typeof user !== "object") continue
+    const id = (user as { id?: unknown }).id
+    if (typeof id === "string" && id) return id
+  }
+  return ""
+}
+
 export const jobListKey = () => queryKey({ query: "job.list" })
 export const jobGetKey = (jobId: JobId) =>
   queryKey({ query: "job.get", input: { jobId } })
 export const jobCalendarKey = (from: string, to: string) =>
   queryKey({ query: "job.calendar", input: { from, to } })
-
-export const jobPriorityCountsKey = () =>
-  queryKey({ query: "job.priorityCounts" })
-
-export function priorityCounts(): Promise<QueryOutput<"job.priorityCounts">> {
-  return apiFetch<SuccessBody<QueryOutput<"job.priorityCounts">>>(
-    endpoints.jobsPriorityCounts
-  ).then(unwrapData)
-}
 
 export function listJobs(): Promise<QueryOutput<"job.list">> {
   return apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs).then(

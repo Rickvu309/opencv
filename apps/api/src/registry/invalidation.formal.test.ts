@@ -1,5 +1,7 @@
 import {
   commands,
+  catalog,
+  resourcesOverlap,
   type AnyCommandEntry,
   queries,
   type QueryName,
@@ -209,11 +211,50 @@ function refreshes(refs: QueryRef[], spec: ReadSpec) {
 }
 
 function invalidatesTable(): InvalidatesTable {
-  return Object.fromEntries(
-    Object.entries(commands as Record<string, AnyCommandEntry>).map(
-      ([name, entry]) => [name, (input: unknown) => entry.invalidates(input)]
-    )
+  const adoptedReads = Object.values(catalog).filter(
+    (operation) => operation.kind === "read"
   )
+  const legacyReads = Object.keys(queries)
+    .filter((name) => !(name in catalog))
+    .map((query) => ({ query }) as QueryRef)
+  const adoptedRefreshes = (
+    touches: { ownerId: string; name: string; entityId?: string }[]
+  ) =>
+    adoptedReads
+      .filter((operation) =>
+        operation
+          .dependsOn()
+          .some((resource) =>
+            touches.some((touch) =>
+              resourcesOverlap(touch, { ...resource, ownerId: "owner" })
+            )
+          )
+      )
+      .map((operation) => ({ query: operation.name }))
+  return Object.fromEntries([
+    ...Object.entries(commands as Record<string, AnyCommandEntry>).map(
+      ([name, entry]) => [
+        name,
+        (input: unknown) => [
+          ...entry.invalidates(input),
+          ...adoptedRefreshes([{ ownerId: "owner", name: "workspace" }]),
+        ],
+      ]
+    ),
+    ...Object.values(catalog)
+      .filter((operation) => operation.kind === "command")
+      .map((operation) => [
+        operation.name,
+        (input: unknown) => [
+          ...legacyReads,
+          ...adoptedRefreshes(
+            operation
+              .writes(operation.input.parse(input))
+              .map((resource) => ({ ...resource, ownerId: "owner" }))
+          ),
+        ],
+      ]),
+  ])
 }
 
 function without(
@@ -252,7 +293,7 @@ function gapsIn(observations: Observation[], table: InvalidatesTable) {
     if (gaps.has(label)) continue
     gaps.set(
       label,
-      `${label} ${JSON.stringify(spec.input)} but its invalidates() does not name it. Add { query: "${spec.query}" } to the invalidates of ${observation.command}.`
+      `${label} ${JSON.stringify(spec.input)} but its refresh bridge does not cover it. Fix the resource dependencies or legacy invalidates of ${observation.command}.`
     )
   }
   return [...gaps.values()].sort()
@@ -438,6 +479,27 @@ describe("every changed read is named by the command that changed it", () => {
 
   it("R2: an undo changes only reads that activity.undo refreshes", () => {
     expect(gapsIn(undos, invalidatesTable())).toEqual([])
+  })
+
+  it("G6: removing a Job bridge edge is caught for legacy writes, adoption and Undo", () => {
+    for (const [command, query] of [
+      ["job.create", "job.priorityCounts"],
+      ["job.update", "job.priorityCounts"],
+      ["job.delete", "job.priorityCounts"],
+      ["job.setPriority", "job.priorityCounts"],
+      ["job.setPriority", "job.get"],
+      ["job.setPriority", "job.list"],
+      ["activity.undo", "job.priorityCounts"],
+    ] as const) {
+      const gaps = gapsIn(
+        [...acts, ...undos],
+        without(invalidatesTable(), command, query)
+      )
+      expect(
+        gaps.some((gap) => gap.includes(`changed ${query}`)),
+        `${command} -> ${query}`
+      ).toBe(true)
+    }
   })
 
   it("mutant R1: paper.setFavorite without paper.list is caught", () => {

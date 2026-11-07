@@ -1,3 +1,4 @@
+import { catalogClient } from "@/lib/contract-client.ts"
 import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery } from "@tanstack/react-query"
@@ -14,10 +15,9 @@ import {
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
 import {
-  jobPriorityCountsKey,
-  priorityCounts,
   jobListKey,
   listJobs,
+  ownerIdFromRouteMatches,
 } from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import {
@@ -89,10 +89,10 @@ function applySearch(
 }
 
 export function ApplyPage() {
-  const counts = useQuery({
-    queryKey: jobPriorityCountsKey(),
-    queryFn: priorityCounts,
+  const ownerId = useRouterState({
+    select: (state) => ownerIdFromRouteMatches(state.matches),
   })
+  const counts = catalogClient.useRead(ownerId, "job.priorityCounts", {})
   const navigate = useNavigate()
   const routeSearch = useRouterState({
     select: (state) => state.location.search,
@@ -160,7 +160,9 @@ export function ApplyPage() {
             {priority} <span className="tabular-nums">{count}</span>
           </span>
         ))}
-        {counts.isError ? <span>Could not load priority counts.</span> : null}
+        {ownerId && counts.isError ? (
+          <span>Could not load priority counts.</span>
+        ) : null}
       </div>
       <ApplyToolbar
         view={view}

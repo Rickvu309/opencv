@@ -32,7 +32,7 @@ export const jobCreateInputSchema = z
 
 export type JobCreateInput = z.infer<typeof jobCreateInputSchema>
 
-export const jobPostingSchema = z
+const jobPostingSchema = z
   .object({
     about: z.string(),
     duties: z.string(),
@@ -40,6 +40,35 @@ export const jobPostingSchema = z
     details: z.string(),
   })
   .strict()
+
+const nullableText = z.string().nullable()
+
+export const jobViewSchema = z
+  .object({
+    id: jobIdSchema,
+    title: z.string(),
+    company: z.string(),
+    stage: jobStageSchema,
+    position: z.string(),
+    location: nullableText,
+    priority: jobPrioritySchema,
+    jobUrl: nullableText,
+    sourceHost: nullableText,
+    description: nullableText,
+    posting: jobPostingSchema.nullable(),
+    interviewAt: z.string().datetime().nullable(),
+    deadline: nullableText,
+    recruiterName: nullableText,
+    recruiterEmail: nullableText,
+    cvDocId: paperIdSchema.nullable(),
+    letterDocId: paperIdSchema.nullable(),
+    starred: z.boolean(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  })
+  .strict()
+
+export type JobView = z.output<typeof jobViewSchema>
 
 export const jobPatchSchema = z
   .object({

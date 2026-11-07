@@ -20,6 +20,7 @@ import { ApiError } from "@/lib/api-error.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
   activityKey,
+  catalogClient,
   refreshQueries,
   useRunCommand,
   undoActivity,
@@ -149,8 +150,11 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   }
 
   async function changePriority(priority: JobPriority) {
-    const result = await run("job.setPriority", { jobId: id, priority })
-    if (result.activityId) {
+    const result = await catalogClient.run(queryClient, "job.setPriority", {
+      jobId: id,
+      priority,
+    })
+    if ("activityId" in result && result.activityId) {
       const activityId = result.activityId
       toastWithUndo(`Priority set to ${priority}`, () => {
         void undoActivity(queryClient, activityId).catch(

@@ -284,7 +284,8 @@ export async function jobApiFetch(
     path.startsWith("/api/jobs") ||
     path.startsWith("/api/activity") ||
     path.includes("/api/commands/job.") ||
-    path.endsWith("/api/commands/activity.undo")
+    path.endsWith("/api/commands/activity.undo") ||
+    path === "/api/reads/job.priorityCounts"
   if (!jobPath) return null
 
   if (method === "GET" && path === "/api/jobs") {
@@ -293,7 +294,7 @@ export async function jobApiFetch(
     return jsonOk(jobs)
   }
 
-  if (method === "GET" && path === "/api/jobs/priority-counts") {
+  if (method === "POST" && path === "/api/reads/job.priorityCounts") {
     return jsonOk(
       (["low", "normal", "high"] as const).map((priority) => ({
         priority,
