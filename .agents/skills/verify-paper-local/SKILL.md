@@ -54,4 +54,4 @@ One document. One tab. One typed edit. One local transaction. One reload. The ne
 
 After a change to the files named above, run `/maintain-formal-verification-skill`. Move the sync commit only after the model still matches the code and the replay keeps the typed words. Never weaken a rule to clear a finding. Do not add this model to `verify-paper-save`. `ContentStore.tla` stays the Yjs log model.
 
-Last confirmed sync commit. pending
+Last confirmed sync commit. `51dc1ac8a3440a9836a8cbb53cb80c20cdbd0bf1`
