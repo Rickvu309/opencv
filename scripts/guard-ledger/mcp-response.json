@@ -1,0 +1,10 @@
+{
+  "id": "mcp-response",
+  "file": "scripts/mcp-response.test.mjs",
+  "detector": { "module": "scripts/lib/mcp-response.mjs", "export": "detect" },
+  "historic": {
+    "mode": "detect",
+    "sha": "a5c61cac383631d4837e65356d8f36cd424c69a6",
+    "path": "apps/api/src/connections/http.ts"
+  }
+}
