@@ -29,6 +29,17 @@ function callName(node) {
   return null
 }
 
+function nullRevision(node) {
+  if (!ts.isObjectLiteralExpression(node)) return false
+  return node.properties.some(
+    (prop) =>
+      ts.isPropertyAssignment(prop) &&
+      ts.isIdentifier(prop.name) &&
+      prop.name.text === "expectedRevision" &&
+      prop.initializer.kind === ts.SyntaxKind.NullKeyword
+  )
+}
+
 function keysOf(node) {
   if (!ts.isObjectLiteralExpression(node)) return null
   const keys = []
@@ -59,6 +70,34 @@ export function detect(text, file = "source.ts") {
       !keys.includes("expectedRevision")
     )
       problems.push({ kind: "unchecked-approval", line: lineOf(source, node) })
+    if (name === "execute" && nullRevision(node.arguments[0]))
+      problems.push({ kind: "null-basis", line: lineOf(source, node) })
   })
+  return problems
+}
+
+export function normalizeApproval(outcome) {
+  return {
+    call: "approve",
+    captured: outcome.captured,
+    passed: outcome.passed,
+    current: outcome.current,
+    wrote: outcome.wrote === true,
+  }
+}
+
+export function basisProblems(trace) {
+  const problems = []
+  for (const event of trace) {
+    if (event.call !== "approve") continue
+    if (event.wrote && event.passed === null)
+      problems.push({ kind: "null-basis" })
+    else if (
+      event.wrote &&
+      event.captured !== null &&
+      event.passed !== event.current
+    )
+      problems.push({ kind: "stale-write" })
+  }
   return problems
 }

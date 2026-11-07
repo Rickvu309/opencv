@@ -8,7 +8,7 @@ import {
   type JobId,
 } from "@workspace/domain"
 
-import { getDb, withDatabase, type TestDatabase } from "../db/context.js"
+import { getDb, transaction, withDatabase } from "../db/context.js"
 import {
   agentConnections,
   jobs,
@@ -22,16 +22,23 @@ import { writePriority } from "../job/index.js"
 import { idOf } from "./coverage-helpers.js"
 import { installRegistry } from "./install.js"
 import {
+  assertPriorityGrant,
   takePriorityGrant,
   withGrantScope,
   type WriteGrant,
 } from "./write-grant.js"
 // @ts-expect-error detectors are plain scripts with no declaration file
-import { detect, traceProblems } from "../../../../scripts/lib/write-grant.mjs"
+import {
+  detect,
+  normalizeWrite,
+  traceProblems,
+} from "../../../../scripts/lib/write-grant.mjs"
 // @ts-expect-error detectors are plain scripts with no declaration file
-import { detect as detectBasis } from "../../../../scripts/lib/proposal-basis.mjs"
-// @ts-expect-error detectors are plain scripts with no declaration file
-import { detect as detectExpiry } from "../../../../scripts/lib/approval-expiry.mjs"
+import {
+  basisProblems,
+  detect as detectBasis,
+  normalizeApproval,
+} from "../../../../scripts/lib/proposal-basis.mjs"
 
 declare const sampleJob: JobId
 declare function createProposal(options: {
@@ -43,8 +50,8 @@ declare function execute(options: {
   name: string
   input: unknown
   skipConfirm?: boolean
+  expectedRevision?: number | null
 }): unknown
-declare function lockPending(userId: string, id: string): Promise<unknown>
 
 async function actorOnlyPriority(
   actor: { userId: string },
@@ -86,8 +93,13 @@ function approve(row: { input: unknown }) {
   })
 }
 
-async function lockProposal(userId: string, id: string) {
-  return lockPending(userId, id)
+function approveNull(row: { input: unknown }) {
+  return execute({
+    name: "job.setPriority",
+    input: row.input,
+    skipConfirm: true,
+    expectedRevision: null,
+  })
 }
 
 const admitted = (entityId: string) => [
@@ -99,7 +111,7 @@ function kinds(problems: { kind: string }[]) {
 }
 
 describe("priority writes require a one-time permission and a matching version", () => {
-  it("flags an actor-only writer, a missing version bump, a proposal with no version, and an approval that skips expiry", () => {
+  it("flags an actor-only writer, a missing version bump, a missing permission check, and a null version", () => {
     const source = readFileSync(
       new URL("./write-grant.test.ts", import.meta.url),
       "utf8"
@@ -112,22 +124,18 @@ describe("priority writes require a one-time permission and a matching version",
       new URL("./registry.ts", import.meta.url),
       "utf8"
     )
-    const proposals = readFileSync(
-      new URL("./proposals.ts", import.meta.url),
-      "utf8"
-    )
     expect(kinds(detect(source, "write-grant.test.ts"))).toEqual(
-      expect.arrayContaining(["actor-only", "missing-bump"])
+      expect.arrayContaining(["actor-only", "missing-bump", "missing-assert"])
     )
     expect(detect(store, "store.ts")).toEqual([])
     expect(kinds(detectBasis(source, "write-grant.test.ts"))).toEqual(
-      expect.arrayContaining(["missing-basis", "unchecked-approval"])
+      expect.arrayContaining([
+        "missing-basis",
+        "unchecked-approval",
+        "null-basis",
+      ])
     )
     expect(detectBasis(registry, "registry.ts")).toEqual([])
-    expect(kinds(detectExpiry(source, "write-grant.test.ts"))).toContain(
-      "expiry-before-lock"
-    )
-    expect(detectExpiry(proposals, "proposals.ts")).toEqual([])
     expect(
       traceProblems([
         {
@@ -169,7 +177,7 @@ describe("priority writes require a one-time permission and a matching version",
     expect(priorityWithoutRevision).toBeTypeOf("function")
     expect(proposeWithoutBasis).toBeTypeOf("function")
     expect(approve).toBeTypeOf("function")
-    expect(lockProposal).toBeTypeOf("function")
+    expect(approveNull).toBeTypeOf("function")
     const refuseActor = () => {
       // @ts-expect-error an actor is not a priority permission
       return writePriority(personActor("owner"), sampleJob, "high")
@@ -276,16 +284,15 @@ describe("priority writes require a one-time permission and a matching version",
           ).output
         )
         await expect(
-          withGrantScope(
-            { ownerId: userId, writes: admitted(jobId) },
-            async () => {
+          withGrantScope({ ownerId: userId, writes: admitted(jobId) }, () =>
+            transaction(async () => {
               const grant = takePriorityGrant(jobId)
               expect(() => takePriorityGrant(jobId)).toThrow(/permission/)
               await expect(
                 writePriority(grant, parseJobId(otherId), "high")
               ).rejects.toMatchObject({ code: "FORBIDDEN" })
               return grant
-            }
+            })
           ).then((grant) => writePriority(grant, parseJobId(jobId), "low"))
         ).rejects.toMatchObject({ code: "FORBIDDEN" })
         const forged = {
@@ -435,45 +442,16 @@ describe("priority writes require a one-time permission and a matching version",
     }
   })
 
-  it("refuses a delegate approval that expires as the save begins", async () => {
+  it("catches a removed permission check and a null version from the save", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
-    const userId = "expiry-owner"
+    const userId = "replay-owner"
     await db.insert(user).values({
       id: userId,
       name: "Ada",
-      email: "expiry@example.com",
-    })
-    await db.insert(oauthClient).values({
-      id: "expiry-client",
-      clientId: "expiry-client",
-      redirectUris: ["http://localhost/callback"],
-    })
-    await db.insert(agentConnections).values({
-      id: "44444444-4444-4444-8444-444444444444",
-      userId,
-      clientId: "expiry-client",
-      authorizationCodeId: "expiry-authorization",
-      name: "My agent",
-      audience: "http://localhost/mcp",
-      scopes: ["job.read", "job.write"],
-      resources: { kind: "jobs" },
-      policy: { reads: "allow", writes: "approval" },
-      expiresAt: new Date(Date.now() + 60_000),
+      email: "replay@example.com",
     })
     const person = personActor(userId)
-    const delegate = delegateActorSchema.parse({
-      type: "delegate",
-      userId,
-      connectionId: "44444444-4444-4444-8444-444444444444",
-      name: "My agent",
-      scopes: ["job.read", "job.write"],
-      resources: "jobs",
-      reads: "allow",
-      writes: "approval",
-    })
-    const originalNow = Date.now
-    const originalTx = db.transaction.bind(db)
     try {
       await withDatabase(db, async () => {
         const jobId = idOf(
@@ -485,37 +463,112 @@ describe("priority writes require a one-time permission and a matching version",
             })
           ).output
         )
-        const proposed = await registry.execute({
-          name: "job.setPriority",
-          input: { jobId, priority: "high" },
-          actor: delegate,
-        })
-        const expires = Date.now() + 10_000
-        await getDb()
-          .update(pendingActions)
-          .set({ createdAt: new Date(expires - 24 * 60 * 60 * 1000) })
-          .where(eq(pendingActions.id, proposed.pendingActionId!))
-        db.transaction = (async (
-          ...args: Parameters<TestDatabase["transaction"]>
-        ) => {
-          Date.now = () => expires + 1
-          return originalTx(...args)
-        }) as typeof db.transaction
+        const read = async () => {
+          const [row] = await getDb()
+            .select({
+              priority: jobs.priority,
+              priorityRevision: jobs.priorityRevision,
+            })
+            .from(jobs)
+            .where(eq(jobs.id, jobId))
+          if (!row) throw new Error("missing job")
+          return row
+        }
+        const spent = async (grant: WriteGrant) => {
+          try {
+            assertPriorityGrant(grant, userId, jobId)
+            return false
+          } catch (error) {
+            return /already used/.test(
+              error instanceof Error ? error.message : ""
+            )
+          }
+        }
+        await withGrantScope(
+          { ownerId: userId, writes: admitted(jobId), expectedRevision: 0 },
+          () =>
+            transaction(async () => {
+              const before = await read()
+              const grant = takePriorityGrant(jobId)
+              await writePriority(grant, parseJobId(jobId), "high")
+              const after = await read()
+              expect(
+                traceProblems([
+                  normalizeWrite({
+                    asserted: await spent(grant),
+                    revisionDelta:
+                      after.priorityRevision - before.priorityRevision,
+                    sameTransaction: true,
+                  }),
+                ])
+              ).toEqual([])
+              expect(after).toMatchObject({
+                priority: "high",
+                priorityRevision: 1,
+              })
+            })
+        )
+        const current = (await read()).priorityRevision
         await expect(
-          registry.approve(userId, proposed.pendingActionId!)
-        ).rejects.toThrow(/expired/)
-        const [row] = await getDb()
-          .select({
-            priority: jobs.priority,
-            priorityRevision: jobs.priorityRevision,
-          })
-          .from(jobs)
-          .where(eq(jobs.id, jobId))
-        expect(row).toMatchObject({ priority: "normal", priorityRevision: 0 })
+          withGrantScope(
+            { ownerId: userId, writes: admitted(jobId), expectedRevision: 0 },
+            () =>
+              transaction(async () => {
+                await writePriority(
+                  takePriorityGrant(jobId),
+                  parseJobId(jobId),
+                  "low"
+                )
+              })
+          )
+        ).rejects.toMatchObject({ code: "CONFLICT" })
+        expect(await read()).toMatchObject({ priority: "high" })
+        expect(
+          basisProblems([
+            normalizeApproval({
+              captured: 0,
+              passed: 0,
+              current,
+              wrote: (await read()).priority !== "high",
+            }),
+          ])
+        ).toEqual([])
+        await withGrantScope(
+          { ownerId: userId, writes: admitted(jobId), expectedRevision: null },
+          () =>
+            transaction(async () => {
+              const before = await read()
+              const grant = takePriorityGrant(jobId)
+              await getDb()
+                .update(jobs)
+                .set({ priority: "low", updatedAt: new Date() })
+                .where(eq(jobs.id, jobId))
+              const after = await read()
+              expect(after.priority).toBe("low")
+              expect(
+                traceProblems([
+                  normalizeWrite({
+                    asserted: await spent(grant),
+                    revisionDelta:
+                      after.priorityRevision - before.priorityRevision,
+                    sameTransaction: true,
+                  }),
+                ]).length
+              ).toBeGreaterThan(0)
+            })
+        )
+        expect(
+          basisProblems([
+            normalizeApproval({
+              captured: 0,
+              passed: null,
+              current,
+              wrote: (await read()).priority === "low",
+            }),
+          ]).map((problem) => problem.kind)
+        ).toContain("null-basis")
       })
     } finally {
-      Date.now = originalNow
-      db.transaction = originalTx
       await client.close()
     }
   })

@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks"
 
 import { ERROR_CODES } from "@workspace/domain"
 
-import { createId } from "../id.js"
+import { getDb, insideTransaction } from "../db/context.js"
 import { CommandError } from "./errors.js"
 
 const grantBrand = Symbol("job-priority-grant")
@@ -11,7 +11,7 @@ export type WriteGrant = {
   readonly ownerId: string
   readonly resource: "job.priority"
   readonly entityId: string
-  readonly transactionId: string
+  readonly transaction: object
   readonly expectedRevision: number | null
   readonly [grantBrand]: true
 }
@@ -23,10 +23,9 @@ type AdmittedWrite = {
 
 type OpenScope = {
   ownerId: string
-  transactionId: string
   expectedRevision: number | null
   sealed: boolean
-  available: Map<string, WriteGrant>
+  available: Set<string>
 }
 
 const scopes = new AsyncLocalStorage<OpenScope>()
@@ -41,19 +40,6 @@ export function priorityBasisOk(captured: number | null, current: number) {
   return captured !== null && captured === current
 }
 
-function mint(open: OpenScope, entityId: string): WriteGrant {
-  const grant = {
-    [grantBrand]: true as const,
-    ownerId: open.ownerId,
-    resource: "job.priority" as const,
-    entityId,
-    transactionId: open.transactionId,
-    expectedRevision: open.expectedRevision,
-  }
-  live.add(grant)
-  return grant
-}
-
 export async function withGrantScope<T>(
   scope: {
     ownerId: string
@@ -64,14 +50,13 @@ export async function withGrantScope<T>(
 ): Promise<T> {
   const open: OpenScope = {
     ownerId: scope.ownerId,
-    transactionId: createId(),
     expectedRevision: scope.expectedRevision ?? null,
     sealed: false,
-    available: new Map(),
+    available: new Set(),
   }
   for (const write of scope.writes) {
     if (write.name !== "job.priority" || !write.entityId) continue
-    open.available.set(write.entityId, mint(open, write.entityId))
+    open.available.add(write.entityId)
   }
   return scopes.run(open, async () => {
     try {
@@ -85,9 +70,20 @@ export async function withGrantScope<T>(
 export function takePriorityGrant(entityId: string): WriteGrant {
   const open = scopes.getStore()
   if (!open || open.sealed) throw refused("This permission has ended")
-  const grant = open.available.get(entityId)
-  if (!grant) throw refused("This save has no permission for that job")
+  if (!insideTransaction())
+    throw refused("This permission is for a different save")
+  if (!open.available.has(entityId))
+    throw refused("This save has no permission for that job")
   open.available.delete(entityId)
+  const grant: WriteGrant = {
+    [grantBrand]: true,
+    ownerId: open.ownerId,
+    resource: "job.priority",
+    entityId,
+    transaction: getDb(),
+    expectedRevision: open.expectedRevision,
+  }
+  live.add(grant)
   return grant
 }
 
@@ -102,7 +98,7 @@ export function assertPriorityGrant(
   if (!open || open.sealed) throw refused("This permission has ended")
   if (!live.has(grant)) throw refused("This permission is not valid")
   if (spent.has(grant)) throw refused("This permission was already used")
-  if (grant.transactionId !== open.transactionId)
+  if (!insideTransaction() || grant.transaction !== getDb())
     throw refused("This permission is for a different save")
   if (grant.resource !== "job.priority")
     throw refused("This permission is for a different change")

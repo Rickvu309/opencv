@@ -18,10 +18,6 @@ import { inputHash } from "./receipt.js"
 
 export const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
-export function approvalExpired(createdAt: Date, now = Date.now()) {
-  return now - createdAt.getTime() > PENDING_TTL_MS
-}
-
 export function createProposal(options: {
   actor: CoachActor | DelegateActor
   command: string
@@ -125,16 +121,6 @@ export async function lockProposal(userId: string, id: string) {
     ? await (await import("../coach/index.js")).lockTaskApproval(proposal)
     : null
   const row = await lockPending(userId, id)
-  if (row.status === "pending" && approvalExpired(row.createdAt)) {
-    await getDb()
-      .update(pendingActions)
-      .set({ status: "expired" })
-      .where(eq(pendingActions.id, row.id))
-    throw new CommandError(
-      ERROR_CODES.PENDING_EXPIRED,
-      "This confirmation expired. Ask the Coach again."
-    )
-  }
   const [expired] = await getDb()
     .select({ id: pendingActions.id })
     .from(pendingActions)
