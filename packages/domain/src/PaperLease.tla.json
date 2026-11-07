@@ -1,0 +1,8 @@
+{
+  "module": "paper-save.ts",
+  "actions": {
+    "Grant": "grant",
+    "Expire": null,
+    "Save": "save"
+  }
+}
