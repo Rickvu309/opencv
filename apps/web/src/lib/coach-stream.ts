@@ -4,24 +4,22 @@ import {
   commands,
   parseChatTurnEvent,
   queries,
-  resourcesOverlap,
   z,
   type AnyCommandEntry,
   type ChatTurnEvent,
   type QueryRef,
-  type ResourceRef,
+  type ResourceTouch,
 } from "@workspace/domain"
 
 import { apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
-import { refreshReads, refreshQueries } from "@/lib/contract-client.ts"
+import { authClient } from "@/lib/auth-client.ts"
+import {
+  refreshCatalogReads,
+  refreshQueries,
+  refreshReads,
+} from "@/lib/contract-client.ts"
 import { readSseStream } from "@/lib/sse.ts"
-
-const mountedDependency = z.object({
-  ownerId: z.string(),
-  name: z.string(),
-  entityId: z.string().optional(),
-})
 
 function isCommandName(name: string): name is keyof typeof commands {
   return name in commands
@@ -36,6 +34,11 @@ function adoptedCommand(name: string) {
 function inputRecord(input: unknown) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return {}
   return input as Record<string, unknown>
+}
+
+function executingOwnerId() {
+  const id = authClient.$store.atoms.session?.get()?.data?.user?.id
+  return typeof id === "string" ? id : ""
 }
 
 function legacyReadsForAdoptedWrite(input: unknown): QueryRef[] {
@@ -59,33 +62,22 @@ function legacyReadsForAdoptedWrite(input: unknown): QueryRef[] {
   return refs
 }
 
-function invalidateCatalogReads(
-  queryClient: QueryClient,
-  writes: readonly ResourceRef[]
-) {
-  return queryClient.invalidateQueries({
-    predicate: (query) => {
-      if (query.queryKey[0] !== "catalog") return false
-      const ownerId = query.queryKey[1]
-      if (typeof ownerId !== "string" || !ownerId) return false
-      const dependencies = z
-        .array(mountedDependency)
-        .safeParse(query.meta?.dependsOn)
-      if (!dependencies.success) return false
-      return writes.some((write) =>
-        dependencies.data.some((dependency) =>
-          resourcesOverlap(
-            {
-              ownerId,
-              name: write.name,
-              ...(write.entityId ? { entityId: write.entityId } : {}),
-            },
-            dependency
-          )
-        )
-      )
-    },
-  })
+function touchesFor(
+  name: string,
+  input: unknown,
+  ownerId: string
+): ResourceTouch[] {
+  if (!ownerId) return []
+  if (isCommandName(name)) return [{ ownerId, name: "workspace" }]
+  const operation = adoptedCommand(name)
+  if (!operation) return []
+  const parsed = operation.input.safeParse(input)
+  if (!parsed.success) return [{ ownerId, name: "workspace" }]
+  return operation.writes(parsed.data as never).map((write) => ({
+    ownerId,
+    name: write.name,
+    ...(write.entityId ? { entityId: write.entityId } : {}),
+  }))
 }
 
 export function createToolRefresher(queryClient: QueryClient) {
@@ -97,22 +89,28 @@ export function createToolRefresher(queryClient: QueryClient) {
     }
     if (event.type !== "tool-result" || !event.ok) return
     if (!inputs.has(event.toolCallId)) return
+    if (event.pendingActionId) return
     const input = inputs.get(event.toolCallId)
     inputs.delete(event.toolCallId)
     if (isCommandName(event.name)) {
       const entry = commands[event.name] as AnyCommandEntry
-      void refreshQueries(queryClient, entry.invalidates(input))
-      return
+      const touches = touchesFor(event.name, input, executingOwnerId())
+      return Promise.all([
+        refreshQueries(queryClient, entry.invalidates(input)),
+        touches.length
+          ? refreshCatalogReads(queryClient, touches)
+          : Promise.resolve(),
+      ])
     }
     const operation = adoptedCommand(event.name)
     if (!operation) return
-    void refreshQueries(queryClient, legacyReadsForAdoptedWrite(input))
-    const parsed = operation.input.safeParse(input)
-    if (!parsed.success) return
-    void invalidateCatalogReads(
-      queryClient,
-      operation.writes(parsed.data as never)
-    )
+    const touches = touchesFor(event.name, input, executingOwnerId())
+    return Promise.all([
+      refreshQueries(queryClient, legacyReadsForAdoptedWrite(input)),
+      touches.length
+        ? refreshCatalogReads(queryClient, touches)
+        : Promise.resolve(),
+    ])
   }
 }
 

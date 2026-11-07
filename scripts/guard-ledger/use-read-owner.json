@@ -1,0 +1,18 @@
+{
+  "id": "use-read-owner",
+  "file": "apps/web/src/features/apply/apply-api.test.ts",
+  "detector": {
+    "module": "scripts/lib/use-read-owner.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "apps/web/src/features/apply/apply-api.test.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/routes/apply.tsx"
+    }
+  },
+  "reason": "Architectural fixture, not a historical product commit. The non-null session read never landed in a commit that survives onto main. detect fires on routeOwnerMistake in this test and stays quiet on the Apply route. The same detector flags a Coach refresher that returns from a legacy command before refreshCatalogReads, or that copies query.queryKey[1] onto a write."
+}
