@@ -44,3 +44,53 @@ export function detectCoachTurnWire(text) {
   visit(source)
   return hits
 }
+
+export function detectPendingDeadline(text) {
+  const source = sourceOf(text, "turn-compatibility.test.ts")
+  const hits = []
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "it" &&
+      ts.isStringLiteral(node.arguments[0]) &&
+      node.arguments[0].text === "sends a pending result the old tab can read"
+    ) {
+      let frozen = false
+      let reading = false
+      let cancelled = false
+      const inspect = (child) => {
+        if (
+          ts.isCallExpression(child) &&
+          ts.isPropertyAccessExpression(child.expression)
+        ) {
+          const method = child.expression.name.text
+          if (
+            method === "mockReturnValue" &&
+            ts.isCallExpression(child.expression.expression)
+          ) {
+            const spy = child.expression.expression
+            frozen ||=
+              ts.isPropertyAccessExpression(spy.expression) &&
+              spy.expression.name.text === "spyOn" &&
+              ts.isIdentifier(spy.arguments[0]) &&
+              spy.arguments[0].text === "Date" &&
+              ts.isStringLiteral(spy.arguments[1]) &&
+              spy.arguments[1].text === "now"
+          }
+          reading ||= method === "read"
+          cancelled ||= method === "cancel"
+        }
+        ts.forEachChild(child, inspect)
+      }
+      inspect(node)
+      if (!frozen || !reading || !cancelled)
+        hits.push(
+          "pending-result delivery needs a controlled deadline and an explicitly closed stream"
+        )
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return hits
+}

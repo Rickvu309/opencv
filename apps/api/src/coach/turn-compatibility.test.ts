@@ -149,18 +149,37 @@ it("sends a pending result the old tab can read", () =>
           final,
         ])
       )
-      const response = await app.request(`/api/chats/${chatId}/turns`, {
-        method: "POST",
-        headers: authHeaders(owner.cookie),
-        body: JSON.stringify({ text: "Delete the Job" }),
-      })
-      const wire = response.text()
-      await work()
-      const text = await wire
-      expect(text).toContain("event: tool-result")
-      expect(text).toContain("pendingActionId")
-      expect(text).toContain("event: confirm")
-      expect(text).not.toContain("The Coach stopped")
+      const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now())
+      const controller = new AbortController()
+      try {
+        const response = await app.request(`/api/chats/${chatId}/turns`, {
+          method: "POST",
+          signal: controller.signal,
+          headers: authHeaders(owner.cookie),
+          body: JSON.stringify({ text: "Delete the Job" }),
+        })
+        const reader = response.body!.getReader()
+        const decoder = new TextDecoder()
+        let text = ""
+        try {
+          await work()
+          while (!text.includes("event: confirm")) {
+            const chunk = await reader.read()
+            if (chunk.done) break
+            text += decoder.decode(chunk.value, { stream: true })
+          }
+        } finally {
+          controller.abort()
+          await reader.cancel()
+        }
+        expect(text).toContain("event: tool-result")
+        expect(text).toContain("pendingActionId")
+        expect(text).toContain("event: confirm")
+        expect(text).not.toContain("The Coach stopped")
+      } finally {
+        controller.abort()
+        clock.mockRestore()
+      }
     },
     { coachDurable: true, coachCompatibilityMs: 1000 }
   ))
