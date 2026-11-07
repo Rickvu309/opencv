@@ -51,4 +51,4 @@ Writers are Tab A, Tab B, and Coach. Head and epoch stay at most 2. One document
 
 After a change to `packages/domain/src/paper-save.ts`, run `/maintain-formal-verification-skill`. Move the sync commit only after the model still matches the code and the replay keeps one live lease. Never weaken a rule to clear a finding.
 
-Last confirmed sync commit. `unconfirmed`
+Last confirmed sync commit. `991b90866dcc5adc3c71870f28c80f28b1289276`
