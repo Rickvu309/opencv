@@ -272,6 +272,68 @@ it("says a read-only Jobs connection cannot change things", async () => {
   ).not.toBeInTheDocument()
 })
 
+it.each([
+  {
+    name: "none",
+    id: "11070000-0000-4000-8000-000000000010",
+    scopes: ["connection.status", "offline_access"],
+    share: "All current and future Jobs · This agent cannot change things",
+    access: "This agent cannot change things",
+    reads: false,
+  },
+  {
+    name: "read only",
+    id: "11070000-0000-4000-8000-000000000011",
+    scopes: ["connection.status", "job.read", "offline_access"],
+    share: "All current and future Jobs · This agent cannot change things",
+    access: "Reads allowed · This agent cannot change things",
+    reads: true,
+  },
+  {
+    name: "write only",
+    id: "11070000-0000-4000-8000-000000000012",
+    scopes: ["connection.status", "job.write", "offline_access"],
+    share: "All current and future Jobs · Reversible changes need approval",
+    access: "Writes need approval",
+    reads: false,
+  },
+  {
+    name: "read plus write",
+    id: "11070000-0000-4000-8000-000000000013",
+    scopes: ["connection.status", "job.read", "job.write", "offline_access"],
+    share: "All current and future Jobs · Reversible changes need approval",
+    access: "Reads allowed · Writes need approval",
+    reads: true,
+  },
+])(
+  "describes a $name Jobs grant from its scopes",
+  async ({ id, scopes, share, access, reads }) => {
+    vi.mocked(fetchConnections).mockResolvedValue([
+      {
+        id: connectionIdSchema.parse(id),
+        clientId: "agent",
+        name: "Scoped agent",
+        audience: "http://localhost:4107/mcp",
+        scopes,
+        resources: { kind: "jobs" },
+        policy: { reads: "allow", writes: "approval" },
+        version: 1,
+        consentVersion: 1,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+        revokedAt: null,
+      },
+    ])
+    show(<ConnectionList />)
+    expect(await screen.findByText(share)).toBeInTheDocument()
+    expect(screen.getByText(access)).toBeInTheDocument()
+    if (!reads) {
+      expect(screen.queryByText(/Reads allowed/)).not.toBeInTheDocument()
+    }
+  }
+)
+
 it("keeps approval copy when the connection was granted a write scope", async () => {
   vi.mocked(fetchConnections).mockResolvedValue([
     {

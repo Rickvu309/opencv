@@ -17,11 +17,11 @@ function connectionGrantLines(connection: {
         ? "All current and future Jobs · Reversible changes need approval"
         : "All current and future Jobs · This agent cannot change things"
       : "Connection status only · No documents or Jobs shared"
-  const access = writes
-    ? "Reads allowed · Writes need approval"
-    : reads
-      ? "Reads allowed · This agent cannot change things"
-      : "This agent cannot change things"
+  const readCopy = reads ? "Reads allowed" : null
+  const writeCopy = writes
+    ? "Writes need approval"
+    : "This agent cannot change things"
+  const access = readCopy ? `${readCopy} · ${writeCopy}` : writeCopy
   return [share, access]
 }
 
