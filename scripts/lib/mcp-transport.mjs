@@ -48,15 +48,6 @@ function unwrapTransaction(node) {
       current = current.right ?? null
       continue
     }
-    if (
-      ts.isCallExpression(current) &&
-      current.expression &&
-      ts.isPropertyAccessExpression(current.expression) &&
-      current.expression.name?.text === "then"
-    ) {
-      current = current.expression.expression ?? null
-      continue
-    }
     break
   }
   return isTransactionCall(current) ? current : null
@@ -79,6 +70,26 @@ function enclosesTransport(node) {
     ts.forEachChild(current, visit)
   }
   visit(node)
+  return found
+}
+
+const CHAIN_MESSAGE = "MCP route handlers use await, not promise chains"
+
+function promiseChains(root) {
+  const found = []
+  const visit = (node) => {
+    if (!node) return
+    if (
+      ts.isCallExpression(node) &&
+      node.expression &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      (node.expression.name.text === "then" ||
+        node.expression.name.text === "catch")
+    )
+      found.push(node)
+    ts.forEachChild(node, visit)
+  }
+  visit(root)
   return found
 }
 
@@ -222,6 +233,12 @@ export function detect(text, file = "http.ts") {
   for (const route of routes) {
     if (routeWrappedInTransaction(route))
       hits.push({ kind: "transaction", line: lineOf(source, route) })
+    for (const call of promiseChains(route))
+      hits.push({
+        kind: "chain",
+        line: lineOf(source, call),
+        message: CHAIN_MESSAGE,
+      })
   }
   const reachable = new Set(routes)
   const queue = [...routes]

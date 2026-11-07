@@ -59,9 +59,6 @@ const WRAPPED = [
     const response = await transaction(async () => handler.fetch(c.req.raw))
     return response
   })`,
-  `routes.all("/mcp", async (c) =>
-    transaction(async () => handler.fetch(c.req.raw)).then((response) => response)
-  )`,
 ]
 
 test("a route wrapped in one database seat or a site list is caught", () => {
@@ -89,7 +86,7 @@ routes.all("/mcp", async (c) => {
 })
 `
 
-test("await, parentheses, return, assignment and then still hold the seat", () => {
+test("await, parentheses, return and assignment still hold the seat", () => {
   for (const source of WRAPPED) {
     assert.ok(
       detect(source).some((hit) => hit.kind === "transaction"),
@@ -111,6 +108,37 @@ test("a short transaction that finishes before transport stays quiet", () => {
       source
     )
   }
+})
+
+const CHAIN_MESSAGE = "MCP route handlers use await, not promise chains"
+
+const CHAINS = [
+  `routes.all("/mcp", async (c) =>
+    transaction(async () => authenticate()).then(() => handler.fetch(c.req.raw))
+  )`,
+  `routes.all("/mcp", async (c) =>
+    transaction(async () => handler.fetch(c.req.raw)).then((response) => response)
+  )`,
+  `routes.all("/mcp", async (c) =>
+    handler.fetch(c.req.raw).catch(() => c.json({ error: "down" }, 500))
+  )`,
+]
+
+test("promise chains are rejected in the route handler", () => {
+  for (const source of CHAINS) {
+    const hits = detect(source)
+    assert.ok(
+      hits.some((hit) => hit.message === CHAIN_MESSAGE),
+      source
+    )
+  }
+  assert.deepEqual(
+    detect(CHAINS[0]).filter((hit) => hit.kind === "transaction"),
+    []
+  )
+  assert.deepEqual(detect(QUIET_SHORT), [])
+  assert.deepEqual(detect(QUIET_BARE), [])
+  assert.deepEqual(detect(CLEAN), [])
 })
 
 test("the live door stays quiet", () => {
