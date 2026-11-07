@@ -34,12 +34,27 @@ function hasProp(node, name) {
   return found
 }
 
+function callee(node) {
+  if (!ts.isCallExpression(node)) return null
+  const expr = node.expression
+  if (ts.isIdentifier(expr)) return expr.text
+  if (ts.isPropertyAccessExpression(expr)) return expr.name.text
+  return null
+}
+
 function isSetCall(node) {
-  return (
-    ts.isCallExpression(node) &&
-    ts.isPropertyAccessExpression(node.expression) &&
-    node.expression.name.text === "set"
-  )
+  return callee(node) === "set"
+}
+
+function callsAssert(fn) {
+  let found = false
+  const visit = (node) => {
+    if (node !== fn && ts.isFunctionLike(node)) return
+    if (callee(node) === "assertPriorityGrant") found = true
+    ts.forEachChild(node, visit)
+  }
+  if (fn.body) visit(fn.body)
+  return found
 }
 
 function grantParam(fn, source) {
@@ -73,10 +88,24 @@ export function detect(text, file = "source.ts") {
     if (sets.length === 0) return
     if (!grantParam(node, source))
       problems.push({ kind: "actor-only", line: lineOf(source, node) })
+    if (!callsAssert(node))
+      problems.push({ kind: "missing-assert", line: lineOf(source, node) })
     if (sets.some((set) => !hasProp(set, "priorityRevision")))
       problems.push({ kind: "missing-bump", line: lineOf(source, node) })
   })
   return problems
+}
+
+export function normalizeWrite(outcome) {
+  return {
+    call: "writePriority",
+    grant: outcome.asserted ? "open" : "missing",
+    owner: outcome.ownerMatched === false ? "other" : "same",
+    entity: outcome.entityMatched === false ? "other" : "same",
+    resource: outcome.resource ?? "job.priority",
+    transaction: outcome.sameTransaction === false ? "other" : "same",
+    bumped: outcome.revisionDelta === 1,
+  }
 }
 
 export function traceProblems(trace) {

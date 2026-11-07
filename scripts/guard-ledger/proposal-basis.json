@@ -7,12 +7,12 @@
   },
   "historic": {
     "mode": "detect",
-    "sha": "HEAD",
-    "path": "apps/api/src/registry/write-grant.test.ts",
+    "sha": "adbbf32cb51d10be26016a79cdeb6b5738ec2b71",
+    "path": "apps/api/src/registry/registry.ts",
     "fixed": {
       "rev": "HEAD",
       "path": "apps/api/src/registry/registry.ts"
     }
   },
-  "reason": "Architectural fixture, not a historical product commit. A priority proposal that stores no version, and an approval that writes without comparing that version, never landed in a commit that survives onto main. detect fires on those fixtures in this test and stays quiet on the registry."
+  "reason": "Caught by review. Introduced by adbbf32cb51d10be26016a79cdeb6b5738ec2b71, where approving a priority change wrote it without the version captured when the change was proposed. detect fires on that approval and stays quiet on the registry."
 }

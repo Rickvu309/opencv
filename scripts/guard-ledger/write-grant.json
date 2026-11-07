@@ -7,12 +7,12 @@
   },
   "historic": {
     "mode": "detect",
-    "sha": "HEAD",
-    "path": "apps/api/src/registry/write-grant.test.ts",
+    "sha": "adbbf32cb51d10be26016a79cdeb6b5738ec2b71",
+    "path": "apps/api/src/job/store.ts",
     "fixed": {
       "rev": "HEAD",
       "path": "apps/api/src/job/store.ts"
     }
   },
-  "reason": "Architectural fixture, not a historical product commit. An actor-only priority writer and a priority write that skips the version bump never landed in a commit that survives onto main. detect fires on those fixtures in this test and stays quiet on the job store."
+  "reason": "Caught by review. Introduced by adbbf32cb51d10be26016a79cdeb6b5738ec2b71, where a priority save wrote the column with no permission and no version bump. detect fires on that store and stays quiet on the granted writer."
 }

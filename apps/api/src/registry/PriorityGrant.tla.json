@@ -5,7 +5,13 @@
   },
   "actions": {
     "Open": "withGrantScope",
+    "Begin": null,
+    "Take": "takePriorityGrant",
+    "Autocommit": "takePriorityGrant",
     "Write": "assertPriorityGrant",
+    "Commit": null,
+    "Late": "assertPriorityGrant",
+    "Cross": "assertPriorityGrant",
     "Stale": "priorityBasisOk",
     "Forge": "assertPriorityGrant",
     "Seal": "withGrantScope",
