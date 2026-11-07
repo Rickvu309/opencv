@@ -10,6 +10,7 @@ import {
   symlinkSync,
 } from "node:fs"
 import { homedir } from "node:os"
+import { createRequire } from "node:module"
 import path from "node:path"
 import test from "node:test"
 
@@ -179,10 +180,19 @@ test("kind-based Vite backstop rejects every review probe without discovery", as
     (entry) => !entry.discoveryOnly
   )) {
     await t.test(fixture.name, async (t) => {
-      const directory = browserWorkspace(t)
+      let directory = browserWorkspace(t)
       write(directory, implementation, server)
       write(directory, declaration, descriptor())
       await catalog("generate", directory)
+      if (fixture.packageRoot) {
+        const seed = directory
+        directory = browserWorkspace(t)
+        cpSync(
+          path.join(seed, "packages/domain/src/generated"),
+          path.join(directory, "packages/domain/src/generated"),
+          { recursive: true }
+        )
+      }
       write(
         directory,
         "apps/api/src/private.ts",
@@ -208,6 +218,26 @@ test("kind-based Vite backstop rejects every review probe without discovery", as
         "packages/domain/src/server.ts",
         'export const secret = "private-api-sentinel"'
       )
+      if (fixture.packageRoot) {
+        const packageRoot = path.join(directory, fixture.packageRoot)
+        const installed = path.dirname(
+          createRequire(
+            path.join(root, "packages/domain/src/index.ts")
+          ).resolve("zod/package.json")
+        )
+        cpSync(installed, packageRoot, { recursive: true })
+        cpSync(
+          path.join(packageRoot, "index.js"),
+          path.join(packageRoot, "original.js")
+        )
+        rmSync(path.join(directory, "packages/domain/node_modules"))
+        mkdirSync(path.join(directory, "packages/domain/node_modules"))
+        symlinkSync(
+          packageRoot,
+          path.join(directory, "packages/domain/node_modules/zod"),
+          "dir"
+        )
+      }
       for (const [file, text] of Object.entries(fixture.files))
         write(directory, file, text)
       for (const [file, destination] of Object.entries(fixture.links ?? {}))
@@ -219,7 +249,8 @@ test("kind-based Vite backstop rejects every review probe without discovery", as
       write(
         directory,
         declaration,
-        descriptor().replace("dependsOn: () => []", `dependsOn: ${callback}`)
+        (fixture.declarationImports ?? "") +
+          descriptor().replace("dependsOn: () => []", `dependsOn: ${callback}`)
       )
       await assert.rejects(
         buildBrowserCatalog(directory),

@@ -11,6 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { format } from "prettier"
 
 import {
+  browserDependency,
   browserPackageRoots,
   browserSource,
   discoverCatalog,
@@ -19,6 +20,7 @@ import {
   CatalogError,
   detect,
   digestOf,
+  plainCode,
   renderCatalog,
 } from "./lib/operation-catalog.mjs"
 
@@ -32,6 +34,7 @@ export async function buildBrowserCatalog(directory = root) {
   )
   const webRoot = path.join(directory, "apps/web")
   const modules = new Set()
+  const dependency = browserDependency(directory)
   const allowedPackages = browserPackageRoots(directory)
   const canonicalRoot = realpathSync(directory)
   const result = await build({
@@ -63,11 +66,15 @@ export async function buildBrowserCatalog(directory = root) {
       .relative(canonicalRoot, canonical)
       .replaceAll(path.sep, "/")
     if (
-      !file.startsWith("apps/api/") &&
+      !source.includes("?") &&
+      !source.includes("#") &&
+      plainCode(source) &&
+      plainCode(canonical) &&
       (browserSource(file) ||
-        allowedPackages.some((allowed) =>
-          canonical.startsWith(`${allowed}${path.sep}`)
-        ))
+        (dependency(canonical) &&
+          allowedPackages.some((allowed) =>
+            canonical.startsWith(`${allowed}${path.sep}`)
+          )))
     )
       return
     throw new CatalogError(

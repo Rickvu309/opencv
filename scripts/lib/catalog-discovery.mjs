@@ -1,5 +1,6 @@
 import {
   existsSync,
+  globSync,
   readFileSync,
   readdirSync,
   realpathSync,
@@ -9,6 +10,7 @@ import { createRequire, registerHooks } from "node:module"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 import ts from "typescript"
+import { parsers } from "prettier/plugins/yaml"
 
 import {
   CatalogError,
@@ -51,17 +53,60 @@ export const browserSource = (file) =>
   !file.split("/").some((part) => ["server", "server-only"].includes(part)) &&
   !/(?:^|[/.])server\.(?:ts|tsx|js|mjs)$/.test(file)
 
+export function browserDependency(root) {
+  const patterns = ["apps/*", "packages/*"]
+  const workspaceFile = path.join(root, "pnpm-workspace.yaml")
+  const values = (node) =>
+    typeof node.value === "string"
+      ? [node.value]
+      : (node.children ?? []).flatMap(values)
+  const visit = (node) => {
+    if (
+      node.type === "mappingItem" &&
+      values(node.children[0])[0] === "packages"
+    )
+      patterns.push(...values(node.children[1]))
+    else node.children?.forEach(visit)
+  }
+  if (existsSync(workspaceFile))
+    visit(parsers.yaml.parse(readFileSync(workspaceFile, "utf8")))
+  const workspaces = patterns
+    .filter((pattern) => !pattern.startsWith("!"))
+    .flatMap((pattern) =>
+      globSync(pattern, {
+        cwd: root,
+        exclude: pattern.split("/").includes("node_modules")
+          ? ["**/.git/**"]
+          : ["**/node_modules/**", "**/.git/**"],
+      })
+    )
+    .map((directory) => path.resolve(root, directory))
+    .filter((directory) => statSync(directory).isDirectory())
+    .map((directory) => realpathSync(directory))
+  return (canonical) =>
+    canonical.split(path.sep).includes("node_modules") &&
+    !workspaces.some(
+      (workspace) =>
+        canonical === workspace ||
+        canonical.startsWith(`${workspace}${path.sep}`)
+    )
+}
+
 export function browserPackageRoots(root) {
   const require = createRequire(path.join(root, domain, "index.ts"))
-  return browserPackages.map((name) =>
-    realpathSync(path.dirname(require.resolve(`${name}/package.json`)))
-  )
+  const dependency = browserDependency(root)
+  return browserPackages
+    .map((name) =>
+      realpathSync(path.dirname(require.resolve(`${name}/package.json`)))
+    )
+    .filter(dependency)
 }
 
 export function browserGraph(root, entries) {
   const sources = new Map()
   const boundaryErrors = []
   const canonicalRoot = realpathSync(root)
+  const dependency = browserDependency(root)
   const reject = (file, line) =>
     boundaryErrors.push({
       file,
@@ -73,6 +118,7 @@ export function browserGraph(root, entries) {
         const require = createRequire(path.join(root, file))
         const target = realpathSync(require.resolve(specifier))
         if (
+          !dependency(target) ||
           !browserPackageRoots(root).some((allowed) =>
             target.startsWith(`${allowed}${path.sep}`)
           )

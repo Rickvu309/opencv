@@ -250,6 +250,87 @@
       "source": "export const dependsOn = () => new (URL as typeof URL)(\"./asset.svg\", \"https://example.test\")",
       "files": {},
       "discoveryOnly": true
+    },
+    {
+      "name": "workspace-css-inline",
+      "packageRoot": "packages/probe",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "packages/probe/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":{\"browser\":\"./browser.js\",\"default\":\"./index.js\"},\"./package.json\":\"./package.json\"}}",
+        "packages/probe/index.js": "export * from \"./original.js\"; export const secret = \"node-safe\"",
+        "packages/probe/browser.js": "export * from \"./original.js\"; export { default as secret } from \"./style.css?inline\"",
+        "packages/probe/style.css": "@import \"../../apps/api/src/private.css\";"
+      }
+    },
+    {
+      "name": "workspace-domain-server",
+      "packageRoot": "packages/domain",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "packages/domain/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "packages/domain/index.js": "export * from \"./original.js\"; export { secret } from \"./src/server.ts\""
+      }
+    },
+    {
+      "name": "workspace-custom-node-modules",
+      "packageRoot": "tools/probe/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "tools/probe/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "tools/probe/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "tools/probe/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\"",
+        "pnpm-workspace.yaml": "packages: [\"apps/*\", \"packages/*\", \"tools/*\"]\n"
+      }
+    },
+    {
+      "name": "workspace-app-node-modules",
+      "packageRoot": "apps/probe/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "apps/probe/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "apps/probe/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "apps/probe/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\""
+      }
+    },
+    {
+      "name": "workspace-package-node-modules",
+      "packageRoot": "packages/probe/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "packages/probe/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "packages/probe/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "packages/probe/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\""
+      }
+    },
+    {
+      "name": "installed-package-css-inline",
+      "packageRoot": "dependencies/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "dependencies/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":{\"browser\":\"./browser.js\",\"default\":\"./index.js\"},\"./package.json\":\"./package.json\"}}",
+        "dependencies/node_modules/zod/index.js": "export * from \"./original.js\"; export const secret = \"node-safe\"",
+        "dependencies/node_modules/zod/browser.js": "export * from \"./original.js\"; export { default as secret } from \"./style.css?inline\"",
+        "dependencies/node_modules/zod/style.css": "@import \"../../../apps/api/src/private.css\";"
+      },
+      "backstopOnly": true
+    },
+    {
+      "name": "workspace-explicit-node-modules",
+      "packageRoot": "dependencies/node_modules/zod",
+      "declarationImports": "import { secret } from \"zod\"; ",
+      "source": "export const dependsOn = () => [{ name: secret, coachFloor: \"auto\" }]",
+      "files": {
+        "dependencies/node_modules/zod/package.json": "{\"name\":\"zod\",\"type\":\"module\",\"exports\":{\".\":\"./index.js\",\"./package.json\":\"./package.json\"}}",
+        "dependencies/node_modules/zod/index.js": "export * from \"./original.js\"; export { secret } from \"./server.ts\"",
+        "dependencies/node_modules/zod/server.ts": "export const secret = \"private-api-sentinel\"",
+        "pnpm-workspace.yaml": "packages: [\"apps/*\", \"packages/*\", \"dependencies/node_modules/zod\"]\n"
+      }
     }
   ],
   "importSources": [

@@ -5,7 +5,7 @@ import { homedir } from "node:os"
 import test from "node:test"
 import fs from "node:fs"
 import childProcess from "node:child_process"
-import { syncBuiltinESMExports } from "node:module"
+import { createRequire, syncBuiltinESMExports } from "node:module"
 import { catalog, root } from "./catalog.mjs"
 import { browserGraph } from "./lib/catalog-discovery.mjs"
 import { watchCatalog } from "./lib/catalog-dev.mjs"
@@ -199,43 +199,73 @@ test("imported helpers reject import.meta in declarations and callbacks", (t) =>
   }
 })
 
-test("plain-code import allow-list rejects every mistake in declarations and transitive helpers with file and line", (t) => {
-  for (const fixture of mistake.importCases) {
+test("plain-code import allow-list rejects every mistake in declarations and transitive helpers with file and line", async (t) => {
+  for (const fixture of mistake.importCases.filter(
+    (entry) => !entry.backstopOnly
+  )) {
     for (const helper of [false, true]) {
-      const directory = tempDir(
-        t,
-        "catalog-imports-",
-        path.join(homedir(), "tmp")
-      )
-      const target = helper
-        ? `${path.dirname(declaration)}/helper.ts`
-        : declaration
-      const write = (file, text) => {
-        mkdirSync(path.dirname(path.join(directory, file)), { recursive: true })
-        writeFileSync(path.join(directory, file), text)
-      }
-      write("packages/domain/src/helper.ts", "export const value = 1")
-      write("apps/api/src/private.ts", "export const secret = 'private'")
-      write("packages/domain/src/server.ts", "export const secret = 'private'")
-      for (const [file, text] of Object.entries(fixture.files))
-        write(file, text)
-      for (const [file, destination] of Object.entries(fixture.links ?? {}))
-        symlinkSync(
-          path.join(directory, destination),
-          path.join(directory, file)
+      await t.test(`${fixture.name}, helper=${helper}`, (t) => {
+        const directory = tempDir(
+          t,
+          "catalog-imports-",
+          path.join(homedir(), "tmp")
         )
-      if (helper) write(declaration, 'export * from "./helper.js"')
-      write(target, `\n${fixture.source}`)
-      const errors = browserGraph(directory, [declaration]).boundaryErrors
-      assert.ok(
-        errors.some(
-          (error) =>
-            error.file === target &&
-            error.detail ===
-              "line 2: operation declarations may only import plain code from packages/domain"
-        ),
-        `${fixture.name}, helper=${helper}: ${JSON.stringify(errors)}`
-      )
+        const target = helper
+          ? `${path.dirname(declaration)}/helper.ts`
+          : declaration
+        const write = (file, text) => {
+          mkdirSync(path.dirname(path.join(directory, file)), {
+            recursive: true,
+          })
+          writeFileSync(path.join(directory, file), text)
+        }
+        write("packages/domain/src/helper.ts", "export const value = 1")
+        write("apps/api/src/private.ts", "export const secret = 'private'")
+        write(
+          "packages/domain/src/server.ts",
+          "export const secret = 'private'"
+        )
+        if (fixture.packageRoot) {
+          const packageRoot = path.join(directory, fixture.packageRoot)
+          const installed = path.dirname(
+            createRequire(
+              path.join(root, "packages/domain/src/index.ts")
+            ).resolve("zod/package.json")
+          )
+          fs.cpSync(installed, packageRoot, { recursive: true })
+          fs.copyFileSync(
+            path.join(packageRoot, "index.js"),
+            path.join(packageRoot, "original.js")
+          )
+          mkdirSync(path.join(directory, "packages/domain/node_modules"), {
+            recursive: true,
+          })
+          symlinkSync(
+            packageRoot,
+            path.join(directory, "packages/domain/node_modules/zod"),
+            "dir"
+          )
+        }
+        for (const [file, text] of Object.entries(fixture.files))
+          write(file, text)
+        for (const [file, destination] of Object.entries(fixture.links ?? {}))
+          symlinkSync(
+            path.join(directory, destination),
+            path.join(directory, file)
+          )
+        if (helper) write(declaration, 'export * from "./helper.js"')
+        write(target, `\n${fixture.declarationImports ?? ""}${fixture.source}`)
+        const errors = browserGraph(directory, [declaration]).boundaryErrors
+        assert.ok(
+          errors.some(
+            (error) =>
+              error.file === target &&
+              error.detail ===
+                "line 2: operation declarations may only import plain code from packages/domain"
+          ),
+          `${fixture.name}, helper=${helper}: ${JSON.stringify(errors)}`
+        )
+      })
     }
   }
   for (const source of mistake.importSources)
