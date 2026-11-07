@@ -1,0 +1,13 @@
+{
+  "id": "authoring-preflight",
+  "file": "scripts/ocv-tools/authoring-preflight.test.mjs",
+  "detector": {
+    "module": "scripts/lib/authoring-preflight.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "ee239905",
+    "path": "scripts/ocv-tools/work.mjs"
+  }
+}

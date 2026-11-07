@@ -12,6 +12,7 @@ import {
 import { diskProblem } from "./disk.mjs"
 import { file } from "./issue.mjs"
 import { worktreeFor } from "./report.mjs"
+import { validateAuthoring } from "./authoring.mjs"
 import { lazyFacts } from "./lazy.mjs"
 import { finishedWorktrees } from "./work.mjs"
 import { decide, issueKind, refusalError } from "./rules/index.mjs"
@@ -129,6 +130,13 @@ function takeInner(ctx, target, flags, setId) {
   setId(`${kind ?? "task"}-${n}`)
   const me = envAgent(ctx) ?? newAgent()
   decideTake(ctx, n, { issue, held, me, flags, kind })
+  validateAuthoring({
+    n,
+    issue,
+    pull: held.branch
+      ? ctx.ports.gh.prs({ state: "open", head: held.branch })[0]
+      : undefined,
+  })
   const made = createWorktree(ctx, {
     type: kind,
     issue: n,

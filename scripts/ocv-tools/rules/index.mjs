@@ -32,6 +32,8 @@ export const MOMENTS = Object.freeze({
   shot: "Attaching pictures as evidence, once the files are read.",
   "shot-target":
     "Attaching pictures, once the issue or pull request they go to is read.",
+  authoring:
+    "Checking issue and pull request metadata before taking, saving or finishing work.",
   finish: "Opening the pull request, before the push.",
   "finish-pushed": "Opening the pull request, after the push.",
   body: "Replacing a pull request body, once the new text is read.",
@@ -61,6 +63,7 @@ export const RUNNERS = Object.freeze({
   approve: ["scripts/ocv-tools/approve.mjs"],
   shot: ["scripts/ocv-tools/shot.mjs"],
   "shot-target": ["scripts/ocv-tools/shot.mjs"],
+  authoring: ["scripts/ocv-tools/authoring.mjs"],
   finish: ["scripts/ocv-tools/jobs/finish.mjs"],
   "finish-pushed": ["scripts/ocv-tools/jobs/finish.mjs"],
   body: ["scripts/ocv-tools/jobs/body.mjs"],

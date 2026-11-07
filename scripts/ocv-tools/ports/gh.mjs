@@ -387,7 +387,10 @@ export function ghAdapter(run) {
       const args = ["pr", "list", "--state", state]
       if (head) args.push("--head", head)
       else args.push("--limit", String(limit))
-      args.push("--json", head ? "number" : "number,state,isDraft,headRefName")
+      args.push(
+        "--json",
+        head ? "number,title,body" : "number,state,isDraft,headRefName"
+      )
       return JSON.parse(gh(...args) || "[]")
     },
     labels() {

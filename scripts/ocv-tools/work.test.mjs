@@ -21,7 +21,13 @@ function task(over = {}) {
     cwd,
     branch: over.branch ?? "feat/90-keep-my-search",
     env: over.env ?? { OCV_TOOLS_AGENT: "me" },
-    issues: [issue(90, { comments: over.comments ?? [claim("me", 100)] })],
+    issues: [
+      issue(90, {
+        ...over.issue,
+        comments: over.comments ?? [claim("me", 100)],
+      }),
+    ],
+    prs: over.prs,
     dirty: over.dirty ?? {},
     patch: over.patch,
     failAdd: over.failAdd,
@@ -382,4 +388,27 @@ test("finished worktrees are best effort: a GitHub failure lists none instead of
     },
   }
   assert.deepEqual(finishedWorktrees(ctx, { main: "/m", root: "/r" }), [])
+})
+
+test("save refuses bad issue titles and live PR metadata before commit or push", () => {
+  const pull = {
+    number: 91,
+    state: "OPEN",
+    headRefName: "feat/90-keep-my-search",
+    title: "feat: keep my search (#90)",
+    body: "Closes #90",
+  }
+  for (const over of [
+    { issue: { title: "Keep my search" } },
+    { prs: [{ ...pull, title: "feat: keep my search (#89)" }] },
+    { prs: [{ ...pull, body: "Closes #89" }] },
+  ]) {
+    const { ctx, ports } = task({ ...over, dirty: { [cwd]: " M b.txt\n" } })
+    const result = runCli(["save", "-m", "fix: keep my search"], ctx)
+    assert.equal(result.code, 2, result.text)
+    assert.match(result.text, /PR_METADATA/)
+    assert.ok(!ports.effects.some((e) => ["commit", "push"].includes(e.op)))
+  }
+  const { ctx } = task({ prs: [pull], dirty: { [cwd]: " M b.txt\n" } })
+  assert.equal(runCli(["save", "-m", "fix: keep my search"], ctx).code, 0)
 })

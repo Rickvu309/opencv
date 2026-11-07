@@ -352,3 +352,38 @@ test("two clients: the later claim wins and the loser removes its worktree", () 
   assert.match(winner.text, /Agent: beta/)
   assert.equal(ports.state.worktrees.length, 1)
 })
+
+test("take refuses a malformed issue title before creating a worktree", () => {
+  const { ctx, ports } = run({
+    issues: [issue(90, { title: "Keep my search" })],
+  })
+  const result = runCli(["take", "90", "--no-install"], ctx)
+  assert.equal(result.code, 2, result.text)
+  assert.match(result.text, /PR_METADATA/)
+  assert.ok(
+    !ports.effects.some((e) =>
+      ["addWorktree", "comment", "push"].includes(e.op)
+    )
+  )
+})
+
+test("take --resume checks the existing PR closing link before creating a worktree", () => {
+  const { ctx, ports } = run({
+    env: { OCV_TOOLS_AGENT: "next" },
+    issues: [issue(90, { comments: [claim("old", 400)] })],
+    remoteBranches: [BRANCH],
+    prs: [
+      {
+        number: 91,
+        state: "OPEN",
+        headRefName: BRANCH,
+        title: "feat: keep my search (#90)",
+        body: "Closes #89",
+      },
+    ],
+  })
+  const result = runCli(["take", "90", "--resume", "--no-install"], ctx)
+  assert.equal(result.code, 2, result.text)
+  assert.match(result.text, /PR_METADATA/)
+  assert.ok(!ports.effects.some((e) => e.op === "addWorktree"))
+})

@@ -72,7 +72,7 @@ export const pullRows = [
     id: "PR_METADATA",
     section: "4",
     says: "The title is type: description (#n), the body says Closes #n, and issue n is open.",
-    at: ["finish", "pr"],
+    at: ["authoring", "finish", "pr"],
     needs: ["pull"],
     check: prMetadata,
     fix: () =>
