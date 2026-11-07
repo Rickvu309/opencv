@@ -3,6 +3,7 @@ import {
   delegateActorSchema,
   type Actor,
   type CoachAccess,
+  type DelegateActor,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 import { getDb } from "../db/context.js"
@@ -30,6 +31,33 @@ export function delegateAllowed(
     : entry.delegate === "reversibleJob" &&
         actor.writes === "approval" &&
         actor.scopes.includes("job.write")
+}
+
+export async function requireLiveDelegate(actor: DelegateActor) {
+  const [grant] = await getDb()
+    .select()
+    .from(agentConnections)
+    .where(
+      and(
+        eq(agentConnections.id, actor.connectionId),
+        eq(agentConnections.userId, actor.userId)
+      )
+    )
+    .for("update")
+  if (
+    !grant ||
+    grant.revokedAt ||
+    grant.expiresAt.getTime() <= Date.now() ||
+    grant.resources.kind !== actor.resources ||
+    actor.scopes.some((scope) => !grant.scopes.includes(scope)) ||
+    grant.policy.reads !== actor.reads ||
+    grant.policy.writes !== actor.writes
+  )
+    throw new CommandError(
+      ERROR_CODES.FORBIDDEN,
+      "This agent connection is no longer active"
+    )
+  return grant
 }
 
 export async function requireLiveProposalConnection(
