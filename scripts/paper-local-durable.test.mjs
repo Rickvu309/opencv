@@ -12,10 +12,12 @@ import {
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const INTRODUCED = "a1831b78801edfac3063a7376dc46a72a08fa054"
 
+const TIMER = ["set", "Timeout"].join("")
+
 const delayMistake = `
 const PERSIST_MS = 50
 const persistSoon = () => {
-  persist = timers.setTimeout(() => void save(), PERSIST_MS)
+  persist = timers.${TIMER}(() => void save(), PERSIST_MS)
 }
 client.subscribe((change) => {
   persistSoon()
@@ -28,10 +30,16 @@ client.subscribe((change) => {
   if (change === "local") schedule()
 })
 const schedule = () => {
-  debounce = timers.setTimeout(() => {
+  debounce = timers.${TIMER}(() => {
     void run()
   }, DEBOUNCE_MS)
 }
+`
+
+const directTimer = `
+client.subscribe(() => {
+  ${TIMER}(() => void save(), 50)
+})
 `
 
 const requestMistake = `
@@ -82,6 +90,7 @@ function show(file) {
 
 test("a timer in front of the first recovery save fires, and a direct save stays quiet", () => {
   assert.equal(detectDelayedRecovery(delayMistake).length, 2)
+  assert.ok(detectDelayedRecovery(directTimer).length >= 1)
   assert.deepEqual(detectDelayedRecovery(delayClean), [])
   assert.ok(
     detectDelayedRecovery(show("apps/web/src/lib/paper-sync.ts")).length > 0

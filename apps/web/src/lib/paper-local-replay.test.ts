@@ -10,7 +10,30 @@ import {
   textOf,
   type,
 } from "@/test/paper-sync-kit.ts"
-import { indexedDbStore, memoryStore } from "./paper-sync-store.ts"
+import {
+  journalScope,
+  journalUpdates,
+  recoverJournals,
+} from "./paper-sync-journal.ts"
+import {
+  indexedDbStore,
+  memoryStore,
+  type SyncStore,
+} from "./paper-sync-store.ts"
+
+function uncommittedStore(): SyncStore {
+  const inner = indexedDbStore()
+  return {
+    load: (docId, tabId) => inner.load(docId, tabId),
+    async save() {
+      await new Promise<void>(() => {})
+    },
+    remove: (docId, tabId) => inner.remove(docId, tabId),
+    removeDoc: (docId) => inner.removeDoc(docId),
+    prune: (docId, now) => inner.prune(docId, now),
+    close: () => inner.close(),
+  }
+}
 
 it("keeps typed words when the page dies inside the old 50ms window", async () => {
   const backend = fakeServer(letter(["t1", "Old words."]))
@@ -25,6 +48,96 @@ it("keeps typed words when the page dies inside the old 50ms window", async () =
   if (beforeCrash.own) await durableOnly.save(DOC, "crash-tab", beforeCrash.own)
   const second = await open({ store: durableOnly, tabId: "crash-tab" })
   expect(textOf(second, "t1")).toContain("Last typed words.")
+})
+
+it("keeps a keystroke that never reaches IndexedDB", async () => {
+  const backend = fakeServer(letter(["t1", "Old words."]))
+  const first = await open({ store: uncommittedStore(), tabId: "crash-tab" })
+  await vi.advanceTimersByTimeAsync(100)
+  backend.state.online = false
+  type(first, "t1", "Old words. INSIDE50")
+  expect(first.status()).not.toBe("saved")
+  expect(
+    recoverJournals(localStorage, DOC).flatMap(({ updates }) => updates).length
+  ).toBeGreaterThan(0)
+  first.destroy()
+  const second = await open({ store: uncommittedStore(), tabId: "crash-tab" })
+  await vi.advanceTimersByTimeAsync(100)
+  expect(textOf(second, "t1")).toContain("INSIDE50")
+  expect(second.status()).not.toBe("saved")
+})
+
+it("writes the journal before save starts", async () => {
+  fakeServer(letter(["t1", "Old words."]))
+  const store = memoryStore()
+  const sync = await open({ store, tabId: "order-tab" })
+  await vi.advanceTimersByTimeAsync(100)
+  const inner = store.save.bind(store)
+  let sawJournal = false
+  store.save = async (docId, tabId, stored) => {
+    sawJournal =
+      recoverJournals(localStorage, DOC).flatMap(({ updates }) => updates)
+        .length > 0
+    return inner(docId, tabId, stored)
+  }
+  type(sync, "t1", "Old words. ORDER")
+  expect(sawJournal).toBe(true)
+})
+
+it("recovers both tabs when neither IndexedDB write completes", async () => {
+  const backend = fakeServer(letter(["a", "Old A."], ["b", "Old B."]))
+  const a = await open({ store: uncommittedStore(), tabId: "writer-a" })
+  const b = await open({ store: uncommittedStore(), tabId: "writer-b" })
+  await vi.advanceTimersByTimeAsync(100)
+  backend.state.online = false
+  type(a, "a", "Old A. KEPT-A")
+  type(b, "b", "Old B. KEPT-B")
+  expect(recoverJournals(localStorage, DOC)).toHaveLength(2)
+  a.destroy()
+  b.destroy()
+  const recovered = await open({ store: uncommittedStore(), tabId: "reopened" })
+  await vi.advanceTimersByTimeAsync(100)
+  expect(textOf(recovered, "a")).toContain("KEPT-A")
+  expect(textOf(recovered, "b")).toContain("KEPT-B")
+})
+
+it("clears the journal only after IndexedDB commits and the server accepts", async () => {
+  const backend = fakeServer(letter(["t1", "Old words."]))
+  const store = indexedDbStore()
+  const sync = await open({ store, tabId: "clear-tab" })
+  await vi.advanceTimersByTimeAsync(100)
+  expect(sync.status()).toBe("saved")
+  backend.state.online = false
+  type(sync, "t1", "Old words. KEPT")
+  await vi.advanceTimersByTimeAsync(1000)
+  expect(sync.status()).not.toBe("saved")
+  expect(
+    recoverJournals(localStorage, DOC).flatMap(({ updates }) => updates).length
+  ).toBeGreaterThan(0)
+  expect((await store.load(DOC, "clear-tab")).own).not.toBeNull()
+  backend.state.online = true
+  sync.poke()
+  await vi.advanceTimersByTimeAsync(1000)
+  expect(sync.status()).toBe("saved")
+  expect(
+    recoverJournals(localStorage, DOC).flatMap(({ updates }) => updates)
+  ).toEqual([])
+})
+
+it("leaves another tab's journal alone when lock ownership is unknown", async () => {
+  vi.stubGlobal("navigator", {})
+  const backend = fakeServer(letter(["t1", "Old words."]))
+  const a = await open({ store: memoryStore(), tabId: "unknown-a" })
+  await vi.advanceTimersByTimeAsync(100)
+  backend.state.online = false
+  type(a, "t1", "Old words. LIVE-A")
+  await vi.advanceTimersByTimeAsync(100)
+  backend.state.online = true
+  await open({ store: memoryStore(), tabId: "unknown-b" })
+  await vi.advanceTimersByTimeAsync(100)
+  expect(
+    journalUpdates(localStorage, journalScope(DOC, "unknown-a"))
+  ).not.toEqual([])
 })
 
 it("rejects a save when request success is followed by a transaction abort", async () => {

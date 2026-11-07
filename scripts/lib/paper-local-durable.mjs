@@ -84,6 +84,62 @@ function calledNames(body) {
   return names
 }
 
+export function detectSynchronousJournal(text) {
+  const source = sourceOf(text)
+  const bodies = functionBodies(source)
+  const hits = []
+  let scoped = false
+  const directJournal = (node) => {
+    if (ts.isAwaitExpression(node) || ts.isFunctionLike(node)) return false
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "rememberLocal"
+    )
+      return true
+    return ts.forEachChild(node, directJournal) ?? false
+  }
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "appendJournal" &&
+      node.arguments.length < 4
+    )
+      hits.push("a recovery journal must keep its document epoch and basis")
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "journalScope" &&
+      node.arguments.some((arg) => ts.isIdentifier(arg) && arg.text === "tabId")
+    )
+      scoped = true
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.expression.expression.text === "client" &&
+      node.expression.name.text === "subscribe"
+    ) {
+      const callback = node.arguments[0]
+      const remember = bodies.get("rememberLocal")
+      if (
+        !callback ||
+        !ts.isFunctionLike(callback) ||
+        !callback.body ||
+        !directJournal(callback.body) ||
+        !remember ||
+        !callsNamed(remember, "appendJournal")
+      )
+        hits.push("local input must write its recovery journal synchronously")
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  if (!scoped) hits.push("each tab must own its recovery journal")
+  return hits
+}
+
 export function detectDelayedRecovery(text) {
   const source = sourceOf(text)
   const hits = []
@@ -110,9 +166,12 @@ export function detectDelayedRecovery(text) {
       ts.isFunctionLike(node.arguments[0]) &&
       node.arguments[0].body
     ) {
-      for (const name of calledNames(node.arguments[0].body)) {
-        const body = bodies.get(name)
-        if (body && timeoutSaves(body))
+      const body = node.arguments[0].body
+      if (timeoutSaves(body))
+        hits.push("a timer sits in front of the first recovery save")
+      for (const name of calledNames(body)) {
+        const helper = bodies.get(name)
+        if (helper && timeoutSaves(helper))
           hits.push("a timer sits in front of the first recovery save")
       }
     }
