@@ -108,67 +108,74 @@ export async function authenticateAgent(
   audience: string
 ) {
   if (!value?.startsWith("Bearer ")) return null
-  const db = getDb()
-  const [row] = await db
-    .select()
-    .from(oauthAccessToken)
-    .innerJoin(
-      agentConnections,
-      and(
-        eq(
-          oauthAccessToken.authorizationCodeId,
-          agentConnections.authorizationCodeId
-        ),
-        eq(oauthAccessToken.userId, agentConnections.userId),
-        eq(oauthAccessToken.clientId, agentConnections.clientId)
+  return transaction(async () => {
+    const db = getDb()
+    const [row] = await db
+      .select()
+      .from(oauthAccessToken)
+      .innerJoin(
+        agentConnections,
+        and(
+          eq(
+            oauthAccessToken.authorizationCodeId,
+            agentConnections.authorizationCodeId
+          ),
+          eq(oauthAccessToken.userId, agentConnections.userId),
+          eq(oauthAccessToken.clientId, agentConnections.clientId)
+        )
       )
-    )
-    .innerJoin(oauthClient, eq(oauthAccessToken.clientId, oauthClient.clientId))
-    .where(
-      and(
-        eq(oauthAccessToken.token, hashAgentToken(value.slice(7))),
-        isNull(oauthAccessToken.revoked),
-        gt(oauthAccessToken.expiresAt, new Date()),
-        isNull(agentConnections.revokedAt),
-        gt(agentConnections.expiresAt, new Date()),
-        eq(agentConnections.audience, audience)
+      .innerJoin(
+        oauthClient,
+        eq(oauthAccessToken.clientId, oauthClient.clientId)
       )
-    )
+      .where(
+        and(
+          eq(oauthAccessToken.token, hashAgentToken(value.slice(7))),
+          isNull(oauthAccessToken.revoked),
+          gt(oauthAccessToken.expiresAt, new Date()),
+          isNull(agentConnections.revokedAt),
+          gt(agentConnections.expiresAt, new Date()),
+          eq(agentConnections.audience, audience)
+        )
+      )
 
-  if (
-    !row ||
-    row.oauth_access_token.confirmation != null ||
-    !row.agent_connections.scopes.includes("connection.status") ||
-    row.oauth_client.disabled ||
-    !row.oauth_access_token.resources?.includes(audience) ||
-    !row.oauth_access_token.scopes.includes("connection.status")
-  )
-    return null
-  if (
-    row.oauth_access_token.scopes.some(
-      (scope) => !row.agent_connections.scopes.includes(scope)
+    if (
+      !row ||
+      row.oauth_access_token.confirmation != null ||
+      !row.agent_connections.scopes.includes("connection.status") ||
+      row.oauth_client.disabled ||
+      !row.oauth_access_token.resources?.includes(audience) ||
+      !row.oauth_access_token.scopes.includes("connection.status")
     )
-  )
-    return null
-  const [live] = await db
-    .select()
-    .from(agentConnections)
-    .where(
-      and(
-        eq(agentConnections.id, row.agent_connections.id),
-        isNull(agentConnections.revokedAt),
-        gt(agentConnections.expiresAt, new Date())
+      return null
+    if (
+      row.oauth_access_token.scopes.some(
+        (scope) => !row.agent_connections.scopes.includes(scope)
       )
     )
-    .for("update")
-  if (
-    !live ||
-    row.oauth_access_token.scopes.some((scope) => !live.scopes.includes(scope))
-  )
-    return null
-  await db
-    .update(agentConnections)
-    .set({ lastUsedAt: new Date() })
-    .where(eq(agentConnections.id, row.agent_connections.id))
-  return { ...live, scopes: row.oauth_access_token.scopes }
+      return null
+    const [live] = await db
+      .select()
+      .from(agentConnections)
+      .where(
+        and(
+          eq(agentConnections.id, row.agent_connections.id),
+          isNull(agentConnections.revokedAt),
+          gt(agentConnections.expiresAt, new Date())
+        )
+      )
+      .for("update")
+    if (
+      !live ||
+      row.oauth_access_token.scopes.some(
+        (scope) => !live.scopes.includes(scope)
+      )
+    )
+      return null
+    await db
+      .update(agentConnections)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(agentConnections.id, row.agent_connections.id))
+    return { ...live, scopes: row.oauth_access_token.scopes }
+  })
 }

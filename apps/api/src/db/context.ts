@@ -31,6 +31,10 @@ export function getDb() {
   return current
 }
 
+export function insideTransaction() {
+  return transactionDb.getStore() !== undefined
+}
+
 export async function transaction<T>(fn: () => Promise<T>): Promise<T> {
   if (transactionDb.getStore()) return fn()
   const db = getDb()

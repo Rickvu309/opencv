@@ -125,6 +125,8 @@ export function createApp({
         "Last-Event-ID",
         "Authorization",
         "MCP-Protocol-Version",
+        "Mcp-Method",
+        "Mcp-Name",
         "Mcp-Session-Id",
       ],
       exposeHeaders: ["WWW-Authenticate", "MCP-Protocol-Version"],
