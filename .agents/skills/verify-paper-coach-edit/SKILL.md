@@ -56,4 +56,4 @@ One document. One immutable proposal. One person typing event. Revisions 0 throu
 
 After a change to the files named above, run `/maintain-formal-verification-skill`. Move the sync commit only after the model still matches the code and the replay still refuses a stale basis. Never weaken a rule to clear a finding.
 
-Last confirmed sync commit. `pending`
+Last confirmed sync commit. `8b449e4e0f1dded1530e79ccc4b630bf45b2396f`
