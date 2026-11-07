@@ -1,8 +1,9 @@
-import { jobContract, type Plan } from "@workspace/domain"
+import { jobContract, jobPriorityResource, type Plan } from "@workspace/domain"
 import type { FetchJobPosting } from "./fetch-posting.js"
 import { fetchJobPosting } from "./fetch-posting.js"
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
+import { takePriorityGrant } from "../registry/write-grant.js"
 import {
   addChecklistItem,
   calendarJobs,
@@ -19,6 +20,7 @@ import {
   starJob,
   unlinkPaper,
   updateJob,
+  writePriority,
 } from "./store.js"
 
 type PostingFields = { title: string; company: string; location: string }
@@ -71,7 +73,26 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
       }),
     },
     "job.update": {
-      handler: (input, actor) => updateJob(actor, input.jobId, input.patch),
+      writes: (input) =>
+        input.patch.priority !== undefined
+          ? [{ ...jobPriorityResource, entityId: input.jobId }]
+          : [],
+      handler: async (input, actor) => {
+        const saved = await updateJob(actor, input.jobId, input.patch)
+        if (input.patch.priority === undefined) return saved
+        const written = await writePriority(
+          takePriorityGrant(input.jobId),
+          input.jobId,
+          input.patch.priority
+        )
+        const { previousPriority, ...job } = written
+        void previousPriority
+        return {
+          ...job,
+          previousPatch: saved.previousPatch,
+          watched: saved.watched,
+        }
+      },
       reversal: (input, output) => ({
         command: "job.update",
         input: { jobId: input.jobId, patch: output.previousPatch },

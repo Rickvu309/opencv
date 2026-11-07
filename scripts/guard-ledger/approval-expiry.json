@@ -1,0 +1,18 @@
+{
+  "id": "approval-expiry",
+  "file": "apps/api/src/registry/write-grant.test.ts",
+  "detector": {
+    "module": "scripts/lib/approval-expiry.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "apps/api/src/registry/write-grant.test.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/registry/proposals.ts"
+    }
+  },
+  "reason": "Architectural fixture, not a historical product commit. An approval lock that checks expiry only before it locks the row never landed in a commit that survives onto main. detect fires on that fixture in this test and stays quiet on the proposal lock."
+}

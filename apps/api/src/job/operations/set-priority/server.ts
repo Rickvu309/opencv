@@ -1,7 +1,8 @@
 import { operation } from "@workspace/domain/operations/job/set-priority"
 import { jobPrioritySchema } from "@workspace/domain"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { setPriority } from "../../store.js"
+import { takePriorityGrant } from "../../../registry/write-grant.js"
+import { writePriority } from "../../store.js"
 
 const privateResult = operation.publicResult
   .extend({ previousPriority: jobPrioritySchema })
@@ -10,7 +11,14 @@ const privateResult = operation.publicResult
 export const implementation = {
   operation,
   privateResult,
-  execute: (input, actor) => setPriority(actor, input.jobId, input.priority),
+  execute: (input, actor) => {
+    void actor
+    return writePriority(
+      takePriorityGrant(input.jobId),
+      input.jobId,
+      input.priority
+    )
+  },
   reversal: (input, result) => ({
     command: operation.name,
     input: { jobId: input.jobId, priority: result.previousPriority },

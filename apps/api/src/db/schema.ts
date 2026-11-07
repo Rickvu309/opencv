@@ -176,6 +176,7 @@ export const jobs = opencvApp.table(
       .$type<"low" | "normal" | "high">()
       .notNull()
       .default("normal"),
+    priorityRevision: integer("priority_revision").notNull().default(0),
     jobUrl: text("job_url"),
     sourceHost: text("source_host"),
     description: text("description"),
@@ -355,6 +356,7 @@ export const pendingActions = opencvApp.table(
     ),
     command: text("command").notNull(),
     input: jsonb("input").notNull(),
+    basisRevision: integer("basis_revision"),
     summary: text("summary").notNull(),
     status: text("status")
       .$type<"pending" | "approved" | "denied" | "expired">()

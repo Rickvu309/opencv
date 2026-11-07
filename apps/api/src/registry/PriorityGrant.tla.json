@@ -1,0 +1,15 @@
+{
+  "module": "write-grant.ts",
+  "mutants": {
+    "": 12
+  },
+  "actions": {
+    "Open": "withGrantScope",
+    "Write": "assertPriorityGrant",
+    "Stale": "priorityBasisOk",
+    "Forge": "assertPriorityGrant",
+    "Seal": "withGrantScope",
+    "Reuse": "takePriorityGrant",
+    "Rollback": "assertPriorityGrant"
+  }
+}
