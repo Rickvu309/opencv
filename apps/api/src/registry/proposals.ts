@@ -12,6 +12,7 @@ import { getDb, savepoint, transaction } from "../db/context.js"
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { createId } from "../id.js"
 
+import { requireLiveDelegate } from "./delegate-policy.js"
 import { CommandError } from "./errors.js"
 import { inputHash } from "./receipt.js"
 
@@ -36,6 +37,7 @@ async function insertProposal(options: {
   const id = createId()
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
+    await requireLiveDelegate(actor)
     await getDb()
       .select({ id: user.id })
       .from(user)

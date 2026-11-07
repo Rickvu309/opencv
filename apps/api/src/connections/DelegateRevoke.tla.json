@@ -1,0 +1,9 @@
+{
+  "module": "../registry/delegate-policy.ts",
+  "actions": {
+    "AuthReturns": null,
+    "Revoke": null,
+    "ToolBody": "requireLiveDelegate",
+    "Rest": null
+  }
+}

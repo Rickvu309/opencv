@@ -21,6 +21,7 @@ import { insideTransaction, transaction } from "../db/context.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import type { Registry } from "../registry/registry.js"
 import { isAllowedOrigin } from "../origin.js"
+import { requireLiveDelegate } from "../registry/delegate-policy.js"
 import { CommandError } from "../registry/errors.js"
 import { authenticateAgent } from "./oauth.js"
 
@@ -187,11 +188,12 @@ export function connectionRoutes(
           async (input) => {
             try {
               consumeToolCall(actor.userId, actor.connectionId)
-              const result = await transaction(async () =>
-                entry.kind === "query"
+              const result = await transaction(async () => {
+                await requireLiveDelegate(actor)
+                return entry.kind === "query"
                   ? { data: await registry.read(entry.name, input, actor) }
                   : registry.execute({ name: entry.name, input, actor })
-              )
+              })
               const pending = "pending" in result && result.pending
               const link =
                 "chatId" in result && typeof result.chatId === "string"
