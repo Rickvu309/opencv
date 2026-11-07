@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { serve } from "@hono/node-server"
 import { delegateActorSchema, personActor } from "@workspace/domain"
-import { afterAll, beforeAll, expect, it } from "vitest"
+import { afterAll, beforeAll, expect, it, vi } from "vitest"
 import type { ZodType } from "zod"
 import { createApp } from "../app.js"
 import {
@@ -11,7 +11,8 @@ import {
   oauthRefreshToken,
   user,
 } from "../db/schema.js"
-import { withDatabase } from "../db/context.js"
+import { getDb, insideTransaction, withDatabase } from "../db/context.js"
+import * as delegatePolicy from "../registry/delegate-policy.js"
 import { idOf } from "../registry/coverage-helpers.js"
 import { registry } from "../registry/registry.js"
 import {
@@ -28,6 +29,58 @@ let app: ReturnType<typeof createApp>
 const owner = "revoke-every-tool"
 const person = personActor(owner)
 const scopes = ["connection.status", "job.read", "job.write"]
+
+type Hit = { kind: "check" | "read" | "write"; tx: object | null }
+const hits: Hit[] = []
+let afterCheck: (() => Promise<void>) | undefined
+
+function txNow() {
+  return insideTransaction() ? getDb() : null
+}
+
+function resetHits() {
+  hits.length = 0
+}
+
+function productHits() {
+  return hits.filter((hit) => hit.kind !== "check")
+}
+
+function assertLiveOrder(name: string) {
+  expect(productHits().length, name).toBeGreaterThan(0)
+  for (let index = 0; index < hits.length; index += 1) {
+    const hit = hits[index]
+    if (!hit || hit.kind === "check") continue
+    let prior: Hit | undefined
+    for (let earlier = index - 1; earlier >= 0; earlier -= 1) {
+      const candidate = hits[earlier]
+      if (candidate?.kind === "check") {
+        prior = candidate
+        break
+      }
+    }
+    expect(prior, `${name} live check`).toBeTruthy()
+    expect(hit.tx, `${name} same transaction`).toBeTruthy()
+    expect(prior?.tx, `${name} same transaction`).toBe(hit.tx)
+  }
+}
+
+function assertNoProduct(name: string) {
+  expect(productHits(), name).toEqual([])
+}
+
+function probeActor() {
+  return delegateActorSchema.parse({
+    type: "delegate",
+    userId: owner,
+    connectionId: randomUUID(),
+    name: "Verifier",
+    scopes,
+    resources: "jobs",
+    reads: "allow",
+    writes: "approval",
+  })
+}
 
 beforeAll(async () => {
   database = await createMigratedTestDb()
@@ -54,9 +107,30 @@ beforeAll(async () => {
     name: "Verifier",
     email: "revoke-every-tool@example.com",
   })
+  const read = registry.read.bind(registry)
+  const execute = registry.execute.bind(registry)
+  const check = delegatePolicy.requireLiveDelegate
+  vi.spyOn(registry, "read").mockImplementation(async (name, input, actor) => {
+    if (actor.type === "delegate") hits.push({ kind: "read", tx: txNow() })
+    return read(name, input, actor)
+  })
+  vi.spyOn(registry, "execute").mockImplementation(async (options) => {
+    if (options.actor.type === "delegate")
+      hits.push({ kind: "write", tx: txNow() })
+    return execute(options)
+  })
+  vi.spyOn(delegatePolicy, "requireLiveDelegate").mockImplementation(
+    async (delegate) => {
+      const grant = await check(delegate)
+      hits.push({ kind: "check", tx: txNow() })
+      await afterCheck?.()
+      return grant
+    }
+  )
 }, 30000)
 
 afterAll(async () => {
+  vi.restoreAllMocks()
   if (server && "closeAllConnections" in server) server.closeAllConnections()
   if (server)
     await new Promise<void>((resolve, reject) =>
@@ -163,7 +237,7 @@ function pauseNextToolList() {
   }
 }
 
-async function rawTool(
+async function postTool(
   token: string,
   name: string,
   args: Record<string, unknown>
@@ -196,16 +270,42 @@ async function rawTool(
       },
     }),
   })
-  expect(response.status).toBe(200)
-  const text = await response.text()
+  return { status: response.status, text: await response.text() }
+}
+
+async function rawTool(
+  token: string,
+  name: string,
+  args: Record<string, unknown>
+) {
+  const posted = await postTool(token, name, args)
+  expect(posted.status).toBe(200)
   const envelope = JSON.parse(
-    text.startsWith("data:") ? text.slice(5).trim() : text
+    posted.text.startsWith("data:") ? posted.text.slice(5).trim() : posted.text
   ) as {
     error?: unknown
     result?: { content?: Array<{ text?: string }> }
   }
   expect(envelope.error).toBeUndefined()
   return envelope.result?.content?.[0]?.text ?? ""
+}
+
+function wireName(name: string) {
+  return name.replaceAll(".", "_")
+}
+
+async function delegateTools() {
+  const entries = await inDb(() => registry.tools(probeActor()))
+  expect(entries.length).toBeGreaterThan(0)
+  expect(entries.some((entry) => entry.kind === "query")).toBe(true)
+  expect(entries.some((entry) => entry.kind === "command")).toBe(true)
+  return [...entries].sort((left, right) =>
+    left.kind === right.kind
+      ? left.name.localeCompare(right.name)
+      : left.kind === "query"
+        ? -1
+        : 1
+  )
 }
 
 const revoke = (id: string) =>
@@ -429,27 +529,91 @@ function toolArguments(entry: { name: string; input: ZodType }, jobId: string) {
   return args as Record<string, unknown>
 }
 
+it("checks the connection before product access in the same transaction", async () => {
+  const entries = await delegateTools()
+  const jobId = await job()
+  resetHits()
+  for (const entry of entries) {
+    const linked = await connection()
+    resetHits()
+    await rawTool(
+      linked.token,
+      wireName(entry.name),
+      toolArguments(entry, jobId)
+    )
+    assertLiveOrder(entry.name)
+  }
+}, 90_000)
+
+it("keeps product access in the checked transaction when removal starts after the check", async () => {
+  const entries = await delegateTools()
+  const jobId = await job()
+  for (const entry of entries) {
+    const linked = await connection()
+    let checked = () => {}
+    let release = () => {}
+    const seen = new Promise<void>((resolve) => {
+      checked = resolve
+    })
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    afterCheck = async () => {
+      checked()
+      await gate
+    }
+    resetHits()
+    const pending = rawTool(
+      linked.token,
+      wireName(entry.name),
+      toolArguments(entry, jobId)
+    )
+    try {
+      const reached = await Promise.race([
+        seen.then(() => true),
+        pending.then(() => false),
+      ])
+      expect(reached, `${entry.name} live check`).toBe(true)
+      assertNoProduct(entry.name)
+      const removed = revoke(linked.id)
+      release()
+      await pending
+      await removed
+      assertLiveOrder(entry.name)
+    } finally {
+      afterCheck = undefined
+      release()
+      await pending
+    }
+  }
+}, 90_000)
+
+it("reaches no product data when the connection is already removed", async () => {
+  const entries = await delegateTools()
+  const jobId = await job()
+  for (const entry of entries) {
+    const linked = await connection()
+    await revoke(linked.id)
+    resetHits()
+    const posted = await postTool(
+      linked.token,
+      wireName(entry.name),
+      toolArguments(entry, jobId)
+    )
+    expect(posted.status, entry.name).toBe(401)
+    expect(posted.text, entry.name).toContain("invalid_token")
+    assertNoProduct(entry.name)
+  }
+}, 90_000)
+
 it("refuses every registered delegate tool after the connection is removed", async () => {
-  const actor = delegateActorSchema.parse({
-    type: "delegate",
-    userId: owner,
-    connectionId: randomUUID(),
-    name: "Verifier",
-    scopes,
-    resources: "jobs",
-    reads: "allow",
-    writes: "approval",
-  })
-  const entries = await inDb(() => registry.tools(actor))
-  expect(entries.length).toBeGreaterThan(0)
-  expect(entries.some((entry) => entry.kind === "query")).toBe(true)
-  expect(entries.some((entry) => entry.kind === "command")).toBe(true)
+  const entries = await delegateTools()
   const jobId = await job()
   for (const entry of entries) {
     const linked = await connection()
     const args = toolArguments(entry, jobId)
     const latch = pauseNextToolList()
-    const pending = rawTool(linked.token, entry.name.replaceAll(".", "_"), args)
+    const pending = rawTool(linked.token, wireName(entry.name), args)
     try {
       const listed = await Promise.race([
         latch.seen.then(() => true),
@@ -464,8 +628,10 @@ it("refuses every registered delegate tool after the connection is removed", asy
       }
       await revoke(linked.id)
       const before = await productRows()
+      resetHits()
       latch.release()
       const text = await pending
+      assertNoProduct(entry.name)
       expect(await productRows(), entry.name).toEqual(before)
       expect(text, entry.name).toContain("no longer active")
       expect(text, entry.name).not.toContain("Private Job")
@@ -475,4 +641,4 @@ it("refuses every registered delegate tool after the connection is removed", asy
       latch.restore()
     }
   }
-}, 60_000)
+}, 90_000)

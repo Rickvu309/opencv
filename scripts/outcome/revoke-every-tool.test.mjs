@@ -13,6 +13,7 @@ import { homedir } from "node:os"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
+import ts from "typescript"
 import { withTempDir } from "../lib/temp-dir.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../..")
@@ -20,9 +21,88 @@ const BINDING = "apps/api/src/connections/http.ts"
 const BEHAVIOR = "apps/api/src/connections/revoke-every-tool.test.ts"
 const LIVE_CHECK = "await requireLiveDelegate(actor)"
 const SKIPPED_CHECK = "if (false) await requireLiveDelegate(actor)"
+const DEFERRED = `const run = await transaction(async () => {
+                await requireLiveDelegate(actor)
+                return async () => entry.kind === "query"
+                  ? { data: await registry.read(entry.name, input, actor) }
+                  : registry.execute({ name: entry.name, input, actor })
+              })
+              const result = await run()`
+const AFTER_READ = `const result = await transaction(async () => {
+                if (
+                  entry.kind === "query" &&
+                  (entry.name === "job.list" || entry.name === "job.get")
+                ) {
+                  const data = await registry.read(entry.name, input, actor)
+                  process.stderr.write(
+                    "REVIEW_PRECHECK_READ " + entry.name + " " + JSON.stringify(data)
+                  )
+                }
+                await requireLiveDelegate(actor)
+                return entry.kind === "query"
+                  ? { data: await registry.read(entry.name, input, actor) }
+                  : registry.execute({ name: entry.name, input, actor })
+              })`
 const CRASH =
   /ERR_MODULE_NOT_FOUND|Cannot find module|SyntaxError|ERR_UNRESOLVED_PACKAGE/
 const ASSERTED = /AssertionError|ERR_ASSERTION|^not ok|\bFAIL\b/m
+const ORDER = /no longer active|Private Job|live check|same transaction/
+
+function hasLiveCheck(root) {
+  let found = false
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "requireLiveDelegate"
+    )
+      found = true
+    ts.forEachChild(node, visit)
+  }
+  visit(root)
+  return found
+}
+
+function replaceToolTransaction(text, replacement) {
+  const source = ts.createSourceFile(
+    BINDING,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  )
+  const blocks = []
+  const visit = (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === "result" &&
+      node.initializer &&
+      ts.isAwaitExpression(node.initializer) &&
+      ts.isCallExpression(node.initializer.expression)
+    ) {
+      const call = node.initializer.expression
+      const body = call.arguments[0]
+      if (
+        ts.isIdentifier(call.expression) &&
+        call.expression.text === "transaction" &&
+        body &&
+        ts.isArrowFunction(body) &&
+        hasLiveCheck(body) &&
+        ts.isVariableDeclarationList(node.parent) &&
+        ts.isVariableStatement(node.parent.parent)
+      )
+        blocks.push(node.parent.parent)
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  assert.equal(blocks.length, 1, "one checked tool transaction")
+  const block = blocks[0]
+  return (
+    text.slice(0, block.getStart(source)) + replacement + text.slice(block.end)
+  )
+}
 
 function git(args, cwd = root) {
   return execFileSync("git", args, { cwd, encoding: "utf8" })
@@ -56,7 +136,12 @@ function runBehavior(tree) {
   return new Promise((resolve) => {
     const child = spawn(
       path.join(tree, "apps/api/node_modules/.bin/vitest"),
-      ["run", "--maxWorkers=1", "src/connections/revoke-every-tool.test.ts"],
+      [
+        "run",
+        "--bail=1",
+        "--maxWorkers=1",
+        "src/connections/revoke-every-tool.test.ts",
+      ],
       {
         cwd: path.join(tree, "apps/api"),
         env,
@@ -84,10 +169,21 @@ function runBehavior(tree) {
   })
 }
 
-test("a skipped live check fails the revoke outcome for every delegate tool", async () => {
+function expectFailure(result) {
+  const crashed = CRASH.test(result.output)
+  const tail = result.output.slice(-2500)
+  assert.equal(result.signal, null, tail)
+  assert.equal(crashed, false, tail)
+  assert.notEqual(result.status, 0, tail)
+  assert.match(result.output, ASSERTED)
+  assert.match(result.output, ORDER)
+}
+
+test("skipped, deferred, and early reads fail the revoke outcome", async () => {
   const original = readFileSync(path.join(root, BINDING), "utf8")
   assert.equal(original.split(LIVE_CHECK).length - 1, 1)
   assert.equal(original.includes(SKIPPED_CHECK), false)
+  assert.notEqual(replaceToolTransaction(original, DEFERRED), original)
   const scratchRoot = homedir()
   await withTempDir(
     "revoke-outcome-",
@@ -104,14 +200,21 @@ test("a skipped live check fails the revoke outcome for every delegate tool", as
         const binding = path.join(tree, BINDING)
         const source = readFileSync(binding, "utf8")
         assert.equal(source.split(LIVE_CHECK).length - 1, 1)
-        writeFileSync(binding, source.replace(LIVE_CHECK, SKIPPED_CHECK))
-        const result = await runBehavior(tree)
-        const crashed = CRASH.test(result.output)
-        assert.equal(result.signal, null, result.output.slice(-2500))
-        assert.equal(crashed, false, result.output.slice(-2500))
-        assert.notEqual(result.status, 0, result.output.slice(-2500))
-        assert.match(result.output, ASSERTED)
-        assert.match(result.output, /no longer active|Private Job/)
+        const mutants = [
+          source.replace(LIVE_CHECK, SKIPPED_CHECK),
+          replaceToolTransaction(source, DEFERRED),
+          replaceToolTransaction(source, AFTER_READ),
+        ]
+        assert.equal(mutants[0].includes(SKIPPED_CHECK), true)
+        assert.equal(mutants[1].split(LIVE_CHECK).length - 1, 1)
+        assert.equal(mutants[2].split(LIVE_CHECK).length - 1, 1)
+        assert.equal(mutants[1].includes("const result = await run()"), true)
+        assert.equal(mutants[2].includes("REVIEW_PRECHECK_READ"), true)
+        for (const next of mutants) {
+          assert.notEqual(next, source)
+          writeFileSync(binding, next)
+          expectFailure(await runBehavior(tree))
+        }
       } finally {
         if (existsSync(path.join(tree, ".git"))) {
           try {
