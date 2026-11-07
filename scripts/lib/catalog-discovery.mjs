@@ -314,13 +314,13 @@ export async function discoverCatalog(root) {
         )
     )
     const match = file.match(
-      /^apps\/api\/src\/([^/]+)\/operations\/([^/]+)\/([^/]+)\/server\.ts$/
+      /^apps\/api\/src\/([^/]+)\/operations\/(?:([^/]+)\/)?([^/]+)\/server\.ts$/
     )
     return {
       file,
       operation: exported && imports.length === 1 ? imports[0] : "unbound",
       owner: match?.[1],
-      namespace: match?.[2],
+      namespace: match?.[2] ?? match?.[1],
       directory: match?.[3],
     }
   })

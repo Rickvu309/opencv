@@ -104,7 +104,22 @@ test("G2 exempts only the imported catalog client binding and its actual methods
 
 test("G2 replays the existing Job contract as prospective adoption debt and a declaration-free slice stays quiet", () => {
   const file = "packages/domain/src/job-contract.ts"
-  const before = execFileSync("git", ["show", `HEAD:${file}`], {
+  const introduced = execFileSync(
+    "git",
+    [
+      "log",
+      "--reverse",
+      "--format=%H",
+      `-S${clean.operations[0].name}`,
+      "--",
+      file,
+    ],
+    { cwd: root, encoding: "utf8" }
+  )
+    .trim()
+    .split("\n")[0]
+  assert.ok(introduced)
+  const before = execFileSync("git", ["show", `${introduced}:${file}`], {
     cwd: root,
     encoding: "utf8",
   })

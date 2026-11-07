@@ -7,7 +7,7 @@ import fs from "node:fs"
 import childProcess from "node:child_process"
 import { createRequire, syncBuiltinESMExports } from "node:module"
 import { catalog, root } from "./catalog.mjs"
-import { browserGraph } from "./lib/catalog-discovery.mjs"
+import { browserGraph, discoverCatalog } from "./lib/catalog-discovery.mjs"
 import { watchCatalog } from "./lib/catalog-dev.mjs"
 import {
   CatalogError,
@@ -97,7 +97,10 @@ test("the committed browser graph is domain-only and the generated files are fre
   assert.ok(
     graph.sources.every(([file]) => file.startsWith("packages/domain/src/"))
   )
-  assert.equal((await catalog("check")).count, 0)
+  assert.equal(
+    (await catalog("check")).count,
+    (await discoverCatalog(root)).operations.length
+  )
 })
 
 test("owners remain independent from profile, billing, actions and coach namespaces", () => {

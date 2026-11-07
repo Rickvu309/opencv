@@ -142,13 +142,17 @@ export const operation = defineOperation({
 const server =
   'import { operation } from "@workspace/domain/operations/fixture/echo"; export const implementation = { operation, execute: async () => ({}) }'
 
-function browserWorkspace(t) {
+function browserWorkspace(t, sourceRoot = root) {
   const directory = tempDir(t, "catalog-backstop-", path.join(homedir(), "tmp"))
   cpSync(
-    path.join(root, "packages/domain/src"),
+    path.join(sourceRoot, "packages/domain/src"),
     path.join(directory, "packages/domain/src"),
     { recursive: true }
   )
+  rmSync(path.join(directory, "packages/domain/src/operations"), {
+    recursive: true,
+    force: true,
+  })
   mkdirSync(path.join(directory, "apps/web"), { recursive: true })
   symlinkSync(
     path.join(root, "node_modules"),
@@ -168,6 +172,102 @@ function browserWorkspace(t) {
   )
   return directory
 }
+
+test("browser fixtures isolate adopted operations before generating their own catalog", async (t) => {
+  const production = browserWorkspace(t)
+  write(production, declaration, descriptor())
+  write(production, implementation, server)
+  assert.equal((await catalog("generate", production)).count, 1)
+  const directory = browserWorkspace(t, production)
+  assert.equal((await catalog("generate", directory)).count, 0)
+  const isolatedDeclaration = declaration.replace("/echo/", "/isolated/")
+  const isolatedImplementation = implementation.replace("/echo/", "/isolated/")
+  write(
+    directory,
+    isolatedDeclaration,
+    descriptor().replace("fixture.echo", "fixture.isolated")
+  )
+  write(
+    directory,
+    isolatedImplementation,
+    server.replace("fixture/echo", "fixture/isolated")
+  )
+  assert.equal((await catalog("generate", directory)).count, 1)
+  assert.equal((await catalog("check", directory)).count, 1)
+  await buildBrowserCatalog(directory)
+})
+
+test("Vite rejects server modules and assets without discovery", async (t) => {
+  const directory = browserWorkspace(t)
+  const privateFile = "apps/api/src/private.ts"
+  const sentinel = "server-private-catalog-sentinel"
+  write(
+    directory,
+    privateFile,
+    `export const privateReceipt = ${JSON.stringify(sentinel + "x".repeat(5000))}`
+  )
+  write(directory, implementation, server)
+  write(directory, declaration, descriptor())
+  await catalog("generate", directory)
+  await catalog("check", directory)
+  for (const [expression, output] of [
+    [
+      'Object.values((import.meta as ImportMeta).glob("../../../../../../apps/api/src/private.ts", { eager: true })).map((value) => ({ name: value.privateReceipt, coachFloor: "auto" }))',
+      "module",
+    ],
+    [
+      '[{ name: new URL("../../../../../../apps/api/src/private.ts", import.meta.url).href, coachFloor: "auto" }]',
+      "asset",
+    ],
+  ]) {
+    write(
+      directory,
+      declaration,
+      descriptor().replace(
+        "dependsOn: () => []",
+        `dependsOn: () => ${expression}`
+      )
+    )
+    await assert.rejects(catalog("generate", directory), (error) => {
+      assert.equal(error.kind, "browser-import")
+      assert.match(
+        error.message,
+        /operation declarations must not use import.meta/
+      )
+      return true
+    })
+    await assert.rejects(buildBrowserCatalog(directory), (error) => {
+      assert.equal(error.kind, "browser-import")
+      assert.equal(error.file, privateFile)
+      assert.match(error.message, new RegExp(`browser ${output}`))
+      return true
+    })
+  }
+  const serverHelper = "packages/domain/src/private/server.ts"
+  write(
+    directory,
+    serverHelper,
+    `export const privateReceipt = ${JSON.stringify(sentinel)}`
+  )
+  write(
+    directory,
+    declaration,
+    `${descriptor()}\nimport { privateReceipt } from "../../../private/server.js"\nexport { privateReceipt }`
+  )
+  await assert.rejects(
+    buildBrowserCatalog(directory),
+    (error) => error.file === serverHelper
+  )
+  write(directory, declaration, descriptor())
+  const safe = await buildBrowserCatalog(directory)
+  assert.ok(
+    safe.output.some(
+      (output) =>
+        output.type === "chunk" && output.code.includes("fixture.echo")
+    )
+  )
+  await catalog("check", directory)
+})
 
 test("kind-based Vite backstop rejects every review probe without discovery", async (t) => {
   const fixtures = JSON.parse(
