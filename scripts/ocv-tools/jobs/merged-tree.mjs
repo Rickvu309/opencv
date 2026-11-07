@@ -7,7 +7,7 @@ const OID = /^[0-9a-f]{40,64}$/
 const GUARD_TIMEOUT_SECONDS = "600"
 const SHOWN = 8
 const LEFTOVER_PREFIX = "ocv-merge-"
-const STALE_AFTER_MS = (Number(GUARD_TIMEOUT_SECONDS) + 60) * 1000
+const STALE_AFTER_MS = (2 * Number(GUARD_TIMEOUT_SECONDS) + 60) * 1000
 const SIGNAL_NUMBERS = { SIGINT: 2, SIGTERM: 15 }
 
 export function parseMergeTree(result) {
@@ -84,8 +84,8 @@ function guardsFor(ctx, commit) {
   )
 }
 
-function linkInstalled(ctx, top, dir) {
-  const workspaces = existing(ctx, "HEAD", ["apps", "packages"])
+function linkInstalled(ctx, top, dir, commit) {
+  const workspaces = existing(ctx, commit, ["apps", "packages"])
     .filter((file) => /^(?:apps|packages)\/[^/]+\/package\.json$/.test(file))
     .map((file) => file.replace(/\/package\.json$/, ""))
   for (const place of ["", ...workspaces]) {
@@ -96,10 +96,28 @@ function linkInstalled(ctx, top, dir) {
   }
 }
 
-function dependenciesDiffer(ctx, commit) {
+function installedMatches(ctx, commit) {
   const mine = git(ctx, ["rev-parse", "HEAD:pnpm-lock.yaml"])
   const theirs = git(ctx, ["rev-parse", `${commit}:pnpm-lock.yaml`])
-  return !mine.ok || !theirs.ok || mine.out !== theirs.out
+  return mine.ok && theirs.ok && mine.out === theirs.out
+}
+
+function prepareDependencies(ctx, top, dir, commit) {
+  if (installedMatches(ctx, commit)) {
+    linkInstalled(ctx, top, dir, commit)
+    return []
+  }
+  const installed = run(
+    ctx,
+    "timeout",
+    [GUARD_TIMEOUT_SECONDS, "pnpm", "install", "--frozen-lockfile"],
+    { cwd: dir }
+  )
+  if (installed.ok) return []
+  const reason = `${installed.err}\n${installed.out}`.trim().split("\n")[0]
+  return [
+    `the merged tree could not install its locked packages (${reason || "no output"})`,
+  ]
 }
 
 export function removeTemporaryTree(ctx, dir) {
@@ -166,11 +184,10 @@ export function guardsOnMergedTree(ctx, n, head, tree) {
     `merge of PR #${n}`,
   ])
   if (!commit.ok)
-    return { skipped: `could not build the merged commit: ${commit.err}` }
-  if (dependenciesDiffer(ctx, commit.out))
     return {
-      skipped:
-        "the merge changes the lockfile, so installed packages do not match",
+      ran: 0,
+      swept: 0,
+      failed: [`could not build the merged commit (${commit.err})`],
     }
   const parent = join(ctx.env.HOME ?? homedir(), "tmp")
   const dir = join(parent, `${LEFTOVER_PREFIX}${n}-${head.slice(0, 8)}`)
@@ -181,8 +198,14 @@ export function guardsOnMergedTree(ctx, n, head, tree) {
   try {
     const added = git(ctx, ["worktree", "add", "--detach", dir, commit.out])
     if (!added.ok)
-      return { skipped: `could not check out the merged tree: ${added.err}` }
-    linkInstalled(ctx, top, dir)
+      return {
+        ran: 0,
+        swept: swept.length,
+        failed: [`could not check out the merged tree (${added.err})`],
+      }
+    const unprepared = prepareDependencies(ctx, top, dir, commit.out)
+    if (unprepared.length)
+      return { ran: 0, swept: swept.length, failed: unprepared }
     const files = guardsFor(ctx, commit.out)
     const result = run(
       ctx,
@@ -236,13 +259,6 @@ export function mergeResultFacts(ctx, n, head) {
   if (merged.conflicts.length)
     return { n, head, lines: [], conflicts: merged.conflicts }
   const guards = guardsOnMergedTree(ctx, n, head, merged.tree)
-  if (guards.skipped)
-    return {
-      n,
-      head,
-      lines: [`Merged-tree guards skipped: ${guards.skipped}.`],
-      conflicts: [],
-    }
   return {
     n,
     head,
@@ -252,7 +268,9 @@ export function mergeResultFacts(ctx, n, head) {
       ...(guards.swept
         ? [`Removed ${guards.swept} leftover merged-tree worktrees.`]
         : []),
-      `Merged tree passes ${guards.ran} quick guards.`,
+      ...(guards.failed.length
+        ? []
+        : [`Merged tree passes ${guards.ran} quick guards.`]),
     ],
   }
 }
