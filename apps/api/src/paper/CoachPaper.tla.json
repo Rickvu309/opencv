@@ -1,0 +1,11 @@
+{
+  "module": "content-coach.ts",
+  "actions": {
+    "Propose": null,
+    "PersonTypes": null,
+    "Approve": "editAsCoach",
+    "RetryApproval": null,
+    "PersonUndo": "revertCoachEdit",
+    "AgentTriesUndo": null
+  }
+}

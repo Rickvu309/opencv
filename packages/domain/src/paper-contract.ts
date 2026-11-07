@@ -236,7 +236,7 @@ export const paperContract = commandContract({
   }),
   "paper.edit": commandEntry({
     description:
-      "Edit a CV or letter by block id. Read paper.outline first and pass its revision as basedOn. Ops: setText (a block's text as inline markdown), setFields (role, company, period, location, school, degree, detail, label, items, level, kind), setHeader (name, email, phone, city, linkedin), insert (new blocks after a block id or after the text @start), insertInto (list items inside an experience, education or list item), move (after a block id or the text @start) and remove. The person may be typing: setText merges with their typing, while move, remove, setFields and setHeader on something they changed are refused as stale. Read the outcomes and re-read paper.outline after a stale one.",
+      "Edit a CV or letter by block id. Read paper.outline first and pass its revision as basedOn. Ops: setText (a block's text as inline markdown), setFields (role, company, period, location, school, degree, detail, label, items, level, kind), setHeader (name, email, phone, city, linkedin), insert (new blocks after a block id or after the text @start), insertInto (list items inside an experience, education or list item), move (after a block id or the text @start) and remove. The edit waits until the person approves. If the person types after the proposal, approval refuses and the document stays as it is. Read paper.outline again after a refusal.",
     input: z
       .object({
         docId: paperIdSchema,
@@ -245,7 +245,7 @@ export const paperContract = commandContract({
       })
       .strict(),
     output: paperEditOutputSchema,
-    coach: "auto",
+    coach: "confirm",
     destructive: false,
     step: () => "Edit the document",
     invalidates: (input) => [...docChanged(input), ...chatsChanged()],

@@ -1,0 +1,13 @@
+{
+  "id": "paper-coach-approval",
+  "file": "scripts/paper-coach-proposal.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-coach-proposal.mjs",
+    "export": "detectPaperEditApproval"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "4d674be96d840957100265da3fc30a2af896768e",
+    "path": "packages/domain/src/paper-contract.ts"
+  }
+}
