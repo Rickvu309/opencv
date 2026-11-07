@@ -1,0 +1,6 @@
+{
+  "id": "write-grant-formal",
+  "file": "apps/api/src/registry/write-grant.formal.test.ts",
+  "historic": null,
+  "reason": "Real database check that a priority permission works only inside the save that took it. The detector and the introducing commit are recorded on write-grant."
+}
