@@ -1,6 +1,11 @@
 {
   "id": "pinned-history",
   "file": "scripts/pinned-history.test.mjs",
-  "historic": null,
-  "reason": "Introduced by 67ef657a (#1126), whose tests pinned branch-only commits f62efbf1 and cf31f543 that the squash merge removed, so CI guards failed on #1128. The pure detector flags both at 67ef657a and stays quiet at f84f3191. Those commits are now kept by guard-proof tags, so a replay of that state can no longer fail and the proof is recorded here instead."
+  "historic": {
+    "mode": "restore",
+    "sha": "a03f42edb4041c2aac90592c1e18a85d25216bb5",
+    "paths": ["scripts/lib/pinned-history.mjs"],
+    "command": ["node", "--test", "scripts/pinned-history.test.mjs"]
+  },
+  "reason": "The first PR-time repair inspected Git argument shapes and missed aliased arrays, option-prefixed calls and fixture strings. Restoring that detector must fail the syntax-independent mistake fixtures and the actual PR guard reproduction before a squash clone loses the referenced commit. Ledger references from M7 and earlier #1128 test references remain covered."
 }

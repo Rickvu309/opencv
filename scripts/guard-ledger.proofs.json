@@ -7,6 +7,10 @@
     "passed": true,
     "fingerprint": "fe9b4af66899"
   },
+  "pinned-history": {
+    "passed": true,
+    "fingerprint": "843512bd276e"
+  },
   "pointer-capture": {
     "passed": true,
     "fingerprint": "fbc7d121fecd"
