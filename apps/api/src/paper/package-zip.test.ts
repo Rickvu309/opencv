@@ -10,6 +10,14 @@ function directoryOffset(bytes: Buffer) {
 }
 
 describe("bounded ZIP admission", () => {
+  it("B4 refuses OPC case-equivalent member names", async () => {
+    const bytes = fixtureZip({
+      "word/document.xml": "<root/>",
+      "WORD/DOCUMENT.XML": "<shadow/>",
+    })
+    await expect(readPackageZip(bytes)).rejects.toThrow("DUPLICATE_ZIP_MEMBER")
+  })
+
   it.each([0, 8])("reads admitted ZIP32 method %i", async (method) => {
     const bytes = fixtureZip({ "file.xml": "<root>hello</root>" }, method)
     expect(

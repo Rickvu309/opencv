@@ -259,7 +259,7 @@ export class PaperPackage {
     const parts = new Map<string, ParsedPart>()
     const budget = { elements: 0 }
     for (const [name, bytes] of archive.files) {
-      if (name.endsWith(".xml") || name.endsWith(".rels"))
+      if (/\.(xml|rels)$/i.test(name))
         parts.set(name, parsePackageXml(bytes, budget))
     }
     const main = parts.get(MAIN_PART) ?? refuse("MISSING_MAIN_DOCUMENT")

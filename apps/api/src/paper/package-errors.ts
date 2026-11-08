@@ -51,6 +51,12 @@ const messages: Record<string, string> = {
   MIXED_OR_MISSING_TEXT_NODE:
     "This text is split across text elements that Paper cannot safely replace together yet.",
   MIXED_OR_MISSING_RUN: "This paragraph has no supported text span to replace.",
+  TRACKED_TABLE_REVISION:
+    "This table row or cell has a pending tracked change. Accept or reject it in Word before editing this text.",
+  UNSUPPORTED_TEXT_CONTROL:
+    "This text contains a tab or line break that Paper cannot safely replace yet.",
+  PARAGRAPH_CONTEXT_TOO_LARGE:
+    "This paragraph is too long for Paper to safely offer edit targets yet.",
   TARGET_TOO_LARGE:
     "This text span is too long for one edit. Choose a shorter supported span.",
   STALE_OR_FOREIGN_BASIS:

@@ -16,7 +16,138 @@ const contains = (node, predicate) => {
 
 const string = (node, value) => ts.isStringLiteral(node) && node.text === value
 
-export function detect(source) {
+const property = (node, name) =>
+  ts.isPropertyAccessExpression(node) && node.name.text === name
+
+const named = (node, name) => contains(node, (item) => property(item, name))
+
+const literal = (node, value) => contains(node, (item) => string(item, value))
+
+const refusal = (node, code) =>
+  contains(
+    node,
+    (item) =>
+      ts.isIfStatement(item) &&
+      contains(
+        item.thenStatement,
+        (branch) =>
+          call(branch, "locked") &&
+          branch.arguments.some((argument) => string(argument, code))
+      )
+  )
+
+const rules = [
+  [
+    "tableRevision",
+    "Check tracked row and cell property changes",
+    (node) =>
+      [
+        "tcPr",
+        "trPr",
+        "ins",
+        "del",
+        "moveFrom",
+        "moveTo",
+        "cellIns",
+        "cellDel",
+        "cellMerge",
+        "Change",
+      ].every((value) => literal(node, value)),
+  ],
+  [
+    "inspectParagraph",
+    "Lock tracked table targets before exposing spans",
+    (node) => contains(node, (item) => call(item, "tableRevision")),
+  ],
+  [
+    "inspectTargetPolicy",
+    "Use indexed paragraph identities and dependency reach",
+    (node) =>
+      ["paragraphIds", "identityValues", "rangeTargets"].every((name) =>
+        named(node, name)
+      ) &&
+      !contains(
+        node,
+        (item) =>
+          call(item, "descendants") &&
+          item.arguments.some((argument) => property(argument, "root"))
+      ),
+  ],
+  [
+    "inspectRun",
+    "Lock decoded tabs and newlines in Word text",
+    (node) =>
+      refusal(node, "UNSUPPORTED_TEXT_CONTROL") &&
+      contains(
+        node,
+        (item) =>
+          ts.isRegularExpressionLiteral(item) && item.text === "/[\\t\\n\\r]/u"
+      ),
+  ],
+  [
+    "directory",
+    "Compare OPC member names without case distinctions",
+    (node) =>
+      ["has", "add"].every((name) =>
+        contains(
+          node,
+          (item) =>
+            ts.isCallExpression(item) &&
+            property(item.expression, name) &&
+            item.arguments.some(
+              (argument) =>
+                ts.isCallExpression(argument) &&
+                property(argument.expression, "toLowerCase")
+            )
+        )
+      ),
+  ],
+  [
+    "open",
+    "Parse case-variant XML and relationship parts",
+    (node) =>
+      contains(
+        node,
+        (item) =>
+          ts.isRegularExpressionLiteral(item) &&
+          item.text === "/\\.(xml|rels)$/i"
+      ),
+  ],
+  [
+    "relationships",
+    "Inspect case-variant relationship parts",
+    (node) =>
+      contains(
+        node,
+        (item) =>
+          ts.isRegularExpressionLiteral(item) && item.text === "/\\.rels$/i"
+      ),
+  ],
+  [
+    "inspectParagraph",
+    "Bound full paragraph context before projection",
+    (node) =>
+      refusal(node, "PARAGRAPH_CONTEXT_TOO_LARGE") &&
+      contains(
+        node,
+        (item) =>
+          ts.isBinaryExpression(item) &&
+          item.operatorToken.kind === ts.SyntaxKind.GreaterThanToken &&
+          named(item.left, "byteLength") &&
+          property(item.right, "targetBytes")
+      ),
+  ],
+]
+
+const required = {
+  targets: ["paragraphText", "tableRevision", "inspectParagraph", "inspectRun"],
+  policy: ["inspectTargetPolicy"],
+  references: ["relationships"],
+  zip: ["directory", "inflate"],
+  engine: ["open"],
+}
+
+export function detect(source, path = "") {
   const file = ts.createSourceFile(
     "paper-package.ts",
     source,
@@ -24,6 +155,26 @@ export function detect(source) {
     true
   )
   const issues = []
+  const functions = new Map()
+  const visit = (node) => {
+    if (
+      (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) &&
+      node.body &&
+      node.name
+    )
+      functions.set(node.name.getText(file), node)
+    ts.forEachChild(node, visit)
+  }
+  visit(file)
+  for (const [scope, names] of Object.entries(required))
+    if (path.endsWith(`/package-${scope}.ts`))
+      for (const name of names)
+        if (!functions.has(name))
+          issues.push(`Keep the ${name} safety boundary present`)
+  for (const [name, message, accepts] of rules) {
+    const node = functions.get(name)
+    if (node && !accepts(node)) issues.push(message)
+  }
   for (const node of file.statements) {
     if (
       ts.isImportDeclaration(node) &&

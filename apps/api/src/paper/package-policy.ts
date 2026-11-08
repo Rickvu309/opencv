@@ -1,7 +1,6 @@
 import { refuse } from "./package-errors.js"
 import {
   isNamespaceAttribute,
-  MAIN_PART,
   OFFICE_RELATIONSHIP_NS,
   PACKAGE_PROFILE,
   storyPart,
@@ -347,21 +346,12 @@ export function inspectTargetPolicy(
     (textId !== undefined && (!validParagraphId(textId) || !paraId))
   )
     refuse("UNPROVEN_IDENTITY_REACH")
-  if (
-    paraId &&
-    descendants(part.root).filter(
-      (item) =>
-        isWord(item, "p") &&
-        attribute(item, "paraId", W14_NS)?.toUpperCase() ===
-          paraId.toUpperCase()
-    ).length !== 1
-  )
+  if (paraId && policy.paragraphIds.get(part)?.get(paraId.toUpperCase()) !== 1)
     refuse("UNPROVEN_IDENTITY_REACH")
   if (
-    policy.identityReferences.some((item) =>
-      [paraId?.toUpperCase(), textId?.toUpperCase()].includes(
-        item.value.toUpperCase()
-      )
+    [paraId, textId].some(
+      (value) =>
+        value !== undefined && policy.identityValues.has(value.toUpperCase())
     )
   )
     refuse("UNPROVEN_IDENTITY_REACH")
@@ -465,13 +455,5 @@ export function inspectTargetPolicy(
           refuse("UNPROVEN_THEME")
       }
   }
-  if (
-    policy.ranges.some(
-      (range) =>
-        range.part === MAIN_PART &&
-        range.start < node.end &&
-        range.end > node.start
-    )
-  )
-    refuse("CROSS_PARAGRAPH_RANGE_OR_FIELD")
+  if (policy.rangeTargets.has(node)) refuse("CROSS_PARAGRAPH_RANGE_OR_FIELD")
 }

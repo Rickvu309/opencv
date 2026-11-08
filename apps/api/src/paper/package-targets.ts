@@ -83,6 +83,32 @@ function simpleLocation(node: XmlElement) {
   )
 }
 
+function tableRevision(node: XmlElement) {
+  return [node.parent, node.parent?.parent].some(
+    (container) =>
+      container &&
+      (isWord(container, "tc") || isWord(container, "tr")) &&
+      container.children.some(
+        (property) =>
+          (isWord(property, "tcPr") || isWord(property, "trPr")) &&
+          descendants(property).some(
+            (item) =>
+              isWord(item) &&
+              ([
+                "ins",
+                "del",
+                "moveFrom",
+                "moveTo",
+                "cellIns",
+                "cellDel",
+                "cellMerge",
+              ].includes(item.local) ||
+                item.local.endsWith("Change"))
+          )
+      )
+  )
+}
+
 function simpleProperties(node: XmlElement, name: string) {
   return (
     isWord(node, name) &&
@@ -122,6 +148,7 @@ function inspectRun(
   const texts = run.children.filter((child) => isWord(child, "t"))
   if (texts.length !== 1 || texts[0].children.length)
     return locked(text, "MIXED_OR_MISSING_TEXT_NODE")
+  if (/[\t\n\r]/u.test(text)) return locked(text, "UNSUPPORTED_TEXT_CONTROL")
   if (!text) return locked(text, "EMPTY_TARGET")
   if (Buffer.byteLength(text, "utf8") > PACKAGE_LIMITS.targetBytes)
     return locked(text, "TARGET_TOO_LARGE")
@@ -152,6 +179,9 @@ export function inspectParagraph(
   policy: PackageReferences
 ): ParagraphInspection {
   const text = paragraphText(node, part.source)
+  if (Buffer.byteLength(text, "utf8") > PACKAGE_LIMITS.targetBytes)
+    return locked(text, "PARAGRAPH_CONTEXT_TOO_LARGE")
+  if (tableRevision(node)) return locked(text, "TRACKED_TABLE_REVISION")
   if (!simpleLocation(node))
     return locked(text, "UNSUPPORTED_STORY_OR_ANCESTOR")
   try {

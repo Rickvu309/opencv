@@ -117,8 +117,8 @@ function directory(input: Uint8Array) {
       bytes.subarray(at + 46, at + 46 + bytes.readUInt16LE(at + 28)),
       Boolean(flags & 0x800)
     )
-    if (names.has(name)) refuse("DUPLICATE_ZIP_MEMBER", name)
-    names.add(name)
+    if (names.has(name.toLowerCase())) refuse("DUPLICATE_ZIP_MEMBER", name)
+    names.add(name.toLowerCase())
     const compressedSize = bytes.readUInt32LE(at + 20)
     const memberSize = bytes.readUInt32LE(at + 24)
     total += memberSize

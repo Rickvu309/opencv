@@ -48,7 +48,9 @@ export function attribute(
 }
 
 function owner(name: string) {
-  return name === "_rels/.rels" ? "" : name.replace("/_rels/", "/").slice(0, -5)
+  return name.toLowerCase() === "_rels/.rels"
+    ? ""
+    : name.replace(/\/_rels\//i, "/").slice(0, -5)
 }
 
 function declarations(
@@ -86,16 +88,18 @@ function declarations(
     const value =
       attribute(node, "ContentType") ?? refuse("UNPROVEN_CONTENT_TYPES")
     const table = node.local === "Default" ? defaults : overrides
-    if (table.has(key)) refuse("UNPROVEN_CONTENT_TYPES")
-    table.set(key, value)
+    if (table.has(key.toLowerCase())) refuse("UNPROVEN_CONTENT_TYPES")
+    table.set(key.toLowerCase(), value)
   }
   const result = new Map<string, string>()
   for (const name of files.keys()) {
     if (name === "[Content_Types].xml") continue
     const type =
-      overrides.get(`/${name}`) ??
+      overrides.get(`/${name.toLowerCase()}`) ??
       defaults.get(
-        name.endsWith(".rels") ? "rels" : posix.extname(name).slice(1)
+        /\.rels$/i.test(name)
+          ? "rels"
+          : posix.extname(name).slice(1).toLowerCase()
       ) ??
       refuse("UNPROVEN_CONTENT_TYPES")
     result.set(name, type)
@@ -122,7 +126,7 @@ function relationships(
 ) {
   const result: PackageRelationship[] = []
   for (const [name, part] of parts) {
-    if (!name.endsWith(".rels")) continue
+    if (!/\.rels$/i.test(name)) continue
     const source = owner(name)
     if (
       (source && !files.has(source)) ||
@@ -229,12 +233,26 @@ export function inspectPackageReferences(
       refuse("UNPROVEN_ACTIVE_PACKAGE")
   const types = declarations(parts, archive.files)
   const graph = relationships(parts, archive.files)
+  const incomingByPart = new Map<string, PackageRelationship[]>()
+  const relationshipIds = new Map<string, Set<string>>()
+  for (const relation of graph) {
+    const ids = relationshipIds.get(relation.owner) ?? new Set<string>()
+    ids.add(relation.id)
+    relationshipIds.set(relation.owner, ids)
+    if (relation.resolved) {
+      const incoming = incomingByPart.get(relation.resolved) ?? []
+      incoming.push(relation)
+      incomingByPart.set(relation.resolved, incoming)
+    }
+  }
+  const paragraphIds = new Map<ParsedPart, Map<string, number>>()
+  const partNodes = new Map<ParsedPart, XmlElement[]>()
   const ranges: LockedRange[] = []
   const bookmarks = new Set<string>()
   const references: string[] = []
   const comments = new Set<string>()
   const commentReferences: string[] = []
-  const identityReferences: { part: string; value: string }[] = []
+  const identityValues = new Set<string>()
   const customStores = new Set<string>()
   for (const item of graph.filter(
     (item) => item.type === `${OFFICE_RELATIONSHIP_NS}/customXmlProps`
@@ -257,7 +275,7 @@ export function inspectPackageReferences(
     customStores.add(id.toUpperCase())
   }
   for (const [name, part] of parts) {
-    const incoming = graph.filter((item) => item.resolved === name)
+    const incoming = incomingByPart.get(name) ?? []
     const role =
       storyPart(name) ||
       [
@@ -273,7 +291,7 @@ export function inspectPackageReferences(
         "docProps/custom.xml",
         "docMetadata/LabelInfo.xml",
       ].includes(name) ||
-      name.endsWith(".rels") ||
+      /\.rels$/i.test(name) ||
       (/^customXml\//.test(name) &&
         incoming.some((item) =>
           /\/(customXml|customXmlProps)$/.test(item.type)
@@ -281,7 +299,15 @@ export function inspectPackageReferences(
     if (!role && incoming.length) refuse("UNPROVEN_PART")
     if (/commentsExtended|commentsIds|people\.xml/.test(name))
       refuse("UNPROVEN_IDENTITY_REACH")
-    for (const node of descendants(part.root)) {
+    const nodes = descendants(part.root)
+    partNodes.set(part, nodes)
+    const counts = new Map<string, number>()
+    paragraphIds.set(part, counts)
+    for (const node of nodes) {
+      if (isWord(node, "p")) {
+        const id = attribute(node, "paraId", W14_NS)?.toUpperCase()
+        if (id) counts.set(id, (counts.get(id) ?? 0) + 1)
+      }
       if (isWord(node, "comment") && name === "word/comments.xml") {
         const id = attribute(node, "id", node.uri) ?? refuse("DANGLING_COMMENT")
         if (comments.has(id)) refuse("DANGLING_COMMENT")
@@ -299,9 +325,7 @@ export function inspectPackageReferences(
       for (const item of node.attributes) {
         if (
           item.uri === OFFICE_RELATIONSHIP_NS &&
-          !graph.some(
-            (relation) => relation.owner === name && relation.id === item.value
-          )
+          !relationshipIds.get(name)?.has(item.value)
         )
           refuse("DANGLING_RELATIONSHIP")
         if (
@@ -317,7 +341,7 @@ export function inspectPackageReferences(
             ["paraId", "textId"].includes(item.local)
           )
         )
-          identityReferences.push({ part: name, value: item.value })
+          identityValues.add(item.value.toUpperCase())
       }
       if (
         !role &&
@@ -370,11 +394,42 @@ export function inspectPackageReferences(
     if (!bookmarks.has(name)) refuse("DANGLING_BOOKMARK")
   for (const [name] of archive.files)
     if (!parts.has(name)) {
-      const incoming = graph.filter((item) => item.resolved === name)
+      const incoming = incomingByPart.get(name) ?? []
       if (incoming.some((item) => !/\/(image|font|thumbnail)$/.test(item.type)))
         refuse("UNPROVEN_PART")
     }
-  return { graph, ranges, types, parts, identityReferences }
+  const rangeTargets = new WeakSet<XmlElement>()
+  for (const [name, part] of parts) {
+    const merged: { start: number; end: number }[] = []
+    for (const range of ranges
+      .filter((range) => range.part === name)
+      .sort((a, b) => a.start - b.start)) {
+      const last = merged.at(-1)
+      if (last && range.start <= last.end)
+        last.end = Math.max(last.end, range.end)
+      else merged.push({ start: range.start, end: range.end })
+    }
+    for (const node of partNodes.get(part) ?? []) {
+      if (!isWord(node, "p")) continue
+      let low = 0
+      let high = merged.length
+      while (low < high) {
+        const middle = Math.floor((low + high) / 2)
+        if (merged[middle].end <= node.start) low = middle + 1
+        else high = middle
+      }
+      if (merged[low] && merged[low].start < node.end) rangeTargets.add(node)
+    }
+  }
+  return {
+    graph,
+    ranges,
+    types,
+    parts,
+    paragraphIds,
+    identityValues,
+    rangeTargets,
+  }
 }
 
 function storyRanges(

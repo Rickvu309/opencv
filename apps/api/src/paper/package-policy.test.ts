@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { PaperPackage } from "./package-engine.js"
 import {
   fixtureFiles,
@@ -12,6 +12,8 @@ import {
   type FixtureOptions,
 } from "./package-fixtures.js"
 import { witnessArchive } from "./package-witness.js"
+import { PACKAGE_LIMITS } from "./package-limits.js"
+import * as packageXml from "./package-xml.js"
 
 const context = {
   docId: "cv",
@@ -389,4 +391,159 @@ describe("conservative surface and references", () => {
       )
     )
   })
+})
+
+describe("review regressions", () => {
+  it.each([
+    ...["ins", "del", "moveFrom", "moveTo", "trPrChange"].map((name) => [
+      "trPr",
+      name,
+    ]),
+    ...["cellIns", "cellDel", "cellMerge", "tcPrChange"].map((name) => [
+      "tcPr",
+      name,
+    ]),
+  ])(
+    "B1 locks table revision %s/%s without a row identity",
+    async (property, change) => {
+      const revision = `<w:${property}><w:${change} w:id="1" w:author="Person"/></w:${property}>`
+      const bytes = fixturePackage(
+        `<w:tbl><w:tr>${property === "trPr" ? revision : ""}<w:tc>${property === "tcPr" ? revision : ""}${paragraph("target")}</w:tc></w:tr></w:tbl>` +
+          tail
+      )
+      const document = await PaperPackage.open(bytes, context)
+      expect(document.read().regions[0]).toMatchObject({
+        kind: "locked",
+        text: "target",
+      })
+      expect(editable(document, "untouched").kind).toBe("editable")
+      expect(document.export()).toEqual(bytes)
+    }
+  )
+
+  it("B1 keeps an ordinary table cell editable", async () => {
+    const document = await PaperPackage.open(
+      fixturePackage(
+        `<w:tbl><w:tr><w:trPr/><w:tc><w:tcPr/><w:p>${run("target")}</w:p></w:tc></w:tr></w:tbl>`
+      ),
+      context
+    )
+    expect(
+      (
+        await document.prepare(edit(document, "target", "changed"))
+      ).package.read().regions[0]
+    ).toMatchObject({ kind: "editable", text: "changed" })
+  })
+
+  it("B2 bounds whole-part identity traversals independently of paragraph count", async () => {
+    const spy = vi.spyOn(packageXml, "descendants")
+    try {
+      const body = Array.from({ length: 64 }, (_, index) =>
+        paragraph(`target ${index}`).replace(
+          "<w:p>",
+          `<w:p w14:paraId="${(index + 1).toString(16).padStart(8, "0")}">`
+        )
+      ).join("")
+      const document = await PaperPackage.open(fixturePackage(body), context)
+      expect(
+        document.read().regions.filter((region) => region.kind === "editable")
+      ).toHaveLength(64)
+      expect(
+        spy.mock.calls.filter(([node]) => packageXml.isWord(node, "document"))
+          .length
+      ).toBeLessThanOrEqual(6)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it("B2 still locks duplicate paragraph identities and keeps independent identities editable", async () => {
+    const p = (text: string, id: string) =>
+      paragraph(text).replace("<w:p>", `<w:p w14:paraId="${id}">`)
+    const document = await PaperPackage.open(
+      fixturePackage(
+        p("first", "1111abcd") +
+          p("second", "1111ABCD") +
+          p("third", "22222222")
+      ),
+      context
+    )
+    expect(document.read().regions.map((region) => region.kind)).toEqual([
+      "locked",
+      "locked",
+      "editable",
+    ])
+  })
+
+  it.each(["&#13;", "&#9;", "&#10;", "\t", "\n", "&#13;&#10;"])(
+    "B3 locks decoded text control %j",
+    async (control) => {
+      const bytes = fixturePackage(
+        `<w:p><w:r><w:t>a${control}b</w:t></w:r></w:p>` + tail
+      )
+      const document = await PaperPackage.open(bytes, context)
+      expect(document.read().regions[0].kind).toBe("locked")
+      expect(editable(document, "untouched").kind).toBe("editable")
+      expect(document.export()).toEqual(bytes)
+    }
+  )
+
+  it.each(["XML", "RELS"])(
+    "B4 classifies the case-variant %s part before dependency checks",
+    async (extension) => {
+      const files = fixtureFiles(paragraph("target"))
+      if (extension === "XML") {
+        files["opaque.XML"] = story("p", run("consumer"))
+      } else {
+        const name = "word/_rels/document.xml.rels"
+        const source = files[name]
+        files["word/_rels/document.xml.RELS"] = source
+          .toString()
+          .replace(
+            "</Relationships>",
+            `<Relationship Id="future" Type="urn:unproven:consumer" Target="document.xml"/></Relationships>`
+          )
+        delete files[name]
+      }
+      const name =
+        extension === "XML" ? "/opaque.XML" : "/word/_rels/document.xml.RELS"
+      const type =
+        extension === "XML"
+          ? "application/xml"
+          : "application/vnd.openxmlformats-package.relationships+xml"
+      files["[Content_Types].xml"] = files["[Content_Types].xml"]
+        .toString()
+        .replace(
+          "</Types>",
+          `<Override PartName="${name}" ContentType="${type}"/></Types>`
+        )
+      const bytes = fixtureZip(files)
+      const document = await PaperPackage.open(bytes, context)
+      expect(document.read().regions[0].kind).toBe("locked")
+      expect(document.export()).toEqual(bytes)
+    }
+  )
+
+  it.each([PACKAGE_LIMITS.targetBytes, PACKAGE_LIMITS.targetBytes + 1])(
+    "B5 bounds complete paragraph context at %i bytes",
+    async (size) => {
+      const text = "é".repeat(Math.floor(size / 2)) + (size % 2 ? "x" : "")
+      const document = await PaperPackage.open(
+        fixturePackage(
+          `<w:p>${run(text.slice(0, 2048))}${run(text.slice(2048))}</w:p>`,
+          {}
+        ),
+        context
+      )
+      expect(document.read().regions[0].kind).toBe(
+        size <= PACKAGE_LIMITS.targetBytes ? "editable" : "locked"
+      )
+      if (size === PACKAGE_LIMITS.targetBytes) {
+        for (const region of document.read().regions) {
+          if (region.kind === "editable")
+            expect(Buffer.byteLength(region.context.paragraphText)).toBe(size)
+        }
+      }
+    }
+  )
 })
