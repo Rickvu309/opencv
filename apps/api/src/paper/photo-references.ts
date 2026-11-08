@@ -32,6 +32,11 @@ export const RELEASED_PHOTO_SOURCE = "paper_doc_updates.released"
 
 export const NOT_PHOTO_JSON = [
   {
+    table: "pending_actions",
+    column: "frozen_review",
+    why: "Frozen artifact identity and staged review; Paper owns photo references",
+  },
+  {
     table: "coach_tasks",
     column: "context_snapshot",
     why: "Coach grounding snapshot, not an authoritative Paper document",

@@ -300,16 +300,29 @@ export function detectReplayIdentity(text) {
   const canonical =
     normalized.length === 1 &&
     spelling(normalized[0], source) === "JSON.parse(JSON.stringify(input))"
+  let admission = false
+  const execute = method(source, "execute")
+  if (execute)
+    walk(execute, (node) => {
+      if (
+        ts.isCallExpression(node) &&
+        spelling(node.expression, source) === "this.admitCommand" &&
+        spelling(node.arguments[0], source) === "options"
+      )
+        admission = true
+    })
   let validated = false
-  walk(source, (node) => {
-    if (
-      ts.isVariableDeclaration(node) &&
-      spelling(node.name, source) === "parsed" &&
-      spelling(node.initializer, source) ===
-        "parseInput(command.input,options.input)"
-    )
-      validated = true
-  })
+  const parsing = admission ? method(source, "admitCommand") : execute
+  if (parsing)
+    walk(parsing, (node) => {
+      if (
+        ts.isVariableDeclaration(node) &&
+        spelling(node.name, source) === "parsed" &&
+        spelling(node.initializer, source) ===
+          "parseInput(command.input,options.input)"
+      )
+        validated = true
+    })
   if (!canonical || !validated) problems.push("uncanonical-keyed-input")
   let taskInput = false
   const taskCall = returned(method(source, "executeTask")).find(
