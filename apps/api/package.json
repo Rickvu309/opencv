@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:formal": "vitest run --config vitest.formal.config.ts",
     "lint": "eslint",
-    "format": "prettier --write \"**/*.{ts,tsx}\""
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "test:mcp-harness": "node --test src/test/mcp-harness.integration.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",
@@ -47,6 +48,7 @@
     "tsx": "^4.23.15",
     "typescript": "~6",
     "typescript-eslint": "^8",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "@modelcontextprotocol/inspector": "2.14.0"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "id": "mcp-harness",
+  "file": "scripts/mcp-harness.test.mjs",
+  "detector": {
+    "module": "scripts/lib/mcp-harness-clients.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "This adds the first reusable real-client harness. The baked-token mistake is a new fixture, not a past product bug."
+}
