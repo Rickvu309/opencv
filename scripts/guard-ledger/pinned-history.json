@@ -3,9 +3,9 @@
   "file": "scripts/pinned-history.test.mjs",
   "historic": {
     "mode": "restore",
-    "sha": "392c98bbaba7107af3551c0036df1c30bb020bb1",
+    "sha": "a03f42edb4041c2aac90592c1e18a85d25216bb5",
     "paths": ["scripts/lib/pinned-history.mjs"],
     "command": ["node", "--test", "scripts/pinned-history.test.mjs"]
   },
-  "reason": "M7 pinned b5bd3e52 in ledger JSON, outside the old test-source-only detector. The proof restores that detector and must fail ledger mistake fixtures while the fixed detector passes. The PR-shaped git fixture proves a locally present branch commit is rejected against canonical main and a wrong-target tag cannot retain it. Earlier #1128 branch-only test references remain covered."
+  "reason": "The first PR-time repair inspected Git argument shapes and missed aliased arrays, option-prefixed calls and fixture strings. Restoring that detector must fail the syntax-independent mistake fixtures and the actual PR guard reproduction before a squash clone loses the referenced commit. Ledger references from M7 and earlier #1128 test references remain covered."
 }
