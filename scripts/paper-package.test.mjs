@@ -68,7 +68,27 @@ test("review safety boundaries reject mistakes and accept clean fixtures", () =>
     [
       "indexed identity and reach",
       `function inspectTargetPolicy(node, part) { return descendants(part.root).filter(x => x === node) }`,
-      `function inspectTargetPolicy(node, part, policy) { return [policy.paragraphIds.get(part), policy.identityValues.has(node.id), policy.rangeTargets.has(node)] }`,
+      `function inspectTargetPolicy(node, part, policy) { targetDependencies(policy)(node); return [policy.paragraphIds.get(part), policy.identityValues.has(node.id), policy.rangeTargets.has(node)] }`,
+    ],
+    [
+      "shared package dependency cache",
+      `function targetDependencies(policy) { return buildTargetDependencies(policy) }`,
+      `function targetDependencies(policy) { let check = dependencyCache.get(policy); if (!check) dependencyCache.set(policy, check = buildTargetDependencies(policy)); return check }`,
+    ],
+    [
+      "shared definition indexes",
+      `function buildTargetDependencies() { return definitions.filter(style => matches(style)) }`,
+      `function buildTargetDependencies(root) { return [definitionIndex(root, "style"), definitionIndex(root, "num"), definitionIndex(root, "abstractNum"), definitionIndex(root, "lvl")] }`,
+    ],
+    [
+      "memoized property refusals",
+      `function checkRoot(root) { return descendants(root).forEach(check) }`,
+      `function checkRoot(root) { if (roots.has(root)) return roots.get(root); try { check(root); roots.set(root, null) } catch (error) { roots.set(root, error); throw error } }`,
+    ],
+    [
+      "iterative cached style closures",
+      `function checkStyle(id) { checkStyle(base(id)) }`,
+      `function checkStyle(id) { try { while (id) { if (results.has(id)) return results.get(id); results.set(id, null); id = base(id) } } catch (error) { results.set(id, error); throw error } }`,
     ],
     [
       "decoded controls",

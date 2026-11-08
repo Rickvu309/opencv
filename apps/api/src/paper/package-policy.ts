@@ -1,4 +1,4 @@
-import { refuse } from "./package-errors.js"
+import { PaperPackageRefusal, refuse } from "./package-errors.js"
 import {
   isNamespaceAttribute,
   OFFICE_RELATIONSHIP_NS,
@@ -355,105 +355,179 @@ export function inspectTargetPolicy(
     )
   )
     refuse("UNPROVEN_IDENTITY_REACH")
-  const styleRoot = policy.parts.get("word/styles.xml")?.root
-  const definitions =
-    styleRoot?.children.filter((item) => isWord(item, "style")) ?? []
-  const closure = [node]
-  const visiting = new Set<string>()
-  function visit(id: string | undefined, type: string) {
-    if (!id) return
-    const matches = definitions.filter(
-      (item) => wordAttribute(item, "styleId") === id
-    )
-    if (
-      matches.length !== 1 ||
-      wordAttribute(matches[0], "type") !== type ||
-      visiting.has(`${type}:${id}`)
-    )
-      refuse("UNPROVEN_STYLE")
-    const style = matches[0]
-    visiting.add(`${type}:${id}`)
-    closure.push(style)
-    const base = wordChild(style, "basedOn")
-    visit(base && wordAttribute(base, "val"), type)
-    if (descendants(style).some((item) => item.local.endsWith("Change")))
-      refuse("UNPROVEN_STYLE")
-    visiting.delete(`${type}:${id}`)
+  targetDependencies(policy)(node)
+  if (policy.rangeTargets.has(node)) refuse("CROSS_PARAGRAPH_RANGE_OR_FIELD")
+}
+
+const dependencyCache = new WeakMap<
+  PackageReferences,
+  ReturnType<typeof buildTargetDependencies>
+>()
+
+function targetDependencies(policy: PackageReferences) {
+  let check = dependencyCache.get(policy)
+  if (!check) {
+    check = buildTargetDependencies(policy)
+    dependencyCache.set(policy, check)
   }
-  const defaultStyle = definitions.find(
+  return check
+}
+
+function definitionIndex(
+  root: XmlElement | undefined,
+  local: string,
+  key: string
+) {
+  const index = new Map<string | undefined, XmlElement[]>()
+  for (const node of root?.children ?? []) {
+    if (!isWord(node, local)) continue
+    const id = wordAttribute(node, key)
+    const matches = index.get(id) ?? []
+    matches.push(node)
+    index.set(id, matches)
+  }
+  return index
+}
+
+function buildTargetDependencies(policy: PackageReferences) {
+  const styleRoot = policy.parts.get("word/styles.xml")?.root
+  const styles = definitionIndex(styleRoot, "style", "styleId")
+  const defaultStyle = styleRoot?.children.find(
     (item) =>
+      isWord(item, "style") &&
       wordAttribute(item, "type") === "paragraph" &&
       wordAttribute(item, "default") === "1"
   )
-  const explicit = wordChild(node, "pPr")?.children.find((item) =>
-    isWord(item, "pStyle")
-  )
-  visit(
-    explicit
-      ? (wordAttribute(explicit, "val") ?? refuse("UNPROVEN_STYLE"))
-      : defaultStyle
-        ? wordAttribute(defaultStyle, "styleId")
-        : definitions.some(
-              (item) => wordAttribute(item, "styleId") === "Normal"
-            )
-          ? "Normal"
-          : undefined,
-    "paragraph"
-  )
-  for (const item of descendants(node))
-    if (isWord(item, "rStyle"))
-      visit(wordAttribute(item, "val") ?? refuse("UNPROVEN_STYLE"), "character")
+  const defaultId = defaultStyle
+    ? wordAttribute(defaultStyle, "styleId")
+    : styles.has("Normal")
+      ? "Normal"
+      : undefined
   const defaults = styleRoot && wordChild(styleRoot, "docDefaults")
-  if (defaults) closure.push(defaults)
-  for (const item of closure.flatMap(descendants)) {
-    if (isWord(item, "numPr")) {
-      const id = wordChild(item, "numId")
-      if (id && wordAttribute(id, "val") === "0") continue
-      const level = wordChild(item, "ilvl")
-      const numbering = policy.parts.get("word/numbering.xml")?.root
-      const nums =
-        numbering?.children.filter(
-          (num) =>
-            isWord(num, "num") &&
-            wordAttribute(num, "numId") === (id && wordAttribute(id, "val"))
-        ) ?? []
-      if (
-        !level ||
-        nums.length !== 1 ||
-        nums[0].children.some((child) => isWord(child, "lvlOverride"))
-      )
-        refuse("UNPROVEN_NUMBERING")
-      const abstractId = wordChild(nums[0], "abstractNumId")
-      const abstract =
-        numbering?.children.filter(
-          (child) =>
-            isWord(child, "abstractNum") &&
-            wordAttribute(child, "abstractNumId") ===
-              (abstractId && wordAttribute(abstractId, "val"))
-        ) ?? []
-      if (
-        abstract.length !== 1 ||
-        abstract[0].children.some(
-          (child) => isWord(child, "styleLink") || isWord(child, "numStyleLink")
-        ) ||
-        abstract[0].children.filter(
-          (child) =>
-            isWord(child, "lvl") &&
-            wordAttribute(child, "ilvl") === wordAttribute(level, "val")
-        ).length !== 1
-      )
-        refuse("UNPROVEN_NUMBERING")
+  const numbering = policy.parts.get("word/numbering.xml")?.root
+  const numbers = definitionIndex(numbering, "num", "numId")
+  const abstracts = definitionIndex(numbering, "abstractNum", "abstractNumId")
+  const levels = new Map<XmlElement, ReturnType<typeof definitionIndex>>()
+  const abstractIds = new Map<XmlElement, string | undefined>()
+  const overrides = new Set<XmlElement>()
+  const linked = new Set<XmlElement>()
+  for (const matches of numbers.values())
+    for (const node of matches) {
+      const reference = wordChild(node, "abstractNumId")
+      abstractIds.set(node, reference && wordAttribute(reference, "val"))
+      if (node.children.some((child) => isWord(child, "lvlOverride")))
+        overrides.add(node)
     }
-    if (isWord(item, "rFonts"))
-      for (const value of item.attributes.filter(
-        (value) => value.local.endsWith("Theme") || value.local === "cstheme"
-      )) {
-        if (
-          !/^(major|minor)(Ascii|HAnsi|EastAsia|Bidi)$/.test(value.value) ||
-          !policy.parts.has("word/theme/theme1.xml")
+  for (const matches of abstracts.values())
+    for (const node of matches) {
+      levels.set(node, definitionIndex(node, "lvl", "ilvl"))
+      if (
+        node.children.some(
+          (child) => isWord(child, "styleLink") || isWord(child, "numStyleLink")
         )
-          refuse("UNPROVEN_THEME")
+      )
+        linked.add(node)
+    }
+  const roots = new WeakMap<XmlElement, PaperPackageRefusal | null>()
+  const resolved = new Map<string, Map<string, PaperPackageRefusal | null>>()
+
+  function checkRoot(root: XmlElement, style = false) {
+    if (roots.has(root)) {
+      const error = roots.get(root)
+      if (error) throw error
+      return
+    }
+    try {
+      for (const item of descendants(root)) {
+        if (style && item.local.endsWith("Change")) refuse("UNPROVEN_STYLE")
+        if (isWord(item, "numPr")) {
+          const id = wordChild(item, "numId")
+          const value = id && wordAttribute(id, "val")
+          if (value === "0") continue
+          const level = wordChild(item, "ilvl")
+          const nums = numbers.get(value) ?? []
+          if (!level || nums.length !== 1 || overrides.has(nums[0]))
+            refuse("UNPROVEN_NUMBERING")
+          const matches = abstracts.get(abstractIds.get(nums[0])) ?? []
+          if (
+            matches.length !== 1 ||
+            linked.has(matches[0]) ||
+            levels.get(matches[0])?.get(wordAttribute(level, "val"))?.length !==
+              1
+          )
+            refuse("UNPROVEN_NUMBERING")
+        }
+        if (isWord(item, "rFonts"))
+          for (const value of item.attributes.filter(
+            (value) =>
+              value.local.endsWith("Theme") || value.local === "cstheme"
+          ))
+            if (
+              !/^(major|minor)(Ascii|HAnsi|EastAsia|Bidi)$/.test(value.value) ||
+              !policy.parts.has("word/theme/theme1.xml")
+            )
+              refuse("UNPROVEN_THEME")
       }
+      roots.set(root, null)
+    } catch (error) {
+      if (error instanceof PaperPackageRefusal) roots.set(root, error)
+      throw error
+    }
   }
-  if (policy.rangeTargets.has(node)) refuse("CROSS_PARAGRAPH_RANGE_OR_FIELD")
+
+  function checkStyle(id: string | undefined, type: string) {
+    const results =
+      resolved.get(type) ?? new Map<string, PaperPackageRefusal | null>()
+    resolved.set(type, results)
+    const trail = new Map<string, XmlElement>()
+    try {
+      while (id) {
+        if (results.has(id)) {
+          const error = results.get(id)
+          if (error) throw error
+          break
+        }
+        const matches = styles.get(id) ?? []
+        if (
+          matches.length !== 1 ||
+          wordAttribute(matches[0], "type") !== type ||
+          trail.has(id)
+        )
+          refuse("UNPROVEN_STYLE")
+        const node = matches[0]
+        trail.set(id, node)
+        const base = wordChild(node, "basedOn")
+        id = base && wordAttribute(base, "val")
+      }
+      for (const [key, node] of [...trail].reverse()) {
+        checkRoot(node, true)
+        results.set(key, null)
+      }
+    } catch (error) {
+      if (error instanceof PaperPackageRefusal)
+        for (const key of trail.keys())
+          if (!results.has(key)) results.set(key, error)
+      throw error
+    }
+  }
+
+  return function check(node: XmlElement) {
+    const explicit = wordChild(node, "pPr")?.children.find((item) =>
+      isWord(item, "pStyle")
+    )
+    checkStyle(
+      explicit
+        ? (wordAttribute(explicit, "val") ?? refuse("UNPROVEN_STYLE"))
+        : defaultId,
+      "paragraph"
+    )
+    for (const item of descendants(node))
+      if (isWord(item, "rStyle"))
+        checkStyle(
+          wordAttribute(item, "val") ?? refuse("UNPROVEN_STYLE"),
+          "character"
+        )
+    checkRoot(node)
+    if (defaults) checkRoot(defaults)
+  }
 }

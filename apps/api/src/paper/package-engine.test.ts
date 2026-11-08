@@ -1,9 +1,18 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { PaperPackage } from "./package-engine.js"
-import { fixturePackage, paragraph, run } from "./package-fixtures.js"
+import {
+  fixturePackage,
+  fixtureFiles,
+  fixtureZip,
+  paragraph,
+  run,
+  story,
+  relationship,
+} from "./package-fixtures.js"
 import { witnessArchive } from "./package-witness.js"
 import { paragraphText } from "./package-targets.js"
 import { parsePackageXml } from "./package-xml.js"
+import * as packageXml from "./package-xml.js"
 
 const context = {
   docId: "cv",
@@ -393,4 +402,160 @@ describe("immutable Word package replacement", () => {
       )
     ).rejects.toThrow("SIDECAR_MAPPING_MISMATCH")
   })
+})
+
+describe("style closure work", () => {
+  it("indexes style and numbering definitions once per package", async () => {
+    const count = 96
+    const definitions = Array.from(
+      { length: count },
+      (_, i) => `<w:style w:type="paragraph" w:styleId="S${i}"/>`
+    ).join("")
+    const numbers = Array.from(
+      { length: count },
+      (_, i) =>
+        `<w:num w:numId="${i + 1}"><w:abstractNumId w:val="${i + 1}"/></w:num><w:abstractNum w:abstractNumId="${i + 1}"><w:lvl w:ilvl="0"/></w:abstractNum>`
+    ).join("")
+    const body = Array.from({ length: 64 }, (_, i) =>
+      paragraph(
+        `target${i}`,
+        '<w:pStyle w:val="S95"/><w:numPr><w:numId w:val="96"/><w:ilvl w:val="0"/></w:numPr>'
+      )
+    ).join("")
+    const files = fixtureFiles(body, {
+      parts: {
+        "word/styles.xml": story("styles", definitions),
+        "word/numbering.xml": story("numbering", numbers),
+      },
+      relationships: [relationship("numbering", "numbering", "numbering.xml")],
+    })
+    files["[Content_Types].xml"] = files["[Content_Types].xml"]
+      .toString()
+      .replace(
+        "</Types>",
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>'
+      )
+    const spy = vi.spyOn(packageXml, "wordAttribute")
+    try {
+      const document = await PaperPackage.open(fixtureZip(files), context)
+      expect(document.read().regions[0]).toMatchObject({ kind: "editable" })
+      expect(
+        document.read().regions.filter((region) => region.kind === "editable")
+      ).toHaveLength(64)
+      const scans = spy.mock.calls.filter(
+        ([node, name]) =>
+          (node.local === "style" && name === "styleId") ||
+          (node.local === "num" && name === "numId") ||
+          (node.local === "abstractNum" && name === "abstractNumId")
+      )
+      expect(scans.length).toBeLessThanOrEqual(count * 8)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it("checks inherited style and default trees once including refused closures", async () => {
+    const definitions = Array.from(
+      { length: 32 },
+      (_, i) =>
+        `<w:style w:type="paragraph" w:styleId="S${i}">${i ? `<w:basedOn w:val="S${i - 1}"/>` : ""}<w:rPr>${"<w:b/>".repeat(16)}</w:rPr></w:style>`
+    ).join("")
+    const styles = story(
+      "styles",
+      definitions +
+        '<w:style w:type="paragraph" w:styleId="Bad"><w:rPrChange/></w:style><w:docDefaults><w:rPrDefault><w:rPr><w:b/></w:rPr></w:rPrDefault></w:docDefaults>'
+    )
+    const body = Array.from(
+      { length: 32 },
+      (_, i) =>
+        paragraph(`target${i}`, '<w:pStyle w:val="S31"/>') +
+        paragraph(`locked${i}`, '<w:pStyle w:val="Bad"/>')
+    ).join("")
+    const spy = vi.spyOn(packageXml, "descendants")
+    try {
+      const document = await PaperPackage.open(
+        fixturePackage(body, { parts: { "word/styles.xml": styles } }),
+        context
+      )
+      expect(
+        document.read().regions.filter((region) => region.kind === "editable")
+      ).toHaveLength(32)
+      expect(
+        document.read().regions.filter((region) => region.kind === "locked")
+      ).toHaveLength(32)
+      const scans = spy.mock.calls.filter(([node]) =>
+        ["style", "docDefaults"].includes(node.local)
+      )
+      expect(scans.length).toBeLessThanOrEqual(36)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+})
+
+describe("cached dependency refusals", () => {
+  it.each([
+    ["missing", "", "UNPROVEN_STYLE"],
+    [
+      "duplicate",
+      '<w:style w:type="paragraph" w:styleId="Bad"/><w:style w:type="paragraph" w:styleId="Bad"/>',
+      "UNPROVEN_STYLE",
+    ],
+    [
+      "wrong type",
+      '<w:style w:type="character" w:styleId="Bad"/>',
+      "UNPROVEN_STYLE",
+    ],
+    [
+      "cycle",
+      '<w:style w:type="paragraph" w:styleId="Bad"><w:basedOn w:val="Bad"/></w:style>',
+      "UNPROVEN_STYLE",
+    ],
+    [
+      "theme",
+      '<w:style w:type="paragraph" w:styleId="Bad"><w:rPr><w:rFonts w:asciiTheme="majorAscii"/></w:rPr></w:style>',
+      "UNPROVEN_THEME",
+    ],
+    [
+      "numbering",
+      '<w:style w:type="paragraph" w:styleId="Bad"><w:pPr><w:numPr><w:numId w:val="1"/><w:ilvl w:val="0"/></w:numPr></w:pPr></w:style>',
+      "UNPROVEN_NUMBERING",
+    ],
+  ])(
+    "retains %s refusal without contaminating another target or package",
+    async (_, bad, code) => {
+      const normal = '<w:style w:type="paragraph" w:styleId="Normal"/>'
+      const body = Array.from(
+        { length: 8 },
+        () => paragraph("blocked", '<w:pStyle w:val="Bad"/>') + tail
+      ).join("")
+      const document = await PaperPackage.open(
+        fixturePackage(body, {
+          parts: { "word/styles.xml": story("styles", normal + bad) },
+        }),
+        context
+      )
+      expect(
+        document
+          .read()
+          .regions.map((region) =>
+            region.kind === "locked" ? region.reason.code : "editable"
+          )
+      ).toEqual(Array.from({ length: 8 }, () => [code, "editable"]).flat())
+      const clean = await PaperPackage.open(
+        fixturePackage(body, {
+          parts: {
+            "word/styles.xml": story(
+              "styles",
+              normal + '<w:style w:type="paragraph" w:styleId="Bad"/>'
+            ),
+          },
+        }),
+        context
+      )
+      expect(
+        clean.read().regions.every((region) => region.kind === "editable")
+      ).toBe(true)
+    }
+  )
 })

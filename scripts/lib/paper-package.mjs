@@ -66,12 +66,57 @@ const rules = [
       ["paragraphIds", "identityValues", "rangeTargets"].every((name) =>
         named(node, name)
       ) &&
+      contains(node, (item) => call(item, "targetDependencies")) &&
       !contains(
         node,
         (item) =>
           call(item, "descendants") &&
           item.arguments.some((argument) => property(argument, "root"))
       ),
+  ],
+  [
+    "targetDependencies",
+    "Cache dependency checks per immutable package",
+    (node) =>
+      ["get", "set"].every((name) =>
+        contains(
+          node,
+          (item) =>
+            ts.isCallExpression(item) &&
+            property(item.expression, name) &&
+            ts.isIdentifier(item.expression.expression) &&
+            item.expression.expression.text === "dependencyCache"
+        )
+      ),
+  ],
+  [
+    "buildTargetDependencies",
+    "Index shared style and numbering definitions before target checks",
+    (node) =>
+      ["style", "num", "abstractNum", "lvl"].every((name) =>
+        contains(
+          node,
+          (item) =>
+            call(item, "definitionIndex") &&
+            item.arguments.some((argument) => string(argument, name))
+        )
+      ),
+  ],
+  [
+    "checkRoot",
+    "Remember successful and refused shared property checks",
+    (node) =>
+      ["has", "get", "set"].every((name) => named(node, name)) &&
+      contains(node, (item) => ts.isCatchClause(item) && named(item, "set")),
+  ],
+  [
+    "checkStyle",
+    "Resolve style chains iteratively and retain both closure outcomes",
+    (node) =>
+      contains(node, (item) => ts.isWhileStatement(item)) &&
+      ["has", "get", "set"].every((name) => named(node, name)) &&
+      contains(node, (item) => ts.isCatchClause(item) && named(item, "set")) &&
+      !contains(node.body, (item) => call(item, "checkStyle")),
   ],
   [
     "inspectRun",
@@ -141,7 +186,14 @@ const rules = [
 
 const required = {
   targets: ["paragraphText", "tableRevision", "inspectParagraph", "inspectRun"],
-  policy: ["inspectTargetPolicy"],
+  policy: [
+    "inspectTargetPolicy",
+    "targetDependencies",
+    "buildTargetDependencies",
+    "definitionIndex",
+    "checkRoot",
+    "checkStyle",
+  ],
   references: ["relationships"],
   zip: ["directory", "inflate"],
   engine: ["open"],
