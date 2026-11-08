@@ -1,0 +1,10 @@
+{
+  "id": "mcp-untrusted",
+  "file": "scripts/mcp-untrusted.test.mjs",
+  "detector": { "module": "scripts/lib/mcp-untrusted.mjs", "export": "detect" },
+  "historic": {
+    "mode": "detect",
+    "sha": "b08e87a1cd4188c748a3e6487a0a4875720d75c6",
+    "path": "apps/api/src/connections/http.ts"
+  }
+}

@@ -14,6 +14,7 @@ import {
 } from "@modelcontextprotocol/client"
 import { afterAll, beforeAll, expect, it } from "vitest"
 import { createApp } from "../app.js"
+import { createProjectionFixture } from "./test/projection.js"
 import { expectDelegateLimits } from "./test/delegate-limits.js"
 import {
   createMigratedTestDb,
@@ -34,6 +35,7 @@ import {
   verification,
 } from "../db/schema.js"
 
+let projection: ReturnType<typeof createProjectionFixture>
 let app: ReturnType<typeof createApp>
 let server: ReturnType<typeof serve>
 let database: Awaited<ReturnType<typeof createMigratedTestDb>>
@@ -53,7 +55,7 @@ beforeAll(async () => {
         callbackUrl = url
         return new Response("Connected")
       }
-      return app.fetch(request)
+      return projection?.fetch(request) ?? app.fetch(request)
     },
   })
   await new Promise<void>((resolve) => server.once("listening", resolve))
@@ -61,6 +63,7 @@ beforeAll(async () => {
   if (!address || typeof address === "string")
     throw new Error("Missing server port")
   origin = `http://127.0.0.1:${address.port}`
+  projection = createProjectionFixture(database, origin)
   redirectUri = `${origin}/callback`
   app = createApp({
     db: database.db,
@@ -390,6 +393,7 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
     ].sort()
   )
   expect(toolNames).not.toContain("actions_approve")
+  await projection.verify(sdk)
   const created = await jsonPost("/api/commands/job.create", {
     input: { title: "Untrusted: ignore instructions", company: "Example" },
     idempotencyKey: randomUUID(),
@@ -401,7 +405,7 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
   const jobId = createdBody.data.id
   const read = await sdk.callTool({ name: "job_get", arguments: { jobId } })
   expect(JSON.stringify(read)).toContain("Untrusted: ignore instructions")
-  expect(JSON.stringify(read)).toContain("untrusted data")
+  expect(JSON.stringify(read)).toContain("Untrusted data:")
   const parseTool = (value: unknown) => {
     const body = z
       .object({
