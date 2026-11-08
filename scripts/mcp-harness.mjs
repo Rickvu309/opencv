@@ -1,14 +1,13 @@
 import assert from "node:assert/strict"
 import { execFileSync, fork } from "node:child_process"
 import { randomUUID } from "node:crypto"
-import { once } from "node:events"
 import { readFileSync } from "node:fs"
 import { get } from "node:http"
 import { createRequire } from "node:module"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { withTempDir } from "./lib/temp-dir.mjs"
-import { checkClients } from "./lib/mcp-harness-clients.mjs"
+import { checkClients, fixtureProcess } from "./lib/mcp-harness-clients.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const apiRequire = createRequire(resolve(root, "apps/api/package.json"))
@@ -65,46 +64,13 @@ function startFixture(port) {
       stdio: ["ignore", "pipe", "pipe", "ipc"],
     }
   )
-  let output = ""
-  const collect = (chunk) => {
-    output = (output + chunk).slice(-8000)
-  }
-  child.stdout.on("data", collect)
-  child.stderr.on("data", collect)
-  const pending = new Map()
-  let readyResolve
-  let readyReject
-  const ready = new Promise((resolve, reject) => {
-    readyResolve = resolve
-    readyReject = reject
-  })
-  child.on("message", (message) => {
-    if (message.ready) readyResolve(message.ready)
-    const waiter = pending.get(message.id)
-    if (!waiter) return
-    pending.delete(message.id)
-    if (message.error) waiter.reject(new Error(message.error))
-    else waiter.resolve(message.data)
-  })
-  child.on("error", (error) => readyReject(error))
-  child.on("exit", (code) => {
-    const error = new Error(`Local API exited (${code}): ${output}`)
-    readyReject(error)
-    for (const waiter of pending.values()) waiter.reject(error)
-    pending.clear()
-  })
-  function request(kind, values = {}) {
-    const id = randomUUID()
-    return new Promise((resolve, reject) => {
-      pending.set(id, { resolve, reject })
-      child.send({ id, kind, ...values })
-    })
-  }
+  const fixture = fixtureProcess(child)
   return {
-    ready,
-    wire: () => request("wire"),
-    observe: (jobId) => request("observe", { jobId }),
-    history: (connectionId, mode) => request("history", { connectionId, mode }),
+    ...fixture,
+    wire: () => fixture.request("wire"),
+    observe: (jobId) => fixture.request("observe", { jobId }),
+    history: (connectionId, mode) =>
+      fixture.request("history", { connectionId, mode }),
     person: async (email) =>
       z
         .object({
@@ -112,14 +78,7 @@ function startFixture(port) {
           userId: z.string(),
           sessionId: z.string(),
         })
-        .parse(await request("person", { email })),
-    close: async () => {
-      if (!child.connected) return
-      const exited = once(child, "exit")
-      await request("close")
-      await exited
-    },
-    kill: () => child.kill("SIGTERM"),
+        .parse(await fixture.request("person", { email })),
   }
 }
 

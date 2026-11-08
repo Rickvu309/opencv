@@ -57,23 +57,43 @@ const wire: {
 let closing: Promise<void> | undefined
 function close() {
   closing ??= (async () => {
-    const listening = server
-    if (listening) {
-      if ("closeAllConnections" in listening) listening.closeAllConnections()
-      await new Promise<void>((resolve, reject) =>
-        listening.close((error) => (error ? reject(error) : resolve()))
-      )
+    const failures: unknown[] = []
+    for (const release of [
+      async () => {
+        const listening = server
+        if (!listening?.listening) return
+        if ("closeAllConnections" in listening) listening.closeAllConnections()
+        await new Promise<void>((resolve, reject) =>
+          listening.close((error) => (error ? reject(error) : resolve()))
+        )
+      },
+      () => pool.end(),
+      () => admin.query(`DROP DATABASE ${name} WITH (FORCE)`),
+      () => admin.end(),
+    ]) {
+      try {
+        await release()
+      } catch (error) {
+        failures.push(error)
+      }
     }
-    await pool.end()
-    await admin.query(`DROP DATABASE ${name} WITH (FORCE)`)
-    await admin.end()
     console.log = originalLog
+    if (failures.length)
+      throw new AggregateError(failures, "Local API cleanup failed")
   })()
   return closing
 }
 
-process.once("disconnect", () => void close())
-process.once("SIGTERM", () => void close().then(() => process.exit()))
+const stop = () =>
+  void close().then(
+    () => process.exit(),
+    (error: unknown) => {
+      console.error(error)
+      process.exit(1)
+    }
+  )
+process.once("disconnect", stop)
+process.once("SIGTERM", stop)
 
 try {
   await runMigrations(db)
@@ -233,6 +253,16 @@ try {
     },
   })
 } catch (error) {
-  await close()
+  try {
+    await close()
+  } catch (cleanupError) {
+    throw new AggregateError(
+      [error, cleanupError],
+      "Local API startup failed",
+      {
+        cause: cleanupError,
+      }
+    )
+  }
   throw error
 }

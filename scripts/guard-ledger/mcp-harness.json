@@ -5,6 +5,10 @@
     "module": "scripts/lib/mcp-harness-clients.mjs",
     "export": "detect"
   },
-  "historic": null,
-  "reason": "This adds the first reusable real-client harness. The baked-token mistake is a new fixture, not a past product bug."
+  "historic": {
+    "mode": "detect",
+    "sha": "b5bd3e524dff2e5b5f6e0042dfeefefcff72c8e0",
+    "path": "scripts/mcp-harness.mjs"
+  },
+  "reason": "The introducing harness sends IPC without observing send failures. The SDK and discovery rules remain new mistake fixtures; cleanup also has a separate introducing-source replay."
 }

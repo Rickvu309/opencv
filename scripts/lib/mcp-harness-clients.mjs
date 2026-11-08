@@ -1,8 +1,81 @@
 import ts from "typescript"
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
+import { randomUUID } from "node:crypto"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
+
+export function fixtureProcess(child) {
+  let output = ""
+  const collect = (chunk) => {
+    output = (output + chunk).slice(-8000)
+  }
+  child.stdout.on("data", collect)
+  child.stderr.on("data", collect)
+  const pending = new Map()
+  let terminalError
+  let readyResolve
+  let readyReject
+  const ready = new Promise((resolve, reject) => {
+    readyResolve = resolve
+    readyReject = reject
+  })
+  const closed = new Promise((resolve) => child.once("close", resolve))
+  function fail(error) {
+    terminalError ??= error
+    readyReject(terminalError)
+    for (const waiter of pending.values()) waiter.reject(terminalError)
+    pending.clear()
+  }
+  child.on("message", (message) => {
+    if (message.ready) readyResolve(message.ready)
+    const waiter = pending.get(message.id)
+    if (!waiter) return
+    pending.delete(message.id)
+    if (message.error) waiter.reject(new Error(message.error))
+    else waiter.resolve(message.data)
+  })
+  child.on("error", fail)
+  child.on("exit", (code) =>
+    fail(new Error(`Local API exited (${code}): ${output}`))
+  )
+  child.on("disconnect", () =>
+    fail(new Error(`Local API disconnected: ${output}`))
+  )
+  function request(kind, values = {}) {
+    if (terminalError || !child.connected)
+      return Promise.reject(
+        terminalError ?? new Error(`Local API disconnected: ${output}`)
+      )
+    const id = randomUUID()
+    return new Promise((resolve, reject) => {
+      pending.set(id, { resolve, reject })
+      const sent = (error) => {
+        if (!error) return
+        pending.delete(id)
+        reject(error)
+      }
+      try {
+        child.send({ id, kind, ...values }, sent)
+      } catch (error) {
+        sent(error)
+      }
+    })
+  }
+  return {
+    ready,
+    request,
+    close: async () => {
+      if (terminalError || !child.connected) return closed
+      try {
+        await request("close")
+      } finally {
+        await closed
+      }
+    },
+    kill: () => child.kill("SIGTERM"),
+  }
+}
 
 function redact(text) {
   return text
@@ -264,6 +337,57 @@ export async function checkClients({
   return checks
 }
 
+export function detectLifecycle(text, file = "scripts/mcp-harness.mjs") {
+  const source = ts.createSourceFile(
+    file,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  )
+  const hits = []
+  function hit(node, kind) {
+    hits.push({
+      line:
+        source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1,
+      kind,
+    })
+  }
+  function visit(node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression)
+    ) {
+      const { expression, name } = node.expression
+      if (
+        ts.isIdentifier(expression) &&
+        expression.text === "child" &&
+        name.text === "send" &&
+        node.arguments.length < 2
+      )
+        hit(node, "ipc-send-result")
+      if (
+        ts.isIdentifier(expression) &&
+        ["pool", "admin"].includes(expression.text) &&
+        ["end", "query"].includes(name.text) &&
+        ts.isAwaitExpression(node.parent)
+      ) {
+        let owner = node.parent
+        let isolated = false
+        while (owner && (!ts.isFunctionLike(owner) || !owner.name)) {
+          if (ts.isTryStatement(owner) && owner.catchClause) isolated = true
+          owner = owner.parent
+        }
+        if (owner?.name?.getText(source) === "close" && !isolated)
+          hit(node, "cleanup-release")
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return hits
+}
+
 export function detect(text, file = "scripts/mcp-harness.mjs") {
   const source = ts.createSourceFile(
     file,
@@ -272,7 +396,7 @@ export function detect(text, file = "scripts/mcp-harness.mjs") {
     true,
     ts.ScriptKind.JS
   )
-  const hits = []
+  const hits = detectLifecycle(text, file)
   let sdk = false
   let challenge = false
   const discovery = new Set()
