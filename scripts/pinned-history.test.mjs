@@ -270,6 +270,7 @@ test("the PR guard rejects aliased and option-prefixed reads before squash loses
               env,
               encoding: "utf8",
               stdio: ["ignore", "pipe", "pipe"],
+              timeout: 30_000,
             }
           ),
         }
@@ -288,6 +289,7 @@ test("the PR guard rejects aliased and option-prefixed reads before squash loses
       assert.ok(result.output.includes(draft), result.output)
       execFileSync(process.execPath, ["scripts/payload.test.mjs"], {
         cwd: repo,
+        timeout: 30_000,
       })
     }
     git(["commit", "-m", "history reader fixture"], repo)
@@ -311,6 +313,7 @@ test("the PR guard rejects aliased and option-prefixed reads before squash loses
       execFileSync(process.execPath, ["scripts/payload.test.mjs"], {
         cwd: clone,
         stdio: "pipe",
+        timeout: 30_000,
       })
     )
     assert.equal(guard(clone).status, 0)
