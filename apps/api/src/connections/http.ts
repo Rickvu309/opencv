@@ -240,12 +240,7 @@ export function connectionRoutes(
         ERROR_CODES.INTERNAL_ERROR,
         "MCP transport must not run inside a database transaction"
       )
-    const response = await handler.fetch(c.req.raw)
-    const body = await response.arrayBuffer()
-    return new Response(body, {
-      status: response.status,
-      headers: response.headers,
-    })
+    return handler.fetch(c.req.raw)
   })
   routes.get("/api/agent-connections", requireSession(auth, db), async (c) =>
     c.json(
