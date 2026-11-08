@@ -14,7 +14,7 @@ export const PAPER_PACKAGE_LIMITS = Object.freeze({
 })
 
 export const PAPER_PACKAGE_PROJECTOR = "paper-package-spans-1"
-export const paperPackageRevisionSchema = z.string().uuid()
+const paperPackageRevisionSchema = z.string().uuid()
 const identity = z.string().uuid()
 const location = z
   .object({
