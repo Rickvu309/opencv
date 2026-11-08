@@ -95,6 +95,10 @@ function immutable<T>(value: T): T {
   return value
 }
 
+export function reviewSnapshot<T>(value: T): T {
+  return immutable(clone(value))
+}
+
 export function refuseFrozenReview(): never {
   throw new CommandError(
     ERROR_CODES.CONFLICT,
@@ -107,6 +111,14 @@ export function requirePreparationBoundary() {
     throw new CommandError(
       ERROR_CODES.CONFLICT,
       "Review preparation must start before a transaction"
+    )
+}
+
+export function requirePublicationBoundary() {
+  if (!insideTransaction())
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "Prepared task publication requires its owning transaction"
     )
 }
 
@@ -224,7 +236,8 @@ export async function replayFrozenProposal(
     .where(
       and(
         eq(pendingActions.id, pointer.data.proposalId),
-        eq(pendingActions.userId, ownerId)
+        eq(pendingActions.userId, ownerId),
+        sql`${pendingActions.createdAt} + interval '24 hours' > clock_timestamp()`
       )
     )
   if (!row) return refuseFrozenReview()

@@ -1,58 +1,107 @@
 import { coachActor } from "@workspace/domain"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb } from "../db/context.js"
-import { coachUsage, toolIntents } from "../db/schema.js"
+import { coachTasks, coachUsage, toolIntents } from "../db/schema.js"
 import { withOwnedTaskFence } from "../registry/task-fence.js"
 import type { Registry } from "../registry/registry.js"
 import { append, inputHash, intentKey } from "./task-store.js"
-import type { Intent, TaskLease } from "./task-types.js"
+import type { Intent, Task, TaskLease } from "./task-types.js"
 
-export function runIntent(
+async function storedIntent(taskId: string, intent: Intent) {
+  const [stored] = await getDb()
+    .select()
+    .from(toolIntents)
+    .where(
+      and(
+        eq(toolIntents.taskId, taskId),
+        eq(toolIntents.step, intent.step),
+        eq(toolIntents.slot, intent.slot)
+      )
+    )
+  if (
+    !stored ||
+    intent.intentKey !== intentKey(taskId, intent.step, intent.slot) ||
+    stored.intentKey !== intent.intentKey ||
+    stored.inputHash !== inputHash(intent.input) ||
+    stored.inputHash !== inputHash(stored.input) ||
+    inputHash(stored.observedRevisions) !==
+      inputHash(intent.observedRevisions) ||
+    stored.inputHash !== intent.inputHash ||
+    stored.operation !== intent.operation ||
+    stored.operationVersion !== intent.operationVersion ||
+    stored.kind !== intent.kind ||
+    stored.providerToolUseId !== intent.providerToolUseId
+  )
+    throw new Error("Intent identity mismatch")
+  return stored
+}
+
+async function taskActor(task: Pick<Task, "id" | "ownerId" | "chatId">) {
+  const [usage] = await getDb()
+    .select()
+    .from(coachUsage)
+    .where(eq(coachUsage.coachTaskId, task.id))
+  if (!usage || usage.userId !== task.ownerId || usage.chatId !== task.chatId)
+    throw new Error("Task usage missing or mismatched")
+  return coachActor(task.ownerId, task.chatId, usage.id)
+}
+
+async function prepareIntent(
   lease: TaskLease,
   intent: Intent,
   registry: Registry
 ) {
+  if (
+    intent.kind !== "command" ||
+    !registry.taskNeedsPreparation(intent.operation)
+  )
+    return null
+  const [task] = await getDb()
+    .select()
+    .from(coachTasks)
+    .where(eq(coachTasks.id, lease.taskId))
+  if (!task) throw new Error("Task lease lost")
+  const stored = await storedIntent(task.id, intent)
+  if (stored.state !== "planned") return null
+  const actor = await taskActor(task)
+  const publish = await registry.prepareTask(lease, {
+    name: stored.operation,
+    input: stored.input,
+    actor,
+    idempotencyKey: stored.intentKey,
+  })
+  return { actor, publish }
+}
+
+export async function runIntent(
+  lease: TaskLease,
+  intent: Intent,
+  registry: Registry
+) {
+  if (
+    intent.kind === "command" &&
+    registry.taskNeedsPreparation(intent.operation)
+  ) {
+    intent = structuredClone(intent)
+    lease = { ...lease }
+  }
+  const prepared = await prepareIntent(lease, intent, registry)
   return withOwnedTaskFence(lease, async (task) => {
-    const [stored] = await getDb()
-      .select()
-      .from(toolIntents)
-      .where(
-        and(
-          eq(toolIntents.taskId, task.id),
-          eq(toolIntents.step, intent.step),
-          eq(toolIntents.slot, intent.slot)
-        )
-      )
-    if (
-      !stored ||
-      intent.intentKey !== intentKey(task.id, intent.step, intent.slot) ||
-      stored.intentKey !== intent.intentKey ||
-      stored.inputHash !== inputHash(intent.input) ||
-      stored.inputHash !== inputHash(stored.input) ||
-      inputHash(stored.observedRevisions) !==
-        inputHash(intent.observedRevisions) ||
-      stored.inputHash !== intent.inputHash ||
-      stored.operation !== intent.operation ||
-      stored.operationVersion !== intent.operationVersion ||
-      stored.kind !== intent.kind ||
-      stored.providerToolUseId !== intent.providerToolUseId
-    )
-      throw new Error("Intent identity mismatch")
+    const stored = await storedIntent(task.id, intent)
     if (stored.state !== "planned") return stored.publicResult
-    const [usage] = await getDb()
-      .select()
-      .from(coachUsage)
-      .where(eq(coachUsage.coachTaskId, task.id))
-    if (!usage) throw new Error("Task usage missing")
-    const actor = coachActor(task.ownerId, task.chatId, usage.id)
+    const actor = await taskActor(task)
+    if (prepared && inputHash(prepared.actor) !== inputHash(actor))
+      throw new Error("Intent actor changed during preparation")
     const executed =
       intent.kind === "command"
-        ? await registry.executeTask(lease, {
-            name: stored.operation,
-            input: stored.input,
-            actor,
-            idempotencyKey: stored.intentKey,
-          })
+        ? prepared
+          ? await prepared.publish()
+          : await registry.executeTask(lease, {
+              name: stored.operation,
+              input: stored.input,
+              actor,
+              idempotencyKey: stored.intentKey,
+            })
         : null
     const result = executed
       ? {

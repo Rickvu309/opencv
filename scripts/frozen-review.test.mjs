@@ -14,16 +14,26 @@ const registry = readFileSync(
   new URL("apps/api/src/registry/registry.ts", root),
   "utf8"
 )
+const effect = readFileSync(
+  new URL("apps/api/src/coach/task-effects.ts", root),
+  "utf8"
+)
 const require = createRequire(new URL("apps/api/package.json", root))
 const z = require("zod").z
 const inputHash = (value) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex")
 const clean = `async function prepareReview() { requirePreparationBoundary(); return binding.parse(await binding.prepare()); }
 function readFrozenReview() { envelopeSchema.safeParse(); inputHash(); binding.parse(); if (body.bindingVersion) refuseFrozenReview(); }
-async function approve() { await lockProposal(); readFrozenReview(); await consumeFrozenReservation(); }`
+async function approve() { await lockProposal(); readFrozenReview(); await consumeFrozenReservation(); }
+async function prepareTask() { requirePreparationBoundary(); requirePublicationBoundary(); checkPreparationTask(); reviewSnapshot(); this.replayByKey(); executeTaskCommand(); }
+async function runIntent() { const prepared = await prepareIntent(); return withOwnedTaskFence(lease, async () => { await storedIntent(); await taskActor(); return prepared.publish(); }); }
+async function replayFrozenProposal() { readFrozenReview(); if (pendingActions.createdAt) refuseFrozenReview(); }`
 const mistake = `async function prepareReview() { return binding.prepare(); }
 function readFrozenReview() { return stored; }
-async function approve() { return binding.prepare(); }`
+async function approve() { return binding.prepare(); }
+async function prepareTask() { return cached; }
+async function runIntent() { return withOwnedTaskFence(lease, async () => { const prepared = await prepareIntent(); await storedIntent(); await taskActor(); return prepared.publish(); }); }
+async function replayFrozenProposal() { readFrozenReview(); refuseFrozenReview(); }`
 
 function load(text, ambient = false) {
   const exports = {}
@@ -63,10 +73,120 @@ const binding = {
 }
 
 test("frozen review pure detector rejects mistake and accepts clean and owning source", () => {
-  assert.equal(detect(mistake).length, 3)
+  assert.equal(detect(mistake).length, 6)
   assert.deepEqual(detect(clean), [])
   assert.deepEqual(detect(source), [])
   assert.deepEqual(detect(registry), [])
+  assert.deepEqual(detect(effect), [])
+})
+
+async function taskReplay(text) {
+  let ambient = false,
+    preparations = 0,
+    publications = 0,
+    events = 0
+  const task = { id: "task", ownerId: "owner", chatId: "chat" }
+  const intent = {
+    step: 0,
+    slot: 0,
+    intentKey: "coach:task:0:0",
+    input: {},
+    inputHash: inputHash({}),
+    observedRevisions: [],
+    operation: "fixture.review",
+    operationVersion: 1,
+    providerToolUseId: "tool",
+    kind: "command",
+  }
+  const stored = { ...intent, state: "planned" }
+  const tables = { coachTasks: {}, coachUsage: {}, toolIntents: {} }
+  const values = {
+    ...tables,
+    getDb: () => ({
+      select: () => ({
+        from: (table) => ({
+          where: async () => [
+            table === tables.coachTasks
+              ? task
+              : table === tables.coachUsage
+                ? { id: "usage", userId: "owner", chatId: "chat" }
+                : stored,
+          ],
+        }),
+      }),
+      update: () => ({
+        set: (update) => ({ where: async () => Object.assign(stored, update) }),
+      }),
+    }),
+    and: () => true,
+    eq: () => true,
+    sql: () => "now",
+    inputHash,
+    intentKey: () => intent.intentKey,
+    coachActor: (userId, chatId, turnId) => ({
+      type: "coach",
+      userId,
+      chatId,
+      turnId,
+    }),
+    append: async () => {
+      assert.equal(ambient, true)
+      events++
+    },
+    withOwnedTaskFence: async (_, publish) => {
+      assert.equal(ambient, false)
+      ambient = true
+      try {
+        return await publish(task)
+      } finally {
+        ambient = false
+      }
+    },
+  }
+  const exports = {}
+  new Function("exports", ...Object.keys(values), kernelSource(text))(
+    exports,
+    ...Object.values(values)
+  )
+  const registry = {
+    taskNeedsPreparation: () => true,
+    prepareTask: async () => {
+      assert.equal(ambient, false, "Preparation started inside SQL")
+      preparations++
+      return async () => {
+        assert.equal(ambient, true)
+        publications++
+        return { pending: true, pendingActionId: "proposal", activityId: null }
+      }
+    },
+    executeTask: () => assert.fail("Reviewed worker bypassed preparation"),
+  }
+  const lease = { taskId: "task", workerId: "worker", epoch: 1 }
+  const first = await exports.runIntent(lease, intent, registry)
+  assert.equal(first.pendingActionId, "proposal")
+  assert.deepEqual(await exports.runIntent(lease, intent, registry), first)
+  assert.equal(preparations, 1)
+  assert.equal(publications, 1)
+  assert.equal(events, 1)
+}
+
+test("actual worker prepares before its owned fence and its outer-transaction mutant fails", async () => {
+  await taskReplay(effect)
+  const mutant = effect.replace(
+    "  const prepared = await prepareIntent(lease, intent, registry)\n  return withOwnedTaskFence(lease, async (task) => {",
+    "  return withOwnedTaskFence(lease, async (task) => {\n    const prepared = await prepareIntent(lease, intent, registry)"
+  )
+  assert.notEqual(mutant, effect)
+  assert.ok(detect(mutant).length > 0)
+  await assert.rejects(taskReplay(mutant), /Preparation started inside SQL/)
+})
+
+test("prepared task publication requires ambient SQL", () => {
+  assert.throws(
+    () => load(source).requirePublicationBoundary(),
+    /owning transaction/
+  )
+  load(source, true).requirePublicationBoundary()
 })
 
 test("actual kernel refuses ambient preparation and its check-removal mutant fails", async () => {

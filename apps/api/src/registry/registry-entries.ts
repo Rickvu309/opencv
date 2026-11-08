@@ -1,5 +1,6 @@
 import {
   defineCommand,
+  ERROR_CODES,
   effectiveCoachPolicy,
   isCoachActor,
   type Actor,
@@ -7,16 +8,53 @@ import {
   type QuerySpec,
 } from "@workspace/domain"
 import { CatalogPublication } from "./catalog-publication.js"
-import { coachRefusal } from "./coach-policy.js"
+import { coachRefusal, REFUSAL_MESSAGES } from "./coach-policy.js"
 import { delegateAllowed } from "./delegate-policy.js"
+import { CommandError } from "./errors.js"
 import { refuseFrozenReview, type ReviewedCommand } from "./frozen-review.js"
 import { brandedActor, parseInput } from "./parse-input.js"
 import { agentGates } from "./registry-reads.js"
-import type { StoredCommand, StoredQuery, ToolEntry } from "./registry-types.js"
+import type {
+  ExecuteOptions,
+  StoredCommand,
+  StoredQuery,
+  ToolEntry,
+} from "./registry-types.js"
 
 export class RegistryEntries extends CatalogPublication {
   protected readonly commands = new Map<string, StoredCommand>()
   protected readonly queries = new Map<string, StoredQuery>()
+
+  protected async admitCommand(options: ExecuteOptions) {
+    const command = this.commands.get(options.name)
+    if (!command)
+      throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
+    const actor = brandedActor(options.actor)
+    if (!delegateAllowed(command, actor))
+      throw new CommandError(
+        ERROR_CODES.FORBIDDEN,
+        "This connection cannot use this command"
+      )
+    const parsed = parseInput(command.input, options.input)
+    const policy = effectiveCoachPolicy(command, parsed)
+    if (actor.type === "delegate" && policy === "never")
+      throw new CommandError(
+        ERROR_CODES.FORBIDDEN,
+        "This resource cannot be changed by an agent"
+      )
+    if (isCoachActor(actor)) {
+      const refusal = coachRefusal(
+        { ...command, coach: policy },
+        await agentGates(actor.userId)
+      )
+      if (refusal)
+        throw new CommandError(
+          ERROR_CODES.COACH_NOT_ALLOWED,
+          REFUSAL_MESSAGES[refusal]
+        )
+    }
+    return { command, actor, parsed, policy }
+  }
 
   addCommand<I, O>(
     spec: CommandSpec<I, O>,
@@ -142,6 +180,10 @@ export class RegistryEntries extends CatalogPublication {
       ? effectiveCoachPolicy(command, parseInput(command.input, input)) ===
           "confirm"
       : false
+  }
+
+  taskNeedsPreparation(name: string) {
+    return Boolean(this.commands.get(name)?.reviewed)
   }
 
   commandNames() {

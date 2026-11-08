@@ -8,7 +8,6 @@ export { coachRefusal }
 import { executeTaskCommand, type TaskLease } from "./task-fence.js"
 import {
   ERROR_CODES,
-  effectiveCoachPolicy,
   approvedProposalActor,
   coachActor,
   isCoachActor,
@@ -66,6 +65,8 @@ import {
   refuseFrozenReview,
   replayFrozenProposal,
   requirePreparationBoundary,
+  requirePublicationBoundary,
+  reviewSnapshot,
   reviewReceiptKey,
   type FrozenReview,
 } from "./frozen-review.js"
@@ -87,7 +88,6 @@ function jsonInput(input: unknown): unknown {
 const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
 const frozenExecution = Symbol("frozenExecution")
-const preparingTask = Symbol("preparingTask")
 const approvingReview = Symbol("approvingReview")
 
 export class Registry extends RegistryEntries {
@@ -146,10 +146,63 @@ export class Registry extends RegistryEntries {
     return (await this.undoBlockedReasons(userId, [{ command, input }]))[0]!
   }
 
-  executeTask(lease: TaskLease, options: TaskOptions) {
+  async prepareTask(lease: TaskLease, options: TaskOptions) {
+    requirePreparationBoundary()
+    const ownedLease = reviewSnapshot(lease)
+    const captured = reviewSnapshot(options)
+    const { command, actor, parsed } = await this.admitCommand(captured)
+    const reviewed = command.reviewed
+    if (!reviewed) return refuseFrozenReview()
+    const bindingVersion = reviewed.version
+    const normalized = reviewSnapshot({ ...captured, actor, input: parsed })
+    await checkReviewActor(actor)
+    await checkPreparationTask(ownedLease, actor, normalized.idempotencyKey)
+    const { frozen } = await prepareOrReplay(
+      reviewed,
+      normalized.input,
+      actor,
+      command.name,
+      normalized.idempotencyKey,
+      this.replayByKey.bind(this)
+    )
+    return async () => {
+      requirePublicationBoundary()
+      return executeTaskCommand(ownedLease, normalized, command, async () => {
+        const current = await this.admitCommand(normalized)
+        if (current.command.reviewed?.version !== bindingVersion)
+          return refuseFrozenReview()
+        await checkReviewActor(actor)
+        const earlier = await this.replayByKey(
+          actor.userId,
+          normalized.idempotencyKey,
+          command.name,
+          inputHash(normalized.input)
+        )
+        if (earlier)
+          return earlier.pending
+            ? earlier
+            : this.committedResult(
+                command.name,
+                normalized.input as never,
+                actor.userId,
+                earlier
+              )
+        if (!frozen) return refuseFrozenReview()
+        return this.execute({
+          ...normalized,
+          [frozenExecution]: frozen,
+          [taskExecution]: true,
+        })
+      })
+    }
+  }
+
+  async executeTask(lease: TaskLease, options: TaskOptions) {
     const command = this.commands.get(options.name)
-    if (command?.reviewed)
-      return this.execute({ ...options, [preparingTask]: lease })
+    if (command?.reviewed) {
+      const publish = await this.prepareTask(lease, options)
+      return transaction(publish)
+    }
     return executeTaskCommand(lease, { ...options }, command, (input) => {
       if (command)
         input.input = jsonInput(parseInput(command.input, input.input))
@@ -163,48 +216,15 @@ export class Registry extends RegistryEntries {
       [taskExecution]?: boolean
       [approvedDelegate]?: string
       [frozenExecution]?: FrozenReview
-      [preparingTask]?: TaskLease
       [approvingReview]?: boolean
     }
   ): Promise<ExecuteResult> {
-    if (
-      options.idempotencyKey?.startsWith("coach:") &&
-      !options[taskExecution] &&
-      !options[preparingTask]
-    )
+    if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
       throw new CommandError(
         ERROR_CODES.CONFLICT,
         "The coach: key namespace is reserved for durable tasks"
       )
-    const command = this.commands.get(options.name)
-    if (!command) {
-      throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
-    }
-    const actor = brandedActor(options.actor)
-    if (!delegateAllowed(command, actor))
-      throw new CommandError(
-        ERROR_CODES.FORBIDDEN,
-        "This connection cannot use this command"
-      )
-    const parsed = parseInput(command.input, options.input)
-    const policy = effectiveCoachPolicy(command, parsed)
-    if (actor.type === "delegate" && policy === "never")
-      throw new CommandError(
-        ERROR_CODES.FORBIDDEN,
-        "This resource cannot be changed by an agent"
-      )
-    if (isCoachActor(actor)) {
-      const refusal = coachRefusal(
-        { ...command, coach: policy },
-        await agentGates(actor.userId)
-      )
-      if (refusal) {
-        throw new CommandError(
-          ERROR_CODES.COACH_NOT_ALLOWED,
-          REFUSAL_MESSAGES[refusal]
-        )
-      }
-    }
+    const { command, actor, parsed, policy } = await this.admitCommand(options)
     const idempotencyKey = omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe(
       command,
       options.idempotencyKey
@@ -216,8 +236,6 @@ export class Registry extends RegistryEntries {
       requirePreparationBoundary()
       await checkReviewActor(actor)
       if (actor.type === "delegate") await requireLiveDelegate(actor)
-      const lease = options[preparingTask]
-      if (lease) await checkPreparationTask(lease, actor, idempotencyKey)
       const { earlier, frozen } = await prepareOrReplay(
         reviewed,
         jsonInput(parsed),
@@ -226,25 +244,12 @@ export class Registry extends RegistryEntries {
         idempotencyKey,
         this.replayByKey.bind(this)
       )
-      const publish = async () =>
+      const result =
         earlier ??
-        this.execute({
+        (await this.execute({
           ...options,
           [frozenExecution]: frozen!,
-          [taskExecution]: Boolean(lease),
-        })
-      const result = lease
-        ? await executeTaskCommand(
-            lease,
-            {
-              ...options,
-              input: jsonInput(parsed),
-              idempotencyKey: idempotencyKey!,
-            },
-            command,
-            publish
-          )
-        : await publish()
+        }))
       return result.pending
         ? result
         : this.committedResult(

@@ -30,14 +30,47 @@ export function detect(text, file = "source.ts") {
             ]
           : name === "approve"
             ? ["readFrozenReview", "consumeFrozenReservation", "lockProposal"]
-            : []
+            : name === "prepareTask"
+              ? [
+                  "requirePreparationBoundary",
+                  "requirePublicationBoundary",
+                  "checkPreparationTask",
+                  "reviewSnapshot",
+                  "this.replayByKey",
+                  "executeTaskCommand",
+                ]
+              : name === "runIntent"
+                ? [
+                    "prepareIntent",
+                    "withOwnedTaskFence",
+                    "storedIntent",
+                    "taskActor",
+                    "prepared.publish",
+                  ]
+                : name === "replayFrozenProposal"
+                  ? ["readFrozenReview", "refuseFrozenReview"]
+                  : []
+    const preparesBeforeFence = node.body.statements?.some(
+      (statement) =>
+        ts.isVariableStatement(statement) &&
+        statement.declarationList.declarations.some(
+          (declaration) =>
+            declaration.initializer &&
+            ts.isAwaitExpression(declaration.initializer) &&
+            ts.isCallExpression(declaration.initializer.expression) &&
+            declaration.initializer.expression.expression.getText(source) ===
+              "prepareIntent"
+        )
+    )
     if (
       needs.some((call) => !calls.includes(call)) ||
       (name === "approve" &&
         calls.some(
           (call) => call.endsWith(".prepare") || call === "prepareReview"
         )) ||
-      (name === "readFrozenReview" && !members.has("bindingVersion"))
+      (name === "readFrozenReview" && !members.has("bindingVersion")) ||
+      (name === "replayFrozenProposal" && !members.has("createdAt")) ||
+      (name === "runIntent" && !preparesBeforeFence)
     )
       problems.push({
         kind: "unfrozen-review",

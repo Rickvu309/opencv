@@ -39,7 +39,9 @@ function method(name: string) {
 describe("coachRefusal is the one decision on whether a Coach actor may use an entry", () => {
   it("tools, execute and read ask it, and approve reaches it through execute", () => {
     expect(method("tools")).toContain("coachRefusal")
-    expect(method("execute")).toContain("coachRefusal")
+    expect(method("execute")).toContain("this.admitCommand")
+    expect(method("prepareTask")).toContain("this.admitCommand")
+    expect(method("admitCommand")).toContain("coachRefusal")
     expect(method("read")).toContain("coachRefusal")
     expect(method("approve")).toContain("this.execute")
     expect(method("approve")).not.toContain("coachRefusal")
