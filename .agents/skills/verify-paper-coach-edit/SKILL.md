@@ -64,3 +64,31 @@ One document. One immutable proposal. One person typing event. Revisions 0 throu
 After a change to the files named above, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay still refuses a stale basis. Never weaken a rule to clear a finding.
 
 Use this skill’s Git history to locate the last verification change. Keep branch-only commits out of verification anchors.
+
+## MCP connection proposing a Job change
+
+Use the same CoachPaper model and the same five invariants for the MCP approval path. The chart title for this interpretation is `An agent proposes a change`. The agent is one immutable MCP connection, owned by the person. The document and revision represent one Job head and its stored revision. The model does not quantify over connections, users or Jobs; ownership and live grants are concrete replay checks.
+
+The local mapping supplements the Paper-only module map; it does not change that map's exported symbols.
+
+| Action         | MCP and Job source                                                                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Propose        | `createProposal` in `registry/proposals.ts` stores the delegate connection, person, immutable input and Job basis revision. `connectionRoutes` in `connections/http.ts` returns its literal proposalId and approval link. |
+| PersonTypes    | `writePriority` in `job/store.ts`, bound by `job/operations/set-priority/server.ts` changes the same Job head as a person.                                                                                                |
+| Approve        | `Registry.approve` in `registry/registry.ts` locks the proposal, calls `requireLiveProposalConnection`, checks the Job basis through registry execution and commits in the same transaction.                              |
+| RetryApproval  | `Registry.approve` returns the already committed activity by the proposal's stable intent key.                                                                                                                            |
+| PersonUndo     | `Registry.undo` executes the stored reversal as a person, checking the current Job revision.                                                                                                                              |
+| AgentTriesUndo | `delegateAllowed` in `registry/delegate-policy.ts` excludes activity.undo; the MCP registry exposes only declared Job operations.                                                                                         |
+
+Run the additional discovered configuration and its paired mutant through the supported runner, then repeat the clean configuration.
+
+```sh
+node scripts/tlc.mjs apps/api/src/paper/CoachPaper.tla --config apps/api/src/paper/CoachPaper.mcp.cfg
+node scripts/tlc.mjs apps/api/src/paper/CoachPaper.tla --config apps/api/src/paper/CoachPaper.mcp.mutant.cfg
+node scripts/tlc.mjs apps/api/src/paper/CoachPaper.tla --config apps/api/src/paper/CoachPaper.mcp.cfg
+pnpm --filter api exec vitest run src/connections/mcp-proposal-replay.test.ts
+```
+
+Clean exits 0. The mutant exits 12 with StaleBasisRefusesWithoutWriting, not a timeout or setup error. The replay uses the official SDK over real loopback HTTP, a separate person session, a response stream lost after commit, keyed approval retries, stale Job refusal, revocation and person Undo. Default storage is migrated PGlite. MCP_REPLAY_DATABASE_URL selects an existing external Postgres schema without initialization or reset; its unique test person and Jobs remain for later owner cleanup.
+
+The byte-set abstraction proves the same bounded approval and retry rules. It does not prove scalar priority replacement, OAuth, live connection revocation, cross-person access, HTTP delivery or multiple-head concurrency. Those require the concrete replay and independent browser approval of the returned link. A model pass never substitutes for those checks. Paper and MCP configurations keep the existing one-head, one-proposal, one-person-write and revision 0 through 3 bounds. No second proposal model is introduced.

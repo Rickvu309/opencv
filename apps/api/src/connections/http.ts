@@ -225,7 +225,13 @@ export function connectionRoutes(
                   : undefined
               return untrustedResult({
                 ...value,
-                ...(pending ? { status: "pending approval", url: link } : {}),
+                ...(pending && "pendingActionId" in value
+                  ? {
+                      proposalId: value.pendingActionId,
+                      status: "pending approval",
+                      url: link,
+                    }
+                  : {}),
               })
             } catch (error) {
               return {

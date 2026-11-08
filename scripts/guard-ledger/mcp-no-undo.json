@@ -1,0 +1,7 @@
+{
+  "id": "mcp-no-undo",
+  "file": "scripts/mcp-no-undo.test.mjs",
+  "detector": { "module": "scripts/lib/mcp-no-undo.mjs", "export": "detect" },
+  "historic": null,
+  "reason": "New delegate safety guard. No historical delegate exposure of person Undo, mail sending or account deletion has been established. Mistake fixtures are enforced; historical proof is unavailable."
+}
