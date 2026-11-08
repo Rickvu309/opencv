@@ -5,6 +5,7 @@ import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import {
+  detectSavedBeforeDurability,
   detectDelayedRecovery,
   detectRequestDurability as detect,
 } from "./lib/paper-local-durable.mjs"
@@ -113,6 +114,32 @@ test("request success used as a durable save fires, and transaction complete sta
         path.join(root, "apps/web/src/lib/paper-sync-store.ts"),
         "utf8"
       )
+    ),
+    []
+  )
+})
+
+const savedMistake = `
+const canShowSaved = () => true
+setStatus("saved")
+`
+const savedClean = `
+const canShowSaved = () =>
+  durableVersion === version && acceptedVersion === version && !client.hasPending()
+if (canShowSaved()) setStatus("saved")
+setStatus(canShowSaved() ? "saved" : "saving")
+`
+
+test("Saved waits for the exact current local completion and receipt", () => {
+  assert.ok(detectSavedBeforeDurability(savedMistake).length > 0)
+  assert.deepEqual(detectSavedBeforeDurability(savedClean), [])
+  assert.ok(
+    detectSavedBeforeDurability(show("apps/web/src/lib/paper-sync.ts")).length >
+      0
+  )
+  assert.deepEqual(
+    detectSavedBeforeDurability(
+      readFileSync(path.join(root, "apps/web/src/lib/paper-sync.ts"), "utf8")
     ),
     []
   )

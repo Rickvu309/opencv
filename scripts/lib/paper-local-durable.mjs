@@ -263,3 +263,88 @@ export function detectRequestDurability(text) {
   }
   return hits
 }
+
+export function detectSavedBeforeDurability(text) {
+  const source = sourceOf(text)
+  const conjuncts = (node) =>
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+      ? [...conjuncts(node.left), ...conjuncts(node.right)]
+      : [node]
+  const gate = functionBodies(source).get("canShowSaved")
+  const terms = gate ? conjuncts(gate) : []
+  const equalVersion = (name) =>
+    terms.some(
+      (node) =>
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken &&
+        ts.isIdentifier(node.left) &&
+        node.left.text === name &&
+        ts.isIdentifier(node.right) &&
+        node.right.text === "version"
+    )
+  const pending = terms.some(
+    (node) =>
+      ts.isPrefixUnaryExpression(node) &&
+      node.operator === ts.SyntaxKind.ExclamationToken &&
+      ts.isCallExpression(node.operand) &&
+      ts.isPropertyAccessExpression(node.operand.expression) &&
+      node.operand.expression.name.text === "hasPending"
+  )
+  const hits = []
+  if (
+    !equalVersion("durableVersion") ||
+    !equalVersion("acceptedVersion") ||
+    !pending
+  )
+    hits.push(
+      "Saved needs the exact current local completion and server receipt"
+    )
+  const gated = (node) =>
+    conjuncts(node).some(
+      (part) =>
+        ts.isCallExpression(part) &&
+        ts.isIdentifier(part.expression) &&
+        part.expression.text === "canShowSaved"
+    )
+  const saved = (node) => ts.isStringLiteral(node) && node.text === "saved"
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "setStatus" &&
+      node.arguments[0]
+    ) {
+      const value = node.arguments[0]
+      if (
+        ts.isConditionalExpression(value) &&
+        saved(value.whenTrue) &&
+        !gated(value.condition)
+      )
+        hits.push("Saved must use the current snapshot gate")
+      if (saved(value)) {
+        let child = node
+        let parent = child.parent
+        let guarded = false
+        while (parent && !ts.isFunctionLike(parent)) {
+          if (
+            ts.isIfStatement(parent) &&
+            parent.thenStatement === child &&
+            gated(parent.expression)
+          )
+            guarded = true
+          child = parent
+          parent = child.parent
+        }
+        if (!guarded) hits.push("Saved must use the current snapshot gate")
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return hits
+}
+
+export function detectLocalDurability(text) {
+  return [...detectDelayedRecovery(text), ...detectSavedBeforeDurability(text)]
+}

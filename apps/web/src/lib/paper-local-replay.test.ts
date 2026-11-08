@@ -35,7 +35,7 @@ function uncommittedStore(): SyncStore {
   }
 }
 
-it("keeps typed words when the page dies inside the old 50ms window", async () => {
+it("recovers words after a completed local save", async () => {
   const backend = fakeServer(letter(["t1", "Old words."]))
   const store = memoryStore()
   const first = await open({ store, tabId: "crash-tab" })
@@ -50,7 +50,7 @@ it("keeps typed words when the page dies inside the old 50ms window", async () =
   expect(textOf(second, "t1")).toContain("Last typed words.")
 })
 
-it("keeps a keystroke that never reaches IndexedDB", async () => {
+it("keeps completed input across ordinary close before IndexedDB completes", async () => {
   const backend = fakeServer(letter(["t1", "Old words."]))
   const first = await open({ store: uncommittedStore(), tabId: "crash-tab" })
   await vi.advanceTimersByTimeAsync(100)
@@ -177,4 +177,85 @@ it("rejects a save when request success is followed by a transaction abort", asy
     patch.mockRestore()
     await store.close()
   }
+})
+
+function controlledStore() {
+  const inner = memoryStore()
+  const writes: { complete(): void; abort(): void }[] = []
+  let held = false
+  const store: SyncStore = {
+    ...inner,
+    async save(docId, tabId, snapshot) {
+      if (held)
+        await new Promise<void>((resolve, reject) => {
+          writes.push({
+            complete: resolve,
+            abort: () => reject(new Error("transaction aborted")),
+          })
+        })
+      await inner.save(docId, tabId, snapshot)
+    },
+  }
+  return {
+    store,
+    writes,
+    hold: () => {
+      held = true
+    },
+  }
+}
+
+it("waits for the current local transaction after a fast receipt", async () => {
+  fakeServer(letter(["t1", "Old words."]))
+  const local = controlledStore()
+  const sync = await open({ store: local.store })
+  await vi.advanceTimersByTimeAsync(100)
+  expect(sync.status()).toBe("saved")
+  local.hold()
+  type(sync, "t1", "RECEIPT_BEFORE_D")
+  await vi.advanceTimersByTimeAsync(400)
+  expect(sync.client()!.hasPending()).toBe(false)
+  expect(sync.status()).toBe("saving")
+  local.writes.shift()!.complete()
+  await vi.advanceTimersByTimeAsync(0)
+  expect(sync.status()).toBe("saved")
+})
+
+it("an older completion cannot cover newer accepted words", async () => {
+  fakeServer(letter(["t1", "Old words."]))
+  const local = controlledStore()
+  const sync = await open({ store: local.store })
+  await vi.advanceTimersByTimeAsync(100)
+  local.hold()
+  type(sync, "t1", "FIRST")
+  await vi.advanceTimersByTimeAsync(400)
+  type(sync, "t1", "SECOND")
+  await vi.advanceTimersByTimeAsync(400)
+  expect(sync.client()!.hasPending()).toBe(false)
+  local.writes.shift()!.complete()
+  await vi.advanceTimersByTimeAsync(0)
+  expect(sync.status()).toBe("saving")
+  local.writes.shift()!.complete()
+  await vi.advanceTimersByTimeAsync(0)
+  expect(sync.status()).toBe("saved")
+})
+
+it("an aborted transaction cannot combine with a receipt to show Saved", async () => {
+  fakeServer(letter(["t1", "Old words."]))
+  const local = controlledStore()
+  const sync = await open({ store: local.store })
+  await vi.advanceTimersByTimeAsync(100)
+  local.hold()
+  type(sync, "t1", "ABORT_BEFORE_D")
+  await vi.advanceTimersByTimeAsync(400)
+  local.writes.shift()!.abort()
+  await vi.advanceTimersByTimeAsync(0)
+  expect(sync.status()).toBe("local")
+  expect(recoverJournals(localStorage, DOC)).not.toHaveLength(0)
+  local.writes.shift()!.complete()
+  await vi.advanceTimersByTimeAsync(0)
+  expect(sync.status()).toBe("saved")
+  expect(journalUpdates(localStorage, journalScope(DOC, "tab-a"))).toHaveLength(
+    0
+  )
 })

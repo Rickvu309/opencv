@@ -3,15 +3,18 @@
   "actions": {
     "Type": "openPaperSync",
     "LocalRequestSuccess": "indexedDbStore",
-    "LocalCommit": "indexedDbStore",
+    "DurabilityPointD": "indexedDbStore",
     "LocalAbort": "indexedDbStore",
     "SendOrRetry": "openPaperSync",
     "AcceptDurably": null,
     "DeliverReply": "openPaperSync",
     "LoseReply": "openPaperSync",
     "ServerFails": "openPaperSync",
+    "ClearJournal": "openPaperSync",
     "GoOffline": null,
     "Reconnect": null,
-    "Reload": "openPaperSync"
+    "PagehideFlush": "openPaperSync",
+    "AbruptKill": null,
+    "Recover": "openPaperSync"
   }
 }

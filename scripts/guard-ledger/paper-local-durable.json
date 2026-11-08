@@ -3,7 +3,7 @@
   "file": "scripts/paper-local-durable.test.mjs",
   "detector": {
     "module": "scripts/lib/paper-local-durable.mjs",
-    "export": "detectDelayedRecovery"
+    "export": "detectLocalDurability"
   },
   "historic": {
     "mode": "detect",

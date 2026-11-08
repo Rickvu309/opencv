@@ -201,6 +201,9 @@ export function openPaperSync(
           : 0,
     },
   ]
+  let version = 0
+  let durableVersion = -1
+  let acceptedVersion = -1
   let saving = false
   let saveAgain = false
   let saveWaiters: (() => void)[] = []
@@ -252,6 +255,13 @@ export function openPaperSync(
     markJournal(appendJournal(journal, journalId(), update, client.stored()))
   }
 
+  const canShowSaved = () =>
+    client !== null &&
+    durableVersion === version &&
+    acceptedVersion === version &&
+    !client.hasPending() &&
+    !localFailed
+
   const pumpSave = () => {
     if (forgotten || !client || !tabId) {
       const pending = saveWaiters
@@ -266,11 +276,13 @@ export function openPaperSync(
     const pending = saveWaiters
     saveWaiters = []
     const checkpoint = journalCheckpoint()
+    const versionOfSnapshot = version
     const snapshot = client.stored()
     void store
       .save(docId, tabId, snapshot)
       .then(
         () => {
+          durableVersion = versionOfSnapshot
           if (localFailed) {
             localFailed = false
             emit()
@@ -278,6 +290,7 @@ export function openPaperSync(
           if (journal)
             for (const { id, seq } of checkpoint)
               markJournal(noteJournal(journal, id, "idb", seq))
+          if (state === "saving" && canShowSaved()) setStatus("saved")
         },
         () => {
           if (!localFailed) {
@@ -319,6 +332,8 @@ export function openPaperSync(
       refresh: false,
     })
     const receipt = live.receive(sent, replyOf(output))
+    if (!receipt.failed && !receipt.stale && !live.hasPending())
+      acceptedVersion = version
     if (receipt.reset) generation += 1
     ready = true
     replied = true
@@ -361,7 +376,7 @@ export function openPaperSync(
       if (await adoptWaiting()) stuck = true
       if (stuck) setStatus("stuck")
       else if (client.hasPending()) schedule()
-      else setStatus("saved")
+      else setStatus(canShowSaved() ? "saved" : "saving")
       emit()
     } catch (error) {
       if (isRefusal(error)) {
@@ -559,6 +574,8 @@ export function openPaperSync(
     ready = recovered !== null
     waitingOrphans = rest
     unsubscribeClient = client.subscribe((change) => {
+      version += 1
+      if (state === "saved") setStatus("saving")
       if (change === "local") rememberLocal()
       void save()
       if (change === "local") schedule()
