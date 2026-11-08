@@ -1,0 +1,7 @@
+{
+  "id": "mcp-project",
+  "file": "scripts/mcp-project.test.mjs",
+  "detector": { "module": "scripts/lib/mcp-project.mjs", "export": "detect" },
+  "historic": null,
+  "reason": "New projection architecture guard. No historical handwritten tool catalog or missing delegate declaration has been established. Mistake fixtures are enforced; historical proof is unavailable."
+}
