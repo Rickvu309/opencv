@@ -1,0 +1,10 @@
+{
+  "id": "paper-package",
+  "file": "scripts/paper-package.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-package.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "This package adapter is new and has no introducing main ancestor. The property-tab regression was found in the retained scratch spike. Pure mistake and clean fixtures and actual-source negative checks preserve that evidence without assigning a branch-only historical commit."
+}
