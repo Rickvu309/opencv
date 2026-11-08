@@ -1,0 +1,30 @@
+{
+  "id": "write-grant",
+  "file": "apps/api/src/registry/write-grant.test.ts",
+  "detector": {
+    "module": "scripts/lib/write-grant.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "restore",
+    "sha": "70a75fd246d05e91d5d0781f7e6686e7e833978d",
+    "paths": [
+      "apps/api/src/registry/write-grant.ts",
+      "apps/api/src/job/store.ts"
+    ],
+    "command": [
+      "pnpm",
+      "--filter",
+      "api",
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      "vitest.formal.config.ts",
+      "src/registry/write-grant.formal.test.ts",
+      "-t",
+      "review round 3"
+    ]
+  },
+  "reason": "Caught by independent review round 3. Introducing ancestor 70a75fd2 replaced the per-scope id with the shared database transaction, allowing an unused grant from sealed scope A to revive in sibling scope B with no admitted writes. Restoring this ancestor must fail the original sibling-scope regression; current HEAD must refuse it. Introducing ancestor 7f1b310f added caller-mutable authoritative bindings and unconditional priority revision increments, but its random scope id already refused sibling scopes. Its separate assertion-failing binding, in-flight scope and no-op save/Undo replay is retained in the earlier historical proof evidence. traceProblems has pure mistake and clean fixtures for original scope identity/openness, immutable bindings and actual value transitions. Earlier actor-only detection at adbbf32cb51d10be26016a79cdeb6b5738ec2b71 remains covered by detect fixtures and retained historical proof logs."
+}

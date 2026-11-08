@@ -23,6 +23,7 @@ export function createProposal(options: {
   command: string
   input: unknown
   summary: string
+  basisRevision: number | null
 }) {
   return transaction(() => savepoint(() => insertProposal(options)))
 }
@@ -32,8 +33,9 @@ async function insertProposal(options: {
   command: string
   input: unknown
   summary: string
+  basisRevision: number | null
 }) {
-  const { actor, command, input, summary } = options
+  const { actor, command, input, summary, basisRevision } = options
   const id = createId()
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
@@ -75,6 +77,7 @@ async function insertProposal(options: {
       command,
       input,
       summary,
+      basisRevision,
       status: "pending",
     })
   if (actor.type === "delegate")

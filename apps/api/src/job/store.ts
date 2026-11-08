@@ -8,6 +8,7 @@ import {
   sourceHostFromUrl,
   parseJobId,
   parsePaperId,
+  parseUserId,
   type Actor,
   type JobCreateInput,
   type JobId,
@@ -18,12 +19,17 @@ import {
   type PaperId,
   type UserId,
 } from "@workspace/domain"
-import { and, asc, count, desc, eq, isNull } from "drizzle-orm"
+import { and, asc, count, desc, eq, isNull, sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { activity, jobChecklist, jobs, paperDocs } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import {
+  assertPriorityGrant,
+  priorityBasisOk,
+  type WriteGrant,
+} from "../registry/write-grant.js"
 
 function iso(value: Date | null) {
   return value ? value.toISOString() : null
@@ -260,7 +266,6 @@ export async function updateJob(actor: Actor, jobId: JobId, patch: JobPatch) {
       ...(patch.title !== undefined ? { title: patch.title } : {}),
       ...(patch.company !== undefined ? { company: patch.company } : {}),
       ...(patch.location !== undefined ? { location: patch.location } : {}),
-      ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
       ...(patch.interviewAt !== undefined
         ? {
             interviewAt: patch.interviewAt ? new Date(patch.interviewAt) : null,
@@ -302,20 +307,63 @@ export async function priorityCounts(
   }))
 }
 
-export async function setPriority(
-  actor: Actor,
+export async function writePriority(
+  grant: WriteGrant,
   jobId: JobId,
   priority: QueryOutput<"job.get">["priority"]
 ) {
-  const current = await ownedJob(actor.userId, jobId)
-  await getDb()
+  const authority = assertPriorityGrant(grant, grant.ownerId, jobId)
+  const ownerId = parseUserId(authority.ownerId)
+  const current = await ownedJob(ownerId, jobId)
+  const expected = authority.expectedRevision
+  if (expected !== null && !priorityBasisOk(expected, current.priorityRevision))
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "This job's priority was already changed, so your change was not saved"
+    )
+  authority.assertOpen()
+  const updated = await getDb()
     .update(jobs)
-    .set({ priority, updatedAt: new Date() })
-    .where(eq(jobs.id, current.id))
+    .set({
+      priority,
+      priorityRevision: sql`case when ${jobs.priority} is distinct from ${priority} then ${jobs.priorityRevision} + 1 else ${jobs.priorityRevision} end`,
+      updatedAt: new Date(),
+    })
+    .where(
+      expected === null
+        ? and(eq(jobs.id, current.id), eq(jobs.userId, current.userId))
+        : and(
+            eq(jobs.id, current.id),
+            eq(jobs.userId, current.userId),
+            eq(jobs.priorityRevision, expected)
+          )
+    )
+    .returning({ id: jobs.id })
+  if (updated.length === 0)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "This job's priority was already changed, so your change was not saved"
+    )
   return {
-    ...toJob(await ownedJob(actor.userId, jobId)),
+    ...toJob(await ownedJob(ownerId, jobId)),
     previousPriority: current.priority,
   }
+}
+
+export async function priorityRevisionFor(
+  ownerId: string,
+  writes: readonly { name: string; entityId?: string }[]
+) {
+  const write = writes.find(
+    (item) => item.name === "job.priority" && item.entityId
+  )
+  if (!write?.entityId) return null
+  const rows = await getDb()
+    .select({ priorityRevision: jobs.priorityRevision })
+    .from(jobs)
+    .where(and(eq(jobs.id, write.entityId), eq(jobs.userId, ownerId)))
+    .limit(1)
+  return rows[0]?.priorityRevision ?? null
 }
 
 export async function moveJob(

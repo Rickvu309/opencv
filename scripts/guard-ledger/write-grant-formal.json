@@ -1,0 +1,23 @@
+{
+  "id": "write-grant-formal",
+  "file": "apps/api/src/registry/write-grant.formal.test.ts",
+  "historic": {
+    "mode": "restore",
+    "sha": "a5c61cac383631d4837e65356d8f36cd424c69a6",
+    "paths": ["apps/api/src/db/context.ts"],
+    "command": [
+      "pnpm",
+      "--filter",
+      "api",
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      "vitest.formal.config.ts",
+      "src/registry/write-grant.formal.test.ts",
+      "-t",
+      "closed transaction: commit"
+    ]
+  },
+  "reason": "Caught by review round 2. The transaction helper originated in 63944da863f0f83436305a5a93d9a23303ce8070. a5c61cac383631d4837e65356d8f36cd424c69a6 introduced insideTransaction treating inherited async context as a live transaction. Restore that introducing main ancestor to replay the detached post-commit priority write against Postgres. The clean lifetime refuses it. traceProblems is the pure detector; the retained-client mutant writes after commit and fires closed-transaction while the clean fixture refuses without changing the row."
+}

@@ -22,5 +22,13 @@
   "undo-later-stored-time": {
     "passed": true,
     "fingerprint": "ac368da6300c"
+  },
+  "write-grant": {
+    "passed": true,
+    "fingerprint": "a0076e820e72"
+  },
+  "write-grant-formal": {
+    "passed": true,
+    "fingerprint": "da3fc77ea7db"
   }
 }

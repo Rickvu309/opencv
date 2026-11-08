@@ -15,6 +15,7 @@ import {
   type ReversalCall,
   type ReversalPlan,
   type ReversalExpect,
+  type ResourceRef,
 } from "@workspace/domain"
 import type { ZodType } from "zod"
 
@@ -62,6 +63,7 @@ type Binding<C extends CommandContract, N extends keyof C & string> = {
     output: CommandOutput<C, N>,
     actor: Actor
   ) => ActivityDraft | null
+  writes?: (input: CommandInput<C, N>) => ResourceRef[]
   transaction?: "none"
 }
 
@@ -73,6 +75,7 @@ type LooseBinding = {
   handler: (input: unknown, actor: Actor) => Promise<unknown>
   reversal: CommandSpec<unknown, unknown>["reversal"]
   activity: CommandSpec<unknown, unknown>["activity"]
+  writes?: (input: unknown) => ResourceRef[]
   transaction?: "none"
 }
 
@@ -91,7 +94,7 @@ export function bindCommands<C extends CommandContract>(
         input: entry.input,
         coach: entry.coach,
         delegate: entry.delegate,
-        writes: entry.writes,
+        writes: bound.writes ?? entry.writes,
         destructive: entry.destructive,
         ...(entry.idempotency ? { idempotency: entry.idempotency } : {}),
         step: entry.step,

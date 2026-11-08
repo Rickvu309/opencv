@@ -1,0 +1,24 @@
+{
+  "module": "write-grant.ts",
+  "mutants": {
+    "": 12
+  },
+  "actions": {
+    "Open": "withGrantScope",
+    "Begin": null,
+    "Take": "takePriorityGrant",
+    "Autocommit": "takePriorityGrant",
+    "Write": "assertPriorityGrant",
+    "Commit": null,
+    "Late": "assertPriorityGrant",
+    "Cross": "assertPriorityGrant",
+    "Stale": "priorityBasisOk",
+    "Forge": "assertPriorityGrant",
+    "Seal": "withGrantScope",
+    "Reuse": "takePriorityGrant",
+    "Rollback": "assertPriorityGrant",
+    "Sibling": "withGrantScope",
+    "Retarget": "assertPriorityGrant",
+    "Stop": null
+  }
+}

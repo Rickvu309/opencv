@@ -11,7 +11,13 @@ type PgliteDrizzle = typeof import("drizzle-orm/pglite").drizzle
 export type TestDatabase = ReturnType<PgliteDrizzle>
 
 const requestDb = new AsyncLocalStorage<AppDatabase>()
-const transactionDb = new AsyncLocalStorage<AppDatabase>()
+type TransactionLifetime = {
+  db: AppDatabase
+  closed: boolean
+  parent: TransactionLifetime | undefined
+}
+
+const transactionDb = new AsyncLocalStorage<TransactionLifetime>()
 let root: AppDatabase | undefined
 
 export function bindDatabase(db: AppDatabase) {
@@ -26,21 +32,52 @@ export function withDatabase<T>(
 }
 
 export function getDb() {
-  const current = transactionDb.getStore() ?? requestDb.getStore() ?? root
+  const lifetime = transactionDb.getStore()
+  if (lifetime && !transactionOpen(lifetime))
+    throw new CommandError(ERROR_CODES.FORBIDDEN, "This save has ended")
+  const current = lifetime?.db ?? requestDb.getStore() ?? root
   if (!current) throw new Error("Database is not bound")
   return current
 }
 
 export function insideTransaction() {
-  return transactionDb.getStore() !== undefined
+  const lifetime = transactionDb.getStore()
+  return lifetime !== undefined && transactionOpen(lifetime)
+}
+
+function transactionOpen(lifetime: TransactionLifetime): boolean {
+  return (
+    !lifetime.closed && (!lifetime.parent || transactionOpen(lifetime.parent))
+  )
+}
+
+async function runTransaction<T>(
+  db: AppDatabase,
+  fn: () => Promise<T>
+): Promise<T> {
+  const lifetime: TransactionLifetime = {
+    db,
+    closed: false,
+    parent: transactionDb.getStore(),
+  }
+  return transactionDb.run(lifetime, async () => {
+    try {
+      return await fn()
+    } finally {
+      lifetime.closed = true
+    }
+  })
 }
 
 export async function transaction<T>(fn: () => Promise<T>): Promise<T> {
-  if (transactionDb.getStore()) return fn()
+  if (transactionDb.getStore()) {
+    getDb()
+    return fn()
+  }
   const db = getDb()
   try {
     return await db.transaction((tx) =>
-      transactionDb.run(tx as unknown as AppDatabase, fn)
+      runTransaction(tx as unknown as AppDatabase, fn)
     )
   } catch (error) {
     if (!isMissingPhoto(error)) throw error
@@ -51,8 +88,8 @@ export async function transaction<T>(fn: () => Promise<T>): Promise<T> {
 export async function savepoint<T>(fn: () => Promise<T>): Promise<T> {
   const outer = transactionDb.getStore()
   if (!outer) return fn()
-  return outer.transaction((inner) =>
-    transactionDb.run(inner as unknown as AppDatabase, fn)
+  return getDb().transaction((inner) =>
+    runTransaction(inner as unknown as AppDatabase, fn)
   )
 }
 
