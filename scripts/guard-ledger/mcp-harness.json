@@ -1,0 +1,14 @@
+{
+  "id": "mcp-harness",
+  "file": "scripts/mcp-harness.test.mjs",
+  "detector": {
+    "module": "scripts/lib/mcp-harness-clients.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b5bd3e524dff2e5b5f6e0042dfeefefcff72c8e0",
+    "path": "scripts/mcp-harness.mjs"
+  },
+  "reason": "The introducing harness leaves close without bounded termination, clears the outer deadline before cleanup and ignores IPC send failures. Saved-head source replay also checks failure-path fixture disconnect and independent releases. SDK and discovery rules remain new mistake fixtures."
+}
