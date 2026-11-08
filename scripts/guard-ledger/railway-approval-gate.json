@@ -1,0 +1,13 @@
+{
+  "id": "railway-approval-gate",
+  "file": "scripts/railway-approval-gate.test.mjs",
+  "detector": {
+    "module": "scripts/lib/railway-approval-gate.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "sha": "ab2b7859762168e631ecc019624e6438516fa85f",
+    "path": ".github/workflows/nightly.yml",
+    "mode": "detect"
+  }
+}
