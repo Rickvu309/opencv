@@ -500,11 +500,18 @@ export async function runHarness({
     console.error("[mcp-harness] Recent transport observations", wire.slice(-8))
     throw error
   } finally {
-    clearTimeout(deadline)
     try {
       await fixture.close()
     } catch (error) {
-      if (!failure) throw error
+      if (failure)
+        throw new AggregateError(
+          [failure, error],
+          "MCP harness and fixture cleanup failed",
+          { cause: failure }
+        )
+      throw error
+    } finally {
+      clearTimeout(deadline)
     }
   }
 }

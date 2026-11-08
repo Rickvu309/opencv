@@ -74,6 +74,52 @@ test(
 )
 
 test(
+  "a cleanup-error reply terminates an uncooperative fixture and remains a failure",
+  { timeout: 2000 },
+  async (context) => {
+    const child = spawn(
+      process.execPath,
+      [
+        "--eval",
+        'process.on("SIGTERM", () => {}); process.on("message", ({ id }) => process.send({ id, error: "DROP DATABASE denied" })); process.send({ ready: true })',
+      ],
+      { stdio: ["ignore", "pipe", "pipe", "ipc"] }
+    )
+    context.after(() => child.kill("SIGKILL"))
+    const fixture = fixtureProcess(child, { closeTimeout: 100 })
+    await fixture.ready
+    await assert.rejects(fixture.close(), { message: "DROP DATABASE denied" })
+    assert.equal(child.signalCode, "SIGKILL")
+    assert.equal(child.connected, false)
+  }
+)
+
+test(
+  "a silent fixture or successful reply without exit cannot leave close pending",
+  { timeout: 2000 },
+  async (context) => {
+    for (const reply of ["", "process.send({ id, data: true })"]) {
+      const child = spawn(
+        process.execPath,
+        [
+          "--eval",
+          `process.on("SIGTERM", () => {}); process.on("message", ({ id }) => { ${reply} }); process.send({ ready: true })`,
+        ],
+        { stdio: ["ignore", "pipe", "pipe", "ipc"] }
+      )
+      context.after(() => child.kill("SIGKILL"))
+      const fixture = fixtureProcess(child, { closeTimeout: 100 })
+      await fixture.ready
+      const closing = fixture.close()
+      assert.equal(fixture.close(), closing)
+      await assert.rejects(closing, /Local API cleanup exceeded its deadline/)
+      assert.equal(child.signalCode, "SIGKILL")
+      assert.equal(child.connected, false)
+    }
+  }
+)
+
+test(
   "an unsuccessful spawn finishes without leaving close pending",
   { timeout: 5000 },
   async () => {
@@ -120,8 +166,36 @@ test("IPC send errors and sequential cleanup cannot leave harness work pending",
   )
 })
 
+test("close keeps bounded termination, failure disconnect and the outer deadline", () => {
+  const fixtures = [
+    [
+      "async function close() { await request('close'); await closed }",
+      "close-termination",
+      "async function close() { const deadline = setTimeout(() => child.kill('SIGKILL'), 5000); try { await request('close') } finally { await closed; clearTimeout(deadline) } }",
+    ],
+    [
+      "if (request.kind === 'close') { await close(); process.disconnect?.() }",
+      "close-disconnect",
+      "if (request.kind === 'close') { try { await close() } catch (error) { report(error) } finally { process.disconnect?.() } }",
+    ],
+    [
+      "try { await run() } finally { clearTimeout(deadline); await fixture.close() }",
+      "cleanup-deadline",
+      "try { await run() } finally { try { await fixture.close() } finally { clearTimeout(deadline) } }",
+    ],
+  ]
+  for (const [mistake, kind, clean] of fixtures) {
+    assert.deepEqual(
+      detectLifecycle(mistake).map((hit) => hit.kind),
+      [kind]
+    )
+    assert.deepEqual(detectLifecycle(clean), [])
+  }
+})
+
 test("the shipped fixture and process controller keep failure cleanup", () => {
   for (const path of [
+    "./mcp-harness.mjs",
     "./lib/mcp-harness-clients.mjs",
     "../apps/api/src/test/mcp-harness.fixture.ts",
   ])

@@ -155,9 +155,14 @@ try {
         return
       }
       if (request.kind === "close") {
-        await close()
-        process.send?.({ id: request.id, data: true })
-        process.disconnect?.()
+        try {
+          await close()
+          process.send?.({ id: request.id, data: true })
+        } catch (error) {
+          process.send?.({ id: request.id, error: String(error) })
+        } finally {
+          process.disconnect?.()
+        }
         return
       }
       if (request.kind === "observe") {

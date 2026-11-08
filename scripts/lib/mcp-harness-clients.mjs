@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 
-export function fixtureProcess(child) {
+export function fixtureProcess(child, { closeTimeout = 5000 } = {}) {
   let output = ""
   const collect = (chunk) => {
     output = (output + chunk).slice(-8000)
@@ -62,17 +62,31 @@ export function fixtureProcess(child) {
       }
     })
   }
+  let closing
+  function close() {
+    closing ??= (async () => {
+      let failure
+      const deadline = setTimeout(() => {
+        failure ??= new Error("Local API cleanup exceeded its deadline")
+        child.kill("SIGKILL")
+      }, closeTimeout)
+      try {
+        if (!terminalError && child.connected) await request("close")
+      } catch (error) {
+        failure ??= error
+        child.kill("SIGTERM")
+      } finally {
+        await closed
+        clearTimeout(deadline)
+      }
+      if (failure) throw failure
+    })()
+    return closing
+  }
   return {
     ready,
     request,
-    close: async () => {
-      if (terminalError || !child.connected) return closed
-      try {
-        await request("close")
-      } finally {
-        await closed
-      }
-    },
+    close,
     kill: () => child.kill("SIGTERM"),
   }
 }
@@ -353,7 +367,111 @@ export function detectLifecycle(text, file = "scripts/mcp-harness.mjs") {
       kind,
     })
   }
+  function contains(node, matches) {
+    if (matches(node)) return true
+    return Boolean(ts.forEachChild(node, (child) => contains(child, matches)))
+  }
+  function calls(node, owner, name) {
+    return (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.expression.expression.text === owner &&
+      node.expression.name.text === name
+    )
+  }
   function visit(node) {
+    if (ts.isAwaitExpression(node) && ts.isCallExpression(node.expression)) {
+      const call = node.expression
+      if (
+        ts.isIdentifier(call.expression) &&
+        call.expression.text === "request" &&
+        call.arguments[0] &&
+        ts.isStringLiteralLike(call.arguments[0]) &&
+        call.arguments[0].text === "close"
+      ) {
+        let owner = node.parent
+        while (owner && !ts.isFunctionLike(owner)) owner = owner.parent
+        if (
+          owner &&
+          !contains(
+            owner,
+            (candidate) =>
+              ts.isCallExpression(candidate) &&
+              ts.isIdentifier(candidate.expression) &&
+              candidate.expression.text === "setTimeout" &&
+              candidate.pos < node.pos &&
+              candidate.arguments.length >= 2 &&
+              contains(
+                candidate.arguments[0],
+                (kill) =>
+                  calls(kill, "child", "kill") &&
+                  kill.arguments.some(
+                    (arg) =>
+                      ts.isStringLiteralLike(arg) && arg.text === "SIGKILL"
+                  )
+              )
+          )
+        )
+          hit(node, "close-termination")
+      }
+      if (
+        ts.isIdentifier(call.expression) &&
+        call.expression.text === "close"
+      ) {
+        let branch = node.parent
+        while (branch && !ts.isFunctionLike(branch)) {
+          if (
+            ts.isIfStatement(branch) &&
+            ts.isBinaryExpression(branch.expression) &&
+            branch.expression.left.getText(source) === "request.kind" &&
+            ts.isStringLiteralLike(branch.expression.right) &&
+            branch.expression.right.text === "close"
+          ) {
+            if (
+              !contains(
+                branch.thenStatement,
+                (candidate) =>
+                  ts.isTryStatement(candidate) &&
+                  candidate.tryBlock.pos < node.pos &&
+                  candidate.tryBlock.end > node.end &&
+                  candidate.finallyBlock &&
+                  contains(candidate.finallyBlock, (disconnect) =>
+                    calls(disconnect, "process", "disconnect")
+                  )
+              )
+            )
+              hit(node, "close-disconnect")
+            break
+          }
+          branch = branch.parent
+        }
+      }
+      if (calls(call, "fixture", "close")) {
+        let owner = node.parent
+        while (owner && !ts.isFunctionLike(owner)) {
+          if (
+            ts.isTryStatement(owner) &&
+            owner.finallyBlock &&
+            owner.finallyBlock.pos < node.pos &&
+            owner.finallyBlock.end > node.end &&
+            contains(
+              owner.finallyBlock,
+              (candidate) =>
+                ts.isCallExpression(candidate) &&
+                ts.isIdentifier(candidate.expression) &&
+                candidate.expression.text === "clearTimeout" &&
+                candidate.arguments[0]?.getText(source) === "deadline" &&
+                candidate.pos < node.pos
+            )
+          ) {
+            hit(node, "cleanup-deadline")
+            break
+          }
+          owner = owner.parent
+        }
+      }
+    }
     if (
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression)
