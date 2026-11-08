@@ -77,12 +77,14 @@ describe("Coach Paper proposal replay", () => {
     await opened("s0-stale", async (store, coach) => {
       const { docId, client } = await store.created()
       const initial = await snapshot(store, docId)
-      const proposal = await createProposal({
+      const proposalOptions = {
         command: "paper.edit",
         input: { docId, basedOn: initial.revision, edits: coachWords },
         actor: coach,
         summary: "Coach edit",
-      })
+        basisRevision: null,
+      }
+      const proposal = await createProposal(proposalOptions)
       expect(proposal.pending).toBe(true)
       expect(await snapshot(store, docId)).toEqual(initial)
       await store.person(docId, client, (paper) =>
@@ -105,12 +107,14 @@ describe("Coach Paper proposal replay", () => {
     await opened("s0-controls", async (store, coach) => {
       const { docId, client } = await store.created()
       const initial = await snapshot(store, docId)
-      const proposal = await createProposal({
+      const proposalOptions = {
         command: "paper.edit",
         input: { docId, basedOn: initial.revision, edits: coachWords },
         actor: coach,
         summary: "Coach edit",
-      })
+        basisRevision: null,
+      }
+      const proposal = await createProposal(proposalOptions)
       expect(await snapshot(store, docId)).toEqual(initial)
       const first = await store.store.registry.approve(
         "s0-controls",
