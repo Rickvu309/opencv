@@ -2,6 +2,7 @@ import { parsePaperId, parseUserId, type Actor } from "@workspace/domain"
 import { and, desc, eq, ilike, or } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
+import { readDelegateActivity } from "../connections/index.js"
 import {
   activity,
   chatMessages,
@@ -168,7 +169,7 @@ export async function readActivity(
       source: row.command,
     }))
   )
-  return rows.map((row, index) => ({
+  const receipts = rows.map((row, index) => ({
     id: row.id,
     createdAt: row.createdAt.toISOString(),
     actor: row.actor,
@@ -183,6 +184,10 @@ export async function readActivity(
       !isUndoRow(row) &&
       !blocked[index],
   }))
+  const calls = await readDelegateActivity(userId, filter)
+  return [...receipts, ...calls]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 100)
 }
 
 export async function readProfile(actor: Actor) {

@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm"
 import {
   boolean,
+  index,
   integer,
   jsonb,
   text,
@@ -219,6 +221,36 @@ export function createOAuthTables(
     revokedAt: timestamptz("revoked_at"),
   })
 
+  const agentToolCalls = opencvApp.table(
+    "agent_tool_calls",
+    {
+      id: uuid("id").primaryKey().defaultRandom(),
+      userId: text("user_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+      connectionId: uuid("connection_id")
+        .notNull()
+        .references(() => agentConnections.id, { onDelete: "cascade" }),
+      createdAt: timestamptz("created_at")
+        .notNull()
+        .default(sql`clock_timestamp()`),
+      tool: text("tool").notNull(),
+      inputHash: text("input_hash").notNull(),
+      outcome: text("outcome", {
+        enum: ["success", "pending", "error", "limited"],
+      }).notNull(),
+      proposalId: uuid("proposal_id"),
+      charged: boolean("charged").notNull(),
+    },
+    (table) => [
+      index("agent_tool_calls_owner_window").on(table.userId, table.createdAt),
+      index("agent_tool_calls_connection_window").on(
+        table.connectionId,
+        table.createdAt
+      ),
+    ]
+  )
+
   return {
     oauthClient,
     oauthResource,
@@ -228,5 +260,6 @@ export function createOAuthTables(
     oauthConsent,
     oauthClientAssertion,
     agentConnections,
+    agentToolCalls,
   }
 }

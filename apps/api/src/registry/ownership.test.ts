@@ -10,6 +10,7 @@ import * as schema from "../db/schema.js"
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
 const writersOfTable: Record<string, string[]> = {
+  agentToolCalls: ["connections"],
   agentConnections: ["connections"],
   oauthClient: ["connections", "auth.ts"],
   oauthResource: ["connections", "auth.ts"],

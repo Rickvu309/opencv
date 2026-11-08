@@ -44,6 +44,7 @@ export const {
   oauthConsent,
   oauthClientAssertion,
   agentConnections,
+  agentToolCalls,
 } = createOAuthTables(opencvApp, user, session)
 
 export const authSchema = {

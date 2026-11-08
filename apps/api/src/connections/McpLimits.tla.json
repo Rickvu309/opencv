@@ -1,0 +1,71 @@
+{
+  "module": "./http.ts",
+  "actions": {
+    "Call": "connectionRoutes",
+    "Tick": null,
+    "CheckCap": "connectionRoutes",
+    "Insert": "connectionRoutes",
+    "OutsideScope": "connectionRoutes"
+  },
+  "boundaries": {
+    "Call": [
+      "call-store.ts:delegateCallWindow",
+      "call-store.ts:appendDelegateCall"
+    ],
+    "CheckCap": [
+      "../registry/proposals.ts:createProposal",
+      "../registry/delegate-policy.ts:requireLiveDelegate"
+    ],
+    "Insert": ["../registry/proposals.ts:createProposal"],
+    "OutsideScope": [
+      "../registry/delegate-policy.ts:delegateAllowed",
+      "../registry/delegate-policy.ts:requireLiveDelegate"
+    ]
+  },
+  "bounds": {
+    "rollingWindowUnits": 2,
+    "clockMinimum": 0,
+    "clockMaximum": 2,
+    "maximumChargedCalls": 5,
+    "connections": 2,
+    "processesByConfiguration": {
+      "shared": [1, 2],
+      "fixed": [1],
+      "pending": [1, 2],
+      "scope": [1, 2]
+    },
+    "connectionLimit": 2,
+    "ownerLimit": 3,
+    "pendingCap": 2,
+    "initialPending": 1,
+    "productionConnectionLimit": 60,
+    "productionOwnerLimit": 120,
+    "productionPendingCap": 20
+  },
+  "source": "Verifier order2 M-c; safe implementation configs and MC1, MC2, pending and scope mutants",
+  "mutants": {
+    "": 12,
+    "fixed": 12,
+    "pending": 12,
+    "scope": 12
+  },
+  "invariants": {
+    "ConnectionRollingMinuteLimit": "Committed charged calls per connection with age strictly below two units do not exceed ConnLimit.",
+    "OwnerRollingMinuteLimit": "The same rolling set across both connections does not exceed OwnerLimit.",
+    "PendingCapNeverExceeded": "Two competing proposals on one connection do not exceed PendingCap.",
+    "ScopeNeverRunsOutsideGrant": "An attempted action outside the connection grant never reaches product execution."
+  },
+  "abstractions": {
+    "Call": "One committed owner-serialized admission and charged audit append; refused attempts and rolled-back transactions do not add charged calls.",
+    "Tick": "Monotone database time over three discrete points; rows exactly one rolling window old are excluded.",
+    "CheckCap": "The proposal transaction locks the owner before counting live pending rows for one connection.",
+    "Insert": "The same transaction inserts the proposal before releasing its owner lock; chat and approval writes are abstracted.",
+    "OutsideScope": "A not-granted action is refused by delegate policy; the model uses a grant predicate, not individual OAuth scopes."
+  },
+  "limits": [
+    "The scaled owner cap is deliberately below the sum of connection caps so owner and connection invariants are independent; it is not proportional to the production 60/120 ratio.",
+    "Each scenario isolates one safety property; this is not a combined rate, pending and scope interleaving proof.",
+    "Pending starts one below its cap; approval, expiry and rejection only reduce live pending count and are omitted.",
+    "No proof of audit payload privacy, append failure rollback, revoke interleavings, OAuth, database implementation, unbounded time or call volume, fairness, liveness, throughput, retention or indexes is claimed."
+  ]
+}
