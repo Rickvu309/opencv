@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs"
 import { withTempDir } from "./lib/temp-dir.mjs"
 import { test } from "node:test"
 import { commitsMissingFromMain } from "./lib/pinned-history.mjs"
@@ -231,6 +231,7 @@ test("the PR guard rejects aliased and option-prefixed reads before squash loses
     const repo = `${cwd}/repo`
     const clone = `${cwd}/clone`
     mkdirSync(`${repo}/scripts/lib`, { recursive: true })
+    symlinkSync(new URL("node_modules", root), `${repo}/node_modules`)
     git(["init", "-b", "main"], repo)
     writeFileSync(`${repo}/payload.txt`, "base\n")
     git(["add", "payload.txt"], repo)
