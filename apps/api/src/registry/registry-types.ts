@@ -8,6 +8,7 @@ import type {
   ResourceTouch,
 } from "@workspace/domain"
 import type { ZodType } from "zod"
+import type { StoredReviewedCommand } from "./frozen-review.js"
 
 export type RanCommand = {
   output: unknown
@@ -17,6 +18,7 @@ export type RanCommand = {
 }
 
 export type StoredCommand = {
+  reviewed?: StoredReviewedCommand
   delegate?: "reversibleJob"
   name: string
   description: string
@@ -51,6 +53,7 @@ export type ToolEntry = {
 }
 
 export type ExecuteResult = {
+  review?: unknown
   touches?: ResourceTouch[]
   chatId?: string
   pending: boolean

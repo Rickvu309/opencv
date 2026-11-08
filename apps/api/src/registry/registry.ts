@@ -11,12 +11,9 @@ import {
   effectiveCoachPolicy,
   approvedProposalActor,
   coachActor,
-  defineCommand,
   isCoachActor,
   personActor,
   type Actor,
-  type CommandSpec,
-  type QuerySpec,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
@@ -32,6 +29,7 @@ import {
 } from "./proposals.js"
 import {
   delegateAllowed,
+  requireLiveDelegate,
   requireLiveProposalConnection,
 } from "./delegate-policy.js"
 import { createId } from "../id.js"
@@ -54,17 +52,29 @@ import {
 import { replay, replayStored } from "./replay.js"
 import { inputHash } from "./receipt.js"
 import { assertReversal } from "./bind.js"
-import { CatalogPublication } from "./catalog-publication.js"
+import { RegistryEntries } from "./registry-entries.js"
 import { priorityRevisionFor } from "../job/index.js"
 import { withGrantScope } from "./write-grant.js"
+import {
+  checkPreparationTask,
+  checkReviewActor,
+  consumeFrozenReservation,
+  prepareOrReplay,
+  publishFrozenReview,
+  publicProposal,
+  readFrozenReview,
+  refuseFrozenReview,
+  replayFrozenProposal,
+  requirePreparationBoundary,
+  reviewReceiptKey,
+  type FrozenReview,
+} from "./frozen-review.js"
 
 import type {
   ExecuteResult,
   ExecuteOptions,
   TaskOptions,
   UndoCandidate,
-  StoredCommand,
-  StoredQuery,
   ToolEntry,
   UndoGuard,
 } from "./registry-types.js"
@@ -76,10 +86,11 @@ function jsonInput(input: unknown): unknown {
 
 const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
+const frozenExecution = Symbol("frozenExecution")
+const preparingTask = Symbol("preparingTask")
+const approvingReview = Symbol("approvingReview")
 
-export class Registry extends CatalogPublication {
-  private readonly commands = new Map<string, StoredCommand>()
-  private readonly queries = new Map<string, StoredQuery>()
+export class Registry extends RegistryEntries {
   private readonly undoGuards = new Map<string, UndoGuard>()
 
   addUndoGuard(reversalCommand: string, guard: UndoGuard) {
@@ -135,122 +146,10 @@ export class Registry extends CatalogPublication {
     return (await this.undoBlockedReasons(userId, [{ command, input }]))[0]!
   }
 
-  addCommand<I, O>(
-    spec: CommandSpec<I, O>,
-    handler: (input: I, actor: Actor) => Promise<O>
-  ) {
-    const checked = defineCommand(spec)
-    if (this.commands.has(checked.name) || this.queries.has(checked.name)) {
-      throw new Error(`Duplicate registry entry ${checked.name}`)
-    }
-    this.commands.set(checked.name, {
-      name: checked.name,
-      description: checked.description,
-      coach: checked.coach,
-      delegate: checked.delegate,
-      writes: (raw) => checked.writes?.(parseInput(checked.input, raw)) ?? [],
-      destructive: checked.destructive,
-      input: checked.input,
-      transaction: checked.transaction,
-      idempotency: checked.idempotency ?? "keyed",
-      step: (raw) => {
-        const parsed = checked.input.safeParse(raw)
-        return parsed.success ? checked.step(parsed.data) : checked.name
-      },
-      run: async (raw, actor) => {
-        const input = parseInput(checked.input, raw)
-        const output = await handler(input, actor)
-        return {
-          output,
-          draft: checked.activity(input, output, actor),
-          reversal: checked.reversal(input, output),
-          step: checked.step(input),
-        }
-      },
-    })
-  }
-
-  addQuery<I, O>(spec: QuerySpec<I, O>) {
-    if (this.commands.has(spec.name) || this.queries.has(spec.name)) {
-      throw new Error(`Duplicate registry entry ${spec.name}`)
-    }
-    this.queries.set(spec.name, {
-      name: spec.name,
-      description: spec.description,
-      coach: spec.coach,
-      delegate: spec.delegate,
-      input: spec.input,
-      step: (raw) => {
-        const parsed = spec.input.safeParse(raw)
-        return parsed.success ? spec.step(parsed.data) : spec.name
-      },
-      read: async (raw, actor) => spec.read(parseInput(spec.input, raw), actor),
-    })
-  }
-
-  list() {
-    return {
-      commands: [...this.commands.values()].map((command) => ({
-        name: command.name,
-        coach: command.coach,
-        destructive: command.destructive,
-      })),
-      queries: [...this.queries.values()].map((query) => ({
-        name: query.name,
-        coach: query.coach,
-      })),
-    }
-  }
-
-  taskRequiresApproval(name: string, input: unknown) {
-    const command = this.commands.get(name)
-    return command
-      ? effectiveCoachPolicy(command, parseInput(command.input, input)) ===
-          "confirm"
-      : false
-  }
-
-  commandNames() {
-    return [...this.commands.keys()]
-  }
-
-  async tools(actor: Actor): Promise<ToolEntry[]> {
-    const branded = brandedActor(actor)
-    const gates = isCoachActor(branded)
-      ? await agentGates(branded.userId)
-      : null
-    const entries: ToolEntry[] = []
-    for (const command of this.commands.values()) {
-      if (!delegateAllowed(command, branded)) continue
-      if (gates && coachRefusal(command, gates)) continue
-      entries.push({
-        name: command.name,
-        description: command.description,
-        kind: "command",
-        coach: command.coach,
-        destructive: command.destructive,
-        step: command.step,
-        input: command.input,
-      })
-    }
-    for (const query of this.queries.values()) {
-      if (!delegateAllowed(query, branded)) continue
-      if (gates && coachRefusal(query, gates)) continue
-      entries.push({
-        name: query.name,
-        description: query.description,
-        kind: "query",
-        coach: query.coach,
-        destructive: false,
-        step: query.step,
-        input: query.input,
-      })
-    }
-    return entries
-  }
-
   executeTask(lease: TaskLease, options: TaskOptions) {
     const command = this.commands.get(options.name)
+    if (command?.reviewed)
+      return this.execute({ ...options, [preparingTask]: lease })
     return executeTaskCommand(lease, { ...options }, command, (input) => {
       if (command)
         input.input = jsonInput(parseInput(command.input, input.input))
@@ -263,9 +162,16 @@ export class Registry extends CatalogPublication {
       expectedRevision?: number | null
       [taskExecution]?: boolean
       [approvedDelegate]?: string
+      [frozenExecution]?: FrozenReview
+      [preparingTask]?: TaskLease
+      [approvingReview]?: boolean
     }
   ): Promise<ExecuteResult> {
-    if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
+    if (
+      options.idempotencyKey?.startsWith("coach:") &&
+      !options[taskExecution] &&
+      !options[preparingTask]
+    )
       throw new CommandError(
         ERROR_CODES.CONFLICT,
         "The coach: key namespace is reserved for durable tasks"
@@ -305,6 +211,58 @@ export class Registry extends CatalogPublication {
     )
 
     const hash = idempotencyKey ? inputHash(jsonInput(parsed)) : null
+    const reviewed = command.reviewed
+    if (reviewed && !options[frozenExecution]) {
+      requirePreparationBoundary()
+      await checkReviewActor(actor)
+      if (actor.type === "delegate") await requireLiveDelegate(actor)
+      const lease = options[preparingTask]
+      if (lease) await checkPreparationTask(lease, actor, idempotencyKey)
+      const { earlier, frozen } = await prepareOrReplay(
+        reviewed,
+        jsonInput(parsed),
+        actor,
+        command.name,
+        idempotencyKey,
+        this.replayByKey.bind(this)
+      )
+      const publish = async () =>
+        earlier ??
+        this.execute({
+          ...options,
+          [frozenExecution]: frozen!,
+          [taskExecution]: Boolean(lease),
+        })
+      const result = lease
+        ? await executeTaskCommand(
+            lease,
+            {
+              ...options,
+              input: jsonInput(parsed),
+              idempotencyKey: idempotencyKey!,
+            },
+            command,
+            publish
+          )
+        : await publish()
+      return result.pending
+        ? result
+        : this.committedResult(
+            command.name,
+            parsed as never,
+            actor.userId,
+            result
+          )
+    }
+    const frozen = reviewed
+      ? readFrozenReview(
+          options[frozenExecution],
+          reviewed,
+          actor.userId,
+          command.name,
+          parsed
+        )
+      : null
     const effect = async (): Promise<ExecuteResult> => {
       const ran = await withGrantScope(
         {
@@ -312,7 +270,11 @@ export class Registry extends CatalogPublication {
           writes: command.writes?.(parsed) ?? [],
           expectedRevision: options.expectedRevision ?? null,
         },
-        () => command.run(parsed, actor)
+        async () => {
+          if (!reviewed || !frozen) return command.run(parsed, actor)
+          await reviewed.revalidate(parsed, frozen, actor)
+          return reviewed.run(parsed, frozen, actor)
+        }
       )
       assertReversal(command.name, this.isCatalogOperation(command.name), ran)
       let activityId: string | null = null
@@ -372,7 +334,21 @@ export class Registry extends CatalogPublication {
         if (earlier) return earlier
       }
 
-      if (
+      let publish = effect
+      if (reviewed && frozen) {
+        publish = () =>
+          publishFrozenReview({
+            binding: reviewed,
+            frozen,
+            input: parsed,
+            actor,
+            key: idempotencyKey,
+            hash,
+            summary: command.step(parsed),
+            approved: Boolean(options[approvingReview]),
+            effect,
+          })
+      } else if (
         (actor.type === "delegate" &&
           (!options[approvedDelegate] ||
             options[approvedDelegate] !== options.idempotencyKey)) ||
@@ -390,9 +366,9 @@ export class Registry extends CatalogPublication {
         })
       }
 
-      if (!idempotencyKey) return effect()
+      if (!idempotencyKey) return publish()
       try {
-        return await savepoint(effect)
+        return await savepoint(publish)
       } catch (error) {
         if (!isUniqueViolation(error)) throw error
         const winner = await this.replayByKey(
@@ -453,7 +429,7 @@ export class Registry extends CatalogPublication {
       rows.map(async (row) => {
         const completed =
           row.status === "approved"
-            ? await activityByKey(userId, row.coachIntentKey ?? row.id)
+            ? await activityByKey(userId, reviewReceiptKey(row))
             : null
         return {
           id: row.id,
@@ -474,8 +450,8 @@ export class Registry extends CatalogPublication {
       const { row, task } = await lockProposal(userId, pendingActionId)
       if (row.status === "approved") {
         if (task) await assertTaskReceipt(userId, row)
-        return activityByKey(userId, row.coachIntentKey ?? row.id).then(
-          (receipt) => (receipt ? this.publicActivity(receipt) : null)
+        return activityByKey(userId, reviewReceiptKey(row)).then((receipt) =>
+          receipt ? this.publicActivity(receipt) : null
         )
       }
       if (row.status === "expired") {
@@ -494,6 +470,21 @@ export class Registry extends CatalogPublication {
         ? await requireLiveProposalConnection(userId, row.delegateConnectionId)
         : null
       const stored = this.commands.get(row.command)
+      const frozen = stored?.reviewed
+        ? readFrozenReview(
+            row.frozenReview,
+            stored.reviewed,
+            userId,
+            row.command,
+            row.input
+          )
+        : null
+      if (
+        (row.frozenReview != null && !frozen) ||
+        (frozen && frozen.proposalId !== row.id)
+      )
+        return refuseFrozenReview()
+      if (frozen) await consumeFrozenReservation(frozen)
       const checksPriority = (stored?.writes?.(row.input) ?? []).some(
         (write) => write.name === "job.priority"
       )
@@ -511,7 +502,10 @@ export class Registry extends CatalogPublication {
             ? coachActor(task.task.ownerId, task.task.chatId, task.turnId)
             : approvedProposalActor(userId, row.chatId)),
         [approvedDelegate]: row.id,
-        idempotencyKey: row.coachIntentKey ?? row.id,
+        idempotencyKey: reviewReceiptKey(row),
+        ...(frozen
+          ? { [frozenExecution]: frozen, [approvingReview]: true }
+          : {}),
         [taskExecution]: Boolean(task),
         skipConfirm: true,
         expectedRevision: checksPriority ? row.basisRevision : null,
@@ -529,8 +523,8 @@ export class Registry extends CatalogPublication {
         return activityById(userId, result.activityId).then((receipt) =>
           receipt ? this.publicActivity(receipt) : null
         )
-      return activityByKey(userId, row.coachIntentKey ?? row.id).then(
-        (receipt) => (receipt ? this.publicActivity(receipt) : null)
+      return activityByKey(userId, reviewReceiptKey(row)).then((receipt) =>
+        receipt ? this.publicActivity(receipt) : null
       )
     })
   }
@@ -539,7 +533,7 @@ export class Registry extends CatalogPublication {
     await expireIfStale(userId, pendingActionId)
     return transaction(async () => {
       const { row, task } = await lockProposal(userId, pendingActionId)
-      if (row.status === "denied") return row
+      if (row.status === "denied") return publicProposal(row)
       if (row.status === "expired") {
         throw new CommandError(
           ERROR_CODES.PENDING_EXPIRED,
@@ -560,7 +554,7 @@ export class Registry extends CatalogPublication {
         const { resolveTaskApproval } = await import("../coach/index.js")
         await resolveTaskApproval(task, "denied", { denied: true })
       }
-      return { ...row, status: "denied" as const }
+      return { ...publicProposal(row), status: "denied" as const }
     })
   }
 
@@ -627,6 +621,17 @@ export class Registry extends CatalogPublication {
         ERROR_CODES.CONFLICT,
         "Idempotency key does not match its command and input"
       )
+    const reviewed = this.commands.get(command)?.reviewed
+    if (!existing && reviewed) {
+      const proposal = await replayFrozenProposal(
+        stored.result,
+        userId,
+        command,
+        hash,
+        reviewed
+      )
+      if (proposal) return proposal
+    }
     return {
       ...(existing ? replay(existing) : replayStored(stored.result)),
       command: stored.command,

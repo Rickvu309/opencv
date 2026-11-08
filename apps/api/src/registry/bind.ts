@@ -126,12 +126,13 @@ export function tableQuery<N extends QueryName>(
   })
 }
 
-export type OperationBinding<T extends Operation, R = unknown> = {
+export type OperationBinding<
+  T extends Operation,
+  R = unknown,
+  C = never,
+  V = never,
+> = {
   operation: T
-  execute: (
-    input: import("zod").output<T["input"]>,
-    actor: Actor
-  ) => Promise<R> | R
   privateResult?: ZodType<R>
   reversal?: (
     input: import("zod").output<T["input"]>,
@@ -142,17 +143,39 @@ export type OperationBinding<T extends Operation, R = unknown> = {
     result: R,
     actor: Actor
   ) => ActivityDraft | null
-}
+} & (
+  | {
+      execute: (
+        input: import("zod").output<T["input"]>,
+        actor: Actor
+      ) => Promise<R> | R
+      reviewed?: never
+    }
+  | (T["kind"] extends "read"
+      ? never
+      : {
+          execute?: never
+          reviewed: import("./frozen-review.js").ReviewedCommand<
+            import("zod").output<T["input"]>,
+            R,
+            C,
+            V
+          >
+        })
+)
 
-export function bindOperation<T extends Operation, R>(
+export function bindOperation<T extends Operation, R, C, V>(
   registry: Registry,
-  binding: OperationBinding<T, R>
+  suppliedBinding: OperationBinding<T, R, C, V>
 ) {
-  const operation = binding.operation
+  const operation = suppliedBinding.operation
   const inputSchema = operation.input as ZodType<
     import("zod").output<T["input"]>
   >
   if (operation.kind === "read") {
+    const execute = suppliedBinding.execute
+    if (!execute) throw new Error("Reads require an execute binding")
+    const binding = { execute }
     registry.addQuery({
       name: operation.name,
       description: operation.description,
@@ -166,45 +189,81 @@ export function bindOperation<T extends Operation, R>(
         operation.publicResult.parse(await binding.execute(input, actor)),
     })
   } else {
-    registry.addCommand<import("zod").output<T["input"]>, R>(
-      {
-        name: operation.name,
-        description: operation.description,
-        input: inputSchema,
-        coach: operation.coach,
-        destructive: operation.destructive,
-        idempotency: operation.idempotency,
-        ...(operation.delegate === "reversibleJob"
-          ? { delegate: operation.delegate }
-          : {}),
-        writes: (input) => [...operation.writes(input as never)],
-        step: () => operation.description,
-        reversal: (input, result) => binding.reversal?.(input, result) ?? null,
-        activity: (input, result, actor) =>
-          binding.activity?.(input, result, actor) ?? null,
-      },
-      async (input, actor) => {
+    const binding = suppliedBinding
+    const spec: import("@workspace/domain").CommandSpec<
+      import("zod").output<T["input"]>,
+      R
+    > = {
+      name: operation.name,
+      description: operation.description,
+      input: inputSchema,
+      coach: operation.coach,
+      destructive: operation.destructive,
+      idempotency: operation.idempotency,
+      ...(operation.delegate === "reversibleJob"
+        ? { delegate: operation.delegate }
+        : {}),
+      writes: (input) => [...operation.writes(input as never)],
+      step: () => operation.description,
+      reversal: (input, result) => binding.reversal?.(input, result) ?? null,
+      activity: (input, result, actor) =>
+        binding.activity?.(input, result, actor) ?? null,
+    }
+    const check = (result: R) => {
+      const checked = binding.privateResult
+        ? binding.privateResult.parse(result)
+        : result
+      operation.publicResult.parse(checked)
+      return checked
+    }
+    if (binding.reviewed) {
+      const reviewed = binding.reviewed
+      registry.addReviewedCommand(spec, {
+        ...reviewed,
+        commit: async (input, prepared, actor) =>
+          check(await reviewed.commit(input, prepared, actor)),
+      })
+    } else
+      registry.addCommand(spec, async (input, actor) => {
         const result = await binding.execute(input, actor)
         const checked = binding.privateResult
           ? binding.privateResult.parse(result)
           : result
         operation.publicResult.parse(checked)
         return checked
-      }
-    )
+      })
   }
   registry.adopt(operation)
 }
 
-export function bindCatalog<
-  B extends Record<
-    string,
-    { operation: Operation; execute: (...args: never[]) => unknown }
-  >,
->(
+type CatalogImplementations<C extends Record<string, Operation>> = {
+  [N in keyof C]: { operation: C[N] } & (C[N]["kind"] extends "read"
+    ? { execute: CatalogImplementation<C[N]> }
+    : | { execute: CatalogImplementation<C[N]> }
+      | {
+          reviewed: {
+            commit: (
+              input: import("zod").output<C[N]["input"]>,
+              prepared: never,
+              context: never
+            ) =>
+              | import("zod").input<C[N]["publicResult"]>
+              | Promise<import("zod").input<C[N]["publicResult"]>>
+          }
+        })
+}
+
+type CatalogImplementation<T extends Operation> = (
+  input: import("zod").output<T["input"]>,
+  context: never
+) =>
+  | import("zod").input<T["publicResult"]>
+  | Promise<import("zod").input<T["publicResult"]>>
+
+export function bindCatalog<B extends Record<string, { operation: Operation }>>(
   registry: Registry,
   bindings: B &
-    import("@workspace/domain").Implementations<{
+    CatalogImplementations<{
       [N in keyof B]: B[N]["operation"]
     }> & {
       [N in keyof B]: {

@@ -15,6 +15,7 @@ import { createId } from "../id.js"
 import { requireLiveDelegate } from "./delegate-policy.js"
 import { CommandError } from "./errors.js"
 import { inputHash } from "./receipt.js"
+import type { FrozenReview } from "./frozen-review.js"
 
 export const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
@@ -24,6 +25,7 @@ export function createProposal(options: {
   input: unknown
   summary: string
   basisRevision: number | null
+  frozenReview?: FrozenReview
 }) {
   return transaction(() => savepoint(() => insertProposal(options)))
 }
@@ -34,9 +36,10 @@ async function insertProposal(options: {
   input: unknown
   summary: string
   basisRevision: number | null
+  frozenReview?: FrozenReview
 }) {
   const { actor, command, input, summary, basisRevision } = options
-  const id = createId()
+  const id = options.frozenReview?.proposalId ?? createId()
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
     await requireLiveDelegate(actor)
@@ -78,10 +81,15 @@ async function insertProposal(options: {
       input,
       summary,
       basisRevision,
+      frozenReview: options.frozenReview ?? null,
       status: "pending",
     })
   if (actor.type === "delegate")
-    await appendAgentProposalApproval(id, actor.userId)
+    await appendAgentProposalApproval(
+      id,
+      actor.userId,
+      options.frozenReview?.review
+    )
   return {
     pending: true as const,
     pendingActionId: id,
@@ -90,6 +98,7 @@ async function insertProposal(options: {
     command,
     activityId: null,
     reversal: null,
+    ...(options.frozenReview ? { review: options.frozenReview.review } : {}),
   }
 }
 

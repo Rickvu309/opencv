@@ -357,6 +357,7 @@ export const pendingActions = opencvApp.table(
     command: text("command").notNull(),
     input: jsonb("input").notNull(),
     basisRevision: integer("basis_revision"),
+    frozenReview: jsonb("frozen_review"),
     summary: text("summary").notNull(),
     status: text("status")
       .$type<"pending" | "approved" | "denied" | "expired">()

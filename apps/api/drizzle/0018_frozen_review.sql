@@ -1,0 +1,1 @@
+ALTER TABLE "opencv_app"."pending_actions" ADD COLUMN "frozen_review" jsonb;

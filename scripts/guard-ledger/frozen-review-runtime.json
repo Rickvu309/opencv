@@ -1,0 +1,6 @@
+{
+  "id": "frozen-review-runtime",
+  "file": "apps/api/src/registry/frozen-review.formal.test.ts",
+  "historic": null,
+  "reason": "New opt-in reviewed binding introduced here, absent from main. Actual registry replays cover staging before SQL/task fencing, frozen persisted review, altered identity/version refusal, keyed replay conflict, rollback and concurrent same-key/double approval. No historical introducing ancestor exists for this new protocol."
+}

@@ -1,0 +1,7 @@
+{
+  "id": "frozen-review",
+  "file": "scripts/frozen-review.test.mjs",
+  "detector": { "module": "scripts/lib/frozen-review.mjs", "export": "detect" },
+  "historic": null,
+  "reason": "New opt-in frozen-review protocol introduced in this change. There is no introducing ancestor on main for this protocol. Pure mistake and clean fixtures, actual-source ambient/digest check-removal mutants and real registry approval regressions establish the new boundary without a fabricated historical proof."
+}
