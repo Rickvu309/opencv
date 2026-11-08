@@ -23,6 +23,7 @@ const ISOLATED_FILES = [
   "src/features/paper/paper-letter-edited.test.tsx",
   "src/lib/paper-sync-tabs.test.tsx",
   "src/lib/paper-sync-stuck.test.ts",
+  "src/lib/paper-local-replay.test.ts",
   "src/features/paper/cv-photo.test.tsx",
   "src/features/paper/paper-share.test.tsx",
   "src/features/paper/paper-v2-preview.test.tsx",

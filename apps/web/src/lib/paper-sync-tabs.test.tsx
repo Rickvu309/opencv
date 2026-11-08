@@ -1,7 +1,11 @@
 import "fake-indexeddb/auto"
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { materialize } from "@workspace/paper-crdt"
+import {
+  materialize,
+  openPaperClient,
+  type Stored,
+} from "@workspace/paper-crdt"
 import { act, renderHook } from "@testing-library/react"
 import { type ReactNode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -15,7 +19,7 @@ import {
   type,
 } from "@/test/paper-sync-kit.ts"
 import { usePaperSync } from "./paper-sync.ts"
-import { lockOf, memoryStore } from "./paper-sync-store.ts"
+import * as syncStores from "./paper-sync-store.ts"
 
 vi.mock("./contract-client.ts", async (importOriginal) => {
   const original = await importOriginal<typeof import("./contract-client.ts")>()
@@ -43,6 +47,7 @@ function holdLocks(names: string[]) {
 }
 
 afterEach(() => {
+  vi.restoreAllMocks()
   Reflect.deleteProperty(navigator, "locks")
   sessionStorage.clear()
 })
@@ -51,8 +56,8 @@ describe("tab identity", () => {
   it("makes a new tab id when the stored one is held by another tab", async () => {
     fakeServer(letter(["p1", "Hello"]))
     sessionStorage.setItem(TAB_KEY, "tab-held")
-    holdLocks([lockOf(DOC, "tab-held")])
-    const store = memoryStore()
+    holdLocks([syncStores.lockOf(DOC, "tab-held")])
+    const store = syncStores.memoryStore()
     const sync = await open({ store, tabId: undefined })
     type(sync, "p1", "Hello again")
     await vi.advanceTimersByTimeAsync(1000)
@@ -65,7 +70,7 @@ describe("tab identity", () => {
     fakeServer(letter(["p1", "Hello"]))
     sessionStorage.setItem(TAB_KEY, "tab-mine")
     holdLocks([])
-    const store = memoryStore()
+    const store = syncStores.memoryStore()
     const sync = await open({ store, tabId: undefined })
     type(sync, "p1", "Hello again")
     await vi.advanceTimersByTimeAsync(1000)
@@ -77,7 +82,7 @@ describe("tab identity", () => {
 describe("orphans from another epoch", () => {
   it("adopts the typing through the rebase and removes the record", async () => {
     const remote = fakeServer(letter(["p1", "Hello"], ["p2", "World"]))
-    const store = memoryStore()
+    const store = syncStores.memoryStore()
     const first = await open({ store, tabId: "tab-one" })
     type(first, "p1", "Hello one")
     await vi.advanceTimersByTimeAsync(100)
@@ -98,7 +103,30 @@ describe("orphans from another epoch", () => {
 
 describe("first open through the hook", () => {
   it("gives no editor client until the first reply, then the document", async () => {
-    const remote = fakeServer(letter(["p1", "Hello"]))
+    const document = letter(["p1", "Hello"])
+    const remote = fakeServer(document)
+    const store = syncStores.indexedDbStore()
+    let resumeSave = () => {}
+    let noteCommit: (stored: Stored) => void = () => {}
+    const allowed = new Promise<void>((resolve) => {
+      resumeSave = resolve
+    })
+    const completed = new Promise<Stored>((resolve) => {
+      noteCommit = resolve
+    })
+    vi.spyOn(syncStores, "defaultStore").mockReturnValue({
+      ...store,
+      async save(docId, tabId, stored) {
+        await allowed
+        await store.save(docId, tabId, stored)
+        if (
+          docId === DOC &&
+          JSON.stringify(openPaperClient(stored).document()) ===
+            JSON.stringify(document)
+        )
+          noteCommit(stored)
+      },
+    })
     remote.state.online = false
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={new QueryClient()}>
@@ -113,8 +141,14 @@ describe("first open through the hook", () => {
     remote.state.online = true
     await act(() => vi.advanceTimersByTimeAsync(3000))
     expect(result.current.client).not.toBeNull()
+    expect(result.current.status).toBe("saving")
+    expect(result.current.client!.document()).toEqual(document)
+    await act(async () => {
+      resumeSave()
+      expect(openPaperClient(await completed).document()).toEqual(document)
+    })
     expect(result.current.status).toBe("saved")
-    expect(JSON.stringify(result.current.client!.document())).toContain("Hello")
+    expect(result.current.client!.document()).toEqual(document)
     unmount()
   })
 })
@@ -132,7 +166,7 @@ function serverTextOf(remote: ReturnType<typeof fakeServer>, id: string) {
 describe("records of other tabs", () => {
   it("keeps typing once when a keepalive delivered it and its record is adopted", async () => {
     const remote = fakeServer(letter(["p1", "Hello"], ["p2", "World"]))
-    const store = memoryStore()
+    const store = syncStores.memoryStore()
     const idle = await open({ store, tabId: "tab-idle" })
     const busy = await open({ store, tabId: "tab-busy" })
     type(busy, "p1", "Hello typed")
@@ -150,7 +184,7 @@ describe("records of other tabs", () => {
 
   it("does not double typing when a live idle tab is adopted as an orphan", async () => {
     const remote = fakeServer(letter(["p1", "Hello"], ["p2", "World"]))
-    const store = memoryStore()
+    const store = syncStores.memoryStore()
     await open({ store, tabId: "tab-first" })
     const live = await open({ store, tabId: "tab-live" })
     remote.state.online = false

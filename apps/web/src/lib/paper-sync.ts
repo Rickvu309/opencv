@@ -2,6 +2,8 @@ import { useSyncExternalStore } from "react"
 import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import {
   openPaperClient,
+  mergedUpdate,
+  updateSince,
   type ClientSyncReply,
   type PaperClient,
   type Stored,
@@ -11,12 +13,23 @@ import type { PaperId } from "@workspace/domain"
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import {
+  appendJournal,
+  journalTip,
+  journalScope,
+  recoverJournals,
+  mergeJournal,
+  noteJournal,
+  type JournalResult,
+} from "@/lib/paper-sync-journal.ts"
+import {
   defaultStore,
   heldLocks,
   holdTabLock,
   lockOf,
   type SyncStore,
 } from "@/lib/paper-sync-store.ts"
+
+export { indexedDbStore } from "@/lib/paper-sync-store.ts"
 
 export type SyncStatus =
   | "loading"
@@ -41,7 +54,6 @@ export const SYNC_LABEL: Record<SyncStatus, string> = {
 
 const DEBOUNCE_MS = 400
 const MAX_WAIT_MS = 2000
-const PERSIST_MS = 50
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16_000, 30_000]
 const KEEPALIVE_LIMIT = 60_000
 const MAX_STALE_RETRIES = 6
@@ -138,7 +150,23 @@ export type SyncOptions = {
   readonly store?: SyncStore
   readonly timers?: Timers
   readonly tabId?: string
+  readonly journal?: Storage | null
   readonly run?: typeof runContractCommand
+}
+
+function openJournal(given: Storage | null | undefined): {
+  storage: Storage | null
+  denied: boolean
+} {
+  if (given === null) return { storage: null, denied: true }
+  if (given) return { storage: given, denied: false }
+  try {
+    if (typeof localStorage === "undefined")
+      return { storage: null, denied: false }
+    return { storage: localStorage, denied: false }
+  } catch {
+    return { storage: null, denied: true }
+  }
 }
 
 export function openPaperSync(
@@ -149,8 +177,36 @@ export function openPaperSync(
   const store = options.store ?? defaultStore()
   const timers = options.timers ?? realTimers
   const command = options.run ?? runContractCommand
+  const openedJournal = openJournal(options.journal)
+  const journal = openedJournal.storage
+  const journalDenied = openedJournal.denied
   let tabId = options.tabId ?? ""
   let releaseLock: () => void = () => {}
+  let recoveredJournals: ReturnType<typeof recoverJournals> = []
+  let canClearRecovered = false
+  const blockedJournals = new Set<string>()
+  const journalId = () => journalScope(docId, tabId)
+  const journalCheckpoint = () => [
+    ...recoveredJournals
+      .filter(
+        ({ id }) =>
+          !blockedJournals.has(id) && (canClearRecovered || id === journalId())
+      )
+      .map(({ id, seq }) => ({ id, seq })),
+    {
+      id: journalId(),
+      seq:
+        journal && !blockedJournals.has(journalId())
+          ? journalTip(journal, journalId())
+          : 0,
+    },
+  ]
+  let version = 0
+  let durableVersion = -1
+  let acceptedVersion = -1
+  let saving = false
+  let saveAgain = false
+  let saveWaiters: (() => void)[] = []
   const listeners = new Set<() => void>()
   let client: PaperClient | null = null
   let ready = false
@@ -169,7 +225,6 @@ export function openPaperSync(
   let debounce: unknown = null
   let maxWait: unknown = null
   let retry: unknown = null
-  let persist: unknown = null
   let unsubscribeClient: () => void = () => {}
 
   const emit = () => {
@@ -184,28 +239,80 @@ export function openPaperSync(
     if (handle !== null) timers.clearTimeout(handle)
   }
 
-  const save = () => {
-    persist = null
-    if (forgotten || !client || !tabId) return Promise.resolve()
-    return store.save(docId, tabId, client.stored()).then(
-      () => {
-        if (localFailed) {
-          localFailed = false
-          emit()
-        }
-      },
-      () => {
-        if (!localFailed) {
-          localFailed = true
-          emit()
-        }
-      }
-    )
+  const markJournal = (result: JournalResult) => {
+    if (result === "kept") return
+    localFailed = true
   }
-  const persistSoon = () => {
-    if (persist === null) {
-      persist = timers.setTimeout(() => void save(), PERSIST_MS)
+
+  const rememberLocal = () => {
+    if (!client) return
+    if (!journal) {
+      if (journalDenied) localFailed = true
+      return
     }
+    const update = updateSince(client.ydoc, new Uint8Array())
+    if (!update || update.byteLength === 0) return
+    markJournal(appendJournal(journal, journalId(), update, client.stored()))
+  }
+
+  const canShowSaved = () =>
+    client !== null &&
+    durableVersion === version &&
+    acceptedVersion === version &&
+    !client.hasPending() &&
+    !localFailed
+
+  const pumpSave = () => {
+    if (forgotten || !client || !tabId) {
+      const pending = saveWaiters
+      saveWaiters = []
+      saving = false
+      saveAgain = false
+      for (const resolve of pending) resolve()
+      return
+    }
+    saving = true
+    saveAgain = false
+    const pending = saveWaiters
+    saveWaiters = []
+    const checkpoint = journalCheckpoint()
+    const versionOfSnapshot = version
+    const snapshot = client.stored()
+    void store
+      .save(docId, tabId, snapshot)
+      .then(
+        () => {
+          durableVersion = versionOfSnapshot
+          if (localFailed) {
+            localFailed = false
+            emit()
+          }
+          if (journal)
+            for (const { id, seq } of checkpoint)
+              markJournal(noteJournal(journal, id, "idb", seq))
+          if (state === "saving" && canShowSaved()) setStatus("saved")
+        },
+        () => {
+          if (!localFailed) {
+            localFailed = true
+            emit()
+          }
+        }
+      )
+      .finally(() => {
+        saving = false
+        for (const resolve of pending) resolve()
+        if ((saveAgain || saveWaiters.length > 0) && !destroyed) pumpSave()
+      })
+  }
+
+  const save = () => {
+    if (forgotten || !client || !tabId) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      saveWaiters.push(resolve)
+      if (saving) saveAgain = true
+      else pumpSave()
+    })
   }
 
   const body = (sent: ReturnType<PaperClient["prepare"]>) => ({
@@ -219,16 +326,22 @@ export function openPaperSync(
   const exchange = async () => {
     const live = client!
     const sent = live.prepare()
+    const covered = journalCheckpoint()
     void save()
     const output = await command(queryClient, "paper.sync", body(sent), {
       refresh: false,
     })
     const receipt = live.receive(sent, replyOf(output))
+    if (!receipt.failed && !receipt.stale && !live.hasPending())
+      acceptedVersion = version
     if (receipt.reset) generation += 1
     ready = true
     replied = true
     forgotten = false
     void save()
+    if (journal && !receipt.failed && !receipt.stale && !receipt.reset)
+      for (const { id, seq } of covered)
+        markJournal(noteJournal(journal, id, "server", seq))
     return receipt
   }
 
@@ -247,7 +360,7 @@ export function openPaperSync(
     retry = null
     if (client.hasPending() || state !== "saved") setStatus("saving")
     try {
-      let stuck = false
+      let stuck = blockedJournals.size > 0
       for (let attempt = 0; ; attempt += 1) {
         const receipt = await exchange()
         if (receipt.failed) {
@@ -263,7 +376,7 @@ export function openPaperSync(
       if (await adoptWaiting()) stuck = true
       if (stuck) setStatus("stuck")
       else if (client.hasPending()) schedule()
-      else setStatus("saved")
+      else setStatus(canShowSaved() ? "saved" : "saving")
       emit()
     } catch (error) {
       if (isRefusal(error)) {
@@ -407,7 +520,7 @@ export function openPaperSync(
       if (destroyed) return
       keepaliveFlush()
       destroyed = true
-      for (const handle of [debounce, maxWait, retry, persist]) clear(handle)
+      for (const handle of [debounce, maxWait, retry]) clear(handle)
       unsubscribeClient()
       stopQueryWatch()
       releaseLock()
@@ -432,11 +545,39 @@ export function openPaperSync(
     if (destroyed) return
     const lead = loaded.own ?? loaded.orphans[0]?.stored ?? null
     const rest = loaded.own ? loaded.orphans : loaded.orphans.slice(1)
-    client = openPaperClient(lead)
-    ready = lead !== null
+    const held = await heldLocks()
+    canClearRecovered = held !== null
+    recoveredJournals = journal
+      ? recoverJournals(journal, docId).filter(
+          ({ id }) =>
+            id === journalId() || held === null || !held.has(`paper-sync:${id}`)
+        )
+      : []
+    const basis =
+      lead ?? recoveredJournals.flatMap(({ states }) => states)[0] ?? null
+    const recovered = mergeJournal(
+      basis,
+      recoveredJournals.flatMap(({ states }) =>
+        states
+          .filter(({ epoch }) => epoch === basis?.epoch)
+          .map(({ server, pending }) => mergedUpdate([server, pending]))
+      )
+    )
+    client = openPaperClient(recovered)
+    for (const { id, states } of recoveredJournals) {
+      for (const stored of states) {
+        if (stored.epoch === client.epoch) continue
+        const result = client.adopt(stored)
+        if (result.failed || !result.adopted) blockedJournals.add(id)
+      }
+    }
+    ready = recovered !== null
     waitingOrphans = rest
     unsubscribeClient = client.subscribe((change) => {
-      persistSoon()
+      version += 1
+      if (state === "saved") setStatus("saving")
+      if (change === "local") rememberLocal()
+      void save()
       if (change === "local") schedule()
       if (change === "reset") generation += 1
       emit()
