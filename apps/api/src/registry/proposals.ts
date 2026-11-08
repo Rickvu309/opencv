@@ -1,4 +1,4 @@
-import { and, count, eq, gt, sql } from "drizzle-orm"
+import { and, count, eq, gt, isNull, sql } from "drizzle-orm"
 import {
   ERROR_CODES,
   type CoachActor,
@@ -95,17 +95,19 @@ async function insertProposal(options: {
 
 export async function expireIfStale(userId: string, id: string) {
   const rows = await getDb()
-    .select()
-    .from(pendingActions)
-    .where(and(eq(pendingActions.id, id), eq(pendingActions.userId, userId)))
-    .limit(1)
-  const row = rows[0]
-  if (!row || row.status !== "pending" || row.coachTaskId) return
-  if (Date.now() - row.createdAt.getTime() <= PENDING_TTL_MS) return
-  await getDb()
     .update(pendingActions)
     .set({ status: "expired" })
-    .where(eq(pendingActions.id, row.id))
+    .where(
+      and(
+        eq(pendingActions.id, id),
+        eq(pendingActions.userId, userId),
+        eq(pendingActions.status, "pending"),
+        isNull(pendingActions.coachTaskId),
+        sql`${pendingActions.createdAt} + interval '24 hours' <= clock_timestamp()`
+      )
+    )
+    .returning({ id: pendingActions.id })
+  if (rows.length === 0) return
   throw new CommandError(
     ERROR_CODES.PENDING_EXPIRED,
     "This confirmation expired. Ask the Coach again."
@@ -127,10 +129,11 @@ export async function lockProposal(userId: string, id: string) {
     .where(
       and(
         eq(pendingActions.id, id),
+        eq(pendingActions.status, "pending"),
         sql`${pendingActions.createdAt} + interval '24 hours' <= clock_timestamp()`
       )
     )
-  if (task && expired && row.status === "pending")
+  if (expired)
     throw new CommandError(
       ERROR_CODES.PENDING_EXPIRED,
       "This confirmation expired. Ask the Coach again."
