@@ -25,12 +25,25 @@ const READ_BY_REGISTRY_CONTRACT_TYPE_TEST = [
   "PaperContract",
 ]
 const READ_BY_PAPER_BLOCKS_TEST = ["paperCheckSchema"]
+const PAPER_SAVE_MODEL_AND_REPLAY = [
+  "Fault",
+  "Lease",
+  "Receipt",
+  "SaveState",
+  "SaveRequest",
+  "canShowSaved",
+  "create",
+  "grant",
+  "hash",
+  "save",
+]
 const KEPT_ON_PURPOSE = new Set([
   ...NEEDED_BY_DECLARATION_BUILD_TO_NAME_BRAND_TS4023,
   ...NAMED_IN_EXPORTED_PAPER_DIFF_SIGNATURES,
   ...NAMED_IN_EXPORTED_COACH_RUNTIME_SIGNATURE,
   ...READ_BY_REGISTRY_CONTRACT_TYPE_TEST,
   ...READ_BY_PAPER_BLOCKS_TEST,
+  ...PAPER_SAVE_MODEL_AND_REPLAY,
 ])
 const TEST_FILE = /\.(?:type-)?test\.|[\\/]src[\\/]test[\\/]/
 

@@ -1,0 +1,16 @@
+{
+  "module": "paper-save.ts",
+  "actions": {
+    "Type": null,
+    "Send": "save",
+    "AcceptDurably": "save",
+    "DeliverReceipt": "canShowSaved",
+    "LoseReply": null,
+    "Retry": "save",
+    "ServerFails": "save",
+    "GoOffline": null,
+    "Reconnect": null,
+    "Reload": null,
+    "DelayedOldSave": "save"
+  }
+}
