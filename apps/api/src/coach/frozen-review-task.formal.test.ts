@@ -3,7 +3,7 @@ import { coachActor } from "@workspace/domain"
 import { eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"
-import { runIntent } from "../coach/task-effects.js"
+import { runIntent } from "./task-effects.js"
 import { getDb, transaction } from "../db/context.js"
 import {
   coachTasks,
@@ -21,7 +21,7 @@ import {
   words,
 } from "../test/frozen-review-support.js"
 import { registerBackendHooks } from "../test/registry-formal-support.js"
-import { inputHash } from "./receipt.js"
+import { inputHash } from "../registry/receipt.js"
 
 registerBackendHooks()
 
