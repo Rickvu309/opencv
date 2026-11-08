@@ -171,7 +171,7 @@ test("close keeps bounded termination, failure disconnect and the outer deadline
     [
       "async function close() { await request('close'); await closed }",
       "close-termination",
-      "async function close() { const deadline = setTimeout(() => child.kill('SIGKILL'), 5000); try { await request('close') } finally { await closed; clearTimeout(deadline) } }",
+      fixtureProcess.toString(),
     ],
     [
       "if (request.kind === 'close') { await close(); process.disconnect?.() }",
