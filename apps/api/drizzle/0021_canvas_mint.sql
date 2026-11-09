@@ -1,0 +1,1 @@
+ALTER TABLE "opencv_app"."paper_package_heads" ADD COLUMN "canvas_profile" text;

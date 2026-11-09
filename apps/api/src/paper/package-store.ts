@@ -214,7 +214,11 @@ export async function stageWordPackage(
   })
 }
 
-export async function publishWordPackage(owner: string, stageId: string) {
+export async function publishWordPackage(
+  owner: string,
+  stageId: string,
+  canvasProfile: string | null = null
+) {
   const revision = z.string().uuid().parse(stageId)
   return transaction(async () => {
     const version = (
@@ -238,6 +242,7 @@ export async function publishWordPackage(owner: string, stageId: string) {
         userId: owner,
         incarnation: version.incarnation,
         revision: version.revision,
+        canvasProfile,
       })
       .onConflictDoNothing({ target: paperPackageHeads.docId })
     const head = await ownedHead(owner, version.docId)

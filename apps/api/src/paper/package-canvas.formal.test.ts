@@ -145,6 +145,13 @@ async function counts(owner: string) {
   }
 }
 
+async function markMinted(docId: string) {
+  await getDb()
+    .update(paperPackageHeads)
+    .set({ canvasProfile: PAPER_CANVAS_PROFILE })
+    .where(eq(paperPackageHeads.docId, docId))
+}
+
 async function publishBytes(owner: string, bytes: Uint8Array) {
   const stage = await stageWordPackage(
     owner,
@@ -289,6 +296,7 @@ describe("a blank page saves through the existing check", () => {
         id,
         loaded.fillPaintedText(loaded.mintBlankBytes(), marks.FIRST)
       )
+      await markMinted(typed.docId)
       const typedSide = await sidecarOf(id, typed.revision)
       const typedSplit = await canvas(id, {
         op: "split",
@@ -469,6 +477,7 @@ describe("a blank page saves through the existing check", () => {
         id,
         loaded.fillPaintedText(loaded.mintBlankBytes(), marks.FIRST)
       )
+      await markMinted(doc.docId)
       const page = await readWordPackage(id, { docId: doc.docId })
       const target = page.regions.find((region) => region.kind === "editable")
       if (!target || target.kind !== "editable")

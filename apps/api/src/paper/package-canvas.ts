@@ -115,6 +115,20 @@ export async function prepareCanvas(
     input.docId,
     input.basedOn
   )
+  const [marked] = await getDb()
+    .select({ canvasProfile: paperPackageHeads.canvasProfile })
+    .from(paperPackageHeads)
+    .where(
+      and(
+        eq(paperPackageHeads.userId, owner),
+        eq(paperPackageHeads.docId, input.docId)
+      )
+    )
+    .limit(1)
+  if (marked?.canvasProfile !== PAPER_CANVAS_PROFILE)
+    return packageFailure(
+      "This page change is not available. No document was changed."
+    )
   const opened = await PaperPackage.open(
     artifact.bytes,
     {
@@ -281,7 +295,11 @@ export function registerCanvasCommit(
     async (input, actor, ahead) => {
       const staged = canvasAhead(ahead)
       if (staged.op === "mint") {
-        const published = await publishWordPackage(actor.userId, staged.stageId)
+        const published = await publishWordPackage(
+          actor.userId,
+          staged.stageId,
+          PAPER_CANVAS_PROFILE
+        )
         return resultOf(actor.userId, published.docId, published.revision, null)
       }
       const published = await commitWordCandidate(actor.userId, input, {

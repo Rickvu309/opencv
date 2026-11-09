@@ -199,20 +199,17 @@ function parseXML(source) {
       if (!qname) throw new Error("xml token")
       const parent = stack.at(-1)
       const attrs = []
-      let w = parent?.w ?? ""
-      for (const match of token.matchAll(
-        /([^\s=<>]+)\s*=\s*(["'])([^<]*?)\2/g
-      )) {
+      for (const match of token.matchAll(/([^\s=<>]+)\s*=\s*(["'])(.*?)\2/g)) {
         const raw = match[1]
-        const value = decode(match[3])
-        if (raw === "xmlns:w") w = value
-        attrs.push({ local: raw.slice(raw.indexOf(":") + 1), value })
+        attrs.push({
+          local: raw.slice(raw.indexOf(":") + 1),
+          value: decode(match[3]),
+        })
       }
       const empty = /\/\s*>$/.test(token)
       const node = {
         qname,
         local: qname.slice(qname.indexOf(":") + 1),
-        w,
         attrs,
         start,
         openEnd: end,
@@ -384,7 +381,7 @@ function classRefusal(paragraphs) {
 }
 
 function word(node, local) {
-  return node?.qname === `w:${local}` && node.w === WORD
+  return node?.qname === `w:${local}`
 }
 
 function tracked(node) {
