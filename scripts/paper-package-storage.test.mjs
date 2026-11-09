@@ -78,10 +78,21 @@ test("Word library stays absent until the feature read has completed", () => {
     "utf8"
   )
   assert.deepEqual(detect(source, "library.tsx"), [])
-  const mutation = source.replace("!library.query.isLoading", "true")
-  assert.notEqual(source, mutation)
+  const loadingMutation = source.replace("!library.query.isLoading", "true")
+  const unavailableMutation = source.replace("!unavailable", "true")
+  assert.notEqual(source, loadingMutation)
+  assert.notEqual(source, unavailableMutation)
+  const unavailableMistake = clean.replace("!unavailable", "true")
   assert.deepEqual(
-    detect(mutation, "library.tsx").map(({ kind }) => kind),
+    detect(loadingMutation, "library.tsx").map(({ kind }) => kind),
+    ["unannounced-word-library"]
+  )
+  assert.deepEqual(
+    detect(unavailableMistake, "library.tsx").map(({ kind }) => kind),
+    ["unannounced-word-library"]
+  )
+  assert.deepEqual(
+    detect(unavailableMutation, "library.tsx").map(({ kind }) => kind),
     ["unannounced-word-library"]
   )
 })
