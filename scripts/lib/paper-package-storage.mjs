@@ -27,7 +27,7 @@ export function detect(text, file = "source.ts") {
     if (
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === "update" &&
+      ["update", "delete"].includes(node.expression.name.text) &&
       node.arguments.some(
         (arg) => arg.getText(source) === "paperPackageVersions"
       ) &&
@@ -52,6 +52,34 @@ export function detect(text, file = "source.ts") {
         calls.push({ name: child.expression.getText(source), node: child })
     })
     const has = (value) => calls.some((call) => call.name === value)
+    if (
+      name === "prepareWordPackage" &&
+      (!has("insideTransaction") ||
+        !has("wordPackageBasis") ||
+        !has("PaperPackage.open") ||
+        has("transaction") ||
+        calls.some((call) => /\.(insert|update|delete)$/.test(call.name)))
+    )
+      add(node, "writing-or-unpinned-package-planner")
+    if (
+      name === "ownedVersion" &&
+      (!has("ownedHead") ||
+        !node.body.getText(source).includes("IN (${published})"))
+    )
+      add(node, "unpublished-package-read")
+    if (
+      name === "wordPackageBasis" &&
+      (!has("ownedVersion") ||
+        !has("ownedHead") ||
+        !has("completeVersion") ||
+        !node.body.getText(source).includes("head.revision !== basedOn"))
+    )
+      add(node, "unpinned-package-basis")
+    if (
+      ["sameRequest", "publishWordPackage"].includes(name) &&
+      !node.body.getText(source).includes("version.parentRevision !== null")
+    )
+      add(node, "child-import-publisher")
     const insertsHead = calls.find(
       (call) =>
         call.name.endsWith(".insert") &&

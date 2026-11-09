@@ -11,7 +11,8 @@ import {
   paperPackageStageSchema,
   type PaperPackageStageInput,
 } from "@workspace/domain"
-import { and, asc, eq, gt } from "drizzle-orm"
+import { and, asc, eq, gt, sql } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
 import { getDb, insideTransaction, transaction } from "../db/context.js"
@@ -30,7 +31,12 @@ export const WORD_PACKAGE_MEDIA_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 type Version = typeof paperPackageVersions.$inferSelect
 
-function metadata(version: Version) {
+function metadata(
+  version: Pick<
+    Version,
+    "docId" | "revision" | "name" | "kind" | "packageHash" | "byteSize"
+  >
+) {
   return paperPackageMetadataSchema.parse({
     generation: "package",
     docId: version.docId,
@@ -70,6 +76,7 @@ function sameRequest(
   hash: string
 ) {
   if (
+    version.parentRevision !== null ||
     version.packageHash !== hash ||
     version.name !== input.name ||
     version.kind !== input.kind
@@ -222,7 +229,7 @@ export async function publishWordPackage(owner: string, stageId: string) {
         )
         .limit(1)
     )[0]
-    if (!version) return missing()
+    if (!version || version.parentRevision !== null) return missing()
     await completeVersion(version)
     await getDb()
       .insert(paperPackageHeads)
@@ -263,6 +270,21 @@ async function ownedHead(owner: string, docId: string) {
 
 async function ownedVersion(owner: string, docId: string, at?: string) {
   const head = await ownedHead(owner, docId)
+  const parent = alias(paperPackageVersions, "published_parent")
+  const published = sql`WITH RECURSIVE published(revision, parent_revision) AS (
+    SELECT ${paperPackageVersions.revision}, ${paperPackageVersions.parentRevision}
+    FROM ${paperPackageVersions}
+    WHERE ${paperPackageVersions.revision} = ${head.revision}
+      AND ${paperPackageVersions.docId} = ${docId}
+      AND ${paperPackageVersions.userId} = ${owner}
+      AND ${paperPackageVersions.incarnation} = ${head.incarnation}
+    UNION
+    SELECT ${parent.revision}, ${parent.parentRevision}
+    FROM ${paperPackageVersions} AS ${sql.identifier("published_parent")}
+    JOIN published ON ${parent.revision} = published.parent_revision
+    WHERE ${parent.docId} = ${docId} AND ${parent.userId} = ${owner}
+      AND ${parent.incarnation} = ${head.incarnation}
+  ) SELECT revision FROM published`
   const version = (
     await getDb()
       .select()
@@ -272,12 +294,27 @@ async function ownedVersion(owner: string, docId: string, at?: string) {
           eq(paperPackageVersions.userId, owner),
           eq(paperPackageVersions.docId, docId),
           eq(paperPackageVersions.incarnation, head.incarnation),
-          eq(paperPackageVersions.revision, at ?? head.revision)
+          eq(paperPackageVersions.revision, at ?? head.revision),
+          sql`${paperPackageVersions.revision} IN (${published})`
         )
       )
       .limit(1)
   )[0]
   return version ?? missing()
+}
+
+export async function wordPackageBasis(
+  owner: string,
+  docId: string,
+  basedOn: string
+) {
+  const version = await ownedVersion(owner, docId, basedOn)
+  const head = await ownedHead(owner, docId)
+  if (head.revision !== basedOn || head.incarnation !== version.incarnation)
+    return packageFailure(
+      "This Word document has changed. Read it again before editing."
+    )
+  return { version, ...(await completeVersion(version)) }
 }
 
 export async function readWordPackage(owner: string, rawInput: unknown) {
@@ -319,7 +356,14 @@ export async function exportWordPackage(
 export async function listWordPackages(owner: string, after?: string) {
   if (after) z.string().uuid().parse(after)
   const rows = await getDb()
-    .select({ version: paperPackageVersions })
+    .select({
+      docId: paperPackageVersions.docId,
+      revision: paperPackageVersions.revision,
+      name: paperPackageVersions.name,
+      kind: paperPackageVersions.kind,
+      packageHash: paperPackageVersions.packageHash,
+      byteSize: paperPackageVersions.byteSize,
+    })
     .from(paperPackageHeads)
     .innerJoin(
       paperPackageVersions,
@@ -338,7 +382,7 @@ export async function listWordPackages(owner: string, after?: string) {
     )
     .orderBy(asc(paperPackageHeads.docId))
     .limit(51)
-  const items = rows.slice(0, 50).map(({ version }) => metadata(version))
+  const items = rows.slice(0, 50).map(metadata)
   return {
     items,
     next: rows.length > 50 ? (items.at(-1)?.docId ?? null) : null,
