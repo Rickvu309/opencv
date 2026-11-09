@@ -12,11 +12,30 @@ function columns(block) {
   )
 }
 
+function recheck(text, start, end) {
+  const at = text.indexOf(start)
+  if (at === -1) return -1
+  const until = text.indexOf(end, at + start.length)
+  const body = until === -1 ? "" : text.slice(at, until)
+  return body.includes("requirePackageEnabled()") ? null : at
+}
+
 function editProblems(text) {
   const problems = []
   const created = text.indexOf("createdAt")
   if (created !== -1) problems.push(problem(text, created))
   if (!text.includes('actor.type !== "person"')) problems.push(problem(text))
+  for (const [start, end] of [
+    ["revalidate: async (_input, snapshot, actor)", "basis: mutationBasis"],
+    ["revalidate: async (input, prepared, actor)", "commit: async"],
+    [
+      "commit: async (input, prepared, actor, locked)",
+      "export function registerWordPackageEdit",
+    ],
+  ]) {
+    const missed = recheck(text, start, end)
+    if (missed !== null) problems.push(problem(text, Math.max(0, missed)))
+  }
   const keys = [...text.matchAll(/key:\s*\[([\s\S]*?)\]/g)]
     .map((match) => match[1])
     .filter((block) => block.includes("column:"))
