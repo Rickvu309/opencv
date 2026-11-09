@@ -1,0 +1,10 @@
+{
+  "id": "paper-render-map",
+  "file": "scripts/paper-render-map.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-render-map.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "The revision map and its diagnostics are new. Main has no ancestor that emitted an offset or a target outside that map, so a historic pass would be fabricated. The mistake fixture emits an offset or a foreign target, and the clean fixture does not."
+}
