@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useReducer, useRef } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useRef,
+} from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -193,16 +199,15 @@ export function WritingCanvas({ docId }: { docId: string }) {
   const composing = useRef(false)
   const splitAfter = useRef(false)
   const pasteGuard = useRef(false)
-  const nextId = useRef(2)
   const [state, dispatch] = useReducer(reduce, docId, (id) => {
     const present = loadDraft(id, localStorage) ?? blankDraft()
-    nextId.current = present.nextId
     return {
       past: [],
       present,
       note: keptOnThisComputer(),
     }
   })
+  const nextId = useRef(state.present.nextId)
 
   useEffect(() => {
     const kept = storeDraft(docId, state.present, localStorage)
@@ -223,6 +228,23 @@ export function WritingCanvas({ docId }: { docId: string }) {
     syncParagraphs(page, state.present.blocks)
     placeCaret(page, state.present.caret)
   }, [state.present])
+
+  const applyPaste = useCallback(
+    (text: string) => {
+      const page = pageRef.current
+      if (!page || pasteGuard.current) return
+      pasteGuard.current = true
+      dispatch({
+        type: "paste",
+        span: spanFrom(page, state.present.caret),
+        text,
+      })
+      queueMicrotask(() => {
+        pasteGuard.current = false
+      })
+    },
+    [state.present]
+  )
 
   useEffect(() => {
     const page = pageRef.current
@@ -260,21 +282,7 @@ export function WritingCanvas({ docId }: { docId: string }) {
     }
     page.addEventListener("beforeinput", onBefore)
     return () => page.removeEventListener("beforeinput", onBefore)
-  }, [state.present])
-
-  function applyPaste(text: string) {
-    const page = pageRef.current
-    if (!page || pasteGuard.current) return
-    pasteGuard.current = true
-    dispatch({
-      type: "paste",
-      span: spanFrom(page, state.present.caret),
-      text,
-    })
-    queueMicrotask(() => {
-      pasteGuard.current = false
-    })
-  }
+  }, [applyPaste, state.present])
 
   return (
     <section aria-label="Writing" className="writing-sheet">
