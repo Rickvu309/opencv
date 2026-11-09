@@ -246,7 +246,16 @@ export const paperContract = commandContract({
         basedOn: z.union([z.number().int().min(0), z.string().uuid()]),
         edits: z.union([paperEditsSchema, paperPackageEditsSchema]),
       })
-      .strict(),
+      .strict()
+      .superRefine((input, ctx) => {
+        const word = input.edits.every((edit) => edit.op === "replaceText")
+        if (word !== (typeof input.basedOn === "string"))
+          ctx.addIssue({
+            code: "custom",
+            message: "This edit does not match the saved document.",
+            path: ["edits"],
+          })
+      }),
     output: z.union([paperEditOutputSchema, paperPackageEditResultSchema]),
     coach: "confirm",
     destructive: false,

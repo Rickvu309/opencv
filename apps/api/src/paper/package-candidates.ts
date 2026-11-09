@@ -425,8 +425,8 @@ export async function revalidateWordCandidate(
   return seal
 }
 
-async function publish(seal: Seal, direction: "forward" | "restore") {
-  const identity = seal[direction]
+async function publish(seal: Seal) {
+  const identity = seal.forward
   if (identity.parentRevision === null) return unavailable()
   const changed = await getDb()
     .update(paperPackageHeads)
@@ -454,7 +454,7 @@ export async function commitWordCandidate(
   prepared: Prepared
 ) {
   const seal = await revalidateWordCandidate(owner, rawInput, prepared)
-  const result = await publish(seal, "forward")
+  const result = await publish(seal)
   return { ...result, restore: prepared.candidate }
 }
 

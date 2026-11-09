@@ -53,4 +53,49 @@ test("word binding keeps the registry basis and the restore compare", () => {
       "package-restore.ts"
     ).some((item) => item.kind === "package-basis-lock")
   )
+  assert.ok(
+    detect(
+      restore.replace("if (changed.length !== 1) return unavailable()", ""),
+      "package-restore.ts"
+    ).some((item) => item.kind === "package-basis-lock")
+  )
+  assert.ok(
+    detect(
+      edit.replace(
+        `column: paperPackageHeads.incarnation,
+      source: "candidate",`,
+        `column: paperPackageHeads.docId,
+      source: "candidate",`
+      ),
+      "package-edit.ts"
+    ).some((item) => item.kind === "package-basis-lock")
+  )
+  assert.ok(
+    detect(
+      edit.replace(
+        `column: paperPackageHeads.userId,
+      source: "candidate",`,
+        `column: paperPackageHeads.docId,
+      source: "candidate",`
+      ),
+      "package-edit.ts"
+    ).some((item) => item.kind === "package-basis-lock")
+  )
+  assert.ok(
+    detect(
+      edit.replace(
+        `column: paperPackageHeads.incarnation,
+      source: "snapshot",`,
+        `column: paperPackageHeads.docId,
+      source: "snapshot",`
+      ),
+      "package-edit.ts"
+    ).some((item) => item.kind === "package-basis-lock")
+  )
+  assert.ok(
+    detect(
+      edit.replace('actor.type !== "person"', 'actor.type === "person"'),
+      "package-edit.ts"
+    ).some((item) => item.kind === "package-basis-lock")
+  )
 })
