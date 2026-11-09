@@ -5,7 +5,8 @@ import {
   PAPER_PACKAGE_PROJECTOR,
   paperPackageProjectionSchema,
 } from "@workspace/domain"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, count, eq, inArray, sql } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
 import { getDb, insideTransaction, transaction } from "../db/context.js"
@@ -14,6 +15,7 @@ import {
   paperPackageCandidates,
   paperPackageHeads,
   paperPackageVersions,
+  user,
 } from "../db/schema.js"
 import { PaperPackage } from "./package-engine.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
@@ -75,6 +77,56 @@ function unavailable(): never {
   return packageFailure(
     "This saved Word edit is no longer available. No document was changed."
   )
+}
+
+const retentionLimits = { count: 64, bytes: 64 * 1024 * 1024 }
+
+async function requireCandidateCapacity(
+  owner: string,
+  packageBytes: number,
+  material: unknown[]
+) {
+  const [account] = await getDb()
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.id, owner))
+    .for("no key update")
+  if (!account) return unavailable()
+  const forward = alias(paperPackageVersions, "retained_forward")
+  const restore = alias(paperPackageVersions, "retained_restore")
+  const [usage] = await getDb()
+    .select({
+      count: count(),
+      bytes: sql<number>`coalesce(sum(
+        ${forward.byteSize}::bigint + ${restore.byteSize}::bigint
+        + octet_length(${paperPackageCandidates.seal}::text)
+        + octet_length(${forward.sidecar}::text)
+        + octet_length(${forward.projection}::text)
+        + octet_length(${restore.sidecar}::text)
+        + octet_length(${restore.projection}::text)
+      ), 0) + ${packageBytes}::bigint
+        + octet_length(${JSON.stringify(material)}::jsonb::text)`.mapWith(
+        Number
+      ),
+    })
+    .from(paperPackageCandidates)
+    .innerJoin(
+      forward,
+      eq(forward.revision, paperPackageCandidates.forwardRevision)
+    )
+    .innerJoin(
+      restore,
+      eq(restore.revision, paperPackageCandidates.restoreRevision)
+    )
+    .where(eq(paperPackageCandidates.userId, owner))
+  if (
+    !usage ||
+    usage.count >= retentionLimits.count ||
+    usage.bytes > retentionLimits.bytes
+  )
+    return packageFailure(
+      "Word edit storage is full. Your document, saved reviews, and Undo are unchanged."
+    )
 }
 
 export async function prepareStoredWordPackage(
@@ -162,6 +214,17 @@ export async function prepareStoredWordPackage(
   })
   const digest = packageDigest(seal)
   await transaction(async () => {
+    await requireCandidateCapacity(
+      owner,
+      seal.forward.byteSize + seal.restore.byteSize,
+      [
+        seal,
+        plan.candidate.sidecar,
+        plan.candidate.projection,
+        sidecar,
+        projection,
+      ]
+    )
     const [version] = await getDb()
       .select()
       .from(paperPackageVersions)
