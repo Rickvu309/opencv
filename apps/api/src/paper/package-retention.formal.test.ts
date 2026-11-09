@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import { count, eq, sql } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { getDb, transaction, withDatabase } from "../db/context.js"
@@ -120,6 +121,166 @@ async function retainedCounts(account: string) {
   )
 }
 
+const byteLimit = 64 * 1024 * 1024
+
+async function usageBytes(account: string) {
+  const forward = alias(paperPackageVersions, "usage_forward")
+  const restore = alias(paperPackageVersions, "usage_restore")
+  const [row] = await getDb()
+    .select({
+      bytes: sql<number>`coalesce(sum(
+        ${forward.byteSize}::bigint + ${restore.byteSize}::bigint
+        + octet_length(${paperPackageCandidates.seal}::text)
+        + octet_length(${forward.sidecar}::text)
+        + octet_length(${forward.projection}::text)
+        + octet_length(${restore.sidecar}::text)
+        + octet_length(${restore.projection}::text)
+      ), 0)`.mapWith(Number),
+    })
+    .from(paperPackageCandidates)
+    .innerJoin(
+      forward,
+      eq(forward.revision, paperPackageCandidates.forwardRevision)
+    )
+    .innerJoin(
+      restore,
+      eq(restore.revision, paperPackageCandidates.restoreRevision)
+    )
+    .where(eq(paperPackageCandidates.userId, account))
+  return row?.bytes ?? 0
+}
+
+async function incomingBytes(account: string) {
+  const forward = alias(paperPackageVersions, "incoming_forward")
+  const restore = alias(paperPackageVersions, "incoming_restore")
+  const [row] = await getDb()
+    .select({
+      bytes: sql<number>`coalesce(sum(
+        ${forward.byteSize}::bigint + ${restore.byteSize}::bigint
+        + octet_length(jsonb_build_array(
+          ${paperPackageCandidates.seal},
+          ${forward.sidecar},
+          ${forward.projection},
+          ${restore.sidecar},
+          ${restore.projection}
+        )::text)
+      ), 0)`.mapWith(Number),
+    })
+    .from(paperPackageCandidates)
+    .innerJoin(
+      forward,
+      eq(forward.revision, paperPackageCandidates.forwardRevision)
+    )
+    .innerJoin(
+      restore,
+      eq(restore.revision, paperPackageCandidates.restoreRevision)
+    )
+    .where(eq(paperPackageCandidates.userId, account))
+  return row?.bytes ?? 0
+}
+
+async function projectionGap(revision: string) {
+  const [row] = await getDb()
+    .select({
+      gap: sql<number>`octet_length(${paperPackageVersions.projection}::text) - length(${paperPackageVersions.projection}::text)`.mapWith(
+        Number
+      ),
+    })
+    .from(paperPackageVersions)
+    .where(eq(paperPackageVersions.revision, revision))
+  return row?.gap ?? 0
+}
+
+async function copiedCandidateOverhead(account: string) {
+  const forward = alias(paperPackageVersions, "overhead_forward")
+  const restore = alias(paperPackageVersions, "overhead_restore")
+  const [row] = await getDb()
+    .select({
+      bytes: sql<number>`coalesce(sum(
+        ${forward.byteSize}::bigint + ${restore.byteSize}::bigint
+        + octet_length(${paperPackageCandidates.seal}::text)
+        + octet_length(${forward.sidecar}::text)
+        + octet_length(${forward.projection}::text)
+        + octet_length(${restore.sidecar}::text)
+      ), 0)`.mapWith(Number),
+    })
+    .from(paperPackageCandidates)
+    .innerJoin(
+      forward,
+      eq(forward.revision, paperPackageCandidates.forwardRevision)
+    )
+    .innerJoin(
+      restore,
+      eq(restore.revision, paperPackageCandidates.restoreRevision)
+    )
+    .where(eq(paperPackageCandidates.userId, account))
+  return row?.bytes ?? 0
+}
+
+async function holdUsage(
+  fixture: Awaited<ReturnType<typeof retentionFixture>>,
+  target: number,
+  fill: string
+) {
+  const [version] = await getDb()
+    .select()
+    .from(paperPackageVersions)
+    .where(eq(paperPackageVersions.revision, fixture.row.restoreRevision))
+  if (!version) throw new Error("Missing restore version")
+  const [widths] = await getDb()
+    .select({
+      empty:
+        sql<number>`octet_length(jsonb_build_object('retentionFixture', '')::text)`.mapWith(
+          Number
+        ),
+      one: sql<number>`octet_length(jsonb_build_object('retentionFixture', ${fill}::text)::text)`.mapWith(
+        Number
+      ),
+      mark: sql<number>`octet_length(jsonb_build_object('retentionFixture', 'x')::text)`.mapWith(
+        Number
+      ),
+    })
+    .from(user)
+    .where(eq(user.id, fixture.account))
+  if (!widths) throw new Error("Missing retention pad widths")
+  const per = widths.one - widths.empty
+  const mark = widths.mark - widths.empty
+  if (per < 1 || mark < 1)
+    throw new Error("Retention pad character added no bytes")
+  const content =
+    target -
+    (await usageBytes(fixture.account)) -
+    (await copiedCandidateOverhead(fixture.account)) -
+    widths.empty
+  if (content < 0)
+    throw new Error(`Retention pad content ${content} is negative`)
+  const copies = Math.floor(content / per)
+  const remainder = content - copies * per
+  if (remainder % mark !== 0)
+    throw new Error(`Retention pad remainder ${remainder} is not a whole mark`)
+  const revision = randomUUID()
+  const tail = "x".repeat(remainder / mark)
+  await getDb()
+    .insert(paperPackageVersions)
+    .values({
+      ...version,
+      revision,
+      requestId: randomUUID(),
+      projection: sql`jsonb_build_object('retentionFixture', repeat(${fill}::text, ${copies}::int) || ${tail}::text)`,
+    })
+  await getDb()
+    .insert(paperPackageCandidates)
+    .values({
+      ...fixture.row,
+      id: randomUUID(),
+      restoreRevision: revision,
+    })
+  const charged = await usageBytes(fixture.account)
+  if (charged !== target)
+    throw new Error(`Charged ${charged} instead of ${target}`)
+  return revision
+}
+
 describe("private Word candidate retention", () => {
   it("refuses candidate count pressure without deleting a saved review or clean Undo", () =>
     run(async () => {
@@ -195,6 +356,58 @@ describe("private Word candidate retention", () => {
         prepare(fixture.doc.head.docId, "original", "overflow", fixture.account)
       ).rejects.toThrow("Word edit storage is full")
       expect(await retainedCounts(fixture.account)).toEqual(before)
+      expect(
+        (
+          await readWordPackage(fixture.account, {
+            docId: fixture.doc.head.docId,
+          })
+        ).revision
+      ).toBe(fixture.doc.head.revision)
+    }))
+
+  it("refuses when only the new candidate crosses the byte limit", () =>
+    run(async () => {
+      const fixture = await retentionFixture(1)
+      const unit = await incomingBytes(fixture.account)
+      if (unit < 1) throw new Error("Missing incoming candidate bytes")
+      const revision = await holdUsage(fixture, byteLimit - unit + 1, "é")
+      const gap = await projectionGap(revision)
+      if (gap <= unit)
+        throw new Error(`Byte gap ${gap} does not exceed one candidate`)
+      const before = await retainedCounts(fixture.account)
+      await expect(
+        prepare(fixture.doc.head.docId, "original", "better", fixture.account)
+      ).rejects.toThrow("Word edit storage is full")
+      expect(await retainedCounts(fixture.account)).toEqual(before)
+      expect(
+        (
+          await readWordPackage(fixture.account, {
+            docId: fixture.doc.head.docId,
+          })
+        ).revision
+      ).toBe(fixture.doc.head.revision)
+    }))
+
+  it("accepts a candidate that lands exactly on the byte limit", () =>
+    run(async () => {
+      const fixture = await retentionFixture(1)
+      const unit = await incomingBytes(fixture.account)
+      if (unit < 1) throw new Error("Missing incoming candidate bytes")
+      await holdUsage(fixture, byteLimit - unit, "x")
+      const before = await retainedCounts(fixture.account)
+      const accepted = await prepare(
+        fixture.doc.head.docId,
+        "original",
+        "better",
+        fixture.account
+      )
+      expect(accepted.prepared.candidate.id).toBeTruthy()
+      const after = await retainedCounts(fixture.account)
+      expect(after).toEqual([
+        [{ count: before[0][0].count + 1 }],
+        [{ count: before[1][0].count + 2 }],
+        [{ count: before[2][0].count + 1 }],
+      ])
       expect(
         (
           await readWordPackage(fixture.account, {

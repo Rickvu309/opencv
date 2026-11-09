@@ -19,7 +19,11 @@ async function requireCandidateCapacity(owner, packageBytes, material) {
 }
 async function prepareStoredWordPackage() {
   await transaction(async () => {
-    await requireCandidateCapacity(owner, bytes, material)
+    await requireCandidateCapacity(
+      owner,
+      seal.forward.byteSize + seal.restore.byteSize,
+      [seal, plan.candidate.sidecar, plan.candidate.projection, sidecar, projection]
+    )
     await db.insert(paperPackageCandidates).values(candidate)
   })
 }`
@@ -52,6 +56,12 @@ const mistakes = [
     "requireCandidateCapacity(",
     "candidate-retention-before-insert",
   ],
+  [
+    "seal.forward.byteSize + seal.restore.byteSize",
+    "0",
+    "candidate-retention-before-insert",
+  ],
+  ["plan.candidate.projection,", "0,", "candidate-retention-before-insert"],
   ["count: 64", "count: 65", "candidate-retention-capacity"],
 ]
 

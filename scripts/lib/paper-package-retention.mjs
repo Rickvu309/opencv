@@ -160,12 +160,35 @@ export function detect(text, file = "source.ts") {
         if (!ts.isArrowFunction(argument) || !ts.isBlock(argument.body))
           return false
         const statement = argument.body.statements[0]
+        if (
+          !statement ||
+          !ts.isExpressionStatement(statement) ||
+          !ts.isAwaitExpression(statement.expression)
+        )
+          return false
+        const invoked = statement.expression.expression
+        if (!call(invoked, "requireCandidateCapacity")) return false
+        const [ownerArg, bytes, material] = invoked.arguments
+        const added =
+          bytes &&
+          ts.isBinaryExpression(bytes) &&
+          bytes.operatorToken.kind === ts.SyntaxKind.PlusToken &&
+          [path(bytes.left), path(bytes.right)].sort().join("+") ===
+            "seal.forward.byteSize+seal.restore.byteSize"
+        const parts =
+          material && ts.isArrayLiteralExpression(material)
+            ? material.elements.map(path)
+            : []
         return (
-          statement &&
-          ts.isExpressionStatement(statement) &&
-          ts.isAwaitExpression(statement.expression) &&
-          call(statement.expression.expression, "requireCandidateCapacity") &&
-          path(statement.expression.expression.arguments[0]) === "owner"
+          path(ownerArg) === "owner" &&
+          added &&
+          [
+            "seal",
+            "plan.candidate.sidecar",
+            "plan.candidate.projection",
+            "sidecar",
+            "projection",
+          ].every((name) => parts.includes(name))
         )
       })
   )
