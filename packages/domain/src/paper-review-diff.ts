@@ -16,7 +16,7 @@ function textBytes(value: string) {
   return new TextEncoder().encode(value).byteLength
 }
 
-export const paperReviewReplacementSchema = z
+const paperReviewReplacementSchema = z
   .object({
     target: z.string().regex(TARGET),
     before: z

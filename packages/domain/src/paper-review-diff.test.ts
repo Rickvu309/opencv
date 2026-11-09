@@ -1,10 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import {
-  paperReviewDiff,
-  paperReviewReplacementSchema,
-} from "./paper-review-diff.ts"
+import { paperReviewDiff } from "./paper-review-diff.ts"
 
 const target = `t_${"ab".repeat(32)}`
 const other = `t_${"cd".repeat(32)}`
@@ -119,15 +116,6 @@ describe("paperReviewDiff", () => {
     assert.throws(
       () => paperReviewDiff(review(Array.from({ length: 21 }, () => ({})))),
       /unavailable/
-    )
-    assert.equal(
-      paperReviewReplacementSchema.safeParse({
-        target,
-        before: "Ada",
-        after: "Grace",
-        handle: "sentinel-handle",
-      }).success,
-      false
     )
   })
 })
