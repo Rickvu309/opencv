@@ -1,0 +1,13 @@
+{
+  "id": "paper-package-retention",
+  "file": "scripts/paper-package-retention.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-package-retention.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "1ea8b265ee17088ae2707ac7db7534005148e1be",
+    "path": "apps/api/src/paper/package-candidates.ts"
+  }
+}
