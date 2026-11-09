@@ -93,14 +93,66 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
   for (const mutation of [
     planner.replace("insideTransaction()", "false"),
     planner.replace("await wordPackageBasis(", "await latestBasis("),
-    `${planner}\nasync function prepareWordPackage() { return db.insert(paperPackageVersions) }`,
     source.replace(
       "IN (${published})",
       "IN (SELECT revision FROM paper_package_versions)"
     ),
     source.replace("head.revision !== basedOn", "false"),
-    source.replaceAll("version.parentRevision !== null", "false"),
     `${source}\ndb.delete(paperPackageVersions)`,
   ])
     assert.ok(detect(mutation).length > 0)
+})
+
+test("Word preparation detects writes inside the complete planner", () => {
+  const planner = readFileSync(
+    new URL("../apps/api/src/paper/package-planner.ts", import.meta.url),
+    "utf8"
+  )
+  const mutation = planner.replace(
+    "const revision = randomUUID()",
+    "getDb().insert(paperPackageVersions); const revision = randomUUID()"
+  )
+  assert.notEqual(mutation, planner)
+  assert.deepEqual(detect(planner), [])
+  assert.deepEqual(
+    detect(mutation).map(({ kind }) => kind),
+    ["writing-or-unpinned-package-planner"]
+  )
+})
+
+test("Word preparation detects transactions inside the complete planner", () => {
+  const planner = readFileSync(
+    new URL("../apps/api/src/paper/package-planner.ts", import.meta.url),
+    "utf8"
+  )
+  const mutation = planner.replace(
+    "const revision = randomUUID()",
+    "transaction(async () => {}); const revision = randomUUID()"
+  )
+  assert.notEqual(mutation, planner)
+  assert.deepEqual(detect(planner), [])
+  assert.deepEqual(
+    detect(mutation).map(({ kind }) => kind),
+    ["writing-or-unpinned-package-planner"]
+  )
+})
+
+test("Word imports reject private children at retry and publication", () => {
+  const source = readFileSync(
+    new URL("../apps/api/src/paper/package-store.ts", import.meta.url),
+    "utf8"
+  )
+  const condition = "version.parentRevision !== null"
+  const first = source.indexOf(condition)
+  const last = source.lastIndexOf(condition)
+  assert.ok(first >= 0 && last > first)
+  assert.deepEqual(detect(source), [])
+  for (const index of [first, last]) {
+    const mutation =
+      source.slice(0, index) + "false" + source.slice(index + condition.length)
+    assert.deepEqual(
+      detect(mutation).map(({ kind }) => kind),
+      ["child-import-publisher"]
+    )
+  }
 })

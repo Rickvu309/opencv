@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 
+import { paperPackageProjectionSchema } from "@workspace/domain"
 import { count, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -87,7 +88,8 @@ async function counts() {
 }
 
 async function retainCandidate(
-  plan: Awaited<ReturnType<typeof prepareWordPackage>>
+  plan: Awaited<ReturnType<typeof prepareWordPackage>>,
+  requestId = randomUUID()
 ) {
   if (plan.kind !== "prepared") throw new Error("Expected a private candidate")
   const source = (
@@ -113,7 +115,7 @@ async function retainCandidate(
     ...source,
     ...candidate,
     fileId,
-    requestId: randomUUID(),
+    requestId,
     parentRevision: source.revision,
   })
   return candidate.revision
@@ -218,6 +220,74 @@ describe("private pinned Word preparation", () => {
         })
       ).rejects.toThrow()
       expect(await counts()).toEqual(before)
+      expect(
+        (await exportWordPackage(owner, doc.head.docId, doc.head.revision))
+          .bytes
+      ).toEqual(doc.bytes)
+    }))
+
+  it("refuses a stored projection shadow even when its stored digest matches", () =>
+    run(async () => {
+      const doc = await document()
+      const version = (
+        await backend.db
+          .select()
+          .from(paperPackageVersions)
+          .where(eq(paperPackageVersions.revision, doc.head.revision))
+      )[0]
+      if (!version) throw new Error("Missing fixture version")
+      const stored = paperPackageProjectionSchema.parse(version.projection)
+      const projection = {
+        ...stored,
+        regions: stored.regions.map((region) =>
+          region.kind === "editable"
+            ? {
+                ...region,
+                context: {
+                  ...region.context,
+                  paragraphText: "A different review context",
+                },
+              }
+            : region
+        ),
+      }
+      await backend.db
+        .update(paperPackageVersions)
+        .set({ projection, projectionHash: packageDigest(projection) })
+        .where(eq(paperPackageVersions.revision, doc.head.revision))
+      const before = await counts()
+      await expect(prepareWordPackage(owner, edit(doc))).rejects.toThrow(
+        "This Word projection is no longer available"
+      )
+      expect(await counts()).toEqual(before)
+      expect(
+        (await exportWordPackage(owner, doc.head.docId, doc.head.revision))
+          .bytes
+      ).toEqual(doc.bytes)
+      expect(
+        (await readWordPackage(owner, { docId: doc.head.docId })).revision
+      ).toBe(doc.head.revision)
+    }))
+
+  it("refuses a private child upload-key retry without changing stored state", () =>
+    run(async () => {
+      const doc = await document()
+      const plan = await prepareWordPackage(owner, edit(doc))
+      if (plan.kind !== "prepared") throw new Error("Expected an edit")
+      const requestId = randomUUID()
+      await retainCandidate(plan, requestId)
+      const before = await counts()
+      await expect(
+        stageWordPackage(
+          owner,
+          { requestId, name: "CV.docx", kind: "cv" },
+          plan.candidate.bytes
+        )
+      ).rejects.toThrow("This upload key was already used for another file")
+      expect(await counts()).toEqual(before)
+      expect(
+        (await readWordPackage(owner, { docId: doc.head.docId })).revision
+      ).toBe(doc.head.revision)
       expect(
         (await exportWordPackage(owner, doc.head.docId, doc.head.revision))
           .bytes

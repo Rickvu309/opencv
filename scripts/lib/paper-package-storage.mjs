@@ -76,7 +76,7 @@ export function detect(text, file = "source.ts") {
     )
       add(node, "unpinned-package-basis")
     if (
-      name === "publishWordPackage" &&
+      ["sameRequest", "publishWordPackage"].includes(name) &&
       !node.body.getText(source).includes("version.parentRevision !== null")
     )
       add(node, "child-import-publisher")
