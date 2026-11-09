@@ -36,7 +36,10 @@ const leaked = review(
   [
     change(target, "Ada", "Grace", {
       handle: "sentinel-handle",
-      reversal: { command: "paper.restoreWord", marker: "reversal-sentinel" },
+      reversal: {
+        command: "private-undo-sentinel",
+        marker: "reversal-sentinel",
+      },
       packageBytes: "package-byte-sentinel",
     }),
   ],
@@ -57,7 +60,7 @@ describe("paperReviewDiff", () => {
     assert.equal(text.includes("sentinel-handle"), false)
     assert.equal(text.includes("reversal-sentinel"), false)
     assert.equal(text.includes("package-byte-sentinel"), false)
-    assert.equal(text.includes("restoreWord"), false)
+    assert.equal(text.includes("private-undo-sentinel"), false)
     assert.equal(JSON.stringify(paperReviewDiff(leaked)), text)
     assert.throws(() => {
       diff[0]!.before = "Bob"
