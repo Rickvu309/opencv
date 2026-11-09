@@ -111,18 +111,15 @@ async function prepare(
       },
     ],
   }
-  return transaction(async () => {
-    const prepared = await prepareStoredWordPackage(owner, input)
-    if (prepared.kind !== "prepared")
-      throw new Error("Missing fixture candidate")
-    if (anchor) await proposal(owner, prepared.candidate.id, "pending")
-    const [row] = await getDb()
-      .select()
-      .from(paperPackageCandidates)
-      .where(eq(paperPackageCandidates.id, prepared.candidate.id))
-    if (!row) throw new Error("Missing candidate record")
-    return { prepared, row }
-  })
+  const prepared = await prepareStoredWordPackage(owner, input)
+  if (prepared.kind !== "prepared") throw new Error("Missing fixture candidate")
+  if (anchor) await proposal(owner, prepared.candidate.id, "pending")
+  const [row] = await getDb()
+    .select()
+    .from(paperPackageCandidates)
+    .where(eq(paperPackageCandidates.id, prepared.candidate.id))
+  if (!row) throw new Error("Missing candidate record")
+  return { prepared, row }
 }
 
 async function copies(
@@ -131,9 +128,10 @@ async function copies(
   status: "pending" | "denied" | "expired" | null
 ) {
   const ids = Array.from({ length: count }, () => randomUUID())
+  const createdAt = new Date(Date.now() - 24 * 60 * 60 * 1000)
   await getDb()
     .insert(paperPackageCandidates)
-    .values(ids.map((id) => ({ ...row, id })))
+    .values(ids.map((id) => ({ ...row, id, createdAt })))
   if (status) for (const id of ids) await proposal(row.userId, id, status)
   return ids
 }

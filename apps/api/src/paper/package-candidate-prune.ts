@@ -55,9 +55,15 @@ export async function pruneUnreachableCandidates(owner: string) {
         )
       )
   )
+  const oldEnough = sql`${candidate.createdAt} < now() - interval '15 minutes'`
   await getDb()
     .delete(candidate)
     .where(
-      and(eq(candidate.userId, owner), namedByPendingReview, namedByLiveUndo)
+      and(
+        eq(candidate.userId, owner),
+        namedByPendingReview,
+        namedByLiveUndo,
+        oldEnough
+      )
     )
 }
