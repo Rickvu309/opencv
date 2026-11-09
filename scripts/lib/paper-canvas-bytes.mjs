@@ -255,7 +255,7 @@ function contentText(node, source) {
       return ""
     if (is(current, "t"))
       return is(current.parent, "r")
-        ? source.slice(current.openEnd, current.closeStart)
+        ? decode(source.slice(current.openEnd, current.closeStart))
         : ""
     return current.children.map(visit).join("")
   }
@@ -383,6 +383,58 @@ function classRefusal(paragraphs) {
   return null
 }
 
+function plainRun(run) {
+  let texts = 0
+  for (const child of run.children) {
+    if (is(child, "t")) texts += 1
+    else if (!is(child, "rPr")) return false
+  }
+  return texts > 0
+}
+
+function plainParagraph(paragraph) {
+  if (!is(paragraph.node.parent, "body") || isCarrier(paragraph)) return false
+  let props = 0
+  let runs = 0
+  for (const child of paragraph.node.children) {
+    if (is(child, "pPr")) props += 1
+    else if (is(child, "r") && plainRun(child)) runs += 1
+    else return false
+  }
+  return props < 2 && runs > 0
+}
+
+function shapeRefusal(paragraphs) {
+  const body = paragraphs[0]?.node.parent
+  const last = paragraphs[paragraphs.length - 1]
+  if (!body || !is(body, "body") || paragraphs.length < 2 || !last)
+    return "shape"
+  if (body.children.some((child) => !is(child, "p"))) return "shape"
+  if (!isCarrier(last) || last.node.children.some((child) => !is(child, "pPr")))
+    return "shape"
+  if (paragraphs.slice(0, -1).some((paragraph) => !plainParagraph(paragraph)))
+    return "shape"
+  return null
+}
+
+function applied(before, bytes, next, side, paragraphs, options) {
+  const packed = repack(bytes, next)
+  const after = paragraphsOf(packed)
+    .map((paragraph) => contentOf(paragraph))
+    .join("")
+  if (
+    !options.force &&
+    before.map((paragraph) => contentOf(paragraph)).join("") !== after
+  )
+    return refused(bytes, side, "text")
+  return {
+    status: "APPLIED",
+    bytes: packed,
+    sidecar: { version: 2, paragraphs },
+    message: "",
+  }
+}
+
 function runXml(text, rPr) {
   const space =
     text.startsWith(" ") || text.endsWith(" ") ? ' xml:space="preserve"' : ""
@@ -414,6 +466,7 @@ export function applyCanvasBytes(bytes, edit, side, options = {}) {
     return refused(bytes, side, "sidecar")
   const blocked = classRefusal(paragraphs)
   if (blocked && !options.force) return refused(bytes, side, blocked)
+  if (shapeRefusal(paragraphs)) return refused(bytes, side, "shape")
   const queue = [...(options.keys ?? [])]
   const take = () => queue.shift() ?? randomUUID()
   const index = source.findIndex((row) => row.key === edit.paragraph)
@@ -486,12 +539,7 @@ function splitAt(
     )
   )
     return refused(bytes, side, "key")
-  return {
-    status: "APPLIED",
-    bytes: repack(bytes, next),
-    sidecar: { version: 2, paragraphs: rows(made) },
-    message: "",
-  }
+  return applied(paragraphs, bytes, next, side, rows(made), options)
 }
 
 function mergeAt(bytes, xml, paragraphs, source, side, index, take, options) {
@@ -511,28 +559,22 @@ function mergeAt(bytes, xml, paragraphs, source, side, index, take, options) {
     xml.slice(0, first.node.start) + merged + xml.slice(second.node.end)
   const kept = source.filter((_, at) => at !== index)
   kept[previous] = { key: take(), textIds: [...source[previous].textIds] }
-  return {
-    status: "APPLIED",
-    bytes: repack(bytes, next),
-    sidecar: { version: 2, paragraphs: rows(kept) },
-    message: "",
-  }
+  return applied(paragraphs, bytes, next, side, rows(kept), options)
 }
 
 function deleteAt(bytes, xml, paragraphs, source, side, index, options) {
   const target = paragraphs[index]
-  if (!options.force && (isCarrier(target) || contentOf(target) !== ""))
+  if (!options.force && (!plainParagraph(target) || contentOf(target) !== ""))
     return refused(bytes, side, "empty")
   const next = xml.slice(0, target.node.start) + xml.slice(target.node.end)
-  return {
-    status: "APPLIED",
-    bytes: repack(bytes, next),
-    sidecar: {
-      version: 2,
-      paragraphs: rows(source.filter((_, at) => at !== index)),
-    },
-    message: "",
-  }
+  return applied(
+    paragraphs,
+    bytes,
+    next,
+    side,
+    rows(source.filter((_, at) => at !== index)),
+    options
+  )
 }
 
 function shell(body) {

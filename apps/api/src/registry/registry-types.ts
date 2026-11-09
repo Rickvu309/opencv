@@ -32,7 +32,8 @@ export type StoredCommand = {
   step: (input: unknown) => string
   transaction?: "none"
   idempotency: "keyed" | "none"
-  run: (input: unknown, actor: Actor) => Promise<RanCommand>
+  prepare?: (input: unknown, actor: Actor) => Promise<unknown>
+  run: (input: unknown, actor: Actor, prepared?: unknown) => Promise<RanCommand>
 }
 
 export type StoredQuery = {
