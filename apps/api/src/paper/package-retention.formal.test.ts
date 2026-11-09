@@ -6,9 +6,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { getDb, transaction, withDatabase } from "../db/context.js"
 import {
+  chats,
   files,
   paperPackageCandidates,
   paperPackageVersions,
+  pendingActions,
   user,
 } from "../db/schema.js"
 import {
@@ -60,6 +62,32 @@ async function document(account = owner) {
   return { head, bytes }
 }
 
+const chatFor = new Map<string, string>()
+
+async function retain(account: string, id: string) {
+  let chatId = chatFor.get(account)
+  if (!chatId) {
+    chatId = randomUUID()
+    chatFor.set(account, chatId)
+    await getDb().insert(chats).values({
+      id: chatId,
+      userId: account,
+      title: "Review",
+    })
+  }
+  await getDb()
+    .insert(pendingActions)
+    .values({
+      id: randomUUID(),
+      userId: account,
+      chatId,
+      command: "paper.edit",
+      input: {},
+      summary: "Review",
+      frozenReview: { candidate: { id } },
+    })
+}
+
 async function prepare(
   docId: string,
   before = "original",
@@ -75,9 +103,13 @@ async function prepare(
     basedOn: page.revision,
     edits: [{ op: "replaceText", targetId: target.targetId, before, after }],
   }
-  const prepared = await prepareStoredWordPackage(account, input)
-  if (prepared.kind !== "prepared") throw new Error("Missing fixture candidate")
-  return { input, prepared }
+  return transaction(async () => {
+    const prepared = await prepareStoredWordPackage(account, input)
+    if (prepared.kind !== "prepared")
+      throw new Error("Missing fixture candidate")
+    await retain(account, prepared.candidate.id)
+    return { input, prepared }
+  })
 }
 
 async function record(candidate: { id: string }) {
@@ -101,12 +133,14 @@ async function retentionFixture(copies: number, after = "better") {
   const doc = await document(account)
   const retained = await prepare(doc.head.docId, "original", after, account)
   const row = await record(retained.prepared.candidate)
-  if (copies > 1)
-    await getDb()
-      .insert(paperPackageCandidates)
-      .values(
-        Array.from({ length: copies - 1 }, () => ({ ...row, id: randomUUID() }))
-      )
+  if (copies > 1) {
+    const extras = Array.from({ length: copies - 1 }, () => ({
+      ...row,
+      id: randomUUID(),
+    }))
+    await getDb().insert(paperPackageCandidates).values(extras)
+    for (const extra of extras) await retain(account, extra.id)
+  }
   return { account, doc, ...retained, row }
 }
 
@@ -268,13 +302,15 @@ async function holdUsage(
       requestId: randomUUID(),
       projection: sql`jsonb_build_object('retentionFixture', repeat(${fill}::text, ${copies}::int) || ${tail}::text)`,
     })
+  const id = randomUUID()
   await getDb()
     .insert(paperPackageCandidates)
     .values({
       ...fixture.row,
-      id: randomUUID(),
+      id,
       restoreRevision: revision,
     })
+  await retain(fixture.account, id)
   const charged = await usageBytes(fixture.account)
   if (charged !== target)
     throw new Error(`Charged ${charged} instead of ${target}`)
@@ -344,13 +380,15 @@ describe("private Word candidate retention", () => {
           requestId: randomUUID(),
           projection: sql`jsonb_build_object('retentionFixture', repeat('x', ${64 * 1024 * 1024}))`,
         })
+      const id = randomUUID()
       await getDb()
         .insert(paperPackageCandidates)
         .values({
           ...fixture.row,
-          id: randomUUID(),
+          id,
           forwardRevision: revision,
         })
+      await retain(fixture.account, id)
       const before = await retainedCounts(fixture.account)
       await expect(
         prepare(fixture.doc.head.docId, "original", "overflow", fixture.account)

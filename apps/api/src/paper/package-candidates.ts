@@ -19,6 +19,7 @@ import {
   paperPackageVersions,
   user,
 } from "../db/schema.js"
+import { pruneUnreachableCandidates } from "./package-candidate-prune.js"
 import { PaperPackage } from "./package-engine.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
 import {
@@ -98,6 +99,7 @@ async function requireCandidateCapacity(
     .where(eq(user.id, owner))
     .for("no key update")
   if (!account) return unavailable()
+  await pruneUnreachableCandidates(owner)
   const forward = alias(paperPackageVersions, "retained_forward")
   const restore = alias(paperPackageVersions, "retained_restore")
   const [usage] = await getDb()
@@ -404,6 +406,7 @@ async function retained(owner: string, rawCandidate: unknown) {
         eq(paperPackageCandidates.userId, owner)
       )
     )
+    .for("update")
   if (
     !record ||
     record.digest !== candidate.digest ||

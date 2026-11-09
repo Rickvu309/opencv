@@ -9,6 +9,7 @@ const retentionLimits = { count: 64, bytes: 64 * 1024 * 1024 }
 async function requireCandidateCapacity(owner, packageBytes, material) {
   const [account] = await db.select().from(user).where(eq(user.id, owner)).for("no key update")
   if (!account) return unavailable()
+  await pruneUnreachableCandidates(owner)
   const usage = db.select({count: count(), bytes: sql\`sum(
     \${forward.byteSize} + \${restore.byteSize} + \${paperPackageCandidates.seal}
     + \${forward.sidecar} + \${forward.projection} + \${restore.sidecar} + \${restore.projection})
@@ -30,6 +31,11 @@ async function prepareStoredWordPackage() {
 
 const mistakes = [
   ['.for("no key update")', '.for("share")', "candidate-retention-owner-lock"],
+  [
+    "pruneUnreachableCandidates(owner)",
+    "pruneUnreachableCandidates(other)",
+    "candidate-retention-prune",
+  ],
   [
     "usage.count >= retentionLimits.count",
     "false",
