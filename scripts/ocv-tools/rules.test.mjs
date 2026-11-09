@@ -136,7 +136,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "NOT_MERGED",
     { work: { branch: "feat/90-keep", merged: false } },
     { work: { branch: "feat/90-keep", merged: true } },
-    "feat/90-keep has no merged pull request"
+    "feat/90-keep has no merged pull request or explicitly abandoned closed pull request"
   )
   check(
     "MISSING_FIELDS",
