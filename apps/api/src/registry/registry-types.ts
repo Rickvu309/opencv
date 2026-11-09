@@ -19,6 +19,8 @@ export type RanCommand = {
 
 export type StoredCommand = {
   reviewed?: StoredReviewedCommand
+  select?: (input: unknown) => "execute" | "reviewed"
+  undoOnly?: boolean
   delegate?: "reversibleJob"
   name: string
   description: string

@@ -149,6 +149,7 @@ async function taskReplay(text) {
     ...Object.values(values)
   )
   const registry = {
+    taskCanPrepare: () => true,
     taskNeedsPreparation: () => true,
     prepareTask: async () => {
       assert.equal(ambient, false, "Preparation started inside SQL")
@@ -287,6 +288,7 @@ async function approvalReplay(text) {
     basisRevision: null,
   }
   const values = {
+    parseInput: (_schema, input) => input,
     expireIfStale: async () => {},
     transaction: (effect) => effect(),
     lockProposal: async () => ({ row, task: null }),
@@ -321,6 +323,7 @@ async function approvalReplay(text) {
   )
   const owner = {
     commands: new Map([["fixture.review", { reviewed: binding }]]),
+    reviewedFor: (command) => command.reviewed,
     publicActivity: (value) => value,
     execute: async () => {
       commits++

@@ -24,6 +24,11 @@ import {
   type ReversalExpectPending,
 } from "./expect-pending.js"
 import type { Registry } from "./registry.js"
+import {
+  isUnchanged,
+  type LockedBasis,
+  type ReviewedCommand,
+} from "./frozen-review.js"
 
 type AtLeastOne<T> = {
   [K in keyof T]-?: Required<Pick<T, K>> & Partial<T>
@@ -131,6 +136,7 @@ export type OperationBinding<
   R = unknown,
   C = never,
   V = never,
+  S = never,
 > = {
   operation: T
   privateResult?: ZodType<R>
@@ -150,23 +156,48 @@ export type OperationBinding<
         actor: Actor
       ) => Promise<R> | R
       reviewed?: never
+      selected?: never
     }
   | (T["kind"] extends "read"
       ? never
       : {
           execute?: never
-          reviewed: import("./frozen-review.js").ReviewedCommand<
+          selected?: never
+          reviewed: ReviewedCommand<
             import("zod").output<T["input"]>,
             R,
             C,
-            V
+            V,
+            S
           >
+        })
+  | (T["kind"] extends "read"
+      ? never
+      : {
+          execute?: never
+          reviewed?: never
+          selected: {
+            select: (
+              input: Readonly<import("zod").output<T["input"]>>
+            ) => "execute" | "reviewed"
+            execute: (
+              input: import("zod").output<T["input"]>,
+              actor: Actor
+            ) => Promise<R> | R
+            reviewed: ReviewedCommand<
+              import("zod").output<T["input"]>,
+              R,
+              C,
+              V,
+              S
+            >
+          }
         })
 )
 
-export function bindOperation<T extends Operation, R, C, V>(
+export function bindOperation<T extends Operation, R, C, V, S = never>(
   registry: Registry,
-  suppliedBinding: OperationBinding<T, R, C, V>
+  suppliedBinding: OperationBinding<T, R, C, V, S>
 ) {
   const operation = suppliedBinding.operation
   const inputSchema = operation.input as ZodType<
@@ -216,16 +247,37 @@ export function bindOperation<T extends Operation, R, C, V>(
       operation.publicResult.parse(checked)
       return checked
     }
-    if (binding.reviewed) {
-      const reviewed = binding.reviewed
-      registry.addReviewedCommand(spec, {
+    const reviewed = binding.reviewed ?? binding.selected?.reviewed
+    if (reviewed) {
+      const checkedReview: ReviewedCommand<
+        import("zod").output<T["input"]>,
+        R,
+        C,
+        V,
+        S
+      > = {
         ...reviewed,
-        commit: async (input, prepared, actor) =>
-          check(await reviewed.commit(input, prepared, actor)),
-      })
+        prepare: async (input, actor) => {
+          const prepared = await reviewed.prepare(input, actor)
+          return isUnchanged(prepared)
+            ? { ...prepared, output: check(prepared.output) }
+            : prepared
+        },
+        commit: async (input, prepared, actor, locked) =>
+          check(await reviewed.commit(input, prepared, actor, locked)),
+      }
+      const selected = binding.selected
+      if (selected)
+        registry.addSelectedCommand(spec, {
+          select: selected.select,
+          execute: async (input, actor) =>
+            check(await selected.execute(input, actor)),
+          reviewed: checkedReview,
+        })
+      else registry.addReviewedCommand(spec, checkedReview)
     } else
       registry.addCommand(spec, async (input, actor) => {
-        const result = await binding.execute(input, actor)
+        const result = await binding.execute!(input, actor)
         const checked = binding.privateResult
           ? binding.privateResult.parse(result)
           : result
@@ -245,10 +297,26 @@ type CatalogImplementations<C extends Record<string, Operation>> = {
             commit: (
               input: import("zod").output<C[N]["input"]>,
               prepared: never,
-              context: never
+              context: never,
+              locked: LockedBasis
             ) =>
               | import("zod").input<C[N]["publicResult"]>
               | Promise<import("zod").input<C[N]["publicResult"]>>
+          }
+        }
+      | {
+          selected: {
+            execute: CatalogImplementation<C[N]>
+            reviewed: {
+              commit: (
+                input: import("zod").output<C[N]["input"]>,
+                prepared: never,
+                context: never,
+                locked: LockedBasis
+              ) =>
+                | import("zod").input<C[N]["publicResult"]>
+                | Promise<import("zod").input<C[N]["publicResult"]>>
+            }
           }
         })
 }

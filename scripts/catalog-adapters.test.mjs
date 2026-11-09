@@ -202,7 +202,7 @@ test("keyed replay binds stored identity on initial and conflict lookups", () =>
     ],
     { cwd: root, encoding: "utf8" }
   )
-  const now = ["registry.ts", "registry-entries.ts"]
+  const now = ["registry.ts", "registry-entries.ts", "command-execution.ts"]
     .map((file) =>
       readFileSync(
         new URL(`../apps/api/src/registry/${file}`, import.meta.url),
@@ -223,7 +223,13 @@ test("keyed replay binds stored identity on initial and conflict lookups", () =>
       "input.input = input.input",
     ],
     ["parseInput(command.input, options.input)", "options.input"],
-    ["await this.admitCommand(options)", "options"],
+    [
+      `await this.admitCommand(
+      options,
+      undo
+    )`,
+      "options",
+    ],
     ["inputHash: hash", "inputHash: null"],
     ["hash!", "null"],
   ]) {

@@ -10,7 +10,7 @@ export {
 
 export { openCoachUsage } from "./usage-store.js"
 
-export { requestCancel, cancelChatTask } from "./task-store.js"
+export { requestCancel, cancelChatTask, runIntent } from "./task-store.js"
 export { lockTaskApproval, resolveTaskApproval } from "./task-approval.js"
 
 export {

@@ -1,6 +1,6 @@
 import { ERROR_CODES, type Actor } from "@workspace/domain"
 import { z, type ZodType } from "zod"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, sql, type AnyColumn, type SQL } from "drizzle-orm"
 import { getDb, insideTransaction } from "../db/context.js"
 import {
   coachTasks,
@@ -21,28 +21,78 @@ import type { TaskLease } from "./task-fence.js"
 
 export type PreparedReview<C, V> = Readonly<{ candidate: C; review: V }>
 
-export type ReviewedCommand<I, O, C, V> = {
+export type PreparedUnchanged<S, O> = Readonly<{
+  kind: "unchanged"
+  snapshot: S
+  output: O
+}>
+
+export type BasisValue = {
+  column: AnyColumn
+  source: "snapshot" | "input" | "actor" | "candidate" | "review"
+  field: string
+}
+
+export type RowBasis = {
+  table: AnyColumn["table"]
+  key: readonly [BasisValue, ...BasisValue[]]
+  compared: readonly [BasisValue, ...BasisValue[]]
+}
+
+export type LockedBasis = Readonly<{
+  key: readonly unknown[]
+  compared: readonly unknown[]
+}>
+
+export type ReviewedCommand<I, O, C, V, S = never> = {
   version: string
   candidate: ZodType<C>
   review: ZodType<V>
-  prepare: (input: I, actor: Actor) => Promise<PreparedReview<C, V>>
+  unchanged?: {
+    snapshot: ZodType<S>
+    basis: RowBasis
+    revalidate: (input: I, snapshot: S, actor: Actor) => Promise<void>
+  }
+  basis: RowBasis
+  prepare: (
+    input: I,
+    actor: Actor
+  ) => Promise<PreparedReview<C, V> | PreparedUnchanged<S, O>>
   revalidate: (
     input: I,
     prepared: PreparedReview<C, V>,
     actor: Actor
   ) => Promise<void>
-  commit: (input: I, prepared: PreparedReview<C, V>, actor: Actor) => Promise<O>
+  commit: (
+    input: I,
+    prepared: PreparedReview<C, V>,
+    actor: Actor,
+    locked: LockedBasis
+  ) => Promise<O>
 }
 
 export type StoredReviewedCommand = {
   version: string
+  unchanged?: {
+    parse: (snapshot: unknown) => unknown
+    basis: RowBasis
+    revalidate: (
+      input: unknown,
+      snapshot: unknown,
+      actor: Actor
+    ) => Promise<void>
+  }
+  basis: RowBasis
   parse: (
-    value: PreparedReview<unknown, unknown>
-  ) => PreparedReview<unknown, unknown>
+    value:
+      PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
+  ) => PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
   prepare: (
     input: unknown,
     actor: Actor
-  ) => Promise<PreparedReview<unknown, unknown>>
+  ) => Promise<
+    PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
+  >
   revalidate: (
     input: unknown,
     prepared: PreparedReview<unknown, unknown>,
@@ -51,7 +101,8 @@ export type StoredReviewedCommand = {
   run: (
     input: unknown,
     prepared: PreparedReview<unknown, unknown>,
-    actor: Actor
+    actor: Actor,
+    locked: LockedBasis
   ) => Promise<RanCommand>
 }
 
@@ -71,6 +122,32 @@ const envelopeSchema = z
   .strict()
 
 export type FrozenReview = z.infer<typeof envelopeSchema>
+
+const unchangedSchema = envelopeSchema
+  .omit({ proposalId: true, candidate: true, review: true })
+  .extend({
+    kind: z.literal("unchanged"),
+    snapshot: z.unknown(),
+    output: z.unknown(),
+  })
+
+export type FrozenUnchanged = z.infer<typeof unchangedSchema>
+export type PreparedExecution = FrozenReview | FrozenUnchanged
+
+export function isUnchanged(value: PreparedExecution): value is FrozenUnchanged
+export function isUnchanged<S, O>(
+  value: PreparedReview<unknown, unknown> | PreparedUnchanged<S, O>
+): value is PreparedUnchanged<S, O>
+export function isUnchanged(
+  value: PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
+): value is PreparedUnchanged<unknown, unknown> {
+  return (
+    "kind" in value &&
+    value.kind === "unchanged" &&
+    !("candidate" in value) &&
+    !("review" in value)
+  )
+}
 
 const pointerSchema = z
   .object({
@@ -106,6 +183,118 @@ export function refuseFrozenReview(): never {
   )
 }
 
+function basisValue(
+  ref: BasisValue,
+  bags: Readonly<Record<BasisValue["source"], unknown>>
+) {
+  const bag = bags[ref.source]
+  if (!bag || typeof bag !== "object" || !Object.hasOwn(bag, ref.field))
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row does not match"
+    )
+  return (bag as Record<string, unknown>)[ref.field]
+}
+
+export async function lockBasis(
+  basis: RowBasis,
+  bags: Readonly<Record<BasisValue["source"], unknown>>
+): Promise<LockedBasis> {
+  if (basis.key.length === 0)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row does not match"
+    )
+  const refs = [...basis.key, ...basis.compared]
+  if (refs.some((ref) => ref.column.table !== basis.table))
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row does not match"
+    )
+  const names = refs.map((ref) => ref.column.name)
+  if (new Set(names).size !== names.length)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row does not match"
+    )
+  const expectedKey = basis.key.map((ref) => basisValue(ref, bags))
+  const expectedCompared = basis.compared.map((ref) => basisValue(ref, bags))
+  const selection: Record<string, AnyColumn> = {}
+  for (const ref of refs) selection[ref.column.name] = ref.column
+  const clauses = basis.key.map((ref, index) =>
+    eq(ref.column, expectedKey[index] as never)
+  )
+  const where = clauses.length === 1 ? clauses[0] : and(...clauses)
+  const db = getDb() as unknown as {
+    select: (columns: Record<string, AnyColumn>) => {
+      from: (table: unknown) => {
+        where: (clause: SQL | undefined) => {
+          for: (mode: "update") => Promise<Array<Record<string, unknown>>>
+        }
+      }
+    }
+  }
+  const rows = await db
+    .select(selection)
+    .from(basis.table)
+    .where(where)
+    .for("update")
+  const row = rows[0]
+  if (rows.length !== 1 || !row)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      rows.length === 0
+        ? "The unchanged basis row is missing"
+        : "The unchanged basis row does not match"
+    )
+  const readKey = basis.key.map((ref) => row[ref.column.name])
+  const readCompared = basis.compared.map((ref) => row[ref.column.name])
+  if (
+    readKey.some((value, index) => value !== expectedKey[index]) ||
+    readCompared.some((value, index) => value !== expectedCompared[index])
+  )
+    throw new CommandError(ERROR_CODES.CONFLICT, "Basis conflict")
+  return Object.freeze({
+    key: Object.freeze(readKey),
+    compared: Object.freeze(readCompared),
+  })
+}
+
+export async function publishUnchanged(
+  binding: StoredReviewedCommand,
+  frozen: FrozenUnchanged,
+  input: unknown,
+  actor: Actor
+) {
+  if (!binding.unchanged) return refuseFrozenReview()
+  const snapshot = binding.unchanged.parse(frozen.snapshot)
+  await lockBasis(binding.unchanged.basis, {
+    snapshot,
+    input,
+    actor,
+    candidate: null,
+    review: null,
+  })
+  await binding.unchanged.revalidate(input, snapshot, actor)
+}
+
+export async function lockReviewedBasis(
+  binding: StoredReviewedCommand,
+  input: unknown,
+  prepared: PreparedReview<unknown, unknown>,
+  actor: Actor
+) {
+  const locked = await lockBasis(binding.basis, {
+    snapshot: null,
+    input,
+    actor,
+    candidate: prepared.candidate,
+    review: prepared.review,
+  })
+  await binding.revalidate(input, prepared, actor)
+  return locked
+}
+
 export function requirePreparationBoundary() {
   if (insideTransaction())
     throw new CommandError(
@@ -128,7 +317,7 @@ export async function prepareReview(
   actor: Actor,
   command: string,
   key: string | undefined
-): Promise<FrozenReview> {
+): Promise<PreparedExecution> {
   requirePreparationBoundary()
   const hash = inputHash(input)
   const prepared = clone(
@@ -136,16 +325,26 @@ export async function prepareReview(
       await binding.prepare(immutable(clone(input)), immutable(clone(actor)))
     )
   )
-  const body = {
-    version: 1 as const,
-    bindingVersion: binding.version,
-    proposalId: createId(),
-    ownerId: actor.userId,
-    command,
-    inputHash: hash,
-    key: key ?? null,
-    ...prepared,
-  }
+  const body = isUnchanged(prepared)
+    ? {
+        version: 1 as const,
+        bindingVersion: binding.version,
+        ownerId: actor.userId,
+        command,
+        inputHash: hash,
+        key: key ?? null,
+        ...prepared,
+      }
+    : {
+        version: 1 as const,
+        bindingVersion: binding.version,
+        proposalId: createId(),
+        ownerId: actor.userId,
+        command,
+        inputHash: hash,
+        key: key ?? null,
+        ...prepared,
+      }
   return immutable({ ...body, digest: inputHash(body) })
 }
 
@@ -159,12 +358,13 @@ export async function prepareOrReplay(
     ownerId: string,
     key: string,
     command: string,
-    hash: string
+    hash: string,
+    input: unknown
   ) => Promise<ExecuteResult | null>
 ) {
   requirePreparationBoundary()
   const earlier = key
-    ? await replay(actor.userId, key, command, inputHash(input))
+    ? await replay(actor.userId, key, command, inputHash(input), input)
     : null
   return {
     earlier,
@@ -206,9 +406,35 @@ export function readFrozenReview(
   )
     return refuseFrozenReview()
   const parsed = binding.parse(body)
+  if (isUnchanged(parsed)) return refuseFrozenReview()
   if (
     inputHash(parsed) !==
     inputHash({ candidate: body.candidate, review: body.review })
+  )
+    return refuseFrozenReview()
+  return immutable(clone(checked.data))
+}
+
+export function readPreparedExecution(
+  value: unknown,
+  binding: StoredReviewedCommand,
+  ownerId: string,
+  command: string,
+  input: unknown
+): PreparedExecution {
+  const checked = unchangedSchema.safeParse(value)
+  if (!checked.success)
+    return readFrozenReview(value, binding, ownerId, command, input)
+  const { digest, ...body } = checked.data
+  if (
+    !binding.unchanged ||
+    body.bindingVersion !== binding.version ||
+    body.ownerId !== ownerId ||
+    body.command !== command ||
+    body.inputHash !== inputHash(input) ||
+    digest !== inputHash(body) ||
+    inputHash(binding.unchanged.parse(body.snapshot)) !==
+      inputHash(body.snapshot)
   )
     return refuseFrozenReview()
   return immutable(clone(checked.data))
@@ -226,10 +452,11 @@ export async function replayFrozenProposal(
   ownerId: string,
   command: string,
   hash: string,
-  binding: StoredReviewedCommand
+  binding: StoredReviewedCommand | undefined
 ): Promise<ExecuteResult | null> {
   const pointer = pointerSchema.safeParse(value)
   if (!pointer.success) return null
+  if (!binding) return refuseFrozenReview()
   const [row] = await getDb()
     .select()
     .from(pendingActions)
@@ -372,7 +599,7 @@ export async function publishFrozenReview({
   hash: string | null
   summary: string
   approved: boolean
-  effect: () => Promise<ExecuteResult>
+  effect: (locked: LockedBasis) => Promise<ExecuteResult>
 }): Promise<ExecuteResult> {
   await checkReviewActor(actor)
   if (actor.type === "delegate") await requireLiveDelegate(actor)
@@ -390,7 +617,7 @@ export async function publishFrozenReview({
       return { ...replay(committed), command: committed.command }
     }
   }
-  await binding.revalidate(input, frozen, actor)
+  const locked = await lockReviewedBasis(binding, input, frozen, actor)
   if (actor.type !== "person" && !approved) {
     return createProposal({
       actor,
@@ -407,5 +634,5 @@ export async function publishFrozenReview({
       .where(
         and(eq(idempotency.userId, actor.userId), eq(idempotency.key, key))
       )
-  return effect()
+  return effect(locked)
 }

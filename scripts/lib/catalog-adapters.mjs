@@ -272,9 +272,10 @@ export function detectReplayIdentity(text) {
     if (
       ts.isCallExpression(node) &&
       spelling(node.expression, source) === "this.replayByKey" &&
-      node.arguments.length === 4 &&
+      node.arguments.length === 5 &&
       spelling(node.arguments[2], source) === "command.name" &&
-      spelling(node.arguments[3], source) === "hash!"
+      spelling(node.arguments[3], source) === "hash!" &&
+      spelling(node.arguments[4], source) === "parsed"
     )
       lookups++
   })
@@ -301,7 +302,7 @@ export function detectReplayIdentity(text) {
     normalized.length === 1 &&
     spelling(normalized[0], source) === "JSON.parse(JSON.stringify(input))"
   let admission = false
-  const execute = method(source, "execute")
+  const execute = method(source, "#execute") ?? method(source, "execute")
   if (execute)
     walk(execute, (node) => {
       if (

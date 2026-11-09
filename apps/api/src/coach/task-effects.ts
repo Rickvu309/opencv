@@ -51,10 +51,7 @@ async function prepareIntent(
   intent: Intent,
   registry: Registry
 ) {
-  if (
-    intent.kind !== "command" ||
-    !registry.taskNeedsPreparation(intent.operation)
-  )
+  if (intent.kind !== "command" || !registry.taskCanPrepare(intent.operation))
     return null
   const [task] = await getDb()
     .select()
@@ -63,6 +60,8 @@ async function prepareIntent(
   if (!task) throw new Error("Task lease lost")
   const stored = await storedIntent(task.id, intent)
   if (stored.state !== "planned") return null
+  if (!registry.taskNeedsPreparation(stored.operation, stored.input))
+    return null
   const actor = await taskActor(task)
   const publish = await registry.prepareTask(lease, {
     name: stored.operation,
@@ -78,10 +77,7 @@ export async function runIntent(
   intent: Intent,
   registry: Registry
 ) {
-  if (
-    intent.kind === "command" &&
-    registry.taskNeedsPreparation(intent.operation)
-  ) {
+  if (intent.kind === "command" && registry.taskCanPrepare(intent.operation)) {
     intent = structuredClone(intent)
     lease = { ...lease }
   }

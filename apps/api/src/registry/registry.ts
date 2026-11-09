@@ -16,7 +16,7 @@ import {
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
-import { activity, idempotency, pendingActions } from "../db/schema.js"
+import { activity, pendingActions } from "../db/schema.js"
 import { getDb, savepoint, transaction } from "../db/context.js"
 import {
   PENDING_TTL_MS,
@@ -31,16 +31,10 @@ import {
   requireLiveDelegate,
   requireLiveProposalConnection,
 } from "./delegate-policy.js"
-import { createId } from "../id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
 import { lockActivity } from "./activity-lock.js"
-import {
-  activityById,
-  activityByKey,
-  agentGates,
-  idempotencyByKey,
-} from "./registry-reads.js"
+import { activityById, activityByKey, agentGates } from "./registry-reads.js"
 import { brandedActor, parseInput } from "./parse-input.js"
 import {
   laterLiveAction,
@@ -48,8 +42,11 @@ import {
   undoKeyFor,
   undoOfUndo,
 } from "./expectation.js"
-import { replay, replayStored } from "./replay.js"
 import { inputHash } from "./receipt.js"
+import {
+  recordCommandResult,
+  replayByKey as replayKeyedCommand,
+} from "./command-execution.js"
 import { assertReversal } from "./bind.js"
 import { RegistryEntries } from "./registry-entries.js"
 import { priorityRevisionFor } from "../job/index.js"
@@ -63,12 +60,15 @@ import {
   publicProposal,
   readFrozenReview,
   refuseFrozenReview,
-  replayFrozenProposal,
   requirePreparationBoundary,
   requirePublicationBoundary,
   reviewSnapshot,
   reviewReceiptKey,
-  type FrozenReview,
+  isUnchanged,
+  readPreparedExecution,
+  publishUnchanged,
+  type LockedBasis,
+  type PreparedExecution,
 } from "./frozen-review.js"
 
 import type {
@@ -151,7 +151,7 @@ export class Registry extends RegistryEntries {
     const ownedLease = reviewSnapshot(lease)
     const captured = reviewSnapshot(options)
     const { command, actor, parsed } = await this.admitCommand(captured)
-    const reviewed = command.reviewed
+    const reviewed = this.reviewedFor(command, parsed)
     if (!reviewed) return refuseFrozenReview()
     const bindingVersion = reviewed.version
     const normalized = reviewSnapshot({ ...captured, actor, input: parsed })
@@ -169,14 +169,18 @@ export class Registry extends RegistryEntries {
       requirePublicationBoundary()
       return executeTaskCommand(ownedLease, normalized, command, async () => {
         const current = await this.admitCommand(normalized)
-        if (current.command.reviewed?.version !== bindingVersion)
+        if (
+          this.reviewedFor(current.command, current.parsed)?.version !==
+          bindingVersion
+        )
           return refuseFrozenReview()
         await checkReviewActor(actor)
         const earlier = await this.replayByKey(
           actor.userId,
           normalized.idempotencyKey,
           command.name,
-          inputHash(normalized.input)
+          inputHash(normalized.input),
+          normalized.input
         )
         if (earlier)
           return earlier.pending
@@ -199,7 +203,7 @@ export class Registry extends RegistryEntries {
 
   async executeTask(lease: TaskLease, options: TaskOptions) {
     const command = this.commands.get(options.name)
-    if (command?.reviewed) {
+    if (command && this.taskNeedsPreparation(options.name, options.input)) {
       const publish = await this.prepareTask(lease, options)
       return transaction(publish)
     }
@@ -210,28 +214,45 @@ export class Registry extends RegistryEntries {
     })
   }
 
-  async execute(
+  execute(
     options: ExecuteOptions & {
       expectedRevision?: number | null
       [taskExecution]?: boolean
       [approvedDelegate]?: string
-      [frozenExecution]?: FrozenReview
+      [frozenExecution]?: PreparedExecution
       [approvingReview]?: boolean
     }
+  ): Promise<ExecuteResult> {
+    return this.#execute(options)
+  }
+
+  async #execute(
+    options: ExecuteOptions & {
+      expectedRevision?: number | null
+      [taskExecution]?: boolean
+      [approvedDelegate]?: string
+      [frozenExecution]?: PreparedExecution
+      [approvingReview]?: boolean
+    },
+    undo = false
   ): Promise<ExecuteResult> {
     if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
       throw new CommandError(
         ERROR_CODES.CONFLICT,
         "The coach: key namespace is reserved for durable tasks"
       )
-    const { command, actor, parsed, policy } = await this.admitCommand(options)
+    const { command, actor, parsed, policy } = await this.admitCommand(
+      options,
+      undo
+    )
     const idempotencyKey = omitStoredKeySoTheCommandsOwnWriteStaysReplaySafe(
       command,
       options.idempotencyKey
     )
 
     const hash = idempotencyKey ? inputHash(jsonInput(parsed)) : null
-    const reviewed = command.reviewed
+    const reviewed = this.reviewedFor(command, parsed)
+    if (options[frozenExecution] && !reviewed) return refuseFrozenReview()
     if (reviewed && !options[frozenExecution]) {
       requirePreparationBoundary()
       await checkReviewActor(actor)
@@ -260,7 +281,7 @@ export class Registry extends RegistryEntries {
           )
     }
     const frozen = reviewed
-      ? readFrozenReview(
+      ? readPreparedExecution(
           options[frozenExecution],
           reviewed,
           actor.userId,
@@ -268,64 +289,37 @@ export class Registry extends RegistryEntries {
           parsed
         )
       : null
-    const effect = async (): Promise<ExecuteResult> => {
-      const ran = await withGrantScope(
-        {
-          ownerId: actor.userId,
-          writes: command.writes?.(parsed) ?? [],
-          expectedRevision: options.expectedRevision ?? null,
-        },
-        async () => {
-          if (!reviewed || !frozen) return command.run(parsed, actor)
-          await reviewed.revalidate(parsed, frozen, actor)
-          return reviewed.run(parsed, frozen, actor)
-        }
-      )
+    const effect = async (locked?: LockedBasis): Promise<ExecuteResult> => {
+      const ran =
+        frozen && isUnchanged(frozen)
+          ? {
+              output: frozen.output,
+              draft: null,
+              reversal: null,
+              step: command.step(parsed),
+            }
+          : await withGrantScope(
+              {
+                ownerId: actor.userId,
+                writes: command.writes?.(parsed) ?? [],
+                expectedRevision: options.expectedRevision ?? null,
+              },
+              async () => {
+                if (!reviewed || !frozen) return command.run(parsed, actor)
+                if (isUnchanged(frozen)) return refuseFrozenReview()
+                if (!locked) return refuseFrozenReview()
+                return reviewed.run(parsed, frozen, actor, locked)
+              }
+            )
       assertReversal(command.name, this.isCatalogOperation(command.name), ran)
-      let activityId: string | null = null
-      if (ran.draft && !options.skipActivity) {
-        activityId = createId()
-        await getDb()
-          .insert(activity)
-          .values({
-            id: activityId,
-            userId: actor.userId,
-            actor: actor.type,
-            command: command.name,
-            subjectKind: ran.draft.subjectKind,
-            subjectId: ran.draft.subjectId,
-            summary:
-              actor.type === "delegate"
-                ? `${ran.draft.summary} · an agent connection (${actor.name}, unverified)`
-                : ran.draft.summary,
-            detail: ran.draft.detail ?? null,
-            result: ran.output ?? null,
-            reversalCommand: ran.reversal?.command ?? null,
-            reversalInput: ran.reversal?.input ?? null,
-            reversalExpect: ran.reversal?.expect ?? null,
-            idempotencyKey: idempotencyKey ?? null,
-            inputHash: hash,
-            turnId: isCoachActor(actor) ? (actor.turnId ?? null) : null,
-          })
-      } else if (idempotencyKey) {
-        await getDb()
-          .insert(idempotency)
-          .values({
-            userId: actor.userId,
-            key: idempotencyKey,
-            inputHash: hash,
-            command: command.name,
-            result: ran.output ?? null,
-          })
-      }
-      return {
-        pending: false,
-        output: ran.output,
-        activityId,
-        summary: ran.step,
-        reversal: ran.reversal,
-        detail: ran.draft?.detail,
-      }
+      return recordCommandResult({
+        command,
+        actor,
+        ran,
+        key: idempotencyKey,
+        hash,
+        skipActivity: options.skipActivity,
+      })
     }
 
     const run = async () => {
@@ -334,13 +328,25 @@ export class Registry extends RegistryEntries {
           actor.userId,
           idempotencyKey,
           command.name,
-          hash!
+          hash!,
+          parsed
         )
         if (earlier) return earlier
       }
 
       let publish = effect
-      if (reviewed && frozen) {
+      if (
+        reviewed &&
+        frozen &&
+        this.reviewedFor(command, parsed)?.version !== frozen.bindingVersion
+      )
+        return refuseFrozenReview()
+      if (reviewed && frozen && isUnchanged(frozen)) {
+        await checkReviewActor(actor)
+        if (actor.type === "delegate") await requireLiveDelegate(actor)
+        if (!reviewed.unchanged) return refuseFrozenReview()
+        await publishUnchanged(reviewed, frozen, parsed, actor)
+      } else if (reviewed && frozen && !isUnchanged(frozen)) {
         publish = () =>
           publishFrozenReview({
             binding: reviewed,
@@ -380,7 +386,8 @@ export class Registry extends RegistryEntries {
           actor.userId,
           idempotencyKey,
           command.name,
-          hash!
+          hash!,
+          parsed
         )
         if (!winner) throw error
         return winner
@@ -475,10 +482,14 @@ export class Registry extends RegistryEntries {
         ? await requireLiveProposalConnection(userId, row.delegateConnectionId)
         : null
       const stored = this.commands.get(row.command)
-      const frozen = stored?.reviewed
+      if (stored?.undoOnly) return refuseFrozenReview()
+      const reviewed = stored
+        ? this.reviewedFor(stored, parseInput(stored.input, row.input))
+        : undefined
+      const frozen = reviewed
         ? readFrozenReview(
             row.frozenReview,
-            stored.reviewed,
+            reviewed,
             userId,
             row.command,
             row.input
@@ -588,14 +599,17 @@ export class Registry extends RegistryEntries {
       ])
       const blocked = undoOfUndo(row) ?? stale ?? (await laterLiveAction(row))
       if (blocked) throw new CommandError(ERROR_CODES.CONFLICT, blocked)
-      await this.execute({
-        name: row.reversalCommand,
-        input: row.reversalInput,
-        actor: personActor(userId),
-        idempotencyKey: undoKeyFor(row.id),
-        skipConfirm: true,
-        skipActivity: row.reversalCommand === "paper.attachPhoto",
-      })
+      await this.#execute(
+        {
+          name: row.reversalCommand,
+          input: row.reversalInput,
+          actor: personActor(userId),
+          idempotencyKey: undoKeyFor(row.id),
+          skipConfirm: true,
+          skipActivity: row.reversalCommand === "paper.attachPhoto",
+        },
+        true
+      )
       const undoneAt = new Date()
       await getDb()
         .update(activity)
@@ -609,41 +623,22 @@ export class Registry extends RegistryEntries {
     return expireTaskApprovals()
   }
 
-  private async replayByKey(
+  private replayByKey(
     userId: string,
     key: string,
     command: string,
-    hash: string
+    hash: string,
+    input: unknown
   ) {
-    const existing = await activityByKey(userId, key)
-    const stored = existing ?? (await idempotencyByKey(userId, key))
-    if (!stored) return null
-    if (
-      stored.command !== command ||
-      (stored.inputHash !== null && stored.inputHash !== hash)
+    return replayKeyedCommand(
+      this.commands,
+      (entry, value) => this.reviewedFor(entry, value),
+      userId,
+      key,
+      command,
+      hash,
+      input
     )
-      throw new CommandError(
-        ERROR_CODES.CONFLICT,
-        "Idempotency key does not match its command and input"
-      )
-    const reviewed = this.commands.get(command)?.reviewed
-    if (!existing && reviewed) {
-      const proposal = await replayFrozenProposal(
-        stored.result,
-        userId,
-        command,
-        hash,
-        reviewed
-      )
-      if (proposal) return proposal
-    }
-    return {
-      ...(existing ? replay(existing) : replayStored(stored.result)),
-      command: stored.command,
-      ...(stored.inputHash === null
-        ? { touches: [{ ownerId: userId, name: "workspace" }] }
-        : {}),
-    }
   }
 }
 
