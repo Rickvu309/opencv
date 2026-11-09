@@ -28,6 +28,7 @@ import {
   packageDigest,
   packageFailure,
 } from "./package-pages.js"
+import { applyEligibleBytes } from "./package-canvas-eligible.js"
 import {
   publishWordPackage,
   readWordPackage,
@@ -125,7 +126,8 @@ export async function prepareCanvas(
       )
     )
     .limit(1)
-  if (marked?.canvasProfile !== PAPER_CANVAS_PROFILE)
+  const minted = marked?.canvasProfile === PAPER_CANVAS_PROFILE
+  if (!minted && input.op === "writeText")
     return packageFailure(
       "This page change is not available. No document was changed."
     )
@@ -143,14 +145,17 @@ export async function prepareCanvas(
       "This Word projection is no longer available. No document was changed."
     )
   const current = opened.sidecar()
-  const applied = loaded.applyCanvasBytes(artifact.bytes, input, {
-    version: 2,
+  const sidecarIn = {
+    version: 2 as const,
     paragraphs: current.paragraphs.map((row) => ({
       key: row.key,
       ordinal: row.ordinal,
       textIds: [...row.textIds],
     })),
-  })
+  }
+  const applied = minted
+    ? loaded.applyCanvasBytes(artifact.bytes, input, sidecarIn)
+    : applyEligibleBytes(artifact.bytes, input, sidecarIn)
   if (applied.status !== "APPLIED")
     return packageFailure(
       "This page change is not available. No document was changed."

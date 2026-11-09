@@ -8,6 +8,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
+  adoptIds,
   blankDraft,
   clearedOnReload,
   commitComposition,
@@ -56,6 +57,7 @@ type CanvasAction =
     }
   | { type: "undo" }
   | { type: "note"; note: string }
+  | { type: "adopt"; blocks: WritingBlock[] }
 
 function remember(state: CanvasState, present: WritingDraft): CanvasState {
   if (JSON.stringify(state.present) === JSON.stringify(present)) return state
@@ -70,6 +72,10 @@ function remember(state: CanvasState, present: WritingDraft): CanvasState {
 function reduce(state: CanvasState, action: CanvasAction): CanvasState {
   if (action.type === "note") {
     return state.note === action.note ? state : { ...state, note: action.note }
+  }
+  if (action.type === "adopt") {
+    const present = adoptIds(state.present, action.blocks)
+    return present === state.present ? state : { ...state, present }
   }
   if (action.type === "undo") {
     const present = state.past[state.past.length - 1]
@@ -200,6 +206,7 @@ function syncParagraphs(root: HTMLElement, blocks: WritingBlock[]) {
       root.appendChild(node)
     }
     node.dataset.block = block.id
+    node.contentEditable = block.held ? "false" : "true"
     const text = visibleText(block.text)
     if (node.textContent !== text) node.textContent = text
   })
@@ -274,6 +281,7 @@ function WritingSheet({
     void settlePage(docId, state.present.blocks, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return
+        if (result.blocks) dispatch({ type: "adopt", blocks: result.blocks })
         const note = savedNote(words, result)
         if (!note) return
         dispatch({ type: "note", note })
@@ -320,6 +328,18 @@ function WritingSheet({
       if (composing.current) return
       const input = event as InputEvent
       if (typeof input.inputType !== "string") return
+      const span = spanFrom(page, state.present.caret)
+      if (
+        state.present.blocks.some(
+          (block) =>
+            block.held &&
+            (block.id === span.anchor.blockId ||
+              block.id === span.focus.blockId)
+        )
+      ) {
+        event.preventDefault()
+        return
+      }
       if (
         input.inputType === "insertCompositionText" ||
         input.inputType === "insertParagraph"
@@ -331,7 +351,6 @@ function WritingSheet({
         applyPaste(input.data ?? "")
         return
       }
-      const span = spanFrom(page, state.present.caret)
       if (input.inputType === "insertText") {
         event.preventDefault()
         const live = readBlocks(page, state.present.nextId)
@@ -371,6 +390,14 @@ function WritingSheet({
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault()
+              if (
+                state.present.blocks.some(
+                  (block) =>
+                    block.held && block.id === state.present.caret.blockId
+                )
+              ) {
+                return
+              }
               const native = event.nativeEvent
               if (native.isComposing || native.keyCode === 229) {
                 splitAfter.current = true
@@ -453,7 +480,11 @@ function WritingSheet({
           }}
         >
           {state.present.blocks.map((block) => (
-            <p key={block.id} data-block={block.id}>
+            <p
+              key={block.id}
+              data-block={block.id}
+              contentEditable={block.held ? false : undefined}
+            >
               {visibleText(block.text)}
             </p>
           ))}

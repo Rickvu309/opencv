@@ -61,6 +61,10 @@
   white-space: pre-wrap;
 }
 
+.writing-page p[contenteditable="false"] {
+  color: var(--muted-foreground);
+}
+
 .writing-note {
   flex: none;
   margin: 0;

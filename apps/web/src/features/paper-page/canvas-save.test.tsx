@@ -305,11 +305,12 @@ describe("settlePage", () => {
       [{ text: "Hello" }],
       new AbortController().signal
     )
-    expect(saved).toEqual({
+    expect(saved).toMatchObject({
       saved: true,
       words: "Hello",
       revision: NEXT,
       note: null,
+      blocks: [{ id: PARAGRAPH, text: "Hello" }],
     })
     const wrote = bodies.find(
       (item) =>
@@ -416,6 +417,84 @@ describe("settlePage", () => {
     })
     expect(calls.some((url) => url.includes("paper.edit"))).toBe(false)
     expect(calls.some((url) => url.includes("paper.canvas"))).toBe(false)
+  })
+
+  it("sends a split for one known paragraph and keeps a table out of the command", async () => {
+    const table = "55555555-5555-4555-8555-555555555555"
+    const right = "44444444-4444-4444-8444-444444444444"
+    const line = (text: string, paragraph: string, at: number) => ({
+      kind: "editable" as const,
+      paragraph,
+      targetId: TARGET,
+      text,
+      location: { paragraph: at, kind: "paragraph" as const },
+      formatting: {
+        kind: "inherited" as const,
+        scope: "preserved-uncomputed" as const,
+      },
+      context: { paragraphText: text },
+    })
+    const cell = (at: number) => ({
+      kind: "locked" as const,
+      paragraph: table,
+      text: "Cell",
+      location: { paragraph: at, kind: "table-cell" as const },
+      reason: { code: "UNSUPPORTED_PARAGRAPH_STRUCTURE", message: "Stays." },
+      complete: true,
+      continuation: false,
+    })
+    const bodies: unknown[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) : null
+      bodies.push(body)
+      const split = bodies.some(
+        (item) =>
+          !!item &&
+          typeof item === "object" &&
+          "input" in item &&
+          (item as { input?: { op?: string } }).input?.op === "split"
+      )
+      if (url.includes("/api/commands/paper.canvas")) {
+        return Promise.resolve(ok({ ...packageResult(), revision: NEXT }))
+      }
+      if (url.includes("/api/reads/paper.read")) {
+        const regions = split
+          ? [line("He", PARAGRAPH, 1), line("llo", right, 2), cell(3)]
+          : [line("Hello", PARAGRAPH, 1), cell(2)]
+        return Promise.resolve(
+          ok({
+            ...readResult(split ? "He" : "Hello", split ? NEXT : REVISION),
+            regions,
+          })
+        )
+      }
+      return Promise.resolve(new Response("missing", { status: 404 }))
+    })
+    const saved = await settlePage(
+      DOC,
+      [
+        { id: PARAGRAPH, text: "He" },
+        { id: "p2", text: "llo" },
+        { id: table, text: "Cell", held: true },
+      ],
+      new AbortController().signal
+    )
+    expect(saved.saved).toBe(true)
+    expect(saved.words).toBe("He\nllo\nCell")
+    const command = bodies.find(
+      (item) =>
+        !!item &&
+        typeof item === "object" &&
+        "input" in item &&
+        (item as { input?: { op?: string } }).input?.op === "split"
+    ) as { input: { at: number; text?: string } }
+    expect(command.input).toMatchObject({
+      op: "split",
+      paragraph: PARAGRAPH,
+      at: 2,
+    })
+    expect(command.input.text).toBeUndefined()
   })
 })
 

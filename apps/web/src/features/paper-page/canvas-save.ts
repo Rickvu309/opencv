@@ -13,6 +13,7 @@ import {
   type PackageDraft,
 } from "@/lib/paper-package-ack.ts"
 import { catalogClient, runContractCommand } from "@/lib/contract-client.ts"
+import { draftFromRegions, type WritingBlock } from "./canvas-edit.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
@@ -41,6 +42,7 @@ export type SaveOutcome = {
   words: string
   revision: string | null
   note: string | null
+  blocks?: WritingBlock[]
 }
 
 type PageRegion = {
@@ -49,7 +51,23 @@ type PageRegion = {
   paragraph?: string
   targetId?: string
   reason?: { code: string }
+  location?: { kind: string }
 }
+
+type PageBlock = { id?: string; text: string; held?: boolean }
+
+type ServerRow = { id: string; text: string; targetId: string | null }
+
+type PagePlan =
+  | {
+      kind: "text"
+      paragraph: string
+      before: string
+      after: string
+      targetId: string | null
+    }
+  | { kind: "split"; paragraph: string; at: number }
+  | { kind: "merge" | "delete"; paragraph: string }
 
 type PackagePage = {
   revision: string
@@ -327,9 +345,227 @@ function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
   return run
 }
 
+function serverRows(regions: readonly PageRegion[]) {
+  const writing: ServerRow[] = []
+  const held: { id: string; text: string }[] = []
+  for (const region of regions) {
+    if (!region.paragraph) continue
+    const table = region.location?.kind === "table-cell"
+    const carrier =
+      CARRIERS.has(region.reason?.code ?? "") && region.text === ""
+    const open =
+      !table &&
+      (region.reason?.code === "EMPTY_TARGET" ||
+        (region.kind === "editable" && !region.reason))
+    if (open) {
+      const previous = writing[writing.length - 1]
+      if (previous?.id === region.paragraph) {
+        previous.text += region.text
+        continue
+      }
+      writing.push({
+        id: region.paragraph,
+        text: region.reason?.code === "EMPTY_TARGET" ? "" : region.text,
+        targetId:
+          region.reason?.code === "EMPTY_TARGET"
+            ? null
+            : (region.targetId ?? null),
+      })
+      continue
+    }
+    if (!carrier && (region.kind === "locked" || table)) {
+      held.push({ id: region.paragraph, text: region.text })
+    }
+  }
+  return { writing, held }
+}
+
+function heldMatches(
+  server: readonly { id: string; text: string }[],
+  blocks: readonly PageBlock[]
+) {
+  const mine = blocks.filter((block) => block.held)
+  return (
+    mine.length === server.length &&
+    mine.every(
+      (block, index) =>
+        block.id === server[index]?.id && block.text === server[index]?.text
+    )
+  )
+}
+
+function aligned(
+  local: readonly { id: string; text: string }[],
+  remote: readonly ServerRow[],
+  localAt: number,
+  remoteAt: number
+) {
+  return remote.slice(remoteAt).every((row, offset) => {
+    const block = local[localAt + offset]
+    return block?.id === row.id && block.text === row.text
+  })
+}
+
+function planChange(
+  regions: readonly PageRegion[],
+  blocks: readonly PageBlock[]
+): PagePlan | null {
+  const server = serverRows(regions)
+  if (!heldMatches(server.held, blocks)) return null
+  const local = blocks
+    .filter((block) => !block.held)
+    .map((block) => ({ id: block.id ?? "", text: block.text }))
+  const remote = server.writing
+  if (
+    local.length === remote.length &&
+    local.every((block, index) => block.id === remote[index]?.id)
+  ) {
+    const changed = local.flatMap((block, index) =>
+      block.text === remote[index]?.text ? [] : [index]
+    )
+    const index = changed.length === 1 ? changed[0] : undefined
+    const before = index === undefined ? undefined : remote[index]
+    const after = index === undefined ? undefined : local[index]?.text
+    if (
+      index === undefined ||
+      !before ||
+      after === undefined ||
+      after === "" ||
+      /[\r\n]/.test(after)
+    ) {
+      return null
+    }
+    return {
+      kind: "text",
+      paragraph: before.id,
+      before: before.text,
+      after,
+      targetId: before.targetId,
+    }
+  }
+  if (local.length === remote.length + 1) {
+    for (const [index, source] of remote.entries()) {
+      const left = local[index]
+      const right = local[index + 1]
+      if (!left || !right || left.id !== source.id) continue
+      if (left.text + right.text !== source.text) continue
+      if (remote.some((row) => row.id === right.id)) continue
+      if (
+        !remote
+          .slice(0, index)
+          .every(
+            (row, offset) =>
+              local[offset]?.id === row.id && local[offset]?.text === row.text
+          )
+      ) {
+        continue
+      }
+      if (!aligned(local, remote, index + 2, index + 1)) continue
+      if (/[\r\n]/.test(left.text) || /[\r\n]/.test(right.text)) return null
+      return { kind: "split", paragraph: source.id, at: [...left.text].length }
+    }
+  }
+  if (local.length + 1 === remote.length) {
+    for (const [index, block] of local.entries()) {
+      const first = remote[index]
+      const second = remote[index + 1]
+      if (!first || !second || block.id !== first.id || second.text === "") {
+        continue
+      }
+      if (block.text !== first.text + second.text) continue
+      if (
+        !remote
+          .slice(0, index)
+          .every(
+            (row, offset) =>
+              local[offset]?.id === row.id && local[offset]?.text === row.text
+          )
+      ) {
+        continue
+      }
+      if (!aligned(local, remote, index + 1, index + 2)) continue
+      return { kind: "merge", paragraph: second.id }
+    }
+    for (const [index, row] of remote.entries()) {
+      if (row.text !== "") continue
+      const rest = remote.filter((_, at) => at !== index)
+      if (
+        rest.length === local.length &&
+        rest.every(
+          (item, offset) =>
+            local[offset]?.id === item.id && local[offset]?.text === item.text
+        )
+      ) {
+        return { kind: "delete", paragraph: row.id }
+      }
+    }
+  }
+  return null
+}
+
+async function sendPlan(
+  docId: string,
+  revision: string,
+  plan: PagePlan,
+  signal: AbortSignal
+) {
+  if (plan.kind === "text") {
+    return sendWords(
+      docId,
+      revision,
+      {
+        paragraph: plan.paragraph,
+        text: plan.before,
+        targetId: plan.targetId,
+      },
+      plan.after,
+      signal
+    )
+  }
+  const input =
+    plan.kind === "split"
+      ? {
+          op: "split" as const,
+          docId,
+          basedOn: revision,
+          paragraph: plan.paragraph,
+          at: plan.at,
+        }
+      : {
+          op:
+            plan.kind === "merge"
+              ? ("mergePrevious" as const)
+              : ("deleteParagraph" as const),
+          docId,
+          basedOn: revision,
+          paragraph: plan.paragraph,
+        }
+  if (!paperCanvasCommitSchema.safeParse(input).success) return null
+  return receiptRevision(
+    await runContractCommand(commandClient(), "paper.canvas", input, {
+      refresh: false,
+      signal,
+    })
+  )
+}
+
+function adoptedBlocks(
+  regions: readonly PageRegion[],
+  blocks: readonly PageBlock[]
+) {
+  const draft = draftFromRegions(regions)
+  if (!draft || draft.blocks.length !== blocks.length) return undefined
+  const same = draft.blocks.every(
+    (block, index) =>
+      block.text === blocks[index]?.text &&
+      !!block.held === !!blocks[index]?.held
+  )
+  return same ? draft.blocks : undefined
+}
+
 async function settleOnce(
   docId: string,
-  blocks: readonly { text: string }[],
+  blocks: readonly PageBlock[],
   signal: AbortSignal
 ): Promise<SaveOutcome> {
   const words = pageWords(blocks)
@@ -344,22 +580,30 @@ async function settleOnce(
       return { saved: true, words, revision: page.revision, note: null }
     }
     if (words === "") return missed(words)
-    const target = writingTarget(page.regions)
-    if (!target) return missed(words)
-    const revision = await sendWords(
-      docId,
-      page.revision,
-      target,
-      words,
-      signal
-    )
+    const planned = planChange(page.regions, blocks)
+    const revision = planned
+      ? await sendPlan(docId, page.revision, planned, signal)
+      : blocks.some((block) => block.held)
+        ? null
+        : await (async () => {
+            const target = writingTarget(page.regions)
+            if (!target) return null
+            return sendWords(docId, page.revision, target, words, signal)
+          })()
     if (!revision || signal.aborted) return missed(words)
     const next = await readPackage(docId, signal)
     const readBack = next ? wordsFromRegions(next.regions) : null
     if (!next || next.revision !== revision || readBack !== words) {
       return missed(words)
     }
-    return { saved: true, words: readBack, revision: next.revision, note: null }
+    const adopted = adoptedBlocks(next.regions, blocks)
+    return {
+      saved: true,
+      words: readBack,
+      revision: next.revision,
+      note: null,
+      ...(adopted ? { blocks: adopted } : {}),
+    }
   } catch (error) {
     return { ...missed(words), note: serverNote(error) }
   }
@@ -367,7 +611,7 @@ async function settleOnce(
 
 export function settlePage(
   docId: string,
-  blocks: readonly { text: string }[],
+  blocks: readonly PageBlock[],
   signal: AbortSignal
 ): Promise<SaveOutcome> {
   return serial(docId, () => settleOnce(docId, blocks, signal))
