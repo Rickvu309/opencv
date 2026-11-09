@@ -7,7 +7,6 @@ import {
 import { ApiError } from "@/lib/api-error.ts"
 import {
   applyReply,
-  draftFromWrite,
   type Acknowledgement,
   type LocalObservation,
   type PackageDraft,
