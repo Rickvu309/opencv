@@ -1,4 +1,4 @@
-import type { PaperView } from "@workspace/domain"
+import { blankCv, type PaperView } from "@workspace/domain"
 
 export type WritingBlock = {
   id: string
@@ -89,7 +89,14 @@ export function opensWritingCanvas(doc: PaperView): boolean {
   ) {
     return false
   }
-  return paper.blocks.every((block) => block.type === "section")
+  const starters = blankCv().blocks
+  return paper.blocks.every((block) => {
+    if (block.type !== "section") return false
+    const starter = starters.find(
+      (item) => item.type === "section" && item.kind === block.kind
+    )
+    return starter?.type === "section" && starter.title === block.title
+  })
 }
 
 export function insertText(

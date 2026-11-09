@@ -124,6 +124,20 @@ describe("opensWritingCanvas", () => {
       })
     ).toBe(false)
   })
+
+  it("keeps the CV editor when a section title is not the starter title", () => {
+    const paper = blankCv()
+    const first = paper.blocks[0]
+    if (!first || first.type !== "section") throw new Error("missing section")
+    expect(
+      opensWritingCanvas(
+        cv({
+          ...paper,
+          blocks: [{ ...first, title: "Roles" }, ...paper.blocks.slice(1)],
+        })
+      )
+    ).toBe(false)
+  })
 })
 
 describe("writing draft", () => {

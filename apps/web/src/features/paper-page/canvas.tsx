@@ -26,6 +26,7 @@ import {
   type WritingDraft,
 } from "./canvas-edit.ts"
 import { pastePlain } from "./canvas-paste.ts"
+import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
 import "./canvas.css"
 
 type CanvasState = {
@@ -35,7 +36,13 @@ type CanvasState = {
 }
 
 type CanvasAction =
-  | { type: "insert"; span: TextSpan; text: string }
+  | {
+      type: "insert"
+      span: TextSpan
+      text: string
+      live?: { id: string; text: string }[]
+      nextId?: number
+    }
   | { type: "split"; span: TextSpan }
   | { type: "backward"; span: TextSpan }
   | { type: "forward"; span: TextSpan }
@@ -56,6 +63,7 @@ function remember(state: CanvasState, present: WritingDraft): CanvasState {
     ...state,
     past: state.past.concat(state.present).slice(-50),
     present,
+    note: state.note === "Saved" ? keptOnThisComputer() : state.note,
   }
 }
 
@@ -80,9 +88,17 @@ function reduce(state: CanvasState, action: CanvasAction): CanvasState {
     return remember(state, present)
   }
   const span = action.span
+  const base =
+    action.type === "insert" && action.live
+      ? replaceVisible(
+          { ...state.present, nextId: action.nextId ?? state.present.nextId },
+          action.live,
+          span.anchor
+        )
+      : state.present
   const present =
     action.type === "insert"
-      ? insertText(state.present, span, action.text)
+      ? insertText(base, span, action.text)
       : action.type === "split"
         ? splitParagraph(state.present, span)
         : action.type === "backward"
@@ -250,10 +266,20 @@ function WritingSheet({
   useEffect(() => {
     const kept = storeDraft(docId, state.present, localStorage)
     nextId.current = state.present.nextId
-    dispatch({
-      type: "note",
-      note: kept ? keptOnThisComputer() : clearedOnReload(),
-    })
+    const fallback = kept ? keptOnThisComputer() : clearedOnReload()
+    dispatch({ type: "note", note: fallback })
+    if (!kept) return
+    const controller = new AbortController()
+    const words = pageWords(state.present.blocks)
+    void settlePage(docId, state.present.blocks, controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return
+        const note = savedNote(words, result)
+        if (!note) return
+        dispatch({ type: "note", note })
+      })
+      .catch(() => undefined)
+    return () => controller.abort()
   }, [docId, state.present])
 
   useLayoutEffect(() => {
@@ -308,7 +334,14 @@ function WritingSheet({
       const span = spanFrom(page, state.present.caret)
       if (input.inputType === "insertText") {
         event.preventDefault()
-        dispatch({ type: "insert", span, text: input.data ?? "" })
+        const live = readBlocks(page, state.present.nextId)
+        dispatch({
+          type: "insert",
+          span,
+          text: input.data ?? "",
+          live: live.texts,
+          nextId: live.nextId,
+        })
         return
       }
       if (input.inputType === "deleteContentBackward") {

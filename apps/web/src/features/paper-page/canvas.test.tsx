@@ -193,6 +193,24 @@ describe("WritingCanvas", () => {
     expect(words()).toEqual(["Kept"])
   })
 
+  it("keeps a spelling fix already on the page", async () => {
+    render(<WritingCanvas docId={DOC} />)
+    await typeText("Helo")
+    const block = page().querySelector("p")
+    if (!block) throw new Error("missing paragraph")
+    block.textContent = "Hello"
+    const text = block.firstChild
+    if (!text) throw new Error("missing text")
+    const range = document.createRange()
+    range.setStart(text, 0)
+    range.collapse(true)
+    const selection = document.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+    await typeText("!")
+    expect(words()).toEqual(["!Hello"])
+  })
+
   it("says a reload clears the words when the copy cannot be kept", async () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("full")
