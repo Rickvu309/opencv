@@ -21,11 +21,24 @@ import type { TaskLease } from "./task-fence.js"
 
 export type PreparedReview<C, V> = Readonly<{ candidate: C; review: V }>
 
-export type ReviewedCommand<I, O, C, V> = {
+export type PreparedUnchanged<S, O> = Readonly<{
+  kind: "unchanged"
+  snapshot: S
+  output: O
+}>
+
+export type ReviewedCommand<I, O, C, V, S = never> = {
   version: string
   candidate: ZodType<C>
   review: ZodType<V>
-  prepare: (input: I, actor: Actor) => Promise<PreparedReview<C, V>>
+  unchanged?: {
+    snapshot: ZodType<S>
+    revalidate: (input: I, snapshot: S, actor: Actor) => Promise<void>
+  }
+  prepare: (
+    input: I,
+    actor: Actor
+  ) => Promise<PreparedReview<C, V> | PreparedUnchanged<S, O>>
   revalidate: (
     input: I,
     prepared: PreparedReview<C, V>,
@@ -36,13 +49,24 @@ export type ReviewedCommand<I, O, C, V> = {
 
 export type StoredReviewedCommand = {
   version: string
+  unchanged?: {
+    parse: (snapshot: unknown) => unknown
+    revalidate: (
+      input: unknown,
+      snapshot: unknown,
+      actor: Actor
+    ) => Promise<void>
+  }
   parse: (
-    value: PreparedReview<unknown, unknown>
-  ) => PreparedReview<unknown, unknown>
+    value:
+      PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
+  ) => PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
   prepare: (
     input: unknown,
     actor: Actor
-  ) => Promise<PreparedReview<unknown, unknown>>
+  ) => Promise<
+    PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
+  >
   revalidate: (
     input: unknown,
     prepared: PreparedReview<unknown, unknown>,
@@ -71,6 +95,27 @@ const envelopeSchema = z
   .strict()
 
 export type FrozenReview = z.infer<typeof envelopeSchema>
+
+const unchangedSchema = envelopeSchema
+  .omit({ proposalId: true, candidate: true, review: true })
+  .extend({
+    kind: z.literal("unchanged"),
+    snapshot: z.unknown(),
+    output: z.unknown(),
+  })
+
+export type FrozenUnchanged = z.infer<typeof unchangedSchema>
+export type PreparedExecution = FrozenReview | FrozenUnchanged
+
+export function isUnchanged(value: PreparedExecution): value is FrozenUnchanged
+export function isUnchanged<S, O>(
+  value: PreparedReview<unknown, unknown> | PreparedUnchanged<S, O>
+): value is PreparedUnchanged<S, O>
+export function isUnchanged(
+  value: PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
+): value is PreparedUnchanged<unknown, unknown> {
+  return "kind" in value && value.kind === "unchanged"
+}
 
 const pointerSchema = z
   .object({
@@ -128,7 +173,7 @@ export async function prepareReview(
   actor: Actor,
   command: string,
   key: string | undefined
-): Promise<FrozenReview> {
+): Promise<PreparedExecution> {
   requirePreparationBoundary()
   const hash = inputHash(input)
   const prepared = clone(
@@ -136,16 +181,26 @@ export async function prepareReview(
       await binding.prepare(immutable(clone(input)), immutable(clone(actor)))
     )
   )
-  const body = {
-    version: 1 as const,
-    bindingVersion: binding.version,
-    proposalId: createId(),
-    ownerId: actor.userId,
-    command,
-    inputHash: hash,
-    key: key ?? null,
-    ...prepared,
-  }
+  const body = isUnchanged(prepared)
+    ? {
+        version: 1 as const,
+        bindingVersion: binding.version,
+        ownerId: actor.userId,
+        command,
+        inputHash: hash,
+        key: key ?? null,
+        ...prepared,
+      }
+    : {
+        version: 1 as const,
+        bindingVersion: binding.version,
+        proposalId: createId(),
+        ownerId: actor.userId,
+        command,
+        inputHash: hash,
+        key: key ?? null,
+        ...prepared,
+      }
   return immutable({ ...body, digest: inputHash(body) })
 }
 
@@ -159,12 +214,13 @@ export async function prepareOrReplay(
     ownerId: string,
     key: string,
     command: string,
-    hash: string
+    hash: string,
+    input: unknown
   ) => Promise<ExecuteResult | null>
 ) {
   requirePreparationBoundary()
   const earlier = key
-    ? await replay(actor.userId, key, command, inputHash(input))
+    ? await replay(actor.userId, key, command, inputHash(input), input)
     : null
   return {
     earlier,
@@ -206,9 +262,35 @@ export function readFrozenReview(
   )
     return refuseFrozenReview()
   const parsed = binding.parse(body)
+  if (isUnchanged(parsed)) return refuseFrozenReview()
   if (
     inputHash(parsed) !==
     inputHash({ candidate: body.candidate, review: body.review })
+  )
+    return refuseFrozenReview()
+  return immutable(clone(checked.data))
+}
+
+export function readPreparedExecution(
+  value: unknown,
+  binding: StoredReviewedCommand,
+  ownerId: string,
+  command: string,
+  input: unknown
+): PreparedExecution {
+  const checked = unchangedSchema.safeParse(value)
+  if (!checked.success)
+    return readFrozenReview(value, binding, ownerId, command, input)
+  const { digest, ...body } = checked.data
+  if (
+    !binding.unchanged ||
+    body.bindingVersion !== binding.version ||
+    body.ownerId !== ownerId ||
+    body.command !== command ||
+    body.inputHash !== inputHash(input) ||
+    digest !== inputHash(body) ||
+    inputHash(binding.unchanged.parse(body.snapshot)) !==
+      inputHash(body.snapshot)
   )
     return refuseFrozenReview()
   return immutable(clone(checked.data))
@@ -226,10 +308,11 @@ export async function replayFrozenProposal(
   ownerId: string,
   command: string,
   hash: string,
-  binding: StoredReviewedCommand
+  binding: StoredReviewedCommand | undefined
 ): Promise<ExecuteResult | null> {
   const pointer = pointerSchema.safeParse(value)
   if (!pointer.success) return null
+  if (!binding) return refuseFrozenReview()
   const [row] = await getDb()
     .select()
     .from(pendingActions)

@@ -11,7 +11,11 @@ import { CatalogPublication } from "./catalog-publication.js"
 import { coachRefusal, REFUSAL_MESSAGES } from "./coach-policy.js"
 import { delegateAllowed } from "./delegate-policy.js"
 import { CommandError } from "./errors.js"
-import { refuseFrozenReview, type ReviewedCommand } from "./frozen-review.js"
+import {
+  isUnchanged,
+  refuseFrozenReview,
+  type ReviewedCommand,
+} from "./frozen-review.js"
 import { brandedActor, parseInput } from "./parse-input.js"
 import { agentGates } from "./registry-reads.js"
 import type {
@@ -25,10 +29,15 @@ export class RegistryEntries extends CatalogPublication {
   protected readonly commands = new Map<string, StoredCommand>()
   protected readonly queries = new Map<string, StoredQuery>()
 
-  protected async admitCommand(options: ExecuteOptions) {
+  protected async admitCommand(options: ExecuteOptions, undo = false) {
     const command = this.commands.get(options.name)
     if (!command)
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
+    if (command.undoOnly && !undo)
+      throw new CommandError(
+        ERROR_CODES.FORBIDDEN,
+        "This command is only available through Undo"
+      )
     const actor = brandedActor(options.actor)
     if (!delegateAllowed(command, actor))
       throw new CommandError(
@@ -78,22 +87,69 @@ export class RegistryEntries extends CatalogPublication {
         const parsed = checked.input.safeParse(raw)
         return parsed.success ? checked.step(parsed.data) : checked.name
       },
-      run: async (raw, actor) => {
-        const input = parseInput(checked.input, raw)
-        const output = await handler(input, actor)
-        return {
-          output,
-          draft: checked.activity(input, output, actor),
-          reversal: checked.reversal(input, output),
-          step: checked.step(input),
-        }
-      },
+      run: this.commandRunner(checked, handler),
     })
   }
 
-  addReviewedCommand<I, O, C, V>(
+  private commandRunner<I, O>(
     spec: CommandSpec<I, O>,
-    binding: ReviewedCommand<I, O, C, V>
+    handler: (input: I, actor: Actor) => Promise<O>
+  ) {
+    return async (raw: unknown, actor: Actor) => {
+      const input = parseInput(spec.input, raw)
+      const output = await handler(input, actor)
+      return {
+        output,
+        draft: spec.activity(input, output, actor),
+        reversal: spec.reversal(input, output),
+        step: spec.step(input),
+      }
+    }
+  }
+
+  addUndoCommand<I, O>(
+    spec: CommandSpec<I, O>,
+    handler: (input: I, actor: Actor) => Promise<O>
+  ) {
+    if (
+      spec.transaction === "none" ||
+      spec.idempotency === "none" ||
+      spec.coach !== "never" ||
+      spec.delegate
+    )
+      throw new Error("Undo commands must be private, transactional and keyed")
+    this.addCommand(spec, handler)
+    this.commands.get(spec.name)!.undoOnly = true
+  }
+
+  protected reviewedFor(command: StoredCommand, input: unknown) {
+    return !command.select || command.select(input) === "reviewed"
+      ? command.reviewed
+      : undefined
+  }
+
+  addSelectedCommand<I, O, C, V, S = never>(
+    spec: CommandSpec<I, O>,
+    binding: {
+      select: (input: Readonly<I>) => "execute" | "reviewed"
+      execute: (input: I, actor: Actor) => Promise<O>
+      reviewed: ReviewedCommand<I, O, C, V, S>
+    }
+  ) {
+    this.addReviewedCommand(spec, binding.reviewed)
+    const command = this.commands.get(spec.name)!
+    command.run = this.commandRunner(spec, binding.execute)
+    command.select = (input) => {
+      const selected = binding.select(parseInput(spec.input, input))
+      if (selected !== "execute" && selected !== "reviewed")
+        return refuseFrozenReview()
+      return selected
+    }
+  }
+
+  addReviewedCommand<I, O, C, V, S = never>(
+    spec: CommandSpec<I, O>,
+    binding: ReviewedCommand<I, O, C, V, S>
   ) {
     if (
       spec.transaction === "none" ||
@@ -107,10 +163,34 @@ export class RegistryEntries extends CatalogPublication {
     const command = this.commands.get(spec.name)!
     command.reviewed = {
       version: binding.version,
-      parse: (prepared) => ({
-        candidate: binding.candidate.parse(prepared.candidate),
-        review: binding.review.parse(prepared.review),
-      }),
+      ...(binding.unchanged
+        ? {
+            unchanged: {
+              parse: (snapshot: unknown) =>
+                binding.unchanged!.snapshot.parse(snapshot),
+              revalidate: (input: unknown, snapshot: unknown, actor: Actor) =>
+                binding.unchanged!.revalidate(
+                  parseInput(spec.input, input),
+                  binding.unchanged!.snapshot.parse(snapshot),
+                  actor
+                ),
+            },
+          }
+        : {}),
+      parse: (prepared) => {
+        if (isUnchanged(prepared)) {
+          if (!binding.unchanged) return refuseFrozenReview()
+          return {
+            kind: "unchanged" as const,
+            snapshot: binding.unchanged.snapshot.parse(prepared.snapshot),
+            output: prepared.output,
+          }
+        }
+        return {
+          candidate: binding.candidate.parse(prepared.candidate),
+          review: binding.review.parse(prepared.review),
+        }
+      },
       prepare: (input, actor) =>
         binding.prepare(parseInput(spec.input, input), actor),
       revalidate: (input, prepared, actor) =>
@@ -162,11 +242,13 @@ export class RegistryEntries extends CatalogPublication {
 
   list() {
     return {
-      commands: [...this.commands.values()].map((command) => ({
-        name: command.name,
-        coach: command.coach,
-        destructive: command.destructive,
-      })),
+      commands: [...this.commands.values()]
+        .filter((command) => !command.undoOnly)
+        .map((command) => ({
+          name: command.name,
+          coach: command.coach,
+          destructive: command.destructive,
+        })),
       queries: [...this.queries.values()].map((query) => ({
         name: query.name,
         coach: query.coach,
@@ -182,12 +264,27 @@ export class RegistryEntries extends CatalogPublication {
       : false
   }
 
-  taskNeedsPreparation(name: string) {
-    return Boolean(this.commands.get(name)?.reviewed)
+  taskCanPrepare(name: string) {
+    const command = this.commands.get(name)
+    return Boolean(command?.reviewed && !command.undoOnly)
+  }
+
+  taskNeedsPreparation(name: string, input?: unknown) {
+    const command = this.commands.get(name)
+    return Boolean(
+      command &&
+      !command.undoOnly &&
+      this.reviewedFor(
+        command,
+        command.select ? parseInput(command.input, input) : input
+      )
+    )
   }
 
   commandNames() {
-    return [...this.commands.keys()]
+    return [...this.commands.values()]
+      .filter((command) => !command.undoOnly)
+      .map((command) => command.name)
   }
 
   async tools(actor: Actor): Promise<ToolEntry[]> {
@@ -197,6 +294,7 @@ export class RegistryEntries extends CatalogPublication {
       : null
     const entries: ToolEntry[] = []
     for (const command of this.commands.values()) {
+      if (command.undoOnly) continue
       if (!delegateAllowed(command, branded)) continue
       if (gates && coachRefusal(command, gates)) continue
       entries.push({

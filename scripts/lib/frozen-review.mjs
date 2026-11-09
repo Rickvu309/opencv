@@ -112,7 +112,20 @@ export function approvalSource(text) {
       selected = node
   })
   if (!selected?.body) throw new Error("Approval method missing")
-  const code = `const approval = async function (${selected.parameters.map((parameter) => parameter.getText(source)).join(",")}) ${selected.body.getText(source)}`
+  const transformed = ts.transform(selected.body, [
+    (context) => {
+      const visit = (node) =>
+        ts.isPrivateIdentifier(node) && node.text === "#execute"
+          ? ts.factory.createIdentifier("execute")
+          : ts.visitEachChild(node, visit, context)
+      return (node) => ts.visitNode(node, visit)
+    },
+  ])
+  const body = ts
+    .createPrinter()
+    .printNode(ts.EmitHint.Unspecified, transformed.transformed[0], source)
+  transformed.dispose()
+  const code = `const approval = async function (${selected.parameters.map((parameter) => parameter.getText(source)).join(",")}) ${body}`
   return (
     ts.transpileModule(code, {
       compilerOptions: {
