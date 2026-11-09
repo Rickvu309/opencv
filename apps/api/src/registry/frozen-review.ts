@@ -200,6 +200,11 @@ export async function lockBasis(
   basis: RowBasis,
   bags: Readonly<Record<BasisValue["source"], unknown>>
 ): Promise<LockedBasis> {
+  if (basis.key.length === 0)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row does not match"
+    )
   const refs = [...basis.key, ...basis.compared]
   if (refs.some((ref) => ref.column.table !== basis.table))
     throw new CommandError(
@@ -229,15 +234,18 @@ export async function lockBasis(
       }
     }
   }
-  const [row] = await db
+  const rows = await db
     .select(selection)
     .from(basis.table)
     .where(where)
     .for("update")
-  if (!row)
+  const row = rows[0]
+  if (rows.length !== 1 || !row)
     throw new CommandError(
       ERROR_CODES.CONFLICT,
-      "The unchanged basis row is missing"
+      rows.length === 0
+        ? "The unchanged basis row is missing"
+        : "The unchanged basis row does not match"
     )
   const readKey = basis.key.map((ref) => row[ref.column.name])
   const readCompared = basis.compared.map((ref) => row[ref.column.name])

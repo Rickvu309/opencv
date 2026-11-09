@@ -3,7 +3,7 @@ import { eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { getDb } from "../db/context.js"
 import { activity, user } from "../db/schema.js"
-import type { LockedBasis, RowBasis } from "./frozen-review.js"
+import { lockBasis, type LockedBasis, type RowBasis } from "./frozen-review.js"
 import {
   commitOtherName,
   fixture,
@@ -67,6 +67,50 @@ export function projectedBasisIsRejected() {
 it("a decoy where, a projected select list, and a rewritten value are not a basis", () => {
   expect(projectedBasisIsRejected()).toBe(true)
 })
+
+it("an empty key refuses the lock", () =>
+  run(async () => {
+    await owner()
+    const basis = {
+      table: user,
+      key: [],
+      compared: [{ column: user.name, source: "snapshot", field: "before" }],
+    } as unknown as RowBasis
+    await expect(
+      lockBasis(basis, {
+        snapshot: { before: "Ada" },
+        input: null,
+        actor: null,
+        candidate: null,
+        review: null,
+      })
+    ).rejects.toThrow("The unchanged basis row does not match")
+  }))
+
+it("a key that matches two rows refuses the lock", () =>
+  run(async () => {
+    const actor = await owner()
+    const otherId = randomUUID()
+    await getDb()
+      .insert(user)
+      .values({ id: otherId, name: "Ada", email: `${otherId}@test.local` })
+    const basis: RowBasis = {
+      table: user,
+      key: [{ column: user.name, source: "snapshot", field: "before" }],
+      compared: [{ column: user.id, source: "snapshot", field: "userId" }],
+    }
+    await expect(
+      lockBasis(basis, {
+        snapshot: { before: "Ada", userId: actor.id },
+        input: null,
+        actor: null,
+        candidate: null,
+        review: null,
+      })
+    ).rejects.toThrow("The unchanged basis row does not match")
+    expect(await nameOf(actor.id)).toBe("Ada")
+    expect(await nameOf(otherId)).toBe("Ada")
+  }))
 
 it.skipIf(!REAL)(
   "a name committed by another session before the lock refuses the unchanged receipt",
