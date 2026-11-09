@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pre-push: the rule table's push rows (no push to main, branch name), then the quick checks (changed files only).
+# pre-push: the rule table's push rows (no push to main, branch name), then prettier and eslint on the change, then the comment scan. The guard suite runs on GitHub.
 # Enable once per clone:  git config core.hooksPath .githooks. Logic and rules: scripts/ocv-tools/jobs/hook.mjs.
 command -v node >/dev/null 2>&1 || { echo "pre-push: node is not on PATH; install node 20 or newer." >&2; exit 1; }
 exec node "$(git rev-parse --show-toplevel)/scripts/ocv-tools.mjs" hook pre-push "$@"

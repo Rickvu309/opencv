@@ -7,7 +7,7 @@ const MIN_LEDGER_ROWS = 2
 const LOOKBACK = 3
 
 export const REGISTRY_FIX =
-  "Do not keep a list every new guard must join. Add scripts/guard-ledger/<id>.json for a ledger row; a root scripts/*.test.mjs is a push check without being listed."
+  "Do not keep a list every new guard must join. Add scripts/guard-ledger/<id>.json for a ledger row; a root scripts/*.test.mjs is run by the GitHub guards job without being listed."
 
 export function detectHandLists(text) {
   const lines = text.split("\n")

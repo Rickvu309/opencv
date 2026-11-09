@@ -53,7 +53,7 @@ const batches = (list) => {
   return out
 }
 
-export function quickPlan(files, top, toolTests = []) {
+export function quickPlan(files, top) {
   const steps = []
   for (const paths of batches(files))
     steps.push({
@@ -89,19 +89,6 @@ export function quickPlan(files, top, toolTests = []) {
     cmd: "node",
     args: ["scripts/no-comments.mjs"],
   })
-  const touched = files.some((file) => file.startsWith("scripts/ocv-tools/"))
-  steps.push({
-    label: "fast guards",
-    cmd: "env",
-    args: [
-      ...[...GIT_ENV, ...COLOR_ENV].flatMap((name) => ["-u", name]),
-      "node",
-      "--test",
-      "--test-concurrency=3",
-      "--test-reporter=dot",
-      ...new Set([...FAST_GUARDS, ...(touched ? toolTests : [])]),
-    ],
-  })
   return steps
 }
 
@@ -127,19 +114,6 @@ export function changedFiles(ctx, top) {
   return diff.out.split("\0").filter(Boolean)
 }
 
-function toolTests(ctx, top) {
-  const listed = run(
-    ctx,
-    "git",
-    ["ls-files", "-z", "scripts/ocv-tools/*.test.mjs"],
-    {
-      cwd: top,
-      raw: true,
-    }
-  )
-  return listed.out.split("\0").filter(Boolean)
-}
-
 export function runQuickChecks(ctx, top) {
   const files = changedFiles(ctx, top)
   const lines =
@@ -148,11 +122,8 @@ export function runQuickChecks(ctx, top) {
           "pre-push: origin/main is missing, so prettier and eslint are skipped.",
         ]
       : []
-  const touched = (files ?? []).some((file) =>
-    file.startsWith("scripts/ocv-tools/")
-  )
   const failed = []
-  const plan = quickPlan(files ?? [], top, touched ? toolTests(ctx, top) : [])
+  const plan = quickPlan(files ?? [], top)
   for (const step of plan) {
     const r = run(ctx, step.cmd, step.args, {
       cwd: step.cwd ?? top,
