@@ -105,17 +105,21 @@ export function detect(text, file = "source.ts") {
       let parent = node.parent
       while (parent && !ts.isConditionalExpression(parent))
         parent = parent.parent
-      let gated = false
+      let loadingGated = false
+      let unavailableGated = false
       if (parent)
         walk(parent.condition, (condition) => {
           if (
             ts.isPrefixUnaryExpression(condition) &&
-            condition.operator === ts.SyntaxKind.ExclamationToken &&
-            condition.operand.getText(source) === "library.query.isLoading"
-          )
-            gated = true
+            condition.operator === ts.SyntaxKind.ExclamationToken
+          ) {
+            const operand = condition.operand.getText(source)
+            if (operand === "library.query.isLoading") loadingGated = true
+            if (operand === "unavailable") unavailableGated = true
+          }
         })
-      if (!gated) add(node, "unannounced-word-library")
+      if (!loadingGated || !unavailableGated)
+        add(node, "unannounced-word-library")
     }
     if (
       ts.isCallExpression(node) &&

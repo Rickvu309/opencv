@@ -6,6 +6,7 @@ import {
 } from "@workspace/domain"
 
 import { render } from "@/test/render-with-client.tsx"
+import { ApiError } from "@/lib/api.ts"
 import {
   PaperPackageLibrary,
   useWordLibrary,
@@ -44,7 +45,16 @@ function page(text: string, nextCursor: string | null = null) {
 
 function Harness() {
   const library = useWordLibrary("all", "")
-  return <PaperPackageLibrary library={library} />
+  return (
+    <>
+      <output aria-label="Word library read status">
+        {library.query.error instanceof ApiError
+          ? library.query.error.status
+          : ""}
+      </output>
+      <PaperPackageLibrary library={library} />
+    </>
+  )
 }
 
 afterEach(() => {
@@ -161,7 +171,9 @@ it("keeps the disabled package library out of the legacy screen", async () => {
     )
   )
   await waitFor(() =>
-    expect(screen.queryByText("Loading Word documents")).not.toBeInTheDocument()
+    expect(screen.getByLabelText("Word library read status")).toHaveTextContent(
+      "404"
+    )
   )
   expect(
     screen.queryByRole("region", { name: "Word documents" })
