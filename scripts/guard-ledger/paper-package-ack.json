@@ -1,0 +1,10 @@
+{
+  "id": "paper-package-ack",
+  "file": "scripts/paper-package-ack.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-package-ack.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "The draft journal and its acknowledgements are new. Main has no ancestor that treated an acknowledgement alone as Saved, so a historic pass would be fabricated. The mistake fixture treats an acknowledgement as Saved, and the clean fixture does not."
+}
