@@ -257,7 +257,7 @@ test("pre-push runs only the quick checks and never the full suite", () => {
     .map((c) => [c.cmd.split("/").pop(), ...c.args].join(" "))
   assert.deepEqual(
     commands.map((line) => line.split(" ")[0]),
-    ["prettier", "eslint", "eslint", "node", "env"]
+    ["prettier", "eslint", "eslint", "node"]
   )
   assert.equal(w.s.calls.filter((c) => c.cmd === "pnpm").length, 0)
   assert.equal(
@@ -276,20 +276,10 @@ test("pre-push runs only the quick checks and never the full suite", () => {
   )
   assert.deepEqual(web.args.slice(-1), ["src/a.tsx"])
   assert.equal(web.options.cwd, "/repo/apps/web")
-  const [comments, guards] = nodeCalls(w)
+  const [comments] = nodeCalls(w)
   assert.deepEqual(comments.args, ["scripts/no-comments.mjs"])
-  assert.equal(guards.cmd, "env")
-  for (const name of [
-    "GIT_DIR",
-    "GIT_INDEX_FILE",
-    "GIT_WORK_TREE",
-    "FORCE_COLOR",
-  ])
-    assert.ok(guards.args.join(" ").includes(`-u ${name} `), name)
-  assert.ok(guards.args.includes("--test"))
-  assert.ok(guards.args.includes("scripts/local-port-range.test.mjs"))
-  assert.ok(!guards.args.includes("packages/guards/shell-suites.test.mjs"))
-  assert.ok(guards.args.every((arg) => !arg.startsWith("packages/")))
+  assert.equal(nodeCalls(w).length, 1)
+  assert.ok(!commands.some((line) => line.includes("--test")))
 })
 
 test("pre-push still refuses a comment, bad formatting, a lint error and a failing guard", () => {
@@ -305,7 +295,7 @@ test("pre-push still refuses a comment, bad formatting, a lint error and a faili
   )
   assert.match(refused(["prettier"]).text, /failed: prettier/)
   assert.match(refused(["eslint"]).text, /failed: eslint apps\/web/)
-  assert.match(refused(["rules-doc"]).text, /failed: fast guards/)
+  assert.equal(refused(["rules-doc"]).code, 0)
   const everything = refused(["no-comments", "eslint"])
   assert.match(everything.text, /eslint apps\/web, no-comments/)
 })
@@ -318,18 +308,15 @@ test("pre-push refuses a bad branch name before it runs any check", () => {
   assert.equal(w.s.calls.filter((c) => c.cmd !== "git").length, 0)
 })
 
-test("pre-push adds the ocv-tools suites only when scripts/ocv-tools changed", () => {
-  const other = world({ changed: ["apps/web/src/a.tsx"] })
-  other.call(["pre-push"], { stdin: pushOk })
-  assert.equal(other.git("ls-files").length, 0)
+test("pre-push does not run the guard suite when scripts/ocv-tools changed", () => {
   const tools = world({
     changed: ["scripts/ocv-tools/jobs/hook.mjs"],
     toolTests: ["scripts/ocv-tools/jobs/hook.test.mjs"],
   })
-  tools.call(["pre-push"], { stdin: pushOk })
-  assert.ok(
-    nodeCalls(tools)[1].args.includes("scripts/ocv-tools/jobs/hook.test.mjs")
-  )
+  const r = tools.call(["pre-push"], { stdin: pushOk })
+  assert.equal(r.code, 0, r.text)
+  assert.ok(!nodeCalls(tools).some((call) => call.args.includes("--test")))
+  assert.equal(tools.git("ls-files").length, 0)
 })
 
 test("pre-push without origin/main skips prettier and eslint but still checks comments", () => {
@@ -337,7 +324,7 @@ test("pre-push without origin/main skips prettier and eslint but still checks co
   const r = w.call(["pre-push"], { stdin: pushOk })
   assert.equal(r.code, 0, r.text)
   assert.match(r.text, /origin\/main is missing/)
-  assert.equal(nodeCalls(w).length, 2)
+  assert.equal(nodeCalls(w).length, 1)
   assert.equal(w.s.calls.filter((c) => c.cmd.endsWith("prettier")).length, 0)
 })
 
