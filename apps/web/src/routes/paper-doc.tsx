@@ -114,7 +114,7 @@ export function PaperDocPage() {
   }
   const doc = docQuery.data
   if (opensWritingCanvas(doc)) {
-    return <WritingCanvas docId={doc.id} />
+    return <WritingCanvas key={doc.id} docId={doc.id} />
   }
   if (doc.kind === "letter") {
     const job =

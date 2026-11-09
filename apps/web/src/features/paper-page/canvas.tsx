@@ -155,14 +155,23 @@ function blockSelector(id: string) {
 function withCommittedWord(
   texts: { id: string; text: string }[],
   blockId: string,
-  word: string
+  word: string,
+  base: { text: string; offset: number } | null
 ) {
   if (!word) return texts
   const index = texts.findIndex((item) => item.id === blockId)
   const block = texts[index]
-  if (!block || block.text.length > 0) return texts
+  if (!block) return texts
+  if (base && block.text !== base.text) return texts
+  const at = Math.max(
+    0,
+    Math.min(base ? base.offset : block.text.length, block.text.length)
+  )
   const next = texts.slice()
-  next[index] = { id: block.id, text: word }
+  next[index] = {
+    id: block.id,
+    text: block.text.slice(0, at) + word + block.text.slice(at),
+  }
   return next
 }
 
@@ -210,13 +219,18 @@ function revealCaret(page: HTMLElement, scroll: HTMLElement) {
   target.scrollIntoView({ block: "nearest" })
 }
 
-export function WritingCanvas({ docId }: { docId: string }) {
+function WritingSheet({ docId }: { docId: string }) {
   const pageRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const opened = useRef(false)
   const composing = useRef(false)
   const splitAfter = useRef(false)
   const pasteGuard = useRef(false)
+  const compositionBase = useRef<{
+    blockId: string
+    text: string
+    offset: number
+  } | null>(null)
   const [state, dispatch] = useReducer(reduce, docId, (id) => {
     const present = loadDraft(id, localStorage) ?? blankDraft()
     return {
@@ -342,10 +356,21 @@ export function WritingCanvas({ docId }: { docId: string }) {
           }}
           onCompositionStart={() => {
             composing.current = true
+            const caret = state.present.caret
+            const block = state.present.blocks.find(
+              (item) => item.id === caret.blockId
+            )
+            compositionBase.current = {
+              blockId: caret.blockId,
+              text: block?.text ?? "",
+              offset: caret.offset,
+            }
           }}
           onCompositionEnd={(event) => {
             composing.current = false
             const page = pageRef.current
+            const base = compositionBase.current
+            compositionBase.current = null
             if (!page) return
             const read = readBlocks(page, nextId.current)
             nextId.current = read.nextId
@@ -358,16 +383,20 @@ export function WritingCanvas({ docId }: { docId: string }) {
             const grew = read.texts.length > state.present.blocks.length
             const split = splitAfter.current && !grew
             splitAfter.current = false
+            const target =
+              base && read.texts.some((item) => item.id === base.blockId)
+                ? base.blockId
+                : selected.blockId
             const texts = withCommittedWord(
               read.texts,
-              selected.blockId,
-              event.data
+              target,
+              event.data,
+              base && base.blockId === target ? base : null
             )
-            const block =
-              texts.find((item) => item.id === selected.blockId) ?? texts[0]
+            const block = texts.find((item) => item.id === target) ?? texts[0]
             const caret = split
               ? {
-                  blockId: block?.id ?? selected.blockId,
+                  blockId: block?.id ?? target,
                   offset: block?.text.length ?? 0,
                 }
               : selected
@@ -396,4 +425,8 @@ export function WritingCanvas({ docId }: { docId: string }) {
       </p>
     </section>
   )
+}
+
+export function WritingCanvas({ docId }: { docId: string }) {
+  return <WritingSheet key={docId} docId={docId} />
 }

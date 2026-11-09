@@ -134,6 +134,44 @@ describe("WritingCanvas", () => {
     expect(words()).toEqual(["漢字", ""])
   })
 
+  it("commits a composed word in a paragraph that already has text, then splits", async () => {
+    render(<WritingCanvas docId={DOC} />)
+    await typeText("Hello")
+    fireEvent.compositionStart(page())
+    const enter = new KeyboardEvent("keydown", {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+    })
+    Object.defineProperty(enter, "keyCode", { get: () => 229 })
+    page().dispatchEvent(enter)
+    expect(words()).toEqual(["Hello"])
+    fireEvent.compositionEnd(page(), { data: "Việt" })
+    expect(words()).toEqual(["HelloViệt", ""])
+  })
+
+  it("keeps each paper's copy when the document changes", async () => {
+    const other = "22222222-2222-7222-8222-222222222222"
+    localStorage.setItem(
+      `opencv-writing:${other}`,
+      JSON.stringify({
+        blocks: [{ id: "p1", text: "Ada" }],
+        caret: { blockId: "p1", offset: 3 },
+        nextId: 2,
+      })
+    )
+    const view = render(<WritingCanvas docId={DOC} />)
+    await typeText("Grace")
+    expect(localStorage.getItem(`opencv-writing:${DOC}`)).toContain("Grace")
+    view.rerender(<WritingCanvas docId={other} />)
+    expect(words()).toEqual(["Ada"])
+    expect(localStorage.getItem(`opencv-writing:${other}`)).toContain("Ada")
+    expect(localStorage.getItem(`opencv-writing:${other}`)).not.toContain(
+      "Grace"
+    )
+    expect(localStorage.getItem(`opencv-writing:${DOC}`)).toContain("Grace")
+  })
+
   it("does not split twice when the browser already made the paragraph", () => {
     render(<WritingCanvas docId={DOC} />)
     const article = page()
