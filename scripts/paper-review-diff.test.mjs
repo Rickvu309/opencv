@@ -70,6 +70,30 @@ test("a private review field fails and the clean projection does not", () => {
       "paper-review-diff.ts"
     ).some((item) => item.kind === "private-review-field")
   )
+  assert.ok(
+    detect(
+      clean.replace(
+        "const replacements = []",
+        "const replacements = changes.map((change) => change)"
+      ),
+      "paper-review-diff.ts"
+    ).some((item) => item.kind === "private-review-field")
+  )
+  assert.ok(
+    detect(
+      clean.replace(
+        "return Object.freeze(parsed.data)",
+        "Object.assign(parsed.data, change)\n  return Object.freeze(parsed.data)"
+      ),
+      "paper-review-diff.ts"
+    ).some((item) => item.kind === "private-review-field")
+  )
+  assert.ok(
+    detect(
+      `${clean}\nconst species = Symbol.species\n`,
+      "paper-review-diff.ts"
+    ).some((item) => item.kind === "private-review-field")
+  )
   const domain = read("packages/domain/src/paper-review-diff.ts")
   const api = read("apps/api/src/paper/package-review-diff.ts")
   const entry = read("packages/domain/src/index.ts")

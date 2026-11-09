@@ -46,6 +46,12 @@ function domainProblems(text) {
     problems.push(problem(text))
   const spread = text.indexOf("...")
   if (spread !== -1) problems.push(problem(text, spread))
+  const mapped = text.indexOf(".map")
+  if (mapped !== -1) problems.push(problem(text, mapped))
+  const assigned = text.indexOf("Object.assign")
+  if (assigned !== -1) problems.push(problem(text, assigned))
+  const species = text.indexOf("Symbol.species")
+  if (species !== -1) problems.push(problem(text, species))
   const leaked = PRIVATE_FIELD.exec(text)
   if (leaked) problems.push(problem(text, leaked.index))
   return problems

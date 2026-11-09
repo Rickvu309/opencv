@@ -39,22 +39,75 @@ const leaked = review(
       reversal: {
         command: "private-undo-sentinel",
         marker: "reversal-sentinel",
+        nested: {
+          handle: "sentinel-handle",
+          packageBytes: "package-byte-sentinel",
+          deeper: {
+            reversal: { marker: "reversal-sentinel" },
+            bytes: "package-byte-sentinel",
+          },
+        },
       },
       packageBytes: "package-byte-sentinel",
     }),
   ],
   {
     handle: "sentinel-handle",
-    reversal: { marker: "reversal-sentinel" },
+    reversal: {
+      marker: "reversal-sentinel",
+      nested: {
+        handle: "sentinel-handle",
+        packageBytes: "package-byte-sentinel",
+      },
+    },
     packageBytes: "package-byte-sentinel",
     bytes: "package-byte-sentinel",
   }
 )
 
+function assertPublic(value: unknown): void {
+  if (typeof value === "string") {
+    assert.equal(value.includes("sentinel-handle"), false)
+    assert.equal(value.includes("reversal-sentinel"), false)
+    assert.equal(value.includes("package-byte-sentinel"), false)
+    assert.equal(value.includes("private-undo-sentinel"), false)
+    return
+  }
+  assert.equal(typeof value, "object")
+  assert.notEqual(value, null)
+  assert.equal(Object.isFrozen(value), true)
+  if (Array.isArray(value)) {
+    assert.equal(Object.getPrototypeOf(value), Array.prototype)
+    const names = Object.getOwnPropertyNames(value).filter(
+      (name) => name !== "length"
+    )
+    const indexes = []
+    for (let index = 0; index < value.length; index += 1)
+      indexes.push(String(index))
+    assert.deepEqual(names, indexes)
+    for (let index = 0; index < value.length; index += 1) {
+      assert.equal(Object.hasOwn(value, index), true)
+      assertPublic(value[index])
+    }
+    return
+  }
+  assert.equal(Object.getPrototypeOf(value), Object.prototype)
+  assert.deepEqual(Object.getOwnPropertyNames(value).sort(), [
+    "after",
+    "before",
+    "target",
+  ])
+  const row = value as Record<string, unknown>
+  assertPublic(row.target)
+  assertPublic(row.before)
+  assertPublic(row.after)
+}
+
 describe("paperReviewDiff", () => {
   it("keeps the frozen replacements and nothing else", () => {
     const diff = paperReviewDiff(leaked)
     assert.deepEqual(diff, [{ target, before: "Ada", after: "Grace" }])
+    assertPublic(diff)
     assert.deepEqual(Object.keys(diff[0] ?? {}), ["target", "before", "after"])
     const text = JSON.stringify(diff)
     assert.equal(text.includes("sentinel-handle"), false)
@@ -65,6 +118,86 @@ describe("paperReviewDiff", () => {
     assert.throws(() => {
       diff[0]!.before = "Bob"
     })
+  })
+
+  it("drops private fields planted by the input array", () => {
+    class PlantedChanges extends Array {
+      static get [Symbol.species]() {
+        return PlantedChanges
+      }
+
+      map() {
+        const planted = new PlantedChanges()
+        planted.push({
+          target,
+          before: "Ada",
+          after: "Grace",
+          handle: "sentinel-handle",
+          reversal: { marker: "reversal-sentinel" },
+          packageBytes: "package-byte-sentinel",
+        })
+        planted.handle = "sentinel-handle"
+        planted.reversal = { marker: "reversal-sentinel" }
+        planted.packageBytes = "package-byte-sentinel"
+        return planted
+      }
+    }
+
+    const changes = new PlantedChanges()
+    changes.push(
+      change(target, "Ada", "Grace", {
+        handle: "sentinel-handle",
+        reversal: {
+          marker: "reversal-sentinel",
+          command: "private-undo-sentinel",
+          nested: {
+            handle: "sentinel-handle",
+            packageBytes: "package-byte-sentinel",
+            deeper: { reversal: { marker: "reversal-sentinel" } },
+          },
+        },
+        packageBytes: "package-byte-sentinel",
+      })
+    )
+    changes.handle = "sentinel-handle"
+    changes.reversal = {
+      marker: "reversal-sentinel",
+      nested: { packageBytes: "package-byte-sentinel" },
+    }
+    changes.packageBytes = "package-byte-sentinel"
+    const diff = paperReviewDiff(
+      review(changes, {
+        handle: "sentinel-handle",
+        reversal: {
+          marker: "reversal-sentinel",
+          nested: { handle: "sentinel-handle" },
+        },
+        packageBytes: "package-byte-sentinel",
+      })
+    )
+    assert.deepEqual(diff, [{ target, before: "Ada", after: "Grace" }])
+    assertPublic(diff)
+
+    const ownMap = [
+      change(target, "Ada", "Grace", {
+        handle: "sentinel-handle",
+        reversal: { marker: "reversal-sentinel" },
+        packageBytes: "package-byte-sentinel",
+      }),
+    ]
+    Object.defineProperty(ownMap, "map", {
+      value: () => [
+        {
+          target,
+          before: "Ada",
+          after: "Grace",
+          handle: "sentinel-handle",
+          reversal: { marker: "reversal-sentinel" },
+          packageBytes: "package-byte-sentinel",
+        },
+      ],
+    })
+    assertPublic(paperReviewDiff(review(ownMap)))
   })
 
   it("keeps replacement order", () => {
@@ -78,7 +211,9 @@ describe("paperReviewDiff", () => {
   })
 
   it("allows an empty after and an empty change list", () => {
-    assert.deepEqual(paperReviewDiff(review([])), [])
+    const empty = paperReviewDiff(review([]))
+    assert.deepEqual(empty, [])
+    assertPublic(empty)
     assert.deepEqual(paperReviewDiff(review([change(target, "Ada", "")])), [
       { target, before: "Ada", after: "" },
     ])
@@ -120,5 +255,8 @@ describe("paperReviewDiff", () => {
       () => paperReviewDiff(review(Array.from({ length: 21 }, () => ({})))),
       /unavailable/
     )
+    const hole = [change(target, "Ada", "Grace"), change(other, "Lin", "Mai")]
+    delete hole[0]
+    assert.throws(() => paperReviewDiff(review(hole)), /unavailable/)
   })
 })

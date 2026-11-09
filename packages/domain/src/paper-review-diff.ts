@@ -62,13 +62,17 @@ export function paperReviewDiff(review: unknown): PaperReviewDiff {
   const record = recordOf(review)
   if (!record || !Object.hasOwn(record, "changes")) refuse()
   const changes = record.changes
-  if (!Array.isArray(changes) || changes.length > REPLACEMENT_CAP) refuse()
+  if (!Array.isArray(changes)) refuse()
+  const count = changes.length
+  if (!Number.isInteger(count) || count < 0 || count > REPLACEMENT_CAP) refuse()
   const seen = new Set<string>()
-  const replacements = changes.map((change) => {
-    const replacement = replacementOf(change)
+  const replacements: PaperReviewReplacement[] = []
+  for (let index = 0; index < count; index += 1) {
+    if (!Object.hasOwn(changes, index)) refuse()
+    const replacement = replacementOf(changes[index])
     if (seen.has(replacement.target)) refuse()
     seen.add(replacement.target)
-    return replacement
-  })
+    replacements.push(replacement)
+  }
   return Object.freeze(replacements)
 }
