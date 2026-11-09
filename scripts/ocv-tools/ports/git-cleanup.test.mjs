@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { mkdirSync, symlinkSync } from "node:fs"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import test from "node:test"
 import { gitAdapter } from "./git.mjs"
 import { realRunner } from "./proc.mjs"
@@ -17,14 +18,21 @@ test("cleanup retains advanced remote tips and a concurrent push defeats its del
         timeout: 5000,
         maxBuffer: 1024 * 1024,
       }).trim()
-    sh(root, ["init", "--quiet", "--bare", "origin.git"])
-    sh(root, ["init", "--quiet", "-b", "main", "work"])
+    const source = fileURLToPath(new URL("../../../", import.meta.url))
+    sh(root, ["clone", "--quiet", "--bare", "--shared", source, "origin.git"])
+    sh(root, [
+      "clone",
+      "--quiet",
+      "--shared",
+      "--no-checkout",
+      "origin.git",
+      "work",
+    ])
     const cwd = join(root, "work")
     const origin = join(root, "origin.git")
-    sh(cwd, ["remote", "add", "origin", origin])
-    const tree = sh(cwd, ["mktree"], "")
-    const a = sh(cwd, ["commit-tree", tree, "-m", "merged publication"])
-    const b = sh(cwd, ["commit-tree", tree, "-p", a, "-m", "unmerged work"])
+    const a = sh(source, ["rev-parse", "HEAD^"])
+    const b = sh(source, ["rev-parse", "HEAD"])
+    sh(origin, ["update-ref", "refs/heads/main", a])
     sh(cwd, ["update-ref", "refs/heads/main", a])
     sh(cwd, ["push", "--quiet", "origin", "main"])
     const branch = "fix/90-retained"
