@@ -4,6 +4,7 @@ import {
   coalescedWrite,
   JournalRefusal,
   nextCommand,
+  openDraft,
   openJournal,
   typeInto,
 } from "./paper-package-journal.ts"
@@ -32,6 +33,15 @@ describe("draft journal", () => {
     expect(once.commandId).toBe("cmd-1")
     expect(opened.words).toBe("Hi")
     expect(Object.isFrozen(write)).toBe(true)
+  })
+
+  it("opens an unsaved draft from the first words", () => {
+    expect(openDraft("cmd-1", "Hi")).toEqual({
+      commandId: "cmd-1",
+      generation: 1,
+      words: "Hi",
+      saved: false,
+    })
   })
 
   it("keeps the generation when the words do not change", () => {

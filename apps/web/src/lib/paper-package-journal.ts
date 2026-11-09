@@ -1,3 +1,5 @@
+import { draftFromWrite, type PackageDraft } from "./paper-package-ack.ts"
+
 export class JournalRefusal extends Error {
   readonly code: "empty-command" | "empty-draft" | "same-command"
 
@@ -58,6 +60,10 @@ export function typeInto(
 
 export function coalescedWrite(journal: PackageJournal): CoalescedWrite {
   return freeze(journal)
+}
+
+export function openDraft(commandId: string, words: string): PackageDraft {
+  return draftFromWrite(openJournal(commandId, words))
 }
 
 export function nextCommand(
