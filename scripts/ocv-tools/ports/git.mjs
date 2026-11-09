@@ -35,7 +35,9 @@ export function gitAdapter(run) {
       }
     },
     worktrees(cwd) {
-      const out = git(cwd, ["worktree", "list", "--porcelain"]).out
+      const listed = git(cwd, ["worktree", "list", "--porcelain"])
+      if (!listed.ok) throw new Error(`could not list worktrees: ${listed.err}`)
+      const out = listed.out
       const found = []
       let path = null
       for (const line of `${out}\n`.split("\n")) {
@@ -46,6 +48,11 @@ export function gitAdapter(run) {
         } else if (line === "") path = null
       }
       return found
+    },
+    retainedHead(cwd, pullHead) {
+      return ["origin/main", ...(pullHead ? [pullHead] : [])].some(
+        (ref) => git(cwd, ["merge-base", "--is-ancestor", "HEAD", ref]).ok
+      )
     },
     remoteHeads(cwd) {
       const out = git(cwd, ["ls-remote", "--heads", "origin"])

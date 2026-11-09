@@ -145,12 +145,45 @@ export function save(ctx, { message }) {
 }
 
 function workOf(ctx, wt, force) {
+  const pulls = ctx.ports.gh.prs({ state: "all", head: wt.branch })
+  const open = pulls.some((p) => p.state === "OPEN")
+  const merged = !open && pulls.find((p) => p.state === "MERGED")
+  const abandoned =
+    !open &&
+    !merged &&
+    pulls.find(
+      (p) =>
+        p.state === "CLOSED" &&
+        p.labels?.some((l) => (l.name ?? l) === "abandoned")
+    )
+  const issueNo = /^[a-z]+\/(\d+)-/.exec(wt.branch)?.[1]
+  const issueLabels = issueNo ? ctx.ports.gh.issueLabels(issueNo) : []
+  const status = ctx.ports.git.status(wt.path)
+  const activity = ctx.ports.activity.inspect(wt.path)
+  const retained = merged
+    ? ctx.ports.git.retainedHead(wt.path, merged.headRefOid)
+    : ["same", "behind"].includes(
+        ctx.ports.git.branchFacts(wt.path, wt.branch).relation
+      )
+  const protection = !status.ok
+    ? "could not read worktree status"
+    : !activity.safe
+      ? activity.reason
+      : !retained
+        ? "unpublished commits are not retained remotely"
+        : issueLabels.includes("ready-for-human") ||
+            pulls.some((p) =>
+              p.labels?.some((l) => (l.name ?? l) === "ready-for-human")
+            )
+          ? "ready-for-human work is preserved"
+          : ""
   return {
-    force,
+    force: force && !abandoned && !protection,
     path: wt.path,
-    dirty: ctx.ports.git.status(wt.path).out,
+    dirty: protection || status.out,
     branch: wt.branch,
-    merged: ctx.ports.gh.prs({ state: "merged", head: wt.branch }).length > 0,
+    merged: Boolean(merged),
+    abandoned: Boolean(abandoned),
   }
 }
 
@@ -163,14 +196,24 @@ function removeRootUnlessAnotherWorktreeUsesIt(fs, root) {
   }
 }
 
-export function finishedWorktrees(ctx, { main, root }) {
+export function registeredWorktrees(ctx, { main }) {
+  return ctx.ports.git.worktrees(main).filter((w) => w.path !== main)
+}
+
+export function finishedWorktrees(ctx, place) {
   try {
-    return ctx.ports.git
-      .worktrees(main)
-      .filter((w) => w.path.startsWith(`${root}/`))
-      .filter(
-        (w) => ctx.ports.gh.prs({ state: "merged", head: w.branch }).length > 0
+    return registeredWorktrees(ctx, place).filter((w) => {
+      const pulls = ctx.ports.gh.prs({ state: "all", head: w.branch })
+      return (
+        !pulls.some((p) => p.state === "OPEN") &&
+        pulls.some(
+          (p) =>
+            p.state === "MERGED" ||
+            (p.state === "CLOSED" &&
+              p.labels?.some((l) => (l.name ?? l) === "abandoned"))
+        )
       )
+    })
   } catch {
     return []
   }
@@ -194,7 +237,7 @@ function judge(ctx, wt, { force, n, root }) {
   return null
 }
 
-export function cleanup(ctx, { n: given, flags = {} }) {
+export function cleanup(ctx, { n: given, flags = {}, targets: selected }) {
   const force = Boolean(flags["--force"])
   const dry = Boolean(flags["--dry-run"])
   const all = Boolean(flags["--all"])
@@ -213,12 +256,10 @@ export function cleanup(ctx, { n: given, flags = {} }) {
     n = here.n
   }
   const fetched = ctx.ports.git.fetch(main, undefined, { prune: true })
-  const lines = fetched.ok
-    ? []
-    : [`Warning: could not fetch origin: ${fetched.err}`]
-  const trees = ctx.ports.git
-    .worktrees(main)
-    .filter((w) => w.path.startsWith(`${root}/`))
+  if (!fetched.ok)
+    throw new Error(`cleanup refused: could not fetch origin: ${fetched.err}`)
+  const lines = []
+  const trees = selected ?? registeredWorktrees(ctx, { main })
   const targets = n
     ? trees.filter((w) => new RegExp(`^[a-z]+/${n}-`).test(w.branch))
     : trees
@@ -254,11 +295,22 @@ export function cleanup(ctx, { n: given, flags = {} }) {
       lines.push(`would remove ${wt.path}  (${wt.branch})`)
       continue
     }
+    const recheck = judge(ctx, wt, { force, n, root })
+    if (recheck) {
+      lines.push(
+        `${recheck.verb} ${wt.branch}: ${recheck.message.split("\n")[0]}`
+      )
+      continue
+    }
     const rm = ctx.ports.git.removeWorktree(main, wt.path, force)
     if (!rm.ok)
       throw new Error(`git worktree remove failed: ${rm.err}`.slice(0, 800))
-    ctx.ports.git.deleteBranch(main, wt.branch)
-    if (ctx.ports.git.remoteHead(main, wt.branch)) {
+    const branch = ctx.ports.git.deleteBranch(main, wt.branch)
+    if (!branch.ok)
+      lines.push(
+        `Warning: could not delete local branch ${wt.branch}: ${branch.err || branch.out}`
+      )
+    if (merged.length && ctx.ports.git.remoteHead(main, wt.branch)) {
       const remote = ctx.ports.git.deleteRemoteBranch(main, wt.branch)
       if (!remote.ok)
         lines.push(
@@ -283,5 +335,17 @@ export function cleanup(ctx, { n: given, flags = {} }) {
       ...removed.map((x) => `  ${x}`),
     ],
     next: "gh issue list",
+  }
+}
+
+export function reconcileFinished(ctx, excluded = []) {
+  try {
+    const targets = finishedWorktrees(ctx, locate(ctx)).filter(
+      (w) => !excluded.includes(w.path)
+    )
+    if (!targets.length) return []
+    return cleanup(ctx, { flags: { "--all": true }, targets }).lines
+  } catch (e) {
+    return [`Warning: completed worktree reconciliation refused: ${e.message}`]
   }
 }

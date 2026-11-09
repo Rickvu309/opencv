@@ -6,6 +6,7 @@ import { TYPES } from "./fields.mjs"
 import { EXIT } from "./result.mjs"
 import { nextStep } from "./report.mjs"
 import { locate } from "./worktree.mjs"
+import { registeredWorktrees, reconcileFinished } from "./work.mjs"
 
 const BLOCKER = /<!-- ocv-tools blocker agent=(\S+) at=(\S+) reason=(.*?) -->/
 
@@ -64,10 +65,7 @@ export function isMine(issue, { me, serverNow }) {
 
 function taskWorktrees(ctx) {
   try {
-    const { root } = locate(ctx)
-    return ctx.ports.git
-      .worktrees(ctx.cwd)
-      .filter((w) => w.path.startsWith(`${root}/`))
+    return registeredWorktrees(ctx, locate(ctx))
       .map((w) => ({ ...w, n: Number(TASK_BRANCH.exec(w.branch ?? "")?.[1]) }))
       .filter((w) => w.n > 0)
   } catch {
@@ -153,11 +151,13 @@ export function openWork(ctx) {
 }
 
 export function done(ctx) {
+  const reconciled = reconcileFinished(ctx, [ctx.cwd])
   const { me, login, rows } = openWork(ctx)
   const open = rows.filter((row) => !row.blocker)
   const blocked = rows.filter((row) => row.blocker)
   const who = `${me} (account ${login})`
   const lines = [
+    ...reconciled,
     `Open work for ${who}:`,
     "This checks only this agent's claimed issues and worktrees, not the full user request.",
   ]

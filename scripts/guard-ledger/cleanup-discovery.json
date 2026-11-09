@@ -1,0 +1,13 @@
+{
+  "id": "cleanup-discovery",
+  "file": "scripts/cleanup-discovery.test.mjs",
+  "detector": {
+    "module": "scripts/lib/cleanup-discovery.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "59c277a8",
+    "path": "scripts/ocv-tools/work.mjs"
+  }
+}

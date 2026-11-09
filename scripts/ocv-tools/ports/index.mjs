@@ -2,6 +2,7 @@ import { fsAdapter } from "./fs.mjs"
 import { ghAdapter } from "./gh.mjs"
 import { gitAdapter } from "./git.mjs"
 import { procAdapter, realRunner } from "./proc.mjs"
+import { activityAdapter } from "./activity.mjs"
 
 export function realPorts() {
   const run = realRunner()
@@ -10,6 +11,7 @@ export function realPorts() {
     git: gitAdapter(run),
     fs: fsAdapter(),
     proc: procAdapter(run),
+    activity: activityAdapter(),
     clock: {
       now: () => Date.now(),
       pause: (seconds) =>

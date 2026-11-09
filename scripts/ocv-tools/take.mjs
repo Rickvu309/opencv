@@ -14,7 +14,7 @@ import { file } from "./issue.mjs"
 import { worktreeFor } from "./report.mjs"
 import { validateAuthoring } from "./authoring.mjs"
 import { lazyFacts } from "./lazy.mjs"
-import { finishedWorktrees } from "./work.mjs"
+import { reconcileFinished } from "./work.mjs"
 import { decide, issueKind, refusalError } from "./rules/index.mjs"
 import {
   createWorktree,
@@ -170,9 +170,7 @@ function takeInner(ctx, target, flags, setId) {
   if (!envAgent(ctx))
     ctx.writeFile(join(made.gitDir, "ocv-tools-agent"), `${me}\n`)
   setId(made.branch)
-  const finished = finishedWorktrees(ctx, locate(ctx)).filter(
-    (w) => w.path !== made.worktree
-  )
+  const reconciled = reconcileFinished(ctx, [ctx.cwd, made.worktree])
   return {
     lines: [
       `Took #${n} ${issue.title}${held.state === "idle" ? ` (took over idle claim of ${held.agent})` : ""}`,
@@ -181,11 +179,7 @@ function takeInner(ctx, target, flags, setId) {
       `Port: ${made.port} (api on ${made.port}, web on ${made.port + 1000})`,
       `Agent: ${me}`,
       ...made.warnings.map((w) => `Warning: ${w}`),
-      ...(finished.length
-        ? [
-            `Finished worktrees still on disk (their pull requests merged): ${finished.map((w) => `${w.path} (${w.branch})`).join(", ")}. Run: scripts/ocv-tools.mjs cleanup --all`,
-          ]
-        : []),
+      ...reconciled,
     ],
     next: `cd ${made.worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes, then scripts/ocv-tools.mjs finish --body-file <file>`,
   }
