@@ -1,6 +1,12 @@
 import { createHash, randomUUID } from "node:crypto"
 import { and, eq, gt, isNull } from "drizzle-orm"
 import { APIError } from "better-auth/api"
+import {
+  catalog,
+  declarationsFromEntries,
+  registeredScopesFromDeclarations,
+  resourcesForScopes,
+} from "@workspace/domain"
 import { z } from "zod"
 import { getDb, transaction } from "../db/context.js"
 import {
@@ -10,15 +16,8 @@ import {
   oauthRefreshToken,
 } from "../db/schema.js"
 
-export const registeredAgentScopes = [
-  "connection.status",
-  "job.read",
-  "job.write",
-  "offline_access",
-] as const
-
-const jobAccessScopes = new Set<string>(
-  registeredAgentScopes.filter((scope) => scope.startsWith("job."))
+export const registeredAgentScopes = registeredScopesFromDeclarations(
+  declarationsFromEntries(Object.values(catalog))
 )
 
 export function hashAgentToken(token: string) {
@@ -63,11 +62,7 @@ export async function bindIssuedToken(value: unknown, audience: string) {
         name: client?.name ?? "Connected agent",
         audience,
         scopes: token.scopes,
-        resources: {
-          kind: token.scopes.some((scope) => jobAccessScopes.has(scope))
-            ? "jobs"
-            : "none",
-        },
+        resources: resourcesForScopes(token.scopes),
         policy: { reads: "allow", writes: "approval" },
         expiresAt: refresh?.expiresAt ?? token.expiresAt,
       })

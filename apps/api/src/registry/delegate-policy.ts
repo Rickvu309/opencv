@@ -1,9 +1,12 @@
 import {
   ERROR_CODES,
   delegateActorSchema,
+  delegateDeclaration,
+  proposalGrantAllows,
   type Actor,
   type CoachAccess,
   type DelegateActor,
+  type DelegateMarker,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 import { getDb } from "../db/context.js"
@@ -14,7 +17,7 @@ export function delegateAllowed(
   entry: {
     name: string
     coach: CoachAccess | boolean
-    delegate?: "reversibleJob" | "jobRead"
+    delegate?: DelegateMarker
   },
   actor: Actor
 ) {
@@ -62,8 +65,10 @@ export async function requireLiveDelegate(actor: DelegateActor) {
 
 export async function requireLiveProposalConnection(
   userId: string,
-  connectionId: string
+  connectionId: string,
+  marker: DelegateMarker | undefined
 ) {
+  const declaration = delegateDeclaration(marker)
   const [grant] = await getDb()
     .select()
     .from(agentConnections)
@@ -78,9 +83,13 @@ export async function requireLiveProposalConnection(
     !grant ||
     grant.revokedAt ||
     grant.expiresAt.getTime() <= Date.now() ||
-    grant.resources.kind !== "jobs" ||
-    !grant.scopes.includes("job.write") ||
-    grant.policy.writes !== "approval"
+    !declaration ||
+    !proposalGrantAllows(
+      grant.resources,
+      grant.scopes,
+      grant.policy.writes,
+      declaration
+    )
   )
     throw new CommandError(
       ERROR_CODES.FORBIDDEN,

@@ -3,6 +3,7 @@ import type {
   Actor,
   CoachAccess,
   CommandSpec,
+  DelegateMarker,
   ReversalPlan,
   ReversalExpect,
   ResourceTouch,
@@ -21,7 +22,7 @@ export type StoredCommand = {
   reviewed?: StoredReviewedCommand
   select?: (input: unknown) => "execute" | "reviewed"
   undoOnly?: boolean
-  delegate?: "reversibleJob"
+  delegate?: DelegateMarker
   name: string
   description: string
   coach: CoachAccess
@@ -35,7 +36,7 @@ export type StoredCommand = {
 }
 
 export type StoredQuery = {
-  delegate?: "jobRead"
+  delegate?: DelegateMarker
   name: string
   description: string
   coach: boolean

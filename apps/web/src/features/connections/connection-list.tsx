@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { ConnectionId } from "@workspace/domain"
+import { grantCopy, type ConnectionId } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { connectionsKey, fetchConnections } from "@/lib/connections-api.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
@@ -7,22 +7,10 @@ import { ConnectAgent } from "./connect-agent.tsx"
 
 function connectionGrantLines(connection: {
   scopes: readonly string[]
-  resources: { kind: string }
+  resources: { kind: "none" | "jobs" }
 }) {
-  const writes = connection.scopes.some((scope) => scope.endsWith(".write"))
-  const reads = connection.scopes.some((scope) => scope.endsWith(".read"))
-  const share =
-    connection.resources.kind === "jobs"
-      ? writes
-        ? "All current and future Jobs · Reversible changes need approval"
-        : "All current and future Jobs · This agent cannot change things"
-      : "Connection status only · No documents or Jobs shared"
-  const readCopy = reads ? "Reads allowed" : null
-  const writeCopy = writes
-    ? "Writes need approval"
-    : "This agent cannot change things"
-  const access = readCopy ? `${readCopy} · ${writeCopy}` : writeCopy
-  return [share, access]
+  const copy = grantCopy(connection)
+  return [copy.share, copy.access]
 }
 
 export function ConnectionList() {

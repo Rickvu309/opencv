@@ -478,10 +478,14 @@ export class Registry extends RegistryEntries {
           "This action was already declined."
         )
       }
-      const delegate = row.delegateConnectionId
-        ? await requireLiveProposalConnection(userId, row.delegateConnectionId)
-        : null
       const stored = this.commands.get(row.command)
+      const delegate = row.delegateConnectionId
+        ? await requireLiveProposalConnection(
+            userId,
+            row.delegateConnectionId,
+            stored?.delegate
+          )
+        : null
       if (stored?.undoOnly) return refuseFrozenReview()
       const reviewed = stored
         ? this.reviewedFor(stored, parseInput(stored.input, row.input))

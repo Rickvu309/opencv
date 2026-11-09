@@ -3,6 +3,35 @@ export { z }
 
 import type { CoachAccess, ResourceRef } from "./resources.js"
 
+const legacyDelegateDeclarations = {
+  jobRead: { resource: "job", access: "read" },
+  reversibleJob: { resource: "job", access: "proposal" },
+} as const
+
+type LegacyDelegate = keyof typeof legacyDelegateDeclarations
+export type DelegateDeclaration = {
+  resource: string
+  access: "read" | "proposal"
+}
+export type DelegateMarker = LegacyDelegate | DelegateDeclaration
+
+export function delegateDeclaration(
+  marker: DelegateMarker | undefined
+): DelegateDeclaration | null {
+  if (!marker) return null
+  if (marker === "jobRead" || marker === "reversibleJob")
+    return { ...legacyDelegateDeclarations[marker] }
+  if (
+    typeof marker === "object" &&
+    typeof marker.resource === "string" &&
+    /^[a-z][a-z0-9]*$/.test(marker.resource) &&
+    (marker.access === "read" || marker.access === "proposal") &&
+    Object.keys(marker).length === 2
+  )
+    return { resource: marker.resource, access: marker.access }
+  return null
+}
+
 type BaseOperation<I extends z.ZodType, O extends z.ZodType> = {
   owner: string
   name: `${string}.${string}`
@@ -11,7 +40,7 @@ type BaseOperation<I extends z.ZodType, O extends z.ZodType> = {
   input: I
   publicResult: O
   coach: CoachAccess
-  delegate?: "reversibleJob" | "jobRead"
+  delegate?: DelegateMarker
 }
 
 type OperationShape<
@@ -47,6 +76,15 @@ export function defineOperation<
   z.string().min(1).parse(operation.description)
   z.enum(["auto", "confirm", "never"]).parse(operation.coach)
   z.enum(["read", "command"]).parse(operation.kind)
+  const declared = delegateDeclaration(operation.delegate)
+  if (operation.delegate !== undefined && !declared)
+    throw new Error(
+      "Delegate access must name a resource and say read or proposal"
+    )
+  if (declared && !operation.name.startsWith(`${declared.resource}.`))
+    throw new Error(
+      `${operation.name} cannot use ${declared.resource} delegate access`
+    )
   if (operation.kind === "command") {
     z.enum(["keyed", "none"]).parse(operation.idempotency)
     z.boolean().parse(operation.destructive)
