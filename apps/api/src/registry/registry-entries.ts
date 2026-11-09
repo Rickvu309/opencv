@@ -168,6 +168,20 @@ export class RegistryEntries extends CatalogPublication {
             unchanged: {
               parse: (snapshot: unknown) =>
                 binding.unchanged!.snapshot.parse(snapshot),
+              key: (snapshot: unknown) =>
+                binding.unchanged!.key(
+                  binding.unchanged!.snapshot.parse(snapshot)
+                ),
+              expect: (snapshot: unknown) =>
+                binding.unchanged!.expect(
+                  binding.unchanged!.snapshot.parse(snapshot)
+                ),
+              lock: (snapshot: unknown, actor: Actor, basis) =>
+                binding.unchanged!.lock(
+                  binding.unchanged!.snapshot.parse(snapshot),
+                  actor,
+                  basis
+                ),
               revalidate: (input: unknown, snapshot: unknown, actor: Actor) =>
                 binding.unchanged!.revalidate(
                   parseInput(spec.input, input),
@@ -193,14 +207,33 @@ export class RegistryEntries extends CatalogPublication {
       },
       prepare: (input, actor) =>
         binding.prepare(parseInput(spec.input, input), actor),
-      revalidate: (input, prepared, actor) =>
-        binding.revalidate(
+      basisKey: (input, prepared, actor) =>
+        binding.basisKey(
           parseInput(spec.input, input),
           {
             candidate: binding.candidate.parse(prepared.candidate),
             review: binding.review.parse(prepared.review),
           },
           actor
+        ),
+      basisValue: (input, prepared, actor) =>
+        binding.basisValue(
+          parseInput(spec.input, input),
+          {
+            candidate: binding.candidate.parse(prepared.candidate),
+            review: binding.review.parse(prepared.review),
+          },
+          actor
+        ),
+      revalidate: (input, prepared, actor, basis) =>
+        binding.revalidate(
+          parseInput(spec.input, input),
+          {
+            candidate: binding.candidate.parse(prepared.candidate),
+            review: binding.review.parse(prepared.review),
+          },
+          actor,
+          basis
         ),
       run: async (input, prepared, actor) => {
         const parsed = parseInput(spec.input, input)

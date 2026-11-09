@@ -128,16 +128,61 @@ export function detect(text, file = "source.ts") {
       !body(execute, source).includes("refuseFrozenReview"))
   )
     problems.push(problem("selected-branch-downgrade", execute, source))
+  if (execute && body(execute, source).includes("isUnchanged")) {
+    const text = body(execute, source)
+    if (
+      !text.includes("publishUnchanged") ||
+      text.includes("basisRowLocks") ||
+      text.includes("requireBasisLock") ||
+      text.includes("pg_locks")
+    )
+      problems.push(problem("unlocked-basis", execute, source))
+  }
+  const unchangedPublish = named(source, "publishUnchanged")
   if (
-    execute &&
-    body(execute, source).includes("isUnchanged") &&
-    (!body(execute, source).includes("basisRowLocks") ||
-      !body(execute, source).includes("requireBasisLock"))
+    unchangedPublish &&
+    (!block(unchangedPublish, source).includes("openBasisLock") ||
+      !block(unchangedPublish, source).includes("requireBasisToken"))
   )
-    problems.push(problem("unlocked-basis", execute, source))
-  const locked = named(source, "lockBasisName")
-  if (locked && !block(locked, source).includes('.for("update")'))
-    problems.push(problem("unlocked-basis", locked, source))
+    problems.push(problem("unlocked-basis", unchangedPublish, source))
+  const reviewedLock = named(source, "lockReviewedBasis")
+  if (
+    reviewedLock &&
+    (!block(reviewedLock, source).includes("openBasisLock") ||
+      !block(reviewedLock, source).includes("requireBasisToken"))
+  )
+    problems.push(problem("unlocked-basis", reviewedLock, source))
+  const frozenPublish = named(source, "publishFrozenReview")
+  if (
+    frozenPublish &&
+    !block(frozenPublish, source).includes("lockReviewedBasis")
+  )
+    problems.push(problem("unlocked-basis", frozenPublish, source))
+  const opener = named(source, "openBasisLock")
+  if (opener) {
+    const text = block(opener, source)
+    if (
+      !text.includes('.for("update")') ||
+      !text.includes("requiredKey") ||
+      text.includes("pg_locks") ||
+      text.includes("RowShareLock") ||
+      text.includes("keyShare") ||
+      text.includes("key share")
+    )
+      problems.push(problem("unlocked-basis", opener, source))
+  }
+  const shape = named(source, "isUnchanged")
+  if (
+    shape &&
+    (!block(shape, source).includes('!("candidate" in value)') ||
+      !block(shape, source).includes('!("review" in value)'))
+  )
+    problems.push(problem("unchanged-shape", shape, source))
+  if (
+    text.includes("prepared.candidate.after") &&
+    !text.includes("prepared.candidate.before")
+  )
+    problems.push(problem("plain-mutation", source, source))
   const restore = named(source, "compareAndRestore")
   if (
     restore &&

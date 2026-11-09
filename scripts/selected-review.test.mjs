@@ -9,6 +9,7 @@ const entries = read("apps/api/src/registry/registry-entries.ts")
 const registry = read("apps/api/src/registry/registry.ts")
 const effects = read("apps/api/src/coach/task-effects.ts")
 const support = read("apps/api/src/test/frozen-review-support.ts")
+const frozen = read("apps/api/src/registry/frozen-review.ts")
 const kinds = (problems) =>
   [...new Set(problems.map((problem) => problem.kind))].sort()
 const clean = `
@@ -73,6 +74,7 @@ test("selected review detector rejects the four mistakes and accepts clean and o
   assert.deepEqual(detect(registry, "registry.ts"), [])
   assert.deepEqual(detect(effects, "task-effects.ts"), [])
   assert.deepEqual(detect(support, "frozen-review-support.ts"), [])
+  assert.deepEqual(detect(frozen, "frozen-review.ts"), [])
 })
 
 test("actual source mutants expose name-only selection, approval preparation, downgrade and direct restore", () => {
@@ -117,18 +119,36 @@ test("actual source mutants expose name-only selection, approval preparation, do
   assert.ok(kinds(detect(reprepare)).includes("approval-time-prepare"))
   assert.ok(kinds(detect(downgrade)).includes("selected-branch-downgrade"))
   assert.ok(kinds(detect(opened)).includes("direct-private-restore"))
-  const unlocked = registry.replace("await requireBasisLock(held)", "")
-  const plainLock = support.replace('.for("update")', "")
+  const unlocked = registry.replace(
+    "await publishUnchanged",
+    "await skippedUnchanged"
+  )
+  const plainLock = frozen.replace('.for("update")', '.for("keyShare")')
+  const counted = frozen.replace(
+    "let accepted: IssuedBasisToken | null = null",
+    "let accepted: IssuedBasisToken | null = null\n  void pg_locks"
+  )
+  const loose = frozen.replace('!("candidate" in value)', "true")
   const plainRestore = support.replace(
     "eq(user.name, expected)",
     "eq(user.id, userId)"
   )
+  const plainMutation = support.replace(
+    "prepared.candidate.before",
+    "actor.userId"
+  )
   assert.ok(kinds(detect(unlocked)).includes("unlocked-basis"))
   assert.ok(kinds(detect(plainLock)).includes("unlocked-basis"))
+  assert.ok(kinds(detect(counted)).includes("unlocked-basis"))
+  assert.ok(kinds(detect(loose)).includes("unchanged-shape"))
   assert.ok(kinds(detect(plainRestore)).includes("unconditional-restore"))
+  assert.ok(kinds(detect(plainMutation)).includes("plain-mutation"))
   assert.notEqual(unlocked, registry)
-  assert.notEqual(plainLock, support)
+  assert.notEqual(plainLock, frozen)
+  assert.notEqual(counted, frozen)
+  assert.notEqual(loose, frozen)
   assert.notEqual(plainRestore, support)
+  assert.notEqual(plainMutation, support)
   assert.notEqual(nameOnly, entries)
   assert.notEqual(prepared, effects)
   assert.notEqual(reprepare, registry)
