@@ -193,17 +193,78 @@ describe("revision diagnostics", () => {
       )
     ).toBe("font-pair")
     expect(
+      diagnose([
+        {
+          subject: "font",
+          sourceFamily: "Calibri",
+          sourceWeight: "regular",
+          replacementFamily: "Carlito (metric-compatible)",
+        },
+      ])
+    ).toEqual([
+      {
+        subject: "font",
+        sourceFamily: "Calibri",
+        sourceWeight: "regular",
+        replacementFamily: "Carlito (metric-compatible)",
+      },
+    ])
+  })
+
+  it("keeps a font family as free text and refuses only a sentence word", () => {
+    expect(
+      diagnose([
+        {
+          subject: "font",
+          sourceFamily: "St. Marie",
+          sourceWeight: "regular",
+          replacementFamily: "Arial (W1)",
+        },
+      ])
+    ).toEqual([
+      {
+        subject: "font",
+        sourceFamily: "St. Marie",
+        sourceWeight: "regular",
+        replacementFamily: "Arial (W1)",
+      },
+    ])
+    expect(
       code(() =>
         diagnose([
           {
             subject: "font",
             sourceFamily: "Calibri",
             sourceWeight: "regular",
-            replacementFamily: "Carlito (metric-compatible)",
+            replacementFamily: "We used a similar font",
           },
         ])
       )
     ).toBe("ui-string")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "font",
+            sourceFamily: "Calibri",
+            sourceWeight: "regular",
+            unavailableWeight: "Bold is not available here",
+          },
+        ])
+      )
+    ).toBe("ui-string")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "font",
+            sourceFamily: "   ",
+            sourceWeight: " ",
+            replacementFamily: " ",
+          },
+        ])
+      )
+    ).toBe("font-pair")
   })
 
   it("names a header gap and a shape gap on their own entries", () => {
@@ -249,7 +310,54 @@ describe("revision diagnostics", () => {
     ).toBe("second-map")
   })
 
-  it("keeps an image border on the drawing entry", () => {
+  it("refuses a warning sentence that has no final period", () => {
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "story",
+            name: "Shown on the next page",
+            status: "unsupported",
+          },
+        ])
+      )
+    ).toBe("ui-string")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "shape",
+            name: "The rule stays with the heading",
+            status: "unknown",
+          },
+        ])
+      )
+    ).toBe("ui-string")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "shape",
+            name: "Warning: header split, moved to body",
+            status: "unknown",
+          },
+        ])
+      )
+    ).toBe("ui-string")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "drawing",
+            name: "Picture edge is not shown",
+            border: null,
+          },
+        ])
+      )
+    ).toBe("ui-string")
+  })
+
+  it("keeps an image border on the drawing entry when width is an integer and color is six hex digits", () => {
     expect(
       diagnose([
         {
@@ -285,6 +393,52 @@ describe("revision diagnostics", () => {
         ])
       )
     ).toBe("offset")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "drawing",
+            name: "word/media/image1.png",
+            border: { width: "0.75pt", color: "000000" },
+          },
+        ])
+      )
+    ).toBe("ui-string")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "drawing",
+            name: "word/media/image1.png",
+            border: { width: "12700", color: "#000000" },
+          },
+        ])
+      )
+    ).toBe("ui-string")
+    expect(
+      code(() =>
+        diagnose([
+          {
+            subject: "drawing",
+            name: "word/media/image1.png",
+            border: { width: "4px", color: "black" },
+          },
+        ])
+      )
+    ).toBe("ui-string")
+  })
+
+  it("refuses a hand-built map that repeats a target", () => {
+    expect(
+      code(() =>
+        packageDiagnostics({ revision, profile, targets: [first, first] }, [])
+      )
+    ).toBe("duplicate-target")
+    expect(
+      code(() =>
+        packageDiagnostics(null as unknown as ReturnType<typeof renderMap>, [])
+      )
+    ).toBe("second-map")
   })
 
   it("returns one map and no warning string", () => {

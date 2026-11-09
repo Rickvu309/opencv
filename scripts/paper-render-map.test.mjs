@@ -9,6 +9,9 @@ const foreign = `t_${"b".repeat(64)}`
 const clean = `const map = { targets: ["${listed}"] }\nconst entry = { targetId: "${listed}", reason: "greeting" }\n`
 const withOffset = `const map = { targets: ["${listed}"] }\nconst entry = { targetId: "${listed}", offset: 4 }\n`
 const withForeign = `const map = { targets: ["${listed}"] }\nconst entry = { targetId: "${foreign}" }\n`
+const quotedOffset = `const e={"offset":4}\n`
+const shorthandOffset = `const offset=4; const e={offset}\n`
+const pxField = `const e={px:4}\n`
 
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
@@ -27,6 +30,14 @@ test("the mistake fixture emits an offset or a target that is not in the map", (
     )
   )
   assert.deepEqual(detect(withOffset, "other.ts"), [])
+})
+
+test("a quoted offset, a shorthand offset, or a px field is a mistake", () => {
+  for (const source of [quotedOffset, shorthandOffset, pxField]) {
+    assert.ok(
+      detect(source, "fixture").some((item) => item.detail === "offset")
+    )
+  }
 })
 
 test("the map sources stay quiet", () => {

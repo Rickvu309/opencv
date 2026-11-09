@@ -65,7 +65,6 @@ export type RenderAdapter = {
   readonly diagnostics: readonly PackageDiagnostic[]
 }
 
-const MAP_KEYS = new Set(["revision", "profile", "targets"])
 const ASSOCIATION_KEYS = new Set(["subject", "targetId", "reason", "status"])
 const FONT_KEYS = new Set([
   "subject",
@@ -80,6 +79,12 @@ const BORDER_KEYS = new Set(["width", "color"])
 const BORDER_SUBJECTS = new Set(["border", "outline", "image"])
 const REASONS = new Set<string>(RENDER_ASSOCIATION_REASONS)
 const STATUSES = new Set<string>(DIAGNOSTIC_STATUSES)
+const PART_PATH =
+  /^word\/(?:header\d+\.xml|footer\d+\.xml|media\/[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9]+)$/
+const SHAPE_TOKEN = /^[A-Za-z][A-Za-z0-9]*$/
+const WEIGHT_TOKEN = /^(?:[0-9]+|[A-Za-z][A-Za-z0-9-]*)$/
+const SENTENCE_WORD =
+  /\b(?:a|an|the|is|are|not|shown|warning|used|similar|available|stays|moved|here|with)\b/i
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -97,18 +102,34 @@ function statusOf(value: unknown): DiagnosticStatus {
   return value as DiagnosticStatus
 }
 
-function fontText(value: unknown) {
-  if (typeof value !== "string" || value.length === 0)
-    refuseRenderMap("font-pair")
-  if (/[.!?()]/.test(value)) refuseRenderMap("ui-string")
+function present(value: unknown, code: "font-pair" | "unnamed-gap") {
+  if (typeof value !== "string" || value.length === 0 || value.trim() !== value)
+    refuseRenderMap(code)
   return value
 }
 
-function gapName(value: unknown) {
-  if (typeof value !== "string" || value.length === 0 || value.trim() !== value)
-    refuseRenderMap("unnamed-gap")
-  if (/[!?]|\.\s|\.$/.test(value)) refuseRenderMap("ui-string")
-  return value
+function familyName(value: unknown) {
+  const name = present(value, "font-pair")
+  if (SENTENCE_WORD.test(name)) refuseRenderMap("ui-string")
+  return name
+}
+
+function weightToken(value: unknown) {
+  const weight = present(value, "font-pair")
+  if (!WEIGHT_TOKEN.test(weight)) refuseRenderMap("ui-string")
+  return weight
+}
+
+function partPath(value: unknown) {
+  const name = present(value, "unnamed-gap")
+  if (!PART_PATH.test(name)) refuseRenderMap("ui-string")
+  return name
+}
+
+function shapeToken(value: unknown) {
+  const name = present(value, "unnamed-gap")
+  if (!SHAPE_TOKEN.test(name)) refuseRenderMap("ui-string")
+  return name
 }
 
 function association(
@@ -128,8 +149,8 @@ function association(
 
 function font(entry: Record<string, unknown>): FontDiagnostic {
   assertSurfaceKeys(entry, FONT_KEYS)
-  const sourceFamily = fontText(entry.sourceFamily)
-  const sourceWeight = fontText(entry.sourceWeight)
+  const sourceFamily = familyName(entry.sourceFamily)
+  const sourceWeight = weightToken(entry.sourceWeight)
   const hasReplacement = entry.replacementFamily !== undefined
   const hasUnavailable = entry.unavailableWeight !== undefined
   if (hasReplacement === hasUnavailable) refuseRenderMap("font-pair")
@@ -138,14 +159,14 @@ function font(entry: Record<string, unknown>): FontDiagnostic {
       subject: "font",
       sourceFamily,
       sourceWeight,
-      replacementFamily: fontText(entry.replacementFamily),
+      replacementFamily: familyName(entry.replacementFamily),
     })
   }
   return Object.freeze({
     subject: "font",
     sourceFamily,
     sourceWeight,
-    unavailableWeight: fontText(entry.unavailableWeight),
+    unavailableWeight: weightToken(entry.unavailableWeight),
   })
 }
 
@@ -156,7 +177,7 @@ function gap(
   assertSurfaceKeys(entry, GAP_KEYS)
   return Object.freeze({
     subject,
-    name: gapName(entry.name),
+    name: subject === "story" ? partPath(entry.name) : shapeToken(entry.name),
     status: statusOf(entry.status),
   })
 }
@@ -171,7 +192,7 @@ function drawingBorder(value: unknown): DrawingBorder | null {
     refuseRenderMap("border-off-drawing")
   if (typeof color !== "string" || color.length === 0)
     refuseRenderMap("border-off-drawing")
-  if (/[#.!?\s()]/.test(width) || /[#.!?\s()]/.test(color))
+  if (!/^[0-9]+$/.test(width) || !/^[0-9A-Fa-f]{6}$/.test(color))
     refuseRenderMap("ui-string")
   return Object.freeze({ width, color })
 }
@@ -181,7 +202,7 @@ function drawing(entry: Record<string, unknown>): DrawingDiagnostic {
   if (!("border" in entry)) refuseRenderMap("border-off-drawing")
   return Object.freeze({
     subject: "drawing",
-    name: gapName(entry.name),
+    name: partPath(entry.name),
     border: drawingBorder(entry.border),
   })
 }
@@ -204,20 +225,12 @@ export function packageDiagnostics(
   map: RenderMap,
   entries: readonly Record<string, unknown>[]
 ): readonly PackageDiagnostic[] {
-  assertSurfaceKeys(map, MAP_KEYS)
-  if (typeof map.revision !== "string" || map.revision.length === 0)
-    refuseRenderMap("empty-revision")
-  if (typeof map.profile !== "string" || map.profile.length === 0)
-    refuseRenderMap("empty-profile")
-  if (!Array.isArray(map.targets)) refuseRenderMap("second-map")
-  for (const target of map.targets) {
-    if (!opaqueTarget(target)) refuseRenderMap("new-target")
-  }
+  const pinned = renderMap(map)
   if (!Array.isArray(entries)) refuseRenderMap("second-map")
   return Object.freeze(
     entries.map((entry) => {
       if (!isRecord(entry)) refuseRenderMap("second-map")
-      return one(map, entry)
+      return one(pinned, entry)
     })
   )
 }

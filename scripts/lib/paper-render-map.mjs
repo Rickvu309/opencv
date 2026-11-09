@@ -16,7 +16,11 @@ export function detect(text, file = "source.ts") {
     name.endsWith("/package-diagnostics.ts")
   if (!watched) return []
   const problems = []
-  if (/\b(?:offset|outlineOffset)\s*:/.test(text))
+  const field = String.raw`["']?(?:outlineOffset|offset|px)["']?`
+  if (
+    new RegExp(String.raw`\b${field}\s*:`).test(text) ||
+    new RegExp(String.raw`\{\s*${field}\s*\}`).test(text)
+  )
     problems.push(problem("offset"))
   if (/\b(?:message|label|warning|sentence)\s*:/.test(text))
     problems.push(problem("ui-string"))

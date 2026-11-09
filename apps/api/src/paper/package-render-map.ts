@@ -67,18 +67,22 @@ export function opaqueTarget(value: unknown): value is string {
   return typeof value === "string" && OPAQUE_TARGET.test(value)
 }
 
+function keptId(value: unknown, code: "empty-revision" | "empty-profile") {
+  if (typeof value !== "string" || value.length === 0 || value.trim() !== value)
+    refuseRenderMap(code)
+  return value
+}
+
 export function renderMap(acknowledged: AcknowledgedRevision): RenderMap {
+  if (
+    typeof acknowledged !== "object" ||
+    acknowledged === null ||
+    Array.isArray(acknowledged)
+  )
+    refuseRenderMap("second-map")
   assertSurfaceKeys(acknowledged, MAP_KEYS)
-  if (
-    typeof acknowledged.revision !== "string" ||
-    acknowledged.revision.length === 0
-  )
-    refuseRenderMap("empty-revision")
-  if (
-    typeof acknowledged.profile !== "string" ||
-    acknowledged.profile.length === 0
-  )
-    refuseRenderMap("empty-profile")
+  const revision = keptId(acknowledged.revision, "empty-revision")
+  const profile = keptId(acknowledged.profile, "empty-profile")
   if (!Array.isArray(acknowledged.targets)) refuseRenderMap("second-map")
   const targets: string[] = []
   const seen = new Set<string>()
@@ -89,8 +93,8 @@ export function renderMap(acknowledged: AcknowledgedRevision): RenderMap {
     targets.push(target)
   }
   return Object.freeze({
-    revision: acknowledged.revision,
-    profile: acknowledged.profile,
+    revision,
+    profile,
     targets: Object.freeze(targets),
   })
 }

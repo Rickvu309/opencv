@@ -71,6 +71,18 @@ describe("revision map", () => {
     expect(code(() => renderMap(surface([first, first])))).toBe(
       "duplicate-target"
     )
+    expect(
+      code(() => renderMap({ revision: "  ", profile, targets: [first] }))
+    ).toBe("empty-revision")
+    expect(
+      code(() => renderMap({ revision, profile: "\n", targets: [first] }))
+    ).toBe("empty-profile")
+    expect(code(() => renderMap(null as unknown as AcknowledgedRevision))).toBe(
+      "second-map"
+    )
+    expect(code(() => renderMap([] as unknown as AcknowledgedRevision))).toBe(
+      "second-map"
+    )
   })
 
   it("refuses an offset or a second map on the acknowledged revision", () => {
