@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { coachActor, defineOperation, personActor } from "@workspace/domain"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
+import type { Pool } from "pg"
 import { expect } from "vitest"
 import { z } from "zod"
 import { getDb, insideTransaction, withDatabase } from "../db/context.js"
@@ -47,6 +48,10 @@ export function fixture(
     silent?: boolean
     prepare?: () => Promise<void>
     revalidate?: () => Promise<void>
+    beforeLock?: () => Promise<void>
+    afterLock?: () => Promise<void>
+    afterRead?: () => Promise<void>
+    lock?: boolean
     fail?: boolean
     version?: string
     select?: (input: Readonly<Input>) => "execute" | "reviewed"
@@ -91,9 +96,18 @@ export function fixture(
       revalidate: async (_input, saved, actor) => {
         calls.revalidate++
         expect(insideTransaction()).toBe(true)
+        if (options.lock === false) {
+          if ((await nameOf(actor.userId)) !== saved.before)
+            throw new Error("Basis conflict")
+          await options.afterRead?.()
+          await options.revalidate?.()
+          return
+        }
+        await options.beforeLock?.()
+        const locked = await lockBasisName(actor.userId)
+        await options.afterLock?.()
         await options.revalidate?.()
-        if ((await nameOf(actor.userId)) !== saved.before)
-          throw new Error("Basis conflict")
+        if (locked !== saved.before) throw new Error("Basis conflict")
       },
     },
     revalidate: async (
@@ -199,4 +213,127 @@ export async function receiptCount(id: string) {
 }
 export async function nameOf(id: string) {
   return (await getDb().select().from(user).where(eq(user.id, id)))[0]?.name
+}
+
+export async function lockBasisName(userId: string) {
+  const [row] = await getDb()
+    .select({ name: user.name })
+    .from(user)
+    .where(eq(user.id, userId))
+    .for("update")
+  return row?.name
+}
+
+export async function compareAndRestore(
+  userId: string,
+  expected: string,
+  prior: string
+) {
+  const rows = await getDb()
+    .update(user)
+    .set({ name: prior })
+    .where(and(eq(user.id, userId), eq(user.name, expected)))
+    .returning({ id: user.id })
+  if (rows.length === 0) throw new Error("Later typing")
+}
+
+export async function commitOtherName(id: string, name: string) {
+  const pool = (backend.db as unknown as { $client: Pool }).$client
+  const client = await pool.connect()
+  try {
+    const pid = await client.query<{ pid: number }>(
+      "select pg_backend_pid() as pid"
+    )
+    await client.query(`update opencv_app."user" set name = $1 where id = $2`, [
+      name,
+      id,
+    ])
+    return pid.rows[0]!.pid
+  } finally {
+    client.release()
+  }
+}
+
+export async function otherBlocked(pid: number) {
+  const pool = (backend.db as unknown as { $client: Pool }).$client
+  const probe = await pool.connect()
+  try {
+    const locks = await probe.query(
+      "select 1 from pg_locks where pid <> $1 and granted = false limit 1",
+      [pid]
+    )
+    return (locks.rowCount ?? 0) > 0
+  } finally {
+    probe.release()
+  }
+}
+
+export function undoFixture(
+  fail: () => boolean = () => false,
+  pause?: () => Promise<void>
+) {
+  const registry = new Registry()
+  const restore = "fixture.restorePrivate"
+  let restores = 0
+  registry.addQuery({
+    name: "fixture.currentName",
+    description: "Read the current name",
+    input: z.object({}).strict(),
+    coach: false,
+    step: () => "Read the name",
+    read: async (_input, actor) => ({ name: await nameOf(actor.userId) }),
+  })
+  registry.addUndoCommand(
+    {
+      name: restore,
+      description: "Restore the exact prior text",
+      input: z.object({ expected: z.string(), prior: z.string() }).strict(),
+      coach: "never",
+      destructive: false,
+      step: () => "Restore text",
+      reversal: () => null,
+      activity: () => null,
+    },
+    async (input, actor) => {
+      expect(insideTransaction()).toBe(true)
+      if (pause) await pause()
+      await compareAndRestore(actor.userId, input.expected, input.prior)
+      restores++
+      if (fail()) throw new Error("Restore refused")
+      return { restored: true }
+    }
+  )
+  registry.addCommand(
+    {
+      name: "fixture.write",
+      description: "Write text",
+      input: z.object({ before: z.string(), after: z.string() }).strict(),
+      coach: "confirm",
+      destructive: false,
+      step: () => "Write text",
+      reversal: (input) => ({
+        command: restore,
+        input: { expected: input.after, prior: input.before },
+        expect: {
+          query: "fixture.currentName",
+          input: {},
+          matches: { name: input.after },
+          skipped: "The name changed",
+        },
+      }),
+      activity: (_input, _output, actor) => ({
+        subjectKind: "account" as const,
+        subjectId: actor.userId,
+        summary: "Wrote text",
+      }),
+    },
+    async (input, actor) => {
+      await getDb()
+        .update(user)
+        .set({ name: input.after })
+        .where(eq(user.id, actor.userId))
+      return { text: input.after }
+    }
+  )
+  return { registry, restore, restores: () => restores }
 }

@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"
 import { runIntent } from "../coach/index.js"
-import { getDb, insideTransaction, transaction } from "../db/context.js"
+import { getDb, transaction } from "../db/context.js"
 import {
   activity,
   coachTasks,
@@ -21,6 +21,7 @@ import {
   owner,
   receiptCount,
   run,
+  undoFixture,
   words,
 } from "../test/frozen-review-support.js"
 import { inputHash } from "./receipt.js"
@@ -242,77 +243,6 @@ it("selected reviewed preparation refuses an outer SQL transaction while the leg
     expect(calls.execute).toBe(1)
     expect(await nameOf(actor.id)).toBe("Grace")
   }))
-
-function undoFixture(fail: () => boolean = () => false) {
-  const registry = new Registry()
-  const restore = "fixture.restorePrivate"
-  let restores = 0
-  registry.addQuery({
-    name: "fixture.currentName",
-    description: "Read the current name",
-    input: z.object({}).strict(),
-    coach: false,
-    step: () => "Read the name",
-    read: async (_input, actor) => ({ name: await nameOf(actor.userId) }),
-  })
-  registry.addUndoCommand(
-    {
-      name: restore,
-      description: "Restore the exact prior text",
-      input: z.object({ expected: z.string(), prior: z.string() }).strict(),
-      coach: "never",
-      destructive: false,
-      step: () => "Restore text",
-      reversal: () => null,
-      activity: () => null,
-    },
-    async (input, actor) => {
-      expect(insideTransaction()).toBe(true)
-      if ((await nameOf(actor.userId)) !== input.expected)
-        throw new Error("Later typing")
-      restores++
-      await getDb()
-        .update(user)
-        .set({ name: input.prior })
-        .where(eq(user.id, actor.userId))
-      if (fail()) throw new Error("Restore refused")
-      return { restored: true }
-    }
-  )
-  registry.addCommand(
-    {
-      name: "fixture.write",
-      description: "Write text",
-      input: z.object({ before: z.string(), after: z.string() }).strict(),
-      coach: "confirm",
-      destructive: false,
-      step: () => "Write text",
-      reversal: (input) => ({
-        command: restore,
-        input: { expected: input.after, prior: input.before },
-        expect: {
-          query: "fixture.currentName",
-          input: {},
-          matches: { name: input.after },
-          skipped: "The name changed",
-        },
-      }),
-      activity: (_input, _output, actor) => ({
-        subjectKind: "account",
-        subjectId: actor.userId,
-        summary: "Wrote text",
-      }),
-    },
-    async (input, actor) => {
-      await getDb()
-        .update(user)
-        .set({ name: input.after })
-        .where(eq(user.id, actor.userId))
-      return { text: input.after }
-    }
-  )
-  return { registry, restore, restores: () => restores }
-}
 
 it("only owned receipt Undo admits a hidden restore; people and both agent transports cannot name it", () =>
   run(async () => {

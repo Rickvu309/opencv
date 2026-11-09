@@ -66,6 +66,8 @@ import {
   reviewReceiptKey,
   isUnchanged,
   readPreparedExecution,
+  basisRowLocks,
+  requireBasisLock,
   type PreparedExecution,
 } from "./frozen-review.js"
 
@@ -343,7 +345,9 @@ export class Registry extends RegistryEntries {
         await checkReviewActor(actor)
         if (actor.type === "delegate") await requireLiveDelegate(actor)
         if (!reviewed.unchanged) return refuseFrozenReview()
+        const held = await basisRowLocks()
         await reviewed.unchanged.revalidate(parsed, frozen.snapshot, actor)
+        await requireBasisLock(held)
       } else if (reviewed && frozen && !isUnchanged(frozen)) {
         publish = () =>
           publishFrozenReview({

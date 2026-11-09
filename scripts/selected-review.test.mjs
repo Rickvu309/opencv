@@ -8,6 +8,7 @@ const read = (file) => readFileSync(new URL(file, root), "utf8")
 const entries = read("apps/api/src/registry/registry-entries.ts")
 const registry = read("apps/api/src/registry/registry.ts")
 const effects = read("apps/api/src/coach/task-effects.ts")
+const support = read("apps/api/src/test/frozen-review-support.ts")
 const kinds = (problems) =>
   [...new Set(problems.map((problem) => problem.kind))].sort()
 const clean = `
@@ -42,7 +43,10 @@ class Registry {
   taskNeedsPreparation(name: string) { return Boolean(this.commands.get(name)?.reviewed) }
   async prepareIntent() { return registry.taskCanPrepare(intent.operation) }
   async approve() { return prepareReview() }
-  async #execute() { return command.run() }
+  async #execute() {
+    if (isUnchanged(frozen)) await reviewed.unchanged.revalidate()
+    return command.run()
+  }
   async admitCommand() { return command.run() }
   list() { return this.commands }
   commandNames() { return this.commands.keys() }
@@ -62,11 +66,13 @@ test("selected review detector rejects the four mistakes and accepts clean and o
     "direct-private-restore",
     "name-only-selection",
     "selected-branch-downgrade",
+    "unlocked-basis",
   ])
   assert.deepEqual(detect(clean), [])
   assert.deepEqual(detect(entries, "registry-entries.ts"), [])
   assert.deepEqual(detect(registry, "registry.ts"), [])
   assert.deepEqual(detect(effects, "task-effects.ts"), [])
+  assert.deepEqual(detect(support, "frozen-review-support.ts"), [])
 })
 
 test("actual source mutants expose name-only selection, approval preparation, downgrade and direct restore", () => {
@@ -111,6 +117,18 @@ test("actual source mutants expose name-only selection, approval preparation, do
   assert.ok(kinds(detect(reprepare)).includes("approval-time-prepare"))
   assert.ok(kinds(detect(downgrade)).includes("selected-branch-downgrade"))
   assert.ok(kinds(detect(opened)).includes("direct-private-restore"))
+  const unlocked = registry.replace("await requireBasisLock(held)", "")
+  const plainLock = support.replace('.for("update")', "")
+  const plainRestore = support.replace(
+    "eq(user.name, expected)",
+    "eq(user.id, userId)"
+  )
+  assert.ok(kinds(detect(unlocked)).includes("unlocked-basis"))
+  assert.ok(kinds(detect(plainLock)).includes("unlocked-basis"))
+  assert.ok(kinds(detect(plainRestore)).includes("unconditional-restore"))
+  assert.notEqual(unlocked, registry)
+  assert.notEqual(plainLock, support)
+  assert.notEqual(plainRestore, support)
   assert.notEqual(nameOnly, entries)
   assert.notEqual(prepared, effects)
   assert.notEqual(reprepare, registry)

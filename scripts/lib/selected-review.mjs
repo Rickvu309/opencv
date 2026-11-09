@@ -21,6 +21,10 @@ function body(node, source) {
   return node ? node.getText(source) : ""
 }
 
+function block(node, source) {
+  return node?.body ? node.body.getText(source) : ""
+}
+
 function calls(node, source, name) {
   const found = []
   if (!node) return found
@@ -124,6 +128,23 @@ export function detect(text, file = "source.ts") {
       !body(execute, source).includes("refuseFrozenReview"))
   )
     problems.push(problem("selected-branch-downgrade", execute, source))
+  if (
+    execute &&
+    body(execute, source).includes("isUnchanged") &&
+    (!body(execute, source).includes("basisRowLocks") ||
+      !body(execute, source).includes("requireBasisLock"))
+  )
+    problems.push(problem("unlocked-basis", execute, source))
+  const locked = named(source, "lockBasisName")
+  if (locked && !block(locked, source).includes('.for("update")'))
+    problems.push(problem("unlocked-basis", locked, source))
+  const restore = named(source, "compareAndRestore")
+  if (
+    restore &&
+    (!block(restore, source).includes("user.name") ||
+      !block(restore, source).includes("expected"))
+  )
+    problems.push(problem("unconditional-restore", restore, source))
   const admit = named(source, "admitCommand")
   if (
     admit &&

@@ -151,6 +151,25 @@ export function refuseFrozenReview(): never {
   )
 }
 
+export async function basisRowLocks() {
+  const counted = await getDb().execute<{ n: number }>(sql`
+    select count(*)::int as n
+    from pg_locks
+    where pid = pg_backend_pid()
+      and granted
+      and mode = 'RowShareLock'
+  `)
+  return Number(counted.rows[0]?.n ?? 0)
+}
+
+export async function requireBasisLock(held: number) {
+  if ((await basisRowLocks()) <= held)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged check did not lock its basis"
+    )
+}
+
 export function requirePreparationBoundary() {
   if (insideTransaction())
     throw new CommandError(
