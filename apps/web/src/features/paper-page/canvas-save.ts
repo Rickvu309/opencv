@@ -40,6 +40,11 @@ export function pageWords(blocks: readonly { text: string }[]): string {
   return blocks.map((block) => block.text).join("\n")
 }
 
+export function savedNote(words: string, outcome: SaveOutcome): "Saved" | null {
+  if (words === "" || !outcome.saved || outcome.words !== words) return null
+  return "Saved"
+}
+
 export function wordsFromRegions(
   regions: readonly { text: string; reason?: { code: string } }[]
 ): string {

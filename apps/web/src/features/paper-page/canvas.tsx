@@ -26,7 +26,7 @@ import {
   type WritingDraft,
 } from "./canvas-edit.ts"
 import { pastePlain } from "./canvas-paste.ts"
-import { pageWords, settlePage } from "./canvas-save.ts"
+import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
 import "./canvas.css"
 
 type CanvasState = {
@@ -274,8 +274,9 @@ function WritingSheet({
     void settlePage(docId, words, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return
-        if (!result.saved || result.words !== words) return
-        dispatch({ type: "note", note: "Saved" })
+        const note = savedNote(words, result)
+        if (!note) return
+        dispatch({ type: "note", note })
       })
       .catch(() => undefined)
     return () => controller.abort()

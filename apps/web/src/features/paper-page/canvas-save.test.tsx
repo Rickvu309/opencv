@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto"
 
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, screen } from "@testing-library/react"
+import { act, cleanup, screen, waitFor } from "@testing-library/react"
 
 import { render } from "@/test/render-with-client.tsx"
 import { draftFromWrite } from "@/lib/paper-package-ack.ts"
@@ -12,6 +12,7 @@ import {
   commitWords,
   decideSave,
   pageWords,
+  savedNote,
   settlePage,
   wordsFromRegions,
 } from "./canvas-save.ts"
@@ -187,6 +188,16 @@ describe("commitWords", () => {
   })
 })
 
+describe("savedNote", () => {
+  it("says Saved only for typed words that match the receipt", () => {
+    expect(savedNote("", { saved: true, words: "" })).toBeNull()
+    expect(savedNote("Hello", { saved: true, words: "" })).toBeNull()
+    expect(savedNote("Hello", { saved: false, words: "Hello" })).toBeNull()
+    expect(savedNote("Hello", { saved: true, words: "Hello!" })).toBeNull()
+    expect(savedNote("Hello", { saved: true, words: "Hello" })).toBe("Saved")
+  })
+})
+
 describe("settlePage", () => {
   it("mints once and says saved when the read-back matches", async () => {
     const calls: string[] = []
@@ -238,28 +249,22 @@ describe("WritingCanvas save", () => {
   }
 
   function stubRead(text: string) {
+    let reads = 0
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes("/api/commands/paper.canvas")) {
         return Promise.resolve(ok(packageResult()))
       }
       if (url.includes("/api/reads/paper.read")) {
+        reads += 1
         return Promise.resolve(ok(readResult(text)))
       }
       return Promise.resolve(new Response("missing", { status: 404 }))
     })
+    return () => reads
   }
 
-  it("says Saved when the blank page matches the saved copy", async () => {
-    stubRead("")
-    render(<WritingCanvas docId={DOC} />)
-    expect(await screen.findByText("Saved")).toBeVisible()
-  })
-
-  it("keeps typed words and does not say Saved when the copy differs", async () => {
-    stubRead("")
-    render(<WritingCanvas docId={DOC} />)
-    expect(await screen.findByText("Saved")).toBeVisible()
+  async function typeHello() {
     await act(async () => {
       page().dispatchEvent(
         new InputEvent("beforeinput", {
@@ -270,8 +275,34 @@ describe("WritingCanvas save", () => {
         })
       )
     })
-    expect(page().textContent?.replaceAll("\u200b", "")).toContain("Hello")
+  }
+
+  it("does not say Saved for an empty document", async () => {
+    const reads = stubRead("")
+    render(<WritingCanvas docId={DOC} />)
+    await waitFor(() => expect(reads()).toBeGreaterThan(0))
+    expect(screen.getByRole("status").textContent).toMatch(/not saved yet/)
     expect(screen.getByRole("status").textContent).not.toMatch(/\bSaved\b/)
+  })
+
+  it("keeps typed words and does not say Saved when only the empty document was stored", async () => {
+    const reads = stubRead("")
+    render(<WritingCanvas docId={DOC} />)
+    await waitFor(() => expect(reads()).toBeGreaterThan(0))
+    const before = reads()
+    await typeHello()
+    await waitFor(() => expect(reads()).toBeGreaterThan(before))
+    expect(page().textContent?.replaceAll("\u200b", "")).toContain("Hello")
+    expect(screen.getByRole("status").textContent).toMatch(/not saved yet/)
+    expect(screen.getByRole("status").textContent).not.toMatch(/\bSaved\b/)
+  })
+
+  it("says Saved when the typed words match the read-back", async () => {
+    stubRead("Hello")
+    render(<WritingCanvas docId={DOC} />)
+    await typeHello()
+    expect(await screen.findByText("Saved")).toBeVisible()
+    expect(page().textContent?.replaceAll("\u200b", "")).toContain("Hello")
   })
 
   it("keeps the words when saving is refused", async () => {
