@@ -200,7 +200,9 @@ function parseXML(source) {
       const parent = stack.at(-1)
       const attrs = []
       let w = parent?.w ?? ""
-      for (const match of token.matchAll(/([^\s=<>]+)\s*=\s*(["'])(.*?)\2/g)) {
+      for (const match of token.matchAll(
+        /([^\s=<>]+)\s*=\s*(["'])([^<]*?)\2/g
+      )) {
         const raw = match[1]
         const value = decode(match[3])
         if (raw === "xmlns:w") w = value
@@ -595,7 +597,7 @@ function deleteAt(bytes, xml, paragraphs, source, side, index, options) {
   )
 }
 
-function shell(body) {
+export function packageFromBody(body) {
   const types = `<Types xmlns="${TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`
   const root = `<Relationships xmlns="${PKG}"><Relationship Id="main" Type="${REL}/officeDocument" Target="word/document.xml"/></Relationships>`
   const document = `<w:document xmlns:w="${WORD}" xmlns:r="${REL}" xmlns:w14="${W14}"><w:body>${body}</w:body></w:document>`
@@ -614,12 +616,8 @@ function painted(text, pPr = PPR, paraId = "11111111", textId = "11111112") {
   return paraXml({ paraId, textId }, pPr, [runXml(text, RPR)])
 }
 
-export function packageFromBody(body) {
-  return shell(body)
-}
-
 export function mintBlankBytes() {
-  return shell(
+  return packageFromBody(
     painted("") + paraXml({ paraId: "22222221", textId: "22222222" }, SECT, [])
   )
 }

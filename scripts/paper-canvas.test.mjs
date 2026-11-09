@@ -645,6 +645,47 @@ test("a numeric token, a comment, or a tracked mark stays unchanged", () => {
     { op: "split", paragraph: KEY_A, at: 1 },
     mintSide()
   )
+  const broken = 'xmlns:w="urn:\nx"'
+  stay(
+    writing("secret").replace("<w:t>", `<w:t ${broken}>`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 3 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:r><w:rPr>", `<w:r ${broken}><w:rPr>`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("").replace("<w:t>", `<w:t ${broken}>`) + carrier(),
+    { op: "deleteParagraph", paragraph: KEY_A },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:pPr>", `<w:pPr ${broken}>`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:rPr>", `<w:rPr ${broken}>`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  for (const br of ["\r", "\u2028", "\u2029"])
+    stay(
+      writing("secret").replace("<w:t>", `<w:t xmlns:w="urn:${br}x">`) +
+        carrier(),
+      { op: "split", paragraph: KEY_A, at: 3 },
+      mintSide()
+    )
+  stay(
+    writing("secret").replace(
+      "<w:t>",
+      '<w:t xmlns:w="urn:x" a="\n xmlns:w=\'http://schemas.openxmlformats.org/wordprocessingml/2006/main\' ">'
+    ) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 3 },
+    mintSide()
+  )
   const kept = packageFromBody(
     writing("ab").replace(
       "<w:t>",
