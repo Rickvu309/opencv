@@ -19,6 +19,14 @@ import type { FrozenReview } from "./frozen-review.js"
 
 export const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
+export async function lockProposalOwner(userId: string) {
+  await getDb()
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.id, userId))
+    .for("update")
+}
+
 export function createProposal(options: {
   actor: CoachActor | DelegateActor
   command: string
@@ -43,11 +51,7 @@ async function insertProposal(options: {
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
     await requireLiveDelegate(actor)
-    await getDb()
-      .select({ id: user.id })
-      .from(user)
-      .where(eq(user.id, actor.userId))
-      .for("update")
+    await lockProposalOwner(actor.userId)
     const [outstanding] = await getDb()
       .select({ count: count() })
       .from(pendingActions)

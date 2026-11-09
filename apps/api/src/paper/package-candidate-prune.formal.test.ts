@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 
+import { delegateActorSchema } from "@workspace/domain"
 import { and, eq, sql } from "drizzle-orm"
 import type { Pool } from "pg"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
@@ -7,24 +8,33 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { getDb, transaction, withDatabase } from "../db/context.js"
 import {
   activity,
+  agentConnections,
   chats,
+  oauthClient,
   paperPackageCandidates,
   paperPackageHeads,
   pendingActions,
   user,
 } from "../db/schema.js"
+import { bindCatalog } from "../registry/bind.js"
+import { Registry } from "../registry/registry.js"
 import {
   openBackend,
   REAL,
   type Backend,
 } from "../test/registry-formal-support.js"
+import { registerPaper } from "./commands.js"
 import {
+  commitWordCandidate,
   prepareStoredWordPackage,
   restoreWordCandidate,
 } from "./package-candidates.js"
+import * as packageCandidates from "./package-candidates.js"
+import { implementation as readWord } from "./operations/read/server.js"
 import { fixturePackage } from "./package-fixtures.js"
 import * as packageRestore from "./package-restore.js"
 import {
+  exportWordPackage,
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
@@ -119,7 +129,7 @@ async function prepare(
     .from(paperPackageCandidates)
     .where(eq(paperPackageCandidates.id, prepared.candidate.id))
   if (!row) throw new Error("Missing candidate record")
-  return { prepared, row }
+  return { input, prepared, row }
 }
 
 async function copies(
@@ -267,6 +277,186 @@ describe("unreachable Word candidate removal", () => {
       expect(ids).not.toContain(undone)
       expect(ids).toHaveLength(2)
     }))
+
+  it("an edit whose saved copy expired refuses and keeps the document", () =>
+    run(async () => {
+      const owner = await account()
+      const doc = await document(owner)
+      const saved = await prepare(owner, doc.head.docId, "better", false)
+      await getDb()
+        .delete(paperPackageCandidates)
+        .where(eq(paperPackageCandidates.id, saved.row.id))
+      await getDb()
+        .insert(paperPackageCandidates)
+        .values({
+          ...saved.row,
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        })
+      const other = await document(owner)
+      await prepare(owner, other.head.docId, "next", false)
+      expect(await candidateIds(owner)).not.toContain(saved.row.id)
+      await expect(
+        transaction(() =>
+          commitWordCandidate(owner, saved.input, saved.prepared)
+        )
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message:
+          "This saved Word edit is no longer available. No document was changed.",
+      })
+      expect(
+        (await readWordPackage(owner, { docId: doc.head.docId })).revision
+      ).toBe(doc.head.revision)
+      expect(
+        (await exportWordPackage(owner, doc.head.docId, doc.head.revision))
+          .bytes
+      ).toEqual(doc.bytes)
+      expect(
+        (await readWordPackage(owner, { docId: other.head.docId })).revision
+      ).toBe(other.head.revision)
+    }))
+
+  it.skipIf(!REAL)(
+    "a delegate proposal locks the account before the saved copy",
+    () =>
+      run(async () => {
+        const tools = process.env.PAPER_AGENT_TOOLS
+        const enabled = process.env.PAPER_PACKAGE_ENABLED
+        process.env.PAPER_AGENT_TOOLS = "true"
+        process.env.PAPER_PACKAGE_ENABLED = "true"
+        const owner = await account()
+        const doc = await document(owner)
+        const clientId = randomUUID()
+        const connectionId = randomUUID()
+        await getDb()
+          .insert(oauthClient)
+          .values({
+            id: clientId,
+            clientId,
+            redirectUris: ["http://localhost/callback"],
+          })
+        await getDb()
+          .insert(agentConnections)
+          .values({
+            id: connectionId,
+            userId: owner,
+            clientId,
+            authorizationCodeId: randomUUID(),
+            name: "Agent",
+            audience: "http://localhost/mcp",
+            scopes: ["paper.write"],
+            resources: { kind: "jobs" },
+            policy: { reads: "allow", writes: "approval" },
+            expiresAt: new Date(Date.now() + 60_000),
+          })
+        const delegate = delegateActorSchema.parse({
+          type: "delegate",
+          userId: owner,
+          connectionId,
+          name: "Agent",
+          scopes: ["paper.write"],
+          resources: "jobs",
+          reads: "allow",
+          writes: "approval",
+        })
+        const other = await document(owner)
+        const page = await readWordPackage(owner, { docId: doc.head.docId })
+        const target = page.regions.find((region) => region.kind === "editable")
+        if (!target || target.kind !== "editable")
+          throw new Error("Missing fixture target")
+        const input = {
+          docId: doc.head.docId,
+          basedOn: page.revision,
+          edits: [
+            {
+              op: "replaceText" as const,
+              targetId: target.targetId,
+              before: "original",
+              after: "better",
+            },
+          ],
+        }
+        let pid = 0
+        let release = () => {}
+        const hold = new Promise<void>((resolve) => {
+          release = resolve
+        })
+        let markEntered = () => {}
+        const entered = new Promise<void>((resolve) => {
+          markEntered = resolve
+        })
+        const real = packageCandidates.revalidateWordCandidate
+        const spy = vi
+          .spyOn(packageCandidates, "revalidateWordCandidate")
+          .mockImplementation(async (...args) => {
+            const mine = await getDb().execute<{ pid: number }>(
+              sql`select pg_backend_pid() as pid`
+            )
+            pid = Number(mine.rows[0]?.pid)
+            markEntered()
+            await hold
+            return real(...args)
+          })
+        const registry = new Registry()
+        registerPaper(registry)
+        bindCatalog(registry, { "paper.read": readWord })
+        const proposing = registry
+          .execute({
+            name: "paper.edit",
+            input,
+            actor: delegate,
+            idempotencyKey: randomUUID(),
+          })
+          .catch((error: unknown) =>
+            error instanceof Error ? error : new Error("Proposal failed")
+          )
+        let saving: Promise<Awaited<ReturnType<typeof prepare>> | Error> =
+          Promise.resolve(new Error("Save has not started"))
+        try {
+          const opened = await Promise.race([
+            entered.then(() => "entered" as const),
+            proposing.then(() => "finished" as const),
+          ])
+          if (opened !== "entered" || !pid)
+            throw new Error("Proposal finished before it locked the account")
+          saving = prepare(owner, other.head.docId, "next", false).catch(
+            (error: unknown) =>
+              error instanceof Error ? error : new Error("Save failed")
+          )
+          let waiting = false
+          for (let attempt = 0; attempt < 80 && !waiting; attempt += 1) {
+            waiting = await otherBlocked(pid)
+            if (!waiting)
+              await new Promise((resolve) => setTimeout(resolve, 25))
+          }
+          expect(waiting).toBe(true)
+          release()
+          const proposed = await proposing
+          if (proposed instanceof Error) throw proposed
+          expect(proposed.pending).toBe(true)
+          const stored = await saving
+          if (stored instanceof Error) throw stored
+          expect(await candidateIds(owner)).toContain(stored.row.id)
+          expect(
+            (await readWordPackage(owner, { docId: doc.head.docId })).revision
+          ).toBe(doc.head.revision)
+          expect(
+            (await exportWordPackage(owner, doc.head.docId, doc.head.revision))
+              .bytes
+          ).toEqual(doc.bytes)
+        } finally {
+          release()
+          spy.mockRestore()
+          if (tools === undefined) delete process.env.PAPER_AGENT_TOOLS
+          else process.env.PAPER_AGENT_TOOLS = tools
+          if (enabled === undefined) delete process.env.PAPER_PACKAGE_ENABLED
+          else process.env.PAPER_PACKAGE_ENABLED = enabled
+          await proposing
+          await saving
+        }
+      }),
+    20_000
+  )
 
   it.skipIf(!REAL)(
     "removal waits while Undo holds the saved copy",

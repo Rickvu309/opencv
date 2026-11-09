@@ -12,7 +12,7 @@ import {
 import { createId } from "../id.js"
 import { CommandError } from "./errors.js"
 import { inputHash } from "./receipt.js"
-import { createProposal } from "./proposals.js"
+import { createProposal, lockProposalOwner } from "./proposals.js"
 import { requireLiveDelegate } from "./delegate-policy.js"
 import { activityByKey } from "./registry-reads.js"
 import { replay } from "./replay.js"
@@ -617,6 +617,8 @@ export async function publishFrozenReview({
       return { ...replay(committed), command: committed.command }
     }
   }
+  if (actor.type === "delegate" && !approved)
+    await lockProposalOwner(actor.userId)
   const locked = await lockReviewedBasis(binding, input, frozen, actor)
   if (actor.type !== "person" && !approved) {
     return createProposal({
