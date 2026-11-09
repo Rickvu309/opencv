@@ -156,3 +156,16 @@ test("Word imports reject private children at retry and publication", () => {
     )
   }
 })
+
+test("legacy uploads publish Word heads through the Catalog executor", () => {
+  const http = readFileSync(
+    new URL("../apps/api/src/paper/http.ts", import.meta.url),
+    "utf8"
+  )
+  assert.deepEqual(detect(http, "apps/api/src/paper/http.ts"), [])
+  const mistake = `${http}\nimport { publishWordPackage } from "./package-store.js"`
+  assert.deepEqual(
+    detect(mistake, "apps/api/src/paper/http.ts").map(({ kind }) => kind),
+    ["public-head-executor"]
+  )
+})

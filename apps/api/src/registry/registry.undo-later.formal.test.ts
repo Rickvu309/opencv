@@ -267,7 +267,6 @@ const KNOWN_VIOLATIONS = [
   "job.update",
   "paper.create",
   "paper.duplicate",
-  "paper.import",
 ]
 
 type Verdict = "refused" | "kept" | "erased"
@@ -320,6 +319,10 @@ describe("P4: undoing an action after a later change never erases the later chan
             userId,
             run
           )
+          if (row.name === "paper.import") {
+            expect(verdicts[row.name]).toBe("refused")
+            expect(await LATER[row.name]!.survives(result, userId)).toBe(true)
+          }
         } else if (row.undoAssert) {
           await row.undoAssert(result)
         }

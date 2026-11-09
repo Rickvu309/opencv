@@ -52,6 +52,10 @@ import {
   discardImport,
   messageOf,
 } from "./paper-library-support.ts"
+import {
+  PaperPackageLibrary,
+  useWordLibrary,
+} from "./paper-package-library.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
 
 export function PaperLibrary({
@@ -101,8 +105,10 @@ export function PaperLibrary({
       newButtonRef.current?.focus()
     }
   }, [mode])
+  const closeDialog = () => dispatch({ type: "dialog_closed" })
   const dialogOpen = mode !== null || importState.type !== "idle"
   const needle = query.trim().toLowerCase()
+  const wordLibrary = useWordLibrary(filter, needle)
   const documents = docs.filter(
     (doc) => doc.kind === "cv" || doc.kind === "letter"
   )
@@ -112,8 +118,11 @@ export function PaperLibrary({
   const visibleFiles = files
     .filter((file) => needle === "" || file.name.toLowerCase().includes(needle))
     .filter(() => filter === "all" || filter === "files")
-  const noResults = visible.length === 0 && visibleFiles.length === 0
-  const total = documents.length + files.length
+  const noResults =
+    visible.length === 0 &&
+    visibleFiles.length === 0 &&
+    wordLibrary.visible.length === 0
+  const total = documents.length + files.length + wordLibrary.items.length
   const firstRun = !loading && !error && total === 0 && needle === ""
 
   useEffect(() => () => importRequest.current?.abort(), [])
@@ -151,6 +160,13 @@ export function PaperLibrary({
     dispatch({ type: "import_started", name: file.name })
     try {
       const created = await importPaperFile(file)
+      if ("generation" in created) {
+        wordLibrary.imported(created, request.signal)
+        if (!request.signal.aborted) {
+          dispatch({ type: "import_ended" })
+        }
+        return
+      }
       if (request.signal.aborted) {
         await discardImport(run, created)
         return
@@ -244,7 +260,7 @@ export function PaperLibrary({
     }
     try {
       await run("paper.rename", { docId: mode.doc.id, name: parsed.data })
-      dispatch({ type: "dialog_closed" })
+      closeDialog()
     } catch (err) {
       dispatch({
         type: "rename_rejected",
@@ -259,7 +275,7 @@ export function PaperLibrary({
     try {
       await run("paper.delete", { docId: mode.doc.id })
       toast(`Deleted ${name}`)
-      dispatch({ type: "dialog_closed" })
+      closeDialog()
     } catch (err) {
       toast(messageOf(err, "Could not delete. Try again."))
     }
@@ -270,7 +286,7 @@ export function PaperLibrary({
     try {
       await run("paper.deleteFile", { fileId: mode.file.id })
       toast(`Deleted ${mode.file.name}`)
-      dispatch({ type: "dialog_closed" })
+      closeDialog()
     } catch (err) {
       toast(messageOf(err, "Could not delete that file. Try again."))
     }
@@ -313,10 +329,10 @@ export function PaperLibrary({
       <PaperLetterStartPage
         onBack={() => {
           returnFromLetter.current = true
-          dispatch({ type: "dialog_closed" })
+          closeDialog()
         }}
         onCreated={(id) => {
-          dispatch({ type: "dialog_closed" })
+          closeDialog()
           onOpen(id)
         }}
       />
@@ -457,9 +473,11 @@ export function PaperLibrary({
         </div>
       ) : null}
 
+      <PaperPackageLibrary library={wordLibrary} />
+
       <PaperImportDialog
         open={mode?.type === "import"}
-        onClose={() => dispatch({ type: "dialog_closed" })}
+        onClose={closeDialog}
         link={link}
         onLinkChange={(next) => dispatch({ type: "link_typed", link: next })}
         onSubmitLink={() => void onPasteLink()}
@@ -470,7 +488,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "new"}
         onOpenChange={(open) => {
-          if (!open) dispatch({ type: "dialog_closed" })
+          if (!open) closeDialog()
         }}
       >
         <DialogContent
@@ -497,7 +515,7 @@ export function PaperLibrary({
                 dispatch({ type: "new_dialog_opened", step })
               }
               onCreated={(doc) => {
-                dispatch({ type: "dialog_closed" })
+                closeDialog()
                 void rememberUndo(doc.id, `Created ${doc.name}`)
                 onOpen(doc.id)
               }}
@@ -511,7 +529,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "rename"}
         onOpenChange={(open) => {
-          if (!open) dispatch({ type: "dialog_closed" })
+          if (!open) closeDialog()
         }}
       >
         <DialogContent>
@@ -541,7 +559,7 @@ export function PaperLibrary({
                 className="h-11 md:h-8"
                 type="button"
                 variant="ghost"
-                onClick={() => dispatch({ type: "dialog_closed" })}
+                onClick={closeDialog}
               >
                 Cancel
               </Button>
@@ -556,7 +574,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "delete" || mode?.type === "delete-file"}
         onOpenChange={(open) => {
-          if (!open) dispatch({ type: "dialog_closed" })
+          if (!open) closeDialog()
         }}
       >
         <DialogContent>
@@ -575,7 +593,7 @@ export function PaperLibrary({
               className="h-11 md:h-8"
               type="button"
               variant="ghost"
-              onClick={() => dispatch({ type: "dialog_closed" })}
+              onClick={closeDialog}
             >
               Cancel
             </Button>
@@ -612,7 +630,7 @@ export function PaperLibrary({
       <Dialog
         open={mode?.type === "link"}
         onOpenChange={(open) => {
-          if (!open) dispatch({ type: "dialog_closed" })
+          if (!open) closeDialog()
         }}
       >
         <DialogContent>
@@ -640,7 +658,7 @@ export function PaperLibrary({
                   })
                     .then(() => {
                       toast(`Linked to ${job.title}`)
-                      dispatch({ type: "dialog_closed" })
+                      closeDialog()
                     })
                     .catch((err: unknown) => {
                       toast(messageOf(err, "Could not link. Try again."))

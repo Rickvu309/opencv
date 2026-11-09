@@ -36,7 +36,9 @@ export function detect(text, file = "source.ts") {
       add(node, "mutable-package-version")
     if (
       ts.isImportDeclaration(node) &&
-      file.endsWith("package-http.ts") &&
+      (file.endsWith("package-http.ts") ||
+        file === "http.ts" ||
+        file.endsWith("/paper/http.ts")) &&
       node.importClause?.namedBindings &&
       ts.isNamedImports(node.importClause.namedBindings) &&
       node.importClause.namedBindings.elements.some(
