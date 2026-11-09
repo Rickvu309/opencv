@@ -1,4 +1,9 @@
-import { CONNECTION_TOKEN_SECONDS } from "@workspace/domain"
+import {
+  CONNECTION_TOKEN_SECONDS,
+  grantCopy,
+  resourcesForScopes,
+  scopesFromSearch,
+} from "@workspace/domain"
 import { authClient } from "@/lib/auth-client.ts"
 import { signedConsentQuery } from "@/lib/oauth-consent.ts"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -24,6 +29,11 @@ export function ConnectionConsent() {
   const answer = useMutation({
     mutationFn: (accept: boolean) => answerConsent(oauthQuery, accept),
     onSuccess: ({ url }) => window.location.assign(url),
+  })
+  const requested = scopesFromSearch(window.location.search)
+  const grant = grantCopy({
+    resources: resourcesForScopes(requested),
+    scopes: requested,
   })
   return (
     <main className="grid min-h-svh place-items-center bg-background px-4 py-12 text-foreground">
@@ -71,14 +81,11 @@ export function ConnectionConsent() {
           OpenCV has not verified the app’s vendor.
         </p>
         <p className="text-sm break-all">Connecting as {session?.user.email}</p>
-        <p>
-          Your agent can read all your current and future Jobs and propose
-          reversible Job changes when you grant Job access.
-        </p>
+        <p>{grant.share}</p>
         <p className="text-sm text-muted-foreground">
-          Reads are allowed. Changes wait for your approval in OpenCV. Only Jobs
-          are shared when the requested scopes include Job access. You can
-          revoke access in Settings → Integrations at any time.
+          {grant.access} Job changes stay off until you approve each one.
+          Document access stays off. You can revoke access in Settings →
+          Integrations at any time.
         </p>
         <p className="text-sm text-muted-foreground">
           Access tokens last {CONNECTION_TOKEN_SECONDS.access / 3600} hour. With

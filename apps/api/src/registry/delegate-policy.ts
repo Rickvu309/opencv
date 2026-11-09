@@ -1,9 +1,13 @@
 import {
   ERROR_CODES,
   delegateActorSchema,
+  delegateDeclaration,
+  delegateToolAllowed,
+  proposalGrantAllows,
   type Actor,
   type CoachAccess,
   type DelegateActor,
+  type DelegateMarker,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 import { getDb } from "../db/context.js"
@@ -14,23 +18,20 @@ export function delegateAllowed(
   entry: {
     name: string
     coach: CoachAccess | boolean
-    delegate?: "reversibleJob" | "jobRead"
+    delegate?: DelegateMarker
   },
   actor: Actor
 ) {
   if (actor.type !== "delegate") return true
-  if (
-    actor.resources !== "jobs" ||
-    !entry.name.startsWith("job.") ||
-    entry.coach === "never" ||
-    entry.coach === false
-  )
-    return false
-  return entry.delegate === "jobRead"
-    ? actor.reads === "allow" && actor.scopes.includes("job.read")
-    : entry.delegate === "reversibleJob" &&
-        actor.writes === "approval" &&
-        actor.scopes.includes("job.write")
+  return delegateToolAllowed({
+    name: entry.name,
+    delegate: entry.delegate,
+    coach: entry.coach,
+    resources: actor.resources,
+    reads: actor.reads,
+    writes: actor.writes,
+    scopes: actor.scopes,
+  })
 }
 
 export async function requireLiveDelegate(actor: DelegateActor) {
@@ -62,8 +63,10 @@ export async function requireLiveDelegate(actor: DelegateActor) {
 
 export async function requireLiveProposalConnection(
   userId: string,
-  connectionId: string
+  connectionId: string,
+  marker: DelegateMarker | undefined
 ) {
+  const declaration = delegateDeclaration(marker)
   const [grant] = await getDb()
     .select()
     .from(agentConnections)
@@ -78,9 +81,13 @@ export async function requireLiveProposalConnection(
     !grant ||
     grant.revokedAt ||
     grant.expiresAt.getTime() <= Date.now() ||
-    grant.resources.kind !== "jobs" ||
-    !grant.scopes.includes("job.write") ||
-    grant.policy.writes !== "approval"
+    !declaration ||
+    !proposalGrantAllows(
+      grant.resources,
+      grant.scopes,
+      grant.policy.writes,
+      declaration
+    )
   )
     throw new CommandError(
       ERROR_CODES.FORBIDDEN,

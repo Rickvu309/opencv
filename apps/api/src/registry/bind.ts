@@ -1,5 +1,7 @@
 import {
   defineQuery,
+  delegateDeclaration,
+  type DelegateMarker,
   type Operation,
   queries,
   type ActivityDraft,
@@ -115,7 +117,7 @@ export function bindCommands<C extends CommandContract>(
 type TableQuerySpec<N extends QueryName> = {
   description: string
   coach: boolean
-  delegate?: "jobRead"
+  delegate?: DelegateMarker
   step: (input: QueryInput<N>) => string
   read: (input: QueryInput<N>, actor: Actor) => Promise<QueryOutput<N>>
 }
@@ -212,7 +214,7 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
       description: operation.description,
       input: inputSchema,
       coach: operation.coach !== "never",
-      ...(operation.delegate === "jobRead"
+      ...(delegateDeclaration(operation.delegate)
         ? { delegate: operation.delegate }
         : {}),
       step: () => operation.description,
@@ -231,7 +233,7 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
       coach: operation.coach,
       destructive: operation.destructive,
       idempotency: operation.idempotency,
-      ...(operation.delegate === "reversibleJob"
+      ...(delegateDeclaration(operation.delegate)
         ? { delegate: operation.delegate }
         : {}),
       writes: (input) => [...operation.writes(input as never)],

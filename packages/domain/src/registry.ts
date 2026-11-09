@@ -4,6 +4,7 @@ import type { ZodType } from "zod"
 
 import { parseChatId, parseUserId, type ChatId, type UserId } from "./ids.js"
 import type { IdempotencyPolicy } from "./contract.js"
+import type { DelegateMarker } from "./operation.js"
 import type { CoachAccess, ResourceRef } from "./resources.js"
 
 export type { CoachAccess } from "./resources.js"
@@ -88,7 +89,7 @@ export type ReversalPlan = {
 } | null
 
 export type CommandSpec<TInput, TOutput> = {
-  delegate?: "reversibleJob"
+  delegate?: DelegateMarker
   writes?: (input: TInput) => ResourceRef[]
   name: string
   description: string
@@ -122,7 +123,7 @@ export type QuerySpec<TInput, TOutput = unknown> = {
   description: string
   input: ZodType<TInput>
   coach: boolean
-  delegate?: "jobRead"
+  delegate?: DelegateMarker
   step: (input: TInput) => string
   read: (input: TInput, actor: Actor) => Promise<TOutput>
 }

@@ -1,5 +1,6 @@
 import type { z } from "zod"
 
+import type { DelegateMarker } from "./operation.js"
 import type { QueryRef } from "./queries.js"
 import type { ResourceRef } from "./resources.js"
 
@@ -35,7 +36,7 @@ type CommandEntry<
   I extends Schema = Schema,
   O extends Schema = Schema,
 > = CoachPolicy & {
-  delegate?: "reversibleJob"
+  delegate?: DelegateMarker
   description: string
   input: I
   output: O

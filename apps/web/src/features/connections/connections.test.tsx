@@ -77,8 +77,11 @@ it("labels the app-supplied name as unverified and sends cancellation through th
     "30 days"
   )
   expect(
-    screen.getByText(/Your agent can read all your current and future Jobs/)
+    screen.getByText("Connection status only · No documents or Jobs shared")
   ).toBeInTheDocument()
+  expect(
+    screen.queryByText(/Reversible changes need approval/)
+  ).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
   await waitFor(() =>
     expect(answerConsent).toHaveBeenCalledWith(
@@ -376,4 +379,51 @@ it("shows the CIMD origin before the unverified app name", async () => {
     origin.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING
   ).toBeTruthy()
   expect(screen.getByText("App-supplied name (unverified)")).toBeInTheDocument()
+})
+
+it("names only the job read the agent asked for", async () => {
+  const scope =
+    "client_id=agent&scope=connection.status%20job.read&sig=verified"
+  window.history.replaceState(
+    {},
+    "",
+    `/oauth/consent?oauth_query=${encodeURIComponent(scope)}`
+  )
+  vi.mocked(consentClient).mockResolvedValue({
+    client_id: "agent",
+    client_name: "Read only",
+  })
+  show(<ConnectionConsent />)
+  expect(
+    await screen.findByText(
+      "All current and future Jobs · This agent cannot change things"
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByText(/Reversible changes need approval/)
+  ).not.toBeInTheDocument()
+  expect(screen.getByText(/Document access stays off/)).toBeInTheDocument()
+})
+
+it("does not offer document access when that is all the agent asked for", async () => {
+  const scope = "client_id=agent&scope=paper.read%20paper.write&sig=verified"
+  window.history.replaceState(
+    {},
+    "",
+    `/oauth/consent?oauth_query=${encodeURIComponent(scope)}`
+  )
+  vi.mocked(consentClient).mockResolvedValue({
+    client_id: "agent",
+    client_name: "Documents",
+  })
+  show(<ConnectionConsent />)
+  expect(
+    await screen.findByText(
+      "Connection status only · No documents or Jobs shared"
+    )
+  ).toBeInTheDocument()
+  expect(screen.queryByText(/paper/i)).not.toBeInTheDocument()
+  expect(
+    screen.queryByText(/Reversible changes need approval/)
+  ).not.toBeInTheDocument()
 })
