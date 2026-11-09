@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  AckRefusal,
   applyReply,
   draftFromWrite,
   type Acknowledgement,
   type LocalObservation,
   type PackageDraft,
 } from "./paper-package-ack.ts"
-import { openJournal, typeInto } from "./paper-package-journal.ts"
+import { nextCommand, openJournal, typeInto } from "./paper-package-journal.ts"
 
 const words = "Hi there now"
 
@@ -23,6 +24,16 @@ function stored(
   transaction: LocalObservation["transaction"] = "complete"
 ): LocalObservation {
   return { generation, words: text, transaction }
+}
+
+function code(run: () => unknown) {
+  try {
+    run()
+  } catch (error) {
+    expect(error).toBeInstanceOf(AckRefusal)
+    return (error as AckRefusal).code
+  }
+  throw new Error("expected a refusal")
 }
 
 function receipt(
@@ -58,8 +69,11 @@ describe("draft acknowledgements", () => {
     expect(applyReply(current, stored(3, words), receipt(3, "Hi")).saved).toBe(
       false
     )
-    expect(applyReply(current, stored(3, "Hi"), receipt(3, words)).words).toBe(
-      words
+    expect(
+      applyReply(current, stored(3, "Hi"), receipt(3, words))
+    ).toMatchObject({ words, saved: false })
+    expect(applyReply(current, stored(2, words), receipt(3, words)).saved).toBe(
+      false
     )
     expect(
       applyReply(current, stored(3, words), receipt(3, words, "cmd-2")).saved
@@ -91,5 +105,41 @@ describe("draft acknowledgements", () => {
         generation: 1,
       })
     ).toBe(current)
+  })
+
+  it("keeps Saved when a late reply names an abandoned command", () => {
+    const saved = applyReply(draft(), stored(3, words), receipt(3, words))
+    const moved = nextCommand(saved, "cmd-2")
+    const retried = applyReply(
+      draftFromWrite(moved),
+      stored(moved.generation, moved.words),
+      receipt(moved.generation, moved.words, moved.commandId)
+    )
+    expect(retried).toEqual({
+      commandId: "cmd-2",
+      generation: 3,
+      words,
+      saved: true,
+    })
+    expect(
+      applyReply(retried, stored(3, words), receipt(3, words, "cmd-1"))
+    ).toBe(retried)
+    expect(
+      applyReply(retried, stored(3, words), {
+        kind: "refusal",
+        commandId: "cmd-1",
+        generation: 3,
+      })
+    ).toBe(retried)
+  })
+
+  it("refuses a receipt that has no body", () => {
+    expect(
+      code(() =>
+        applyReply(draft(), stored(3, words), {
+          kind: "receipt",
+        } as Acknowledgement)
+      )
+    ).toBe("empty-reply")
   })
 })

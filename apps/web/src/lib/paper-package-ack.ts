@@ -65,8 +65,22 @@ export function draftFromWrite(write: CoalescedWrite): PackageDraft {
   })
 }
 
+function isReceipt(value: unknown): value is ServerReceipt {
+  if (value == null || typeof value !== "object") return false
+  const receipt = value as ServerReceipt
+  return (
+    typeof receipt.commandId === "string" &&
+    typeof receipt.words === "string" &&
+    Number.isInteger(receipt.generation)
+  )
+}
+
 function generationOf(reply: Acknowledgement) {
   return reply.kind === "receipt" ? reply.receipt.generation : reply.generation
+}
+
+function commandOf(reply: Acknowledgement) {
+  return reply.kind === "receipt" ? reply.receipt.commandId : reply.commandId
 }
 
 function sameGeneration(draft: PackageDraft, reply: Acknowledgement) {
@@ -88,7 +102,10 @@ export function applyReply(
     throw new AckRefusal("empty-draft")
   if (reply == null || (reply.kind !== "receipt" && reply.kind !== "refusal"))
     throw new AckRefusal("empty-reply")
+  if (reply.kind === "receipt" && !isReceipt(reply.receipt))
+    throw new AckRefusal("empty-reply")
   if (!sameGeneration(draft, reply)) return draft
+  if (commandOf(reply) !== draft.commandId) return draft
   if (reply.kind === "refusal") return freeze({ ...draft, saved: false })
   const receipt = reply.receipt
   const stored =

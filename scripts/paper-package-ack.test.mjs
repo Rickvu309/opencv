@@ -17,6 +17,31 @@ const mistake = `export function apply(draft, acknowledgement) {
   return draft
 }
 `
+const matchedOnly = `export function apply(draft, stored, matched) {
+  return { ...draft, saved: matched }
+}
+`
+const storedOrMatched = `export function apply(draft, stored, matched) {
+  return { ...draft, saved: stored || matched }
+}
+`
+const inverted = `export function apply(draft, local) {
+  const saved = local.transaction !== "complete" && local.words === draft.words
+  return { ...draft, saved }
+}
+`
+const arrowFirst = `const apply = (draft, receipt) => ({ ...draft, saved: receipt.ok })
+function other() {
+  return 1
+}
+`
+const helper = `function isStored(local) {
+  return local.transaction === "complete"
+}
+export function apply(draft, local, receipt) {
+  return { ...draft, saved: isStored(local) && receipt.words === draft.words }
+}
+`
 
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
@@ -30,6 +55,18 @@ test("the mistake fixture treats an acknowledgement alone as Saved", () => {
     { kind: "package-ack", detail: "ack-saved" },
   ])
   assert.deepEqual(detect(mistake, "other.ts"), [])
+})
+
+test("a receipt match or an or-expression is not Saved", () => {
+  for (const text of [matchedOnly, storedOrMatched, inverted, arrowFirst]) {
+    assert.deepEqual(detect(text, "fixture"), [
+      { kind: "package-ack", detail: "ack-saved" },
+    ])
+  }
+})
+
+test("a helper that checks the completed transaction stays quiet", () => {
+  assert.deepEqual(detect(helper, "fixture"), [])
 })
 
 test("the journal and acknowledgement sources stay quiet", () => {
