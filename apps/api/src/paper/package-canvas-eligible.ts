@@ -6,6 +6,7 @@ import {
   descendants,
   isWord,
   parsePackageXml,
+  XML_NS,
   xmlText,
   type XmlElement,
 } from "./package-xml.js"
@@ -61,6 +62,7 @@ function plainMark(node: XmlElement) {
 }
 
 function plainProps(node: XmlElement) {
+  if (node.opaque || node.attributes.length > 0) return false
   const kids = wordKids(node)
   if (kids.length !== node.children.length) return false
   const marks = kids.filter((child) => child.local === "rPr")
@@ -69,6 +71,19 @@ function plainProps(node: XmlElement) {
   return (
     rest.every((child) => leaf(child, PROP_LEAVES)) &&
     (!marks[0] || plainMark(marks[0]))
+  )
+}
+
+function plainText(node: XmlElement) {
+  return (
+    !node.opaque &&
+    node.children.length === 0 &&
+    node.attributes.every(
+      (attribute) =>
+        attribute.uri === XML_NS &&
+        attribute.local === "space" &&
+        attribute.value === "preserve"
+    )
   )
 }
 
@@ -102,7 +117,7 @@ function ordinary(source: string, paragraph: XmlElement) {
   if (inside.length !== texts.length + marks.length) return null
   if (marks[0] && !plainMark(marks[0])) return null
   const textNode = texts[0]
-  if (!textNode || textNode.children.length > 0) return null
+  if (!textNode || !plainText(textNode)) return null
   const text = textOf(source, textNode)
   if (/[\r\n]/.test(text)) return null
   return { run, textNode, text }

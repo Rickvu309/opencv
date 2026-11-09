@@ -196,7 +196,7 @@ export function deleteForward(
       block.text.slice(placed.caret.offset + 1)
     return replaceBlock(placed, index, { ...block, text }, placed.caret)
   }
-  return placed
+  return joinNext(placed)
 }
 
 export function commitComposition(
@@ -333,6 +333,24 @@ function breakAtCaret(draft: WritingDraft): WritingDraft {
     blocks,
     caret: { blockId: id, offset: 0 },
     nextId: draft.nextId + 1,
+  }
+}
+
+function joinNext(draft: WritingDraft): WritingDraft {
+  const index = draft.blocks.findIndex(
+    (item) => item.id === draft.caret.blockId
+  )
+  const block = draft.blocks[index]
+  const next = draft.blocks[index + 1]
+  if (!block || !next || block.held || next.held) return draft
+  return {
+    blocks: [
+      ...draft.blocks.slice(0, index),
+      { id: block.id, text: block.text + next.text },
+      ...draft.blocks.slice(index + 2),
+    ],
+    caret: { blockId: block.id, offset: block.text.length },
+    nextId: draft.nextId,
   }
 }
 

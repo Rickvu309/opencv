@@ -149,4 +149,32 @@ describe("eligible imported paragraphs", () => {
       expect(Buffer.from(refused.bytes).equals(source)).toBe(true)
     }
   })
+
+  it("refuses an opaque text node", () => {
+    const bytes = fixturePackage(
+      "<w:p><w:r><w:t>He<!--x-->llo</w:t></w:r></w:p>"
+    )
+    const basis = side(1)
+    const refused = applyEligibleBytes(
+      bytes,
+      { op: "split", paragraph: basis.paragraphs[0].key, at: 1 },
+      basis
+    )
+    expect(refused.status).toBe("REFUSED")
+    expect(Buffer.from(refused.bytes).equals(bytes)).toBe(true)
+  })
+
+  it("refuses an opaque paragraph property", () => {
+    const bytes = fixturePackage(
+      "<w:p><w:pPr><!--x--></w:pPr><w:r><w:t>Hello</w:t></w:r></w:p>"
+    )
+    const basis = side(1)
+    const refused = applyEligibleBytes(
+      bytes,
+      { op: "split", paragraph: basis.paragraphs[0].key, at: 1 },
+      basis
+    )
+    expect(refused.status).toBe("REFUSED")
+    expect(Buffer.from(refused.bytes).equals(bytes)).toBe(true)
+  })
 })

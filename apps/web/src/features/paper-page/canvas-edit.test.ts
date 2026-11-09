@@ -163,16 +163,36 @@ describe("writing draft", () => {
     expect(kept.caret).toEqual({ blockId: "p1", offset: 0 })
   })
 
-  it("deletes one character and does not merge at the end", () => {
+  it("deletes one character and joins the next paragraph at the end", () => {
     const draft = helloWorld()
     const trimmed = deleteForward(
       draft,
       pointSpan({ blockId: "p1", offset: 4 })
     )
     expect(words(trimmed)).toEqual(["Hell", "World"])
-    const held = deleteForward(trimmed, pointSpan({ blockId: "p1", offset: 4 }))
-    expect(words(held)).toEqual(["Hell", "World"])
-    expect(held.caret).toEqual({ blockId: "p1", offset: 4 })
+    const joined = deleteForward(
+      trimmed,
+      pointSpan({ blockId: "p1", offset: 4 })
+    )
+    expect(words(joined)).toEqual(["HellWorld"])
+    expect(joined.caret).toEqual({ blockId: "p1", offset: 4 })
+    const stayed = deleteForward(
+      joined,
+      pointSpan({ blockId: "p1", offset: 9 })
+    )
+    expect(words(stayed)).toEqual(["HellWorld"])
+    const heldNext = {
+      ...trimmed,
+      blocks: trimmed.blocks.map((block, index) =>
+        index === 1 ? { ...block, held: true } : block
+      ),
+    }
+    const kept = deleteForward(
+      heldNext,
+      pointSpan({ blockId: "p1", offset: 4 })
+    )
+    expect(words(kept)).toEqual(["Hell", "World"])
+    expect(kept.caret).toEqual({ blockId: "p1", offset: 4 })
   })
 
   it("removes only an empty paragraph", () => {
