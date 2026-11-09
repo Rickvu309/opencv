@@ -34,7 +34,7 @@
 .writing-page {
   box-sizing: border-box;
   min-block-size: 11in;
-  padding-block: clamp(1.5rem, 9%, 1in);
+  padding-block: clamp(1.5rem, 12%, 1in);
   padding-inline: clamp(1.25rem, 12%, 1in);
   border: 1px solid var(--border);
   background: var(--card);
