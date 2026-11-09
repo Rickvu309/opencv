@@ -17,7 +17,7 @@ http://scripts.sil.org/OFL
 
 Jost
 
-Copyright 2020 The Jost Project Authors (https://github.com/indestructible-type)
+Copyright 2020 The Jost Project Authors (https://github.com/indestructible-type/Jost)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -25,7 +25,7 @@ http://scripts.sil.org/OFL
 
 Montserrat
 
-Copyright 2024 The Montserrat.Git Project Authors (https://github.com/JulietaUla/Montserrat.git)
+Copyright 2011 The Montserrat Project Authors (https://github.com/JulietaUla/Montserrat)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -47,8 +47,8 @@ Source: https://github.com/liberationfonts
 
 Files: *
 Copyright:
- Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine.
- Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.
+ Digitized data copyright (c) 2010 Google Corporation.
+ Copyright (c) 2012 Red Hat, Inc.
 
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
 -----------------------------------------------------------

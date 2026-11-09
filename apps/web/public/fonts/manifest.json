@@ -117,5 +117,12 @@
     "bytes": 532636,
     "sha256": "36643644f318a812aab2d2ed3bb98f8cf0872527f835fe9398d95fe6b9adb878",
     "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "OpenSans-Italic.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/opensans/OpenSans-Italic%5Bwdth,wght%5D.ttf",
+    "bytes": 583992,
+    "sha256": "fe269381e992f32e135801740998544d6235061e37c93ec067ad2be3edd5b17b",
+    "license": "SIL OFL 1.1"
   }
 ]

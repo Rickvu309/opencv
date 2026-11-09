@@ -57,8 +57,15 @@
 @font-face {
   font-family: "Open Sans";
   src: url("/fonts/OpenSans.ttf") format("truetype");
-  font-weight: 100 900;
+  font-weight: 300 800;
   font-style: normal;
+}
+
+@font-face {
+  font-family: "Open Sans";
+  src: url("/fonts/OpenSans-Italic.ttf") format("truetype");
+  font-weight: 300 800;
+  font-style: italic;
 }
 
 @font-face {
