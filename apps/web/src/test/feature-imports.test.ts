@@ -25,7 +25,7 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
   "command-palette": [],
   inbox: ["apply"],
   landing: [],
-  paper: ["apply", "coach", "seed"],
+  paper: ["apply", "coach", "paper-page", "seed"],
   "paper-page": [],
   seed: [],
   settings: ["auth", "connections"],
