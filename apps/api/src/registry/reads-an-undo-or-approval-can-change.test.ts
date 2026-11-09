@@ -114,13 +114,17 @@ function bindingObjects(sf: ts.SourceFile) {
   return found
 }
 
-function selectedCommands(sf: ts.SourceFile) {
+function addedCommands(sf: ts.SourceFile) {
+  return selectedCommands(sf, "addCommand")
+}
+
+function selectedCommands(sf: ts.SourceFile, method = "addSelectedCommand") {
   const found: Array<{ name: string; activity: ts.Expression }> = []
   const visit = (node: ts.Node) => {
     if (
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === "addSelectedCommand" &&
+      node.expression.name.text === method &&
       node.arguments[0] &&
       ts.isObjectLiteralExpression(node.arguments[0])
     ) {
@@ -228,6 +232,14 @@ function classified() {
   for (const file of filesNamed(apiSrc, "package-edit.ts")) {
     const sf = parse(file)
     for (const selected of selectedCommands(sf)) {
+      if (writes.has(selected.name))
+        throw new Error(`${selected.name} is bound twice`)
+      writes.set(selected.name, writesActivity(selected.activity, sf))
+    }
+  }
+  for (const file of filesNamed(apiSrc, "package-canvas.ts")) {
+    const sf = parse(file)
+    for (const selected of addedCommands(sf)) {
       if (writes.has(selected.name))
         throw new Error(`${selected.name} is bound twice`)
       writes.set(selected.name, writesActivity(selected.activity, sf))
