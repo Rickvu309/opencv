@@ -1,9 +1,11 @@
 import { randomBytes } from "node:crypto"
 
 import {
+  ERROR_CODES,
   keywordGap,
   PAPER_RECEIPT_CHANGE_LIMIT,
   paperContract,
+  paperEditSchema,
   paperPhotoFileId,
   paperPlainText,
   parseFileId,
@@ -12,9 +14,11 @@ import {
 } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
+import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { createId } from "../id.js"
 import { editAsCoach, revertCoachEdit } from "./content-coach.js"
+import { registerWordPackageEdit } from "./package-edit.js"
 import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
@@ -89,7 +93,8 @@ export function registerPaper(registry: Registry) {
   )
   registry.addUndoGuard("paper.replace", oldEditorUndoReasons)
   registry.addUndoGuard("paper.restore", oldEditorUndoReasons)
-  bindCommands(registry, paperContract, {
+  const { "paper.edit": paperEdit, ...paperCommands } = paperContract
+  bindCommands(registry, paperCommands, {
     "paper.create": {
       handler: async (input, actor) => {
         const created = await createPaper(actor, input)
@@ -111,43 +116,6 @@ export function registerPaper(registry: Registry) {
         subjectId: output.id,
         summary: `Created ${output.name}`,
       }),
-    },
-    "paper.edit": {
-      handler: async (input, actor) => {
-        const result = await editAsCoach(
-          actor.userId,
-          input.docId,
-          {
-            basedOn: input.basedOn,
-            edits: input.edits,
-            editId: createId(),
-            newId: newBlockId,
-          },
-          actor
-        )
-        const changes = result.changes.slice(0, PAPER_RECEIPT_CHANGE_LIMIT)
-        return {
-          ...result,
-          changes,
-          moreChanges: result.changes.length - changes.length,
-        }
-      },
-      reversal: (input, output) =>
-        output.editId
-          ? {
-              command: "paper.revertEdit",
-              input: { docId: input.docId, editId: output.editId },
-            }
-          : null,
-      activity: (input, output) =>
-        output.editId
-          ? {
-              subjectKind: "paper",
-              subjectId: input.docId,
-              summary: `Edited ${output.name}`,
-              detail: { docId: input.docId, name: output.name },
-            }
-          : null,
     },
     "paper.revertEdit": {
       handler: async (input, actor) => {
@@ -268,6 +236,31 @@ export function registerPaper(registry: Registry) {
       reversal: noReversal,
       activity: noActivity,
     },
+  })
+  registerWordPackageEdit(registry, paperEdit, async (input, actor) => {
+    if (typeof input.basedOn !== "number")
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "This edit does not use a document revision."
+      )
+    const edits = paperEditSchema.array().min(1).parse(input.edits)
+    const result = await editAsCoach(
+      actor.userId,
+      input.docId,
+      {
+        basedOn: input.basedOn,
+        edits,
+        editId: createId(),
+        newId: newBlockId,
+      },
+      actor
+    )
+    const changes = result.changes.slice(0, PAPER_RECEIPT_CHANGE_LIMIT)
+    return {
+      ...result,
+      changes,
+      moreChanges: result.changes.length - changes.length,
+    }
   })
 
   registry.addQuery(

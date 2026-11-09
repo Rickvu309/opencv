@@ -13,6 +13,10 @@ import {
   paperEditsSchema,
 } from "./paper-doc/edits-schema.js"
 import {
+  paperPackageEditResultSchema,
+  paperPackageEditsSchema,
+} from "./paper-package.js"
+import {
   paperSyncInputSchema,
   paperSyncOutputSchema,
 } from "./paper-doc/sync.js"
@@ -239,11 +243,20 @@ export const paperContract = commandContract({
     input: z
       .object({
         docId: paperIdSchema,
-        basedOn: z.number().int().min(0),
-        edits: paperEditsSchema,
+        basedOn: z.union([z.number().int().min(0), z.string().uuid()]),
+        edits: z.union([paperEditsSchema, paperPackageEditsSchema]),
       })
-      .strict(),
-    output: paperEditOutputSchema,
+      .strict()
+      .superRefine((input, ctx) => {
+        const word = input.edits.every((edit) => edit.op === "replaceText")
+        if (word !== (typeof input.basedOn === "string"))
+          ctx.addIssue({
+            code: "custom",
+            message: "This edit does not match the saved document.",
+            path: ["edits"],
+          })
+      }),
+    output: z.union([paperEditOutputSchema, paperPackageEditResultSchema]),
     coach: "confirm",
     destructive: false,
     step: () => "Edit the document",
