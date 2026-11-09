@@ -17,6 +17,7 @@ import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
 import { extractLetterAttachment, parseImportLink } from "./import-parse.js"
+import { createPaperPackageRoutes } from "./package-http.js"
 import {
   IMPORT_FILE_CAP,
   IMPORT_SIZE_MESSAGE,
@@ -143,6 +144,7 @@ function refuseImportLink(
 
 export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
+  routes.route("/packages", createPaperPackageRoutes(auth, db))
 
   routes.get("/shared/:token/photo", async (c) => {
     return photoBytes(

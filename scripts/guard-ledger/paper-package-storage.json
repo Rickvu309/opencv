@@ -1,0 +1,10 @@
+{
+  "id": "paper-package-storage",
+  "file": "scripts/paper-package-storage.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-package-storage.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "This immutable Word persistence boundary is new. No main ancestor introduced it. Pure mistake and clean fixtures and actual-source negative mutations cover incomplete publication, flattened import and export, mutable projection writes and a second public publisher. No branch-only commit is pinned as historical proof."
+}

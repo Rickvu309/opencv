@@ -30,6 +30,8 @@ const writersOfTable: Record<string, string[]> = {
   paperDocs: ["paper"],
   paperDocUpdates: ["paper"],
   paperShares: ["paper"],
+  paperPackageVersions: ["paper"],
+  paperPackageHeads: ["paper"],
   jobs: ["job"],
   jobChecklist: ["job"],
   connections: ["inbox"],

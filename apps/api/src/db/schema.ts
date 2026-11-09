@@ -1,4 +1,6 @@
 import { createAuthTables } from "./auth-schema.js"
+import { bytea, timestamptz } from "./column-types.js"
+import { createPaperPackageTables } from "./paper-package-schema.js"
 import { createCoachUsageTable } from "./coach-usage-schema.js"
 import { createOAuthTables } from "./oauth-schema.js"
 import type { ReversalExpect } from "@workspace/domain"
@@ -7,7 +9,6 @@ import {
   bigint,
   check,
   boolean,
-  customType,
   date,
   type AnyPgColumn,
   index,
@@ -16,21 +17,11 @@ import {
   pgSchema,
   primaryKey,
   text,
-  timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core"
 
 export const opencvApp = pgSchema("opencv_app")
-
-const timestamptz = (name: string) =>
-  timestamp(name, { withTimezone: true, mode: "date" })
-
-const bytea = customType<{ data: Buffer; driverData: Buffer }>({
-  dataType: () => "bytea",
-  toDriver: (value) => value,
-  fromDriver: (value) => (Buffer.isBuffer(value) ? value : Buffer.from(value)),
-})
 
 export const { user, session, account, verification, connections } =
   createAuthTables(opencvApp)
@@ -71,12 +62,15 @@ export const files = opencvApp.table(
     name: text("name").notNull(),
     mediaType: text("media_type").notNull(),
     byteSize: integer("byte_size").notNull(),
-    purpose: text("purpose").$type<"import" | "avatar">().notNull(),
+    purpose: text("purpose").$type<"import" | "avatar" | "package">().notNull(),
     bytes: bytea("bytes").notNull(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [index("files_user_id_idx").on(table.userId)]
 )
+
+export const { paperPackageVersions, paperPackageHeads } =
+  createPaperPackageTables(opencvApp, user, files)
 
 export const paperDocs = opencvApp.table(
   "paper_docs",

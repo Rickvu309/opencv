@@ -40,13 +40,7 @@ test("the checked-in schema generates no SQL without changing tracked migrations
 test("a schema change without a migration emits SQL and the unchanged schema stays quiet", (t) => {
   const dir = tempDir(t, "migration-fixture-", path.join(homedir(), "tmp"))
   const schema = path.join(dir, "schema.ts")
-  for (const name of [
-    "oauth-schema.ts",
-    "auth-schema.ts",
-    "coach-usage-schema.ts",
-  ]) {
-    cpSync(path.join(root, "apps/api/src/db", name), path.join(dir, name))
-  }
+  cpSync(path.join(root, "apps/api/src/db"), dir, { recursive: true })
   symlinkSync(
     path.join(root, "apps/api/node_modules"),
     path.join(dir, "node_modules")

@@ -23,7 +23,7 @@ import {
   type PaperTemplateId,
   type UserId,
 } from "@workspace/domain"
-import { and, desc, eq } from "drizzle-orm"
+import { and, desc, eq, ne } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
@@ -476,7 +476,13 @@ export async function readFileMeta(userId: UserId, fileId: FileId) {
       byteSize: files.byteSize,
     })
     .from(files)
-    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
+    .where(
+      and(
+        eq(files.id, fileId),
+        eq(files.userId, userId),
+        ne(files.purpose, "package")
+      )
+    )
     .limit(1)
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "File not found")
@@ -493,7 +499,7 @@ export async function listFiles(userId: UserId) {
       createdAt: files.createdAt,
     })
     .from(files)
-    .where(eq(files.userId, userId))
+    .where(and(eq(files.userId, userId), ne(files.purpose, "package")))
     .orderBy(desc(files.createdAt))
   return rows.map((row) => ({
     id: parseFileId(row.id),
