@@ -5,7 +5,7 @@ import { expect, it } from "vitest"
 
 const fonts = path.join(
   path.dirname(new URL(import.meta.url).pathname),
-  "../../public/fonts"
+  "../../../public/fonts"
 )
 
 function readManifest() {
