@@ -197,27 +197,25 @@ function parseXML(source) {
     } else {
       const qname = token.match(/^<([^\s/>]+)/)?.[1]
       if (!qname) throw new Error("xml token")
+      const parent = stack.at(-1)
       const attrs = []
+      let w = parent?.w ?? ""
       for (const match of token.matchAll(/([^\s=<>]+)\s*=\s*(["'])(.*?)\2/g)) {
         const raw = match[1]
-        attrs.push({
-          local: raw.includes(":") ? raw.slice(raw.indexOf(":") + 1) : raw,
-          value: decode(match[3]),
-        })
+        const value = decode(match[3])
+        if (raw === "xmlns:w") w = value
+        attrs.push({ local: raw.slice(raw.indexOf(":") + 1), value })
       }
       const empty = /\/\s*>$/.test(token)
-      const parent = stack.at(-1)
       const node = {
         qname,
-        local: qname.includes(":")
-          ? qname.slice(qname.indexOf(":") + 1)
-          : qname,
+        local: qname.slice(qname.indexOf(":") + 1),
+        w,
         attrs,
         start,
         openEnd: end,
         closeStart: empty ? end : null,
         end: empty ? end : null,
-        empty,
         children: [],
         parent,
       }
@@ -384,7 +382,7 @@ function classRefusal(paragraphs) {
 }
 
 function word(node, local) {
-  return node?.qname === `w:${local}`
+  return node?.qname === `w:${local}` && node.w === WORD
 }
 
 function tracked(node) {

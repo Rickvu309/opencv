@@ -618,4 +618,42 @@ test("a numeric token, a comment, or a tracked mark stays unchanged", () => {
     { op: "split", paragraph: KEY_A, at: 1 },
     mintSide()
   )
+  const foreign = 'xmlns:w="urn:x"'
+  stay(
+    writing("secret").replace("<w:t>", `<w:t ${foreign}>`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 3 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:r><w:rPr>", `<w:r ${foreign}><w:rPr>`) +
+      carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("").replace("<w:t>", `<w:t ${foreign}>`) + carrier(),
+    { op: "deleteParagraph", paragraph: KEY_A },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:pPr>", `<w:pPr ${foreign}>`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:rPr>", `<w:rPr ${foreign}>`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  const kept = packageFromBody(
+    writing("ab").replace(
+      "<w:t>",
+      `<w:t xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">`
+    ) + carrier()
+  )
+  assert.equal(
+    applyCanvasBytes(kept, { op: "split", paragraph: KEY_A, at: 1 }, mintSide())
+      .status,
+    "APPLIED"
+  )
 })
