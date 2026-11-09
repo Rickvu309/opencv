@@ -180,6 +180,13 @@ function collapsed(value: string) {
   return value.replace(/\s+/g, "").slice(0, 24)
 }
 
+function sameParagraph(want: string, got: string) {
+  if (!want || !got) return false
+  if (want === got) return true
+  if (want.length < 8 || got.length < 8) return false
+  return got.startsWith(want.slice(0, 12)) || want.startsWith(got.slice(0, 12))
+}
+
 export function paragraphText(paragraph: Element) {
   return byLocal(paragraph, "t")
     .map((node) => node.textContent ?? "")
@@ -195,46 +202,37 @@ export function paintSourceLines(
   const hosts = [
     ...root.querySelectorAll<HTMLParagraphElement>("article p"),
   ].filter((node) => !node.classList.contains("source-header"))
-  let hostIndex = 0
+  const used = new Set<number>()
   let unknown = 0
   let section = 0
   let afterBreak = false
   for (const row of rows) {
     const want = collapsed(paragraphText(row.paragraph))
-    if (
-      want &&
-      hostIndex < hosts.length &&
-      !collapsed(hosts[hostIndex]?.textContent ?? "") &&
-      hosts[hostIndex + 1] &&
-      collapsed(hosts[hostIndex + 1]?.textContent ?? "").startsWith(
-        want.slice(0, 16)
-      )
-    ) {
-      hostIndex += 1
-    }
-    const host = hosts[hostIndex]
-    hostIndex += 1
     const columnBreak = byLocal(row.paragraph, "br").some(
       (node) => attr(node, "type") === "column"
     )
-    const got = host ? collapsed(host.textContent ?? "") : ""
-    const matched =
-      host &&
-      (!want ||
-        !got ||
-        got.startsWith(want.slice(0, 12)) ||
-        want.startsWith(got.slice(0, 12)))
-    if (!matched || !host) unknown += 1
-    else {
-      host.dataset.section = String(section)
-      if (columnBreak || afterBreak) host.dataset.columnBreak = "1"
-      host.dataset.line = row.line
-      const wantLine = Number(row.line) / 240
-      const style = getComputedStyle(host)
-      const size = Number.parseFloat(style.fontSize)
-      const used = Number.parseFloat(style.lineHeight)
-      if (!size || !(used / size >= wantLine * 0.9)) {
-        host.style.lineHeight = wantLine.toFixed(4)
+    if (want) {
+      const matches = hosts
+        .map((host, index) => ({ host, index }))
+        .filter(
+          ({ host, index }) =>
+            !used.has(index) &&
+            sameParagraph(want, collapsed(host.textContent ?? ""))
+        )
+      const match = matches[0]
+      if (matches.length !== 1 || !match) unknown += 1
+      else {
+        used.add(match.index)
+        match.host.dataset.section = String(section)
+        if (columnBreak || afterBreak) match.host.dataset.columnBreak = "1"
+        match.host.dataset.line = row.line
+        const wantLine = Number(row.line) / 240
+        const style = getComputedStyle(match.host)
+        const size = Number.parseFloat(style.fontSize)
+        const drawn = Number.parseFloat(style.lineHeight)
+        if (!size || !(drawn / size >= wantLine * 0.9)) {
+          match.host.style.lineHeight = wantLine.toFixed(4)
+        }
       }
     }
     if (columnBreak) afterBreak = true
@@ -243,7 +241,11 @@ export function paintSourceLines(
       afterBreak = false
     }
   }
-  if (hostIndex < hosts.length) unknown += hosts.length - hostIndex
+  for (const [index, host] of hosts.entries()) {
+    if (used.has(index)) continue
+    if (!collapsed(host.textContent ?? "")) continue
+    unknown += 1
+  }
   const note = sourceLineNote(documentXml, stylesXml)
   return unknown
     ? `${note} Line spacing source map is unknown for ${unknown} paragraphs.`.trim()

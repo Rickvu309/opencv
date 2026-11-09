@@ -16,7 +16,6 @@ import {
   markShortRegions,
   measureAdvances,
   shortAdvanceNote,
-  type LineMeasure,
 } from "./short-advance.ts"
 import "./preview.css"
 
@@ -35,13 +34,7 @@ const renderOptions = {
   renderAltChunks: false,
 }
 
-export function WordPagePreview({
-  bytes,
-  advances,
-}: {
-  bytes: ArrayBuffer
-  advances?: LineMeasure[]
-}) {
+export function WordPagePreview({ bytes }: { bytes: ArrayBuffer }) {
   const host = useRef<HTMLDivElement>(null)
   const [status, dispatch] = useReducer(previewReducer, "Loading pages")
   useEffect(() => {
@@ -65,10 +58,10 @@ export function WordPagePreview({
         )
         paintPictureOutlines(node, parts.documentXml)
         joinKeptGroups(node)
-        const measured = advances ?? measureAdvances(node)
+        const measured = measureAdvances(node)
         markShortRegions(node, measured)
         const notice = [
-          fontWarning(fontFacesFromXml(parts.xml)),
+          await fontWarning(fontFacesFromXml(parts.xml)),
           lineNote,
           shortAdvanceNote(measured),
           headerSplitNote(node),
@@ -89,7 +82,7 @@ export function WordPagePreview({
     return () => {
       cancel = true
     }
-  }, [advances, bytes])
+  }, [bytes])
   return (
     <section aria-label="Word pages" className="word-pages">
       <p className="word-pages-status">{status}</p>

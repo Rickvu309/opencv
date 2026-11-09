@@ -42,10 +42,12 @@ export function markShortRegions(root: ParentNode, lines: LineMeasure[]) {
   const paragraphs = [...root.querySelectorAll("article p")]
   for (const line of lines.filter(isShortAdvance)) {
     const from = clip(line.text)
-    const host = paragraphs.find((node) =>
-      clip(node.textContent ?? "").includes(from)
+    if (!from) continue
+    const hosts = paragraphs.filter(
+      (node) => clip(node.textContent ?? "") === from
     )
-    if (!(host instanceof HTMLElement)) continue
+    const host = hosts[0]
+    if (hosts.length !== 1 || !(host instanceof HTMLElement)) continue
     host.setAttribute("contenteditable", "false")
     host.dataset.shortAdvance = String(line.advancePx)
     host.setAttribute(

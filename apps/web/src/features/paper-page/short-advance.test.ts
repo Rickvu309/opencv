@@ -1,8 +1,9 @@
-import { expect, it } from "vitest"
+import { expect, it, vi } from "vitest"
 
 import {
   isShortAdvance,
   markShortRegions,
+  measureAdvances,
   shortAdvanceNote,
   type LineMeasure,
 } from "./short-advance.ts"
@@ -88,7 +89,7 @@ const cv12 = [
   pair("Additional Information", "Authorized to work in the U.S.", 16, 14.7),
 ]
 
-it("names the four CV13 gaps and the eleven CV12 gaps", () => {
+it("keeps the recorded CV13 and CV12 pairs under the floor", () => {
   const notice = shortAdvanceNote([...cv13, ...cv12])
   expect(cv13.filter(isShortAdvance)).toHaveLength(4)
   expect(cv12.filter(isShortAdvance)).toHaveLength(11)
@@ -109,6 +110,61 @@ it("skips a gap that changes page, section, or follows a column break", () => {
   expect(isShortAdvance({ ...changed, nextPage: 2 })).toBe(false)
   expect(isShortAdvance({ ...changed, nextSection: "1" })).toBe(false)
   expect(isShortAdvance({ ...changed, columnBreak: true })).toBe(false)
+})
+
+function drawnPage(first: string, second: string) {
+  const root = document.createElement("div")
+  root.innerHTML = `<section class="docx"><article>
+    <p data-line="264" data-section="0" style="font-size:16px">${first}</p>
+    <p data-line="264" data-section="0" style="font-size:16px">${second}</p>
+  </article></section>`
+  return root
+}
+
+it("names a short gap only when that text was measured on the page", () => {
+  const previous = Range.prototype.getClientRects
+  Range.prototype.getClientRects = function () {
+    const node = this.startContainer.parentElement?.closest("p")
+    const peers = [...(node?.closest("article")?.querySelectorAll("p") ?? [])]
+    const top = Math.max(0, peers.indexOf(node as HTMLParagraphElement)) * 10
+    const rect = {
+      top,
+      height: 12,
+      width: 8,
+      left: 0,
+      right: 8,
+      bottom: top + 12,
+      x: 0,
+      y: top,
+      toJSON() {
+        return {}
+      },
+    }
+    return [rect] as unknown as DOMRectList
+  }
+  const context = vi
+    .spyOn(HTMLCanvasElement.prototype, "getContext")
+    .mockReturnValue({
+      font: "",
+      measureText: () => ({ actualBoundingBoxAscent: 8 }),
+    } as unknown as CanvasRenderingContext2D)
+  try {
+    const root = drawnPage("Leadership &amp; Activities", "Organization")
+    const notice = shortAdvanceNote(measureAdvances(root))
+    expect(notice).toContain('from "Leadership & Activities"')
+    expect(notice).toContain('to "Organization"')
+    markShortRegions(root, measureAdvances(root))
+    expect(root.querySelector("article p")).toHaveAttribute(
+      "contenteditable",
+      "false"
+    )
+    const other = drawnPage("Hello pages", "Next line")
+    expect(shortAdvanceNote(measureAdvances(other))).not.toContain("Leadership")
+  } finally {
+    if (previous) Range.prototype.getClientRects = previous
+    else delete Range.prototype.getClientRects
+    context.mockRestore()
+  }
 })
 
 it("marks the short region read-only and names the measured advance", () => {

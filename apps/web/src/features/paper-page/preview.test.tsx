@@ -5,7 +5,6 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
 
 import { WordPagePreview } from "./preview.tsx"
-import { type LineMeasure } from "./short-advance.ts"
 
 afterEach(() => {
   cleanup()
@@ -106,19 +105,6 @@ function sampleDocx() {
   return out.buffer
 }
 
-const shortGap: LineMeasure = {
-  text: "Leadership & Activities",
-  nextText: "Organization",
-  page: 1,
-  nextPage: 1,
-  section: "0",
-  nextSection: "0",
-  columnBreak: false,
-  advancePx: 17.6,
-  runSizePx: 18.7,
-  sourceLine: 264,
-}
-
 it("stays off the current editor", () => {
   const route = readFileSync(
     path.join(process.cwd(), "src/routes/paper-doc.tsx"),
@@ -133,15 +119,15 @@ it("stays off the current editor", () => {
   expect(editor).toContain("BlockNoteViewRaw")
 })
 
-it("draws the sample pages and names the replaced font and the short gap", async () => {
-  render(<WordPagePreview bytes={sampleDocx()} advances={[shortGap]} />)
-  expect(await screen.findByLabelText("Word pages")).toBeVisible()
-  expect(
-    await screen.findByText(/Calibri is shown using Carlito/)
-  ).toBeVisible()
-  expect(
-    screen.getByText(/Line spacing 264 \(1\.10\) advances 17\.6px/)
-  ).toBeVisible()
+it("draws the sample and does not name a gap or face it did not measure", async () => {
+  render(<WordPagePreview bytes={sampleDocx()} />)
+  const status = await screen.findByText(
+    /Calibri is shown using no shipped file/
+  )
+  expect(status).toBeVisible()
+  expect(status).not.toHaveTextContent("Carlito")
+  expect(status).not.toHaveTextContent("17.6")
+  expect(status).not.toHaveTextContent("Leadership")
   expect(screen.getByText(/Hello pages/)).toBeVisible()
   expect(screen.queryByText("Fonts substituted")).not.toBeInTheDocument()
 })

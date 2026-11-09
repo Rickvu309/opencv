@@ -145,6 +145,35 @@ it("marks the matching page paragraph and skips one extra empty host", () => {
   expect(note).toBe("Line spacing is the source 240 (1.00) on 2 paragraphs.")
 })
 
+it("does not give a blank paragraph the next source line", () => {
+  const root = document.createElement("div")
+  root.innerHTML = `<section class="docx"><article>
+    <p></p><p>Mr. Curtis:</p>
+  </article></section>`
+  const body = paragraph("April 30, 2023") + paragraph("Mr. Curtis:")
+  const note = paintSourceLines(root, documentXml(body), styles("240"))
+  const hosts = [...root.querySelectorAll("article p")]
+  expect(hosts[0]?.dataset.line).toBeUndefined()
+  expect(hosts[1]?.dataset.line).toBe("240")
+  expect(note).toContain("unknown")
+})
+
+it("refuses a source line when two paragraphs share the text", () => {
+  const root = document.createElement("div")
+  root.innerHTML = `<section class="docx"><article>
+    <p>April 30, 2023</p><p>April 30, 2023</p>
+  </article></section>`
+  const note = paintSourceLines(
+    root,
+    documentXml(paragraph("April 30, 2023")),
+    styles("240")
+  )
+  const hosts = [...root.querySelectorAll("article p")]
+  expect(hosts[0]?.dataset.line).toBeUndefined()
+  expect(hosts[1]?.dataset.line).toBeUndefined()
+  expect(note).toContain("unknown")
+})
+
 it("reads the document and styles from one sample", async () => {
   const encoder = new TextEncoder()
   const bytes = zip(
