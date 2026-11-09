@@ -22,6 +22,12 @@ export function delegateAllowed(
   actor: Actor
 ) {
   if (actor.type !== "delegate") return true
+  if (process.env.PAPER_AGENT_TOOLS === "true") {
+    if (entry.name === "paper.read")
+      return actor.reads === "allow" && actor.scopes.includes("paper.read")
+    if (entry.name === "paper.edit")
+      return actor.writes === "approval" && actor.scopes.includes("paper.write")
+  }
   if (
     actor.resources !== "jobs" ||
     !entry.name.startsWith("job.") ||

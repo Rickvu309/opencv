@@ -31,6 +31,7 @@ import {
   requireLiveDelegate,
   requireLiveProposalConnection,
 } from "./delegate-policy.js"
+import { paperAgentRefusal } from "./paper-agent.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 
 import { lockActivity } from "./activity-lock.js"
@@ -413,7 +414,7 @@ export class Registry extends RegistryEntries {
     if (!delegateAllowed(query, branded))
       throw new CommandError(
         ERROR_CODES.FORBIDDEN,
-        "This connection cannot use this read"
+        paperAgentRefusal(query.name) ?? "This connection cannot use this read"
       )
     if (isCoachActor(branded)) {
       const refusal = coachRefusal(query, await agentGates(branded.userId))
