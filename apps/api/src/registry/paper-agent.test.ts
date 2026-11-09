@@ -49,6 +49,9 @@ it("keeps document tools off and leaves job access unchanged", () => {
   expect(delegateAllowed({ name: "paper.edit", coach: "confirm" }, paper)).toBe(
     false
   )
+  expect(delegateAllowed({ name: "paper.canvas", coach: "never" }, paper)).toBe(
+    false
+  )
   expect(
     delegateAllowed(
       { name: "job.get", coach: "auto", delegate: "jobRead" },
@@ -91,6 +94,9 @@ it("opens only the two document tools when the switch and scopes agree", () => {
     true
   )
   expect(delegateAllowed({ name: "paper.sync", coach: "never" }, paper)).toBe(
+    false
+  )
+  expect(delegateAllowed({ name: "paper.canvas", coach: "never" }, paper)).toBe(
     false
   )
   expect(

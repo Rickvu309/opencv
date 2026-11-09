@@ -219,7 +219,13 @@ function revealCaret(page: HTMLElement, scroll: HTMLElement) {
   target.scrollIntoView({ block: "nearest" })
 }
 
-function WritingSheet({ docId }: { docId: string }) {
+function WritingSheet({
+  docId,
+  seed,
+}: {
+  docId: string
+  seed: WritingDraft | null
+}) {
   const pageRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const opened = useRef(false)
@@ -231,8 +237,8 @@ function WritingSheet({ docId }: { docId: string }) {
     text: string
     offset: number
   } | null>(null)
-  const [state, dispatch] = useReducer(reduce, docId, (id) => {
-    const present = loadDraft(id, localStorage) ?? blankDraft()
+  const [state, dispatch] = useReducer(reduce, null, () => {
+    const present = loadDraft(docId, localStorage) ?? seed ?? blankDraft()
     return {
       past: [],
       present,
@@ -427,6 +433,12 @@ function WritingSheet({ docId }: { docId: string }) {
   )
 }
 
-export function WritingCanvas({ docId }: { docId: string }) {
-  return <WritingSheet key={docId} docId={docId} />
+export function WritingCanvas({
+  docId,
+  seed = null,
+}: {
+  docId: string
+  seed?: WritingDraft | null
+}) {
+  return <WritingSheet key={docId} docId={docId} seed={seed} />
 }

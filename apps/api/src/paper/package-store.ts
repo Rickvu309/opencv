@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto"
 
 import {
   ERROR_CODES,
+  PAPER_CANVAS_PROFILE,
   PAPER_PACKAGE_LIMITS,
   PAPER_PACKAGE_PROJECTOR,
   paperPackageMetadataSchema,
@@ -322,6 +323,26 @@ export async function wordPackageBasis(
   return { version, ...(await completeVersion(version)) }
 }
 
+function canvasParagraphKeys(sidecar: unknown) {
+  const parsed = z
+    .object({
+      paragraphs: z.array(
+        z
+          .object({
+            key: z.string().uuid(),
+            ordinal: z.number().int().nonnegative(),
+          })
+          .passthrough()
+      ),
+    })
+    .passthrough()
+    .safeParse(sidecar)
+  if (!parsed.success) return undefined
+  if (parsed.data.paragraphs.some((row, index) => row.ordinal !== index))
+    return undefined
+  return parsed.data.paragraphs.map((row) => row.key)
+}
+
 export async function readWordPackage(owner: string, rawInput: unknown) {
   const input = paperPackageReadInputSchema.parse(rawInput)
   const cursor = input.cursor ? decodePackageCursor(input.cursor) : undefined
@@ -336,6 +357,7 @@ export async function readWordPackage(owner: string, rawInput: unknown) {
     input.docId,
     input.at ?? cursor?.position.revision
   )
+  const head = await ownedHead(owner, input.docId)
   const { projection } = await completeVersion(version)
   return packagePage({
     metadata: metadata(version),
@@ -343,6 +365,9 @@ export async function readWordPackage(owner: string, rawInput: unknown) {
     owner,
     key: version.cursorKey,
     cursor: input.cursor,
+    ...(head.canvasProfile === PAPER_CANVAS_PROFILE
+      ? { paragraphKeys: canvasParagraphKeys(version.sidecar) }
+      : {}),
   })
 }
 

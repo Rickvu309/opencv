@@ -35,7 +35,7 @@ import {
   ImportProgressDialog,
   PaperImportDialog,
 } from "./paper-import.tsx"
-import { PaperNewDialog } from "./paper-new-dialog.tsx"
+import { openBlankPage, PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
@@ -106,6 +106,7 @@ export function PaperLibrary({
     }
   }, [mode])
   const closeDialog = () => dispatch({ type: "dialog_closed" })
+  const newGallery = mode?.type === "new" && mode.step === "gallery"
   const dialogOpen = mode !== null || importState.type !== "idle"
   const needle = query.trim().toLowerCase()
   const wordLibrary = useWordLibrary(filter, needle)
@@ -198,11 +199,9 @@ export function PaperLibrary({
     if (creatingBlank) return
     dispatch({ type: "blank_started" })
     try {
-      const created = await run("paper.create", {
-        kind: "cv",
-      })
+      const opened = await openBlankPage(run)
       dispatch({ type: "import_ended" })
-      onOpen(created.id)
+      onOpen(opened.minted ? opened.id : opened.doc.id)
     } catch (err) {
       dispatch({
         type: "import_failed",
@@ -492,18 +491,10 @@ export function PaperLibrary({
         }}
       >
         <DialogContent
-          className={
-            mode?.type === "new" && mode.step === "gallery"
-              ? PAPER_GALLERY_DIALOG_CLASS
-              : undefined
-          }
+          className={newGallery ? PAPER_GALLERY_DIALOG_CLASS : undefined}
         >
           <DialogHeader>
-            <DialogTitle>
-              {mode?.type === "new" && mode.step === "gallery"
-                ? "New CV"
-                : "New"}
-            </DialogTitle>
+            <DialogTitle>{newGallery ? "New CV" : "New"}</DialogTitle>
             <DialogDescription>
               Pick a page, or bring a file you already have.
             </DialogDescription>
@@ -518,6 +509,10 @@ export function PaperLibrary({
                 closeDialog()
                 void rememberUndo(doc.id, `Created ${doc.name}`)
                 onOpen(doc.id)
+              }}
+              onMinted={(id) => {
+                closeDialog()
+                onOpen(id)
               }}
               onChooseLetter={() => dispatch({ type: "letter_dialog_opened" })}
               onImport={chooseFile}
