@@ -37,12 +37,10 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
     const input = catalog["paper.import"].input
     const fileId = "4962177f-66d9-4c13-a9f9-24df1ef97e9d"
     const stageId = "547fb75f-0733-4132-b86d-7b0fef9ada58"
-    expect(z.toJSONSchema(input, { io: "input", reused: "ref" })).toMatchObject(
-      {
-        type: "object",
-        anyOf: [expect.any(Object), expect.any(Object)],
-      }
-    )
+    const schema = z.toJSONSchema(input, { io: "input", reused: "ref" })
+    expect(schema).toMatchObject({ type: "object" })
+    for (const combinator of ["anyOf", "oneOf", "allOf"])
+      expect(schema).not.toHaveProperty(combinator)
     expect(input.parse({ fileId })).toEqual({ fileId })
     expect(input.parse({ generation: "package", stageId })).toEqual({
       generation: "package",
@@ -232,6 +230,17 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         actor: person,
       })
       const coach = await seedCoachActor(userId, idOf(chat.output))
+      const tool = (await registry.tools(coach)).find(
+        (entry) => entry.name === "paper.import"
+      )
+      if (!tool) throw new Error("Missing Coach import tool")
+      const toolSchema = z.toJSONSchema(tool.input, {
+        io: "input",
+        reused: "ref",
+      })
+      expect(toolSchema).toMatchObject({ type: "object" })
+      for (const combinator of ["anyOf", "oneOf", "allOf"])
+        expect(toolSchema).not.toHaveProperty(combinator)
       const cv = idOf(
         (
           await registry.execute({

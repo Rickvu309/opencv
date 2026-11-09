@@ -318,6 +318,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
           actor: person(c.var.userId),
         })
       )
+      savedId = undefined
       const receipt = catalog["paper.import"].publicResult.parse(
         imported.output
       )

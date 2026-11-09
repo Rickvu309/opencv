@@ -1,8 +1,11 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import { paperImportInputSchema } from "../../../paper.js"
 import { paperPackageMetadataSchema } from "../../../paper-package.js"
+import { paperImportInputSchema } from "../../../paper.js"
+
+type ImportInput =
+  { fileId: string } | { generation: "package"; stageId: string }
 
 export const operation = defineOperation({
   owner: "paper",
@@ -11,16 +14,31 @@ export const operation = defineOperation({
   kind: "command",
   description: "Import an uploaded file or publish a staged Word document.",
   input: z
-    .union([
-      paperImportInputSchema.extend({ fileId: z.string().uuid() }),
-      z
-        .object({
-          generation: z.literal("package"),
-          stageId: z.string().uuid(),
-        })
-        .strict(),
-    ])
-    .meta({ type: "object" }),
+    .object({
+      fileId: paperImportInputSchema.shape.fileId.optional(),
+      generation: z.literal("package").optional(),
+      stageId: z.string().uuid().optional(),
+    })
+    .strict()
+    .transform((input, ctx): ImportInput => {
+      if (
+        input.fileId !== undefined &&
+        input.generation === undefined &&
+        input.stageId === undefined
+      )
+        return { fileId: input.fileId }
+      if (
+        input.fileId === undefined &&
+        input.generation === "package" &&
+        input.stageId !== undefined
+      )
+        return { generation: input.generation, stageId: input.stageId }
+      ctx.addIssue({
+        code: "custom",
+        message: "Choose an uploaded file or a staged Word document.",
+      })
+      return z.NEVER
+    }),
   publicResult: z.union([
     z
       .object({

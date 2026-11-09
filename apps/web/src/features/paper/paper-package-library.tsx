@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { paperPackageMetadataSchema, type z } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
@@ -17,12 +17,51 @@ import { catalogClient, refreshCatalogReads } from "@/lib/contract-client.ts"
 
 export type WordDocument = z.output<typeof paperPackageMetadataSchema>
 
+type WordLibraryState = {
+  after: string | undefined
+  selected: WordDocument | null
+}
+
+type WordLibraryAction =
+  | { type: "page"; after: string | undefined }
+  | { type: "select"; document: WordDocument | null }
+
+const initialWordLibrary: WordLibraryState = {
+  after: undefined,
+  selected: null,
+}
+
+function wordLibraryReducer(
+  state: WordLibraryState,
+  action: WordLibraryAction
+): WordLibraryState {
+  switch (action.type) {
+    case "page":
+      return { ...state, after: action.after }
+    case "select":
+      return { ...state, selected: action.document }
+  }
+}
+
+function snapshotPageReducer(
+  _cursor: string | undefined,
+  action: { type: "page"; cursor: string | undefined }
+) {
+  return action.cursor
+}
+
 export function useWordLibrary(filter: string, needle: string) {
   const queryClient = useQueryClient()
   const { data: session } = authClient.useSession()
   const owner = session?.user.id ?? ""
-  const [after, setAfter] = useState<string>()
-  const [selected, onSelect] = useState<WordDocument | null>(null)
+  const [{ after, selected }, dispatch] = useReducer(
+    wordLibraryReducer,
+    initialWordLibrary
+  )
+  const setAfter = (after: string | undefined) =>
+    dispatch({ type: "page", after })
+  const onSelect = (document: WordDocument | null) =>
+    dispatch({ type: "select", document })
   const query = useQuery({
     ...catalogClient.options(owner, "paper.read", {
       view: "library",
@@ -68,9 +107,8 @@ export function PaperPackageLibrary({
   const items = library.visible
   return (
     <>
-      {!unavailable && library.owner !== "" ? (
+      {!unavailable && !library.query.isLoading && library.owner !== "" ? (
         <section aria-label="Word documents" className="flex flex-col gap-3">
-          {library.query.isLoading ? <p>Loading Word documents</p> : null}
           {library.query.error ? (
             <div>
               <p>Could not load Word documents.</p>
@@ -158,7 +196,9 @@ function WordSnapshot({
   document: WordDocument
   owner: string
 }) {
-  const [cursor, setCursor] = useState<string>()
+  const [cursor, dispatch] = useReducer(snapshotPageReducer, undefined)
+  const setCursor = (cursor: string | undefined) =>
+    dispatch({ type: "page", cursor })
   const page = useQuery({
     ...catalogClient.options(owner, "paper.read", {
       docId: document.docId,

@@ -1,5 +1,12 @@
-import { ERROR_CODES, parseUserId, personActor } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  paperContract,
+  parseUserId,
+  personActor,
+} from "@workspace/domain"
 import { eq } from "drizzle-orm"
+import { materialize } from "@workspace/paper-crdt"
+import { clientFrom, typed, withText } from "../test/paper-content.js"
 import { describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"
@@ -290,6 +297,55 @@ async function undoAfterLater(
 }
 
 describe("P4: undoing an action after a later change never erases the later change", () => {
+  it("refuses import Undo after later typing and keeps the typed words", async () => {
+    await withDatabase(backend.db, async () => {
+      const userId = "formal-import-later-typing"
+      await backend.db.insert(user).values({
+        id: userId,
+        name: "Ada",
+        email: "import-later-typing@example.com",
+      })
+      const person = personActor(userId)
+      const row = coverageCases(backend.db, userId).cases.find(
+        (row) => row.name === "paper.import"
+      )
+      if (!row) throw new Error("Missing import coverage")
+      await row.arrange()
+      const imported = await row.act()
+      const docId = idOf(imported.output)
+      const pulled = await registry.execute({
+        name: "paper.sync",
+        input: { docId, epoch: 0, update: "", stateVector: "" },
+        actor: person,
+      })
+      const sync = paperContract["paper.sync"].output.parse(pulled.output)
+      const client = clientFrom(sync.update)
+      const current = materialize(client)
+      if (!current.ok) throw new Error(current.reason)
+      const block = current.document.blocks.find((block) => "content" in block)
+      if (!block) throw new Error("Missing imported text block")
+      const words = "These are the person's later words."
+      await registry.execute({
+        name: "paper.sync",
+        input: {
+          docId,
+          epoch: sync.epoch,
+          basedOn: sync.revision,
+          update: typed(client, (paper) => withText(paper, block.id, words)),
+          stateVector: "",
+        },
+        actor: person,
+      })
+      if (!imported.activityId) throw new Error("Missing import activity")
+      await expect(
+        registry.undo(userId, imported.activityId)
+      ).rejects.toMatchObject({ code: ERROR_CODES.CONFLICT })
+      const stored = await registry.read("paper.get", { docId }, person)
+      expect(JSON.stringify(stored)).toContain(words)
+      expect(text(stored, "name")).toBe(text(imported.output, "name"))
+    })
+  })
+
   it("refuses with CONFLICT or leaves the later change intact, for every command with an Undo", async () => {
     await withDatabase(backend.db, async () => {
       const userId = "formal-undo-later"

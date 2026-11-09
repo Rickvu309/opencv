@@ -4,6 +4,88 @@ import test from "node:test"
 
 import { detect } from "./lib/paper-package-storage.mjs"
 
+test("Paper import tools have a real object root", () => {
+  const mistake =
+    'defineOperation({ name: "paper.import", input: z.union([legacy, word]).meta({type: "object"}) })'
+  const clean =
+    'defineOperation({ name: "paper.import", input: z.object({fileId: z.string().optional()}).strict().transform(parse) })'
+  assert.deepEqual(
+    detect(mistake).map(({ kind }) => kind),
+    ["nonobject-import-tool-input"]
+  )
+  assert.deepEqual(detect(clean), [])
+  const source = readFileSync(
+    new URL(
+      "../packages/domain/src/operations/paper/import/operation.ts",
+      import.meta.url
+    ),
+    "utf8"
+  )
+  assert.deepEqual(detect(source), [])
+  const mutation = source.replace(
+    ".object({",
+    ".union([legacy, word]).meta({type: 'object'}).objectFields({"
+  )
+  assert.notEqual(source, mutation)
+  assert.deepEqual(
+    detect(mutation).map(({ kind }) => kind),
+    ["nonobject-import-tool-input"]
+  )
+})
+
+test("committed imports release upload cleanup before reading the response", () => {
+  const mistake =
+    'async function upload() { const imported = await withImportSignal(signal, execute); const document = await registry.read("paper.get"); return document }'
+  const clean = mistake.replace(
+    "const document",
+    "savedId = undefined; const document"
+  )
+  assert.deepEqual(
+    detect(mistake).map(({ kind }) => kind),
+    ["committed-import-cleanup"]
+  )
+  assert.deepEqual(detect(clean), [])
+  const source = readFileSync(
+    new URL("../apps/api/src/paper/http.ts", import.meta.url),
+    "utf8"
+  )
+  assert.deepEqual(detect(source, "http.ts"), [])
+  const mutation = source.replace("savedId = undefined", "savedId = saved.id")
+  assert.notEqual(source, mutation)
+  assert.deepEqual(
+    detect(mutation, "http.ts").map(({ kind }) => kind),
+    ["committed-import-cleanup"]
+  )
+})
+
+test("Word library stays absent until the feature read has completed", () => {
+  const mistake =
+    'function Library() { return !unavailable && owner ? <section aria-label="Word documents">Library</section> : null }'
+  const clean = mistake.replace(
+    "!unavailable",
+    "!unavailable && !library.query.isLoading"
+  )
+  assert.deepEqual(
+    detect(mistake, "library.tsx").map(({ kind }) => kind),
+    ["unannounced-word-library"]
+  )
+  assert.deepEqual(detect(clean, "library.tsx"), [])
+  const source = readFileSync(
+    new URL(
+      "../apps/web/src/features/paper/paper-package-library.tsx",
+      import.meta.url
+    ),
+    "utf8"
+  )
+  assert.deepEqual(detect(source, "library.tsx"), [])
+  const mutation = source.replace("!library.query.isLoading", "true")
+  assert.notEqual(source, mutation)
+  assert.deepEqual(
+    detect(mutation, "library.tsx").map(({ kind }) => kind),
+    ["unannounced-word-library"]
+  )
+})
+
 test("immutable Word storage rejects unfinished heads, projection shadows and flattening", () => {
   const mistake = `
     async function stageWordPackage() { return parseImportFile(bytes) }

@@ -5,6 +5,31 @@ function walk(node, visit) {
   ts.forEachChild(node, (child) => walk(child, visit))
 }
 
+function hasCall(node, name) {
+  let found = false
+  walk(node, (child) => {
+    if (ts.isCallExpression(child) && child.expression.getText() === name)
+      found = true
+  })
+  return found
+}
+
+function objectRoot(node) {
+  while (
+    ts.isCallExpression(node) &&
+    ts.isPropertyAccessExpression(node.expression)
+  ) {
+    if (
+      node.expression.name.text === "object" &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.expression.expression.text === "z"
+    )
+      return true
+    node = node.expression.expression
+  }
+  return false
+}
+
 export function detect(text, file = "source.ts") {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
   const problems = []
@@ -14,6 +39,84 @@ export function detect(text, file = "source.ts") {
       line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
     })
   walk(source, (node) => {
+    if (
+      ts.isObjectLiteralExpression(node) &&
+      node.properties.some(
+        (property) =>
+          ts.isPropertyAssignment(property) &&
+          property.name.getText(source) === "name" &&
+          ts.isStringLiteral(property.initializer) &&
+          property.initializer.text === "paper.import"
+      )
+    ) {
+      const input = node.properties.find(
+        (property) =>
+          ts.isPropertyAssignment(property) &&
+          property.name.getText(source) === "input"
+      )
+      if (!input || !objectRoot(input.initializer))
+        add(node, "nonobject-import-tool-input")
+    }
+    if (ts.isBlock(node)) {
+      const imported = node.statements.findIndex(
+        (statement) =>
+          ts.isVariableStatement(statement) &&
+          statement.declarationList.declarations.some(
+            (declaration) =>
+              declaration.initializer &&
+              ts.isAwaitExpression(declaration.initializer) &&
+              ts.isCallExpression(declaration.initializer.expression) &&
+              declaration.initializer.expression.expression.getText(source) ===
+                "withImportSignal"
+          )
+      )
+      const read = node.statements.findIndex(
+        (statement, index) =>
+          index > imported && hasCall(statement, "registry.read")
+      )
+      if (imported >= 0 && read > imported) {
+        const released = node.statements
+          .slice(imported + 1, read)
+          .some(
+            (statement) =>
+              ts.isExpressionStatement(statement) &&
+              ts.isBinaryExpression(statement.expression) &&
+              statement.expression.operatorToken.kind ===
+                ts.SyntaxKind.EqualsToken &&
+              statement.expression.left.getText(source) === "savedId" &&
+              statement.expression.right.getText(source) === "undefined"
+          )
+        if (!released)
+          add(node.statements[imported], "committed-import-cleanup")
+      }
+    }
+    if (
+      ts.isJsxElement(node) &&
+      node.openingElement.tagName.getText(source) === "section" &&
+      node.openingElement.attributes.properties.some(
+        (attribute) =>
+          ts.isJsxAttribute(attribute) &&
+          attribute.name.getText(source) === "aria-label" &&
+          attribute.initializer &&
+          ts.isStringLiteral(attribute.initializer) &&
+          attribute.initializer.text === "Word documents"
+      )
+    ) {
+      let parent = node.parent
+      while (parent && !ts.isConditionalExpression(parent))
+        parent = parent.parent
+      let gated = false
+      if (parent)
+        walk(parent.condition, (condition) => {
+          if (
+            ts.isPrefixUnaryExpression(condition) &&
+            condition.operator === ts.SyntaxKind.ExclamationToken &&
+            condition.operand.getText(source) === "library.query.isLoading"
+          )
+            gated = true
+        })
+      if (!gated) add(node, "unannounced-word-library")
+    }
     if (
       ts.isCallExpression(node) &&
       ts.isIdentifier(node.expression) &&

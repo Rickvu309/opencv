@@ -142,21 +142,74 @@ it("keeps unavailable pinned content unavailable instead of loading a newer head
 })
 
 it("keeps the disabled package library out of the legacy screen", async () => {
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(
-      Response.json(
-        { ok: false, error: { code: "NOT_FOUND", message: "Disabled" } },
-        { status: 404 }
-      )
-    )
+  const response = Promise.withResolvers<Response>()
+  const fetchMock = vi.fn<typeof fetch>(() => response.promise)
   vi.stubGlobal("fetch", fetchMock)
   render(<Harness />)
+  expect(screen.queryByText("Loading Word documents")).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole("region", { name: "Word documents" })
+  ).not.toBeInTheDocument()
   await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
+  expect(
+    screen.queryByRole("region", { name: "Word documents" })
+  ).not.toBeInTheDocument()
+  response.resolve(
+    Response.json(
+      { ok: false, error: { code: "NOT_FOUND", message: "Disabled" } },
+      { status: 404 }
+    )
+  )
   await waitFor(() =>
     expect(screen.queryByText("Loading Word documents")).not.toBeInTheDocument()
   )
   expect(
     screen.queryByRole("region", { name: "Word documents" })
+  ).not.toBeInTheDocument()
+})
+
+it("requests the next library page and returns to the first page", async () => {
+  const second = paperPackageMetadataSchema.parse({
+    ...document,
+    docId: "33333333-3333-4333-8333-333333333333",
+    name: "Second Letter.docx",
+  })
+  const inputs: unknown[] = []
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<typeof fetch>(async (_url, init) => {
+      const input: unknown = JSON.parse(String(init?.body))
+      inputs.push(input)
+      const after = input && typeof input === "object" && "after" in input
+      return Response.json({
+        ok: true,
+        data: {
+          items: [after ? second : document],
+          next: after ? null : document.docId,
+        },
+      })
+    })
+  )
+  render(<Harness />)
+  expect(
+    await screen.findByRole("button", { name: document.name })
+  ).toBeVisible()
+  fireEvent.click(screen.getByRole("button", { name: "More documents" }))
+  expect(await screen.findByRole("button", { name: second.name })).toBeVisible()
+  expect(
+    screen.queryByRole("button", { name: document.name })
+  ).not.toBeInTheDocument()
+  expect(inputs).toContainEqual({ view: "library", after: document.docId })
+  fireEvent.click(screen.getByRole("button", { name: "First documents" }))
+  expect(
+    await screen.findByRole("button", { name: document.name })
+  ).toBeVisible()
+  await waitFor(() =>
+    expect(
+      inputs.filter((input) => JSON.stringify(input) === '{"view":"library"}')
+    ).toHaveLength(2)
+  )
+  expect(
+    screen.queryByRole("button", { name: "First documents" })
   ).not.toBeInTheDocument()
 })
