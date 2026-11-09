@@ -220,13 +220,29 @@ describe("savedNote", () => {
     expect(savedNote("Hello", { ...matched, revision: null })).toBeNull()
     expect(savedNote("Hello", matched)).toBe("Saved")
     expect(
+      savedNote("", {
+        saved: false,
+        words: "",
+        revision: null,
+        note: "Saved Word documents are unavailable.",
+      })
+    ).toBeNull()
+    expect(
       savedNote("Hello", {
         saved: false,
         words: "Hello",
         revision: null,
         note: "Saved Word documents are unavailable.",
       })
-    ).toBe("Saved Word documents are unavailable.")
+    ).toBe("Word documents are unavailable.")
+    expect(
+      savedNote("Hello", {
+        saved: false,
+        words: "Hello",
+        revision: null,
+        note: "This page change is not available. No document was changed.",
+      })
+    ).toBe("This page change is not available. No document was changed.")
   })
 })
 
@@ -373,7 +389,33 @@ describe("settlePage", () => {
       new AbortController().signal
     )
     expect(saved.saved).toBe(false)
+    expect(saved.words).toBe("Hello")
     expect(saved.note).toBe("Saved Word documents are unavailable.")
+  })
+
+  it("does not edit a page whose words cross a line", async () => {
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      calls.push(url)
+      if (url.includes("/api/reads/paper.read")) {
+        return Promise.resolve(ok(readResult("Hello")))
+      }
+      return Promise.resolve(new Response("missing", { status: 404 }))
+    })
+    const saved = await settlePage(
+      DOC,
+      [{ text: "Hello" }, { text: "There" }],
+      new AbortController().signal
+    )
+    expect(saved).toEqual({
+      saved: false,
+      words: "Hello\nThere",
+      revision: null,
+      note: null,
+    })
+    expect(calls.some((url) => url.includes("paper.edit"))).toBe(false)
+    expect(calls.some((url) => url.includes("paper.canvas"))).toBe(false)
   })
 })
 
@@ -412,6 +454,29 @@ describe("WritingCanvas save", () => {
       )
     })
   }
+
+  it("keeps the not-saved line when an empty page cannot read a Word document", async () => {
+    let reads = 0
+    vi.stubGlobal("fetch", () => {
+      reads += 1
+      return Promise.resolve(
+        Response.json(
+          {
+            ok: false,
+            error: {
+              code: "NOT_FOUND",
+              message: "Saved Word documents are unavailable.",
+            },
+          },
+          { status: 404 }
+        )
+      )
+    })
+    render(<WritingCanvas docId={DOC} />)
+    await waitFor(() => expect(reads).toBeGreaterThan(0))
+    expect(await screen.findByText(/not saved yet/)).toBeVisible()
+    expect(screen.getByRole("status").textContent).not.toMatch(/\bSaved\b/)
+  })
 
   it("does not say Saved for an empty document", async () => {
     const reads = stubRead("")

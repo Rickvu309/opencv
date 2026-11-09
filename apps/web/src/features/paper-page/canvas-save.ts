@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query"
 import {
   paperCanvasCommitSchema,
+  paperIdSchema,
   paperPackageEditSchema,
 } from "@workspace/domain"
 
@@ -19,8 +20,9 @@ const CARRIERS = new Set([
   "OPAQUE_OR_SECTION_BOUNDARY",
   "UNSUPPORTED_TARGET_PROPERTY",
 ])
+const UNAVAILABLE = "Saved Word documents are unavailable."
 const SERVER_NOTES = new Set([
-  "Saved Word documents are unavailable.",
+  UNAVAILABLE,
   "This Word document has changed. Read it again before editing.",
   "This page change is not available. No document was changed.",
 ])
@@ -65,6 +67,8 @@ export function pageWords(blocks: readonly { text: string }[]): string {
 }
 
 export function savedNote(words: string, outcome: SaveOutcome): string | null {
+  if (words === "") return null
+  if (outcome.note === UNAVAILABLE) return "Word documents are unavailable."
   if (outcome.note && SERVER_NOTES.has(outcome.note)) return outcome.note
   if (
     words === "" ||
@@ -284,8 +288,11 @@ async function sendWords(
     )
   }
   if (!target.targetId || target.text === "") return null
+  if (/[\r\n]/.test(words)) return null
+  const id = paperIdSchema.safeParse(docId)
+  if (!id.success) return null
   const input = {
-    docId,
+    docId: id.data,
     basedOn: revision,
     edits: [
       {
