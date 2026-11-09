@@ -63,14 +63,13 @@ function findEocd(bytes: Uint8Array) {
 }
 
 async function inflate(data: Uint8Array) {
-  const source = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(data)
-      controller.close()
-    },
-  })
-  const stream = source.pipeThrough(new DecompressionStream("deflate-raw"))
-  return new Uint8Array(await new Response(stream).arrayBuffer())
+  const decompression = new DecompressionStream("deflate-raw")
+  const writer = decompression.writable.getWriter()
+  await writer.write(new Uint8Array(data))
+  await writer.close()
+  return new Uint8Array(
+    await new Response(decompression.readable).arrayBuffer()
+  )
 }
 
 export async function readZip(bytes: Uint8Array) {
@@ -193,9 +192,9 @@ export function paintSourceLines(
   stylesXml: string | null
 ) {
   const rows = paragraphLines(documentXml, stylesXml)
-  const hosts = [...root.querySelectorAll("article p")].filter(
-    (node) => !node.classList.contains("source-header")
-  )
+  const hosts = [
+    ...root.querySelectorAll<HTMLParagraphElement>("article p"),
+  ].filter((node) => !node.classList.contains("source-header"))
   let hostIndex = 0
   let unknown = 0
   let section = 0

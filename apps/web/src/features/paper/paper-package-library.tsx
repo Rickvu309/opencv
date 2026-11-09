@@ -104,7 +104,7 @@ export function PaperPackageLibrary({
 }: {
   library: ReturnType<typeof useWordLibrary>
 }) {
-  if (wordPagesOpen()) void import("../paper-page/preview.tsx")
+  if (wordPagesOpen()) void import("./page/preview.tsx")
   const { selected, onSelect } = library
   const unavailable =
     library.query.error instanceof ApiError &&

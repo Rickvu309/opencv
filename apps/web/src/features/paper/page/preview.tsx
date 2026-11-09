@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import { renderAsync } from "docx-preview"
 
 import { paintColumns } from "./columns.ts"
@@ -20,6 +20,13 @@ import {
 } from "./short-advance.ts"
 import "./preview.css"
 
+type PreviewAction = { type: "ready"; text: string } | { type: "failed" }
+
+function previewReducer(_status: string, action: PreviewAction) {
+  if (action.type === "failed") return "These pages could not be drawn."
+  return action.text
+}
+
 const renderOptions = {
   breakPages: true,
   ignoreLastRenderedPageBreak: false,
@@ -36,7 +43,7 @@ export function WordPagePreview({
   advances?: LineMeasure[]
 }) {
   const host = useRef<HTMLDivElement>(null)
-  const [status, setStatus] = useState("Loading pages")
+  const [status, dispatch] = useReducer(previewReducer, "Loading pages")
   useEffect(() => {
     const node = host.current
     if (!node) return
@@ -68,9 +75,14 @@ export function WordPagePreview({
         ]
           .filter(Boolean)
           .join(" ")
-        if (!cancel) setStatus(notice || "Pages use the original Word file.")
+        if (!cancel) {
+          dispatch({
+            type: "ready",
+            text: notice || "Pages use the original Word file.",
+          })
+        }
       } catch {
-        if (!cancel) setStatus("These pages could not be drawn.")
+        if (!cancel) dispatch({ type: "failed" })
       }
     }
     void run()

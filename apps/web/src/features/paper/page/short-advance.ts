@@ -67,9 +67,9 @@ export function measureAdvances(root: ParentNode): LineMeasure[] {
   const context = canvas.getContext("2d")
   if (!context) return []
   const pages = [...root.querySelectorAll("section.docx")]
-  const paragraphs = [...root.querySelectorAll("article p")].filter(
-    (node) => !node.classList.contains("source-header")
-  )
+  const paragraphs = [
+    ...root.querySelectorAll<HTMLParagraphElement>("article p"),
+  ].filter((node) => !node.classList.contains("source-header"))
   const lines: LineMeasure[] = []
   for (let index = 0; index < paragraphs.length - 1; index++) {
     const current = paragraphs[index]
