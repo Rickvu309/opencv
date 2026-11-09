@@ -69,8 +69,11 @@ export const files = opencvApp.table(
   (table) => [index("files_user_id_idx").on(table.userId)]
 )
 
-export const { paperPackageVersions, paperPackageHeads } =
-  createPaperPackageTables(opencvApp, user, files)
+export const {
+  paperPackageVersions,
+  paperPackageHeads,
+  paperPackageCandidates,
+} = createPaperPackageTables(opencvApp, user, files)
 
 export const paperDocs = opencvApp.table(
   "paper_docs",

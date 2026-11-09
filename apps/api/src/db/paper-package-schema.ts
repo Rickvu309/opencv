@@ -90,5 +90,44 @@ export function createPaperPackageTables(
     ]
   )
 
-  return { paperPackageVersions, paperPackageHeads }
+  const paperPackageCandidates = opencvApp.table(
+    "paper_package_candidates",
+    {
+      id: uuid("id").primaryKey(),
+      userId: text("user_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+      docId: uuid("doc_id").notNull(),
+      incarnation: uuid("incarnation").notNull(),
+      basisRevision: uuid("basis_revision").notNull(),
+      forwardRevision: uuid("forward_revision").notNull(),
+      restoreRevision: uuid("restore_revision").notNull(),
+      seal: jsonb("seal").$type<unknown>().notNull(),
+      digest: text("digest").notNull(),
+      createdAt: timestamptz("created_at").notNull().defaultNow(),
+    },
+    (table) => [
+      ...(
+        [
+          ["basis", table.basisRevision],
+          ["forward", table.forwardRevision],
+          ["restore", table.restoreRevision],
+        ] as const
+      ).map(([role, revision]) =>
+        foreignKey({
+          name: `paper_package_candidate_${role}_fk`,
+          columns: [table.docId, table.userId, table.incarnation, revision],
+          foreignColumns: [
+            paperPackageVersions.docId,
+            paperPackageVersions.userId,
+            paperPackageVersions.incarnation,
+            paperPackageVersions.revision,
+          ],
+        })
+      ),
+      index("paper_package_candidates_owner_idx").on(table.userId),
+    ]
+  )
+
+  return { paperPackageVersions, paperPackageHeads, paperPackageCandidates }
 }

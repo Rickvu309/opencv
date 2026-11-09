@@ -31,7 +31,7 @@ const replacement = z
     after: text,
   })
   .strict()
-const requestSchema = z
+export const wordPackageEditSchema = z
   .object({
     docId: z.string().uuid(),
     basedOn: z.string().uuid(),
@@ -42,7 +42,7 @@ const requestSchema = z
 export async function prepareWordPackage(owner: string, rawInput: unknown) {
   if (insideTransaction())
     return packageFailure("Prepare the Word edit before starting a save.")
-  const input = requestSchema.parse(rawInput)
+  const input = wordPackageEditSchema.parse(rawInput)
   if (Buffer.byteLength(JSON.stringify(input)) > PACKAGE_LIMITS.requestBytes)
     return packageFailure("This Word edit is too large. Send fewer changes.")
   const { version, artifact, projection } = await wordPackageBasis(

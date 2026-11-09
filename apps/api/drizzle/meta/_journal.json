@@ -141,6 +141,13 @@
       "when": 1794180691620,
       "tag": "0019_cute_ultimo",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794212067119,
+      "tag": "0020_tricky_abomination",
+      "breakpoints": true
     }
   ]
 }
