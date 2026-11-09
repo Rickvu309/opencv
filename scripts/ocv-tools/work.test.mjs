@@ -290,7 +290,7 @@ test("cleanup deletes the remote branch only while it still exists, and says not
   assert.doesNotMatch(deleted.text, /Warning/)
 })
 
-test("cleanup from inside the worktree infers the issue; --force removes unsaved work; --all keeps unmerged", () => {
+test("cleanup from inside the worktree infers the issue; dirty work survives --force; --all keeps unmerged", () => {
   const ports = fakePorts({
     cwd: wt,
     branch: "feat/90-keep",
@@ -303,8 +303,8 @@ test("cleanup from inside the worktree infers the issue; --force removes unsaved
   assert.match(all.text, /kept feat\/90-keep: .*no merged/)
   ports.state.prs = [pr(5, { state: "MERGED", head: "feat/90-keep" })]
   const forced = runCli(["cleanup", "--force"], ctx)
-  assert.equal(forced.code, 0, forced.text)
-  assert.equal(ports.state.worktrees.length, 0)
+  assert.match(forced.text, /REFUSED DIRTY/)
+  assert.equal(ports.state.worktrees.length, 1)
 })
 
 test("cleanup closes an issue a merged pull request left open, with no Closes keyword", () => {

@@ -121,8 +121,8 @@ function dirtyFix(facts) {
 
 function notMerged(facts) {
   const work = facts.work
-  if (!work || work.merged !== false) return null
-  return `${work.branch} has no merged pull request`
+  if (!work || work.merged !== false || work.abandoned) return null
+  return `${work.branch} has no merged pull request or explicitly abandoned closed pull request`
 }
 
 function notARepo(facts) {

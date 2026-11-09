@@ -1,0 +1,13 @@
+{
+  "id": "cleanup-retention",
+  "file": "scripts/cleanup-retention.test.mjs",
+  "detector": {
+    "module": "scripts/lib/cleanup-retention.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "17c5eb8b",
+    "path": "scripts/ocv-tools/work.mjs"
+  }
+}

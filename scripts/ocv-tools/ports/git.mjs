@@ -35,7 +35,9 @@ export function gitAdapter(run) {
       }
     },
     worktrees(cwd) {
-      const out = git(cwd, ["worktree", "list", "--porcelain"]).out
+      const listed = git(cwd, ["worktree", "list", "--porcelain"])
+      if (!listed.ok) throw new Error(`could not list worktrees: ${listed.err}`)
+      const out = listed.out
       const found = []
       let path = null
       for (const line of `${out}\n`.split("\n")) {
@@ -46,6 +48,29 @@ export function gitAdapter(run) {
         } else if (line === "") path = null
       }
       return found
+    },
+    retainedHead(cwd, pullHead) {
+      return ["origin/main", ...(pullHead ? [pullHead] : [])].some(
+        (ref) => git(cwd, ["merge-base", "--is-ancestor", "HEAD", ref]).ok
+      )
+    },
+    retainedRemote(cwd, branch, pullHeads = []) {
+      const remote = git(cwd, [
+        "ls-remote",
+        "--heads",
+        "origin",
+        `refs/heads/${branch}`,
+      ])
+      if (!remote.ok) return { oid: null, retained: false }
+      const oid = remote.out.split(/\s+/)[0] || null
+      return {
+        oid,
+        retained:
+          !oid ||
+          ["origin/main", ...pullHeads].some(
+            (ref) => git(cwd, ["merge-base", "--is-ancestor", oid, ref]).ok
+          ),
+      }
     },
     remoteHeads(cwd) {
       const out = git(cwd, ["ls-remote", "--heads", "origin"])
@@ -192,8 +217,19 @@ export function gitAdapter(run) {
     deleteBranch(cwd, branch) {
       return git(cwd, ["branch", "-D", branch])
     },
-    deleteRemoteBranch(cwd, branch) {
-      return git(cwd, ["push", "origin", "--delete", branch])
+    deleteRemoteBranch(cwd, branch, expected) {
+      if (!expected)
+        return {
+          ok: false,
+          out: "",
+          err: "remote deletion requires a retained tip",
+        }
+      return git(cwd, [
+        "push",
+        `--force-with-lease=refs/heads/${branch}:${expected}`,
+        "origin",
+        `:refs/heads/${branch}`,
+      ])
     },
     prune(cwd) {
       return git(cwd, ["worktree", "prune"])

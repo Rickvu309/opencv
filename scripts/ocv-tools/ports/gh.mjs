@@ -389,7 +389,9 @@ export function ghAdapter(run) {
       else args.push("--limit", String(limit))
       args.push(
         "--json",
-        head ? "number,title,body" : "number,state,isDraft,headRefName"
+        head
+          ? "number,title,body,state,labels,headRefName,headRefOid,closingIssuesReferences"
+          : "number,state,isDraft,headRefName"
       )
       return JSON.parse(gh(...args) || "[]")
     },
@@ -432,6 +434,11 @@ export function ghAdapter(run) {
     },
     releaseUpload(tag, files) {
       gh("release", "upload", tag, ...files, "--clobber")
+    },
+    issueLabels(n) {
+      return JSON.parse(
+        gh("issue", "view", String(n), "--json", "labels")
+      ).labels.map((l) => l.name)
     },
     viewIssue(n) {
       return run("gh", ["issue", "view", String(n), "--json", "number"]).ok

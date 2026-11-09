@@ -93,7 +93,7 @@ test("take builds the branch, worktree, .env, port record, claim and result", ()
   )
 })
 
-test("take lists finished worktrees a human merge left on disk, and nothing when there are none", () => {
+test("take reconciles finished worktrees after a queued or human merge without depending on the former account", () => {
   const old = {
     path: "/tmp/opencv.worktrees/80-old-fix",
     branch: "fix/80-old-fix",
@@ -106,9 +106,11 @@ test("take lists finished worktrees a human merge left on disk, and nothing when
   })
   const r = runCli(["take", "90", "--no-install"], left.ctx)
   assert.equal(r.code, 0, r.text)
-  assert.match(
-    r.text,
-    /Finished worktrees still on disk \(their pull requests merged\): \/tmp\/opencv\.worktrees\/80-old-fix \(fix\/80-old-fix\)\. Run: scripts\/ocv-tools\.mjs cleanup --all/
+  assert.match(r.text, /Removed:\n.*80-old-fix/)
+  assert.ok(
+    left.ports.effects.some(
+      (e) => e.op === "removeWorktree" && e.path === old.path
+    )
   )
   const none = run({
     dirs: [`${WT}/.githooks`],
