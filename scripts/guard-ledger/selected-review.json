@@ -6,5 +6,5 @@
     "export": "detect"
   },
   "historic": null,
-  "reason": "Selected dispatch and private Undo admission are new in this change. Historical main has no ancestor that introduced this protocol, so a historic PASS would be fabricated. Mistake and clean fixtures plus executable mutants of the current source cover name-only task selection, approval-time preparation, selected-branch downgrade, direct private restore admission, an unchanged publication that accepts a lock count instead of its own FOR UPDATE token, a mutation write that drops the expected name, and a private restore that writes without comparing the expected name."
+  "reason": "Selected dispatch and private Undo admission are new in this change. Historical main has no ancestor that introduced this protocol, so a historic PASS would be fabricated. Mistake and clean fixtures plus executable mutants of the current source cover name-only task selection, approval-time preparation, selected-branch downgrade, direct private restore admission, an unchanged publication that skips the Registry row lock or reads a caller-supplied value, a mutation write that drops the locked compared value, and a private restore that writes without comparing the expected name."
 }

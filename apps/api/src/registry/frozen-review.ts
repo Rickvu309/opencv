@@ -1,6 +1,6 @@
 import { ERROR_CODES, type Actor } from "@workspace/domain"
 import { z, type ZodType } from "zod"
-import { and, eq, sql, type SQL } from "drizzle-orm"
+import { and, eq, sql, type AnyColumn, type SQL } from "drizzle-orm"
 import { getDb, insideTransaction } from "../db/context.js"
 import {
   coachTasks,
@@ -27,23 +27,33 @@ export type PreparedUnchanged<S, O> = Readonly<{
   output: O
 }>
 
+export type BasisValue = {
+  column: AnyColumn
+  source: "snapshot" | "input" | "actor" | "candidate" | "review"
+  field: string
+}
+
+export type RowBasis = {
+  table: AnyColumn["table"]
+  key: readonly [BasisValue, ...BasisValue[]]
+  compared: readonly [BasisValue, ...BasisValue[]]
+}
+
+export type LockedBasis = Readonly<{
+  key: readonly unknown[]
+  compared: readonly unknown[]
+}>
+
 export type ReviewedCommand<I, O, C, V, S = never> = {
   version: string
   candidate: ZodType<C>
   review: ZodType<V>
   unchanged?: {
     snapshot: ZodType<S>
-    key: (snapshot: S) => unknown
-    expect: (snapshot: S) => unknown
-    lock: (snapshot: S, actor: Actor, basis: BasisLock) => Promise<BasisToken>
+    basis: RowBasis
     revalidate: (input: I, snapshot: S, actor: Actor) => Promise<void>
   }
-  basisKey: (input: I, prepared: PreparedReview<C, V>, actor: Actor) => unknown
-  basisValue: (
-    input: I,
-    prepared: PreparedReview<C, V>,
-    actor: Actor
-  ) => unknown
+  basis: RowBasis
   prepare: (
     input: I,
     actor: Actor
@@ -51,39 +61,28 @@ export type ReviewedCommand<I, O, C, V, S = never> = {
   revalidate: (
     input: I,
     prepared: PreparedReview<C, V>,
+    actor: Actor
+  ) => Promise<void>
+  commit: (
+    input: I,
+    prepared: PreparedReview<C, V>,
     actor: Actor,
-    basis: BasisLock
-  ) => Promise<BasisToken>
-  commit: (input: I, prepared: PreparedReview<C, V>, actor: Actor) => Promise<O>
+    locked: LockedBasis
+  ) => Promise<O>
 }
 
 export type StoredReviewedCommand = {
   version: string
   unchanged?: {
     parse: (snapshot: unknown) => unknown
-    key: (snapshot: unknown) => unknown
-    expect: (snapshot: unknown) => unknown
-    lock: (
-      snapshot: unknown,
-      actor: Actor,
-      basis: BasisLock
-    ) => Promise<BasisToken>
+    basis: RowBasis
     revalidate: (
       input: unknown,
       snapshot: unknown,
       actor: Actor
     ) => Promise<void>
   }
-  basisKey: (
-    input: unknown,
-    prepared: PreparedReview<unknown, unknown>,
-    actor: Actor
-  ) => unknown
-  basisValue: (
-    input: unknown,
-    prepared: PreparedReview<unknown, unknown>,
-    actor: Actor
-  ) => unknown
+  basis: RowBasis
   parse: (
     value:
       PreparedReview<unknown, unknown> | PreparedUnchanged<unknown, unknown>
@@ -97,13 +96,13 @@ export type StoredReviewedCommand = {
   revalidate: (
     input: unknown,
     prepared: PreparedReview<unknown, unknown>,
-    actor: Actor,
-    basis: BasisLock
-  ) => Promise<BasisToken>
+    actor: Actor
+  ) => Promise<void>
   run: (
     input: unknown,
     prepared: PreparedReview<unknown, unknown>,
-    actor: Actor
+    actor: Actor,
+    locked: LockedBasis
   ) => Promise<RanCommand>
 }
 
@@ -184,91 +183,73 @@ export function refuseFrozenReview(): never {
   )
 }
 
-export type BasisToken = {
-  readonly key: unknown
-  readonly value: unknown
-}
-
-export type BasisSpec = {
-  table: unknown
-  where: SQL
-  columns: Record<string, unknown>
-  key: unknown
-  keyColumn: string
-  valueColumn: string
-}
-
-export type BasisLock = {
-  forUpdate(spec: BasisSpec): Promise<BasisToken>
-}
-
-class IssuedBasisToken {
-  readonly key: unknown
-  readonly value: unknown
-  constructor(key: unknown, value: unknown) {
-    this.key = key
-    this.value = value
-  }
-}
-
-export function openBasisLock(requiredKey: unknown) {
-  let accepted: IssuedBasisToken | null = null
-  const lock: BasisLock = {
-    async forUpdate(spec) {
-      if (spec.key !== requiredKey)
-        throw new CommandError(
-          ERROR_CODES.CONFLICT,
-          "The unchanged basis row does not match"
-        )
-      const db = getDb() as unknown as {
-        select: (columns: Record<string, unknown>) => {
-          from: (table: unknown) => {
-            where: (clause: SQL) => {
-              for: (mode: "update") => Promise<Array<Record<string, unknown>>>
-            }
-          }
-        }
-      }
-      const [row] = await db
-        .select(spec.columns)
-        .from(spec.table)
-        .where(spec.where)
-        .for("update")
-      if (!row)
-        throw new CommandError(
-          ERROR_CODES.CONFLICT,
-          "The unchanged basis row is missing"
-        )
-      if (row[spec.keyColumn] !== requiredKey)
-        throw new CommandError(
-          ERROR_CODES.CONFLICT,
-          "The unchanged basis row does not match"
-        )
-      const token = new IssuedBasisToken(
-        row[spec.keyColumn],
-        row[spec.valueColumn]
-      )
-      accepted = token
-      return token
-    },
-  }
-  return {
-    lock,
-    accepts(token: unknown): token is BasisToken {
-      return token === accepted && accepted !== null
-    },
-  }
-}
-
-export function requireBasisToken(
-  held: { accepts(token: unknown): boolean },
-  token: unknown
+function basisValue(
+  ref: BasisValue,
+  bags: Readonly<Record<BasisValue["source"], unknown>>
 ) {
-  if (!held.accepts(token))
+  const bag = bags[ref.source]
+  if (!bag || typeof bag !== "object" || !Object.hasOwn(bag, ref.field))
     throw new CommandError(
       ERROR_CODES.CONFLICT,
-      "The unchanged check did not lock its basis"
+      "The unchanged basis row does not match"
     )
+  return (bag as Record<string, unknown>)[ref.field]
+}
+
+export async function lockBasis(
+  basis: RowBasis,
+  bags: Readonly<Record<BasisValue["source"], unknown>>
+): Promise<LockedBasis> {
+  const refs = [...basis.key, ...basis.compared]
+  if (refs.some((ref) => ref.column.table !== basis.table))
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row does not match"
+    )
+  const names = refs.map((ref) => ref.column.name)
+  if (new Set(names).size !== names.length)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row does not match"
+    )
+  const expectedKey = basis.key.map((ref) => basisValue(ref, bags))
+  const expectedCompared = basis.compared.map((ref) => basisValue(ref, bags))
+  const selection: Record<string, AnyColumn> = {}
+  for (const ref of refs) selection[ref.column.name] = ref.column
+  const clauses = basis.key.map((ref, index) =>
+    eq(ref.column, expectedKey[index] as never)
+  )
+  const where = clauses.length === 1 ? clauses[0] : and(...clauses)
+  const db = getDb() as unknown as {
+    select: (columns: Record<string, AnyColumn>) => {
+      from: (table: unknown) => {
+        where: (clause: SQL | undefined) => {
+          for: (mode: "update") => Promise<Array<Record<string, unknown>>>
+        }
+      }
+    }
+  }
+  const [row] = await db
+    .select(selection)
+    .from(basis.table)
+    .where(where)
+    .for("update")
+  if (!row)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The unchanged basis row is missing"
+    )
+  const readKey = basis.key.map((ref) => row[ref.column.name])
+  const readCompared = basis.compared.map((ref) => row[ref.column.name])
+  if (
+    readKey.some((value, index) => value !== expectedKey[index]) ||
+    readCompared.some((value, index) => value !== expectedCompared[index])
+  )
+    throw new CommandError(ERROR_CODES.CONFLICT, "Basis conflict")
+  return Object.freeze({
+    key: Object.freeze(readKey),
+    compared: Object.freeze(readCompared),
+  })
 }
 
 export async function publishUnchanged(
@@ -278,12 +259,15 @@ export async function publishUnchanged(
   actor: Actor
 ) {
   if (!binding.unchanged) return refuseFrozenReview()
-  const held = openBasisLock(binding.unchanged.key(frozen.snapshot))
-  const token = await binding.unchanged.lock(frozen.snapshot, actor, held.lock)
-  requireBasisToken(held, token)
-  if (token.value !== binding.unchanged.expect(frozen.snapshot))
-    throw new CommandError(ERROR_CODES.CONFLICT, "Basis conflict")
-  await binding.unchanged.revalidate(input, frozen.snapshot, actor)
+  const snapshot = binding.unchanged.parse(frozen.snapshot)
+  await lockBasis(binding.unchanged.basis, {
+    snapshot,
+    input,
+    actor,
+    candidate: null,
+    review: null,
+  })
+  await binding.unchanged.revalidate(input, snapshot, actor)
 }
 
 export async function lockReviewedBasis(
@@ -292,11 +276,15 @@ export async function lockReviewedBasis(
   prepared: PreparedReview<unknown, unknown>,
   actor: Actor
 ) {
-  const held = openBasisLock(binding.basisKey(input, prepared, actor))
-  const token = await binding.revalidate(input, prepared, actor, held.lock)
-  requireBasisToken(held, token)
-  if (token.value !== binding.basisValue(input, prepared, actor))
-    throw new CommandError(ERROR_CODES.CONFLICT, "Basis conflict")
+  const locked = await lockBasis(binding.basis, {
+    snapshot: null,
+    input,
+    actor,
+    candidate: prepared.candidate,
+    review: prepared.review,
+  })
+  await binding.revalidate(input, prepared, actor)
+  return locked
 }
 
 export function requirePreparationBoundary() {
@@ -603,7 +591,7 @@ export async function publishFrozenReview({
   hash: string | null
   summary: string
   approved: boolean
-  effect: () => Promise<ExecuteResult>
+  effect: (locked: LockedBasis) => Promise<ExecuteResult>
 }): Promise<ExecuteResult> {
   await checkReviewActor(actor)
   if (actor.type === "delegate") await requireLiveDelegate(actor)
@@ -621,7 +609,7 @@ export async function publishFrozenReview({
       return { ...replay(committed), command: committed.command }
     }
   }
-  await lockReviewedBasis(binding, input, frozen, actor)
+  const locked = await lockReviewedBasis(binding, input, frozen, actor)
   if (actor.type !== "person" && !approved) {
     return createProposal({
       actor,
@@ -638,5 +626,5 @@ export async function publishFrozenReview({
       .where(
         and(eq(idempotency.userId, actor.userId), eq(idempotency.key, key))
       )
-  return effect()
+  return effect(locked)
 }

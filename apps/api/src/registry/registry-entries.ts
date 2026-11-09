@@ -168,20 +168,7 @@ export class RegistryEntries extends CatalogPublication {
             unchanged: {
               parse: (snapshot: unknown) =>
                 binding.unchanged!.snapshot.parse(snapshot),
-              key: (snapshot: unknown) =>
-                binding.unchanged!.key(
-                  binding.unchanged!.snapshot.parse(snapshot)
-                ),
-              expect: (snapshot: unknown) =>
-                binding.unchanged!.expect(
-                  binding.unchanged!.snapshot.parse(snapshot)
-                ),
-              lock: (snapshot: unknown, actor: Actor, basis) =>
-                binding.unchanged!.lock(
-                  binding.unchanged!.snapshot.parse(snapshot),
-                  actor,
-                  basis
-                ),
+              basis: binding.unchanged!.basis,
               revalidate: (input: unknown, snapshot: unknown, actor: Actor) =>
                 binding.unchanged!.revalidate(
                   parseInput(spec.input, input),
@@ -207,35 +194,17 @@ export class RegistryEntries extends CatalogPublication {
       },
       prepare: (input, actor) =>
         binding.prepare(parseInput(spec.input, input), actor),
-      basisKey: (input, prepared, actor) =>
-        binding.basisKey(
-          parseInput(spec.input, input),
-          {
-            candidate: binding.candidate.parse(prepared.candidate),
-            review: binding.review.parse(prepared.review),
-          },
-          actor
-        ),
-      basisValue: (input, prepared, actor) =>
-        binding.basisValue(
-          parseInput(spec.input, input),
-          {
-            candidate: binding.candidate.parse(prepared.candidate),
-            review: binding.review.parse(prepared.review),
-          },
-          actor
-        ),
-      revalidate: (input, prepared, actor, basis) =>
+      basis: binding.basis,
+      revalidate: (input, prepared, actor) =>
         binding.revalidate(
           parseInput(spec.input, input),
           {
             candidate: binding.candidate.parse(prepared.candidate),
             review: binding.review.parse(prepared.review),
           },
-          actor,
-          basis
+          actor
         ),
-      run: async (input, prepared, actor) => {
+      run: async (input, prepared, actor, locked) => {
         const parsed = parseInput(spec.input, input)
         const output = await binding.commit(
           parsed,
@@ -243,7 +212,8 @@ export class RegistryEntries extends CatalogPublication {
             candidate: binding.candidate.parse(prepared.candidate),
             review: binding.review.parse(prepared.review),
           },
-          actor
+          actor,
+          locked
         )
         return {
           output,

@@ -134,22 +134,28 @@ export function detect(text, file = "source.ts") {
       !text.includes("publishUnchanged") ||
       text.includes("basisRowLocks") ||
       text.includes("requireBasisLock") ||
+      text.includes("openBasisLock") ||
+      text.includes("token.value") ||
       text.includes("pg_locks")
     )
       problems.push(problem("unlocked-basis", execute, source))
   }
   const unchangedPublish = named(source, "publishUnchanged")
-  if (
-    unchangedPublish &&
-    (!block(unchangedPublish, source).includes("openBasisLock") ||
-      !block(unchangedPublish, source).includes("requireBasisToken"))
-  )
-    problems.push(problem("unlocked-basis", unchangedPublish, source))
+  if (unchangedPublish) {
+    const text = block(unchangedPublish, source)
+    if (
+      !text.includes("lockBasis") ||
+      text.includes("token.value") ||
+      text.includes(".lock(") ||
+      text.includes("openBasisLock")
+    )
+      problems.push(problem("unlocked-basis", unchangedPublish, source))
+  }
   const reviewedLock = named(source, "lockReviewedBasis")
   if (
     reviewedLock &&
-    (!block(reviewedLock, source).includes("openBasisLock") ||
-      !block(reviewedLock, source).includes("requireBasisToken"))
+    (!block(reviewedLock, source).includes("lockBasis") ||
+      block(reviewedLock, source).includes("token.value"))
   )
     problems.push(problem("unlocked-basis", reviewedLock, source))
   const frozenPublish = named(source, "publishFrozenReview")
@@ -158,18 +164,23 @@ export function detect(text, file = "source.ts") {
     !block(frozenPublish, source).includes("lockReviewedBasis")
   )
     problems.push(problem("unlocked-basis", frozenPublish, source))
-  const opener = named(source, "openBasisLock")
-  if (opener) {
-    const text = block(opener, source)
+  const basisLock = named(source, "lockBasis")
+  if (basisLock) {
+    const text = block(basisLock, source)
     if (
       !text.includes('.for("update")') ||
-      !text.includes("requiredKey") ||
-      text.includes("pg_locks") ||
-      text.includes("RowShareLock") ||
+      !text.includes("eq(") ||
+      text.includes("spec.where") ||
+      text.includes("spec.columns") ||
+      text.includes("token") ||
       text.includes("keyShare") ||
-      text.includes("key share")
+      text.includes("pg_locks")
     )
-      problems.push(problem("unlocked-basis", opener, source))
+      problems.push(problem("unlocked-basis", basisLock, source))
+  }
+  for (const retired of ["openBasisLock", "requireBasisToken"]) {
+    const found = named(source, retired)
+    if (found) problems.push(problem("unlocked-basis", found, source))
   }
   const shape = named(source, "isUnchanged")
   if (
@@ -180,7 +191,7 @@ export function detect(text, file = "source.ts") {
     problems.push(problem("unchanged-shape", shape, source))
   if (
     text.includes("prepared.candidate.after") &&
-    !text.includes("prepared.candidate.before")
+    !text.includes("locked.compared")
   )
     problems.push(problem("plain-mutation", source, source))
   const restore = named(source, "compareAndRestore")

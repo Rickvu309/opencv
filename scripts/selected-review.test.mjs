@@ -125,18 +125,15 @@ test("actual source mutants expose name-only selection, approval preparation, do
   )
   const plainLock = frozen.replace('.for("update")', '.for("keyShare")')
   const counted = frozen.replace(
-    "let accepted: IssuedBasisToken | null = null",
-    "let accepted: IssuedBasisToken | null = null\n  void pg_locks"
+    "await lockBasis(binding.unchanged.basis,",
+    "token.value\n  await lockBasis(binding.unchanged.basis,"
   )
   const loose = frozen.replace('!("candidate" in value)', "true")
   const plainRestore = support.replace(
     "eq(user.name, expected)",
     "eq(user.id, userId)"
   )
-  const plainMutation = support.replace(
-    "prepared.candidate.before",
-    "actor.userId"
-  )
+  const plainMutation = support.replace("locked.compared", "actor.userId")
   assert.ok(kinds(detect(unlocked)).includes("unlocked-basis"))
   assert.ok(kinds(detect(plainLock)).includes("unlocked-basis"))
   assert.ok(kinds(detect(counted)).includes("unlocked-basis"))

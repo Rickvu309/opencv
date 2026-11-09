@@ -1,17 +1,13 @@
 import { randomUUID } from "node:crypto"
 import { coachActor, defineOperation, personActor } from "@workspace/domain"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import type { Pool } from "pg"
 import { expect } from "vitest"
 import { z } from "zod"
 import { getDb, insideTransaction, withDatabase } from "../db/context.js"
 import { activity, chats, coachUsage, idempotency, user } from "../db/schema.js"
 import { bindCatalog } from "../registry/bind.js"
-import type {
-  BasisLock,
-  BasisToken,
-  ReviewedCommand,
-} from "../registry/frozen-review.js"
+import type { LockedBasis, ReviewedCommand } from "../registry/frozen-review.js"
 import { Registry } from "../registry/registry.js"
 import { backend, trace } from "./registry-formal-support.js"
 
@@ -45,8 +41,6 @@ type Candidate = z.output<typeof candidate>
 type Review = z.output<typeof review>
 const snapshot = z.object({ before: z.string(), userId: z.string() }).strict()
 type Snapshot = z.output<typeof snapshot>
-export type BasisAttack =
-  "plain" | "keyShare" | "wrongRow" | "missing" | "lockTable" | "wrongWhere"
 export const words = { before: "Ada", after: "Grace" }
 
 export function fixture(
@@ -54,14 +48,8 @@ export function fixture(
     silent?: boolean
     prepare?: () => Promise<void>
     revalidate?: () => Promise<void>
-    beforeLock?: () => Promise<void>
     afterLock?: () => Promise<void>
-    afterRead?: () => Promise<void>
-    beforeMutationLock?: () => Promise<void>
     afterMutationLock?: () => Promise<void>
-    lock?: boolean
-    attack?: BasisAttack
-    decoyId?: string
     basisUserId?: string
     fail?: boolean
     version?: string
@@ -107,34 +95,29 @@ export function fixture(
     },
     unchanged: {
       snapshot,
-      key: (saved) => saved.userId,
-      expect: (saved) => saved.before,
-      lock: (saved, _actor, basis) => readUnchangedBasis(saved, basis, options),
+      basis: {
+        table: user,
+        key: [{ column: user.id, source: "snapshot", field: "userId" }],
+        compared: [{ column: user.name, source: "snapshot", field: "before" }],
+      },
       revalidate: async () => {
         calls.revalidate++
         expect(insideTransaction()).toBe(true)
+        await options.afterLock?.()
         await options.revalidate?.()
       },
     },
-    basisKey: (_input, _prepared, actor) => actor.userId,
-    basisValue: (input) => input.before,
+    basis: {
+      table: user,
+      key: [{ column: user.id, source: "actor", field: "userId" }],
+      compared: [{ column: user.name, source: "input", field: "before" }],
+    },
     revalidate: async (
       input: Input,
-      prepared: { candidate: Candidate; review: Review },
-      actor: { userId: string },
-      basis: BasisLock
+      prepared: { candidate: Candidate; review: Review }
     ) => {
       calls.revalidate++
       expect(insideTransaction()).toBe(true)
-      await options.beforeMutationLock?.()
-      const token = await basis.forUpdate({
-        table: user,
-        where: eq(user.id, actor.userId),
-        columns: { id: user.id, name: user.name },
-        key: actor.userId,
-        keyColumn: "id",
-        valueColumn: "name",
-      })
       await options.afterMutationLock?.()
       await options.revalidate?.()
       if (
@@ -142,12 +125,12 @@ export function fixture(
         prepared.review.after !== input.after
       )
         throw new Error("Basis conflict")
-      return token
     },
     commit: async (
       _input: Input,
       prepared: { candidate: Candidate; review: Review },
-      actor: { userId: string }
+      _actor: { userId: string },
+      locked: LockedBasis
     ) => {
       calls.commit++
       expect(insideTransaction()).toBe(true)
@@ -156,8 +139,8 @@ export function fixture(
         .set({ name: prepared.candidate.after })
         .where(
           and(
-            eq(user.id, actor.userId),
-            eq(user.name, prepared.candidate.before)
+            eq(user.id, locked.key[0] as string),
+            eq(user.name, locked.compared[0] as string)
           )
         )
         .returning({ id: user.id })
@@ -235,75 +218,6 @@ export async function receiptCount(id: string) {
 }
 export async function nameOf(id: string) {
   return (await getDb().select().from(user).where(eq(user.id, id)))[0]?.name
-}
-
-export async function readUnchangedBasis(
-  saved: { before: string; userId: string },
-  basis: BasisLock,
-  options: {
-    lock?: boolean
-    attack?: BasisAttack
-    decoyId?: string
-    beforeLock?: () => Promise<void>
-    afterLock?: () => Promise<void>
-    afterRead?: () => Promise<void>
-  }
-): Promise<BasisToken> {
-  const attack =
-    options.attack ?? (options.lock === false ? "plain" : undefined)
-  await options.beforeLock?.()
-  const forged = async () => {
-    await options.afterRead?.()
-    return { key: saved.userId, value: saved.before }
-  }
-  if (attack === "plain") {
-    await nameOf(saved.userId)
-    return forged()
-  }
-  if (attack === "keyShare") {
-    await getDb().execute(
-      sql`select name from opencv_app."user" where id = ${saved.userId} for key share`
-    )
-    return forged()
-  }
-  if (attack === "wrongRow") {
-    await getDb().execute(
-      sql`select name from opencv_app."user" where id = ${options.decoyId!} for update`
-    )
-    await nameOf(saved.userId)
-    return forged()
-  }
-  if (attack === "missing") {
-    await getDb().execute(
-      sql`select name from opencv_app."user" where id = ${"missing-" + saved.userId} for update`
-    )
-    await nameOf(saved.userId)
-    return forged()
-  }
-  if (attack === "lockTable") {
-    await getDb().execute(sql`lock table opencv_app."user" in row share mode`)
-    await nameOf(saved.userId)
-    return forged()
-  }
-  if (attack === "wrongWhere")
-    return basis.forUpdate({
-      table: user,
-      where: eq(user.id, options.decoyId!),
-      columns: { id: user.id, name: user.name },
-      key: saved.userId,
-      keyColumn: "id",
-      valueColumn: "name",
-    })
-  const token = await basis.forUpdate({
-    table: user,
-    where: eq(user.id, saved.userId),
-    columns: { id: user.id, name: user.name },
-    key: saved.userId,
-    keyColumn: "id",
-    valueColumn: "name",
-  })
-  await options.afterLock?.()
-  return token
 }
 
 export async function compareAndRestore(

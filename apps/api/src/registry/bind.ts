@@ -24,7 +24,11 @@ import {
   type ReversalExpectPending,
 } from "./expect-pending.js"
 import type { Registry } from "./registry.js"
-import { isUnchanged, type ReviewedCommand } from "./frozen-review.js"
+import {
+  isUnchanged,
+  type LockedBasis,
+  type ReviewedCommand,
+} from "./frozen-review.js"
 
 type AtLeastOne<T> = {
   [K in keyof T]-?: Required<Pick<T, K>> & Partial<T>
@@ -259,8 +263,8 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
             ? { ...prepared, output: check(prepared.output) }
             : prepared
         },
-        commit: async (input, prepared, actor) =>
-          check(await reviewed.commit(input, prepared, actor)),
+        commit: async (input, prepared, actor, locked) =>
+          check(await reviewed.commit(input, prepared, actor, locked)),
       }
       const selected = binding.selected
       if (selected)
@@ -293,7 +297,8 @@ type CatalogImplementations<C extends Record<string, Operation>> = {
             commit: (
               input: import("zod").output<C[N]["input"]>,
               prepared: never,
-              context: never
+              context: never,
+              locked: LockedBasis
             ) =>
               | import("zod").input<C[N]["publicResult"]>
               | Promise<import("zod").input<C[N]["publicResult"]>>
@@ -306,7 +311,8 @@ type CatalogImplementations<C extends Record<string, Operation>> = {
               commit: (
                 input: import("zod").output<C[N]["input"]>,
                 prepared: never,
-                context: never
+                context: never,
+                locked: LockedBasis
               ) =>
                 | import("zod").input<C[N]["publicResult"]>
                 | Promise<import("zod").input<C[N]["publicResult"]>>

@@ -67,6 +67,7 @@ import {
   isUnchanged,
   readPreparedExecution,
   publishUnchanged,
+  type LockedBasis,
   type PreparedExecution,
 } from "./frozen-review.js"
 
@@ -288,7 +289,7 @@ export class Registry extends RegistryEntries {
           parsed
         )
       : null
-    const effect = async (): Promise<ExecuteResult> => {
+    const effect = async (locked?: LockedBasis): Promise<ExecuteResult> => {
       const ran =
         frozen && isUnchanged(frozen)
           ? {
@@ -306,7 +307,8 @@ export class Registry extends RegistryEntries {
               async () => {
                 if (!reviewed || !frozen) return command.run(parsed, actor)
                 if (isUnchanged(frozen)) return refuseFrozenReview()
-                return reviewed.run(parsed, frozen, actor)
+                if (!locked) return refuseFrozenReview()
+                return reviewed.run(parsed, frozen, actor, locked)
               }
             )
       assertReversal(command.name, this.isCatalogOperation(command.name), ran)
