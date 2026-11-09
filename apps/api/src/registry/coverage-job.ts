@@ -12,7 +12,9 @@ import {
 export function jobCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, run, undo, jobOf, gone, checklist } = tools
   const catalogCases: CoverageCase[] = Object.values(catalog)
-    .filter((operation) => operation.kind === "command")
+    .filter(
+      (operation) => operation.kind === "command" && operation.owner === "job"
+    )
     .map((operation) => ({
       name: operation.name,
       arrange: async () => {

@@ -32,6 +32,10 @@ import {
 
 export function paperCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, registry, run, undo, paperOf, gone, shares, userId } = tools
+  const paperImport = registry
+    .list()
+    .commands.find((command) => command.name === "paper.import")
+  if (!paperImport) throw new Error("Missing Paper import command")
   let syncPush = ""
   const coachSentence = "First paragraph. Coach adds a sentence."
   async function startCoachEdit() {
@@ -367,7 +371,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.import",
+      name: paperImport.name,
       arrange: async () => {
         const file = await saveFile({
           userId: parseUserId(userId),
@@ -378,7 +382,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.fileId = file.id
       },
-      act: () => run("paper.import", { fileId: ctx.fileId }),
+      act: () => run(paperImport.name, { fileId: ctx.fileId }),
       assert: async (result) => {
         const doc = await paperOf(idOf(result.output))
         expect(text(doc, "kind")).toBe("cv")
