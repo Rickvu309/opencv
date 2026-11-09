@@ -33,6 +33,8 @@ export function pr(n, over = {}) {
     headRefName: over.head ?? over.headRefName ?? "feat/1-x",
     labels: over.labels ?? [],
     headRefOid: over.headRefOid,
+    body: over.body,
+    closingIssuesReferences: over.closingIssuesReferences,
   }
 }
 
@@ -425,6 +427,12 @@ export function fakePorts(world = {}) {
     retainedHead(cwd) {
       return !(world.unpublished ?? []).includes(cwd)
     },
+    retainedRemote(_cwd, branch) {
+      return {
+        oid: state.remote.has(branch) ? "retained-tip" : null,
+        retained: true,
+      }
+    },
     remoteHeads() {
       counts.remoteHeads += 1
       return [...state.remote]
@@ -525,8 +533,8 @@ export function fakePorts(world = {}) {
       state.local.delete(branch)
       return { ok: true, out: "", err: "" }
     },
-    deleteRemoteBranch(_cwd, branch) {
-      effect("deleteRemoteBranch", { branch })
+    deleteRemoteBranch(_cwd, branch, expected) {
+      effect("deleteRemoteBranch", { branch, expected })
       return { ok: true, out: "", err: "" }
     },
     prune() {

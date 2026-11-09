@@ -54,6 +54,24 @@ export function gitAdapter(run) {
         (ref) => git(cwd, ["merge-base", "--is-ancestor", "HEAD", ref]).ok
       )
     },
+    retainedRemote(cwd, branch, pullHeads = []) {
+      const remote = git(cwd, [
+        "ls-remote",
+        "--heads",
+        "origin",
+        `refs/heads/${branch}`,
+      ])
+      if (!remote.ok) return { oid: null, retained: false }
+      const oid = remote.out.split(/\s+/)[0] || null
+      return {
+        oid,
+        retained:
+          !oid ||
+          ["origin/main", ...pullHeads].some(
+            (ref) => git(cwd, ["merge-base", "--is-ancestor", oid, ref]).ok
+          ),
+      }
+    },
     remoteHeads(cwd) {
       const out = git(cwd, ["ls-remote", "--heads", "origin"])
       const names = []
@@ -199,8 +217,19 @@ export function gitAdapter(run) {
     deleteBranch(cwd, branch) {
       return git(cwd, ["branch", "-D", branch])
     },
-    deleteRemoteBranch(cwd, branch) {
-      return git(cwd, ["push", "origin", "--delete", branch])
+    deleteRemoteBranch(cwd, branch, expected) {
+      if (!expected)
+        return {
+          ok: false,
+          out: "",
+          err: "remote deletion requires a retained tip",
+        }
+      return git(cwd, [
+        "push",
+        `--force-with-lease=refs/heads/${branch}:${expected}`,
+        "origin",
+        `:refs/heads/${branch}`,
+      ])
     },
     prune(cwd) {
       return git(cwd, ["worktree", "prune"])

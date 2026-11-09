@@ -390,7 +390,7 @@ export function ghAdapter(run) {
       args.push(
         "--json",
         head
-          ? "number,title,body,state,labels,headRefName,headRefOid"
+          ? "number,title,body,state,labels,headRefName,headRefOid,closingIssuesReferences"
           : "number,state,isDraft,headRefName"
       )
       return JSON.parse(gh(...args) || "[]")

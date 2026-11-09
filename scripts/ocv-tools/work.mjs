@@ -157,7 +157,22 @@ function workOf(ctx, wt, force) {
         p.labels?.some((l) => (l.name ?? l) === "abandoned")
     )
   const issueNo = /^[a-z]+\/(\d+)-/.exec(wt.branch)?.[1]
-  const issueLabels = issueNo ? ctx.ports.gh.issueLabels(issueNo) : []
+  const issueNumbers = new Set([
+    ...(issueNo ? [Number(issueNo)] : []),
+    ...pulls.flatMap((p) =>
+      (p.closingIssuesReferences ?? []).map((i) => i.number)
+    ),
+    ...pulls.flatMap((p) =>
+      [
+        ...(p.body ?? "").matchAll(
+          /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)\b/gi
+        ),
+      ].map((m) => Number(m[1]))
+    ),
+  ])
+  const issueLabels = [...issueNumbers].flatMap((n) =>
+    ctx.ports.gh.issueLabels(n)
+  )
   const status = ctx.ports.git.status(wt.path)
   const activity = ctx.ports.activity.inspect(wt.path)
   const retained = merged
@@ -165,25 +180,28 @@ function workOf(ctx, wt, force) {
     : ["same", "behind"].includes(
         ctx.ports.git.branchFacts(wt.path, wt.branch).relation
       )
-  const protection = !status.ok
-    ? "could not read worktree status"
-    : !activity.safe
-      ? activity.reason
-      : !retained
-        ? "unpublished commits are not retained remotely"
-        : issueLabels.includes("ready-for-human") ||
-            pulls.some((p) =>
-              p.labels?.some((l) => (l.name ?? l) === "ready-for-human")
-            )
-          ? "ready-for-human work is preserved"
-          : ""
+  const protection = !issueNumbers.size
+    ? "could not establish the associated issue"
+    : !status.ok
+      ? "could not read worktree status"
+      : !activity.safe
+        ? activity.reason
+        : !retained
+          ? "unpublished commits are not retained remotely"
+          : issueLabels.includes("ready-for-human") ||
+              pulls.some((p) =>
+                p.labels?.some((l) => (l.name ?? l) === "ready-for-human")
+              )
+            ? "ready-for-human work is preserved"
+            : ""
   return {
-    force: force && !abandoned && !protection,
+    force: force && !abandoned && !protection && !status.out,
     path: wt.path,
     dirty: protection || status.out,
     branch: wt.branch,
     merged: Boolean(merged),
     abandoned: Boolean(abandoned),
+    warnings: activity.warnings ?? [],
   }
 }
 
@@ -219,8 +237,9 @@ export function finishedWorktrees(ctx, place) {
   }
 }
 
-function judge(ctx, wt, { force, n, root }) {
+function judge(ctx, wt, { force, n, root, diagnostics }) {
   const work = workOf(ctx, wt, force)
+  for (const warning of work.warnings) diagnostics.add(warning)
   const verdict = decide("cleanup", {
     here: { ok: true },
     local: { required: Boolean(n), found: true, n, root },
@@ -273,8 +292,9 @@ export function cleanup(ctx, { n: given, flags = {}, targets: selected }) {
 
   const removed = []
   const closed = []
+  const diagnostics = new Set()
   for (const wt of targets) {
-    const j = judge(ctx, wt, { force, n, root })
+    const j = judge(ctx, wt, { force, n, root, diagnostics })
     if (j) {
       lines.push(`${j.verb} ${wt.branch}: ${j.message.split("\n")[0]}`)
       continue
@@ -295,7 +315,7 @@ export function cleanup(ctx, { n: given, flags = {}, targets: selected }) {
       lines.push(`would remove ${wt.path}  (${wt.branch})`)
       continue
     }
-    const recheck = judge(ctx, wt, { force, n, root })
+    const recheck = judge(ctx, wt, { force, n, root, diagnostics })
     if (recheck) {
       lines.push(
         `${recheck.verb} ${wt.branch}: ${recheck.message.split("\n")[0]}`
@@ -310,12 +330,27 @@ export function cleanup(ctx, { n: given, flags = {}, targets: selected }) {
       lines.push(
         `Warning: could not delete local branch ${wt.branch}: ${branch.err || branch.out}`
       )
-    if (merged.length && ctx.ports.git.remoteHead(main, wt.branch)) {
-      const remote = ctx.ports.git.deleteRemoteBranch(main, wt.branch)
-      if (!remote.ok)
+    if (merged.length) {
+      const remoteHead = ctx.ports.git.retainedRemote(
+        main,
+        wt.branch,
+        merged.map((p) => p.headRefOid).filter(Boolean)
+      )
+      if (!remoteHead.retained) {
         lines.push(
-          `Warning: could not delete remote branch ${wt.branch}: ${remote.err || remote.out}`
+          `Warning: remote branch ${wt.branch} is preserved: its tip is not proven merged.`
         )
+      } else if (remoteHead.oid) {
+        const remote = ctx.ports.git.deleteRemoteBranch(
+          main,
+          wt.branch,
+          remoteHead.oid
+        )
+        if (!remote.ok)
+          lines.push(
+            `Warning: could not delete remote branch ${wt.branch}: ${remote.err || remote.out}`
+          )
+      }
     }
     removed.push(`${wt.path}  (${wt.branch})`)
   }
@@ -325,6 +360,7 @@ export function cleanup(ctx, { n: given, flags = {}, targets: selected }) {
   }
   return {
     lines: [
+      ...[...diagnostics].map((warning) => `Warning: ${warning}`),
       ...lines,
       ...closed,
       removed.length
@@ -340,8 +376,14 @@ export function cleanup(ctx, { n: given, flags = {}, targets: selected }) {
 
 export function reconcileFinished(ctx, excluded = []) {
   try {
+    const roots = [ctx.cwd, ...excluded].map((path) => {
+      const here = ctx.ports.git.here(path)
+      if (!here.topOk)
+        throw new Error("could not establish the caller worktree root")
+      return here.top
+    })
     const targets = finishedWorktrees(ctx, locate(ctx)).filter(
-      (w) => !excluded.includes(w.path)
+      (w) => !roots.includes(w.path)
     )
     if (!targets.length) return []
     return cleanup(ctx, { flags: { "--all": true }, targets }).lines

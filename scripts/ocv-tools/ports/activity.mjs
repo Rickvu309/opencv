@@ -28,6 +28,74 @@ export function threadActivity(rows) {
   return { safe: true }
 }
 
+export function processActivity(
+  path,
+  {
+    proc = "/proc",
+    io = { readdirSync, readFileSync, readlinkSync, statSync },
+  } = {}
+) {
+  const warnings = new Set()
+  function read(file, operation, fallback) {
+    try {
+      return operation(file)
+    } catch (e) {
+      if (e.code !== "ENOENT" && e.code !== "ESRCH") {
+        const entry = join(proc, file.slice(proc.length + 1).split("/")[0])
+        warnings.add(
+          `Unreadable process entry ${entry}: ${e.code ?? "read failed"}`
+        )
+      }
+      return fallback
+    }
+  }
+  let pids
+  try {
+    pids = io.readdirSync(proc)
+  } catch {
+    return { safe: false, reason: "could not list active worktree processes" }
+  }
+  for (const pid of pids.filter((s) => /^\d+$/.test(s))) {
+    if (Number(pid) === process.pid) continue
+    const dir = join(proc, pid)
+    const uid = read(dir, (file) => io.statSync(file).uid, null)
+    if (uid !== process.getuid()) continue
+    const command = read(
+      join(dir, "cmdline"),
+      (file) => io.readFileSync(file, "utf8"),
+      ""
+    ).split("\0")
+    const tasks = read(join(dir, "task"), (file) => io.readdirSync(file), [])
+    const links = [
+      dir,
+      ...tasks
+        .filter((tid) => /^\d+$/.test(tid))
+        .map((tid) => join(dir, "task", tid)),
+    ].flatMap((root) => {
+      const fds = read(join(root, "fd"), (file) => io.readdirSync(file), [])
+      return ["cwd", "exe", ...fds.map((fd) => `fd/${fd}`)].map((file) =>
+        join(root, file)
+      )
+    })
+    for (const file of links) {
+      const target = read(file, (entry) => io.readlinkSync(entry), "")
+      if (contains(path, target.replace(/ \(deleted\)$/, "")))
+        return {
+          safe: false,
+          reason: `process ${pid} uses the worktree`,
+          warnings: [...warnings],
+        }
+    }
+    if (command.some((arg) => arg.includes(path)))
+      return {
+        safe: false,
+        reason: `process ${pid} names the worktree`,
+        warnings: [...warnings],
+      }
+  }
+  return { safe: true, warnings: [...warnings] }
+}
+
 export function activityAdapter({ home = homedir(), proc = "/proc" } = {}) {
   function threads(path) {
     const file = join(home, ".t3/userdata/statev2.sqlite")
@@ -59,54 +127,7 @@ export function activityAdapter({ home = homedir(), proc = "/proc" } = {}) {
       path = resolve(path)
       const thread = threads(path)
       if (!thread.safe) return thread
-      try {
-        for (const pid of readdirSync(proc).filter((s) => /^\d+$/.test(s))) {
-          if (Number(pid) === process.pid) continue
-          const dir = join(proc, pid)
-          try {
-            if (statSync(dir).uid !== process.getuid()) continue
-            const command = readFileSync(join(dir, "cmdline"), "utf8").split(
-              "\0"
-            )
-            const files = [
-              "cwd",
-              "exe",
-              ...readdirSync(join(dir, "fd")).map((fd) => `fd/${fd}`),
-            ]
-            for (const file of files) {
-              try {
-                if (
-                  contains(
-                    path,
-                    readlinkSync(join(dir, file)).replace(/ \(deleted\)$/, "")
-                  )
-                )
-                  return {
-                    safe: false,
-                    reason: `process ${pid} uses the worktree`,
-                  }
-              } catch (e) {
-                if (e.code !== "ENOENT") throw e
-              }
-            }
-            if (
-              command.some((arg) => arg.startsWith("/") && contains(path, arg))
-            )
-              return {
-                safe: false,
-                reason: `process ${pid} runs from the worktree`,
-              }
-          } catch (e) {
-            if (e.code !== "ENOENT" && e.code !== "ESRCH") throw e
-          }
-        }
-        return { safe: true }
-      } catch {
-        return {
-          safe: false,
-          reason: "could not verify active worktree processes",
-        }
-      }
+      return processActivity(path, { proc })
     },
   }
 }

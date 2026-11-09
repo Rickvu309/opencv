@@ -1,0 +1,13 @@
+{
+  "id": "cleanup-process-readability",
+  "file": "scripts/cleanup-process-readability.test.mjs",
+  "detector": {
+    "module": "scripts/lib/cleanup-process-readability.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "5bbda529",
+    "path": "scripts/ocv-tools/ports/activity.mjs"
+  }
+}
