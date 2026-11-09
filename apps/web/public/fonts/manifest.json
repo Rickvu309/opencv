@@ -1,0 +1,121 @@
+[
+  {
+    "name": "Caladea.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/caladea/Caladea-Regular.ttf",
+    "bytes": 81600,
+    "sha256": "f1e899278b7b4491aba5b6a8253c4b04c050cc59b21865be5c37559a775153cd",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "Carlito.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/carlito/Carlito-Regular.ttf",
+    "bytes": 628032,
+    "sha256": "f6418f708baede9789daef5d458c0f53d2a888af9820e8062934e504fedc6595",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "Jost.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/jost/Jost%5Bwght%5D.ttf",
+    "bytes": 134996,
+    "sha256": "6343b70971000b04c5d401c96ae08ce371086135e999d5e1e1413039c0213076",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationMono-Bold.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 308068,
+    "sha256": "50464e64aaadea741fb9516748aee296d570439406be11d63df22294e77ba867",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationMono-BoldItalic.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 284184,
+    "sha256": "291872531f0e8013df602c412fc570241860e41b1fa1b7972537c27a19024d4d",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationMono-Italic.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 281608,
+    "sha256": "35c3116d4366eb0e58494d8e432d4ee0c60c5735c7f775ffc096008bd2907c74",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationMono-Regular.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 319624,
+    "sha256": "d18235f1e874771f4eaec3ddd6ddb4db849d334bdc6930c5c2185d9344834e62",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSans-Bold.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 414568,
+    "sha256": "b72c65e551d653b54217ffad0d1454ce0657e4e8d4a28bcc79e0acd2598f4bf3",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSans-BoldItalic.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 409108,
+    "sha256": "64263238517af60213cdb469165fc7e9acd0c09c35f4155f924a379f97125a57",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSans-Italic.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 415920,
+    "sha256": "4ccb79043bd3a6d131b5a53901abb21261b1417f6052b38a9fa9716a4e5a3d81",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSans-Regular.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 410820,
+    "sha256": "075e71be4c58beda172ecb574a799308f04c3d054c6a5b7434954d3b0f1b28d8",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSerif-Bold.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 370196,
+    "sha256": "bb033fae52dcbf67a55494a08829aaa788324624d72a195af7f93da3061c928f",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSerif-BoldItalic.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 376892,
+    "sha256": "10ec0fa22bc6f12a239d600c051752884d155997aafd19ebc24c4f4a8d2b98d0",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSerif-Italic.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 375760,
+    "sha256": "c1882fbb05e78537b9c39dad3c07c4f231c987a3747b20c8745737aed50cd488",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "LiberationSerif-Regular.ttf",
+    "source": "https://github.com/liberationfonts/liberation-fonts",
+    "bytes": 393692,
+    "sha256": "350f4ffd773cae53560c63dca3d89a5070595614fde12f772bf43feb63d81064",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "Montserrat.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf",
+    "bytes": 744936,
+    "sha256": "0f7b311b2f3279e4eef9b2f968bcdbab6e28f4daeb1f049f4f278a902bcd82f7",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "name": "OpenSans.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/opensans/OpenSans%5Bwdth,wght%5D.ttf",
+    "bytes": 532636,
+    "sha256": "36643644f318a812aab2d2ed3bb98f8cf0872527f835fe9398d95fe6b9adb878",
+    "license": "SIL OFL 1.1"
+  }
+]
