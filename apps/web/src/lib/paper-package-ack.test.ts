@@ -98,6 +98,14 @@ describe("draft acknowledgements", () => {
     })
     expect(refused.words).toBe(words)
     expect(refused.saved).toBe(false)
+    const saved = applyReply(current, stored(3, words), receipt(3, words))
+    expect(
+      applyReply(saved, stored(3, words), {
+        kind: "refusal",
+        commandId: "cmd-1",
+        generation: 3,
+      })
+    ).toMatchObject({ words, saved: false })
     expect(
       applyReply(current, stored(1, "Hi"), {
         kind: "refusal",

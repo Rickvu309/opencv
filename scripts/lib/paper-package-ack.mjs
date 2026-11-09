@@ -14,29 +14,54 @@ function isFalse(node) {
   return node.kind === ts.SyntaxKind.FalseKeyword
 }
 
+function unwrap(node) {
+  let current = node
+  while (
+    current &&
+    (ts.isParenthesizedExpression(current) ||
+      ts.isAsExpression(current) ||
+      ts.isTypeAssertionExpression(current))
+  )
+    current = current.expression
+  return current
+}
+
 function isSavedPassthrough(node) {
-  return ts.isPropertyAccessExpression(node) && node.name.text === "saved"
+  const value = unwrap(node)
+  return (
+    ts.isPropertyAccessExpression(value) &&
+    value.name.text === "saved" &&
+    unwrap(value.expression)?.kind === ts.SyntaxKind.Identifier &&
+    unwrap(value.expression).text === "draft"
+  )
 }
 
 function isTransaction(node) {
-  if (ts.isIdentifier(node)) return node.text === "transaction"
-  if (ts.isPropertyAccessExpression(node))
-    return node.name.text === "transaction"
-  if (ts.isParenthesizedExpression(node)) return isTransaction(node.expression)
-  return false
+  const value = unwrap(node)
+  if (!value) return false
+  if (ts.isIdentifier(value)) return value.text === "transaction"
+  if (
+    !ts.isPropertyAccessExpression(value) ||
+    value.name.text !== "transaction"
+  )
+    return false
+  const object = unwrap(value.expression)
+  return ts.isIdentifier(object) && object.text === "local"
 }
 
 function isCompleteString(node) {
-  return ts.isStringLiteral(node) && node.text === "complete"
+  const value = unwrap(node)
+  return ts.isStringLiteral(value) && value.text === "complete"
 }
 
 function isCompleteComparison(node) {
-  if (!ts.isBinaryExpression(node)) return false
-  if (node.operatorToken.kind !== ts.SyntaxKind.EqualsEqualsEqualsToken)
+  const value = unwrap(node)
+  if (!value || !ts.isBinaryExpression(value)) return false
+  if (value.operatorToken.kind !== ts.SyntaxKind.EqualsEqualsEqualsToken)
     return false
   return (
-    (isTransaction(node.left) && isCompleteString(node.right)) ||
-    (isTransaction(node.right) && isCompleteString(node.left))
+    (isTransaction(value.left) && isCompleteString(value.right)) ||
+    (isTransaction(value.right) && isCompleteString(value.left))
   )
 }
 
@@ -45,6 +70,7 @@ function returnExprs(body) {
   if (!ts.isBlock(body)) return [body]
   const exprs = []
   const walk = (node) => {
+    if (ts.isFunctionLike(node)) return
     if (ts.isReturnStatement(node) && node.expression)
       exprs.push(node.expression)
     ts.forEachChild(node, walk)
@@ -57,20 +83,46 @@ function bind(scope, name, value) {
   scope.set(name, { ...value, seeing: false })
 }
 
+function bindName(scope, name) {
+  if (ts.isIdentifier(name)) bind(scope, name.text, { blocked: true })
+}
+
 function collectBindings(fn, scope) {
+  if (ts.isFunctionLike(fn)) {
+    for (const param of fn.parameters) bindName(scope, param.name)
+  }
   const body = ts.isSourceFile(fn) ? fn : fn.body
   if (!body) return
   const walk = (node) => {
     if (ts.isFunctionDeclaration(node) && node.name && node !== fn) {
-      bind(scope, node.name.text, { returns: returnExprs(node.body) })
+      const inner = new Map(scope)
+      collectBindings(node, inner)
+      bind(scope, node.name.text, {
+        returns: returnExprs(node.body),
+        scope: inner,
+      })
       return
     }
     if (node !== body && ts.isFunctionLike(node)) return
-    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
-      const init = node.initializer
-      if (init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init)))
-        bind(scope, node.name.text, { returns: returnExprs(init.body) })
-      else if (init) bind(scope, node.name.text, { expr: init })
+    if (ts.isVariableDeclaration(node)) {
+      if (ts.isIdentifier(node.name)) {
+        const init = node.initializer
+        if (
+          init &&
+          (ts.isArrowFunction(init) || ts.isFunctionExpression(init))
+        ) {
+          const inner = new Map(scope)
+          collectBindings(init, inner)
+          bind(scope, node.name.text, {
+            returns: returnExprs(init.body),
+            scope: inner,
+          })
+        } else if (init) bind(scope, node.name.text, { expr: init })
+      } else if (ts.isObjectBindingPattern(node.name)) {
+        for (const el of node.name.elements) {
+          if (ts.isBindingElement(el)) bindName(scope, el.name)
+        }
+      }
     }
     ts.forEachChild(node, walk)
   }
@@ -82,29 +134,30 @@ function lookup(scope, name) {
 }
 
 function reaches(expr, scope) {
-  if (!expr) return false
-  if (isCompleteComparison(expr)) return true
-  if (ts.isParenthesizedExpression(expr)) return reaches(expr.expression, scope)
+  const value = unwrap(expr)
+  if (!value) return false
+  if (isFalse(value) || isCompleteComparison(value)) return true
   if (
-    ts.isBinaryExpression(expr) &&
-    expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+    ts.isBinaryExpression(value) &&
+    value.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
   )
-    return reaches(expr.left, scope) || reaches(expr.right, scope)
-  if (ts.isIdentifier(expr)) {
-    const bound = lookup(scope, expr.text)
-    if (!bound || bound.seeing) return false
+    return reaches(value.left, scope) || reaches(value.right, scope)
+  if (ts.isIdentifier(value)) {
+    const bound = lookup(scope, value.text)
+    if (!bound || bound.seeing || bound.blocked || !bound.expr) return false
     bound.seeing = true
-    const ok = bound.expr
-      ? reaches(bound.expr, scope)
-      : (bound.returns ?? []).some((item) => reaches(item, scope))
+    const ok = reaches(bound.expr, scope)
     bound.seeing = false
     return ok
   }
-  if (ts.isCallExpression(expr) && ts.isIdentifier(expr.expression)) {
-    const bound = lookup(scope, expr.expression.text)
-    if (!bound || bound.seeing) return false
+  if (ts.isCallExpression(value) && ts.isIdentifier(value.expression)) {
+    const bound = lookup(scope, value.expression.text)
+    if (!bound || bound.seeing || bound.blocked) return false
+    const items = bound.returns ?? []
+    if (items.length === 0) return false
     bound.seeing = true
-    const ok = (bound.returns ?? []).some((item) => reaches(item, scope))
+    const inner = bound.scope ?? scope
+    const ok = items.every((item) => reaches(item, inner))
     bound.seeing = false
     return ok
   }
@@ -112,37 +165,43 @@ function reaches(expr, scope) {
 }
 
 function hasOr(expr, scope) {
-  if (!expr) return false
+  const value = unwrap(expr)
+  if (!value) return false
   if (
-    ts.isBinaryExpression(expr) &&
-    expr.operatorToken.kind === ts.SyntaxKind.BarBarToken
+    ts.isBinaryExpression(value) &&
+    value.operatorToken.kind === ts.SyntaxKind.BarBarToken
   )
     return true
-  if (ts.isParenthesizedExpression(expr)) return hasOr(expr.expression, scope)
   if (
-    ts.isBinaryExpression(expr) &&
-    expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+    ts.isBinaryExpression(value) &&
+    value.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
   )
-    return hasOr(expr.left, scope) || hasOr(expr.right, scope)
-  if (ts.isIdentifier(expr)) {
-    const bound = lookup(scope, expr.text)
-    if (!bound || bound.seeing) return false
+    return hasOr(value.left, scope) || hasOr(value.right, scope)
+  if (ts.isIdentifier(value)) {
+    const bound = lookup(scope, value.text)
+    if (!bound || bound.seeing || bound.blocked || !bound.expr) return false
     bound.seeing = true
-    const ok = bound.expr
-      ? hasOr(bound.expr, scope)
-      : (bound.returns ?? []).some((item) => hasOr(item, scope))
+    const ok = hasOr(bound.expr, scope)
     bound.seeing = false
     return ok
   }
-  if (ts.isCallExpression(expr) && ts.isIdentifier(expr.expression)) {
-    const bound = lookup(scope, expr.expression.text)
-    if (!bound || bound.seeing) return false
+  if (ts.isCallExpression(value) && ts.isIdentifier(value.expression)) {
+    const bound = lookup(scope, value.expression.text)
+    if (!bound || bound.seeing || bound.blocked) return false
+    const items = bound.returns ?? []
     bound.seeing = true
-    const ok = (bound.returns ?? []).some((item) => hasOr(item, scope))
+    const inner = bound.scope ?? scope
+    const ok = items.some((item) => hasOr(item, inner))
     bound.seeing = false
     return ok
   }
   return false
+}
+
+function savedName(node) {
+  if (ts.isIdentifier(node)) return node.text
+  if (ts.isStringLiteral(node)) return node.text
+  return null
 }
 
 function savedExprs(source) {
@@ -162,11 +221,13 @@ function savedExprs(source) {
   const visit = (node) => {
     let expr = null
     if (
-      ts.isPropertyAssignment(node) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === "saved"
+      (ts.isPropertyAssignment(node) ||
+        ts.isShorthandPropertyAssignment(node)) &&
+      savedName(node.name) === "saved"
     )
-      expr = node.initializer
+      expr = ts.isShorthandPropertyAssignment(node)
+        ? node.name
+        : node.initializer
     else if (
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
@@ -178,12 +239,17 @@ function savedExprs(source) {
       expr = node.initializer
     else if (
       ts.isBinaryExpression(node) &&
-      node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-      ts.isIdentifier(node.left) &&
-      node.left.text === "saved"
-    )
-      expr = node.right
-    if (expr && !isFalse(expr) && !isSavedPassthrough(expr)) {
+      node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+    ) {
+      if (ts.isIdentifier(node.left) && node.left.text === "saved")
+        expr = node.right
+      else if (
+        ts.isPropertyAccessExpression(node.left) &&
+        node.left.name.text === "saved"
+      )
+        expr = node.right
+    }
+    if (expr && !isFalse(unwrap(expr)) && !isSavedPassthrough(expr)) {
       let owner = node
       while (owner && !scopes.has(owner)) owner = owner.parent
       found.push({ expr, scope: owner ? scopes.get(owner) : new Map() })
