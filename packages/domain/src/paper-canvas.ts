@@ -29,10 +29,8 @@ const adjacent = z
   })
   .strict()
 
-export const paperCanvasCommitSchema = z.discriminatedUnion("op", [
-  mint,
-  split,
-  adjacent,
-])
+export const paperCanvasCommitSchema = z
+  .discriminatedUnion("op", [mint, split, adjacent])
+  .meta({ type: "object" })
 
 export type PaperCanvasCommit = z.infer<typeof paperCanvasCommitSchema>

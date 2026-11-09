@@ -6,7 +6,7 @@ import {
   PAPER_CANVAS_PROFILE,
   PAPER_PACKAGE_LIMITS,
   PAPER_PACKAGE_PROJECTOR,
-  paperCanvasCommitSchema,
+  paperContract,
   paperPackageEditResultSchema,
   paperPackageProjectionSchema,
   type PaperCanvasCommit,
@@ -218,14 +218,17 @@ async function commitCanvas(owner: string, input: PaperCanvasCommit) {
   return resultOf(owner, published.docId, published.revision, published.restore)
 }
 
-export function registerCanvasCommit(registry: Registry) {
+export function registerCanvasCommit(
+  registry: Registry,
+  entry: (typeof paperContract)["paper.canvas"]
+) {
   registry.addCommand(
     {
       name: "paper.canvas",
-      description: "Write on the blank page.",
-      input: paperCanvasCommitSchema,
-      coach: "never",
-      destructive: false,
+      description: entry.description,
+      input: entry.input,
+      coach: entry.coach,
+      destructive: entry.destructive,
       idempotency: "keyed",
       transaction: "none",
       reversal: (_input, output: CanvasResult) =>
@@ -246,7 +249,7 @@ export function registerCanvasCommit(registry: Registry) {
               },
             }
           : null,
-      step: () => "Write on the page",
+      step: entry.step,
       activity: (_input, output: CanvasResult) => ({
         subjectKind: "paper",
         subjectId: output.docId,
@@ -254,7 +257,16 @@ export function registerCanvasCommit(registry: Registry) {
       }),
     },
     async (input, actor) => {
-      requireEnabled()
+      if (process.env.PAPER_PACKAGE_ENABLED !== "true") {
+        try {
+          await transaction(async () => {
+            requireEnabled()
+          })
+        } catch (error) {
+          if (error instanceof CommandError) throw error
+          requireEnabled()
+        }
+      }
       return commitCanvas(actor.userId, input)
     }
   )

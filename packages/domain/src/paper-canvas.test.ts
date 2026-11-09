@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
+import { z } from "zod"
+
 import {
   PAPER_CANVAS_PROFILE,
   paperCanvasCommitSchema,
@@ -47,6 +49,11 @@ describe("blank page commits", () => {
 
   it("accepts a mint, a split, a merge, and an empty delete", () => {
     assert.equal(PAPER_CANVAS_PROFILE, "paper-canvas-1")
+    assert.equal(
+      z.toJSONSchema(paperCanvasCommitSchema, { io: "input", reused: "ref" })
+        .type,
+      "object"
+    )
     assert.deepEqual(paperCanvasCommitSchema.parse({ op: "mint" }), {
       op: "mint",
     })

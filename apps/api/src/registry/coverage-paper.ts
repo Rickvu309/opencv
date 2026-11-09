@@ -487,5 +487,20 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         ).rejects.toThrow(/not found/i)
       },
     },
+    {
+      name: "paper.canvas",
+      arrange: async () => {
+        process.env.PAPER_PACKAGE_ENABLED = "true"
+      },
+      act: () => run("paper.canvas", { op: "mint" }),
+      assert: async (result) => {
+        delete process.env.PAPER_PACKAGE_ENABLED
+        expect(text(result.output, "generation")).toBe("package")
+        expect(text(result.output, "docId")).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+        )
+        expect(result.reversal).toBeNull()
+      },
+    },
   ]
 }

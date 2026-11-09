@@ -12,6 +12,7 @@ import {
   paperEditOutcomeSchema,
   paperEditsSchema,
 } from "./paper-doc/edits-schema.js"
+import { paperCanvasCommitSchema } from "./paper-canvas.js"
 import {
   paperPackageEditResultSchema,
   paperPackageEditsSchema,
@@ -261,6 +262,16 @@ export const paperContract = commandContract({
     destructive: false,
     step: () => "Edit the document",
     invalidates: (input) => [...docChanged(input), ...chatsChanged()],
+  }),
+  "paper.canvas": commandEntry({
+    description: "Write on the blank page.",
+    input: paperCanvasCommitSchema,
+    output: paperPackageEditResultSchema,
+    idempotency: "keyed",
+    coach: "never",
+    destructive: false,
+    step: () => "Write on the page",
+    invalidates: () => [],
   }),
   "paper.revertEdit": commandEntry({
     description: "Take back one Coach edit and keep later typing.",

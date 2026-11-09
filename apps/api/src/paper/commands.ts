@@ -94,7 +94,11 @@ export function registerPaper(registry: Registry) {
   )
   registry.addUndoGuard("paper.replace", oldEditorUndoReasons)
   registry.addUndoGuard("paper.restore", oldEditorUndoReasons)
-  const { "paper.edit": paperEdit, ...paperCommands } = paperContract
+  const {
+    "paper.edit": paperEdit,
+    "paper.canvas": paperCanvas,
+    ...paperCommands
+  } = paperContract
   bindCommands(registry, paperCommands, {
     "paper.create": {
       handler: async (input, actor) => {
@@ -238,7 +242,7 @@ export function registerPaper(registry: Registry) {
       activity: noActivity,
     },
   })
-  registerCanvasCommit(registry)
+  registerCanvasCommit(registry, paperCanvas)
   registerWordPackageEdit(registry, paperEdit, async (input, actor) => {
     if (typeof input.basedOn !== "number")
       throw new CommandError(

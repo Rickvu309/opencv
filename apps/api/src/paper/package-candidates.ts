@@ -135,16 +135,7 @@ async function requireCandidateCapacity(
     )
 }
 
-export async function prepareStoredWordPackage(
-  owner: string,
-  rawInput: unknown
-) {
-  if (insideTransaction())
-    return packageFailure("Prepare the Word edit before starting a save.")
-  const plan = await prepareWordPackage(owner, rawInput)
-  if (plan.kind === "unchanged") return plan
-  return persistWordPackage(owner, plan, PACKAGE_PROFILE.version, false)
-}
+const structuralPlan = Symbol("structural-plan")
 
 type StoredPackagePlan = {
   basis: {
@@ -174,175 +165,228 @@ type StoredPackagePlan = {
   }
 }
 
+type StructuralCall = {
+  plan: Omit<StoredPackagePlan, "review"> & { review: unknown }
+  profile: typeof PACKAGE_PROFILE.version | typeof PAPER_CANVAS_PROFILE
+  freshRestore: boolean
+}
+
+function readStructural(value: unknown): StructuralCall | undefined {
+  if (typeof value !== "object" || value === null) return undefined
+  if (!(structuralPlan in value)) return undefined
+  const found = (value as { [structuralPlan]?: StructuralCall })[structuralPlan]
+  if (!found) return undefined
+  return found
+}
+
+export async function prepareStoredWordPackage(
+  owner: string,
+  rawInput: unknown
+) {
+  if (insideTransaction())
+    return packageFailure("Prepare the Word edit before starting a save.")
+
+  async function storePrepared<Review>(
+    plan: Omit<StoredPackagePlan, "review"> & { review: Review },
+    profile: typeof PACKAGE_PROFILE.version | typeof PAPER_CANVAS_PROFILE,
+    freshRestore: boolean
+  ) {
+    if ((profile === PAPER_CANVAS_PROFILE) !== freshRestore)
+      return unavailable()
+    const basis = await wordPackageBasis(
+      owner,
+      plan.basis.docId,
+      plan.basis.revision
+    )
+    if (
+      basis.version.incarnation !== plan.basis.incarnation ||
+      basis.version.packageHash !== plan.basis.packageHash ||
+      basis.version.sidecarHash !== plan.basis.sidecarHash ||
+      basis.version.projectionHash !== plan.basis.projectionHash
+    )
+      return unavailable()
+    const restoreRevision = randomUUID()
+    const restored = await PaperPackage.open(
+      basis.artifact.bytes,
+      {
+        docId: plan.basis.docId,
+        incarnation: plan.basis.incarnation,
+        revision: restoreRevision,
+      },
+      freshRestore
+        ? undefined
+        : {
+            ...plan.candidate.sidecar,
+            revision: restoreRevision,
+            packageHash: plan.basis.packageHash,
+          }
+    )
+    const projection = paperPackageProjectionSchema.parse(restored.read())
+    if (
+      Buffer.byteLength(JSON.stringify(projection)) >
+      PAPER_PACKAGE_LIMITS.projectionBytes
+    )
+      return packageFailure(
+        "This Word restore has too much text to read safely."
+      )
+    const sidecar = restored.sidecar()
+    const id = randomUUID()
+    const fileId = randomUUID()
+    const seal = sealSchema.parse({
+      version: 1,
+      id,
+      owner,
+      docId: plan.basis.docId,
+      incarnation: plan.basis.incarnation,
+      profile,
+      inputHash: plan.inputHash,
+      reviewHash: plan.reviewHash,
+      basis: {
+        revision: basis.version.revision,
+        parentRevision: basis.version.parentRevision,
+        fileId: basis.version.fileId,
+        packageHash: basis.version.packageHash,
+        byteSize: basis.version.byteSize,
+        sidecarHash: basis.version.sidecarHash,
+        projectionHash: basis.version.projectionHash,
+        projector: basis.version.projector,
+      },
+      forward: {
+        revision: plan.candidate.revision,
+        parentRevision: plan.basis.revision,
+        fileId,
+        packageHash: plan.candidate.packageHash,
+        byteSize: plan.candidate.byteSize,
+        sidecarHash: plan.candidate.sidecarHash,
+        projectionHash: plan.candidate.projectionHash,
+        projector: plan.candidate.projector,
+      },
+      restore: {
+        revision: restoreRevision,
+        parentRevision: plan.candidate.revision,
+        fileId: basis.version.fileId,
+        packageHash: plan.basis.packageHash,
+        byteSize: basis.version.byteSize,
+        sidecarHash: packageDigest(sidecar),
+        projectionHash: packageDigest(projection),
+        projector: PAPER_PACKAGE_PROJECTOR,
+      },
+    })
+    const digest = packageDigest(seal)
+    await transaction(async () => {
+      await requireCandidateCapacity(
+        owner,
+        seal.forward.byteSize + seal.restore.byteSize,
+        [
+          seal,
+          plan.candidate.sidecar,
+          plan.candidate.projection,
+          sidecar,
+          projection,
+        ]
+      )
+      const [version] = await getDb()
+        .select()
+        .from(paperPackageVersions)
+        .where(eq(paperPackageVersions.revision, seal.basis.revision))
+        .for("update")
+      const [artifact] = await getDb()
+        .select()
+        .from(files)
+        .where(eq(files.id, seal.basis.fileId))
+        .for("update")
+      if (
+        !version ||
+        !artifact ||
+        packageDigest(version) !== packageDigest(basis.version) ||
+        artifact.userId !== owner ||
+        artifact.purpose !== "package" ||
+        artifact.mediaType !== basis.artifact.mediaType ||
+        artifact.byteSize !== seal.basis.byteSize ||
+        artifact.bytes.length !== seal.basis.byteSize ||
+        archiveDigest(artifact.bytes) !== seal.basis.packageHash
+      )
+        return unavailable()
+      await getDb()
+        .insert(files)
+        .values({
+          id: fileId,
+          userId: owner,
+          name: basis.version.name,
+          mediaType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          byteSize: plan.candidate.byteSize,
+          purpose: "package",
+          bytes: Buffer.from(plan.candidate.bytes),
+        })
+      await getDb()
+        .insert(paperPackageVersions)
+        .values(
+          [
+            {
+              identity: seal.forward,
+              sidecar: plan.candidate.sidecar,
+              projection: plan.candidate.projection,
+            },
+            { identity: seal.restore, sidecar, projection },
+          ].map((item) => ({
+            ...item.identity,
+            userId: owner,
+            docId: seal.docId,
+            incarnation: seal.incarnation,
+            requestId: randomUUID(),
+            name: basis.version.name,
+            kind: basis.version.kind,
+            sidecar: item.sidecar,
+            projection: item.projection,
+            cursorKey: randomBytes(32).toString("hex"),
+          }))
+        )
+      await getDb().insert(paperPackageCandidates).values({
+        id,
+        userId: owner,
+        docId: seal.docId,
+        incarnation: seal.incarnation,
+        basisRevision: seal.basis.revision,
+        forwardRevision: seal.forward.revision,
+        restoreRevision: seal.restore.revision,
+        seal,
+        digest,
+      })
+    })
+    return {
+      kind: "prepared" as const,
+      candidate: { id, digest },
+      review: plan.review,
+    }
+  }
+
+  const supplied = readStructural(rawInput)
+  if (supplied) {
+    return (await storePrepared(
+      supplied.plan,
+      supplied.profile,
+      supplied.freshRestore
+    )) as never
+  }
+  const plan = await prepareWordPackage(owner, rawInput)
+  if (plan.kind === "unchanged") return plan
+  return storePrepared(plan, PACKAGE_PROFILE.version, false)
+}
+
 export async function persistWordPackage<Review>(
   owner: string,
   plan: Omit<StoredPackagePlan, "review"> & { review: Review },
   profile: typeof PACKAGE_PROFILE.version | typeof PAPER_CANVAS_PROFILE,
   freshRestore: boolean
 ) {
-  if ((profile === PAPER_CANVAS_PROFILE) !== freshRestore) return unavailable()
-  const basis = await wordPackageBasis(
-    owner,
-    plan.basis.docId,
-    plan.basis.revision
-  )
-  if (
-    basis.version.incarnation !== plan.basis.incarnation ||
-    basis.version.packageHash !== plan.basis.packageHash ||
-    basis.version.sidecarHash !== plan.basis.sidecarHash ||
-    basis.version.projectionHash !== plan.basis.projectionHash
-  )
-    return unavailable()
-  const restoreRevision = randomUUID()
-  const restored = await PaperPackage.open(
-    basis.artifact.bytes,
-    {
-      docId: plan.basis.docId,
-      incarnation: plan.basis.incarnation,
-      revision: restoreRevision,
-    },
-    freshRestore
-      ? undefined
-      : {
-          ...plan.candidate.sidecar,
-          revision: restoreRevision,
-          packageHash: plan.basis.packageHash,
-        }
-  )
-  const projection = paperPackageProjectionSchema.parse(restored.read())
-  if (
-    Buffer.byteLength(JSON.stringify(projection)) >
-    PAPER_PACKAGE_LIMITS.projectionBytes
-  )
-    return packageFailure("This Word restore has too much text to read safely.")
-  const sidecar = restored.sidecar()
-  const id = randomUUID()
-  const fileId = randomUUID()
-  const seal = sealSchema.parse({
-    version: 1,
-    id,
-    owner,
-    docId: plan.basis.docId,
-    incarnation: plan.basis.incarnation,
-    profile,
-    inputHash: plan.inputHash,
-    reviewHash: plan.reviewHash,
-    basis: {
-      revision: basis.version.revision,
-      parentRevision: basis.version.parentRevision,
-      fileId: basis.version.fileId,
-      packageHash: basis.version.packageHash,
-      byteSize: basis.version.byteSize,
-      sidecarHash: basis.version.sidecarHash,
-      projectionHash: basis.version.projectionHash,
-      projector: basis.version.projector,
-    },
-    forward: {
-      revision: plan.candidate.revision,
-      parentRevision: plan.basis.revision,
-      fileId,
-      packageHash: plan.candidate.packageHash,
-      byteSize: plan.candidate.byteSize,
-      sidecarHash: plan.candidate.sidecarHash,
-      projectionHash: plan.candidate.projectionHash,
-      projector: plan.candidate.projector,
-    },
-    restore: {
-      revision: restoreRevision,
-      parentRevision: plan.candidate.revision,
-      fileId: basis.version.fileId,
-      packageHash: plan.basis.packageHash,
-      byteSize: basis.version.byteSize,
-      sidecarHash: packageDigest(sidecar),
-      projectionHash: packageDigest(projection),
-      projector: PAPER_PACKAGE_PROJECTOR,
-    },
+  const stored = await prepareStoredWordPackage(owner, {
+    [structuralPlan]: { plan, profile, freshRestore },
   })
-  const digest = packageDigest(seal)
-  await transaction(async () => {
-    await requireCandidateCapacity(
-      owner,
-      seal.forward.byteSize + seal.restore.byteSize,
-      [
-        seal,
-        plan.candidate.sidecar,
-        plan.candidate.projection,
-        sidecar,
-        projection,
-      ]
-    )
-    const [version] = await getDb()
-      .select()
-      .from(paperPackageVersions)
-      .where(eq(paperPackageVersions.revision, seal.basis.revision))
-      .for("update")
-    const [artifact] = await getDb()
-      .select()
-      .from(files)
-      .where(eq(files.id, seal.basis.fileId))
-      .for("update")
-    if (
-      !version ||
-      !artifact ||
-      packageDigest(version) !== packageDigest(basis.version) ||
-      artifact.userId !== owner ||
-      artifact.purpose !== "package" ||
-      artifact.mediaType !== basis.artifact.mediaType ||
-      artifact.byteSize !== seal.basis.byteSize ||
-      artifact.bytes.length !== seal.basis.byteSize ||
-      archiveDigest(artifact.bytes) !== seal.basis.packageHash
-    )
-      return unavailable()
-    await getDb()
-      .insert(files)
-      .values({
-        id: fileId,
-        userId: owner,
-        name: basis.version.name,
-        mediaType:
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        byteSize: plan.candidate.byteSize,
-        purpose: "package",
-        bytes: Buffer.from(plan.candidate.bytes),
-      })
-    await getDb()
-      .insert(paperPackageVersions)
-      .values(
-        [
-          {
-            identity: seal.forward,
-            sidecar: plan.candidate.sidecar,
-            projection: plan.candidate.projection,
-          },
-          { identity: seal.restore, sidecar, projection },
-        ].map((item) => ({
-          ...item.identity,
-          userId: owner,
-          docId: seal.docId,
-          incarnation: seal.incarnation,
-          requestId: randomUUID(),
-          name: basis.version.name,
-          kind: basis.version.kind,
-          sidecar: item.sidecar,
-          projection: item.projection,
-          cursorKey: randomBytes(32).toString("hex"),
-        }))
-      )
-    await getDb().insert(paperPackageCandidates).values({
-      id,
-      userId: owner,
-      docId: seal.docId,
-      incarnation: seal.incarnation,
-      basisRevision: seal.basis.revision,
-      forwardRevision: seal.forward.revision,
-      restoreRevision: seal.restore.revision,
-      seal,
-      digest,
-    })
-  })
+  if (stored.kind !== "prepared") return unavailable()
   return {
     kind: "prepared" as const,
-    candidate: { id, digest },
+    candidate: stored.candidate,
     review: plan.review,
   }
 }
