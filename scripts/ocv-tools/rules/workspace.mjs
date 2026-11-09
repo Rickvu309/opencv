@@ -109,8 +109,13 @@ function noWorktree(facts) {
 function dirty(facts) {
   const work = facts.work
   if (!work || work.force || !work.dirty) return null
-  const preview = String(work.dirty).split("\n").slice(0, 8).join("\n")
-  return `${work.path} has unsaved work:\n${preview}`
+  const preview = String(work.dirty)
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim())
+    .slice(0, 8)
+    .join("; ")
+  return `${work.path} has unsaved work: ${preview}`
 }
 
 function dirtyFix(facts) {

@@ -130,7 +130,7 @@ test("every checked rule has a failing and a passing fact", () => {
       },
     },
     { work: { path: "/wt/90", dirty: "", force: false, merged: true } },
-    "/wt/90 has unsaved work:\n M x.txt"
+    "/wt/90 has unsaved work:  M x.txt"
   )
   check(
     "NOT_MERGED",
