@@ -46,7 +46,7 @@ export function pointSpan(point: TextPoint): TextSpan {
 export function opensWritingCanvas(doc: PaperView): boolean {
   if (doc.kind !== "cv" || doc.sourceFileId !== null) return false
   const paper = doc.paper
-  if (paper.kind !== "cv") return false
+  if (paper?.kind !== "cv") return false
   const header = paper.header
   if (
     header.name ||

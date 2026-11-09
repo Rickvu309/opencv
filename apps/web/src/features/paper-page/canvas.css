@@ -1,69 +1,73 @@
 .writing-sheet {
-  --gutter: 1.5rem;
-  --content: 42rem;
-  --breakout: 42rem;
-  display: grid;
-  grid-template-columns:
-    [full-width-start] minmax(var(--gutter), 1fr)
-    [breakout-start] minmax(0, calc((var(--breakout) - var(--content)) / 2))
-    [content-start] min(100% - var(--gutter) * 2, var(--content))
-    [content-end]
-    minmax(0, calc((var(--breakout) - var(--content)) / 2))
-    [breakout-end] minmax(var(--gutter), 1fr) [full-width-end];
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  block-size: 100%;
+  min-block-size: 0;
   background: var(--background);
   color: var(--foreground);
 }
 
-.writing-sheet > * {
+.writing-scroll {
+  display: grid;
+  flex: 1;
+  grid-template-columns:
+    [full-width-start] minmax(1.5rem, 1fr)
+    [breakout-start] minmax(0, 0px)
+    [content-start] min(100% - 3rem, 8.5in) [content-end]
+    minmax(0, 0px) [breakout-end]
+    minmax(1.5rem, 1fr) [full-width-end];
+  align-content: start;
+  box-sizing: border-box;
+  min-block-size: 0;
+  padding-block: 1.5rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background: var(--background);
+}
+
+.writing-scroll > * {
   grid-column: content;
 }
 
 .writing-page {
   box-sizing: border-box;
-  min-block-size: 70vh;
-  padding-block: 4.5rem 1.5rem;
-  padding-inline: 0;
-  caret-color: var(--foreground);
-  font: inherit;
-  font-size: 1.125rem;
+  min-block-size: 11in;
+  padding-block: clamp(1.5rem, 9%, 1in);
+  padding-inline: clamp(1.25rem, 12%, 1in);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+  caret-color: var(--card-foreground);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.06),
+    0 12px 32px oklch(0 0 0 / 0.05);
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 12pt;
   line-height: 1.6;
-  color: inherit;
-  background: transparent;
 }
 
 .writing-page:focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--foreground) 40%, transparent);
-  outline-offset: 0.25rem;
+  outline: 2px solid transparent;
+  outline-offset: 0;
 }
 
 .writing-page p {
   margin: 0;
-  margin-block-end: 0.85rem;
-  min-block-size: 1.6em;
+  margin-block-end: 8pt;
+  min-block-size: 1lh;
   overflow-wrap: break-word;
   white-space: pre-wrap;
 }
 
 .writing-note {
+  flex: none;
   margin: 0;
-  padding-block: 0 3rem;
+  padding-block: 0.4rem;
+  padding-inline: 1.5rem;
   color: var(--muted-foreground);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   line-height: 1.4;
   overflow-wrap: break-word;
-}
-
-@keyframes writing-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .writing-page {
-    animation: writing-in var(--duration-panel) var(--ease-panel) both;
-  }
 }

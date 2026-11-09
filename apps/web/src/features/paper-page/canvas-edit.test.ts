@@ -114,6 +114,15 @@ describe("opensWritingCanvas", () => {
       })
     ).toBe(false)
   })
+
+  it("leaves a document that has no paper on its own editor", () => {
+    expect(
+      opensWritingCanvas({
+        ...cv(),
+        paper: undefined as unknown as PaperView["paper"],
+      })
+    ).toBe(false)
+  })
 })
 
 describe("writing draft", () => {

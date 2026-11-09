@@ -22,6 +22,7 @@ import {
   storeDraft,
   type TextPoint,
   type TextSpan,
+  type WritingBlock,
   type WritingDraft,
 } from "./canvas-edit.ts"
 import { pastePlain } from "./canvas-paste.ts"
@@ -130,18 +131,20 @@ function spanFrom(root: HTMLElement, fallback: TextPoint): TextSpan {
 
 function readBlocks(root: HTMLElement, nextId: number) {
   let minted = nextId
-  const texts = [...root.querySelectorAll(":scope > p")].map((block) => {
-    let id = block.dataset.block
-    if (!id) {
-      id = `p${minted}`
-      minted += 1
-      block.dataset.block = id
+  const texts = [...root.querySelectorAll<HTMLElement>(":scope > p")].map(
+    (block) => {
+      let id = block.dataset.block
+      if (!id) {
+        id = `p${minted}`
+        minted += 1
+        block.dataset.block = id
+      }
+      return {
+        id,
+        text: (block.textContent ?? "").replaceAll("\u200b", ""),
+      }
     }
-    return {
-      id,
-      text: (block.textContent ?? "").replaceAll("\u200b", ""),
-    }
-  })
+  )
   return { texts, nextId: minted }
 }
 
@@ -194,8 +197,23 @@ function placeCaret(root: HTMLElement, caret: TextPoint) {
   selection?.addRange(range)
 }
 
+function revealCaret(page: HTMLElement, scroll: HTMLElement) {
+  const node = page.ownerDocument.getSelection()?.focusNode
+  const target =
+    node?.nodeType === Node.TEXT_NODE
+      ? node.parentElement
+      : (node as HTMLElement | null)
+  if (!target) return
+  const caretBox = target.getBoundingClientRect()
+  const frame = scroll.getBoundingClientRect()
+  if (caretBox.top >= frame.top && caretBox.bottom <= frame.bottom) return
+  target.scrollIntoView({ block: "nearest" })
+}
+
 export function WritingCanvas({ docId }: { docId: string }) {
   const pageRef = useRef<HTMLElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const opened = useRef(false)
   const composing = useRef(false)
   const splitAfter = useRef(false)
   const pasteGuard = useRef(false)
@@ -218,15 +236,18 @@ export function WritingCanvas({ docId }: { docId: string }) {
     })
   }, [docId, state.present])
 
-  useEffect(() => {
-    pageRef.current?.focus()
-  }, [])
-
   useLayoutEffect(() => {
     const page = pageRef.current
+    const scroll = scrollRef.current
     if (!page || composing.current) return
     syncParagraphs(page, state.present.blocks)
+    if (!opened.current) {
+      page.focus({ preventScroll: true })
+      if (scroll) scroll.scrollTop = 0
+      opened.current = true
+    }
     placeCaret(page, state.present.caret)
+    if (scroll) revealCaret(page, scroll)
   }, [state.present])
 
   const applyPaste = useCallback(
@@ -286,88 +307,90 @@ export function WritingCanvas({ docId }: { docId: string }) {
 
   return (
     <section aria-label="Writing" className="writing-sheet">
-      <article
-        ref={pageRef}
-        className={cn("writing-page")}
-        contentEditable
-        suppressContentEditableWarning
-        spellCheck
-        aria-label="Page"
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault()
-            const native = event.nativeEvent
-            if (native.isComposing || native.keyCode === 229) {
-              splitAfter.current = true
+      <div className="writing-scroll" ref={scrollRef}>
+        <article
+          ref={pageRef}
+          className={cn("writing-page")}
+          contentEditable
+          suppressContentEditableWarning
+          spellCheck
+          aria-label="Page"
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault()
+              const native = event.nativeEvent
+              if (native.isComposing || native.keyCode === 229) {
+                splitAfter.current = true
+                return
+              }
+              const page = pageRef.current
+              if (!page) return
+              dispatch({
+                type: "split",
+                span: spanFrom(page, state.present.caret),
+              })
               return
             }
+            if (
+              (event.metaKey || event.ctrlKey) &&
+              event.key.toLowerCase() === "z" &&
+              !event.shiftKey
+            ) {
+              event.preventDefault()
+              dispatch({ type: "undo" })
+            }
+          }}
+          onCompositionStart={() => {
+            composing.current = true
+          }}
+          onCompositionEnd={(event) => {
+            composing.current = false
             const page = pageRef.current
             if (!page) return
+            const read = readBlocks(page, nextId.current)
+            nextId.current = read.nextId
+            const selected =
+              pointFrom(
+                page,
+                page.ownerDocument.getSelection()?.focusNode ?? null,
+                page.ownerDocument.getSelection()?.focusOffset ?? 0
+              ) ?? state.present.caret
+            const grew = read.texts.length > state.present.blocks.length
+            const split = splitAfter.current && !grew
+            splitAfter.current = false
+            const texts = withCommittedWord(
+              read.texts,
+              selected.blockId,
+              event.data
+            )
+            const block =
+              texts.find((item) => item.id === selected.blockId) ?? texts[0]
+            const caret = split
+              ? {
+                  blockId: block?.id ?? selected.blockId,
+                  offset: block?.text.length ?? 0,
+                }
+              : selected
             dispatch({
-              type: "split",
-              span: spanFrom(page, state.present.caret),
+              type: "composed",
+              texts,
+              caret,
+              split,
+              nextId: read.nextId,
             })
-            return
-          }
-          if (
-            (event.metaKey || event.ctrlKey) &&
-            event.key.toLowerCase() === "z" &&
-            !event.shiftKey
-          ) {
+          }}
+          onPaste={(event) => {
             event.preventDefault()
-            dispatch({ type: "undo" })
-          }
-        }}
-        onCompositionStart={() => {
-          composing.current = true
-        }}
-        onCompositionEnd={() => {
-          composing.current = false
-          const page = pageRef.current
-          if (!page) return
-          const read = readBlocks(page, nextId.current)
-          nextId.current = read.nextId
-          const selected =
-            pointFrom(
-              page,
-              page.ownerDocument.getSelection()?.focusNode ?? null,
-              page.ownerDocument.getSelection()?.focusOffset ?? 0
-            ) ?? state.present.caret
-          const grew = read.texts.length > state.present.blocks.length
-          const split = splitAfter.current && !grew
-          splitAfter.current = false
-          const texts = withCommittedWord(
-            read.texts,
-            selected.blockId,
-            event.data
-          )
-          const block =
-            texts.find((item) => item.id === selected.blockId) ?? texts[0]
-          const caret = split
-            ? {
-                blockId: block?.id ?? selected.blockId,
-                offset: block?.text.length ?? 0,
-              }
-            : selected
-          dispatch({
-            type: "composed",
-            texts,
-            caret,
-            split,
-            nextId: read.nextId,
-          })
-        }}
-        onPaste={(event) => {
-          event.preventDefault()
-          applyPaste(event.clipboardData.getData("text/plain"))
-        }}
-      >
-        {state.present.blocks.map((block) => (
-          <p key={block.id} data-block={block.id}>
-            {visibleText(block.text)}
-          </p>
-        ))}
-      </article>
+            applyPaste(event.clipboardData.getData("text/plain"))
+          }}
+        >
+          {state.present.blocks.map((block) => (
+            <p key={block.id} data-block={block.id}>
+              {visibleText(block.text)}
+            </p>
+          ))}
+        </article>
+      </div>
       <p className="writing-note" role="status">
         {state.note}
       </p>
