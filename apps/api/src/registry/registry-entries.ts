@@ -80,10 +80,13 @@ export class RegistryEntries extends CatalogPublication {
   }
 
   addCommand<I, O>(
-    spec: CommandSpec<I, O>,
-    handler: (input: I, actor: Actor) => Promise<O>
+    spec: CommandSpec<I, O> & {
+      prepare?: (input: I, actor: Actor) => Promise<unknown>
+    },
+    handler: (input: I, actor: Actor, prepared?: unknown) => Promise<O>
   ) {
-    const checked = defineCommand(spec)
+    const { prepare, ...rest } = spec
+    const checked = defineCommand(rest as CommandSpec<I, O>)
     if (this.commands.has(checked.name) || this.queries.has(checked.name)) {
       throw new Error(`Duplicate registry entry ${checked.name}`)
     }
@@ -97,6 +100,12 @@ export class RegistryEntries extends CatalogPublication {
       input: checked.input,
       transaction: checked.transaction,
       idempotency: checked.idempotency ?? "keyed",
+      ...(prepare
+        ? {
+            prepare: async (raw: unknown, actor: Actor) =>
+              prepare(parseInput(checked.input, raw), actor),
+          }
+        : {}),
       step: (raw) => {
         const parsed = checked.input.safeParse(raw)
         return parsed.success ? checked.step(parsed.data) : checked.name
@@ -107,11 +116,11 @@ export class RegistryEntries extends CatalogPublication {
 
   private commandRunner<I, O>(
     spec: CommandSpec<I, O>,
-    handler: (input: I, actor: Actor) => Promise<O>
+    handler: (input: I, actor: Actor, prepared?: unknown) => Promise<O>
   ) {
-    return async (raw: unknown, actor: Actor) => {
+    return async (raw: unknown, actor: Actor, prepared?: unknown) => {
       const input = parseInput(spec.input, raw)
-      const output = await handler(input, actor)
+      const output = await handler(input, actor, prepared)
       return {
         output,
         draft: spec.activity(input, output, actor),

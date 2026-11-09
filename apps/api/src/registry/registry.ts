@@ -17,7 +17,7 @@ import {
 import { and, eq } from "drizzle-orm"
 
 import { activity, pendingActions } from "../db/schema.js"
-import { getDb, savepoint, transaction } from "../db/context.js"
+import { getDb, transaction } from "../db/context.js"
 import {
   PENDING_TTL_MS,
   createProposal,
@@ -32,7 +32,7 @@ import {
   requireLiveProposalConnection,
 } from "./delegate-policy.js"
 import { paperAgentRefusal } from "./paper-agent.js"
-import { CommandError, isUniqueViolation } from "./errors.js"
+import { CommandError } from "./errors.js"
 
 import { lockActivity } from "./activity-lock.js"
 import { activityById, activityByKey, agentGates } from "./registry-reads.js"
@@ -45,6 +45,8 @@ import {
 } from "./expectation.js"
 import { inputHash } from "./receipt.js"
 import {
+  finishIdempotent,
+  prepareOutside,
   recordCommandResult,
   replayByKey as replayKeyedCommand,
 } from "./command-execution.js"
@@ -290,6 +292,7 @@ export class Registry extends RegistryEntries {
           parsed
         )
       : null
+    let ahead: unknown
     const effect = async (locked?: LockedBasis): Promise<ExecuteResult> => {
       const ran =
         frozen && isUnchanged(frozen)
@@ -306,7 +309,8 @@ export class Registry extends RegistryEntries {
                 expectedRevision: options.expectedRevision ?? null,
               },
               async () => {
-                if (!reviewed || !frozen) return command.run(parsed, actor)
+                if (!reviewed || !frozen)
+                  return command.run(parsed, actor, ahead)
                 if (isUnchanged(frozen)) return refuseFrozenReview()
                 if (!locked) return refuseFrozenReview()
                 return reviewed.run(parsed, frozen, actor, locked)
@@ -357,7 +361,7 @@ export class Registry extends RegistryEntries {
             key: idempotencyKey,
             hash,
             summary: command.step(parsed),
-            approved: Boolean(options[approvingReview]),
+            approved: !!options[approvingReview],
             effect,
           })
       } else if (
@@ -378,24 +382,33 @@ export class Registry extends RegistryEntries {
         })
       }
 
-      if (!idempotencyKey) return publish()
-      try {
-        return await savepoint(publish)
-      } catch (error) {
-        if (!isUniqueViolation(error)) throw error
-        const winner = await this.replayByKey(
+      return finishIdempotent(idempotencyKey, publish, () =>
+        this.replayByKey(
           actor.userId,
-          idempotencyKey,
+          idempotencyKey!,
           command.name,
           hash!,
           parsed
         )
-        if (!winner) throw error
-        return winner
-      }
+      )
     }
+    const hit = command.prepare
+      ? await prepareOutside(
+          command,
+          parsed,
+          actor,
+          idempotencyKey,
+          hash,
+          this.replayByKey.bind(this)
+        )
+      : null
+    if (hit && "ahead" in hit) ahead = hit.ahead
     const result =
-      command.transaction === "none" ? await run() : await transaction(run)
+      hit && !("ahead" in hit)
+        ? hit
+        : command.transaction === "none" && !command.prepare
+          ? await run()
+          : await transaction(run)
     if (result.pending) return result
     return this.committedResult(
       result.command ?? command.name,
@@ -527,7 +540,7 @@ export class Registry extends RegistryEntries {
         ...(frozen
           ? { [frozenExecution]: frozen, [approvingReview]: true }
           : {}),
-        [taskExecution]: Boolean(task),
+        [taskExecution]: !!task,
         skipConfirm: true,
         expectedRevision: checksPriority ? row.basisRevision : null,
       })

@@ -73,6 +73,7 @@ export function createPaperPackageTables(
         .references(() => user.id, { onDelete: "cascade" }),
       incarnation: uuid("incarnation").notNull(),
       revision: uuid("revision").notNull(),
+      canvasProfile: text("canvas_profile"),
       createdAt: timestamptz("created_at").notNull().defaultNow(),
     },
     (table) => [

@@ -30,6 +30,7 @@ import {
   ID_A,
   ID_B,
   KEY_A,
+  KEY_B,
   KEY_C,
   MARK,
   MERGED_KEY,
@@ -469,5 +470,152 @@ test("paper.edit does not gain Enter", () => {
       "apps/api/src/paper/package-canvas.ts"
     ),
     []
+  )
+})
+
+test("a split keeps escaped letters and leaves locked paragraphs unchanged", () => {
+  const side = mintSide()
+  const ampersand = fillPaintedText(mintBlankBytes(), "R&D")
+  const cut = applyCanvasBytes(
+    ampersand,
+    { op: "split", paragraph: side.paragraphs[0].key, at: 1 },
+    side
+  )
+  assert.equal(cut.status, "APPLIED")
+  const written = paragraphsOf(cut.bytes).filter(
+    (paragraph) => !isCarrier(paragraph)
+  )
+  assert.equal(contentOf(written[0]), "R")
+  assert.equal(contentOf(written[1]), "&D")
+  const later = applyCanvasBytes(
+    ampersand,
+    { op: "split", paragraph: side.paragraphs[0].key, at: 2 },
+    side
+  )
+  const laterText = paragraphsOf(later.bytes).filter(
+    (paragraph) => !isCarrier(paragraph)
+  )
+  assert.equal(contentOf(laterText[0]), "R&")
+  assert.equal(contentOf(laterText[1]), "D")
+  const less = fillPaintedText(mintBlankBytes(), "a<b")
+  const angled = applyCanvasBytes(
+    less,
+    { op: "split", paragraph: side.paragraphs[0].key, at: 1 },
+    side
+  )
+  const angledText = paragraphsOf(angled.bytes).filter(
+    (paragraph) => !isCarrier(paragraph)
+  )
+  assert.equal(contentOf(angledText[0]), "a")
+  assert.equal(contentOf(angledText[1]), "<b")
+  const linked = packageFromBody(
+    `<w:p w14:paraId="${ID_A}" w14:textId="${TID_A}"><w:pPr>${PPR}</w:pPr><w:hyperlink r:id="rId1"><w:r><w:t>link</w:t></w:r></w:hyperlink></w:p>` +
+      writing("next", PPR, ID_B, TID_B) +
+      carrier()
+  )
+  const merged = applyCanvasBytes(
+    linked,
+    { op: "mergePrevious", paragraph: KEY_B },
+    twoSide()
+  )
+  assert.equal(merged.status, "REFUSED")
+  assert.equal(Buffer.from(merged.bytes).equals(Buffer.from(linked)), true)
+  const broken = packageFromBody(
+    `<w:p w14:paraId="${ID_A}" w14:textId="${TID_A}"><w:pPr>${PPR}</w:pPr><w:r><w:br w:type="page"/></w:r></w:p>` +
+      carrier()
+  )
+  const removed = applyCanvasBytes(
+    broken,
+    { op: "deleteParagraph", paragraph: side.paragraphs[0].key },
+    side
+  )
+  assert.equal(removed.status, "REFUSED")
+  assert.equal(Buffer.from(removed.bytes).equals(Buffer.from(broken)), true)
+  const tracked = packageFromBody(
+    writing("a") +
+      `<w:p w14:paraId="${ID_B}" w14:textId="${TID_B}"><w:pPr>${PPR}</w:pPr><w:ins><w:r><w:t>inserted</w:t></w:r></w:ins></w:p>` +
+      carrier()
+  )
+  const kept = applyCanvasBytes(
+    tracked,
+    { op: "mergePrevious", paragraph: KEY_B },
+    twoSide()
+  )
+  assert.equal(kept.status, "REFUSED")
+  assert.equal(Buffer.from(kept.bytes).equals(Buffer.from(tracked)), true)
+  const table = packageFromBody(
+    `<w:tbl><w:tr><w:tc><w:p w14:paraId="${ID_A}" w14:textId="${TID_A}"><w:r><w:t></w:t></w:r></w:p></w:tc></w:tr></w:tbl>` +
+      carrier()
+  )
+  const cell = applyCanvasBytes(
+    table,
+    { op: "deleteParagraph", paragraph: side.paragraphs[0].key },
+    side
+  )
+  assert.equal(cell.status, "REFUSED")
+  assert.equal(Buffer.from(cell.bytes).equals(Buffer.from(table)), true)
+})
+
+test("a numeric token, a comment, or a tracked mark stays unchanged", () => {
+  const stay = (body, edit, side) => {
+    const bytes = packageFromBody(body)
+    const got = applyCanvasBytes(bytes, edit, side)
+    assert.equal(got.status, "REFUSED")
+    assert.equal(Buffer.from(got.bytes).equals(Buffer.from(bytes)), true)
+  }
+  for (const [text, at] of [
+    ["A&#x26;B", 1],
+    ["A&#x26;B", 2],
+    ["caf&#233;", 0],
+    ["&#128512;X", 1],
+    ["a<!--c-->b", 1],
+    ["a<?pi x?>b", 1],
+    ["<![CDATA[ab]]>", 1],
+  ])
+    stay(
+      writing(text) + carrier(),
+      { op: "split", paragraph: KEY_A, at },
+      mintSide()
+    )
+  const mark = (kind) =>
+    `<w:rPr><w:${kind} w:id="9" w:author="A" w:date="2020-01-01T00:00:00Z"/></w:rPr>`
+  for (const kind of ["del", "moveFrom", "moveTo"])
+    stay(
+      writing("a") +
+        writing("next", `${PPR}${mark(kind)}`, ID_B, TID_B) +
+        carrier(),
+      { op: "mergePrevious", paragraph: KEY_B },
+      twoSide()
+    )
+  stay(
+    writing("", `${PPR}${mark("del")}`) + carrier(),
+    { op: "deleteParagraph", paragraph: KEY_A },
+    mintSide()
+  )
+  stay(
+    writing("ab", `${PPR}${mark("ins")}`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace(
+      "</w:rPr>",
+      '<w:rPrChange w:id="9" w:author="A" w:date="2020-01-01T00:00:00Z"/></w:rPr>'
+    ) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:t>ab</w:t>", '<x:t xmlns:x="urn:x">ab</x:t>') +
+      carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab")
+      .replace("<w:r><w:rPr>", "<x:r><w:rPr>")
+      .replace("</w:r></w:p>", "</x:r></w:p>") + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
   )
 })

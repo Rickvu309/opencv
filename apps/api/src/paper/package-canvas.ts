@@ -104,16 +104,6 @@ async function resultOf(
   })
 }
 
-async function mintPage(owner: string) {
-  const stage = await stageWordPackage(
-    owner,
-    { requestId: randomUUID(), name: "Page.docx", kind: "letter" },
-    loaded.mintBlankBytes()
-  )
-  const published = await publishWordPackage(owner, stage.stageId)
-  return resultOf(owner, published.docId, published.revision, null)
-}
-
 export async function prepareCanvas(
   owner: string,
   input: Exclude<PaperCanvasCommit, { op: "mint" }>
@@ -125,6 +115,20 @@ export async function prepareCanvas(
     input.docId,
     input.basedOn
   )
+  const [marked] = await getDb()
+    .select({ canvasProfile: paperPackageHeads.canvasProfile })
+    .from(paperPackageHeads)
+    .where(
+      and(
+        eq(paperPackageHeads.userId, owner),
+        eq(paperPackageHeads.docId, input.docId)
+      )
+    )
+    .limit(1)
+  if (marked?.canvasProfile !== PAPER_CANVAS_PROFILE)
+    return packageFailure(
+      "This page change is not available. No document was changed."
+    )
   const opened = await PaperPackage.open(
     artifact.bytes,
     {
@@ -206,16 +210,24 @@ export async function prepareCanvas(
   )
 }
 
-async function commitCanvas(owner: string, input: PaperCanvasCommit) {
-  if (input.op === "mint") return mintPage(owner)
-  const prepared = await prepareCanvas(owner, input)
-  const published = await transaction(() =>
-    commitWordCandidate(owner, input, {
-      candidate: prepared.candidate,
-      review: prepared.review,
-    })
+type CanvasAhead =
+  | { op: "mint"; stageId: string }
+  | {
+      op: "edit"
+      prepared: Awaited<ReturnType<typeof prepareCanvas>>
+    }
+
+function canvasAhead(value: unknown): CanvasAhead {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !("op" in value) ||
+    (value.op !== "mint" && value.op !== "edit")
   )
-  return resultOf(owner, published.docId, published.revision, published.restore)
+    return packageFailure(
+      "This page change is not available. No document was changed."
+    )
+  return value as CanvasAhead
 }
 
 export function registerCanvasCommit(
@@ -231,6 +243,30 @@ export function registerCanvasCommit(
       destructive: entry.destructive,
       idempotency: "keyed",
       transaction: "none",
+      prepare: async (input, actor) => {
+        if (process.env.PAPER_PACKAGE_ENABLED !== "true") {
+          try {
+            await transaction(async () => {
+              requireEnabled()
+            })
+          } catch (error) {
+            if (error instanceof CommandError) throw error
+            requireEnabled()
+          }
+        }
+        if (input.op === "mint") {
+          const stage = await stageWordPackage(
+            actor.userId,
+            { requestId: randomUUID(), name: "Page.docx", kind: "letter" },
+            loaded.mintBlankBytes()
+          )
+          return { op: "mint" as const, stageId: stage.stageId }
+        }
+        return {
+          op: "edit" as const,
+          prepared: await prepareCanvas(actor.userId, input),
+        }
+      },
       reversal: (_input, output: CanvasResult) =>
         output.restore
           ? {
@@ -256,18 +292,26 @@ export function registerCanvasCommit(
         summary: "Wrote on the page",
       }),
     },
-    async (input, actor) => {
-      if (process.env.PAPER_PACKAGE_ENABLED !== "true") {
-        try {
-          await transaction(async () => {
-            requireEnabled()
-          })
-        } catch (error) {
-          if (error instanceof CommandError) throw error
-          requireEnabled()
-        }
+    async (input, actor, ahead) => {
+      const staged = canvasAhead(ahead)
+      if (staged.op === "mint") {
+        const published = await publishWordPackage(
+          actor.userId,
+          staged.stageId,
+          PAPER_CANVAS_PROFILE
+        )
+        return resultOf(actor.userId, published.docId, published.revision, null)
       }
-      return commitCanvas(actor.userId, input)
+      const published = await commitWordCandidate(actor.userId, input, {
+        candidate: staged.prepared.candidate,
+        review: staged.prepared.review,
+      })
+      return resultOf(
+        actor.userId,
+        published.docId,
+        published.revision,
+        published.restore
+      )
     }
   )
 }

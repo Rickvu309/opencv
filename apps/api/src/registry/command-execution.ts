@@ -1,8 +1,8 @@
 import { ERROR_CODES, isCoachActor, type Actor } from "@workspace/domain"
-import { getDb } from "../db/context.js"
+import { getDb, savepoint } from "../db/context.js"
 import { activity, idempotency } from "../db/schema.js"
 import { createId } from "../id.js"
-import { CommandError } from "./errors.js"
+import { CommandError, isUniqueViolation } from "./errors.js"
 import {
   replayFrozenProposal,
   type StoredReviewedCommand,
@@ -117,5 +117,43 @@ export async function replayByKey(
     ...(stored.inputHash === null
       ? { touches: [{ ownerId: userId, name: "workspace" }] }
       : {}),
+  }
+}
+
+export async function prepareOutside(
+  command: StoredCommand,
+  parsed: unknown,
+  actor: Actor,
+  key: string | undefined,
+  hash: string | null,
+  replay: (
+    userId: string,
+    key: string,
+    name: string,
+    hash: string,
+    input: unknown
+  ) => Promise<ExecuteResult | null>
+): Promise<ExecuteResult | { ahead: unknown }> {
+  if (!command.prepare) return { ahead: undefined }
+  if (key && hash) {
+    const earlier = await replay(actor.userId, key, command.name, hash, parsed)
+    if (earlier) return earlier
+  }
+  return { ahead: await command.prepare(parsed, actor) }
+}
+
+export async function finishIdempotent(
+  key: string | undefined,
+  publish: () => Promise<ExecuteResult>,
+  replay: () => Promise<ExecuteResult | null>
+) {
+  if (!key) return publish()
+  try {
+    return await savepoint(publish)
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error
+    const winner = await replay()
+    if (!winner) throw error
+    return winner
   }
 }

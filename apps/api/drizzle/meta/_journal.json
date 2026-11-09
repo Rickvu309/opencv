@@ -148,6 +148,13 @@
       "when": 1794212067119,
       "tag": "0020_tricky_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794259218440,
+      "tag": "0021_canvas_mint",
+      "breakpoints": true
     }
   ]
 }
