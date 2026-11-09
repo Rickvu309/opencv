@@ -15,7 +15,7 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
   `
   const clean = `
     async function stageWordPackage() { await PaperPackage.open(bytes); return transaction(save) }
-    async function publishWordPackage() { return transaction(async () => { await completeVersion(version); return db.insert(paperPackageHeads) }) }
+    async function publishWordPackage() { return transaction(async () => { if (version.parentRevision !== null) throw Error(); await completeVersion(version); return db.insert(paperPackageHeads) }) }
     async function readWordPackage() { return completeVersion(await ownedVersion(owner, docId, at)) }
     async function exportWordPackage() { return completeVersion(await ownedVersion(owner, docId, at)) }
   `
@@ -24,6 +24,7 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
     [
       "flattened-or-published-stage",
       "flattened-package",
+      "child-import-publisher",
       "unfinished-package-head",
       "mutable-read-projection",
       "mutable-read-projection",
@@ -84,4 +85,22 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
       "package-http.ts"
     ).length > 0
   )
+  const planner = readFileSync(
+    new URL("../apps/api/src/paper/package-planner.ts", import.meta.url),
+    "utf8"
+  )
+  assert.deepEqual(detect(planner), [])
+  for (const mutation of [
+    planner.replace("insideTransaction()", "false"),
+    planner.replace("await wordPackageBasis(", "await latestBasis("),
+    `${planner}\nasync function prepareWordPackage() { return db.insert(paperPackageVersions) }`,
+    source.replace(
+      "IN (${published})",
+      "IN (SELECT revision FROM paper_package_versions)"
+    ),
+    source.replace("head.revision !== basedOn", "false"),
+    source.replaceAll("version.parentRevision !== null", "false"),
+    `${source}\ndb.delete(paperPackageVersions)`,
+  ])
+    assert.ok(detect(mutation).length > 0)
 })
