@@ -17,41 +17,14 @@ const loaded = createRequire(import.meta.url)(
   repack: (bytes: Uint8Array, xml: string) => Uint8Array
 }
 
-const BLOCKED = new Set([
-  "tbl",
-  "tr",
-  "tc",
-  "sdt",
-  "ins",
-  "del",
-  "moveFrom",
-  "moveTo",
-  "hyperlink",
-  "bookmarkStart",
-  "bookmarkEnd",
-  "fldChar",
-  "fldSimple",
-  "instrText",
-  "commentReference",
-  "commentRangeStart",
-  "commentRangeEnd",
-  "footnoteReference",
-  "endnoteReference",
-  "drawing",
-  "pict",
-  "object",
-  "numPr",
-  "sectPr",
-  "br",
-  "cr",
-  "tab",
-  "sym",
-  "lastRenderedPageBreak",
-  "ruby",
-  "smartTag",
-  "customXml",
-  "altChunk",
-])
+const PROP_LEAVES = new Set(
+  "pStyle jc spacing ind keepNext keepLines widowControl outlineLvl".split(" ")
+)
+const RUN_LEAVES = new Set(
+  "rFonts b bCs i iCs color sz szCs u highlight vertAlign spacing lang shd".split(
+    " "
+  )
+)
 
 type Row = { key: string; ordinal: number; textIds: string[] }
 
@@ -75,9 +48,27 @@ function wordKids(node: XmlElement) {
   return node.children.filter((child) => isWord(child))
 }
 
-function blocked(node: XmlElement): boolean {
-  return descendants(node).some(
-    (child) => child !== node && isWord(child) && BLOCKED.has(child.local)
+function leaf(node: XmlElement, allowed: Set<string>) {
+  return allowed.has(node.local) && !node.opaque && node.children.length === 0
+}
+
+function plainMark(node: XmlElement) {
+  const kids = wordKids(node)
+  return (
+    kids.length === node.children.length &&
+    kids.every((child) => leaf(child, RUN_LEAVES))
+  )
+}
+
+function plainProps(node: XmlElement) {
+  const kids = wordKids(node)
+  if (kids.length !== node.children.length) return false
+  const marks = kids.filter((child) => child.local === "rPr")
+  if (marks.length > 1) return false
+  const rest = kids.filter((child) => child.local !== "rPr")
+  return (
+    rest.every((child) => leaf(child, PROP_LEAVES)) &&
+    (!marks[0] || plainMark(marks[0]))
   )
 }
 
@@ -95,19 +86,21 @@ function ordinary(source: string, paragraph: XmlElement) {
   )
     return null
   const elements = wordKids(paragraph)
+  if (elements.length !== paragraph.children.length) return null
   const runs = elements.filter((child) => child.local === "r")
   const props = elements.filter((child) => child.local === "pPr")
   if (runs.length !== 1 || props.length > 1) return null
   if (elements.length !== runs.length + props.length) return null
-  if (props[0] && blocked(props[0])) return null
+  if (props[0] && !plainProps(props[0])) return null
   const run = runs[0]
   if (!run) return null
   const inside = wordKids(run)
+  if (inside.length !== run.children.length) return null
   const texts = inside.filter((child) => child.local === "t")
   const marks = inside.filter((child) => child.local === "rPr")
   if (texts.length !== 1 || marks.length > 1) return null
   if (inside.length !== texts.length + marks.length) return null
-  if (marks[0] && blocked(marks[0])) return null
+  if (marks[0] && !plainMark(marks[0])) return null
   const textNode = texts[0]
   if (!textNode || textNode.children.length > 0) return null
   const text = textOf(source, textNode)

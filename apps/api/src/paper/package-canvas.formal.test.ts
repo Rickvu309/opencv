@@ -326,7 +326,7 @@ describe("a blank page saves through the existing check", () => {
       expect(loaded.isCarrier(mergedBody[1])).toBe(true)
     }))
 
-  it("refuses numbering, a different style, and a paragraph mark", () =>
+  it("refuses numbering and a paragraph mark", () =>
     run(async () => {
       const id = await seed()
       const packages = [
@@ -338,11 +338,6 @@ describe("a blank page saves through the existing check", () => {
               marks.ID_B,
               marks.TID_B
             ) +
-            marks.carrier()
-        ),
-        loaded.packageFromBody(
-          marks.writing("Hello") +
-            marks.writing("Next", marks.H1, marks.ID_B, marks.TID_B) +
             marks.carrier()
         ),
         loaded.packageFromBody(

@@ -33,7 +33,15 @@ function others(left: Uint8Array, right: Uint8Array) {
   const names = [...new Set([...a.keys(), ...b.keys()])]
     .filter((name) => name !== "word/document.xml")
     .sort()
-  return names.every((name) => a.get(name)?.bytes.equals(b.get(name)?.bytes))
+  return names.every((name) => {
+    const leftBytes = a.get(name)?.bytes
+    const rightBytes = b.get(name)?.bytes
+    return (
+      leftBytes !== undefined &&
+      rightBytes !== undefined &&
+      leftBytes.equals(rightBytes)
+    )
+  })
 }
 
 describe("eligible imported paragraphs", () => {
@@ -96,5 +104,49 @@ describe("eligible imported paragraphs", () => {
     )
     expect(refused.status).toBe("REFUSED")
     expect(Buffer.from(refused.bytes).equals(marked)).toBe(true)
+  })
+
+  it("splits two styles and refuses a paragraph mark", () => {
+    const bytes = fixturePackage(
+      `${paragraph(
+        "Hello",
+        '<w:pStyle w:val="Normal"/><w:jc w:val="center"/>'
+      )}<w:p><w:pPr><w:pStyle w:val="Heading1"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:color w:val="231F20"/></w:rPr><w:t>Next</w:t></w:r></w:p>`
+    )
+    const basis = side(2)
+    const applied = applyEligibleBytes(
+      bytes,
+      { op: "split", paragraph: basis.paragraphs[0].key, at: 1 },
+      basis
+    )
+    expect(applied.status).toBe("APPLIED")
+    expect(texts(applied.bytes)).toEqual(["H", "ello", "Next"])
+    const marked = [
+      fixturePackage(
+        paragraph(
+          "Hello",
+          '<w:pPrChange w:id="2"><w:pPr><w:pStyle w:val="Normal"/></w:pPr></w:pPrChange>'
+        )
+      ),
+      fixturePackage(
+        paragraph(
+          "Hello",
+          '<w:rPr><w:rPrChange w:id="1" w:author="A" w:date="2020-01-01T00:00:00Z"><w:rPr/></w:rPrChange></w:rPr><w:pPrChange w:id="2" w:author="A" w:date="2020-01-01T00:00:00Z"><w:pPr><w:pStyle w:val="Normal"/></w:pPr></w:pPrChange>'
+        )
+      ),
+      fixturePackage(
+        '<w:p><w:r><w:rPr><w:rFonts w:ascii="Calibri"/><w:rPrChange w:id="1"><w:rPr/></w:rPrChange></w:rPr><w:t>Hello</w:t></w:r></w:p>'
+      ),
+    ]
+    for (const source of marked) {
+      const markedSide = side(1)
+      const refused = applyEligibleBytes(
+        source,
+        { op: "split", paragraph: markedSide.paragraphs[0].key, at: 1 },
+        markedSide
+      )
+      expect(refused.status).toBe("REFUSED")
+      expect(Buffer.from(refused.bytes).equals(source)).toBe(true)
+    }
   })
 })

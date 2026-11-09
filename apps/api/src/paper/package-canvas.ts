@@ -153,9 +153,10 @@ export async function prepareCanvas(
       textIds: [...row.textIds],
     })),
   }
-  const applied = minted
-    ? loaded.applyCanvasBytes(artifact.bytes, input, sidecarIn)
-    : applyEligibleBytes(artifact.bytes, input, sidecarIn)
+  const applied =
+    minted || input.op === "writeText"
+      ? loaded.applyCanvasBytes(artifact.bytes, input, sidecarIn)
+      : applyEligibleBytes(artifact.bytes, input, sidecarIn)
   if (applied.status !== "APPLIED")
     return packageFailure(
       "This page change is not available. No document was changed."
