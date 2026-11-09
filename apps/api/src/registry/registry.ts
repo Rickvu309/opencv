@@ -361,7 +361,7 @@ export class Registry extends RegistryEntries {
             key: idempotencyKey,
             hash,
             summary: command.step(parsed),
-            approved: Boolean(options[approvingReview]),
+            approved: !!options[approvingReview],
             effect,
           })
       } else if (
@@ -382,14 +382,14 @@ export class Registry extends RegistryEntries {
         })
       }
 
-      return finishIdempotent(
-        idempotencyKey,
-        publish,
-        this.replayByKey.bind(this),
-        actor.userId,
-        command.name,
-        hash,
-        parsed
+      return finishIdempotent(idempotencyKey, publish, () =>
+        this.replayByKey(
+          actor.userId,
+          idempotencyKey,
+          command.name,
+          hash!,
+          parsed
+        )
       )
     }
     const hit = command.prepare
@@ -540,7 +540,7 @@ export class Registry extends RegistryEntries {
         ...(frozen
           ? { [frozenExecution]: frozen, [approvingReview]: true }
           : {}),
-        [taskExecution]: Boolean(task),
+        [taskExecution]: !!task,
         skipConfirm: true,
         expectedRevision: checksPriority ? row.basisRevision : null,
       })

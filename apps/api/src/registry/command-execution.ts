@@ -145,24 +145,14 @@ export async function prepareOutside(
 export async function finishIdempotent(
   key: string | undefined,
   publish: () => Promise<ExecuteResult>,
-  replay: (
-    userId: string,
-    key: string,
-    name: string,
-    hash: string,
-    input: unknown
-  ) => Promise<ExecuteResult | null>,
-  userId: string,
-  name: string,
-  hash: string | null,
-  input: unknown
+  replay: () => Promise<ExecuteResult | null>
 ) {
   if (!key) return publish()
   try {
     return await savepoint(publish)
   } catch (error) {
     if (!isUniqueViolation(error)) throw error
-    const winner = hash ? await replay(userId, key, name, hash, input) : null
+    const winner = await replay()
     if (!winner) throw error
     return winner
   }
