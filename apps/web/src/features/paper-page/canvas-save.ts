@@ -1,10 +1,10 @@
+import { QueryClient } from "@tanstack/react-query"
 import {
-  paperPackageEditResultSchema,
-  paperPackageReadSchema,
+  paperCanvasCommitSchema,
+  paperPackageEditSchema,
 } from "@workspace/domain"
 
-import { apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { ApiError } from "@/lib/api-error.ts"
 import {
   applyReply,
   draftFromWrite,
@@ -12,7 +12,7 @@ import {
   type LocalObservation,
   type PackageDraft,
 } from "@/lib/paper-package-ack.ts"
-import { endpoints } from "@/lib/requests.ts"
+import { catalogClient, runContractCommand } from "@/lib/contract-client.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
@@ -20,13 +20,17 @@ const CARRIERS = new Set([
   "OPAQUE_OR_SECTION_BOUNDARY",
   "UNSUPPORTED_TARGET_PROPERTY",
 ])
+const SERVER_NOTES = new Set([
+  "Saved Word documents are unavailable.",
+  "This Word document has changed. Read it again before editing.",
+  "This page change is not available. No document was changed.",
+])
 
 export type WritingRecord = {
   key: string
   commandId: string
   generation: number
   words: string
-  packageDocId: string | null
   revision: string | null
   idempotencyKey: string
 }
@@ -34,14 +38,43 @@ export type WritingRecord = {
 export type SaveOutcome = {
   saved: boolean
   words: string
+  revision: string | null
+  note: string | null
+}
+
+type PageRegion = {
+  kind: string
+  text: string
+  paragraph?: string
+  targetId?: string
+  reason?: { code: string }
+}
+
+type PackagePage = {
+  revision: string
+  regions: readonly PageRegion[]
+}
+
+type WritingTarget = {
+  paragraph: string
+  text: string
+  targetId: string | null
 }
 
 export function pageWords(blocks: readonly { text: string }[]): string {
   return blocks.map((block) => block.text).join("\n")
 }
 
-export function savedNote(words: string, outcome: SaveOutcome): "Saved" | null {
-  if (words === "" || !outcome.saved || outcome.words !== words) return null
+export function savedNote(words: string, outcome: SaveOutcome): string | null {
+  if (outcome.note && SERVER_NOTES.has(outcome.note)) return outcome.note
+  if (
+    words === "" ||
+    !outcome.saved ||
+    outcome.words !== words ||
+    outcome.revision === null
+  ) {
+    return null
+  }
   return "Saved"
 }
 
@@ -122,7 +155,6 @@ function fresh(words: string): WritingRecord {
     commandId,
     generation: 1,
     words,
-    packageDocId: null,
     revision: null,
     idempotencyKey: commandId,
   }
@@ -152,7 +184,6 @@ export async function commitWords(
       commandId,
       generation,
       words,
-      packageDocId: existing?.packageDocId ?? null,
       revision: existing?.revision ?? null,
       idempotencyKey: existing?.idempotencyKey ?? commandId,
     }
@@ -171,84 +202,107 @@ export async function commitWords(
   }
 }
 
-export async function rememberPackage(
-  docId: string,
-  packageDocId: string,
-  revision: string
-): Promise<void> {
-  if (typeof indexedDB === "undefined") return
-  const db = await database()
-  const existing = await readRecord(db, docId)
-  if (!existing) return
-  await writeRecord(db, { ...existing, packageDocId, revision })
+function missed(words: string): SaveOutcome {
+  return { saved: false, words, revision: null, note: null }
 }
 
-function draftOf(record: WritingRecord): PackageDraft {
-  return draftFromWrite({
-    commandId: record.commandId,
-    generation: record.generation,
-    words: record.words,
+function serverNote(error: unknown): string | null {
+  return error instanceof ApiError && SERVER_NOTES.has(error.message)
+    ? error.message
+    : null
+}
+
+let commands: QueryClient | null = null
+
+function commandClient() {
+  commands ??= new QueryClient()
+  return commands
+}
+
+function isPackagePage(value: unknown): value is PackagePage {
+  if (!value || typeof value !== "object") return false
+  if (!("revision" in value) || typeof value.revision !== "string") return false
+  return "regions" in value && Array.isArray(value.regions)
+}
+
+async function readPackage(docId: string, signal: AbortSignal) {
+  const options = catalogClient.options("page", "paper.read", { docId })
+  if (!options.queryFn) return null
+  const data = await options.queryFn({
+    client: commandClient(),
+    queryKey: options.queryKey,
+    signal,
+    meta: options.meta,
   })
+  return isPackagePage(data) ? data : null
 }
 
-function refusal(draft: PackageDraft): Acknowledgement {
-  return {
-    kind: "refusal",
-    commandId: draft.commandId,
-    generation: draft.generation,
+function writingTarget(regions: readonly PageRegion[]): WritingTarget | null {
+  for (const region of regions) {
+    if (!region.paragraph) continue
+    if (region.reason?.code === "EMPTY_TARGET") {
+      return { paragraph: region.paragraph, text: "", targetId: null }
+    }
+    if (region.kind === "editable" && region.targetId) {
+      return {
+        paragraph: region.paragraph,
+        text: region.text,
+        targetId: region.targetId,
+      }
+    }
   }
+  return null
 }
 
-async function postJson(path: string, body: unknown, signal: AbortSignal) {
-  return unwrapData(
-    await apiFetch<SuccessBody<unknown>>(path, {
-      method: "POST",
-      body: JSON.stringify(body),
-      signal,
-    })
-  )
+function receiptRevision(value: unknown) {
+  if (!value || typeof value !== "object") return null
+  if (!("generation" in value) || value.generation !== "package") return null
+  if (!("revision" in value) || typeof value.revision !== "string") return null
+  return value.revision
 }
 
-async function mint(key: string, signal: AbortSignal) {
-  const data = await postJson(
-    endpoints.catalogCommand("paper.canvas"),
-    { input: { op: "mint" }, idempotencyKey: key },
-    signal
-  )
-  if (!data || typeof data !== "object") return null
-  const record = data as Record<string, unknown>
-  const parsed = paperPackageEditResultSchema.safeParse({
-    generation: record.generation,
-    docId: record.docId,
-    revision: record.revision,
-    name: record.name,
-    kind: record.kind,
-    packageHash: record.packageHash,
-    byteSize: record.byteSize,
-    incarnation: record.incarnation,
-    restore: record.restore ?? null,
-  })
-  return parsed.success ? parsed.data : null
-}
-
-async function readPackage(
+async function sendWords(
   docId: string,
   revision: string,
+  target: WritingTarget,
+  words: string,
   signal: AbortSignal
 ) {
-  const data = await postJson(
-    endpoints.catalogRead("paper.read"),
-    { docId, at: revision },
-    signal
-  )
-  const parsed = paperPackageReadSchema.safeParse(data)
-  if (!parsed.success) return null
-  return wordsFromRegions(
-    parsed.data.regions.map((region) =>
-      region.kind === "locked"
-        ? { text: region.text, reason: region.reason }
-        : { text: region.text }
+  if (target.text === "" && target.targetId === null) {
+    const input = {
+      op: "writeText" as const,
+      docId,
+      basedOn: revision,
+      paragraph: target.paragraph,
+      text: words,
+    }
+    if (!paperCanvasCommitSchema.safeParse(input).success) return null
+    return receiptRevision(
+      await runContractCommand(commandClient(), "paper.canvas", input, {
+        refresh: false,
+        signal,
+      })
     )
+  }
+  if (!target.targetId || target.text === "") return null
+  const input = {
+    docId,
+    basedOn: revision,
+    edits: [
+      {
+        op: "replaceText" as const,
+        targetId: target.targetId,
+        before: target.text,
+        after: words,
+      },
+    ],
+  }
+  if (!paperPackageEditSchema.safeParse(input).success) return null
+  return receiptRevision(
+    await runContractCommand(commandClient(), "paper.edit", input, {
+      refresh: false,
+      signal,
+    })
   )
 }
 
@@ -269,53 +323,46 @@ function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
 
 async function settleOnce(
   docId: string,
-  words: string,
+  blocks: readonly { text: string }[],
   signal: AbortSignal
 ): Promise<SaveOutcome> {
-  if (signal.aborted) return { saved: false, words }
+  const words = pageWords(blocks)
+  if (signal.aborted) return missed(words)
   const committed = await commitWords(docId, words)
-  const draft = draftOf(committed.record)
-  if (committed.local.transaction !== "complete") {
-    return { saved: false, words: draft.words }
-  }
+  if (committed.local.transaction !== "complete") return missed(words)
   try {
-    let packageDocId = committed.record.packageDocId
-    let revision = committed.record.revision
-    if (!packageDocId || !revision) {
-      const minted = await mint(committed.record.idempotencyKey, signal)
-      if (!minted) {
-        const decided = decideSave(draft, committed.local, refusal(draft))
-        return { saved: decided.saved, words: decided.words }
-      }
-      packageDocId = minted.docId
-      revision = minted.revision
-      await rememberPackage(docId, packageDocId, revision)
+    const page = await readPackage(docId, signal)
+    if (!page || signal.aborted) return missed(words)
+    const seen = wordsFromRegions(page.regions)
+    if (words === seen && words !== "") {
+      return { saved: true, words, revision: page.revision, note: null }
     }
-    if (signal.aborted) return { saved: false, words: draft.words }
-    const read = await readPackage(packageDocId, revision, signal)
-    if (read === null) {
-      const decided = decideSave(draft, committed.local, refusal(draft))
-      return { saved: decided.saved, words: decided.words }
+    if (words === "") return missed(words)
+    const target = writingTarget(page.regions)
+    if (!target) return missed(words)
+    const revision = await sendWords(
+      docId,
+      page.revision,
+      target,
+      words,
+      signal
+    )
+    if (!revision || signal.aborted) return missed(words)
+    const next = await readPackage(docId, signal)
+    const readBack = next ? wordsFromRegions(next.regions) : null
+    if (!next || next.revision !== revision || readBack !== words) {
+      return missed(words)
     }
-    const decided = decideSave(draft, committed.local, {
-      kind: "receipt",
-      receipt: {
-        commandId: draft.commandId,
-        generation: draft.generation,
-        words: read,
-      },
-    })
-    return { saved: decided.saved, words: decided.words }
-  } catch {
-    const decided = decideSave(draft, committed.local, refusal(draft))
-    return { saved: decided.saved, words: decided.words }
+    return { saved: true, words: readBack, revision: next.revision, note: null }
+  } catch (error) {
+    return { ...missed(words), note: serverNote(error) }
   }
 }
 
 export function settlePage(
   docId: string,
-  words: string,
+  blocks: readonly { text: string }[],
   signal: AbortSignal
 ): Promise<SaveOutcome> {
-  return serial(docId, () => settleOnce(docId, words, signal))
+  return serial(docId, () => settleOnce(docId, blocks, signal))
 }

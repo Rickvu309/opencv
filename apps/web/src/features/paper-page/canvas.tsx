@@ -271,7 +271,7 @@ function WritingSheet({
     if (!kept) return
     const controller = new AbortController()
     const words = pageWords(state.present.blocks)
-    void settlePage(docId, words, controller.signal)
+    void settlePage(docId, state.present.blocks, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return
         const note = savedNote(words, result)
