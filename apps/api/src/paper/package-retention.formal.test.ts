@@ -89,7 +89,7 @@ async function record(candidate: { id: string }) {
   return row
 }
 
-async function retentionFixture(copies: number) {
+async function retentionFixture(copies: number, after = "better") {
   const account = randomUUID()
   await getDb()
     .insert(user)
@@ -99,7 +99,7 @@ async function retentionFixture(copies: number) {
       email: `${account}@test.invalid`,
     })
   const doc = await document(account)
-  const retained = await prepare(doc.head.docId, "original", "better", account)
+  const retained = await prepare(doc.head.docId, "original", after, account)
   const row = await record(retained.prepared.candidate)
   if (copies > 1)
     await getDb()
@@ -367,7 +367,7 @@ describe("private Word candidate retention", () => {
 
   it("refuses when only the new candidate crosses the byte limit", () =>
     run(async () => {
-      const fixture = await retentionFixture(1)
+      const fixture = await retentionFixture(1, "bétter")
       const unit = await incomingBytes(fixture.account)
       if (unit < 1) throw new Error("Missing incoming candidate bytes")
       const revision = await holdUsage(fixture, byteLimit - unit + 1, "é")
@@ -376,7 +376,7 @@ describe("private Word candidate retention", () => {
         throw new Error(`Byte gap ${gap} does not exceed one candidate`)
       const before = await retainedCounts(fixture.account)
       await expect(
-        prepare(fixture.doc.head.docId, "original", "better", fixture.account)
+        prepare(fixture.doc.head.docId, "original", "bétter", fixture.account)
       ).rejects.toThrow("Word edit storage is full")
       expect(await retainedCounts(fixture.account)).toEqual(before)
       expect(
@@ -390,7 +390,7 @@ describe("private Word candidate retention", () => {
 
   it("accepts a candidate that lands exactly on the byte limit", () =>
     run(async () => {
-      const fixture = await retentionFixture(1)
+      const fixture = await retentionFixture(1, "bétter")
       const unit = await incomingBytes(fixture.account)
       if (unit < 1) throw new Error("Missing incoming candidate bytes")
       await holdUsage(fixture, byteLimit - unit, "x")
@@ -398,7 +398,7 @@ describe("private Word candidate retention", () => {
       const accepted = await prepare(
         fixture.doc.head.docId,
         "original",
-        "better",
+        "bétter",
         fixture.account
       )
       expect(accepted.prepared.candidate.id).toBeTruthy()
