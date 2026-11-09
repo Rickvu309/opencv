@@ -1,10 +1,13 @@
-import { letterAttachmentContextSchema } from "@workspace/domain"
+import {
+  paperViewSchema,
+  paperPackageMetadataSchema,
+  letterAttachmentContextSchema,
+} from "@workspace/domain"
 import type { QueryClient } from "@tanstack/react-query"
 import type {
   ChatToolName,
   FileId,
   PaperId,
-  PaperView,
   QueryOutput,
 } from "@workspace/domain"
 
@@ -126,10 +129,7 @@ export async function extractLetterAttachment(
   return letterAttachmentContextSchema.parse(data)
 }
 
-export async function importPaperFile(
-  file: File,
-  signal?: AbortSignal
-): Promise<PaperView> {
+export async function importPaperFile(file: File, signal?: AbortSignal) {
   const body = new FormData()
   body.set("file", file)
   const res = await fetchBinary(endpoints.paperImport, {
@@ -148,8 +148,14 @@ export async function importPaperFile(
       payload?.error?.message ?? "Could not import that file. Try it again."
     )
   }
-  const payload = (await res.json()) as SuccessBody<PaperView>
-  return unwrapData(payload)
+  const payload: unknown = await res.json()
+  return paperViewSchema
+    .or(paperPackageMetadataSchema)
+    .parse(
+      payload && typeof payload === "object" && "data" in payload
+        ? payload.data
+        : null
+    )
 }
 
 export async function importPaperLink(

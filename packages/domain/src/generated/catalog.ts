@@ -1,10 +1,16 @@
 import { operation as operation0 } from "../operations/job/priority-counts/operation.js"
 import { operation as operation1 } from "../operations/job/set-priority/operation.js"
+import { operation as operation2 } from "../operations/paper/export/operation.js"
+import { operation as operation3 } from "../operations/paper/import/operation.js"
+import { operation as operation4 } from "../operations/paper/read/operation.js"
 
 export const catalog = {
   "job.priorityCounts": operation0,
   "job.setPriority": operation1,
+  "paper.export": operation2,
+  "paper.import": operation3,
+  "paper.read": operation4,
 } as const
 
 export const catalogDigest =
-  "64f7d54920cd008321a441d1d282f4df43cc4cce752ac0d31713b4684569301d"
+  "3b7bfa79a873470b26f95481f33cb254d56ccfbc3f35ef63e1689531dc8acd29"

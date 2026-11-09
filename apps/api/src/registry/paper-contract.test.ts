@@ -1,4 +1,5 @@
 import {
+  catalog,
   commands,
   paperContract,
   paperQueries,
@@ -7,6 +8,7 @@ import {
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
+import { z } from "zod"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
@@ -26,6 +28,40 @@ async function seed(
 }
 
 describe("a paper binding that drifts from the paper contract is rejected", () => {
+  it("exposes object-root Paper tools without accepting mixed import forms", () => {
+    for (const name of ["paper.import", "paper.read", "paper.export"] as const)
+      expect(
+        z.toJSONSchema(catalog[name].input, { io: "input", reused: "ref" }),
+        name
+      ).toMatchObject({ type: "object" })
+    const input = catalog["paper.import"].input
+    const fileId = "4962177f-66d9-4c13-a9f9-24df1ef97e9d"
+    const stageId = "547fb75f-0733-4132-b86d-7b0fef9ada58"
+    const schema = z.toJSONSchema(input, { io: "input", reused: "ref" })
+    expect(schema).toMatchObject({ type: "object" })
+    for (const combinator of ["anyOf", "oneOf", "allOf"])
+      expect(schema).not.toHaveProperty(combinator)
+    expect(input.parse({ fileId })).toEqual({ fileId })
+    expect(input.parse({ generation: "package", stageId })).toEqual({
+      generation: "package",
+      stageId,
+    })
+    for (const invalid of [
+      {},
+      { stageId },
+      { generation: "package" },
+      { generation: "package", stageId, fileId },
+      { generation: "other", stageId },
+      { fileId: "invalid" },
+      { generation: "package", stageId: "invalid" },
+      { fileId, unknown: true },
+      { generation: "package", stageId, unknown: true },
+    ])
+      expect(input.safeParse(invalid).success, JSON.stringify(invalid)).toBe(
+        false
+      )
+  })
+
   it("parses every paper command output and every paper read", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
@@ -108,7 +144,14 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         purpose: "avatar",
       })
       await run("paper.attachPhoto", { docId: cv, fileId: photo.id })
-      const imported = idOf(await run("paper.import", { fileId: upload.id }))
+      const importedResult = await registry.execute({
+        name: "paper.import",
+        input: { fileId: upload.id },
+        actor: person,
+      })
+      const imported = idOf(
+        catalog["paper.import"].publicResult.parse(importedResult.output)
+      )
       await run("paper.dismissCheck", { docId: imported, checkId: "import" })
 
       const list = await read("paper.list", {})
@@ -187,6 +230,17 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         actor: person,
       })
       const coach = await seedCoachActor(userId, idOf(chat.output))
+      const tool = (await registry.tools(coach)).find(
+        (entry) => entry.name === "paper.import"
+      )
+      if (!tool) throw new Error("Missing Coach import tool")
+      const toolSchema = z.toJSONSchema(tool.input, {
+        io: "input",
+        reused: "ref",
+      })
+      expect(toolSchema).toMatchObject({ type: "object" })
+      for (const combinator of ["anyOf", "oneOf", "allOf"])
+        expect(toolSchema).not.toHaveProperty(combinator)
       const cv = idOf(
         (
           await registry.execute({

@@ -25,7 +25,6 @@ import {
   deletePaper,
   dismissCheck,
   duplicatePaper,
-  importPaper,
   keepTwoPages,
   listFiles,
   listPapers,
@@ -237,18 +236,6 @@ export function registerPaper(registry: Registry) {
       handler: (input, actor) => unsharePaper(actor, input.docId),
       reversal: noReversal,
       activity: noActivity,
-    },
-    "paper.import": {
-      handler: (input, actor) => importPaper(actor, input.fileId),
-      reversal: (_input, output) => ({
-        command: "paper.delete",
-        input: { docId: output.id },
-      }),
-      activity: (_input, output) => ({
-        subjectKind: "paper",
-        subjectId: output.id,
-        summary: `Imported ${output.name}`,
-      }),
     },
     "paper.dismissCheck": {
       handler: (input, actor) =>

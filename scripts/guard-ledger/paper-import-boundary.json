@@ -1,0 +1,10 @@
+{
+  "id": "paper-import-boundary",
+  "file": "scripts/paper-package-storage.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-package-storage.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "The root tool union, committed-upload cleanup and pending Word section were introduced together on the unmerged issue 1198 branch. No introducing commit is a main ancestor. Exact branch-source negatives and pure fixtures are retained in the issue evidence; no historical main proof is claimed."
+}

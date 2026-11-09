@@ -6,6 +6,7 @@ import { render } from "@/test/render-with-client.tsx"
 import {
   blankCv,
   paperDocumentSchema,
+  paperPackageMetadataSchema,
   type PaperView,
   type PaperFile,
 } from "@workspace/domain"
@@ -112,7 +113,11 @@ describe("Paper library", () => {
   it("opens the full-page letter picker and returns to Paper", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(Response.json({ ok: true, data: [] }))
+      vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(Response.json({ ok: true, data: [] }))
+        )
     )
     renderLibrary([])
     fireEvent.click(screen.getByRole("button", { name: "Cover letter" }))
@@ -208,6 +213,57 @@ describe("Paper library", () => {
     expect(onOpen).not.toHaveBeenCalled()
     expect(calls.some((url) => url.includes("paper.deleteFile"))).toBe(true)
     expect(screen.getByText("Start a document")).toBeInTheDocument()
+  })
+
+  it("opens a Word import as a pinned preview without entering the legacy editor", async () => {
+    const word = paperPackageMetadataSchema.parse({
+      generation: "package",
+      docId: "33333333-3333-4333-8333-333333333333",
+      revision: "44444444-4444-4444-8444-444444444444",
+      name: "Original.docx",
+      kind: "cv",
+      packageHash: "b".repeat(64),
+      byteSize: 1200,
+    })
+    vi.mocked(importPaperFile).mockResolvedValueOnce(word)
+    const onOpen = vi.fn()
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
+        {
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Snapshot unavailable" },
+        },
+        { status: 404 }
+      )
+    )
+    vi.stubGlobal("fetch", fetchMock)
+    render(
+      <PaperLibrary
+        docs={[]}
+        files={[]}
+        loading={false}
+        error={null}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+        query=""
+        onQueryChange={() => undefined}
+      />
+    )
+    const input = document.querySelector('input[type="file"]')
+    if (!input) throw new Error("Missing import input")
+    fireEvent.change(input, {
+      target: { files: [new File(["Word"], word.name)] },
+    })
+    expect(await screen.findByRole("dialog", { name: word.name })).toBeVisible()
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(
+      fetchMock.mock.calls.some(([, init]) =>
+        String(init?.body).includes(`"at":"${word.revision}"`)
+      )
+    ).toBe(true)
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url).includes("paper.sync"))
+    ).toBe(false)
   })
 
   it("shows a failed import and lets the user retry with another file", async () => {
@@ -467,7 +523,9 @@ describe("Paper library", () => {
   ] as const)("submits a %s rename with Enter", async (_kind, doc) => {
     const fetchMock = vi
       .fn<typeof fetch>()
-      .mockResolvedValue(Response.json({ ok: true, data: { id: doc.id } }))
+      .mockImplementation(() =>
+        Promise.resolve(Response.json({ ok: true, data: { id: doc.id } }))
+      )
     vi.stubGlobal("fetch", fetchMock)
     const user = await openRename(doc)
     const field = screen.getByRole("textbox", { name: "Name" })

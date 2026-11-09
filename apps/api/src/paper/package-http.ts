@@ -3,6 +3,7 @@ import {
   PAPER_PACKAGE_LIMITS,
   errorEnvelope,
   paperPackageStageInputSchema,
+  personActor,
   successEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
@@ -15,13 +16,12 @@ import {
   requireSession,
   type SessionVariables,
 } from "../middleware.js"
+import { registry } from "../registry/registry.js"
 import { CommandError } from "../registry/errors.js"
 import { PaperPackageRefusal } from "./package-errors.js"
 import {
   WORD_PACKAGE_MEDIA_TYPE,
   exportWordPackage,
-  listWordPackages,
-  readWordPackage,
   stageWordPackage,
 } from "./package-store.js"
 
@@ -96,16 +96,24 @@ export function createPaperPackageRoutes(auth?: Auth, db?: AppDatabase) {
   routes.get("/", async (c) =>
     c.json(
       successEnvelope(
-        await listWordPackages(c.var.userId, c.req.query("after"))
+        await registry.read(
+          "paper.read",
+          { view: "library", after: c.req.query("after") },
+          personActor(c.var.userId)
+        )
       )
     )
   )
   routes.get("/:docId/read", async (c) => {
-    const page = await readWordPackage(c.var.userId, {
-      docId: c.req.param("docId"),
-      at: c.req.query("at"),
-      cursor: c.req.query("cursor"),
-    })
+    const page = await registry.read(
+      "paper.read",
+      {
+        docId: c.req.param("docId"),
+        at: c.req.query("at"),
+        cursor: c.req.query("cursor"),
+      },
+      personActor(c.var.userId)
+    )
     return c.json(successEnvelope(page))
   })
   routes.get("/:docId/export", async (c) => {

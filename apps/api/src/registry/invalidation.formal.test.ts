@@ -8,7 +8,7 @@ import {
   type QueryRef,
 } from "@workspace/domain"
 import { eq, inArray } from "drizzle-orm"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import {
@@ -61,6 +61,8 @@ const SNAPSHOT_QUERIES: {
   "inbox.snoozed": () => [{}],
   "inbox.get": (ids) => ids.threads.map((threadId) => ({ threadId })),
   "paper.list": () => [{}],
+  "paper.read": () => [{ view: "library" }],
+  "paper.export": null,
   "paper.get": (ids) => ids.docs.map((docId) => ({ docId })),
   "paper.pageCount": (ids) => ids.docs.map((docId) => ({ docId })),
   "paper.shared": (ids) => ids.tokens.map((token) => ({ token })),
@@ -88,6 +90,8 @@ const SNAPSHOT_QUERIES: {
 
 const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
   "activity.list": "every command refreshes it",
+  "paper.export":
+    "pinned binary download metadata is covered by the package HTTP replay",
   "coach.status":
     "task snapshots are read with a cursor, outside the query cache",
   "coach.events": "SSE replay advances its own cursor, outside the query cache",
@@ -248,9 +252,10 @@ function invalidatesTable(): InvalidatesTable {
         (input: unknown) => [
           ...legacyReads,
           ...adoptedRefreshes(
-            operation
-              .writes(operation.input.parse(input))
-              .map((resource) => ({ ...resource, ownerId: "owner" }))
+            (operation.name === "paper.import"
+              ? operation.writes()
+              : operation.writes(operation.input.parse(input))
+            ).map((resource) => ({ ...resource, ownerId: "owner" }))
           ),
         ],
       ]),
@@ -311,6 +316,7 @@ describe("every changed read is named by the command that changed it", () => {
   let closeDb: () => Promise<void> = async () => {}
 
   beforeAll(async () => {
+    vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
     const { db, client } = await createMigratedTestDb()
     closeDb = () => client.close()
     await db.insert(user).values({
@@ -438,6 +444,7 @@ describe("every changed read is named by the command that changed it", () => {
   }, 240_000)
 
   afterAll(async () => {
+    vi.unstubAllEnvs()
     await closeDb()
   })
 

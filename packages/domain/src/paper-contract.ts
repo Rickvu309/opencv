@@ -24,7 +24,6 @@ import {
   paperDocNameSchema,
   paperDocStatusSchema,
   paperDuplicateInputSchema,
-  paperImportInputSchema,
   paperKeepTwoPagesInputSchema,
   paperKeywordGapInputSchema,
   paperRenameInputSchema,
@@ -49,7 +48,7 @@ export const paperCheckSchema = z
 
 const paperPageChoiceSchema = z.enum(["unset", "keep"])
 
-const paperViewSchema = z
+export const paperViewSchema = z
   .object({
     id: paperIdSchema,
     name: z.string(),
@@ -347,15 +346,7 @@ export const paperContract = commandContract({
     step: () => "Stop sharing",
     invalidates: () => [{ query: "paper.shared" }],
   }),
-  "paper.import": commandEntry({
-    description: "Create a CV from an uploaded file.",
-    input: paperImportInputSchema,
-    output: paperViewSchema,
-    coach: "auto",
-    destructive: false,
-    step: () => "Import a file",
-    invalidates: listChanged,
-  }),
+
   "paper.dismissCheck": commandEntry({
     description: "Dismiss an import check.",
     input: paperDismissCheckInputSchema,

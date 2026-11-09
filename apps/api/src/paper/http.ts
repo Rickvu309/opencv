@@ -2,6 +2,9 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  paperPackageStageInputSchema,
+  catalog,
+  parsePaperId,
   parseFileId,
   parseUserId,
   personActor,
@@ -9,6 +12,9 @@ import {
 } from "@workspace/domain"
 import { Hono } from "hono"
 
+import { createId } from "../id.js"
+import { PaperPackageRefusal } from "./package-errors.js"
+import { stageWordPackage } from "./package-store.js"
 import type { Auth } from "../auth.js"
 import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../http-json.js"
@@ -271,6 +277,30 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     let bytes: Buffer | undefined = Buffer.from(await file.arrayBuffer())
     let savedId: string | undefined
     try {
+      if (
+        process.env.PAPER_PACKAGE_ENABLED === "true" &&
+        file.name.toLowerCase().endsWith(".docx")
+      ) {
+        const input = paperPackageStageInputSchema.safeParse({
+          requestId: c.req.header("idempotency-key") ?? createId(),
+          name: file.name,
+          kind: c.req.query("kind") ?? "cv",
+        })
+        if (!input.success)
+          throw new CommandError(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Choose a valid document name, kind, and upload key."
+          )
+        const staged = await stageWordPackage(c.var.userId, input.data, bytes)
+        const imported = await withImportSignal(c.req.raw.signal, () =>
+          registry.execute({
+            name: catalog["paper.import"].name,
+            input: { generation: "package", stageId: staged.stageId },
+            actor: person(c.var.userId),
+          })
+        )
+        return c.json(successEnvelope(imported.output))
+      }
       const saved = await saveFile({
         userId: parseUserId(c.var.userId),
         name: file.name,
@@ -283,18 +313,30 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       void bytes
       const imported = await withImportSignal(c.req.raw.signal, () =>
         registry.execute({
-          name: "paper.import",
+          name: catalog["paper.import"].name,
           input: { fileId: saved.id },
           actor: person(c.var.userId),
         })
       )
-      return c.json(successEnvelope(imported.output))
+      savedId = undefined
+      const receipt = catalog["paper.import"].publicResult.parse(
+        imported.output
+      )
+      if ("generation" in receipt) return c.json(successEnvelope(receipt))
+      const document = await registry.read(
+        "paper.get",
+        { docId: parsePaperId(receipt.id) },
+        person(c.var.userId)
+      )
+      return c.json(successEnvelope(document))
     } catch (error) {
       bytes = undefined
       void bytes
       if (savedId) {
         await dropImportFileTheCommandRolledBack(c.var.userId, savedId)
       }
+      if (error instanceof PaperPackageRefusal)
+        throw new CommandError(ERROR_CODES.VALIDATION_ERROR, error.message)
       throw error
     }
   })
