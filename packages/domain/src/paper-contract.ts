@@ -13,6 +13,10 @@ import {
   paperEditsSchema,
 } from "./paper-doc/edits-schema.js"
 import {
+  paperPackageEditResultSchema,
+  paperPackageEditsSchema,
+} from "./paper-package.js"
+import {
   paperSyncInputSchema,
   paperSyncOutputSchema,
 } from "./paper-doc/sync.js"
@@ -239,11 +243,11 @@ export const paperContract = commandContract({
     input: z
       .object({
         docId: paperIdSchema,
-        basedOn: z.number().int().min(0),
-        edits: paperEditsSchema,
+        basedOn: z.union([z.number().int().min(0), z.string().uuid()]),
+        edits: z.union([paperEditsSchema, paperPackageEditsSchema]),
       })
       .strict(),
-    output: paperEditOutputSchema,
+    output: z.union([paperEditOutputSchema, paperPackageEditResultSchema]),
     coach: "confirm",
     destructive: false,
     step: () => "Edit the document",

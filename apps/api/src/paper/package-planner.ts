@@ -3,9 +3,9 @@ import { randomUUID } from "node:crypto"
 import {
   PAPER_PACKAGE_LIMITS,
   PAPER_PACKAGE_PROJECTOR,
+  paperPackageEditSchema,
   paperPackageProjectionSchema,
 } from "@workspace/domain"
-import { z } from "zod"
 
 import { insideTransaction } from "../db/context.js"
 import { PaperPackage } from "./package-engine.js"
@@ -17,27 +17,7 @@ import {
 } from "./package-pages.js"
 import { wordPackageBasis } from "./package-store.js"
 
-const text = z
-  .string()
-  .refine(
-    (value) => Buffer.byteLength(value) <= PACKAGE_LIMITS.targetBytes,
-    "This text is larger than the supported Word region."
-  )
-const replacement = z
-  .object({
-    op: z.literal("replaceText"),
-    targetId: z.string().regex(/^t_[a-f0-9]{64}$/),
-    before: text.refine((value) => value.length > 0),
-    after: text,
-  })
-  .strict()
-export const wordPackageEditSchema = z
-  .object({
-    docId: z.string().uuid(),
-    basedOn: z.string().uuid(),
-    edits: z.array(replacement).min(1).max(PACKAGE_LIMITS.replacements),
-  })
-  .strict()
+export const wordPackageEditSchema = paperPackageEditSchema
 
 export async function prepareWordPackage(owner: string, rawInput: unknown) {
   if (insideTransaction())

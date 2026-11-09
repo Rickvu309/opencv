@@ -25,6 +25,7 @@ import {
   packageFailure,
 } from "./package-pages.js"
 import { prepareWordPackage, wordPackageEditSchema } from "./package-planner.js"
+import { compareAndRestorePackage, readPackageHead } from "./package-restore.js"
 import { wordPackageBasis } from "./package-store.js"
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/)
@@ -463,7 +464,24 @@ export async function restoreWordCandidate(
   expectedRevision: string
 ) {
   const seal = await retained(owner, rawCandidate)
-  if (expectedRevision !== seal.forward.revision) return unavailable()
-  await requireHead(seal, seal.forward.revision)
-  return publish(seal, "restore")
+  const expected = seal.restore.parentRevision
+  if (
+    expected === null ||
+    expectedRevision !== seal.forward.revision ||
+    expected !== seal.forward.revision
+  )
+    return unavailable()
+  await readPackageHead(
+    owner,
+    seal.docId,
+    seal.incarnation,
+    seal.forward.revision
+  )
+  return compareAndRestorePackage(
+    owner,
+    seal.docId,
+    seal.incarnation,
+    expected,
+    seal.restore.revision
+  )
 }

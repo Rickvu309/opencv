@@ -114,6 +114,33 @@ function bindingObjects(sf: ts.SourceFile) {
   return found
 }
 
+function selectedCommands(sf: ts.SourceFile) {
+  const found: Array<{ name: string; activity: ts.Expression }> = []
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "addSelectedCommand" &&
+      node.arguments[0] &&
+      ts.isObjectLiteralExpression(node.arguments[0])
+    ) {
+      let name: string | null = null
+      let activity: ts.Expression | null = null
+      for (const prop of node.arguments[0].properties) {
+        if (!ts.isPropertyAssignment(prop)) continue
+        const key = propName(prop.name)
+        if (key === "name" && ts.isStringLiteral(prop.initializer))
+          name = prop.initializer.text
+        if (key === "activity") activity = prop.initializer
+      }
+      if (name && activity) found.push({ name, activity })
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(sf)
+  return found
+}
+
 function activityOf(binding: ts.ObjectLiteralExpression) {
   for (const prop of binding.properties) {
     if (!ts.isPropertyAssignment(prop) || propName(prop.name) !== "activity")
@@ -196,6 +223,14 @@ function classified() {
         if (writes.has(name)) throw new Error(`${name} is bound twice`)
         writes.set(name, writesActivity(activity, sf))
       }
+    }
+  }
+  for (const file of filesNamed(apiSrc, "package-edit.ts")) {
+    const sf = parse(file)
+    for (const selected of selectedCommands(sf)) {
+      if (writes.has(selected.name))
+        throw new Error(`${selected.name} is bound twice`)
+      writes.set(selected.name, writesActivity(selected.activity, sf))
     }
   }
 

@@ -103,6 +103,45 @@ export const paperPackageStageInputSchema = z
     kind: z.enum(["cv", "letter"]),
   })
   .strict()
+const packageText = z
+  .string()
+  .refine(
+    (value) =>
+      new TextEncoder().encode(value).byteLength <=
+      PAPER_PACKAGE_LIMITS.textBytes,
+    "This text is larger than the supported Word region."
+  )
+const packageReplacement = z
+  .object({
+    op: z.literal("replaceText"),
+    targetId: z.string().regex(/^t_[a-f0-9]{64}$/),
+    before: packageText.refine((value) => value.length > 0),
+    after: packageText,
+  })
+  .strict()
+export const paperPackageEditsSchema = z
+  .array(packageReplacement)
+  .min(1)
+  .max(20)
+export const paperPackageEditSchema = z
+  .object({
+    docId: identity,
+    basedOn: identity,
+    edits: paperPackageEditsSchema,
+  })
+  .strict()
+export const paperPackageEditResultSchema = paperPackageMetadataSchema
+  .extend({
+    incarnation: identity,
+    restore: z
+      .object({
+        id: identity,
+        digest: z.string().regex(/^[a-f0-9]{64}$/),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict()
 export const paperPackageStageSchema = paperPackageMetadataSchema
   .extend({ stageId: identity })
   .strict()
