@@ -1,3 +1,4 @@
+import { readPublicBytes } from "@/lib/public-bytes.ts"
 import { fontCovers, fontFacts } from "./font-file.ts"
 import { attr, byLocal, xmlDoc } from "./source-line.ts"
 
@@ -185,11 +186,7 @@ export function fontSentence(face: FontFace, painted: boolean) {
 async function fontBytes(url: string) {
   const cached = reads.get(url)
   if (cached) return cached
-  const pending = (async () => {
-    const response = await fetch(url, { signal: AbortSignal.timeout(4000) })
-    if (!response.ok) return null
-    return new Uint8Array(await response.arrayBuffer())
-  })().catch(() => null)
+  const pending = readPublicBytes(url)
   reads.set(url, pending)
   return pending
 }
