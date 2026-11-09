@@ -555,3 +555,67 @@ test("a split keeps escaped letters and leaves locked paragraphs unchanged", () 
   assert.equal(cell.status, "REFUSED")
   assert.equal(Buffer.from(cell.bytes).equals(Buffer.from(table)), true)
 })
+
+test("a numeric token, a comment, or a tracked mark stays unchanged", () => {
+  const stay = (body, edit, side) => {
+    const bytes = packageFromBody(body)
+    const got = applyCanvasBytes(bytes, edit, side)
+    assert.equal(got.status, "REFUSED")
+    assert.equal(Buffer.from(got.bytes).equals(Buffer.from(bytes)), true)
+  }
+  for (const [text, at] of [
+    ["A&#x26;B", 1],
+    ["A&#x26;B", 2],
+    ["caf&#233;", 0],
+    ["&#128512;X", 1],
+    ["a<!--c-->b", 1],
+    ["a<?pi x?>b", 1],
+    ["<![CDATA[ab]]>", 1],
+  ])
+    stay(
+      writing(text) + carrier(),
+      { op: "split", paragraph: KEY_A, at },
+      mintSide()
+    )
+  const mark = (kind) =>
+    `<w:rPr><w:${kind} w:id="9" w:author="A" w:date="2020-01-01T00:00:00Z"/></w:rPr>`
+  for (const kind of ["del", "moveFrom", "moveTo"])
+    stay(
+      writing("a") +
+        writing("next", `${PPR}${mark(kind)}`, ID_B, TID_B) +
+        carrier(),
+      { op: "mergePrevious", paragraph: KEY_B },
+      twoSide()
+    )
+  stay(
+    writing("", `${PPR}${mark("del")}`) + carrier(),
+    { op: "deleteParagraph", paragraph: KEY_A },
+    mintSide()
+  )
+  stay(
+    writing("ab", `${PPR}${mark("ins")}`) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace(
+      "</w:rPr>",
+      '<w:rPrChange w:id="9" w:author="A" w:date="2020-01-01T00:00:00Z"/></w:rPr>'
+    ) + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab").replace("<w:t>ab</w:t>", '<x:t xmlns:x="urn:x">ab</x:t>') +
+      carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+  stay(
+    writing("ab")
+      .replace("<w:r><w:rPr>", "<x:r><w:rPr>")
+      .replace("</w:r></w:p>", "</x:r></w:p>") + carrier(),
+    { op: "split", paragraph: KEY_A, at: 1 },
+    mintSide()
+  )
+})

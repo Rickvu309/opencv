@@ -385,7 +385,7 @@ export class Registry extends RegistryEntries {
       return finishIdempotent(idempotencyKey, publish, () =>
         this.replayByKey(
           actor.userId,
-          idempotencyKey,
+          idempotencyKey!,
           command.name,
           hash!,
           parsed

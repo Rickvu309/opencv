@@ -383,22 +383,39 @@ function classRefusal(paragraphs) {
   return null
 }
 
-function plainRun(run) {
+function word(node, local) {
+  return node?.qname === `w:${local}`
+}
+
+function tracked(node) {
+  return /^(?:ins|del|moveFrom|moveTo)$/.test(node.local)
+}
+
+function plainRun(run, xml) {
   let texts = 0
   for (const child of run.children) {
-    if (is(child, "t")) texts += 1
-    else if (!is(child, "rPr")) return false
+    if (word(child, "rPr")) {
+      if (descendants(child).some((item) => item.local.endsWith("PrChange")))
+        return false
+      continue
+    }
+    if (!word(child, "t")) return false
+    const raw = xml.slice(child.openEnd, child.closeStart)
+    if (/&#|</.test(raw)) return false
+    texts += 1
   }
   return texts > 0
 }
 
 function plainParagraph(paragraph) {
-  if (!is(paragraph.node.parent, "body") || isCarrier(paragraph)) return false
+  const node = paragraph.node
+  if (!word(node.parent, "body") || isCarrier(paragraph)) return false
+  if (descendants(node).some(tracked)) return false
   let props = 0
   let runs = 0
-  for (const child of paragraph.node.children) {
-    if (is(child, "pPr")) props += 1
-    else if (is(child, "r") && plainRun(child)) runs += 1
+  for (const child of node.children) {
+    if (word(child, "pPr")) props += 1
+    else if (word(child, "r") && plainRun(child, paragraph.xml)) runs += 1
     else return false
   }
   return props < 2 && runs > 0
@@ -407,10 +424,13 @@ function plainParagraph(paragraph) {
 function shapeRefusal(paragraphs) {
   const body = paragraphs[0]?.node.parent
   const last = paragraphs[paragraphs.length - 1]
-  if (!body || !is(body, "body") || paragraphs.length < 2 || !last)
+  if (!body || !word(body, "body") || paragraphs.length < 2 || !last)
     return "shape"
-  if (body.children.some((child) => !is(child, "p"))) return "shape"
-  if (!isCarrier(last) || last.node.children.some((child) => !is(child, "pPr")))
+  if (body.children.some((child) => !word(child, "p"))) return "shape"
+  if (
+    !isCarrier(last) ||
+    last.node.children.some((child) => !word(child, "pPr"))
+  )
     return "shape"
   if (paragraphs.slice(0, -1).some((paragraph) => !plainParagraph(paragraph)))
     return "shape"
