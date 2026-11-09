@@ -107,9 +107,23 @@ function queryPairs(search: string) {
   return pairs
 }
 
+export function consentQueryFromSearch(search: string) {
+  const stripped = search.replace(/^\?/, "")
+  const values: string[] = []
+  for (const part of stripped.split("&")) {
+    if (!part) continue
+    const split = part.indexOf("=")
+    const rawKey = split === -1 ? part : part.slice(0, split)
+    if (decoded(rawKey) !== "oauth_query") continue
+    values.push(decoded(split === -1 ? "" : part.slice(split + 1)))
+  }
+  if (values.length > 1) return null
+  return values[0] ?? stripped
+}
+
 export function scopesFromSearch(search: string) {
-  const outer = queryPairs(search)
-  const query = outer.get("oauth_query") ?? search.replace(/^\?/, "")
+  const query = consentQueryFromSearch(search)
+  if (query === null) return []
   const scope = queryPairs(query).get("scope") ?? ""
   return scope.split(/\s+/).filter(Boolean)
 }

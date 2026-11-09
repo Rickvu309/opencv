@@ -1,9 +1,11 @@
+import { consentQueryFromSearch } from "@workspace/domain"
+
 export function signedConsentQuery(search: string) {
-  return (
-    new URLSearchParams(search).get("oauth_query") ?? search.replace(/^\?/, "")
-  )
+  return consentQueryFromSearch(search)
 }
 
 export function authorizationResumePath(pathname: string, search: string) {
-  return `${pathname}?oauth_query=${encodeURIComponent(signedConsentQuery(search))}`
+  const query = signedConsentQuery(search)
+  if (query === null) return pathname
+  return `${pathname}?oauth_query=${encodeURIComponent(query)}`
 }

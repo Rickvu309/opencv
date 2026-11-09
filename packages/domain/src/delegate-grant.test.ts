@@ -9,6 +9,7 @@ import {
   proposalGrantAllows,
   registeredScopesFromDeclarations,
   resourcesForScopes,
+  consentQueryFromSearch,
   scopesFromSearch,
 } from "./delegate-grant.js"
 import { defineOperation, delegateDeclaration } from "./operation.js"
@@ -127,6 +128,18 @@ it("reads requested scopes from the consent query", () => {
   assert.deepEqual(
     scopesFromSearch(`oauth_query=${encodeURIComponent(inner)}`),
     ["connection.status", "job.read"]
+  )
+})
+
+it("refuses a repeated oauth_query instead of keeping the last one", () => {
+  const read = "client_id=agent&scope=connection.status%20job.read"
+  const write = "client_id=agent&scope=connection.status%20job.read%20job.write"
+  const search = `oauth_query=${encodeURIComponent(write)}&oauth_query=${encodeURIComponent(read)}`
+  assert.equal(consentQueryFromSearch(search), null)
+  assert.deepEqual(scopesFromSearch(search), [])
+  assert.deepEqual(
+    scopesFromSearch(`oauth_query=${encodeURIComponent(write)}`),
+    ["connection.status", "job.read", "job.write"]
   )
 })
 
