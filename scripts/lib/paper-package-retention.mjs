@@ -109,6 +109,12 @@ export function detect(text, file = "source.ts") {
         has(node, (child) => call(child, "eq", ["user.id", "owner"]))
     )
   if (!locked) add("candidate-retention-owner-lock")
+  if (
+    !has(capacity, (node) =>
+      call(node, "pruneUnreachableCandidates", ["owner"])
+    )
+  )
+    add("candidate-retention-prune")
   const refusal = has(
     capacity,
     (node) =>
