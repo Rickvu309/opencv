@@ -2,7 +2,6 @@ import {
   ERROR_CODES,
   delegateActorSchema,
   delegateDeclaration,
-  delegateToolAllowed,
   proposalGrantAllows,
   type Actor,
   type CoachAccess,
@@ -23,15 +22,18 @@ export function delegateAllowed(
   actor: Actor
 ) {
   if (actor.type !== "delegate") return true
-  return delegateToolAllowed({
-    name: entry.name,
-    delegate: entry.delegate,
-    coach: entry.coach,
-    resources: actor.resources,
-    reads: actor.reads,
-    writes: actor.writes,
-    scopes: actor.scopes,
-  })
+  if (
+    actor.resources !== "jobs" ||
+    !entry.name.startsWith("job.") ||
+    entry.coach === "never" ||
+    entry.coach === false
+  )
+    return false
+  return entry.delegate === "jobRead"
+    ? actor.reads === "allow" && actor.scopes.includes("job.read")
+    : entry.delegate === "reversibleJob" &&
+        actor.writes === "approval" &&
+        actor.scopes.includes("job.write")
 }
 
 export async function requireLiveDelegate(actor: DelegateActor) {

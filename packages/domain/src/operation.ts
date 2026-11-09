@@ -8,7 +8,7 @@ const legacyDelegateDeclarations = {
   reversibleJob: { resource: "job", access: "proposal" },
 } as const
 
-export type LegacyDelegate = keyof typeof legacyDelegateDeclarations
+type LegacyDelegate = keyof typeof legacyDelegateDeclarations
 export type DelegateDeclaration = {
   resource: string
   access: "read" | "proposal"

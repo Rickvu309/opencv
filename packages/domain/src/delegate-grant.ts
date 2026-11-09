@@ -4,9 +4,9 @@ import {
   type DelegateMarker,
 } from "./operation.js"
 
-export type StoredConnectionResources = { kind: "none" | "jobs" }
+type StoredConnectionResources = { kind: "none" | "jobs" }
 
-export function delegateScope(declaration: DelegateDeclaration) {
+function delegateScope(declaration: DelegateDeclaration) {
   return `${declaration.resource}.${declaration.access === "read" ? "read" : "write"}`
 }
 
@@ -45,33 +45,10 @@ export function resourcesForScopes(
   return { kind: jobs ? "jobs" : "none" }
 }
 
-export function grantedResources(
+function grantedResources(
   resources: StoredConnectionResources
 ): readonly string[] {
   return resources.kind === "jobs" ? ["job"] : []
-}
-
-export function delegateToolAllowed(input: {
-  name: string
-  delegate?: DelegateMarker
-  coach: "auto" | "confirm" | "never" | boolean
-  resources: "none" | "jobs"
-  reads: "allow"
-  writes: "approval"
-  scopes: readonly string[]
-}) {
-  if (input.coach === "never" || input.coach === false) return false
-  const declaration = delegateDeclaration(input.delegate)
-  if (!declaration) return false
-  if (!input.name.startsWith(`${declaration.resource}.`)) return false
-  if (
-    !grantedResources({ kind: input.resources }).includes(declaration.resource)
-  )
-    return false
-  if (!input.scopes.includes(delegateScope(declaration))) return false
-  return declaration.access === "read"
-    ? input.reads === "allow"
-    : input.writes === "approval"
 }
 
 export function proposalGrantAllows(

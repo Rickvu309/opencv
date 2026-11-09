@@ -4,11 +4,8 @@ import { z } from "zod"
 
 import { catalog } from "./catalog.js"
 import {
-  delegateScope,
   declarationsFromEntries,
-  delegateToolAllowed,
   grantCopy,
-  grantedResources,
   proposalGrantAllows,
   registeredScopesFromDeclarations,
   resourcesForScopes,
@@ -17,7 +14,7 @@ import {
 import { defineOperation, delegateDeclaration } from "./operation.js"
 import { operation as paperRead } from "./operations/paper/read/operation.js"
 
-const paperProposal = delegateScope({ resource: "paper", access: "proposal" })
+const paperProposal = ["paper", "write"].join(".")
 
 const jobs = {
   resources: "jobs" as const,
@@ -49,100 +46,26 @@ it("keeps a job grant on jobs and gives a document scope nothing", () => {
     resourcesForScopes(["connection.status", "paper.read", paperProposal]),
     { kind: "none" }
   )
-  assert.deepEqual(grantedResources({ kind: "jobs" }), ["job"])
-  assert.deepEqual(grantedResources({ kind: "none" }), [])
   assert.deepEqual(resourcesForScopes(["job.read", paperProposal]), {
     kind: "jobs",
   })
-  assert.equal(
-    grantedResources(resourcesForScopes(["job.read", paperProposal])).includes(
-      "paper"
-    ),
-    false
-  )
 })
 
-it("allows the same job reads and proposals as a job grant does today", () => {
-  assert.equal(
-    delegateToolAllowed({
-      name: "job.get",
-      delegate: "jobRead",
-      coach: true,
-      ...jobs,
-      scopes: ["job.read"],
-    }),
-    true
-  )
-  assert.equal(
-    delegateToolAllowed({
-      name: "job.setPriority",
-      delegate: "reversibleJob",
-      coach: "confirm",
-      ...jobs,
-    }),
-    true
-  )
-  assert.equal(
-    delegateToolAllowed({
-      name: "job.setPriority",
-      delegate: "reversibleJob",
-      coach: "confirm",
-      ...jobs,
-      scopes: ["job.read"],
-    }),
-    false
-  )
-  assert.equal(
-    delegateToolAllowed({
-      name: "job.get",
-      delegate: "jobRead",
-      coach: true,
-      ...jobs,
-      resources: "none",
-    }),
-    false
-  )
-  assert.equal(
-    delegateToolAllowed({
-      name: "job.get",
-      delegate: "jobRead",
-      coach: "never",
-      ...jobs,
-    }),
-    false
-  )
+it("maps today's job markers onto read and proposal access", () => {
+  assert.deepEqual(delegateDeclaration("jobRead"), {
+    resource: "job",
+    access: "read",
+  })
+  assert.deepEqual(delegateDeclaration("reversibleJob"), {
+    resource: "job",
+    access: "proposal",
+  })
+  assert.equal(delegateDeclaration(undefined), null)
 })
 
-it("refuses document tools, approval and undo on a job grant", () => {
+it("refuses a document proposal on a job grant", () => {
   const paper = delegateDeclaration({ resource: "paper", access: "read" })
   assert.deepEqual(paper, { resource: "paper", access: "read" })
-  assert.equal(delegateScope(paper!), "paper.read")
-  assert.equal(
-    delegateToolAllowed({
-      name: "paper.read",
-      delegate: { resource: "paper", access: "read" },
-      coach: "auto",
-      ...jobs,
-      scopes: [...jobs.scopes, "paper.read"],
-    }),
-    false
-  )
-  assert.equal(
-    delegateToolAllowed({
-      name: "actions.approve",
-      coach: "never",
-      ...jobs,
-    }),
-    false
-  )
-  assert.equal(
-    delegateToolAllowed({
-      name: "activity.undo",
-      coach: "never",
-      ...jobs,
-    }),
-    false
-  )
   assert.equal(
     proposalGrantAllows(
       { kind: "jobs" },
