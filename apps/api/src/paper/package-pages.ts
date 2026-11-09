@@ -87,12 +87,21 @@ export function encodePackageCursor(
   ).toString("base64url")
 }
 
+function withParagraph<
+  T extends { location: { paragraph: number }; paragraph?: string },
+>(item: T, keys: readonly string[] | undefined): T {
+  const key = keys?.[item.location.paragraph - 1]
+  if (!key) return item
+  return { ...item, paragraph: key }
+}
+
 export function packagePage(input: {
   metadata: PaperPackageMetadata
   projection: PaperPackageProjection
   owner: string
   key: string
   cursor?: string
+  paragraphKeys?: readonly string[]
 }): PaperPackageRead {
   const { metadata, projection, owner, key } = input
   let index = 0
@@ -162,11 +171,12 @@ export function packagePage(input: {
   ) {
     const region = projection.regions[index]
     if (!region) break
+    const keyed = withParagraph(region, input.paragraphKeys)
     let item: PaperPackageRead["regions"][number]
     let nextIndex = index + 1
     let nextOffset = 0
-    if (region.kind === "editable" && fits([region], nextIndex, 0)) {
-      item = region
+    if (keyed.kind === "editable" && fits([keyed], nextIndex, 0)) {
+      item = keyed
     } else {
       let text = ""
       for (const scalar of region.text.slice(offset)) {
@@ -193,6 +203,7 @@ export function packagePage(input: {
         complete,
         continuation: offset > 0,
       }
+      item = withParagraph(item, input.paragraphKeys)
       if (!complete) {
         nextIndex = index
         nextOffset = offset + text.length

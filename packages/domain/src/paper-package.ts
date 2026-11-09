@@ -34,6 +34,7 @@ const finiteText = z
 const editable = z
   .object({
     kind: z.literal("editable"),
+    paragraph: z.string().uuid().optional(),
     targetId: z.string().regex(/^t_[a-f0-9]{64}$/),
     text: finiteText,
     location,
@@ -67,6 +68,7 @@ const editable = z
 const locked = z
   .object({
     kind: z.literal("locked"),
+    paragraph: z.string().uuid().optional(),
     text: z.string(),
     location,
     reason: refusal,

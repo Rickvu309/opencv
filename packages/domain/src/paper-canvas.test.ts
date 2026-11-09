@@ -47,7 +47,7 @@ describe("blank page commits", () => {
     )
   })
 
-  it("accepts a mint, a split, a merge, and an empty delete", () => {
+  it("accepts a mint, a first write, a split, a merge, and an empty delete", () => {
     assert.equal(PAPER_CANVAS_PROFILE, "paper-canvas-1")
     assert.equal(
       z.toJSONSchema(paperCanvasCommitSchema, { io: "input", reused: "ref" })
@@ -57,6 +57,51 @@ describe("blank page commits", () => {
     assert.deepEqual(paperCanvasCommitSchema.parse({ op: "mint" }), {
       op: "mint",
     })
+    assert.deepEqual(
+      paperCanvasCommitSchema.parse({
+        op: "writeText",
+        docId,
+        basedOn,
+        paragraph,
+        text: "Hi",
+      }),
+      { op: "writeText", docId, basedOn, paragraph, text: "Hi" }
+    )
+    assert.equal(
+      paperCanvasCommitSchema.safeParse({
+        op: "writeText",
+        docId,
+        basedOn,
+        paragraph,
+        text: "",
+      }).success,
+      false
+    )
+    assert.equal(
+      paperCanvasCommitSchema.safeParse({
+        op: "writeText",
+        docId,
+        basedOn,
+        paragraph,
+        text: "a\nb",
+      }).success,
+      false
+    )
+    assert.equal(
+      paperPackageEditSchema.safeParse({
+        docId,
+        basedOn,
+        edits: [
+          {
+            op: "writeText",
+            targetId: `t_${"ab".repeat(32)}`,
+            before: "Hi",
+            after: "Hi",
+          },
+        ],
+      }).success,
+      false
+    )
     assert.deepEqual(
       paperCanvasCommitSchema.parse({
         op: "split",

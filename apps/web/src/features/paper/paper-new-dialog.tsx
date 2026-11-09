@@ -8,6 +8,32 @@ import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 
+const SAVED_WORDS_UNAVAILABLE = "Saved Word documents are unavailable."
+
+export async function openBlankPage(run: ReturnType<typeof useRunCommand>) {
+  try {
+    const created = await run("paper.canvas", { op: "mint" })
+    if (
+      created &&
+      typeof created === "object" &&
+      "docId" in created &&
+      typeof created.docId === "string"
+    ) {
+      return { minted: true as const, id: created.docId }
+    }
+    throw new Error("Could not start a blank page. Try again.")
+  } catch (cause) {
+    if (
+      !(cause instanceof Error) ||
+      cause.message !== SAVED_WORDS_UNAVAILABLE
+    ) {
+      throw cause
+    }
+  }
+  const created = await run("paper.create", { kind: "cv" })
+  return { minted: false as const, doc: created }
+}
+
 type CreateState = { pending: boolean; error: string | null }
 
 type CreateAction =
@@ -30,12 +56,14 @@ export function PaperNewDialog({
   step,
   onStepChange,
   onCreated,
+  onMinted,
   onChooseLetter,
   onImport,
 }: {
   step: "kind" | "gallery"
   onStepChange: (step: "kind" | "gallery") => void
   onCreated: (doc: PaperView) => void
+  onMinted?: (docId: string) => void
   onChooseLetter: () => void
   onImport: () => void
 }) {
@@ -66,6 +94,25 @@ export function PaperNewDialog({
     }
   }
 
+  async function startBlank() {
+    dispatch({ type: "create_started" })
+    try {
+      const opened = await openBlankPage(run)
+      if (opened.minted) onMinted?.(opened.id)
+      else onCreated(opened.doc)
+    } catch (cause) {
+      dispatch({
+        type: "create_failed",
+        message:
+          cause instanceof Error
+            ? cause.message
+            : "Could not start a blank page. Try again.",
+      })
+    } finally {
+      dispatch({ type: "create_settled" })
+    }
+  }
+
   if (step === "gallery") {
     return (
       <div className="space-y-3">
@@ -77,7 +124,7 @@ export function PaperNewDialog({
         <PaperTemplateGallery
           onUse={(templateId) => void applyTemplate(templateId)}
           onImport={onImport}
-          onBlank={() => void applyTemplate()}
+          onBlank={() => void startBlank()}
           pending={pending}
         />
       </div>

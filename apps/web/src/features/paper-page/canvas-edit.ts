@@ -39,6 +39,37 @@ export function blankDraft(): WritingDraft {
   }
 }
 
+export function draftFromRegions(
+  regions: readonly {
+    kind: string
+    text: string
+    paragraph?: string
+    reason?: { code: string }
+  }[]
+): WritingDraft | null {
+  const blocks: WritingBlock[] = []
+  for (const region of regions) {
+    if (!region.paragraph) continue
+    const writing =
+      region.kind === "editable" ||
+      (region.kind === "locked" && region.reason?.code === "EMPTY_TARGET")
+    if (!writing) continue
+    const previous = blocks[blocks.length - 1]
+    if (previous?.id === region.paragraph) {
+      previous.text += region.text
+      continue
+    }
+    blocks.push({ id: region.paragraph, text: region.text })
+  }
+  const first = blocks[0]
+  if (!first) return null
+  return {
+    blocks,
+    caret: { blockId: first.id, offset: 0 },
+    nextId: blocks.length + 1,
+  }
+}
+
 export function pointSpan(point: TextPoint): TextSpan {
   return { anchor: point, focus: point }
 }

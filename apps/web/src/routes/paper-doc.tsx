@@ -13,10 +13,15 @@ import {
   paperPagesKey,
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
-import { opensWritingCanvas } from "@/features/paper-page/canvas-edit.ts"
+import {
+  draftFromRegions,
+  opensWritingCanvas,
+} from "@/features/paper-page/canvas-edit.ts"
 import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
+import { authClient } from "@/lib/auth-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { ApiError } from "@/lib/api-error.ts"
 
@@ -67,11 +72,34 @@ export function PaperDocPage() {
   const docId = docIdFromPath(pathname)
   const parsedId = paperIdSchema.safeParse(docId)
   const validId = parsedId.success ? parsedId.data : null
+  const session = authClient.useSession()
+  const owner = session.data?.user.id ?? ""
   const docQuery = useQuery({
     queryKey: paperGetKey(validId ?? NO_DOC),
     queryFn: () => getPaper(docId),
     enabled: validId !== null,
   })
+  const packageMissing =
+    validId !== null &&
+    !docQuery.isLoading &&
+    !docQuery.data &&
+    docQuery.error instanceof ApiError &&
+    docQuery.error.code === ERROR_CODES.NOT_FOUND
+  const packageQuery = useQuery({
+    ...catalogClient.options(owner, "paper.read", {
+      docId: validId ?? NO_DOC,
+    }),
+    enabled: packageMissing && owner !== "",
+    retry: false,
+  })
+  const packagePage =
+    packageQuery.data && "regions" in packageQuery.data
+      ? packageQuery.data
+      : null
+  const seeded = packagePage ? draftFromRegions(packagePage.regions) : null
+  const packagePending =
+    packageMissing &&
+    (session.isPending || (owner !== "" && packageQuery.isLoading))
   const pagesQuery = useQuery({
     queryKey: paperPagesKey(validId ?? NO_DOC),
     queryFn: () => getPaperPages(docId),
@@ -84,7 +112,7 @@ export function PaperDocPage() {
   })
   const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
 
-  if (docQuery.isLoading) {
+  if (docQuery.isLoading || packagePending) {
     return (
       <section aria-label="Paper" className="p-4">
         <p>Loading documents</p>
@@ -92,6 +120,9 @@ export function PaperDocPage() {
     )
   }
   if (!docQuery.data) {
+    if (seeded && validId) {
+      return <WritingCanvas key={validId} docId={validId} seed={seeded} />
+    }
     const missing =
       validId === null ||
       (docQuery.error instanceof ApiError &&

@@ -619,3 +619,71 @@ test("a numeric token, a comment, or a tracked mark stays unchanged", () => {
     mintSide()
   )
 })
+
+test("the first words fill only an empty paragraph", () => {
+  const minted = mintBlankBytes()
+  const side = mintSide()
+  const wrote = applyCanvasBytes(
+    minted,
+    { op: "writeText", paragraph: KEY_A, text: "Hi" },
+    side
+  )
+  assert.equal(wrote.status, "APPLIED")
+  const parts = paragraphsOf(wrote.bytes)
+  assert.equal(contentOf(parts[0]), "Hi")
+  assert.equal(contentOf(parts[1]), "")
+  assert.deepEqual(wordIds(parts[0]), { paraId: ID_A, textId: TID_A })
+  assert.equal(wrote.sidecar.paragraphs[0].key, KEY_A)
+  assert.equal(parts[1].slice, paragraphsOf(minted)[1].slice)
+  const spaced = applyCanvasBytes(
+    minted,
+    { op: "writeText", paragraph: KEY_A, text: " Hi " },
+    side
+  )
+  assert.equal(spaced.status, "APPLIED")
+  assert.match(mainXml(spaced.bytes), /<w:t xml:space="preserve"> Hi <\/w:t>/)
+  assert.equal(contentOf(paragraphsOf(spaced.bytes)[0]), " Hi ")
+  const ampersand = applyCanvasBytes(
+    minted,
+    { op: "writeText", paragraph: KEY_A, text: "R&D" },
+    side
+  )
+  assert.equal(contentOf(paragraphsOf(ampersand.bytes)[0]), "R&D")
+  const typed = fillPaintedText(minted, "Hi")
+  const again = applyCanvasBytes(
+    typed,
+    { op: "writeText", paragraph: KEY_A, text: "Yo" },
+    side
+  )
+  assert.equal(again.status, "REFUSED")
+  assert.equal(Buffer.from(again.bytes).equals(Buffer.from(typed)), true)
+  const carrierWrite = applyCanvasBytes(
+    minted,
+    { op: "writeText", paragraph: KEY_C, text: "No" },
+    side
+  )
+  assert.equal(carrierWrite.status, "REFUSED")
+  assert.equal(
+    Buffer.from(carrierWrite.bytes).equals(Buffer.from(minted)),
+    true
+  )
+  const broken = applyCanvasBytes(
+    minted,
+    { op: "writeText", paragraph: KEY_A, text: "a\nb" },
+    side
+  )
+  assert.equal(broken.status, "REFUSED")
+  const opened = split(minted, side, 0)
+  const filled = applyCanvasBytes(
+    opened.bytes,
+    {
+      op: "writeText",
+      paragraph: opened.sidecar.paragraphs[0].key,
+      text: "Hi",
+    },
+    opened.sidecar
+  )
+  assert.equal(filled.status, "APPLIED")
+  assert.equal(contentOf(paragraphsOf(filled.bytes)[0]), "Hi")
+  assert.equal(contentOf(paragraphsOf(filled.bytes)[1]), "")
+})

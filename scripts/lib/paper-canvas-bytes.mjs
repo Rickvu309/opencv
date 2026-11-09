@@ -1,16 +1,15 @@
 import { randomUUID } from "node:crypto"
 import { deflateRawSync, inflateRawSync } from "node:zlib"
 
-const WORD = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-const REL =
+export const WORD =
+  "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+export const REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-const PKG = "http://schemas.openxmlformats.org/package/2006/relationships"
-const TYPES = "http://schemas.openxmlformats.org/package/2006/content-types"
-const W14 = "http://schemas.microsoft.com/office/word/2010/wordml"
-const PPR = '<w:pStyle w:val="Normal"/><w:jc w:val="center"/>'
-const RPR = '<w:color w:val="231F20"/>'
-const SECT =
-  '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>'
+export const PKG =
+  "http://schemas.openxmlformats.org/package/2006/relationships"
+export const TYPES =
+  "http://schemas.openxmlformats.org/package/2006/content-types"
+export const W14 = "http://schemas.microsoft.com/office/word/2010/wordml"
 
 function crc32(bytes) {
   let value = 0xffffffff
@@ -62,7 +61,7 @@ function readZip(input) {
   return files
 }
 
-function writeZip(files) {
+export function writeZip(files) {
   const locals = []
   const central = []
   let offset = 0
@@ -145,7 +144,7 @@ function decode(value) {
     .replaceAll("&amp;", "&")
 }
 
-function escapeText(value) {
+export function escapeText(value) {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -439,11 +438,20 @@ function applied(before, bytes, next, side, paragraphs, options) {
   const after = paragraphsOf(packed)
     .map((paragraph) => contentOf(paragraph))
     .join("")
-  if (
-    !options.force &&
-    before.map((paragraph) => contentOf(paragraph)).join("") !== after
-  )
+  const beforeText = before.map((paragraph) => contentOf(paragraph)).join("")
+  if (!options.force && options.wrote == null && beforeText !== after)
     return refused(bytes, side, "text")
+  if (options.wrote != null) {
+    const parts = paragraphsOf(packed)
+    const moved =
+      parts.length !== before.length ||
+      contentOf(parts[options.at]) !== options.wrote ||
+      parts.some(
+        (paragraph, at) =>
+          at !== options.at && contentOf(paragraph) !== contentOf(before[at])
+      )
+    if (moved) return refused(bytes, side, "text")
+  }
   return {
     status: "APPLIED",
     bytes: packed,
@@ -452,14 +460,14 @@ function applied(before, bytes, next, side, paragraphs, options) {
   }
 }
 
-function runXml(text, rPr) {
+export function runXml(text, rPr) {
   const space =
     text.startsWith(" ") || text.endsWith(" ") ? ' xml:space="preserve"' : ""
   const props = rPr ? `<w:rPr>${rPr}</w:rPr>` : ""
   return `<w:r>${props}<w:t${space}>${escapeText(text)}</w:t></w:r>`
 }
 
-function paraXml(ids, pPr, inners) {
+export function paraXml(ids, pPr, inners) {
   const attrs = `${ids.paraId ? ` w14:paraId="${ids.paraId}"` : ""}${ids.textId ? ` w14:textId="${ids.textId}"` : ""}`
   const props = pPr != null ? `<w:pPr>${pPr}</w:pPr>` : ""
   return `<w:p${attrs}>${props}${inners.join("")}</w:p>`
@@ -505,7 +513,31 @@ export function applyCanvasBytes(bytes, edit, side, options = {}) {
     return mergeAt(bytes, xml, paragraphs, source, side, index, take, options)
   if (edit.op === "deleteParagraph")
     return deleteAt(bytes, xml, paragraphs, source, side, index, options)
+  if (edit.op === "writeText")
+    return writeEmpty(bytes, xml, paragraphs, source, side, index, edit.text)
   return refused(bytes, side, "op")
+}
+
+function writeEmpty(bytes, xml, paragraphs, source, side, index, text) {
+  const target = paragraphs[index]
+  if (
+    isCarrier(target) ||
+    !emptyTextNode(target) ||
+    typeof text !== "string" ||
+    text === "" ||
+    /[\r\n]/.test(text)
+  )
+    return refused(bytes, side, "write")
+  const next =
+    xml.slice(0, target.node.start) +
+    paraXml(wordIds(target), pPrInner(target), [
+      runXml(text, runsOf(target)[0].rPr),
+    ]) +
+    xml.slice(target.node.end)
+  return applied(paragraphs, bytes, next, side, rows(source), {
+    wrote: text,
+    at: index,
+  })
 }
 
 function splitAt(
@@ -594,36 +626,9 @@ function deleteAt(bytes, xml, paragraphs, source, side, index, options) {
   )
 }
 
-export function packageFromBody(body) {
-  const types = `<Types xmlns="${TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`
-  const root = `<Relationships xmlns="${PKG}"><Relationship Id="main" Type="${REL}/officeDocument" Target="word/document.xml"/></Relationships>`
-  const document = `<w:document xmlns:w="${WORD}" xmlns:r="${REL}" xmlns:w14="${W14}"><w:body>${body}</w:body></w:document>`
-  const styles = `<w:styles xmlns:w="${WORD}" xmlns:r="${REL}"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style></w:styles>`
-  const rels = `<Relationships xmlns="${PKG}"><Relationship Id="styles" Type="${REL}/styles" Target="styles.xml"/></Relationships>`
-  return writeZip([
-    ["[Content_Types].xml", types],
-    ["_rels/.rels", root],
-    ["word/document.xml", document],
-    ["word/styles.xml", styles],
-    ["word/_rels/document.xml.rels", rels],
-  ])
-}
-
-function painted(text, pPr = PPR, paraId = "11111111", textId = "11111112") {
-  return paraXml({ paraId, textId }, pPr, [runXml(text, RPR)])
-}
-
-export function mintBlankBytes() {
-  return packageFromBody(
-    painted("") + paraXml({ paraId: "22222221", textId: "22222222" }, SECT, [])
-  )
-}
-
-export function fillPaintedText(bytes, text) {
-  const xml = mainXml(bytes)
-  const from = "<w:t></w:t>"
-  if (xml.split(from).length !== 2) throw new Error("empty text is not unique")
-  return repack(bytes, xml.replace(from, `<w:t>${escapeText(text)}</w:t>`))
-}
-
-export const canvasMarks = { PPR, RPR, SECT }
+export {
+  canvasMarks,
+  fillPaintedText,
+  mintBlankBytes,
+  packageFromBody,
+} from "./paper-canvas-mint.mjs"

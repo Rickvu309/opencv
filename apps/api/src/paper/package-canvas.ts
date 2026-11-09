@@ -40,7 +40,7 @@ const loaded = createRequire(import.meta.url)(
 ) as {
   applyCanvasBytes: (
     bytes: Uint8Array,
-    edit: { op: string; paragraph: string; at?: number },
+    edit: { op: string; paragraph: string; at?: number; text?: string },
     side: {
       version: 2
       paragraphs: { key: string; ordinal: number; textIds: string[] }[]

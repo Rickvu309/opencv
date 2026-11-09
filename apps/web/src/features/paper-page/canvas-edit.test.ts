@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest"
 import {
   blankDraft,
   clearedOnReload,
+  draftFromRegions,
   commitComposition,
   deleteBackward,
   deleteForward,
@@ -235,6 +236,46 @@ describe("writing draft", () => {
         },
       })
     ).toBe(false)
+  })
+
+  it("seeds the empty paragraph id and skips the section carrier", () => {
+    const writing = "a11a11a1-a11a-4a11-8a11-a11a11a11a11"
+    const carrier = "b22b22b2-b22b-4b22-8b22-b22b22b22b22"
+    expect(
+      draftFromRegions([
+        {
+          kind: "locked",
+          text: "",
+          paragraph: writing,
+          reason: { code: "EMPTY_TARGET" },
+        },
+        {
+          kind: "locked",
+          text: "",
+          paragraph: carrier,
+          reason: { code: "UNSUPPORTED_TARGET_PROPERTY" },
+        },
+      ])
+    ).toEqual({
+      blocks: [{ id: writing, text: "" }],
+      caret: { blockId: writing, offset: 0 },
+      nextId: 2,
+    })
+    expect(draftFromRegions([])).toBeNull()
+    expect(
+      draftFromRegions([
+        {
+          kind: "editable",
+          text: "Hi",
+          paragraph: writing,
+        },
+        {
+          kind: "editable",
+          text: " there",
+          paragraph: writing,
+        },
+      ])?.blocks
+    ).toEqual([{ id: writing, text: "Hi there" }])
   })
 
   it("says the writing is not saved yet", () => {
