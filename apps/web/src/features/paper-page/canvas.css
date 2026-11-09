@@ -1,0 +1,69 @@
+.writing-sheet {
+  --gutter: 1.5rem;
+  --content: 42rem;
+  --breakout: 42rem;
+  display: grid;
+  grid-template-columns:
+    [full-width-start] minmax(var(--gutter), 1fr)
+    [breakout-start] minmax(0, calc((var(--breakout) - var(--content)) / 2))
+    [content-start] min(100% - var(--gutter) * 2, var(--content))
+    [content-end]
+    minmax(0, calc((var(--breakout) - var(--content)) / 2))
+    [breakout-end] minmax(var(--gutter), 1fr) [full-width-end];
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.writing-sheet > * {
+  grid-column: content;
+}
+
+.writing-page {
+  box-sizing: border-box;
+  min-block-size: 70vh;
+  padding-block: 4.5rem 1.5rem;
+  padding-inline: 0;
+  caret-color: var(--foreground);
+  font: inherit;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: inherit;
+  background: transparent;
+}
+
+.writing-page:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--foreground) 40%, transparent);
+  outline-offset: 0.25rem;
+}
+
+.writing-page p {
+  margin: 0;
+  margin-block-end: 0.85rem;
+  min-block-size: 1.6em;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.writing-note {
+  margin: 0;
+  padding-block: 0 3rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+@keyframes writing-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .writing-page {
+    animation: writing-in var(--duration-panel) var(--ease-panel) both;
+  }
+}

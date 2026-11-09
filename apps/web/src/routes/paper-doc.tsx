@@ -13,6 +13,8 @@ import {
   paperPagesKey,
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import { opensWritingCanvas } from "@/features/paper-page/canvas-edit.ts"
+import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
@@ -111,6 +113,9 @@ export function PaperDocPage() {
     )
   }
   const doc = docQuery.data
+  if (opensWritingCanvas(doc)) {
+    return <WritingCanvas docId={doc.id} />
+  }
   if (doc.kind === "letter") {
     const job =
       jobsQuery.data?.find((item) => item.letterDocId === doc.id) ?? null

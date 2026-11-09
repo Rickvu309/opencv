@@ -26,6 +26,7 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
   inbox: ["apply"],
   landing: [],
   paper: ["apply", "coach", "seed"],
+  "paper-page": [],
   seed: [],
   settings: ["auth", "connections"],
 }
