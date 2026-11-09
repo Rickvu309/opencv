@@ -1,8 +1,10 @@
 import { randomBytes, randomUUID } from "node:crypto"
 
 import {
+  PAPER_CANVAS_PROFILE,
   PAPER_PACKAGE_LIMITS,
   PAPER_PACKAGE_PROJECTOR,
+  paperCanvasCommitSchema,
   paperPackageProjectionSchema,
 } from "@workspace/domain"
 import { and, count, eq, inArray, sql } from "drizzle-orm"
@@ -52,7 +54,10 @@ const sealSchema = z
     owner: z.string(),
     docId: z.string().uuid(),
     incarnation: z.string().uuid(),
-    profile: z.literal(PACKAGE_PROFILE.version),
+    profile: z.union([
+      z.literal(PACKAGE_PROFILE.version),
+      z.literal(PAPER_CANVAS_PROFILE),
+    ]),
     inputHash: hash,
     reviewHash: hash,
     basis: identitySchema,
@@ -138,6 +143,44 @@ export async function prepareStoredWordPackage(
     return packageFailure("Prepare the Word edit before starting a save.")
   const plan = await prepareWordPackage(owner, rawInput)
   if (plan.kind === "unchanged") return plan
+  return persistWordPackage(owner, plan, PACKAGE_PROFILE.version, false)
+}
+
+type StoredPackagePlan = {
+  basis: {
+    docId: string
+    incarnation: string
+    revision: string
+    packageHash: string
+    sidecarHash: string
+    projectionHash: string
+    projector: string
+  }
+  inputHash: string
+  review: unknown
+  reviewHash: string
+  candidate: {
+    docId: string
+    incarnation: string
+    revision: string
+    bytes: Uint8Array
+    byteSize: number
+    packageHash: string
+    sidecar: { revision: string; packageHash: string }
+    sidecarHash: string
+    projection: unknown
+    projectionHash: string
+    projector: string
+  }
+}
+
+export async function persistWordPackage<Review>(
+  owner: string,
+  plan: Omit<StoredPackagePlan, "review"> & { review: Review },
+  profile: typeof PACKAGE_PROFILE.version | typeof PAPER_CANVAS_PROFILE,
+  freshRestore: boolean
+) {
+  if ((profile === PAPER_CANVAS_PROFILE) !== freshRestore) return unavailable()
   const basis = await wordPackageBasis(
     owner,
     plan.basis.docId,
@@ -158,11 +201,13 @@ export async function prepareStoredWordPackage(
       incarnation: plan.basis.incarnation,
       revision: restoreRevision,
     },
-    {
-      ...plan.candidate.sidecar,
-      revision: restoreRevision,
-      packageHash: plan.basis.packageHash,
-    }
+    freshRestore
+      ? undefined
+      : {
+          ...plan.candidate.sidecar,
+          revision: restoreRevision,
+          packageHash: plan.basis.packageHash,
+        }
   )
   const projection = paperPackageProjectionSchema.parse(restored.read())
   if (
@@ -179,7 +224,7 @@ export async function prepareStoredWordPackage(
     owner,
     docId: plan.basis.docId,
     incarnation: plan.basis.incarnation,
-    profile: PACKAGE_PROFILE.version,
+    profile,
     inputHash: plan.inputHash,
     reviewHash: plan.reviewHash,
     basis: {
@@ -415,7 +460,12 @@ export async function revalidateWordCandidate(
   prepared: Prepared
 ) {
   const seal = await retained(owner, prepared.candidate)
-  const input = wordPackageEditSchema.parse(rawInput)
+  const canvas = paperCanvasCommitSchema.safeParse(rawInput)
+  const structural = canvas.success && canvas.data.op !== "mint"
+  if (structural) {
+    if (seal.profile !== PAPER_CANVAS_PROFILE) return unavailable()
+  } else if (seal.profile === PAPER_CANVAS_PROFILE) return unavailable()
+  const input = structural ? canvas.data : wordPackageEditSchema.parse(rawInput)
   if (
     seal.inputHash !== packageDigest(input) ||
     seal.reviewHash !== packageDigest(prepared.review)

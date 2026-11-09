@@ -18,6 +18,7 @@ import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { createId } from "../id.js"
 import { editAsCoach, revertCoachEdit } from "./content-coach.js"
+import { registerCanvasCommit } from "./package-canvas.js"
 import { registerWordPackageEdit } from "./package-edit.js"
 import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
@@ -237,6 +238,7 @@ export function registerPaper(registry: Registry) {
       activity: noActivity,
     },
   })
+  registerCanvasCommit(registry)
   registerWordPackageEdit(registry, paperEdit, async (input, actor) => {
     if (typeof input.basedOn !== "number")
       throw new CommandError(

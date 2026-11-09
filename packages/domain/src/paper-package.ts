@@ -177,3 +177,8 @@ export type PaperPackageRead = z.infer<typeof paperPackageReadSchema>
 export type PaperPackageStageInput = z.infer<
   typeof paperPackageStageInputSchema
 >
+export {
+  PAPER_CANVAS_PROFILE,
+  paperCanvasCommitSchema,
+} from "./paper-canvas.js"
+export type { PaperCanvasCommit } from "./paper-canvas.js"
