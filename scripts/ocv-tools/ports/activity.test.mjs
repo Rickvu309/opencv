@@ -69,6 +69,40 @@ test("readable cwd, open files and command arguments block removal despite other
   }
 })
 
+test("the command's own shell does not block cleanup, and another program still does", () => {
+  function withStatus(io, statuses) {
+    const readFile = io.readFileSync
+    io.readFileSync = (file, encoding) =>
+      file in statuses ? statuses[file] : readFile(file, encoding)
+    return io
+  }
+  const own = withStatus(
+    proc({
+      50: { cwd: worktree, cmdline: `bash\0-c\0cd ${worktree}` },
+      51: { cwd: worktree, cmdline: "node\0scripts/ocv-tools.mjs\0cleanup" },
+    }),
+    {
+      "/proc/51/status": "Name:\tnode\nPPid:\t50\n",
+      "/proc/50/status": "Name:\tbash\nPPid:\t1\n",
+    }
+  )
+  assert.equal(processActivity(worktree, { io: own, selfPid: 51 }).safe, true)
+  const other = withStatus(
+    proc({
+      50: { cwd: worktree, cmdline: `bash\0-c\0cd ${worktree}` },
+      51: { cwd: "/", cmdline: "node\0scripts/ocv-tools.mjs\0cleanup" },
+      9001: { cwd: `${worktree}/apps` },
+    }),
+    {
+      "/proc/51/status": "Name:\tnode\nPPid:\t50\n",
+      "/proc/50/status": "Name:\tbash\nPPid:\t1\n",
+    }
+  )
+  const blocked = processActivity(worktree, { io: other, selfPid: 51 })
+  assert.equal(blocked.safe, false)
+  assert.match(blocked.reason, /process 9001/)
+})
+
 test("another worktree prefix and a vanished process do not block cleanup", () => {
   assert.equal(
     processActivity(worktree, {

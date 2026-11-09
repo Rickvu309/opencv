@@ -33,6 +33,7 @@ export function processActivity(
   {
     proc = "/proc",
     io = { readdirSync, readFileSync, readlinkSync, statSync },
+    selfPid = process.pid,
   } = {}
 ) {
   const warnings = new Set()
@@ -55,8 +56,22 @@ export function processActivity(
   } catch {
     return { safe: false, reason: "could not list active worktree processes" }
   }
+  const skip = new Set([String(selfPid)])
+  let cursor = String(selfPid)
+  for (let depth = 0; depth < 32; depth++) {
+    let status = ""
+    try {
+      status = io.readFileSync(join(proc, cursor, "status"), "utf8")
+    } catch {
+      break
+    }
+    const parent = /^PPid:\s*(\d+)/m.exec(String(status))?.[1]
+    if (!parent || parent === "0" || skip.has(parent)) break
+    skip.add(parent)
+    cursor = parent
+  }
   for (const pid of pids.filter((s) => /^\d+$/.test(s))) {
-    if (Number(pid) === process.pid) continue
+    if (skip.has(pid)) continue
     const dir = join(proc, pid)
     const uid = read(dir, (file) => io.statSync(file).uid, null)
     if (uid !== process.getuid()) continue
