@@ -40,6 +40,24 @@ export function parseFences(text, now) {
   return { active, expired }
 }
 
+export function keepOpenFences(active, stateOf) {
+  const open = []
+  const closed = []
+  const seen = new Set()
+  for (const fence of active) {
+    const state = String(stateOf(fence.issue) ?? "").toUpperCase()
+    if (state !== "CLOSED") {
+      open.push(fence)
+      continue
+    }
+    if (!seen.has(fence.issue)) {
+      seen.add(fence.issue)
+      closed.push({ issue: fence.issue })
+    }
+  }
+  return { open, closed }
+}
+
 function portOf(ctx, worktree) {
   if (!worktree) return null
   try {
@@ -56,10 +74,12 @@ export function brief(ctx, n, { role }) {
       `usage: ocv-tools brief <issue> --role ${Object.keys(ROLES).join("|")}`
     )
   const rules = ctx.ports.fs.read(RULES_FILE)
-  const { active: fences, expired } = parseFences(
-    ctx.ports.fs.read(FENCES_FILE),
-    nowOf(ctx)
+  const parsed = parseFences(ctx.ports.fs.read(FENCES_FILE), nowOf(ctx))
+  const { open: fences, closed } = keepOpenFences(
+    parsed.active,
+    (issue) => ctx.facts.load(issue, ["issue"]).issue.state
   )
+  const expired = parsed.expired
   const readOnly = READ_ONLY_ROLES.includes(role)
   const { issue } = ctx.facts.load(n, ["issue"])
   const { worktree, branch } = worktreeFor(ctx, n)
@@ -86,6 +106,9 @@ export function brief(ctx, n, { role }) {
     ...expired.map(
       (fence) =>
         `Fence for #${fence.issue} expired on ${fence.expires} and is not listed`
+    ),
+    ...closed.map(
+      (fence) => `Fence for #${fence.issue} is closed and is not listed`
     ),
     "",
     "Rules:",

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { FENCES_FILE, RULES_FILE, parseFences } from "./brief.mjs"
+import {
+  FENCES_FILE,
+  RULES_FILE,
+  keepOpenFences,
+  parseFences,
+} from "./brief.mjs"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts, issue } from "./ports/fake.mjs"
 
@@ -93,38 +98,46 @@ const PAPER_FENCE = {
   ],
 }
 
-test("the shipped fence holds the #1041 paths and an expiry date", () => {
-  const raw = readFileSync(FENCES_FILE, "utf8")
-  const [fence] = JSON.parse(raw).fences
-  assert.equal(fence.issue, 1041)
-  assert.match(fence.expires, /^\d{4}-\d{2}-\d{2}$/)
-  const { active } = parseFences(raw, Date.parse("2026-11-03T00:00:00Z"))
-  const paths = active.map((entry) => entry.path)
-  for (const path of [
-    "apps/web/src/features/paper/**",
-    "apps/api/src/paper/**",
-    "apps/web/src/features/coach/chat-api.ts",
-    "apps/web/src/lib/paper-selection.ts",
-    "apps/web/src/lib/paper-sync*",
-    "apps/web/src/test/paper-fixture.ts",
-    "apps/api/src/test/paper-client.ts",
-    "packages/domain/src/paper-doc/**",
-    "packages/paper-crdt/**",
-    "apps/web/package.json",
-    "apps/web/src/routes/paper-doc.tsx",
-  ])
-    assert.ok(paths.includes(path), path)
+test("the shipped fence file lists no path", () => {
+  const fences = JSON.parse(readFileSync(FENCES_FILE, "utf8")).fences
+  assert.deepEqual(fences, [])
 })
 
-test("brief prints the shipped fence before its expiry", () => {
+test("a brief prints no shipped fence", () => {
   const { text } = run(["brief", "90", "--role", "build"])
-  assert.match(text, /^Fenced paths \(never edit\):$/m)
-  assert.match(text, /^ {2}apps\/api\/src\/paper\/\*\* \(issue #1041\)$/m)
+  assert.match(text, /^Fenced paths: none$/m)
+  assert.doesNotMatch(text, /#1041/)
+})
+
+test("a fence for a closed issue is not printed", () => {
+  const files = { [FENCES_FILE]: JSON.stringify(PAPER_FENCE) }
+  const closed = run(["brief", "90", "--role", "build"], {
+    files,
+    issues: [
+      issue(90, { title: "feat: Keep my search" }),
+      issue(916, { state: "CLOSED", title: "old writing fence" }),
+    ],
+  })
+  assert.equal(closed.code, 0, closed.text)
+  assert.match(closed.text, /^Fenced paths: none$/m)
+  assert.doesNotMatch(closed.text, /features\/paper/)
+  assert.match(closed.text, /Fence for #916 is closed and is not listed/)
+  const parsed = parseFences(
+    JSON.stringify(PAPER_FENCE),
+    Date.parse("2026-11-03T00:00:00Z")
+  )
+  const kept = keepOpenFences(parsed.active, () => "CLOSED")
+  assert.equal(kept.open.length, 0)
+  assert.deepEqual(kept.closed, [{ issue: 916 }])
 })
 
 test("fenced paths come from the file and an expired fence is dropped", () => {
   const files = { [FENCES_FILE]: JSON.stringify(PAPER_FENCE) }
-  const live = run(["brief", "90", "--role", "build"], { files })
+  const issues = [
+    issue(90, { title: "feat: Keep my search" }),
+    issue(916, { title: "writing fence" }),
+  ]
+  const live = run(["brief", "90", "--role", "build"], { files, issues })
   assert.match(live.text, /^Fenced paths \(never edit\):$/m)
   assert.match(
     live.text,
@@ -133,6 +146,7 @@ test("fenced paths come from the file and an expired fence is dropped", () => {
   const expired = run(["brief", "90", "--role", "build"], {
     now: Date.parse("2026-12-02T00:00:00Z"),
     files,
+    issues,
   })
   assert.match(expired.text, /^Fenced paths: none$/m)
   assert.doesNotMatch(expired.text, /features\/paper/)
