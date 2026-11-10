@@ -228,6 +228,34 @@ export function replaceVisible(
   return place({ blocks, caret: known, nextId: draft.nextId }, known)
 }
 
+export type DraftBasis = {
+  revision: string | null
+  words: string
+}
+
+function storedDraft(value: unknown): WritingDraft | null {
+  if (!value || typeof value !== "object") return null
+  const wrapped = value as { draft?: unknown; blocks?: unknown }
+  const source =
+    !Array.isArray(wrapped.blocks) &&
+    wrapped.draft &&
+    typeof wrapped.draft === "object"
+      ? wrapped.draft
+      : value
+  const draft = source as WritingDraft
+  if (!draft || !Array.isArray(draft.blocks) || draft.blocks.length === 0) {
+    return null
+  }
+  const blocksOk = draft.blocks.every(
+    (block) =>
+      !!block && typeof block.id === "string" && typeof block.text === "string"
+  )
+  if (!blocksOk || typeof draft.nextId !== "number" || !draft.caret) {
+    return null
+  }
+  return place(draft, draft.caret)
+}
+
 export function loadDraft(
   docId: string,
   storage: Pick<Storage, "getItem">
@@ -235,20 +263,27 @@ export function loadDraft(
   try {
     const raw = storage.getItem(storageKey(docId))
     if (!raw) return null
-    const value = JSON.parse(raw) as WritingDraft
-    if (!value || !Array.isArray(value.blocks) || value.blocks.length === 0) {
+    return storedDraft(JSON.parse(raw) as unknown)
+  } catch {
+    return null
+  }
+}
+
+export function loadDraftBasis(
+  docId: string,
+  storage: Pick<Storage, "getItem">
+): DraftBasis | null {
+  try {
+    const raw = storage.getItem(storageKey(docId))
+    if (!raw) return null
+    const value = JSON.parse(raw) as { basis?: unknown }
+    if (!value || typeof value !== "object" || !value.basis) return null
+    const basis = value.basis as { revision?: unknown; words?: unknown }
+    if (typeof basis.words !== "string") return null
+    if (basis.revision !== null && typeof basis.revision !== "string") {
       return null
     }
-    const blocksOk = value.blocks.every(
-      (block) =>
-        !!block &&
-        typeof block.id === "string" &&
-        typeof block.text === "string"
-    )
-    if (!blocksOk || typeof value.nextId !== "number" || !value.caret) {
-      return null
-    }
-    return place(value, value.caret)
+    return { revision: basis.revision, words: basis.words }
   } catch {
     return null
   }
@@ -257,10 +292,14 @@ export function loadDraft(
 export function storeDraft(
   docId: string,
   draft: WritingDraft,
-  storage: Pick<Storage, "setItem">
+  storage: Pick<Storage, "setItem">,
+  basis?: DraftBasis | null
 ): boolean {
   try {
-    storage.setItem(storageKey(docId), JSON.stringify(draft))
+    storage.setItem(
+      storageKey(docId),
+      JSON.stringify(basis ? { draft, basis } : draft)
+    )
     return true
   } catch {
     return false

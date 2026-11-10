@@ -120,8 +120,15 @@ export function PaperDocPage() {
     )
   }
   if (!docQuery.data) {
-    if (seeded && validId) {
-      return <WritingPage key={validId} docId={validId} seed={seeded} />
+    if (seeded && validId && packagePage) {
+      return (
+        <WritingPage
+          key={validId}
+          docId={validId}
+          seed={seeded}
+          seedRevision={packagePage.revision}
+        />
+      )
     }
     const missing =
       validId === null ||

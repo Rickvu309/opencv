@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useReducer,
   useRef,
+  useSyncExternalStore,
 } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -17,10 +18,12 @@ import {
   insertText,
   keptOnThisComputer,
   loadDraft,
+  loadDraftBasis,
   pointSpan,
   replaceVisible,
   splitParagraph,
   storeDraft,
+  type DraftBasis,
   type TextPoint,
   type TextSpan,
   type WritingBlock,
@@ -29,12 +32,20 @@ import {
 import { pastePlain } from "./canvas-paste.ts"
 import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
+import {
+  setWritingConflict,
+  subscribeWritingConflict,
+  WRITING_CONFLICT_NOTE,
+  writingConflictDoc,
+} from "@/lib/writing-refresh.ts"
 import "./canvas.css"
 
 type CanvasState = {
   past: WritingDraft[]
   present: WritingDraft
   note: string
+  basis: DraftBasis | null
+  typed: boolean
 }
 
 type CanvasAction =
@@ -59,6 +70,14 @@ type CanvasAction =
   | { type: "undo" }
   | { type: "note"; note: string }
   | { type: "adopt"; blocks: WritingBlock[] }
+  | { type: "basis"; basis: DraftBasis; typed: boolean }
+  | { type: "replace"; draft: WritingDraft; basis: DraftBasis }
+
+function sameBasis(left: DraftBasis | null, right: DraftBasis | null) {
+  if (left === right) return true
+  if (!left || !right) return false
+  return left.revision === right.revision && left.words === right.words
+}
 
 function remember(state: CanvasState, present: WritingDraft): CanvasState {
   if (JSON.stringify(state.present) === JSON.stringify(present)) return state
@@ -67,12 +86,33 @@ function remember(state: CanvasState, present: WritingDraft): CanvasState {
     past: state.past.concat(state.present).slice(-50),
     present,
     note: state.note === "Saved" ? keptOnThisComputer() : state.note,
+    typed: true,
   }
 }
 
 function reduce(state: CanvasState, action: CanvasAction): CanvasState {
   if (action.type === "note") {
     return state.note === action.note ? state : { ...state, note: action.note }
+  }
+  if (action.type === "basis") {
+    if (sameBasis(state.basis, action.basis) && state.typed === action.typed) {
+      return state
+    }
+    return { ...state, basis: action.basis, typed: action.typed }
+  }
+  if (action.type === "replace") {
+    const same =
+      JSON.stringify(state.present) === JSON.stringify(action.draft) &&
+      sameBasis(state.basis, action.basis) &&
+      !state.typed
+    if (same) return state
+    return {
+      ...state,
+      past: [],
+      present: action.draft,
+      basis: action.basis,
+      typed: false,
+    }
   }
   if (action.type === "adopt") {
     const present = adoptIds(state.present, action.blocks)
@@ -81,7 +121,10 @@ function reduce(state: CanvasState, action: CanvasAction): CanvasState {
   if (action.type === "undo") {
     const present = state.past[state.past.length - 1]
     if (!present) return state
-    return { ...state, past: state.past.slice(0, -1), present }
+    const typed = state.basis
+      ? pageWords(present.blocks) !== state.basis.words
+      : state.typed
+    return { ...state, past: state.past.slice(0, -1), present, typed }
   }
   if (action.type === "composed") {
     const visible = replaceVisible(
@@ -243,12 +286,36 @@ function revealCaret(page: HTMLElement, scroll: HTMLElement) {
   target.scrollIntoView({ block: "nearest" })
 }
 
+function openSheet(
+  docId: string,
+  seed: WritingDraft | null,
+  seedRevision: string | null
+): CanvasState {
+  const stored = loadDraft(docId, localStorage)
+  const present = stored ?? seed ?? blankDraft()
+  const basis =
+    loadDraftBasis(docId, localStorage) ??
+    (seedRevision
+      ? { revision: seedRevision, words: pageWords(present.blocks) }
+      : null)
+  storeDraft(docId, present, localStorage, basis)
+  return {
+    past: [],
+    present,
+    note: keptOnThisComputer(),
+    basis,
+    typed: false,
+  }
+}
+
 function WritingSheet({
   docId,
   seed,
+  seedRevision,
 }: {
   docId: string
   seed: WritingDraft | null
+  seedRevision: string | null
 }) {
   const pageRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -261,38 +328,57 @@ function WritingSheet({
     text: string
     offset: number
   } | null>(null)
-  const [state, dispatch] = useReducer(reduce, null, () => {
-    const present = loadDraft(docId, localStorage) ?? seed ?? blankDraft()
-    storeDraft(docId, present, localStorage)
-    return {
-      past: [],
-      present,
-      note: keptOnThisComputer(),
-    }
-  })
+  const [state, dispatch] = useReducer(reduce, null, () =>
+    openSheet(docId, seed, seedRevision)
+  )
   const nextId = useRef(state.present.nextId)
+  const conflicted = useSyncExternalStore(
+    subscribeWritingConflict,
+    () => writingConflictDoc() === docId,
+    () => false
+  )
 
   useEffect(() => holdWritingCoachFocus(docId), [docId])
 
   useEffect(() => {
-    const kept = storeDraft(docId, state.present, localStorage)
+    const kept = storeDraft(docId, state.present, localStorage, state.basis)
     nextId.current = state.present.nextId
     const fallback = kept ? keptOnThisComputer() : clearedOnReload()
     dispatch({ type: "note", note: fallback })
     if (!kept) return
     const controller = new AbortController()
     const words = pageWords(state.present.blocks)
-    void settlePage(docId, state.present.blocks, controller.signal)
+    void settlePage(docId, state.present.blocks, controller.signal, {
+      basis: state.basis,
+      typed: state.typed,
+    })
       .then((result) => {
         if (controller.signal.aborted) return
+        if (result.conflict) {
+          setWritingConflict(docId)
+          return
+        }
+        if (result.replace && result.basis) {
+          setWritingConflict(null)
+          dispatch({
+            type: "replace",
+            draft: result.replace,
+            basis: result.basis,
+          })
+          return
+        }
+        if (result.basis) {
+          dispatch({ type: "basis", basis: result.basis, typed: false })
+        }
         if (result.blocks) dispatch({ type: "adopt", blocks: result.blocks })
         const note = savedNote(words, result)
         if (!note) return
+        if (note === "Saved") setWritingConflict(null)
         dispatch({ type: "note", note })
       })
       .catch(() => undefined)
     return () => controller.abort()
-  }, [docId, state.present])
+  }, [docId, state.basis, state.present, state.typed])
 
   useLayoutEffect(() => {
     const page = pageRef.current
@@ -495,7 +581,7 @@ function WritingSheet({
         </article>
       </div>
       <p className="writing-note" role="status">
-        {state.note}
+        {conflicted ? WRITING_CONFLICT_NOTE : state.note}
       </p>
     </section>
   )
@@ -504,9 +590,18 @@ function WritingSheet({
 export function WritingCanvas({
   docId,
   seed = null,
+  seedRevision = null,
 }: {
   docId: string
   seed?: WritingDraft | null
+  seedRevision?: string | null
 }) {
-  return <WritingSheet key={docId} docId={docId} seed={seed} />
+  return (
+    <WritingSheet
+      key={docId}
+      docId={docId}
+      seed={seed}
+      seedRevision={seedRevision}
+    />
+  )
 }

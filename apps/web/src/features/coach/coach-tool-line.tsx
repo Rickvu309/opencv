@@ -8,6 +8,8 @@ import { Button } from "@workspace/ui/components/button"
 import { ToolCallCard } from "@workspace/ui/components/tool-call-card"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
+import { ApiError } from "@/lib/api-error.ts"
+import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
 import {
   receiptReversalNote,
   receiptShowsUndo,
@@ -18,6 +20,18 @@ import type { CoachToolPart } from "./coach-parts.ts"
 
 export const UNDO_FAILED_COPY =
   "Couldn't undo this change. Try again, or edit it yourself."
+
+function undoFailureCopy(cause: unknown) {
+  if (!(cause instanceof ApiError)) return UNDO_FAILED_COPY
+  const reason = cause.message.trim()
+  if (
+    (cause.status === 409 || cause.code === "CONFLICT") &&
+    reason.includes("Undo was skipped")
+  ) {
+    return reason
+  }
+  return UNDO_FAILED_COPY
+}
 
 type ActionState = { busy: boolean; error: string | null }
 
@@ -88,8 +102,8 @@ export function CoachToolExtras({
     dispatch({ type: "started" })
     try {
       await onUndo()
-    } catch {
-      dispatch({ type: "failed", message: UNDO_FAILED_COPY })
+    } catch (cause) {
+      dispatch({ type: "failed", message: undoFailureCopy(cause) })
     } finally {
       dispatch({ type: "settled" })
     }
@@ -105,6 +119,7 @@ export function CoachToolExtras({
         <CoachApproval
           id={part.pendingActionId}
           status={part.approval ?? "pending"}
+          command={tool.name}
         />
       ) : null}
       {part.ok && part.detail ? <ReceiptDetail detail={part.detail} /> : null}
@@ -143,9 +158,11 @@ export function CoachToolLine(props: ExtrasProps) {
 function CoachApproval({
   id,
   status,
+  command,
 }: {
   id: string
   status: "pending" | "approved" | "denied" | "expired"
+  command: string
 }) {
   const client = useQueryClient()
   const { activeChatId } = useChatStore()
@@ -162,6 +179,7 @@ function CoachApproval({
         approve ? "actions.approve" : "actions.deny",
         { pendingActionId: parsePendingActionId(id) }
       )
+      if (approve && command === "paper.edit") notifyWritingRefresh()
       await refreshReads(client, [{ query: "chat.list" }])
       if (activeChatId)
         await refreshReads(client, [
