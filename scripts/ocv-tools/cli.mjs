@@ -7,7 +7,7 @@ import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import { slugify } from "./worktree.mjs"
 import { release } from "./claim.mjs"
 import { take } from "./take.mjs"
-import { file } from "./issue.mjs"
+import { TAKE_SWITCHES, file } from "./issue.mjs"
 import { COMMANDS, doctor, renderHelp, status } from "./report.mjs"
 import { rulesJob } from "./rules/command.mjs"
 import { cleanup, save } from "./work.mjs"
@@ -45,37 +45,32 @@ export function realCtx() {
   }
 }
 
+const VALUED = new Set([
+  "--desc",
+  "--title",
+  "--body-file",
+  "-m",
+  "-d",
+  "--reason",
+  "--pr",
+  "--issue",
+  "--name",
+  "--role",
+  ...TEMPLATE_FIELDS.map((f) => f.flag),
+])
+
 export function parseArgs(argv) {
-  const valued = new Set([
-    "--desc",
-    "--title",
-    "--body-file",
-    "-m",
-    "-d",
-    "--reason",
-    "--pr",
-    "--issue",
-    "--name",
-    "--role",
-    ...TEMPLATE_FIELDS.map((f) => f.flag),
-  ])
   const flags = {}
   const pos = []
   for (let i = 0; i < argv.length; i++) {
-    if (valued.has(argv[i])) flags[argv[i]] = argv[++i]
+    if (VALUED.has(argv[i])) flags[argv[i]] = argv[++i]
     else if (argv[i].startsWith("-")) flags[argv[i]] = true
     else pos.push(argv[i])
   }
   return { flags, pos }
 }
 
-const TAKE_BOOL = new Set([
-  "--resume",
-  "--no-install",
-  "--no-assign",
-  "--take",
-  "--dry-run",
-])
+const TAKE_BOOL = new Set(TAKE_SWITCHES)
 
 const RETIRED_FLAG = {
   "--desc": "-d",
@@ -141,7 +136,11 @@ function guardTake(flags, pos) {
   }
   if (targetKind(pos[0]) === "bad")
     badInput({ token: { ok: false, text: pos[0] } })
-  if (flags["--type"] != null && !TYPES.includes(flags["--type"]))
+  if (
+    targetKind(pos[0]) === "issue" &&
+    flags["--type"] != null &&
+    !TYPES.includes(flags["--type"])
+  )
     badInput({ flags, validateType: true })
   if (flags["-d"] != null && !slugify(flags["-d"]))
     badInput({ flags, desc: flags["-d"] })
@@ -156,9 +155,17 @@ function issueNumber(text, usage) {
 
 const HELP_WORDS = ["--help", "-h"]
 
+function asksForHelp(words) {
+  for (let i = 0; i < words.length; i++) {
+    if (VALUED.has(words[i])) i += 1
+    else if (HELP_WORDS.includes(words[i])) return true
+  }
+  return false
+}
+
 function command(ctx, cmd, rest) {
   const asked = COMMANDS.find((c) => c.name === cmd)
-  if (asked && rest.some((word) => HELP_WORDS.includes(word)))
+  if (asked && asksForHelp(rest))
     return {
       lines: [`Usage: scripts/ocv-tools.mjs ${asked.usage}`, asked.when],
       next: "scripts/ocv-tools.mjs help",

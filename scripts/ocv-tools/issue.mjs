@@ -28,12 +28,23 @@ export function titleWithType(title, type) {
 
 const shellQuote = (text) => `'${String(text).replaceAll("'", `'\\''`)}'`
 
+export const TAKE_SWITCHES = Object.freeze([
+  "--resume",
+  "--no-install",
+  "--no-assign",
+  "--take",
+  "--dry-run",
+])
+const FILE_SWITCHES = ["--dry-run"]
+
 function fieldArgument(field, flags, risk) {
   const given = String(flags[field.flag] ?? "").trim()
   if (field.kind === "dropdown") {
     const usable = field.options.includes(given.toLowerCase())
     if (usable) return `${field.flag} ${given.toLowerCase()}`
-    return field.required ? `${field.flag} <${field.options.join("|")}>` : null
+    return field.required
+      ? `${field.flag} '<${field.options.join("|")}>'`
+      : null
   }
   if (given) return `${field.flag} ${shellQuote(given)}`
   if (field.required || field.requiredForRisk === risk)
@@ -55,11 +66,15 @@ export function retryCommand(verb, flags, typed) {
     verb === "take" && typeof flags["-d"] === "string"
       ? `-d ${shellQuote(flags["-d"])}`
       : null
+  const kept = (verb === "take" ? TAKE_SWITCHES : FILE_SWITCHES).filter(
+    (name) => flags[name] === true
+  )
   return [
     "scripts/ocv-tools.mjs",
     verb === "take" ? `take ${title}` : `file --title ${title}`,
     words,
     ...fields,
+    ...kept,
   ]
     .filter(Boolean)
     .join(" ")
@@ -68,9 +83,13 @@ export function retryCommand(verb, flags, typed) {
 function draftOf(ctx, flags, verb) {
   const problems = []
   const given = flags["--title"]
-  const title = given ? titleWithType(given, flags["--type"]) : null
+  const wanted = flags["--type"]
+  const wrongType = wanted != null && !TYPES.includes(wanted)
+  const title = given ? titleWithType(given, wanted) : null
+  if (wrongType)
+    problems.push(`--type must be ${TYPES.join(", ")}, not "${wanted}"`)
   if (!given) problems.push("no --title")
-  else if (!title)
+  else if (!title && !wrongType)
     problems.push(
       `the title must start with one of ${TYPES.join(", ")} and a colon, for example "fix: ...", or pass --type`
     )
