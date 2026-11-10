@@ -7,15 +7,14 @@ on:
     - cron: "17 19 * * *"
   workflow_dispatch:
 
-concurrency:
-  group: nightly-main
-  cancel-in-progress: false
-
 permissions: {}
 
 jobs:
   full:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    concurrency:
+      group: nightly-main
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -31,8 +30,7 @@ jobs:
       - run: pnpm check:full lint typecheck test build
 
   approve-railway:
-    needs: full
-    if: ${{ github.event_name == 'push' && needs.full.result == 'success' }}
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

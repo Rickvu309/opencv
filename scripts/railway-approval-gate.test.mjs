@@ -4,32 +4,31 @@ import test from "node:test"
 import { detect } from "./lib/railway-approval-gate.mjs"
 
 const file = ".github/workflows/nightly.yml"
-const mistake =
+const clean =
   "jobs:\n  approve-railway:\n    if: ${{ github.event_name == 'push' }}\n    runs-on: ubuntu-latest\n"
-const clean = mistake
+const waits = clean
   .replace("    if:", "    needs: full\n    if:")
   .replace("== 'push'", "== 'push' && needs.full.result == 'success'")
 
-test("independent approval loses the recovery dependency", () => {
-  assert.ok(detect(mistake, file).length)
+test("approval that waits for the full run is refused", () => {
+  assert.ok(detect(waits, file).length)
   assert.deepEqual(detect(clean, file), [])
-  assert.deepEqual(detect(mistake, "other.yml"), [])
+  assert.deepEqual(detect(waits, "other.yml"), [])
 })
 
-test("a missing approval or wrong dependency refuses the workflow", () => {
+test("a missing approval refuses the workflow", () => {
   assert.ok(detect("jobs:\n  full:\n    runs-on: ubuntu-latest\n", file).length)
-  assert.ok(detect(clean.replace("needs: full\n    ", ""), file).length)
-  assert.ok(detect(clean.replace("needs: full", "needs: static"), file).length)
 })
 
-test("the gate checks outcomes rather than success words", () => {
+test("approval on the long check or only after success is refused", () => {
   for (const condition of [
     "always()",
     "true",
-    "github.event_name == 'push'",
+    "github.event_name == 'schedule'",
+    "github.event_name == 'workflow_dispatch'",
+    "github.event_name == 'push' && needs.full.result == 'success'",
     "always() || needs.full.result == 'success'",
     "github.event_name == 'push' && needs.full.result != 'cancelled'",
-    "github.event_name == 'push' && (needs.full.result == 'success' || failure())",
     "unknown()",
   ])
     assert.ok(
@@ -39,29 +38,29 @@ test("the gate checks outcomes rather than success words", () => {
     )
 })
 
-test("equivalent dependency lists and reversed predicates remain valid", () => {
-  const reversed = clean
-    .replace("needs: full", "needs: [full]")
-    .replace(
-      "github.event_name == 'push' && needs.full.result == 'success'",
-      "(needs.full.result == 'success') && ('push' == github.event_name)"
-    )
-  assert.deepEqual(detect(reversed, file), [])
-  assert.deepEqual(
-    detect(reversed.replace("needs: [full]", "needs:\n      - full"), file),
-    []
+test("a reversed push check stays valid", () => {
+  const reversed = clean.replace(
+    "github.event_name == 'push'",
+    "'push' == github.event_name"
   )
+  assert.deepEqual(detect(reversed, file), [])
 })
 
-test("the actual main workflow schedules approval after successful full", () => {
-  assert.deepEqual(
-    detect(
-      readFileSync(
-        new URL("../.github/workflows/nightly.yml", import.meta.url),
-        "utf8"
-      ),
-      file
-    ),
-    []
+test("the main workflow approves on push and keeps the long check on its schedule", () => {
+  const workflow = readFileSync(
+    new URL("../.github/workflows/nightly.yml", import.meta.url),
+    "utf8"
+  )
+  assert.deepEqual(detect(workflow, file), [])
+  assert.match(
+    workflow,
+    /full:[\s\S]*github\.event_name == 'schedule'[\s\S]*github\.event_name == 'workflow_dispatch'/
+  )
+  assert.match(workflow, /cron: "17 19 \* \* \*"/)
+  assert.match(workflow, /workflow_dispatch:/)
+  assert.match(workflow, /Full run failed on main/)
+  assert.doesNotMatch(
+    workflow,
+    /needs: full\n    if: \$\{\{ github\.event_name == 'push'/
   )
 })

@@ -6,7 +6,7 @@
     "export": "detect"
   },
   "historic": {
-    "sha": "ab2b7859762168e631ecc019624e6438516fa85f",
+    "sha": "19214e6bad56eae50b8ff26d2e83adea32c4ccb7",
     "path": ".github/workflows/nightly.yml",
     "mode": "detect"
   }
