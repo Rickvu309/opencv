@@ -84,7 +84,8 @@ function draftOf(ctx, flags, verb) {
   const problems = []
   const given = flags["--title"]
   const wanted = flags["--type"]
-  const wrongType = wanted != null && !TYPES.includes(wanted)
+  const wrongType =
+    wanted != null && !TYPES.includes(wanted) && !TITLE_PREFIX.test(given ?? "")
   const title = given ? titleWithType(given, wanted) : null
   if (wrongType)
     problems.push(`--type must be ${TYPES.join(", ")}, not "${wanted}"`)

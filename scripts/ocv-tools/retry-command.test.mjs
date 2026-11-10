@@ -51,3 +51,26 @@ test("a help word that is a flag's value does not print help", () => {
   const shown = runCli(["finish", "--body-file", "b.md", "--help"], run().ctx)
   assert.match(shown.text, /^Usage: scripts\/ocv-tools\.mjs finish/)
 })
+
+test("a wrong type is ignored when the title already carries a legal one", () => {
+  const { ports, ctx } = run({ issues: [], nextIssue: 83 })
+  const { code, text } = runCli(
+    [
+      "file",
+      "--title",
+      "feat: Keep my search",
+      "--type",
+      "feature",
+      "--what",
+      "The page forgets your search. This keeps it.",
+      "--done",
+      "- I come back and the box still has my words.",
+      "--risk",
+      "low",
+    ],
+    ctx
+  )
+  assert.equal(code, 0, text)
+  assert.match(text, /FILED #83: feat: Keep my search/)
+  assert.ok(ports.effects.some((e) => e.op === "createIssue"))
+})
