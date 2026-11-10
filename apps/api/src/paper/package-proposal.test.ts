@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto"
 
-import { PAPER_CANVAS_PROFILE, coachActor } from "@workspace/domain"
+import {
+  PAPER_CANVAS_PROFILE,
+  coachActor,
+  personActor,
+} from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import {
@@ -165,6 +169,69 @@ describe("Coach is told the saved page and sends replaceText", () => {
             .list()
             .commands.find((command) => command.name === "paper.edit")
         ).toMatchObject({ coach: "confirm" })
+      } finally {
+        if (previous === undefined) delete process.env.PAPER_PACKAGE_ENABLED
+        else process.env.PAPER_PACKAGE_ENABLED = previous
+      }
+    }))
+
+  it("starts on an imported page for the signed-in person", () =>
+    run(async () => {
+      const previous = process.env.PAPER_PACKAGE_ENABLED
+      process.env.PAPER_PACKAGE_ENABLED = "true"
+      try {
+        const staged = await stageWordPackage(
+          owner,
+          { requestId: randomUUID(), name: "LT13.docx", kind: "letter" },
+          bytes
+        )
+        const imported = await publishWordPackage(owner, staged.stageId)
+        const grounding = await resolveTurnGrounding({
+          registry,
+          actor: personActor(owner),
+          requestFocusDocId: imported.docId,
+          storedKind: null,
+          storedId: null,
+          memoryEnabled: false,
+        })
+        expect(grounding.focusDoc).toMatchObject({
+          id: imported.docId,
+          name: "LT13.docx",
+          kind: "letter",
+          revision: imported.revision,
+        })
+        expect(grounding.focusDoc?.outline).toContain("Harbor light")
+        expect(grounding.focusDoc?.outline).toContain(
+          `Saved revision ${imported.revision}`
+        )
+        await expect(
+          registry.read(
+            "paper.get",
+            { docId: imported.docId },
+            personActor(owner)
+          )
+        ).rejects.toMatchObject({ code: "NOT_FOUND" })
+        const listed = await registry.read("paper.list", {}, personActor(owner))
+        expect(
+          Array.isArray(listed) &&
+            listed.some(
+              (item) =>
+                item &&
+                typeof item === "object" &&
+                "id" in item &&
+                item.id === imported.docId
+            )
+        ).toBe(false)
+        await expect(
+          resolveTurnGrounding({
+            registry,
+            actor: personActor(randomUUID()),
+            requestFocusDocId: imported.docId,
+            storedKind: null,
+            storedId: null,
+            memoryEnabled: false,
+          })
+        ).rejects.toMatchObject({ code: "NOT_FOUND" })
       } finally {
         if (previous === undefined) delete process.env.PAPER_PACKAGE_ENABLED
         else process.env.PAPER_PACKAGE_ENABLED = previous
