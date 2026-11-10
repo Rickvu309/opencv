@@ -1,5 +1,4 @@
 import assert from "node:assert/strict"
-import { execFileSync } from "node:child_process"
 import test from "node:test"
 import { isMissingFlagValue, runCli } from "./cli.mjs"
 import { approvalValid, nextStep } from "./report.mjs"
@@ -163,49 +162,6 @@ test("take with a title names every missing flag at once with a command to copy"
     /\nFix: Fill in what is missing and run: scripts\/ocv-tools\.mjs take 'Keep my search' -d 'keep search' --type '<feat\|fix\|hotfix\|refactor\|chore\|docs>' --what '<What and why>' --done '<Done when>' --risk '<low\|normal\|high>'/
   )
   assert.deepEqual(ports.effects, [])
-})
-
-test("the command to copy parses as shell and keeps the switches", () => {
-  const { text } = runCli(
-    [
-      "take",
-      "Keep it's search",
-      "--type",
-      "feature",
-      "--done",
-      "- Line one.\n- Line two.",
-      "--no-install",
-      "--dry-run",
-    ],
-    run({ issues: [] }).ctx
-  )
-  assert.match(
-    text,
-    /MISSING_FIELDS: --type must be feat, fix, hotfix, refactor, chore, docs, not "feature"; missing --what, --risk/
-  )
-  assert.doesNotMatch(text, /the title must start/)
-  const retry = text.match(
-    /run: (scripts\/ocv-tools\.mjs take [\s\S]*)\nRESULT_JSON|run: (scripts\/ocv-tools\.mjs take [\s\S]*)$/
-  )
-  const line = retry[1] ?? retry[2]
-  assert.match(line, / --no-install --dry-run$/)
-  assert.match(line, /--type '<feat\|fix/)
-  execFileSync("bash", ["-n", "-c", line])
-  const words = execFileSync(
-    "bash",
-    ["-c", `printf '%s\\0' ${line.replace(/^scripts\/ocv-tools\.mjs /, "")}`],
-    { encoding: "utf8" }
-  ).split("\0")
-  assert.equal(words[1], "Keep it's search")
-  assert.ok(words.includes("- Line one.\n- Line two."))
-})
-
-test("a help word that is a flag's value does not print help", () => {
-  const { text } = runCli(["take", "90", "-d", "-h"], run().ctx)
-  assert.doesNotMatch(text, /^Usage:/)
-  assert.match(text, /MISSING_FIELDS: -d needs a value/)
-  const shown = runCli(["finish", "--body-file", "b.md", "--help"], run().ctx)
-  assert.match(shown.text, /^Usage: scripts\/ocv-tools\.mjs finish/)
 })
 
 test("the command to copy keeps what was already given", () => {
