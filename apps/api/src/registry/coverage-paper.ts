@@ -37,6 +37,8 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .commands.find((command) => command.name === "paper.import")
   if (!paperImport) throw new Error("Missing Paper import command")
   let syncPush = ""
+  let mintedDocId = ""
+  let mintedParagraph = ""
   const coachSentence = "First paragraph. Coach adds a sentence."
   async function startCoachEdit() {
     const paper = await run("paper.create", {
@@ -492,15 +494,76 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       arrange: async () => {
         process.env.PAPER_PACKAGE_ENABLED = "true"
       },
-      act: () => run("paper.canvas", { op: "mint" }),
-      assert: async (result) => {
-        delete process.env.PAPER_PACKAGE_ENABLED
-        expect(text(result.output, "generation")).toBe("package")
-        expect(text(result.output, "docId")).toMatch(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+      act: async () => {
+        const minted = await run("paper.canvas", { op: "mint" })
+        const docId = text(minted.output, "docId")
+        const revision = text(minted.output, "revision")
+        if (!docId || !revision) throw new Error("missing minted page")
+        const page = await registry.read(
+          "paper.read",
+          { docId },
+          personActor(userId)
         )
-        expect(result.reversal).toBeNull()
+        mintedDocId = docId
+        mintedParagraph = emptyWritingParagraph(page)
+        return run("paper.canvas", {
+          op: "writeText",
+          docId,
+          basedOn: revision,
+          paragraph: mintedParagraph,
+          text: "Harbor light",
+        })
+      },
+      assert: async (result) => {
+        expect(text(result.output, "generation")).toBe("package")
+        expect(text(result.output, "docId")).toBe(mintedDocId)
+        expect(result.reversal?.command).toBe("paper.restoreWord")
+        const page = await registry.read(
+          "paper.read",
+          { docId: mintedDocId },
+          personActor(userId)
+        )
+        expect(editableText(page)).toBe("Harbor light")
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        const page = await registry.read(
+          "paper.read",
+          { docId: mintedDocId },
+          personActor(userId)
+        )
+        expect(emptyWritingParagraph(page)).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        )
       },
     },
   ]
+}
+
+function emptyWritingParagraph(page: unknown) {
+  for (const region of list(page, "regions")) {
+    if (!region || typeof region !== "object") continue
+    const row = region as Record<string, unknown>
+    const reason = row.reason
+    if (
+      row.kind === "locked" &&
+      reason &&
+      typeof reason === "object" &&
+      "code" in reason &&
+      reason.code === "EMPTY_TARGET" &&
+      typeof row.paragraph === "string"
+    ) {
+      return row.paragraph
+    }
+  }
+  throw new Error("missing empty paragraph")
+}
+
+function editableText(page: unknown) {
+  for (const region of list(page, "regions")) {
+    if (!region || typeof region !== "object") continue
+    const row = region as Record<string, unknown>
+    if (row.kind === "editable" && typeof row.text === "string") return row.text
+  }
+  throw new Error("missing written text")
 }

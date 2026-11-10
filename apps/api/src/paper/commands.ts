@@ -20,6 +20,7 @@ import { createId } from "../id.js"
 import { editAsCoach, revertCoachEdit } from "./content-coach.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerWordPackageEdit } from "./package-edit.js"
+import { mintedPackagePaper, missingDocument } from "./package-list.js"
 import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
@@ -282,8 +283,16 @@ export function registerPaper(registry: Registry) {
       description: "Read one document.",
       coach: true,
       step: (input) => `Read document ${input.docId}`,
-      read: async (input, actor) =>
-        toPaper(await ownedPaper(actor.userId, input.docId)),
+      read: async (input, actor) => {
+        try {
+          return toPaper(await ownedPaper(actor.userId, input.docId))
+        } catch (error) {
+          if (actor.type !== "coach" || !missingDocument(error)) throw error
+          const page = await mintedPackagePaper(actor.userId, input.docId)
+          if (!page) throw error
+          return page
+        }
+      },
     })
   )
   registry.addQuery(

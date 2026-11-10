@@ -6,7 +6,12 @@ import {
   queryContract,
   queryEntry,
 } from "./contract.js"
-import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
+import {
+  fileIdSchema,
+  jobIdSchema,
+  paperIdSchema,
+  parsePaperId,
+} from "./ids.js"
 import { paperDocumentSchema } from "./paper-doc/document.js"
 import {
   paperEditOutcomeSchema,
@@ -271,7 +276,17 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Write on the page",
-    invalidates: () => [],
+    invalidates: (input) =>
+      input.op === "mint"
+        ? listChanged()
+        : [
+            { query: "paper.get", input: { docId: parsePaperId(input.docId) } },
+            {
+              query: "paper.outline",
+              input: { docId: parsePaperId(input.docId) },
+            },
+            ...listChanged(),
+          ],
   }),
   "paper.revertEdit": commandEntry({
     description: "Take back one Coach edit and keep later typing.",

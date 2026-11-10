@@ -18,7 +18,7 @@ import {
   registerBackendHooks,
   registry,
 } from "../test/registry-formal-support.js"
-import { flag, idOf, record, text } from "./coverage-helpers.js"
+import { flag, idOf, list, record, text } from "./coverage-helpers.js"
 import { coverageCases } from "./coverage-setup.js"
 import { undoKeyFor } from "./expectation.js"
 import { REVERSAL_EXPECT_PENDING } from "./expect-pending.js"
@@ -167,6 +167,41 @@ const LATER: Record<string, Later> = {
     survives: async (a, userId) =>
       (await paperName(userId, a).catch(() => "gone")) === "Renamed",
   },
+  "paper.canvas": {
+    act: async (a, run, userId) => {
+      process.env.PAPER_PACKAGE_ENABLED = "true"
+      const docId = text(a.output, "docId")
+      const basedOn = text(a.output, "revision")
+      if (!docId || !basedOn) throw new Error("missing page")
+      const page = await registry.read(
+        "paper.read",
+        { docId },
+        personActor(userId)
+      )
+      await run("paper.canvas", {
+        op: "split",
+        docId,
+        basedOn,
+        paragraph: writtenParagraph(page),
+        at: 6,
+      })
+    },
+    survives: async (a, userId) => {
+      const docId = text(a.output, "docId")
+      if (!docId) return false
+      const page = await registry.read(
+        "paper.read",
+        { docId },
+        personActor(userId)
+      )
+      const words = pageWords(page)
+      return (
+        words.includes("Harbor") &&
+        words.includes("light") &&
+        text(page, "revision") !== text(a.output, "revision")
+      )
+    },
+  },
   "paper.attachPhoto": {
     act: async (a, run, userId) => {
       const second = await saveFile({
@@ -257,6 +292,31 @@ const LATER: Record<string, Later> = {
     survives: async (a, userId) =>
       text(await reversalJob(userId, a), "cvDocId") === laterIds.docId,
   },
+}
+
+function writtenParagraph(page: unknown) {
+  for (const region of list(page, "regions")) {
+    if (!region || typeof region !== "object") continue
+    const row = region as Record<string, unknown>
+    if (
+      row.kind === "editable" &&
+      row.text === "Harbor light" &&
+      typeof row.paragraph === "string"
+    ) {
+      return row.paragraph
+    }
+  }
+  throw new Error("missing written paragraph")
+}
+
+function pageWords(page: unknown) {
+  return list(page, "regions")
+    .map((region) => {
+      if (!region || typeof region !== "object") return ""
+      const row = region as Record<string, unknown>
+      return typeof row.text === "string" ? row.text : ""
+    })
+    .join("\n")
 }
 
 const laterIds: { focusId?: string; docId?: string } = {}

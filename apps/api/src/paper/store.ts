@@ -29,6 +29,7 @@ import { getDb } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import { listMintedPackagePapers } from "./package-list.js"
 import {
   IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
@@ -113,13 +114,27 @@ export async function listPapers(
     .where(eq(paperDocs.userId, userId))
     .orderBy(desc(paperDocs.updatedAt))
   const needle = query?.trim().toLowerCase()
-  return rows
+  const stored = rows
     .filter((row) => (kind ? row.kind === kind : true))
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
     .flatMap((row) => {
       const paper = tryReadStoredPaper(row)
       return paper ? [toPaper(row, paper)] : []
     })
+  const seen = new Set(stored.map((item) => item.id))
+  const minted = (await listMintedPackagePapers(userId)).filter(
+    (item) =>
+      !seen.has(item.id) &&
+      (!kind || item.kind === kind) &&
+      (!needle || item.name.toLowerCase().includes(needle))
+  )
+  return [...stored, ...minted].sort((left, right) =>
+    left.updatedAt < right.updatedAt
+      ? 1
+      : left.updatedAt > right.updatedAt
+        ? -1
+        : 0
+  )
 }
 
 export async function createPaper(
