@@ -1,5 +1,7 @@
+import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
+import { handleApiError } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { PaperPackage } from "./package-engine.js"
 import { PaperPackageRefusal } from "./package-errors.js"
@@ -27,7 +29,7 @@ function inners(bytes: Buffer) {
 }
 
 describe("editable spans share one replacement decision", () => {
-  it("treats a refusal as a client error with its own reason", () => {
+  it("treats a refusal as a client error with its own reason", async () => {
     const error = new PaperPackageRefusal("BEFORE_TEXT_MISMATCH", "kept")
     expect(error).toBeInstanceOf(CommandError)
     expect(error.status).not.toBe(500)
@@ -38,6 +40,20 @@ describe("editable spans share one replacement decision", () => {
     )
     expect(error.detail).toEqual({})
     expect(error.packageDetail).toBe("kept")
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.get("/boom", () => {
+      throw error
+    })
+    const res = await app.request("/boom")
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: "BEFORE_TEXT_MISMATCH",
+        message: error.message,
+      },
+    })
   })
 
   it("replaces each editable piece and leaves the other piece bytes unchanged", async () => {
