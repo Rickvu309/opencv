@@ -39,7 +39,7 @@ const CASES = {
       body: { file: "/b.md", text: BODY },
       pull: { title: "feat: add a thing (#7)" },
     },
-    "The PR body needs ## Evidence.",
+    "3 problems. (1) The PR body needs ## Evidence. (2) The PR body needs ## Merge Danger. (3) Fill in Door, Blast Radius and all template placeholders.",
   ],
   BAD_TITLE: [
     { pull: { title: "Add a thing" } },
@@ -130,8 +130,21 @@ test("a body needs content under each section, and a readable file", () => {
   const body = (text, extra) => ({ body: { file: "/b.md", text, ...extra } })
   const check = (facts) => jobRows.find((r) => r.id === "BAD_BODY").check(facts)
   assert.equal(
-    check(body("## Summary\n\n## Evidence\nx\n## Merge Danger\nx")),
+    check(
+      body(
+        "## Summary\n\n## Evidence\n`node x.mjs`: exit 0\n## Merge Danger\n**Door:** two-way\n**Blast Radius:** jobs"
+      )
+    ),
     "The PR body needs ## Summary."
+  )
+  assert.equal(
+    check({
+      ...body(
+        "## Summary\nA fix.\n## Evidence\nIt works, see /home/me/log.\n## Merge Danger\n**Door:** two-way\n**Blast Radius:** jobs"
+      ),
+      pull: { title: "fix: a thing (#7)" },
+    }),
+    "4 problems. (1) The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture. (2) Evidence needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run. (3) A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self (4) A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
   )
   assert.equal(
     check({ body: { file: null, text: "" } }),
@@ -257,5 +270,8 @@ test("finish refuses a body with no Evidence before it pushes", () => {
     diff: { files: "", labels: [], ciYmlAtHead: true, deleted: {} },
   })
   assert.equal(verdict.refusals[0].id, "BAD_BODY")
-  assert.equal(verdict.refusals[0].message, "The PR body needs ## Evidence.")
+  assert.equal(
+    verdict.refusals[0].message,
+    "3 problems. (1) The PR body needs ## Evidence. (2) The PR body needs ## Merge Danger. (3) Fill in Door, Blast Radius and all template placeholders."
+  )
 })

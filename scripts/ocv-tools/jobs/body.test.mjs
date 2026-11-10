@@ -31,7 +31,7 @@ test("body refuses a bad note with the body rule's own message", () => {
   f.ctx.writeFile(`${f.ctx.cwd}/note.md`, "## Summary\n\nOnly this\n")
   const r = f.call("body", "91", "--body-file", "note.md")
   assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED BAD_BODY: The PR body needs ## Evidence\./)
+  assert.match(r.text, /REFUSED BAD_BODY: .*The PR body needs ## Evidence\./)
   assert.equal(f.effects("gh", "pr edit").length, 0)
 
   const fix = fixture({
@@ -43,7 +43,7 @@ test("body refuses a bad note with the body rule's own message", () => {
   assert.equal(missingCaught.code, 2, missingCaught.text)
   assert.match(
     missingCaught.text,
-    /REFUSED BAD_BODY: A fix needs a line: Caught by:/
+    /REFUSED BAD_BODY: .*A fix needs a line: Caught by:.*A fix needs a line: Introduced by:/
   )
   assert.equal(fix.effects("gh", "pr edit").length, 0)
 

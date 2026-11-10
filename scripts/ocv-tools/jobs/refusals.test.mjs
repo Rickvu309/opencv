@@ -31,7 +31,7 @@ test("finish refuses a body with no Evidence section before any push", () => {
   )
   const r = f.call("finish", "--body-file", "body.md")
   assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED BAD_BODY: The PR body needs ## Evidence\./)
+  assert.match(r.text, /REFUSED BAD_BODY: .*The PR body needs ## Evidence\./)
   assert.equal(f.effects("git", "push").length, 0)
 })
 
@@ -40,6 +40,27 @@ test("finish refuses a body file that cannot be read, even for a dry run", () =>
   const r = f.call("finish", "--body-file", "missing.md", "--dry-run")
   assert.equal(r.code, 2, r.text)
   assert.match(r.text, /REFUSED BAD_BODY: .*missing\.md cannot be read/)
+})
+
+test("a dry run checks only the body, so unsaved work does not stop it", () => {
+  const f = fixture({ dirty: " M source.mjs" })
+  const r = f.call("finish", "--body-file", "body.md", "--dry-run")
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /DRY RUN: the body passes/)
+  assert.equal(f.effects("git", "push").length, 0)
+  assert.equal(f.effects("git", "fetch").length, 0)
+  assert.equal(f.effects("gh", "pr create").length, 0)
+})
+
+test("a dry run names every body problem in one message", () => {
+  const f = fixture({ dirty: " M source.mjs" })
+  f.ctx.writeFile(`${f.ctx.cwd}/thin.md`, "## Summary\n\nOnly this\n")
+  const r = f.call("finish", "--body-file", "thin.md", "--dry-run")
+  assert.equal(r.code, 2, r.text)
+  assert.match(
+    r.text,
+    /REFUSED BAD_BODY: 3 problems\. \(1\) The PR body needs ## Evidence\. \(2\) The PR body needs ## Merge Danger\. \(3\) Fill in Door/
+  )
 })
 
 test("finish refuses unsaved work with the finish fix", () => {

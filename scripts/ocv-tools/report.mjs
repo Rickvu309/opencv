@@ -10,7 +10,7 @@ export const COMMANDS = [
   {
     name: "finish",
     usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
-    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft).",
+    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. --dry-run checks only the body and title, pushes nothing and opens nothing, so it works with unsaved changes.",
   },
   {
     name: "body",

@@ -102,25 +102,35 @@ function badBody(facts) {
   if (!body?.file) return "Pass --body-file <file>."
   if (body.unreadable) return `The body file ${body.file} cannot be read.`
   const text = body.text ?? ""
-  for (const heading of SECTIONS)
-    if (!sectionBody(text, heading)) return `The PR body needs ## ${heading}.`
+  const problems = SECTIONS.filter(
+    (heading) => !sectionBody(text, heading)
+  ).map((heading) => `The PR body needs ## ${heading}.`)
   if (
     !/^\*\*Door:\*\* (one-way|two-way)/m.test(text) ||
     !/^\*\*Blast Radius:\*\* [^<\s]/m.test(text) ||
     /<(diagram|screenshot|one-way|optional)[^>]*>/.test(text)
   )
-    return "Fill in Door, Blast Radius and all template placeholders."
+    problems.push("Fill in Door, Blast Radius and all template placeholders.")
   if (LOCAL_PATH.test(text))
-    return "The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture."
-  if (!hasRealEvidence(sectionBody(text, "Evidence")))
-    return "Evidence needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run."
+    problems.push(
+      "The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture."
+    )
+  const evidence = sectionBody(text, "Evidence")
+  if (evidence && !hasRealEvidence(evidence))
+    problems.push(
+      "Evidence needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run."
+    )
   if (FIX_TITLE.test(facts.pull?.title ?? "")) {
     if (!CAUGHT_BY.test(text))
-      return "A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self"
+      problems.push(
+        "A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self"
+      )
     if (!INTRODUCED_BY.test(text))
-      return "A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
+      problems.push("A fix needs a line: Introduced by: <sha>|#<pr>|unknown")
   }
-  return null
+  if (!problems.length) return null
+  if (problems.length === 1) return problems[0]
+  return `${problems.length} problems. ${problems.map((line, i) => `(${i + 1}) ${line}`).join(" ")}`
 }
 
 const badTitle = (facts) =>
