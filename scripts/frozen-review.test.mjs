@@ -309,6 +309,7 @@ async function approvalReplay(text) {
     frozenExecution: Symbol(),
     approvingReview: Symbol(),
     taskExecution: Symbol(),
+    confirmed: Symbol(),
     reviewReceiptKey: () => "key",
     getDb: () => ({
       update: () => ({ set: () => ({ where: async () => {} }) }),
