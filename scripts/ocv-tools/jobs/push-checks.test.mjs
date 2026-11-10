@@ -1,12 +1,14 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { existsSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import test from "node:test"
 import { SLOW, discoverTests } from "../../../packages/guards/run-tests.mjs"
 import {
   CI_ONLY_GUARDS,
   FAST_GUARDS,
+  TYPECHECK_PROJECTS,
   WORKSPACE_USES,
+  readsBuiltOutput,
   quickPlan,
   typecheckDirs,
   workspaceUses,
@@ -88,6 +90,15 @@ test("a change is typechecked in its package and in every package that uses it",
   assert.deepEqual(typecheckDirs(["apps/api/tsconfig.json"], USES), [
     "apps/api",
   ])
+  assert.deepEqual(typecheckDirs(["packages/ui/package.json"], USES), [
+    "apps/web",
+    "packages/ui",
+  ])
+  assert.deepEqual(typecheckDirs(["packages/paper-crdt/src/a.ts"], USES), [
+    "apps/api",
+    "apps/web",
+    "packages/paper-crdt",
+  ])
   assert.deepEqual(typecheckDirs(["packages/domain/src/a.ts"], USES), [
     "apps/api",
     "apps/web",
@@ -136,5 +147,48 @@ test("each typecheck step is incremental, emits nothing and runs in its package"
     assert.equal(step.cmd, "/repo/apps/web/node_modules/.bin/tsc")
     assert.ok(step.args.includes("--noEmit"))
     assert.ok(step.args.includes("--incremental"))
+  }
+})
+
+const BUILT = { name: "@workspace/domain", types: "./dist/index.d.ts" }
+
+test("a project that would read a package's built output is named", () => {
+  assert.deepEqual(readsBuiltOutput('{ "compilerOptions": {} }', [BUILT]), [
+    "@workspace/domain",
+  ])
+  assert.deepEqual(
+    readsBuiltOutput(
+      '{\n  /* note */\n  "compilerOptions": { "paths": { "@/*": ["./src/*"], "@workspace/domain": ["../domain/src/index.ts"] } } }',
+      [BUILT]
+    ),
+    []
+  )
+  assert.deepEqual(
+    readsBuiltOutput(
+      '{ "compilerOptions": { "customConditions": ["opencv-source"] } }',
+      [BUILT]
+    ),
+    []
+  )
+  assert.deepEqual(
+    readsBuiltOutput("{}", [{ name: "@workspace/ui", types: undefined }]),
+    []
+  )
+})
+
+test("no typecheck project on the push needs a build first", () => {
+  const packageOf = (dir) =>
+    JSON.parse(readFileSync(`${root}${dir}/package.json`, "utf8"))
+  for (const [dir, projects] of Object.entries(TYPECHECK_PROJECTS)) {
+    const used = WORKSPACE_USES[dir].map(packageOf)
+    for (const project of projects)
+      assert.deepEqual(
+        readsBuiltOutput(
+          readFileSync(`${root}${dir}/${project}`, "utf8"),
+          used
+        ),
+        [],
+        `${dir}/${project}`
+      )
   }
 })
