@@ -259,3 +259,53 @@ it("keeps unsent words when the approved page is newer", async () => {
     false
   )
 })
+
+it("says Saved for an imported letter and does not call that a conflict", async () => {
+  const address = "66666666-6666-4666-8666-666666666666"
+  const reason =
+    "Paper cannot safely preserve a property attached to this text yet."
+  const letter = {
+    blocks: [
+      { id: address, text: "1 Main Street", held: true, reason },
+      { id: PARAGRAPH, text: "Thank you" },
+    ],
+    caret: { blockId: PARAGRAPH, offset: 0 },
+    nextId: 3,
+  }
+  const regions = [
+    {
+      kind: "locked" as const,
+      paragraph: address,
+      text: "1 Main Street",
+      location: { paragraph: 1, kind: "paragraph" as const },
+      reason: { code: "UNSUPPORTED_TARGET_PROPERTY", message: reason },
+      complete: true,
+      continuation: false,
+    },
+    ...readPage("Thank you").regions,
+  ]
+  vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+    const path = String(url)
+    if (path.includes("/api/reads/paper.read")) {
+      return Response.json({
+        ok: true,
+        data: { ...readPage("Thank you"), regions },
+      })
+    }
+    return Response.json({ ok: true, data: {} })
+  })
+  render(<WritingPage docId={DOC} seed={letter} seedRevision={REVISION} />)
+  await waitFor(() =>
+    expect(screen.getByRole("status").textContent).toMatch(/\bSaved\b/)
+  )
+  expect(words()).toEqual(["1 Main Street", "Thank you"])
+  expect(screen.getByText(reason)).toBeVisible()
+  notifyWritingRefresh()
+  await waitFor(() =>
+    expect(screen.getByRole("status").textContent).toMatch(/\bSaved\b/)
+  )
+  expect(screen.getByRole("status").textContent).not.toContain(
+    WRITING_CONFLICT_NOTE
+  )
+  expect(words()).toEqual(["1 Main Street", "Thank you"])
+})

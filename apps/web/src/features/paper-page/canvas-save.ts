@@ -12,13 +12,14 @@ import {
   type LocalObservation,
   type PackageDraft,
 } from "@/lib/paper-package-ack.ts"
-import { catalogClient, runContractCommand } from "@/lib/contract-client.ts"
+import { runContractCommand } from "@/lib/contract-client.ts"
 import {
   draftFromRegions,
   type DraftBasis,
   type WritingBlock,
   type WritingDraft,
 } from "./canvas-edit.ts"
+import { readWholePackage } from "./package-read.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
@@ -119,6 +120,19 @@ export function wordsFromRegions(
     .filter((region) => !CARRIERS.has(region.reason?.code ?? ""))
     .map((region) => region.text)
     .join("\n")
+}
+
+export function packageWords(
+  regions: readonly {
+    kind: string
+    text: string
+    paragraph?: string
+    reason?: { code: string; message?: string }
+    location?: { kind: string }
+  }[]
+): string {
+  const draft = draftFromRegions(regions)
+  return draft ? pageWords(draft.blocks) : wordsFromRegions(regions)
 }
 
 export function decideSave(
@@ -260,15 +274,8 @@ function isPackagePage(value: unknown): value is PackagePage {
 }
 
 async function readPackage(docId: string, signal: AbortSignal) {
-  const options = catalogClient.options("page", "paper.read", { docId })
-  if (!options.queryFn) return null
-  const data = await options.queryFn({
-    client: commandClient(),
-    queryKey: options.queryKey,
-    signal,
-    meta: options.meta,
-  })
-  return isPackagePage(data) ? data : null
+  const page = await readWholePackage("page", docId, signal)
+  return page && isPackagePage(page) ? page : null
 }
 
 function writingTarget(regions: readonly PageRegion[]): WritingTarget | null {
@@ -593,7 +600,7 @@ async function settleOnce(
   try {
     const page = await readPackage(docId, signal)
     if (!page || signal.aborted) return missed(words)
-    const seen = wordsFromRegions(page.regions)
+    const seen = packageWords(page.regions)
     const changed = claim.basis ? words !== claim.basis.words : claim.typed
     const serverMoved =
       claim.basis?.revision != null && page.revision !== claim.basis.revision
@@ -635,7 +642,7 @@ async function settleOnce(
           })()
     if (!revision || signal.aborted) return missed(words)
     const next = await readPackage(docId, signal)
-    const readBack = next ? wordsFromRegions(next.regions) : null
+    const readBack = next ? packageWords(next.regions) : null
     if (!next || next.revision !== revision || readBack !== words) {
       return missed(words)
     }

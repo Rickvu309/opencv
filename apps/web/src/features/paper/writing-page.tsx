@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useReducer } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import { paperIdSchema } from "@workspace/domain"
 
 import {
@@ -11,9 +10,9 @@ import {
 } from "@/features/paper-page/canvas-edit.ts"
 import { pageWords } from "@/features/paper-page/canvas-save.ts"
 import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
+import { readWholePackage } from "@/features/paper-page/package-read.ts"
 import { WritingProposalCard } from "@/features/paper/writing-proposal.tsx"
 import { authClient } from "@/lib/auth-client.ts"
-import { catalogClient } from "@/lib/contract-client.ts"
 import {
   setWritingConflict,
   subscribeWritingRefresh,
@@ -47,11 +46,6 @@ function unsent(docId: string) {
   return pageWords(draft.blocks) !== basis.words
 }
 
-function revisionOf(data: unknown) {
-  if (!data || typeof data !== "object" || !("revision" in data)) return null
-  return typeof data.revision === "string" ? data.revision : null
-}
-
 export function WritingPage({
   docId,
   seed = null,
@@ -61,7 +55,6 @@ export function WritingPage({
   seed?: WritingDraft | null
   seedRevision?: string | null
 }) {
-  const queryClient = useQueryClient()
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
   const [shown, dispatch] = useReducer(pageReducer, {
@@ -79,22 +72,22 @@ export function WritingPage({
     if (!id.success || owner === "") {
       throw new Error("Could not read this page.")
     }
-    const data = await queryClient.fetchQuery(
-      catalogClient.options(owner, "paper.read", { docId: id.data })
+    const data = await readWholePackage(
+      owner,
+      id.data,
+      new AbortController().signal
     )
     if (unsent(docId)) {
       setWritingConflict(docId)
       return
     }
-    const next =
-      data && typeof data === "object" && "regions" in data
-        ? draftFromRegions(data.regions)
-        : null
+    if (!data) throw new Error("Could not read this page.")
+    const next = draftFromRegions(data.regions)
     if (!next) throw new Error("Could not read this page.")
     forgetDraft(docId, localStorage)
     setWritingConflict(null)
-    dispatch({ type: "reread", seed: next, revision: revisionOf(data) })
-  }, [docId, owner, queryClient])
+    dispatch({ type: "reread", seed: next, revision: data.revision })
+  }, [docId, owner])
 
   useEffect(
     () =>

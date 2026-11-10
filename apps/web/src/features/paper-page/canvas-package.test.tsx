@@ -31,7 +31,7 @@ vi.mock("@/lib/auth-client.ts", () => ({
   },
 }))
 
-function page(regions: unknown[]) {
+function page(regions: unknown[], nextCursor: string | null = null) {
   return {
     generation: "package",
     docId: DOC,
@@ -42,7 +42,7 @@ function page(regions: unknown[]) {
     byteSize: 128,
     projector: "paper-package-spans-1",
     regions,
-    nextCursor: null,
+    nextCursor,
   }
 }
 
@@ -144,5 +144,84 @@ describe("minted package page", () => {
     })
     render(<PaperDocPage />)
     expect(await screen.findByText("Document not found.")).toBeVisible()
+  })
+
+  it("shows the rest of an imported file and why a part is locked", async () => {
+    const later = "c33c33c3-c33c-4c33-8c33-c33c33c33c33"
+    const locked = "d44d44d4-d44d-4d44-8d44-d44d44d44d44"
+    const message = "This part stays locked."
+    const editable = (paragraph: string, text: string, target: string) => ({
+      kind: "editable" as const,
+      paragraph,
+      targetId: target,
+      text,
+      location: { paragraph: 1, kind: "paragraph" as const },
+      formatting: {
+        kind: "inherited" as const,
+        scope: "preserved-uncomputed" as const,
+      },
+      context: { paragraphText: text },
+    })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.includes("/api/reads/paper.read")) {
+          const body = JSON.parse(String(init?.body ?? "{}")) as {
+            cursor?: string
+          }
+          const data =
+            body.cursor === "rest"
+              ? page(
+                  [editable(later, "Later paragraph", `t_${"cd".repeat(32)}`)],
+                  null
+                )
+              : page(
+                  [
+                    editable(
+                      WRITING,
+                      "First paragraph",
+                      `t_${"ab".repeat(32)}`
+                    ),
+                    {
+                      kind: "locked",
+                      paragraph: locked,
+                      text: "Locked line",
+                      location: { paragraph: 2, kind: "paragraph" },
+                      reason: {
+                        code: "UNSUPPORTED_TARGET_PROPERTY",
+                        message,
+                      },
+                      complete: true,
+                      continuation: false,
+                    },
+                  ],
+                  "rest"
+                )
+          return Response.json({ ok: true, data })
+        }
+        return Response.json(
+          {
+            ok: false,
+            error: { code: ERROR_CODES.NOT_FOUND, message: "Missing" },
+          },
+          { status: 404 }
+        )
+      }
+    )
+    render(<PaperDocPage />)
+    expect(await screen.findByText("Later paragraph")).toBeVisible()
+    const article = screen.getByRole("article", { name: "Page" })
+    expect(
+      [...article.querySelectorAll(":scope > p")].map((node) =>
+        (node.textContent ?? "").replaceAll("\u200b", "")
+      )
+    ).toEqual(["First paragraph", "Locked line", "Later paragraph"])
+    expect(screen.getByText(message)).toBeVisible()
+    expect(
+      article
+        .querySelector(`p[data-block="${locked}"]`)
+        ?.getAttribute("contenteditable")
+    ).toBe("false")
   })
 })
