@@ -1,4 +1,6 @@
 import {
+  PAPER_CANVAS_PROFILE,
+  coachActor,
   commands,
   catalog,
   resourcesOverlap,
@@ -7,7 +9,7 @@ import {
   type QueryName,
   type QueryRef,
 } from "@workspace/domain"
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
@@ -18,6 +20,7 @@ import {
   inboxThreads,
   jobs,
   paperDocs,
+  paperPackageHeads,
   paperShares,
   user,
 } from "../db/schema.js"
@@ -26,7 +29,11 @@ import { coverageCases } from "./coverage-setup.js"
 import type { Registry } from "./registry.js"
 import type { Actor } from "@workspace/domain"
 
-type ReadSpec = { query: QueryName; input: Record<string, unknown> }
+type ReadSpec = {
+  query: QueryName
+  input: Record<string, unknown>
+  asCoach?: boolean
+}
 type Snapshot = Map<string, string>
 type Observation = {
   scenario: string
@@ -39,6 +46,7 @@ type InvalidatesTable = Record<string, (input: unknown) => QueryRef[]>
 type Ids = {
   jobs: string[]
   docs: string[]
+  minted: string[]
   tokens: string[]
   files: string[]
   chats: string[]
@@ -63,12 +71,14 @@ const SNAPSHOT_QUERIES: {
   "paper.list": () => [{}],
   "paper.read": () => [{ view: "library" }],
   "paper.export": null,
-  "paper.get": (ids) => ids.docs.map((docId) => ({ docId })),
+  "paper.get": (ids) =>
+    [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.pageCount": (ids) => ids.docs.map((docId) => ({ docId })),
   "paper.shared": (ids) => ids.tokens.map((token) => ({ token })),
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
-  "paper.outline": (ids) => ids.docs.map((docId) => ({ docId })),
+  "paper.outline": (ids) =>
+    [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.keywordGap": (ids) =>
     ids.docs.flatMap((docId) =>
       ids.jobs
@@ -149,9 +159,21 @@ async function arrangedIds(
       .from(files)
       .where(eq(files.userId, userId))
   ).map((row) => row.id)
+  const minted = (
+    await db
+      .select({ id: paperPackageHeads.docId })
+      .from(paperPackageHeads)
+      .where(
+        and(
+          eq(paperPackageHeads.userId, userId),
+          eq(paperPackageHeads.canvasProfile, PAPER_CANVAS_PROFILE)
+        )
+      )
+  ).map((row) => row.id)
   return {
     jobs: jobIds,
     docs: docIds,
+    minted,
     tokens,
     files: fileIds,
     chats: await owned(chats),
@@ -168,21 +190,36 @@ function keyOf(spec: ReadSpec) {
 }
 
 function specsFor(ids: Ids): ReadSpec[] {
+  const minted = new Set(ids.minted)
   return (Object.keys(SNAPSHOT_QUERIES) as QueryName[]).flatMap((query) => {
     const inputs = SNAPSHOT_QUERIES[query]
-    return inputs ? inputs(ids).map((input) => ({ query, input })) : []
+    if (!inputs) return []
+    return inputs(ids).map((input) => ({
+      query,
+      input,
+      ...(query === "paper.get" &&
+      typeof input.docId === "string" &&
+      minted.has(input.docId)
+        ? { asCoach: true }
+        : {}),
+    }))
   })
 }
 
 async function snapshot(
   registry: Registry,
   actor: Actor,
+  coach: Actor,
   specs: ReadSpec[]
 ): Promise<Snapshot> {
   const result: Snapshot = new Map()
   for (const spec of specs) {
     try {
-      const output = await registry.read(spec.query, spec.input, actor)
+      const output = await registry.read(
+        spec.query,
+        spec.input,
+        spec.asCoach ? coach : actor
+      )
       result.set(keyOf(spec), JSON.stringify(output))
     } catch (error) {
       result.set(
@@ -316,6 +353,11 @@ describe("every changed read is named by the command that changed it", () => {
   let closeDb: () => Promise<void> = async () => {}
 
   beforeAll(async () => {
+    const coach = coachActor(
+      userId,
+      "11111111-1111-4111-8111-111111111111",
+      "invalidation-minted"
+    )
     vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
     const { db, client } = await createMigratedTestDb()
     closeDb = () => client.close()
@@ -337,9 +379,9 @@ describe("every changed read is named by the command that changed it", () => {
       perform: () => Promise<unknown>
     ) => {
       const specs = specsFor(await arrangedIds(db, userId, touched))
-      const before = await snapshot(registry, person, specs)
+      const before = await snapshot(registry, person, coach, specs)
       const value = await perform()
-      const after = await snapshot(registry, person, specs)
+      const after = await snapshot(registry, person, coach, specs)
       readCount += specs.length
       for (const spec of specs) {
         asked.add(spec.query)
@@ -435,8 +477,8 @@ describe("every changed read is named by the command that changed it", () => {
         if (row.undoAssert) await row.undoAssert(result)
       }
       const finalSpecs = specsFor(await arrangedIds(db, userId, ""))
-      const first = await snapshot(registry, person, finalSpecs)
-      const second = await snapshot(registry, person, finalSpecs)
+      const first = await snapshot(registry, person, coach, finalSpecs)
+      const second = await snapshot(registry, person, coach, finalSpecs)
       controlDiffs = changedBetween(finalSpecs, first, second)
     })
     expect(undoSeen).toBeGreaterThan(0)
@@ -482,6 +524,18 @@ describe("every changed read is named by the command that changed it", () => {
 
   it("R1: every read a command changes is in its invalidates", () => {
     expect(gapsIn([...acts, ...reversals], invalidatesTable())).toEqual([])
+  })
+
+  it("a later page write changes the minted outline and Coach document read", () => {
+    const changed = acts
+      .filter((entry) => entry.command === "paper.canvas")
+      .flatMap((entry) => entry.changed)
+    const outline = changed.find((spec) => spec.query === "paper.outline")
+    const coachGet = changed.find(
+      (spec) => spec.query === "paper.get" && spec.asCoach
+    )
+    expect(typeof outline?.input.docId).toBe("string")
+    expect(coachGet?.input.docId).toBe(outline?.input.docId)
   })
 
   it("R2: an undo changes only reads that activity.undo refreshes", () => {

@@ -37,6 +37,9 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .commands.find((command) => command.name === "paper.import")
   if (!paperImport) throw new Error("Missing Paper import command")
   let syncPush = ""
+  let mintedDocId = ""
+  let mintedRevision = ""
+  let mintedParagraph = ""
   const coachSentence = "First paragraph. Coach adds a sentence."
   async function startCoachEdit() {
     const paper = await run("paper.create", {
@@ -502,5 +505,72 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         expect(result.reversal).toBeNull()
       },
     },
+    {
+      name: "paper.canvas",
+      arrange: async () => {
+        process.env.PAPER_PACKAGE_ENABLED = "true"
+        const minted = await registry.execute({
+          name: "paper.canvas",
+          input: { op: "mint" },
+          actor: personActor(userId),
+        })
+        const docId = text(minted.output, "docId")
+        const revision = text(minted.output, "revision")
+        if (!docId || !revision) throw new Error("missing minted page")
+        const page = await registry.read(
+          "paper.read",
+          { docId },
+          personActor(userId)
+        )
+        mintedDocId = docId
+        mintedRevision = revision
+        mintedParagraph = emptyWritingParagraph(page)
+      },
+      act: () =>
+        run("paper.canvas", {
+          op: "writeText",
+          docId: mintedDocId,
+          basedOn: mintedRevision,
+          paragraph: mintedParagraph,
+          text: "Harbor light",
+        }),
+      assert: async (result) => {
+        expect(text(result.output, "docId")).toBe(mintedDocId)
+        const page = await registry.read(
+          "paper.read",
+          { docId: mintedDocId },
+          personActor(userId)
+        )
+        expect(editableText(page)).toBe("Harbor light")
+      },
+    },
   ]
+}
+
+function emptyWritingParagraph(page: unknown) {
+  for (const region of list(page, "regions")) {
+    if (!region || typeof region !== "object") continue
+    const row = region as Record<string, unknown>
+    const reason = row.reason
+    if (
+      row.kind === "locked" &&
+      reason &&
+      typeof reason === "object" &&
+      "code" in reason &&
+      reason.code === "EMPTY_TARGET" &&
+      typeof row.paragraph === "string"
+    ) {
+      return row.paragraph
+    }
+  }
+  throw new Error("missing empty paragraph")
+}
+
+function editableText(page: unknown) {
+  for (const region of list(page, "regions")) {
+    if (!region || typeof region !== "object") continue
+    const row = region as Record<string, unknown>
+    if (row.kind === "editable" && typeof row.text === "string") return row.text
+  }
+  throw new Error("missing written text")
 }
