@@ -419,7 +419,54 @@ describe("Anthropic request-bound Coach runtime", () => {
         registry: { read: vi.fn(), execute: vi.fn() },
       })
     )
-    expect(parts.at(-1)?.type).toBe("error")
+    expect(parts.at(-1)).toEqual({
+      type: "error",
+      message: "The Coach hit its limit for this turn.",
+    })
+    expect(parts.some((part) => part.type === "finish")).toBe(false)
+  })
+
+  it("treats a cut-off tool call as the limit before reading its input", async () => {
+    const strict: ToolEntry = {
+      ...entry,
+      name: "paper.edit",
+      kind: "command",
+      input: z.object({
+        docId: z.string(),
+        basedOn: z.number(),
+        edits: z.array(z.unknown()),
+      }),
+    }
+    const { model } = fixture([
+      () =>
+        anthropicFixtureResponse(
+          [
+            {
+              type: "tool-call",
+              toolCallId: "cut",
+              toolName: "paper_edit",
+              input: "{}",
+            },
+          ],
+          "max_tokens"
+        ),
+    ])
+    const execute = vi.fn()
+    const parts = await collect(
+      streamAnthropicSteps({
+        model,
+        history: [],
+        system: "",
+        entries: [strict],
+        actor,
+        registry: { read: vi.fn(), execute },
+      })
+    )
+    expect(execute).not.toHaveBeenCalled()
+    expect(parts.at(-1)).toEqual({
+      type: "error",
+      message: "The Coach hit its limit for this turn.",
+    })
     expect(parts.some((part) => part.type === "finish")).toBe(false)
   })
 })

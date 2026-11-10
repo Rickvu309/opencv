@@ -303,3 +303,106 @@ it("saves the step after a tool when the model reports a large prompt", () =>
     expect(first.tools.some((tool) => tool.name === "job_list")).toBe(true)
     expect(first.tools.some((tool) => tool.name === "profile_get")).toBe(true)
   }))
+
+it("stores a cut-off reply as a limit and does not try it again", () =>
+  fixture(async ({ ownerId, taskId }, registry) => {
+    await getDb()
+      .update(coachTasks)
+      .set({ modelId: COACH_MODEL })
+      .where(eq(coachTasks.id, taskId))
+    const [task] = await getDb().select().from(coachTasks)
+    let requests = 0
+    const model = createAnthropicModel({
+      apiKey: "fixture",
+      maxRetries: 0,
+      fetch: async () => {
+        requests += 1
+        return anthropicFixtureResponse(
+          [{ type: "text-delta", delta: "Here is half of a dra" }],
+          "max_tokens"
+        )
+      },
+    })
+    const entries = await registry.tools(
+      coachActor(ownerId, task!.chatId, "fixture")
+    )
+    await runCoachWorker({
+      ...settings,
+      registry,
+      runtime: () =>
+        createAnthropicWorkerRuntime({
+          model,
+          system: "Grounded",
+          history: [],
+          entries,
+          registry,
+          actor: coachActor(ownerId, task!.chatId, "fixture"),
+        }),
+    })
+    const [saved] = await getDb().select().from(coachTasks)
+    expect(saved).toMatchObject({
+      state: "failed",
+      errorCode: "BUDGET_EXCEEDED",
+      retryCount: 0,
+    })
+    expect(requests).toBe(1)
+    const texts = (await getDb().select().from(chatMessages)).map(
+      (row) => row.text
+    )
+    expect(texts.join("\n")).not.toContain("Try again")
+  }))
+
+it("stores a cut-off tool call as a limit before reading its input", () =>
+  fixture(async ({ ownerId, taskId }, registry) => {
+    await getDb()
+      .update(coachTasks)
+      .set({ modelId: COACH_MODEL })
+      .where(eq(coachTasks.id, taskId))
+    const [task] = await getDb().select().from(coachTasks)
+    let requests = 0
+    const model = createAnthropicModel({
+      apiKey: "fixture",
+      maxRetries: 0,
+      fetch: async () => {
+        requests += 1
+        return anthropicFixtureResponse(
+          [
+            {
+              type: "tool-call",
+              toolCallId: "cut",
+              toolName: "paper_edit",
+              input: "{}",
+            },
+          ],
+          "max_tokens"
+        )
+      },
+    })
+    const entries = await registry.tools(
+      coachActor(ownerId, task!.chatId, "fixture")
+    )
+    await runCoachWorker({
+      ...settings,
+      registry,
+      runtime: () =>
+        createAnthropicWorkerRuntime({
+          model,
+          system: "Grounded",
+          history: [],
+          entries,
+          registry,
+          actor: coachActor(ownerId, task!.chatId, "fixture"),
+        }),
+    })
+    const [saved] = await getDb().select().from(coachTasks)
+    expect(saved).toMatchObject({
+      state: "failed",
+      errorCode: "BUDGET_EXCEEDED",
+      retryCount: 0,
+    })
+    expect(requests).toBe(1)
+    const texts = (await getDb().select().from(chatMessages)).map(
+      (row) => row.text
+    )
+    expect(texts.join("\n")).not.toContain("Try again")
+  }))
