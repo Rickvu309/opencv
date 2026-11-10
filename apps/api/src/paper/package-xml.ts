@@ -152,7 +152,6 @@ export function parsePackageXml(bytes: Uint8Array, budget = { elements: 0 }) {
       } else {
         const parent = stack.at(-1)
         if (parent) parent.opaque = true
-        else refuse("UNPROVEN_XML_TOKEN")
       }
       position = end + ending.length
       continue
