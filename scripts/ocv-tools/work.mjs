@@ -1,5 +1,6 @@
 import { EXIT, FIXES } from "./result.mjs"
 import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
+import { throwPushFailure } from "./push-failure.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 import { validateAuthoring } from "./authoring.mjs"
 import { locate } from "./worktree.mjs"
@@ -124,12 +125,7 @@ export function save(ctx, { message }) {
     return lost(ctx, t, beforePush)
   heartbeat(ctx, t.n, beforePush, me)
   const pushed = git.push(ctx.cwd)
-  if (!pushed.ok)
-    throw new Error(
-      `push failed (the pre-push checks may have found a problem; your commit is safe locally): ${pushed.err || pushed.out}`.slice(
-        -800
-      )
-    )
+  if (!pushed.ok) throwPushFailure(ctx, pushed)
   const afterPushRead = readClaim(ctx, t.n, true)
   const afterPush = afterPushRead.holder
   if (lostNow(t, { claim: afterPush, me, issue: afterPushRead.issue }))

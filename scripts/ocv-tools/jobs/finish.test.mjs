@@ -66,6 +66,23 @@ test("push failures and changes during push never create a PR", () => {
     assert.equal(f.effects("gh", "pr create").length, 0)
   }
 })
+test("a failed finish push names the check and the first error line", () => {
+  const f = fixture({
+    pushOk: false,
+    pushOut: "REFUSED QUICK_CHECKS: the quick checks failed: prettier\n",
+    pushErr:
+      "error: failed to push some refs to 'github.com:Rickvu309/opencv.git'\n",
+  })
+  const result = finish(f)
+  assert.match(result.text, /QUICK_CHECKS/)
+  assert.match(result.text, /prettier/)
+  assert.match(
+    result.text,
+    /REFUSED QUICK_CHECKS: the quick checks failed: prettier/
+  )
+  assert.match(result.text, /Full log:/)
+  assert.equal(f.effects("gh", "pr create").length, 0)
+})
 test("finish rejects malformed body and missing flags", () => {
   const f = fixture()
   f.ctx.writeFile(`${f.ctx.cwd}/body.md`, "## Summary\nOnly this")
