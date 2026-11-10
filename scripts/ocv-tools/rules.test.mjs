@@ -430,16 +430,11 @@ test("variant messages stay the ones the jobs print", () => {
     "#90 is closed\nState: closed"
   )
   assert.equal(
-    at("MISSING_FIELDS", { flags: {}, draft: { missingTitle: true } }),
-    "no --title"
-  )
-  assert.equal(
-    at("MISSING_FIELDS", { flags: {}, draft: { badTitle: true } }),
-    `the title must start with one of ${TYPE_LIST} and a colon, for example "fix: ..."`
-  )
-  assert.equal(
-    at("MISSING_FIELDS", { flags: {}, draft: { bodyError: "missing --what" } }),
-    "missing --what"
+    at("MISSING_FIELDS", {
+      flags: {},
+      draft: { problems: ["no --title", "missing --what"] },
+    }),
+    "no --title; missing --what"
   )
   assert.equal(
     at("MISSING_FIELDS", {

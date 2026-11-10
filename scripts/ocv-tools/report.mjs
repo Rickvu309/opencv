@@ -40,7 +40,7 @@ export const COMMANDS = [
   {
     name: "file",
     usage: "file --title <t> --what <t> --done <t> --risk <low|normal|high>",
-    when: 'Write a new issue from answers and label it risk:*. The only place plain words are checked. Optional: --type, --could-go-wrong (required when risk is high), --questions, --out-of-scope, --details. --dry-run shows the writing guide and model issues and creates nothing. --body-file <f> replaces the field flags. Refused if the plain sections use jargon, backticks, file names, sentences over 20 words, more than 6 "Done when" lines, vague "Done when" lines, or read above grade 8. A title may use CI, PR and API. Those words are still refused in the other plain sections.',
+    when: 'Write a new issue from answers and label it risk:*. The only place plain words are checked. Optional: --type, --could-go-wrong (required when risk is high), --questions, --out-of-scope, --details. --dry-run shows the writing guide and model issues and creates nothing. --body-file <f> replaces the field flags. Refused if a required part is missing or the plain sections use backticks, file names, more than 6 "Done when" lines or vague "Done when" lines. Every missing flag is named in one message with a command to copy. Jargon, sentences over 20 words and a reading grade above 8 print a warning and the issue is still filed. A title may use CI, PR and API.',
   },
   {
     name: "status",

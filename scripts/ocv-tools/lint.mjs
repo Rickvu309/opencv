@@ -71,7 +71,7 @@ const PATHY = [
   /(?:^|\s)\.[a-z]+\//i,
 ]
 
-export const PLAIN_RULE = `Write it like one person talking to another. Short sentences (under ${SENTENCE_LIMIT} words), everyday words, one idea per sentence. Say what changes for the owner and how they will see it, not how the code works. Never present your own choices as the owner's; ask under "Questions for you" instead. Every "Done when" line names something the owner can see or try, at most ${DONE_LIMIT} lines. No backticks, no file names, no jargon. A title may use CI, PR and API. Keep technical notes under "Details for the agent". Reading grade ${GRADE_LIMIT} or lower.`
+export const PLAIN_RULE = `Write it like one person talking to another. Short sentences (under ${SENTENCE_LIMIT} words), everyday words, one idea per sentence. Say what changes for the owner and how they will see it, not how the code works. Never present your own choices as the owner's; ask under "Questions for you" instead. Every "Done when" line names something the owner can see or try, at most ${DONE_LIMIT} lines. No backticks and no file names. Jargon, a long sentence or a reading grade above ${GRADE_LIMIT} gets a warning, not a refusal. A title may use CI, PR and API. Keep technical notes under "Details for the agent".`
 
 function plainSections(body) {
   return String(body ?? "")
@@ -169,6 +169,7 @@ const CHECKS = [
   },
   {
     id: "jargon",
+    advice: true,
     run: (i) =>
       inChecked(i, (h, t) =>
         JARGON.filter(
@@ -213,6 +214,7 @@ const CHECKS = [
   },
   {
     id: "long-sentence",
+    advice: true,
     run: (i) =>
       inChecked(i, (h, t) =>
         sentences(t)
@@ -225,6 +227,7 @@ const CHECKS = [
   },
   {
     id: "reading-level",
+    advice: true,
     run: ({ grade }) =>
       grade > GRADE_LIMIT
         ? [
@@ -269,36 +272,45 @@ export function lintIssue({ title, body }) {
     grade,
   }
   const reasons = []
+  const advice = []
   const failed = []
   for (const check of CHECKS) {
     const found = check.run(issue)
-    if (found.length) {
-      failed.push(check.id)
-      reasons.push(...found)
-    }
+    if (!found.length) continue
+    failed.push(check.id)
+    if (check.advice) advice.push(...found)
+    else reasons.push(...found)
   }
-  return { ok: reasons.length === 0, reasons, failed, grade, risk }
+  return { ok: reasons.length === 0, reasons, advice, failed, grade, risk }
 }
 
-export function buildIssueBody(values) {
+export function issueFieldProblems(values) {
   const blank = (f) => !String(values[f.id] ?? "").trim()
+  const problems = []
   const missing = TEMPLATE_FIELDS.filter((f) => f.required && blank(f)).map(
     (f) => f.flag
   )
-  if (missing.length) throw new Error(`missing ${missing.join(", ")}`)
+  if (missing.length) problems.push(`missing ${missing.join(", ")}`)
   for (const f of TEMPLATE_FIELDS.filter((x) => x.kind === "dropdown")) {
+    if (blank(f)) continue
     const v = String(values[f.id]).trim().toLowerCase()
     if (!f.options.includes(v))
-      throw new Error(
+      problems.push(
         `${f.flag} must be ${f.options.join(", ")}, not "${values[f.id]}"`
       )
   }
-  const risk = String(values.risk).trim().toLowerCase()
-  const need = TEMPLATE_FIELDS.find(
-    (f) => f.requiredForRisk === risk && blank(f)
-  )
-  if (need)
-    throw new Error(`missing ${need.flag} (required when risk is ${risk})`)
+  const risk = String(values.risk ?? "")
+    .trim()
+    .toLowerCase()
+  for (const f of TEMPLATE_FIELDS)
+    if (f.requiredForRisk === risk && blank(f))
+      problems.push(`missing ${f.flag} (required when risk is ${risk})`)
+  return problems
+}
+
+export function buildIssueBody(values) {
+  const problems = issueFieldProblems(values)
+  if (problems.length) throw new Error(problems.join("; "))
   return (
     TEMPLATE_FIELDS.map((f) => [
       f,

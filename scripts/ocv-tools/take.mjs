@@ -33,11 +33,14 @@ function repoName(ctx) {
 }
 
 function fileFirst(ctx, title, flags) {
-  const filed = file(ctx, { flags: { ...flags, "--title": title } })
+  const filed = file(ctx, {
+    flags: { ...flags, "--title": title },
+    verb: "take",
+  })
   const first = filed.lines[0] ?? ""
   const m = /#(\d+)/.exec(first)
   if (!m || /DRY RUN/.test(first)) return { done: filed }
-  return { n: Number(m[1]) }
+  return { n: Number(m[1]), warnings: filed.warnings ?? [] }
 }
 
 export function take(ctx, target, flags = {}) {
@@ -117,6 +120,7 @@ function lostTake(ctx, made, n, h) {
 
 function takeInner(ctx, target, flags, setId) {
   let n = Number(String(target).replace(/^#/, ""))
+  let writing = []
   if (!Number.isInteger(n) || n < 1) {
     checkDiskFirst(ctx)
     const filed = fileFirst(ctx, String(target), flags)
@@ -124,6 +128,7 @@ function takeInner(ctx, target, flags, setId) {
       return { ...filed.done, noResult: true }
     }
     n = filed.n
+    writing = filed.warnings
   }
   const { issue, holder: held } = readClaim(ctx, n)
   const kind = issueKind(issue, flags)
@@ -178,6 +183,7 @@ function takeInner(ctx, target, flags, setId) {
       `Branch: ${made.branch}`,
       `Port: ${made.port} (api on ${made.port}, web on ${made.port + 1000})`,
       `Agent: ${me}`,
+      ...writing,
       ...made.warnings.map((w) => `Warning: ${w}`),
       ...reconciled,
     ],
