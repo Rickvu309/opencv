@@ -38,7 +38,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
   if (!paperImport) throw new Error("Missing Paper import command")
   let syncPush = ""
   let mintedDocId = ""
-  let mintedRevision = ""
   let mintedParagraph = ""
   const coachSentence = "First paragraph. Coach adds a sentence."
   async function startCoachEdit() {
@@ -495,25 +494,8 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       arrange: async () => {
         process.env.PAPER_PACKAGE_ENABLED = "true"
       },
-      act: () => run("paper.canvas", { op: "mint" }),
-      assert: async (result) => {
-        delete process.env.PAPER_PACKAGE_ENABLED
-        expect(text(result.output, "generation")).toBe("package")
-        expect(text(result.output, "docId")).toMatch(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
-        )
-        expect(result.reversal).toBeNull()
-      },
-    },
-    {
-      name: "paper.canvas",
-      arrange: async () => {
-        process.env.PAPER_PACKAGE_ENABLED = "true"
-        const minted = await registry.execute({
-          name: "paper.canvas",
-          input: { op: "mint" },
-          actor: personActor(userId),
-        })
+      act: async () => {
+        const minted = await run("paper.canvas", { op: "mint" })
         const docId = text(minted.output, "docId")
         const revision = text(minted.output, "revision")
         if (!docId || !revision) throw new Error("missing minted page")
@@ -523,25 +505,36 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
           personActor(userId)
         )
         mintedDocId = docId
-        mintedRevision = revision
         mintedParagraph = emptyWritingParagraph(page)
-      },
-      act: () =>
-        run("paper.canvas", {
+        return run("paper.canvas", {
           op: "writeText",
-          docId: mintedDocId,
-          basedOn: mintedRevision,
+          docId,
+          basedOn: revision,
           paragraph: mintedParagraph,
           text: "Harbor light",
-        }),
+        })
+      },
       assert: async (result) => {
+        expect(text(result.output, "generation")).toBe("package")
         expect(text(result.output, "docId")).toBe(mintedDocId)
+        expect(result.reversal?.command).toBe("paper.restoreWord")
         const page = await registry.read(
           "paper.read",
           { docId: mintedDocId },
           personActor(userId)
         )
         expect(editableText(page)).toBe("Harbor light")
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        const page = await registry.read(
+          "paper.read",
+          { docId: mintedDocId },
+          personActor(userId)
+        )
+        expect(emptyWritingParagraph(page)).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        )
       },
     },
   ]
