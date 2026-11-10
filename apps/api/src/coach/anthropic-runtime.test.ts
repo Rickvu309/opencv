@@ -419,7 +419,10 @@ describe("Anthropic request-bound Coach runtime", () => {
         registry: { read: vi.fn(), execute: vi.fn() },
       })
     )
-    expect(parts.at(-1)?.type).toBe("error")
+    expect(parts.at(-1)).toEqual({
+      type: "error",
+      message: "The Coach hit its limit for this turn.",
+    })
     expect(parts.some((part) => part.type === "finish")).toBe(false)
   })
 })

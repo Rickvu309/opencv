@@ -19,6 +19,7 @@ import {
   type SerializedStepBoundary,
 } from "./model-step.js"
 import { toolResultFromExecute } from "./receipt.js"
+import { TaskBudgetError } from "./task-budget.js"
 
 export type CoachModel = { client: Anthropic; modelId: typeof COACH_MODEL }
 
@@ -271,9 +272,10 @@ export async function* streamAnthropicSteps(input: {
         return
       }
       if (message.stop_reason === "max_tokens") {
+        if (input.boundary) throw new TaskBudgetError()
         yield {
           type: "error",
-          message: "The Coach reply was cut off before it finished. Try again.",
+          message: "The Coach hit its limit for this turn.",
         }
         return
       }
