@@ -92,6 +92,18 @@ const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
 const frozenExecution = Symbol("frozenExecution")
 const approvingReview = Symbol("approvingReview")
+const confirmed = Symbol("confirmed")
+const noReceipt = Symbol("noReceipt")
+
+type RunnerOptions = ExecuteOptions & {
+  expectedRevision?: number | null
+  [taskExecution]?: boolean
+  [approvedDelegate]?: string
+  [frozenExecution]?: PreparedExecution
+  [approvingReview]?: boolean
+  [confirmed]?: boolean
+  [noReceipt]?: boolean
+}
 
 export class Registry extends RegistryEntries {
   private readonly undoGuards = new Map<string, UndoGuard>()
@@ -217,28 +229,11 @@ export class Registry extends RegistryEntries {
     })
   }
 
-  execute(
-    options: ExecuteOptions & {
-      expectedRevision?: number | null
-      [taskExecution]?: boolean
-      [approvedDelegate]?: string
-      [frozenExecution]?: PreparedExecution
-      [approvingReview]?: boolean
-    }
-  ): Promise<ExecuteResult> {
+  execute(options: RunnerOptions): Promise<ExecuteResult> {
     return this.#execute(options)
   }
 
-  async #execute(
-    options: ExecuteOptions & {
-      expectedRevision?: number | null
-      [taskExecution]?: boolean
-      [approvedDelegate]?: string
-      [frozenExecution]?: PreparedExecution
-      [approvingReview]?: boolean
-    },
-    undo = false
-  ): Promise<ExecuteResult> {
+  async #execute(options: RunnerOptions, undo = false): Promise<ExecuteResult> {
     if (options.idempotencyKey?.startsWith("coach:") && !options[taskExecution])
       throw new CommandError(
         ERROR_CODES.CONFLICT,
@@ -323,7 +318,7 @@ export class Registry extends RegistryEntries {
         ran,
         key: idempotencyKey,
         hash,
-        skipActivity: options.skipActivity,
+        skipActivity: options[noReceipt],
       })
     }
 
@@ -368,7 +363,7 @@ export class Registry extends RegistryEntries {
         (actor.type === "delegate" &&
           (!options[approvedDelegate] ||
             options[approvedDelegate] !== options.idempotencyKey)) ||
-        (isCoachActor(actor) && policy === "confirm" && !options.skipConfirm)
+        (isCoachActor(actor) && policy === "confirm" && !options[confirmed])
       ) {
         return createProposal({
           actor,
@@ -541,7 +536,7 @@ export class Registry extends RegistryEntries {
           ? { [frozenExecution]: frozen, [approvingReview]: true }
           : {}),
         [taskExecution]: !!task,
-        skipConfirm: true,
+        [confirmed]: true,
         expectedRevision: checksPriority ? row.basisRevision : null,
       })
       await getDb()
@@ -623,8 +618,8 @@ export class Registry extends RegistryEntries {
           input: row.reversalInput,
           actor: personActor(userId),
           idempotencyKey: undoKeyFor(row.id),
-          skipConfirm: true,
-          skipActivity: row.reversalCommand === "paper.attachPhoto",
+          [confirmed]: true,
+          [noReceipt]: row.reversalCommand === "paper.attachPhoto",
         },
         true
       )

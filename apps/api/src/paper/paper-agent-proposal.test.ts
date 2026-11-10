@@ -117,7 +117,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
           name: "paper.edit",
           input: {},
           actor: paper,
-          skipConfirm: true,
         })
       ).rejects.toThrow(/not available to agents yet/)
       expect(
@@ -155,7 +154,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
             ],
           },
           actor: paper,
-          skipConfirm: true,
           idempotencyKey: randomUUID(),
         })
       ).rejects.toThrow(/Saved Word documents are unavailable/)
@@ -168,7 +166,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
             edits: [{ op: "setText", blockId: "letter-1", text: "Hello" }],
           },
           actor: paper,
-          skipConfirm: true,
           idempotencyKey: randomUUID(),
         })
       ).rejects.toThrow(paperEditBasisMessage)
@@ -223,7 +220,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
           ],
         },
         actor: paper,
-        skipConfirm: true,
         idempotencyKey: randomUUID(),
       })
       expect(proposed.pending).toBe(true)
@@ -254,7 +250,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
           name: "activity.undo",
           input: {},
           actor: paper,
-          skipConfirm: true,
         })
       ).rejects.toThrow(/connection cannot/)
       const kept = paperPackageReadSchema.parse(

@@ -54,6 +54,33 @@ type GuardedPlan = NonNullable<ReversalPlan> & { expect: ReversalExpect }
 export type IrreversibleCommand = { irreversible: string }
 export type SilentCommand = { silent: string }
 
+function statesReason(value: unknown, key: "irreversible" | "silent") {
+  if (typeof value !== "object" || value === null || !(key in value))
+    return false
+  const reason = (value as Record<string, unknown>)[key]
+  return typeof reason === "string" && /\S\s+\S/.test(reason)
+}
+
+export function requireStatedBinding(
+  name: string,
+  binding: { reversal?: unknown; activity?: unknown }
+) {
+  if (
+    typeof binding.reversal !== "function" &&
+    !statesReason(binding.reversal, "irreversible")
+  )
+    throw new Error(
+      `Command ${name} needs an Undo or { irreversible: "<reason>" }`
+    )
+  if (
+    typeof binding.activity !== "function" &&
+    !statesReason(binding.activity, "silent")
+  )
+    throw new Error(
+      `Command ${name} needs an activity receipt or { silent: "<reason>" }`
+    )
+}
+
 type ReversalBinding<I, R> =
   | ((input: I, result: R) => GuardedPlan | IrreversibleCommand)
   | IrreversibleCommand
@@ -249,6 +276,7 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
     })
   } else {
     const binding = suppliedBinding
+    requireStatedBinding(operation.name, binding)
     const spec: import("@workspace/domain").CommandSpec<
       import("zod").output<T["input"]>,
       R

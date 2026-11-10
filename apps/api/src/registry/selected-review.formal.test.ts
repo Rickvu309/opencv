@@ -269,7 +269,6 @@ it("only owned receipt Undo admits a hidden restore; people and both agent trans
           input: { expected: "Grace", prior: "Ada" },
           actor: identity,
           idempotencyKey: randomUUID(),
-          skipConfirm: true,
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" })
     }
@@ -399,7 +398,6 @@ it("a coach and a delegate cannot approve or undo, and the person still can", ()
           input: {},
           actor: actor.coach,
           idempotencyKey: randomUUID(),
-          skipConfirm: true,
         })
       ).rejects.toMatchObject({ code: "COACH_NOT_ALLOWED" })
       await expect(
@@ -408,7 +406,6 @@ it("a coach and a delegate cannot approve or undo, and the person still can", ()
           input: {},
           actor: delegate,
           idempotencyKey: randomUUID(),
-          skipConfirm: true,
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" })
     }

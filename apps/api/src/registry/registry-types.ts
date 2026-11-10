@@ -79,8 +79,6 @@ export type ExecuteOptions = {
   input: unknown
   actor: Actor
   idempotencyKey?: string
-  skipConfirm?: boolean
-  skipActivity?: boolean
 }
 export type TaskOptions = Pick<ExecuteOptions, "name" | "input" | "actor"> & {
   idempotencyKey: string

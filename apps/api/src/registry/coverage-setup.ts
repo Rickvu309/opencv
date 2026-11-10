@@ -55,7 +55,6 @@ export function coverageCases(
       name: plan.command,
       input: plan.input,
       actor: person,
-      skipConfirm: true,
     })
   }
   const undo = wrappers.undo ? wrappers.undo(plainUndo, registry) : plainUndo
