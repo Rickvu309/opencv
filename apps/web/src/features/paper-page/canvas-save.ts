@@ -607,7 +607,7 @@ async function settleOnce(
       }
     }
     if (!changed) {
-      if (words === "") return missed(words)
+      if (words === "" && seen === "") return missed(words)
       const replacement = draftFromRegions(page.regions)
       if (!replacement) return missed(words)
       return {

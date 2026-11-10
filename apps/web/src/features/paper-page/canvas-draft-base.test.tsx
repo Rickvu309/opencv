@@ -121,6 +121,29 @@ describe("draft base", () => {
     })
   })
 
+  it("adopts a newer read when the unchanged draft is empty", async () => {
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      calls.push(url)
+      if (url.includes("/api/reads/paper.read")) {
+        return Promise.resolve(
+          Response.json({ ok: true, data: readResult(GREEN) })
+        )
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    const saved = await settlePage(
+      DOC,
+      [{ id: PARAGRAPH, text: "" }],
+      new AbortController().signal,
+      { basis: { revision: REVISION, words: "" }, typed: false }
+    )
+    expect(saved.saved).toBe(false)
+    expect(saved.replace?.blocks.map((block) => block.text)).toEqual([GREEN])
+    expect(calls.some((url) => url.includes("/api/commands/"))).toBe(false)
+  })
+
   it("does not write an unchanged draft over a newer read", async () => {
     const calls: string[] = []
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
@@ -171,6 +194,22 @@ describe("draft base", () => {
 })
 
 describe("WritingCanvas adopted edit", () => {
+  it("shows a newer read when the stored page is still empty", async () => {
+    const calls = stubGreen()
+    storeDraft(DOC, draft(""), localStorage, {
+      revision: REVISION,
+      words: "",
+    })
+    render(
+      <WritingCanvas docId={DOC} seed={draft("")} seedRevision={REVISION} />
+    )
+    await waitFor(() => expect(articleWords()).toBe(GREEN))
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toMatch(/\bSaved\b/)
+    )
+    expect(calls.some((url) => url.includes("/api/commands/"))).toBe(false)
+  })
+
   it("shows an approved edit after the page opens again", async () => {
     const calls = stubGreen()
     localStorage.setItem(`opencv-writing:${DOC}`, JSON.stringify(draft(BLUE)))
