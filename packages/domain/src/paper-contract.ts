@@ -271,7 +271,7 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Write on the page",
-    invalidates: () => [],
+    invalidates: () => listChanged(),
   }),
   "paper.revertEdit": commandEntry({
     description: "Take back one Coach edit and keep later typing.",
