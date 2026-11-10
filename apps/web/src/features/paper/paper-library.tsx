@@ -472,7 +472,7 @@ export function PaperLibrary({
         </div>
       ) : null}
 
-      <PaperPackageLibrary library={wordLibrary} />
+      <PaperPackageLibrary library={wordLibrary} onOpen={onOpen} />
 
       <PaperImportDialog
         open={mode?.type === "import"}

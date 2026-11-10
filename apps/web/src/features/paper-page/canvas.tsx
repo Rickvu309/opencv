@@ -28,6 +28,7 @@ import {
 } from "./canvas-edit.ts"
 import { pastePlain } from "./canvas-paste.ts"
 import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
+import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import "./canvas.css"
 
 type CanvasState = {
@@ -269,6 +270,8 @@ function WritingSheet({
     }
   })
   const nextId = useRef(state.present.nextId)
+
+  useEffect(() => holdWritingCoachFocus(docId), [docId])
 
   useEffect(() => {
     const kept = storeDraft(docId, state.present, localStorage)

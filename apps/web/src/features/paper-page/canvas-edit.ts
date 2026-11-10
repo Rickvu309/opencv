@@ -271,6 +271,17 @@ function storageKey(docId: string) {
   return `opencv-writing:${docId}`
 }
 
+export function forgetDraft(
+  docId: string,
+  storage: Pick<Storage, "removeItem">
+) {
+  try {
+    storage.removeItem(storageKey(docId))
+  } catch {
+    return
+  }
+}
+
 function isHeld(draft: WritingDraft, blockId: string) {
   return draft.blocks.some((block) => block.id === blockId && block.held)
 }

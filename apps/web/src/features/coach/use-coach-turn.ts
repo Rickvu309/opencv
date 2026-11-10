@@ -14,6 +14,11 @@ import {
 import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
 import { undoActivity, runContractCommand } from "@/lib/contract-client.ts"
+import {
+  attachWritingProposal,
+  clearWritingProposal,
+  publishWritingProposal,
+} from "@/lib/writing-proposal.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import {
   createChat,
@@ -299,8 +304,16 @@ export function useCoachTurn({
               label,
             })
         },
-        onToolCall({ toolCallId, name }) {
-          if (!stale()) progressDispatch({ type: "call", id: toolCallId, name })
+        onToolCall(event) {
+          if (stale()) return
+          progressDispatch({
+            type: "call",
+            id: event.toolCallId,
+            name: event.name,
+          })
+          if (event.name === "paper.edit") {
+            publishWritingProposal(event.toolCallId, event.input)
+          }
         },
         onTextDelta({ text }) {
           if (stale()) return
@@ -309,9 +322,17 @@ export function useCoachTurn({
         onToolResult(data) {
           if (stale()) return
           paint(appendCoachPart(parts, data))
+          if (data.name !== "paper.edit") return
+          if (!data.ok) clearWritingProposal(data.toolCallId)
+          else if (data.pendingActionId) {
+            attachWritingProposal(data.toolCallId, data.pendingActionId)
+          }
         },
         onConfirm(data) {
           if (stale()) return
+          if (data.command === "paper.edit") {
+            attachWritingProposal(null, data.pendingActionId)
+          }
           paint(
             parts.map((part) =>
               part.type === "tool" &&

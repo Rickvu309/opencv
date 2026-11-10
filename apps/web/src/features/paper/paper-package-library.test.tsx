@@ -151,6 +151,42 @@ it("keeps unavailable pinned content unavailable instead of loading a newer head
   ])
 })
 
+it("opens the saved page without leaving the preview", async () => {
+  const opened: string[] = []
+  function OpenHarness() {
+    const library = useWordLibrary("all", "")
+    return (
+      <PaperPackageLibrary
+        library={library}
+        onOpen={(id) => {
+          opened.push(id)
+        }}
+      />
+    )
+  }
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<typeof fetch>(async (_url, init) => {
+      const input: unknown = JSON.parse(String(init?.body))
+      if (input && typeof input === "object" && "view" in input) {
+        return Response.json({
+          ok: true,
+          data: { items: [document], next: null },
+        })
+      }
+      return Response.json({ ok: true, data: page("First saved paragraph") })
+    })
+  )
+  render(<OpenHarness />)
+  fireEvent.click(
+    await screen.findByRole("button", { name: `Open ${document.name}` })
+  )
+  expect(opened).toEqual([document.docId])
+  expect(screen.queryByText("First saved paragraph")).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: document.name }))
+  expect(await screen.findByText("First saved paragraph")).toBeVisible()
+})
+
 it("keeps the disabled package library out of the legacy screen", async () => {
   const response = Promise.withResolvers<Response>()
   const fetchMock = vi.fn<typeof fetch>(() => response.promise)

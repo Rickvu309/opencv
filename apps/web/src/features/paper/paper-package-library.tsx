@@ -101,8 +101,10 @@ function wordPagesOpen() {
 
 export function PaperPackageLibrary({
   library,
+  onOpen,
 }: {
   library: ReturnType<typeof useWordLibrary>
+  onOpen?: (docId: string) => void
 }) {
   if (wordPagesOpen()) void import("../paper-page/preview.tsx")
   const { selected, onSelect } = library
@@ -131,14 +133,24 @@ export function PaperPackageLibrary({
               <h2 className="text-sm font-medium">Word documents</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((document) => (
-                  <Button
-                    key={document.docId}
-                    variant="outline"
-                    className="h-auto min-h-11 justify-start p-4 text-left whitespace-normal"
-                    onClick={() => onSelect(document)}
-                  >
-                    {document.name}
-                  </Button>
+                  <div key={document.docId} className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-auto min-h-11 justify-start p-4 text-left whitespace-normal"
+                      onClick={() => onSelect(document)}
+                    >
+                      {document.name}
+                    </Button>
+                    {onOpen ? (
+                      <Button
+                        variant="outline"
+                        className="h-11 justify-start md:h-9"
+                        onClick={() => onOpen(document.docId)}
+                      >
+                        Open {document.name}
+                      </Button>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </>
