@@ -310,9 +310,10 @@ export async function priorityCounts(
 export async function writePriority(
   grant: WriteGrant,
   jobId: JobId,
-  priority: QueryOutput<"job.get">["priority"]
+  priority: QueryOutput<"job.get">["priority"],
+  actorId: string = grant.ownerId
 ) {
-  const authority = assertPriorityGrant(grant, grant.ownerId, jobId)
+  const authority = assertPriorityGrant(grant, actorId, jobId)
   const ownerId = parseUserId(authority.ownerId)
   const current = await ownedJob(ownerId, jobId)
   const expected = authority.expectedRevision

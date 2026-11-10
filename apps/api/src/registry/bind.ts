@@ -49,6 +49,35 @@ export type GuardedReversal<C extends CommandContract> = ReversalCall<C> & {
   expect: ReversalGuard
 }
 
+type GuardedPlan = NonNullable<ReversalPlan> & { expect: ReversalExpect }
+
+export type IrreversibleCommand = { irreversible: string }
+export type SilentCommand = { silent: string }
+
+type ReversalBinding<I, R> =
+  | ((input: I, result: R) => GuardedPlan | IrreversibleCommand)
+  | IrreversibleCommand
+
+type ActivityBinding<I, R> =
+  ((input: I, result: R, actor: Actor) => ActivityDraft) | SilentCommand
+
+function boundReversal<I, R>(
+  reversal: ReversalBinding<I, R> | undefined
+): (input: I, result: R) => ReversalPlan {
+  if (typeof reversal !== "function") return () => null
+  return (input, result) => {
+    const plan = reversal(input, result)
+    return "irreversible" in plan ? null : plan
+  }
+}
+
+function boundActivity<I, R>(
+  activity: ActivityBinding<I, R> | undefined
+): (input: I, result: R, actor: Actor) => ActivityDraft | null {
+  if (typeof activity !== "function") return () => null
+  return activity
+}
+
 type ReversalOf<
   C extends CommandContract,
   N extends keyof C & string,
@@ -142,50 +171,26 @@ export type OperationBinding<
 > = {
   operation: T
   privateResult?: ZodType<R>
-  reversal?: (
-    input: import("zod").output<T["input"]>,
-    result: R
-  ) => (NonNullable<ReversalPlan> & { expect: ReversalExpect }) | null
-  activity?: (
-    input: import("zod").output<T["input"]>,
-    result: R,
-    actor: Actor
-  ) => ActivityDraft | null
-} & (
-  | {
-      execute: (
-        input: import("zod").output<T["input"]>,
-        actor: Actor
-      ) => Promise<R> | R
-      reviewed?: never
-      selected?: never
+} & (T["kind"] extends "command"
+  ? {
+      reversal: ReversalBinding<import("zod").output<T["input"]>, R>
+      activity: ActivityBinding<import("zod").output<T["input"]>, R>
     }
-  | (T["kind"] extends "read"
-      ? never
-      : {
-          execute?: never
-          selected?: never
-          reviewed: ReviewedCommand<
-            import("zod").output<T["input"]>,
-            R,
-            C,
-            V,
-            S
-          >
-        })
-  | (T["kind"] extends "read"
-      ? never
-      : {
-          execute?: never
-          reviewed?: never
-          selected: {
-            select: (
-              input: Readonly<import("zod").output<T["input"]>>
-            ) => "execute" | "reviewed"
-            execute: (
-              input: import("zod").output<T["input"]>,
-              actor: Actor
-            ) => Promise<R> | R
+  : { reversal?: never; activity?: never }) &
+  (
+    | {
+        execute: (
+          input: import("zod").output<T["input"]>,
+          actor: Actor
+        ) => Promise<R> | R
+        reviewed?: never
+        selected?: never
+      }
+    | (T["kind"] extends "read"
+        ? never
+        : {
+            execute?: never
+            selected?: never
             reviewed: ReviewedCommand<
               import("zod").output<T["input"]>,
               R,
@@ -193,9 +198,30 @@ export type OperationBinding<
               V,
               S
             >
-          }
-        })
-)
+          })
+    | (T["kind"] extends "read"
+        ? never
+        : {
+            execute?: never
+            reviewed?: never
+            selected: {
+              select: (
+                input: Readonly<import("zod").output<T["input"]>>
+              ) => "execute" | "reviewed"
+              execute: (
+                input: import("zod").output<T["input"]>,
+                actor: Actor
+              ) => Promise<R> | R
+              reviewed: ReviewedCommand<
+                import("zod").output<T["input"]>,
+                R,
+                C,
+                V,
+                S
+              >
+            }
+          })
+  )
 
 export function bindOperation<T extends Operation, R, C, V, S = never>(
   registry: Registry,
@@ -238,9 +264,14 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
         : {}),
       writes: (input) => [...operation.writes(input as never)],
       step: () => operation.description,
-      reversal: (input, result) => binding.reversal?.(input, result) ?? null,
-      activity: (input, result, actor) =>
-        binding.activity?.(input, result, actor) ?? null,
+      reversal: boundReversal(
+        binding.reversal as
+          ReversalBinding<import("zod").output<T["input"]>, R> | undefined
+      ),
+      activity: boundActivity(
+        binding.activity as
+          ActivityBinding<import("zod").output<T["input"]>, R> | undefined
+      ),
     }
     const check = (result: R) => {
       const checked = binding.privateResult
@@ -336,11 +367,14 @@ export function bindCatalog<B extends Record<string, { operation: Operation }>>(
     CatalogImplementations<{
       [N in keyof B]: B[N]["operation"]
     }> & {
-      [N in keyof B]: {
-        reversal?: (
-          ...args: never[]
-        ) => (NonNullable<ReversalPlan> & { expect: ReversalExpect }) | null
-      }
+      [N in keyof B]: B[N]["operation"]["kind"] extends "command"
+        ? {
+            reversal:
+              | ((...args: never[]) => GuardedPlan | IrreversibleCommand)
+              | IrreversibleCommand
+            activity: ((...args: never[]) => ActivityDraft) | SilentCommand
+          }
+        : { reversal?: never; activity?: never }
     }
 ) {
   for (const [name, binding] of Object.entries(bindings)) {
@@ -363,6 +397,4 @@ export function assertReversal(
       !REVERSAL_EXPECT_PENDING.commands.some((name) => name === command))
   )
     throw new Error("Reversals require a guarded expectation")
-  if (catalog && result.reversal && !result.draft)
-    throw new Error("Catalog reversals require an activity receipt")
 }

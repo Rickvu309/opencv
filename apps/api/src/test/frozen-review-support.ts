@@ -151,18 +151,20 @@ export function fixture(
   }
   const common = {
     operation,
-    activity: (
-      _input: Input,
-      result: { text: string },
-      actor: { userId: string }
-    ) =>
-      options.silent
-        ? null
-        : {
-            subjectKind: "account" as const,
-            subjectId: actor.userId,
-            summary: result.text,
-          },
+    reversal: {
+      irreversible: "This review fixture does not undo",
+    },
+    activity: options.silent
+      ? { silent: "This review fixture records no receipt" }
+      : (
+          _input: Input,
+          result: { text: string },
+          actor: { userId: string }
+        ) => ({
+          subjectKind: "account" as const,
+          subjectId: actor.userId,
+          summary: result.text,
+        }),
   }
   const execute = async (input: Input, actor: { userId: string }) => {
     calls.execute++

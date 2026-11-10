@@ -2,7 +2,11 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { z } from "zod"
 
-import { defineOperation, type Implementations } from "./operation.js"
+import {
+  defineOperation,
+  type AcceptsOperation,
+  type Implementations,
+} from "./operation.js"
 
 const operation = defineOperation({
   owner: "fixture",
@@ -72,19 +76,33 @@ test("operation names, wire input, parsed input and public results retain their 
   ])
 })
 
+type PolicyShape = {
+  owner: "fixture"
+  name: "fixture.update"
+  version: 2
+  kind: "command"
+  description: "Update a value"
+  input: z.ZodType<{ count: number }>
+  publicResult: z.ZodType<{ updated: boolean }>
+  idempotency: "keyed"
+  writes: (input: { count: number }) => readonly {
+    name: string
+    coachFloor: "auto"
+  }[]
+}
+
+const rejectsAutoDestructive: AcceptsOperation<
+  PolicyShape & { coach: "auto"; destructive: true }
+> = false
+const acceptsConfirmedDestructive: AcceptsOperation<
+  PolicyShape & { coach: "confirm"; destructive: true }
+> = true
+
 test("operation versions and destructive command policy are validated independently of source digests", () => {
+  assert.equal(rejectsAutoDestructive, false)
+  assert.equal(acceptsConfirmedDestructive, true)
   assert.throws(() => defineOperation({ ...operation, version: 0 }))
   assert.throws(() => defineOperation({ ...operation, owner: "../account" }))
-  assert.throws(() =>
-    defineOperation({
-      ...operation,
-      kind: "command",
-      coach: "auto",
-      destructive: true,
-      idempotency: "keyed",
-      writes: () => [],
-    })
-  )
   const command = defineOperation({
     owner: "fixture",
     name: "fixture.update",

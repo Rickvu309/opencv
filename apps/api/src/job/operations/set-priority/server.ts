@@ -11,14 +11,13 @@ const privateResult = operation.publicResult
 export const implementation = {
   operation,
   privateResult,
-  execute: (input, actor) => {
-    void actor
-    return writePriority(
+  execute: (input, actor) =>
+    writePriority(
       takePriorityGrant(input.jobId),
       input.jobId,
-      input.priority
-    )
-  },
+      input.priority,
+      actor.userId
+    ),
   reversal: (input, result) => ({
     command: operation.name,
     input: { jobId: input.jobId, priority: result.previousPriority },
