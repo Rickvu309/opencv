@@ -64,6 +64,18 @@ export function finish(ctx, { flags }) {
       .trim()
       .replace(/\.$/, "")
     const title = `${t.type}: ${desc.charAt(0).toLowerCase()}${desc.slice(1)} (#${t.n})`
+    if (flags["--dry-run"]) {
+      const checked = decide("body", { body: written, pull: { title } })
+      if (!checked.ok) throw refusalError(checked.refusals[0])
+      return {
+        lines: [
+          "DRY RUN: the body passes. Nothing was pushed or opened, and the other finish rules did not run.",
+          `Title: ${title}`,
+          `Closes #${t.n}\n\n${written.text}`,
+        ],
+        next: "scripts/ocv-tools.mjs finish --body-file <file>",
+      }
+    }
     const problem = diskProblem(ctx.ports.fs, ctx.env, t)
     const main = {
       path: t.main,
@@ -115,11 +127,6 @@ export function finish(ctx, { flags }) {
     }
     const verdict = decide("finish", facts)
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
-    if (flags["--dry-run"])
-      return {
-        lines: [`Title: ${title}`, `Closes #${t.n}\n\n${written.text}`],
-        next: "scripts/ocv-tools.mjs finish --body-file <file>",
-      }
     const bodyFile = ctx.writeScratch(`finish/${t.n}-body.md`, body)
     const upload = run(ctx, "git", ["push", "-u", "origin", t.branch])
     if (!upload.ok) throwPushFailure(ctx, upload)
