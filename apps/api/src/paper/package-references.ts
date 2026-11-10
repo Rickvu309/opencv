@@ -11,6 +11,7 @@ import {
   storyPart,
   W14_NS,
 } from "./package-profile.js"
+import { externalLink } from "./package-neighbors.js"
 import {
   decodeXml,
   descendants,
@@ -438,7 +439,8 @@ export function inspectPackageReferences(
         })
       }
     }
-    if (storyPart(name)) storyRanges(name, part, ranges, bookmarks, references)
+    if (storyPart(name))
+      storyRanges(name, part, ranges, bookmarks, references, graph)
   }
   for (const id of commentReferences)
     if (!comments.has(id)) refuse("DANGLING_COMMENT")
@@ -489,7 +491,8 @@ function storyRanges(
   part: ParsedPart,
   ranges: LockedRange[],
   bookmarks: Set<string>,
-  references: string[]
+  references: string[],
+  graph: PackageRelationship[]
 ) {
   const active = new Map<string, XmlElement>()
   const fields: { node: XmlElement; instruction: string }[] = []
@@ -554,12 +557,13 @@ function storyRanges(
     if (isWord(node, "hyperlink")) {
       const anchor = attribute(node, "anchor", node.uri)
       if (anchor) references.push(anchor)
-      ranges.push({
-        part: name,
-        start: node.start,
-        end: node.end,
-        kind: "link",
-      })
+      if (!externalLink(node, graph))
+        ranges.push({
+          part: name,
+          start: node.start,
+          end: node.end,
+          kind: "link",
+        })
     }
   }
   if (active.size || fields.length) refuse("UNBALANCED_RANGE_OR_FIELD")
