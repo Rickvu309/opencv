@@ -1,6 +1,6 @@
 import { paperOutline, type PaperId, type UserId } from "@workspace/domain"
 
-import { mintedPackageOutline, missingDocument } from "./package-list.js"
+import { missingDocument, ownedPackageOutline } from "./package-list.js"
 import { readStoredPaper } from "./read-paper.js"
 import { ownedPaper } from "./store.js"
 
@@ -24,13 +24,13 @@ export async function readOutline(
     }
   } catch (error) {
     if (!missingDocument(error)) throw error
-    const minted = await mintedPackageOutline(
+    const page = await ownedPackageOutline(
       userId,
       docId,
       blockIds,
       OUTLINE_MAX_CHARS
     )
-    if (!minted) throw error
-    return minted
+    if (!page) throw error
+    return page
   }
 }

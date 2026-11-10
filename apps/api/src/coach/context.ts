@@ -38,7 +38,11 @@ async function paperFocus(
     kind,
     status,
     outline: text(outline?.outline),
-    revision: typeof outline?.revision === "number" ? outline.revision : 0,
+    revision:
+      typeof outline?.revision === "number" ||
+      typeof outline?.revision === "string"
+        ? outline.revision
+        : 0,
   }
 }
 
