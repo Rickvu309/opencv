@@ -215,7 +215,7 @@ describe("Paper library", () => {
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
-  it("opens a Word import as a pinned preview without entering the legacy editor", async () => {
+  it("opens a Word import on the writing page", async () => {
     const word = paperPackageMetadataSchema.parse({
       generation: "package",
       docId: "33333333-3333-4333-8333-333333333333",
@@ -227,16 +227,18 @@ describe("Paper library", () => {
     })
     vi.mocked(importPaperFile).mockResolvedValueOnce(word)
     const onOpen = vi.fn()
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json(
-        {
-          ok: false,
-          error: { code: "NOT_FOUND", message: "Snapshot unavailable" },
-        },
-        { status: 404 }
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: { code: "NOT_FOUND", message: "Snapshot unavailable" },
+          },
+          { status: 404 }
+        )
       )
     )
-    vi.stubGlobal("fetch", fetchMock)
     render(
       <PaperLibrary
         docs={[]}
@@ -254,16 +256,10 @@ describe("Paper library", () => {
     fireEvent.change(input, {
       target: { files: [new File(["Word"], word.name)] },
     })
-    expect(await screen.findByRole("dialog", { name: word.name })).toBeVisible()
-    expect(onOpen).not.toHaveBeenCalled()
-    expect(
-      fetchMock.mock.calls.some(([, init]) =>
-        String(init?.body).includes(`"at":"${word.revision}"`)
-      )
-    ).toBe(true)
-    expect(
-      fetchMock.mock.calls.some(([url]) => String(url).includes("paper.sync"))
-    ).toBe(false)
+    await vi.waitFor(() => {
+      expect(onOpen).toHaveBeenCalledWith(word.docId)
+    })
+    expect(screen.queryByRole("dialog", { name: word.name })).toBeNull()
   })
 
   it("shows a failed import and lets the user retry with another file", async () => {

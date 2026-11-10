@@ -162,10 +162,9 @@ export function PaperLibrary({
     try {
       const created = await importPaperFile(file)
       if ("generation" in created) {
-        wordLibrary.imported(created, request.signal)
-        if (!request.signal.aborted) {
-          dispatch({ type: "import_ended" })
-        }
+        if (request.signal.aborted) return
+        dispatch({ type: "import_ended" })
+        onOpen(created.docId)
         return
       }
       if (request.signal.aborted) {

@@ -4,6 +4,7 @@ export type WritingBlock = {
   id: string
   text: string
   held?: boolean
+  reason?: string
 }
 
 export type TextPoint = {
@@ -50,7 +51,7 @@ export function draftFromRegions(
     kind: string
     text: string
     paragraph?: string
-    reason?: { code: string }
+    reason?: { code: string; message?: string }
     location?: { kind: string }
   }[]
 ): WritingDraft | null {
@@ -74,7 +75,13 @@ export function draftFromRegions(
       continue
     }
     if (carrier || (region.kind !== "locked" && !table)) continue
-    blocks.push({ id: region.paragraph, text: region.text, held: true })
+    const reason = region.reason?.message
+    blocks.push({
+      id: region.paragraph,
+      text: region.text,
+      held: true,
+      ...(reason ? { reason } : {}),
+    })
   }
   const first = blocks.find((block) => !block.held) ?? blocks[0]
   if (!first) return null
@@ -215,7 +222,14 @@ export function replaceVisible(
 ): WritingDraft {
   const blocks = texts.map((item) => {
     const current = draft.blocks.find((block) => block.id === item.id)
-    if (current?.held) return { id: current.id, text: current.text, held: true }
+    if (current?.held) {
+      return {
+        id: current.id,
+        text: current.text,
+        held: true,
+        ...(current.reason ? { reason: current.reason } : {}),
+      }
+    }
     return {
       id: item.id,
       text: item.text.replaceAll("\u200b", ""),

@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -302,7 +303,7 @@ function openSheet(
   return {
     past: [],
     present,
-    note: keptOnThisComputer(),
+    note: pageWords(present.blocks) === "" ? keptOnThisComputer() : "",
     basis,
     typed: false,
   }
@@ -343,11 +344,15 @@ function WritingSheet({
   useEffect(() => {
     const kept = storeDraft(docId, state.present, localStorage, state.basis)
     nextId.current = state.present.nextId
-    const fallback = kept ? keptOnThisComputer() : clearedOnReload()
-    dispatch({ type: "note", note: fallback })
-    if (!kept) return
-    const controller = new AbortController()
     const words = pageWords(state.present.blocks)
+    if (!kept) {
+      dispatch({ type: "note", note: clearedOnReload() })
+      return
+    }
+    if (words === "" || state.typed) {
+      dispatch({ type: "note", note: keptOnThisComputer() })
+    }
+    const controller = new AbortController()
     void settlePage(docId, state.present.blocks, controller.signal, {
       basis: state.basis,
       typed: state.typed,
@@ -372,9 +377,14 @@ function WritingSheet({
         }
         if (result.blocks) dispatch({ type: "adopt", blocks: result.blocks })
         const note = savedNote(words, result)
-        if (!note) return
-        if (note === "Saved") setWritingConflict(null)
-        dispatch({ type: "note", note })
+        if (note) {
+          if (note === "Saved") setWritingConflict(null)
+          dispatch({ type: "note", note })
+          return
+        }
+        if (!state.typed && words !== "") {
+          dispatch({ type: "note", note: keptOnThisComputer() })
+        }
       })
       .catch(() => undefined)
     return () => controller.abort()
@@ -570,13 +580,19 @@ function WritingSheet({
           }}
         >
           {state.present.blocks.map((block) => (
-            <p
-              key={block.id}
-              data-block={block.id}
-              contentEditable={block.held ? false : undefined}
-            >
-              {visibleText(block.text)}
-            </p>
+            <Fragment key={block.id}>
+              <p
+                data-block={block.id}
+                contentEditable={block.held ? false : undefined}
+              >
+                {visibleText(block.text)}
+              </p>
+              {block.held && block.reason ? (
+                <div className="text-xs text-muted-foreground">
+                  {block.reason}
+                </div>
+              ) : null}
+            </Fragment>
           ))}
         </article>
       </div>

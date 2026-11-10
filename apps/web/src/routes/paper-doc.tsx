@@ -17,6 +17,7 @@ import {
   draftFromRegions,
   opensWritingCanvas,
 } from "@/features/paper-page/canvas-edit.ts"
+import { readWholePackage } from "@/features/paper-page/package-read.ts"
 import { WritingPage } from "@/features/paper/writing-page.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
@@ -85,10 +86,13 @@ export function PaperDocPage() {
     !docQuery.data &&
     docQuery.error instanceof ApiError &&
     docQuery.error.code === ERROR_CODES.NOT_FOUND
+  const packageRead = catalogClient.options(owner, "paper.read", {
+    docId: validId ?? NO_DOC,
+  })
   const packageQuery = useQuery({
-    ...catalogClient.options(owner, "paper.read", {
-      docId: validId ?? NO_DOC,
-    }),
+    queryKey: packageRead.queryKey,
+    meta: packageRead.meta,
+    queryFn: ({ signal }) => readWholePackage(owner, validId ?? NO_DOC, signal),
     enabled: packageMissing && owner !== "",
     retry: false,
   })
