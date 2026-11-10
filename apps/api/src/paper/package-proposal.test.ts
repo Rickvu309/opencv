@@ -3,19 +3,22 @@ import { randomUUID } from "node:crypto"
 import { PAPER_CANVAS_PROFILE, coachActor } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
+import {
+  coachInstructions,
+  coachTurnContext,
+  resolveTurnGrounding,
+} from "../coach/index.js"
 import { getDb, withDatabase } from "../db/context.js"
 import { chats, coachUsage, user } from "../db/schema.js"
-import { registry } from "../registry/registry.js"
 import { installRegistry } from "../registry/install.js"
+import { registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { resolveTurnGrounding } from "./context.js"
-import { coachInstructions, coachTurnContext } from "./instructions.js"
-import { fixturePackage, paragraph } from "../paper/package-fixtures.js"
+import { fixturePackage, paragraph } from "./package-fixtures.js"
 import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "../paper/package-store.js"
+} from "./package-store.js"
 
 let backend: Backend
 const owner = randomUUID()

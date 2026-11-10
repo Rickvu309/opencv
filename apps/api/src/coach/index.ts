@@ -1,5 +1,7 @@
 export { createCoachRoutes } from "./http.js"
 export { runCoachTurn } from "./turn.js"
+export { resolveTurnGrounding } from "./context.js"
+export { coachInstructions, coachTurnContext } from "./instructions.js"
 export { interpretPosting, routeCoachModel } from "./router.js"
 export {
   createDemoCoachRuntime,
