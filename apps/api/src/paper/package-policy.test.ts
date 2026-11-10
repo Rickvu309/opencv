@@ -173,7 +173,7 @@ describe("conservative surface and references", () => {
       "",
       { parts: { "word/commentsExtended.xml": "<unknown/>" } },
     ],
-    ["unknown markup", "<w:p><w:futureRef/></w:p>", {}],
+    ["unknown markup", "<w:futureRef/>", {}],
     [
       "external active relationship",
       "",
@@ -491,7 +491,11 @@ describe("review regressions", () => {
   it.each(["XML", "RELS"])(
     "B4 classifies the case-variant %s part before dependency checks",
     async (extension) => {
-      const files = fixtureFiles(paragraph("target"))
+      const files = fixtureFiles(
+        extension === "RELS"
+          ? `<w:p><w:r><w:object r:id="future"/>${run("target")}</w:r></w:p>`
+          : paragraph("target")
+      )
       if (extension === "XML") {
         files["opaque.XML"] = story("p", run("consumer"))
       } else {
@@ -520,6 +524,11 @@ describe("review regressions", () => {
       const bytes = fixtureZip(files)
       const document = await PaperPackage.open(bytes, context)
       expect(document.read().regions[0].kind).toBe("locked")
+      if (extension === "RELS") {
+        expect(document.read().regions[0]).toMatchObject({
+          reason: { code: "UNPROVEN_RELATIONSHIP" },
+        })
+      }
       expect(document.export()).toEqual(bytes)
     }
   )

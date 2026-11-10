@@ -34,6 +34,7 @@ export type PackageRelationship = {
   target: string
   mode: string
   resolved?: string
+  unproven?: boolean
 }
 export type PackageReferences = ReturnType<typeof inspectPackageReferences>
 
@@ -161,37 +162,66 @@ function relationships(
       const mode = attribute(node, "TargetMode") ?? "Internal"
       if (!id || ids.has(id)) refuse("UNPROVEN_RELATIONSHIP")
       ids.add(id)
+      const suffix = type.startsWith(`${OFFICE_RELATIONSHIP_NS}/`)
+        ? type.slice(OFFICE_RELATIONSHIP_NS.length + 1)
+        : ""
       const known =
-        (type.startsWith(`${OFFICE_RELATIONSHIP_NS}/`) &&
-          PACKAGE_PROFILE.relationSuffix.has(
-            type.slice(OFFICE_RELATIONSHIP_NS.length + 1)
-          )) ||
+        (suffix !== "" && PACKAGE_PROFILE.relationSuffix.has(suffix)) ||
         [
           `${RELATIONSHIP_NS}/metadata/core-properties`,
           `${RELATIONSHIP_NS}/metadata/thumbnail`,
           "http://schemas.microsoft.com/office/2020/02/relationships/classificationlabels",
         ].includes(type)
-      if (!known) refuse("UNPROVEN_RELATIONSHIP")
+      const packageRelationship =
+        known &&
+        [
+          "officeDocument",
+          "styles",
+          "settings",
+          "webSettings",
+          "numbering",
+          "fontTable",
+          "theme",
+          "extended-properties",
+          "custom-properties",
+          "customXml",
+          "customXmlProps",
+          "glossaryDocument",
+        ].includes(suffix)
+      const hyperlink = type === `${OFFICE_RELATIONSHIP_NS}/hyperlink`
       if (mode === "External") {
-        if (type !== `${OFFICE_RELATIONSHIP_NS}/hyperlink`)
-          refuse("UNPROVEN_RELATIONSHIP")
-        result.push({ owner: source, id, type, target, mode })
-      } else {
-        if (
-          mode !== "Internal" ||
-          /[?#%\\]/.test(target) ||
-          /^[a-z]+:/i.test(target)
+        if (packageRelationship) refuse("UNPROVEN_RELATIONSHIP")
+        result.push(
+          known && hyperlink
+            ? { owner: source, id, type, target, mode }
+            : { owner: source, id, type, target, mode, unproven: true }
         )
-          refuse("UNPROVEN_RELATIONSHIP")
-        const resolved = posix.normalize(
-          target.startsWith("/")
-            ? target.slice(1)
-            : posix.join(posix.dirname(source), target)
-        )
-        if (resolved.startsWith("../") || !files.has(resolved))
-          refuse("DANGLING_RELATIONSHIP")
-        result.push({ owner: source, id, type, target, mode, resolved })
+        continue
       }
+      const malformed =
+        mode !== "Internal" ||
+        /[?#%\\]/.test(target) ||
+        /^[a-z]+:/i.test(target)
+      if (malformed) {
+        if (known) refuse("UNPROVEN_RELATIONSHIP")
+        result.push({ owner: source, id, type, target, mode, unproven: true })
+        continue
+      }
+      const resolved = posix.normalize(
+        target.startsWith("/")
+          ? target.slice(1)
+          : posix.join(posix.dirname(source), target)
+      )
+      if (resolved.startsWith("../") || !files.has(resolved)) {
+        if (known) refuse("DANGLING_RELATIONSHIP")
+        result.push({ owner: source, id, type, target, mode, unproven: true })
+        continue
+      }
+      if (!known) {
+        result.push({ owner: source, id, type, target, mode, unproven: true })
+        continue
+      }
+      result.push({ owner: source, id, type, target, mode, resolved })
     }
   }
   const main = result.filter(
@@ -233,8 +263,15 @@ export function inspectPackageReferences(
       refuse("UNPROVEN_ACTIVE_PACKAGE")
   const types = declarations(parts, archive.files)
   const graph = relationships(parts, archive.files)
+  const unprovenIds = new Map<string, Set<string>>()
   const incomingByPart = new Map<string, PackageRelationship[]>()
   const relationshipIds = new Map<string, Set<string>>()
+  for (const relation of graph) {
+    if (!relation.unproven) continue
+    const ids = unprovenIds.get(relation.owner) ?? new Set<string>()
+    ids.add(relation.id)
+    unprovenIds.set(relation.owner, ids)
+  }
   for (const relation of graph) {
     const ids = relationshipIds.get(relation.owner) ?? new Set<string>()
     ids.add(relation.id)
@@ -328,6 +365,21 @@ export function inspectPackageReferences(
           !relationshipIds.get(name)?.has(item.value)
         )
           refuse("DANGLING_RELATIONSHIP")
+        if (
+          item.uri === OFFICE_RELATIONSHIP_NS &&
+          unprovenIds.get(name)?.has(item.value)
+        ) {
+          let cursor: XmlElement | null = node
+          let inside = false
+          while (cursor) {
+            if (isWord(cursor, "p")) {
+              inside = true
+              break
+            }
+            cursor = cursor.parent
+          }
+          if (!inside) refuse("UNPROVEN_RELATIONSHIP")
+        }
         if (
           /paraId|textId|paragraphId|textRef|paraRef/i.test(item.local) &&
           !(

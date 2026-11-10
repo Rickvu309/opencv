@@ -79,6 +79,8 @@ const messages: Record<string, string> = {
     "This Word file contains a part whose effect on the text Paper cannot yet establish. Editing is unavailable.",
   UNPROVEN_PACKAGE_MARKUP:
     "This Word file uses markup whose effect on the text Paper cannot yet establish. Editing is unavailable.",
+  UNPROVEN_RELATIONSHIP:
+    "This text depends on a relationship Paper cannot safely prove yet.",
 }
 
 export function refusalReason(code: string): PackageRefusalReason {

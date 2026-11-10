@@ -248,54 +248,66 @@ export function inspectPackagePolicy(policy: PackageReferences) {
       }
     if (!storyPart(name)) continue
     for (const node of descendants(part.root)) {
-      if (
-        node.uri !== WORD_NS &&
-        !PACKAGE_PROFILE.storyNamespaces.has(node.uri) &&
-        !localDrawing(node)
-      )
-        refuse("UNPROVEN_EXTENSION_REACH")
-      if (
-        node.uri === A &&
-        ["fld", "hlinkClick", "hlinkHover"].includes(node.local)
-      )
-        refuse("UNPROVEN_FIELD_CONSUMER")
-      for (const item of node.attributes) {
-        if (
-          isNamespaceAttribute(item) ||
-          ["", WORD_NS, OFFICE_RELATIONSHIP_NS, MC_NS, XML_NS].includes(
-            item.uri
-          ) ||
-          localDrawing(node)
-        )
-          continue
-        if (localIdentity(node, item)) {
-          if (!validParagraphId(item.value)) refuse("UNPROVEN_IDENTITY_REACH")
-        } else refuse("UNPROVEN_EXTENSION_REACH")
-      }
-      if (
-        isWord(node) &&
-        !PACKAGE_PROFILE.knownStoryNames.has(node.local) &&
-        !PACKAGE_PROFILE.propNames.has(node.local) &&
-        !localWord(node) &&
-        ![
-          "tblW",
-          "tblInd",
-          "tblBorders",
-          "tcW",
-          "tcBorders",
-          "tcMar",
-          "gridSpan",
-          "vMerge",
-          "tblLayout",
-          "tblLook",
-          "trHeight",
-          "cantSplit",
-          "tblCellMar",
-        ].includes(node.local)
-      )
-        refuse("UNPROVEN_STORY_CONSUMER")
+      if (insideParagraph(node)) continue
+      inspectStoryNode(node)
     }
   }
+}
+
+function insideParagraph(node: XmlElement) {
+  let cursor: XmlElement | null = node
+  while (cursor) {
+    if (isWord(cursor, "p")) return true
+    cursor = cursor.parent
+  }
+  return false
+}
+
+function inspectStoryNode(node: XmlElement) {
+  if (
+    node.uri !== WORD_NS &&
+    !PACKAGE_PROFILE.storyNamespaces.has(node.uri) &&
+    !localDrawing(node)
+  )
+    refuse("UNPROVEN_EXTENSION_REACH")
+  if (
+    node.uri === A &&
+    ["fld", "hlinkClick", "hlinkHover"].includes(node.local)
+  )
+    refuse("UNPROVEN_FIELD_CONSUMER")
+  for (const item of node.attributes) {
+    if (
+      isNamespaceAttribute(item) ||
+      ["", WORD_NS, OFFICE_RELATIONSHIP_NS, MC_NS, XML_NS].includes(item.uri) ||
+      localDrawing(node)
+    )
+      continue
+    if (localIdentity(node, item)) {
+      if (!validParagraphId(item.value)) refuse("UNPROVEN_IDENTITY_REACH")
+    } else refuse("UNPROVEN_EXTENSION_REACH")
+  }
+  if (
+    isWord(node) &&
+    !PACKAGE_PROFILE.knownStoryNames.has(node.local) &&
+    !PACKAGE_PROFILE.propNames.has(node.local) &&
+    !localWord(node) &&
+    ![
+      "tblW",
+      "tblInd",
+      "tblBorders",
+      "tcW",
+      "tcBorders",
+      "tcMar",
+      "gridSpan",
+      "vMerge",
+      "tblLayout",
+      "tblLook",
+      "trHeight",
+      "cantSplit",
+      "tblCellMar",
+    ].includes(node.local)
+  )
+    refuse("UNPROVEN_STORY_CONSUMER")
 }
 
 function checkProperties(root: XmlElement) {
@@ -338,6 +350,7 @@ export function inspectTargetPolicy(
   part: ParsedPart,
   policy: PackageReferences
 ) {
+  for (const child of descendants(node)) inspectStoryNode(child)
   checkProperties(node)
   const paraId = attribute(node, "paraId", W14_NS)
   const textId = attribute(node, "textId", W14_NS)
