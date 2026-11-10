@@ -71,11 +71,13 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     queryFn: listChats,
   })
   const chats = listQuery.data ?? EMPTY_CHATS
-  const focusDocId = useSyncExternalStore(
+  const writingPageDocId = useSyncExternalStore(
     subscribeWritingCoachFocus,
     writingCoachFocus,
     () => null
   )
+  const focusDocId =
+    typeof writingPageDocId === "string" ? writingPageDocId : undefined
 
   const {
     configuration,
