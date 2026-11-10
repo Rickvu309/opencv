@@ -448,6 +448,23 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     }
   )
 
+  it("shows the limit sentence when a live reply is cut off", async () => {
+    scriptCoachStream({
+      texts: ["Here is half"],
+      streamError: "The Coach hit its limit for this turn.",
+    })
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
+    await sendMessage("Help me prepare")
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The Coach hit its limit for this turn."
+    )
+    expect(
+      screen.queryByText("Something went wrong sending that. Try again.")
+    ).not.toBeInTheDocument()
+  })
+
   it("shows a failed bubble with Retry after a send error, then recovers", async () => {
     scriptCoachStream({
       httpError: {

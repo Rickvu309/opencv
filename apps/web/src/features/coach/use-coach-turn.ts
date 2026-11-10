@@ -351,7 +351,10 @@ export function useCoachTurn({
           ended = true
         },
         onError({ message }) {
-          streamError = coachSendErrorMessage(new Error(message))
+          streamError =
+            message === "The Coach hit its limit for this turn."
+              ? message
+              : coachSendErrorMessage(new Error(message))
         },
       }
 
