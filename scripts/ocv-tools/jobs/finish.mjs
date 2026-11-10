@@ -3,10 +3,12 @@ import { validateAuthoring } from "../authoring.mjs"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
+import { throwPushFailure } from "../push-failure.mjs"
 import {
   recorded,
   task,
   stateHeldDuringPush,
+  run,
   git,
   gh,
   json,
@@ -119,7 +121,8 @@ export function finish(ctx, { flags }) {
         next: "scripts/ocv-tools.mjs finish --body-file <file>",
       }
     const bodyFile = ctx.writeScratch(`finish/${t.n}-body.md`, body)
-    git(ctx, "push", "-u", "origin", t.branch)
+    const upload = run(ctx, "git", ["push", "-u", "origin", t.branch])
+    if (!upload.ok) throwPushFailure(ctx, upload)
     const pushed = decide("finish-pushed", {
       snapshot: { before: current, after: stateHeldDuringPush(ctx, t) },
     })

@@ -116,7 +116,13 @@ export function fixture(over = {}) {
           )
         if (a[0] === "push") {
           if (s.changeDuringPush) s.tree = "changed"
-          return s.pushOk ? ok() : fail()
+          return s.pushOk
+            ? ok()
+            : {
+                ok: false,
+                out: s.pushOut ?? "",
+                err: s.pushErr ?? "failed",
+              }
         }
         if (a[0] === "fetch") return ok()
         if (a[0] === "grep") {
