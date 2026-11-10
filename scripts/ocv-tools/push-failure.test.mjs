@@ -37,3 +37,13 @@ test("a guard on stdout is kept when stderr is only the git refusal", () => {
   assert.match(message.slice(0, 800), /FILE_SIZE/)
   assert.match(message, /REFUSED FILE_SIZE: file is over the limit/)
 })
+
+test("a type error is the first error line and its package is named", () => {
+  const message = explainPushFailure({
+    out: "",
+    err: "src/job/store.ts(12,7): error TS2322: Type 'string' is not assignable to type 'number'.\nREFUSED QUICK_CHECKS: the quick checks failed: typecheck apps/api\nerror: failed to push some refs to 'github.com:Rickvu309/opencv.git'\n",
+    logPath: "/tmp/push.log",
+  })
+  assert.match(message, /QUICK_CHECKS \(typecheck apps\/api\)/)
+  assert.match(message, /src\/job\/store\.ts\(12,7\): error TS2322/)
+})

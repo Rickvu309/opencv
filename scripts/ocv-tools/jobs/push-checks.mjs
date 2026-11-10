@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { run } from "./common.mjs"
@@ -12,6 +12,47 @@ const LINT_DIRS = [
   "packages/paper-crdt",
   "packages/ui",
 ]
+
+const TYPED = /\.(?:[cm]?ts|tsx)$|(?:^|\/)tsconfig[^/]*\.json$/
+const TYPE_PROJECTS = Object.freeze({
+  "apps/api": ["tsconfig.json"],
+  "apps/web": ["tsconfig.app.json", "tsconfig.node.json"],
+  "packages/domain": ["tsconfig.json"],
+  "packages/paper-crdt": ["tsconfig.json"],
+  "packages/ui": ["tsconfig.json"],
+})
+
+export function workspaceUses(readPackage) {
+  const packages = LINT_DIRS.map((dir) => ({ dir, ...readPackage(dir) }))
+  const dirOf = new Map(packages.map((item) => [item.name, item.dir]))
+  return Object.fromEntries(
+    packages.map((item) => [
+      item.dir,
+      Object.keys({ ...item.dependencies, ...item.devDependencies })
+        .map((name) => dirOf.get(name))
+        .filter(Boolean),
+    ])
+  )
+}
+
+export function typecheckDirs(files, uses) {
+  const touched = new Set(
+    LINT_DIRS.filter((dir) =>
+      files.some((file) => file.startsWith(`${dir}/`) && TYPED.test(file))
+    )
+  )
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const dir of LINT_DIRS) {
+      if (touched.has(dir)) continue
+      if (!(uses[dir] ?? []).some((used) => touched.has(used))) continue
+      touched.add(dir)
+      grew = true
+    }
+  }
+  return LINT_DIRS.filter((dir) => touched.has(dir))
+}
 
 export const CI_ONLY_GUARDS = Object.freeze([
   "scripts/approve-railway-deploys.test.mjs",
@@ -31,6 +72,12 @@ export const FAST_GUARDS = Object.freeze([
     .sort(),
   ...NESTED_FAST_GUARDS,
 ])
+
+export const WORKSPACE_USES = Object.freeze(
+  workspaceUses((dir) =>
+    JSON.parse(readFileSync(join(ROOT, dir, "package.json"), "utf8"))
+  )
+)
 
 export const GIT_ENV = Object.freeze([
   "GIT_DIR",
@@ -53,7 +100,7 @@ const batches = (list) => {
   return out
 }
 
-export function quickPlan(files, top) {
+export function quickPlan(files, top, uses = WORKSPACE_USES) {
   const steps = []
   for (const paths of batches(files))
     steps.push({
@@ -84,6 +131,23 @@ export function quickPlan(files, top) {
         cwd: join(top, dir),
       })
   }
+  for (const dir of typecheckDirs(files, uses))
+    for (const project of TYPE_PROJECTS[dir])
+      steps.push({
+        label: `typecheck ${dir}`,
+        cmd: join(top, dir, "node_modules/.bin/tsc"),
+        args: [
+          "-p",
+          project,
+          "--noEmit",
+          "--incremental",
+          "--tsBuildInfoFile",
+          `node_modules/.cache/ocv-tools/typecheck/${project}.tsbuildinfo`,
+          "--pretty",
+          "false",
+        ],
+        cwd: join(top, dir),
+      })
   steps.push({
     label: "no-comments",
     cmd: "node",

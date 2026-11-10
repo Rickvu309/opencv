@@ -3,7 +3,14 @@ import { execFileSync } from "node:child_process"
 import { existsSync } from "node:fs"
 import test from "node:test"
 import { SLOW, discoverTests } from "../../../packages/guards/run-tests.mjs"
-import { CI_ONLY_GUARDS, FAST_GUARDS, quickPlan } from "./push-checks.mjs"
+import {
+  CI_ONLY_GUARDS,
+  FAST_GUARDS,
+  WORKSPACE_USES,
+  quickPlan,
+  typecheckDirs,
+  workspaceUses,
+} from "./push-checks.mjs"
 
 const root = new URL("../../../", import.meta.url).pathname
 
@@ -41,7 +48,7 @@ test("the plan has no turbo, test runner or build step", () => {
   assert.doesNotMatch(text, /turbo|pnpm|vitest|vite build|playwright|chrom/i)
   assert.deepEqual(
     plan.map((step) => step.label),
-    ["prettier", "eslint apps/api", "no-comments"]
+    ["prettier", "eslint apps/api", "typecheck apps/api", "no-comments"]
   )
   assert.ok(!plan.some((step) => step.args.includes("--test")))
 })
@@ -60,4 +67,74 @@ test("the GitHub guards job runs every file the push used to run", () => {
   assert.deepEqual(missing, [])
   assert.ok(hook.has("scripts/local-port-range.test.mjs"))
   assert.ok(hook.has("scripts/ocv-tools/rules-doc.test.mjs"))
+})
+
+const USES = {
+  "apps/api": ["packages/domain", "packages/paper-crdt"],
+  "apps/web": ["packages/domain", "packages/paper-crdt", "packages/ui"],
+  "packages/domain": [],
+  "packages/paper-crdt": ["packages/domain"],
+  "packages/ui": [],
+}
+
+test("a change is typechecked in its package and in every package that uses it", () => {
+  assert.deepEqual(typecheckDirs(["docs/a.md", "scripts/a.mjs"], USES), [])
+  assert.deepEqual(typecheckDirs(["apps/web/src/a.css"], USES), [])
+  assert.deepEqual(typecheckDirs(["apps/web/src/a.tsx"], USES), ["apps/web"])
+  assert.deepEqual(typecheckDirs(["packages/ui/src/a.tsx"], USES), [
+    "apps/web",
+    "packages/ui",
+  ])
+  assert.deepEqual(typecheckDirs(["apps/api/tsconfig.json"], USES), [
+    "apps/api",
+  ])
+  assert.deepEqual(typecheckDirs(["packages/domain/src/a.ts"], USES), [
+    "apps/api",
+    "apps/web",
+    "packages/domain",
+    "packages/paper-crdt",
+  ])
+})
+
+test("the package links come from each package file", () => {
+  const read = (dir) =>
+    ({
+      "apps/api": {
+        name: "api",
+        dependencies: { "@workspace/domain": "workspace:*", hono: "1" },
+      },
+      "apps/web": {
+        name: "web",
+        devDependencies: { "@workspace/ui": "workspace:*" },
+      },
+      "packages/domain": { name: "@workspace/domain" },
+      "packages/paper-crdt": { name: "@workspace/paper-crdt" },
+      "packages/ui": { name: "@workspace/ui" },
+    })[dir]
+  assert.deepEqual(workspaceUses(read), {
+    "apps/api": ["packages/domain"],
+    "apps/web": ["packages/ui"],
+    "packages/domain": [],
+    "packages/paper-crdt": [],
+    "packages/ui": [],
+  })
+  assert.deepEqual(WORKSPACE_USES, USES)
+})
+
+test("each typecheck step is incremental, emits nothing and runs in its package", () => {
+  const steps = quickPlan(["apps/web/src/a.tsx"], "/repo", USES).filter(
+    (step) => step.label.startsWith("typecheck")
+  )
+  assert.deepEqual(
+    steps.map((step) => [step.cwd, step.args[1]]),
+    [
+      ["/repo/apps/web", "tsconfig.app.json"],
+      ["/repo/apps/web", "tsconfig.node.json"],
+    ]
+  )
+  for (const step of steps) {
+    assert.equal(step.cmd, "/repo/apps/web/node_modules/.bin/tsc")
+    assert.ok(step.args.includes("--noEmit"))
+    assert.ok(step.args.includes("--incremental"))
+  }
 })

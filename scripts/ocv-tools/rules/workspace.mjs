@@ -201,7 +201,7 @@ export const workspaceRows = [
   rule({
     id: "QUICK_CHECKS",
     section: "4",
-    says: "A push passes the quick checks: prettier and eslint on the changed files, and no comments. The guard suite runs on GitHub.",
+    says: "A push passes the quick checks: prettier and eslint on the changed files, a typecheck of each changed package and the packages that use it, and no comments. The guard suite runs on GitHub.",
     at: ["push"],
     needs: ["quick"],
     check: quickChecks,

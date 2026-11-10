@@ -1,6 +1,6 @@
 const HOOK_NAME = /^(pre-push|pre-commit|commit-msg)\b/
 const ERROR_LINE =
-  /^(?:REFUSED\s|error:|✖|not ok\b|AssertionError\b|TypeError\b|SyntaxError\b)/i
+  /^(?:REFUSED\s|error:|✖|not ok\b|AssertionError\b|TypeError\b|SyntaxError\b)|^\S+\(\d+,\d+\): error TS\d+:/i
 
 function linesOf(out, err) {
   return `${out ?? ""}\n${err ?? ""}`
