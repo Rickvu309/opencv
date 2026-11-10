@@ -1,3 +1,5 @@
+import { CommandError } from "../registry/errors.js"
+
 export type PackageRefusalReason = { code: string; message: string }
 
 const messages: Record<string, string> = {
@@ -98,17 +100,16 @@ export function refusalReason(code: string): PackageRefusalReason {
   return { code, message }
 }
 
-export class PaperPackageRefusal extends Error {
+export class PaperPackageRefusal extends CommandError {
   readonly reason: PackageRefusalReason
+  readonly packageDetail: string
 
-  constructor(
-    readonly code: string,
-    readonly detail = ""
-  ) {
+  constructor(code: string, detail = "") {
     const reason = refusalReason(code)
-    super(`${code}: ${reason.message}`)
+    super(code, `${code}: ${reason.message}`)
     this.name = "PaperPackageRefusal"
     this.reason = reason
+    this.packageDetail = detail
   }
 }
 

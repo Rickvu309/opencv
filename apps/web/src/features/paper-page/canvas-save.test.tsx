@@ -328,6 +328,40 @@ describe("settlePage", () => {
     })
   })
 
+  it("keeps the words and shows why a save was refused", async () => {
+    const reason =
+      "The text to replace does not exactly match this span. Read it again and use its exact text."
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/reads/paper.read")) {
+        return Promise.resolve(ok(readResult("Hello")))
+      }
+      if (url.includes("/api/commands/paper.edit")) {
+        return Promise.resolve(
+          Response.json(
+            {
+              ok: false,
+              error: { code: "BEFORE_TEXT_MISMATCH", message: reason },
+            },
+            { status: 400 }
+          )
+        )
+      }
+      return Promise.resolve(new Response("missing", { status: 404 }))
+    })
+    const saved = await settlePage(
+      DOC,
+      [{ id: PARAGRAPH, text: "Hello!" }],
+      new AbortController().signal
+    )
+    expect(saved).toEqual({
+      saved: false,
+      words: "Hello!",
+      revision: null,
+      note: reason,
+    })
+  })
+
   it("keeps the words when the server refuses", async () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(new Response("no", { status: 500 }))

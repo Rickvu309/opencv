@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { Auth } from "./auth.js"
 import type { AppDatabase } from "./db/context.js"
+import { PaperPackageRefusal } from "./paper/package-errors.js"
 import { CommandError } from "./registry/errors.js"
 import {
   handleApiError,
@@ -87,6 +88,21 @@ describe("api error handling", () => {
     await expect(res.json()).resolves.toEqual({
       ok: false,
       error: { code: ERROR_CODES.FORBIDDEN, message: "Not yours" },
+    })
+  })
+
+  it("onError returns a package refusal as its reason, not a server error", async () => {
+    const res = await errorApp(
+      new PaperPackageRefusal("BEFORE_TEXT_MISMATCH")
+    ).request("/boom")
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: "BEFORE_TEXT_MISMATCH",
+        message:
+          "BEFORE_TEXT_MISMATCH: The text to replace does not exactly match this span. Read it again and use its exact text.",
+      },
     })
   })
 
