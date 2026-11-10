@@ -42,6 +42,7 @@ function world(over = {}) {
         cmd === "node" ||
         cmd === "env" ||
         cmd.endsWith("/eslint") ||
+        cmd.endsWith("/tsc") ||
         args.includes("--check")
       ) {
         const label =
@@ -257,7 +258,17 @@ test("pre-push runs only the quick checks and never the full suite", () => {
     .map((c) => [c.cmd.split("/").pop(), ...c.args].join(" "))
   assert.deepEqual(
     commands.map((line) => line.split(" ")[0]),
-    ["prettier", "eslint", "eslint", "node"]
+    ["prettier", "eslint", "eslint", "tsc", "tsc", "tsc", "node"]
+  )
+  assert.deepEqual(
+    w.s.calls
+      .filter((c) => c.cmd.endsWith("/tsc"))
+      .map((c) => [c.options.cwd, c.args[1]]),
+    [
+      ["/repo/apps/web", "tsconfig.app.json"],
+      ["/repo/apps/web", "tsconfig.node.json"],
+      ["/repo/packages/ui", "tsconfig.json"],
+    ]
   )
   assert.equal(w.s.calls.filter((c) => c.cmd === "pnpm").length, 0)
   assert.equal(
@@ -295,6 +306,9 @@ test("pre-push still refuses a comment, bad formatting, a lint error and a faili
   )
   assert.match(refused(["prettier"]).text, /failed: prettier/)
   assert.match(refused(["eslint"]).text, /failed: eslint apps\/web/)
+  const typed = refused(["tsc"])
+  assert.equal(typed.code, 2)
+  assert.match(typed.text, /failed: typecheck apps\/web/)
   assert.equal(refused(["rules-doc"]).code, 0)
   const everything = refused(["no-comments", "eslint"])
   assert.match(everything.text, /eslint apps\/web, no-comments/)
