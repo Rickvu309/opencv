@@ -54,6 +54,17 @@ export function typecheckDirs(files, uses) {
   return LINT_DIRS.filter((dir) => touched.has(dir))
 }
 
+export const TYPECHECK_PROJECTS = TYPE_PROJECTS
+
+export function readsBuiltOutput(tsconfigText, used) {
+  const config = tsconfigText.replace(/^\s*\/\*.*\*\/\s*$/gm, "")
+  if (/"customConditions"\s*:\s*\[[^\]]*"opencv-source"/.test(config)) return []
+  return used
+    .filter((item) => /(^|\/)dist\//.test(item.types ?? ""))
+    .filter((item) => !config.includes(`"${item.name}": [`))
+    .map((item) => item.name)
+}
+
 export const CI_ONLY_GUARDS = Object.freeze([
   "scripts/approve-railway-deploys.test.mjs",
   "scripts/no-comments.test.mjs",
