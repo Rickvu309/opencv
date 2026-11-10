@@ -1,5 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useMemo, useReducer, type ReactNode } from "react"
+import {
+  useCallback,
+  useMemo,
+  useReducer,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react"
 import type { ChatSummary } from "@workspace/domain"
 
 import {
@@ -15,6 +21,10 @@ import {
 import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
 import { titleFrom } from "@/features/coach/chat-messages.ts"
 import { refreshReads } from "@/lib/contract-client.ts"
+import {
+  subscribeWritingCoachFocus,
+  writingCoachFocus,
+} from "@/lib/writing-coach-focus.ts"
 
 type ActiveChatState = {
   activeChatId: string | null
@@ -61,6 +71,13 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     queryFn: listChats,
   })
   const chats = listQuery.data ?? EMPTY_CHATS
+  const writingPageDocId = useSyncExternalStore(
+    subscribeWritingCoachFocus,
+    writingCoachFocus,
+    () => null
+  )
+  const focusDocId =
+    typeof writingPageDocId === "string" ? writingPageDocId : undefined
 
   const {
     configuration,
@@ -78,6 +95,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     chatId: activeChatId,
     setChatId: (id) => dispatch({ type: "conversation_created", id }),
     titleForCreate: titleFrom,
+    focusDocId,
     onAfterUndo: () => {
       void refreshReads(queryClient, [{ query: "profile.get" }])
     },

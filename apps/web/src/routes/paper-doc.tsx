@@ -17,7 +17,7 @@ import {
   draftFromRegions,
   opensWritingCanvas,
 } from "@/features/paper-page/canvas-edit.ts"
-import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
+import { WritingPage } from "@/features/paper/writing-page.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
 import { authClient } from "@/lib/auth-client.ts"
@@ -121,7 +121,7 @@ export function PaperDocPage() {
   }
   if (!docQuery.data) {
     if (seeded && validId) {
-      return <WritingCanvas key={validId} docId={validId} seed={seeded} />
+      return <WritingPage key={validId} docId={validId} seed={seeded} />
     }
     const missing =
       validId === null ||
@@ -145,7 +145,7 @@ export function PaperDocPage() {
   }
   const doc = docQuery.data
   if (opensWritingCanvas(doc)) {
-    return <WritingCanvas key={doc.id} docId={doc.id} />
+    return <WritingPage key={doc.id} docId={doc.id} />
   }
   if (doc.kind === "letter") {
     const job =

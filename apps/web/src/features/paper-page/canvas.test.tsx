@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 
 import { render } from "@/test/render-with-client.tsx"
 
+import { writingCoachFocus } from "@/lib/writing-coach-focus.ts"
+
 import { WritingCanvas } from "./canvas.tsx"
 
 const DOC = "11111111-1111-7111-8111-111111111111"
@@ -60,6 +62,14 @@ afterEach(() => {
 })
 
 describe("WritingCanvas", () => {
+  it("tells Coach which Paper is open", async () => {
+    const view = render(<WritingCanvas docId={DOC} />)
+    expect(writingCoachFocus()).toBe(DOC)
+    view.unmount()
+    await act(async () => {})
+    expect(writingCoachFocus()).toBeNull()
+  })
+
   it("opens a blank page and says the writing is not saved yet", () => {
     render(<WritingCanvas docId={DOC} />)
     expect(words()).toEqual([""])
