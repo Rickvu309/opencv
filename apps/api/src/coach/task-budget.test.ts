@@ -3,7 +3,12 @@ import { eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"
 import { getDb, withDatabase } from "../db/context.js"
-import { chatMessages, coachTasks, jobs } from "../db/schema.js"
+import {
+  chatMessages,
+  coachTasks,
+  jobs,
+  taskCheckpoints,
+} from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import { seedTask } from "../test/coach-task-support.js"
 import { createMigratedTestDb } from "../test/harness.js"
@@ -405,4 +410,85 @@ it("stores a cut-off tool call as a limit before reading its input", () =>
       (row) => row.text
     )
     expect(texts.join("\n")).not.toContain("Try again")
+  }))
+
+it("adds a fresh copy and a later copy without mixing in the page", () =>
+  fixture(async ({ ownerId, taskId }, registry) => {
+    await getDb()
+      .update(coachTasks)
+      .set({ modelId: COACH_MODEL })
+      .where(eq(coachTasks.id, taskId))
+    const [task] = await getDb().select().from(coachTasks)
+    const requests: { system?: unknown }[] = []
+    const responses = [
+      anthropicFixtureResponse(
+        [
+          {
+            type: "tool-call",
+            toolCallId: "create",
+            toolName: "job_create",
+            input: JSON.stringify({ title: "Engineer", company: "Acme" }),
+          },
+        ],
+        undefined,
+        {
+          inputTokens: 10,
+          outputTokens: 1,
+          cacheCreationInputTokens: 100,
+          cacheReadInputTokens: 0,
+        }
+      ),
+      anthropicFixtureResponse(
+        [{ type: "text-delta", delta: "Done." }],
+        undefined,
+        {
+          inputTokens: 4,
+          outputTokens: 2,
+          cacheCreationInputTokens: 0,
+          cacheReadInputTokens: 100,
+        }
+      ),
+    ]
+    const model = createAnthropicModel({
+      apiKey: "fixture",
+      maxRetries: 0,
+      fetch: async (_url, init) => {
+        requests.push(JSON.parse(String(init?.body)))
+        const response = responses.shift()
+        if (!response) throw new Error("Unexpected model request")
+        return response
+      },
+    })
+    const entries = await registry.tools(
+      coachActor(ownerId, task!.chatId, "fixture")
+    )
+    await runCoachWorker({
+      ...settings,
+      registry,
+      runtime: () =>
+        createAnthropicWorkerRuntime({
+          model,
+          system: "Shared instructions",
+          uncached: "Context: doc-secret-9f3a",
+          history: [],
+          entries,
+          registry,
+          actor: coachActor(ownerId, task!.chatId, "fixture"),
+        }),
+    })
+    const rows = await getDb()
+      .select()
+      .from(taskCheckpoints)
+      .where(eq(taskCheckpoints.taskId, taskId))
+    const latest = rows.sort((a, b) => b.version - a.version)[0]
+    expect(latest?.usage).toEqual({
+      inputTokens: 14,
+      outputTokens: 3,
+      cacheCreationInputTokens: 100,
+      cacheReadInputTokens: 100,
+    })
+    const system = requests[0]?.system as { text: string }[]
+    expect(system[0]?.text).toBe("Shared instructions")
+    expect(system[0]?.text).not.toContain("doc-secret-9f3a")
+    expect(system[1]?.text).toBe("Context: doc-secret-9f3a")
   }))

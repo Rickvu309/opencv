@@ -1,5 +1,5 @@
 import { createAuthTables } from "./auth-schema.js"
-import { bytea, timestamptz } from "./column-types.js"
+import { bytea, timestamptz, type CheckpointUsage } from "./column-types.js"
 import { createPaperPackageTables } from "./paper-package-schema.js"
 import { createCoachUsageTable } from "./coach-usage-schema.js"
 import { createOAuthTables } from "./oauth-schema.js"
@@ -555,9 +555,7 @@ export const taskCheckpoints = opencvApp.table(
     attempt: integer("attempt").notNull(),
     modelMessages: jsonb("model_messages").notNull(),
     observedRevisions: jsonb("observed_revisions").notNull(),
-    usage: jsonb("usage")
-      .$type<{ inputTokens: number; outputTokens: number }>()
-      .notNull(),
+    usage: jsonb("usage").$type<CheckpointUsage>().notNull(),
     requestManifest: jsonb("request_manifest").notNull(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },

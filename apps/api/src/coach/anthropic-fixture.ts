@@ -59,7 +59,12 @@ export class FixtureCoachModel {
 export function anthropicFixtureResponse(
   chunks: FixtureChunk[],
   stopReason?: string,
-  usage?: { inputTokens: number; outputTokens: number }
+  usage?: {
+    inputTokens: number
+    outputTokens: number
+    cacheCreationInputTokens?: number
+    cacheReadInputTokens?: number
+  }
 ): Response {
   const events: unknown[] = [
     {
@@ -75,6 +80,14 @@ export function anthropicFixtureResponse(
         usage: {
           input_tokens: usage?.inputTokens ?? 1,
           output_tokens: 0,
+          ...(usage?.cacheCreationInputTokens === undefined
+            ? {}
+            : {
+                cache_creation_input_tokens: usage.cacheCreationInputTokens,
+              }),
+          ...(usage?.cacheReadInputTokens === undefined
+            ? {}
+            : { cache_read_input_tokens: usage.cacheReadInputTokens }),
         },
       },
     },
