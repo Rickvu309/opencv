@@ -71,8 +71,8 @@ export function detect(text, file) {
   const needs = /^    needs:([^\n]*)(?:\n((?:      -[^\n]*\n)*))?/m.exec(block)
   const dependencies =
     `${needs?.[1] ?? ""} ${needs?.[2] ?? ""}`.match(/\w[\w-]*/g) ?? []
-  if (dependencies.length !== 1 || dependencies[0] !== "full")
-    return ["approval must depend on full"]
+  if (dependencies.includes("full"))
+    return ["approval must not wait for the full run"]
   const raw = /^    if: (.+)$/m.exec(block)?.[1]?.trim() ?? ""
   const unquoted = /^["']/.test(raw) ? raw.slice(1, -1) : raw
   const condition = unquoted.replace(/^\$\{\{\s*|\s*\}\}$/g, "")
@@ -85,11 +85,8 @@ export function detect(text, file) {
       "merge_group",
     ])
       for (const result of ["success", "failure", "cancelled", "skipped"])
-        if (
-          evaluate(condition, event, result) !==
-          (event === "push" && result === "success")
-        )
-          return ["approval must run only after a successful push full"]
+        if (evaluate(condition, event, result) !== (event === "push"))
+          return ["approval must run on push without the full run"]
   } catch {
     return ["approval condition cannot be verified"]
   }
