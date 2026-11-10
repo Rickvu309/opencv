@@ -51,7 +51,12 @@ export type ModelStep = {
   intents: readonly ModelIntent[]
   stopReason: string | null
   message?: ModelMessage
-  usage?: { inputTokens: number; outputTokens: number }
+  usage?: {
+    inputTokens: number
+    outputTokens: number
+    cacheCreationInputTokens?: number
+    cacheReadInputTokens?: number
+  }
 }
 
 export type StepBoundary = {

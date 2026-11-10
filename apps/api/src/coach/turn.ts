@@ -45,7 +45,8 @@ import {
   trackChatTurn,
 } from "./turn-steps.js"
 
-import { coachInstructions, coachTurnContext } from "./instructions.js"
+import { coachTurnContext } from "./instructions.js"
+import { COACH_STABLE_PROMPT } from "./prompt.js"
 
 export { toolResultFromExecute } from "./receipt.js"
 
@@ -344,7 +345,8 @@ export async function* liveParts(input: {
   })
   yield* streamAnthropicSteps({
     model: input.model,
-    system: coachInstructions(grounding),
+    system: COACH_STABLE_PROMPT,
+    uncached: `Context: ${grounding}`,
     history: input.history,
     entries: input.toolEntries,
     registry: input.registry,

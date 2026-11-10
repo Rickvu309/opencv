@@ -1,7 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { z } from "zod"
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod"
-import type { BetaMessageParam } from "@anthropic-ai/sdk/resources/beta/messages"
+import type {
+  BetaMessageParam,
+  BetaTextBlockParam,
+} from "@anthropic-ai/sdk/resources/beta/messages"
 import {
   COACH_MODEL,
   chatToolNameSchema,
@@ -114,9 +117,28 @@ function advertisedInputSchema(name: string, input: z.ZodType) {
   return { ...schema, type: "object" as const }
 }
 
+function coachSystem(
+  modelId: string,
+  stable: string,
+  uncached?: string
+): string | BetaTextBlockParam[] {
+  if (modelId !== "claude-opus-5-5")
+    return uncached ? `${stable}\n${uncached}` : stable
+  const blocks: BetaTextBlockParam[] = [
+    {
+      type: "text",
+      text: stable,
+      cache_control: { type: "ephemeral", ttl: "5m" },
+    },
+  ]
+  if (uncached) blocks.push({ type: "text", text: uncached })
+  return blocks
+}
+
 export async function* streamAnthropicSteps(input: {
   model: CoachModel
   system: string
+  uncached?: string
   history: ChatEntry[]
   messages?: BetaMessageParam[]
   entries: ToolEntry[]
@@ -207,7 +229,7 @@ export async function* streamAnthropicSteps(input: {
       max_tokens: input.maxTokens ?? 32000,
       thinking: { type: "adaptive" },
       output_config: { effort: "medium" },
-      system: input.system,
+      system: coachSystem(input.model.modelId, input.system, input.uncached),
       messages:
         input.messages ??
         input.history.slice(-40).map((message) => ({
@@ -290,6 +312,9 @@ export async function* streamAnthropicSteps(input: {
         usage: {
           inputTokens: message.usage.input_tokens,
           outputTokens: message.usage.output_tokens,
+          cacheCreationInputTokens:
+            message.usage.cache_creation_input_tokens ?? 0,
+          cacheReadInputTokens: message.usage.cache_read_input_tokens ?? 0,
         },
       })
       for (const intent of intents)

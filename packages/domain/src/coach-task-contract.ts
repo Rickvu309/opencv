@@ -114,6 +114,8 @@ const coachTaskUsageSchema = z
     latencyMs: z.number().int().nullable(),
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),
+    cacheCreationInputTokens: z.number().int().nonnegative().default(0),
+    cacheReadInputTokens: z.number().int().nonnegative().default(0),
   })
   .strict()
 export const coachTaskSnapshotSchema = z

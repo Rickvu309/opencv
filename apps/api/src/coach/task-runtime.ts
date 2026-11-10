@@ -9,7 +9,7 @@ import type { Registry } from "../registry/registry.js"
 import { streamAnthropicSteps } from "./anthropic-runtime.js"
 import { createScriptedWorkerRuntime } from "./fake.js"
 import { modelMessageSchema, type WorkerRuntime } from "./model-step.js"
-import { coachInstructions } from "./instructions.js"
+import { COACH_STABLE_PROMPT } from "./prompt.js"
 import { routeCoachModel } from "./router.js"
 import type { Task } from "./task-types.js"
 
@@ -43,7 +43,8 @@ export function createTaskRuntime(
         mode: coachModeSchema.parse(task.mode),
         env: coachModelEnv(),
       }),
-      system: coachInstructions(JSON.stringify(task.contextSnapshot)),
+      system: COACH_STABLE_PROMPT,
+      uncached: `Context: ${JSON.stringify(task.contextSnapshot)}`,
       history: [],
       messages: input.messages,
       entries: task.toolsAllowed ? await registry.tools(actor) : [],

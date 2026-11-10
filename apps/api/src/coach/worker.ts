@@ -198,6 +198,12 @@ export async function runCoachWorker(options: {
           tokens = {
             inputTokens: tokens.inputTokens + decision.usage.inputTokens,
             outputTokens: tokens.outputTokens + decision.usage.outputTokens,
+            cacheCreationInputTokens:
+              (tokens.cacheCreationInputTokens ?? 0) +
+              (decision.usage.cacheCreationInputTokens ?? 0),
+            cacheReadInputTokens:
+              (tokens.cacheReadInputTokens ?? 0) +
+              (decision.usage.cacheReadInputTokens ?? 0),
           }
           const intents: Intent[] = decision.intents.map((intent, slot) => {
             const entry = entries.find((entry) => entry.name === intent.name)

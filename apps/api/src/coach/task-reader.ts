@@ -126,6 +126,8 @@ async function snapshot(task: Task) {
       latencyMs: usage.latencyMs,
       inputTokens: checkpoint?.usage.inputTokens ?? 0,
       outputTokens: checkpoint?.usage.outputTokens ?? 0,
+      cacheCreationInputTokens: checkpoint?.usage.cacheCreationInputTokens ?? 0,
+      cacheReadInputTokens: checkpoint?.usage.cacheReadInputTokens ?? 0,
     },
   })
 }

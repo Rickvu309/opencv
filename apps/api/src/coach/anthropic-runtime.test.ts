@@ -381,6 +381,7 @@ describe("Anthropic request-bound Coach runtime", () => {
       thinking: { type: "adaptive" },
       output_config: { effort: "low" },
     })
+    expect(JSON.stringify(observed)).not.toContain("cache_control")
   })
 
   it("rejects a completion that thinking used up before any answer", async () => {
@@ -468,5 +469,111 @@ describe("Anthropic request-bound Coach runtime", () => {
       message: "The Coach hit its limit for this turn.",
     })
     expect(parts.some((part) => part.type === "finish")).toBe(false)
+  })
+
+  it("reuses shared instructions for five minutes and leaves a person's page out", async () => {
+    const secret = "doc-secret-9f3a"
+    const { model, requests } = fixture([text])
+    await collect(
+      streamAnthropicSteps({
+        model,
+        history: [
+          {
+            id: "00000000-0000-4000-8000-000000000010",
+            role: "user",
+            text: "Please look at my page",
+            createdAt: "2026-11-10T00:00:00.000Z",
+          },
+        ],
+        system: "Shared instructions",
+        uncached: `Context: ${secret}`,
+        entries: [entry],
+        actor,
+        registry: { read: vi.fn(), execute: vi.fn() },
+      })
+    )
+    const request = requests[0] as {
+      system: {
+        type: string
+        text: string
+        cache_control?: { type: string; ttl: string }
+      }[]
+      tools: { cache_control?: unknown }[]
+      messages: unknown[]
+    }
+    expect(request.system[0]).toEqual({
+      type: "text",
+      text: "Shared instructions",
+      cache_control: { type: "ephemeral", ttl: "5m" },
+    })
+    expect(request.system[0]?.text).not.toContain(secret)
+    expect(request.system[1]).toEqual({
+      type: "text",
+      text: `Context: ${secret}`,
+    })
+    expect(request.system[1]).not.toHaveProperty("cache_control")
+    expect(request.tools.length).toBeGreaterThan(0)
+    expect(JSON.stringify(request.tools)).not.toContain("cache_control")
+    expect(JSON.stringify(request.messages)).toContain("Please look at my page")
+    expect(JSON.stringify(request.messages)).not.toContain("cache_control")
+    expect(JSON.stringify(request).match(/cache_control/g)).toHaveLength(1)
+  })
+
+  it("records a fresh copy, a later copy, and the uncached remainder", async () => {
+    const { model } = fixture([
+      () =>
+        anthropicFixtureResponse(
+          [{ type: "text-delta", delta: "Ok" }],
+          "end_turn",
+          {
+            inputTokens: 40,
+            outputTokens: 2,
+            cacheCreationInputTokens: 17000,
+            cacheReadInputTokens: 0,
+          }
+        ),
+    ])
+    const steps: ModelStep[] = []
+    await collect(
+      streamAnthropicSteps({
+        model,
+        history: [],
+        system: "Shared instructions",
+        entries: [entry],
+        actor,
+        registry: { read: vi.fn(), execute: vi.fn() },
+        boundary: {
+          persistStep: async (step) => {
+            steps.push(step)
+          },
+          runIntent: async () => "",
+        },
+      })
+    )
+    expect(steps[0]?.usage).toEqual({
+      inputTokens: 40,
+      outputTokens: 2,
+      cacheCreationInputTokens: 17000,
+      cacheReadInputTokens: 0,
+    })
+  })
+
+  it("does not reuse instructions for a different model", async () => {
+    const { model, requests } = fixture([text])
+    await collect(
+      streamAnthropicSteps({
+        model: { ...model, modelId: "claude-other" as typeof model.modelId },
+        history: [],
+        system: "Shared instructions",
+        uncached: "Context: doc-secret-9f3a",
+        entries: [entry],
+        actor,
+        registry: { read: vi.fn(), execute: vi.fn() },
+      })
+    )
+    expect(requests[0]?.system).toBe(
+      "Shared instructions\nContext: doc-secret-9f3a"
+    )
+    expect(JSON.stringify(requests[0])).not.toContain("cache_control")
   })
 })
