@@ -102,6 +102,7 @@ export function savedNote(words: string, outcome: SaveOutcome): string | null {
   if (words === "") return null
   if (outcome.note === UNAVAILABLE) return "Word documents are unavailable."
   if (outcome.note && SERVER_NOTES.has(outcome.note)) return outcome.note
+  if (!outcome.saved && outcome.note) return outcome.note
   if (
     words === "" ||
     !outcome.saved ||
@@ -255,9 +256,10 @@ function missed(words: string): SaveOutcome {
 }
 
 function serverNote(error: unknown): string | null {
-  return error instanceof ApiError && SERVER_NOTES.has(error.message)
-    ? error.message
-    : null
+  if (!(error instanceof ApiError) || error.message === "") return null
+  if (SERVER_NOTES.has(error.message) || error.status === 400)
+    return error.message
+  return null
 }
 
 let commands: QueryClient | null = null

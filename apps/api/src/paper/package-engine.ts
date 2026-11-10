@@ -14,7 +14,11 @@ import {
   type ParsedPart,
 } from "./package-references.js"
 import { inspectPackagePolicy } from "./package-policy.js"
-import { changedInterval, replaceUniqueSpan } from "./package-spans.js"
+import {
+  changedInterval,
+  replaceUniqueSpan,
+  spansForEdit,
+} from "./package-spans.js"
 import { updateParagraphVersions } from "./package-versions.js"
 import {
   inspectParagraph,
@@ -348,30 +352,32 @@ export class PaperPackage {
       refuse("READ_ONLY_PACKAGE", this.#policy)
     const ids = new Set<string>()
     let aggregate = 0
-    const replacements = request.edits.map((edit) => {
-      if (ids.has(edit.targetId)) refuse("DUPLICATE_TARGET")
-      ids.add(edit.targetId)
-      const target =
-        this.#view.targets.get(edit.targetId) ??
-        refuse("STALE_OR_FOREIGN_TARGET")
-      if (!xmlCharacters(edit.before)) refuse("UNSUPPORTED_REPLACEMENT_TEXT")
-      const replacement = replaceUniqueSpan(
-        target.text,
-        edit.before,
-        edit.after
-      )
-      if (!xmlCharacters(edit.after) || /[\r\n\t]/.test(edit.after))
-        refuse("UNSUPPORTED_REPLACEMENT_TEXT")
-      const beforeBytes = Buffer.byteLength(edit.before, "utf8")
-      const afterBytes = Buffer.byteLength(edit.after, "utf8")
-      aggregate += beforeBytes + afterBytes
-      if (
-        Math.max(beforeBytes, afterBytes) > PACKAGE_LIMITS.targetBytes ||
-        aggregate > PACKAGE_LIMITS.replacementBytes
-      )
-        refuse("EDIT_TEXT_LIMIT")
-      return { ...edit, target, replacement }
-    })
+    const replacements = request.edits.flatMap((edit) =>
+      spansForEdit(this.#view.projection.regions, edit).map((span) => {
+        if (ids.has(span.targetId)) refuse("DUPLICATE_TARGET")
+        ids.add(span.targetId)
+        const target =
+          this.#view.targets.get(span.targetId) ??
+          refuse("STALE_OR_FOREIGN_TARGET")
+        if (!xmlCharacters(span.before)) refuse("UNSUPPORTED_REPLACEMENT_TEXT")
+        const replacement = replaceUniqueSpan(
+          target.text,
+          span.before,
+          span.after
+        )
+        if (!xmlCharacters(span.after) || /[\r\n\t]/.test(span.after))
+          refuse("UNSUPPORTED_REPLACEMENT_TEXT")
+        const beforeBytes = Buffer.byteLength(span.before, "utf8")
+        const afterBytes = Buffer.byteLength(span.after, "utf8")
+        aggregate += beforeBytes + afterBytes
+        if (
+          Math.max(beforeBytes, afterBytes) > PACKAGE_LIMITS.targetBytes ||
+          aggregate > PACKAGE_LIMITS.replacementBytes
+        )
+          refuse("EDIT_TEXT_LIMIT")
+        return { ...span, target, replacement }
+      })
+    )
     const changed = replacements.filter(
       (replacement) => replacement.before !== replacement.after
     )
