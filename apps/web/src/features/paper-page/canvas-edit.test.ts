@@ -10,9 +10,9 @@ import { describe, expect, it } from "vitest"
 import {
   blankDraft,
   clearedOnReload,
-  draftFromRegions,
   commitComposition,
   deleteBackward,
+  draftFromRegions,
   deleteForward,
   insertText,
   keptOnThisComputer,
@@ -163,16 +163,36 @@ describe("writing draft", () => {
     expect(kept.caret).toEqual({ blockId: "p1", offset: 0 })
   })
 
-  it("deletes one character and does not merge at the end", () => {
+  it("deletes one character and joins the next paragraph at the end", () => {
     const draft = helloWorld()
     const trimmed = deleteForward(
       draft,
       pointSpan({ blockId: "p1", offset: 4 })
     )
     expect(words(trimmed)).toEqual(["Hell", "World"])
-    const held = deleteForward(trimmed, pointSpan({ blockId: "p1", offset: 4 }))
-    expect(words(held)).toEqual(["Hell", "World"])
-    expect(held.caret).toEqual({ blockId: "p1", offset: 4 })
+    const joined = deleteForward(
+      trimmed,
+      pointSpan({ blockId: "p1", offset: 4 })
+    )
+    expect(words(joined)).toEqual(["HellWorld"])
+    expect(joined.caret).toEqual({ blockId: "p1", offset: 4 })
+    const stayed = deleteForward(
+      joined,
+      pointSpan({ blockId: "p1", offset: 9 })
+    )
+    expect(words(stayed)).toEqual(["HellWorld"])
+    const heldNext = {
+      ...trimmed,
+      blocks: trimmed.blocks.map((block, index) =>
+        index === 1 ? { ...block, held: true } : block
+      ),
+    }
+    const kept = deleteForward(
+      heldNext,
+      pointSpan({ blockId: "p1", offset: 4 })
+    )
+    expect(words(kept)).toEqual(["Hell", "World"])
+    expect(kept.caret).toEqual({ blockId: "p1", offset: 4 })
   })
 
   it("removes only an empty paragraph", () => {
@@ -276,6 +296,44 @@ describe("writing draft", () => {
       nextId: 2,
     })
     expect(draftFromRegions([])).toBeNull()
+    const table = "c33c33c3-c33c-4c33-8c33-c33c33c33c33"
+    const placed = draftFromRegions([
+      {
+        kind: "editable",
+        text: "Hello",
+        paragraph: writing,
+        location: { kind: "paragraph" },
+      },
+      {
+        kind: "editable",
+        text: "Cell",
+        paragraph: table,
+        location: { kind: "table-cell" },
+      },
+      {
+        kind: "locked",
+        text: "",
+        paragraph: "d44d44d4-d44d-4d44-8d44-d44d44d44d44",
+        reason: { code: "UNSUPPORTED_RUN_STRUCTURE" },
+        location: { kind: "paragraph" },
+      },
+    ])
+    expect(placed?.blocks).toEqual([
+      { id: writing, text: "Hello" },
+      { id: table, text: "Cell", held: true },
+      {
+        id: "d44d44d4-d44d-4d44-8d44-d44d44d44d44",
+        text: "",
+        held: true,
+      },
+    ])
+    expect(placed?.caret).toEqual({ blockId: writing, offset: 0 })
+    const held = pointSpan({ blockId: table, offset: 0 })
+    expect(splitParagraph(placed!, held).blocks).toEqual(placed?.blocks)
+    expect(insertText(placed!, held, "X").blocks[1]).toEqual(placed?.blocks[1])
+    expect(
+      deleteBackward(placed!, pointSpan({ blockId: writing, offset: 0 })).blocks
+    ).toEqual(placed?.blocks)
     expect(
       draftFromRegions([
         {

@@ -2,7 +2,6 @@ import { randomBytes, randomUUID } from "node:crypto"
 
 import {
   ERROR_CODES,
-  PAPER_CANVAS_PROFILE,
   PAPER_PACKAGE_LIMITS,
   PAPER_PACKAGE_PROJECTOR,
   paperPackageMetadataSchema,
@@ -357,7 +356,6 @@ export async function readWordPackage(owner: string, rawInput: unknown) {
     input.docId,
     input.at ?? cursor?.position.revision
   )
-  const head = await ownedHead(owner, input.docId)
   const { projection } = await completeVersion(version)
   return packagePage({
     metadata: metadata(version),
@@ -365,9 +363,7 @@ export async function readWordPackage(owner: string, rawInput: unknown) {
     owner,
     key: version.cursorKey,
     cursor: input.cursor,
-    ...(head.canvasProfile === PAPER_CANVAS_PROFILE
-      ? { paragraphKeys: canvasParagraphKeys(version.sidecar) }
-      : {}),
+    paragraphKeys: canvasParagraphKeys(version.sidecar),
   })
 }
 

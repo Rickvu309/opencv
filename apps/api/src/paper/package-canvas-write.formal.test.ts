@@ -172,7 +172,7 @@ describe("the first words on a minted page", () => {
       const page = await readWordPackage(id, { docId: published.docId })
       const empty = page.regions.find((item) => item.kind === "locked")
       if (!empty || empty.kind !== "locked") throw new Error("Missing region")
-      expect(empty.paragraph).toBeUndefined()
+      expect(empty.paragraph).toBeTruthy()
       const head = await headOf(published.docId)
       const paragraph = "a11a11a1-a11a-4a11-8a11-a11a11a11a11"
       await expect(

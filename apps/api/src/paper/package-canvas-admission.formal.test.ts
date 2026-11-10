@@ -88,38 +88,34 @@ async function canvas(owner: string, input: unknown) {
 }
 
 describe("canvas admits only a page the server minted", () => {
-  it("refuses split, merge, and delete on an imported package", () =>
+  it("splits an ordinary imported paragraph and still refuses the first join", () =>
     run(async () => {
       const id = await seed()
       const doc = await imported(id)
       expect((await headOf(doc.docId)).canvasProfile).toBeNull()
-      for (const input of [
-        {
-          op: "split",
-          docId: doc.docId,
-          basedOn: doc.revision,
-          paragraph: doc.paragraph,
-          at: 0,
-        },
-        {
+      await expect(
+        canvas(id, {
           op: "mergePrevious",
           docId: doc.docId,
           basedOn: doc.revision,
           paragraph: doc.paragraph,
-        },
-        {
-          op: "deleteParagraph",
-          docId: doc.docId,
-          basedOn: doc.revision,
-          paragraph: doc.paragraph,
-        },
-      ]) {
-        await expect(canvas(id, input)).rejects.toThrow(
-          "This page change is not available. No document was changed."
-        )
-      }
+        })
+      ).rejects.toThrow(
+        "This page change is not available. No document was changed."
+      )
+      expect((await headOf(doc.docId)).revision).toBe(doc.revision)
+      const split = await canvas(id, {
+        op: "split",
+        docId: doc.docId,
+        basedOn: doc.revision,
+        paragraph: doc.paragraph,
+        at: 0,
+      })
+      const saved = split.output as { docId: string; revision: string }
+      expect(saved.docId).toBe(doc.docId)
+      expect(saved.revision).not.toBe(doc.revision)
       const head = await headOf(doc.docId)
-      expect(head.revision).toBe(doc.revision)
+      expect(head.revision).toBe(saved.revision)
       expect(head.canvasProfile).toBeNull()
     }))
 
