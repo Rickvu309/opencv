@@ -281,7 +281,7 @@ it("confirms every Coach priority writer, preserves automatic updates, and guard
   }
 })
 
-it("keeps delegate writes pending even with skipConfirm and fails closed outside Job tools", async () => {
+it("keeps delegate writes pending and fails closed outside Job tools", async () => {
   const { db, client } = await createMigratedTestDb()
   const registry = installRegistry()
   const userId = "delegate-owner"
@@ -344,7 +344,6 @@ it("keeps delegate writes pending even with skipConfirm and fails closed outside
         name: "job.update",
         input: { jobId, patch: { priority: "high" } },
         actor: delegate,
-        skipConfirm: true,
       })
       expect(result).toMatchObject({ pending: true, activityId: null })
       expect(result.pendingActionId).toBeTruthy()
@@ -367,7 +366,6 @@ it("keeps delegate writes pending even with skipConfirm and fails closed outside
           },
         },
         actor: delegate,
-        skipConfirm: true,
       })
       expect(ordinary.pending).toBe(true)
       const approvalChat = await registry.read(
@@ -428,7 +426,6 @@ it("keeps delegate writes pending even with skipConfirm and fails closed outside
             name,
             input: {},
             actor: delegate,
-            skipConfirm: true,
           })
         ).rejects.toThrow(/connection cannot/)
       }

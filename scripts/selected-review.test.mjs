@@ -275,6 +275,7 @@ function approvalValues(commits) {
     frozenExecution: Symbol("frozen"),
     approvingReview: Symbol("approving"),
     taskExecution: Symbol("task"),
+    confirmed: Symbol("confirmed"),
     reviewReceiptKey: () => "key",
     getDb: () => ({
       update: () => ({ set: () => ({ where: async () => {} }) }),
