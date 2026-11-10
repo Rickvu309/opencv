@@ -150,6 +150,23 @@ describe("eligible imported paragraphs", () => {
     }
   })
 
+  it("refuses a comment in the run or its properties", () => {
+    for (const body of [
+      "<w:p><w:r><w:rPr><w:b/></w:rPr><!--x--><w:t>Hello</w:t></w:r></w:p>",
+      "<w:p><w:r><w:rPr><!--x--><w:b/></w:rPr><w:t>Hello</w:t></w:r></w:p>",
+    ]) {
+      const bytes = fixturePackage(body)
+      const basis = side(1)
+      const refused = applyEligibleBytes(
+        bytes,
+        { op: "split", paragraph: basis.paragraphs[0].key, at: 1 },
+        basis
+      )
+      expect(refused.status).toBe("REFUSED")
+      expect(Buffer.from(refused.bytes).equals(bytes)).toBe(true)
+    }
+  })
+
   it("refuses an opaque text node", () => {
     const bytes = fixturePackage(
       "<w:p><w:r><w:t>He<!--x-->llo</w:t></w:r></w:p>"

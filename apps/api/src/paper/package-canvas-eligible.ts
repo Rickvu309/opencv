@@ -54,6 +54,7 @@ function leaf(node: XmlElement, allowed: Set<string>) {
 }
 
 function plainMark(node: XmlElement) {
+  if (node.opaque) return false
   const kids = wordKids(node)
   return (
     kids.length === node.children.length &&
@@ -108,7 +109,7 @@ function ordinary(source: string, paragraph: XmlElement) {
   if (elements.length !== runs.length + props.length) return null
   if (props[0] && !plainProps(props[0])) return null
   const run = runs[0]
-  if (!run) return null
+  if (!run || run.opaque) return null
   const inside = wordKids(run)
   if (inside.length !== run.children.length) return null
   const texts = inside.filter((child) => child.local === "t")
