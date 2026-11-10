@@ -54,6 +54,65 @@ export async function completeAnthropic(
     .join("")
 }
 
+type JsonRecord = Record<string, unknown>
+
+function jsonRecord(value: unknown, label: string): JsonRecord {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error(label)
+  return value as JsonRecord
+}
+
+function defsStillUsed(schema: JsonRecord, defs: JsonRecord) {
+  const used = new Set<string>()
+  const visit = (value: unknown, skipDefs: boolean) => {
+    if (!value || typeof value !== "object") return
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item, false)
+      return
+    }
+    const record = value as JsonRecord
+    const ref = record.$ref
+    if (typeof ref === "string" && ref.startsWith("#/$defs/")) {
+      const defName = ref.slice("#/$defs/".length)
+      if (!used.has(defName) && Object.hasOwn(defs, defName)) {
+        used.add(defName)
+        visit(defs[defName], false)
+      }
+    }
+    for (const [key, child] of Object.entries(record)) {
+      if (skipDefs && key === "$defs") continue
+      visit(child, false)
+    }
+  }
+  visit(schema, true)
+  const kept: JsonRecord = {}
+  for (const defName of used) kept[defName] = defs[defName]
+  return kept
+}
+
+function advertisedInputSchema(name: string, input: z.ZodType) {
+  const schema = jsonRecord(
+    z.toJSONSchema(input, { io: "input", reused: "ref" }),
+    `Invalid tool schema: ${name}`
+  )
+  if (schema.type !== "object") throw new Error(`Invalid tool schema: ${name}`)
+  if (name === "paper.create") {
+    const properties = {
+      ...jsonRecord(schema.properties ?? {}, `Invalid tool schema: ${name}`),
+    }
+    delete properties.document
+    schema.properties = properties
+    if (Array.isArray(schema.required))
+      schema.required = schema.required.filter((item) => item !== "document")
+  }
+  if (schema.$defs && typeof schema.$defs === "object") {
+    const kept = defsStillUsed(schema, schema.$defs as JsonRecord)
+    if (Object.keys(kept).length) schema.$defs = kept
+    else delete schema.$defs
+  }
+  return { ...schema, type: "object" as const }
+}
+
 export async function* streamAnthropicSteps(input: {
   model: CoachModel
   system: string
@@ -73,9 +132,7 @@ export async function* streamAnthropicSteps(input: {
   let toolFailed = false
   const tools = input.entries.map((entry) => {
     const name = chatToolNameSchema.parse(entry.name)
-    const schema = z.toJSONSchema(entry.input, { io: "input", reused: "ref" })
-    if (schema.type !== "object")
-      throw new Error(`Invalid tool schema: ${name}`)
+    const schema = advertisedInputSchema(entry.name, entry.input)
     const tool = betaZodTool({
       name: name.replaceAll(".", "_"),
       description: entry.description,
@@ -132,7 +189,7 @@ export async function* streamAnthropicSteps(input: {
     })
     return {
       ...tool,
-      input_schema: { ...schema, type: "object" as const },
+      input_schema: schema,
       parse: (args: unknown) => entry.input.parse(args),
     }
   })

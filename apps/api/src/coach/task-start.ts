@@ -28,6 +28,10 @@ import { inputHash } from "./task-store.js"
 import { resolveTurnGrounding } from "./context.js"
 import { openCoachUsage } from "./usage-store.js"
 import { modelMessageSchema } from "./model-step.js"
+import {
+  COACH_TASK_MAX_STEPS,
+  COACH_TASK_OUTPUT_BUDGET,
+} from "./task-budget.js"
 
 export const COACH_TASK_RUNTIME_VERSION = 1
 export function taskCatalogDigest(registry: Registry) {
@@ -199,8 +203,8 @@ export function startTask(
           regenerate: Boolean(input.regenerate),
           context,
         },
-        maxSteps: 8,
-        maxTokens: 32000,
+        maxSteps: COACH_TASK_MAX_STEPS,
+        maxTokens: COACH_TASK_OUTPUT_BUDGET,
         deadlineAt: sql`clock_timestamp() + interval '5 minutes'`,
         nextSeq: 1,
       })

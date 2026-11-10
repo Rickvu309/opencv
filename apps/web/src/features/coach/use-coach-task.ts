@@ -348,16 +348,20 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         ),
       ],
     },
+    limitReached: task?.snapshot.errorCode === "BUDGET_EXCEEDED",
     error:
       local.error ??
-      (task?.snapshot.state === "failed"
-        ? "The Coach stopped. Try again."
-        : task?.snapshot.state === "cancelled"
-          ? "The Coach stopped."
-          : null),
+      (task?.snapshot.errorCode === "BUDGET_EXCEEDED"
+        ? "The Coach hit its limit for this turn."
+        : task?.snapshot.state === "failed"
+          ? "The Coach stopped. Try again."
+          : task?.snapshot.state === "cancelled"
+            ? "The Coach stopped."
+            : null),
     send: (text: string, sendOptions: boolean | CoachSendOptions = {}) =>
       launch(text, typeof sendOptions === "boolean" ? {} : sendOptions),
     retry: () => {
+      if (task?.snapshot.errorCode === "BUDGET_EXCEEDED") return false
       const state = machine.current
       if (
         state.failedStop ||

@@ -566,6 +566,7 @@ export function useCoachTurn({
         regenerate,
         undo,
         cancelInFlight,
+        limitReached: false,
       }
   return {
     ...turn,
@@ -581,5 +582,6 @@ export function useCoachTurn({
           return true
         }
       : turn.retry,
+    limitReached: config.isError ? false : turn.limitReached,
   }
 }

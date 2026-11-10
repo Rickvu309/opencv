@@ -11,6 +11,7 @@ import {
   lockTask,
   withTaskFence,
 } from "../registry/task-fence.js"
+import { outputOverBudget, TaskBudgetError } from "./task-budget.js"
 import type { Checkpoint, Intent, TaskLease } from "./task-types.js"
 
 export { runIntent } from "./task-effects.js"
@@ -121,10 +122,9 @@ export function persistStep(
       throw new Error("Task tools disabled")
     if (
       checkpoint.completedStep >= task.maxSteps ||
-      checkpoint.usage.inputTokens + checkpoint.usage.outputTokens >
-        task.maxTokens
+      outputOverBudget(checkpoint.usage.outputTokens, task.maxTokens)
     )
-      throw new Error("Task budget exceeded")
+      throw new TaskBudgetError()
     const [prior] = await getDb()
       .select()
       .from(taskCheckpoints)

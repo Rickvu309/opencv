@@ -17,6 +17,7 @@ export type ChatStoreValue = {
   phase: TurnPhase
   progress: CoachTurnProgress
   error: string | null
+  limitReached?: boolean
   send: (text: string, options?: CoachSendOptions, owner?: string) => boolean
   stop: () => void
   retry: () => boolean

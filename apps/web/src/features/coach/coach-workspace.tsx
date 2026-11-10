@@ -381,7 +381,11 @@ export function CoachWorkspace({
             waiting={phase === "waiting"}
             progress={progress}
             error={store.configuration === "error" ? null : error}
-            onRetry={!capped && enabled ? store.retry : undefined}
+            onRetry={
+              !capped && enabled && !store.limitReached
+                ? store.retry
+                : undefined
+            }
             onRegenerate={
               !active && !capped && enabled ? store.regenerate : undefined
             }

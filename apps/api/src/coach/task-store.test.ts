@@ -312,7 +312,7 @@ it("preserves checkpoint order, cumulative budgets and frozen query results", as
       await expect(
         persistStep(
           lease,
-          { ...checkpoint, usage: { inputTokens: 1001, outputTokens: 0 } },
+          { ...checkpoint, usage: { inputTokens: 23000, outputTokens: 1001 } },
           [intent]
         )
       ).rejects.toThrow("budget")

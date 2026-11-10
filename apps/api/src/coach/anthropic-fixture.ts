@@ -58,7 +58,8 @@ export class FixtureCoachModel {
 
 export function anthropicFixtureResponse(
   chunks: FixtureChunk[],
-  stopReason?: string
+  stopReason?: string,
+  usage?: { inputTokens: number; outputTokens: number }
 ): Response {
   const events: unknown[] = [
     {
@@ -71,7 +72,10 @@ export function anthropicFixtureResponse(
         content: [],
         stop_reason: null,
         stop_sequence: null,
-        usage: { input_tokens: 1, output_tokens: 0 },
+        usage: {
+          input_tokens: usage?.inputTokens ?? 1,
+          output_tokens: 0,
+        },
       },
     },
   ]
@@ -126,7 +130,7 @@ export function anthropicFixtureResponse(
             : "end_turn"),
         stop_sequence: null,
       },
-      usage: { output_tokens: 1 },
+      usage: { output_tokens: usage?.outputTokens ?? 1 },
     },
     { type: "message_stop" }
   )

@@ -20,6 +20,11 @@ import {
 } from "./model-step.js"
 import type { Checkpoint, Task, Intent } from "./task-types.js"
 import {
+  outputBlocksAnotherStep,
+  providerOutputLimit,
+  TaskBudgetError,
+} from "./task-budget.js"
+import {
   finishTask,
   pauseTask,
   recoverWaitingTasks,
@@ -169,9 +174,9 @@ export async function runCoachWorker(options: {
     }
     if (
       step >= task.maxSteps ||
-      tokens.inputTokens + tokens.outputTokens >= task.maxTokens
+      outputBlocksAnotherStep(tokens.outputTokens, task.maxTokens)
     )
-      throw new Error("Task budget exceeded")
+      throw new TaskBudgetError()
     const outputs = new Map<string, { intent: Intent; result: unknown }>()
     const runtime = options.runtime(task)
     const stream = runtime({
@@ -179,10 +184,7 @@ export async function runCoachWorker(options: {
       completedSteps: step,
       signal: controller.signal,
       maxSteps: task.maxSteps - step,
-      maxTokens: Math.min(
-        4096,
-        task.maxTokens - tokens.inputTokens - tokens.outputTokens
-      ),
+      maxTokens: providerOutputLimit(tokens.outputTokens, task.maxTokens),
       boundary: {
         async persistStep(decision) {
           controller.signal.throwIfAborted()
@@ -262,8 +264,12 @@ export async function runCoachWorker(options: {
     if (draft)
       await append(lease, { kind: "draft", payload: { text: draft }, step })
     const restored = await restoreTask(task.id)
-    if (!restored.checkpoint || restored.intents.length)
-      throw new Error("Task budget exceeded")
+    if (!restored.checkpoint)
+      throw new Error("Task stopped before a reply was saved")
+    if (restored.intents.length) {
+      if (step >= task.maxSteps) throw new TaskBudgetError()
+      throw new Error("Task stopped before a reply was saved")
+    }
     await finishTask(lease, "succeeded", options.registry)
   } catch (error) {
     if (error === paused) return true
@@ -294,7 +300,11 @@ export async function runCoachWorker(options: {
       lease,
       current.cancelRequestedAt ? "cancelled" : "failed",
       options.registry,
-      error instanceof TaskDeadlineError ? "DEADLINE_EXCEEDED" : "TASK_FAILED"
+      error instanceof TaskDeadlineError
+        ? "DEADLINE_EXCEEDED"
+        : error instanceof TaskBudgetError
+          ? "BUDGET_EXCEEDED"
+          : "TASK_FAILED"
     )
   } finally {
     stopped = true

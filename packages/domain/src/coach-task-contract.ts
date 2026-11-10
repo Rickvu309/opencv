@@ -12,6 +12,7 @@ import {
 export const coachConfigSchema = z.object({ coachDurable: z.boolean() })
 
 export const coachTaskErrorCodeSchema = z.enum([
+  "BUDGET_EXCEEDED",
   "DEADLINE_EXCEEDED",
   "REPLY_SUPERSEDED",
   "TASK_FAILED",
