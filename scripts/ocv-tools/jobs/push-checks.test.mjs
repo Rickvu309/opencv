@@ -88,6 +88,15 @@ test("a change is typechecked in its package and in every package that uses it",
   assert.deepEqual(typecheckDirs(["apps/api/tsconfig.json"], USES), [
     "apps/api",
   ])
+  assert.deepEqual(typecheckDirs(["packages/ui/package.json"], USES), [
+    "apps/web",
+    "packages/ui",
+  ])
+  assert.deepEqual(typecheckDirs(["packages/paper-crdt/src/a.ts"], USES), [
+    "apps/api",
+    "apps/web",
+    "packages/paper-crdt",
+  ])
   assert.deepEqual(typecheckDirs(["packages/domain/src/a.ts"], USES), [
     "apps/api",
     "apps/web",

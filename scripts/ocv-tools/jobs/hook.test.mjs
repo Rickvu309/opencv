@@ -32,6 +32,17 @@ function world(over = {}) {
     files: {
       "/repo/MSG": s.message ?? "",
       ...(s.noPrettier ? {} : { [PRETTIER]: "" }),
+      ...(s.noTsc
+        ? {}
+        : Object.fromEntries(
+            [
+              "apps/api",
+              "apps/web",
+              "packages/domain",
+              "packages/paper-crdt",
+              "packages/ui",
+            ].map((dir) => [`/repo/${dir}/node_modules/.bin/tsc`, ""])
+          )),
     },
     env: s.env ?? {},
     run(cmd, args, options = {}) {
@@ -63,6 +74,8 @@ function world(over = {}) {
         return s.noBase ? { ok: false, out: "", err: "" } : ok("base1")
       if (line.includes("--diff-filter=ACMR -z base1 HEAD"))
         return ok(s.changed.join("\0"))
+      if (line.includes("--diff-filter=ACMRD -z base1 HEAD"))
+        return ok([...s.changed, ...(s.deleted ?? [])].join("\0"))
       if (args[0] === "ls-files") return ok(s.toolTests.join("\0"))
       if (line.startsWith("rev-parse --show-toplevel")) return ok("/repo")
       if (line.startsWith("rev-parse --absolute-git-dir"))
@@ -312,6 +325,42 @@ test("pre-push still refuses a comment, bad formatting, a lint error and a faili
   assert.equal(refused(["rules-doc"]).code, 0)
   const everything = refused(["no-comments", "eslint"])
   assert.match(everything.text, /eslint apps\/web, no-comments/)
+})
+
+test("pre-push typechecks after a deleted file and for a package file change", () => {
+  const dirs = (over) => {
+    const w = world(over)
+    const r = w.call(["pre-push"], { stdin: pushOk })
+    assert.equal(r.code, 0, r.text)
+    return w.s.calls
+      .filter((c) => c.cmd.endsWith("/tsc"))
+      .map((c) => c.options.cwd)
+  }
+  assert.deepEqual(dirs({ deleted: ["packages/ui/src/gone.tsx"] }), [
+    "/repo/apps/web",
+    "/repo/apps/web",
+    "/repo/packages/ui",
+  ])
+  assert.deepEqual(dirs({ changed: ["apps/api/package.json"] }), [
+    "/repo/apps/api",
+  ])
+  const deleting = world({ deleted: ["packages/ui/src/gone.tsx"] })
+  deleting.call(["pre-push"], { stdin: pushOk })
+  assert.equal(
+    deleting.s.calls.filter((c) => c.cmd.endsWith("/eslint")).length,
+    0
+  )
+})
+
+test("pre-push names the missing install when the TypeScript tools are absent", () => {
+  const w = world({ changed: ["apps/web/src/a.tsx"], noTsc: true })
+  const r = w.call(["pre-push"], { stdin: pushOk })
+  assert.equal(r.code, 2, r.text)
+  assert.match(
+    r.text,
+    /failed: typecheck apps\/web \(the TypeScript tools are not installed here; run pnpm install in this worktree\)/
+  )
+  assert.equal(w.s.calls.filter((c) => c.cmd.endsWith("/tsc")).length, 0)
 })
 
 test("pre-push refuses a bad branch name before it runs any check", () => {

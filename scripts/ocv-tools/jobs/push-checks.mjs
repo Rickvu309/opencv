@@ -13,7 +13,7 @@ const LINT_DIRS = [
   "packages/ui",
 ]
 
-const TYPED = /\.(?:[cm]?ts|tsx)$|(?:^|\/)tsconfig[^/]*\.json$/
+const TYPED = /\.(?:[cm]?ts|tsx)$|(?:^|\/)(?:tsconfig[^/]*|package)\.json$/
 const TYPE_PROJECTS = Object.freeze({
   "apps/api": ["tsconfig.json"],
   "apps/web": ["tsconfig.app.json", "tsconfig.node.json"],
@@ -100,7 +100,7 @@ const batches = (list) => {
   return out
 }
 
-export function quickPlan(files, top, uses = WORKSPACE_USES) {
+export function quickPlan(files, top, uses = WORKSPACE_USES, touched = files) {
   const steps = []
   for (const paths of batches(files))
     steps.push({
@@ -131,7 +131,7 @@ export function quickPlan(files, top, uses = WORKSPACE_USES) {
         cwd: join(top, dir),
       })
   }
-  for (const dir of typecheckDirs(files, uses))
+  for (const dir of typecheckDirs(touched, uses))
     for (const project of TYPE_PROJECTS[dir])
       steps.push({
         label: `typecheck ${dir}`,
@@ -147,6 +147,7 @@ export function quickPlan(files, top, uses = WORKSPACE_USES) {
           "false",
         ],
         cwd: join(top, dir),
+        needsInstall: true,
       })
   steps.push({
     label: "no-comments",
@@ -156,7 +157,7 @@ export function quickPlan(files, top, uses = WORKSPACE_USES) {
   return steps
 }
 
-export function changedFiles(ctx, top) {
+export function changedFiles(ctx, top, kinds = "ACMR") {
   const base = run(ctx, "git", ["merge-base", "origin/main", "HEAD"], {
     cwd: top,
   })
@@ -168,7 +169,7 @@ export function changedFiles(ctx, top) {
       "diff",
       "--name-only",
       "--no-renames",
-      "--diff-filter=ACMR",
+      `--diff-filter=${kinds}`,
       "-z",
       base.out,
       "HEAD",
@@ -183,12 +184,19 @@ export function runQuickChecks(ctx, top) {
   const lines =
     files === null
       ? [
-          "pre-push: origin/main is missing, so prettier and eslint are skipped.",
+          "pre-push: origin/main is missing, so prettier, eslint and the typecheck are skipped.",
         ]
       : []
+  const touched = files === null ? [] : changedFiles(ctx, top, "ACMRD")
   const failed = []
-  const plan = quickPlan(files ?? [], top)
+  const plan = quickPlan(files ?? [], top, WORKSPACE_USES, touched ?? [])
   for (const step of plan) {
+    if (step.needsInstall && !ctx.ports.fs.exists(step.cmd)) {
+      failed.push(
+        `${step.label} (the TypeScript tools are not installed here; run pnpm install in this worktree)`
+      )
+      continue
+    }
     const r = run(ctx, step.cmd, step.args, {
       cwd: step.cwd ?? top,
       inherit: true,
