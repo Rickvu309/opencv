@@ -255,7 +255,7 @@ export function inspectPackagePolicy(policy: PackageReferences) {
 }
 
 function insideParagraph(node: XmlElement) {
-  let cursor: XmlElement | undefined = node
+  let cursor: XmlElement | null = node
   while (cursor) {
     if (isWord(cursor, "p")) return true
     cursor = cursor.parent

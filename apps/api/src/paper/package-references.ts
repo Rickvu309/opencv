@@ -369,7 +369,7 @@ export function inspectPackageReferences(
           item.uri === OFFICE_RELATIONSHIP_NS &&
           unprovenIds.get(name)?.has(item.value)
         ) {
-          let cursor: XmlElement | undefined = node
+          let cursor: XmlElement | null = node
           let inside = false
           while (cursor) {
             if (isWord(cursor, "p")) {
