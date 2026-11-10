@@ -243,6 +243,20 @@ test("take with a title files the issue first, then takes it", () => {
   assert.match(r.text, /Branch: feat\/90-keep-my-search/)
 })
 
+test("take with a jargon title body files, takes and prints the writing warnings", () => {
+  const { ports, ctx } = run({ issues: [], nextIssue: 90 })
+  const long = `The API endpoint ${Array.from({ length: 22 }, () => "word").join(" ")}.`
+  const r = runCli(
+    ["take", ...filed.map((a) => (a.startsWith("The page") ? long : a))],
+    ctx
+  )
+  assert.equal(r.code, 0, r.text)
+  assert.ok(ports.effects.some((e) => e.op === "createIssue"))
+  assert.match(r.text, /Took #90/)
+  assert.match(r.text, /Warning: .*jargon word "api"/)
+  assert.match(r.text, /Warning: .*-word sentence/)
+})
+
 test("a title on low disk makes zero gh calls", () => {
   const { ports, ctx } = run({ diskFreeMb: 4 })
   const r = runCli(

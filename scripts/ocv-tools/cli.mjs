@@ -81,8 +81,6 @@ const RETIRED_FLAG = {
   "--desc": "-d",
   "-b": "--body-file",
   "--body": "--body-file",
-  "-h": "scripts/ocv-tools.mjs help",
-  "--help": "scripts/ocv-tools.mjs help",
 }
 
 function takeValued() {
@@ -156,10 +154,20 @@ function issueNumber(text, usage) {
   return n
 }
 
+const HELP_WORDS = ["--help", "-h"]
+
 function command(ctx, cmd, rest) {
+  const asked = COMMANDS.find((c) => c.name === cmd)
+  if (asked && rest.some((word) => HELP_WORDS.includes(word)))
+    return {
+      lines: [`Usage: scripts/ocv-tools.mjs ${asked.usage}`, asked.when],
+      next: "scripts/ocv-tools.mjs help",
+    }
   const { flags, pos } = parseArgs(rest)
   switch (cmd) {
     case undefined:
+    case "--help":
+    case "-h":
     case "help":
       return { lines: [renderHelp()], next: "scripts/ocv-tools.mjs doctor" }
     case "file":

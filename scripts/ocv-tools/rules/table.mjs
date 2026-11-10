@@ -27,11 +27,7 @@ function slugOf(text) {
 function missingFields(facts) {
   if (facts.missingValue) return `${facts.missingValue} needs a value`
   const draft = facts.draft
-  if (draft?.missingTitle) return "no --title"
-  if (draft?.titleError) return draft.titleError
-  if (draft?.badTitle)
-    return `the title must start with one of ${TYPE_LIST} and a colon, for example "fix: ..."`
-  if (draft?.bodyError) return draft.bodyError
+  if (draft?.problems?.length) return draft.problems.join("; ")
   if (facts.requireKind && !issueKind(facts.issue, facts.flags ?? {}))
     return `#${facts.issue.n} has no Type (${TYPE_LIST})`
   if ("desc" in facts && !slugOf(facts.desc ?? ""))
@@ -45,6 +41,13 @@ function missingFields(facts) {
   )
     return `type must be one of: ${TYPE_LIST}`
   return null
+}
+
+function missingFieldsFix(facts) {
+  const retry = facts.draft?.retry
+  return retry
+    ? `Fill in what is missing and run: ${retry}`
+    : FIXES.MISSING_FIELDS
 }
 
 function unreadable(facts) {
@@ -156,11 +159,12 @@ export const tableRows = [
     needs: ["flags"],
     stop: true,
     check: missingFields,
+    fix: missingFieldsFix,
   }),
   rule({
     id: "UNREADABLE",
     section: "1",
-    says: "Plain sections must stay readable: short words, no jargon, no file names.",
+    says: "Plain sections need every required part, no code formatting, no file names, a short and concrete Done when list, and a bounded length. Jargon, long sentences and a high reading grade only warn.",
     at: ["file"],
     needs: ["draft"],
     check: unreadable,

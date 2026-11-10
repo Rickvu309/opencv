@@ -38,7 +38,6 @@ test("take refuses bad arguments before any git or gh call", () => {
     /unknown option: --desc \(use -d\)/
   )
   check(["90", "-b", "body text"], "UNKNOWN_FLAG", /--body-file/)
-  check(["90", "--help"], "UNKNOWN_FLAG", /help/)
   check(["90", "-d"], "MISSING_FIELDS", /-d needs a value/)
   check(["90", "--type"], "MISSING_FIELDS", /--type needs a value/)
   check(["90", "-d", "--no-assign"], "MISSING_FIELDS", /-d needs a value/)
@@ -106,7 +105,7 @@ test("file for a high-risk issue says it needs the owner", () => {
   assert.match(text, /Next: Ask a project admin to comment \/approve/)
 })
 
-test("file accepts everyday words in the title and still refuses them in the body", () => {
+test("file accepts everyday words in the title and warns about them in the body", () => {
   const { ctx } = run({ issues: [], nextIssue: 80 })
   const titled = fileArgs.map((a) =>
     a === "feat: Keep my search" ? "fix: Keep CI honest" : a
@@ -117,20 +116,98 @@ test("file accepts everyday words in the title and still refuses them in the bod
     fileArgs.map((a) => (a.startsWith("The page") ? "The CI run lied." : a)),
     run({ issues: [] }).ctx
   )
-  assert.equal(body.code, 2)
-  assert.match(body.text, /jargon word "ci"/)
+  assert.equal(body.code, 0, body.text)
+  assert.match(body.text, /FILED #/)
+  assert.match(body.text, /Warning: .*jargon word "ci"/)
 })
 
-test("file refuses jargon with exit 2 UNREADABLE and creates nothing", () => {
+test("file warns about jargon, long sentences and reading grade and still files", () => {
+  const { ports, ctx } = run({ issues: [], nextIssue: 81 })
+  const long = `Add an API endpoint ${Array.from({ length: 22 }, () => "word").join(" ")}.`
+  const args = fileArgs.map((a) => (a.startsWith("The page") ? long : a))
+  const { code, text } = runCli(args, ctx)
+  assert.equal(code, 0, text)
+  assert.match(text, /FILED #81/)
+  assert.match(text, /Warning: .*jargon word "api"/)
+  assert.match(text, /Warning: .*-word sentence/)
+  assert.doesNotMatch(text, /REFUSED/)
+  assert.ok(ports.effects.some((e) => e.op === "createIssue"))
+})
+
+test("file still refuses code formatting with exit 2 UNREADABLE and creates nothing", () => {
   const { ports, ctx } = run({ issues: [] })
   const args = fileArgs.map((a) =>
-    a.startsWith("The page") ? "Add an API endpoint." : a
+    a.startsWith("The page") ? "Change `search` please." : a
   )
   const { code, text } = runCli(args, ctx)
   assert.equal(code, 2)
-  assert.match(text, /REFUSED UNREADABLE: .*jargon word "api"/)
+  assert.match(text, /REFUSED UNREADABLE: .*code formatting/)
   assert.match(text, /\nFix: /)
   assert.deepEqual(ports.effects, [])
+})
+
+test("take with a title names every missing flag at once with a command to copy", () => {
+  const { ports, ctx } = run({ issues: [] })
+  const { code, text } = runCli(
+    ["take", "Keep my search", "-d", "keep search", "--risk", "huge"],
+    ctx
+  )
+  assert.equal(code, 2, text)
+  assert.match(
+    text,
+    /REFUSED MISSING_FIELDS: the title must start with one of .*; missing --what, --done; --risk must be low, normal, high, not "huge"/
+  )
+  assert.match(
+    text,
+    /\nFix: Fill in what is missing and run: scripts\/ocv-tools\.mjs take 'Keep my search' -d 'keep search' --type <feat\|fix\|hotfix\|refactor\|chore\|docs> --what '<What and why>' --done '<Done when>' --risk <low\|normal\|high>/
+  )
+  assert.deepEqual(ports.effects, [])
+})
+
+test("the command to copy keeps what was already given", () => {
+  const { ctx } = run({ issues: [] })
+  const { text } = runCli(
+    [
+      "file",
+      "--title",
+      "fix: Keep it's search",
+      "--what",
+      "The page forgets.",
+      "--risk",
+      "high",
+    ],
+    ctx
+  )
+  assert.match(
+    text,
+    /MISSING_FIELDS: missing --done; missing --could-go-wrong \(required when risk is high\)/
+  )
+  assert.ok(
+    text.includes(
+      `scripts/ocv-tools.mjs file --title 'fix: Keep it'\\''s search' --what 'The page forgets.' --done '<Done when>' --risk high --could-go-wrong '<What could go wrong>'`
+    ),
+    text
+  )
+})
+
+test("--help on a command prints its usage and changes nothing", () => {
+  for (const [args, usage] of [
+    [["take", "--help"], /Usage: scripts\/ocv-tools\.mjs take <n \| title>/],
+    [["take", "90", "-h"], /Usage: scripts\/ocv-tools\.mjs take <n \| title>/],
+    [["finish", "--help"], /Usage: scripts\/ocv-tools\.mjs finish --body-file/],
+    [["save", "--help"], /Usage: scripts\/ocv-tools\.mjs save -m/],
+  ]) {
+    const { ports, ctx } = run()
+    const { code, text } = runCli(args, ctx)
+    assert.equal(code, 0, text)
+    assert.match(text, usage)
+    assert.match(text, /\nNext: scripts\/ocv-tools\.mjs help/)
+    assert.deepEqual(ports.effects, [])
+  }
+  assert.match(
+    runCli(["--help"], run().ctx).text,
+    /Usage: scripts\/ocv-tools\.mjs <command>/
+  )
 })
 
 test("file refuses missing fields and high risk without --could-go-wrong", () => {
