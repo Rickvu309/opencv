@@ -1,5 +1,6 @@
-import type { Actor, CoachFocusDoc } from "@workspace/domain"
+import { ERROR_CODES, type Actor, type CoachFocusDoc } from "@workspace/domain"
 
+import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 
 type ContextItem = {
@@ -17,13 +18,34 @@ function text(value: unknown) {
   return typeof value === "string" ? value : ""
 }
 
+function missingDocument(error: unknown) {
+  return error instanceof CommandError && error.code === ERROR_CODES.NOT_FOUND
+}
+
+async function listedPage(registry: Registry, actor: Actor, docId: string) {
+  const listed = await registry.read("paper.list", {}, actor)
+  if (!Array.isArray(listed)) return null
+  for (const item of listed) {
+    const row = record(item)
+    if (row?.id === docId) return row
+  }
+  return null
+}
+
 async function paperFocus(
   registry: Registry,
   actor: Actor,
   docId: string,
   blockIds?: string[]
 ): Promise<CoachFocusDoc | null> {
-  const row = record(await registry.read("paper.get", { docId }, actor))
+  let row: Record<string, unknown> | null
+  try {
+    row = record(await registry.read("paper.get", { docId }, actor))
+  } catch (error) {
+    if (!missingDocument(error)) throw error
+    row = await listedPage(registry, actor, docId)
+    if (!row) throw error
+  }
   if (!row) return null
   const kind = row.kind
   if (kind !== "cv" && kind !== "letter" && kind !== "proof") return null
