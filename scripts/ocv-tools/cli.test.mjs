@@ -159,7 +159,7 @@ test("take with a title names every missing flag at once with a command to copy"
   )
   assert.match(
     text,
-    /\nFix: Fill in what is missing and run: scripts\/ocv-tools\.mjs take 'Keep my search' -d 'keep search' --type <feat\|fix\|hotfix\|refactor\|chore\|docs> --what '<What and why>' --done '<Done when>' --risk <low\|normal\|high>/
+    /\nFix: Fill in what is missing and run: scripts\/ocv-tools\.mjs take 'Keep my search' -d 'keep search' --type '<feat\|fix\|hotfix\|refactor\|chore\|docs>' --what '<What and why>' --done '<Done when>' --risk '<low\|normal\|high>'/
   )
   assert.deepEqual(ports.effects, [])
 })
