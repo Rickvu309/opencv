@@ -6,6 +6,15 @@ import {
 import { PACKAGE_LIMITS } from "./package-limits.js"
 import { OFFICE_RELATIONSHIP_NS, PACKAGE_PROFILE } from "./package-profile.js"
 import type { PackageReferences, ParsedPart } from "./package-references.js"
+import {
+  breakRun,
+  externalLink,
+  ordinaryRun,
+  proofingInventory,
+  proofingOverlap,
+  proofMarker,
+  type ProofInventory,
+} from "./package-neighbors.js"
 import { inspectTargetPolicy } from "./package-policy.js"
 import {
   decodeXml,
@@ -53,9 +62,10 @@ type RunSpan = {
   formatting: RunFormatting
 }
 type LockedSpan = { kind: "locked"; text: string; reason: PackageRefusalReason }
+type ParagraphPiece = RunSpan | LockedSpan
 type ParagraphInspection =
   | { kind: "locked"; text: string; reason: PackageRefusalReason }
-  | { kind: "spans"; text: string; spans: RunSpan[] }
+  | { kind: "pieces"; text: string; pieces: ParagraphPiece[] }
 
 function locked(text: string, code: string): LockedSpan {
   return { kind: "locked", text, reason: refusalReason(code) }
@@ -195,6 +205,22 @@ function usesUnprovenRelationship(
   )
 }
 
+const proofCache = new WeakMap<PackageReferences, ProofInventory>()
+
+function proofInventory(policy: PackageReferences) {
+  const cached = proofCache.get(policy)
+  if (cached) return cached
+  const inventory = proofingInventory(policy.parts)
+  proofCache.set(policy, inventory)
+  return inventory
+}
+
+function partName(part: ParsedPart, policy: PackageReferences) {
+  for (const [name, candidate] of policy.parts)
+    if (candidate === part) return name
+  return ""
+}
+
 export function inspectParagraph(
   node: XmlElement,
   part: ParsedPart,
@@ -231,20 +257,54 @@ export function inspectParagraph(
     )
   )
     return locked(text, "UNSUPPORTED_BIDI")
+  const inventory = proofInventory(policy)
+  if (inventory.unresolved.has(node)) return locked(text, "UNRESOLVED_PROOFING")
   if (
-    node.children.some(
-      (child) => !isWord(child, "r") && !simpleProperties(child, "pPr")
-    ) ||
-    node.children.filter((child) => isWord(child, "pPr")).length > 1
+    node.children.filter((child) => simpleProperties(child, "pPr")).length > 1
   )
     return locked(text, "UNSUPPORTED_PARAGRAPH_STRUCTURE")
-  const runs = node.children.filter((child) => isWord(child, "r"))
-  if (!runs.length) return locked(text, "MIXED_OR_MISSING_RUN")
-  const spans: RunSpan[] = []
-  for (const [ordinal, run] of runs.entries()) {
-    const span = inspectRun(run, ordinal, part)
-    if (span.kind === "locked") return locked(text, span.reason.code)
-    spans.push(span)
+  for (const child of node.children) {
+    if (simpleProperties(child, "pPr") || isWord(child, "r")) continue
+    if (externalLink(child, policy.graph) || proofMarker(child)) continue
+    return locked(text, "UNSUPPORTED_PARAGRAPH_STRUCTURE")
   }
-  return { kind: "spans", text, spans }
+  const name = partName(part, policy)
+  const pieces: ParagraphPiece[] = []
+  let runIndex = 0
+  for (const child of node.children) {
+    if (simpleProperties(child, "pPr") || proofMarker(child)) continue
+    if (externalLink(child, policy.graph)) {
+      pieces.push(
+        locked(paragraphText(child, part.source), "PRESERVED_NEIGHBOR")
+      )
+      continue
+    }
+    if (!isWord(child, "r"))
+      return locked(text, "UNSUPPORTED_PARAGRAPH_STRUCTURE")
+    if (breakRun(child)) {
+      pieces.push(
+        locked(paragraphText(child, part.source), "PRESERVED_NEIGHBOR")
+      )
+      runIndex += 1
+      continue
+    }
+    const span = inspectRun(child, runIndex, part)
+    if (span.kind === "locked") return locked(text, span.reason.code)
+    if (!ordinaryRun(child)) return locked(text, "UNSUPPORTED_RUN_STRUCTURE")
+    if (proofingOverlap(inventory, child, name))
+      pieces.push(locked(span.text, "PROOFING_RANGE"))
+    else pieces.push(span)
+    runIndex += 1
+  }
+  if (!pieces.some((piece) => piece.kind === "editable")) {
+    if (
+      pieces.some(
+        (piece) =>
+          piece.kind === "locked" && piece.reason.code === "PROOFING_RANGE"
+      )
+    )
+      return { kind: "pieces", text, pieces }
+    return locked(text, "MIXED_OR_MISSING_RUN")
+  }
+  return { kind: "pieces", text, pieces }
 }

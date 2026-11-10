@@ -192,21 +192,29 @@ function project(
         ]
       const key =
         sidecar.paragraphs[ordinal]?.key ?? refuse("SIDECAR_MAPPING_MISMATCH")
-      return inspected.spans.map((span): Region => {
-        const targetId = `t_${hash(JSON.stringify([context.docId, context.incarnation, context.revision, key, span.run, sidecar.packageHash, PACKAGE_PROFILE.version]))}`
+      return inspected.pieces.map((piece): Region => {
+        if (piece.kind === "locked")
+          return {
+            kind: "locked",
+            text: piece.text,
+            location,
+            reason: piece.reason,
+            complete: true,
+          }
+        const targetId = `t_${hash(JSON.stringify([context.docId, context.incarnation, context.revision, key, piece.run, sidecar.packageHash, PACKAGE_PROFILE.version]))}`
         targets.set(targetId, {
           ordinal,
-          run: span.run,
+          run: piece.run,
           paragraph,
-          node: span.node,
-          text: span.text,
+          node: piece.node,
+          text: piece.text,
         })
         return {
           kind: "editable",
           targetId,
-          text: span.text,
+          text: piece.text,
           location,
-          formatting: span.formatting,
+          formatting: piece.formatting,
           context: { paragraphText: inspected.text },
         }
       })

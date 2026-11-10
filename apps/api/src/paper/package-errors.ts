@@ -81,6 +81,12 @@ const messages: Record<string, string> = {
     "This Word file uses markup whose effect on the text Paper cannot yet establish. Editing is unavailable.",
   UNPROVEN_RELATIONSHIP:
     "This text depends on a relationship Paper cannot safely prove yet.",
+  PRESERVED_NEIGHBOR:
+    "This link or line break stays unchanged. Paper can still edit the other text in this paragraph.",
+  PROOFING_RANGE:
+    "This text sits inside a spelling or grammar mark. Paper leaves that mark and its words unchanged.",
+  UNRESOLVED_PROOFING:
+    "A spelling or grammar mark in this paragraph is incomplete. Paper cannot safely change this paragraph yet.",
 }
 
 export function refusalReason(code: string): PackageRefusalReason {

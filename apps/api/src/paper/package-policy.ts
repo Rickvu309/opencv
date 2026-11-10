@@ -13,6 +13,7 @@ import {
   type PackageReferences,
   type ParsedPart,
 } from "./package-references.js"
+import { preservedNeighbor } from "./package-neighbors.js"
 import {
   descendants,
   isWord,
@@ -310,8 +311,12 @@ function inspectStoryNode(node: XmlElement) {
     refuse("UNPROVEN_STORY_CONSUMER")
 }
 
-function checkProperties(root: XmlElement) {
+function checkProperties(
+  root: XmlElement,
+  relations: PackageReferences["graph"]
+) {
   for (const node of descendants(root)) {
+    if (preservedNeighbor(node, relations)) continue
     if (node === root || isWord(node, "r") || isWord(node, "t")) {
       for (const item of node.attributes) {
         if (
@@ -351,7 +356,7 @@ export function inspectTargetPolicy(
   policy: PackageReferences
 ) {
   for (const child of descendants(node)) inspectStoryNode(child)
-  checkProperties(node)
+  checkProperties(node, policy.graph)
   const paraId = attribute(node, "paraId", W14_NS)
   const textId = attribute(node, "textId", W14_NS)
   if (
