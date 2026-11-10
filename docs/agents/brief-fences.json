@@ -1,21 +1,3 @@
 {
-  "fences": [
-    {
-      "issue": 1041,
-      "expires": "2026-12-01",
-      "paths": [
-        "apps/web/src/features/paper/**",
-        "apps/api/src/paper/**",
-        "apps/web/src/features/coach/chat-api.ts",
-        "apps/web/src/lib/paper-selection.ts",
-        "apps/web/src/lib/paper-sync*",
-        "apps/web/src/test/paper-fixture.ts",
-        "apps/api/src/test/paper-client.ts",
-        "packages/domain/src/paper-doc/**",
-        "packages/paper-crdt/**",
-        "apps/web/package.json",
-        "apps/web/src/routes/paper-doc.tsx"
-      ]
-    }
-  ]
+  "fences": []
 }
