@@ -15,6 +15,7 @@ import {
 import { runContractCommand } from "@/lib/contract-client.ts"
 import {
   draftFromRegions,
+  pagePieces,
   type DraftBasis,
   type WritingBlock,
   type WritingDraft,
@@ -33,6 +34,10 @@ const SERVER_NOTES = new Set([
   "This Word document has changed. Read it again before editing.",
   "This page change is not available. No document was changed.",
 ])
+const REFUSED_TEXT =
+  "This replacement contains text controls Paper cannot safely insert. Use plain text without tabs or line breaks."
+const PROJECTION_GONE =
+  "This Word projection is no longer available. No document was changed."
 
 export type WritingRecord = {
   key: string
@@ -70,7 +75,12 @@ type PageRegion = {
 
 type PageBlock = { id?: string; text: string; held?: boolean }
 
-type ServerRow = { id: string; text: string; targetId: string | null }
+type ServerRow = {
+  id: string
+  text: string
+  targetId: string | null
+  paragraph: string
+}
 
 type PagePlan =
   | {
@@ -255,10 +265,25 @@ function missed(words: string): SaveOutcome {
   return { saved: false, words, revision: null, note: null }
 }
 
+function visibleRefusal(message: string) {
+  if (
+    !message.includes(PROJECTION_GONE) ||
+    message.includes("Reload the page")
+  ) {
+    return message
+  }
+  return `${message} Reload the page, then edit the text that is there.`
+}
+
 function serverNote(error: unknown): string | null {
   if (!(error instanceof ApiError) || error.message === "") return null
-  if (SERVER_NOTES.has(error.message) || error.status === 400)
-    return error.message
+  if (
+    SERVER_NOTES.has(error.message) ||
+    error.status === 400 ||
+    error.status === 409
+  ) {
+    return visibleRefusal(error.message)
+  }
   return null
 }
 
@@ -367,39 +392,16 @@ function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
   return run
 }
 
-function serverRows(regions: readonly PageRegion[]) {
-  const writing: ServerRow[] = []
-  const held: { id: string; text: string }[] = []
-  for (const region of regions) {
-    if (!region.paragraph) continue
-    const table = region.location?.kind === "table-cell"
-    const carrier =
-      CARRIERS.has(region.reason?.code ?? "") && region.text === ""
-    const open =
-      !table &&
-      (region.reason?.code === "EMPTY_TARGET" ||
-        (region.kind === "editable" && !region.reason))
-    if (open) {
-      const previous = writing[writing.length - 1]
-      if (previous?.id === region.paragraph) {
-        previous.text += region.text
-        continue
-      }
-      writing.push({
-        id: region.paragraph,
-        text: region.reason?.code === "EMPTY_TARGET" ? "" : region.text,
-        targetId:
-          region.reason?.code === "EMPTY_TARGET"
-            ? null
-            : (region.targetId ?? null),
-      })
-      continue
-    }
-    if (!carrier && (region.kind === "locked" || table)) {
-      held.push({ id: region.paragraph, text: region.text })
-    }
-  }
-  return { writing, held }
+function refusedControl(
+  regions: readonly PageRegion[],
+  blocks: readonly PageBlock[]
+) {
+  const open = pagePieces(regions).filter((piece) => !piece.held)
+  return blocks.some((block) => {
+    if (block.held || !/[\t\r\n]/.test(block.text)) return false
+    const piece = open.find((item) => item.id === block.id)
+    return piece !== undefined && piece.text !== block.text
+  })
 }
 
 function heldMatches(
@@ -428,16 +430,22 @@ function aligned(
   })
 }
 
-function planChange(
+export function planPageChange(
   regions: readonly PageRegion[],
   blocks: readonly PageBlock[]
 ): PagePlan | null {
-  const server = serverRows(regions)
-  if (!heldMatches(server.held, blocks)) return null
+  const pieces = pagePieces(regions)
+  if (
+    !heldMatches(
+      pieces.filter((piece) => piece.held),
+      blocks
+    )
+  )
+    return null
   const local = blocks
     .filter((block) => !block.held)
     .map((block) => ({ id: block.id ?? "", text: block.text }))
-  const remote = server.writing
+  const remote: ServerRow[] = pieces.filter((piece) => !piece.held)
   if (
     local.length === remote.length &&
     local.every((block, index) => block.id === remote[index]?.id)
@@ -459,7 +467,7 @@ function planChange(
     }
     return {
       kind: "text",
-      paragraph: before.id,
+      paragraph: before.paragraph,
       before: before.text,
       after,
       targetId: before.targetId,
@@ -484,7 +492,11 @@ function planChange(
       }
       if (!aligned(local, remote, index + 2, index + 1)) continue
       if (/[\r\n]/.test(left.text) || /[\r\n]/.test(right.text)) return null
-      return { kind: "split", paragraph: source.id, at: [...left.text].length }
+      return {
+        kind: "split",
+        paragraph: source.paragraph,
+        at: [...left.text].length,
+      }
     }
   }
   if (local.length + 1 === remote.length) {
@@ -506,7 +518,7 @@ function planChange(
         continue
       }
       if (!aligned(local, remote, index + 1, index + 2)) continue
-      return { kind: "merge", paragraph: second.id }
+      return { kind: "merge", paragraph: second.paragraph }
     }
     for (const [index, row] of remote.entries()) {
       if (row.text !== "") continue
@@ -518,7 +530,7 @@ function planChange(
             local[offset]?.id === item.id && local[offset]?.text === item.text
         )
       ) {
-        return { kind: "delete", paragraph: row.id }
+        return { kind: "delete", paragraph: row.paragraph }
       }
     }
   }
@@ -632,7 +644,13 @@ async function settleOnce(
       return { saved: false, words, revision: null, note: null, conflict: true }
     }
     if (words === "") return missed(words)
-    const planned = planChange(page.regions, blocks)
+    const planned = planPageChange(page.regions, blocks)
+    if (
+      (planned?.kind === "text" && /[\t\r\n]/.test(planned.after)) ||
+      (!planned && refusedControl(page.regions, blocks))
+    ) {
+      return { saved: false, words, revision: null, note: REFUSED_TEXT }
+    }
     const revision = planned
       ? await sendPlan(docId, page.revision, planned, signal)
       : blocks.some((block) => block.held)
