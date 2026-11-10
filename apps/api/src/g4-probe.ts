@@ -1,1 +1,1 @@
-export const g4Probe: number = 1
+export const g4Probe: number = 2
