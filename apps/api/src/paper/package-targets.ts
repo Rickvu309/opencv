@@ -4,7 +4,7 @@ import {
   type PackageRefusalReason,
 } from "./package-errors.js"
 import { PACKAGE_LIMITS } from "./package-limits.js"
-import { PACKAGE_PROFILE } from "./package-profile.js"
+import { OFFICE_RELATIONSHIP_NS, PACKAGE_PROFILE } from "./package-profile.js"
 import type { PackageReferences, ParsedPart } from "./package-references.js"
 import { inspectTargetPolicy } from "./package-policy.js"
 import {
@@ -173,12 +173,36 @@ function inspectRun(
   return { kind: "editable", run: ordinal, text, node: texts[0], formatting }
 }
 
+function usesUnprovenRelationship(
+  node: XmlElement,
+  part: ParsedPart,
+  policy: PackageReferences
+) {
+  let owner = ""
+  for (const [name, candidate] of policy.parts)
+    if (candidate === part) owner = name
+  if (!owner) return false
+  const ids = new Set(
+    policy.graph
+      .filter((item) => item.unproven && item.owner === owner)
+      .map((item) => item.id)
+  )
+  if (!ids.size) return false
+  return descendants(node).some((child) =>
+    child.attributes.some(
+      (item) => item.uri === OFFICE_RELATIONSHIP_NS && ids.has(item.value)
+    )
+  )
+}
+
 export function inspectParagraph(
   node: XmlElement,
   part: ParsedPart,
   policy: PackageReferences
 ): ParagraphInspection {
   const text = paragraphText(node, part.source)
+  if (usesUnprovenRelationship(node, part, policy))
+    return locked(text, "UNPROVEN_RELATIONSHIP")
   if (Buffer.byteLength(text, "utf8") > PACKAGE_LIMITS.targetBytes)
     return locked(text, "PARAGRAPH_CONTEXT_TOO_LARGE")
   if (tableRevision(node)) return locked(text, "TRACKED_TABLE_REVISION")
