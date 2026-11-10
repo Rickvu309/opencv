@@ -263,6 +263,7 @@ function WritingSheet({
   } | null>(null)
   const [state, dispatch] = useReducer(reduce, null, () => {
     const present = loadDraft(docId, localStorage) ?? seed ?? blankDraft()
+    storeDraft(docId, present, localStorage)
     return {
       past: [],
       present,

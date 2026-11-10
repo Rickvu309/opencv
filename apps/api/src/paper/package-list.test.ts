@@ -62,7 +62,7 @@ describe("a minted writing page in the document list", () => {
         },
         bytes
       )
-      await publishWordPackage(owner, plain.stageId)
+      const imported = await publishWordPackage(owner, plain.stageId)
       const head = await publishWordPackage(
         owner,
         staged.stageId,
@@ -90,9 +90,25 @@ describe("a minted writing page in the document list", () => {
         )
       ).resolves.toMatchObject({ id: head.docId, name: "Page.docx" })
       const outline = await readOutline(ownerId, docId, undefined)
+      expect(outline.revision).toBe(head.revision)
       expect(outline.outline).toContain("Harbor light")
       expect(outline.outline).toContain(`Saved revision ${head.revision}`)
       expect(outline.outline).toMatch(/\[t_[a-f0-9]{64}\]/)
+      const importedId = parsePaperId(imported.docId)
+      const importedOutline = await readOutline(ownerId, importedId, undefined)
+      expect(importedOutline.revision).toBe(imported.revision)
+      expect(importedOutline.outline).toContain("Harbor light")
+      expect(importedOutline.outline).toMatch(/\[t_[a-f0-9]{64}\]/)
+      await expect(
+        registry.read("paper.get", { docId: importedId }, personActor(owner))
+      ).rejects.toMatchObject({ code: "NOT_FOUND" })
+      await expect(
+        registry.read(
+          "paper.get",
+          { docId: importedId },
+          coachActor(owner, randomUUID(), "turn-import")
+        )
+      ).resolves.toMatchObject({ id: imported.docId, name: "Imported.docx" })
       await expect(
         readOutline(parseUserId(stranger), docId, undefined)
       ).rejects.toMatchObject({ code: "NOT_FOUND" })

@@ -41,7 +41,11 @@ function packagePaper(row: {
   })
 }
 
-function mintedRows(owner: string, docId?: string) {
+function packageRows(
+  owner: string,
+  docId: string | undefined,
+  mintedOnly: boolean
+) {
   return getDb()
     .select({
       docId: paperPackageVersions.docId,
@@ -62,29 +66,31 @@ function mintedRows(owner: string, docId?: string) {
     .where(
       and(
         eq(paperPackageHeads.userId, owner),
-        eq(paperPackageHeads.canvasProfile, PAPER_CANVAS_PROFILE),
+        mintedOnly
+          ? eq(paperPackageHeads.canvasProfile, PAPER_CANVAS_PROFILE)
+          : undefined,
         docId ? eq(paperPackageHeads.docId, docId) : undefined
       )
     )
 }
 
 export async function listMintedPackagePapers(owner: string) {
-  return (await mintedRows(owner)).map(packagePaper)
+  return (await packageRows(owner, undefined, true)).map(packagePaper)
 }
 
-export async function mintedPackagePaper(owner: string, docId: string) {
+export async function ownedPackagePaper(owner: string, docId: string) {
   if (!docIdSchema.safeParse(docId).success) return null
-  const row = (await mintedRows(owner, docId).limit(1))[0]
+  const row = (await packageRows(owner, docId, false).limit(1))[0]
   return row ? packagePaper(row) : null
 }
 
-export async function mintedPackageOutline(
+export async function ownedPackageOutline(
   owner: string,
   docId: string,
   blockIds: readonly string[] | undefined,
   maxChars: number
 ) {
-  if (!(await mintedPackagePaper(owner, docId))) return null
+  if (!(await ownedPackagePaper(owner, docId))) return null
   const page = await readWordPackage(owner, { docId })
   const selected = new Set(blockIds ?? [])
   const lines = [`Saved revision ${page.revision}`]
@@ -102,7 +108,7 @@ export async function mintedPackageOutline(
     outline = outline.slice(0, maxChars)
     truncated = true
   }
-  return { revision: 0, outline, truncated }
+  return { revision: page.revision, outline, truncated }
 }
 
 export function missingDocument(error: unknown) {
