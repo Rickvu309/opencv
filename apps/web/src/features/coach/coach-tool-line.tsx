@@ -22,12 +22,13 @@ export const UNDO_FAILED_COPY =
   "Couldn't undo this change. Try again, or edit it yourself."
 
 function undoFailureCopy(cause: unknown) {
+  if (!(cause instanceof ApiError)) return UNDO_FAILED_COPY
+  const reason = cause.message.trim()
   if (
-    cause instanceof ApiError &&
     (cause.status === 409 || cause.code === "CONFLICT") &&
-    cause.message.trim() !== ""
+    reason.includes("Undo was skipped")
   ) {
-    return cause.message
+    return reason
   }
   return UNDO_FAILED_COPY
 }
