@@ -216,8 +216,8 @@ describe("catalog kernel", () => {
             if (store === "idempotency")
               bindOperation(registry, {
                 ...setup.binding,
-                activity: () => null,
-                reversal: () => null,
+                activity: { silent: "Replay lookup stores no receipt" },
+                reversal: { irreversible: "Replay lookup stores no Undo" },
               })
             const legacy = "job.rename"
             addLegacy(registry, setup.execute, () =>

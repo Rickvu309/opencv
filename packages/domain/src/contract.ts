@@ -1,12 +1,8 @@
 import type { z } from "zod"
 
-import type { DelegateMarker } from "./operation.js"
+import type { CoachPolicy, DelegateMarker } from "./operation.js"
 import type { QueryRef } from "./queries.js"
 import type { ResourceRef } from "./resources.js"
-
-type CoachPolicy =
-  | { coach: "auto"; destructive: false }
-  | { coach: "confirm" | "never"; destructive: boolean }
 
 type Schema = z.ZodType
 

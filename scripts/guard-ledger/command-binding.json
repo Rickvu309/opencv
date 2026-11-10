@@ -1,0 +1,6 @@
+{
+  "id": "command-binding",
+  "file": "apps/api/src/registry/command-binding.test.ts",
+  "historic": null,
+  "reason": "A command with no Undo is rejected by the type, which is new. Older main left Undo optional, so a historic pass would be fabricated."
+}

@@ -25,7 +25,9 @@ export const implementation = {
   },
   reversal: (_input, output) =>
     "generation" in output
-      ? null
+      ? {
+          irreversible: "A published Word document is not undone from import.",
+        }
       : {
           command: "paper.delete",
           input: { docId: output.id },

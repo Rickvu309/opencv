@@ -35,9 +35,28 @@ export function delegateAllowed(
     entry.coach === false
   )
     return false
-  return entry.delegate === "jobRead"
+  const marker = entry.delegate
+  const named =
+    marker === "jobRead"
+      ? ("read" as const)
+      : marker === "reversibleJob"
+        ? ("proposal" as const)
+        : null
+  const access =
+    named ??
+    (marker &&
+    typeof marker === "object" &&
+    marker.resource === "job" &&
+    Object.keys(marker).length === 2
+      ? marker.access
+      : null)
+  return access === "read"
     ? actor.reads === "allow" && actor.scopes.includes("job.read")
     : entry.delegate === "reversibleJob" &&
+        actor.writes === "approval" &&
+        actor.scopes.includes("job.write")
+      ? true
+      : access === "proposal" &&
         actor.writes === "approval" &&
         actor.scopes.includes("job.write")
 }

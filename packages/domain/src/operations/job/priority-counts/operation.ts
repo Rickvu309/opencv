@@ -18,6 +18,6 @@ export const operation = defineOperation({
       .strict()
   ),
   coach: "auto",
-  delegate: "jobRead",
+  delegate: { resource: "job", access: "read" },
   dependsOn: () => [{ name: "job", coachFloor: "auto" }],
 })
