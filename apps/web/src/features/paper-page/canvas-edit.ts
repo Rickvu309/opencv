@@ -46,16 +46,26 @@ const CARRIERS = new Set([
   "UNSUPPORTED_TARGET_PROPERTY",
 ])
 
-export function draftFromRegions(
-  regions: readonly {
-    kind: string
-    text: string
-    paragraph?: string
-    reason?: { code: string; message?: string }
-    location?: { kind: string }
-  }[]
-): WritingDraft | null {
-  const blocks: WritingBlock[] = []
+type ReadRegion = {
+  kind: string
+  text: string
+  paragraph?: string
+  targetId?: string
+  reason?: { code: string; message?: string }
+  location?: { kind: string }
+}
+
+export type PagePiece = {
+  id: string
+  paragraph: string
+  text: string
+  held?: boolean
+  reason?: string
+  targetId: string | null
+}
+
+export function pagePieces(regions: readonly ReadRegion[]): PagePiece[] {
+  const pieces: PagePiece[] = []
   for (const region of regions) {
     if (!region.paragraph) continue
     const table = region.location?.kind === "table-cell"
@@ -66,23 +76,56 @@ export function draftFromRegions(
       (region.kind === "editable" ||
         (region.kind === "locked" && region.reason?.code === "EMPTY_TARGET"))
     if (writing) {
-      const previous = blocks[blocks.length - 1]
-      if (previous && !previous.held && previous.id === region.paragraph) {
+      const previous = pieces[pieces.length - 1]
+      if (
+        previous &&
+        !previous.held &&
+        previous.paragraph === region.paragraph
+      ) {
         previous.text += region.text
         continue
       }
-      blocks.push({ id: region.paragraph, text: region.text })
+      pieces.push({
+        id: region.paragraph,
+        paragraph: region.paragraph,
+        text: region.text,
+        targetId: region.targetId ?? null,
+      })
       continue
     }
     if (carrier || (region.kind !== "locked" && !table)) continue
     const reason = region.reason?.message
-    blocks.push({
+    pieces.push({
       id: region.paragraph,
+      paragraph: region.paragraph,
       text: region.text,
       held: true,
+      targetId: null,
       ...(reason ? { reason } : {}),
     })
   }
+  const totals = new Map<string, number>()
+  for (const piece of pieces) {
+    totals.set(piece.paragraph, (totals.get(piece.paragraph) ?? 0) + 1)
+  }
+  const seen = new Map<string, number>()
+  return pieces.map((piece) => {
+    if ((totals.get(piece.paragraph) ?? 0) < 2) return piece
+    const index = seen.get(piece.paragraph) ?? 0
+    seen.set(piece.paragraph, index + 1)
+    return { ...piece, id: `${piece.paragraph}#${index}` }
+  })
+}
+
+export function draftFromRegions(
+  regions: readonly ReadRegion[]
+): WritingDraft | null {
+  const blocks = pagePieces(regions).map((piece) => ({
+    id: piece.id,
+    text: piece.text,
+    ...(piece.held ? { held: true as const } : {}),
+    ...(piece.reason ? { reason: piece.reason } : {}),
+  }))
   const first = blocks.find((block) => !block.held) ?? blocks[0]
   if (!first) return null
   return {
@@ -220,13 +263,18 @@ export function replaceVisible(
   texts: readonly { id: string; text: string }[],
   caret: TextPoint
 ): WritingDraft {
+  const used = new Set<number>()
   const blocks = texts.map((item) => {
-    const current = draft.blocks.find((block) => block.id === item.id)
+    const index = draft.blocks.findIndex(
+      (block, at) => block.id === item.id && !used.has(at)
+    )
+    if (index >= 0) used.add(index)
+    const current = index >= 0 ? draft.blocks[index] : undefined
     if (current?.held) {
       return {
         id: current.id,
         text: current.text,
-        held: true,
+        held: true as const,
         ...(current.reason ? { reason: current.reason } : {}),
       }
     }
