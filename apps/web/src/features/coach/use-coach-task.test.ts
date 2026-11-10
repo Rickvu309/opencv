@@ -136,6 +136,52 @@ it("regenerates a persisted failed reply without appending its person message ag
   hook.unmount()
 })
 
+it("tells the truth when a turn hits its limit and does not send it again", async () => {
+  setMockChats([{ id: CHAT, title: "Saved Chat" }])
+  const starts = vi.fn()
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input))
+      if (url.pathname.endsWith("coach.start")) {
+        starts()
+        return Response.json({ ok: true, data: { taskId: TASK } })
+      }
+      if (url.pathname.includes("/coach/tasks/"))
+        return Response.json({
+          ok: true,
+          data: taskSnapshot({
+            state: "failed",
+            errorCode: "BUDGET_EXCEEDED",
+          }),
+        })
+      const response = await chatApiFetchOrThrow(input, init)
+      if (url.pathname === `/api/chats/${CHAT}`) {
+        const body = (await response.json()) as {
+          data: Record<string, unknown>
+        }
+        return Response.json({
+          ok: true,
+          data: { ...body.data, activeTaskId: TASK },
+        })
+      }
+      return response
+    }
+  )
+  const hook = mount(CHAT)
+  await waitFor(() =>
+    expect(hook.result.current.error).toBe(
+      "The Coach hit its limit for this turn."
+    )
+  )
+  expect(hook.result.current.limitReached).toBe(true)
+  act(() => {
+    expect(hook.result.current.retry()).toBe(false)
+  })
+  expect(starts).not.toHaveBeenCalled()
+  hook.unmount()
+})
+
 function deferred<T>() {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((done) => {
