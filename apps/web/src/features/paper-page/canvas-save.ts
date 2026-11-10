@@ -13,7 +13,12 @@ import {
   type PackageDraft,
 } from "@/lib/paper-package-ack.ts"
 import { catalogClient, runContractCommand } from "@/lib/contract-client.ts"
-import { draftFromRegions, type WritingBlock } from "./canvas-edit.ts"
+import {
+  draftFromRegions,
+  type DraftBasis,
+  type WritingBlock,
+  type WritingDraft,
+} from "./canvas-edit.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
@@ -43,6 +48,14 @@ export type SaveOutcome = {
   revision: string | null
   note: string | null
   blocks?: WritingBlock[]
+  basis?: DraftBasis
+  replace?: WritingDraft
+  conflict?: boolean
+}
+
+export type SettleClaim = {
+  basis: DraftBasis | null
+  typed: boolean
 }
 
 type PageRegion = {
@@ -563,10 +576,15 @@ function adoptedBlocks(
   return same ? draft.blocks : undefined
 }
 
+function recordedBasis(revision: string, words: string): DraftBasis {
+  return { revision, words }
+}
+
 async function settleOnce(
   docId: string,
   blocks: readonly PageBlock[],
-  signal: AbortSignal
+  signal: AbortSignal,
+  claim: SettleClaim
 ): Promise<SaveOutcome> {
   const words = pageWords(blocks)
   if (signal.aborted) return missed(words)
@@ -576,8 +594,33 @@ async function settleOnce(
     const page = await readPackage(docId, signal)
     if (!page || signal.aborted) return missed(words)
     const seen = wordsFromRegions(page.regions)
+    const changed = claim.basis ? words !== claim.basis.words : claim.typed
+    const serverMoved =
+      claim.basis?.revision != null && page.revision !== claim.basis.revision
     if (words === seen && words !== "") {
-      return { saved: true, words, revision: page.revision, note: null }
+      return {
+        saved: true,
+        words,
+        revision: page.revision,
+        note: null,
+        basis: recordedBasis(page.revision, words),
+      }
+    }
+    if (!changed) {
+      if (words === "") return missed(words)
+      const replacement = draftFromRegions(page.regions)
+      if (!replacement) return missed(words)
+      return {
+        saved: false,
+        words: seen,
+        revision: page.revision,
+        note: null,
+        replace: replacement,
+        basis: recordedBasis(page.revision, seen),
+      }
+    }
+    if (serverMoved) {
+      return { saved: false, words, revision: null, note: null, conflict: true }
     }
     if (words === "") return missed(words)
     const planned = planChange(page.regions, blocks)
@@ -602,6 +645,7 @@ async function settleOnce(
       words: readBack,
       revision: next.revision,
       note: null,
+      basis: recordedBasis(next.revision, words),
       ...(adopted ? { blocks: adopted } : {}),
     }
   } catch (error) {
@@ -612,7 +656,8 @@ async function settleOnce(
 export function settlePage(
   docId: string,
   blocks: readonly PageBlock[],
-  signal: AbortSignal
+  signal: AbortSignal,
+  claim: SettleClaim = { basis: null, typed: true }
 ): Promise<SaveOutcome> {
-  return serial(docId, () => settleOnce(docId, blocks, signal))
+  return serial(docId, () => settleOnce(docId, blocks, signal, claim))
 }

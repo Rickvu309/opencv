@@ -64,3 +64,65 @@ export function clearWritingProposal(toolCallId?: string) {
   current = null
   emit()
 }
+
+type TaskAction = {
+  toolCallId: string
+  operation: string
+  input: unknown
+  state: string
+  proposalId: string | null
+}
+
+type TaskConfirmation = {
+  id: string
+  input: unknown
+  status: string
+}
+
+function sameProposal(next: WritingProposal) {
+  if (!current) return false
+  return (
+    current.toolCallId === next.toolCallId &&
+    current.docId === next.docId &&
+    current.before === next.before &&
+    current.after === next.after &&
+    current.pendingActionId === next.pendingActionId
+  )
+}
+
+export function syncWritingProposalFromActions(
+  actions: readonly TaskAction[],
+  confirmations: readonly TaskConfirmation[]
+) {
+  const pending = actions.find(
+    (action) => action.operation === "paper.edit" && action.state === "proposed"
+  )
+  if (pending) {
+    const confirmation = confirmations.find(
+      (item) => item.id === pending.proposalId && item.status === "pending"
+    )
+    const parsed =
+      oneReplacement(pending.input) ?? oneReplacement(confirmation?.input)
+    if (parsed) {
+      const next = {
+        toolCallId: pending.toolCallId,
+        pendingActionId: pending.proposalId,
+        ...parsed,
+      }
+      if (!sameProposal(next)) {
+        current = next
+        emit()
+      }
+      return
+    }
+  }
+  if (!current) return
+  const owner = actions.find(
+    (action) => action.toolCallId === current?.toolCallId
+  )
+  if (owner && (owner.state === "proposed" || owner.state === "planned")) {
+    return
+  }
+  current = null
+  emit()
+}
