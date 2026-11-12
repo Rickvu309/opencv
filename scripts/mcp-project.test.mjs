@@ -32,8 +32,15 @@ test("MCP tools project registry metadata instead of a handwritten name list", (
 
 test("delegate projection requires both declared metadata and its access scope", () => {
   assert.deepEqual(detect(policy, "delegate-policy.ts"), [])
-  for (const scope of ["job.read", "job.write"]) {
-    const mistake = policy.replace(`actor.scopes.includes("${scope}")`, "true")
+  for (const expression of [
+    "actor.scopes.includes(`${resource}.read`)",
+    "actor.scopes.includes(`${resource}.write`)",
+    "if (!declaration) return false",
+  ]) {
+    const mistake = policy.replace(
+      expression,
+      expression.startsWith("if") ? "" : "true"
+    )
     assert.notEqual(mistake, policy)
     assert(
       detect(mistake, "delegate-policy.ts").some(
@@ -41,11 +48,4 @@ test("delegate projection requires both declared metadata and its access scope",
       )
     )
   }
-  const undeclared = policy.replace('entry.delegate === "reversibleJob" &&', "")
-  assert.notEqual(undeclared, policy)
-  assert(
-    detect(undeclared, "delegate-policy.ts").some(
-      (hit) => hit.kind === "delegate-without-declared-scope"
-    )
-  )
 })

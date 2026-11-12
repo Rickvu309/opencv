@@ -22,43 +22,31 @@ export function delegateAllowed(
   actor: Actor
 ) {
   if (actor.type !== "delegate") return true
-  if (process.env.PAPER_AGENT_TOOLS === "true") {
-    if (entry.name === "paper.read")
-      return actor.reads === "allow" && actor.scopes.includes("paper.read")
-    if (entry.name === "paper.edit")
-      return actor.writes === "approval" && actor.scopes.includes("paper.write")
-  }
-  if (
-    actor.resources !== "jobs" ||
-    !entry.name.startsWith("job.") ||
-    entry.coach === "never" ||
-    entry.coach === false
-  )
-    return false
   const marker = entry.delegate
-  const named =
+  const declaration =
     marker === "jobRead"
-      ? ("read" as const)
+      ? { resource: "job", access: "read" }
       : marker === "reversibleJob"
-        ? ("proposal" as const)
-        : null
-  const access =
-    named ??
-    (marker &&
-    typeof marker === "object" &&
-    marker.resource === "job" &&
-    Object.keys(marker).length === 2
-      ? marker.access
-      : null)
+        ? { resource: "job", access: "proposal" }
+        : marker &&
+            typeof marker === "object" &&
+            Object.keys(marker).length === 2
+          ? marker
+          : null
+  if (!declaration) return false
+  const { resource, access } = declaration
+  const shared =
+    actor.resources === "jobs-and-paper"
+      ? resource === "job" || resource === "paper"
+      : actor.resources === (resource === "job" ? "jobs" : resource)
+  if (!shared || resource === "none") return false
   return access === "read"
-    ? actor.reads === "allow" && actor.scopes.includes("job.read")
-    : entry.delegate === "reversibleJob" &&
+    ? actor.reads === "allow" && actor.scopes.includes(`${resource}.read`)
+    : access === "proposal" &&
+        entry.coach !== "never" &&
+        entry.coach !== false &&
         actor.writes === "approval" &&
-        actor.scopes.includes("job.write")
-      ? true
-      : access === "proposal" &&
-        actor.writes === "approval" &&
-        actor.scopes.includes("job.write")
+        actor.scopes.includes(`${resource}.write`)
 }
 
 export async function requireLiveDelegate(actor: DelegateActor) {

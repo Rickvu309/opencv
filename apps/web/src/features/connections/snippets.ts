@@ -28,7 +28,7 @@ export function agentSnippets(serverUrl: string): AgentSnippet[] {
       id: "claude",
       title: "Claude Code",
       detail:
-        "Run the add command in a terminal. Then run the login command, or open Claude Code and run /mcp to authenticate.",
+        "Run the add command in a terminal. Then run the login command, or open Claude Code and run /mcp to authenticate. Request paper.read and paper.write alongside connection.status for CVs and Letters. Check that consent includes documents; reconnect to grant Paper access to an existing Job-only connection. Ask the agent to paper_read your document, propose setText, insert or delete with paper_edit against basedOn, and wait for your approval in OpenCV. Never invent experience or qualifications.",
       copies: [
         {
           id: "claude-add",
@@ -65,7 +65,7 @@ export function agentSnippets(serverUrl: string): AgentSnippet[] {
       id: "codex",
       title: "Codex",
       detail:
-        "Add this table to ~/.codex/config.toml. Then run the login command and approve the connection here.",
+        "Add this table to ~/.codex/config.toml. Then run codex mcp login opencv --scopes connection.status,paper.read,paper.write and approve the connection here. Check that consent includes documents; reconnect to grant Paper access to an existing Job-only connection. Ask the agent to paper_read your document, propose setText, insert or delete with paper_edit against basedOn, and wait for your approval in OpenCV. Never invent experience or qualifications.",
       copies: [
         {
           id: "codex-table",

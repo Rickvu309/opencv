@@ -62,7 +62,7 @@ beforeAll(async () => {
     name: "Paper agent",
     audience: "http://localhost/mcp",
     scopes: ["paper.read", "paper.write"],
-    resources: { kind: "none" },
+    resources: { kind: "paper" },
     policy: { reads: "allow", writes: "approval" },
     expiresAt: new Date(Date.now() + 600_000),
   })
@@ -112,7 +112,7 @@ function delegate() {
     connectionId,
     name: "Paper agent",
     scopes: ["paper.read", "paper.write"],
-    resources: "none",
+    resources: "paper",
     reads: "allow",
     writes: "approval",
   })
@@ -352,10 +352,9 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
       expect((await head(page.doc)).revision).toBe(typed.page.revision)
     }))
 
-  it("keeps an own agent's batch pending and never commits it without approval", () =>
+  it("commits exactly the reviewed own-agent batch only after person approval and supports Undo", () =>
     run(async () => {
       vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
-      vi.stubEnv("PAPER_AGENT_TOOLS", "true")
       const page = await blank()
       const empty = page.paragraphs[0]
       if (!empty) throw new Error("blank page has no line")
@@ -369,9 +368,19 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
       expect(again.activityId).toBeNull()
       expect(again.pendingActionId).not.toBe(proposed.pendingActionId)
       expect(await words(page.doc)).toEqual([""])
-      await expect(approve(proposed.pendingActionId)).rejects.toThrow(
-        /no longer active/
-      )
+      expect(proposed.review).toMatchObject({
+        operations: [
+          { op: "setText", before: "", after: "Dear Ada," },
+          { op: "insert", after: "Thank you for your time." },
+        ],
+      })
+      const receipt = await approve(proposed.pendingActionId)
+      expect(await words(page.doc)).toEqual([
+        "Dear Ada,",
+        "Thank you for your time.",
+      ])
+      await registry.undo(owner, receipt.id)
+      expect(await words(page.doc)).toEqual([""])
       expect((await head(page.doc)).revision).toBe(page.revision)
     }))
 

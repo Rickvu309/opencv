@@ -26,12 +26,15 @@ server.registerTool("job_get", {}, async (input) => {
 
 const CLEAN = `
 server.registerTool("job_get", {}, async (input) => {
-  await transaction(async () => {
-    await requireLiveDelegate(actor)
-    return entry.kind === "query"
-      ? { data: await registry.read(entry.name, input, actor) }
-      : registry.execute({ name: entry.name, input, actor })
-  })
+  const reservation = await transaction(async () => {
+    await delegateCallWindow(actor);
+    await requireLiveDelegate(actor);
+    return appendDelegateCall({ actor });
+  });
+  if (!reservation.allowed) throw new Error("limited");
+  return entry.kind === "query"
+    ? await transaction(async () => { await requireLiveDelegate(actor); return registry.read(entry.name, input, actor); })
+    : registry.execute({ name: entry.name, input, actor });
 })
 `
 
@@ -45,6 +48,24 @@ test("a check outside the tool transaction is rejected", () => {
 
 test("a check inside the tool transaction stays quiet", () => {
   assert.deepEqual(detect(CLEAN), [])
+})
+
+test("reviewed execution stays outside a transaction after a charged live admission", () => {
+  assert.ok(
+    detect(
+      CLEAN.replace(
+        "registry.execute({ name: entry.name, input, actor })",
+        "transaction(async () => registry.execute({ name: entry.name, input, actor }))"
+      )
+    ).length > 0
+  )
+  for (const missing of [
+    "await delegateCallWindow(actor);",
+    "await requireLiveDelegate(actor);",
+    "return appendDelegateCall({ actor });",
+    'if (!reservation.allowed) throw new Error("limited");',
+  ])
+    assert.ok(detect(CLEAN.replace(missing, "")).length > 0)
 })
 
 test("the live binding stays quiet", () => {

@@ -95,9 +95,9 @@ export function ConnectionConsent() {
           <>
             <p>{grant.share}</p>
             <p className="text-sm text-muted-foreground">
-              {grant.access} Job changes stay off until you approve each one.
-              Document access stays off. You can revoke access in Settings →
-              Integrations at any time.
+              {grant.access} Every proposed change waits for you to approve or
+              deny it in OpenCV. Only the resources listed above are shared. You
+              can revoke access in Settings → Integrations at any time.
             </p>
           </>
         ) : null}

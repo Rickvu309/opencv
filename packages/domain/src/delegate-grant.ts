@@ -4,7 +4,10 @@ import {
   type DelegateMarker,
 } from "./operation.js"
 
-type StoredConnectionResources = { kind: "none" | "jobs" }
+import type { z } from "zod"
+import type { connectionResourcesSchema } from "./connections.js"
+
+type StoredConnectionResources = z.infer<typeof connectionResourcesSchema>
 
 function delegateScope(declaration: DelegateDeclaration) {
   return `${declaration.resource}.${declaration.access === "read" ? "read" : "write"}`
@@ -42,13 +45,28 @@ export function resourcesForScopes(
   const jobs = scopes.some(
     (scope) => scope === "job.read" || scope === "job.write"
   )
-  return { kind: jobs ? "jobs" : "none" }
+  const paper = scopes.some(
+    (scope) => scope === "paper.read" || scope === "paper.write"
+  )
+  return {
+    kind:
+      jobs && paper
+        ? "jobs-and-paper"
+        : jobs
+          ? "jobs"
+          : paper
+            ? "paper"
+            : "none",
+  }
 }
 
 function grantedResources(
   resources: StoredConnectionResources
 ): readonly string[] {
-  return resources.kind === "jobs" ? ["job"] : []
+  if (resources.kind === "jobs-and-paper") return ["job", "paper"]
+  if (resources.kind === "jobs") return ["job"]
+  if (resources.kind === "paper") return ["paper"]
+  return []
 }
 
 export function proposalGrantAllows(
@@ -69,14 +87,21 @@ export function grantCopy(input: {
   resources: StoredConnectionResources
   scopes: readonly string[]
 }) {
-  const writes = input.scopes.includes("job.write")
-  const reads = input.scopes.includes("job.read")
-  const share =
-    input.resources.kind === "jobs"
-      ? writes
-        ? "All current and future Jobs · Reversible changes need approval"
-        : "All current and future Jobs · This agent cannot change things"
-      : "Connection status only · No documents or Jobs shared"
+  const resources = grantedResources(input.resources)
+  const writes = resources.some((resource) =>
+    input.scopes.includes(`${resource}.write`)
+  )
+  const reads = resources.some((resource) =>
+    input.scopes.includes(`${resource}.read`)
+  )
+  const shared = resources
+    .map((resource) =>
+      resource === "job" ? "Jobs" : "documents (CVs and Letters)"
+    )
+    .join(" and ")
+  const share = shared
+    ? `All current and future ${shared} · ${writes ? "Every change waits for your approval" : "This agent cannot change things"}`
+    : "Connection status only · No documents or Jobs shared"
   const readCopy = reads ? "Reads allowed" : null
   const writeCopy = writes
     ? "Writes need approval"

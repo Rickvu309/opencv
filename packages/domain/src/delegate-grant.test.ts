@@ -13,6 +13,7 @@ import {
   scopesFromSearch,
 } from "./delegate-grant.js"
 import { defineOperation, delegateDeclaration } from "./operation.js"
+import { paperContract } from "./paper-contract.js"
 import { operation as paperRead } from "./operations/paper/read/operation.js"
 
 const paperProposal = ["paper", "write"].join(".")
@@ -24,31 +25,36 @@ const jobs = {
   scopes: ["connection.status", "job.read", "job.write", "offline_access"],
 }
 
-it("derives the published agent scopes from job declarations only", () => {
+it("derives the published agent scopes from Job and Paper declarations", () => {
   const scopes = registeredScopesFromDeclarations(
-    declarationsFromEntries(Object.values(catalog))
+    declarationsFromEntries([
+      ...Object.values(catalog),
+      ...Object.values(paperContract),
+    ])
   )
   assert.deepEqual(scopes, [
     "connection.status",
     "job.read",
     "job.write",
+    "paper.read",
+    "paper.write",
     "offline_access",
   ])
   assert.equal(
     scopes.some((scope) => scope.startsWith("paper.")),
-    false
+    true
   )
-  assert.equal(paperRead.delegate, undefined)
+  assert.deepEqual(paperRead.delegate, { resource: "paper", access: "read" })
 })
 
-it("keeps a job grant on jobs and gives a document scope nothing", () => {
+it("keeps existing Job grants isolated and grants Paper explicitly", () => {
   assert.deepEqual(resourcesForScopes(jobs.scopes), { kind: "jobs" })
   assert.deepEqual(
     resourcesForScopes(["connection.status", "paper.read", paperProposal]),
-    { kind: "none" }
+    { kind: "paper" }
   )
   assert.deepEqual(resourcesForScopes(["job.read", paperProposal]), {
-    kind: "jobs",
+    kind: "jobs-and-paper",
   })
 })
 
@@ -100,7 +106,8 @@ it("describes a job grant without treating a document scope as permission to cha
   assert.deepEqual(
     grantCopy({ resources: { kind: "jobs" }, scopes: jobs.scopes }),
     {
-      share: "All current and future Jobs · Reversible changes need approval",
+      share:
+        "All current and future Jobs · Every change waits for your approval",
       access: "Reads allowed · Writes need approval",
     }
   )
@@ -119,7 +126,7 @@ it("describes a job grant without treating a document scope as permission to cha
       resources: resourcesForScopes(["paper.read"]),
       scopes: ["paper.read"],
     }).share,
-    "Connection status only · No documents or Jobs shared"
+    "All current and future documents (CVs and Letters) · This agent cannot change things"
   )
 })
 

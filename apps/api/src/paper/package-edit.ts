@@ -362,6 +362,7 @@ export function registerWordPackageEdit(
     {
       name: "paper.edit",
       description: entry.description,
+      delegate: entry.delegate,
       input: entry.input,
       coach: entry.coach,
       destructive: entry.destructive,

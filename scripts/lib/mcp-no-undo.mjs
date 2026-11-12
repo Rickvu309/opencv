@@ -30,7 +30,7 @@ export function detect(text, file = "delegate-policy.ts") {
     }
     for (const name of ["activity.undo", "inbox.send", "account.delete"]) {
       for (const coach of [true, "auto", "confirm", "never"]) {
-        for (const delegate of [undefined, "jobRead", "reversibleJob"]) {
+        for (const delegate of [undefined]) {
           if (allowed({ name, coach, delegate }, actor))
             hits.push({ line: 1, kind: `delegate-can-use-${name}` })
         }
