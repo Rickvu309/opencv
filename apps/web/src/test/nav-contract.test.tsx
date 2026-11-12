@@ -9,11 +9,7 @@ import {
   getMockPaperDocs,
   setMockPaperFavorite,
 } from "@/test/paper-api-mock.ts"
-import {
-  resetShellApiMock,
-  setMockInbox,
-  setMockJobs,
-} from "@/test/shell-api-mock.ts"
+import { resetShellApiMock, setMockJobs } from "@/test/shell-api-mock.ts"
 
 const ITEMS = [...SHELL_PRIMARY, ...SHELL_WORK]
 const SAMPLE_ID = "11111111-1111-7111-8111-111111111111"

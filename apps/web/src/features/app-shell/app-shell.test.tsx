@@ -15,7 +15,6 @@ import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import {
   expectApplyLive,
-  expectPitch,
   linkNames,
   NAV,
   stubDesktopViewport,
@@ -34,7 +33,6 @@ import {
   chatCreateCalls,
   resetShellApiMock,
   setMockChats,
-  setMockInbox,
   setMockJobs,
 } from "@/test/shell-api-mock.ts"
 

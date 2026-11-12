@@ -39,21 +39,6 @@ const SECTION_HEADINGS = [
   "A coach that does the work",
 ] as const
 
-const INTEGRATIONS = [
-  "Gmail",
-  "Google Calendar",
-  "Zoom",
-  "Google Meet",
-  "Microsoft Teams",
-  "Google Drive",
-  "Microsoft OneDrive",
-  "Notion",
-  "Figma",
-  "Canva",
-  "LinkedIn",
-  "GitHub",
-] as const
-
 async function renderLanding() {
   setMockSession(null)
   const view = renderApp("/")

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, screen, waitFor, within } from "@testing-library/react"
+import { cleanup, screen, within } from "@testing-library/react"
 
 import { renderApp } from "@/test/render-app.tsx"
 import {

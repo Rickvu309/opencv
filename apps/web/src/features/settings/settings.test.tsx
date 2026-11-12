@@ -46,11 +46,6 @@ async function choose(name: string, option: string) {
   await user.click(within(list).getByRole("option", { name: option }))
 }
 
-async function expectUpgradePlaceholder() {
-  await screen.findByText("Billing is not open yet.")
-  expect(screen.getByText("Billing is not open yet.")).toBeInTheDocument()
-}
-
 describe("settings", () => {
   it("shows a persisted profile photo after reopening Account", async () => {
     vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(
