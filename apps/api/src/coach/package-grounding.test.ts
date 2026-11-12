@@ -34,57 +34,46 @@ afterAll(async () => {
 describe("Coach grounding on a minted page", () => {
   it("finds the page for its owner while a direct read stays missing", () =>
     run(async () => {
-      const previous = process.env.PAPER_PACKAGE_ENABLED
-      process.env.PAPER_PACKAGE_ENABLED = "true"
-      try {
-        const minted = paperPackageEditResultSchema.parse(
-          (
-            await registry.execute({
-              name: "paper.canvas",
-              input: { op: "mint" },
-              actor: personActor(owner),
-              idempotencyKey: randomUUID(),
-            })
-          ).output
-        )
-        const grounding = await resolveTurnGrounding({
+      const minted = paperPackageEditResultSchema.parse(
+        (
+          await registry.execute({
+            name: "paper.canvas",
+            input: { op: "mint" },
+            actor: personActor(owner),
+            idempotencyKey: randomUUID(),
+          })
+        ).output
+      )
+      const grounding = await resolveTurnGrounding({
+        registry,
+        actor: personActor(owner),
+        requestFocusDocId: minted.docId,
+        storedKind: null,
+        storedId: null,
+        memoryEnabled: false,
+      })
+      expect(grounding.focusDoc).toMatchObject({
+        id: minted.docId,
+        name: "Page.docx",
+        kind: "letter",
+        revision: minted.revision,
+      })
+      expect(grounding.focusDoc?.outline).toContain(
+        `Saved revision ${minted.revision}`
+      )
+      expect(grounding.note).toContain("Open document: Page.docx (letter).")
+      await expect(
+        registry.read("paper.get", { docId: minted.docId }, personActor(owner))
+      ).rejects.toMatchObject({ code: "NOT_FOUND" })
+      await expect(
+        resolveTurnGrounding({
           registry,
-          actor: personActor(owner),
+          actor: personActor(stranger),
           requestFocusDocId: minted.docId,
           storedKind: null,
           storedId: null,
           memoryEnabled: false,
         })
-        expect(grounding.focusDoc).toMatchObject({
-          id: minted.docId,
-          name: "Page.docx",
-          kind: "letter",
-          revision: minted.revision,
-        })
-        expect(grounding.focusDoc?.outline).toContain(
-          `Saved revision ${minted.revision}`
-        )
-        expect(grounding.note).toContain("Open document: Page.docx (letter).")
-        await expect(
-          registry.read(
-            "paper.get",
-            { docId: minted.docId },
-            personActor(owner)
-          )
-        ).rejects.toMatchObject({ code: "NOT_FOUND" })
-        await expect(
-          resolveTurnGrounding({
-            registry,
-            actor: personActor(stranger),
-            requestFocusDocId: minted.docId,
-            storedKind: null,
-            storedId: null,
-            memoryEnabled: false,
-          })
-        ).rejects.toMatchObject({ code: "NOT_FOUND" })
-      } finally {
-        if (previous === undefined) delete process.env.PAPER_PACKAGE_ENABLED
-        else process.env.PAPER_PACKAGE_ENABLED = previous
-      }
+      ).rejects.toMatchObject({ code: "NOT_FOUND" })
     }))
 })

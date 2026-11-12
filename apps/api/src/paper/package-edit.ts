@@ -119,14 +119,6 @@ function unavailable(): never {
   )
 }
 
-function requirePackageEnabled() {
-  if (process.env.PAPER_PACKAGE_ENABLED !== "true")
-    throw new CommandError(
-      ERROR_CODES.NOT_FOUND,
-      "Saved Word documents are unavailable."
-    )
-}
-
 function matchesLocked(
   locked: LockedBasis,
   key: readonly unknown[],
@@ -219,7 +211,6 @@ const wordPackageReview: ReviewedCommand<
     snapshot: snapshotSchema,
     basis: unchangedBasis,
     revalidate: async (_input, snapshot, actor) => {
-      requirePackageEnabled()
       if (snapshot.owner !== actor.userId) return unavailable()
       await revalidateUnchangedPackage(
         snapshot.owner,
@@ -231,7 +222,6 @@ const wordPackageReview: ReviewedCommand<
   },
   basis: mutationBasis,
   prepare: async (input, actor) => {
-    requirePackageEnabled()
     if (typeof input.basedOn !== "string")
       return packageFailure("This Word edit does not name a saved revision.")
     const plan = isWordBatch(input)
@@ -284,7 +274,6 @@ const wordPackageReview: ReviewedCommand<
     }
   },
   revalidate: async (input, prepared, actor) => {
-    requirePackageEnabled()
     if (prepared.candidate.owner !== actor.userId) return unavailable()
     if (prepared.candidate.noop) {
       await revalidateUnchangedPackage(
@@ -304,7 +293,6 @@ const wordPackageReview: ReviewedCommand<
     })
   },
   commit: async (input, prepared, actor, locked) => {
-    requirePackageEnabled()
     const basis = basisOf(prepared.candidate)
     matchesLocked(locked, basis.key, basis.expected)
     if (prepared.candidate.owner !== actor.userId) return unavailable()
@@ -351,7 +339,6 @@ export function registerWordPackageEdit(
       activity: () => null,
     },
     async (input, actor) => {
-      requirePackageEnabled()
       const restored = await undo(actor.userId, input)
       if (restored.refused)
         throw new CommandError(ERROR_CODES.CONFLICT, restored.message)

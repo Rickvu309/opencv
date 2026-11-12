@@ -156,7 +156,6 @@ async function approve(pendingActionId: string) {
 describe("the Coach and own agents send Word batches through paper.edit", () => {
   it("writes first words on a blank page only after the person approves, and Undo puts the blank page back", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await blank()
       const empty = page.paragraphs[0]
       if (!empty) throw new Error("blank page has no line")
@@ -192,7 +191,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("inserts a paragraph after a handle", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await imported(paragraph("Dear Ada,"))
       const first = page.paragraphs[0]
       if (!first) throw new Error("missing line")
@@ -220,7 +218,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("proposes, approves and undoes a batch with several operations", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await imported(
         paragraph("Dear Ada,") + paragraph("Old line") + paragraph("Thanks")
       )
@@ -269,7 +266,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("refuses Undo after the person typed on the page and keeps their words", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await blank()
       const empty = page.paragraphs[0]
       if (!empty) throw new Error("blank page has no line")
@@ -297,7 +293,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("refuses Undo of an insert after the person typed on the page and keeps their words", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await imported(paragraph("Dear Ada,"))
       const first = page.paragraphs[0]
       if (!first) throw new Error("missing line")
@@ -328,7 +323,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("refuses Undo of a delete after the person typed on the page and keeps their words", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await imported(paragraph("Dear Ada,") + paragraph("Thanks"))
       const [greeting, thanks] = page.paragraphs
       if (!greeting || !thanks) throw new Error("missing lines")
@@ -354,7 +348,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("keeps an own agent's batch pending and never commits it without approval", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       vi.stubEnv("PAPER_AGENT_TOOLS", "true")
       const page = await blank()
       const empty = page.paragraphs[0]
@@ -377,7 +370,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("refuses a batch based on an older revision", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await blank()
       const empty = page.paragraphs[0]
       if (!empty) throw new Error("blank page has no line")
@@ -397,7 +389,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("holds a batch that would flatten formatting", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await imported(
         `<w:p>${wordRun("Led ")}${wordRun("data", "<w:b/>")}</w:p>`
       )
@@ -414,7 +405,6 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
 
   it("keeps Word operations off the numeric block arm", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const page = await blank()
       const empty = page.paragraphs[0]
       if (!empty) throw new Error("blank page has no line")

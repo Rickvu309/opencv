@@ -185,22 +185,6 @@ describe("savedNote", () => {
     expect(savedNote("Hello", { ...matched, revision: null })).toBeNull()
     expect(savedNote("Hello", matched)).toBe("Saved")
     expect(
-      savedNote("", {
-        saved: false,
-        words: "",
-        revision: null,
-        note: "Saved Word documents are unavailable.",
-      })
-    ).toBeNull()
-    expect(
-      savedNote("Hello", {
-        saved: false,
-        words: "Hello",
-        revision: null,
-        note: "Saved Word documents are unavailable.",
-      })
-    ).toBe("Word documents are unavailable.")
-    expect(
       savedNote("Hello", {
         saved: false,
         words: "Hello",
@@ -354,31 +338,6 @@ describe("settlePage", () => {
       revision: null,
       note: null,
     })
-  })
-
-  it("repeats the sentence when saved documents are unavailable", async () => {
-    vi.stubGlobal("fetch", () =>
-      Promise.resolve(
-        Response.json(
-          {
-            ok: false,
-            error: {
-              code: "NOT_FOUND",
-              message: "Saved Word documents are unavailable.",
-            },
-          },
-          { status: 404 }
-        )
-      )
-    )
-    const saved = await settlePage(
-      DOC,
-      [{ id: "p1", text: "Hello" }],
-      new AbortController().signal
-    )
-    expect(saved.saved).toBe(false)
-    expect(saved.words).toBe("Hello")
-    expect(saved.note).toBe("Saved Word documents are unavailable.")
   })
 
   it("saves a line typed after the first as one batch and reads it back", async () => {
@@ -555,7 +514,7 @@ describe("WritingCanvas save", () => {
             ok: false,
             error: {
               code: "NOT_FOUND",
-              message: "Saved Word documents are unavailable.",
+              message: "This document could not be found.",
             },
           },
           { status: 404 }

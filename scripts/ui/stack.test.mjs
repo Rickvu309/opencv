@@ -29,7 +29,7 @@ test("the app runs on pglite with the fake Coach, Word pages on and no real data
   assert.equal(env.api.DB_DRIVER, "pglite")
   assert.equal(env.api.PGLITE_DATA_DIR, "/s/1-demo/pglite")
   assert.equal(env.api.COACH_RUNTIME, "fake")
-  assert.equal(env.api.PAPER_PACKAGE_ENABLED, "true")
+  assert.equal(env.api.PAPER_PACKAGE_ENABLED, undefined)
   assert.equal(env.api.AUTH_URL, PORTS.apiOrigin)
   assert.equal(env.api.WEB_ORIGINS, PORTS.webOrigin)
   assert.equal(env.web.VITE_API_URL, PORTS.apiOrigin)

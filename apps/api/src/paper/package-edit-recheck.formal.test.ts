@@ -26,24 +26,18 @@ import {
   type Backend,
 } from "../test/registry-formal-support.js"
 import { prepareStoredWordPackage } from "./package-candidates.js"
-import * as packageCandidates from "./package-candidates.js"
 import { registerPaper } from "./commands.js"
 import { fixturePackage } from "./package-fixtures.js"
-import * as packageRestore from "./package-restore.js"
 import * as packageStore from "./package-store.js"
 import { implementation as readWord } from "./operations/read/server.js"
 
 let backend: Backend
 const run = <T>(fn: () => Promise<T>) => withDatabase(backend.db, fn)
-const enabled = process.env.PAPER_PACKAGE_ENABLED
 
 beforeAll(async () => {
-  process.env.PAPER_PACKAGE_ENABLED = "true"
   backend = await openBackend()
 })
 afterAll(async () => {
-  if (enabled === undefined) delete process.env.PAPER_PACKAGE_ENABLED
-  else process.env.PAPER_PACKAGE_ENABLED = enabled
   await backend?.close()
 })
 
@@ -156,16 +150,6 @@ async function laterRevision(owner: string, docId: string) {
     .from(files)
     .where(eq(files.id, version!.fileId))
   return { revision: row.forwardRevision, bytes: file!.bytes }
-}
-
-const turnedOff = {
-  code: "NOT_FOUND",
-  message: "Saved Word documents are unavailable.",
-}
-
-function savedDocuments(on: boolean) {
-  if (on) process.env.PAPER_PACKAGE_ENABLED = "true"
-  else delete process.env.PAPER_PACKAGE_ENABLED
 }
 
 function onPreparedExecute(effect: () => Promise<void> | void) {
@@ -304,87 +288,4 @@ describe("Word save rechecks", () => {
       run(async () => approveAfterMove(await seed(), "original", "original")),
     20_000
   )
-
-  it("an unchanged save rechecks the switch after prepare", () =>
-    run(async () => {
-      const id = await seed()
-      const doc = await document(id)
-      const gate = onPreparedExecute(() => savedDocuments(false))
-      try {
-        await expect(
-          registry().execute({
-            name: "paper.edit",
-            input: await editInput(id, doc.docId, "original", "original"),
-            actor: personActor(id),
-            idempotencyKey: randomUUID(),
-          })
-        ).rejects.toMatchObject(turnedOff)
-        expect(gate.calls()).toBe(2)
-        expect((await headOf(doc.docId)).revision).toBe(doc.revision)
-        expect(await receipts(id)).toBe(0)
-      } finally {
-        gate.stop()
-        savedDocuments(true)
-      }
-    }))
-
-  it("a Coach edit cannot land after saved documents are turned off", () =>
-    run(async () => {
-      const id = await seed()
-      const { doc, proposal } = await coachProposal(id, "original", "better")
-      const check = vi.spyOn(packageCandidates, "revalidateWordCandidate")
-      savedDocuments(false)
-      try {
-        await expect(registry().approve(id, proposal.id)).rejects.toMatchObject(
-          turnedOff
-        )
-        expect(check).not.toHaveBeenCalled()
-        await stillWaiting(id, doc.docId, doc.revision)
-      } finally {
-        check.mockRestore()
-        savedDocuments(true)
-      }
-    }))
-
-  it("a Coach no-op cannot land after saved documents are turned off", () =>
-    run(async () => {
-      const id = await seed()
-      const { doc, proposal } = await coachProposal(id, "original", "original")
-      const check = vi.spyOn(packageRestore, "revalidateUnchangedPackage")
-      savedDocuments(false)
-      try {
-        await expect(registry().approve(id, proposal.id)).rejects.toMatchObject(
-          turnedOff
-        )
-        expect(check).not.toHaveBeenCalled()
-        await stillWaiting(id, doc.docId, doc.revision)
-      } finally {
-        check.mockRestore()
-        savedDocuments(true)
-      }
-    }))
-
-  it("approval rechecks the switch in commit after revalidate", () =>
-    run(async () => {
-      const id = await seed()
-      const { doc, proposal } = await coachProposal(id, "original", "better")
-      const check = packageCandidates.revalidateWordCandidate
-      const spy = vi
-        .spyOn(packageCandidates, "revalidateWordCandidate")
-        .mockImplementation(async (...args) => {
-          const seal = await check(...args)
-          savedDocuments(false)
-          return seal
-        })
-      try {
-        await expect(registry().approve(id, proposal.id)).rejects.toMatchObject(
-          turnedOff
-        )
-        expect(spy).toHaveBeenCalledOnce()
-        await stillWaiting(id, doc.docId, doc.revision)
-      } finally {
-        spy.mockRestore()
-        savedDocuments(true)
-      }
-    }))
 })

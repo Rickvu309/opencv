@@ -358,7 +358,6 @@ describe("every changed read is named by the command that changed it", () => {
       "11111111-1111-4111-8111-111111111111",
       "invalidation-minted"
     )
-    vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
     const { db, client } = await createMigratedTestDb()
     closeDb = () => client.close()
     await db.insert(user).values({

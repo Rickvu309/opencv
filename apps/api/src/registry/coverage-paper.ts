@@ -491,9 +491,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     },
     {
       name: "paper.canvas",
-      arrange: async () => {
-        process.env.PAPER_PACKAGE_ENABLED = "true"
-      },
+      arrange: async () => {},
       act: async () => {
         const minted = await run("paper.canvas", { op: "mint" })
         const docId = text(minted.output, "docId")

@@ -25,16 +25,12 @@ import { apply, open } from "./document.js"
 
 let backend: Backend
 const run = <T>(fn: () => Promise<T>) => withDatabase(backend.db, fn)
-const enabled = process.env.PAPER_PACKAGE_ENABLED
 
 beforeAll(async () => {
-  process.env.PAPER_PACKAGE_ENABLED = "true"
   backend = await openBackend()
 })
 
 afterAll(async () => {
-  if (enabled === undefined) delete process.env.PAPER_PACKAGE_ENABLED
-  else process.env.PAPER_PACKAGE_ENABLED = enabled
   await backend?.close()
 })
 

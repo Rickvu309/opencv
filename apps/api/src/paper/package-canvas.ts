@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 
 import {
-  ERROR_CODES,
   PAPER_CANVAS_PROFILE,
   paperContract,
   paperPackageEditResultSchema,
@@ -10,9 +9,8 @@ import {
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
-import { getDb, insideTransaction, transaction } from "../db/context.js"
+import { getDb, insideTransaction } from "../db/context.js"
 import { paperPackageHeads } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { commitWordCandidate } from "./package-candidates.js"
 import { packageFailure } from "./package-pages.js"
@@ -31,14 +29,6 @@ const loaded = createRequire(import.meta.url)(
 }
 
 type CanvasResult = ReturnType<typeof paperPackageEditResultSchema.parse>
-
-function requireEnabled() {
-  if (process.env.PAPER_PACKAGE_ENABLED !== "true")
-    throw new CommandError(
-      ERROR_CODES.NOT_FOUND,
-      "Saved Word documents are unavailable."
-    )
-}
 
 async function incarnationOf(owner: string, docId: string) {
   const [head] = await getDb()
@@ -127,16 +117,6 @@ export function registerCanvasCommit(
       idempotency: "keyed",
       transaction: "none",
       prepare: async (input, actor) => {
-        if (process.env.PAPER_PACKAGE_ENABLED !== "true") {
-          try {
-            await transaction(async () => {
-              requireEnabled()
-            })
-          } catch (error) {
-            if (error instanceof CommandError) throw error
-            requireEnabled()
-          }
-        }
         if (input.op === "mint") {
           const stage = await stageWordPackage(
             actor.userId,

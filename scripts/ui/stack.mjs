@@ -31,7 +31,6 @@ export function stackEnv({ base, ports, dir, name }) {
       DB_DRIVER: "pglite",
       PGLITE_DATA_DIR: join(dir, "pglite"),
       COACH_RUNTIME: "fake",
-      PAPER_PACKAGE_ENABLED: "true",
       OPENCV_VERIFY_RUN: name,
       AUTH_URL: ports.apiOrigin,
       WEB_ORIGINS: ports.webOrigin,
