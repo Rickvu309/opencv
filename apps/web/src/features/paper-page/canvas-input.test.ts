@@ -6,7 +6,6 @@ import { KEPT_PART_LINE, NUMBERED_LINE } from "./canvas-fixed-lines.ts"
 import {
   BLOCKED_INPUT,
   BROWSER_INPUT_TYPES,
-  CHANGE_NOT_KEPT,
   CHANGE_NOT_SUPPORTED,
   COMPOSING_INPUT,
   DRAG_NOT_SAVED,
@@ -24,6 +23,7 @@ import {
   TRANSPOSE_NOT_SAVED,
   YANK_NOT_SAVED,
 } from "./canvas-input.ts"
+import { CHANGED_IN_BOTH } from "./canvas-state.ts"
 
 const NOTE_FOR_INPUT: Record<string, string> = {
   formatBold: FORMAT_NOT_SAVED,
@@ -66,7 +66,7 @@ const EVERY_NOTE = [
   TRANSPOSE_NOT_SAVED,
   YANK_NOT_SAVED,
   CHANGE_NOT_SUPPORTED,
-  CHANGE_NOT_KEPT,
+  CHANGED_IN_BOTH,
   NUMBERED_LINE,
   KEPT_PART_LINE,
 ]

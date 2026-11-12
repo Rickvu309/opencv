@@ -21,7 +21,6 @@ import {
 } from "./canvas-edit.ts"
 import { fixedLineNote, heldLineNote } from "./canvas-fixed-lines.ts"
 import {
-  CHANGE_NOT_KEPT,
   PASTE_LINE_LIMIT,
   PASTE_LINE_TOO_LONG,
   PASTE_TOO_MANY_LINES,
@@ -29,9 +28,14 @@ import {
 import { collectLooks, withoutLooks, type LookBook } from "./canvas-look.ts"
 import { pastePlain, plainCharacters } from "./canvas-paste.ts"
 import { reachSpan, type Reach } from "./canvas-reach.ts"
+import { keepMine } from "./canvas-merge.ts"
 import { pageWords } from "./canvas-save.ts"
+import type { LineRefusal } from "./canvas-save-lines.ts"
 
 const HISTORY_DEPTH = 50
+
+export const CHANGED_IN_BOTH =
+  "This line was also changed somewhere else. Your version is shown here and is not saved. Edit the line to save your version, or restore the saved one."
 
 export type CanvasState = {
   past: WritingDraft[]
@@ -44,6 +48,8 @@ export type CanvasState = {
   typed: boolean
   saved: WritingDraft | null
   redraw: number
+  unsaved: LineRefusal[]
+  pageRefusal: string | null
 }
 
 export type CanvasAction =
@@ -77,7 +83,15 @@ export type CanvasAction =
   | { type: "adopt"; blocks: WritingBlock[] }
   | { type: "basis"; basis: DraftBasis; typed: boolean }
   | { type: "replace"; draft: WritingDraft; basis: DraftBasis }
-  | { type: "refused"; note: string; words: string }
+  | {
+      type: "unsaved"
+      lines?: LineRefusal[]
+      page?: string | null
+      words: string
+    }
+  | { type: "keepMine"; theirs: WritingDraft; basis: DraftBasis }
+  | { type: "useSaved"; theirs: WritingDraft; basis: DraftBasis }
+  | { type: "restoreLine"; id: string; text: string | null }
   | { type: "redraw" }
 
 function sameBasis(left: DraftBasis | null, right: DraftBasis | null) {
@@ -156,27 +170,6 @@ function showsPresent(
         item.text === present.blocks[index]?.text
     )
   )
-}
-
-function restoreSaved(state: CanvasState, note: string): CanvasState {
-  const notice = `${CHANGE_NOT_KEPT} ${note}`
-  const saved = state.saved
-  if (!saved) return { ...withNotice(state, notice), redraw: state.redraw + 1 }
-  const at = state.past.lastIndexOf(saved)
-  const present = {
-    ...saved,
-    caret: sensibleCaret(saved, state.present.caret),
-  }
-  return {
-    ...state,
-    past: at >= 0 ? state.past.slice(0, at) : [],
-    present,
-    future: [],
-    saved: present,
-    notice,
-    typed: typedAgainst(state, present),
-    redraw: state.redraw + 1,
-  }
 }
 
 function typedAgainst(state: CanvasState, present: WritingDraft) {
@@ -316,11 +309,23 @@ export function reduce(state: CanvasState, action: CanvasAction): CanvasState {
     return { ...state, basis: action.basis, typed: action.typed, saved }
   }
   if (action.type === "redraw") return redrawn(state, state.present.caret)
-  if (action.type === "refused") {
+  if (action.type === "unsaved") {
     if (pageWords(state.present.blocks) !== action.words) return state
-    return restoreSaved(state, action.note)
+    const unsaved = action.lines ?? state.unsaved
+    const pageRefusal =
+      action.page === undefined ? state.pageRefusal : action.page
+    if (
+      JSON.stringify(unsaved) === JSON.stringify(state.unsaved) &&
+      pageRefusal === state.pageRefusal
+    )
+      return state
+    return { ...state, unsaved, pageRefusal }
   }
+  if (action.type === "keepMine") return keptMine(state, action)
+  if (action.type === "useSaved") return usedSaved(state, action)
+  if (action.type === "restoreLine") return restoredLine(state, action)
   if (action.type === "replace") {
+    if (hasUnsavedWords(state)) return state
     const draft = plainDraft(action.draft)
     const looks = collectLooks(state.looks, action.draft.blocks)
     const same =
@@ -349,6 +354,82 @@ export function reduce(state: CanvasState, action: CanvasAction): CanvasState {
   if (action.type === "undo") return travel(state, true)
   if (action.type === "redo") return travel(state, false)
   return edited(state, action)
+}
+
+export function hasUnsavedWords(state: CanvasState) {
+  return state.basis
+    ? pageWords(state.present.blocks) !== state.basis.words
+    : state.typed
+}
+
+function freshFrom(
+  state: CanvasState,
+  action: { theirs: WritingDraft; basis: DraftBasis },
+  present: WritingDraft,
+  unsaved: LineRefusal[]
+): CanvasState {
+  return {
+    ...state,
+    past: [],
+    present,
+    future: [],
+    looks: collectLooks(state.looks, action.theirs.blocks),
+    basis: action.basis,
+    typed: pageWords(present.blocks) !== action.basis.words,
+    saved: plainDraft(action.theirs),
+    notice: "",
+    unsaved,
+    pageRefusal: null,
+    redraw: state.redraw + 1,
+  }
+}
+
+function keptMine(
+  state: CanvasState,
+  action: Extract<CanvasAction, { type: "keepMine" }>
+): CanvasState {
+  const merged = keepMine(state.saved, state.present, plainDraft(action.theirs))
+  return freshFrom(
+    state,
+    action,
+    merged.draft,
+    merged.both.map((line) => ({ ...line, note: CHANGED_IN_BOTH }))
+  )
+}
+
+function usedSaved(
+  state: CanvasState,
+  action: Extract<CanvasAction, { type: "useSaved" }>
+): CanvasState {
+  const present = plainDraft(action.theirs)
+  return freshFrom(state, action, present, [])
+}
+
+function restoredLine(
+  state: CanvasState,
+  action: Extract<CanvasAction, { type: "restoreLine" }>
+): CanvasState {
+  const blocks =
+    action.text === null
+      ? state.present.blocks.filter((block) => block.id !== action.id)
+      : state.present.blocks.map((block) =>
+          block.id === action.id ? { ...block, text: action.text ?? "" } : block
+        )
+  if (blocks.length === 0) return state
+  const caret = blocks.some((block) => block.id === state.present.caret.blockId)
+    ? sensibleCaret({ ...state.present, blocks }, state.present.caret)
+    : { blockId: blocks[0]?.id ?? "", offset: 0 }
+  const present = { ...state.present, blocks, caret }
+  return {
+    ...state,
+    past: state.past.concat(state.present).slice(-HISTORY_DEPTH),
+    present,
+    future: [],
+    unsaved: state.unsaved.filter((line) => line.id !== action.id),
+    typed: typedAgainst(state, present),
+    notice: "",
+    redraw: state.redraw + 1,
+  }
 }
 
 export function openSheet(
@@ -381,5 +462,7 @@ export function openSheet(
     typed: false,
     saved,
     redraw: 0,
+    unsaved: [],
+    pageRefusal: null,
   }
 }

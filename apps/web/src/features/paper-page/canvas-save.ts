@@ -19,6 +19,14 @@ import {
 } from "./canvas-edit.ts"
 import { readWordPage } from "./package-read.ts"
 import { diffParagraphs } from "./page-diff.ts"
+import {
+  lineUnits,
+  stillRefused,
+  withLine,
+  withoutRefused,
+  type LineRefusal,
+  type PageBlock,
+} from "./canvas-save-lines.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
@@ -44,15 +52,37 @@ export type SaveOutcome = {
   basis?: DraftBasis
   replace?: WritingDraft
   conflict?: boolean
+  refusedLines?: LineRefusal[]
+  pageRefusal?: string | null
 }
 
 export type SettleClaim = {
   basis: DraftBasis | null
   typed: boolean
   caret?: TextPoint
+  refused?: readonly LineRefusal[]
 }
 
-type PageBlock = { id: string; text: string; held?: boolean }
+export const SIGNED_OUT = "You are signed out."
+
+const PAGE_REASONS = new Map<number, string>([
+  [401, SIGNED_OUT],
+  [403, "You no longer have access to this page."],
+  [404, "This page is no longer available."],
+  [410, "This page is no longer available."],
+])
+
+export function pageReason(error: unknown): string | null {
+  return error instanceof ApiError
+    ? (PAGE_REASONS.get(error.status) ?? null)
+    : null
+}
+
+function lineRefusalNote(error: unknown): string | null {
+  if (!(error instanceof ApiError)) return null
+  if (error.status !== 400 && error.status !== 409) return null
+  return error.message || "Paper could not save this line."
+}
 
 export function pageWords(blocks: readonly { text: string }[]): string {
   return blocks.map((block) => block.text).join("\n")
@@ -66,11 +96,6 @@ export function savedNote(words: string, outcome: SaveOutcome): string | null {
     return null
   }
   return "Saved"
-}
-
-export function refusedSave(outcome: SaveOutcome): string | null {
-  if (outcome.saved || outcome.conflict || !outcome.note) return null
-  return SERVER_NOTES.has(outcome.note) ? null : outcome.note
 }
 
 export function decideSave(
@@ -233,11 +258,15 @@ function adoptedBlocks(page: WordPage, blocks: readonly PageBlock[]) {
   return same ? next : undefined
 }
 
+type Sent =
+  { revision: string | null; note: null } | { revision: null; note: string }
+
 async function sendPage(
+  docId: string,
   page: WordPage,
   blocks: readonly PageBlock[],
   caret: TextPoint | null
-): Promise<{ revision: string | null; note: string | null }> {
+): Promise<Sent> {
   const diff = diffParagraphs(page, blocks, caret)
   if ("refused" in diff) return { revision: null, note: diff.refused }
   if (diff.ops.length === 0) return { revision: null, note: null }
@@ -246,15 +275,123 @@ async function sendPage(
     batch: { doc: page.doc, basedOn: page.revision, ops: diff.ops },
   })
   if (!input.success)
-    return { revision: null, note: input.error.issues[0]?.message ?? null }
-  return {
-    revision: receiptRevision(
+    return {
+      revision: null,
+      note: input.error.issues[0]?.message ?? "Paper could not save this line.",
+    }
+  const words = pageWords(blocks)
+  unanswered.set(docId, words)
+  try {
+    const revision = receiptRevision(
       await runContractCommand(commandClient(), "paper.canvas", input.data, {
         refresh: false,
       })
-    ),
-    note: null,
+    )
+    unanswered.delete(docId)
+    if (revision) ownWrites.set(docId, recordedBasis(revision, words))
+    return { revision, note: null }
+  } catch (error) {
+    const note = lineRefusalNote(error)
+    if (note === null) throw error
+    unanswered.delete(docId)
+    return { revision: null, note }
   }
+}
+
+function caretIn(caret: TextPoint | null, ids: readonly string[]) {
+  return caret && ids.includes(caret.blockId) ? caret : null
+}
+
+type Isolated =
+  | { head: WordPage; refused: LineRefusal[]; landed: boolean }
+  | { moved: true }
+  | null
+
+async function stillOurs(
+  docId: string,
+  head: WordPage,
+  signal: AbortSignal
+): Promise<WordPage | "moved" | null> {
+  const now = await readPage(docId, signal)
+  if (!now || signal.aborted) return null
+  return now.revision === head.revision ? now : "moved"
+}
+
+async function isolate(
+  docId: string,
+  page: WordPage,
+  blocks: readonly PageBlock[],
+  caret: TextPoint | null,
+  signal: AbortSignal,
+  firstNote: string
+): Promise<Isolated> {
+  let head = page
+  const refused: LineRefusal[] = []
+  let landed = false
+  const units = lineUnits(pageBlocks(page), blocks)
+  const texts = new Map(blocks.map((block) => [block.id, block.text]))
+  const single = units.lines.length + (units.rest.length > 0 ? 1 : 0) <= 1
+  if (single) {
+    const ids = [...units.lines.map((line) => line.id), ...units.rest]
+    return {
+      head,
+      landed,
+      refused: ids.map((id) => ({
+        id,
+        text: texts.get(id) ?? "",
+        note: firstNote,
+      })),
+    }
+  }
+  for (const unit of units.lines) {
+    if (signal.aborted) return null
+    const candidate = withLine(pageBlocks(head), unit.id, unit.text)
+    const sent = await sendPage(
+      docId,
+      head,
+      candidate,
+      caretIn(caret, [unit.id])
+    )
+    if (sent.note === null && sent.revision) {
+      const next = await readPage(docId, signal)
+      if (!next || next.revision !== sent.revision) return null
+      head = next
+      landed = true
+      continue
+    }
+    if (sent.note === null) continue
+    const now = await stillOurs(docId, head, signal)
+    if (now === "moved") return { moved: true }
+    if (!now) return null
+    refused.push({ ...unit, note: sent.note })
+  }
+  if (units.rest.length === 0) return { head, refused, landed }
+  const rest = withoutRefused(pageBlocks(head), blocks, refused)
+  const sent = await sendPage(docId, head, rest, caretIn(caret, units.rest))
+  if (sent.note === null && sent.revision) {
+    const next = await readPage(docId, signal)
+    if (!next || next.revision !== sent.revision) return null
+    return { head: next, refused, landed: true }
+  }
+  if (sent.note === null) return { head, refused, landed }
+  const now = await stillOurs(docId, head, signal)
+  if (now === "moved") return { moved: true }
+  if (!now) return null
+  return {
+    head,
+    landed,
+    refused: refused.concat(
+      units.rest.map((id) => ({
+        id,
+        text: texts.get(id) ?? "",
+        note: sent.note,
+      }))
+    ),
+  }
+}
+
+function sameNote(refused: readonly LineRefusal[]) {
+  return refused.every((line) => line.note === refused[0]?.note)
 }
 
 function receiptRevision(value: unknown) {
@@ -342,23 +479,62 @@ async function settleOnce(
   if (serverMoved) {
     return { saved: false, words, revision: null, note: null, conflict: true }
   }
-  unanswered.set(docId, words)
-  const sent = await sendPage(page, blocks, claim.caret ?? null)
-  unanswered.delete(docId)
-  if (sent.note) return { saved: false, words, revision: null, note: sent.note }
-  if (sent.revision) ownWrites.set(docId, recordedBasis(sent.revision, words))
-  if (!sent.revision || signal.aborted) return missed(words)
+  const carried = stillRefused(claim.refused ?? [], blocks)
+  const sending = withoutRefused(pageBlocks(page), blocks, carried)
+  const caret = claim.caret ?? null
+  const sent = await sendPage(docId, page, sending, caret)
+  if (sent.note !== null) {
+    const now = await stillOurs(docId, page, signal)
+    if (now === "moved")
+      return { saved: false, words, revision: null, note: null, conflict: true }
+    if (!now) return missed(words)
+    const isolated = await isolate(
+      docId,
+      now,
+      sending,
+      caret,
+      signal,
+      sent.note
+    )
+    if (!isolated) return missed(words)
+    if ("moved" in isolated)
+      return { saved: false, words, revision: null, note: null, conflict: true }
+    const refused = carried.concat(isolated.refused)
+    const whole = !isolated.landed && refused.length > 1 && sameNote(refused)
+    const head = isolated.head
+    return {
+      saved: false,
+      words,
+      revision: head.revision,
+      note: null,
+      basis: recordedBasis(head.revision, pageText(head)),
+      refusedLines: refused,
+      pageRefusal: whole ? sent.note : null,
+    }
+  }
+  if (!sent.revision) {
+    if (carried.length === 0) return missed(words)
+    return { ...missed(words), refusedLines: carried }
+  }
+  if (signal.aborted) return missed(words)
+  const sentWords = pageWords(sending)
   const next = await readPage(docId, signal)
-  if (!next || next.revision !== sent.revision || pageText(next) !== words) {
+  if (
+    !next ||
+    next.revision !== sent.revision ||
+    pageText(next) !== sentWords
+  ) {
     return missed(words)
   }
   const adopted = adoptedBlocks(next, blocks)
   return {
-    saved: true,
+    saved: sentWords === words,
     words,
     revision: next.revision,
     note: null,
-    basis: recordedBasis(next.revision, words),
+    basis: recordedBasis(next.revision, sentWords),
+    refusedLines: carried,
+    pageRefusal: null,
     ...(adopted ? { blocks: adopted } : {}),
   }
 }
@@ -390,6 +566,13 @@ async function attempt(
       wait: null,
     }
   } catch (error) {
+    const page = pageReason(error)
+    if (page) {
+      return {
+        outcome: { ...missed(pageWords(blocks)), pageRefusal: page },
+        wait: null,
+      }
+    }
     return {
       outcome: { ...missed(pageWords(blocks)), note: serverNote(error) },
       wait: retryWait(error),

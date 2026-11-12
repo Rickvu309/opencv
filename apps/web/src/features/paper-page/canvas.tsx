@@ -11,7 +11,9 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import {
   clearedOnReload,
+  draftFromPage,
   keptOnThisComputer,
+  pageBlocks,
   pointSpan,
   storeDraft,
   type TextPoint,
@@ -20,6 +22,10 @@ import {
 } from "./canvas-edit.ts"
 import { inputRule, pageKey, type PageEdit } from "./canvas-input.ts"
 import { openSheet, reduce, type CanvasAction } from "./canvas-state.ts"
+import { changedLines, droppedCount } from "./canvas-merge.ts"
+import { stillRefused } from "./canvas-save-lines.ts"
+import { UnsavedBar } from "./canvas-unsaved-bar.tsx"
+import { readWordPage } from "./package-read.ts"
 import {
   placeCaret,
   syncParagraphs,
@@ -27,7 +33,7 @@ import {
   visibleText,
   type DrawnLooks,
 } from "./canvas-draw.ts"
-import { pageWords, refusedSave, savedNote, settlePage } from "./canvas-save.ts"
+import { pageWords, savedNote, settlePage, SIGNED_OUT } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import {
   setWritingConflict,
@@ -198,6 +204,16 @@ function WritingSheet({
     openSheet(docId, seed, seedRevision)
   )
   const nextId = useRef(state.present.nextId)
+  const heldBack = useRef<CanvasAction[]>([])
+  const deliver = useCallback((action: CanvasAction) => {
+    if (composing.current) heldBack.current.push(action)
+    else dispatch(action)
+  }, [])
+  const flushHeldBack = useCallback(() => {
+    const held = heldBack.current
+    heldBack.current = []
+    for (const action of held) dispatch(action)
+  }, [])
   const drawnLooks = useRef<DrawnLooks>(new Map())
   const conflicted = useSyncExternalStore(
     subscribeWritingConflict,
@@ -223,6 +239,7 @@ function WritingSheet({
       basis: state.basis,
       typed: state.typed,
       caret: state.present.caret,
+      refused: state.unsaved,
     })
       .then((result) => {
         if (controller.signal.aborted) return
@@ -232,7 +249,7 @@ function WritingSheet({
         }
         if (result.replace && result.basis) {
           setWritingConflict(null)
-          dispatch({
+          deliver({
             type: "replace",
             draft: result.replace,
             basis: result.basis,
@@ -240,27 +257,45 @@ function WritingSheet({
           return
         }
         if (result.basis) {
-          dispatch({ type: "basis", basis: result.basis, typed: false })
+          deliver({
+            type: "basis",
+            basis: result.basis,
+            typed: result.basis.words !== words,
+          })
         }
-        if (result.blocks) dispatch({ type: "adopt", blocks: result.blocks })
-        const refused = refusedSave(result)
-        if (refused) {
-          dispatch({ type: "refused", note: refused, words })
-          return
+        if (result.blocks) deliver({ type: "adopt", blocks: result.blocks })
+        if (result.saved) {
+          deliver({ type: "unsaved", lines: [], page: null, words })
+        } else if (
+          result.refusedLines !== undefined ||
+          result.pageRefusal !== undefined
+        ) {
+          deliver({
+            type: "unsaved",
+            lines: result.refusedLines,
+            page: result.pageRefusal,
+            words,
+          })
         }
         const note = savedNote(words, result)
         if (note) {
           if (note === "Saved") setWritingConflict(null)
-          dispatch({ type: "note", note })
+          deliver({ type: "note", note })
           return
         }
         if (!state.typed && words !== "") {
-          dispatch({ type: "note", note: keptOnThisComputer() })
+          deliver({ type: "note", note: keptOnThisComputer() })
         }
       })
       .catch(() => undefined)
     return () => controller.abort()
-  }, [docId, state.basis, state.present, state.typed])
+  }, [deliver, docId, state.basis, state.present, state.typed, state.unsaved])
+
+  useLayoutEffect(() => {
+    composing.current = false
+    compositionBase.current = null
+    compositionSpan.current = null
+  }, [state.redraw])
 
   useLayoutEffect(() => {
     const page = pageRef.current
@@ -285,6 +320,69 @@ function WritingSheet({
     placeCaret(page, state.present.caret)
     if (scroll) revealCaret(page, scroll)
   }, [state.present, state.looks, state.redraw])
+
+  const visibleUnsaved = stillRefused(state.unsaved, state.present.blocks)
+  const wholePage = conflicted || state.pageRefusal !== null
+  const marked = [
+    ...new Set([
+      ...visibleUnsaved.map((line) => line.id),
+      ...(wholePage
+        ? changedLines(state.saved, state.present).map((block) => block.id)
+        : []),
+    ]),
+  ].join(" ")
+
+  useLayoutEffect(() => {
+    const page = pageRef.current
+    if (!page || composing.current) return
+    const ids = new Set(marked.split(" "))
+    for (const node of page.querySelectorAll<HTMLElement>(":scope > p")) {
+      if (ids.has(node.dataset.block ?? ""))
+        node.setAttribute("data-unsaved", "")
+      else node.removeAttribute("data-unsaved")
+    }
+  }, [marked, state.present, state.redraw])
+
+  const readHead = useCallback(async () => {
+    try {
+      const page = await readWordPage(
+        "page",
+        docId,
+        new AbortController().signal
+      )
+      const draft = page ? draftFromPage(page) : null
+      if (!page || !draft) return null
+      return {
+        theirs: draft,
+        basis: {
+          revision: page.revision,
+          words: pageWords(pageBlocks(page)),
+        },
+      }
+    } catch {
+      return null
+    }
+  }, [docId])
+
+  const choose = useCallback(
+    async (type: "keepMine" | "useSaved") => {
+      const head = await readHead()
+      if (!head) return
+      setWritingConflict(null)
+      dispatch({ type, ...head })
+    },
+    [readHead]
+  )
+
+  const restoreLine = useCallback(
+    async (id: string) => {
+      const head = await readHead()
+      const source = head ? head.theirs : state.saved
+      const kept = source?.blocks.find((block) => block.id === id)
+      dispatch({ type: "restoreLine", id, text: kept ? kept.text : null })
+    },
+    [readHead, state.saved]
+  )
 
   const applyPaste = useCallback(
     (text: string) => {
@@ -374,6 +472,31 @@ function WritingSheet({
       className="writing-sheet"
       data-pen-surface="paper-page"
     >
+      <UnsavedBar
+        moved={
+          conflicted
+            ? {
+                dropped: droppedCount(state.saved, state.present),
+                onKeep: () => void choose("keepMine"),
+                onUseSaved: () => void choose("useSaved"),
+              }
+            : null
+        }
+        page={
+          state.pageRefusal
+            ? {
+                reason: state.pageRefusal,
+                signIn: state.pageRefusal === SIGNED_OUT,
+                unsavedText: () =>
+                  changedLines(state.saved, state.present)
+                    .map((block) => block.text)
+                    .join("\n"),
+              }
+            : null
+        }
+        lines={visibleUnsaved}
+        onRestore={(id) => void restoreLine(id)}
+      />
       <div className="writing-scroll" ref={scrollRef}>
         <article
           key={state.redraw}
@@ -426,8 +549,16 @@ function WritingSheet({
               offset: caret.offset,
             }
           }}
+          onBlur={() => {
+            if (!composing.current) return
+            composing.current = false
+            compositionBase.current = null
+            compositionSpan.current = null
+            flushHeldBack()
+          }}
           onCompositionEnd={(event) => {
             composing.current = false
+            flushHeldBack()
             const page = pageRef.current
             const base = compositionBase.current
             const from = compositionSpan.current

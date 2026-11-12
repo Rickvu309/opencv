@@ -32,8 +32,6 @@ export const YANK_NOT_SAVED =
 export const CHANGE_NOT_SUPPORTED =
   "This change can't be saved here yet, so it was not made."
 
-export const CHANGE_NOT_KEPT = "Your last change was not kept."
-
 export const BROWSER_INPUT_TYPES = [
   "insertText",
   "insertReplacementText",

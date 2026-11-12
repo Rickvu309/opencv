@@ -7,11 +7,11 @@ import { render } from "@/test/render-with-client.tsx"
 
 import { draftFromPage } from "./canvas-edit.ts"
 import { KEPT_PART_LINE, NUMBERED_LINE } from "./canvas-fixed-lines.ts"
-import { CHANGE_NOT_KEPT } from "./canvas-input.ts"
 import { WritingCanvas } from "./canvas.tsx"
 
 const server = vi.hoisted(() => ({
   refuse: null as null | ((words: string) => string | null),
+  refusedText: null as string | null,
   saves: 0,
   savedWords: [] as string[],
 }))
@@ -21,11 +21,22 @@ vi.mock("./canvas-save.ts", async (importOriginal) => {
   return {
     ...real,
     settlePage: vi.fn(
-      async (_doc: string, blocks: readonly { text: string }[]) => {
+      async (_doc: string, blocks: readonly { id: string; text: string }[]) => {
         const words = real.pageWords(blocks)
         const refused = server.refuse?.(words) ?? null
         if (refused) {
-          return { saved: false, words, revision: null, note: refused }
+          const line = blocks.find((item) =>
+            item.text.includes(server.refusedText ?? "\u0000")
+          )
+          return line
+            ? {
+                saved: false,
+                words,
+                revision: null,
+                note: null,
+                refusedLines: [{ id: line.id, text: line.text, note: refused }],
+              }
+            : { saved: false, words, revision: null, note: refused }
         }
         if (server.savedWords.at(-1) !== words) {
           server.saves += 1
@@ -252,6 +263,7 @@ afterEach(() => {
   cleanup()
   localStorage.clear()
   server.refuse = null
+  server.refusedText = null
   server.saves = 0
   server.savedWords = []
 })
@@ -426,28 +438,34 @@ describe("a change the browser makes after the page refused it", () => {
 })
 
 describe("a save the server refuses", () => {
-  it("puts back the saved words, says the change was not kept, and takes the next letter", async () => {
+  it("keeps the refused words on their line, marked as not saved, and takes the next letter", async () => {
     open()
     select([H.city, 16])
     await send(beforeInput("insertText", { data: "a" }))
     expect(block(H.city).textContent).toBe("Ho Chi Minh Citya")
     server.refuse = (text) =>
       text.includes("Q") ? "This line has mixed formatting." : null
+    server.refusedText = "Q"
     select([H.city, 17])
     await send(beforeInput("insertText", { data: "Q" }))
-    expect(block(H.city).textContent).toBe("Ho Chi Minh Citya")
+    expect(block(H.city).textContent).toBe("Ho Chi Minh CityaQ")
+    expect(block(H.city)).toHaveAttribute("data-unsaved")
     expect(stored()).toEqual(words())
-    expect(status()).toBe(`${CHANGE_NOT_KEPT} This line has mixed formatting.`)
+    expect(status()).not.toMatch(/\bSaved\b/)
+    expect(
+      screen.getByRole("region", { name: "Unsaved words" }).textContent
+    ).toContain("This line has mixed formatting.")
     await typeAtEndOfAfter("b")
     expect(block(H.after).textContent).toBe(`${AFTER}b`)
-    expect(server.savedWords.at(-1)).toContain(`${AFTER}b`)
+    expect(stored()).toEqual(words())
+    await press("z", { ctrlKey: true })
     await press("z", { ctrlKey: true })
     expect(words().join("\n")).not.toContain("Q")
-    await press("z", { ctrlKey: true })
-    expect(words().join("\n")).not.toContain("Q")
+    expect(block(H.city)).not.toHaveAttribute("data-unsaved")
     await press("z", { ctrlKey: true, shiftKey: true })
-    await press("z", { ctrlKey: true, shiftKey: true })
-    expect(words().join("\n")).not.toContain("Q")
+    expect(block(H.city).textContent).toBe("Ho Chi Minh CityaQ")
+    expect(block(H.city)).toHaveAttribute("data-unsaved")
+    expect(status()).not.toMatch(/\bSaved\b/)
   })
 
   it("keeps the words when the server only says the page changed elsewhere", async () => {
