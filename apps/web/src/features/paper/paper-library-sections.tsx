@@ -32,7 +32,7 @@ export function PaperLibrarySection({
         variant="ghost"
         data-slot="paper-library-section-head"
         aria-expanded={open}
-        className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent md:h-8"
+        className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
         onClick={toggle}
       >
         <Chevron

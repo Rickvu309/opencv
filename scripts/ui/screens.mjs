@@ -117,6 +117,22 @@ export const SCREENS = [
     steps: [{ waitFor: { text: "Start a document" } }],
   },
   {
+    id: "paper-home-panel-open",
+    route: "/paper",
+    steps: [
+      { waitFor: { selector: 'main input[aria-label="Search Paper"]' } },
+      ...OPEN_PANEL,
+    ],
+  },
+  {
+    id: "paper-home-new-cv",
+    route: "/paper",
+    steps: [
+      { click: { role: "button", name: "New CV" } },
+      { waitFor: { role: "dialog", name: "New CV" } },
+    ],
+  },
+  {
     id: "paper-blank",
     route: "/paper",
     steps: OPEN_BLANK_CV,
