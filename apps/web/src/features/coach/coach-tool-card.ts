@@ -1,4 +1,5 @@
 import { coachReadLabel, humanToolText } from "./coach-tool-labels.ts"
+import { documentEditDetail } from "./coach-receipt.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 
@@ -22,7 +23,7 @@ export function isCompactCoachTool(tool: CoachToolPart) {
     refusedApproval(tool) ||
     tool.part.undone ||
     (tool.part.ok &&
-      (coachReadLabel(tool.name) || tool.part.detail?.type === "paper.replace"))
+      (coachReadLabel(tool.name) || documentEditDetail(tool.part.detail)))
   )
 }
 

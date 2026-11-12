@@ -19,7 +19,7 @@ import {
   refusedApprovalLine,
   toolCardProps,
 } from "./coach-tool-card.ts"
-import { receiptHeadline } from "./coach-receipt.ts"
+import { documentEditDetail, receiptHeadline } from "./coach-receipt.ts"
 import { useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
 import { useChatStore } from "./use-chat-store.ts"
@@ -101,9 +101,7 @@ export function CoachToolExtras({
 }: ExtrasProps) {
   const { part } = tool
   const edit =
-    part.ok && !part.pendingActionId && part.detail?.type === "paper.replace"
-      ? part.detail
-      : null
+    part.ok && !part.pendingActionId ? documentEditDetail(part.detail) : null
   const readLabel = part.ok ? coachReadLabel(tool.name) : undefined
   const note =
     edit || readLabel || part.pendingActionId ? null : receiptReversalNote(part)
@@ -277,9 +275,8 @@ function CoachApproval({
       dispatch({ type: "settled" })
     }
   }
-  const detail = tool.part.detail
-  const documentName =
-    detail?.type === "paper.replace" ? detail.docName : "your document"
+  const detail = documentEditDetail(tool.part.detail)
+  const documentName = detail ? detail.docName : "your document"
   const state =
     effectiveStatus === "pending" ? "approval-requested" : "approval-responded"
   const approved = effectiveStatus === "approved"
@@ -306,7 +303,7 @@ function CoachApproval({
           </h3>
           <Badge variant="outline">Needs your approval</Badge>
         </div>
-        {detail?.type === "paper.replace" && detail.hunks.length ? (
+        {detail?.hunks.length ? (
           <DiffBlock detail={detail} />
         ) : batch.state !== "none" ? null : (
           <div className="space-y-1 text-sm leading-relaxed text-muted-foreground">

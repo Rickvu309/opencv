@@ -20,6 +20,7 @@ import { toolCardProps } from "./coach-tool-card.ts"
 import { CoachToolLine } from "./coach-tool-line.tsx"
 import { CoachParts } from "./coach-part-renderers.tsx"
 import { toCoachParts, type CoachToolPart } from "./coach-parts.ts"
+import { documentEditDetail, documentEditReceiptType } from "./coach-receipt.ts"
 
 beforeEach(() => {
   vi.spyOn(contractClient, "runContractCommand").mockResolvedValue(undefined)
@@ -66,7 +67,7 @@ const edited: ChatToolPart = {
   toolCallId: "call-edit",
   activityId: "activity-edit",
   detail: {
-    type: "paper.replace",
+    type: documentEditReceiptType,
     docId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
     docKind: "cv",
     docName: "Untitled CV",
@@ -266,7 +267,7 @@ describe("Coach trace and receipts", () => {
     if (!row) throw new Error("Expected receipt row")
     expect(within(row).getByRole("link", { name: "Open" })).toHaveAttribute(
       "href",
-      `/paper/${edited.detail?.type === "paper.replace" ? edited.detail.docId : ""}`
+      `/paper/${documentEditDetail(edited.detail)?.docId ?? ""}`
     )
     expect(within(row).getByRole("button", { name: /^Undo/ })).toBeEnabled()
     expect(

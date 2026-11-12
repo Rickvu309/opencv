@@ -19,8 +19,14 @@ export function stageLabel(stage: string) {
 
 export { RECEIPT_STAGES }
 
+export const documentEditReceiptType = "paper.replace"
+
+export function documentEditDetail(detail: CoachReceiptDetail | undefined) {
+  return detail?.type === documentEditReceiptType ? detail : null
+}
+
 export function namedReceiptHeadline(detail: CoachReceiptDetail) {
-  if (detail.type === "paper.replace") {
+  if (detail.type === documentEditReceiptType) {
     const changes = detail.hunks.reduce(
       (total, hunk) =>
         total +
