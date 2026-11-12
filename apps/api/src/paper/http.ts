@@ -4,7 +4,6 @@ import {
   httpStatusForError,
   paperPackageStageInputSchema,
   catalog,
-  parsePaperId,
   parseFileId,
   parseUserId,
   personActor,
@@ -23,26 +22,18 @@ import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
 import { extractLetterAttachment, parseImportLink } from "./import-parse.js"
+import { importedWordPage } from "./import-word.js"
 import { createPaperPackageRoutes } from "./package-http.js"
 import {
   IMPORT_FILE_CAP,
   IMPORT_SIZE_MESSAGE,
-  deleteFile,
   readOwnedPhoto,
   readSharedPhoto,
   saveFile,
-  withImportSignal,
 } from "./store.js"
 
 function person(userId: string) {
   return personActor(userId)
-}
-
-async function dropImportFileTheCommandRolledBack(
-  userId: string,
-  savedId: string
-) {
-  await deleteFile(person(userId), parseFileId(savedId)).catch(() => undefined)
 }
 
 const PHOTO_EXTENSION: Record<string, string> = {
@@ -275,63 +266,45 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       )
     }
     let bytes: Buffer | undefined = Buffer.from(await file.arrayBuffer())
-    let savedId: string | undefined
     try {
-      if (file.name.toLowerCase().endsWith(".docx")) {
-        const input = paperPackageStageInputSchema.safeParse({
-          requestId: c.req.header("idempotency-key") ?? createId(),
-          name: file.name,
-          kind: c.req.query("kind") ?? "cv",
-        })
-        if (!input.success)
-          throw new CommandError(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Choose a valid document name, kind, and upload key."
-          )
-        const staged = await stageWordPackage(c.var.userId, input.data, bytes)
-        const imported = await withImportSignal(c.req.raw.signal, () =>
-          registry.execute({
-            name: catalog["paper.import"].name,
-            input: { generation: "package", stageId: staged.stageId },
-            actor: person(c.var.userId),
+      const word = file.name.toLowerCase().endsWith(".docx")
+        ? { name: file.name, bytes, notice: null }
+        : await importedWordPage({
+            name: file.name,
+            mediaType: file.type || "application/octet-stream",
+            bytes,
           })
-        )
-        return c.json(successEnvelope(imported.output))
-      }
-      const saved = await saveFile({
-        userId: parseUserId(c.var.userId),
-        name: file.name,
-        mediaType: file.type || "application/octet-stream",
-        bytes,
-        purpose: "import",
-      })
-      savedId = saved.id
       bytes = undefined
       void bytes
-      const imported = await withImportSignal(c.req.raw.signal, () =>
-        registry.execute({
-          name: catalog["paper.import"].name,
-          input: { fileId: saved.id },
-          actor: person(c.var.userId),
+      const input = paperPackageStageInputSchema.safeParse({
+        requestId: c.req.header("idempotency-key") ?? createId(),
+        name: word.name,
+        kind: c.req.query("kind") ?? "cv",
+      })
+      if (!input.success)
+        throw new CommandError(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Choose a valid document name, kind, and upload key."
+        )
+      const staged = await stageWordPackage(
+        c.var.userId,
+        input.data,
+        word.bytes
+      )
+      const imported = await registry.execute({
+        name: catalog["paper.import"].name,
+        input: { generation: "package", stageId: staged.stageId },
+        actor: person(c.var.userId),
+      })
+      return c.json(
+        successEnvelope({
+          ...catalog["paper.import"].publicResult.parse(imported.output),
+          ...(word.notice ? { notice: word.notice } : {}),
         })
       )
-      savedId = undefined
-      const receipt = catalog["paper.import"].publicResult.parse(
-        imported.output
-      )
-      if ("generation" in receipt) return c.json(successEnvelope(receipt))
-      const document = await registry.read(
-        "paper.get",
-        { docId: parsePaperId(receipt.id) },
-        person(c.var.userId)
-      )
-      return c.json(successEnvelope(document))
     } catch (error) {
       bytes = undefined
       void bytes
-      if (savedId) {
-        await dropImportFileTheCommandRolledBack(c.var.userId, savedId)
-      }
       if (error instanceof PaperPackageRefusal)
         throw new CommandError(ERROR_CODES.VALIDATION_ERROR, error.message)
       throw error

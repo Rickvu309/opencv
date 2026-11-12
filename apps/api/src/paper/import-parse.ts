@@ -1,52 +1,34 @@
 import {
-  IMPORT_DATES_MESSAGE,
   IMPORT_GOOGLE_MESSAGE,
   IMPORT_LINKEDIN_MESSAGE,
   IMPORT_PAGES_MESSAGE,
-  IMPORT_PHONE_MESSAGE,
   LETTER_ATTACHMENT_TEXT_MAX,
-  paperDocumentSchema,
-  paperPlainText,
-  paragraphPaper,
   type LetterAttachmentContext,
-  type PaperDocument,
 } from "@workspace/domain"
 
 export const IMPORT_GENERIC_MESSAGE = "Upload a PDF, Word, or text file."
 export const IMPORT_FAILED_MESSAGE = "Could not import that file. Try it again."
+export const IMPORT_EMPTY_MESSAGE =
+  "This file is empty. Choose the file with your CV in it."
+export const IMPORT_JSON_MESSAGE =
+  "A JSON file cannot be imported as a CV. Import a PDF, Word or text file."
+export const IMPORT_SCANNED_MESSAGE =
+  "This PDF has no text we can read. It may be a scan or a photo. Export it again from the app you wrote it in, or import a Word or text file."
+export const IMPORT_LOCKED_MESSAGE =
+  "This PDF is protected with a password. Save a copy without the password, then import it again."
+export const IMPORT_PDF_PAGES_MESSAGE =
+  "This PDF has more than 20 pages. Import a shorter CV."
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-type ImportCheck = {
-  id: string
-  kind: "phone" | "dates"
-  blockId: string
-  message: string
-  resolved: boolean
-}
-
 export type ImportParseResult =
-  | { ok: true; document: unknown; checks: ImportCheck[] }
+  | { ok: true; kind: "pdf" | "text"; text: string }
   | {
       ok: false
       code: "FILE_UNSUPPORTED" | "LINK_UNREADABLE"
       message: string
     }
-
-const YEAR_RANGE = /\b(?:19|20)\d{2}\s*(?:-|–|—|to)\s*(?:19|20)\d{2}\b/gi
-
-const PHONE_RUN = /(?:\+?\d[\s().+-]*){6}\d/g
-
-function hasPhoneRun(text: string): boolean {
-  const stripped = text.replace(new RegExp(YEAR_RANGE.source, "gi"), " ")
-  const runs = stripped.matchAll(new RegExp(PHONE_RUN.source, "g"))
-  for (const match of runs) {
-    const digits = match[0].replace(/\D/g, "")
-    if (digits.length >= 7) return true
-  }
-  return false
-}
 
 function hostIs(host: string, domain: string) {
   return host === domain || host.endsWith(`.${domain}`)
@@ -66,50 +48,6 @@ export function unreadableImportLink(value: string): string | null {
   return null
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function looksLikeStoredCv(value: unknown) {
-  if (!isRecord(value)) return false
-  if (value.version === 3 && value.kind === "cv") return true
-  if (
-    value.version === 2 &&
-    isRecord(value.header) &&
-    Array.isArray(value.sections)
-  ) {
-    return true
-  }
-  return typeof value.name === "string" && isRecord(value.contact)
-}
-
-export function checksForPaper(document: PaperDocument): ImportCheck[] {
-  const parsed = paperDocumentSchema.safeParse(document)
-  if (!parsed.success || parsed.data.kind !== "cv") return []
-  const paper = parsed.data
-  const checks: ImportCheck[] = []
-  if (!paper.header.phone.trim() && !hasPhoneRun(paperPlainText(paper))) {
-    checks.push({
-      id: "phone",
-      kind: "phone",
-      blockId: "header.phone",
-      message: IMPORT_PHONE_MESSAGE,
-      resolved: false,
-    })
-  }
-  const entry = paper.blocks.find((block) => block.type === "experience")
-  if (entry && entry.type === "experience" && !entry.period.includes("20")) {
-    checks.push({
-      id: "dates",
-      kind: "dates",
-      blockId: entry.id,
-      message: IMPORT_DATES_MESSAGE,
-      resolved: false,
-    })
-  }
-  return checks
-}
-
 function isPages(name: string, mediaType: string) {
   return (
     name.toLowerCase().endsWith(".pages") ||
@@ -124,26 +62,15 @@ function refused(
   return { ok: false, code, message }
 }
 
-function textBlocks(raw: string): ImportParseResult {
-  const document = paragraphPaper(raw)
-  return { ok: true, document, checks: checksForPaper(document) }
-}
+class ImportRefusal extends Error {}
 
-function jsonDocument(raw: string): ImportParseResult {
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (looksLikeStoredCv(parsed)) {
-      return { ok: true, document: parsed, checks: [] }
-    }
-  } catch {
-    return textBlocks(raw)
-  }
-  return textBlocks(raw)
+function isLockedPdf(error: unknown) {
+  return error instanceof Error && error.name === "PasswordException"
 }
 
 const PDF_PAGE_CAP = 20
 
-type PdfTextItem = { str?: string }
+type PdfTextItem = { str?: string; hasEOL?: boolean }
 type PdfPage = { getTextContent: () => Promise<{ items: PdfTextItem[] }> }
 type PdfDocument = {
   numPages: number
@@ -156,21 +83,27 @@ async function openPdfDocument(bytes: Buffer): Promise<PdfDocument> {
   return (await unpdf.getDocumentProxy(new Uint8Array(bytes))) as PdfDocument
 }
 
-async function readPdfPages(pdf: PdfDocument) {
+async function readPdfPages(pdf: PdfDocument, whole: boolean) {
+  if (whole && pdf.numPages > PDF_PAGE_CAP)
+    throw new ImportRefusal(IMPORT_PDF_PAGES_MESSAGE)
   const count = Math.min(pdf.numPages, PDF_PAGE_CAP)
   const pages: string[] = []
   for (let page = 1; page <= count; page += 1) {
     const content = await (await pdf.getPage(page)).getTextContent()
-    pages.push(content.items.map((item) => item.str ?? "").join(""))
+    pages.push(
+      content.items
+        .map((item) => (item.str ?? "") + (item.hasEOL ? "\n" : ""))
+        .join("")
+    )
   }
   return pages.join("\n")
 }
 
-async function defaultPdfText(bytes: Buffer) {
+async function defaultPdfText(bytes: Buffer, whole = false) {
   const pdf = await importParsers.openPdf(bytes)
   bytes = Buffer.alloc(0)
   void bytes
-  const pending = readPdfPages(pdf)
+  const pending = readPdfPages(pdf, whole)
   void pending.catch(() => undefined)
   try {
     return await withDeadline(pending)
@@ -395,17 +328,34 @@ export async function extractLetterAttachment(
   }
 }
 
+async function importText(input: ImportFileInput, kind: "pdf" | "text") {
+  if (kind === "text") return input.bytes.toString("utf8")
+  try {
+    return await importParsers.pdfText(input.bytes, true)
+  } catch (error) {
+    if (error instanceof ImportRefusal) return error
+    if (isLockedPdf(error)) return new ImportRefusal(IMPORT_LOCKED_MESSAGE)
+    throw error
+  }
+}
+
 export async function parseImportFile(
   input: ImportFileInput
 ): Promise<ImportParseResult> {
+  if (input.bytes.length === 0)
+    return refused("FILE_UNSUPPORTED", IMPORT_EMPTY_MESSAGE)
   const kind = classifyImport(input)
-  if (kind === "pages") {
-    return refused("FILE_UNSUPPORTED", IMPORT_PAGES_MESSAGE)
-  }
-  if (kind === "unknown") {
+  if (kind === "pages") return refused("FILE_UNSUPPORTED", IMPORT_PAGES_MESSAGE)
+  if (kind === "json") return refused("FILE_UNSUPPORTED", IMPORT_JSON_MESSAGE)
+  if (kind !== "pdf" && kind !== "text")
     return refused("FILE_UNSUPPORTED", IMPORT_GENERIC_MESSAGE)
-  }
-  const raw = await extractedText(input)
-  if (kind === "json") return jsonDocument(raw)
-  return textBlocks(raw)
+  const text = await importText(input, kind)
+  if (text instanceof ImportRefusal)
+    return refused("FILE_UNSUPPORTED", text.message)
+  if (text.replace(/^\uFEFF/u, "").trim() === "")
+    return refused(
+      "FILE_UNSUPPORTED",
+      kind === "pdf" ? IMPORT_SCANNED_MESSAGE : IMPORT_EMPTY_MESSAGE
+    )
+  return { ok: true, kind, text: text.replace(/^\uFEFF/u, "") }
 }

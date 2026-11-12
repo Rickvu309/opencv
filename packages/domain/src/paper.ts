@@ -121,12 +121,6 @@ export const paperDismissCheckInputSchema = z
 
 export const paperKeepTwoPagesInputSchema = paperShareInputSchema
 
-export const paperImportInputSchema = z
-  .object({
-    fileId: fileIdSchema,
-  })
-  .strict()
-
 export const paperSetStatusCommandInputSchema = paperSetStatusInputSchema
 
 export const paperKeywordGapInputSchema = z
