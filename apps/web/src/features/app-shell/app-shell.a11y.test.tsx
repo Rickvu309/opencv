@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { expectPitch } from "@/test/app-shell-fixtures.ts"
+import { expectApplyLive } from "@/test/app-shell-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {
@@ -18,8 +18,8 @@ afterEach(() => {
 
 describe("shell polish and a11y", () => {
   it("exposes a skip link, the sidebar, and the dock", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
 
     expect(
       screen.getByRole("link", { name: "Skip to main content" })

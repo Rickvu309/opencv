@@ -129,7 +129,7 @@ export const LANDING_PRODUCTS: readonly LandingProduct[] = [
       "Tailor a CV",
       "Prep an interview",
       "Write a letter",
-      "Email updates",
+      "Role guidance",
     ],
   },
 ]
@@ -145,36 +145,11 @@ export const LANDING_INTEGRATIONS_HEADER: LandingSectionHeader = {
   link: { label: "See all integrations", to: "/pricing" },
 }
 
-export const LANDING_INTEGRATIONS = [
-  { id: "gmail", name: "Gmail", src: "/landing/logo-gmail.webp" },
-  {
-    id: "google-calendar",
-    name: "Google Calendar",
-    src: "/landing/logo-google-calendar.webp",
-  },
-  { id: "zoom", name: "Zoom", src: "/landing/logo-zoom.webp" },
-  {
-    id: "google-meet",
-    name: "Google Meet",
-    src: "/landing/logo-google-meet.webp",
-  },
-  {
-    id: "microsoft-teams",
-    name: "Microsoft Teams",
-    src: "/landing/logo-microsoft-teams.webp",
-  },
-  { id: "drive", name: "Google Drive", src: "/landing/logo-drive.webp" },
-  {
-    id: "microsoft-onedrive",
-    name: "Microsoft OneDrive",
-    src: "/landing/logo-microsoft-onedrive.webp",
-  },
-  { id: "notion", name: "Notion", src: "/landing/logo-notion.webp" },
-  { id: "figma", name: "Figma", src: "/landing/logo-figma.webp" },
-  { id: "canva", name: "Canva", src: "/landing/logo-canva.webp" },
-  { id: "linkedin", name: "LinkedIn", src: "/landing/logo-linkedin.webp" },
-  { id: "github", name: "GitHub", src: "/landing/logo-github.webp" },
-] as const
+export const LANDING_INTEGRATIONS: readonly {
+  id: string
+  name: string
+  src: string
+}[] = []
 
 export const LANDING_COMING_NEXT_HEADER: LandingSectionHeader = {
   title: "Coming next",
@@ -189,20 +164,7 @@ export type LandingComingNext = {
   figure: LandingFigureId
 }
 
-export const LANDING_COMING_NEXT: readonly LandingComingNext[] = [
-  {
-    id: "proof",
-    title: "Proof",
-    body: "Turn a CV line into evidence.",
-    figure: "proof",
-  },
-  {
-    id: "pitch",
-    title: "Pitch",
-    body: "Your CV and Proofs on one page.",
-    figure: "pitch",
-  },
-]
+export const LANDING_COMING_NEXT: readonly LandingComingNext[] = []
 
 export const LANDING_STORIES = {
   lead: {

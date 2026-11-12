@@ -14,7 +14,6 @@ export const GMAIL_UNAVAILABLE = "Gmail is not available in this build."
 export const LOAD_ERROR = "Could not load settings."
 export const NO_WEEKLY_CAP = "No weekly cap on this mode."
 export const NO_SESSION_CAP = "No session cap on this mode."
-export const UPGRADE_PLACEHOLDER = "Billing is not open yet."
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 

@@ -26,8 +26,6 @@ const SECTION_IDS = [
   "paper",
   "apply",
   "coach",
-  "integrations",
-  "coming-next",
   "stories",
   "close",
 ] as const
@@ -36,26 +34,9 @@ const SECTION_HEADINGS = [
   "Paper",
   "Apply",
   "Coach",
-  "Works with your apps",
-  "Coming next",
   "A CV for every job",
   "Every application in one place",
   "A coach that does the work",
-] as const
-
-const INTEGRATIONS = [
-  "Gmail",
-  "Google Calendar",
-  "Zoom",
-  "Google Meet",
-  "Microsoft Teams",
-  "Google Drive",
-  "Microsoft OneDrive",
-  "Notion",
-  "Figma",
-  "Canva",
-  "LinkedIn",
-  "GitHub",
 ] as const
 
 async function renderLanding() {
@@ -126,9 +107,6 @@ describe("landing page", () => {
         screen.getByRole("heading", { level: 2, name: title })
       ).toBeInTheDocument()
     }
-    expect(
-      screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)
-    ).toEqual(["Proof", "Pitch"])
   })
 
   it("shows four features under each product", async () => {
@@ -145,7 +123,7 @@ describe("landing page", () => {
       ],
       [
         "coach",
-        ["Tailor a CV", "Prep an interview", "Write a letter", "Email updates"],
+        ["Tailor a CV", "Prep an interview", "Write a letter", "Role guidance"],
       ],
     ] as const) {
       const listed = [
@@ -163,12 +141,6 @@ describe("landing page", () => {
     for (const link of learnMore)
       expect(link).toHaveAttribute("href", "/sign-in")
 
-    expect(
-      screen.getByRole("link", { name: "See all integrations" })
-    ).toHaveAttribute("href", "/pricing")
-    expect(
-      screen.getByRole("link", { name: "Join the waitlist" })
-    ).toHaveAttribute("href", "/sign-in")
     expect(screen.getByRole("link", { name: "See a sample" })).toHaveAttribute(
       "href",
       "/#paper"
@@ -224,12 +196,8 @@ describe("landing page", () => {
     expect(container.querySelector('a[href*="/u/"]')).toBeNull()
   })
 
-  it("lists the twelve apps Coach works with and the two customer stories", async () => {
+  it("lists the customer stories", async () => {
     const { container } = await renderLanding()
-
-    for (const name of INTEGRATIONS) {
-      expect(screen.getByRole("img", { name })).toBeInTheDocument()
-    }
 
     const stories = container.querySelector("#stories")
     const figures = stories?.querySelectorAll("figure")
@@ -260,7 +228,7 @@ describe("landing page", () => {
     const { container } = await renderLanding()
 
     const graphics = container.querySelectorAll("img, [role='img']")
-    expect(graphics.length).toBeGreaterThanOrEqual(20)
+    expect(graphics.length).toBeGreaterThanOrEqual(6)
     for (const node of graphics) {
       if (node.getAttribute("aria-hidden") === "true") continue
       const name =
@@ -286,10 +254,9 @@ describe("pricing page", () => {
       "href",
       "/sign-in"
     )
-    expect(screen.getByRole("link", { name: "Get Pro" })).toHaveAttribute(
-      "href",
-      "/sign-in"
-    )
+    expect(
+      screen.queryByRole("link", { name: "Get Pro" })
+    ).not.toBeInTheDocument()
     expect(
       screen.getAllByRole("img", { name: "Not included" }).length
     ).toBeGreaterThan(0)

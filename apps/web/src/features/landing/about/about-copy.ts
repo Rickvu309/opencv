@@ -74,5 +74,5 @@ export const ABOUT_SURFACES = [
 
 export const ABOUT_NEXT = {
   title: "What is next",
-  line: "Two new ways to show your work. Proof turns a CV line into evidence. Pitch is your CV and Proofs on one page.",
+  line: "Two new ways to show your work.",
 } as const

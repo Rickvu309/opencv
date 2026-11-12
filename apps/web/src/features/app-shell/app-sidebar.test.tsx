@@ -6,11 +6,7 @@ import { renderApp } from "@/test/render-app.tsx"
 import { stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
-import {
-  resetShellApiMock,
-  setMockInbox,
-  setMockJobs,
-} from "@/test/shell-api-mock.ts"
+import { resetShellApiMock, setMockJobs } from "@/test/shell-api-mock.ts"
 
 afterEach(() => {
   cleanup()
@@ -55,35 +51,19 @@ describe("app sidebar active row", () => {
   })
 
   it("marks only the surface on its own route", async () => {
-    const sidebar = await renderSidebar(SURFACE_PATHS.pitch)
-    await within(sidebar).findByRole("link", { name: "Pitch" })
-    expect(currentRows(sidebar)).toEqual(["Pitch"])
+    const sidebar = await renderSidebar(SURFACE_PATHS.coach)
+    await within(sidebar).findByRole("link", { name: "Coach" })
+    expect(currentRows(sidebar)).toEqual(["Coach"])
   })
 })
 
-describe("app sidebar Inbox name", () => {
-  it("includes the unread count", async () => {
-    setMockInbox({
-      connected: false,
-      skipped: true,
-      threads: [
-        { id: "a", unread: true },
-        { id: "b", unread: true },
-        { id: "c", unread: true },
-        { id: "d", unread: true },
-      ],
-    })
-    const sidebar = await renderSidebar(SURFACE_PATHS.pitch)
-    expect(
-      await within(sidebar).findByRole("link", { name: "Inbox, 4 unread" })
-    ).toHaveAccessibleName("Inbox, 4 unread")
-  })
-
-  it("is just Inbox when nothing is unread", async () => {
-    const sidebar = await renderSidebar(SURFACE_PATHS.pitch)
-    expect(
-      await within(sidebar).findByRole("link", { name: "Inbox" })
-    ).toHaveAccessibleName("Inbox")
+describe("app sidebar hidden surfaces", () => {
+  it("omits hidden surfaces from the sidebar", async () => {
+    const sidebar = await renderSidebar(SURFACE_PATHS.apply)
+    expect(within(sidebar).queryByRole("link", { name: /^Inbox/ })).toBeNull()
+    expect(within(sidebar).queryByRole("link", { name: /^Pitch/ })).toBeNull()
+    expect(within(sidebar).queryByRole("link", { name: /^Jobs/ })).toBeNull()
+    expect(within(sidebar).queryByRole("link", { name: /^Proofs/ })).toBeNull()
   })
 })
 
@@ -99,7 +79,7 @@ async function tabTo(
 describe("app sidebar groups", () => {
   it("collapses Your work from the keyboard and keeps it collapsed after a remount", async () => {
     const user = userEvent.setup()
-    const sidebar = await renderSidebar(SURFACE_PATHS.pitch)
+    const sidebar = await renderSidebar(SURFACE_PATHS.apply)
     const toggle = await within(sidebar).findByRole("button", {
       name: "Your work",
     })
@@ -112,10 +92,9 @@ describe("app sidebar groups", () => {
     expect(toggle).toHaveFocus()
     expect(within(sidebar).queryByRole("link", { name: "Apply" })).toBeNull()
     expect(within(sidebar).queryByRole("link", { name: "Paper" })).toBeNull()
-    expect(within(sidebar).queryByRole("link", { name: "Pitch" })).toBeNull()
 
     cleanup()
-    const reloaded = await renderSidebar(SURFACE_PATHS.pitch)
+    const reloaded = await renderSidebar(SURFACE_PATHS.apply)
     const again = await within(reloaded).findByRole("button", {
       name: "Your work",
     })
@@ -133,7 +112,7 @@ describe("app sidebar groups", () => {
       { id: "job-1", title: "Designer", company: "Acme", starred: true },
     ])
     const user = userEvent.setup()
-    const sidebar = await renderSidebar(SURFACE_PATHS.pitch)
+    const sidebar = await renderSidebar(SURFACE_PATHS.apply)
     const toggle = await within(sidebar).findByRole("button", {
       name: "Favorites",
     })
@@ -148,7 +127,7 @@ describe("app sidebar groups", () => {
     expect(within(sidebar).getByRole("link", { name: "Apply" })).toBeVisible()
 
     cleanup()
-    const reloaded = await renderSidebar(SURFACE_PATHS.pitch)
+    const reloaded = await renderSidebar(SURFACE_PATHS.apply)
     const again = await within(reloaded).findByRole("button", {
       name: "Favorites",
     })

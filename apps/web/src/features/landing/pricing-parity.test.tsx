@@ -168,15 +168,15 @@ describe("pricing page", () => {
     expect(screen.getByText("$9")).toHaveStyle({ fontSize: "56px" })
 
     const start = screen.getByRole("link", { name: "Start free" })
-    const upgrade = screen.getByRole("link", { name: "Get Pro" })
     expect(start).toHaveAttribute("href", "/sign-in")
-    expect(upgrade).toHaveAttribute("href", "/sign-in")
+    expect(
+      screen.queryByRole("link", { name: "Get Pro" })
+    ).not.toBeInTheDocument()
+    expect(document.querySelectorAll(".pricing-cta")).toHaveLength(1)
     expect(start.className).toContain("w-full")
     expect(start.className).toContain("4%")
-    expect(upgrade.className).toContain("bg-card")
     expect(start.style.blockSize).toBe("44px")
     expect(start.style.inlineSize).toBe("100%")
-    expect(upgrade.style.blockSize).toBe("44px")
 
     const lead = screen.getByText("Everything in Free, plus")
     expect(lead.tagName).toBe("P")

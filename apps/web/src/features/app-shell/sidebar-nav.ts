@@ -1,5 +1,4 @@
-import { shellCopy } from "@/features/app-shell/shell-copy.ts"
-import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+import { SURFACES, SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 export function currentNavPath(pathname: string, targets: readonly string[]) {
   return (
@@ -23,23 +22,22 @@ export function favoriteJobPath(jobId: string) {
   return `${SURFACE_PATHS.apply}/${jobId}`
 }
 
-export function shellNavLabel(
-  item: { id: string; label: string },
-  inboxUnread: number | null
-) {
-  return item.id === "inbox" && inboxUnread
-    ? `${item.label}, ${inboxUnread} ${shellCopy.unread}`
-    : item.label
-}
+export const NAV_LABELS = Object.fromEntries(
+  SURFACES.map((surface) => [surface.id, surface.label])
+) as Record<string, string>
 
-export const SHELL_PRIMARY = [
-  { id: "inbox", label: shellCopy.inbox, to: SURFACE_PATHS.inbox },
-  { id: "coach", label: shellCopy.coach, to: SURFACE_PATHS.coach },
-  { id: "jobs", label: shellCopy.jobs, to: SURFACE_PATHS.jobs },
-] as const
+export const SHELL_PRIMARY = SURFACES.filter(
+  (surface) => surface.shown && surface.nav === "primary"
+).map((surface) => ({
+  id: surface.id,
+  label: surface.label,
+  to: surface.path,
+}))
 
-export const SHELL_WORK = [
-  { id: "paper", label: shellCopy.paper, to: SURFACE_PATHS.paper },
-  { id: "apply", label: shellCopy.apply, to: SURFACE_PATHS.apply },
-  { id: "pitch", label: shellCopy.pitch, to: SURFACE_PATHS.pitch },
-] as const
+export const SHELL_WORK = SURFACES.filter(
+  (surface) => surface.shown && surface.nav === "work"
+).map((surface) => ({
+  id: surface.id,
+  label: surface.label,
+  to: surface.path,
+}))

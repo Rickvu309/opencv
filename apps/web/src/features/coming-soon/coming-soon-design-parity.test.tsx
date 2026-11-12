@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, screen } from "@testing-library/react"
 
-import { renderApp } from "@/test/render-app.tsx"
+import { renderPage } from "@/test/render-app.tsx"
+import { JobsPage, PitchPage, ProofsPage } from "./pages.tsx"
 
 import jobsLayout from "./design/jobs.layout.json"
 import pitchLayout from "./design/pitch.layout.json"
@@ -18,11 +19,17 @@ afterEach(() => {
 
 const normalize = (text: string) => text.replaceAll(/\s+/g, " ").trim()
 
+const PAGES: Record<string, () => React.ReactElement> = {
+  "/jobs": JobsPage,
+  "/pitch": PitchPage,
+  "/proofs": ProofsPage,
+}
+
 describe.each([jobsLayout, pitchLayout, proofLayout])(
   "$frameName ($frameId) on $route",
   (layout) => {
     it("renders every design text on its route", async () => {
-      renderApp(layout.route)
+      renderPage(PAGES[layout.route]!)
       await screen.findByRole("heading", { level: 2 })
       const page = normalize(document.body.textContent ?? "")
       const missing = layout.texts

@@ -8,7 +8,8 @@ import {
 } from "@testing-library/react"
 
 import { pathOf } from "@/test/mock-http.ts"
-import { renderApp } from "@/test/render-app.tsx"
+import { renderPage } from "@/test/render-app.tsx"
+import { ProofsPage } from "./proof-page.tsx"
 import { notifyCalls } from "@/test/shell-api-mock.ts"
 
 beforeEach(() => {
@@ -22,7 +23,7 @@ afterEach(() => {
 
 describe("Proofs coming soon", () => {
   it("names the page Proofs with one h1 and a Paper breadcrumb above it", async () => {
-    renderApp("/proofs")
+    renderPage(ProofsPage)
 
     const title = await screen.findByRole("heading", { level: 1 })
     expect(title).toHaveTextContent(/^Proofs$/)
@@ -36,7 +37,7 @@ describe("Proofs coming soon", () => {
   })
 
   it("keeps the header outside the scrolling body", async () => {
-    renderApp("/proofs")
+    renderPage(ProofsPage)
 
     const title = await screen.findByRole("heading", { level: 1 })
     const header = title.closest('[data-slot="page-header"]')!
@@ -46,7 +47,7 @@ describe("Proofs coming soon", () => {
   })
 
   it("gives phones a back link to Paper", async () => {
-    renderApp("/proofs")
+    renderPage(ProofsPage)
 
     await screen.findByRole("heading", { level: 1 })
     const back = document.querySelector('[data-slot="page-header-back"]')!
@@ -55,7 +56,7 @@ describe("Proofs coming soon", () => {
   })
 
   it("leads with the headline and the sub line", async () => {
-    renderApp("/proofs")
+    renderPage(ProofsPage)
 
     expect(
       await screen.findByRole("heading", {
@@ -67,7 +68,7 @@ describe("Proofs coming soon", () => {
   })
 
   it("asks to be notified about Proofs", async () => {
-    renderApp("/proofs")
+    renderPage(ProofsPage)
     const before = notifyCalls().length
 
     fireEvent.click(
@@ -80,7 +81,7 @@ describe("Proofs coming soon", () => {
   })
 
   it("shows an error next to the button when the request fails", async () => {
-    renderApp("/proofs", (input) => {
+    renderPage(ProofsPage, (input) => {
       if (pathOf(input) === "/api/commands/notify.request")
         throw new Error("offline")
     })
@@ -93,7 +94,7 @@ describe("Proofs coming soon", () => {
   })
 
   it("keeps the decorative chart out of the accessibility tree", async () => {
-    renderApp("/proofs")
+    renderPage(ProofsPage)
     await screen.findByRole("heading", { level: 2 })
 
     expect(

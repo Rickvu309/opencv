@@ -6,6 +6,8 @@ import {
 import { LandingSectionHeader } from "./landing-section-header.tsx"
 
 export function LandingComingNext() {
+  if (LANDING_COMING_NEXT.length === 0) return null
+
   return (
     <section
       id="coming-next"

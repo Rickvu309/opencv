@@ -74,10 +74,13 @@ describe("help page", () => {
       "href",
       "/help#paper"
     )
-    expect(topics.getByRole("link", { name: "Inbox" })).toHaveAttribute(
+    expect(topics.getByRole("link", { name: "Apply" })).toHaveAttribute(
       "href",
-      "/help#inbox"
+      "/help#apply"
     )
+    expect(
+      topics.queryByRole("link", { name: "Inbox" })
+    ).not.toBeInTheDocument()
 
     const hidden = { hidden: true }
     expect(screen.getByText("How do I sign in?")).toBeVisible()
@@ -87,12 +90,7 @@ describe("help page", () => {
     expect(
       screen.getByText(/Light and Max need Pro/, hidden)
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        /Nothing in Inbox is sent until you click send\./,
-        hidden
-      )
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/Inbox/, hidden)).not.toBeInTheDocument()
     expect(
       screen.getByText(/The Jobs page is coming soon/, hidden)
     ).toBeInTheDocument()
@@ -123,7 +121,7 @@ describe("help page", () => {
       document.head.querySelector('meta[name="description"]')
     ).toHaveAttribute(
       "content",
-      "Answers to common questions about opencv. Sign in with an email code, then use Paper, Apply, Coach and Inbox."
+      "Answers to common questions about opencv. Sign in with an email code, then use Paper, Apply and Coach."
     )
   })
 
@@ -134,8 +132,15 @@ describe("help page", () => {
     const search = await screen.findByRole("searchbox", { name: "Search help" })
 
     await user.type(search, "inbox")
+    expect(screen.getByRole("status")).toHaveTextContent("No answers match")
     expect(
-      screen.getByRole("heading", { level: 2, name: "Inbox" })
+      screen.queryByRole("heading", { level: 2, name: "Inbox" })
+    ).not.toBeInTheDocument()
+
+    await user.clear(search)
+    await user.type(search, "board")
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Apply" })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("heading", { level: 2, name: "Paper" })
@@ -150,7 +155,7 @@ describe("help page", () => {
     await user.type(search, "zzzz-no-match")
     expect(screen.getByRole("status")).toHaveTextContent("No answers match")
     expect(
-      screen.queryByRole("heading", { level: 2, name: "Inbox" })
+      screen.queryByRole("heading", { level: 2, name: "Apply" })
     ).not.toBeInTheDocument()
     expect(screen.queryByRole("navigation", { name: "Help topics" })).toBeNull()
     expect(

@@ -5,7 +5,7 @@ export const HELP_HEADLINE = "Help"
 export const HELP_SUBHEAD = "Answers to common questions about opencv."
 
 export const HELP_DESCRIPTION =
-  "Answers to common questions about opencv. Sign in with an email code, then use Paper, Apply, Coach and Inbox."
+  "Answers to common questions about opencv. Sign in with an email code, then use Paper, Apply and Coach."
 
 export const HELP_SEARCH_LABEL = "Search help"
 
@@ -18,13 +18,7 @@ export const HELP_STUCK_BODY = "Sign in and ask Coach."
 export const HELP_STUCK_LINK = "Sign in"
 
 export type HelpTopicId =
-  | "getting-started"
-  | "paper"
-  | "apply"
-  | "coach"
-  | "inbox"
-  | "plans"
-  | "account"
+  "getting-started" | "paper" | "apply" | "coach" | "plans" | "account"
 
 export type HelpQuestion = {
   id: string
@@ -182,34 +176,6 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     ],
   },
   {
-    id: "inbox",
-    title: "Inbox",
-    blurb: "Recruiter mail, sent only by you.",
-    questions: [
-      {
-        id: "inbox-what",
-        question: "What is Inbox?",
-        answer: "Recruiter mail matched to your jobs.",
-      },
-      {
-        id: "inbox-send",
-        question: "Can opencv send mail on its own?",
-        answer: "No. Nothing in Inbox is sent until you click send.",
-      },
-      {
-        id: "inbox-gmail",
-        question: "How does mail get into Inbox?",
-        answer:
-          "Inbox shows a sample mailbox for now. You can skip connecting Gmail.",
-      },
-      {
-        id: "inbox-apps",
-        question: "Are Calendar and Outlook connected?",
-        answer: "They are shown in Settings. They are not connected yet.",
-      },
-    ],
-  },
-  {
     id: "plans",
     title: "Plans and billing",
     blurb: "Free is $0. Pro is $9 a month.",
@@ -239,11 +205,6 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         id: "plans-card",
         question: "Is there a card on file?",
         answer: "No. Billing shows your plan, with no card and no invoices.",
-      },
-      {
-        id: "plans-next",
-        question: "What is coming next?",
-        answer: "Jobs, Proof and Pitch are coming soon.",
       },
     ],
   },

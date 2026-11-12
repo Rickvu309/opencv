@@ -67,13 +67,15 @@ function PlanCard({ plan }: { plan: PricingPlan }) {
         </span>
         <span className="pricing-price-period">{plan.period}</span>
       </p>
-      <a
-        href={documentHref("/sign-in")}
-        className={`pricing-cta ${landingPlanButton(plan.tone)}`}
-        style={{ blockSize: metrics.buttonPx, inlineSize: "100%" }}
-      >
-        {plan.cta}
-      </a>
+      {plan.cta ? (
+        <a
+          href={documentHref("/sign-in")}
+          className={`pricing-cta ${landingPlanButton(plan.tone)}`}
+          style={{ blockSize: metrics.buttonPx, inlineSize: "100%" }}
+        >
+          {plan.cta}
+        </a>
+      ) : null}
       <p className="pricing-note">{plan.note}</p>
       <hr className="pricing-plan-rule" />
       {plan.lead ? <p className="pricing-lead">{plan.lead}</p> : null}

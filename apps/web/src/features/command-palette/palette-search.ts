@@ -3,22 +3,18 @@ import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import type { SurfaceId } from "@/lib/product-paths.ts"
+import { SURFACES, type SurfaceId } from "@/lib/product-paths.ts"
 import { endpoints } from "@/lib/requests.ts"
 
 export const PALETTE_PAGES: {
   id: string
   label: string
   surface: SurfaceId
-}[] = [
-  { id: "inbox", label: "Inbox", surface: "inbox" },
-  { id: "coach", label: "Coach", surface: "coach" },
-  { id: "jobs", label: "Jobs", surface: "jobs" },
-  { id: "paper", label: "Paper", surface: "paper" },
-  { id: "apply", label: "Apply", surface: "apply" },
-  { id: "pitch", label: "Pitch", surface: "pitch" },
-  { id: "settings", label: "Settings", surface: "settings" },
-]
+}[] = SURFACES.filter((surface) => surface.shown).map((surface) => ({
+  id: surface.id,
+  label: surface.label,
+  surface: surface.id,
+}))
 
 export const PALETTE_SCOPES = [
   { id: "all", label: "All" },

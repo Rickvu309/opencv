@@ -5,10 +5,9 @@ import "./design/cap-notice.pen.css"
 type Props = {
   modeLabel: string
   resetTime: string
-  showUpgrade: boolean
 }
 
-export function CoachCapNotice({ modeLabel, resetTime, showUpgrade }: Props) {
+export function CoachCapNotice({ modeLabel, resetTime }: Props) {
   return (
     <div
       role="status"
@@ -25,18 +24,8 @@ export function CoachCapNotice({ modeLabel, resetTime, showUpgrade }: Props) {
         </p>
         <p className="text-[12.5px] leading-tight text-muted-foreground">
           Resets at {resetTime}.
-          {showUpgrade ? " Upgrade to access Light and Max." : ""}
         </p>
       </div>
-      {showUpgrade ? (
-        <a
-          data-cap-upgrade=""
-          className="inline-flex h-8 shrink-0 items-center rounded-lg px-[14px] text-[13px] font-semibold"
-          href="/settings/billing/upgrade"
-        >
-          Upgrade
-        </a>
-      ) : null}
     </div>
   )
 }

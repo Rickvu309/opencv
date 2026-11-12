@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
 import type { Profile, QueryOutput } from "@workspace/domain"
-import { Button } from "@workspace/ui/components/button"
 import { UsageBar } from "@workspace/ui/components/usage-bar"
 
 import {
@@ -32,7 +30,6 @@ export function UsageSection({
     queryKey: usageKey(),
     queryFn: fetchUsage,
   })
-  const navigate = useNavigate()
   const planLine =
     plan === "pro" ? "You're on the Pro plan." : "You're on the Free plan."
 
@@ -67,19 +64,6 @@ export function UsageSection({
             timeZone={timeZone}
           />
         </SettingsCard>
-      </SettingsSection>
-      <SettingsSection label="Need more?">
-        <p className="text-sm text-muted-foreground">
-          Pro gives you unlimited Coach chats.
-        </p>
-        <Button
-          className="h-11 md:h-8"
-          type="button"
-          variant="outline"
-          onClick={() => void navigate({ href: "/settings/billing/upgrade" })}
-        >
-          Upgrade to Pro
-        </Button>
       </SettingsSection>
     </>
   )

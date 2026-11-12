@@ -29,7 +29,7 @@ export function stubPointerApis() {
 
 export async function renderShell() {
   stubDesktopViewport(true)
-  const view = renderApp(SURFACE_PATHS.pitch)
+  const view = renderApp(SURFACE_PATHS.coach)
   const handle = await screen.findByRole("separator", {
     name: "Resize sidebar",
   })

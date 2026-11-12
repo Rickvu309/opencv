@@ -368,12 +368,6 @@ export function InboxReader({
                 >
                   <p>You've reached today's Free limit.</p>
                   <p>{limit.message}</p>
-                  <a
-                    href="/settings"
-                    className="text-foreground underline underline-offset-4"
-                  >
-                    Upgrade
-                  </a>
                 </div>
               ) : null}
               <div className="px-4 py-3.5">

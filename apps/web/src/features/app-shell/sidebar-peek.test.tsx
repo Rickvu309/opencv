@@ -206,12 +206,12 @@ describe("peek navigation", () => {
   it("navigates from a link in the panel and closes the panel", async () => {
     const router = await collapsedShell()
     openPeek()
-    const link = screen.getByRole("link", { name: /^Inbox/ })
+    const link = screen.getByRole("link", { name: /^Apply/ })
     link.focus()
     vi.useRealTimers()
     fireEvent.click(link)
     await vi.waitFor(() => {
-      expect(router.state.location.pathname).toBe("/inbox")
+      expect(router.state.location.pathname).toBe("/apply")
     })
     expect(aside()).toHaveAttribute("data-peek", "false")
     expect(document.activeElement).not.toBe(document.body)

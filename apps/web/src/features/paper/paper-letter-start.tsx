@@ -585,7 +585,6 @@ export function PaperLetterStart({
         <div>
           <p>You&apos;ve reached today&apos;s Free limit.</p>
           <p>{limit.message}</p>
-          <a href="/settings">Upgrade</a>
         </div>
       ) : null}
       {error ? <p role="alert">{error}</p> : null}

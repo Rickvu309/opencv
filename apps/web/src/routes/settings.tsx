@@ -1,6 +1,6 @@
 import { useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate, useRouterState } from "@tanstack/react-router"
+import { useRouterState } from "@tanstack/react-router"
 import type { ProfileUpdateInput } from "@workspace/domain"
 
 import { AccountSection } from "@/features/settings/account-section.tsx"
@@ -18,7 +18,6 @@ import {
   isPlanRequired,
   TIME_ZONE_REJECTION,
 } from "@/features/settings/settings-api.ts"
-import { UpgradeScreen } from "@/features/settings/upgrade-screen.tsx"
 import { UsageSection } from "@/features/settings/usage-section.tsx"
 import { fetchProfile, profileKey } from "@/lib/account-api.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
@@ -44,8 +43,6 @@ export function SettingsPage() {
         <SettingsSkeletons />
       ) : profile.isError || !profile.data ? (
         <SettingsLoadError onRetry={() => void profile.refetch()} />
-      ) : view === "upgrade" ? (
-        <UpgradeScreen />
       ) : view === "preferences" ? (
         <PreferencesSection profile={profile.data} {...save} />
       ) : view === "coach" ? (
@@ -85,7 +82,6 @@ function saveReducer(state: SaveState, action: SaveAction): SaveState {
 
 function useSettingsSave() {
   const runCommand = useRunCommand()
-  const navigate = useNavigate()
   const [{ pending, errorKey, error }, dispatch] = useReducer(saveReducer, {
     pending: false,
   })
@@ -97,7 +93,11 @@ function useSettingsSave() {
       await runCommand("profile.update", patch)
     } catch (caught) {
       if (isPlanRequired(caught)) {
-        await navigate({ href: "/settings/billing/upgrade" })
+        dispatch({
+          type: "save_rejected",
+          key,
+          message: "Pro plan required.",
+        })
         return
       }
       dispatch({
