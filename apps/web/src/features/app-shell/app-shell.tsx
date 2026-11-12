@@ -30,6 +30,7 @@ import {
   CoachPanel,
   type CoachPanelMode,
 } from "@/features/coach/coach-panel.tsx"
+import { coachPanelFloatingStyle } from "./coach-panel-placement.ts"
 import { CoachWorkspace } from "@/features/coach/coach-workspace.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
@@ -258,12 +259,12 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
         null
       }
       tabIndex={-1}
+      style={floating ? coachPanelFloatingStyle : undefined}
       className={cn(
         "z-10 min-h-0 bg-transparent outline-none",
         panelOpen && "flex flex-col",
         sheet && "fixed inset-x-0 top-0 z-40 h-dvh w-full",
-        floating &&
-          "fixed right-5 bottom-12 z-30 h-[min(600px,max(320px,calc(100dvh-56px)))] w-[400px]",
+        floating && "fixed right-5 z-30 w-[400px]",
         isDesktop && panel.mode === "full" && "absolute inset-0 z-20"
       )}
       onKeyDown={(event) => {
