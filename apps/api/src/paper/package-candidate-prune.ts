@@ -1,10 +1,11 @@
-import { and, eq, exists, isNull, notExists, sql } from "drizzle-orm"
+import { and, eq, exists, isNull, notExists, or, sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import {
   activity,
   paperPackageCandidates,
   paperPackageHeads,
+  paperPackageTrash,
   pendingActions,
 } from "../db/schema.js"
 
@@ -39,18 +40,33 @@ export async function pruneUnreachableCandidates(owner: string) {
             ${activity.reversalInput} #>> '{candidate,id}' = ${candidate.id}::text
             or ${activity.result} #>> '{restore,id}' = ${candidate.id}::text
           )`,
-          exists(
-            getDb()
-              .select({ revision: paperPackageHeads.revision })
-              .from(paperPackageHeads)
-              .where(
-                and(
-                  eq(paperPackageHeads.userId, candidate.userId),
-                  eq(paperPackageHeads.docId, candidate.docId),
-                  eq(paperPackageHeads.incarnation, candidate.incarnation),
-                  eq(paperPackageHeads.revision, candidate.forwardRevision)
+          or(
+            exists(
+              getDb()
+                .select({ revision: paperPackageHeads.revision })
+                .from(paperPackageHeads)
+                .where(
+                  and(
+                    eq(paperPackageHeads.userId, candidate.userId),
+                    eq(paperPackageHeads.docId, candidate.docId),
+                    eq(paperPackageHeads.incarnation, candidate.incarnation),
+                    eq(paperPackageHeads.revision, candidate.forwardRevision)
+                  )
                 )
-              )
+            ),
+            exists(
+              getDb()
+                .select({ revision: paperPackageTrash.revision })
+                .from(paperPackageTrash)
+                .where(
+                  and(
+                    eq(paperPackageTrash.userId, candidate.userId),
+                    eq(paperPackageTrash.docId, candidate.docId),
+                    eq(paperPackageTrash.incarnation, candidate.incarnation),
+                    eq(paperPackageTrash.revision, candidate.forwardRevision)
+                  )
+                )
+            )
           )
         )
       )

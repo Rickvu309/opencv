@@ -176,6 +176,13 @@
       "when": 1794509017639,
       "tag": "0024_package_trash",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794509034376,
+      "tag": "0025_word_rename_retained",
+      "breakpoints": true
     }
   ]
 }
