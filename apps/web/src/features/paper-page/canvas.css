@@ -65,18 +65,14 @@
   color: var(--muted-foreground);
 }
 
-.writing-page {
-  --writing-cv-body: 10.5;
-}
-
 .writing-page p[data-form="title"] {
-  font-size: calc(1em * 22 / var(--writing-cv-body));
+  font-size: calc(1em * 22 / 10.5);
   font-weight: 700;
   line-height: calc(26.5 / 22);
 }
 
 .writing-page p[data-form="heading"] {
-  font-size: calc(1em * 11.5 / var(--writing-cv-body));
+  font-size: calc(1em * 11.5 / 10.5);
   font-weight: 600;
   line-height: calc(14 / 11.5);
 }
