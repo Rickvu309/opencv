@@ -55,6 +55,7 @@ const VALUED = new Set([
   "--issue",
   "--name",
   "--role",
+  "--allow-migration",
   ...TEMPLATE_FIELDS.map((f) => f.flag),
 ])
 
@@ -205,12 +206,12 @@ function command(ctx, cmd, rest) {
         cmd === "finish"
           ? ["--body-file", "-d", "--desc", "--draft", "--dry-run"]
           : cmd === "merge"
-            ? ["--wait"]
+            ? ["--wait", "--allow-migration"]
             : []
       for (const flag of Object.keys(flags)) {
         if (!allowed.includes(flag)) unknownOption(flag)
         if (
-          ["--body-file", "-d", "--desc"].includes(flag) &&
+          ["--body-file", "-d", "--desc", "--allow-migration"].includes(flag) &&
           (flags[flag] == null || String(flags[flag]).startsWith("--"))
         )
           needsValue(flag)
@@ -222,6 +223,10 @@ function command(ctx, cmd, rest) {
       if (cmd === "finish") return finish(ctx, { flags })
       return merge(ctx, issueNumber(pos[0], "merge <pr#>"), {
         wait: Boolean(flags["--wait"]),
+        allowMigrations: String(flags["--allow-migration"] ?? "")
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
       })
     }
     case "save":
