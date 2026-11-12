@@ -40,7 +40,7 @@ import {
   wordPackageBasis,
 } from "../package-store.js"
 import { projectParagraphs } from "./classify.js"
-import { blankPageBytes, mutateMinted, refuse } from "./mutate.js"
+import { blankPageBytes, mutateWord, refuse } from "./mutate.js"
 
 const storedKeys = z
   .object({
@@ -132,7 +132,6 @@ async function headOf(owner: WordOwner, doc: WordDoc) {
     .select({
       incarnation: paperPackageHeads.incarnation,
       revision: paperPackageHeads.revision,
-      canvasProfile: paperPackageHeads.canvasProfile,
     })
     .from(paperPackageHeads)
     .where(
@@ -214,7 +213,7 @@ async function draftCandidate<Review>(
       null,
       "PROJECTION"
     )
-  const drafted = mutateMinted(
+  const drafted = mutateWord(
     artifact.bytes,
     {
       version: 2,
@@ -323,13 +322,6 @@ export async function prepareBatch<Review>(
   if ("refused" in batch) return batch
   const head = await headOf(owner, batch.doc)
   if (!head) return notAvailable()
-  if (head.canvasProfile !== PAPER_CANVAS_PROFILE)
-    return refuse(
-      "closed",
-      "Paper saves these edits only on a page it started blank, for now. No document was changed.",
-      firstHandle(batch),
-      "NOT_MINTED"
-    )
   if (head.revision !== batch.basedOn) return changed(batch)
   try {
     return await draftCandidate(owner, batch, review)
