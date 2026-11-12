@@ -70,6 +70,18 @@ it("maps today's job markers onto read and proposal access", () => {
   assert.equal(delegateDeclaration(undefined), null)
 })
 
+it("refuses delegate access for anything but Jobs and Paper", () => {
+  for (const resource of ["activity", "inbox", "account", "actions"])
+    for (const access of ["read", "proposal"] as const)
+      assert.equal(
+        delegateDeclaration({
+          resource,
+          access,
+        } as unknown as Parameters<typeof delegateDeclaration>[0]),
+        null
+      )
+})
+
 it("refuses a document proposal on a job grant", () => {
   const paper = delegateDeclaration({ resource: "paper", access: "read" })
   assert.deepEqual(paper, { resource: "paper", access: "read" })

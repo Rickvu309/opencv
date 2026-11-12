@@ -353,7 +353,10 @@ it("opens Paper to a consented agent over MCP and writes only what the person ap
     expect(proposed.body).toMatchObject({
       pending: true,
       status: "pending approval",
+      chatId: expect.any(String),
+      url: expect.stringContaining("/coach?chat="),
     })
+    expect(JSON.stringify(proposed.body)).not.toMatch(/Applied|Saved/)
     const proposalId = z.uuid().parse(proposed.body.proposalId)
     expect((await read()).revision).toBe(first.revision)
     const [stored] = await door.db
