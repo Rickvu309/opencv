@@ -72,7 +72,7 @@ function layout(width: number, height: number, state: PanelState): Layout {
         "New chat": box(12, 52, 92, 44),
       }
     : {
-        "New on Paper home": box(width - 78, 19, 53, 32),
+        "New on Paper home": box(width - 99, 19, 74, 32),
         "Download Word": box(width - 153, 13, 128, 32),
         "New job": box(width - 115, 21, 90, 28),
         "New chat": box(frame.left + 12, 21, 92, 28),
