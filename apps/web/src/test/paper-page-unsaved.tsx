@@ -6,9 +6,9 @@ import type { WordPage } from "@workspace/domain"
 
 import { render } from "@/test/render-with-client.tsx"
 
-import { draftFromPage } from "./canvas-edit.ts"
-import { WritingCanvas } from "./canvas.tsx"
-import { closeWritingDb } from "./canvas-save.ts"
+import { draftFromPage } from "@/features/paper-page/canvas-edit.ts"
+import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
+import { closeWritingDb } from "@/features/paper-page/canvas-save.ts"
 import { setWritingConflict } from "@/lib/writing-refresh.ts"
 
 export const DOC = "11111111-1111-7111-8111-111111111111"

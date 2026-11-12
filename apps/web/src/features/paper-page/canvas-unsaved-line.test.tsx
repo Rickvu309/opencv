@@ -25,7 +25,7 @@ import {
   surface,
   type,
   openUnsavedPageSuite,
-} from "./canvas-unsaved-harness.tsx"
+} from "@/test/paper-page-unsaved.tsx"
 
 openUnsavedPageSuite()
 
