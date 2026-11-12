@@ -6,7 +6,24 @@ const STORED = 0
 const DEFLATED = 8
 const UTF8_NAMES = 0x800
 
-export function zipArchive(members: readonly ArchiveMember[]) {
+function dosStamp(at: Date) {
+  return {
+    time:
+      (at.getUTCHours() << 11) |
+      (at.getUTCMinutes() << 5) |
+      Math.floor(at.getUTCSeconds() / 2),
+    date:
+      ((at.getUTCFullYear() - 1980) << 9) |
+      ((at.getUTCMonth() + 1) << 5) |
+      at.getUTCDate(),
+  }
+}
+
+export function zipArchive(
+  members: readonly ArchiveMember[],
+  madeAt = new Date()
+) {
+  const stamp = dosStamp(madeAt)
   const chunks: Buffer[] = []
   const central: Buffer[] = []
   let offset = 0
@@ -20,6 +37,8 @@ export function zipArchive(members: readonly ArchiveMember[]) {
     local.writeUInt16LE(20, 4)
     local.writeUInt16LE(UTF8_NAMES, 6)
     local.writeUInt16LE(method, 8)
+    local.writeUInt16LE(stamp.time, 10)
+    local.writeUInt16LE(stamp.date, 12)
     local.writeUInt32LE(checksum, 14)
     local.writeUInt32LE(body.length, 18)
     local.writeUInt32LE(member.bytes.length, 22)
@@ -31,6 +50,8 @@ export function zipArchive(members: readonly ArchiveMember[]) {
     record.writeUInt16LE(20, 6)
     record.writeUInt16LE(UTF8_NAMES, 8)
     record.writeUInt16LE(method, 10)
+    record.writeUInt16LE(stamp.time, 12)
+    record.writeUInt16LE(stamp.date, 14)
     record.writeUInt32LE(checksum, 16)
     record.writeUInt32LE(body.length, 20)
     record.writeUInt32LE(member.bytes.length, 24)
