@@ -197,13 +197,13 @@ export async function streamPaperTurn(input: {
   onToolResult?: (tool: ChatToolName) => void
   onWaiting?: () => void
 }): Promise<PaperTurnEnd> {
-  let end: PaperTurnEnd = "finished"
+  const turn: { end: PaperTurnEnd } = { end: "finished" }
   const tail = new AbortController()
   const forward = () => tail.abort(input.signal?.reason)
   input.signal?.addEventListener("abort", forward, { once: true })
   if (input.signal?.aborted) forward()
   const followFromHere = () => {
-    end = "continuing"
+    turn.end = "continuing"
     tail.abort()
   }
   try {
@@ -228,15 +228,15 @@ export async function streamPaperTurn(input: {
           input.onWaiting()
           followFromHere()
         }
-        if (event.type === "notice") end = "continuing"
+        if (event.type === "notice") turn.end = "continuing"
         if (event.type === "error") {
           throw new ApiError(502, "REQUEST_FAILED", event.message)
         }
       },
     })
-    return end
+    return turn.end
   } catch (error) {
-    if (end === "continuing" && !input.signal?.aborted) return end
+    if (turn.end === "continuing" && !input.signal?.aborted) return turn.end
     if (error instanceof ApiError && error.status === 429) {
       const usage = await apiFetch<SuccessBody<{ resetsAt?: string }>>(
         endpoints.coachUsage
