@@ -461,6 +461,65 @@ describe("private Word candidates", () => {
       await transaction(() => commitWordCandidate(owner, input, prepared))
     }))
 
+  it("lets a retained Word version change only its name, and refuses name together with any other column", () =>
+    run(async () => {
+      const doc = await document()
+      const { prepared } = await prepare(doc.head.docId)
+      const retained = await record(prepared.candidate)
+      const versionAt = async () => {
+        const [row] = await getDb()
+          .select()
+          .from(paperPackageVersions)
+          .where(eq(paperPackageVersions.revision, retained.forwardRevision))
+        if (!row) throw new Error("Missing forward version")
+        return row
+      }
+      const before = await versionAt()
+      const otherColumns: Partial<typeof paperPackageVersions.$inferInsert>[] =
+        [
+          { revision: randomUUID() },
+          { parentRevision: randomUUID() },
+          { docId: randomUUID() },
+          { incarnation: randomUUID() },
+          { userId: stranger },
+          { requestId: randomUUID() },
+          { kind: before.kind === "cv" ? "letter" : "cv" },
+          { fileId: randomUUID() },
+          { packageHash: "0".repeat(64) },
+          { byteSize: before.byteSize + 1 },
+          { sidecar: { tampered: true } },
+          { sidecarHash: "0".repeat(64) },
+          { projection: { tampered: true } },
+          { projectionHash: "0".repeat(64) },
+          { projector: "tampered" },
+          { cursorKey: "tampered" },
+          { createdAt: new Date(0) },
+        ]
+      for (const change of otherColumns) {
+        const refused = await getDb()
+          .update(paperPackageVersions)
+          .set({ name: "Renamed.docx", ...change })
+          .where(eq(paperPackageVersions.revision, retained.forwardRevision))
+          .then(
+            () => "allowed",
+            (error: unknown) =>
+              String(
+                (error as { cause?: { message?: string } }).cause?.message ??
+                  error
+              )
+          )
+        expect(refused, Object.keys(change).join()).toContain(
+          "Retained Word versions and candidates cannot be changed"
+        )
+      }
+      expect(await versionAt()).toEqual(before)
+      await getDb()
+        .update(paperPackageVersions)
+        .set({ name: "Renamed.docx" })
+        .where(eq(paperPackageVersions.revision, retained.forwardRevision))
+      expect(await versionAt()).toEqual({ ...before, name: "Renamed.docx" })
+    }))
+
   it("keeps no-op preparation free of retained candidates and never publishes it", () =>
     run(async () => {
       const doc = await document()

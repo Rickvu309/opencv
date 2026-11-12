@@ -9,6 +9,20 @@ import {
   pendingActions,
 } from "../db/schema.js"
 
+export function candidatePageInTrash() {
+  return exists(
+    getDb()
+      .select({ docId: paperPackageTrash.docId })
+      .from(paperPackageTrash)
+      .where(
+        and(
+          eq(paperPackageTrash.userId, paperPackageCandidates.userId),
+          eq(paperPackageTrash.docId, paperPackageCandidates.docId)
+        )
+      )
+  )
+}
+
 export async function pruneUnreachableCandidates(owner: string) {
   const candidate = paperPackageCandidates
   await getDb()

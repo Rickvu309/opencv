@@ -447,3 +447,86 @@ it("leaves nothing of a deleted Word page behind when its owner deletes the acco
         await getDb().select().from(table).where(eq(column, leaving))
       ).toEqual([])
   }))
+
+describe("Word edit storage while pages sit in the trash", () => {
+  it(
+    "keeps live editing open after 70 edited pages are deleted, and brings a page and its edit Undo back whole",
+    () =>
+      run(async () => {
+        const deleted = []
+        for (let index = 0; index < 70; index += 1) {
+          const page = await mintWordPage(`Trashed ${index}.docx`)
+          const original = await headOf(page.docId)
+          const proposal = await coachProposal(
+            page.docId,
+            page.revision,
+            `Harbor lamp ${index}`,
+            await coachTurn()
+          )
+          const edit = (await registry.approve(owner, proposal)) as {
+            id: string
+          }
+          const edited = await headOf(page.docId)
+          const removal = await registry.execute({
+            name: "paper.delete",
+            input: { docId: page.docId },
+            actor: person,
+          })
+          deleted.push({
+            docId: page.docId,
+            original,
+            edited,
+            edit: edit.id,
+            removal: String(removal.activityId),
+          })
+        }
+        const live = await mintWordPage("Still editable.docx")
+        const proposal = await coachProposal(
+          live.docId,
+          live.revision,
+          "Harbor beacon",
+          await coachTurn()
+        )
+        await registry.approve(owner, proposal)
+        expect((await headOf(live.docId)).text).toContain("Harbor beacon")
+
+        const [kept, lost] = deleted
+        if (!kept || !lost) throw new Error("missing deleted pages")
+        await registry.execute({
+          name: "activity.undo",
+          input: { activityId: kept.removal },
+          actor: person,
+        })
+        expect(await headOf(kept.docId)).toEqual(kept.edited)
+        await registry.execute({
+          name: "activity.undo",
+          input: { activityId: kept.edit },
+          actor: person,
+        })
+        const undone = await headOf(kept.docId)
+        expect(undone.text).toBe(kept.original.text)
+        expect(undone.packageHash).toBe(kept.original.packageHash)
+
+        await getDb()
+          .delete(paperPackageCandidates)
+          .where(eq(paperPackageCandidates.docId, lost.docId))
+        await registry.execute({
+          name: "activity.undo",
+          input: { activityId: lost.removal },
+          actor: person,
+        })
+        expect(await headOf(lost.docId)).toEqual(lost.edited)
+        await registry.execute({
+          name: "activity.undo",
+          input: { activityId: lost.edit },
+          actor: person,
+        })
+        const restoredWithoutCandidate = await headOf(lost.docId)
+        expect(restoredWithoutCandidate.text).toBe(lost.original.text)
+        expect(restoredWithoutCandidate.packageHash).toBe(
+          lost.original.packageHash
+        )
+      }),
+    600_000
+  )
+})
