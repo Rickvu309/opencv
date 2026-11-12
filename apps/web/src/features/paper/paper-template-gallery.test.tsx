@@ -8,6 +8,7 @@ import { PaperCvEditor } from "./paper-cv-editor.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 import { PAPER_TEMPLATE_LABELS } from "./paper-templates.ts"
+import { panelFit } from "@workspace/ui/lib/dialog-fit"
 
 const record: PaperView = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -36,10 +37,31 @@ function wideDialog() {
     .querySelector("[data-template-gallery]")
     ?.closest("[data-slot='dialog-content']")
   expect(content?.className).toContain("sm:max-w-3xl")
-  expect(content?.className).toContain("max-h-[90vh]")
   expect(content?.className).toContain("overflow-y-auto")
   expect(content?.className).not.toContain("sm:max-w-sm")
+  for (const window of GALLERY_WINDOWS)
+    expect(
+      panelFit(content!.className, window).problems,
+      `${window.width}x${window.height}`
+    ).toEqual([])
+  const actions = content!.querySelector("[data-slot=paper-gallery-actions]")
+  expect(actions?.className).toContain("sticky")
+  expect(actions?.className).toContain("-bottom-6")
+  expect(
+    actions
+      ?.querySelector("button")
+      ?.closest("[data-slot=paper-gallery-actions]")
+  ).toBe(actions)
 }
+
+const GALLERY_WINDOWS = [
+  { width: 390, height: 844 },
+  { width: 390, height: 560 },
+  { width: 600, height: 480 },
+  { width: 820, height: 512 },
+  { width: 1024, height: 700 },
+  { width: 1440, height: 900 },
+]
 
 afterEach(() => {
   cleanup()
@@ -89,7 +111,7 @@ describe("Paper template gallery", () => {
     ).toContain("@min-[391px]:grid-cols-2")
   })
 
-  it("gives the dialog a wide frame that scrolls inside the viewport", () => {
+  it("gives the dialog a wide frame that fits every window size and scrolls inside it, with its actions pinned in view", () => {
     const library = render(
       <PaperLibrary
         docs={[record]}

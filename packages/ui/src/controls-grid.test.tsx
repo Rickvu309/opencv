@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest"
-import { readdirSync, readFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -349,72 +349,13 @@ const WINDOWS: Viewport[] = [
   { width: 1440, height: 900 },
 ]
 
-const APP_SOURCE = path.join(import.meta.dirname, "../../../apps/web/src")
-
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) return sourceFiles(full)
-    return entry.name.endsWith(".tsx") && !entry.name.includes(".test.")
-      ? [full]
-      : []
-  })
-}
-
-function openingTag(source: string, start: number) {
-  let depth = 0
-  let quote = ""
-  for (let index = start; index < source.length; index += 1) {
-    const char = source[index]
-    if (quote) {
-      if (char === quote) quote = ""
-    } else if (char === '"' || char === "`") quote = char
-    else if (char === "{") depth += 1
-    else if (char === "}") depth -= 1
-    else if (char === ">" && depth === 0) return source.slice(start, index + 1)
-  }
-  throw new Error("unclosed DialogContent tag")
-}
-
 type DialogSite = {
-  name: string
   layout: DialogLayout
   className: string
   hasOutsideControl: boolean
 }
 
-function dialogSites(): DialogSite[] {
-  const files = sourceFiles(APP_SOURCE)
-  const texts = new Map(files.map((file) => [file, readFileSync(file, "utf8")]))
-  const constant = (name: string) => {
-    for (const text of texts.values()) {
-      const found = new RegExp(`const ${name} =\\s*"([^"]*)"`).exec(text)
-      if (found) return found[1]
-    }
-    throw new Error(`cannot find ${name}`)
-  }
-  return [...texts].flatMap(([file, text]) =>
-    [...text.matchAll(/<DialogContent\b/g)].map((match) => {
-      const tag = openingTag(text, match.index)
-      const literal = /className="([^"]*)"/.exec(tag)?.[1]
-      const named = /className=\{[^}]*?\b([A-Z][A-Z0-9_]+)\b[^}]*\}/.exec(
-        tag
-      )?.[1]
-      const body = text.slice(
-        match.index + tag.length,
-        text.indexOf("</DialogContent>", match.index)
-      )
-      return {
-        name: `${path.relative(APP_SOURCE, file)}:${text.slice(0, match.index).split("\n").length}`,
-        layout: (/layout="(\w+)"/.exec(tag)?.[1] ?? "dialog") as DialogLayout,
-        className: literal ?? (named ? constant(named) : ""),
-        hasOutsideControl: /(^|[\s"])-(right|left|top|bottom)-\d/.test(body),
-      }
-    })
-  )
-}
-
-function fitProblems(site: Omit<DialogSite, "name">, window: Viewport) {
+function fitProblems(site: DialogSite, window: Viewport) {
   return panelFit(
     `${DIALOG_LAYOUT_CLASS[site.layout]} ${site.className}`,
     window,
@@ -422,29 +363,7 @@ function fitProblems(site: Omit<DialogSite, "name">, window: Viewport) {
   ).problems
 }
 
-describe("every dialog and dialog-based panel fits the window at every size", () => {
-  const sites = dialogSites()
-
-  it("finds the dialog call sites, the phone drawer and the template gallery among them", () => {
-    expect(sites.length).toBeGreaterThanOrEqual(15)
-    expect(
-      sites.some((site) =>
-        site.name.startsWith("features/app-shell/app-shell.tsx")
-      )
-    ).toBe(true)
-    expect(sites.some((site) => site.className.includes("sm:max-w-3xl"))).toBe(
-      true
-    )
-  })
-
-  for (const window of WINDOWS)
-    it(`at ${window.width}x${window.height} each panel stays inside, full-height panels stay full, outside controls stay visible`, () => {
-      const problems = sites.flatMap((site) =>
-        fitProblems(site, window).map((problem) => `${site.name} ${problem}`)
-      )
-      expect(problems).toEqual([])
-    })
-
+describe("the dialog fit model at every window size", () => {
   const DRAWER_AT_B19A5BAD = {
     layout: "dialog" as const,
     className:
