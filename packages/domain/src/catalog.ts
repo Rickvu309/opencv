@@ -1,1 +1,1 @@
-export { catalog, catalogDigest } from "./generated/catalog.js"
+export { catalog } from "./generated/catalog.js"

@@ -12,9 +12,9 @@ import { watchCatalog } from "./lib/catalog-dev.mjs"
 import {
   CatalogError,
   detect,
-  digestOf,
   renderCatalog,
 } from "./lib/operation-catalog.mjs"
+import { staleOutputs } from "./lib/catalog-freshness.mjs"
 import { FAST_GUARDS } from "./ocv-tools/jobs/push-checks.mjs"
 import { discoverTests } from "../packages/guards/run-tests.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
@@ -27,7 +27,7 @@ const declaration = clean.operations[0].file
 
 test("G1 missing pairs, orphans, normalized collisions, namespaces, schemas and stale output fire; a paired catalog stays quiet", () => {
   assert.equal(detect(mistake)[0].kind, "missing-implementation")
-  assert.deepEqual(detect(clean, digestOf(clean)), [])
+  assert.deepEqual(detect(clean), [])
   assert.deepEqual(
     detect(JSON.stringify(clean), "scripts/fixtures/catalog/clean.json"),
     []
@@ -84,8 +84,65 @@ test("G1 missing pairs, orphans, normalized collisions, namespaces, schemas and 
       kind
     )
   }
-  assert.equal(detect(clean, "stale")[0].kind, "stale-output")
   assert.deepEqual(renderCatalog(clean), renderCatalog(clean))
+  const fresh = renderCatalog(clean)
+  const [domainFile, serverFile] = Object.keys(fresh)
+  const staleKinds = (current) =>
+    staleOutputs(fresh, current).map((error) => [error.kind, error.file])
+  assert.deepEqual(staleKinds({ ...fresh }), [])
+  assert.deepEqual(
+    staleKinds(
+      Object.fromEntries(
+        Object.entries(fresh).map(([file, text]) => [
+          file,
+          text.replaceAll("\n", "\r\n"),
+        ])
+      )
+    ),
+    []
+  )
+  assert.deepEqual(
+    staleKinds({
+      ...fresh,
+      [domainFile]: fresh[domainFile].replace("fixture.echo", "fixture.edit"),
+    }),
+    [["stale-output", domainFile]]
+  )
+  const missed = renderCatalog({
+    ...clean,
+    operations: [
+      ...clean.operations,
+      {
+        ...clean.operations[0],
+        name: "fixture.repeat",
+        directory: "repeat",
+        file: declaration.replace("/echo/", "/repeat/"),
+      },
+    ],
+    servers: [
+      ...clean.servers,
+      {
+        ...clean.servers[0],
+        directory: "repeat",
+        file: clean.servers[0].file.replace("/echo/", "/repeat/"),
+        operation: declaration.replace("/echo/", "/repeat/"),
+      },
+    ],
+  })
+  assert.deepEqual(
+    staleOutputs(missed, fresh).map((error) => error.file),
+    [domainFile, serverFile]
+  )
+  assert.deepEqual(staleKinds({ [domainFile]: fresh[domainFile] }), [
+    ["stale-output", serverFile],
+  ])
+  assert.deepEqual(
+    staleKinds({
+      ...fresh,
+      "packages/domain/src/generated/catalog.digest": "9adc8878\n",
+    }),
+    [["stale-output", "packages/domain/src/generated/catalog.digest"]]
+  )
 })
 
 test("the committed browser graph is domain-only and the generated files are fresh", async () => {

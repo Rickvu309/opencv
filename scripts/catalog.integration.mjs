@@ -184,8 +184,12 @@ test("add, rename and delete pairs regenerate deterministically without running 
     declaration,
     descriptor().replace('description: "Echo"', 'description: "Changed"')
   )
-  await assert.rejects(catalog("check", directory), { kind: "stale-output" })
+  await catalog("check", directory)
   await catalog("generate", directory)
+  assert.deepEqual(
+    outputs.map((file) => readFileSync(path.join(directory, file))),
+    before
+  )
   renameSync(
     path.join(directory, path.dirname(declaration)),
     path.join(directory, path.dirname(declaration).replace("/echo", "/repeat"))
