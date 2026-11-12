@@ -133,6 +133,7 @@ export function startTask(
       storedId: existing.focusId,
       context,
       memoryEnabled: profile.memoryEnabled,
+      textOnly: input.textOnly,
     })
     const usageId = await openCoachUsage({
       userId: actor.userId,

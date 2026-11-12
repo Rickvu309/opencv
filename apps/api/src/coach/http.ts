@@ -135,6 +135,7 @@ async function startTurn(
     storedId: existing.focusId,
     context,
     memoryEnabled: profile.memoryEnabled,
+    textOnly: parsed.data.textOnly,
   })
   const { usageId, history } = await transaction(async () => {
     const usageId = await openCoachUsage({
