@@ -138,6 +138,28 @@ export function fixturePackage(body: string, options: FixtureOptions = {}) {
   return fixtureZip(fixtureFiles(body, options))
 }
 
+export function cvPackage(body: string) {
+  const files = fixtureFiles(body, {
+    parts: {
+      "word/numbering.xml": story(
+        "numbering",
+        '<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"/></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>'
+      ),
+    },
+    relationships: [
+      relationship("numbering", "numbering", "numbering.xml"),
+      relationship("link", "hyperlink", "https://example.invalid/cv", true),
+    ],
+  })
+  files["[Content_Types].xml"] = files["[Content_Types].xml"]
+    .toString()
+    .replace(
+      "</Types>",
+      '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>'
+    )
+  return fixtureZip(files)
+}
+
 export const rangeFixtures = {
   fieldStart: `<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`,
   fieldEnd: '<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>',

@@ -15,6 +15,7 @@ import { uniqueSpan } from "./package-spans.js"
 import { wordPackageBasis } from "./package-store.js"
 import { xmlCharacters } from "./package-xml.js"
 import { draftBatch, open } from "./word/document.js"
+import { changedSpan, type WordSpan } from "./word/mutate.js"
 
 export const wordPackageEditSchema = paperPackageEditSchema
 
@@ -22,13 +23,7 @@ type Projection = z.infer<typeof paperPackageProjectionSchema>
 type Region = Projection["regions"][number]
 type Editable = Extract<Region, { kind: "editable" }>
 type Edit = z.infer<typeof wordPackageEditSchema>["edits"][number]
-type Placed = {
-  edit: Edit
-  region: Editable
-  start: number
-  end: number
-  whole: boolean
-}
+type Placed = { edit: Edit; region: Editable; handle: string; span: WordSpan }
 
 const sidecarKeys = z
   .object({
@@ -46,12 +41,16 @@ function lineRegions(projection: Projection, paragraph: number) {
   )
 }
 
-function place(
+function holdsWords(region: Region) {
+  return region.kind === "editable" || region.reason.code === "PROOFING_RANGE"
+}
+
+function spanOf(
   projection: Projection,
   edit: Edit,
   region: Editable,
   line: WordParagraph
-): Placed {
+): WordSpan {
   if (
     !xmlCharacters(edit.before) ||
     !xmlCharacters(edit.after) ||
@@ -60,76 +59,100 @@ function place(
     refuse("UNSUPPORTED_REPLACEMENT_TEXT")
   if (line.held) return packageFailure(line.message)
   const regions = lineRegions(projection, region.location.paragraph)
-  if (
-    regions.some((item) => item.kind !== "editable") ||
-    regions.map((item) => item.text).join("") !== line.text
-  )
+  const words = regions.filter(holdsWords)
+  if (words.map((item) => item.text).join("") !== line.text)
     return packageFailure(
-      "Part of this line is kept exactly as it is in Word, so Paper will not rewrite it. No document was changed."
+      "This line no longer matches the page. Read it again. No document was changed."
     )
-  const index = regions.indexOf(region)
-  const offset = regions
-    .slice(0, index)
+  const offset = words
+    .slice(0, words.indexOf(region))
     .reduce((sum, item) => sum + item.text.length, 0)
-  const group = regions
-    .slice(index)
-    .map((item) => item.text)
-    .join("")
-  if (index < regions.length - 1 && edit.before === group)
+  const group: Region[] = []
+  for (const item of regions.slice(regions.indexOf(region))) {
+    if (item.kind !== "editable") break
+    group.push(item)
+  }
+  const joined = group.map((item) => item.text).join("")
+  if (group.length > 1 && edit.before === joined) {
+    const change = changedSpan(joined, edit.after)
+    return {
+      start: offset + change.start,
+      end: offset + change.end,
+      text: change.text,
+      lean: change.start === 0 ? "after" : "before",
+    }
+  }
+  const span = uniqueSpan(region.text, edit.before)
+  return {
+    start: offset + span.start,
+    end: offset + span.end,
+    text: edit.after,
+    lean: "before",
+  }
+}
+
+export function plannedReplacements(
+  projection: Projection,
+  paragraphs: readonly WordParagraph[],
+  keys: readonly string[],
+  edits: readonly Edit[]
+) {
+  const lines = new Map(paragraphs.map((line) => [line.handle, line]))
+  const seen = new Set<string>()
+  let aggregate = 0
+  const placed = edits.map((edit): Placed => {
+    if (seen.has(edit.targetId)) refuse("DUPLICATE_TARGET")
+    seen.add(edit.targetId)
+    const beforeBytes = Buffer.byteLength(edit.before, "utf8")
+    const afterBytes = Buffer.byteLength(edit.after, "utf8")
+    aggregate += beforeBytes + afterBytes
+    if (
+      Math.max(beforeBytes, afterBytes) > PACKAGE_LIMITS.targetBytes ||
+      aggregate > PACKAGE_LIMITS.replacementBytes
+    )
+      refuse("EDIT_TEXT_LIMIT")
+    const region = projection.regions.find(
+      (item): item is Editable =>
+        item.kind === "editable" && item.targetId === edit.targetId
+    )
+    if (!region) return refuse("STALE_OR_FOREIGN_TARGET")
+    const handle =
+      keys[region.location.paragraph - 1] ?? refuse("SIDECAR_MAPPING_MISMATCH")
+    const line = lines.get(handle)
+    if (!line) return refuse("STALE_OR_FOREIGN_TARGET")
     return {
       edit,
       region,
-      start: offset,
-      end: offset + group.length,
-      whole: true,
+      handle,
+      span: spanOf(projection, edit, region, line),
     }
-  const span = uniqueSpan(region.text, edit.before)
-  return {
-    edit,
-    region,
-    start: offset + span.start,
-    end: offset + span.end,
-    whole: false,
+  })
+  const changed = placed.filter((item) => item.edit.before !== item.edit.after)
+  const spans = new Map<string, WordSpan[]>()
+  for (const item of changed)
+    spans.set(item.handle, [...(spans.get(item.handle) ?? []), item.span])
+  const ops: WordOp[] = []
+  for (const [handle, list] of spans) {
+    const ordered = [...list].sort((left, right) => left.start - right.start)
+    if (
+      ordered.some((item, at) => {
+        const previous = ordered[at - 1]
+        return (
+          previous !== undefined &&
+          (item.start < previous.end ||
+            (item.start === previous.start && item.end === previous.end))
+        )
+      })
+    )
+      refuse("DUPLICATE_TARGET")
+    const line = lines.get(handle)
+    if (!line) return refuse("STALE_OR_FOREIGN_TARGET")
+    let text = line.text
+    for (const item of [...ordered].reverse())
+      text = text.slice(0, item.start) + item.text + text.slice(item.end)
+    if (text !== line.text) ops.push({ op: "setText", handle, text })
   }
-}
-
-function spliced(text: string, placed: readonly Placed[]) {
-  let next = text
-  for (const item of [...placed].sort(
-    (left, right) => right.start - left.start
-  ))
-    next = next.slice(0, item.start) + item.edit.after + next.slice(item.end)
-  return next
-}
-
-function expectedPieces(regions: readonly Region[], placed: readonly Placed[]) {
-  const pieces: { formatting: string; text: string }[] = []
-  for (const region of regions) {
-    if (region.kind !== "editable") continue
-    const edit = placed.find((item) => item.region === region)
-    const text = edit
-      ? region.text.replace(edit.edit.before, () => edit.edit.after)
-      : region.text
-    const formatting = JSON.stringify(region.formatting)
-    const last = pieces.at(-1)
-    if (last && last.formatting === formatting) last.text += text
-    else pieces.push({ formatting, text })
-  }
-  return pieces.map((piece) => piece.text).filter(Boolean)
-}
-
-function keepsFormatting(
-  regions: readonly Region[],
-  placed: readonly Placed[],
-  written: WordParagraph | undefined
-) {
-  if (placed.some((item) => item.whole)) return true
-  if (!written || written.held) return false
-  const actual = written.pieces
-    .map((piece) => piece.text)
-    .filter(Boolean)
-    .join("\u0000")
-  return expectedPieces(regions, placed).join("\u0000") === actual
+  return { changed, ops, spans }
 }
 
 export async function prepareWordPackage(owner: string, rawInput: unknown) {
@@ -158,39 +181,20 @@ export async function prepareWordPackage(owner: string, rawInput: unknown) {
     at: input.basedOn,
   })
   if ("refused" in page) return failWith(page)
-  const keys = sidecarKeys.parse(version.sidecar).paragraphs
-  const lines = new Map(page.paragraphs.map((line) => [line.handle, line]))
-  const handleOf = (region: Editable) =>
-    keys[region.location.paragraph - 1]?.key ??
-    refuse("SIDECAR_MAPPING_MISMATCH")
-  const seen = new Set<string>()
-  let aggregate = 0
-  const placed = input.edits.map((edit) => {
-    if (seen.has(edit.targetId)) refuse("DUPLICATE_TARGET")
-    seen.add(edit.targetId)
-    const beforeBytes = Buffer.byteLength(edit.before, "utf8")
-    const afterBytes = Buffer.byteLength(edit.after, "utf8")
-    aggregate += beforeBytes + afterBytes
-    if (
-      Math.max(beforeBytes, afterBytes) > PACKAGE_LIMITS.targetBytes ||
-      aggregate > PACKAGE_LIMITS.replacementBytes
-    )
-      refuse("EDIT_TEXT_LIMIT")
-    const region = projection.regions.find(
-      (item): item is Editable =>
-        item.kind === "editable" && item.targetId === edit.targetId
-    )
-    if (!region) return refuse("STALE_OR_FOREIGN_TARGET")
-    const line = lines.get(handleOf(region))
-    if (!line) return refuse("STALE_OR_FOREIGN_TARGET")
-    return place(projection, edit, region, line)
-  })
-  const changed = placed.filter((item) => item.edit.before !== item.edit.after)
-  if (changed.length === 0) return { kind: "unchanged" as const, basis }
+  const keys = sidecarKeys
+    .parse(version.sidecar)
+    .paragraphs.map((paragraph) => paragraph.key)
+  const planned = plannedReplacements(
+    projection,
+    page.paragraphs,
+    keys,
+    input.edits
+  )
+  if (planned.changed.length === 0) return { kind: "unchanged" as const, basis }
   const review = {
     docId: input.docId,
     basedOn: input.basedOn,
-    changes: changed.map(({ edit, region }) => ({
+    changes: planned.changed.map(({ edit, region }) => ({
       targetId: edit.targetId,
       before: edit.before,
       after: edit.after,
@@ -201,48 +205,13 @@ export async function prepareWordPackage(owner: string, rawInput: unknown) {
   }
   if (Buffer.byteLength(JSON.stringify(review)) > 128 * 1024)
     return packageFailure("This Word review is too large. Send fewer changes.")
-  const byLine = new Map<string, Placed[]>()
-  for (const item of placed) {
-    const handle = handleOf(item.region)
-    byLine.set(handle, [...(byLine.get(handle) ?? []), item])
-  }
-  const ops: WordOp[] = []
-  for (const [handle, items] of byLine) {
-    const ordered = [...items].sort((left, right) => left.start - right.start)
-    if (
-      ordered.some(
-        (item, at) => at > 0 && item.start < (ordered[at - 1]?.end ?? 0)
-      )
-    )
-      refuse("DUPLICATE_TARGET")
-    const line = lines.get(handle)
-    if (!line) return refuse("STALE_OR_FOREIGN_TARGET")
-    const text = spliced(line.text, ordered)
-    if (text !== line.text) ops.push({ op: "setText", handle, text })
-  }
-  if (ops.length === 0) return { kind: "unchanged" as const, basis }
-  const drafted = await draftBatch(owner, {
-    doc: input.docId,
-    basedOn: input.basedOn,
-    ops,
-  })
-  if (drafted.refused) return failWith(drafted)
-  const written = new Map(
-    drafted.page.paragraphs.map((line) => [line.handle, line])
+  if (planned.ops.length === 0) return { kind: "unchanged" as const, basis }
+  const drafted = await draftBatch(
+    owner,
+    { doc: input.docId, basedOn: input.basedOn, ops: planned.ops },
+    planned.spans
   )
-  for (const [handle, items] of byLine) {
-    const paragraph = items[0]?.region.location.paragraph ?? 0
-    if (
-      !keepsFormatting(
-        lineRegions(projection, paragraph),
-        items,
-        written.get(handle)
-      )
-    )
-      return packageFailure(
-        "This change would move words into different formatting, such as bold or a different font. Paper will not change that line. No document was changed."
-      )
-  }
+  if (drafted.refused) return failWith(drafted)
   return {
     kind: "prepared" as const,
     basis,

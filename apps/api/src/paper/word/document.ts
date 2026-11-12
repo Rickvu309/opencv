@@ -40,7 +40,7 @@ import {
   wordPackageBasis,
 } from "../package-store.js"
 import { projectParagraphs } from "./classify.js"
-import { blankPageBytes, mutateWord, refuse } from "./mutate.js"
+import { blankPageBytes, mutateWord, refuse, type WordSpans } from "./mutate.js"
 
 const storedKeys = z
   .object({
@@ -187,7 +187,11 @@ async function readPage(
   }
 }
 
-async function draftCandidate(owner: WordOwner, batch: WordBatch) {
+async function draftCandidate(
+  owner: WordOwner,
+  batch: WordBatch,
+  spans: WordSpans = new Map()
+) {
   const { version, artifact } = await wordPackageBasis(
     owner,
     batch.doc,
@@ -209,6 +213,13 @@ async function draftCandidate(owner: WordOwner, batch: WordBatch) {
       null,
       "PROJECTION"
     )
+  if (opened.readOnly())
+    return refuse(
+      "closed",
+      "Paper can read this Word file but cannot safely change it, because it uses Word features Paper cannot check yet. No document was changed.",
+      null,
+      "READ_ONLY_PACKAGE"
+    )
   const drafted = mutateWord(
     artifact.bytes,
     {
@@ -219,7 +230,8 @@ async function draftCandidate(owner: WordOwner, batch: WordBatch) {
         textIds: [...row.textIds],
       })),
     },
-    batch.ops
+    batch.ops,
+    spans
   )
   if (drafted.refused) return drafted
   const revision = randomUUID()
@@ -317,8 +329,12 @@ async function guarded<Result>(
   }
 }
 
-export function draftBatch(owner: WordOwner, raw: WordBatch) {
-  return guarded(owner, raw, (batch) => draftCandidate(owner, batch))
+export function draftBatch(
+  owner: WordOwner,
+  raw: WordBatch,
+  spans: WordSpans = new Map()
+) {
+  return guarded(owner, raw, (batch) => draftCandidate(owner, batch, spans))
 }
 
 export function prepareBatch<Review>(

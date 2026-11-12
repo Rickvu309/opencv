@@ -16,6 +16,7 @@ import {
   openBackend,
   type Backend,
 } from "../../test/registry-formal-support.js"
+import { cvPackage } from "../package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "../package-store.js"
 import { apply, exportWord, open, undo } from "./document.js"
 
@@ -76,7 +77,10 @@ function refused(value: WordCommit | WordRefusal): WordRefusal {
 }
 
 async function imported(owner: string, body: string) {
-  const bytes = loaded.packageFromBody(body + SECTION)
+  return importedBytes(owner, loaded.packageFromBody(body + SECTION))
+}
+
+async function importedBytes(owner: string, bytes: Uint8Array) {
   const stage = await stageWordPackage(
     owner,
     { requestId: randomUUID(), name: "Imported.docx", kind: "letter" },
@@ -159,7 +163,9 @@ describe("one classifier for imported pages", () => {
       )
       expect(wrote.page.paragraphs[0]?.text).toBe("Goodbye moon")
       const xml = await xmlAt(owner, wrote.page)
-      expect(xml).toContain(`<w:r>${PLAIN}<w:t>Goodbye moon</w:t></w:r>`)
+      expect(xml).toContain(
+        `<w:r>${PLAIN}<w:t xml:space="preserve">Goodbye moon</w:t></w:r><w:r>${PLAIN}<w:t></w:t></w:r>`
+      )
       expect(xml).not.toContain("world")
     }))
 
@@ -198,6 +204,26 @@ describe("one classifier for imported pages", () => {
       )
     }))
 
+  it("puts letters typed where a plain word meets a bold run into the plain run", () =>
+    run(async () => {
+      const owner = await seed()
+      const page = await imported(
+        owner,
+        line(piece("Led "), piece("data", BOLD))
+      )
+      const target = named(page, "Led data")
+      const wrote = saved(
+        await apply(owner, {
+          doc: page.doc,
+          basedOn: page.revision,
+          ops: [{ op: "setText", handle: target.handle, text: "Led big data" }],
+        })
+      )
+      const xml = await xmlAt(owner, wrote.page)
+      expect(xml).toContain(`${PLAIN}<w:t xml:space="preserve">Led big </w:t>`)
+      expect(xml).toContain(`${BOLD}<w:t>data</w:t>`)
+    }))
+
   it("holds a rewrite that would flatten bold words and names why", () =>
     run(async () => {
       const owner = await seed()
@@ -224,14 +250,10 @@ describe("one classifier for imported pages", () => {
       expect(await xmlAt(owner, page)).toBe(before)
     }))
 
-  it("keeps numbered, marked, sectioned, table and hidden-markup lines held", () =>
+  it("keeps marked, sectioned, boxed-table and hidden-markup lines held", () =>
     run(async () => {
       const owner = await seed()
       const cases = [
-        {
-          code: "NUMBERING",
-          body: `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>${piece("Item")}</w:p>`,
-        },
         {
           code: "CHANGE_MARK",
           body: `<w:p><w:pPr><w:pPrChange w:id="2" w:author="A" w:date="2020-01-01T00:00:00Z"><w:pPr/></w:pPrChange></w:pPr>${piece("Item")}</w:p>`,
@@ -248,7 +270,7 @@ describe("one classifier for imported pages", () => {
         },
         {
           code: "NOT_BODY",
-          body: `<w:tbl><w:tr><w:tc>${line(piece("Item"))}</w:tc></w:tr></w:tbl>`,
+          body: `<w:tbl><w:tr><w:tc>${line(piece("Item"))}${line(piece("Other"))}</w:tc></w:tr></w:tbl>`,
         },
         {
           code: "HIDDEN_MARKUP",
@@ -283,6 +305,105 @@ describe("one classifier for imported pages", () => {
         expect(held.message).toBe(target.message)
         await unchanged(owner, page)
         expect(await xmlAt(owner, page)).toBe(before)
+      }
+    }))
+
+  it("changes the words of numbered, linked, broken, proofed and table lines and holds their structure", () =>
+    run(async () => {
+      const owner = await seed()
+      const link =
+        '<w:hyperlink r:id="link"><w:r><w:rPr><w:color w:val="0563C1"/></w:rPr><w:t>site</w:t></w:r></w:hyperlink>'
+      const cases = [
+        {
+          code: "NUMBERING",
+          body: `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>${piece("Led a team")}</w:p>`,
+          text: "Led a team",
+          next: "Led a sales team",
+          kept: '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>',
+        },
+        {
+          code: "WORD_FEATURE",
+          body: line(piece("Visit "), link, piece(" today")),
+          text: "Visit  today",
+          next: "See  today",
+          kept: link,
+        },
+        {
+          code: "WORD_FEATURE",
+          body: line(piece("First"), "<w:r><w:br/></w:r>", piece("Second")),
+          text: "FirstSecond",
+          next: "FirstThird",
+          kept: "<w:r><w:br/></w:r>",
+        },
+        {
+          code: "WORD_FEATURE",
+          body: line(
+            '<w:proofErr w:type="spellStart"/>',
+            piece("Teh"),
+            '<w:proofErr w:type="spellEnd"/>',
+            piece(" plan")
+          ),
+          text: "Teh plan",
+          next: "The plan",
+          kept: '<w:proofErr w:type="spellEnd"/>',
+        },
+        {
+          code: "NOT_BODY",
+          body: `<w:tbl><w:tr><w:tc><w:tcPr/>${line(piece("Cell"))}</w:tc></w:tr></w:tbl>`,
+          text: "Cell",
+          next: "Table cell",
+          kept: "<w:tc><w:tcPr/><w:p>",
+        },
+      ]
+      for (const item of cases) {
+        const page = await importedBytes(
+          owner,
+          cvPackage(item.body + line(piece("")))
+        )
+        const target = named(page, item.text)
+        expect({ held: target.held, code: target.code }).toEqual({
+          held: false,
+          code: null,
+        })
+        const wrote = saved(
+          await apply(owner, {
+            doc: page.doc,
+            basedOn: page.revision,
+            ops: [{ op: "setText", handle: target.handle, text: item.next }],
+          })
+        )
+        expect(wrote.page.paragraphs[0]?.text).toBe(item.next)
+        expect(await xmlAt(owner, wrote.page)).toContain(item.kept)
+        const later = wrote.page.paragraphs[0]
+        if (!later) throw new Error("missing line")
+        for (const ops of [
+          [
+            { op: "setText" as const, handle: later.handle, text: "Le" },
+            {
+              op: "insert" as const,
+              after: later.handle,
+              text: item.next.slice(2),
+            },
+          ],
+          [{ op: "delete" as const, handle: later.handle }],
+        ]) {
+          const held = refused(
+            await apply(owner, {
+              doc: page.doc,
+              basedOn: wrote.page.revision,
+              ops: ops.map((op) =>
+                op.op === "setText"
+                  ? { ...op, text: item.next.slice(0, 2) }
+                  : op
+              ),
+            })
+          )
+          expect({ reason: held.reason, code: held.code }).toEqual({
+            reason: "held",
+            code: item.code,
+          })
+          expect(held.message).toContain("will not split, join or remove")
+        }
       }
     }))
 

@@ -168,17 +168,24 @@ describe("a Coach replacement is prepared by the Word document module", () => {
       ).rejects.toThrow("This line mixes formatting")
     }))
 
-  it("holds a replacement whose new words would land in the neighbouring bold run", () =>
+  it("keeps new words in the run the Coach named when they meet a bold run", () =>
     within(async () => {
       const doc = await stored(
         `<w:p>${wordRun("Hello")}${wordRun(" World", "<w:b/>")}</w:p>`
       )
-      await expect(
-        prepareWordPackage(
-          owner,
-          request(doc, [replace(doc, 0, "Hello", "Hello there")])
-        )
-      ).rejects.toThrow("move words into different formatting")
+      const after = await prepared(doc, [
+        replace(doc, 0, "Hello", "Hello there"),
+      ])
+      const xml = await mainPart(after.candidate.bytes)
+      expect(xml).toContain(
+        `<w:r><w:t>Hello there</w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve"> World</w:t></w:r>`
+      )
+      const before = await prepared(doc, [
+        replace(doc, 1, " World", " big World"),
+      ])
+      expect(await mainPart(before.candidate.bytes)).toContain(
+        `<w:r><w:t>Hello</w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve"> big World</w:t></w:r>`
+      )
     }))
 
   it("refuses a replacement based on a page that has since changed", () =>
