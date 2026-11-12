@@ -47,10 +47,49 @@ export function compareRow({ label, design, rendered, props, tolerance }) {
   })
 }
 
+export function compareBoxes({ label, before, after, props, tolerance }) {
+  if (before && after)
+    return compareRow({
+      label,
+      design: before,
+      rendered: after,
+      props,
+      tolerance,
+    })
+  return props.map((property) => ({
+    label,
+    property,
+    design: before?.[property] ?? null,
+    rendered: after?.[property] ?? null,
+    difference: null,
+    status: "missing",
+  }))
+}
+
+const FAILING = new Set(["mismatch", "missing", "not-in-composed-screen"])
+
 export function failed(rows) {
-  return rows.filter(
-    (row) => row.status === "mismatch" || row.status === "missing"
-  )
+  return rows.filter((row) => FAILING.has(row.status))
+}
+
+export function specimenRow({ label, frame, composedScreen }) {
+  return {
+    label,
+    property: "frame",
+    design: composedScreen,
+    rendered: frame,
+    difference: null,
+    status: "not-in-composed-screen",
+  }
+}
+
+export function checkNotes({ rows, failedLabels, placements, warning }) {
+  return rows
+    .filter((row) => row.frame && failedLabels.has(row.label))
+    .map(
+      (row) =>
+        `${row.label}: frame ${row.frame}, pen path ${placements.get(row)?.path ?? "not found in the pen file"}; ${warning}`
+    )
 }
 
 export function renderTable(rows) {

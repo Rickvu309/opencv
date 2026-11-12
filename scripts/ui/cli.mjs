@@ -1,10 +1,29 @@
 import { join, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
-import { PROPERTIES, compareRow, failed, renderTable } from "./compare.mjs"
-import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
+import {
+  checkNotes,
+  compareBoxes,
+  compareRow,
+  failed,
+  renderTable,
+  specimenRow,
+} from "./compare.mjs"
+import {
+  DESIGN_MAP,
+  SPECIMEN_WARNING,
+  isSameBox,
+  rowsForScreen,
+} from "./design-map.mjs"
 import { diffImages } from "./diff.mjs"
-import { findFrames, frameGeometry, indexPen, penPath } from "./pen.mjs"
+import {
+  composedPlacement,
+  findFrames,
+  framePath,
+  frameGeometry,
+  indexPen,
+  penPath,
+} from "./pen.mjs"
 import { SCREENS, pickScreens, shotName } from "./screens.mjs"
 import { down, liveState, up } from "./stack.mjs"
 
@@ -202,9 +221,12 @@ export const COMMANDS = {
       return {
         code: EXIT.ok,
         lines: [
-          ...ids
-            .slice(0, FRAME_MATCH_LIMIT)
-            .map((id) => json(frameGeometry(index, id))),
+          ...ids.slice(0, FRAME_MATCH_LIMIT).map((id) =>
+            json({
+              path: framePath(index, id),
+              ...frameGeometry(index, id),
+            })
+          ),
           ...(ids.length > FRAME_MATCH_LIMIT
             ? [
                 json({
@@ -221,7 +243,7 @@ export const COMMANDS = {
   check: {
     usage: "check <screen...> [--tolerance 1] [--pen file]",
     about:
-      "Compare rendered elements with their pen frames through scripts/ui/design-map.mjs. Exit 1 on any mismatch.",
+      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. Exit 1 on any mismatch.",
     options: { valued: ["tolerance", "pen"] },
     run: async (ctx, { positional, flags }) => {
       const screens = requireScreens(positional)
@@ -250,28 +272,69 @@ export const COMMANDS = {
             code = EXIT.failed
             continue
           }
-          const { page, close } = await openScreen(browser, state, screen, {
-            width: 1440,
-          })
-          const measured = await measure(
-            page,
-            rows.map((row) => ({ name: row.label, selector: row.selector }))
-          )
-          await close()
-          const table = rows.flatMap((row, at) =>
-            compareRow({
-              label: row.label,
-              design: frameGeometry(index, row.frame),
-              rendered: measured[at].items[0] ?? null,
-              props: row.props,
-              tolerance,
+          const measureOn = async (target, list) => {
+            const { page, close } = await openScreen(browser, state, target, {
+              width: 1440,
             })
+            const measured = await measure(
+              page,
+              list.map((row) => ({ name: row.label, selector: row.selector }))
+            )
+            await close()
+            return measured.map((result) => result.items[0] ?? null)
+          }
+          const rendered = await measureOn(screen, rows)
+          const againstIds = [
+            ...new Set(rows.filter(isSameBox).map((row) => row.against)),
+          ]
+          const baseline = new Map()
+          for (const id of againstIds) {
+            const [target] = requireScreens([id])
+            if (target.unreachable)
+              throw new UsageError(
+                `${id} is unreachable: ${target.unreachable}`
+              )
+            const list = rows.filter((row) => row.against === id)
+            const boxes = await measureOn(target, list)
+            list.forEach((row, at) => baseline.set(row, boxes[at]))
+          }
+          const placements = new Map(
+            rows
+              .filter((row) => !isSameBox(row))
+              .map((row) => [row, composedPlacement(index, row)])
           )
+          const table = rows.flatMap((row, at) => {
+            if (isSameBox(row))
+              return compareBoxes({
+                label: `${row.label} vs ${row.against}`,
+                before: baseline.get(row),
+                after: rendered[at],
+                props: row.props,
+                tolerance,
+              })
+            const placement = placements.get(row)
+            return [
+              ...(placement.inScreen ? [] : [specimenRow(row)]),
+              ...compareRow({
+                label: row.label,
+                design: frameGeometry(index, row.frame),
+                rendered: rendered[at],
+                props: row.props,
+                tolerance,
+              }),
+            ]
+          })
           const bad = failed(table)
           if (bad.length) code = EXIT.failed
           lines.push(
             `${screen.id} at 1440x900, tolerance ${tolerance}px`,
-            ...renderTable(table)
+            ...renderTable(table),
+            ...checkNotes({
+              rows,
+              failedLabels: new Set(bad.map((row) => row.label)),
+              placements,
+              warning: SPECIMEN_WARNING,
+            })
           )
           lines.push(
             json({

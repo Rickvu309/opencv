@@ -1,6 +1,13 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { compareRow, failed, renderTable } from "./compare.mjs"
+import {
+  checkNotes,
+  compareBoxes,
+  compareRow,
+  failed,
+  renderTable,
+  specimenRow,
+} from "./compare.mjs"
 
 const design = { width: 400, height: 600, radius: 12, x: 1020, gap: "$ds-gap" }
 
@@ -61,4 +68,53 @@ test("the table aligns columns and shows a dash for no value", () => {
     /^element\s+property\s+design\s+rendered\s+difference\s+status$/
   )
   assert.match(lines[1], /^p\s+width\s+400\s+-\s+-\s+missing$/)
+})
+
+test("a box compared across two screens fails when it moves and when either side is missing", () => {
+  const closed = { x: 422.5, width: 816 }
+  const moved = compareBoxes({
+    label: "page",
+    before: closed,
+    after: { x: 220, width: 816 },
+    props: ["x", "width"],
+    tolerance: 1,
+  })
+  assert.deepEqual(
+    moved.map((row) => row.status),
+    ["mismatch", "ok"]
+  )
+  assert.equal(moved[0].difference, -202.5)
+  const gone = compareBoxes({
+    label: "page",
+    before: closed,
+    after: null,
+    props: ["x"],
+    tolerance: 1,
+  })
+  assert.deepEqual([gone[0].status, gone[0].design], ["missing", 422.5])
+})
+
+test("a row mapped to a kit specimen fails and every failing frame row names its frame, path and the composed-screen warning", () => {
+  const row = {
+    label: "Dock Coach button",
+    frame: "OqrwQ",
+    composedScreen: "OC App shell",
+  }
+  const specimen = specimenRow(row)
+  assert.equal(specimen.status, "not-in-composed-screen")
+  assert.equal(failed([specimen]).length, 1)
+  const placements = new Map([
+    [row, { inScreen: false, path: "Dock items > Dock button" }],
+  ])
+  assert.deepEqual(
+    checkNotes({
+      rows: [row, { label: "same", against: "b" }],
+      failedLabels: new Set(["Dock Coach button", "same"]),
+      placements,
+      warning: "confirm",
+    }),
+    [
+      "Dock Coach button: frame OqrwQ, pen path Dock items > Dock button; confirm",
+    ]
+  )
 })

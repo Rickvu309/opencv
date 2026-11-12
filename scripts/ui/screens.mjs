@@ -9,13 +9,71 @@ const OPEN_BLANK_CV = [
   { waitFor: { selector: PAGE } },
 ]
 
+const OPEN_TEMPLATE_CV = [
+  { goto: "/paper" },
+  { click: { role: "button", name: "New" } },
+  { click: { role: "button", name: "CV" } },
+  { click: { role: "button", name: "Use template" } },
+  { waitFor: { selector: PAGE } },
+]
+
 const OPEN_PANEL = [
   { click: { selector: "[data-dock-coach]" } },
   { waitFor: { selector: '[data-slot="coach-panel"]' } },
 ]
 
-const FAKE_COACH_NO_APPROVAL =
-  "The fake Coach (apps/api/src/coach/fake.ts) proposes no tool that needs approval on the Coach page, and on a Word page its paper.edit outline insert is refused by apps/api/src/coach/worker.ts with 'This edit does not match the saved document.', so no approval is ever shown"
+const PANEL = '[data-slot="coach-panel"]'
+const PANEL_UNDO = `${PANEL} button[aria-label="Undo"]`
+
+const ASK_FOR_AN_EDIT = [
+  ...OPEN_TEMPLATE_CV,
+  ...OPEN_PANEL,
+  {
+    fill: {
+      selector: `${PANEL} ${COMPOSER}`,
+      text: "Please improve the summary",
+    },
+  },
+  { press: "Enter" },
+  { waitFor: { role: "button", name: "Approve" } },
+]
+
+const DENY_THE_WAITING_EDIT = [
+  { click: { role: "button", name: "Deny" } },
+  { waitFor: { text: "Action was not approved" } },
+]
+
+const APPROVE_THE_EDIT = [
+  ...ASK_FOR_AN_EDIT,
+  { click: { role: "button", name: "Approve" } },
+  { waitFor: { selector: PANEL_UNDO } },
+]
+
+const UNDO_THE_EDIT = [
+  ...APPROVE_THE_EDIT,
+  { click: { selector: PANEL_UNDO } },
+  { waitFor: { text: "Undone" } },
+]
+
+const JOB_DIALOG = '[role="dialog"]'
+
+const ADD_A_JOB = [
+  { click: { role: "button", name: "New job" } },
+  {
+    fill: {
+      selector: `${JOB_DIALOG} input[aria-label="Role title"]`,
+      text: "Product designer",
+    },
+  },
+  {
+    fill: {
+      selector: `${JOB_DIALOG} input[aria-label="Company"]`,
+      text: "Lumiere",
+    },
+  },
+  { click: { selector: `${JOB_DIALOG} button[aria-label="Add job"]` } },
+  { waitFor: { text: "Product designer" } },
+]
 
 export const SCREENS = [
   {
@@ -81,21 +139,59 @@ export const SCREENS = [
       "The fake Coach replays its script with no delay, so the turn finishes before a frame can be captured; it needs a paced fake script",
   },
   {
-    id: "coach-approval",
-    route: "/coach",
-    unreachable: FAKE_COACH_NO_APPROVAL,
+    id: "paper-panel-closed",
+    route: "/paper",
+    steps: [...OPEN_BLANK_CV, { waitFor: { selector: "[data-dock-coach]" } }],
   },
-  { id: "coach-receipt", route: "/coach", unreachable: FAKE_COACH_NO_APPROVAL },
-  { id: "coach-undone", route: "/coach", unreachable: FAKE_COACH_NO_APPROVAL },
   {
     id: "paper-panel-approval",
     route: "/paper",
-    unreachable: FAKE_COACH_NO_APPROVAL,
+    steps: ASK_FOR_AN_EDIT,
+    after: DENY_THE_WAITING_EDIT,
+  },
+  {
+    id: "paper-panel-receipt",
+    route: "/paper",
+    steps: APPROVE_THE_EDIT,
+  },
+  {
+    id: "paper-panel-undone",
+    route: "/paper",
+    steps: UNDO_THE_EDIT,
+  },
+  {
+    id: "coach-approval",
+    route: "/paper",
+    steps: [
+      ...ASK_FOR_AN_EDIT,
+      { click: { role: "button", name: "Expand" } },
+      { waitFor: { role: "button", name: "Approve" } },
+    ],
+    after: DENY_THE_WAITING_EDIT,
+  },
+  {
+    id: "coach-receipt",
+    route: "/paper",
+    steps: [
+      ...APPROVE_THE_EDIT,
+      { click: { role: "button", name: "Expand" } },
+      { waitFor: { selector: PANEL_UNDO } },
+    ],
+  },
+  {
+    id: "coach-undone",
+    route: "/paper",
+    steps: [
+      ...UNDO_THE_EDIT,
+      { click: { role: "button", name: "Expand" } },
+      { waitFor: { text: "Undone" } },
+    ],
   },
   {
     id: "paper-proposal-card",
     route: "/paper",
-    unreachable: FAKE_COACH_NO_APPROVAL,
+    unreachable:
+      "The on-page Coach proposal card renders only on a Word writing page (apps/web/src/features/paper/writing-page.tsx). There the fake Coach's paper.edit is refused before approval with 'This edit does not match the saved document.' (apps/api/src/coach/worker.ts:218, outline insert from apps/api/src/coach/fake.ts with a Word revision). On a template CV the edit waits in the Coach card, but no proposal card is drawn; tested on 2026-11-12, waitFor section[aria-label=\"Coach proposal\"] timed out after Approve appeared",
   },
   {
     id: "paper-imported",
@@ -106,8 +202,7 @@ export const SCREENS = [
   {
     id: "apply-board",
     route: "/apply",
-    unreachable:
-      "Not scripted yet: needs the steps that add a Job through the Add job form",
+    steps: ADD_A_JOB,
   },
 ]
 
@@ -137,7 +232,14 @@ export function validateScreens(screens) {
       typeof screen.unreachable === "string" && screen.unreachable.length > 0
     if (hasSteps === hasReason)
       problems.push(`${label}: needs steps or an unreachable reason, not both`)
-    for (const step of screen.steps ?? []) {
+    if (
+      screen.after !== undefined &&
+      !(hasSteps && Array.isArray(screen.after))
+    )
+      problems.push(
+        `${label}: after must be a step list on a screen with steps`
+      )
+    for (const step of [...(screen.steps ?? []), ...(screen.after ?? [])]) {
       const kinds = Object.keys(step)
       if (kinds.length !== 1 || !STEP_KINDS.has(kinds[0]))
         problems.push(

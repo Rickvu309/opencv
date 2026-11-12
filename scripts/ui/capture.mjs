@@ -2,6 +2,7 @@ import { viewportFor } from "./screens.mjs"
 
 const STEP_TIMEOUT_MS = 20_000
 const MEASURE_LIMIT = 40
+const ANIMATION_WAIT_MS = 2_000
 const STILL =
   "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important;scroll-behavior:auto!important}"
 
@@ -40,17 +41,24 @@ export async function runStep(page, origin, step) {
 export async function settle(page) {
   await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {})
   await page.addStyleTag({ content: STILL })
-  await page.evaluate(async () => {
+  await page.evaluate(async (limit) => {
     await document.fonts.ready
-    await Promise.all(
-      document
-        .getAnimations()
-        .map((animation) => animation.finished.catch(() => {}))
-    )
+    const finite = document
+      .getAnimations()
+      .filter(
+        (animation) =>
+          animation.effect?.getComputedTiming().iterations !== Infinity
+      )
+    await Promise.race([
+      Promise.all(
+        finite.map((animation) => animation.finished.catch(() => {}))
+      ),
+      new Promise((resolve) => setTimeout(resolve, limit)),
+    ])
     await new Promise((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(resolve))
     )
-  })
+  }, ANIMATION_WAIT_MS)
 }
 
 export async function openScreen(browser, state, screen, { width, scale = 1 }) {
@@ -64,18 +72,40 @@ export async function openScreen(browser, state, screen, { width, scale = 1 }) {
   await page.goto(`${state.webOrigin}${screen.route}`, {
     waitUntil: "domcontentloaded",
   })
-  for (const [at, step] of screen.steps.entries()) {
+  await runSteps(
+    page,
+    state.webOrigin,
+    screen.id,
+    "step",
+    screen.steps,
+    context
+  )
+  await settle(page)
+  const close = async () => {
+    await runSteps(
+      page,
+      state.webOrigin,
+      screen.id,
+      "after step",
+      screen.after ?? [],
+      context
+    )
+    await context.close()
+  }
+  return { page, close }
+}
+
+async function runSteps(page, origin, screenId, kind, steps, context) {
+  for (const [at, step] of steps.entries()) {
     try {
-      await runStep(page, state.webOrigin, step)
+      await runStep(page, origin, step)
     } catch (error) {
       await context.close()
       throw new Error(
-        `${screen.id} step ${at + 1} ${JSON.stringify(step)} failed: ${error.message.split("\n")[0]}`
+        `${screenId} ${kind} ${at + 1} ${JSON.stringify(step)} failed: ${error.message.split("\n")[0]}`
       )
     }
   }
-  await settle(page)
-  return { page, close: () => context.close() }
 }
 
 export function slotSelectors({ slots = [], selectors = [] }) {

@@ -82,3 +82,42 @@ export function frameGeometry(index, id) {
     moreChildren: Math.max(0, children.length - CHILD_LIMIT),
   }
 }
+
+export function frameChain(index, id) {
+  const chain = []
+  for (let at = id; at && index.has(at); at = index.get(at).parent)
+    chain.unshift({ id: at, node: index.get(at).node })
+  return chain
+}
+
+const nodeLabel = ({ node }) =>
+  node.type === "ref"
+    ? `${node.name ?? node.id} (instance)`
+    : (node.name ?? node.id)
+
+const joinPath = (chain) => chain.map(nodeLabel).join(" > ")
+
+export function framePath(index, id) {
+  return joinPath(frameChain(index, id))
+}
+
+export function composedPlacement(index, { frame, composedScreen, via }) {
+  const chain = frameChain(index, frame)
+  if (chain.length === 0) return { inScreen: false, path: null }
+  const fromScreen = (links) =>
+    links.slice(links.findIndex(({ node }) => node.name === composedScreen))
+  if (chain.some(({ node }) => node.name === composedScreen))
+    return { inScreen: true, path: joinPath(fromScreen(chain)) }
+  const instance = via ? frameChain(index, via) : []
+  const master = instance.at(-1)?.node.ref
+  const inMaster = chain.findIndex(({ id }) => id === master)
+  if (
+    instance.some(({ node }) => node.name === composedScreen) &&
+    inMaster !== -1
+  )
+    return {
+      inScreen: true,
+      path: joinPath([...fromScreen(instance), ...chain.slice(inMaster + 1)]),
+    }
+  return { inScreen: false, path: joinPath(chain) }
+}

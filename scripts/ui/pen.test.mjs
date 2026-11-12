@@ -1,8 +1,13 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
+import { homedir } from "node:os"
+import { join } from "node:path"
 import test from "node:test"
+import { DESIGN_MAP, isSameBox } from "./design-map.mjs"
 import {
   boxSides,
+  composedPlacement,
+  framePath,
   findFrames,
   frameGeometry,
   indexPen,
@@ -80,3 +85,66 @@ test("the pen path comes from the flag, then OCV_PEN, then the default, else a f
     /git show origin\/chore\/350-design-kit-cli-skills:design\/opencv\.pen > \/d\.pen/
   )
 })
+
+const composed = indexPen(
+  JSON.parse(
+    readFileSync(
+      new URL("./fixtures/composed.pen.json", import.meta.url),
+      "utf8"
+    )
+  )
+)
+const SHELL = "OC App shell"
+
+test("a frame inside the composed screen is placed there and its path starts at that screen", () => {
+  assert.deepEqual(
+    composedPlacement(composed, { frame: "coach", composedScreen: SHELL }),
+    { inScreen: true, path: "OC App shell > Bottom bar > Coach button" }
+  )
+})
+
+test("a master part counts only through an instance placed in the composed screen", () => {
+  assert.deepEqual(
+    composedPlacement(composed, {
+      frame: "body",
+      composedScreen: SHELL,
+      via: "placed",
+    }),
+    { inScreen: true, path: "OC App shell > Chat panel (instance) > Body" }
+  )
+  assert.equal(
+    composedPlacement(composed, { frame: "body", composedScreen: SHELL })
+      .inScreen,
+    false
+  )
+})
+
+test("a kit specimen is not the composed screen and its full path is shown", () => {
+  assert.deepEqual(
+    composedPlacement(composed, { frame: "specimen", composedScreen: SHELL }),
+    { inScreen: false, path: "Dock items > Dock button" }
+  )
+  assert.equal(
+    framePath(composed, "placed"),
+    "App kit > OC App shell > Chat panel (instance)"
+  )
+  assert.deepEqual(
+    composedPlacement(composed, { frame: "gone", composedScreen: SHELL }),
+    { inScreen: false, path: null }
+  )
+})
+
+const REAL_PEN = join(homedir(), "tmp", "opencv-ui", "opencv.pen")
+
+test(
+  "every frame row in the design map sits in the composed app shell of the real pen file",
+  { skip: !existsSync(REAL_PEN) && `no pen file at ${REAL_PEN}` },
+  () => {
+    const real = indexPen(JSON.parse(readFileSync(REAL_PEN, "utf8")))
+    for (const row of DESIGN_MAP.filter((row) => !isSameBox(row))) {
+      const placement = composedPlacement(real, row)
+      assert.ok(placement.inScreen, `${row.label}: ${placement.path}`)
+      assert.match(placement.path, /^OC App shell > /, row.label)
+    }
+  }
+)
