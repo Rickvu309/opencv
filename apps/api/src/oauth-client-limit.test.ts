@@ -119,19 +119,75 @@ async function signedInPerson(email: string) {
   return { cookie, userId: row!.id }
 }
 
-it("keeps never-approved clients at the bound when every registration comes from a new address", async () => {
+const MINUTE = 60_000
+
+async function consentPage(clientId: string, cookie: string) {
+  const authorize = await app.request(authorizePath(clientId), {
+    headers: { Cookie: cookie, Accept: "application/json" },
+  })
+  const location =
+    authorize.headers.get("location") ??
+    ((await authorize.json()) as { url: string }).url
+  const consentUrl = new URL(location, testWebOrigin)
+  expect(consentUrl.pathname).toBe("/oauth/consent")
+  return consentUrl.search.slice(1)
+}
+
+function allow(oauthQuery: string, cookie: string) {
+  return app.request("/api/auth/oauth2/consent", {
+    method: "POST",
+    headers: jsonHeaders({ Cookie: cookie }),
+    body: JSON.stringify({ accept: true, oauth_query: oauthQuery }),
+  })
+}
+
+it("a flood of registrations from other addresses inside the grace period keeps a client whose person is on the consent screen", async () => {
   const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
   try {
-    const counts: number[] = []
-    let newest = ""
+    const person = await signedInPerson("consent-reader-1413@example.com")
+    const honest = await registeredClientId({ client_name: "Honest agent" })
+    const oauthQuery = await consentPage(honest, person.cookie)
+    for (let index = 0; index <= BOUND * 3; index += 1)
+      await registeredClientId({ client_name: `Flood ${index}` })
+    clock = new Date(
+      Date.now() + (OAUTH_CLIENT_LIMITS.pendingGraceMinutes - 1) * MINUTE
+    )
+    await registeredClientId({ client_name: "Flood last" })
+    expect(await clientIds()).toContain(honest)
+    const consent = await allow(oauthQuery, person.cookie)
+    const body = (await consent.json()) as { url: string }
+    expect(consent.status, JSON.stringify(body)).toBe(200)
+    expect(new URL(body.url).searchParams.get("code")).toBeTruthy()
+  } finally {
+    warn.mockRestore()
+  }
+})
+
+it("after the grace period removes never-approved clients beyond the newest bound, oldest first", async () => {
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+  try {
+    const start = clock.getTime()
     vi.useFakeTimers({ toFake: ["Date"] })
-    for (let index = 0; index < BOUND * 3; index += 1) {
-      vi.setSystemTime(clock.getTime() + index * 1000)
-      newest = await registeredClientId({ client_name: `Flood ${index}` })
-      counts.push((await clientIds()).length)
+    const old: string[] = []
+    for (let index = 0; index < BOUND; index += 1) {
+      vi.setSystemTime(start + index * 1000)
+      old.push(await registeredClientId({ client_name: `Old ${index}` }))
     }
-    expect(Math.max(...counts)).toBe(BOUND)
-    expect(await clientIds()).toContain(newest)
+    const afterGrace =
+      start + (OAUTH_CLIENT_LIMITS.pendingGraceMinutes + 1) * MINUTE
+    const young: string[] = []
+    for (let index = 0; index < BOUND; index += 1) {
+      vi.setSystemTime(afterGrace + index * 1000)
+      young.push(await registeredClientId({ client_name: `Young ${index}` }))
+      const left = await clientIds()
+      expect(left).toHaveLength(BOUND)
+      expect(left).toEqual(
+        expect.arrayContaining([
+          ...old.slice(index + 1),
+          ...young.slice(0, index + 1),
+        ])
+      )
+    }
     expect(warn.mock.calls.map((call) => String(call[0]))).toContainEqual(
       expect.stringContaining(`past the bound of ${BOUND}`)
     )
@@ -139,6 +195,21 @@ it("keeps never-approved clients at the bound when every registration comes from
     vi.useRealTimers()
     warn.mockRestore()
   }
+})
+
+it("answers a consent for a swept client with the register-again error, not a server error", async () => {
+  const person = await signedInPerson("late-reader-1413@example.com")
+  const swept = await registeredClientId({ client_name: "Read too long" })
+  const oauthQuery = await consentPage(swept, person.cookie)
+  clock = new Date(Date.now() + (OAUTH_CLIENT_LIMITS.pendingHours + 1) * HOUR)
+  await registeredClientId({ client_name: "Trigger" })
+  expect(await clientIds()).not.toContain(swept)
+  const consent = await allow(oauthQuery, person.cookie)
+  expect(consent.status).toBe(400)
+  expect(await consent.json()).toEqual({
+    error: "invalid_client",
+    error_description: UNKNOWN_CLIENT_DESCRIPTION,
+  })
 })
 
 it("removes a never-approved client after the window and keeps one a person approved", async () => {

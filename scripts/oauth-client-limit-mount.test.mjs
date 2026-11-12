@@ -7,12 +7,14 @@ import { fileURLToPath } from "node:url"
 import {
   APP_FILE,
   LIMIT_FILE,
+  countRulesWithoutAgeFloor,
   detect,
 } from "./lib/oauth-client-limit-mount.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const AUTH_FILE = "apps/api/src/auth.ts"
 const OPEN_REGISTRATION_INTRODUCED = "433f74956fea62e921461475a4631aa12028e988"
+const COUNT_RULE_WITHOUT_AGE_FLOOR = "c69e2018da5d1112943e5a730fc74497ffc4f3b1"
 
 const atRev = (rev) => ({
   read(name) {
@@ -109,4 +111,37 @@ test("a client limit that skips a client-creating route or a bound fires", () =>
     problems.some((line) => line.includes("sets no pendingHours bound")),
     problems.join("\n")
   )
+})
+
+test("a count rule with no age floor fires at the commit that shipped it", () => {
+  const mistake = atRev(COUNT_RULE_WITHOUT_AGE_FLOOR)
+  const limit = mistake.read(LIMIT_FILE)
+  assert.ok(limit, `${LIMIT_FILE} at ${COUNT_RULE_WITHOUT_AGE_FLOOR}`)
+  assert.equal(countRulesWithoutAgeFloor(limit).length, 1)
+  const problems = detect(
+    current(AUTH_FILE),
+    AUTH_FILE,
+    fromFiles({ [APP_FILE]: current(APP_FILE), [LIMIT_FILE]: limit })
+  )
+  assert.ok(
+    problems.some((line) => line.includes("with no age floor")),
+    problems.join("\n")
+  )
+})
+
+test("the count rule with the grace floor stays quiet", () => {
+  assert.deepEqual(countRulesWithoutAgeFloor(current(LIMIT_FILE)), [])
+})
+
+test("a count rule whose floor is removed or not tied to the grace fires", () => {
+  const limit = current(LIMIT_FILE)
+  const unfloored = limit.replace(
+    /\n\s*where beyond\.created_at is null or beyond\.created_at < \$\{graceStart\}::timestamptz/,
+    ""
+  )
+  const untied = limit.replace(/limits\.pendingGraceMinutes \* 60_000/, "0")
+  assert.notEqual(unfloored, limit)
+  assert.notEqual(untied, limit)
+  assert.equal(countRulesWithoutAgeFloor(unfloored).length, 1)
+  assert.equal(countRulesWithoutAgeFloor(untied).length, 1)
 })

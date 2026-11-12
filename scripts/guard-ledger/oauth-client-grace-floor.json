@@ -1,0 +1,14 @@
+{
+  "id": "oauth-client-grace-floor",
+  "file": "scripts/oauth-client-limit-mount.test.mjs",
+  "detector": {
+    "module": "scripts/lib/oauth-client-limit-mount.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "c69e2018da5d1112943e5a730fc74497ffc4f3b1",
+    "path": "apps/api/src/auth.ts",
+    "reads": ["apps/api/src/app.ts", "apps/api/src/oauth-client-limit.ts"]
+  }
+}

@@ -25,7 +25,28 @@ const MOUNT = /app\.use\(\s*"\/api\/auth\/oauth2\/\*",\s*oauthClientLimit\(/
 const HANDLER = /app\.all\(\s*"\/api\/auth\/\*"/
 const ADDRESS_KEY =
   /x-real-ip|x-forwarded-for|ipAddress|getConnInfo|remoteAddr/i
-const BOUNDS = ["pendingClients", "pendingHours", "registrationBytes"]
+const BOUNDS = [
+  "pendingClients",
+  "pendingHours",
+  "pendingGraceMinutes",
+  "registrationBytes",
+]
+const SQL_TEMPLATE = /sql`([^`]*)`/g
+const COUNT_RULE = /\boffset\s*\$\{\s*limits\.pendingClients\s*\}/
+const AGE_FLOOR = /created_at\s*<\s*\$\{\s*graceStart\s*\}/
+const GRACE_START =
+  /graceStart\s*=\s*new Date\(\s*now\.getTime\(\)\s*-\s*limits\.pendingGraceMinutes\s*\*\s*60_000\s*\)/
+
+export function countRulesWithoutAgeFloor(limit) {
+  const graceComputed = GRACE_START.test(limit)
+  return [...limit.matchAll(SQL_TEMPLATE)]
+    .map((match) => match[1])
+    .filter(
+      (statement) =>
+        COUNT_RULE.test(statement) &&
+        !(graceComputed && AGE_FLOOR.test(statement))
+    )
+}
 
 export function detect(
   source,
@@ -59,6 +80,10 @@ export function detect(
       problems.push(
         `${route} can create a client row and ${LIMIT_FILE} does not sweep after it`
       )
+  if (countRulesWithoutAgeFloor(limit).length > 0)
+    problems.push(
+      `${LIMIT_FILE} removes never-approved clients past the newest pendingClients with no age floor, so a burst of registrations removes a client whose person is still on the consent screen; keep clients younger than pendingGraceMinutes`
+    )
   for (const bound of BOUNDS)
     if (!new RegExp(`\\b${bound}:\\s*\\d`).test(limit))
       problems.push(`${LIMIT_FILE} sets no ${bound} bound`)

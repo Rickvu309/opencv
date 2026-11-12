@@ -1,4 +1,4 @@
-import { sql, type SQL } from "drizzle-orm"
+import { eq, sql, type SQL } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 import type { AppDatabase } from "./db/context.js"
 import {
@@ -12,6 +12,7 @@ import {
 export type OAuthClientLimits = {
   pendingClients: number
   pendingHours: number
+  pendingGraceMinutes: number
   registrationBytes: number
   nameChars: number
   redirectUris: number
@@ -21,6 +22,7 @@ export type OAuthClientLimits = {
 export const OAUTH_CLIENT_LIMITS: OAuthClientLimits = {
   pendingClients: 5000,
   pendingHours: 24,
+  pendingGraceMinutes: 15,
   registrationBytes: 16_384,
   nameChars: 100,
   redirectUris: 10,
@@ -28,6 +30,8 @@ export const OAUTH_CLIENT_LIMITS: OAuthClientLimits = {
 }
 
 export const CLIENT_REGISTRATION_PATH = "/api/auth/oauth2/register"
+
+export const CLIENT_CONSENT_PATH = "/api/auth/oauth2/consent"
 
 export const CLIENT_CREATING_AUTH_PATHS: ReadonlySet<string> = new Set([
   CLIENT_REGISTRATION_PATH,
@@ -62,27 +66,33 @@ export async function sweepPendingClients(
   now: Date,
   limits: OAuthClientLimits = OAUTH_CLIENT_LIMITS
 ) {
-  const cutoff = new Date(
+  const expiryStart = new Date(
     now.getTime() - limits.pendingHours * 3_600_000
+  ).toISOString()
+  const graceStart = new Date(
+    now.getTime() - limits.pendingGraceMinutes * 60_000
   ).toISOString()
   const expired = await deletedCount(
     db,
     sql`select pending.id from ${oauthClient} pending
       where ${pendingClientIn("pending")}
-      and (pending.created_at is null or pending.created_at < ${cutoff}::timestamptz)`
+      and (pending.created_at is null or pending.created_at < ${expiryStart}::timestamptz)`
   )
-  const overflow = await deletedCount(
+  const pastTheBoundAndTheGrace = await deletedCount(
     db,
-    sql`select pending.id from ${oauthClient} pending
-      where ${pendingClientIn("pending")}
-      order by pending.created_at desc nulls last, pending.id
-      offset ${limits.pendingClients}`
+    sql`select beyond.id from (
+        select pending.id, pending.created_at from ${oauthClient} pending
+        where ${pendingClientIn("pending")}
+        order by pending.created_at desc nulls last, pending.id
+        offset ${limits.pendingClients}
+      ) beyond
+      where beyond.created_at is null or beyond.created_at < ${graceStart}::timestamptz`
   )
-  if (overflow > 0)
+  if (pastTheBoundAndTheGrace > 0)
     console.warn(
-      `[auth] removed ${overflow} never-approved agent clients past the bound of ${limits.pendingClients}`
+      `[auth] removed ${pastTheBoundAndTheGrace} never-approved agent clients past the bound of ${limits.pendingClients} and older than ${limits.pendingGraceMinutes} minutes`
     )
-  return { expired, overflow }
+  return { expired, overflow: pastTheBoundAndTheGrace }
 }
 
 export function registrationProblem(
@@ -119,6 +129,41 @@ export function registrationProblem(
       return `each redirect URI must be at most ${limits.uriChars} characters`
   }
   return null
+}
+
+async function consentClientId(request: Request) {
+  const type = (request.headers.get("content-type") ?? "").toLowerCase()
+  const copy = request.clone()
+  const body: unknown = type.includes("application/x-www-form-urlencoded")
+    ? await copy
+        .formData()
+        .then((form) => Object.fromEntries(form))
+        .catch(() => null)
+    : await copy.json().catch(() => null)
+  if (
+    !body ||
+    typeof body !== "object" ||
+    !("oauth_query" in body) ||
+    typeof body.oauth_query !== "string"
+  )
+    return null
+  return new URLSearchParams(body.oauth_query).get("client_id")
+}
+
+async function clientIsRegistered(db: AppDatabase, clientId: string) {
+  const rows = await db
+    .select({ id: oauthClient.id })
+    .from(oauthClient)
+    .where(eq(oauthClient.clientId, clientId))
+    .limit(1)
+  return rows.length > 0
+}
+
+export function unknownClientResponse() {
+  return Response.json(
+    { error: "invalid_client", error_description: UNKNOWN_CLIENT_DESCRIPTION },
+    { status: 400 }
+  )
 }
 
 function unknownClientLocation(location: string) {
@@ -192,6 +237,11 @@ export function oauthClientLimit({
           { error: "invalid_client_metadata", error_description: problem },
           400
         )
+    }
+    if (path === CLIENT_CONSENT_PATH && c.req.method === "POST") {
+      const clientId = await consentClientId(c.req.raw)
+      if (clientId && !(await clientIsRegistered(db, clientId)))
+        return unknownClientResponse()
     }
     await next()
     if (CLIENT_CREATING_AUTH_PATHS.has(path) && c.res.status < 400)
