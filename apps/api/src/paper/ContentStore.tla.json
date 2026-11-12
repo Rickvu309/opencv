@@ -4,10 +4,34 @@
     "Lock": "cacheRevisionUsable",
     "Person": "syncContent",
     "Commit": "nextContentSeq",
-    "Coach": "coachBasisOk",
+    "Coach": null,
+    "PersonMerge": "coachBasisOk",
     "Replace": "sameContentVersion",
     "Rollback": "withContent",
     "End": "withContent",
     "Evict": "withContent"
+  },
+  "boundaries": {
+    "Coach": [
+      "content-coach.ts:editAsCoach",
+      "content-coach.ts:stalePaperBasis"
+    ],
+    "PersonMerge": [
+      "content-coach.ts:editAsCoach",
+      "content-store.ts:coachBasisOk",
+      "../registry/http.ts:personActor"
+    ]
+  },
+  "covers": [
+    "apps/api/src/paper/content-store.ts",
+    "apps/api/src/paper/content-coach.ts",
+    "apps/api/src/paper/commands.ts",
+    "apps/api/src/registry/http.ts",
+    "apps/api/src/registry/registry-entries.ts"
+  ],
+  "sync": "f8167a13418e8167eedde62be48f1d01cbee16d5",
+  "retiring": "The Yjs Paper log. Every page the web creates now uses the Word package path (apps/api/src/paper/word/document.ts, apps/api/src/paper/package-candidates.ts). Old Yjs rows, a Coach paper.create, and a signed-in person who posts paper.edit with a numeric basedOn to apps/api/src/registry/http.ts still reach this code.",
+  "mutants": {
+    "coach": 13
   }
 }
