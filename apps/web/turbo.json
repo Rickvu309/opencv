@@ -3,7 +3,17 @@
   "extends": ["//"],
   "tasks": {
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*",
+        "$TURBO_ROOT$/apps/api/src/**",
+        "$TURBO_ROOT$/scripts/lib/use-read-owner.mjs",
+        "$TURBO_ROOT$/scripts/ocv-tools/claim-marker.mjs",
+        "$TURBO_ROOT$/scripts/ocv-tools/fields.mjs",
+        "$TURBO_ROOT$/scripts/ocv-tools/result.mjs",
+        "$TURBO_ROOT$/scripts/ocv-tools/rules/**",
+        "$TURBO_ROOT$/scripts/ocv-tools/worktree.mjs"
+      ]
     }
   }
 }

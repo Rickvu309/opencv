@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*",
+        "$TURBO_ROOT$/apps/web/src/**",
+        "$TURBO_ROOT$/scripts/lib/paper-canvas-bytes.mjs",
+        "$TURBO_ROOT$/scripts/lib/paper-canvas-mint.mjs",
+        "$TURBO_ROOT$/scripts/lib/proposal-basis.mjs",
+        "$TURBO_ROOT$/scripts/lib/write-grant.mjs"
+      ]
+    },
+    "test:formal": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/scripts/lib/approval-expiry.mjs",
+        "$TURBO_ROOT$/scripts/lib/paper-canvas-bytes.mjs",
+        "$TURBO_ROOT$/scripts/lib/paper-canvas-checks.mjs",
+        "$TURBO_ROOT$/scripts/lib/paper-canvas-mint.mjs",
+        "$TURBO_ROOT$/scripts/lib/write-grant.mjs"
+      ]
+    }
+  }
+}

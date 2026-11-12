@@ -1,0 +1,24 @@
+{
+  "id": "test-outside-reads",
+  "file": "scripts/test-outside-reads.test.mjs",
+  "detector": {
+    "module": "scripts/lib/test-outside-reads.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "da9c2838",
+    "path": "apps/api/src/registry/names.test.ts",
+    "reads": [
+      "turbo.json",
+      "apps/api/turbo.json",
+      "apps/api/package.json",
+      "packages/domain/package.json",
+      "packages/paper-crdt/package.json"
+    ],
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/registry/names.test.ts"
+    }
+  }
+}
