@@ -4,6 +4,7 @@ import {
   screen,
   waitFor,
   cleanup,
+  within,
 } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import userEvent from "@testing-library/user-event"
@@ -310,7 +311,7 @@ describe("Coach workspace", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("disables sending and shows the reset when capped", async () => {
+  it("disables sending and shows the reset with no Upgrade link when capped", async () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -349,6 +350,12 @@ describe("Coach workspace", () => {
     ).toBeDisabled()
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
     expect(screen.getByRole("status")).toHaveTextContent("Resets at")
+    expect(
+      within(screen.getByRole("status")).queryByRole("link")
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: /upgrade/i })
+    ).not.toBeInTheDocument()
     expect(screen.getByPlaceholderText(/^Coach is back at/)).toBeDisabled()
     expect(screen.getByRole("button", { name: "Add" })).toBeDisabled()
     expect(

@@ -22,7 +22,7 @@ export type PricingPlan = {
   audience: string
   price: string
   period: string
-  cta: string
+  cta?: string
   note: string
   tone: "neutral" | "white"
   surface: "paper" | "mesh"
@@ -42,7 +42,17 @@ type PricingModel = Omit<typeof pricingSnapshot, "plans" | "compare"> & {
   }
 }
 
-export const pricingModel: PricingModel = pricingSnapshot
+function withoutPurchase(plan: PricingPlan): PricingPlan {
+  return { ...plan, cta: undefined }
+}
+
+export const pricingModel: PricingModel = {
+  ...pricingSnapshot,
+  plans: {
+    free: pricingSnapshot.plans.free,
+    pro: withoutPurchase(pricingSnapshot.plans.pro),
+  },
+}
 
 export function pricingDescription(model: PricingModel): string {
   const { free, pro } = model.plans

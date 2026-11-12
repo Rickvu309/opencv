@@ -379,13 +379,6 @@
   },
   {
     "rule": "touch-targets",
-    "file": "apps/web/src/features/settings/upgrade-screen.tsx",
-    "count": 1,
-    "issue": "#1037",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
     "file": "apps/web/src/features/settings/usage-section.tsx",
     "count": 1,
     "issue": "#1037",

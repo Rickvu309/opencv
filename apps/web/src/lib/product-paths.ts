@@ -1,3 +1,5 @@
+import { startPageSchema, type StartPage } from "@workspace/domain"
+
 export type SurfaceNavGroup = "primary" | "work"
 
 export const SURFACES = [
@@ -122,24 +124,38 @@ export function shownSurfaces(): readonly Surface[] {
   return SURFACES.filter((surface) => surface.shown)
 }
 
-export const START_PAGE_KEYS = SURFACES.filter((s) => s.canBeStartPage).map(
-  (s) => s.id
-)
+type StartPageSurface = Extract<Surface, { canBeStartPage: true }>
+type StartPageLink = { path: string; label: string }
 
-export const START_PAGES = Object.fromEntries(
-  SURFACES.filter((s) => s.shown && s.canBeStartPage).map((s) => [
-    s.id,
-    { path: s.path, label: s.label },
-  ])
-) as Record<string, { path: string; label: string }>
+function isStartPageSurface(surface: Surface): surface is StartPageSurface {
+  return surface.canBeStartPage
+}
 
-export function startPageEntry(startPage: unknown) {
-  const fallback = START_PAGES.apply ?? { path: "/apply", label: "Apply" }
-  const known =
-    typeof startPage === "string" &&
-    Object.hasOwn(START_PAGES, startPage) &&
-    START_PAGES[startPage]
-  return known ? known : fallback
+function startPageOf(surface: StartPageSurface): StartPage {
+  return surface.id
+}
+
+export const START_PAGE_KEYS: readonly StartPage[] =
+  SURFACES.filter(isStartPageSurface).map(startPageOf)
+
+export const START_PAGES: Readonly<Partial<Record<StartPage, StartPageLink>>> =
+  Object.fromEntries(
+    SURFACES.filter(isStartPageSurface)
+      .filter((surface) => surface.shown)
+      .map((surface) => [
+        startPageOf(surface),
+        { path: surface.path, label: surface.label },
+      ])
+  )
+
+const DEFAULT_START_PAGE: StartPageLink = START_PAGES.apply ?? {
+  path: "/apply",
+  label: "Apply",
+}
+
+export function startPageEntry(startPage: unknown): StartPageLink {
+  const stored = startPageSchema.safeParse(startPage)
+  return (stored.success && START_PAGES[stored.data]) || DEFAULT_START_PAGE
 }
 
 export function startPagePath(startPage: unknown) {

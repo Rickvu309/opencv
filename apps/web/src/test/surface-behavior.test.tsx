@@ -76,6 +76,21 @@ describe("empty api data shows empty states, never sample content", () => {
     expect(router.state.location.pathname).toBe("/apply")
   })
 
+  it("Pitch shows the placeholder and no demo content", async () => {
+    renderPage(PitchPage)
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 2,
+        name: "One link that sells you",
+      })
+    ).toBeInTheDocument()
+    expect(screen.queryByText("Demo content")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Moments" })
+    ).not.toBeInTheDocument()
+  })
+
   it("Coach opens empty, with no sample content", async () => {
     getMockChats().splice(0)
     getMockPaperDocs().splice(0)

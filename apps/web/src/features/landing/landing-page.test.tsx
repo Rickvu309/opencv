@@ -254,10 +254,9 @@ describe("pricing page", () => {
       "href",
       "/sign-in"
     )
-    expect(screen.getByRole("link", { name: "Get Pro" })).toHaveAttribute(
-      "href",
-      "/sign-in"
-    )
+    expect(
+      screen.queryByRole("link", { name: "Get Pro" })
+    ).not.toBeInTheDocument()
     expect(
       screen.getAllByRole("img", { name: "Not included" }).length
     ).toBeGreaterThan(0)
