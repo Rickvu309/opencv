@@ -30,6 +30,8 @@ import {
 } from "./sections.ts"
 import { LOAD_ERROR } from "./settings-api.ts"
 
+const SETTINGS_NAV_ITEM = "h-7 rounded-sm"
+
 export function SettingsLayout({
   view,
   startPage,
@@ -50,14 +52,15 @@ export function SettingsLayout({
     >
       {desktop ? (
         <aside
-          className="flex w-60 shrink-0 flex-col gap-1 px-3 py-3"
+          className="flex w-61 shrink-0 flex-col gap-px px-2.5 pt-2.5 pb-3"
           aria-label="Settings"
         >
           <BackLink href={startPagePath(startPage)} />
+          <span aria-hidden className="h-3.5 shrink-0" />
           <p className="flex h-6 items-center px-2 text-sm text-muted-foreground">
             Settings
           </p>
-          <nav className="flex flex-col gap-1" aria-label="Settings sections">
+          <nav className="flex flex-col gap-px" aria-label="Settings sections">
             {SETTINGS_SECTIONS.map((item) => (
               <SectionLink
                 key={item.id}
@@ -96,6 +99,7 @@ function BackLink({ href }: { href: string }) {
   return (
     <NavItem
       tone="muted"
+      className={SETTINGS_NAV_ITEM}
       href={href}
       onClick={(event) => {
         event.preventDefault()
@@ -136,6 +140,7 @@ function SectionLink({
   return (
     <NavItem
       tone="muted"
+      className={SETTINGS_NAV_ITEM}
       href={href}
       active={current}
       onClick={(event) => {
