@@ -22,7 +22,6 @@ import { diffParagraphs } from "./page-diff.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
-const RETRY_FLOOR_MS = 1000
 const SERVER_NOTES = new Set([
   "This Word document has changed. Read it again before editing.",
 ])
@@ -367,7 +366,7 @@ function retryWait(error: unknown): RetryWait {
   if (error instanceof ApiError) {
     return error.retryAfterMs === undefined
       ? null
-      : { until: Date.now() + Math.max(error.retryAfterMs, RETRY_FLOOR_MS) }
+      : { until: Date.now() + error.retryAfterMs }
   }
   return typeof navigator !== "undefined" && navigator.onLine === false
     ? "online"
