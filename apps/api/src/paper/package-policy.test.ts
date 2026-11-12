@@ -373,7 +373,6 @@ describe("conservative surface and references", () => {
       await document.prepare(edit(document, "untouched", "changed"))
     ).package
     const candidateFiles = (await readPackageZip(candidate.export())).files
-    const originalFiles = (await readPackageZip(bytes)).files
     expect(candidateFiles.get("word/document.xml")?.toString()).toContain(link)
     expect(
       await packageMember(candidate.export(), "word/_rels/document.xml.rels")
