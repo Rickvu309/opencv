@@ -30,6 +30,14 @@ import {
   type WritingBlock,
   type WritingDraft,
 } from "./canvas-edit.ts"
+import { collectLooks, withoutLooks, type LookBook } from "./canvas-look.ts"
+import {
+  placeCaret,
+  syncParagraphs,
+  textOffsetIn,
+  visibleText,
+  type DrawnLooks,
+} from "./canvas-draw.ts"
 import { pastePlain } from "./canvas-paste.ts"
 import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
@@ -44,6 +52,7 @@ import "./canvas.css"
 type CanvasState = {
   past: WritingDraft[]
   present: WritingDraft
+  looks: LookBook
   note: string
   basis: DraftBasis | null
   typed: boolean
@@ -102,22 +111,28 @@ function reduce(state: CanvasState, action: CanvasAction): CanvasState {
     return { ...state, basis: action.basis, typed: action.typed }
   }
   if (action.type === "replace") {
+    const draft = plainDraft(action.draft)
+    const looks = collectLooks(state.looks, action.draft.blocks)
     const same =
-      JSON.stringify(state.present) === JSON.stringify(action.draft) &&
+      JSON.stringify(state.present) === JSON.stringify(draft) &&
       sameBasis(state.basis, action.basis) &&
       !state.typed
-    if (same) return state
+    if (same) return looks === state.looks ? state : { ...state, looks }
     return {
       ...state,
       past: [],
-      present: action.draft,
+      present: draft,
+      looks,
       basis: action.basis,
       typed: false,
     }
   }
   if (action.type === "adopt") {
-    const present = adoptIds(state.present, action.blocks)
-    return present === state.present ? state : { ...state, present }
+    const present = adoptIds(state.present, withoutLooks(action.blocks))
+    const looks = collectLooks(state.looks, action.blocks)
+    return present === state.present && looks === state.looks
+      ? state
+      : { ...state, present, looks }
   }
   if (action.type === "undo") {
     const present = state.past[state.past.length - 1]
@@ -160,8 +175,10 @@ function reduce(state: CanvasState, action: CanvasAction): CanvasState {
   return remember(state, present)
 }
 
-function visibleText(text: string) {
-  return text.length === 0 ? "\u200b" : text
+function plainDraft(draft: WritingDraft): WritingDraft {
+  return draft.blocks.some((block) => block.look)
+    ? { ...draft, blocks: withoutLooks(draft.blocks) }
+    : draft
 }
 
 function blockElement(node: Node | null) {
@@ -180,7 +197,8 @@ function pointFrom(
   const block = blockElement(node)
   if (!block || !root.contains(block) || !block.dataset.block) return null
   const text = (block.textContent ?? "").replaceAll("\u200b", "")
-  const raw = node?.nodeType === Node.TEXT_NODE ? offset : 0
+  const raw =
+    node?.nodeType === Node.TEXT_NODE ? textOffsetIn(block, node, offset) : 0
   return {
     blockId: block.dataset.block,
     offset: Math.max(0, Math.min(raw, text.length)),
@@ -215,10 +233,6 @@ function readBlocks(root: HTMLElement, nextId: number) {
   return { texts, nextId: minted }
 }
 
-function blockSelector(id: string) {
-  return `p[data-block="${id.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"]`
-}
-
 function withCommittedWord(
   texts: { id: string; text: string }[],
   blockId: string,
@@ -242,38 +256,6 @@ function withCommittedWord(
   return next
 }
 
-function syncParagraphs(root: HTMLElement, blocks: WritingBlock[]) {
-  const nodes = [...root.querySelectorAll<HTMLElement>(":scope > p")]
-  blocks.forEach((block, index) => {
-    let node = nodes[index]
-    if (!node) {
-      node = root.ownerDocument.createElement("p")
-      root.appendChild(node)
-    }
-    node.dataset.block = block.id
-    node.contentEditable = block.held ? "false" : "true"
-    const text = visibleText(block.text)
-    if (node.textContent !== text) node.textContent = text
-  })
-  nodes.slice(blocks.length).forEach((node) => node.remove())
-}
-
-function placeCaret(root: HTMLElement, caret: TextPoint) {
-  const block = root.querySelector<HTMLElement>(blockSelector(caret.blockId))
-  if (!block) return
-  const text = block.firstChild
-  if (!text) return
-  const raw = text.textContent ?? ""
-  const offset =
-    raw === "\u200b" ? 0 : Math.max(0, Math.min(caret.offset, raw.length))
-  const range = root.ownerDocument.createRange()
-  range.setStart(text, offset)
-  range.collapse(true)
-  const selection = root.ownerDocument.getSelection()
-  selection?.removeAllRanges()
-  selection?.addRange(range)
-}
-
 function revealCaret(page: HTMLElement, scroll: HTMLElement) {
   const node = page.ownerDocument.getSelection()?.focusNode
   const target =
@@ -293,7 +275,7 @@ function openSheet(
   seedRevision: string | null
 ): CanvasState {
   const stored = loadDraft(docId, localStorage)
-  const present = stored ?? seed ?? blankDraft()
+  const present = plainDraft(stored ?? seed ?? blankDraft())
   const basis =
     loadDraftBasis(docId, localStorage) ??
     (seedRevision
@@ -303,6 +285,7 @@ function openSheet(
   return {
     past: [],
     present,
+    looks: collectLooks(new Map(), seed?.blocks ?? []),
     note: pageWords(present.blocks) === "" ? keptOnThisComputer() : "",
     basis,
     typed: false,
@@ -333,6 +316,7 @@ function WritingSheet({
     openSheet(docId, seed, seedRevision)
   )
   const nextId = useRef(state.present.nextId)
+  const drawnLooks = useRef<DrawnLooks>(new Map())
   const conflicted = useSyncExternalStore(
     subscribeWritingConflict,
     () => writingConflictDoc() === docId,
@@ -395,7 +379,13 @@ function WritingSheet({
     const page = pageRef.current
     const scroll = scrollRef.current
     if (!page || composing.current) return
-    syncParagraphs(page, state.present.blocks)
+    syncParagraphs(
+      page,
+      state.present.blocks,
+      state.looks,
+      state.present.caret,
+      drawnLooks.current
+    )
     if (!opened.current) {
       page.focus({ preventScroll: true })
       if (scroll) scroll.scrollTop = 0
@@ -403,7 +393,7 @@ function WritingSheet({
     }
     placeCaret(page, state.present.caret)
     if (scroll) revealCaret(page, scroll)
-  }, [state.present])
+  }, [state.present, state.looks])
 
   const applyPaste = useCallback(
     (text: string) => {

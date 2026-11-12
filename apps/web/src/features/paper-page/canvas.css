@@ -65,6 +65,57 @@
   color: var(--muted-foreground);
 }
 
+.writing-page {
+  --writing-cv-body: 10.5;
+}
+
+.writing-page p[data-form="title"] {
+  font-size: calc(1em * 22 / var(--writing-cv-body));
+  font-weight: 700;
+  line-height: calc(26.5 / 22);
+}
+
+.writing-page p[data-form="heading"] {
+  font-size: calc(1em * 11.5 / var(--writing-cv-body));
+  font-weight: 600;
+  line-height: calc(14 / 11.5);
+}
+
+.writing-page p[data-form="heading"][aria-level="2"] {
+  font-weight: 700;
+}
+
+.writing-page p[data-marker]::before {
+  content: attr(data-marker);
+  display: inline-block;
+  inline-size: 1.5em;
+  margin-inline-start: -1.5em;
+  user-select: none;
+}
+
+.writing-page p[data-align="center"] {
+  text-align: center;
+}
+
+.writing-page p[data-align="end"] {
+  text-align: end;
+}
+
+.writing-page p[data-align="justify"] {
+  text-align: justify;
+}
+
+.writing-page strong {
+  font-weight: 700;
+}
+
+.writing-page .writing-link {
+  text-decoration-line: underline;
+  text-decoration-color: var(--ring);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
 .writing-note {
   flex: none;
   margin: 0;

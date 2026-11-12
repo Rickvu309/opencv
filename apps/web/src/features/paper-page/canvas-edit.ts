@@ -1,10 +1,13 @@
 import { blankCv, type PaperView, type WordPage } from "@workspace/domain"
 
+import { lookOf, type BlockLook } from "./canvas-look.ts"
+
 export type WritingBlock = {
   id: string
   text: string
   held?: boolean
   reason?: string
+  look?: BlockLook
 }
 
 export type TextPoint = {
@@ -52,19 +55,46 @@ export function pageBlocks(page: WordPage): WritingBlock[] {
           ...(paragraph.message ? { reason: paragraph.message } : {}),
         },
       ]
-    const segments: { text: string; editable: boolean }[] = []
+    const segments: {
+      text: string
+      editable: boolean
+      pieces: (typeof paragraph.pieces)[number][]
+    }[] = []
     for (const piece of paragraph.pieces) {
       const previous = segments.at(-1)
-      if (previous?.editable && piece.editable) previous.text += piece.text
-      else segments.push({ text: piece.text, editable: piece.editable })
+      if (previous?.editable && piece.editable) {
+        previous.text += piece.text
+        previous.pieces.push(piece)
+      } else
+        segments.push({
+          text: piece.text,
+          editable: piece.editable,
+          pieces: [piece],
+        })
     }
-    if (segments.every((segment) => segment.editable))
-      return [{ id: paragraph.handle, text: paragraph.text }]
-    return segments.map((segment, index) => ({
-      id: `${paragraph.handle}#${index}`,
-      text: segment.text,
-      ...(segment.editable ? {} : { held: true }),
-    }))
+    if (segments.every((segment) => segment.editable)) {
+      const look = lookOf(paragraph.pieces, paragraph.form, paragraph.align)
+      return [
+        {
+          id: paragraph.handle,
+          text: paragraph.text,
+          ...(look ? { look } : {}),
+        },
+      ]
+    }
+    return segments.map((segment, index) => {
+      const look = lookOf(
+        segment.pieces,
+        index === 0 ? paragraph.form : undefined,
+        paragraph.align
+      )
+      return {
+        id: `${paragraph.handle}#${index}`,
+        text: segment.text,
+        ...(segment.editable ? {} : { held: true }),
+        ...(look ? { look } : {}),
+      }
+    })
   })
 }
 
