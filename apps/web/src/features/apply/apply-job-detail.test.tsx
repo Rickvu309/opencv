@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { appNotifications, findAppMain } from "@/test/app-regions.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import {
@@ -38,14 +39,15 @@ describe("job detail", () => {
   it("sets priority through the command and restores it with Undo", async () => {
     setMockJobs([mockJob({ id, priority: "normal" })])
     renderApp(`/apply/${id}`)
+    const page = await findAppMain()
     fireEvent.click(
-      await screen.findByRole("button", { name: "Priority: Normal" })
+      await page.findByRole("button", { name: "Priority: Normal" })
     )
     fireEvent.click(
       await screen.findByRole("menuitem", { name: "High priority" })
     )
     expect(
-      await screen.findByRole("button", { name: "Priority: High priority" })
+      await page.findByRole("button", { name: "Priority: High priority" })
     ).toBeVisible()
     expect(getMockJobPosts()).toContainEqual(
       expect.objectContaining({
@@ -53,9 +55,11 @@ describe("job detail", () => {
         input: { jobId: id, priority: "high" },
       })
     )
-    fireEvent.click(await screen.findByRole("button", { name: "Undo" }))
+    fireEvent.click(
+      await appNotifications().findByRole("button", { name: "Undo" })
+    )
     expect(
-      await screen.findByRole("button", { name: "Priority: Normal" })
+      await page.findByRole("button", { name: "Priority: Normal" })
     ).toBeVisible()
   })
   it("opens the full saved posting URL through a keyboard-focusable source link", async () => {

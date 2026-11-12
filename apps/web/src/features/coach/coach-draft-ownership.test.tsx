@@ -99,12 +99,16 @@ function mount(compactInitially = false) {
   )
 }
 
+function harnessControl(label: string) {
+  return screen.getByText(label, { selector: "button" })
+}
+
 function main() {
-  return within(screen.getByRole("region", { name: "Main composer" }))
+  return within(screen.getByLabelText("Main composer"))
 }
 
 function compact() {
-  return within(screen.getByRole("region", { name: "Compact composer" }))
+  return within(screen.getByLabelText("Compact composer"))
 }
 
 function typeMain(value: string) {
@@ -149,9 +153,7 @@ describe("Coach draft ownership", () => {
       getMockChats().find((chat) => chat.id === CHAT_A)
     )
     expect(saved?.createdAt).toBe(TEST_NOW.toISOString())
-    fireEvent.click(
-      screen.getByRole("button", { name: "Open saved A in panel" })
-    )
+    fireEvent.click(harnessControl("Open saved A in panel"))
     await compact().findByRole("button", { name: "History, Saved A" })
     await waitFor(() =>
       expect(
@@ -161,8 +163,8 @@ describe("Coach draft ownership", () => {
     expect(
       main().queryByRole("button", { name: "Remove jobs.example.com" })
     ).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Close panel" }))
-    fireEvent.click(screen.getByRole("button", { name: "Select new chat" }))
+    fireEvent.click(harnessControl("Close panel"))
+    fireEvent.click(harnessControl("Select new chat"))
     await waitFor(() =>
       expect(
         main().getByRole("textbox", { name: "Message Coach" })
@@ -185,7 +187,7 @@ describe("Coach draft ownership", () => {
     expect(
       main().getByRole("button", { name: "Remove jobs.example.com" })
     ).toBeVisible()
-    fireEvent.click(screen.getByRole("button", { name: "Select new chat" }))
+    fireEvent.click(harnessControl("Select new chat"))
     expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       ""
     )
@@ -196,11 +198,11 @@ describe("Coach draft ownership", () => {
 
   it("restores independent drafts and links when returning from saved C to saved A", async () => {
     mount()
-    fireEvent.click(screen.getByRole("button", { name: "Select saved A" }))
+    fireEvent.click(harnessControl("Select saved A"))
     await main().findByRole("button", { name: "History, Saved A" })
     typeMain("Draft for A")
     await attachLink()
-    fireEvent.click(screen.getByRole("button", { name: "Select saved C" }))
+    fireEvent.click(harnessControl("Select saved C"))
     await main().findByRole("button", { name: "History, Saved C" })
     expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       ""
@@ -209,7 +211,7 @@ describe("Coach draft ownership", () => {
       main().queryByRole("button", { name: "Remove jobs.example.com" })
     ).not.toBeInTheDocument()
     typeMain("Draft for C")
-    fireEvent.click(screen.getByRole("button", { name: "Select saved A" }))
+    fireEvent.click(harnessControl("Select saved A"))
     await waitFor(() =>
       expect(
         main().getByRole("textbox", { name: "Message Coach" })
@@ -218,7 +220,7 @@ describe("Coach draft ownership", () => {
     expect(
       main().getByRole("button", { name: "Remove jobs.example.com" })
     ).toBeVisible()
-    fireEvent.click(screen.getByRole("button", { name: "Select saved C" }))
+    fireEvent.click(harnessControl("Select saved C"))
     await waitFor(() =>
       expect(
         main().getByRole("textbox", { name: "Message Coach" })
@@ -248,7 +250,7 @@ describe("Coach draft ownership", () => {
       main().queryByRole("button", { name: "Remove jobs.example.com" })
     ).not.toBeInTheDocument()
     expect(getLastCoachRequest()?.context).toBeUndefined()
-    fireEvent.click(screen.getByRole("button", { name: "Select new chat" }))
+    fireEvent.click(harnessControl("Select new chat"))
     expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       "Unsent main draft"
     )
@@ -296,7 +298,7 @@ describe("Coach draft ownership", () => {
     expect(
       main().getByRole("button", { name: "Remove jobs.example.com" })
     ).toBeVisible()
-    fireEvent.click(screen.getByRole("button", { name: "Select new chat" }))
+    fireEvent.click(harnessControl("Select new chat"))
     expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       ""
     )
@@ -347,7 +349,7 @@ describe("Coach draft ownership", () => {
       main().queryByRole("button", { name: "Remove jobs.example.com" })
     ).not.toBeInTheDocument()
     expect(getLastCoachRequest()?.context).toBeUndefined()
-    fireEvent.click(screen.getByRole("button", { name: "Select new chat" }))
+    fireEvent.click(harnessControl("Select new chat"))
     expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       "Keep my main follow-up private"
     )
@@ -392,7 +394,7 @@ describe("Coach draft ownership", () => {
     expect(
       main().getByRole("button", { name: "Remove jobs.example.com" })
     ).toBeVisible()
-    fireEvent.click(screen.getByRole("button", { name: "Select new chat" }))
+    fireEvent.click(harnessControl("Select new chat"))
     expect(main().getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       ""
     )
