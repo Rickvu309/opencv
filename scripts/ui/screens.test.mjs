@@ -102,11 +102,15 @@ test("every design row names a known screen and known properties", () => {
   )
 })
 
-test("every frame row belongs to the composed app shell screen", () => {
+test("every frame row belongs to the app shell or a numbered composed screen", () => {
   const frameRows = DESIGN_MAP.filter((row) => !isSameBox(row))
   assert.ok(frameRows.length > 0)
   for (const row of frameRows)
-    assert.equal(row.composedScreen, APP_SHELL, row.label)
+    assert.ok(
+      row.composedScreen === APP_SHELL ||
+        /^W\d+\.\d+ \S/.test(row.composedScreen),
+      row.label
+    )
 })
 
 test("the Coach card keeps the main content and the writing page where they were with the card closed", () => {

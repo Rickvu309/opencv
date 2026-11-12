@@ -2,25 +2,18 @@ import { dirname, join, relative, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
 import { compareDir, manifestProblems, runCompare } from "./before-after.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
+import { checkScreen } from "./check-screen.mjs"
 import {
-  checkNotes,
-  compareBoxes,
-  compareRow,
-  failed,
-  renderTable,
-  specimenRow,
-} from "./compare.mjs"
-import {
-  DESIGN_MAP,
-  SPECIMEN_WARNING,
-  isSameBox,
-  rowsForScreen,
-} from "./design-map.mjs"
+  screensToCheck,
+  summarize,
+  summaryLine,
+  totalLine,
+} from "./check-all.mjs"
+import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
 import { CHANGES_PER_SCREEN, draftSpec, rankChanges } from "./changes.mjs"
 import { renderComposite } from "./composite.mjs"
 import { diffImages } from "./diff.mjs"
 import {
-  composedPlacement,
   findFrames,
   framePath,
   frameGeometry,
@@ -262,12 +255,16 @@ export const COMMANDS = {
     },
   },
   check: {
-    usage: "check <screen...> [--tolerance 1] [--pen file]",
+    usage: "check <screen...> | --all [--json] [--tolerance 1] [--pen file]",
     about:
-      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. Exit 1 on any mismatch.",
-    options: { valued: ["tolerance", "pen"] },
+      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. --all checks every reachable mapped screen and prints one line per screen and a total; --json prints one JSON result. Exit 1 on any mismatch.",
+    options: { valued: ["tolerance", "pen"], switches: ["all", "json"] },
     run: async (ctx, { positional, flags }) => {
-      const screens = requireScreens(positional)
+      const started = ctx.clock.now()
+      const mapped = screensToCheck(DESIGN_MAP, SCREENS)
+      const screens = flags.all
+        ? [...mapped.reachable, ...mapped.unreachable]
+        : requireScreens(positional)
       const tolerance = Number(flags.tolerance ?? "1")
       if (!Number.isFinite(tolerance) || tolerance < 0)
         throw new UsageError("--tolerance takes a number of pixels")
@@ -284,89 +281,44 @@ export const COMMANDS = {
         )
       const index = loadPen(ctx, flags.pen)
       const state = await requireStack(ctx)
-      const lines = []
-      let code = EXIT.ok
+      const detail = []
+      const results = []
       await withBrowser(ctx, async (browser) => {
         for (const { screen, rows } of plans) {
           if (screen.unreachable) {
-            lines.push(unreachableLine(screen))
-            code = EXIT.failed
+            detail.push(unreachableLine(screen))
+            results.push({ screen: screen.id, error: "unreachable" })
             continue
           }
-          const measureOn = async (target, list) => {
-            const { page, close } = await openScreen(browser, state, target, {
-              width: 1440,
-            })
-            const measured = await measure(
-              page,
-              list.map((row) => ({ name: row.label, selector: row.selector }))
-            )
-            await close()
-            return measured.map((result) => result.items[0] ?? null)
-          }
-          const rendered = await measureOn(screen, rows)
-          const againstIds = [
-            ...new Set(rows.filter(isSameBox).map((row) => row.against)),
-          ]
-          const baseline = new Map()
-          for (const id of againstIds) {
-            const [target] = requireScreens([id])
-            if (target.unreachable)
-              throw new UsageError(
-                `${id} is unreachable: ${target.unreachable}`
-              )
-            const list = rows.filter((row) => row.against === id)
-            const boxes = await measureOn(target, list)
-            list.forEach((row, at) => baseline.set(row, boxes[at]))
-          }
-          const placements = new Map(
-            rows
-              .filter((row) => !isSameBox(row))
-              .map((row) => [row, composedPlacement(index, row)])
-          )
-          const table = rows.flatMap((row, at) => {
-            if (isSameBox(row))
-              return compareBoxes({
-                label: `${row.label} vs ${row.against}`,
-                before: baseline.get(row),
-                after: rendered[at],
-                props: row.props,
-                tolerance,
-              })
-            const placement = placements.get(row)
-            return [
-              ...(placement.inScreen ? [] : [specimenRow(row)]),
-              ...compareRow({
-                label: row.label,
-                design: frameGeometry(index, row.frame),
-                rendered: rendered[at],
-                props: row.props,
-                tolerance,
-              }),
-            ]
-          })
-          const bad = failed(table)
-          if (bad.length) code = EXIT.failed
-          lines.push(
-            `${screen.id} at 1440x900, tolerance ${tolerance}px`,
-            ...renderTable(table),
-            ...checkNotes({
+          try {
+            const outcome = await checkScreen({
+              browser,
+              state,
+              index,
+              screen,
               rows,
-              failedLabels: new Set(bad.map((row) => row.label)),
-              placements,
-              warning: SPECIMEN_WARNING,
+              tolerance,
             })
-          )
-          lines.push(
-            json({
-              screen: screen.id,
-              compared: table.length,
-              failed: bad.length,
-            })
-          )
+            detail.push(...outcome.lines)
+            results.push(outcome.result)
+          } catch (error) {
+            const message = error.message.split("\n")[0]
+            detail.push(json({ screen: screen.id, error: message }))
+            results.push({ screen: screen.id, error: message })
+          }
         }
       })
-      return { code, lines }
+      const total = summarize(
+        results,
+        Math.round((ctx.clock.now() - started) / 1000)
+      )
+      const code = total.ok ? EXIT.ok : EXIT.failed
+      if (flags.json) return { code, lines: [json({ ...total, results })] }
+      if (!flags.all) return { code, lines: detail }
+      return {
+        code,
+        lines: [...results.map(summaryLine), totalLine(total)],
+      }
     },
   },
   compare: {

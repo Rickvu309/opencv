@@ -81,7 +81,7 @@ test("unknown screens, unmapped screens and unknown commands are usage errors", 
     /unknown screen nope/
   )
   assert.match(
-    (await runUi(["check", "settings"], fakePorts())).lines[0],
+    (await runUi(["check", "paper-typed"], fakePorts())).lines[0],
     /add rows to scripts\/ui\/design-map\.mjs/
   )
   assert.equal((await runUi(["paint"], fakePorts())).code, 2)
