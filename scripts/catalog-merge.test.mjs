@@ -7,11 +7,15 @@ import path from "node:path"
 import test from "node:test"
 import { pathToFileURL } from "node:url"
 import { formatOutputs, root } from "./catalog.mjs"
-import { staleOutputs } from "./lib/catalog-freshness.mjs"
+import {
+  detectConflictProneLayout,
+  staleOutputs,
+} from "./lib/catalog-freshness.mjs"
 import { renderCatalog } from "./lib/operation-catalog.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 
 const digestLayoutCommit = "019152ccb3f64690ea533fb98efa5f04b4055f57"
+const lastDigestLayoutCommit = "2a4ea761c6d56a458a784ed298cb6de9309d2019"
 
 const withOperation = (snapshot, name) => {
   const [namespace, action] = name.split(".")
@@ -218,11 +222,30 @@ test("the digest layout from the commit that introduced it conflicts on every sc
   }
 })
 
-test("the committed catalog has one line per operation and no digest", () => {
-  const committed = readFileSync(
-    path.join(root, "packages/domain/src/generated/catalog.ts"),
-    "utf8"
-  )
-  assert.doesNotMatch(committed, /digest/i)
-  assert.doesNotMatch(committed, /operation\d+\b/)
+test("the conflict-prone layout fires on the digest commit and stays quiet on the committed and rendered catalogs", async () => {
+  const file = "packages/domain/src/generated/catalog.ts"
+  const details = (sha) =>
+    new Set(
+      detectConflictProneLayout(
+        execFileSync("git", ["show", `${sha}:${file}`], {
+          cwd: root,
+          encoding: "utf8",
+        }),
+        file
+      ).map((problem) => problem.detail)
+    )
+  assert.equal(details(digestLayoutCommit).size, 1)
+  assert.equal(details(lastDigestLayoutCommit).size, 2)
+  for (const generated of [file, "apps/api/src/registry/generated/catalog.ts"])
+    assert.deepEqual(
+      detectConflictProneLayout(
+        readFileSync(path.join(root, generated), "utf8"),
+        generated
+      ),
+      []
+    )
+  for (const [generated, text] of Object.entries(
+    await render(renderCatalog, withOperation(base, "job.archive"))
+  ))
+    assert.deepEqual(detectConflictProneLayout(text, generated), [])
 })

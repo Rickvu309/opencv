@@ -30,3 +30,24 @@ export function staleOutputs(expected, current) {
       )
   return errors
 }
+
+const conflictProneLines = [
+  [
+    /digest/i,
+    "a whole-catalog digest rewrites this line on every contract edit",
+  ],
+  [
+    /\b(?:operation|implementation)\d+\b/,
+    "index aliases renumber every later line when one operation is added",
+  ],
+]
+
+export function detectConflictProneLayout(text, file = "catalog.ts") {
+  return text
+    .split(/\r?\n/)
+    .flatMap((line, index) =>
+      conflictProneLines
+        .filter(([pattern]) => pattern.test(line))
+        .map(([, detail]) => ({ file, line: index + 1, detail }))
+    )
+}

@@ -1,0 +1,18 @@
+{
+  "id": "catalog-merge-layout",
+  "file": "scripts/catalog-merge.test.mjs",
+  "detector": {
+    "module": "scripts/lib/catalog-freshness.mjs",
+    "export": "detectConflictProneLayout"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "019152ccb3f64690ea533fb98efa5f04b4055f57",
+    "path": "packages/domain/src/generated/catalog.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "packages/domain/src/generated/catalog.ts"
+    }
+  },
+  "reason": "Caught by issue #1380: every pull request that changed a contract source rewrote the one-line catalog digest, so any two such pull requests conflicted in the merge queue (#1352, #1354, #1357, #1358, #1360, #1370, #1373). Introduced by main commit 019152ccb3f64690ea533fb98efa5f04b4055f57 (#1137), which added the digest line and index aliases. The detector fires on a digest line or an index alias in a generated catalog; the merge test replays two contract changes in either order through git merge-file and proves the old renderer from that commit conflicts on every scenario."
+}
