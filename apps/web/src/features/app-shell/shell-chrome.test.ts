@@ -12,22 +12,6 @@ const SHELL_FILES = [
   "sidebar-nav.ts",
 ]
 
-function detectCoachLayout(source: string, styles: string) {
-  const frame = source.slice(
-    source.indexOf("const panelFrame"),
-    source.indexOf("const collapsedRail")
-  )
-  const violations: string[] = []
-  if (
-    /\babsolute\b/.test(frame) &&
-    !/grid-template-columns:[^;]+clamp\(/.test(styles)
-  )
-    violations.push("Coach overlays the desktop page")
-  if (/data-slot=["']dock-recent["']/.test(source))
-    violations.push("Chat titles are in the dock")
-  return violations
-}
-
 describe("shell chrome", () => {
   it("keeps HomeThread and the full store hook out of shell chrome", () => {
     for (const file of SHELL_FILES) {
@@ -36,46 +20,56 @@ describe("shell chrome", () => {
       expect(src, file).not.toMatch(/useChatStore/)
     }
   })
+})
 
-  it("detects the floating panel and title-tab mistakes", () => {
+function coachCardMistakes(source: string, styles: string) {
+  const frame = source.slice(
+    source.indexOf("const panelFrame"),
+    source.indexOf("const collapsedRail")
+  )
+  const dock = source.slice(source.indexOf("function ShellDock"))
+  const mistakes: string[] = []
+  if (!frame.includes("w-[400px]") || !frame.includes("600px"))
+    mistakes.push("desktop Coach is not the 400 by 600 card")
+  if (!frame.includes("right-5") || !frame.includes("bottom-12"))
+    mistakes.push("desktop Coach is not anchored over the page")
+  if (/clamp\(\s*360px/.test(frame) || /clamp\(\s*360px/.test(styles))
+    mistakes.push("desktop Coach uses a split column")
+  if (!dock.includes('data-slot="dock-recent"'))
+    mistakes.push("recent chats are missing from the dock")
+  if (/coachPage\s*\?\s*null/.test(source))
+    mistakes.push("the dock is removed on Coach")
+  return mistakes
+}
+
+describe("coach card geometry", () => {
+  it("rejects a split pane and a dock without chat chips", () => {
     expect(
-      detectCoachLayout(
-        'const panelFrame = <div className="absolute" />; const collapsedRail = false; <div data-slot="dock-recent" />',
-        ""
+      coachCardMistakes(
+        'const panelFrame = <div className="w-[clamp(360px,28vw,400px)]" />; const collapsedRail = false; function ShellDock() { return null } coachPage ? null : null',
+        "grid-template-columns: clamp(360px, 28vw, 400px);"
       )
     ).toEqual([
-      "Coach overlays the desktop page",
-      "Chat titles are in the dock",
+      "desktop Coach is not the 400 by 600 card",
+      "desktop Coach is not anchored over the page",
+      "desktop Coach uses a split column",
+      "recent chats are missing from the dock",
+      "the dock is removed on Coach",
     ])
   })
 
-  it("accepts a split panel with a launcher and history", () => {
+  it("accepts the floating 400 by 600 card and the chat chips", () => {
     expect(
-      detectCoachLayout(
-        'const panelFrame = <div data-slot="shell-coach" />; const collapsedRail = false;',
-        "grid-template-columns: minmax(0, 1fr) clamp(360px, 28vw, 400px);"
+      coachCardMistakes(
+        'const panelFrame = <div className="fixed right-5 bottom-12 h-[min(600px,max(320px,calc(100dvh-56px)))] w-[400px]" />; const collapsedRail = false; function ShellDock() { return <div data-slot="dock-recent" /> }',
+        ""
       )
     ).toEqual([])
   })
 
-  it("only animates the panel when the person allows motion", () => {
-    const styles = readFileSync(path.join(here, "design/dock.pen.css"), "utf8")
-    const [still, moving] = styles.split(
-      "@media (prefers-reduced-motion: no-preference)"
-    )
-    expect(still).not.toMatch(/transition:/)
-    expect(moving).toContain(
-      "grid-template-columns var(--duration-panel) var(--ease-panel)"
-    )
-    expect(moving).toContain(
-      "transform var(--duration-panel) var(--ease-panel)"
-    )
-    expect(moving).toContain('[data-open="false"]')
-  })
-
-  it("keeps Coach beside the page and chat titles out of the dock", () => {
+  it("keeps the shell on the designed card", () => {
     expect(
-      detectCoachLayout(
+      coachCardMistakes(
         readFileSync(path.join(here, "app-shell.tsx"), "utf8"),
         readFileSync(path.join(here, "design/dock.pen.css"), "utf8")
       )

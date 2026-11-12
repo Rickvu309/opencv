@@ -449,10 +449,11 @@ describe("app shell layout", () => {
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
     })
-    expect(screen.getByRole("button", { name: "New chat" })).toHaveFocus()
+    expect(document.activeElement).toHaveAccessibleName("New chat")
+    expect(document.activeElement).not.toHaveAttribute("data-chat-id")
   })
 
-  it("opens a saved chat through history without creating a chat", async () => {
+  it("opens a dock chip without creating a chat", async () => {
     setMockChats([
       {
         id: "chat-1",
@@ -464,10 +465,8 @@ describe("app shell layout", () => {
       },
     ])
     renderApp(SURFACE_PATHS.apply)
-    fireEvent.click(await screen.findByRole("button", { name: "Coach" }))
-    fireEvent.click(await screen.findByRole("button", { name: /^History,/ }))
     fireEvent.click(
-      await screen.findByRole("button", { name: /Checkout notes/ })
+      await screen.findByRole("button", { name: "Checkout notes" })
     )
     expect(
       await screen.findByRole("button", { name: "Close" })
@@ -507,7 +506,7 @@ describe("app shell layout", () => {
     )
   })
 
-  it("opens history on that chat's messages", async () => {
+  it("opens a dock chip on that chat's messages", async () => {
     setMockChats([
       {
         id: "11111111-1111-4111-8111-111111111111",
@@ -519,12 +518,12 @@ describe("app shell layout", () => {
       },
     ])
     renderApp(SURFACE_PATHS.apply)
-    fireEvent.click(await screen.findByRole("button", { name: "Coach" }))
-    fireEvent.click(await screen.findByRole("button", { name: /^History,/ }))
     fireEvent.click(
-      await screen.findByRole("button", { name: /CV vs internship first/ })
+      await screen.findByRole("button", { name: "CV vs internship first" })
     )
-    const panel = document.getElementById("coach-panel")!
+    const panel = await screen.findByRole("region", {
+      name: "CV vs internship first",
+    })
     expect(
       await within(panel).findByText(
         "I don't know if I should chase internships or finish my CV first."
@@ -532,8 +531,36 @@ describe("app shell layout", () => {
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Minimize" }))
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+      expect(
+        screen.getByRole("button", { name: "CV vs internship first" })
+      ).toHaveFocus()
     })
+  })
+
+  it("keeps the dock and a recent chat on the Coach page", async () => {
+    setMockChats([
+      {
+        id: "chat-1",
+        title: "Checkout notes",
+        focusKind: null,
+        focusId: null,
+        createdAt: "2026-02-01T00:00:00.000Z",
+        updatedAt: "2026-02-02T00:00:00.000Z",
+      },
+    ])
+    stubDesktopViewport(true)
+    renderApp(SURFACE_PATHS.coach)
+    await screen.findByRole("navigation", { name: "Main" })
+    const dock = document.querySelector<HTMLElement>('[data-slot="app-dock"]')
+    expect(dock).not.toBeNull()
+    expect(
+      within(dock as HTMLElement).getByRole("button", { name: "Coach" })
+    ).toBeInTheDocument()
+    expect(
+      within(dock as HTMLElement).getByRole("button", {
+        name: "Checkout notes",
+      })
+    ).toBeInTheDocument()
   })
 
   it("hides the sidebar at 390 until Menu, and a link closes the drawer", async () => {

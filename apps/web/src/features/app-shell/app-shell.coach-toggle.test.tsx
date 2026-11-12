@@ -184,7 +184,7 @@ describe("the Coach button in the dock", () => {
     ).toBeInTheDocument()
   })
 
-  it("opens a recent chat through the panel history without closing it", async () => {
+  it("opens a recent chat from its chip, and a chip never closes a different chat", async () => {
     setMockChats([
       {
         id: "11111111-1111-4111-8111-111111111111",
@@ -200,14 +200,11 @@ describe("the Coach button in the dock", () => {
     await openCoach()
     expect(coachButton()).toHaveAttribute("aria-expanded", "true")
 
-    fireEvent.click(await screen.findByRole("button", { name: /^History,/ }))
     fireEvent.click(
-      await screen.findByRole("button", { name: /CV vs internship first/ })
+      await screen.findByRole("button", { name: "CV vs internship first" })
     )
     expect(
-      await screen.findByRole("button", {
-        name: "History, CV vs internship first",
-      })
+      await screen.findByRole("region", { name: "CV vs internship first" })
     ).toBeInTheDocument()
     expect(coachButton()).toHaveAttribute("aria-expanded", "true")
 

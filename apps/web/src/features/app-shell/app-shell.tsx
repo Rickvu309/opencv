@@ -3,7 +3,7 @@ import "./design/dock.pen.css"
 import { useEffect, useReducer, useRef } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
-import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
+import { Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import { History, Menu, MessageCircle } from "lucide-react"
 
@@ -15,6 +15,7 @@ import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
 import { SidebarExpandContext } from "@/lib/sidebar-expand.tsx"
+import { useShellChats } from "@/features/app-shell/use-shell-chats.ts"
 import {
   CoachPanel,
   type CoachPanelMode,
@@ -102,18 +103,14 @@ export function AppShell({ onSearch }: AppShellProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
-  const coachPage = pathname === "/coach" || pathname.startsWith("/coach/")
-  const wide = useMediaQuery("(min-width: 1280px)", true)
-  const sheet = !isDesktop || !wide
+  const sheet = !isDesktop
+  const chats = useShellChats()
   const layout = useSidebarLayout(isDesktop)
   const [{ panel, drawerOpen }, dispatch] = useReducer(
     shellReducer,
     SHELL_START
   )
-  const panelOpen = panel.open && !coachPage
+  const panelOpen = panel.open
   const openPanelRef = useRef<
     (next: { title: string; chatId: string | null }) => void
   >(() => {})
@@ -187,13 +184,6 @@ export function AppShell({ onSearch }: AppShellProps) {
   }
 
   function openPanel(next: { title: string; chatId: string | null }) {
-    if (coachPage) {
-      void navigate({
-        to: "/coach",
-        search: { chat: next.chatId ?? undefined },
-      })
-      return
-    }
     rememberOpener()
     dispatch({ type: "panel_opened", title: next.title, chatId: next.chatId })
   }
@@ -233,17 +223,15 @@ export function AppShell({ onSearch }: AppShellProps) {
     menuRef.current?.focus()
   }
 
+  const floating = isDesktop && panel.mode === "side"
   const panelFrame = (
     <FocusSafeRegion
       id={COACH_PANEL_ID}
       data-slot="shell-coach"
-      data-pen-surface="app-shell"
-      data-open={panelOpen}
-      data-full={panel.mode === "full"}
-      role={sheet ? "dialog" : undefined}
+      role={sheet && panelOpen ? "dialog" : undefined}
       aria-modal={sheet && panelOpen ? true : undefined}
       aria-label={sheet ? "Coach" : undefined}
-      aria-hidden={!panelOpen}
+      hidden={!panelOpen}
       concealed={!panelOpen}
       focusFallback={() =>
         openerRef.current ??
@@ -251,6 +239,14 @@ export function AppShell({ onSearch }: AppShellProps) {
         null
       }
       tabIndex={-1}
+      className={cn(
+        "z-10 min-h-0 bg-transparent outline-none",
+        panelOpen && "flex flex-col",
+        sheet && "fixed inset-x-0 top-0 z-40 h-dvh w-full",
+        floating &&
+          "fixed right-5 bottom-12 z-30 h-[min(600px,max(320px,calc(100dvh-56px)))] w-[400px]",
+        isDesktop && panel.mode === "full" && "absolute inset-0 z-20"
+      )}
       onKeyDown={(event) => {
         if (event.key !== "Tab" || (!sheet && panel.mode !== "full")) return
         const controls = event.currentTarget.querySelectorAll<HTMLElement>(
@@ -361,20 +357,13 @@ export function AppShell({ onSearch }: AppShellProps) {
             "peer-data-[collapse-preview=true]/frame:md:pl-2"
           )}
         >
-          <div
-            data-slot="shell-workspace"
-            data-pen-surface="app-shell"
-            data-coach-open={panelOpen}
-            data-coach-full={panel.mode === "full"}
-            className="relative min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border"
-          >
+          <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border">
             <SidebarExpandContext value={sidebarExpand}>
               <FocusSafeRegion
-                data-slot="workspace-main"
                 concealed={panelOpen && (sheet || panel.mode === "full")}
                 focusFallback={() => document.getElementById(COACH_PANEL_ID)}
                 hidden={panelOpen && panel.mode === "full"}
-                className="min-h-0 min-w-0 overflow-hidden rounded-[inherit]"
+                className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]"
               >
                 <main
                   id="app-main"
@@ -387,17 +376,20 @@ export function AppShell({ onSearch }: AppShellProps) {
             </SidebarExpandContext>
             {panelFrame}
           </div>
-          {coachPage ? null : (
-            <ShellDock
-              dockRef={dockRef}
-              coachOpen={panelOpen}
-              onCoach={toggleCoach}
-              onHistory={() => {
-                closePanel()
-                void navigate({ to: "/coach" })
-              }}
-            />
-          )}
+          <ShellDock
+            dockRef={dockRef}
+            titles={(chats.data ?? []).map((chat) => ({
+              id: chat.id,
+              title: chatDisplayTitle(chat.title),
+            }))}
+            onOpenChat={(chat) => openPanel(chat)}
+            coachOpen={panelOpen}
+            onCoach={toggleCoach}
+            onHistory={() => {
+              closePanel()
+              void navigate({ to: "/coach" })
+            }}
+          />
         </div>
       </div>
       {!isDesktop && drawerOpen ? (
@@ -434,11 +426,15 @@ export function AppShell({ onSearch }: AppShellProps) {
 
 function ShellDock({
   dockRef,
+  titles,
+  onOpenChat,
   coachOpen,
   onCoach,
   onHistory,
 }: {
   dockRef: { current: HTMLDivElement | null }
+  titles: { id: string; title: string }[]
+  onOpenChat: (chat: { title: string; chatId: string }) => void
   coachOpen: boolean
   onCoach: () => void
   onHistory: () => void
@@ -450,6 +446,22 @@ function ShellDock({
       data-pen-surface="app-shell"
       className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
+      <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
+        {titles.map((chat) => (
+          <Button
+            key={chat.id}
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
+            data-chat-id={chat.id}
+            title={chat.title}
+            onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
+          >
+            <span className="truncate">{chat.title}</span>
+          </Button>
+        ))}
+      </div>
       <Button
         type="button"
         variant="ghost"
