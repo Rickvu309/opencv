@@ -1,6 +1,6 @@
-import { useReducer } from "react"
+import { useReducer, type ReactNode } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
-import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 
 import { AppShell } from "@/features/app-shell/app-shell.tsx"
 import { SURFACE_PATHS, type SurfaceId } from "@/lib/product-paths.ts"
@@ -8,23 +8,11 @@ import { ShellOverlays } from "@/features/auth/shell-overlays.tsx"
 import { CommandPalette } from "@/features/command-palette/command-palette.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 
-export function AppShellLayout() {
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
-  if (pathname === "/settings" || pathname.startsWith("/settings/")) {
-    return (
-      <ChatStoreProvider>
-        <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
-          <Outlet />
-        </div>
-      </ChatStoreProvider>
-    )
-  }
+export function AppShellLayout({ sidebar }: { sidebar?: ReactNode }) {
   return (
     <ChatStoreProvider>
       <ShellOverlays>
-        <AppShellChrome />
+        <AppShellChrome sidebar={sidebar} />
       </ShellOverlays>
     </ChatStoreProvider>
   )
@@ -40,7 +28,7 @@ function searchReducer(open: boolean, action: SearchAction) {
   return action.type === "search_requested"
 }
 
-function AppShellChrome() {
+function AppShellChrome({ sidebar }: { sidebar?: ReactNode }) {
   const navigate = useNavigate()
   const [searchOpen, dispatchSearch] = useReducer(searchReducer, false)
 
@@ -57,7 +45,10 @@ function AppShellChrome() {
 
   return (
     <>
-      <AppShell onSearch={() => dispatchSearch({ type: "search_requested" })} />
+      <AppShell
+        sidebar={sidebar}
+        onSearch={() => dispatchSearch({ type: "search_requested" })}
+      />
       <CommandPalette
         open={searchOpen}
         onOpenChange={(open) =>

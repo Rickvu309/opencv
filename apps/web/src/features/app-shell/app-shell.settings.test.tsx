@@ -9,7 +9,10 @@ import {
   TEST_SESSION_USER,
   setMockSession,
 } from "@/test/auth-client-mock.ts"
-import { openAccountMenu } from "@/test/app-shell-fixtures.ts"
+import {
+  openAccountMenu,
+  stubDesktopViewport,
+} from "@/test/app-shell-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {
@@ -109,5 +112,67 @@ describe("settings workspace", () => {
     expect(
       screen.queryByText(/Aspiring product manager/i)
     ).not.toBeInTheDocument()
+  })
+
+  it("sits inside the app frame with the Settings nav in the sidebar slot and the Coach dock", async () => {
+    stubDesktopViewport(true)
+    renderApp(`${SURFACE_PATHS.settings}/integrations`)
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Integrations" })
+    ).toBeInTheDocument()
+
+    const shell = document.querySelector('[data-slot="app-shell"]')!
+    const nav = screen.getByRole("complementary", { name: "Settings" })
+    expect(shell).toContainElement(nav)
+    expect(nav).toHaveAttribute("data-slot", "settings-nav")
+    expect(screen.queryByRole("complementary", { name: "Sidebar" })).toBeNull()
+    const main = document.getElementById("app-main")!
+    expect(main).toContainElement(
+      document.querySelector('[data-slot="settings-layout"]') as HTMLElement
+    )
+    expect(main).not.toContainElement(nav)
+    expect(main.querySelectorAll("main")).toHaveLength(0)
+
+    const coach = screen.getByRole("button", { name: "Coach" })
+    expect(document.querySelector('[data-slot="app-dock"]')).toContainElement(
+      coach
+    )
+    fireEvent.click(coach)
+    expect(
+      await screen.findByRole("textbox", { name: "Message Coach" })
+    ).toBeInTheDocument()
+    expect(coach).toHaveAttribute("aria-expanded", "true")
+    fireEvent.keyDown(document.getElementById("coach-panel")!, {
+      key: "Escape",
+    })
+    await waitFor(() => {
+      expect(coach).toHaveAttribute("aria-expanded", "false")
+    })
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Integrations" })
+    ).toBeInTheDocument()
+  })
+
+  it("goes back to the previous section with browser back", async () => {
+    stubDesktopViewport(true)
+    const { router } = renderApp(SURFACE_PATHS.settings)
+    await screen.findByRole("heading", { level: 1, name: "Preferences" })
+
+    fireEvent.click(screen.getByRole("link", { name: "Account" }))
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Account" })
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(
+      `${SURFACE_PATHS.settings}/account`
+    )
+
+    router.history.back()
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Preferences" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    )
   })
 })

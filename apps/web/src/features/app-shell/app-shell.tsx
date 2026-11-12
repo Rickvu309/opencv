@@ -1,6 +1,6 @@
 import "./design/dock.pen.css"
 
-import { useEffect, useReducer, useRef } from "react"
+import { useEffect, useReducer, useRef, type ReactNode } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { Outlet, useNavigate } from "@tanstack/react-router"
@@ -97,9 +97,10 @@ function shellReducer(state: ShellState, action: ShellAction): ShellState {
 
 type AppShellProps = {
   onSearch: () => void
+  sidebar?: ReactNode
 }
 
-export function AppShell({ onSearch }: AppShellProps) {
+export function AppShell({ onSearch, sidebar }: AppShellProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
@@ -288,7 +289,7 @@ export function AppShell({ onSearch }: AppShellProps) {
     </FocusSafeRegion>
   )
 
-  const collapsedRail = isDesktop && layout.collapsed
+  const collapsedRail = isDesktop && layout.collapsed && !sidebar
   const sidebarExpand = {
     collapsed: collapsedRail,
     expand: layout.expand,
@@ -348,7 +349,9 @@ export function AppShell({ onSearch }: AppShellProps) {
         </div>
       )}
       <div className="flex min-h-0 min-w-0 flex-1">
-        {isDesktop ? <SidebarFrame layout={layout}>{nav}</SidebarFrame> : null}
+        {isDesktop
+          ? (sidebar ?? <SidebarFrame layout={layout}>{nav}</SidebarFrame>)
+          : null}
         <div
           data-slot="shell-main"
           className={cn(
