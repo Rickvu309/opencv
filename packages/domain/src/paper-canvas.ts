@@ -17,10 +17,18 @@ export const PAPER_CANVAS_PROFILE = "paper-canvas-1"
 const encodedBytes = (value: string) =>
   new TextEncoder().encode(value).byteLength
 
+function holdsControlCode(value: string) {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index)
+    if (code < 32 || code === 127) return true
+  }
+  return false
+}
+
 const startingLineSchema = z
   .string()
-  .regex(
-    /^[^\u0000-\u001f\u007f]*$/,
+  .refine(
+    (value) => !holdsControlCode(value),
     "A line must not hold control characters."
   )
   .refine(

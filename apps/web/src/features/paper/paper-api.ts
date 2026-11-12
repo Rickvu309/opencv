@@ -187,11 +187,11 @@ export async function streamPaperTurn(input: {
   queryClient: QueryClient
   chatId: string
   text: string
-  focusDocId: string
+  focusDocId?: string
   context?: { kind: "paper" | "job" | "link" | "file"; id: string }[]
   signal?: AbortSignal
   onText: (delta: string) => void
-  onToolResult: (tool: ChatToolName) => void
+  onToolResult?: (tool: ChatToolName) => void
 }): Promise<void> {
   try {
     await streamChatTurn({
@@ -199,13 +199,13 @@ export async function streamPaperTurn(input: {
       chatId: input.chatId,
       body: {
         text: input.text,
-        focusDocId: input.focusDocId,
+        ...(input.focusDocId ? { focusDocId: input.focusDocId } : {}),
         ...(input.context ? { context: input.context } : {}),
       },
       signal: input.signal,
       onEvent(event) {
         if (event.type === "text-delta") input.onText(event.text)
-        if (event.type === "tool-result") input.onToolResult(event.name)
+        if (event.type === "tool-result") input.onToolResult?.(event.name)
         if (event.type === "error") {
           throw new ApiError(502, "REQUEST_FAILED", event.message)
         }
