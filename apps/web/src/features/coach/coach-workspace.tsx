@@ -27,6 +27,7 @@ import {
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
+import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
 import { chatColumn } from "@/components/ai-elements/chat.tsx"
 import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
@@ -271,6 +272,7 @@ export function CoachWorkspace({
   )
   const composer = (
     <div
+      ref={showWelcome ? undefined : keepToastsClearOf}
       data-slot="coach-workspace-composer"
       className={cn(
         "space-y-2",

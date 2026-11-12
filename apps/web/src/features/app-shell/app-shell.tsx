@@ -1,7 +1,14 @@
 import "./design/dock.pen.css"
 
-import { useEffect, useReducer, useRef, type ReactNode } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useRef,
+  type ReactNode,
+} from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
+import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
@@ -225,6 +232,14 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   }
 
   const floating = isDesktop && panel.mode === "side"
+
+  useLayoutEffect(() => keepToastsClearOf(dockRef.current), [])
+
+  useLayoutEffect(() => {
+    if (!floating || !panelOpen) return
+    return keepToastsClearOf(document.getElementById(COACH_PANEL_ID))
+  }, [floating, panelOpen])
+
   const panelFrame = (
     <FocusSafeRegion
       id={COACH_PANEL_ID}

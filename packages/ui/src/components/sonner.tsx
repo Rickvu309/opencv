@@ -1,18 +1,18 @@
 import type { ComponentProps } from "react"
 import { Toaster as Sonner, toast } from "sonner"
 import { cn } from "cn"
+import { toastOffsetBottom } from "@workspace/ui/lib/toast-offset"
 
-const clearOfCoachPanelOnPhones = {
-  top: "calc(64px + env(safe-area-inset-top, 0px))",
-}
+const clearOfBottomChrome = { bottom: toastOffsetBottom(24) }
+const clearOfBottomChromeOnPhones = { bottom: toastOffsetBottom(16) }
 
 function Toaster({ className, ...props }: ComponentProps<typeof Sonner>) {
   return (
     <Sonner
       data-slot="toaster"
       className={cn("toaster group", className)}
-      position="top-center"
-      mobileOffset={clearOfCoachPanelOnPhones}
+      offset={clearOfBottomChrome}
+      mobileOffset={clearOfBottomChromeOnPhones}
       toastOptions={{
         classNames: {
           toast:
