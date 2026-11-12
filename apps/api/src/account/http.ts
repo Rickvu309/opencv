@@ -95,8 +95,12 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
 
   const exportGate = createExportGate()
   routes.get("/export", (c) =>
-    gatedExport(exportGate, c.var.userId, () =>
-      exportAccountArchive(c.var.userId)
+    gatedExport(
+      exportGate,
+      c.var.userId,
+      () => exportAccountArchive(c.var.userId),
+      undefined,
+      c.req.raw.signal
     )
   )
 

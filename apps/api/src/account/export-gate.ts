@@ -97,23 +97,33 @@ export async function gatedExport(
   gate: ExportGate,
   owner: string,
   build: () => Promise<ExportArchive>,
-  timeLimitMs = EXPORT_TIME_LIMIT_MS
+  timeLimitMs = EXPORT_TIME_LIMIT_MS,
+  clientGone?: AbortSignal
 ): Promise<Response> {
   const claim = gate.claim(owner)
   if (claim.kind === "account-busy") return refusal(429, EXPORT_ACCOUNT_BUSY)
   if (claim.kind === "service-busy") return refusal(503, EXPORT_SERVICE_BUSY)
+  const release = claim.release
   let expired = false
   let stopStream = () => {}
   const timer = setTimeout(() => {
     expired = true
     stopStream()
-    claim.release()
+    release()
   }, timeLimitMs)
   timer.unref?.()
-  const finish = () => {
+  let building = true
+  function finish() {
     clearTimeout(timer)
-    claim.release()
+    clientGone?.removeEventListener("abort", stopForGoneClient)
+    release()
   }
+  function stopForGoneClient() {
+    if (building) return
+    stopStream()
+    finish()
+  }
+  clientGone?.addEventListener("abort", stopForGoneClient, { once: true })
   let archive: ExportArchive
   try {
     archive = await build()
@@ -121,10 +131,19 @@ export async function gatedExport(
     finish()
     throw error
   }
+  building = false
   if (expired) {
     archive.chunks.length = 0
     finish()
     return refusal(503, EXPORT_TIMED_OUT)
+  }
+  if (clientGone?.aborted) {
+    archive.chunks.length = 0
+    finish()
+    return new Response(null, {
+      status: 499,
+      headers: { "cache-control": "no-store" },
+    })
   }
   const body = archiveStream(archive, finish, (stop) => {
     stopStream = stop

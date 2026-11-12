@@ -135,4 +135,65 @@ describe("export gate", () => {
     expect(Buffer.from(await second.arrayBuffer()).toString()).toBe("PKbodyend")
     expect(gate.running()).toBe(0)
   })
+
+  it("frees the slot once the build ends when the person left while it was building", async () => {
+    const gate = createExportGate()
+    const slow = deferred()
+    const gone = new AbortController()
+    const pending = gatedExport(
+      gate,
+      "ada",
+      () => slow.promise,
+      60_000,
+      gone.signal
+    )
+    gone.abort()
+    expect(gate.running()).toBe(1)
+    const built = archive()
+    slow.resolve(built)
+    const res = await pending
+    expect(res.status).toBe(499)
+    expect(built.chunks).toHaveLength(0)
+    expect(gate.running()).toBe(0)
+    const next = await gatedExport(gate, "ada", async () => archive())
+    expect(next.status).toBe(200)
+  })
+
+  it("frees the slot when the person leaves before reading a built export", async () => {
+    const gate = createExportGate()
+    const gone = new AbortController()
+    const built = archive()
+    const res = await gatedExport(
+      gate,
+      "ada",
+      async () => built,
+      60_000,
+      gone.signal
+    )
+    expect(gate.running()).toBe(1)
+    gone.abort()
+    expect(gate.running()).toBe(0)
+    expect(built.chunks).toHaveLength(0)
+    await expect(res.arrayBuffer()).rejects.toThrow()
+  })
+
+  it("does not free a newer export of the same person when an old request reports it left", async () => {
+    const gate = createExportGate()
+    const gone = new AbortController()
+    const first = await gatedExport(
+      gate,
+      "ada",
+      async () => archive(),
+      60_000,
+      gone.signal
+    )
+    await first.arrayBuffer()
+    const slow = deferred()
+    const second = gatedExport(gate, "ada", () => slow.promise)
+    gone.abort()
+    expect(gate.running()).toBe(1)
+    slow.resolve(archive())
+    await (await second).arrayBuffer()
+    expect(gate.running()).toBe(0)
+  })
 })
