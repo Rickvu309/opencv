@@ -3,6 +3,14 @@ import type { CoachContextItem } from "@workspace/domain"
 export type Attachment = CoachContextItem & { label: string }
 export type Picker = "paper" | "job" | "link" | null
 
+export type SentBubble = {
+  text: string
+  seen: number
+  chatId: string | null
+  revision: number
+  attachments: Attachment[]
+}
+
 type ChatDraft = {
   draft: string
   attachments: Attachment[]
@@ -21,11 +29,13 @@ export type WorkspaceState = {
   draftNavigationRevision: number
   drafts: ReadonlyMap<string | null, ChatDraft>
   addMenuOpened: boolean
+  sent: SentBubble | null
 }
 
 export type WorkspaceAction =
   | { type: "draft_typed"; value: string }
-  | { type: "draft_sent" }
+  | { type: "draft_sent"; sent: SentBubble }
+  | { type: "sent_cleared" }
   | { type: "more_ideas_toggled" }
   | { type: "history_opened" }
   | { type: "history_open_changed"; open: boolean }
@@ -64,6 +74,7 @@ export function initialWorkspaceState(
     draftNavigationRevision: navigationRevision,
     drafts: new Map(),
     addMenuOpened: false,
+    sent: null,
   }
 }
 
@@ -88,7 +99,9 @@ export function workspaceReducer(
     case "draft_typed":
       return { ...state, draft: action.value }
     case "draft_sent":
-      return { ...state, draft: "" }
+      return { ...state, draft: "", sent: action.sent }
+    case "sent_cleared":
+      return state.sent === null ? state : { ...state, sent: null }
     case "more_ideas_toggled":
       return { ...state, moreIdeas: !state.moreIdeas }
     case "history_opened":
@@ -129,6 +142,12 @@ export function workspaceReducer(
       const next = createdHere
         ? current
         : (drafts.get(action.chatId) ?? { draft: "", attachments: [] })
+      const sent =
+        createdHere &&
+        state.sent?.chatId === null &&
+        state.sent.revision === action.navigationRevision
+          ? { ...state.sent, chatId: action.chatId }
+          : null
       return {
         ...state,
         ...next,
@@ -139,7 +158,26 @@ export function workspaceReducer(
         picker: null,
         link: "",
         linkError: "",
+        sent,
       }
     }
   }
+}
+
+export function pendingSentLine(
+  sent: SentBubble | null,
+  turn: {
+    chatId: string | null
+    navigationRevision: number
+    messages: readonly { role: string; text: string }[]
+    phase: "idle" | "waiting" | "streaming"
+  }
+): SentBubble | null {
+  if (!sent || turn.phase === "idle") return null
+  if (sent.chatId !== turn.chatId || sent.revision !== turn.navigationRevision)
+    return null
+  const stored = turn.messages.filter(
+    (message) => message.role === "user" && message.text === sent.text
+  ).length
+  return stored > sent.seen ? null : sent
 }

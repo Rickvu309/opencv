@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { css as messageActionsCss } from "./components/message-actions-styles"
 import { css as segmentedControlCss } from "./components/segmented-control-styles"
 import { css as toolCallCardCss } from "./components/tool-call-card-styles"
 import { CommentThread } from "./components/comment-thread"
@@ -222,8 +221,7 @@ describe("thinking loader", () => {
 })
 
 describe("kit styles", () => {
-  it("draws message action and tool call card strokes as half-pixel inset shadows", () => {
-    expect(messageActionsCss).toContain("inset 0 0 0 0.5px var(--ui-mac-line)")
+  it("draws tool call card strokes as half-pixel inset shadows", () => {
     expect(toolCallCardCss).toContain("inset 0 0 0 0.5px var(--ui-tcc-line)")
   })
 

@@ -1,13 +1,24 @@
-import { Chat, ChatLog } from "@/components/ai-elements/chat.tsx"
+import { cn } from "@workspace/ui/lib/utils"
+
+import { Chat, ChatLog, chatColumn } from "@/components/ai-elements/chat.tsx"
 import {
   CoachTurns,
   type CoachTurnsProps,
 } from "@/features/coach/coach-turns.tsx"
 
-export function ChatView(props: CoachTurnsProps) {
+export function ChatView({
+  presentation = "page",
+  ...props
+}: CoachTurnsProps & { presentation?: "page" | "compact" }) {
   return (
     <Chat>
-      <ChatLog className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+      <ChatLog
+        className={cn(
+          chatColumn,
+          presentation === "compact" ? "gap-3.5 py-2" : "gap-5 pt-6"
+        )}
+        viewportClassName="[scrollbar-gutter:auto]!"
+      >
         <CoachTurns {...props} />
       </ChatLog>
     </Chat>

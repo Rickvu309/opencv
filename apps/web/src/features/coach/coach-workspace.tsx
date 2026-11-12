@@ -27,6 +27,8 @@ import {
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
+import { chatColumn } from "@/components/ai-elements/chat.tsx"
+import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
@@ -37,9 +39,10 @@ import { CoachPageHeader } from "./coach-page-header.tsx"
 import { useChatStore } from "./use-chat-store.ts"
 import {
   initialWorkspaceState,
+  pendingSentLine,
   workspaceReducer,
+  type Attachment,
 } from "./coach-workspace.reducer.ts"
-import type { Attachment } from "./coach-workspace.reducer.ts"
 
 export function CoachWorkspace({
   chatId = null,
@@ -78,6 +81,7 @@ export function CoachWorkspace({
       draftChatId,
       draftNavigationRevision,
       addMenuOpened,
+      sent,
     },
     dispatch,
   ] = useReducer(workspaceReducer, undefined, () =>
@@ -100,6 +104,20 @@ export function CoachWorkspace({
     enabled: picker === "job",
   })
   const active = phase !== "idle"
+  const chatSynced =
+    draftChatId === activeChatId &&
+    draftNavigationRevision === navigationRevision
+  const sentBubble = chatSynced
+    ? pendingSentLine(sent, {
+        chatId: activeChatId,
+        navigationRevision,
+        messages,
+        phase,
+      })
+    : null
+  if (chatSynced && sent && !sentBubble) {
+    dispatch({ type: "sent_cleared" })
+  }
   const day = usage.data?.day
   const capped = day?.capped === true && day.remaining === 0
   const enabled = profile.data?.agentChat !== false
@@ -141,21 +159,34 @@ export function CoachWorkspace({
 
   function send(text = draft) {
     if (!enabled || capped || active) return
-    if (
-      store.send(
-        text,
-        {
-          context: attachments.map(({ kind, id }) => ({ kind, id })),
-          attachments: attachments.map(({ kind, id, label }) => ({
-            kind,
-            id,
-            label,
-          })),
-        },
-        composerId
-      )
+    const trimmed = text.trim()
+    const sentAttachments = attachments.map(({ kind, id, label }) => ({
+      kind,
+      id,
+      label,
+    }))
+    const seen = messages.filter(
+      (message) => message.role === "user" && message.text === trimmed
+    ).length
+    const started = store.send(
+      text,
+      {
+        context: sentAttachments.map(({ kind, id }) => ({ kind, id })),
+        attachments: sentAttachments,
+      },
+      composerId
     )
-      dispatch({ type: "draft_sent" })
+    if (!started) return
+    dispatch({
+      type: "draft_sent",
+      sent: {
+        text: trimmed,
+        seen,
+        chatId: activeChatId,
+        revision: navigationRevision,
+        attachments: sentAttachments,
+      },
+    })
   }
 
   function attach(item: Attachment) {
@@ -243,8 +274,9 @@ export function CoachWorkspace({
       data-slot="coach-workspace-composer"
       className={cn(
         "space-y-2",
-        !showWelcome && "mx-auto w-full max-w-2xl shrink-0",
-        !showWelcome && (compact ? "px-2 pb-2" : "px-3 pt-2 pb-3")
+        !showWelcome && "shrink-0",
+        !showWelcome && !compact && chatColumn,
+        !showWelcome && compact && "w-full min-w-0 px-2 pb-2"
       )}
     >
       {attachments.length ? (
@@ -305,7 +337,11 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
-      {coachDock}
+      <PromptInputFrame
+        value={!showWelcome && !compact && !capped ? "page" : "standard"}
+      >
+        {coachDock}
+      </PromptInputFrame>
     </div>
   )
   const headerTitle = showHome
@@ -372,7 +408,21 @@ export function CoachWorkspace({
           </CoachHome>
         ) : (
           <ChatView
+            presentation={presentation}
             messages={messages}
+            pendingUser={
+              sentBubble
+                ? {
+                    id: "pending-user",
+                    role: "user",
+                    text: sentBubble.text,
+                    ...(sentBubble.attachments.length
+                      ? { attachments: sentBubble.attachments }
+                      : {}),
+                  }
+                : null
+            }
+            seenUserCount={sentBubble?.seen ?? 0}
             waiting={phase === "waiting"}
             progress={progress}
             error={store.configuration === "error" ? null : error}
