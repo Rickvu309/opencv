@@ -40,6 +40,10 @@ import {
   requireSession,
 } from "./middleware.js"
 import { authMailConfigured } from "./mail/auth-code.js"
+import {
+  oauthClientLimit,
+  type OAuthClientLimits,
+} from "./oauth-client-limit.js"
 import { isAllowedOrigin } from "./origin.js"
 import { createPaperRoutes } from "./paper/index.js"
 import { createReadRoutes } from "./registry/read.js"
@@ -71,6 +75,8 @@ export type AppConfig = {
   fetchJobPosting?: FetchJobPosting
   commitSha?: string
   healthDbTimeoutMs?: number
+  oauthClientLimits?: OAuthClientLimits
+  oauthClientClock?: () => Date
 }
 
 export function createApp({
@@ -97,6 +103,8 @@ export function createApp({
   fetchJobPosting,
   commitSha,
   healthDbTimeoutMs = 2000,
+  oauthClientLimits,
+  oauthClientClock,
 }: AppConfig) {
   const registry = installRegistry({
     ...(fetchJobPosting ? { fetch: fetchJobPosting } : {}),
@@ -205,6 +213,15 @@ export function createApp({
           : undefined,
         limitSends:
           rateLimitEnabled !== false && sendCodeLimitEnabled !== false,
+      })
+    )
+  if (auth && database)
+    app.use(
+      "/api/auth/oauth2/*",
+      oauthClientLimit({
+        db: database,
+        now: oauthClientClock,
+        limits: oauthClientLimits,
       })
     )
   app.all("/api/auth/*", (c) =>
