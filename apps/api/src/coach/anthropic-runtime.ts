@@ -100,15 +100,6 @@ function advertisedInputSchema(name: string, input: z.ZodType) {
     `Invalid tool schema: ${name}`
   )
   if (schema.type !== "object") throw new Error(`Invalid tool schema: ${name}`)
-  if (name === "paper.create") {
-    const properties = {
-      ...jsonRecord(schema.properties ?? {}, `Invalid tool schema: ${name}`),
-    }
-    delete properties.document
-    schema.properties = properties
-    if (Array.isArray(schema.required))
-      schema.required = schema.required.filter((item) => item !== "document")
-  }
   if (schema.$defs && typeof schema.$defs === "object") {
     const kept = defsStillUsed(schema, schema.$defs as JsonRecord)
     if (Object.keys(kept).length) schema.$defs = kept

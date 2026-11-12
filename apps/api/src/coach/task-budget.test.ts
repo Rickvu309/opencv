@@ -300,10 +300,16 @@ it("saves the step after a tool when the model reports a large prompt", () =>
         input_schema: { properties?: Record<string, unknown> }
       }[]
     }
-    const create = first.tools.find((tool) => tool.name === "paper_create")
+    const start = first.tools.find((tool) => tool.name === "paper_start")
     const edit = first.tools.find((tool) => tool.name === "paper_edit")
-    expect(create?.input_schema.properties).not.toHaveProperty("document")
-    expect(JSON.stringify(create?.input_schema).length).toBeLessThan(1000)
+    expect(first.tools.some((tool) => tool.name === "paper_create")).toBe(false)
+    expect(Object.keys(start?.input_schema.properties ?? {}).sort()).toEqual([
+      "jobId",
+      "kind",
+      "name",
+      "templateId",
+    ])
+    expect(JSON.stringify(start?.input_schema).length).toBeLessThan(1000)
     expect(edit?.description).toContain("setText")
     expect(first.tools.some((tool) => tool.name === "job_list")).toBe(true)
     expect(first.tools.some((tool) => tool.name === "profile_get")).toBe(true)

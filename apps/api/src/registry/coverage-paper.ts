@@ -490,6 +490,24 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
+      name: "paper.start",
+      arrange: async () => {},
+      act: () => run("paper.start", { kind: "cv" }),
+      assert: async (result) => {
+        expect(text(result.output, "generation")).toBe("package")
+        expect(text(result.output, "name")).toBe("Simple CV.docx")
+        expect(result.reversal).toBeNull()
+        const docId = text(result.output, "docId")
+        if (!docId) throw new Error("missing started page")
+        const outline = await registry.read(
+          "paper.outline",
+          { docId },
+          personActor(userId)
+        )
+        expect(text(outline, "outline")).toContain("[Your name]")
+      },
+    },
+    {
       name: "paper.canvas",
       arrange: async () => {},
       act: async () => {

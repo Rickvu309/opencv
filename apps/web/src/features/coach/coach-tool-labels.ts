@@ -127,6 +127,7 @@ const TOOL_COPY = {
     label: "Read the shared Paper",
     read: "Read the shared Paper",
   },
+  "paper.start": { label: "Start a new Paper" },
   "paper.sync": { label: "Save your Paper" },
   "paper.unshare": { label: "Stop sharing your Paper" },
   "profile.get": { label: "Read your Profile", read: "Read your Profile" },

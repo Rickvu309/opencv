@@ -8,6 +8,7 @@ import { coachUsage } from "../db/schema.js"
 import type { Registry } from "../registry/registry.js"
 import { streamAnthropicSteps } from "./anthropic-runtime.js"
 import { createScriptedWorkerRuntime, fakePaperEdit } from "./fake.js"
+import { paperStartAsk, paperStartRuntime } from "./fake-paper-start.js"
 import { modelMessageSchema, type WorkerRuntime } from "./model-step.js"
 import { COACH_STABLE_PROMPT } from "./prompt.js"
 import { routeCoachModel } from "./router.js"
@@ -82,24 +83,28 @@ function demoTaskRuntime(task: Task): WorkerRuntime {
             },
           ]
         : [{ id: "call_list", name: "job.list" as const, input: {} }]
-  const runtime = createScriptedWorkerRuntime([
-    {
-      text: "I looked at the context. ",
-      intents,
-      inputTokens: 20,
-      outputTokens: 10,
-    },
-    {
-      text: focus
-        ? "I made one edit."
-        : jobId
-          ? "I updated the Job priority."
-          : "Prep the starred Job next.",
-      intents: [],
-      inputTokens: 10,
-      outputTokens: 10,
-    },
-  ])
+  const startKind =
+    task.toolsAllowed && !focus ? paperStartAsk(context.messages) : null
+  const runtime = startKind
+    ? paperStartRuntime(startKind, jobId)
+    : createScriptedWorkerRuntime([
+        {
+          text: "I looked at the context. ",
+          intents,
+          inputTokens: 20,
+          outputTokens: 10,
+        },
+        {
+          text: focus
+            ? "I made one edit."
+            : jobId
+              ? "I updated the Job priority."
+              : "Prep the starred Job next.",
+          intents: [],
+          inputTokens: 10,
+          outputTokens: 10,
+        },
+      ])
   return async function* (input) {
     await new Promise<void>((resolve, reject) => {
       const abort = () => {

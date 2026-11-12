@@ -74,7 +74,7 @@ async function incarnationOf(owner: string, docId: string) {
   return head.incarnation
 }
 
-async function resultOf(
+export async function resultOf(
   owner: string,
   docId: string,
   revision: string,

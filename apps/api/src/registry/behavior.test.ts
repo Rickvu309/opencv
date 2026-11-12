@@ -53,7 +53,6 @@ const coachToolNames = [
   "link.get",
   "notify.request",
   "paper.attachPhoto",
-  "paper.create",
   "paper.delete",
   "paper.duplicate",
   "paper.edit",
@@ -65,6 +64,7 @@ const coachToolNames = [
   "paper.pageCount",
   "paper.rename",
   "paper.setTemplate",
+  "paper.start",
   "profile.get",
   "workspace.search",
 ]

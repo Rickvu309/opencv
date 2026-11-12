@@ -102,6 +102,7 @@ describe("what a delegate can reach", () => {
         "actions.deny",
         "activity.undo",
         "paper.canvas",
+        "paper.start",
       ])
     )
     for (const entry of closed)
@@ -114,6 +115,16 @@ describe("what a delegate can reach", () => {
             ),
             `${entry.name} with ${JSON.stringify(marker)}`
           ).toBe(false)
+  })
+
+  it("keeps paper.start closed to agents: only the Coach and the person start a page", async () => {
+    const everything = grants["Jobs and Paper, every scope"].actor
+    expect(reachable).not.toContain("paper.start")
+    const start = every.find((entry) => entry.name === "paper.start")
+    expect(start).toBeDefined()
+    expect(
+      (await registry.tools(everything)).map((tool) => tool.name)
+    ).not.toContain("paper.start")
   })
 
   it("refuses a delegate marker someone adds to Undo", () => {

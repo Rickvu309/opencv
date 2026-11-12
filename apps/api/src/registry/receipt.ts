@@ -71,6 +71,7 @@ export function receiptDetail(
   }
   if (
     command === "paper.create" ||
+    command === "paper.start" ||
     command === "paper.import" ||
     command === "paper.duplicate"
   ) {
@@ -82,7 +83,9 @@ export function receiptDetail(
         : "draft"
     return {
       type: "paper.create",
-      ...(text(row.id) ? { docId: text(row.id) } : {}),
+      ...(text(row.id) || text(row.docId)
+        ? { docId: text(row.id) || text(row.docId) }
+        : {}),
       docKind: kind,
       name: text(row.name) || "Document",
       status,
