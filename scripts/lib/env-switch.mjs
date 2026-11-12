@@ -20,10 +20,7 @@ export const CONFIGURATION = new Set([
   "PHOTO_MODEL_RUNS",
 ])
 
-export const SWITCHES_BEING_DELETED = new Set([
-  "PAPER_AGENT_TOOLS",
-  "COACH_DURABLE",
-])
+export const SWITCHES_BEING_DELETED = new Set(["COACH_DURABLE"])
 
 const CONFIGURATION_SUFFIX =
   /_(URL|URLS|ORIGIN|ORIGINS|HOST|PORT|SECRET|KEY|TOKEN|PASSWORD|LIMIT|MAX|TIMEOUT|DIR|PATH|MODEL|PROVIDER|DRIVER|REGION|BUCKET)$/
@@ -75,8 +72,7 @@ function destructuredNames(node, source) {
   }))
 }
 
-export function detect(text, file = "apps/api/src/index.ts") {
-  if (!isProductFile(file)) return []
+export function envReads(text, file) {
   const kind = file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   const source = ts.createSourceFile(
     file,
@@ -85,23 +81,34 @@ export function detect(text, file = "apps/api/src/index.ts") {
     true,
     kind
   )
-  const problems = []
-  const report = (node, name) => {
-    if (isConfiguration(name)) return
-    problems.push({
-      kind: "unlisted-env-switch",
+  const reads = []
+  const add = (node, name) =>
+    reads.push({
       name,
       line:
         source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1,
     })
-  }
   const visit = (node) => {
     const name = readName(node, source)
-    if (name !== null) report(node, name)
+    if (name !== null) add(node, name)
     for (const found of destructuredNames(node, source))
-      report(found.node, found.name)
+      add(found.node, found.name)
     ts.forEachChild(node, visit)
   }
   visit(source)
-  return problems
+  return reads
+}
+
+export function detect(text, file = "apps/api/src/index.ts") {
+  if (!isProductFile(file)) return []
+  return envReads(text, file)
+    .filter(({ name }) => !isConfiguration(name))
+    .map(({ name, line }) => ({ kind: "unlisted-env-switch", name, line }))
+}
+
+export function staleDeletions(readNames, deleting = SWITCHES_BEING_DELETED) {
+  const read = new Set(readNames)
+  return [...deleting]
+    .filter((name) => !read.has(name))
+    .map((name) => ({ kind: "deleted-switch-still-allowed", name }))
 }
