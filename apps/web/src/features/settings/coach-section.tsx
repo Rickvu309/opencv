@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
 import type { Profile, ProfileUpdateInput } from "@workspace/domain"
-import { Button } from "@workspace/ui/components/button"
-import { UsageBar } from "@workspace/ui/components/usage-bar"
+import { CalendarCheck, FileText, Mail, MessageCircle, Mic } from "lucide-react"
+import { Switch } from "@workspace/ui/components/switch"
 
 import {
   SettingsCard,
   SettingsRow,
-  SettingsSection,
-  SettingsSkeletons,
+  SettingsTile,
   SettingsTitle,
+  SettingsUsageLink,
   StateWord,
 } from "./settings-layout.tsx"
 import {
@@ -21,26 +21,31 @@ import { fetchUsage, usageKey } from "@/lib/account-api.ts"
 const AGENTS = [
   {
     key: "agentChat",
+    icon: MessageCircle,
     label: "Coach chat",
     desc: "Set your background and how Coach replies",
   },
   {
     key: "agentCvs",
+    icon: FileText,
     label: "Tailored CVs",
     desc: "Tailor your CV to each job in Apply",
   },
   {
     key: "agentInterview",
+    icon: Mic,
     label: "Interview prep",
     desc: "Practice questions from each job post",
   },
   {
     key: "agentEmail",
+    icon: Mail,
     label: "Email updates",
     desc: "Move jobs when a recruiter replies in Gmail",
   },
   {
     key: "agentWeekly",
+    icon: CalendarCheck,
     label: "Weekly plan",
     desc: "Every Monday, the jobs to apply for next",
   },
@@ -63,59 +68,59 @@ export function CoachSection({
       <SettingsTitle title="Coach">
         Your career coach across Paper and Apply.
       </SettingsTitle>
-      <SettingsSection label="Usage">
-        {usage.isPending ? (
-          <SettingsSkeletons />
-        ) : (
-          <SettingsCard>
-            <SettingsRow
-              label={
-                week && week.capped
-                  ? weekUsageLabel(week.percent)
-                  : NO_WEEKLY_CAP
-              }
-              control={
-                week && week.capped ? (
-                  <UsageBar
-                    className="w-28"
-                    value={week.percent / 100}
-                    label={weekUsageLabel(week.percent)}
-                  />
-                ) : null
-              }
-            />
-          </SettingsCard>
-        )}
-      </SettingsSection>
-      <SettingsCard>
+      <SettingsUsageLink
+        desc={
+          usage.isPending
+            ? "Loading usage"
+            : usage.isError
+              ? "See your Coach limits"
+              : week && week.capped
+                ? weekUsageLabel(week.percent)
+                : NO_WEEKLY_CAP
+        }
+      />
+      <SettingsCard name="memory" className="mt-3">
         <SettingsRow
+          id="memory"
+          inset="wide"
           label="Enable memory"
           desc="Coach remembers past chats. Never used to train models."
           error={errorKey === "memoryEnabled" ? error : undefined}
           control={
-            <Button
-              className="h-11 md:h-8"
-              type="button"
-              variant="ghost"
-              role="switch"
-              aria-checked={profile.memoryEnabled}
+            <Switch
+              data-slot="settings-switch"
+              className="data-[size=default]:h-[18px]"
               aria-label={`Enable memory, ${profile.memoryEnabled ? "Enabled" : "Disabled"}`}
+              checked={profile.memoryEnabled}
               disabled={pending}
-              onClick={() => onSave({ memoryEnabled: !profile.memoryEnabled })}
-            >
-              <StateWord on={profile.memoryEnabled} />
-            </Button>
+              onCheckedChange={(memoryEnabled) => onSave({ memoryEnabled })}
+            />
           }
         />
       </SettingsCard>
-      <SettingsSection label="Coach agent">
-        <p className="text-sm text-muted-foreground">
-          Works for you inside Paper and Apply.
-        </p>
-        <SettingsCard>
+      <section
+        data-slot="settings-agent-group"
+        aria-labelledby="settings-coach-agent"
+        className="mt-11 flex flex-col gap-4"
+      >
+        <div className="flex flex-col gap-1">
+          <h2
+            id="settings-coach-agent"
+            data-slot="settings-group-title"
+            className="text-[15px] font-medium"
+          >
+            Coach agent
+          </h2>
+          <p className="text-[13px] text-muted-foreground">
+            Works for you inside Paper and Apply.
+          </p>
+        </div>
+        <SettingsCard name="capabilities">
           {AGENTS.map((agent) => (
             <SettingsRow
               key={agent.key}
+              id={agent.key}
+              inset="wide"
               label={agent.label}
               desc={agent.desc}
               disabled={pending}
@@ -125,11 +130,12 @@ export function CoachSection({
                   [agent.key]: !profile[agent.key],
                 } as ProfileUpdateInput)
               }
-              control={<StateWord on={profile[agent.key]} />}
+              leading={<SettingsTile icon={agent.icon} />}
+              control={<StateWord on={profile[agent.key]} chevron />}
             />
           ))}
         </SettingsCard>
-      </SettingsSection>
+      </section>
     </>
   )
 }

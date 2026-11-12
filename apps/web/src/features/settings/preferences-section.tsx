@@ -12,6 +12,7 @@ import {
   SettingsCard,
   SettingsRow,
   SettingsSection,
+  SettingsTile,
   SettingsTitle,
   StateWord,
 } from "./settings-layout.tsx"
@@ -51,16 +52,18 @@ export function PreferencesSection({
   return (
     <>
       <SettingsTitle title="Preferences" />
-      <SettingsSection label="Interface">
-        <SettingsCard>
+      <SettingsSection id="interface" label="Interface">
+        <SettingsCard name="interface">
           <SettingsRow
+            id="language"
             label="Language"
-            desc="Words in menus and buttons"
+            desc="Menus and buttons stay in English for now"
             error={errorKey === "language" ? error : undefined}
             control={
               <SegmentedControl
                 aria-label="Language"
                 size="sm"
+                className="pointer-fine:[--ui-segc-h:30px]! pointer-fine:[--ui-segc-px:10px]!"
                 disabled={pending}
                 value={profile.language}
                 onChange={(language) => onSave({ language })}
@@ -72,6 +75,7 @@ export function PreferencesSection({
             }
           />
           <SettingsRow
+            id="time-zone"
             label="Time zone"
             desc="Used for interviews and deadlines"
             error={errorKey === "timeZone" ? error : undefined}
@@ -85,7 +89,7 @@ export function PreferencesSection({
                 <SelectTrigger
                   aria-label="Time zone"
                   disabled={pending}
-                  className="touch-manipulation data-[size=default]:max-md:h-11"
+                  className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px]"
                 >
                   <SelectValue>{zoneLabel}</SelectValue>
                 </SelectTrigger>
@@ -100,6 +104,7 @@ export function PreferencesSection({
             }
           />
           <SettingsRow
+            id="start-page"
             label="Start page"
             desc="What opens when you sign in"
             error={errorKey === "startPage" ? error : undefined}
@@ -114,7 +119,7 @@ export function PreferencesSection({
                 <SelectTrigger
                   aria-label="Start page"
                   disabled={pending}
-                  className="touch-manipulation data-[size=default]:max-md:h-11"
+                  className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px]"
                 >
                   <SelectValue>{startLabel}</SelectValue>
                 </SelectTrigger>
@@ -130,33 +135,27 @@ export function PreferencesSection({
           />
         </SettingsCard>
       </SettingsSection>
-      <SettingsSection label="Notifications">
-        <SettingsCard>
+      <SettingsSection id="notifications" label="Notifications">
+        <SettingsCard name="notifications">
           <SettingsRow
+            id="notify-email"
             label="Email"
             desc={profile.email}
             onClick={() => onSave({ notifyEmail: !profile.notifyEmail })}
             disabled={pending}
             error={errorKey === "notifyEmail" ? error : undefined}
-            control={
-              <span className="flex items-center gap-2">
-                <Mail className="size-4 text-muted-foreground" aria-hidden />
-                <StateWord on={profile.notifyEmail} />
-              </span>
-            }
+            leading={<SettingsTile icon={Mail} />}
+            control={<StateWord on={profile.notifyEmail} chevron />}
           />
           <SettingsRow
+            id="notify-browser"
             label="Browser"
             desc="While opencv is open"
             onClick={() => onSave({ notifyBrowser: !profile.notifyBrowser })}
             disabled={pending}
             error={errorKey === "notifyBrowser" ? error : undefined}
-            control={
-              <span className="flex items-center gap-2">
-                <Monitor className="size-4 text-muted-foreground" aria-hidden />
-                <StateWord on={profile.notifyBrowser} />
-              </span>
-            }
+            leading={<SettingsTile icon={Monitor} />}
+            control={<StateWord on={profile.notifyBrowser} chevron />}
           />
         </SettingsCard>
       </SettingsSection>

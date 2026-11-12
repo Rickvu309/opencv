@@ -3,10 +3,10 @@ import {
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
+import { APP_SHELL, MAIN_PANEL, PADDING } from "./design-map-shared.mjs"
+import { SETTINGS_ROWS } from "./design-map-settings.mjs"
 
-const PADDING = ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"]
-
-export const APP_SHELL = "OC App shell"
+export { APP_SHELL }
 const SHELL_CHAT_PANEL = "G8L8J"
 const SHELL_SIDEBAR = "jsloS"
 const SIDEBAR_NAV_INBOX = "n4ZOA1"
@@ -16,9 +16,7 @@ const PAPER_LIBRARY = "W5.2 Paper library"
 const DELETE_CONFIRM = "W5.5 Delete confirm"
 const CV_EDITING = "W6.4 Editing"
 const APPLY_BOARD = "W9.3 Board"
-const PREFERENCES = "W12.1 Preferences"
 const SIGN_IN = "W1.1 Continue"
-const MAIN_PANEL = '[data-slot="shell-main"] main'
 const PAPER_SECTION = 'main section[aria-label="Paper"]'
 const PAPER_HEADER = '[data-slot="paper-library-header"]'
 const PAPER_SHEET = '[data-slot="paper-library-sheet"]'
@@ -502,78 +500,7 @@ export const DESIGN_MAP = [
   ...["paper-blank", "paper-typed", "paper-letter-blank"].flatMap(
     writingPageRows
   ),
-  {
-    screen: "settings",
-    label: "Settings nav",
-    selector: '[data-slot="app-shell"] [data-slot="settings-nav"]',
-    composedScreen: PREFERENCES,
-    frame: "b6mQao",
-    props: ["width", ...PADDING, "gap"],
-  },
-  {
-    screen: "settings",
-    label: "Settings nav item",
-    selector: '[data-slot="settings-nav"] [data-slot="nav-item"]',
-    composedScreen: PREFERENCES,
-    frame: "rGQ1P",
-    props: ["height", "radius", "paddingLeft", "paddingRight", "gap"],
-  },
-  {
-    screen: "settings",
-    label: "Settings content column",
-    selector: '[data-slot="settings-column"]',
-    composedScreen: PREFERENCES,
-    frame: "MbGQO",
-    props: ["width"],
-  },
-  {
-    screen: "settings",
-    label: "Settings body inside the main panel",
-    selector: `${MAIN_PANEL} [data-slot="settings-body"]`,
-    composedScreen: PREFERENCES,
-    frame: "xlDIq",
-    props: PADDING,
-  },
-  {
-    screen: "settings",
-    label: "Settings main panel",
-    selector: MAIN_PANEL,
-    composedScreen: APP_SHELL,
-    frame: "GIhbq",
-    props: ["radius"],
-  },
-  {
-    screen: "settings",
-    label: "Settings dock bar",
-    selector: '[data-slot="app-dock"]',
-    composedScreen: APP_SHELL,
-    frame: "IYQY3",
-    props: ["height", "gap"],
-  },
-  {
-    screen: "settings",
-    label: "Settings dock Coach button",
-    selector: "[data-dock-coach]",
-    composedScreen: APP_SHELL,
-    frame: "gsnSu",
-    props: ["height", "radius", ...PADDING, "gap"],
-  },
-  {
-    screen: "settings",
-    label: "Settings title type",
-    selector: '[data-slot="settings-title"] h1',
-    composedScreen: PREFERENCES,
-    frame: "E08nY",
-    props: ["fontSize"],
-  },
-  {
-    screen: "settings",
-    label: "Settings card",
-    selector: '[data-slot="settings-card"]',
-    composedScreen: PREFERENCES,
-    frame: "DUGTx",
-    props: ["radius"],
-  },
+  ...SETTINGS_ROWS,
   {
     screen: "sign-in",
     label: "Sign-in email box",

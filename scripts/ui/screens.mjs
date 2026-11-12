@@ -183,6 +183,21 @@ export const SCREENS = [
     route: "/settings",
     steps: [{ waitFor: { selector: '[data-slot="settings-card"]' } }],
   },
+  ...[
+    ["settings-coach", "/settings/coach", '[data-slot="settings-card"]'],
+    [
+      "settings-integrations",
+      "/settings/integrations",
+      '[data-slot="integration-card"]',
+    ],
+    ["settings-usage", "/settings/usage", '[data-slot="settings-card"]'],
+    ["settings-billing", "/settings/billing", '[data-slot="settings-card"]'],
+    ["settings-account", "/settings/account", '[data-slot="settings-card"]'],
+  ].map(([id, route, selector]) => ({
+    id,
+    route,
+    steps: [{ waitFor: { selector } }],
+  })),
   {
     id: "settings-panel-open",
     route: "/settings",

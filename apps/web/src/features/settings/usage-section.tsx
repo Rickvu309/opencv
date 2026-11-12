@@ -5,7 +5,6 @@ import { UsageBar } from "@workspace/ui/components/usage-bar"
 import {
   SettingsCard,
   SettingsLoadError,
-  SettingsRow,
   SettingsSection,
   SettingsSkeletons,
   SettingsTitle,
@@ -49,8 +48,8 @@ export function UsageSection({
   return (
     <>
       <SettingsTitle title="Usage & limits">{planLine}</SettingsTitle>
-      <SettingsSection label="Coach usage">
-        <SettingsCard>
+      <SettingsSection id="coach-usage" label="Coach usage" spacing="grid">
+        <SettingsCard name="coach-usage">
           <UsageReadout
             label="Current session"
             kind="session"
@@ -81,30 +80,48 @@ function UsageReadout({
   timeZone: string
 }) {
   const uncapped = kind === "week" ? NO_WEEKLY_CAP : NO_SESSION_CAP
+  const desc = usageWindow.capped
+    ? kind === "session"
+      ? sessionResetLabel(usageWindow.resetsAt)
+      : weekResetLabel(usageWindow.resetsAt, timeZone)
+    : undefined
   return (
-    <SettingsRow
-      label={label}
-      desc={
-        usageWindow.capped
-          ? kind === "session"
-            ? sessionResetLabel(usageWindow.resetsAt)
-            : weekResetLabel(usageWindow.resetsAt, timeZone)
-          : undefined
-      }
-      control={
-        usageWindow.capped ? (
-          <span className="flex flex-col items-end gap-1">
-            <span>{percentLabel(usageWindow.percent)}</span>
-            <UsageBar
-              className="w-28"
-              value={usageWindow.percent / 100}
-              label={percentLabel(usageWindow.percent)}
-            />
+    <div
+      data-slot="settings-row"
+      data-row={kind}
+      className="flex flex-wrap items-center gap-4 px-5 py-4"
+    >
+      <span
+        data-slot="settings-usage-text"
+        className="flex min-w-0 flex-col gap-0.5 md:w-45"
+      >
+        <span
+          data-slot="settings-row-label"
+          className="text-[13px] font-medium"
+        >
+          {label}
+        </span>
+        {desc ? (
+          <span className="text-[12.5px] text-muted-foreground">{desc}</span>
+        ) : null}
+      </span>
+      {usageWindow.capped ? (
+        <>
+          <UsageBar
+            className="min-w-24 flex-1"
+            value={usageWindow.percent / 100}
+            label={percentLabel(usageWindow.percent)}
+          />
+          <span
+            data-slot="settings-usage-percent"
+            className="w-16 shrink-0 text-[13px] text-muted-foreground"
+          >
+            {percentLabel(usageWindow.percent)}
           </span>
-        ) : (
-          <span>{uncapped}</span>
-        )
-      }
-    />
+        </>
+      ) : (
+        <span className="text-[13px] text-muted-foreground">{uncapped}</span>
+      )}
+    </div>
   )
 }
