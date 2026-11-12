@@ -20,6 +20,8 @@ const PREFERENCES = "W12.1 Preferences"
 const SIGN_IN = "W1.1 Continue"
 const MAIN_PANEL = '[data-slot="shell-main"] main'
 const PAPER_SECTION = 'main section[aria-label="Paper"]'
+const PAPER_HEADER = '[data-slot="paper-library-header"]'
+const PAPER_SHEET = '[data-slot="paper-library-sheet"]'
 const APPROVAL_CARD = '[aria-label="Review Coach action"]'
 const COACH_COLUMN = '[data-slot="chat"] [data-slot="message-scroller-content"]'
 
@@ -191,7 +193,7 @@ export const DESIGN_MAP = [
   {
     screen: "paper-home",
     label: "Paper page header",
-    selector: `${PAPER_SECTION} > div:nth-of-type(1)`,
+    selector: PAPER_HEADER,
     composedScreen: PAPER_LIBRARY,
     frame: "nV0FO",
     props: ["height", "paddingLeft", "paddingRight", "gap"],
@@ -207,10 +209,34 @@ export const DESIGN_MAP = [
   {
     screen: "paper-home",
     label: "Paper search",
-    selector: 'main input[aria-label="Search Paper"]',
+    selector: `${PAPER_HEADER} input[aria-label="Search Paper"]`,
     composedScreen: PAPER_LIBRARY,
     frame: "LYZTY",
     props: ["width", "height", "radius"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper search placeholder type",
+    selector: `${PAPER_HEADER} input[aria-label="Search Paper"]`,
+    composedScreen: PAPER_LIBRARY,
+    frame: "VjlBC",
+    props: ["fontSize"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper search icon",
+    selector: `${PAPER_HEADER} [data-slot="paper-library-search-icon"]`,
+    composedScreen: PAPER_LIBRARY,
+    frame: "BzQxH",
+    props: ["width", "height"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper title without a count",
+    selector: `${PAPER_HEADER} h1:not(:has(+ span))`,
+    composedScreen: PAPER_LIBRARY,
+    frame: "Imv3q",
+    props: ["fontSize"],
   },
   {
     screen: "paper-home",
@@ -223,10 +249,91 @@ export const DESIGN_MAP = [
   {
     screen: "paper-home",
     label: "Paper card row",
-    selector: `${PAPER_SECTION} > div:nth-of-type(3)`,
+    selector: '[data-slot="paper-library-row"]',
     composedScreen: PAPER_LIBRARY,
     frame: "t3Jvb",
     props: ["gap"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper body without a type filter row",
+    selector: `${PAPER_SECTION}:not(:has([aria-label="Document type"]))`,
+    composedScreen: PAPER_LIBRARY,
+    frame: "P5JGNu",
+    props: [...PADDING, "gap"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper section",
+    selector: '[data-slot="paper-library-section"]',
+    composedScreen: PAPER_LIBRARY,
+    frame: "i60Hhc",
+    props: ["gap"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper section head",
+    selector: '[data-slot="paper-library-section-head"]',
+    composedScreen: PAPER_LIBRARY,
+    frame: "EQB3L",
+    props: ["height", "paddingLeft", "gap"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper section head type",
+    selector: '[data-slot="paper-library-section-head"]',
+    composedScreen: PAPER_LIBRARY,
+    frame: "Q54AG",
+    props: ["fontSize"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper section head icon",
+    selector: '[data-slot="paper-library-section-icon"]',
+    composedScreen: PAPER_LIBRARY,
+    frame: "lMGcv",
+    props: ["width", "height"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper card",
+    selector: '[data-slot="paper-library-card"] > button',
+    composedScreen: PAPER_LIBRARY,
+    frame: "C2VWl",
+    props: ["width", "gap"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper card page",
+    selector: PAPER_SHEET,
+    composedScreen: PAPER_LIBRARY,
+    frame: "xYauz",
+    props: ["width", "height", "radius", ...PADDING],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper card label below its page",
+    selector: '[data-slot="paper-library-label"]',
+    from: PAPER_SHEET,
+    composedScreen: PAPER_LIBRARY,
+    frame: "Lqh0Y",
+    props: ["left", "below"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper New CV tile",
+    selector: 'section[aria-label="CVs"] [data-slot="paper-library-new-cv"]',
+    composedScreen: PAPER_LIBRARY,
+    frame: "RzZKt",
+    props: ["width", "height", "radius"],
+  },
+  {
+    screen: "paper-home",
+    label: "Paper Import tile in Files",
+    selector: 'section[aria-label="Files"] [data-slot="paper-library-import"]',
+    composedScreen: PAPER_LIBRARY,
+    frame: "Hrpf0",
+    props: ["width", "height", "radius", "gap"],
   },
   {
     screen: "apply-board",

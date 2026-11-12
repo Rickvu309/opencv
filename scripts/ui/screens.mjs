@@ -112,6 +112,11 @@ export const SCREENS = [
     ],
   },
   {
+    id: "paper-home-empty",
+    route: "/paper",
+    steps: [{ waitFor: { text: "Start a document" } }],
+  },
+  {
     id: "paper-blank",
     route: "/paper",
     steps: OPEN_BLANK_CV,

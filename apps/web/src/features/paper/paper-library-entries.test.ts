@@ -106,6 +106,25 @@ describe("Paper home sections", () => {
     expect(all).toHaveLength(docs.length + 2 + 1)
   })
 
+  it("draws a Word CV made from a template once, though both lists return it", () => {
+    const fromTemplate = paper(TEMPLATE_PAGE, "Template Word CV", "cv")
+    const sameInWordList = word(TEMPLATE_PAGE, "Template Word CV", "cv")
+    const entries = libraryEntries({
+      docs: [fromTemplate],
+      files: [],
+      words: [sameInWordList],
+    })
+    const ids = entries.map((entry) =>
+      entry.type === "paper"
+        ? entry.doc.id
+        : entry.type === "word"
+          ? entry.word.docId
+          : entry.file.id
+    )
+    expect(ids).toEqual([TEMPLATE_PAGE])
+    expect(librarySections(entries, "").cv).toHaveLength(1)
+  })
+
   it("keeps a Word page's text preview on its one card", () => {
     const entries = libraryEntries({ docs, files: [], words })
     const blank = entries.find(
