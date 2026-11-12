@@ -179,16 +179,16 @@ describe("apply board", () => {
     ).toBeInTheDocument()
   })
 
-  it("keeps one glow while the new job dialog is open", async () => {
+  it("keeps one solid primary while the new job dialog is open", async () => {
     renderApp("/apply")
     const add = await screen.findByRole("button", { name: "Add job" })
-    expect(add).toHaveAttribute("data-variant", "glow")
+    expect(add).toHaveAttribute("data-variant", "primary")
     fireEvent.click(add)
     const dialog = await screen.findByRole("dialog", { name: "New job" })
     expect(add).toHaveAttribute("data-variant", "ghost")
     expect(
       within(dialog).getByRole("button", { name: "Add job" })
-    ).toHaveAttribute("data-variant", "glow")
+    ).toHaveAttribute("data-variant", "primary")
   })
 
   it("persists a keyboard move on drop", async () => {

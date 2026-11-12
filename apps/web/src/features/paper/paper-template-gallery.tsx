@@ -129,9 +129,10 @@ export function PaperTemplateGallery({
           </Button>
         ) : null}
         <Button
-          className="h-11 md:h-8"
+          className="h-11 md:h-7"
           type="button"
-          variant="glow"
+          size="sm"
+          variant="primary"
           onClick={() => onUse(current.id)}
           disabled={pending}
         >

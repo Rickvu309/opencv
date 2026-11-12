@@ -100,16 +100,18 @@ export function DeleteAccountDialog({
         </Field>
         <div className="flex justify-end gap-2">
           <Button
-            className="h-11 md:h-8"
+            className="h-11 md:h-7"
             type="button"
-            variant="outline"
+            size="sm"
+            variant="ghost"
             onClick={() => close(false)}
           >
             Cancel
           </Button>
           <Button
-            className="h-11 md:h-8"
+            className="h-11 md:h-7"
             type="button"
+            size="sm"
             variant="destructive"
             disabled={!ready || pending}
             onClick={() => void onDelete()}

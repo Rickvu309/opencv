@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { Fragment, type ReactNode } from "react"
 import { MoreHorizontal, type LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -6,10 +6,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
-export type PaperCardAction = { label: string; onSelect: () => void }
+export type PaperCardAction = {
+  label: string
+  icon: LucideIcon
+  onSelect: () => void
+  destructive?: boolean
+}
 
 const SHEET =
   "relative flex aspect-[150/212] w-full flex-col overflow-hidden rounded-[3px] bg-card px-[13px] py-[14px] text-left shadow-sm ring-1 ring-foreground/5 md:h-[212px] md:w-[150px]"
@@ -102,11 +108,20 @@ export function PaperLibraryCard({
             }
           />
           <DropdownMenuContent align="end">
-            {actions.map((action) => (
-              <DropdownMenuItem key={action.label} onClick={action.onSelect}>
-                {action.label}
-              </DropdownMenuItem>
-            ))}
+            {actions.map(
+              ({ label, icon: Icon, onSelect, destructive }, index) => (
+                <Fragment key={label}>
+                  {destructive && index > 0 ? <DropdownMenuSeparator /> : null}
+                  <DropdownMenuItem
+                    variant={destructive ? "destructive" : "default"}
+                    onClick={onSelect}
+                  >
+                    <Icon aria-hidden="true" />
+                    {label}
+                  </DropdownMenuItem>
+                </Fragment>
+              )
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}

@@ -1,5 +1,16 @@
 import { useReducer, type ReactNode } from "react"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Download,
+  FileText,
+  Link2,
+  Pencil,
+  SquareArrowOutUpRight,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react"
 import type { PaperFile, PaperView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -76,18 +87,32 @@ function paperActions(
 ): PaperCardAction[] {
   const each = (
     label: string,
+    icon: LucideIcon,
     handler: ((doc: PaperView) => void) | undefined
-  ) => (handler ? [{ label, onSelect: () => handler(doc) }] : [])
+  ) => (handler ? [{ label, icon, onSelect: () => handler(doc) }] : [])
   return [
-    { label: "Open", onSelect: () => on.onOpen(doc.id) },
-    ...each("Rename", on.onRename),
-    ...each("Duplicate", on.onDuplicate),
-    ...each("Link to application", on.onLink),
-    ...(hasPrintBody(doc) ? each("Download PDF", on.onDownload) : []),
+    {
+      label: "Open",
+      icon: SquareArrowOutUpRight,
+      onSelect: () => on.onOpen(doc.id),
+    },
+    ...each("Rename", Pencil, on.onRename),
+    ...each("Duplicate", Copy, on.onDuplicate),
+    ...each("Link to application", Link2, on.onLink),
+    ...(hasPrintBody(doc) ? each("Download PDF", Download, on.onDownload) : []),
     ...(word
-      ? [{ label: "Preview text", onSelect: () => on.onPreview(word) }]
+      ? [
+          {
+            label: "Preview text",
+            icon: FileText,
+            onSelect: () => on.onPreview(word),
+          },
+        ]
       : []),
-    ...each("Delete", on.onDelete),
+    ...each("Delete", Trash2, on.onDelete).map((action) => ({
+      ...action,
+      destructive: true,
+    })),
   ]
 }
 
@@ -120,8 +145,16 @@ export function LibraryEntryCard({
         openLabel={`Open ${word.name}`}
         onOpen={() => on.onOpen(word.docId)}
         actions={[
-          { label: "Open", onSelect: () => on.onOpen(word.docId) },
-          { label: "Preview text", onSelect: () => on.onPreview(word) },
+          {
+            label: "Open",
+            icon: SquareArrowOutUpRight,
+            onSelect: () => on.onOpen(word.docId),
+          },
+          {
+            label: "Preview text",
+            icon: FileText,
+            onSelect: () => on.onPreview(word),
+          },
         ]}
       />
     )
@@ -135,7 +168,14 @@ export function LibraryEntryCard({
       badge={fileBadge(file)}
       actions={
         onDeleteFile
-          ? [{ label: "Delete", onSelect: () => onDeleteFile(file) }]
+          ? [
+              {
+                label: "Delete",
+                icon: Trash2,
+                onSelect: () => onDeleteFile(file),
+                destructive: true,
+              },
+            ]
           : []
       }
     />
