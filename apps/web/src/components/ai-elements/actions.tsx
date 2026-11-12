@@ -10,7 +10,7 @@ import {
 } from "@workspace/ui/components/tooltip"
 
 const hit =
-  "size-4 box-content p-2.5 -m-2.5 text-muted-foreground hover:text-foreground min-h-9 min-w-9 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11 motion-reduce:animate-none motion-reduce:transition-none"
+  "relative size-4 rounded-sm border-0 p-0 text-muted-foreground hover:bg-transparent hover:text-foreground before:absolute before:top-1/2 before:left-1/2 before:size-9 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] [@media(pointer:coarse)]:before:size-11 motion-reduce:animate-none motion-reduce:transition-none"
 
 type CopyState = { copied: boolean; notice: string }
 type CopyAction =

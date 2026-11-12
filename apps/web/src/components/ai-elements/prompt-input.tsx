@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react"
+import { use, type ComponentProps, type ReactNode } from "react"
 
 import {
   InputGroup,
@@ -6,6 +6,20 @@ import {
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { PromptInputFrame } from "./prompt-input-frame.ts"
+
+const frameClasses = {
+  standard: {
+    textarea: "max-h-48 min-h-14 px-4 py-3.5 text-base md:text-base",
+    toolbar: "justify-between gap-2 px-3 pb-3",
+  },
+  page: {
+    textarea:
+      "max-h-48 min-h-14 px-4 py-3.5 text-base md:min-h-[55px] md:pt-[15px] md:pb-0 md:text-base",
+    toolbar: "justify-between gap-2 px-3 pb-3 md:pt-3.5 md:pb-[11px]",
+  },
+}
 
 type PromptInputProps = Omit<ComponentProps<"div">, "onSubmit" | "children"> & {
   value: string
@@ -32,6 +46,7 @@ export function PromptInput({
   className,
   ...props
 }: PromptInputProps) {
+  const frame = frameClasses[use(PromptInputFrame)]
   return (
     <InputGroup
       data-slot="prompt-input"
@@ -54,12 +69,9 @@ export function PromptInput({
           event.preventDefault()
           if (!submitBlocked && !disabled) onSubmit()
         }}
-        className="max-h-48 min-h-14 px-4 py-3.5 text-base md:text-base"
+        className={frame.textarea}
       />
-      <InputGroupAddon
-        align="block-end"
-        className="justify-between gap-2 px-3 pb-3"
-      >
+      <InputGroupAddon align="block-end" className={frame.toolbar}>
         <div className="flex min-w-0 items-center gap-1">{tools}</div>
         <div className="flex shrink-0 items-center gap-1">{actions}</div>
       </InputGroupAddon>

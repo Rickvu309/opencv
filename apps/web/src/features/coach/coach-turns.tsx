@@ -181,7 +181,7 @@ export function CoachTurns({
               />
               {streaming ? null : messageCite?.(message)}
               {replyActionsVisible(message, streaming) ? (
-                <MessageFooter>
+                <MessageFooter className="px-0">
                   <CoachMessageActions
                     message={message}
                     canRegenerate={

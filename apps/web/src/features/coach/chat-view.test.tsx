@@ -223,14 +223,49 @@ describe("ChatView reply actions", () => {
       screen.queryByRole("button", { name: /read aloud|speak|voice/i })
     ).not.toBeInTheDocument()
     const copy = screen.getByRole("button", { name: "Copy" })
+    expect(copy.className).toMatch(/focus-visible:ring/)
+    expect(copy.className).toMatch(/\bsize-4\b/)
+    expect(copy.className).toMatch(/before:size-9/)
+    expect(copy.className).toMatch(/pointer:coarse\)\]:before:size-11/)
+    expect(copy.className).toMatch(/motion-reduce:transition-none/)
+  })
+
+  it("keeps Copy and Regenerate shown at rest, on hover and on keyboard focus, and never hides them from assistive tech", () => {
+    render(
+      createElement(ChatView, {
+        messages: [coachTurn([{ type: "text", text: "Moved it." }])],
+        onRegenerate: () => {},
+      })
+    )
+    const actions = screen.getByRole("group", { name: "Reply actions" })
+    const copy = within(actions).getByRole("button", { name: "Copy" })
+    const regenerate = within(actions).getByRole("button", {
+      name: "Regenerate",
+    })
+    const hiding = /(?<![\w:-])(opacity-0|invisible|sr-only|hidden)(?![\w-])/
+    for (
+      let node: HTMLElement | null = actions;
+      node && node !== document.body;
+      node = node.parentElement
+    ) {
+      expect(node).not.toHaveAttribute("aria-hidden", "true")
+      expect(node).not.toHaveAttribute("inert")
+      expect(node.className).not.toMatch(hiding)
+    }
+    for (const button of [copy, regenerate]) {
+      expect(button.className).not.toMatch(hiding)
+      expect(button).toBeVisible()
+    }
+    fireEvent.mouseEnter(actions)
+    expect(copy).toBeVisible()
+    fireEvent.mouseLeave(actions)
+    expect(copy).toBeVisible()
     copy.focus()
     expect(copy).toHaveFocus()
-    expect(copy.className).toMatch(/focus-visible:ring/)
-    expect(copy.className).toMatch(/min-h-9/)
-    expect(copy.className).toMatch(/min-w-9/)
-    expect(copy.className).toMatch(/pointer:coarse/)
-    expect(copy.className).toMatch(/min-h-11/)
-    expect(copy.className).toMatch(/motion-reduce:transition-none/)
+    expect(copy).toBeVisible()
+    regenerate.focus()
+    expect(regenerate).toHaveFocus()
+    expect(regenerate).toBeVisible()
   })
 
   it("hides Copy and Regenerate on an empty or failed reply and offers Retry on the alert", () => {
@@ -285,7 +320,28 @@ describe("ChatView pending message", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Working$/)
     const log = screen.getByRole("log", { name: "Chat" })
     expect(log.className).toContain("max-w-[720px]")
+    expect(log.className).toContain("gap-5")
+    expect(log.className).toContain("pt-6")
+  })
+
+  it("keeps the compact log on the panel gap", () => {
+    render(
+      createElement(ChatView, {
+        presentation: "compact",
+        messages: [],
+        waiting: true,
+        pendingUser: {
+          id: "pending-user",
+          role: "user",
+          text: "Tighten my summary",
+        },
+        seenUserCount: 0,
+      })
+    )
+    const log = screen.getByRole("log", { name: "Chat" })
     expect(log.className).toContain("gap-3.5")
+    expect(log.className).not.toContain("gap-5")
+    expect(log.className).not.toContain("pt-6")
   })
 
   it("does not paint the pending message twice once the store has it", () => {

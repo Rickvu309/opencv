@@ -27,7 +27,8 @@ import {
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
-import { coachThreadColumn } from "@/components/ai-elements/chat.tsx"
+import { chatColumn } from "@/components/ai-elements/chat.tsx"
+import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
@@ -38,26 +39,10 @@ import { CoachPageHeader } from "./coach-page-header.tsx"
 import { useChatStore } from "./use-chat-store.ts"
 import {
   initialWorkspaceState,
+  pendingSentLine,
   workspaceReducer,
+  type Attachment,
 } from "./coach-workspace.reducer.ts"
-import { type Attachment, type SentBubble } from "./coach-workspace.reducer.ts"
-
-function visibleSent(
-  sent: SentBubble | null,
-  activeChatId: string | null,
-  active: boolean,
-  messages: readonly { role: string; text: string }[]
-) {
-  if (!sent) return null
-  const switched =
-    sent.chatId !== activeChatId && !(sent.chatId === null && active)
-  if (switched) return null
-  const count = messages.filter(
-    (message) => message.role === "user" && message.text === sent.text
-  ).length
-  if (count > sent.seen) return null
-  return sent
-}
 
 export function CoachWorkspace({
   chatId = null,
@@ -119,7 +104,20 @@ export function CoachWorkspace({
     enabled: picker === "job",
   })
   const active = phase !== "idle"
-  const sentBubble = visibleSent(sent, activeChatId, active, messages)
+  const chatSynced =
+    draftChatId === activeChatId &&
+    draftNavigationRevision === navigationRevision
+  const sentBubble = chatSynced
+    ? pendingSentLine(sent, {
+        chatId: activeChatId,
+        navigationRevision,
+        messages,
+        phase,
+      })
+    : null
+  if (chatSynced && sent && !sentBubble) {
+    dispatch({ type: "sent_cleared" })
+  }
   const day = usage.data?.day
   const capped = day?.capped === true && day.remaining === 0
   const enabled = profile.data?.agentChat !== false
@@ -170,26 +168,25 @@ export function CoachWorkspace({
     const seen = messages.filter(
       (message) => message.role === "user" && message.text === trimmed
     ).length
-    if (
-      store.send(
-        text,
-        {
-          context: sentAttachments.map(({ kind, id }) => ({ kind, id })),
-          attachments: sentAttachments,
-        },
-        composerId
-      )
-    ) {
-      dispatch({
-        type: "draft_sent",
-        sent: {
-          text: trimmed,
-          seen,
-          chatId: activeChatId,
-          attachments: sentAttachments,
-        },
-      })
-    }
+    const started = store.send(
+      text,
+      {
+        context: sentAttachments.map(({ kind, id }) => ({ kind, id })),
+        attachments: sentAttachments,
+      },
+      composerId
+    )
+    if (!started) return
+    dispatch({
+      type: "draft_sent",
+      sent: {
+        text: trimmed,
+        seen,
+        chatId: activeChatId,
+        revision: navigationRevision,
+        attachments: sentAttachments,
+      },
+    })
   }
 
   function attach(item: Attachment) {
@@ -278,7 +275,7 @@ export function CoachWorkspace({
       className={cn(
         "space-y-2",
         !showWelcome && "shrink-0",
-        !showWelcome && !compact && coachThreadColumn,
+        !showWelcome && !compact && chatColumn,
         !showWelcome && compact && "w-full min-w-0 px-2 pb-2"
       )}
     >
@@ -340,7 +337,11 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
-      {coachDock}
+      <PromptInputFrame
+        value={!showWelcome && !compact && !capped ? "page" : "standard"}
+      >
+        {coachDock}
+      </PromptInputFrame>
     </div>
   )
   const headerTitle = showHome
@@ -407,6 +408,7 @@ export function CoachWorkspace({
           </CoachHome>
         ) : (
           <ChatView
+            presentation={presentation}
             messages={messages}
             pendingUser={
               sentBubble
