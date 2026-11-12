@@ -1,12 +1,6 @@
-import { FileText, MoreHorizontal, Upload, type LucideIcon } from "lucide-react"
+import { FileText, Upload, type LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 
 import { previewTemplate } from "./paper-templates.ts"
 
@@ -87,113 +81,6 @@ export function PaperLibraryStarters({
           onClick={onImport}
         />
       </div>
-    </div>
-  )
-}
-
-export function PaperCard({
-  name,
-  edited,
-  kind,
-  onOpen,
-  onRename,
-  onDuplicate,
-  onLink,
-  onDownload,
-  onDelete,
-}: {
-  name: string
-  edited: string
-  kind: "CV" | "Cover letter"
-  onOpen: () => void
-  onRename: () => void
-  onDuplicate: () => void
-  onLink: () => void
-  onDownload: () => void
-  onDelete: () => void
-}) {
-  return (
-    <div className="relative min-w-0">
-      <Button
-        type="button"
-        variant="outline"
-        aria-label={`${name}, ${edited}`}
-        className="h-36 w-full min-w-0 flex-col items-start justify-between rounded-lg bg-card p-4 text-left whitespace-normal"
-        onClick={onOpen}
-      >
-        <FileText className="text-muted-foreground" aria-hidden="true" />
-        <span className="flex w-full min-w-0 flex-col gap-1">
-          <span className="line-clamp-2 text-sm font-medium break-words">
-            {name}
-          </span>
-          <span className="text-xs font-normal text-muted-foreground">
-            {kind} · {edited}
-          </span>
-        </span>
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="absolute top-2 right-2 size-11 md:size-7"
-              aria-label={`${name} menu`}
-            >
-              <MoreHorizontal />
-            </Button>
-          }
-        />
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onOpen}>Open</DropdownMenuItem>
-          <DropdownMenuItem onClick={onRename}>Rename</DropdownMenuItem>
-          <DropdownMenuItem onClick={onDuplicate}>Duplicate</DropdownMenuItem>
-          <DropdownMenuItem onClick={onLink}>
-            Link to application
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onDownload}>Download PDF</DropdownMenuItem>
-          <DropdownMenuItem onClick={onDelete}>Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-}
-
-export function PaperFileCard({
-  name,
-  onDelete,
-}: {
-  name: string
-  onDelete: () => void
-}) {
-  return (
-    <div className="relative flex h-36 min-w-0 flex-col items-start justify-between rounded-lg border border-border bg-card p-4">
-      <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
-      <div className="flex w-full min-w-0 flex-col gap-1">
-        <span className="line-clamp-2 text-sm font-medium break-words">
-          {name}
-        </span>
-        <span className="text-xs text-muted-foreground">Imported file</span>
-      </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="absolute top-2 right-2 size-11 md:size-7"
-              aria-label={`${name} menu`}
-            >
-              <MoreHorizontal />
-            </Button>
-          }
-        />
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onDelete}>Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   )
 }
