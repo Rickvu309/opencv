@@ -5,8 +5,6 @@ export type PaperImportState =
   | { type: "importing"; name: string }
   | { type: "error"; message: string }
 
-export type LibraryFilter = "all" | "cv" | "letter" | "files"
-
 export type Mode =
   | { type: "new"; step: "kind" | "gallery" }
   | { type: "letter" }
@@ -18,7 +16,6 @@ export type Mode =
   | null
 
 export type LibraryState = {
-  filter: LibraryFilter
   importState: PaperImportState
   creatingBlank: boolean
   mode: Mode
@@ -32,7 +29,6 @@ export type LibraryState = {
 }
 
 export type LibraryAction =
-  | { type: "filter_changed"; filter: LibraryFilter }
   | { type: "import_dialog_opened" }
   | { type: "new_dialog_opened"; step: "kind" | "gallery" }
   | { type: "letter_dialog_opened" }
@@ -55,7 +51,6 @@ export type LibraryAction =
   | { type: "print_finished" }
 
 export const initialLibrary: LibraryState = {
-  filter: "all",
   importState: { type: "idle" },
   creatingBlank: false,
   mode: null,
@@ -73,8 +68,6 @@ export function libraryReducer(
   action: LibraryAction
 ): LibraryState {
   switch (action.type) {
-    case "filter_changed":
-      return { ...state, filter: action.filter }
     case "import_dialog_opened":
       return { ...state, mode: { type: "import" } }
     case "new_dialog_opened":

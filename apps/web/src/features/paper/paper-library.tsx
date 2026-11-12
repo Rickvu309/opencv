@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, type DragEvent } from "react"
+import { FileUp, Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   paperDocNameSchema,
@@ -39,11 +40,7 @@ import { openBlankPage, PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
-import {
-  PaperLibraryStarters,
-  PaperCard,
-  PaperFileCard,
-} from "./paper-parts.tsx"
+import { PaperLibraryStarters } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
@@ -56,8 +53,18 @@ import {
   PaperPackageLibrary,
   useWordLibrary,
 } from "./paper-package-library.tsx"
-import { paperEditedLabel } from "./paper-templates.ts"
-import { PaperLibraryFilters } from "./paper-library-filters.tsx"
+import { PaperLibrarySearch } from "./paper-library-search.tsx"
+import { PaperLibraryTile } from "./paper-library-card.tsx"
+import {
+  LIBRARY_SECTIONS,
+  libraryEntries,
+  librarySections,
+} from "./paper-library-entries.ts"
+import {
+  LibraryEntryCard,
+  PaperLibrarySection,
+  type LibraryEntryHandlers,
+} from "./paper-library-sections.tsx"
 import "./design/paper-library.pen.css"
 
 export function PaperLibrary({
@@ -87,7 +94,6 @@ export function PaperLibrary({
   const importRequest = useRef<AbortController | null>(null)
   const [
     {
-      filter,
       importState,
       creatingBlank,
       mode,
@@ -111,22 +117,15 @@ export function PaperLibrary({
   const newGallery = mode?.type === "new" && mode.step === "gallery"
   const dialogOpen = mode !== null || importState.type !== "idle"
   const needle = query.trim().toLowerCase()
-  const wordLibrary = useWordLibrary(filter, needle)
-  const documents = docs.filter(
-    (doc) => doc.kind === "cv" || doc.kind === "letter"
+  const wordLibrary = useWordLibrary()
+  const entries = libraryEntries({ docs, files, words: wordLibrary.items })
+  const sections = librarySections(entries, needle)
+  const searching = needle !== ""
+  const noResults = LIBRARY_SECTIONS.every(
+    ({ id }) => sections[id].length === 0
   )
-  const visible = documents
-    .filter((doc) => needle === "" || doc.name.toLowerCase().includes(needle))
-    .filter((doc) => filter === "all" || doc.kind === filter)
-  const visibleFiles = files
-    .filter((file) => needle === "" || file.name.toLowerCase().includes(needle))
-    .filter(() => filter === "all" || filter === "files")
-  const noResults =
-    visible.length === 0 &&
-    visibleFiles.length === 0 &&
-    wordLibrary.visible.length === 0
-  const total = documents.length + files.length + wordLibrary.items.length
-  const firstRun = !loading && !error && total === 0 && needle === ""
+  const firstRun = !loading && !error && entries.length === 0 && !searching
+  const ready = !loading && !error && !firstRun
 
   useEffect(() => () => importRequest.current?.abort(), [])
 
@@ -305,23 +304,37 @@ export function PaperLibrary({
     dispatch({ type: "print_requested", doc })
   }
 
-  function renderCard(doc: PaperView) {
-    return (
-      <PaperCard
-        key={doc.id}
-        name={doc.name}
-        edited={paperEditedLabel(doc.updatedAt)}
-        kind={doc.kind === "letter" ? "Cover letter" : "CV"}
-        onOpen={() => onOpen(doc.id)}
-        onRename={() => {
-          dispatch({ type: "rename_requested", doc })
-        }}
-        onDuplicate={() => void duplicate(doc)}
-        onLink={() => void openLink(doc)}
-        onDownload={() => void download(doc)}
-        onDelete={() => dispatch({ type: "delete_requested", doc })}
+  const handlers: LibraryEntryHandlers = {
+    onOpen,
+    onPreview: wordLibrary.onSelect,
+    onRename: (doc) => dispatch({ type: "rename_requested", doc }),
+    onDuplicate: (doc) => void duplicate(doc),
+    onLink: (doc) => void openLink(doc),
+    onDownload: download,
+    onDelete: (doc) => dispatch({ type: "delete_requested", doc }),
+    onDeleteFile: (file) => dispatch({ type: "delete_file_requested", file }),
+  }
+
+  const tiles = {
+    cv: (
+      <PaperLibraryTile
+        key="new-cv"
+        label="New CV"
+        icon={Plus}
+        slot="paper-library-new-cv"
+        onClick={() => dispatch({ type: "new_dialog_opened", step: "gallery" })}
       />
-    )
+    ),
+    letter: null,
+    files: (
+      <PaperLibraryTile
+        key="import"
+        label="Import a file"
+        icon={FileUp}
+        slot="paper-library-import"
+        onClick={() => dispatch({ type: "import_dialog_opened" })}
+      />
+    ),
   }
 
   if (mode?.type === "letter") {
@@ -362,47 +375,25 @@ export function PaperLibrary({
       ) : null}
       <div
         data-slot="paper-library-header"
-        className="flex items-center justify-between gap-3"
+        className="flex flex-wrap items-center gap-2"
       >
-        <div className="flex items-baseline gap-2">
-          <h1 className="text-lg font-medium">Paper</h1>
-          {total > 0 ? (
-            <span className="text-xs text-muted-foreground">{total}</span>
-          ) : null}
-        </div>
-        <div className="flex gap-2">
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="outline"
-            onClick={() => dispatch({ type: "import_dialog_opened" })}
-          >
-            Import
-          </Button>
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant={dialogOpen ? "outline" : "glow"}
-            data-primary-action
-            ref={newButtonRef}
-            onClick={() =>
-              dispatch({ type: "new_dialog_opened", step: "kind" })
-            }
-          >
-            New
-          </Button>
-        </div>
+        <h1 className="text-lg font-medium">Paper</h1>
+        <div data-slot="paper-library-spacer" className="flex-1" />
+        {ready ? (
+          <PaperLibrarySearch query={query} onQueryChange={onQueryChange} />
+        ) : null}
+        <Button
+          className="h-11 gap-1.5 md:h-8 md:px-3 md:text-[13px] md:font-semibold"
+          type="button"
+          variant={dialogOpen ? "outline" : "glow"}
+          data-primary-action
+          ref={newButtonRef}
+          onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}
+        >
+          <Plus className="size-[13px]" aria-hidden="true" />
+          New
+        </Button>
       </div>
-      {!firstRun && !loading && !error ? (
-        <PaperLibraryFilters
-          filter={filter}
-          query={query}
-          onFilterChange={(next) =>
-            dispatch({ type: "filter_changed", filter: next })
-          }
-          onQueryChange={onQueryChange}
-        />
-      ) : null}
       {loading ? <p>Loading documents</p> : null}
       {error ? (
         <div className="flex flex-col items-start gap-3">
@@ -424,39 +415,35 @@ export function PaperLibrary({
           onImport={() => dispatch({ type: "import_dialog_opened" })}
         />
       ) : null}
-      {!loading && !error && !firstRun && noResults ? (
+      {ready && searching && noResults ? (
         <div>
-          <p>
-            {needle ? (
-              <>No results for &quot;{query.trim()}&quot;</>
-            ) : (
-              "No documents of this type yet."
-            )}
-          </p>
+          <p>No results for &quot;{query.trim()}&quot;</p>
           <p className="text-sm text-muted-foreground">
-            {needle
-              ? "Try another word, or clear the search."
-              : "Choose another type, or start a new document."}
+            Try another word, or clear the search.
           </p>
         </div>
       ) : null}
-      {!loading && !error && !firstRun && !noResults ? (
-        <div
-          data-slot="paper-library-cards"
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-        >
-          {visible.map(renderCard)}
-          {visibleFiles.map((file) => (
-            <PaperFileCard
-              key={file.id}
-              name={file.name}
-              onDelete={() => dispatch({ type: "delete_file_requested", file })}
-            />
-          ))}
-        </div>
-      ) : null}
+      {ready
+        ? LIBRARY_SECTIONS.map(({ id, title }) => {
+            const items = sections[id]
+            const tile = searching ? null : tiles[id]
+            if (items.length === 0 && (searching || id !== "files")) return null
+            return (
+              <PaperLibrarySection key={id} title={title}>
+                {items.map((entry) => (
+                  <LibraryEntryCard
+                    key={entry.key}
+                    entry={entry}
+                    on={handlers}
+                  />
+                ))}
+                {tile}
+              </PaperLibrarySection>
+            )
+          })
+        : null}
 
-      <PaperPackageLibrary library={wordLibrary} onOpen={onOpen} />
+      <PaperPackageLibrary library={wordLibrary} />
 
       <PaperImportDialog
         open={mode?.type === "import"}

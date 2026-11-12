@@ -47,7 +47,7 @@ describe("empty api data shows empty states, never sample content", () => {
     ).toBeInTheDocument()
     expect(
       screen.getAllByRole("button", { name: "Import", exact: true })
-    ).toHaveLength(2)
+    ).toHaveLength(1)
     expectNone(samplePaperDocs().map((doc) => doc.name))
   })
 

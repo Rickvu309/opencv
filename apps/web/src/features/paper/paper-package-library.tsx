@@ -50,7 +50,7 @@ function snapshotPageReducer(
   return action.cursor
 }
 
-export function useWordLibrary(filter: string, needle: string) {
+export function useWordLibrary() {
   const queryClient = useQueryClient()
   const { data: session } = authClient.useSession()
   const owner = session?.user.id ?? ""
@@ -72,11 +72,6 @@ export function useWordLibrary(filter: string, needle: string) {
   })
   const items = query.data && "items" in query.data ? query.data.items : []
   const next = query.data && "items" in query.data ? query.data.next : null
-  const visible = items.filter(
-    (document) =>
-      (filter === "all" || filter === document.kind) &&
-      document.name.toLowerCase().includes(needle)
-  )
   function imported(document: WordDocument, signal: AbortSignal) {
     void refreshCatalogReads(queryClient)
     if (!signal.aborted) onSelect(document)
@@ -85,7 +80,6 @@ export function useWordLibrary(filter: string, needle: string) {
     owner,
     query,
     items,
-    visible,
     after,
     next,
     setAfter,
@@ -97,19 +91,20 @@ export function useWordLibrary(filter: string, needle: string) {
 
 export function PaperPackageLibrary({
   library,
-  onOpen,
 }: {
   library: ReturnType<typeof useWordLibrary>
-  onOpen?: (docId: string) => void
 }) {
   const { selected, onSelect } = library
   const unavailable =
     library.query.error instanceof ApiError &&
     library.query.error.status === 404
-  const items = library.visible
+  const pages = Boolean(library.after || library.next)
   return (
     <>
-      {!unavailable && !library.query.isLoading && library.owner !== "" ? (
+      {!unavailable &&
+      !library.query.isLoading &&
+      library.owner !== "" &&
+      (library.query.error || pages) ? (
         <section aria-label="Word documents" className="flex flex-col gap-3">
           {library.query.error ? (
             <div>
@@ -123,34 +118,7 @@ export function PaperPackageLibrary({
               </Button>
             </div>
           ) : null}
-          {items.length > 0 ? (
-            <>
-              <h2 className="text-sm font-medium">Word documents</h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {items.map((document) => (
-                  <div key={document.docId} className="flex flex-col gap-2">
-                    <Button
-                      variant="outline"
-                      className="h-auto min-h-11 justify-start p-4 text-left whitespace-normal"
-                      onClick={() => onSelect(document)}
-                    >
-                      {document.name}
-                    </Button>
-                    {onOpen ? (
-                      <Button
-                        variant="outline"
-                        className="h-11 justify-start md:h-9"
-                        onClick={() => onOpen(document.docId)}
-                      >
-                        Open {document.name}
-                      </Button>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null}
-          {library.after || library.next ? (
+          {pages ? (
             <div className="flex gap-2">
               {library.after ? (
                 <Button

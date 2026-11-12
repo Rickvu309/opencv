@@ -11,6 +11,7 @@ import {
   PaperPackageLibrary,
   useWordLibrary,
 } from "./paper-package-library.tsx"
+import { LibraryEntryCard } from "./paper-library-sections.tsx"
 
 const document = paperPackageMetadataSchema.parse({
   generation: "package",
@@ -43,8 +44,12 @@ function page(text: string, nextCursor: string | null = null) {
   })
 }
 
-function Harness() {
-  const library = useWordLibrary("all", "")
+function Harness({
+  onOpen = () => undefined,
+}: {
+  onOpen?: (docId: string) => void
+}) {
+  const library = useWordLibrary()
   return (
     <>
       <output aria-label="Word library read status">
@@ -52,9 +57,21 @@ function Harness() {
           ? library.query.error.status
           : ""}
       </output>
+      {library.items.map((word) => (
+        <LibraryEntryCard
+          key={word.docId}
+          entry={{ type: "word", key: word.docId, word }}
+          on={{ onOpen, onPreview: library.onSelect }}
+        />
+      ))}
       <PaperPackageLibrary library={library} />
     </>
   )
+}
+
+async function preview(name: string) {
+  fireEvent.click(await screen.findByRole("button", { name: `${name} menu` }))
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Preview text" }))
 }
 
 afterEach(() => {
@@ -95,7 +112,7 @@ it("pins every preview page and download to the selected saved revision", async 
   })
   vi.stubGlobal("fetch", fetchMock)
   render(<Harness />)
-  fireEvent.click(await screen.findByRole("button", { name: document.name }))
+  await preview(document.name)
   expect(await screen.findByText("First saved paragraph")).toBeVisible()
   expect(
     screen.getByText("This text cannot be safely changed yet.")
@@ -132,7 +149,7 @@ it("keeps unavailable pinned content unavailable instead of loading a newer head
     })
   )
   render(<Harness />)
-  fireEvent.click(await screen.findByRole("button", { name: document.name }))
+  await preview(document.name)
   expect(
     await screen.findByText(
       "Could not load this saved version. Your file has not changed."
@@ -153,17 +170,6 @@ it("keeps unavailable pinned content unavailable instead of loading a newer head
 
 it("opens the saved page without leaving the preview", async () => {
   const opened: string[] = []
-  function OpenHarness() {
-    const library = useWordLibrary("all", "")
-    return (
-      <PaperPackageLibrary
-        library={library}
-        onOpen={(id) => {
-          opened.push(id)
-        }}
-      />
-    )
-  }
   vi.stubGlobal(
     "fetch",
     vi.fn<typeof fetch>(async (_url, init) => {
@@ -177,13 +183,19 @@ it("opens the saved page without leaving the preview", async () => {
       return Response.json({ ok: true, data: page("First saved paragraph") })
     })
   )
-  render(<OpenHarness />)
+  render(
+    <Harness
+      onOpen={(id) => {
+        opened.push(id)
+      }}
+    />
+  )
   fireEvent.click(
     await screen.findByRole("button", { name: `Open ${document.name}` })
   )
   expect(opened).toEqual([document.docId])
   expect(screen.queryByText("First saved paragraph")).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole("button", { name: document.name }))
+  await preview(document.name)
   expect(await screen.findByText("First saved paragraph")).toBeVisible()
 })
 
@@ -240,17 +252,19 @@ it("requests the next library page and returns to the first page", async () => {
   )
   render(<Harness />)
   expect(
-    await screen.findByRole("button", { name: document.name })
+    await screen.findByRole("button", { name: `Open ${document.name}` })
   ).toBeVisible()
   fireEvent.click(screen.getByRole("button", { name: "More documents" }))
-  expect(await screen.findByRole("button", { name: second.name })).toBeVisible()
   expect(
-    screen.queryByRole("button", { name: document.name })
+    await screen.findByRole("button", { name: `Open ${second.name}` })
+  ).toBeVisible()
+  expect(
+    screen.queryByRole("button", { name: `Open ${document.name}` })
   ).not.toBeInTheDocument()
   expect(inputs).toContainEqual({ view: "library", after: document.docId })
   fireEvent.click(screen.getByRole("button", { name: "First documents" }))
   expect(
-    await screen.findByRole("button", { name: document.name })
+    await screen.findByRole("button", { name: `Open ${document.name}` })
   ).toBeVisible()
   await waitFor(() =>
     expect(

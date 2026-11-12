@@ -1,17 +1,17 @@
-import { StrictMode, useReducer } from "react"
+import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
-import {
-  blankCv,
-  paperDocumentSchema,
-  paperPackageMetadataSchema,
-  type PaperView,
-  type PaperFile,
-} from "@workspace/domain"
+import { paperPackageMetadataSchema, type PaperView } from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
+import {
+  cv,
+  letter,
+  letterPaper,
+  renderLibrary,
+} from "./paper-library.fixtures.tsx"
 import { importPaperFile, importPaperLink } from "./paper-api.ts"
 
 vi.mock("./paper-api.ts", async (importOriginal) => ({
@@ -19,47 +19,6 @@ vi.mock("./paper-api.ts", async (importOriginal) => ({
   importPaperFile: vi.fn(),
   importPaperLink: vi.fn(),
 }))
-
-function letterPaper(lines: string[]): PaperView["paper"] {
-  return paperDocumentSchema.parse({
-    version: 3,
-    kind: "letter",
-    clashes: [],
-    blocks: lines.map((text, index) => ({
-      id: `l-${index + 1}`,
-      type: "paragraph",
-      content: [{ text }],
-    })),
-  })
-}
-
-function cv(name: string): PaperView {
-  return {
-    id: "11111111-1111-4111-8111-111111111111",
-    name,
-    kind: "cv",
-    templateId: "simple",
-    status: "draft",
-    paper: blankCv(),
-    contentVersion: 1,
-    checks: [],
-    pageChoice: "unset",
-    isFavorite: false,
-    sourceFileId: null,
-    createdAt: "2026-08-25T12:00:00.000Z",
-    updatedAt: "2026-08-25T12:00:00.000Z",
-  }
-}
-
-function letter(name: string): PaperView {
-  return {
-    ...cv(name),
-    id: "22222222-2222-4222-8222-222222222222",
-    kind: "letter",
-    templateId: null,
-    paper: letterPaper(["A cover letter."]),
-  }
-}
 
 async function openRename(doc: PaperView) {
   const user = userEvent.setup()
@@ -85,28 +44,6 @@ afterEach(() => {
 
 function missingImport(): never {
   throw new Error("Missing Import button")
-}
-
-function renderLibrary(docs: PaperView[], files: PaperFile[] = []) {
-  function Harness() {
-    const [query, setQuery] = useReducer(
-      (_query: string, nextQuery: string) => nextQuery,
-      ""
-    )
-    return (
-      <PaperLibrary
-        docs={docs}
-        files={files}
-        loading={false}
-        error={null}
-        onRetry={() => undefined}
-        onOpen={() => undefined}
-        query={query}
-        onQueryChange={setQuery}
-      />
-    )
-  }
-  render(<Harness />)
 }
 
 describe("Paper library", () => {
@@ -344,7 +281,7 @@ describe("Paper library", () => {
       screen.queryByRole("textbox", { name: "Search Paper" })
     ).not.toBeInTheDocument()
     fireEvent.click(
-      screen.getAllByRole("button", { name: "Import", exact: true }).at(1) ??
+      screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
         missingImport()
     )
     expect(
@@ -352,78 +289,6 @@ describe("Paper library", () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Choose file" })
-    ).toBeInTheDocument()
-  })
-
-  it("filters document types and searches within the selected type", () => {
-    renderLibrary([cv("My CV"), letter("Design letter")])
-    fireEvent.click(
-      screen.getByRole("button", { name: "Cover letters", exact: true })
-    )
-    expect(
-      screen.getByRole("button", { name: "Cover letters", exact: true })
-    ).toHaveAttribute("aria-pressed", "true")
-    expect(
-      screen.queryByRole("button", { name: /^My CV,/ })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: /^Design letter,/ })
-    ).toBeInTheDocument()
-    fireEvent.change(screen.getByRole("textbox", { name: "Search Paper" }), {
-      target: { value: "My CV" },
-    })
-    expect(screen.getByText('No results for "My CV"')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "All", exact: true }))
-    expect(screen.getByRole("button", { name: /^My CV,/ })).toBeInTheDocument()
-  })
-
-  it("shows imported files without documents and keeps their delete action", async () => {
-    renderLibrary(
-      [],
-      [
-        {
-          id: "33333333-3333-4333-8333-333333333333",
-          name: "Original CV.pdf",
-          mediaType: "application/pdf",
-          byteSize: 42,
-          createdAt: "2026-08-25T12:00:00.000Z",
-        },
-      ]
-    )
-    expect(screen.queryByText("Start a document")).not.toBeInTheDocument()
-    expect(screen.getByText("Original CV.pdf")).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "CVs", exact: true }))
-    expect(
-      screen.getByText("No documents of this type yet.")
-    ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Files", exact: true }))
-    fireEvent.click(
-      screen.getByRole("button", { name: "Original CV.pdf menu" })
-    )
-    fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Delete", exact: true })
-    )
-    expect(
-      screen.getByRole("dialog", { name: "Delete this file?" })
-    ).toBeInTheDocument()
-  })
-
-  it("names a CV card from the document and hides it when search misses", async () => {
-    renderLibrary([cv("PM track CV")])
-    expect(
-      screen.getByRole("button", { name: /^PM track CV,/ })
-    ).toBeInTheDocument()
-
-    fireEvent.change(screen.getByRole("textbox", { name: "Search Paper" }), {
-      target: { value: "portfolio" },
-    })
-
-    expect(screen.getByText('No results for "portfolio"')).toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: /^PM track CV,/ })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.getByText("Try another word, or clear the search.")
     ).toBeInTheDocument()
   })
 
