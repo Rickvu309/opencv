@@ -1,6 +1,6 @@
+import { coachReadLabel, humanToolText } from "./coach-tool-labels.ts"
 import {
   humanizeCommandFailCopy,
-  PAPER_KIND_LABEL,
   type CoachReceiptDetail,
   type ChatToolPart,
 } from "@workspace/domain"
@@ -21,18 +21,28 @@ export { RECEIPT_STAGES }
 
 export function namedReceiptHeadline(detail: CoachReceiptDetail) {
   if (detail.type === "paper.replace") {
-    return `Updated ${PAPER_KIND_LABEL[detail.docKind]} ${detail.docName}`
+    const changes = detail.hunks.reduce(
+      (total, hunk) =>
+        total +
+        hunk.lines.filter(
+          (line, index) =>
+            line.kind !== "eq" &&
+            (index === 0 || hunk.lines[index - 1]?.kind === "eq")
+        ).length,
+      0
+    )
+    return `Edited ${detail.docName} · ${changes} change${changes === 1 ? "" : "s"}`
   }
   if (detail.type === "job.move") {
     return `Moved ${detail.title} at ${detail.company} from ${stageLabel(detail.from)} to ${stageLabel(detail.to)}`
   }
-  return `Created ${PAPER_KIND_LABEL[detail.docKind]} ${detail.name}`
+  return `Created ${detail.name}`
 }
 
 export function receiptHeadline(part: ChatToolPart) {
   if (!part.ok) return humanizeCommandFailCopy(part.summary)
   if (part.detail) return namedReceiptHeadline(part.detail)
-  return part.summary
+  return coachReadLabel(part.name) ?? humanToolText(part.summary)
 }
 
 export function receiptReversalNote(part: ChatToolPart) {

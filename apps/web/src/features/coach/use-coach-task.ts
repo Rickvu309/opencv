@@ -1,3 +1,4 @@
+import { coachToolLabel } from "./coach-tool-labels.ts"
 import { useEffect, useReducer, useRef } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
@@ -360,7 +361,7 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
           task?.snapshot.actions.map((action) => ({
             kind: "call" as const,
             id: action.toolCallId,
-            label: action.operation,
+            label: coachToolLabel(action.operation),
             name: chatToolNameSchema.parse(action.operation),
           })) ?? [],
           parts

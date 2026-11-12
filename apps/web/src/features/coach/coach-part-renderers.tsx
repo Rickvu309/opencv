@@ -13,11 +13,8 @@ import {
   type CoachPart,
   type CoachToolPart,
 } from "./coach-parts.ts"
-import {
-  CoachToolExtras,
-  CoachToolLine,
-  toolCardProps,
-} from "./coach-tool-line.tsx"
+import { toolCardProps } from "./coach-tool-card.ts"
+import { CoachToolExtras, CoachToolLine } from "./coach-tool-line.tsx"
 
 export type PartContext = {
   canUndo: boolean

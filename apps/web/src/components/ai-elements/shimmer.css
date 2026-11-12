@@ -1,0 +1,25 @@
+.coach-shimmer {
+  color: inherit;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .coach-shimmer {
+    background-image: linear-gradient(
+      110deg,
+      #8a8f98 35%,
+      var(--foreground) 50%,
+      #8a8f98 65%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: coach-shimmer calc(var(--duration-panel) * 7) linear infinite;
+  }
+}
+@keyframes coach-shimmer {
+  from {
+    background-position: 100% center;
+  }
+  to {
+    background-position: 0% center;
+  }
+}

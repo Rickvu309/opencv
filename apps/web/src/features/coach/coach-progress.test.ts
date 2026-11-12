@@ -58,9 +58,9 @@ describe("coachProgressReducer", () => {
     ).toBe(once)
   })
 
-  it("labels a call with no step by its tool name, not a made-up phrase", () => {
+  it("labels a call with no step in plain words", () => {
     const [call] = fold([{ type: "call", id: "call-1", name: "job.list" }])
-    expect(call?.label).toBe("Job list")
+    expect(call?.label).toBe("Look at your Jobs")
   })
 })
 

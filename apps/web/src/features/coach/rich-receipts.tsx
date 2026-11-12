@@ -1,15 +1,8 @@
 import { useReducer } from "react"
-import { FilePlus, FileText } from "lucide-react"
+import { FilePlus } from "lucide-react"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import {
-  CodeBlock,
-  CodeBlockContent,
-  CodeBlockHeader,
-  CodeBlockLine,
-  CodeBlockTitle,
-} from "@workspace/ui/components/code-block"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   PAPER_KIND_LABEL,
@@ -36,57 +29,40 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-        <Badge variant="outline">{PAPER_KIND_LABEL[detail.docKind]}</Badge>
-        <span className="inline-flex items-center gap-1">
-          <FileText className="size-3" aria-hidden />
-          {detail.docId ? (
-            <a
-              className="underline underline-offset-2"
-              href={`/paper/${detail.docId}`}
-            >
-              {detail.docName} · Open
-            </a>
-          ) : (
-            detail.docName
-          )}
-        </span>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        {changed} change{changed === 1 ? "" : "s"}
-      </p>
       {hunks.map((hunk) => (
-        <CodeBlock key={`${hunk.sectionId}-${hunk.section}`} size="sm">
-          <CodeBlockHeader>
-            <CodeBlockTitle>{hunk.section}</CodeBlockTitle>
-          </CodeBlockHeader>
-          <CodeBlockContent wrap aria-label={`Changes in ${hunk.section}`}>
+        <section
+          key={`${hunk.sectionId}-${hunk.section}`}
+          className="space-y-1.5"
+          aria-label={`Changes in ${hunk.section}`}
+        >
+          <h4 className="text-xs font-medium text-muted-foreground">
+            {hunk.section}
+          </h4>
+          <div className="space-y-1 font-sans text-sm leading-relaxed [overflow-wrap:anywhere]">
             {hunk.lines.map((line, index) => (
-              <CodeBlockLine
+              <p
                 key={`${hunk.sectionId}-${index}`}
-                variant={
-                  line.kind === "add"
-                    ? "added"
-                    : line.kind === "del"
-                      ? "removed"
-                      : "default"
-                }
+                className="whitespace-pre-wrap"
               >
                 {line.kind === "add" ? (
-                  <ins className="no-underline">{line.text}</ins>
+                  <ins className="bg-chart-2/10 text-[color:color-mix(in_oklab,var(--chart-2)_65%,var(--foreground))] no-underline">
+                    {line.text}
+                  </ins>
                 ) : line.kind === "del" ? (
-                  <del>{line.text}</del>
+                  <del className="bg-destructive/10 text-destructive line-through">
+                    {line.text}
+                  </del>
                 ) : (
                   line.text
                 )}
-              </CodeBlockLine>
+              </p>
             ))}
-          </CodeBlockContent>
-        </CodeBlock>
+          </div>
+        </section>
       ))}
       {hidden > 0 || expanded ? (
         <Button
-          className="h-11 md:h-6"
+          className="h-11 md:h-8"
           type="button"
           variant="ghost"
           size="xs"

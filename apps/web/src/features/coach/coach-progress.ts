@@ -1,3 +1,4 @@
+import { coachToolLabel, humanToolText } from "./coach-tool-labels.ts"
 import type { ChatEntryPart, ChatToolName } from "@workspace/domain"
 
 export type CoachProgressCall =
@@ -23,11 +24,6 @@ export type CoachProgressAction =
   | { type: "step"; id: string; label: string }
   | { type: "call"; id: string; name: ChatToolName }
 
-function nameLabel(name: string) {
-  const words = name.replace(/[._-]+/g, " ")
-  return words.charAt(0).toUpperCase() + words.slice(1)
-}
-
 export function coachProgressReducer(
   calls: readonly CoachProgressCall[],
   action: CoachProgressAction
@@ -36,7 +32,10 @@ export function coachProgressReducer(
     case "cleared":
       return []
     case "step":
-      return [...calls, { kind: "step", id: action.id, label: action.label }]
+      return [
+        ...calls,
+        { kind: "step", id: action.id, label: humanToolText(action.label) },
+      ]
     case "call": {
       if (calls.some((call) => call.id === action.id)) return calls
       const precedingStep = calls.at(-1)
@@ -47,7 +46,7 @@ export function coachProgressReducer(
         label:
           precedingStep?.kind === "step"
             ? precedingStep.label
-            : nameLabel(action.name),
+            : coachToolLabel(action.name),
       }
       return precedingStep?.kind === "step"
         ? [...calls.slice(0, -1), call]

@@ -15,7 +15,7 @@ import {
   type ReactNode,
 } from "react"
 
-export type ToolCallStatus = "running" | "success" | "error"
+export type ToolCallStatus = "awaiting" | "running" | "success" | "error"
 
 export type ToolCallCardProps = {
   name: string
@@ -92,11 +92,13 @@ export function ToolCallCard({
   const ms = status === "running" ? (measured ?? 0) : (durationMs ?? measured)
 
   const announce =
-    status === "running"
-      ? `${name} running`
-      : status === "success"
-        ? `${name} finished${typeof summary === "string" ? `: ${summary}` : ""}`
-        : `${name} failed${error ? `: ${error}` : ""}`
+    status === "awaiting"
+      ? `${name} needs your approval`
+      : status === "running"
+        ? `${name} running`
+        : status === "success"
+          ? `${name} finished${typeof summary === "string" ? `: ${summary}` : ""}`
+          : `${name} failed${error ? `: ${error}` : ""}`
 
   return (
     <div
@@ -126,7 +128,7 @@ export function ToolCallCard({
           {icon ?? <WrenchIcon />}
         </span>
         <span className="ui-tcc__main">
-          <code className="ui-tcc__name">{name}</code>
+          <span className="ui-tcc__name">{name}</span>
           {summary != null && (
             <span
               className="ui-tcc__summary"
@@ -137,6 +139,9 @@ export function ToolCallCard({
           )}
         </span>
         <span className="ui-tcc__status" key={status}>
+          {status === "awaiting" && (
+            <span className="ui-tcc__awaiting">Needs your approval</span>
+          )}
           {status === "running" && <Spinner />}
           {status === "success" && (
             <svg className="ui-tcc__ok" viewBox="0 0 16 16" aria-hidden="true">
@@ -145,13 +150,15 @@ export function ToolCallCard({
             </svg>
           )}
           {status === "error" && <ErrorIcon />}
-          <span className="ui-tcc__time">
-            {status === "error"
-              ? "Failed"
-              : ms != null
-                ? formatMs(ms, status === "running")
-                : null}
-          </span>
+          {status !== "awaiting" && (
+            <span className="ui-tcc__time">
+              {status === "error"
+                ? "Failed"
+                : ms != null
+                  ? formatMs(ms, status === "running")
+                  : null}
+            </span>
+          )}
         </span>
         <Chevron />
       </button>
@@ -219,7 +226,12 @@ export function ToolCallGroup({
   const [openState, setOpenState] = useState(defaultOpen)
   const open = openProp ?? openState
 
-  const calls = Children.toArray(children)
+  const visibleChildren = Children.toArray(children).filter(
+    (child) =>
+      !isValidElement<Partial<ToolCallCardProps>>(child) ||
+      !child.props.className?.split(" ").includes("hidden")
+  )
+  const calls = visibleChildren
     .filter(isValidElement)
     .map((c) => (c as ReactElement<Partial<ToolCallCardProps>>).props)
   const running = calls.some((c) => c.status === "running")
@@ -235,6 +247,8 @@ export function ToolCallGroup({
   const count = `Used ${calls.length} ${calls.length === 1 ? "tool" : "tools"}`
   const title = running ? runningLabel : (label ?? count)
   const icons = calls.slice(-3)
+
+  if (!calls.length) return null
 
   return (
     <div
@@ -296,7 +310,7 @@ export function ToolCallGroup({
 
       <div className="ui-tcc__body" id={`${id}-list`} inert={!open}>
         <div className="ui-tcc__clip">
-          <div className="ui-tcc-group__list">{children}</div>
+          <div className="ui-tcc-group__list">{visibleChildren}</div>
         </div>
       </div>
     </div>

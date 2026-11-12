@@ -1,16 +1,10 @@
-import { useEffect, useReducer } from "react"
+import { Shimmer } from "@/components/ai-elements/shimmer.tsx"
+import { humanToolText } from "./coach-tool-labels.ts"
 import { CircleCheck, Circle, Clock, Lightbulb, X } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
 import "./design/working.pen.css"
 
 import type { CoachProgressRow, CoachProgressStatus } from "./coach-progress.ts"
-
-function elapsedReducer(
-  _seconds: number,
-  action: { type: "ticked"; seconds: number }
-) {
-  return action.seconds
-}
 
 const STATUS_NOTE: Record<CoachProgressStatus, string> = {
   reported: "reported",
@@ -50,19 +44,6 @@ export function CoachWorking({
   rows?: readonly CoachProgressRow[]
   showHeader?: boolean
 }) {
-  const [seconds, dispatch] = useReducer(elapsedReducer, 0)
-  useEffect(() => {
-    const startedAt = Date.now()
-    const timer = setInterval(
-      () =>
-        dispatch({
-          type: "ticked",
-          seconds: Math.floor((Date.now() - startedAt) / 1000),
-        }),
-      1000
-    )
-    return () => clearInterval(timer)
-  }, [])
   return (
     <div data-pen-surface="coach" data-slot="coach-working">
       {showHeader ? (
@@ -72,7 +53,7 @@ export function CoachWorking({
           </span>
           <div data-slot="coach-working-heading" aria-hidden="true">
             <Lightbulb className="size-[14px] shrink-0" />
-            <span>Working, {seconds}s</span>
+            <Shimmer>Working</Shimmer>
           </div>
         </>
       ) : null}
@@ -91,7 +72,7 @@ export function CoachWorking({
             >
               <StatusIcon status={status} />
               <span>
-                {label}
+                {humanToolText(label)}
                 <span className="sr-only">, {STATUS_NOTE[status]}</span>
               </span>
             </li>

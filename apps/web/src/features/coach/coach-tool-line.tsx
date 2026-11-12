@@ -1,8 +1,25 @@
+import {
+  Confirmation,
+  ConfirmationRequest,
+  ConfirmationAccepted,
+  ConfirmationRejected,
+  ConfirmationActions,
+  ConfirmationAction,
+} from "@/components/ai-elements/confirmation.tsx"
+import { Badge } from "@workspace/ui/components/badge"
+import { FileText } from "lucide-react"
+import {
+  coachReadLabel,
+  coachToolLabel,
+  humanToolText,
+} from "./coach-tool-labels.ts"
+import { isCompactCoachTool, toolCardProps } from "./coach-tool-card.ts"
+import { receiptHeadline } from "./coach-receipt.ts"
 import { useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
 import { useChatStore } from "./use-chat-store.ts"
 import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
-import { useReducer } from "react"
+import { useReducer, useRef, type ReactNode } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { ToolCallCard } from "@workspace/ui/components/tool-call-card"
@@ -14,9 +31,7 @@ import {
   receiptReversalNote,
   receiptShowsUndo,
 } from "@/features/coach/coach-receipt.ts"
-import { ReceiptDetail } from "@/features/coach/rich-receipts.tsx"
-import { WordBatchPreview } from "@/features/coach/word-batch-preview.tsx"
-import { useWordBatchApproval } from "@/lib/writing-proposal.ts"
+import { DiffBlock, ReceiptDetail } from "@/features/coach/rich-receipts.tsx"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 
@@ -55,28 +70,10 @@ function actionReducer(state: ActionState, event: ActionEvent): ActionState {
   }
 }
 
-// eslint-disable-next-line react-refresh/only-export-components -- shared with the grouped renderer
-export function toolCardProps(tool: CoachToolPart) {
-  const failed = tool.status === "error"
-  const needsApproval = tool.part.approval === "pending"
-  return {
-    name: needsApproval ? `Awaiting approval: ${tool.label}` : tool.label,
-    args: { command: tool.name },
-    status: needsApproval
-      ? "running"
-      : failed
-        ? "error"
-        : tool.status === "done"
-          ? "success"
-          : "running",
-    result: tool.status === "done" ? tool.part.summary : undefined,
-    error: failed ? "Nothing changed." : undefined,
-    defaultOpen: failed,
-  } as const
-}
-
 export function CoachToolCard({ tool }: { tool: CoachToolPart }) {
-  return <ToolCallCard {...toolCardProps(tool)} />
+  return isCompactCoachTool(tool) ? null : (
+    <ToolCallCard {...toolCardProps(tool)} />
+  )
 }
 
 type ExtrasProps = {
@@ -84,16 +81,27 @@ type ExtrasProps = {
   undoLabel?: string
   canUndo: boolean
   onUndo?: () => Promise<void>
+  preview?: ReactNode
 }
+
+const RECEIPT_HIT =
+  "relative after:absolute after:inset-[min(0px,calc((100%-44px)/2))] after:content-['']"
 
 export function CoachToolExtras({
   tool,
   undoLabel = "Undo",
   canUndo,
   onUndo,
+  preview,
 }: ExtrasProps) {
   const { part } = tool
-  const note = receiptReversalNote(part)
+  const edit =
+    part.ok && !part.pendingActionId && part.detail?.type === "paper.replace"
+      ? part.detail
+      : null
+  const readLabel = part.ok ? coachReadLabel(tool.name) : undefined
+  const note =
+    edit || readLabel || part.pendingActionId ? null : receiptReversalNote(part)
   const [{ busy: pending, error: undoError }, dispatch] = useReducer(
     actionReducer,
     IDLE_ACTION
@@ -111,6 +119,9 @@ export function CoachToolExtras({
     }
   }
 
+  if (readLabel && !part.pendingActionId && !part.undone)
+    return <p className="text-[13px] text-muted-foreground">{readLabel}</p>
+
   if (part.undone) {
     return <p className="text-xs text-muted-foreground">Undone</p>
   }
@@ -122,28 +133,66 @@ export function CoachToolExtras({
           id={part.pendingActionId}
           status={part.approval ?? "pending"}
           command={tool.name}
-          review={part.review}
+          tool={tool}
+          preview={preview}
         />
       ) : null}
-      {part.ok && part.detail ? <ReceiptDetail detail={part.detail} /> : null}
+      {part.ok && !part.pendingActionId && !edit && part.detail ? (
+        <ReceiptDetail detail={part.detail} />
+      ) : null}
       {note ? (
-        <p className="min-w-0 [overflow-wrap:anywhere] break-words">{note}</p>
+        <p className="min-w-0 [overflow-wrap:anywhere] break-words">
+          {humanToolText(note)}
+        </p>
       ) : null}
-      {canUndo && receiptShowsUndo(part) ? (
-        <Button
-          className="h-11 md:h-6"
-          type="button"
-          variant="outline"
-          size="xs"
-          aria-label={undoLabel}
-          disabled={pending}
-          onClick={() => void undo()}
-        >
-          {pending ? "Undoing…" : "Undo"}
-        </Button>
-      ) : null}
+      <div
+        className={
+          edit
+            ? "flex w-full min-w-0 items-center gap-2.5 rounded-[12px] border border-border px-3 py-2.5"
+            : "flex min-w-0 items-center gap-1.5"
+        }
+      >
+        {edit ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-foreground text-background"
+            >
+              <FileText className="size-[13px]" />
+            </span>
+            <p className="min-w-0 flex-1 text-[12.5px] leading-[1.2] font-semibold [overflow-wrap:anywhere] text-foreground">
+              {receiptHeadline(part)}
+            </p>
+            {edit.docId ? (
+              <a
+                href={`/paper/${edit.docId}`}
+                className={`inline-flex h-[26px] shrink-0 items-center rounded-[7px] glow px-2.5 text-xs font-medium no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:opacity-80 ${RECEIPT_HIT}`}
+              >
+                Open
+              </a>
+            ) : null}
+          </>
+        ) : null}
+        {canUndo && receiptShowsUndo(part) ? (
+          <Button
+            className={
+              edit
+                ? `h-[26px] rounded-[7px] px-2.5 text-xs ${RECEIPT_HIT}`
+                : `h-11 md:h-6 ${RECEIPT_HIT}`
+            }
+            type="button"
+            variant="ghost"
+            size="xs"
+            aria-label={undoLabel}
+            disabled={pending}
+            onClick={() => void undo()}
+          >
+            {pending ? "Undoing…" : "Undo"}
+          </Button>
+        ) : null}
+      </div>
       {undoError ? (
-        <ErrorBanner variant="inline">{undoError}</ErrorBanner>
+        <ErrorBanner variant="inline">{humanToolText(undoError)}</ErrorBanner>
       ) : null}
     </div>
   )
@@ -162,22 +211,31 @@ function CoachApproval({
   id,
   status,
   command,
-  review,
+  tool,
+  preview,
 }: {
   id: string
   status: "pending" | "approved" | "denied" | "expired"
   command: string
-  review?: unknown
+  tool: CoachToolPart
+  preview?: ReactNode
 }) {
   const client = useQueryClient()
   const { activeChatId } = useChatStore()
-  const batch = useWordBatchApproval(id, review)
   const [{ busy: working, error }, dispatch] = useReducer(
     actionReducer,
     IDLE_ACTION
   )
+  const lock = useRef(false)
+  const [decision, setDecision] = useReducer(
+    (_previous: boolean | null, approved: boolean) => approved,
+    null
+  )
+  const effectiveStatus =
+    decision === null ? status : decision ? "approved" : "denied"
   async function decide(approve: boolean) {
-    if (working) return
+    if (lock.current || working || effectiveStatus !== "pending") return
+    lock.current = true
     dispatch({ type: "started" })
     try {
       await runContractCommand(
@@ -191,7 +249,9 @@ function CoachApproval({
         await refreshReads(client, [
           { query: "chat.get", input: { chatId: parseChatId(activeChatId) } },
         ])
+      setDecision(approve)
     } catch (cause) {
+      lock.current = false
       dispatch({
         type: "failed",
         message:
@@ -203,44 +263,73 @@ function CoachApproval({
       dispatch({ type: "settled" })
     }
   }
+  const detail = tool.part.detail
+  const documentName =
+    detail?.type === "paper.replace" ? detail.docName : "your document"
+  const state =
+    effectiveStatus === "pending" ? "approval-requested" : "approval-responded"
+  const approved = effectiveStatus === "approved"
   return (
-    <div className="space-y-2">
-      {status === "pending" ? (
-        <>
-          <p>Review this action before it runs.</p>
-          <WordBatchPreview batch={batch} />
-          <div className="flex gap-2">
-            {batch.state === "withheld" ? null : (
-              <Button
-                className="h-11 md:h-6"
-                size="xs"
-                disabled={working}
-                onClick={() => void decide(true)}
-              >
-                Approve
-              </Button>
-            )}
-            <Button
-              className="h-11 md:h-6"
-              size="xs"
-              variant="outline"
-              disabled={working}
-              onClick={() => void decide(false)}
-            >
-              Deny
-            </Button>
+    <Confirmation
+      state={state}
+      approval={effectiveStatus === "pending" ? { id } : { id, approved }}
+      role={effectiveStatus === "pending" ? "region" : "status"}
+      aria-label={
+        effectiveStatus === "pending" ? "Review Coach action" : undefined
+      }
+      className={
+        effectiveStatus === "pending"
+          ? "gap-2.5 rounded-[12px] border border-border px-3 py-2.5 text-foreground"
+          : "border-0 bg-transparent p-0 text-[13px] text-muted-foreground"
+      }
+    >
+      <ConfirmationRequest>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="min-w-0 text-[12.5px] leading-[1.2] font-semibold [overflow-wrap:anywhere]">
+            {command === "paper.edit"
+              ? `Coach wants to edit ${documentName}`
+              : `Coach wants to ${coachToolLabel(command).replace(/^./, (letter) => letter.toLowerCase())}`}
+          </h3>
+          <Badge variant="outline">Needs your approval</Badge>
+        </div>
+        {detail?.type === "paper.replace" && detail.hunks.length ? (
+          <DiffBlock detail={detail} />
+        ) : (
+          <div className="space-y-1 text-sm leading-relaxed text-muted-foreground">
+            <p>{humanToolText(tool.part.summary)}</p>
+            <p>
+              {command === "paper.edit"
+                ? "Coach will change the text in your Paper. The proposed words are not available in this Chat. Open the document in Paper to review the current text before deciding."
+                : "Review this change before allowing Coach to apply it."}
+            </p>
           </div>
-        </>
-      ) : (
-        <p>
-          {status === "approved"
-            ? "Approved"
-            : status === "denied"
-              ? "Denied · nothing changed"
-              : "Expired · ask Coach again"}
-        </p>
-      )}
-      {error ? <ErrorBanner variant="inline">{error}</ErrorBanner> : null}
-    </div>
+        )}
+        {preview}
+      </ConfirmationRequest>
+      <ConfirmationAccepted>Approved</ConfirmationAccepted>
+      <ConfirmationRejected>
+        {effectiveStatus === "expired"
+          ? "Expired · ask Coach again"
+          : "Denied · nothing changed"}
+      </ConfirmationRejected>
+      <ConfirmationActions className="justify-start self-start">
+        <ConfirmationAction
+          disabled={working}
+          onClick={() => void decide(true)}
+        >
+          Approve
+        </ConfirmationAction>
+        <ConfirmationAction
+          variant="ghost"
+          disabled={working}
+          onClick={() => void decide(false)}
+        >
+          Deny
+        </ConfirmationAction>
+      </ConfirmationActions>
+      {error ? (
+        <ErrorBanner variant="inline">{humanToolText(error)}</ErrorBanner>
+      ) : null}
+    </Confirmation>
   )
 }
