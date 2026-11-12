@@ -333,7 +333,7 @@ export const SCREENS = [
       ...ASK_FOR_AN_EDIT,
       ...STOP_THE_WAITING_EDIT,
       ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "Expired · ask Coach again" } },
+      { waitFor: { text: "Not approved · ask Coach again" } },
     ],
   },
   {

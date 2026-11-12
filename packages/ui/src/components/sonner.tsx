@@ -2,11 +2,17 @@ import type { ComponentProps } from "react"
 import { Toaster as Sonner, toast } from "sonner"
 import { cn } from "cn"
 
+const clearOfCoachPanelOnPhones = {
+  top: "calc(64px + env(safe-area-inset-top, 0px))",
+}
+
 function Toaster({ className, ...props }: ComponentProps<typeof Sonner>) {
   return (
     <Sonner
       data-slot="toaster"
       className={cn("toaster group", className)}
+      position="top-center"
+      mobileOffset={clearOfCoachPanelOnPhones}
       toastOptions={{
         classNames: {
           toast:
