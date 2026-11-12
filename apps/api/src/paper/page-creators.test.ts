@@ -1,0 +1,587 @@
+import { randomUUID } from "node:crypto"
+import { readdirSync, readFileSync, statSync } from "node:fs"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+import { delegateActorSchema } from "@workspace/domain"
+import { eq } from "drizzle-orm"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { z } from "zod"
+
+import { withDatabase } from "../db/context.js"
+import { user } from "../db/schema.js"
+import { installRegistry } from "../registry/install.js"
+import { registry } from "../registry/registry.js"
+import {
+  authHeaders,
+  createMigratedTestDb,
+  createTestApp,
+  signUp,
+  testWebOrigin,
+} from "../test/harness.js"
+import { textDocx, textPdf } from "./import-fixtures.test.js"
+import { openWordPage } from "./index.js"
+import { pageCreatorSites, type SourceFile } from "./page-creator-sites.js"
+import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
+
+const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
+
+type Format = "word" | "older"
+type Made = { docId: string; kind: "cv" | "letter"; format: Format }
+type Account = { cookie: string; userId: string }
+type App = ReturnType<typeof createTestApp>
+type Maker = (app: App, owner: Account) => Promise<Made>
+
+const dataOf = z.object({ data: z.unknown() })
+const idOf = z.union([
+  z.object({ docId: z.string().uuid() }).passthrough(),
+  z.object({ id: z.string().uuid() }).passthrough(),
+])
+const listOf = z.array(
+  z
+    .object({ id: z.string(), kind: z.string(), format: z.string().optional() })
+    .passthrough()
+)
+
+async function command(
+  app: App,
+  owner: Account,
+  name: string,
+  input: unknown
+): Promise<unknown> {
+  const response = await app.request(`/api/commands/${name}`, {
+    method: "POST",
+    headers: authHeaders(owner.cookie),
+    body: JSON.stringify({ input, idempotencyKey: randomUUID() }),
+  })
+  expect(response.status, `${name}: ${await response.clone().text()}`).toBe(200)
+  return dataOf.parse(await response.json()).data
+}
+
+function docIdOf(data: unknown) {
+  const parsed = idOf.parse(data)
+  return "docId" in parsed ? parsed.docId : parsed.id
+}
+
+async function importFile(
+  app: App,
+  owner: Account,
+  bytes: Buffer,
+  name: string,
+  type: string
+) {
+  const form = new FormData()
+  form.set("file", new File([new Uint8Array(bytes)], name, { type }))
+  const response = await app.request("/api/paper/import", {
+    method: "POST",
+    headers: { Origin: testWebOrigin, Cookie: owner.cookie },
+    body: form,
+  })
+  expect(response.status, await response.clone().text()).toBe(200)
+  return docIdOf(dataOf.parse(await response.json()).data)
+}
+
+async function mintWord(app: App, owner: Account) {
+  return docIdOf(
+    await command(app, owner, "paper.canvas", { op: "mint", label: "cv" })
+  )
+}
+
+async function importWord(app: App, owner: Account) {
+  return importFile(
+    app,
+    owner,
+    textDocx("Imported for a copy"),
+    "Copy source.docx",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  )
+}
+
+async function restored(app: App, owner: Account, docId: string) {
+  await command(app, owner, "paper.delete", { docId })
+  return docIdOf(await command(app, owner, "paper.restoreDeleted", { docId }))
+}
+
+const word = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
+  docId,
+  kind,
+  format: "word",
+})
+
+const CASES: Record<string, Maker> = {
+  "Start blank (paper.canvas mint)": async (app, owner) =>
+    word(await mintWord(app, owner)),
+  "Start from a template (paper.canvas mint with a template)": async (
+    app,
+    owner
+  ) =>
+    word(
+      docIdOf(
+        await command(app, owner, "paper.canvas", {
+          op: "mint",
+          label: "cv",
+          templateId: "modern",
+        })
+      )
+    ),
+  "Start a letter for a Job (paper.canvas mint with a Job)": async (
+    app,
+    owner
+  ) => {
+    const job = docIdOf(
+      await command(app, owner, "job.create", {
+        title: "Analyst",
+        company: "Northwind",
+        location: "Hanoi",
+      })
+    )
+    return word(
+      docIdOf(
+        await command(app, owner, "paper.canvas", {
+          op: "mint",
+          label: "letter",
+          jobId: job,
+        })
+      ),
+      "letter"
+    )
+  },
+  "Coach start (paper.start)": async (app, owner) =>
+    word(
+      docIdOf(
+        await command(app, owner, "paper.start", {
+          kind: "cv",
+          templateId: "modern",
+        })
+      )
+    ),
+  "Import a Word file": async (app, owner) =>
+    word(
+      await importFile(
+        app,
+        owner,
+        textDocx("Imported Word words"),
+        "Imported.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      )
+    ),
+  "Import a PDF": async (app, owner) =>
+    word(
+      await importFile(
+        app,
+        owner,
+        textPdf("Imported PDF words"),
+        "Imported.pdf",
+        "application/pdf"
+      )
+    ),
+  "Import a text file": async (app, owner) =>
+    word(
+      await importFile(
+        app,
+        owner,
+        Buffer.from("Imported text words\nSecond line\n"),
+        "Imported.txt",
+        "text/plain"
+      )
+    ),
+  "Own agent import (stage, then paper.import)": async (app, owner) => {
+    const headers = new Headers({
+      ...authHeaders(owner.cookie),
+      "idempotency-key": randomUUID(),
+    })
+    headers.set("content-type", WORD_PACKAGE_MEDIA_TYPE)
+    const staged = await app.request(
+      "/api/paper/packages/stage?name=Agent.docx&kind=cv",
+      {
+        method: "POST",
+        headers,
+        body: new Uint8Array(fixturePackage(paragraph("Agent words"))),
+      }
+    )
+    expect(staged.status, await staged.clone().text()).toBe(201)
+    const stageId = z
+      .object({ data: z.object({ stageId: z.string() }) })
+      .parse(await staged.json()).data.stageId
+    return word(
+      docIdOf(
+        await command(app, owner, "paper.import", {
+          generation: "package",
+          stageId,
+        })
+      )
+    )
+  },
+  "Duplicate an imported page (paper.duplicate)": async (app, owner) =>
+    word(
+      docIdOf(
+        await command(app, owner, "paper.duplicate", {
+          docId: await importWord(app, owner),
+        })
+      )
+    ),
+  "Duplicate a started page (paper.duplicate)": async (app, owner) =>
+    word(
+      docIdOf(
+        await command(app, owner, "paper.duplicate", {
+          docId: await mintWord(app, owner),
+        })
+      )
+    ),
+  "Restore an imported page from trash (paper.restoreDeleted)": async (
+    app,
+    owner
+  ) => word(await restored(app, owner, await importWord(app, owner))),
+  "Restore a started page from trash (paper.restoreDeleted)": async (
+    app,
+    owner
+  ) => word(await restored(app, owner, await mintWord(app, owner))),
+  "Older document (paper.create)": async (app, owner) => ({
+    docId: docIdOf(
+      await command(app, owner, "paper.create", {
+        kind: "cv",
+        name: "Older CV",
+      })
+    ),
+    kind: "cv",
+    format: "older",
+  }),
+  "Duplicate an older document (paper.duplicate)": async (app, owner) => ({
+    docId: docIdOf(
+      await command(app, owner, "paper.duplicate", {
+        docId: docIdOf(
+          await command(app, owner, "paper.create", {
+            kind: "cv",
+            name: "Older CV to copy",
+          })
+        ),
+      })
+    ),
+    kind: "cv",
+    format: "older",
+  }),
+  "Word module open with a mint source (openWordPage)": async (_app, owner) => {
+    const page = await openWordPage(owner.userId, {
+      kind: "mint",
+      name: "Opened page",
+      label: "cv",
+    })
+    if ("refused" in page) throw new Error(page.message)
+    return word(page.doc)
+  },
+}
+
+type Site = { count: number; command?: string; cases: string[] }
+
+const IMPORTS = [
+  "Import a Word file",
+  "Import a PDF",
+  "Import a text file",
+  "Own agent import (stage, then paper.import)",
+  "Duplicate an imported page (paper.duplicate)",
+  "Restore an imported page from trash (paper.restoreDeleted)",
+]
+const WORD_CASES = Object.keys(CASES).filter(
+  (name) => !name.startsWith("Older") && !name.includes("older")
+)
+
+const CREATOR_SITES: Record<string, Site> = {
+  "paper/package-store.ts#publishWordPackage": {
+    count: 1,
+    cases: WORD_CASES.filter((name) => !name.startsWith("Restore")),
+  },
+  "paper/package-canvas.ts#registerCanvasCommit": {
+    count: 1,
+    command: "paper.canvas",
+    cases: [
+      "Start blank (paper.canvas mint)",
+      "Start from a template (paper.canvas mint with a template)",
+      "Start a letter for a Job (paper.canvas mint with a Job)",
+    ],
+  },
+  "paper/package-start.ts#paperStartReview": {
+    count: 1,
+    cases: ["Coach start (paper.start)"],
+  },
+  "paper/package-start.ts#registerPaperStart": {
+    count: 1,
+    command: "paper.start",
+    cases: ["Coach start (paper.start)"],
+  },
+  "paper/operations/import/server.ts#implementation": {
+    count: 1,
+    cases: IMPORTS.slice(0, 4),
+  },
+  "registry/generated/catalog.ts#command:paper.import": {
+    count: 1,
+    cases: IMPORTS.slice(0, 4),
+  },
+  "paper/http.ts#route:POST /import": {
+    count: 1,
+    cases: IMPORTS.slice(0, 3),
+  },
+  "paper/package-card-actions.ts#publishWordPageCopy": {
+    count: 1,
+    cases: [
+      "Duplicate an imported page (paper.duplicate)",
+      "Duplicate a started page (paper.duplicate)",
+    ],
+  },
+  "paper/store.ts#duplicatePaper": {
+    count: 2,
+    cases: [
+      "Duplicate an imported page (paper.duplicate)",
+      "Duplicate a started page (paper.duplicate)",
+      "Duplicate an older document (paper.duplicate)",
+    ],
+  },
+  "paper/card-action-commands.ts#registerDuplicate": {
+    count: 1,
+    command: "paper.duplicate",
+    cases: [
+      "Duplicate an imported page (paper.duplicate)",
+      "Duplicate a started page (paper.duplicate)",
+      "Duplicate an older document (paper.duplicate)",
+    ],
+  },
+  "paper/package-card-actions.ts#restoreWordPage": {
+    count: 1,
+    cases: [
+      "Restore an imported page from trash (paper.restoreDeleted)",
+      "Restore a started page from trash (paper.restoreDeleted)",
+    ],
+  },
+  "paper/store.ts#restoreDeletedPaper": {
+    count: 1,
+    cases: [
+      "Restore an imported page from trash (paper.restoreDeleted)",
+      "Restore a started page from trash (paper.restoreDeleted)",
+    ],
+  },
+  "paper/commands.ts#command:paper.restoreDeleted": {
+    count: 1,
+    cases: [
+      "Restore an imported page from trash (paper.restoreDeleted)",
+      "Restore a started page from trash (paper.restoreDeleted)",
+    ],
+  },
+  "paper/store.ts#createPaper": {
+    count: 1,
+    cases: [
+      "Older document (paper.create)",
+      "Duplicate an older document (paper.duplicate)",
+    ],
+  },
+  "paper/commands.ts#command:paper.create": {
+    count: 1,
+    cases: ["Older document (paper.create)"],
+  },
+  "paper/word/document.ts#open": {
+    count: 1,
+    cases: ["Word module open with a mint source (openWordPage)"],
+  },
+}
+
+const CREATOR_COMMANDS = [
+  "paper.canvas",
+  "paper.create",
+  "paper.duplicate",
+  "paper.import",
+  "paper.restoreDeleted",
+  "paper.start",
+]
+
+function apiSources(dir: string): SourceFile[] {
+  return readdirSync(dir).flatMap((entry) => {
+    const full = path.join(dir, entry)
+    if (statSync(full).isDirectory())
+      return entry === "test" ? [] : apiSources(full)
+    if (!entry.endsWith(".ts") || entry.endsWith(".test.ts")) return []
+    return [
+      {
+        path: path.relative(srcRoot, full).split(path.sep).join("/"),
+        text: readFileSync(full, "utf8"),
+      },
+    ]
+  })
+}
+
+function namedCommands(sites: Record<string, Site>) {
+  return Object.fromEntries(
+    Object.entries(sites).flatMap(([site, entry]) =>
+      entry.command ? [[site, entry.command]] : []
+    )
+  )
+}
+
+function counts(sites: Record<string, Site>) {
+  return Object.fromEntries(
+    Object.entries(sites)
+      .map(([site, entry]) => [site, entry.count] as const)
+      .sort(([left], [right]) => left.localeCompare(right))
+  )
+}
+
+describe("every place that makes a page is named here", () => {
+  it("finds exactly the named places that write a page row, from the API source", () => {
+    expect(
+      pageCreatorSites(apiSources(srcRoot), namedCommands(CREATOR_SITES)),
+      "A new way to make a page needs a case in CASES and its place in CREATOR_SITES"
+    ).toEqual(counts(CREATOR_SITES))
+  })
+
+  it("covers every named place with a real case, and every case belongs to a place", () => {
+    const named = new Set(
+      Object.values(CREATOR_SITES).flatMap((site) => site.cases)
+    )
+    expect([...named].filter((name) => !(name in CASES))).toEqual([])
+    expect(Object.keys(CASES).filter((name) => !named.has(name))).toEqual([])
+    for (const site of Object.values(CREATOR_SITES))
+      expect(site.cases.length).toBeGreaterThan(0)
+  })
+
+  it("flags a new route that publishes a page and stays quiet on the named ones", () => {
+    const writer: SourceFile = {
+      path: "paper/package-store.ts",
+      text: "export async function publishWordPackage(owner: string) {\n  await getDb().insert(paperPackageHeads).values({ owner })\n}\n",
+    }
+    const quiet: SourceFile = {
+      path: "paper/read-only.ts",
+      text: 'import { open } from "./word/document.js"\nexport async function readOnly(owner: string, doc: string) {\n  return open(owner, { kind: "read", doc })\n}\n',
+    }
+    const route: SourceFile = {
+      path: "paper/new-route.ts",
+      text: 'import { publishWordPackage } from "./package-store.js"\nexport function routes(app: any) {\n  app.post("/quick", async () => publishWordPackage("owner"))\n}\n',
+    }
+    const viaCommand: SourceFile = {
+      path: "job/new-door.ts",
+      text: 'export function door(registry: any) {\n  return registry.execute({ name: "paper.import", input: {} })\n}\n',
+    }
+    const importer: SourceFile = {
+      path: "paper/operations/import/server.ts",
+      text: 'import { publishWordPackage } from "../../package-store.js"\nexport const implementation = { execute: () => publishWordPackage("owner") }\n',
+    }
+    expect(pageCreatorSites([writer, quiet], {})).toEqual({
+      "paper/package-store.ts#publishWordPackage": 1,
+    })
+    expect(pageCreatorSites([writer, quiet, route], {})).toEqual({
+      "paper/new-route.ts#route:POST /quick": 1,
+      "paper/package-store.ts#publishWordPackage": 1,
+    })
+    expect(pageCreatorSites([writer, importer, viaCommand], {})).toEqual({
+      "job/new-door.ts#door": 1,
+      "paper/operations/import/server.ts#implementation": 1,
+      "paper/package-store.ts#publishWordPackage": 1,
+    })
+  })
+
+  it("keeps the person's own agent door to its nine operations, none of which makes a page", async () => {
+    installRegistry()
+    const tools = (
+      await registry.tools(
+        delegateActorSchema.parse({
+          type: "delegate",
+          userId: "user-page-creators",
+          connectionId: "11111111-1111-4111-8111-111111111111",
+          name: "Agent",
+          scopes: ["job.read", "job.write", "paper.read", "paper.write"],
+          resources: "jobs-and-paper",
+          reads: "allow",
+          writes: "approval",
+        })
+      )
+    ).map((tool) => tool.name)
+    expect(tools).toHaveLength(9)
+    expect(tools.filter((name) => CREATOR_COMMANDS.includes(name))).toEqual([])
+  })
+})
+
+describe("a page made any way is listed, opens, and stays hidden from others", () => {
+  let app: App
+  let close: () => Promise<void>
+  let owner: Account
+  let stranger: Account
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+
+  async function account(name: string): Promise<Account> {
+    const email = `${randomUUID()}@test.invalid`
+    const signed = await signUp(app, { name, email })
+    const row = await withDatabase(db, async () =>
+      db.select({ id: user.id }).from(user).where(eq(user.email, email))
+    )
+    return { cookie: signed.cookie, userId: row[0]?.id ?? "" }
+  }
+
+  async function listed(who: Account) {
+    const response = await app.request("/api/paper", {
+      headers: authHeaders(who.cookie),
+    })
+    expect(response.status).toBe(200)
+    return listOf.parse(dataOf.parse(await response.json()).data)
+  }
+
+  async function routeReads(who: Account, docId: string) {
+    const get = await app.request(`/api/paper/${docId}`, {
+      headers: authHeaders(who.cookie),
+    })
+    const read = await app.request("/api/reads/paper.read", {
+      method: "POST",
+      headers: authHeaders(who.cookie),
+      body: JSON.stringify({ view: "page", docId }),
+    })
+    const shape = async (response: Response) => ({
+      status: response.status,
+      body: (await response.text()).replaceAll(docId, "<id>"),
+    })
+    return { get: await shape(get), read: await shape(read) }
+  }
+
+  beforeAll(async () => {
+    const opened = await createMigratedTestDb()
+    db = opened.db
+    close = () => opened.client.close()
+    app = createTestApp(db)
+    owner = await account("Page owner")
+    stranger = await account("Stranger")
+  })
+
+  afterAll(async () => {
+    await close?.()
+  })
+
+  it.each(Object.keys(CASES))("%s", async (name) => {
+    const maker = CASES[name]
+    if (!maker) throw new Error(name)
+    const made = await withDatabase(db, () => maker(app, owner))
+    const mine = (await listed(owner)).filter((item) => item.id === made.docId)
+    expect(mine).toHaveLength(1)
+    expect(mine[0]?.kind).toBe(made.kind)
+    if (made.format === "word") {
+      expect(mine[0]?.format).toBe("word")
+      const read = await app.request("/api/reads/paper.read", {
+        method: "POST",
+        headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ view: "page", docId: made.docId }),
+      })
+      expect(read.status, await read.clone().text()).toBe(200)
+      expect(
+        z
+          .object({ data: z.object({ doc: z.string() }).passthrough() })
+          .parse(await read.json()).data.doc
+      ).toBe(made.docId)
+    } else {
+      expect(mine[0]?.format).not.toBe("word")
+      const get = await app.request(`/api/paper/${made.docId}`, {
+        headers: authHeaders(owner.cookie),
+      })
+      expect(get.status, await get.clone().text()).toBe(200)
+    }
+    expect(
+      (await listed(stranger)).some((item) => item.id === made.docId)
+    ).toBe(false)
+    const strangerSees = await routeReads(stranger, made.docId)
+    expect(strangerSees.get.status).toBe(404)
+    expect(strangerSees).toEqual(await routeReads(stranger, randomUUID()))
+  })
+})
