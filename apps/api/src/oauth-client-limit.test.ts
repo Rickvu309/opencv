@@ -351,3 +351,40 @@ it("accepts the names and redirect URIs real agents send", () => {
   ])
     expect(registrationProblem(JSON.stringify(body))).toBeNull()
 })
+
+it("with the sign-in code limit also mounted, a registration and a sign-in code send each reach the auth handler with their body intact", async () => {
+  const both = createApp({
+    webOrigins: [testWebOrigin],
+    sessionSecret: testSessionSecret,
+    authUrl: testAuthUrl,
+    db: database.db,
+    rateLimitEnabled: true,
+    sendCodeLimitEnabled: true,
+    logAuthMail: true,
+  })
+  const registration = await both.request("/api/auth/oauth2/register", {
+    method: "POST",
+    headers: jsonHeaders({ "x-real-ip": "198.51.100.21" }),
+    body: JSON.stringify({
+      client_name: "Both limits agent",
+      redirect_uris: [redirectUri],
+      token_endpoint_auth_method: "none",
+      application_type: "native",
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"],
+      scope,
+    }),
+  })
+  const registered = (await registration.json()) as {
+    client_id: string
+    client_name: string
+  }
+  expect(registration.status, JSON.stringify(registered)).toBe(201)
+  expect(registered.client_name).toBe("Both limits agent")
+  expect(await clientIds()).toContain(registered.client_id)
+
+  const email = "both-limits-1413@example.com"
+  const { res, code } = await sendSignInCode(both, email)
+  expect(res.status).toBe(200)
+  expect(code).toMatch(/^\d+$/)
+})
