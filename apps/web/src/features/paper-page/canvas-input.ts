@@ -1,11 +1,38 @@
+import { WORD_LIMITS } from "@workspace/domain"
+
+export const PASTE_LINE_LIMIT = Math.floor(WORD_LIMITS.maxOpsPerApply / 2)
+
 export const FORMAT_NOT_SAVED =
-  "Formatting from the keyboard is not saved yet. Ask the Coach to make words bold or italic."
+  "Bold, italic and other formatting typed here are not saved yet. Formatting already in your document is kept. To change it, use Download Word and edit the file in Word."
+
+export const LAYOUT_NOT_SAVED =
+  "Alignment, indents and text direction can't be changed here yet. Your document keeps the ones it has. To change them, use Download Word and edit the file in Word."
+
+export const LIST_NOT_SAVED =
+  "A line can't be made into a list or taken out of one here yet. Lists already in your document are kept."
+
+export const RULE_NOT_SAVED = "A dividing line can't be added here yet."
+
+export const LINK_NOT_SAVED =
+  "Links can't be added here yet. Links already in your document are kept."
 
 export const DRAG_NOT_SAVED =
-  "Dragging words is not saved yet. Cut and paste them instead."
+  "Dragged words were not moved. Cut and paste them instead."
 
-export const PASTE_TOO_LONG =
-  "This paste is too long to save at once. Paste up to 50 lines at a time."
+export const PASTE_TOO_MANY_LINES = `Nothing was pasted. One paste can hold up to ${PASTE_LINE_LIMIT} lines.`
+
+export const PASTE_LINE_TOO_LONG = `Nothing was pasted. One pasted line can hold up to ${WORD_LIMITS.maxTextBytes / 1024} KB of text.`
+
+export const TRANSPOSE_NOT_SAVED =
+  "Swapping letters is not saved here yet, so nothing changed. Retype them instead."
+
+export const YANK_NOT_SAVED =
+  "This kind of paste is not saved here yet, so nothing was pasted. Use Paste instead."
+
+export const CHANGE_NOT_SUPPORTED =
+  "This change can't be saved here yet, so it was not made."
+
+export const CHANGE_NOT_KEPT = "Your last change was not kept."
 
 export const BROWSER_INPUT_TYPES = [
   "insertText",
@@ -75,7 +102,7 @@ export type PageEdit =
 export type InputRule =
   | { kind: "native" }
   | { kind: "edit"; edit: PageEdit }
-  | { kind: "blocked"; notice: string | null }
+  | { kind: "blocked"; notice: string }
 
 export const COMPOSING_INPUT = [
   "insertCompositionText",
@@ -125,38 +152,50 @@ export const HANDLED_INPUT: Readonly<Record<string, PageEdit>> = {
     direction: "forward",
     reach: "line",
   },
+  deleteEntireSoftLine: {
+    kind: "delete",
+    direction: "backward",
+    reach: "line",
+  },
   historyUndo: { kind: "undo" },
   historyRedo: { kind: "redo" },
 }
 
-export const BLOCKED_INPUT: Readonly<Record<string, string | null>> = {
-  formatBold: FORMAT_NOT_SAVED,
-  formatItalic: FORMAT_NOT_SAVED,
-  formatUnderline: FORMAT_NOT_SAVED,
-  formatStrikeThrough: FORMAT_NOT_SAVED,
-  formatSuperscript: FORMAT_NOT_SAVED,
-  formatSubscript: FORMAT_NOT_SAVED,
-  formatJustifyFull: FORMAT_NOT_SAVED,
-  formatJustifyCenter: FORMAT_NOT_SAVED,
-  formatJustifyRight: FORMAT_NOT_SAVED,
-  formatJustifyLeft: FORMAT_NOT_SAVED,
-  formatIndent: FORMAT_NOT_SAVED,
-  formatOutdent: FORMAT_NOT_SAVED,
-  formatRemove: FORMAT_NOT_SAVED,
-  formatSetBlockTextDirection: FORMAT_NOT_SAVED,
-  formatSetInlineTextDirection: FORMAT_NOT_SAVED,
-  formatBackColor: FORMAT_NOT_SAVED,
-  formatFontColor: FORMAT_NOT_SAVED,
-  formatFontName: FORMAT_NOT_SAVED,
-  insertOrderedList: FORMAT_NOT_SAVED,
-  insertUnorderedList: FORMAT_NOT_SAVED,
-  insertHorizontalRule: FORMAT_NOT_SAVED,
-  insertLink: FORMAT_NOT_SAVED,
+const MARKS = [
+  "formatBold",
+  "formatItalic",
+  "formatUnderline",
+  "formatStrikeThrough",
+  "formatSuperscript",
+  "formatSubscript",
+  "formatRemove",
+  "formatBackColor",
+  "formatFontColor",
+  "formatFontName",
+] as const
+
+const LAYOUT = [
+  "formatJustifyFull",
+  "formatJustifyCenter",
+  "formatJustifyRight",
+  "formatJustifyLeft",
+  "formatIndent",
+  "formatOutdent",
+  "formatSetBlockTextDirection",
+  "formatSetInlineTextDirection",
+] as const
+
+export const BLOCKED_INPUT: Readonly<Record<string, string>> = {
+  ...Object.fromEntries(MARKS.map((type) => [type, FORMAT_NOT_SAVED])),
+  ...Object.fromEntries(LAYOUT.map((type) => [type, LAYOUT_NOT_SAVED])),
+  insertOrderedList: LIST_NOT_SAVED,
+  insertUnorderedList: LIST_NOT_SAVED,
+  insertHorizontalRule: RULE_NOT_SAVED,
+  insertLink: LINK_NOT_SAVED,
   insertFromDrop: DRAG_NOT_SAVED,
   deleteByDrag: DRAG_NOT_SAVED,
-  deleteEntireSoftLine: null,
-  insertTranspose: null,
-  insertFromYank: null,
+  insertTranspose: TRANSPOSE_NOT_SAVED,
+  insertFromYank: YANK_NOT_SAVED,
 }
 
 export function inputRule(inputType: string): InputRule {
@@ -164,7 +203,10 @@ export function inputRule(inputType: string): InputRule {
     return { kind: "native" }
   const edit = HANDLED_INPUT[inputType]
   if (edit) return { kind: "edit", edit }
-  return { kind: "blocked", notice: BLOCKED_INPUT[inputType] ?? null }
+  return {
+    kind: "blocked",
+    notice: BLOCKED_INPUT[inputType] ?? CHANGE_NOT_SUPPORTED,
+  }
 }
 
 export type PageKey = "split" | "undo" | "redo" | null

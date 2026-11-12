@@ -12,9 +12,9 @@ import {
   DRAG_NOT_SAVED,
   FORMAT_NOT_SAVED,
   inputRule,
-  PASTE_TOO_LONG,
+  PASTE_LINE_LIMIT,
+  PASTE_TOO_MANY_LINES,
 } from "./canvas-input.ts"
-import { PASTE_LINE_LIMIT } from "./canvas-state.ts"
 import { WritingCanvas } from "./canvas.tsx"
 
 const DOC = "11111111-1111-7111-8111-111111111111"
@@ -513,7 +513,7 @@ describe("paste and drop", () => {
       Array.from({ length: PASTE_LINE_LIMIT + 1 }, (_, i) => `L${i}`).join("\n")
     )
     expect(words()).toEqual(before)
-    expect(status()).toBe(PASTE_TOO_LONG)
+    expect(status()).toBe(PASTE_TOO_MANY_LINES)
     await paste("x".repeat(9000))
     expect(words()).toEqual(before)
     await paste(

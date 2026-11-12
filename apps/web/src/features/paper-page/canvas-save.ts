@@ -68,6 +68,11 @@ export function savedNote(words: string, outcome: SaveOutcome): string | null {
   return "Saved"
 }
 
+export function refusedSave(outcome: SaveOutcome): string | null {
+  if (outcome.saved || outcome.conflict || !outcome.note) return null
+  return SERVER_NOTES.has(outcome.note) ? null : outcome.note
+}
+
 export function decideSave(
   draft: PackageDraft,
   local: LocalObservation | null,

@@ -27,7 +27,7 @@ import {
   visibleText,
   type DrawnLooks,
 } from "./canvas-draw.ts"
-import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
+import { pageWords, refusedSave, savedNote, settlePage } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import {
   setWritingConflict,
@@ -187,6 +187,8 @@ function WritingSheet({
   const composing = useRef(false)
   const splitAfter = useRef(false)
   const pasteGuard = useRef(false)
+  const compositionSpan = useRef<TextSpan | null>(null)
+  const drawnFor = useRef(0)
   const compositionBase = useRef<{
     blockId: string
     text: string
@@ -241,6 +243,11 @@ function WritingSheet({
           dispatch({ type: "basis", basis: result.basis, typed: false })
         }
         if (result.blocks) dispatch({ type: "adopt", blocks: result.blocks })
+        const refused = refusedSave(result)
+        if (refused) {
+          dispatch({ type: "refused", note: refused, words })
+          return
+        }
         const note = savedNote(words, result)
         if (note) {
           if (note === "Saved") setWritingConflict(null)
@@ -271,9 +278,13 @@ function WritingSheet({
       if (scroll) scroll.scrollTop = 0
       opened.current = true
     }
+    if (drawnFor.current !== state.redraw) {
+      drawnFor.current = state.redraw
+      page.focus({ preventScroll: true })
+    }
     placeCaret(page, state.present.caret)
     if (scroll) revealCaret(page, scroll)
-  }, [state.present, state.looks])
+  }, [state.present, state.looks, state.redraw])
 
   const applyPaste = useCallback(
     (text: string) => {
@@ -344,7 +355,7 @@ function WritingSheet({
     }
     page.addEventListener("beforeinput", onBefore)
     return () => page.removeEventListener("beforeinput", onBefore)
-  }, [applyPaste, state.present])
+  }, [applyPaste, state.present, state.redraw])
 
   return (
     <section
@@ -354,6 +365,7 @@ function WritingSheet({
     >
       <div className="writing-scroll" ref={scrollRef}>
         <article
+          key={state.redraw}
           ref={pageRef}
           className={cn("writing-page")}
           contentEditable
@@ -391,9 +403,9 @@ function WritingSheet({
           onCompositionStart={() => {
             composing.current = true
             const page = pageRef.current
-            const caret = page
-              ? spanFrom(page, state.present.caret).focus
-              : state.present.caret
+            const span = page ? spanFrom(page, state.present.caret) : null
+            compositionSpan.current = span
+            const caret = span ? span.focus : state.present.caret
             const block = state.present.blocks.find(
               (item) => item.id === caret.blockId
             )
@@ -407,7 +419,9 @@ function WritingSheet({
             composing.current = false
             const page = pageRef.current
             const base = compositionBase.current
+            const from = compositionSpan.current
             compositionBase.current = null
+            compositionSpan.current = null
             if (!page) return
             const read = readBlocks(page, nextId.current)
             nextId.current = read.nextId
@@ -441,6 +455,7 @@ function WritingSheet({
               type: "composed",
               texts,
               caret,
+              from,
               split,
               nextId: read.nextId,
             })

@@ -19,16 +19,19 @@ import {
   type WritingBlock,
   type WritingDraft,
 } from "./canvas-edit.ts"
-import { fixedLineNote } from "./canvas-fixed-lines.ts"
-import { PASTE_TOO_LONG } from "./canvas-input.ts"
+import { fixedLineNote, heldLineNote } from "./canvas-fixed-lines.ts"
+import {
+  CHANGE_NOT_KEPT,
+  PASTE_LINE_LIMIT,
+  PASTE_LINE_TOO_LONG,
+  PASTE_TOO_MANY_LINES,
+} from "./canvas-input.ts"
 import { collectLooks, withoutLooks, type LookBook } from "./canvas-look.ts"
 import { pastePlain, plainCharacters } from "./canvas-paste.ts"
 import { reachSpan, type Reach } from "./canvas-reach.ts"
 import { pageWords } from "./canvas-save.ts"
 
 const HISTORY_DEPTH = 50
-
-export const PASTE_LINE_LIMIT = Math.floor(WORD_LIMITS.maxOpsPerApply / 2)
 
 export type CanvasState = {
   past: WritingDraft[]
@@ -39,6 +42,8 @@ export type CanvasState = {
   notice: string
   basis: DraftBasis | null
   typed: boolean
+  saved: WritingDraft | null
+  redraw: number
 }
 
 export type CanvasAction =
@@ -61,6 +66,7 @@ export type CanvasAction =
       type: "composed"
       texts: { id: string; text: string }[]
       caret: TextPoint
+      from: TextSpan | null
       split: boolean
       nextId: number
     }
@@ -71,6 +77,7 @@ export type CanvasAction =
   | { type: "adopt"; blocks: WritingBlock[] }
   | { type: "basis"; basis: DraftBasis; typed: boolean }
   | { type: "replace"; draft: WritingDraft; basis: DraftBasis }
+  | { type: "refused"; note: string; words: string }
 
 function sameBasis(left: DraftBasis | null, right: DraftBasis | null) {
   if (left === right) return true
@@ -101,6 +108,74 @@ function remember(state: CanvasState, present: WritingDraft): CanvasState {
 
 function withNotice(state: CanvasState, notice: string): CanvasState {
   return state.notice === notice ? state : { ...state, notice }
+}
+
+function startOf(draft: WritingDraft, span: TextSpan): TextPoint {
+  const anchor = draft.blocks.findIndex(
+    (block) => block.id === span.anchor.blockId
+  )
+  const focus = draft.blocks.findIndex(
+    (block) => block.id === span.focus.blockId
+  )
+  if (anchor < 0) return span.focus
+  if (focus < 0) return span.anchor
+  if (anchor !== focus) return anchor < focus ? span.anchor : span.focus
+  return span.anchor.offset <= span.focus.offset ? span.anchor : span.focus
+}
+
+function sensibleCaret(draft: WritingDraft, point: TextPoint): TextPoint {
+  const block = draft.blocks.find((item) => item.id === point.blockId)
+  if (!block || block.held) return draft.caret
+  return {
+    blockId: block.id,
+    offset: Math.max(0, Math.min(point.offset, block.text.length)),
+  }
+}
+
+function redrawn(state: CanvasState, caret: TextPoint): CanvasState {
+  return {
+    ...state,
+    present: {
+      ...state.present,
+      caret: sensibleCaret(state.present, caret),
+    },
+    redraw: state.redraw + 1,
+  }
+}
+
+function showsPresent(
+  present: WritingDraft,
+  texts: { id: string; text: string }[]
+) {
+  return (
+    texts.length === present.blocks.length &&
+    texts.every(
+      (item, index) =>
+        item.id === present.blocks[index]?.id &&
+        item.text === present.blocks[index]?.text
+    )
+  )
+}
+
+function restoreSaved(state: CanvasState, note: string): CanvasState {
+  const notice = `${CHANGE_NOT_KEPT} ${note}`
+  const saved = state.saved
+  if (!saved) return { ...withNotice(state, notice), redraw: state.redraw + 1 }
+  const at = state.past.lastIndexOf(saved)
+  const present = {
+    ...saved,
+    caret: sensibleCaret(saved, state.present.caret),
+  }
+  return {
+    ...state,
+    past: at >= 0 ? state.past.slice(0, at) : [],
+    present,
+    future: [],
+    saved: present,
+    notice,
+    typed: typedAgainst(state, present),
+    redraw: state.redraw + 1,
+  }
 }
 
 function typedAgainst(state: CanvasState, present: WritingDraft) {
@@ -134,34 +209,57 @@ function travel(state: CanvasState, back: boolean): CanvasState {
       }
 }
 
-function tooLong(text: string) {
+function pasteRefusal(text: string): string | null {
   const lines = plainCharacters(text).split("\n")
+  if (lines.length > PASTE_LINE_LIMIT) return PASTE_TOO_MANY_LINES
   const encoder = new TextEncoder()
-  return (
-    lines.length > PASTE_LINE_LIMIT ||
-    lines.some(
-      (line) => encoder.encode(line).byteLength > WORD_LIMITS.maxTextBytes
-    )
+  const long = lines.some(
+    (line) => encoder.encode(line).byteLength > WORD_LIMITS.maxTextBytes
   )
+  return long ? PASTE_LINE_TOO_LONG : null
+}
+
+function composed(
+  state: CanvasState,
+  action: Extract<CanvasAction, { type: "composed" }>
+): CanvasState {
+  const from = action.from
+  const held = from ? heldLineNote(state.present, from, state.looks) : null
+  if (from && held) {
+    return withNotice(redrawn(state, startOf(state.present, from)), held)
+  }
+  const visible = replaceVisible(
+    { ...state.present, nextId: action.nextId },
+    action.texts,
+    action.caret
+  )
+  if (!action.split) return remember(state, visible)
+  const split = commitComposition({ ...visible, caret: action.caret }, "", true)
+  const fixed = fixedLineNote(state.present, split, state.looks)
+  return fixed
+    ? withNotice(remember(state, visible), fixed)
+    : remember(state, split)
 }
 
 function edited(state: CanvasState, action: CanvasAction): CanvasState {
   if (action.type === "composed") {
-    const visible = replaceVisible(
-      { ...state.present, nextId: action.nextId },
-      action.texts,
-      action.caret
-    )
-    if (!action.split) return remember(state, visible)
-    const split = commitComposition(
-      { ...visible, caret: action.caret },
-      "",
-      true
-    )
-    const fixed = fixedLineNote(state.present, split, state.looks)
-    return fixed
-      ? withNotice(remember(state, visible), fixed)
-      : remember(state, split)
+    const next = composed(state, action)
+    if (next.present !== state.present || next.redraw !== state.redraw)
+      return next
+    if (showsPresent(state.present, action.texts)) return next
+    const caret = action.from
+      ? startOf(state.present, action.from)
+      : action.caret
+    return redrawn(next, caret)
+  }
+  if (
+    action.type === "insert" ||
+    action.type === "split" ||
+    action.type === "paste" ||
+    action.type === "delete"
+  ) {
+    const held = heldLineNote(state.present, action.span, state.looks)
+    if (held) return withNotice(state, held)
   }
   if (action.type === "insert") {
     const base = action.live
@@ -176,7 +274,8 @@ function edited(state: CanvasState, action: CanvasAction): CanvasState {
   if (action.type === "split")
     return remember(state, splitParagraph(state.present, action.span))
   if (action.type === "paste") {
-    if (tooLong(action.text)) return withNotice(state, PASTE_TOO_LONG)
+    const refusal = pasteRefusal(action.text)
+    if (refusal) return withNotice(state, refusal)
     return remember(state, pastePlain(state.present, action.span, action.text))
   }
   if (action.type === "delete") {
@@ -206,10 +305,18 @@ export function reduce(state: CanvasState, action: CanvasAction): CanvasState {
   }
   if (action.type === "notice") return withNotice(state, action.notice)
   if (action.type === "basis") {
+    const saved =
+      !action.typed && action.basis.words === pageWords(state.present.blocks)
+        ? state.present
+        : state.saved
     if (sameBasis(state.basis, action.basis) && state.typed === action.typed) {
-      return state
+      return saved === state.saved ? state : { ...state, saved }
     }
-    return { ...state, basis: action.basis, typed: action.typed }
+    return { ...state, basis: action.basis, typed: action.typed, saved }
+  }
+  if (action.type === "refused") {
+    if (pageWords(state.present.blocks) !== action.words) return state
+    return restoreSaved(state, action.note)
   }
   if (action.type === "replace") {
     const draft = plainDraft(action.draft)
@@ -227,14 +334,15 @@ export function reduce(state: CanvasState, action: CanvasAction): CanvasState {
       looks,
       basis: action.basis,
       typed: false,
+      saved: draft,
     }
   }
   if (action.type === "adopt") {
     const present = adoptIds(state.present, withoutLooks(action.blocks))
     const looks = collectLooks(state.looks, action.blocks)
-    return present === state.present && looks === state.looks
-      ? state
-      : { ...state, present, looks }
+    if (present === state.present && looks === state.looks) return state
+    const saved = state.saved === state.present ? present : state.saved
+    return { ...state, present, looks, saved }
   }
   if (action.type === "undo") return travel(state, true)
   if (action.type === "redo") return travel(state, false)
@@ -254,6 +362,12 @@ export function openSheet(
       ? { revision: seedRevision, words: pageWords(present.blocks) }
       : null)
   storeDraft(docId, present, localStorage, basis)
+  const saved =
+    basis && pageWords(present.blocks) === basis.words
+      ? present
+      : seed
+        ? plainDraft(seed)
+        : null
   return {
     past: [],
     present,
@@ -263,5 +377,7 @@ export function openSheet(
     notice: "",
     basis,
     typed: false,
+    saved,
+    redraw: 0,
   }
 }

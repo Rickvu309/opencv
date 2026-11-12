@@ -1,16 +1,43 @@
-import type { WritingDraft } from "./canvas-edit.ts"
+import type { TextSpan, WritingBlock, WritingDraft } from "./canvas-edit.ts"
+import { CHANGE_NOT_SUPPORTED } from "./canvas-input.ts"
 import type { LookBook } from "./canvas-look.ts"
 
 export const NUMBERED_LINE =
-  "This paragraph is numbered. Paper can change its words but will not split, join or remove it."
+  "This numbered or bulleted line can't be split, joined or removed here yet. Typing inside it works."
 
 export const KEPT_PART_LINE =
-  "This paragraph has a link or a break. Paper can change the words around them but will not split, join or remove it."
+  "This line has a link or a break, so it can't be split, joined or removed here yet. Typing inside it works."
 
 function fixedNote(id: string, looks: LookBook): string | null {
   const form = looks.get(id)?.look.form
   if (form?.kind === "bullet" || form?.kind === "number") return NUMBERED_LINE
   if (id.includes("#")) return KEPT_PART_LINE
+  return null
+}
+
+function keptLineNote(block: WritingBlock, looks: LookBook): string | null {
+  const fixed = fixedNote(block.id, looks)
+  if (fixed) return fixed
+  return block.held ? block.reason || CHANGE_NOT_SUPPORTED : null
+}
+
+export function heldLineNote(
+  draft: WritingDraft,
+  span: TextSpan,
+  looks: LookBook
+): string | null {
+  const ids = draft.blocks.map((block) => block.id)
+  const anchor = ids.indexOf(span.anchor.blockId)
+  const focus = ids.indexOf(span.focus.blockId)
+  if (anchor < 0 || focus < 0 || anchor === focus) return null
+  const reached = draft.blocks.slice(
+    Math.min(anchor, focus),
+    Math.max(anchor, focus) + 1
+  )
+  for (const block of reached) {
+    const note = keptLineNote(block, looks)
+    if (note) return note
+  }
   return null
 }
 
