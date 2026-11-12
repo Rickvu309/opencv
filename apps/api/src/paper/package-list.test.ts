@@ -4,6 +4,7 @@ import {
   PAPER_CANVAS_PROFILE,
   coachActor,
   parsePaperId,
+  paperViewSchema,
   parseUserId,
   personActor,
 } from "@workspace/domain"
@@ -146,13 +147,17 @@ describe("the document list and the document read agree", () => {
         )
         await publishWordPackage(reader, staged.stageId, PAPER_CANVAS_PROFILE)
       }
-      const listed = await registry.read("paper.list", {}, personActor(reader))
+      const listed = paperViewSchema
+        .array()
+        .parse(await registry.read("paper.list", {}, personActor(reader)))
       expect(listed.length).toBe(2)
       for (const item of listed) {
-        const read = await registry.read(
-          "paper.get",
-          { docId: item.id },
-          personActor(reader)
+        const read = paperViewSchema.parse(
+          await registry.read(
+            "paper.get",
+            { docId: item.id },
+            personActor(reader)
+          )
         )
         expect({ id: read.id, kind: read.kind, format: read.format }).toEqual({
           id: item.id,
