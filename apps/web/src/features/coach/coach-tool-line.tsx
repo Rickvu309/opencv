@@ -24,7 +24,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
 import { useChatStore } from "./use-chat-store.ts"
 import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
-import { useReducer, useRef, type ReactNode } from "react"
+import { useReducer, useRef } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { ToolCallCard } from "@workspace/ui/components/tool-call-card"
@@ -37,6 +37,8 @@ import {
   receiptShowsUndo,
 } from "@/features/coach/coach-receipt.ts"
 import { DiffBlock, ReceiptDetail } from "@/features/coach/rich-receipts.tsx"
+import { WordBatchPreview } from "@/features/coach/word-batch-preview.tsx"
+import { useWordBatchApproval } from "@/lib/writing-proposal.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 
@@ -86,7 +88,6 @@ type ExtrasProps = {
   undoLabel?: string
   canUndo: boolean
   onUndo?: () => Promise<void>
-  preview?: ReactNode
 }
 
 const RECEIPT_HIT =
@@ -97,7 +98,6 @@ export function CoachToolExtras({
   undoLabel = "Undo",
   canUndo,
   onUndo,
-  preview,
 }: ExtrasProps) {
   const { part } = tool
   const edit =
@@ -147,7 +147,7 @@ export function CoachToolExtras({
           status={part.approval ?? "pending"}
           command={tool.name}
           tool={tool}
-          preview={preview}
+          review={part.review}
         />
       ) : null}
       {part.ok && !part.pendingActionId && !edit && part.detail ? (
@@ -225,16 +225,17 @@ function CoachApproval({
   status,
   command,
   tool,
-  preview,
+  review,
 }: {
   id: string
   status: "pending" | "approved" | "denied" | "expired"
   command: string
   tool: CoachToolPart
-  preview?: ReactNode
+  review?: unknown
 }) {
   const client = useQueryClient()
   const { activeChatId } = useChatStore()
+  const batch = useWordBatchApproval(id, review)
   const [{ busy: working, error }, dispatch] = useReducer(
     actionReducer,
     IDLE_ACTION
@@ -307,7 +308,7 @@ function CoachApproval({
         </div>
         {detail?.type === "paper.replace" && detail.hunks.length ? (
           <DiffBlock detail={detail} />
-        ) : (
+        ) : batch.state !== "none" ? null : (
           <div className="space-y-1 text-sm leading-relaxed text-muted-foreground">
             <p>{humanToolText(tool.part.summary)}</p>
             <p>
@@ -317,7 +318,7 @@ function CoachApproval({
             </p>
           </div>
         )}
-        {preview}
+        <WordBatchPreview batch={batch} />
       </ConfirmationRequest>
       <ConfirmationAccepted>Approved</ConfirmationAccepted>
       <ConfirmationRejected>
@@ -326,13 +327,15 @@ function CoachApproval({
         )}
       </ConfirmationRejected>
       <ConfirmationActions className="justify-start self-start">
-        <ConfirmationAction
-          variant="primary"
-          disabled={working}
-          onClick={() => void decide(true)}
-        >
-          Approve
-        </ConfirmationAction>
+        {batch.state === "withheld" ? null : (
+          <ConfirmationAction
+            variant="primary"
+            disabled={working}
+            onClick={() => void decide(true)}
+          >
+            Approve
+          </ConfirmationAction>
+        )}
         <ConfirmationAction
           variant="default"
           disabled={working}

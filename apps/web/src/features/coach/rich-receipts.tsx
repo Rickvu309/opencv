@@ -1,4 +1,4 @@
-import { useReducer } from "react"
+import { useReducer, type ReactNode } from "react"
 import { FilePlus } from "lucide-react"
 
 import { Badge } from "@workspace/ui/components/badge"
@@ -20,6 +20,22 @@ type UpdateContentDetail = Extract<
   CoachReceiptDetail,
   { type: "paper.replace" }
 >
+
+export function DiffInsert({ children }: { children: ReactNode }) {
+  return (
+    <ins className="bg-chart-2/10 text-[color:color-mix(in_oklab,var(--chart-2)_65%,var(--foreground))] no-underline">
+      {children}
+    </ins>
+  )
+}
+
+export function DiffDelete({ children }: { children: ReactNode }) {
+  return (
+    <del className="bg-destructive/10 text-[color:color-mix(in_oklab,var(--destructive)_80%,var(--foreground))] line-through">
+      {children}
+    </del>
+  )
+}
 
 export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
   const [expanded, toggleExpanded] = useReducer((open: boolean) => !open, false)
@@ -45,13 +61,9 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
                 className="whitespace-pre-wrap"
               >
                 {line.kind === "add" ? (
-                  <ins className="bg-chart-2/10 text-[color:color-mix(in_oklab,var(--chart-2)_65%,var(--foreground))] no-underline">
-                    {line.text}
-                  </ins>
+                  <DiffInsert>{line.text}</DiffInsert>
                 ) : line.kind === "del" ? (
-                  <del className="bg-destructive/10 text-[color:color-mix(in_oklab,var(--destructive)_80%,var(--foreground))] line-through">
-                    {line.text}
-                  </del>
+                  <DiffDelete>{line.text}</DiffDelete>
                 ) : (
                   line.text
                 )}

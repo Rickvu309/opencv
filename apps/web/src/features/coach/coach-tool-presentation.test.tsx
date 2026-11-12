@@ -299,19 +299,44 @@ describe("Coach trace and receipts", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument()
   })
 
-  it("places a proposal preview above Approve and Deny", () => {
-    render(
+  it("shows a Word batch in the diff look directly above the solid Approve", () => {
+    const { container } = render(
       <CoachToolLine
-        tool={toolOf(pending)}
+        tool={toolOf({
+          ...pending,
+          detail: undefined,
+          review: {
+            docId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            basedOn: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            operations: [
+              { op: "setText", before: "Dear Ada,", after: "Dear Grace," },
+              { op: "delete", before: "Old line", after: "" },
+            ],
+          },
+        })}
         canUndo={false}
-        preview={<p>Exact words</p>}
       />
     )
-    const words = screen.getByText("Exact words")
+    const deleted = screen.getByText("Dear Ada,")
+    const inserted = screen.getByText("Dear Grace,")
+    expect(deleted.tagName).toBe("DEL")
+    expect(inserted.tagName).toBe("INS")
+    expect(screen.getByText("Old line").tagName).toBe("DEL")
+    const diffLine = container.querySelector("[aria-label^='Changes in'] del")
+    expect(diffLine).toBeNull()
+    const sameLook = render(
+      <CoachToolLine tool={toolOf(pending)} canUndo={false} />
+    ).container
+    expect(deleted.className).toBe(sameLook.querySelector("del")?.className)
+    expect(inserted.className).toBe(sameLook.querySelector("ins")?.className)
+    sameLook.remove()
     const approve = screen.getByRole("button", { name: "Approve" })
-    expect(words.compareDocumentPosition(approve)).toBe(
+    expect(approve).toHaveAttribute("data-variant", "primary")
+    expect(inserted.compareDocumentPosition(approve)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     )
+    expect(screen.getByText("Changes to approve")).toBeVisible()
+    expect(container.textContent).not.toMatch(/not available in this Chat/)
   })
 
   it("maps a pending tool to awaiting and gives the kit no running timer", () => {
