@@ -29,7 +29,9 @@ export function captureRetryAfter() {
   return {
     fetchOptions: {
       onError(context: { response: Response }) {
-        header = context.response.headers.get("Retry-After")
+        header =
+          context.response.headers.get("Retry-After") ??
+          context.response.headers.get("X-Retry-After")
       },
     },
     minutes: (now: number) => retryAfterMinutes(header, now),

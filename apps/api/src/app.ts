@@ -136,6 +136,7 @@ export function createApp({
         "WWW-Authenticate",
         "MCP-Protocol-Version",
         "Retry-After",
+        "X-Retry-After",
       ],
     })
   )

@@ -60,6 +60,17 @@ describe("captureRetryAfter", () => {
     })
     expect(wait.minutes(NOW)).toBe(15)
   })
+
+  it("falls back to the library's X-Retry-After", () => {
+    const wait = captureRetryAfter()
+    wait.fetchOptions.onError({
+      response: new Response(null, {
+        status: 429,
+        headers: { "X-Retry-After": "42" },
+      }),
+    })
+    expect(wait.minutes(NOW)).toBe(1)
+  })
 })
 
 describe("apiFetch with Retry-After", () => {

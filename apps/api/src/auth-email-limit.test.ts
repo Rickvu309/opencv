@@ -112,7 +112,7 @@ describe("sign-in code sends are limited per email address", () => {
       expect(refused.headers.get("access-control-allow-origin")).toBeTruthy()
       expect(
         refused.headers.get("access-control-expose-headers")?.split(",")
-      ).toContain("Retry-After")
+      ).toEqual(expect.arrayContaining(["Retry-After", "X-Retry-After"]))
     })
   })
 
