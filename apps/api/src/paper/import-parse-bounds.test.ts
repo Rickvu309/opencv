@@ -204,7 +204,7 @@ describe("paper import bounds", () => {
       app,
       owner.cookie,
       textDocx(`${"A".repeat(200_000)}DOCX-TAIL`),
-      "long.docx",
+      "long",
       WORD
     )
     expect(capped.status).toBe(200)
@@ -217,7 +217,7 @@ describe("paper import bounds", () => {
       app,
       owner.cookie,
       textDocx("Hello zip cap", 300),
-      "bomb.docx",
+      "bomb",
       WORD
     )
     expect(bomb.status).toBe(400)
@@ -251,7 +251,7 @@ describe("paper import bounds", () => {
       app,
       owner.cookie,
       textDocx("Weekly newsletter for students"),
-      "notes.docx",
+      "notes",
       ""
     )
     expect(docx.status).toBe(200)

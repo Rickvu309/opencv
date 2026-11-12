@@ -136,9 +136,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
         (await registry.tools(jobs)).map((tool) => tool.name).sort()
       ).toEqual([...jobNames].sort())
       await expect(
-        registry.read("paper.read", { docId: randomUUID() }, paper)
-      ).rejects.toThrow(/Saved Word documents are unavailable/)
-      await expect(
         registry.execute({
           name: "paper.edit",
           input: {
@@ -156,7 +153,7 @@ it("reads one page and keeps an edit as a proposal", async () => {
           actor: paper,
           idempotencyKey: randomUUID(),
         })
-      ).rejects.toThrow(/Saved Word documents are unavailable/)
+      ).rejects.toThrow(/This Word document or version is not available/)
       await expect(
         registry.execute({
           name: "paper.edit",

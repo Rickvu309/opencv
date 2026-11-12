@@ -131,7 +131,7 @@ describe("paper import", () => {
       app,
       owner.cookie,
       textDocx("Weekly newsletter for students"),
-      "notes.docx",
+      "notes",
       WORD
     )
     expect(docx.status).toBe(200)
