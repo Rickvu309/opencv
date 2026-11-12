@@ -7,6 +7,7 @@ import { runContractCommand } from "@/lib/contract-client.ts"
 
 import {
   getPaperPages,
+  importPaperFile,
   listPaper,
   listPaperFiles,
   paperGetKey,
@@ -25,6 +26,36 @@ afterEach(() => {
 })
 
 describe("paper API client", () => {
+  it("reads a PDF import's note beside the Word page, and refuses a note inside it", async () => {
+    const page = {
+      generation: "package",
+      docId: "22222222-2222-4222-8222-222222222222",
+      revision: "33333333-3333-4333-8333-333333333333",
+      name: "Linh_CV",
+      kind: "cv",
+      packageHash: "a".repeat(64),
+      byteSize: 1200,
+    }
+    const notice =
+      "Imported the text of your PDF. Layout, fonts and photo were not kept."
+    const file = new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ ok: true, data: page, notice }))
+    )
+    await expect(importPaperFile(file)).resolves.toEqual({ ...page, notice })
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope(page)))
+    await expect(importPaperFile(file)).resolves.toEqual({
+      ...page,
+      notice: null,
+    })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(envelope({ ...page, notice }))
+    )
+    await expect(importPaperFile(file)).rejects.toThrow()
+  })
+
   it("lists documents from GET /api/paper", async () => {
     const fetchMock = vi.fn().mockResolvedValue(envelope([]))
     vi.stubGlobal("fetch", fetchMock)

@@ -19,11 +19,7 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
-import {
-  undoActivity,
-  refreshQueries,
-  useRunCommand,
-} from "@/lib/contract-client.ts"
+import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
 
 import {
@@ -46,7 +42,7 @@ import { printPaper } from "./paper-print.ts"
 import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
 import {
   IMPORT_ACCEPT,
-  discardImport,
+  discardCancelledImport,
   messageOf,
 } from "./paper-library-support.ts"
 import {
@@ -163,22 +159,13 @@ export function PaperLibrary({
     dispatch({ type: "import_started", name: file.name })
     try {
       const created = await importPaperFile(file)
-      if ("generation" in created) {
-        if (request.signal.aborted) return
-        dispatch({ type: "import_ended" })
-        onOpen(created.docId)
-        return
-      }
       if (request.signal.aborted) {
-        await discardImport(run, created)
+        await discardCancelledImport(run, created.docId)
         return
       }
-      void refreshQueries(queryClient, [
-        { query: "paper.list" },
-        { query: "paper.files" },
-      ])
       dispatch({ type: "import_ended" })
-      onOpen(created.id)
+      if (created.notice) toast(created.notice, { position: "top-center" })
+      onOpen(created.docId)
     } catch (err) {
       if (request.signal.aborted) return
       dispatch({
