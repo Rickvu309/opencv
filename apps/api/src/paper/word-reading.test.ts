@@ -8,7 +8,7 @@ import {
   parseUserId,
   personActor,
 } from "@workspace/domain"
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { withDatabase } from "../db/context.js"
@@ -68,73 +68,66 @@ afterAll(async () => {
 describe("one pinned Word document for the Coach and an agent", () => {
   it("reads every paragraph after the first HTTP page with handles accepted by an approved edit", () =>
     run(async () => {
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
-      try {
-        const text = Array.from(
-          { length: 23 },
-          (_, index) => `Career paragraph ${index + 1}`
-        )
-        const head = await imported(
-          text.map((value) => paragraph(value)).join("")
-        )
-        const page = await open(owner, {
-          kind: "read",
-          doc: head.docId,
-          at: head.revision,
-        })
-        if ("refused" in page) throw new Error(page.message)
-        const outline = await readOutline(
-          parseUserId(owner),
-          parsePaperId(head.docId),
-          undefined
-        )
-        expect(outline.truncated).toBe(false)
-        expect(outline.revision).toBe(head.revision)
-        for (const line of page.paragraphs)
-          expect(outline.outline).toContain(
-            `[line ${line.handle}] ${line.text}`
-          )
-        expect(outline.outline).not.toMatch(/\[t_[a-f0-9]+\]/)
-        const later = page.paragraphs[22]
-        if (!later) throw new Error("missing last paragraph")
-        const selected = await readOutline(
-          parseUserId(owner),
-          parsePaperId(head.docId),
-          [later.handle]
-        )
-        expect(selected.outline).toContain(`>> [line ${later.handle}]`)
-        const chat = await registry.execute({
-          name: "chat.create",
-          input: {},
-          actor: personActor(owner),
-        })
-        const chatId = z.object({ id: z.string() }).parse(chat.output).id
-        const actor = await seedCoachActor(owner, chatId)
-        const proposal = await registry.execute({
-          name: "paper.edit",
-          input: {
-            docId: head.docId,
-            basedOn: head.revision,
-            edits: [
-              {
-                op: "setText",
-                handle: later.handle,
-                text: "Improved final paragraph",
-              },
-            ],
-          },
-          actor,
-          idempotencyKey: randomUUID(),
-        })
-        expect(proposal.pending).toBe(true)
-        if (!proposal.pendingActionId) throw new Error("missing approval")
-        await registry.approve(owner, proposal.pendingActionId)
-        const changed = await open(owner, { kind: "read", doc: head.docId })
-        if ("refused" in changed) throw new Error(changed.message)
-        expect(changed.paragraphs[22]?.text).toBe("Improved final paragraph")
-      } finally {
-        vi.unstubAllEnvs()
-      }
+      const text = Array.from(
+        { length: 23 },
+        (_, index) => `Career paragraph ${index + 1}`
+      )
+      const head = await imported(
+        text.map((value) => paragraph(value)).join("")
+      )
+      const page = await open(owner, {
+        kind: "read",
+        doc: head.docId,
+        at: head.revision,
+      })
+      if ("refused" in page) throw new Error(page.message)
+      const outline = await readOutline(
+        parseUserId(owner),
+        parsePaperId(head.docId),
+        undefined
+      )
+      expect(outline.truncated).toBe(false)
+      expect(outline.revision).toBe(head.revision)
+      for (const line of page.paragraphs)
+        expect(outline.outline).toContain(`[line ${line.handle}] ${line.text}`)
+      expect(outline.outline).not.toMatch(/\[t_[a-f0-9]+\]/)
+      const later = page.paragraphs[22]
+      if (!later) throw new Error("missing last paragraph")
+      const selected = await readOutline(
+        parseUserId(owner),
+        parsePaperId(head.docId),
+        [later.handle]
+      )
+      expect(selected.outline).toContain(`>> [line ${later.handle}]`)
+      const chat = await registry.execute({
+        name: "chat.create",
+        input: {},
+        actor: personActor(owner),
+      })
+      const chatId = z.object({ id: z.string() }).parse(chat.output).id
+      const actor = await seedCoachActor(owner, chatId)
+      const proposal = await registry.execute({
+        name: "paper.edit",
+        input: {
+          docId: head.docId,
+          basedOn: head.revision,
+          edits: [
+            {
+              op: "setText",
+              handle: later.handle,
+              text: "Improved final paragraph",
+            },
+          ],
+        },
+        actor,
+        idempotencyKey: randomUUID(),
+      })
+      expect(proposal.pending).toBe(true)
+      if (!proposal.pendingActionId) throw new Error("missing approval")
+      await registry.approve(owner, proposal.pendingActionId)
+      const changed = await open(owner, { kind: "read", doc: head.docId })
+      if ("refused" in changed) throw new Error(changed.message)
+      expect(changed.paragraphs[22]?.text).toBe("Improved final paragraph")
     }))
 
   it("reports exact unread text, follows its cursor at the pinned revision, and rejects foreign or tampered cursors", () =>
@@ -380,7 +373,6 @@ describe("one pinned Word document for the Coach and an agent", () => {
 })
 
 it("serves the same complete paragraphs over authenticated HTTP as the Coach outline", async () => {
-  vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
   const { db, client } = await createMigratedTestDb()
   try {
     const app = createTestApp(db)
@@ -438,7 +430,6 @@ it("serves the same complete paragraphs over authenticated HTTP as the Coach out
     for (const line of paragraphs)
       expect(outline.outline).toContain(`[line ${line.handle}] ${line.text}`)
   } finally {
-    vi.unstubAllEnvs()
     await client.close()
   }
 })
