@@ -86,7 +86,8 @@ function layout(
         : state === "open"
           ? sheetComposer
           : null
-  const obstacles = [dock, panel, composer].filter(
+  const account = desktop ? box(10, height - 52, 224, 40) : null
+  const obstacles = [dock, account, panel, composer].filter(
     (obstacle): obstacle is ToastBox => obstacle !== null
   )
   const headerControls = desktop
@@ -115,6 +116,7 @@ function layout(
       ...headerControls,
       "page header row": box(0, 0, width, frame.top + PAGE_HEADER_HEIGHT),
       "dock bar": dock,
+      ...(account ? { Account: account } : {}),
       ...(composer
         ? {
             composer,
@@ -233,11 +235,11 @@ describe("toastSpot", () => {
     )
   })
 
-  it("narrows the toast to the room left of the panel between 768 and 807 wide on short windows", () => {
+  it("narrows the toast to the room left of the panel between 768 and 807 wide on short windows, above the sidebar Account button", () => {
     const { room } = layout(768, 657, "open")
     expect(toastSpot(room)).toEqual({
       right: 400 + 20 + TOAST_CLEARANCE_GAP_PX,
-      bottom: 40 + TOAST_CLEARANCE_GAP_PX,
+      bottom: 52 + TOAST_CLEARANCE_GAP_PX,
       width: 768 - 420 - TOAST_CLEARANCE_GAP_PX - 24,
     })
     expect(toastSpot(layout(807, 780, "open").room).width).toBe(355)
