@@ -76,6 +76,7 @@ export const {
   paperPackageVersions,
   paperPackageHeads,
   paperPackageCandidates,
+  paperPackageTrash,
 } = createPaperPackageTables(opencvApp, user, files)
 
 export const paperDocs = opencvApp.table(

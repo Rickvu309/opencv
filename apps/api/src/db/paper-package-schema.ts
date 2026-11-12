@@ -130,5 +130,42 @@ export function createPaperPackageTables(
     ]
   )
 
-  return { paperPackageVersions, paperPackageHeads, paperPackageCandidates }
+  const paperPackageTrash = opencvApp.table(
+    "paper_package_trash",
+    {
+      docId: uuid("doc_id").primaryKey(),
+      userId: text("user_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+      incarnation: uuid("incarnation").notNull(),
+      revision: uuid("revision").notNull(),
+      canvasProfile: text("canvas_profile"),
+      headCreatedAt: timestamptz("head_created_at").notNull(),
+      linkedJobs: uuid("linked_jobs")
+        .array()
+        .notNull()
+        .default(sql`'{}'::uuid[]`),
+      deletedAt: timestamptz("deleted_at").notNull().defaultNow(),
+    },
+    (table) => [
+      foreignKey({
+        name: "paper_package_trash_version_fk",
+        columns: [table.docId, table.userId, table.incarnation, table.revision],
+        foreignColumns: [
+          paperPackageVersions.docId,
+          paperPackageVersions.userId,
+          paperPackageVersions.incarnation,
+          paperPackageVersions.revision,
+        ],
+      }),
+      index("paper_package_trash_owner_idx").on(table.userId),
+    ]
+  )
+
+  return {
+    paperPackageVersions,
+    paperPackageHeads,
+    paperPackageCandidates,
+    paperPackageTrash,
+  }
 }

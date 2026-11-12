@@ -169,6 +169,13 @@
       "when": 1794502581685,
       "tag": "0023_auth_limit_counters",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794509017639,
+      "tag": "0024_package_trash",
+      "breakpoints": true
     }
   ]
 }

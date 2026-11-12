@@ -21,17 +21,20 @@ import { editAsCoach, revertCoachEdit } from "./content-coach.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
+import { registerDuplicate, relinkJobs } from "./card-action-commands.js"
+import { isWordPageDeleted } from "./package-card-actions.js"
 import { missingDocument, ownedPackagePaper } from "./package-list.js"
 import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
+import { coachPaperList, coachWordPageWithText } from "./coach-word-pages.js"
 import {
   attachPhoto,
   createPaper,
   deleteFile,
   deletePaper,
   dismissCheck,
-  duplicatePaper,
+  restoreDeletedPaper,
   keepTwoPages,
   listFiles,
   listPapers,
@@ -100,6 +103,7 @@ export function registerPaper(registry: Registry) {
     "paper.edit": paperEdit,
     "paper.canvas": paperCanvas,
     "paper.start": paperStart,
+    "paper.duplicate": paperDuplicate,
     ...paperCommands
   } = paperContract
   bindCommands(registry, paperCommands, {
@@ -171,20 +175,36 @@ export function registerPaper(registry: Registry) {
       reversal: noReversal,
       activity: noActivity,
     },
-    "paper.duplicate": {
-      handler: (input, actor) => duplicatePaper(actor, input.docId),
-      reversal: (_input, output) => ({
-        command: "paper.delete",
-        input: { docId: output.id },
-      }),
-      activity: (_input, output) => ({
-        subjectKind: "paper",
-        subjectId: output.id,
-        summary: `Duplicated ${output.name}`,
-      }),
-    },
     "paper.delete": {
       handler: (input, actor) => deletePaper(actor, input.docId),
+      reversal: (input, output) =>
+        output.format === "word"
+          ? {
+              command: "paper.restoreDeleted",
+              input: { docId: input.docId },
+              expect: {
+                query: "paper.isDeleted",
+                input: { docId: input.docId },
+                matches: { deleted: true },
+                skipped: "This page is already back, so Undo was skipped",
+              },
+            }
+          : null,
+      activity: (_input, output) =>
+        output.format === "word"
+          ? {
+              subjectKind: "paper",
+              subjectId: output.id,
+              summary: `Deleted ${output.name ?? "a Word page"}`,
+            }
+          : null,
+    },
+    "paper.restoreDeleted": {
+      handler: async (input, actor) => {
+        const restored = await restoreDeletedPaper(actor, input.docId)
+        await relinkJobs(registry, actor, restored)
+        return restored.page
+      },
       reversal: noReversal,
       activity: noActivity,
     },
@@ -247,6 +267,7 @@ export function registerPaper(registry: Registry) {
   })
   registerCanvasCommit(registry, paperCanvas)
   registerPaperStart(registry, paperStart)
+  registerDuplicate(registry, paperDuplicate)
   registerWordPackageEdit(registry, paperEdit, async (input, actor) => {
     if (typeof input.basedOn !== "number")
       throw new CommandError(
@@ -273,31 +294,43 @@ export function registerPaper(registry: Registry) {
     }
   })
 
-  registry.addQuery(
-    tableQuery("paper.list", {
-      description: "List documents.",
-      coach: true,
-      step: () => "List documents",
-      read: (input, actor) => listPapers(actor.userId, input.query, input.kind),
-    })
-  )
-  registry.addQuery(
-    tableQuery("paper.get", {
-      description: "Read one document.",
-      coach: true,
-      step: (input) => `Read document ${input.docId}`,
-      read: async (input, actor) => {
-        try {
-          return toPaper(await ownedPaper(actor.userId, input.docId))
-        } catch (error) {
-          if (actor.type !== "coach" || !missingDocument(error)) throw error
-          const page = await ownedPackagePaper(actor.userId, input.docId)
-          if (!page) throw error
-          return page
-        }
-      },
-    })
-  )
+  const paperList = tableQuery("paper.list", {
+    description:
+      "List documents. A Word page is listed without a document body: read its text with paper_outline.",
+    coach: true,
+    step: () => "List documents",
+    read: (input, actor) => listPapers(actor.userId, input.query, input.kind),
+  })
+  registry.addQuery({
+    ...paperList,
+    read: async (input, actor) => {
+      const views = await paperList.read(input, actor)
+      return actor.type === "coach"
+        ? coachPaperList(actor.userId, views)
+        : views
+    },
+  })
+  const paperGet = tableQuery("paper.get", {
+    description:
+      "Read one document. For a Word page this returns its saved text outline as content, not a document body; use paper_outline for line handles and the rest of a long page.",
+    coach: true,
+    step: (input) => `Read document ${input.docId}`,
+    read: async (input, actor) =>
+      toPaper(await ownedPaper(actor.userId, input.docId)),
+  })
+  registry.addQuery({
+    ...paperGet,
+    read: async (input, actor) => {
+      try {
+        return await paperGet.read(input, actor)
+      } catch (error) {
+        if (actor.type !== "coach" || !missingDocument(error)) throw error
+        const page = await ownedPackagePaper(actor.userId, input.docId)
+        if (!page) throw error
+        return coachWordPageWithText(actor.userId, page)
+      }
+    },
+  })
   registry.addQuery(
     tableQuery("paper.outline", {
       description:
@@ -306,6 +339,18 @@ export function registerPaper(registry: Registry) {
       step: () => "Read the document outline",
       read: (input, actor) =>
         readOutline(actor.userId, input.docId, input.blockIds, input.cursor),
+    })
+  )
+  registry.addQuery(
+    tableQuery("paper.isDeleted", {
+      description:
+        "Say whether a Word page is deleted and can be brought back.",
+      coach: false,
+      step: () => "Check a deleted page",
+      read: async (input, actor) => ({
+        docId: input.docId,
+        deleted: await isWordPageDeleted(actor.userId, input.docId),
+      }),
     })
   )
   registry.addQuery(

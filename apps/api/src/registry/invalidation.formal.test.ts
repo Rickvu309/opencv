@@ -73,6 +73,7 @@ const SNAPSHOT_QUERIES: {
   "paper.export": null,
   "paper.get": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
+  "paper.isDeleted": (ids) => ids.minted.map((docId) => ({ docId })),
   "paper.pageCount": (ids) => ids.docs.map((docId) => ({ docId })),
   "paper.shared": (ids) => ids.tokens.map((token) => ({ token })),
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
