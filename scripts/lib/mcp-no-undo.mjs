@@ -23,14 +23,31 @@ export function detect(text, file = "delegate-policy.ts") {
       type: "delegate",
       userId: "person",
       connectionId: "connection",
-      resources: "jobs",
+      resources: "jobs-and-paper",
       reads: "allow",
       writes: "approval",
-      scopes: ["job.read", "job.write", "connection.status"],
+      scopes: [
+        "job.read",
+        "job.write",
+        "paper.read",
+        "paper.write",
+        "activity.read",
+        "activity.write",
+        "inbox.read",
+        "inbox.write",
+        "account.read",
+        "account.write",
+        "connection.status",
+      ],
     }
     for (const name of ["activity.undo", "inbox.send", "account.delete"]) {
+      const resource = name.split(".")[0]
       for (const coach of [true, "auto", "confirm", "never"]) {
-        for (const delegate of [undefined]) {
+        for (const delegate of [
+          undefined,
+          { resource, access: "read" },
+          { resource, access: "proposal" },
+        ]) {
           if (allowed({ name, coach, delegate }, actor))
             hits.push({ line: 1, kind: `delegate-can-use-${name}` })
         }

@@ -19,6 +19,16 @@ test("the delegate filter refuses Undo, mail sending and account deletion while 
       detect(mistake).some((hit) => hit.kind === `delegate-can-use-${name}`)
     )
   }
+  const scopeOnly = actual.replace(
+    "if (!granted.includes(declaration.resource)) return false",
+    ""
+  )
+  assert.notEqual(scopeOnly, actual)
+  assert(
+    detect(scopeOnly).some(
+      (hit) => hit.kind === "delegate-can-use-activity.undo"
+    )
+  )
   const noPerson = actual.replace(
     'if (actor.type !== "delegate") return true',
     'if (actor.type !== "delegate") return false'

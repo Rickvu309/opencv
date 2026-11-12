@@ -2,12 +2,9 @@ import {
   delegateDeclaration,
   type DelegateDeclaration,
   type DelegateMarker,
+  type DelegateResource,
 } from "./operation.js"
-
-import type { z } from "zod"
-import type { connectionResourcesSchema } from "./connections.js"
-
-type StoredConnectionResources = z.infer<typeof connectionResourcesSchema>
+import type { ConnectionResources } from "./connections.js"
 
 function delegateScope(declaration: DelegateDeclaration) {
   return `${declaration.resource}.${declaration.access === "read" ? "read" : "write"}`
@@ -41,7 +38,7 @@ export function registeredScopesFromDeclarations(
 
 export function resourcesForScopes(
   scopes: readonly string[]
-): StoredConnectionResources {
+): ConnectionResources {
   const jobs = scopes.some(
     (scope) => scope === "job.read" || scope === "job.write"
   )
@@ -61,8 +58,8 @@ export function resourcesForScopes(
 }
 
 function grantedResources(
-  resources: StoredConnectionResources
-): readonly string[] {
+  resources: ConnectionResources
+): readonly DelegateResource[] {
   if (resources.kind === "jobs-and-paper") return ["job", "paper"]
   if (resources.kind === "jobs") return ["job"]
   if (resources.kind === "paper") return ["paper"]
@@ -70,7 +67,7 @@ function grantedResources(
 }
 
 export function proposalGrantAllows(
-  resources: StoredConnectionResources,
+  resources: ConnectionResources,
   scopes: readonly string[],
   writes: string,
   declaration: DelegateDeclaration
@@ -84,7 +81,7 @@ export function proposalGrantAllows(
 }
 
 export function grantCopy(input: {
-  resources: StoredConnectionResources
+  resources: ConnectionResources
   scopes: readonly string[]
 }) {
   const resources = grantedResources(input.resources)

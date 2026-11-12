@@ -34,19 +34,27 @@ export function delegateAllowed(
           ? marker
           : null
   if (!declaration) return false
-  const { resource, access } = declaration
-  const shared =
+  const granted =
     actor.resources === "jobs-and-paper"
-      ? resource === "job" || resource === "paper"
-      : actor.resources === (resource === "job" ? "jobs" : resource)
-  if (!shared || resource === "none") return false
-  return access === "read"
-    ? actor.reads === "allow" && actor.scopes.includes(`${resource}.read`)
-    : access === "proposal" &&
-        entry.coach !== "never" &&
-        entry.coach !== false &&
-        actor.writes === "approval" &&
-        actor.scopes.includes(`${resource}.write`)
+      ? ["job", "paper"]
+      : actor.resources === "jobs"
+        ? ["job"]
+        : actor.resources === "paper"
+          ? ["paper"]
+          : []
+  if (!granted.includes(declaration.resource)) return false
+  if (declaration.access === "read")
+    return (
+      actor.reads === "allow" &&
+      actor.scopes.includes(`${declaration.resource}.read`)
+    )
+  return (
+    declaration.access === "proposal" &&
+    entry.coach !== "never" &&
+    entry.coach !== false &&
+    actor.writes === "approval" &&
+    actor.scopes.includes(`${declaration.resource}.write`)
+  )
 }
 
 export async function requireLiveDelegate(actor: DelegateActor) {

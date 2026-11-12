@@ -33,8 +33,8 @@ test("MCP tools project registry metadata instead of a handwritten name list", (
 test("delegate projection requires both declared metadata and its access scope", () => {
   assert.deepEqual(detect(policy, "delegate-policy.ts"), [])
   for (const expression of [
-    "actor.scopes.includes(`${resource}.read`)",
-    "actor.scopes.includes(`${resource}.write`)",
+    "actor.scopes.includes(`${declaration.resource}.read`)",
+    "actor.scopes.includes(`${declaration.resource}.write`)",
     "if (!declaration) return false",
   ]) {
     const mistake = policy.replace(

@@ -3,6 +3,7 @@ import { z } from "zod"
 export const connectionResourcesSchema = z
   .object({ kind: z.enum(["none", "jobs", "paper", "jobs-and-paper"]) })
   .strict()
+export type ConnectionResources = z.infer<typeof connectionResourcesSchema>
 export const connectionPolicySchema = z
   .object({ reads: z.literal("allow"), writes: z.literal("approval") })
   .strict()

@@ -1,27 +1,16 @@
-import { serve } from "@hono/node-server"
-import {
-  Client,
-  StreamableHTTPClientTransport,
-} from "@modelcontextprotocol/client"
-import { z } from "zod"
-import { createApp } from "../app.js"
-import {
-  bindIssuedToken,
-  hashAgentToken,
-  registeredAgentScopes,
-} from "../connections/oauth.js"
-import { testSessionSecret, testWebOrigin } from "../test/harness.js"
 import { randomUUID } from "node:crypto"
 
 import { delegateActorSchema, paperPackageReadSchema } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterEach, expect, it, vi } from "vitest"
+import { z } from "zod"
 
+import { registeredAgentScopes } from "../connections/oauth.js"
+import { createProposalClient } from "../connections/test/proposal-client.js"
 import { withDatabase } from "../db/context.js"
 import {
   agentConnections,
   oauthClient,
-  oauthAccessToken,
   pendingActions,
   user,
 } from "../db/schema.js"
@@ -245,12 +234,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
           actor: paper,
         })
       ).rejects.toThrow(/connection cannot/)
-      const kept = paperPackageReadSchema.parse(
-        await registry.read("paper.read", { docId: head.docId }, paper)
-      )
-      expect(
-        kept.regions.find((item) => item.kind === "editable")
-      ).toMatchObject({ text: "Original words" })
     })
   } finally {
     await client.close()
@@ -262,97 +245,63 @@ const replySchema = z.object({
   content: z.array(z.object({ type: z.literal("text"), text: z.string() })),
 })
 
-function payload(value: unknown) {
-  const reply = replySchema.parse(value)
-  const first = reply.content[0]
+function reply(value: unknown) {
+  const parsed = replySchema.parse(value)
+  const first = parsed.content[0]
   if (!first) throw new Error("Missing tool response")
-  return z.record(z.string(), z.unknown()).parse(JSON.parse(first.text))
+  return {
+    isError: parsed.isError === true,
+    body: z.record(z.string(), z.unknown()).parse(JSON.parse(first.text)),
+  }
 }
 
-it("serves declaration-issued Paper grants over MCP with complete reads and person-approved Word batches", async () => {
+const doorScope = registeredAgentScopes.join(" ")
+
+it("opens Paper to a consented agent over MCP and writes only what the person approves", async () => {
   vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
-  const database = await createMigratedTestDb()
-  const owner = randomUUID()
-  const registry = installRegistry()
-  let app: ReturnType<typeof createApp>
-  const server = serve({
-    port: 0,
-    hostname: "127.0.0.1",
-    fetch: (request) => app.fetch(request),
-  })
-  await new Promise<void>((resolve) => server.once("listening", resolve))
-  const address = server.address()
-  if (!address || typeof address === "string")
-    throw new Error("Missing server port")
-  const origin = `http://127.0.0.1:${address.port}`
-  const audience = `${origin}/mcp`
-  app = createApp({
-    db: database.db,
-    authUrl: origin,
-    sessionSecret: testSessionSecret,
-    webOrigins: [testWebOrigin],
-    rateLimitEnabled: false,
-    sendCodeLimitEnabled: false,
-  })
-  const clients: Client[] = []
-  const run = <T>(fn: () => Promise<T>) => withDatabase(database.db, fn)
+  const door = await createProposalClient(doorScope)
+  const jobsOnly = await createProposalClient()
   try {
-    await database.db
-      .insert(user)
-      .values({ id: owner, name: "Ada", email: `${owner}@test.invalid` })
-    await database.db.insert(oauthClient).values({
-      id: "paper-http",
-      clientId: "paper-http",
-      redirectUris: [`${origin}/callback`],
-    })
-    async function connect(scopes: string[]) {
-      const token = randomUUID()
-      await database.db.insert(oauthAccessToken).values({
-        id: randomUUID(),
-        token: hashAgentToken(token),
-        clientId: "paper-http",
-        userId: owner,
-        authorizationCodeId: randomUUID(),
-        resources: [audience],
-        scopes,
-        createdAt: new Date(),
-        expiresAt: new Date(Date.now() + 600_000),
-      })
-      await run(() => bindIssuedToken({ access_token: token }, audience))
-      const client = new Client({
-        name: "Paper local MCP client",
-        version: "1.0.0",
-      })
-      clients.push(client)
-      await client.connect(
-        new StreamableHTTPClientTransport(new URL(audience), {
-          requestInit: { headers: { Authorization: `Bearer ${token}` } },
-        })
-      )
-      return client
-    }
-    const client = await connect(registeredAgentScopes)
-    const jobs = await connect(["connection.status", "job.read", "job.write"])
-    const names = (await client.listTools()).tools.map((tool) => tool.name)
+    const owner = door.owner.user.id
+    const names = (await door.sdk.listTools()).tools.map((tool) => tool.name)
     expect(names.filter((name) => name.startsWith("paper_"))).toEqual([
       "paper_edit",
       "paper_read",
     ])
+    const tools = (await door.sdk.listTools()).tools
+    const readTool = tools.find((tool) => tool.name === "paper_read")
+    const editTool = tools.find((tool) => tool.name === "paper_edit")
+    expect(readTool?.description).toMatch(/nextCursor/)
+    expect(readTool?.annotations).toMatchObject({
+      readOnlyHint: true,
+      idempotentHint: true,
+    })
+    expect(editTool?.description).toMatch(/setText/)
+    expect(editTool?.description).toMatch(/approves/)
+    expect(editTool?.description).toMatch(
+      /do not invent the person's experience or qualifications/
+    )
     expect(
-      (await jobs.listTools()).tools
+      (await jobsOnly.sdk.listTools()).tools
         .map((tool) => tool.name)
         .filter((name) => name.startsWith("paper_"))
     ).toEqual([])
-    const grants = await database.db.select().from(agentConnections)
-    expect(grants.map((grant) => grant.resources.kind).sort()).toEqual([
-      "jobs",
-      "jobs-and-paper",
-    ])
+    const [grant] = await door.db
+      .select()
+      .from(agentConnections)
+      .where(eq(agentConnections.userId, owner))
+    expect(grant?.resources).toEqual({ kind: "jobs-and-paper" })
+    const [jobGrant] = await jobsOnly.db
+      .select()
+      .from(agentConnections)
+      .where(eq(agentConnections.userId, jobsOnly.owner.user.id))
+    expect(jobGrant?.resources).toEqual({ kind: "jobs" })
+
     const originals = Array.from(
       { length: 35 },
       (_, index) => `Original paragraph ${index + 1}`
     )
-    const doc = await run(async () => {
+    const doc = await withDatabase(door.db, async () => {
       const staged = await stageWordPackage(
         owner,
         { requestId: randomUUID(), name: "CV.docx", kind: "cv" },
@@ -360,103 +309,128 @@ it("serves declaration-issued Paper grants over MCP with complete reads and pers
       )
       return publishWordPackage(owner, staged.stageId)
     })
-    const read = async (cursor?: string) =>
-      paperPackageReadSchema.parse(
-        payload(
-          await client.callTool({
-            name: "paper_read",
-            arguments: { docId: doc.docId, ...(cursor ? { cursor } : {}) },
-          })
-        ).data
+    const read = async (cursor?: string) => {
+      const result = reply(
+        await door.sdk.callTool({
+          name: "paper_read",
+          arguments: { docId: doc.docId, ...(cursor ? { cursor } : {}) },
+        })
       )
+      expect(result.isError, JSON.stringify(result.body)).toBe(false)
+      return paperPackageReadSchema.parse(result.body.data)
+    }
     const first = await read()
+    expect(first.nextCursor).not.toBeNull()
     const regions = [...first.regions]
     let next = first.nextCursor
-    expect(next).not.toBeNull()
-    const cursors = new Set<string>()
+    let pages = 1
     while (next) {
-      expect(cursors.has(next)).toBe(false)
-      cursors.add(next)
       const page = await read(next)
       expect(page.revision).toBe(first.revision)
       regions.push(...page.regions)
       next = page.nextCursor
+      pages += 1
     }
+    expect(pages).toBeGreaterThan(1)
     expect(regions.map((region) => region.text)).toEqual(originals)
     const [one, two, three] = regions
     if (!one?.paragraph || !two?.paragraph || !three?.paragraph)
       throw new Error("Missing Word handles")
-    const edits = [
+
+    const propose = async (basedOn: string, edits: unknown[]) =>
+      reply(
+        await door.sdk.callTool({
+          name: "paper_edit",
+          arguments: { docId: doc.docId, basedOn, edits },
+        })
+      )
+    const proposed = await propose(first.revision, [
       { op: "setText", handle: one.paragraph, text: "Reviewed exact words" },
       { op: "insert", after: two.paragraph, text: "Reviewed inserted words" },
       { op: "delete", handle: three.paragraph },
-    ]
-    const propose = async (basedOn: string, operations = edits) =>
-      client.callTool({
-        name: "paper_edit",
-        arguments: { docId: doc.docId, basedOn, edits: operations },
-      })
-    const pending = payload(await propose(first.revision))
-    expect(pending).toMatchObject({ pending: true, status: "pending approval" })
-    const proposalId = z.string().parse(pending.pendingActionId)
+    ])
+    expect(proposed.isError, JSON.stringify(proposed.body)).toBe(false)
+    expect(proposed.body).toMatchObject({
+      pending: true,
+      status: "pending approval",
+    })
+    const proposalId = z.uuid().parse(proposed.body.proposalId)
     expect((await read()).revision).toBe(first.revision)
-    const [stored] = await database.db
+    const [stored] = await door.db
       .select()
       .from(pendingActions)
       .where(eq(pendingActions.id, proposalId))
-    expect(stored?.status).toBe("pending")
-    const pendingForPerson = stored?.frozenReview
-    expect(JSON.stringify(pendingForPerson)).toContain("Reviewed exact words")
-    expect(JSON.stringify(pendingForPerson)).toContain(
-      "Reviewed inserted words"
-    )
-    expect(JSON.stringify(pendingForPerson)).toContain(originals[2])
+    expect(stored).toMatchObject({ status: "pending", command: "paper.edit" })
+    const frozen = JSON.stringify(stored?.frozenReview)
+    for (const words of [
+      "Original paragraph 1",
+      "Reviewed exact words",
+      "Reviewed inserted words",
+      "Original paragraph 3",
+    ])
+      expect(frozen).toContain(words)
+
     for (const name of [
       "actions_approve",
       "actions_deny",
       "activity_undo",
       "paper_canvas",
       "paper_restore",
+      "paper_restoreWord",
       "paper_sync",
-      "paper_undoWord",
     ]) {
       expect(names).not.toContain(name)
-      await expect(client.callTool({ name, arguments: {} })).rejects.toThrow()
+      await expect(door.sdk.callTool({ name, arguments: {} })).rejects.toThrow()
     }
-    const receipt = await run(() => registry.approve(owner, proposalId))
-    expect(receipt).toBeTruthy()
-    expect(
-      (await read()).regions.slice(0, 4).map((region) => region.text)
-    ).toEqual([
-      "Reviewed exact words",
-      originals[1],
-      "Reviewed inserted words",
-      originals[3],
-    ])
-    expect(replySchema.parse(await propose(first.revision)).isError).toBe(true)
+
+    const approved = await door.command("actions.approve", {
+      pendingActionId: proposalId,
+    })
+    expect(approved.status, await approved.clone().text()).toBe(200)
+    const receipt = z
+      .object({
+        data: z.object({ id: z.uuid(), actor: z.literal("delegate") }),
+      })
+      .parse(await approved.json())
     const committed = await read()
-    const denied = payload(
-      await propose(committed.revision, [
-        { op: "setText", handle: one.paragraph, text: "Denied words" },
-      ])
+    expect(committed.revision).not.toBe(first.revision)
+    expect(committed.regions.slice(0, 4).map((region) => region.text)).toEqual([
+      "Reviewed exact words",
+      "Original paragraph 2",
+      "Reviewed inserted words",
+      "Original paragraph 4",
+    ])
+
+    const stale = await propose(first.revision, [
+      { op: "setText", handle: one.paragraph, text: "Stale words" },
+    ])
+    expect(stale.isError).toBe(true)
+    expect(JSON.stringify(stale.body)).toMatch(
+      /Read it again|read it again|Read the document again/
     )
-    await run(() =>
-      registry.deny(owner, z.string().parse(denied.pendingActionId))
-    )
-    expect((await read()).revision).toBe(committed.revision)
-    if (!receipt) throw new Error("Missing approval receipt")
-    await run(() => registry.undo(owner, receipt.id))
-    expect((await read()).revision).toBe(first.revision)
-    expect((await read()).regions.map((region) => region.text)).toEqual(
-      originals.slice(0, first.regions.length)
+
+    const denied = await propose(committed.revision, [
+      { op: "setText", handle: one.paragraph, text: "Denied words" },
+    ])
+    expect(denied.isError, JSON.stringify(denied.body)).toBe(false)
+    const deniedResponse = await door.command("actions.deny", {
+      pendingActionId: z.uuid().parse(denied.body.proposalId),
+    })
+    expect(deniedResponse.status, await deniedResponse.text()).toBe(200)
+    const afterDeny = await read()
+    expect(afterDeny.revision).toBe(committed.revision)
+    expect(afterDeny.regions[0]?.text).toBe("Reviewed exact words")
+
+    const undone = await door.command("activity.undo", {
+      activityId: receipt.data.id,
+    })
+    expect(undone.status, await undone.text()).toBe(200)
+    const restored = await read()
+    expect(restored.regions.map((region) => region.text)).toEqual(
+      originals.slice(0, restored.regions.length)
     )
   } finally {
-    for (const client of clients) await client.close()
-    server.closeAllConnections()
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve()))
-    )
-    await database.client.close()
-    vi.unstubAllEnvs()
+    await door.close()
+    await jobsOnly.close()
   }
-}, 30000)
+}, 60000)

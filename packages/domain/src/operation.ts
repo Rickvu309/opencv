@@ -9,8 +9,10 @@ const legacyDelegateDeclarations = {
 } as const
 
 type LegacyDelegate = keyof typeof legacyDelegateDeclarations
+export const DELEGATE_RESOURCES = ["job", "paper"] as const
+export type DelegateResource = (typeof DELEGATE_RESOURCES)[number]
 export type DelegateDeclaration = {
-  resource: string
+  resource: DelegateResource
   access: "read" | "proposal"
 }
 export type DelegateMarker = LegacyDelegate | DelegateDeclaration
@@ -23,8 +25,7 @@ export function delegateDeclaration(
     return { ...legacyDelegateDeclarations[marker] }
   if (
     typeof marker === "object" &&
-    typeof marker.resource === "string" &&
-    /^[a-z][a-z0-9]*$/.test(marker.resource) &&
+    DELEGATE_RESOURCES.includes(marker.resource) &&
     (marker.access === "read" || marker.access === "proposal") &&
     Object.keys(marker).length === 2
   )

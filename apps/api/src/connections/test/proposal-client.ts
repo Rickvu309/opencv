@@ -25,7 +25,9 @@ import {
   testWebOrigin,
 } from "../../test/harness.js"
 
-export async function createProposalClient() {
+export async function createProposalClient(
+  scope = "connection.status job.read job.write offline_access"
+) {
   const external = process.env.MCP_REPLAY_DATABASE_URL
   const pool = external
     ? new Pool({ connectionString: external, max: 4 })
@@ -102,7 +104,6 @@ export async function createProposalClient() {
     await memory?.client.close()
   }
   try {
-    const scope = "connection.status job.read job.write offline_access"
     const audience = new URL("/mcp", origin)
     const resource = await discoverOAuthProtectedResourceMetadata(audience)
     const issuer = resource.authorization_servers?.[0]
