@@ -56,6 +56,49 @@ describe("paper API client", () => {
     await expect(importPaperFile(file)).rejects.toThrow()
   })
 
+  it.each([
+    [429, "IMPORT_READ_LIMITED", "Your last file is still being read."],
+    [503, "IMPORT_READ_BUSY", "Many files are being read right now."],
+    [422, "FILE_UNSUPPORTED", "This PDF has more than 20 pages."],
+  ])(
+    "turns a %i import refusal into the server's code and sentence, and sends the cancel signal",
+    async (status, code, message) => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { ok: false, error: { code, message } },
+            { status, headers: { "Retry-After": "60" } }
+          )
+        )
+      vi.stubGlobal("fetch", fetchMock)
+      const stop = new AbortController()
+      const refused = await importPaperFile(
+        new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" }),
+        stop.signal
+      ).catch((error: unknown) => error)
+      expect(refused).toMatchObject({ status, code, message })
+      expect(fetchMock.mock.calls[0]?.[1]?.signal).toBe(stop.signal)
+    }
+  )
+
+  it("keeps a plain sentence when a gateway answers an import without JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response("<html>Gateway</html>", { status: 504 })
+        )
+    )
+    await expect(
+      importPaperFile(new File(["CV"], "Linh_CV.pdf"))
+    ).rejects.toMatchObject({
+      status: 504,
+      message: "Could not import that file. Try it again.",
+    })
+  })
+
   it("lists documents from GET /api/paper", async () => {
     const fetchMock = vi.fn().mockResolvedValue(envelope([]))
     vi.stubGlobal("fetch", fetchMock)

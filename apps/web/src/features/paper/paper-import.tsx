@@ -131,6 +131,7 @@ export function CantReadDialog({
   onChoose,
   onBlank,
   onClose,
+  onRetry,
   blankPending = false,
 }: {
   open: boolean
@@ -138,6 +139,7 @@ export function CantReadDialog({
   onChoose: () => void
   onBlank: () => void
   onClose: () => void
+  onRetry?: () => void
   blankPending?: boolean
 }) {
   return (
@@ -149,26 +151,39 @@ export function CantReadDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Can&apos;t read this file</DialogTitle>
+          <DialogTitle>
+            {onRetry ? "File not imported yet" : "Can't read this file"}
+          </DialogTitle>
           <DialogDescription role="alert">{sentence}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-wrap justify-end gap-2">
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="ghost"
-            onClick={onBlank}
-            disabled={blankPending}
-          >
-            Start blank
-          </Button>
+          {onRetry ? (
+            <Button
+              className="h-11 md:h-8"
+              type="button"
+              variant="ghost"
+              onClick={onChoose}
+            >
+              Choose another file
+            </Button>
+          ) : (
+            <Button
+              className="h-11 md:h-8"
+              type="button"
+              variant="ghost"
+              onClick={onBlank}
+              disabled={blankPending}
+            >
+              Start blank
+            </Button>
+          )}
           <Button
             className="h-11 md:h-8"
             type="button"
             variant="glow"
-            onClick={onChoose}
+            onClick={onRetry ?? onChoose}
           >
-            Choose another file
+            {onRetry ? "Try again" : "Choose another file"}
           </Button>
         </div>
       </DialogContent>

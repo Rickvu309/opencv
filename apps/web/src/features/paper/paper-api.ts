@@ -142,11 +142,11 @@ export async function importPaperFile(file: File, signal?: AbortSignal) {
   })
   if (!res.ok) {
     const payload = (await res.json().catch(() => null)) as {
-      error?: { message?: string }
+      error?: { code?: string; message?: string }
     } | null
     throw new ApiError(
       res.status,
-      "REQUEST_FAILED",
+      payload?.error?.code ?? "REQUEST_FAILED",
       payload?.error?.message ?? "Could not import that file. Try it again."
     )
   }

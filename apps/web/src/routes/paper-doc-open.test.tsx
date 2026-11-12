@@ -191,6 +191,14 @@ describe("opening a document from its link", () => {
     }
   )
 
+  it("opens a page imported a moment ago, when the cached list was read before the import", async () => {
+    const exchanges = stubServer()
+    open(`/paper/${WORD_PAGE}`, [olderView])
+    expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
+    expect(failed(exchanges)).toEqual([])
+    expect(paperRequests(exchanges)).toEqual(["paper", "reads/paper.read"])
+  })
+
   it("still opens a Word page when the document list cannot load", async () => {
     stubServer({ listFails: true })
     open(`/paper/${WORD_PAGE}`)

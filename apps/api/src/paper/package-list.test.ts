@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 
 import {
   PAPER_CANVAS_PROFILE,
+  PAPER_COACH_WORD_PAGE_NOTE,
   coachActor,
   parsePaperId,
   parseUserId,
@@ -95,6 +96,20 @@ describe("Word pages in the document list", () => {
       expect(coachIds).toEqual(
         expect.arrayContaining([imported.docId, head.docId])
       )
+      const coachImported = (
+        Array.isArray(coachListed) ? coachListed : []
+      ).filter((item: unknown) =>
+        item && typeof item === "object" && "id" in item
+          ? item.id === imported.docId
+          : false
+      )
+      expect(coachImported).toEqual([
+        expect.objectContaining({
+          format: "word",
+          note: PAPER_COACH_WORD_PAGE_NOTE,
+        }),
+      ])
+      expect(coachImported[0]).not.toHaveProperty("paper")
       expect(
         (await listPapers(parseUserId(stranger))).some(
           (item) => item.id === imported.docId

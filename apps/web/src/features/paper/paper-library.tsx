@@ -43,6 +43,7 @@ import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
 import {
   IMPORT_ACCEPT,
   discardCancelledImport,
+  importRefusal,
   messageOf,
 } from "./paper-library-support.ts"
 import {
@@ -112,6 +113,7 @@ export function PaperLibrary({
   const closeDialog = () => dispatch({ type: "dialog_closed" })
   const newGallery = mode?.type === "new" && mode.step === "gallery"
   const dialogOpen = mode !== null || importState.type !== "idle"
+  const retryFile = importState.type === "error" ? importState.retry : null
   const needle = query.trim().toLowerCase()
   const wordLibrary = useWordLibrary()
   const entries = libraryEntries({ docs, files, words: wordLibrary.items })
@@ -158,7 +160,7 @@ export function PaperLibrary({
     importRequest.current = request
     dispatch({ type: "import_started", name: file.name })
     try {
-      const created = await importPaperFile(file)
+      const created = await importPaperFile(file, request.signal)
       if (request.signal.aborted) {
         await discardCancelledImport(run, created.docId)
         return
@@ -168,9 +170,11 @@ export function PaperLibrary({
       onOpen(created.docId)
     } catch (err) {
       if (request.signal.aborted) return
+      const refusal = importRefusal(err)
       dispatch({
         type: "import_failed",
-        message: messageOf(err, "Could not import that file. Try it again."),
+        message: refusal.message,
+        ...(refusal.waitAndRetry ? { retry: file } : {}),
       })
     } finally {
       if (importRequest.current === request) importRequest.current = null
@@ -579,6 +583,7 @@ export function PaperLibrary({
         onChoose={chooseFile}
         onBlank={() => void startBlank()}
         onClose={() => dispatch({ type: "import_ended" })}
+        onRetry={retryFile ? () => void onImport(retryFile) : undefined}
         blankPending={creatingBlank}
       />
 

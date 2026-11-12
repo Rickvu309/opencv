@@ -9,6 +9,8 @@ import {
   type PaperView,
 } from "@workspace/domain"
 
+import { ApiError } from "@/lib/api-error.ts"
+
 import { PaperLibrary } from "./paper-library.tsx"
 import {
   cv,
@@ -78,22 +80,6 @@ describe("Paper library", () => {
     expect(
       screen.getByRole("button", { name: "New", exact: true })
     ).toHaveFocus()
-  })
-
-  it("does not pass the cancel signal to the upload, so a keep-alive cancel leaves the server request running", async () => {
-    vi.mocked(importPaperFile).mockImplementation(
-      () => new Promise(() => undefined)
-    )
-    renderLibrary([])
-    const file = new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })
-    const input = document.querySelector('input[type="file"]')
-    if (!input) throw new Error("Missing import input")
-    fireEvent.change(input, { target: { files: [file] } })
-    expect(await screen.findByRole("status")).toHaveTextContent("Linh_CV.pdf")
-    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
-    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
-    expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
   it("deletes a Word page that finishes importing after Cancel, and neither opens it nor shows the note", async () => {
@@ -214,7 +200,11 @@ describe("Paper library", () => {
 
   it("shows a failed import and lets the user retry with another file", async () => {
     vi.mocked(importPaperFile).mockRejectedValueOnce(
-      new Error("Pages files aren't supported. Try a PDF or Word file.")
+      new ApiError(
+        415,
+        "FILE_UNSUPPORTED",
+        "Pages files aren't supported. Try a PDF or Word file."
+      )
     )
     renderLibrary([])
     const input = document.querySelector('input[type="file"]')
@@ -255,7 +245,10 @@ describe("Paper library", () => {
     expect(
       screen.getByRole("heading", { name: "Importing…" })
     ).toBeInTheDocument()
-    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(file)
+    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(
+      file,
+      expect.any(AbortSignal)
+    )
   })
 
   it("posts a pasted link and shows the server sentence", async () => {
