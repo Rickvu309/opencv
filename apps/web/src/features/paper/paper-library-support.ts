@@ -1,3 +1,5 @@
+import { parsePaperId } from "@workspace/domain"
+
 import { ApiError } from "@/lib/api-error.ts"
 import type { useRunCommand } from "@/lib/contract-client.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
@@ -16,7 +18,7 @@ export async function discardCancelledImport(
   docId: string
 ) {
   await ignoreRejection(
-    run("paper.delete", { docId }),
+    run("paper.delete", { docId: parsePaperId(docId) }),
     "cancelledImportCleanupStaysQuiet"
   )
 }
