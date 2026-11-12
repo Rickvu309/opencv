@@ -6,6 +6,7 @@ import {
   LIVE_HEALTH,
   deployLines,
   migrationChanges,
+  migrationFacts,
 } from "./migration-facts.mjs"
 
 const sql = (name) =>
@@ -49,17 +50,14 @@ test("the clean fixtures stay quiet, and the deploy notice counts the statements
       statements: 2,
       changes: [],
     },
-    {
-      file: "apps/api/drizzle/0024_b.sql",
-      tag: "0024_b",
-      statements: 0,
-      changes: [],
-    },
   ]
   assert.deepEqual(deployLines({ allowed: [], files }).slice(1), [
     "Migration apps/api/drizzle/0023_a.sql only adds: each of its 2 statement(s) is on the only-adds list.",
-    "Migration apps/api/drizzle/0024_b.sql has no statements.",
   ])
+  assert.match(
+    migrationChanges("--> statement-breakpoint\n")[0],
+    /it has no statements/
+  )
 })
 
 const MIGRATION = "apps/api/drizzle/0024_word_rename_retained.sql"
@@ -124,4 +122,63 @@ test("merge of a PR with no migration says it deploys and carries none", () => {
   assert.equal(r.code, 0, r.text)
   assert.match(r.text, /This merge deploys to production/)
   assert.match(r.text, /It carries no database migration\./)
+})
+
+test("a drizzle file the scanner does not read, a journal changed alone, an unread change list and a file that is not UTF-8 each change existing things", () => {
+  const shown = new Map([
+    [
+      "apps/api/drizzle/custom_backfill.sql",
+      "UPDATE opencv_app.jobs SET a = 1",
+    ],
+    ["apps/api/drizzle/0026_bytes.sql", "CREATE TABLE t (id int); �"],
+    ["apps/api/drizzle/0027_new.sql", "CREATE TABLE t (id int)"],
+  ])
+  const ctx = {
+    cwd: "/repo",
+    ports: {
+      proc: {
+        run: (cmd, args) => {
+          const file = args[1].slice(args[1].indexOf(":") + 1)
+          return shown.has(file)
+            ? { ok: true, out: shown.get(file), err: "" }
+            : { ok: false, out: "", err: "missing" }
+        },
+      },
+    },
+  }
+  const verdicts = (files) =>
+    Object.fromEntries(
+      migrationFacts(ctx, files, "HEAD").files.map((item) => [
+        item.file,
+        item.changes.join("; ") || "only adds",
+      ])
+    )
+  assert.deepEqual(
+    verdicts([
+      "apps/api/drizzle/custom_backfill.sql",
+      "apps/api/drizzle/0026_bytes.sql",
+      "apps/api/drizzle/0027_new.sql",
+      "apps/api/drizzle/meta/0027_snapshot.json",
+      "apps/api/drizzle/meta/_journal.json",
+      "apps/api/drizzle/seed.ts",
+    ]),
+    {
+      "apps/api/drizzle/seed.ts":
+        "a file under apps/api/drizzle the scanner does not read; it may change what drizzle runs",
+      "apps/api/drizzle/0026_bytes.sql":
+        "the file is not UTF-8 text (or holds U+FFFD), so the scanner cannot read it as the database will",
+      "apps/api/drizzle/0027_new.sql": "only adds",
+      "apps/api/drizzle/custom_backfill.sql":
+        "statement 1, UPDATE opencv_app.jobs SET a = 1: an UPDATE changes existing rows",
+    }
+  )
+  assert.deepEqual(verdicts(["apps/api/drizzle/meta/_journal.json"]), {
+    "apps/api/drizzle/meta/_journal.json":
+      "the migration journal changed without a migration file, so it may run a file this pull request did not change",
+  })
+  assert.deepEqual(verdicts(undefined), {
+    "the changed files":
+      "the list of changed files could not be read, so no migration can be ruled out",
+  })
+  assert.deepEqual(verdicts(["apps/api/src/a.ts"]), {})
 })

@@ -57,6 +57,19 @@ export function tokenize(sql) {
       const end = endOfQuoted(text, i, "'", escaped)
       tokens.push({ t: "str", start: escaped ? prev.start : i, end })
       i = end
+    } else if (
+      /[Uu]/.test(c) &&
+      text[i + 1] === "&" &&
+      /["']/.test(text[i + 2] ?? "")
+    ) {
+      const end = endOfQuoted(text, i + 2, text[i + 2], false)
+      tokens.push({
+        t: "unread",
+        v: "a Unicode-escaped name or string (U&)",
+        start: i,
+        end,
+      })
+      i = end
     } else if (c === '"') {
       const end = endOfQuoted(text, i, '"', false)
       tokens.push({
@@ -77,6 +90,14 @@ export function tokenize(sql) {
       const raw = text.slice(i, end)
       tokens.push({ t: "word", v: raw.toUpperCase(), raw, start: i, end })
       i = end
+    } else if (c.charCodeAt(0) > 127) {
+      tokens.push({
+        t: "unread",
+        v: `the character ${JSON.stringify(c)} outside quotes`,
+        start: i,
+        end: i + 1,
+      })
+      i += 1
     } else {
       tokens.push({ t: "punct", v: c, start: i, end: i + 1 })
       i += 1
@@ -106,8 +127,16 @@ export function splitStatements(sql) {
 }
 
 const isName = (token) => token?.t === "word" || token?.t === "name"
-const part = (token) =>
-  token.t === "name" ? token.v.toLowerCase() : token.raw.toLowerCase()
+const part = (token) => (token.t === "name" ? token.v : token.raw.toLowerCase())
+const PLAIN = /^[a-z_][a-z0-9_$]*$/
+const keyOf = (parts) => (parts ? JSON.stringify(parts) : null)
+const show = (parts) =>
+  parts
+    ? parts
+        .map((p) => (PLAIN.test(p) ? p : `"${p.replace(/"/g, '""')}"`))
+        .join(".")
+    : "a name the scanner cannot read"
+const parentOf = (parts) => (parts ? parts.slice(0, -1) : null)
 
 function nameAt(ts, i) {
   if (!isName(ts[i])) return [null, i]
@@ -117,7 +146,7 @@ function nameAt(ts, i) {
     parts.push(part(ts[j + 1]))
     j += 2
   }
-  return [parts.join("."), j]
+  return [parts, j]
 }
 
 function words(ts, i, ...expected) {
@@ -153,8 +182,6 @@ function topLevelParts(ts, from) {
   return parts
 }
 
-const parent = (name) => name.split(".").slice(0, -1).join(".")
-
 function createTable(ts, made) {
   let i = words(ts, 0, "CREATE", "TABLE")
   if (i < 0) return null
@@ -164,7 +191,7 @@ function createTable(ts, made) {
     return "CREATE TABLE without a column list (AS, PARTITION OF or OF) is not on the only-adds list"
   if (closeOf(ts, j) !== ts.length - 1)
     return "CREATE TABLE with options after its columns (INHERITS, PARTITION BY, WITH) is not on the only-adds list"
-  if (ifNot < 0) made.tables.add(name)
+  if (ifNot < 0) made.tables.add(keyOf(name))
   return true
 }
 
@@ -176,6 +203,7 @@ function createIndex(ts, made) {
   if (i < 0) return null
   const concurrently = words(ts, i, "CONCURRENTLY") >= 0
   i = optional(ts, i, "CONCURRENTLY")
+  const ifNot = words(ts, i, "IF", "NOT", "EXISTS") >= 0
   i = optional(ts, i, "IF", "NOT", "EXISTS")
   let index = null
   if (words(ts, i, "ON") < 0) [index, i] = nameAt(ts, i)
@@ -183,15 +211,17 @@ function createIndex(ts, made) {
   if (i < 0) return "a CREATE INDEX the scanner cannot read"
   i = optional(ts, i, "ONLY")
   const [table] = nameAt(ts, i)
-  if (table && made.tables.has(table)) {
-    if (index) made.indexes.add(index)
-    if (index && !index.includes(".") && table.includes("."))
-      made.indexes.add(`${parent(table)}.${index}`)
+  if (table && made.tables.has(keyOf(table))) {
+    if (index && !ifNot) {
+      made.indexes.add(keyOf(index))
+      if (index.length === 1 && table.length > 1)
+        made.indexes.add(keyOf([...parentOf(table), ...index]))
+    }
     return true
   }
   return concurrently
-    ? `an index on ${table}, a table this migration did not create, builds over its existing rows`
-    : `an index on ${table}, a table this migration did not create, locks its writes while it builds (no CONCURRENTLY)`
+    ? `an index on ${show(table)}, a table this migration did not create, builds over its existing rows`
+    : `an index on ${show(table)}, a table this migration did not create, locks its writes while it builds (no CONCURRENTLY)`
 }
 
 function alterTable(ts, made) {
@@ -200,8 +230,8 @@ function alterTable(ts, made) {
   i = optional(ts, i, "IF", "EXISTS")
   i = optional(ts, i, "ONLY")
   const [table, j] = nameAt(ts, i)
-  if (!table || !made.tables.has(table))
-    return `an ALTER TABLE on ${table}, a table this migration did not create`
+  if (!table || !made.tables.has(keyOf(table)))
+    return `an ALTER TABLE on ${show(table)}, a table this migration did not create`
   const odd = topLevelParts(ts, j).find(
     (action) =>
       !(action[0]?.t === "word" && action[0].v === "ADD" && isName(action[1]))
@@ -217,37 +247,44 @@ function alterTable(ts, made) {
 function createSmall(ts, made) {
   if (words(ts, 0, "CREATE", "TYPE") >= 0) {
     const [name] = nameAt(ts, 2)
-    if (name) made.types.add(name)
+    if (name) made.types.add(keyOf(name))
     return true
   }
   const schema = words(ts, 0, "CREATE", "SCHEMA", "IF", "NOT", "EXISTS")
   if (schema >= 0) {
     const [name, j] = nameAt(ts, schema)
     return name && j === ts.length
-      ? (made.schemas.add(name), true)
+      ? true
       : "CREATE SCHEMA with AUTHORIZATION or elements is not on the only-adds list"
   }
   let i = words(ts, 0, "CREATE", "SEQUENCE")
   if (i < 0) return null
+  const ifNot = words(ts, i, "IF", "NOT", "EXISTS") >= 0
   i = optional(ts, i, "IF", "NOT", "EXISTS")
   const [name] = nameAt(ts, i)
-  const owned = ts.findIndex((t, k) => t.v === "OWNED" && ts[k + 1]?.v === "BY")
+  const owned = ts.findIndex(
+    (t, k) =>
+      t.t === "word" &&
+      t.v === "OWNED" &&
+      ts[k + 1]?.t === "word" &&
+      ts[k + 1].v === "BY"
+  )
   if (owned >= 0) {
     const [column] = nameAt(ts, owned + 2)
-    if (column !== "none" && !made.tables.has(parent(column ?? "")))
-      return `a sequence OWNED BY ${column}, a column of a table this migration did not create`
+    const none = ts[owned + 2]?.t === "word" && ts[owned + 2].v === "NONE"
+    if (!none && !made.tables.has(keyOf(parentOf(column))))
+      return `a sequence OWNED BY ${show(column)}, a column of a table this migration did not create`
   }
-  if (name) made.sequences.add(name)
+  if (name && !ifNot) made.sequences.add(keyOf(name))
   return true
 }
 
 const COMMENT_KINDS = {
-  TABLE: (made, name) => made.tables.has(name),
-  COLUMN: (made, name) => made.tables.has(parent(name)),
-  INDEX: (made, name) => made.indexes.has(name),
-  TYPE: (made, name) => made.types.has(name),
-  SEQUENCE: (made, name) => made.sequences.has(name),
-  SCHEMA: (made, name) => made.schemas.has(name),
+  TABLE: (made, name) => made.tables.has(keyOf(name)),
+  COLUMN: (made, name) => made.tables.has(keyOf(parentOf(name))),
+  INDEX: (made, name) => made.indexes.has(keyOf(name)),
+  TYPE: (made, name) => made.types.has(keyOf(name)),
+  SEQUENCE: (made, name) => made.sequences.has(keyOf(name)),
 }
 
 function commentOn(ts, made) {
@@ -258,7 +295,7 @@ function commentOn(ts, made) {
   const own = COMMENT_KINDS[kind]
   return own && name && own(made, name)
     ? true
-    : `a COMMENT ON ${kind} ${name}, which this migration did not create`
+    : `a COMMENT ON ${kind} ${show(name)}, which this migration did not create`
 }
 
 const REFUSED = [
@@ -320,16 +357,28 @@ export function classifyMigration(sql) {
       },
     }
   }
+  if (!statements.length)
+    return {
+      onlyAdds: false,
+      statements: 0,
+      first: {
+        n: 0,
+        text: "",
+        why: "it has no statements, so the scanner cannot tell what it is for; a migration with nothing to run is usually a file cut short",
+      },
+    }
   const made = {
     tables: new Set(),
     indexes: new Set(),
     types: new Set(),
-    schemas: new Set(),
     sequences: new Set(),
   }
   for (const [k, statement] of statements.entries()) {
-    let verdict = null
-    for (const classify of CLASSIFIERS) {
+    const unread = statement.tokens.find((token) => token.t === "unread")
+    let verdict = unread
+      ? `it holds ${unread.v}, which the scanner does not read`
+      : null
+    for (const classify of unread ? [] : CLASSIFIERS) {
       verdict = classify(statement.tokens, made)
       if (verdict !== null) break
     }

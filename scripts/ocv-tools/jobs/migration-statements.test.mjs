@@ -171,17 +171,18 @@ test("only-adds statements on new objects stay quiet, including drizzle's breakp
   }
 })
 
-test("an empty file and a file of comments only add nothing and change nothing; an unclosed quote cannot be parsed and changes existing things", () => {
+test("an empty file, a file of comments only and a file with only a breakpoint cannot be told apart from a cut-short file and change existing things; an unclosed quote cannot be parsed", () => {
   for (const sql of [
     "",
     "  \n",
+    "--> statement-breakpoint\n",
     "-- note\n/* block /* nested */ */\n--> statement-breakpoint\n",
-  ])
-    assert.deepEqual(classifyMigration(sql), {
-      onlyAdds: true,
-      statements: 0,
-      first: null,
-    })
+    ";;\n",
+  ]) {
+    const verdict = classifyMigration(sql)
+    assert.equal(verdict.onlyAdds, false, JSON.stringify(sql))
+    assert.match(verdict.first.why, /it has no statements/)
+  }
   for (const sql of [
     "SELECT 'open",
     'CREATE TABLE "open (a int)',
@@ -212,4 +213,163 @@ test("the real migrations on main classify by their content", () => {
     retained.first.text,
     /^CREATE OR REPLACE FUNCTION "opencv_app"\."reject_retained_word_version_update"/
   )
+})
+
+const ONLY = "only adds"
+
+const ROUND_THREE = [
+  [
+    'CREATE TABLE opencv_app."JOBS" (id int); ALTER TABLE opencv_app.jobs ADD COLUMN backfilled int NOT NULL',
+    /an ALTER TABLE on opencv_app\.jobs, a table this migration did not create/,
+  ],
+  [
+    'CREATE TABLE "opencv_app"."Jobs" (id int); CREATE UNIQUE INDEX jobs_email ON opencv_app.jobs (email)',
+    /an index on opencv_app\.jobs/,
+  ],
+  [
+    'CREATE TABLE opencv_app."Papers" (id int); ALTER TABLE opencv_app.papers ADD CONSTRAINT c CHECK (false) NOT VALID',
+    /an ALTER TABLE on opencv_app\.papers/,
+  ],
+  [
+    'CREATE TABLE opencv_app."JoBs" (id int); CREATE INDEX i ON opencv_app."JOBS" (id)',
+    /an index on opencv_app\."JOBS"/,
+  ],
+  ['CREATE TABLE "x"."y" (id int); ALTER TABLE x.y ADD COLUMN a int', ONLY],
+  [
+    'CREATE TABLE "jobs_new" (id int); ALTER TABLE JOBS_NEW ADD COLUMN a int',
+    ONLY,
+  ],
+  ['CREATE TABLE "Jobs" (id int); ALTER TABLE "Jobs" ADD COLUMN a int', ONLY],
+  [
+    'CREATE TABLE "Jobs" (id int); ALTER TABLE Jobs ADD COLUMN a int',
+    /an ALTER TABLE on jobs/,
+  ],
+  [
+    'CREATE TABLE "opencv_app.jobs" (id int); ALTER TABLE opencv_app.jobs ADD COLUMN a int',
+    /an ALTER TABLE on opencv_app\.jobs/,
+  ],
+  [
+    'CREATE TABLE opencv_app.jobs2 (id int); ALTER TABLE "opencv_app.jobs2" ADD COLUMN a int',
+    /an ALTER TABLE on "opencv_app\.jobs2"/,
+  ],
+  ['CREATE TABLE "a""b" (id int); ALTER TABLE "a""b" ADD COLUMN c int', ONLY],
+  [
+    'CREATE TABLE "jobs""" (id int); ALTER TABLE "jobs" ADD COLUMN c int',
+    /an ALTER TABLE on jobs/,
+  ],
+  ['CREATE TABLE U&"jobs" (id int)', /Unicode-escaped name/],
+  [
+    'CREATE TABLE x (id int); ALTER TABLE U&"\\0078" ADD COLUMN a int',
+    /Unicode-escaped name/,
+  ],
+  [
+    "CREATE TABLE x (id int); COMMENT ON TABLE x IS U&'d\\0061ta'",
+    /Unicode-escaped name or string/,
+  ],
+  ["CREATE TABLE café (id int)", /the character "é" outside quotes/],
+  [
+    "SET search_path TO opencv_app; CREATE TABLE jobs2 (id int)",
+    /SET search_path is not on the only-adds list/,
+  ],
+  [
+    "CREATE TABLE jobs (id int); ALTER TABLE opencv_app.jobs ADD COLUMN a int",
+    /an ALTER TABLE on opencv_app\.jobs/,
+  ],
+  [
+    "CREATE TABLE opencv_app.jobs3 (id int); ALTER TABLE jobs3 ADD COLUMN a int",
+    /an ALTER TABLE on jobs3/,
+  ],
+  ["CREATE TABLE IF NOT EXISTS opencv_app.jobs (id int)", ONLY],
+  [
+    "CREATE TABLE IF NOT EXISTS opencv_app.jobs (id int); ALTER TABLE opencv_app.jobs ADD COLUMN a int",
+    /an ALTER TABLE on opencv_app\.jobs/,
+  ],
+  [
+    "CREATE TABLE IF NOT EXISTS opencv_app.jobs (id int); CREATE INDEX i ON opencv_app.jobs (id)",
+    /an index on opencv_app\.jobs/,
+  ],
+  [
+    "CREATE TABLE IF NOT EXISTS opencv_app.jobs (id int); COMMENT ON TABLE opencv_app.jobs IS 'x'",
+    /a COMMENT ON TABLE opencv_app\.jobs/,
+  ],
+  [
+    "CREATE TABLE t (id int); CREATE INDEX IF NOT EXISTS jobs_pkey ON t (id); COMMENT ON INDEX jobs_pkey IS 'x'",
+    /a COMMENT ON INDEX jobs_pkey/,
+  ],
+  [
+    "CREATE SEQUENCE IF NOT EXISTS opencv_app.jobs_seq; COMMENT ON SEQUENCE opencv_app.jobs_seq IS 'x'",
+    /a COMMENT ON SEQUENCE opencv_app\.jobs_seq/,
+  ],
+  [
+    "CREATE SCHEMA IF NOT EXISTS opencv_app; COMMENT ON SCHEMA opencv_app IS 'x'",
+    /a COMMENT ON SCHEMA opencv_app/,
+  ],
+  ["CREATE OR REPLACE VIEW v AS SELECT 1", /CREATE OR REPLACE replaces/],
+  [
+    "CREATE OR REPLACE TRIGGER t BEFORE UPDATE ON opencv_app.jobs FOR EACH ROW EXECUTE FUNCTION f()",
+    /CREATE OR REPLACE replaces/,
+  ],
+  [
+    "CREATE OR REPLACE RULE r AS ON INSERT TO opencv_app.jobs DO NOTHING",
+    /CREATE OR REPLACE replaces/,
+  ],
+  [
+    "ALTER TYPE opencv_app.stage ADD VALUE 'archived'",
+    /an ALTER changes something that exists/,
+  ],
+  [
+    "CREATE TYPE opencv_app.mood AS ENUM ('a'); ALTER TYPE opencv_app.mood ADD VALUE 'b'",
+    /an ALTER changes something that exists/,
+  ],
+  [
+    "COMMENT ON TABLE opencv_app.jobs IS 'x'",
+    /a COMMENT ON TABLE opencv_app\.jobs/,
+  ],
+  ["COMMENT ON FUNCTION opencv_app.f() IS 'x'", /a COMMENT ON FUNCTION/],
+  [
+    "COMMENT ON CONSTRAINT c ON opencv_app.jobs IS 'x'",
+    /a COMMENT ON CONSTRAINT/,
+  ],
+  [
+    "GRANT USAGE ON SCHEMA opencv_app TO reader",
+    /a GRANT changes who can reach/,
+  ],
+  [
+    "CREATE TABLE t (id int); REVOKE ALL ON t FROM PUBLIC",
+    /a REVOKE changes who can reach/,
+  ],
+  [
+    "CREATE TABLE a (id int); SELECT 'x; DROP TABLE jobs;",
+    /the scanner cannot parse it: a string never closes/,
+  ],
+  [
+    "CREATE TABLE a (id int); DO $q$ BEGIN DROP TABLE jobs; END",
+    /the scanner cannot parse it: a \$q\$ body never closes/,
+  ],
+  [
+    'CREATE TABLE a (id int); ALTER TABLE "jobs ADD COLUMN x int',
+    /the scanner cannot parse it: a quoted name never closes/,
+  ],
+  [
+    "CREATE TABLE t (id int); CREATE SEQUENCE s OWNED BY opencv_app.jobs.id",
+    /a sequence OWNED BY opencv_app\.jobs\.id/,
+  ],
+  [
+    'CREATE TABLE t (id int); CREATE SEQUENCE s OWNED BY "T".id',
+    /a sequence OWNED BY "T"\.id/,
+  ],
+  ["CREATE TABLE t (id int); CREATE SEQUENCE s OWNED BY NONE", ONLY],
+  ['CREATE TABLE "DROP" (id int)', ONLY],
+]
+
+test("round three: quoted names keep their case, a dotted quoted name is one name, and anything the scanner does not fully read changes existing things", () => {
+  for (const [sql, expected] of ROUND_THREE) {
+    const verdict = classifyMigration(sql)
+    if (expected === ONLY)
+      assert.equal(verdict.onlyAdds, true, `${sql}: ${verdict.first?.why}`)
+    else {
+      assert.equal(verdict.onlyAdds, false, sql)
+      assert.match(verdict.first.why, expected, sql)
+    }
+  }
 })
