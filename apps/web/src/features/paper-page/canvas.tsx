@@ -48,6 +48,7 @@ import {
   writingConflictDoc,
 } from "@/lib/writing-refresh.ts"
 import "./canvas.css"
+import "./design/writing-page.pen.css"
 
 type CanvasState = {
   past: WritingDraft[]
@@ -469,7 +470,11 @@ function WritingSheet({
   }, [applyPaste, state.present])
 
   return (
-    <section aria-label="Writing" className="writing-sheet">
+    <section
+      aria-label="Writing"
+      className="writing-sheet"
+      data-pen-surface="paper-page"
+    >
       <div className="writing-scroll" ref={scrollRef}>
         <article
           ref={pageRef}
