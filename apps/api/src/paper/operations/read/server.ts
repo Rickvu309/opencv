@@ -2,6 +2,7 @@ import { operation } from "@workspace/domain/operations/paper/read"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { packageFailure } from "../../package-pages.js"
 import { listWordPackages, readWordPackage } from "../../package-store.js"
+import { readWordParagraphs } from "../../word-reading.js"
 import { open } from "../../word/document.js"
 
 async function readWordLines(owner: string, doc: string, at?: string) {
@@ -16,6 +17,7 @@ export const implementation = {
   operation,
   execute: (input, actor) => {
     if (!("view" in input)) return readWordPackage(actor.userId, input)
+    if (input.view === "lines") return readWordParagraphs(actor.userId, input)
     return input.view === "page"
       ? readWordLines(actor.userId, input.docId, input.at)
       : listWordPackages(actor.userId, input.after)
@@ -25,4 +27,5 @@ export const implementation = {
   | Awaited<ReturnType<typeof listWordPackages>>
   | Awaited<ReturnType<typeof readWordPackage>>
   | Awaited<ReturnType<typeof readWordLines>>
+  | Awaited<ReturnType<typeof readWordParagraphs>>
 >

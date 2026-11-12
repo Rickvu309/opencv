@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { delegateActorSchema, paperPackageReadSchema } from "@workspace/domain"
+import { delegateActorSchema, paperWordReadSchema } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterEach, expect, it, vi } from "vitest"
 
@@ -184,15 +184,18 @@ it("reads one page and keeps an edit as a proposal", async () => {
         bytes
       )
       const head = await publishWordPackage(userId, staged.stageId)
-      const page = paperPackageReadSchema.parse(
-        await registry.read("paper.read", { docId: head.docId }, paper)
+      const page = paperWordReadSchema.parse(
+        await registry.read(
+          "paper.read",
+          { view: "lines", docId: head.docId },
+          paper
+        )
       )
       expect(page.docId).toBe(head.docId)
       expect(page.revision).toBe(head.revision)
       expect(page.nextCursor).toBeNull()
-      const region = page.regions.find((item) => item.kind === "editable")
-      if (!region || region.kind !== "editable")
-        throw new Error("missing editable region")
+      const region = page.paragraphs.find((item) => !item.held)
+      if (!region || region.held) throw new Error("missing editable region")
       expect(region.text).toBe("Original words")
       await expect(
         registry.read(
@@ -208,10 +211,9 @@ it("reads one page and keeps an edit as a proposal", async () => {
           basedOn: page.revision,
           edits: [
             {
-              op: "replaceText",
-              targetId: region.targetId,
-              before: region.text,
-              after: "Trusted words",
+              op: "setText",
+              handle: region.handle,
+              text: "Trusted words",
             },
           ],
         },
@@ -227,17 +229,17 @@ it("reads one page and keeps an edit as a proposal", async () => {
       expect(shaped?.proposalId).toBe(proposed.pendingActionId)
       expect(shaped?.status).toBe("pending approval")
       expect(JSON.stringify(shaped)).not.toMatch(/Applied|Saved|restore/)
-      const again = paperPackageReadSchema.parse(
+      const again = paperWordReadSchema.parse(
         await registry.read(
           "paper.read",
-          { docId: head.docId, at: head.revision },
+          { view: "lines", docId: head.docId, at: head.revision },
           paper
         )
       )
       expect(again.revision).toBe(page.revision)
-      expect(
-        again.regions.find((item) => item.kind === "editable")
-      ).toMatchObject({ text: "Original words" })
+      expect(again.paragraphs.find((item) => !item.held)).toMatchObject({
+        text: "Original words",
+      })
       await expect(
         registry.approve(userId, proposed.pendingActionId!)
       ).rejects.toThrow(/no longer active/)
@@ -248,12 +250,16 @@ it("reads one page and keeps an edit as a proposal", async () => {
           actor: paper,
         })
       ).rejects.toThrow(/connection cannot/)
-      const kept = paperPackageReadSchema.parse(
-        await registry.read("paper.read", { docId: head.docId }, paper)
+      const kept = paperWordReadSchema.parse(
+        await registry.read(
+          "paper.read",
+          { view: "lines", docId: head.docId },
+          paper
+        )
       )
-      expect(
-        kept.regions.find((item) => item.kind === "editable")
-      ).toMatchObject({ text: "Original words" })
+      expect(kept.paragraphs.find((item) => !item.held)).toMatchObject({
+        text: "Original words",
+      })
     })
   } finally {
     await client.close()

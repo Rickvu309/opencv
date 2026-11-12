@@ -19,6 +19,7 @@ const positionSchema = z
     revision: z.string().uuid(),
     incarnation: z.string().uuid(),
     projector: z.literal(PAPER_PACKAGE_PROJECTOR),
+    reader: z.literal("word").optional(),
     index: z.number().int().nonnegative(),
     offset: z.number().int().nonnegative(),
   })
@@ -87,6 +88,17 @@ export function encodePackageCursor(
   ).toString("base64url")
 }
 
+export function packageCursorSigned(
+  token: { position: Position; signature: string },
+  owner: string,
+  key: string
+) {
+  return timingSafeEqual(
+    Buffer.from(token.signature, "hex"),
+    Buffer.from(signature(token.position, owner, key), "hex")
+  )
+}
+
 function withParagraph<
   T extends { location: { paragraph: number }; paragraph?: string },
 >(item: T, keys: readonly string[] | undefined): T {
@@ -110,13 +122,11 @@ export function packagePage(input: {
     const token = decodePackageCursor(input.cursor)
     const position = token.position
     if (
+      position.reader !== undefined ||
       position.docId !== metadata.docId ||
       position.revision !== metadata.revision ||
       position.incarnation !== projection.incarnation ||
-      !timingSafeEqual(
-        Buffer.from(token.signature, "hex"),
-        Buffer.from(signature(position, owner, key), "hex")
-      )
+      !packageCursorSigned(token, owner, key)
     )
       return packageFailure("This page belongs to another document or version.")
     index = position.index

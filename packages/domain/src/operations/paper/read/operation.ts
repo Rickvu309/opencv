@@ -5,6 +5,7 @@ import {
   paperPackageMetadataSchema,
   paperPackageReadInputSchema,
   paperPackageReadSchema,
+  paperWordReadSchema,
 } from "../../../paper-package.js"
 import { wordPageSchema } from "../../../paper-word.js"
 
@@ -14,7 +15,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description:
-    "List saved Word documents, read a page pinned to its document and revision, or read the page as Word lines.",
+    "List saved Word documents, read a page pinned to its document and revision, read the page as Word lines, or read those lines in parts by following nextCursor.",
   input: z
     .union([
       z
@@ -30,6 +31,14 @@ export const operation = defineOperation({
           at: z.string().uuid().optional(),
         })
         .strict(),
+      z
+        .object({
+          view: z.literal("lines"),
+          docId: z.string().uuid(),
+          at: z.string().uuid().optional(),
+          cursor: z.string().min(1).max(2048).optional(),
+        })
+        .strict(),
       paperPackageReadInputSchema,
     ])
     .meta({ type: "object" }),
@@ -41,6 +50,7 @@ export const operation = defineOperation({
       })
       .strict(),
     paperPackageReadSchema,
+    paperWordReadSchema,
     wordPageSchema,
   ]),
   coach: "never",

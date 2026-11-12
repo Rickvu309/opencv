@@ -298,11 +298,11 @@ export function registerPaper(registry: Registry) {
   registry.addQuery(
     tableQuery("paper.outline", {
       description:
-        "Read a bounded outline of a document with block ids, kinds, section titles, heading levels, marks and links, and the revision to pass as basedOn. Pass blockIds to mark selected blocks.",
+        "Read a bounded outline of a document with block ids, kinds, section titles, heading levels, marks and links, and the revision to pass as basedOn. Pass blockIds to mark selected blocks. If truncated, pass nextCursor as cursor to read the next Word part at the same saved revision.",
       coach: true,
       step: () => "Read the document outline",
       read: (input, actor) =>
-        readOutline(actor.userId, input.docId, input.blockIds),
+        readOutline(actor.userId, input.docId, input.blockIds, input.cursor),
     })
   )
   registry.addQuery(
