@@ -11,7 +11,9 @@ import {
   bar,
   caretAtEnd,
   copied,
+  goOnline,
   key,
+  lastLine,
   line,
   opened,
   refuseAvailable,
@@ -194,5 +196,57 @@ describe.each(LINE_ROWS)("one line the server refuses ($code)", ({ note }) => {
     expect(server.textOf(L.name)).toBe("Linh NguyenX")
     expect(server.textOf(L.education)).toBe("Educationtiếng")
     expect(shown(L.available)).toBe(`${START[L.available]}!`)
+  })
+})
+
+describe("a refused line next to a new line, as in review N1", () => {
+  async function refusedWithNewLine() {
+    await opened()
+    server.state.offline = true
+    caretAtEnd(L.education)
+    await key("Enter")
+    const fresh = lastLine()
+    await type(fresh, "New line")
+    refuseAvailable(MIXED)
+    await type(L.available, "Also ", 0)
+    await type(L.available, "!")
+    await settle()
+    await goOnline()
+    return fresh
+  }
+
+  it("goes quiet once the page settles and sends nothing while idle", async () => {
+    await refusedWithNewLine()
+    const posts = server.state.posts
+    expect(posts).toBeLessThanOrEqual(4)
+    await settle(600)
+    expect(server.state.posts).toBe(posts)
+  })
+
+  it("saves the new line, marks only the refused line, and never deletes a line still on screen", async () => {
+    await refusedWithNewLine()
+    expect(server.words().split("\n")).toEqual([
+      START[L.name],
+      START[L.job],
+      START[L.available],
+      START[L.education],
+      "New line",
+    ])
+    const marked = [...surface().querySelectorAll("p[data-unsaved]")].map(
+      (node) => node.textContent?.replaceAll("\u200b", "")
+    )
+    expect(marked).toEqual([`Also ${START[L.available]}!`])
+    expect(
+      server.state.batches.flatMap((batch) =>
+        batch.ops.filter((op) => op.op === "delete")
+      )
+    ).toEqual([])
+    await reload()
+    expect(surface().querySelectorAll("p[data-unsaved]").length).toBe(1)
+    expect(bar()?.textContent).toMatch(/is not saved/)
+    await type(L.name, "Q")
+    await settle()
+    expect(server.textOf(L.name)).toBe("Linh NguyenQ")
+    expect(server.words()).toContain("New line")
   })
 })

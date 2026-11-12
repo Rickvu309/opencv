@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest"
 import { act, fireEvent, within } from "@testing-library/react"
 
 import {
+  copied,
+  goOnline,
   GONE,
   L,
+  MIXED,
   SENTENCE,
   STALE,
   START,
@@ -12,6 +15,7 @@ import {
   key,
   line,
   opened,
+  refuseAvailable,
   reload,
   server,
   settle,
@@ -80,11 +84,11 @@ describe.each(MOVED_ROWS)(
       const found = bar() as HTMLElement
       expect(found).toBeVisible()
       expect(
-        within(found).getByRole("button", { name: "Keep my words" })
-      ).toBeVisible()
-      expect(
-        within(found).getByRole("button", { name: /Use the saved page/ })
-      ).toBeVisible()
+        within(found)
+          .getAllByRole("button")
+          .map((button) => button.getAttribute("aria-label"))
+      ).toEqual(["Copy my unsaved text", "Use the saved page, discards 1 line"])
+      expect(within(found).queryByText(/Keep my words/)).toBeNull()
       expect(status()).not.toMatch(/\bSaved\b/)
       expect(stored()).toContain(SENTENCE)
     })
@@ -99,74 +103,48 @@ describe.each(MOVED_ROWS)(
       expect(bar()).not.toBeNull()
     })
 
-    it("keeps my words on top of the new saved page", async () => {
+    it("copies the unsaved lines and sends nothing over the newer page while the person keeps typing", async () => {
       await moved()
+      const posts = server.state.posts
       await act(async () => {
         fireEvent.click(
           within(bar() as HTMLElement).getByRole("button", {
-            name: "Keep my words",
+            name: "Copy my unsaved text",
           })
         )
       })
       await settle()
-      expect(shown(L.name)).toBe("Linh Nguyen, MBA")
-      expect(shown(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
-      expect(server.textOf(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
-      expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
-      expect(bar()).toBeNull()
-      expect(status()).toMatch(/\bSaved\b/)
-      await key("z", { ctrlKey: true })
+      expect(copied.at(-1)).toBe(`${START[L.job]}${SENTENCE}`)
+      await type(L.name, " Thi")
+      await type(L.education, " and more")
       await settle()
-      expect(shown(L.name)).toBe("Linh Nguyen, MBA")
+      expect(server.state.posts).toBe(posts)
+      expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
+      expect(server.textOf(L.job)).toBe(START[L.job])
+      expect(shown(L.name)).toBe("Linh Nguyen Thi")
+      expect(stored()).toContain("Education and more")
+      expect(bar()?.textContent).toMatch(/discards 3 lines/)
     })
 
-    it("marks a line changed in both places and keeps my version on it", async () => {
+    it("marks exactly the lines the person changed, with the count Use the saved page states", async () => {
       await opened()
       arm()
       await type(L.name, " Thi")
       await type(L.job, SENTENCE)
       await settle()
       if (after) await after()
-      await act(async () => {
-        fireEvent.click(
-          within(bar() as HTMLElement).getByRole("button", {
-            name: "Keep my words",
-          })
-        )
-      })
-      await settle()
-      expect(shown(L.name)).toBe("Linh Nguyen Thi")
-      expect(line(L.name)).toHaveAttribute("data-unsaved")
-      expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
-      expect(server.textOf(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
-      expect(status()).not.toMatch(/\bSaved\b/)
+      const marked = () =>
+        Object.values(L).filter((id) => line(id).hasAttribute("data-unsaved"))
+      expect(marked()).toEqual([L.name, L.job])
+      expect(bar()?.textContent).toMatch(/discards 2 lines/)
       await reload()
-      expect(shown(L.name)).toBe("Linh Nguyen Thi")
-      expect(line(L.name)).toHaveAttribute("data-unsaved")
+      await type(L.available, "!")
+      await settle()
+      expect(marked()).toEqual([L.name, L.job, L.available])
+      expect(bar()?.textContent).toMatch(/discards 3 lines/)
       expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
+      expect(server.textOf(L.available)).toBe(START[L.available])
       expect(status()).not.toMatch(/\bSaved\b/)
-    })
-
-    it("still marks a line changed in both places when the person reloads before choosing", async () => {
-      await opened()
-      arm()
-      await type(L.name, " Thi")
-      await type(L.job, SENTENCE)
-      await settle()
-      if (after) await after()
-      await reload()
-      await act(async () => {
-        fireEvent.click(
-          within(bar() as HTMLElement).getByRole("button", {
-            name: "Keep my words",
-          })
-        )
-      })
-      await settle()
-      expect(shown(L.name)).toBe("Linh Nguyen Thi")
-      expect(line(L.name)).toHaveAttribute("data-unsaved")
-      expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
-      expect(server.textOf(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
     })
 
     it("uses the saved page only when asked, says how much it drops, and clears the copy", async () => {
@@ -174,7 +152,7 @@ describe.each(MOVED_ROWS)(
       const discard = within(bar() as HTMLElement).getByRole("button", {
         name: /Use the saved page/,
       })
-      expect(bar()?.textContent).toMatch(/1 line/)
+      expect(bar()?.textContent).toMatch(/discards 1 line\b/)
       await act(async () => {
         fireEvent.click(discard)
       })
@@ -188,6 +166,10 @@ describe.each(MOVED_ROWS)(
       await settle()
       expect(shown(L.name)).toBe("Linh Nguyen, MBA")
       expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
+      await type(L.education, "!")
+      await settle()
+      expect(server.textOf(L.education)).toBe("Education!")
+      expect(status()).toMatch(/\bSaved\b/)
     })
 
     it("offers the same choice after a reload", async () => {
@@ -219,3 +201,46 @@ describe.each(MOVED_ROWS)(
     })
   }
 )
+
+describe("a partial resend, an edit elsewhere and a reload, as in review N2", () => {
+  it("never offers old text as the person's version and counts only the person's lines", async () => {
+    await opened()
+    server.state.offline = true
+    await type(L.job, " — I led a five-person team")
+    refuseAvailable(MIXED)
+    await type(L.available, "Also ", 0)
+    await type(L.available, "!")
+    await settle()
+    await goOnline()
+    expect(server.textOf(L.job)).toBe(
+      `${START[L.job]} — I led a five-person team`
+    )
+    expect(line(L.available)).toHaveAttribute("data-unsaved")
+    server.otherTab(L.education, "Education ELSEWHERE")
+    await reload()
+    await type(L.name, "Q", 4)
+    await settle()
+    const marked = () =>
+      Object.values(L).filter((id) => line(id).hasAttribute("data-unsaved"))
+    expect(marked()).toEqual([L.name, L.available])
+    expect(bar()?.textContent).toMatch(/discards 2 lines/)
+    expect(within(bar() as HTMLElement).queryByText(/Keep my words/)).toBeNull()
+    await type(L.education, " & Exchange")
+    await settle()
+    expect(server.textOf(L.education)).toBe("Education ELSEWHERE")
+    expect(server.textOf(L.name)).toBe(START[L.name])
+    expect(bar()?.textContent).toMatch(/discards 3 lines/)
+    await act(async () => {
+      fireEvent.click(
+        within(bar() as HTMLElement).getByRole("button", {
+          name: /Use the saved page/,
+        })
+      )
+    })
+    await settle()
+    expect(shown(L.education)).toBe("Education ELSEWHERE")
+    expect(shown(L.name)).toBe(START[L.name])
+    expect(server.textOf(L.education)).toBe("Education ELSEWHERE")
+    expect(bar()).toBeNull()
+  })
+})

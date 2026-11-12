@@ -11,9 +11,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import {
   clearedOnReload,
-  draftFromPage,
   keptOnThisComputer,
-  pageBlocks,
   pointSpan,
   storeDraft,
   type TextPoint,
@@ -22,10 +20,8 @@ import {
 } from "./canvas-edit.ts"
 import { inputRule, pageKey, type PageEdit } from "./canvas-input.ts"
 import { openSheet, reduce, type CanvasAction } from "./canvas-state.ts"
-import { changedLines, droppedCount } from "./canvas-merge.ts"
-import { stillRefused } from "./canvas-save-lines.ts"
+import { markedLines, unsavedBar } from "./canvas-unsaved.ts"
 import { UnsavedBar } from "./canvas-unsaved-bar.tsx"
-import { readWordPage } from "./package-read.ts"
 import {
   placeCaret,
   syncParagraphs,
@@ -33,7 +29,7 @@ import {
   visibleText,
   type DrawnLooks,
 } from "./canvas-draw.ts"
-import { pageWords, savedNote, settlePage, SIGNED_OUT } from "./canvas-save.ts"
+import { pageWords, settlePage } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import {
   setWritingConflict,
@@ -223,84 +219,47 @@ function WritingSheet({
 
   useEffect(() => holdWritingCoachFocus(docId), [docId])
 
+  const latest = useRef(state)
+  const stored = useRef(true)
+  useLayoutEffect(() => {
+    latest.current = state
+  })
+
   useEffect(() => {
-    const kept = storeDraft(docId, state.present, localStorage, state.basis, {
-      saved: state.saved,
-      unsaved: state.unsaved,
-    })
+    stored.current = storeDraft(
+      docId,
+      state.present,
+      localStorage,
+      state.basis,
+      { saved: state.saved, unsaved: state.unsaved }
+    )
     nextId.current = state.present.nextId
+    if (!stored.current) dispatch({ type: "note", note: clearedOnReload() })
+  }, [docId, state.present, state.basis, state.saved, state.unsaved])
+
+  useEffect(() => {
+    if (!stored.current) return
     const words = pageWords(state.present.blocks)
-    if (!kept) {
-      dispatch({ type: "note", note: clearedOnReload() })
-      return
-    }
-    if (words === "" || state.typed) {
+    const typed = state.typed
+    if (words === "" || typed) {
       dispatch({ type: "note", note: keptOnThisComputer() })
     }
     const controller = new AbortController()
     void settlePage(docId, state.present.blocks, controller.signal, {
       basis: state.basis,
-      typed: state.typed,
+      typed,
       caret: state.present.caret,
-      refused: state.unsaved,
+      refused: latest.current.unsaved,
     })
-      .then((result) => {
+      .then((outcome) => {
         if (controller.signal.aborted) return
-        if (result.conflict) {
-          setWritingConflict(docId)
-          return
-        }
-        if (result.replace && result.basis) {
-          setWritingConflict(null)
-          deliver({
-            type: "replace",
-            draft: result.replace,
-            basis: result.basis,
-          })
-          return
-        }
-        if (result.basis) {
-          deliver({
-            type: "basis",
-            basis: result.basis,
-            typed: result.basis.words !== words,
-          })
-        }
-        if (result.blocks) deliver({ type: "adopt", blocks: result.blocks })
-        if (result.saved) {
-          deliver({ type: "unsaved", lines: [], page: null, words })
-        } else if (
-          result.refusedLines !== undefined ||
-          result.pageRefusal !== undefined
-        ) {
-          deliver({
-            type: "unsaved",
-            lines: result.refusedLines,
-            page: result.pageRefusal,
-            words,
-          })
-        }
-        const note = savedNote(words, result)
-        if (note) {
-          if (note === "Saved") setWritingConflict(null)
-          deliver({ type: "note", note })
-          return
-        }
-        if (!state.typed && words !== "") {
-          deliver({ type: "note", note: keptOnThisComputer() })
-        }
+        if (outcome.moved) setWritingConflict(docId)
+        else if (outcome.saved || outcome.replace) setWritingConflict(null)
+        deliver({ type: "settled", outcome, words, typed })
       })
       .catch(() => undefined)
     return () => controller.abort()
-  }, [
-    deliver,
-    docId,
-    state.basis,
-    state.present,
-    state.saved,
-    state.typed,
-    state.unsaved,
-  ])
+  }, [deliver, docId, state.present, state.basis, state.typed, conflicted])
 
   useLayoutEffect(() => {
     composing.current = false
@@ -332,16 +291,8 @@ function WritingSheet({
     if (scroll) revealCaret(page, scroll)
   }, [state.present, state.looks, state.redraw])
 
-  const visibleUnsaved = stillRefused(state.unsaved, state.present.blocks)
-  const wholePage = conflicted || state.pageRefusal !== null
-  const marked = [
-    ...new Set([
-      ...visibleUnsaved.map((line) => line.id),
-      ...(wholePage
-        ? changedLines(state.saved, state.present).map((block) => block.id)
-        : []),
-    ]),
-  ].join(" ")
+  const bar = unsavedBar(state)
+  const marked = markedLines(state).join(" ")
 
   useLayoutEffect(() => {
     const page = pageRef.current
@@ -354,46 +305,14 @@ function WritingSheet({
     }
   }, [marked, state.present, state.redraw])
 
-  const readHead = useCallback(async () => {
-    try {
-      const page = await readWordPage(
-        "page",
-        docId,
-        new AbortController().signal
-      )
-      const draft = page ? draftFromPage(page) : null
-      if (!page || !draft) return null
-      return {
-        theirs: draft,
-        basis: {
-          revision: page.revision,
-          words: pageWords(pageBlocks(page)),
-        },
-      }
-    } catch {
-      return null
-    }
-  }, [docId])
+  const takeSavedPage = useCallback(() => {
+    setWritingConflict(null)
+    dispatch({ type: "useSaved" })
+  }, [])
 
-  const choose = useCallback(
-    async (type: "keepMine" | "useSaved") => {
-      const head = await readHead()
-      if (!head) return
-      setWritingConflict(null)
-      dispatch({ type, ...head })
-    },
-    [readHead]
-  )
-
-  const restoreLine = useCallback(
-    async (id: string) => {
-      const head = await readHead()
-      const source = head ? head.theirs : state.saved
-      const kept = source?.blocks.find((block) => block.id === id)
-      dispatch({ type: "restoreLine", id, text: kept ? kept.text : null })
-    },
-    [readHead, state.saved]
-  )
+  const restoreLine = useCallback((id: string) => {
+    dispatch({ type: "restoreLine", id })
+  }, [])
 
   const applyPaste = useCallback(
     (text: string) => {
@@ -484,29 +403,9 @@ function WritingSheet({
       data-pen-surface="paper-page"
     >
       <UnsavedBar
-        moved={
-          conflicted
-            ? {
-                dropped: droppedCount(state.saved, state.present),
-                onKeep: () => void choose("keepMine"),
-                onUseSaved: () => void choose("useSaved"),
-              }
-            : null
-        }
-        page={
-          state.pageRefusal
-            ? {
-                reason: state.pageRefusal,
-                signIn: state.pageRefusal === SIGNED_OUT,
-                unsavedText: () =>
-                  changedLines(state.saved, state.present)
-                    .map((block) => block.text)
-                    .join("\n"),
-              }
-            : null
-        }
-        lines={visibleUnsaved}
-        onRestore={(id) => void restoreLine(id)}
+        model={bar}
+        onUseSaved={takeSavedPage}
+        onRestore={restoreLine}
       />
       <div className="writing-scroll" ref={scrollRef}>
         <article

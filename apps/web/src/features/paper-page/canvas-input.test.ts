@@ -23,7 +23,6 @@ import {
   TRANSPOSE_NOT_SAVED,
   YANK_NOT_SAVED,
 } from "./canvas-input.ts"
-import { CHANGED_IN_BOTH } from "./canvas-state.ts"
 
 const NOTE_FOR_INPUT: Record<string, string> = {
   formatBold: FORMAT_NOT_SAVED,
@@ -66,7 +65,6 @@ const EVERY_NOTE = [
   TRANSPOSE_NOT_SAVED,
   YANK_NOT_SAVED,
   CHANGE_NOT_SUPPORTED,
-  CHANGED_IN_BOTH,
   NUMBERED_LINE,
   KEPT_PART_LINE,
 ]

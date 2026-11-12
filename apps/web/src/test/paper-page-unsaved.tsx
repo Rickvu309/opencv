@@ -69,6 +69,7 @@ export function fakeServer() {
       text,
     })) as Line[],
     committed: [] as string[],
+    batches: [] as Batch[],
     posts: 0,
     offline: false,
     loseReplies: 0,
@@ -159,6 +160,7 @@ export function fakeServer() {
     const batch = (
       JSON.parse(String(init?.body)) as { input: { batch: Batch } }
     ).input.batch
+    state.batches.push(batch)
     if (state.hold) await state.hold
     const race = state.raceOnce
     if (race) {
@@ -217,6 +219,19 @@ export async function settle(count = 120) {
   })
 }
 
+export function lastLine() {
+  const lines = surface().querySelectorAll<HTMLElement>(":scope > p")
+  return lines[lines.length - 1]?.dataset.block ?? ""
+}
+
+export async function goOnline() {
+  await act(async () => {
+    server.state.offline = false
+    window.dispatchEvent(new Event("online"))
+  })
+  await settle()
+}
+
 export function surface() {
   return screen.getByRole("article", { name: "Page" })
 }
@@ -266,8 +281,8 @@ export function caretAtEnd(id: string, at?: number) {
   selection?.addRange(range)
 }
 
-export async function type(id: string, text: string) {
-  caretAtEnd(id)
+export async function type(id: string, text: string, at?: number) {
+  caretAtEnd(id, at)
   const event = new InputEvent("beforeinput", {
     inputType: "insertText",
     data: text,

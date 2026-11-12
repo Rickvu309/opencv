@@ -1,7 +1,6 @@
 import { WORD_LIMITS } from "@workspace/domain"
 
 import {
-  adoptIds,
   blankDraft,
   commitComposition,
   deleteBackward,
@@ -30,14 +29,16 @@ import {
 import { collectLooks, withoutLooks, type LookBook } from "./canvas-look.ts"
 import { pastePlain, plainCharacters } from "./canvas-paste.ts"
 import { reachSpan, type Reach } from "./canvas-reach.ts"
-import { keepMine } from "./canvas-merge.ts"
-import { pageWords } from "./canvas-save.ts"
-import { stillRefused, type LineRefusal } from "./canvas-save-lines.ts"
+import { pageWords, savedNote } from "./canvas-save.ts"
+import type { MovedPage, SaveOutcome } from "./canvas-save-outcome.ts"
+import {
+  sameRefusals,
+  stillRefused,
+  uniqueRefusals,
+  type LineRefusal,
+} from "./canvas-save-lines.ts"
 
 const HISTORY_DEPTH = 50
-
-export const CHANGED_IN_BOTH =
-  "This line was also changed somewhere else. Your version is shown here and is not saved. Edit the line to save your version, or restore the saved one."
 
 export type CanvasState = {
   past: WritingDraft[]
@@ -52,6 +53,7 @@ export type CanvasState = {
   redraw: number
   unsaved: LineRefusal[]
   pageRefusal: string | null
+  moved: MovedPage | null
 }
 
 export type CanvasAction =
@@ -82,18 +84,9 @@ export type CanvasAction =
   | { type: "redo" }
   | { type: "note"; note: string }
   | { type: "notice"; notice: string }
-  | { type: "adopt"; blocks: WritingBlock[] }
-  | { type: "basis"; basis: DraftBasis; typed: boolean }
-  | { type: "replace"; draft: WritingDraft; basis: DraftBasis }
-  | {
-      type: "unsaved"
-      lines?: LineRefusal[]
-      page?: string | null
-      words: string
-    }
-  | { type: "keepMine"; theirs: WritingDraft; basis: DraftBasis }
-  | { type: "useSaved"; theirs: WritingDraft; basis: DraftBasis }
-  | { type: "restoreLine"; id: string; text: string | null }
+  | { type: "settled"; outcome: SaveOutcome; words: string; typed: boolean }
+  | { type: "useSaved" }
+  | { type: "restoreLine"; id: string }
   | { type: "redraw" }
 
 function sameBasis(left: DraftBasis | null, right: DraftBasis | null) {
@@ -300,59 +293,10 @@ export function reduce(state: CanvasState, action: CanvasAction): CanvasState {
     return state.note === action.note ? state : { ...state, note: action.note }
   }
   if (action.type === "notice") return withNotice(state, action.notice)
-  if (action.type === "basis") {
-    const saved =
-      !action.typed && action.basis.words === pageWords(state.present.blocks)
-        ? state.present
-        : state.saved
-    if (sameBasis(state.basis, action.basis) && state.typed === action.typed) {
-      return saved === state.saved ? state : { ...state, saved }
-    }
-    return { ...state, basis: action.basis, typed: action.typed, saved }
-  }
   if (action.type === "redraw") return redrawn(state, state.present.caret)
-  if (action.type === "unsaved") {
-    if (pageWords(state.present.blocks) !== action.words) return state
-    const unsaved = action.lines ?? state.unsaved
-    const pageRefusal =
-      action.page === undefined ? state.pageRefusal : action.page
-    if (
-      JSON.stringify(unsaved) === JSON.stringify(state.unsaved) &&
-      pageRefusal === state.pageRefusal
-    )
-      return state
-    return { ...state, unsaved, pageRefusal }
-  }
-  if (action.type === "keepMine") return keptMine(state, action)
-  if (action.type === "useSaved") return usedSaved(state, action)
-  if (action.type === "restoreLine") return restoredLine(state, action)
-  if (action.type === "replace") {
-    if (hasUnsavedWords(state)) return state
-    const draft = plainDraft(action.draft)
-    const looks = collectLooks(state.looks, action.draft.blocks)
-    const same =
-      JSON.stringify(state.present) === JSON.stringify(draft) &&
-      sameBasis(state.basis, action.basis) &&
-      !state.typed
-    if (same) return looks === state.looks ? state : { ...state, looks }
-    return {
-      ...state,
-      past: [],
-      present: draft,
-      future: [],
-      looks,
-      basis: action.basis,
-      typed: false,
-      saved: draft,
-    }
-  }
-  if (action.type === "adopt") {
-    const present = adoptIds(state.present, withoutLooks(action.blocks))
-    const looks = collectLooks(state.looks, action.blocks)
-    if (present === state.present && looks === state.looks) return state
-    const saved = state.saved === state.present ? present : state.saved
-    return { ...state, present, looks, saved }
-  }
+  if (action.type === "settled") return settled(state, action)
+  if (action.type === "useSaved") return usedSaved(state)
+  if (action.type === "restoreLine") return restoredLine(state, action.id)
   if (action.type === "undo") return travel(state, true)
   if (action.type === "redo") return travel(state, false)
   return edited(state, action)
@@ -364,60 +308,248 @@ export function hasUnsavedWords(state: CanvasState) {
     : state.typed
 }
 
-function freshFrom(
+function draftOf(blocks: readonly WritingBlock[], caret: TextPoint) {
+  const plain = withoutLooks(blocks)
+  const kept = plain.find((block) => block.id === caret.blockId && !block.held)
+  const first = plain.find((block) => !block.held) ?? plain[0]
+  return {
+    blocks: plain,
+    caret: kept
+      ? { blockId: kept.id, offset: Math.min(caret.offset, kept.text.length) }
+      : { blockId: first?.id ?? caret.blockId, offset: 0 },
+    nextId: Math.max(blocks.length + 1, 1),
+  }
+}
+
+function sameBlocks(
+  left: readonly WritingBlock[] | undefined,
+  right: readonly WritingBlock[]
+) {
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
+function renamedDraft(
+  draft: WritingDraft,
+  renames: Record<string, string>
+): WritingDraft {
+  if (!draft.blocks.some((block) => renames[block.id])) return draft
+  return {
+    ...draft,
+    blocks: draft.blocks.map((block) => {
+      const id = renames[block.id]
+      return id ? { ...block, id } : block
+    }),
+    caret: {
+      ...draft.caret,
+      blockId: renames[draft.caret.blockId] ?? draft.caret.blockId,
+    },
+  }
+}
+
+function renamedState(
   state: CanvasState,
-  action: { theirs: WritingDraft; basis: DraftBasis },
-  present: WritingDraft,
-  unsaved: LineRefusal[]
+  renames: Record<string, string>
 ): CanvasState {
+  const taken = new Set(state.present.blocks.map((block) => block.id))
+  const usable = Object.fromEntries(
+    Object.entries(renames).filter(
+      ([from, to]) => taken.has(from) && !taken.has(to)
+    )
+  )
+  if (Object.keys(usable).length === 0) return state
+  return {
+    ...state,
+    past: state.past.map((draft) => renamedDraft(draft, usable)),
+    present: renamedDraft(state.present, usable),
+    future: state.future.map((draft) => renamedDraft(draft, usable)),
+    unsaved: state.unsaved.map((line) =>
+      usable[line.id] ? { ...line, id: usable[line.id] ?? line.id } : line
+    ),
+  }
+}
+
+function basedOn(
+  state: CanvasState,
+  basis: DraftBasis,
+  head: readonly WritingBlock[] | undefined,
+  words: string
+): CanvasState {
+  const typed = basis.words !== words
+  const saved = head
+    ? sameBlocks(state.saved?.blocks, withoutLooks(head))
+      ? state.saved
+      : draftOf(head, state.present.caret)
+    : basis.words === pageWords(state.present.blocks)
+      ? state.present
+      : state.saved
+  const looks = head ? collectLooks(state.looks, head) : state.looks
+  if (
+    sameBasis(state.basis, basis) &&
+    state.typed === typed &&
+    saved === state.saved &&
+    looks === state.looks
+  )
+    return state
+  return {
+    ...state,
+    basis: sameBasis(state.basis, basis) ? state.basis : basis,
+    typed,
+    saved,
+    looks,
+  }
+}
+
+function withRefusals(
+  state: CanvasState,
+  lines: readonly LineRefusal[] | undefined,
+  page: string | null | undefined
+): CanvasState {
+  const unsaved = lines
+    ? stillRefused(uniqueRefusals(lines), state.present.blocks)
+    : state.unsaved
+  const pageRefusal = page === undefined ? state.pageRefusal : page
+  const same = sameRefusals(unsaved, state.unsaved)
+  if (same && pageRefusal === state.pageRefusal) return state
+  return {
+    ...state,
+    unsaved: same ? state.unsaved : unsaved,
+    pageRefusal,
+  }
+}
+
+function replaced(
+  state: CanvasState,
+  replacement: WritingDraft,
+  basis: DraftBasis
+): CanvasState {
+  if (hasUnsavedWords(state)) return state
+  const draft = plainDraft(replacement)
+  const looks = collectLooks(state.looks, replacement.blocks)
+  const same =
+    JSON.stringify(state.present) === JSON.stringify(draft) &&
+    sameBasis(state.basis, basis) &&
+    !state.typed &&
+    state.moved === null
+  if (same) return looks === state.looks ? state : { ...state, looks }
+  return {
+    ...state,
+    past: [],
+    present: draft,
+    future: [],
+    looks,
+    basis,
+    typed: false,
+    saved: draft,
+    unsaved: [],
+    pageRefusal: null,
+    moved: null,
+  }
+}
+
+function settledNote(
+  state: CanvasState,
+  outcome: SaveOutcome,
+  words: string,
+  typed: boolean
+): CanvasState {
+  const note = savedNote(words, outcome)
+  if (note) return reduce(state, { type: "note", note })
+  if (!typed && words !== "")
+    return reduce(state, { type: "note", note: keptOnThisComputer() })
+  return state
+}
+
+function settled(
+  state: CanvasState,
+  action: Extract<CanvasAction, { type: "settled" }>
+): CanvasState {
+  const { outcome, words, typed } = action
+  if (pageWords(state.present.blocks) !== words) return state
+  if (outcome.moved) {
+    const moved = outcome.moved
+    const same =
+      state.moved !== null &&
+      sameBasis(state.moved.basis, moved.basis) &&
+      sameBlocks(state.moved.head, moved.head)
+    return same ? state : { ...state, moved }
+  }
+  if (outcome.replace && outcome.basis)
+    return replaced(state, outcome.replace, outcome.basis)
+  let next = outcome.renamed ? renamedState(state, outcome.renamed) : state
+  if (outcome.basis) next = basedOn(next, outcome.basis, outcome.head, words)
+  if (outcome.saved) {
+    next =
+      next.unsaved.length === 0 &&
+      next.pageRefusal === null &&
+      next.moved === null
+        ? next
+        : { ...next, unsaved: [], pageRefusal: null, moved: null }
+  } else if (
+    outcome.refusedLines !== undefined ||
+    outcome.pageRefusal !== undefined
+  ) {
+    next = withRefusals(next, outcome.refusedLines, outcome.pageRefusal)
+  }
+  return settledNote(next, outcome, words, typed)
+}
+
+function usedSaved(state: CanvasState): CanvasState {
+  const moved = state.moved
+  if (!moved) return state
+  const present = draftOf(moved.head, state.present.caret)
   return {
     ...state,
     past: [],
     present,
     future: [],
-    looks: collectLooks(state.looks, action.theirs.blocks),
-    basis: action.basis,
-    typed: pageWords(present.blocks) !== action.basis.words,
-    saved: plainDraft(action.theirs),
+    looks: collectLooks(state.looks, moved.head),
+    basis: moved.basis,
+    typed: false,
+    saved: present,
     notice: "",
-    unsaved,
+    unsaved: [],
     pageRefusal: null,
+    moved: null,
     redraw: state.redraw + 1,
   }
 }
 
-function keptMine(
+function restoredBlocks(
   state: CanvasState,
-  action: Extract<CanvasAction, { type: "keepMine" }>
-): CanvasState {
-  const merged = keepMine(state.saved, state.present, plainDraft(action.theirs))
-  return freshFrom(
-    state,
-    action,
-    merged.draft,
-    merged.both.map((line) => ({ ...line, note: CHANGED_IN_BOTH }))
+  line: LineRefusal
+): WritingBlock[] | null {
+  const blocks = state.present.blocks
+  const saved = state.saved?.blocks ?? []
+  const prior = saved.find((block) => block.id === line.id)
+  if (line.removed) {
+    if (!prior || blocks.some((block) => block.id === line.id)) return null
+    const index = saved.indexOf(prior)
+    const before = saved
+      .slice(0, index)
+      .reverse()
+      .find((block) => blocks.some((item) => item.id === block.id))
+    const at = before
+      ? blocks.findIndex((block) => block.id === before.id) + 1
+      : 0
+    const next = blocks.slice()
+    next.splice(at, 0, { id: prior.id, text: prior.text })
+    return next
+  }
+  if (prior)
+    return blocks.map((block) =>
+      block.id === line.id ? { ...block, text: prior.text } : block
+    )
+  const without = blocks.filter((block) => block.id !== line.id)
+  return without.length > 0 ? without : null
+}
+
+function restoredLine(state: CanvasState, id: string): CanvasState {
+  const line = stillRefused(state.unsaved, state.present.blocks).find(
+    (item) => item.id === id
   )
-}
-
-function usedSaved(
-  state: CanvasState,
-  action: Extract<CanvasAction, { type: "useSaved" }>
-): CanvasState {
-  const present = plainDraft(action.theirs)
-  return freshFrom(state, action, present, [])
-}
-
-function restoredLine(
-  state: CanvasState,
-  action: Extract<CanvasAction, { type: "restoreLine" }>
-): CanvasState {
-  const blocks =
-    action.text === null
-      ? state.present.blocks.filter((block) => block.id !== action.id)
-      : state.present.blocks.map((block) =>
-          block.id === action.id ? { ...block, text: action.text ?? "" } : block
-        )
-  if (blocks.length === 0) return state
+  if (!line) return state
+  const blocks = restoredBlocks(state, line)
+  if (!blocks) return state
   const caret = blocks.some((block) => block.id === state.present.caret.blockId)
     ? sensibleCaret({ ...state.present, blocks }, state.present.caret)
     : { blockId: blocks[0]?.id ?? "", offset: 0 }
@@ -427,7 +559,7 @@ function restoredLine(
     past: state.past.concat(state.present).slice(-HISTORY_DEPTH),
     present,
     future: [],
-    unsaved: state.unsaved.filter((line) => line.id !== action.id),
+    unsaved: state.unsaved.filter((item) => item.id !== id),
     typed: typedAgainst(state, present),
     notice: "",
     redraw: state.redraw + 1,
@@ -474,5 +606,6 @@ export function openSheet(
     redraw: 0,
     unsaved,
     pageRefusal: null,
+    moved: null,
   }
 }
