@@ -107,6 +107,7 @@ export function createPaperPackageRoutes(auth?: Auth, db?: AppDatabase) {
     const page = await registry.read(
       "paper.read",
       {
+        view: "lines",
         docId: c.req.param("docId"),
         at: c.req.query("at"),
         cursor: c.req.query("cursor"),

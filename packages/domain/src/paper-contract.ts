@@ -167,6 +167,7 @@ export const paperQueries = queryContract({
       .object({
         docId: paperIdSchema,
         blockIds: z.array(blockIdSchema).max(50).optional(),
+        cursor: z.string().min(1).max(2048).optional(),
       })
       .strict(),
     output: z
@@ -174,6 +175,9 @@ export const paperQueries = queryContract({
         revision: z.union([z.number().int(), z.string().uuid()]),
         outline: z.string(),
         truncated: z.boolean(),
+        nextCursor: z.string().max(2048).nullable().optional(),
+        omittedParagraphs: z.number().int().nonnegative().optional(),
+        omittedChars: z.number().int().nonnegative().optional(),
       })
       .strict(),
   }),

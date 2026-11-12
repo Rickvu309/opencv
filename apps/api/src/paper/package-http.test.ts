@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import {
   catalog,
   paperPackageMetadataSchema,
-  paperPackageReadSchema,
+  paperWordReadSchema,
   paperPackageStageSchema,
 } from "@workspace/domain"
 import { expect, it, vi } from "vitest"
@@ -119,9 +119,9 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
     expect(read.status).toBe(200)
     expect(read.headers.get("cache-control")).toBe("private, no-store")
     const page = z
-      .object({ data: paperPackageReadSchema })
+      .object({ data: paperWordReadSchema })
       .parse(await read.json()).data
-    expect(page.regions[0]?.text).toBe("HTTP original words")
+    expect(page.paragraphs[0]?.text).toBe("HTTP original words")
     const downloaded = await app.request(
       `/api/paper/packages/${staged.docId}/export?at=${staged.revision}`,
       { headers }

@@ -367,6 +367,28 @@ export async function readWordPackage(owner: string, rawInput: unknown) {
   })
 }
 
+export async function wordReadingBasis(owner: string, rawInput: unknown) {
+  const input = paperPackageReadInputSchema.parse(rawInput)
+  const cursor = input.cursor ? decodePackageCursor(input.cursor) : undefined
+  if (
+    cursor &&
+    (cursor.position.reader !== "word" ||
+      cursor.position.docId !== input.docId ||
+      (input.at !== undefined && cursor.position.revision !== input.at))
+  )
+    return packageFailure("This page belongs to another document or version.")
+  const version = await ownedVersion(
+    owner,
+    input.docId,
+    input.at ?? cursor?.position.revision
+  )
+  return {
+    metadata: metadata(version),
+    incarnation: version.incarnation,
+    key: version.cursorKey,
+  }
+}
+
 export async function exportWordPackage(
   owner: string,
   docId: string,

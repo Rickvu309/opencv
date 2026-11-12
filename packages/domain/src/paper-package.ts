@@ -171,6 +171,26 @@ export const paperPackageReadSchema = paperPackageMetadataSchema
   })
   .strict()
 
+export const paperWordReadSchema = paperPackageMetadataSchema
+  .extend({
+    paragraphs: z
+      .array(
+        z
+          .object({
+            handle: identity,
+            text: finiteText,
+            held: z.boolean(),
+            message: z.string(),
+            complete: z.boolean(),
+            continuation: z.boolean(),
+          })
+          .strict()
+      )
+      .max(PAPER_PACKAGE_LIMITS.pageRegions),
+    nextCursor: z.string().max(PAPER_PACKAGE_LIMITS.cursorBytes).nullable(),
+  })
+  .strict()
+
 export type PaperPackageProjection = z.infer<
   typeof paperPackageProjectionSchema
 >
