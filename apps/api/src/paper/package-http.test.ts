@@ -18,7 +18,6 @@ import {
 } from "../test/harness.js"
 import { withDatabase } from "../db/context.js"
 import { files, paperDocs, paperPackageHeads, user } from "../db/schema.js"
-import { registry } from "../registry/registry.js"
 import { textPdf } from "./import-fixtures.test.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import {

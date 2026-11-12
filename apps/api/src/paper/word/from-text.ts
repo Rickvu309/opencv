@@ -60,7 +60,6 @@ const SECTION_TITLES = new Set([
 const GLYPH_BULLET = /^[•●○◦▪▫■□‣⁃∙➢►✓✔]\s*/u
 const ASCII_BULLET = /^[-–*]\s+/u
 const LONE_GLYPH = /^[•●○◦▪▫■□‣⁃∙➢►✓✔]$/u
-const XML_UNSAFE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/gu
 const EMAIL = /[^\s@]+@[^\s@]+\.[^\s@]+/u
 const PHONE = /(?:\+?\d[\s().+-]*){6}\d/u
 const PROFILE_LINK = /linkedin|github|https?:\/\/|www\./iu
@@ -71,11 +70,18 @@ export function wordsOf(text: string): string[] {
   return text.match(WORD) ?? []
 }
 
+function xmlSafe(text: string) {
+  return Array.from(text, (char) => {
+    const code = char.codePointAt(0) ?? 0
+    const control = code < 0x20 && code !== 0x0a && code !== 0x0d
+    return control || code === 0xfffe || code === 0xffff ? " " : char
+  }).join("")
+}
+
 function cleanLines(raw: string): string[] {
-  return raw
+  return xmlSafe(raw)
     .replace(/\r\n?/gu, "\n")
     .replace(/\t/gu, " ")
-    .replace(XML_UNSAFE, " ")
     .split("\n")
     .map((line) => line.replace(/ {2,}/gu, " ").trim())
     .filter((line) => line !== "")

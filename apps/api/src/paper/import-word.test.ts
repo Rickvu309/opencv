@@ -29,6 +29,8 @@ const canvas = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as { mainXml: (bytes: Buffer) => string }
 
+const BYTE_ORDER_MARK = String.fromCharCode(0xfeff)
+
 type Line = { style: string; text: string; center: boolean }
 
 function unescapeXml(text: string) {
@@ -201,7 +203,7 @@ describe("a PDF or text CV becomes Word lines", () => {
     expect(plain.notice).toBeNull()
     const windows = await imported(
       Buffer.from(
-        `﻿${CV_LINES.join("\r\n").replace("Python, SQL", "Python,\tSQL")}\r\n`
+        `${BYTE_ORDER_MARK}${CV_LINES.join("\r\n").replace("Python, SQL", "Python,\tSQL")}\r\n`
       ),
       "cv.txt",
       "text/plain"
@@ -242,23 +244,24 @@ describe("a PDF or text CV becomes Word lines", () => {
     expect(await refusal(Buffer.from(tooMany), "many.txt", "text/plain")).toBe(
       "This file has more than 2,000 lines of text. Import a shorter CV."
     )
-    expect(importedTextLines(tooMany.split("\n").slice(0, 2000).join("\n")).ok)
-      .toBe(true)
+    expect(
+      importedTextLines(tooMany.split("\n").slice(0, 2000).join("\n")).ok
+    ).toBe(true)
   })
 
   it("refuses a scanned PDF, a locked PDF, an empty file, a long PDF, JSON and Pages instead of making an empty page", async () => {
-    expect(
-      await refusal(pagedPdf([""]), "scan.pdf", "application/pdf")
-    ).toBe(IMPORT_SCANNED_MESSAGE)
+    expect(await refusal(pagedPdf([""]), "scan.pdf", "application/pdf")).toBe(
+      IMPORT_SCANNED_MESSAGE
+    )
     expect(await refusal(lockedPdf(), "locked.pdf", "application/pdf")).toBe(
       IMPORT_LOCKED_MESSAGE
     )
     expect(await refusal(Buffer.alloc(0), "cv.pdf", "application/pdf")).toBe(
       IMPORT_EMPTY_MESSAGE
     )
-    expect(await refusal(Buffer.from(" \n\t\r\n"), "cv.txt", "text/plain")).toBe(
-      IMPORT_EMPTY_MESSAGE
-    )
+    expect(
+      await refusal(Buffer.from(" \n\t\r\n"), "cv.txt", "text/plain")
+    ).toBe(IMPORT_EMPTY_MESSAGE)
     expect(
       await refusal(
         pagedPdf(Array.from({ length: 21 }, (_, index) => `Page ${index}`)),
@@ -274,7 +277,11 @@ describe("a PDF or text CV becomes Word lines", () => {
       )
     ).toBe(IMPORT_JSON_MESSAGE)
     expect(
-      await refusal(Buffer.from("pages"), "cv.pages", "application/vnd.apple.pages")
+      await refusal(
+        Buffer.from("pages"),
+        "cv.pages",
+        "application/vnd.apple.pages"
+      )
     ).toBe(IMPORT_PAGES_MESSAGE)
   })
 })

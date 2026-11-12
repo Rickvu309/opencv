@@ -1,12 +1,5 @@
-import {
-  ERROR_CODES,
-  paperContract,
-  parseUserId,
-  personActor,
-} from "@workspace/domain"
+import { ERROR_CODES, parseUserId, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
-import { materialize } from "@workspace/paper-crdt"
-import { clientFrom, typed, withText } from "../test/paper-content.js"
 import { describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"
