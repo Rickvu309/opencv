@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, screen, within } from "@testing-library/react"
+import { cleanup, screen } from "@testing-library/react"
 
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -32,28 +32,10 @@ const SOURCE = {
   pricePx: 56,
   sectionTitlePx: 24,
   faqPadPx: 22,
-  compareHeadPx: 44,
-  compareRowPx: 48,
-  compareValuePx: 180,
 } as const
 
-function block(label: string) {
-  const found = pricingModel.compare.blocks.find(
-    (entry) => entry.label === label
-  )
-  expect(found, label).toBeDefined()
-  return found!
-}
-
-function rowOf(feature: string): HTMLElement {
-  const header = screen.getByRole("rowheader", { name: feature })
-  const row = header.closest("tr")
-  expect(row).not.toBeNull()
-  return row as HTMLElement
-}
-
 describe("pricing snapshot", () => {
-  it("keeps the frame geometry and the corrected compare", () => {
+  it("keeps the frame geometry", () => {
     expect(pricingSnapshot.source).toMatchObject({
       file: "design/opencv.pen",
       frameId: "q720Ng",
@@ -61,34 +43,21 @@ describe("pricing snapshot", () => {
       width: 1440,
     })
     expect(pricingModel.metrics).toMatchObject(SOURCE)
-    expect(pricingModel.plans.free.price).toBe("$0")
-    expect(pricingModel.plans.pro.price).toBe("$9")
-    expect(pricingModel.plans.pro.kicker).toBe("For active search")
-    expect(pricingModel.plans.free.surface).toBe("paper")
-    expect(pricingModel.plans.pro.surface).toBe("mesh")
-    expect(pricingModel.compare.blocks.map((entry) => entry.label)).toEqual([
-      "Coach",
-      "Paper",
-      "Apply",
-      "Support",
-    ])
-    expect(block("Apply").rows.map((row) => row.feature)).toContain(
-      "Integrations"
-    )
-    expect(block("Support").rows.map((row) => row.feature)).toEqual([
-      "Help centre",
-    ])
-    expect(block("Coach").rows[0]?.pro).toEqual({
-      kind: "text",
-      value: "Limited",
-    })
   })
 
   it("keeps only what is true without a purchase", () => {
-    const { pro } = pricingModel.plans
-    expect(pro.cta).toBeUndefined()
-    expect(pro.note).toBe("Not on sale yet")
-    expect(pro.features).toEqual(["Stronger Coach model"])
+    expect(pricingModel.plan).toMatchObject({
+      name: "Free",
+      price: "$0",
+      cta: "Start free",
+    })
+    expect(pricingModel.plan.features).toEqual([
+      "Limited Coach chats",
+      "CVs and cover letters in Paper",
+      "Board, list and calendar in Apply",
+      "Integrations",
+    ])
+    expect(Object.keys(pricingModel)).not.toContain("compare")
     expect(pricingModel.header.subhead).toBe(
       "Start free. Coach has a daily limit."
     )
@@ -98,7 +67,7 @@ describe("pricing snapshot", () => {
     ])
   })
 
-  it("does not keep a second compare table in landing copy", () => {
+  it("keeps no compare table in landing copy", () => {
     const copy = readFileSync(
       path.join(process.cwd(), "src/features/landing/landing-copy.ts"),
       "utf8"
@@ -108,16 +77,15 @@ describe("pricing snapshot", () => {
       path.join(process.cwd(), "src/features/landing/pricing.css"),
       "utf8"
     )
-    expect(css).toContain("var(--ring)")
     expect(css).toContain("var(--card)")
-    expect(css).toContain("var(--background)")
+    expect(css).toContain("var(--border)")
     expect(css).toContain(`${pricingModel.metrics.prefooterGapPx}px`)
     expect(css).not.toMatch(/#(?:EEF1FA|8EA4E0|1B1B1F|C3D0F2)/i)
   })
 })
 
 describe("pricing page", () => {
-  it("renders the snapshot, the prices, and the sign-in links", async () => {
+  it("renders the free plan as the only card with its sign-in link", async () => {
     setMockSession(null)
     renderApp("/pricing")
 
@@ -148,7 +116,7 @@ describe("pricing page", () => {
     expect(planRow.style.width).toBe("880px")
     expect(planRow.style.maxWidth).toBe("100%")
 
-    for (const name of ["Every plan includes", "Compare plans", "Questions"]) {
+    for (const name of ["Every plan includes", "Questions"]) {
       expect(screen.getByRole("heading", { name })).toHaveStyle({
         fontSize: "24px",
         letterSpacing: "-0.4px",
@@ -159,20 +127,18 @@ describe("pricing page", () => {
     }
 
     const free = screen.getByRole("heading", { level: 2, name: "Free" })
-    const pro = screen.getByRole("heading", { level: 2, name: "Pro" })
     expect(free.parentElement).toHaveClass("pricing-plan-name")
-    expect(free.parentElement).not.toHaveTextContent("For active search")
     expect(free.closest("article")).toHaveClass("pricing-plan-free")
-    expect(pro.parentElement).toHaveClass("pricing-plan-name")
-    expect(pro.parentElement).toHaveTextContent("For active search")
-    expect(pro.closest("article")).toHaveClass("pricing-plan-pro")
     expect(free.closest("article")).toHaveStyle({
       padding: "32px",
       borderRadius: "24px",
     })
+    expect(document.querySelectorAll(".pricing-plan")).toHaveLength(1)
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Pro" })
+    ).not.toBeInTheDocument()
 
     expect(screen.getByText("$0")).toHaveStyle({ fontSize: "56px" })
-    expect(screen.getByText("$9")).toHaveStyle({ fontSize: "56px" })
 
     const start = screen.getByRole("link", { name: "Start free" })
     expect(start).toHaveAttribute("href", "/sign-in")
@@ -185,10 +151,6 @@ describe("pricing page", () => {
     expect(start.style.blockSize).toBe("44px")
     expect(start.style.inlineSize).toBe("100%")
 
-    const lead = screen.getByText("Everything in Free, plus")
-    expect(lead.tagName).toBe("P")
-    expect(lead.closest("li")).toBeNull()
-
     const included = document
       .getElementById("included-title")!
       .closest("section")!
@@ -197,46 +159,10 @@ describe("pricing page", () => {
       gap: "24px",
     })
 
-    const table = screen.getByRole("table", { name: "Compare plans" })
-    expect(table.querySelector("thead tr")).toHaveStyle({ height: "44px" })
-    expect(
-      within(table).queryByRole("columnheader", { name: "Integrations" })
-    ).toBeNull()
-    expect(
-      within(table).queryByRole("columnheader", { name: "Coming soon" })
-    ).toBeNull()
-
-    for (const group of pricingModel.compare.blocks) {
-      for (const row of group.rows) {
-        const rendered = rowOf(row.feature)
-        const want = { check: 0, dash: 0 }
-        for (const cell of [row.free, row.pro]) {
-          if (cell.kind === "text") {
-            expect(
-              within(rendered).getAllByText(cell.value).length
-            ).toBeGreaterThan(0)
-          } else {
-            want[cell.kind] += 1
-          }
-        }
-        expect(
-          within(rendered).queryAllByRole("img", { name: "Included" })
-        ).toHaveLength(want.check)
-        expect(
-          within(rendered).queryAllByRole("img", { name: "Not included" })
-        ).toHaveLength(want.dash)
-        expect(rendered).toHaveStyle({ height: "48px" })
-      }
-    }
-
-    expect(
-      within(table).queryByRole("rowheader", { name: "Priority support" })
-    ).toBeNull()
-    expect(document.body).not.toHaveTextContent(/Proof|Pitch|Cancel anytime/)
-    expect(screen.getByText("Not on sale yet")).toBeInTheDocument()
-
-    expect(screen.queryByText("Not included")).not.toBeInTheDocument()
-    expect(screen.queryByText("Included")).not.toBeInTheDocument()
+    expect(screen.queryByRole("table")).not.toBeInTheDocument()
+    expect(document.body).not.toHaveTextContent(
+      /\bPro\b|\$9|Stronger|Not on sale|Proof|Pitch|Cancel anytime/
+    )
 
     const question = screen.getByRole("heading", {
       name: "What happens when I hit the Free limit?",

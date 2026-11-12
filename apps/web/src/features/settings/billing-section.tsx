@@ -33,24 +33,13 @@ export function BillingSection() {
   return (
     <>
       <SettingsTitle title="Billing">{planLine}</SettingsTitle>
-      <SettingsSection label="All plans">
+      <SettingsSection label="Plan">
         <div className="grid gap-3">
           <article className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
             <h3 className="font-medium">Free plan</h3>
             <p className="text-sm text-muted-foreground">
               {data.free.price}. {data.free.line}
             </p>
-          </article>
-          <article className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
-            <h3 className="font-medium">Pro plan</h3>
-            <p className="text-sm text-muted-foreground">
-              {data.pro.price}. {data.pro.line}
-            </p>
-            <ul className="flex flex-col gap-1 text-sm">
-              {data.pro.benefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
           </article>
         </div>
       </SettingsSection>

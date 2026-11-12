@@ -227,7 +227,8 @@ describe("settings", () => {
     expect(
       screen.queryByRole("button", { name: "Add card" })
     ).not.toBeInTheDocument()
-    expect(screen.getByText("$9 a month. Not on sale yet.")).toBeInTheDocument()
+    expect(screen.queryByText("Pro plan")).not.toBeInTheDocument()
+    expect(screen.queryByText(/\$9|Not on sale/)).not.toBeInTheDocument()
     expect(screen.queryByText("Payment method")).not.toBeInTheDocument()
     expect(screen.queryByText(/invoice/i)).not.toBeInTheDocument()
     expect(glowButtons()).toHaveLength(0)

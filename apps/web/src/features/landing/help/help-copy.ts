@@ -142,7 +142,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         id: "coach-modes",
         question: "What are the Coach modes?",
         answer:
-          "Free, Light and Max. The composer labels Max as Power. Light and Max need Pro.",
+          "Free, Light and Max. The composer labels Max as Power. Light and Max are not open on the Free plan yet.",
       },
       {
         id: "coach-cap",
@@ -159,42 +159,31 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       {
         id: "coach-model",
         question: "Which model does Coach use?",
-        answer:
-          "On the Free plan, Coach uses a free model. On Pro, Coach uses Claude.",
+        answer: "Every Coach mode uses the same model.",
       },
       {
         id: "coach-limits",
         question: "What are the daily caps?",
         answer:
-          "On the Free plan, the default is 20 turns a day. On Pro, Free mode has no daily cap. Light defaults to 10 and Max defaults to 5.",
+          "On the Free plan, the default is 20 turns a day. Light defaults to 10 and Max defaults to 5.",
       },
     ],
   },
   {
     id: "plans",
     title: "Plans and billing",
-    blurb: "Free is $0. Pro is $9 a month.",
+    blurb: "Free is $0. There is no paid plan.",
     questions: [
       {
         id: "plans-cost",
         question: "What does opencv cost?",
-        answer: "Free is $0 a month. Pro is $9 a month.",
+        answer: "Free is $0 a month. There is no paid plan.",
       },
       {
         id: "plans-free",
         question: "What is on the Free plan?",
         answer:
           "The Free Coach mode, your CVs and letters, and the Apply board, list and calendar.",
-      },
-      {
-        id: "plans-pro",
-        question: "What does Pro add?",
-        answer: "Light and Max, and Claude instead of the free model.",
-      },
-      {
-        id: "plans-upgrade",
-        question: "How do I get Pro?",
-        answer: "Upgrade is not open yet. Pro is granted by hand.",
       },
       {
         id: "plans-card",

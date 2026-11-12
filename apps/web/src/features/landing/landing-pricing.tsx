@@ -11,10 +11,8 @@ import { LandingFooter } from "./landing-footer.tsx"
 import { LandingNav } from "./landing-nav.tsx"
 import { LandingClose } from "./landing-sections.tsx"
 import {
-  COMPARE_LABEL,
   pricingDescription,
   pricingModel,
-  type CompareCell,
   type IncludedIconName,
   type PricingPlan,
 } from "./pricing-model.ts"
@@ -40,19 +38,13 @@ function sectionTitleStyle(): CSSProperties {
 }
 
 function PlanCard({ plan }: { plan: PricingPlan }) {
-  const mesh = plan.surface === "mesh"
   return (
     <article
-      className={
-        mesh
-          ? "pricing-plan pricing-plan-pro"
-          : "pricing-plan pricing-plan-free"
-      }
+      className="pricing-plan pricing-plan-free"
       style={{ padding: metrics.cardPadPx, borderRadius: metrics.cardRadiusPx }}
     >
       <div className="pricing-plan-name">
         <h2>{plan.name}</h2>
-        {plan.kicker ? <p className="pricing-kicker">{plan.kicker}</p> : null}
       </div>
       <p className="pricing-audience">{plan.audience}</p>
       <p className="pricing-price">
@@ -67,18 +59,15 @@ function PlanCard({ plan }: { plan: PricingPlan }) {
         </span>
         <span className="pricing-price-period">{plan.period}</span>
       </p>
-      {plan.cta ? (
-        <a
-          href={documentHref("/sign-in")}
-          className={`pricing-cta ${landingPlanButton(plan.tone)}`}
-          style={{ blockSize: metrics.buttonPx, inlineSize: "100%" }}
-        >
-          {plan.cta}
-        </a>
-      ) : null}
+      <a
+        href={documentHref("/sign-in")}
+        className={`pricing-cta ${landingPlanButton(plan.tone)}`}
+        style={{ blockSize: metrics.buttonPx, inlineSize: "100%" }}
+      >
+        {plan.cta}
+      </a>
       <p className="pricing-note">{plan.note}</p>
       <hr className="pricing-plan-rule" />
-      {plan.lead ? <p className="pricing-lead">{plan.lead}</p> : null}
       <ul className="pricing-features">
         {plan.features.map((feature) => (
           <li key={feature}>
@@ -89,20 +78,6 @@ function PlanCard({ plan }: { plan: PricingPlan }) {
       </ul>
     </article>
   )
-}
-
-function CompareValue({ cell }: { cell: CompareCell }) {
-  if (cell.kind === "check") {
-    return <Check aria-label={COMPARE_LABEL.check} role="img" size={16} />
-  }
-  if (cell.kind === "dash") {
-    return (
-      <span className="pricing-dash" role="img" aria-label={COMPARE_LABEL.dash}>
-        {"\u2013"}
-      </span>
-    )
-  }
-  return cell.value
 }
 
 export function PricingPage() {
@@ -155,8 +130,7 @@ export function PricingPage() {
             className="pricing-column pricing-plan-row"
             style={{ ...columnStyle(), gap: metrics.plansGapPx }}
           >
-            <PlanCard plan={pricingModel.plans.free} />
-            <PlanCard plan={pricingModel.plans.pro} />
+            <PlanCard plan={pricingModel.plan} />
           </div>
         </section>
         <section
@@ -198,80 +172,6 @@ export function PricingPage() {
                   </article>
                 )
               })}
-            </div>
-          </div>
-        </section>
-        <section
-          aria-labelledby="compare-title"
-          className="pricing-block"
-          style={{ paddingTop: metrics.padBlockPx }}
-        >
-          <div
-            className="pricing-column pricing-stack pricing-compare-copy"
-            style={columnStyle()}
-          >
-            <h2
-              id="compare-title"
-              className="pricing-section-title"
-              style={sectionTitleStyle()}
-            >
-              {pricingModel.compare.title}
-            </h2>
-            <div className="pricing-compare-scroll">
-              <table
-                className="pricing-compare-table"
-                aria-labelledby="compare-title"
-              >
-                <thead>
-                  <tr style={{ height: metrics.compareHeadPx }}>
-                    <th scope="col">
-                      <span className="sr-only">Feature</span>
-                    </th>
-                    {pricingModel.compare.columns.map((column) => (
-                      <th
-                        key={column}
-                        scope="col"
-                        style={{
-                          width: `${(metrics.compareValuePx / metrics.columnPx) * 100}%`,
-                        }}
-                      >
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                {pricingModel.compare.blocks.map((block) => (
-                  <tbody key={block.label}>
-                    <tr className="pricing-compare-group">
-                      <th
-                        scope="colgroup"
-                        colSpan={3}
-                        style={{
-                          paddingTop: metrics.compareGroupPadTopPx,
-                          paddingBottom: metrics.compareGroupPadBottomPx,
-                        }}
-                      >
-                        {block.label}
-                      </th>
-                    </tr>
-                    {block.rows.map((row) => (
-                      <tr
-                        key={row.feature}
-                        className="pricing-compare-row"
-                        style={{ height: metrics.compareRowPx }}
-                      >
-                        <th scope="row">{row.feature}</th>
-                        <td>
-                          <CompareValue cell={row.free} />
-                        </td>
-                        <td>
-                          <CompareValue cell={row.pro} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                ))}
-              </table>
             </div>
           </div>
         </section>

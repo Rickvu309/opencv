@@ -88,7 +88,10 @@ describe("help page", () => {
       screen.getByText(/There is no password\./, hidden)
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/Light and Max need Pro/, hidden)
+      screen.getByText(
+        /Light and Max are not open on the Free plan yet/,
+        hidden
+      )
     ).toBeInTheDocument()
     expect(screen.queryByText(/Inbox/, hidden)).not.toBeInTheDocument()
     expect(
@@ -96,7 +99,7 @@ describe("help page", () => {
     ).toBeInTheDocument()
     expect(screen.queryByText(/coming soon/i, hidden)).not.toBeInTheDocument()
     expect(
-      screen.getByText("Free is $0 a month. Pro is $9 a month.", hidden)
+      screen.getByText("Free is $0 a month. There is no paid plan.", hidden)
     ).toBeInTheDocument()
 
     await userEvent.click(screen.getByText("How do I sign in?"))

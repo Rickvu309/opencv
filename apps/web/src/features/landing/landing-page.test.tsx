@@ -241,7 +241,7 @@ describe("landing page", () => {
 })
 
 describe("pricing page", () => {
-  it("shows Free and Pro with sign-up actions", async () => {
+  it("shows only the free plan with its sign-up action", async () => {
     setMockSession(null)
     renderApp("/pricing")
 
@@ -249,7 +249,6 @@ describe("pricing page", () => {
       await screen.findByRole("heading", { level: 1, name: "Pricing" })
     ).toBeInTheDocument()
     expect(screen.getByText("$0")).toBeInTheDocument()
-    expect(screen.getByText("$9")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Start free" })).toHaveAttribute(
       "href",
       "/sign-in"
@@ -257,11 +256,9 @@ describe("pricing page", () => {
     expect(
       screen.queryByRole("link", { name: "Get Pro" })
     ).not.toBeInTheDocument()
-    expect(
-      screen.getAllByRole("img", { name: "Included" }).length
-    ).toBeGreaterThan(0)
-    expect(screen.queryByText("Included")).not.toBeInTheDocument()
-    expect(document.body).not.toHaveTextContent(/Cancel anytime|Proof|Pitch/)
+    expect(document.body).not.toHaveTextContent(
+      /\bPro\b|\$9|Cancel anytime|Proof|Pitch/
+    )
   })
 })
 
