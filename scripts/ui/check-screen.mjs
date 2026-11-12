@@ -22,6 +22,7 @@ import {
   rowsForScreen,
 } from "./design-map.mjs"
 import { knownFailureLines, markKnownFailures } from "./known-drift.mjs"
+import { decidedDesign, ownerDecisionLines } from "./owner-decision.mjs"
 import { composedPlacement, frameGeometry } from "./pen.mjs"
 import { SCREENS } from "./screens.mjs"
 
@@ -56,6 +57,26 @@ export async function checkScreen({
     const boxes = await measureOn(target, list)
     list.forEach((row, at) => baseline.set(row, boxes[at]))
   }
+  return screenReport({
+    screen,
+    rows,
+    rendered,
+    baseline,
+    index,
+    tolerance,
+    onMain,
+  })
+}
+
+export function screenReport({
+  screen,
+  rows,
+  rendered,
+  baseline,
+  index,
+  tolerance,
+  onMain,
+}) {
   const placements = new Map(
     rows
       .filter((row) => !isSameBox(row))
@@ -75,7 +96,7 @@ export async function checkScreen({
       ...(placement.inScreen ? [] : [specimenRow(row)]),
       ...compareRow({
         label: row.label,
-        design: frameGeometry(index, row.frame),
+        design: decidedDesign(row, frameGeometry(index, row.frame)),
         rendered: rendered[at],
         props: row.props,
         tolerance,
@@ -89,6 +110,11 @@ export async function checkScreen({
     lines: [
       `${screen.id} at 1440x900, tolerance ${tolerance}px`,
       ...renderTable(table),
+      ...rows
+        .filter((row) => !isSameBox(row))
+        .flatMap((row) =>
+          ownerDecisionLines(row, frameGeometry(index, row.frame))
+        ),
       ...checkNotes({
         rows,
         failedLabels: new Set(bad.map((row) => row.label)),

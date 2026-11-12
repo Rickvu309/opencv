@@ -7,6 +7,7 @@ import {
   checkBaseScreen,
   knownFailureLines,
   markKnownFailures,
+  staleBaseLine,
 } from "./known-drift.mjs"
 import { checkSummary, renderPrSection } from "./pr-section.mjs"
 
@@ -32,20 +33,57 @@ const here = {
 test("a failure that also fails on main is known and every other failure is new", () => {
   const marked = markKnownFailures(here, {
     screen: "paper-home",
-    failures: [failure("Paper page header", "height", 30)],
+    failures: [failure("Paper page header", "height", 32)],
   })
   assert.equal(marked.newFailed, 1)
   assert.equal(marked.knownFailed, 1)
-  assert.deepEqual(marked.failures[0].onMain, { rendered: 30 })
+  assert.deepEqual(marked.failures[0].onMain, { rendered: 32, changed: false })
   assert.equal(marked.failures[1].onMain, null)
   assert.deepEqual(knownFailureLines(marked), [
     "new since main: Paper body gap",
+    "changed since main: none",
     "already failing on main: Paper page header height",
   ])
   assert.equal(
     summaryLine(marked),
     "paper-home: FAIL, 3 compared, 2 failed, 1 already failing on main"
   )
+})
+
+test("a known failure whose value changed on the branch counts as new and shows both values", () => {
+  const worse = {
+    screen: "paper-home",
+    compared: 1,
+    failed: 1,
+    failures: [failure("Paper page header", "height", 70)],
+  }
+  const marked = markKnownFailures(worse, {
+    screen: "paper-home",
+    failures: [failure("Paper page header", "height", 30)],
+  })
+  assert.equal(marked.newFailed, 1)
+  assert.equal(marked.knownFailed, 0)
+  assert.deepEqual(knownFailureLines(marked), [
+    "new since main: none",
+    "changed since main: Paper page header height 30 on main, 70 here",
+    "already failing on main: none",
+  ])
+  assert.equal(
+    summaryLine(marked),
+    "paper-home: FAIL, 1 compared, 1 failed, 0 already failing on main"
+  )
+})
+
+test("a manifest is called out when its base is not this branch's merge-base with origin/main", () => {
+  const main = "a".repeat(40)
+  const older = "b".repeat(40)
+  assert.equal(staleBaseLine({ baseSha: main }, main), null)
+  assert.equal(
+    staleBaseLine({ baseSha: older }, main),
+    "known drift: the manifest was made on bbbbbbbbbbbb, but this branch's merge-base with origin/main is aaaaaaaaaaaa; its main results may be stale, rerun node scripts/ui.mjs compare"
+  )
+  assert.match(staleBaseLine({ captures: [] }, main), /records no base commit/)
+  assert.match(staleBaseLine({ baseSha: main }, null), /could not find/)
 })
 
 test("with no base result, or a base that errored, nothing is marked", () => {
@@ -62,6 +100,7 @@ test("a base that passes makes every failure new", () => {
   assert.equal(marked.newFailed, 2)
   assert.deepEqual(knownFailureLines(marked), [
     "new since main: Paper page header height; Paper body gap",
+    "changed since main: none",
     "already failing on main: none",
   ])
 })

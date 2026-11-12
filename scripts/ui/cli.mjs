@@ -8,7 +8,8 @@ import {
 } from "./before-after.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
 import { baseChecker, checkScreen } from "./check-screen.mjs"
-import { baseCheckFor } from "./known-drift.mjs"
+import { baseCheckFor, staleBaseLine } from "./known-drift.mjs"
+import { mergeBaseWithMain, readManifest } from "./manifest-file.mjs"
 import {
   screensToCheck,
   summarize,
@@ -85,17 +86,6 @@ async function withBrowser(ctx, work) {
   } finally {
     await browser.close()
   }
-}
-
-function readManifest(ctx, flag) {
-  const file = resolve(
-    flag ?? join(compareDir(ctx.scratchRoot, ctx.repo), "manifest.json")
-  )
-  if (!ctx.fs.exists(file))
-    throw new UsageError(
-      `no compare manifest at ${file}; run node scripts/ui.mjs compare <screen...>`
-    )
-  return { file, manifest: JSON.parse(ctx.fs.read(file)) }
 }
 
 function penOrNull(ctx, flag) {
@@ -307,8 +297,12 @@ export const COMMANDS = {
         )
       const index = loadPen(ctx, flags.pen)
       const known = flags.known ? readManifest(ctx, flags.known).manifest : null
+      const baseNotice = known
+        ? staleBaseLine(known, mergeBaseWithMain(ctx))
+        : null
+      const notices = baseNotice ? [baseNotice] : []
       const state = await requireStack(ctx)
-      const detail = []
+      const detail = [...notices]
       const results = []
       await withBrowser(ctx, async (browser) => {
         for (const { screen, rows } of plans) {
@@ -341,11 +335,17 @@ export const COMMANDS = {
         Math.round((ctx.clock.now() - started) / 1000)
       )
       const code = total.ok ? EXIT.ok : EXIT.failed
-      if (flags.json) return { code, lines: [json({ ...total, results })] }
+      if (flags.json)
+        return {
+          code,
+          lines: [
+            json({ ...total, results, ...(baseNotice ? { baseNotice } : {}) }),
+          ],
+        }
       if (!flags.all) return { code, lines: detail }
       return {
         code,
-        lines: [...results.map(summaryLine), totalLine(total)],
+        lines: [...notices, ...results.map(summaryLine), totalLine(total)],
       }
     },
   },
