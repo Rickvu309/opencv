@@ -135,7 +135,7 @@ export const chatTextPartSchema = z
   })
   .strict()
 
-export const chatToolOutcomeSchema = z.enum([
+const chatToolOutcomeSchema = z.enum([
   "waiting",
   "approved",
   "denied",
