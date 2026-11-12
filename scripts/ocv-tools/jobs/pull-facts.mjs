@@ -3,7 +3,7 @@ import { run, git, json, diffFacts } from "./common.mjs"
 import { pinFacts } from "./pin-facts.mjs"
 
 export const PR_FIELDS =
-  "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,mergeCommit,closingIssuesReferences"
+  "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,baseRefName,mergeCommit,closingIssuesReferences"
 
 const generated = (out) =>
   out
@@ -153,6 +153,7 @@ export function pullOf(pull, extra = {}) {
     labels: (pull.labels ?? []).map((l) => l.name),
     head: pull.headRefOid,
     branch: pull.headRefName,
+    base: pull.baseRefName,
     mergeOid: pull.mergeCommit?.oid,
     closing: (pull.closingIssuesReferences ?? []).map((i) => i.number),
     ...extra,

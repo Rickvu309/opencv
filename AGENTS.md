@@ -48,7 +48,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 - Every code bug you find gets two fixes. Trace it to the first place the system went wrong and fix it there. Then add a lint or guard that fails on that mistake, so the same bug cannot return. A new guard needs a pure detect, a mistake fixture that fires, a clean fixture that stays quiet, and proof against the commit that introduced the bug.
 - Verify the affected behavior, not just compilation. For changes under `apps/web` or `apps/api`, run the affected flow locally and inspect the result. For UI changes, drive the affected screen and inspect it against its design frame.
 - For UI changes, use `node scripts/ui.mjs` (`up`, `shot`, `check`, `down`) and the skill in `.agents/skills/verify-ui/SKILL.md`. The pen frame wins over any audit or component default.
-- A pull request that changes a screen carries a `## Before / after` section from `node scripts/ui.mjs compare`, `changes`, `annotate` and `pr-section`, or the line `No visible change.` with one sentence of reason.
+- A pull request that changes a screen file carries a `## Before / after` section from `node scripts/ui.mjs compare`, `changes`, `annotate` and `pr-section`, even when nothing looks different. A pull request that changes no screen file has the line `No visible change.` with one sentence of reason.
 - For Coach work, use the existing scripted local runtime and fake-provider tests where they cover the behavior. Distinguish fake-provider evidence from live-model evidence. Do not make paid model calls just to check unrelated changes.
 - For changes to this file, run `node --test scripts/ocv-tools/brief.test.mjs` and check formatting. Brief rules depend on the Guardrails, Per change, and Agent briefs headings and several policy phrases.
 - Report each requested outcome with the command and real result, or the relevant file, screenshot, or PR. Never weaken a check to make it pass. Report an unrelated bug under Findings with file and line, reproduction, and a possible guard.
@@ -67,6 +67,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Recording a blocker never completes open work.                        | `done` exits 4 for blocked work, 1 if any unblocked item remains; `scripts/ocv-tools/done.test.mjs` replays the #1083 and #1084 handbacks.              |
 | An empty ownership check does not prove the full request is complete. | `done` states its agent scope and requires checking the full request; the coordinator must match each requested item to evidence before final handback. |
+| `No visible change.` is refused while a screen file changes.          | Row `NO_BEFORE_AFTER` at `finish`, `body` and `pr`; `scripts/ocv-tools/rules/before-after.test.mjs` replays #1406 and #1410.                            |
 
 ## Pointers
 

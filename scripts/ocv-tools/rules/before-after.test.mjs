@@ -53,9 +53,59 @@ test("the mistake fixture fires: a screen change without Before / after is refus
     assert.match(hit.fix, new RegExp(`\\b${command}\\b`))
 })
 
-test("the clean fixtures stay quiet: an image and the main / this PR table, or an honest No visible change", () => {
-  for (const name of ["ui-with-before-after.txt", "ui-no-visible-change.txt"])
-    assert.equal(beforeAfterProblem(fixture(name), SCREEN_FILES), null, name)
+test("the clean fixture stays quiet: an image and the main / this PR table", () => {
+  assert.equal(
+    beforeAfterProblem(fixture("ui-with-before-after.txt"), SCREEN_FILES),
+    null
+  )
+})
+
+const PR_1406_SCREEN_FILES = [
+  "apps/web/src/features/auth/auth-copy.ts",
+  "apps/web/src/features/auth/auth.test.tsx",
+  "apps/web/src/features/auth/sign-in-screen.reducer.ts",
+  "apps/web/src/features/auth/sign-in-screen.tsx",
+]
+
+test("the truth fixture fires: No visible change. while the diff edits a screen file, as PR #1406 said while its sign-in screen changed", () => {
+  for (const files of [SCREEN_FILES, PR_1406_SCREEN_FILES]) {
+    const hit = evaluate("NO_BEFORE_AFTER", {
+      pull: { body: fixture("ui-no-visible-change.txt") },
+      diff: { files },
+    })
+    assert.match(
+      hit.message,
+      /screen file\(s\).*"No visible change\." is a claim the pictures must show/
+    )
+  }
+  assert.equal(
+    beforeAfterProblem(
+      fixture("ui-no-visible-change.txt"),
+      PR_1406_SCREEN_FILES.filter((file) => !file.endsWith(".tsx"))
+    ),
+    null
+  )
+})
+
+const PR_1410_FILES = [
+  "apps/web/src/features/paper/paper-library.tsx",
+  "scripts/paper-one-kind.test.mjs",
+]
+
+test("a stacked PR is told its base branch holds the screen files, as PR #1410 on fix/1404-word-card-actions was", () => {
+  const stacked = evaluate("NO_BEFORE_AFTER", {
+    pull: { body: "## Summary\n\nx", base: "fix/1404-word-card-actions" },
+    diff: { files: PR_1410_FILES },
+  })
+  assert.match(
+    stacked.message,
+    /stacked on fix\/1404-word-card-actions, so its diff against main also holds that branch's screen files: merge fix\/1404-word-card-actions first and rebase/
+  )
+  const onMain = evaluate("NO_BEFORE_AFTER", {
+    pull: { body: "## Summary\n\nx", base: "main" },
+    diff: { files: PR_1410_FILES },
+  })
+  assert.doesNotMatch(onMain.message, /stacked/)
 })
 
 test("a change with no screen file needs no Before / after section", () => {
@@ -68,7 +118,7 @@ test("a change with no screen file needs no Before / after section", () => {
   )
 })
 
-test("half a section names what it lacks, and a bare No visible change needs its reason", () => {
+test("half a section names what it lacks, and No visible change. needs the pictures", () => {
   const only = (inner) =>
     `## Summary\n\nx\n\n## Before / after\n\n${inner}\n\n## Merge Danger\n\nx`
   assert.match(
@@ -81,20 +131,20 @@ test("half a section names what it lacks, and a bare No visible change needs its
   )
   assert.match(
     beforeAfterProblem(only("No visible change."), SCREEN_FILES),
-    /needs one sentence of reason/
+    /is a claim the pictures must show/
   )
   assert.match(
     beforeAfterProblem(
       only("Nothing changed, No visible change."),
       SCREEN_FILES
     ),
-    /lacks an image and a \| main \| this PR \| table$/
+    /put the compare image and the \| main \| this PR \| table/
   )
 })
 
-test("finish and the live pull request policy run the row; both gather the body and the diff", () => {
+test("finish, body and the live pull request policy run the row; each gathers the body and the diff", () => {
   const row = RULES.find((item) => item.id === "NO_BEFORE_AFTER")
-  assert.deepEqual(row.at, ["finish", "pr"])
+  assert.deepEqual(row.at, ["finish", "body", "pr"])
   for (const moment of row.at)
     for (const kind of row.needs) assert.ok(needsOf(moment).includes(kind))
 })

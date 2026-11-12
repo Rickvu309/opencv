@@ -339,7 +339,7 @@ test("every checked rule has a failing and a passing fact", () => {
     },
     {
       pull: {
-        body: "## Before / after\n\nNo visible change.\nThe rename keeps every style as it was.",
+        body: "## Before / after\n\n![after](https://x/a.png)\n\n| main | this PR |\n| --- | --- |",
       },
       diff: { files: ["packages/ui/src/components/button.tsx"] },
     },
