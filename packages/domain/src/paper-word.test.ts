@@ -5,6 +5,7 @@ import {
   WORD_DOCUMENT_MEDIA_TYPE,
   WORD_LIMITS,
   wordBatchSchema,
+  wordConfirmedOpsSchema,
   wordSourceSchema,
   wordUndoSchema,
 } from "./paper-word.ts"
@@ -105,6 +106,29 @@ describe("a Word batch", () => {
     assert.equal(filled(WORD_LIMITS.maxBatchTextBytes / chunk.length), true)
     assert.equal(
       filled(WORD_LIMITS.maxBatchTextBytes / chunk.length + 1),
+      false
+    )
+  })
+
+  it("takes the caret side as lean and keptBefore together or not at all", () => {
+    const setText = (side: object) =>
+      wordBatchSchema.safeParse(
+        batchOf([{ op: "setText", handle, text: "Hi", caret: 1, ...side }])
+      )
+    assert.equal(setText({}).success, true)
+    assert.equal(setText({ lean: "after", keptBefore: 1 }).success, true)
+    const leanOnly = setText({ lean: "after" })
+    assert.equal(leanOnly.success, false)
+    assert.deepEqual(leanOnly.error?.issues[0]?.path, ["ops", 0, "keptBefore"])
+    assert.match(
+      leanOnly.error?.issues[0]?.message ?? "",
+      /lean and keptBefore together/
+    )
+    assert.equal(setText({ keptBefore: 0 }).success, false)
+    assert.equal(
+      wordConfirmedOpsSchema.safeParse([
+        { op: "setText", handle, text: "Hi", lean: "before" },
+      ]).success,
       false
     )
   })

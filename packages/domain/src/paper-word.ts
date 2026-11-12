@@ -55,6 +55,11 @@ const wordSetTextOpSchema = z
     keptBefore: z.number().int().nonnegative().optional(),
   })
   .strict()
+  .refine((op) => (op.lean === undefined) === (op.keptBefore === undefined), {
+    message:
+      "Send lean and keptBefore together, or leave both out. One alone cannot say which side of the caret the words belong to.",
+    path: ["keptBefore"],
+  })
 
 const wordInsertOpSchema = z
   .object({

@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto"
 
-import type { WordLean, WordParagraph } from "@workspace/domain"
+import type { WordBatch, WordLean, WordParagraph } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { cvPackage, run } from "../package-fixtures.js"
 import { paragraphsOf, projectParagraphs } from "./classify.js"
+import { draftBatch } from "./document.js"
 import { mutateWord } from "./mutate.js"
 
 const bold = "<w:b/>"
@@ -49,7 +50,7 @@ function typed(
 
 describe("typing where two runs meet saves into the run the caret leans on", () => {
   it("keeps words typed at the start of the text after a link out of the words before it", () => {
-    expect(typed(linkLine, "Portfolio at new today", 16, "after")).toEqual([
+    expect(typed(linkLine, "Portfolio at new today", 16, "after", 1)).toEqual([
       { text: "Portfolio at ", editable: true },
       { text: "example site", editable: false, marks: ["link"] },
       { text: "new today", editable: true },
@@ -57,7 +58,7 @@ describe("typing where two runs meet saves into the run the caret leans on", () 
   })
 
   it("keeps words typed at the end of the text before a link before it", () => {
-    expect(typed(linkLine, "Portfolio at my today", 15, "before")).toEqual([
+    expect(typed(linkLine, "Portfolio at my today", 15, "before", 0)).toEqual([
       { text: "Portfolio at my", editable: true },
       { text: "example site", editable: false, marks: ["link"] },
       { text: " today", editable: true },
@@ -77,7 +78,8 @@ describe("typing where two runs meet saves into the run the caret leans on", () 
       breakLine,
       "Marketing InternSince Jun 2025",
       22,
-      "after"
+      "after",
+      1
     )
     expect(pieces).toEqual([
       { text: "Marketing Intern", editable: true },
@@ -87,18 +89,18 @@ describe("typing where two runs meet saves into the run the caret leans on", () 
   })
 
   it("follows the lean between a plain run and a bold run", () => {
-    expect(typed(boldLine, "Led bigdata", 7, "before")).toEqual([
+    expect(typed(boldLine, "Led bigdata", 7, "before", 0)).toEqual([
       { text: "Led big", editable: true },
       { text: "data", editable: true, marks: ["bold"] },
     ])
-    expect(typed(boldLine, "Led bigdata", 7, "after")).toEqual([
+    expect(typed(boldLine, "Led bigdata", 7, "after", 0)).toEqual([
       { text: "Led ", editable: true },
       { text: "bigdata", editable: true, marks: ["bold"] },
     ])
   })
 
   it("still refuses words that would cross a link instead of guessing a side", () => {
-    expect(typed(linkLine, "Portfolio now", 13, "after")).toBe("HELD_GAP")
+    expect(typed(linkLine, "Portfolio now", 13, "after", 1)).toBe("HELD_GAP")
   })
 })
 
@@ -268,5 +270,45 @@ describe("changes that are not a single caret at a boundary", () => {
     expect(
       typed(`<w:p>${link}</w:p>`, "example site now", 12, "after", 1)
     ).toBe("WORD_FEATURE")
+  })
+})
+
+describe("a batch names the caret side whole or not at all", () => {
+  const batchWith = (side: object) => ({
+    doc: randomUUID(),
+    basedOn: randomUUID(),
+    ops: [
+      {
+        op: "setText" as const,
+        handle: randomUUID(),
+        text: "Portfolio at new today",
+        caret: 16,
+        ...side,
+      },
+    ],
+  })
+
+  it.each([
+    ["a lean without keptBefore", { lean: "after" }],
+    ["a keptBefore without a lean", { keptBefore: 1 }],
+  ])("refuses %s before reading the page", async (_, side) => {
+    const drafted = await draftBatch(randomUUID(), batchWith(side) as WordBatch)
+    expect(drafted).toMatchObject({ refused: true, code: "BATCH" })
+  })
+
+  it("places words by the caret alone when neither is sent, as before", () => {
+    expect(typed(linkLine, "Portfolio at new today", 16)).toEqual([
+      { text: "Portfolio at new", editable: true },
+      { text: "example site", editable: false, marks: ["link"] },
+      { text: " today", editable: true },
+    ])
+  })
+
+  it("places words on the named side when both are sent", () => {
+    expect(typed(linkLine, "Portfolio at new today", 16, "after", 1)).toEqual([
+      { text: "Portfolio at ", editable: true },
+      { text: "example site", editable: false, marks: ["link"] },
+      { text: "new today", editable: true },
+    ])
   })
 })

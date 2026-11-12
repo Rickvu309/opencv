@@ -251,5 +251,11 @@ describe("the page keeps the look of an imported line", () => {
       block.id === `${BREAK}#1` ? { ...block, text: "\n\n" } : block
     )
     expect(diffParagraphs(page, movedBreak, null)).toHaveProperty("refused")
+    const elsewhere = plain.map((block) =>
+      block.id === LEAD ? { ...block, text: "Led data work!" } : block
+    )
+    expect(diffParagraphs(page, elsewhere, null)).toEqual({
+      ops: [{ op: "setText", handle: LEAD, text: "Led data work!" }],
+    })
   })
 })
