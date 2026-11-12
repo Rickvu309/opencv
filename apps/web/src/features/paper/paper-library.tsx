@@ -547,7 +547,7 @@ export function PaperLibrary({
           if (!open) closeDialog()
         }}
       >
-        <DialogContent>
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>
               {mode?.type === "delete-file"
