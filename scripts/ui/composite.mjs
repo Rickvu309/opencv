@@ -32,6 +32,7 @@ function sideOf(ctx, { section, side, specDir, capture, manifestDir }) {
     ])
   )
   return {
+    scale,
     size: pngSize(bytes),
     image: `data:image/png;base64,${bytes.toString("base64")}`,
     boxes,
@@ -53,9 +54,12 @@ export function readSpec(ctx, specFile) {
   }
 }
 
-export async function renderComposite(ctx, specFile, out) {
+export async function renderComposite(ctx, specFile, out, only) {
   const { spec, specDir, manifest, manifestDir } = readSpec(ctx, specFile)
-  const layouts = spec.sections.map((section) => {
+  const picked = only
+    ? spec.sections.filter((_, at) => only.includes(at))
+    : spec.sections
+  const layouts = picked.map((section) => {
     const capture = section.screen
       ? findCapture(manifest, section.screen, section.width)
       : null

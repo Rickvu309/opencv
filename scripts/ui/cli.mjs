@@ -11,7 +11,9 @@ import {
 } from "./check-all.mjs"
 import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
 import { CHANGES_PER_SCREEN, draftSpec, rankChanges } from "./changes.mjs"
-import { renderComposite } from "./composite.mjs"
+import { compositeFiles, SPLIT_ABOVE } from "./annotate-split.mjs"
+import { readSpec, renderComposite } from "./composite.mjs"
+import { ZOOM } from "./zoom.mjs"
 import { diffImages } from "./diff.mjs"
 import {
   findFrames,
@@ -390,44 +392,56 @@ export const COMMANDS = {
     },
   },
   annotate: {
-    usage: "annotate --spec <file.json> --out <png>",
-    about:
-      "Render one dark composite: per section a title, the before and after images, numbered callouts with arrows to the same target in both, and a legend. Selector targets read their boxes from the compare manifest.",
-    options: { valued: ["spec", "out"] },
+    usage: "annotate --spec <file.json> --out <png or dir> [--single]",
+    about: `Render dark composites: per section a title, the before and after images, numbered callouts with arrows to the same target in both, and a legend with ${ZOOM.factor}x before and after crops for small changes. A spec with more than ${SPLIT_ABOVE} sections writes one composite per section named from its title, unless --single.`,
+    options: { valued: ["spec", "out"], switches: ["single"] },
     run: async (ctx, { flags }) => {
       if (!flags.spec || !flags.out)
         throw new UsageError("give --spec <file.json> and --out <png>")
-      const out = resolve(flags.out)
-      ctx.fs.mkdir(dirname(out))
-      const sections = await renderComposite(ctx, resolve(flags.spec), out)
-      const bad = sections.some(
-        (section) =>
-          section.missing.before.length || section.missing.after.length
-      )
-      return {
-        code: bad ? EXIT.failed : EXIT.ok,
-        lines: [...sections.map(json), json({ out })],
+      const specFile = resolve(flags.spec)
+      const { spec } = readSpec(ctx, specFile)
+      const files = compositeFiles(spec.sections, resolve(flags.out), {
+        single: flags.single === true,
+      })
+      const lines = []
+      let bad = false
+      for (const file of files) {
+        ctx.fs.mkdir(dirname(file.out))
+        const sections = await renderComposite(
+          ctx,
+          specFile,
+          file.out,
+          file.sections
+        )
+        bad ||= sections.some(
+          (section) =>
+            section.missing.before.length || section.missing.after.length
+        )
+        lines.push(...sections.map(json), json({ out: file.out }))
       }
+      return { code: bad ? EXIT.failed : EXIT.ok, lines }
     },
   },
   "pr-section": {
     usage:
-      "pr-section --annotated <png> [--manifest file] [--check] [--pr n | --issue n]",
+      "pr-section --annotated <png,...> [--manifest file] [--check] [--pr n | --issue n]",
     about:
-      "Upload the composite and every before and after through scripts/ocv-tools.mjs shot (no comment) and print the ## Before / after markdown: the composite, a | main | this PR | table and, with --check, the check summary per screen.",
+      "Upload the composite and every before and after through scripts/ocv-tools.mjs shot (no comment) and print the ## Before / after markdown: every composite in the order given, a | main | this PR | table and, with --check, the check summary per screen.",
     options: {
-      valued: ["manifest", "annotated", "pr", "issue"],
+      valued: ["manifest", "pr", "issue"],
+      repeated: ["annotated"],
       switches: ["check"],
     },
     run: async (ctx, { flags }) => {
       if (!flags.annotated) throw new UsageError("give --annotated <png>")
       const { file, manifest } = readManifest(ctx, flags.manifest)
-      const pictures = picturesToUpload(manifest, resolve(flags.annotated)).map(
-        (picture) => ({
-          ...picture,
-          file: resolve(dirname(file), picture.file),
-        })
-      )
+      const pictures = picturesToUpload(
+        manifest,
+        flags.annotated.map((file) => resolve(file))
+      ).map((picture) => ({
+        ...picture,
+        file: resolve(dirname(file), picture.file),
+      }))
       const checks = []
       if (flags.check)
         for (const screen of [
