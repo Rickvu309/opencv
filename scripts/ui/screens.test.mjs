@@ -29,7 +29,7 @@ test("a screen with neither steps nor a reason, a duplicate, a bad route or an u
   ])
   assert.deepEqual(problems, [
     "a: needs steps or an unreachable reason, not both",
-    'b: step {"hover":"x"} must be one of goto, click, fill, press, type, waitFor',
+    'b: step {"hover":"x"} must be one of goto, click, fill, press, type, upload, waitFor',
     "b: duplicate id",
     "b: route must start with /",
     "C: id must be kebab-case",
@@ -131,7 +131,7 @@ test("a screen's after steps clean up and are only allowed on a screen with step
     ]),
     [
       "b: after must be a step list on a screen with steps",
-      'c: step {"hover":"x"} must be one of goto, click, fill, press, type, waitFor',
+      'c: step {"hover":"x"} must be one of goto, click, fill, press, type, upload, waitFor',
     ]
   )
   for (const screen of SCREENS.filter((screen) =>
