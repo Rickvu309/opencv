@@ -1,0 +1,13 @@
+{
+  "id": "session-check-reads",
+  "file": "scripts/session-check-reads.test.mjs",
+  "detector": {
+    "module": "scripts/lib/session-check-reads.mjs",
+    "export": "detectDirectSessionRead"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "765f384b97c9f55ce7e060742fdbee8e5af4fb70",
+    "path": "apps/web/src/router.tsx"
+  }
+}
