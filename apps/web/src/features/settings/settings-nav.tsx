@@ -23,7 +23,8 @@ import {
   type SettingsSectionId,
 } from "./sections.ts"
 
-const SETTINGS_NAV_ITEM = "h-7 rounded-sm"
+const SETTINGS_NAV_ITEM =
+  "h-11 rounded-sm hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent md:h-7"
 
 const SECTION_ICONS: Record<SettingsSectionId, LucideIcon> = {
   preferences: SlidersHorizontal,

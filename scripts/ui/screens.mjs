@@ -144,6 +144,22 @@ export const SCREENS = [
     steps: [{ waitFor: { selector: '[data-slot="settings-card"]' } }],
   },
   {
+    id: "settings-panel-open",
+    route: "/settings",
+    steps: [
+      { waitFor: { selector: '[data-slot="settings-card"]' } },
+      ...OPEN_PANEL,
+      {
+        fill: {
+          selector: `${PANEL} ${COMPOSER}`,
+          text: "What should I do next?",
+        },
+      },
+      { press: "Enter" },
+      { waitFor: { text: "Prep the starred" } },
+    ],
+  },
+  {
     id: "coach-chat-streaming",
     route: "/coach",
     unreachable:

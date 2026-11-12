@@ -124,6 +124,7 @@ export function AccountSection({
             control={
               <Input
                 aria-label="Name"
+                className="max-md:h-11"
                 value={name}
                 disabled={pending}
                 onChange={(event) =>

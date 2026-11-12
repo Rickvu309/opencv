@@ -82,7 +82,11 @@ export function PreferencesSection({
                   if (timeZone) onSave({ timeZone })
                 }}
               >
-                <SelectTrigger aria-label="Time zone" disabled={pending}>
+                <SelectTrigger
+                  aria-label="Time zone"
+                  disabled={pending}
+                  className="touch-manipulation data-[size=default]:max-md:h-11"
+                >
                   <SelectValue>{zoneLabel}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -107,7 +111,11 @@ export function PreferencesSection({
                   if (startPage.success) onSave({ startPage: startPage.data })
                 }}
               >
-                <SelectTrigger aria-label="Start page" disabled={pending}>
+                <SelectTrigger
+                  aria-label="Start page"
+                  disabled={pending}
+                  className="touch-manipulation data-[size=default]:max-md:h-11"
+                >
                   <SelectValue>{startLabel}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
