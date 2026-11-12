@@ -52,6 +52,7 @@ const wordSetTextOpSchema = z
     text: wordTextSchema,
     caret: z.number().int().nonnegative().optional(),
     lean: wordLeanSchema.optional(),
+    keptBefore: z.number().int().nonnegative().optional(),
   })
   .strict()
 

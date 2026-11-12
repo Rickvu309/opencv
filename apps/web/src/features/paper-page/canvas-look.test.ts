@@ -129,6 +129,7 @@ describe("the page keeps the look of an imported line", () => {
           text: "Led ddata work",
           caret: 5,
           lean: "before",
+          keptBefore: 0,
         },
       ],
     })
@@ -242,6 +243,7 @@ describe("the page keeps the look of an imported line", () => {
           text: "Marketing InternSince Jun 2025 to now",
           caret: 22,
           lean: "after",
+          keptBefore: 1,
         },
       ],
     })

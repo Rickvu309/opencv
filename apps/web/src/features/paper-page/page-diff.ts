@@ -55,7 +55,11 @@ export function diffParagraphs(
   if (!keptPartsMatch(basis, blocks)) return { refused: KEPT_PART }
   const handles = new Set(page.paragraphs.map((paragraph) => paragraph.handle))
   const written = new Map<WordHandle, string>()
-  const carets = new Map<WordHandle, { at: number; lean: WordLean | null }>()
+  const carets = new Map<
+    WordHandle,
+    { at: number; lean: WordLean | null; keptBefore: number }
+  >()
+  const keptSoFar = new Map<WordHandle, number>()
   const slots: Slot[] = []
   let current: WordHandle | null = null
   for (const block of blocks) {
@@ -71,12 +75,17 @@ export function diffParagraphs(
       slots.push({ kind: "kept", handle })
       current = handle
     }
-    if (block.held) continue
+    const keptBefore = keptSoFar.get(handle) ?? 0
+    if (block.held) {
+      keptSoFar.set(handle, keptBefore + 1)
+      continue
+    }
     const before = written.get(handle) ?? ""
     if (caret?.blockId === block.id)
       carets.set(handle, {
         at: before.length + caret.offset,
         lean: leanOf(basis, block, caret.offset),
+        keptBefore,
       })
     written.set(handle, before + block.text)
   }
@@ -136,7 +145,9 @@ export function diffParagraphs(
         handle: slot.handle,
         text,
         ...(point === undefined ? {} : { caret: point.at }),
-        ...(point?.lean ? { lean: point.lean } : {}),
+        ...(point?.lean
+          ? { lean: point.lean, keptBefore: point.keptBefore }
+          : {}),
       })
     }
     for (const handle of removedAfter.get(slot.handle) ?? [])

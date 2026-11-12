@@ -71,6 +71,7 @@ describe("diffParagraphs", () => {
           text: "Second line",
           caret: 11,
           lean: "before",
+          keptBefore: 0,
         },
       ],
     })
@@ -123,6 +124,7 @@ describe("diffParagraphs", () => {
           text: "Join me to this",
           caret: 8,
           lean: "before",
+          keptBefore: 0,
         },
         { op: "delete", handle: B },
       ],
@@ -177,6 +179,7 @@ describe("diffParagraphs", () => {
           text: "Led ddata",
           caret: 5,
           lean: "before",
+          keptBefore: 0,
         },
       ],
     })
@@ -220,6 +223,7 @@ describe("diffParagraphs", () => {
           text: "Your Name QA555",
           caret: 12,
           lean: "before",
+          keptBefore: 1,
         },
       ],
     })
@@ -334,6 +338,7 @@ describe("the side of a run boundary the caret sits on", () => {
           text: "Portfolio at new today",
           caret: 16,
           lean: "after",
+          keptBefore: 1,
         },
       ],
     })
@@ -353,6 +358,7 @@ describe("the side of a run boundary the caret sits on", () => {
           text: "Portfolio at my today",
           caret: 15,
           lean: "before",
+          keptBefore: 0,
         },
       ],
     })
@@ -377,6 +383,7 @@ describe("the side of a run boundary the caret sits on", () => {
           text: "Marketing InternSince Jun 2025",
           caret: 22,
           lean: "after",
+          keptBefore: 1,
         },
       ],
     })
@@ -396,6 +403,116 @@ describe("the side of a run boundary the caret sits on", () => {
         },
       ],
     })
+  })
+
+  function lineOf(...pieces: WordParagraph["pieces"]): WordPage {
+    return pageOf({
+      handle: A,
+      text: pieces
+        .filter((piece) => piece.editable)
+        .map((piece) => piece.text)
+        .join(""),
+      pieces,
+      held: false,
+      message: "",
+      code: null,
+    })
+  }
+
+  const site = { text: "example site", editable: false, marks: ["link"] }
+  const second = { text: "second site", editable: false, marks: ["link"] }
+
+  it("names the empty block before a link as the caret's own", () => {
+    const page = lineOf({ text: "", editable: true }, site, {
+      text: " today",
+      editable: true,
+    })
+    expect(
+      diffParagraphs(page, typedInto(page, `${A}#0`, "Hi "), {
+        blockId: `${A}#0`,
+        offset: 3,
+      })
+    ).toEqual({
+      ops: [
+        {
+          op: "setText",
+          handle: A,
+          text: "Hi  today",
+          caret: 3,
+          lean: "after",
+          keptBefore: 0,
+        },
+      ],
+    })
+  })
+
+  it("names the empty block before a soft break as the caret's own", () => {
+    const page = lineOf(
+      { text: "", editable: true },
+      { text: "\n", editable: false },
+      { text: "Jun 2025", editable: true }
+    )
+    expect(
+      diffParagraphs(page, typedInto(page, `${A}#0`, "Lead"), {
+        blockId: `${A}#0`,
+        offset: 4,
+      })
+    ).toMatchObject({ ops: [{ caret: 4, keptBefore: 0 }] })
+  })
+
+  it("names the empty block after a link as the caret's own", () => {
+    const page = lineOf({ text: "Portfolio at ", editable: true }, site, {
+      text: "",
+      editable: true,
+    })
+    expect(
+      diffParagraphs(page, typedInto(page, `${A}#2`, "now"), {
+        blockId: `${A}#2`,
+        offset: 3,
+      })
+    ).toMatchObject({ ops: [{ caret: 16, keptBefore: 1 }] })
+  })
+
+  it("names the empty block between two links as the caret's own", () => {
+    const page = lineOf(
+      { text: "A", editable: true },
+      site,
+      { text: "", editable: true },
+      second,
+      { text: "C", editable: true }
+    )
+    expect(
+      diffParagraphs(page, typedInto(page, `${A}#2`, "x"), {
+        blockId: `${A}#2`,
+        offset: 1,
+      })
+    ).toMatchObject({ ops: [{ text: "AxC", caret: 2, keptBefore: 1 }] })
+    expect(
+      diffParagraphs(page, typedInto(page, `${A}#4`, "bC"), {
+        blockId: `${A}#4`,
+        offset: 1,
+      })
+    ).toMatchObject({
+      ops: [{ text: "AbC", caret: 2, lean: "after", keptBefore: 2 }],
+    })
+  })
+
+  it("names the caret's block when several letters arrive at once", () => {
+    expect(
+      diffParagraphs(linked, typedInto(linked, `${A}#2`, "and more today"), {
+        blockId: `${A}#2`,
+        offset: 8,
+      })
+    ).toMatchObject({ ops: [{ caret: 21, lean: "after", keptBefore: 1 }] })
+  })
+
+  it("names the caret's block when a letter after a link is deleted", () => {
+    expect(
+      diffParagraphs(linked, typedInto(linked, `${A}#2`, "today"), {
+        blockId: `${A}#2`,
+        offset: 0,
+      })
+    ).toMatchObject({ ops: [{ caret: 13, keptBefore: 1 }] })
   })
 
   it("holds no line the page says can change", () => {

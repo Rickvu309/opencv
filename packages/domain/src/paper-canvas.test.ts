@@ -107,6 +107,7 @@ describe("blank page commits", () => {
           text: "Hello",
           caret: 0,
           lean: "after",
+          keptBefore: 1,
         },
         { op: "insert", after: paragraph, text: "world" },
         { op: "delete", handle: paragraph },
@@ -120,6 +121,16 @@ describe("blank page commits", () => {
       [{ op: "setText", handle: paragraph, text: "a\nb" }],
       [{ op: "setText", handle: paragraph, text: "a", caret: -1 }],
       [{ op: "setText", handle: paragraph, text: "a", caret: 0, lean: "in" }],
+      [
+        {
+          op: "setText",
+          handle: paragraph,
+          text: "a",
+          caret: 0,
+          lean: "after",
+          keptBefore: -1,
+        },
+      ],
       [{ op: "split", handle: paragraph, at: 1 }],
       [],
     ])

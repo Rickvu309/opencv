@@ -5,7 +5,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import {
   detectInventedHold,
-  detectLeanlessCaret,
+  detectSidelessCaret,
 } from "./lib/paper-page-sides.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -24,7 +24,7 @@ function opsOf(slot: Slot, text: string, at: number | undefined): WordOp[] {
 }
 `
 
-const leanClean = `
+const keptlessMistakeAt5ba2081e = `
 function opsOf(slot: Slot, text: string, point: Point | undefined): WordOp[] {
   return [
     {
@@ -33,6 +33,22 @@ function opsOf(slot: Slot, text: string, point: Point | undefined): WordOp[] {
       text,
       ...(point === undefined ? {} : { caret: point.at }),
       ...(point?.lean ? { lean: point.lean } : {}),
+    },
+  ]
+}
+`
+
+const leanClean = `
+function opsOf(slot: Slot, text: string, point: Point | undefined): WordOp[] {
+  return [
+    {
+      op: "setText",
+      handle: slot.handle,
+      text,
+      ...(point === undefined ? {} : { caret: point.at }),
+      ...(point?.lean
+        ? { lean: point.lean, keptBefore: point.keptBefore }
+        : {}),
     },
     { op: "insert", after: slot.handle, text },
   ]
@@ -82,7 +98,7 @@ export function replaceVisible(blocks: WritingBlock[], current: WritingBlock) {
 
 test("MISTAKE: a setText op that sends a caret without its side fires", () => {
   assert.deepEqual(
-    detectLeanlessCaret(leanlessMistakeAtC0b0d467).map(({ kind, line }) => ({
+    detectSidelessCaret(leanlessMistakeAtC0b0d467).map(({ kind, line }) => ({
       kind,
       line,
     })),
@@ -90,8 +106,18 @@ test("MISTAKE: a setText op that sends a caret without its side fires", () => {
   )
 })
 
+test("MISTAKE: a setText op that leans without naming the caret's block fires, so an empty block is never skipped", () => {
+  assert.deepEqual(
+    detectSidelessCaret(keptlessMistakeAt5ba2081e).map(({ kind, line }) => ({
+      kind,
+      line,
+    })),
+    [{ kind: "lean-without-kept-before", line: 4 }]
+  )
+})
+
 test("a setText op that sends a caret with its side, and other ops, stay quiet", () => {
-  assert.deepEqual(detectLeanlessCaret(leanClean), [])
+  assert.deepEqual(detectSidelessCaret(leanClean), [])
 })
 
 test("MISTAKE: a block held for a reason the page never gave fires", () => {
@@ -115,7 +141,7 @@ test("the writing page names a caret's side and holds only what the page holds",
   assert.ok(sources.length > 0)
   for (const name of sources) {
     const text = readFileSync(path.join(PAGE, name), "utf8")
-    assert.deepEqual(detectLeanlessCaret(text, name), [], name)
+    assert.deepEqual(detectSidelessCaret(text, name), [], name)
     assert.deepEqual(detectInventedHold(text, name), [], name)
   }
 })

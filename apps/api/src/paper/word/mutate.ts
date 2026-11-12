@@ -9,9 +9,7 @@ import type {
 } from "@workspace/domain"
 
 import {
-  editedRun,
   joinsAt,
-  letters,
   lineWith,
   lineXml,
   plainRun,
@@ -27,6 +25,7 @@ import {
   type WordDisposition,
   type WordLine,
 } from "./classify.js"
+import { rewrite, splitLine } from "./line-spans.js"
 
 export type WordSide = {
   version: 2
@@ -78,6 +77,7 @@ type Step =
       spans: readonly WordSpan[] | null
       caret: number | null
       lean: WordSpan["lean"] | null
+      keptBefore: number | null
     }
   | { kind: "delete"; handle: WordHandle }
   | { kind: "insert"; after: WordHandle | null; text: string }
@@ -95,6 +95,7 @@ type Step =
       text: string
       caret: number | null
       lean: WordSpan["lean"] | null
+      keptBefore: number | null
     }
 
 const unsafe = () =>
@@ -144,106 +145,6 @@ function textOf(disposition: WordDisposition) {
   if (disposition.kind === "line") return disposition.line.text
   if (disposition.kind === "held") return disposition.text
   return ""
-}
-
-function spansOf(line: WordLine) {
-  let at = 0
-  return line.parts.flatMap((part, index) => {
-    if (!part.run) return []
-    const length = part.run.text.length
-    const span = { run: part.run, index, start: at, end: at + length }
-    at += length
-    return [span]
-  })
-}
-
-type Placed = ReturnType<typeof spansOf>[number]
-
-function covering(spans: Placed[], span: WordSpan) {
-  if (span.start < span.end)
-    return spans.filter(
-      (item) => item.start < span.end && item.end > span.start
-    )
-  const around = spans.filter(
-    (item) => item.start <= span.start && span.start <= item.end
-  )
-  const pick =
-    span.lean === "before"
-      ? (around.find((item) => item.start < span.start) ?? around[0])
-      : ([...around].reverse().find((item) => item.end > span.start) ??
-        around.at(-1))
-  return pick ? [pick] : []
-}
-
-function rewrite(
-  line: WordLine,
-  changes: readonly WordSpan[]
-): WordLine | "MIXED_FORMAT" | "HELD_GAP" | "SPANS" {
-  const spans = spansOf(line)
-  const texts = spans.map((span) => span.run.text)
-  const ordered = [...changes].sort((left, right) => right.start - left.start)
-  for (const [at, change] of ordered.entries()) {
-    const right = ordered[at - 1]
-    if (
-      change.start < 0 ||
-      change.start > change.end ||
-      change.end > line.text.length ||
-      (right &&
-        (change.end > right.start ||
-          (change.start === change.end && right.start === change.start)))
-    )
-      return "SPANS"
-    const covered = covering(spans, change)
-    const first = covered[0]
-    const last = covered.at(-1)
-    if (!first || !last) return "SPANS"
-    if (covered.some((item) => item.run.props !== first.run.props))
-      return "MIXED_FORMAT"
-    if (
-      line.parts
-        .slice(first.index, last.index + 1)
-        .some((part) => part.kept && part.kept.text !== "")
-    )
-      return "HELD_GAP"
-    const opening = spans.indexOf(first)
-    const closing = spans.indexOf(last)
-    const head = (texts[opening] ?? "").slice(0, change.start - first.start)
-    const tail = (texts[closing] ?? "").slice(change.end - last.start)
-    for (let index = opening; index <= closing; index += 1) texts[index] = ""
-    texts[opening] = head + change.text + (opening === closing ? tail : "")
-    if (closing !== opening) texts[closing] = tail
-  }
-  let index = 0
-  const parts = line.parts.map((part) => {
-    if (!part.run) return part
-    const text = texts[index] ?? part.run.text
-    index += 1
-    return { run: editedRun(part.run, text), kept: null }
-  })
-  return { ...line, parts, text: texts.join("") }
-}
-
-function splitLine(line: WordLine, at: number): [WordLine, WordLine] {
-  const runs = runsOf(line)
-  const spans = spansOf(line)
-  const offset = letters(line.text).slice(0, at).join("").length
-  const index = Math.max(
-    0,
-    spans.findIndex((span) => offset <= span.end)
-  )
-  const span = spans[index] ?? spans[0]
-  if (!span) throw new Error("A line without runs cannot split.")
-  const cut = offset - span.start
-  return [
-    lineWith(line.open, line.props, [
-      ...runs.slice(0, index),
-      rebuiltRun(span.run, span.run.text.slice(0, cut)),
-    ]),
-    lineWith("<w:p>", line.props, [
-      rebuiltRun(span.run, span.run.text.slice(cut)),
-      ...runs.slice(index + 1),
-    ]),
-  ]
 }
 
 function lineEntry(entry: Entry, line: WordLine): Entry {
@@ -305,6 +206,7 @@ function rewritten(
 ): WordLine | WordRefusal {
   const written = rewrite(line, changes)
   if (written === "SPANS") return unsafe()
+  if (written === "CARET") return caretOutside(handle)
   if (written === "HELD_GAP")
     return refuse(
       "held",
@@ -394,6 +296,7 @@ function plan(
           text: op.text,
           caret: op.caret ?? null,
           lean: op.lean ?? null,
+          keptBefore: op.keptBefore ?? null,
         })
         at += 1
         continue
@@ -408,6 +311,7 @@ function plan(
             spans: spans.get(op.handle) ?? null,
             caret: op.caret ?? null,
             lean: op.lean ?? null,
+            keptBefore: op.keptBefore ?? null,
           }
         : { kind: "delete", handle: op.handle }
     )
@@ -505,7 +409,13 @@ function run(page: Page, step: Step): Page | WordRefusal {
   const after = entries.slice(index + 1)
   if (step.kind === "setText") {
     if (step.text === line.text && !step.spans) return page
-    const typed = typedSpan(line.text, step.text, step.caret, step.lean)
+    const typed = typedSpan(
+      line.text,
+      step.text,
+      step.caret,
+      step.lean,
+      step.keptBefore
+    )
     if (!typed) return caretOutside(step.handle)
     const written = rewritten(
       line,
@@ -619,7 +529,13 @@ function run(page: Page, step: Step): Page | WordRefusal {
     ...runsOf(line),
     ...runsOf(joined.disposition.line),
   ])
-  const typed = typedSpan(merged.text, step.text, step.caret, step.lean)
+  const typed = typedSpan(
+    merged.text,
+    step.text,
+    step.caret,
+    step.lean,
+    step.keptBefore
+  )
   if (!typed) return caretOutside(step.handle)
   const result =
     step.text === merged.text

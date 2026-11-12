@@ -48,7 +48,7 @@ function isSetTextOp(literal) {
   )
 }
 
-export function detectLeanlessCaret(text, file = "page.ts") {
+export function detectSidelessCaret(text, file = "page.ts") {
   const source = sourceOf(text, file)
   const problems = []
   const visit = (node) => {
@@ -57,6 +57,12 @@ export function detectLeanlessCaret(text, file = "page.ts") {
       if (names.has("caret") && !names.has("lean"))
         problems.push({
           kind: "caret-without-lean",
+          file,
+          line: lineOf(source, node),
+        })
+      if (names.has("lean") && !names.has("keptBefore"))
+        problems.push({
+          kind: "lean-without-kept-before",
           file,
           line: lineOf(source, node),
         })

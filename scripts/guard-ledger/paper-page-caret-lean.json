@@ -3,7 +3,7 @@
   "file": "scripts/paper-page-sides.test.mjs",
   "detector": {
     "module": "scripts/lib/paper-page-sides.mjs",
-    "export": "detectLeanlessCaret"
+    "export": "detectSidelessCaret"
   },
   "historic": {
     "mode": "detect",
