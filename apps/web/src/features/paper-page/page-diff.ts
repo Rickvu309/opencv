@@ -1,11 +1,7 @@
-import type { WordHandle, WordOp, WordPage } from "@workspace/domain"
+import type { WordHandle, WordLean, WordOp, WordPage } from "@workspace/domain"
 
-import {
-  heldOnPage,
-  pageBlocks,
-  type TextPoint,
-  type WritingBlock,
-} from "./canvas-edit.ts"
+import { pageBlocks, type TextPoint, type WritingBlock } from "./canvas-edit.ts"
+import { typedReach } from "./canvas-look.ts"
 
 export type PageDiff = { ops: WordOp[] } | { refused: string }
 
@@ -38,15 +34,28 @@ function keptPartsMatch(
   )
 }
 
+function leanOf(
+  basis: readonly WritingBlock[],
+  block: WritingBlock,
+  offset: number
+): WordLean | null {
+  const before = basis.find((item) => item.id === block.id)
+  if (!before || before.held || before.text === block.text) return null
+  return typedReach(before.text, block.text, offset).head === 0
+    ? "after"
+    : "before"
+}
+
 export function diffParagraphs(
   page: WordPage,
   blocks: readonly WritingBlock[],
   caret: TextPoint | null
 ): PageDiff {
-  if (!keptPartsMatch(pageBlocks(page), blocks)) return { refused: KEPT_PART }
+  const basis = pageBlocks(page)
+  if (!keptPartsMatch(basis, blocks)) return { refused: KEPT_PART }
   const handles = new Set(page.paragraphs.map((paragraph) => paragraph.handle))
   const written = new Map<WordHandle, string>()
-  const carets = new Map<WordHandle, number>()
+  const carets = new Map<WordHandle, { at: number; lean: WordLean | null }>()
   const slots: Slot[] = []
   let current: WordHandle | null = null
   for (const block of blocks) {
@@ -65,7 +74,10 @@ export function diffParagraphs(
     if (block.held) continue
     const before = written.get(handle) ?? ""
     if (caret?.blockId === block.id)
-      carets.set(handle, before.length + caret.offset)
+      carets.set(handle, {
+        at: before.length + caret.offset,
+        lean: leanOf(basis, block, caret.offset),
+      })
     written.set(handle, before + block.text)
   }
   const order = page.paragraphs.map((paragraph) => paragraph.handle)
@@ -77,7 +89,7 @@ export function diffParagraphs(
   const surviving = new Set(
     slots.flatMap((slot) => (slot.kind === "kept" ? [slot.handle] : []))
   )
-  const lines = page.paragraphs.filter((paragraph) => !heldOnPage(paragraph))
+  const lines = page.paragraphs.filter((paragraph) => !paragraph.held)
   const gone = lines.filter((paragraph) => !surviving.has(paragraph.handle))
   const reused = gone[0]
   if (reused && lines.every((paragraph) => !surviving.has(paragraph.handle))) {
@@ -96,7 +108,7 @@ export function diffParagraphs(
       previous = paragraph.handle
       continue
     }
-    if (heldOnPage(paragraph)) continue
+    if (paragraph.held) continue
     removedAfter.set(previous, [
       ...(removedAfter.get(previous) ?? []),
       paragraph.handle,
@@ -117,13 +129,14 @@ export function diffParagraphs(
       (item) => item.handle === slot.handle
     )
     const text = written.get(slot.handle) ?? ""
-    if (paragraph && !heldOnPage(paragraph) && text !== paragraph.text) {
-      const at = carets.get(slot.handle)
+    if (paragraph && !paragraph.held && text !== paragraph.text) {
+      const point = carets.get(slot.handle)
       ops.push({
         op: "setText",
         handle: slot.handle,
         text,
-        ...(at === undefined ? {} : { caret: at }),
+        ...(point === undefined ? {} : { caret: point.at }),
+        ...(point?.lean ? { lean: point.lean } : {}),
       })
     }
     for (const handle of removedAfter.get(slot.handle) ?? [])

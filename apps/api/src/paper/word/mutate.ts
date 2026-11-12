@@ -77,6 +77,7 @@ type Step =
       text: string
       spans: readonly WordSpan[] | null
       caret: number | null
+      lean: WordSpan["lean"] | null
     }
   | { kind: "delete"; handle: WordHandle }
   | { kind: "insert"; after: WordHandle | null; text: string }
@@ -93,6 +94,7 @@ type Step =
       joined: WordHandle
       text: string
       caret: number | null
+      lean: WordSpan["lean"] | null
     }
 
 const unsafe = () =>
@@ -391,6 +393,7 @@ function plan(
           joined: next.handle,
           text: op.text,
           caret: op.caret ?? null,
+          lean: op.lean ?? null,
         })
         at += 1
         continue
@@ -404,6 +407,7 @@ function plan(
             text: op.text,
             spans: spans.get(op.handle) ?? null,
             caret: op.caret ?? null,
+            lean: op.lean ?? null,
           }
         : { kind: "delete", handle: op.handle }
     )
@@ -501,7 +505,7 @@ function run(page: Page, step: Step): Page | WordRefusal {
   const after = entries.slice(index + 1)
   if (step.kind === "setText") {
     if (step.text === line.text && !step.spans) return page
-    const typed = typedSpan(line.text, step.text, step.caret)
+    const typed = typedSpan(line.text, step.text, step.caret, step.lean)
     if (!typed) return caretOutside(step.handle)
     const written = rewritten(
       line,
@@ -615,7 +619,7 @@ function run(page: Page, step: Step): Page | WordRefusal {
     ...runsOf(line),
     ...runsOf(joined.disposition.line),
   ])
-  const typed = typedSpan(merged.text, step.text, step.caret)
+  const typed = typedSpan(merged.text, step.text, step.caret, step.lean)
   if (!typed) return caretOutside(step.handle)
   const result =
     step.text === merged.text

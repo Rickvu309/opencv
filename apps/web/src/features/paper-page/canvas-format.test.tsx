@@ -224,7 +224,7 @@ describe("an imported CV on the writing page", () => {
     ).toEqual(["data-block"])
   })
 
-  it("shows a soft line break inside one held paragraph with its message", () => {
+  it("shows a soft line break between two editable sides of one line", () => {
     const handle = "a0000000-0000-4000-8000-000000000010"
     const page = cv()
     render(
@@ -249,15 +249,16 @@ describe("an imported CV on the writing page", () => {
         })}
       />
     )
-    const line = block(handle)
+    const first = block(`${handle}#0`)
+    const gap = block(`${handle}#1`)
+    const second = block(`${handle}#2`)
     expect(page.paragraphs.length).toBeGreaterThan(1)
-    expect(line.contentEditable).toBe("false")
-    expect(line.textContent).toBe("Marketing Intern\nJun 2025 to now")
-    expect(line.querySelector("strong")?.textContent).toBe("Marketing Intern")
-    expect(
-      screen.getByText(
-        "This line has a line break inside it. Paper shows it as it is but will not change it yet."
-      )
-    ).toBeVisible()
+    expect(first.contentEditable).toBe("true")
+    expect(first.querySelector("strong")?.textContent).toBe("Marketing Intern")
+    expect(gap.contentEditable).toBe("false")
+    expect(gap.hasAttribute("data-break")).toBe(true)
+    expect(second.contentEditable).toBe("true")
+    expect(second.textContent).toBe("Jun 2025 to now")
+    expect(first.hasAttribute("data-break")).toBe(false)
   })
 })

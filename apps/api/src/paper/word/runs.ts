@@ -108,11 +108,14 @@ export function joinsAt(
 export function typedSpan(
   before: string,
   after: string,
-  caret: number | null
+  caret: number | null,
+  lean: WordSpan["lean"] | null
 ): WordSpan | null {
-  return caret === null
-    ? changedSpan(before, after)
-    : caretSpan(before, after, caret)
+  const span =
+    caret === null
+      ? changedSpan(before, after)
+      : caretSpan(before, after, caret)
+  return span && lean ? { ...span, lean } : span
 }
 
 function rawWith(raw: string, before: string, after: string) {

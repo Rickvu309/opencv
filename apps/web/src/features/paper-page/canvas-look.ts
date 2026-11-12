@@ -109,14 +109,7 @@ function sharedTail(left: string, right: string) {
   return size
 }
 
-function carriedMarks(
-  entry: LookEntry,
-  text: string,
-  caret: number | null
-): (readonly WordMark[])[] {
-  const before = entry.text
-  const marks = marksAt(entry.look.spans ?? [], before.length)
-  if (before === text) return marks
+export function typedReach(before: string, text: string, caret: number | null) {
   const tail = Math.min(
     sharedTail(before, text),
     caret === null ? Number.MAX_SAFE_INTEGER : Math.max(0, text.length - caret)
@@ -126,6 +119,18 @@ function carriedMarks(
     before.length - tail,
     text.length - tail
   )
+  return { head, tail }
+}
+
+function carriedMarks(
+  entry: LookEntry,
+  text: string,
+  caret: number | null
+): (readonly WordMark[])[] {
+  const before = entry.text
+  const marks = marksAt(entry.look.spans ?? [], before.length)
+  if (before === text) return marks
+  const { head, tail } = typedReach(before, text, caret)
   const typed =
     head > 0
       ? (marks[head - 1] ?? [])

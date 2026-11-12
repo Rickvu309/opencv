@@ -145,6 +145,10 @@ function blockSelector(id: string) {
   return `p[data-block="${id.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"]`
 }
 
+function softBreak(block: WritingBlock) {
+  return !!block.held && /^\n+$/.test(block.text)
+}
+
 export type DrawnLooks = Map<string, { source: LookEntry; current: LookEntry }>
 
 export function syncParagraphs(
@@ -166,6 +170,7 @@ export function syncParagraphs(
     }
     node.dataset.block = block.id
     node.contentEditable = block.held ? "false" : "true"
+    setAttribute(node, "data-break", softBreak(block) ? "" : null)
     const source = looks.get(block.id)
     const kept = drawn.get(block.id)
     const base = kept && kept.source === source ? kept.current : source

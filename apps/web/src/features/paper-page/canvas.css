@@ -65,6 +65,21 @@
   color: var(--muted-foreground);
 }
 
+.writing-page p:has(+ p[data-break]),
+.writing-page p[data-break] {
+  margin-block-end: 0;
+}
+
+.writing-page p[data-break] {
+  min-block-size: 0;
+  block-size: 0;
+  overflow: hidden;
+}
+
+.writing-page p[data-break] + p[data-break] {
+  block-size: 1lh;
+}
+
 .writing-page p[data-form="title"] {
   font-size: calc(1em * 22 / 10.5);
   font-weight: 700;
