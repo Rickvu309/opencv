@@ -163,8 +163,15 @@ function lineXml(line: TemplateLine, index: number) {
 }
 
 export function templatePageBytes(templateId: PaperTemplateId): Uint8Array {
+  return pageBytesOf(templateLines(templateId))
+}
+
+export function writtenPageBytes(lines: readonly string[]): Uint8Array {
+  return pageBytesOf(lines.map((text) => ({ style: "Normal", text })))
+}
+
+function pageBytesOf(lines: readonly TemplateLine[]): Uint8Array {
   const { WORD, REL, PKG, TYPES, W14 } = canvas
-  const lines = templateLines(templateId)
   const body =
     lines.map(lineXml).join("") +
     canvas.paraXml(idsAt(lines.length), canvas.canvasMarks.SECT, [])

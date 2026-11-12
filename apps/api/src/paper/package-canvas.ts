@@ -22,7 +22,11 @@ import {
   wordPackageBasis,
 } from "./package-store.js"
 import { prepareBatch, WORD_UNDO_MOVED } from "./word/document.js"
-import { templatePageBytes, templatePageName } from "./word/template.js"
+import {
+  templatePageBytes,
+  templatePageName,
+  writtenPageBytes,
+} from "./word/template.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"
@@ -36,6 +40,21 @@ const BLANK_PAGE_NAMES: Record<WordPageLabel, string> = {
 }
 
 type CanvasResult = ReturnType<typeof paperPackageEditResultSchema.parse>
+
+type CanvasMint = Extract<PaperCanvasCommit, { op: "mint" }>
+
+function mintedName(input: CanvasMint) {
+  if (input.name)
+    return /\.docx$/i.test(input.name) ? input.name : `${input.name}.docx`
+  if (input.templateId) return templatePageName(input.templateId)
+  return BLANK_PAGE_NAMES[input.label]
+}
+
+function mintedBytes(input: CanvasMint) {
+  if (input.templateId) return templatePageBytes(input.templateId)
+  if (input.lines) return writtenPageBytes(input.lines)
+  return loaded.mintBlankBytes()
+}
 
 async function incarnationOf(owner: string, docId: string) {
   const [head] = await getDb()
@@ -125,18 +144,16 @@ export function registerCanvasCommit(
       transaction: "none",
       prepare: async (input, actor) => {
         if (input.op === "mint") {
+          if (input.jobId)
+            await registry.read("job.get", { jobId: input.jobId }, actor)
           const stage = await stageWordPackage(
             actor.userId,
             {
               requestId: randomUUID(),
-              name: input.templateId
-                ? templatePageName(input.templateId)
-                : BLANK_PAGE_NAMES[input.label],
+              name: mintedName(input),
               kind: input.label,
             },
-            input.templateId
-              ? templatePageBytes(input.templateId)
-              : loaded.mintBlankBytes()
+            mintedBytes(input)
           )
           return { op: "mint" as const, stageId: stage.stageId }
         }
@@ -177,6 +194,16 @@ export function registerCanvasCommit(
           staged.stageId,
           PAPER_CANVAS_PROFILE
         )
+        if (input.op === "mint" && input.jobId)
+          await registry.execute({
+            name: "job.linkPaper",
+            input: {
+              jobId: input.jobId,
+              docId: published.docId,
+              kind: input.label,
+            },
+            actor,
+          })
         return resultOf(actor.userId, published.docId, published.revision, null)
       }
       const published = await commitWordCandidate(actor.userId, input, {

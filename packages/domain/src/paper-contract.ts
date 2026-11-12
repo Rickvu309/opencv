@@ -280,7 +280,7 @@ export const paperContract = commandContract({
   }),
   "paper.canvas": commandEntry({
     description:
-      "Start a blank Word page, or save what the person wrote as one batch of line changes.",
+      "Start a Word page (blank, from a template, or with the person's drafted lines, optionally named and linked to a Job), or save what the person wrote as one batch of line changes.",
     input: paperCanvasCommitSchema,
     output: paperPackageEditResultSchema,
     idempotency: "keyed",
@@ -289,7 +289,7 @@ export const paperContract = commandContract({
     step: () => "Write on the page",
     invalidates: (input) =>
       input.op === "mint"
-        ? listChanged()
+        ? [...listChanged(), ...(input.jobId ? jobsLinked() : [])]
         : [
             {
               query: "paper.get",

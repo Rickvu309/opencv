@@ -74,6 +74,53 @@ describe("blank page commits", () => {
     )
   })
 
+  it("starts a named letter page for a Job with its drafted lines", () => {
+    const jobId = "44444444-4444-4444-8444-444444444444"
+    assert.deepEqual(
+      paperCanvasCommitSchema.parse({
+        op: "mint",
+        label: "letter",
+        name: "Cover letter, Northwind",
+        jobId,
+        lines: ["Dear team,", "I would like to join Northwind."],
+      }),
+      {
+        op: "mint",
+        label: "letter",
+        name: "Cover letter, Northwind",
+        jobId,
+        lines: ["Dear team,", "I would like to join Northwind."],
+      }
+    )
+    for (const refused of [
+      { lines: [] },
+      { lines: ["a\nb"] },
+      { lines: ["x".repeat(8 * 1024 + 1)] },
+      { lines: Array.from({ length: 9 }, () => "y".repeat(8 * 1024)) },
+      { lines: Array.from({ length: 101 }, () => "z") },
+      { jobId: "not-a-job" },
+      { name: "" },
+    ])
+      assert.equal(
+        paperCanvasCommitSchema.safeParse({
+          op: "mint",
+          label: "letter",
+          ...refused,
+        }).success,
+        false,
+        JSON.stringify(refused).slice(0, 60)
+      )
+    assert.equal(
+      paperCanvasCommitSchema.safeParse({
+        op: "mint",
+        label: "cv",
+        templateId: "modern",
+        lines: ["Ada"],
+      }).success,
+      false
+    )
+  })
+
   it("accepts a mint and one Word batch, and nothing older", () => {
     assert.equal(PAPER_CANVAS_PROFILE, "paper-canvas-1")
     assert.equal(

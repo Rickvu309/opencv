@@ -32,7 +32,9 @@ describe("Cover letter drafting", () => {
     ).not.toBeInTheDocument()
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" })
     await vi.waitFor(() =>
-      expect(calls.some((call) => call.url.includes("/turns"))).toBe(true)
+      expect(calls.some((call) => call.url.includes("/paper.canvas"))).toBe(
+        true
+      )
     )
     expect(calls.find((call) => call.url.includes("/turns"))?.body).toEqual(
       expect.objectContaining({
@@ -40,7 +42,7 @@ describe("Cover letter drafting", () => {
       })
     )
     expect(
-      calls.find((call) => call.url.includes("/paper.create"))?.body
+      calls.find((call) => call.url.includes("/paper.canvas"))?.body
     ).toEqual(
       expect.objectContaining({
         input: expect.not.objectContaining({ jobId: job.id }),
@@ -68,7 +70,9 @@ describe("Cover letter drafting", () => {
     expect(screen.queryByText(/From CV/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
     await vi.waitFor(() =>
-      expect(calls.some((call) => call.url.includes("/turns"))).toBe(true)
+      expect(calls.some((call) => call.url.includes("/paper.canvas"))).toBe(
+        true
+      )
     )
     expect(calls.find((call) => call.url.includes("/turns"))?.body).toEqual(
       expect.objectContaining({
@@ -76,10 +80,10 @@ describe("Cover letter drafting", () => {
       })
     )
     expect(
-      calls.find((call) => call.url.includes("/paper.create"))?.body
+      calls.find((call) => call.url.includes("/paper.canvas"))?.body
     ).toEqual(
       expect.objectContaining({
-        input: expect.objectContaining({ kind: "letter" }),
+        input: expect.objectContaining({ op: "mint", label: "letter" }),
       })
     )
     expect(calls.some((call) => call.url.includes("/paper/import"))).toBe(false)
@@ -116,23 +120,44 @@ describe("Cover letter drafting", () => {
     expect(screen.queryByText(/Context:/)).not.toBeInTheDocument()
   })
 
-  it("drafts with the job title and refetches on a paper edit tool result", async () => {
+  it("drafts with the job title, then opens a Word page linked to the Job with the draft in it", async () => {
     const calls = installFetch("tool")
     startDrafting()
     await vi.waitFor(() => {
       expect(
-        calls.some((call) => call.url.includes("/api/paper/letter-1"))
+        calls.some((call) => call.url.includes("/api/commands/paper.canvas"))
       ).toBe(true)
     })
-    expect(calls.find((call) => call.url.includes("/turns"))?.body).toEqual(
+    const turn = calls.find((call) => call.url.includes("/turns"))?.body
+    expect(turn).toEqual(
       expect.objectContaining({
-        text: "Draft a cover letter for Associate PM at Northwind.",
-        focusDocId: "letter-1",
+        text: expect.stringContaining(
+          "Draft a cover letter for Associate PM at Northwind."
+        ),
+      })
+    )
+    expect(turn).not.toHaveProperty("focusDocId")
+    expect(
+      calls.find((call) => call.url.includes("/api/commands/paper.canvas"))
+        ?.body
+    ).toEqual(
+      expect.objectContaining({
+        input: {
+          op: "mint",
+          label: "letter",
+          name: "Cover letter, Northwind",
+          jobId: job.id,
+          lines: ["Dear team", "I write clearly."],
+        },
       })
     )
     expect(
-      calls.some((call) => call.url.includes("/api/commands/paper.edit"))
-    ).toBe(false)
+      calls.filter(
+        (call) =>
+          call.url.includes("/api/commands/paper.") &&
+          !call.url.includes("/paper.canvas")
+      )
+    ).toEqual([])
   })
 
   it("stops the stream", async () => {
