@@ -1,6 +1,7 @@
 import { basename, join } from "node:path"
 import { WORKTREE_PORTS } from "../../packages/domain/src/local-ports.ts"
 import { resolveApiPort, verifierPorts } from "../lib/worktree-port.mjs"
+import { poolPaths } from "./account-pool.mjs"
 
 export const ACCOUNT = { email: "ui-agent@example.com" }
 const START_DEADLINE_MS = 180_000
@@ -202,13 +203,36 @@ async function signIn(ctx, ports, apiLog) {
   return cookiesFromSetCookie(signed.setCookie, "localhost")
 }
 
+const FILLER = join("scripts", "ui", "account-filler.mjs")
+
+function startFiller(ctx, state) {
+  const paths = poolPaths(state.dir)
+  ctx.fs.mkdir(paths.root)
+  const pid = ctx.proc.start("node", [join(ctx.repo, FILLER), state.dir], {
+    cwd: ctx.repo,
+    env: ctx.env,
+    log: paths.log,
+  })
+  const next = { ...state, pool: { pid, dir: paths.root } }
+  ctx.fs.write(join(state.dir, "state.json"), JSON.stringify(next, null, 2))
+  return next
+}
+
 export async function up(ctx, { port } = {}) {
   const running = await liveState(ctx)
-  if (running) return { reused: true, state: running }
+  if (running) {
+    const filling = running.pool && ctx.proc.alive(running.pool.pid)
+    return {
+      reused: true,
+      state: filling ? running : startFiller(ctx, running),
+    }
+  }
   const dir = stateDir(ctx.scratchRoot, ctx.repo)
   const stale = readState(ctx)
-  if (stale) await stopPids(ctx, stale.pids)
+  if (stale)
+    await stopPids(ctx, [...stale.pids, stale.pool?.pid].filter(Boolean))
   ctx.fs.remove(join(dir, "pglite"))
+  ctx.fs.remove(poolPaths(dir).root)
   ctx.fs.mkdir(dir)
   const name = basename(ctx.repo)
   const ports = await choosePorts(ctx, port, dir)
@@ -286,14 +310,15 @@ export async function up(ctx, { port } = {}) {
   )
   const cookies = await signIn(ctx, ports, apiLog)
   ctx.fs.write(state.storage, JSON.stringify({ cookies, origins: [] }, null, 2))
-  return { reused: false, state }
+  return { reused: false, state: startFiller(ctx, state) }
 }
 
 export async function down(ctx) {
   const state = readState(ctx)
   if (!state) return { stopped: [] }
-  await stopPids(ctx, state.pids)
+  await stopPids(ctx, [...state.pids, state.pool?.pid].filter(Boolean))
   ctx.fs.remove(join(state.dir, "pglite"))
+  ctx.fs.remove(poolPaths(state.dir).root)
   ctx.fs.remove(join(state.dir, "state.json"))
   ctx.fs.remove(state.storage)
   releasePort(ctx, state)

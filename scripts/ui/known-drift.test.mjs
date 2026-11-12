@@ -31,10 +31,14 @@ const here = {
 }
 
 test("a failure that also fails on main is known and every other failure is new", () => {
-  const marked = markKnownFailures(here, {
-    screen: "paper-home",
-    failures: [failure("Paper page header", "height", 32)],
-  })
+  const marked = markKnownFailures(
+    here,
+    {
+      screen: "paper-home",
+      failures: [failure("Paper page header", "height", 32)],
+    },
+    1
+  )
   assert.equal(marked.newFailed, 1)
   assert.equal(marked.knownFailed, 1)
   assert.deepEqual(marked.failures[0].onMain, { rendered: 32, changed: false })
@@ -46,7 +50,7 @@ test("a failure that also fails on main is known and every other failure is new"
   ])
   assert.equal(
     summaryLine(marked),
-    "paper-home: FAIL, 3 compared, 2 failed, 1 already failing on main"
+    "paper-home: FAIL, 3 compared, 2 failed, 1 already failing on main, 0 changed since main"
   )
 })
 
@@ -57,10 +61,14 @@ test("a known failure whose value changed on the branch counts as new and shows 
     failed: 1,
     failures: [failure("Paper page header", "height", 70)],
   }
-  const marked = markKnownFailures(worse, {
-    screen: "paper-home",
-    failures: [failure("Paper page header", "height", 30)],
-  })
+  const marked = markKnownFailures(
+    worse,
+    {
+      screen: "paper-home",
+      failures: [failure("Paper page header", "height", 30)],
+    },
+    1
+  )
   assert.equal(marked.newFailed, 1)
   assert.equal(marked.knownFailed, 0)
   assert.deepEqual(knownFailureLines(marked), [
@@ -70,8 +78,43 @@ test("a known failure whose value changed on the branch counts as new and shows 
   ])
   assert.equal(
     summaryLine(marked),
-    "paper-home: FAIL, 1 compared, 1 failed, 0 already failing on main"
+    "paper-home: FAIL, 1 compared, 1 failed, 0 already failing on main, 1 changed since main"
   )
+})
+
+test("sub-pixel noise inside the check tolerance keeps a main failure known, and a step past it is changed", () => {
+  const at = (rendered) => ({
+    screen: "paper-home",
+    compared: 1,
+    failed: 1,
+    failures: [failure("Paper page header", "height", rendered)],
+  })
+  const main = {
+    screen: "paper-home",
+    failures: [failure("Paper page header", "height", 32)],
+  }
+  const noisy = markKnownFailures(at(32.4), main, 1)
+  assert.equal(noisy.newFailed, 0)
+  assert.equal(noisy.knownFailed, 1)
+  assert.equal(noisy.failures[0].onMain.changed, false)
+  const edge = markKnownFailures(at(33), main, 1)
+  assert.equal(edge.failures[0].onMain.changed, false)
+  const moved = markKnownFailures(at(33.5), main, 1)
+  assert.equal(moved.newFailed, 1)
+  assert.equal(moved.failures[0].onMain.changed, true)
+  const strict = markKnownFailures(at(32.4), main, 0)
+  assert.equal(strict.failures[0].onMain.changed, true)
+  const lost = markKnownFailures(
+    {
+      ...at(32),
+      failures: [
+        { ...failure("Paper page header", "height", 32), rendered: null },
+      ],
+    },
+    main,
+    1
+  )
+  assert.equal(lost.failures[0].onMain.changed, true)
 })
 
 test("a manifest is called out when its base is not this branch's merge-base with origin/main", () => {
@@ -88,7 +131,7 @@ test("a manifest is called out when its base is not this branch's merge-base wit
 
 test("with no base result, or a base that errored, nothing is marked", () => {
   for (const base of [undefined, null, { screen: "paper-home", error: "x" }]) {
-    const marked = markKnownFailures(here, base)
+    const marked = markKnownFailures(here, base, 1)
     assert.equal(marked, here)
     assert.deepEqual(knownFailureLines(marked), [])
     assert.equal(summaryLine(marked), "paper-home: FAIL, 3 compared, 2 failed")
@@ -96,7 +139,11 @@ test("with no base result, or a base that errored, nothing is marked", () => {
 })
 
 test("a base that passes makes every failure new", () => {
-  const marked = markKnownFailures(here, { screen: "paper-home", failures: [] })
+  const marked = markKnownFailures(
+    here,
+    { screen: "paper-home", failures: [] },
+    1
+  )
   assert.equal(marked.newFailed, 2)
   assert.deepEqual(knownFailureLines(marked), [
     "new since main: Paper page header height; Paper body gap",

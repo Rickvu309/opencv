@@ -61,8 +61,15 @@ export function summaryLine(result) {
   const known =
     result.newFailed === undefined
       ? ""
-      : `, ${result.knownFailed} already failing on main`
+      : `, ${result.knownFailed} already failing on main, ${result.changedFailed ?? 0} changed since main`
   return `${result.screen}: ${verdict}, ${result.compared} compared, ${result.failed} failed${known}`
+}
+
+export function allScreenLines(outcomes) {
+  return outcomes.flatMap(({ result, ownerLines = [] }) => [
+    summaryLine(result),
+    ...ownerLines.map((line) => `  ${line}`),
+  ])
 }
 
 export function totalLine(total) {

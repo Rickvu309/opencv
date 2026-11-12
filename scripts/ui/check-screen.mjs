@@ -104,17 +104,21 @@ export function screenReport({
     ]
   })
   const bad = failed(table)
-  const result = markKnownFailures(screenResult(screen.id, table, bad), onMain)
+  const result = markKnownFailures(
+    screenResult(screen.id, table, bad),
+    onMain,
+    tolerance
+  )
+  const ownerLines = rows
+    .filter((row) => !isSameBox(row))
+    .flatMap((row) => ownerDecisionLines(row, frameGeometry(index, row.frame)))
   return {
     result,
+    ownerLines,
     lines: [
       `${screen.id} at 1440x900, tolerance ${tolerance}px`,
       ...renderTable(table),
-      ...rows
-        .filter((row) => !isSameBox(row))
-        .flatMap((row) =>
-          ownerDecisionLines(row, frameGeometry(index, row.frame))
-        ),
+      ...ownerLines,
       ...checkNotes({
         rows,
         failedLabels: new Set(bad.map((row) => row.label)),
@@ -128,7 +132,11 @@ export function screenReport({
         failed: bad.length,
         ...(result.newFailed === undefined
           ? {}
-          : { newFailed: result.newFailed, knownFailed: result.knownFailed }),
+          : {
+              newFailed: result.newFailed,
+              knownFailed: result.knownFailed,
+              changedFailed: result.changedFailed,
+            }),
       }),
     ],
   }

@@ -249,3 +249,26 @@ test("the conflict-prone layout fires on the digest commit and stays quiet on th
   ))
     assert.deepEqual(detectConflictProneLayout(text, generated), [])
 })
+
+test("the conflict-prone layout fires on the old digest file by its path", () => {
+  const file = "packages/domain/src/generated/catalog.digest"
+  const text = execFileSync("git", ["show", `${digestLayoutCommit}:${file}`], {
+    cwd: root,
+    encoding: "utf8",
+  })
+  assert.equal(detectConflictProneLayout(text, file).length, 1)
+})
+
+test("the conflict-prone layout stays quiet on operations whose names contain digest", async () => {
+  const snapshot = withOperation(
+    withOperation(base, "paper.digest"),
+    "inbox.weeklyDigest"
+  )
+  const rendered = await render(renderCatalog, snapshot)
+  assert.match(
+    rendered["packages/domain/src/generated/catalog.ts"],
+    /paper\.digest/
+  )
+  for (const [generated, text] of Object.entries(rendered))
+    assert.deepEqual(detectConflictProneLayout(text, generated), [])
+})

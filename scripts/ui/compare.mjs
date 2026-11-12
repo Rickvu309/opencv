@@ -20,6 +20,15 @@ export const RELATIVE = ["left", "below", "centerOffset"]
 
 const round = (value) => Math.round(value * 100) / 100
 
+export const withinTolerance = (got, want, tolerance) =>
+  Math.abs(round(got - want)) <= tolerance
+
+export function sameMeasure(got, want, tolerance) {
+  if (typeof got === "number" && typeof want === "number")
+    return withinTolerance(got, want, tolerance)
+  return got === want
+}
+
 export function relate(items, from) {
   const [first, second] = items
   if (!first) return null
@@ -64,7 +73,7 @@ export function compareRow({ label, design, rendered, props, tolerance }) {
       design: want,
       rendered: round(got),
       difference,
-      status: Math.abs(difference) <= tolerance ? "ok" : "mismatch",
+      status: withinTolerance(got, want, tolerance) ? "ok" : "mismatch",
     }
   })
 }

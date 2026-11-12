@@ -1,0 +1,9 @@
+async function postWithinLimit(context, url, options) {
+  const until = Date.now() + LIMITED_DEADLINE_MS
+  let response = await context.request.post(url, options)
+  while (response.status() === 429 && Date.now() < until) {
+    await pause(retryAfterMs(response.headers()))
+    response = await context.request.post(url, options)
+  }
+  return response
+}

@@ -31,9 +31,11 @@ export function staleOutputs(expected, current) {
   return errors
 }
 
+const digestFile = /(?:^|\/)generated\/catalog\.digest$/
+
 const conflictProneLines = [
   [
-    /digest/i,
+    /^export const catalogDigest\b/,
     "a whole-catalog digest rewrites this line on every contract edit",
   ],
   [
@@ -43,6 +45,14 @@ const conflictProneLines = [
 ]
 
 export function detectConflictProneLayout(text, file = "catalog.ts") {
+  if (digestFile.test(file))
+    return [
+      {
+        file,
+        line: 1,
+        detail: "a whole-catalog digest file changes on every contract edit",
+      },
+    ]
   return text
     .split(/\r?\n/)
     .flatMap((line, index) =>

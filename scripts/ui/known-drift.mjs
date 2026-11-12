@@ -1,8 +1,10 @@
+import { sameMeasure } from "./compare.mjs"
+
 const failureKey = (failure) => `${failure.element}\u0000${failure.property}`
 
 const isNewSinceMain = (failure) => !failure.onMain || failure.onMain.changed
 
-export function markKnownFailures(result, base) {
+export function markKnownFailures(result, base, tolerance) {
   if (!base || base.error || !Array.isArray(base.failures)) return result
   const onMain = new Map(
     base.failures.map((failure) => [failureKey(failure), failure])
@@ -14,7 +16,7 @@ export function markKnownFailures(result, base) {
       ...failure,
       onMain: {
         rendered: known.rendered,
-        changed: known.rendered !== failure.rendered,
+        changed: !sameMeasure(failure.rendered, known.rendered, tolerance),
       },
     }
   })
@@ -24,6 +26,7 @@ export function markKnownFailures(result, base) {
     failures,
     newFailed,
     knownFailed: failures.length - newFailed,
+    changedFailed: failures.filter((failure) => failure.onMain?.changed).length,
   }
 }
 
