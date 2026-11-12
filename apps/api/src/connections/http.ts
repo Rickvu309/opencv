@@ -17,7 +17,7 @@ import {
 } from "@workspace/domain"
 import type { Auth } from "../auth.js"
 import type { AppDatabase } from "../db/context.js"
-import { insideTransaction, transaction } from "../db/context.js"
+import { insideTransaction, savepoint, transaction } from "../db/context.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import type { Registry } from "../registry/registry.js"
 import { isAllowedOrigin } from "../origin.js"
@@ -174,43 +174,99 @@ export function connectionRoutes(
           },
           async (input) => {
             try {
-              const reservation = await transaction(async () => {
-                const window = await delegateCallWindow(actor)
-                await requireLiveDelegate(actor)
-                const id = await appendDelegateCall({
-                  actor,
-                  tool: entry.name,
-                  input,
-                  window,
-                  outcome: window.allowed ? "error" : "limited",
-                })
-                return { id, allowed: window.allowed }
-              })
-              if (!reservation.allowed)
-                throw new Error(
-                  "Agent tool call rate limit reached. Try again in 60 seconds."
-                )
               const value =
-                entry.kind === "query"
-                  ? await transaction(async () => {
-                      await requireLiveDelegate(actor)
-                      return {
-                        data: await registry.read(entry.name, input, actor),
-                      }
-                    })
-                  : await registry.execute({ name: entry.name, input, actor })
-              const proposalId =
-                "pendingActionId" in value &&
-                typeof value.pendingActionId === "string"
-                  ? value.pendingActionId
-                  : undefined
-              await transaction(() =>
-                completeDelegateCall(
-                  reservation.id,
-                  proposalId ? "pending" : "success",
-                  proposalId
-                )
-              )
+                entry.kind === "command" &&
+                registry.taskNeedsPreparation(entry.name, input)
+                  ? await (async () => {
+                      const reservation = await transaction(async () => {
+                        const window = await delegateCallWindow(actor)
+                        await requireLiveDelegate(actor)
+                        const id = await appendDelegateCall({
+                          actor,
+                          tool: entry.name,
+                          input,
+                          window,
+                          outcome: window.allowed ? "error" : "limited",
+                        })
+                        return { id, allowed: window.allowed }
+                      })
+                      if (!reservation.allowed)
+                        throw new Error(
+                          "Agent tool call rate limit reached. Try again in 60 seconds."
+                        )
+                      const prepared = await registry.execute({
+                        name: entry.name,
+                        input,
+                        actor,
+                      })
+                      await transaction(() =>
+                        completeDelegateCall(
+                          reservation.id,
+                          prepared.pendingActionId ? "pending" : "success",
+                          prepared.pendingActionId
+                        )
+                      )
+                      return prepared
+                    })()
+                  : await (async () => {
+                      const result = await transaction(async () => {
+                        const window = await delegateCallWindow(actor)
+                        let checked = false
+                        const outcome = await (async () => {
+                          try {
+                            const result = await savepoint(async () => {
+                              await requireLiveDelegate(actor)
+                              checked = true
+                              if (!window.allowed)
+                                throw new Error(
+                                  "Agent tool call rate limit reached. Try again in 60 seconds."
+                                )
+                              return entry.kind === "query"
+                                ? {
+                                    data: await registry.read(
+                                      entry.name,
+                                      input,
+                                      actor
+                                    ),
+                                  }
+                                : registry.execute({
+                                    name: entry.name,
+                                    input,
+                                    actor,
+                                  })
+                            })
+                            return { kind: "success" as const, result }
+                          } catch (error) {
+                            return { kind: "error" as const, error }
+                          }
+                        })()
+                        if (checked) {
+                          const proposalId =
+                            outcome.kind === "success" &&
+                            "pendingActionId" in outcome.result &&
+                            typeof outcome.result.pendingActionId === "string"
+                              ? outcome.result.pendingActionId
+                              : undefined
+                          await appendDelegateCall({
+                            actor,
+                            tool: entry.name,
+                            input,
+                            window,
+                            outcome: !window.allowed
+                              ? "limited"
+                              : outcome.kind === "error"
+                                ? "error"
+                                : proposalId
+                                  ? "pending"
+                                  : "success",
+                            proposalId,
+                          })
+                        }
+                        return outcome
+                      })
+                      if (result.kind === "error") throw result.error
+                      return result.result
+                    })()
               const link =
                 "chatId" in value && typeof value.chatId === "string"
                   ? new URL(`/coach?chat=${value.chatId}`, webOrigins[0]).href

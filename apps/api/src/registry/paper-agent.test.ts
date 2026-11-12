@@ -53,7 +53,7 @@ it("publishes declared Paper scopes and keeps Job grants isolated", () => {
   expect(paperAgentRefusal("job.get")).toBeNull()
   expect(read.description).toMatch(/nextCursor/)
   expect(read.description).toMatch(/experience or qualifications/)
-  expect(edit.description).toMatch(/wait|Wait/)
+  expect(edit.description).toMatch(/until the person approves/)
   expect(edit.description).toMatch(/experience or qualifications/)
   expect(paperEditBasisRefused("paper.edit", { basedOn: 1 })).toBe(true)
   expect(

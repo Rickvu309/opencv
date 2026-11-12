@@ -77,34 +77,69 @@ function checkedBefore(callback, position) {
   return found
 }
 
+function statementsBefore(handler, position, matches) {
+  let found = null
+  const visit = (node) => {
+    if (found || !node || node.getStart() >= position) return
+    if (matches(node)) {
+      found = node
+      return
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(handler.body)
+  return found
+}
+
 export function reservedBefore(handler, position) {
-  const statements = handler.body.statements ?? []
-  const reserve = statements.find(
-    (statement) =>
-      ts.isVariableStatement(statement) &&
-      statement.declarationList.declarations.some(
-        (declaration) =>
-          declaration.name.getText() === "reservation" &&
-          declaration.initializer &&
-          ts.isAwaitExpression(declaration.initializer) &&
-          isTransactionCall(declaration.initializer.expression)
-      )
+  const reserve = statementsBefore(
+    handler,
+    position,
+    (node) =>
+      ts.isVariableDeclaration(node) &&
+      node.name.getText() === "reservation" &&
+      Boolean(node.initializer) &&
+      ts.isAwaitExpression(node.initializer) &&
+      isTransactionCall(node.initializer.expression)
   )
   if (!reserve || reserve.getEnd() >= position) return false
-  const text = reserve.getText()
-  const denied = statements.some(
-    (statement) =>
-      ts.isIfStatement(statement) &&
-      statement.getEnd() < position &&
-      statement.expression.getText() === "!reservation.allowed" &&
-      ts.isThrowStatement(statement.thenStatement)
+  const denied = statementsBefore(
+    handler,
+    position,
+    (node) =>
+      ts.isIfStatement(node) &&
+      node.getEnd() < position &&
+      node.expression.getText() === "!reservation.allowed" &&
+      ts.isThrowStatement(node.thenStatement)
   )
+  const text = reserve.getText()
   return (
-    denied &&
+    Boolean(denied) &&
     ["delegateCallWindow", "requireLiveDelegate", "appendDelegateCall"].every(
       (name) => text.includes(`${name}(`)
     )
   )
+}
+
+function preparedBranch(node, handler) {
+  let child = node
+  let current = node.parent
+  while (current && current !== handler) {
+    const condition = ts.isConditionalExpression(current)
+      ? current.condition
+      : ts.isIfStatement(current)
+        ? current.expression
+        : null
+    if (
+      condition &&
+      child !== condition &&
+      condition.getText().includes("taskNeedsPreparation(")
+    )
+      return true
+    child = current
+    current = current.parent
+  }
+  return false
 }
 
 export function detect(text) {
@@ -130,9 +165,11 @@ export function detect(text) {
             const execution =
               ts.isPropertyAccessExpression(current.expression) &&
               current.expression.name.text === "execute"
-            const safe = execution
-              ? !callback && reservedBefore(handler, current.getStart(source))
-              : callback && checkedBefore(callback, current.getStart(source))
+            const safe = callback
+              ? checkedBefore(callback, current.getStart(source))
+              : execution &&
+                reservedBefore(handler, current.getStart(source)) &&
+                preparedBranch(current, handler)
             if (!safe) hits.push({ line: lineOf(source, current) })
           }
           ts.forEachChild(current, scan)
