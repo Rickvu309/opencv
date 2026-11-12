@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { ERROR_CODES, paperIdSchema, parsePaperId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -74,6 +74,7 @@ export function PaperDocPage() {
   const validId = parsedId.success ? parsedId.data : null
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
+  const queryClient = useQueryClient()
   const listQuery = useQuery({
     queryKey: paperListKey(),
     queryFn: listPaper,
@@ -83,10 +84,33 @@ export function PaperDocPage() {
       ? undefined
       : listQuery.data?.find((item) => item.id === validId)
   const wordPage = listed?.format === "word"
+  const packageRead = catalogClient.options(owner, "paper.read", {
+    view: "page",
+    docId: validId ?? NO_DOC,
+  })
+  const wordReadFailed =
+    wordPage &&
+    queryClient.getQueryState(packageRead.queryKey)?.status === "error"
+  const listSettled = listQuery.isSuccess && !listQuery.isFetching
+  const freshListQuery = useQuery({
+    queryKey: [...paperListKey(), "fresh-for", validId ?? NO_DOC],
+    queryFn: async () => {
+      const fresh = await queryClient.fetchQuery({
+        queryKey: paperListKey(),
+        queryFn: listPaper,
+      })
+      return { listed: fresh.some((item) => item.id === validId) }
+    },
+    enabled:
+      validId !== null &&
+      listSettled &&
+      (listed === undefined || wordReadFailed),
+    retry: false,
+  })
   const kindKnown =
     listed !== undefined ||
     listQuery.isError ||
-    (listQuery.isSuccess && !listQuery.isFetching)
+    (listSettled && !freshListQuery.isFetching && !freshListQuery.isPending)
   const docQuery = useQuery({
     queryKey: paperGetKey(validId ?? NO_DOC),
     queryFn: () => getPaper(docId),
@@ -99,10 +123,6 @@ export function PaperDocPage() {
     docQuery.error.code === ERROR_CODES.NOT_FOUND
   const askWordPage =
     validId !== null && (wordPage || (listQuery.isError && docMissing))
-  const packageRead = catalogClient.options(owner, "paper.read", {
-    view: "page",
-    docId: validId ?? NO_DOC,
-  })
   const packageQuery = useQuery({
     queryKey: packageRead.queryKey,
     meta: packageRead.meta,
