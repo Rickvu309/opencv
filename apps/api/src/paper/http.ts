@@ -10,7 +10,7 @@ import {
   personActor,
   successEnvelope,
 } from "@workspace/domain"
-import { Hono } from "hono"
+import { type Context, Hono } from "hono"
 
 import { createId } from "../id.js"
 import { PaperPackageRefusal } from "./package-errors.js"
@@ -25,6 +25,7 @@ import { registry } from "../registry/registry.js"
 import {
   classifyImport,
   extractLetterAttachment,
+  importReadStop,
   parseImportLink,
 } from "./import-parse.js"
 import { importedWordPage } from "./import-word.js"
@@ -39,6 +40,15 @@ import {
 
 function person(userId: string) {
   return personActor(userId)
+}
+
+function stoppedRead(c: Context, error: unknown, place: "import" | "letter") {
+  const stop = importReadStop(error, place)
+  if (!stop) return null
+  if (stop.retryAfterSeconds !== null)
+    c.header("Retry-After", String(stop.retryAfterSeconds))
+  c.header("Cache-Control", "no-store")
+  return jsonWithStatus(c, errorEnvelope(stop.code, stop.message), stop.status)
 }
 
 function refuseCancelledImport(signal: AbortSignal) {
@@ -217,11 +227,14 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       )
     }
     try {
-      const result = await extractLetterAttachment({
-        name: uploaded.file.name,
-        mediaType: uploaded.file.type,
-        bytes: Buffer.from(await uploaded.file.arrayBuffer()),
-      })
+      const result = await extractLetterAttachment(
+        {
+          name: uploaded.file.name,
+          mediaType: uploaded.file.type,
+          bytes: Buffer.from(await uploaded.file.arrayBuffer()),
+        },
+        { owner: c.var.userId, signal: c.req.raw.signal }
+      )
       if (!result.ok)
         return jsonWithStatus(
           c,
@@ -229,7 +242,9 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
           400
         )
       return c.json(successEnvelope(result.context))
-    } catch {
+    } catch (error) {
+      const stopped = stoppedRead(c, error, "letter")
+      if (stopped) return stopped
       return jsonWithStatus(
         c,
         errorEnvelope(
@@ -289,7 +304,10 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
         file.name.toLowerCase().endsWith(".docx") ||
         classifyImport(upload) === "docx"
           ? { name: file.name, bytes, notice: null }
-          : await importedWordPage(upload)
+          : await importedWordPage(upload, {
+              owner: c.var.userId,
+              signal: c.req.raw.signal,
+            })
       bytes = undefined
       void bytes
       refuseCancelledImport(c.req.raw.signal)
@@ -325,6 +343,8 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     } catch (error) {
       bytes = undefined
       void bytes
+      const stopped = stoppedRead(c, error, "import")
+      if (stopped) return stopped
       if (error instanceof PaperPackageRefusal)
         throw new CommandError(ERROR_CODES.VALIDATION_ERROR, error.message)
       throw error

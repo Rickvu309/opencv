@@ -9,9 +9,14 @@ export const IMPORT_READ_LIMITS = Object.freeze({
   workerStackMb: 4,
   workerMemoryBytes: 192 * 1024 * 1024,
   memoryCheckMs: 10,
-  parallel: 1,
-  waiting: 9,
-  waitMs: 20_000,
+  workers: 2,
+  waiting: 12,
+  waitMs: 75_000,
+  accountBudgetMs: 60_000,
+  accountWindowMs: 60 * 60_000,
+  fairStepMs: 5_000,
+  accountRetryMs: 10_000,
+  serviceRetryMs: 60_000,
 })
 
 export const IMPORT_TEXT_LIMITS = Object.freeze({

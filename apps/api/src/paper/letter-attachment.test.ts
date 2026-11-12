@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import { afterEach, describe, expect, it } from "vitest"
 
 import { files, paperDocs } from "../db/schema.js"
@@ -143,7 +145,8 @@ describe("paper letter attachment extraction endpoint", () => {
 
   it("keeps at most 200,000 characters of DOCX text and refuses a zip with too many entries", async () => {
     const text = await importParsers.docxText(
-      textDocx(`${"A".repeat(IMPORT_READ_LIMITS.textChars)}DOCX-TAIL`)
+      textDocx(`${"A".repeat(IMPORT_READ_LIMITS.textChars)}DOCX-TAIL`),
+      { owner: randomUUID() }
     )
     expect(text).toHaveLength(IMPORT_READ_LIMITS.textChars)
     expect(text).not.toContain("DOCX-TAIL")

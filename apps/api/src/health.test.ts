@@ -25,6 +25,7 @@ describe("GET /health/deep", () => {
       db: true,
       mail: false,
       schemaVersion: newestMigrationTag(),
+      pdfReading: true,
     })
 
     const shallow = await app.request("/health")
@@ -49,6 +50,7 @@ describe("GET /health/deep", () => {
       db: true,
       mail: true,
       schemaVersion: newestMigrationTag(),
+      pdfReading: true,
     })
     expect(text).not.toContain(mail.resendApiKey)
     expect(text).not.toContain(mail.authEmailFrom)

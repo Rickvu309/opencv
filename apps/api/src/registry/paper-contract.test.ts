@@ -146,11 +146,14 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         purpose: "avatar",
       })
       await run("paper.attachPhoto", { docId: cv, fileId: photo.id })
-      const page = await importedWordPage({
-        name: "cv.txt",
-        mediaType: "text/plain",
-        bytes: Buffer.from("Imported words"),
-      })
+      const page = await importedWordPage(
+        {
+          name: "cv.txt",
+          mediaType: "text/plain",
+          bytes: Buffer.from("Imported words"),
+        },
+        { owner: randomUUID() }
+      )
       const stage = await stageWordPackage(
         userId,
         { requestId: randomUUID(), name: page.name, kind: "cv" },

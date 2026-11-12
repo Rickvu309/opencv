@@ -57,6 +57,23 @@ function inflatedSize(data: Buffer, room: number, raw = false) {
   }
 }
 
+const OBJECT = Buffer.from("obj")
+const DICTIONARY_REACH = 8192
+const NOT_READ_FOR_TEXT =
+  /\/Subtype\s*\/Image\b|\/Type\s*\/(?:EmbeddedFile|Metadata)\b|\/Subtype\s*\/XML\b|\/Length[123]\b|\/Subtype\s*\/(?:Type1C|CIDFontType0C|OpenType)\b/u
+
+export function streamDictionary(bytes: Buffer, at: number) {
+  const from = Math.max(0, at - DICTIONARY_REACH)
+  const object = bytes.lastIndexOf(OBJECT, at)
+  if (object < from) return null
+  return bytes.toString("latin1", object + OBJECT.length, at)
+}
+
+export function streamReadForText(bytes: Buffer, at: number) {
+  const dictionary = streamDictionary(bytes, at)
+  return dictionary === null || !NOT_READ_FOR_TEXT.test(dictionary)
+}
+
 export function pdfStreamsFit(bytes: Buffer, limits: ReadLimits) {
   let total = 0
   let streams = 0
@@ -66,15 +83,17 @@ export function pdfStreamsFit(bytes: Buffer, limits: ReadLimits) {
       at = bytes.indexOf(STREAM, at + STREAM.length)
       continue
     }
-    streams += 1
-    if (streams > limits.pdfStreams) return false
     const start = streamDataStart(bytes, at)
     const end = bytes.indexOf(END_STREAM, start)
     const stop = end === -1 ? bytes.length : end
-    total += inflatedSize(
-      bytes.subarray(start, stop),
-      limits.inflatedBytes - total
-    )
+    if (streamReadForText(bytes, at)) {
+      streams += 1
+      if (streams > limits.pdfStreams) return false
+      total += inflatedSize(
+        bytes.subarray(start, stop),
+        limits.inflatedBytes - total
+      )
+    }
     if (total > limits.inflatedBytes) return false
     if (end === -1) return true
     at = bytes.indexOf(STREAM, end + END_STREAM.length)

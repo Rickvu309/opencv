@@ -6,6 +6,7 @@ import { Hono } from "hono"
 
 import type { AppDatabase } from "./db/context.js"
 import { migrationsFolder } from "./db/paths.js"
+import { importReaderReady } from "./paper/index.js"
 
 type DeepHealth = {
   ok: boolean
@@ -13,6 +14,7 @@ type DeepHealth = {
   db: boolean
   mail: boolean
   schemaVersion: string | null
+  pdfReading: boolean
 }
 
 type HealthConfig = {
@@ -83,7 +85,9 @@ export function createHealthRoutes({
   dbTimeoutMs,
 }: HealthConfig) {
   const routes = new Hono()
-  routes.get("/health", (c) => c.json({ ok: true, sha }))
+  routes.get("/health", (c) =>
+    c.json({ ok: true, sha, pdfReading: importReaderReady() })
+  )
   routes.get("/health/deep", async (c) => {
     const probe = await boundedProbe(db, dbTimeoutMs)
     const body: DeepHealth = {
@@ -92,6 +96,7 @@ export function createHealthRoutes({
       db: probe.db,
       mail: mailConfigured,
       schemaVersion: probe.schemaVersion,
+      pdfReading: importReaderReady(),
     }
     return c.json(body, body.ok ? 200 : 503)
   })

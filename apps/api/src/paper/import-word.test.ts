@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 
 import { IMPORT_PAGES_MESSAGE } from "@workspace/domain"
@@ -58,7 +59,7 @@ function pageLines(bytes: Uint8Array): Line[] {
 }
 
 async function imported(bytes: Buffer, name: string, mediaType: string) {
-  return importedWordPage({ name, mediaType, bytes })
+  return importedWordPage({ name, mediaType, bytes }, { owner: randomUUID() })
 }
 
 async function refusal(bytes: Buffer, name: string, mediaType: string) {

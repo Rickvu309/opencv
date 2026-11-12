@@ -1,6 +1,10 @@
 import { Worker } from "node:worker_threads"
 
 import { IMPORT_READ_LIMITS } from "./import-limits.js"
+import {
+  createImportReadQueue,
+  ImportReadCancelled,
+} from "./import-read-queue.js"
 
 export type ImportReadReason =
   "pages" | "locked" | "heavy" | "text" | "slow" | "failed"
@@ -11,9 +15,9 @@ export class ImportReadRefusal extends Error {
   }
 }
 
-export class ImportReadBusy extends Error {
+export class ImportReadOff extends Error {
   constructor() {
-    super("import-read-busy")
+    super("import-read-off")
   }
 }
 
@@ -27,44 +31,34 @@ const workerUrl = new URL(
   import.meta.url
 )
 
-const waiting: Array<() => void> = []
-let running = 0
-
-function releaseSlot() {
-  const next = waiting.shift()
-  if (next) next()
-  else running -= 1
+export function workerHeapWatchAvailable() {
+  return typeof Worker.prototype.getHeapStatistics === "function"
 }
 
-async function takeSlot() {
-  if (running < IMPORT_READ_LIMITS.parallel) {
-    running += 1
-    return
-  }
-  if (waiting.length >= IMPORT_READ_LIMITS.waiting) throw new ImportReadBusy()
-  await new Promise<void>((resolve, reject) => {
-    const turn = () => {
-      clearTimeout(timer)
-      resolve()
-    }
-    const timer = setTimeout(() => {
-      const index = waiting.indexOf(turn)
-      if (index !== -1) waiting.splice(index, 1)
-      reject(new ImportReadBusy())
-    }, IMPORT_READ_LIMITS.waitMs)
-    waiting.push(turn)
-  })
+export const importReader = {
+  heapWatch: workerHeapWatchAvailable(),
+  queue: createImportReadQueue({
+    workers: IMPORT_READ_LIMITS.workers,
+    waiting: IMPORT_READ_LIMITS.waiting,
+    waitMs: IMPORT_READ_LIMITS.waitMs,
+    budgetMs: IMPORT_READ_LIMITS.accountBudgetMs,
+    windowMs: IMPORT_READ_LIMITS.accountWindowMs,
+    fairStepMs: IMPORT_READ_LIMITS.fairStepMs,
+    accountRetryMs: IMPORT_READ_LIMITS.accountRetryMs,
+    serviceRetryMs: IMPORT_READ_LIMITS.serviceRetryMs,
+  }),
 }
 
-function canMeasure(worker: Worker) {
-  return typeof worker.getHeapStatistics === "function"
+export function importReaderReady() {
+  return importReader.heapWatch
 }
 
 function runWorker(
   kind: "pdf" | "docx",
   source: Uint8Array,
   whole: boolean,
-  deadlineMs: number
+  deadlineMs: number,
+  signal: AbortSignal
 ) {
   const bytes = new Uint8Array(source)
   const worker = new Worker(workerUrl, {
@@ -80,21 +74,30 @@ function runWorker(
   return new Promise<string>((resolve, reject) => {
     let settled = false
     let measuring = false
-    const finish = (outcome: TextOutcome) => {
+    const finish = (outcome: TextOutcome | "cancelled") => {
       if (settled) return
       settled = true
       clearTimeout(deadline)
       clearInterval(watch)
-      void worker.terminate()
-      if (outcome.ok) resolve(outcome.text)
-      else reject(new ImportReadRefusal(outcome.reason))
+      signal.removeEventListener("abort", cancel)
+      void worker
+        .terminate()
+        .catch(() => 0)
+        .then(() => {
+          if (outcome === "cancelled") reject(new ImportReadCancelled())
+          else if (outcome.ok) resolve(outcome.text)
+          else reject(new ImportReadRefusal(outcome.reason))
+        })
     }
+    const cancel = () => finish("cancelled")
+    signal.addEventListener("abort", cancel, { once: true })
+    if (signal.aborted) cancel()
     const deadline = setTimeout(
       () => finish({ ok: false, reason: "slow" }),
       deadlineMs
     )
     const watch = setInterval(() => {
-      if (measuring || settled || !canMeasure(worker)) return
+      if (measuring || settled) return
       measuring = true
       worker
         .getHeapStatistics()
@@ -126,16 +129,11 @@ export async function readImportText(input: {
   bytes: Uint8Array
   whole: boolean
   deadlineMs: number
+  owner: string
+  signal?: AbortSignal
 }) {
-  await takeSlot()
-  try {
-    return await runWorker(
-      input.kind,
-      input.bytes,
-      input.whole,
-      input.deadlineMs
-    )
-  } finally {
-    releaseSlot()
-  }
+  if (!importReaderReady()) throw new ImportReadOff()
+  return importReader.queue.run(input.owner, input.signal, (signal) =>
+    runWorker(input.kind, input.bytes, input.whole, input.deadlineMs, signal)
+  )
 }

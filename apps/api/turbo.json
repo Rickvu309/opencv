@@ -6,6 +6,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env*",
+        "$TURBO_ROOT$/.github/actions/setup/action.yml",
         "$TURBO_ROOT$/apps/web/src/**",
         "$TURBO_ROOT$/scripts/lib/paper-canvas-bytes.mjs",
         "$TURBO_ROOT$/scripts/lib/paper-canvas-mint.mjs",

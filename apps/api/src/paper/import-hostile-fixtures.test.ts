@@ -3,7 +3,7 @@ import { createDeflate, deflateSync } from "node:zlib"
 
 import { crc32 } from "./package-zip.js"
 
-function pdfFrom(objects: Array<string | Buffer>): Buffer {
+export function pdfFrom(objects: Array<string | Buffer>): Buffer {
   const parts: Buffer[] = [Buffer.from("%PDF-1.4\n")]
   let size = parts[0]!.length
   const offsets: number[] = []
@@ -210,4 +210,35 @@ if (runner) {
       expect(manyEntriesDocx(2).readUInt32LE(0)).toBe(0x04034b50)
     })
   })
+}
+
+export function plainStream(dictionary: string, data: Buffer) {
+  return Buffer.concat([
+    Buffer.from(`<< ${dictionary} /Length ${data.length} >>\nstream\n`),
+    data,
+    Buffer.from("\nendstream"),
+  ])
+}
+
+export function fanOutPdf() {
+  const resources =
+    "/Resources << /Font << /F1 5 0 R >> /XObject << /X1 6 0 R /X2 7 0 R >> >>"
+  const inner = deflateSync(
+    Buffer.from(`${"q Q ".repeat(25_000)}BT /F1 1 Tf (a) Tj ET`)
+  )
+  return pdfFrom([
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Count 1 /Kids [3 0 R] >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> /XObject << /X1 6 0 R /X2 7 0 R >> >> >>",
+    plainStream("", Buffer.from("/X1 Do ".repeat(20))),
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    plainStream(
+      `/Type /XObject /Subtype /Form /BBox [0 0 10 10] ${resources}`,
+      Buffer.from("/X2 Do ".repeat(1000))
+    ),
+    plainStream(
+      `/Type /XObject /Subtype /Form /BBox [0 0 10 10] /Filter /FlateDecode ${resources}`,
+      inner
+    ),
+  ])
 }

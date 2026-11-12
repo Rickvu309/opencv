@@ -7,7 +7,9 @@ import {
 } from "@workspace/domain"
 
 import { IMPORT_TEXT_LIMITS } from "./import-limits.js"
+import { ImportReadCancelled, ImportReadLimited } from "./import-read-queue.js"
 import {
+  ImportReadOff,
   type ImportReadReason,
   ImportReadRefusal,
   readImportText,
@@ -27,10 +29,74 @@ export const IMPORT_PDF_PAGES_MESSAGE =
   "This PDF has more than 20 pages. Import a shorter CV."
 export const IMPORT_PDF_HEAVY_MESSAGE =
   "This PDF is too large or complex to read as a CV. Export it again from the app you wrote it in, or import a Word or text file."
+export const IMPORT_PDF_UNREADABLE_MESSAGE =
+  "We could not read this PDF. Export it again from the app you wrote it in, or import a Word or text file."
 export const IMPORT_TEXT_LONG_MESSAGE =
   "This file has more than 200,000 characters of text. Import a shorter CV."
 export const IMPORT_BUSY_MESSAGE =
-  "Many files are being read right now. Try again in a moment."
+  "Many files are being read right now. Try again in a minute."
+export const IMPORT_ACCOUNT_BUSY_MESSAGE =
+  "Your last file is still being read. Import this one when it finishes."
+export const IMPORT_CANCELLED_MESSAGE =
+  "The import was cancelled. No document was made."
+export const IMPORT_READER_OFF_MESSAGE =
+  "Reading PDF files is switched off on this server for now. Import a Word or text file instead."
+export const LETTER_READER_OFF_MESSAGE =
+  "Reading PDF and Word files is switched off on this server for now. Paste the job text or choose a text file."
+
+export function importBudgetMessage(retryAfterSeconds: number) {
+  const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60))
+  return `Your recent files took a long time to read, so reading files is paused for your account. Try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`
+}
+
+export type ImportReader = { owner: string; signal?: AbortSignal }
+
+export type ImportReadStop = {
+  status: 400 | 429 | 503
+  code: string
+  message: string
+  retryAfterSeconds: number | null
+}
+
+export function importReadStop(
+  error: unknown,
+  place: "import" | "letter"
+): ImportReadStop | null {
+  if (error instanceof ImportReadCancelled)
+    return {
+      status: 400,
+      code: "VALIDATION_ERROR",
+      message: IMPORT_CANCELLED_MESSAGE,
+      retryAfterSeconds: null,
+    }
+  if (error instanceof ImportReadOff)
+    return {
+      status: 503,
+      code: "IMPORT_READER_OFF",
+      message:
+        place === "import"
+          ? IMPORT_READER_OFF_MESSAGE
+          : LETTER_READER_OFF_MESSAGE,
+      retryAfterSeconds: null,
+    }
+  if (!(error instanceof ImportReadLimited)) return null
+  if (error.limit === "service-busy")
+    return {
+      status: 503,
+      code: "IMPORT_READ_BUSY",
+      message: IMPORT_BUSY_MESSAGE,
+      retryAfterSeconds: error.retryAfterSeconds,
+    }
+  return {
+    status: 429,
+    code: "IMPORT_READ_LIMITED",
+    message:
+      error.limit === "account-busy"
+        ? IMPORT_ACCOUNT_BUSY_MESSAGE
+        : importBudgetMessage(error.retryAfterSeconds),
+    retryAfterSeconds: error.retryAfterSeconds,
+  }
+}
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -83,15 +149,22 @@ const READ_REFUSALS: Partial<Record<ImportReadReason, string>> = {
   heavy: IMPORT_PDF_HEAVY_MESSAGE,
   slow: IMPORT_PDF_HEAVY_MESSAGE,
   text: IMPORT_TEXT_LONG_MESSAGE,
+  failed: IMPORT_PDF_UNREADABLE_MESSAGE,
 }
 
-async function defaultPdfText(bytes: Buffer, whole = false) {
+async function defaultPdfText(
+  bytes: Buffer,
+  whole: boolean,
+  reader: ImportReader
+) {
   try {
     return await readImportText({
       kind: "pdf",
       bytes,
       whole,
       deadlineMs: importParsers.timeoutMs,
+      owner: reader.owner,
+      ...(reader.signal ? { signal: reader.signal } : {}),
     })
   } catch (error) {
     const message =
@@ -137,7 +210,7 @@ function zipAllowsMammoth(bytes: Buffer) {
   return false
 }
 
-async function defaultDocxText(bytes: Buffer) {
+async function defaultDocxText(bytes: Buffer, reader: ImportReader) {
   if (!zipAllowsMammoth(bytes)) {
     throw new Error("import-zip-entries")
   }
@@ -146,6 +219,8 @@ async function defaultDocxText(bytes: Buffer) {
     bytes,
     whole: false,
     deadlineMs: importParsers.timeoutMs,
+    owner: reader.owner,
+    ...(reader.signal ? { signal: reader.signal } : {}),
   })
 }
 
@@ -252,15 +327,16 @@ export function parseImportLink(value: string): ImportParseResult | null {
 
 type ImportFileInput = { name: string; mediaType: string; bytes: Buffer }
 
-async function extractedText(input: ImportFileInput) {
+async function extractedText(input: ImportFileInput, reader: ImportReader) {
   const kind = classifyImport(input)
-  if (kind === "pdf") return importParsers.pdfText(input.bytes)
-  if (kind === "docx") return importParsers.docxText(input.bytes)
+  if (kind === "pdf") return importParsers.pdfText(input.bytes, false, reader)
+  if (kind === "docx") return importParsers.docxText(input.bytes, reader)
   return input.bytes.toString("utf8")
 }
 
 export async function extractLetterAttachment(
-  input: ImportFileInput
+  input: ImportFileInput,
+  reader: ImportReader
 ): Promise<
   | { ok: true; context: LetterAttachmentContext }
   | { ok: false; code: "FILE_UNSUPPORTED"; message: string }
@@ -273,7 +349,7 @@ export async function extractLetterAttachment(
       message: IMPORT_GENERIC_MESSAGE,
     }
   }
-  const raw = (await extractedText(input)).trim()
+  const raw = (await extractedText(input, reader)).trim()
   if (!raw) {
     return {
       ok: false,
@@ -292,14 +368,18 @@ export async function extractLetterAttachment(
   }
 }
 
-async function importText(input: ImportFileInput, kind: "pdf" | "text") {
+async function importText(
+  input: ImportFileInput,
+  kind: "pdf" | "text",
+  reader: ImportReader
+) {
   if (kind === "text") {
     if (input.bytes.length > IMPORT_TEXT_LIMITS.textFileBytes)
       return new ImportRefusal(IMPORT_TEXT_LONG_MESSAGE)
     return input.bytes.toString("utf8")
   }
   try {
-    return await importParsers.pdfText(input.bytes, true)
+    return await importParsers.pdfText(input.bytes, true, reader)
   } catch (error) {
     if (error instanceof ImportRefusal) return error
     throw error
@@ -307,7 +387,8 @@ async function importText(input: ImportFileInput, kind: "pdf" | "text") {
 }
 
 export async function parseImportFile(
-  input: ImportFileInput
+  input: ImportFileInput,
+  reader: ImportReader
 ): Promise<ImportParseResult> {
   if (input.bytes.length === 0)
     return refused("FILE_UNSUPPORTED", IMPORT_EMPTY_MESSAGE)
@@ -316,7 +397,7 @@ export async function parseImportFile(
   if (kind === "json") return refused("FILE_UNSUPPORTED", IMPORT_JSON_MESSAGE)
   if (kind !== "pdf" && kind !== "text")
     return refused("FILE_UNSUPPORTED", IMPORT_GENERIC_MESSAGE)
-  const text = await importText(input, kind)
+  const text = await importText(input, kind, reader)
   if (text instanceof ImportRefusal)
     return refused("FILE_UNSUPPORTED", text.message)
   if (text.replace(/^\uFEFF/u, "").trim() === "")

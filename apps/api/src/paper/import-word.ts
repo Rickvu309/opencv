@@ -2,11 +2,11 @@ import { ERROR_CODES } from "@workspace/domain"
 
 import { CommandError } from "../registry/errors.js"
 import {
-  IMPORT_BUSY_MESSAGE,
   IMPORT_FAILED_MESSAGE,
+  type ImportReader,
+  importReadStop,
   parseImportFile,
 } from "./import-parse.js"
-import { ImportReadBusy } from "./import-text-pool.js"
 import { importedTextLines } from "./word/from-text.js"
 import { pageBytesOf } from "./word/template.js"
 
@@ -23,26 +23,31 @@ export function importedPageName(fileName: string) {
   return (fileName.replace(/\.[^.]+$/u, "").trim() || "CV").slice(0, 200)
 }
 
-async function parsed(input: {
-  name: string
-  mediaType: string
-  bytes: Buffer
-}) {
+async function parsed(
+  input: {
+    name: string
+    mediaType: string
+    bytes: Buffer
+  },
+  reader: ImportReader
+) {
   try {
-    return await parseImportFile(input)
+    return await parseImportFile(input, reader)
   } catch (error) {
-    if (error instanceof ImportReadBusy)
-      throw new CommandError(ERROR_CODES.CONFLICT, IMPORT_BUSY_MESSAGE)
+    if (importReadStop(error, "import")) throw error
     throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
   }
 }
 
-export async function importedWordPage(input: {
-  name: string
-  mediaType: string
-  bytes: Buffer
-}): Promise<ImportedWordPage> {
-  const read = await parsed(input)
+export async function importedWordPage(
+  input: {
+    name: string
+    mediaType: string
+    bytes: Buffer
+  },
+  reader: ImportReader
+): Promise<ImportedWordPage> {
+  const read = await parsed(input, reader)
   if (!read.ok) throw new CommandError(ERROR_CODES[read.code], read.message)
   const lines = importedTextLines(read.text)
   if (!lines.ok)

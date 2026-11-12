@@ -18,7 +18,7 @@ import {
 } from "../test/harness.js"
 import { publishedText, textDocx, textPdf } from "./import-fixtures.test.js"
 import {
-  IMPORT_FAILED_MESSAGE,
+  IMPORT_PDF_UNREADABLE_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
   IMPORT_JSON_MESSAGE,
 } from "./import-parse.js"
@@ -240,9 +240,12 @@ describe("paper import", () => {
       "broken.pdf",
       "application/pdf"
     )
-    expect(corrupt.status).toBe(400)
+    expect(corrupt.status).toBe(415)
     expect(await corrupt.json()).toMatchObject({
-      error: { message: IMPORT_FAILED_MESSAGE },
+      error: {
+        code: "FILE_UNSUPPORTED",
+        message: IMPORT_PDF_UNREADABLE_MESSAGE,
+      },
     })
 
     const google = await app.request("/api/paper/import", {

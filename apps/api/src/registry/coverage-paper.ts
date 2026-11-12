@@ -398,11 +398,14 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: paperImport.name,
       arrange: async () => {
-        const page = await importedWordPage({
-          name: "cv.txt",
-          mediaType: "text/plain",
-          bytes: Buffer.from("hello from an imported file"),
-        })
+        const page = await importedWordPage(
+          {
+            name: "cv.txt",
+            mediaType: "text/plain",
+            bytes: Buffer.from("hello from an imported file"),
+          },
+          { owner: userId }
+        )
         importStage = (
           await stageWordPackage(
             userId,

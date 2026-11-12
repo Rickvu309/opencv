@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import { describe, expect, it } from "vitest"
 
 import { files, paperPackageHeads } from "../db/schema.js"
@@ -19,8 +21,8 @@ import {
 } from "./import-hostile-fixtures.test.js"
 import { IMPORT_READ_LIMITS, IMPORT_TEXT_LIMITS } from "./import-limits.js"
 import {
-  IMPORT_BUSY_MESSAGE,
-  IMPORT_FAILED_MESSAGE,
+  IMPORT_ACCOUNT_BUSY_MESSAGE,
+  IMPORT_PDF_UNREADABLE_MESSAGE,
   IMPORT_PDF_HEAVY_MESSAGE,
   IMPORT_TEXT_LONG_MESSAGE,
   importParsers,
@@ -61,7 +63,9 @@ function expectBounded(result: Awaited<ReturnType<typeof measured>>) {
 }
 
 function importFile(name: string, bytes: Buffer) {
-  return measured(() => importedWordPage({ name, mediaType: "", bytes }))
+  return measured(() =>
+    importedWordPage({ name, mediaType: "", bytes }, { owner: randomUUID() })
+  )
 }
 
 describe("hostile uploads stay bounded", () => {
@@ -180,7 +184,7 @@ describe("hostile uploads stay bounded", () => {
     const result = await importFile("cv.pdf", nestedPdf(100_000))
     expect(result.outcome).toEqual({
       ok: false,
-      message: IMPORT_FAILED_MESSAGE,
+      message: IMPORT_PDF_UNREADABLE_MESSAGE,
     })
     expectBounded(result)
   })
@@ -193,7 +197,9 @@ describe("hostile uploads stay bounded", () => {
       expect(result.outcome.ok).toBe(false)
       expectBounded(result)
     }
-    const letter = await measured(() => importParsers.docxText(hidden))
+    const letter = await measured(() =>
+      importParsers.docxText(hidden, { owner: randomUUID() })
+    )
     expect(letter.outcome.ok).toBe(false)
     expectBounded(letter)
   })
@@ -203,38 +209,57 @@ describe("hostile uploads stay bounded", () => {
     const word = await measured(() => readPackageZip(bytes))
     expect(word.outcome.ok).toBe(false)
     expectBounded(word)
-    const letter = await measured(() => importParsers.docxText(bytes))
+    const letter = await measured(() =>
+      importParsers.docxText(bytes, { owner: randomUUID() })
+    )
     expect(letter.outcome).toEqual({ ok: false, message: "import-zip-entries" })
     expectBounded(letter)
   })
 
-  it("reads ten honest PDFs sent at once, asks an eleventh to retry, and other requests still answer", async () => {
+  it("reads one PDF per account at a time, tells the same account plainly to wait, reads ten accounts sent at once, and other requests still answer", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
-    const owner = await signUp(app, {
-      name: "Ten",
-      email: "ten-imports@example.com",
-    })
-    const uploads = Array.from({ length: 11 }, (_, index) => {
+    const owners: Array<{ cookie: string }> = []
+    for (let index = 0; index < 10; index += 1)
+      owners.push(
+        await signUp(app, {
+          name: `Reader ${index}`,
+          email: `ten-imports-${index}@example.com`,
+        })
+      )
+    const send = (cookie: string, index: number) => {
       const form = new FormData()
       form.set(
         "file",
         new File(
           [new Uint8Array(textPdf(`Campus newsletter ${index}`))],
           "cv.pdf",
-          {
-            type: "application/pdf",
-          }
+          { type: "application/pdf" }
         )
       )
       return Promise.resolve(
         app.request("/api/paper/import", {
           method: "POST",
-          headers: { Origin: testWebOrigin, Cookie: owner.cookie },
+          headers: { Origin: testWebOrigin, Cookie: cookie },
           body: form,
         })
       )
+    }
+    const same = await Promise.all(
+      Array.from({ length: 11 }, (_, index) => send(owners[0]!.cookie, index))
+    )
+    const sameStatuses = same.map((response) => response.status)
+    expect(
+      sameStatuses.filter((status) => status === 200).length
+    ).toBeLessThanOrEqual(2)
+    const waits = same.filter((response) => response.status === 429)
+    expect(waits.length).toBeGreaterThanOrEqual(9)
+    expect(waits[0]!.headers.get("retry-after")).toBe("10")
+    expect(await waits[0]!.json()).toMatchObject({
+      error: { message: IMPORT_ACCOUNT_BUSY_MESSAGE },
     })
+    const served = sameStatuses.filter((status) => status === 200).length
+    const uploads = owners.map((owner, index) => send(owner.cookie, index))
     await new Promise((resolve) => setTimeout(resolve, 50))
     const asked = performance.now()
     const quick = await app.request("/api/public-config")
@@ -242,16 +267,12 @@ describe("hostile uploads stay bounded", () => {
     const responses = await Promise.all(uploads)
     expect(quick.status).toBe(200)
     expect(quickMs).toBeLessThan(250)
-    const statuses = responses.map((response) => response.status)
-    expect(statuses.filter((status) => status === 200)).toHaveLength(10)
-    const busy = responses.filter((response) => response.status === 409)
-    expect(busy).toHaveLength(1)
-    expect(await busy[0]!.json()).toMatchObject({
-      error: { message: IMPORT_BUSY_MESSAGE },
-    })
-    expect(await db.select().from(paperPackageHeads)).toHaveLength(10)
-    expect(await db.select().from(files)).toHaveLength(10)
-    expect(IMPORT_READ_LIMITS.parallel + IMPORT_READ_LIMITS.waiting).toBe(10)
+    expect(responses.map((response) => response.status)).toEqual(
+      Array.from({ length: 10 }, () => 200)
+    )
+    expect(await db.select().from(paperPackageHeads)).toHaveLength(10 + served)
+    expect(await db.select().from(files)).toHaveLength(10 + served)
+    expect(IMPORT_READ_LIMITS.workers + IMPORT_READ_LIMITS.waiting).toBe(14)
     await client.close()
   })
 })
