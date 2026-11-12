@@ -280,6 +280,22 @@ export function loadDraft(
   }
 }
 
+export function loadSavedDraft(
+  docId: string,
+  storage: Pick<Storage, "getItem">
+): WritingDraft | null {
+  try {
+    const raw = storage.getItem(storageKey(docId))
+    if (!raw) return null
+    const value = JSON.parse(raw) as { saved?: unknown }
+    return value && typeof value === "object" && value.saved
+      ? storedDraft(value.saved)
+      : null
+  } catch {
+    return null
+  }
+}
+
 export function loadDraftBasis(
   docId: string,
   storage: Pick<Storage, "getItem">
@@ -317,12 +333,15 @@ export function storeDraft(
   docId: string,
   draft: WritingDraft,
   storage: Pick<Storage, "setItem">,
-  basis?: DraftBasis | null
+  basis?: DraftBasis | null,
+  saved?: WritingDraft | null
 ): boolean {
   try {
     storage.setItem(
       storageKey(docId),
-      JSON.stringify(basis ? { draft, basis } : draft)
+      JSON.stringify(
+        basis ? { draft, basis, ...(saved ? { saved } : {}) } : draft
+      )
     )
     return true
   } catch {

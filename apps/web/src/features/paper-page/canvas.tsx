@@ -224,7 +224,13 @@ function WritingSheet({
   useEffect(() => holdWritingCoachFocus(docId), [docId])
 
   useEffect(() => {
-    const kept = storeDraft(docId, state.present, localStorage, state.basis)
+    const kept = storeDraft(
+      docId,
+      state.present,
+      localStorage,
+      state.basis,
+      state.saved
+    )
     nextId.current = state.present.nextId
     const words = pageWords(state.present.blocks)
     if (!kept) {
@@ -289,7 +295,15 @@ function WritingSheet({
       })
       .catch(() => undefined)
     return () => controller.abort()
-  }, [deliver, docId, state.basis, state.present, state.typed, state.unsaved])
+  }, [
+    deliver,
+    docId,
+    state.basis,
+    state.present,
+    state.saved,
+    state.typed,
+    state.unsaved,
+  ])
 
   useLayoutEffect(() => {
     composing.current = false

@@ -142,6 +142,28 @@ describe.each(MOVED_ROWS)(
       expect(status()).not.toMatch(/\bSaved\b/)
     })
 
+    it("still marks a line changed in both places when the person reloads before choosing", async () => {
+      await opened()
+      arm()
+      await type(L.name, " Thi")
+      await type(L.job, SENTENCE)
+      await settle()
+      if (after) await after()
+      await reload()
+      await act(async () => {
+        fireEvent.click(
+          within(bar() as HTMLElement).getByRole("button", {
+            name: "Keep my words",
+          })
+        )
+      })
+      await settle()
+      expect(shown(L.name)).toBe("Linh Nguyen Thi")
+      expect(line(L.name)).toHaveAttribute("data-unsaved")
+      expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
+      expect(server.textOf(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
+    })
+
     it("uses the saved page only when asked, says how much it drops, and clears the copy", async () => {
       await moved()
       const discard = within(bar() as HTMLElement).getByRole("button", {

@@ -10,6 +10,7 @@ import {
   keptOnThisComputer,
   loadDraft,
   loadDraftBasis,
+  loadSavedDraft,
   replaceVisible,
   splitParagraph,
   storeDraft,
@@ -444,13 +445,17 @@ export function openSheet(
     (seedRevision
       ? { revision: seedRevision, words: pageWords(present.blocks) }
       : null)
-  storeDraft(docId, present, localStorage, basis)
-  const saved =
-    basis && pageWords(present.blocks) === basis.words
+  const savedAtBasis = (draft: WritingDraft | null) =>
+    draft && basis && pageWords(draft.blocks) === basis.words
+      ? plainDraft(draft)
+      : null
+  const saved = !basis
+    ? null
+    : pageWords(present.blocks) === basis.words
       ? present
-      : seed
-        ? plainDraft(seed)
-        : null
+      : (savedAtBasis(loadSavedDraft(docId, localStorage)) ??
+        savedAtBasis(seed))
+  storeDraft(docId, present, localStorage, basis, saved)
   return {
     past: [],
     present,
