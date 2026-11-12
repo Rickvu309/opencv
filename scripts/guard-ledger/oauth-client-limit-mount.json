@@ -1,0 +1,14 @@
+{
+  "id": "oauth-client-limit-mount",
+  "file": "scripts/oauth-client-limit-mount.test.mjs",
+  "detector": {
+    "module": "scripts/lib/oauth-client-limit-mount.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "433f74956fea62e921461475a4631aa12028e988",
+    "path": "apps/api/src/auth.ts",
+    "reads": ["apps/api/src/app.ts", "apps/api/src/oauth-client-limit.ts"]
+  }
+}
