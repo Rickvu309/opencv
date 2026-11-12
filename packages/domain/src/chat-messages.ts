@@ -135,6 +135,17 @@ export const chatTextPartSchema = z
   })
   .strict()
 
+export const chatToolOutcomeSchema = z.enum([
+  "waiting",
+  "approved",
+  "denied",
+  "failed",
+  "undone",
+  "expired",
+])
+
+export type ChatToolOutcome = z.infer<typeof chatToolOutcomeSchema>
+
 export const chatToolPartSchema = z
   .object({
     type: z.literal("tool"),
@@ -146,6 +157,7 @@ export const chatToolPartSchema = z
     activityId: z.string().optional(),
     pendingActionId: z.string().optional(),
     approval: z.enum(["pending", "approved", "denied", "expired"]).optional(),
+    outcome: chatToolOutcomeSchema.optional(),
     undone: z.boolean().optional(),
     detail: coachReceiptDetailSchema.optional(),
     review: z.unknown().optional(),

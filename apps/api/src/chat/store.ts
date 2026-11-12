@@ -111,17 +111,21 @@ export async function getChat(userId: UserId, chatId: ChatId) {
         const result = withBlocked(withUndone(message, undone), blocked)
         return {
           ...result,
-          parts: result.parts.map((part) =>
-            part.type === "tool" && part.pendingActionId
-              ? {
-                  ...part,
-                  ...confirmations.get(part.pendingActionId)?.receipt,
-                  approval:
-                    confirmations.get(part.pendingActionId)?.status ??
-                    ("expired" as const),
-                }
-              : part
-          ),
+          parts: result.parts.map((part) => {
+            if (part.type !== "tool" || !part.pendingActionId) return part
+            const confirmation = confirmations.get(part.pendingActionId)
+            const approval = confirmation?.status ?? ("expired" as const)
+            return {
+              ...part,
+              ...confirmation?.receipt,
+              approval,
+              outcome: confirmation?.receipt?.undone
+                ? ("undone" as const)
+                : approval === "pending"
+                  ? ("waiting" as const)
+                  : approval,
+            }
+          }),
         }
       }),
       ...(activeTask
@@ -265,7 +269,7 @@ function withUndone(
     parts: message.parts.map((part) => {
       const id = toolActivityId(part)
       return id && undone.has(id)
-        ? ({ ...part, undone: true } as ChatMessagePart)
+        ? ({ ...part, undone: true, outcome: "undone" } as ChatMessagePart)
         : part
     }),
   }

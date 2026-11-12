@@ -241,6 +241,11 @@ export function appendCoachPart(
           name: part.name,
           summary: part.summary,
           ok: part.ok,
+          outcome: part.pendingActionId
+            ? "waiting"
+            : part.ok
+              ? "approved"
+              : "failed",
           ...(part.reversal ? { reversal: part.reversal } : {}),
           ...(part.detail ? { detail: part.detail } : {}),
           ...(part.activityId ? { activityId: part.activityId } : {}),

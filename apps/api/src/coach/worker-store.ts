@@ -1,9 +1,8 @@
 import { z } from "zod"
 import { and, asc, desc, eq, sql } from "drizzle-orm"
 import {
-  appendCoachPart,
   chatToolNameSchema,
-  errorEnvelope,
+  chatToolPartSchema,
   parseChatId,
   parseUserId,
   textFromParts,
@@ -144,24 +143,20 @@ export function finishTask(
       .where(eq(toolIntents.taskId, task.id))
       .orderBy(asc(toolIntents.step), asc(toolIntents.slot))
     for (const intent of outcomes) {
-      const denied =
-        intent.state === "denied" ||
-        (intent.state === "proposed" && state !== "succeeded")
-      if (intent.state !== "read" && !denied) continue
-      const summary = denied ? "Action was not approved" : intent.operation
-      const result = z
-        .object({ output: z.unknown().optional() })
-        .parse(intent.publicResult ?? {})
-      parts = appendCoachPart(parts, {
-        type: "tool-result",
-        toolCallId: intent.providerToolUseId,
-        name: chatToolNameSchema.parse(intent.operation),
-        summary,
-        ok: !denied,
-        result: denied
-          ? errorEnvelope("CONFLICT", summary)
-          : { ok: true, data: result.output ?? null },
-      })
+      const outcome = settledIntentOutcome(intent, state)
+      if (!outcome) continue
+      parts.push(
+        chatToolPartSchema.parse({
+          type: "tool",
+          toolCallId: intent.providerToolUseId,
+          name: chatToolNameSchema.parse(intent.operation),
+          summary:
+            outcome === "approved" ? intent.operation : refusalSummary(outcome),
+          ok: outcome === "approved",
+          outcome,
+          ...(outcome === "approved" ? {} : { approval: outcome }),
+        })
+      )
     }
     parts = withMissingReceipts(
       parts,
@@ -235,4 +230,25 @@ export function retryTask(lease: TaskLease) {
       .where(eq(coachTasks.id, task.id))
     return true
   })
+}
+
+const expiredResultSchema = z.object({ expired: z.literal(true) })
+
+function settledIntentOutcome(
+  intent: { state: string; publicResult: unknown },
+  taskState: "succeeded" | "failed" | "cancelled"
+): "approved" | "denied" | "expired" | null {
+  if (intent.state === "read") return "approved"
+  if (intent.state === "proposed")
+    return taskState === "succeeded" ? null : "expired"
+  if (intent.state !== "denied") return null
+  return expiredResultSchema.safeParse(intent.publicResult).success
+    ? "expired"
+    : "denied"
+}
+
+function refusalSummary(outcome: "denied" | "expired") {
+  return outcome === "expired"
+    ? "Expired · ask Coach again"
+    : "Denied · nothing changed"
 }
