@@ -15,6 +15,7 @@ export function fakePorts({
     stopped,
     store,
     env,
+    pid: 1,
     repo: "/work/opencv.worktrees/1-demo",
     scratchRoot: "/scratch/ocv-ui",
     defaultPen: "/scratch/opencv.pen",
@@ -28,6 +29,18 @@ export function fakePorts({
       readBytes: (path) => Buffer.from(store.get(path) ?? ""),
       write: (path, data) => store.set(path, String(data)),
       mkdir: () => {},
+      list: (path) => [
+        ...new Set(
+          [...store.keys()]
+            .filter((key) => key.startsWith(`${path}/`))
+            .map((key) => key.slice(path.length + 1).split("/")[0])
+        ),
+      ],
+      claim: (path, data) => {
+        if (store.has(path)) return false
+        store.set(path, String(data))
+        return true
+      },
       remove: (path) => {
         for (const key of [...store.keys()])
           if (key === path || key.startsWith(`${path}/`)) store.delete(key)

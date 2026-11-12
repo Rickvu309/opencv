@@ -120,7 +120,37 @@ async function stopPids(ctx, pids) {
   for (const pid of pids) if (ctx.proc.alive(pid)) ctx.proc.stop(pid, "SIGKILL")
 }
 
-async function choosePorts(ctx, requested) {
+export const portClaimFile = (scratchRoot, apiPort) =>
+  join(scratchRoot, "ports", `${apiPort}.json`)
+
+function claimOwnerAlive(ctx, file) {
+  try {
+    const owner = JSON.parse(ctx.fs.read(file))
+    return owner.pids.some((pid) => ctx.proc.alive(pid))
+  } catch {
+    return false
+  }
+}
+
+export function claimPort(ctx, apiPort, dir) {
+  const file = portClaimFile(ctx.scratchRoot, apiPort)
+  const owner = JSON.stringify({ pids: [ctx.pid], dir })
+  if (ctx.fs.claim(file, owner)) return true
+  if (claimOwnerAlive(ctx, file)) return false
+  ctx.fs.remove(file)
+  return ctx.fs.claim(file, owner)
+}
+
+function releasePort(ctx, state) {
+  const file = portClaimFile(ctx.scratchRoot, state.apiPort)
+  try {
+    if (JSON.parse(ctx.fs.read(file)).dir === state.dir) ctx.fs.remove(file)
+  } catch {
+    return
+  }
+}
+
+async function choosePorts(ctx, requested, dir) {
   const preferred =
     requested ??
     resolveApiPort({
@@ -131,7 +161,8 @@ async function choosePorts(ctx, requested) {
     const ports = verifierPorts(apiPort)
     if (
       (await ctx.net.isFree(ports.apiPort)) &&
-      (await ctx.net.isFree(ports.webPort))
+      (await ctx.net.isFree(ports.webPort)) &&
+      claimPort(ctx, apiPort, dir)
     )
       return ports
     if (requested)
@@ -181,7 +212,7 @@ export async function up(ctx, { port } = {}) {
   ctx.fs.remove(join(dir, "pglite"))
   ctx.fs.mkdir(dir)
   const name = basename(ctx.repo)
-  const ports = await choosePorts(ctx, port)
+  const ports = await choosePorts(ctx, port, dir)
   const env = stackEnv({ base: ctx.env, ports, dir, name })
   const apiLog = join(dir, "api.log")
   const webLog = join(dir, "web.log")
@@ -238,6 +269,10 @@ export async function up(ctx, { port } = {}) {
     logs: { api: apiLog, web: webLog },
   }
   ctx.fs.write(join(dir, "state.json"), JSON.stringify(state, null, 2))
+  ctx.fs.write(
+    portClaimFile(ctx.scratchRoot, ports.apiPort),
+    JSON.stringify({ pids: state.pids, dir })
+  )
   await waitUntil(
     ctx,
     () => healthy(ctx, `${ports.apiOrigin}/health`),
@@ -262,5 +297,6 @@ export async function down(ctx) {
   ctx.fs.remove(join(state.dir, "pglite"))
   ctx.fs.remove(join(state.dir, "state.json"))
   ctx.fs.remove(state.storage)
+  releasePort(ctx, state)
   return { stopped: state.pids, dir: state.dir }
 }

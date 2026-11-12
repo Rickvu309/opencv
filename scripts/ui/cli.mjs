@@ -1,6 +1,11 @@
 import { dirname, join, relative, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
-import { compareDir, manifestProblems, runCompare } from "./before-after.mjs"
+import {
+  compareDir,
+  manifestProblems,
+  pruneBases,
+  runCompare,
+} from "./before-after.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
 import { checkScreen } from "./check-screen.mjs"
 import {
@@ -136,6 +141,12 @@ export const COMMANDS = {
         ],
       }
     },
+  },
+  "prune-bases": {
+    usage: "prune-bases",
+    about:
+      "Delete base copies left by compare runs whose process has ended. Copies of a running compare stay.",
+    run: async (ctx) => ({ code: EXIT.ok, lines: [json(pruneBases(ctx))] }),
   },
   screens: {
     usage: "screens",

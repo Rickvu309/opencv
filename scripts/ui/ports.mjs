@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   openSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -97,6 +98,7 @@ export function realPorts() {
     git,
     upload,
     env: process.env,
+    pid: process.pid,
     repo: repoRoot(),
     scratchRoot: SCRATCH_ROOT,
     defaultPen: DEFAULT_PEN,
@@ -111,6 +113,17 @@ export function realPorts() {
         writeFileSync(path, data)
       },
       mkdir: (path) => mkdirSync(path, { recursive: true }),
+      list: (path) => (existsSync(path) ? readdirSync(path) : []),
+      claim: (path, data) => {
+        mkdirSync(dirname(path), { recursive: true })
+        try {
+          writeFileSync(path, data, { flag: "wx" })
+          return true
+        } catch (error) {
+          if (error.code === "EEXIST") return false
+          throw error
+        }
+      },
       remove: (path) => rmSync(path, { recursive: true, force: true }),
     },
     proc: { start, run, alive, stop },

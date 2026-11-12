@@ -1,4 +1,4 @@
-import { join } from "node:path"
+import { basename, join } from "node:path"
 import { openScreen } from "./capture.mjs"
 import { viewportFor } from "./screens.mjs"
 import { down, liveState, stateDir, up } from "./stack.mjs"
@@ -13,8 +13,51 @@ export const sideFile = (screen, width, side) =>
 export const compareDir = (scratchRoot, repo) =>
   join(stateDir(scratchRoot, repo), "compare")
 
-export const baseDir = (scratchRoot, sha) =>
-  join(scratchRoot, "bases", sha.slice(0, 12))
+export const basesRoot = (scratchRoot) => join(scratchRoot, "bases")
+
+export const baseDir = (scratchRoot, sha, caller) =>
+  join(basesRoot(scratchRoot), `${sha.slice(0, 12)}-${caller}`)
+
+const ownerFile = (dir) => `${dir}.owner.json`
+
+function ownerAlive(ctx, dir) {
+  try {
+    return ctx.proc.alive(JSON.parse(ctx.fs.read(ownerFile(dir))).pid)
+  } catch {
+    return false
+  }
+}
+
+function removeBase(ctx, dir) {
+  for (const path of [
+    dir,
+    `${dir}.tar`,
+    `${dir}.log`,
+    ownerFile(dir),
+    stateDir(ctx.scratchRoot, dir),
+  ])
+    ctx.fs.remove(path)
+}
+
+export function pruneBases(ctx) {
+  const root = basesRoot(ctx.scratchRoot)
+  const names = new Set(
+    ctx.fs
+      .list(root)
+      .map((entry) => entry.replace(/\.(owner\.json|tar|log)$/, ""))
+  )
+  const removed = []
+  const running = []
+  for (const name of [...names].sort()) {
+    const dir = join(root, name)
+    if (ownerAlive(ctx, dir)) running.push(dir)
+    else {
+      removeBase(ctx, dir)
+      removed.push(dir)
+    }
+  }
+  return { removed, running }
+}
 
 export function emptyManifest({ base, baseSha, head, widths }) {
   return { base, baseSha, head, widths, captures: [] }
@@ -113,10 +156,15 @@ export async function snapshotElements(page, selectors = []) {
 
 export async function prepareBase(ctx, ref) {
   const sha = ctx.git(["rev-parse", "--verify", `${ref}^{commit}`], ctx.repo)
-  const dir = baseDir(ctx.scratchRoot, sha)
-  ctx.fs.remove(dir)
+  const dir = baseDir(ctx.scratchRoot, sha, basename(ctx.repo))
+  if (ownerAlive(ctx, dir))
+    throw new Error(
+      `another compare from this worktree is using ${dir}; wait for it to finish`
+    )
+  removeBase(ctx, dir)
+  ctx.fs.write(ownerFile(dir), JSON.stringify({ pid: ctx.pid }))
   ctx.fs.mkdir(dir)
-  const log = join(ctx.scratchRoot, "bases", `${sha.slice(0, 12)}.log`)
+  const log = `${dir}.log`
   ctx.fs.write(log, "")
   const tar = `${dir}.tar`
   const steps = [
@@ -137,6 +185,9 @@ export async function prepareBase(ctx, ref) {
           `${command} ${args[0]} failed for the base checkout (log ${log})`
         )
     }
+  } catch (error) {
+    removeBase(ctx, dir)
+    throw error
   } finally {
     ctx.fs.remove(tar)
   }
@@ -230,6 +281,6 @@ export async function runCompare(
     return { manifest, file }
   } finally {
     for (const stack of [...started].reverse()) await down(stack)
-    if (checkout) ctx.fs.remove(checkout.dir)
+    if (checkout) removeBase(ctx, checkout.dir)
   }
 }
