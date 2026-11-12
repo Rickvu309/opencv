@@ -141,9 +141,18 @@ async function pageBytes(owner: string, page: ListedPage) {
   }
 }
 
+const UNSAFE_FILE_CHARACTERS = new Set('/\\:*?"<>|')
+
+function safeCharacter(character: string) {
+  const code = character.charCodeAt(0)
+  return code < 32 || code === 127 || UNSAFE_FILE_CHARACTERS.has(character)
+    ? "-"
+    : character
+}
+
 function fileStem(name: string) {
-  const stem = name
-    .replace(/[\u0000-\u001f\u007f/\\:*?"<>|]+/g, "-")
+  const stem = Array.from(name, safeCharacter)
+    .join("")
     .replace(/^[\s.-]+|[\s.]+$/g, "")
     .slice(0, 80)
   return stem || "Untitled"

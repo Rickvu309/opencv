@@ -376,6 +376,23 @@ describe("account export of Word pages", () => {
     ).toBe(true)
   })
 
+  it("keeps every file name inside its folder whatever the page is called", async () => {
+    const cy = await person("Cy", "cy-export-word@example.com")
+    for (const name of ["../../etc/passwd", "a\\b:c*?<>|", "...", "\u0007bell"])
+      await importedPage(cy.id, name, "Cy line")
+    const { index, members } = await exportOf(cy.cookie)
+    const paths = index.wordPages.map((page) => page.file!)
+    expect(new Set(paths).size).toBe(4)
+    for (const path of paths) {
+      expect(members.has(path)).toBe(true)
+      expect(path).toMatch(/^word-pages\/[^/\\:*?"<>|]+\.docx$/)
+      expect(
+        [...path].every((character) => character.charCodeAt(0) >= 32)
+      ).toBe(true)
+      expect(path.split("/")).not.toContain("..")
+    }
+  })
+
   it("leaves no Word page or stored bytes behind when the account is deleted", async () => {
     await inDb(() =>
       deleteAccount(bea.id as Parameters<typeof deleteAccount>[0])
