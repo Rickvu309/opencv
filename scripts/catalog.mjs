@@ -1,9 +1,11 @@
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from "node:fs"
 import path from "node:path"
@@ -16,6 +18,7 @@ import {
   browserSource,
   discoverCatalog,
 } from "./lib/catalog-discovery.mjs"
+import { generatedDirectories, staleOutputs } from "./lib/catalog-freshness.mjs"
 import {
   CatalogError,
   detect,
@@ -110,6 +113,32 @@ export async function buildBrowserCatalog(directory = root) {
   return result
 }
 
+export async function formatOutputs(outputs) {
+  const formatted = {}
+  for (const [file, source] of Object.entries(outputs))
+    formatted[file] = file.endsWith(".ts")
+      ? await format(source, {
+          parser: "typescript",
+          semi: false,
+          trailingComma: "es5",
+        })
+      : source
+  return formatted
+}
+
+export function readGenerated(expected, directory = root) {
+  const current = {}
+  for (const folder of generatedDirectories(expected)) {
+    const absolute = path.join(directory, folder)
+    if (!existsSync(absolute)) continue
+    for (const entry of readdirSync(absolute, { withFileTypes: true }))
+      current[`${folder}/${entry.name}`] = entry.isFile()
+        ? readFileSync(path.join(absolute, entry.name), "utf8")
+        : null
+  }
+  return current
+}
+
 export async function catalog(mode = "check", directory = root) {
   const snapshot = await discoverCatalog(directory)
   const errors = detect(snapshot)
@@ -118,36 +147,25 @@ export async function catalog(mode = "check", directory = root) {
       errors,
       errors.map((error) => error.message).join("\n")
     )
-  const outputs = renderCatalog(snapshot)
-  for (const [file, source] of Object.entries(outputs)) {
-    const content = file.endsWith(".ts")
-      ? await format(source, {
-          parser: "typescript",
-          semi: false,
-          trailingComma: "es5",
-        })
-      : source
-    const target = path.join(directory, file)
-    const current = existsSync(target)
-      ? readFileSync(target, "utf8")
-      : undefined
-    if (
-      (mode === "check" ? current?.replace(/\r\n?/g, "\n") : current) ===
-      content
-    )
-      continue
-    if (mode === "check")
-      throw new CatalogError(
-        "stale-output",
-        file,
-        "run node scripts/catalog.mjs generate"
-      )
-    mkdirSync(path.dirname(target), { recursive: true })
-    const temporary = `${target}.${process.pid}.pending`
-    writeFileSync(temporary, content)
-    renameSync(temporary, target)
+  const expected = await formatOutputs(renderCatalog(snapshot))
+  const current = readGenerated(expected, directory)
+  if (mode === "check") {
+    const stale = staleOutputs(expected, current)
+    if (stale.length) throw stale[0]
+    await buildBrowserCatalog(directory)
+  } else {
+    for (const file of Object.keys(current))
+      if (!(file in expected))
+        rmSync(path.join(directory, file), { recursive: true, force: true })
+    for (const [file, content] of Object.entries(expected)) {
+      if (current[file] === content) continue
+      const target = path.join(directory, file)
+      mkdirSync(path.dirname(target), { recursive: true })
+      const temporary = `${target}.${process.pid}.pending`
+      writeFileSync(temporary, content)
+      renameSync(temporary, target)
+    }
   }
-  if (mode === "check") await buildBrowserCatalog(directory)
   return { count: snapshot.operations.length, digest: digestOf(snapshot) }
 }
 

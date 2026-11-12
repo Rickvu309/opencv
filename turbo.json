@@ -69,7 +69,6 @@
         "packages/domain/src/operations/*/*/operation.ts",
         "apps/api/src/*/operations/*/*/server.ts",
         "packages/domain/src/generated/catalog.ts",
-        "packages/domain/src/generated/catalog.digest",
         "apps/api/src/registry/generated/catalog.ts"
       ],
       "outputs": []

@@ -106,7 +106,7 @@ export function inspectBrowserImports(file, text) {
 
 const pathExtension = (specifier) => specifier.split("/").at(-1).includes(".")
 
-export function detect(value, outputDigest) {
+export function detect(value) {
   const snapshot = typeof value === "string" ? JSON.parse(value) : value
   const errors = []
   const names = new Set()
@@ -163,53 +163,42 @@ export function detect(value, outputDigest) {
       errors.push(new CatalogError("browser-import", issue.file, issue.detail))
   for (const issue of snapshot.boundaryErrors ?? [])
     errors.push(new CatalogError("browser-import", issue.file, issue.detail))
-  if (
-    typeof value !== "string" &&
-    outputDigest !== undefined &&
-    outputDigest !== digestOf(snapshot)
-  )
-    errors.push(
-      new CatalogError(
-        "stale-output",
-        "catalog",
-        "run node scripts/catalog.mjs generate"
-      )
-    )
   return errors
 }
 
+export const aliasOf = (name) =>
+  name
+    .split(".")
+    .map((part) => part.replace(/[^A-Za-z0-9_]/g, "_"))
+    .join("$")
+    .replace(/^(?=[0-9])/, "_")
+
 export function renderCatalog(snapshot) {
-  const digest = digestOf(snapshot)
   const operations = [...snapshot.operations].sort((a, b) =>
     a.name.localeCompare(b.name, "en")
   )
   const browser = operations.map(
-    (operation, index) =>
-      `import { operation as operation${index} } from ${JSON.stringify(`../${operation.file.replace("packages/domain/src/", "").replace(/\.ts$/, ".js")}`)}`
+    (operation) =>
+      `import { operation as ${aliasOf(operation.name)} } from ${JSON.stringify(`../${operation.file.replace("packages/domain/src/", "").replace(/\.ts$/, ".js")}`)}`
   )
   const server = [
     'import type { Implementations } from "@workspace/domain"',
     'import { catalog } from "@workspace/domain"',
   ]
-  operations.forEach((operation, index) => {
+  for (const operation of operations) {
     const implementation = snapshot.servers.find(
       (entry) => entry.operation === operation.file
     )
     server.push(
-      `import { implementation as implementation${index} } from ${JSON.stringify(`../../${implementation.file.replace("apps/api/src/", "").replace(/\.ts$/, ".js")}`)}`
+      `import { implementation as ${aliasOf(operation.name)} } from ${JSON.stringify(`../../${implementation.file.replace("apps/api/src/", "").replace(/\.ts$/, ".js")}`)}`
     )
-  })
+  }
   const entries = operations.map(
-    (operation, index) =>
-      `  ${JSON.stringify(operation.name)}: operation${index},`
-  )
-  const bindings = operations.map(
-    (operation, index) =>
-      `  ${JSON.stringify(operation.name)}: implementation${index},`
+    (operation) =>
+      `  ${JSON.stringify(operation.name)}: ${aliasOf(operation.name)},`
   )
   return {
-    "packages/domain/src/generated/catalog.ts": `${browser.join("\n")}${browser.length ? "\n\n" : ""}export const catalog = {\n${entries.join("\n")}\n} as const\n\nexport const catalogDigest = ${JSON.stringify(digest)}\n`,
-    "apps/api/src/registry/generated/catalog.ts": `${server.join("\n")}\n\nexport const implementations = {\n${bindings.join("\n")}\n} satisfies Implementations<typeof catalog>\n`,
-    "packages/domain/src/generated/catalog.digest": `${digest}\n`,
+    "packages/domain/src/generated/catalog.ts": `${browser.join("\n")}${browser.length ? "\n\n" : ""}export const catalog = {\n${entries.join("\n")}\n} as const\n`,
+    "apps/api/src/registry/generated/catalog.ts": `${server.join("\n")}\n\nexport const implementations = {\n${entries.join("\n")}\n} satisfies Implementations<typeof catalog>\n`,
   }
 }
